@@ -133,7 +133,7 @@ typedef struct {
     Py_UCS4 *field;             /* temporary buffer */
     Py_ssize_t field_size;      /* size of allocated buffer */
     Py_ssize_t field_len;       /* length of current field */
-    int unquoted_field;
+    bool unquoted_field;
     unsigned long line_num;     /* Source-file line number */
 } ReaderObj;
 
@@ -695,7 +695,7 @@ parse_process_char(ReaderObj *self, _csvstate *module_state, Py_UCS4 c)
         /* fallthru */
     case START_FIELD:
         /* expecting field */
-        self->unquoted_field = 1;
+        self->unquoted_field = true;
         if (c == '\n' || c == '\r' || c == EOL) {
             /* save empty field - return [fields] */
             if (parse_save_field(self) < 0)
@@ -705,12 +705,12 @@ parse_process_char(ReaderObj *self, _csvstate *module_state, Py_UCS4 c)
         else if (c == dialect->quotechar &&
                  dialect->quoting != QUOTE_NONE) {
             /* start quoted field */
-            self->unquoted_field = 0;
+            self->unquoted_field = false;
             self->state = IN_QUOTED_FIELD;
         }
         else if (c == dialect->escapechar) {
             /* possible escaped character */
-            self->unquoted_field = 0;
+            self->unquoted_field = false;
             self->state = ESCAPED_CHAR;
         }
         else if (c == ' ' && dialect->skipinitialspace)
@@ -866,7 +866,7 @@ parse_reset(ReaderObj *self)
         return -1;
     self->field_len = 0;
     self->state = START_RECORD;
-    self->unquoted_field = 0;
+    self->unquoted_field = false;
     return 0;
 }
 
