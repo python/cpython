@@ -1,2 +1,0 @@
-Fix a hang at fork in the logging module: the new private _at_fork_reinit()
-method is now used to reinitialize locks at fork in the child process.

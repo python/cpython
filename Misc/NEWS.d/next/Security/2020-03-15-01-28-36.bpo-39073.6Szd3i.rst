@@ -1,1 +1,0 @@
-Disallow CR or LF in email.headerregistry.Address arguments to guard against header injection attacks.

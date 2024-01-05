@@ -1,4 +1,0 @@
-The :c:func:`PyObject_NEW` macro becomes an alias to the :c:func:`PyObject_New`
-macro, and the :c:func:`PyObject_NEW_VAR` macro becomes an alias to the
-:c:func:`PyObject_NewVar` macro, to hide implementation details. They no longer
-access directly the :c:member:`PyTypeObject.tp_basicsize` member.

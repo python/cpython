@@ -20,7 +20,7 @@ testcfg = {
 }
 code_sample = """\
 
-class C1():
+class C1:
     # Class comment.
     def __init__(self, a, b):
         self.a = a
@@ -178,29 +178,29 @@ class CodeContextTest(unittest.TestCase):
         with self.assertRaises(AssertionError):
             gc(1, stopline=0)
 
-        eq(gc(3), ([(2, 0, 'class C1():', 'class')], 0))
+        eq(gc(3), ([(2, 0, 'class C1:', 'class')], 0))
 
         # Don't return comment.
-        eq(gc(4), ([(2, 0, 'class C1():', 'class')], 0))
+        eq(gc(4), ([(2, 0, 'class C1:', 'class')], 0))
 
         # Two indentation levels and no comment.
-        eq(gc(5), ([(2, 0, 'class C1():', 'class'),
+        eq(gc(5), ([(2, 0, 'class C1:', 'class'),
                     (4, 4, '    def __init__(self, a, b):', 'def')], 0))
 
         # Only one 'def' is returned, not both at the same indent level.
-        eq(gc(10), ([(2, 0, 'class C1():', 'class'),
+        eq(gc(10), ([(2, 0, 'class C1:', 'class'),
                      (7, 4, '    def compare(self):', 'def'),
                      (8, 8, '        if a > b:', 'if')], 0))
 
         # With 'elif', also show the 'if' even though it's at the same level.
-        eq(gc(11), ([(2, 0, 'class C1():', 'class'),
+        eq(gc(11), ([(2, 0, 'class C1:', 'class'),
                      (7, 4, '    def compare(self):', 'def'),
                      (8, 8, '        if a > b:', 'if'),
                      (10, 8, '        elif a < b:', 'elif')], 0))
 
         # Set stop_line to not go back to first line in source code.
         # Return includes stop_line.
-        eq(gc(11, stopline=2), ([(2, 0, 'class C1():', 'class'),
+        eq(gc(11, stopline=2), ([(2, 0, 'class C1:', 'class'),
                                  (7, 4, '    def compare(self):', 'def'),
                                  (8, 8, '        if a > b:', 'if'),
                                  (10, 8, '        elif a < b:', 'elif')], 0))
@@ -240,37 +240,37 @@ class CodeContextTest(unittest.TestCase):
         # Scroll down to line 2.
         cc.text.yview(2)
         cc.update_code_context()
-        eq(cc.info, [(0, -1, '', False), (2, 0, 'class C1():', 'class')])
+        eq(cc.info, [(0, -1, '', False), (2, 0, 'class C1:', 'class')])
         eq(cc.topvisible, 3)
-        eq(cc.context.get('1.0', 'end-1c'), 'class C1():')
+        eq(cc.context.get('1.0', 'end-1c'), 'class C1:')
 
         # Scroll down to line 3.  Since it's a comment, nothing changes.
         cc.text.yview(3)
         cc.update_code_context()
-        eq(cc.info, [(0, -1, '', False), (2, 0, 'class C1():', 'class')])
+        eq(cc.info, [(0, -1, '', False), (2, 0, 'class C1:', 'class')])
         eq(cc.topvisible, 4)
-        eq(cc.context.get('1.0', 'end-1c'), 'class C1():')
+        eq(cc.context.get('1.0', 'end-1c'), 'class C1:')
 
         # Scroll down to line 4.
         cc.text.yview(4)
         cc.update_code_context()
         eq(cc.info, [(0, -1, '', False),
-                     (2, 0, 'class C1():', 'class'),
+                     (2, 0, 'class C1:', 'class'),
                      (4, 4, '    def __init__(self, a, b):', 'def')])
         eq(cc.topvisible, 5)
-        eq(cc.context.get('1.0', 'end-1c'), 'class C1():\n'
+        eq(cc.context.get('1.0', 'end-1c'), 'class C1:\n'
                                             '    def __init__(self, a, b):')
 
         # Scroll down to line 11.  Last 'def' is removed.
         cc.text.yview(11)
         cc.update_code_context()
         eq(cc.info, [(0, -1, '', False),
-                     (2, 0, 'class C1():', 'class'),
+                     (2, 0, 'class C1:', 'class'),
                      (7, 4, '    def compare(self):', 'def'),
                      (8, 8, '        if a > b:', 'if'),
                      (10, 8, '        elif a < b:', 'elif')])
         eq(cc.topvisible, 12)
-        eq(cc.context.get('1.0', 'end-1c'), 'class C1():\n'
+        eq(cc.context.get('1.0', 'end-1c'), 'class C1:\n'
                                             '    def compare(self):\n'
                                             '        if a > b:\n'
                                             '        elif a < b:')
@@ -279,12 +279,12 @@ class CodeContextTest(unittest.TestCase):
         cc.update_code_context()
         cc.context_depth = 1
         eq(cc.info, [(0, -1, '', False),
-                     (2, 0, 'class C1():', 'class'),
+                     (2, 0, 'class C1:', 'class'),
                      (7, 4, '    def compare(self):', 'def'),
                      (8, 8, '        if a > b:', 'if'),
                      (10, 8, '        elif a < b:', 'elif')])
         eq(cc.topvisible, 12)
-        eq(cc.context.get('1.0', 'end-1c'), 'class C1():\n'
+        eq(cc.context.get('1.0', 'end-1c'), 'class C1:\n'
                                             '    def compare(self):\n'
                                             '        if a > b:\n'
                                             '        elif a < b:')
@@ -293,7 +293,7 @@ class CodeContextTest(unittest.TestCase):
         cc.text.yview(5)
         cc.update_code_context()
         eq(cc.info, [(0, -1, '', False),
-                     (2, 0, 'class C1():', 'class'),
+                     (2, 0, 'class C1:', 'class'),
                      (4, 4, '    def __init__(self, a, b):', 'def')])
         eq(cc.topvisible, 6)
         # context_depth is 1.
@@ -440,7 +440,7 @@ class HelperFunctionText(unittest.TestCase):
         # Line 1 is not a BLOCKOPENER.
         eq(gli(lines[0]), (codecontext.INFINITY, '', False))
         # Line 2 is a BLOCKOPENER without an indent.
-        eq(gli(lines[1]), (0, 'class C1():', 'class'))
+        eq(gli(lines[1]), (0, 'class C1:', 'class'))
         # Line 3 is not a BLOCKOPENER and does not return the indent level.
         eq(gli(lines[2]), (codecontext.INFINITY, '    # Class comment.', False))
         # Line 4 is a BLOCKOPENER and is indented.
