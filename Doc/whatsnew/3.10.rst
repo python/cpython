@@ -1316,8 +1316,8 @@ pyclbr
 ------
 
 Add an ``end_lineno`` attribute to the ``Function`` and ``Class``
-objects in the tree returned by :func:`pyclbr.readline` and
-:func:`pyclbr.readline_ex`.  It matches the existing (start) ``lineno``.
+objects in the tree returned by :func:`pyclbr.readmodule` and
+:func:`pyclbr.readmodule_ex`.  It matches the existing (start) ``lineno``.
 (Contributed by Aviral Srivastava in :issue:`38307`.)
 
 shelve
