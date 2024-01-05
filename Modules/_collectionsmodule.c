@@ -1117,6 +1117,7 @@ _collections_deque_reverse_impl(dequeobject *deque)
 }
 
 /*[clinic input]
+@critical_section
 _collections.deque.count
 
     deque: dequeobject
@@ -1127,8 +1128,8 @@ Return number of occurrences of v
 [clinic start generated code]*/
 
 static PyObject *
-_collections_deque_count(dequeobject *deque, PyObject *v)
-/*[clinic end generated code: output=4fd47b6bf522f071 input=38d3b9f0f9993e26]*/
+_collections_deque_count_impl(dequeobject *deque, PyObject *v)
+/*[clinic end generated code: output=9c70678be9804685 input=f430e22a70390922]*/
 {
     block *b = deque->leftblock;
     Py_ssize_t index = deque->leftindex;

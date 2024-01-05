@@ -248,6 +248,21 @@ PyDoc_STRVAR(_collections_deque_count__doc__,
 #define _COLLECTIONS_DEQUE_COUNT_METHODDEF    \
     {"count", (PyCFunction)_collections_deque_count, METH_O, _collections_deque_count__doc__},
 
+static PyObject *
+_collections_deque_count_impl(dequeobject *deque, PyObject *v);
+
+static PyObject *
+_collections_deque_count(dequeobject *deque, PyObject *v)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(deque);
+    return_value = _collections_deque_count_impl(deque, v);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_collections_deque_index__doc__,
 "index($self, value, [start, [stop]])\n"
 "--\n"
@@ -533,4 +548,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d07b2cf01ca914eb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e82801f66853ad40 input=a9049054013a1b77]*/
