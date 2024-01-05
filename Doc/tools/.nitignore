@@ -33,7 +33,6 @@ Doc/library/asyncio-task.rst
 Doc/library/bdb.rst
 Doc/library/collections.rst
 Doc/library/concurrent.futures.rst
-Doc/library/configparser.rst
 Doc/library/csv.rst
 Doc/library/datetime.rst
 Doc/library/dbm.rst
@@ -68,10 +67,8 @@ Doc/library/pickletools.rst
 Doc/library/platform.rst
 Doc/library/plistlib.rst
 Doc/library/profile.rst
-Doc/library/pyclbr.rst
 Doc/library/pydoc.rst
 Doc/library/pyexpat.rst
-Doc/library/random.rst
 Doc/library/readline.rst
 Doc/library/resource.rst
 Doc/library/select.rst
