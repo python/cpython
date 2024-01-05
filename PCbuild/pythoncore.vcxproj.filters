@@ -1280,6 +1280,9 @@
     <ClCompile Include="..\Python\future.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\gc.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\getargs.c">
       <Filter>Python</Filter>
     </ClCompile>

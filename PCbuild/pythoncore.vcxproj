@@ -566,6 +566,7 @@
       <AdditionalIncludeDirectories>$(GeneratedFrozenModulesDir)Python;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <ClCompile Include="..\Python\future.c" />
+    <ClCompile Include="..\Python\gc.c" />
     <ClCompile Include="..\Python\getargs.c" />
     <ClCompile Include="..\Python\getcompiler.c" />
     <ClCompile Include="..\Python\getcopyright.c" />
