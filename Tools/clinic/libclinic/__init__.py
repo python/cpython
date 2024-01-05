@@ -1,5 +1,8 @@
 from typing import Final
 
+from .errors import (
+    ClinicError,
+)
 from .formatting import (
     SIG_END_MARKER,
     c_repr,
@@ -15,6 +18,9 @@ from .formatting import (
 
 
 __all__ = [
+    # Error handling
+    "ClinicError",
+
     # Formatting helpers
     "SIG_END_MARKER",
     "c_repr",

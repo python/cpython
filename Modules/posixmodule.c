@@ -236,14 +236,15 @@ corresponding Unix manual entries for more information on calls.");
 #  include <sys/uio.h>
 #endif
 
+#ifdef HAVE_SYS_TYPES_H
+/* Should be included before <sys/sysmacros.h> on HP-UX v3 */
+#  include <sys/types.h>
+#endif /* HAVE_SYS_TYPES_H */
+
 #ifdef HAVE_SYS_SYSMACROS_H
 /* GNU C Library: major(), minor(), makedev() */
 #  include <sys/sysmacros.h>
 #endif
-
-#ifdef HAVE_SYS_TYPES_H
-#  include <sys/types.h>
-#endif /* HAVE_SYS_TYPES_H */
 
 #ifdef HAVE_SYS_STAT_H
 #  include <sys/stat.h>
@@ -1023,7 +1024,7 @@ typedef struct {
     PyObject *TerminalSizeType;
     PyObject *TimesResultType;
     PyObject *UnameResultType;
-#if defined(HAVE_WAITID) && !defined(__APPLE__)
+#if defined(HAVE_WAITID)
     PyObject *WaitidResultType;
 #endif
 #if defined(HAVE_WAIT3) || defined(HAVE_WAIT4)
@@ -2291,7 +2292,7 @@ static PyStructSequence_Desc statvfs_result_desc = {
     10
 };
 
-#if defined(HAVE_WAITID) && !defined(__APPLE__)
+#if defined(HAVE_WAITID)
 PyDoc_STRVAR(waitid_result__doc__,
 "waitid_result: Result from waitid.\n\n\
 This object may be accessed either as a tuple of\n\
@@ -2366,7 +2367,7 @@ _posix_clear(PyObject *module)
     Py_CLEAR(state->TerminalSizeType);
     Py_CLEAR(state->TimesResultType);
     Py_CLEAR(state->UnameResultType);
-#if defined(HAVE_WAITID) && !defined(__APPLE__)
+#if defined(HAVE_WAITID)
     Py_CLEAR(state->WaitidResultType);
 #endif
 #if defined(HAVE_WAIT3) || defined(HAVE_WAIT4)
@@ -2391,7 +2392,7 @@ _posix_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->TerminalSizeType);
     Py_VISIT(state->TimesResultType);
     Py_VISIT(state->UnameResultType);
-#if defined(HAVE_WAITID) && !defined(__APPLE__)
+#if defined(HAVE_WAITID)
     Py_VISIT(state->WaitidResultType);
 #endif
 #if defined(HAVE_WAIT3) || defined(HAVE_WAIT4)
@@ -9517,7 +9518,7 @@ os_wait4_impl(PyObject *module, pid_t pid, int options)
 #endif /* HAVE_WAIT4 */
 
 
-#if defined(HAVE_WAITID) && !defined(__APPLE__)
+#if defined(HAVE_WAITID)
 /*[clinic input]
 os.waitid
 
@@ -9574,7 +9575,7 @@ os_waitid_impl(PyObject *module, idtype_t idtype, id_t id, int options)
 
     return result;
 }
-#endif /* defined(HAVE_WAITID) && !defined(__APPLE__) */
+#endif /* defined(HAVE_WAITID) */
 
 
 #if defined(HAVE_WAITPID)
@@ -17308,7 +17309,7 @@ posixmodule_exec(PyObject *m)
         return -1;
     }
 
-#if defined(HAVE_WAITID) && !defined(__APPLE__)
+#if defined(HAVE_WAITID)
     waitid_result_desc.name = MODNAME ".waitid_result";
     state->WaitidResultType = (PyObject *)PyStructSequence_NewType(&waitid_result_desc);
     if (PyModule_AddObjectRef(m, "waitid_result", state->WaitidResultType) < 0) {

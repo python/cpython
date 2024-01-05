@@ -27,6 +27,7 @@ extern "C" {
 #include "pycore_import.h"        // struct _import_state
 #include "pycore_instruments.h"   // _PY_MONITORING_EVENTS
 #include "pycore_list.h"          // struct _Py_list_state
+#include "pycore_mimalloc.h"      // struct _mimalloc_interp_state
 #include "pycore_object_state.h"  // struct _py_object_state
 #include "pycore_obmalloc.h"      // struct _obmalloc_state
 #include "pycore_tstate.h"        // _PyThreadStateImpl
@@ -165,6 +166,10 @@ struct _is {
 
     struct _warnings_runtime_state warnings;
     struct atexit_state atexit;
+
+#if defined(Py_GIL_DISABLED)
+    struct _mimalloc_interp_state mimalloc;
+#endif
 
     struct _obmalloc_state obmalloc;
 

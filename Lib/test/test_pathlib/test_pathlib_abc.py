@@ -8,7 +8,6 @@ import unittest
 from pathlib._abc import UnsupportedOperation, PurePathBase, PathBase
 import posixpath
 
-from test.support import set_recursion_limit
 from test.support.os_helper import TESTFN
 
 
@@ -543,10 +542,6 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(p.relative_to('a/b/c', walk_up=True), P('..'))
         self.assertEqual(p.relative_to(P('c'), walk_up=True), P('../a/b'))
         self.assertEqual(p.relative_to('c', walk_up=True), P('../a/b'))
-        # With several args.
-        with self.assertWarns(DeprecationWarning):
-            p.relative_to('a', 'b')
-            p.relative_to('a', 'b', walk_up=True)
         # Unrelated paths.
         self.assertRaises(ValueError, p.relative_to, P('c'))
         self.assertRaises(ValueError, p.relative_to, P('a/b/c'))
@@ -608,9 +603,6 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertTrue(p.is_relative_to('a/'))
         self.assertTrue(p.is_relative_to(P('a/b')))
         self.assertTrue(p.is_relative_to('a/b'))
-        # With several args.
-        with self.assertWarns(DeprecationWarning):
-            p.is_relative_to('a', 'b')
         # Unrelated paths.
         self.assertFalse(p.is_relative_to(P('c')))
         self.assertFalse(p.is_relative_to(P('a/b/c')))
@@ -1224,25 +1216,6 @@ class DummyPathTest(DummyPurePathTest):
                   }
         self.assertEqual(given, {p / x for x in expect})
 
-    def test_glob_many_open_files(self):
-        depth = 30
-        P = self.cls
-        p = base = P(self.base) / 'deep'
-        p.mkdir()
-        for _ in range(depth):
-            p /= 'd'
-            p.mkdir()
-        pattern = '/'.join(['*'] * depth)
-        iters = [base.glob(pattern) for j in range(100)]
-        for it in iters:
-            self.assertEqual(next(it), p)
-        iters = [base.rglob('d') for j in range(100)]
-        p = base
-        for i in range(depth):
-            p = p / 'd'
-            for it in iters:
-                self.assertEqual(next(it), p)
-
     def test_glob_dotdot(self):
         # ".." is not special in globs.
         P = self.cls
@@ -1285,30 +1258,6 @@ class DummyPathTest(DummyPurePathTest):
         bad_link = base / 'bad_link'
         bad_link.symlink_to("bad" * 200)
         self.assertEqual(sorted(base.glob('**/*')), [bad_link])
-
-    def test_glob_above_recursion_limit(self):
-        recursion_limit = 50
-        # directory_depth > recursion_limit
-        directory_depth = recursion_limit + 10
-        base = self.cls(self.base, 'deep')
-        path = base.joinpath(*(['d'] * directory_depth))
-        path.mkdir(parents=True)
-
-        with set_recursion_limit(recursion_limit):
-            list(base.glob('**/'))
-
-    def test_glob_recursive_no_trailing_slash(self):
-        P = self.cls
-        p = P(self.base)
-        with self.assertWarns(FutureWarning):
-            p.glob('**')
-        with self.assertWarns(FutureWarning):
-            p.glob('*/**')
-        with self.assertWarns(FutureWarning):
-            p.rglob('**')
-        with self.assertWarns(FutureWarning):
-            p.rglob('*/**')
-
 
     def test_readlink(self):
         if not self.can_symlink:
@@ -1825,17 +1774,6 @@ class DummyPathTest(DummyPurePathTest):
         else:
             self.fail("symlink not found")
 
-    def test_walk_above_recursion_limit(self):
-        recursion_limit = 40
-        # directory_depth > recursion_limit
-        directory_depth = recursion_limit + 10
-        base = self.cls(self.base, 'deep')
-        path = base.joinpath(*(['d'] * directory_depth))
-        path.mkdir(parents=True)
-
-        with set_recursion_limit(recursion_limit):
-            list(base.walk())
-            list(base.walk(top_down=False))
 
 class DummyPathWithSymlinks(DummyPath):
     def readlink(self):

@@ -3067,6 +3067,24 @@ AC_MSG_RESULT([no])
 with_ubsan="no"
 ])
 
+AC_MSG_CHECKING([for --with-thread-sanitizer])
+AC_ARG_WITH(
+  [thread_sanitizer],
+  [AS_HELP_STRING(
+    [--with-thread-sanitizer],
+    [enable ThreadSanitizer data race detector, 'tsan' (default is no)]
+  )],
+[
+AC_MSG_RESULT([$withval])
+BASECFLAGS="-fsanitize=thread $BASECFLAGS"
+LDFLAGS="-fsanitize=thread $LDFLAGS"
+with_tsan="yes"
+],
+[
+AC_MSG_RESULT([no])
+with_tsan="no"
+])
+
 # Set info about shared libraries.
 AC_SUBST([SHLIB_SUFFIX])
 AC_SUBST([LDSHARED])
@@ -4349,7 +4367,7 @@ ipv6type=unknown
 ipv6lib=none
 ipv6trylibc=no
 
-if test "$ipv6" = "yes"; then
+if test "$ipv6" = yes -a "$cross_compiling" = no; then
 	AC_MSG_CHECKING([ipv6 stack type])
 	for i in inria kame linux-glibc linux-inet6 solaris toshiba v6d zeta;
 	do
@@ -5102,6 +5120,7 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #if defined(MAJOR_IN_MKDEV)
 #include <sys/mkdev.h>
 #elif defined(MAJOR_IN_SYSMACROS)
+#include <sys/types.h>
 #include <sys/sysmacros.h>
 #else
 #include <sys/types.h>
@@ -6808,7 +6827,12 @@ AX_CHECK_OPENSSL([have_openssl=yes],[have_openssl=no])
 AS_VAR_IF([GNULD], [yes], [
   rpath_arg="-Wl,--enable-new-dtags,-rpath="
 ], [
-  rpath_arg="-Wl,-rpath="
+  if test "$ac_sys_system" = "Darwin"
+  then
+     rpath_arg="-Wl,-rpath,"
+  else
+     rpath_arg="-Wl,-rpath="
+  fi
 ])
 
 AC_MSG_CHECKING([for --with-openssl-rpath])
