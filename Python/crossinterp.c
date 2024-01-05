@@ -484,6 +484,10 @@ error:
     return -1;
 }
 
+// We accommodate backports here.
+#ifndef _Py_EMPTY_STR
+# define _Py_EMPTY_STR &_Py_STR(empty)
+#endif
 
 static const char *
 _format_TracebackException(PyObject *tbexc)
@@ -492,7 +496,8 @@ _format_TracebackException(PyObject *tbexc)
     if (lines == NULL) {
         return NULL;
     }
-    PyObject *formatted_obj = PyUnicode_Join(&_Py_STR(empty), lines);
+    assert(_Py_EMPTY_STR != NULL);
+    PyObject *formatted_obj = PyUnicode_Join(_Py_EMPTY_STR, lines);
     Py_DECREF(lines);
     if (formatted_obj == NULL) {
         return NULL;
