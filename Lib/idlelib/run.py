@@ -4,6 +4,7 @@ Simplified, pyshell.ModifiedInterpreter spawns a subprocess with
 f'''{sys.executable} -c "__import__('idlelib.run').run.main()"'''
 '.run' is needed because __import__ returns idlelib, not idlelib.run.
 """
+import contextlib
 import functools
 import io
 import linecache
@@ -16,6 +17,7 @@ import _thread as thread
 import threading
 import warnings
 
+import idlelib  # testing
 from idlelib import autocomplete  # AutoComplete, fetch_encodings
 from idlelib import calltip  # Calltip
 from idlelib import debugger_r  # start_debugger
@@ -38,18 +40,25 @@ if not hasattr(sys.modules['idlelib.run'], 'firstrun'):
 
 LOCALHOST = '127.0.0.1'
 
+try:
+    eof = 'Ctrl-D (end-of-file)'
+    exit.eof = eof
+    quit.eof = eof
+except NameError: # In case subprocess started with -S (maybe in future).
+    pass
+
 
 def idle_formatwarning(message, category, filename, lineno, line=None):
     """Format warnings the IDLE way."""
 
     s = "\nWarning (from warnings module):\n"
-    s += '  File \"%s\", line %s\n' % (filename, lineno)
+    s += f'  File \"{filename}\", line {lineno}\n'
     if line is None:
         line = linecache.getline(filename, lineno)
     line = line.strip()
     if line:
         s += "    %s\n" % line
-    s += "%s: %s\n" % (category.__name__, message)
+    s += f"{category.__name__}: {message}\n"
     return s
 
 def idle_showwarning_subproc(
@@ -131,12 +140,13 @@ def main(del_exitfunc=False):
 
     capture_warnings(True)
     sys.argv[:] = [""]
-    sockthread = threading.Thread(target=manage_socket,
-                                  name='SockThread',
-                                  args=((LOCALHOST, port),))
-    sockthread.daemon = True
-    sockthread.start()
-    while 1:
+    threading.Thread(target=manage_socket,
+                     name='SockThread',
+                     args=((LOCALHOST, port),),
+                     daemon=True,
+                    ).start()
+
+    while True:
         try:
             if exit_now:
                 try:
@@ -210,6 +220,19 @@ def show_socket_error(err, address):
             parent=root)
     root.destroy()
 
+
+def get_message_lines(typ, exc, tb):
+    "Return line composing the exception message."
+    if typ in (AttributeError, NameError):
+        # 3.10+ hints are not directly accessible from python (#44026).
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            sys.__excepthook__(typ, exc, tb)
+        return [err.getvalue().split("\n")[-2] + "\n"]
+    else:
+        return traceback.format_exception_only(typ, exc)
+
+
 def print_exception():
     import linecache
     linecache.checkcache()
@@ -217,6 +240,7 @@ def print_exception():
     efile = sys.stderr
     typ, val, tb = excinfo = sys.exc_info()
     sys.last_type, sys.last_value, sys.last_traceback = excinfo
+    sys.last_exc = val
     seen = set()
 
     def print_exc(typ, exc, tb):
@@ -240,7 +264,7 @@ def print_exception():
                        "debugger_r.py", "bdb.py")
             cleanup_traceback(tbe, exclude)
             traceback.print_list(tbe, file=efile)
-        lines = traceback.format_exception_only(typ, exc)
+        lines = get_message_lines(typ, exc, tb)
         for line in lines:
             print(line, end='', file=efile)
 
@@ -387,14 +411,21 @@ class MyRPCServer(rpc.RPCServer):
             thread.interrupt_main()
         except:
             erf = sys.__stderr__
-            print('\n' + '-'*40, file=erf)
-            print('Unhandled server exception!', file=erf)
-            print('Thread: %s' % threading.current_thread().name, file=erf)
-            print('Client Address: ', client_address, file=erf)
-            print('Request: ', repr(request), file=erf)
-            traceback.print_exc(file=erf)
-            print('\n*** Unrecoverable, server exiting!', file=erf)
-            print('-'*40, file=erf)
+            print(textwrap.dedent(f"""
+            {'-'*40}
+            Unhandled exception in user code execution server!'
+            Thread: {threading.current_thread().name}
+            IDLE Client Address: {client_address}
+            Request: {request!r}
+            """), file=erf)
+            traceback.print_exc(limit=-20, file=erf)
+            print(textwrap.dedent(f"""
+            *** Unrecoverable, server exiting!
+
+            Users should never see this message; it is likely transient.
+            If this recurs, report this with a copy of the message
+            and an explanation of how to make it repeat.
+            {'-'*40}"""), file=erf)
             quitting = True
             thread.interrupt_main()
 
@@ -453,9 +484,7 @@ class StdInputFile(StdioFile):
         result = self._line_buffer
         self._line_buffer = ''
         if size < 0:
-            while True:
-                line = self.shell.readline()
-                if not line: break
+            while line := self.shell.readline():
                 result += line
         else:
             while len(result) < size:
@@ -531,18 +560,21 @@ class MyHandler(rpc.RPCHandler):
         thread.interrupt_main()
 
 
-class Executive(object):
+class Executive:
 
     def __init__(self, rpchandler):
         self.rpchandler = rpchandler
-        self.locals = __main__.__dict__
-        self.calltip = calltip.Calltip()
-        self.autocomplete = autocomplete.AutoComplete()
+        if idlelib.testing is False:
+            self.locals = __main__.__dict__
+            self.calltip = calltip.Calltip()
+            self.autocomplete = autocomplete.AutoComplete()
+        else:
+            self.locals = {}
 
     def runcode(self, code):
         global interruptable
         try:
-            self.usr_exc_info = None
+            self.user_exc_info = None
             interruptable = True
             try:
                 exec(code, self.locals)
@@ -555,10 +587,17 @@ class Executive(object):
                     print('SystemExit: ' + str(ob), file=sys.stderr)
             # Return to the interactive prompt.
         except:
-            self.usr_exc_info = sys.exc_info()
+            self.user_exc_info = sys.exc_info()  # For testing, hook, viewer.
             if quitting:
                 exit()
-            print_exception()
+            if sys.excepthook is sys.__excepthook__:
+                print_exception()
+            else:
+                try:
+                    sys.excepthook(*self.user_exc_info)
+                except:
+                    self.user_exc_info = sys.exc_info()  # For testing.
+                    print_exception()
             jit = self.rpchandler.console.getvar("<<toggle-jit-stack-viewer>>")
             if jit:
                 self.rpchandler.interp.open_remote_stack_viewer()
@@ -583,8 +622,8 @@ class Executive(object):
         return self.autocomplete.fetch_completions(what, mode)
 
     def stackviewer(self, flist_oid=None):
-        if self.usr_exc_info:
-            typ, val, tb = self.usr_exc_info
+        if self.user_exc_info:
+            _, exc, tb = self.user_exc_info
         else:
             return None
         flist = None
@@ -592,9 +631,8 @@ class Executive(object):
             flist = self.rpchandler.get_remote_proxy(flist_oid)
         while tb and tb.tb_frame.f_globals["__name__"] in ["rpc", "run"]:
             tb = tb.tb_next
-        sys.last_type = typ
-        sys.last_value = val
-        item = stackviewer.StackTreeItem(flist, tb)
+        exc.__traceback__ = tb
+        item = stackviewer.StackTreeItem(exc, flist)
         return debugobj_r.remote_object_tree_item(item)
 
 
