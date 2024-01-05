@@ -1,2 +1,0 @@
-Tentative to deprecate ``make suspicious`` by first removing it from the CI
-and documentation builds, but keeping it around for manual uses.
