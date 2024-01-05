@@ -207,6 +207,7 @@
     <ClCompile Include="..\Python\formatter_unicode.c" />
     <ClCompile Include="..\Python\frame.c" />
     <ClCompile Include="..\Python\future.c" />
+    <ClCompile Include="..\Python\gc.c" />
     <ClCompile Include="..\Python\getargs.c" />
     <ClCompile Include="..\Python\getcompiler.c" />
     <ClCompile Include="..\Python\getcopyright.c" />
