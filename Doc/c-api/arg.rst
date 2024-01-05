@@ -185,7 +185,7 @@ There are three ways strings and buffers can be converted to C:
    recoding them.  Instead, the implementation assumes that the byte string object uses
    the encoding passed in as parameter.
 
-``es#`` (:class:`str`) [*encoding*, char \*\*buffer, :c:type:`Py_ssize_t` \*buffer_length]
+``es#`` (:class:`str`) [*encoding*, char \*buffer, :c:type:`Py_ssize_t` buffer_length]
    This variant on ``s#`` is used for encoding Unicode into a character buffer.
    Unlike the ``es`` format, this variant allows input data which contains NUL
    characters.
@@ -216,7 +216,7 @@ There are three ways strings and buffers can be converted to C:
    In both cases, *\*buffer_length* is set to the length of the encoded data
    without the trailing NUL byte.
 
-``et#`` (:class:`str`, :class:`bytes` or :class:`bytearray`) [*encoding*, char \*\*buffer, :c:type:`Py_ssize_t` \*buffer_length]
+``et#`` (:class:`str`, :class:`bytes` or :class:`bytearray`) [*encoding*, char \*buffer, :c:type:`Py_ssize_t` buffer_length]
    Same as ``es#`` except that byte string objects are passed through without recoding
    them. Instead, the implementation assumes that the byte string object uses the
    encoding passed in as parameter.
