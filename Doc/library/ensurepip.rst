@@ -7,6 +7,8 @@
 
 .. versionadded:: 3.4
 
+**Source code:** :source:`Lib/ensurepip`
+
 --------------
 
 The :mod:`ensurepip` package provides support for bootstrapping the ``pip``
@@ -36,6 +38,7 @@ when creating a virtual environment) or after explicitly uninstalling
    :pep:`453`: Explicit bootstrapping of pip in Python installations
       The original rationale and specification for this module.
 
+.. include:: ../includes/wasm-notavail.rst
 
 Command line interface
 ----------------------
@@ -48,7 +51,7 @@ The simplest possible invocation is::
 
 This invocation will install ``pip`` if it is not already installed,
 but otherwise does nothing. To ensure the installed version of ``pip``
-is at least as recent as the one bundled with ``ensurepip``, pass the
+is at least as recent as the one available in ``ensurepip``, pass the
 ``--upgrade`` option::
 
     python -m ensurepip --upgrade
@@ -58,7 +61,7 @@ By default, ``pip`` is installed into the current virtual environment
 active virtual environment). The installation location can be controlled
 through two additional command line options:
 
-* ``--root <dir>``: Installs ``pip`` relative to the given root directory
+* :samp:`--root {dir}`: Installs ``pip`` relative to the given root directory
   rather than the root of the currently active virtual environment (if any)
   or the default root for the current Python installation.
 * ``--user``: Installs ``pip`` into the user site packages directory rather
@@ -86,7 +89,7 @@ Module API
 
 .. function:: version()
 
-   Returns a string specifying the bundled version of pip that will be
+   Returns a string specifying the available version of pip that will be
    installed when bootstrapping an environment.
 
 .. function:: bootstrap(root=None, upgrade=False, user=False, \
@@ -100,7 +103,7 @@ Module API
    for the current environment.
 
    *upgrade* indicates whether or not to upgrade an existing installation
-   of an earlier version of ``pip`` to the bundled version.
+   of an earlier version of ``pip`` to the available version.
 
    *user* indicates whether to use the user scheme rather than installing
    globally.

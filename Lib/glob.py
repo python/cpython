@@ -1,5 +1,6 @@
 """Filename globbing utility."""
 
+import contextlib
 import os
 import re
 import fnmatch
@@ -9,20 +10,26 @@ import sys
 
 __all__ = ["glob", "iglob", "escape"]
 
-def glob(pathname, *, root_dir=None, dir_fd=None, recursive=False):
+def glob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
+        include_hidden=False):
     """Return a list of paths matching a pathname pattern.
 
     The pattern may contain simple shell-style wildcards a la
-    fnmatch. However, unlike fnmatch, filenames starting with a
+    fnmatch. Unlike fnmatch, filenames starting with a
     dot are special cases that are not matched by '*' and '?'
-    patterns.
+    patterns by default.
 
-    If recursive is true, the pattern '**' will match any files and
+    If `include_hidden` is true, the patterns '*', '?', '**'  will match hidden
+    directories.
+
+    If `recursive` is true, the pattern '**' will match any files and
     zero or more directories and subdirectories.
     """
-    return list(iglob(pathname, root_dir=root_dir, dir_fd=dir_fd, recursive=recursive))
+    return list(iglob(pathname, root_dir=root_dir, dir_fd=dir_fd, recursive=recursive,
+                      include_hidden=include_hidden))
 
-def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False):
+def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
+          include_hidden=False):
     """Return an iterator which yields the paths matching a pathname pattern.
 
     The pattern may contain simple shell-style wildcards a la
@@ -33,11 +40,14 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False):
     If recursive is true, the pattern '**' will match any files and
     zero or more directories and subdirectories.
     """
+    sys.audit("glob.glob", pathname, recursive)
+    sys.audit("glob.glob/2", pathname, recursive, root_dir, dir_fd)
     if root_dir is not None:
         root_dir = os.fspath(root_dir)
     else:
         root_dir = pathname[:0]
-    it = _iglob(pathname, root_dir, dir_fd, recursive, False)
+    it = _iglob(pathname, root_dir, dir_fd, recursive, False,
+                include_hidden=include_hidden)
     if not pathname or recursive and _isrecursive(pathname[:2]):
         try:
             s = next(it)  # skip empty string
@@ -47,7 +57,8 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False):
             pass
     return it
 
-def _iglob(pathname, root_dir, dir_fd, recursive, dironly):
+def _iglob(pathname, root_dir, dir_fd, recursive, dironly,
+           include_hidden=False):
     dirname, basename = os.path.split(pathname)
     if not has_magic(pathname):
         assert not dironly
@@ -61,15 +72,18 @@ def _iglob(pathname, root_dir, dir_fd, recursive, dironly):
         return
     if not dirname:
         if recursive and _isrecursive(basename):
-            yield from _glob2(root_dir, basename, dir_fd, dironly)
+            yield from _glob2(root_dir, basename, dir_fd, dironly,
+                             include_hidden=include_hidden)
         else:
-            yield from _glob1(root_dir, basename, dir_fd, dironly)
+            yield from _glob1(root_dir, basename, dir_fd, dironly,
+                              include_hidden=include_hidden)
         return
     # `os.path.split()` returns the argument itself as a dirname if it is a
     # drive or UNC path.  Prevent an infinite recursion if a drive or UNC path
     # contains magic characters (i.e. r'\\?\C:').
     if dirname != pathname and has_magic(dirname):
-        dirs = _iglob(dirname, root_dir, dir_fd, recursive, True)
+        dirs = _iglob(dirname, root_dir, dir_fd, recursive, True,
+                      include_hidden=include_hidden)
     else:
         dirs = [dirname]
     if has_magic(basename):
@@ -80,20 +94,21 @@ def _iglob(pathname, root_dir, dir_fd, recursive, dironly):
     else:
         glob_in_dir = _glob0
     for dirname in dirs:
-        for name in glob_in_dir(_join(root_dir, dirname), basename, dir_fd, dironly):
+        for name in glob_in_dir(_join(root_dir, dirname), basename, dir_fd, dironly,
+                               include_hidden=include_hidden):
             yield os.path.join(dirname, name)
 
 # These 2 helper functions non-recursively glob inside a literal directory.
 # They return a list of basenames.  _glob1 accepts a pattern while _glob0
 # takes a literal basename (so it only has to check for its existence).
 
-def _glob1(dirname, pattern, dir_fd, dironly):
-    names = list(_iterdir(dirname, dir_fd, dironly))
-    if not _ishidden(pattern):
-        names = (x for x in names if not _ishidden(x))
+def _glob1(dirname, pattern, dir_fd, dironly, include_hidden=False):
+    names = _listdir(dirname, dir_fd, dironly)
+    if include_hidden or not _ishidden(pattern):
+        names = (x for x in names if include_hidden or not _ishidden(x))
     return fnmatch.filter(names, pattern)
 
-def _glob0(dirname, basename, dir_fd, dironly):
+def _glob0(dirname, basename, dir_fd, dironly, include_hidden=False):
     if basename:
         if _lexists(_join(dirname, basename), dir_fd):
             return [basename]
@@ -115,10 +130,11 @@ def glob1(dirname, pattern):
 # This helper function recursively yields relative pathnames inside a literal
 # directory.
 
-def _glob2(dirname, pattern, dir_fd, dironly):
+def _glob2(dirname, pattern, dir_fd, dironly, include_hidden=False):
     assert _isrecursive(pattern)
     yield pattern[:0]
-    yield from _rlistdir(dirname, dir_fd, dironly)
+    yield from _rlistdir(dirname, dir_fd, dironly,
+                         include_hidden=include_hidden)
 
 # If dironly is false, yields all file names inside a directory.
 # If dironly is true, yields only directory names.
@@ -156,14 +172,19 @@ def _iterdir(dirname, dir_fd, dironly):
     except OSError:
         return
 
+def _listdir(dirname, dir_fd, dironly):
+    with contextlib.closing(_iterdir(dirname, dir_fd, dironly)) as it:
+        return list(it)
+
 # Recursively yields relative pathnames inside a literal directory.
-def _rlistdir(dirname, dir_fd, dironly):
-    names = list(_iterdir(dirname, dir_fd, dironly))
+def _rlistdir(dirname, dir_fd, dironly, include_hidden=False):
+    names = _listdir(dirname, dir_fd, dironly)
     for x in names:
-        if not _ishidden(x):
+        if include_hidden or not _ishidden(x):
             yield x
             path = _join(dirname, x) if dirname else x
-            for y in _rlistdir(path, dir_fd, dironly):
+            for y in _rlistdir(path, dir_fd, dironly,
+                               include_hidden=include_hidden):
                 yield _join(x, y)
 
 
@@ -228,3 +249,63 @@ def escape(pathname):
 
 
 _dir_open_flags = os.O_RDONLY | getattr(os, 'O_DIRECTORY', 0)
+
+
+def translate(pat, *, recursive=False, include_hidden=False, seps=None):
+    """Translate a pathname with shell wildcards to a regular expression.
+
+    If `recursive` is true, the pattern segment '**' will match any number of
+    path segments; if '**' appears outside its own segment, ValueError will be
+    raised.
+
+    If `include_hidden` is true, wildcards can match path segments beginning
+    with a dot ('.').
+
+    If a sequence of separator characters is given to `seps`, they will be
+    used to split the pattern into segments and match path separators. If not
+    given, os.path.sep and os.path.altsep (where available) are used.
+    """
+    if not seps:
+        if os.path.altsep:
+            seps = (os.path.sep, os.path.altsep)
+        else:
+            seps = os.path.sep
+    escaped_seps = ''.join(map(re.escape, seps))
+    any_sep = f'[{escaped_seps}]' if len(seps) > 1 else escaped_seps
+    not_sep = f'[^{escaped_seps}]'
+    if include_hidden:
+        one_last_segment = f'{not_sep}+'
+        one_segment = f'{one_last_segment}{any_sep}'
+        any_segments = f'(?:.+{any_sep})?'
+        any_last_segments = '.*'
+    else:
+        one_last_segment = f'[^{escaped_seps}.]{not_sep}*'
+        one_segment = f'{one_last_segment}{any_sep}'
+        any_segments = f'(?:{one_segment})*'
+        any_last_segments = f'{any_segments}(?:{one_last_segment})?'
+
+    results = []
+    parts = re.split(any_sep, pat)
+    last_part_idx = len(parts) - 1
+    for idx, part in enumerate(parts):
+        if part == '*':
+            results.append(one_segment if idx < last_part_idx else one_last_segment)
+            continue
+        if recursive:
+            if part == '**':
+                if idx < last_part_idx:
+                    if parts[idx + 1] != '**':
+                        results.append(any_segments)
+                else:
+                    results.append(any_last_segments)
+                continue
+            elif '**' in part:
+                raise ValueError("Invalid pattern: '**' can only be an entire path component")
+        if part:
+            if not include_hidden and part[0] in '*?':
+                results.append(r'(?!\.)')
+            results.extend(fnmatch._translate(part, f'{not_sep}*', not_sep))
+        if idx < last_part_idx:
+            results.append(any_sep)
+    res = ''.join(results)
+    return fr'(?s:{res})\Z'

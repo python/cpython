@@ -1,0 +1,4 @@
+:func:`shutil.move` now moves a symlink into a directory when that
+directory is the target of the symlink.  This provides the same behavior as
+the mv shell command.  The previous behavior raised an exception.  Patch by
+Jeffrey Kintscher.
