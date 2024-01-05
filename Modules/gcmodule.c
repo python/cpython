@@ -164,11 +164,11 @@ gc_set_threshold_impl(PyObject *module, int threshold0, int group_right_1,
     }
     if (group_right_2) {
         gcstate->generations[2].threshold = threshold2;
-    }
 
-    for (int i = 3; i < NUM_GENERATIONS; i++) {
         /* generations higher than 2 get the same threshold */
-        gcstate->generations[i].threshold = gcstate->generations[2].threshold;
+        for (int i = 3; i < NUM_GENERATIONS; i++) {
+            gcstate->generations[i].threshold = gcstate->generations[2].threshold;
+        }
     }
     Py_RETURN_NONE;
 }
