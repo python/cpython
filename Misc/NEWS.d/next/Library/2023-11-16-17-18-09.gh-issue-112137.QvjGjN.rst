@@ -1,0 +1,1 @@
+Change :mod:`dis` output to display logical labels for jump targets instead of offsets.

@@ -125,6 +125,7 @@ consts: ('None',)
 
 """
 
+import copy
 import inspect
 import sys
 import threading
@@ -143,6 +144,8 @@ from test.support import (cpython_only,
                           gc_collect)
 from test.support.script_helper import assert_python_ok
 from test.support import threading_helper
+from test.support.bytecode_helper import (BytecodeTestCase,
+                                          instructions_with_positions)
 from opcode import opmap, opname
 COPY_FREE_VARS = opmap['COPY_FREE_VARS']
 
@@ -264,7 +267,7 @@ class CodeTest(unittest.TestCase):
             ("co_posonlyargcount", 0),
             ("co_kwonlyargcount", 0),
             ("co_nlocals", 1),
-            ("co_stacksize", 0),
+            ("co_stacksize", 1),
             ("co_flags", code.co_flags | inspect.CO_COROUTINE),
             ("co_firstlineno", 100),
             ("co_code", code2.co_code),
@@ -280,8 +283,14 @@ class CodeTest(unittest.TestCase):
             with self.subTest(attr=attr, value=value):
                 new_code = code.replace(**{attr: value})
                 self.assertEqual(getattr(new_code, attr), value)
+                new_code = copy.replace(code, **{attr: value})
+                self.assertEqual(getattr(new_code, attr), value)
 
         new_code = code.replace(co_varnames=code2.co_varnames,
+                                co_nlocals=code2.co_nlocals)
+        self.assertEqual(new_code.co_varnames, code2.co_varnames)
+        self.assertEqual(new_code.co_nlocals, code2.co_nlocals)
+        new_code = copy.replace(code, co_varnames=code2.co_varnames,
                                 co_nlocals=code2.co_nlocals)
         self.assertEqual(new_code.co_varnames, code2.co_varnames)
         self.assertEqual(new_code.co_nlocals, code2.co_nlocals)
@@ -338,18 +347,25 @@ class CodeTest(unittest.TestCase):
         new_code = code = func.__code__.replace(co_linetable=b'')
         self.assertEqual(list(new_code.co_lines()), [])
 
+    def test_co_lnotab_is_deprecated(self):  # TODO: remove in 3.14
+        def func():
+            pass
+
+        with self.assertWarns(DeprecationWarning):
+            func.__code__.co_lnotab
+
     def test_invalid_bytecode(self):
         def foo():
             pass
 
-        # assert that opcode 238 is invalid
-        self.assertEqual(opname[238], '<238>')
+        # assert that opcode 229 is invalid
+        self.assertEqual(opname[229], '<229>')
 
-        # change first opcode to 0xee (=238)
+        # change first opcode to 0xeb (=229)
         foo.__code__ = foo.__code__.replace(
-            co_code=b'\xee' + foo.__code__.co_code[1:])
+            co_code=b'\xe5' + foo.__code__.co_code[1:])
 
-        msg = f"unknown opcode 238"
+        msg = "unknown opcode 229"
         with self.assertRaisesRegex(SystemError, msg):
             foo()
 
@@ -370,10 +386,8 @@ class CodeTest(unittest.TestCase):
         code = traceback.tb_frame.f_code
 
         artificial_instructions = []
-        for instr, positions in zip(
-            dis.get_instructions(code, show_caches=True),
-            code.co_positions(),
-            strict=True
+        for instr, positions in instructions_with_positions(
+            dis.get_instructions(code), code.co_positions()
         ):
             # If any of the positions is None, then all have to
             # be None as well for the case above. There are still
@@ -490,6 +504,25 @@ class CodeTest(unittest.TestCase):
         c1 = c.replace(co_code=d.co_code)
         self.assertNotEqual(c, c1)
         self.assertNotEqual(hash(c), hash(c1))
+
+    @cpython_only
+    def test_code_equal_with_instrumentation(self):
+        """ GH-109052
+
+        Make sure the instrumentation doesn't affect the code equality
+        The validity of this test relies on the fact that "x is x" and
+        "x in x" have only one different instruction and the instructions
+        have the same argument.
+
+        """
+        code1 = compile("x is x", "example.py", "eval")
+        code2 = compile("x in x", "example.py", "eval")
+        sys._getframe().f_trace_opcodes = True
+        sys.settrace(lambda *args: None)
+        exec(code1, {'x': []})
+        exec(code2, {'x': []})
+        self.assertNotEqual(code1, code2)
+        sys.settrace(None)
 
 
 def isinterned(s):
@@ -702,7 +735,8 @@ class CodeLocationTest(unittest.TestCase):
 
     def check_lines(self, func):
         co = func.__code__
-        lines1 = list(dedup(l for (_, _, l) in co.co_lines()))
+        lines1 = [line for _, _, line in co.co_lines()]
+        self.assertEqual(lines1, list(dedup(lines1)))
         lines2 = list(lines_from_postions(positions_from_location_table(co)))
         for l1, l2 in zip(lines1, lines2):
             self.assertEqual(l1, l2)
@@ -722,6 +756,7 @@ class CodeLocationTest(unittest.TestCase):
             pass
         PY_CODE_LOCATION_INFO_NO_COLUMNS = 13
         f.__code__ = f.__code__.replace(
+            co_stacksize=1,
             co_firstlineno=42,
             co_code=bytes(
                 [
@@ -750,15 +785,15 @@ if check_impl_detail(cpython=True) and ctypes is not None:
     py = ctypes.pythonapi
     freefunc = ctypes.CFUNCTYPE(None,ctypes.c_voidp)
 
-    RequestCodeExtraIndex = py._PyEval_RequestCodeExtraIndex
+    RequestCodeExtraIndex = py.PyUnstable_Eval_RequestCodeExtraIndex
     RequestCodeExtraIndex.argtypes = (freefunc,)
     RequestCodeExtraIndex.restype = ctypes.c_ssize_t
 
-    SetExtra = py._PyCode_SetExtra
+    SetExtra = py.PyUnstable_Code_SetExtra
     SetExtra.argtypes = (ctypes.py_object, ctypes.c_ssize_t, ctypes.c_voidp)
     SetExtra.restype = ctypes.c_int
 
-    GetExtra = py._PyCode_GetExtra
+    GetExtra = py.PyUnstable_Code_GetExtra
     GetExtra.argtypes = (ctypes.py_object, ctypes.c_ssize_t,
                          ctypes.POINTER(ctypes.c_voidp))
     GetExtra.restype = ctypes.c_int

@@ -118,6 +118,10 @@ import re
 import sys
 import functools
 import itertools
+try:
+    import _wmi
+except ImportError:
+    _wmi = None
 
 ### Globals & Constants
 
@@ -136,11 +140,11 @@ _ver_stages = {
     'pl': 200, 'p': 200,
 }
 
-_component_re = re.compile(r'([0-9]+|[._+-])')
 
 def _comparable_version(version):
+    component_re = re.compile(r'([0-9]+|[._+-])')
     result = []
-    for v in _component_re.split(version):
+    for v in component_re.split(version):
         if v not in '._+-':
             try:
                 v = int(v, 10)
@@ -152,11 +156,6 @@ def _comparable_version(version):
 
 ### Platform specific APIs
 
-_libc_search = re.compile(b'(__libc_init)'
-                          b'|'
-                          b'(GLIBC_([0-9.]+))'
-                          b'|'
-                          br'(libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)', re.ASCII)
 
 def libc_ver(executable=None, lib='', version='', chunksize=16384):
 
@@ -190,6 +189,12 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
             # sys.executable is not set.
             return lib, version
 
+    libc_search = re.compile(b'(__libc_init)'
+                          b'|'
+                          b'(GLIBC_([0-9.]+))'
+                          b'|'
+                          br'(libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)', re.ASCII)
+
     V = _comparable_version
     # We use os.path.realpath()
     # here to work around problems with Cygwin not being
@@ -200,7 +205,7 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
         pos = 0
         while pos < len(binary):
             if b'libc' in binary or b'GLIBC' in binary:
-                m = _libc_search.search(binary, pos)
+                m = libc_search.search(binary, pos)
             else:
                 m = None
             if not m or m.end() == len(binary):
@@ -247,9 +252,6 @@ def _norm_version(version, build=''):
     version = '.'.join(strings[:3])
     return version
 
-_ver_output = re.compile(r'(?:([\w ]+) ([\w.]+) '
-                         r'.*'
-                         r'\[.* ([\d.]+)\])')
 
 # Examples of VER command output:
 #
@@ -285,6 +287,7 @@ def _syscmd_ver(system='', release='', version='',
                                            stdin=subprocess.DEVNULL,
                                            stderr=subprocess.DEVNULL,
                                            text=True,
+                                           encoding="locale",
                                            shell=True)
         except (OSError, subprocess.CalledProcessError) as why:
             #print('Command %s failed: %s' % (cmd, why))
@@ -294,9 +297,13 @@ def _syscmd_ver(system='', release='', version='',
     else:
         return system, release, version
 
+    ver_output = re.compile(r'(?:([\w ]+) ([\w.]+) '
+                         r'.*'
+                         r'\[.* ([\d.]+)\])')
+
     # Parse the output
     info = info.strip()
-    m = _ver_output.match(info)
+    m = ver_output.match(info)
     if m is not None:
         system, release, version = m.groups()
         # Strip trailing dots from version and release
@@ -309,24 +316,26 @@ def _syscmd_ver(system='', release='', version='',
         version = _norm_version(version)
     return system, release, version
 
-try:
-    import _wmi
-except ImportError:
-    def _wmi_query(*keys):
+
+def _wmi_query(table, *keys):
+    global _wmi
+    if not _wmi:
         raise OSError("not supported")
-else:
-    def _wmi_query(table, *keys):
-        table = {
-            "OS": "Win32_OperatingSystem",
-            "CPU": "Win32_Processor",
-        }[table]
+    table = {
+        "OS": "Win32_OperatingSystem",
+        "CPU": "Win32_Processor",
+    }[table]
+    try:
         data = _wmi.exec_query("SELECT {} FROM {}".format(
             ",".join(keys),
             table,
         )).split("\0")
-        split_data = (i.partition("=") for i in data)
-        dict_data = {i[0]: i[2] for i in split_data}
-        return (dict_data[k] for k in keys)
+    except OSError:
+        _wmi = None
+        raise OSError("not supported")
+    split_data = (i.partition("=") for i in data)
+    dict_data = {i[0]: i[2] for i in split_data}
+    return (dict_data[k] for k in keys)
 
 
 _WIN32_CLIENT_RELEASES = [
@@ -824,6 +833,7 @@ class _Processor:
                 ['uname', '-p'],
                 stderr=subprocess.DEVNULL,
                 text=True,
+                encoding="utf8",
             ).strip()
         except (OSError, subprocess.CalledProcessError):
             pass
@@ -1031,32 +1041,6 @@ def processor():
 
 ### Various APIs for extracting information from sys.version
 
-_sys_version_parser = re.compile(
-    r'([\w.+]+)\s*'  # "version<space>"
-    r'\(#?([^,]+)'  # "(#buildno"
-    r'(?:,\s*([\w ]*)'  # ", builddate"
-    r'(?:,\s*([\w :]*))?)?\)\s*'  # ", buildtime)<space>"
-    r'\[([^\]]+)\]?', re.ASCII)  # "[compiler]"
-
-_ironpython_sys_version_parser = re.compile(
-    r'IronPython\s*'
-    r'([\d\.]+)'
-    r'(?: \(([\d\.]+)\))?'
-    r' on (.NET [\d\.]+)', re.ASCII)
-
-# IronPython covering 2.6 and 2.7
-_ironpython26_sys_version_parser = re.compile(
-    r'([\d.]+)\s*'
-    r'\(IronPython\s*'
-    r'[\d.]+\s*'
-    r'\(([\d.]+)\) on ([\w.]+ [\d.]+(?: \(\d+-bit\))?)\)'
-)
-
-_pypy_sys_version_parser = re.compile(
-    r'([\w.+]+)\s*'
-    r'\(#?([^,]+),\s*([\w ]+),\s*([\w :]+)\)\s*'
-    r'\[PyPy [^\]]+\]?')
-
 _sys_version_cache = {}
 
 def _sys_version(sys_version=None):
@@ -1088,28 +1072,17 @@ def _sys_version(sys_version=None):
     if result is not None:
         return result
 
-    # Parse it
-    if 'IronPython' in sys_version:
-        # IronPython
-        name = 'IronPython'
-        if sys_version.startswith('IronPython'):
-            match = _ironpython_sys_version_parser.match(sys_version)
-        else:
-            match = _ironpython26_sys_version_parser.match(sys_version)
+    sys_version_parser = re.compile(
+        r'([\w.+]+)\s*'  # "version<space>"
+        r'\(#?([^,]+)'  # "(#buildno"
+        r'(?:,\s*([\w ]*)'  # ", builddate"
+        r'(?:,\s*([\w :]*))?)?\)\s*'  # ", buildtime)<space>"
+        r'\[([^\]]+)\]?', re.ASCII)  # "[compiler]"
 
-        if match is None:
-            raise ValueError(
-                'failed to parse IronPython sys.version: %s' %
-                repr(sys_version))
-
-        version, alt_version, compiler = match.groups()
-        buildno = ''
-        builddate = ''
-
-    elif sys.platform.startswith('java'):
+    if sys.platform.startswith('java'):
         # Jython
         name = 'Jython'
-        match = _sys_version_parser.match(sys_version)
+        match = sys_version_parser.match(sys_version)
         if match is None:
             raise ValueError(
                 'failed to parse Jython sys.version: %s' %
@@ -1121,8 +1094,13 @@ def _sys_version(sys_version=None):
 
     elif "PyPy" in sys_version:
         # PyPy
+        pypy_sys_version_parser = re.compile(
+            r'([\w.+]+)\s*'
+            r'\(#?([^,]+),\s*([\w ]+),\s*([\w :]+)\)\s*'
+            r'\[PyPy [^\]]+\]?')
+
         name = "PyPy"
-        match = _pypy_sys_version_parser.match(sys_version)
+        match = pypy_sys_version_parser.match(sys_version)
         if match is None:
             raise ValueError("failed to parse PyPy sys.version: %s" %
                              repr(sys_version))
@@ -1131,7 +1109,7 @@ def _sys_version(sys_version=None):
 
     else:
         # CPython
-        match = _sys_version_parser.match(sys_version)
+        match = sys_version_parser.match(sys_version)
         if match is None:
             raise ValueError(
                 'failed to parse CPython sys.version: %s' %
@@ -1169,7 +1147,6 @@ def python_implementation():
 
         Currently, the following implementations are identified:
           'CPython' (C implementation of Python),
-          'IronPython' (.NET implementation of Python),
           'Jython' (Java implementation of Python),
           'PyPy' (Python implementation of Python).
 
@@ -1244,7 +1221,7 @@ def python_compiler():
 
 _platform_cache = {}
 
-def platform(aliased=0, terse=0):
+def platform(aliased=False, terse=False):
 
     """ Returns a single string identifying the underlying platform
         with as much useful information as possible (but no more :).
@@ -1321,13 +1298,6 @@ def platform(aliased=0, terse=0):
 ### freedesktop.org os-release standard
 # https://www.freedesktop.org/software/systemd/man/os-release.html
 
-# NAME=value with optional quotes (' or "). The regular expression is less
-# strict than shell lexer, but that's ok.
-_os_release_line = re.compile(
-    "^(?P<name>[a-zA-Z0-9_]+)=(?P<quote>[\"\']?)(?P<value>.*)(?P=quote)$"
-)
-# unescape five special characters mentioned in the standard
-_os_release_unescape = re.compile(r"\\([\\\$\"\'`])")
 # /etc takes precedence over /usr/lib
 _os_release_candidates = ("/etc/os-release", "/usr/lib/os-release")
 _os_release_cache = None
@@ -1342,10 +1312,18 @@ def _parse_os_release(lines):
         "PRETTY_NAME": "Linux",
     }
 
+    # NAME=value with optional quotes (' or "). The regular expression is less
+    # strict than shell lexer, but that's ok.
+    os_release_line = re.compile(
+        "^(?P<name>[a-zA-Z0-9_]+)=(?P<quote>[\"\']?)(?P<value>.*)(?P=quote)$"
+    )
+    # unescape five special characters mentioned in the standard
+    os_release_unescape = re.compile(r"\\([\\\$\"\'`])")
+
     for line in lines:
-        mo = _os_release_line.match(line)
+        mo = os_release_line.match(line)
         if mo is not None:
-            info[mo.group('name')] = _os_release_unescape.sub(
+            info[mo.group('name')] = os_release_unescape.sub(
                 r"\1", mo.group('value')
             )
 

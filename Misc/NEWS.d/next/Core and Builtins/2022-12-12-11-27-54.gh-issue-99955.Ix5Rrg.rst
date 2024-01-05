@@ -1,1 +1,0 @@
-Internal compiler functions (in compile.c) now consistently return -1 on error and 0 on success.

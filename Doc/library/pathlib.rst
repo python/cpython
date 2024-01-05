@@ -21,6 +21,7 @@ inherit from pure paths but also provide I/O operations.
 
 .. image:: pathlib-inheritance.png
    :align: center
+   :class: invert-in-dark-mode
 
 If you've never used this module before or just aren't sure which class is
 right for your task, :class:`Path` is most likely what you need. It instantiates
@@ -87,6 +88,17 @@ Opening a file::
    '#!/bin/bash\n'
 
 
+Exceptions
+----------
+
+.. exception:: UnsupportedOperation
+
+   An exception inheriting :exc:`NotImplementedError` that is raised when an
+   unsupported operation is called on a path object.
+
+   .. versionadded:: 3.13
+
+
 .. _pure-paths:
 
 Pure paths
@@ -105,8 +117,9 @@ we also call *flavours*:
       PurePosixPath('setup.py')
 
    Each element of *pathsegments* can be either a string representing a
-   path segment, an object implementing the :class:`os.PathLike` interface
-   which returns a string, or another path object::
+   path segment, or an object implementing the :class:`os.PathLike` interface
+   where the :meth:`~os.PathLike.__fspath__` method returns a string,
+   such as another path object::
 
       >>> PurePath('foo', 'some/path', 'bar')
       PurePosixPath('foo/some/path/bar')
@@ -118,16 +131,16 @@ we also call *flavours*:
       >>> PurePath()
       PurePosixPath('.')
 
-   When several absolute paths are given, the last is taken as an anchor
-   (mimicking :func:`os.path.join`'s behaviour)::
+   If a segment is an absolute path, all previous segments are ignored
+   (like :func:`os.path.join`)::
 
       >>> PurePath('/etc', '/usr', 'lib64')
       PurePosixPath('/usr/lib64')
       >>> PureWindowsPath('c:/Windows', 'd:bar')
       PureWindowsPath('d:bar')
 
-   However, in a Windows path, changing the local root doesn't discard the
-   previous drive setting::
+   On Windows, the drive is not reset when a rooted relative path
+   segment (e.g., ``r'\foo'``) is encountered::
 
       >>> PureWindowsPath('c:/Windows', '/Program Files')
       PureWindowsPath('c:/Program Files')
@@ -186,7 +199,7 @@ these classes, since they don't provide any operation that does system calls.
 General properties
 ^^^^^^^^^^^^^^^^^^
 
-Paths are immutable and hashable.  Paths of a same flavour are comparable
+Paths are immutable and :term:`hashable`.  Paths of a same flavour are comparable
 and orderable.  These properties respect the flavour's case-folding
 semantics::
 
@@ -212,7 +225,10 @@ Paths of a different flavour compare unequal and cannot be ordered::
 Operators
 ^^^^^^^^^
 
-The slash operator helps create child paths, similarly to :func:`os.path.join`::
+The slash operator helps create child paths, like :func:`os.path.join`.
+If the argument is an absolute path, the previous path is ignored.
+On Windows, the drive is not reset when the argument is a rooted
+relative path (e.g., ``r'\foo'``)::
 
    >>> p = PurePath('/etc')
    >>> p
@@ -222,6 +238,10 @@ The slash operator helps create child paths, similarly to :func:`os.path.join`::
    >>> q = PurePath('bin')
    >>> '/usr' / q
    PurePosixPath('/usr/bin')
+   >>> p / '/an_absolute_path'
+   PurePosixPath('/an_absolute_path')
+   >>> PureWindowsPath('c:/Windows', '/Program Files')
+   PureWindowsPath('c:/Program Files')
 
 A path object can be used anywhere an object implementing :class:`os.PathLike`
 is accepted::
@@ -259,7 +279,7 @@ Accessing individual parts
 To access the individual "parts" (components) of a path, use the following
 property:
 
-.. data:: PurePath.parts
+.. attribute:: PurePath.parts
 
    A tuple giving access to the path's various components::
 
@@ -283,7 +303,14 @@ Methods and properties
 
 Pure paths provide the following methods and properties:
 
-.. data:: PurePath.drive
+.. attribute:: PurePath.pathmod
+
+   The implementation of the :mod:`os.path` module used for low-level path
+   operations: either :mod:`posixpath` or :mod:`ntpath`.
+
+   .. versionadded:: 3.13
+
+.. attribute:: PurePath.drive
 
    A string representing the drive letter or name, if any::
 
@@ -299,7 +326,7 @@ Pure paths provide the following methods and properties:
       >>> PureWindowsPath('//host/share/foo.txt').drive
       '\\\\host\\share'
 
-.. data:: PurePath.root
+.. attribute:: PurePath.root
 
    A string representing the (local or global) root, if any::
 
@@ -335,7 +362,7 @@ Pure paths provide the following methods and properties:
       an implementation-defined manner, although more than two leading slashes
       shall be treated as a single slash."*
 
-.. data:: PurePath.anchor
+.. attribute:: PurePath.anchor
 
    The concatenation of the drive and root::
 
@@ -349,7 +376,7 @@ Pure paths provide the following methods and properties:
       '\\\\host\\share\\'
 
 
-.. data:: PurePath.parents
+.. attribute:: PurePath.parents
 
    An immutable sequence providing access to the logical ancestors of
    the path::
@@ -365,7 +392,7 @@ Pure paths provide the following methods and properties:
    .. versionchanged:: 3.10
       The parents sequence now supports :term:`slices <slice>` and negative index values.
 
-.. data:: PurePath.parent
+.. attribute:: PurePath.parent
 
    The logical parent of the path::
 
@@ -394,7 +421,7 @@ Pure paths provide the following methods and properties:
       symlinks and eliminate ``".."`` components.
 
 
-.. data:: PurePath.name
+.. attribute:: PurePath.name
 
    A string representing the final path component, excluding the drive and
    root, if any::
@@ -410,9 +437,9 @@ Pure paths provide the following methods and properties:
       ''
 
 
-.. data:: PurePath.suffix
+.. attribute:: PurePath.suffix
 
-   The file extension of the final component, if any::
+   The last dot-separated portion of the final component, if any::
 
       >>> PurePosixPath('my/library/setup.py').suffix
       '.py'
@@ -421,10 +448,11 @@ Pure paths provide the following methods and properties:
       >>> PurePosixPath('my/library').suffix
       ''
 
+   This is commonly called the file extension.
 
-.. data:: PurePath.suffixes
+.. attribute:: PurePath.suffixes
 
-   A list of the path's file extensions::
+   A list of the path's suffixes, often called file extensions::
 
       >>> PurePosixPath('my/library.tar.gar').suffixes
       ['.tar', '.gar']
@@ -434,7 +462,7 @@ Pure paths provide the following methods and properties:
       []
 
 
-.. data:: PurePath.stem
+.. attribute:: PurePath.stem
 
    The final path component, without its suffix::
 
@@ -522,10 +550,10 @@ Pure paths provide the following methods and properties:
    unintended effects.
 
 
-.. method:: PurePath.joinpath(*other)
+.. method:: PurePath.joinpath(*pathsegments)
 
    Calling this method is equivalent to combining the path with each of
-   the *other* arguments in turn::
+   the given *pathsegments* in turn::
 
       >>> PurePosixPath('/etc').joinpath('passwd')
       PurePosixPath('/etc/passwd')
@@ -537,7 +565,7 @@ Pure paths provide the following methods and properties:
       PureWindowsPath('c:/Program Files')
 
 
-.. method:: PurePath.match(pattern)
+.. method:: PurePath.match(pattern, *, case_sensitive=None)
 
    Match this path against the provided glob-style pattern.  Return ``True``
    if matching is successful, ``False`` otherwise.
@@ -560,12 +588,31 @@ Pure paths provide the following methods and properties:
       >>> PurePath('a/b.py').match('/*.py')
       False
 
+   The *pattern* may be another path object; this speeds up matching the same
+   pattern against multiple files::
+
+      >>> pattern = PurePath('*.py')
+      >>> PurePath('a/b.py').match(pattern)
+      True
+
+   .. versionchanged:: 3.12
+      Accepts an object implementing the :class:`os.PathLike` interface.
+
    As with other methods, case-sensitivity follows platform defaults::
 
       >>> PurePosixPath('b.py').match('*.PY')
       False
       >>> PureWindowsPath('b.py').match('*.PY')
       True
+
+   Set *case_sensitive* to ``True`` or ``False`` to override this behaviour.
+
+   .. versionchanged:: 3.12
+      The *case_sensitive* parameter was added.
+
+   .. versionchanged:: 3.13
+      Support for the recursive wildcard "``**``" was added. In previous
+      versions, it acted like the non-recursive wildcard "``*``".
 
 
 .. method:: PurePath.relative_to(other, walk_up=False)
@@ -606,8 +653,8 @@ Pure paths provide the following methods and properties:
       are present in the path; call :meth:`~Path.resolve` first if
       necessary to resolve symlinks.
 
-   .. versionadded:: 3.12
-      The *walk_up* argument (old behavior is the same as ``walk_up=False``).
+   .. versionchanged:: 3.12
+      The *walk_up* parameter was added (old behavior is the same as ``walk_up=False``).
 
    .. deprecated-removed:: 3.12 3.14
 
@@ -672,6 +719,30 @@ Pure paths provide the following methods and properties:
       PureWindowsPath('README')
 
 
+.. method:: PurePath.with_segments(*pathsegments)
+
+   Create a new path object of the same type by combining the given
+   *pathsegments*. This method is called whenever a derivative path is created,
+   such as from :attr:`parent` and :meth:`relative_to`. Subclasses may
+   override this method to pass information to derivative paths, for example::
+
+      from pathlib import PurePosixPath
+
+      class MyPath(PurePosixPath):
+          def __init__(self, *pathsegments, session_id):
+              super().__init__(*pathsegments)
+              self.session_id = session_id
+
+          def with_segments(self, *pathsegments):
+              return type(self)(*pathsegments, session_id=self.session_id)
+
+      etc = MyPath('/etc', session_id=42)
+      hosts = etc / 'hosts'
+      print(hosts.session_id)  # 42
+
+   .. versionadded:: 3.12
+
+
 .. _concrete-paths:
 
 
@@ -703,6 +774,11 @@ calls on path objects.  There are three ways to instantiate concrete paths:
 
    *pathsegments* is specified similarly to :class:`PurePath`.
 
+   .. versionchanged:: 3.13
+      Raises :exc:`UnsupportedOperation` on Windows. In previous versions,
+      :exc:`NotImplementedError` was raised instead.
+
+
 .. class:: WindowsPath(*pathsegments)
 
    A subclass of :class:`Path` and :class:`PureWindowsPath`, this class
@@ -712,6 +788,11 @@ calls on path objects.  There are three ways to instantiate concrete paths:
       WindowsPath('c:/Program Files')
 
    *pathsegments* is specified similarly to :class:`PurePath`.
+
+   .. versionchanged:: 3.13
+      Raises :exc:`UnsupportedOperation` on non-Windows platforms. In previous
+      versions, :exc:`NotImplementedError` was raised instead.
+
 
 You can only instantiate the class flavour that corresponds to your system
 (allowing system calls on non-compatible path flavours could lead to
@@ -729,7 +810,7 @@ bugs or failures in your application)::
      File "<stdin>", line 1, in <module>
      File "pathlib.py", line 798, in __new__
        % (cls.__name__,))
-   NotImplementedError: cannot instantiate 'WindowsPath' on your system
+   UnsupportedOperation: cannot instantiate 'WindowsPath' on your system
 
 
 Methods
@@ -772,6 +853,42 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.5
 
 
+.. classmethod:: Path.from_uri(uri)
+
+   Return a new path object from parsing a 'file' URI conforming to
+   :rfc:`8089`. For example::
+
+       >>> p = Path.from_uri('file:///etc/hosts')
+       PosixPath('/etc/hosts')
+
+   On Windows, DOS device and UNC paths may be parsed from URIs::
+
+       >>> p = Path.from_uri('file:///c:/windows')
+       WindowsPath('c:/windows')
+       >>> p = Path.from_uri('file://server/share')
+       WindowsPath('//server/share')
+
+   Several variant forms are supported::
+
+       >>> p = Path.from_uri('file:////server/share')
+       WindowsPath('//server/share')
+       >>> p = Path.from_uri('file://///server/share')
+       WindowsPath('//server/share')
+       >>> p = Path.from_uri('file:c:/windows')
+       WindowsPath('c:/windows')
+       >>> p = Path.from_uri('file:/c|/windows')
+       WindowsPath('c:/windows')
+
+   :exc:`ValueError` is raised if the URI does not start with ``file:``, or
+   the parsed path isn't absolute.
+
+   :func:`os.fsdecode` is used to decode percent-escaped byte sequences, and
+   so file URIs are not portable across machines with different
+   :ref:`filesystem encodings <filesystem-encoding>`.
+
+   .. versionadded:: 3.13
+
+
 .. method:: Path.stat(*, follow_symlinks=True)
 
    Return a :class:`os.stat_result` object containing information about this path, like :func:`os.stat`.
@@ -811,9 +928,14 @@ call fails (for example because the path doesn't exist).
    .. versionchanged:: 3.10
       The *follow_symlinks* parameter was added.
 
-.. method:: Path.exists()
+.. method:: Path.exists(*, follow_symlinks=True)
 
-   Whether the path points to an existing file or directory::
+   Return ``True`` if the path points to an existing file or directory.
+
+   This method normally follows symlinks; to check if a symlink exists, add
+   the argument ``follow_symlinks=False``.
+
+   ::
 
       >>> Path('.').exists()
       True
@@ -824,10 +946,8 @@ call fails (for example because the path doesn't exist).
       >>> Path('nonexistentfile').exists()
       False
 
-   .. note::
-      If the path points to a symlink, :meth:`exists` returns whether the
-      symlink *points to* an existing file or directory.
-
+   .. versionchanged:: 3.12
+      The *follow_symlinks* parameter was added.
 
 .. method:: Path.expanduser()
 
@@ -844,7 +964,7 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.5
 
 
-.. method:: Path.glob(pattern)
+.. method:: Path.glob(pattern, *, case_sensitive=None, follow_symlinks=None)
 
    Glob the given relative *pattern* in the directory represented by this path,
    yielding all matching files (of any kind)::
@@ -869,34 +989,81 @@ call fails (for example because the path doesn't exist).
       Using the "``**``" pattern in large directory trees may consume
       an inordinate amount of time.
 
+   .. tip::
+      Set *follow_symlinks* to ``True`` or ``False`` to improve performance
+      of recursive globbing.
+
+   By default, or when the *case_sensitive* keyword-only argument is set to
+   ``None``, this method matches paths using platform-specific casing rules:
+   typically, case-sensitive on POSIX, and case-insensitive on Windows.
+   Set *case_sensitive* to ``True`` or ``False`` to override this behaviour.
+
+   By default, or when the *follow_symlinks* keyword-only argument is set to
+   ``None``, this method follows symlinks except when expanding "``**``"
+   wildcards. Set *follow_symlinks* to ``True`` to always follow symlinks, or
+   ``False`` to treat all symlinks as files.
+
    .. audit-event:: pathlib.Path.glob self,pattern pathlib.Path.glob
 
    .. versionchanged:: 3.11
       Return only directories if *pattern* ends with a pathname components
       separator (:data:`~os.sep` or :data:`~os.altsep`).
 
-.. method:: Path.group()
+   .. versionchanged:: 3.12
+      The *case_sensitive* parameter was added.
 
-   Return the name of the group owning the file.  :exc:`KeyError` is raised
+   .. versionchanged:: 3.13
+      The *follow_symlinks* parameter was added.
+
+   .. versionchanged:: 3.13
+      Emits :exc:`FutureWarning` if the pattern ends with "``**``". In a
+      future Python release, patterns with this ending will match both files
+      and directories. Add a trailing slash to match only directories.
+
+.. method:: Path.group(*, follow_symlinks=True)
+
+   Return the name of the group owning the file. :exc:`KeyError` is raised
    if the file's gid isn't found in the system database.
 
+   This method normally follows symlinks; to get the group of the symlink, add
+   the argument ``follow_symlinks=False``.
 
-.. method:: Path.is_dir()
+   .. versionchanged:: 3.13
+      Raises :exc:`UnsupportedOperation` if the :mod:`grp` module is not
+      available. In previous versions, :exc:`NotImplementedError` was raised.
 
-   Return ``True`` if the path points to a directory (or a symbolic link
-   pointing to a directory), ``False`` if it points to another kind of file.
+   .. versionchanged:: 3.13
+      The *follow_symlinks* parameter was added.
+
+
+.. method:: Path.is_dir(*, follow_symlinks=True)
+
+   Return ``True`` if the path points to a directory, ``False`` if it points
+   to another kind of file.
 
    ``False`` is also returned if the path doesn't exist or is a broken symlink;
    other errors (such as permission errors) are propagated.
 
+   This method normally follows symlinks; to exclude symlinks to directories,
+   add the argument ``follow_symlinks=False``.
 
-.. method:: Path.is_file()
+   .. versionchanged:: 3.13
+      The *follow_symlinks* parameter was added.
 
-   Return ``True`` if the path points to a regular file (or a symbolic link
-   pointing to a regular file), ``False`` if it points to another kind of file.
+
+.. method:: Path.is_file(*, follow_symlinks=True)
+
+   Return ``True`` if the path points to a regular file, ``False`` if it
+   points to another kind of file.
 
    ``False`` is also returned if the path doesn't exist or is a broken symlink;
    other errors (such as permission errors) are propagated.
+
+   This method normally follows symlinks; to exclude symlinks, add the
+   argument ``follow_symlinks=False``.
+
+   .. versionchanged:: 3.13
+      The *follow_symlinks* parameter was added.
 
 
 .. method:: Path.is_junction()
@@ -1133,10 +1300,20 @@ call fails (for example because the path doesn't exist).
       '#!/usr/bin/env python3\n'
 
 
-.. method:: Path.owner()
+.. method:: Path.owner(*, follow_symlinks=True)
 
-   Return the name of the user owning the file.  :exc:`KeyError` is raised
+   Return the name of the user owning the file. :exc:`KeyError` is raised
    if the file's uid isn't found in the system database.
+
+   This method normally follows symlinks; to get the owner of the symlink, add
+   the argument ``follow_symlinks=False``.
+
+   .. versionchanged:: 3.13
+      Raises :exc:`UnsupportedOperation` if the :mod:`pwd` module is not
+      available. In previous versions, :exc:`NotImplementedError` was raised.
+
+   .. versionchanged:: 3.13
+      The *follow_symlinks* parameter was added.
 
 
 .. method:: Path.read_bytes()
@@ -1152,7 +1329,7 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.5
 
 
-.. method:: Path.read_text(encoding=None, errors=None)
+.. method:: Path.read_text(encoding=None, errors=None, newline=None)
 
    Return the decoded contents of the pointed-to file as a string::
 
@@ -1167,6 +1344,8 @@ call fails (for example because the path doesn't exist).
 
    .. versionadded:: 3.5
 
+   .. versionchanged:: 3.13
+      The *newline* parameter was added.
 
 .. method:: Path.readlink()
 
@@ -1179,6 +1358,10 @@ call fails (for example because the path doesn't exist).
       PosixPath('setup.py')
 
    .. versionadded:: 3.9
+
+   .. versionchanged:: 3.13
+      Raises :exc:`UnsupportedOperation` if :func:`os.readlink` is not
+      available. In previous versions, :exc:`NotImplementedError` was raised.
 
 
 .. method:: Path.rename(target)
@@ -1251,19 +1434,24 @@ call fails (for example because the path doesn't exist).
       >>> p.resolve()
       PosixPath('/home/antoine/pathlib/setup.py')
 
-   If the path doesn't exist and *strict* is ``True``, :exc:`FileNotFoundError`
-   is raised.  If *strict* is ``False``, the path is resolved as far as possible
-   and any remainder is appended without checking whether it exists.  If an
-   infinite loop is encountered along the resolution path, :exc:`RuntimeError`
-   is raised.
+   If a path doesn't exist or a symlink loop is encountered, and *strict* is
+   ``True``, :exc:`OSError` is raised.  If *strict* is ``False``, the path is
+   resolved as far as possible and any remainder is appended without checking
+   whether it exists.
 
-   .. versionadded:: 3.6
-      The *strict* argument (pre-3.6 behavior is strict).
+   .. versionchanged:: 3.6
+      The *strict* parameter was added (pre-3.6 behavior is strict).
 
-.. method:: Path.rglob(pattern)
+   .. versionchanged:: 3.13
+      Symlink loops are treated like other errors: :exc:`OSError` is raised in
+      strict mode, and no exception is raised in non-strict mode. In previous
+      versions, :exc:`RuntimeError` is raised no matter the value of *strict*.
+
+.. method:: Path.rglob(pattern, *, case_sensitive=None, follow_symlinks=None)
 
    Glob the given relative *pattern* recursively.  This is like calling
-   :func:`Path.glob` with "``**/``" added in front of the *pattern*::
+   :func:`Path.glob` with "``**/``" added in front of the *pattern*, where
+   *patterns* are the same as for :mod:`fnmatch`::
 
       >>> sorted(Path().rglob("*.py"))
       [PosixPath('build/lib/pathlib.py'),
@@ -1272,11 +1460,27 @@ call fails (for example because the path doesn't exist).
        PosixPath('setup.py'),
        PosixPath('test_pathlib.py')]
 
+   By default, or when the *case_sensitive* keyword-only argument is set to
+   ``None``, this method matches paths using platform-specific casing rules:
+   typically, case-sensitive on POSIX, and case-insensitive on Windows.
+   Set *case_sensitive* to ``True`` or ``False`` to override this behaviour.
+
+   By default, or when the *follow_symlinks* keyword-only argument is set to
+   ``None``, this method follows symlinks except when expanding "``**``"
+   wildcards. Set *follow_symlinks* to ``True`` to always follow symlinks, or
+   ``False`` to treat all symlinks as files.
+
    .. audit-event:: pathlib.Path.rglob self,pattern pathlib.Path.rglob
 
    .. versionchanged:: 3.11
       Return only directories if *pattern* ends with a pathname components
       separator (:data:`~os.sep` or :data:`~os.altsep`).
+
+   .. versionchanged:: 3.12
+      The *case_sensitive* parameter was added.
+
+   .. versionchanged:: 3.13
+      The *follow_symlinks* parameter was added.
 
 .. method:: Path.rmdir()
 
@@ -1325,6 +1529,11 @@ call fails (for example because the path doesn't exist).
       The order of arguments (link, target) is the reverse
       of :func:`os.symlink`'s.
 
+   .. versionchanged:: 3.13
+      Raises :exc:`UnsupportedOperation` if :func:`os.symlink` is not
+      available. In previous versions, :exc:`NotImplementedError` was raised.
+
+
 .. method:: Path.hardlink_to(target)
 
    Make this path a hard link to the same file as *target*.
@@ -1334,6 +1543,10 @@ call fails (for example because the path doesn't exist).
       of :func:`os.link`'s.
 
    .. versionadded:: 3.10
+
+   .. versionchanged:: 3.13
+      Raises :exc:`UnsupportedOperation` if :func:`os.link` is not
+      available. In previous versions, :exc:`NotImplementedError` was raised.
 
 
 .. method:: Path.touch(mode=0o666, exist_ok=True)
@@ -1438,11 +1651,11 @@ Below is a table mapping various :mod:`os` functions to their corresponding
                                        :meth:`Path.group`
 :func:`os.path.isabs`                  :meth:`PurePath.is_absolute`
 :func:`os.path.join`                   :func:`PurePath.joinpath`
-:func:`os.path.basename`               :data:`PurePath.name`
-:func:`os.path.dirname`                :data:`PurePath.parent`
+:func:`os.path.basename`               :attr:`PurePath.name`
+:func:`os.path.dirname`                :attr:`PurePath.parent`
 :func:`os.path.samefile`               :meth:`Path.samefile`
-:func:`os.path.splitext`               :data:`PurePath.stem` and
-                                       :data:`PurePath.suffix`
+:func:`os.path.splitext`               :attr:`PurePath.stem` and
+                                       :attr:`PurePath.suffix`
 ====================================   ==============================
 
 .. rubric:: Footnotes

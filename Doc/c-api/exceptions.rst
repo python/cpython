@@ -60,9 +60,14 @@ Printing and clearing
    Call this function **only** when the error indicator is set.  Otherwise it
    will cause a fatal error!
 
-   If *set_sys_last_vars* is nonzero, the variables :data:`sys.last_type`,
-   :data:`sys.last_value` and :data:`sys.last_traceback` will be set to the
-   type, value and traceback of the printed exception, respectively.
+   If *set_sys_last_vars* is nonzero, the variable :data:`sys.last_exc` is
+   set to the printed exception. For backwards compatibility, the
+   deprecated variables :data:`sys.last_type`, :data:`sys.last_value` and
+   :data:`sys.last_traceback` are also set to the type, value and traceback
+   of this exception, respectively.
+
+   .. versionchanged:: 3.12
+      The setting of :data:`sys.last_exc` was added.
 
 
 .. c:function:: void PyErr_Print()
@@ -78,13 +83,40 @@ Printing and clearing
    This utility function prints a warning message to ``sys.stderr`` when an
    exception has been set but it is impossible for the interpreter to actually
    raise the exception.  It is used, for example, when an exception occurs in an
-   :meth:`__del__` method.
+   :meth:`~object.__del__` method.
 
    The function is called with a single argument *obj* that identifies the context
    in which the unraisable exception occurred. If possible,
    the repr of *obj* will be printed in the warning message.
+   If *obj* is ``NULL``, only the traceback is printed.
 
    An exception must be set when calling this function.
+
+   .. versionchanged:: 3.4
+      Print a traceback. Print only traceback if *obj* is ``NULL``.
+
+   .. versionchanged:: 3.8
+      Use :func:`sys.unraisablehook`.
+
+
+.. c:function:: void PyErr_FormatUnraisable(const char *format, ...)
+
+   Similar to :c:func:`PyErr_WriteUnraisable`, but the *format* and subsequent
+   parameters help format the warning message; they have the same meaning and
+   values as in :c:func:`PyUnicode_FromFormat`.
+   ``PyErr_WriteUnraisable(obj)`` is roughtly equivalent to
+   ``PyErr_FormatUnraisable("Exception ignored in: %R, obj)``.
+   If *format* is ``NULL``, only the traceback is printed.
+
+   .. versionadded:: 3.13
+
+
+.. c:function:: void PyErr_DisplayException(PyObject *exc)
+
+   Print the standard traceback display of ``exc`` to ``sys.stderr``, including
+   chained exceptions and notes.
+
+   .. versionadded:: 3.12
 
 
 Raising exceptions
@@ -99,7 +131,8 @@ For convenience, some of these functions will always return a
 
    This is the most common way to set the error indicator.  The first argument
    specifies the exception type; it is normally one of the standard exceptions,
-   e.g. :c:data:`PyExc_RuntimeError`.  You need not increment its reference count.
+   e.g. :c:data:`PyExc_RuntimeError`.  You need not create a new
+   :term:`strong reference` to it (e.g. with :c:func:`Py_INCREF`).
    The second argument is an error message; it is decoded from ``'utf-8'``.
 
 
@@ -152,9 +185,9 @@ For convenience, some of these functions will always return a
    This is a convenience function to raise an exception when a C library function
    has returned an error and set the C variable :c:data:`errno`.  It constructs a
    tuple object whose first item is the integer :c:data:`errno` value and whose
-   second item is the corresponding error message (gotten from :c:func:`strerror`),
+   second item is the corresponding error message (gotten from :c:func:`!strerror`),
    and then calls ``PyErr_SetObject(type, object)``.  On Unix, when the
-   :c:data:`errno` value is :const:`EINTR`, indicating an interrupted system call,
+   :c:data:`errno` value is :c:macro:`!EINTR`, indicating an interrupted system call,
    this calls :c:func:`PyErr_CheckSignals`, and if that set the error indicator,
    leaves it set to that.  The function always returns ``NULL``, so a wrapper
    function around a system call can write ``return PyErr_SetFromErrno(type);``
@@ -166,7 +199,7 @@ For convenience, some of these functions will always return a
    Similar to :c:func:`PyErr_SetFromErrno`, with the additional behavior that if
    *filenameObject* is not ``NULL``, it is passed to the constructor of *type* as
    a third parameter.  In the case of :exc:`OSError` exception,
-   this is used to define the :attr:`filename` attribute of the
+   this is used to define the :attr:`!filename` attribute of the
    exception instance.
 
 
@@ -189,12 +222,12 @@ For convenience, some of these functions will always return a
 .. c:function:: PyObject* PyErr_SetFromWindowsErr(int ierr)
 
    This is a convenience function to raise :exc:`WindowsError`. If called with
-   *ierr* of ``0``, the error code returned by a call to :c:func:`GetLastError`
-   is used instead.  It calls the Win32 function :c:func:`FormatMessage` to retrieve
-   the Windows description of error code given by *ierr* or :c:func:`GetLastError`,
+   *ierr* of ``0``, the error code returned by a call to :c:func:`!GetLastError`
+   is used instead.  It calls the Win32 function :c:func:`!FormatMessage` to retrieve
+   the Windows description of error code given by *ierr* or :c:func:`!GetLastError`,
    then it constructs a tuple object whose first item is the *ierr* value and whose
    second item is the corresponding error message (gotten from
-   :c:func:`FormatMessage`), and then calls ``PyErr_SetObject(PyExc_WindowsError,
+   :c:func:`!FormatMessage`), and then calls ``PyErr_SetObject(PyExc_WindowsError,
    object)``. This function always returns ``NULL``.
 
    .. availability:: Windows.
@@ -210,17 +243,21 @@ For convenience, some of these functions will always return a
 
 .. c:function:: PyObject* PyErr_SetFromWindowsErrWithFilename(int ierr, const char *filename)
 
-   Similar to :c:func:`PyErr_SetFromWindowsErrWithFilenameObject`, but the
-   filename is given as a C string.  *filename* is decoded from the filesystem
-   encoding (:func:`os.fsdecode`).
+   Similar to :c:func:`PyErr_SetFromWindowsErr`, with the additional behavior
+   that if *filename* is not ``NULL``, it is decoded from the filesystem
+   encoding (:func:`os.fsdecode`) and passed to the constructor of
+   :exc:`OSError` as a third parameter to be used to define the
+   :attr:`!filename` attribute of the exception instance.
 
    .. availability:: Windows.
 
 
 .. c:function:: PyObject* PyErr_SetExcFromWindowsErrWithFilenameObject(PyObject *type, int ierr, PyObject *filename)
 
-   Similar to :c:func:`PyErr_SetFromWindowsErrWithFilenameObject`, with an
-   additional parameter specifying the exception type to be raised.
+   Similar to :c:func:`PyErr_SetExcFromWindowsErr`, with the additional behavior
+   that if *filename* is not ``NULL``, it is passed to the constructor of
+   :exc:`OSError` as a third parameter to be used to define the
+   :attr:`!filename` attribute of the exception instance.
 
    .. availability:: Windows.
 
@@ -400,7 +437,47 @@ Querying the error indicator
    recursively in subtuples) are searched for a match.
 
 
+.. c:function:: PyObject *PyErr_GetRaisedException(void)
+
+   Return the exception currently being raised, clearing the error indicator at
+   the same time. Return ``NULL`` if the error indicator is not set.
+
+   This function is used by code that needs to catch exceptions,
+   or code that needs to save and restore the error indicator temporarily.
+
+   For example::
+
+      {
+         PyObject *exc = PyErr_GetRaisedException();
+
+         /* ... code that might produce other errors ... */
+
+         PyErr_SetRaisedException(exc);
+      }
+
+   .. seealso:: :c:func:`PyErr_GetHandledException`,
+                to save the exception currently being handled.
+
+   .. versionadded:: 3.12
+
+
+.. c:function:: void PyErr_SetRaisedException(PyObject *exc)
+
+   Set *exc* as the exception currently being raised,
+   clearing the existing exception if one is set.
+
+   .. warning::
+
+      This call steals a reference to *exc*, which must be a valid exception.
+
+   .. versionadded:: 3.12
+
+
 .. c:function:: void PyErr_Fetch(PyObject **ptype, PyObject **pvalue, PyObject **ptraceback)
+
+   .. deprecated:: 3.12
+
+      Use :c:func:`PyErr_GetRaisedException` instead.
 
    Retrieve the error indicator into three variables whose addresses are passed.
    If the error indicator is not set, set all three variables to ``NULL``.  If it is
@@ -409,8 +486,10 @@ Querying the error indicator
 
    .. note::
 
-      This function is normally only used by code that needs to catch exceptions or
-      by code that needs to save and restore the error indicator temporarily, e.g.::
+      This function is normally only used by legacy code that needs to catch
+      exceptions or save and restore the error indicator temporarily.
+
+      For example::
 
          {
             PyObject *type, *value, *traceback;
@@ -424,8 +503,14 @@ Querying the error indicator
 
 .. c:function:: void PyErr_Restore(PyObject *type, PyObject *value, PyObject *traceback)
 
-   Set  the error indicator from the three objects.  If the error indicator is
-   already set, it is cleared first.  If the objects are ``NULL``, the error
+   .. deprecated:: 3.12
+
+      Use :c:func:`PyErr_SetRaisedException` instead.
+
+   Set the error indicator from the three objects,
+   *type*, *value*, and *traceback*,
+   clearing the existing exception if one is set.
+   If the objects are ``NULL``, the error
    indicator is cleared.  Do not pass a ``NULL`` type and non-``NULL`` value or
    traceback.  The exception type should be a class.  Do not pass an invalid
    exception type or value. (Violating these rules will cause subtle problems
@@ -436,12 +521,17 @@ Querying the error indicator
 
    .. note::
 
-      This function is normally only used by code that needs to save and restore the
-      error indicator temporarily.  Use :c:func:`PyErr_Fetch` to save the current
-      error indicator.
+      This function is normally only used by legacy code that needs to
+      save and restore the error indicator temporarily.
+      Use :c:func:`PyErr_Fetch` to save the current error indicator.
 
 
 .. c:function:: void PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
+
+   .. deprecated:: 3.12
+
+      Use :c:func:`PyErr_GetRaisedException` instead,
+      to avoid any possible de-normalization.
 
    Under certain circumstances, the values returned by :c:func:`PyErr_Fetch` below
    can be "unnormalized", meaning that ``*exc`` is a class object but ``*val`` is
@@ -451,7 +541,8 @@ Querying the error indicator
 
    .. note::
 
-      This function *does not* implicitly set the ``__traceback__``
+      This function *does not* implicitly set the
+      :attr:`~BaseException.__traceback__`
       attribute on the exception value. If setting the traceback
       appropriately is desired, the following additional snippet is needed::
 
@@ -543,7 +634,7 @@ Signal Handling
 .. c:function:: int PyErr_CheckSignals()
 
    .. index::
-      module: signal
+      pair: module; signal
       single: SIGINT
       single: KeyboardInterrupt (built-in exception)
 
@@ -567,18 +658,18 @@ Signal Handling
    be interruptible by user requests (such as by pressing Ctrl-C).
 
    .. note::
-      The default Python signal handler for :const:`SIGINT` raises the
+      The default Python signal handler for :c:macro:`!SIGINT` raises the
       :exc:`KeyboardInterrupt` exception.
 
 
 .. c:function:: void PyErr_SetInterrupt()
 
    .. index::
-      module: signal
+      pair: module; signal
       single: SIGINT
       single: KeyboardInterrupt (built-in exception)
 
-   Simulate the effect of a :const:`SIGINT` signal arriving.
+   Simulate the effect of a :c:macro:`!SIGINT` signal arriving.
    This is equivalent to ``PyErr_SetInterruptEx(SIGINT)``.
 
    .. note::
@@ -589,7 +680,7 @@ Signal Handling
 .. c:function:: int PyErr_SetInterruptEx(int signum)
 
    .. index::
-      module: signal
+      pair: module; signal
       single: KeyboardInterrupt (built-in exception)
 
    Simulate the effect of a signal arriving. The next time
@@ -602,7 +693,7 @@ Signal Handling
    to interrupt an operation).
 
    If the given signal isn't handled by Python (it was set to
-   :data:`signal.SIG_DFL` or :data:`signal.SIG_IGN`), it will be ignored.
+   :py:const:`signal.SIG_DFL` or :py:const:`signal.SIG_IGN`), it will be ignored.
 
    If *signum* is outside of the allowed range of signal numbers, ``-1``
    is returned.  Otherwise, ``0`` is returned.  The error indicator is
@@ -663,7 +754,8 @@ Exception Objects
 .. c:function:: PyObject* PyException_GetTraceback(PyObject *ex)
 
    Return the traceback associated with the exception as a new reference, as
-   accessible from Python through :attr:`__traceback__`.  If there is no
+   accessible from Python through the :attr:`~BaseException.__traceback__`
+   attribute. If there is no
    traceback associated, this returns ``NULL``.
 
 
@@ -677,8 +769,8 @@ Exception Objects
 
    Return the context (another exception instance during whose handling *ex* was
    raised) associated with the exception as a new reference, as accessible from
-   Python through :attr:`__context__`.  If there is no context associated, this
-   returns ``NULL``.
+   Python through the :attr:`~BaseException.__context__` attribute.
+   If there is no context associated, this returns ``NULL``.
 
 
 .. c:function:: void PyException_SetContext(PyObject *ex, PyObject *ctx)
@@ -690,19 +782,43 @@ Exception Objects
 
 .. c:function:: PyObject* PyException_GetCause(PyObject *ex)
 
-   Return the cause (either an exception instance, or :const:`None`,
+   Return the cause (either an exception instance, or ``None``,
    set by ``raise ... from ...``) associated with the exception as a new
-   reference, as accessible from Python through :attr:`__cause__`.
+   reference, as accessible from Python through the
+   :attr:`~BaseException.__cause__` attribute.
 
 
 .. c:function:: void PyException_SetCause(PyObject *ex, PyObject *cause)
 
    Set the cause associated with the exception to *cause*.  Use ``NULL`` to clear
    it.  There is no type check to make sure that *cause* is either an exception
-   instance or :const:`None`.  This steals a reference to *cause*.
+   instance or ``None``.  This steals a reference to *cause*.
 
-   :attr:`__suppress_context__` is implicitly set to ``True`` by this function.
+   The :attr:`~BaseException.__suppress_context__` attribute is implicitly set
+   to ``True`` by this function.
 
+
+.. c:function:: PyObject* PyException_GetArgs(PyObject *ex)
+
+   Return :attr:`~BaseException.args` of exception *ex*.
+
+
+.. c:function:: void PyException_SetArgs(PyObject *ex, PyObject *args)
+
+   Set :attr:`~BaseException.args` of exception *ex* to *args*.
+
+.. c:function:: PyObject* PyUnstable_Exc_PrepReraiseStar(PyObject *orig, PyObject *excs)
+
+   Implement part of the interpreter's implementation of :keyword:`!except*`.
+   *orig* is the original exception that was caught, and *excs* is the list of
+   the exceptions that need to be raised. This list contains the unhandled
+   part of *orig*, if any, as well as the exceptions that were raised from the
+   :keyword:`!except*` clauses (so they have a different traceback from *orig*) and
+   those that were reraised (and have the same traceback as *orig*).
+   Return the :exc:`ExceptionGroup` that needs to be reraised in the end, or
+   ``None`` if there is nothing to reraise.
+
+   .. versionadded:: 3.12
 
 .. _unicodeexceptions:
 
@@ -788,7 +904,7 @@ because the :ref:`call protocol <call>` takes care of recursion handling.
 
    Marks a point where a recursive C-level call is about to be performed.
 
-   If :const:`USE_STACKCHECK` is defined, this function checks if the OS
+   If :c:macro:`USE_STACKCHECK` is defined, this function checks if the OS
    stack overflowed using :c:func:`PyOS_CheckStack`.  In this is the case, it
    sets a :exc:`MemoryError` and returns a nonzero value.
 
@@ -801,7 +917,7 @@ because the :ref:`call protocol <call>` takes care of recursion handling.
    depth limit.
 
    .. versionchanged:: 3.9
-      This function is now also available in the limited API.
+      This function is now also available in the :ref:`limited API <limited-c-api>`.
 
 .. c:function:: void Py_LeaveRecursiveCall(void)
 
@@ -809,7 +925,7 @@ because the :ref:`call protocol <call>` takes care of recursion handling.
    *successful* invocation of :c:func:`Py_EnterRecursiveCall`.
 
    .. versionchanged:: 3.9
-      This function is now also available in the limited API.
+      This function is now also available in the :ref:`limited API <limited-c-api>`.
 
 Properly implementing :c:member:`~PyTypeObject.tp_repr` for container types requires
 special recursion handling.  In addition to protecting the stack,
