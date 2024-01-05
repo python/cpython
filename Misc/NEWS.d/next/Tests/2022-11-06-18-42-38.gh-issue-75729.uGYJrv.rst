@@ -1,2 +1,0 @@
-Fix the :func:`os.spawn* <os.spawnl>` tests failing on Windows
-when the working directory or interpreter path contains spaces.

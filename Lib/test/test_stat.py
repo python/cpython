@@ -122,8 +122,11 @@ class TestFilemode:
             st_mode, modestr = self.get_mode()
             self.assertEqual(modestr, '-rwx------')
             self.assertS_IS("REG", st_mode)
-            self.assertEqual(self.statmod.S_IMODE(st_mode),
+            imode = self.statmod.S_IMODE(st_mode)
+            self.assertEqual(imode,
                              self.statmod.S_IRWXU)
+            self.assertEqual(self.statmod.filemode(imode),
+                             '?rwx------')
 
             os.chmod(TESTFN, 0o070)
             st_mode, modestr = self.get_mode()
@@ -145,12 +148,19 @@ class TestFilemode:
             self.assertEqual(modestr, '-r--r--r--')
             self.assertEqual(self.statmod.S_IMODE(st_mode), 0o444)
         else:
+            os.chmod(TESTFN, 0o500)
+            st_mode, modestr = self.get_mode()
+            self.assertEqual(modestr[:3], '-r-')
+            self.assertS_IS("REG", st_mode)
+            self.assertEqual(self.statmod.S_IMODE(st_mode), 0o444)
+
             os.chmod(TESTFN, 0o700)
             st_mode, modestr = self.get_mode()
             self.assertEqual(modestr[:3], '-rw')
             self.assertS_IS("REG", st_mode)
             self.assertEqual(self.statmod.S_IFMT(st_mode),
                              self.statmod.S_IFREG)
+            self.assertEqual(self.statmod.S_IMODE(st_mode), 0o666)
 
     @os_helper.skip_unless_working_chmod
     def test_directory(self):
@@ -238,6 +248,7 @@ class TestFilemode:
             self.assertEqual(value, modvalue, key)
 
 
+@unittest.skipIf(c_stat is None, 'need _stat extension')
 class TestFilemodeCStat(TestFilemode, unittest.TestCase):
     statmod = c_stat
 

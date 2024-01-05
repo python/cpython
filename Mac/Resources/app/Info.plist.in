@@ -58,5 +58,7 @@
 	<string>(c) 2001-2023 Python Software Foundation.</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
+	<key>CFBundleAllowMixedLocalizations</key>
+	<true/>
 </dict>
 </plist>

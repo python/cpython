@@ -17,6 +17,7 @@ import unittest
 from datetime import date, datetime, time, timedelta, timezone
 from functools import cached_property
 
+from test.support import MISSING_C_DOCSTRINGS
 from test.test_zoneinfo import _support as test_support
 from test.test_zoneinfo._support import OS_ENV_LOCK, TZPATH_TEST_LOCK, ZoneInfoTestBase
 from test.support.import_helper import import_module
@@ -418,6 +419,8 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
 class CZoneInfoTest(ZoneInfoTest):
     module = c_zoneinfo
 
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
     def test_signatures(self):
         """Ensure that C module has valid method signatures."""
         import inspect
@@ -1015,6 +1018,80 @@ class TZStrTest(ZoneInfoTestBase):
 
                 self.assertEqual(dt_act, dt_utc)
 
+    def test_extreme_tzstr(self):
+        tzstrs = [
+            # Extreme offset hour
+            "AAA24",
+            "AAA+24",
+            "AAA-24",
+            "AAA24BBB,J60/2,J300/2",
+            "AAA+24BBB,J60/2,J300/2",
+            "AAA-24BBB,J60/2,J300/2",
+            "AAA4BBB24,J60/2,J300/2",
+            "AAA4BBB+24,J60/2,J300/2",
+            "AAA4BBB-24,J60/2,J300/2",
+            # Extreme offset minutes
+            "AAA4:00BBB,J60/2,J300/2",
+            "AAA4:59BBB,J60/2,J300/2",
+            "AAA4BBB5:00,J60/2,J300/2",
+            "AAA4BBB5:59,J60/2,J300/2",
+            # Extreme offset seconds
+            "AAA4:00:00BBB,J60/2,J300/2",
+            "AAA4:00:59BBB,J60/2,J300/2",
+            "AAA4BBB5:00:00,J60/2,J300/2",
+            "AAA4BBB5:00:59,J60/2,J300/2",
+            # Extreme total offset
+            "AAA24:59:59BBB5,J60/2,J300/2",
+            "AAA-24:59:59BBB5,J60/2,J300/2",
+            "AAA4BBB24:59:59,J60/2,J300/2",
+            "AAA4BBB-24:59:59,J60/2,J300/2",
+            # Extreme months
+            "AAA4BBB,M12.1.1/2,M1.1.1/2",
+            "AAA4BBB,M1.1.1/2,M12.1.1/2",
+            # Extreme weeks
+            "AAA4BBB,M1.5.1/2,M1.1.1/2",
+            "AAA4BBB,M1.1.1/2,M1.5.1/2",
+            # Extreme weekday
+            "AAA4BBB,M1.1.6/2,M2.1.1/2",
+            "AAA4BBB,M1.1.1/2,M2.1.6/2",
+            # Extreme numeric offset
+            "AAA4BBB,0/2,20/2",
+            "AAA4BBB,0/2,0/14",
+            "AAA4BBB,20/2,365/2",
+            "AAA4BBB,365/2,365/14",
+            # Extreme julian offset
+            "AAA4BBB,J1/2,J20/2",
+            "AAA4BBB,J1/2,J1/14",
+            "AAA4BBB,J20/2,J365/2",
+            "AAA4BBB,J365/2,J365/14",
+            # Extreme transition hour
+            "AAA4BBB,J60/167,J300/2",
+            "AAA4BBB,J60/+167,J300/2",
+            "AAA4BBB,J60/-167,J300/2",
+            "AAA4BBB,J60/2,J300/167",
+            "AAA4BBB,J60/2,J300/+167",
+            "AAA4BBB,J60/2,J300/-167",
+            # Extreme transition minutes
+            "AAA4BBB,J60/2:00,J300/2",
+            "AAA4BBB,J60/2:59,J300/2",
+            "AAA4BBB,J60/2,J300/2:00",
+            "AAA4BBB,J60/2,J300/2:59",
+            # Extreme transition seconds
+            "AAA4BBB,J60/2:00:00,J300/2",
+            "AAA4BBB,J60/2:00:59,J300/2",
+            "AAA4BBB,J60/2,J300/2:00:00",
+            "AAA4BBB,J60/2,J300/2:00:59",
+            # Extreme total transition time
+            "AAA4BBB,J60/167:59:59,J300/2",
+            "AAA4BBB,J60/-167:59:59,J300/2",
+            "AAA4BBB,J60/2,J300/167:59:59",
+            "AAA4BBB,J60/2,J300/-167:59:59",
+        ]
+
+        for tzstr in tzstrs:
+            with self.subTest(tzstr=tzstr):
+                self.zone_from_tzstr(tzstr)
+
     def test_invalid_tzstr(self):
         invalid_tzstrs = [
             "PST8PDT",  # DST but no transition specified
@@ -1022,16 +1099,33 @@ class TZStrTest(ZoneInfoTestBase):
             "GMT,M3.2.0/2,M11.1.0/3",  # Transition rule but no DST
             "GMT0+11,M3.2.0/2,M11.1.0/3",  # Unquoted alphanumeric in DST
             "PST8PDT,M3.2.0/2",  # Only one transition rule
-            # Invalid offsets
-            "STD+25",
-            "STD-25",
-            "STD+374",
-            "STD+374DST,M3.2.0/2,M11.1.0/3",
-            "STD+23DST+25,M3.2.0/2,M11.1.0/3",
-            "STD-23DST-25,M3.2.0/2,M11.1.0/3",
+            # Invalid offset hours
+            "AAA168",
+            "AAA+168",
+            "AAA-168",
+            "AAA168BBB,J60/2,J300/2",
+            "AAA+168BBB,J60/2,J300/2",
+            "AAA-168BBB,J60/2,J300/2",
+            "AAA4BBB168,J60/2,J300/2",
+            "AAA4BBB+168,J60/2,J300/2",
+            "AAA4BBB-168,J60/2,J300/2",
+            # Invalid offset minutes
+            "AAA4:0BBB,J60/2,J300/2",
+            "AAA4:100BBB,J60/2,J300/2",
+            "AAA4BBB5:0,J60/2,J300/2",
+            "AAA4BBB5:100,J60/2,J300/2",
+            # Invalid offset seconds
+            "AAA4:00:0BBB,J60/2,J300/2",
+            "AAA4:00:100BBB,J60/2,J300/2",
+            "AAA4BBB5:00:0,J60/2,J300/2",
+            "AAA4BBB5:00:100,J60/2,J300/2",
             # Completely invalid dates
             "AAA4BBB,M1443339,M11.1.0/3",
             "AAA4BBB,M3.2.0/2,0349309483959c",
+            "AAA4BBB,,J300/2",
+            "AAA4BBB,z,J300/2",
+            "AAA4BBB,J60/2,",
+            "AAA4BBB,J60/2,z",
             # Invalid months
             "AAA4BBB,M13.1.1/2,M1.1.1/2",
             "AAA4BBB,M1.1.1/2,M13.1.1/2",
@@ -1051,6 +1145,26 @@ class TZStrTest(ZoneInfoTestBase):
             # Invalid julian offset
             "AAA4BBB,J0/2,J20/2",
             "AAA4BBB,J20/2,J366/2",
+            # Invalid transition time
+            "AAA4BBB,J60/2/3,J300/2",
+            "AAA4BBB,J60/2,J300/2/3",
+            # Invalid transition hour
+            "AAA4BBB,J60/168,J300/2",
+            "AAA4BBB,J60/+168,J300/2",
+            "AAA4BBB,J60/-168,J300/2",
+            "AAA4BBB,J60/2,J300/168",
+            "AAA4BBB,J60/2,J300/+168",
+            "AAA4BBB,J60/2,J300/-168",
+            # Invalid transition minutes
+            "AAA4BBB,J60/2:0,J300/2",
+            "AAA4BBB,J60/2:100,J300/2",
+            "AAA4BBB,J60/2,J300/2:0",
+            "AAA4BBB,J60/2,J300/2:100",
+            # Invalid transition seconds
+            "AAA4BBB,J60/2:00:0,J300/2",
+            "AAA4BBB,J60/2:00:100,J300/2",
+            "AAA4BBB,J60/2,J300/2:00:0",
+            "AAA4BBB,J60/2,J300/2:00:100",
         ]
 
         for invalid_tzstr in invalid_tzstrs:

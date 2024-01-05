@@ -1,16 +1,18 @@
-import platform
+import _ctypes_test
+from platform import architecture as _architecture
+import struct
 import sys
 import unittest
-from ctypes import *
-from test.test_ctypes import need_symbol
+from ctypes import (CDLL, Array, Structure, Union, POINTER, sizeof, byref, alignment,
+                    c_void_p, c_char, c_wchar, c_byte, c_ubyte,
+                    c_uint8, c_uint16, c_uint32,
+                    c_short, c_ushort, c_int, c_uint,
+                    c_long, c_ulong, c_longlong, c_ulonglong, c_float, c_double)
+from ctypes.util import find_library
 from struct import calcsize
-import _ctypes_test
+from collections import namedtuple
 from test import support
 
-# The following definition is meant to be used from time to time to assist
-# temporarily disabling tests on specific architectures while investigations
-# are in progress, to keep buildbots happy.
-MACHINE = platform.machine()
 
 class SubclassesTest(unittest.TestCase):
     def test_subclass(self):
@@ -50,6 +52,7 @@ class SubclassesTest(unittest.TestCase):
         self.assertEqual(X._fields_, [("a", c_int)])
         self.assertEqual(Y._fields_, [("b", c_int)])
         self.assertEqual(Z._fields_, [("a", c_int)])
+
 
 class StructureTestCase(unittest.TestCase):
     formats = {"c": c_char,
@@ -184,7 +187,6 @@ class StructureTestCase(unittest.TestCase):
         self.assertEqual(sizeof(X), 10)
         self.assertEqual(X.b.offset, 2)
 
-        import struct
         longlong_size = struct.calcsize("q")
         longlong_align = struct.calcsize("bq") - longlong_size
 
@@ -303,7 +305,6 @@ class StructureTestCase(unittest.TestCase):
         self.assertEqual(p.phone.number, b"5678")
         self.assertEqual(p.age, 5)
 
-    @need_symbol('c_wchar')
     def test_structures_with_wchar(self):
         class PersonW(Structure):
             _fields_ = [("name", c_wchar * 12),
@@ -359,15 +360,6 @@ class StructureTestCase(unittest.TestCase):
         except Exception as detail:
             return detail.__class__, str(detail)
 
-    @unittest.skip('test disabled')
-    def test_subclass_creation(self):
-        meta = type(Structure)
-        # same as 'class X(Structure): pass'
-        # fails, since we need either a _fields_ or a _abstract_ attribute
-        cls, msg = self.get_except(meta, "X", (Structure,), {})
-        self.assertEqual((cls, msg),
-                (AttributeError, "class must define a '_fields_' attribute"))
-
     def test_abstract_class(self):
         class X(Structure):
             _abstract_ = "something"
@@ -376,9 +368,6 @@ class StructureTestCase(unittest.TestCase):
         self.assertEqual((cls, msg), (TypeError, "abstract class"))
 
     def test_methods(self):
-##        class X(Structure):
-##            _fields_ = []
-
         self.assertIn("in_dll", dir(type(Structure)))
         self.assertIn("from_address", dir(type(Structure)))
         self.assertIn("in_dll", dir(type(Structure)))
@@ -484,8 +473,71 @@ class StructureTestCase(unittest.TestCase):
         self.assertEqual(s.first, got.first)
         self.assertEqual(s.second, got.second)
 
+    def _test_issue18060(self, Vector):
+        # The call to atan2() should succeed if the
+        # class fields were correctly cloned in the
+        # subclasses. Otherwise, it will segfault.
+        if sys.platform == 'win32':
+            libm = CDLL(find_library('msvcrt.dll'))
+        else:
+            libm = CDLL(find_library('m'))
+
+        libm.atan2.argtypes = [Vector]
+        libm.atan2.restype = c_double
+
+        arg = Vector(y=0.0, x=-1.0)
+        self.assertAlmostEqual(libm.atan2(arg), 3.141592653589793)
+
+    @unittest.skipIf(_architecture() == ('64bit', 'WindowsPE'), "can't test Windows x64 build")
+    @unittest.skipUnless(sys.byteorder == 'little', "can't test on this platform")
+    def test_issue18060_a(self):
+        # This test case calls
+        # PyCStructUnionType_update_stgdict() for each
+        # _fields_ assignment, and PyCStgDict_clone()
+        # for the Mid and Vector class definitions.
+        class Base(Structure):
+            _fields_ = [('y', c_double),
+                        ('x', c_double)]
+        class Mid(Base):
+            pass
+        Mid._fields_ = []
+        class Vector(Mid): pass
+        self._test_issue18060(Vector)
+
+    @unittest.skipIf(_architecture() == ('64bit', 'WindowsPE'), "can't test Windows x64 build")
+    @unittest.skipUnless(sys.byteorder == 'little', "can't test on this platform")
+    def test_issue18060_b(self):
+        # This test case calls
+        # PyCStructUnionType_update_stgdict() for each
+        # _fields_ assignment.
+        class Base(Structure):
+            _fields_ = [('y', c_double),
+                        ('x', c_double)]
+        class Mid(Base):
+            _fields_ = []
+        class Vector(Mid):
+            _fields_ = []
+        self._test_issue18060(Vector)
+
+    @unittest.skipIf(_architecture() == ('64bit', 'WindowsPE'), "can't test Windows x64 build")
+    @unittest.skipUnless(sys.byteorder == 'little', "can't test on this platform")
+    def test_issue18060_c(self):
+        # This test case calls
+        # PyCStructUnionType_update_stgdict() for each
+        # _fields_ assignment.
+        class Base(Structure):
+            _fields_ = [('y', c_double)]
+        class Mid(Base):
+            _fields_ = []
+        class Vector(Mid):
+            _fields_ = [('x', c_double)]
+        self._test_issue18060(Vector)
+
     def test_array_in_struct(self):
         # See bpo-22273
+
+        # Load the shared library
+        dll = CDLL(_ctypes_test.__file__)
 
         # These should mirror the structures in Modules/_ctypes/_ctypes_test.c
         class Test2(Structure):
@@ -493,28 +545,44 @@ class StructureTestCase(unittest.TestCase):
                 ('data', c_ubyte * 16),
             ]
 
-        class Test3(Structure):
-            _fields_ = [
-                ('data', c_double * 2),
-            ]
-
-        class Test3A(Structure):
+        class Test3AParent(Structure):
             _fields_ = [
                 ('data', c_float * 2),
             ]
 
-        class Test3B(Test3A):
+        class Test3A(Test3AParent):
             _fields_ = [
                 ('more_data', c_float * 2),
             ]
 
+        class Test3B(Structure):
+            _fields_ = [
+                ('data', c_double * 2),
+            ]
+
+        class Test3C(Structure):
+            _fields_ = [
+                ("data", c_double * 4)
+            ]
+
+        class Test3D(Structure):
+            _fields_ = [
+                ("data", c_double * 8)
+            ]
+
+        class Test3E(Structure):
+            _fields_ = [
+                ("data", c_double * 9)
+            ]
+
+
+        # Tests for struct Test2
         s = Test2()
         expected = 0
         for i in range(16):
             s.data[i] = i
             expected += i
-        dll = CDLL(_ctypes_test.__file__)
-        func = dll._testfunc_array_in_struct1
+        func = dll._testfunc_array_in_struct2
         func.restype = c_int
         func.argtypes = (Test2,)
         result = func(s)
@@ -523,29 +591,16 @@ class StructureTestCase(unittest.TestCase):
         for i in range(16):
             self.assertEqual(s.data[i], i)
 
-        s = Test3()
-        s.data[0] = 3.14159
-        s.data[1] = 2.71828
-        expected = 3.14159 + 2.71828
-        func = dll._testfunc_array_in_struct2
-        func.restype = c_double
-        func.argtypes = (Test3,)
-        result = func(s)
-        self.assertEqual(result, expected)
-        # check the passed-in struct hasn't changed
-        self.assertEqual(s.data[0], 3.14159)
-        self.assertEqual(s.data[1], 2.71828)
-
-        s = Test3B()
+        # Tests for struct Test3A
+        s = Test3A()
         s.data[0] = 3.14159
         s.data[1] = 2.71828
         s.more_data[0] = -3.0
         s.more_data[1] = -2.0
-
-        expected = 3.14159 + 2.71828 - 5.0
-        func = dll._testfunc_array_in_struct2a
+        expected = 3.14159 + 2.71828 - 3.0 - 2.0
+        func = dll._testfunc_array_in_struct3A
         func.restype = c_double
-        func.argtypes = (Test3B,)
+        func.argtypes = (Test3A,)
         result = func(s)
         self.assertAlmostEqual(result, expected, places=6)
         # check the passed-in struct hasn't changed
@@ -553,6 +608,61 @@ class StructureTestCase(unittest.TestCase):
         self.assertAlmostEqual(s.data[1], 2.71828, places=6)
         self.assertAlmostEqual(s.more_data[0], -3.0, places=6)
         self.assertAlmostEqual(s.more_data[1], -2.0, places=6)
+
+        # Test3B, Test3C, Test3D, Test3E have the same logic with different
+        # sizes hence putting them in a loop.
+        StructCtype = namedtuple(
+            "StructCtype",
+            ["cls", "cfunc1", "cfunc2", "items"]
+        )
+        structs_to_test = [
+            StructCtype(
+                Test3B,
+                dll._testfunc_array_in_struct3B,
+                dll._testfunc_array_in_struct3B_set_defaults,
+                2),
+            StructCtype(
+                Test3C,
+                dll._testfunc_array_in_struct3C,
+                dll._testfunc_array_in_struct3C_set_defaults,
+                4),
+            StructCtype(
+                Test3D,
+                dll._testfunc_array_in_struct3D,
+                dll._testfunc_array_in_struct3D_set_defaults,
+                8),
+            StructCtype(
+                Test3E,
+                dll._testfunc_array_in_struct3E,
+                dll._testfunc_array_in_struct3E_set_defaults,
+                9),
+        ]
+
+        for sut in structs_to_test:
+            s = sut.cls()
+
+            # Test for cfunc1
+            expected = 0
+            for i in range(sut.items):
+                float_i = float(i)
+                s.data[i] = float_i
+                expected += float_i
+            func = sut.cfunc1
+            func.restype = c_double
+            func.argtypes = (sut.cls,)
+            result = func(s)
+            self.assertEqual(result, expected)
+            # check the passed-in struct hasn't changed
+            for i in range(sut.items):
+                self.assertEqual(s.data[i], float(i))
+
+            # Test for cfunc2
+            func = sut.cfunc2
+            func.restype = sut.cls
+            result = func()
+            # check if the default values have been set correctly
+            for i in range(sut.items):
+                self.assertEqual(result.data[i], float(i+1))
 
     def test_38368(self):
         class U(Union):
@@ -738,6 +848,7 @@ class StructureTestCase(unittest.TestCase):
         self.assertEqual(ctx.exception.args[0], 'item 1 in _argtypes_ passes '
                          'a union by value, which is unsupported.')
 
+
 class PointerMemberTestCase(unittest.TestCase):
 
     def test(self):
@@ -764,8 +875,6 @@ class PointerMemberTestCase(unittest.TestCase):
 
         s.array[0] = 1
 
-##        s.array[1] = 42
-
         items = [s.array[i] for i in range(3)]
         self.assertEqual(items, [1, 2, 3])
 
@@ -778,6 +887,7 @@ class PointerMemberTestCase(unittest.TestCase):
         s.x = 12345678
         s.p = None
         self.assertEqual(s.x, 12345678)
+
 
 class TestRecursiveStructure(unittest.TestCase):
     def test_contains_itself(self):
@@ -807,6 +917,7 @@ class TestRecursiveStructure(unittest.TestCase):
             self.assertIn("_fields_ is final", str(details))
         else:
             self.fail("AttributeError not raised")
+
 
 if __name__ == '__main__':
     unittest.main()
