@@ -714,6 +714,18 @@ class TestContentTypeHeader(TestHeaderBase):
             " charset*=unknown-8bit''utf-8%E2%80%9D\n",
             ),
 
+        'rfc2231_nonascii_in_charset_of_charset_parameter_value': (
+            "text/plain; charset*=utf-8”''utf-8%E2%80%9D",
+            'text/plain',
+            'text',
+            'plain',
+            {'charset': 'utf-8”'},
+            [],
+            'text/plain; charset="utf-8”"',
+            "Content-Type: text/plain;"
+            " charset*=utf-8''utf-8%E2%80%9D\n",
+            ),
+
         'rfc2231_encoded_then_unencoded_segments': (
             ('application/x-foo;'
                 '\tname*0*="us-ascii\'en-us\'My";'

@@ -1,1 +1,0 @@
-Add slice support to :meth:`~pathlib.Path.parents`.

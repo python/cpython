@@ -1,4 +1,4 @@
-"""Test query, coverage 93%).
+"""Test query, coverage 93%.
 
 Non-gui tests for Query, SectionName, ModuleName, and HelpSource use
 dummy versions that extract the non-gui methods and add other needed
@@ -136,8 +136,8 @@ class ModuleNameTest(unittest.TestCase):
         dialog = self.Dummy_ModuleName('idlelib')
         self.assertTrue(dialog.entry_ok().endswith('__init__.py'))
         self.assertEqual(dialog.entry_error['text'], '')
-        dialog = self.Dummy_ModuleName('os.path')
-        self.assertTrue(dialog.entry_ok().endswith('path.py'))
+        dialog = self.Dummy_ModuleName('idlelib.idle')
+        self.assertTrue(dialog.entry_ok().endswith('idle.py'))
         self.assertEqual(dialog.entry_error['text'], '')
 
 
