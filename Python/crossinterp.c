@@ -7,7 +7,6 @@
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_namespace.h"     //_PyNamespace_New()
 #include "pycore_pyerrors.h"      // _PyErr_Clear()
-#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_typeobject.h"    // _PyType_GetModuleName()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
@@ -67,7 +66,7 @@ int
 _Py_CallInInterpreter(PyInterpreterState *interp,
                       _Py_simple_func func, void *arg)
 {
-    if (interp == _PyThreadState_GetCurrent()->interp) {
+    if (interp == PyInterpreterState_Get()) {
         return func(arg);
     }
     // XXX Emit a warning if this fails?
@@ -79,7 +78,7 @@ int
 _Py_CallInInterpreterAndRawFree(PyInterpreterState *interp,
                                 _Py_simple_func func, void *arg)
 {
-    if (interp == _PyThreadState_GetCurrent()->interp) {
+    if (interp == PyInterpreterState_Get()) {
         int res = func(arg);
         PyMem_RawFree(arg);
         return res;
@@ -292,7 +291,7 @@ _set_xid_lookup_failure(PyInterpreterState *interp,
 int
 _PyObject_CheckCrossInterpreterData(PyObject *obj)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyInterpreterState *interp = PyInterpreterState_Get();
     crossinterpdatafunc getdata = lookup_getdata(interp, obj);
     if (getdata == NULL) {
         if (!PyErr_Occurred()) {
@@ -306,11 +305,7 @@ _PyObject_CheckCrossInterpreterData(PyObject *obj)
 int
 _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
 {
-    PyThreadState *tstate = _PyThreadState_GetCurrent();
-#ifdef Py_DEBUG
-    // The caller must hold the GIL
-    _Py_EnsureTstateNotNULL(tstate);
-#endif
+    PyThreadState *tstate = PyThreadState_Get();
     PyInterpreterState *interp = tstate->interp;
 
     // Reset data before re-populating.
@@ -1340,7 +1335,7 @@ _PyXI_FreeNamespace(_PyXI_namespace *ns)
         return;
     }
 
-    if (interpid == PyInterpreterState_GetID(_PyInterpreterState_GET())) {
+    if (interpid == PyInterpreterState_GetID(PyInterpreterState_Get())) {
         _sharedns_free(ns);
     }
     else {
@@ -1539,7 +1534,7 @@ _propagate_not_shareable_error(_PyXI_session *session)
     if (session == NULL) {
         return;
     }
-    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyInterpreterState *interp = PyInterpreterState_Get();
     if (PyErr_ExceptionMatches(_get_not_shareable_error_type(interp))) {
         // We want to propagate the exception directly.
         session->_error_override = _PyXI_ERR_NOT_SHAREABLE;
