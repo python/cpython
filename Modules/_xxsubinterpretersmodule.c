@@ -19,6 +19,8 @@
 #include "interpreteridobject.h"
 #include "marshal.h"              // PyMarshal_ReadObjectFromString()
 
+#include "_interpreters_common.h"
+
 
 #define MODULE_NAME "_xxsubinterpreters"
 
@@ -267,8 +269,7 @@ register_memoryview_xid(PyObject *mod, PyTypeObject **p_state)
     *p_state = cls;
 
     // Register XID for the builtin memoryview type.
-    if (_PyCrossInterpreterData_RegisterClass(
-                &PyMemoryView_Type, _memoryview_shared) < 0) {
+    if (ensure_xid_class(&PyMemoryView_Type, _memoryview_shared) < 0) {
         return -1;
     }
     // We don't ever bother un-registering memoryview.

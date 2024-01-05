@@ -17,6 +17,8 @@
 #include <sched.h>          // sched_yield()
 #endif
 
+#include "_interpreters_common.h"
+
 
 /*
 This module has the following process-global state:
@@ -101,7 +103,7 @@ static int
 register_xid_class(PyTypeObject *cls, crossinterpdatafunc shared,
                    struct xid_class_registry *classes)
 {
-    int res = _PyCrossInterpreterData_RegisterClass(cls, shared);
+    int res = ensure_xid_class(cls, shared);
     if (res == 0) {
         assert(classes->count < MAX_XID_CLASSES);
         // The class has refs elsewhere, so we need to incref here.

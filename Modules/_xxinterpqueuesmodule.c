@@ -8,6 +8,8 @@
 #include "Python.h"
 #include "pycore_crossinterp.h"   // struct _xid
 
+#include "_interpreters_common.h"
+
 
 #define MODULE_NAME "_xxinterpqueues"
 
@@ -1062,7 +1064,7 @@ set_external_queue_type(PyObject *module, PyTypeObject *queue_type)
     }
     state->queue_type = (PyTypeObject *)Py_NewRef(queue_type);
 
-    if (_PyCrossInterpreterData_RegisterClass(queue_type, _queueobj_shared) < 0) {
+    if (ensure_xid_class(queue_type, _queueobj_shared) < 0) {
         return -1;
     }
 
