@@ -17425,13 +17425,7 @@ posixmodule_exec(PyObject *m)
     }
 
 #ifdef MS_WINDOWS
-    PyObject *v = Py_XNewRef(windows_namespace());
-    if (v == NULL) {
-        return -1;
-    }
-    int rc = PyModule_AddObjectRef(m, "windows", v);
-    Py_DECREF(v);
-    if (rc < 0) {
+    if (PyModule_Add(m, "windows", windows_namespace()) < 0) {
         return -1;
     }
 #endif
