@@ -125,7 +125,7 @@ Module API
 
    *prefix* specifies the directory prefix to use when installing.
 
-   .. versionchanged:: 3.13
+   .. versionadded:: 3.13
 
       The *prefix* parameter.
 
