@@ -1051,6 +1051,7 @@ done:
 }
 
 /*[clinic input]
+@critical_section
 _collections.deque.rotate
 
     deque: dequeobject
@@ -1062,7 +1063,7 @@ Rotate the deque n steps to the right.  If n is negative, rotates left.
 
 static PyObject *
 _collections_deque_rotate_impl(dequeobject *deque, Py_ssize_t n)
-/*[clinic end generated code: output=5a9df290cc0d3adf input=0d7f4900fe866917]*/
+/*[clinic end generated code: output=5a9df290cc0d3adf input=0b3d3912d59abb9f]*/
 {
     if (!_deque_rotate(deque, n))
         Py_RETURN_NONE;

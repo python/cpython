@@ -215,7 +215,9 @@ _collections_deque_rotate(dequeobject *deque, PyObject *const *args, Py_ssize_t 
         n = ival;
     }
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(deque);
     return_value = _collections_deque_rotate_impl(deque, n);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -567,4 +569,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=523c22da39db3275 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=048f7e8a64c412ea input=a9049054013a1b77]*/
