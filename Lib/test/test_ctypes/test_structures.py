@@ -192,7 +192,6 @@ class StructureTestCase(unittest.TestCase):
         self.assertEqual(sizeof(X), 10)
         self.assertEqual(X.b.offset, 2)
 
-        import struct
         longlong_size = struct.calcsize("q")
         longlong_align = struct.calcsize("bq") - longlong_size
 
