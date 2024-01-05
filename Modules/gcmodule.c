@@ -231,12 +231,17 @@ referentsvisit(PyObject *obj, void *arg)
     return PyList_Append(list, obj) < 0;
 }
 
-PyDoc_STRVAR(gc_get_referents__doc__,
-"get_referents(*objs) -> list\n\
-Return the list of objects that are directly referred to by objs.");
+/*[clinic input]
+gc.get_referents
+
+    *objs as args: object
+
+Return the list of objects that are directly referred to by 'objs'.
+[clinic start generated code]*/
 
 static PyObject *
-gc_get_referents(PyObject *self, PyObject *args)
+gc_get_referents_impl(PyObject *module, PyObject *args)
+/*[clinic end generated code: output=d47dc02cefd06fe8 input=b3ceab0c34038cbf]*/
 {
     Py_ssize_t i;
     if (PySys_Audit("gc.get_referents", "(O)", args) < 0) {
@@ -479,8 +484,7 @@ static PyMethodDef GcMethods[] = {
     GC_IS_TRACKED_METHODDEF
     GC_IS_FINALIZED_METHODDEF
     GC_GET_REFERRERS_METHODDEF
-    {"get_referents",  gc_get_referents, METH_VARARGS,
-        gc_get_referents__doc__},
+    GC_GET_REFERENTS_METHODDEF
     GC_FREEZE_METHODDEF
     GC_UNFREEZE_METHODDEF
     GC_GET_FREEZE_COUNT_METHODDEF
