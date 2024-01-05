@@ -16,6 +16,7 @@ from test.support import _4G, bigmemtest, requires_subprocess
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
 gzip = import_helper.import_module('gzip')
+zlib = import_helper.import_module('zlib')
 
 data1 = b"""  int length=DEFAULTALLOC, err = Z_OK;
   PyObject *RetVal;
@@ -615,6 +616,66 @@ class TestGzip(BaseTest):
         with gzip.GzipFile(fileobj=io.BytesIO(), mode='w') as f:
             self.assertEqual(f.write(q), LENGTH)
             self.assertEqual(f.tell(), LENGTH)
+
+    def test_flush_flushes_compressor(self):
+        # See issue GH-105808.
+        b = io.BytesIO()
+        message = b"important message here."
+        with gzip.GzipFile(fileobj=b, mode='w') as f:
+            f.write(message)
+            f.flush()
+            partial_data = b.getvalue()
+        full_data = b.getvalue()
+        self.assertEqual(gzip.decompress(full_data), message)
+        # The partial data should contain the gzip header and the complete
+        # message, but not the end-of-stream markers (so we can't just
+        # decompress it directly).
+        with self.assertRaises(EOFError):
+            gzip.decompress(partial_data)
+        d = zlib.decompressobj(wbits=-zlib.MAX_WBITS)
+        f = io.BytesIO(partial_data)
+        gzip._read_gzip_header(f)
+        read_message = d.decompress(f.read())
+        self.assertEqual(read_message, message)
+
+    def test_flush_modes(self):
+        # Make sure the argument to flush is properly passed to the
+        # zlib.compressobj; see issue GH-105808.
+        class FakeCompressor:
+            def __init__(self):
+                self.modes = []
+            def compress(self, data):
+                return b''
+            def flush(self, mode=-1):
+                self.modes.append(mode)
+                return b''
+        b = io.BytesIO()
+        fc = FakeCompressor()
+        with gzip.GzipFile(fileobj=b, mode='w') as f:
+            f.compress = fc
+            f.flush()
+            f.flush(50)
+            f.flush(zlib_mode=100)
+        # The implicit close will also flush the compressor.
+        expected_modes = [
+            zlib.Z_SYNC_FLUSH,
+            50,
+            100,
+            -1,
+        ]
+        self.assertEqual(fc.modes, expected_modes)
+
+    def test_write_seek_write(self):
+        # Make sure that offset is up-to-date before seeking
+        # See issue GH-108111
+        b = io.BytesIO()
+        message = b"important message here."
+        with gzip.GzipFile(fileobj=b, mode='w') as f:
+            f.write(message)
+            f.seek(len(message))
+            f.write(message)
+        data = b.getvalue()
+        self.assertEqual(gzip.decompress(data), message * 2)
 
 
 class TestOpen(BaseTest):

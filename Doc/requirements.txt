@@ -1,15 +1,22 @@
 # Requirements to build the Python documentation
+#
+# Note that when updating this file, you will likely also have to update
+# the Doc/constraints.txt file.
 
 # Sphinx version is pinned so that new versions that introduce new warnings
 # won't suddenly cause build failures. Updating the version is fine as long
 # as no warnings are raised by doing so.
-sphinx==4.5.0
+# PR #104777: Sphinx 6.2 no longer uses imghdr, removed in Python 3.13.
+sphinx==6.2.1
 
 blurb
 
-sphinx-lint==0.6.7
-sphinxext-opengraph>=0.7.1
+sphinx-autobuild
+sphinxext-opengraph==0.7.5
+sphinx-notfound-page==1.0.0
 
 # The theme used by the documentation is stored separately, so we need
 # to install that as well.
-python-docs-theme>=2022.1
+python-docs-theme>=2023.3.1,!=2023.7
+
+-c constraints.txt

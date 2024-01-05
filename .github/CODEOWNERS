@@ -5,10 +5,17 @@
 # https://git-scm.com/docs/gitignore#_pattern_format
 
 # GitHub
-.github/**                    @ezio-melotti
+.github/**                    @ezio-melotti @hugovk
+
+# pre-commit
+.pre-commit-config.yaml       @hugovk @AlexWaygood
+.ruff.toml                    @hugovk @AlexWaygood
+
+# Build system
+configure*                    @erlend-aasland @corona10
 
 # asyncio
-**/*asyncio*                  @1st1 @asvetlov @gvanrossum @kumaraditya303
+**/*asyncio*                  @1st1 @asvetlov @gvanrossum @kumaraditya303 @willingc
 
 # Core
 **/*context*                  @1st1
@@ -16,15 +23,24 @@
 **/*hamt*                     @1st1
 Objects/set*                  @rhettinger
 Objects/dict*                 @methane @markshannon
+Objects/typevarobject.c       @JelleZijlstra
 Objects/type*                 @markshannon
 Objects/codeobject.c          @markshannon
 Objects/frameobject.c         @markshannon
 Objects/call.c                @markshannon
-Python/ceval.c                @markshannon
+Python/ceval*.c               @markshannon @gvanrossum
+Python/ceval*.h               @markshannon @gvanrossum
 Python/compile.c              @markshannon @iritkatriel
+Python/assemble.c             @markshannon @iritkatriel
+Python/flowgraph.c            @markshannon @iritkatriel
 Python/ast_opt.c              @isidentical
+Python/bytecodes.c            @markshannon @gvanrossum
+Python/optimizer*.c           @markshannon @gvanrossum
 Lib/test/test_patma.py        @brandtbucher
 Lib/test/test_peepholer.py    @brandtbucher
+Lib/test/test_type_*.py       @JelleZijlstra
+Lib/test/test_capi/test_misc.py  @markshannon @gvanrossum
+Tools/c-analyzer/             @ericsnowcurrently
 
 # Exceptions
 Lib/traceback.py              @iritkatriel
@@ -58,12 +74,9 @@ Python/traceback.c            @iritkatriel
 /Tools/build/parse_html5_entities.py   @ezio-melotti
 
 # Import (including importlib).
-# Ignoring importlib.h so as to not get flagged on
-# all pull requests that change the emitted
-# bytecode.
-**/*import*.c                 @brettcannon @encukou @ericsnowcurrently @ncoghlan @warsaw
-**/*import*.py                @brettcannon @encukou @ericsnowcurrently @ncoghlan @warsaw
-**/*importlib/resources/*      @jaraco @warsaw @brettcannon @FFY00
+**/*import*                   @brettcannon @ericsnowcurrently @ncoghlan @warsaw
+/Python/import.c              @kumaraditya303
+**/*importlib/resources/*      @jaraco @warsaw @FFY00
 **/importlib/metadata/*       @jaraco @warsaw
 
 # Dates and times
@@ -73,7 +86,7 @@ Doc/library/time.rst          @pganssle @abalkin
 Lib/test/test_time.py         @pganssle @abalkin
 Modules/timemodule.c          @pganssle @abalkin
 Python/pytime.c               @pganssle @abalkin
-Include/pytime.h              @pganssle @abalkin
+Include/internal/pycore_time.h  @pganssle @abalkin
 
 # Email and related
 **/*mail*                     @python/email-team
@@ -91,6 +104,11 @@ Include/pytime.h              @pganssle @abalkin
 /Tools/peg_generator/         @pablogsal @lysnikolaou
 /Lib/test/test_peg_generator/ @pablogsal @lysnikolaou
 /Grammar/python.gram          @pablogsal @lysnikolaou
+/Lib/tokenize.py              @pablogsal @lysnikolaou
+/Lib/test/test_tokenize.py    @pablogsal @lysnikolaou
+
+# Code generator
+/Tools/cases_generator/        @gvanrossum
 
 # AST
 Python/ast.c                  @isidentical
@@ -109,6 +127,12 @@ Lib/ast.py                    @isidentical
 /Lib/subprocess.py            @gpshead
 /Lib/test/test_subprocess.py  @gpshead
 /Modules/*subprocess*         @gpshead
+
+# Limited C API & stable ABI
+Tools/build/stable_abi.py     @encukou
+Misc/stable_abi.toml          @encukou
+Doc/data/*.abi                @encukou
+Doc/c-api/stable.rst          @encukou
 
 # Windows
 /PC/                          @python/windows-team
@@ -133,9 +157,11 @@ Lib/ast.py                    @isidentical
 
 **/*dataclasses*              @ericvsmith
 
+**/*ensurepip*                @pfmoore @pradyunsg
+
 **/*idlelib*                  @terryjreedy
 
-**/*typing*                   @gvanrossum @Fidget-Spinner @JelleZijlstra @AlexWaygood
+**/*typing*                   @JelleZijlstra @AlexWaygood
 
 **/*ftplib                    @giampaolo
 **/*shutil                    @giampaolo
@@ -144,16 +170,35 @@ Lib/ast.py                    @isidentical
 **/*cgi*                      @ethanfurman
 **/*tarfile*                  @ethanfurman
 
-**/*tomllib*                  @encukou
+**/*tomllib*                  @encukou @hauntsaninja
 
 **/*sysconfig*                @FFY00
+
+**/*cjkcodecs*                @corona10
 
 # macOS
 /Mac/                         @python/macos-team
 **/*osx_support*              @python/macos-team
 
 # pathlib
-**/*pathlib*                  @brettcannon
+**/*pathlib*                  @barneygale
 
 # zipfile.Path
-**/*zipfile/*_path.py         @jaraco
+**/*zipfile/_path/*           @jaraco
+
+# Argument Clinic
+/Tools/clinic/**              @erlend-aasland @AlexWaygood
+/Lib/test/test_clinic.py      @erlend-aasland @AlexWaygood
+Doc/howto/clinic.rst          @erlend-aasland
+
+# Subinterpreters
+Lib/test/support/interpreters/  @ericsnowcurrently
+Modules/_xx*interp*module.c   @ericsnowcurrently
+Lib/test/test_interpreters/   @ericsnowcurrently
+
+# WebAssembly
+/Tools/wasm/                  @brettcannon
+
+# SBOM
+/Misc/sbom.spdx.json          @sethmlarson
+/Tools/build/generate_sbom.py @sethmlarson

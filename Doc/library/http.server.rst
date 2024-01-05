@@ -65,10 +65,10 @@ provides three different variants:
 
    The handler will parse the request and the headers, then call a method
    specific to the request type. The method name is constructed from the
-   request. For example, for the request method ``SPAM``, the :meth:`do_SPAM`
+   request. For example, for the request method ``SPAM``, the :meth:`!do_SPAM`
    method will be called with no arguments. All of the relevant information is
    stored in instance variables of the handler.  Subclasses should not need to
-   override or extend the :meth:`__init__` method.
+   override or extend the :meth:`!__init__` method.
 
    :class:`BaseHTTPRequestHandler` has the following instance variables:
 
@@ -187,13 +187,13 @@ provides three different variants:
 
       Calls :meth:`handle_one_request` once (or, if persistent connections are
       enabled, multiple times) to handle incoming HTTP requests. You should
-      never need to override it; instead, implement appropriate :meth:`do_\*`
+      never need to override it; instead, implement appropriate :meth:`!do_\*`
       methods.
 
    .. method:: handle_one_request()
 
       This method will parse and dispatch the request to the appropriate
-      :meth:`do_\*` method.  You should never need to override it.
+      :meth:`!do_\*` method.  You should never need to override it.
 
    .. method:: handle_expect_100()
 
@@ -217,7 +217,7 @@ provides three different variants:
       attribute holds the default values for *message* and *explain* that
       will be used if no value is provided; for unknown codes the default value
       for both is the string ``???``. The body will be empty if the method is
-      HEAD or the response code is one of the following: ``1xx``,
+      HEAD or the response code is one of the following: :samp:`1{xx}`,
       ``204 No Content``, ``205 Reset Content``, ``304 Not Modified``.
 
       .. versionchanged:: 3.4
@@ -413,6 +413,11 @@ the current directory::
        print("serving at port", PORT)
        httpd.serve_forever()
 
+
+:class:`SimpleHTTPRequestHandler` can also be subclassed to enhance behavior,
+such as using different index file names by overriding the class attribute
+:attr:`index_pages`.
+
 .. _http-server-cli:
 
 :mod:`http.server` can also be invoked directly using the :option:`-m`
@@ -497,10 +502,23 @@ following command runs an HTTP/1.1 conformant server::
    Note that CGI scripts will be run with UID of user nobody, for security
    reasons.  Problems with the CGI script will be translated to error 403.
 
+   .. deprecated-removed:: 3.13 3.15
+
+      :class:`CGIHTTPRequestHandler` is being removed in 3.15.  CGI has not
+      been considered a good way to do things for well over a decade. This code
+      has been unmaintained for a while now and sees very little practical use.
+      Retaining it could lead to further :ref:`security considerations
+      <http.server-security>`.
+
 :class:`CGIHTTPRequestHandler` can be enabled in the command line by passing
 the ``--cgi`` option::
 
         python -m http.server --cgi
+
+.. deprecated-removed:: 3.13 3.15
+
+   :mod:`http.server` command line ``--cgi`` support is being removed
+   because :class:`CGIHTTPRequestHandler` is being removed.
 
 .. _http.server-security:
 
