@@ -1468,7 +1468,7 @@ _collections_deque_remove_impl(dequeobject *deque, PyObject *value)
 }
 
 static int
-deque_ass_item(dequeobject *deque, Py_ssize_t i, PyObject *v)
+deque_ass_item_locked(dequeobject *deque, Py_ssize_t i, PyObject *v)
 {
     block *b;
     Py_ssize_t n, len=Py_SIZE(deque), halflen=(len+1)>>1, index=i;
@@ -1497,6 +1497,15 @@ deque_ass_item(dequeobject *deque, Py_ssize_t i, PyObject *v)
     }
     Py_SETREF(b->data[i], Py_NewRef(v));
     return 0;
+}
+
+static int
+deque_ass_item(dequeobject *deque, Py_ssize_t i, PyObject *v)
+{
+    Py_BEGIN_CRITICAL_SECTION(deque);
+    int result = deque_ass_item_locked(deque, i, v);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static void
