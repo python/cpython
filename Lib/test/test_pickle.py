@@ -542,7 +542,8 @@ class CompatPickleTests(unittest.TestCase):
                            RecursionError,
                            EncodingWarning,
                            BaseExceptionGroup,
-                           ExceptionGroup):
+                           ExceptionGroup,
+                           IncompleteInputError):
                     continue
                 if exc is not OSError and issubclass(exc, OSError):
                     self.assertEqual(reverse_mapping('builtins', name),
