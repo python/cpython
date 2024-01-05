@@ -1315,8 +1315,8 @@ changes, or look through the Subversion logs for all the details.
   giving the source address that will be used for the connection.
   (Contributed by Eldon Ziegler; :issue:`3972`.)
 
-* The :mod:`ihooks` module now supports relative imports.  Note that
-  :mod:`ihooks` is an older module for customizing imports,
+* The :mod:`!ihooks` module now supports relative imports.  Note that
+  :mod:`!ihooks` is an older module for customizing imports,
   superseded by the :mod:`imputil` module added in Python 2.0.
   (Relative import support added by Neil Schemenauer.)
 
