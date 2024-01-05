@@ -40,10 +40,10 @@ new feature.
 PEP 218: A Standard Set Datatype
 ================================
 
-The new :mod:`sets` module contains an implementation of a set datatype.  The
+The new :mod:`!sets` module contains an implementation of a set datatype.  The
 :class:`Set` class is for mutable sets, sets that can have members added and
-removed.  The :class:`ImmutableSet` class is for sets that can't be modified,
-and instances of :class:`ImmutableSet` can therefore be used as dictionary keys.
+removed.  The :class:`!ImmutableSet` class is for sets that can't be modified,
+and instances of :class:`!ImmutableSet` can therefore be used as dictionary keys.
 Sets are built on top of dictionaries, so the elements within a set must be
 hashable.
 
@@ -63,10 +63,10 @@ Here's a simple example::
    Set([1, 2, 5])
    >>>
 
-The union and intersection of sets can be computed with the :meth:`union` and
-:meth:`intersection` methods; an alternative notation uses the bitwise operators
+The union and intersection of sets can be computed with the :meth:`~frozenset.union` and
+:meth:`~frozenset.intersection` methods; an alternative notation uses the bitwise operators
 ``&`` and ``|``. Mutable sets also have in-place versions of these methods,
-:meth:`union_update` and :meth:`intersection_update`. ::
+:meth:`!union_update` and :meth:`~frozenset.intersection_update`. ::
 
    >>> S1 = sets.Set([1,2,3])
    >>> S2 = sets.Set([4,5,6])
@@ -87,7 +87,7 @@ It's also possible to take the symmetric difference of two sets.  This is the
 set of all elements in the union that aren't in the intersection.  Another way
 of putting it is that the symmetric difference contains all elements that are in
 exactly one set.  Again, there's an alternative notation (``^``), and an
-in-place version with the ungainly name :meth:`symmetric_difference_update`. ::
+in-place version with the ungainly name :meth:`~frozenset.symmetric_difference_update`. ::
 
    >>> S1 = sets.Set([1,2,3,4])
    >>> S2 = sets.Set([3,4,5,6])
@@ -97,7 +97,7 @@ in-place version with the ungainly name :meth:`symmetric_difference_update`. ::
    Set([1, 2, 5, 6])
    >>>
 
-There are also :meth:`issubset` and :meth:`issuperset` methods for checking
+There are also :meth:`!issubset` and :meth:`!issuperset` methods for checking
 whether one set is a subset or superset of another::
 
    >>> S1 = sets.Set([1,2,3])
@@ -166,7 +166,7 @@ statement isn't allowed inside the :keyword:`try` block of a
 :keyword:`!try`...\ :keyword:`!finally` statement; read :pep:`255` for a full
 explanation of the interaction between :keyword:`!yield` and exceptions.)
 
-Here's a sample usage of the :func:`generate_ints` generator::
+Here's a sample usage of the :func:`!generate_ints` generator::
 
    >>> gen = generate_ints(3)
    >>> gen
@@ -227,7 +227,7 @@ like::
    sentence := "Store it in the neighboring harbor"
    if (i := find("or", sentence)) > 5 then write(i)
 
-In Icon the :func:`find` function returns the indexes at which the substring
+In Icon the :func:`!find` function returns the indexes at which the substring
 "or" is found: 3, 23, 33.  In the :keyword:`if` statement, ``i`` is first
 assigned a value of 3, but 3 is less than 5, so the comparison fails, and Icon
 retries it with the second value of 23.  23 is greater than 5, so the comparison
@@ -345,7 +345,7 @@ Python now allows using arbitrary Unicode strings (within the limitations of the
 file system) for all functions that expect file names, most notably the
 :func:`open` built-in function. If a Unicode string is passed to
 :func:`os.listdir`, Python now returns a list of Unicode strings.  A new
-function, :func:`os.getcwdu`, returns the current directory as a Unicode string.
+function, :func:`!os.getcwdu`, returns the current directory as a Unicode string.
 
 Byte strings still work as file names, and on Windows Python will transparently
 convert them to Unicode using the ``mbcs`` encoding.
@@ -386,10 +386,10 @@ one followed by the platform on which Python is running. Opening a file with
 the mode ``'U'`` or ``'rU'`` will open a file for reading in :term:`universal
 newlines` mode.  All three line ending conventions will be translated to a
 ``'\n'`` in the strings returned by the various file methods such as
-:meth:`read` and :meth:`readline`.
+:meth:`!read` and :meth:`!readline`.
 
 Universal newline support is also used when importing modules and when executing
-a file with the :func:`execfile` function.  This means that Python modules can
+a file with the :func:`!execfile` function.  This means that Python modules can
 be shared between all three operating systems without needing to convert the
 line-endings.
 
@@ -450,16 +450,16 @@ records to standard error or to a file or socket, send them to the system log,
 or even e-mail them to a particular address; of course, it's also possible to
 write your own handler classes.
 
-The :class:`Logger` class is the primary class. Most application code will deal
-with one or more :class:`Logger` objects, each one used by a particular
-subsystem of the application. Each :class:`Logger` is identified by a name, and
+The :class:`~logging.Logger` class is the primary class. Most application code will deal
+with one or more :class:`~logging.Logger` objects, each one used by a particular
+subsystem of the application. Each :class:`~logging.Logger` is identified by a name, and
 names are organized into a hierarchy using ``.``  as the component separator.
-For example, you might have :class:`Logger` instances named ``server``,
+For example, you might have :class:`~logging.Logger` instances named ``server``,
 ``server.auth`` and ``server.network``.  The latter two instances are below
 ``server`` in the hierarchy.  This means that if you turn up the verbosity for
 ``server`` or direct ``server`` messages to a different handler, the changes
 will also apply to records logged to ``server.auth`` and ``server.network``.
-There's also a root :class:`Logger` that's the parent of all other loggers.
+There's also a root :class:`~logging.Logger` that's the parent of all other loggers.
 
 For simple uses, the :mod:`logging` package contains some convenience functions
 that always use the root log::
@@ -480,14 +480,14 @@ This produces the following output::
 
 In the default configuration, informational and debugging messages are
 suppressed and the output is sent to standard error.  You can enable the display
-of informational and debugging messages by calling the :meth:`setLevel` method
+of informational and debugging messages by calling the :meth:`~logging.Logger.setLevel` method
 on the root logger.
 
-Notice the :func:`warning` call's use of string formatting operators; all of the
+Notice the :func:`~logging.warning` call's use of string formatting operators; all of the
 functions for logging messages take the arguments ``(msg, arg1, arg2, ...)`` and
 log the string resulting from ``msg % (arg1, arg2, ...)``.
 
-There's also an :func:`exception` function that records the most recent
+There's also an :func:`~logging.exception` function that records the most recent
 traceback.  Any of the other functions will also record the traceback if you
 specify a true value for the keyword argument *exc_info*. ::
 
@@ -517,16 +517,16 @@ it if it doesn't exist yet. ``getLogger(None)`` returns the root logger. ::
     ...
 
 Log records are usually propagated up the hierarchy, so a message logged to
-``server.auth`` is also seen by ``server`` and ``root``, but a :class:`Logger`
-can prevent this by setting its :attr:`propagate` attribute to :const:`False`.
+``server.auth`` is also seen by ``server`` and ``root``, but a :class:`~logging.Logger`
+can prevent this by setting its :attr:`~logging.Logger.propagate` attribute to :const:`False`.
 
 There are more classes provided by the :mod:`logging` package that can be
-customized.  When a :class:`Logger` instance is told to log a message, it
-creates a :class:`LogRecord` instance that is sent to any number of different
-:class:`Handler` instances.  Loggers and handlers can also have an attached list
-of filters, and each filter can cause the :class:`LogRecord` to be ignored or
+customized.  When a :class:`~logging.Logger` instance is told to log a message, it
+creates a :class:`~logging.LogRecord` instance that is sent to any number of different
+:class:`~logging.Handler` instances.  Loggers and handlers can also have an attached list
+of filters, and each filter can cause the :class:`~logging.LogRecord` to be ignored or
 can modify the record before passing it along.  When they're finally output,
-:class:`LogRecord` instances are converted to text by a :class:`Formatter`
+:class:`~logging.LogRecord` instances are converted to text by a :class:`~logging.Formatter`
 class.  All of these classes can be replaced by your own specially written
 classes.
 
@@ -550,7 +550,7 @@ PEP 285: A Boolean Type
 =======================
 
 A Boolean type was added to Python 2.3.  Two new constants were added to the
-:mod:`__builtin__` module, :const:`True` and :const:`False`.  (:const:`True` and
+:mod:`!__builtin__` module, :const:`True` and :const:`False`.  (:const:`True` and
 :const:`False` constants were added to the built-ins in Python 2.2.1, but the
 2.2.1 versions are simply set to integer values of 1 and 0 and aren't a
 different type.)
@@ -662,7 +662,7 @@ a central catalog server.  The resulting catalog is available from
 https://pypi.org.
 
 To make the catalog a bit more useful, a new optional *classifiers* keyword
-argument has been added to the Distutils :func:`setup` function.  A list of
+argument has been added to the Distutils :func:`!setup` function.  A list of
 `Trove <http://catb.org/~esr/trove/>`_-style strings can be supplied to help
 classify the software.
 
@@ -703,14 +703,14 @@ PEP 302: New Import Hooks
 =========================
 
 While it's been possible to write custom import hooks ever since the
-:mod:`ihooks` module was introduced in Python 1.3, no one has ever been really
+:mod:`!ihooks` module was introduced in Python 1.3, no one has ever been really
 happy with it because writing new import hooks is difficult and messy.  There
-have been various proposed alternatives such as the :mod:`imputil` and :mod:`iu`
+have been various proposed alternatives such as the :mod:`!imputil` and :mod:`!iu`
 modules, but none of them has ever gained much acceptance, and none of them were
 easily usable from C code.
 
 :pep:`302` borrows ideas from its predecessors, especially from Gordon
-McMillan's :mod:`iu` module.  Three new items  are added to the :mod:`sys`
+McMillan's :mod:`!iu` module.  Three new items  are added to the :mod:`sys`
 module:
 
 * ``sys.path_hooks`` is a list of callable objects; most  often they'll be
@@ -790,7 +790,7 @@ package is much simpler::
    for line in reader:
        print line
 
-The :func:`reader` function takes a number of different options. The field
+The :func:`~csv.reader` function takes a number of different options. The field
 separator isn't limited to the comma and can be changed to any character, and so
 can the quoting and line-ending characters.
 
@@ -814,7 +814,7 @@ of tuples or lists, quoting strings that contain the delimiter.
 PEP 307: Pickle Enhancements
 ============================
 
-The :mod:`pickle` and :mod:`cPickle` modules received some attention during the
+The :mod:`pickle` and :mod:`!cPickle` modules received some attention during the
 2.3 development cycle.  In 2.2, new-style classes could be pickled without
 difficulty, but they weren't pickled very compactly; :pep:`307` quotes a trivial
 example where a new-style class results in a pickled string three times longer
@@ -829,13 +829,13 @@ fanciest protocol available.
 
 Unpickling is no longer considered a safe operation.  2.2's :mod:`pickle`
 provided hooks for trying to prevent unsafe classes from being unpickled
-(specifically, a :attr:`__safe_for_unpickling__` attribute), but none of this
+(specifically, a :attr:`!__safe_for_unpickling__` attribute), but none of this
 code was ever audited and therefore it's all been ripped out in 2.3.  You should
 not unpickle untrusted data in any version of Python.
 
 To reduce the pickling overhead for new-style classes, a new interface for
 customizing pickling was added using three special methods:
-:meth:`__getstate__`, :meth:`__setstate__`, and :meth:`__getnewargs__`.  Consult
+:meth:`~object.__getstate__`, :meth:`~object.__setstate__`, and :meth:`~object.__getnewargs__`.  Consult
 :pep:`307` for the full semantics  of these methods.
 
 As a way to compress pickles yet further, it's now possible to use integer codes
@@ -939,7 +939,7 @@ Or use slice objects directly in subscripts::
 To simplify implementing sequences that support extended slicing, slice objects
 now have a method ``indices(length)`` which, given the length of a sequence,
 returns a ``(start, stop, step)`` tuple that can be passed directly to
-:func:`range`. :meth:`indices` handles omitted and out-of-bounds indices in a
+:func:`range`. :meth:`!indices` handles omitted and out-of-bounds indices in a
 manner consistent with regular slices (and this innocuous phrase hides a welter
 of confusing details!).  The method is intended to be used like this::
 
@@ -1042,7 +1042,7 @@ Here are all of the changes that Python 2.3 makes to the core Python language.
   execute any assertions.
 
 * Most type objects are now callable, so you can use them to create new objects
-  such as functions, classes, and modules.  (This means that the :mod:`new` module
+  such as functions, classes, and modules.  (This means that the :mod:`!new` module
   can be deprecated in a future Python version, because you can now use the type
   objects available in the :mod:`types` module.) For example, you can create a new
   module object with the following code:
@@ -1069,11 +1069,11 @@ Here are all of the changes that Python 2.3 makes to the core Python language.
 * Using ``None`` as a variable name will now result in a :exc:`SyntaxWarning`
   warning.  In a future version of Python, ``None`` may finally become a keyword.
 
-* The :meth:`xreadlines` method of file objects, introduced in Python 2.1, is no
+* The :meth:`!xreadlines` method of file objects, introduced in Python 2.1, is no
   longer necessary because files now behave as their own iterator.
-  :meth:`xreadlines` was originally introduced as a faster way to loop over all
+  :meth:`!xreadlines` was originally introduced as a faster way to loop over all
   the lines in a file, but now you can simply write ``for line in file_obj``.
-  File objects also have a new read-only :attr:`encoding` attribute that gives the
+  File objects also have a new read-only :attr:`!encoding` attribute that gives the
   encoding used by the file; Unicode strings written to the file will be
   automatically  converted to bytes using the given encoding.
 
@@ -1096,12 +1096,12 @@ Here are all of the changes that Python 2.3 makes to the core Python language.
   switching overhead.  Some multithreaded applications may suffer slower response
   time, but that's easily fixed by setting the limit back to a lower number using
   ``sys.setcheckinterval(N)``. The limit can be retrieved with the new
-  :func:`sys.getcheckinterval` function.
+  :func:`!sys.getcheckinterval` function.
 
 * One minor but far-reaching change is that the names of extension types defined
   by the modules included with Python now contain the module and a ``'.'`` in
   front of the type name.  For example, in Python 2.2, if you created a socket and
-  printed its :attr:`__class__`, you'd get this output::
+  printed its :attr:`!__class__`, you'd get this output::
 
      >>> s = socket.socket()
      >>> s.__class__
@@ -1138,9 +1138,9 @@ String Changes
      True
 
   Note that this doesn't tell you where the substring starts; if you need that
-  information, use the :meth:`find` string method.
+  information, use the :meth:`~str.find` string method.
 
-* The :meth:`strip`, :meth:`lstrip`, and :meth:`rstrip` string methods now have
+* The :meth:`~str.strip`, :meth:`~str.lstrip`, and :meth:`~str.rstrip` string methods now have
   an optional argument for specifying the characters to strip.  The default is
   still to remove all whitespace characters::
 
@@ -1156,13 +1156,13 @@ String Changes
 
   (Suggested by Simon Brunning and implemented by Walter Dörwald.)
 
-* The :meth:`startswith` and :meth:`endswith` string methods now accept negative
+* The :meth:`~str.startswith` and :meth:`~str.endswith` string methods now accept negative
   numbers for the *start* and *end* parameters.
 
-* Another new string method is :meth:`zfill`, originally a function in the
-  :mod:`string` module.  :meth:`zfill` pads a numeric string with zeros on the
+* Another new string method is :meth:`~str.zfill`, originally a function in the
+  :mod:`string` module.  :meth:`~str.zfill` pads a numeric string with zeros on the
   left until it's the specified width. Note that the ``%`` operator is still more
-  flexible and powerful than :meth:`zfill`. ::
+  flexible and powerful than :meth:`~str.zfill`. ::
 
      >>> '45'.zfill(4)
      '0045'
@@ -1173,10 +1173,10 @@ String Changes
 
   (Contributed by Walter Dörwald.)
 
-* A new type object, :class:`basestring`, has been added. Both 8-bit strings and
+* A new type object, :class:`!basestring`, has been added. Both 8-bit strings and
   Unicode strings inherit from this type, so ``isinstance(obj, basestring)`` will
   return :const:`True` for either kind of string.  It's a completely abstract
-  type, so you can't create :class:`basestring` instances.
+  type, so you can't create :class:`!basestring` instances.
 
 * Interned strings are no longer immortal and will now be garbage-collected in
   the usual way when the only reference to them is from the internal dictionary of
@@ -1191,7 +1191,7 @@ Optimizations
 * The creation of new-style class instances has been made much faster; they're
   now faster than classic classes!
 
-* The :meth:`sort` method of list objects has been extensively rewritten by Tim
+* The :meth:`~list.sort` method of list objects has been extensively rewritten by Tim
   Peters, and the implementation is significantly faster.
 
 * Multiplication of large long integers is now much faster thanks to an
@@ -1203,7 +1203,7 @@ Optimizations
   increase, depending on your compiler's idiosyncrasies. See section
   :ref:`23section-other` for a longer explanation. (Removed by Michael Hudson.)
 
-* :func:`xrange` objects now have their own iterator, making ``for i in
+* :func:`!xrange` objects now have their own iterator, making ``for i in
   xrange(n)`` slightly faster than ``for i in range(n)``.  (Patch by Raymond
   Hettinger.)
 
@@ -1230,21 +1230,21 @@ complete list of changes, or look through the CVS logs for all the details.
   operator to add another array's contents, and the ``*=`` assignment operator to
   repeat an array. (Contributed by Jason Orendorff.)
 
-* The :mod:`bsddb` module has been replaced by version 4.1.6 of the `PyBSDDB
+* The :mod:`!bsddb` module has been replaced by version 4.1.6 of the `PyBSDDB
   <https://pybsddb.sourceforge.net>`_ package, providing a more complete interface
   to the transactional features of the BerkeleyDB library.
 
-  The old version of the module has been renamed to  :mod:`bsddb185` and is no
+  The old version of the module has been renamed to  :mod:`!bsddb185` and is no
   longer built automatically; you'll  have to edit :file:`Modules/Setup` to enable
-  it.  Note that the new :mod:`bsddb` package is intended to be compatible with
+  it.  Note that the new :mod:`!bsddb` package is intended to be compatible with
   the  old module, so be sure to file bugs if you discover any incompatibilities.
   When upgrading to Python 2.3, if the new interpreter is compiled with a new
   version of  the underlying BerkeleyDB library, you will almost certainly have to
   convert your database files to the new version.  You can do this fairly easily
   with the new scripts :file:`db2pickle.py` and :file:`pickle2db.py` which you
   will find in the distribution's :file:`Tools/scripts` directory.  If you've
-  already been using the PyBSDDB package and importing it as :mod:`bsddb3`, you
-  will have to change your ``import`` statements to import it as :mod:`bsddb`.
+  already been using the PyBSDDB package and importing it as :mod:`!bsddb3`, you
+  will have to change your ``import`` statements to import it as :mod:`!bsddb`.
 
 * The new :mod:`bz2` module is an interface to the bz2 data compression library.
   bz2-compressed data is usually smaller than  corresponding
@@ -1253,11 +1253,11 @@ complete list of changes, or look through the CVS logs for all the details.
 * A set of standard date/time types has been added in the new :mod:`datetime`
   module.  See the following section for more details.
 
-* The Distutils :class:`Extension` class now supports an extra constructor
+* The Distutils :class:`!Extension` class now supports an extra constructor
   argument named *depends* for listing additional source files that an extension
   depends on.  This lets Distutils recompile the module if any of the dependency
   files are modified.  For example, if :file:`sampmodule.c` includes the header
-  file :file:`sample.h`, you would create the :class:`Extension` object like
+  file :file:`sample.h`, you would create the :class:`!Extension` object like
   this::
 
      ext = Extension("samp",
@@ -1268,21 +1268,21 @@ complete list of changes, or look through the CVS logs for all the details.
   (Contributed by Jeremy Hylton.)
 
 * Other minor changes to Distutils: it now checks for the :envvar:`CC`,
-  :envvar:`CFLAGS`, :envvar:`CPP`, :envvar:`LDFLAGS`, and :envvar:`CPPFLAGS`
+  :envvar:`CFLAGS`, :envvar:`!CPP`, :envvar:`LDFLAGS`, and :envvar:`CPPFLAGS`
   environment variables, using them to override the settings in Python's
   configuration (contributed by Robert Weber).
 
 * Previously the :mod:`doctest` module would only search the docstrings of
   public methods and functions for test cases, but it now also examines private
-  ones as well.  The :func:`DocTestSuite` function creates a
+  ones as well.  The :func:`~doctest.DocTestSuite` function creates a
   :class:`unittest.TestSuite` object from a set of :mod:`doctest` tests.
 
 * The new ``gc.get_referents(object)`` function returns a list of all the
   objects referenced by *object*.
 
-* The :mod:`getopt` module gained a new function, :func:`gnu_getopt`, that
-  supports the same arguments as the existing :func:`getopt` function but uses
-  GNU-style scanning mode. The existing :func:`getopt` stops processing options as
+* The :mod:`getopt` module gained a new function, :func:`~getopt.gnu_getopt`, that
+  supports the same arguments as the existing :func:`~getopt.getopt` function but uses
+  GNU-style scanning mode. The existing :func:`~getopt.getopt` stops processing options as
   soon as a non-option argument is encountered, but in GNU-style mode processing
   continues, meaning that options and arguments can be mixed.  For example::
 
@@ -1311,7 +1311,7 @@ complete list of changes, or look through the CVS logs for all the details.
   O(lg n).  (See https://xlinux.nist.gov/dads//HTML/priorityque.html for more
   information about the priority queue data structure.)
 
-  The :mod:`heapq` module provides :func:`heappush` and :func:`heappop` functions
+  The :mod:`heapq` module provides :func:`~heapq.heappush` and :func:`~heapq.heappop` functions
   for adding and removing items while maintaining the heap property on top of some
   other mutable Python sequence type.  Here's an example that uses a Python list::
 
@@ -1343,7 +1343,7 @@ complete list of changes, or look through the CVS logs for all the details.
 * The :mod:`itertools` contains a number of useful functions for use with
   iterators, inspired by various functions provided by the ML and Haskell
   languages.  For example, ``itertools.ifilter(predicate, iterator)`` returns all
-  elements in the iterator for which the function :func:`predicate` returns
+  elements in the iterator for which the function :func:`!predicate` returns
   :const:`True`, and ``itertools.repeat(obj, N)`` returns ``obj`` *N* times.
   There are a number of other functions in the module; see the package's reference
   documentation for details.
@@ -1356,21 +1356,21 @@ complete list of changes, or look through the CVS logs for all the details.
   was added to :func:`math.log` to make it easier to compute logarithms for bases
   other than ``e`` and ``10``.  (Contributed by Raymond Hettinger.)
 
-* Several new POSIX functions (:func:`getpgid`, :func:`killpg`, :func:`lchown`,
-  :func:`loadavg`, :func:`major`, :func:`makedev`, :func:`minor`, and
-  :func:`mknod`) were added to the :mod:`posix` module that underlies the
+* Several new POSIX functions (:func:`!getpgid`, :func:`!killpg`, :func:`!lchown`,
+  :func:`!loadavg`, :func:`!major`, :func:`!makedev`, :func:`!minor`, and
+  :func:`!mknod`) were added to the :mod:`posix` module that underlies the
   :mod:`os` module. (Contributed by Gustavo Niemeyer, Geert Jansen, and Denis S.
   Otkidach.)
 
-* In the :mod:`os` module, the :func:`\*stat` family of functions can now report
+* In the :mod:`os` module, the :func:`!\*stat` family of functions can now report
   fractions of a second in a timestamp.  Such time stamps are represented as
   floats, similar to the value returned by :func:`time.time`.
 
   During testing, it was found that some applications will break if time stamps
   are floats.  For compatibility, when using the tuple interface of the
-  :class:`stat_result` time stamps will be represented as integers. When using
+  :class:`~os.stat_result` time stamps will be represented as integers. When using
   named fields (a feature first introduced in Python 2.2), time stamps are still
-  represented as integers, unless :func:`os.stat_float_times` is invoked to enable
+  represented as integers, unless :func:`!os.stat_float_times` is invoked to enable
   float return values::
 
      >>> os.stat("/tmp").st_mtime
@@ -1391,7 +1391,7 @@ complete list of changes, or look through the CVS logs for all the details.
   automatically generate a usage message.  See the following section for  more
   details.
 
-* The old and never-documented :mod:`linuxaudiodev` module has been deprecated,
+* The old and never-documented :mod:`!linuxaudiodev` module has been deprecated,
   and a new version named :mod:`!ossaudiodev` has been added.  The module was
   renamed because the OSS sound drivers can be used on platforms other than Linux,
   and the interface has also been tidied and brought up to date in various ways.
@@ -1402,14 +1402,14 @@ complete list of changes, or look through the CVS logs for all the details.
   functions for getting the architecture, CPU type, the Windows OS version, and
   even the Linux distribution version. (Contributed by Marc-André Lemburg.)
 
-* The parser objects provided by the :mod:`pyexpat` module can now optionally
+* The parser objects provided by the :mod:`pyexpat <xml.parsers.expat>` module can now optionally
   buffer character data, resulting in fewer calls to your character data handler
   and therefore faster performance.  Setting the parser object's
-  :attr:`buffer_text` attribute to :const:`True` will enable buffering.
+  :attr:`~xml.parsers.expat.xmlparser.buffer_text` attribute to :const:`True` will enable buffering.
 
 * The ``sample(population, k)`` function was added to the :mod:`random`
-  module.  *population* is a sequence or :class:`xrange` object containing the
-  elements of a population, and :func:`sample` chooses *k* elements from the
+  module.  *population* is a sequence or :class:`!xrange` object containing the
+  elements of a population, and :func:`~random.sample` chooses *k* elements from the
   population without replacing chosen elements.  *k* can be any value up to
   ``len(population)``. For example::
 
@@ -1436,20 +1436,20 @@ complete list of changes, or look through the CVS logs for all the details.
   (All changes contributed by Raymond Hettinger.)
 
 * The :mod:`readline` module also gained a number of new functions:
-  :func:`get_history_item`, :func:`get_current_history_length`, and
-  :func:`redisplay`.
+  :func:`~readline.get_history_item`, :func:`~readline.get_current_history_length`, and
+  :func:`~readline.redisplay`.
 
-* The :mod:`rexec` and :mod:`Bastion` modules have been declared dead, and
+* The :mod:`!rexec` and :mod:`!Bastion` modules have been declared dead, and
   attempts to import them will fail with a :exc:`RuntimeError`.  New-style classes
   provide new ways to break out of the restricted execution environment provided
-  by :mod:`rexec`, and no one has interest in fixing them or time to do so.  If
-  you have applications using :mod:`rexec`, rewrite them to use something else.
+  by :mod:`!rexec`, and no one has interest in fixing them or time to do so.  If
+  you have applications using :mod:`!rexec`, rewrite them to use something else.
 
   (Sticking with Python 2.2 or 2.1 will not make your applications any safer
-  because there are known bugs in the :mod:`rexec` module in those versions.  To
-  repeat: if you're using :mod:`rexec`, stop using it immediately.)
+  because there are known bugs in the :mod:`!rexec` module in those versions.  To
+  repeat: if you're using :mod:`!rexec`, stop using it immediately.)
 
-* The :mod:`rotor` module has been deprecated because the  algorithm it uses for
+* The :mod:`!rotor` module has been deprecated because the  algorithm it uses for
   encryption is not believed to be secure.  If you need encryption, use one of the
   several AES Python modules that are available separately.
 
@@ -1474,9 +1474,9 @@ complete list of changes, or look through the CVS logs for all the details.
 * On Windows, the :mod:`socket` module now ships with Secure  Sockets Layer
   (SSL) support.
 
-* The value of the C :c:macro:`PYTHON_API_VERSION` macro is now exposed at the
+* The value of the C :c:macro:`!PYTHON_API_VERSION` macro is now exposed at the
   Python level as ``sys.api_version``.  The current exception can be cleared by
-  calling the new :func:`sys.exc_clear` function.
+  calling the new :func:`!sys.exc_clear` function.
 
 * The new :mod:`tarfile` module  allows reading from and writing to
   :program:`tar`\ -format archive files. (Contributed by Lars Gustäbel.)
@@ -1486,7 +1486,7 @@ complete list of changes, or look through the CVS logs for all the details.
   string and returns a list containing the text split into lines of no more than
   the chosen width.  The ``fill(text, width)`` function returns a single
   string, reformatted to fit into lines no longer than the chosen width. (As you
-  can guess, :func:`fill` is built on top of :func:`wrap`.  For example::
+  can guess, :func:`~textwrap.fill` is built on top of :func:`~textwrap.wrap`.  For example::
 
      >>> import textwrap
      >>> paragraph = "Not a whit, we defy augury: ... more text ..."
@@ -1503,15 +1503,15 @@ complete list of changes, or look through the CVS logs for all the details.
      it will come: the readiness is all.
      >>>
 
-  The module also contains a :class:`TextWrapper` class that actually implements
-  the text wrapping strategy.   Both the :class:`TextWrapper` class and the
-  :func:`wrap` and :func:`fill` functions support a number of additional keyword
+  The module also contains a :class:`~textwrap.TextWrapper` class that actually implements
+  the text wrapping strategy.   Both the :class:`~textwrap.TextWrapper` class and the
+  :func:`~textwrap.wrap` and :func:`~textwrap.fill` functions support a number of additional keyword
   arguments for fine-tuning the formatting; consult the module's documentation
   for details. (Contributed by Greg Ward.)
 
-* The :mod:`thread` and :mod:`threading` modules now have companion modules,
-  :mod:`dummy_thread` and :mod:`dummy_threading`, that provide a do-nothing
-  implementation of the :mod:`thread` module's interface for platforms where
+* The :mod:`!thread` and :mod:`threading` modules now have companion modules,
+  :mod:`!dummy_thread` and :mod:`!dummy_threading`, that provide a do-nothing
+  implementation of the :mod:`!thread` module's interface for platforms where
   threads are not supported.  The intention is to simplify thread-aware modules
   (ones that *don't* rely on threads to run) by putting the following code at the
   top::
@@ -1521,26 +1521,26 @@ complete list of changes, or look through the CVS logs for all the details.
      except ImportError:
          import dummy_threading as _threading
 
-  In this example, :mod:`_threading` is used as the module name to make it clear
+  In this example, :mod:`!_threading` is used as the module name to make it clear
   that the module being used is not necessarily the actual :mod:`threading`
-  module. Code can call functions and use classes in :mod:`_threading` whether or
+  module. Code can call functions and use classes in :mod:`!_threading` whether or
   not threads are supported, avoiding an :keyword:`if` statement and making the
   code slightly clearer.  This module will not magically make multithreaded code
   run without threads; code that waits for another thread to return or to do
   something will simply hang forever.
 
-* The :mod:`time` module's :func:`strptime` function has long been an annoyance
-  because it uses the platform C library's :func:`strptime` implementation, and
+* The :mod:`time` module's :func:`~time.strptime` function has long been an annoyance
+  because it uses the platform C library's :func:`~time.strptime` implementation, and
   different platforms sometimes have odd bugs.  Brett Cannon contributed a
   portable implementation that's written in pure Python and should behave
   identically on all platforms.
 
 * The new :mod:`timeit` module helps measure how long snippets of Python code
   take to execute.  The :file:`timeit.py` file can be run directly from the
-  command line, or the module's :class:`Timer` class can be imported and used
+  command line, or the module's :class:`~timeit.Timer` class can be imported and used
   directly.  Here's a short example that figures out whether it's faster to
   convert an 8-bit string to Unicode by appending an empty Unicode string to it or
-  by using the :func:`unicode` function::
+  by using the :func:`!unicode` function::
 
      import timeit
 
@@ -1558,46 +1558,46 @@ complete list of changes, or look through the CVS logs for all the details.
 * The :mod:`!Tix` module has received various bug fixes and updates for the
   current version of the Tix package.
 
-* The :mod:`Tkinter` module now works with a thread-enabled  version of Tcl.
+* The :mod:`!Tkinter` module now works with a thread-enabled  version of Tcl.
   Tcl's threading model requires that widgets only be accessed from the thread in
   which they're created; accesses from another thread can cause Tcl to panic.  For
-  certain Tcl interfaces, :mod:`Tkinter` will now automatically avoid this  when a
+  certain Tcl interfaces, :mod:`!Tkinter` will now automatically avoid this  when a
   widget is accessed from a different thread by marshalling a command, passing it
   to the correct thread, and waiting for the results.  Other interfaces can't be
-  handled automatically but :mod:`Tkinter` will now raise an exception on such an
+  handled automatically but :mod:`!Tkinter` will now raise an exception on such an
   access so that you can at least find out about the problem.  See
   https://mail.python.org/pipermail/python-dev/2002-December/031107.html for a more
   detailed explanation of this change.  (Implemented by Martin von Löwis.)
 
-* Calling Tcl methods through :mod:`_tkinter` no longer  returns only strings.
+* Calling Tcl methods through :mod:`!_tkinter` no longer  returns only strings.
   Instead, if Tcl returns other objects those objects are converted to their
-  Python equivalent, if one exists, or wrapped with a :class:`_tkinter.Tcl_Obj`
+  Python equivalent, if one exists, or wrapped with a :class:`!_tkinter.Tcl_Obj`
   object if no Python equivalent exists. This behavior can be controlled through
-  the :meth:`wantobjects` method of :class:`tkapp` objects.
+  the :meth:`!wantobjects` method of :class:`!tkapp` objects.
 
-  When using :mod:`_tkinter` through the :mod:`Tkinter` module (as most Tkinter
+  When using :mod:`!_tkinter` through the :mod:`!Tkinter` module (as most Tkinter
   applications will), this feature is always activated. It should not cause
   compatibility problems, since Tkinter would always convert string results to
   Python types where possible.
 
   If any incompatibilities are found, the old behavior can be restored by setting
-  the :attr:`wantobjects` variable in the :mod:`Tkinter` module to false before
-  creating the first :class:`tkapp` object. ::
+  the :attr:`!wantobjects` variable in the :mod:`!Tkinter` module to false before
+  creating the first :class:`!tkapp` object. ::
 
      import Tkinter
      Tkinter.wantobjects = 0
 
   Any breakage caused by this change should be reported as a bug.
 
-* The :mod:`UserDict` module has a new :class:`DictMixin` class which defines
+* The :mod:`!UserDict` module has a new :class:`!DictMixin` class which defines
   all dictionary methods for classes that already have a minimum mapping
   interface.  This greatly simplifies writing classes that need to be
   substitutable for dictionaries, such as the classes in  the :mod:`shelve`
   module.
 
   Adding the mix-in as a superclass provides the full dictionary interface
-  whenever the class defines :meth:`~object.__getitem__`, :meth:`__setitem__`,
-  :meth:`__delitem__`, and :meth:`keys`. For example::
+  whenever the class defines :meth:`~object.__getitem__`, :meth:`~object.__setitem__`,
+  :meth:`~object.__delitem__`, and :meth:`!keys`. For example::
 
      >>> import UserDict
      >>> class SeqDict(UserDict.DictMixin):
@@ -1640,15 +1640,15 @@ complete list of changes, or look through the CVS logs for all the details.
 
 * The DOM implementation in :mod:`xml.dom.minidom` can now generate XML output
   in a particular encoding by providing an optional encoding argument to the
-  :meth:`toxml` and :meth:`toprettyxml` methods of DOM nodes.
+  :meth:`~xml.dom.minidom.Node.toxml` and :meth:`~xml.dom.minidom.Node.toprettyxml` methods of DOM nodes.
 
-* The :mod:`xmlrpclib` module now supports an XML-RPC extension for handling nil
+* The :mod:`!xmlrpclib` module now supports an XML-RPC extension for handling nil
   data values such as Python's ``None``.  Nil values are always supported on
   unmarshalling an XML-RPC response.  To generate requests containing ``None``,
   you must supply a true value for the *allow_none* parameter when creating a
-  :class:`Marshaller` instance.
+  :class:`!Marshaller` instance.
 
-* The new :mod:`DocXMLRPCServer` module allows writing self-documenting XML-RPC
+* The new :mod:`!DocXMLRPCServer` module allows writing self-documenting XML-RPC
   servers. Run it in demo mode (as a program) to see it in action.   Pointing the
   web browser to the RPC server produces pydoc-style documentation; pointing
   xmlrpclib to the server allows invoking the actual methods. (Contributed by
@@ -1663,8 +1663,8 @@ complete list of changes, or look through the CVS logs for all the details.
 
   The :mod:`socket` module has also been extended to transparently convert
   Unicode hostnames to the ACE version before passing them to the C library.
-  Modules that deal with hostnames such as :mod:`httplib` and :mod:`ftplib`)
-  also support Unicode host names; :mod:`httplib` also sends HTTP ``Host``
+  Modules that deal with hostnames such as :mod:`!httplib` and :mod:`ftplib`)
+  also support Unicode host names; :mod:`!httplib` also sends HTTP ``Host``
   headers using the ACE version of the domain name.  :mod:`urllib` supports
   Unicode URLs with non-ASCII host names as long as the ``path`` part of the URL
   is ASCII only.
@@ -1682,17 +1682,17 @@ Date and time types suitable for expressing timestamps were added as the
 :mod:`datetime` module.  The types don't support different calendars or many
 fancy features, and just stick to the basics of representing time.
 
-The three primary types are: :class:`date`, representing a day, month, and year;
+The three primary types are: :class:`~datetime.date`, representing a day, month, and year;
 :class:`~datetime.time`, consisting of hour, minute, and second; and :class:`~datetime.datetime`,
-which contains all the attributes of both :class:`date` and :class:`~datetime.time`.
-There's also a :class:`timedelta` class representing differences between two
+which contains all the attributes of both :class:`~datetime.date` and :class:`~datetime.time`.
+There's also a :class:`~datetime.timedelta` class representing differences between two
 points in time, and time zone logic is implemented by classes inheriting from
-the abstract :class:`tzinfo` class.
+the abstract :class:`~datetime.tzinfo` class.
 
-You can create instances of :class:`date` and :class:`~datetime.time` by either supplying
+You can create instances of :class:`~datetime.date` and :class:`~datetime.time` by either supplying
 keyword arguments to the appropriate constructor, e.g.
 ``datetime.date(year=1972, month=10, day=15)``, or by using one of a number of
-class methods.  For example, the :meth:`date.today` class method returns the
+class methods.  For example, the :meth:`~datetime.date.today` class method returns the
 current local date.
 
 Once created, instances of the date/time classes are all immutable. There are a
@@ -1707,8 +1707,8 @@ number of methods for producing formatted strings from objects::
    >>> now.strftime('%Y %d %b')
    '2002 30 Dec'
 
-The :meth:`replace` method allows modifying one or more fields  of a
-:class:`date` or :class:`~datetime.datetime` instance, returning a new instance::
+The :meth:`~datetime.datetime.replace` method allows modifying one or more fields  of a
+:class:`~datetime.date` or :class:`~datetime.datetime` instance, returning a new instance::
 
    >>> d = datetime.datetime.now()
    >>> d
@@ -1718,10 +1718,10 @@ The :meth:`replace` method allows modifying one or more fields  of a
    >>>
 
 Instances can be compared, hashed, and converted to strings (the result is the
-same as that of :meth:`isoformat`).  :class:`date` and :class:`~datetime.datetime`
-instances can be subtracted from each other, and added to :class:`timedelta`
+same as that of :meth:`~datetime.datetime.isoformat`).  :class:`~datetime.date` and :class:`~datetime.datetime`
+instances can be subtracted from each other, and added to :class:`~datetime.timedelta`
 instances.  The largest missing feature is that there's no standard library
-support for parsing strings and getting back a :class:`date` or
+support for parsing strings and getting back a :class:`~datetime.date` or
 :class:`~datetime.datetime`.
 
 For more information, refer to the module's reference documentation.
@@ -1739,7 +1739,7 @@ command-line parsing that follows the Unix conventions, automatically creates
 the output for :option:`!--help`, and can perform different actions for different
 options.
 
-You start by creating an instance of :class:`OptionParser` and telling it what
+You start by creating an instance of :class:`~optparse.OptionParser` and telling it what
 your program's options are. ::
 
    import sys
@@ -1753,7 +1753,7 @@ your program's options are. ::
                  action='store', type='int', dest='length',
                  help='set maximum length of output')
 
-Parsing a command line is then done by calling the :meth:`parse_args` method. ::
+Parsing a command line is then done by calling the :meth:`~optparse.OptionParser.parse_args` method. ::
 
    options, args = op.parse_args(sys.argv[1:])
    print options
@@ -1925,7 +1925,7 @@ Changes to Python's build process and to the C API include:
   dependence on a system version or local installation of Expat.
 
 * If you dynamically allocate type objects in your extension, you should be
-  aware of a change in the rules relating to the :attr:`__module__` and
+  aware of a change in the rules relating to the :attr:`!__module__` and
   :attr:`~definition.__name__` attributes.  In summary, you will want to ensure the type's
   dictionary contains a ``'__module__'`` key; making the module name the part of
   the type name leading up to the final period will no longer have the desired
@@ -1940,7 +1940,7 @@ Port-Specific Changes
 Support for a port to IBM's OS/2 using the EMX runtime environment was merged
 into the main Python source tree.  EMX is a POSIX emulation layer over the OS/2
 system APIs.  The Python port for EMX tries to support all the POSIX-like
-capability exposed by the EMX runtime, and mostly succeeds; :func:`fork` and
+capability exposed by the EMX runtime, and mostly succeeds; :func:`!fork` and
 :func:`fcntl` are restricted by the limitations of the underlying emulation
 layer.  The standard OS/2 port, which uses IBM's Visual Age compiler, also
 gained support for case-sensitive import semantics as part of the integration of
@@ -1998,13 +1998,13 @@ Some of the more notable changes are:
   It would be difficult to detect any resulting difference from Python code, apart
   from a slight speed up when Python is run without :option:`-O`.
 
-  C extensions that access the :attr:`f_lineno` field of frame objects should
+  C extensions that access the :attr:`~frame.f_lineno` field of frame objects should
   instead call ``PyCode_Addr2Line(f->f_code, f->f_lasti)``. This will have the
   added effect of making the code work as desired under "python -O" in earlier
   versions of Python.
 
   A nifty new feature is that trace functions can now assign to the
-  :attr:`f_lineno` attribute of frame objects, changing the line that will be
+  :attr:`~frame.f_lineno` attribute of frame objects, changing the line that will be
   executed next.  A ``jump`` command has been added to the :mod:`pdb` debugger
   taking advantage of this new feature. (Implemented by Richie Hindle.)
 
@@ -2031,9 +2031,9 @@ code:
   the file's encoding (UTF-8, Latin-1, or whatever) by adding a comment to the top
   of the file.  See section :ref:`section-encodings` for more information.
 
-* Calling Tcl methods through :mod:`_tkinter` no longer  returns only strings.
+* Calling Tcl methods through :mod:`!_tkinter` no longer  returns only strings.
   Instead, if Tcl returns other objects those objects are converted to their
-  Python equivalent, if one exists, or wrapped with a :class:`_tkinter.Tcl_Obj`
+  Python equivalent, if one exists, or wrapped with a :class:`!_tkinter.Tcl_Obj`
   object if no Python equivalent exists.
 
 * Large octal and hex literals such as ``0xffffffff`` now trigger a
@@ -2049,10 +2049,10 @@ code:
 
 * You can no longer disable assertions by assigning to ``__debug__``.
 
-* The Distutils :func:`setup` function has gained various new keyword arguments
+* The Distutils :func:`!setup` function has gained various new keyword arguments
   such as *depends*.  Old versions of the Distutils will abort if passed unknown
   keywords.  A solution is to check for the presence of the new
-  :func:`get_distutil_options` function in your :file:`setup.py` and only uses the
+  :func:`!get_distutil_options` function in your :file:`setup.py` and only uses the
   new keywords with a version of the Distutils that supports them::
 
      from distutils import core

@@ -479,26 +479,46 @@ class BindTest(AbstractTkTest, unittest.TestCase):
 
     def test_unbind2(self):
         f = self.frame
+        f.wait_visibility()
+        f.focus_force()
+        f.update_idletasks()
         event = '<Control-Alt-Key-c>'
         self.assertEqual(f.bind(), ())
         self.assertEqual(f.bind(event), '')
-        def test1(e): pass
-        def test2(e): pass
+        def test1(e): events.append('a')
+        def test2(e): events.append('b')
+        def test3(e): events.append('c')
 
         funcid = f.bind(event, test1)
         funcid2 = f.bind(event, test2, add=True)
-
-        f.unbind(event, funcid)
-        script = f.bind(event)
-        self.assertNotIn(funcid, script)
-        self.assertCommandNotExist(funcid)
-        self.assertCommandExist(funcid2)
+        funcid3 = f.bind(event, test3, add=True)
+        events = []
+        f.event_generate(event)
+        self.assertEqual(events, ['a', 'b', 'c'])
 
         f.unbind(event, funcid2)
+        script = f.bind(event)
+        self.assertNotIn(funcid2, script)
+        self.assertIn(funcid, script)
+        self.assertIn(funcid3, script)
+        self.assertEqual(f.bind(), (event,))
+        self.assertCommandNotExist(funcid2)
+        self.assertCommandExist(funcid)
+        self.assertCommandExist(funcid3)
+        events = []
+        f.event_generate(event)
+        self.assertEqual(events, ['a', 'c'])
+
+        f.unbind(event, funcid)
+        f.unbind(event, funcid3)
         self.assertEqual(f.bind(event), '')
         self.assertEqual(f.bind(), ())
         self.assertCommandNotExist(funcid)
         self.assertCommandNotExist(funcid2)
+        self.assertCommandNotExist(funcid3)
+        events = []
+        f.event_generate(event)
+        self.assertEqual(events, [])
 
         # non-idempotent
         self.assertRaises(tkinter.TclError, f.unbind, event, funcid2)
