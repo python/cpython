@@ -616,6 +616,7 @@ deque_inplace_concat(dequeobject *deque, PyObject *other)
 {
     PyObject *result;
 
+    // _collections_deque_extend is thread-safe
     result = _collections_deque_extend(deque, other);
     if (result == NULL)
         return result;
