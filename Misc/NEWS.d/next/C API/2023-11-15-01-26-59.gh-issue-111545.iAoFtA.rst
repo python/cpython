@@ -1,0 +1,2 @@
+Add :c:func:`Py_HashPointer` function to hash a pointer. Patch by Victor
+Stinner.

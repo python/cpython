@@ -1,1 +1,0 @@
-Added ``__floor__`` and ``__ceil__`` methods to float object. Patch by Batuhan Taşkaya.

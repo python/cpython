@@ -1,2 +1,0 @@
-Add ``-i`` and ``--indent`` (indentation level), and ``--no-type-comments``
-(type comments) command line options to ast parsing tool.

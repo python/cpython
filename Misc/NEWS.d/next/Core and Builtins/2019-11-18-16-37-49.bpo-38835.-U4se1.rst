@@ -1,2 +1,0 @@
-The ``PyFPE_START_PROTECT()`` and ``PyFPE_END_PROTECT()`` macros are empty:
-they have been doing nothing for the last year, so stop using them.

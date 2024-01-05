@@ -1,2 +1,0 @@
-Fix ``SpooledTemporaryFile.rollover()`` might corrupt the file when it is in
-text mode. Patch by Serhiy Storchaka.
