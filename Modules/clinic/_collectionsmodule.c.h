@@ -364,6 +364,21 @@ PyDoc_STRVAR(_collections_deque_remove__doc__,
 #define _COLLECTIONS_DEQUE_REMOVE_METHODDEF    \
     {"remove", (PyCFunction)_collections_deque_remove, METH_O, _collections_deque_remove__doc__},
 
+static PyObject *
+_collections_deque_remove_impl(dequeobject *deque, PyObject *value);
+
+static PyObject *
+_collections_deque_remove(dequeobject *deque, PyObject *value)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(deque);
+    return_value = _collections_deque_remove_impl(deque, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_collections_deque___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
@@ -552,4 +567,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1b7104017b44333e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=523c22da39db3275 input=a9049054013a1b77]*/

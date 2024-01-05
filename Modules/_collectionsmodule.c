@@ -1395,6 +1395,7 @@ deque_del_item(dequeobject *deque, Py_ssize_t i)
 }
 
 /*[clinic input]
+@critical_section
 _collections.deque.remove
 
     deque: dequeobject
@@ -1405,8 +1406,8 @@ Remove first occurrence of value.
 [clinic start generated code]*/
 
 static PyObject *
-_collections_deque_remove(dequeobject *deque, PyObject *value)
-/*[clinic end generated code: output=6e44d24b93f7109e input=d53d4a0b082137f6]*/
+_collections_deque_remove_impl(dequeobject *deque, PyObject *value)
+/*[clinic end generated code: output=a841fda79ad70372 input=ad91dbbfb64e677a]*/
 {
     PyObject *item;
     block *b = deque->leftblock;
