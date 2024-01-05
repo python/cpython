@@ -1576,13 +1576,11 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
     }
     _Py_Executors_InvalidateDependency(interp, code);
     int code_len = (int)Py_SIZE(code);
-    /* code->_co_firsttraceable >= code_len indicates
-     * that no instrumentation can be inserted.
-     * Exit early to avoid creating instrumentation
+    /* Exit early to avoid creating instrumentation
      * data for potential statically allocated code
      * objects.
      * See https://github.com/python/cpython/issues/108390 */
-    if (code->_co_firsttraceable >= code_len) {
+    if (code->co_flags & CO_NO_MONITORING_EVENTS) {
         return 0;
     }
     if (update_instrumentation_data(code, interp)) {
