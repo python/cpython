@@ -207,17 +207,18 @@ gc_get_count_impl(PyObject *module)
                          gcstate->generations[2].count);
 }
 
-PyDoc_STRVAR(gc_get_referrers__doc__,
-"get_referrers(*objs) -> list\n\
-Return the list of objects that directly refer to any of objs.");
+/*[clinic input]
+gc.get_referrers
+
+    *objs as args: object
+
+Return the list of objects that directly refer to any of 'objs'.
+[clinic start generated code]*/
 
 static PyObject *
-gc_get_referrers(PyObject *self, PyObject *args)
+gc_get_referrers_impl(PyObject *module, PyObject *args)
+/*[clinic end generated code: output=296a09587f6a86b5 input=bae96961b14a0922]*/
 {
-    if (PySys_Audit("gc.get_referrers", "(O)", args) < 0) {
-        return NULL;
-    }
-
     PyInterpreterState *interp = _PyInterpreterState_GET();
     return _PyGC_GetReferrers(interp, args);
 }
@@ -477,8 +478,7 @@ static PyMethodDef GcMethods[] = {
     GC_GET_STATS_METHODDEF
     GC_IS_TRACKED_METHODDEF
     GC_IS_FINALIZED_METHODDEF
-    {"get_referrers",  gc_get_referrers, METH_VARARGS,
-        gc_get_referrers__doc__},
+    GC_GET_REFERRERS_METHODDEF
     {"get_referents",  gc_get_referents, METH_VARARGS,
         gc_get_referents__doc__},
     GC_FREEZE_METHODDEF
