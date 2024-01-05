@@ -4540,7 +4540,7 @@ ipv6type=unknown
 ipv6lib=none
 ipv6trylibc=no
 
-if test "$ipv6" = "yes"; then
+if test "$ipv6" = yes -a "$cross_compiling" = no; then
 	AC_MSG_CHECKING([ipv6 stack type])
 	for i in inria kame linux-glibc linux-inet6 solaris toshiba v6d zeta;
 	do
