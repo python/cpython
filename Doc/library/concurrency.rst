@@ -21,6 +21,7 @@ multitasking). Here's an overview:
    subprocess.rst
    sched.rst
    queue.rst
+   contextvars.rst
 
 
 The following are support modules for some of the above services:
