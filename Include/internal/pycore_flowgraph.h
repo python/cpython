@@ -26,7 +26,7 @@ typedef struct {
 
 
 typedef struct {
-    struct _PyCfgBasicblock_ *handlers[CO_MAXBLOCKS+1];
+    struct _PyCfgBasicblock_ *handlers[CO_MAXBLOCKS+2];
     int depth;
 } _PyCfgExceptStack;
 

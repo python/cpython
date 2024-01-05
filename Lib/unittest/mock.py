@@ -2199,8 +2199,11 @@ class MagicProxy(Base):
         return self.create_mock()
 
 
-_CODE_ATTRS = dir(CodeType)
-_CODE_SIG = inspect.signature(partial(CodeType.__init__, None))
+try:
+    _CODE_SIG = inspect.signature(partial(CodeType.__init__, None))
+    _CODE_ATTRS = dir(CodeType)
+except ValueError:
+    _CODE_SIG = None
 
 
 class AsyncMockMixin(Base):
@@ -2220,9 +2223,12 @@ class AsyncMockMixin(Base):
         self.__dict__['_mock_await_count'] = 0
         self.__dict__['_mock_await_args'] = None
         self.__dict__['_mock_await_args_list'] = _CallList()
-        code_mock = NonCallableMock(spec_set=_CODE_ATTRS)
-        code_mock.__dict__["_spec_class"] = CodeType
-        code_mock.__dict__["_spec_signature"] = _CODE_SIG
+        if _CODE_SIG:
+            code_mock = NonCallableMock(spec_set=_CODE_ATTRS)
+            code_mock.__dict__["_spec_class"] = CodeType
+            code_mock.__dict__["_spec_signature"] = _CODE_SIG
+        else:
+            code_mock = NonCallableMock(spec_set=CodeType)
         code_mock.co_flags = (
             inspect.CO_COROUTINE
             + inspect.CO_VARARGS

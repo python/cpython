@@ -1683,7 +1683,7 @@ class _TypingEllipsis:
 _TYPING_INTERNALS = frozenset({
     '__parameters__', '__orig_bases__',  '__orig_class__',
     '_is_protocol', '_is_runtime_protocol', '__protocol_attrs__',
-    '__callable_proto_members_only__', '__type_params__',
+    '__non_callable_proto_members__', '__type_params__',
 })
 
 _SPECIAL_NAMES = frozenset({
@@ -1820,11 +1820,6 @@ class _ProtocolMeta(ABCMeta):
         super().__init__(*args, **kwargs)
         if getattr(cls, "_is_protocol", False):
             cls.__protocol_attrs__ = _get_protocol_attrs(cls)
-            # PEP 544 prohibits using issubclass()
-            # with protocols that have non-method members.
-            cls.__callable_proto_members_only__ = all(
-                callable(getattr(cls, attr, None)) for attr in cls.__protocol_attrs__
-            )
 
     def __subclasscheck__(cls, other):
         if cls is Protocol:
@@ -1836,17 +1831,18 @@ class _ProtocolMeta(ABCMeta):
             if not isinstance(other, type):
                 # Same error message as for issubclass(1, int).
                 raise TypeError('issubclass() arg 1 must be a class')
-            if (
-                not cls.__callable_proto_members_only__
-                and cls.__dict__.get("__subclasshook__") is _proto_hook
-            ):
-                raise TypeError(
-                    "Protocols with non-method members don't support issubclass()"
-                )
             if not getattr(cls, '_is_runtime_protocol', False):
                 raise TypeError(
                     "Instance and class checks can only be used with "
                     "@runtime_checkable protocols"
+                )
+            if (
+                # this attribute is set by @runtime_checkable:
+                cls.__non_callable_proto_members__
+                and cls.__dict__.get("__subclasshook__") is _proto_hook
+            ):
+                raise TypeError(
+                    "Protocols with non-method members don't support issubclass()"
                 )
         return super().__subclasscheck__(other)
 
@@ -1875,7 +1871,8 @@ class _ProtocolMeta(ABCMeta):
                 val = getattr_static(instance, attr)
             except AttributeError:
                 break
-            if val is None and callable(getattr(cls, attr, None)):
+            # this attribute is set by @runtime_checkable:
+            if val is None and attr not in cls.__non_callable_proto_members__:
                 break
         else:
             return True
@@ -2113,6 +2110,22 @@ def runtime_checkable(cls):
         raise TypeError('@runtime_checkable can be only applied to protocol classes,'
                         ' got %r' % cls)
     cls._is_runtime_protocol = True
+    # PEP 544 prohibits using issubclass()
+    # with protocols that have non-method members.
+    # See gh-113320 for why we compute this attribute here,
+    # rather than in `_ProtocolMeta.__init__`
+    cls.__non_callable_proto_members__ = set()
+    for attr in cls.__protocol_attrs__:
+        try:
+            is_callable = callable(getattr(cls, attr, None))
+        except Exception as e:
+            raise TypeError(
+                f"Failed to determine whether protocol member {attr!r} "
+                "is a method member"
+            ) from e
+        else:
+            if not is_callable:
+                cls.__non_callable_proto_members__.add(attr)
     return cls
 
 
@@ -3280,7 +3293,7 @@ sys.modules[re.__name__] = re
 
 
 def reveal_type[T](obj: T, /) -> T:
-    """Reveal the inferred type of a variable.
+    """Ask a static type checker to reveal the inferred type of an expression.
 
     When a static type checker encounters a call to ``reveal_type()``,
     it will emit the inferred type of the argument::
@@ -3292,7 +3305,7 @@ def reveal_type[T](obj: T, /) -> T:
     will produce output similar to 'Revealed type is "builtins.int"'.
 
     At runtime, the function prints the runtime type of the
-    argument and returns it unchanged.
+    argument and returns the argument unchanged.
     """
     print(f"Runtime type is {type(obj).__name__!r}", file=sys.stderr)
     return obj

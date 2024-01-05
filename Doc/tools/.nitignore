@@ -24,7 +24,6 @@ Doc/extending/extending.rst
 Doc/glossary.rst
 Doc/howto/descriptor.rst
 Doc/howto/enum.rst
-Doc/howto/isolating-extensions.rst
 Doc/howto/logging.rst
 Doc/howto/urllib2.rst
 Doc/library/2to3.rst
@@ -36,14 +35,10 @@ Doc/library/asyncio-subprocess.rst
 Doc/library/asyncio-task.rst
 Doc/library/audioop.rst
 Doc/library/bdb.rst
-Doc/library/bisect.rst
-Doc/library/calendar.rst
 Doc/library/cgi.rst
 Doc/library/chunk.rst
-Doc/library/cmd.rst
 Doc/library/collections.rst
 Doc/library/concurrent.futures.rst
-Doc/library/configparser.rst
 Doc/library/copy.rst
 Doc/library/csv.rst
 Doc/library/datetime.rst
@@ -75,7 +70,6 @@ Doc/library/msilib.rst
 Doc/library/multiprocessing.rst
 Doc/library/multiprocessing.shared_memory.rst
 Doc/library/nntplib.rst
-Doc/library/numbers.rst
 Doc/library/optparse.rst
 Doc/library/os.rst
 Doc/library/ossaudiodev.rst
@@ -87,7 +81,6 @@ Doc/library/profile.rst
 Doc/library/pyclbr.rst
 Doc/library/pydoc.rst
 Doc/library/pyexpat.rst
-Doc/library/random.rst
 Doc/library/readline.rst
 Doc/library/resource.rst
 Doc/library/select.rst
@@ -100,7 +93,6 @@ Doc/library/string.rst
 Doc/library/subprocess.rst
 Doc/library/sunau.rst
 Doc/library/syslog.rst
-Doc/library/tarfile.rst
 Doc/library/telnetlib.rst
 Doc/library/termios.rst
 Doc/library/test.rst

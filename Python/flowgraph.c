@@ -645,6 +645,7 @@ push_except_block(ExceptStack *stack, cfg_instr *setup) {
     if (opcode == SETUP_WITH || opcode == SETUP_CLEANUP) {
         target->b_preserve_lasti = 1;
     }
+    assert(stack->depth <= CO_MAXBLOCKS);
     stack->handlers[++stack->depth] = target;
     return target;
 }

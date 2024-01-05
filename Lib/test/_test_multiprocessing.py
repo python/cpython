@@ -4630,6 +4630,29 @@ class _TestLogging(BaseTestCase):
         root_logger.setLevel(root_level)
         logger.setLevel(level=LOG_LEVEL)
 
+    def test_filename(self):
+        logger = multiprocessing.get_logger()
+        original_level = logger.level
+        try:
+            logger.setLevel(util.DEBUG)
+            stream = io.StringIO()
+            handler = logging.StreamHandler(stream)
+            logging_format = '[%(levelname)s] [%(filename)s] %(message)s'
+            handler.setFormatter(logging.Formatter(logging_format))
+            logger.addHandler(handler)
+            logger.info('1')
+            util.info('2')
+            logger.debug('3')
+            filename = os.path.basename(__file__)
+            log_record = stream.getvalue()
+            self.assertIn(f'[INFO] [{filename}] 1', log_record)
+            self.assertIn(f'[INFO] [{filename}] 2', log_record)
+            self.assertIn(f'[DEBUG] [{filename}] 3', log_record)
+        finally:
+            logger.setLevel(original_level)
+            logger.removeHandler(handler)
+            handler.close()
+
 
 # class _TestLoggingProcessName(BaseTestCase):
 #

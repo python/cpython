@@ -1607,6 +1607,13 @@ PyObject_Call:PyObject*:callable_object:0:
 PyObject_Call:PyObject*:args:0:
 PyObject_Call:PyObject*:kw:0:
 
+PyObject_CallNoArgs:PyObject*::+1:
+PyObject_CallNoArgs:PyObject*:callable_object:0:
+
+PyObject_CallOneArg:PyObject*::+1:
+PyObject_CallOneArg:PyObject*:callable_object:0:
+PyObject_CallOneArg:PyObject*:arg:0:
+
 PyObject_CallFunction:PyObject*::+1:
 PyObject_CallFunction:PyObject*:callable_object:0:
 PyObject_CallFunction:const char*:format::
