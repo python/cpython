@@ -280,7 +280,7 @@ searched.  Objects imported into the module are not searched.
 In addition, there are cases when you want tests to be part of a module but not part
 of the help text, which requires that the tests not be included in the docstring.
 Doctest looks for a module-level variable called ``__test__`` and uses it to locate other
-tests. If ``M.__test__`` exists and is truthy, it must be a dict, and each
+tests. If ``M.__test__`` exists, it must be a dict, and each
 entry maps a (string) name to a function object, class object, or string.
 Function and class object docstrings found from ``M.__test__`` are searched, and
 strings are treated as if they were docstrings.  In output, a key ``K`` in
@@ -944,8 +944,8 @@ and :ref:`doctest-simple-testfile`.
    (or module :mod:`__main__` if *m* is not supplied or is ``None``), starting with
    ``m.__doc__``.
 
-   Also test examples reachable from dict ``m.__test__``, if it exists and is not
-   ``None``.  ``m.__test__`` maps names (strings) to functions, classes and
+   Also test examples reachable from dict ``m.__test__``, if it exists.
+   ``m.__test__`` maps names (strings) to functions, classes and
    strings; function and class docstrings are searched for examples; strings are
    searched directly, as if they were docstrings.
 
