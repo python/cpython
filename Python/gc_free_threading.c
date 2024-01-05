@@ -14,14 +14,14 @@ _PyGC_Clear_FreeList(PyInterpreterState *interp)
 {
     _PyTuple_ClearFreeList(interp);
     _PyFloat_ClearFreeList(interp);
-    _PyList_ClearFreeList(interp);
     _PyDict_ClearFreeList(interp);
     _PyAsyncGen_ClearFreeLists(interp);
     _PyContext_ClearFreeList(interp);
+
     HEAD_LOCK(&_PyRuntime);
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)interp->threads.head;
     while (tstate != NULL) {
-        _PyList_ClearFreeList(&tstate->freelist_state);
+        _Py_ClearFreeLists(&tstate->freelist_state);
         tstate = tstate->base.next;
     }
     HEAD_UNLOCK(&_PyRuntime);

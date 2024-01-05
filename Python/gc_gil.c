@@ -13,13 +13,12 @@ _PyGC_Clear_FreeList(PyInterpreterState *interp)
 {
     _PyTuple_ClearFreeList(interp);
     _PyFloat_ClearFreeList(interp);
-    _PyList_ClearFreeList(interp);
     _PyDict_ClearFreeList(interp);
     _PyAsyncGen_ClearFreeLists(interp);
     _PyContext_ClearFreeList(interp);
 
     _PyFreeListState* state = _PyFreeListState_GET();
-    _PyList_ClearFreeList(state);
+    _Py_ClearFreeLists(state);
 }
 
 #endif
