@@ -58,6 +58,9 @@ of these classes.
 
 Function Objects
 ----------------
+
+.. class:: Function
+
 Class :class:`Function` instances describe functions defined by def
 statements.  They have the following attributes:
 
@@ -108,6 +111,9 @@ statements.  They have the following attributes:
 
 Class Objects
 -------------
+
+.. class:: Class
+
 Class :class:`Class` instances describe classes defined by class
 statements.  They have the same attributes as Functions and two more.
 
