@@ -438,7 +438,7 @@ def enablerlcompleter():
     registering a sys.__interactivehook__.
 
     If the readline module can be imported, the hook will set the Tab key
-    as completion key and register ~/.python_history as history file.
+    as completion key and register history file.
     This can be overridden in the sitecustomize or usercustomize module,
     or in a PYTHONSTARTUP file.
     """
@@ -467,14 +467,18 @@ def enablerlcompleter():
             pass
 
         if readline.get_current_history_length() == 0:
-            # If no history was loaded, default to .python_history.
+            # If no history was loaded, load history file from
+            # platform defined directories.
             # The guard is necessary to avoid doubling history size at
             # each interpreter exit when readline was already configured
             # through a PYTHONSTARTUP hook, see:
             # http://bugs.python.org/issue5845#msg198636
-            history = os.path.join(os.path.expanduser('~'),
-                                   '.python_history')
+
+            history = get_readline_history_path()
+            history = os.path.abspath(history)
             try:
+                _dir, _ = os.path.split(history)
+                os.makedirs(_dir, exist_ok=True)
                 readline.read_history_file(history)
             except OSError:
                 pass
@@ -488,6 +492,30 @@ def enablerlcompleter():
                     pass
 
             atexit.register(write_history)
+
+    def get_readline_history_path():
+        def joinuser(*args):
+            return os.path.expanduser(os.path.join(*args))
+
+        # If the legacy path "~/.python_history" is readable, always use it.
+        legacy = joinuser('~', '.python_history')
+        if os.access(legacy, os.R_OK):
+            return legacy
+
+        # Otherwise, use platform defined data directory.
+        if os.name == 'nt':
+            base = os.environ.get('APPDATA') or '~'
+            return joinuser(base, 'Python', 'history')
+
+        if sys.platform == 'darwin':
+            return joinuser('~', 'Library', 'Application Support', 'Python', 'history')
+
+        if os.name == 'posix':
+            base = os.environ.get('XDG_STATE_HOME') or joinuser('~', '.local', 'state')
+            return joinuser(base, 'python', 'history')
+
+        # Unknown platform, use the legacy path.
+        return legacy
 
     sys.__interactivehook__ = register_readline
 

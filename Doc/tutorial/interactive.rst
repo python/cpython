@@ -25,7 +25,11 @@ the expression up to the final ``'.'`` and then suggest completions from
 the attributes of the resulting object.  Note that this may execute
 application-defined code if an object with a :meth:`~object.__getattr__` method
 is part of the expression.  The default configuration also saves your
-history into a file named :file:`.python_history` in your user directory.
+history into a file under platform defined data directory (
+:file:`%APPDATA%\\Python\\history` for Windows;
+:file:`~/Library/Application Support/Python/history` for Mac OS;
+:file:`$XDG_STATE_HOME/python/history` or
+:file:`~/.local/state/python/history` for other POSIX platforms like Linux).
 The history will be available again during the next interactive interpreter
 session.
 

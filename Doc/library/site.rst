@@ -152,14 +152,24 @@ Readline configuration
 On systems that support :mod:`readline`, this module will also import and
 configure the :mod:`rlcompleter` module, if Python is started in
 :ref:`interactive mode <tut-interactive>` and without the :option:`-S` option.
-The default behavior is enable tab-completion and to use
-:file:`~/.python_history` as the history save file.  To disable it, delete (or
-override) the :data:`sys.__interactivehook__` attribute in your
+The default behavior is enable tab-completion and to use history file from
+platform defined directory.
+For Windows, it is :file:`%APPDATA%\\Python\\history`;
+for Mac OS, it is :file:`~/Library/Application Support/Python/history`;
+for other POSIX platforms, it is :file:`$XDG_STATE_HOME/python/history` or
+:file:`~/.local/state/python/history`;
+otherwise, it is :file:`~/.python_history`.
+Note that for compatibility, if :file:`~/.python_history` is readable, it will
+always be taken as default and other paths are ignored. To disable it, delete
+(or override) the :data:`sys.__interactivehook__` attribute in your
 :mod:`sitecustomize` or :mod:`usercustomize` module or your
 :envvar:`PYTHONSTARTUP` file.
 
 .. versionchanged:: 3.4
    Activation of rlcompleter and history was made automatic.
+
+.. versionchanged:: 3.13
+   Prefer platform defined data directory instead of :file:`~/.python_history`.
 
 
 Module contents
