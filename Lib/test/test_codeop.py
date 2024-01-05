@@ -223,6 +223,9 @@ class CodeopTests(unittest.TestCase):
         ai("(x for x in")
         ai("(x for x in (")
 
+        ai('a = f"""')
+        ai('a = \\')
+
     def test_invalid(self):
         ai = self.assertInvalid
         ai("a b")
