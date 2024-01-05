@@ -358,6 +358,10 @@ Set implementation-specific option. The following options are available:
     -X frozen_modules=[on|off]: whether or not frozen modules should be used.
        The default is "on" (or "off" if you are running a local build).
 
+    -X int_max_str_digits=number: limit the size of int<->str conversions.
+       This helps avoid denial of service attacks when parsing untrusted data.
+       The default is sys.int_info.default_max_str_digits.  0 disables.
+
 .TP
 .B \-x
 Skip the first line of the source.  This is intended for a DOS
@@ -531,6 +535,11 @@ values.
 
 The integer must be a decimal number in the range [0,4294967295].  Specifying
 the value 0 will disable hash randomization.
+.IP PYTHONINTMAXSTRDIGITS
+Limit the maximum digit characters in an int value
+when converting from a string and when converting an int back to a str.
+A value of 0 disables the limit.  Conversions to or from bases 2, 4, 8,
+16, and 32 are never limited.
 .IP PYTHONMALLOC
 Set the Python memory allocators and/or install debug hooks. The available
 memory allocators are
@@ -583,8 +592,8 @@ works on Mac OS X.
 .IP PYTHONUSERBASE
 Defines the user base directory, which is used to compute the path of the user
 .IR site-packages
-directory and Distutils installation paths for
-.IR "python setup\.py install \-\-user" .
+directory and installation paths for
+.IR "python \-m pip install \-\-user" .
 .IP PYTHONPROFILEIMPORTTIME
 If this environment variable is set to a non-empty string, Python will
 show how long each import takes. This is exactly equivalent to setting
@@ -592,6 +601,9 @@ show how long each import takes. This is exactly equivalent to setting
 .IP PYTHONBREAKPOINT
 If this environment variable is set to 0, it disables the default debugger. It
 can be set to the callable of your debugger of choice.
+.IP PYTHON_COLORS
+If this variable is set to 1, the interpreter will colorize various kinds of
+output. Setting it to 0 deactivates this behavior.
 .SS Debug-mode variables
 Setting these variables only has an effect in a debug build of Python, that is,
 if Python was configured with the

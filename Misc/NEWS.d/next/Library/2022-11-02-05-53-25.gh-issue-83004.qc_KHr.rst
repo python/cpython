@@ -1,1 +1,0 @@
-Clean up refleaks on failed module initialisation in in :mod:`_pickle`

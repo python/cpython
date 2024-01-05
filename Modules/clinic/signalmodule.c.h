@@ -2,11 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(signal_default_int_handler__doc__,
 "default_int_handler($module, signalnum, frame, /)\n"
@@ -33,7 +29,7 @@ signal_default_int_handler(PyObject *module, PyObject *const *args, Py_ssize_t n
     if (!_PyArg_CheckPositional("default_int_handler", nargs, 2, 2)) {
         goto exit;
     }
-    signalnum = _PyLong_AsInt(args[0]);
+    signalnum = PyLong_AsInt(args[0]);
     if (signalnum == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -65,7 +61,7 @@ signal_alarm(PyObject *module, PyObject *arg)
     int seconds;
     long _return_value;
 
-    seconds = _PyLong_AsInt(arg);
+    seconds = PyLong_AsInt(arg);
     if (seconds == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -121,7 +117,7 @@ signal_raise_signal(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int signalnum;
 
-    signalnum = _PyLong_AsInt(arg);
+    signalnum = PyLong_AsInt(arg);
     if (signalnum == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -160,7 +156,7 @@ signal_signal(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("signal", nargs, 2, 2)) {
         goto exit;
     }
-    signalnum = _PyLong_AsInt(args[0]);
+    signalnum = PyLong_AsInt(args[0]);
     if (signalnum == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -195,7 +191,7 @@ signal_getsignal(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int signalnum;
 
-    signalnum = _PyLong_AsInt(arg);
+    signalnum = PyLong_AsInt(arg);
     if (signalnum == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -211,8 +207,9 @@ PyDoc_STRVAR(signal_strsignal__doc__,
 "\n"
 "Return the system description of the given signal.\n"
 "\n"
-"The return values can be such as \"Interrupt\", \"Segmentation fault\", etc.\n"
-"Returns None if the signal is not recognized.");
+"Returns the description of signal *signalnum*, such as \"Interrupt\"\n"
+"for :const:`SIGINT`. Returns :const:`None` if *signalnum* has no\n"
+"description. Raises :exc:`ValueError` if *signalnum* is invalid.");
 
 #define SIGNAL_STRSIGNAL_METHODDEF    \
     {"strsignal", (PyCFunction)signal_strsignal, METH_O, signal_strsignal__doc__},
@@ -226,7 +223,7 @@ signal_strsignal(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int signalnum;
 
-    signalnum = _PyLong_AsInt(arg);
+    signalnum = PyLong_AsInt(arg);
     if (signalnum == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -263,11 +260,11 @@ signal_siginterrupt(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("siginterrupt", nargs, 2, 2)) {
         goto exit;
     }
-    signalnum = _PyLong_AsInt(args[0]);
+    signalnum = PyLong_AsInt(args[0]);
     if (signalnum == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    flag = _PyLong_AsInt(args[1]);
+    flag = PyLong_AsInt(args[1]);
     if (flag == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -310,7 +307,7 @@ signal_setitimer(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("setitimer", nargs, 2, 3)) {
         goto exit;
     }
-    which = _PyLong_AsInt(args[0]);
+    which = PyLong_AsInt(args[0]);
     if (which == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -348,7 +345,7 @@ signal_getitimer(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int which;
 
-    which = _PyLong_AsInt(arg);
+    which = PyLong_AsInt(arg);
     if (which == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -384,7 +381,7 @@ signal_pthread_sigmask(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     if (!_PyArg_CheckPositional("pthread_sigmask", nargs, 2, 2)) {
         goto exit;
     }
-    how = _PyLong_AsInt(args[0]);
+    how = PyLong_AsInt(args[0]);
     if (how == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -586,7 +583,7 @@ signal_pthread_kill(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     thread_id = PyLong_AsUnsignedLongMask(args[0]);
-    signalnum = _PyLong_AsInt(args[1]);
+    signalnum = PyLong_AsInt(args[1]);
     if (signalnum == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -625,11 +622,11 @@ signal_pidfd_send_signal(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (!_PyArg_CheckPositional("pidfd_send_signal", nargs, 2, 4)) {
         goto exit;
     }
-    pidfd = _PyLong_AsInt(args[0]);
+    pidfd = PyLong_AsInt(args[0]);
     if (pidfd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    signalnum = _PyLong_AsInt(args[1]);
+    signalnum = PyLong_AsInt(args[1]);
     if (signalnum == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -640,7 +637,7 @@ signal_pidfd_send_signal(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (nargs < 4) {
         goto skip_optional;
     }
-    flags = _PyLong_AsInt(args[3]);
+    flags = PyLong_AsInt(args[3]);
     if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -704,4 +701,4 @@ exit:
 #ifndef SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
     #define SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
 #endif /* !defined(SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF) */
-/*[clinic end generated code: output=f2a3321b32b0637c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5a9928cb2dc75b5f input=a9049054013a1b77]*/
