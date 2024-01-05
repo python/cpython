@@ -177,7 +177,6 @@ def addpackage(sitedir, name, known_paths):
         (getattr(st, 'st_file_attributes', 0) & stat.FILE_ATTRIBUTE_HIDDEN)):
         _trace(f"Skipping hidden .pth file: {fullname!r}")
         return
-    _trace(f"Processing .pth file: {fullname!r}")
     try:
         # locale encoding is not ideal especially on Windows. But we have used
         # it for a long time. setuptools uses the locale encoding too.
@@ -185,6 +184,15 @@ def addpackage(sitedir, name, known_paths):
     except OSError:
         return
     with f:
+        if stat.S_ISLNK(st.st_mode) and hasattr(st, 'st_flags'):
+            try:
+                st = os.fstat(f.fileno())
+            except OSError:
+                return
+            if st.st_flags & stat.UF_HIDDEN:
+                _trace(f"Skipping hidden .pth file: {fullname!r}")
+                return
+        _trace(f"Processing .pth file: {fullname!r}")
         for n, line in enumerate(f):
             if line.startswith("#"):
                 continue
