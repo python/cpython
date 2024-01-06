@@ -16,6 +16,10 @@
 #  include "mimalloc/internal.h"  // for stats
 #endif
 
+#if defined(Py_GIL_DISABLED) && !defined(WITH_MIMALLOC)
+#  error "Py_GIL_DISABLED requires WITH_MIMALLOC"
+#endif
+
 #undef  uint
 #define uint pymem_uint
 
@@ -84,19 +88,37 @@ _PyMem_RawFree(void *Py_UNUSED(ctx), void *ptr)
 void *
 _PyMem_MiMalloc(void *ctx, size_t size)
 {
+#ifdef Py_GIL_DISABLED
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+    mi_heap_t *heap = &tstate->mimalloc.heaps[_Py_MIMALLOC_HEAP_MEM];
+    return mi_heap_malloc(heap, size);
+#else
     return mi_malloc(size);
+#endif
 }
 
 void *
 _PyMem_MiCalloc(void *ctx, size_t nelem, size_t elsize)
 {
+#ifdef Py_GIL_DISABLED
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+    mi_heap_t *heap = &tstate->mimalloc.heaps[_Py_MIMALLOC_HEAP_MEM];
+    return mi_heap_calloc(heap, nelem, elsize);
+#else
     return mi_calloc(nelem, elsize);
+#endif
 }
 
 void *
 _PyMem_MiRealloc(void *ctx, void *ptr, size_t size)
 {
+#ifdef Py_GIL_DISABLED
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+    mi_heap_t *heap = &tstate->mimalloc.heaps[_Py_MIMALLOC_HEAP_MEM];
+    return mi_heap_realloc(heap, ptr, size);
+#else
     return mi_realloc(ptr, size);
+#endif
 }
 
 void
@@ -108,20 +130,38 @@ _PyMem_MiFree(void *ctx, void *ptr)
 void *
 _PyObject_MiMalloc(void *ctx, size_t nbytes)
 {
+#ifdef Py_GIL_DISABLED
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+    mi_heap_t *heap = tstate->mimalloc.current_object_heap;
+    return mi_heap_malloc(heap, nbytes);
+#else
     return mi_malloc(nbytes);
+#endif
 }
 
 void *
 _PyObject_MiCalloc(void *ctx, size_t nelem, size_t elsize)
 {
+#ifdef Py_GIL_DISABLED
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+    mi_heap_t *heap = tstate->mimalloc.current_object_heap;
+    return mi_heap_calloc(heap, nelem, elsize);
+#else
     return mi_calloc(nelem, elsize);
+#endif
 }
 
 
 void *
 _PyObject_MiRealloc(void *ctx, void *ptr, size_t nbytes)
 {
+#ifdef Py_GIL_DISABLED
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+    mi_heap_t *heap = tstate->mimalloc.current_object_heap;
+    return mi_heap_realloc(heap, ptr, nbytes);
+#else
     return mi_realloc(ptr, nbytes);
+#endif
 }
 
 void
@@ -153,7 +193,12 @@ void* _PyObject_Realloc(void *ctx, void *ptr, size_t size);
 #  define PYMALLOC_ALLOC {NULL, _PyObject_Malloc, _PyObject_Calloc, _PyObject_Realloc, _PyObject_Free}
 #endif  // WITH_PYMALLOC
 
-#if defined(WITH_PYMALLOC)
+#if defined(Py_GIL_DISABLED)
+// Py_GIL_DISABLED requires using mimalloc for "mem" and "obj" domains.
+#  define PYRAW_ALLOC MALLOC_ALLOC
+#  define PYMEM_ALLOC MIMALLOC_ALLOC
+#  define PYOBJ_ALLOC MIMALLOC_OBJALLOC
+#elif defined(WITH_PYMALLOC)
 #  define PYRAW_ALLOC MALLOC_ALLOC
 #  define PYMEM_ALLOC PYMALLOC_ALLOC
 #  define PYOBJ_ALLOC PYMALLOC_ALLOC
@@ -350,7 +395,7 @@ _PyMem_GetAllocatorName(const char *name, PyMemAllocatorName *allocator)
     else if (strcmp(name, "debug") == 0) {
         *allocator = PYMEM_ALLOCATOR_DEBUG;
     }
-#ifdef WITH_PYMALLOC
+#if defined(WITH_PYMALLOC) && !defined(Py_GIL_DISABLED)
     else if (strcmp(name, "pymalloc") == 0) {
         *allocator = PYMEM_ALLOCATOR_PYMALLOC;
     }
@@ -366,12 +411,14 @@ _PyMem_GetAllocatorName(const char *name, PyMemAllocatorName *allocator)
         *allocator = PYMEM_ALLOCATOR_MIMALLOC_DEBUG;
     }
 #endif
+#ifndef Py_GIL_DISABLED
     else if (strcmp(name, "malloc") == 0) {
         *allocator = PYMEM_ALLOCATOR_MALLOC;
     }
     else if (strcmp(name, "malloc_debug") == 0) {
         *allocator = PYMEM_ALLOCATOR_MALLOC_DEBUG;
     }
+#endif
     else {
         /* unknown allocator */
         return -1;

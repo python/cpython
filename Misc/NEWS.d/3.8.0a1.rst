@@ -2006,8 +2006,8 @@ Improved support of custom data descriptors in :func:`help` and
 .. nonce: V4kNN3
 .. section: Library
 
-The `crypt` module now internally uses the `crypt_r()` library function
-instead of `crypt()` when available.
+The ``crypt`` module now internally uses the ``crypt_r()`` library function
+instead of ``crypt()`` when available.
 
 ..
 
@@ -5044,8 +5044,8 @@ functionality.
 .. nonce: C_K-J9
 .. section: Library
 
-`ConfigParser.items()` was fixed so that key-value pairs passed in via
-`vars` are not included in the resulting output.
+``ConfigParser.items()`` was fixed so that key-value pairs passed in via
+:func:`vars` are not included in the resulting output.
 
 ..
 

@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.2
+    rev: v0.1.7
     hooks:
       - id: ruff
         name: Run Ruff on Lib/test/
@@ -24,7 +24,7 @@ repos:
         types_or: [c, inc, python, rst]
 
   - repo: https://github.com/sphinx-contrib/sphinx-lint
-    rev: v0.8.1
+    rev: v0.9.1
     hooks:
       - id: sphinx-lint
         args: [--enable=default-role]
