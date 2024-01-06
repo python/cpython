@@ -929,10 +929,14 @@ deque_repeat(dequeobject *deque, Py_ssize_t n)
     dequeobject *new_deque;
     PyObject *rv;
 
+    Py_BEGIN_CRITICAL_SECTION(deque);
     new_deque = (dequeobject *) _collections_deque_copy_impl(deque);
+    Py_END_CRITICAL_SECTION();
     if (new_deque == NULL)
         return NULL;
-    rv = deque_inplace_repeat(new_deque, n);
+    // It's safe to not acquire the per-object lock for new_deque; it's
+    // invisible to other threads.
+    rv = deque_inplace_repeat_locked(new_deque, n);
     Py_DECREF(new_deque);
     return rv;
 }
