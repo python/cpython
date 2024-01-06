@@ -82,7 +82,9 @@ channel's queue, which are safely managed via the _PyCrossInterpreterData_*()
 API..  The module does not create any objects that are shared globally.
 */
 
-#define MODULE_NAME "_xxinterpchannels"
+#define MODULE_NAME _xxinterpchannels
+#define MODULE_NAME_STR Py_STRINGIFY(MODULE_NAME)
+#define MODINIT_FUNC_NAME RESOLVE_MODINIT_FUNC_NAME(MODULE_NAME)
 
 
 #define GLOBAL_MALLOC(TYPE) \
@@ -169,7 +171,7 @@ _get_current_interp(void)
 static PyObject *
 _get_current_module(void)
 {
-    PyObject *name = PyUnicode_FromString(MODULE_NAME);
+    PyObject *name = PyUnicode_FromString(MODULE_NAME_STR);
     if (name == NULL) {
         return NULL;
     }
@@ -219,7 +221,7 @@ add_new_exception(PyObject *mod, const char *name, PyObject *base)
 }
 
 #define ADD_NEW_EXCEPTION(MOD, NAME, BASE) \
-    add_new_exception(MOD, MODULE_NAME "." Py_STRINGIFY(NAME), BASE)
+    add_new_exception(MOD, MODULE_NAME_STR "." Py_STRINGIFY(NAME), BASE)
 
 static PyTypeObject *
 add_new_type(PyObject *mod, PyType_Spec *spec, crossinterpdatafunc shared,
@@ -301,7 +303,7 @@ _get_current_module_state(void)
     if (mod == NULL) {
         // XXX import it?
         PyErr_SetString(PyExc_RuntimeError,
-                        MODULE_NAME " module not imported yet");
+                        MODULE_NAME_STR " module not imported yet");
         return NULL;
     }
     module_state *state = get_module_state(mod);
@@ -2128,7 +2130,7 @@ static PyStructSequence_Field channel_info_fields[] = {
 };
 
 static PyStructSequence_Desc channel_info_desc = {
-    .name = MODULE_NAME ".ChannelInfo",
+    .name = MODULE_NAME_STR ".ChannelInfo",
     .doc = channel_info_doc,
     .fields = channel_info_fields,
     .n_in_sequence = 8,
@@ -2480,7 +2482,7 @@ _channelid_from_xid(_PyCrossInterpreterData *data)
                 (struct _channelid_xid *)_PyCrossInterpreterData_DATA(data);
 
     // It might not be imported yet, so we can't use _get_current_module().
-    PyObject *mod = PyImport_ImportModule(MODULE_NAME);
+    PyObject *mod = PyImport_ImportModule(MODULE_NAME_STR);
     if (mod == NULL) {
         return NULL;
     }
@@ -2605,7 +2607,7 @@ static PyType_Slot channelid_typeslots[] = {
 };
 
 static PyType_Spec channelid_typespec = {
-    .name = MODULE_NAME ".ChannelID",
+    .name = MODULE_NAME_STR ".ChannelID",
     .basicsize = sizeof(channelid),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE),
@@ -3383,7 +3385,7 @@ module_free(void *mod)
 
 static struct PyModuleDef moduledef = {
     .m_base = PyModuleDef_HEAD_INIT,
-    .m_name = MODULE_NAME,
+    .m_name = MODULE_NAME_STR,
     .m_doc = module_doc,
     .m_size = sizeof(module_state),
     .m_methods = module_functions,
@@ -3394,7 +3396,7 @@ static struct PyModuleDef moduledef = {
 };
 
 PyMODINIT_FUNC
-PyInit__xxinterpchannels(void)
+MODINIT_FUNC_NAME(void)
 {
     return PyModuleDef_Init(&moduledef);
 }
