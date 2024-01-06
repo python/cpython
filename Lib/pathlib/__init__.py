@@ -245,7 +245,10 @@ class PurePath(_abc.PurePathBase):
                    "scheduled for removal in Python 3.14")
             warnings.warn(msg, DeprecationWarning, stacklevel=2)
             other = self.with_segments(other, *_deprecated)
-        return _abc.PurePathBase.relative_to(self, other, walk_up=walk_up)
+        path = _abc.PurePathBase.relative_to(self, other, walk_up=walk_up)
+        path._drv = path._root = ''
+        path._tail_cached = path._raw_paths.copy()
+        return path
 
     def is_relative_to(self, other, /, *_deprecated):
         """Return True if the path is relative to another path or False.
