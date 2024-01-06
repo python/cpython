@@ -572,7 +572,7 @@ tuple_index_impl(PyTupleObject *self, PyObject *value, Py_ssize_t start,
         else if (cmp < 0)
             return NULL;
         }
-    } 
+    }
     else {
         for (i = start; i < stop; i++) {
         PyObject *item = self->ob_item[i];
