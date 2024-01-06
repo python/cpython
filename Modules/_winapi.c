@@ -860,8 +860,6 @@ normalize_environment(PyObject* environment)
         if (i == 0) {
             prev_key_string = PyUnicode_AsWideCharString(key, NULL);
             if (prev_key_string == NULL) {
-                Py_XDECREF(result);
-                result = NULL;
                 goto error;
             }
             if (PyObject_SetItem(result, key, value) < 0) {
