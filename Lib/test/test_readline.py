@@ -5,6 +5,7 @@ import locale
 import os
 import sys
 import tempfile
+import textwrap
 import unittest
 from test.support import verbose
 from test.support.import_helper import import_module
@@ -18,7 +19,7 @@ readline = import_module('readline')
 if hasattr(readline, "_READLINE_LIBRARY_VERSION"):
     is_editline = ("EditLine wrapper" in readline._READLINE_LIBRARY_VERSION)
 else:
-    is_editline = (readline.__doc__ and "libedit" in readline.__doc__)
+    is_editline = readline.backend == "editline"
 
 
 def setUpModule():
@@ -144,6 +145,9 @@ class TestReadline(unittest.TestCase):
                                               TERM='xterm-256color')
         self.assertEqual(stdout, b'')
 
+    def test_backend(self):
+        self.assertIn(readline.backend, ("readline", "editline"))
+
     auto_history_script = """\
 import readline
 readline.set_auto_history({})
@@ -163,6 +167,25 @@ print("History length:", readline.get_current_history_length())
         # end, so don't expect it in the output.
         self.assertIn(b"History length: 0", output)
 
+    def test_set_complete_delims(self):
+        script = textwrap.dedent("""
+            import readline
+            def complete(text, state):
+                if state == 0 and text == "$":
+                    return "$complete"
+                return None
+            if readline.backend == "editline":
+                readline.parse_and_bind(r'bind "\\t" rl_complete')
+            else:
+                readline.parse_and_bind(r'"\\t": complete')
+            readline.set_completer_delims(" \\t\\n")
+            readline.set_completer(complete)
+            print(input())
+        """)
+
+        output = run_pty(script, input=b"$\t\n")
+        self.assertIn(b"$complete", output)
+
     def test_nonascii(self):
         loc = locale.setlocale(locale.LC_CTYPE, None)
         if loc in ('C', 'POSIX'):
@@ -178,7 +201,7 @@ print("History length:", readline.get_current_history_length())
 
         script = r"""import readline
 
-is_editline = readline.__doc__ and "libedit" in readline.__doc__
+is_editline = readline.backend == "editline"
 inserted = "[\xEFnserted]"
 macro = "|t\xEB[after]"
 set_pre_input_hook = getattr(readline, "set_pre_input_hook", None)
