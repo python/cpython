@@ -2006,8 +2006,8 @@ Improved support of custom data descriptors in :func:`help` and
 .. nonce: V4kNN3
 .. section: Library
 
-The `crypt` module now internally uses the `crypt_r()` library function
-instead of `crypt()` when available.
+The ``crypt`` module now internally uses the ``crypt_r()`` library function
+instead of ``crypt()`` when available.
 
 ..
 
