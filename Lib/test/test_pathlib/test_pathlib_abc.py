@@ -1086,7 +1086,7 @@ class DummyPathTest(DummyPurePathTest):
             self.skipTest("symlinks required")
         def _check(path, glob, expected):
             actual = {path for path in path.glob(glob, follow_symlinks=True)
-                      if "linkD" not in path.parent.parts}  # exclude symlink loop.
+                      if path.parts.count("linkD") <= 1}  # exclude symlink loop.
             self.assertEqual(actual, { P(self.base, q) for q in expected })
         P = self.cls
         p = P(self.base)
@@ -1096,13 +1096,15 @@ class DummyPathTest(DummyPurePathTest):
         _check(p, "*B/*", ["dirB/fileB", "dirB/linkD", "linkB/fileB", "linkB/linkD"])
         _check(p, "*/fileB", ["dirB/fileB", "linkB/fileB"])
         _check(p, "*/", ["dirA/", "dirB/", "dirC/", "dirE/", "linkB/"])
-        _check(p, "dir*/*/..", ["dirC/dirD/..", "dirA/linkC/.."])
+        _check(p, "dir*/*/..", ["dirC/dirD/..", "dirA/linkC/..", "dirB/linkD/.."])
         _check(p, "dir*/**/", ["dirA/", "dirA/linkC/", "dirA/linkC/linkD/", "dirB/", "dirB/linkD/",
                                "dirC/", "dirC/dirD/", "dirE/"])
         _check(p, "dir*/**/..", ["dirA/..", "dirA/linkC/..", "dirB/..",
+                                 "dirB/linkD/..", "dirA/linkC/linkD/..",
                                  "dirC/..", "dirC/dirD/..", "dirE/.."])
         _check(p, "dir*/*/**/", ["dirA/linkC/", "dirA/linkC/linkD/", "dirB/linkD/", "dirC/dirD/"])
-        _check(p, "dir*/*/**/..", ["dirA/linkC/..", "dirC/dirD/.."])
+        _check(p, "dir*/*/**/..", ["dirA/linkC/..", "dirA/linkC/linkD/..",
+                                   "dirB/linkD/..", "dirC/dirD/.."])
         _check(p, "dir*/**/fileC", ["dirC/fileC"])
         _check(p, "dir*/*/../dirD/**/", ["dirC/dirD/../dirD/"])
         _check(p, "*/dirD/**/", ["dirC/dirD/"])
@@ -1157,7 +1159,7 @@ class DummyPathTest(DummyPurePathTest):
                 "dirA/", "dirA/linkC/", "dirB/", "dirB/linkD/", "dirC/",
                 "dirC/dirD/", "dirE/", "linkB/",
             ])
-        _check(p.rglob(""), ["./", "dirA/", "dirB/", "dirC/", "dirE/", "dirC/dirD/"])
+        _check(p.rglob(""), ["", "dirA/", "dirB/", "dirC/", "dirE/", "dirC/dirD/"])
 
         p = P(self.base, "dirC")
         _check(p.rglob("*"), ["dirC/fileC", "dirC/novel.txt",
@@ -1178,18 +1180,21 @@ class DummyPathTest(DummyPurePathTest):
             self.skipTest("symlinks required")
         def _check(path, glob, expected):
             actual = {path for path in path.rglob(glob, follow_symlinks=True)
-                      if 'linkD' not in path.parent.parts}  # exclude symlink loop.
+                      if path.parts.count("linkD") <= 1}  # exclude symlink loop.
             self.assertEqual(actual, { P(self.base, q) for q in expected })
         P = self.cls
         p = P(self.base)
-        _check(p, "fileB", ["dirB/fileB", "dirA/linkC/fileB", "linkB/fileB"])
+        _check(p, "fileB", ["dirB/fileB", "dirA/linkC/fileB", "linkB/fileB",
+                            "dirA/linkC/linkD/fileB", "dirB/linkD/fileB", "linkB/linkD/fileB"])
         _check(p, "*/fileA", [])
-        _check(p, "*/fileB", ["dirB/fileB", "dirA/linkC/fileB", "linkB/fileB"])
+        _check(p, "*/fileB", ["dirB/fileB", "dirA/linkC/fileB", "linkB/fileB",
+                              "dirA/linkC/linkD/fileB", "dirB/linkD/fileB", "linkB/linkD/fileB"])
         _check(p, "file*", ["fileA", "dirA/linkC/fileB", "dirB/fileB",
+                            "dirA/linkC/linkD/fileB", "dirB/linkD/fileB", "linkB/linkD/fileB",
                             "dirC/fileC", "dirC/dirD/fileD", "linkB/fileB"])
         _check(p, "*/", ["dirA/", "dirA/linkC/", "dirA/linkC/linkD/", "dirB/", "dirB/linkD/",
                          "dirC/", "dirC/dirD/", "dirE/", "linkB/", "linkB/linkD/"])
-        _check(p, "", ["./", "dirA/", "dirA/linkC/", "dirA/linkC/linkD/", "dirB/", "dirB/linkD/",
+        _check(p, "", ["", "dirA/", "dirA/linkC/", "dirA/linkC/linkD/", "dirB/", "dirB/linkD/",
                        "dirC/", "dirE/", "dirC/dirD/", "linkB/", "linkB/linkD/"])
 
         p = P(self.base, "dirC")
@@ -1216,7 +1221,7 @@ class DummyPathTest(DummyPurePathTest):
         _check(p, "*/fileB", ["dirB/fileB"])
         _check(p, "file*", ["fileA", "dirB/fileB", "dirC/fileC", "dirC/dirD/fileD", ])
         _check(p, "*/", ["dirA/", "dirB/", "dirC/", "dirC/dirD/", "dirE/"])
-        _check(p, "", ["./", "dirA/", "dirB/", "dirC/", "dirE/", "dirC/dirD/"])
+        _check(p, "", ["", "dirA/", "dirB/", "dirC/", "dirE/", "dirC/dirD/"])
 
         p = P(self.base, "dirC")
         _check(p, "*", ["dirC/fileC", "dirC/novel.txt",
