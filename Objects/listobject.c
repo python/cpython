@@ -2689,7 +2689,7 @@ list_index_impl(PyListObject *self, PyObject *value, Py_ssize_t start,
         for (i = start; i < stop && i < Py_SIZE(self); i++) {
             PyObject *obj = self->ob_item[i];
             /* take reference to item, in case comparison methods modify list */
-            Py_INCREF(obj);  
+            Py_INCREF(obj);
             int cmp = PyObject_RichCompareBool(obj, value, Py_EQ);
             Py_DECREF(obj);
             if (cmp > 0)
@@ -2701,7 +2701,7 @@ list_index_impl(PyListObject *self, PyObject *value, Py_ssize_t start,
         for (i = start; i < stop && i < Py_SIZE(self); i++) {
             PyObject *item = self->ob_item[i];
             /* take reference to item, in case key modifies list */
-            Py_INCREF(item);  
+            Py_INCREF(item);
             PyObject *obj = PyObject_CallFunctionObjArgs(key, item, NULL);
             Py_DECREF(item);
             if (!obj)

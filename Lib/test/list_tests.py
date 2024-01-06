@@ -396,9 +396,10 @@ class CommonTest(seq_tests.CommonTest):
         def evil_key(i):
             del data[:]
             return i[1]
+
         with self.assertRaises(ValueError):
             idx = data.index("a", key=evil_key)
-        self.assertEqual(data, [])        
+        self.assertEqual(data, [])
 
     def test_reverse(self):
         u = self.type2test([-2, -1, 0, 1, 2])
