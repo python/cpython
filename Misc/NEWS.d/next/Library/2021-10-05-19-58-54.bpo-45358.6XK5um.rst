@@ -1,0 +1,1 @@
+Add "Priority" and "SameParty" to known cookie attributes.

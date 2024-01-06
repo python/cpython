@@ -282,9 +282,10 @@ class Morsel(dict):
         "httponly" : "HttpOnly",
         "version"  : "Version",
         "samesite" : "SameSite",
+        "priority" : "Priority"
     }
 
-    _flags = {'secure', 'httponly'}
+    _flags = {'secure', 'httponly', 'sameparty'}
 
     def __init__(self):
         # Set defaults
@@ -581,6 +582,8 @@ class BaseCookie(dict):
                 parsed_items.append((TYPE_KEYVALUE, key, self.value_decode(value)))
                 morsel_seen = True
             else:
+                if morsel_seen:
+                    continue
                 # Invalid cookie string
                 return
 
