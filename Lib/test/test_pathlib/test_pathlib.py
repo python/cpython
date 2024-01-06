@@ -214,6 +214,19 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
                 self.assertEqual(q, p)
                 self.assertEqual(repr(q), r)
 
+    def test_relative_to_several_args(self):
+        P = self.cls
+        p = P('a/b')
+        with self.assertWarns(DeprecationWarning):
+            p.relative_to('a', 'b')
+            p.relative_to('a', 'b', walk_up=True)
+
+    def test_is_relative_to_several_args(self):
+        P = self.cls
+        p = P('a/b')
+        with self.assertWarns(DeprecationWarning):
+            p.is_relative_to('a', 'b')
+
 
 class PurePosixPathTest(PurePathTest):
     cls = pathlib.PurePosixPath
@@ -1702,6 +1715,18 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
 
         with set_recursion_limit(recursion_limit):
             list(base.glob('**/'))
+
+    def test_glob_recursive_no_trailing_slash(self):
+        P = self.cls
+        p = P(self.base)
+        with self.assertWarns(FutureWarning):
+            p.glob('**')
+        with self.assertWarns(FutureWarning):
+            p.glob('*/**')
+        with self.assertWarns(FutureWarning):
+            p.rglob('**')
+        with self.assertWarns(FutureWarning):
+            p.rglob('*/**')
 
 
 @only_posix
