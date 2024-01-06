@@ -819,68 +819,68 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
         Py_DECREF(getattr);
         return result;
     }
+
+    if (suppress == 1) {
+        return NULL;
+    }
     if (PyDict_GetItemRef(m->md_dict, &_Py_ID(__name__), &mod_name) < 0) {
         return NULL;
     }
-    if (mod_name && PyUnicode_Check(mod_name)) {
-        PyObject *spec;
-        if (PyDict_GetItemRef(m->md_dict, &_Py_ID(__spec__), &spec) < 0) {
-            Py_DECREF(mod_name);
-            return NULL;
-        }
-        if (suppress != 1) {
-            int rc = _PyModuleSpec_IsInitializing(spec);
-            if (rc > 0) {
-                int valid_spec = PyObject_GetOptionalAttr(spec, &_Py_ID(origin), &origin);
-                if (valid_spec == -1) {
-                    Py_XDECREF(spec);
-                    Py_DECREF(mod_name);
-                    return NULL;
-                }
-                if (valid_spec == 1 && !PyUnicode_Check(origin)) {
-                    valid_spec = 0;
-                    Py_DECREF(origin);
-                }
-                if (valid_spec == 1) {
-                    PyErr_Format(PyExc_AttributeError,
-                                "partially initialized "
-                                "module '%U' from '%U' has no attribute '%U' "
-                                "(most likely due to a circular import)",
-                                mod_name, origin, name);
-                    Py_DECREF(origin);
-                }
-                else {
-                    PyErr_Format(PyExc_AttributeError,
-                                "partially initialized "
-                                "module '%U' has no attribute '%U' "
-                                "(most likely due to a circular import)",
-                                mod_name, name);
-                }
-            }
-            else if (rc == 0) {
-                rc = _PyModuleSpec_IsUninitializedSubmodule(spec, name);
-                if (rc > 0) {
-                    PyErr_Format(PyExc_AttributeError,
-                                "cannot access submodule '%U' of module '%U' "
-                                "(most likely due to a circular import)",
-                                name, mod_name);
-                }
-                else if (rc == 0) {
-                    PyErr_Format(PyExc_AttributeError,
-                                "module '%U' has no attribute '%U'",
-                                mod_name, name);
-                }
-            }
-        }
-        Py_XDECREF(spec);
+    if (!mod_name || !PyUnicode_Check(mod_name)) {
+        Py_XDECREF(mod_name);
+        PyErr_Format(PyExc_AttributeError,
+                    "module has no attribute '%U'", name);
+        return NULL;
+    }
+    PyObject *spec;
+    if (PyDict_GetItemRef(m->md_dict, &_Py_ID(__spec__), &spec) < 0) {
         Py_DECREF(mod_name);
         return NULL;
     }
-    Py_XDECREF(mod_name);
-    if (suppress != 1) {
-        PyErr_Format(PyExc_AttributeError,
-                    "module has no attribute '%U'", name);
+    int rc = _PyModuleSpec_IsInitializing(spec);
+    if (rc > 0) {
+        int valid_spec = PyObject_GetOptionalAttr(spec, &_Py_ID(origin), &origin);
+        if (valid_spec == -1) {
+            Py_XDECREF(spec);
+            Py_DECREF(mod_name);
+            return NULL;
+        }
+        if (valid_spec == 1 && !PyUnicode_Check(origin)) {
+            valid_spec = 0;
+            Py_DECREF(origin);
+        }
+        if (valid_spec == 1) {
+            PyErr_Format(PyExc_AttributeError,
+                        "partially initialized "
+                        "module '%U' from '%U' has no attribute '%U' "
+                        "(most likely due to a circular import)",
+                        mod_name, origin, name);
+            Py_DECREF(origin);
+        }
+        else {
+            PyErr_Format(PyExc_AttributeError,
+                        "partially initialized "
+                        "module '%U' has no attribute '%U' "
+                        "(most likely due to a circular import)",
+                        mod_name, name);
+        }
     }
+    else if (rc == 0) {
+        rc = _PyModuleSpec_IsUninitializedSubmodule(spec, name);
+        if (rc > 0) {
+            PyErr_Format(PyExc_AttributeError,
+                        "cannot access submodule '%U' of module '%U' "
+                        "(most likely due to a circular import)",
+                        name, mod_name);
+        }
+        else if (rc == 0) {
+            PyErr_Format(PyExc_AttributeError,
+                        "module '%U' has no attribute '%U'",
+                        mod_name, name);
+        }
+    }
+    Py_XDECREF(spec);
+    Py_DECREF(mod_name);
     return NULL;
 }
 
