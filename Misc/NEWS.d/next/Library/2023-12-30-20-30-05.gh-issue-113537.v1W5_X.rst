@@ -1,0 +1,1 @@
+Support loads ``str`` in :func:`plistlib.loads`.

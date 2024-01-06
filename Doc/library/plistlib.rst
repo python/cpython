@@ -27,7 +27,7 @@ top level object is a dictionary.
 To write out and to parse a plist file, use the :func:`dump` and
 :func:`load` functions.
 
-To work with plist data in bytes objects, use :func:`dumps`
+To work with plist data in bytes or string objects, use :func:`dumps`
 and :func:`loads`.
 
 Values can be strings, integers, floats, booleans, tuples, lists, dictionaries
@@ -89,11 +89,13 @@ This module defines the following functions:
 
 .. function:: loads(data, *, fmt=None, dict_type=dict, aware_datetime=False)
 
-   Load a plist from a bytes object. See :func:`load` for an explanation of
-   the keyword arguments.
+   Load a plist from a bytes or string object. See :func:`load` for an
+   explanation of the keyword arguments.
 
    .. versionadded:: 3.4
 
+   .. versionchanged:: 3.13
+      *data* can be a string when *fmt* equals :data:`FMT_XML`.
 
 .. function:: dump(value, fp, *, fmt=FMT_XML, sort_keys=True, skipkeys=False, aware_datetime=False)
 
