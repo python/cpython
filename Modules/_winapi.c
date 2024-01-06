@@ -777,7 +777,8 @@ gethandle(PyObject* obj, const char* name)
 static PyObject*
 sortenvironmentkey(PyObject *module, PyObject *item)
 {
-    return _winapi_LCMapStringEx_impl(NULL, LOCALE_NAME_INVARIANT, LCMAP_UPPERCASE, item);
+    return _winapi_LCMapStringEx_impl(NULL, LOCALE_NAME_INVARIANT,
+                                      LCMAP_UPPERCASE, item);
 }
 
 static PyMethodDef sortenvironmentkey_def = {
@@ -788,16 +789,12 @@ static PyMethodDef sortenvironmentkey_def = {
 };
 
 static PyObject *
-normalize_environment(PyObject* environment)
+normalize_environment_keys(PyObject *keys)
 {
-    PyObject *result = NULL, *keys = NULL, *keyfunc = NULL, *kwnames = NULL,
-        *dedupped_keys = NULL;
+    PyObject *keyfunc = NULL, *kwnames = NULL, *result = NULL;
+    wchar_t *prev_key_string = NULL;
 
-    keys = PyMapping_Keys(environment);
-    if (keys == NULL) {
-        return NULL;
-    }
-
+    // Sort the keys.
     keyfunc = PyCFunction_New(&sortenvironmentkey_def, NULL);
     if (keyfunc == NULL) {
         goto error;
@@ -811,11 +808,11 @@ normalize_environment(PyObject* environment)
         goto error;
     }
 
-    dedupped_keys = PyList_New(0);
-    if (dedupped_keys == NULL) {
+    // Remove duplicated keys and only keep the last inserted one.
+    result = PyList_New(0);
+    if (result == NULL) {
         goto error;
     }
-    wchar_t *prev_key_string = NULL;
     for (Py_ssize_t i=PyList_GET_SIZE(keys)-1; i>=0; i--) {
         PyObject *key = PyList_GET_ITEM(keys, i);
         if (key == NULL) {
@@ -826,7 +823,7 @@ normalize_environment(PyObject* environment)
             if (prev_key_string == NULL) {
                 goto error;
             }
-            if (PyList_Insert(dedupped_keys, 0, key) < 0) {
+            if (PyList_Insert(result, 0, key) < 0) {
                 goto error;
             }
             continue;
@@ -839,19 +836,48 @@ normalize_environment(PyObject* environment)
             PyMem_Free(key_string);
             continue;
         }
-        if (PyList_Insert(dedupped_keys, 0, key) < 0) {
+        if (PyList_Insert(result, 0, key) < 0) {
             goto error;
         }
         PyMem_Free(prev_key_string);
         prev_key_string = key_string;
     }
 
+    goto cleanup;
+error:
+    Py_XDECREF(result);
+    result = NULL;
+cleanup:
+    Py_XDECREF(keyfunc);
+    Py_XDECREF(kwnames);
+    if (prev_key_string != NULL) {
+        PyMem_Free(prev_key_string);
+    }
+
+    return result;
+}
+
+static PyObject *
+normalize_environment(PyObject* environment)
+{
+    PyObject *result = NULL, *keys = NULL, *normalized_keys = NULL;
+
+    keys = PyMapping_Keys(environment);
+    if (keys == NULL) {
+        return NULL;
+    }
+
+    normalized_keys = normalize_environment_keys(keys);
+    if (normalized_keys == NULL) {
+        goto error;
+    }
+
     result = PyDict_New();
     if (result == NULL) {
         goto error;
     }
-    for (int i=0; i<PyList_GET_SIZE(dedupped_keys); i++) {
-        PyObject *key = PyList_GET_ITEM(dedupped_keys, i);
+    for (int i=0; i<PyList_GET_SIZE(normalized_keys); i++) {
+        PyObject *key = PyList_GET_ITEM(normalized_keys, i);
         if (key == NULL) {
             goto error;
         }
@@ -891,12 +917,6 @@ error:
     result = NULL;
 cleanup:
     Py_XDECREF(keys);
-    Py_XDECREF(dedupped_keys);
-    Py_XDECREF(keyfunc);
-    Py_XDECREF(kwnames);
-    if (prev_key_string != NULL) {
-        PyMem_Free(prev_key_string);
-    }
 
     return result;
 }
