@@ -1627,11 +1627,16 @@ _collections_deque___reduce___impl(dequeobject *deque)
         return NULL;
     }
 
-    if (deque->maxlen < 0) {
-        return Py_BuildValue("O()NN", Py_TYPE(deque), state, it);
+    Py_BEGIN_CRITICAL_SECTION(deque);
+    Py_ssize_t maxlen = deque->maxlen;
+    PyTypeObject *typ = Py_TYPE(deque);
+    Py_END_CRITICAL_SECTION();
+
+    if (maxlen < 0) {
+        return Py_BuildValue("O()NN", typ, state, it);
     }
     else {
-        return Py_BuildValue("O(()n)NN", Py_TYPE(deque), deque->maxlen, state, it);
+        return Py_BuildValue("O(()n)NN", typ, maxlen, state, it);
     }
 }
 
