@@ -2132,13 +2132,9 @@ deque_reviter(dequeobject *deque)
 }
 
 static PyObject *
-dequereviter_next(dequeiterobject *it)
+dequereviter_next_locked(dequeiterobject *it, dequeobject *deque)
 {
-    PyObject *item;
-    if (it->counter == 0)
-        return NULL;
-
-    if (it->deque->state != it->state) {
+    if (it->deque != deque || it->deque->state != it->state) {
         it->counter = 0;
         PyErr_SetString(PyExc_RuntimeError,
                         "deque mutated during iteration");
@@ -2147,7 +2143,7 @@ dequereviter_next(dequeiterobject *it)
     assert (!(it->b == it->deque->leftblock &&
               it->index < it->deque->leftindex));
 
-    item = it->b->data[it->index];
+    PyObject *item = it->b->data[it->index];
     it->index--;
     it->counter--;
     if (it->index < 0 && it->counter > 0) {
@@ -2156,6 +2152,28 @@ dequereviter_next(dequeiterobject *it)
         it->index = BLOCKLEN - 1;
     }
     return Py_NewRef(item);
+}
+
+static PyObject *
+dequereviter_next(dequeiterobject *it)
+{
+    dequeobject *deque = NULL;
+    Py_ssize_t counter;
+
+    Py_BEGIN_CRITICAL_SECTION(it);
+    counter = it->counter;
+    deque = it->deque;
+    Py_END_CRITICAL_SECTION();
+
+    if (counter == 0)
+        return NULL;
+
+    PyObject *item = NULL;
+    Py_BEGIN_CRITICAL_SECTION2(it, deque);
+    item = dequereviter_next_locked(it, deque);
+    Py_END_CRITICAL_SECTION2();
+
+    return item;
 }
 
 static PyObject *
