@@ -16,18 +16,18 @@ import codecs
 class Codec(codecs.Codec):
 
     def encode(self,input,errors='strict'):
-        raise UnicodeEncodeError("undefined", input, 0, len(input), "undefined encoding")
+        raise UnicodeError("undefined encoding")
 
     def decode(self,input,errors='strict'):
-        raise UnicodeDecodeError("undefined", input, 0, len(input), "undefined encoding")
+        raise UnicodeError("undefined encoding")
 
 class IncrementalEncoder(codecs.IncrementalEncoder):
     def encode(self, input, final=False):
-        raise UnicodeEncodeError("undefined", input, 0, len(input), "undefined encoding")
+        raise UnicodeError("undefined encoding")
 
 class IncrementalDecoder(codecs.IncrementalDecoder):
     def decode(self, input, final=False):
-        raise UnicodeDecodeError("undefined", input, 0, len(input), "undefined encoding")
+        raise UnicodeError("undefined encoding")
 
 class StreamWriter(Codec,codecs.StreamWriter):
     pass

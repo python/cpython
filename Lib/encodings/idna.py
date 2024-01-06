@@ -170,7 +170,7 @@ class Codec(codecs.Codec):
 
         if errors != 'strict':
             # IDNA is quite clear that implementations must be strict
-            raise UnicodeEncodeError("idna", input, 0, 1, f"unsupported error handling {errors}")
+            raise UnicodeError(f"Unsupported error handling: {errors}")
 
         if not input:
             return b'', 0
@@ -217,7 +217,7 @@ class Codec(codecs.Codec):
     def decode(self, input, errors='strict'):
 
         if errors != 'strict':
-            raise UnicodeDecodeError("idna", input, 0, 1, f"Unsupported error handling {errors}")
+            raise UnicodeError(f"Unsupported error handling: {errors}")
 
         if not input:
             return "", 0
@@ -264,7 +264,7 @@ class IncrementalEncoder(codecs.BufferedIncrementalEncoder):
     def _buffer_encode(self, input, errors, final):
         if errors != 'strict':
             # IDNA is quite clear that implementations must be strict
-            raise UnicodeEncodeError("idna", input, 0, 1, f"Unsupported error handling {errors}")
+            raise UnicodeError(f"Unsupported error handling: {errors}")
 
         if not input:
             return (b'', 0)
@@ -307,7 +307,7 @@ class IncrementalEncoder(codecs.BufferedIncrementalEncoder):
 class IncrementalDecoder(codecs.BufferedIncrementalDecoder):
     def _buffer_decode(self, input, errors, final):
         if errors != 'strict':
-            raise UnicodeDecodeError("idna", input, 0, 1, "Unsupported error handling {errors}")
+            raise UnicodeError("Unsupported error handling: {errors}")
 
         if not input:
             return ("", 0)
