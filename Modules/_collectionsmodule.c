@@ -704,9 +704,11 @@ deque_concat(dequeobject *deque, PyObject *other)
     PyObject *new_deque, *result;
     int rv;
 
+    Py_BEGIN_CRITICAL_SECTION(deque);
     collections_state *state = find_module_state_by_def(Py_TYPE(deque));
     rv = PyObject_IsInstance(other, (PyObject *)state->deque_type);
     if (rv <= 0) {
+        Py_END_CRITICAL_SECTION();
         if (rv == 0) {
             PyErr_Format(PyExc_TypeError,
                          "can only concatenate deque (not \"%.200s\") to deque",
@@ -716,9 +718,12 @@ deque_concat(dequeobject *deque, PyObject *other)
     }
 
     new_deque = _collections_deque_copy_impl(deque);
+    Py_END_CRITICAL_SECTION();
     if (new_deque == NULL)
         return NULL;
-    result = _collections_deque_extend((dequeobject *)new_deque, other);
+    // It's safe to not acquire the per-object lock for new_deque; it's
+    // invisible to other threads.
+    result = _collections_deque_extend_impl((dequeobject *)new_deque, other);
     if (result == NULL) {
         Py_DECREF(new_deque);
         return NULL;
