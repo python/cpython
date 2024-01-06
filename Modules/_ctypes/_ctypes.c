@@ -2703,7 +2703,6 @@ KeepRef(CDataObject *target, Py_ssize_t index, PyObject *keep)
 static int
 PyCData_traverse(CDataObject *self, visitproc visit, void *arg)
 {
-    assert(PyType_HasFeature(Py_TYPE(self), Py_TPFLAGS_HEAPTYPE));
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->b_objects);
     Py_VISIT((PyObject *)self->b_base);
