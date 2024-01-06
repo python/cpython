@@ -790,7 +790,8 @@ static PyMethodDef sortenvironmentkey_def = {
 static PyObject *
 normalize_environment(PyObject* environment)
 {
-    PyObject *result = NULL, *keys = NULL, *keyfunc = NULL, *kwnames = NULL;
+    PyObject *result = NULL, *keys = NULL, *keyfunc = NULL, *kwnames = NULL,
+        *dedupped_keys = NULL;
 
     keys = PyMapping_Keys(environment);
     if (keys == NULL) {
@@ -810,14 +811,47 @@ normalize_environment(PyObject* environment)
         goto error;
     }
 
+    dedupped_keys = PyList_New(0);
+    if (dedupped_keys == NULL) {
+        goto error;
+    }
+    wchar_t *prev_key_string = NULL;
+    for (Py_ssize_t i=PyList_GET_SIZE(keys)-1; i>=0; i--) {
+        PyObject *key = PyList_GET_ITEM(keys, i);
+        if (key == NULL) {
+            goto error;
+        }
+        if (i == PyList_GET_SIZE(keys)) {
+            prev_key_string = PyUnicode_AsWideCharString(key, NULL);
+            if (prev_key_string == NULL) {
+                goto error;
+            }
+            if (PyList_Insert(dedupped_keys, 0, key) < 0) {
+                goto error;
+            }
+            continue;
+        }
+        wchar_t *key_string = PyUnicode_AsWideCharString(key, NULL);
+        if (key_string == NULL) {
+            goto error;
+        }
+        if (CompareStringOrdinal(prev_key_string, -1, key_string, -1, TRUE) == CSTR_EQUAL) {
+            PyMem_Free(key_string);
+            continue;
+        }
+        if (PyList_Insert(dedupped_keys, 0, key) < 0) {
+            goto error;
+        }
+        PyMem_Free(prev_key_string);
+        prev_key_string = key_string;
+    }
+
     result = PyDict_New();
     if (result == NULL) {
         goto error;
     }
-    wchar_t *prev_key_string = NULL;
-
-    for (int i=0; i<PyList_GET_SIZE(keys); i++) {
-        PyObject *key = PyList_GET_ITEM(keys, i);
+    for (int i=0; i<PyList_GET_SIZE(dedupped_keys); i++) {
+        PyObject *key = PyList_GET_ITEM(dedupped_keys, i);
         if (key == NULL) {
             goto error;
         }
@@ -846,30 +880,9 @@ normalize_environment(PyObject* environment)
             goto error;
         }
 
-        if (i == 0) {
-            prev_key_string = PyUnicode_AsWideCharString(key, NULL);
-            if (prev_key_string == NULL) {
-                goto error;
-            }
-            if (PyObject_SetItem(result, key, value) < 0) {
-                goto error;
-            }
-            continue;
-        }
-
-        wchar_t *key_string = PyUnicode_AsWideCharString(key, NULL);
-        if (key_string == NULL) {
-            goto error;
-        }
-        if (CompareStringOrdinal(prev_key_string, -1, key_string, -1, TRUE) == CSTR_EQUAL) {
-            PyMem_Free(key_string);
-            continue;
-        }
         if (PyObject_SetItem(result, key, value) < 0) {
             goto error;
         }
-        PyMem_Free(prev_key_string);
-        prev_key_string = key_string;
     }
 
     goto cleanup;
@@ -878,6 +891,7 @@ error:
     result = NULL;
 cleanup:
     Py_XDECREF(keys);
+    Py_XDECREF(dedupped_keys);
     Py_XDECREF(keyfunc);
     Py_XDECREF(kwnames);
     if (prev_key_string != NULL) {
