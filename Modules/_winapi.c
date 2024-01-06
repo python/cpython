@@ -891,7 +891,11 @@ normalize_environment(PyObject* environment)
         prev_key_string = key_string;
     }
 
+    goto cleanup;
 error:
+    Py_XDECREF(result);
+    result = NULL;
+cleanup:
     Py_XDECREF(keys);
     Py_XDECREF(keyfunc);
     Py_XDECREF(kwnames);
