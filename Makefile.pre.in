@@ -419,7 +419,7 @@ PYTHON_OBJS=	\
 		Python/future.o \
 		Python/gc.o \
 		Python/gc_free_threading.o \
-                Python/gc_gil.o \
+		Python/gc_gil.o \
 		Python/getargs.o \
 		Python/getcompiler.o \
 		Python/getcopyright.o \
