@@ -820,8 +820,6 @@ normalize_environment(PyObject* environment)
     for (int i=0; i<PyList_GET_SIZE(keys); i++) {
         PyObject *key = PyList_GET_ITEM(keys, i);
         if (key == NULL) {
-            Py_XDECREF(result);
-            result = NULL;
             goto error;
         }
         PyObject* value = PyObject_GetItem(environment, key);
