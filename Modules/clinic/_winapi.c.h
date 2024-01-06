@@ -3,10 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_long.h"          // _PyLong_Size_t_Converter()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_winapi_Overlapped_GetOverlappedResult__doc__,
 "GetOverlappedResult($self, wait, /)\n"
@@ -397,26 +398,25 @@ PyDoc_STRVAR(_winapi_CreateProcess__doc__,
     {"CreateProcess", _PyCFunction_CAST(_winapi_CreateProcess), METH_FASTCALL, _winapi_CreateProcess__doc__},
 
 static PyObject *
-_winapi_CreateProcess_impl(PyObject *module,
-                           const Py_UNICODE *application_name,
+_winapi_CreateProcess_impl(PyObject *module, const wchar_t *application_name,
                            PyObject *command_line, PyObject *proc_attrs,
                            PyObject *thread_attrs, BOOL inherit_handles,
                            DWORD creation_flags, PyObject *env_mapping,
-                           const Py_UNICODE *current_directory,
+                           const wchar_t *current_directory,
                            PyObject *startup_info);
 
 static PyObject *
 _winapi_CreateProcess(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    const Py_UNICODE *application_name = NULL;
+    const wchar_t *application_name = NULL;
     PyObject *command_line;
     PyObject *proc_attrs;
     PyObject *thread_attrs;
     BOOL inherit_handles;
     DWORD creation_flags;
     PyObject *env_mapping;
-    const Py_UNICODE *current_directory = NULL;
+    const wchar_t *current_directory = NULL;
     PyObject *startup_info;
 
     if (!_PyArg_ParseStack(args, nargs, "O&OOOikOO&O:CreateProcess",
@@ -568,7 +568,7 @@ _winapi_GetExitCodeProcess(PyObject *module, PyObject *arg)
     if ((_return_value == PY_DWORD_MAX) && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = Py_BuildValue("k", _return_value);
+    return_value = PyLong_FromUnsignedLong(_return_value);
 
 exit:
     return return_value;
@@ -595,7 +595,7 @@ _winapi_GetLastError(PyObject *module, PyObject *Py_UNUSED(ignored))
     if ((_return_value == PY_DWORD_MAX) && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = Py_BuildValue("k", _return_value);
+    return_value = PyLong_FromUnsignedLong(_return_value);
 
 exit:
     return return_value;
@@ -885,7 +885,7 @@ PyDoc_STRVAR(_winapi_LCMapStringEx__doc__,
 
 static PyObject *
 _winapi_LCMapStringEx_impl(PyObject *module, LPCWSTR locale, DWORD flags,
-                           LPCWSTR src);
+                           PyObject *src);
 
 static PyObject *
 _winapi_LCMapStringEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -912,16 +912,16 @@ _winapi_LCMapStringEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     static const char * const _keywords[] = {"locale", "flags", "src", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .format = "O&kO&:LCMapStringEx",
+        .format = "O&kU:LCMapStringEx",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
     LPCWSTR locale = NULL;
     DWORD flags;
-    LPCWSTR src = NULL;
+    PyObject *src;
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        _PyUnicode_WideCharString_Converter, &locale, &flags, _PyUnicode_WideCharString_Converter, &src)) {
+        _PyUnicode_WideCharString_Converter, &locale, &flags, &src)) {
         goto exit;
     }
     return_value = _winapi_LCMapStringEx_impl(module, locale, flags, src);
@@ -929,8 +929,6 @@ _winapi_LCMapStringEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
 exit:
     /* Cleanup for locale */
     PyMem_Free((void *)locale);
-    /* Cleanup for src */
-    PyMem_Free((void *)src);
 
     return return_value;
 }
@@ -1307,7 +1305,7 @@ _winapi_GetFileType(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     if ((_return_value == PY_DWORD_MAX) && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = Py_BuildValue("k", _return_value);
+    return_value = PyLong_FromUnsignedLong(_return_value);
 
 exit:
     return return_value;
@@ -1371,4 +1369,114 @@ _winapi__mimetypes_read_windows_registry(PyObject *module, PyObject *const *args
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=edb1a9d1bbfd6394 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_winapi_NeedCurrentDirectoryForExePath__doc__,
+"NeedCurrentDirectoryForExePath($module, exe_name, /)\n"
+"--\n"
+"\n");
+
+#define _WINAPI_NEEDCURRENTDIRECTORYFOREXEPATH_METHODDEF    \
+    {"NeedCurrentDirectoryForExePath", (PyCFunction)_winapi_NeedCurrentDirectoryForExePath, METH_O, _winapi_NeedCurrentDirectoryForExePath__doc__},
+
+static int
+_winapi_NeedCurrentDirectoryForExePath_impl(PyObject *module,
+                                            LPCWSTR exe_name);
+
+static PyObject *
+_winapi_NeedCurrentDirectoryForExePath(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    LPCWSTR exe_name = NULL;
+    int _return_value;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("NeedCurrentDirectoryForExePath", "argument", "str", arg);
+        goto exit;
+    }
+    exe_name = PyUnicode_AsWideCharString(arg, NULL);
+    if (exe_name == NULL) {
+        goto exit;
+    }
+    _return_value = _winapi_NeedCurrentDirectoryForExePath_impl(module, exe_name);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    /* Cleanup for exe_name */
+    PyMem_Free((void *)exe_name);
+
+    return return_value;
+}
+
+PyDoc_STRVAR(_winapi_CopyFile2__doc__,
+"CopyFile2($module, /, existing_file_name, new_file_name, flags,\n"
+"          progress_routine=None)\n"
+"--\n"
+"\n"
+"Copies a file from one name to a new name.\n"
+"\n"
+"This is implemented using the CopyFile2 API, which preserves all stat\n"
+"and metadata information apart from security attributes.\n"
+"\n"
+"progress_routine is reserved for future use, but is currently not\n"
+"implemented. Its value is ignored.");
+
+#define _WINAPI_COPYFILE2_METHODDEF    \
+    {"CopyFile2", _PyCFunction_CAST(_winapi_CopyFile2), METH_FASTCALL|METH_KEYWORDS, _winapi_CopyFile2__doc__},
+
+static PyObject *
+_winapi_CopyFile2_impl(PyObject *module, LPCWSTR existing_file_name,
+                       LPCWSTR new_file_name, DWORD flags,
+                       PyObject *progress_routine);
+
+static PyObject *
+_winapi_CopyFile2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 4
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(existing_file_name), &_Py_ID(new_file_name), &_Py_ID(flags), &_Py_ID(progress_routine), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"existing_file_name", "new_file_name", "flags", "progress_routine", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .format = "O&O&k|O:CopyFile2",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    LPCWSTR existing_file_name = NULL;
+    LPCWSTR new_file_name = NULL;
+    DWORD flags;
+    PyObject *progress_routine = Py_None;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        _PyUnicode_WideCharString_Converter, &existing_file_name, _PyUnicode_WideCharString_Converter, &new_file_name, &flags, &progress_routine)) {
+        goto exit;
+    }
+    return_value = _winapi_CopyFile2_impl(module, existing_file_name, new_file_name, flags, progress_routine);
+
+exit:
+    /* Cleanup for existing_file_name */
+    PyMem_Free((void *)existing_file_name);
+    /* Cleanup for new_file_name */
+    PyMem_Free((void *)new_file_name);
+
+    return return_value;
+}
+/*[clinic end generated code: output=e1a9908bb82a6379 input=a9049054013a1b77]*/

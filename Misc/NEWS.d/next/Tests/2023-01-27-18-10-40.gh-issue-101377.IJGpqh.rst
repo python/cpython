@@ -1,1 +1,0 @@
-Improved test_locale_calendar_formatweekday of calendar.

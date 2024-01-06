@@ -76,6 +76,13 @@ except ImportError:
     pass
 
 
+# gh-89363: Skip fork() test if Python is built with Address Sanitizer (ASAN)
+# to work around a libasan race condition, dead lock in pthread_create().
+skip_if_asan_fork = unittest.skipIf(
+    support.HAVE_ASAN_FORK_BUG,
+    "libasan has a pthread_create() dead lock related to thread+fork")
+
+
 class BaseTest(unittest.TestCase):
 
     """Base class for logging tests."""
@@ -90,8 +97,7 @@ class BaseTest(unittest.TestCase):
         self._threading_key = threading_helper.threading_setup()
 
         logger_dict = logging.getLogger().manager.loggerDict
-        logging._acquireLock()
-        try:
+        with logging._lock:
             self.saved_handlers = logging._handlers.copy()
             self.saved_handler_list = logging._handlerList[:]
             self.saved_loggers = saved_loggers = logger_dict.copy()
@@ -101,8 +107,6 @@ class BaseTest(unittest.TestCase):
             for name in saved_loggers:
                 logger_states[name] = getattr(saved_loggers[name],
                                               'disabled', None)
-        finally:
-            logging._releaseLock()
 
         # Set two unused loggers
         self.logger1 = logging.getLogger("\xab\xd7\xbb")
@@ -136,8 +140,7 @@ class BaseTest(unittest.TestCase):
             self.root_logger.removeHandler(h)
             h.close()
         self.root_logger.setLevel(self.original_logging_level)
-        logging._acquireLock()
-        try:
+        with logging._lock:
             logging._levelToName.clear()
             logging._levelToName.update(self.saved_level_to_name)
             logging._nameToLevel.clear()
@@ -154,8 +157,6 @@ class BaseTest(unittest.TestCase):
             for name in self.logger_states:
                 if logger_states[name] is not None:
                     self.saved_loggers[name].disabled = logger_states[name]
-        finally:
-            logging._releaseLock()
 
         self.doCleanups()
         threading_helper.threading_cleanup(*self._threading_key)
@@ -680,6 +681,7 @@ class HandlerTest(BaseTest):
         support.is_emscripten, "Emscripten cannot fstat unlinked files."
     )
     @threading_helper.requires_working_threading()
+    @support.requires_resource('walltime')
     def test_race(self):
         # Issue #14632 refers.
         def remove_loop(fname, tries):
@@ -729,6 +731,7 @@ class HandlerTest(BaseTest):
     # register_at_fork mechanism is also present and used.
     @support.requires_fork()
     @threading_helper.requires_working_threading()
+    @skip_if_asan_fork
     def test_post_fork_child_no_deadlock(self):
         """Ensure child logging locks are not held; bpo-6721 & bpo-36533."""
         class _OurHandler(logging.Handler):
@@ -738,11 +741,8 @@ class HandlerTest(BaseTest):
                     stream=open('/dev/null', 'wt', encoding='utf-8'))
 
             def emit(self, record):
-                self.sub_handler.acquire()
-                try:
+                with self.sub_handler.lock:
                     self.sub_handler.emit(record)
-                finally:
-                    self.sub_handler.release()
 
         self.assertEqual(len(logging._handlers), 0)
         refed_h = _OurHandler()
@@ -758,29 +758,22 @@ class HandlerTest(BaseTest):
         fork_happened__release_locks_and_end_thread = threading.Event()
 
         def lock_holder_thread_fn():
-            logging._acquireLock()
-            try:
-                refed_h.acquire()
-                try:
-                    # Tell the main thread to do the fork.
-                    locks_held__ready_to_fork.set()
+            with logging._lock, refed_h.lock:
+                # Tell the main thread to do the fork.
+                locks_held__ready_to_fork.set()
 
-                    # If the deadlock bug exists, the fork will happen
-                    # without dealing with the locks we hold, deadlocking
-                    # the child.
+                # If the deadlock bug exists, the fork will happen
+                # without dealing with the locks we hold, deadlocking
+                # the child.
 
-                    # Wait for a successful fork or an unreasonable amount of
-                    # time before releasing our locks.  To avoid a timing based
-                    # test we'd need communication from os.fork() as to when it
-                    # has actually happened.  Given this is a regression test
-                    # for a fixed issue, potentially less reliably detecting
-                    # regression via timing is acceptable for simplicity.
-                    # The test will always take at least this long. :(
-                    fork_happened__release_locks_and_end_thread.wait(0.5)
-                finally:
-                    refed_h.release()
-            finally:
-                logging._releaseLock()
+                # Wait for a successful fork or an unreasonable amount of
+                # time before releasing our locks.  To avoid a timing based
+                # test we'd need communication from os.fork() as to when it
+                # has actually happened.  Given this is a regression test
+                # for a fixed issue, potentially less reliably detecting
+                # regression via timing is acceptable for simplicity.
+                # The test will always take at least this long. :(
+                fork_happened__release_locks_and_end_thread.wait(0.5)
 
         lock_holder_thread = threading.Thread(
                 target=lock_holder_thread_fn,
@@ -1524,6 +1517,32 @@ class ConfigFileTest(BaseTest):
     kwargs={{"encoding": "utf-8"}}
     """
 
+
+    config9 = """
+    [loggers]
+    keys=root
+
+    [handlers]
+    keys=hand1
+
+    [formatters]
+    keys=form1
+
+    [logger_root]
+    level=WARNING
+    handlers=hand1
+
+    [handler_hand1]
+    class=StreamHandler
+    level=NOTSET
+    formatter=form1
+    args=(sys.stdout,)
+
+    [formatter_form1]
+    format=%(message)s ++ %(customfield)s
+    defaults={"customfield": "defaultvalue"}
+    """
+
     disable_test = """
     [loggers]
     keys=root
@@ -1687,6 +1706,16 @@ class ConfigFileTest(BaseTest):
         handler = logging.root.handlers[0]
         self.addCleanup(closeFileHandler, handler, fn)
 
+    def test_config9_ok(self):
+        self.apply_config(self.config9)
+        formatter = logging.root.handlers[0].formatter
+        result = formatter.format(logging.makeLogRecord({'msg': 'test'}))
+        self.assertEqual(result, 'test ++ defaultvalue')
+        result = formatter.format(logging.makeLogRecord(
+            {'msg': 'test', 'customfield': "customvalue"}))
+        self.assertEqual(result, 'test ++ customvalue')
+
+
     def test_logger_disabling(self):
         self.apply_config(self.disable_test)
         logger = logging.getLogger('some_pristine_logger')
@@ -1719,6 +1748,42 @@ class ConfigFileTest(BaseTest):
             """
         self.apply_config(test_config)
         self.assertEqual(logging.getLogger().handlers[0].name, 'hand1')
+
+    def test_exception_if_confg_file_is_invalid(self):
+        test_config = """
+            [loggers]
+            keys=root
+
+            [handlers]
+            keys=hand1
+
+            [formatters]
+            keys=form1
+
+            [logger_root]
+            handlers=hand1
+
+            [handler_hand1]
+            class=StreamHandler
+            formatter=form1
+
+            [formatter_form1]
+            format=%(levelname)s ++ %(message)s
+
+            prince
+            """
+
+        file = io.StringIO(textwrap.dedent(test_config))
+        self.assertRaises(RuntimeError, logging.config.fileConfig, file)
+
+    def test_exception_if_confg_file_is_empty(self):
+        fd, fn = tempfile.mkstemp(prefix='test_empty_', suffix='.ini')
+        os.close(fd)
+        self.assertRaises(RuntimeError, logging.config.fileConfig, fn)
+        os.remove(fn)
+
+    def test_exception_if_config_file_does_not_exist(self):
+        self.assertRaises(FileNotFoundError, logging.config.fileConfig, 'filenotfound')
 
     def test_defaults_do_no_interpolation(self):
         """bpo-33802 defaults should not get interpolated"""
@@ -2007,17 +2072,17 @@ class SysLogHandlerTest(BaseTest):
         # The log message sent to the SysLogHandler is properly received.
         logger = logging.getLogger("slh")
         logger.error("sp\xe4m")
-        self.handled.wait()
+        self.handled.wait(support.LONG_TIMEOUT)
         self.assertEqual(self.log_output, b'<11>sp\xc3\xa4m\x00')
         self.handled.clear()
         self.sl_hdlr.append_nul = False
         logger.error("sp\xe4m")
-        self.handled.wait()
+        self.handled.wait(support.LONG_TIMEOUT)
         self.assertEqual(self.log_output, b'<11>sp\xc3\xa4m')
         self.handled.clear()
         self.sl_hdlr.ident = "h\xe4m-"
         logger.error("sp\xe4m")
-        self.handled.wait()
+        self.handled.wait(support.LONG_TIMEOUT)
         self.assertEqual(self.log_output, b'<11>h\xc3\xa4m-sp\xc3\xa4m')
 
     def test_udp_reconnection(self):
@@ -2025,7 +2090,7 @@ class SysLogHandlerTest(BaseTest):
         self.sl_hdlr.close()
         self.handled.clear()
         logger.error("sp\xe4m")
-        self.handled.wait(0.1)
+        self.handled.wait(support.LONG_TIMEOUT)
         self.assertEqual(self.log_output, b'<11>sp\xc3\xa4m\x00')
 
 @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
@@ -2097,7 +2162,7 @@ class HTTPHandlerTest(BaseTest):
                     sslctx = None
                 else:
                     here = os.path.dirname(__file__)
-                    localhost_cert = os.path.join(here, "keycert.pem")
+                    localhost_cert = os.path.join(here, "certdata", "keycert.pem")
                     sslctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
                     sslctx.load_cert_chain(localhost_cert)
 
@@ -2909,6 +2974,63 @@ class ConfigDictTest(BaseTest):
         },
     }
 
+    # config0 but with default values for formatter. Skipped 15, it is defined
+    # in the test code.
+    config16 = {
+        'version': 1,
+        'formatters': {
+            'form1' : {
+                'format' : '%(message)s ++ %(customfield)s',
+                'defaults': {"customfield": "defaultvalue"}
+            },
+        },
+        'handlers' : {
+            'hand1' : {
+                'class' : 'logging.StreamHandler',
+                'formatter' : 'form1',
+                'level' : 'NOTSET',
+                'stream'  : 'ext://sys.stdout',
+            },
+        },
+        'root' : {
+            'level' : 'WARNING',
+            'handlers' : ['hand1'],
+        },
+    }
+
+    class CustomFormatter(logging.Formatter):
+        custom_property = "."
+
+        def format(self, record):
+            return super().format(record)
+
+    config17 = {
+        'version': 1,
+        'formatters': {
+            "custom": {
+                "()": CustomFormatter,
+                "style": "{",
+                "datefmt": "%Y-%m-%d %H:%M:%S",
+                "format": "{message}", # <-- to force an exception when configuring
+                ".": {
+                    "custom_property": "value"
+                }
+            }
+        },
+        'handlers' : {
+            'hand1' : {
+                'class' : 'logging.StreamHandler',
+                'formatter' : 'custom',
+                'level' : 'NOTSET',
+                'stream'  : 'ext://sys.stdout',
+            },
+        },
+        'root' : {
+            'level' : 'WARNING',
+            'handlers' : ['hand1'],
+        },
+    }
+
     bad_format = {
         "version": 1,
         "formatters": {
@@ -3021,7 +3143,7 @@ class ConfigDictTest(BaseTest):
         }
     }
 
-    # Configuration with custom function and 'validate' set to False
+    # Configuration with custom function, 'validate' set to False and no defaults
     custom_formatter_with_function = {
         'version': 1,
         'formatters': {
@@ -3029,6 +3151,33 @@ class ConfigDictTest(BaseTest):
                 '()': formatFunc,
                 'format': '%(levelname)s:%(name)s:%(message)s',
                 'validate': False,
+            },
+        },
+        'handlers' : {
+            'hand1' : {
+                'class': 'logging.StreamHandler',
+                'formatter': 'form1',
+                'level': 'NOTSET',
+                'stream': 'ext://sys.stdout',
+            },
+        },
+        "loggers": {
+            "my_test_logger_custom_formatter": {
+                "level": "DEBUG",
+                "handlers": ["hand1"],
+                "propagate": "true"
+            }
+        }
+    }
+
+    # Configuration with custom function, and defaults
+    custom_formatter_with_defaults = {
+        'version': 1,
+        'formatters': {
+            'form1': {
+                '()': formatFunc,
+                'format': '%(levelname)s:%(name)s:%(message)s:%(customfield)s',
+                'defaults': {"customfield": "myvalue"}
             },
         },
         'handlers' : {
@@ -3349,6 +3498,25 @@ class ConfigDictTest(BaseTest):
         handler = logging.root.handlers[0]
         self.addCleanup(closeFileHandler, handler, fn)
 
+    def test_config16_ok(self):
+        self.apply_config(self.config16)
+        h = logging._handlers['hand1']
+
+        # Custom value
+        result = h.formatter.format(logging.makeLogRecord(
+            {'msg': 'Hello', 'customfield': 'customvalue'}))
+        self.assertEqual(result, 'Hello ++ customvalue')
+
+        # Default value
+        result = h.formatter.format(logging.makeLogRecord(
+            {'msg': 'Hello'}))
+        self.assertEqual(result, 'Hello ++ defaultvalue')
+
+    def test_config17_ok(self):
+        self.apply_config(self.config17)
+        h = logging._handlers['hand1']
+        self.assertEqual(h.formatter.custom_property, 'value')
+
     def setup_via_listener(self, text, verify=None):
         text = text.encode("utf-8")
         # Ask for a randomly assigned port (by using port 0)
@@ -3516,11 +3684,35 @@ class ConfigDictTest(BaseTest):
     def test_custom_formatter_function_with_validate(self):
         self.assertRaises(ValueError, self.apply_config, self.custom_formatter_with_function)
 
+    def test_custom_formatter_function_with_defaults(self):
+        self.assertRaises(ValueError, self.apply_config, self.custom_formatter_with_defaults)
+
     def test_baseconfig(self):
         d = {
             'atuple': (1, 2, 3),
             'alist': ['a', 'b', 'c'],
-            'adict': {'d': 'e', 'f': 3 },
+            'adict': {
+                'd': 'e', 'f': 3 ,
+                'alpha numeric 1 with spaces' : 5,
+                'aplha numeric 1 %( - © ©ß¯' : 9,
+                'alpha numeric ] 1 with spaces' : 15,
+                'aplha ]] numeric 1 %( - © ©ß¯]' : 19,
+                ' aplha [ numeric 1 %( - © ©ß¯] ' : 11,
+                ' aplha ' : 32,
+                '' : 10,
+                'nest4' : {
+                    'd': 'e', 'f': 3 ,
+                    'alpha numeric 1 with spaces' : 5,
+                    'aplha numeric 1 %( - © ©ß¯' : 9,
+                    '' : 10,
+                    'somelist' :  ('g', ('h', 'i'), 'j'),
+                    'somedict' : {
+                        'a' : 1,
+                        'a with 1 and space' : 3,
+                        'a with ( and space' : 4,
+                    }
+                }
+            },
             'nest1': ('g', ('h', 'i'), 'j'),
             'nest2': ['k', ['l', 'm'], 'n'],
             'nest3': ['o', 'cfg://alist', 'p'],
@@ -3532,11 +3724,36 @@ class ConfigDictTest(BaseTest):
         self.assertEqual(bc.convert('cfg://nest2[1][1]'), 'm')
         self.assertEqual(bc.convert('cfg://adict.d'), 'e')
         self.assertEqual(bc.convert('cfg://adict[f]'), 3)
+        self.assertEqual(bc.convert('cfg://adict[alpha numeric 1 with spaces]'), 5)
+        self.assertEqual(bc.convert('cfg://adict[aplha numeric 1 %( - © ©ß¯]'), 9)
+        self.assertEqual(bc.convert('cfg://adict[]'), 10)
+        self.assertEqual(bc.convert('cfg://adict.nest4.d'), 'e')
+        self.assertEqual(bc.convert('cfg://adict.nest4[d]'), 'e')
+        self.assertEqual(bc.convert('cfg://adict[nest4].d'), 'e')
+        self.assertEqual(bc.convert('cfg://adict[nest4][f]'), 3)
+        self.assertEqual(bc.convert('cfg://adict[nest4][alpha numeric 1 with spaces]'), 5)
+        self.assertEqual(bc.convert('cfg://adict[nest4][aplha numeric 1 %( - © ©ß¯]'), 9)
+        self.assertEqual(bc.convert('cfg://adict[nest4][]'), 10)
+        self.assertEqual(bc.convert('cfg://adict[nest4][somelist][0]'), 'g')
+        self.assertEqual(bc.convert('cfg://adict[nest4][somelist][1][0]'), 'h')
+        self.assertEqual(bc.convert('cfg://adict[nest4][somelist][1][1]'), 'i')
+        self.assertEqual(bc.convert('cfg://adict[nest4][somelist][2]'), 'j')
+        self.assertEqual(bc.convert('cfg://adict[nest4].somedict.a'), 1)
+        self.assertEqual(bc.convert('cfg://adict[nest4].somedict[a]'), 1)
+        self.assertEqual(bc.convert('cfg://adict[nest4].somedict[a with 1 and space]'), 3)
+        self.assertEqual(bc.convert('cfg://adict[nest4].somedict[a with ( and space]'), 4)
+        self.assertEqual(bc.convert('cfg://adict.nest4.somelist[1][1]'), 'i')
+        self.assertEqual(bc.convert('cfg://adict.nest4.somelist[2]'), 'j')
+        self.assertEqual(bc.convert('cfg://adict.nest4.somedict.a'), 1)
+        self.assertEqual(bc.convert('cfg://adict.nest4.somedict[a]'), 1)
         v = bc.convert('cfg://nest3')
         self.assertEqual(v.pop(1), ['a', 'b', 'c'])
         self.assertRaises(KeyError, bc.convert, 'cfg://nosuch')
         self.assertRaises(ValueError, bc.convert, 'cfg://!')
         self.assertRaises(KeyError, bc.convert, 'cfg://adict[2]')
+        self.assertRaises(KeyError, bc.convert, 'cfg://adict[alpha numeric ] 1 with spaces]')
+        self.assertRaises(ValueError, bc.convert, 'cfg://adict[ aplha ]] numeric 1 %( - © ©ß¯] ]')
+        self.assertRaises(ValueError, bc.convert, 'cfg://adict[ aplha [ numeric 1 %( - © ©ß¯] ]')
 
     def test_namedtuple(self):
         # see bpo-39142
@@ -3704,6 +3921,25 @@ class ConfigDictTest(BaseTest):
         self.apply_config(config)
         # Logger should be enabled, since explicitly mentioned
         self.assertFalse(logger.disabled)
+
+    def test_111615(self):
+        # See gh-111615
+        import multiprocessing as mp
+
+        config = {
+            'version': 1,
+            'handlers': {
+                'sink': {
+                    'class': 'logging.handlers.QueueHandler',
+                    'queue': mp.get_context('spawn').Queue(),
+                },
+            },
+            'root': {
+                'handlers': ['sink'],
+                'level': 'DEBUG',
+            },
+        }
+        logging.config.dictConfig(config)
 
 class ManagerTest(BaseTest):
     def test_manager_loggerclass(self):
@@ -5097,8 +5333,7 @@ class BasicConfigTest(unittest.TestCase):
             message = []
 
             def dummy_handle_error(record):
-                _, v, _ = sys.exc_info()
-                message.append(str(v))
+                message.append(str(sys.exception()))
 
             handler.handleError = dummy_handle_error
             logging.debug('The Øresund Bridge joins Copenhagen to Malmö')
@@ -5291,6 +5526,46 @@ class LoggerAdapterTest(unittest.TestCase):
         self.assertIs(adapter_adapter.manager, orig_manager)
         self.assertIs(adapter.manager, orig_manager)
         self.assertIs(self.logger.manager, orig_manager)
+
+    def test_extra_in_records(self):
+        self.adapter = logging.LoggerAdapter(logger=self.logger,
+                                             extra={'foo': '1'})
+
+        self.adapter.critical('foo should be here')
+        self.assertEqual(len(self.recording.records), 1)
+        record = self.recording.records[0]
+        self.assertTrue(hasattr(record, 'foo'))
+        self.assertEqual(record.foo, '1')
+
+    def test_extra_not_merged_by_default(self):
+        self.adapter.critical('foo should NOT be here', extra={'foo': 'nope'})
+        self.assertEqual(len(self.recording.records), 1)
+        record = self.recording.records[0]
+        self.assertFalse(hasattr(record, 'foo'))
+
+    def test_extra_merged(self):
+        self.adapter = logging.LoggerAdapter(logger=self.logger,
+                                             extra={'foo': '1'},
+                                             merge_extra=True)
+
+        self.adapter.critical('foo and bar should be here', extra={'bar': '2'})
+        self.assertEqual(len(self.recording.records), 1)
+        record = self.recording.records[0]
+        self.assertTrue(hasattr(record, 'foo'))
+        self.assertTrue(hasattr(record, 'bar'))
+        self.assertEqual(record.foo, '1')
+        self.assertEqual(record.bar, '2')
+
+    def test_extra_merged_log_call_has_precedence(self):
+        self.adapter = logging.LoggerAdapter(logger=self.logger,
+                                             extra={'foo': '1'},
+                                             merge_extra=True)
+
+        self.adapter.critical('foo shall be min', extra={'foo': '2'})
+        self.assertEqual(len(self.recording.records), 1)
+        record = self.recording.records[0]
+        self.assertTrue(hasattr(record, 'foo'))
+        self.assertEqual(record.foo, '2')
 
 
 class LoggerTest(BaseTest, AssertErrorMessage):

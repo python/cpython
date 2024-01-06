@@ -3,9 +3,11 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
-#include "pycore_object.h"        // _PyObject_GC_TRACK(), _Py_FatalRefcountError()
+#include "pycore_modsupport.h"    // _PyArg_NoKwnames()
+#include "pycore_object.h"        // _PyObject_GC_TRACK(), _Py_FatalRefcountError(), _PyDebugAllocatorStats()
 
 /*[clinic input]
 class tuple "PyTupleObject *" "&PyTuple_Type"
@@ -61,7 +63,7 @@ tuple_alloc(Py_ssize_t size)
 static inline PyObject *
 tuple_get_empty(void)
 {
-    return Py_NewRef(&_Py_SINGLETON(tuple_empty));
+    return (PyObject *)&_Py_SINGLETON(tuple_empty);
 }
 
 PyObject *
@@ -959,24 +961,6 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
     return 0;
 }
 
-
-PyStatus
-_PyTuple_InitTypes(PyInterpreterState *interp)
-{
-    if (!_Py_IsMainInterpreter(interp)) {
-        return _PyStatus_OK();
-    }
-
-    if (PyType_Ready(&PyTuple_Type) < 0) {
-        return _PyStatus_ERR("Can't initialize tuple type");
-    }
-
-    if (PyType_Ready(&PyTupleIter_Type) < 0) {
-        return _PyStatus_ERR("Can't initialize tuple iterator type");
-    }
-
-    return _PyStatus_OK();
-}
 
 static void maybe_freelist_clear(PyInterpreterState *, int);
 

@@ -7,10 +7,14 @@ What's currently here:
 
 - `lexer.py`: lexer for C, originally written by Mark Shannon
 - `plexer.py`: OO interface on top of lexer.py; main class: `PLexer`
-- `parser.py`: Parser for instruction definition DSL; main class `Parser`
+- `parsing.py`: Parser for instruction definition DSL; main class `Parser`
 - `generate_cases.py`: driver script to read `Python/bytecodes.c` and
-  write `Python/generated_cases.c.h`
-- `test_generator.py`: tests, require manual running using `pytest`
+  write `Python/generated_cases.c.h` (and several other files)
+- `analysis.py`: `Analyzer` class used to read the input files
+- `flags.py`: abstractions related to metadata flags for instructions
+- `formatting.py`: `Formatter` class used to write the output files
+- `instructions.py`: classes to analyze and write instructions
+- `stacking.py`: code to handle generalized stack effects
 
 Note that there is some dummy C code at the top and bottom of
 `Python/bytecodes.c`

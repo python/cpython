@@ -121,11 +121,11 @@ about features that will be removed in Python 3.0.  You can run code
 with this switch to see how much work will be necessary to port
 code to 3.0.  The value of this switch is available
 to Python code as the boolean variable :data:`sys.py3kwarning`,
-and to C extension code as :c:data:`Py_Py3kWarningFlag`.
+and to C extension code as :c:data:`!Py_Py3kWarningFlag`.
 
 .. seealso::
 
-   The 3xxx series of PEPs, which contains proposals for Python 3.0.
+   The 3\ *xxx* series of PEPs, which contains proposals for Python 3.0.
    :pep:`3000` describes the development process for Python 3.0.
    Start with :pep:`3100` that describes the general goals for Python
    3.0, and then explore the higher-numbered PEPS that propose
@@ -172,7 +172,7 @@ this edition of "What's New in Python" links to the bug/patch
 item for each change.
 
 Hosting of the Python bug tracker is kindly provided by
-`Upfront Systems <http://www.upfrontsoftware.co.za>`__
+`Upfront Systems <https://upfrontsoftware.co.za>`__
 of Stellenbosch, South Africa.  Martin von Löwis put a
 lot of effort into importing existing bugs and patches from
 SourceForge; his scripts for this import operation are at
@@ -269,15 +269,15 @@ structure is::
        with-block
 
 The expression is evaluated, and it should result in an object that supports the
-context management protocol (that is, has :meth:`__enter__` and :meth:`__exit__`
+context management protocol (that is, has :meth:`~object.__enter__` and :meth:`~object.__exit__`
 methods).
 
-The object's :meth:`__enter__` is called before *with-block* is executed and
+The object's :meth:`~object.__enter__` is called before *with-block* is executed and
 therefore can run set-up code. It also may return a value that is bound to the
 name *variable*, if given.  (Note carefully that *variable* is *not* assigned
 the result of *expression*.)
 
-After execution of the *with-block* is finished, the object's :meth:`__exit__`
+After execution of the *with-block* is finished, the object's :meth:`~object.__exit__`
 method is called, even if the block raised an exception, and can therefore run
 clean-up code.
 
@@ -296,7 +296,7 @@ part-way through the block.
 .. note::
 
    In this case, *f* is the same object created by :func:`open`, because
-   :meth:`file.__enter__` returns *self*.
+   :meth:`~object.__enter__` returns *self*.
 
 The :mod:`threading` module's locks and condition variables  also support the
 ':keyword:`with`' statement::
@@ -339,16 +339,16 @@ underlying implementation and should keep reading.
 A high-level explanation of the context management protocol is:
 
 * The expression is evaluated and should result in an object called a "context
-  manager".  The context manager must have :meth:`__enter__` and :meth:`__exit__`
+  manager".  The context manager must have :meth:`~object.__enter__` and :meth:`~object.__exit__`
   methods.
 
-* The context manager's :meth:`__enter__` method is called.  The value returned
+* The context manager's :meth:`~object.__enter__` method is called.  The value returned
   is assigned to *VAR*.  If no ``as VAR`` clause is present, the value is simply
   discarded.
 
 * The code in *BLOCK* is executed.
 
-* If *BLOCK* raises an exception, the context manager's :meth:`__exit__` method
+* If *BLOCK* raises an exception, the context manager's :meth:`~object.__exit__` method
   is called with three arguments, the exception details (``type, value, traceback``,
   the same values returned by :func:`sys.exc_info`, which can also be ``None``
   if no exception occurred).  The method's return value controls whether an exception
@@ -357,7 +357,7 @@ A high-level explanation of the context management protocol is:
   if you do the author of the code containing the ':keyword:`with`' statement will
   never realize anything went wrong.
 
-* If *BLOCK* didn't raise an exception,  the :meth:`__exit__` method is still
+* If *BLOCK* didn't raise an exception,  the :meth:`~object.__exit__` method is still
   called, but *type*, *value*, and *traceback* are all ``None``.
 
 Let's think through an example.  I won't present detailed code but will only
@@ -391,7 +391,7 @@ rolled back if there's an exception. Here's the basic interface for
        def rollback(self):
            "Rolls back current transaction"
 
-The :meth:`__enter__` method is pretty easy, having only to start a new
+The :meth:`~object.__enter__` method is pretty easy, having only to start a new
 transaction.  For this application the resulting cursor object would be a useful
 result, so the method will return it.  The user can then add ``as cursor`` to
 their ':keyword:`with`' statement to bind the cursor to a variable name. ::
@@ -403,7 +403,7 @@ their ':keyword:`with`' statement to bind the cursor to a variable name. ::
            cursor = self.cursor()
            return cursor
 
-The :meth:`__exit__` method is the most complicated because it's where most of
+The :meth:`~object.__exit__` method is the most complicated because it's where most of
 the work has to be done.  The method has to check if an exception occurred.  If
 there was no exception, the transaction is committed.  The transaction is rolled
 back if there was an exception.
@@ -436,10 +436,10 @@ are useful when writing objects for use with the ':keyword:`with`' statement.
 The decorator is called :func:`contextmanager`, and lets you write a single
 generator function instead of defining a new class.  The generator should yield
 exactly one value.  The code up to the :keyword:`yield` will be executed as the
-:meth:`__enter__` method, and the value yielded will be the method's return
+:meth:`~object.__enter__` method, and the value yielded will be the method's return
 value that will get bound to the variable in the ':keyword:`with`' statement's
 :keyword:`!as` clause, if any.  The code after the :keyword:`!yield` will be
-executed in the :meth:`__exit__` method.  Any exception raised in the block will
+executed in the :meth:`~object.__exit__` method.  Any exception raised in the block will
 be raised by the :keyword:`!yield` statement.
 
 Using this decorator, our database example from the previous section
@@ -875,11 +875,11 @@ The signature of the new function is::
 
 The parameters are:
 
- * *args*: positional arguments whose values will be printed out.
- * *sep*: the separator, which will be printed between arguments.
- * *end*: the ending text, which will be printed after all of the
-   arguments have been output.
- * *file*: the file object to which the output will be sent.
+* *args*: positional arguments whose values will be printed out.
+* *sep*: the separator, which will be printed between arguments.
+* *end*: the ending text, which will be printed after all of the
+  arguments have been output.
+* *file*: the file object to which the output will be sent.
 
 .. seealso::
 
@@ -977,7 +977,7 @@ can be used to include Unicode characters::
     print len(s)               # 12 Unicode characters
 
 At the C level, Python 3.0 will rename the existing 8-bit
-string type, called :c:type:`PyStringObject` in Python 2.x,
+string type, called :c:type:`!PyStringObject` in Python 2.x,
 to :c:type:`PyBytesObject`.  Python 2.6 uses ``#define``
 to support using the names :c:func:`PyBytesObject`,
 :c:func:`PyBytes_Check`, :c:func:`PyBytes_FromStringAndSize`,
@@ -1138,13 +1138,13 @@ indicate that the external caller is done.
 The *flags* argument to :c:func:`PyObject_GetBuffer` specifies
 constraints upon the memory returned.  Some examples are:
 
- * :const:`PyBUF_WRITABLE` indicates that the memory must be writable.
+* :c:macro:`PyBUF_WRITABLE` indicates that the memory must be writable.
 
- * :const:`PyBUF_LOCK` requests a read-only or exclusive lock on the memory.
+* :c:macro:`PyBUF_LOCK` requests a read-only or exclusive lock on the memory.
 
- * :const:`PyBUF_C_CONTIGUOUS` and :const:`PyBUF_F_CONTIGUOUS`
-   requests a C-contiguous (last dimension varies the fastest) or
-   Fortran-contiguous (first dimension varies the fastest) array layout.
+* :c:macro:`PyBUF_C_CONTIGUOUS` and :c:macro:`PyBUF_F_CONTIGUOUS`
+  requests a C-contiguous (last dimension varies the fastest) or
+  Fortran-contiguous (first dimension varies the fastest) array layout.
 
 Two new argument codes for :c:func:`PyArg_ParseTuple`,
 ``s*`` and ``z*``, return locked buffer objects for a parameter.
@@ -1433,7 +1433,7 @@ one, :func:`math.trunc`, that's been backported to Python 2.6.
 
    `Scheme's numerical tower <https://www.gnu.org/software/guile/manual/html_node/Numerical-Tower.html#Numerical-Tower>`__, from the Guile manual.
 
-   `Scheme's number datatypes <https://schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.2>`__ from the R5RS Scheme specification.
+   `Scheme's number datatypes <https://conservatory.scheme.org/schemers/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.2>`__ from the R5RS Scheme specification.
 
 
 The :mod:`fractions` Module
@@ -1677,8 +1677,9 @@ Some smaller changes made to the core Python language are:
   (:issue:`1591665`)
 
 * Instance method objects have new attributes for the object and function
-  comprising the method; the new synonym for :attr:`im_self` is
-  :attr:`__self__`, and :attr:`im_func` is also available as :attr:`__func__`.
+  comprising the method; the new synonym for :attr:`!im_self` is
+  :attr:`~method.__self__`, and :attr:`!im_func` is also available as
+  :attr:`~method.__func__`.
   The old names are still supported in Python 2.6, but are gone in 3.0.
 
 * An obscure change: when you use the :func:`locals` function inside a
@@ -1737,7 +1738,7 @@ Optimizations
   (Contributed by Antoine Pitrou.)  Memory usage is reduced
   by using pymalloc for the Unicode string's data.
 
-* The ``with`` statement now stores the :meth:`__exit__` method on the stack,
+* The ``with`` statement now stores the :meth:`~object.__exit__` method on the stack,
   producing a small speedup.  (Implemented by Jeffrey Yasskin.)
 
 * To reduce memory usage, the garbage collector will now clear internal
@@ -1788,7 +1789,7 @@ changes, sorted alphabetically by module name. Consult the
 :file:`Misc/NEWS` file in the source tree for a more complete list of
 changes, or look through the Subversion logs for all the details.
 
-* The :mod:`asyncore` and :mod:`asynchat` modules are
+* The :mod:`!asyncore` and :mod:`!asynchat` modules are
   being actively maintained again, and a number of patches and bugfixes
   were applied.  (Maintained by Josiah Carlson; see :issue:`1736190` for
   one patch.)
@@ -1805,15 +1806,15 @@ changes, or look through the Subversion logs for all the details.
   available, instead of restricting itself to protocol 1.
   (Contributed by W. Barnes.)
 
-* The :mod:`cgi` module will now read variables from the query string
+* The :mod:`!cgi` module will now read variables from the query string
   of an HTTP POST request.  This makes it possible to use form actions
   with URLs that include query strings such as
   "/cgi-bin/add.py?category=1".  (Contributed by Alexandre Fiori and
   Nubis; :issue:`1817`.)
 
   The :func:`parse_qs` and :func:`parse_qsl` functions have been
-  relocated from the :mod:`cgi` module to the :mod:`urlparse` module.
-  The versions still available in the :mod:`cgi` module will
+  relocated from the :mod:`!cgi` module to the :mod:`urlparse` module.
+  The versions still available in the :mod:`!cgi` module will
   trigger :exc:`PendingDeprecationWarning` messages in 2.6
   (:issue:`600362`).
 
@@ -1850,8 +1851,8 @@ changes, or look through the Subversion logs for all the details.
   special values and floating-point exceptions in a manner consistent
   with Annex 'G' of the C99 standard.
 
-* A new data type in the :mod:`collections` module: :class:`namedtuple(typename,
-  fieldnames)` is a factory function that creates subclasses of the standard tuple
+* A new data type in the :mod:`collections` module: ``namedtuple(typename, fieldnames)``
+  is a factory function that creates subclasses of the standard tuple
   whose fields are accessible by name as well as index.  For example::
 
      >>> var_type = collections.namedtuple('variable',
@@ -1873,7 +1874,7 @@ changes, or look through the Subversion logs for all the details.
      variable(id=1, name='amplitude', type='int', size=4)
 
   Several places in the standard library that returned tuples have
-  been modified to return :class:`namedtuple` instances.  For example,
+  been modified to return :func:`namedtuple` instances.  For example,
   the :meth:`Decimal.as_tuple` method now returns a named tuple with
   :attr:`sign`, :attr:`digits`, and :attr:`exponent` fields.
 
@@ -2289,7 +2290,7 @@ changes, or look through the Subversion logs for all the details.
   (Contributed by Raymond Hettinger; :issue:`1861`.)
 
 * The :mod:`select` module now has wrapper functions
-  for the Linux :c:func:`epoll` and BSD :c:func:`kqueue` system calls.
+  for the Linux :c:func:`!epoll` and BSD :c:func:`!kqueue` system calls.
   :meth:`modify` method was added to the existing :class:`poll`
   objects; ``pollobj.modify(fd, eventmask)`` takes a file descriptor
   or file object and an event mask, modifying the recorded event mask
@@ -2328,7 +2329,7 @@ changes, or look through the Subversion logs for all the details.
   one for reading and one for writing.  The writable descriptor
   will be passed to :func:`set_wakeup_fd`, and the readable descriptor
   will be added to the list of descriptors monitored by the event loop via
-  :c:func:`select` or :c:func:`poll`.
+  :c:func:`!select` or :c:func:`!poll`.
   On receiving a signal, a byte will be written and the main event loop
   will be woken up, avoiding the need to poll.
 
@@ -2363,7 +2364,7 @@ changes, or look through the Subversion logs for all the details.
   negotiation itself.  (Patch contributed by Bill Fenner;
   :issue:`829951`.)
 
-* The :mod:`socket` module now supports TIPC (http://tipc.sourceforge.net/),
+* The :mod:`socket` module now supports TIPC (https://tipc.sourceforge.net/),
   a high-performance non-IP-based protocol designed for use in clustered
   environments.  TIPC addresses are 4- or 5-tuples.
   (Contributed by Alberto Bertogli; :issue:`1646`.)
@@ -2465,7 +2466,7 @@ changes, or look through the Subversion logs for all the details.
   (All changes contributed by Lars Gustäbel).
 
 * An optional ``timeout`` parameter was added to the
-  :class:`telnetlib.Telnet` class constructor, specifying a timeout
+  :class:`!telnetlib.Telnet` class constructor, specifying a timeout
   measured in seconds.  (Added by Facundo Batista.)
 
 * The :class:`tempfile.NamedTemporaryFile` class usually deletes
@@ -2915,8 +2916,8 @@ Deprecations and Removals
 
 * Changes to the :class:`Exception` interface
   as dictated by :pep:`352` continue to be made.  For 2.6,
-  the :attr:`message` attribute is being deprecated in favor of the
-  :attr:`args` attribute.
+  the :attr:`!message` attribute is being deprecated in favor of the
+  :attr:`~BaseException.args` attribute.
 
 * (3.0-warning mode) Python 3.0 will feature a reorganized standard
   library that will drop many outdated modules and rename others.
@@ -2924,51 +2925,51 @@ Deprecations and Removals
   when they are imported.
 
   The list of deprecated modules is:
-  :mod:`audiodev`,
-  :mod:`bgenlocations`,
-  :mod:`buildtools`,
-  :mod:`bundlebuilder`,
-  :mod:`Canvas`,
-  :mod:`compiler`,
-  :mod:`dircache`,
-  :mod:`dl`,
-  :mod:`fpformat`,
-  :mod:`gensuitemodule`,
-  :mod:`ihooks`,
-  :mod:`imageop`,
-  :mod:`imgfile`,
-  :mod:`linuxaudiodev`,
-  :mod:`mhlib`,
-  :mod:`mimetools`,
-  :mod:`multifile`,
-  :mod:`new`,
-  :mod:`pure`,
-  :mod:`statvfs`,
-  :mod:`sunaudiodev`,
-  :mod:`test.testall`, and
-  :mod:`toaiff`.
+  :mod:`!audiodev`,
+  :mod:`!bgenlocations`,
+  :mod:`!buildtools`,
+  :mod:`!bundlebuilder`,
+  :mod:`!Canvas`,
+  :mod:`!compiler`,
+  :mod:`!dircache`,
+  :mod:`!dl`,
+  :mod:`!fpformat`,
+  :mod:`!gensuitemodule`,
+  :mod:`!ihooks`,
+  :mod:`!imageop`,
+  :mod:`!imgfile`,
+  :mod:`!linuxaudiodev`,
+  :mod:`!mhlib`,
+  :mod:`!mimetools`,
+  :mod:`!multifile`,
+  :mod:`!new`,
+  :mod:`!pure`,
+  :mod:`!statvfs`,
+  :mod:`!sunaudiodev`,
+  :mod:`!test.testall`, and
+  :mod:`!toaiff`.
 
-* The :mod:`gopherlib` module has been removed.
+* The :mod:`!gopherlib` module has been removed.
 
-* The :mod:`MimeWriter` module and :mod:`mimify` module
+* The :mod:`!MimeWriter` module and :mod:`!mimify` module
   have been deprecated; use the :mod:`email`
   package instead.
 
-* The :mod:`md5` module has been deprecated; use the :mod:`hashlib` module
+* The :mod:`!md5` module has been deprecated; use the :mod:`hashlib` module
   instead.
 
-* The :mod:`posixfile` module has been deprecated; :func:`fcntl.lockf`
+* The :mod:`!posixfile` module has been deprecated; :func:`fcntl.lockf`
   provides better locking.
 
-* The :mod:`popen2` module has been deprecated; use the :mod:`subprocess`
+* The :mod:`!popen2` module has been deprecated; use the :mod:`subprocess`
   module.
 
-* The :mod:`rgbimg` module has been removed.
+* The :mod:`!rgbimg` module has been removed.
 
-* The :mod:`sets` module has been deprecated; it's better to
+* The :mod:`!sets` module has been deprecated; it's better to
   use the built-in :class:`set` and :class:`frozenset` types.
 
-* The :mod:`sha` module has been deprecated; use the :mod:`hashlib` module
+* The :mod:`!sha` module has been deprecated; use the :mod:`hashlib` module
   instead.
 
 
@@ -2982,7 +2983,7 @@ Changes to Python's build process and to the C API include:
 
 * Python now must be compiled with C89 compilers (after 19
   years!).  This means that the Python source tree has dropped its
-  own implementations of :c:func:`memmove` and :c:func:`strerror`, which
+  own implementations of :c:func:`!memmove` and :c:func:`!strerror`, which
   are in the C89 standard library.
 
 * Python 2.6 can be built with Microsoft Visual Studio 2008 (version
@@ -3012,11 +3013,11 @@ Changes to Python's build process and to the C API include:
   bug occurred if one thread closed a file object while another thread
   was reading from or writing to the object.  In 2.6 file objects
   have a reference count, manipulated by the
-  :c:func:`PyFile_IncUseCount` and :c:func:`PyFile_DecUseCount`
+  :c:func:`!PyFile_IncUseCount` and :c:func:`!PyFile_DecUseCount`
   functions.  File objects can't be closed unless the reference count
-  is zero.  :c:func:`PyFile_IncUseCount` should be called while the GIL
+  is zero.  :c:func:`!PyFile_IncUseCount` should be called while the GIL
   is still held, before carrying out an I/O operation using the
-  ``FILE *`` pointer, and :c:func:`PyFile_DecUseCount` should be called
+  ``FILE *`` pointer, and :c:func:`!PyFile_DecUseCount` should be called
   immediately after the GIL is re-acquired.
   (Contributed by Antoine Pitrou and Gregory P. Smith.)
 
@@ -3060,9 +3061,9 @@ Changes to Python's build process and to the C API include:
 
 * Some macros were renamed in both 3.0 and 2.6 to make it clearer that
   they are macros,
-  not functions.  :c:macro:`Py_Size()` became :c:macro:`Py_SIZE()`,
-  :c:macro:`Py_Type()` became :c:macro:`Py_TYPE()`, and
-  :c:macro:`Py_Refcnt()` became :c:macro:`Py_REFCNT()`.
+  not functions.  :c:macro:`!Py_Size()` became :c:macro:`Py_SIZE()`,
+  :c:macro:`!Py_Type()` became :c:macro:`Py_TYPE()`, and
+  :c:macro:`!Py_Refcnt()` became :c:macro:`Py_REFCNT()`.
   The mixed-case macros are still available
   in Python 2.6 for backward compatibility.
   (:issue:`1629`)
@@ -3135,7 +3136,7 @@ Port-Specific Changes: Windows
   registry reflection for 32-bit processes running on 64-bit systems.
   (:issue:`1753245`)
 
-* The :mod:`msilib` module's :class:`Record` object
+* The :mod:`!msilib` module's :class:`Record` object
   gained :meth:`GetInteger` and :meth:`GetString` methods that
   return field values as an integer or a string.
   (Contributed by Floris Bruynooghe; :issue:`2125`.)

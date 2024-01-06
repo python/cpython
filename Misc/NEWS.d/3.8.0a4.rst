@@ -92,7 +92,7 @@ the field.
 .. nonce: wejLoC
 .. section: Core and Builtins
 
-On AIX, :attr:`sys.platform` doesn't contain the major version anymore.
+On AIX, :data:`sys.platform` doesn't contain the major version anymore.
 Always return ``'aix'``, instead of ``'aix3'`` .. ``'aix7'``.  Since older
 Python versions include the version number, it is recommended to always use
 ``sys.platform.startswith('aix')``. Contributed by M. Felt.
@@ -124,7 +124,7 @@ Galindo.
 .. nonce: CjRps3
 .. section: Core and Builtins
 
-:c:func:`PyEval_AcquireLock` and :c:func:`PyEval_AcquireThread` now
+:c:func:`!PyEval_AcquireLock` and :c:func:`!PyEval_AcquireThread` now
 terminate the current thread if called while the interpreter is finalizing,
 making them consistent with :c:func:`PyEval_RestoreThread`,
 :c:func:`Py_END_ALLOW_THREADS`, and :c:func:`PyGILState_Ensure`.
@@ -255,7 +255,7 @@ all tags in a namespace.  Patch by Stefan Behnel.
 .. nonce: Lpm-SI
 .. section: Library
 
-`pathlib.path.link_to()` is now implemented. It creates a hard link pointing
+``pathlib.path.link_to()`` is now implemented. It creates a hard link pointing
 to a path.
 
 ..
@@ -955,7 +955,7 @@ Add a new :mod:`_testinternalcapi` module to test the internal C API.
 .. section: Tests
 
 Fix ``test_imap4_host_default_value()`` of ``test_imaplib``: catch also
-:data:`errno.ENETUNREACH` error.
+:const:`errno.ENETUNREACH` error.
 
 ..
 
@@ -1087,7 +1087,7 @@ on the ABI.
 Change ``PyAPI_FUNC(type)``, ``PyAPI_DATA(type)`` and ``PyMODINIT_FUNC``
 macros of ``pyport.h`` when ``Py_BUILD_CORE_MODULE`` is defined. The
 ``Py_BUILD_CORE_MODULE`` define must be now be used to build a C extension
-as a dynamic library accessing Python internals: export the PyInit_xxx()
+as a dynamic library accessing Python internals: export the :samp:`PyInit_{xxx}()`
 function in DLL exports on Windows.
 
 ..
@@ -1344,7 +1344,7 @@ Fix the argument handling in Tools/scripts/lll.py.
 .. nonce: vghb86
 .. section: C API
 
-Fix memory leak in :c:func:`Py_SetStandardStreamEncoding`: release memory if
+Fix memory leak in :c:func:`!Py_SetStandardStreamEncoding`: release memory if
 the function is called twice.
 
 ..
