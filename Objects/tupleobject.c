@@ -548,7 +548,7 @@ Raises ValueError if the value is not present.
 
 static PyObject *
 tuple_index_impl(PyTupleObject *self, PyObject *value, Py_ssize_t start,
-                 Py_ssize_t stop)
+                 Py_ssize_t stop, PyObject *key)
 /*[clinic end generated code: output=07b6f9f3cb5c33eb input=fb39e9874a21fe3f]*/
 {
     Py_ssize_t i;
@@ -564,13 +564,33 @@ tuple_index_impl(PyTupleObject *self, PyObject *value, Py_ssize_t start,
     else if (stop > Py_SIZE(self)) {
         stop = Py_SIZE(self);
     }
-    for (i = start; i < stop; i++) {
+    if (key == NULL){
+        for (i = start; i < stop; i++) {
         int cmp = PyObject_RichCompareBool(self->ob_item[i], value, Py_EQ);
         if (cmp > 0)
             return PyLong_FromSsize_t(i);
         else if (cmp < 0)
             return NULL;
+        }
+    } 
+    else {
+        for (i = start; i < stop; i++) {
+        PyObject *item = self->ob_item[i];
+        Py_INCREF(item);
+        PyObject *obj = PyObject_CallFunctionObjArgs(key, item, NULL);
+        Py_DECREF(item);
+        if (obj == NULL){
+            return NULL;
+        }
+        int cmp = PyObject_RichCompareBool(obj, value, Py_EQ);
+        Py_DECREF(obj);
+        if (cmp > 0)
+            return PyLong_FromSsize_t(i);
+        else if (cmp < 0)
+            return NULL;
+        }
     }
+    
     PyErr_SetString(PyExc_ValueError, "tuple.index(x): x not in tuple");
     return NULL;
 }

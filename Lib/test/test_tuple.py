@@ -415,6 +415,32 @@ class TupleTest(seq_tests.CommonTest):
         c = self.type2test([1, 3])
         self.assertLess(a, b)
         self.assertLess(b, c)
+    
+    def test_index(self):
+        test_data = (1, 2, 3, 4)
+        idx = test_data.index(2)
+        self.assertEqual(idx, 1)
+        
+        with self.assertRaises(ValueError):
+            test_data.index(2, 2)
+        
+        with self.assertRaises(ValueError):
+            test_data.index(2, 0, 1)
+        
+        with self.assertRaises(ValueError):
+            test_data.index(5)
+    
+    def test_index_key(self):
+        data = tuple((i, chr(i)) for i in range(100))
+        idx = data.index("a", key=lambda i:i[1])
+        self.assertEqual(data[idx][1], "a")
+
+        with self.assertRaises(ValueError):
+            data.index("foo", key=lambda i:i[1])
+
+        # verify that errors propagate
+        with self.assertRaises(ZeroDivisionError):
+            data.index("a", key=lambda i: 1/0)
 
 # Notes on testing hash codes.  The primary thing is that Python doesn't
 # care about "random" hash codes.  To the contrary, we like them to be
