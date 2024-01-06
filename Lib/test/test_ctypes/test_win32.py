@@ -73,6 +73,10 @@ class TestWintypes(unittest.TestCase):
         self.assertEqual(ex.text, "text")
         self.assertEqual(ex.details, ("details",))
 
+        msg = "cannot set 'foo' attribute of immutable type '_ctypes.COMError'"
+        with self.assertRaisesRegex(TypeError, msg):
+            COMError.foo = "bar"
+
 
 @unittest.skipUnless(sys.platform == "win32", 'Windows-specific test')
 class TestWinError(unittest.TestCase):
