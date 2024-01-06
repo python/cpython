@@ -2,7 +2,6 @@ import functools
 import ntpath
 import posixpath
 import sys
-from _collections_abc import Sequence
 from errno import ENOENT, ENOTDIR, EBADF, ELOOP, EINVAL
 from itertools import chain
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
@@ -136,35 +135,6 @@ class UnsupportedOperation(NotImplementedError):
     a path object.
     """
     pass
-
-
-class _PathParents(Sequence):
-    """This object provides sequence-like access to the logical ancestors
-    of a path.  Don't try to construct it yourself."""
-    __slots__ = ('_path', '_drv', '_root', '_tail')
-
-    def __init__(self, path):
-        self._path = path
-        self._drv = path.drive
-        self._root = path.root
-        self._tail = path._tail
-
-    def __len__(self):
-        return len(self._tail)
-
-    def __getitem__(self, idx):
-        if isinstance(idx, slice):
-            return tuple(self[i] for i in range(*idx.indices(len(self))))
-
-        if idx >= len(self) or idx < -len(self):
-            raise IndexError(idx)
-        if idx < 0:
-            idx += len(self)
-        return self._path._from_parsed_parts(self._drv, self._root,
-                                             self._tail[:-idx - 1])
-
-    def __repr__(self):
-        return "<{}.parents>".format(type(self._path).__name__)
 
 
 class PurePathBase:
@@ -442,21 +412,26 @@ class PurePathBase:
     @property
     def parent(self):
         """The logical parent of the path."""
-        drv = self.drive
-        root = self.root
-        tail = self._tail
-        if not tail:
-            return self
-        path = self._from_parsed_parts(drv, root, tail[:-1])
-        path._resolving = self._resolving
-        return path
+        path = str(self)
+        parent = self.pathmod.dirname(path)
+        if path != parent:
+            parent = self.with_segments(parent)
+            parent._resolving = self._resolving
+            return parent
+        return self
 
     @property
     def parents(self):
         """A sequence of this path's logical parents."""
-        # The value of this property should not be cached on the path object,
-        # as doing so would introduce a reference cycle.
-        return _PathParents(self)
+        dirname = self.pathmod.dirname
+        path = str(self)
+        parent = dirname(path)
+        parents = []
+        while path != parent:
+            parents.append(self.with_segments(parent))
+            path = parent
+            parent = dirname(path)
+        return tuple(parents)
 
     def is_absolute(self):
         """True if the path is absolute (has both a root and, if applicable,
