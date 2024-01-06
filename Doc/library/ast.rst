@@ -416,6 +416,17 @@ Variables
             type_ignores=[])
 
 
+Note that the execution result of::
+
+    >>> del a, [b, c], (d, [e, f])
+
+is equivalent to::
+
+    >>> del a, b, c, d, e, f
+
+But these two delete statements generate different AST trees.
+
+
 .. class:: Starred(value, ctx)
 
    A ``*var`` variable reference. ``value`` holds the variable, typically a
