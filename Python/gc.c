@@ -1434,7 +1434,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     /* Clear free list only during the collection of the highest
      * generation */
     if (generation == NUM_GENERATIONS-1) {
-        _PyGC_Clear_FreeList(tstate->interp);
+        _PyGC_ClearFreeList(tstate->interp);
     }
 
     if (_PyErr_Occurred(tstate)) {
