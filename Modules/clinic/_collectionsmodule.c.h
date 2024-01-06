@@ -169,7 +169,13 @@ _collections_deque_copy_impl(dequeobject *deque);
 static PyObject *
 _collections_deque_copy(dequeobject *deque, PyObject *Py_UNUSED(ignored))
 {
-    return _collections_deque_copy_impl(deque);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(deque);
+    return_value = _collections_deque_copy_impl(deque);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_collections_deque___copy____doc__,
@@ -187,7 +193,13 @@ _collections_deque___copy___impl(dequeobject *deque);
 static PyObject *
 _collections_deque___copy__(dequeobject *deque, PyObject *Py_UNUSED(ignored))
 {
-    return _collections_deque___copy___impl(deque);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(deque);
+    return_value = _collections_deque___copy___impl(deque);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_collections_deque_clear__doc__,
@@ -611,4 +623,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=29df3c964eaaab55 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=92186babdf20cea0 input=a9049054013a1b77]*/

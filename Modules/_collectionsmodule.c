@@ -627,6 +627,7 @@ deque_inplace_concat(dequeobject *deque, PyObject *other)
 
 
 /*[clinic input]
+@critical_section
 _collections.deque.copy
 
     deque: dequeobject
@@ -636,7 +637,7 @@ Return a shallow copy of a deque.
 
 static PyObject *
 _collections_deque_copy_impl(dequeobject *deque)
-/*[clinic end generated code: output=af1e3831be813117 input=f575fc72c00333d4]*/
+/*[clinic end generated code: output=af1e3831be813117 input=471ed29263775e83]*/
 {
     PyObject *result;
     dequeobject *old_deque = (dequeobject *)deque;
@@ -650,12 +651,16 @@ _collections_deque_copy_impl(dequeobject *deque)
         if (new_deque == NULL)
             return NULL;
         new_deque->maxlen = old_deque->maxlen;
-        /* Fast path for the deque_repeat() common case where len(deque) == 1 */
+        /* Fast path for the deque_repeat() common case where len(deque) == 1
+         *
+         * It's safe to not acquire the per-object lock for new_deque; it's
+         * invisible to other threads.
+         */
         if (Py_SIZE(deque) == 1) {
             PyObject *item = old_deque->leftblock->data[old_deque->leftindex];
-            rv = _collections_deque_append(new_deque, item);
+            rv = _collections_deque_append_impl(new_deque, item);
         } else {
-            rv = _collections_deque_extend(new_deque, (PyObject *) deque);
+            rv = _collections_deque_extend_impl(new_deque, (PyObject *) deque);
         }
         if (rv != NULL) {
             Py_DECREF(rv);
@@ -680,6 +685,7 @@ _collections_deque_copy_impl(dequeobject *deque)
 }
 
 /*[clinic input]
+@critical_section
 _collections.deque.__copy__ = _collections.deque.copy
 
 Return a shallow copy of a deque.
@@ -687,7 +693,7 @@ Return a shallow copy of a deque.
 
 static PyObject *
 _collections_deque___copy___impl(dequeobject *deque)
-/*[clinic end generated code: output=c4c31949334138fd input=9d78c00375929799]*/
+/*[clinic end generated code: output=c4c31949334138fd input=8775d5bafd63f5ee]*/
 {
     return _collections_deque_copy_impl(deque);
 }
