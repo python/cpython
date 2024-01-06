@@ -540,16 +540,19 @@ tuple.index
     start: slice_index(accept={int}) = 0
     stop: slice_index(accept={int}, c_default="PY_SSIZE_T_MAX") = sys.maxsize
     /
+    *
+    key: object=NULL
 
 Return first index of value.
 
 Raises ValueError if the value is not present.
+A callable 'key' can be provided to transform each item before comparison with 'value'.
 [clinic start generated code]*/
 
 static PyObject *
 tuple_index_impl(PyTupleObject *self, PyObject *value, Py_ssize_t start,
                  Py_ssize_t stop, PyObject *key)
-/*[clinic end generated code: output=07b6f9f3cb5c33eb input=fb39e9874a21fe3f]*/
+/*[clinic end generated code: output=35ad088a42ddd127 input=e078accb010344da]*/
 {
     Py_ssize_t i;
 

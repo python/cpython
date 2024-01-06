@@ -2,7 +2,11 @@
 preserve
 [clinic start generated code]*/
 
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
+#endif
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(tuple_index__doc__,
 "index($self, value, start=0, stop=sys.maxsize, /, *,\n"
@@ -58,7 +62,7 @@ tuple_index(PyTupleObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     PyObject *key = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
-    if (args == NULL) {
+    if (!args) {
         goto exit;
     }
     value = args[0];
@@ -77,7 +81,7 @@ tuple_index(PyTupleObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
         goto exit;
     }
 skip_optional_posonly:
-    if (noptargs == 0) {
+    if (!noptargs) {
         goto skip_optional_kwonly;
     }
     key = args[3];
@@ -152,4 +156,4 @@ tuple___getnewargs__(PyTupleObject *self, PyObject *Py_UNUSED(ignored))
 {
     return tuple___getnewargs___impl(self);
 }
-/*[clinic end generated code: output=a6a9abba5d121f4c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e8f3acd2d1a0e43d input=a9049054013a1b77]*/
