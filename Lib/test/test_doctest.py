@@ -413,6 +413,23 @@ Compare `DocTest`:
     False
     >>> test != other_test
     True
+    >>> test < other_test
+    False
+    >>> other_test < test
+    True
+
+Test comparison with lineno None on one side
+
+    >>> no_lineno = parser.get_doctest(docstring, globs, 'some_test',
+    ...                               'some_test', None)
+    >>> test.lineno is None
+    False
+    >>> no_lineno.lineno is None
+    True
+    >>> test < no_lineno
+    False
+    >>> no_lineno < test
+    True
 
 Compare `DocTestCase`:
 
@@ -653,9 +670,11 @@ It used to be broken for quite some time until `bpo-28249`.
        30  test.doctest_lineno.ClassWithDoctest
      None  test.doctest_lineno.ClassWithoutDocstring
      None  test.doctest_lineno.MethodWrapper
+       53  test.doctest_lineno.MethodWrapper.classmethod_with_doctest
        39  test.doctest_lineno.MethodWrapper.method_with_docstring
        45  test.doctest_lineno.MethodWrapper.method_with_doctest
      None  test.doctest_lineno.MethodWrapper.method_without_docstring
+       61  test.doctest_lineno.MethodWrapper.property_with_doctest
         4  test.doctest_lineno.func_with_docstring
        12  test.doctest_lineno.func_with_doctest
      None  test.doctest_lineno.func_without_docstring
@@ -2905,6 +2924,9 @@ Check doctest with a non-ascii filename:
         Traceback (most recent call last):
           File ...
             exec(compile(example.source, filename, "single",
+            ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                         compileflags, True), test.globs)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
           File "<doctest foo-bär@baz[0]>", line 1, in <module>
             raise Exception('clé')
         Exception: clé

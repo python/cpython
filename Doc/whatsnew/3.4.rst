@@ -605,15 +605,15 @@ Using ``ABC`` as a base class has essentially the same effect as specifying
 aifc
 ----
 
-The :meth:`~!aifc.aifc.getparams` method now returns a namedtuple rather than a
+The :meth:`!getparams` method now returns a namedtuple rather than a
 plain tuple.  (Contributed by Claudiu Popa in :issue:`17818`.)
 
 :func:`!aifc.open` now supports the context management protocol: when used in a
-:keyword:`with` block, the :meth:`~!aifc.aifc.close` method of the returned
+:keyword:`with` block, the :meth:`!close` method of the returned
 object will be called automatically at the end of the block.  (Contributed by
 Serhiy Storchacha in :issue:`16486`.)
 
-The :meth:`~!aifc.aifc.writeframesraw` and :meth:`~!aifc.aifc.writeframes`
+The :meth:`!writeframesraw` and :meth:`!writeframes`
 methods now accept any :term:`bytes-like object`.  (Contributed by Serhiy
 Storchaka in :issue:`8311`.)
 
@@ -632,7 +632,7 @@ audioop
 :mod:`!audioop` now supports 24-bit samples.  (Contributed by Serhiy Storchaka
 in :issue:`12866`.)
 
-New :func:`~!audioop.byteswap` function converts big-endian samples to
+New :func:`!byteswap` function converts big-endian samples to
 little-endian and vice versa.  (Contributed by Serhiy Storchaka in
 :issue:`19641`.)
 
@@ -1369,9 +1369,9 @@ error.  (Contributed by Atsuo Ishimoto and Hynek Schlawack in
 smtpd
 -----
 
-The :class:`~smtpd.SMTPServer` and :class:`~smtpd.SMTPChannel` classes now
+The :class:`!SMTPServer` and :class:`!SMTPChannel` classes now
 accept a *map* keyword argument which, if specified, is passed in to
-:class:`asynchat.async_chat` as its *map* argument.  This allows an application
+:class:`!asynchat.async_chat` as its *map* argument.  This allows an application
 to avoid affecting the global socket map.  (Contributed by Vinay Sajip in
 :issue:`11959`.)
 
@@ -1528,7 +1528,7 @@ work on Windows.  This change was actually inadvertently made in 3.3.4.
 sunau
 -----
 
-The :meth:`~!sunau.getparams` method now returns a namedtuple rather than a
+The :meth:`!getparams` method now returns a namedtuple rather than a
 plain tuple.  (Contributed by Claudiu Popa in :issue:`18901`.)
 
 :meth:`!sunau.open` now supports the context management protocol: when used in a
@@ -1540,8 +1540,8 @@ in :issue:`18878`.)
 support for writing 24 sample using the module.  (Contributed by
 Serhiy Storchaka in :issue:`19261`.)
 
-The :meth:`~!sunau.AU_write.writeframesraw` and
-:meth:`~!sunau.AU_write.writeframes` methods now accept any :term:`bytes-like
+The :meth:`!writeframesraw` and
+:meth:`!writeframes` methods now accept any :term:`bytes-like
 object`.  (Contributed by Serhiy Storchaka in :issue:`8311`.)
 
 
@@ -1936,7 +1936,7 @@ Other Improvements
 * The :ref:`python <using-on-cmdline>` command has a new :ref:`option
   <using-on-misc-options>`, ``-I``, which causes it to run in "isolated mode",
   which means that :data:`sys.path` contains neither the script's directory nor
-  the user's ``site-packages`` directory, and all :envvar:`PYTHON*` environment
+  the user's ``site-packages`` directory, and all :envvar:`!PYTHON*` environment
   variables are ignored (it implies both ``-s`` and ``-E``).  Other
   restrictions may also be applied in the future, with the goal being to
   isolate the execution of a script from the user's environment.  This is
@@ -2370,7 +2370,7 @@ Changes in the Python API
   :issue:`18011`.)  Note: this change was also inadvertently applied in Python
   3.3.3.
 
-* The :attr:`~cgi.FieldStorage.file` attribute is now automatically closed when
+* The :attr:`!file` attribute is now automatically closed when
   the creating :class:`!cgi.FieldStorage` instance is garbage collected. If you
   were pulling the file object out separately from the :class:`!cgi.FieldStorage`
   instance and not keeping the instance alive, then you should either store the
@@ -2405,8 +2405,8 @@ Changes in the Python API
   storage).  (:issue:`17094`.)
 
 * Parameter names in ``__annotations__`` dicts are now mangled properly,
-  similarly to ``__kwdefaults__``.  (Contributed by Yury Selivanov in
-  :issue:`20625`.)
+  similarly to :attr:`~function.__kwdefaults__`.
+  (Contributed by Yury Selivanov in :issue:`20625`.)
 
 * :attr:`hashlib.hash.name` now always returns the identifier in lower case.
   Previously some builtin hashes had uppercase names, but now that it is a

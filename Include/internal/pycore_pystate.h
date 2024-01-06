@@ -187,6 +187,7 @@ extern PyThreadState * _PyThreadState_New(
     int whence);
 extern void _PyThreadState_Bind(PyThreadState *tstate);
 extern void _PyThreadState_DeleteExcept(PyThreadState *tstate);
+extern void _PyThreadState_ClearMimallocHeaps(PyThreadState *tstate);
 
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(PyObject*) _PyThreadState_GetDict(PyThreadState *tstate);
@@ -220,9 +221,9 @@ PyAPI_FUNC(int) _PyState_AddModule(
 extern int _PyOS_InterruptOccurred(PyThreadState *tstate);
 
 #define HEAD_LOCK(runtime) \
-    PyThread_acquire_lock((runtime)->interpreters.mutex, WAIT_LOCK)
+    PyMutex_LockFlags(&(runtime)->interpreters.mutex, _Py_LOCK_DONT_DETACH)
 #define HEAD_UNLOCK(runtime) \
-    PyThread_release_lock((runtime)->interpreters.mutex)
+    PyMutex_Unlock(&(runtime)->interpreters.mutex)
 
 // Get the configuration of the current interpreter.
 // The caller must hold the GIL.

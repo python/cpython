@@ -219,6 +219,10 @@ exit:
 void *
 _PyPegen_raise_error(Parser *p, PyObject *errtype, int use_mark, const char *errmsg, ...)
 {
+    // Bail out if we already have an error set.
+    if (p->error_indicator && PyErr_Occurred()) {
+        return NULL;
+    }
     if (p->fill == 0) {
         va_list va;
         va_start(va, errmsg);
@@ -278,6 +282,10 @@ get_error_line_from_tokenizer_buffers(Parser *p, Py_ssize_t lineno)
     Py_ssize_t relative_lineno = p->starting_lineno ? lineno - p->starting_lineno + 1 : lineno;
     const char* buf_end = p->tok->fp_interactive ? p->tok->interactive_src_end : p->tok->inp;
 
+    if (buf_end < cur_line) {
+        buf_end = cur_line + strlen(cur_line);
+    }
+
     for (int i = 0; i < relative_lineno - 1; i++) {
         char *new_line = strchr(cur_line, '\n');
         // The assert is here for debug builds but the conditional that
@@ -303,6 +311,10 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
                                     Py_ssize_t end_lineno, Py_ssize_t end_col_offset,
                                     const char *errmsg, va_list va)
 {
+    // Bail out if we already have an error set.
+    if (p->error_indicator && PyErr_Occurred()) {
+        return NULL;
+    }
     PyObject *value = NULL;
     PyObject *errstr = NULL;
     PyObject *error_line = NULL;
@@ -394,7 +406,7 @@ error:
 
 void
 _Pypegen_set_syntax_error(Parser* p, Token* last_token) {
-    // Existing sintax error
+    // Existing syntax error
     if (PyErr_Occurred()) {
         // Prioritize tokenizer errors to custom syntax errors raised
         // on the second phase only if the errors come from the parser.
