@@ -74,7 +74,10 @@ def ToASCII(label):
         if 0 < len(label) < 64:
             return label
         label = label.decode("ascii", errors="backslashreplace")
-        raise UnicodeEncodeError("idna", label, 0, len(label), "label empty or too long")
+        if len(label) == 0:
+            raise UnicodeEncodeError("idna", label, 0, 1, "label empty")
+        else:
+            raise UnicodeEncodeError("idna", label, 0, len(label), "label too long")
 
     # Step 2: nameprep
     label = nameprep(label)
@@ -90,7 +93,10 @@ def ToASCII(label):
         if 0 < len(label) < 64:
             return label
         label = label.decode("ascii", errors="backslashreplace")
-        raise UnicodeEncodeError("idna", label, 0, len(label), "label empty or too long")
+        if len(label) == 0:
+            raise UnicodeEncodeError("idna", label, 0, 1, "label empty")
+        else:
+            raise UnicodeEncodeError("idna", label, 0, len(label), "label too long")
 
     # Step 5: Check ACE prefix
     if label.startswith(sace_prefix):
@@ -108,7 +114,10 @@ def ToASCII(label):
     if 0 < len(label) < 64:
         return label
     label = label[len(ace_prefix):].decode("punycode", errors="replace")
-    raise UnicodeEncodeError("idna", label, 0, len(label), "label empty or too long")
+    if len(label) == 0:
+        raise UnicodeEncodeError("idna", label, 0, 1, "label empty")
+    else:
+        raise UnicodeEncodeError("idna", label, 0, len(label), "label too long")
 
 def ToUnicode(label):
     if len(label) > 1024:
@@ -185,7 +194,10 @@ class Codec(codecs.Codec):
             index = 0
             for label in labels[:-1]:
                 if not (0 < len(label) < 64):
-                    raise UnicodeEncodeError("idna", input, index, index+len(label), "label empty or too long")
+                if len(label) == 0:
+                    raise UnicodeEncodeError("idna", input, index, index+1, "label empty")
+                elif len(label >= 64:
+                    raise UnicodeEncodeError("idna", input, index, index+len(label), "label too long")
                 index += len(label) + 1
             if len(labels[-1]) >= 64:
                 raise UnicodeEncodeError("idna", input, index, len(input), "label too long")
