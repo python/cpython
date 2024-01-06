@@ -816,15 +816,6 @@ deque_clear(dequeobject *deque)
     return 0;
 }
 
-static int
-deque_tp_clear(dequeobject *deque)
-{
-    Py_BEGIN_CRITICAL_SECTION(deque);
-    int result = deque_clear(deque);
-    Py_END_CRITICAL_SECTION();
-    return result;
-}
-
 /*[clinic input]
 @critical_section
 _collections.deque.clear
@@ -1884,7 +1875,7 @@ static PyType_Slot deque_slots[] = {
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_doc, (void *)_collections_deque___init____doc__},
     {Py_tp_traverse, deque_traverse},
-    {Py_tp_clear, deque_tp_clear},
+    {Py_tp_clear, deque_clear},
     {Py_tp_richcompare, deque_richcompare},
     {Py_tp_iter, deque_iter},
     {Py_tp_getset, deque_getset},
