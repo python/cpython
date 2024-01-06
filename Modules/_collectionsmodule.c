@@ -2022,6 +2022,11 @@ dequeiter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         if (item) {
             Py_DECREF(item);
         } else {
+          /*
+           * It's safe to read directly from it without acquiring the
+           * per-object lock; the iterator isn't visible to any other threads
+           * yet.
+           */
             if (it->counter) {
                 Py_DECREF(it);
                 return NULL;
@@ -2035,7 +2040,8 @@ dequeiter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject *
 dequeiter_len(dequeiterobject *it, PyObject *Py_UNUSED(ignored))
 {
-    return PyLong_FromSsize_t(it->counter);
+    Py_ssize_t len = _Py_atomic_load_ssize(&it->counter);
+    return PyLong_FromSsize_t(len);
 }
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
