@@ -1,8 +1,8 @@
-#ifdef Py_GIL_DISABLED
-
 #include "Python.h"
 #include "pycore_pystate.h"   // _PyFreeListState_GET()
 #include "pycore_tstate.h"    // _PyThreadStateImpl
+
+#ifdef Py_GIL_DISABLED
 
 /* Clear all free lists
  * All free lists are cleared during the collection of the highest generation.
