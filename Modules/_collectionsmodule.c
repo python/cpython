@@ -1792,6 +1792,7 @@ _collections_deque___init___impl(dequeobject *deque, PyObject *iterable,
 }
 
 /*[clinic input]
+@critical_section
 _collections.deque.__sizeof__
 
     deque: dequeobject
@@ -1801,7 +1802,7 @@ Return the size of the deque in memory, in bytes
 
 static PyObject *
 _collections_deque___sizeof___impl(dequeobject *deque)
-/*[clinic end generated code: output=1a66234430a294a3 input=c0c535e64766f446]*/
+/*[clinic end generated code: output=1a66234430a294a3 input=88e45a563a92ab4d]*/
 {
     size_t res = _PyObject_SIZE(Py_TYPE(deque));
     size_t blocks;

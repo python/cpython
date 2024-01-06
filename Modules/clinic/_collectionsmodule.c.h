@@ -537,7 +537,13 @@ _collections_deque___sizeof___impl(dequeobject *deque);
 static PyObject *
 _collections_deque___sizeof__(dequeobject *deque, PyObject *Py_UNUSED(ignored))
 {
-    return _collections_deque___sizeof___impl(deque);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(deque);
+    return_value = _collections_deque___sizeof___impl(deque);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_collections_deque___reversed____doc__,
@@ -625,4 +631,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=af5cda2d6ca0e23b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a34c1f2f2c576c0b input=a9049054013a1b77]*/
