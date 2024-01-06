@@ -481,9 +481,12 @@ no_redundant_jumps(cfg_builder *g) {
             if (IS_UNCONDITIONAL_JUMP_OPCODE(last->i_opcode)) {
                 basicblock *next = next_nonempty_block(b->b_next);
                 basicblock *jump_target = next_nonempty_block(last->i_target);
-                assert(jump_target != next);
                 if (jump_target == next) {
-                    return false;
+                    assert(next);
+                    if (last->i_loc.lineno == next->b_instr[0].i_loc.lineno) {
+                        assert(0);
+                        return false;
+                    }
                 }
             }
         }
@@ -1097,6 +1100,7 @@ remove_redundant_jumps(cfg_builder *g) {
             }
         }
     }
+
     return SUCCESS;
 }
 
@@ -1135,11 +1139,15 @@ jump_thread(cfg_instr *inst, cfg_instr *target, int opcode)
     assert(is_jump(target));
     // bpo-45773: If inst->i_target == target->i_target, then nothing actually
     // changes (and we fall into an infinite loop):
-    if ((inst->i_loc.lineno == target->i_loc.lineno || target->i_loc.lineno == -1) &&
+    if ((inst->i_loc.lineno == target->i_loc.lineno ||
+         inst->i_loc.lineno == -1 || target->i_loc.lineno == -1) &&
         inst->i_target != target->i_target)
     {
         inst->i_target = target->i_target;
         inst->i_opcode = opcode;
+        if (inst->i_loc.lineno == -1) {
+            inst->i_loc = target->i_loc;
+        }
         return true;
     }
     return false;
@@ -1602,9 +1610,14 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 }
                 break;
             case JUMP:
+            case JUMP_NO_INTERRUPT:
                 switch (target->i_opcode) {
                     case JUMP:
                         i -= jump_thread(inst, target, JUMP);
+                        continue;
+                    case JUMP_NO_INTERRUPT:
+                        i -= jump_thread(inst, target, opcode);
+                        continue;
                 }
                 break;
             case FOR_ITER:
