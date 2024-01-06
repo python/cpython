@@ -371,7 +371,7 @@ class PurePathBase:
         else:
             raise ValueError(f"{str(self)!r} and {str(other)!r} have different anchors")
         parts = ['..'] * step + self._tail[len(path._tail):]
-        return self._from_parsed_parts('', '', parts)
+        return self.with_segments(*parts)
 
     def is_relative_to(self, other):
         """Return True if the path is relative to another path or False.
