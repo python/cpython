@@ -380,6 +380,26 @@ class CommonTest(seq_tests.CommonTest):
         # This used to seg fault before patch #1005778
         self.assertRaises(ValueError, a.index, None)
 
+    def test_index_key(self):
+        data = [(i, chr(i)) for i in range(100)]
+        idx = data.index("a", key=lambda i:i[1])
+        self.assertEqual(data[idx][1], "a")
+
+        with self.assertRaises(ValueError):
+            data.index("foo", key=lambda i:i[1])
+
+        # verify that errors propagate
+        with self.assertRaises(ZeroDivisionError):
+            data.index("a", key=lambda i: 1/0)
+
+        # verify that key method can modify the list without crashing
+        def evil_key(i):
+            del data[:]
+            return i[1]
+        with self.assertRaises(ValueError):
+            idx = data.index("a", key=evil_key)
+        self.assertEqual(data, [])        
+
     def test_reverse(self):
         u = self.type2test([-2, -1, 0, 1, 2])
         u2 = u[:]

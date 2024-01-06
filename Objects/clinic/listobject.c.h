@@ -246,46 +246,84 @@ list_reverse(PyListObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(list_index__doc__,
-"index($self, value, start=0, stop=sys.maxsize, /)\n"
+"index($self, value, start=0, stop=sys.maxsize, /, *,\n"
+"      key=<unrepresentable>)\n"
 "--\n"
 "\n"
 "Return first index of value.\n"
 "\n"
-"Raises ValueError if the value is not present.");
+"Raises ValueError if the value is not present.\n"
+"A callable \'key\' can be provided to transform each item before comparison with \'value\'.");
 
 #define LIST_INDEX_METHODDEF    \
-    {"index", _PyCFunction_CAST(list_index), METH_FASTCALL, list_index__doc__},
+    {"index", _PyCFunction_CAST(list_index), METH_FASTCALL|METH_KEYWORDS, list_index__doc__},
 
 static PyObject *
 list_index_impl(PyListObject *self, PyObject *value, Py_ssize_t start,
-                Py_ssize_t stop);
+                Py_ssize_t stop, PyObject *key);
 
 static PyObject *
-list_index(PyListObject *self, PyObject *const *args, Py_ssize_t nargs)
+list_index(PyListObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(key), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "", "", "key", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "index",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[4];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *value;
     Py_ssize_t start = 0;
     Py_ssize_t stop = PY_SSIZE_T_MAX;
+    PyObject *key = NULL;
 
-    if (!_PyArg_CheckPositional("index", nargs, 1, 3)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     value = args[0];
     if (nargs < 2) {
-        goto skip_optional;
+        goto skip_optional_posonly;
     }
+    noptargs--;
     if (!_PyEval_SliceIndexNotNone(args[1], &start)) {
         goto exit;
     }
     if (nargs < 3) {
-        goto skip_optional;
+        goto skip_optional_posonly;
     }
+    noptargs--;
     if (!_PyEval_SliceIndexNotNone(args[2], &stop)) {
         goto exit;
     }
-skip_optional:
-    return_value = list_index_impl(self, value, start, stop);
+skip_optional_posonly:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    key = args[3];
+skip_optional_kwonly:
+    return_value = list_index_impl(self, value, start, stop, key);
 
 exit:
     return return_value;
@@ -384,4 +422,4 @@ list___reversed__(PyListObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl(self);
 }
-/*[clinic end generated code: output=f2d7b63119464ff4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=33d604e8788095b7 input=a9049054013a1b77]*/

@@ -2659,16 +2659,19 @@ list.index
     start: slice_index(accept={int}) = 0
     stop: slice_index(accept={int}, c_default="PY_SSIZE_T_MAX") = sys.maxsize
     /
+    *
+    key: object=NULL
 
 Return first index of value.
 
 Raises ValueError if the value is not present.
+A callable 'key' can be provided to transform each item before comparison with 'value'.
 [clinic start generated code]*/
 
 static PyObject *
 list_index_impl(PyListObject *self, PyObject *value, Py_ssize_t start,
-                Py_ssize_t stop)
-/*[clinic end generated code: output=ec51b88787e4e481 input=40ec5826303a0eb1]*/
+                Py_ssize_t stop, PyObject *key)
+/*[clinic end generated code: output=23a18266d9a3a9b3 input=7115b8d01b704c54]*/
 {
     Py_ssize_t i;
 
@@ -2682,16 +2685,34 @@ list_index_impl(PyListObject *self, PyObject *value, Py_ssize_t start,
         if (stop < 0)
             stop = 0;
     }
-    for (i = start; i < stop && i < Py_SIZE(self); i++) {
-        PyObject *obj = self->ob_item[i];
-        Py_INCREF(obj);
-        int cmp = PyObject_RichCompareBool(obj, value, Py_EQ);
-        Py_DECREF(obj);
-        if (cmp > 0)
-            return PyLong_FromSsize_t(i);
-        else if (cmp < 0)
-            return NULL;
-    }
+    if (!key)
+        for (i = start; i < stop && i < Py_SIZE(self); i++) {
+            PyObject *obj = self->ob_item[i];
+            /* take reference to item, in case comparison methods modify list */
+            Py_INCREF(obj);  
+            int cmp = PyObject_RichCompareBool(obj, value, Py_EQ);
+            Py_DECREF(obj);
+            if (cmp > 0)
+                return PyLong_FromSsize_t(i);
+            else if (cmp < 0)
+                return NULL;
+        }
+    else
+        for (i = start; i < stop && i < Py_SIZE(self); i++) {
+            PyObject *item = self->ob_item[i];
+            /* take reference to item, in case key modifies list */
+            Py_INCREF(item);  
+            PyObject *obj = PyObject_CallFunctionObjArgs(key, item, NULL);
+            Py_DECREF(item);
+            if (!obj)
+                return NULL;
+            int cmp = PyObject_RichCompareBool(obj, value, Py_EQ);
+            Py_DECREF(obj);
+            if (cmp > 0)
+                return PyLong_FromSsize_t(i);
+            else if (cmp < 0)
+                return NULL;
+        }
     PyErr_Format(PyExc_ValueError, "%R is not in list", value);
     return NULL;
 }
