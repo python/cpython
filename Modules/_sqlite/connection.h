@@ -87,6 +87,9 @@ typedef struct
      */
     PyObject* text_factory;
 
+    // The str() built-in, used by set_sqlite_error()
+    PyObject *str;
+
     // Remember contexts used by the trace, progress, and authoriser callbacks
     callback_context *trace_ctx;
     callback_context *progress_ctx;

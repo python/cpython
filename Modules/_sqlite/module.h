@@ -50,6 +50,7 @@ typedef struct {
     PyObject *converters;
 
     PyObject *lru_cache;
+    PyObject *bltin_str;
     PyObject *psyco_adapters;  // The adapters registry
     int BaseTypeAdapted;
     int enable_callback_tracebacks;

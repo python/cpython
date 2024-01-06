@@ -897,11 +897,91 @@ print_or_clear_traceback(callback_context *ctx)
     }
 }
 
+static PyObject *
+fetch_str_builtin(callback_context *ctx)
+{
+    pysqlite_state *state = ctx->state;
+    if (state->bltin_str != NULL) {
+        return state->bltin_str;
+    }
+
+    /* Both PyEval_GetBuiltins and PyDict_GetItemString return
+     * borrowed references. */
+    PyObject *bltins = PyEval_GetBuiltins();
+    if (bltins == NULL) {
+        return NULL;
+    }
+    state->bltin_str = PyDict_GetItemString(bltins , "str");
+    return Py_XNewRef(state->bltin_str);
+}
+
+static PyObject *
+get_exception_message(callback_context *ctx, PyObject *exc)
+{
+    PyObject *str = fetch_str_builtin(ctx);
+    if (str == NULL) {
+        return NULL;
+    }
+    PyObject *res = PyObject_CallFunction(str, "(O)", exc);
+    if (res == NULL) {
+        return NULL;
+    }
+    if (!PyUnicode_Check(res)) {
+        Py_DECREF(res);
+        return NULL;
+    }
+    return res;
+}
+
+static char *
+build_error_message(const char *pre, const char *msg)
+{
+    static const char *sep = ": ";
+    const size_t len_pre = pre ? strlen(pre) : 0;
+    const size_t len_msg = msg ? strlen(msg) : 0;
+    size_t total = len_pre + len_msg;
+    assert(len_pre || len_msg);
+    if (len_pre && len_msg) {
+        total += 2;  // strlen(sep)
+    }
+    char *ret = PyMem_Malloc(total + 1);
+    if (ret == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    if (len_pre && !len_msg) {
+        return strcpy(ret, pre);
+    }
+    if (len_msg && !len_pre) {
+        return strcpy(ret, msg);
+    }
+    ret = strcpy(ret, pre);
+    ret = strcat(ret, sep);
+    return strcat(ret, msg);
+}
+
+static char *
+get_result_error_message(callback_context *ctx, const char *preamble,
+                         PyObject *exc)
+{
+    char *ret = NULL;
+
+    PyObject *msg = get_exception_message(ctx, exc);
+    if (msg != NULL) {
+        const char *cstr = PyUnicode_AsUTF8(msg);
+        ret = build_error_message(preamble, cstr);
+    }
+
+    Py_DECREF(msg);
+    return ret;
+}
+
 // Checks the Python exception and sets the appropriate SQLite error code.
 static void
-set_sqlite_error(sqlite3_context *context, const char *msg)
+set_sqlite_error(sqlite3_context *context, const char *preamble)
 {
     assert(PyErr_Occurred());
+    callback_context *ctx = (callback_context *)sqlite3_user_data(context);
     if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
         sqlite3_result_error_nomem(context);
     }
@@ -909,9 +989,19 @@ set_sqlite_error(sqlite3_context *context, const char *msg)
         sqlite3_result_error_toobig(context);
     }
     else {
-        sqlite3_result_error(context, msg, -1);
+        PyObject *exc = PyErr_GetRaisedException();
+
+        char *msg = get_result_error_message(ctx, preamble, exc);
+        if (msg == NULL) {
+            PyErr_NoMemory();
+        }
+        else {
+            sqlite3_result_error(context, msg, -1);
+            PyMem_Free(msg);
+        }
+
+        PyErr_SetRaisedException(exc);
     }
-    callback_context *ctx = (callback_context *)sqlite3_user_data(context);
     print_or_clear_traceback(ctx);
 }
 
@@ -969,8 +1059,7 @@ step_callback(sqlite3_context *context, int argc, sqlite3_value **params)
 
     stepmethod = PyObject_GetAttr(*aggregate_instance, ctx->state->str_step);
     if (!stepmethod) {
-        set_sqlite_error(context,
-                "user-defined aggregate's 'step' method not defined");
+        set_sqlite_error(context, NULL);
         goto error;
     }
 
@@ -1038,7 +1127,7 @@ final_callback(sqlite3_context *context)
          * from the finalize callback. This implies that execute*() will not
          * raise OperationalError, as it normally would. */
         set_sqlite_error(context, attr_err
-                ? "user-defined aggregate's 'finalize' method not defined"
+                ? NULL
                 : "user-defined aggregate's 'finalize' method raised error");
     }
     else {
@@ -1201,8 +1290,7 @@ inverse_callback(sqlite3_context *context, int argc, sqlite3_value **params)
 
     PyObject *method = PyObject_GetAttr(*cls, ctx->state->str_inverse);
     if (method == NULL) {
-        set_sqlite_error(context,
-                "user-defined aggregate's 'inverse' method not defined");
+        set_sqlite_error(context, NULL);
         goto exit;
     }
 
@@ -1251,7 +1339,7 @@ value_callback(sqlite3_context *context)
     if (res == NULL) {
         int attr_err = PyErr_ExceptionMatches(PyExc_AttributeError);
         set_sqlite_error(context, attr_err
-                ? "user-defined aggregate's 'value' method not defined"
+                ? NULL
                 : "user-defined aggregate's 'value' method raised error");
     }
     else {

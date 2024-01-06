@@ -32,6 +32,9 @@ from .util import cx_limit, memory_database
 from .util import with_tracebacks
 
 
+class CustomException(Exception):
+    pass
+
 def func_returntext():
     return "foo"
 def func_returntextwithnull():
@@ -49,7 +52,7 @@ def func_returnblob():
 def func_returnlonglong():
     return 1<<31
 def func_raiseexception():
-    5/0
+    raise CustomException("func except")
 def func_memoryerror():
     raise MemoryError
 def func_overflowerror():
@@ -71,7 +74,7 @@ class AggrNoFinalize:
 
 class AggrExceptionInInit:
     def __init__(self):
-        5/0
+        raise CustomException("aggr init")
 
     def step(self, x):
         pass
@@ -84,7 +87,7 @@ class AggrExceptionInStep:
         pass
 
     def step(self, x):
-        5/0
+        raise CustomException("aggr step")
 
     def finalize(self):
         return 42
@@ -97,7 +100,7 @@ class AggrExceptionInFinalize:
         pass
 
     def finalize(self):
-        5/0
+        raise CustomException("aggr finalize")
 
 class AggrCheckType:
     def __init__(self):
@@ -254,13 +257,13 @@ class FunctionTests(unittest.TestCase):
         cur.execute("select returnnan()")
         self.assertIsNone(cur.fetchone()[0])
 
-    @with_tracebacks(ZeroDivisionError, name="func_raiseexception")
+    @with_tracebacks(CustomException, name="func_raiseexception")
     def test_func_exception(self):
         cur = self.con.cursor()
-        with self.assertRaises(sqlite.OperationalError) as cm:
+        msg = "user-defined function raised exception.*func except"
+        with self.assertRaisesRegex(sqlite.OperationalError, msg):
             cur.execute("select raiseexception()")
             cur.fetchone()
-        self.assertEqual(str(cm.exception), 'user-defined function raised exception')
 
     @with_tracebacks(MemoryError, name="func_memoryerror")
     def test_func_memory_error(self):
@@ -561,7 +564,7 @@ class WindowFunctionTests(unittest.TestCase):
                 name = f"exc_{meth}"
                 self.con.create_window_function(name, 1, cls)
                 with self.assertRaisesRegex(sqlite.OperationalError,
-                                            f"'{meth}' method not defined"):
+                                            f"'{cls.__name__}'.*has no attribute '{meth}'"):
                     self.cur.execute(self.query % name)
                     self.cur.fetchall()
 
@@ -644,41 +647,40 @@ class AggregateTests(unittest.TestCase):
     @with_tracebacks(AttributeError, name="AggrNoStep")
     def test_aggr_no_step(self):
         cur = self.con.cursor()
-        with self.assertRaises(sqlite.OperationalError) as cm:
+        msg = "'AggrNoStep' object has no attribute 'step'"
+        with self.assertRaisesRegex(sqlite.OperationalError, msg):
             cur.execute("select nostep(t) from test")
-        self.assertEqual(str(cm.exception),
-                         "user-defined aggregate's 'step' method not defined")
 
     def test_aggr_no_finalize(self):
         cur = self.con.cursor()
-        msg = "user-defined aggregate's 'finalize' method not defined"
+        msg = "'AggrNoFinalize' object has no attribute 'finalize'"
         with self.assertRaisesRegex(sqlite.OperationalError, msg):
             cur.execute("select nofinalize(t) from test")
             val = cur.fetchone()[0]
 
-    @with_tracebacks(ZeroDivisionError, name="AggrExceptionInInit")
+    @with_tracebacks(CustomException, name="AggrExceptionInInit")
     def test_aggr_exception_in_init(self):
         cur = self.con.cursor()
-        with self.assertRaises(sqlite.OperationalError) as cm:
+        msg = "'__init__' method raised error:.*aggr init"
+        with self.assertRaisesRegex(sqlite.OperationalError, msg):
             cur.execute("select excInit(t) from test")
             val = cur.fetchone()[0]
-        self.assertEqual(str(cm.exception), "user-defined aggregate's '__init__' method raised error")
 
-    @with_tracebacks(ZeroDivisionError, name="AggrExceptionInStep")
+    @with_tracebacks(CustomException, name="AggrExceptionInStep")
     def test_aggr_exception_in_step(self):
         cur = self.con.cursor()
-        with self.assertRaises(sqlite.OperationalError) as cm:
+        msg = "'step' method raised error:.*aggr step"
+        with self.assertRaisesRegex(sqlite.OperationalError, msg):
             cur.execute("select excStep(t) from test")
             val = cur.fetchone()[0]
-        self.assertEqual(str(cm.exception), "user-defined aggregate's 'step' method raised error")
 
-    @with_tracebacks(ZeroDivisionError, name="AggrExceptionInFinalize")
+    @with_tracebacks(CustomException, name="AggrExceptionInFinalize")
     def test_aggr_exception_in_finalize(self):
         cur = self.con.cursor()
-        with self.assertRaises(sqlite.OperationalError) as cm:
+        msg = "'finalize' method raised error:.*aggr finalize"
+        with self.assertRaisesRegex(sqlite.OperationalError, msg):
             cur.execute("select excFinalize(t) from test")
             val = cur.fetchone()[0]
-        self.assertEqual(str(cm.exception), "user-defined aggregate's 'finalize' method raised error")
 
     def test_aggr_check_param_str(self):
         cur = self.con.cursor()
