@@ -424,7 +424,7 @@ is equivalent to::
 
     >>> del a, b, c, d, e, f
 
-But these two delete statements generate different AST trees.
+But these two delete statements generate different AST.
 
 
 .. class:: Starred(value, ctx)
