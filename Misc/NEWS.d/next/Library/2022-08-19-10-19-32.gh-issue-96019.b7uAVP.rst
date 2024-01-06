@@ -1,3 +1,0 @@
-Fix a bug in the ``makeunicodedata.py`` script leading to about 13 KiB of
-space saving in the ``unicodedata`` module, specifically the character
-decomposition data.

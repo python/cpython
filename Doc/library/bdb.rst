@@ -143,7 +143,7 @@ The :mod:`bdb` module also defines two classes:
 
       For real file names, the canonical form is an operating-system-dependent,
       :func:`case-normalized <os.path.normcase>` :func:`absolute path
-      <os.path.abspath>`. A *filename* with angle brackets, such as `"<stdin>"`
+      <os.path.abspath>`. A *filename* with angle brackets, such as ``"<stdin>"``
       generated in interactive mode, is returned unchanged.
 
    .. method:: reset()
@@ -294,7 +294,7 @@ The :mod:`bdb` module also defines two classes:
    .. method:: set_quit()
 
       Set the :attr:`quitting` attribute to ``True``.  This raises :exc:`BdbQuit` in
-      the next call to one of the :meth:`dispatch_\*` methods.
+      the next call to one of the :meth:`!dispatch_\*` methods.
 
 
    Derived classes and clients can call the following methods to manipulate

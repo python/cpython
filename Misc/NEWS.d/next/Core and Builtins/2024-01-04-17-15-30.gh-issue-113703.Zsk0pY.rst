@@ -1,0 +1,2 @@
+Fix a regression in the :mod:`codeop` module that was causing it to incorrectly
+identify incomplete f-strings. Patch by Pablo Galindo

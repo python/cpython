@@ -1,3 +1,0 @@
-Add *timeout* parameter to :meth:`asyncio.loop.shutdown_default_executor`.
-The default value is ``None``, which means the executor will be given an unlimited amount of time.
-When called from :class:`asyncio.Runner` or :func:`asyncio.run`, the default timeout is 5 minutes.

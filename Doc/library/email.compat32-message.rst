@@ -298,7 +298,7 @@ Here are the methods of the :class:`Message` class:
    In a model generated from bytes, any header values that (in contravention of
    the RFCs) contain non-ASCII bytes will, when retrieved through this
    interface, be represented as :class:`~email.header.Header` objects with
-   a charset of `unknown-8bit`.
+   a charset of ``unknown-8bit``.
 
 
    .. method:: __len__()
@@ -367,7 +367,7 @@ Here are the methods of the :class:`Message` class:
    .. method:: get(name, failobj=None)
 
       Return the value of the named header field.  This is identical to
-      :meth:`__getitem__` except that optional *failobj* is returned if the
+      :meth:`~object.__getitem__` except that optional *failobj* is returned if the
       named header is missing (defaults to ``None``).
 
    Here are some additional useful methods:

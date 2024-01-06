@@ -352,7 +352,7 @@ rather than ``JUMP_FORWARD`` with an argument of ``(2**32)+offset``.
 .. nonce: 3Z_qxd
 .. section: Core and Builtins
 
-Correct the docstring for the :meth:`__bool__` method. Patch by Jelle
+Correct the docstring for the :meth:`~object.__bool__` method. Patch by Jelle
 Zijlstra.
 
 ..
@@ -382,7 +382,7 @@ involving lots of brackets. Patch by Pablo Galindo.
 .. section: Core and Builtins
 
 :mod:`ctypes` now allocates memory on the stack instead of on the heap to
-pass arguments while calling a Python callback function. Patch by Dong-hee
+pass arguments while calling a Python callback function. Patch by Donghee
 Na.
 
 ..
@@ -441,7 +441,7 @@ Add a missing call to ``va_end()`` in ``Modules/_hashopenssl.c``.
 .. section: Core and Builtins
 
 Use :c:func:`PyObject_Vectorcall` while calling ctypes callback function.
-Patch by Dong-hee Na.
+Patch by Donghee Na.
 
 ..
 
@@ -514,7 +514,7 @@ For performance, use the optimized string-searching implementations from
 .. section: Library
 
 :class:`~http.server.SimpleHTTPRequestHandler` now uses HTML5 grammar. Patch
-by Dong-hee Na.
+by Donghee Na.
 
 ..
 
@@ -941,7 +941,7 @@ uvloop library.
 
 Make the :class:`configparser.ConfigParser` constructor raise
 :exc:`TypeError` if the ``interpolation`` parameter is not of type
-:class:`configparser.Interpolation`
+:class:`!configparser.Interpolation`
 
 ..
 
@@ -1055,7 +1055,7 @@ Patch by Victor Stinner.
 .. section: Build
 
 Building Python now requires support for floating point Not-a-Number (NaN):
-remove the ``Py_NO_NAN`` macro. Patch by by Victor Stinner.
+remove the ``Py_NO_NAN`` macro. Patch by Victor Stinner.
 
 ..
 

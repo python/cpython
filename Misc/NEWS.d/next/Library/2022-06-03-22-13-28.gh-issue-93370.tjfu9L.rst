@@ -1,1 +1,0 @@
-Deprecate :data:`sqlite3.version` and :data:`sqlite3.version_info`.

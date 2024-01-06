@@ -5,7 +5,7 @@
 File Objects
 ------------
 
-.. index:: object: file
+.. index:: pair: object; file
 
 These APIs are a minimal emulation of the Python 2 C API for built-in file
 objects, which used to rely on the buffered I/O (:c:expr:`FILE*`) support
@@ -38,7 +38,7 @@ the :mod:`io` APIs instead.
 
 .. c:function:: int PyObject_AsFileDescriptor(PyObject *p)
 
-   Return the file descriptor associated with *p* as an :c:type:`int`.  If the
+   Return the file descriptor associated with *p* as an :c:expr:`int`.  If the
    object is an integer, its value is returned.  If not, the
    object's :meth:`~io.IOBase.fileno` method is called if it exists; the
    method must return an integer, which is returned as the file descriptor
@@ -93,7 +93,7 @@ the :mod:`io` APIs instead.
    .. index:: single: Py_PRINT_RAW
 
    Write object *obj* to file object *p*.  The only supported flag for *flags* is
-   :const:`Py_PRINT_RAW`; if given, the :func:`str` of the object is written
+   :c:macro:`Py_PRINT_RAW`; if given, the :func:`str` of the object is written
    instead of the :func:`repr`.  Return ``0`` on success or ``-1`` on failure; the
    appropriate exception will be set.
 
