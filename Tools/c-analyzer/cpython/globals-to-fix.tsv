@@ -347,27 +347,16 @@ Modules/_testclinic.c	-	DeprKwdNew	-
 ## static types
 
 Modules/_ctypes/_ctypes.c	-	PyCArrayType_Type	-
-Modules/_ctypes/_ctypes.c	-	PyCArray_Type	-
-Modules/_ctypes/_ctypes.c	-	PyCData_Type	-
 Modules/_ctypes/_ctypes.c	-	PyCFuncPtrType_Type	-
-Modules/_ctypes/_ctypes.c	-	PyCFuncPtr_Type	-
 Modules/_ctypes/_ctypes.c	-	PyCPointerType_Type	-
-Modules/_ctypes/_ctypes.c	-	PyCPointer_Type	-
 Modules/_ctypes/_ctypes.c	-	PyCSimpleType_Type	-
 Modules/_ctypes/_ctypes.c	-	PyCStructType_Type	-
-Modules/_ctypes/_ctypes.c	-	Simple_Type	-
-Modules/_ctypes/_ctypes.c	-	Struct_Type	-
 Modules/_ctypes/_ctypes.c	-	UnionType_Type	-
-Modules/_ctypes/_ctypes.c	-	Union_Type	-
 Modules/_ctypes/callproc.c	-	PyCArg_Type	-
 Modules/_ctypes/ctypes.h	-	PyCArg_Type	-
 Modules/_ctypes/ctypes.h	-	PyCArrayType_Type	-
-Modules/_ctypes/ctypes.h	-	PyCArray_Type	-
-Modules/_ctypes/ctypes.h	-	PyCData_Type	-
 Modules/_ctypes/ctypes.h	-	PyCFuncPtrType_Type	-
-Modules/_ctypes/ctypes.h	-	PyCFuncPtr_Type	-
 Modules/_ctypes/ctypes.h	-	PyCPointerType_Type	-
-Modules/_ctypes/ctypes.h	-	PyCPointer_Type	-
 Modules/_ctypes/ctypes.h	-	PyCSimpleType_Type	-
 Modules/_ctypes/ctypes.h	-	PyCStgDict_Type	-
 Modules/_ctypes/ctypes.h	-	PyCStructType_Type	-

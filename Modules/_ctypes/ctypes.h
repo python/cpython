@@ -41,6 +41,13 @@ typedef struct {
     PyTypeObject *PyComError_Type;
 #endif
     PyTypeObject *StructParam_Type;
+    PyTypeObject *PyCData_Type;
+    PyTypeObject *Struct_Type;
+    PyTypeObject *Union_Type;
+    PyTypeObject *PyCArray_Type;
+    PyTypeObject *Simple_Type;
+    PyTypeObject *PyCPointer_Type;
+    PyTypeObject *PyCFuncPtr_Type;
 } ctypes_state;
 
 extern ctypes_state global_state;
@@ -150,9 +157,8 @@ extern int PyObject_stginfo(PyObject *self, Py_ssize_t *psize, Py_ssize_t *palig
 
 
 
-extern PyTypeObject PyCData_Type;
-#define CDataObject_CheckExact(v)       Py_IS_TYPE(v, &PyCData_Type)
-#define CDataObject_Check(v)            PyObject_TypeCheck(v, &PyCData_Type)
+#define CDataObject_CheckExact(st, v)       Py_IS_TYPE((v), (st)->PyCData_Type)
+#define CDataObject_Check(st, v)            PyObject_TypeCheck((v), (st)->PyCData_Type)
 #define _CDataObject_HasExternalBuffer(v)  ((v)->b_ptr != (char *)&(v)->b_value)
 
 extern PyTypeObject PyCSimpleType_Type;
@@ -172,18 +178,15 @@ extern PyObject *PyCData_AtAddress(PyObject *type, void *buf);
 extern PyObject *PyCData_FromBytes(PyObject *type, char *data, Py_ssize_t length);
 
 extern PyTypeObject PyCArrayType_Type;
-extern PyTypeObject PyCArray_Type;
 extern PyTypeObject PyCPointerType_Type;
-extern PyTypeObject PyCPointer_Type;
-extern PyTypeObject PyCFuncPtr_Type;
 extern PyTypeObject PyCFuncPtrType_Type;
 extern PyTypeObject PyCStructType_Type;
 
 #define PyCArrayTypeObject_Check(v)     PyObject_TypeCheck(v, &PyCArrayType_Type)
-#define ArrayObject_Check(v)            PyObject_TypeCheck(v, &PyCArray_Type)
-#define PointerObject_Check(v)          PyObject_TypeCheck(v, &PyCPointer_Type)
+#define ArrayObject_Check(st, v)        PyObject_TypeCheck((v), (st)->PyCArray_Type)
+#define PointerObject_Check(st, v)      PyObject_TypeCheck((v), (st)->PyCPointer_Type)
 #define PyCPointerTypeObject_Check(v)   PyObject_TypeCheck(v, &PyCPointerType_Type)
-#define PyCFuncPtrObject_Check(v)               PyObject_TypeCheck(v, &PyCFuncPtr_Type)
+#define PyCFuncPtrObject_Check(st, v)   PyObject_TypeCheck((v), (st)->PyCFuncPtr_Type)
 #define PyCFuncPtrTypeObject_Check(v)   PyObject_TypeCheck(v, &PyCFuncPtrType_Type)
 #define PyCStructTypeObject_Check(v)    PyObject_TypeCheck(v, &PyCStructType_Type)
 
