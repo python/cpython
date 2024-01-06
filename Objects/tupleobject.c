@@ -590,7 +590,6 @@ tuple_index_impl(PyTupleObject *self, PyObject *value, Py_ssize_t start,
             return NULL;
         }
     }
-    
     PyErr_SetString(PyExc_ValueError, "tuple.index(x): x not in tuple");
     return NULL;
 }
