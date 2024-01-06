@@ -1923,15 +1923,19 @@ deque_iter(dequeobject *deque)
 {
     dequeiterobject *it;
 
+    Py_BEGIN_CRITICAL_SECTION(deque);
     collections_state *state = find_module_state_by_def(Py_TYPE(deque));
     it = PyObject_GC_New(dequeiterobject, state->dequeiter_type);
-    if (it == NULL)
+    if (it == NULL) {
+        Py_END_CRITICAL_SECTION();
         return NULL;
+    }
     it->b = deque->leftblock;
     it->index = deque->leftindex;
     it->deque = (dequeobject*)Py_NewRef(deque);
     it->state = deque->state;
     it->counter = Py_SIZE(deque);
+    Py_END_CRITICAL_SECTION();
     PyObject_GC_Track(it);
     return (PyObject *)it;
 }
