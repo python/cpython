@@ -842,8 +842,6 @@ normalize_environment(PyObject* environment)
             PyUnicode_FindChar(value, '\0', 0, PyUnicode_GET_LENGTH(value), 1) != -1)
         {
             PyErr_SetString(PyExc_ValueError, "embedded null character");
-            Py_XDECREF(result);
-            result = NULL;
             goto error;
         }
         /* Search from index 1 because on Windows starting '=' is allowed for
