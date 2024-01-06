@@ -10,7 +10,7 @@
  */
 
 void
-_PyGC_Clear_FreeList(PyInterpreterState *interp)
+_PyGC_ClearFreeList(PyInterpreterState *interp)
 {
     _PyTuple_ClearFreeList(interp);
     _PyFloat_ClearFreeList(interp);
