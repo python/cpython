@@ -1752,6 +1752,7 @@ done:
 }
 
 /*[clinic input]
+@critical_section
 @text_signature "($self, iterable=None, maxlen=None)"
 _collections.deque.__init__
 
@@ -1765,7 +1766,7 @@ A list-like sequence optimized for data accesses near its endpoints.
 static int
 _collections_deque___init___impl(dequeobject *deque, PyObject *iterable,
                                  PyObject *maxlen)
-/*[clinic end generated code: output=9fbb306da99f6694 input=2966a2a0176e4506]*/
+/*[clinic end generated code: output=9fbb306da99f6694 input=028e41dfaecb9617]*/
 
 {
     Py_ssize_t maxlenval = -1;
@@ -1782,7 +1783,7 @@ _collections_deque___init___impl(dequeobject *deque, PyObject *iterable,
     if (Py_SIZE(deque) > 0)
         deque_clear(deque);
     if (iterable != NULL) {
-        PyObject *rv = _collections_deque_extend(deque, iterable);
+        PyObject *rv = _collections_deque_extend_impl(deque, iterable);
         if (rv == NULL)
             return -1;
         Py_DECREF(rv);

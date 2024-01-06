@@ -514,7 +514,9 @@ _collections_deque___init__(PyObject *deque, PyObject *args, PyObject *kwargs)
     }
     maxlen = fastargs[1];
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(deque);
     return_value = _collections_deque___init___impl((dequeobject *)deque, iterable, maxlen);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -623,4 +625,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=92186babdf20cea0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=af5cda2d6ca0e23b input=a9049054013a1b77]*/
