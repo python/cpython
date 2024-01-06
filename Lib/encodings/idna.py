@@ -191,16 +191,15 @@ class Codec(codecs.Codec):
         else:
             # ASCII name: fast path
             labels = result.split(b'.')
-            index = 0
-            for label in labels[:-1]:
-                if not (0 < len(label) < 64):
+            for i, label in enumerate(labels[:-1]):
                 if len(label) == 0:
-                    raise UnicodeEncodeError("idna", input, index, index+1, "label empty")
-                elif len(label >= 64:
-                    raise UnicodeEncodeError("idna", input, index, index+len(label), "label too long")
-                index += len(label) + 1
-            if len(labels[-1]) >= 64:
-                raise UnicodeEncodeError("idna", input, index, len(input), "label too long")
+                    offset = sum(len(l) for l in labels[:i]) + i
+                    raise UnicodeEncodeError("idna", input, offset, offset+1, "label empty")
+            for i, label in enumerate(labels):
+                if len(label) >= 64:
+                    offset = sum(len(l) for l in labels[:i]) + i
+                    raise UnicodeEncodeError(
+                        "idna", input, offset, offset+len(label), "label too long")
             return result, len(input)
 
         result = bytearray()
@@ -210,18 +209,19 @@ class Codec(codecs.Codec):
             del labels[-1]
         else:
             trailing_dot = b''
-        for label in labels:
+        for i, label in enumerate(labels):
             if result:
                 # Join with U+002E
                 result.extend(b'.')
             try:
                 result.extend(ToASCII(label))
             except UnicodeEncodeError as exc:
+                offset = sum(len(l) for l in labels[:i]) + i
                 raise UnicodeEncodeError(
                     "idna",
                     input,
-                    len(result) + exc.start,
-                    len(result) + exc.end,
+                    offset + exc.start,
+                    offset + exc.end,
                     exc.reason,
                 )
         return bytes(result+trailing_dot), len(input)
@@ -259,14 +259,9 @@ class Codec(codecs.Codec):
             try:
                 u_label = ToUnicode(label)
             except UnicodeEncodeError as exc:
-                len_result = sum(len(x) for x in result) + len(result)
+                offset = sum(len(x) for x in result) + len(result)
                 raise UnicodeDecodeError(
-                    "idna",
-                    input,
-                    len_result + exc.start,
-                    len_result + exc.end,
-                    exc.reason,
-                )
+                    "idna", input, offset+exc.start, offset+exc.end, exc.reason)
             else:
                 result.append(u_label)
 
