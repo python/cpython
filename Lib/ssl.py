@@ -110,7 +110,7 @@ from _ssl import RAND_status, RAND_add, RAND_bytes
 try:
     from _ssl import RAND_egd
 except ImportError:
-    # LibreSSL does not provide RAND_egd
+    # RAND_egd is not supported on some platforms
     pass
 
 
