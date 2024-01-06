@@ -24,6 +24,7 @@ __all__ = [
 import builtins
 import io
 import os
+import struct
 from _lzma import *
 from _lzma import _encode_filter_properties, _decode_filter_properties
 import _compression
@@ -354,3 +355,67 @@ def decompress(data, format=FORMAT_AUTO, memlimit=None, filters=None):
         if not data:
             break
     return b"".join(results)
+
+
+
+# For use by zipfile.register_compressor(), originally part of zipfile.
+class _ZipLZMACompressor:
+    def __init__(self, compresslevel=None):
+        self._comp = None
+        del compresslevel  # unused
+
+    def _init(self):
+        props = _encode_filter_properties({'id': FILTER_LZMA1})
+        self._comp = LZMACompressor(FORMAT_RAW, filters=[
+            _decode_filter_properties(FILTER_LZMA1, props)
+        ])
+        return struct.pack('<BBH', 9, 4, len(props)) + props
+
+    def compress(self, data):
+        if self._comp is None:
+            return self._init() + self._comp.compress(data)
+        return self._comp.compress(data)
+
+    def flush(self):
+        if self._comp is None:
+            return self._init() + self._comp.flush()
+        return self._comp.flush()
+
+
+class _ZipLZMADecompressor:
+    def __init__(self):
+        self._decomp = None
+        self._unconsumed = b''
+
+    @property
+    def eof(self):
+        return self._decomp.eof if self._decomp else False
+
+    @property
+    def needs_input(self):
+        return self._decomp.needs_input if self._decomp else True
+
+    def decompress(self, /, data, max_length=-1):
+        if self._decomp is None:
+            self._unconsumed += data
+            if len(self._unconsumed) <= 4:
+                return b''
+            psize, = struct.unpack('<H', self._unconsumed[2:4])
+            if len(self._unconsumed) <= 4 + psize:
+                return b''
+
+            self._decomp = LZMADecompressor(FORMAT_RAW, filters=[
+                _decode_filter_properties(FILTER_LZMA1,
+                                          self._unconsumed[4:4 + psize])
+            ])
+            data = self._unconsumed[4 + psize:]
+            del self._unconsumed
+
+        return self._decomp.decompress(data, max_length)
+
+    def flush(self):
+        if not self._decomp:
+            return b''
+        if not self._decomp.eof and not self._decomp.needs_input:
+            return self.decompress(b'')
+        return b''

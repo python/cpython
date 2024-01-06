@@ -1,5 +1,7 @@
 import array
+import codecs
 import contextlib
+import importlib
 import importlib.util
 import io
 import itertools
@@ -2262,19 +2264,201 @@ class OtherTests(unittest.TestCase):
                 fp.seek(1, os.SEEK_CUR)
                 self.assertEqual(fp.read(-1), b'men!')
 
-    @requires_bz2()
-    def test_decompress_without_3rd_party_library(self):
-        data = b'PK\x05\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-        zip_file = io.BytesIO(data)
-        with zipfile.ZipFile(zip_file, 'w', compression=zipfile.ZIP_BZIP2) as zf:
-            zf.writestr('a.txt', b'a')
-        with mock.patch('zipfile.bz2', None):
-            with zipfile.ZipFile(zip_file) as zf:
-                self.assertRaises(RuntimeError, zf.extract, 'a.txt')
-
     def tearDown(self):
         unlink(TESTFN)
         unlink(TESTFN2)
+
+
+class TestDemandLoadedCompressors(unittest.TestCase):
+    def setUp(self):
+        importlib.reload(zipfile)
+        # Confirm that the reload() reset these to their initial pre-use state.
+        # They replace themselves with an actual implementation on first use
+        # when the relevant compression module is present.
+        self.assertIn("OnDemand", zipfile._compressors_by_appnote_4_4_5_method_id[zipfile.ZIP_DEFLATED].decompressor.__name__)
+        self.assertIn("OnDemand", zipfile._compressors_by_appnote_4_4_5_method_id[zipfile.ZIP_BZIP2].decompressor.__name__)
+        self.assertIn("OnDemand", zipfile._compressors_by_appnote_4_4_5_method_id[zipfile.ZIP_LZMA].decompressor.__name__)
+
+    @requires_bz2()  # To make coding the save and restore easier.
+    def test_decompress_without_3rd_party_bz2_library(self):
+        # A zip containing a single bzip2 compressed a.txt file.
+        data = b'PK\x03\x04.\x00\x00\x00\x0c\x00\x8a\x8b$XC\xbe\xb7\xe8%\x00\x00\x00\x01\x00\x00\x00\x05\x00\x00\x00a.txtBZh91AY&SY\x19\x93\x9bk\x00\x00\x00\x01\x00 \x00 \x00!\x18F\x82\xeeH\xa7\n\x12\x032sm`PK\x01\x02.\x03.\x00\x00\x00\x0c\x00\x8a\x8b$XC\xbe\xb7\xe8%\x00\x00\x00\x01\x00\x00\x00\x05\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80\x01\x00\x00\x00\x00a.txtPK\x05\x06\x00\x00\x00\x00\x01\x00\x01\x003\x00\x00\x00H\x00\x00\x00\x00\x00'
+        zip_file = io.BytesIO(data)
+        saved_bz2_module = sys.modules['bz2']
+        try:
+            sys.modules['bz2'] = None
+            with zipfile.ZipFile(zip_file) as zf:
+                with self.assertRaises(zipfile.UnknownCompressionError):
+                    zf.extract('a.txt')
+        finally:
+            sys.modules['bz2'] = saved_bz2_module
+
+    @requires_lzma()  # To make coding the save and restore easier.
+    def test_decompress_without_3rd_party_lzma_library(self):
+        # A zip containing a single lzma compressed a.txt file.
+        data = b'PK\x03\x04?\x00\x02\x00\x0e\x00a\x8e$XC\xbe\xb7\xe8\x14\x00\x00\x00\x01\x00\x00\x00\x05\x00\x00\x00a.txt\t\x04\x05\x00]\x00\x00\x80\x00\x000\xc1\xfb\xff\xff\xff\xe0\x00\x00\x00PK\x01\x02?\x03?\x00\x02\x00\x0e\x00a\x8e$XC\xbe\xb7\xe8\x14\x00\x00\x00\x01\x00\x00\x00\x05\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80\x01\x00\x00\x00\x00a.txtPK\x05\x06\x00\x00\x00\x00\x01\x00\x01\x003\x00\x00\x007\x00\x00\x00\x00\x00'
+        zip_file = io.BytesIO(data)
+        saved_lzma_module = sys.modules['lzma']
+        try:
+            sys.modules['lzma'] = None
+            with zipfile.ZipFile(zip_file) as zf:
+                with self.assertRaises(zipfile.UnknownCompressionError):
+                    zf.extract('a.txt')
+        finally:
+            sys.modules['lzma'] = saved_lzma_module
+
+    def test_decompress_without_3rd_party_zlib_library(self):
+        # A zip containing a single zlib (deflate) compressed a.txt file.
+        data = b'PK\x03\x04\x14\x00\x00\x00\x08\x00g\x8f$XC\xbe\xb7\xe8\x03\x00\x00\x00\x01\x00\x00\x00\x05\x00\x00\x00a.txtK\x04\x00PK\x01\x02\x14\x03\x14\x00\x00\x00\x08\x00g\x8f$XC\xbe\xb7\xe8\x03\x00\x00\x00\x01\x00\x00\x00\x05\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80\x01\x00\x00\x00\x00a.txtPK\x05\x06\x00\x00\x00\x00\x01\x00\x01\x003\x00\x00\x00&\x00\x00\x00\x00\x00'
+        zip_file = io.BytesIO(data)
+        # zlib is currently always imported when available so this test is
+        # simpler than others: It can just disable zlib within zipfile.
+        with mock.patch("zipfile.zlib", None):
+            with zipfile.ZipFile(zip_file) as zf:
+                with self.assertRaises(zipfile.UnknownCompressionError):
+                    zf.extract('a.txt')
+                # UnknownCompressionError must also be catchable via these
+                # old types that zipfile used to raise for unsupported formats.
+                with self.assertRaises(RuntimeError):
+                    zf.extract('a.txt')
+                with self.assertRaises(NotImplementedError):
+                    zf.extract('a.txt')
+
+
+class RegisterCompressorTests(unittest.TestCase):
+    def tearDown(self):
+        importlib.reload(zipfile)
+
+    def test_override_store_fails(self):
+        with self.assertRaises(RuntimeError):
+            zipfile.register_compressor(
+                    'fakename',
+                    compression_type=zipfile.ZIP_STORED,
+                    compressor=zipfile.AbstractCompressor,
+                    decompressor=zipfile.AbstractDecompressor,
+                    override="always",
+            )
+
+    def test_override_always(self):
+        zipfile.register_compressor(
+                'fake-deflate',
+                compression_type=zipfile.ZIP_DEFLATED,
+                compressor=zipfile.AbstractCompressor,
+                decompressor=zipfile.AbstractDecompressor,
+                override="always",
+        )
+
+    def test_override_stdlib(self):
+        zipfile.register_compressor(
+                'fake-deflate',
+                compression_type=zipfile.ZIP_DEFLATED,
+                compressor=zipfile.AbstractCompressor,
+                decompressor=zipfile.AbstractDecompressor,
+                override="stdlib",
+        )
+
+    def test_override_non_stdlib(self):
+        zipfile.register_compressor(
+                'fake-127',
+                compression_type=127,  # Unused as of this writing.
+                compressor=zipfile.AbstractCompressor,
+                decompressor=zipfile.AbstractDecompressor,
+                override="stdlib",
+        )
+        # attempt overriding the above not in "always" mode.
+        with self.assertRaises(RuntimeError):
+            zipfile.register_compressor(
+                    'different-127',
+                    compression_type=127,
+                    compressor=zipfile.AbstractCompressor,
+                    decompressor=zipfile.AbstractDecompressor,
+                    override="stdlib",
+            )
+        with self.assertRaises(RuntimeError):
+            zipfile.register_compressor(
+                    'different-127',
+                    compression_type=127,
+                    compressor=zipfile.AbstractCompressor,
+                    decompressor=zipfile.AbstractDecompressor,
+                    override="never",
+            )
+
+    def test_override_never(self):
+        with self.assertRaises(RuntimeError):
+            zipfile.register_compressor(
+                    'fake-deflate',
+                    compression_type=zipfile.ZIP_DEFLATED,
+                    compressor=zipfile.AbstractCompressor,
+                    decompressor=zipfile.AbstractDecompressor,
+                    override="never",
+            )
+
+    def test_custom_rot13_compressor(self):
+        rot13_id = 113  # Made up unclaimed value for this test.
+        self.assertNotIn(rot13_id, zipfile.compressor_names,
+                         msg="update the test to use a different value?")
+
+        # A silly "compression" scheme useful for testing purposes.
+        class rot13_compressor:
+            def __init__(self, compresslevel):
+                del compresslevel  # unused
+                self.data = b""
+
+            def compress(self, data):
+                self.data += codecs.encode(
+                        data.decode("latin-1"), "rot13").encode("latin-1")
+                # This exercises partial return + flush operation.
+                if self.data:
+                    two_bytes = self.data[0:2]
+                    self.data = self.data[2:]
+                    return two_bytes
+                return b""
+
+            def flush(self):
+                try:
+                    return self.data
+                finally:
+                    self.data = b""
+
+        class rot13_decompressor:
+            def __init__(self):
+                self._buffer = b""
+                self.eof = False
+
+            def decompress(self, /, data, max_length=0):
+                data = self._buffer + data
+                self._buffer = b""
+                if max_length > 0:
+                    self._buffer = data[max_length:]
+                    data = data[:max_length]
+                return codecs.decode(
+                        data.decode("latin-1"), "rot13").encode("latin-1")
+
+            def flush(self):
+                if self._buffer:
+                    return self.decompress(b"")
+                return b""
+
+        zipfile.register_compressor(
+                'rot13',
+                compression_type=rot13_id,
+                compressor=rot13_compressor,
+                decompressor=rot13_decompressor,
+                override="never",
+        )
+
+        mem_zip_f = io.BytesIO()
+        with zipfile.ZipFile(mem_zip_f, "w", compression=rot13_id) as zipf:
+            zipf.writestr("EBG13.txt", b"fcnz naq ornaf")
+
+        self.assertIn(b"spam and beans", mem_zip_f.getvalue())
+        mem_zip_f.seek(0)
+        with zipfile.ZipFile(mem_zip_f, "r") as zipf:
+            self.assertEqual(zipf.infolist()[0].compress_type, rot13_id)
+            self.assertEqual(zipf.read("EBG13.txt"), b"fcnz naq ornaf")
+            with zipf.open("EBG13.txt", "r") as f:
+                self.assertEqual(f.read(5), b"fcnz ")
+                self.assertEqual(f.read(), b"naq ornaf")
 
 
 class AbstractBadCrcTests:
