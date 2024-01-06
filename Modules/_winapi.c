@@ -826,8 +826,6 @@ normalize_environment(PyObject* environment)
         }
         PyObject* value = PyObject_GetItem(environment, key);
         if (value == NULL) {
-            Py_XDECREF(result);
-            result = NULL;
             goto error;
         }
 
