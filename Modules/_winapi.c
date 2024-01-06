@@ -874,8 +874,6 @@ normalize_environment(PyObject* environment)
 
         wchar_t *key_string = PyUnicode_AsWideCharString(key, NULL);
         if (key_string == NULL) {
-            Py_XDECREF(result);
-            result = NULL;
             goto error;
         }
         if (CompareStringOrdinal(prev_key_string, -1, key_string, -1, TRUE) == CSTR_EQUAL) {
