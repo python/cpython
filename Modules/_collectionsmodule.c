@@ -832,7 +832,7 @@ _collections_deque_clear_impl(dequeobject *deque)
 }
 
 static PyObject *
-deque_inplace_repeat(dequeobject *deque, Py_ssize_t n)
+deque_inplace_repeat_locked(dequeobject *deque, Py_ssize_t n)
 {
     Py_ssize_t i, m, size;
     PyObject *seq;
@@ -896,7 +896,7 @@ deque_inplace_repeat(dequeobject *deque, Py_ssize_t n)
         n = (deque->maxlen + size - 1) / size;
 
     for (i = 0 ; i < n-1 ; i++) {
-        rv = _collections_deque_extend(deque, seq);
+        rv = _collections_deque_extend_impl(deque, seq);
         if (rv == NULL) {
             Py_DECREF(seq);
             return NULL;
@@ -906,6 +906,15 @@ deque_inplace_repeat(dequeobject *deque, Py_ssize_t n)
     Py_INCREF(deque);
     Py_DECREF(seq);
     return (PyObject *)deque;
+}
+
+static PyObject *
+deque_inplace_repeat(dequeobject *deque, Py_ssize_t n)
+{
+    Py_BEGIN_CRITICAL_SECTION(deque);
+    PyObject *result = deque_inplace_repeat_locked(deque, n);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static PyObject *
