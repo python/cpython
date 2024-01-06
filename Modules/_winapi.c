@@ -865,8 +865,6 @@ normalize_environment(PyObject* environment)
                 goto error;
             }
             if (PyObject_SetItem(result, key, value) < 0) {
-                Py_XDECREF(result);
-                result = NULL;
                 goto error;
             }
             continue;
