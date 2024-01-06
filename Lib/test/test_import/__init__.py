@@ -409,9 +409,12 @@ class ImportTests(unittest.TestCase):
             import RAnDoM
 
     def test_double_const(self):
-        # Another brief digression to test the accuracy of manifest float
-        # constants.
-        from test import double_const  # don't blink -- that *was* the test
+        # Importing double_const checks that float constants
+        # serialiazed by marshal as PYC files don't lose precision
+        # (SF bug 422177).
+        from test.test_import.data import double_const
+        unload('test.test_import.data.double_const')
+        from test.test_import.data import double_const
 
     def test_import(self):
         def test_with_extension(ext):
@@ -1629,6 +1632,14 @@ class CircularImportTests(unittest.TestCase):
             str(cm.exception),
         )
 
+    def test_circular_import(self):
+        with self.assertRaisesRegex(
+            AttributeError,
+            r"partially initialized module 'test.test_import.data.circular_imports.import_cycle' "
+            r"from '.*' has no attribute 'some_attribute' \(most likely due to a circular import\)"
+        ):
+            import test.test_import.data.circular_imports.import_cycle
+
     def test_absolute_circular_submodule(self):
         with self.assertRaises(AttributeError) as cm:
             import test.test_import.data.circular_imports.subpkg2.parent
@@ -1968,10 +1979,13 @@ class SubinterpImportTests(unittest.TestCase):
             print(_testsinglephase)
             ''')
         interpid = _interpreters.create()
-        with self.assertRaises(_interpreters.RunFailedError):
-            _interpreters.run_string(interpid, script)
-        with self.assertRaises(_interpreters.RunFailedError):
-            _interpreters.run_string(interpid, script)
+        self.addCleanup(lambda: _interpreters.destroy(interpid))
+
+        excsnap = _interpreters.run_string(interpid, script)
+        self.assertIsNot(excsnap, None)
+
+        excsnap = _interpreters.run_string(interpid, script)
+        self.assertIsNot(excsnap, None)
 
 
 class TestSinglePhaseSnapshot(ModuleSnapshot):
@@ -2100,12 +2114,18 @@ class SinglephaseInitTests(unittest.TestCase):
 
     def add_subinterpreter(self):
         interpid = _interpreters.create(isolated=False)
-        _interpreters.run_string(interpid, textwrap.dedent('''
+        def ensure_destroyed():
+            try:
+                _interpreters.destroy(interpid)
+            except _interpreters.InterpreterNotFoundError:
+                pass
+        self.addCleanup(ensure_destroyed)
+        _interpreters.exec(interpid, textwrap.dedent('''
             import sys
             import _testinternalcapi
             '''))
         def clean_up():
-            _interpreters.run_string(interpid, textwrap.dedent(f'''
+            _interpreters.exec(interpid, textwrap.dedent(f'''
                 name = {self.NAME!r}
                 if name in sys.modules:
                     sys.modules.pop(name)._clear_globals()

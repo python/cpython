@@ -1,8 +1,8 @@
 import unittest
-import sys
 from test.support import import_helper
 
 _testcapi = import_helper.import_module('_testcapi')
+from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
 
 NULL = None
 
@@ -55,10 +55,13 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(fromstringandsize(b'', 0), b'')
         self.assertEqual(fromstringandsize(NULL, 0), b'')
         self.assertEqual(len(fromstringandsize(NULL, 3)), 3)
-        self.assertRaises((MemoryError, OverflowError), fromstringandsize, NULL, sys.maxsize)
+        self.assertRaises((MemoryError, OverflowError),
+                          fromstringandsize, NULL, PY_SSIZE_T_MAX)
 
         self.assertRaises(SystemError, fromstringandsize, b'abc', -1)
+        self.assertRaises(SystemError, fromstringandsize, b'abc', PY_SSIZE_T_MIN)
         self.assertRaises(SystemError, fromstringandsize, NULL, -1)
+        self.assertRaises(SystemError, fromstringandsize, NULL, PY_SSIZE_T_MIN)
 
     def test_fromstring(self):
         # Test PyBytes_FromString()
@@ -208,7 +211,10 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(decodeescape(br'x\xa\xy', 'ignore'), b'xy')
         self.assertRaises(ValueError, decodeescape, b'\\', 'spam')
         self.assertEqual(decodeescape(NULL), b'')
+        self.assertRaises(OverflowError, decodeescape, b'abc', NULL, PY_SSIZE_T_MAX)
+        self.assertRaises(OverflowError, decodeescape, NULL, NULL, PY_SSIZE_T_MAX)
 
+        # CRASHES decodeescape(b'abc', NULL, -1)
         # CRASHES decodeescape(NULL, NULL, 1)
 
 

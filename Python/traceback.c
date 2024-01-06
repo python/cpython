@@ -618,44 +618,7 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     if (rc != 0 || !source_line) {
         /* ignore errors since we can't report them, can we? */
         err = ignore_source_errors();
-        goto done;
     }
-
-    int code_offset = tb->tb_lasti;
-    PyCodeObject* code = _PyFrame_GetCode(frame->f_frame);
-    const Py_ssize_t source_line_len = PyUnicode_GET_LENGTH(source_line);
-
-    int start_line;
-    int end_line;
-    int start_col_byte_offset;
-    int end_col_byte_offset;
-    if (!PyCode_Addr2Location(code, code_offset, &start_line, &start_col_byte_offset,
-                              &end_line, &end_col_byte_offset)) {
-        goto done;
-    }
-
-    if (start_line < 0 || end_line < 0
-        || start_col_byte_offset < 0
-        || end_col_byte_offset < 0)
-    {
-        goto done;
-    }
-
-    // If this is a multi-line expression, then we will highlight until
-    // the last non-whitespace character.
-    const char *source_line_str = PyUnicode_AsUTF8(source_line);
-    if (!source_line_str) {
-        goto done;
-    }
-
-    Py_ssize_t i = source_line_len;
-    while (--i >= 0) {
-        if (!IS_WHITESPACE(source_line_str[i])) {
-            break;
-        }
-    }
-
-done:
     Py_XDECREF(source_line);
     return err;
 }

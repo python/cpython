@@ -1,2 +1,0 @@
-Speed up :obj:`Traceback` object creation by lazily compute the line number.
-Patch by Pablo Galindo

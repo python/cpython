@@ -10,11 +10,12 @@ extern "C" {
 
 #include "pycore_frame.h"         // _PyInterpreterFrame
 
-#define _Py_UOP_MAX_TRACE_LENGTH 128
+#define _Py_UOP_MAX_TRACE_LENGTH 512
 
 typedef struct {
-    uint32_t opcode;
-    uint32_t oparg;
+    uint16_t opcode;
+    uint16_t oparg;
+    uint32_t target;
     uint64_t operand;  // A cache entry
 } _PyUOpInstruction;
 
@@ -23,7 +24,7 @@ typedef struct {
     _PyUOpInstruction trace[1];
 } _PyUOpExecutorObject;
 
-_PyInterpreterFrame *_PyUopExecute(
+_Py_CODEUNIT *_PyUOpExecute(
     _PyExecutorObject *executor,
     _PyInterpreterFrame *frame,
     PyObject **stack_pointer);

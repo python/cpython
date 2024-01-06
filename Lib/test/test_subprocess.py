@@ -1561,21 +1561,6 @@ class ProcessTestCase(BaseTestCase):
         self.assertIsInstance(subprocess.Popen[bytes], types.GenericAlias)
         self.assertIsInstance(subprocess.CompletedProcess[str], types.GenericAlias)
 
-    @unittest.skipIf(not sysconfig.get_config_var("HAVE_VFORK"),
-                     "vfork() not enabled by configure.")
-    @mock.patch("subprocess._fork_exec")
-    def test__use_vfork(self, mock_fork_exec):
-        self.assertTrue(subprocess._USE_VFORK)  # The default value regardless.
-        mock_fork_exec.side_effect = RuntimeError("just testing args")
-        with self.assertRaises(RuntimeError):
-            subprocess.run([sys.executable, "-c", "pass"])
-        mock_fork_exec.assert_called_once()
-        self.assertTrue(mock_fork_exec.call_args.args[-1])
-        with mock.patch.object(subprocess, '_USE_VFORK', False):
-            with self.assertRaises(RuntimeError):
-                subprocess.run([sys.executable, "-c", "pass"])
-            self.assertFalse(mock_fork_exec.call_args_list[-1].args[-1])
-
 
 class RunFuncTestCase(BaseTestCase):
     def run_python(self, code, **kwargs):
@@ -2066,8 +2051,14 @@ class POSIXProcessTestCase(BaseTestCase):
     def test_extra_groups(self):
         gid = os.getegid()
         group_list = [65534 if gid != 65534 else 65533]
+        self._test_extra_groups_impl(gid=gid, group_list=group_list)
+
+    @unittest.skipUnless(hasattr(os, 'setgroups'), 'no setgroups() on platform')
+    def test_extra_groups_empty_list(self):
+        self._test_extra_groups_impl(gid=os.getegid(), group_list=[])
+
+    def _test_extra_groups_impl(self, *, gid, group_list):
         name_group = _get_test_grp_name()
-        perm_error = False
 
         if grp is not None:
             group_list.append(name_group)
@@ -2077,11 +2068,8 @@ class POSIXProcessTestCase(BaseTestCase):
                     [sys.executable, "-c",
                      "import os, sys, json; json.dump(os.getgroups(), sys.stdout)"],
                     extra_groups=group_list)
-        except OSError as ex:
-            if ex.errno != errno.EPERM:
-                raise
-            perm_error = True
-
+        except PermissionError:
+            self.skipTest("setgroup() EPERM; this test may require root.")
         else:
             parent_groups = os.getgroups()
             child_groups = json.loads(output)
@@ -2092,12 +2080,15 @@ class POSIXProcessTestCase(BaseTestCase):
             else:
                 desired_gids = group_list
 
-            if perm_error:
-                self.assertEqual(set(child_groups), set(parent_groups))
-            else:
-                self.assertEqual(set(desired_gids), set(child_groups))
+            self.assertEqual(set(desired_gids), set(child_groups))
 
-        # make sure we bomb on negative values
+        if grp is None:
+            with self.assertRaises(ValueError):
+                subprocess.check_call(ZERO_RETURN_CMD,
+                                      extra_groups=[name_group])
+
+    # No skip necessary, this test won't make it to a setgroup() call.
+    def test_extra_groups_invalid_gid_t_values(self):
         with self.assertRaises(ValueError):
             subprocess.check_call(ZERO_RETURN_CMD, extra_groups=[-1])
 
@@ -2105,16 +2096,6 @@ class POSIXProcessTestCase(BaseTestCase):
             subprocess.check_call(ZERO_RETURN_CMD,
                                   cwd=os.curdir, env=os.environ,
                                   extra_groups=[2**64])
-
-        if grp is None:
-            with self.assertRaises(ValueError):
-                subprocess.check_call(ZERO_RETURN_CMD,
-                                      extra_groups=[name_group])
-
-    @unittest.skipIf(hasattr(os, 'setgroups'), 'setgroups() available on platform')
-    def test_extra_groups_error(self):
-        with self.assertRaises(ValueError):
-            subprocess.check_call(ZERO_RETURN_CMD, extra_groups=[])
 
     @unittest.skipIf(mswindows or not hasattr(os, 'umask'),
                      'POSIX umask() is not available.')
@@ -3363,6 +3344,94 @@ class POSIXProcessTestCase(BaseTestCase):
         _, out, err = assert_python_ok("-c", code)
         self.assertEqual(out, b'')
         self.assertIn(b"preexec_fn not supported at interpreter shutdown", err)
+
+    @unittest.skipIf(not sysconfig.get_config_var("HAVE_VFORK"),
+                     "vfork() not enabled by configure.")
+    @mock.patch("subprocess._fork_exec")
+    @mock.patch("subprocess._USE_POSIX_SPAWN", new=False)
+    def test__use_vfork(self, mock_fork_exec):
+        self.assertTrue(subprocess._USE_VFORK)  # The default value regardless.
+        mock_fork_exec.side_effect = RuntimeError("just testing args")
+        with self.assertRaises(RuntimeError):
+            subprocess.run([sys.executable, "-c", "pass"])
+        mock_fork_exec.assert_called_once()
+        # NOTE: These assertions are *ugly* as they require the last arg
+        # to remain the have_vfork boolean. We really need to refactor away
+        # from the giant "wall of args" internal C extension API.
+        self.assertTrue(mock_fork_exec.call_args.args[-1])
+        with mock.patch.object(subprocess, '_USE_VFORK', False):
+            with self.assertRaises(RuntimeError):
+                subprocess.run([sys.executable, "-c", "pass"])
+            self.assertFalse(mock_fork_exec.call_args_list[-1].args[-1])
+
+    @unittest.skipIf(not sysconfig.get_config_var("HAVE_VFORK"),
+                     "vfork() not enabled by configure.")
+    @unittest.skipIf(sys.platform != "linux", "Linux only, requires strace.")
+    @mock.patch("subprocess._USE_POSIX_SPAWN", new=False)
+    def test_vfork_used_when_expected(self):
+        # This is a performance regression test to ensure we default to using
+        # vfork() when possible.
+        # Technically this test could pass when posix_spawn is used as well
+        # because libc tends to implement that internally using vfork. But
+        # that'd just be testing a libc+kernel implementation detail.
+        strace_binary = "/usr/bin/strace"
+        # The only system calls we are interested in.
+        strace_filter = "--trace=clone,clone2,clone3,fork,vfork,exit,exit_group"
+        true_binary = "/bin/true"
+        strace_command = [strace_binary, strace_filter]
+
+        try:
+            does_strace_work_process = subprocess.run(
+                    strace_command + [true_binary],
+                    stderr=subprocess.PIPE,
+                    stdout=subprocess.DEVNULL,
+            )
+            rc = does_strace_work_process.returncode
+            stderr = does_strace_work_process.stderr
+        except OSError:
+            rc = -1
+            stderr = ""
+        if rc or (b"+++ exited with 0 +++" not in stderr):
+            self.skipTest("strace not found or not working as expected.")
+
+        with self.subTest(name="default_is_vfork"):
+            vfork_result = assert_python_ok(
+                    "-c",
+                    textwrap.dedent(f"""\
+                    import subprocess
+                    subprocess.check_call([{true_binary!r}])"""),
+                    __run_using_command=strace_command,
+            )
+            # Match both vfork() and clone(..., flags=...|CLONE_VFORK|...)
+            self.assertRegex(vfork_result.err, br"(?i)vfork")
+            # Do NOT check that fork() or other clones did not happen.
+            # If the OS denys the vfork it'll fallback to plain fork().
+
+        # Test that each individual thing that would disable the use of vfork
+        # actually disables it.
+        for sub_name, preamble, sp_kwarg, expect_permission_error in (
+                ("!use_vfork", "subprocess._USE_VFORK = False", "", False),
+                ("preexec", "", "preexec_fn=lambda: None", False),
+                ("setgid", "", f"group={os.getgid()}", True),
+                ("setuid", "", f"user={os.getuid()}", True),
+                ("setgroups", "", "extra_groups=[]", True),
+        ):
+            with self.subTest(name=sub_name):
+                non_vfork_result = assert_python_ok(
+                    "-c",
+                    textwrap.dedent(f"""\
+                    import subprocess
+                    {preamble}
+                    try:
+                        subprocess.check_call(
+                                [{true_binary!r}], **dict({sp_kwarg}))
+                    except PermissionError:
+                        if not {expect_permission_error}:
+                            raise"""),
+                    __run_using_command=strace_command,
+                )
+                # Ensure neither vfork() or clone(..., flags=...|CLONE_VFORK|...).
+                self.assertNotRegex(non_vfork_result.err, br"(?i)vfork")
 
 
 @unittest.skipUnless(mswindows, "Windows specific tests")

@@ -139,10 +139,15 @@ def compile_c_extension(
     ]
     include_dirs = [
         str(MOD_DIR.parent.parent.parent / "Include" / "internal"),
+        str(MOD_DIR.parent.parent.parent / "Include" / "internal" / "mimalloc"),
         str(MOD_DIR.parent.parent.parent / "Parser"),
         str(MOD_DIR.parent.parent.parent / "Parser" / "lexer"),
         str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer"),
     ]
+    if sys.platform == "win32":
+        # HACK: The location of pyconfig.h has moved within our build, and
+        # setuptools hasn't updated for it yet. So add the path manually for now
+        include_dirs.append(pathlib.Path(sysconfig.get_config_h_filename()).parent)
     extension = Extension(
         extension_name,
         sources=[generated_source_path],
