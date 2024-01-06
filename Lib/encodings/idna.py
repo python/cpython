@@ -48,17 +48,18 @@ def nameprep(label):
         # MUST NOT contain any LCat character.
         for i, x in enumerate(label):
             if stringprep.in_table_d2(x):
-                raise UnicodeEncodeError("idna", label, i, i+1, "Violation of BIDI requirement 2")
+                raise UnicodeEncodeError("idna", label, i, i+1,
+                                         "Violation of BIDI requirement 2")
         # 3) If a string contains any RandALCat character, a
         # RandALCat character MUST be the first character of the
         # string, and a RandALCat character MUST be the last
         # character of the string.
         if not RandAL[0]:
-            raise UnicodeEncodeError(
-                "idna", label,
-                0, 1, "Violation of BIDI requirement 3")
+            raise UnicodeEncodeError("idna", label, 0, 1,
+                                     "Violation of BIDI requirement 3")
         if not RandAL[-1]:
-            raise UnicodeEncodeError("idna", label, len(label)-1, len(label), "Violation of BIDI requirement 3")
+            raise UnicodeEncodeError("idna", label, len(label)-1, len(label),
+                                     "Violation of BIDI requirement 3")
 
     return label
 
@@ -150,7 +151,8 @@ def ToUnicode(label):
         except UnicodeEncodeError as exc:
             if isinstance(label, bytes):
                 label = label.decode("utf-8", errors="backslashreplace")
-            raise UnicodeEncodeError("idna", label, exc.start, exc.end, "Invalid character in IDN label")
+            raise UnicodeEncodeError("idna", label, exc.start, exc.end,
+                                     "Invalid character in IDN label")
     # Step 3: Check for ACE prefix
     if not label.startswith(ace_prefix):
         return str(label, "ascii")
@@ -167,7 +169,8 @@ def ToUnicode(label):
     # Step 7: Compare the result of step 6 with the one of step 3
     # label2 will already be in lower case.
     if str(label, "ascii").lower() != str(label2, "ascii"):
-        raise UnicodeEncodeError("idna", label, 0, len(label), f"IDNA does not round-trip, '{label!r}' != '{label2!r}'")
+        raise UnicodeEncodeError("idna", label, 0, len(label),
+                                 f"IDNA does not round-trip, '{label!r}' != '{label2!r}'")
 
     # Step 8: return the result of step 5
     return result
@@ -194,12 +197,13 @@ class Codec(codecs.Codec):
             for i, label in enumerate(labels[:-1]):
                 if len(label) == 0:
                     offset = sum(len(l) for l in labels[:i]) + i
-                    raise UnicodeEncodeError("idna", input, offset, offset+1, "label empty")
+                    raise UnicodeEncodeError("idna", input, offset, offset+1,
+                                             "label empty")
             for i, label in enumerate(labels):
                 if len(label) >= 64:
                     offset = sum(len(l) for l in labels[:i]) + i
-                    raise UnicodeEncodeError(
-                        "idna", input, offset, offset+len(label), "label too long")
+                    raise UnicodeEncodeError("idna", input, offset, offset+len(label),
+                                             "label too long")
             return result, len(input)
 
         result = bytearray()

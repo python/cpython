@@ -135,7 +135,8 @@ def decode_generalized_number(extended, extpos, bias, errors):
         except IndexError:
             if errors == "strict":
                 b_extended = extended.encode("utf-8", errors="backslashreplace")
-                raise UnicodeDecodeError("punycode", b_extended, extpos, extpos+1, "incomplete punycode string")
+                raise UnicodeDecodeError("punycode", b_extended, extpos, extpos+1,
+                                         "incomplete punycode string")
             return extpos + 1, None
         extpos += 1
         if 0x41 <= char <= 0x5A: # A-Z
@@ -144,7 +145,8 @@ def decode_generalized_number(extended, extpos, bias, errors):
             digit = char - 22 # 0x30-26
         elif errors == "strict":
             b_extended = extended.encode("utf-8", errors="backslashreplace")
-            raise UnicodeDecodeError("punycode", b_extended, extpos-1, extpos, f"Invalid extended code point '{extended[extpos-1]}'")
+            raise UnicodeDecodeError("punycode", b_extended, extpos-1, extpos,
+                                     f"Invalid extended code point '{extended[extpos-1]}'")
         else:
             return extpos, None
         t = T(j, bias)
