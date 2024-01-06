@@ -931,17 +931,9 @@ class PathBase(PurePathBase):
         uppermost parent of the path (equivalent to path.parents[-1]), and
         *parts* is a reversed list of parts following the anchor.
         """
-        split = self.pathmod.split
-        path = str(self)
-        parent, name = split(path)
-        names = []
-        while path != parent:
-            names.append(name)
-            path = parent
-            parent, name = split(path)
-        if not names:
+        if not self._tail:
             return self, []
-        return self.with_segments(path), names
+        return self._from_parsed_parts(self.drive, self.root, []), self._tail[::-1]
 
     def resolve(self, strict=False):
         """
@@ -962,9 +954,7 @@ class PathBase(PurePathBase):
         link_count = 0
         while parts:
             part = parts.pop()
-            if not part or part == '.':
-                continue
-            elif part == '..':
+            if part == '..':
                 if not path._tail:
                     if path.root:
                         # Delete '..' segment immediately following root
