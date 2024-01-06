@@ -801,11 +801,10 @@ normalize_environment(PyObject* environment)
     if (keyfunc == NULL) {
         goto error;
     }
-    kwnames = PyTuple_New(1);
+    kwnames = Py_BuildValue("(s)", "key");
     if (kwnames == NULL) {
         goto error;
     }
-    assert(PyTuple_SetItem(kwnames, 0, PyUnicode_FromString("key")) == 0);
     PyObject *args[] = { keys, keyfunc };
     if (PyObject_VectorcallMethod(&_Py_ID(sort), args, 1, kwnames) == NULL) {
         goto error;
