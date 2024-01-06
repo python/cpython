@@ -852,8 +852,6 @@ normalize_environment(PyObject* environment)
             PyUnicode_FindChar(key, '=', 1, PyUnicode_GET_LENGTH(key), 1) != -1)
         {
             PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
-            Py_XDECREF(result);
-            result = NULL;
             goto error;
         }
 
