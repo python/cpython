@@ -51,6 +51,9 @@ class DummyPurePath(PurePathBase):
     def __hash__(self):
         return hash(str(self))
 
+    def __repr__(self):
+        return "{}({!r})".format(self.__class__.__name__, self.as_posix())
+
 
 class DummyPurePathTest(unittest.TestCase):
     cls = DummyPurePath
@@ -718,6 +721,9 @@ class DummyPath(PathBase):
 
     def __hash__(self):
         return hash(str(self))
+
+    def __repr__(self):
+        return "{}({!r})".format(self.__class__.__name__, self.as_posix())
 
     def stat(self, *, follow_symlinks=True):
         if follow_symlinks:
