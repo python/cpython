@@ -1971,14 +1971,22 @@ dequeiter_next(dequeiterobject *it)
 {
     PyObject *item;
 
-    if (it->deque->state != it->state) {
+    Py_BEGIN_CRITICAL_SECTION(it);
+    dequeobject *deque = it->deque;
+    Py_END_CRITICAL_SECTION();
+
+    Py_BEGIN_CRITICAL_SECTION2(it, deque);
+    if (it->deque != deque || it->deque->state != it->state) {
         it->counter = 0;
         PyErr_SetString(PyExc_RuntimeError,
                         "deque mutated during iteration");
+        Py_END_CRITICAL_SECTION2();
         return NULL;
     }
-    if (it->counter == 0)
+    if (it->counter == 0) {
+        Py_END_CRITICAL_SECTION2();
         return NULL;
+    }
     assert (!(it->b == it->deque->rightblock &&
               it->index > it->deque->rightindex));
 
@@ -1990,6 +1998,7 @@ dequeiter_next(dequeiterobject *it)
         it->b = it->b->rightlink;
         it->index = 0;
     }
+    Py_END_CRITICAL_SECTION2();
     return Py_NewRef(item);
 }
 
