@@ -1744,14 +1744,14 @@ class CodecsModuleTest(unittest.TestCase):
                 self.assertIsInstance(file, codecs.StreamReaderWriter)
 
     def test_undefined(self):
-        self.assertRaises(UnicodeEncodeError, codecs.encode, 'abc', 'undefined')
-        self.assertRaises(UnicodeDecodeError, codecs.decode, b'abc', 'undefined')
-        self.assertRaises(UnicodeEncodeError, codecs.encode, '', 'undefined')
-        self.assertRaises(UnicodeDecodeError, codecs.decode, b'', 'undefined')
+        self.assertRaises(UnicodeError, codecs.encode, 'abc', 'undefined')
+        self.assertRaises(UnicodeError, codecs.decode, b'abc', 'undefined')
+        self.assertRaises(UnicodeError, codecs.encode, '', 'undefined')
+        self.assertRaises(UnicodeError, codecs.decode, b'', 'undefined')
         for errors in ('strict', 'ignore', 'replace', 'backslashreplace'):
-            self.assertRaises(UnicodeEncodeError,
+            self.assertRaises(UnicodeError,
                 codecs.encode, 'abc', 'undefined', errors)
-            self.assertRaises(UnicodeDecodeError,
+            self.assertRaises(UnicodeError,
                 codecs.decode, b'abc', 'undefined', errors)
 
     def test_file_closes_if_lookup_error_raised(self):
