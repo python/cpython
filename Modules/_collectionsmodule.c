@@ -2049,7 +2049,13 @@ PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(
 static PyObject *
 dequeiter_reduce(dequeiterobject *it, PyObject *Py_UNUSED(ignored))
 {
-    return Py_BuildValue("O(On)", Py_TYPE(it), it->deque, Py_SIZE(it->deque) - it->counter);
+    Py_BEGIN_CRITICAL_SECTION(it);
+    PyTypeObject *ty = Py_TYPE(it);
+    dequeobject *deque = it->deque;
+    Py_ssize_t size = Py_SIZE(deque);
+    Py_ssize_t counter = it->counter;
+    Py_END_CRITICAL_SECTION();
+    return Py_BuildValue("O(On)", ty, deque, size - counter);
 }
 
 static PyMethodDef dequeiter_methods[] = {
