@@ -94,6 +94,24 @@ Improved Error Messages
   variables. See also :ref:`using-on-controlling-color`.
   (Contributed by Pablo Galindo Salgado in :gh:`112730`.)
 
+* A common mistake is to write a script with the same name as a
+  standard library module. The interpreter now detects this and
+  displays a more helpful error message.
+  (Contributed by Shantanu Jain in :gh:`95754`.)
+
+  .. code-block:: shell-session
+
+    $ python random.py
+    Traceback (most recent call last):
+      File "/home/random.py", line 1, in <module>
+        import random; print(random.randint(5))
+        ^^^^^^^^^^^^^
+      File "/home/random.py", line 1, in <module>
+        import random; print(random.randint(5))
+                            ^^^^^^^^^^^^^^
+    AttributeError: module 'random' has no attribute 'randint' (most likely due to '/home/random.py' shadowing the standard library module named 'random')
+
+
 Other Language Changes
 ======================
 
