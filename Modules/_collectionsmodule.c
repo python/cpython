@@ -1255,7 +1255,7 @@ deque_contains(dequeobject *deque, PyObject *v)
 static Py_ssize_t
 deque_len(dequeobject *deque)
 {
-    return Py_SIZE(deque);
+    return _Py_atomic_load_ssize(&((PyVarObject *)deque)->ob_size);
 }
 
 /*[clinic input]
