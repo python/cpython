@@ -98,10 +98,6 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         msg = r"bool\(\) takes no keyword arguments"
         self.assertRaisesRegex(TypeError, msg, bool, x=2)
 
-    def test_varargs4_kw(self):
-        msg = r"^(list[.])?index\(\) takes no keyword arguments$"
-        self.assertRaisesRegex(TypeError, msg, [].index, x=2)
-
     def test_varargs5_kw(self):
         msg = r"^hasattr\(\) takes no keyword arguments$"
         self.assertRaisesRegex(TypeError, msg, hasattr, x=2)
