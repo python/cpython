@@ -8,7 +8,6 @@
  * Allocated items in the free list may keep a pymalloc arena occupied.
  * Clearing the free lists may give back memory to the OS earlier.
  */
-
 void
 _PyGC_ClearFreeList(PyInterpreterState *interp)
 {

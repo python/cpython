@@ -3,10 +3,13 @@
 #include "pycore_tstate.h"    // _PyThreadStateImpl
 
 #ifdef Py_GIL_DISABLED
+
 /* Clear all free lists
  * All free lists are cleared during the collection of the highest generation.
  * Allocated items in the free list may keep a pymalloc arena occupied.
  * Clearing the free lists may give back memory to the OS earlier.
+ * Free-threading version: Since freelists are managed per thread,
+ * GC should clear all freelists by traversing all threads.
  */
 void
 _PyGC_ClearFreeList(PyInterpreterState *interp)
