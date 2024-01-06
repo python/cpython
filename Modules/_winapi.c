@@ -834,8 +834,6 @@ normalize_environment(PyObject* environment)
         if (! PyUnicode_Check(key) || ! PyUnicode_Check(value)) {
             PyErr_SetString(PyExc_TypeError,
                 "environment can only contain strings");
-            Py_XDECREF(result);
-            result = NULL;
             goto error;
         }
         if (PyUnicode_FindChar(key, '\0', 0, PyUnicode_GET_LENGTH(key), 1) != -1 ||
