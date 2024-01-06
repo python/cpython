@@ -879,6 +879,7 @@ normalize_environment(PyObject* environment)
             goto error;
         }
         if (CompareStringOrdinal(prev_key_string, -1, key_string, -1, TRUE) == CSTR_EQUAL) {
+            PyMem_Free(key_string);
             continue;
         }
         if (PyObject_SetItem(result, key, value) < 0) {
