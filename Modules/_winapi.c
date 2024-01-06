@@ -883,8 +883,6 @@ normalize_environment(PyObject* environment)
             continue;
         }
         if (PyObject_SetItem(result, key, value) < 0) {
-            Py_XDECREF(result);
-            result = NULL;
             goto error;
         }
         PyMem_Free(prev_key_string);
