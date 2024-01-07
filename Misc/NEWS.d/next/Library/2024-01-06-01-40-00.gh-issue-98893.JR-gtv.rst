@@ -1,1 +1,2 @@
-PLACEHOLDER Improved error messages for sqlite3 UDFs PLACEHOLDER
+If possible, include the original error message if an exception happens during
+the execution of a user-defined function in :mod:`sqlite3`.
