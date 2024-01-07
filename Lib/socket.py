@@ -458,7 +458,7 @@ class socket(_socket.socket):
             if total_sent > 0 and hasattr(file, 'seek'):
                 file.seek(offset + total_sent)
 
-    if _overlapped:
+    if _overlapped and msvcrt:
         def _sendfile_use_transmitfile(self, file, offset=0, count=None):
             self._check_sendfile_params(file, offset, count)
             timeout = self.gettimeout()
