@@ -252,6 +252,7 @@ gc
   The only difference is that instead of the results refering to
   the young, aging and old generations, the results refer to the
   young generation and the aging and collecting spaces of the old generation.
+
 In summary, code that attempted to manipulate the behavior of the cycle GC may
 not work as well as intended, but it is very unlikely to harmful.
 All other code will work just fine.
