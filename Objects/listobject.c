@@ -2685,34 +2685,25 @@ list_index_impl(PyListObject *self, PyObject *value, Py_ssize_t start,
         if (stop < 0)
             stop = 0;
     }
-    if (!key)
-        for (i = start; i < stop && i < Py_SIZE(self); i++) {
-            PyObject *obj = self->ob_item[i];
-            /* take reference to item, in case comparison methods modify list */
-            Py_INCREF(obj);
-            int cmp = PyObject_RichCompareBool(obj, value, Py_EQ);
-            Py_DECREF(obj);
-            if (cmp > 0)
-                return PyLong_FromSsize_t(i);
-            else if (cmp < 0)
-                return NULL;
-        }
-    else
-        for (i = start; i < stop && i < Py_SIZE(self); i++) {
-            PyObject *item = self->ob_item[i];
-            /* take reference to item, in case key modifies list */
-            Py_INCREF(item);
-            PyObject *obj = PyObject_CallFunctionObjArgs(key, item, NULL);
+    for (i = start; i < stop && i < Py_SIZE(self); i++) {
+        PyObject *obj, *item = self->ob_item[i];
+        /* take reference to item, in case list modified by key or comparison */
+        Py_INCREF(item);
+        if (!key) {
+            obj = item;
+        } else {
+            obj = PyObject_CallFunctionObjArgs(key, item, NULL);
             Py_DECREF(item);
             if (!obj)
                 return NULL;
-            int cmp = PyObject_RichCompareBool(obj, value, Py_EQ);
-            Py_DECREF(obj);
-            if (cmp > 0)
-                return PyLong_FromSsize_t(i);
-            else if (cmp < 0)
-                return NULL;
         }
+        int cmp = PyObject_RichCompareBool(obj, value, Py_EQ);
+        Py_DECREF(obj);
+        if (cmp > 0)
+            return PyLong_FromSsize_t(i);
+        else if (cmp < 0)
+            return NULL;
+    }
     PyErr_Format(PyExc_ValueError, "%R is not in list", value);
     return NULL;
 }
