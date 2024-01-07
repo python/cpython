@@ -2689,13 +2689,15 @@ list_index_impl(PyListObject *self, PyObject *value, Py_ssize_t start,
         PyObject *obj, *item = self->ob_item[i];
         /* take reference to item, in case list modified by key or comparison */
         Py_INCREF(item);
-        if (!key) {
+        if (key == NULL) {
             obj = item;
-        } else {
+        }
+        else {
             obj = PyObject_CallFunctionObjArgs(key, item, NULL);
             Py_DECREF(item);
-            if (!obj)
+            if (obj == NULL) {
                 return NULL;
+            }
         }
         int cmp = PyObject_RichCompareBool(obj, value, Py_EQ);
         Py_DECREF(obj);
