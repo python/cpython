@@ -2677,13 +2677,15 @@ list_index_impl(PyListObject *self, PyObject *value, Py_ssize_t start,
 
     if (start < 0) {
         start += Py_SIZE(self);
-        if (start < 0)
+        if (start < 0) {
             start = 0;
+        }
     }
     if (stop < 0) {
         stop += Py_SIZE(self);
-        if (stop < 0)
+        if (stop < 0) {
             stop = 0;
+        }
     }
     for (i = start; i < stop && i < Py_SIZE(self); i++) {
         PyObject *obj, *item = self->ob_item[i];
@@ -2701,10 +2703,12 @@ list_index_impl(PyListObject *self, PyObject *value, Py_ssize_t start,
         }
         int cmp = PyObject_RichCompareBool(obj, value, Py_EQ);
         Py_DECREF(obj);
-        if (cmp > 0)
+        if (cmp > 0) {
             return PyLong_FromSsize_t(i);
-        else if (cmp < 0)
+        }
+        else if (cmp < 0) {
             return NULL;
+        }
     }
     PyErr_Format(PyExc_ValueError, "%R is not in list", value);
     return NULL;
