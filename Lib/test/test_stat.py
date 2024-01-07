@@ -15,10 +15,10 @@ class TestFilemode:
     statmod = None
 
     file_flags = {'SF_APPEND', 'SF_ARCHIVED', 'SF_IMMUTABLE', 'SF_NOUNLINK',
-                  'SF_SNAPSHOT', 'SF_RESTRICTED', 'SF_FIRMLINK', 'SF_DATALESS',
-                  'UF_APPEND', 'UF_COMPRESSED', 'UF_HIDDEN', 'UF_IMMUTABLE',
-                  'UF_NODUMP', 'UF_NOUNLINK', 'UF_OPAQUE', 'UF_TRACKED',
-                  'UF_DATAVAULT'}
+                  'SF_SNAPSHOT', 'SF_SETTABLE', 'SF_RESTRICTED', 'SF_FIRMLINK',
+                  'SF_DATALESS', 'UF_APPEND', 'UF_COMPRESSED', 'UF_HIDDEN',
+                  'UF_IMMUTABLE', 'UF_NODUMP', 'UF_NOUNLINK', 'UF_OPAQUE',
+                  'UF_SETTABLE', 'UF_TRACKED', 'UF_DATAVAULT'}
 
     formats = {'S_IFBLK', 'S_IFCHR', 'S_IFDIR', 'S_IFIFO', 'S_IFLNK',
                'S_IFREG', 'S_IFSOCK', 'S_IFDOOR', 'S_IFPORT', 'S_IFWHT'}
@@ -241,6 +241,18 @@ class TestFilemode:
             self.assertTrue(callable(func))
             self.assertEqual(func(0), 0)
 
+    def test_flags_consistent(self):
+        self.assertFalse(self.statmod.UF_SETTABLE & self.statmod.SF_SETTABLE)
+
+        for flag in self.file_flags:
+            if flag.startswith("UF"):
+                self.assertTrue(getattr(self.statmod, flag) & self.statmod.UF_SETTABLE, f"{flag} notin UF_SETTABLE")
+            elif sys.platform == 'darwin' and self.statmod is c_stat and flag == 'SF_DATALESS':
+                self.assertTrue(self.statmod.SF_DATALESS & self.statmod.SF_SYNTHETIC, "SF_DATALESS not in SF_SYNTHETIC")
+                self.assertFalse(self.statmod.SF_DATALESS & self.statmod.SF_SETTABLE, "SF_DATALESS in SF_SETTABLE")
+            else:
+                self.assertTrue(getattr(self.statmod, flag) & self.statmod.SF_SETTABLE, f"{flag} notin SF_SETTABLE")
+
     @unittest.skipUnless(sys.platform == "win32",
                          "FILE_ATTRIBUTE_* constants are Win32 specific")
     def test_file_attribute_constants(self):
@@ -261,9 +273,12 @@ class TestFilemode:
         self.assertEqual(self.statmod.UF_DATAVAULT, 0x00000080)
         self.assertEqual(self.statmod.UF_HIDDEN, 0x00008000)
 
-        self.assertEqual(self.statmod.SF_SUPPORTED, 0x009f0000)
-        self.assertEqual(self.statmod.SF_SETTABLE, 0x3fff0000)
-        self.assertEqual(self.statmod.SF_SYNTHETIC, 0xc0000000)
+        if self.statmod is c_stat:
+            self.assertEqual(self.statmod.SF_SUPPORTED, 0x009f0000)
+            self.assertEqual(self.statmod.SF_SETTABLE, 0x3fff0000)
+            self.assertEqual(self.statmod.SF_SYNTHETIC, 0xc0000000)
+        else:
+            self.assertEqual(self.statmod.SF_SETTABLE, 0xffff0000)
         self.assertEqual(self.statmod.SF_ARCHIVED, 0x00010000)
         self.assertEqual(self.statmod.SF_IMMUTABLE, 0x00020000)
         self.assertEqual(self.statmod.SF_APPEND, 0x00040000)

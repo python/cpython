@@ -202,6 +202,10 @@ typedef unsigned short mode_t;
 
 
 /* Names for file flags */
+#ifndef UF_SETTABLE
+#  define UF_ARCHIVED 0x0000ffff
+#endif
+
 #ifndef UF_NODUMP
 #  define UF_NODUMP 0x00000001
 #endif
@@ -238,6 +242,10 @@ typedef unsigned short mode_t;
 #  define UF_HIDDEN 0x00008000
 #endif
 
+#ifndef SF_SETTABLE
+#  define SF_ARCHIVED 0xffff0000
+#endif
+
 #ifndef SF_ARCHIVED
 #  define SF_ARCHIVED 0x00010000
 #endif
@@ -265,6 +273,22 @@ typedef unsigned short mode_t;
 #ifndef SF_DATALESS
 #  define SF_DATALESS 0x40000000
 #endif
+
+#if defined(__APPLE__) && !defined(SF_SUPPORTED)
+   /* On older macOS versions the definition of SF_SUPPORTED is different 
+    * from that on newer versions.
+    *
+    * Provide a consistent experience by redefining.
+    *
+    * None of bit bits set in the actual SF_SUPPORTED but not in this 
+    * definition are defined on these versions of macOS.
+    */
+#  undef SF_SETTABLE
+#  define SF_SUPPORTED 0x009f0000
+#  define SF_SETTABLE 0x3fff0000
+#  define SF_SYNTHETIC 0xc0000000
+#endif
+
 
 static mode_t
 _PyLong_AsMode_t(PyObject *op)
@@ -483,7 +507,8 @@ S_IWOTH: write by others\n\
 S_IXOTH: execute by others\n\
 \n"
 
-"UF_NODUMP: do not dump file\n\
+"UF_SETTABLE: mask of owner changable flags\n\
+UF_NODUMP: do not dump file\n\
 UF_IMMUTABLE: file may not be changed\n\
 UF_APPEND: file may only be appended to\n\
 UF_OPAQUE: directory is opaque when viewed through a union stack\n\
@@ -492,6 +517,7 @@ UF_COMPRESSED: macOS: file is hfs-compressed\n\
 UF_TRACKED: used for dealing with document IDs\n\
 UF_DATAVAULT: entitlement required for reading and writing\n\
 UF_HIDDEN: macOS: file should not be displayed\n\
+SF_SETTABLE: mask of super user changeable flags\n\
 SF_ARCHIVED: file may be archived\n\
 SF_IMMUTABLE: file may not be changed\n\
 SF_APPEND: file may only be appended to\n\
@@ -502,8 +528,6 @@ SF_FIRMLINK: file is a firmlink\n\
 SF_DATALESS: file is a dataless object\n\
 \n\
 On macOS:\n\
-UF_SETTABLE: mask of owner changable flags\n\
-SF_SETTABLE: mask of super user changeable flags\n\
 SF_SUPPORTED: mask of super user supported flags\n\
 SF_SYNTHETIC: mask of read-only synthetic flags\n\
 \n"
@@ -570,6 +594,7 @@ stat_exec(PyObject *module)
     ADD_INT_MACRO(module, S_IWOTH);
     ADD_INT_MACRO(module, S_IXOTH);
 
+    ADD_INT_MACRO(module, UF_SETTABLE);
     ADD_INT_MACRO(module, UF_NODUMP);
     ADD_INT_MACRO(module, UF_IMMUTABLE);
     ADD_INT_MACRO(module, UF_APPEND);
@@ -579,6 +604,7 @@ stat_exec(PyObject *module)
     ADD_INT_MACRO(module, UF_TRACKED);
     ADD_INT_MACRO(module, UF_DATAVAULT);
     ADD_INT_MACRO(module, UF_HIDDEN);
+    ADD_INT_MACRO(module, SF_SETTABLE);
     ADD_INT_MACRO(module, SF_ARCHIVED);
     ADD_INT_MACRO(module, SF_IMMUTABLE);
     ADD_INT_MACRO(module, SF_APPEND);
@@ -587,10 +613,10 @@ stat_exec(PyObject *module)
     ADD_INT_MACRO(module, SF_FIRMLINK);
     ADD_INT_MACRO(module, SF_DATALESS);
 
-#ifdef UF_SETTABLE
-    ADD_INT_MACRO(module, UF_SETTABLE);
+#ifdef SF_SUPPORTED
     ADD_INT_MACRO(module, SF_SUPPORTED);
-    ADD_INT_MACRO(module, SF_SETTABLE);
+#endif
+#ifdef SF_SYNTHETIC
     ADD_INT_MACRO(module, SF_SYNTHETIC);
 #endif
 

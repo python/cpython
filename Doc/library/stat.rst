@@ -354,8 +354,6 @@ The following flags can be used in the *flags* argument of :func:`os.chflags`:
 
    All user settable flags.
 
-   .. availability:: macOS
-
    .. versionadded: 3.13
 
 .. data:: UF_NODUMP
@@ -398,15 +396,13 @@ The following flags can be used in the *flags* argument of :func:`os.chflags`:
 
    The file should not be displayed in a GUI (macOS 10.5+).
 
-.. data:: UF_SUPPORTED
+.. data:: SF_SUPPORTED
 
    All super-user supported flags
 
-   .. availability:: macOS
-
    .. versionadded: 3.13
 
-.. data:: UF_SETTABLE
+.. data:: SF_SETTABLE
 
    All super-user changeable flags
 
