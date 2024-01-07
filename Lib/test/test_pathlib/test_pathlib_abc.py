@@ -1,4 +1,4 @@
-import collections.abc
+import collections
 import io
 import os
 import errno
@@ -43,6 +43,8 @@ class PurePathBaseTest(unittest.TestCase):
 
 
 class DummyPurePath(PurePathBase):
+    __slots__ = ()
+
     def __eq__(self, other):
         if not isinstance(other, DummyPurePath):
             return NotImplemented
@@ -732,11 +734,18 @@ class DummyPathIO(io.BytesIO):
         super().close()
 
 
+DummyPathStatResult = collections.namedtuple(
+    'DummyPathStatResult',
+    'st_mode st_ino st_dev st_nlink st_uid st_gid st_size st_atime st_mtime st_ctime')
+
+
 class DummyPath(PathBase):
     """
     Simple implementation of PathBase that keeps files and directories in
     memory.
     """
+    __slots__ = ()
+
     _files = {}
     _directories = {}
     _symlinks = {}
@@ -765,7 +774,7 @@ class DummyPath(PathBase):
             st_mode = stat.S_IFLNK
         else:
             raise FileNotFoundError(errno.ENOENT, "Not found", str(self))
-        return os.stat_result((st_mode, hash(str(self)), 0, 0, 0, 0, 0, 0, 0, 0))
+        return DummyPathStatResult(st_mode, hash(str(self)), 0, 0, 0, 0, 0, 0, 0, 0)
 
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
@@ -1814,6 +1823,11 @@ class DummyPathTest(DummyPurePathTest):
 
 
 class DummyPathWithSymlinks(DummyPath):
+    __slots__ = ()
+
+    # Reduce symlink traversal limit to make tests run faster.
+    _max_symlinks = 20
+
     def readlink(self):
         path = str(self.parent.resolve() / self.name)
         if path in self._symlinks:
