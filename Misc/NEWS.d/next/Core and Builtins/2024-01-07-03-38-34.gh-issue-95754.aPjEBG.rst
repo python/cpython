@@ -1,0 +1,1 @@
+Improve the error message when a script in the current directory shadows a module from the standard library.
