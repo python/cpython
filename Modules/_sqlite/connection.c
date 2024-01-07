@@ -1001,8 +1001,6 @@ set_sqlite_error(sqlite3_context *context, const char *preamble)
             // An exception happened while we tried to build a more detailed
             // error message; write this as an unraisable exception and pass
             // the preamble as the sqlite3 error message.
-            void *data = sqlite3_user_data(context);
-            callback_context *ctx = (callback_context *)data;
             PyErr_WriteUnraisable(ctx->callable);
             sqlite3_result_error(context, preamble, -1);
         }
