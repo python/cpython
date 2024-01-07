@@ -804,9 +804,11 @@ normalize_environment_keys(PyObject *keys)
         goto error;
     }
     PyObject *args[] = { keys, keyfunc };
-    if (PyObject_VectorcallMethod(&_Py_ID(sort), args, 1, kwnames) == NULL) {
+    PyObject *r = PyObject_VectorcallMethod(&_Py_ID(sort), args, 1, kwnames);
+    if (r == NULL) {
         goto error;
     }
+    Py_DECREF(r);
 
     // Remove duplicated keys and only keep the last inserted one.
     result = PyList_New(0);
