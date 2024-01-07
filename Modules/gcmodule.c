@@ -144,15 +144,12 @@ static PyObject *
 gc_set_threshold(PyObject *self, PyObject *args)
 {
     GCState *gcstate = get_gc_state();
+    int ignore;
     if (!PyArg_ParseTuple(args, "i|ii:set_threshold",
-                          &gcstate->generations[0].threshold,
-                          &gcstate->generations[1].threshold,
-                          &gcstate->generations[2].threshold))
+                          &gcstate->young.threshold,
+                          &gcstate->old[0].threshold,
+                          &ignore))
         return NULL;
-    for (int i = 3; i < NUM_GENERATIONS; i++) {
-        /* generations higher than 2 get the same threshold */
-        gcstate->generations[i].threshold = gcstate->generations[2].threshold;
-    }
     Py_RETURN_NONE;
 }
 
@@ -168,9 +165,9 @@ gc_get_threshold_impl(PyObject *module)
 {
     GCState *gcstate = get_gc_state();
     return Py_BuildValue("(iii)",
-                         gcstate->generations[0].threshold,
-                         gcstate->generations[1].threshold,
-                         gcstate->generations[2].threshold);
+                         gcstate->young.threshold,
+                         gcstate->old[0].threshold,
+                         0);
 }
 
 /*[clinic input]
@@ -185,9 +182,9 @@ gc_get_count_impl(PyObject *module)
 {
     GCState *gcstate = get_gc_state();
     return Py_BuildValue("(iii)",
-                         gcstate->generations[0].count,
-                         gcstate->generations[1].count,
-                         gcstate->generations[2].count);
+                         gcstate->young.count,
+                         gcstate->old[gcstate->visited_space].count,
+                         gcstate->old[gcstate->visited_space^1].count);
 }
 
 PyDoc_STRVAR(gc_get_referrers__doc__,
