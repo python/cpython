@@ -788,7 +788,7 @@ static PyMethodDef sortenvironmentkey_def = {
     "",
 };
 
-bool
+static bool
 sort_environment_keys(PyObject *keys)
 {
     PyObject *keyfunc = NULL, *kwnames = NULL;
