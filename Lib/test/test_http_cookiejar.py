@@ -1957,20 +1957,20 @@ class LWPCookieTests(unittest.TestCase):
             os_helper.unlink(filename)
 
         # Check that the HttpOnly prefix is added to the correct cookies
-        for value in ["foo1", "foo2", "foo3"]:
-            matches = [x for x in lines if value in x]
+        for key in ["foo1", "foo2", "foo3"]:
+            matches = [x for x in lines if key in x]
             self.assertEqual(len(matches), 1,
-                             "Incorrect number of matches for cookie with value %r" % value)
+                             "Incorrect number of matches for cookie with value %r" % key)
             self.assertTrue(matches[0].startswith("#HttpOnly_"),
-                            "Cookie with value %r is missing the HttpOnly prefix" % value)
+                            "Cookie with value %r is missing the HttpOnly prefix" % key)
 
         # Check that the HttpOnly prefix is not added to the correct cookies
-        for value in ["foo4"]:
-            matches = [x for x in lines if value in x]
+        for key in ["foo4"]:
+            matches = [x for x in lines if key in x]
             self.assertEqual(len(matches), 1,
-                             "Incorrect number of matches for cookie with value %r" % value)
+                             "Incorrect number of matches for cookie with value %r" % key)
             self.assertFalse(matches[0].startswith("#HttpOnly_"),
-                             "Cookie with value %r has the HttpOnly prefix" % value)
+                             "Cookie with value %r has the HttpOnly prefix" % key)
 
     def test_netscape_misc(self):
         # Some additional Netscape cookies tests.
