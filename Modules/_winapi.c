@@ -788,32 +788,45 @@ static PyMethodDef sortenvironmentkey_def = {
     "",
 };
 
-static PyObject *
-normalize_environment_keys(PyObject *keys)
+bool
+sort_environment_keys(PyObject *keys)
 {
-    PyObject *keyfunc = NULL, *kwnames = NULL, *result = NULL;
-    wchar_t *prev_key_string = NULL;
+    PyObject *keyfunc = NULL, *kwnames = NULL;
+    bool result = false;
 
-    // Sort the keys.
     keyfunc = PyCFunction_New(&sortenvironmentkey_def, NULL);
     if (keyfunc == NULL) {
-        goto error;
+        return false;
     }
     kwnames = Py_BuildValue("(s)", "key");
     if (kwnames == NULL) {
-        goto error;
+        goto cleanup;
     }
     PyObject *args[] = { keys, keyfunc };
-    PyObject *r = PyObject_VectorcallMethod(&_Py_ID(sort), args, 1, kwnames);
-    if (r == NULL) {
-        goto error;
+    PyObject *ret = PyObject_VectorcallMethod(&_Py_ID(sort), args, 1, kwnames);
+    if (ret == NULL) {
+        goto cleanup;
     }
-    Py_DECREF(r);
+    Py_DECREF(ret);
 
-    // Remove duplicated keys and only keep the last inserted one.
+    result = true;
+
+cleanup:
+    Py_XDECREF(keyfunc);
+    Py_XDECREF(kwnames);
+
+    return result;
+}
+
+static PyObject *
+dedup_environment_keys(PyObject *keys)
+{
+    PyObject *result = NULL;
+    wchar_t *prev_key_string = NULL;
+
     result = PyList_New(0);
     if (result == NULL) {
-        goto error;
+        return NULL;
     }
     for (Py_ssize_t i=PyList_GET_SIZE(keys)-1; i>=0; i--) {
         PyObject *key = PyList_GET_ITEM(keys, i);
@@ -847,8 +860,6 @@ error:
     Py_XDECREF(result);
     result = NULL;
 cleanup:
-    Py_XDECREF(keyfunc);
-    Py_XDECREF(kwnames);
     if (prev_key_string != NULL) {
         PyMem_Free(prev_key_string);
     }
@@ -866,7 +877,10 @@ normalize_environment(PyObject* environment)
         return NULL;
     }
 
-    normalized_keys = normalize_environment_keys(keys);
+    if (!sort_environment_keys(keys)) {
+        goto error;
+    }
+    normalized_keys = dedup_environment_keys(keys);
     if (normalized_keys == NULL) {
         goto error;
     }
