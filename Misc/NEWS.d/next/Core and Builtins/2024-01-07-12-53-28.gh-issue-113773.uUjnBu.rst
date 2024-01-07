@@ -1,0 +1,1 @@
+:func:`list.index` now supports the *key* keyword-only argument. When provided, each list item is first transformed by it before comparint it with *value*.
