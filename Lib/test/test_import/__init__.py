@@ -803,34 +803,20 @@ class ImportTests(unittest.TestCase):
             ):
                 collections.does_not_exist
 
-    def test_shadowing_stdlib_edge_cases(self):
         with CleanImport('collections'):
             import collections
-            collections.__spec__ = types.SimpleNamespace()
-            collections.__spec__.origin = os.path.join(os.getcwd(), 'collections.py')
-            with CleanImport('sys'):
-                import sys
-                sys.stdlib_module_names = None
-                with self.assertRaisesRegex(
-                    AttributeError,
-                    r"module 'collections' has no attribute 'does_not_exist'"
-                ):
-                    collections.does_not_exist
-
-                del sys.stdlib_module_names
-                with self.assertRaisesRegex(
-                    AttributeError,
-                    r"module 'collections' has no attribute 'does_not_exist'"
-                ):
-                    collections.does_not_exist
-            with CleanImport("os"), CleanImport('os.path'):
-                import os as clean_os
-                del clean_os.path.dirname
-                with self.assertRaisesRegex(
-                    AttributeError,
-                    r"module '.*path' has no attribute 'dirname'"
-                ):
-                    collections.does_not_exist
+            del collections.__spec__.origin
+            with self.assertRaisesRegex(
+                AttributeError,
+                r"module 'collections' has no attribute 'does_not_exist'$"
+            ):
+                collections.does_not_exist
+            del collections.__spec__
+            with self.assertRaisesRegex(
+                AttributeError,
+                r"module 'collections' has no attribute 'does_not_exist'$"
+            ):
+                collections.does_not_exist
 
 
 @skip_if_dont_write_bytecode

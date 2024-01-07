@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_fileutils.h"     // _Py_wgetcwd
 #include "pycore_interp.h"        // PyInterpreterState.importlib
 #include "pycore_modsupport.h"    // _PyModule_CreateInitialized()
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
@@ -10,6 +11,8 @@
 #include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
+#include "osdefs.h"               // MAXPATHLEN
+#include "Python/stdlib_module_names.h"  // _Py_stdlib_module_names
 
 
 static PyMemberDef module_members[] = {
@@ -784,6 +787,20 @@ _PyModuleSpec_IsUninitializedSubmodule(PyObject *spec, PyObject *name)
     return rc;
 }
 
+// TODO: deduplicate with suggestions.c. Where should this go?
+static bool
+is_name_stdlib_module(PyObject* name)
+{
+    const char* the_name = PyUnicode_AsUTF8(name);
+    Py_ssize_t len = Py_ARRAY_LENGTH(_Py_stdlib_module_names);
+    for (Py_ssize_t i = 0; i < len; i++) {
+        if (strcmp(the_name, _Py_stdlib_module_names[i]) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 PyObject*
 _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
 {
@@ -854,62 +871,34 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
     int is_script_shadowing_stdlib = 0;
     // Check mod.__name__ in sys.stdlib_module_names
     // and os.path.dirname(mod.__spec__.origin) == os.getcwd()
-    PyObject *stdlib = NULL;
-    if (origin) {
-        // Checks against mod_name are to avoid bad recursion
-        if (
-            PyUnicode_CompareWithASCIIString(mod_name, "sys") != 0
-            && PyUnicode_CompareWithASCIIString(mod_name, "builtins") != 0
-        ) {
-            stdlib = _PyImport_GetModuleAttrString("sys", "stdlib_module_names");
-            if (!stdlib) {
-                if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                    PyErr_Clear();
-                } else {
-                    goto done;
-                }
+    if (origin && is_name_stdlib_module(mod_name)) {
+        wchar_t cwdbuf[MAXPATHLEN];
+        if(_Py_wgetcwd(cwdbuf, MAXPATHLEN)) {
+            PyObject *cwd = PyUnicode_FromWideChar(cwdbuf, wcslen(cwdbuf));
+            if (!cwd) {
+                goto done;
             }
-            if (stdlib && PyFrozenSet_Check(stdlib) && PySet_Contains(stdlib, mod_name)) {
-                if (
-                    PyUnicode_CompareWithASCIIString(mod_name, "os") != 0
-                    && PyUnicode_CompareWithASCIIString(mod_name, "posixpath") != 0
-                    && PyUnicode_CompareWithASCIIString(mod_name, "ntpath") != 0
-                ) {
-                    PyObject *os_path = _PyImport_GetModuleAttrString("os", "path");
-                    if (!os_path) {
-                        goto done;
-                    }
-                    PyObject *dirname = PyObject_GetAttrString(os_path, "dirname");
-                    Py_DECREF(os_path);
-                    if (!dirname) {
-                        goto done;
-                    }
-                    PyObject *origin_dir = _PyObject_CallOneArg(dirname, origin);
-                    Py_DECREF(dirname);
-                    if (!origin_dir) {
-                        goto done;
-                    }
-
-                    PyObject *getcwd = _PyImport_GetModuleAttrString("os", "getcwd");
-                    if (!getcwd) {
-                        Py_DECREF(origin_dir);
-                        goto done;
-                    }
-                    PyObject *cwd = _PyObject_CallNoArgs(getcwd);
-                    Py_DECREF(getcwd);
-                    if (!cwd) {
-                        Py_DECREF(origin_dir);
-                        goto done;
-                    }
-
-                    is_script_shadowing_stdlib = PyObject_RichCompareBool(origin_dir, cwd, Py_EQ);
-                    Py_DECREF(origin_dir);
-                    Py_DECREF(cwd);
-                    if (is_script_shadowing_stdlib < 0) {
-                        goto done;
-                    }
-                }
+            const char sep_char = SEP;
+            PyObject *sep = PyUnicode_FromStringAndSize(&sep_char, 1);
+            if (!sep) {
+                Py_DECREF(cwd);
+                goto done;
             }
+            PyObject *parts = PyUnicode_RPartition(origin, sep);
+            Py_DECREF(sep);
+            if (!parts) {
+                Py_DECREF(cwd);
+                goto done;
+            }
+            int rc = PyUnicode_Compare(cwd, PyTuple_GET_ITEM(parts, 0));
+            if (rc == -1 && PyErr_Occurred()) {
+                Py_DECREF(parts);
+                Py_DECREF(cwd);
+                goto done;
+            }
+            is_script_shadowing_stdlib = rc == 0;
+            Py_DECREF(parts);
+            Py_DECREF(cwd);
         }
     }
 
@@ -954,7 +943,6 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
     }
 
 done:
-    Py_XDECREF(stdlib);
     Py_XDECREF(origin);
     Py_XDECREF(spec);
     Py_DECREF(mod_name);
