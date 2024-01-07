@@ -941,10 +941,10 @@ static char *
 build_error_message(const char *preamble, const char *message)
 {
     assert(preamble || message);
-    size_t n = 0;
-    n += preamble ? strlen(preamble) : 0;
-    n += message ? strlen(message) : 0;
-    if (preamble && message) {
+    const size_t len_preamble = preamble ? strlen(preamble) : 0;
+    const size_t len_message = message ? strlen(message) : 0;
+    size_t n = len_preamble + len_message;
+    if (len_preamble && len_message) {
         n += 2;  // Make room for ": ".
     }
     char *buf = PyMem_Malloc(n + 1);
@@ -952,10 +952,10 @@ build_error_message(const char *preamble, const char *message)
         return (char *)PyErr_NoMemory();
     }
     buf[n] = 0;
-    if (preamble && !message) {
+    if (len_preamble && !len_message) {
         return strncpy(buf, preamble, n);
     }
-    if (!preamble && message) {
+    if (!len_preamble && len_message) {
         return strncpy(buf, message, n);
     }
     buf = strncpy(buf, preamble, n);
@@ -985,6 +985,7 @@ get_result_error_message(callback_context *ctx, const char *preamble,
 static void
 set_sqlite_error(sqlite3_context *context, const char *preamble)
 {
+    assert(preamble);
     assert(PyErr_Occurred());
     callback_context *ctx = (callback_context *)sqlite3_user_data(context);
     if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
@@ -1068,7 +1069,8 @@ step_callback(sqlite3_context *context, int argc, sqlite3_value **params)
 
     stepmethod = PyObject_GetAttr(*aggregate_instance, ctx->state->str_step);
     if (!stepmethod) {
-        set_sqlite_error(context, NULL);
+        set_sqlite_error(context,
+                "user-defined aggregate's 'step' method not defined");
         goto error;
     }
 
@@ -1128,16 +1130,14 @@ final_callback(sqlite3_context *context)
         Py_DECREF(function_result);
     }
     if (!ok) {
-        int attr_err = PyErr_ExceptionMatches(PyExc_AttributeError);
         _PyErr_ChainExceptions1(exc);
 
         /* Note: contrary to the step, value, and inverse callbacks, SQLite
          * does _not_, as of SQLite 3.38.0, propagate errors to sqlite3_step()
          * from the finalize callback. This implies that execute*() will not
          * raise OperationalError, as it normally would. */
-        set_sqlite_error(context, attr_err
-                ? NULL
-                : "user-defined aggregate's 'finalize' method raised error");
+        set_sqlite_error(context,
+                "user-defined aggregate's 'finalize' method raised error");
     }
     else {
         PyErr_SetRaisedException(exc);
@@ -1299,7 +1299,8 @@ inverse_callback(sqlite3_context *context, int argc, sqlite3_value **params)
 
     PyObject *method = PyObject_GetAttr(*cls, ctx->state->str_inverse);
     if (method == NULL) {
-        set_sqlite_error(context, NULL);
+        set_sqlite_error(context,
+                "user-defined aggregate's 'inverse' method not defined");
         goto exit;
     }
 
@@ -1346,10 +1347,8 @@ value_callback(sqlite3_context *context)
 
     PyObject *res = PyObject_CallMethodNoArgs(*cls, ctx->state->str_value);
     if (res == NULL) {
-        int attr_err = PyErr_ExceptionMatches(PyExc_AttributeError);
-        set_sqlite_error(context, attr_err
-                ? NULL
-                : "user-defined aggregate's 'value' method raised error");
+        set_sqlite_error(context,
+                "user-defined aggregate's 'value' method raised error");
     }
     else {
         int rc = _pysqlite_set_result(context, res);
