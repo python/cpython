@@ -1903,6 +1903,75 @@ class LWPCookieTests(unittest.TestCase):
         self.assertEqual(len(new_c), 4)  # 2 of them discarded on save
         self.assertIn("name='foo1', value='bar'", repr(new_c))
 
+    def test_mozilla_httponly_prefix(self):
+        # Save / load Mozilla/Netscape cookie file with HttpOnly prefix.
+        filename = os_helper.TESTFN
+
+        # Load the input file test
+        c1 = MozillaCookieJar(filename)
+        one_year_later = int(time.time()) + 365*24*60*60
+        try:
+            with open(filename, "w") as f:
+                f.write("# Netscape HTTP Cookie File\n")
+                f.write("#HttpOnly_.example.com\tTRUE\t/\tFALSE\t%d\tfoo\tbar\n"
+                        % (one_year_later,))
+            c1.load()
+        finally:
+            os_helper.unlink(filename)
+
+        cookie = list(c1)[0]
+        self.assertIn("HttpOnly", repr(cookie))
+        self.assertTrue(cookie.has_nonstandard_attr("HttpOnly", case_insensitive=True))
+        self.assertTrue(cookie.has_nonstandard_attr("HTTPOnly", case_insensitive=True))
+        self.assertFalse(cookie.has_nonstandard_attr("HTTPOnly"))
+
+        # Save and read the output file test
+        c2 = MozillaCookieJar(filename)
+        year_plus_one = time.localtime()[0] + 1
+        expires = "expires=09-Nov-%d 23:12:40 GMT" % (year_plus_one,)
+        # foo1 has the HttpOnly flag set
+        interact_netscape(c2, "http://example.com/",
+                          "foo1=bar1; %s; HttpOnly;" % expires)
+        # foo2 will have the HttpOnly flag set later
+        interact_netscape(c2, "http://example.com/",
+                          "foo2=bar2; %s;" % expires)
+        # foo3 will have the HTTPOnly flag set later
+        interact_netscape(c2, "http://example.com/",
+                          "foo3=bar3; %s;" % expires)
+        # foo4 does not have the HttpOnly flag set
+        interact_netscape(c2, "http://example.com/",
+                          "foo4=bar4; %s;" % expires)
+        # Set flags manually
+        for cookie in c2:
+            if cookie.name == "foo2":
+                cookie.set_nonstandard_attr("HttpOnly", "")
+            if cookie.name == "foo3":
+                cookie.set_nonstandard_attr("HTTPOnly", "")
+
+        # Save and read the output file
+        try:
+            c2.save()
+            with open(filename, "r") as f:
+                lines = f.readlines()
+        finally:
+            os_helper.unlink(filename)
+
+        # Check that the HttpOnly prefix is added to the correct cookies
+        for value in ["foo1", "foo2", "foo3"]:
+            matches = [x for x in lines if value in x]
+            self.assertEqual(len(matches), 1,
+                             "Incorrect number of matches for cookie with value %r" % value)
+            self.assertTrue(matches[0].startswith("#HttpOnly_"),
+                            "Cookie with value %r is missing the HttpOnly prefix" % value)
+
+        # Check that the HttpOnly prefix is not added to the correct cookies
+        for value in ["foo4"]:
+            matches = [x for x in lines if value in x]
+            self.assertEqual(len(matches), 1,
+                             "Incorrect number of matches for cookie with value %r" % value)
+            self.assertFalse(matches[0].startswith("#HttpOnly_"),
+                             "Cookie with value %r has the HttpOnly prefix" % value)
+
     def test_netscape_misc(self):
         # Some additional Netscape cookies tests.
         c = CookieJar()

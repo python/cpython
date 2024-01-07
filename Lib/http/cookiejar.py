@@ -2116,7 +2116,7 @@ class MozillaCookieJar(FileCookieJar):
                 else:
                     name = cookie.name
                     value = cookie.value
-                if cookie.has_nonstandard_attr(HTTPONLY_ATTR):
+                if cookie.has_nonstandard_attr(HTTPONLY_ATTR, case_insensitive=True):
                     domain = HTTPONLY_PREFIX + domain
                 f.write(
                     "\t".join([domain, initial_dot, cookie.path,
