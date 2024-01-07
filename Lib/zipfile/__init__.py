@@ -1758,7 +1758,7 @@ class ZipFile:
             # filter illegal characters on Windows
             arcname = self._sanitize_windows_name(arcname, os.path.sep)
 
-        if not arcname:
+        if not arcname and not member.is_dir():
             raise ValueError("Empty filename.")
 
         targetpath = os.path.join(targetpath, arcname)
