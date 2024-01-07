@@ -246,7 +246,7 @@ class TestFilemode:
 
         for flag in self.file_flags:
             if flag.startswith("UF"):
-                self.assertTrue(getattr(self.statmod, flag) & self.statmod.UF_SETTABLE, f"{flag} notin UF_SETTABLE")
+                self.assertTrue(getattr(self.statmod, flag) & self.statmod.UF_SETTABLE, f"{flag} not in UF_SETTABLE")
             elif sys.platform == 'darwin' and self.statmod is c_stat and flag == 'SF_DATALESS':
                 self.assertTrue(self.statmod.SF_DATALESS & self.statmod.SF_SYNTHETIC, "SF_DATALESS not in SF_SYNTHETIC")
                 self.assertFalse(self.statmod.SF_DATALESS & self.statmod.SF_SETTABLE, "SF_DATALESS in SF_SETTABLE")
