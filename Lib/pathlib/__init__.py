@@ -9,6 +9,9 @@ import io
 import ntpath
 import os
 import posixpath
+import sys
+import warnings
+from _collections_abc import Sequence
 
 try:
     import pwd
@@ -27,6 +30,35 @@ __all__ = [
     "PurePath", "PurePosixPath", "PureWindowsPath",
     "Path", "PosixPath", "WindowsPath",
     ]
+
+
+class _PathParents(Sequence):
+    """This object provides sequence-like access to the logical ancestors
+    of a path.  Don't try to construct it yourself."""
+    __slots__ = ('_path', '_drv', '_root', '_tail')
+
+    def __init__(self, path):
+        self._path = path
+        self._drv = path.drive
+        self._root = path.root
+        self._tail = path._tail
+
+    def __len__(self):
+        return len(self._tail)
+
+    def __getitem__(self, idx):
+        if isinstance(idx, slice):
+            return tuple(self[i] for i in range(*idx.indices(len(self))))
+
+        if idx >= len(self) or idx < -len(self):
+            raise IndexError(idx)
+        if idx < 0:
+            idx += len(self)
+        return self._path._from_parsed_parts(self._drv, self._root,
+                                             self._tail[:-idx - 1])
+
+    def __repr__(self):
+        return "<{}.parents>".format(type(self._path).__name__)
 
 
 UnsupportedOperation = _abc.UnsupportedOperation
@@ -93,7 +125,6 @@ class PurePath(_abc.PurePathBase):
                 paths.append(path)
         # Avoid calling super().__init__, as an optimisation
         self._raw_paths = paths
-        self._resolving = False
 
     def __reduce__(self):
         # Using the parts tuple helps share interned path parts
@@ -164,6 +195,72 @@ class PurePath(_abc.PurePathBase):
             return NotImplemented
         return self._parts_normcase >= other._parts_normcase
 
+    @property
+    def parent(self):
+        """The logical parent of the path."""
+        drv = self.drive
+        root = self.root
+        tail = self._tail
+        if not tail:
+            return self
+        return self._from_parsed_parts(drv, root, tail[:-1])
+
+    @property
+    def parents(self):
+        """A sequence of this path's logical parents."""
+        # The value of this property should not be cached on the path object,
+        # as doing so would introduce a reference cycle.
+        return _PathParents(self)
+
+    @property
+    def name(self):
+        """The final path component, if any."""
+        tail = self._tail
+        if not tail:
+            return ''
+        return tail[-1]
+
+    def with_name(self, name):
+        """Return a new path with the file name changed."""
+        m = self.pathmod
+        if not name or m.sep in name or (m.altsep and m.altsep in name) or name == '.':
+            raise ValueError(f"Invalid name {name!r}")
+        tail = self._tail.copy()
+        if not tail:
+            raise ValueError(f"{self!r} has an empty name")
+        tail[-1] = name
+        return self._from_parsed_parts(self.drive, self.root, tail)
+
+    def relative_to(self, other, /, *_deprecated, walk_up=False):
+        """Return the relative path to another path identified by the passed
+        arguments.  If the operation is not possible (because this is not
+        related to the other path), raise ValueError.
+
+        The *walk_up* parameter controls whether `..` may be used to resolve
+        the path.
+        """
+        if _deprecated:
+            msg = ("support for supplying more than one positional argument "
+                   "to pathlib.PurePath.relative_to() is deprecated and "
+                   "scheduled for removal in Python 3.14")
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
+            other = self.with_segments(other, *_deprecated)
+        path = _abc.PurePathBase.relative_to(self, other, walk_up=walk_up)
+        path._drv = path._root = ''
+        path._tail_cached = path._raw_paths.copy()
+        return path
+
+    def is_relative_to(self, other, /, *_deprecated):
+        """Return True if the path is relative to another path or False.
+        """
+        if _deprecated:
+            msg = ("support for supplying more than one argument to "
+                   "pathlib.PurePath.is_relative_to() is deprecated and "
+                   "scheduled for removal in Python 3.14")
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
+            other = self.with_segments(other, *_deprecated)
+        return _abc.PurePathBase.is_relative_to(self, other)
+
     def as_uri(self):
         """Return the path as a URI."""
         if not self.is_absolute():
@@ -230,7 +327,6 @@ class Path(_abc.PathBase, PurePath):
 
     def __init__(self, *args, **kwargs):
         if kwargs:
-            import warnings
             msg = ("support for supplying keyword arguments to pathlib.PurePath "
                    "is deprecated and scheduled for removal in Python {remove}")
             warnings._deprecated("pathlib.PurePath(**kwargs)", msg, remove=(3, 14))
@@ -301,7 +397,53 @@ class Path(_abc.PathBase, PurePath):
 
     def _make_child_entry(self, entry):
         # Transform an entry yielded from _scandir() into a path object.
-        return self._make_child_relpath(entry.name)
+        path_str = entry.name if str(self) == '.' else entry.path
+        path = self.with_segments(path_str)
+        path._str = path_str
+        path._drv = self.drive
+        path._root = self.root
+        path._tail_cached = self._tail + [entry.name]
+        return path
+
+    def glob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
+        """Iterate over this subtree and yield all existing files (of any
+        kind, including directories) matching the given relative pattern.
+        """
+        sys.audit("pathlib.Path.glob", self, pattern)
+        if pattern.endswith('**'):
+            # GH-70303: '**' only matches directories. Add trailing slash.
+            warnings.warn(
+                "Pattern ending '**' will match files and directories in a "
+                "future Python release. Add a trailing slash to match only "
+                "directories and remove this warning.",
+                FutureWarning, 2)
+            pattern = f'{pattern}/'
+        return _abc.PathBase.glob(
+            self, pattern, case_sensitive=case_sensitive, follow_symlinks=follow_symlinks)
+
+    def rglob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
+        """Recursively yield all existing files (of any kind, including
+        directories) matching the given relative pattern, anywhere in
+        this subtree.
+        """
+        sys.audit("pathlib.Path.rglob", self, pattern)
+        if pattern.endswith('**'):
+            # GH-70303: '**' only matches directories. Add trailing slash.
+            warnings.warn(
+                "Pattern ending '**' will match files and directories in a "
+                "future Python release. Add a trailing slash to match only "
+                "directories and remove this warning.",
+                FutureWarning, 2)
+            pattern = f'{pattern}/'
+        pattern = f'**/{pattern}'
+        return _abc.PathBase.glob(
+            self, pattern, case_sensitive=case_sensitive, follow_symlinks=follow_symlinks)
+
+    def walk(self, top_down=True, on_error=None, follow_symlinks=False):
+        """Walk the directory tree from this directory, similar to os.walk()."""
+        sys.audit("pathlib.Path.walk", self, on_error, follow_symlinks)
+        return _abc.PathBase.walk(
+            self, top_down=top_down, on_error=on_error, follow_symlinks=follow_symlinks)
 
     def absolute(self):
         """Return an absolute version of this path

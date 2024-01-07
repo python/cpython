@@ -209,7 +209,7 @@ mi_heap_t* mi_heap_get_backing(void) {
   return bheap;
 }
 
-void _mi_heap_init_ex(mi_heap_t* heap, mi_tld_t* tld, mi_arena_id_t arena_id)
+void _mi_heap_init_ex(mi_heap_t* heap, mi_tld_t* tld, mi_arena_id_t arena_id, bool no_reclaim, uint8_t tag)
 {
   _mi_memcpy_aligned(heap, &_mi_heap_empty, sizeof(mi_heap_t));
   heap->tld = tld;
@@ -224,17 +224,19 @@ void _mi_heap_init_ex(mi_heap_t* heap, mi_tld_t* tld, mi_arena_id_t arena_id)
   heap->cookie = _mi_heap_random_next(heap) | 1;
   heap->keys[0] = _mi_heap_random_next(heap);
   heap->keys[1] = _mi_heap_random_next(heap);
+  heap->no_reclaim = no_reclaim;
+  heap->tag = tag;
+  // push on the thread local heaps list
+  heap->next = heap->tld->heaps;
+  heap->tld->heaps = heap;
 }
 
 mi_decl_nodiscard mi_heap_t* mi_heap_new_in_arena(mi_arena_id_t arena_id) {
   mi_heap_t* bheap = mi_heap_get_backing();
   mi_heap_t* heap = mi_heap_malloc_tp(bheap, mi_heap_t);  // todo: OS allocate in secure mode?
   if (heap == NULL) return NULL;
-  _mi_heap_init_ex(heap, bheap->tld, arena_id);
-  heap->no_reclaim = true;  // don't reclaim abandoned pages or otherwise destroy is unsafe
-  // push on the thread local heaps list
-  heap->next = heap->tld->heaps;
-  heap->tld->heaps = heap;
+  // don't reclaim abandoned pages or otherwise destroy is unsafe
+  _mi_heap_init_ex(heap, bheap->tld, arena_id, true, 0);
   return heap;
 }
 
