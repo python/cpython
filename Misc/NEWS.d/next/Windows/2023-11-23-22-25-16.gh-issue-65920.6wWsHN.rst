@@ -1,1 +1,1 @@
-Use ``TransmitFile`` on Windows to implement ``socket.sendfile``.
+Use :c:func:`!TransmitFile` on Windows to implement :func:`socket.sendfile`.
