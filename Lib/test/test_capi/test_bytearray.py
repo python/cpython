@@ -1,8 +1,8 @@
 import unittest
-import sys
 from test.support import import_helper
 
 _testcapi = import_helper.import_module('_testcapi')
+from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
 
 NULL = None
 
@@ -53,10 +53,12 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(fromstringandsize(b'', 0), bytearray())
         self.assertEqual(fromstringandsize(NULL, 0), bytearray())
         self.assertEqual(len(fromstringandsize(NULL, 3)), 3)
-        self.assertRaises(MemoryError, fromstringandsize, NULL, sys.maxsize)
+        self.assertRaises(MemoryError, fromstringandsize, NULL, PY_SSIZE_T_MAX)
 
         self.assertRaises(SystemError, fromstringandsize, b'abc', -1)
+        self.assertRaises(SystemError, fromstringandsize, b'abc', PY_SSIZE_T_MIN)
         self.assertRaises(SystemError, fromstringandsize, NULL, -1)
+        self.assertRaises(SystemError, fromstringandsize, NULL, PY_SSIZE_T_MIN)
 
     def test_fromobject(self):
         # Test PyByteArray_FromObject()
@@ -149,8 +151,8 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(resize(ba, 3), 0)
         self.assertEqual(ba, bytearray(b'abc'))
 
-        self.assertRaises(MemoryError, resize, bytearray(), sys.maxsize)
-        self.assertRaises(MemoryError, resize, bytearray(1000), sys.maxsize)
+        self.assertRaises(MemoryError, resize, bytearray(), PY_SSIZE_T_MAX)
+        self.assertRaises(MemoryError, resize, bytearray(1000), PY_SSIZE_T_MAX)
 
         # CRASHES resize(bytearray(b'abc'), -1)
         # CRASHES resize(b'abc', 0)

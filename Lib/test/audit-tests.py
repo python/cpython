@@ -455,6 +455,9 @@ def test_threading():
     i = _thread.start_new_thread(test_func(), ())
     lock.acquire()
 
+    handle = _thread.start_joinable_thread(test_func())
+    handle.join()
+
 
 def test_threading_abort():
     # Ensures that aborting PyThreadState_New raises the correct exception

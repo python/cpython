@@ -981,6 +981,10 @@ field names, the method and attribute names start with an underscore.
 
     Named tuples are also supported by generic function :func:`copy.replace`.
 
+    .. versionchanged:: 3.13
+       Raise :exc:`TypeError` instead of :exc:`ValueError` for invalid
+       keyword arguments.
+
 .. attribute:: somenamedtuple._fields
 
     Tuple of strings listing the field names.  Useful for introspection

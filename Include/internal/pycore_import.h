@@ -9,6 +9,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_lock.h"          // PyMutex
 #include "pycore_hashtable.h"     // _Py_hashtable_t
 #include "pycore_time.h"          // _PyTime_t
 
@@ -47,7 +48,7 @@ struct _import_runtime_state {
     Py_ssize_t last_module_index;
     struct {
         /* A lock to guard the cache. */
-        PyThread_type_lock mutex;
+        PyMutex mutex;
         /* The actual cache of (filename, name, PyModuleDef) for modules.
            Only legacy (single-phase init) extension modules are added
            and only if they support multiple initialization (m_size >- 0)

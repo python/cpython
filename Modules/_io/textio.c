@@ -7,14 +7,14 @@
 */
 
 #include "Python.h"
-#include "pycore_call.h"          // _PyObject_CallMethod()
-#include "pycore_codecs.h"        // _PyCodecInfo_GetIncrementalDecoder()
-#include "pycore_fileutils.h"     // _Py_GetLocaleEncoding()
-#include "pycore_interp.h"        // PyInterpreterState.fs_codec
-#include "pycore_long.h"          // _PyLong_GetZero()
-#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
-#include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
-#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_call.h"              // _PyObject_CallMethod()
+#include "pycore_codecs.h"            // _PyCodecInfo_GetIncrementalDecoder()
+#include "pycore_fileutils.h"         // _Py_GetLocaleEncoding()
+#include "pycore_interp.h"            // PyInterpreterState.fs_codec
+#include "pycore_long.h"              // _PyLong_GetZero()
+#include "pycore_object.h"            // _PyObject_GC_UNTRACK()
+#include "pycore_pyerrors.h"          // _PyErr_ChainExceptions1()
+#include "pycore_pystate.h"           // _PyInterpreterState_GET()
 
 #include "_iomodule.h"
 
@@ -131,40 +131,52 @@ _io__TextIOBase_write_impl(PyObject *self, PyTypeObject *cls,
     return _unsupported(state, "write");
 }
 
-PyDoc_STRVAR(textiobase_encoding_doc,
-    "Encoding of the text stream.\n"
-    "\n"
-    "Subclasses should override.\n"
-    );
+/*[clinic input]
+@getter
+_io._TextIOBase.encoding
+
+Encoding of the text stream.
+
+Subclasses should override.
+[clinic start generated code]*/
 
 static PyObject *
-textiobase_encoding_get(PyObject *self, void *context)
+_io__TextIOBase_encoding_get_impl(PyObject *self)
+/*[clinic end generated code: output=e0f5d8f548b92432 input=4736d7621dd38f43]*/
 {
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(textiobase_newlines_doc,
-    "Line endings translated so far.\n"
-    "\n"
-    "Only line endings translated during reading are considered.\n"
-    "\n"
-    "Subclasses should override.\n"
-    );
+/*[clinic input]
+@getter
+_io._TextIOBase.newlines
+
+Line endings translated so far.
+
+Only line endings translated during reading are considered.
+
+Subclasses should override.
+[clinic start generated code]*/
 
 static PyObject *
-textiobase_newlines_get(PyObject *self, void *context)
+_io__TextIOBase_newlines_get_impl(PyObject *self)
+/*[clinic end generated code: output=46ec147fb9f00c2a input=a5b196d076af1164]*/
 {
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(textiobase_errors_doc,
-    "The error setting of the decoder or encoder.\n"
-    "\n"
-    "Subclasses should override.\n"
-    );
+/*[clinic input]
+@getter
+_io._TextIOBase.errors
+
+The error setting of the decoder or encoder.
+
+Subclasses should override.
+[clinic start generated code]*/
 
 static PyObject *
-textiobase_errors_get(PyObject *self, void *context)
+_io__TextIOBase_errors_get_impl(PyObject *self)
+/*[clinic end generated code: output=c6623d6addcd087d input=974aa52d1db93a82]*/
 {
     Py_RETURN_NONE;
 }
@@ -179,9 +191,9 @@ static PyMethodDef textiobase_methods[] = {
 };
 
 static PyGetSetDef textiobase_getset[] = {
-    {"encoding", (getter)textiobase_encoding_get, NULL, textiobase_encoding_doc},
-    {"newlines", (getter)textiobase_newlines_get, NULL, textiobase_newlines_doc},
-    {"errors", (getter)textiobase_errors_get, NULL, textiobase_errors_doc},
+    _IO__TEXTIOBASE_ENCODING_GETSETDEF
+    _IO__TEXTIOBASE_NEWLINES_GETSETDEF
+    _IO__TEXTIOBASE_ERRORS_GETSETDEF
     {NULL}
 };
 
@@ -1020,13 +1032,8 @@ io_check_errors(PyObject *errors)
         return 0;
     }
 
-    Py_ssize_t name_length;
-    const char *name = PyUnicode_AsUTF8AndSize(errors, &name_length);
+    const char *name = _PyUnicode_AsUTF8NoNUL(errors);
     if (name == NULL) {
-        return -1;
-    }
-    if (strlen(name) != (size_t)name_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character in errors");
         return -1;
     }
     PyObject *handler = PyCodec_LookupError(name);
@@ -1117,6 +1124,10 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     else if (io_check_errors(errors)) {
         return -1;
     }
+    const char *errors_str = _PyUnicode_AsUTF8NoNUL(errors);
+    if (errors_str == NULL) {
+        return -1;
+    }
 
     if (validate_newline(newline) < 0) {
         return -1;
@@ -1189,11 +1200,11 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     /* Build the decoder object */
     _PyIO_State *state = find_io_state_by_def(Py_TYPE(self));
     self->state = state;
-    if (_textiowrapper_set_decoder(self, codec_info, PyUnicode_AsUTF8(errors)) != 0)
+    if (_textiowrapper_set_decoder(self, codec_info, errors_str) != 0)
         goto error;
 
     /* Build the encoder object */
-    if (_textiowrapper_set_encoder(self, codec_info, PyUnicode_AsUTF8(errors)) != 0)
+    if (_textiowrapper_set_encoder(self, codec_info, errors_str) != 0)
         goto error;
 
     /* Finished sorting out the codec details */
@@ -1289,35 +1300,46 @@ textiowrapper_change_encoding(textio *self, PyObject *encoding,
             errors = &_Py_ID(strict);
         }
     }
+    Py_INCREF(errors);
 
+    const char *c_encoding = PyUnicode_AsUTF8(encoding);
+    if (c_encoding == NULL) {
+        Py_DECREF(encoding);
+        Py_DECREF(errors);
+        return -1;
+    }
     const char *c_errors = PyUnicode_AsUTF8(errors);
     if (c_errors == NULL) {
         Py_DECREF(encoding);
+        Py_DECREF(errors);
         return -1;
     }
 
     // Create new encoder & decoder
     PyObject *codec_info = _PyCodec_LookupTextEncoding(
-        PyUnicode_AsUTF8(encoding), "codecs.open()");
+        c_encoding, "codecs.open()");
     if (codec_info == NULL) {
         Py_DECREF(encoding);
+        Py_DECREF(errors);
         return -1;
     }
     if (_textiowrapper_set_decoder(self, codec_info, c_errors) != 0 ||
             _textiowrapper_set_encoder(self, codec_info, c_errors) != 0) {
         Py_DECREF(codec_info);
         Py_DECREF(encoding);
+        Py_DECREF(errors);
         return -1;
     }
     Py_DECREF(codec_info);
 
     Py_SETREF(self->encoding, encoding);
-    Py_SETREF(self->errors, Py_NewRef(errors));
+    Py_SETREF(self->errors, errors);
 
     return _textiowrapper_fix_encoder_state(self);
 }
 
 /*[clinic input]
+@critical_section
 _io.TextIOWrapper.reconfigure
     *
     encoding: object = None
@@ -1337,12 +1359,32 @@ _io_TextIOWrapper_reconfigure_impl(textio *self, PyObject *encoding,
                                    PyObject *errors, PyObject *newline_obj,
                                    PyObject *line_buffering_obj,
                                    PyObject *write_through_obj)
-/*[clinic end generated code: output=52b812ff4b3d4b0f input=671e82136e0f5822]*/
+/*[clinic end generated code: output=52b812ff4b3d4b0f input=dc3bd35ebda702a7]*/
 {
     int line_buffering;
     int write_through;
     const char *newline = NULL;
 
+    if (encoding != Py_None && !PyUnicode_Check(encoding)) {
+        PyErr_Format(PyExc_TypeError,
+                "reconfigure() argument 'encoding' must be str or None, not %s",
+                Py_TYPE(encoding)->tp_name);
+        return NULL;
+    }
+    if (errors != Py_None && !PyUnicode_Check(errors)) {
+        PyErr_Format(PyExc_TypeError,
+                "reconfigure() argument 'errors' must be str or None, not %s",
+                Py_TYPE(errors)->tp_name);
+        return NULL;
+    }
+    if (newline_obj != NULL && newline_obj != Py_None &&
+        !PyUnicode_Check(newline_obj))
+    {
+        PyErr_Format(PyExc_TypeError,
+                "reconfigure() argument 'newline' must be str or None, not %s",
+                Py_TYPE(newline_obj)->tp_name);
+        return NULL;
+    }
     /* Check if something is in the read buffer */
     if (self->decoded_chars != NULL) {
         if (encoding != Py_None || errors != Py_None || newline_obj != NULL) {
@@ -1362,9 +1404,12 @@ _io_TextIOWrapper_reconfigure_impl(textio *self, PyObject *encoding,
 
     line_buffering = convert_optional_bool(line_buffering_obj,
                                            self->line_buffering);
+    if (line_buffering < 0) {
+        return NULL;
+    }
     write_through = convert_optional_bool(write_through_obj,
                                           self->write_through);
-    if (line_buffering < 0 || write_through < 0) {
+    if (write_through < 0) {
         return NULL;
     }
 
@@ -1442,7 +1487,7 @@ textiowrapper_traverse(textio *self, visitproc visit, void *arg)
 }
 
 static PyObject *
-textiowrapper_closed_get(textio *self, void *context);
+_io_TextIOWrapper_closed_get_impl(textio *self);
 
 /* This macro takes some shortcuts to make the common case faster. */
 #define CHECK_CLOSED(self) \
@@ -1453,7 +1498,7 @@ textiowrapper_closed_get(textio *self, void *context);
             if (self->raw != NULL) \
                 r = _PyFileIO_closed(self->raw); \
             else { \
-                _res = textiowrapper_closed_get(self, NULL); \
+                _res = _io_TextIOWrapper_closed_get_impl(self); \
                 if (_res == NULL) \
                     return NULL; \
                 r = PyObject_IsTrue(_res); \
@@ -1499,12 +1544,13 @@ textiowrapper_closed_get(textio *self, void *context);
 
 
 /*[clinic input]
+@critical_section
 _io.TextIOWrapper.detach
 [clinic start generated code]*/
 
 static PyObject *
 _io_TextIOWrapper_detach_impl(textio *self)
-/*[clinic end generated code: output=7ba3715cd032d5f2 input=e5a71fbda9e1d9f9]*/
+/*[clinic end generated code: output=7ba3715cd032d5f2 input=c908a3b4ef203b0f]*/
 {
     PyObject *buffer;
     CHECK_ATTACHED(self);
@@ -1590,6 +1636,7 @@ _textiowrapper_writeflush(textio *self)
 }
 
 /*[clinic input]
+@critical_section
 _io.TextIOWrapper.write
     text: unicode
     /
@@ -1597,7 +1644,7 @@ _io.TextIOWrapper.write
 
 static PyObject *
 _io_TextIOWrapper_write_impl(textio *self, PyObject *text)
-/*[clinic end generated code: output=d2deb0d50771fcec input=fdf19153584a0e44]*/
+/*[clinic end generated code: output=d2deb0d50771fcec input=73ec95c5c4a3489c]*/
 {
     PyObject *ret;
     PyObject *b;
@@ -1901,6 +1948,7 @@ textiowrapper_read_chunk(textio *self, Py_ssize_t size_hint)
 }
 
 /*[clinic input]
+@critical_section
 _io.TextIOWrapper.read
     size as n: Py_ssize_t(accept={int, NoneType}) = -1
     /
@@ -1908,7 +1956,7 @@ _io.TextIOWrapper.read
 
 static PyObject *
 _io_TextIOWrapper_read_impl(textio *self, Py_ssize_t n)
-/*[clinic end generated code: output=7e651ce6cc6a25a6 input=123eecbfe214aeb8]*/
+/*[clinic end generated code: output=7e651ce6cc6a25a6 input=67d14c5661121377]*/
 {
     PyObject *result = NULL, *chunks = NULL;
 
@@ -2276,6 +2324,7 @@ _textiowrapper_readline(textio *self, Py_ssize_t limit)
 }
 
 /*[clinic input]
+@critical_section
 _io.TextIOWrapper.readline
     size: Py_ssize_t = -1
     /
@@ -2283,7 +2332,7 @@ _io.TextIOWrapper.readline
 
 static PyObject *
 _io_TextIOWrapper_readline_impl(textio *self, Py_ssize_t size)
-/*[clinic end generated code: output=344afa98804e8b25 input=56c7172483b36db6]*/
+/*[clinic end generated code: output=344afa98804e8b25 input=b65bab871dc3ddba]*/
 {
     CHECK_ATTACHED(self);
     return _textiowrapper_readline(self, size);
@@ -2422,6 +2471,7 @@ _textiowrapper_encoder_setstate(textio *self, cookie_type *cookie)
 }
 
 /*[clinic input]
+@critical_section
 _io.TextIOWrapper.seek
     cookie as cookieObj: object
       Zero or an opaque number returned by tell().
@@ -2446,7 +2496,7 @@ and may raise exceptions.
 
 static PyObject *
 _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
-/*[clinic end generated code: output=0a15679764e2d04d input=0f68adcb02cf2823]*/
+/*[clinic end generated code: output=0a15679764e2d04d input=4bea78698be23d7e]*/
 {
     PyObject *posobj;
     cookie_type cookie;
@@ -2633,6 +2683,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
 }
 
 /*[clinic input]
+@critical_section
 _io.TextIOWrapper.tell
 
 Return the stream position as an opaque number.
@@ -2643,7 +2694,7 @@ previous stream position.
 
 static PyObject *
 _io_TextIOWrapper_tell_impl(textio *self)
-/*[clinic end generated code: output=4f168c08bf34ad5f input=0852d627d76fb520]*/
+/*[clinic end generated code: output=4f168c08bf34ad5f input=415d6b4e4f8e6e8c]*/
 {
     PyObject *res;
     PyObject *posobj = NULL;
@@ -2869,6 +2920,7 @@ fail:
 }
 
 /*[clinic input]
+@critical_section
 _io.TextIOWrapper.truncate
     pos: object = None
     /
@@ -2876,7 +2928,7 @@ _io.TextIOWrapper.truncate
 
 static PyObject *
 _io_TextIOWrapper_truncate_impl(textio *self, PyObject *pos)
-/*[clinic end generated code: output=90ec2afb9bb7745f input=56ec8baa65aea377]*/
+/*[clinic end generated code: output=90ec2afb9bb7745f input=8bddb320834c93ee]*/
 {
     CHECK_ATTACHED(self)
 
@@ -2956,72 +3008,78 @@ textiowrapper_repr(textio *self)
 /* Inquiries */
 
 /*[clinic input]
+@critical_section
 _io.TextIOWrapper.fileno
 [clinic start generated code]*/
 
 static PyObject *
 _io_TextIOWrapper_fileno_impl(textio *self)
-/*[clinic end generated code: output=21490a4c3da13e6c input=c488ca83d0069f9b]*/
+/*[clinic end generated code: output=21490a4c3da13e6c input=515e1196aceb97ab]*/
 {
     CHECK_ATTACHED(self);
     return PyObject_CallMethodNoArgs(self->buffer, &_Py_ID(fileno));
 }
 
 /*[clinic input]
+@critical_section
 _io.TextIOWrapper.seekable
 [clinic start generated code]*/
 
 static PyObject *
 _io_TextIOWrapper_seekable_impl(textio *self)
-/*[clinic end generated code: output=ab223dbbcffc0f00 input=8b005ca06e1fca13]*/
+/*[clinic end generated code: output=ab223dbbcffc0f00 input=71c4c092736c549b]*/
 {
     CHECK_ATTACHED(self);
     return PyObject_CallMethodNoArgs(self->buffer, &_Py_ID(seekable));
 }
 
 /*[clinic input]
+@critical_section
 _io.TextIOWrapper.readable
 [clinic start generated code]*/
 
 static PyObject *
 _io_TextIOWrapper_readable_impl(textio *self)
-/*[clinic end generated code: output=72ff7ba289a8a91b input=0704ea7e01b0d3eb]*/
+/*[clinic end generated code: output=72ff7ba289a8a91b input=80438d1f01b0a89b]*/
 {
     CHECK_ATTACHED(self);
     return PyObject_CallMethodNoArgs(self->buffer, &_Py_ID(readable));
 }
 
 /*[clinic input]
+@critical_section
 _io.TextIOWrapper.writable
 [clinic start generated code]*/
 
 static PyObject *
 _io_TextIOWrapper_writable_impl(textio *self)
-/*[clinic end generated code: output=a728c71790d03200 input=c41740bc9d8636e8]*/
+/*[clinic end generated code: output=a728c71790d03200 input=9d6c22befb0c340a]*/
 {
     CHECK_ATTACHED(self);
     return PyObject_CallMethodNoArgs(self->buffer, &_Py_ID(writable));
 }
 
 /*[clinic input]
+@critical_section
 _io.TextIOWrapper.isatty
 [clinic start generated code]*/
 
 static PyObject *
 _io_TextIOWrapper_isatty_impl(textio *self)
-/*[clinic end generated code: output=12be1a35bace882e input=fb68d9f2c99bbfff]*/
+/*[clinic end generated code: output=12be1a35bace882e input=7f83ff04d4d1733d]*/
 {
     CHECK_ATTACHED(self);
     return PyObject_CallMethodNoArgs(self->buffer, &_Py_ID(isatty));
 }
 
 /*[clinic input]
+@critical_section
 _io.TextIOWrapper.flush
 [clinic start generated code]*/
 
 static PyObject *
 _io_TextIOWrapper_flush_impl(textio *self)
-/*[clinic end generated code: output=59de9165f9c2e4d2 input=928c60590694ab85]*/
+/*[clinic end generated code: output=59de9165f9c2e4d2 input=3ac3bf521bfed59d]*/
 {
     CHECK_ATTACHED(self);
     CHECK_CLOSED(self);
@@ -3032,18 +3090,19 @@ _io_TextIOWrapper_flush_impl(textio *self)
 }
 
 /*[clinic input]
+@critical_section
 _io.TextIOWrapper.close
 [clinic start generated code]*/
 
 static PyObject *
 _io_TextIOWrapper_close_impl(textio *self)
-/*[clinic end generated code: output=056ccf8b4876e4f4 input=9c2114315eae1948]*/
+/*[clinic end generated code: output=056ccf8b4876e4f4 input=8e12d7079d5ac5c1]*/
 {
     PyObject *res;
     int r;
     CHECK_ATTACHED(self);
 
-    res = textiowrapper_closed_get(self, NULL);
+    res = _io_TextIOWrapper_closed_get_impl(self);
     if (res == NULL)
         return NULL;
     r = PyObject_IsTrue(res);
@@ -3117,22 +3176,43 @@ textiowrapper_iternext(textio *self)
     return line;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+_io.TextIOWrapper.name
+[clinic start generated code]*/
+
 static PyObject *
-textiowrapper_name_get(textio *self, void *context)
+_io_TextIOWrapper_name_get_impl(textio *self)
+/*[clinic end generated code: output=8c2f1d6d8756af40 input=26ecec9b39e30e07]*/
 {
     CHECK_ATTACHED(self);
     return PyObject_GetAttr(self->buffer, &_Py_ID(name));
 }
 
+/*[clinic input]
+@critical_section
+@getter
+_io.TextIOWrapper.closed
+[clinic start generated code]*/
+
 static PyObject *
-textiowrapper_closed_get(textio *self, void *context)
+_io_TextIOWrapper_closed_get_impl(textio *self)
+/*[clinic end generated code: output=b49b68f443a85e3c input=7dfcf43f63c7003d]*/
 {
     CHECK_ATTACHED(self);
     return PyObject_GetAttr(self->buffer, &_Py_ID(closed));
 }
 
+/*[clinic input]
+@critical_section
+@getter
+_io.TextIOWrapper.newlines
+[clinic start generated code]*/
+
 static PyObject *
-textiowrapper_newlines_get(textio *self, void *context)
+_io_TextIOWrapper_newlines_get_impl(textio *self)
+/*[clinic end generated code: output=53aa03ac35573180 input=610df647e514b3e8]*/
 {
     PyObject *res;
     CHECK_ATTACHED(self);
@@ -3144,30 +3224,51 @@ textiowrapper_newlines_get(textio *self, void *context)
     return res;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+_io.TextIOWrapper.errors
+[clinic start generated code]*/
+
 static PyObject *
-textiowrapper_errors_get(textio *self, void *context)
+_io_TextIOWrapper_errors_get_impl(textio *self)
+/*[clinic end generated code: output=dca3a3ef21b09484 input=b45f983e6d43c4d8]*/
 {
     CHECK_INITIALIZED(self);
     return Py_NewRef(self->errors);
 }
 
+/*[clinic input]
+@critical_section
+@getter
+_io.TextIOWrapper._CHUNK_SIZE
+[clinic start generated code]*/
+
 static PyObject *
-textiowrapper_chunk_size_get(textio *self, void *context)
+_io_TextIOWrapper__CHUNK_SIZE_get_impl(textio *self)
+/*[clinic end generated code: output=039925cd2df375bc input=e9715b0e06ff0fa6]*/
 {
     CHECK_ATTACHED(self);
     return PyLong_FromSsize_t(self->chunk_size);
 }
 
+/*[clinic input]
+@critical_section
+@setter
+_io.TextIOWrapper._CHUNK_SIZE
+[clinic start generated code]*/
+
 static int
-textiowrapper_chunk_size_set(textio *self, PyObject *arg, void *context)
+_io_TextIOWrapper__CHUNK_SIZE_set_impl(textio *self, PyObject *value)
+/*[clinic end generated code: output=edb86d2db660a5ab input=32fc99861db02a0a]*/
 {
     Py_ssize_t n;
     CHECK_ATTACHED_INT(self);
-    if (arg == NULL) {
+    if (value == NULL) {
         PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
         return -1;
     }
-    n = PyNumber_AsSsize_t(arg, PyExc_ValueError);
+    n = PyNumber_AsSsize_t(value, PyExc_ValueError);
     if (n == -1 && PyErr_Occurred())
         return -1;
     if (n <= 0) {
@@ -3248,14 +3349,13 @@ static PyMemberDef textiowrapper_members[] = {
 };
 
 static PyGetSetDef textiowrapper_getset[] = {
-    {"name", (getter)textiowrapper_name_get, NULL, NULL},
-    {"closed", (getter)textiowrapper_closed_get, NULL, NULL},
+    _IO_TEXTIOWRAPPER_NAME_GETSETDEF
+    _IO_TEXTIOWRAPPER_CLOSED_GETSETDEF
 /*    {"mode", (getter)TextIOWrapper_mode_get, NULL, NULL},
 */
-    {"newlines", (getter)textiowrapper_newlines_get, NULL, NULL},
-    {"errors", (getter)textiowrapper_errors_get, NULL, NULL},
-    {"_CHUNK_SIZE", (getter)textiowrapper_chunk_size_get,
-                    (setter)textiowrapper_chunk_size_set, NULL},
+    _IO_TEXTIOWRAPPER_NEWLINES_GETSETDEF
+    _IO_TEXTIOWRAPPER_ERRORS_GETSETDEF
+    _IO_TEXTIOWRAPPER__CHUNK_SIZE_GETSETDEF
     {NULL}
 };
 

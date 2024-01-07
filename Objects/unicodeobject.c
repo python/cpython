@@ -1897,6 +1897,7 @@ PyUnicode_FromString(const char *u)
 PyObject *
 _PyUnicode_FromId(_Py_Identifier *id)
 {
+    PyMutex_Lock((PyMutex *)&id->mutex);
     PyInterpreterState *interp = _PyInterpreterState_GET();
     struct _Py_unicode_ids *ids = &interp->unicode.ids;
 
@@ -1904,7 +1905,7 @@ _PyUnicode_FromId(_Py_Identifier *id)
     if (index < 0) {
         struct _Py_unicode_runtime_ids *rt_ids = &interp->runtime->unicode_state.ids;
 
-        PyThread_acquire_lock(rt_ids->lock, WAIT_LOCK);
+        PyMutex_Lock(&rt_ids->mutex);
         // Check again to detect concurrent access. Another thread can have
         // initialized the index while this thread waited for the lock.
         index = _Py_atomic_load_ssize(&id->index);
@@ -1914,7 +1915,7 @@ _PyUnicode_FromId(_Py_Identifier *id)
             rt_ids->next_index++;
             _Py_atomic_store_ssize(&id->index, index);
         }
-        PyThread_release_lock(rt_ids->lock);
+        PyMutex_Unlock(&rt_ids->mutex);
     }
     assert(index >= 0);
 
@@ -1923,14 +1924,14 @@ _PyUnicode_FromId(_Py_Identifier *id)
         obj = ids->array[index];
         if (obj) {
             // Return a borrowed reference
-            return obj;
+            goto end;
         }
     }
 
     obj = PyUnicode_DecodeUTF8Stateful(id->string, strlen(id->string),
                                        NULL, NULL);
     if (!obj) {
-        return NULL;
+        goto end;
     }
     PyUnicode_InternInPlace(&obj);
 
@@ -1941,7 +1942,8 @@ _PyUnicode_FromId(_Py_Identifier *id)
         PyObject **new_array = PyMem_Realloc(ids->array, new_size * item_size);
         if (new_array == NULL) {
             PyErr_NoMemory();
-            return NULL;
+            obj = NULL;
+            goto end;
         }
         memset(&new_array[ids->size], 0, (new_size - ids->size) * item_size);
         ids->array = new_array;
@@ -1951,6 +1953,8 @@ _PyUnicode_FromId(_Py_Identifier *id)
     // The array stores a strong reference
     ids->array[index] = obj;
 
+end:
+    PyMutex_Unlock((PyMutex *)&id->mutex);
     // Return a borrowed reference
     return obj;
 }
@@ -3844,13 +3848,19 @@ PyUnicode_AsUTF8AndSize(PyObject *unicode, Py_ssize_t *psize)
 const char *
 PyUnicode_AsUTF8(PyObject *unicode)
 {
+    return PyUnicode_AsUTF8AndSize(unicode, NULL);
+}
+
+const char *
+_PyUnicode_AsUTF8NoNUL(PyObject *unicode)
+{
     Py_ssize_t size;
-    const char *utf8 = PyUnicode_AsUTF8AndSize(unicode, &size);
-    if (utf8 != NULL && strlen(utf8) != (size_t)size) {
+    const char *s = PyUnicode_AsUTF8AndSize(unicode, &size);
+    if (s && strlen(s) != (size_t)size) {
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         return NULL;
     }
-    return utf8;
+    return s;
 }
 
 /*
@@ -5863,6 +5873,23 @@ PyUnicode_AsUTF16String(PyObject *unicode)
     return _PyUnicode_EncodeUTF16(unicode, NULL, 0);
 }
 
+_PyUnicode_Name_CAPI *
+_PyUnicode_GetNameCAPI(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyUnicode_Name_CAPI *ucnhash_capi;
+
+    ucnhash_capi = _Py_atomic_load_ptr(&interp->unicode.ucnhash_capi);
+    if (ucnhash_capi == NULL) {
+        ucnhash_capi = (_PyUnicode_Name_CAPI *)PyCapsule_Import(
+                PyUnicodeData_CAPSULE_NAME, 1);
+
+        // It's fine if we overwite the value here. It's always the same value.
+        _Py_atomic_store_ptr(&interp->unicode.ucnhash_capi, ucnhash_capi);
+    }
+    return ucnhash_capi;
+}
+
 /* --- Unicode Escape Codec ----------------------------------------------- */
 
 PyObject *
@@ -5878,7 +5905,6 @@ _PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
     _PyUnicode_Name_CAPI *ucnhash_capi;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     // so we can remember if we've seen an invalid escape char or not
     *first_invalid_escape = NULL;
@@ -6026,19 +6052,13 @@ _PyUnicode_DecodeUnicodeEscapeInternal(const char *s,
 
             /* \N{name} */
         case 'N':
-            ucnhash_capi = interp->unicode.ucnhash_capi;
+            ucnhash_capi = _PyUnicode_GetNameCAPI();
             if (ucnhash_capi == NULL) {
-                /* load the unicode data module */
-                ucnhash_capi = (_PyUnicode_Name_CAPI *)PyCapsule_Import(
-                                                PyUnicodeData_CAPSULE_NAME, 1);
-                if (ucnhash_capi == NULL) {
-                    PyErr_SetString(
+                PyErr_SetString(
                         PyExc_UnicodeError,
                         "\\N escapes not supported (can't load unicodedata module)"
-                        );
-                    goto onError;
-                }
-                interp->unicode.ucnhash_capi = ucnhash_capi;
+                );
+                goto onError;
             }
 
             message = "malformed \\N character escape";
@@ -12488,10 +12508,12 @@ str.split as unicode_split
         character (including \n \r \t \f and spaces) and will discard
         empty strings from the result.
     maxsplit: Py_ssize_t = -1
-        Maximum number of splits (starting from the left).
+        Maximum number of splits.
         -1 (the default value) means no limit.
 
 Return a list of the substrings in the string, using sep as the separator string.
+
+Splitting starts at the front of the string and works to the end.
 
 Note, str.split() is mainly useful for data that has been intentionally
 delimited.  With natural text that includes punctuation, consider using
@@ -12501,7 +12523,7 @@ the regular expression module.
 
 static PyObject *
 unicode_split_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit)
-/*[clinic end generated code: output=3a65b1db356948dc input=07b9040d98c5fe8d]*/
+/*[clinic end generated code: output=3a65b1db356948dc input=a29bcc0c7a5af0eb]*/
 {
     if (sep == Py_None)
         return split(self, NULL, maxsplit);
@@ -13384,15 +13406,17 @@ _PyUnicodeWriter_Dealloc(_PyUnicodeWriter *writer)
 #include "stringlib/unicode_format.h"
 
 PyDoc_STRVAR(format__doc__,
-             "S.format(*args, **kwargs) -> str\n\
+             "format($self, /, *args, **kwargs)\n\
+--\n\
 \n\
-Return a formatted version of S, using substitutions from args and kwargs.\n\
+Return a formatted version of the string, using substitutions from args and kwargs.\n\
 The substitutions are identified by braces ('{' and '}').");
 
 PyDoc_STRVAR(format_map__doc__,
-             "S.format_map(mapping) -> str\n\
+             "format_map($self, /, mapping)\n\
+--\n\
 \n\
-Return a formatted version of S, using substitutions from mapping.\n\
+Return a formatted version of the string, using substitutions from mapping.\n\
 The substitutions are identified by braces ('{' and '}').");
 
 /*[clinic input]
@@ -14690,7 +14714,7 @@ errors is specified, then the object must expose a data buffer\n\
 that will be decoded using the given encoding and error handler.\n\
 Otherwise, returns the result of object.__str__() (if defined)\n\
 or repr(object).\n\
-encoding defaults to sys.getdefaultencoding().\n\
+encoding defaults to 'utf-8'.\n\
 errors defaults to 'strict'.");
 
 static PyObject *unicode_iter(PyObject *seq);

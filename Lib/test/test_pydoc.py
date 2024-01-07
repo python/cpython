@@ -32,7 +32,7 @@ from test.support.script_helper import (assert_python_ok,
 from test.support import threading_helper
 from test.support import (reap_children, captured_output, captured_stdout,
                           captured_stderr, is_emscripten, is_wasi,
-                          requires_docstrings)
+                          requires_docstrings, MISSING_C_DOCSTRINGS)
 from test.support.os_helper import (TESTFN, rmtree, unlink)
 from test import pydoc_mod
 
@@ -43,8 +43,8 @@ class nonascii:
 
 if test.support.HAVE_DOCSTRINGS:
     expected_data_docstrings = (
-        'dictionary for instance variables (if defined)',
-        'list of weak references to the object (if defined)',
+        'dictionary for instance variables',
+        'list of weak references to the object',
         ) * 2
 else:
     expected_data_docstrings = ('', '', '', '')
@@ -108,10 +108,10 @@ CLASSES
      |  Data descriptors defined here:
      |
      |  __dict__
-     |      dictionary for instance variables (if defined)
+     |      dictionary for instance variables
      |
      |  __weakref__
-     |      list of weak references to the object (if defined)
+     |      list of weak references to the object
 
 FUNCTIONS
     doc_func()
@@ -169,16 +169,16 @@ class A(builtins.object)
 
     Data descriptors defined here:
         __dict__
-            dictionary for instance variables (if defined)
+            dictionary for instance variables
         __weakref__
-            list of weak references to the object (if defined)
+            list of weak references to the object
 
 class B(builtins.object)
     Data descriptors defined here:
         __dict__
-            dictionary for instance variables (if defined)
+            dictionary for instance variables
         __weakref__
-            list of weak references to the object (if defined)
+            list of weak references to the object
     Data and other attributes defined here:
         NO_MEANING = 'eggs'
         __annotations__ = {'NO_MEANING': <class 'str'>}
@@ -195,9 +195,9 @@ class C(builtins.object)
         __class_getitem__(item) from builtins.type
     Data descriptors defined here:
         __dict__
-            dictionary for instance variables (if defined)
+            dictionary for instance variables
         __weakref__
-             list of weak references to the object (if defined)
+             list of weak references to the object
 
 Functions
     doc_func()
@@ -745,14 +745,18 @@ class PydocDocTest(unittest.TestCase):
 
     def test_is_package_when_not_package(self):
         with os_helper.temp_cwd() as test_dir:
-            self.assertFalse(pydoc.ispackage(test_dir))
+            with self.assertWarns(DeprecationWarning) as cm:
+                self.assertFalse(pydoc.ispackage(test_dir))
+            self.assertEqual(cm.filename, __file__)
 
     def test_is_package_when_is_package(self):
         with os_helper.temp_cwd() as test_dir:
             init_path = os.path.join(test_dir, '__init__.py')
             open(init_path, 'w').close()
-            self.assertTrue(pydoc.ispackage(test_dir))
+            with self.assertWarns(DeprecationWarning) as cm:
+                self.assertTrue(pydoc.ispackage(test_dir))
             os.remove(init_path)
+            self.assertEqual(cm.filename, __file__)
 
     def test_allmethods(self):
         # issue 17476: allmethods was no longer returning unbound methods.
@@ -829,10 +833,10 @@ class B(A)
  |  Data descriptors inherited from A:
  |
  |  __dict__
- |      dictionary for instance variables (if defined)
+ |      dictionary for instance variables
  |
  |  __weakref__
- |      list of weak references to the object (if defined)
+ |      list of weak references to the object
 ''' % __name__)
 
         doc = pydoc.render_doc(B, renderer=pydoc.HTMLDoc())
@@ -861,14 +865,104 @@ class B(A)
 
     Data descriptors inherited from A:
         __dict__
-            dictionary for instance variables (if defined)
+            dictionary for instance variables
         __weakref__
-            list of weak references to the object (if defined)
+            list of weak references to the object
 """
         as_text = html2text(doc)
         expected_lines = [line.strip() for line in expected_text.split("\n") if line]
         for expected_line in expected_lines:
             self.assertIn(expected_line, as_text)
+
+    def test_long_signatures(self):
+        from collections.abc import Callable
+        from typing import Literal, Annotated
+
+        class A:
+            def __init__(self,
+                         arg1: Callable[[int, int, int], str],
+                         arg2: Literal['some value', 'other value'],
+                         arg3: Annotated[int, 'some docs about this type'],
+                         ) -> None:
+                ...
+
+        doc = pydoc.render_doc(A)
+        # clean up the extra text formatting that pydoc performs
+        doc = re.sub('\b.', '', doc)
+        self.assertEqual(doc, '''Python Library Documentation: class A in module %s
+
+class A(builtins.object)
+ |  A(
+ |      arg1: collections.abc.Callable[[int, int, int], str],
+ |      arg2: Literal['some value', 'other value'],
+ |      arg3: Annotated[int, 'some docs about this type']
+ |  ) -> None
+ |
+ |  Methods defined here:
+ |
+ |  __init__(
+ |      self,
+ |      arg1: collections.abc.Callable[[int, int, int], str],
+ |      arg2: Literal['some value', 'other value'],
+ |      arg3: Annotated[int, 'some docs about this type']
+ |  ) -> None
+ |
+ |  ----------------------------------------------------------------------
+ |  Data descriptors defined here:
+ |
+ |  __dict__%s
+ |
+ |  __weakref__%s
+''' % (__name__,
+       '' if MISSING_C_DOCSTRINGS else '\n |      dictionary for instance variables',
+       '' if MISSING_C_DOCSTRINGS else '\n |      list of weak references to the object',
+      ))
+
+        def func(
+            arg1: Callable[[Annotated[int, 'Some doc']], str],
+            arg2: Literal[1, 2, 3, 4, 5, 6, 7, 8],
+        ) -> Annotated[int, 'Some other']:
+            ...
+
+        doc = pydoc.render_doc(func)
+        # clean up the extra text formatting that pydoc performs
+        doc = re.sub('\b.', '', doc)
+        self.assertEqual(doc, '''Python Library Documentation: function func in module %s
+
+func(
+    arg1: collections.abc.Callable[[typing.Annotated[int, 'Some doc']], str],
+    arg2: Literal[1, 2, 3, 4, 5, 6, 7, 8]
+) -> Annotated[int, 'Some other']
+''' % __name__)
+
+        def function_with_really_long_name_so_annotations_can_be_rather_small(
+            arg1: int,
+            arg2: str,
+        ):
+            ...
+
+        doc = pydoc.render_doc(function_with_really_long_name_so_annotations_can_be_rather_small)
+        # clean up the extra text formatting that pydoc performs
+        doc = re.sub('\b.', '', doc)
+        self.assertEqual(doc, '''Python Library Documentation: function function_with_really_long_name_so_annotations_can_be_rather_small in module %s
+
+function_with_really_long_name_so_annotations_can_be_rather_small(
+    arg1: int,
+    arg2: str
+)
+''' % __name__)
+
+        does_not_have_name = lambda \
+            very_long_parameter_name_that_should_not_fit_into_a_single_line, \
+            second_very_long_parameter_name: ...
+
+        doc = pydoc.render_doc(does_not_have_name)
+        # clean up the extra text formatting that pydoc performs
+        doc = re.sub('\b.', '', doc)
+        self.assertEqual(doc, '''Python Library Documentation: function <lambda> in module %s
+
+<lambda> lambda very_long_parameter_name_that_should_not_fit_into_a_single_line, second_very_long_parameter_name
+''' % __name__)
 
     def test__future__imports(self):
         # __future__ features are excluded from module help,
@@ -1065,13 +1159,15 @@ class TestDescriptions(unittest.TestCase):
         doc = pydoc.render_doc(typing.List[int], renderer=pydoc.plaintext)
         self.assertIn('_GenericAlias in module typing', doc)
         self.assertIn('List = class list(object)', doc)
-        self.assertIn(list.__doc__.strip().splitlines()[0], doc)
+        if not MISSING_C_DOCSTRINGS:
+            self.assertIn(list.__doc__.strip().splitlines()[0], doc)
 
         self.assertEqual(pydoc.describe(list[int]), 'GenericAlias')
         doc = pydoc.render_doc(list[int], renderer=pydoc.plaintext)
         self.assertIn('GenericAlias in module builtins', doc)
         self.assertIn('\nclass list(object)', doc)
-        self.assertIn(list.__doc__.strip().splitlines()[0], doc)
+        if not MISSING_C_DOCSTRINGS:
+            self.assertIn(list.__doc__.strip().splitlines()[0], doc)
 
     def test_union_type(self):
         self.assertEqual(pydoc.describe(typing.Union[int, str]), '_UnionGenericAlias')
@@ -1085,7 +1181,8 @@ class TestDescriptions(unittest.TestCase):
         doc = pydoc.render_doc(int | str, renderer=pydoc.plaintext)
         self.assertIn('UnionType in module types object', doc)
         self.assertIn('\nclass UnionType(builtins.object)', doc)
-        self.assertIn(types.UnionType.__doc__.strip().splitlines()[0], doc)
+        if not MISSING_C_DOCSTRINGS:
+            self.assertIn(types.UnionType.__doc__.strip().splitlines()[0], doc)
 
     def test_special_form(self):
         self.assertEqual(pydoc.describe(typing.NoReturn), '_SpecialForm')
@@ -1238,6 +1335,7 @@ class TestDescriptions(unittest.TestCase):
             "__class_getitem__(object, /) method of builtins.type instance")
 
     @support.cpython_only
+    @requires_docstrings
     def test_module_level_callable_unrepresentable_default(self):
         import _testcapi
         builtin = _testcapi.func_with_unrepresentable_signature
@@ -1245,6 +1343,7 @@ class TestDescriptions(unittest.TestCase):
             "func_with_unrepresentable_signature(a, b=<x>)")
 
     @support.cpython_only
+    @requires_docstrings
     def test_builtin_staticmethod_unrepresentable_default(self):
         self.assertEqual(self._get_summary_line(str.maketrans),
             "maketrans(x, y=<unrepresentable>, z=<unrepresentable>, /)")
@@ -1254,6 +1353,7 @@ class TestDescriptions(unittest.TestCase):
             "staticmeth(a, b=<x>)")
 
     @support.cpython_only
+    @requires_docstrings
     def test_unbound_builtin_method_unrepresentable_default(self):
         self.assertEqual(self._get_summary_line(dict.pop),
             "pop(self, key, default=<unrepresentable>, /)")
@@ -1263,6 +1363,7 @@ class TestDescriptions(unittest.TestCase):
             "meth(self, /, a, b=<x>)")
 
     @support.cpython_only
+    @requires_docstrings
     def test_bound_builtin_method_unrepresentable_default(self):
         self.assertEqual(self._get_summary_line({}.pop),
             "pop(key, default=<unrepresentable>, /) "
@@ -1274,6 +1375,7 @@ class TestDescriptions(unittest.TestCase):
             "method of _testcapi.DocStringUnrepresentableSignatureTest instance")
 
     @support.cpython_only
+    @requires_docstrings
     def test_unbound_builtin_classmethod_unrepresentable_default(self):
         import _testcapi
         cls = _testcapi.DocStringUnrepresentableSignatureTest
@@ -1282,6 +1384,7 @@ class TestDescriptions(unittest.TestCase):
             "classmeth(type, /, a, b=<x>)")
 
     @support.cpython_only
+    @requires_docstrings
     def test_bound_builtin_classmethod_unrepresentable_default(self):
         import _testcapi
         cls = _testcapi.DocStringUnrepresentableSignatureTest
