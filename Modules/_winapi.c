@@ -815,9 +815,6 @@ normalize_environment_keys(PyObject *keys)
     }
     for (Py_ssize_t i=PyList_GET_SIZE(keys)-1; i>=0; i--) {
         PyObject *key = PyList_GET_ITEM(keys, i);
-        if (key == NULL) {
-            goto error;
-        }
         if (i == PyList_GET_SIZE(keys)) {
             prev_key_string = PyUnicode_AsWideCharString(key, NULL);
             if (prev_key_string == NULL) {
