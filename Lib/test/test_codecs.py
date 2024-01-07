@@ -1356,13 +1356,29 @@ class PunycodeTest(unittest.TestCase):
 
     def test_decode_invalid(self):
         testcases = [
-            (b"xn--w&", "strict", UnicodeDecodeError("punycode", b"xn--w&", 0, 6, "")),
+            (b"xn--w&", "strict", UnicodeDecodeError("punycode", b"xn--W&", 5, 6, "")),
+            (b"&egbpdaj6bu4bxfgehfvwxn", "strict", UnicodeDecodeError("punycode", b"&EGBPDAJ6BU4BXFGEHFVWXN", 0, 1, "")),
+            (b"egbpdaj6bu&4bx&fgehfvwxn", "strict", UnicodeDecodeError("punycode", b"EGBPDAJ6BU&4BX&FGEHFVWXN", 10, 11, "")),
+            (b"egbpdaj6bu4bxfgehfvwxn&", "strict", UnicodeDecodeError("punycode", b"EGBPDAJ6BU4BXFGEHFVWXN&", 22, 23, "")),
+            (b"\xFFProprostnemluvesky-uyb24dma41a", "strict", UnicodeDecodeError("ascii", b"\xFFProprostnemluvesky", 0, 1, "")),
+            (b"Pro\xFFprostnemluvesky-uyb24dma41a", "strict", UnicodeDecodeError("ascii", b"Pro\xFFprostnemluvesky", 3, 4, "")),
+            (b"Proprost&nemluvesky-uyb24&dma41a", "strict", UnicodeDecodeError("punycode", b"Proprost&nemluvesky-UYB24&DMA41A", 25, 26, "")),
+            (b"Proprostnemluvesky&-&uyb24dma41a", "strict", UnicodeDecodeError("punycode", b"Proprostnemluvesky&-&UYB24DMA41A", 20, 21, "")),
+            (b"Proprostnemluvesky-&uyb24dma41a", "strict", UnicodeDecodeError("punycode", b"Proprostnemluvesky-&UYB24DMA41A", 19, 20, "")),
+            (b"Proprostnemluvesky-uyb24d&ma41a", "strict", UnicodeDecodeError("punycode", b"Proprostnemluvesky-UYB24D&MA41A", 25, 26, "")),
+            (b"Proprostnemluvesky-uyb24dma41a&", "strict", UnicodeDecodeError("punycode", b"Proprostnemluvesky-UYB24DMA41A&", 30, 31, "")),
             (b"xn--w&", "ignore", "xn-"),
         ]
         for puny, errors, expected in testcases:
             with self.subTest(puny=puny, errors=errors):
                 if isinstance(expected, Exception):
-                    self.assertRaises(UnicodeDecodeError, puny.decode, "punycode", errors)
+                    with self.assertRaises(UnicodeDecodeError) as cm:
+                        puny.decode("punycode", errors)
+                    exc = cm.exception
+                    self.assertEqual(exc.encoding, expected.encoding)
+                    self.assertEqual(exc.object, expected.object)
+                    self.assertEqual(exc.start, expected.start)
+                    self.assertEqual(exc.end, expected.end)
                 else:
                     self.assertEqual(puny.decode("punycode", errors), expected)
 
@@ -1542,17 +1558,56 @@ class NameprepTest(unittest.TestCase):
 
 
 class IDNACodecTest(unittest.TestCase):
+
+    invalid_decode_testcases = [
+        (b"\xFFpython.org", UnicodeDecodeError("idna", b"\xFFpython.org", 0, 1, "")),
+        (b"pyt\xFFhon.org", UnicodeDecodeError("idna", b"pyt\xFFhon.org", 3, 4, "")),
+        (b"python\xFF.org", UnicodeDecodeError("idna", b"python\xFF.org", 6, 7, "")),
+        (b"python.\xFForg", UnicodeDecodeError("idna", b"python.\xFForg", 7, 8, "")),
+        (b"python.o\xFFrg", UnicodeDecodeError("idna", b"python.o\xFFrg", 8, 9, "")),
+        (b"python.org\xFF", UnicodeDecodeError("idna", b"python.org\xFF", 10, 11, "")),
+        (b"xn--pythn-&mua.org", UnicodeDecodeError("idna", b"xn--pythn-&mua.org", 10, 11, "")),
+        (b"xn--pythn-m&ua.org", UnicodeDecodeError("idna", b"xn--pythn-m&ua.org", 11, 12, "")),
+        (b"xn--pythn-mua&.org", UnicodeDecodeError("idna", b"xn--pythn-mua&.org", 13, 14, "")),
+    ]
+    invalid_encode_testcases = [
+        (f"foo.{'\xff'*60}", UnicodeEncodeError("idna", f"foo.{'\xff'*60}", 4, 64, "")),
+        ("あさ.\u034f", UnicodeEncodeError("idna", "あさ.\u034f", 3, 4, "")),
+    ]
+
     def test_builtin_decode(self):
         self.assertEqual(str(b"python.org", "idna"), "python.org")
         self.assertEqual(str(b"python.org.", "idna"), "python.org.")
         self.assertEqual(str(b"xn--pythn-mua.org", "idna"), "pyth\xf6n.org")
         self.assertEqual(str(b"xn--pythn-mua.org.", "idna"), "pyth\xf6n.org.")
 
+    def test_builtin_decode_invalid(self):
+        for case, expected in self.invalid_decode_testcases:
+            with self.subTest(case=case, expected=expected):
+                with self.assertRaises(UnicodeDecodeError) as cm:
+                    case.decode("idna")
+                exc = cm.exception
+                self.assertEqual(exc.encoding, expected.encoding)
+                self.assertEqual(exc.object, expected.object)
+                self.assertEqual(exc.start, expected.start, msg=f'reason: {exc.reason}')
+                self.assertEqual(exc.end, expected.end)
+
     def test_builtin_encode(self):
         self.assertEqual("python.org".encode("idna"), b"python.org")
         self.assertEqual("python.org.".encode("idna"), b"python.org.")
         self.assertEqual("pyth\xf6n.org".encode("idna"), b"xn--pythn-mua.org")
         self.assertEqual("pyth\xf6n.org.".encode("idna"), b"xn--pythn-mua.org.")
+
+    def test_builtin_encode_invalid(self):
+        for case, expected in self.invalid_encode_testcases:
+            with self.subTest(case=case, expected=expected):
+                with self.assertRaises(UnicodeEncodeError) as cm:
+                    case.encode("idna")
+                exc = cm.exception
+                self.assertEqual(exc.encoding, expected.encoding)
+                self.assertEqual(exc.object, expected.object)
+                self.assertEqual(exc.start, expected.start)
+                self.assertEqual(exc.end, expected.end)
 
     def test_builtin_decode_length_limit(self):
         with self.assertRaisesRegex(UnicodeDecodeError, "way too long"):
@@ -1595,6 +1650,39 @@ class IDNACodecTest(unittest.TestCase):
         self.assertEqual(decoder.decode(b"rg."), "org.")
         self.assertEqual(decoder.decode(b"", True), "")
 
+    def test_incremental_decode_invalid(self):
+        iterdecode_testcases = [
+            (b"\xFFpython.org", UnicodeDecodeError("idna", b"\xFF", 0, 1, "")),
+            (b"pyt\xFFhon.org", UnicodeDecodeError("idna", b"pyt\xFF", 3, 4, "")),
+            (b"python\xFF.org", UnicodeDecodeError("idna", b"python\xFF", 6, 7, "")),
+            (b"python.\xFForg", UnicodeDecodeError("idna", b"\xFF", 0, 1, "")),
+            (b"python.o\xFFrg", UnicodeDecodeError("idna", b"o\xFF", 1, 2, "")),
+            (b"python.org\xFF", UnicodeDecodeError("idna", b"org\xFF", 3, 4, "")),
+            (b"xn--pythn-&mua.org", UnicodeDecodeError("idna", b"xn--pythn-&mua.", 10, 11, "")),
+            (b"xn--pythn-m&ua.org", UnicodeDecodeError("idna", b"xn--pythn-m&ua.", 11, 12, "")),
+            (b"xn--pythn-mua&.org", UnicodeDecodeError("idna", b"xn--pythn-mua&.", 13, 14, "")),
+        ]
+        for case, expected in iterdecode_testcases:
+            with self.subTest(case=case, expected=expected):
+                with self.assertRaises(UnicodeDecodeError) as cm:
+                    list(codecs.iterdecode((bytes([c]) for c in case), "idna"))
+                exc = cm.exception
+                self.assertEqual(exc.encoding, expected.encoding)
+                self.assertEqual(exc.object, expected.object)
+                self.assertEqual(exc.start, expected.start)
+                self.assertEqual(exc.end, expected.end)
+
+        decoder = codecs.getincrementaldecoder("idna")()
+        for case, expected in self.invalid_decode_testcases:
+            with self.subTest(case=case, expected=expected):
+                with self.assertRaises(UnicodeDecodeError) as cm:
+                    decoder.decode(case)
+                exc = cm.exception
+                self.assertEqual(exc.encoding, expected.encoding)
+                self.assertEqual(exc.object, expected.object)
+                self.assertEqual(exc.start, expected.start)
+                self.assertEqual(exc.end, expected.end)
+
     def test_incremental_encode(self):
         self.assertEqual(
             b"".join(codecs.iterencode("python.org", "idna")),
@@ -1622,6 +1710,23 @@ class IDNACodecTest(unittest.TestCase):
         self.assertEqual(encoder.encode("\xe4x"), b"")
         self.assertEqual(encoder.encode("ample.org."), b"xn--xample-9ta.org.")
         self.assertEqual(encoder.encode("", True), b"")
+
+    def test_incremental_encode_invalid(self):
+        iterencode_testcases = [
+            (f"foo.{'\xff'*60}", UnicodeEncodeError("idna", f"{'\xff'*60}", 0, 60, "")),
+            ("あさ.\u034f", UnicodeEncodeError("idna", "\u034f", 0, 1, "")),
+        ]
+        for case, expected in iterencode_testcases:
+            with self.subTest(case=case, expected=expected):
+                with self.assertRaises(UnicodeEncodeError) as cm:
+                    list(codecs.iterencode(case, "idna"))
+                exc = cm.exception
+                self.assertEqual(exc.encoding, expected.encoding)
+                self.assertEqual(exc.object, expected.object)
+                self.assertEqual(exc.start, expected.start)
+                self.assertEqual(exc.end, expected.end)
+
+        # codecs.getincrementalencoder.encode() does not throw an error
 
     def test_errors(self):
         """Only supports "strict" error handler"""

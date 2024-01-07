@@ -158,11 +158,13 @@ def decode_generalized_number(extended, extpos, bias, errors):
 
 
 def insertion_sort(base, extended, errors):
-    """3.2 Insertion unsort coding"""
+    """3.2 Insertion sort coding"""
     char = 0x80
     pos = -1
     bias = 72
     extpos = 0
+    original_base, original_ext = base, extended
+    extended_offset = (len(original_base) + 1) if original_base else 0
     while extpos < len(extended):
         try:
             newpos, delta = decode_generalized_number(extended, extpos,
@@ -170,10 +172,10 @@ def insertion_sort(base, extended, errors):
         except UnicodeDecodeError as exc:
             raise UnicodeDecodeError(
                 "punycode",
-                base.encode("utf-8", errors="backslashreplace")
-                    + b"-"
-                    + extended.encode("utf-8", errors="backslashreplace"),
-                pos + exc.start, pos + exc.end, exc.reason)
+                original_base.encode("utf-8", errors="backslashreplace")
+                    + (b"-" if original_base else b"")
+                    + original_ext.encode("utf-8", errors="backslashreplace"),
+                extended_offset+exc.start, extended_offset+exc.end, exc.reason)
 
         if delta is None:
             # There was an error in decoding. We can't continue because
@@ -185,10 +187,11 @@ def insertion_sort(base, extended, errors):
             if errors == "strict":
                 raise UnicodeDecodeError(
                     "punycode",
-                    base.encode("utf-8", errors="backslashreplace")
-                        + b"-"
-                        + extended.encode("utf-8", errors="backslashreplace"),
-                    pos, pos+1, f"Invalid character U+{char:x}")
+                    original_base.encode("utf-8", errors="backslashreplace")
+                        + (b"-" if original_base else b"")
+                        + original_ext.encode("utf-8", errors="backslashreplace"),
+                    extended_offset+pos-1, extended_offset+pos,
+                    f"Invalid character U+{char:x}")
             char = ord('?')
         pos = pos % (len(base) + 1)
         base = base[:pos] + chr(char) + base[pos:]
