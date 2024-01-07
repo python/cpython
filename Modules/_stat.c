@@ -243,7 +243,7 @@ typedef unsigned short mode_t;
 #endif
 
 #ifndef SF_SETTABLE
-#  define SF_ARCHIVED 0xffff0000
+#  define SF_SETTABLE 0xffff0000
 #endif
 
 #ifndef SF_ARCHIVED
@@ -275,12 +275,12 @@ typedef unsigned short mode_t;
 #endif
 
 #if defined(__APPLE__) && !defined(SF_SUPPORTED)
-   /* On older macOS versions the definition of SF_SUPPORTED is different 
+   /* On older macOS versions the definition of SF_SUPPORTED is different
     * from that on newer versions.
     *
     * Provide a consistent experience by redefining.
     *
-    * None of bit bits set in the actual SF_SUPPORTED but not in this 
+    * None of bit bits set in the actual SF_SUPPORTED but not in this
     * definition are defined on these versions of macOS.
     */
 #  undef SF_SETTABLE
