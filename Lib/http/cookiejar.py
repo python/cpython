@@ -800,7 +800,10 @@ class Cookie:
 
         self._rest = copy.copy(rest)
 
-    def has_nonstandard_attr(self, name):
+    def has_nonstandard_attr(self, name, case_insensitive=False):
+        if case_insensitive:
+            name = name.lower()
+            return any(k.lower() == name for k in self._rest)
         return name in self._rest
     def get_nonstandard_attr(self, name, default=None):
         return self._rest.get(name, default)

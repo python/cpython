@@ -623,6 +623,7 @@ class CookieTests(unittest.TestCase):
         # case is preserved
         self.assertTrue(cookie.has_nonstandard_attr("blArgh"))
         self.assertFalse(cookie.has_nonstandard_attr("blargh"))
+        self.assertTrue(cookie.has_nonstandard_attr("blargh", case_insensitive=True))
 
         cookie = c._cookies["www.acme.com"]["/"]["ni"]
         self.assertEqual(cookie.domain, "www.acme.com")
