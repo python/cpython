@@ -874,8 +874,7 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
     if (origin && is_name_stdlib_module(mod_name)) {
         wchar_t cwd[MAXPATHLEN], origin_dirname[MAXPATHLEN];
         if(_Py_wgetcwd(cwd, MAXPATHLEN)) {
-            int rc = PyUnicode_AsWideChar(origin, origin_dirname, MAXPATHLEN);
-            if (rc < 0) {
+            if (PyUnicode_AsWideChar(origin, origin_dirname, MAXPATHLEN) < 0) {
                 goto done;
             }
             wchar_t *sep = wcsrchr(origin_dirname, SEP);
