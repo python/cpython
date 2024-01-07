@@ -917,8 +917,8 @@ fetch_str_builtin(callback_context *ctx)
         return NULL;
     }
 
-    /* Store a strong reference in the module state, and a borrowed
-     * reference to the caller. */
+    /* Store a strong reference in the module state;
+     * return a borrowed reference to the caller. */
     state->bltin_str = Py_NewRef(str);
     return str;
 }
