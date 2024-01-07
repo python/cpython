@@ -132,6 +132,11 @@ Other Language Changes
   equivalent of the :option:`-X frozen_modules <-X>` command-line option.
   (Contributed by Yilei Yang in :gh:`111374`.)
 
+* The new :envvar:`PYTHON_HISTORY` environment variable can be used to change
+  the location of a ``.python_history`` file.
+  (Contributed by Levi Sabah, Zackery Spytz and Hugo van Kemenade in
+  :gh:`73965`.)
+
 New Modules
 ===========
 
