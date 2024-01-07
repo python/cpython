@@ -949,17 +949,25 @@ Floating point literals
 Floating point literals are described by the following lexical definitions:
 
 .. productionlist:: python-grammar
-   floatnumber: `pointfloat` | `exponentfloat`
+   floatnumber: `pointfloat` | `exponentfloat` | `hexfloat`
    pointfloat: [`digitpart`] `fraction` | `digitpart` "."
    exponentfloat: (`digitpart` | `pointfloat`) `exponent`
+   hexfloat: ("0x | "0X") ["_"] (`hexdigitpart` | `hexpointfloat`) [`binexponent`]
    digitpart: `digit` (["_"] `digit`)*
    fraction: "." `digitpart`
    exponent: ("e" | "E") ["+" | "-"] `digitpart`
+   hexpointfloat: [`hexdigit`] `hexfraction` | `hexdigitpart` "."
+   hexfraction: "." `hexdigitpart`
+   hexdigitpart: `hexdigit` (["_"] `hexdigit`)*
+   binexponent: ("p" | "P") ["+" | "-"] `digitpart`
 
-Note that the integer and exponent parts are always interpreted using radix 10.
+Note that the exponent parts are always interpreted using radix 10.
 For example, ``077e010`` is legal, and denotes the same number as ``77e10``. The
 allowed range of floating point literals is implementation-dependent.  As in
 integer literals, underscores are supported for digit grouping.
+
+The exponent of a hexadecimal floating point literal is written in decimal, and
+it gives the power of 2 by which to multiply the coefficient.
 
 Some examples of floating point literals::
 
@@ -967,6 +975,9 @@ Some examples of floating point literals::
 
 .. versionchanged:: 3.6
    Underscores are now allowed for grouping purposes in literals.
+
+.. versionchanged:: 3.13
+   Added support for hexadecimal floating-point literals.
 
 
 .. index::

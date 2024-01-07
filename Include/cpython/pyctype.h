@@ -21,10 +21,16 @@ PyAPI_DATA(const unsigned int) _Py_ctype_table[256];
 #define Py_ISLOWER(c)  (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_LOWER)
 #define Py_ISUPPER(c)  (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_UPPER)
 #define Py_ISALPHA(c)  (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_ALPHA)
-#define Py_ISDIGIT(c)  (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_DIGIT)
-#define Py_ISXDIGIT(c) (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_XDIGIT)
 #define Py_ISALNUM(c)  (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_ALNUM)
 #define Py_ISSPACE(c)  (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_SPACE)
+
+static inline int Py_ISDIGIT(char c) {
+    return _Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_DIGIT;
+}
+
+static inline int Py_ISXDIGIT(char c) {
+    return _Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_XDIGIT;
+}
 
 PyAPI_DATA(const unsigned char) _Py_ctype_tolower[256];
 PyAPI_DATA(const unsigned char) _Py_ctype_toupper[256];

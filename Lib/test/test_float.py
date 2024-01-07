@@ -38,9 +38,9 @@ class GeneralFloatCases(unittest.TestCase):
         self.assertEqual(float(3.14), 3.14)
         self.assertEqual(float(314), 314.0)
         self.assertEqual(float("  3.14  "), 3.14)
-        self.assertRaises(ValueError, float, "  0x3.1  ")
-        self.assertRaises(ValueError, float, "  -0x3.p-1  ")
-        self.assertRaises(ValueError, float, "  +0x3.p-1  ")
+        self.assertEqual(float("  0x3.1  "), 3.0625)
+        self.assertEqual(float("  -0x3.p-1  "), -1.5)
+        self.assertEqual(float("  +0x3.p-1  "), 1.5)
         self.assertRaises(ValueError, float, "++3.14")
         self.assertRaises(ValueError, float, "+-3.14")
         self.assertRaises(ValueError, float, "-+3.14")
@@ -70,13 +70,13 @@ class GeneralFloatCases(unittest.TestCase):
 
     def test_underscores(self):
         for lit in VALID_UNDERSCORE_LITERALS:
-            if not any(ch in lit for ch in 'jJxXoObB'):
+            if not any(ch in lit for ch in 'jJoObB'):
                 self.assertEqual(float(lit), eval(lit))
                 self.assertEqual(float(lit), float(lit.replace('_', '')))
         for lit in INVALID_UNDERSCORE_LITERALS:
             if lit in ('0_7', '09_99'):  # octals are not recognized here
                 continue
-            if not any(ch in lit for ch in 'jJxXoObB'):
+            if not any(ch in lit for ch in 'jJoObB'):
                 self.assertRaises(ValueError, float, lit)
         # Additional test cases; nan and inf are never valid as literals,
         # only in the float() constructor, but we don't allow underscores
@@ -173,9 +173,9 @@ class GeneralFloatCases(unittest.TestCase):
         self.assertRaises(ValueError, float, "  3,14  ")
         self.assertRaises(ValueError, float, "  +3,14  ")
         self.assertRaises(ValueError, float, "  -3,14  ")
-        self.assertRaises(ValueError, float, "  0x3.1  ")
-        self.assertRaises(ValueError, float, "  -0x3.p-1  ")
-        self.assertRaises(ValueError, float, "  +0x3.p-1  ")
+        self.assertEqual(float("  0x3.1  "), 3.0625)
+        self.assertEqual(float("  -0x3.p-1  "), -1.5)
+        self.assertEqual(float("  +0x3.p-1  "), 1.5)
         self.assertEqual(float("  25.e-1  "), 2.5)
         self.assertAlmostEqual(float("  .25e-1  "), .025)
 
@@ -1483,7 +1483,7 @@ class HexFloatTestCase(unittest.TestCase):
             except OverflowError:
                 pass
             else:
-                self.identical(x, fromHex(toHex(x)))
+                self.identical(x, roundtrip(x))
 
     def test_subclass(self):
         class F(float):

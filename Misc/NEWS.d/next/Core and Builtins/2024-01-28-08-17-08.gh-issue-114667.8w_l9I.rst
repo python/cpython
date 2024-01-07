@@ -1,0 +1,3 @@
+Add hexadecimal floating point literals (IEEE 754-2008 §5.12.3) and support
+construction of floats from hexadecimal strings.  Patch by Sergey B
+Kirpichev.
