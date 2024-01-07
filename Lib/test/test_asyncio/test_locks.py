@@ -759,7 +759,7 @@ class ConditionTests(unittest.IsolatedAsyncioTestCase):
                 await asyncio.wait_for(condition.wait(), timeout=0.5)
 
     async def test_cancelled_error_wakeup(self):
-        # Test that a cancelled error, received when awaiting wakeup
+        # Test that a cancelled error, received when awaiting wakeup,
         # will be re-raised un-modified.
         wake = False
         raised = None
@@ -775,12 +775,13 @@ class ConditionTests(unittest.IsolatedAsyncioTestCase):
 
         task = asyncio.create_task(func())
         await asyncio.sleep(0)
-        # Task is waiting on the condition, cancel it there
+        # Task is waiting on the condition, cancel it there.
         task.cancel(msg="foo")
         with self.assertRaises(asyncio.CancelledError) as err:
             await task
         self.assertEqual(err.exception.args, ("foo",))
-        # we should have got the _same_ exception instance as the one originally raised
+        # We should have got the _same_ exception instance as the one
+        # originally raised.
         self.assertIs(err.exception, raised)
 
     async def test_cancelled_error_re_aquire(self):
@@ -805,13 +806,14 @@ class ConditionTests(unittest.IsolatedAsyncioTestCase):
         wake = True
         cond.notify()
         await asyncio.sleep(0)
-        # task is now trying to re-acquire the lock, cancel it there
+        # Task is now trying to re-acquire the lock, cancel it there.
         task.cancel(msg="foo")
         cond.release()
         with self.assertRaises(asyncio.CancelledError) as err:
             await task
         self.assertEqual(err.exception.args, ("foo",))
-        # we should have got the _same_ exception instance as the one originally raised
+        # We should have got the _same_ exception instance as the one
+        # originally raised.
         self.assertIs(err.exception, raised)
 
 class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
@@ -1100,31 +1102,32 @@ class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual([2, 3], result)
 
     async def test_acquire_fifo_order_4(self):
-        # test that a successfule `acquire()` will wake up multiple Tasks
-        # that were waiting in the Semaphore queue due to FIFO rules
+        # Test that a successfule `acquire()` will wake up multiple Tasks
+        # that were waiting in the Semaphore queue due to FIFO rules.
         sem = asyncio.Semaphore(0)
         result = []
         count = 0
 
         async def c1(result):
-            # first task immediatlly waits for semaphore.  It will be awoken by c2
+            # First task immediatlly waits for semaphore.  It will be awoken by c2.
             self.assertEqual(sem._value, 0)
             await sem.acquire()
-            # we should have woken up all waiting tasks now
+            # We should have woken up all waiting tasks now.
             self.assertEqual(sem._value, 0)
-            # create a fourth task.  It should run after c3, not c2
+            # Create a fourth task.  It should run after c3, not c2.
             nonlocal t4
             t4 = asyncio.create_task(c4(result))
             result.append(1)
             return True
 
         async def c2(result):
-            # second task begins by releasing semaphore three times, for c1, c2, and c3
+            # The second task begins by releasing semaphore three times,
+            # for c1, c2, and c3.
             sem.release()
             sem.release()
             sem.release()
             self.assertEqual(sem._value, 2)
-            # it is locked, because c1 hasn't woken up yet
+            # It is locked, because c1 hasn't woken up yet.
             self.assertTrue(sem.locked())
             await sem.acquire()
             result.append(2)
@@ -1146,7 +1149,7 @@ class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
         t4 = None
 
         await asyncio.sleep(0)
-        # three tasks are in the queue, the first hasn't woken up yet
+        # Three tasks are in the queue, the first hasn't woken up yet.
         self.assertEqual(sem._value, 2)
         self.assertEqual(len(sem._waiters), 3)
         await asyncio.sleep(0)

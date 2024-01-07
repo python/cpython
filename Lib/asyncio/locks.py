@@ -96,8 +96,7 @@ class Lock(_ContextManagerMixin, mixins._LoopBoundMixin):
         locked and returns True.
         """
         # Implement fair scheduling, where thread always waits
-        # its turn.
-        # Jumping the queue if all are cancelled is an optimization.
+        # its turn. Jumping the queue if all are cancelled is an optimization.
         if (not self._locked and (self._waiters is None or
                 all(w.cancelled() for w in self._waiters))):
             self._locked = True
@@ -116,8 +115,8 @@ class Lock(_ContextManagerMixin, mixins._LoopBoundMixin):
         except exceptions.CancelledError:
             # Currently the only exception designed be able to occur here.
 
-            # Ensure the lock invariant: If lock is not claimed (or about to be by us)
-            # and there is a Task in waiters,
+            # Ensure the lock invariant: If lock is not claimed (or about
+            # to be claimed by us) and there is a Task in waiters,
             # ensure that the Task at the head will run.
             if not self._locked:
                 self._wake_up_first()
@@ -153,7 +152,7 @@ class Lock(_ContextManagerMixin, mixins._LoopBoundMixin):
         except StopIteration:
             return
 
-        # .done() means that the waiter is already set to wake up
+        # .done() means that the waiter is already set to wake up.
         if not fut.done():
             fut.set_result(True)
 
@@ -273,7 +272,7 @@ class Condition(_ContextManagerMixin, mixins._LoopBoundMixin):
                 self._waiters.remove(fut)
 
         finally:
-            # Must reacquire lock even if wait is cancelled.
+            # Must re-acquire lock even if wait is cancelled.
             # We only catch CancelledError here, since we don't want any
             # other (fatal) errors with the future to cause us to spin.
             err = None
@@ -286,9 +285,9 @@ class Condition(_ContextManagerMixin, mixins._LoopBoundMixin):
 
             if err:
                 try:
-                    raise err  # Re-raise most recent exception instance
+                    raise err  # Re-raise most recent exception instance.
                 finally:
-                    err = None  # Break reference cycles
+                    err = None  # Break reference cycles.
 
     async def wait_for(self, predicate):
         """Wait until a predicate becomes true.
@@ -366,7 +365,7 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
 
     def locked(self):
         """Returns True if semaphore cannot be acquired immediately."""
-        # due to state, or FIFO rules (must allow others to run first)
+        # Due to state, or FIFO rules (must allow others to run first).
         return self._value == 0 or (
             any(not w.cancelled() for w in (self._waiters or ())))
 
@@ -380,7 +379,7 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
         True.
         """
         if not self.locked():
-            # Maintain FIFO, wait for others to start even if _value > 0
+            # Maintain FIFO, wait for others to start even if _value > 0.
             self._value -= 1
             return True
 
@@ -398,18 +397,18 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
             # Currently the only exception designed be able to occur here.
             if fut.done() and not fut.cancelled():
                 # Our Future was successfully set to True via _wake_up_next(),
-                # but we are not about to successfully acquire().  Therefore we
+                # but we are not about to successfully acquire(). Therefore we
                 # must undo the bookkeeping already done and attempt to wake
                 # up someone else.
                 self._value += 1
             raise
 
         finally:
-            # new waiters may have arrived but had to wait due to FIFO.
+            # New waiters may have arrived but had to wait due to FIFO.
             # Wake up as many as are allowed.
             while self._value > 0:
                 if not self._wake_up_next():
-                    break  # there was no-one to wake up
+                    break  # There was no-one to wake up.
         return True
 
     def release(self):
@@ -430,7 +429,7 @@ class Semaphore(_ContextManagerMixin, mixins._LoopBoundMixin):
             if not fut.done():
                 self._value -= 1
                 fut.set_result(True)
-                # fut is now `done()` and not `cancelled()`
+                # `fut` is now `done()` and not `cancelled()`.
                 return True
         return False
 
