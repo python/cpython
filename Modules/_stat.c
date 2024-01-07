@@ -203,7 +203,7 @@ typedef unsigned short mode_t;
 
 /* Names for file flags */
 #ifndef UF_SETTABLE
-#  define UF_ARCHIVED 0x0000ffff
+#  define UF_SETTABLE 0x0000ffff
 #endif
 
 #ifndef UF_NODUMP
