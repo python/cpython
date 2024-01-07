@@ -1139,6 +1139,14 @@ conflict.
 
    .. versionadded:: 3.13
 
+.. envvar:: PYTHON_HISTORY
+
+   This environment variable can be used to set the location of a
+   ``.python_history`` file (by default, it is ``.python_history`` in the
+   user's home directory).
+
+   .. versionadded:: 3.13
+
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~
 
