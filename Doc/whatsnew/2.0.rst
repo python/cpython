@@ -1030,7 +1030,7 @@ Module changes
 
 Lots of improvements and bugfixes were made to Python's extensive standard
 library; some of the affected modules include :mod:`readline`,
-:mod:`ConfigParser`, :mod:`!cgi`, :mod:`calendar`, :mod:`posix`, :mod:`readline`,
+:mod:`ConfigParser <configparser>`, :mod:`!cgi`, :mod:`calendar`, :mod:`posix`, :mod:`readline`,
 :mod:`xmllib`, :mod:`!aifc`, :mod:`!chunk`, :mod:`wave`, :mod:`random`, :mod:`shelve`,
 and :mod:`!nntplib`.  Consult the CVS logs for the exact patch-by-patch details.
 
@@ -1095,8 +1095,8 @@ module.
   GNU gettext message catalog library. (Integrated by Barry Warsaw, from separate
   contributions by Martin  von Löwis, Peter Funk, and James Henstridge.)
 
-* :mod:`linuxaudiodev`: Support for the :file:`/dev/audio` device on Linux, a
-  twin to the existing :mod:`sunaudiodev` module. (Contributed by Peter Bosch,
+* :mod:`!linuxaudiodev`: Support for the :file:`/dev/audio` device on Linux, a
+  twin to the existing :mod:`!sunaudiodev` module. (Contributed by Peter Bosch,
   with fixes by Jeremy Hylton.)
 
 * :mod:`mmap`: An interface to memory-mapped files on both Windows and Unix.  A
@@ -1139,8 +1139,8 @@ module.
   Unix, not to be confused with :program:`gzip`\ -format files (which are
   supported by the :mod:`gzip` module) (Contributed by James C. Ahlstrom.)
 
-* :mod:`imputil`: A module that provides a simpler way for writing customized
-  import hooks, in comparison to the existing :mod:`ihooks` module.  (Implemented
+* :mod:`!imputil`: A module that provides a simpler way for writing customized
+  import hooks, in comparison to the existing :mod:`!ihooks` module.  (Implemented
   by Greg Stein, with much discussion on python-dev along the way.)
 
 .. ======================================================================
