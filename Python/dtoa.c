@@ -118,6 +118,7 @@
 /* Linking of Python's #defines to Gay's #defines starts here. */
 
 #include "Python.h"
+#include "pycore_floatobject.h"   // _Py_dg_strtod_hex()
 #include "pycore_dtoa.h"          // _PY_SHORT_FLOAT_REPR
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include <stdlib.h>               // exit()
@@ -1409,6 +1410,9 @@ _Py_dg_strtod(const char *s00, char **se)
     case '+':
         c = *++s;
     }
+
+    if (*s == '0' && (*(s + 1) == 'x' || *(s + 1) == 'X'))
+        return _Py_dg_strtod_hex(s, se) * (sign ? -1: 1);
 
     /* Skip leading zeros: lz is true iff there were leading zeros. */
     s1 = s;
