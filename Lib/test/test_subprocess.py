@@ -830,7 +830,7 @@ class ProcessTestCase(BaseTestCase):
                                if not is_env_var_to_ignore(k)]
             self.assertEqual(child_env_names, [])
 
-    def test_one_env(self):
+    def test_one_environment_variable(self):
         newenv = {'fruit': 'orange'}
         cmd = [sys.executable, '-c',
                                'import sys,os;'
