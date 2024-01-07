@@ -12,7 +12,7 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 #include "osdefs.h"               // MAXPATHLEN
-#include "Python/stdlib_module_names.h"  // _Py_stdlib_module_names
+#include "../Python/stdlib_module_names.h"  // _Py_stdlib_module_names
 
 
 static PyMemberDef module_members[] = {
@@ -872,33 +872,19 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
     // Check mod.__name__ in sys.stdlib_module_names
     // and os.path.dirname(mod.__spec__.origin) == os.getcwd()
     if (origin && is_name_stdlib_module(mod_name)) {
-        wchar_t cwdbuf[MAXPATHLEN];
-        if(_Py_wgetcwd(cwdbuf, MAXPATHLEN)) {
-            PyObject *cwd = PyUnicode_FromWideChar(cwdbuf, wcslen(cwdbuf));
-            if (!cwd) {
+        wchar_t cwd[MAXPATHLEN], origin_dirname[MAXPATHLEN];
+        if(_Py_wgetcwd(cwd, MAXPATHLEN)) {
+            int rc = PyUnicode_AsWideChar(origin, origin_dirname, MAXPATHLEN);
+            if (rc < 0) {
                 goto done;
             }
-            const char sep_char = SEP;
-            PyObject *sep = PyUnicode_FromStringAndSize(&sep_char, 1);
-            if (!sep) {
-                Py_DECREF(cwd);
-                goto done;
+            wchar_t *sep = wcsrchr(origin_dirname, SEP);
+            if (sep) {
+                *sep = L'\0';
+                if (wcscmp(cwd, origin_dirname) == 0) {
+                    is_script_shadowing_stdlib = 1;
+                }
             }
-            PyObject *parts = PyUnicode_RPartition(origin, sep);
-            Py_DECREF(sep);
-            if (!parts) {
-                Py_DECREF(cwd);
-                goto done;
-            }
-            int rc = PyUnicode_Compare(cwd, PyTuple_GET_ITEM(parts, 0));
-            if (rc == -1 && PyErr_Occurred()) {
-                Py_DECREF(parts);
-                Py_DECREF(cwd);
-                goto done;
-            }
-            is_script_shadowing_stdlib = rc == 0;
-            Py_DECREF(parts);
-            Py_DECREF(cwd);
         }
     }
 
