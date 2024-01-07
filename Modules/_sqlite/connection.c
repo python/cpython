@@ -897,46 +897,6 @@ print_or_clear_traceback(callback_context *ctx)
     }
 }
 
-// Return a borrowed reference to built-in str().
-static PyObject *
-fetch_str_builtin(callback_context *ctx)
-{
-    pysqlite_state *state = ctx->state;
-    if (state->bltin_str != NULL) {
-        return state->bltin_str;
-    }
-
-    /* Both PyEval_GetBuiltins and PyDict_GetItemString return
-     * borrowed references. */
-    PyObject *bltins = PyEval_GetBuiltins();
-    if (bltins == NULL) {
-        return NULL;
-    }
-    PyObject *str = PyDict_GetItemString(bltins , "str");
-    if (str == NULL) {
-        return NULL;
-    }
-
-    /* Store a strong reference in the module state;
-     * return a borrowed reference to the caller. */
-    state->bltin_str = Py_NewRef(str);
-    return str;
-}
-
-static PyObject *
-get_exception_message(callback_context *ctx, PyObject *exc)
-{
-    PyObject *str = fetch_str_builtin(ctx);  // Borrowed ref.
-    if (str == NULL) {
-        return NULL;
-    }
-    PyObject *res = PyObject_CallFunction(str, "(O)", exc);
-    if (res == NULL) {
-        return NULL;
-    }
-    return res;
-}
-
 static char *
 build_error_message(const char *preamble, const char *message)
 {
@@ -967,7 +927,7 @@ static char *
 get_result_error_message(callback_context *ctx, const char *preamble,
                          PyObject *exc)
 {
-    PyObject *msg_obj = get_exception_message(ctx, exc);
+    PyObject *msg_obj = PyObject_Str(exc);
     if (msg_obj == NULL) {
         return NULL;
     }

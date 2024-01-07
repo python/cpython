@@ -568,7 +568,6 @@ module_traverse(PyObject *module, visitproc visit, void *arg)
     // Misc
     Py_VISIT(state->converters);
     Py_VISIT(state->lru_cache);
-    Py_VISIT(state->bltin_str);
     Py_VISIT(state->psyco_adapters);
 
     return 0;
@@ -602,7 +601,6 @@ module_clear(PyObject *module)
     // Misc
     Py_CLEAR(state->converters);
     Py_CLEAR(state->lru_cache);
-    Py_CLEAR(state->bltin_str);
     Py_CLEAR(state->psyco_adapters);
 
     // Interned strings
