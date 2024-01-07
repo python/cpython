@@ -897,6 +897,7 @@ print_or_clear_traceback(callback_context *ctx)
     }
 }
 
+// Return a borrowed reference to built-in str().
 static PyObject *
 fetch_str_builtin(callback_context *ctx)
 {
@@ -911,14 +912,21 @@ fetch_str_builtin(callback_context *ctx)
     if (bltins == NULL) {
         return NULL;
     }
-    state->bltin_str = PyDict_GetItemString(bltins , "str");
-    return Py_XNewRef(state->bltin_str);
+    PyObject *str = PyDict_GetItemString(bltins , "str");
+    if (str == NULL) {
+        return NULL;
+    }
+
+    /* Store a strong reference in the module state, and a borrowed
+     * reference to the caller. */
+    state->bltin_str = Py_NewRef(str);
+    return str;
 }
 
 static PyObject *
 get_exception_message(callback_context *ctx, PyObject *exc)
 {
-    PyObject *str = fetch_str_builtin(ctx);
+    PyObject *str = fetch_str_builtin(ctx);  // Borrowed ref.
     if (str == NULL) {
         return NULL;
     }
@@ -926,54 +934,51 @@ get_exception_message(callback_context *ctx, PyObject *exc)
     if (res == NULL) {
         return NULL;
     }
-    if (!PyUnicode_Check(res)) {
-        Py_DECREF(res);
-        return NULL;
-    }
     return res;
 }
 
 static char *
-build_error_message(const char *pre, const char *msg)
+build_error_message(const char *preamble, const char *message)
 {
-    static const char *sep = ": ";
-    const size_t len_pre = pre ? strlen(pre) : 0;
-    const size_t len_msg = msg ? strlen(msg) : 0;
-    size_t total = len_pre + len_msg;
-    assert(len_pre || len_msg);
-    if (len_pre && len_msg) {
-        total += 2;  // strlen(sep)
+    assert(preamble || message);
+    size_t n = 0;
+    n += preamble ? strlen(preamble) : 0;
+    n += message ? strlen(message) : 0;
+    if (preamble && message) {
+        n += 2;  // Make room for ": ".
     }
-    char *ret = PyMem_Malloc(total + 1);
-    if (ret == NULL) {
-        PyErr_NoMemory();
-        return NULL;
+    char *buf = PyMem_Malloc(n + 1);
+    if (buf == NULL) {
+        return (char *)PyErr_NoMemory();
     }
-    if (len_pre && !len_msg) {
-        return strcpy(ret, pre);
+    buf[n] = 0;
+    if (preamble && !message) {
+        return strncpy(buf, preamble, n);
     }
-    if (len_msg && !len_pre) {
-        return strcpy(ret, msg);
+    if (!preamble && message) {
+        return strncpy(buf, message, n);
     }
-    ret = strcpy(ret, pre);
-    ret = strcat(ret, sep);
-    return strcat(ret, msg);
+    buf = strncpy(buf, preamble, n);
+    buf = strncat(buf, ": ", n);
+    return strncat(buf, message, n);
 }
 
 static char *
 get_result_error_message(callback_context *ctx, const char *preamble,
                          PyObject *exc)
 {
-    char *ret = NULL;
-
-    PyObject *msg = get_exception_message(ctx, exc);
-    if (msg != NULL) {
-        const char *cstr = PyUnicode_AsUTF8(msg);
-        ret = build_error_message(preamble, cstr);
+    PyObject *msg_obj = get_exception_message(ctx, exc);
+    if (msg_obj == NULL) {
+        return NULL;
     }
-
-    Py_DECREF(msg);
-    return ret;
+    const char *msg = PyUnicode_AsUTF8(msg_obj);
+    if (msg == NULL) {
+        Py_DECREF(msg_obj);
+        return NULL;
+    }
+    char *errmsg = build_error_message(preamble, msg);
+    Py_DECREF(msg_obj);
+    return errmsg;
 }
 
 // Checks the Python exception and sets the appropriate SQLite error code.
@@ -993,7 +998,13 @@ set_sqlite_error(sqlite3_context *context, const char *preamble)
 
         char *msg = get_result_error_message(ctx, preamble, exc);
         if (msg == NULL) {
-            PyErr_NoMemory();
+            // An exception happened while we tried to build a more detailed
+            // error message; write this as an unraisable exception and pass
+            // the preamble as the sqlite3 error message.
+            void *data = sqlite3_user_data(context);
+            callback_context *ctx = (callback_context *)data;
+            PyErr_WriteUnraisable(ctx->callable);
+            sqlite3_result_error(context, preamble, -1);
         }
         else {
             sqlite3_result_error(context, msg, -1);
