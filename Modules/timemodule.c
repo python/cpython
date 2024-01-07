@@ -2049,6 +2049,18 @@ time_exec(PyObject *module)
             return -1;
         }
 #endif
+#ifdef CLOCK_MONOTONIC_RAW_APPROX
+
+        if (PyModule_AddIntMacro(module, CLOCK_MONOTONIC_RAW_APPROX) < 0) {
+            return -1;
+        }
+#endif
+#ifdef CLOCK_UPTIME_RAW_APPROX
+
+        if (PyModule_AddIntMacro(module, CLOCK_UPTIME_RAW_APPROX) < 0) {
+            return -1;
+        }
+#endif
     }
 
 #endif  /* defined(HAVE_CLOCK_GETTIME) || defined(HAVE_CLOCK_SETTIME) || defined(HAVE_CLOCK_GETRES) */
