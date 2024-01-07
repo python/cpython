@@ -50,7 +50,7 @@ def _debug(*args):
         logger = logging.getLogger("http.cookiejar")
     return logger.debug(*args)
 
-HTTPONLY_ATTR = "HTTPOnly"
+HTTPONLY_ATTR = "HttpOnly"
 HTTPONLY_PREFIX = "#HttpOnly_"
 DEFAULT_HTTP_PORT = str(http.client.HTTP_PORT)
 NETSCAPE_MAGIC_RGX = re.compile("#( Netscape)? HTTP Cookie File")

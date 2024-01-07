@@ -1882,7 +1882,7 @@ class LWPCookieTests(unittest.TestCase):
 
         for cookie in c:
             if cookie.name == "foo1":
-                cookie.set_nonstandard_attr("HTTPOnly", "")
+                cookie.set_nonstandard_attr("HttpOnly", "")
 
         def save_and_restore(cj, ignore_discard):
             try:
@@ -1897,7 +1897,7 @@ class LWPCookieTests(unittest.TestCase):
         new_c = save_and_restore(c, True)
         self.assertEqual(len(new_c), 6)  # none discarded
         self.assertIn("name='foo1', value='bar'", repr(new_c))
-        self.assertIn("rest={'HTTPOnly': ''}", repr(new_c))
+        self.assertIn("rest={'HttpOnly': ''}", repr(new_c))
 
         new_c = save_and_restore(c, False)
         self.assertEqual(len(new_c), 4)  # 2 of them discarded on save
