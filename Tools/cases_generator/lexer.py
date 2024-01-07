@@ -347,11 +347,8 @@ def to_text(tkns: list[Token], dedent: int = 0) -> str:
             elif dedent > 0:
                 temp: list[str] = []
                 for line in text.split("\n"):
-                    leading_space = len(line) - len(line.lstrip())
-                    if leading_space > dedent:
-                        line = re.sub(r'(?m)^[ \t]{' + str(dedent) + r'}', '', line)
-                    else:
-                        line = re.sub(r'(?m)^[ \t]{' + str(leading_space) + r'}', '', line)
+                    leading_space = len(line) - len(line.lstrip(' '))
+                    line = line[min(leading_space, dedent):]
                     temp.append(line)
                 text = "\n".join(temp)
         res.append(text)
@@ -367,6 +364,9 @@ if __name__ == "__main__":
         src = sys.argv[2]
     else:
         src = open(filename).read()
-    # print(to_text(tokenize(src)))
-    for tkn in tokenize(src, filename=filename):
-        print(tkn)
+
+    dedent = int(sys.argv[3])
+    print(to_text(tokenize(src), dedent))
+
+    # for tkn in tokenize(src, filename=filename):
+    #     print(tkn)
