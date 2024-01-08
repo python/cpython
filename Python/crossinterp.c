@@ -17,6 +17,7 @@
 
 static int init_exceptions(PyInterpreterState *);
 static void fini_exceptions(PyInterpreterState *);
+static PyObject * _get_not_shareable_error_type(PyInterpreterState *);
 #include "crossinterp_exceptions.h"
 
 
@@ -86,38 +87,6 @@ _PyCrossInterpreterData_Free(_PyCrossInterpreterData *xid)
     PyInterpreterState *interp = PyInterpreterState_Get();
     _PyCrossInterpreterData_Clear(interp, xid);
     PyMem_RawFree(xid);
-}
-
-
-/* exceptions */
-
-static PyStatus
-_init_not_shareable_error_type(PyInterpreterState *interp)
-{
-    const char *name = "_interpreters.NotShareableError";
-    PyObject *base = PyExc_ValueError;
-    PyObject *ns = NULL;
-    PyObject *exctype = PyErr_NewException(name, base, ns);
-    if (exctype == NULL) {
-        PyErr_Clear();
-        return _PyStatus_ERR("could not initialize NotShareableError");
-    }
-
-    _PyInterpreterState_GetXIState(interp)->PyExc_NotShareableError = exctype;
-    return _PyStatus_OK();
-}
-
-static void
-_fini_not_shareable_error_type(PyInterpreterState *interp)
-{
-    Py_CLEAR(_PyInterpreterState_GetXIState(interp)->PyExc_NotShareableError);
-}
-
-static PyObject *
-_get_not_shareable_error_type(PyInterpreterState *interp)
-{
-    assert(_PyInterpreterState_GetXIState(interp)->PyExc_NotShareableError != NULL);
-    return _PyInterpreterState_GetXIState(interp)->PyExc_NotShareableError;
 }
 
 
@@ -1673,16 +1642,8 @@ _PyXI_Exit(_PyXI_session *session)
 PyStatus
 _PyXI_Init(PyInterpreterState *interp)
 {
-    PyStatus status;
-
     // Initialize the XID lookup state (e.g. registry).
     xid_lookup_init(interp);
-
-    // Initialize exceptions (heap types).
-    status = _init_not_shareable_error_type(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
 
     return _PyStatus_OK();
 }
@@ -1693,9 +1654,6 @@ _PyXI_Init(PyInterpreterState *interp)
 void
 _PyXI_Fini(PyInterpreterState *interp)
 {
-    // Finalize exceptions (heap types).
-    _fini_not_shareable_error_type(interp);
-
     // Finalize the XID lookup state (e.g. registry).
     xid_lookup_fini(interp);
 }
