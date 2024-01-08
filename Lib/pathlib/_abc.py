@@ -297,17 +297,10 @@ class PurePathBase:
     def parts(self):
         """An object providing sequence-like access to the
         components in the filesystem path."""
-        m = self.pathmod
-        drive, root, rel = m.splitroot(str(self))
-        if rel:
-            if m.altsep:
-                rel = rel.replace(m.altsep, m.sep)
-            tail = tuple(rel.split(m.sep))
-        else:
-            tail = tuple()
-        if drive or root:
-            tail = (drive + root,) + tail
-        return tail
+        anchor, parts = self._stack
+        if anchor:
+            parts.append(anchor)
+        return tuple(reversed(parts))
 
     def joinpath(self, *pathsegments):
         """Combine this path with one or several arguments, and return a
