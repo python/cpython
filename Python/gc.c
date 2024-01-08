@@ -1765,6 +1765,7 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     if (PyDTrace_GC_START_ENABLED()) {
         PyDTrace_GC_START(generation);
     }
+    GC_STAT_ADD(generation, collections, 1);
     PyObject *exc = _PyErr_GetRaisedException(tstate);
     switch(generation) {
         case 0:
