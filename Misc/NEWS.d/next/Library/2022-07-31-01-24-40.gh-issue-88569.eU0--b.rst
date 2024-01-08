@@ -1,2 +1,4 @@
 Add :func:`ntpath.isreserved`, which identifies reserved pathnames on
 Windows; reserved names include "NUL", "AUX" and "CON".
+
+Deprecate :meth:`pathlib.PurePath.is_reserved`.
