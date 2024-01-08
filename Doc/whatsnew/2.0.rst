@@ -130,7 +130,7 @@ Guidelines":
 Read the rest of :pep:`1` for the details of the PEP editorial process, style, and
 format.  PEPs are kept in the Python CVS tree on SourceForge, though they're not
 part of the Python 2.0 distribution, and are also available in HTML form from
-https://peps.python.org/.  As of September 2000, there are 25 PEPS, ranging
+https://peps.python.org/.  As of September 2000, there are 25 PEPs, ranging
 from :pep:`201`, "Lockstep Iteration", to PEP 225, "Elementwise/Objectwise
 Operators".
 
