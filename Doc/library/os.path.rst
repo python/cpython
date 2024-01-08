@@ -332,6 +332,12 @@ the :mod:`glob` module.)
    as well as DOS device names such as "NUL", "CON", "CONIN$", "CONOUT$",
    "AUX", "PRN", "COM1", and "LPT1".
 
+   .. note::
+
+      This function approximates rules for reserved paths on most Windows
+      systems. It may be updated in future Python releases as changed rules
+      become more widely used.
+
    .. availability:: Windows.
 
    .. versionadded:: 3.13
