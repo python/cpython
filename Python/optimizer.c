@@ -860,6 +860,7 @@ counter_optimize(
         { .opcode = _EXIT_TRACE, .target = instr - _PyCode_CODE(code) }
     };
     _PyBloomFilter empty;
+    _Py_BloomFilter_Init(&empty);
     _PyExecutorObject *executor = make_executor_from_uops(buffer, &empty);
     if (executor == NULL) {
         return -1;
