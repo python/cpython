@@ -361,7 +361,8 @@ def _isreservedname(name):
     # Trailing dots and spaces are reserved.
     if name.endswith(('.', ' ')) and name not in ('.', '..'):
         return True
-    # The wildcard characters, colon, and pipe (*?"<>:|) are reserved.
+    # Wildcards, separators, colon, and pipe (*?"<>/\:|) are reserved.
+    # ASCII control characters (0-31) are reserved.
     # Colon is reserved for file streams (e.g. "name:stream[:type]").
     if _reserved_chars.intersection(name):
         return True
