@@ -410,6 +410,23 @@ class PurePathBase:
             return NotImplemented
 
     @property
+    def _stack(self):
+        """
+        Split the path into a 2-tuple (anchor, parts), where *anchor* is the
+        uppermost parent of the path (equivalent to path.parents[-1]), and
+        *parts* is a reversed list of parts following the anchor.
+        """
+        split = self.pathmod.split
+        path = str(self)
+        parent, name = split(path)
+        names = []
+        while path != parent:
+            names.append(name)
+            path = parent
+            parent, name = split(path)
+        return path, names
+
+    @property
     def parent(self):
         """The logical parent of the path."""
         path = str(self)
@@ -924,22 +941,6 @@ class PathBase(PurePathBase):
         self._unsupported("readlink")
     readlink._supported = False
 
-    def _split_stack(self):
-        """
-        Split the path into a 2-tuple (anchor, parts), where *anchor* is the
-        uppermost parent of the path (equivalent to path.parents[-1]), and
-        *parts* is a reversed list of parts following the anchor.
-        """
-        split = self.pathmod.split
-        path = str(self)
-        parent, name = split(path)
-        names = []
-        while path != parent:
-            names.append(name)
-            path = parent
-            parent, name = split(path)
-        return path, names
-
     def resolve(self, strict=False):
         """
         Make the path absolute, resolving all symlinks on the way and also
@@ -947,14 +948,14 @@ class PathBase(PurePathBase):
         """
         if self._resolving:
             return self
-        path_root, parts = self._split_stack()
+        path_root, parts = self._stack
         path = self.with_segments(path_root)
         try:
             path = path.absolute()
         except UnsupportedOperation:
             path_tail = []
         else:
-            path_root, path_tail = path._split_stack()
+            path_root, path_tail = path._stack
             path_tail.reverse()
 
         # If the user has *not* overridden the `readlink()` method, then symlinks are unsupported
@@ -986,7 +987,7 @@ class PathBase(PurePathBase):
                         link_count += 1
                         if link_count >= _MAX_SYMLINKS:
                             raise OSError(ELOOP, "Too many symbolic links in path", str(self))
-                        target_root, target_parts = path.readlink()._split_stack()
+                        target_root, target_parts = path.readlink()._stack
                         # If the symlink target is absolute (like '/etc/hosts'), set the current
                         # path to its uppermost parent (like '/').
                         if target_root:
