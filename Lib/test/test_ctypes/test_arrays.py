@@ -7,16 +7,13 @@ from ctypes import (Structure, Array, sizeof, addressof,
                     c_char, c_wchar, c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
                     c_long, c_ulonglong, c_float, c_double, c_longdouble)
 from test.support import bigmemtest, _2G
+from .support import _CData, PyCArrayType
 
 
 formats = "bBhHiIlLqQfd"
 
 formats = c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint, \
           c_long, c_ulonglong, c_float, c_double, c_longdouble
-
-ArrayType = type(Array)
-# _CData is not exported to Python, so we have to access it from __base__.
-_CData = Structure.__base__
 
 
 def ARRAY(*args):
@@ -28,20 +25,19 @@ def ARRAY(*args):
 
 class ArrayTestCase(unittest.TestCase):
     def test_inheritance_hierarchy(self):
-        self.assertEqual(_CData.__name__, "_CData")
         self.assertEqual(Array.mro(), [Array, _CData, object])
 
-        self.assertEqual(ArrayType.__name__, "PyCArrayType")
-        self.assertEqual(type(ArrayType), type)
+        self.assertEqual(PyCArrayType.__name__, "PyCArrayType")
+        self.assertEqual(type(PyCArrayType), type)
 
     def test_instantiation(self):
         with self.assertRaisesRegex(TypeError, "abstract class"):
             Array()
 
-        ArrayType("Foo", (Array,), {"_length_": 1, "_type_": c_int})
+        PyCArrayType("Foo", (Array,), {"_length_": 1, "_type_": c_int})
 
     def test_immutability(self):
-        for t in [Array, ArrayType]:
+        for t in [Array, PyCArrayType]:
             msg = "cannot set 'foo' attribute of immutable type"
             with self.assertRaisesRegex(TypeError, msg):
                 t.foo = "bar"

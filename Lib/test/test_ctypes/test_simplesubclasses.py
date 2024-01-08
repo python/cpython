@@ -1,10 +1,6 @@
 import unittest
 from ctypes import Structure, CFUNCTYPE, c_int, _SimpleCData
-
-
-SimpleType = type(_SimpleCData)
-# _CData is not exported to Python, so we have to access it from __base__.
-_CData = Structure.__base__
+from .support import _CData, PyCSimpleType
 
 
 class MyInt(c_int):
@@ -16,11 +12,10 @@ class MyInt(c_int):
 
 class Test(unittest.TestCase):
     def test_inheritance_hierarchy(self):
-        self.assertEqual(_CData.__name__, "_CData")
         self.assertEqual(_SimpleCData.mro(), [_SimpleCData, _CData, object])
 
-        self.assertEqual(SimpleType.__name__, "PyCSimpleType")
-        self.assertEqual(type(SimpleType), type)
+        self.assertEqual(PyCSimpleType.__name__, "PyCSimpleType")
+        self.assertEqual(type(PyCSimpleType), type)
 
         self.assertEqual(c_int.mro(), [c_int, _SimpleCData, _CData, object])
 
@@ -28,10 +23,10 @@ class Test(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "abstract class"):
             _SimpleCData()
 
-        SimpleType("Foo", (_SimpleCData,), {"_type_": "i"})
+        PyCSimpleType("Foo", (_SimpleCData,), {"_type_": "i"})
 
     def test_immutability(self):
-        for t in [_SimpleCData, SimpleType]:
+        for t in [_SimpleCData, PyCSimpleType]:
             msg = "cannot set 'foo' attribute of immutable type"
             with self.assertRaisesRegex(TypeError, msg):
                 t.foo = "bar"

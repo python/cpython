@@ -3,16 +3,11 @@ import sys
 import unittest
 import warnings
 from ctypes import Union
-
-
-UnionType = type(Union)
-# _CData is not exported to Python, so we have to access it from __base__.
-_CData = Union.__base__
+from .support import _CData, UnionType
 
 
 class ArrayTestCase(unittest.TestCase):
     def test_inheritance_hierarchy(self):
-        self.assertEqual(_CData.__name__, "_CData")
         self.assertEqual(Union.mro(), [Union, _CData, object])
 
         self.assertEqual(UnionType.__name__, "UnionType")
