@@ -290,6 +290,7 @@ static const char usage_envvars[] =
 "PYTHON_COLORS   : If this variable is set to 1, the interpreter will colorize\n"
 "                  various kinds of output.  Setting it to 0 deactivates\n"
 "                  this behavior.\n"
+"PYTHON_HISTORY  : the location of a .python_history file.\n"
 "These variables have equivalent command-line options (see --help for details):\n"
 "PYTHONDEBUG     : enable parser debug mode (-d)\n"
 "PYTHONDONTWRITEBYTECODE: don't write .pyc files (-B)\n"
