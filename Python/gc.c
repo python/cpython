@@ -1747,6 +1747,25 @@ PyGC_IsEnabled(void)
     return gcstate->enabled;
 }
 
+// Show stats for objects in each generations
+static void
+show_stats_each_generations(GCState *gcstate)
+{
+    char buf[100];
+    size_t pos = 0;
+
+    for (int i = 0; i < NUM_GENERATIONS && pos < sizeof(buf); i++) {
+        pos += PyOS_snprintf(buf+pos, sizeof(buf)-pos,
+                             " %zd",
+                             gc_list_size(GEN_HEAD(gcstate, i)));
+    }
+
+    PySys_FormatStderr(
+        "gc: objects in each generation:%s\n"
+        "gc: objects in permanent generation: %zd\n",
+        buf, gc_list_size(&gcstate->permanent_generation.head));
+}
+
 Py_ssize_t
 _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 {
@@ -1761,6 +1780,12 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     struct gc_collection_stats stats = { 0 };
     if (reason != _Py_GC_REASON_SHUTDOWN) {
         invoke_gc_callback(gcstate, "start", generation, &stats);
+    }
+    _PyTime_t t1 = 0;   /* initialize to prevent a compiler warning */
+    if (gcstate->debug & _PyGC_DEBUG_STATS) {
+        PySys_WriteStderr("gc: collecting generation %d...\n", generation);
+        show_stats_each_generations(gcstate);
+        t1 = _PyTime_GetPerfCounter();
     }
     if (PyDTrace_GC_START_ENABLED()) {
         PyDTrace_GC_START(generation);
@@ -1797,6 +1822,13 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     }
 #endif
     validate_old(gcstate);
+    if (gcstate->debug & _PyGC_DEBUG_STATS) {
+        double d = _PyTime_AsSecondsDouble(_PyTime_GetPerfCounter() - t1);
+        PySys_WriteStderr(
+            "gc: done, %zd collected, %zd uncollectable, %.4fs elapsed\n",
+            stats.collected, stats.uncollectable, d);
+    }
+
     _Py_atomic_store_int(&gcstate->collecting, 0);
     return stats.uncollectable + stats.collected;
 }
