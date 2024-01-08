@@ -271,8 +271,14 @@ counter_optimize(
     int Py_UNUSED(curr_stackentries)
 )
 {
+    int oparg = instr->op.arg;
+    while (instr->op.code == EXTENDED_ARG) {
+        instr++;
+        oparg = (oparg << 8) | instr->op.arg;
+    }
     if (instr->op.code != JUMP_BACKWARD) {
         PyErr_Format(PyExc_ValueError, "Counter optimizer can only handle backward edges");
+        return -1;
     }
     _PyCounterExecutorObject *executor = (_PyCounterExecutorObject *)_PyObject_New(&_PyCounterExecutor_Type);
     if (executor == NULL) {
@@ -281,7 +287,7 @@ counter_optimize(
     executor->executor.execute = counter_execute;
     Py_INCREF(self);
     executor->optimizer = (_PyCounterOptimizerObject *)self;
-    executor->next_instr = instr + 2 - instr->op.arg;
+    executor->next_instr = instr + 2 - oparg;
     *exec_ptr = (_PyExecutorObject *)executor;
     _PyBloomFilter empty;
     _Py_BloomFilter_Init(&empty);
@@ -548,7 +554,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
             /* Special case the first instruction, so that we can guarantee
             * forward progress */
             if (opcode == JUMP_BACKWARD) {
-                instr += 2 - oparg;
+                instr += 2 - (int32_t)oparg;
                 continue;
             }
             else {
