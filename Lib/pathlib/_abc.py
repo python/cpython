@@ -444,7 +444,7 @@ class PurePathBase:
         """Return True if the path contains one of the special names reserved
         by the system, if any."""
         if hasattr(self.pathmod, 'isreserved'):
-            return self.pathmod.isreserved(self)
+            return self.pathmod.isreserved(str(self))
         return False
 
     def match(self, path_pattern, *, case_sensitive=None):
