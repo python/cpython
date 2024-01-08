@@ -1,0 +1,1 @@
+Make methods on `collections.deque` thread-safe when the GIL is disabled. When the GIL is disabled, methods that operate a deque's internal state will do so only while holding the object's lock.
