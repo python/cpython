@@ -61,12 +61,13 @@ def _formatwarnmsg_impl(msg):
             tracing = True
             tb = None
         else:
-            tracing = tracemalloc.is_tracing()
             try:
+                tracing = tracemalloc.is_tracing()
                 tb = tracemalloc.get_object_traceback(msg.source)
             except Exception:
                 # When a warning is logged during Python shutdown, tracemalloc
                 # and the import machinery don't work anymore
+                tracing = False
                 tb = None
 
         if tb is not None:
