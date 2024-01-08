@@ -1,5 +1,4 @@
 import functools
-import ntpath
 import posixpath
 import sys
 from errno import ENOENT, ENOTDIR, EBADF, ELOOP, EINVAL
@@ -434,19 +433,8 @@ class PurePathBase:
         return tuple(parents)
 
     def is_absolute(self):
-        """True if the path is absolute (has both a root and, if applicable,
-        a drive)."""
-        if self.pathmod is ntpath:
-            # ntpath.isabs() is defective - see GH-44626.
-            return bool(self.drive and self.root)
-        elif self.pathmod is posixpath:
-            # Optimization: work with raw paths on POSIX.
-            for path in self._raw_paths:
-                if path.startswith('/'):
-                    return True
-            return False
-        else:
-            return self.pathmod.isabs(str(self))
+        """True if the path is absolute."""
+        return self.pathmod.isabs(str(self))
 
     def is_reserved(self):
         """Return True if the path contains one of the special names reserved

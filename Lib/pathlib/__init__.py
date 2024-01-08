@@ -261,6 +261,20 @@ class PurePath(_abc.PurePathBase):
             other = self.with_segments(other, *_deprecated)
         return _abc.PurePathBase.is_relative_to(self, other)
 
+    def is_absolute(self):
+        """True if the path is absolute."""
+        if self.pathmod is ntpath:
+            # ntpath.isabs() is defective - see GH-44626.
+            return bool(self.drive and self.root)
+        elif self.pathmod is posixpath:
+            # Optimization: work with raw paths on POSIX.
+            for path in self._raw_paths:
+                if path.startswith('/'):
+                    return True
+            return False
+        else:
+            return _abc.PurePathBase.is_absolute(self)
+
     def as_uri(self):
         """Return the path as a URI."""
         if not self.is_absolute():
