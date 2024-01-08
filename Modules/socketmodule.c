@@ -1735,16 +1735,23 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                     return retval;
             }
         } else {
+            if (!PyErr_ExceptionMatches(PyExc_TypeError)) {
+                Py_DECREF(args);
+                return retval;
+            }
+
             PyErr_Clear();
             Py_INCREF(args);
         }
 
         if (!PyArg_Parse(args, "y*", &path)) {
             Py_DECREF(args);
-            PyErr_Format(PyExc_TypeError,
-                "expected str, bytes-like object or os.PathLike object, "
-                "not %.200s",
-                _PyType_Name(Py_TYPE(args)));
+            if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+                PyErr_Format(PyExc_TypeError,
+                    "expected str, bytes-like object or os.PathLike object, "
+                    "not %.200s",
+                    _PyType_Name(Py_TYPE(args)));
+            }
             return retval;
         }
         assert(path.len >= 0);
