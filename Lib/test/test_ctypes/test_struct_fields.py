@@ -1,5 +1,6 @@
 import unittest
 from ctypes import Structure, Union, sizeof, c_char, c_int
+from .support import PY_TPFLAGS_DISALLOW_INSTANTIATION, PY_TPFLAGS_IMMUTABLETYPE
 
 
 class StructFieldsTestCase(unittest.TestCase):
@@ -12,6 +13,9 @@ class StructFieldsTestCase(unittest.TestCase):
     # 4. The type is subclassed
     #
     # When they are finalized, assigning _fields_ is no longer allowed.
+    class X(Structure):
+        _fields_ = [("x", c_int)]
+    CField = type(X.x)
 
     def test_1_A(self):
         class X(Structure):
@@ -55,21 +59,15 @@ class StructFieldsTestCase(unittest.TestCase):
         x.char = b'a\0b\0'
         self.assertEqual(bytes(x), b'a\x00###')
 
-    def test_cfield_instantiation(self):
-        class X(Structure):
-            _fields_ = [("x", c_int)]
-        CField = type(X.x)
-        self.assertRaisesRegex(TypeError,
-                               "cannot create '_ctypes.CField' instances",
-                               CField)
+    def test_6(self):
+        self.assertRaises(TypeError, self.CField)
 
-    def test_cfield_immutability(self):
-        class X(Structure):
-            _fields_ = [("x", c_int)]
-        CField = type(X.x)
-        msg = "cannot set 'foo' attribute of immutable type '_ctypes.CField'"
-        with self.assertRaisesRegex(TypeError, msg):
-            CField.foo = "bar"
+    def test_cfield_type_flags(self):
+        self.assertTrue(self.CField.__flags__ & PY_TPFLAGS_DISALLOW_INSTANTIATION)
+        self.assertTrue(self.CField.__flags__ & PY_TPFLAGS_IMMUTABLETYPE)
+
+    def test_cfield_inheritance_hierarchy(self):
+        self.assertEqual(self.CField.mro(), [self.CField, object])
 
     def test_gh99275(self):
         class BrokenStructure(Structure):

@@ -9,6 +9,7 @@ from ctypes import (CDLL, Structure, POINTER, pointer, sizeof, byref,
                     _pointer_type_cache,
                     c_void_p, c_char, c_int, c_long)
 from test import support
+from .support import PY_TPFLAGS_DISALLOW_INSTANTIATION, PY_TPFLAGS_IMMUTABLETYPE
 
 
 @unittest.skipUnless(sys.platform == "win32", 'Windows-specific test')
@@ -73,9 +74,10 @@ class TestWintypes(unittest.TestCase):
         self.assertEqual(ex.text, "text")
         self.assertEqual(ex.details, ("details",))
 
-        msg = "cannot set 'foo' attribute of immutable type '_ctypes.COMError'"
-        with self.assertRaisesRegex(TypeError, msg):
-            COMError.foo = "bar"
+        self.assertEqual(COMError.mro(),
+                         [COMError, Exception, BaseException, object])
+        self.assertFalse(COMError.__flags__ & PY_TPFLAGS_DISALLOW_INSTANTIATION)
+        self.assertTrue(COMError.__flags__ & PY_TPFLAGS_IMMUTABLETYPE)
 
 
 @unittest.skipUnless(sys.platform == "win32", 'Windows-specific test')
