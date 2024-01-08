@@ -256,14 +256,23 @@ class PurePath(_abc.PurePathBase):
         parsed = [sys.intern(str(x)) for x in rel.split(sep) if x and x != '.']
         return drv, root, parsed
 
+    def _load_parts(self):
+        paths = self._raw_paths
+        if len(paths) == 0:
+            path = ''
+        elif len(paths) == 1:
+            path = paths[0]
+        else:
+            path = self.pathmod.join(*paths)
+        self._drv, self._root, self._tail_cached = self._parse_path(path)
+
     @property
     def drive(self):
         """The drive prefix (letter or UNC path), if any."""
         try:
             return self._drv
         except AttributeError:
-            path = _abc.PurePathBase.__str__(self)
-            self._drv, self._root, self._tail_cached = self._parse_path(path)
+            self._load_parts()
             return self._drv
 
     @property
@@ -272,8 +281,7 @@ class PurePath(_abc.PurePathBase):
         try:
             return self._root
         except AttributeError:
-            path = _abc.PurePathBase.__str__(self)
-            self._drv, self._root, self._tail_cached = self._parse_path(path)
+            self._load_parts()
             return self._root
 
     @property
@@ -281,8 +289,7 @@ class PurePath(_abc.PurePathBase):
         try:
             return self._tail_cached
         except AttributeError:
-            path = _abc.PurePathBase.__str__(self)
-            self._drv, self._root, self._tail_cached = self._parse_path(path)
+            self._load_parts()
             return self._tail_cached
 
     @property
