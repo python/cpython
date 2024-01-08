@@ -2044,11 +2044,11 @@ dequeiter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         if (item) {
             Py_DECREF(item);
         } else {
-          /*
-           * It's safe to read directly from it without acquiring the
-           * per-object lock; the iterator isn't visible to any other threads
-           * yet.
-           */
+            /*
+             * It's safe to read directly from it without acquiring the
+             * per-object lock; the iterator isn't visible to any other threads
+             * yet.
+             */
             if (it->counter) {
                 Py_DECREF(it);
                 return NULL;
@@ -2196,6 +2196,11 @@ dequereviter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         if (item) {
             Py_DECREF(item);
         } else {
+            /*
+             * It's safe to read directly from it without acquiring the
+             * per-object lock; the iterator isn't visible to any other threads
+             * yet.
+             */
             if (it->counter) {
                 Py_DECREF(it);
                 return NULL;
