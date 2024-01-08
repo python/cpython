@@ -904,26 +904,6 @@ normalize_environment(PyObject* environment)
             goto error;
         }
 
-        if (! PyUnicode_Check(key) || ! PyUnicode_Check(value)) {
-            PyErr_SetString(PyExc_TypeError,
-                "environment can only contain strings");
-            goto error;
-        }
-        if (PyUnicode_FindChar(key, '\0', 0, PyUnicode_GET_LENGTH(key), 1) != -1 ||
-            PyUnicode_FindChar(value, '\0', 0, PyUnicode_GET_LENGTH(value), 1) != -1)
-        {
-            PyErr_SetString(PyExc_ValueError, "embedded null character");
-            goto error;
-        }
-        /* Search from index 1 because on Windows starting '=' is allowed for
-           defining hidden environment variables. */
-        if (PyUnicode_GET_LENGTH(key) == 0 ||
-            PyUnicode_FindChar(key, '=', 1, PyUnicode_GET_LENGTH(key), 1) != -1)
-        {
-            PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
-            goto error;
-        }
-
         if (PyObject_SetItem(result, key, value) < 0) {
             goto error;
         }
@@ -991,6 +971,26 @@ getenvironment(PyObject* environment)
         PyObject* key = PyList_GET_ITEM(keys, i);
         PyObject* value = PyList_GET_ITEM(values, i);
         Py_ssize_t size;
+
+        if (! PyUnicode_Check(key) || ! PyUnicode_Check(value)) {
+            PyErr_SetString(PyExc_TypeError,
+                "environment can only contain strings");
+            goto error;
+        }
+        if (PyUnicode_FindChar(key, '\0', 0, PyUnicode_GET_LENGTH(key), 1) != -1 ||
+            PyUnicode_FindChar(value, '\0', 0, PyUnicode_GET_LENGTH(value), 1) != -1)
+        {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto error;
+        }
+        /* Search from index 1 because on Windows starting '=' is allowed for
+           defining hidden environment variables. */
+        if (PyUnicode_GET_LENGTH(key) == 0 ||
+            PyUnicode_FindChar(key, '=', 1, PyUnicode_GET_LENGTH(key), 1) != -1)
+        {
+            PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
+            goto error;
+        }
 
         size = PyUnicode_AsWideChar(key, NULL, 0);
         assert(size > 1);
