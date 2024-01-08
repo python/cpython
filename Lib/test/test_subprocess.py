@@ -796,7 +796,7 @@ class ProcessTestCase(BaseTestCase):
         with subprocess.Popen(["CMD", "/c", "SET", "fruit"],
                               stdout=subprocess.PIPE,
                               env=newenv) as p:
-            stdout, stderr = p.communicate()
+            stdout, _ = p.communicate()
             self.assertEqual(stdout.strip(), b"frUit=banana")
 
     # Windows requires at least the SYSTEMROOT environment variable to start

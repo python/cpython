@@ -907,6 +907,7 @@ normalize_environment(PyObject* environment)
         if (PyObject_SetItem(result, key, value) < 0) {
             goto error;
         }
+        Py_DECREF(value);
     }
 
     goto cleanup;
