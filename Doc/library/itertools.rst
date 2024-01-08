@@ -1142,7 +1142,7 @@ The following recipes have a more mathematical flavor:
        # https://mathworld.wolfram.com/TotientFunction.html
        # totient(12) --> 4 because len([1, 5, 7, 11]) == 4
        for p in unique_justseen(factor(n)):
-           n = n // p * (p - 1)
+           n -= n // p
        return n
 
 
