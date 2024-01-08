@@ -1,6 +1,7 @@
 import unittest
 from ctypes import Structure, CFUNCTYPE, c_int, _SimpleCData
-from .support import _CData, PyCSimpleType
+from .support import (_CData, PyCSimpleType, PY_TPFLAGS_DISALLOW_INSTANTIATION,
+                      PY_TPFLAGS_IMMUTABLETYPE)
 
 
 class MyInt(c_int):
@@ -19,18 +20,12 @@ class Test(unittest.TestCase):
 
         self.assertEqual(c_int.mro(), [c_int, _SimpleCData, _CData, object])
 
-    def test_abstract_class(self):
-        with self.assertRaisesRegex(TypeError, "abstract class"):
-            _SimpleCData()
+    def test_type_flags(self):
+        self.assertTrue(_SimpleCData.__flags__ & PY_TPFLAGS_IMMUTABLETYPE)
+        self.assertFalse(_SimpleCData.__flags__ & PY_TPFLAGS_DISALLOW_INSTANTIATION)
 
-        PyCSimpleType("Foo", (_SimpleCData,), {"_type_": "i"})
-
-    def test_immutability(self):
-        for t in [_SimpleCData, PyCSimpleType]:
-            msg = "cannot set 'foo' attribute of immutable type"
-            with self.assertRaisesRegex(TypeError, msg):
-                t.foo = "bar"
-
+        self.assertTrue(PyCSimpleType.__flags__ & PY_TPFLAGS_IMMUTABLETYPE)
+        self.assertFalse(PyCSimpleType.__flags__ & PY_TPFLAGS_DISALLOW_INSTANTIATION)
 
     def test_compare(self):
         self.assertEqual(MyInt(3), MyInt(3))

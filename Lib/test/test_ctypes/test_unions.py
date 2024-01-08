@@ -1,9 +1,7 @@
-import ctypes
-import sys
 import unittest
-import warnings
 from ctypes import Union
-from .support import _CData, UnionType
+from .support import (_CData, UnionType, PY_TPFLAGS_DISALLOW_INSTANTIATION,
+                      PY_TPFLAGS_IMMUTABLETYPE)
 
 
 class ArrayTestCase(unittest.TestCase):
@@ -13,15 +11,9 @@ class ArrayTestCase(unittest.TestCase):
         self.assertEqual(UnionType.__name__, "UnionType")
         self.assertEqual(type(UnionType), type)
 
-    def test_instantiation(self):
-        with self.assertRaisesRegex(TypeError, "abstract class"):
-            Union()
+    def test_type_flags(self):
+        self.assertTrue(Union.__flags__ & PY_TPFLAGS_IMMUTABLETYPE)
+        self.assertFalse(Union.__flags__ & PY_TPFLAGS_DISALLOW_INSTANTIATION)
 
-        UnionType("Foo", (Union,), {})
-
-    def test_immutability(self):
-        Union.foo = "bar"
-
-        msg = "cannot set 'foo' attribute of immutable type"
-        with self.assertRaisesRegex(TypeError, msg):
-            UnionType.foo = "bar"
+        self.assertTrue(UnionType.__flags__ & PY_TPFLAGS_IMMUTABLETYPE)
+        self.assertFalse(UnionType.__flags__ & PY_TPFLAGS_DISALLOW_INSTANTIATION)

@@ -13,3 +13,7 @@ PyCPointerType = type(_Pointer)
 PyCArrayType = type(Array)
 PyCSimpleType = type(_SimpleCData)
 PyCFuncPtrType = type(CFuncPtr)
+
+# type flags
+PY_TPFLAGS_DISALLOW_INSTANTIATION = 1 << 7
+PY_TPFLAGS_IMMUTABLETYPE = 1 << 8

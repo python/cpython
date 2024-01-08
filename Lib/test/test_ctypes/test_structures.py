@@ -12,7 +12,8 @@ from ctypes.util import find_library
 from struct import calcsize
 from collections import namedtuple
 from test import support
-from .support import _CData, PyCStructType
+from .support import (_CData, PyCStructType, PY_TPFLAGS_DISALLOW_INSTANTIATION,
+                      PY_TPFLAGS_IMMUTABLETYPE)
 
 
 class SubclassesTest(unittest.TestCase):
@@ -77,17 +78,13 @@ class StructureTestCase(unittest.TestCase):
         self.assertEqual(PyCStructType.__name__, "PyCStructType")
         self.assertEqual(type(PyCStructType), type)
 
-    def test_instantiation(self):
-        with self.assertRaisesRegex(TypeError, "abstract class"):
-            Structure()
 
-        PyCStructType("Foo", (Structure,), {})
+    def test_type_flags(self):
+        self.assertTrue(Structure.__flags__ & PY_TPFLAGS_IMMUTABLETYPE)
+        self.assertFalse(Structure.__flags__ & PY_TPFLAGS_DISALLOW_INSTANTIATION)
 
-    def test_immutability(self):
-        for t in [Structure, PyCStructType]:
-            msg = "cannot set 'foo' attribute of immutable type"
-            with self.assertRaisesRegex(TypeError, msg):
-                t.foo = "bar"
+        self.assertTrue(PyCStructType.__flags__ & PY_TPFLAGS_IMMUTABLETYPE)
+        self.assertFalse(PyCStructType.__flags__ & PY_TPFLAGS_DISALLOW_INSTANTIATION)
 
     def test_simple_structs(self):
         for code, tp in self.formats.items():
