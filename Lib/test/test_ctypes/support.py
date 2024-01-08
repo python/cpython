@@ -4,7 +4,7 @@ from _ctypes import Structure, Union, _Pointer, Array, _SimpleCData, CFuncPtr
 
 
 _CData = Structure.__base__
-assert _CData.__name__, "_CData"
+assert _CData.__name__ == "_CData"
 
 # metaclasses
 PyCStructType = type(Structure)
