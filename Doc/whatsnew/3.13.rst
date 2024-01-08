@@ -484,7 +484,8 @@ Deprecated
 * :mod:`pathlib`:
 
   * :meth:`pathlib.PurePath.is_reserved` is deprecated and scheduled for
-    removal in Python 3.15.
+    removal in Python 3.15. Use :func:`os.path.isreserved` to detect reserved
+    paths on Windows.
 
 * :mod:`sys`: :func:`sys._enablelegacywindowsfsencoding` function.
   Replace it with :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment variable.
@@ -700,7 +701,8 @@ Pending Removal in Python 3.15
 * :mod:`pathlib`:
 
   * :meth:`pathlib.PurePath.is_reserved` is deprecated and scheduled for
-    removal in Python 3.15.
+    removal in Python 3.15. Use :func:`os.path.isreserved` to detect reserved
+    paths on Windows.
 
 * :class:`typing.NamedTuple`:
 
