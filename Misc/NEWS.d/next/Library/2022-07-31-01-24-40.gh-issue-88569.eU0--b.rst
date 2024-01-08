@@ -1,3 +1,2 @@
-Add :func:`os.path.isreserved`, which identifies reserved pathnames. On
-Windows, reserved names include "NUL", "AUX" and "CON". On other platforms,
-this function always returns ``False``.
+Add :func:`ntpath.isreserved`, which identifies reserved pathnames on
+Windows; reserved names include "NUL", "AUX" and "CON".

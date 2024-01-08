@@ -242,35 +242,6 @@ class PosixPathTest(unittest.TestCase):
         finally:
             os.lstat = save_lstat
 
-    def test_isreserved(self):
-        # Regular ol' paths are unreserved.
-        self.assertFalse(posixpath.isreserved(''))
-        self.assertFalse(posixpath.isreserved(b''))
-        self.assertFalse(posixpath.isreserved('/'))
-        self.assertFalse(posixpath.isreserved(b'/'))
-        self.assertFalse(posixpath.isreserved('hi'))
-        self.assertFalse(posixpath.isreserved(b'hi'))
-
-        # '.' and '..' are unreserved.
-        self.assertFalse(posixpath.isreserved('.'))
-        self.assertFalse(posixpath.isreserved(b'.'))
-        self.assertFalse(posixpath.isreserved('..'))
-        self.assertFalse(posixpath.isreserved(b'..'))
-
-        # Paths reserved on Windows aren't reserved here.
-        self.assertFalse(posixpath.isreserved('NUL'))
-        self.assertFalse(posixpath.isreserved(b'NUL'))
-
-        # Null bytes ARE reserved
-        self.assertTrue(posixpath.isreserved('\x00'))
-        self.assertTrue(posixpath.isreserved(b'\x00'))
-        self.assertTrue(posixpath.isreserved('ham/eggs\x00beans/tomato'))
-        self.assertTrue(posixpath.isreserved(b'ham/eggs\x00beans/tomato'))
-
-        # Other special characters are not reserved.
-        self.assertFalse(posixpath.isreserved('\x01'))
-        self.assertFalse(posixpath.isreserved(b'\x01'))
-
     def test_expanduser(self):
         self.assertEqual(posixpath.expanduser("foo"), "foo")
         self.assertEqual(posixpath.expanduser(b"foo"), b"foo")

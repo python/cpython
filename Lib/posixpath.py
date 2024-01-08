@@ -31,8 +31,8 @@ from genericpath import *
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
            "getatime","getctime","islink","exists","lexists","isdir","isfile",
-           "ismount","isreserved","expanduser","expandvars","normpath",
-           "abspath","samefile","sameopenfile","samestat",
+           "ismount", "expanduser","expandvars","normpath","abspath",
+           "samefile","sameopenfile","samestat",
            "curdir","pardir","sep","pathsep","defpath","altsep","extsep",
            "devnull","realpath","supports_unicode_filenames","relpath",
            "commonpath"]
@@ -214,18 +214,6 @@ def ismount(path):
     if ino1 == ino2:
         return True     # path/.. is the same i-node as path
     return False
-
-
-def isreserved(path):
-    """Return true if the pathname is reserved by the system."""
-    path = os.fsencode(path)
-    return b'\0' in path
-
-
-def isreservedname(name):
-    """Return true if the filename is reserved by the system."""
-    name = os.fsencode(name)
-    return b'\0' in name or b'/' in name
 
 
 # Expand paths beginning with '~' or '~user'.
