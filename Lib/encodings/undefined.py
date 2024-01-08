@@ -10,6 +10,11 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 """
 import codecs
+import warnings
+
+
+warnings._deprecated('codec "undefined"', remove=(3, 15))
+
 
 ### Codec APIs
 

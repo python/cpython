@@ -1,12 +1,13 @@
 import codecs
 import contextlib
 import copy
+import encodings
 import io
 import locale
 import pickle
 import sys
 import unittest
-import encodings
+import warnings
 from unittest import mock
 
 from test import support
@@ -1744,6 +1745,11 @@ class CodecsModuleTest(unittest.TestCase):
                 self.assertIsInstance(file, codecs.StreamReaderWriter)
 
     def test_undefined(self):
+        # ignore the DeprecationWarning
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', category=DeprecationWarning)
+            codecs.lookup('undefined')
+
         self.assertRaises(UnicodeError, codecs.encode, 'abc', 'undefined')
         self.assertRaises(UnicodeError, codecs.decode, b'abc', 'undefined')
         self.assertRaises(UnicodeError, codecs.encode, '', 'undefined')

@@ -568,6 +568,12 @@ Deprecated
 * Deprecate undocumented :func:`!pydoc.ispackage` function.
   (Contributed by Zackery Spytz in :gh:`64020`.)
 
+* Deprecate the ``undefined`` codec. This codec always raises a
+  :exc:`ValueError` exception when being used. It was intended for use by the
+  :mod:`site` module to switch off automatic string to Unicode coercion, but
+  it's no longer used by the :mod:`site` module.
+  (Contributed by Victor Stinner in :gh:`76637`.)
+
 
 Pending Removal in Python 3.14
 ------------------------------
@@ -720,6 +726,12 @@ Pending Removal in Python 3.15
   but they are just ignored. Python version does not allow any arguments.
   All arguments will be removed from :func:`threading.RLock` in Python 3.15.
   (Contributed by Nikita Sobolev in :gh:`102029`.)
+
+* The codec ``undefined`` is deprecated. This codec always raises a
+  :exc:`ValueError` exception when being used. It was intended for use by the
+  :mod:`site` module to switch off automatic string to Unicode coercion, but
+  it's no longer used by the :mod:`site` module.
+  (Contributed by Victor Stinner in :gh:`76637`.)
 
 Pending Removal in Python 3.16
 ------------------------------
