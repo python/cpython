@@ -76,6 +76,7 @@ static const char* _Py_stdlib_module_names[] = {
 "_string",
 "_strptime",
 "_struct",
+"_suggestions",
 "_symtable",
 "_sysconfig",
 "_thread",

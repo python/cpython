@@ -1164,7 +1164,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(seek));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(seekable));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(selectors));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(self));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(send));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(sep));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(sequence));
