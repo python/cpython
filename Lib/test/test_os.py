@@ -4485,6 +4485,55 @@ class FDInheritanceTests(unittest.TestCase):
         self.assertEqual(os.get_inheritable(master_fd), False)
         self.assertEqual(os.get_inheritable(slave_fd), False)
 
+    @unittest.skipUnless(hasattr(os, 'spawnl'), "need os.openpty()")
+    def test_pipe_spawnl(self):
+        # gh-77046: On Windows, os.pipe() file descriptors must be created with
+        # _O_NOINHERIT to make them non-inheritable. UCRT has no public API to
+        # get (_osfile(fd) & _O_NOINHERIT), so use a functional test.
+        fd, fd2 = os.pipe()
+        self.addCleanup(os.close, fd)
+        self.addCleanup(os.close, fd2)
+
+        # Make sure that fd is not inherited by a child process created by
+        # os.spawnl(): get_osfhandle() and dup() must fail with EBADF.
+        code = textwrap.dedent(f"""
+            import errno
+            import os
+            try:
+                import msvcrt
+            except ImportError:
+                msvcrt = None
+
+            fd = {fd}
+
+            if msvcrt is not None:
+                try:
+                    handle = msvcrt.get_osfhandle(fd)
+                except OSError as exc:
+                    if exc.errno != errno.EBADF:
+                        raise
+                else:
+                    raise Exception("get_osfhandle() must fail")
+
+            try:
+                fd3 = os.dup(fd)
+            except OSError as exc:
+                if exc.errno != errno.EBADF:
+                    raise
+            else:
+                os.close(fd3)
+                raise Exception("dup must fail")
+        """)
+
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        with open(filename, "w") as fp:
+            print(code, file=fp, end="")
+
+        cmd = [sys.executable, filename]
+        exitcode = os.spawnl(os.P_WAIT, cmd[0], *cmd)
+        self.assertEqual(exitcode, 0)
+
 
 class PathTConverterTests(unittest.TestCase):
     # tuples of (function name, allows fd arguments, additional arguments to

@@ -2771,6 +2771,10 @@ _Py_get_osfhandle(int fd)
 int
 _Py_open_osfhandle_noraise(void *handle, int flags)
 {
+    // PEP 446: Create non inheritable file descriptor by default,
+    // always set the _O_NOINHERIT flag.
+    flags |= _O_NOINHERIT;
+
     int fd;
     _Py_BEGIN_SUPPRESS_IPH
     fd = _open_osfhandle((intptr_t)handle, flags);
