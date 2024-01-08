@@ -1730,7 +1730,7 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
     def test_reset_tzpath_kwarg(self):
         self.module.reset_tzpath(to=[f"{DRIVE}/a/b/c"])
 
-        self.assertSequenceEqual(self.module.TZPATH, ("/a/b/c",))
+        self.assertSequenceEqual(self.module.TZPATH, (f"{DRIVE}/a/b/c",))
 
     def test_reset_tzpath_relative_paths(self):
         bad_values = [

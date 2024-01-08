@@ -447,8 +447,8 @@ class TestCommandLineArgs(unittest.TestCase):
 
     def testParseArgsAbsolutePathsThatCannotBeConverted(self):
         program = self.program
-        # '//...' is considered absolute by os.path.abspath on all platforms.
-        argv = ['progname', '//foo/bar/baz.py', '//green/red.py']
+        drive = os.path.splitdrive(os.getcwd())[0]
+        argv = ['progname', f'{drive}/foo/bar/baz.py', f'{drive}/green/red.py']
         self._patch_isfile(argv)
 
         program.createTests = lambda: None
