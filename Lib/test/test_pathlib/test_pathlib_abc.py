@@ -159,19 +159,6 @@ class DummyPurePathTest(unittest.TestCase):
             self.assertEqual(P(pathstr).as_posix(), pathstr)
         # Other tests for as_posix() are in test_equivalences().
 
-    def test_eq_common(self):
-        P = self.cls
-        self.assertEqual(P('a/b'), P('a/b'))
-        self.assertEqual(P('a/b'), P('a', 'b'))
-        self.assertNotEqual(P('a/b'), P('a'))
-        self.assertNotEqual(P('a/b'), P('/a/b'))
-        self.assertNotEqual(P('a/b'), P())
-        self.assertNotEqual(P('/a/b'), P('/'))
-        self.assertNotEqual(P(), P('/'))
-        self.assertNotEqual(P(), "")
-        self.assertNotEqual(P(), {})
-        self.assertNotEqual(P(), int)
-
     def test_match_empty(self):
         P = self.cls
         self.assertRaises(ValueError, P('a').match, '')

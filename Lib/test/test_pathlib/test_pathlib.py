@@ -225,6 +225,19 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
         P = self.cls
         self.assertEqual(bytes(P('a/b')), b'a' + sep + b'b')
 
+    def test_eq_common(self):
+        P = self.cls
+        self.assertEqual(P('a/b'), P('a/b'))
+        self.assertEqual(P('a/b'), P('a', 'b'))
+        self.assertNotEqual(P('a/b'), P('a'))
+        self.assertNotEqual(P('a/b'), P('/a/b'))
+        self.assertNotEqual(P('a/b'), P())
+        self.assertNotEqual(P('/a/b'), P('/'))
+        self.assertNotEqual(P(), P('/'))
+        self.assertNotEqual(P(), "")
+        self.assertNotEqual(P(), {})
+        self.assertNotEqual(P(), int)
+
     def test_equivalences(self):
         for k, tuples in self.equivalences.items():
             canon = k.replace('/', self.sep)
