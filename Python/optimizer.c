@@ -754,7 +754,6 @@ top:  // Jump here after _PUSH_FRAME or likely branches
         instr++;
         // Add cache size for opcode
         instr += _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
-        progress_needed = false;
         /* Stop if we have reached the start */
         if (instr == initial_instr) {
             RESERVE(1);
