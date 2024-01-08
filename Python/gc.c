@@ -1306,7 +1306,7 @@ gc_collect_young(PyThreadState *tstate,
 }
 
 static inline int
-IS_IN_VISITED(PyGC_Head *gc, int visited_space)
+is_in_visited(PyGC_Head *gc, int visited_space)
 {
     assert(visited_space == 0 || flip_old_space(visited_space) == 0);
     return gc_old_space(gc) == visited_space;
@@ -1350,7 +1350,7 @@ expand_region_transitively_reachable(PyGC_Head *container, PyGC_Head *gc, GCStat
     while (gc != container) {
         /* Survivors will be moved to visited space, so they should
          * have been marked as visited */
-        assert(IS_IN_VISITED(gc, gcstate->visited_space));
+        assert(is_in_visited(gc, gcstate->visited_space));
         PyObject *op = FROM_GC(gc);
         if (_Py_IsImmortal(op)) {
             PyGC_Head *next = GC_NEXT(gc);
