@@ -391,13 +391,21 @@ extern "C" {
 #endif
 
 #if LONG_BIT != 8 * SIZEOF_LONG
+#ifndef _AIX
 /* 04-Oct-2000 LONG_BIT is apparently (mis)defined as 64 on some recent
  * 32-bit platforms using gcc.  We try to catch that here at compile-time
  * rather than waiting for integer multiplication to trigger bogus
  * overflows.
  */
 #error "LONG_BIT definition appears wrong for platform (bad gcc/glibc config?)."
+#else
+/* By default, AIX compiles, links, archives, etc. as 32-bit
+ * When Python is built as 64-bit executable the AIX utilities will complain
+ * For AIX, the better hint is that OBJECT_MODE is not correct
+ */
+#error "LONG_BIT definition appears wrong. Is OBJECT_MODE set correctly (32 or 64)?"
 #endif
+#endif /* LONG_BIT != 8 * SIZEOF_LONG */
 
 #ifdef __cplusplus
 }
