@@ -334,7 +334,7 @@ the :mod:`glob` module.)
 
    .. availability:: Windows.
 
-   .. versionadded:: 3.12
+   .. versionadded:: 3.13
 
 
 .. function:: join(path, *paths)
