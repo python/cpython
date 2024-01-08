@@ -10,9 +10,6 @@ from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 # Internals
 #
 
-# Maximum number of symlinks to follow in PathBase.resolve()
-_MAX_SYMLINKS = 40
-
 _WINERROR_NOT_READY = 21  # drive exists but is not accessible
 _WINERROR_INVALID_NAME = 123  # fix for bpo-35306
 _WINERROR_CANT_RESOLVE_FILENAME = 1921  # broken symlink pointing to itself
@@ -475,6 +472,9 @@ class PathBase(PurePathBase):
     such as paths in archive files or on remote storage systems.
     """
     __slots__ = ()
+
+    # Maximum number of symlinks to follow in resolve()
+    _max_symlinks = 40
 
     @classmethod
     def _unsupported(cls, method_name):
@@ -947,7 +947,7 @@ class PathBase(PurePathBase):
                         # Like Linux and macOS, raise OSError(errno.ELOOP) if too many symlinks are
                         # encountered during resolution.
                         link_count += 1
-                        if link_count >= _MAX_SYMLINKS:
+                        if link_count >= self._max_symlinks:
                             raise OSError(ELOOP, "Too many symbolic links in path", str(self))
                         target, target_parts = next_path.readlink()._split_stack()
                         # If the symlink target is absolute (like '/etc/hosts'), set the current
