@@ -96,7 +96,7 @@ The :mod:`gc` module provides the following functions:
    .. versionadded:: 3.4
 
 
-.. function:: set_threshold(threshold0[, threshold1[, threshold2]])
+.. function:: set_threshold(threshold0, [threshold1, [threshold2]])
 
    Set the garbage collection thresholds (the collection frequency). Setting
    *threshold0* to zero disables collection.
