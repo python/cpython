@@ -1,1 +1,0 @@
-Document the ``context`` object used in the ``venv.EnvBuilder`` class, and add the new environment's library path to it.

@@ -1,2 +1,0 @@
-The ``--experimental-isolated-subinterpreters`` configure option and
-``EXPERIMENTAL_ISOLATED_SUBINTERPRETERS`` macro have been removed.

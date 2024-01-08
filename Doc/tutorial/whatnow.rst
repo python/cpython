@@ -17,7 +17,7 @@ the set are:
   reference material about types, functions, and the modules in the standard
   library.  The standard Python distribution includes a *lot* of additional code.
   There are modules to read Unix mailboxes, retrieve documents via HTTP, generate
-  random numbers, parse command-line options, write CGI programs, compress data,
+  random numbers, parse command-line options, compress data,
   and many other tasks. Skimming through the Library Reference will give you an
   idea of what's available.
 

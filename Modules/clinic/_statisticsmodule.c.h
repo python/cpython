@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(_statistics__normal_dist_inv_cdf__doc__,
 "_normal_dist_inv_cdf($module, p, mu, sigma, /)\n"
 "--\n"
@@ -65,4 +67,4 @@ _statistics__normal_dist_inv_cdf(PyObject *module, PyObject *const *args, Py_ssi
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b807a8243e7801e6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e7cead17f9f3e19f input=a9049054013a1b77]*/

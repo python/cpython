@@ -1,1 +1,0 @@
-Removed redundant fields from the compiler's basicblock struct: ``b_nofallthrough``, ``b_exit``, ``b_return``. They can be easily calculated from the opcode of the last instruction of the block.

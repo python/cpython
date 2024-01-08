@@ -5,11 +5,10 @@ from test.support import requires, gc_collect
 import sys
 
 from test.test_ttk_textonly import MockTclObj
-from test.test_tkinter.support import (AbstractTkTest, tcl_version, get_tk_patchlevel,
+from test.test_tkinter.support import (AbstractTkTest, tk_version, get_tk_patchlevel,
                                   simulate_mouse_click, AbstractDefaultRootTest)
 from test.test_tkinter.widget_tests import (add_standard_options,
-    AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests,
-    setUpModule)
+    AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests)
 
 requires('gui')
 
@@ -20,7 +19,7 @@ class StandardTtkOptionsTests(StandardOptionsTests):
         widget = self.create()
         self.assertEqual(widget['class'], '')
         errmsg='attempt to change read-only option'
-        if get_tk_patchlevel() < (8, 6, 0, 'beta', 3):
+        if get_tk_patchlevel(self.root) < (8, 6, 0, 'beta', 3):
             errmsg='Attempt to change read-only option'
         self.checkInvalidParam(widget, 'class', 'Foo', errmsg=errmsg)
         widget2 = self.create(class_='Foo')
@@ -50,7 +49,6 @@ class StandardTtkOptionsTests(StandardOptionsTests):
         widget2 = self.create(class_='Foo')
         self.assertEqual(widget2['class'], 'Foo')
         # XXX
-        pass
 
 
 class WidgetTest(AbstractTkTest, unittest.TestCase):
@@ -274,6 +272,21 @@ class CheckbuttonTest(AbstractLabelTest, unittest.TestCase):
         self.assertLessEqual(len(success), 1)
         self.assertEqual(cbtn['offvalue'],
             cbtn.tk.globalgetvar(cbtn['variable']))
+
+    def test_unique_variables(self):
+        frames = []
+        buttons = []
+        for i in range(2):
+            f = ttk.Frame(self.root)
+            f.pack()
+            frames.append(f)
+            for j in 'AB':
+                b = ttk.Checkbutton(f, text=j)
+                b.pack()
+                buttons.append(b)
+        variables = [str(b['variable']) for b in buttons]
+        print(variables)
+        self.assertEqual(len(set(variables)), 4, variables)
 
 
 @add_standard_options(IntegerSizeTests, StandardTtkOptionsTests)
@@ -547,7 +560,7 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         widget = self.create()
         self.assertEqual(str(widget['orient']), 'vertical')
         errmsg='attempt to change read-only option'
-        if get_tk_patchlevel() < (8, 6, 0, 'beta', 3):
+        if get_tk_patchlevel(self.root) < (8, 6, 0, 'beta', 3):
             errmsg='Attempt to change read-only option'
         self.checkInvalidParam(widget, 'orient', 'horizontal',
                 errmsg=errmsg)
@@ -1513,7 +1526,7 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_heading_callback(self):
         def simulate_heading_click(x, y):
-            if tcl_version >= (8, 6):
+            if tk_version >= (8, 6):
                 self.assertEqual(self.tv.identify_column(x), '#0')
                 self.assertEqual(self.tv.identify_region(x, y), 'heading')
             simulate_mouse_click(self.tv, x, y)

@@ -555,8 +555,8 @@ very extensive changes to the standard library.  :pep:`3108` is the
 reference for the major changes to the library.  Here's a capsule
 review:
 
-* Many old modules were removed.  Some, like :mod:`gopherlib` (no
-  longer used) and :mod:`md5` (replaced by :mod:`hashlib`), were
+* Many old modules were removed.  Some, like :mod:`!gopherlib` (no
+  longer used) and :mod:`!md5` (replaced by :mod:`hashlib`), were
   already deprecated by :pep:`4`.  Others were removed as a result
   of the removal of support for various platforms such as Irix, BeOS
   and Mac OS 9 (see :pep:`11`).  Some modules were also selected for
@@ -626,7 +626,7 @@ review:
 Some other changes to standard library modules, not covered by
 :pep:`3108`:
 
-* Killed :mod:`sets`.  Use the built-in :func:`set` class.
+* Killed :mod:`!sets`.  Use the built-in :func:`set` class.
 
 * Cleanup of the :mod:`sys` module: removed :func:`sys.exitfunc`,
   :func:`sys.exc_clear`, :data:`sys.exc_type`, :data:`sys.exc_value`,
@@ -648,7 +648,7 @@ Some other changes to standard library modules, not covered by
 
 * Cleanup of the :mod:`random` module: removed the :func:`jumpahead` API.
 
-* The :mod:`new` module is gone.
+* The :mod:`!new` module is gone.
 
 * The functions :func:`os.tmpnam`, :func:`os.tempnam` and
   :func:`os.tmpfile` have been removed in favor of the :mod:`tempfile`
@@ -711,7 +711,7 @@ new powerful features added:
   {Exception}({args})` instead of :samp:`raise {Exception}, {args}`.
   Additionally, you can no longer explicitly specify a traceback;
   instead, if you *have* to do this, you can assign directly to the
-  :attr:`__traceback__` attribute (see below).
+  :attr:`~BaseException.__traceback__` attribute (see below).
 
 * :pep:`3110`: Catching exceptions.  You must now use
   :samp:`except {SomeException} as {variable}` instead
@@ -725,7 +725,7 @@ new powerful features added:
   handler block.  This usually happens due to a bug in the handler
   block; we call this a *secondary* exception.  In this case, the
   original exception (that was being handled) is saved as the
-  :attr:`__context__` attribute of the secondary exception.
+  :attr:`~BaseException.__context__` attribute of the secondary exception.
   Explicit chaining is invoked with this syntax::
 
     raise SecondaryException() from primary_exception
@@ -733,14 +733,15 @@ new powerful features added:
   (where *primary_exception* is any expression that produces an
   exception object, probably an exception that was previously caught).
   In this case, the primary exception is stored on the
-  :attr:`__cause__` attribute of the secondary exception.  The
+  :attr:`~BaseException.__cause__` attribute of the secondary exception.  The
   traceback printed when an unhandled exception occurs walks the chain
-  of :attr:`__cause__` and :attr:`__context__` attributes and prints a
+  of :attr:`!__cause__` and :attr:`~BaseException.__context__` attributes and
+  prints a
   separate traceback for each component of the chain, with the primary
   exception at the top.  (Java users may recognize this behavior.)
 
 * :pep:`3134`: Exception objects now store their traceback as the
-  :attr:`__traceback__` attribute.  This means that an exception
+  :attr:`~BaseException.__traceback__` attribute.  This means that an exception
   object now contains all the information pertaining to an exception,
   and there are fewer reasons to use :func:`sys.exc_info` (though the
   latter is not removed).
@@ -779,17 +780,18 @@ Operators And Special Methods
 
 * Removed support for :attr:`__members__` and :attr:`__methods__`.
 
-* The function attributes named :attr:`func_X` have been renamed to
-  use the :data:`__X__` form, freeing up these names in the function
+* The function attributes named :attr:`!func_X` have been renamed to
+  use the :attr:`!__X__` form, freeing up these names in the function
   attribute namespace for user-defined attributes.  To wit,
-  :attr:`func_closure`, :attr:`func_code`, :attr:`func_defaults`,
-  :attr:`func_dict`, :attr:`func_doc`, :attr:`func_globals`,
-  :attr:`func_name` were renamed to :attr:`__closure__`,
-  :attr:`__code__`, :attr:`__defaults__`, :attr:`~object.__dict__`,
-  :attr:`__doc__`, :attr:`__globals__`, :attr:`~definition.__name__`,
+  :attr:`!func_closure`, :attr:`!func_code`, :attr:`!func_defaults`,
+  :attr:`!func_dict`, :attr:`!func_doc`, :attr:`!func_globals`,
+  :attr:`!func_name` were renamed to :attr:`~function.__closure__`,
+  :attr:`~function.__code__`, :attr:`~function.__defaults__`,
+  :attr:`~function.__dict__`, :attr:`~function.__doc__`,
+  :attr:`~function.__globals__`, :attr:`~function.__name__`,
   respectively.
 
-* :meth:`__nonzero__` is now :meth:`__bool__`.
+* :meth:`!__nonzero__` is now :meth:`~object.__bool__`.
 
 Builtins
 --------
@@ -840,7 +842,7 @@ Builtins
   need it; however, 99 percent of the time an explicit :keyword:`for`
   loop is more readable.
 
-* Removed :func:`reload`.  Use :func:`imp.reload`.
+* Removed :func:`reload`.  Use :func:`!imp.reload`.
 
 * Removed. :meth:`dict.has_key` -- use the :keyword:`in` operator
   instead.
@@ -865,8 +867,8 @@ to the C API.
 
 * No more C API support for restricted execution.
 
-* :c:func:`PyNumber_Coerce`, :c:func:`PyNumber_CoerceEx`,
-  :c:func:`PyMember_Get`, and :c:func:`PyMember_Set` C APIs are removed.
+* :c:func:`!PyNumber_Coerce`, :c:func:`!PyNumber_CoerceEx`,
+  :c:func:`!PyMember_Get`, and :c:func:`!PyMember_Set` C APIs are removed.
 
 * New C API :c:func:`PyImport_ImportModuleNoBlock`, works like
   :c:func:`PyImport_ImportModule` but won't block on the import lock
@@ -875,7 +877,7 @@ to the C API.
 * Renamed the boolean conversion C-level slot and method:
   ``nb_nonzero`` is now ``nb_bool``.
 
-* Removed :c:macro:`METH_OLDARGS` and :c:macro:`WITH_CYCLE_GC` from the C API.
+* Removed :c:macro:`!METH_OLDARGS` and :c:macro:`!WITH_CYCLE_GC` from the C API.
 
 .. ======================================================================
 
@@ -911,7 +913,7 @@ best strategy is the following:
    tests still pass.
 
 3. Run the ``2to3`` source-to-source translator over your source code
-   tree.  (See :ref:`2to3-reference` for more on this tool.)  Run the
+   tree.  Run the
    result of the translation under Python 3.0.  Manually fix up any
    remaining issues, fixing problems until all tests pass again.
 

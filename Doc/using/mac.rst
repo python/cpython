@@ -17,15 +17,16 @@ the IDE and the Package Manager that are worth pointing out.
 Getting and Installing MacPython
 ================================
 
-macOS since version 10.8 comes with Python 2.7 pre-installed by Apple.  If you wish, you
-are invited to install the most recent version of Python 3 from the Python
+macOS used to come with Python 2.7 pre-installed between versions
+10.8 and `12.3 <https://developer.apple.com/documentation/macos-release-notes/macos-12_3-release-notes#Python>`_.
+You are invited to install the most recent version of Python 3 from the Python
 website (https://www.python.org).  A current "universal binary" build of Python,
 which runs natively on the Mac's new Intel and legacy PPC CPU's, is available
 there.
 
 What you get after installing is a number of things:
 
-* A :file:`Python 3.9` folder in your :file:`Applications` folder. In here
+* A :file:`Python 3.12` folder in your :file:`Applications` folder. In here
   you find IDLE, the development environment that is a standard part of official
   Python distributions; and PythonLauncher, which handles double-clicking Python
   scripts from the Finder.
@@ -65,7 +66,7 @@ number of standard Unix command line editors, :program:`vim` and
 :program:`BBEdit` or :program:`TextWrangler` from Bare Bones Software (see
 http://www.barebones.com/products/bbedit/index.html) are good choices, as is
 :program:`TextMate` (see https://macromates.com/). Other editors include
-:program:`Gvim` (http://macvim-dev.github.io/macvim/) and :program:`Aquamacs`
+:program:`Gvim` (https://macvim.org/macvim/) and :program:`Aquamacs`
 (http://aquamacs.org/).
 
 To run your script from the Terminal window you must make sure that
@@ -124,13 +125,9 @@ http://www.hashcollision.org/hkn/python/idle_intro/index.html.
 Installing Additional Python Packages
 =====================================
 
-There are several methods to install additional Python packages:
+This section has moved to the `Python Packaging User Guide`_.
 
-* Packages can be installed via the standard Python distutils mode (``python
-  setup.py install``).
-
-* Many packages can also be installed via the :program:`setuptools` extension
-  or :program:`pip` wrapper, see https://pip.pypa.io/.
+.. _Python Packaging User Guide: https://packaging.python.org/en/latest/tutorials/installing-packages/
 
 
 GUI Programming on the Mac
@@ -143,8 +140,8 @@ the foundation of most modern Mac development. Information on PyObjC is
 available from https://pypi.org/project/pyobjc/.
 
 The standard Python GUI toolkit is :mod:`tkinter`, based on the cross-platform
-Tk toolkit (https://www.tcl.tk). An Aqua-native version of Tk is bundled with OS
-X by Apple, and the latest version can be downloaded and installed from
+Tk toolkit (https://www.tcl.tk). An Aqua-native version of Tk is bundled with
+macOS by Apple, and the latest version can be downloaded and installed from
 https://www.activestate.com; it can also be built from source.
 
 *wxPython* is another popular cross-platform GUI toolkit that runs natively on
