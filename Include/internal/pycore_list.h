@@ -8,7 +8,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "listobject.h"           // _PyList_CAST()
+
+extern PyObject* _PyList_Extend(PyListObject *, PyObject *);
+extern void _PyList_DebugMallocStats(FILE *out);
 
 
 /* runtime lifecycle */
@@ -35,7 +37,7 @@ struct _Py_list_state {
 #endif
 };
 
-#define _PyList_ITEMS(op) (_PyList_CAST(op)->ob_item)
+#define _PyList_ITEMS(op) _Py_RVALUE(_PyList_CAST(op)->ob_item)
 
 extern int
 _PyList_AppendTakeRefListResize(PyListObject *self, PyObject *newitem);
@@ -74,6 +76,8 @@ typedef struct {
     Py_ssize_t it_index;
     PyListObject *it_seq; /* Set to NULL when iterator is exhausted */
 } _PyListIterObject;
+
+extern PyObject *_PyList_FromArraySteal(PyObject *const *src, Py_ssize_t n);
 
 #ifdef __cplusplus
 }

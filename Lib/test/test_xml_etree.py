@@ -203,25 +203,6 @@ class ElementTreeTest(unittest.TestCase):
     def test_interface(self):
         # Test element tree interface.
 
-        def check_string(string):
-            len(string)
-            for char in string:
-                self.assertEqual(len(char), 1,
-                        msg="expected one-character string, got %r" % char)
-            new_string = string + ""
-            new_string = string + " "
-            string[:0]
-
-        def check_mapping(mapping):
-            len(mapping)
-            keys = mapping.keys()
-            items = mapping.items()
-            for key in keys:
-                item = mapping[key]
-            mapping["key"] = "value"
-            self.assertEqual(mapping["key"], "value",
-                    msg="expected value string, got %r" % mapping["key"])
-
         def check_element(element):
             self.assertTrue(ET.iselement(element), msg="not an element")
             direlem = dir(element)
@@ -231,12 +212,12 @@ class ElementTreeTest(unittest.TestCase):
                 self.assertIn(attr, direlem,
                         msg='no %s visible by dir' % attr)
 
-            check_string(element.tag)
-            check_mapping(element.attrib)
+            self.assertIsInstance(element.tag, str)
+            self.assertIsInstance(element.attrib, dict)
             if element.text is not None:
-                check_string(element.text)
+                self.assertIsInstance(element.text, str)
             if element.tail is not None:
-                check_string(element.tail)
+                self.assertIsInstance(element.tail, str)
             for elem in element:
                 check_element(elem)
 
@@ -347,7 +328,7 @@ class ElementTreeTest(unittest.TestCase):
         self.serialize_check(element, '<tag key="value" />') # 5
         with self.assertRaises(ValueError) as cm:
             element.remove(subelement)
-        self.assertEqual(str(cm.exception), 'list.remove(x): x not in list')
+        self.assertIn('not in list', str(cm.exception))
         self.serialize_check(element, '<tag key="value" />') # 6
         element[0:0] = [subelement, subelement, subelement]
         self.serialize_check(element[1], '<subtag />')
@@ -384,6 +365,7 @@ class ElementTreeTest(unittest.TestCase):
         from xml.etree import ElementPath
 
         elem = ET.XML(SAMPLE_XML)
+        ElementPath._cache.clear()
         for i in range(10): ET.ElementTree(elem).find('./'+str(i))
         cache_len_10 = len(ElementPath._cache)
         for i in range(10): ET.ElementTree(elem).find('./'+str(i))
@@ -2553,6 +2535,7 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
         e.extend([ET.Element('bar')])
         self.assertRaises(ValueError, e.remove, X('baz'))
 
+    @support.infinite_recursion()
     def test_recursive_repr(self):
         # Issue #25455
         e = ET.Element('foo')
@@ -3945,8 +3928,9 @@ class KeywordArgsTest(unittest.TestCase):
 # --------------------------------------------------------------------
 
 class NoAcceleratorTest(unittest.TestCase):
-    def setUp(self):
-        if not pyET:
+    @classmethod
+    def setUpClass(cls):
+        if ET is not pyET:
             raise unittest.SkipTest('only for the Python version')
 
     # Test that the C accelerator was not imported for pyET
@@ -3957,6 +3941,25 @@ class NoAcceleratorTest(unittest.TestCase):
         self.assertIsInstance(pyET.Element.__init__, types.FunctionType)
         self.assertIsInstance(pyET.XMLParser.__init__, types.FunctionType)
 
+# --------------------------------------------------------------------
+
+class BoolTest(unittest.TestCase):
+    def test_warning(self):
+        e = ET.fromstring('<a style="new"></a>')
+        msg = (
+            r"Testing an element's truth value will raise an exception in "
+            r"future versions.  "
+            r"Use specific 'len\(elem\)' or 'elem is not None' test instead.")
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            result = bool(e)
+        # Emulate prior behavior for now
+        self.assertIs(result, False)
+
+        # Element with children
+        ET.SubElement(e, 'b')
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            new_result = bool(e)
+        self.assertIs(new_result, True)
 
 # --------------------------------------------------------------------
 
@@ -4192,8 +4195,7 @@ class C14NTest(unittest.TestCase):
 
 # --------------------------------------------------------------------
 
-
-def test_main(module=None):
+def setUpModule(module=None):
     # When invoked without a module, runs the Python ET tests by loading pyET.
     # Otherwise, uses the given module as the ET.
     global pyET
@@ -4205,62 +4207,30 @@ def test_main(module=None):
     global ET
     ET = module
 
-    test_classes = [
-        ModuleTest,
-        ElementSlicingTest,
-        BasicElementTest,
-        BadElementTest,
-        BadElementPathTest,
-        ElementTreeTest,
-        IOTest,
-        ParseErrorTest,
-        XIncludeTest,
-        ElementTreeTypeTest,
-        ElementFindTest,
-        ElementIterTest,
-        TreeBuilderTest,
-        XMLParserTest,
-        XMLPullParserTest,
-        BugsTest,
-        KeywordArgsTest,
-        C14NTest,
-        ]
-
-    # These tests will only run for the pure-Python version that doesn't import
-    # _elementtree. We can't use skipUnless here, because pyET is filled in only
-    # after the module is loaded.
-    if pyET is not ET:
-        test_classes.extend([
-            NoAcceleratorTest,
-            ])
+    # don't interfere with subsequent tests
+    def cleanup():
+        global ET, pyET
+        ET = pyET = None
+    unittest.addModuleCleanup(cleanup)
 
     # Provide default namespace mapping and path cache.
     from xml.etree import ElementPath
     nsmap = ET.register_namespace._namespace_map
     # Copy the default namespace mapping
     nsmap_copy = nsmap.copy()
+    unittest.addModuleCleanup(nsmap.update, nsmap_copy)
+    unittest.addModuleCleanup(nsmap.clear)
+
     # Copy the path cache (should be empty)
     path_cache = ElementPath._cache
+    unittest.addModuleCleanup(setattr, ElementPath, "_cache", path_cache)
     ElementPath._cache = path_cache.copy()
+
     # Align the Comment/PI factories.
     if hasattr(ET, '_set_factories'):
         old_factories = ET._set_factories(ET.Comment, ET.PI)
-    else:
-        old_factories = None
-
-    try:
-        support.run_unittest(*test_classes)
-    finally:
-        from xml.etree import ElementPath
-        # Restore mapping and path cache
-        nsmap.clear()
-        nsmap.update(nsmap_copy)
-        ElementPath._cache = path_cache
-        if old_factories is not None:
-            ET._set_factories(*old_factories)
-        # don't interfere with subsequent tests
-        ET = pyET = None
+        unittest.addModuleCleanup(ET._set_factories, *old_factories)
 
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
