@@ -335,8 +335,9 @@ the :mod:`glob` module.)
    .. note::
 
       This function approximates rules for reserved paths on most Windows
-      systems. It may be updated in future Python releases as changed rules
-      become more widely used.
+      systems. These rules change over time in various Windows releases.
+      This function may be updated in future Python releases as changes to
+      the rules become broadly available.
 
    .. availability:: Windows.
 
