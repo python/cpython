@@ -935,6 +935,7 @@ error:
     result = NULL;
 cleanup:
     Py_XDECREF(keys);
+    Py_XDECREF(normalized_keys);
 
     return result;
 }
