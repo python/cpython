@@ -991,7 +991,7 @@ class TestNtpath(NtpathTestCase):
         self.assertTrue(ntpath.isreserved('foo<bar'))
         self.assertTrue(ntpath.isreserved('foo>bar'))
         self.assertTrue(ntpath.isreserved('foo:bar'))
-        self.assertTrue(ntpath.isreserved('foo|bar'))     
+        self.assertTrue(ntpath.isreserved('foo|bar'))
         # Case-insensitive DOS-device names are reserved.
         self.assertTrue(ntpath.isreserved('nul'))
         self.assertTrue(ntpath.isreserved('aux'))
