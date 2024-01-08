@@ -812,50 +812,61 @@ sort_environment_keys(PyObject *keys)
     return true;
 }
 
+static bool
+compare_string_ordinal(PyObject *str1, PyObject *str2, int *result)
+{
+    wchar_t *s1 = PyUnicode_AsWideCharString(str1, NULL);
+    if (s1 == NULL) {
+        return false;
+    }
+    wchar_t *s2 = PyUnicode_AsWideCharString(str2, NULL);
+    if (s2 == NULL) {
+        PyMem_Free(s1);
+        return false;
+    }
+    *result = CompareStringOrdinal(s1, -1, s2, -1, TRUE);
+    PyMem_Free(s1);
+    PyMem_Free(s2);
+    return true;
+}
+
 static PyObject *
 dedup_environment_keys(PyObject *keys)
 {
-    PyObject *result = NULL;
-    wchar_t *prev_key_string = NULL;
-
-    result = PyList_New(0);
+    PyObject *result = PyList_New(0);
     if (result == NULL) {
         return NULL;
     }
-    for (Py_ssize_t i=PyList_GET_SIZE(keys)-1; i>=0; i--) {
-        PyObject *key = PyList_GET_ITEM(keys, i);
-        if (i == PyList_GET_SIZE(keys)) {
-            prev_key_string = PyUnicode_AsWideCharString(key, NULL);
-            if (prev_key_string == NULL) {
-                goto error;
-            }
-            if (PyList_Insert(result, 0, key) < 0) {
-                goto error;
-            }
-            continue;
-        }
-        wchar_t *key_string = PyUnicode_AsWideCharString(key, NULL);
-        if (key_string == NULL) {
-            goto error;
-        }
-        if (CompareStringOrdinal(prev_key_string, -1, key_string, -1, TRUE) == CSTR_EQUAL) {
-            PyMem_Free(key_string);
-            continue;
-        }
-        if (PyList_Insert(result, 0, key) < 0) {
-            goto error;
-        }
-        PyMem_Free(prev_key_string);
-        prev_key_string = key_string;
-    }
 
-    goto cleanup;
-error:
-    Py_XDECREF(result);
-    result = NULL;
-cleanup:
-    if (prev_key_string != NULL) {
-        PyMem_Free(prev_key_string);
+    // Iterate over the pre-ordered keys, check whether the current key is equal
+    // to the next key (ignoring case), if different, insert the current value
+    // into the result list. If they are equal, do nothing because we always
+    // want to keep the last inserted one.
+    for (Py_ssize_t i=0; i<PyList_GET_SIZE(keys); i++) {
+        PyObject *key = PyList_GET_ITEM(keys, i);
+
+        // The last key will always be kept.
+        if (i + 1 == PyList_GET_SIZE(keys)) {
+            if (PyList_Append(result, key) < 0) {
+                Py_DECREF(result);
+                return NULL;
+            }
+            continue;
+        }
+
+        PyObject *next_key = PyList_GET_ITEM(keys, i + 1);
+        int compare_result;
+        if (!compare_string_ordinal(key, next_key, &compare_result)) {
+            Py_DECREF(result);
+            return NULL;
+        }
+        if (compare_result == CSTR_EQUAL) {
+            continue;
+        }
+        if (PyList_Append(result, key) < 0) {
+            Py_DECREF(result);
+            return NULL;
+        }
     }
 
     return result;
