@@ -1678,7 +1678,7 @@ _PyGC_GetObjects(PyInterpreterState *interp, Py_ssize_t generation)
         }
     }
     else {
-        if (append_objects(result, GEN_HEAD(gcstate, generation))) {
+        if (append_objects(result, GEN_HEAD(gcstate, (int)generation))) {
             goto error;
         }
     }
