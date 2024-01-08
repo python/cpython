@@ -791,31 +791,25 @@ static PyMethodDef sortenvironmentkey_def = {
 static bool
 sort_environment_keys(PyObject *keys)
 {
-    PyObject *keyfunc = NULL, *kwnames = NULL;
-    bool result = false;
-
-    keyfunc = PyCFunction_New(&sortenvironmentkey_def, NULL);
+    PyObject *keyfunc = PyCFunction_New(&sortenvironmentkey_def, NULL);
     if (keyfunc == NULL) {
         return false;
     }
-    kwnames = Py_BuildValue("(s)", "key");
+    PyObject *kwnames = Py_BuildValue("(s)", "key");
     if (kwnames == NULL) {
-        goto cleanup;
+        Py_DECREF(keyfunc);
+        return false;
     }
     PyObject *args[] = { keys, keyfunc };
     PyObject *ret = PyObject_VectorcallMethod(&_Py_ID(sort), args, 1, kwnames);
+    Py_DECREF(keyfunc);
+    Py_DECREF(kwnames);
     if (ret == NULL) {
-        goto cleanup;
+        return false;
     }
     Py_DECREF(ret);
 
-    result = true;
-
-cleanup:
-    Py_XDECREF(keyfunc);
-    Py_XDECREF(kwnames);
-
-    return result;
+    return true;
 }
 
 static PyObject *
