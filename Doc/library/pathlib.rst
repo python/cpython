@@ -546,7 +546,8 @@ Pure paths provide the following methods and properties:
       are considered reserved. UNC paths may be reserved.
 
    .. deprecated-removed:: 3.13 3.15
-
+      This method is deprecated; use :func:`os.path.isreserved` to detect
+      reserved paths on Windows.
 
 .. method:: PurePath.joinpath(*pathsegments)
 
