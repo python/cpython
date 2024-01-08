@@ -244,10 +244,10 @@ class PurePathBase:
 
     def with_name(self, name):
         """Return a new path with the file name changed."""
-        m = self.pathmod
-        if m.sep in name or (m.altsep and m.altsep in name):
+        dirname = self.pathmod.dirname
+        if dirname(name):
             raise ValueError(f"Invalid name {name!r}")
-        return self.with_segments(m.dirname(str(self)), name)
+        return self.with_segments(dirname(str(self)), name)
 
     def with_stem(self, stem):
         """Return a new path with the stem changed."""
@@ -694,7 +694,7 @@ class PathBase(PurePathBase):
             raise ValueError("Unacceptable pattern: {!r}".format(pattern))
 
         pattern_parts = list(path_pattern.parts)
-        if pattern[-1] in (self.pathmod.sep, self.pathmod.altsep):
+        if not self.pathmod.basename(pattern):
             # GH-65238: pathlib doesn't preserve trailing slash. Add it back.
             pattern_parts.append('')
 
