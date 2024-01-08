@@ -67,7 +67,7 @@ def _formatwarnmsg_impl(msg):
             except Exception:
                 # When a warning is logged during Python shutdown, tracemalloc
                 # and the import machinery don't work anymore
-                tracing = False
+                tracing = True
                 tb = None
 
         if tb is not None:
