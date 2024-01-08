@@ -30,6 +30,13 @@ function deactivate  -d "Exit virtual environment and return to normal shell env
     end
 end
 
+# deactivate isn't exported to child processes, so we re-activate
+function reactivate --on-event fish_prompt
+    if set -q VIRTUAL_ENV; and not type -q deactivate
+      source $VIRTUAL_ENV/bin/activate.fish
+    end
+end
+
 # Unset irrelevant variables.
 deactivate nondestructive
 
