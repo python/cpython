@@ -970,10 +970,14 @@ class PureWindowsPathTest(PurePathTest):
         self.assertTrue(P('c:/a').is_absolute())
         self.assertTrue(P('c:/a/b/').is_absolute())
         # UNC paths are absolute by definition.
+        self.assertTrue(P('//').is_absolute())
+        self.assertTrue(P('//a').is_absolute())
         self.assertTrue(P('//a/b').is_absolute())
         self.assertTrue(P('//a/b/').is_absolute())
         self.assertTrue(P('//a/b/c').is_absolute())
         self.assertTrue(P('//a/b/c/d').is_absolute())
+        self.assertTrue(P('//?/UNC/').is_absolute())
+        self.assertTrue(P('//?/UNC/spam').is_absolute())
 
     def test_join(self):
         P = self.cls

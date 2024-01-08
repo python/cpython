@@ -1,5 +1,4 @@
 import functools
-import ntpath
 import posixpath
 import sys
 from errno import ENOENT, ENOTDIR, EBADF, ELOOP, EINVAL
@@ -433,10 +432,7 @@ class PurePathBase:
     def is_absolute(self):
         """True if the path is absolute (has both a root and, if applicable,
         a drive)."""
-        if self.pathmod is ntpath:
-            # ntpath.isabs() is defective - see GH-44626.
-            return bool(self.drive and self.root)
-        elif self.pathmod is posixpath:
+        if self.pathmod is posixpath:
             # Optimization: work with raw paths on POSIX.
             for path in self._raw_paths:
                 if path.startswith('/'):
