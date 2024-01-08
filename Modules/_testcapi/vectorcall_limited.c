@@ -195,6 +195,6 @@ _PyTestCapi_Init_VectorcallLimited(PyObject *m) {
     if (PyModule_AddType(m, (PyTypeObject *)LimitedVectorCallClass) < 0) {
         return -1;
     }
-
+    Py_DECREF(LimitedVectorCallClass);
     return 0;
 }
