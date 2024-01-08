@@ -4499,6 +4499,7 @@ class FDInheritanceTests(unittest.TestCase):
         code = textwrap.dedent(f"""
             import errno
             import os
+            import test.support
             try:
                 import msvcrt
             except ImportError:
@@ -4506,23 +4507,24 @@ class FDInheritanceTests(unittest.TestCase):
 
             fd = {fd}
 
-            if msvcrt is not None:
+            with test.support.SuppressCrashReport():
+                if msvcrt is not None:
+                    try:
+                        handle = msvcrt.get_osfhandle(fd)
+                    except OSError as exc:
+                        if exc.errno != errno.EBADF:
+                            raise
+                    else:
+                        raise Exception("get_osfhandle() must fail")
+
                 try:
-                    handle = msvcrt.get_osfhandle(fd)
+                    fd3 = os.dup(fd)
                 except OSError as exc:
                     if exc.errno != errno.EBADF:
                         raise
                 else:
-                    raise Exception("get_osfhandle() must fail")
-
-            try:
-                fd3 = os.dup(fd)
-            except OSError as exc:
-                if exc.errno != errno.EBADF:
-                    raise
-            else:
-                os.close(fd3)
-                raise Exception("dup must fail")
+                    os.close(fd3)
+                    raise Exception("dup must fail")
         """)
 
         filename = os_helper.TESTFN
