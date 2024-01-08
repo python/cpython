@@ -8,9 +8,6 @@ import asyncio
 from test.test_asyncio.utils import await_without_task
 
 
-class CustomError(Exception):
-    pass
-
 def tearDownModule():
     asyncio.set_event_loop_policy(None)
 
@@ -127,10 +124,13 @@ class TimeoutTests(unittest.IsolatedAsyncioTestCase):
                 finally:
                     await asyncio.sleep(1)
         e = cm.exception
-        self.assertIsInstance(e.__context__, asyncio.CancelledError)
-        self.assertIs(e.__cause__, e.__context__)
-        self.assertIsInstance(e.__context__.__context__, ZeroDivisionError)
-        self.assertIsNone(e.__context__.__cause__)
+        # Expect TimeoutError caused by CancelledError raised during handling
+        # of ZeroDivisionError.
+        e2 = e.__cause__
+        self.assertIsInstance(e2, asyncio.CancelledError)
+        self.assertIs(e.__context__, e2)
+        self.assertIsNone(e2.__cause__)
+        self.assertIsInstance(e2.__context__, ZeroDivisionError)
 
     async def test_foreign_exception_on_timeout(self):
         async def crash():
@@ -142,10 +142,14 @@ class TimeoutTests(unittest.IsolatedAsyncioTestCase):
             async with asyncio.timeout(0.01):
                 await crash()
         e = cm.exception
-        self.assertIsInstance(e.__context__, TimeoutError)
-        self.assertIsInstance(e.__context__.__context__, asyncio.CancelledError)
-        self.assertIs(e.__context__.__cause__, e.__context__.__context__)
+        # Expect ZeroDivisionError raised during handling of TimeoutError
+        # caused by CancelledError.
         self.assertIsNone(e.__cause__)
+        e2 = e.__context__
+        self.assertIsInstance(e2, TimeoutError)
+        e3 = e2.__cause__
+        self.assertIsInstance(e3, asyncio.CancelledError)
+        self.assertIs(e2.__context__, e3)
 
     async def test_foreign_exception_on_timeout_2(self):
         with self.assertRaises(ZeroDivisionError) as cm:
@@ -161,15 +165,19 @@ class TimeoutTests(unittest.IsolatedAsyncioTestCase):
                     finally:
                         1/0
         e = cm.exception
-        self.assertIsInstance(e.__context__, KeyError)
-        e2 = e.__context__.__context__
-        self.assertIsInstance(e2, TimeoutError)
-        self.assertIsInstance(e2.__context__, asyncio.CancelledError)
-        self.assertIsInstance(e2.__context__.__context__, ValueError)
-        self.assertIsNone(e2.__context__.__cause__)
-        self.assertIsNone(e.__context__.__cause__)
-        self.assertIs(e2.__cause__, e2.__context__)
+        # Expect ZeroDivisionError raised during handling of KeyError
+        # raised during handling of TimeoutError caused by CancelledError.
         self.assertIsNone(e.__cause__)
+        e2 = e.__context__
+        self.assertIsInstance(e2, KeyError)
+        self.assertIsNone(e2.__cause__)
+        e3 = e2.__context__
+        self.assertIsInstance(e3, TimeoutError)
+        e4 = e3.__cause__
+        self.assertIsInstance(e4, asyncio.CancelledError)
+        self.assertIsNone(e4.__cause__)
+        self.assertIsInstance(e4.__context__, ValueError)
+        self.assertIs(e3.__context__, e4)
 
     async def test_foreign_cancel_doesnt_timeout_if_not_expired(self):
         with self.assertRaises(asyncio.CancelledError):
@@ -273,15 +281,21 @@ class TimeoutTests(unittest.IsolatedAsyncioTestCase):
                         async with asyncio.timeout(0.01):
                             await asyncio.sleep(10)
         e1 = cm1.exception
-        self.assertIsInstance(e1.__context__, asyncio.CancelledError)
-        self.assertIsNone(e1.__context__.__context__)
-        self.assertIsNone(e1.__context__.__cause__)
-        self.assertIs(e1.__cause__, e1.__context__)
+        # Expect TimeoutError caused by CancelledError.
+        e12 = e1.__cause__
+        self.assertIsInstance(e12, asyncio.CancelledError)
+        self.assertIsNone(e12.__cause__)
+        self.assertIsNone(e12.__context__)
+        self.assertIs(e1.__context__, e12)
         e2 = cm2.exception
-        self.assertIsInstance(e2.__context__, asyncio.CancelledError)
-        self.assertIs(e2.__context__.__context__, e1.__context__)
-        self.assertIsNone(e2.__context__.__cause__)
-        self.assertIs(e2.__cause__, e2.__context__)
+        # Expect TimeoutError caused by CancelledError raised during
+        # handling of other CancelledError (which is the same as in
+        # the above chain).
+        e22 = e2.__cause__
+        self.assertIsInstance(e22, asyncio.CancelledError)
+        self.assertIsNone(e22.__cause__)
+        self.assertIs(e22.__context__, e12)
+        self.assertIs(e2.__context__, e22)
 
     async def test_timeout_after_cancellation(self):
         try:
@@ -367,22 +381,30 @@ class TimeoutTests(unittest.IsolatedAsyncioTestCase):
                     finally:
                         await asyncio.sleep(1)
         eg = cm.exception
-        self.assertIsInstance(eg.__context__, TimeoutError)
-        self.assertIsInstance(eg.__context__.__context__, asyncio.CancelledError)
-        self.assertIsInstance(eg.__context__.__context__.__context__, ValueError)
-        self.assertIsNone(eg.__context__.__context__.__cause__)
-        self.assertIs(eg.__context__.__cause__, eg.__context__.__context__)
+        # Expect ExceptionGroup raised during handling of TimeoutError caused
+        # by CancelledError raised during handling of ValueError.
         self.assertIsNone(eg.__cause__)
+        e_1 = eg.__context__
+        self.assertIsInstance(e_1, TimeoutError)
+        e_2 = e_1.__cause__
+        self.assertIsInstance(e_2, asyncio.CancelledError)
+        self.assertIsNone(e_2.__cause__)
+        self.assertIsInstance(e_2.__context__, ValueError)
+        self.assertIs(e_1.__context__, e_2)
 
         self.assertEqual(len(eg.exceptions), 1, eg)
-        e = eg.exceptions[0]
-        self.assertIsInstance(e, ZeroDivisionError)
-        self.assertIsInstance(e.__context__, TimeoutError)
-        self.assertIsInstance(e.__context__.__context__, asyncio.CancelledError)
-        self.assertIsNone(e.__context__.__context__.__context__)
-        self.assertIsNone(e.__context__.__context__.__cause__)
-        self.assertIs(e.__context__.__cause__, e.__context__.__context__)
-        self.assertIsNone(e.__cause__)
+        e1 = eg.exceptions[0]
+        # Expect ZeroDivisionError raised during handling of TimeoutError
+        # caused by CancelledError (it is a different CancelledError).
+        self.assertIsInstance(e1, ZeroDivisionError)
+        self.assertIsNone(e1.__cause__)
+        e2 = e1.__context__
+        self.assertIsInstance(e2, TimeoutError)
+        e3 = e2.__cause__
+        self.assertIsInstance(e3, asyncio.CancelledError)
+        self.assertIsNone(e3.__context__)
+        self.assertIsNone(e3.__cause__)
+        self.assertIs(e2.__context__, e3)
 
 
 if __name__ == '__main__':

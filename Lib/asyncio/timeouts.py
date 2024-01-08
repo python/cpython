@@ -114,7 +114,7 @@ class Timeout:
                 # handling this.
                 if exc_type is exceptions.CancelledError:
                     raise TimeoutError from exc_val
-                elif 10 and exc_val is not None:
+                elif exc_val is not None:
                     self._insert_timeout_error(exc_val)
                     if isinstance(exc_val, ExceptionGroup):
                         for exc in exc_val.exceptions:
