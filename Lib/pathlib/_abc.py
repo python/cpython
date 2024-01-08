@@ -440,13 +440,6 @@ class PurePathBase:
         else:
             return self.pathmod.isabs(str(self))
 
-    def is_reserved(self):
-        """Return True if the path contains one of the special names reserved
-        by the system, if any."""
-        if hasattr(self.pathmod, 'isreserved'):
-            return self.pathmod.isreserved(str(self))
-        return False
-
     def match(self, path_pattern, *, case_sensitive=None):
         """
         Return True if this path matches the given pattern.
