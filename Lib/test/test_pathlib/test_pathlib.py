@@ -135,6 +135,11 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
         check('a/./.',    '', '', ['a'])
         check('/a/b',     '', sep, ['a', 'b'])
 
+    def test_empty_path(self):
+        # The empty path points to '.'
+        p = self.cls('')
+        self.assertEqual(str(p), '.')
+
     def test_parts_interning(self):
         P = self.cls
         p = P('/usr/bin/foo')
@@ -216,6 +221,19 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
         sep = os.fsencode(self.sep)
         P = self.cls
         self.assertEqual(bytes(P('a/b')), b'a' + sep + b'b')
+
+    def test_eq_common(self):
+        P = self.cls
+        self.assertEqual(P('a/b'), P('a/b'))
+        self.assertEqual(P('a/b'), P('a', 'b'))
+        self.assertNotEqual(P('a/b'), P('a'))
+        self.assertNotEqual(P('a/b'), P('/a/b'))
+        self.assertNotEqual(P('a/b'), P())
+        self.assertNotEqual(P('/a/b'), P('/'))
+        self.assertNotEqual(P(), P('/'))
+        self.assertNotEqual(P(), "")
+        self.assertNotEqual(P(), {})
+        self.assertNotEqual(P(), int)
 
     def test_equivalences(self):
         for k, tuples in self.equivalences.items():
