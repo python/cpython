@@ -128,7 +128,7 @@ jobs:
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
       - name: Restore config.cache
@@ -187,13 +187,13 @@ jobs:
     if: needs.check_source.outputs.run_tests == 'true'
     uses: ./.github/workflows/reusable-windows.yml
 
-  build_windows_free_threaded:
-    name: 'Windows (free-threaded)'
+  build_windows_free_threading:
+    name: 'Windows (free-threading)'
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     uses: ./.github/workflows/reusable-windows.yml
     with:
-      free-threaded: true
+      free-threading: true
 
   build_macos:
     name: 'macOS'
@@ -203,14 +203,14 @@ jobs:
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
 
-  build_macos_free_threaded:
-    name: 'macOS (free-threaded)'
+  build_macos_free_threading:
+    name: 'macOS (free-threading)'
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     uses: ./.github/workflows/reusable-macos.yml
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
-      free-threaded: true
+      free-threading: true
 
   build_ubuntu:
     name: 'Ubuntu'
@@ -225,8 +225,8 @@ jobs:
           --with-pydebug \
           --with-openssl=$OPENSSL_DIR
 
-  build_ubuntu_free_threaded:
-    name: 'Ubuntu (free-threaded)'
+  build_ubuntu_free_threading:
+    name: 'Ubuntu (free-threading)'
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     uses: ./.github/workflows/reusable-ubuntu.yml
@@ -395,7 +395,7 @@ jobs:
           -x test_subprocess \
           -x test_signal \
           -x test_sysconfig
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       if: always()
       with:
         name: hypothesis-example-db
@@ -483,14 +483,14 @@ jobs:
           output-sarif: true
           sanitizer: ${{ matrix.sanitizer }}
       - name: Upload crash
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: failure() && steps.build.outcome == 'success'
         with:
           name: ${{ matrix.sanitizer }}-artifacts
           path: ./out/artifacts
       - name: Upload SARIF
         if: always() && steps.build.outcome == 'success'
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: cifuzz-sarif/results.sarif
           checkout_path: cifuzz-sarif
@@ -504,12 +504,12 @@ jobs:
     - check-docs
     - check_generated_files
     - build_macos
-    - build_macos_free_threaded
+    - build_macos_free_threading
     - build_ubuntu
-    - build_ubuntu_free_threaded
+    - build_ubuntu_free_threading
     - build_ubuntu_ssltests
     - build_windows
-    - build_windows_free_threaded
+    - build_windows_free_threading
     - test_hypothesis
     - build_asan
     - cifuzz
@@ -537,12 +537,12 @@ jobs:
             && '
             check_generated_files,
             build_macos,
-            build_macos_free_threaded,
+            build_macos_free_threading,
             build_ubuntu,
-            build_ubuntu_free_threaded,
+            build_ubuntu_free_threading,
             build_ubuntu_ssltests,
             build_windows,
-            build_windows_free_threaded,
+            build_windows_free_threading,
             build_asan,
             '
             || ''

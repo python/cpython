@@ -8,7 +8,6 @@ import unittest
 from pathlib._abc import UnsupportedOperation, PurePathBase, PathBase
 import posixpath
 
-from test.support import set_recursion_limit
 from test.support.os_helper import TESTFN
 
 
@@ -51,6 +50,9 @@ class DummyPurePath(PurePathBase):
 
     def __hash__(self):
         return hash(str(self))
+
+    def __repr__(self):
+        return "{}({!r})".format(self.__class__.__name__, self.as_posix())
 
 
 class DummyPurePathTest(unittest.TestCase):
@@ -159,10 +161,13 @@ class DummyPurePathTest(unittest.TestCase):
             self.assertEqual(P(pathstr).as_posix(), pathstr)
         # Other tests for as_posix() are in test_equivalences().
 
-    def test_match_common(self):
+    def test_match_empty(self):
         P = self.cls
         self.assertRaises(ValueError, P('a').match, '')
         self.assertRaises(ValueError, P('a').match, '.')
+
+    def test_match_common(self):
+        P = self.cls
         # Simple relative pattern.
         self.assertTrue(P('b.py').match('b.py'))
         self.assertTrue(P('a/b.py').match('b.py'))
@@ -324,14 +329,17 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('/').anchor, sep)
         self.assertEqual(P('/a/b').anchor, sep)
 
-    def test_name_common(self):
+    def test_name_empty(self):
         P = self.cls
         self.assertEqual(P('').name, '')
         self.assertEqual(P('.').name, '')
+        self.assertEqual(P('/a/b/.').name, 'b')
+
+    def test_name_common(self):
+        P = self.cls
         self.assertEqual(P('/').name, '')
         self.assertEqual(P('a/b').name, 'b')
         self.assertEqual(P('/a/b').name, 'b')
-        self.assertEqual(P('/a/b/.').name, 'b')
         self.assertEqual(P('a/b.py').name, 'b.py')
         self.assertEqual(P('/a/b.py').name, 'b.py')
 
@@ -374,10 +382,13 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('a/Some name. Ending with a dot.').suffixes, [])
         self.assertEqual(P('/a/Some name. Ending with a dot.').suffixes, [])
 
-    def test_stem_common(self):
+    def test_stem_empty(self):
         P = self.cls
         self.assertEqual(P('').stem, '')
         self.assertEqual(P('.').stem, '')
+
+    def test_stem_common(self):
+        P = self.cls
         self.assertEqual(P('..').stem, '..')
         self.assertEqual(P('/').stem, '')
         self.assertEqual(P('a/b').stem, 'b')
@@ -396,11 +407,17 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('/a/b.py').with_name('d.xml'), P('/a/d.xml'))
         self.assertEqual(P('a/Dot ending.').with_name('d.xml'), P('a/d.xml'))
         self.assertEqual(P('/a/Dot ending.').with_name('d.xml'), P('/a/d.xml'))
+
+    def test_with_name_empty(self):
+        P = self.cls
         self.assertRaises(ValueError, P('').with_name, 'd.xml')
         self.assertRaises(ValueError, P('.').with_name, 'd.xml')
         self.assertRaises(ValueError, P('/').with_name, 'd.xml')
         self.assertRaises(ValueError, P('a/b').with_name, '')
         self.assertRaises(ValueError, P('a/b').with_name, '.')
+
+    def test_with_name_seps(self):
+        P = self.cls
         self.assertRaises(ValueError, P('a/b').with_name, '/c')
         self.assertRaises(ValueError, P('a/b').with_name, 'c/')
         self.assertRaises(ValueError, P('a/b').with_name, 'c/d')
@@ -414,11 +431,17 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('/a/b.tar.gz').with_stem('d'), P('/a/d.gz'))
         self.assertEqual(P('a/Dot ending.').with_stem('d'), P('a/d'))
         self.assertEqual(P('/a/Dot ending.').with_stem('d'), P('/a/d'))
+
+    def test_with_stem_empty(self):
+        P = self.cls
         self.assertRaises(ValueError, P('').with_stem, 'd')
         self.assertRaises(ValueError, P('.').with_stem, 'd')
         self.assertRaises(ValueError, P('/').with_stem, 'd')
         self.assertRaises(ValueError, P('a/b').with_stem, '')
         self.assertRaises(ValueError, P('a/b').with_stem, '.')
+
+    def test_with_stem_seps(self):
+        P = self.cls
         self.assertRaises(ValueError, P('a/b').with_stem, '/c')
         self.assertRaises(ValueError, P('a/b').with_stem, 'c/')
         self.assertRaises(ValueError, P('a/b').with_stem, 'c/d')
@@ -432,10 +455,16 @@ class DummyPurePathTest(unittest.TestCase):
         # Stripping suffix.
         self.assertEqual(P('a/b.py').with_suffix(''), P('a/b'))
         self.assertEqual(P('/a/b').with_suffix(''), P('/a/b'))
+
+    def test_with_suffix_empty(self):
+        P = self.cls
         # Path doesn't have a "filename" component.
         self.assertRaises(ValueError, P('').with_suffix, '.gz')
         self.assertRaises(ValueError, P('.').with_suffix, '.gz')
         self.assertRaises(ValueError, P('/').with_suffix, '.gz')
+
+    def test_with_suffix_seps(self):
+        P = self.cls
         # Invalid suffix.
         self.assertRaises(ValueError, P('a/b').with_suffix, 'gz')
         self.assertRaises(ValueError, P('a/b').with_suffix, '/')
@@ -471,10 +500,6 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(p.relative_to('a/b/c', walk_up=True), P('..'))
         self.assertEqual(p.relative_to(P('c'), walk_up=True), P('../a/b'))
         self.assertEqual(p.relative_to('c', walk_up=True), P('../a/b'))
-        # With several args.
-        with self.assertWarns(DeprecationWarning):
-            p.relative_to('a', 'b')
-            p.relative_to('a', 'b', walk_up=True)
         # Unrelated paths.
         self.assertRaises(ValueError, p.relative_to, P('c'))
         self.assertRaises(ValueError, p.relative_to, P('a/b/c'))
@@ -536,9 +561,6 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertTrue(p.is_relative_to('a/'))
         self.assertTrue(p.is_relative_to(P('a/b')))
         self.assertTrue(p.is_relative_to('a/b'))
-        # With several args.
-        with self.assertWarns(DeprecationWarning):
-            p.is_relative_to('a', 'b')
         # Unrelated paths.
         self.assertFalse(p.is_relative_to(P('c')))
         self.assertFalse(p.is_relative_to(P('a/b/c')))
@@ -654,6 +676,9 @@ class DummyPath(PathBase):
 
     def __hash__(self):
         return hash(str(self))
+
+    def __repr__(self):
+        return "{}({!r})".format(self.__class__.__name__, self.as_posix())
 
     def stat(self, *, follow_symlinks=True):
         if follow_symlinks:
@@ -984,7 +1009,7 @@ class DummyPathTest(DummyPurePathTest):
             self.skipTest("symlinks required")
         def _check(path, glob, expected):
             actual = {path for path in path.glob(glob, follow_symlinks=True)
-                      if "linkD" not in path.parent.parts}  # exclude symlink loop.
+                      if path.parts.count("linkD") <= 1}  # exclude symlink loop.
             self.assertEqual(actual, { P(self.base, q) for q in expected })
         P = self.cls
         p = P(self.base)
@@ -994,13 +1019,15 @@ class DummyPathTest(DummyPurePathTest):
         _check(p, "*B/*", ["dirB/fileB", "dirB/linkD", "linkB/fileB", "linkB/linkD"])
         _check(p, "*/fileB", ["dirB/fileB", "linkB/fileB"])
         _check(p, "*/", ["dirA/", "dirB/", "dirC/", "dirE/", "linkB/"])
-        _check(p, "dir*/*/..", ["dirC/dirD/..", "dirA/linkC/.."])
+        _check(p, "dir*/*/..", ["dirC/dirD/..", "dirA/linkC/..", "dirB/linkD/.."])
         _check(p, "dir*/**/", ["dirA/", "dirA/linkC/", "dirA/linkC/linkD/", "dirB/", "dirB/linkD/",
                                "dirC/", "dirC/dirD/", "dirE/"])
         _check(p, "dir*/**/..", ["dirA/..", "dirA/linkC/..", "dirB/..",
+                                 "dirB/linkD/..", "dirA/linkC/linkD/..",
                                  "dirC/..", "dirC/dirD/..", "dirE/.."])
         _check(p, "dir*/*/**/", ["dirA/linkC/", "dirA/linkC/linkD/", "dirB/linkD/", "dirC/dirD/"])
-        _check(p, "dir*/*/**/..", ["dirA/linkC/..", "dirC/dirD/.."])
+        _check(p, "dir*/*/**/..", ["dirA/linkC/..", "dirA/linkC/linkD/..",
+                                   "dirB/linkD/..", "dirC/dirD/.."])
         _check(p, "dir*/**/fileC", ["dirC/fileC"])
         _check(p, "dir*/*/../dirD/**/", ["dirC/dirD/../dirD/"])
         _check(p, "*/dirD/**/", ["dirC/dirD/"])
@@ -1055,7 +1082,7 @@ class DummyPathTest(DummyPurePathTest):
                 "dirA/", "dirA/linkC/", "dirB/", "dirB/linkD/", "dirC/",
                 "dirC/dirD/", "dirE/", "linkB/",
             ])
-        _check(p.rglob(""), ["./", "dirA/", "dirB/", "dirC/", "dirE/", "dirC/dirD/"])
+        _check(p.rglob(""), ["", "dirA/", "dirB/", "dirC/", "dirE/", "dirC/dirD/"])
 
         p = P(self.base, "dirC")
         _check(p.rglob("*"), ["dirC/fileC", "dirC/novel.txt",
@@ -1076,18 +1103,21 @@ class DummyPathTest(DummyPurePathTest):
             self.skipTest("symlinks required")
         def _check(path, glob, expected):
             actual = {path for path in path.rglob(glob, follow_symlinks=True)
-                      if 'linkD' not in path.parent.parts}  # exclude symlink loop.
+                      if path.parts.count("linkD") <= 1}  # exclude symlink loop.
             self.assertEqual(actual, { P(self.base, q) for q in expected })
         P = self.cls
         p = P(self.base)
-        _check(p, "fileB", ["dirB/fileB", "dirA/linkC/fileB", "linkB/fileB"])
+        _check(p, "fileB", ["dirB/fileB", "dirA/linkC/fileB", "linkB/fileB",
+                            "dirA/linkC/linkD/fileB", "dirB/linkD/fileB", "linkB/linkD/fileB"])
         _check(p, "*/fileA", [])
-        _check(p, "*/fileB", ["dirB/fileB", "dirA/linkC/fileB", "linkB/fileB"])
+        _check(p, "*/fileB", ["dirB/fileB", "dirA/linkC/fileB", "linkB/fileB",
+                              "dirA/linkC/linkD/fileB", "dirB/linkD/fileB", "linkB/linkD/fileB"])
         _check(p, "file*", ["fileA", "dirA/linkC/fileB", "dirB/fileB",
+                            "dirA/linkC/linkD/fileB", "dirB/linkD/fileB", "linkB/linkD/fileB",
                             "dirC/fileC", "dirC/dirD/fileD", "linkB/fileB"])
         _check(p, "*/", ["dirA/", "dirA/linkC/", "dirA/linkC/linkD/", "dirB/", "dirB/linkD/",
                          "dirC/", "dirC/dirD/", "dirE/", "linkB/", "linkB/linkD/"])
-        _check(p, "", ["./", "dirA/", "dirA/linkC/", "dirA/linkC/linkD/", "dirB/", "dirB/linkD/",
+        _check(p, "", ["", "dirA/", "dirA/linkC/", "dirA/linkC/linkD/", "dirB/", "dirB/linkD/",
                        "dirC/", "dirE/", "dirC/dirD/", "linkB/", "linkB/linkD/"])
 
         p = P(self.base, "dirC")
@@ -1114,7 +1144,7 @@ class DummyPathTest(DummyPurePathTest):
         _check(p, "*/fileB", ["dirB/fileB"])
         _check(p, "file*", ["fileA", "dirB/fileB", "dirC/fileC", "dirC/dirD/fileD", ])
         _check(p, "*/", ["dirA/", "dirB/", "dirC/", "dirC/dirD/", "dirE/"])
-        _check(p, "", ["./", "dirA/", "dirB/", "dirC/", "dirE/", "dirC/dirD/"])
+        _check(p, "", ["", "dirA/", "dirB/", "dirC/", "dirE/", "dirC/dirD/"])
 
         p = P(self.base, "dirC")
         _check(p, "*", ["dirC/fileC", "dirC/novel.txt",
@@ -1146,25 +1176,6 @@ class DummyPathTest(DummyPurePathTest):
                   'brokenLinkLoop',
                   }
         self.assertEqual(given, {p / x for x in expect})
-
-    def test_glob_many_open_files(self):
-        depth = 30
-        P = self.cls
-        p = base = P(self.base) / 'deep'
-        p.mkdir()
-        for _ in range(depth):
-            p /= 'd'
-            p.mkdir()
-        pattern = '/'.join(['*'] * depth)
-        iters = [base.glob(pattern) for j in range(100)]
-        for it in iters:
-            self.assertEqual(next(it), p)
-        iters = [base.rglob('d') for j in range(100)]
-        p = base
-        for i in range(depth):
-            p = p / 'd'
-            for it in iters:
-                self.assertEqual(next(it), p)
 
     def test_glob_dotdot(self):
         # ".." is not special in globs.
@@ -1208,30 +1219,6 @@ class DummyPathTest(DummyPurePathTest):
         bad_link = base / 'bad_link'
         bad_link.symlink_to("bad" * 200)
         self.assertEqual(sorted(base.glob('**/*')), [bad_link])
-
-    def test_glob_above_recursion_limit(self):
-        recursion_limit = 50
-        # directory_depth > recursion_limit
-        directory_depth = recursion_limit + 10
-        base = self.cls(self.base, 'deep')
-        path = base.joinpath(*(['d'] * directory_depth))
-        path.mkdir(parents=True)
-
-        with set_recursion_limit(recursion_limit):
-            list(base.glob('**/'))
-
-    def test_glob_recursive_no_trailing_slash(self):
-        P = self.cls
-        p = P(self.base)
-        with self.assertWarns(FutureWarning):
-            p.glob('**')
-        with self.assertWarns(FutureWarning):
-            p.glob('*/**')
-        with self.assertWarns(FutureWarning):
-            p.rglob('**')
-        with self.assertWarns(FutureWarning):
-            p.rglob('*/**')
-
 
     def test_readlink(self):
         if not self.can_symlink:
@@ -1739,17 +1726,6 @@ class DummyPathTest(DummyPurePathTest):
         else:
             self.fail("symlink not found")
 
-    def test_walk_above_recursion_limit(self):
-        recursion_limit = 40
-        # directory_depth > recursion_limit
-        directory_depth = recursion_limit + 10
-        base = self.cls(self.base, 'deep')
-        path = base.joinpath(*(['d'] * directory_depth))
-        path.mkdir(parents=True)
-
-        with set_recursion_limit(recursion_limit):
-            list(base.walk())
-            list(base.walk(top_down=False))
 
 class DummyPathWithSymlinks(DummyPath):
     def readlink(self):

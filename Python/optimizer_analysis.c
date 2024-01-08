@@ -4,6 +4,7 @@
 #include "pycore_opcode_metadata.h"
 #include "pycore_opcode_utils.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_uop_metadata.h"
 #include "pycore_uops.h"
 #include "pycore_long.h"
 #include "cpython/optimizer.h"
@@ -35,13 +36,13 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
             break;
         }
         else {
-            if (OPCODE_HAS_ESCAPES(opcode)) {
+            if (_PyUop_Flags[opcode] & HAS_ESCAPES_FLAG) {
                 maybe_invalid = true;
                 if (last_set_ip >= 0) {
                     buffer[last_set_ip].opcode = _SET_IP;
                 }
             }
-            if (OPCODE_HAS_ERROR(opcode) || opcode == _PUSH_FRAME) {
+            if ((_PyUop_Flags[opcode] & HAS_ERROR_FLAG) || opcode == _PUSH_FRAME) {
                 if (last_set_ip >= 0) {
                     buffer[last_set_ip].opcode = _SET_IP;
                 }

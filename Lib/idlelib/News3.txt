@@ -4,7 +4,13 @@ Released on 2024-10-xx
 =========================
 
 
+gh-113729: Fix the "Help -> IDLE Doc" menu bug in 3.11.7 and 3.12.1.
+
+gh-57795: Enter selected text into the Find box when opening
+a Replace dialog.  Patch by  Roger Serwy and Zackery Spytz.
+
 gh-113269: Fix test_editor hang on macOS Catalina.
+Patch by Terry Reedy.
 
 gh-112939: Fix processing unsaved files when quitting IDLE on macOS.
 Patch by Ronald Oussoren and Christopher Chavez.
