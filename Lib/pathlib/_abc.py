@@ -10,9 +10,6 @@ from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 # Internals
 #
 
-# Maximum number of symlinks to follow in PathBase.resolve()
-_MAX_SYMLINKS = 40
-
 # Reference for Windows paths can be found at
 # https://learn.microsoft.com/en-gb/windows/win32/fileio/naming-a-file .
 _WIN_RESERVED_NAMES = frozenset(
@@ -500,6 +497,9 @@ class PathBase(PurePathBase):
     """
     __slots__ = ()
 
+    # Maximum number of symlinks to follow in resolve()
+    _max_symlinks = 40
+
     @classmethod
     def _unsupported(cls, method_name):
         msg = f"{cls.__name__}.{method_name}() is unsupported"
@@ -971,7 +971,7 @@ class PathBase(PurePathBase):
                         # Like Linux and macOS, raise OSError(errno.ELOOP) if too many symlinks are
                         # encountered during resolution.
                         link_count += 1
-                        if link_count >= _MAX_SYMLINKS:
+                        if link_count >= self._max_symlinks:
                             raise OSError(ELOOP, "Too many symbolic links in path", str(self))
                         target, target_parts = next_path.readlink()._split_stack()
                         # If the symlink target is absolute (like '/etc/hosts'), set the current
