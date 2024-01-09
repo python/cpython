@@ -212,9 +212,9 @@ def cflags(p: Properties) -> str:
     if p.escapes:
         flags.append("HAS_ESCAPES_FLAG")
     if p.pure:
-        flags.append("PURE")
+        flags.append("HAS_PURE_FLAG")
     if p.passthrough:
-        flags.append("PASSTHROUGH")
+        flags.append("HAS_PASSTHROUGH_FLAG")
     if flags:
         return " | ".join(flags)
     else:
