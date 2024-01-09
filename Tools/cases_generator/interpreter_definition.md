@@ -144,7 +144,9 @@ The objects before the "--" are the objects on top of the stack at the start of
 the instruction. Those after the "--" are the objects on top of the stack at the
 end of the instruction. When prefixed by a `&`, the type rule follows the
 `type_prop` rule. This indicates the stack effect is of that specific type
-after the operation.
+after the operation. In this case, the type may also contain auxillary information
+that is fetched from a previously defined operand in the instruction header, such as
+a type version tag. This follows the format `type + auxillary`.
 
 An `inst` without `stack_effect` is a transitional form to allow the original C code
 definitions to be copied. It lacks information to generate anything other than the
