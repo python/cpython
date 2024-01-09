@@ -23,7 +23,7 @@ def get_test_tk_root(test_instance):
     requires('gui')
     root = Tk()
     root.withdraw()
-    patcher = mock.patch("idlelib.macosx._idle_root", new=root)
+    patcher = patch("idlelib.macosx._idle_root", new=root)
     patcher.start()
 
     def cleanup_root():
