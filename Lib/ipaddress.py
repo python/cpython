@@ -12,7 +12,6 @@ __version__ = '1.0'
 
 
 import functools
-from itertools import combinations
 
 IPV4LENGTH = 32
 IPV6LENGTH = 128
