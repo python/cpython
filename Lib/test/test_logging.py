@@ -43,6 +43,7 @@ import sys
 import tempfile
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test import support
+from test.support import import_helper
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import threading_helper
@@ -3894,7 +3895,8 @@ class ConfigDictTest(BaseTest):
 
     def test_111615(self):
         # See gh-111615
-        import multiprocessing as mp
+        import_helper.import_module('_multiprocessing')  # see gh-113692
+        mp = import_helper.import_module('multiprocessing')
 
         config = {
             'version': 1,
