@@ -272,9 +272,28 @@ class MmapTests(unittest.TestCase):
         with open(TESTFN, "wb") as f:
             f.write(b"a"*size)
         with open(TESTFN, "r+b") as f:
-            m = mmap.mmap(f.fileno(), size, trackfd=False)
-            self.assertEqual(len(m), size)
-            m.close()
+            with mmap.mmap(f.fileno(), size, trackfd=False) as m:
+                self.assertEqual(len(m), size)
+                with self.assertRaises(OSError):
+                    m.size()
+                self.assertEqual(m.closed, False)
+
+                # Smoke-test other API
+                m.resize(size * 2)
+                m.write_byte(ord('X'))
+                m[2] = ord('Y')
+                m[size + 1] = ord('Z')
+                m.flush()
+                with open(TESTFN, "rb") as f:
+                    self.assertEqual(f.read(4), b'XaYa')
+                self.assertEqual(m.tell(), 1)
+                m.seek(0)
+                self.assertEqual(m.tell(), 0)
+                self.assertEqual(m.read_byte(), ord('X'))
+                self.assertEqual(m[size + 1], 0)  # TODO: resize doesn't quite work
+
+        self.assertEqual(m.closed, True)
+        self.assertEqual(os.stat(TESTFN).st_size, size)
 
     def test_bad_file_desc(self):
         # Try opening a bad file descriptor...
