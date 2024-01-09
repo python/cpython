@@ -2870,6 +2870,7 @@ list_richcompare(PyObject *v, PyObject *w, int op)
     Py_END_CRITICAL_SECTION2()
     return ret;
 }
+
 /*[clinic input]
 list.__init__
 
