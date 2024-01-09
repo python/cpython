@@ -1,4 +1,0 @@
-Add :opcode:`LOAD_SUPER_ATTR` (and a specialization for ``super().method()``) to
-speed up ``super().method()`` and ``super().attr``. This makes
-``super().method()`` roughly 2.3x faster and brings it within 20% of the
-performance of a simple method call. Patch by Vladimir Matveev and Carl Meyer.

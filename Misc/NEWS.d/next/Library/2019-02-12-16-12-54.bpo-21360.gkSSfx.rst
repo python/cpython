@@ -1,0 +1,1 @@
+:class:`mailbox.Maildir` now ignores files with a leading dot.

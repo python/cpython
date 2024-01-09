@@ -1,7 +1,8 @@
+import _ctypes_test
+import ctypes
 import unittest
+from ctypes import CDLL, c_int
 
-from ctypes import *
-from test.test_ctypes import need_symbol
 
 class CHECKED(c_int):
     def _check_retval_(value):
@@ -9,11 +10,9 @@ class CHECKED(c_int):
         return str(value.value)
     _check_retval_ = staticmethod(_check_retval_)
 
+
 class Test(unittest.TestCase):
-
     def test_checkretval(self):
-
-        import _ctypes_test
         dll = CDLL(_ctypes_test.__file__)
         self.assertEqual(42, dll._testfunc_p_p(42))
 
@@ -26,11 +25,12 @@ class Test(unittest.TestCase):
         del dll._testfunc_p_p.restype
         self.assertEqual(42, dll._testfunc_p_p(42))
 
-    @need_symbol('oledll')
+    @unittest.skipUnless(hasattr(ctypes, 'oledll'),
+                         'ctypes.oledll is required')
     def test_oledll(self):
-        self.assertRaises(OSError,
-                              oledll.oleaut32.CreateTypeLib2,
-                              0, None, None)
+        oleaut32 = ctypes.oledll.oleaut32
+        self.assertRaises(OSError, oleaut32.CreateTypeLib2, 0, None, None)
+
 
 if __name__ == "__main__":
     unittest.main()

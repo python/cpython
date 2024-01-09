@@ -78,14 +78,6 @@ PyAPI_FUNC(void) PyObject_SetArenaAllocator(PyObjectArenaAllocator *allocator);
 PyAPI_FUNC(int) PyObject_IS_GC(PyObject *obj);
 
 
-/* Code built with Py_BUILD_CORE must include pycore_gc.h instead which
-   defines a different _PyGC_FINALIZED() macro. */
-#ifndef Py_BUILD_CORE
-   // Kept for backward compatibility with Python 3.8
-#  define _PyGC_FINALIZED(o) PyObject_GC_IsFinalized(o)
-#endif
-
-
 // Test if a type supports weak references
 PyAPI_FUNC(int) PyType_SUPPORTS_WEAKREFS(PyTypeObject *type);
 

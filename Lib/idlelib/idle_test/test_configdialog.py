@@ -430,7 +430,7 @@ class HighPageTest(unittest.TestCase):
 
         def tag_to_element(elem):
             for element, tag in d.theme_elements.items():
-                elem[tag[0]] = element
+                elem[tag] = element
 
         def click_it(start):
             x, y, dx, dy = hs.bbox(start)

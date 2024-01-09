@@ -28,6 +28,7 @@ simple statements is:
               : | `future_stmt`
               : | `global_stmt`
               : | `nonlocal_stmt`
+              : | `type_stmt`
 
 
 .. _exprstmts:
@@ -209,11 +210,11 @@ Assignment of an object to a single target is recursively defined as follows.
 
   If the primary is a mapping object (such as a dictionary), the subscript must
   have a type compatible with the mapping's key type, and the mapping is then
-  asked to create a key/datum pair which maps the subscript to the assigned
+  asked to create a key/value pair which maps the subscript to the assigned
   object.  This can either replace an existing key/value pair with the same key
   value, or insert a new key/value pair (if no key with the same value existed).
 
-  For user-defined objects, the :meth:`__setitem__` method is called with
+  For user-defined objects, the :meth:`~object.__setitem__` method is called with
   appropriate arguments.
 
   .. index:: pair: slicing; assignment
@@ -350,7 +351,7 @@ If the right hand side is present, an annotated
 assignment performs the actual assignment before evaluating annotations
 (where applicable). If the right hand side is not present for an expression
 target, then the interpreter evaluates the target except for the last
-:meth:`__setitem__` or :meth:`__setattr__` call.
+:meth:`~object.__setitem__` or :meth:`~object.__setattr__` call.
 
 .. seealso::
 
@@ -577,7 +578,7 @@ The :dfn:`type` of the exception is the exception instance's class, the
 .. index:: pair: object; traceback
 
 A traceback object is normally created automatically when an exception is raised
-and attached to it as the :attr:`__traceback__` attribute, which is writable.
+and attached to it as the :attr:`~BaseException.__traceback__` attribute.
 You can create an exception and set your own traceback in one step using the
 :meth:`~BaseException.with_traceback` exception method (which returns the
 same exception instance, with its traceback set to its argument), like so::
@@ -591,11 +592,13 @@ same exception instance, with its traceback set to its argument), like so::
 The ``from`` clause is used for exception chaining: if given, the second
 *expression* must be another exception class or instance. If the second
 expression is an exception instance, it will be attached to the raised
-exception as the :attr:`__cause__` attribute (which is writable). If the
+exception as the :attr:`~BaseException.__cause__` attribute (which is writable). If the
 expression is an exception class, the class will be instantiated and the
 resulting exception instance will be attached to the raised exception as the
-:attr:`__cause__` attribute. If the raised exception is not handled, both
-exceptions will be printed::
+:attr:`!__cause__` attribute. If the raised exception is not handled, both
+exceptions will be printed:
+
+.. code-block:: pycon
 
    >>> try:
    ...     print(1 / 0)
@@ -604,19 +607,24 @@ exceptions will be printed::
    ...
    Traceback (most recent call last):
      File "<stdin>", line 2, in <module>
+       print(1 / 0)
+             ~~^~~
    ZeroDivisionError: division by zero
 
    The above exception was the direct cause of the following exception:
 
    Traceback (most recent call last):
      File "<stdin>", line 4, in <module>
+       raise RuntimeError("Something bad happened") from exc
    RuntimeError: Something bad happened
 
 A similar mechanism works implicitly if a new exception is raised when
 an exception is already being handled.  An exception may be handled
 when an :keyword:`except` or :keyword:`finally` clause, or a
 :keyword:`with` statement, is used.  The previous exception is then
-attached as the new exception's :attr:`__context__` attribute::
+attached as the new exception's :attr:`~BaseException.__context__` attribute:
+
+.. code-block:: pycon
 
    >>> try:
    ...     print(1 / 0)
@@ -625,16 +633,21 @@ attached as the new exception's :attr:`__context__` attribute::
    ...
    Traceback (most recent call last):
      File "<stdin>", line 2, in <module>
+       print(1 / 0)
+             ~~^~~
    ZeroDivisionError: division by zero
 
    During handling of the above exception, another exception occurred:
 
    Traceback (most recent call last):
      File "<stdin>", line 4, in <module>
+       raise RuntimeError("Something bad happened")
    RuntimeError: Something bad happened
 
 Exception chaining can be explicitly suppressed by specifying :const:`None` in
-the ``from`` clause::
+the ``from`` clause:
+
+.. doctest::
 
    >>> try:
    ...     print(1 / 0)
@@ -652,8 +665,8 @@ and information about handling exceptions is in section :ref:`try`.
     :const:`None` is now permitted as ``Y`` in ``raise X from Y``.
 
 .. versionadded:: 3.3
-    The ``__suppress_context__`` attribute to suppress automatic display of the
-    exception context.
+    The :attr:`~BaseException.__suppress_context__` attribute to suppress
+    automatic display of the exception context.
 
 .. versionchanged:: 3.11
     If the traceback of the active exception is modified in an :keyword:`except`
@@ -919,7 +932,7 @@ That is not a future statement; it's an ordinary import statement with no
 special semantics or syntax restrictions.
 
 Code compiled by calls to the built-in functions :func:`exec` and :func:`compile`
-that occur in a module :mod:`M` containing a future statement will, by default,
+that occur in a module :mod:`!M` containing a future statement will, by default,
 use the new syntax or semantics associated with the future statement.  This can
 be controlled by optional arguments to :func:`compile` --- see the documentation
 of that function for details.
@@ -1012,3 +1025,48 @@ pre-existing bindings in the local scope.
 
    :pep:`3104` - Access to Names in Outer Scopes
       The specification for the :keyword:`nonlocal` statement.
+
+.. _type:
+
+The :keyword:`!type` statement
+==============================
+
+.. index:: pair: statement; type
+
+.. productionlist:: python-grammar
+   type_stmt: 'type' `identifier` [`type_params`] "=" `expression`
+
+The :keyword:`!type` statement declares a type alias, which is an instance
+of :class:`typing.TypeAliasType`.
+
+For example, the following statement creates a type alias::
+
+   type Point = tuple[float, float]
+
+This code is roughly equivalent to::
+
+   annotation-def VALUE_OF_Point():
+       return tuple[float, float]
+   Point = typing.TypeAliasType("Point", VALUE_OF_Point())
+
+``annotation-def`` indicates an :ref:`annotation scope <annotation-scopes>`, which behaves
+mostly like a function, but with several small differences.
+
+The value of the
+type alias is evaluated in the annotation scope. It is not evaluated when the
+type alias is created, but only when the value is accessed through the type alias's
+:attr:`!__value__` attribute (see :ref:`lazy-evaluation`).
+This allows the type alias to refer to names that are not yet defined.
+
+Type aliases may be made generic by adding a :ref:`type parameter list <type-params>`
+after the name. See :ref:`generic-type-aliases` for more.
+
+:keyword:`!type` is a :ref:`soft keyword <soft-keywords>`.
+
+.. versionadded:: 3.12
+
+.. seealso::
+
+   :pep:`695` - Type Parameter Syntax
+      Introduced the :keyword:`!type` statement and syntax for
+      generic classes and functions.

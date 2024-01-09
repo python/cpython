@@ -1,2 +1,0 @@
-Avoid a potential :exc:`ResourceWarning` in :class:`http.client.HTTPConnection`
-by closing the proxy / tunnel's CONNECT response explicitly.

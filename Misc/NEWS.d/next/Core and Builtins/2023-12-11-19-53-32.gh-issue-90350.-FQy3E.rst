@@ -1,0 +1,1 @@
+Optimize builtin functions :func:`min` and :func:`max`.

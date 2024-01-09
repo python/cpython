@@ -220,7 +220,7 @@ access of ``builtins.__dict__`` keys mutates the iter object.
 .. section: Core and Builtins
 
 Update :mod:`tracemalloc` to handle presize of object properly. Patch by
-Dong-hee Na.
+Donghee Na.
 
 ..
 
@@ -303,7 +303,7 @@ Kim.
 .. nonce: Vxz0Mr
 .. section: Library
 
-Add :data:`mmap.MAP_ALIGNED_SUPER` FreeBSD and :data:`mmap.MAP_CONCEAL`
+Add :const:`mmap.MAP_ALIGNED_SUPER` FreeBSD and :const:`mmap.MAP_CONCEAL`
 OpenBSD constants to :mod:`mmap`. Patch by Yeojin Kim.
 
 ..
