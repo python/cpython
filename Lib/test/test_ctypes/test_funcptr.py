@@ -3,8 +3,8 @@ import ctypes
 import unittest
 from ctypes import (CDLL, Structure, CFUNCTYPE, sizeof, _CFuncPtr,
                     c_void_p, c_char_p, c_char, c_int, c_uint, c_long)
-from .support import (_CData, PyCFuncPtrType, PY_TPFLAGS_DISALLOW_INSTANTIATION,
-                      PY_TPFLAGS_IMMUTABLETYPE)
+from .support import (_CData, PyCFuncPtrType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
+                      Py_TPFLAGS_IMMUTABLETYPE)
 
 
 try:
@@ -24,11 +24,11 @@ class CFuncPtrTestCase(unittest.TestCase):
         self.assertEqual(type(PyCFuncPtrType), type)
 
     def test_type_flags(self):
-        self.assertTrue(_CFuncPtr.__flags__ & PY_TPFLAGS_IMMUTABLETYPE)
-        self.assertFalse(_CFuncPtr.__flags__ & PY_TPFLAGS_DISALLOW_INSTANTIATION)
+        self.assertTrue(_CFuncPtr.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
+        self.assertFalse(_CFuncPtr.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
 
-        self.assertTrue(PyCFuncPtrType.__flags__ & PY_TPFLAGS_IMMUTABLETYPE)
-        self.assertFalse(PyCFuncPtrType.__flags__ & PY_TPFLAGS_DISALLOW_INSTANTIATION)
+        self.assertTrue(PyCFuncPtrType.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
+        self.assertFalse(PyCFuncPtrType.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
 
     def test_basic(self):
         X = WINFUNCTYPE(c_int, c_int, c_int)

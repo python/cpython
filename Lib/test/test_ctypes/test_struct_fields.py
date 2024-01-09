@@ -1,6 +1,6 @@
 import unittest
 from ctypes import Structure, Union, sizeof, c_char, c_int
-from .support import PY_TPFLAGS_DISALLOW_INSTANTIATION, PY_TPFLAGS_IMMUTABLETYPE
+from .support import Py_TPFLAGS_DISALLOW_INSTANTIATION, Py_TPFLAGS_IMMUTABLETYPE
 
 
 class StructFieldsTestCase(unittest.TestCase):
@@ -63,8 +63,8 @@ class StructFieldsTestCase(unittest.TestCase):
         self.assertRaises(TypeError, self.CField)
 
     def test_cfield_type_flags(self):
-        self.assertTrue(self.CField.__flags__ & PY_TPFLAGS_DISALLOW_INSTANTIATION)
-        self.assertTrue(self.CField.__flags__ & PY_TPFLAGS_IMMUTABLETYPE)
+        self.assertTrue(self.CField.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
+        self.assertTrue(self.CField.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
 
     def test_cfield_inheritance_hierarchy(self):
         self.assertEqual(self.CField.mro(), [self.CField, object])

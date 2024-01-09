@@ -7,8 +7,8 @@ from ctypes import (Structure, Array, sizeof, addressof,
                     c_char, c_wchar, c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
                     c_long, c_ulonglong, c_float, c_double, c_longdouble)
 from test.support import bigmemtest, _2G
-from .support import (_CData, PyCArrayType, PY_TPFLAGS_DISALLOW_INSTANTIATION,
-                      PY_TPFLAGS_IMMUTABLETYPE)
+from .support import (_CData, PyCArrayType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
+                      Py_TPFLAGS_IMMUTABLETYPE)
 
 
 formats = "bBhHiIlLqQfd"
@@ -32,11 +32,11 @@ class ArrayTestCase(unittest.TestCase):
         self.assertEqual(type(PyCArrayType), type)
 
     def test_type_flags(self):
-        self.assertTrue(Array.__flags__ & PY_TPFLAGS_IMMUTABLETYPE)
-        self.assertFalse(Array.__flags__ & PY_TPFLAGS_DISALLOW_INSTANTIATION)
+        self.assertTrue(Array.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
+        self.assertFalse(Array.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
 
-        self.assertTrue(PyCArrayType.__flags__ & PY_TPFLAGS_IMMUTABLETYPE)
-        self.assertFalse(PyCArrayType.__flags__ & PY_TPFLAGS_DISALLOW_INSTANTIATION)
+        self.assertTrue(PyCArrayType.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
+        self.assertFalse(PyCArrayType.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
 
     def test_simple(self):
         # create classes holding simple numeric types, and check

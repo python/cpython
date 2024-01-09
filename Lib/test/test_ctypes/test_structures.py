@@ -12,8 +12,8 @@ from ctypes.util import find_library
 from struct import calcsize
 from collections import namedtuple
 from test import support
-from .support import (_CData, PyCStructType, PY_TPFLAGS_DISALLOW_INSTANTIATION,
-                      PY_TPFLAGS_IMMUTABLETYPE)
+from .support import (_CData, PyCStructType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
+                      Py_TPFLAGS_IMMUTABLETYPE)
 
 
 class SubclassesTest(unittest.TestCase):
@@ -80,11 +80,11 @@ class StructureTestCase(unittest.TestCase):
 
 
     def test_type_flags(self):
-        self.assertTrue(Structure.__flags__ & PY_TPFLAGS_IMMUTABLETYPE)
-        self.assertFalse(Structure.__flags__ & PY_TPFLAGS_DISALLOW_INSTANTIATION)
+        self.assertTrue(Structure.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
+        self.assertFalse(Structure.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
 
-        self.assertTrue(PyCStructType.__flags__ & PY_TPFLAGS_IMMUTABLETYPE)
-        self.assertFalse(PyCStructType.__flags__ & PY_TPFLAGS_DISALLOW_INSTANTIATION)
+        self.assertTrue(PyCStructType.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
+        self.assertFalse(PyCStructType.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
 
     def test_simple_structs(self):
         for code, tp in self.formats.items():

@@ -1,7 +1,7 @@
 import unittest
 from ctypes import Structure, CFUNCTYPE, c_int, _SimpleCData
-from .support import (_CData, PyCSimpleType, PY_TPFLAGS_DISALLOW_INSTANTIATION,
-                      PY_TPFLAGS_IMMUTABLETYPE)
+from .support import (_CData, PyCSimpleType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
+                      Py_TPFLAGS_IMMUTABLETYPE)
 
 
 class MyInt(c_int):
@@ -21,11 +21,11 @@ class Test(unittest.TestCase):
         self.assertEqual(c_int.mro(), [c_int, _SimpleCData, _CData, object])
 
     def test_type_flags(self):
-        self.assertTrue(_SimpleCData.__flags__ & PY_TPFLAGS_IMMUTABLETYPE)
-        self.assertFalse(_SimpleCData.__flags__ & PY_TPFLAGS_DISALLOW_INSTANTIATION)
+        self.assertTrue(_SimpleCData.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
+        self.assertFalse(_SimpleCData.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
 
-        self.assertTrue(PyCSimpleType.__flags__ & PY_TPFLAGS_IMMUTABLETYPE)
-        self.assertFalse(PyCSimpleType.__flags__ & PY_TPFLAGS_DISALLOW_INSTANTIATION)
+        self.assertTrue(PyCSimpleType.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
+        self.assertFalse(PyCSimpleType.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
 
     def test_compare(self):
         self.assertEqual(MyInt(3), MyInt(3))

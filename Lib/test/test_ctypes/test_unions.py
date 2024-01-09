@@ -1,7 +1,7 @@
 import unittest
 from ctypes import Union
-from .support import (_CData, UnionType, PY_TPFLAGS_DISALLOW_INSTANTIATION,
-                      PY_TPFLAGS_IMMUTABLETYPE)
+from .support import (_CData, UnionType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
+                      Py_TPFLAGS_IMMUTABLETYPE)
 
 
 class ArrayTestCase(unittest.TestCase):
@@ -12,8 +12,8 @@ class ArrayTestCase(unittest.TestCase):
         self.assertEqual(type(UnionType), type)
 
     def test_type_flags(self):
-        self.assertTrue(Union.__flags__ & PY_TPFLAGS_IMMUTABLETYPE)
-        self.assertFalse(Union.__flags__ & PY_TPFLAGS_DISALLOW_INSTANTIATION)
+        self.assertTrue(Union.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
+        self.assertFalse(Union.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
 
-        self.assertTrue(UnionType.__flags__ & PY_TPFLAGS_IMMUTABLETYPE)
-        self.assertFalse(UnionType.__flags__ & PY_TPFLAGS_DISALLOW_INSTANTIATION)
+        self.assertTrue(UnionType.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
+        self.assertFalse(UnionType.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
