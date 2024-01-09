@@ -372,25 +372,25 @@ MAP_* Constants
 
 .. data:: MAP_SHARED
           MAP_PRIVATE
-          MAP_DENYWRITE
-          MAP_EXECUTABLE
+          MAP_32BIT
+          MAP_ALIGNED_SUPER
           MAP_ANON
           MAP_ANONYMOUS
-          MAP_POPULATE
-          MAP_STACK
-          MAP_ALIGNED_SUPER
           MAP_CONCEAL
-          MAP_NORESERVE
-          MAP_NOEXTEND
+          MAP_DENYWRITE
+          MAP_EXECUTABLE
           MAP_HASSEMAPHORE
-          MAP_NOCACHE
           MAP_JIT
+          MAP_NOCACHE
+          MAP_NOEXTEND
+          MAP_NORESERVE
+          MAP_POPULATE
           MAP_RESILIENT_CODESIGN
           MAP_RESILIENT_MEDIA
-          MAP_32BIT
+          MAP_STACK
+          MAP_TPRO
           MAP_TRANSLATED_ALLOW_EXECUTE
           MAP_UNIX03
-          MAP_TPRO
 
     These are the various flags that can be passed to :meth:`mmap.mmap`.  :data:`MAP_ALIGNED_SUPER`
     is only available at FreeBSD and :data:`MAP_CONCEAL` is only available at OpenBSD.  Note
