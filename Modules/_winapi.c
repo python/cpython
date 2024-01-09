@@ -922,7 +922,9 @@ getenvironment(PyObject* environment)
 {
     Py_ssize_t i, envsize, totalsize;
     wchar_t *buffer = NULL, *p, *end;
-    PyObject *normalized_environment = NULL, *keys = NULL, *values = NULL;
+    PyObject *normalized_environment = NULL;
+    PyObject *keys = NULL;
+    PyObject *values = NULL;
 
     /* convert environment dictionary to windows environment string */
     if (! PyMapping_Check(environment)) {
