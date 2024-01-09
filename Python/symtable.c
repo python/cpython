@@ -872,6 +872,12 @@ update_symbols(PyObject *symbols, PyObject *scopes,
         }
         Py_DECREF(name);
     }
+
+    /* Check if loop ended because of exception in PyIter_Next */
+    if (PyErr_Occurred()) {
+        goto error;
+    }
+
     Py_DECREF(itr);
     Py_DECREF(v_free);
     return 1;
