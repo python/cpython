@@ -894,7 +894,7 @@ normalize_environment(PyObject* environment)
     if (result == NULL) {
         goto error;
     }
-    for (int i=0; i<PyList_GET_SIZE(normalized_keys); i++) {
+    for (int i = 0; i < PyList_GET_SIZE(normalized_keys); i++) {
         PyObject *key = PyList_GET_ITEM(normalized_keys, i);
         if (key == NULL) {
             goto error;
