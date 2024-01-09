@@ -2,7 +2,6 @@ import functools
 import ntpath
 import posixpath
 from errno import ENOENT, ENOTDIR, EBADF, ELOOP, EINVAL
-from itertools import chain
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 
 #
@@ -272,23 +271,40 @@ class PurePathBase:
         """
         if not isinstance(other, PurePathBase):
             other = self.with_segments(other)
-        for step, path in enumerate(chain([other], other.parents)):
-            if path == self or path in self.parents:
-                break
+        anchor0, parts0 = self._stack
+        anchor1, parts1 = other._stack
+        if anchor0 != anchor1:
+            raise ValueError(f"{str(self)!r} and {str(other)!r} have different anchors")
+        while parts0 and parts1 and parts0[-1] == parts1[-1]:
+            parts0.pop()
+            parts1.pop()
+        for part in parts1:
+            if not part or part == '.':
+                pass
             elif not walk_up:
                 raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
-            elif path.name == '..':
+            elif part == '..':
                 raise ValueError(f"'..' segment in {str(other)!r} cannot be walked")
-        else:
-            raise ValueError(f"{str(self)!r} and {str(other)!r} have different anchors")
-        return self.with_segments(*['..'] * step, *self.parts[len(path.parts):])
+            else:
+                parts0.append('..')
+        return self.with_segments('', *reversed(parts0))
 
     def is_relative_to(self, other):
         """Return True if the path is relative to another path or False.
         """
         if not isinstance(other, PurePathBase):
             other = self.with_segments(other)
-        return other == self or other in self.parents
+        anchor0, parts0 = self._stack
+        anchor1, parts1 = other._stack
+        if anchor0 != anchor1:
+            return False
+        while parts0 and parts1 and parts0[-1] == parts1[-1]:
+            parts0.pop()
+            parts1.pop()
+        for part in parts1:
+            if part and part != '.':
+                return False
+        return True
 
     @property
     def parts(self):

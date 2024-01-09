@@ -338,26 +338,12 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
         self.assertRaises(ValueError, P('.').with_suffix, '.gz')
         self.assertRaises(ValueError, P('/').with_suffix, '.gz')
 
-    def test_relative_to_trailing_sep(self):
-        P = self.cls
-        p = P('a/b')
-        self.assertEqual(p.relative_to('a/'), P('b'))
-        self.assertEqual(p.relative_to('a/', walk_up=True), P('b'))
-        p = P('/a/b')
-        self.assertEqual(p.relative_to('/a/'), P('b'))
-        self.assertEqual(p.relative_to('/a/', walk_up=True), P('b'))
-
     def test_relative_to_several_args(self):
         P = self.cls
         p = P('a/b')
         with self.assertWarns(DeprecationWarning):
             p.relative_to('a', 'b')
             p.relative_to('a', 'b', walk_up=True)
-
-    def test_is_relative_to_trailing_sep(self):
-        P = self.cls
-        self.assertTrue(P('a/b').is_relative_to('a/'))
-        self.assertTrue(P('/a/b').is_relative_to('/a/'))
 
     def test_is_relative_to_several_args(self):
         P = self.cls

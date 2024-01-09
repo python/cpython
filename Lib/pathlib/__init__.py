@@ -11,6 +11,7 @@ import os
 import posixpath
 import sys
 import warnings
+from itertools import chain
 from _collections_abc import Sequence
 
 try:
@@ -356,10 +357,19 @@ class PurePath(_abc.PurePathBase):
                    "scheduled for removal in Python 3.14")
             warnings.warn(msg, DeprecationWarning, stacklevel=2)
             other = self.with_segments(other, *_deprecated)
-        path = _abc.PurePathBase.relative_to(self, other, walk_up=walk_up)
-        path._drv = path._root = ''
-        path._tail_cached = path._raw_paths.copy()
-        return path
+        elif not isinstance(other, PurePath):
+            other = self.with_segments(other)
+        for step, path in enumerate(chain([other], other.parents)):
+            if path == self or path in self.parents:
+                break
+            elif not walk_up:
+                raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
+            elif path.name == '..':
+                raise ValueError(f"'..' segment in {str(other)!r} cannot be walked")
+        else:
+            raise ValueError(f"{str(self)!r} and {str(other)!r} have different anchors")
+        parts = ['..'] * step + self._tail[len(path._tail):]
+        return self._from_parsed_parts('', '', parts)
 
     def is_relative_to(self, other, /, *_deprecated):
         """Return True if the path is relative to another path or False.
@@ -370,7 +380,9 @@ class PurePath(_abc.PurePathBase):
                    "scheduled for removal in Python 3.14")
             warnings.warn(msg, DeprecationWarning, stacklevel=2)
             other = self.with_segments(other, *_deprecated)
-        return _abc.PurePathBase.is_relative_to(self, other)
+        elif not isinstance(other, PurePath):
+            other = self.with_segments(other)
+        return other == self or other in self.parents
 
     def as_uri(self):
         """Return the path as a URI."""
