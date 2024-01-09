@@ -32,13 +32,10 @@ class ArrayTestCase(unittest.TestCase):
         self.assertEqual(type(PyCArrayType), type)
 
     def test_type_flags(self):
-        with self.subTest(cls=Array):
-            self.assertTrue(Array.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
-            self.assertFalse(Array.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
-
-        with self.subTest(cls=PyCArrayType):
-            self.assertTrue(PyCArrayType.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
-            self.assertFalse(PyCArrayType.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
+        for cls in Array, PyCArrayType:
+            with self.subTest(cls=cls):
+                self.assertTrue(cls.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
+                self.assertFalse(cls.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
 
     def test_simple(self):
         # create classes holding simple numeric types, and check
