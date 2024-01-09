@@ -214,7 +214,7 @@ dummy_func(
             Py_INCREF(value);
         }
 
-        pure inst(LOAD_FAST_AND_CLEAR, (-- value)) {
+        inst(LOAD_FAST_AND_CLEAR, (-- value)) {
             value = GETLOCAL(oparg);
             // do not use SETLOCAL here, it decrefs the old value
             GETLOCAL(oparg) = NULL;
