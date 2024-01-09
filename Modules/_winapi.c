@@ -788,46 +788,46 @@ static PyMethodDef sortenvironmentkey_def = {
     "",
 };
 
-static bool
+static int
 sort_environment_keys(PyObject *keys)
 {
     PyObject *keyfunc = PyCFunction_New(&sortenvironmentkey_def, NULL);
     if (keyfunc == NULL) {
-        return false;
+        return -1;
     }
     PyObject *kwnames = Py_BuildValue("(s)", "key");
     if (kwnames == NULL) {
         Py_DECREF(keyfunc);
-        return false;
+        return -1;
     }
     PyObject *args[] = { keys, keyfunc };
     PyObject *ret = PyObject_VectorcallMethod(&_Py_ID(sort), args, 1, kwnames);
     Py_DECREF(keyfunc);
     Py_DECREF(kwnames);
     if (ret == NULL) {
-        return false;
+        return -1;
     }
     Py_DECREF(ret);
 
-    return true;
+    return 0;
 }
 
-static bool
+static int
 compare_string_ordinal(PyObject *str1, PyObject *str2, int *result)
 {
     wchar_t *s1 = PyUnicode_AsWideCharString(str1, NULL);
     if (s1 == NULL) {
-        return false;
+        return -1;
     }
     wchar_t *s2 = PyUnicode_AsWideCharString(str2, NULL);
     if (s2 == NULL) {
         PyMem_Free(s1);
-        return false;
+        return -1;
     }
     *result = CompareStringOrdinal(s1, -1, s2, -1, TRUE);
     PyMem_Free(s1);
     PyMem_Free(s2);
-    return true;
+    return 0;
 }
 
 static PyObject *
@@ -856,7 +856,7 @@ dedup_environment_keys(PyObject *keys)
 
         PyObject *next_key = PyList_GET_ITEM(keys, i + 1);
         int compare_result;
-        if (!compare_string_ordinal(key, next_key, &compare_result)) {
+        if (compare_string_ordinal(key, next_key, &compare_result) < 0) {
             Py_DECREF(result);
             return NULL;
         }
@@ -882,7 +882,7 @@ normalize_environment(PyObject* environment)
         return NULL;
     }
 
-    if (!sort_environment_keys(keys)) {
+    if (sort_environment_keys(keys) < 0) {
         goto error;
     }
     normalized_keys = dedup_environment_keys(keys);
