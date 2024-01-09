@@ -1016,19 +1016,16 @@ probability that the Python room will stay within its capacity limits?
     >>> round(NormalDist(mu=n*p, sigma=sqrt(n*p*q)).cdf(k + 0.5), 4)
     0.8402
 
-    >>> # Solution using the cumulative binomial distribution
+    >>> # Exact solution using the cumulative binomial distribution
     >>> from math import comb, fsum
     >>> round(fsum(comb(n, r) * p**r * q**(n-r) for r in range(k+1)), 4)
     0.8402
 
     >>> # Approximation using a simulation
-    >>> from random import seed, choices
+    >>> from random import seed, binomialvariate
     >>> seed(8675309)
-    >>> def trial():
-    ...     return choices(('Python', 'Ruby'), (p, q), k=n).count('Python')
-    ...
-    >>> mean(trial() <= k for i in range(10_000))
-    0.8398
+    >>> mean(binomialvariate(n, p) <= k for i in range(10_000))
+    0.8406
 
 
 Naive bayesian classifier
