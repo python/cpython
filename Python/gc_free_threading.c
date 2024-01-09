@@ -23,7 +23,7 @@ _PyGC_ClearAllFreeLists(PyInterpreterState *interp)
     HEAD_LOCK(&_PyRuntime);
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)interp->threads.head;
     while (tstate != NULL) {
-        _Py_ClearFreeLists(&tstate->freelist_state);
+        _Py_ClearFreeLists(&tstate->freelist_state, 0);
         tstate = (_PyThreadStateImpl *)tstate->base.next;
     }
     HEAD_UNLOCK(&_PyRuntime);
