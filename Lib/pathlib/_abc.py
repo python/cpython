@@ -753,20 +753,7 @@ class PathBase(PurePathBase):
         return entry
 
     def _make_child_relpath(self, name):
-        path_str = str(self)
-        tail = self._tail
-        if tail:
-            path_str = f'{path_str}{self.pathmod.sep}{name}'
-        elif path_str != '.':
-            path_str = f'{path_str}{name}'
-        else:
-            path_str = name
-        path = self.with_segments(path_str)
-        path._str = path_str
-        path._drv = self.drive
-        path._root = self.root
-        path._tail_cached = tail + [name]
-        return path
+        return self.joinpath(name)
 
     def glob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
         """Iterate over this subtree and yield all existing files (of any
