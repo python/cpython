@@ -1162,7 +1162,6 @@ extern "C" {
     INIT_ID(seek), \
     INIT_ID(seekable), \
     INIT_ID(selectors), \
-    INIT_ID(self), \
     INIT_ID(send), \
     INIT_ID(sep), \
     INIT_ID(sequence), \

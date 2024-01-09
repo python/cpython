@@ -11,11 +11,16 @@ class Properties:
     deopts: bool
     oparg: bool
     jumps: bool
+    eval_breaker: bool
     ends_with_eval_breaker: bool
     needs_this: bool
     always_exits: bool
     stores_sp: bool
     tier_one_only: bool
+    uses_co_consts: bool
+    uses_co_names: bool
+    uses_locals: bool
+    has_free: bool
 
     def dump(self, indent: str) -> None:
         print(indent, end="")
@@ -30,11 +35,16 @@ class Properties:
             deopts=any(p.deopts for p in properties),
             oparg=any(p.oparg for p in properties),
             jumps=any(p.jumps for p in properties),
+            eval_breaker=any(p.eval_breaker for p in properties),
             ends_with_eval_breaker=any(p.ends_with_eval_breaker for p in properties),
             needs_this=any(p.needs_this for p in properties),
             always_exits=any(p.always_exits for p in properties),
             stores_sp=any(p.stores_sp for p in properties),
             tier_one_only=any(p.tier_one_only for p in properties),
+            uses_co_consts=any(p.uses_co_consts for p in properties),
+            uses_co_names=any(p.uses_co_names for p in properties),
+            uses_locals=any(p.uses_locals for p in properties),
+            has_free=any(p.has_free for p in properties),
         )
 
 
@@ -44,11 +54,16 @@ SKIP_PROPERTIES = Properties(
     deopts=False,
     oparg=False,
     jumps=False,
+    eval_breaker=False,
     ends_with_eval_breaker=False,
     needs_this=False,
     always_exits=False,
     stores_sp=False,
     tier_one_only=False,
+    uses_co_consts=False,
+    uses_co_names=False,
+    uses_locals=False,
+    has_free=False,
 )
 
 
@@ -142,6 +157,12 @@ class Uop:
             return False
         return True
 
+    def is_super(self) -> bool:
+        for tkn in self.body:
+            if tkn.kind == "IDENTIFIER" and tkn.text == "oparg1":
+                return True
+        return False
+
 
 Part = Uop | Skip
 
@@ -153,6 +174,7 @@ class Instruction:
     _properties: Properties | None
     is_target: bool = False
     family: Optional["Family"] = None
+    opcode: int = -1
 
     @property
     def properties(self) -> Properties:
@@ -171,15 +193,29 @@ class Instruction:
     def size(self) -> int:
         return 1 + sum(part.size for part in self.parts)
 
+    def is_super(self) -> bool:
+        if len(self.parts) != 1:
+            return False
+        uop = self.parts[0]
+        if isinstance(uop, Uop):
+            return uop.is_super()
+        else:
+            return False
+
 
 @dataclass
 class PseudoInstruction:
     name: str
     targets: list[Instruction]
     flags: list[str]
+    opcode: int = -1
 
     def dump(self, indent: str) -> None:
         print(indent, self.name, "->", " or ".join([t.name for t in self.targets]))
+
+    @property
+    def properties(self) -> Properties:
+        return Properties.from_list([i.properties for i in self.targets])
 
 
 @dataclass
@@ -198,12 +234,15 @@ class Analysis:
     uops: dict[str, Uop]
     families: dict[str, Family]
     pseudos: dict[str, PseudoInstruction]
+    opmap: dict[str, int]
+    have_arg: int
+    min_instrumented: int
 
 
 def analysis_error(message: str, tkn: lexer.Token) -> SyntaxError:
     # To do -- support file and line output
     # Construct a SyntaxError instance from message and token
-    return lexer.make_syntax_error(message, "", tkn.line, tkn.column, "")
+    return lexer.make_syntax_error(message, tkn.filename, tkn.line, tkn.column, "")
 
 
 def override_error(
@@ -234,10 +273,15 @@ def analyze_stack(op: parser.InstDef) -> StackEffect:
     return StackEffect(inputs, outputs)
 
 
-def analyze_caches(op: parser.InstDef) -> list[CacheEntry]:
+def analyze_caches(inputs: list[parser.InputEffect]) -> list[CacheEntry]:
     caches: list[parser.CacheEffect] = [
-        i for i in op.inputs if isinstance(i, parser.CacheEffect)
+        i for i in inputs if isinstance(i, parser.CacheEffect)
     ]
+    for cache in caches:
+        if cache.name == "unused":
+            raise analysis_error(
+                "Unused cache entry in op. Move to enclosing macro.", cache.tokens[0]
+            )
     return [CacheEntry(i.name, int(i.size)) for i in caches]
 
 
@@ -258,7 +302,81 @@ def is_infallible(op: parser.InstDef) -> bool:
     )
 
 
-from flags import makes_escaping_api_call
+NON_ESCAPING_FUNCTIONS = (
+    "Py_INCREF",
+    "_PyDictOrValues_IsValues",
+    "_PyObject_DictOrValuesPointer",
+    "_PyDictOrValues_GetValues",
+    "_PyObject_MakeInstanceAttributesFromDict",
+    "Py_DECREF",
+    "_Py_DECREF_SPECIALIZED",
+    "DECREF_INPUTS_AND_REUSE_FLOAT",
+    "PyUnicode_Append",
+    "_PyLong_IsZero",
+    "Py_SIZE",
+    "Py_TYPE",
+    "PyList_GET_ITEM",
+    "PyTuple_GET_ITEM",
+    "PyList_GET_SIZE",
+    "PyTuple_GET_SIZE",
+    "Py_ARRAY_LENGTH",
+    "Py_Unicode_GET_LENGTH",
+    "PyUnicode_READ_CHAR",
+    "_Py_SINGLETON",
+    "PyUnicode_GET_LENGTH",
+    "_PyLong_IsCompact",
+    "_PyLong_IsNonNegativeCompact",
+    "_PyLong_CompactValue",
+    "_Py_NewRef",
+    "_Py_IsImmortal",
+    "_Py_STR",
+    "_PyLong_Add",
+    "_PyLong_Multiply",
+    "_PyLong_Subtract",
+    "Py_NewRef",
+    "_PyList_ITEMS",
+    "_PyTuple_ITEMS",
+    "_PyList_AppendTakeRef",
+    "_Py_atomic_load_uintptr_relaxed",
+    "_PyFrame_GetCode",
+    "_PyThreadState_HasStackSpace",
+)
+
+ESCAPING_FUNCTIONS = (
+    "import_name",
+    "import_from",
+)
+
+
+def makes_escaping_api_call(instr: parser.InstDef) -> bool:
+    if "CALL_INTRINSIC" in instr.name:
+        return True
+    tkns = iter(instr.tokens)
+    for tkn in tkns:
+        if tkn.kind != lexer.IDENTIFIER:
+            continue
+        try:
+            next_tkn = next(tkns)
+        except StopIteration:
+            return False
+        if next_tkn.kind != lexer.LPAREN:
+            continue
+        if tkn.text in ESCAPING_FUNCTIONS:
+            return True
+        if not tkn.text.startswith("Py") and not tkn.text.startswith("_Py"):
+            continue
+        if tkn.text.endswith("Check"):
+            continue
+        if tkn.text.startswith("Py_Is"):
+            continue
+        if tkn.text.endswith("CheckExact"):
+            continue
+        if tkn.text in NON_ESCAPING_FUNCTIONS:
+            continue
+        return True
+    return False
+
+
 
 EXITS = {
     "DISPATCH",
@@ -300,27 +418,38 @@ def always_exits(op: parser.InstDef) -> bool:
 
 
 def compute_properties(op: parser.InstDef) -> Properties:
+    has_free = (
+        variable_used(op, "PyCell_New")
+        or variable_used(op, "PyCell_GET")
+        or variable_used(op, "PyCell_SET")
+    )
     return Properties(
         escapes=makes_escaping_api_call(op),
         infallible=is_infallible(op),
         deopts=variable_used(op, "DEOPT_IF"),
         oparg=variable_used(op, "oparg"),
         jumps=variable_used(op, "JUMPBY"),
+        eval_breaker=variable_used(op, "CHECK_EVAL_BREAKER"),
         ends_with_eval_breaker=eval_breaker_at_end(op),
         needs_this=variable_used(op, "this_instr"),
         always_exits=always_exits(op),
         stores_sp=variable_used(op, "STORE_SP"),
         tier_one_only=variable_used(op, "TIER_ONE_ONLY"),
+        uses_co_consts=variable_used(op, "FRAME_CO_CONSTS"),
+        uses_co_names=variable_used(op, "FRAME_CO_NAMES"),
+        uses_locals=(variable_used(op, "GETLOCAL") or variable_used(op, "SETLOCAL"))
+        and not has_free,
+        has_free=has_free,
     )
 
 
-def make_uop(name: str, op: parser.InstDef) -> Uop:
+def make_uop(name: str, op: parser.InstDef, inputs: list[parser.InputEffect]) -> Uop:
     return Uop(
         name=name,
         context=op.context,
         annotations=op.annotations,
         stack=analyze_stack(op),
-        caches=analyze_caches(op),
+        caches=analyze_caches(inputs),
         body=op.block.tokens,
         properties=compute_properties(op),
     )
@@ -333,7 +462,7 @@ def add_op(op: parser.InstDef, uops: dict[str, Uop]) -> None:
             raise override_error(
                 op.name, op.context, uops[op.name].context, op.tokens[0]
             )
-    uops[op.name] = make_uop(op.name, op)
+    uops[op.name] = make_uop(op.name, op, op.inputs)
 
 
 def add_instruction(
@@ -347,10 +476,27 @@ def desugar_inst(
 ) -> None:
     assert inst.kind == "inst"
     name = inst.name
-    uop = make_uop("_" + inst.name, inst)
+    op_inputs: list[parser.InputEffect] = []
+    parts: list[Part] = []
+    uop_index = -1
+    # Move unused cache entries to the Instruction, removing them from the Uop.
+    for input in inst.inputs:
+        if isinstance(input, parser.CacheEffect) and input.name == "unused":
+            parts.append(Skip(input.size))
+        else:
+            op_inputs.append(input)
+            if uop_index < 0:
+                uop_index = len(parts)
+                # Place holder for the uop.
+                parts.append(Skip(0))
+    uop = make_uop("_" + inst.name, inst, op_inputs)
     uop.implicitly_created = True
     uops[inst.name] = uop
-    add_instruction(name, [uop], instructions)
+    if uop_index < 0:
+        parts.append(uop)
+    else:
+        parts[uop_index] = uop
+    add_instruction(name, parts, instructions)
 
 
 def add_macro(
@@ -400,6 +546,95 @@ def add_pseudo(
     )
 
 
+def assign_opcodes(
+    instructions: dict[str, Instruction],
+    families: dict[str, Family],
+    pseudos: dict[str, PseudoInstruction],
+) -> tuple[dict[str, int], int, int]:
+    """Assigns opcodes, then returns the opmap,
+    have_arg and min_instrumented values"""
+    instmap: dict[str, int] = {}
+
+    # 0 is reserved for cache entries. This helps debugging.
+    instmap["CACHE"] = 0
+
+    # 17 is reserved as it is the initial value for the specializing counter.
+    # This helps catch cases where we attempt to execute a cache.
+    instmap["RESERVED"] = 17
+
+    # 149 is RESUME - it is hard coded as such in Tools/build/deepfreeze.py
+    instmap["RESUME"] = 149
+
+    # This is an historical oddity.
+    instmap["BINARY_OP_INPLACE_ADD_UNICODE"] = 3
+
+    instmap["INSTRUMENTED_LINE"] = 254
+
+    instrumented = [name for name in instructions if name.startswith("INSTRUMENTED")]
+
+    # Special case: this instruction is implemented in ceval.c
+    # rather than bytecodes.c, so we need to add it explicitly
+    # here (at least until we add something to bytecodes.c to
+    # declare external instructions).
+    instrumented.append("INSTRUMENTED_LINE")
+
+    specialized: set[str] = set()
+    no_arg: list[str] = []
+    has_arg: list[str] = []
+
+    for family in families.values():
+        specialized.update(inst.name for inst in family.members)
+
+    for inst in instructions.values():
+        name = inst.name
+        if name in specialized:
+            continue
+        if name in instrumented:
+            continue
+        if inst.properties.oparg:
+            has_arg.append(name)
+        else:
+            no_arg.append(name)
+
+    # Specialized ops appear in their own section
+    # Instrumented opcodes are at the end of the valid range
+    min_internal = 150
+    min_instrumented = 254 - (len(instrumented) - 1)
+    assert min_internal + len(specialized) < min_instrumented
+
+    next_opcode = 1
+
+    def add_instruction(name: str) -> None:
+        nonlocal next_opcode
+        if name in instmap:
+            return  # Pre-defined name
+        while next_opcode in instmap.values():
+            next_opcode += 1
+        instmap[name] = next_opcode
+        next_opcode += 1
+
+    for name in sorted(no_arg):
+        add_instruction(name)
+    for name in sorted(has_arg):
+        add_instruction(name)
+    # For compatibility
+    next_opcode = min_internal
+    for name in sorted(specialized):
+        add_instruction(name)
+    next_opcode = min_instrumented
+    for name in instrumented:
+        add_instruction(name)
+
+    for name in instructions:
+        instructions[name].opcode = instmap[name]
+
+    for op, name in enumerate(sorted(pseudos), 256):
+        instmap[name] = op
+        pseudos[name].opcode = op
+
+    return instmap, len(no_arg), min_instrumented
+
+
 def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
     instructions: dict[str, Instruction] = {}
     uops: dict[str, Uop] = {}
@@ -443,9 +678,20 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
                     continue
                 if target.text in instructions:
                     instructions[target.text].is_target = True
-    # Hack
-    instructions["BINARY_OP_INPLACE_ADD_UNICODE"].family = families["BINARY_OP"]
-    return Analysis(instructions, uops, families, pseudos)
+    # Special case BINARY_OP_INPLACE_ADD_UNICODE
+    # BINARY_OP_INPLACE_ADD_UNICODE is not a normal family member,
+    # as it is the wrong size, but we need it to maintain an
+    # historical optimization.
+    if "BINARY_OP_INPLACE_ADD_UNICODE" in instructions:
+        inst = instructions["BINARY_OP_INPLACE_ADD_UNICODE"]
+        inst.family = families["BINARY_OP"]
+        families["BINARY_OP"].members.append(inst)
+    opmap, first_arg, min_instrumented = assign_opcodes(
+        instructions, families, pseudos
+    )
+    return Analysis(
+        instructions, uops, families, pseudos, opmap, first_arg, min_instrumented
+    )
 
 
 def analyze_files(filenames: list[str]) -> Analysis:

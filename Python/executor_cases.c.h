@@ -375,38 +375,6 @@
             break;
         }
 
-        case _BINARY_OP_INPLACE_ADD_UNICODE: {
-            PyObject *right;
-            PyObject *left;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            assert(next_instr->op.code == STORE_FAST);
-            PyObject **target_local = &GETLOCAL(next_instr->op.arg);
-            if (*target_local != left) goto deoptimize;
-            STAT_INC(BINARY_OP, hit);
-            /* Handle `left = left + right` or `left += right` for str.
-             *
-             * When possible, extend `left` in place rather than
-             * allocating a new PyUnicodeObject. This attempts to avoid
-             * quadratic behavior when one neglects to use str.join().
-             *
-             * If `left` has only two references remaining (one from
-             * the stack, one in the locals), DECREFing `left` leaves
-             * only the locals reference, so PyUnicode_Append knows
-             * that the string is safe to mutate.
-             */
-            assert(Py_REFCNT(left) >= 2);
-            _Py_DECREF_NO_DEALLOC(left);
-            PyUnicode_Append(target_local, right);
-            _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
-            if (*target_local == NULL) goto pop_2_error_tier_two;
-            // The STORE_FAST is already done.
-            assert(next_instr->op.code == STORE_FAST);
-            SKIP_OVER(1);
-            stack_pointer += -2;
-            break;
-        }
-
         case _BINARY_SUBSCR: {
             PyObject *sub;
             PyObject *container;
@@ -690,18 +658,6 @@
             break;
         }
 
-        case _INTERPRETER_EXIT: {
-            PyObject *retval;
-            retval = stack_pointer[-1];
-            assert(frame == &entry_frame);
-            assert(_PyFrame_IsIncomplete(frame));
-            /* Restore previous frame and return. */
-            tstate->current_frame = frame->previous;
-            assert(!_PyErr_Occurred(tstate));
-            tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
-            return retval;
-        }
-
         case _POP_FRAME: {
             PyObject *retval;
             retval = stack_pointer[-1];
@@ -846,38 +802,11 @@
 
         /* _INSTRUMENTED_YIELD_VALUE is not a viable micro-op for tier 2 */
 
-        case _YIELD_VALUE: {
-            PyObject *retval;
-            oparg = CURRENT_OPARG();
-            retval = stack_pointer[-1];
-            // NOTE: It's important that YIELD_VALUE never raises an exception!
-            // The compiler treats any exception raised here as a failed close()
-            // or throw() call.
-            assert(frame != &entry_frame);
-            frame->instr_ptr = next_instr;
-            PyGenObject *gen = _PyFrame_GetGenerator(frame);
-            assert(FRAME_SUSPENDED_YIELD_FROM == FRAME_SUSPENDED + 1);
-            assert(oparg == 0 || oparg == 1);
-            gen->gi_frame_state = FRAME_SUSPENDED + oparg;
-            _PyFrame_SetStackPointer(frame, stack_pointer - 1);
-            tstate->exc_info = gen->gi_exc_state.previous_item;
-            gen->gi_exc_state.previous_item = NULL;
-            _Py_LeaveRecursiveCallPy(tstate);
-            _PyInterpreterFrame *gen_frame = frame;
-            frame = tstate->current_frame = frame->previous;
-            gen_frame->previous = NULL;
-            _PyFrame_StackPush(frame, retval);
-            /* We don't know which of these is relevant here, so keep them equal */
-            assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
-            LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
-            goto resume_frame;
-        }
-
         case _POP_EXCEPT: {
             PyObject *exc_value;
             exc_value = stack_pointer[-1];
             _PyErr_StackItem *exc_info = tstate->exc_info;
-            Py_XSETREF(exc_info->exc_value, exc_value);
+            Py_XSETREF(exc_info->exc_value, exc_value == Py_None ? NULL : exc_value);
             stack_pointer += -1;
             break;
         }
@@ -1197,8 +1126,8 @@
             }
             null = NULL;
             stack_pointer[0] = res;
-             if (oparg & 1) stack_pointer[1] = null;
-            stack_pointer += 1 + ((oparg & 1));
+            if (oparg & 1) stack_pointer[1] = null;
+            stack_pointer += 1 + (oparg & 1);
             break;
         }
 
@@ -1233,8 +1162,8 @@
             STAT_INC(LOAD_GLOBAL, hit);
             null = NULL;
             stack_pointer[0] = res;
-             if (oparg & 1) stack_pointer[1] = null;
-            stack_pointer += 1 + ((oparg & 1));
+            if (oparg & 1) stack_pointer[1] = null;
+            stack_pointer += 1 + (oparg & 1);
             break;
         }
 
@@ -1251,8 +1180,8 @@
             STAT_INC(LOAD_GLOBAL, hit);
             null = NULL;
             stack_pointer[0] = res;
-             if (oparg & 1) stack_pointer[1] = null;
-            stack_pointer += 1 + ((oparg & 1));
+            if (oparg & 1) stack_pointer[1] = null;
+            stack_pointer += 1 + (oparg & 1);
             break;
         }
 
@@ -1605,7 +1534,7 @@
             Py_DECREF(self);
             if (attr == NULL) goto pop_3_error_tier_two;
             stack_pointer[-3] = attr;
-            stack_pointer += -2 + (((0) ? 1 : 0));
+            stack_pointer += -2 + ((0) ? 1 : 0);
             break;
         }
 
@@ -1683,8 +1612,8 @@
                 if (attr == NULL) goto pop_1_error_tier_two;
             }
             stack_pointer[-1] = attr;
-             if (oparg & 1) stack_pointer[0] = self_or_null;
-            stack_pointer += ((oparg & 1));
+            if (oparg & 1) stack_pointer[0] = self_or_null;
+            stack_pointer += (oparg & 1);
             break;
         }
 
@@ -1723,8 +1652,8 @@
             null = NULL;
             Py_DECREF(owner);
             stack_pointer[-1] = attr;
-             if (oparg & 1) stack_pointer[0] = null;
-            stack_pointer += ((oparg & 1));
+            if (oparg & 1) stack_pointer[0] = null;
+            stack_pointer += (oparg & 1);
             break;
         }
 
@@ -1757,8 +1686,8 @@
             null = NULL;
             Py_DECREF(owner);
             stack_pointer[-1] = attr;
-             if (oparg & 1) stack_pointer[0] = null;
-            stack_pointer += ((oparg & 1));
+            if (oparg & 1) stack_pointer[0] = null;
+            stack_pointer += (oparg & 1);
             break;
         }
 
@@ -1801,8 +1730,8 @@
             null = NULL;
             Py_DECREF(owner);
             stack_pointer[-1] = attr;
-             if (oparg & 1) stack_pointer[0] = null;
-            stack_pointer += ((oparg & 1));
+            if (oparg & 1) stack_pointer[0] = null;
+            stack_pointer += (oparg & 1);
             break;
         }
 
@@ -1821,8 +1750,8 @@
             null = NULL;
             Py_DECREF(owner);
             stack_pointer[-1] = attr;
-             if (oparg & 1) stack_pointer[0] = null;
-            stack_pointer += ((oparg & 1));
+            if (oparg & 1) stack_pointer[0] = null;
+            stack_pointer += (oparg & 1);
             break;
         }
 
@@ -1842,15 +1771,15 @@
             PyObject *null = NULL;
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
-            PyObject * descr = (PyObject *)CURRENT_OPERAND();
+            PyObject *descr = (PyObject *)CURRENT_OPERAND();
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             attr = Py_NewRef(descr);
             null = NULL;
             Py_DECREF(owner);
             stack_pointer[-1] = attr;
-             if (oparg & 1) stack_pointer[0] = null;
-            stack_pointer += ((oparg & 1));
+            if (oparg & 1) stack_pointer[0] = null;
+            stack_pointer += (oparg & 1);
             break;
         }
 
@@ -2084,12 +2013,6 @@
             break;
         }
 
-        case _JUMP_FORWARD: {
-            oparg = CURRENT_OPARG();
-            JUMPBY(oparg);
-            break;
-        }
-
         /* _JUMP_BACKWARD is not a viable micro-op for tier 2 */
 
         /* _POP_JUMP_IF_FALSE is not a viable micro-op for tier 2 */
@@ -2108,17 +2031,6 @@
                 Py_DECREF(value);
             }
             stack_pointer[-1] = b;
-            break;
-        }
-
-        case _JUMP_BACKWARD_NO_INTERRUPT: {
-            oparg = CURRENT_OPARG();
-            /* This bytecode is used in the `yield from` or `await` loop.
-             * If there is an interrupt, we want it handled in the innermost
-             * generator or coroutine, so we deliberately do not check it here.
-             * (see bpo-30039).
-             */
-            JUMPBY(-oparg);
             break;
         }
 
@@ -2546,7 +2458,7 @@
             PyObject *self = NULL;
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
-            PyObject * descr = (PyObject *)CURRENT_OPERAND();
+            PyObject *descr = (PyObject *)CURRENT_OPERAND();
             assert(oparg & 1);
             /* Cached method object */
             STAT_INC(LOAD_ATTR, hit);
@@ -2555,8 +2467,8 @@
             assert(_PyType_HasFeature(Py_TYPE(attr), Py_TPFLAGS_METHOD_DESCRIPTOR));
             self = owner;
             stack_pointer[-1] = attr;
-             if (1) stack_pointer[0] = self;
-            stack_pointer += (((1) ? 1 : 0));
+            if (1) stack_pointer[0] = self;
+            stack_pointer += ((1) ? 1 : 0);
             break;
         }
 
@@ -2566,7 +2478,7 @@
             PyObject *self = NULL;
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
-            PyObject * descr = (PyObject *)CURRENT_OPERAND();
+            PyObject *descr = (PyObject *)CURRENT_OPERAND();
             assert(oparg & 1);
             assert(Py_TYPE(owner)->tp_dictoffset == 0);
             STAT_INC(LOAD_ATTR, hit);
@@ -2575,8 +2487,8 @@
             attr = Py_NewRef(descr);
             self = owner;
             stack_pointer[-1] = attr;
-             if (1) stack_pointer[0] = self;
-            stack_pointer += (((1) ? 1 : 0));
+            if (1) stack_pointer[0] = self;
+            stack_pointer += ((1) ? 1 : 0);
             break;
         }
 
@@ -2585,14 +2497,14 @@
             PyObject *attr;
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
-            PyObject * descr = (PyObject *)CURRENT_OPERAND();
+            PyObject *descr = (PyObject *)CURRENT_OPERAND();
             assert((oparg & 1) == 0);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             Py_DECREF(owner);
             attr = Py_NewRef(descr);
             stack_pointer[-1] = attr;
-            stack_pointer += (((0) ? 1 : 0));
+            stack_pointer += ((0) ? 1 : 0);
             break;
         }
 
@@ -2601,7 +2513,7 @@
             PyObject *attr;
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
-            PyObject * descr = (PyObject *)CURRENT_OPERAND();
+            PyObject *descr = (PyObject *)CURRENT_OPERAND();
             assert((oparg & 1) == 0);
             assert(Py_TYPE(owner)->tp_dictoffset == 0);
             STAT_INC(LOAD_ATTR, hit);
@@ -2609,7 +2521,7 @@
             Py_DECREF(owner);
             attr = Py_NewRef(descr);
             stack_pointer[-1] = attr;
-            stack_pointer += (((0) ? 1 : 0));
+            stack_pointer += ((0) ? 1 : 0);
             break;
         }
 
@@ -2630,7 +2542,7 @@
             PyObject *self = NULL;
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
-            PyObject * descr = (PyObject *)CURRENT_OPERAND();
+            PyObject *descr = (PyObject *)CURRENT_OPERAND();
             assert(oparg & 1);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
@@ -2638,8 +2550,8 @@
             attr = Py_NewRef(descr);
             self = owner;
             stack_pointer[-1] = attr;
-             if (1) stack_pointer[0] = self;
-            stack_pointer += (((1) ? 1 : 0));
+            if (1) stack_pointer[0] = self;
+            stack_pointer += ((1) ? 1 : 0);
             break;
         }
 
@@ -2751,7 +2663,7 @@
                 goto exit_unwind;
             }
             #endif
-            stack_pointer += (((0) ? 1 : 0));
+            stack_pointer += ((0) ? 1 : 0);
             break;
         }
 
@@ -3060,32 +2972,6 @@
             break;
         }
 
-        case _CALL_LIST_APPEND: {
-            PyObject **args;
-            PyObject *self;
-            PyObject *callable;
-            oparg = CURRENT_OPARG();
-            args = &stack_pointer[-oparg];
-            self = stack_pointer[-1 - oparg];
-            callable = stack_pointer[-2 - oparg];
-            assert(oparg == 1);
-            PyInterpreterState *interp = tstate->interp;
-            if (callable != interp->callable_cache.list_append) goto deoptimize;
-            assert(self != NULL);
-            if (!PyList_Check(self)) goto deoptimize;
-            STAT_INC(CALL, hit);
-            if (_PyList_AppendTakeRef((PyListObject *)self, args[0]) < 0) {
-                goto pop_1_error;  // Since arg is DECREF'ed already
-            }
-            Py_DECREF(self);
-            Py_DECREF(callable);
-            STACK_SHRINK(3);
-            // Skip POP_TOP
-            assert(next_instr->op.code == POP_TOP);
-            SKIP_OVER(1);
-            DISPATCH();
-        }
-
         case _CALL_METHOD_DESCRIPTOR_O: {
             PyObject **args;
             PyObject *self_or_null;
@@ -3307,47 +3193,22 @@
             break;
         }
 
-        case _RETURN_GENERATOR: {
-            assert(PyFunction_Check(frame->f_funcobj));
-            PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
-            PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
-            if (gen == NULL) {
-                GOTO_ERROR(error);
-            }
-            assert(EMPTY());
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
-            frame->instr_ptr = next_instr;
-            _PyFrame_Copy(frame, gen_frame);
-            assert(frame->frame_obj == NULL);
-            gen->gi_frame_state = FRAME_CREATED;
-            gen_frame->owner = FRAME_OWNED_BY_GENERATOR;
-            _Py_LeaveRecursiveCallPy(tstate);
-            assert(frame != &entry_frame);
-            _PyInterpreterFrame *prev = frame->previous;
-            _PyThreadState_PopFrame(tstate, frame);
-            frame = tstate->current_frame = prev;
-            _PyFrame_StackPush(frame, (PyObject *)gen);
-            LOAD_IP(frame->return_offset);
-            goto resume_frame;
-        }
-
         case _BUILD_SLICE: {
             PyObject *step = NULL;
             PyObject *stop;
             PyObject *start;
             PyObject *slice;
             oparg = CURRENT_OPARG();
-        if (oparg == 3) { step = stack_pointer[-(((oparg == 3) ? 1 : 0))]; }
-            stop = stack_pointer[-1 - (((oparg == 3) ? 1 : 0))];
-            start = stack_pointer[-2 - (((oparg == 3) ? 1 : 0))];
+            if (oparg == 3) { step = stack_pointer[-((oparg == 3) ? 1 : 0)]; }
+            stop = stack_pointer[-1 - ((oparg == 3) ? 1 : 0)];
+            start = stack_pointer[-2 - ((oparg == 3) ? 1 : 0)];
             slice = PySlice_New(start, stop, step);
             Py_DECREF(start);
             Py_DECREF(stop);
             Py_XDECREF(step);
-            if (slice == NULL) { stack_pointer += -2 - (((oparg == 3) ? 1 : 0)); goto error_tier_two; }
-            stack_pointer[-2 - (((oparg == 3) ? 1 : 0))] = slice;
-            stack_pointer += -1 - (((oparg == 3) ? 1 : 0));
+            if (slice == NULL) { stack_pointer += -2 - ((oparg == 3) ? 1 : 0); goto error_tier_two; }
+            stack_pointer[-2 - ((oparg == 3) ? 1 : 0)] = slice;
+            stack_pointer += -1 - ((oparg == 3) ? 1 : 0);
             break;
         }
 
@@ -3516,7 +3377,7 @@
 
         case _EXIT_TRACE: {
             TIER_TWO_ONLY
-            GOTO_TIER_ONE();
+            if (1) goto deoptimize;
             break;
         }
 

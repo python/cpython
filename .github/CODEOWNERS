@@ -40,6 +40,7 @@ Lib/test/test_patma.py        @brandtbucher
 Lib/test/test_peepholer.py    @brandtbucher
 Lib/test/test_type_*.py       @JelleZijlstra
 Lib/test/test_capi/test_misc.py  @markshannon @gvanrossum
+Tools/c-analyzer/             @ericsnowcurrently
 
 # Exceptions
 Lib/traceback.py              @iritkatriel
@@ -77,11 +78,6 @@ Python/traceback.c            @iritkatriel
 /Python/import.c              @kumaraditya303
 **/*importlib/resources/*      @jaraco @warsaw @FFY00
 **/importlib/metadata/*       @jaraco @warsaw
-
-# Subinterpreters
-Lib/test/support/interpreters/**  @ericsnowcurrently
-Modules/_xx*interp*module.c   @ericsnowcurrently
-Lib/test/test_interpreters/**  @ericsnowcurrently
 
 # Dates and times
 **/*datetime*                 @pganssle @abalkin
@@ -153,21 +149,15 @@ Doc/c-api/stable.rst          @encukou
 **/*itertools*                @rhettinger
 **/*collections*              @rhettinger
 **/*random*                   @rhettinger
-Doc/**/*queue*                @rhettinger
-PCbuild/**/*queue*            @rhettinger
-Modules/_queuemodule.c        @rhettinger
-Lib/*queue*.py                @rhettinger
-Lib/asyncio/*queue*.py        @rhettinger
-Lib/multiprocessing/*queue*.py  @rhettinger
-Lib/test/*queue*.py           @rhettinger
-Lib/test_asyncio/*queue*.py   @rhettinger
-Lib/test_multiprocessing/*queue*.py  @rhettinger
+**/*queue*                    @rhettinger
 **/*bisect*                   @rhettinger
 **/*heapq*                    @rhettinger
 **/*functools*                @rhettinger
 **/*decimal*                  @rhettinger
 
 **/*dataclasses*              @ericvsmith
+
+**/*ensurepip*                @pfmoore @pradyunsg
 
 **/*idlelib*                  @terryjreedy
 
@@ -200,6 +190,11 @@ Lib/test_multiprocessing/*queue*.py  @rhettinger
 /Tools/clinic/**              @erlend-aasland @AlexWaygood
 /Lib/test/test_clinic.py      @erlend-aasland @AlexWaygood
 Doc/howto/clinic.rst          @erlend-aasland
+
+# Subinterpreters
+Lib/test/support/interpreters/  @ericsnowcurrently
+Modules/_xx*interp*module.c   @ericsnowcurrently
+Lib/test/test_interpreters/   @ericsnowcurrently
 
 # WebAssembly
 /Tools/wasm/                  @brettcannon

@@ -103,13 +103,6 @@ TIER2_REPLACEMENT_FUNCTIONS["ERROR_IF"] = tier2_replace_error
 TIER2_REPLACEMENT_FUNCTIONS["DEOPT_IF"] = tier2_replace_deopt
 
 
-def is_super(uop: Uop) -> bool:
-    for tkn in uop.body:
-        if tkn.kind == "IDENTIFIER" and tkn.text == "oparg1":
-            return True
-    return False
-
-
 def write_uop(uop: Uop, out: CWriter, stack: Stack) -> None:
     try:
         out.start_line()
@@ -123,10 +116,11 @@ def write_uop(uop: Uop, out: CWriter, stack: Stack) -> None:
         for cache in uop.caches:
             if cache.name != "unused":
                 if cache.size == 4:
-                    type = "PyObject *"
+                    type = cast = "PyObject *"
                 else:
-                    type = f"uint{cache.size*16}_t"
-                out.emit(f"{type} {cache.name} = ({type})CURRENT_OPERAND();\n")
+                    type = f"uint{cache.size*16}_t "
+                    cast = f"uint{cache.size*16}_t"
+                out.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND();\n")
         emit_tokens(out, uop, stack, None, TIER2_REPLACEMENT_FUNCTIONS)
         if uop.properties.stores_sp:
             for i, var in enumerate(uop.stack.outputs):
@@ -155,7 +149,7 @@ def generate_tier2(
     for name, uop in analysis.uops.items():
         if uop.properties.tier_one_only:
             continue
-        if is_super(uop):
+        if uop.is_super():
             continue
         if not uop.is_viable():
             out.emit(f"/* {uop.name} is not a viable micro-op for tier 2 */\n\n")
