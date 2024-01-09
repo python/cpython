@@ -896,7 +896,7 @@ normalize_environment(PyObject* environment)
 
     for (int i = 0; i < PyList_GET_SIZE(normalized_keys); i++) {
         PyObject *key = PyList_GET_ITEM(normalized_keys, i);
-        PyObject* value = PyObject_GetItem(environment, key);
+        PyObject *value = PyObject_GetItem(environment, key);
         if (value == NULL) {
             Py_DECREF(normalized_keys);
             Py_DECREF(result);
