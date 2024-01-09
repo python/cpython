@@ -4,6 +4,7 @@ from test.support import (
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
 import unittest
+import errno
 import os
 import re
 import itertools
@@ -278,8 +279,9 @@ class MmapTests(unittest.TestCase):
                         if close_original_fd:
                             f.close()
                         self.assertEqual(len(m), size)
-                        with self.assertRaises(OSError):
+                        with self.assertRaises(OSError) as err_cm:
                             m.size()
+                        self.assertEqual(err_cm.exception.errno, errno.EBADF)
                         with self.assertRaises(TypeError):
                             m.resize(size * 2)
                         with self.assertRaises(TypeError):
