@@ -407,6 +407,23 @@ class PurePathBase:
             return NotImplemented
 
     @property
+    def _stack(self):
+        """
+        Split the path into a 2-tuple (anchor, parts), where *anchor* is the
+        uppermost parent of the path (equivalent to path.parents[-1]), and
+        *parts* is a reversed list of parts following the anchor.
+        """
+        split = self.pathmod.split
+        path = str(self)
+        parent, name = split(path)
+        names = []
+        while path != parent:
+            names.append(name)
+            path = parent
+            parent, name = split(path)
+        return path, names
+
+    @property
     def parent(self):
         """The logical parent of the path."""
         path = str(self)
@@ -911,16 +928,6 @@ class PathBase(PurePathBase):
         self._unsupported("readlink")
     readlink._supported = False
 
-    def _split_stack(self):
-        """
-        Split the path into a 2-tuple (anchor, parts), where *anchor* is the
-        uppermost parent of the path (equivalent to path.parents[-1]), and
-        *parts* is a reversed list of parts following the anchor.
-        """
-        if not self._tail:
-            return self, []
-        return self._from_parsed_parts(self.drive, self.root, []), self._tail[::-1]
-
     def resolve(self, strict=False):
         """
         Make the path absolute, resolving all symlinks on the way and also
@@ -928,11 +935,15 @@ class PathBase(PurePathBase):
         """
         if self._resolving:
             return self
-        path, parts = self._split_stack()
+        path_root, parts = self._stack
+        path = self.with_segments(path_root)
         try:
             path = path.absolute()
         except UnsupportedOperation:
-            pass
+            path_tail = []
+        else:
+            path_root, path_tail = path._stack
+            path_tail.reverse()
 
         # If the user has *not* overridden the `readlink()` method, then symlinks are unsupported
         # and (in non-strict mode) we can improve performance by not calling `stat()`.
@@ -940,31 +951,37 @@ class PathBase(PurePathBase):
         link_count = 0
         while parts:
             part = parts.pop()
+            if not part or part == '.':
+                continue
             if part == '..':
-                if not path._tail:
-                    if path.root:
+                if not path_tail:
+                    if path_root:
                         # Delete '..' segment immediately following root
                         continue
-                elif path._tail[-1] != '..':
+                elif path_tail[-1] != '..':
                     # Delete '..' segment and its predecessor
-                    path = path.parent
+                    path_tail.pop()
                     continue
-            next_path = path._make_child_relpath(part)
+            path_tail.append(part)
             if querying and part != '..':
-                next_path._resolving = True
+                path = self.with_segments(path_root + self.pathmod.sep.join(path_tail))
+                path._resolving = True
                 try:
-                    st = next_path.stat(follow_symlinks=False)
+                    st = path.stat(follow_symlinks=False)
                     if S_ISLNK(st.st_mode):
                         # Like Linux and macOS, raise OSError(errno.ELOOP) if too many symlinks are
                         # encountered during resolution.
                         link_count += 1
                         if link_count >= self._max_symlinks:
                             raise OSError(ELOOP, "Too many symbolic links in path", str(self))
-                        target, target_parts = next_path.readlink()._split_stack()
+                        target_root, target_parts = path.readlink()._stack
                         # If the symlink target is absolute (like '/etc/hosts'), set the current
                         # path to its uppermost parent (like '/').
-                        if target.root:
-                            path = target
+                        if target_root:
+                            path_root = target_root
+                            path_tail.clear()
+                        else:
+                            path_tail.pop()
                         # Add the symlink target's reversed tail parts (like ['hosts', 'etc']) to
                         # the stack of unresolved path parts.
                         parts.extend(target_parts)
@@ -976,9 +993,7 @@ class PathBase(PurePathBase):
                         raise
                     else:
                         querying = False
-                next_path._resolving = False
-            path = next_path
-        return path
+        return self.with_segments(path_root + self.pathmod.sep.join(path_tail))
 
     def symlink_to(self, target, target_is_directory=False):
         """
