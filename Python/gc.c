@@ -1019,21 +1019,6 @@ delete_garbage(PyThreadState *tstate, GCState *gcstate,
     }
 }
 
-/* Clear all free lists
- * All free lists are cleared during the collection of the highest generation.
- * Allocated items in the free list may keep a pymalloc arena occupied.
- * Clearing the free lists may give back memory to the OS earlier.
- */
-static void
-clear_freelists(PyInterpreterState *interp)
-{
-    _PyTuple_ClearFreeList(interp);
-    _PyFloat_ClearFreeList(interp);
-    _PyList_ClearFreeList(interp);
-    _PyDict_ClearFreeList(interp);
-    _PyAsyncGen_ClearFreeLists(interp);
-    _PyContext_ClearFreeList(interp);
-}
 
 // Show stats for objects in each generations
 static void
@@ -1449,7 +1434,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     /* Clear free list only during the collection of the highest
      * generation */
     if (generation == NUM_GENERATIONS-1) {
-        clear_freelists(tstate->interp);
+        _PyGC_ClearAllFreeLists(tstate->interp);
     }
 
     if (_PyErr_Occurred(tstate)) {

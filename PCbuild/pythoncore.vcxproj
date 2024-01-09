@@ -231,6 +231,7 @@
     <ClInclude Include="..\Include\internal\pycore_floatobject.h" />
     <ClInclude Include="..\Include\internal\pycore_format.h" />
     <ClInclude Include="..\Include\internal\pycore_frame.h" />
+    <ClInclude Include="..\Include\internal\pycore_freelist.h" />
     <ClInclude Include="..\Include\internal\pycore_function.h" />
     <ClInclude Include="..\Include\internal\pycore_gc.h" />
     <ClInclude Include="..\Include\internal\pycore_genobject.h" />
@@ -568,6 +569,8 @@
     </ClCompile>
     <ClCompile Include="..\Python\future.c" />
     <ClCompile Include="..\Python\gc.c" />
+    <ClCompile Include="..\Python\gc_free_threading.c" />
+    <ClCompile Include="..\Python\gc_gil.c" />
     <ClCompile Include="..\Python\getargs.c" />
     <ClCompile Include="..\Python\getcompiler.c" />
     <ClCompile Include="..\Python\getcopyright.c" />
