@@ -782,10 +782,7 @@ sortenvironmentkey(PyObject *module, PyObject *item)
 }
 
 static PyMethodDef sortenvironmentkey_def = {
-    "sortenvironmentkey",
-    _PyCFunction_CAST(sortenvironmentkey),
-    METH_O,
-    "",
+    "sortenvironmentkey", _PyCFunction_CAST(sortenvironmentkey), METH_O, "",
 };
 
 static int
