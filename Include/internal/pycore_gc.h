@@ -240,7 +240,7 @@ extern PyObject *_PyGC_GetObjects(PyInterpreterState *interp, Py_ssize_t generat
 extern PyObject *_PyGC_GetReferrers(PyInterpreterState *interp, PyObject *objs);
 
 // Functions to clear types free lists
-extern void _PyGC_ClearFreeList(PyInterpreterState *interp);
+extern void _PyGC_ClearAllFreeLists(PyInterpreterState *interp);
 extern void _Py_ClearFreeLists(_PyFreeListState *state);
 extern void _PyTuple_ClearFreeList(PyInterpreterState *interp);
 extern void _PyFloat_ClearFreeList(PyInterpreterState *interp);

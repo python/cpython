@@ -12,7 +12,7 @@
  * GC should clear all freelists by traversing all threads.
  */
 void
-_PyGC_ClearFreeList(PyInterpreterState *interp)
+_PyGC_ClearAllFreeLists(PyInterpreterState *interp)
 {
     _PyTuple_ClearFreeList(interp);
     _PyFloat_ClearFreeList(interp);

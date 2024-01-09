@@ -9,7 +9,7 @@
  * Clearing the free lists may give back memory to the OS earlier.
  */
 void
-_PyGC_ClearFreeList(PyInterpreterState *interp)
+_PyGC_ClearAllFreeLists(PyInterpreterState *interp)
 {
     _PyTuple_ClearFreeList(interp);
     _PyFloat_ClearFreeList(interp);
