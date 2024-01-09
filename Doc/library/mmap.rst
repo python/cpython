@@ -406,8 +406,9 @@ MAP_* Constants
        Added :data:`MAP_ALIGNED_SUPER` and :data:`MAP_CONCEAL` constants.
 
     .. versionadded:: 3.13
-       Added :data:`MAP_NORESERVE`, :data:`MAP_NOEXTEND`, :data:`MAP_HASSEMAPHORE`,
-       :data:`MAP_NOCACHE`, :data:`MAP_JIT`, :data:`MAP_RESILIENT_CODESIGN`,
-       :data:`MAP_RESILIENT_MEDIA`, :data:`MAP_32BIT`, :data:`MAP_TRANSLATED_ALLOW_EXECUTE`,
-       :data:`MAP_UNIX03` and :data:`MAP_TPRO`.
+       Added :data:`MAP_32BIT`, :data:`MAP_HASSEMAPHORE`, :data:`MAP_JIT`,
+       :data:`MAP_NOCACHE`, :data:`MAP_NOEXTEND`, :data:`MAP_NORESERVE`,
+       :data:`MAP_RESILIENT_CODESIGN`, :data:`MAP_RESILIENT_MEDIA`,
+       :data:`MAP_TPRO`, :data:`MAP_TRANSLATED_ALLOW_EXECUTE`, and
+       :data:`MAP_UNIX03` constants.
 
