@@ -347,7 +347,6 @@ class PurePathBase:
         else:
             raise ValueError(f"Invalid suffix {suffix!r}")
 
-
     def relative_to(self, other, *, walk_up=False):
         """Return the relative path to another path identified by the passed
         arguments.  If the operation is not possible (because this is not
