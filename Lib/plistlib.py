@@ -906,6 +906,11 @@ def loads(value, *, fmt=None, dict_type=dict, aware_datetime=False):
     """Read a .plist file from a bytes object.
     Return the unpacked root object (which usually is a dictionary).
     """
+    if isinstance(value, str):
+        if fmt == FMT_BINARY:
+            raise TypeError("value must be bytes-like object when fmt is "
+                            "FMT_BINARY")
+        value = value.encode()
     fp = BytesIO(value)
     return load(fp, fmt=fmt, dict_type=dict_type, aware_datetime=aware_datetime)
 

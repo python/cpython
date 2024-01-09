@@ -45,6 +45,22 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
     # Make sure any symbolic links in the base test path are resolved.
     base = os.path.realpath(TESTFN)
 
+    # Keys are canonical paths, values are list of tuples of arguments
+    # supposed to produce equal paths.
+    equivalences = {
+        'a/b': [
+            ('a', 'b'), ('a/', 'b'), ('a', 'b/'), ('a/', 'b/'),
+            ('a/b/',), ('a//b',), ('a//b//',),
+            # Empty components get removed.
+            ('', 'a', 'b'), ('a', '', 'b'), ('a', 'b', ''),
+            ],
+        '/b/c/d': [
+            ('a', '/b/c', 'd'), ('/a', '/b/c', 'd'),
+            # Empty components get removed.
+            ('/', 'b', '', 'c/d'), ('/', '', 'b/c/d'), ('', '/b/c/d'),
+            ],
+    }
+
     def test_concrete_class(self):
         if self.cls is pathlib.PurePath:
             expected = pathlib.PureWindowsPath if os.name == 'nt' else pathlib.PurePosixPath
@@ -94,6 +110,45 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
         self.assertEqual(P(P('a'), P('b')), P('a/b'))
         self.assertEqual(P(P('a'), P('b'), P('c')), P(FakePath("a/b/c")))
         self.assertEqual(P(P('./a:b')), P('./a:b'))
+
+    def _check_parse_path(self, raw_path, *expected):
+        sep = self.pathmod.sep
+        actual = self.cls._parse_path(raw_path.replace('/', sep))
+        self.assertEqual(actual, expected)
+        if altsep := self.pathmod.altsep:
+            actual = self.cls._parse_path(raw_path.replace('/', altsep))
+            self.assertEqual(actual, expected)
+
+    def test_parse_path_common(self):
+        check = self._check_parse_path
+        sep = self.pathmod.sep
+        check('',         '', '', [])
+        check('a',        '', '', ['a'])
+        check('a/',       '', '', ['a'])
+        check('a/b',      '', '', ['a', 'b'])
+        check('a/b/',     '', '', ['a', 'b'])
+        check('a/b/c/d',  '', '', ['a', 'b', 'c', 'd'])
+        check('a/b//c/d', '', '', ['a', 'b', 'c', 'd'])
+        check('a/b/c/d',  '', '', ['a', 'b', 'c', 'd'])
+        check('.',        '', '', [])
+        check('././b',    '', '', ['b'])
+        check('a/./b',    '', '', ['a', 'b'])
+        check('a/./.',    '', '', ['a'])
+        check('/a/b',     '', sep, ['a', 'b'])
+
+    def test_empty_path(self):
+        # The empty path points to '.'
+        p = self.cls('')
+        self.assertEqual(str(p), '.')
+
+    def test_parts_interning(self):
+        P = self.cls
+        p = P('/usr/bin/foo')
+        q = P('/usr/local/bin')
+        # 'usr'
+        self.assertIs(p.parts[1], q.parts[1])
+        # 'bin'
+        self.assertIs(p.parts[2], q.parts[3])
 
     def test_join_nested(self):
         P = self.cls
@@ -168,6 +223,37 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
         P = self.cls
         self.assertEqual(bytes(P('a/b')), b'a' + sep + b'b')
 
+    def test_eq_common(self):
+        P = self.cls
+        self.assertEqual(P('a/b'), P('a/b'))
+        self.assertEqual(P('a/b'), P('a', 'b'))
+        self.assertNotEqual(P('a/b'), P('a'))
+        self.assertNotEqual(P('a/b'), P('/a/b'))
+        self.assertNotEqual(P('a/b'), P())
+        self.assertNotEqual(P('/a/b'), P('/'))
+        self.assertNotEqual(P(), P('/'))
+        self.assertNotEqual(P(), "")
+        self.assertNotEqual(P(), {})
+        self.assertNotEqual(P(), int)
+
+    def test_equivalences(self):
+        for k, tuples in self.equivalences.items():
+            canon = k.replace('/', self.sep)
+            posix = k.replace(self.sep, '/')
+            if canon != posix:
+                tuples = tuples + [
+                    tuple(part.replace('/', self.sep) for part in t)
+                    for t in tuples
+                    ]
+                tuples.append((posix, ))
+            pcanon = self.cls(canon)
+            for t in tuples:
+                p = self.cls(*t)
+                self.assertEqual(p, pcanon, "failed with args {}".format(t))
+                self.assertEqual(hash(p), hash(pcanon))
+                self.assertEqual(str(p), canon)
+                self.assertEqual(p.as_posix(), posix)
+
     def test_ordering_common(self):
         # Ordering is tuple-alike.
         def assertLess(a, b):
@@ -213,6 +299,19 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
                 self.assertIs(q.__class__, p.__class__)
                 self.assertEqual(q, p)
                 self.assertEqual(repr(q), r)
+
+    def test_relative_to_several_args(self):
+        P = self.cls
+        p = P('a/b')
+        with self.assertWarns(DeprecationWarning):
+            p.relative_to('a', 'b')
+            p.relative_to('a', 'b', walk_up=True)
+
+    def test_is_relative_to_several_args(self):
+        P = self.cls
+        p = P('a/b')
+        with self.assertWarns(DeprecationWarning):
+            p.is_relative_to('a', 'b')
 
 
 class PurePosixPathTest(PurePathTest):
@@ -1702,6 +1801,18 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
 
         with set_recursion_limit(recursion_limit):
             list(base.glob('**/'))
+
+    def test_glob_recursive_no_trailing_slash(self):
+        P = self.cls
+        p = P(self.base)
+        with self.assertWarns(FutureWarning):
+            p.glob('**')
+        with self.assertWarns(FutureWarning):
+            p.glob('*/**')
+        with self.assertWarns(FutureWarning):
+            p.rglob('**')
+        with self.assertWarns(FutureWarning):
+            p.rglob('*/**')
 
 
 @only_posix
