@@ -15,6 +15,7 @@ These tools would be used to:
 * Generate the tier 2 interpreter
 * Generate documentation for instructions
 * Generate metadata about instructions, such as stack use (done).
+* Generate the tier 2 optimizer's abstract interpreter.
 
 Having a single definition file ensures that there is a single source
 of truth for bytecode semantics.
@@ -108,7 +109,10 @@ and a piece of C code describing its semantics::
     NAME [":" type] [ "if" "(" C-expression ")" ]
 
   type:
-    NAME ["*"]
+    NAME ["*"] | type_prop
+
+  type_prop:
+    "&" "(" NAME ["+" NAME] ")"
 
   stream:
     NAME "/" size
@@ -138,7 +142,9 @@ The following definitions may occur:
 The optional `type` in an `object` is the C type. It defaults to `PyObject *`.
 The objects before the "--" are the objects on top of the stack at the start of
 the instruction. Those after the "--" are the objects on top of the stack at the
-end of the instruction.
+end of the instruction. When prefixed by a `&`, the type rule follows the
+`type_prop` rule. This indicates the stack effect is of that specific type
+after the operation.
 
 An `inst` without `stack_effect` is a transitional form to allow the original C code
 definitions to be copied. It lacks information to generate anything other than the
@@ -157,6 +163,21 @@ will be skipped in the instruction stream.
 By convention cache effects (`stream`) must precede the input effects.
 
 The name `oparg` is pre-defined as a 32 bit value fetched from the instruction stream.
+
+### Special instruction annotations
+
+Instruction headers may be prefixed by one or more annotations. The non-exhaustive
+list of annotations and their meanings are as follows:
+
+* `override`. For external use by other interpreter definitions to override the current
+   instruction definition.
+* `pure`. This instruction has no side effects visible to the Python user. It may
+   still have side effects on the CPython interpreter state. All other instructions without
+   this annotation are assumed to be not pure.
+* `passthrough`. This instruction does not modify its stack inputs/outputs.
+   I.e. the stack operands "pass through".
+* `no_trivial_elimination`. This tells the Tier 2 optimizer's abstract interpreter that
+   this instruction cannot be eliminated trivially via constant or type propagation.
 
 ### Special functions/macros
 
