@@ -179,9 +179,9 @@ class AutoFileTests:
             pass
 
         f = TestSubclass(TESTFN)
-        self.assertIn(TestSubclass.__name__, repr(f))
+        with f:
+            self.assertIn(TestSubclass.__name__, repr(f))
 
-        f.close()
         self.assertIn(TestSubclass.__name__, repr(f))
 
     def testReprNoCloseFD(self):

@@ -103,8 +103,9 @@ class WindowsConsoleIOTests(unittest.TestCase):
             pass
 
         f = TestSubclass("CON")
-        self.assertIn(TestSubclass.__name__, repr(f))
-        f.close()
+        with f:
+            self.assertIn(TestSubclass.__name__, repr(f))
+
         self.assertIn(TestSubclass.__name__, repr(f))
 
     @unittest.skipIf(sys.getwindowsversion()[:2] <= (6, 1),
