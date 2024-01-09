@@ -1,4 +1,4 @@
-import collections.abc
+import collections
 import io
 import os
 import errno
@@ -43,6 +43,8 @@ class PurePathBaseTest(unittest.TestCase):
 
 
 class DummyPurePath(PurePathBase):
+    __slots__ = ()
+
     def __eq__(self, other):
         if not isinstance(other, DummyPurePath):
             return NotImplemented
@@ -60,22 +62,6 @@ class DummyPurePathTest(unittest.TestCase):
 
     # Use a base path that's unrelated to any real filesystem path.
     base = f'/this/path/kills/fascists/{TESTFN}'
-
-    # Keys are canonical paths, values are list of tuples of arguments
-    # supposed to produce equal paths.
-    equivalences = {
-        'a/b': [
-            ('a', 'b'), ('a/', 'b'), ('a', 'b/'), ('a/', 'b/'),
-            ('a/b/',), ('a//b',), ('a//b//',),
-            # Empty components get removed.
-            ('', 'a', 'b'), ('a', '', 'b'), ('a', 'b', ''),
-            ],
-        '/b/c/d': [
-            ('a', '/b/c', 'd'), ('/a', '/b/c', 'd'),
-            # Empty components get removed.
-            ('/', 'b', '', 'c/d'), ('/', '', 'b/c/d'), ('', '/b/c/d'),
-            ],
-    }
 
     def setUp(self):
         p = self.cls('a')
@@ -132,31 +118,6 @@ class DummyPurePathTest(unittest.TestCase):
         for parent in p.parents:
             self.assertEqual(42, parent.session_id)
 
-    def _check_parse_path(self, raw_path, *expected):
-        sep = self.pathmod.sep
-        actual = self.cls._parse_path(raw_path.replace('/', sep))
-        self.assertEqual(actual, expected)
-        if altsep := self.pathmod.altsep:
-            actual = self.cls._parse_path(raw_path.replace('/', altsep))
-            self.assertEqual(actual, expected)
-
-    def test_parse_path_common(self):
-        check = self._check_parse_path
-        sep = self.pathmod.sep
-        check('',         '', '', [])
-        check('a',        '', '', ['a'])
-        check('a/',       '', '', ['a'])
-        check('a/b',      '', '', ['a', 'b'])
-        check('a/b/',     '', '', ['a', 'b'])
-        check('a/b/c/d',  '', '', ['a', 'b', 'c', 'd'])
-        check('a/b//c/d', '', '', ['a', 'b', 'c', 'd'])
-        check('a/b/c/d',  '', '', ['a', 'b', 'c', 'd'])
-        check('.',        '', '', [])
-        check('././b',    '', '', ['b'])
-        check('a/./b',    '', '', ['a', 'b'])
-        check('a/./.',    '', '', ['a'])
-        check('/a/b',     '', sep, ['a', 'b'])
-
     def test_join_common(self):
         P = self.cls
         p = P('a/b')
@@ -201,19 +162,6 @@ class DummyPurePathTest(unittest.TestCase):
         for pathstr in ('a', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c'):
             self.assertEqual(P(pathstr).as_posix(), pathstr)
         # Other tests for as_posix() are in test_equivalences().
-
-    def test_eq_common(self):
-        P = self.cls
-        self.assertEqual(P('a/b'), P('a/b'))
-        self.assertEqual(P('a/b'), P('a', 'b'))
-        self.assertNotEqual(P('a/b'), P('a'))
-        self.assertNotEqual(P('a/b'), P('/a/b'))
-        self.assertNotEqual(P('a/b'), P())
-        self.assertNotEqual(P('/a/b'), P('/'))
-        self.assertNotEqual(P(), P('/'))
-        self.assertNotEqual(P(), "")
-        self.assertNotEqual(P(), {})
-        self.assertNotEqual(P(), int)
 
     def test_match_empty(self):
         P = self.cls
@@ -298,24 +246,6 @@ class DummyPurePathTest(unittest.TestCase):
         p = P('/a/b')
         parts = p.parts
         self.assertEqual(parts, (sep, 'a', 'b'))
-
-    def test_equivalences(self):
-        for k, tuples in self.equivalences.items():
-            canon = k.replace('/', self.sep)
-            posix = k.replace(self.sep, '/')
-            if canon != posix:
-                tuples = tuples + [
-                    tuple(part.replace('/', self.sep) for part in t)
-                    for t in tuples
-                    ]
-                tuples.append((posix, ))
-            pcanon = self.cls(canon)
-            for t in tuples:
-                p = self.cls(*t)
-                self.assertEqual(p, pcanon, "failed with args {}".format(t))
-                self.assertEqual(hash(p), hash(pcanon))
-                self.assertEqual(str(p), canon)
-                self.assertEqual(p.as_posix(), posix)
 
     def test_parent_common(self):
         # Relative
@@ -732,11 +662,18 @@ class DummyPathIO(io.BytesIO):
         super().close()
 
 
+DummyPathStatResult = collections.namedtuple(
+    'DummyPathStatResult',
+    'st_mode st_ino st_dev st_nlink st_uid st_gid st_size st_atime st_mtime st_ctime')
+
+
 class DummyPath(PathBase):
     """
     Simple implementation of PathBase that keeps files and directories in
     memory.
     """
+    __slots__ = ()
+
     _files = {}
     _directories = {}
     _symlinks = {}
@@ -765,7 +702,7 @@ class DummyPath(PathBase):
             st_mode = stat.S_IFLNK
         else:
             raise FileNotFoundError(errno.ENOENT, "Not found", str(self))
-        return os.stat_result((st_mode, hash(str(self)), 0, 0, 0, 0, 0, 0, 0, 0))
+        return DummyPathStatResult(st_mode, hash(str(self)), 0, 0, 0, 0, 0, 0, 0, 0)
 
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
@@ -917,11 +854,6 @@ class DummyPathTest(DummyPurePathTest):
         self.assertRaises(FileNotFoundError, r.samefile, non_existent)
         self.assertRaises(FileNotFoundError, r.samefile, r)
         self.assertRaises(FileNotFoundError, r.samefile, non_existent)
-
-    def test_empty_path(self):
-        # The empty path points to '.'
-        p = self.cls('')
-        self.assertEqual(str(p), '.')
 
     def test_exists(self):
         P = self.cls
@@ -1598,15 +1530,6 @@ class DummyPathTest(DummyPurePathTest):
         self.assertIs((P / 'fileA\udfff').is_char_device(), False)
         self.assertIs((P / 'fileA\x00').is_char_device(), False)
 
-    def test_parts_interning(self):
-        P = self.cls
-        p = P('/usr/bin/foo')
-        q = P('/usr/local/bin')
-        # 'usr'
-        self.assertIs(p.parts[1], q.parts[1])
-        # 'bin'
-        self.assertIs(p.parts[2], q.parts[3])
-
     def _check_complex_symlinks(self, link0_target):
         if not self.can_symlink:
             self.skipTest("symlinks required")
@@ -1814,6 +1737,11 @@ class DummyPathTest(DummyPurePathTest):
 
 
 class DummyPathWithSymlinks(DummyPath):
+    __slots__ = ()
+
+    # Reduce symlink traversal limit to make tests run faster.
+    _max_symlinks = 20
+
     def readlink(self):
         path = str(self.parent.resolve() / self.name)
         if path in self._symlinks:

@@ -10,9 +10,6 @@ from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 # Internals
 #
 
-# Maximum number of symlinks to follow in PathBase.resolve()
-_MAX_SYMLINKS = 40
-
 # Reference for Windows paths can be found at
 # https://learn.microsoft.com/en-gb/windows/win32/fileio/naming-a-file .
 _WIN_RESERVED_NAMES = frozenset(
@@ -500,6 +497,9 @@ class PathBase(PurePathBase):
     """
     __slots__ = ()
 
+    # Maximum number of symlinks to follow in resolve()
+    _max_symlinks = 40
+
     @classmethod
     def _unsupported(cls, method_name):
         msg = f"{cls.__name__}.{method_name}() is unsupported"
@@ -753,20 +753,7 @@ class PathBase(PurePathBase):
         return entry
 
     def _make_child_relpath(self, name):
-        path_str = str(self)
-        tail = self._tail
-        if tail:
-            path_str = f'{path_str}{self.pathmod.sep}{name}'
-        elif path_str != '.':
-            path_str = f'{path_str}{name}'
-        else:
-            path_str = name
-        path = self.with_segments(path_str)
-        path._str = path_str
-        path._drv = self.drive
-        path._root = self.root
-        path._tail_cached = tail + [name]
-        return path
+        return self.joinpath(name)
 
     def glob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
         """Iterate over this subtree and yield all existing files (of any
@@ -971,7 +958,7 @@ class PathBase(PurePathBase):
                         # Like Linux and macOS, raise OSError(errno.ELOOP) if too many symlinks are
                         # encountered during resolution.
                         link_count += 1
-                        if link_count >= _MAX_SYMLINKS:
+                        if link_count >= self._max_symlinks:
                             raise OSError(ELOOP, "Too many symbolic links in path", str(self))
                         target, target_parts = next_path.readlink()._split_stack()
                         # If the symlink target is absolute (like '/etc/hosts'), set the current
