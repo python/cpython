@@ -774,7 +774,7 @@ gethandle(PyObject* obj, const char* name)
     return ret;
 }
 
-static PyObject*
+static PyObject *
 sortenvironmentkey(PyObject *module, PyObject *item)
 {
     return _winapi_LCMapStringEx_impl(NULL, LOCALE_NAME_INVARIANT,
