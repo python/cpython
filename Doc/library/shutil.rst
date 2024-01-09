@@ -360,12 +360,15 @@ Directory and files operations
 
 .. function:: move(src, dst, copy_function=copy2)
 
-   Recursively move a file or directory (*src*) to another location (*dst*)
-   and return the destination.
+   Recursively move a file or directory (*src*) to another location and return
+   the destination.
 
-   If the destination is an existing directory, then *src* is moved inside that
-   directory. If the destination already exists but is not a directory, it may
-   be overwritten depending on :func:`os.rename` semantics.
+   If *dst* is an existing directory or a symlink to a directory, then *src*
+   is moved inside that directory. The destination path in that directory must
+   not already exist.
+
+   If the destination already exists but is not a directory, it may be
+   overwritten depending on :func:`os.rename` semantics.
 
    If the destination is on the current filesystem, then :func:`os.rename` is
    used. Otherwise, *src* is copied to *dst* using *copy_function* and then
