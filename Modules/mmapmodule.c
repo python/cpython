@@ -1231,7 +1231,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
                                "access", "offset", "trackfd", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwdict,
-                                     "in|iii" _Py_PARSE_OFF_T "p", keywords,
+                                     "in|iii" _Py_PARSE_OFF_T "$p", keywords,
                                      &fd, &map_size, &flags, &prot,
                                      &access, &offset, &trackfd)) {
         return NULL;
