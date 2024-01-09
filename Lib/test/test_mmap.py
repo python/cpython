@@ -300,6 +300,27 @@ class MmapTests(unittest.TestCase):
                 self.assertEqual(m.closed, True)
                 self.assertEqual(os.stat(TESTFN).st_size, size)
 
+    @unittest.skipIf(os.name == 'nt', 'trackfd not present on Windows')
+    def test_trackfd_neg1(self):
+        size = 64
+        with mmap.mmap(-1, size, trackfd=False) as m:
+            with self.assertRaises(OSError):
+                m.size()
+            with self.assertRaises(TypeError):
+                m.resize(size // 2)
+            self.assertEqual(len(m), size)
+            m[0] = ord('a')
+            assert m[0] == ord('a')
+
+    @unittest.skipIf(os.name != 'nt', 'trackfd only fails on Windows')
+    def test_no_trackfd_parameter_on_windows(self):
+        # 'trackffd' is an invalid keyword argument for this function
+        size = 64
+        with self.assertRaises(TypeError):
+            mmap.mmap(-1, size, trackfd=True)
+        with self.assertRaises(TypeError):
+            mmap.mmap(-1, size, trackfd=False)
+
     def test_bad_file_desc(self):
         # Try opening a bad file descriptor...
         self.assertRaises(OSError, mmap.mmap, -2, 4096)
