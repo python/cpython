@@ -28,13 +28,10 @@ class PointersTestCase(unittest.TestCase):
         self.assertEqual(type(PyCPointerType), type)
 
     def test_type_flags(self):
-        with self.subTest(cls=_Pointer):
-            self.assertTrue(_Pointer.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
-            self.assertFalse(_Pointer.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
-
-        with self.subTest(cls=PyCPointerType):
-            self.assertTrue(PyCPointerType.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
-            self.assertFalse(PyCPointerType.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
+        for cls in _Pointer, PyCPointerType:
+            with self.subTest(cls=cls):
+                self.assertTrue(_Pointer.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
+                self.assertFalse(_Pointer.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
 
     def test_pointer_crash(self):
 

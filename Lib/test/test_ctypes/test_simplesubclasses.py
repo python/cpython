@@ -21,13 +21,10 @@ class Test(unittest.TestCase):
         self.assertEqual(c_int.mro(), [c_int, _SimpleCData, _CData, object])
 
     def test_type_flags(self):
-        with self.subTest(cls=_SimpleCData):
-            self.assertTrue(_SimpleCData.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
-            self.assertFalse(_SimpleCData.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
-
-        with self.subTest(cls=PyCSimpleType):
-            self.assertTrue(PyCSimpleType.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
-            self.assertFalse(PyCSimpleType.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
+        for cls in _SimpleCData, PyCSimpleType:
+            with self.subTest(cls=cls):
+                self.assertTrue(_SimpleCData.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
+                self.assertFalse(_SimpleCData.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
 
     def test_compare(self):
         self.assertEqual(MyInt(3), MyInt(3))
