@@ -125,7 +125,7 @@ _PyList_ClearFreeList(_PyFreeListState *freelist_state, int is_finalization)
 {
 #if PyList_MAXFREELIST > 0
     struct _Py_list_state *state = &freelist_state->list;
-    while (state->numfree) {
+    while (state->numfree > 0) {
         PyListObject *op = state->free_list[--state->numfree];
         assert(PyList_CheckExact(op));
         PyObject_GC_Del(op);
