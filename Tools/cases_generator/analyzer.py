@@ -23,8 +23,8 @@ class Properties:
     has_free: bool
 
     pure: bool
-    guard: bool
-    mandatory: bool
+    passthrough: bool
+    no_trivial_elimination: bool
 
     def dump(self, indent: str) -> None:
         print(indent, end="")
@@ -51,8 +51,8 @@ class Properties:
             has_free=any(p.has_free for p in properties),
 
             pure=all(p.pure for p in properties),
-            guard=all(p.guard for p in properties),
-            mandatory=any(p.mandatory for p in properties),
+            passthrough=all(p.passthrough for p in properties),
+            no_trivial_elimination=any(p.no_trivial_elimination for p in properties),
         )
 
 
@@ -74,8 +74,8 @@ SKIP_PROPERTIES = Properties(
     has_free=False,
 
     pure=False,
-    guard=False,
-    mandatory=False,
+    passthrough=False,
+    no_trivial_elimination=False,
 )
 
 
@@ -456,8 +456,8 @@ def compute_properties(op: parser.InstDef) -> Properties:
         has_free=has_free,
 
         pure="pure" in op.annotations,
-        guard="guard" in op.annotations,
-        mandatory="mandatory" in op.annotations,
+        passthrough="passthrough" in op.annotations,
+        no_trivial_elimination="no_trivial_elimination" in op.annotations,
     )
 
 

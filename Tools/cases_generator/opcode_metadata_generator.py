@@ -349,7 +349,7 @@ def generate_tier2_properties(analysis: Analysis, out: CWriter) -> None:
     out.emit(f"const uint8_t _PyOpcode_isguard[{table_size}] = {{\n")
 
     for name, inst in (analysis.instructions | analysis.uops).items():
-        if inst.properties.guard:
+        if inst.properties.passthrough:
             out.emit(f"[{name}] = 1,\n")
 
     out.emit("};\n\n")

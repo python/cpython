@@ -3,7 +3,7 @@ from analyzer import StackItem, Instruction, Uop
 from dataclasses import dataclass
 from cwriter import CWriter
 
-UNUSED = {"unused", "__unused_"}
+UNUSED = {"unused"}
 
 def maybe_parenthesize(sym: str) -> str:
     """Add parentheses around a string if it contains an operator

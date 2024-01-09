@@ -71,12 +71,13 @@ class Block(Node):
 class StackEffect(Node):
     name: str = field(compare=False)  # __eq__ only uses type, cond, size
     type: str = ""  # Optional `:type`
-    # Optional `(type, aux)`
-    type_prop: None | tuple[str, None | str] = \
-        field(default_factory=lambda: None, init=True, compare=False, hash=False)
     cond: str = ""  # Optional `if (cond)`
     size: str = ""  # Optional `[size]`
     # Note: size cannot be combined with type or cond
+
+    # Optional `(type, aux)`
+    type_prop: None | tuple[str, None | str] = \
+        field(default_factory=lambda: None, init=True, compare=False, hash=False)
 
     def __repr__(self) -> str:
         items = [self.name, self.type, self.cond, self.size]
@@ -256,7 +257,7 @@ class Parser(PLexer):
 
     @contextual
     def stack_effect(self) -> StackEffect | None:
-        #   IDENTIFIER [':' [IDENTIFIER [TIMES]] ['~' '(' IDENTIFIER ['+' IDENTIFIER] ')']] ['if' '(' expression ')']
+        #   IDENTIFIER [':' [IDENTIFIER [TIMES]] ['&' '(' IDENTIFIER ['+' IDENTIFIER] ')']] ['if' '(' expression ')']
         # | IDENTIFIER '[' expression ']'
         if tkn := self.expect(lx.IDENTIFIER):
             type_text = ""
@@ -266,7 +267,7 @@ class Parser(PLexer):
                     type_text = i.text.strip()
                     if self.expect(lx.TIMES):
                         type_text += " *"
-                if self.expect(lx.NOT):
+                if self.expect(lx.AND):
                     self.require(lx.LPAREN)
                     type_prop_text = self.require(lx.IDENTIFIER).text.strip()
                     aux = None
@@ -290,7 +291,7 @@ class Parser(PLexer):
                 self.require(lx.RBRACKET)
                 type_text = "PyObject **"
                 size_text = size.text.strip()
-            return StackEffect(tkn.text, type_text, type_prop, cond_text, size_text)
+            return StackEffect(tkn.text, type_text, cond_text, size_text, type_prop)
         return None
 
     @contextual
