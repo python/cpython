@@ -121,6 +121,7 @@ typedef struct {
 
 #ifdef UNIX
     int fd;
+    _Bool trackfd;
 #endif
 
     PyObject *weakreflist;
@@ -397,6 +398,13 @@ is_resizeable(mmap_object *self)
             "mmap can't resize with extant buffers exported.");
         return 0;
     }
+#ifdef UNIX
+    if (!self->trackfd) {
+        PyErr_SetString(PyExc_TypeError,
+            "mmap can't resize with trackfd=False.");
+        return 0;
+    }
+#endif
     if ((self->access == ACCESS_WRITE) || (self->access == ACCESS_DEFAULT))
         return 1;
     PyErr_Format(PyExc_TypeError,
@@ -1331,6 +1339,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     m_obj->weakreflist = NULL;
     m_obj->exports = 0;
     m_obj->offset = offset;
+    m_obj->trackfd = trackfd;
     if (fd == -1) {
         m_obj->fd = -1;
         /* Assume the caller wants to map anonymous memory.

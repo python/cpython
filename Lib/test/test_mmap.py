@@ -276,13 +276,15 @@ class MmapTests(unittest.TestCase):
                 self.assertEqual(len(m), size)
                 with self.assertRaises(OSError):
                     m.size()
+                with self.assertRaises(TypeError):
+                    m.resize(size * 2)
+                with self.assertRaises(TypeError):
+                    m.resize(size // 2)
                 self.assertEqual(m.closed, False)
 
                 # Smoke-test other API
-                m.resize(size * 2)
                 m.write_byte(ord('X'))
                 m[2] = ord('Y')
-                m[size + 1] = ord('Z')
                 m.flush()
                 with open(TESTFN, "rb") as f:
                     self.assertEqual(f.read(4), b'XaYa')
@@ -290,7 +292,6 @@ class MmapTests(unittest.TestCase):
                 m.seek(0)
                 self.assertEqual(m.tell(), 0)
                 self.assertEqual(m.read_byte(), ord('X'))
-                self.assertEqual(m[size + 1], 0)  # TODO: resize doesn't quite work
 
         self.assertEqual(m.closed, True)
         self.assertEqual(os.stat(TESTFN).st_size, size)
