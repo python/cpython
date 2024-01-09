@@ -403,8 +403,7 @@ MAP_* Constants
        Added :data:`MAP_STACK` constant.
 
     .. versionadded:: 3.12
-       Added :data:`MAP_ALIGNED_SUPER` constant.
-       Added :data:`MAP_CONCEAL` constant.
+       Added :data:`MAP_ALIGNED_SUPER` and :data:`MAP_CONCEAL` constants.
 
     .. versionadded:: 3.13
        Added :data:`MAP_NORESERVE`, :data:`MAP_NOEXTEND`, :data:`MAP_HASSEMAPHORE`,
