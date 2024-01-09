@@ -214,7 +214,7 @@ The grammar for a replacement field is as follows:
    element_index: `~python-grammar:digit`+ | `index_string`
    index_string: <any source character except "]"> +
    conversion: "r" | "s" | "a"
-   format_spec: <described in the next section>
+   format_spec: `format-spec:format_spec`
 
 In less formal terms, the replacement field can start with a *field_name* that specifies
 the object whose value is to be formatted and inserted
