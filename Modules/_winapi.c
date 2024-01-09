@@ -842,7 +842,7 @@ dedup_environment_keys(PyObject *keys)
     // to the next key (ignoring case), if different, insert the current value
     // into the result list. If they are equal, do nothing because we always
     // want to keep the last inserted one.
-    for (Py_ssize_t i=0; i<PyList_GET_SIZE(keys); i++) {
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(keys); i++) {
         PyObject *key = PyList_GET_ITEM(keys, i);
 
         // The last key will always be kept.
