@@ -24,8 +24,9 @@ _Py_DECLARE_STR(list_err, "list index out of range");
 static struct _Py_list_state *
 get_list_state(void)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    return &interp->list;
+    _PyFreeListState *state = _PyFreeListState_GET();
+    assert(state != NULL);
+    return &state->list;
 }
 #endif
 
@@ -120,26 +121,25 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
 }
 
 void
-_PyList_ClearFreeList(PyInterpreterState *interp)
+_PyList_ClearFreeList(_PyFreeListState *freelist_state, int is_finalization)
 {
 #if PyList_MAXFREELIST > 0
-    struct _Py_list_state *state = &interp->list;
-    while (state->numfree) {
+    struct _Py_list_state *state = &freelist_state->list;
+    while (state->numfree > 0) {
         PyListObject *op = state->free_list[--state->numfree];
         assert(PyList_CheckExact(op));
         PyObject_GC_Del(op);
+    }
+    if (is_finalization) {
+        state->numfree = -1;
     }
 #endif
 }
 
 void
-_PyList_Fini(PyInterpreterState *interp)
+_PyList_Fini(_PyFreeListState *state)
 {
-    _PyList_ClearFreeList(interp);
-#if defined(Py_DEBUG) && PyList_MAXFREELIST > 0
-    struct _Py_list_state *state = &interp->list;
-    state->numfree = -1;
-#endif
+    _PyList_ClearFreeList(state, 1);
 }
 
 /* Print summary info about the state of the optimized allocator */
@@ -798,6 +798,7 @@ list_ass_item(PyObject *aa, Py_ssize_t i, PyObject *v)
 }
 
 /*[clinic input]
+@critical_section
 list.insert
 
     index: Py_ssize_t
@@ -809,7 +810,7 @@ Insert object before index.
 
 static PyObject *
 list_insert_impl(PyListObject *self, Py_ssize_t index, PyObject *object)
-/*[clinic end generated code: output=7f35e32f60c8cb78 input=858514cf894c7eab]*/
+/*[clinic end generated code: output=7f35e32f60c8cb78 input=b1987ca998a4ae2d]*/
 {
     if (ins1(self, index, object) == 0)
         Py_RETURN_NONE;
@@ -817,6 +818,7 @@ list_insert_impl(PyListObject *self, Py_ssize_t index, PyObject *object)
 }
 
 /*[clinic input]
+@critical_section
 list.clear as py_list_clear
 
 Remove all items from list.
@@ -824,7 +826,7 @@ Remove all items from list.
 
 static PyObject *
 py_list_clear_impl(PyListObject *self)
-/*[clinic end generated code: output=83726743807e3518 input=378711e10f545c53]*/
+/*[clinic end generated code: output=83726743807e3518 input=e285b7f09051a9ba]*/
 {
     list_clear(self);
     Py_RETURN_NONE;
@@ -1062,6 +1064,7 @@ list_inplace_concat(PyObject *_self, PyObject *other)
 }
 
 /*[clinic input]
+@critical_section
 list.pop
 
     index: Py_ssize_t = -1
@@ -1074,7 +1077,7 @@ Raises IndexError if list is empty or index is out of range.
 
 static PyObject *
 list_pop_impl(PyListObject *self, Py_ssize_t index)
-/*[clinic end generated code: output=6bd69dcb3f17eca8 input=b83675976f329e6f]*/
+/*[clinic end generated code: output=6bd69dcb3f17eca8 input=c269141068ae4b8f]*/
 {
     PyObject *v;
     int status;
@@ -2593,6 +2596,7 @@ PyList_Sort(PyObject *v)
 }
 
 /*[clinic input]
+@critical_section
 list.reverse
 
 Reverse *IN PLACE*.
@@ -2600,7 +2604,7 @@ Reverse *IN PLACE*.
 
 static PyObject *
 list_reverse_impl(PyListObject *self)
-/*[clinic end generated code: output=482544fc451abea9 input=eefd4c3ae1bc9887]*/
+/*[clinic end generated code: output=482544fc451abea9 input=04ac8e0c6a66e4d9]*/
 {
     if (Py_SIZE(self) > 1)
         reverse_slice(self->ob_item, self->ob_item + Py_SIZE(self));
@@ -2730,6 +2734,7 @@ list_count(PyListObject *self, PyObject *value)
 }
 
 /*[clinic input]
+@critical_section
 list.remove
 
      value: object
@@ -2741,8 +2746,8 @@ Raises ValueError if the value is not present.
 [clinic start generated code]*/
 
 static PyObject *
-list_remove(PyListObject *self, PyObject *value)
-/*[clinic end generated code: output=f087e1951a5e30d1 input=2dc2ba5bb2fb1f82]*/
+list_remove_impl(PyListObject *self, PyObject *value)
+/*[clinic end generated code: output=b9b76a6633b18778 input=26c813dbb95aa93b]*/
 {
     Py_ssize_t i;
 
