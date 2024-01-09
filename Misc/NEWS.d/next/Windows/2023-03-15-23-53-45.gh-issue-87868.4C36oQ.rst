@@ -1,2 +1,2 @@
 Correctly sort and remove duplicate environment variables in
-``_winapi.CreateProcess``.
+:py:func:`!_winapi.CreateProcess`.
