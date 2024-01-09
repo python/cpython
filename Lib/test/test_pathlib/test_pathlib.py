@@ -140,6 +140,8 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
         # The empty path points to '.'
         p = self.cls('')
         self.assertEqual(str(p), '.')
+        # Special case for the empty path.
+        self._check_str('.', ('',))
 
     def test_parts_interning(self):
         P = self.cls
@@ -300,6 +302,40 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
                 self.assertEqual(q, p)
                 self.assertEqual(repr(q), r)
 
+    def test_name_empty(self):
+        P = self.cls
+        self.assertEqual(P('').name, '')
+        self.assertEqual(P('.').name, '')
+        self.assertEqual(P('/a/b/.').name, 'b')
+
+    def test_stem_empty(self):
+        P = self.cls
+        self.assertEqual(P('').stem, '')
+        self.assertEqual(P('.').stem, '')
+
+    def test_with_name_empty(self):
+        P = self.cls
+        self.assertRaises(ValueError, P('').with_name, 'd.xml')
+        self.assertRaises(ValueError, P('.').with_name, 'd.xml')
+        self.assertRaises(ValueError, P('/').with_name, 'd.xml')
+        self.assertRaises(ValueError, P('a/b').with_name, '')
+        self.assertRaises(ValueError, P('a/b').with_name, '.')
+
+    def test_with_stem_empty(self):
+        P = self.cls
+        self.assertRaises(ValueError, P('').with_stem, 'd')
+        self.assertRaises(ValueError, P('.').with_stem, 'd')
+        self.assertRaises(ValueError, P('/').with_stem, 'd')
+        self.assertRaises(ValueError, P('a/b').with_stem, '')
+        self.assertRaises(ValueError, P('a/b').with_stem, '.')
+
+    def test_with_suffix_empty(self):
+        # Path doesn't have a "filename" component.
+        P = self.cls
+        self.assertRaises(ValueError, P('').with_suffix, '.gz')
+        self.assertRaises(ValueError, P('.').with_suffix, '.gz')
+        self.assertRaises(ValueError, P('/').with_suffix, '.gz')
+
     def test_relative_to_several_args(self):
         P = self.cls
         p = P('a/b')
@@ -312,6 +348,11 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
         p = P('a/b')
         with self.assertWarns(DeprecationWarning):
             p.is_relative_to('a', 'b')
+
+    def test_match_empty(self):
+        P = self.cls
+        self.assertRaises(ValueError, P('a').match, '')
+        self.assertRaises(ValueError, P('a').match, '.')
 
 
 class PurePosixPathTest(PurePathTest):
