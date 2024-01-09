@@ -13,7 +13,7 @@ from struct import calcsize
 from collections import namedtuple
 from test import support
 from ._support import (_CData, PyCStructType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
-                      Py_TPFLAGS_IMMUTABLETYPE)
+                       Py_TPFLAGS_IMMUTABLETYPE)
 
 
 class SubclassesTest(unittest.TestCase):

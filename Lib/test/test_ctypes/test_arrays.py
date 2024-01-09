@@ -8,7 +8,7 @@ from ctypes import (Structure, Array, sizeof, addressof,
                     c_long, c_ulonglong, c_float, c_double, c_longdouble)
 from test.support import bigmemtest, _2G
 from ._support import (_CData, PyCArrayType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
-                      Py_TPFLAGS_IMMUTABLETYPE)
+                       Py_TPFLAGS_IMMUTABLETYPE)
 
 
 formats = "bBhHiIlLqQfd"

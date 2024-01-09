@@ -1,7 +1,7 @@
 import unittest
 from ctypes import Union
 from ._support import (_CData, UnionType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
-                      Py_TPFLAGS_IMMUTABLETYPE)
+                       Py_TPFLAGS_IMMUTABLETYPE)
 
 
 class ArrayTestCase(unittest.TestCase):
