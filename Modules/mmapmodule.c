@@ -1166,7 +1166,7 @@ is 0, the maximum length of the map is the current size of the file,\n\
 except that if the file is empty Windows raises an exception (you cannot\n\
 create an empty mapping on Windows).\n\
 \n\
-Unix: mmap(fileno, length[, flags[, prot[, access[, offset]]]])\n\
+Unix: mmap(fileno, length[, flags[, prot[, access[, offset[, trackfd]]]]])\n\
 \n\
 Maps length bytes from the file specified by the file descriptor fileno,\n\
 and returns a mmap object.  If length is 0, the maximum length of the map\n\
