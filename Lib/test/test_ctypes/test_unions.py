@@ -12,8 +12,10 @@ class ArrayTestCase(unittest.TestCase):
         self.assertEqual(type(UnionType), type)
 
     def test_type_flags(self):
-        self.assertTrue(Union.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
-        self.assertFalse(Union.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
+        with self.subTest(cls=Union):
+            self.assertTrue(Union.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
+            self.assertFalse(Union.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
 
-        self.assertTrue(UnionType.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
-        self.assertFalse(UnionType.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
+        with self.subTest(cls=UnionType):
+            self.assertTrue(UnionType.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
+            self.assertFalse(UnionType.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)

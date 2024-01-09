@@ -24,11 +24,13 @@ class CFuncPtrTestCase(unittest.TestCase):
         self.assertEqual(type(PyCFuncPtrType), type)
 
     def test_type_flags(self):
-        self.assertTrue(_CFuncPtr.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
-        self.assertFalse(_CFuncPtr.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
+        with self.subTest(cls=_CFuncPtr):
+            self.assertTrue(_CFuncPtr.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
+            self.assertFalse(_CFuncPtr.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
 
-        self.assertTrue(PyCFuncPtrType.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
-        self.assertFalse(PyCFuncPtrType.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
+        with self.subTest(cls=PyCFuncPtrType):
+            self.assertTrue(PyCFuncPtrType.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
+            self.assertFalse(PyCFuncPtrType.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
 
     def test_basic(self):
         X = WINFUNCTYPE(c_int, c_int, c_int)

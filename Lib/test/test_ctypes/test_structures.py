@@ -80,11 +80,13 @@ class StructureTestCase(unittest.TestCase):
 
 
     def test_type_flags(self):
-        self.assertTrue(Structure.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
-        self.assertFalse(Structure.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
+        with self.subTest(cls=Structure):
+            self.assertTrue(Structure.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
+            self.assertFalse(Structure.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
 
-        self.assertTrue(PyCStructType.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
-        self.assertFalse(PyCStructType.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
+        with self.subTest(cls=PyCStructType):
+            self.assertTrue(PyCStructType.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
+            self.assertFalse(PyCStructType.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
 
     def test_simple_structs(self):
         for code, tp in self.formats.items():
