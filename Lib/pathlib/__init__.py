@@ -196,6 +196,15 @@ class PurePath(_abc.PurePathBase):
         return self._parts_normcase >= other._parts_normcase
 
     @property
+    def parts(self):
+        """An object providing sequence-like access to the
+        components in the filesystem path."""
+        if self.drive or self.root:
+            return (self.drive + self.root,) + tuple(self._tail)
+        else:
+            return tuple(self._tail)
+
+    @property
     def parent(self):
         """The logical parent of the path."""
         drv = self.drive
