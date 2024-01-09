@@ -567,6 +567,65 @@ f'''{
     OP         '}'           (3, 1) (3, 2)
     FSTRING_END "'''"         (3, 2) (3, 5)
     """)
+        self.check_tokenize("""\
+f'''__{
+    x:a
+}__'''""", """\
+    FSTRING_START "f'''"        (1, 0) (1, 4)
+    FSTRING_MIDDLE '__'          (1, 4) (1, 6)
+    OP         '{'           (1, 6) (1, 7)
+    NL         '\\n'          (1, 7) (1, 8)
+    NAME       'x'           (2, 4) (2, 5)
+    OP         ':'           (2, 5) (2, 6)
+    FSTRING_MIDDLE 'a\\n'         (2, 6) (3, 0)
+    OP         '}'           (3, 0) (3, 1)
+    FSTRING_MIDDLE '__'          (3, 1) (3, 3)
+    FSTRING_END "'''"         (3, 3) (3, 6)
+    """)
+        self.check_tokenize("""\
+f'''__{
+    x:a
+    b
+     c
+      d
+}__'''""", """\
+    FSTRING_START "f'''"        (1, 0) (1, 4)
+    FSTRING_MIDDLE '__'          (1, 4) (1, 6)
+    OP         '{'           (1, 6) (1, 7)
+    NL         '\\n'          (1, 7) (1, 8)
+    NAME       'x'           (2, 4) (2, 5)
+    OP         ':'           (2, 5) (2, 6)
+    FSTRING_MIDDLE 'a\\n    b\\n     c\\n      d\\n' (2, 6) (6, 0)
+    OP         '}'           (6, 0) (6, 1)
+    FSTRING_MIDDLE '__'          (6, 1) (6, 3)
+    FSTRING_END "'''"         (6, 3) (6, 6)
+    """)
+        self.check_tokenize("""\
+f'__{
+    x:d
+}__'""", """\
+    FSTRING_START "f'"          (1, 0) (1, 2)
+    FSTRING_MIDDLE '__'          (1, 2) (1, 4)
+    OP         '{'           (1, 4) (1, 5)
+    NL         '\\n'          (1, 5) (1, 6)
+    NAME       'x'           (2, 4) (2, 5)
+    OP         ':'           (2, 5) (2, 6)
+    FSTRING_MIDDLE 'd'           (2, 6) (2, 7)
+    NL         '\\n'          (2, 7) (2, 8)
+    OP         '}'           (3, 0) (3, 1)
+    FSTRING_MIDDLE '__'          (3, 1) (3, 3)
+    FSTRING_END "'"           (3, 3) (3, 4)
+    """)
+
+        self.check_tokenize("""\
+    '''Autorzy, którzy tą jednostkę mają wpisani jako AKTUALNA -- czyli
+    aktualni pracownicy, obecni pracownicy'''
+""", """\
+    INDENT     '    '        (1, 0) (1, 4)
+    STRING     "'''Autorzy, którzy tą jednostkę mają wpisani jako AKTUALNA -- czyli\\n    aktualni pracownicy, obecni pracownicy'''" (1, 4) (2, 45)
+    NEWLINE    '\\n'          (2, 45) (2, 46)
+    DEDENT     ''            (3, 0) (3, 0)
+    """)
 
     def test_function(self):
         self.check_tokenize("def d22(a, b, c=2, d=2, *k): pass", """\
@@ -1200,7 +1259,7 @@ class TestTokenizerAdheresToPep0263(TestCase):
     """
 
     def _testFile(self, filename):
-        path = os.path.join(os.path.dirname(__file__), filename)
+        path = os.path.join(os.path.dirname(__file__), 'tokenizedata', filename)
         with open(path, 'rb') as f:
             TestRoundtrip.check_roundtrip(self, f)
 
@@ -1386,7 +1445,7 @@ class TestDetectEncoding(TestCase):
         self.assertEqual(consumed_lines, expected)
 
     def test_latin1_normalization(self):
-        # See get_normal_name() in tokenizer.c.
+        # See get_normal_name() in Parser/tokenizer/helpers.c.
         encodings = ("latin-1", "iso-8859-1", "iso-latin-1", "latin-1-unix",
                      "iso-8859-1-unix", "iso-latin-1-mac")
         for encoding in encodings:
@@ -1411,7 +1470,7 @@ class TestDetectEncoding(TestCase):
 
 
     def test_utf8_normalization(self):
-        # See get_normal_name() in tokenizer.c.
+        # See get_normal_name() in Parser/tokenizer/helpers.c.
         encodings = ("utf-8", "utf-8-mac", "utf-8-unix")
         for encoding in encodings:
             for rep in ("-", "_"):
@@ -1794,7 +1853,7 @@ class TestRoundtrip(TestCase):
 
         self.check_roundtrip("if x == 1 : \n"
                              "  print(x)\n")
-        fn = support.findfile("tokenize_tests.txt")
+        fn = support.findfile("tokenize_tests.txt", subdir="tokenizedata")
         with open(fn, 'rb') as f:
             self.check_roundtrip(f)
         self.check_roundtrip("if x == 1:\n"
@@ -1849,22 +1908,11 @@ class TestRoundtrip(TestCase):
         # pass the '-ucpu' option to process the full directory.
 
         import glob, random
-        fn = support.findfile("tokenize_tests.txt")
-        tempdir = os.path.dirname(fn) or os.curdir
+        tempdir = os.path.dirname(__file__) or os.curdir
         testfiles = glob.glob(os.path.join(glob.escape(tempdir), "test*.py"))
-
-        # Tokenize is broken on test_pep3131.py because regular expressions are
-        # broken on the obscure unicode identifiers in it. *sigh*
-        # With roundtrip extended to test the 5-tuple mode of untokenize,
-        # 7 more testfiles fail.  Remove them also until the failure is diagnosed.
-
-        testfiles.remove(os.path.join(tempdir, "test_unicode_identifiers.py"))
 
         # TODO: Remove this once we can untokenize PEP 701 syntax
         testfiles.remove(os.path.join(tempdir, "test_fstring.py"))
-
-        for f in ('buffer', 'builtin', 'fileio', 'inspect', 'os', 'platform', 'sys'):
-            testfiles.remove(os.path.join(tempdir, "test_%s.py") % f)
 
         if not support.is_resource_enabled("cpu"):
             testfiles = random.sample(testfiles, 10)
@@ -2278,6 +2326,54 @@ def"', """\
     FSTRING_START \'f"\'          (1, 0) (1, 2)
     FSTRING_MIDDLE 'hola\\\\\\\\\\\\r\\\\ndfgf' (1, 2) (1, 16)
     FSTRING_END \'"\'           (1, 16) (1, 17)
+    """)
+
+        self.check_tokenize("""\
+f'''__{
+    x:a
+}__'''""", """\
+    FSTRING_START "f'''"        (1, 0) (1, 4)
+    FSTRING_MIDDLE '__'          (1, 4) (1, 6)
+    LBRACE     '{'           (1, 6) (1, 7)
+    NAME       'x'           (2, 4) (2, 5)
+    COLON      ':'           (2, 5) (2, 6)
+    FSTRING_MIDDLE 'a\\n'         (2, 6) (3, 0)
+    RBRACE     '}'           (3, 0) (3, 1)
+    FSTRING_MIDDLE '__'          (3, 1) (3, 3)
+    FSTRING_END "'''"         (3, 3) (3, 6)
+    """)
+
+        self.check_tokenize("""\
+f'''__{
+    x:a
+    b
+     c
+      d
+}__'''""", """\
+    FSTRING_START "f'''"        (1, 0) (1, 4)
+    FSTRING_MIDDLE '__'          (1, 4) (1, 6)
+    LBRACE     '{'           (1, 6) (1, 7)
+    NAME       'x'           (2, 4) (2, 5)
+    COLON      ':'           (2, 5) (2, 6)
+    FSTRING_MIDDLE 'a\\n    b\\n     c\\n      d\\n' (2, 6) (6, 0)
+    RBRACE     '}'           (6, 0) (6, 1)
+    FSTRING_MIDDLE '__'          (6, 1) (6, 3)
+    FSTRING_END "'''"         (6, 3) (6, 6)
+    """)
+
+        self.check_tokenize("""\
+f'__{
+    x:d
+}__'""", """\
+    FSTRING_START "f'"          (1, 0) (1, 2)
+    FSTRING_MIDDLE '__'          (1, 2) (1, 4)
+    LBRACE     '{'           (1, 4) (1, 5)
+    NAME       'x'           (2, 4) (2, 5)
+    COLON      ':'           (2, 5) (2, 6)
+    FSTRING_MIDDLE 'd'           (2, 6) (2, 7)
+    RBRACE     '}'           (3, 0) (3, 1)
+    FSTRING_MIDDLE '__'          (3, 1) (3, 3)
+    FSTRING_END "'"           (3, 3) (3, 4)
     """)
 
     def test_function(self):

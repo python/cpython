@@ -230,7 +230,7 @@ class BinASCIITest(unittest.TestCase):
             binascii.b2a_uu(b"", True)
 
     @hypothesis.given(
-        binary=hypothesis.strategies.binary(),
+        binary=hypothesis.strategies.binary(max_size=45),
         backtick=hypothesis.strategies.booleans(),
     )
     def test_b2a_roundtrip(self, binary, backtick):
@@ -473,6 +473,12 @@ class BinASCIITest(unittest.TestCase):
         converted = binascii.b2a_base64(self.type2test(binary), newline=newline)
         restored = binascii.a2b_base64(self.type2test(converted))
         self.assertConversion(binary, converted, restored, newline=newline)
+
+    def test_c_contiguity(self):
+        m = memoryview(bytearray(b'noncontig'))
+        noncontig_writable = m[::-2]
+        with self.assertRaises(BufferError):
+            binascii.b2a_hex(noncontig_writable)
 
 
 class ArrayBinASCIITest(BinASCIITest):

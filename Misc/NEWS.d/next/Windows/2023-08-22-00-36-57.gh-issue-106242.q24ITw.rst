@@ -1,4 +1,0 @@
-Fixes :func:`~os.path.realpath` to behave consistently when passed a path
-containing an embedded null character on Windows. In strict mode, it now
-raises :exc:`OSError` instead of the unexpected :exc:`ValueError`, and in
-non-strict mode will make the path absolute.

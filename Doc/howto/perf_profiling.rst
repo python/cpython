@@ -97,7 +97,7 @@ Then we can use ``perf report`` to analyze the data:
                             |          |          |                     |          |          |--2.97%--_PyObject_Malloc
     ...
 
-As you can see, the Python functions are not shown in the output, only ``_Py_Eval_EvalFrameDefault``
+As you can see, the Python functions are not shown in the output, only ``_PyEval_EvalFrameDefault``
 (the function that evaluates the Python bytecode) shows up. Unfortunately that's not very useful because all Python
 functions use the same C function to evaluate bytecode so we cannot know which Python function corresponds to which
 bytecode-evaluating function.
@@ -162,8 +162,7 @@ the :option:`!-X` option takes precedence over the environment variable.
 
 Example, using the environment variable::
 
-   $ PYTHONPERFSUPPORT=1
-   $ python script.py
+   $ PYTHONPERFSUPPORT=1 python script.py
    $ perf report -g -i perf.data
 
 Example, using the :option:`!-X` option::

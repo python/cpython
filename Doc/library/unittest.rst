@@ -206,13 +206,13 @@ Command-line options
 
 .. program:: unittest
 
-.. cmdoption:: -b, --buffer
+.. option:: -b, --buffer
 
    The standard output and standard error streams are buffered during the test
    run. Output during a passing test is discarded. Output is echoed normally
    on test fail or error and is added to the failure messages.
 
-.. cmdoption:: -c, --catch
+.. option:: -c, --catch
 
    :kbd:`Control-C` during the test run waits for the current test to end and then
    reports all the results so far. A second :kbd:`Control-C` raises the normal
@@ -220,11 +220,11 @@ Command-line options
 
    See `Signal Handling`_ for the functions that provide this functionality.
 
-.. cmdoption:: -f, --failfast
+.. option:: -f, --failfast
 
    Stop the test run on the first error or failure.
 
-.. cmdoption:: -k
+.. option:: -k
 
    Only run test methods and classes that match the pattern or substring.
    This option may be used multiple times, in which case all test cases that
@@ -240,11 +240,11 @@ Command-line options
    For example, ``-k foo`` matches ``foo_tests.SomeTest.test_something``,
    ``bar_tests.SomeTest.test_foo``, but not ``bar_tests.FooTest.test_something``.
 
-.. cmdoption:: --locals
+.. option:: --locals
 
    Show local variables in tracebacks.
 
-.. cmdoption:: --durations N
+.. option:: --durations N
 
    Show the N slowest test cases (N=0 for all).
 
@@ -292,19 +292,19 @@ The ``discover`` sub-command has the following options:
 
 .. program:: unittest discover
 
-.. cmdoption:: -v, --verbose
+.. option:: -v, --verbose
 
    Verbose output
 
-.. cmdoption:: -s, --start-directory directory
+.. option:: -s, --start-directory directory
 
    Directory to start discovery (``.`` default)
 
-.. cmdoption:: -p, --pattern pattern
+.. option:: -p, --pattern pattern
 
    Pattern to match test files (``test*.py`` default)
 
-.. cmdoption:: -t, --top-level-directory directory
+.. option:: -t, --top-level-directory directory
 
    Top level directory of project (defaults to start directory)
 
@@ -346,8 +346,8 @@ the `load_tests protocol`_.
    ``python -m unittest discover -s root/namespace -t root``).
 
 .. versionchanged:: 3.11
-   Python 3.11 dropped the :term:`namespace packages <namespace package>`
-   support. It has been broken since Python 3.7. Start directory and
+   :mod:`unittest` dropped the :term:`namespace packages <namespace package>`
+   support in Python 3.11. It has been broken since Python 3.7. Start directory and
    subdirectories containing tests must be regular package that have
    ``__init__.py`` file.
 
@@ -390,8 +390,8 @@ testing code::
            widget = Widget('The widget')
            self.assertEqual(widget.size(), (50, 50))
 
-Note that in order to test something, we use one of the :meth:`assert\*`
-methods provided by the :class:`TestCase` base class.  If the test fails, an
+Note that in order to test something, we use one of the :ref:`assert\* methods <assert-methods>`
+provided by the :class:`TestCase` base class.  If the test fails, an
 exception will be raised with an explanatory message, and :mod:`unittest`
 will identify the test case as a :dfn:`failure`.  Any other exceptions will be
 treated as :dfn:`errors`.
@@ -1571,6 +1571,14 @@ Test cases
 
    .. versionadded:: 3.8
 
+   .. attribute:: loop_factory
+
+      The *loop_factory* passed to :class:`asyncio.Runner`. Override
+      in subclasses with :class:`asyncio.EventLoop` to avoid using the
+      asyncio policy system.
+
+      .. versionadded:: 3.13
+
    .. coroutinemethod:: asyncSetUp()
 
       Method called to prepare the test fixture. This is called after :meth:`setUp`.
@@ -1725,7 +1733,7 @@ Grouping tests
    .. method:: __iter__()
 
       Tests grouped by a :class:`TestSuite` are always accessed by iteration.
-      Subclasses can lazily provide tests by overriding :meth:`__iter__`. Note
+      Subclasses can lazily provide tests by overriding :meth:`!__iter__`. Note
       that this method may be called several times on a single suite (for
       example when counting tests or comparing for equality) so the tests
       returned by repeated iterations before :meth:`TestSuite.run` must be the
@@ -1736,7 +1744,7 @@ Grouping tests
 
       .. versionchanged:: 3.2
          In earlier versions the :class:`TestSuite` accessed tests directly rather
-         than through iteration, so overriding :meth:`__iter__` wasn't sufficient
+         than through iteration, so overriding :meth:`!__iter__` wasn't sufficient
          for providing tests.
 
       .. versionchanged:: 3.4
@@ -1932,14 +1940,14 @@ Loading and running tests
       String giving the prefix of method names which will be interpreted as test
       methods.  The default value is ``'test'``.
 
-      This affects :meth:`getTestCaseNames` and all the :meth:`loadTestsFrom\*`
+      This affects :meth:`getTestCaseNames` and all the ``loadTestsFrom*``
       methods.
 
 
    .. attribute:: sortTestMethodsUsing
 
       Function to be used to compare method names when sorting them in
-      :meth:`getTestCaseNames` and all the :meth:`loadTestsFrom\*` methods.
+      :meth:`getTestCaseNames` and all the ``loadTestsFrom*`` methods.
 
 
    .. attribute:: suiteClass
@@ -1948,7 +1956,7 @@ Loading and running tests
       methods on the resulting object are needed.  The default value is the
       :class:`TestSuite` class.
 
-      This affects all the :meth:`loadTestsFrom\*` methods.
+      This affects all the ``loadTestsFrom*`` methods.
 
    .. attribute:: testNamePatterns
 
@@ -1961,7 +1969,7 @@ Loading and running tests
       so unlike patterns passed to the ``-k`` option, simple substring patterns
       will have to be converted using ``*`` wildcards.
 
-      This affects all the :meth:`loadTestsFrom\*` methods.
+      This affects all the ``loadTestsFrom*`` methods.
 
       .. versionadded:: 3.7
 
@@ -1995,7 +2003,7 @@ Loading and running tests
 
       A list containing 2-tuples of :class:`TestCase` instances and strings
       holding formatted tracebacks. Each tuple represents a test where a failure
-      was explicitly signalled using the :meth:`TestCase.assert\*` methods.
+      was explicitly signalled using the :ref:`assert\* methods <assert-methods>`.
 
    .. attribute:: skipped
 
@@ -2317,6 +2325,8 @@ Loading and running tests
       The *defaultTest* parameter was changed to also accept an iterable of
       test names.
 
+
+.. _load_tests-protocol:
 
 load_tests Protocol
 ###################

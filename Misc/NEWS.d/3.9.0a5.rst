@@ -96,7 +96,7 @@ Port itertools module to multiphase initialization (:pep:`489`).
 .. section: Core and Builtins
 
 Speed up calls to ``frozenset()`` by using the :pep:`590` ``vectorcall``
-calling convention. Patch by Dong-hee Na.
+calling convention. Patch by Donghee Na.
 
 ..
 
@@ -117,7 +117,7 @@ own variable.
 .. section: Core and Builtins
 
 Speed up calls to ``set()`` by using the :pep:`590` ``vectorcall`` calling
-convention. Patch by Dong-hee Na.
+convention. Patch by Donghee Na.
 
 ..
 
@@ -166,7 +166,7 @@ Allow executing asynchronous comprehensions on the top level when the
 .. section: Core and Builtins
 
 Speed up calls to ``tuple()`` by using the :pep:`590` ``vectorcall`` calling
-convention. Patch by Dong-hee Na.
+convention. Patch by Donghee Na.
 
 ..
 
@@ -571,7 +571,7 @@ Fixed :func:`ast.unparse` for extended slices containing a single element
 .. nonce: yWq9NJ
 .. section: Library
 
-Fix :mod:`json.tool` to catch :exc:`BrokenPipeError`. Patch by Dong-hee Na.
+Fix :mod:`json.tool` to catch :exc:`BrokenPipeError`. Patch by Donghee Na.
 
 ..
 
@@ -783,7 +783,7 @@ when the optional ``qop`` parameter is not present.
 .. section: Library
 
 HTTP status codes ``103 EARLY_HINTS`` and ``425 TOO_EARLY`` are added to
-:class:`http.HTTPStatus`. Patch by Dong-hee Na.
+:class:`http.HTTPStatus`. Patch by Donghee Na.
 
 ..
 
@@ -1133,7 +1133,7 @@ module. Patch by José Roberto Meza Cabrera.
 .. section: C API
 
 Add :c:func:`PyModule_AddType` helper function: add a type to a module.
-Patch by Dong-hee Na.
+Patch by Donghee Na.
 
 ..
 
@@ -1163,7 +1163,7 @@ Python thread state.
 .. nonce: R3jaTy
 .. section: C API
 
-Add _PyArg_NoKwnames helper function. Patch by Dong-hee Na.
+Add _PyArg_NoKwnames helper function. Patch by Donghee Na.
 
 ..
 

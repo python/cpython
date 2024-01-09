@@ -36,7 +36,7 @@ class saved_test_environment:
     items is also printed.
     """
 
-    def __init__(self, test_name, verbose=0, quiet=False, *, pgo=False):
+    def __init__(self, test_name, verbose, quiet, *, pgo):
         self.test_name = test_name
         self.verbose = verbose
         self.quiet = quiet

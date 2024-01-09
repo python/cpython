@@ -1,3 +1,0 @@
-Compiler now strips indents from docstrings. It reduces ``pyc`` file size 5%
-when the module is heavily documented. This change affects to ``__doc__`` so
-tools like doctest will be affected.

@@ -1989,7 +1989,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         ns = {}
         exec(code, ns)
         number_attrs = ns["number_attrs"]
-        # Warm up the the function for quickening (PEP 659)
+        # Warm up the function for quickening (PEP 659)
         for _ in range(30):
             self.assertEqual(number_attrs(Numbers()), list(range(280)))
 
@@ -4757,24 +4757,24 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         thing = Thing()
         for i in range(20):
             with self.assertRaises(TypeError):
-                # PRECALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS
+                # CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS
                 list.sort(thing)
         for i in range(20):
             with self.assertRaises(TypeError):
-                # PRECALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS
+                # CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS
                 str.split(thing)
         for i in range(20):
             with self.assertRaises(TypeError):
-                # PRECALL_NO_KW_METHOD_DESCRIPTOR_NOARGS
+                # CALL_METHOD_DESCRIPTOR_NOARGS
                 str.upper(thing)
         for i in range(20):
             with self.assertRaises(TypeError):
-                # PRECALL_NO_KW_METHOD_DESCRIPTOR_FAST
+                # CALL_METHOD_DESCRIPTOR_FAST
                 str.strip(thing)
         from collections import deque
         for i in range(20):
             with self.assertRaises(TypeError):
-                # PRECALL_NO_KW_METHOD_DESCRIPTOR_O
+                # CALL_METHOD_DESCRIPTOR_O
                 deque.append(thing, thing)
 
     def test_repr_as_str(self):
@@ -5003,6 +5003,21 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         del Child
         gc.collect()
         self.assertEqual(Parent.__subclasses__(), [])
+
+    def test_instance_method_get_behavior(self):
+        # test case for gh-113157
+
+        class A:
+            def meth(self):
+                return self
+
+        class B:
+            pass
+
+        a = A()
+        b = B()
+        b.meth = a.meth.__get__(b, B)
+        self.assertEqual(b.meth(), a)
 
     def test_attr_raise_through_property(self):
         # test case for gh-103272

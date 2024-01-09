@@ -2,7 +2,6 @@
 # handler, are obscure and unhelpful.
 
 import os
-import platform
 import sys
 import sysconfig
 import unittest
@@ -14,7 +13,7 @@ from test.support import os_helper
 from xml.parsers import expat
 from xml.parsers.expat import errors
 
-from test.support import sortdict, is_emscripten, is_wasi
+from test.support import sortdict
 
 
 class SetAttributeTest(unittest.TestCase):
@@ -545,7 +544,7 @@ class sf1296433Test(unittest.TestCase):
         parser = expat.ParserCreate()
         parser.CharacterDataHandler = handler
 
-        self.assertRaises(Exception, parser.Parse, xml.encode('iso8859'))
+        self.assertRaises(SpecificException, parser.Parse, xml.encode('iso8859'))
 
 class ChardataBufferTest(unittest.TestCase):
     """

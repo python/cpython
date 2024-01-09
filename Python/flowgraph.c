@@ -97,6 +97,7 @@ static const jump_target_label NO_LABEL = {-1};
 static inline int
 is_block_push(cfg_instr *i)
 {
+    assert(OPCODE_HAS_ARG(i->i_opcode) || !IS_BLOCK_PUSH_OPCODE(i->i_opcode));
     return IS_BLOCK_PUSH_OPCODE(i->i_opcode);
 }
 
@@ -261,8 +262,8 @@ dump_instr(cfg_instr *i)
     if (HAS_TARGET(i->i_opcode)) {
         sprintf(arg, "target: %p [%d] ", i->i_target, i->i_oparg);
     }
-    fprintf(stderr, "line: %d, opcode: %d %s%s\n",
-                    i->i_loc.lineno, i->i_opcode, arg, jump);
+    fprintf(stderr, "line: %d, %s (%d)  %s%s\n",
+                    i->i_loc.lineno, _PyOpcode_OpName[i->i_opcode], i->i_opcode, arg, jump);
 }
 
 static inline int
@@ -448,6 +449,15 @@ _PyCfgBuilder_Addop(cfg_builder *g, int opcode, int oparg, location loc)
 }
 
 
+static basicblock *
+next_nonempty_block(basicblock *b)
+{
+    while (b && b->b_iused == 0) {
+        b = b->b_next;
+    }
+    return b;
+}
+
 /***** debugging helpers *****/
 
 #ifndef NDEBUG
@@ -464,24 +474,19 @@ no_redundant_nops(cfg_builder *g) {
 }
 
 static bool
-no_empty_basic_blocks(cfg_builder *g) {
-    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        if (b->b_iused == 0) {
-            return false;
-        }
-    }
-    return true;
-}
-
-static bool
 no_redundant_jumps(cfg_builder *g) {
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         cfg_instr *last = basicblock_last_instr(b);
         if (last != NULL) {
             if (IS_UNCONDITIONAL_JUMP_OPCODE(last->i_opcode)) {
-                assert(last->i_target != b->b_next);
-                if (last->i_target == b->b_next) {
-                    return false;
+                basicblock *next = next_nonempty_block(b->b_next);
+                basicblock *jump_target = next_nonempty_block(last->i_target);
+                if (jump_target == next) {
+                    assert(next);
+                    if (last->i_loc.lineno == next->b_instr[0].i_loc.lineno) {
+                        assert(0);
+                        return false;
+                    }
                 }
             }
         }
@@ -575,16 +580,23 @@ check_cfg(cfg_builder *g) {
     return SUCCESS;
 }
 
+static int
+get_max_label(basicblock *entryblock)
+{
+    int lbl = -1;
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        if (b->b_label.id > lbl) {
+            lbl = b->b_label.id;
+        }
+    }
+    return lbl;
+}
+
 /* Calculate the actual jump target from the target_label */
 static int
 translate_jump_labels_to_targets(basicblock *entryblock)
 {
-    int max_label = -1;
-    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        if (b->b_label.id > max_label) {
-            max_label = b->b_label.id;
-        }
-    }
+    int max_label = get_max_label(entryblock);
     size_t mapsize = sizeof(basicblock *) * (max_label + 1);
     basicblock **label2block = (basicblock **)PyMem_Malloc(mapsize);
     if (!label2block) {
@@ -640,7 +652,7 @@ mark_except_handlers(basicblock *entryblock) {
 
 
 struct _PyCfgExceptStack {
-    basicblock *handlers[CO_MAXBLOCKS+1];
+    basicblock *handlers[CO_MAXBLOCKS+2];
     int depth;
 };
 
@@ -653,6 +665,7 @@ push_except_block(struct _PyCfgExceptStack *stack, cfg_instr *setup) {
     if (opcode == SETUP_WITH || opcode == SETUP_CLEANUP) {
         target->b_preserve_lasti = 1;
     }
+    assert(stack->depth <= CO_MAXBLOCKS);
     stack->handlers[++stack->depth] = target;
     return target;
 }
@@ -833,6 +846,7 @@ label_exception_targets(basicblock *entryblock) {
         assert(except_stack != NULL);
         b->b_exceptstack = NULL;
         handler = except_stack_top(except_stack);
+        int last_yield_except_depth = -1;
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
             if (is_block_push(instr)) {
@@ -871,10 +885,21 @@ label_exception_targets(basicblock *entryblock) {
                     todo++;
                 }
             }
-            else {
-                if (instr->i_opcode == YIELD_VALUE) {
-                    instr->i_oparg = except_stack->depth;
+            else if (instr->i_opcode == YIELD_VALUE) {
+                instr->i_except = handler;
+                last_yield_except_depth = except_stack->depth;
+            }
+            else if (instr->i_opcode == RESUME) {
+                instr->i_except = handler;
+                if (instr->i_oparg != RESUME_AT_FUNC_START) {
+                    assert(last_yield_except_depth >= 0);
+                    if (last_yield_except_depth == 1) {
+                        instr->i_oparg |= RESUME_OPARG_DEPTH1_MASK;
+                    }
+                    last_yield_except_depth = -1;
                 }
+            }
+            else {
                 instr->i_except = handler;
             }
         }
@@ -940,35 +965,6 @@ mark_reachable(basicblock *entryblock) {
     return SUCCESS;
 }
 
-static void
-eliminate_empty_basic_blocks(cfg_builder *g) {
-    /* Eliminate empty blocks */
-    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        basicblock *next = b->b_next;
-        while (next && next->b_iused == 0) {
-            next = next->b_next;
-        }
-        b->b_next = next;
-    }
-    while(g->g_entryblock && g->g_entryblock->b_iused == 0) {
-        g->g_entryblock = g->g_entryblock->b_next;
-    }
-    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        assert(b->b_iused > 0);
-        for (int i = 0; i < b->b_iused; i++) {
-            cfg_instr *instr = &b->b_instr[i];
-            if (HAS_TARGET(instr->i_opcode)) {
-                basicblock *target = instr->i_target;
-                while (target->b_iused == 0) {
-                    target = target->b_next;
-                }
-                instr->i_target = target;
-                assert(instr->i_target && instr->i_target->b_iused > 0);
-            }
-        }
-    }
-}
-
 static int
 remove_redundant_nops(basicblock *bb) {
     /* Remove NOPs when legal to do so. */
@@ -997,13 +993,20 @@ remove_redundant_nops(basicblock *bb) {
                 }
             }
             else {
-                basicblock* next = bb->b_next;
-                while (next && next->b_iused == 0) {
-                    next = next->b_next;
-                }
+                basicblock *next = next_nonempty_block(bb->b_next);
                 /* or if last instruction in BB and next BB has same line number */
                 if (next) {
-                    if (lineno == next->b_instr[0].i_loc.lineno) {
+                    location next_loc = NO_LOCATION;
+                    for (int next_i=0; next_i < next->b_iused; next_i++) {
+                        cfg_instr *instr = &next->b_instr[next_i];
+                        if (instr->i_opcode == NOP && instr->i_loc.lineno == NO_LOCATION.lineno) {
+                            /* Skip over NOPs without location, they will be removed */
+                            continue;
+                        }
+                        next_loc = instr->i_loc;
+                        break;
+                    }
+                    if (lineno == next_loc.lineno) {
                         continue;
                     }
                 }
@@ -1073,22 +1076,31 @@ remove_redundant_jumps(cfg_builder *g) {
      * of that jump. If it is, then the jump instruction is redundant and
      * can be deleted.
      */
-    assert(no_empty_basic_blocks(g));
+
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         cfg_instr *last = basicblock_last_instr(b);
-        assert(last != NULL);
+        if (last == NULL) {
+            continue;
+        }
         assert(!IS_ASSEMBLER_OPCODE(last->i_opcode));
         if (IS_UNCONDITIONAL_JUMP_OPCODE(last->i_opcode)) {
-            if (last->i_target == NULL) {
+            basicblock* jump_target = next_nonempty_block(last->i_target);
+            if (jump_target == NULL) {
                 PyErr_SetString(PyExc_SystemError, "jump with NULL target");
                 return ERROR;
             }
-            if (last->i_target == b->b_next) {
-                assert(b->b_next->b_iused);
-                INSTR_SET_OP0(last, NOP);
+            basicblock *next = next_nonempty_block(b->b_next);
+            if (jump_target == next) {
+                if (last->i_loc.lineno == NO_LOCATION.lineno) {
+                    b->b_iused--;
+                }
+                else {
+                    INSTR_SET_OP0(last, NOP);
+                }
             }
         }
     }
+
     return SUCCESS;
 }
 
@@ -1127,11 +1139,15 @@ jump_thread(cfg_instr *inst, cfg_instr *target, int opcode)
     assert(is_jump(target));
     // bpo-45773: If inst->i_target == target->i_target, then nothing actually
     // changes (and we fall into an infinite loop):
-    if ((inst->i_loc.lineno == target->i_loc.lineno || target->i_loc.lineno == -1) &&
+    if ((inst->i_loc.lineno == target->i_loc.lineno ||
+         inst->i_loc.lineno == -1 || target->i_loc.lineno == -1) &&
         inst->i_target != target->i_target)
     {
         inst->i_target = target->i_target;
         inst->i_opcode = opcode;
+        if (inst->i_loc.lineno == -1) {
+            inst->i_loc = target->i_loc;
+        }
         return true;
     }
     return false;
@@ -1594,9 +1610,14 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 }
                 break;
             case JUMP:
+            case JUMP_NO_INTERRUPT:
                 switch (target->i_opcode) {
                     case JUMP:
                         i -= jump_thread(inst, target, JUMP);
+                        continue;
+                    case JUMP_NO_INTERRUPT:
+                        i -= jump_thread(inst, target, opcode);
+                        continue;
                 }
                 break;
             case FOR_ITER:
@@ -1623,8 +1644,6 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 if (oparg == 1) {
                     INSTR_SET_OP0(inst, NOP);
                 }
-                break;
-            case KW_NAMES:
                 break;
             case LOAD_GLOBAL:
                 if (nextop == PUSH_NULL && (oparg & 1) == 0) {
@@ -1698,11 +1717,9 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache)
 {
     assert(PyDict_CheckExact(const_cache));
     RETURN_IF_ERROR(check_cfg(g));
-    eliminate_empty_basic_blocks(g);
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         RETURN_IF_ERROR(inline_small_exit_blocks(b));
     }
-    assert(no_empty_basic_blocks(g));
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         RETURN_IF_ERROR(optimize_basic_block(const_cache, b, consts));
         assert(b->b_predecessors == 0);
@@ -1717,14 +1734,21 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache)
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
        if (b->b_predecessors == 0) {
             b->b_iused = 0;
+            b->b_except_handler = 0;
        }
     }
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         remove_redundant_nops(b);
     }
-    eliminate_empty_basic_blocks(g);
-    assert(no_redundant_nops(g));
     RETURN_IF_ERROR(remove_redundant_jumps(g));
+
+    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
+        remove_redundant_nops(b);
+    }
+
+    RETURN_IF_ERROR(remove_redundant_jumps(g));
+
+    assert(no_redundant_jumps(g));
     return SUCCESS;
 }
 
@@ -1774,7 +1798,6 @@ insert_superinstructions(cfg_builder *g)
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         remove_redundant_nops(b);
     }
-    eliminate_empty_basic_blocks(g);
     assert(no_redundant_nops(g));
 }
 
@@ -2128,6 +2151,8 @@ push_cold_blocks_to_end(cfg_builder *g) {
     }
     RETURN_IF_ERROR(mark_cold(entryblock));
 
+    int next_lbl = get_max_label(g->g_entryblock) + 1;
+
     /* If we have a cold block with fallthrough to a warm block, add */
     /* an explicit jump instead of fallthrough */
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
@@ -2135,6 +2160,9 @@ push_cold_blocks_to_end(cfg_builder *g) {
             basicblock *explicit_jump = cfg_builder_new_block(g);
             if (explicit_jump == NULL) {
                 return ERROR;
+            }
+            if (!IS_LABEL(b->b_next->b_label)) {
+                b->b_next->b_label.id = next_lbl++;
             }
             basicblock_addop(explicit_jump, JUMP, b->b_next->b_label.id, NO_LOCATION);
             explicit_jump->b_cold = 1;
@@ -2200,15 +2228,14 @@ convert_pseudo_ops(basicblock *entryblock)
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
             if (is_block_push(instr) || instr->i_opcode == POP_BLOCK) {
-                assert(SAME_OPCODE_METADATA(instr->i_opcode, NOP));
                 INSTR_SET_OP0(instr, NOP);
             }
             else if (instr->i_opcode == LOAD_CLOSURE) {
-                assert(SAME_OPCODE_METADATA(LOAD_CLOSURE, LOAD_FAST));
+                assert(is_pseudo_target(LOAD_CLOSURE, LOAD_FAST));
                 instr->i_opcode = LOAD_FAST;
             }
             else if (instr->i_opcode == STORE_FAST_MAYBE_NULL) {
-                assert(SAME_OPCODE_METADATA(STORE_FAST_MAYBE_NULL, STORE_FAST));
+                assert(is_pseudo_target(STORE_FAST_MAYBE_NULL, STORE_FAST));
                 instr->i_opcode = STORE_FAST;
             }
         }
@@ -2231,6 +2258,7 @@ is_exit_without_lineno(basicblock *b) {
     return true;
 }
 
+
 /* PEP 626 mandates that the f_lineno of a frame is correct
  * after a frame terminates. It would be prohibitively expensive
  * to continuously update the f_lineno field at runtime,
@@ -2243,15 +2271,18 @@ is_exit_without_lineno(basicblock *b) {
 static int
 duplicate_exits_without_lineno(cfg_builder *g)
 {
-    assert(no_empty_basic_blocks(g));
+    int next_lbl = get_max_label(g->g_entryblock) + 1;
+
     /* Copy all exit blocks without line number that are targets of a jump.
      */
     basicblock *entryblock = g->g_entryblock;
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         cfg_instr *last = basicblock_last_instr(b);
-        assert(last != NULL);
+        if (last == NULL) {
+            continue;
+        }
         if (is_jump(last)) {
-            basicblock *target = last->i_target;
+            basicblock *target = next_nonempty_block(last->i_target);
             if (is_exit_without_lineno(target) && target->b_predecessors > 1) {
                 basicblock *new_target = copy_basicblock(g, target);
                 if (new_target == NULL) {
@@ -2262,6 +2293,7 @@ duplicate_exits_without_lineno(cfg_builder *g)
                 target->b_predecessors--;
                 new_target->b_predecessors = 1;
                 new_target->b_next = target->b_next;
+                new_target->b_label.id = next_lbl++;
                 target->b_next = new_target;
             }
         }
@@ -2307,9 +2339,10 @@ propagate_line_numbers(basicblock *entryblock) {
             }
         }
         if (BB_HAS_FALLTHROUGH(b) && b->b_next->b_predecessors == 1) {
-            assert(b->b_next->b_iused);
-            if (b->b_next->b_instr[0].i_loc.lineno < 0) {
-                b->b_next->b_instr[0].i_loc = prev_location;
+            if (b->b_next->b_iused > 0) {
+                if (b->b_next->b_instr[0].i_loc.lineno < 0) {
+                    b->b_next->b_instr[0].i_loc = prev_location;
+                }
             }
         }
         if (is_jump(last)) {
@@ -2446,17 +2479,19 @@ insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entrybl
          * of 0. This is because RETURN_GENERATOR pushes an element
          * with _PyFrame_StackPush before switching stacks.
          */
+
+        location loc = LOCATION(umd->u_firstlineno, umd->u_firstlineno, -1, -1);
         cfg_instr make_gen = {
             .i_opcode = RETURN_GENERATOR,
             .i_oparg = 0,
-            .i_loc = LOCATION(umd->u_firstlineno, umd->u_firstlineno, -1, -1),
+            .i_loc = loc,
             .i_target = NULL,
         };
         RETURN_IF_ERROR(basicblock_insert_instruction(entryblock, 0, &make_gen));
         cfg_instr pop_top = {
             .i_opcode = POP_TOP,
             .i_oparg = 0,
-            .i_loc = NO_LOCATION,
+            .i_loc = loc,
             .i_target = NULL,
         };
         RETURN_IF_ERROR(basicblock_insert_instruction(entryblock, 1, &pop_top));
@@ -2663,4 +2698,3 @@ _PyCfg_OptimizedCfgToInstructionSequence(cfg_builder *g,
 
     return SUCCESS;
 }
-

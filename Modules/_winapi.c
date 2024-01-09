@@ -212,7 +212,7 @@ class DWORD_return_converter(CReturnConverter):
         self.declare(data)
         self.err_occurred_if("_return_value == PY_DWORD_MAX", data)
         data.return_conversion.append(
-            'return_value = Py_BuildValue("k", _return_value);\n')
+            'return_value = PyLong_FromUnsignedLong(_return_value);\n')
 
 class LPVOID_return_converter(CReturnConverter):
     type = 'LPVOID'
@@ -223,7 +223,7 @@ class LPVOID_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = HANDLE_TO_PYNUM(_return_value);\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=011ee0c3a2244bfe]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=ef52a757a1830d92]*/
 
 #include "clinic/_winapi.c.h"
 

@@ -1,0 +1,2 @@
+Only use ``NULL`` in the exception stack to indicate an exception was
+handled. Patch by Carey Metcalfe.
