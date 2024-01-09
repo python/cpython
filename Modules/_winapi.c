@@ -870,7 +870,7 @@ dedup_environment_keys(PyObject *keys)
 }
 
 static PyObject *
-normalize_environment(PyObject* environment)
+normalize_environment(PyObject *environment)
 {
     PyObject *keys = PyMapping_Keys(environment);
     if (keys == NULL) {
