@@ -34,6 +34,11 @@ def _init_tk_type():
                 _tk_type = "cocoa"
                 return
 
+            else:
+                if _idle_root is None:
+                    _tk_type = "cocoa"
+                    return
+
         ws = _idle_root.tk.call('tk', 'windowingsystem')
         if 'x11' in ws:
             _tk_type = "xquartz"

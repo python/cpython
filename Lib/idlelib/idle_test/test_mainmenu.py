@@ -3,10 +3,18 @@
 
 from idlelib import mainmenu
 import re
+import sys
 import unittest
+from unittest import mock
 
 
 class MainMenuTest(unittest.TestCase):
+    def setUp(self):
+        self._patcher = mock.patch("idlelib.macosx._tk_type", new="cocoa" if sys.platform == "darwin" else "other")
+        self._patcher.start()
+
+    def tearDown(self):
+        self._patcher.stop()
 
     def test_menudefs(self):
         actual = [item[0] for item in mainmenu.menudefs]
