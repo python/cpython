@@ -1082,6 +1082,7 @@ with_dsymutil
 with_address_sanitizer
 with_memory_sanitizer
 with_undefined_behavior_sanitizer
+with_thread_sanitizer
 with_hash_algorithm
 with_tzpath
 with_libs
@@ -1860,6 +1861,8 @@ Optional Packages:
   --with-undefined-behavior-sanitizer
                           enable UndefinedBehaviorSanitizer undefined
                           behaviour detector, 'ubsan' (default is no)
+  --with-thread-sanitizer enable ThreadSanitizer data race detector, 'tsan'
+                          (default is no)
   --with-hash-algorithm=[fnv|siphash13|siphash24]
                           select hash algorithm for use in Python/pyhash.c
                           (default is SipHash13)
@@ -12506,6 +12509,28 @@ with_ubsan="no"
 fi
 
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-thread-sanitizer" >&5
+printf %s "checking for --with-thread-sanitizer... " >&6; }
+
+# Check whether --with-thread_sanitizer was given.
+if test ${with_thread_sanitizer+y}
+then :
+  withval=$with_thread_sanitizer;
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
+printf "%s\n" "$withval" >&6; }
+BASECFLAGS="-fsanitize=thread $BASECFLAGS"
+LDFLAGS="-fsanitize=thread $LDFLAGS"
+with_tsan="yes"
+
+else $as_nop
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+with_tsan="no"
+
+fi
+
+
 # Set info about shared libraries.
 
 
@@ -16513,7 +16538,7 @@ ipv6type=unknown
 ipv6lib=none
 ipv6trylibc=no
 
-if test "$ipv6" = "yes"; then
+if test "$ipv6" = yes -a "$cross_compiling" = no; then
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking ipv6 stack type" >&5
 printf %s "checking ipv6 stack type... " >&6; }
 	for i in inria kame linux-glibc linux-inet6 solaris toshiba v6d zeta;
@@ -21805,6 +21830,7 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #if defined(MAJOR_IN_MKDEV)
 #include <sys/mkdev.h>
 #elif defined(MAJOR_IN_SYSMACROS)
+#include <sys/types.h>
 #include <sys/sysmacros.h>
 #else
 #include <sys/types.h>
@@ -27478,7 +27504,12 @@ then :
 
 else $as_nop
 
-  rpath_arg="-Wl,-rpath="
+  if test "$ac_sys_system" = "Darwin"
+  then
+     rpath_arg="-Wl,-rpath,"
+  else
+     rpath_arg="-Wl,-rpath="
+  fi
 
 fi
 
