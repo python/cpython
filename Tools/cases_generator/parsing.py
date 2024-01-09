@@ -76,8 +76,9 @@ class StackEffect(Node):
     # Note: size cannot be combined with type or cond
 
     # Optional `(type, aux)`
-    type_prop: None | tuple[str, None | str] = \
-        field(default_factory=lambda: None, init=True, compare=False, hash=False)
+    type_prop: None | tuple[str, None | str] = field(
+        default_factory=lambda: None, init=True, compare=False, hash=False
+    )
 
     def __repr__(self) -> str:
         items = [self.name, self.type, self.cond, self.size]
@@ -142,10 +143,12 @@ class Family(Node):
 @dataclass
 class Pseudo(Node):
     name: str
-    flags: list[str]   # instr flags to set on the pseudo instruction
-    targets: list[str] # opcodes this can be replaced by
+    flags: list[str]  # instr flags to set on the pseudo instruction
+    targets: list[str]  # opcodes this can be replaced by
+
 
 AstNode = InstDef | Macro | Pseudo | Family
+
 
 class Parser(PLexer):
     @contextual
@@ -378,7 +381,9 @@ class Parser(PLexer):
                     if self.expect(lx.COMMA):
                         if not (size := self.expect(lx.IDENTIFIER)):
                             if not (size := self.expect(lx.NUMBER)):
-                                raise self.make_syntax_error("Expected identifier or number")
+                                raise self.make_syntax_error(
+                                    "Expected identifier or number"
+                                )
                     if self.expect(lx.RPAREN):
                         if self.expect(lx.EQUALS):
                             if not self.expect(lx.LBRACE):

@@ -5,6 +5,7 @@ from cwriter import CWriter
 
 UNUSED = {"unused"}
 
+
 def maybe_parenthesize(sym: str) -> str:
     """Add parentheses around a string if it contains an operator
        and is not already parenthesized.
@@ -30,6 +31,7 @@ def var_size(var: StackItem) -> str:
     else:
         return var.size
 
+
 @dataclass
 class StackOffset:
     "The stack offset of the virtual base of the stack from the physical stack pointer"
@@ -48,10 +50,7 @@ class StackOffset:
         self.pushed.append(var_size(item))
 
     def __sub__(self, other: "StackOffset") -> "StackOffset":
-        return StackOffset(
-            self.popped + other.pushed,
-            self.pushed + other.popped
-        )
+        return StackOffset(self.popped + other.pushed, self.pushed + other.popped)
 
     def __neg__(self) -> "StackOffset":
         return StackOffset(self.pushed, self.popped)

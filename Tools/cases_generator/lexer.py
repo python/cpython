@@ -332,7 +332,9 @@ def tokenize(src: str, line: int = 1, filename: str = "") -> Iterator[Token]:
         else:
             begin = line, start - linestart
         if kind != "\n":
-            yield Token(filename, kind, text, begin, (line, start - linestart + len(text)))
+            yield Token(
+                filename, kind, text, begin, (line, start - linestart + len(text))
+            )
 
 
 def to_text(tkns: list[Token], dedent: int = 0) -> str:

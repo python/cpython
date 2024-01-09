@@ -49,7 +49,6 @@ class Properties:
             uses_co_names=any(p.uses_co_names for p in properties),
             uses_locals=any(p.uses_locals for p in properties),
             has_free=any(p.has_free for p in properties),
-
             pure=all(p.pure for p in properties),
             passthrough=all(p.passthrough for p in properties),
             no_trivial_elimination=any(p.no_trivial_elimination for p in properties),
@@ -72,7 +71,6 @@ SKIP_PROPERTIES = Properties(
     uses_co_names=False,
     uses_locals=False,
     has_free=False,
-
     pure=False,
     passthrough=False,
     no_trivial_elimination=False,
@@ -100,8 +98,9 @@ class StackItem:
     condition: str | None
     size: str
     peek: bool = False
-    type_prop: None | tuple[str, None | str] = \
-        field(default_factory=lambda: None, init=True, compare=False, hash=False)
+    type_prop: None | tuple[str, None | str] = field(
+        default_factory=lambda: None, init=True, compare=False, hash=False
+    )
 
     def __str__(self) -> str:
         cond = f" if ({self.condition})" if self.condition else ""
@@ -273,7 +272,9 @@ def override_error(
 
 
 def convert_stack_item(item: parser.StackEffect) -> StackItem:
-    return StackItem(item.name, item.type, item.cond, (item.size or "1"), type_prop=item.type_prop)
+    return StackItem(
+        item.name, item.type, item.cond, (item.size or "1"), type_prop=item.type_prop
+    )
 
 
 def analyze_stack(op: parser.InstDef) -> StackEffect:
@@ -391,7 +392,6 @@ def makes_escaping_api_call(instr: parser.InstDef) -> bool:
     return False
 
 
-
 EXITS = {
     "DISPATCH",
     "GO_TO_INSTRUCTION",
@@ -454,7 +454,6 @@ def compute_properties(op: parser.InstDef) -> Properties:
         uses_locals=(variable_used(op, "GETLOCAL") or variable_used(op, "SETLOCAL"))
         and not has_free,
         has_free=has_free,
-
         pure="pure" in op.annotations,
         passthrough="passthrough" in op.annotations,
         no_trivial_elimination="no_trivial_elimination" in op.annotations,
@@ -704,9 +703,7 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
         inst = instructions["BINARY_OP_INPLACE_ADD_UNICODE"]
         inst.family = families["BINARY_OP"]
         families["BINARY_OP"].members.append(inst)
-    opmap, first_arg, min_instrumented = assign_opcodes(
-        instructions, families, pseudos
-    )
+    opmap, first_arg, min_instrumented = assign_opcodes(instructions, families, pseudos)
     return Analysis(
         instructions, uops, families, pseudos, opmap, first_arg, min_instrumented
     )
