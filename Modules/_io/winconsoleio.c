@@ -1073,13 +1073,13 @@ winconsoleio_repr(winconsoleio *self)
     const char *type_name = (Py_TYPE((PyObject *)self)->tp_name);
 
     if (self->fd == -1)
-        return PyUnicode_FromFormat("<%s [closed]>", type_name);
+        return PyUnicode_FromFormat("<%.100s [closed]>", type_name);
 
     if (self->readable)
-        return PyUnicode_FromFormat("<%s mode='rb' closefd=%s>",
+        return PyUnicode_FromFormat("<%.100s mode='rb' closefd=%s>",
             type_name, self->closefd ? "True" : "False");
     if (self->writable)
-        return PyUnicode_FromFormat("<%s mode='wb' closefd=%s>",
+        return PyUnicode_FromFormat("<%.100s mode='wb' closefd=%s>",
             type_name, self->closefd ? "True" : "False");
 
     PyErr_SetString(PyExc_SystemError, "_WindowsConsoleIO has invalid mode");

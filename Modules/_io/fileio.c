@@ -1103,7 +1103,7 @@ fileio_repr(fileio *self)
     const char *type_name = Py_TYPE((PyObject *) self)->tp_name;
 
     if (self->fd < 0) {
-        return PyUnicode_FromFormat("<%s [closed]>", type_name);
+        return PyUnicode_FromFormat("<%.100s [closed]>", type_name);
     }
 
     if (PyObject_GetOptionalAttr((PyObject *) self, &_Py_ID(name), &nameobj) < 0) {
@@ -1111,7 +1111,7 @@ fileio_repr(fileio *self)
     }
     if (nameobj == NULL) {
         res = PyUnicode_FromFormat(
-            "<%s fd=%d mode='%s' closefd=%s>",
+            "<%.100s fd=%d mode='%s' closefd=%s>",
             type_name, self->fd, mode_string(self), self->closefd ? "True" : "False");
     }
     else {
@@ -1119,13 +1119,13 @@ fileio_repr(fileio *self)
         res = NULL;
         if (status == 0) {
             res = PyUnicode_FromFormat(
-                "<%s name=%R mode='%s' closefd=%s>",
+                "<%.100s name=%R mode='%s' closefd=%s>",
                 type_name, nameobj, mode_string(self), self->closefd ? "True" : "False");
             Py_ReprLeave((PyObject *)self);
         }
         else if (status > 0) {
             PyErr_Format(PyExc_RuntimeError,
-                         "reentrant call inside %s.__repr__", type_name);
+                         "reentrant call inside %.100s.__repr__", type_name);
         }
         Py_DECREF(nameobj);
     }

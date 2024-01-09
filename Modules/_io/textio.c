@@ -2948,7 +2948,7 @@ textiowrapper_repr(textio *self)
 
     CHECK_INITIALIZED(self);
 
-    res = PyUnicode_FromFormat("<%s", type_name);
+    res = PyUnicode_FromFormat("<%.100s", type_name);
     if (res == NULL)
         return NULL;
 
@@ -2956,7 +2956,7 @@ textiowrapper_repr(textio *self)
     if (status != 0) {
         if (status > 0) {
             PyErr_Format(PyExc_RuntimeError,
-                         "reentrant call inside %s.__repr__",
+                         "reentrant call inside %.100s.__repr__",
                          type_name);
         }
         goto error;
