@@ -121,7 +121,7 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
 }
 
 void
-_PyList_ClearFreeList(_PyFreeListState *freelist_state)
+_PyList_ClearFreeList(_PyFreeListState *freelist_state, int is_finalization)
 {
 #if PyList_MAXFREELIST > 0
     struct _Py_list_state *state = &freelist_state->list;
@@ -130,16 +130,16 @@ _PyList_ClearFreeList(_PyFreeListState *freelist_state)
         assert(PyList_CheckExact(op));
         PyObject_GC_Del(op);
     }
+    if (is_finalization) {
+        state->numfree = -1;
+    }
 #endif
 }
 
 void
 _PyList_Fini(_PyFreeListState *state)
 {
-    _PyList_ClearFreeList(state);
-#if defined(Py_DEBUG) && PyList_MAXFREELIST > 0
-    state->list.numfree = -1;
-#endif
+    _PyList_ClearFreeList(state, 1);
 }
 
 /* Print summary info about the state of the optimized allocator */
