@@ -844,7 +844,7 @@ class ProcessTestCase(BaseTestCase):
             cmd = ["CMD", "/c", "SET", "fruit"]
         with subprocess.Popen(cmd, stdout=subprocess.PIPE, env=newenv) as p:
             stdout, _ = p.communicate()
-            self.assertTrue(stdout.startswith(b"fruit=orange"))
+            self.assertEqual(stdout.strip(), b"fruit=orange")
 
     def test_invalid_cmd(self):
         # null character in the command name
