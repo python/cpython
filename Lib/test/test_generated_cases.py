@@ -750,7 +750,7 @@ class TestGeneratedCases(unittest.TestCase):
 
     def test_annotated_inst(self):
         input = """
-        guard inst(OP, (--)) {
+        passthrough inst(OP, (--)) {
             ham();
         }
         """
@@ -767,7 +767,7 @@ class TestGeneratedCases(unittest.TestCase):
 
     def test_annotated_op(self):
         input = """
-        guard op(OP, (--)) {
+        passthrough op(OP, (--)) {
             spam();
         }
         macro(M) = OP;
@@ -784,7 +784,7 @@ class TestGeneratedCases(unittest.TestCase):
         self.run_cases_test(input, output)
 
         input = """
-        guard register specializing op(OP, (--)) {
+        passthrough register specializing op(OP, (--)) {
             spam();
         }
         macro(M) = OP;
