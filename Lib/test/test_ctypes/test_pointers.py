@@ -10,7 +10,7 @@ from ctypes import (CDLL, CFUNCTYPE, Structure,
                     c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
                     c_long, c_ulong, c_longlong, c_ulonglong,
                     c_float, c_double)
-from .support import (_CData, PyCPointerType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
+from ._support import (_CData, PyCPointerType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
                       Py_TPFLAGS_IMMUTABLETYPE)
 
 

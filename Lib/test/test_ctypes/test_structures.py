@@ -12,7 +12,7 @@ from ctypes.util import find_library
 from struct import calcsize
 from collections import namedtuple
 from test import support
-from .support import (_CData, PyCStructType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
+from ._support import (_CData, PyCStructType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
                       Py_TPFLAGS_IMMUTABLETYPE)
 
 

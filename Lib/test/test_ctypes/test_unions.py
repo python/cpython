@@ -1,6 +1,6 @@
 import unittest
 from ctypes import Union
-from .support import (_CData, UnionType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
+from ._support import (_CData, UnionType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
                       Py_TPFLAGS_IMMUTABLETYPE)
 
 

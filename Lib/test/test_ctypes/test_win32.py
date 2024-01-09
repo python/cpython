@@ -9,7 +9,7 @@ from ctypes import (CDLL, Structure, POINTER, pointer, sizeof, byref,
                     _pointer_type_cache,
                     c_void_p, c_char, c_int, c_long)
 from test import support
-from .support import Py_TPFLAGS_DISALLOW_INSTANTIATION, Py_TPFLAGS_IMMUTABLETYPE
+from ._support import Py_TPFLAGS_DISALLOW_INSTANTIATION, Py_TPFLAGS_IMMUTABLETYPE
 
 
 @unittest.skipUnless(sys.platform == "win32", 'Windows-specific test')
