@@ -380,6 +380,17 @@ MAP_* Constants
           MAP_STACK
           MAP_ALIGNED_SUPER
           MAP_CONCEAL
+          MAP_NORESERVE
+          MAP_NOEXTEND
+          MAP_HASSEMAPHORE
+          MAP_NOCACHE
+          MAP_JIT
+          MAP_RESILIENT_CODESIGN
+          MAP_RESILIENT_MEDIA
+          MAP_32BIT
+          MAP_TRANSLATED_ALLOW_EXECUTE
+          MAP_UNIX03
+          MAP_TPRO
 
     These are the various flags that can be passed to :meth:`mmap.mmap`.  :data:`MAP_ALIGNED_SUPER`
     is only available at FreeBSD and :data:`MAP_CONCEAL` is only available at OpenBSD.  Note
@@ -394,3 +405,10 @@ MAP_* Constants
     .. versionadded:: 3.12
        Added :data:`MAP_ALIGNED_SUPER` constant.
        Added :data:`MAP_CONCEAL` constant.
+
+    .. versionadded:: 3.13
+       Added :data:`MAP_NORESERVE`, :data:`MAP_NOEXTEND`, :data:`MAP_HASSEMAPHORE`,
+       :data:`MAP_NOCACHE`, :data:`MAP_JIT`, :data:`MAP_RESILIENT_CODESIGN`,
+       :data:`MAP_RESILIENT_MEDIA`, :data:`MAP_32BIT`, :data:`MAP_TRANSLATED_ALLOW_EXECUTE`,
+       :data:`MAP_UNIX03` and :data:`MAP_TPRO`.
+
