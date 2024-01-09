@@ -2948,10 +2948,11 @@ textiowrapper_repr(textio *self)
 {
     PyObject *nameobj, *modeobj, *res, *s;
     int status;
+    const char *type_name = Py_TYPE(self)->tp_name;
 
     CHECK_INITIALIZED(self);
 
-    res = PyUnicode_FromString("<_io.TextIOWrapper");
+    res = PyUnicode_FromFormat("<%.100s", type_name);
     if (res == NULL)
         return NULL;
 
@@ -2959,8 +2960,8 @@ textiowrapper_repr(textio *self)
     if (status != 0) {
         if (status > 0) {
             PyErr_Format(PyExc_RuntimeError,
-                         "reentrant call inside %s.__repr__",
-                         Py_TYPE(self)->tp_name);
+                         "reentrant call inside %.100s.__repr__",
+                         type_name);
         }
         goto error;
     }
