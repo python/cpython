@@ -843,7 +843,11 @@ class ProcessTestCase(BaseTestCase):
         if sys.platform == "win32":
             cmd = ["CMD", "/c", "SET", "fruit"]
         with subprocess.Popen(cmd, stdout=subprocess.PIPE, env=newenv) as p:
-            stdout, _ = p.communicate()
+            stdout, stderr = p.communicate()
+            if p.returncode and support.verbose:
+                print("STDOUT:", stdout.decode("ascii", "replace"))
+                print("STDERR:", stderr.decode("ascii", "replace"))
+            self.assertEqual(p.returncode, 0)
             self.assertEqual(stdout.strip(), b"fruit=orange")
 
     def test_invalid_cmd(self):
