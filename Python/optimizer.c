@@ -2,7 +2,7 @@
 #include "opcode.h"
 #include "pycore_interp.h"
 #include "pycore_bitutils.h"        // _Py_popcount32()
-#include "pycore_opcode_metadata.h" // _PyOpcode_OpName()
+#include "pycore_opcode_metadata.h" // _PyOpcode_OpName[]
 #include "pycore_opcode_utils.h"  // MAX_REAL_OPCODE
 #include "pycore_optimizer.h"     // _Py_uop_analyze_and_optimize()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
@@ -563,7 +563,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                 uint32_t uopcode = BRANCH_TO_GUARD[opcode - POP_JUMP_IF_FALSE][jump_likely];
                 _Py_CODEUNIT *next_instr = instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
                 DPRINTF(2, "%s(%d): counter=%x, bitcount=%d, likely=%d, confidence=%d, uopcode=%s\n",
-                        _PyUOpName(opcode), oparg,
+                        _PyOpcode_OpName[opcode], oparg,
                         counter, bitcount, jump_likely, confidence, _PyUOpName(uopcode));
                 ADD_TO_TRACE(uopcode, max_length, 0, target);
                 if (jump_likely) {
@@ -722,7 +722,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                     }
                     break;
                 }
-                DPRINTF(2, "Unsupported opcode %s\n", _PyUOpName(opcode));
+                DPRINTF(2, "Unsupported opcode %s\n", _PyOpcode_OpName[opcode]);
                 OPT_UNSUPPORTED_OPCODE(opcode);
                 goto done;  // Break out of loop
             }  // End default
