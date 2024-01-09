@@ -2282,7 +2282,7 @@ Loading and running tests
    The *testRunner* argument can either be a test runner class or an already
    created instance of it. By default ``main`` calls :func:`sys.exit` with
    an exit code indicating success (0) or failure (1) of the tests run.
-   An exit code of 5 indicates that no tests were run.
+   An exit code of 5 indicates that no tests were run or skipped.
 
    The *testLoader* argument has to be a :class:`TestLoader` instance,
    and defaults to :data:`defaultTestLoader`.
