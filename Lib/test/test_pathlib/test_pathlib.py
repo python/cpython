@@ -304,14 +304,12 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
 
     def test_name_empty(self):
         P = self.cls
-        self.assertEqual(P().name, '')
         self.assertEqual(P('').name, '')
         self.assertEqual(P('.').name, '')
         self.assertEqual(P('/a/b/.').name, 'b')
 
     def test_stem_empty(self):
         P = self.cls
-        self.assertEqual(P().stem, '')
         self.assertEqual(P('').stem, '')
         self.assertEqual(P('.').stem, '')
 

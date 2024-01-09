@@ -382,7 +382,6 @@ class DummyPurePathTest(unittest.TestCase):
 
     def test_stem_empty(self):
         P = self.cls
-        self.assertEqual(P().stem, '')
         self.assertEqual(P('').stem, '')
         self.assertEqual(P('.').stem, '.')
 
