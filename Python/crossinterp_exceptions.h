@@ -65,9 +65,8 @@ init_exceptions(PyInterpreterState *interp)
     }
 
     // heap types
-    if (_init_not_shareable_error_type(interp) < 0) {
-        return -1;
-    }
+    // We would  call _init_not_shareable_error_type() here too,
+    // but that leads to ref leaks
 
     return 0;
 }
@@ -75,7 +74,7 @@ init_exceptions(PyInterpreterState *interp)
 static void
 fini_exceptions(PyInterpreterState *interp)
 {
-    _fini_not_shareable_error_type(interp);
+    // Likewise with _fini_not_shareable_error_type().
     _PyStaticType_Dealloc(interp, &_PyExc_InterpreterNotFoundError);
     _PyStaticType_Dealloc(interp, &_PyExc_InterpreterError);
 }

@@ -17,6 +17,8 @@
 
 static int init_exceptions(PyInterpreterState *);
 static void fini_exceptions(PyInterpreterState *);
+static int _init_not_shareable_error_type(PyInterpreterState *);
+static void _fini_not_shareable_error_type(PyInterpreterState *);
 static PyObject * _get_not_shareable_error_type(PyInterpreterState *);
 #include "crossinterp_exceptions.h"
 
@@ -1645,6 +1647,11 @@ _PyXI_Init(PyInterpreterState *interp)
     // Initialize the XID lookup state (e.g. registry).
     xid_lookup_init(interp);
 
+    // Initialize exceptions (heap types).
+    if (_init_not_shareable_error_type(interp) < 0) {
+        return _PyStatus_ERR("failed to initialize NotShareableError");
+    }
+
     return _PyStatus_OK();
 }
 
@@ -1654,6 +1661,9 @@ _PyXI_Init(PyInterpreterState *interp)
 void
 _PyXI_Fini(PyInterpreterState *interp)
 {
+    // Finalize exceptions (heap types).
+    _fini_not_shareable_error_type(interp);
+
     // Finalize the XID lookup state (e.g. registry).
     xid_lookup_fini(interp);
 }
