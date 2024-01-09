@@ -48,7 +48,7 @@ update the underlying file.
 
 To map anonymous memory, -1 should be passed as the fileno along with the length.
 
-.. class:: mmap(fileno, length, tagname=None, access=ACCESS_DEFAULT[, offset])
+.. class:: mmap(fileno, length, tagname=None, access=ACCESS_DEFAULT, offset=0)
 
    **(Windows version)** Maps *length* bytes from the file specified by the
    file handle *fileno*, and creates a mmap object.  If *length* is larger
@@ -72,7 +72,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    .. audit-event:: mmap.__new__ fileno,length,access,offset mmap.mmap
 
 .. class:: mmap(fileno, length, flags=MAP_SHARED, prot=PROT_WRITE|PROT_READ, \
-                access=ACCESS_DEFAULT[, offset], trackfd=True)
+                access=ACCESS_DEFAULT, offset=0, trackfd=True)
    :noindex:
 
    **(Unix version)** Maps *length* bytes from the file specified by the file
@@ -104,13 +104,16 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    which is equal to :const:`PAGESIZE` on Unix systems.
 
    If *trackfd* is ``False``, the file descriptor specified by *fileno* will
-   not be duplicated.
+   not be duplicated, and the resulting :class:`~!mmap.mmap` object will not
+   be associated with the map's underlying file.
+   This means that :meth:`~mmap.mmap.size` method will fail, and the
+   :meth:`~mmap.mmap.resize` method will not resize the underlying file.
 
    To ensure validity of the created memory mapping the file specified
    by the descriptor *fileno* is internally automatically synchronized
    with the physical backing store on macOS.
 
-   .. versionchanged:: 3.10
+   .. versionchanged:: 3.13
       The *trackfd* parameter was added.
 
    This example shows a simple way of using :class:`~mmap.mmap`::
@@ -269,6 +272,10 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       maps against the same named file. Resizing an anonymous map (ie against the
       pagefile) will silently create a new map with the original data copied over
       up to the length of the new size.
+
+      **On Unix**. If the ``mmap`` object was created with *trackfd=False*,
+      this method only resizes the map, but not the underlying file.
+      This may leave part of the memory unmapped.
 
       .. versionchanged:: 3.11
          Correctly fails if attempting to resize when another map is held
