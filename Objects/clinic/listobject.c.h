@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(list_insert__doc__,
@@ -44,7 +45,9 @@ list_insert(PyListObject *self, PyObject *const *args, Py_ssize_t nargs)
         index = ival;
     }
     object = args[1];
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = list_insert_impl(self, index, object);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -65,7 +68,13 @@ py_list_clear_impl(PyListObject *self);
 static PyObject *
 py_list_clear(PyListObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return py_list_clear_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = py_list_clear_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(list_copy__doc__,
@@ -143,7 +152,9 @@ list_pop(PyListObject *self, PyObject *const *args, Py_ssize_t nargs)
         index = ival;
     }
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = list_pop_impl(self, index);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -242,7 +253,13 @@ list_reverse_impl(PyListObject *self);
 static PyObject *
 list_reverse(PyListObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return list_reverse_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = list_reverse_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(list_index__doc__,
@@ -310,6 +327,21 @@ PyDoc_STRVAR(list_remove__doc__,
 
 #define LIST_REMOVE_METHODDEF    \
     {"remove", (PyCFunction)list_remove, METH_O, list_remove__doc__},
+
+static PyObject *
+list_remove_impl(PyListObject *self, PyObject *value);
+
+static PyObject *
+list_remove(PyListObject *self, PyObject *value)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = list_remove_impl(self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
 
 PyDoc_STRVAR(list___init____doc__,
 "list(iterable=(), /)\n"
@@ -384,4 +416,4 @@ list___reversed__(PyListObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl(self);
 }
-/*[clinic end generated code: output=f2d7b63119464ff4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3c9f24fd3212b18b input=a9049054013a1b77]*/
