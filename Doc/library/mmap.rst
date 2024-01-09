@@ -72,7 +72,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    .. audit-event:: mmap.__new__ fileno,length,access,offset mmap.mmap
 
 .. class:: mmap(fileno, length, flags=MAP_SHARED, prot=PROT_WRITE|PROT_READ, \
-                access=ACCESS_DEFAULT, offset=0, trackfd=True)
+                access=ACCESS_DEFAULT, offset=0, *, trackfd=True)
    :noindex:
 
    **(Unix version)** Maps *length* bytes from the file specified by the file
