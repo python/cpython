@@ -875,48 +875,47 @@ dedup_environment_keys(PyObject *keys)
 static PyObject *
 normalize_environment(PyObject* environment)
 {
-    PyObject *result = NULL, *keys = NULL, *normalized_keys = NULL;
-
-    keys = PyMapping_Keys(environment);
+    PyObject *keys = PyMapping_Keys(environment);
     if (keys == NULL) {
         return NULL;
     }
 
     if (sort_environment_keys(keys) < 0) {
-        goto error;
-    }
-    normalized_keys = dedup_environment_keys(keys);
-    if (normalized_keys == NULL) {
-        goto error;
+        Py_DECREF(keys);
+        return NULL;
     }
 
-    result = PyDict_New();
-    if (result == NULL) {
-        goto error;
+    PyObject *normalized_keys = dedup_environment_keys(keys);
+    Py_DECREF(keys);
+    if (normalized_keys == NULL) {
+        return NULL;
     }
+
+    PyObject *result = PyDict_New();
+    if (result == NULL) {
+        Py_DECREF(normalized_keys);
+        return NULL;
+    }
+
     for (int i = 0; i < PyList_GET_SIZE(normalized_keys); i++) {
         PyObject *key = PyList_GET_ITEM(normalized_keys, i);
-        if (key == NULL) {
-            goto error;
-        }
         PyObject* value = PyObject_GetItem(environment, key);
         if (value == NULL) {
-            goto error;
+            Py_DECREF(normalized_keys);
+            Py_DECREF(result);
+            return NULL;
         }
 
-        if (PyObject_SetItem(result, key, value) < 0) {
-            goto error;
-        }
+        int ret = PyObject_SetItem(result, key, value);
         Py_DECREF(value);
+        if (ret < 0) {
+            Py_DECREF(normalized_keys);
+            Py_DECREF(result);
+            return NULL;
+        }
     }
 
-    goto cleanup;
-error:
-    Py_XDECREF(result);
-    result = NULL;
-cleanup:
-    Py_XDECREF(keys);
-    Py_XDECREF(normalized_keys);
+    Py_DECREF(normalized_keys);
 
     return result;
 }
