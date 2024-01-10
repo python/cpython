@@ -39,7 +39,6 @@ typedef struct _Py_freelist_state {
     struct _Py_list_state list;
 } _PyFreeListState;
 
-
 #ifdef __cplusplus
 }
 #endif
