@@ -1,0 +1,1 @@
+Provide a fallback for systems where pthread_threadid_np is unsupported. Fixes Python on older macOS.
