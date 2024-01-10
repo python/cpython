@@ -1360,6 +1360,15 @@ class TestMH(TestMailbox, unittest.TestCase):
         box.set_sequences({})
         self.assertEqual(os.listdir(path), ['.mh_sequences'])
 
+    def test_lock_unlock_no_dot_mh_sequences_file(self):
+        path = os.path.join(self._path, 'foo.bar')
+        os.mkdir(path)
+        box = self._factory(path)
+        self.assertEqual(os.listdir(path), [])
+        box.lock()
+        box.unlock()
+        self.assertEqual(os.listdir(path), ['.mh_sequences'])
+
     def test_issue2625(self):
         msg0 = mailbox.MHMessage(self._template % 0)
         msg0.add_sequence('foo')
