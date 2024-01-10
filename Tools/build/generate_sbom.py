@@ -82,9 +82,9 @@ def spdx_id(value: str) -> str:
     return re.sub(r"[^a-zA-Z0-9.\-]+", "-", value)
 
 
-def error_if_not(value: bool, error_message: str) -> None:
-    """Prints an error if a value isn't true along with a link to the Dev Guide"""
-    if not value:
+def error_if(value: bool, error_message: str) -> None:
+    """Prints an error if a comparison fails along with a link to the Dev Guide"""
+    if value:
         print(error_message)
         print("See 'https://devguide.python.org/developer-workflow/sbom' for more information.")
         sys.exit(1)
@@ -214,35 +214,35 @@ def main() -> None:
     discover_pip_sbom_package(sbom_data)
 
     # Ensure all packages in this tool are represented also in the SBOM file.
-    error_if_not(
-        {package["name"] for package in sbom_data["packages"]} == set(PACKAGE_TO_FILES),
+    error_if(
+        {package["name"] for package in sbom_data["packages"]} != set(PACKAGE_TO_FILES),
         "Packages defined in SBOM tool don't match those defined in SBOM file.",
     )
 
     # Make a bunch of assertions about the SBOM data to ensure it's consistent.
     for package in sbom_data["packages"]:
         # Properties and ID must be properly formed.
-        error_if_not(
-            "name" in package,
+        error_if(
+            "name" not in package,
             "Package is missing the 'name' field"
         )
-        error_if_not(
-            set(package.keys()) == REQUIRED_PROPERTIES_PACKAGE,
+        error_if(
+            set(package.keys()) != REQUIRED_PROPERTIES_PACKAGE,
             f"Package '{package['name']}' is missing required fields",
         )
-        error_if_not(
-            package["SPDXID"] == spdx_id(f"SPDXRef-PACKAGE-{package['name']}"),
+        error_if(
+            package["SPDXID"] != spdx_id(f"SPDXRef-PACKAGE-{package['name']}"),
             f"Package '{package['name']}' has a malformed SPDXID",
         )
 
         # Version must be in the download and external references.
         version = package["versionInfo"]
-        error_if_not(
-            version in package["downloadLocation"],
+        error_if(
+            version not in package["downloadLocation"],
             f"Version '{version}' for package '{package['name']} not in 'downloadLocation' field",
         )
-        error_if_not(
-            all(version in ref["referenceLocator"] for ref in package["externalRefs"]),
+        error_if(
+            any(version not in ref["referenceLocator"] for ref in package["externalRefs"]),
             (
                 f"Version '{version}' for package '{package['name']} not in "
                 f"all 'externalRefs[].referenceLocator' fields"
@@ -251,8 +251,8 @@ def main() -> None:
 
         # License must be on the approved list for SPDX.
         license_concluded = package["licenseConcluded"]
-        error_if_not(
-            license_concluded in ALLOWED_LICENSE_EXPRESSIONS,
+        error_if(
+            license_concluded not in ALLOWED_LICENSE_EXPRESSIONS,
             f"License identifier '{license_concluded}' not in SBOM tool allowlist"
         )
 
@@ -268,8 +268,8 @@ def main() -> None:
             # Find all the paths and then filter them through .gitignore.
             paths = glob.glob(include, root_dir=CPYTHON_ROOT_DIR, recursive=True)
             paths = filter_gitignored_paths(paths)
-            error_if_not(
-                len(paths) > 0,
+            error_if(
+                len(paths) == 0,
                 f"No valid paths found at path '{include}' for package '{name}",
             )
 
