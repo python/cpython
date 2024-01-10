@@ -429,7 +429,8 @@ class ZipInfo (object):
         self.external_attr = 0          # External file attributes
         self.compress_size = 0          # Size of the compressed file
         self.file_size = 0              # Size of the uncompressed file
-        # Other attributes are set by class ZipFile:
+        self.CRC = None  # None indicates that it has not yet been filled in.
+        # Attributes set by class ZipFile:
         # header_offset         Byte offset to the file header
         # CRC                   CRC-32 of the uncompressed file
 
@@ -1008,7 +1009,9 @@ class ZipExtFile(io.BufferedIOBase):
         self._running_crc = crc32(newdata, self._running_crc)
         # Check the CRC if we're at the end of the file
         if self._eof and self._running_crc != self._expected_crc:
-            raise BadZipFile("Bad CRC-32 for file %r" % self.name)
+            raise BadZipFile(
+                    f"Bad CRC-32 for file {self.name!r} expected "
+                    f"{hex(self._expected_crc)} != {hex(self._running_crc)}")
 
     def read1(self, n):
         """Read up to n bytes with at most one read() system call."""
@@ -1184,15 +1187,24 @@ class ZipExtFile(io.BufferedIOBase):
 
 
 class _ZipWriteFile(io.BufferedIOBase):
-    def __init__(self, zf, zinfo, zip64):
+    def __init__(self, zf, zinfo, zip64, *, precompressed=False):
         self._zinfo = zinfo
         self._zip64 = zip64
         self._zipfile = zf
-        self._compressor = _get_compressor(zinfo.compress_type,
-                                           zinfo._compresslevel)
-        self._file_size = 0
+        if precompressed:
+            self._compute_crc = False  # Precomputed in zinfo.
+            self._crc = zinfo.CRC
+            self._compute_file_size = False  # Precomputed in zinfo.
+            self._file_size = zinfo.file_size
+            self._compressor = None
+        else:
+            self._compute_crc = True
+            self._crc = 0
+            self._compute_file_size = True
+            self._file_size = 0
+            self._compressor = _get_compressor(zinfo.compress_type,
+                                               zinfo._compresslevel)
         self._compress_size = 0
-        self._crc = 0
 
     @property
     def _fileobj(self):
@@ -1211,12 +1223,14 @@ class _ZipWriteFile(io.BufferedIOBase):
         else:
             data = memoryview(data)
             nbytes = data.nbytes
-        self._file_size += nbytes
+        if self._compute_file_size:
+            self._file_size += nbytes
 
-        self._crc = crc32(data, self._crc)
+        if self._compute_crc:
+            self._crc = crc32(data, self._crc)
         if self._compressor:
             data = self._compressor.compress(data)
-            self._compress_size += len(data)
+        self._compress_size += len(data)
         self._fileobj.write(data)
         return nbytes
 
@@ -1230,11 +1244,11 @@ class _ZipWriteFile(io.BufferedIOBase):
                 buf = self._compressor.flush()
                 self._compress_size += len(buf)
                 self._fileobj.write(buf)
-                self._zinfo.compress_size = self._compress_size
-            else:
-                self._zinfo.compress_size = self._file_size
-            self._zinfo.CRC = self._crc
-            self._zinfo.file_size = self._file_size
+            self._zinfo.compress_size = self._compress_size
+            if self._compute_crc:
+                self._zinfo.CRC = self._crc
+            if self._compute_file_size:
+                self._zinfo.file_size = self._file_size
 
             if not self._zip64:
                 if self._file_size > ZIP64_LIMIT:
@@ -1564,7 +1578,8 @@ class ZipFile:
         with self.open(name, "r", pwd) as fp:
             return fp.read()
 
-    def open(self, name, mode="r", pwd=None, *, force_zip64=False):
+    def open(self, name, mode="r", pwd=None, *, force_zip64=False,
+             precompressed=False):
         """Return file-like object for 'name'.
 
         name is a string for the file name within the ZIP file, or a ZipInfo
@@ -1579,6 +1594,10 @@ class ZipFile:
         2 GiB, pass force_zip64 to use the ZIP64 format, which can handle large
         files.  If the size is known in advance, it is best to pass a ZipInfo
         instance for name, with zinfo.file_size set.
+
+        precompressed is for advanced users creating a zip structure out
+        of precompressed data, its use requires "name" to be a ZipInfo with
+        both .file_size and .CRC precomputed and populated.
         """
         if mode not in {"r", "w"}:
             raise ValueError('open() requires mode "r" or "w"')
@@ -1588,20 +1607,23 @@ class ZipFile:
             raise ValueError(
                 "Attempt to use ZIP archive that was already closed")
 
-        # Make sure we have an info object
+        if precompressed:
+            assert mode == "w", "precompressed is only for writing"
+            assert isinstance(name, ZipInfo), "precompressed needs ZipInfo"
+            assert name.CRC is not None, "precompressed requires ZipInfo.CRC"
+
         if isinstance(name, ZipInfo):
-            # 'name' is already an info object
             zinfo = name
         elif mode == 'w':
             zinfo = ZipInfo(name)
             zinfo.compress_type = self.compression
             zinfo._compresslevel = self.compresslevel
-        else:
-            # Get info object for name
+        else:  # implies mode == "r"
             zinfo = self.getinfo(name)
 
         if mode == 'w':
-            return self._open_to_write(zinfo, force_zip64=force_zip64)
+            return self._open_to_write(zinfo, force_zip64=force_zip64,
+                                       precompressed=precompressed)
 
         if self._writing:
             raise ValueError("Can't read from the ZIP file while there "
@@ -1662,7 +1684,7 @@ class ZipFile:
             zef_file.close()
             raise
 
-    def _open_to_write(self, zinfo, force_zip64=False):
+    def _open_to_write(self, zinfo, force_zip64=False, precompressed=False):
         if force_zip64 and not self._allowZip64:
             raise ValueError(
                 "force_zip64 is True, but allowZip64 was False when opening "
@@ -1673,9 +1695,10 @@ class ZipFile:
                              "another write handle open on it. "
                              "Close the first handle before opening another.")
 
-        # Size and CRC are overwritten with correct data after processing the file
+        # Size and CRC are set with correct data after processing the file.
         zinfo.compress_size = 0
-        zinfo.CRC = 0
+        if not precompressed:
+            zinfo.CRC = 0
 
         zinfo.flag_bits = 0x00
         if zinfo.compress_type == ZIP_LZMA:
@@ -1702,7 +1725,7 @@ class ZipFile:
         self.fp.write(zinfo.FileHeader(zip64))
 
         self._writing = True
-        return _ZipWriteFile(self, zinfo, zip64)
+        return _ZipWriteFile(self, zinfo, zip64, precompressed=precompressed)
 
     def extract(self, member, path=None, pwd=None):
         """Extract a member from the archive to the current working directory,
@@ -1818,9 +1841,24 @@ class ZipFile:
                                    " would require ZIP64 extensions")
 
     def write(self, filename, arcname=None,
-              compress_type=None, compresslevel=None):
-        """Put the bytes from filename into the archive under the name
-        arcname."""
+              compress_type=None, compresslevel=None,
+              *, zinfo=None, precompressed=None):
+        """Put the bytes from a file into the archive as arcname.
+
+        filename may instead be a file like object open for reading in binary
+        mode. If so it will be read from and closed. It must have a .name
+        attribute (as file objects do) in order to construct a ZipInfo unless
+        the zinfo parameter is provided.
+
+        A ZipInfo instance zinfo may be supplied instead of arcname.  If
+        neither is supplied, filename without a drive letter or leading path
+        separators will be used as the name within the archive.
+
+        If *precompressed* is True, file data is assumed to already have been
+        been compressed in the appropriate manner and *zinfo* MUST be supplied
+        with details about the original file including the .file_size and .CRC
+        attributes filled in.  Advanced use only; no validation is performed!
+        """
         if not self.fp:
             raise ValueError(
                 "Attempt to write to ZIP archive that was already closed")
@@ -1829,8 +1867,21 @@ class ZipFile:
                 "Can't write to ZIP archive while an open writing handle exists"
             )
 
-        zinfo = ZipInfo.from_file(filename, arcname,
-                                  strict_timestamps=self._strict_timestamps)
+        if arcname and zinfo:
+            raise ValueError("arcname and zinfo are mutually exclusive.")
+        if hasattr(filename, 'read'):
+            fileobj = filename
+            if not zinfo:
+                filename = fileobj.name  # zinfo will be populated from this.
+        else:
+            fileobj = None
+
+        if precompressed:
+            assert zinfo is not None, "precompressed requires zinfo"
+            assert zinfo.CRC is not None
+        elif not zinfo:
+            zinfo = ZipInfo.from_file(filename, arcname,
+                                      strict_timestamps=self._strict_timestamps)
 
         if zinfo.is_dir():
             zinfo.compress_size = 0
@@ -1847,19 +1898,36 @@ class ZipFile:
             else:
                 zinfo._compresslevel = self.compresslevel
 
-            with open(filename, "rb") as src, self.open(zinfo, 'w') as dest:
-                shutil.copyfileobj(src, dest, 1024*8)
+            with (fileobj if fileobj else open(filename, "rb")) as src, \
+                    self.open(zinfo, "w", precompressed=precompressed) as dest:
+                shutil.copyfileobj(src, dest)
 
     def writestr(self, zinfo_or_arcname, data,
-                 compress_type=None, compresslevel=None):
-        """Write a file into the archive.  The contents is 'data', which
-        may be either a 'str' or a 'bytes' instance; if it is a 'str',
-        it is encoded as UTF-8 first.
-        'zinfo_or_arcname' is either a ZipInfo instance or
-        the name of the file in the archive."""
+                 compress_type=None, compresslevel=None, *,
+                 precompressed=False):
+        """Write a file into the archive from data in memory.
+
+        The contents is *data*, which may be either a 'str' or a 'bytes'
+        instance.  If it is a 'str', it is encoded as UTF-8 first.
+
+        *zinfo_or_arcname* is either a ZipInfo instance or
+        the name of the file in the archive.
+
+        *compress_type* and *compresslevel* if supplied each override the
+        related setting from this ZipFile instance or within any supplied
+        ZipInfo.
+
+        If *precompressed* is True, the *data* is assumed to already have been
+        compressed in the appropriate manner and *zinfo_or_arcname* MUST be a
+        ZipInfo instance with details about the original file including the
+        .file_size and .CRC attributes filled in.  Advanced use only; no
+        validation is performed!
+        """
         if isinstance(data, str):
             data = data.encode("utf-8")
         if not isinstance(zinfo_or_arcname, ZipInfo):
+            if precompressed:
+                raise ValueError("ZipInfo required when precompressed.")
             zinfo = ZipInfo(filename=zinfo_or_arcname,
                             date_time=time.localtime(time.time())[:6])
             zinfo.compress_type = self.compression
@@ -1886,10 +1954,13 @@ class ZipFile:
         if compresslevel is not None:
             zinfo._compresslevel = compresslevel
 
-        zinfo.file_size = len(data)            # Uncompressed size
+        if not precompressed:
+            zinfo.file_size = len(data)  # Uncompressed size
+        else:
+            assert zinfo.CRC is not None
         with self._lock:
-            with self.open(zinfo, mode='w') as dest:
-                dest.write(data)
+            with self.open(zinfo, mode="w", precompressed=precompressed) as dst:
+                dst.write(data)
 
     def mkdir(self, zinfo_or_directory_name, mode=511):
         """Creates a directory inside the zip archive."""

@@ -645,11 +645,26 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
             zinfo = zipfp.getinfo(TESTFN)
             self.assertEqual(zinfo.date_time, (2107, 12, 31, 23, 59, 59))
 
+    def test_write_zinfo(self):
+        zinfo = zipfile.ZipInfo("test_write_zinfo")
+        with zipfile.ZipFile(TESTFN2, "w") as zipfp:
+            zipfp.write(TESTFN, zinfo=zinfo)
+        with zipfile.ZipFile(TESTFN2, "r") as zr:
+            self.assertEqual(zr.read("test_write_zinfo"), self.data)
+
 
 @requires_zlib()
 class DeflateTestsWithSourceFile(AbstractTestsWithSourceFile,
                                  unittest.TestCase):
     compression = zipfile.ZIP_DEFLATED
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        import zlib
+        compressor = zlib.compressobj(2, zlib.DEFLATED, -15)
+        cls.z_data = compressor.compress(cls.data) + compressor.flush()
+        cls.data_crc = zlib.crc32(cls.data, 0)
 
     def test_per_file_compression(self):
         """Check that files within a Zip archive can have different
@@ -661,6 +676,66 @@ class DeflateTestsWithSourceFile(AbstractTestsWithSourceFile,
             dinfo = zipfp.getinfo('deflateme')
             self.assertEqual(sinfo.compress_type, zipfile.ZIP_STORED)
             self.assertEqual(dinfo.compress_type, zipfile.ZIP_DEFLATED)
+
+    def test_write_precompressed(self):
+        with open(TESTFN, "wb") as data_f:
+            data_f.write(self.z_data)
+        zinfo = zipfile.ZipInfo("test/write/precompressed")
+        zinfo.CRC = self.data_crc
+        zinfo.file_size = len(self.data)
+        with zipfile.ZipFile(TESTFN2, "w") as zipfp:
+            zipfp.write(TESTFN, compress_type=zipfile.ZIP_DEFLATED,
+                        zinfo=zinfo, precompressed=True)
+        with zipfile.ZipFile(TESTFN2, "r") as zr:
+            self.assertEqual(zr.read("test/write/precompressed"), self.data)
+
+    def test_write_precompressed_fileobj(self):
+        zinfo = zipfile.ZipInfo("test/write/precompressed/fileobj")
+        zinfo.CRC = self.data_crc
+        zinfo.file_size = len(self.data)
+        fileobj = io.BytesIO(self.z_data)
+        with zipfile.ZipFile(TESTFN2, "w") as zipfp:
+            zipfp.write(fileobj, compress_type=zipfile.ZIP_DEFLATED,
+                        zinfo=zinfo, precompressed=True)
+        with zipfile.ZipFile(TESTFN2, "r") as zr:
+            self.assertEqual(zr.read("test/write/precompressed/fileobj"),
+                             self.data)
+
+    def test_writestr_precompressed(self):
+        zinfo = zipfile.ZipInfo("writestr/precomp")
+        zinfo.CRC = self.data_crc
+        zinfo.file_size = len(self.data)
+        with zipfile.ZipFile(TESTFN, "w") as zipfp:
+            zipfp.writestr(zinfo, self.z_data,
+                           compress_type=zipfile.ZIP_DEFLATED,
+                           precompressed=True)
+        with zipfile.ZipFile(TESTFN, "r") as zr:
+            self.assertEqual(zr.read("writestr/precomp"), self.data)
+
+    def test_writestr_precompressed_crc_missing(self):
+        zinfo = zipfile.ZipInfo("precompressed/crc/missing")
+        zinfo.file_size = len(self.data)
+        with zipfile.ZipFile(TESTFN, "w") as zipfp:
+            with self.assertRaises(AssertionError if __debug__ else struct.error):
+                zipfp.writestr(zinfo, self.z_data,
+                               compress_type=zipfile.ZIP_DEFLATED,
+                               precompressed=True)
+
+    def test_writestr_precompressed_no_zinfo(self):
+        with zipfile.ZipFile(TESTFN, "w") as zipfp:
+            with self.assertRaises(ValueError):
+                zipfp.writestr("writestr/no_zinfo", self.z_data,
+                               compress_type=zipfile.ZIP_DEFLATED,
+                               precompressed=True)
+
+    def test_write_precompressed_no_zinfo(self):
+        if not __debug__:
+            self.skipTest("__debug__ assertion test")
+        with zipfile.ZipFile(TESTFN, "w") as zipfp:
+            with self.assertRaises(AssertionError):
+                zipfp.write(TESTFN2, "precomp/no_zinfo",
+                            compress_type=zipfile.ZIP_DEFLATED,
+                            precompressed=True)
 
 @requires_bz2()
 class Bzip2TestsWithSourceFile(AbstractTestsWithSourceFile,
