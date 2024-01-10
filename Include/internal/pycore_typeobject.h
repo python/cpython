@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_moduleobject.h"  // PyModuleObject
+#include "pycore_lock.h"          // PyMutex
 
 
 /* state */
@@ -21,6 +22,7 @@ struct _types_runtime_state {
     // bpo-42745: next_version_tag remains shared by all interpreters
     // because of static types.
     unsigned int next_version_tag;
+    PyMutex type_mutex;
 };
 
 
