@@ -282,7 +282,7 @@ How does the :class:`~collections.OrderedDict` work?  It maintains a
 doubly linked list of keys, appending new keys to the list as they're inserted.
 A secondary dictionary maps keys to their corresponding list node, so
 deletion doesn't have to traverse the entire linked list and therefore
-remains O(1).
+remains *O*\ (1).
 
 The standard library now supports use of ordered dictionaries in several
 modules.
