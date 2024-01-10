@@ -1747,7 +1747,7 @@ Modules
   (Contributed by Brett Cannon in :issue:`47061` and Victor Stinner in
   :gh:`68966`.)
 
-* The :mod:`asynchat`, :mod:`asyncore` and  :mod:`smtpd` modules have been
+* The :mod:`!asynchat`, :mod:`!asyncore` and  :mod:`!smtpd` modules have been
   deprecated since at least Python 3.6. Their documentation and deprecation
   warnings have now been updated to note they will be removed in Python 3.12.
   (Contributed by Hugo van Kemenade in :issue:`47022`.)
@@ -1773,7 +1773,7 @@ Standard Library
 
   * the :class:`!configparser.SafeConfigParser` class
   * the :attr:`!configparser.ParsingError.filename` property
-  * the :meth:`configparser.RawConfigParser.readfp` method
+  * the :meth:`!configparser.RawConfigParser.readfp` method
 
   (Contributed by Hugo van Kemenade in :issue:`45173`.)
 
@@ -1860,7 +1860,7 @@ Standard Library
 
   (Contributed by Erlend E. Aasland in :issue:`5846`.)
 
-* :meth:`~!unittest.TestProgram.usageExit` is marked deprecated, to be removed
+* :meth:`!unittest.TestProgram.usageExit` is marked deprecated, to be removed
   in 3.13.
   (Contributed by Carlos Damázio in :gh:`67048`.)
 
@@ -1877,8 +1877,8 @@ and will be removed in Python 3.12.
 C APIs pending removal are
 :ref:`listed separately <whatsnew311-c-api-pending-removal>`.
 
-* The :mod:`asynchat` module
-* The :mod:`asyncore` module
+* The :mod:`!asynchat` module
+* The :mod:`!asyncore` module
 * The :ref:`entire distutils package <distutils-deprecated>`
 * The :mod:`!imp` module
 * The :class:`typing.io <typing.IO>` namespace
@@ -1902,10 +1902,10 @@ C APIs pending removal are
 * :func:`!importlib.util.set_package_wrapper`
 * :class:`!pkgutil.ImpImporter`
 * :class:`!pkgutil.ImpLoader`
-* :meth:`pathlib.Path.link_to`
+* :meth:`!pathlib.Path.link_to`
 * :func:`!sqlite3.enable_shared_cache`
 * :func:`!sqlite3.OptimizedUnicode`
-* :envvar:`PYTHONTHREADDEBUG` environment variable
+* :envvar:`!PYTHONTHREADDEBUG` environment variable
 * The following deprecated aliases in :mod:`unittest`:
 
     ============================ =============================== ===============
@@ -2007,7 +2007,7 @@ Removed C APIs are :ref:`listed separately <whatsnew311-c-api-removed>`.
   because it was not used and added by mistake in previous versions.
   (Contributed by Nikita Sobolev in :issue:`46483`.)
 
-* Removed the :class:`!MailmanProxy` class in the :mod:`smtpd` module,
+* Removed the :class:`!MailmanProxy` class in the :mod:`!smtpd` module,
   as it is unusable without the external :mod:`!mailman` package.
   (Contributed by Donghee Na in :issue:`35800`.)
 
@@ -2458,11 +2458,12 @@ Porting to Python 3.11
   * ``f_valuestack``: removed.
 
   The Python frame object is now created lazily. A side effect is that the
-  ``f_back`` member must not be accessed directly, since its value is now also
+  :attr:`~frame.f_back` member must not be accessed directly,
+  since its value is now also
   computed lazily. The :c:func:`PyFrame_GetBack` function must be called
   instead.
 
-  Debuggers that accessed the ``f_locals`` directly *must* call
+  Debuggers that accessed the :attr:`~frame.f_locals` directly *must* call
   :c:func:`PyFrame_GetLocals` instead. They no longer need to call
   :c:func:`PyFrame_FastToLocalsWithError` or :c:func:`PyFrame_LocalsToFast`,
   in fact they should not call those functions. The necessary updating of the
