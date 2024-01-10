@@ -227,6 +227,18 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         with self.assertRaises(tkinter.TclError):
             rgb((111, 78, 55))
 
+    def test_winfo_pathname(self):
+        t = tkinter.Toplevel(self.root)
+        w = tkinter.Button(t)
+        wid = w.winfo_id()
+        self.assertIsInstance(wid, int)
+        self.assertEqual(self.root.winfo_pathname(hex(wid)), str(w))
+        self.assertEqual(self.root.winfo_pathname(hex(wid), displayof=None), str(w))
+        self.assertEqual(self.root.winfo_pathname(hex(wid), displayof=t), str(w))
+        self.assertEqual(self.root.winfo_pathname(wid), str(w))
+        self.assertEqual(self.root.winfo_pathname(wid, displayof=None), str(w))
+        self.assertEqual(self.root.winfo_pathname(wid, displayof=t), str(w))
+
     def test_event_repr_defaults(self):
         e = tkinter.Event()
         e.serial = 12345
