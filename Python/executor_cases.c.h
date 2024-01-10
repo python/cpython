@@ -3397,4 +3397,22 @@
             break;
         }
 
+        case _LOAD_CONST_INLINE_BORROW: {
+            PyObject *value;
+            PyObject *ptr = (PyObject *)CURRENT_OPERAND();
+            value = ptr;
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            break;
+        }
+
+        case _INTERNAL_INCREMENT_OPT_COUNTER: {
+            PyObject *opt;
+            opt = stack_pointer[-1];
+            _PyCounterOptimizerObject *exe = (_PyCounterOptimizerObject *)opt;
+            exe->count++;
+            stack_pointer += -1;
+            break;
+        }
+
 #undef TIER_TWO
