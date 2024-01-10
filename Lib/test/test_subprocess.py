@@ -835,6 +835,9 @@ class ProcessTestCase(BaseTestCase):
                                if not is_env_var_to_ignore(k)]
             self.assertEqual(child_env_names, [])
 
+    @unittest.skipIf(sysconfig.get_config_var('Py_ENABLE_SHARED') == 1,
+                     'The Python shared library cannot be loaded '
+                     'with an empty environment.')
     def test_one_environment_variable(self):
         newenv = {'fruit': 'orange'}
         cmd = [sys.executable, '-c',
