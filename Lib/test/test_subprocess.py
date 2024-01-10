@@ -837,7 +837,9 @@ class ProcessTestCase(BaseTestCase):
 
     @unittest.skipIf(sysconfig.get_config_var('Py_ENABLE_SHARED') == 1,
                      'The Python shared library cannot be loaded '
-                     'with an empty environment.')
+                     'without some system environments.')
+    @unittest.skipIf(check_sanitizer(address=True),
+                     'AddressSanitizer adds to the environment.')
     def test_one_environment_variable(self):
         newenv = {'fruit': 'orange'}
         cmd = [sys.executable, '-c',
