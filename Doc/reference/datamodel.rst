@@ -768,7 +768,7 @@ standard built-in module). The number and type of the arguments are
 determined by the C function. Special read-only attributes:
 :attr:`__doc__` is the function's documentation string, or ``None`` if
 unavailable; :attr:`~definition.__name__` is the function's name; :attr:`__self__` is
-set to ``None`` (but see the next item); :attr:`__module__` its the name of
+set to ``None`` (but see the next item); :attr:`__module__` is the name of
 the module the function was defined in or ``None`` if unavailable.
 
 
