@@ -167,13 +167,7 @@ class PurePathBase:
     def __str__(self):
         """Return the string representation of the path, suitable for
         passing to system calls."""
-        paths = self._raw_paths
-        if len(paths) == 1:
-            return paths[0]
-        elif paths:
-            return self.pathmod.join(*paths)
-        else:
-            return ''
+        return self.pathmod.join(*self._raw_paths)
 
     def as_posix(self):
         """Return the string representation of the path with forward (/)
@@ -838,7 +832,7 @@ class PathBase(PurePathBase):
         # enable users to replace the implementation of 'absolute()' in a
         # subclass and benefit from the new behaviour here. This works because
         # os.path.abspath('.') == os.getcwd().
-        return cls().absolute()
+        return cls('').absolute()
 
     def expanduser(self):
         """ Return a new path with expanded ~ and ~user constructs
