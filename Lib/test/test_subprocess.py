@@ -842,7 +842,7 @@ class ProcessTestCase(BaseTestCase):
                                'sys.stdout.write("fruit="+os.getenv("fruit"))']
         if sys.platform == "win32":
             cmd = ["CMD", "/c", "SET", "fruit"]
-        with subprocess.Popen(cmd, stdout=subprocess.PIPE, env=newenv) as p:
+        with subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=newenv) as p:
             stdout, stderr = p.communicate()
             if p.returncode and support.verbose:
                 print("STDOUT:", stdout.decode("ascii", "replace"))
