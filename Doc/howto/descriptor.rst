@@ -1240,7 +1240,7 @@ instance::
     <function D.f at 0x00C45070>
 
     >>> d.f.__self__
-    <__main__.D object at 0x1012e1f98>
+    <__main__.D object at 0x00B18C90>
 
 If you have ever wondered where *self* comes from in regular methods or where
 *cls* comes from in class methods, this is it!
