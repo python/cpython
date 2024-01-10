@@ -10,6 +10,8 @@ sphinx==2.4.4
 docutils==0.17.1
 # Jinja version is pinned to a version compatible with Sphinx version 2.4.4.
 jinja2==3.0.3
+# Alabaster version is pinned to a version compatible with Sphinx version 2.4.4.
+alabaster==0.7.13
 
 blurb
 
