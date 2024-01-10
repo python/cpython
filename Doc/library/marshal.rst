@@ -26,7 +26,7 @@ Therefore, the Python maintainers reserve the right to modify the marshal format
 in backward incompatible ways should the need arise.
 The format of code objects is not compatible between Python versions,
 even if the version of the format is the same.
-De-serializing a code object in wrong Python version has undefined behavior.
+De-serializing a code object in the incorrect Python version has undefined behavior.
 If you're serializing and
 de-serializing Python objects, use the :mod:`pickle` module instead -- the
 performance is comparable, version independence is guaranteed, and pickle
