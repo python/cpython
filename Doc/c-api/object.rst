@@ -225,7 +225,7 @@ Object Protocol
    :c:macro:`Py_NE`, :c:macro:`Py_GT`, or :c:macro:`Py_GE`, corresponding to ``<``,
    ``<=``, ``==``, ``!=``, ``>``, or ``>=`` respectively. Returns ``-1`` on error,
    ``0`` if the result is false, ``1`` otherwise. This is the equivalent of the
-   Python expression ``o1 op o2``, where ``op`` is the operator corresponding to
+   Python expression ``bool(o1 op o2)``, where ``op`` is the operator corresponding to
    *opid*.
 
 .. note::
