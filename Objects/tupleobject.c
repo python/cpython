@@ -1173,6 +1173,7 @@ maybe_freelist_push(PyTupleObject *op)
     Py_ssize_t index = Py_SIZE(op) - 1;
     if (index < PyTuple_NFREELISTS
         && STATE.numfree[index] < PyTuple_MAXFREELIST
+        && STATE.numfree[index] >= 0
         && Py_IS_TYPE(op, &PyTuple_Type))
     {
         /* op is the head of a linked list, with the first item
