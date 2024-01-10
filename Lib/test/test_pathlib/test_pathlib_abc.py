@@ -590,7 +590,7 @@ class PathBaseTest(PurePathBaseTest):
 
     def test_unsupported_operation(self):
         P = self.cls
-        p = self.cls()
+        p = self.cls('')
         e = UnsupportedOperation
         self.assertRaises(e, p.stat)
         self.assertRaises(e, p.lstat)
@@ -634,13 +634,13 @@ class PathBaseTest(PurePathBaseTest):
 
     def test_as_uri_common(self):
         e = UnsupportedOperation
-        self.assertRaises(e, self.cls().as_uri)
+        self.assertRaises(e, self.cls('').as_uri)
 
     def test_fspath_common(self):
-        self.assertRaises(TypeError, os.fspath, self.cls())
+        self.assertRaises(TypeError, os.fspath, self.cls(''))
 
     def test_as_bytes_common(self):
-        self.assertRaises(TypeError, bytes, self.cls())
+        self.assertRaises(TypeError, bytes, self.cls(''))
 
 
 class DummyPathIO(io.BytesIO):
@@ -993,7 +993,7 @@ class DummyPathTest(DummyPurePathTest):
             _check(p.glob("*/"), ["dirA/", "dirB/", "dirC/", "dirE/", "linkB/"])
 
     def test_glob_empty_pattern(self):
-        p = self.cls()
+        p = self.cls('')
         with self.assertRaisesRegex(ValueError, 'Unacceptable pattern'):
             list(p.glob(''))
 
@@ -1554,7 +1554,7 @@ class DummyPathTest(DummyPurePathTest):
 
         # Resolve relative paths.
         try:
-            self.cls().absolute()
+            self.cls('').absolute()
         except UnsupportedOperation:
             return
         old_path = os.getcwd()

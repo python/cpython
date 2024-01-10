@@ -832,7 +832,7 @@ class PathBase(PurePathBase):
         # enable users to replace the implementation of 'absolute()' in a
         # subclass and benefit from the new behaviour here. This works because
         # os.path.abspath('.') == os.getcwd().
-        return cls().absolute()
+        return cls('').absolute()
 
     def expanduser(self):
         """ Return a new path with expanded ~ and ~user constructs
