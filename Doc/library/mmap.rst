@@ -264,10 +264,12 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
    .. method:: resize(newsize)
 
-      Resizes the map and the underlying file, if any. If the mmap was created
-      with *access* of :const:`ACCESS_READ` or :const:`ACCESS_COPY`,
-      or with *trackfd* set to ``False``, resizing the map will
-      raise a :exc:`TypeError` exception.
+      Resizes the map and the underlying file, if any.
+
+      Resizing a map created with *access* of :const:`ACCESS_READ` or
+      :const:`ACCESS_COPY`, will raise a :exc:`TypeError` exception.
+      Resizing a map created with with *trackfd* set to ``False``,
+      will raise a :exc:`ValueError` exception.
 
       **On Windows**: Resizing the map will raise an :exc:`OSError` if there are other
       maps against the same named file. Resizing an anonymous map (ie against the

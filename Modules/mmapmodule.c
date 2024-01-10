@@ -400,7 +400,7 @@ is_resizeable(mmap_object *self)
     }
 #ifdef UNIX
     if (!self->trackfd) {
-        PyErr_SetString(PyExc_TypeError,
+        PyErr_SetString(PyExc_ValueError,
             "mmap can't resize with trackfd=False.");
         return 0;
     }
