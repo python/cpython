@@ -421,8 +421,8 @@ top:  // Jump here after _PUSH_FRAME or likely branches
         uint32_t oparg = instr->op.arg;
         uint32_t extended = 0;
 
-
         if (opcode == ENTER_EXECUTOR) {
+            assert(oparg < 256);
             _PyExecutorObject *executor =
                 (_PyExecutorObject *)code->co_executors->executors[oparg];
             opcode = executor->vm_data.opcode;
