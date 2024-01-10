@@ -122,6 +122,10 @@ static inline void _PyGC_SET_FINALIZED(PyObject *op) {
     PyGC_Head *gc = _Py_AS_GC(op);
     _PyGCHead_SET_FINALIZED(gc);
 }
+static inline void _PyGC_CLEAR_FINALIZED(PyObject *op) {
+    PyGC_Head *gc = _Py_AS_GC(op);
+    gc->_gc_prev &= ~_PyGC_PREV_MASK_FINALIZED;
+}
 
 
 /* GC runtime state */
