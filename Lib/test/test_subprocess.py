@@ -1192,6 +1192,37 @@ class ProcessTestCase(BaseTestCase):
             stdout, stderr = popen.communicate(input='')
             self.assertEqual(stdout, '1\n2\n3\n4')
 
+    @unittest.skipIf(mswindows, "behavior currently not supported on Windows")
+    def test_universal_newlines_timeout(self):
+        with self.assertRaises(subprocess.TimeoutExpired) as c:
+            p = subprocess.run(
+                [
+                    sys.executable, "-c",
+                    "import sys, time;"
+                    r"sys.stderr.buffer.write(b'foo \xc2\xa4 bar');"
+                    "sys.stderr.buffer.flush();"
+                    r"sys.stdout.buffer.write(b'foo \xc2');"
+                    "sys.stdout.buffer.flush();"
+                    "time.sleep(10);"
+                ],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+                timeout=3)
+        self.assertEqual(c.exception.stdout, "foo ")
+        self.assertEqual(c.exception.stderr, "foo ¤ bar")
+
+    @unittest.skipIf(mswindows, "behavior currently not supported on Windows")
+    def test_no_output_timeout(self):
+        with self.assertRaises(subprocess.TimeoutExpired) as c:
+            p = subprocess.run(
+                [sys.executable, "-c", "import time; time.sleep(10)"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                timeout=0.1)
+        self.assertEqual(c.exception.stdout, b"")
+        self.assertEqual(c.exception.stderr, b"")
+
     def test_communicate_errors(self):
         for errors, expected in [
             ('ignore', ''),
