@@ -4490,12 +4490,14 @@ class FDInheritanceTests(unittest.TestCase):
         # gh-77046: On Windows, os.pipe() file descriptors must be created with
         # _O_NOINHERIT to make them non-inheritable. UCRT has no public API to
         # get (_osfile(fd) & _O_NOINHERIT), so use a functional test.
+        #
+        # Make sure that fd is not inherited by a child process created by
+        # os.spawnl(): get_osfhandle() and dup() must fail with EBADF.
+
         fd, fd2 = os.pipe()
         self.addCleanup(os.close, fd)
         self.addCleanup(os.close, fd2)
 
-        # Make sure that fd is not inherited by a child process created by
-        # os.spawnl(): get_osfhandle() and dup() must fail with EBADF.
         code = textwrap.dedent(f"""
             import errno
             import os
@@ -4514,6 +4516,7 @@ class FDInheritanceTests(unittest.TestCase):
                     except OSError as exc:
                         if exc.errno != errno.EBADF:
                             raise
+                        # get_osfhandle(fd) failed with EBADF as expected
                     else:
                         raise Exception("get_osfhandle() must fail")
 
@@ -4522,6 +4525,7 @@ class FDInheritanceTests(unittest.TestCase):
                 except OSError as exc:
                     if exc.errno != errno.EBADF:
                         raise
+                    # os.dup(fd) failed with EBADF as expected
                 else:
                     os.close(fd3)
                     raise Exception("dup must fail")
