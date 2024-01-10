@@ -1181,6 +1181,8 @@ class Misc:
 
     def winfo_pathname(self, id, displayof=0):
         """Return the pathname of the widget given by ID."""
+        if isinstance(id, int):
+            id = hex(id)
         args = ('winfo', 'pathname') \
                + self._displayof(displayof) + (id,)
         return self.tk.call(args)
