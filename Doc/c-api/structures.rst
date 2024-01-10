@@ -408,7 +408,9 @@ definition with the same method name.
 .. c:function:: PyObject * PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
 
    Same as :c:func:`PyCFunction_New`, but also allows setting the function
-   object's ``__module__`` attribute.  ``module`` can be anything.
+   object's ``__module__`` attribute.  :attr:`!__module__` should be the name
+   of the module the function is defined in or ``None`` if unavailable.
+   See :attr:`function.__module__`.
 
 .. c:function:: PyObject * PyCMethod_New(PyMethodDef *ml, PyObject *self, PyObject *module, PyTypeObject *cls)
 
