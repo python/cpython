@@ -218,12 +218,10 @@ keywords = {name.lower(): name for name in kwds}
 ANNOTATION = "ANNOTATION"
 annotations = {
     "specializing",
-    "passthrough",
     "override",
     "register",
     "replaced",
     "pure",
-    "no_trivial_elimination",
 }
 
 __all__ = []

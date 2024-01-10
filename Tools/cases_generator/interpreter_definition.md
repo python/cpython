@@ -176,10 +176,6 @@ list of annotations and their meanings are as follows:
 * `pure`. This instruction has no side effects visible to the Python user. It may
    still have side effects on the CPython interpreter state. All other instructions without
    this annotation are assumed to be not pure.
-* `passthrough`. This instruction does not modify its stack inputs/outputs.
-   I.e. the stack operands "pass through".
-* `no_trivial_elimination`. This tells the Tier 2 optimizer's abstract interpreter that
-   this instruction cannot be eliminated trivially via constant or type propagation.
 
 ### Special functions/macros
 

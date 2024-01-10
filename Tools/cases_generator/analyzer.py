@@ -24,7 +24,6 @@ class Properties:
 
     pure: bool
     passthrough: bool
-    no_trivial_elimination: bool
 
     def dump(self, indent: str) -> None:
         print(indent, end="")
@@ -51,7 +50,6 @@ class Properties:
             has_free=any(p.has_free for p in properties),
             pure=all(p.pure for p in properties),
             passthrough=all(p.passthrough for p in properties),
-            no_trivial_elimination=any(p.no_trivial_elimination for p in properties),
         )
 
 
@@ -73,7 +71,6 @@ SKIP_PROPERTIES = Properties(
     has_free=False,
     pure=False,
     passthrough=False,
-    no_trivial_elimination=False,
 )
 
 
@@ -431,6 +428,20 @@ def always_exits(op: parser.InstDef) -> bool:
     return False
 
 
+def stack_effect_only_peeks(instr: parser.InstDef) -> bool:
+    stack_inputs = [s for s in instr.inputs if not isinstance(s, parser.CacheEffect)]
+    if len(stack_inputs) != len(instr.outputs):
+        return False
+    if len(stack_inputs) == 0:
+        return False
+    if any(s.cond for s in stack_inputs) or any(s.cond for s in instr.outputs):
+        return False
+    return all(
+        (s.name == other.name and s.type == other.type and s.size == other.size)
+        for s, other in zip(stack_inputs, instr.outputs)
+    )
+
+
 def compute_properties(op: parser.InstDef) -> Properties:
     has_free = (
         variable_used(op, "PyCell_New")
@@ -455,8 +466,7 @@ def compute_properties(op: parser.InstDef) -> Properties:
         and not has_free,
         has_free=has_free,
         pure="pure" in op.annotations,
-        passthrough="passthrough" in op.annotations,
-        no_trivial_elimination="no_trivial_elimination" in op.annotations,
+        passthrough=stack_effect_only_peeks(op) and is_infallible(op),
     )
 
 
