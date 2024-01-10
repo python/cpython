@@ -629,8 +629,9 @@ class BuiltinTest(unittest.TestCase):
 
     def test___ne__(self):
         self.assertFalse(None.__ne__(None))
-        self.assertTrue(None.__ne__(0))
-        self.assertTrue(None.__ne__("abc"))
+        with self.assertWarns(DeprecationWarning):
+            self.assertTrue(None.__ne__(0))
+            self.assertTrue(None.__ne__("abc"))
 
     def test_divmod(self):
         self.assertEqual(divmod(12, 7), (1, 5))
