@@ -26,17 +26,13 @@ class float "PyObject *" "&PyFloat_Type"
 
 #include "clinic/floatobject.c.h"
 
-#ifndef PyFloat_MAXFREELIST
-#  define PyFloat_MAXFREELIST   100
-#endif
-
-
 #if PyFloat_MAXFREELIST > 0
 static struct _Py_float_state *
 get_float_state(void)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    return &interp->float_state;
+    _PyFreeListState *state = _PyFreeListState_GET();
+    assert(state != NULL);
+    return &state->float_state;
 }
 #endif
 
@@ -2002,10 +1998,10 @@ _PyFloat_InitTypes(PyInterpreterState *interp)
 }
 
 void
-_PyFloat_ClearFreeList(PyInterpreterState *interp)
+_PyFloat_ClearFreeList(_PyFreeListState *freelist_state, int is_finalization)
 {
 #if PyFloat_MAXFREELIST > 0
-    struct _Py_float_state *state = &interp->float_state;
+    struct _Py_float_state *state = &freelist_state->float_state;
     PyFloatObject *f = state->free_list;
     while (f != NULL) {
         PyFloatObject *next = (PyFloatObject*) Py_TYPE(f);
@@ -2013,18 +2009,19 @@ _PyFloat_ClearFreeList(PyInterpreterState *interp)
         f = next;
     }
     state->free_list = NULL;
-    state->numfree = 0;
+    if (is_finalization) {
+        state->numfree = -1;
+    }
+    else {
+        state->numfree = 0;
+    }
 #endif
 }
 
 void
-_PyFloat_Fini(PyInterpreterState *interp)
+_PyFloat_Fini(_PyFreeListState *state)
 {
-    _PyFloat_ClearFreeList(interp);
-#if defined(Py_DEBUG) && PyFloat_MAXFREELIST > 0
-    struct _Py_float_state *state = &interp->float_state;
-    state->numfree = -1;
-#endif
+    _PyFloat_ClearFreeList(state, 1);
 }
 
 void
