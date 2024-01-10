@@ -405,6 +405,10 @@ definition with the same method name.
    passed as ``self`` parameter to the C function in ``ml->ml_meth`` when
    invoked, can be ``NULL``.
 
+   .. note::
+
+      This function "steals" a reference to *ml*.
+
 .. c:function:: PyObject * PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
 
    Same as :c:func:`PyCFunction_New`, but also allows setting the function
@@ -412,11 +416,19 @@ definition with the same method name.
    of the module the function is defined in or ``None`` if unavailable.
    See :attr:`function.__module__`.
 
+   .. note::
+
+      This function "steals" a reference to *ml*.
+
 .. c:function:: PyObject * PyCMethod_New(PyMethodDef *ml, PyObject *self, PyObject *module, PyTypeObject *cls)
 
    Same as :c:func:`PyCFuntion_NewEx`, but accept a ``cls`` parameter, which
    will be passed as ``defining_class`` parameter to the C function.  Must be
    set if :c:macro:`METH_METHOD` is set on ``ml->ml_flags``.
+
+   .. note::
+
+      This function "steals" a reference to *ml*.
 
 
 Accessing attributes of extension types
