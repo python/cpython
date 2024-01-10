@@ -231,7 +231,8 @@ extern "C" {
 #define _SAVE_RETURN_OFFSET 378
 #define _INSERT 379
 #define _CHECK_VALIDITY 380
-#define MAX_UOP_ID 380
+#define _COLD_EXIT 381
+#define MAX_UOP_ID 381
 
 #ifdef __cplusplus
 }

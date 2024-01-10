@@ -19,6 +19,12 @@ extern PyTypeObject _PyDefaultOptimizer_Type;
 extern PyTypeObject _PyUOpExecutor_Type;
 extern PyTypeObject _PyUOpOptimizer_Type;
 
+typedef struct _exit_data {
+    uint32_t target;
+    int16_t hotness;
+    _PyExecutorObject *exit;
+} _PyExitData;
+
 #ifdef __cplusplus
 }
 #endif

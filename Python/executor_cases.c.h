@@ -3397,4 +3397,15 @@
             break;
         }
 
+        case _COLD_EXIT: {
+            oparg = CURRENT_OPARG();
+            TIER_TWO_ONLY
+            _PyExitData *exit = PyOptimizer_GetExit(current_executor, oparg);
+            Py_DECREF(current_executor);
+            current_executor = exit->exit;
+            Py_INCREF(current_executor);
+            if (1) goto deoptimize;
+            break;
+        }
+
 #undef TIER_TWO

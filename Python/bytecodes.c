@@ -4066,6 +4066,28 @@ dummy_func(
             DEOPT_IF(!current_executor->base.vm_data.valid);
         }
 
+        op(_COLD_EXIT, (--)) {
+            TIER_TWO_ONLY
+            _PyExitData *exit = PyOptimizer_GetExit(current_executor, oparg);
+            Py_DECREF(current_executor);
+            exit->hotness++;
+            DEOPT_IF(exit->hotness < 0);
+            PyCodeObject *code = _PyFrame_GetCode(frame);
+            _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
+            _PyOptimizerObject *opt = interp->optimizer;
+            _PyExecutorObject *executor = NULL;
+            int optimized = opt->optimize(opt, code, target, &executor, (int)(stack_pointer - _PyFrame_Stackbase(frame)));
+            ERROR_IF(optimized < 0, error);
+            if (optimized) {
+                exit->exit = executor;
+                Py_INCREF(executor);
+                GOTO_TIER_TWO();
+            }
+            else {
+                exit->hotness = -10000; /* Choose a better number */
+            }
+        }
+
 
 // END BYTECODES //
 

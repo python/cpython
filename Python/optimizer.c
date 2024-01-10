@@ -1139,3 +1139,37 @@ _Py_Executors_InvalidateAll(PyInterpreterState *interp)
     }
     interp->executor_list_head = NULL;
 }
+
+/* Executor side exits */
+
+
+typedef struct _cold_exit {
+    PyObject_VAR_HEAD
+    _PyVMData vm_data;
+    union {
+        void *jit_code; // Will be a function pointer
+        _PyUOpInstruction *trace;
+    };
+    _PyUOpInstruction cold;
+} _PyColdExitObject;
+
+static int cold_exits_initialized = 0;
+_PyColdExitObject COLD_EXITS[_Py_UOP_MAX_TRACE_LENGTH];
+
+static void
+initialize_cold_exits(void) {
+    if (cold_exits_initialized) {
+        return;
+    }
+    cold_exits_initialized = 1;
+    for (int i = 0; i < _Py_UOP_MAX_TRACE_LENGTH; i++) {
+        COLD_EXITS[i].ob_base.ob_base.ob_refcnt = _Py_IMMORTAL_REFCNT;
+        COLD_EXITS[i].ob_base.ob_base.ob_type = &_PyUOpExecutor_Type;
+        COLD_EXITS[i].ob_base.ob_size = 0;
+        COLD_EXITS[i].vm_data = (_PyVMData){ 0 };
+        COLD_EXITS[i].cold.opcode = _COLD_EXIT;
+        COLD_EXITS[i].cold.oparg = i;
+        COLD_EXITS[i].trace = &COLD_EXITS[i].cold;
+    }
+}
+
