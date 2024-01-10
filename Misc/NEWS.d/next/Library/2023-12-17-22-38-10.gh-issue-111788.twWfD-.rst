@@ -1,2 +1,1 @@
-Fix a bug that :func:`urllib.robotparser` will raise exception when parse
-weird robot.txt.
+Don't treat path in robots.txt as URL in :func:`urllib.robotparser`.
