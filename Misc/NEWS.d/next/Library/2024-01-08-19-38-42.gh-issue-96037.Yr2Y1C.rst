@@ -1,0 +1,2 @@
+Insert :exc:`TimeoutError` in the context of the exception that was raised
+during exiting an expired :func:`asyncio.timeout` block.
