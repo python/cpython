@@ -401,7 +401,7 @@ definition with the same method name.
 
 .. c:function:: PyObject * PyCFunction_New(PyMethodDef *ml, PyObject *self)
 
-   Turn ``ml`` into a Python callable object.  The ``self`` parameter will be
+   Turn *ml* into a Python callable object.  The *self* parameter will be
    passed as ``self`` parameter to the C function in ``ml->ml_meth`` when
    invoked, can be ``NULL``.
 
