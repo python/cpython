@@ -2666,6 +2666,14 @@ combinations_traverse(combinationsobject *co, visitproc visit, void *arg)
     return 0;
 }
 
+# macro that maps a combination index value to its pool element
+#define SET_COMBINATION_VALUE(i)                \
+    elem = PyTuple_GET_ITEM(pool, indices[i]);  \
+    Py_INCREF(elem);                            \
+    oldelem = PyTuple_GET_ITEM(result, i);      \
+    PyTuple_SET_ITEM(result, i, elem);          \
+    Py_DECREF(oldelem);
+
 static PyObject *
 combinations_next(combinationsobject *co)
 {
@@ -2714,33 +2722,46 @@ combinations_next(combinationsobject *co)
          */
         assert(r == 0 || Py_REFCNT(result) == 1);
 
+        i = r - 1;
+
         /* Scan indices right-to-left until finding one that is not
            at its maximum (i + n - r). */
-        for (i=r-1 ; i >= 0 && indices[i] == i+n-r ; i--)
-            ;
+        if (indices[i] == i + n - r) {
+            /* If we only have one index, at max value, we're done. */
+            if (0 == i)
+                goto empty;
 
-        /* If i is negative, then the indices are all at
-           their maximum value and we're done. */
-        if (i < 0)
-            goto empty;
+            for (;;) {
+                --i;
+                if (indices[i] < i + n - r)
+                    break;
 
-        /* Increment the current index which we know is not at its
-           maximum.  Then move back to the right setting each index
-           to its lowest possible value (one higher than the index
-           to its left -- this maintains the sort order invariant). */
-        indices[i]++;
-        for (j=i+1 ; j<r ; j++)
-            indices[j] = indices[j-1] + 1;
+                /* If i is zero, then the indices are all at
+                   their maximum value and we're done. */
+                if (0 == i)
+                    goto empty;
+            }
 
-        /* Update the result tuple for the new indices
-           starting with i, the leftmost index that changed */
-        for ( ; i<r ; i++) {
-            index = indices[i];
-            elem = PyTuple_GET_ITEM(pool, index);
-            Py_INCREF(elem);
-            oldelem = PyTuple_GET_ITEM(result, i);
-            PyTuple_SET_ITEM(result, i, elem);
-            Py_DECREF(oldelem);
+            /* Increment the current index which we know is not at its
+               maximum.  Then move back to the right setting each index
+               to its lowest possible value (one higher than the index
+               to its left -- this maintains the sort order invariant). */
+            ++indices[i];
+
+            /* Update the indices and the result tuple
+               starting with i, the leftmost index that changed */
+            for (;;) {
+                SET_COMBINATION_VALUE(i)
+                if (i == r - 1)
+                    break;
+
+                ++i;
+                indices[i] = indices[i - 1] + 1;
+            }
+        }
+        else {
+            ++indices[i];
+            SET_COMBINATION_VALUE(i)
         }
     }
 
