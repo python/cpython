@@ -50,7 +50,7 @@ terms of the MIT license. A copy of the license can be found in the file
   #include <sys/sysctl.h>
 #endif
 
-#if !defined(__HAIKU__) && !defined(__APPLE__) && !defined(__CYGWIN__) && !defined(_AIX) && !defined(__FreeBSD__)
+#if !defined(__HAIKU__) && !defined(__APPLE__) && !defined(__CYGWIN__) && !defined(_AIX) && !defined(__FreeBSD__) && !defined(__sun)
   #define MI_HAS_SYSCALL_H
   #include <sys/syscall.h>
 #endif
@@ -76,7 +76,7 @@ static int mi_prim_access(const char *fpath, int mode) {
   return syscall(SYS_access,fpath,mode);
 }
 
-#elif !defined(__APPLE__) && !defined(_AIX) && !defined(__FreeBSD__) // avoid unused warnings
+#elif !defined(__APPLE__) && !defined(_AIX) && !defined(__FreeBSD__) && !defined(__sun) // avoid unused warnings
 
 static int mi_prim_open(const char* fpath, int open_flags) {
   return open(fpath,open_flags);
@@ -310,7 +310,7 @@ static void* unix_mmap(void* addr, size_t size, size_t try_alignment, int protec
       #elif defined(__sun)
       if (allow_large && _mi_os_use_large_page(size, try_alignment)) {
         struct memcntl_mha cmd = {0};
-        cmd.mha_pagesize = large_os_page_size;
+        cmd.mha_pagesize = 2*MI_MiB;
         cmd.mha_cmd = MHA_MAPSIZE_VA;
         if (memcntl((caddr_t)p, size, MC_HAT_ADVISE, (caddr_t)&cmd, 0, 0) == 0) {
           *is_large = true;

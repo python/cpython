@@ -2372,16 +2372,8 @@ dummy_func(
             _PyExecutorObject *executor = (_PyExecutorObject *)code->co_executors->executors[oparg&255];
             if (executor->vm_data.valid) {
                 Py_INCREF(executor);
-                if (executor->execute == _PyUOpExecute) {
-                    current_executor = (_PyUOpExecutorObject *)executor;
-                    GOTO_TIER_TWO();
-                }
-                next_instr = executor->execute(executor, frame, stack_pointer);
-                frame = tstate->current_frame;
-                if (next_instr == NULL) {
-                    goto resume_with_error;
-                }
-                stack_pointer = _PyFrame_GetStackPointer(frame);
+                current_executor = (_PyUOpExecutorObject *)executor;
+                GOTO_TIER_TWO();
             }
             else {
                 /* ENTER_EXECUTOR will be the first code unit of the instruction */
@@ -4072,6 +4064,16 @@ dummy_func(
         op(_CHECK_VALIDITY, (--)) {
             TIER_TWO_ONLY
             DEOPT_IF(!current_executor->base.vm_data.valid);
+        }
+
+        op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
+            value = ptr;
+        }
+
+        /* Internal -- for testing executors */
+        op(_INTERNAL_INCREMENT_OPT_COUNTER, (opt --)) {
+            _PyCounterOptimizerObject *exe = (_PyCounterOptimizerObject *)opt;
+            exe->count++;
         }
 
 
