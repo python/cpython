@@ -833,6 +833,11 @@ class ProcessTestCase(BaseTestCase):
                                if not is_env_var_to_ignore(k)]
             self.assertEqual(child_env_names, [])
 
+    @unittest.skipIf(sysconfig.get_config_var('Py_ENABLE_SHARED') == 1,
+                     'The Python shared library cannot be loaded '
+                     'without some system environments.')
+    @unittest.skipIf(check_sanitizer(address=True),
+                     'AddressSanitizer adds to the environment.')
     def test_one_environment_variable(self):
         newenv = {'fruit': 'orange'}
         cmd = [sys.executable, '-c',
@@ -840,9 +845,13 @@ class ProcessTestCase(BaseTestCase):
                                'sys.stdout.write("fruit="+os.getenv("fruit"))']
         if sys.platform == "win32":
             cmd = ["CMD", "/c", "SET", "fruit"]
-        with subprocess.Popen(cmd, stdout=subprocess.PIPE, env=newenv) as p:
-            stdout, _ = p.communicate()
-            self.assertTrue(stdout.startswith(b"fruit=orange"))
+        with subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=newenv) as p:
+            stdout, stderr = p.communicate()
+            if p.returncode and support.verbose:
+                print("STDOUT:", stdout.decode("ascii", "replace"))
+                print("STDERR:", stderr.decode("ascii", "replace"))
+            self.assertEqual(p.returncode, 0)
+            self.assertEqual(stdout.strip(), b"fruit=orange")
 
     def test_invalid_cmd(self):
         # null character in the command name
