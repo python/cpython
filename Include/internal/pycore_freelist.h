@@ -61,8 +61,8 @@ struct _Py_float_state {
 
 typedef struct _Py_freelist_state {
     struct _Py_float_state float_state;
-    struct _Py_list_state list;
     struct _Py_tuple_state tuple_state;
+    struct _Py_list_state list_state;
 } _PyFreeListState;
 
 #ifdef __cplusplus
