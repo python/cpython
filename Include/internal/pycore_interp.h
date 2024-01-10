@@ -184,7 +184,6 @@ struct _is {
 #endif
     struct _py_object_state object_state;
     struct _Py_unicode_state unicode;
-    struct _Py_float_state float_state;
     struct _Py_long_state long_state;
     struct _dtoa_state dtoa;
     struct _py_func_state func_state;
