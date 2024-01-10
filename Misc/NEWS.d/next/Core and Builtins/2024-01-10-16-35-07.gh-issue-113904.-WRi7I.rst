@@ -1,0 +1,1 @@
+:func:`isinstance` now works with :pep:`695` type aliases.

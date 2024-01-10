@@ -11,6 +11,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_unionobject.h"   // _PyUnion_Check()
+#include "pycore_typevarobject.h" // _PyTypeAlias_Check()
 
 #include <stddef.h>               // offsetof()
 
@@ -2669,6 +2670,15 @@ object_recursive_isinstance(PyThreadState *tstate, PyObject *inst, PyObject *cls
     /* We know what type's __instancecheck__ does. */
     if (PyType_CheckExact(cls)) {
         return object_isinstance(inst, cls);
+    }
+
+    if (_PyTypeAlias_Check(cls)) {
+        PyObject *alias = _PyTypeAlias_GetValue(cls);
+        if (alias == NULL) {
+            return -1;
+        }
+
+        cls = alias;
     }
 
     if (_PyUnion_Check(cls)) {
