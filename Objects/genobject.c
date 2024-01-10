@@ -1740,6 +1740,7 @@ async_gen_asend_dealloc(PyAsyncGenASend *o)
 #endif
     if (state->asend_numfree < _PyAsyncGen_MAXFREELIST) {
         assert(PyAsyncGenASend_CheckExact(o));
+        _PyGC_CLEAR_FINALIZED((PyObject *)o);
         state->asend_freelist[state->asend_numfree++] = o;
     }
     else
@@ -1952,7 +1953,6 @@ async_gen_wrapped_val_dealloc(_PyAsyncGenWrappedValue *o)
 #endif
     if (state->value_numfree < _PyAsyncGen_MAXFREELIST) {
         assert(_PyAsyncGenWrappedValue_CheckExact(o));
-        _PyGC_CLEAR_FINALIZED((PyObject *)o);
         state->value_freelist[state->value_numfree++] = o;
         OBJECT_STAT_INC(to_freelist);
     }
