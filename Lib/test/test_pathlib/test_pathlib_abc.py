@@ -5,7 +5,7 @@ import errno
 import stat
 import unittest
 
-from pathlib._abc import UnsupportedOperation, PurePathBase, PathBase
+from pathlib._abc import UnsupportedOperation, PathModuleBase, PurePathBase, PathBase
 import posixpath
 
 from test.support.os_helper import TESTFN
@@ -17,6 +17,23 @@ class UnsupportedOperationTest(unittest.TestCase):
         self.assertTrue(isinstance(UnsupportedOperation(), NotImplementedError))
 
 
+class PathModuleBaseTest(unittest.TestCase):
+    cls = PathModuleBase
+
+    def test_unsupported_operation(self):
+        m = self.cls()
+        e = UnsupportedOperation
+        with self.assertRaises(e):
+            m.sep
+        self.assertRaises(e, m.join, 'foo')
+        self.assertRaises(e, m.split, 'foo')
+        self.assertRaises(e, m.dirname, 'foo')
+        self.assertRaises(e, m.basename, 'foo')
+        self.assertRaises(e, m.splitroot, 'foo')
+        self.assertRaises(e, m.splitdrive, 'foo')
+        self.assertRaises(e, m.normcase, 'foo')
+        self.assertRaises(e, m.isabs, 'foo')
+
 #
 # Tests for the pure classes.
 #
@@ -24,6 +41,40 @@ class UnsupportedOperationTest(unittest.TestCase):
 
 class PurePathBaseTest(unittest.TestCase):
     cls = PurePathBase
+
+    def test_unsupported_operation_pure(self):
+        p = self.cls('foo')
+        e = UnsupportedOperation
+        self.assertRaises(e, str, p)
+        self.assertRaises(e, p.as_posix)
+        with self.assertRaises(e):
+            p.drive
+        with self.assertRaises(e):
+            p.root
+        with self.assertRaises(e):
+            p.anchor
+        with self.assertRaises(e):
+            p.parts
+        with self.assertRaises(e):
+            p.parent
+        with self.assertRaises(e):
+            p.parents
+        with self.assertRaises(e):
+            p.name
+        with self.assertRaises(e):
+            p.stem
+        with self.assertRaises(e):
+            p.suffix
+        with self.assertRaises(e):
+            p.suffixes
+        self.assertRaises(e, p.with_name, 'bar')
+        self.assertRaises(e, p.with_stem, 'bar')
+        self.assertRaises(e, p.with_suffix, '.txt')
+        self.assertRaises(e, p.relative_to, '')
+        self.assertRaises(e, p.is_relative_to, '')
+        self.assertRaises(e, p.is_absolute)
+        self.assertRaises(e, p.is_reserved)
+        self.assertRaises(e, p.match, '*')
 
     def test_magic_methods(self):
         P = self.cls
@@ -39,11 +90,12 @@ class PurePathBaseTest(unittest.TestCase):
         self.assertIs(P.__ge__, object.__ge__)
 
     def test_pathmod(self):
-        self.assertIs(self.cls.pathmod, posixpath)
+        self.assertIsInstance(self.cls.pathmod, PathModuleBase)
 
 
 class DummyPurePath(PurePathBase):
     __slots__ = ()
+    pathmod = posixpath
 
     def __eq__(self, other):
         if not isinstance(other, DummyPurePath):
@@ -669,6 +721,7 @@ class DummyPath(PathBase):
     memory.
     """
     __slots__ = ()
+    pathmod = posixpath
 
     _files = {}
     _directories = {}

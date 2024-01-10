@@ -132,6 +132,68 @@ class UnsupportedOperation(NotImplementedError):
     pass
 
 
+class PathModuleBase:
+    """Base class for path modules, which do low-level path manipulation.
+
+    Path modules provide a subset of the os.path API, specifically those
+    functions needed to provide PurePathBase functionality. Each PurePathBase
+    subclass references its path module via a 'pathmod' class attribute.
+
+    Every method in this base class raises an UnsupportedOperation exception.
+    """
+
+    @classmethod
+    def _unsupported(cls, attr):
+        raise UnsupportedOperation(f"{cls.__name__}.{attr} is unsupported")
+
+    @property
+    def sep(self):
+        """The character used to separate path components."""
+        self._unsupported('sep')
+
+    def join(self, *paths):
+        """Join path segments."""
+        self._unsupported('join()')
+
+    def split(self, path):
+        """Split the path into a pair (head, tail), where *head* is everything
+        before the final path separator, and *tail* is everything after.
+        Either part may be empty.
+        """
+        self._unsupported('split()')
+
+    def dirname(self, path):
+        """Return everything before the final path separator."""
+        return self.split(path)[0]
+
+    def basename(self, path):
+        """Return everything after the final path separator."""
+        return self.split(path)[1]
+
+    def splitroot(self, path):
+        """Split the pathname path into a 3-item tuple (drive, root, tail),
+        where *drive* is a device name or mount point, *root* is a string of
+        separators after the drive, and *tail* is everything after the root.
+        Any part may be empty."""
+        self._unsupported('splitroot()')
+
+    def splitdrive(self, path):
+        """Split the pathname path into a 2-item tuple (drive, tail), where
+        *drive* is a device name or mount point, and *tail* is everything
+        after the drive. Either part may be empty."""
+        drive, root, rel = self.splitroot(path)
+        return drive, root + rel
+
+    def normcase(self, path):
+        """Normalize the case of the path."""
+        self._unsupported('normcase()')
+
+    def isabs(self, path):
+        """Returns whether the path is absolute, i.e. unaffected by the
+        current directory or drive."""
+        self._unsupported('isabs()')
+
+
 class PurePathBase:
     """Base class for pure path objects.
 
@@ -151,7 +213,7 @@ class PurePathBase:
         # work from occurring when `resolve()` calls `stat()` or `readlink()`.
         '_resolving',
     )
-    pathmod = posixpath
+    pathmod = PathModuleBase()
 
     def __init__(self, *paths):
         self._raw_paths = paths
