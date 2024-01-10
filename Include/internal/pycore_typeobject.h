@@ -28,6 +28,9 @@ struct _types_runtime_state {
 // see _PyType_Lookup().
 struct type_cache_entry {
     unsigned int version;  // initialized from type->tp_version_tag
+#ifdef Py_GIL_DISABLED
+    int sequence;
+#endif
     PyObject *name;        // reference to exactly a str or None
     PyObject *value;       // borrowed reference or NULL
 };
