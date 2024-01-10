@@ -759,11 +759,8 @@ m_log10(double x)
 static PyObject *
 math_gcd(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
 {
-    // Fast-path for the common case: avoid calling _PyNumber_Index()
-    // and the loop.
-    if (nargs == 2
-        && PyLong_CheckExact(args[0])
-        && PyLong_CheckExact(args[1]))
+    // Fast-path for the common case: gcd(int, int)
+    if (nargs == 2 && PyLong_CheckExact(args[0]) && PyLong_CheckExact(args[1]))
     {
         return _PyLong_GCD(args[0], args[1]);
     }
