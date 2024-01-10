@@ -1671,6 +1671,14 @@ Modules/pwdmodule.o: $(srcdir)/Modules/pwdmodule.c $(srcdir)/Modules/posixmodule
 
 Modules/signalmodule.o: $(srcdir)/Modules/signalmodule.c $(srcdir)/Modules/posixmodule.h
 
+Modules/_xxsubinterpretersmodule.o: $(srcdir)/Modules/_xxsubinterpretersmodule.c $(srcdir)/Modules/_interpreters_common.h
+
+Modules/_xxinterpqueuesmodule.o: $(srcdir)/Modules/_xxinterpqueuesmodule.c $(srcdir)/Modules/_interpreters_common.h
+
+Modules/_xxinterpchannelsmodule.o: $(srcdir)/Modules/_xxinterpchannelsmodule.c $(srcdir)/Modules/_interpreters_common.h
+
+Python/crossinterp.o: $(srcdir)/Python/crossinterp.c $(srcdir)/Python/crossinterp_data_lookup.h $(srcdir)/Python/crossinterp_exceptions.h
+
 Python/dynload_shlib.o: $(srcdir)/Python/dynload_shlib.c Makefile
 	$(CC) -c $(PY_CORE_CFLAGS) \
 		-DSOABI='"$(SOABI)"' \
