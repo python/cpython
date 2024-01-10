@@ -3406,7 +3406,7 @@
             break;
         }
 
-        case _INCREMENT_OPT_COUNTER: {
+        case _INTERNAL_INCREMENT_OPT_COUNTER: {
             PyObject *opt;
             opt = stack_pointer[-1];
             _PyCounterOptimizerObject *exe = (_PyCounterOptimizerObject *)opt;

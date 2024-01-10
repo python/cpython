@@ -4063,7 +4063,7 @@ dummy_func(
         }
 
         /* Internal -- for testing executors */
-        op(_INCREMENT_OPT_COUNTER, (opt --)) {
+        op(_INTERNAL_INCREMENT_OPT_COUNTER, (opt --)) {
             _PyCounterOptimizerObject *exe = (_PyCounterOptimizerObject *)opt;
             exe->count++;
         }

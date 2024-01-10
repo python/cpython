@@ -856,8 +856,8 @@ counter_optimize(
 {
     _PyUOpInstruction buffer[3] = {
         { .opcode = _LOAD_CONST_INLINE_BORROW, .operand = (uintptr_t)self },
-        { .opcode = _INCREMENT_OPT_COUNTER },
-        { .opcode = _EXIT_TRACE, .target = instr - _PyCode_CODE(code) }
+        { .opcode = _INTERNAL_INCREMENT_OPT_COUNTER },
+        { .opcode = _EXIT_TRACE, .target = (uint32_t)(instr - _PyCode_CODE(code)) }
     };
     _PyBloomFilter empty;
     _Py_BloomFilter_Init(&empty);
