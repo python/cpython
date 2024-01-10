@@ -4765,6 +4765,82 @@ is_dunder_name(PyObject *name)
     return 0;
 }
 
+static void
+update_cache(struct type_cache_entry *entry, PyObject *name, unsigned int version_tag, PyObject *value)
+{
+    entry->version = version_tag;
+    entry->value = value;  /* borrowed */
+    assert(_PyASCIIObject_CAST(name)->hash != -1);
+    OBJECT_STAT_INC_COND(type_cache_collisions, entry->name != Py_None && entry->name != name);
+    Py_SETREF(entry->name, Py_NewRef(name));
+}
+
+#if Py_GIL_DISABLED
+
+#define TYPE_CACHE_IS_UPDATING(sequence) (sequence & 0x01)
+
+static void
+update_cache_gil_disabled(struct type_cache_entry *entry, PyObject *name,
+                          unsigned int version_tag, PyObject *value)
+{
+    // Similar to linux seqlock: https://en.wikipedia.org/wiki/Seqlock
+    // We use a sequence number to lock the writer, an even sequence means we're unlocked, an odd
+    // sequence means we're locked.
+    // Differs a little bit in that we use CAS on sequence as the lock, instead of a seperate spin lock.
+    // If our writer detects that another thread has already done the same write we'll just bail
+    // and restore the previous sequence number without doing any updates.
+
+    // lock the entry by setting by moving to an odd sequence number
+    int prev = entry->sequence;
+    while (1) {
+        if (TYPE_CACHE_IS_UPDATING(prev)) {
+            // Someone else is currently updating the cache
+            _Py_yield();
+            prev = _Py_atomic_load_int32_relaxed(&entry->sequence);
+        } else if(_Py_atomic_compare_exchange_int32(&entry->sequence, &prev, prev + 1)) {
+            // We've locked the cache
+            break;
+        } else {
+            _Py_yield();
+        }
+    }
+
+    // update the entry
+    if (entry->name == name &&
+        entry->value == value &&
+        entry->version == version_tag) {
+        // We reaced with another update, bail and restore previous sequence.
+        _Py_atomic_exchange_int32(&entry->sequence, prev);
+        return;
+    }
+
+    update_cache(entry, name, version_tag, value);
+
+    // Then update sequence to the next valid value
+    int new_sequence = prev + 2;
+    assert(!TYPE_CACHE_IS_UPDATING(new_sequence));
+    _Py_atomic_exchange_int32(&entry->sequence, new_sequence);
+}
+
+#endif
+
+void _PyTypes_AfterFork() {
+#ifdef Py_GIL_DISABLED
+    struct type_cache *cache = get_type_cache();
+    for (int i = 0; i < 1 << MCACHE_SIZE_EXP; i++) {
+        struct type_cache_entry *entry = &cache->hashtable[i];
+        int sequence = _Py_atomic_load_int_acquire(&entry->sequence);
+        if (TYPE_CACHE_IS_UPDATING(sequence)) {
+            // Entry was in the process of updating while forking, clear it...
+            entry->sequence = 0;
+            entry->value = NULL;
+            entry->name = NULL;
+            entry->version = 0;
+        }
+    }
+#endif
+}
+
 /* Internal API to look for a name through the MRO.
    This returns a borrowed reference, and doesn't set an exception! */
 PyObject *
@@ -4777,13 +4853,40 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
     unsigned int h = MCACHE_HASH_METHOD(type, name);
     struct type_cache *cache = get_type_cache();
     struct type_cache_entry *entry = &cache->hashtable[h];
+#ifdef Py_GIL_DISABLED
+    // synchronize-with other writing threads by doing an acquire load on the sequence
+    while (1) {
+        int sequence = _Py_atomic_load_int_acquire(&entry->sequence);
+        if (!TYPE_CACHE_IS_UPDATING(sequence)) {
+            if (_Py_atomic_load_uint32_relaxed(&entry->version) == type->tp_version_tag &&
+                _Py_atomic_load_ptr_relaxed(&entry->name) == name) {
+                assert(_PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG));
+                OBJECT_STAT_INC_COND(type_cache_hits, !is_dunder_name(name));
+                OBJECT_STAT_INC_COND(type_cache_dunder_hits, is_dunder_name(name));
+                PyObject *value = _Py_atomic_load_ptr_relaxed(&entry->value);
+
+                // Synchronize again and validate that the entry hasn't been updated
+                // while we were readying the values.
+                if (_Py_atomic_load_int_acquire(&entry->sequence) == sequence) {
+                    return value;
+                }
+             } else {
+                // Cache miss
+                break;
+             }
+        }
+        // We are in progress of updating the cache, retry
+        _Py_yield();
+    }
+#else
     if (entry->version == type->tp_version_tag &&
         entry->name == name) {
         assert(_PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG));
         OBJECT_STAT_INC_COND(type_cache_hits, !is_dunder_name(name));
         OBJECT_STAT_INC_COND(type_cache_dunder_hits, is_dunder_name(name));
-        return entry->value;
+            return entry->value;
     }
+#endif
     OBJECT_STAT_INC_COND(type_cache_misses, !is_dunder_name(name));
     OBJECT_STAT_INC_COND(type_cache_dunder_misses, is_dunder_name(name));
 
@@ -4808,15 +4911,13 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
     }
 
     if (MCACHE_CACHEABLE_NAME(name) && assign_version_tag(interp, type)) {
-        h = MCACHE_HASH_METHOD(type, name);
-        struct type_cache_entry *entry = &cache->hashtable[h];
-        entry->version = type->tp_version_tag;
-        entry->value = res;  /* borrowed */
-        assert(_PyASCIIObject_CAST(name)->hash != -1);
-        OBJECT_STAT_INC_COND(type_cache_collisions, entry->name != Py_None && entry->name != name);
+#if Py_GIL_DISABLED
+        update_cache_gil_disabled(entry, name, type->tp_version_tag, res);
+#else
+        update_cache(entry, name, type->tp_version_tag, res);
+#endif
         assert(_PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG));
-        Py_SETREF(entry->name, Py_NewRef(name));
-    }
+}
     return res;
 }
 

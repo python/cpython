@@ -251,6 +251,7 @@ PyAPI_FUNC(void) _PyRWMutex_RUnlock(_PyRWMutex *rwmutex);
 PyAPI_FUNC(void) _PyRWMutex_Lock(_PyRWMutex *rwmutex);
 PyAPI_FUNC(void) _PyRWMutex_Unlock(_PyRWMutex *rwmutex);
 
+void _Py_yield(void);
 
 #ifdef __cplusplus
 }

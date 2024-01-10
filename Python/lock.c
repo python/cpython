@@ -36,7 +36,7 @@ struct mutex_entry {
     int handed_off;
 };
 
-static void
+void
 _Py_yield(void)
 {
 #ifdef MS_WINDOWS

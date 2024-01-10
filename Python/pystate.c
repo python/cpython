@@ -499,6 +499,8 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
         _PyMutex_at_fork_reinit(locks[i]);
     }
 
+    _PyTypes_AfterFork();
+
     /* bpo-42540: id_mutex is freed by _PyInterpreterState_Delete, which does
      * not force the default allocator. */
     if (_PyThread_at_fork_reinit(&runtime->interpreters.main->id_mutex) < 0) {
