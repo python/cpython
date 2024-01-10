@@ -2666,7 +2666,7 @@ combinations_traverse(combinationsobject *co, visitproc visit, void *arg)
     return 0;
 }
 
-# macro that maps a combination index value to its pool element
+/* macro that maps a combination index value to its pool element */
 #define SET_COMBINATION_VALUE(i)                \
     elem = PyTuple_GET_ITEM(pool, indices[i]);  \
     Py_INCREF(elem);                            \
