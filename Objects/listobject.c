@@ -20,7 +20,7 @@ class list "PyListObject *" "&PyList_Type"
 
 _Py_DECLARE_STR(list_err, "list index out of range");
 
-#if PyList_MAXFREELIST > 0
+#ifdef WITH_FREELISTS
 static struct _Py_list_state *
 get_list_state(void)
 {
@@ -123,7 +123,7 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
 void
 _PyList_ClearFreeList(_PyFreeListState *freelist_state, int is_finalization)
 {
-#if PyList_MAXFREELIST > 0
+#ifdef WITH_FREELISTS
     struct _Py_list_state *state = &freelist_state->list;
     while (state->numfree > 0) {
         PyListObject *op = state->free_list[--state->numfree];
@@ -146,7 +146,7 @@ _PyList_Fini(_PyFreeListState *state)
 void
 _PyList_DebugMallocStats(FILE *out)
 {
-#if PyList_MAXFREELIST > 0
+#ifdef WITH_FREELISTS
     struct _Py_list_state *state = get_list_state();
     _PyDebugAllocatorStats(out,
                            "free PyListObject",
@@ -164,13 +164,9 @@ PyList_New(Py_ssize_t size)
         return NULL;
     }
 
-#if PyList_MAXFREELIST > 0
+#ifdef WITH_FREELISTS
     struct _Py_list_state *state = get_list_state();
-#ifdef Py_DEBUG
-    // PyList_New() must not be called after _PyList_Fini()
-    assert(state->numfree != -1);
-#endif
-    if (PyList_MAXFREELIST && state->numfree) {
+    if (PyList_MAXFREELIST && state->numfree > 0) {
         state->numfree--;
         op = state->free_list[state->numfree];
         OBJECT_STAT_INC(from_freelist);
@@ -360,13 +356,9 @@ list_dealloc(PyObject *self)
         }
         PyMem_Free(op->ob_item);
     }
-#if PyList_MAXFREELIST > 0
+#ifdef WITH_FREELISTS
     struct _Py_list_state *state = get_list_state();
-#ifdef Py_DEBUG
-    // list_dealloc() must not be called after _PyList_Fini()
-    assert(state->numfree != -1);
-#endif
-    if (state->numfree < PyList_MAXFREELIST && PyList_CheckExact(op)) {
+    if (state->numfree < PyList_MAXFREELIST && state->numfree >= 0 && PyList_CheckExact(op)) {
         state->free_list[state->numfree++] = op;
         OBJECT_STAT_INC(to_freelist);
     }
