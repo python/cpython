@@ -250,11 +250,7 @@ _PyFloat_ExactDealloc(PyObject *obj)
     PyFloatObject *op = (PyFloatObject *)obj;
 #ifdef WITH_FREELISTS
     struct _Py_float_state *state = get_float_state();
-#ifdef Py_DEBUG
-    // float_dealloc() must not be called after _PyFloat_Fini()
-    assert(state->numfree != -1);
-#endif
-    if (state->numfree >= PyFloat_MAXFREELIST)  {
+    if (state->numfree >= PyFloat_MAXFREELIST || state->numfree < 0) {
         PyObject_Free(op);
         return;
     }
