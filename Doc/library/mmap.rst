@@ -104,7 +104,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    which is equal to :const:`PAGESIZE` on Unix systems.
 
    If *trackfd* is ``False``, the file descriptor specified by *fileno* will
-   not be duplicated, and the resulting :class:`~!mmap.mmap` object will not
+   not be duplicated, and the resulting :class:`!mmap` object will not
    be associated with the map's underlying file.
    This means that the :meth:`~mmap.mmap.size` and :meth:`~mmap.mmap.resize`
    methods will fail.
