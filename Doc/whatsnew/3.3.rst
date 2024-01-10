@@ -174,7 +174,7 @@ Features
   b or c are now hashable.  (Contributed by Antoine Pitrou in :issue:`13411`.)
 
 * Arbitrary slicing of any 1-D arrays type is supported. For example, it
-  is now possible to reverse a memoryview in O(1) by using a negative step.
+  is now possible to reverse a memoryview in *O*\ (1) by using a negative step.
 
 API changes
 -----------
