@@ -629,8 +629,10 @@ class BuiltinTest(unittest.TestCase):
 
     def test___ne__(self):
         self.assertFalse(None.__ne__(None))
-        with self.assertWarnsRegex(DeprecationWarning, "NotImplemented should not be used in a boolean context"):
+        msg = "NotImplemented should not be used in a boolean context"
+        with self.assertWarnsRegex(DeprecationWarning, msg):
             self.assertTrue(None.__ne__(0))
+        with self.assertWarnsRegex(DeprecationWarning, msg):
             self.assertTrue(None.__ne__("abc"))
 
     def test_divmod(self):
