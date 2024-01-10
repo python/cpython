@@ -172,7 +172,6 @@ _PyOptimizer_Optimize(_PyInterpreterFrame *frame, _Py_CODEUNIT *start, PyObject 
     }
     _PyOptimizerObject *opt = interp->optimizer;
     _PyExecutorObject *executor = NULL;
-    /* Start optimizing at the destination to guarantee forward progress */
     int err = opt->optimize(opt, code, start, &executor, (int)(stack_pointer - _PyFrame_Stackbase(frame)));
     if (err <= 0) {
         assert(executor == NULL);
@@ -277,8 +276,8 @@ counter_optimize(
         oparg = (oparg << 8) | instr->op.arg;
     }
     if (instr->op.code != JUMP_BACKWARD) {
-        PyErr_Format(PyExc_ValueError, "Counter optimizer can only handle backward edges");
-        return -1;
+        /* Counter optimizer can only handle backward edges */
+        return 0;
     }
     _PyCounterExecutorObject *executor = (_PyCounterExecutorObject *)_PyObject_New(&_PyCounterExecutor_Type);
     if (executor == NULL) {
@@ -287,7 +286,7 @@ counter_optimize(
     executor->executor.execute = counter_execute;
     Py_INCREF(self);
     executor->optimizer = (_PyCounterOptimizerObject *)self;
-    executor->next_instr = instr + 2 - oparg;
+    executor->next_instr = instr + 1 + _PyOpcode_Caches[JUMP_BACKWARD] - oparg;
     *exec_ptr = (_PyExecutorObject *)executor;
     _PyBloomFilter empty;
     _Py_BloomFilter_Init(&empty);
@@ -530,6 +529,15 @@ top:  // Jump here after _PUSH_FRAME or likely branches
         uint32_t oparg = instr->op.arg;
         uint32_t extended = 0;
 
+
+        if (opcode == ENTER_EXECUTOR) {
+            _PyExecutorObject *executor =
+                (_PyExecutorObject *)code->co_executors->executors[oparg];
+            opcode = executor->vm_data.opcode;
+            DPRINTF(2, "  * ENTER_EXECUTOR -> %s\n",  _PyOpcode_OpName[opcode]);
+            oparg = executor->vm_data.oparg;
+        }
+
         if (opcode == EXTENDED_ARG) {
             instr++;
             extended = 1;
@@ -540,30 +548,22 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                 goto done;
             }
         }
+        assert(opcode != ENTER_EXECUTOR && opcode != EXTENDED_ARG);
 
-        if (opcode == ENTER_EXECUTOR) {
-            _PyExecutorObject *executor =
-                (_PyExecutorObject *)code->co_executors->executors[oparg&255];
-            opcode = executor->vm_data.opcode;
-            DPRINTF(2, "  * ENTER_EXECUTOR -> %s\n",  _PyOpcode_OpName[opcode]);
-            oparg = (oparg & 0xffffff00) | executor->vm_data.oparg;
-        }
-
+        /* Special case the first instruction,
+         * so that we can guarantee forward progress */
         if (progress_needed) {
             progress_needed = false;
-            /* Special case the first instruction, so that we can guarantee
-            * forward progress */
-            if (opcode == JUMP_BACKWARD) {
-                instr += 2 - (int32_t)oparg;
+            if (opcode == JUMP_BACKWARD || opcode == JUMP_BACKWARD_NO_INTERRUPT) {
+                instr += 1 + _PyOpcode_Caches[opcode] - (int32_t)oparg;
+                initial_instr = instr;
                 continue;
             }
             else {
                 if (OPCODE_HAS_DEOPT(opcode)) {
                     opcode = _PyOpcode_Deopt[opcode];
                 }
-                if (OPCODE_HAS_DEOPT(opcode)) {
-                    return 0;
-                }
+                assert(!OPCODE_HAS_DEOPT(opcode));
             }
         }
 
@@ -607,8 +607,16 @@ top:  // Jump here after _PUSH_FRAME or likely branches
             case JUMP_BACKWARD:
             case JUMP_BACKWARD_NO_INTERRUPT:
             {
-                OPT_STAT_INC(inner_loop);
-                DPRINTF(2, "JUMP_BACKWARD not to top ends trace\n");
+                _Py_CODEUNIT *target = instr + 1 + _PyOpcode_Caches[opcode] - (int)oparg;
+                if (target == initial_instr) {
+                    /* We have looped round to the start */
+                    RESERVE(1);
+                    ADD_TO_TRACE(_JUMP_TO_TOP, 0, 0, 0);
+                }
+                else {
+                    OPT_STAT_INC(inner_loop);
+                    DPRINTF(2, "JUMP_BACKWARD not to top ends trace\n");
+                }
                 goto done;
             }
 
@@ -754,11 +762,6 @@ top:  // Jump here after _PUSH_FRAME or likely branches
         instr++;
         // Add cache size for opcode
         instr += _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
-        /* Stop if we have reached the start */
-        if (instr == initial_instr) {
-            RESERVE(1);
-            ADD_TO_TRACE(_JUMP_TO_TOP, 0, 0, 0);
-        }
     }  // End for (;;)
 
 done:
@@ -767,19 +770,7 @@ done:
     }
     assert(code == initial_code);
     // Skip short traces like _SET_IP, LOAD_FAST, _SET_IP, _EXIT_TRACE
-    if (trace_length > 4) {
-        ADD_TO_TRACE(_EXIT_TRACE, 0, 0, target);
-        DPRINTF(1,
-                "Created a trace for %s (%s:%d) at byte offset %d -- length %d\n",
-                PyUnicode_AsUTF8(code->co_qualname),
-                PyUnicode_AsUTF8(code->co_filename),
-                code->co_firstlineno,
-                2 * INSTR_IP(initial_instr, code),
-                trace_length);
-        OPT_HIST(trace_length + buffer_size - max_length, trace_length_hist);
-        return 1;
-    }
-    else {
+    if (progress_needed || trace_length < 5) {
         OPT_STAT_INC(trace_too_short);
         DPRINTF(4,
                 "No trace for %s (%s:%d) at byte offset %d\n",
@@ -787,15 +778,25 @@ done:
                 PyUnicode_AsUTF8(code->co_filename),
                 code->co_firstlineno,
                 2 * INSTR_IP(initial_instr, code));
+        return 0;
     }
-    return 0;
+    ADD_TO_TRACE(_EXIT_TRACE, 0, 0, target);
+    DPRINTF(1,
+            "Created a trace for %s (%s:%d) at byte offset %d -- length %d\n",
+            PyUnicode_AsUTF8(code->co_qualname),
+            PyUnicode_AsUTF8(code->co_filename),
+            code->co_firstlineno,
+            2 * INSTR_IP(initial_instr, code),
+            trace_length);
+    OPT_HIST(trace_length + buffer_size - max_length, trace_length_hist);
+    return 1;
+}
 
 #undef RESERVE
 #undef RESERVE_RAW
 #undef INSTR_IP
 #undef ADD_TO_TRACE
 #undef DPRINTF
-}
 
 #define UNSET_BIT(array, bit) (array[(bit)>>5] &= ~(1<<((bit)&31)))
 #define SET_BIT(array, bit) (array[(bit)>>5] |= (1<<((bit)&31)))

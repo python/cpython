@@ -2384,10 +2384,12 @@ dummy_func(
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             else {
-                code->co_executors->executors[oparg & 255] = NULL;
+                /* ENTER_EXECUTOR will be the first code unit of the instruction */
+                assert(oparg < 256);
+                code->co_executors->executors[oparg] = NULL;
                 opcode = this_instr->op.code = executor->vm_data.opcode;
                 this_instr->op.arg = executor->vm_data.oparg;
-                oparg = (oparg & (~255)) | executor->vm_data.oparg;
+                oparg = executor->vm_data.oparg;
                 Py_DECREF(executor);
                 next_instr = this_instr;
                 DISPATCH_GOTO();
