@@ -1914,7 +1914,6 @@ async_gen_asend_new(PyAsyncGenObject *gen, PyObject *sendval)
     if (state->asend_numfree) {
         state->asend_numfree--;
         o = state->asend_freelist[state->asend_numfree];
-        _PyGC_CLEAR_FINALIZED((PyObject *)o);
         _Py_NewReference((PyObject *)o);
     }
     else
@@ -1953,6 +1952,7 @@ async_gen_wrapped_val_dealloc(_PyAsyncGenWrappedValue *o)
 #endif
     if (state->value_numfree < _PyAsyncGen_MAXFREELIST) {
         assert(_PyAsyncGenWrappedValue_CheckExact(o));
+        _PyGC_CLEAR_FINALIZED((PyObject *)o);
         state->value_freelist[state->value_numfree++] = o;
         OBJECT_STAT_INC(to_freelist);
     }
