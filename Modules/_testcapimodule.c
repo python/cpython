@@ -49,7 +49,7 @@ get_testcapi_state(PyObject *module)
 
 static PyObject *
 get_testerror(PyObject *self) {
-    testcapistate_t *state = get_testcapi_state((PyObject *)Py_TYPE(self));
+    testcapistate_t *state = get_testcapi_state(self);
     return state->error;
 }
 
@@ -3947,7 +3947,6 @@ PyInit__testcapi(void)
 
     testcapistate_t *state = get_testcapi_state(m);
     state->error = PyErr_NewException("_testcapi.error", NULL, NULL);
-    Py_INCREF(state->error);
     PyModule_AddObject(m, "error", state->error);
 
     if (PyType_Ready(&ContainerNoGC_type) < 0) {

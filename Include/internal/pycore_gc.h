@@ -8,6 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_freelist.h"   // _PyFreeListState
+
 /* GC information is stored BEFORE the object structure. */
 typedef struct {
     // Pointer to next object in the list.
@@ -242,9 +244,11 @@ extern PyObject *_PyGC_GetObjects(PyInterpreterState *interp, Py_ssize_t generat
 extern PyObject *_PyGC_GetReferrers(PyInterpreterState *interp, PyObject *objs);
 
 // Functions to clear types free lists
+extern void _PyGC_ClearAllFreeLists(PyInterpreterState *interp);
+extern void _Py_ClearFreeLists(_PyFreeListState *state, int is_finalization);
 extern void _PyTuple_ClearFreeList(PyInterpreterState *interp);
 extern void _PyFloat_ClearFreeList(PyInterpreterState *interp);
-extern void _PyList_ClearFreeList(PyInterpreterState *interp);
+extern void _PyList_ClearFreeList(_PyFreeListState *state, int is_finalization);
 extern void _PyDict_ClearFreeList(PyInterpreterState *interp);
 extern void _PyAsyncGen_ClearFreeLists(PyInterpreterState *interp);
 extern void _PyContext_ClearFreeList(PyInterpreterState *interp);
