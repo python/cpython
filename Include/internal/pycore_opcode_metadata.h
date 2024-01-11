@@ -909,6 +909,7 @@ enum InstructionFormat {
 #define HAS_DEOPT_FLAG (128)
 #define HAS_ERROR_FLAG (256)
 #define HAS_ESCAPES_FLAG (512)
+#define HAS_EXIT_FLAG (1024)
 #define OPCODE_HAS_ARG(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_ARG_FLAG))
 #define OPCODE_HAS_CONST(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_CONST_FLAG))
 #define OPCODE_HAS_NAME(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_NAME_FLAG))
@@ -919,6 +920,7 @@ enum InstructionFormat {
 #define OPCODE_HAS_DEOPT(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_DEOPT_FLAG))
 #define OPCODE_HAS_ERROR(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_ERROR_FLAG))
 #define OPCODE_HAS_ESCAPES(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_ESCAPES_FLAG))
+#define OPCODE_HAS_EXIT(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_EXIT_FLAG))
 
 #define OPARG_FULL 0
 #define OPARG_CACHE_1 1

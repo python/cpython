@@ -3318,7 +3318,7 @@
         case _GUARD_IS_TRUE_POP: {
             PyObject *flag;
             flag = stack_pointer[-1];
-            if (Py_IsFalse(flag)) goto deoptimize;
+            if (Py_IsFalse(flag)) goto side_exit;
             assert(Py_IsTrue(flag));
             stack_pointer += -1;
             break;
@@ -3327,7 +3327,7 @@
         case _GUARD_IS_FALSE_POP: {
             PyObject *flag;
             flag = stack_pointer[-1];
-            if (Py_IsTrue(flag)) goto deoptimize;
+            if (Py_IsTrue(flag)) goto side_exit;
             assert(Py_IsFalse(flag));
             stack_pointer += -1;
             break;
@@ -3336,7 +3336,7 @@
         case _GUARD_IS_NONE_POP: {
             PyObject *val;
             val = stack_pointer[-1];
-            if (!Py_IsNone(val)) goto deoptimize;
+            if (!Py_IsNone(val)) goto side_exit;
             stack_pointer += -1;
             break;
         }
@@ -3344,7 +3344,7 @@
         case _GUARD_IS_NOT_NONE_POP: {
             PyObject *val;
             val = stack_pointer[-1];
-            if (Py_IsNone(val)) goto deoptimize;
+            if (Py_IsNone(val)) goto side_exit;
             Py_DECREF(val);
             stack_pointer += -1;
             break;
@@ -3418,24 +3418,29 @@
         case _COLD_EXIT: {
             oparg = CURRENT_OPARG();
             TIER_TWO_ONLY
-            _PyExitData *exit = PyOptimizer_GetExit(current_executor, oparg);
+            _PyExitData *exit = &current_executor->exits[oparg];
             Py_DECREF(current_executor);
             exit->hotness++;
             if (exit->hotness < 0) goto deoptimize;
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
-            _PyOptimizerObject *opt = interp->optimizer;
             _PyExecutorObject *executor = NULL;
-            int optimized = opt->optimize(opt, code, target, &executor, (int)(stack_pointer - _PyFrame_Stackbase(frame)));
-            if (optimized < 0) goto error_tier_two;
-            if (optimized) {
-                exit->exit = executor;
+            if (target->op.code == ENTER_EXECUTOR) {
+                _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
                 Py_INCREF(executor);
-                GOTO_TIER_TWO();
+            } else {
+                _PyOptimizerObject *opt = tstate->interp->optimizer;
+                int optimized = opt->optimize(opt, code, target, &executor, (int)(stack_pointer - _PyFrame_Stackbase(frame)));
+                if (optimized <= 0) {
+                    next_instr = target;
+                    exit->hotness = -10000; /* Choose a better number */
+                    if (optimized < 0) goto error_tier_two;
+                    DISPATCH();
+                }
             }
-            else {
-                exit->hotness = -10000; /* Choose a better number */
-            }
+            exit->executor = current_executor = executor;
+            Py_INCREF(current_executor);
+            GOTO_TIER_TWO();
             break;
         }
 

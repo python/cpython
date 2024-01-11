@@ -4013,21 +4013,21 @@ dummy_func(
         ///////// Tier-2 only opcodes /////////
 
         op (_GUARD_IS_TRUE_POP, (flag -- )) {
-            DEOPT_IF(Py_IsFalse(flag));
+            EXIT_IF(Py_IsFalse(flag));
             assert(Py_IsTrue(flag));
         }
 
         op (_GUARD_IS_FALSE_POP, (flag -- )) {
-            DEOPT_IF(Py_IsTrue(flag));
+            EXIT_IF(Py_IsTrue(flag));
             assert(Py_IsFalse(flag));
         }
 
         op (_GUARD_IS_NONE_POP, (val -- )) {
-            DEOPT_IF(!Py_IsNone(val));
+            EXIT_IF(!Py_IsNone(val));
         }
 
         op (_GUARD_IS_NOT_NONE_POP, (val -- )) {
-            DEOPT_IF(Py_IsNone(val));
+            EXIT_IF(Py_IsNone(val));
             Py_DECREF(val);
         }
 
@@ -4078,24 +4078,29 @@ dummy_func(
 
         op(_COLD_EXIT, (--)) {
             TIER_TWO_ONLY
-            _PyExitData *exit = PyOptimizer_GetExit(current_executor, oparg);
+            _PyExitData *exit = &current_executor->exits[oparg];
             Py_DECREF(current_executor);
             exit->hotness++;
             DEOPT_IF(exit->hotness < 0);
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
-            _PyOptimizerObject *opt = interp->optimizer;
             _PyExecutorObject *executor = NULL;
-            int optimized = opt->optimize(opt, code, target, &executor, (int)(stack_pointer - _PyFrame_Stackbase(frame)));
-            ERROR_IF(optimized < 0, error);
-            if (optimized) {
-                exit->exit = executor;
+            if (target->op.code == ENTER_EXECUTOR) {
+                _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
                 Py_INCREF(executor);
-                GOTO_TIER_TWO();
+            } else {
+                _PyOptimizerObject *opt = tstate->interp->optimizer;
+                int optimized = opt->optimize(opt, code, target, &executor, (int)(stack_pointer - _PyFrame_Stackbase(frame)));
+                if (optimized <= 0) {
+                    next_instr = target;
+                    exit->hotness = -10000; /* Choose a better number */
+                    ERROR_IF(optimized < 0, error);
+                    DISPATCH();
+                }
             }
-            else {
-                exit->hotness = -10000; /* Choose a better number */
-            }
+            exit->executor = current_executor = executor;
+            Py_INCREF(current_executor);
+            GOTO_TIER_TWO();
         }
 
 

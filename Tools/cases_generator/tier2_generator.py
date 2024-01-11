@@ -98,9 +98,25 @@ def tier2_replace_deopt(
     out.emit(") goto deoptimize;\n")
 
 
+def tier2_replace_exit_if(
+    out: CWriter,
+    tkn: Token,
+    tkn_iter: Iterator[Token],
+    uop: Uop,
+    unused: Stack,
+    inst: Instruction | None,
+) -> None:
+    out.emit_at("if ", tkn)
+    out.emit(next(tkn_iter))
+    emit_to(out, tkn_iter, "RPAREN")
+    next(tkn_iter)  # Semi colon
+    out.emit(") goto side_exit;\n")
+
+
 TIER2_REPLACEMENT_FUNCTIONS = REPLACEMENT_FUNCTIONS.copy()
 TIER2_REPLACEMENT_FUNCTIONS["ERROR_IF"] = tier2_replace_error
 TIER2_REPLACEMENT_FUNCTIONS["DEOPT_IF"] = tier2_replace_deopt
+TIER2_REPLACEMENT_FUNCTIONS["EXIT_IF"] = tier2_replace_exit_if
 
 
 def write_uop(uop: Uop, out: CWriter, stack: Stack) -> None:

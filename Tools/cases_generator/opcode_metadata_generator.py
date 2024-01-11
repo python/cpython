@@ -50,6 +50,7 @@ FLAGS = [
     "DEOPT",
     "ERROR",
     "ESCAPES",
+    "EXIT",
 ]
 
 

@@ -21,6 +21,7 @@ class Properties:
     uses_co_names: bool
     uses_locals: bool
     has_free: bool
+    side_exit: bool
 
     def dump(self, indent: str) -> None:
         print(indent, end="")
@@ -45,6 +46,7 @@ class Properties:
             uses_co_names=any(p.uses_co_names for p in properties),
             uses_locals=any(p.uses_locals for p in properties),
             has_free=any(p.has_free for p in properties),
+            side_exit=any(p.side_exit for p in properties),
         )
 
 
@@ -64,6 +66,7 @@ SKIP_PROPERTIES = Properties(
     uses_co_names=False,
     uses_locals=False,
     has_free=False,
+    side_exit=False,
 )
 
 
@@ -423,10 +426,13 @@ def compute_properties(op: parser.InstDef) -> Properties:
         or variable_used(op, "PyCell_GET")
         or variable_used(op, "PyCell_SET")
     )
+    deopts_if = variable_used(op, "DEOPT_IF")
+    exits_if = variable_used(op, "EXIT_IF")
     return Properties(
         escapes=makes_escaping_api_call(op),
         infallible=is_infallible(op),
-        deopts=variable_used(op, "DEOPT_IF"),
+        deopts=deopts_if or exits_if,
+        side_exit=exits_if,
         oparg=variable_used(op, "oparg"),
         jumps=variable_used(op, "JUMPBY"),
         eval_breaker=variable_used(op, "CHECK_EVAL_BREAKER"),

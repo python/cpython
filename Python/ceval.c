@@ -1073,7 +1073,22 @@ deoptimize:
     Py_DECREF(current_executor);
     DISPATCH();
 
+// Jump here from EXIT_IF()
+side_exit:
+    OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
+    UOP_STAT_INC(uopcode, miss);
+    _PyExitData *exit = &current_executor->exits[next_uop[-1].target];
+    DPRINTF(2, "SIDE EXIT: [UOp %d (%s), oparg %d, operand %" PRIu64 ", target %d @ %d -> %s]\n",
+            uopcode, _PyUOpName(uopcode), next_uop[-1].oparg, next_uop[-1].operand, exit->target,
+            (int)(next_uop - current_executor->trace - 1),
+            _PyOpcode_OpName[frame->instr_ptr->op.code]);
+    Py_INCREF(exit->executor);
+    Py_DECREF(current_executor);
+    current_executor = exit->executor;
+    GOTO_TIER_TWO();
+
 }
+
 #if defined(__GNUC__)
 #  pragma GCC diagnostic pop
 #elif defined(_MSC_VER) /* MS_WINDOWS */

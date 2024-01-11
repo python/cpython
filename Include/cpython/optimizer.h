@@ -36,10 +36,17 @@ typedef struct {
     uint64_t operand;  // A cache entry
 } _PyUOpInstruction;
 
+typedef struct _exit_data {
+    uint32_t target;
+    int16_t hotness;
+    struct _PyExecutorObject *executor;
+} _PyExitData;
+
 typedef struct _PyExecutorObject {
     PyObject_VAR_HEAD
     _PyVMData vm_data; /* Used by the VM, but opaque to the optimizer */
-    _PyUOpInstruction trace[1];
+    _PyUOpInstruction *trace;
+    _PyExitData exits[1];
 } _PyExecutorObject;
 
 typedef struct _PyOptimizerObject _PyOptimizerObject;
