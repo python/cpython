@@ -1094,17 +1094,15 @@ from a fixed number of discrete samples.
 The basic idea is to smooth the data using `a kernel function such as a
 normal distribution, triangular distribution, or uniform distribution
 <https://en.wikipedia.org/wiki/Kernel_(statistics)#Kernel_functions_in_common_use>`_.
-The degree of smoothing is controlled by a single
-parameter, ``h``, representing the variance of the kernel function.
+The degree of smoothing is controlled by a scaling parameter, ``h``,
+which is called the *bandwidth*.
 
 .. testcode::
 
-   import math
-
    def kde_normal(sample, h):
        "Create a continuous probability density function from a sample."
-       # Smooth the sample with a normal distribution of variance h.
-       kernel_h = NormalDist(0.0, math.sqrt(h)).pdf
+       # Smooth the sample with a normal distribution kernel scaled by h.
+       kernel_h = NormalDist(0.0, h).pdf
        n = len(sample)
        def pdf(x):
            return sum(kernel_h(x - x_i) for x_i in sample) / n
@@ -1118,7 +1116,7 @@ a probability density function estimated from a small sample:
 .. doctest::
 
    >>> sample = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2]
-   >>> f_hat = kde_normal(sample, h=2.25)
+   >>> f_hat = kde_normal(sample, h=1.5)
    >>> xarr = [i/100 for i in range(-750, 1100)]
    >>> yarr = [f_hat(x) for x in xarr]
 
