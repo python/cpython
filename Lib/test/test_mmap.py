@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 from test.support import (
     requires, _2G, _4G, gc_collect, cpython_only, is_emscripten
 )
@@ -1008,21 +1009,29 @@ class LargeMmapTests(unittest.TestCase):
         unlink(TESTFN)
 
     def _make_test_file(self, num_zeroes, tail):
-        if sys.platform[:3] == 'win' or sys.platform == 'darwin':
-            requires('largefile',
-                'test requires %s bytes and a long time to run' % str(0x180000000))
-        f = open(TESTFN, 'w+b')
-        try:
-            f.seek(num_zeroes)
-            f.write(tail)
-            f.flush()
-        except (OSError, OverflowError, ValueError):
+        # gh-68141: some systems cannot create sparse files leading to
+		# an extremely long attempt to initialize 5GB of disc space.
+		# In this case, abort the test after a short timeout.
+        def potentially_superlong_seek():
+            f = open(TESTFN, 'w+b')
             try:
-                f.close()
-            except (OSError, OverflowError):
-                pass
-            raise unittest.SkipTest("filesystem does not have largefile support")
-        return f
+                f.seek(num_zeroes)
+                f.write(tail)
+                f.flush()
+                return f
+            except (OSError, OverflowError, ValueError):
+                try:
+                    f.close()
+                except (OSError, OverflowError):
+                    pass
+                raise unittest.SkipTest("filesystem does not have largefile support")
+                
+            with ThreadPoolExecutor(max_workers=1) as pool:
+	            worker = pool.submit(potentially_superlong_seek)
+	            try:
+		            return worker.result(timeout=min(SHORT_TIMEOUT, 5.0))
+	            except TimeoutError:
+		            raise unittest.SkipTest('skip honest creation of a huge file')
 
     def test_large_offset(self):
         with self._make_test_file(0x14FFFFFFF, b" ") as f:

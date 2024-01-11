@@ -1,0 +1,2 @@
+Guard ``test_mmap.LargeMmapTests`` with a timeout. Patch by Oleg
+Iarygin.
