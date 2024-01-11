@@ -2806,6 +2806,13 @@ class TextIOWrapperTest(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 repr(t)  # Should not crash
 
+    def test_subclass_repr(self):
+        class TestSubclass(self.TextIOWrapper):
+            pass
+
+        f = TestSubclass(self.StringIO())
+        self.assertIn(TestSubclass.__name__, repr(f))
+
     def test_line_buffering(self):
         r = self.BytesIO()
         b = self.BufferedWriter(r, 1000)
@@ -3879,6 +3886,14 @@ class TextIOWrapperTest(unittest.TestCase):
         t.read(1)
         t.write('x')
         t.tell()
+
+    def test_issue35928(self):
+        p = self.BufferedRWPair(self.BytesIO(b'foo\nbar\n'), self.BytesIO())
+        f = self.TextIOWrapper(p)
+        res = f.readline()
+        self.assertEqual(res, 'foo\n')
+        f.write(res)
+        self.assertEqual(res + f.readline(), 'foo\nbar\n')
 
 
 class MemviewBytesIO(io.BytesIO):

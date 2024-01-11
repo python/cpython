@@ -759,13 +759,17 @@ m_log10(double x)
 static PyObject *
 math_gcd(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
 {
-    PyObject *res, *x;
-    Py_ssize_t i;
+    // Fast-path for the common case: gcd(int, int)
+    if (nargs == 2 && PyLong_CheckExact(args[0]) && PyLong_CheckExact(args[1]))
+    {
+        return _PyLong_GCD(args[0], args[1]);
+    }
 
     if (nargs == 0) {
         return PyLong_FromLong(0);
     }
-    res = PyNumber_Index(args[0]);
+
+    PyObject *res = PyNumber_Index(args[0]);
     if (res == NULL) {
         return NULL;
     }
@@ -775,8 +779,8 @@ math_gcd(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
     }
 
     PyObject *one = _PyLong_GetOne();  // borrowed ref
-    for (i = 1; i < nargs; i++) {
-        x = _PyNumber_Index(args[i]);
+    for (Py_ssize_t i = 1; i < nargs; i++) {
+        PyObject *x = _PyNumber_Index(args[i]);
         if (x == NULL) {
             Py_DECREF(res);
             return NULL;
