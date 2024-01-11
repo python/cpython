@@ -7,32 +7,29 @@ blurb
 python-docs-theme>=2022.1
 
 # Generated from:
-#     pip install "Sphinx~=3.2.0" "docutils<0.17" "Jinja2<3" "MarkupSafe<2"
+#     pip install "Sphinx~=4.2.0"
 #     pip freeze
 #
-# Sphinx 3.2 comes from ``needs_sphinx = '3.2'`` in ``Doc/conf.py``.
-# Docutils<0.17, Jinja2<3, and MarkupSafe<2 are additionally specified as
-# Sphinx 3.2 is incompatible with newer releases of these packages.
+# Sphinx 4.2 comes from ``needs_sphinx = '4.2'`` in ``Doc/conf.py``.
 
 alabaster==0.7.13
-Babel==2.12.1
+Babel==2.13.0
 certifi==2023.7.22
-charset-normalizer==3.2.0
-colorama==0.4.6
-docutils==0.16
+charset-normalizer==3.3.0
+docutils==0.17.1
 idna==3.4
 imagesize==1.4.1
-Jinja2==2.11.3
-MarkupSafe==1.1.1
-packaging==23.1
-Pygments==2.15.1
+Jinja2==3.1.2
+MarkupSafe==2.1.3
+packaging==23.2
+Pygments==2.16.1
 requests==2.31.0
 snowballstemmer==2.2.0
-Sphinx==3.2.1
+Sphinx==4.2.0
 sphinxcontrib-applehelp==1.0.4
 sphinxcontrib-devhelp==1.0.2
 sphinxcontrib-htmlhelp==2.0.1
 sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==1.0.3
 sphinxcontrib-serializinghtml==1.1.5
-urllib3==2.0.4
+urllib3==2.0.7

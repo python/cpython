@@ -3,13 +3,13 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
-#include "pycore_abstract.h"       // _PyNumber_Index()
-#include "pycore_fileutils.h"      // _PyLong_FileDescriptor_Converter()
-#include "pycore_long.h"           // _PyLong_UnsignedInt_Converter()
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_fileutils.h"     // _PyLong_FileDescriptor_Converter()
+#include "pycore_long.h"          // _PyLong_UnsignedInt_Converter()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(os_stat__doc__,
 "stat($module, /, path, *, dir_fd=None, follow_symlinks=True)\n"
@@ -493,7 +493,8 @@ exit:
 #endif /* defined(HAVE_FCHDIR) */
 
 PyDoc_STRVAR(os_chmod__doc__,
-"chmod($module, /, path, mode, *, dir_fd=None, follow_symlinks=True)\n"
+"chmod($module, /, path, mode, *, dir_fd=None,\n"
+"      follow_symlinks=(os.name != \'nt\'))\n"
 "--\n"
 "\n"
 "Change the access permissions of a file.\n"
@@ -562,7 +563,7 @@ os_chmod(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     path_t path = PATH_T_INITIALIZE("chmod", "path", 0, PATH_HAVE_FCHMOD);
     int mode;
     int dir_fd = DEFAULT_DIR_FD;
-    int follow_symlinks = 1;
+    int follow_symlinks = CHMOD_DEFAULT_FOLLOW_SYMLINKS;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
     if (!args) {
@@ -600,7 +601,7 @@ exit:
     return return_value;
 }
 
-#if defined(HAVE_FCHMOD)
+#if (defined(HAVE_FCHMOD) || defined(MS_WINDOWS))
 
 PyDoc_STRVAR(os_fchmod__doc__,
 "fchmod($module, /, fd, mode)\n"
@@ -675,9 +676,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_FCHMOD) */
+#endif /* (defined(HAVE_FCHMOD) || defined(MS_WINDOWS)) */
 
-#if defined(HAVE_LCHMOD)
+#if (defined(HAVE_LCHMOD) || defined(MS_WINDOWS))
 
 PyDoc_STRVAR(os_lchmod__doc__,
 "lchmod($module, /, path, mode)\n"
@@ -747,7 +748,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_LCHMOD) */
+#endif /* (defined(HAVE_LCHMOD) || defined(MS_WINDOWS)) */
 
 #if defined(HAVE_CHFLAGS)
 
@@ -1849,6 +1850,40 @@ exit:
 
 #if defined(MS_WINDOWS)
 
+PyDoc_STRVAR(os__findfirstfile__doc__,
+"_findfirstfile($module, path, /)\n"
+"--\n"
+"\n"
+"A function to get the real file name without accessing the file in Windows.");
+
+#define OS__FINDFIRSTFILE_METHODDEF    \
+    {"_findfirstfile", (PyCFunction)os__findfirstfile, METH_O, os__findfirstfile__doc__},
+
+static PyObject *
+os__findfirstfile_impl(PyObject *module, path_t *path);
+
+static PyObject *
+os__findfirstfile(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    path_t path = PATH_T_INITIALIZE("_findfirstfile", "path", 0, 0);
+
+    if (!path_converter(arg, &path)) {
+        goto exit;
+    }
+    return_value = os__findfirstfile_impl(module, &path);
+
+exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+#if defined(MS_WINDOWS)
+
 PyDoc_STRVAR(os__getvolumepathname__doc__,
 "_getvolumepathname($module, /, path)\n"
 "--\n"
@@ -1978,7 +2013,7 @@ exit:
 #if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os__path_isdir__doc__,
-"_path_isdir($module, /, path)\n"
+"_path_isdir($module, /, s)\n"
 "--\n"
 "\n"
 "Return true if the pathname refers to an existing directory.");
@@ -1987,7 +2022,7 @@ PyDoc_STRVAR(os__path_isdir__doc__,
     {"_path_isdir", _PyCFunction_CAST(os__path_isdir), METH_FASTCALL|METH_KEYWORDS, os__path_isdir__doc__},
 
 static PyObject *
-os__path_isdir_impl(PyObject *module, PyObject *path);
+os__path_isdir_impl(PyObject *module, PyObject *s);
 
 static PyObject *
 os__path_isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -2002,7 +2037,7 @@ os__path_isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), },
+        .ob_item = { &_Py_ID(s), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2011,7 +2046,7 @@ os__path_isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"path", NULL};
+    static const char * const _keywords[] = {"s", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "_path_isdir",
@@ -2019,14 +2054,14 @@ os__path_isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    PyObject *path;
+    PyObject *s;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    path = args[0];
-    return_value = os__path_isdir_impl(module, path);
+    s = args[0];
+    return_value = os__path_isdir_impl(module, s);
 
 exit:
     return return_value;
@@ -5432,7 +5467,7 @@ exit:
 
 #endif /* defined(HAVE_WAIT4) */
 
-#if (defined(HAVE_WAITID) && !defined(__APPLE__))
+#if defined(HAVE_WAITID)
 
 PyDoc_STRVAR(os_waitid__doc__,
 "waitid($module, idtype, id, options, /)\n"
@@ -5475,7 +5510,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_WAITID) && !defined(__APPLE__)) */
+#endif /* defined(HAVE_WAITID) */
 
 #if defined(HAVE_WAITPID)
 
@@ -5963,8 +5998,6 @@ exit:
 
 #endif /* defined(HAVE_SYMLINK) */
 
-#if defined(HAVE_TIMES)
-
 PyDoc_STRVAR(os_times__doc__,
 "times($module, /)\n"
 "--\n"
@@ -5987,7 +6020,375 @@ os_times(PyObject *module, PyObject *Py_UNUSED(ignored))
     return os_times_impl(module);
 }
 
-#endif /* defined(HAVE_TIMES) */
+#if defined(HAVE_TIMERFD_CREATE)
+
+PyDoc_STRVAR(os_timerfd_create__doc__,
+"timerfd_create($module, clockid, /, *, flags=0)\n"
+"--\n"
+"\n"
+"Create and return a timer file descriptor.\n"
+"\n"
+"  clockid\n"
+"    A valid clock ID constant as timer file descriptor.\n"
+"\n"
+"    time.CLOCK_REALTIME\n"
+"    time.CLOCK_MONOTONIC\n"
+"    time.CLOCK_BOOTTIME\n"
+"  flags\n"
+"    0 or a bit mask of os.TFD_NONBLOCK or os.TFD_CLOEXEC.\n"
+"\n"
+"    os.TFD_NONBLOCK\n"
+"        If *TFD_NONBLOCK* is set as a flag, read doesn\'t blocks.\n"
+"        If *TFD_NONBLOCK* is not set as a flag, read block until the timer fires.\n"
+"\n"
+"    os.TFD_CLOEXEC\n"
+"        If *TFD_CLOEXEC* is set as a flag, enable the close-on-exec flag");
+
+#define OS_TIMERFD_CREATE_METHODDEF    \
+    {"timerfd_create", _PyCFunction_CAST(os_timerfd_create), METH_FASTCALL|METH_KEYWORDS, os_timerfd_create__doc__},
+
+static PyObject *
+os_timerfd_create_impl(PyObject *module, int clockid, int flags);
+
+static PyObject *
+os_timerfd_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(flags), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "flags", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "timerfd_create",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    int clockid;
+    int flags = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    clockid = PyLong_AsInt(args[0]);
+    if (clockid == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    flags = PyLong_AsInt(args[1]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = os_timerfd_create_impl(module, clockid, flags);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_TIMERFD_CREATE) */
+
+#if defined(HAVE_TIMERFD_CREATE)
+
+PyDoc_STRVAR(os_timerfd_settime__doc__,
+"timerfd_settime($module, fd, /, *, flags=0, initial=0.0, interval=0.0)\n"
+"--\n"
+"\n"
+"Alter a timer file descriptor\'s internal timer in seconds.\n"
+"\n"
+"  fd\n"
+"    A timer file descriptor.\n"
+"  flags\n"
+"    0 or a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.\n"
+"  initial\n"
+"    The initial expiration time, in seconds.\n"
+"  interval\n"
+"    The timer\'s interval, in seconds.");
+
+#define OS_TIMERFD_SETTIME_METHODDEF    \
+    {"timerfd_settime", _PyCFunction_CAST(os_timerfd_settime), METH_FASTCALL|METH_KEYWORDS, os_timerfd_settime__doc__},
+
+static PyObject *
+os_timerfd_settime_impl(PyObject *module, int fd, int flags, double initial,
+                        double interval);
+
+static PyObject *
+os_timerfd_settime(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 3
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(flags), &_Py_ID(initial), &_Py_ID(interval), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "flags", "initial", "interval", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "timerfd_settime",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[4];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    int fd;
+    int flags = 0;
+    double initial = 0.0;
+    double interval = 0.0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[1]) {
+        flags = PyLong_AsInt(args[1]);
+        if (flags == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[2]) {
+        if (PyFloat_CheckExact(args[2])) {
+            initial = PyFloat_AS_DOUBLE(args[2]);
+        }
+        else
+        {
+            initial = PyFloat_AsDouble(args[2]);
+            if (initial == -1.0 && PyErr_Occurred()) {
+                goto exit;
+            }
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (PyFloat_CheckExact(args[3])) {
+        interval = PyFloat_AS_DOUBLE(args[3]);
+    }
+    else
+    {
+        interval = PyFloat_AsDouble(args[3]);
+        if (interval == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+skip_optional_kwonly:
+    return_value = os_timerfd_settime_impl(module, fd, flags, initial, interval);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_TIMERFD_CREATE) */
+
+#if defined(HAVE_TIMERFD_CREATE)
+
+PyDoc_STRVAR(os_timerfd_settime_ns__doc__,
+"timerfd_settime_ns($module, fd, /, *, flags=0, initial=0, interval=0)\n"
+"--\n"
+"\n"
+"Alter a timer file descriptor\'s internal timer in nanoseconds.\n"
+"\n"
+"  fd\n"
+"    A timer file descriptor.\n"
+"  flags\n"
+"    0 or a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.\n"
+"  initial\n"
+"    initial expiration timing in seconds.\n"
+"  interval\n"
+"    interval for the timer in seconds.");
+
+#define OS_TIMERFD_SETTIME_NS_METHODDEF    \
+    {"timerfd_settime_ns", _PyCFunction_CAST(os_timerfd_settime_ns), METH_FASTCALL|METH_KEYWORDS, os_timerfd_settime_ns__doc__},
+
+static PyObject *
+os_timerfd_settime_ns_impl(PyObject *module, int fd, int flags,
+                           long long initial, long long interval);
+
+static PyObject *
+os_timerfd_settime_ns(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 3
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(flags), &_Py_ID(initial), &_Py_ID(interval), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "flags", "initial", "interval", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "timerfd_settime_ns",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[4];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    int fd;
+    int flags = 0;
+    long long initial = 0;
+    long long interval = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[1]) {
+        flags = PyLong_AsInt(args[1]);
+        if (flags == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[2]) {
+        initial = PyLong_AsLongLong(args[2]);
+        if (initial == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    interval = PyLong_AsLongLong(args[3]);
+    if (interval == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = os_timerfd_settime_ns_impl(module, fd, flags, initial, interval);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_TIMERFD_CREATE) */
+
+#if defined(HAVE_TIMERFD_CREATE)
+
+PyDoc_STRVAR(os_timerfd_gettime__doc__,
+"timerfd_gettime($module, fd, /)\n"
+"--\n"
+"\n"
+"Return a tuple of a timer file descriptor\'s (interval, next expiration) in float seconds.\n"
+"\n"
+"  fd\n"
+"    A timer file descriptor.");
+
+#define OS_TIMERFD_GETTIME_METHODDEF    \
+    {"timerfd_gettime", (PyCFunction)os_timerfd_gettime, METH_O, os_timerfd_gettime__doc__},
+
+static PyObject *
+os_timerfd_gettime_impl(PyObject *module, int fd);
+
+static PyObject *
+os_timerfd_gettime(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int fd;
+
+    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
+        goto exit;
+    }
+    return_value = os_timerfd_gettime_impl(module, fd);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_TIMERFD_CREATE) */
+
+#if defined(HAVE_TIMERFD_CREATE)
+
+PyDoc_STRVAR(os_timerfd_gettime_ns__doc__,
+"timerfd_gettime_ns($module, fd, /)\n"
+"--\n"
+"\n"
+"Return a tuple of a timer file descriptor\'s (interval, next expiration) in nanoseconds.\n"
+"\n"
+"  fd\n"
+"    A timer file descriptor.");
+
+#define OS_TIMERFD_GETTIME_NS_METHODDEF    \
+    {"timerfd_gettime_ns", (PyCFunction)os_timerfd_gettime_ns, METH_O, os_timerfd_gettime_ns__doc__},
+
+static PyObject *
+os_timerfd_gettime_ns_impl(PyObject *module, int fd);
+
+static PyObject *
+os_timerfd_gettime_ns(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int fd;
+
+    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
+        goto exit;
+    }
+    return_value = os_timerfd_gettime_ns_impl(module, fd);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_TIMERFD_CREATE) */
 
 #if defined(HAVE_GETSID)
 
@@ -6804,10 +7205,6 @@ os_write(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (PyObject_GetBuffer(args[1], &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("write", "argument 2", "contiguous buffer", args[1]);
-        goto exit;
-    }
     _return_value = os_write_impl(module, fd, &data);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -7404,10 +7801,6 @@ os_pwrite(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (PyObject_GetBuffer(args[1], &buffer, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("pwrite", "argument 2", "contiguous buffer", args[1]);
         goto exit;
     }
     if (!Py_off_t_converter(args[2], &offset)) {
@@ -8162,7 +8555,7 @@ exit:
 
 #endif /* (defined HAVE_TRUNCATE || defined MS_WINDOWS) */
 
-#if (defined(HAVE_POSIX_FALLOCATE) && !defined(POSIX_FADVISE_AIX_BUG))
+#if (defined(HAVE_POSIX_FALLOCATE) && !defined(POSIX_FADVISE_AIX_BUG) && !defined(__wasi__))
 
 PyDoc_STRVAR(os_posix_fallocate__doc__,
 "posix_fallocate($module, fd, offset, length, /)\n"
@@ -8207,7 +8600,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_POSIX_FALLOCATE) && !defined(POSIX_FADVISE_AIX_BUG)) */
+#endif /* (defined(HAVE_POSIX_FALLOCATE) && !defined(POSIX_FADVISE_AIX_BUG) && !defined(__wasi__)) */
 
 #if (defined(HAVE_POSIX_FADVISE) && !defined(POSIX_FADVISE_AIX_BUG))
 
@@ -9848,10 +10241,6 @@ os_setxattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     if (PyObject_GetBuffer(args[2], &value, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&value, 'C')) {
-        _PyArg_BadArgument("setxattr", "argument 'value'", "contiguous buffer", args[2]);
-        goto exit;
-    }
     if (!noptargs) {
         goto skip_optional_pos;
     }
@@ -10426,11 +10815,9 @@ PyDoc_STRVAR(os_cpu_count__doc__,
 "cpu_count($module, /)\n"
 "--\n"
 "\n"
-"Return the number of CPUs in the system; return None if indeterminable.\n"
+"Return the number of logical CPUs in the system.\n"
 "\n"
-"This number is not equivalent to the number of CPUs the current process can\n"
-"use.  The number of usable CPUs can be obtained with\n"
-"``len(os.sched_getaffinity(0))``");
+"Return None if indeterminable.");
 
 #define OS_CPU_COUNT_METHODDEF    \
     {"cpu_count", (PyCFunction)os_cpu_count, METH_NOARGS, os_cpu_count__doc__},
@@ -10696,22 +11083,18 @@ PyDoc_STRVAR(os_DirEntry_is_junction__doc__,
 "Return True if the entry is a junction; cached per entry.");
 
 #define OS_DIRENTRY_IS_JUNCTION_METHODDEF    \
-    {"is_junction", _PyCFunction_CAST(os_DirEntry_is_junction), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, os_DirEntry_is_junction__doc__},
+    {"is_junction", (PyCFunction)os_DirEntry_is_junction, METH_NOARGS, os_DirEntry_is_junction__doc__},
 
 static int
-os_DirEntry_is_junction_impl(DirEntry *self, PyTypeObject *defining_class);
+os_DirEntry_is_junction_impl(DirEntry *self);
 
 static PyObject *
-os_DirEntry_is_junction(DirEntry *self, PyTypeObject *defining_class, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+os_DirEntry_is_junction(DirEntry *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
     int _return_value;
 
-    if (nargs) {
-        PyErr_SetString(PyExc_TypeError, "is_junction() takes no arguments");
-        goto exit;
-    }
-    _return_value = os_DirEntry_is_junction_impl(self, defining_class);
+    _return_value = os_DirEntry_is_junction_impl(self);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -11374,6 +11757,28 @@ exit:
 
 #endif /* (defined(WIFEXITED) || defined(MS_WINDOWS)) */
 
+#if defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os__supports_virtual_terminal__doc__,
+"_supports_virtual_terminal($module, /)\n"
+"--\n"
+"\n"
+"Checks if virtual terminal is supported in windows");
+
+#define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF    \
+    {"_supports_virtual_terminal", (PyCFunction)os__supports_virtual_terminal, METH_NOARGS, os__supports_virtual_terminal__doc__},
+
+static PyObject *
+os__supports_virtual_terminal_impl(PyObject *module);
+
+static PyObject *
+os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return os__supports_virtual_terminal_impl(module);
+}
+
+#endif /* defined(MS_WINDOWS) */
+
 #ifndef OS_TTYNAME_METHODDEF
     #define OS_TTYNAME_METHODDEF
 #endif /* !defined(OS_TTYNAME_METHODDEF) */
@@ -11457,6 +11862,10 @@ exit:
 #ifndef OS__GETFINALPATHNAME_METHODDEF
     #define OS__GETFINALPATHNAME_METHODDEF
 #endif /* !defined(OS__GETFINALPATHNAME_METHODDEF) */
+
+#ifndef OS__FINDFIRSTFILE_METHODDEF
+    #define OS__FINDFIRSTFILE_METHODDEF
+#endif /* !defined(OS__FINDFIRSTFILE_METHODDEF) */
 
 #ifndef OS__GETVOLUMEPATHNAME_METHODDEF
     #define OS__GETVOLUMEPATHNAME_METHODDEF
@@ -11726,9 +12135,25 @@ exit:
     #define OS_SYMLINK_METHODDEF
 #endif /* !defined(OS_SYMLINK_METHODDEF) */
 
-#ifndef OS_TIMES_METHODDEF
-    #define OS_TIMES_METHODDEF
-#endif /* !defined(OS_TIMES_METHODDEF) */
+#ifndef OS_TIMERFD_CREATE_METHODDEF
+    #define OS_TIMERFD_CREATE_METHODDEF
+#endif /* !defined(OS_TIMERFD_CREATE_METHODDEF) */
+
+#ifndef OS_TIMERFD_SETTIME_METHODDEF
+    #define OS_TIMERFD_SETTIME_METHODDEF
+#endif /* !defined(OS_TIMERFD_SETTIME_METHODDEF) */
+
+#ifndef OS_TIMERFD_SETTIME_NS_METHODDEF
+    #define OS_TIMERFD_SETTIME_NS_METHODDEF
+#endif /* !defined(OS_TIMERFD_SETTIME_NS_METHODDEF) */
+
+#ifndef OS_TIMERFD_GETTIME_METHODDEF
+    #define OS_TIMERFD_GETTIME_METHODDEF
+#endif /* !defined(OS_TIMERFD_GETTIME_METHODDEF) */
+
+#ifndef OS_TIMERFD_GETTIME_NS_METHODDEF
+    #define OS_TIMERFD_GETTIME_NS_METHODDEF
+#endif /* !defined(OS_TIMERFD_GETTIME_NS_METHODDEF) */
 
 #ifndef OS_GETSID_METHODDEF
     #define OS_GETSID_METHODDEF
@@ -11993,4 +12418,8 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=1b34619e5f65adc2 input=a9049054013a1b77]*/
+
+#ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
+    #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
+#endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
+/*[clinic end generated code: output=18c128534c355d84 input=a9049054013a1b77]*/

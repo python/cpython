@@ -18,6 +18,7 @@ _Py_CheckEmscriptenSignalsPeriodically(void);
 #define _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY() _Py_CheckEmscriptenSignalsPeriodically()
 
 extern int Py_EMSCRIPTEN_SIGNAL_HANDLING;
+extern int _Py_emscripten_signal_clock;
 
 #else
 

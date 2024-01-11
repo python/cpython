@@ -50,6 +50,9 @@ Python/getversion.c	-	version	-
 Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	-
 Python/pyhash.c	-	_Py_HashSecret	-
 
+## thread-safe hashtable (internal locks)
+Python/parking_lot.c	-	buckets	-
+
 
 ##################################
 ## state tied to Py_Main()
@@ -84,6 +87,10 @@ Parser/myreadline.c	-	PyOS_ReadlineFunctionPointer	-
 
 Python/initconfig.c	-	_Py_StandardStreamEncoding	-
 Python/initconfig.c	-	_Py_StandardStreamErrors	-
+
+# Internal constant list
+Python/initconfig.c	-	PYCONFIG_SPEC	-
+
 
 ##-----------------------
 ## public C-API
@@ -158,6 +165,10 @@ Python/pylifecycle.c	fatal_error	reentrant	-
 
 # explicitly protected, internal-only
 Modules/_xxinterpchannelsmodule.c	-	_globals	-
+Modules/_xxinterpqueuesmodule.c	-	_globals	-
+
+# set once during module init
+Modules/_decimal/_decimal.c	-	minalloc_is_set	-
 
 
 ##################################
@@ -325,7 +336,7 @@ Objects/unicodeobject.c	unicode_encode_call_errorhandler	argparse	-
 Objects/unicodeobject.c	unicode_translate_call_errorhandler	argparse	-
 Parser/parser.c	-	reserved_keywords	-
 Parser/parser.c	-	soft_keywords	-
-Parser/tokenizer.c	-	type_comment_prefix	-
+Parser/lexer/lexer.c	-	type_comment_prefix	-
 Python/ast_opt.c	fold_unaryop	ops	-
 Python/ceval.c	-	_PyEval_BinaryOps	-
 Python/ceval.c	-	_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS	-
@@ -364,11 +375,11 @@ Python/sysmodule.c	-	perf_map_state	-
 Python/sysmodule.c	-	_PySys_ImplCacheTag	-
 Python/sysmodule.c	-	_PySys_ImplName	-
 Python/sysmodule.c	-	whatstrings	-
-Python/optimizer.c	-	DefaultOptimizer_Type	-
-Python/optimizer.c	-	CounterExecutor_Type	-
-Python/optimizer.c	-	CounterOptimizer_Type	-
-Python/optimizer.c	-	UOpExecutor_Type	-
-Python/optimizer.c	-	UOpOptimizer_Type	-
+Python/optimizer.c	-	_PyDefaultOptimizer_Type	-
+Python/optimizer.c	-	_PyCounterExecutor_Type	-
+Python/optimizer.c	-	_PyCounterOptimizer_Type	-
+Python/optimizer.c	-	_PyUOpExecutor_Type	-
+Python/optimizer.c	-	_PyUOpOptimizer_Type	-
 Python/optimizer.c	-	_PyOptimizer_Default	-
 
 ##-----------------------
@@ -420,6 +431,7 @@ Modules/_testcapi/buffer.c	-	testBufType	-
 Modules/_testcapi/code.c	get_code_extra_index	key	-
 Modules/_testcapi/datetime.c	-	test_run_counter	-
 Modules/_testcapi/docstring.c	-	DocStringNoSignatureTest	-
+Modules/_testcapi/docstring.c	-	DocStringUnrepresentableSignatureTest	-
 Modules/_testcapi/exceptions.c	-	PyRecursingInfinitelyError_Type	-
 Modules/_testcapi/heaptype.c	-	_testcapimodule	-
 Modules/_testcapi/mem.c	-	FmData	-
@@ -519,7 +531,7 @@ Modules/_testcapimodule.c	make_exception_with_doc	kwlist	-
 Modules/_testcapimodule.c	raise_SIGINT_then_send_None	PyId_send	-
 Modules/_testcapimodule.c	slot_tp_del	PyId___tp_del__	-
 Modules/_testcapimodule.c	test_capsule	buffer	-
-Modules/_testcapimodule.c	test_empty_argparse	kwlist	-
+Modules/_testcapimodule.c	getargs_empty	kwlist	-
 Modules/_testcapimodule.c	test_structmembers_new	keywords	-
 Modules/_testcapimodule.c	getargs_s_hash_int	keywords	-
 Modules/_testcapimodule.c	-	g_dict_watch_events	-
@@ -554,7 +566,6 @@ Modules/_testmultiphase.c	-	def_nonascii_latin	-
 Modules/_testmultiphase.c	-	def_nonmodule	-
 Modules/_testmultiphase.c	-	def_nonmodule_with_exec_slots	-
 Modules/_testmultiphase.c	-	def_nonmodule_with_methods	-
-Modules/_testmultiphase.c	-	imp_dummy_def	-
 Modules/_testmultiphase.c	-	main_def	-
 Modules/_testmultiphase.c	-	main_slots	-
 Modules/_testmultiphase.c	-	meth_state_access_slots	-
@@ -576,29 +587,36 @@ Modules/_testmultiphase.c	-	uninitialized_def	-
 Modules/_testsinglephase.c	-	global_state	-
 Modules/_xxtestfuzz/_xxtestfuzz.c	-	_fuzzmodule	-
 Modules/_xxtestfuzz/_xxtestfuzz.c	-	module_methods	-
-Modules/_xxtestfuzz/fuzzer.c	-	SRE_FLAG_DEBUG	-
+Modules/_xxtestfuzz/fuzzer.c	-	RE_FLAG_DEBUG	-
 Modules/_xxtestfuzz/fuzzer.c	-	ast_literal_eval_method	-
+Modules/_xxtestfuzz/fuzzer.c	-	bytesio_type	-
 Modules/_xxtestfuzz/fuzzer.c	-	compiled_patterns	-
 Modules/_xxtestfuzz/fuzzer.c	-	csv_error	-
 Modules/_xxtestfuzz/fuzzer.c	-	csv_module	-
 Modules/_xxtestfuzz/fuzzer.c	-	json_loads_method	-
 Modules/_xxtestfuzz/fuzzer.c	-	regex_patterns	-
-Modules/_xxtestfuzz/fuzzer.c	-	sre_compile_method	-
-Modules/_xxtestfuzz/fuzzer.c	-	sre_error_exception	-
+Modules/_xxtestfuzz/fuzzer.c	-	re_compile_method	-
+Modules/_xxtestfuzz/fuzzer.c	-	re_error_exception	-
 Modules/_xxtestfuzz/fuzzer.c	-	struct_error	-
 Modules/_xxtestfuzz/fuzzer.c	-	struct_unpack_method	-
+Modules/_xxtestfuzz/fuzzer.c	-	xmlparser_type	-
+Modules/_xxtestfuzz/fuzzer.c	-	pycompile_scratch	-
+Modules/_xxtestfuzz/fuzzer.c	-	start_vals	-
+Modules/_xxtestfuzz/fuzzer.c	-	optimize_vals	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	CSV_READER_INITIALIZED	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	JSON_LOADS_INITIALIZED	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	SRE_COMPILE_INITIALIZED	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	SRE_MATCH_INITIALIZED	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	STRUCT_UNPACK_INITIALIZED	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	AST_LITERAL_EVAL_INITIALIZED	-
+Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	ELEMENTTREE_PARSEWHOLE_INITIALIZED	-
 
 ##-----------------------
 ## the analyzer should have ignored these
 # XXX Fix the analyzer.
 
 ## forward/extern references
+Include/internal/pycore_importdl.h	-	_PyImport_DynLoadFiletab	-
 Include/py_curses.h	-	PyCurses_API	-
 Include/pydecimal.h	-	_decimal_api	-
 Modules/_blake2/blake2module.c	-	blake2b_type_spec	-
@@ -660,7 +678,6 @@ Objects/object.c	-	_PyLineIterator	-
 Objects/object.c	-	_PyPositionsIterator	-
 Python/perf_trampoline.c	-	_Py_trampoline_func_start	-
 Python/perf_trampoline.c	-	_Py_trampoline_func_end	-
-Python/importdl.h	-	_PyImport_DynLoadFiletab	-
 Modules/expat/xmlrole.c	-	prolog0	-
 Modules/expat/xmlrole.c	-	prolog1	-
 Modules/expat/xmlrole.c	-	prolog2	-
@@ -718,3 +735,4 @@ Modules/_io/_iomodule.c	-	_PyIO_Module	-
 Modules/_sqlite/module.c	-	_sqlite3module	-
 Python/optimizer_analysis.c	-	_Py_PartitionRootNode_Type	-
 Python/optimizer_analysis.c	-	_Py_UOpsAbstractInterpContext_Type	-
+Modules/clinic/md5module.c.h	_md5_md5	_keywords	-

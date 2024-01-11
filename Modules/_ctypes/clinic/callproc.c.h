@@ -2,12 +2,6 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
-
 PyDoc_STRVAR(create_pointer_type__doc__,
 "POINTER($module, type, /)\n"
 "--\n"
@@ -35,4 +29,4 @@ PyDoc_STRVAR(create_pointer_inst__doc__,
 
 #define CREATE_POINTER_INST_METHODDEF    \
     {"pointer", (PyCFunction)create_pointer_inst, METH_O, create_pointer_inst__doc__},
-/*[clinic end generated code: output=ae26452a759ba56d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=51b311ea369e5adf input=a9049054013a1b77]*/

@@ -1058,8 +1058,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
                 while True:
                     yield 1
             finally:
-                await asyncio.sleep(0.01)
-                await asyncio.sleep(0.01)
+                await asyncio.sleep(0)
                 DONE = 1
 
         async def run():
@@ -1069,7 +1068,10 @@ class AsyncGenAsyncioTest(unittest.TestCase):
             del g
             gc_collect()  # For PyPy or other GCs.
 
-            await asyncio.sleep(0.1)
+            # Starts running the aclose task
+            await asyncio.sleep(0)
+            # For asyncio.sleep(0) in finally block
+            await asyncio.sleep(0)
 
         self.loop.run_until_complete(run())
         self.assertEqual(DONE, 1)
@@ -1698,6 +1700,14 @@ class TestUnawaitedWarnings(unittest.TestCase):
     def test_asend(self):
         async def gen():
             yield 1
+
+        # gh-113753: asend objects allocated from a free-list should warn.
+        # Ensure there is a finalized 'asend' object ready to be reused.
+        try:
+            g = gen()
+            g.asend(None).send(None)
+        except StopIteration:
+            pass
 
         msg = f"coroutine method 'asend' of '{gen.__qualname__}' was never awaited"
         with self.assertWarnsRegex(RuntimeWarning, msg):

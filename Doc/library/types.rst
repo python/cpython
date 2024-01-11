@@ -200,6 +200,8 @@ Standard names are defined for the following types:
 
      Return a copy of the code object with new values for the specified fields.
 
+     Code objects are also supported by generic function :func:`copy.replace`.
+
      .. versionadded:: 3.8
 
 .. data:: CellType
@@ -376,17 +378,15 @@ Standard names are defined for the following types:
 
 .. data:: FrameType
 
-   The type of frame objects such as found in ``tb.tb_frame`` if ``tb`` is a
-   traceback object.
-
-   See :ref:`the language reference <frame-objects>` for details of the
-   available attributes and operations.
+   The type of :ref:`frame objects <frame-objects>` such as found in
+   :attr:`tb.tb_frame <traceback.tb_frame>` if ``tb`` is a traceback object.
 
 
 .. data:: GetSetDescriptorType
 
    The type of objects defined in extension modules with ``PyGetSetDef``, such
-   as ``FrameType.f_locals`` or ``array.array.typecode``.  This type is used as
+   as :attr:`FrameType.f_locals <frame.f_locals>` or ``array.array.typecode``.
+   This type is used as
    descriptor for object attributes; it has the same purpose as the
    :class:`property` type, but for classes defined in extension modules.
 
@@ -470,6 +470,12 @@ Standard names are defined for the following types:
 
       .. versionadded:: 3.12
 
+.. class:: CapsuleType
+
+   The type of :ref:`capsule objects <capsules>`.
+
+   .. versionadded:: 3.13
+
 
 Additional Utility Classes and Functions
 ----------------------------------------
@@ -511,6 +517,8 @@ Additional Utility Classes and Functions
    ``SimpleNamespace`` may be useful as a replacement for ``class NS: pass``.
    However, for a structured record type use :func:`~collections.namedtuple`
    instead.
+
+   :class:`!SimpleNamespace` objects are supported by :func:`copy.replace`.
 
    .. versionadded:: 3.3
 

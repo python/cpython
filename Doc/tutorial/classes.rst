@@ -276,7 +276,7 @@ definition looked like this::
 then ``MyClass.i`` and ``MyClass.f`` are valid attribute references, returning
 an integer and a function object, respectively. Class attributes can also be
 assigned to, so you can change the value of ``MyClass.i`` by assignment.
-:attr:`__doc__` is also a valid attribute, returning the docstring belonging to
+:attr:`!__doc__` is also a valid attribute, returning the docstring belonging to
 the class: ``"A simple example class"``.
 
 Class *instantiation* uses function notation.  Just pretend that the class
@@ -769,8 +769,10 @@ data from a string buffer instead, and pass it as an argument.
    or arithmetic operators, and assigning such a "pseudo-file" to sys.stdin will
    not cause the interpreter to read further input from it.)
 
-Instance method objects have attributes, too: ``m.__self__`` is the instance
-object with the method :meth:`!m`, and ``m.__func__`` is the function object
+:ref:`Instance method objects <instance-methods>` have attributes, too:
+:attr:`m.__self__ <method.__self__>` is the instance
+object with the method :meth:`!m`, and :attr:`m.__func__ <method.__func__>` is
+the :ref:`function object <user-defined-funcs>`
 corresponding to the method.
 
 

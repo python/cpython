@@ -8,30 +8,22 @@ from test.support import os_helper
 from test.support.os_helper import TESTFN, unlink
 from textwrap import dedent
 from unittest import TestCase
-import contextlib
 import inspect
 import os.path
 import re
 import sys
-import types
 import unittest
 
 test_tools.skip_if_missing('clinic')
 with test_tools.imports_under_tool('clinic'):
+    import libclinic
     import clinic
     from clinic import DSLParser
 
 
-def default_namespace():
-    ns = types.SimpleNamespace()
-    ns.force = False
-    ns.limited_capi = clinic.DEFAULT_LIMITED_CAPI
-    return ns
-
-
 def _make_clinic(*, filename='clinic_tests'):
-    clang = clinic.CLanguage(None)
-    c = clinic.Clinic(clang, filename=filename)
+    clang = clinic.CLanguage(filename)
+    c = clinic.Clinic(clang, filename=filename, limited_capi=False)
     c.block_parser = clinic.BlockParser('', clang)
     return c
 
@@ -58,11 +50,6 @@ def _expect_failure(tc, parser, code, errmsg, *, filename=None, lineno=None,
     if lineno is not None:
         tc.assertEqual(cm.exception.lineno, lineno)
     return cm.exception
-
-
-class MockClinic:
-    def __init__(self):
-        self.limited_capi = clinic.DEFAULT_LIMITED_CAPI
 
 
 class ClinicWholeFileTest(TestCase):
@@ -138,7 +125,7 @@ class ClinicWholeFileTest(TestCase):
         clang.body_prefix = "//"
         clang.start_line = "//[{dsl_name} start]"
         clang.stop_line = "//[{dsl_name} stop]"
-        cl = clinic.Clinic(clang, filename="test.c")
+        cl = clinic.Clinic(clang, filename="test.c", limited_capi=False)
         raw = dedent("""
             //[clinic start]
             //module test
@@ -277,70 +264,6 @@ class ClinicWholeFileTest(TestCase):
         )
         self.expect_failure(raw, err)
 
-    @staticmethod
-    @contextlib.contextmanager
-    def _clinic_version(new_version):
-        """Helper for test_version_*() tests"""
-        _saved = clinic.version
-        clinic.version = new_version
-        try:
-            yield
-        finally:
-            clinic.version = _saved
-
-    def test_version_directive(self):
-        dataset = (
-            # (clinic version, required version)
-            ('3', '2'),          # required version < clinic version
-            ('3.1', '3.0'),      # required version < clinic version
-            ('1.2b0', '1.2a7'),  # required version < clinic version
-            ('5', '5'),          # required version == clinic version
-            ('6.1', '6.1'),      # required version == clinic version
-            ('1.2b3', '1.2b3'),  # required version == clinic version
-        )
-        for clinic_version, required_version in dataset:
-            with self.subTest(clinic_version=clinic_version,
-                              required_version=required_version):
-                with self._clinic_version(clinic_version):
-                    block = dedent(f"""
-                        /*[clinic input]
-                        version {required_version}
-                        [clinic start generated code]*/
-                    """)
-                    self.clinic.parse(block)
-
-    def test_version_directive_insufficient_version(self):
-        with self._clinic_version('4'):
-            err = (
-                "Insufficient Clinic version!\n"
-                "  Version: 4\n"
-                "  Required: 5"
-            )
-            block = """
-                /*[clinic input]
-                version 5
-                [clinic start generated code]*/
-            """
-            self.expect_failure(block, err)
-
-    def test_version_directive_illegal_char(self):
-        err = "Illegal character 'v' in version string 'v5'"
-        block = """
-            /*[clinic input]
-            version v5
-            [clinic start generated code]*/
-        """
-        self.expect_failure(block, err)
-
-    def test_version_directive_unsupported_string(self):
-        err = "Unsupported version string: '.-'"
-        block = """
-            /*[clinic input]
-            version .-
-            [clinic start generated code]*/
-        """
-        self.expect_failure(block, err)
-
     def test_clone_mismatch(self):
         err = "'kind' of function and cloned function don't match!"
         block = """
@@ -371,6 +294,20 @@ class ClinicWholeFileTest(TestCase):
             [clinic start generated code]*/
         """
         self.expect_failure(block, err, lineno=8)
+
+    def test_multiple_star_in_args(self):
+        err = "'my_test_func' uses '*' more than once."
+        block = """
+            /*[clinic input]
+            my_test_func
+
+                pos_arg: object
+                *args: object
+                *
+                kw_arg: object
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=6)
 
     def test_module_already_got_one(self):
         err = "Already defined module 'm'!"
@@ -637,7 +574,7 @@ class ClinicWholeFileTest(TestCase):
             C.__init__ = C.meth
             [clinic start generated code]*/
         """
-        err = "'__init__' must be a normal method, not a class or static method"
+        err = "'__init__' must be a normal method; got 'FunctionKind.CLASS_METHOD'!"
         self.expect_failure(block, err, lineno=8)
 
     def test_validate_cloned_new(self):
@@ -704,9 +641,8 @@ class ParseFileUnitTest(TestCase):
         self, *, filename, expected_error, verify=True, output=None
     ):
         errmsg = re.escape(dedent(expected_error).strip())
-        ns = default_namespace()
         with self.assertRaisesRegex(clinic.ClinicError, errmsg):
-            clinic.parse_file(filename, ns=ns)
+            clinic.parse_file(filename, limited_capi=False)
 
     def test_parse_file_no_extension(self) -> None:
         self.expect_parsing_failure(
@@ -846,9 +782,9 @@ class ClinicBlockParserTest(TestCase):
 
         blocks = list(clinic.BlockParser(input, language))
         writer = clinic.BlockPrinter(language)
-        mock_clinic = MockClinic()
+        c = _make_clinic()
         for block in blocks:
-            writer.print_block(block, clinic=mock_clinic)
+            writer.print_block(block, limited_capi=c.limited_capi, header_includes=c.includes)
         output = writer.f.getvalue()
         assert output == input, "output != input!\n\noutput " + repr(output) + "\n\n input " + repr(input)
 
@@ -874,7 +810,7 @@ xyz
 
     def _test_clinic(self, input, output):
         language = clinic.CLanguage(None)
-        c = clinic.Clinic(language, filename="file")
+        c = clinic.Clinic(language, filename="file", limited_capi=False)
         c.parsers['inert'] = InertParser(c)
         c.parsers['copy'] = CopyParser(c)
         computed = c.parse(input)
@@ -2180,14 +2116,100 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err, lineno=2)
 
     def test_init_must_be_a_normal_method(self):
-        err = "'__init__' must be a normal method, not a class or static method!"
+        err_template = "'__init__' must be a normal method; got 'FunctionKind.{}'!"
+        annotations = {
+            "@classmethod": "CLASS_METHOD",
+            "@staticmethod": "STATIC_METHOD",
+            "@getter": "GETTER",
+        }
+        for annotation, invalid_kind in annotations.items():
+            with self.subTest(annotation=annotation, invalid_kind=invalid_kind):
+                block = f"""
+                    module foo
+                    class Foo "" ""
+                    {annotation}
+                    Foo.__init__
+                """
+                expected_error = err_template.format(invalid_kind)
+                self.expect_failure(block, expected_error, lineno=3)
+
+    def test_invalid_getset(self):
+        annotations = ["@getter", "@setter"]
+        for annotation in annotations:
+            with self.subTest(annotation=annotation):
+                block = f"""
+                    module foo
+                    class Foo "" ""
+                    {annotation}
+                    Foo.property -> int
+                """
+                expected_error = f"{annotation} method cannot define a return type"
+                self.expect_failure(block, expected_error, lineno=3)
+
+                block = f"""
+                   module foo
+                   class Foo "" ""
+                   {annotation}
+                   Foo.property
+                       obj: int
+                       /
+                """
+                expected_error = f"{annotation} method cannot define parameters"
+                self.expect_failure(block, expected_error)
+
+    def test_setter_docstring(self):
         block = """
             module foo
             class Foo "" ""
-            @classmethod
-            Foo.__init__
+            @setter
+            Foo.property
+
+            foo
+
+            bar
+            [clinic start generated code]*/
         """
-        self.expect_failure(block, err, lineno=3)
+        expected_error = "docstrings are only supported for @getter, not @setter"
+        self.expect_failure(block, expected_error)
+
+    def test_duplicate_getset(self):
+        annotations = ["@getter", "@setter"]
+        for annotation in annotations:
+            with self.subTest(annotation=annotation):
+                block = f"""
+                    module foo
+                    class Foo "" ""
+                    {annotation}
+                    {annotation}
+                    Foo.property -> int
+                """
+                expected_error = f"Cannot apply {annotation} twice to the same function!"
+                self.expect_failure(block, expected_error, lineno=3)
+
+    def test_getter_and_setter_disallowed_on_same_function(self):
+        dup_annotations = [("@getter", "@setter"), ("@setter", "@getter")]
+        for dup in dup_annotations:
+            with self.subTest(dup=dup):
+                block = f"""
+                    module foo
+                    class Foo "" ""
+                    {dup[0]}
+                    {dup[1]}
+                    Foo.property -> int
+                """
+                expected_error = "Cannot apply both @getter and @setter to the same function!"
+                self.expect_failure(block, expected_error, lineno=3)
+
+    def test_getset_no_class(self):
+        for annotation in "@getter", "@setter":
+            with self.subTest(annotation=annotation):
+                block = f"""
+                    module m
+                    {annotation}
+                    m.func
+                """
+                expected_error = "@getter and @setter must be methods"
+                self.expect_failure(block, expected_error, lineno=2)
 
     def test_duplicate_coexist(self):
         err = "Called @coexist twice"
@@ -2324,10 +2346,10 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err, lineno=1)
 
     def test_parent_class_or_module_does_not_exist(self):
-        err = "Parent class or module 'z' does not exist"
+        err = "Parent class or module 'baz' does not exist"
         block = """
             module m
-            z.func
+            baz.func
         """
         self.expect_failure(block, err, lineno=1)
 
@@ -2412,7 +2434,7 @@ class ClinicExternalTest(TestCase):
     def test_external(self):
         CLINIC_TEST = 'clinic.test.c'
         source = support.findfile(CLINIC_TEST)
-        with open(source, 'r', encoding='utf-8') as f:
+        with open(source, encoding='utf-8') as f:
             orig_contents = f.read()
 
         # Run clinic CLI and verify that it does not complain.
@@ -2420,7 +2442,7 @@ class ClinicExternalTest(TestCase):
         out = self.expect_success("-f", "-o", TESTFN, source)
         self.assertEqual(out, "")
 
-        with open(TESTFN, 'r', encoding='utf-8') as f:
+        with open(TESTFN, encoding='utf-8') as f:
             new_contents = f.read()
 
         self.assertEqual(new_contents, orig_contents)
@@ -2480,7 +2502,7 @@ class ClinicExternalTest(TestCase):
                 "/*[clinic end generated code: "
                 "output=c16447c01510dfb3 input=9543a8d2da235301]*/\n"
             )
-            with open(fn, 'r', encoding='utf-8') as f:
+            with open(fn, encoding='utf-8') as f:
                 generated = f.read()
             self.assertTrue(generated.endswith(checksum),
                             (generated, checksum))
@@ -2687,12 +2709,6 @@ class ClinicExternalTest(TestCase):
             preserve
             [clinic start generated code]*/
 
-            #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-            #  include "pycore_gc.h"            // PyGC_Head
-            #  include "pycore_runtime.h"       // _Py_ID()
-            #endif
-
-
             PyDoc_VAR(func__doc__);
 
             PyDoc_STRVAR(func__doc__,
@@ -2705,7 +2721,7 @@ class ClinicExternalTest(TestCase):
 
             static PyObject *
             func(PyObject *module, PyObject *a)
-            /*[clinic end generated code: output=56c09670e89a0d9a input=a9049054013a1b77]*/
+            /*[clinic end generated code: output=3dde2d13002165b9 input=a9049054013a1b77]*/
         """)
         with os_helper.temp_dir() as tmp_dir:
             in_fn = os.path.join(tmp_dir, "test.c")
@@ -3174,6 +3190,10 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(ac_tester.posonly_vararg(1, 2), (1, 2, ()))
         self.assertEqual(ac_tester.posonly_vararg(1, b=2), (1, 2, ()))
         self.assertEqual(ac_tester.posonly_vararg(1, 2, 3, 4), (1, 2, (3, 4)))
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_vararg(b=4)
+        with self.assertRaises(TypeError):
+            ac_tester.posonly_vararg(1, 2, 3, b=4)
 
     def test_vararg_and_posonly(self):
         with self.assertRaises(TypeError):
@@ -3223,6 +3243,37 @@ class ClinicFunctionalTest(unittest.TestCase):
         )
         with self.assertRaisesRegex(TypeError, err):
             ac_tester.gh_99240_double_free('a', '\0b')
+
+    def test_null_or_tuple_for_varargs(self):
+        # All of these should not crash:
+        valid_args_for_test = [
+            (('a',), {},
+             ('a', (), False)),
+            (('a', 1, 2, 3), {'covariant': True},
+             ('a', (1, 2, 3), True)),
+            ((), {'name': 'a'},
+             ('a', (), False)),
+            ((), {'name': 'a', 'covariant': True},
+             ('a', (), True)),
+            ((), {'covariant': True, 'name': 'a'},
+             ('a', (), True)),
+        ]
+        for args, kwargs, expected in valid_args_for_test:
+            with self.subTest(args=args, kwargs=kwargs):
+                self.assertEqual(
+                    ac_tester.null_or_tuple_for_varargs(*args, **kwargs),
+                    expected,
+                )
+
+    def test_null_or_tuple_for_varargs_error(self):
+        with self.assertRaises(TypeError):
+            ac_tester.null_or_tuple_for_varargs(covariant=True)
+        with self.assertRaises(TypeError):
+            ac_tester.null_or_tuple_for_varargs(1, name='a')
+        with self.assertRaises(TypeError):
+            ac_tester.null_or_tuple_for_varargs(1, 2, 3, name='a', covariant=True)
+        with self.assertRaises(TypeError):
+            ac_tester.null_or_tuple_for_varargs(1, 2, 3, covariant=True, name='a')
 
     def test_cloned_func_exception_message(self):
         incorrect_arg = -1  # f1() and f2() accept a single str
@@ -3679,7 +3730,7 @@ class FormatHelperTests(unittest.TestCase):
         )
         for lines, expected in dataset:
             with self.subTest(lines=lines, expected=expected):
-                out = clinic.strip_leading_and_trailing_blank_lines(lines)
+                out = libclinic.normalize_snippet(lines)
                 self.assertEqual(out, expected)
 
     def test_normalize_snippet(self):
@@ -3708,63 +3759,33 @@ class FormatHelperTests(unittest.TestCase):
         expected_outputs = {0: zero_indent, 4: four_indent, 8: eight_indent}
         for indent, expected in expected_outputs.items():
             with self.subTest(indent=indent):
-                actual = clinic.normalize_snippet(snippet, indent=indent)
+                actual = libclinic.normalize_snippet(snippet, indent=indent)
                 self.assertEqual(actual, expected)
 
-    def test_accumulator(self):
-        acc = clinic.text_accumulator()
-        self.assertEqual(acc.output(), "")
-        acc.append("a")
-        self.assertEqual(acc.output(), "a")
-        self.assertEqual(acc.output(), "")
-        acc.append("b")
-        self.assertEqual(acc.output(), "b")
-        self.assertEqual(acc.output(), "")
-        acc.append("c")
-        acc.append("d")
-        self.assertEqual(acc.output(), "cd")
-        self.assertEqual(acc.output(), "")
-
-    def test_quoted_for_c_string(self):
+    def test_escaped_docstring(self):
         dataset = (
             # input,    expected
-            (r"abc",    r"abc"),
-            (r"\abc",   r"\\abc"),
-            (r"\a\bc",  r"\\a\\bc"),
-            (r"\a\\bc", r"\\a\\\\bc"),
-            (r'"abc"',  r'\"abc\"'),
-            (r"'a'",    r"\'a\'"),
+            (r"abc",    r'"abc"'),
+            (r"\abc",   r'"\\abc"'),
+            (r"\a\bc",  r'"\\a\\bc"'),
+            (r"\a\\bc", r'"\\a\\\\bc"'),
+            (r'"abc"',  r'"\"abc\""'),
+            (r"'a'",    r'"\'a\'"'),
         )
         for line, expected in dataset:
             with self.subTest(line=line, expected=expected):
-                out = clinic.quoted_for_c_string(line)
+                out = libclinic.docstring_for_c_string(line)
                 self.assertEqual(out, expected)
-
-    def test_rstrip_lines(self):
-        lines = (
-            "a \n"
-            "b\n"
-            " c\n"
-            " d \n"
-        )
-        expected = (
-            "a\n"
-            "b\n"
-            " c\n"
-            " d\n"
-        )
-        out = clinic.rstrip_lines(lines)
-        self.assertEqual(out, expected)
 
     def test_format_escape(self):
         line = "{}, {a}"
         expected = "{{}}, {{a}}"
-        out = clinic.format_escape(line)
+        out = libclinic.format_escape(line)
         self.assertEqual(out, expected)
 
     def test_indent_all_lines(self):
         # Blank lines are expected to be unchanged.
-        self.assertEqual(clinic.indent_all_lines("", prefix="bar"), "")
+        self.assertEqual(libclinic.indent_all_lines("", prefix="bar"), "")
 
         lines = (
             "one\n"
@@ -3774,7 +3795,7 @@ class FormatHelperTests(unittest.TestCase):
             "barone\n"
             "bartwo"
         )
-        out = clinic.indent_all_lines(lines, prefix="bar")
+        out = libclinic.indent_all_lines(lines, prefix="bar")
         self.assertEqual(out, expected)
 
         # If last line is empty, expect it to be unchanged.
@@ -3790,12 +3811,12 @@ class FormatHelperTests(unittest.TestCase):
             "bartwo\n"
             ""
         )
-        out = clinic.indent_all_lines(lines, prefix="bar")
+        out = libclinic.indent_all_lines(lines, prefix="bar")
         self.assertEqual(out, expected)
 
     def test_suffix_all_lines(self):
         # Blank lines are expected to be unchanged.
-        self.assertEqual(clinic.suffix_all_lines("", suffix="foo"), "")
+        self.assertEqual(libclinic.suffix_all_lines("", suffix="foo"), "")
 
         lines = (
             "one\n"
@@ -3805,7 +3826,7 @@ class FormatHelperTests(unittest.TestCase):
             "onefoo\n"
             "twofoo"
         )
-        out = clinic.suffix_all_lines(lines, suffix="foo")
+        out = libclinic.suffix_all_lines(lines, suffix="foo")
         self.assertEqual(out, expected)
 
         # If last line is empty, expect it to be unchanged.
@@ -3821,7 +3842,7 @@ class FormatHelperTests(unittest.TestCase):
             "twofoo\n"
             ""
         )
-        out = clinic.suffix_all_lines(lines, suffix="foo")
+        out = libclinic.suffix_all_lines(lines, suffix="foo")
         self.assertEqual(out, expected)
 
 
@@ -3899,7 +3920,7 @@ class ClinicReprTests(unittest.TestCase):
         self.assertEqual(repr(parameter), "<clinic.Parameter 'bar'>")
 
     def test_Monitor_repr(self):
-        monitor = clinic.cpp.Monitor()
+        monitor = libclinic.cpp.Monitor("test.c")
         self.assertRegex(repr(monitor), r"<clinic.Monitor \d+ line=0 condition=''>")
 
         monitor.line_number = 42

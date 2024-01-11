@@ -33,3 +33,11 @@ PyAPI_FUNC(int) PyUnstable_InterpreterFrame_GetLasti(struct _PyInterpreterFrame 
 /* Returns the currently executing line number, or -1 if there is no line number.
  * Does not raise an exception. */
 PyAPI_FUNC(int) PyUnstable_InterpreterFrame_GetLine(struct _PyInterpreterFrame *frame);
+
+#define PyUnstable_EXECUTABLE_KIND_SKIP 0
+#define PyUnstable_EXECUTABLE_KIND_PY_FUNCTION 1
+#define PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION 3
+#define PyUnstable_EXECUTABLE_KIND_METHOD_DESCRIPTOR 4
+#define PyUnstable_EXECUTABLE_KINDS 5
+
+PyAPI_DATA(const PyTypeObject *) const PyUnstable_ExecutableKinds[PyUnstable_EXECUTABLE_KINDS+1];

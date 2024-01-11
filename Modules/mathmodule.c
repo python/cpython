@@ -759,13 +759,17 @@ m_log10(double x)
 static PyObject *
 math_gcd(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
 {
-    PyObject *res, *x;
-    Py_ssize_t i;
+    // Fast-path for the common case: gcd(int, int)
+    if (nargs == 2 && PyLong_CheckExact(args[0]) && PyLong_CheckExact(args[1]))
+    {
+        return _PyLong_GCD(args[0], args[1]);
+    }
 
     if (nargs == 0) {
         return PyLong_FromLong(0);
     }
-    res = PyNumber_Index(args[0]);
+
+    PyObject *res = PyNumber_Index(args[0]);
     if (res == NULL) {
         return NULL;
     }
@@ -775,8 +779,8 @@ math_gcd(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
     }
 
     PyObject *one = _PyLong_GetOne();  // borrowed ref
-    for (i = 1; i < nargs; i++) {
-        x = _PyNumber_Index(args[i]);
+    for (Py_ssize_t i = 1; i < nargs; i++) {
+        PyObject *x = _PyNumber_Index(args[i]);
         if (x == NULL) {
             Py_DECREF(res);
             return NULL;
@@ -1125,8 +1129,12 @@ static PyObject *
 math_ceil(PyObject *module, PyObject *number)
 /*[clinic end generated code: output=6c3b8a78bc201c67 input=2725352806399cab]*/
 {
+    double x;
 
-    if (!PyFloat_CheckExact(number)) {
+    if (PyFloat_CheckExact(number)) {
+        x = PyFloat_AS_DOUBLE(number);
+    }
+    else {
         math_module_state *state = get_math_module_state(module);
         PyObject *method = _PyObject_LookupSpecial(number, state->str___ceil__);
         if (method != NULL) {
@@ -1136,11 +1144,10 @@ math_ceil(PyObject *module, PyObject *number)
         }
         if (PyErr_Occurred())
             return NULL;
+        x = PyFloat_AsDouble(number);
+        if (x == -1.0 && PyErr_Occurred())
+            return NULL;
     }
-    double x = PyFloat_AsDouble(number);
-    if (x == -1.0 && PyErr_Occurred())
-        return NULL;
-
     return PyLong_FromDouble(ceil(x));
 }
 
@@ -1196,8 +1203,7 @@ math_floor(PyObject *module, PyObject *number)
     if (PyFloat_CheckExact(number)) {
         x = PyFloat_AS_DOUBLE(number);
     }
-    else
-    {
+    else {
         math_module_state *state = get_math_module_state(module);
         PyObject *method = _PyObject_LookupSpecial(number, state->str___floor__);
         if (method != NULL) {
@@ -2195,12 +2201,10 @@ math_modf_impl(PyObject *module, double x)
     double y;
     /* some platforms don't do the right thing for NaNs and
        infinities, so we take care of special cases directly. */
-    if (!Py_IS_FINITE(x)) {
-        if (Py_IS_INFINITY(x))
-            return Py_BuildValue("(dd)", copysign(0., x), x);
-        else if (Py_IS_NAN(x))
-            return Py_BuildValue("(dd)", x, x);
-    }
+    if (Py_IS_INFINITY(x))
+        return Py_BuildValue("(dd)", copysign(0., x), x);
+    else if (Py_IS_NAN(x))
+        return Py_BuildValue("(dd)", x, x);
 
     errno = 0;
     x = modf(x, &y);
@@ -2832,7 +2836,7 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
                         PyErr_Clear();
                         goto finalize_flt_path;
                     }
-                } else if (q_type_float && (PyLong_CheckExact(p_i) || PyBool_Check(q_i))) {
+                } else if (q_type_float && (PyLong_CheckExact(p_i) || PyBool_Check(p_i))) {
                     flt_q = PyFloat_AS_DOUBLE(q_i);
                     flt_p = PyLong_AsDouble(p_i);
                     if (flt_p == -1.0 && PyErr_Occurred()) {
@@ -2950,7 +2954,8 @@ math_pow_impl(PyObject *module, double x, double y)
             else /* y < 0. */
                 r = odd_y ? copysign(0., x) : 0.;
         }
-        else if (Py_IS_INFINITY(y)) {
+        else {
+            assert(Py_IS_INFINITY(y));
             if (fabs(x) == 1.0)
                 r = 1.;
             else if (y > 0. && fabs(x) > 1.0)
@@ -3480,9 +3485,7 @@ static const uint8_t factorial_trailing_zeros[] = {
 static PyObject *
 perm_comb_small(unsigned long long n, unsigned long long k, int iscomb)
 {
-    if (k == 0) {
-        return PyLong_FromLong(1);
-    }
+    assert(k != 0);
 
     /* For small enough n and k the result fits in the 64-bit range and can
      * be calculated without allocating intermediate PyLong objects. */

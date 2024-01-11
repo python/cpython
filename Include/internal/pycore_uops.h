@@ -8,11 +8,14 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#define _Py_UOP_MAX_TRACE_LENGTH 64
+#include "pycore_frame.h"         // _PyInterpreterFrame
+
+#define _Py_UOP_MAX_TRACE_LENGTH 512
 
 typedef struct {
-    uint32_t opcode;
-    uint32_t oparg;
+    uint16_t opcode;
+    uint16_t oparg;
+    uint32_t target;
     uint64_t operand;  // A cache entry
 } _PyUOpInstruction;
 
@@ -20,11 +23,6 @@ typedef struct {
     _PyExecutorObject base;
     _PyUOpInstruction trace[1];
 } _PyUOpExecutorObject;
-
-_PyInterpreterFrame *_PyUopExecute(
-    _PyExecutorObject *executor,
-    _PyInterpreterFrame *frame,
-    PyObject **stack_pointer);
 
 #ifdef __cplusplus
 }

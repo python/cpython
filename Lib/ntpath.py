@@ -23,7 +23,6 @@ import stat
 import genericpath
 from genericpath import *
 
-
 __all__ = ["normcase","isabs","join","splitdrive","splitroot","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
            "getatime","getctime", "islink","exists","lexists","isdir","isfile",
@@ -601,7 +600,7 @@ else:  # use native Windows method on Windows
             return _abspath_fallback(path)
 
 try:
-    from nt import _getfinalpathname, readlink as _nt_readlink
+    from nt import _findfirstfile, _getfinalpathname, readlink as _nt_readlink
 except ImportError:
     # realpath is a no-op on systems without _getfinalpathname support.
     realpath = abspath
@@ -688,10 +687,15 @@ else:
                 except OSError:
                     # If we fail to readlink(), let's keep traversing
                     pass
-                path, name = split(path)
-                # TODO (bpo-38186): Request the real file name from the directory
-                # entry using FindFirstFileW. For now, we will return the path
-                # as best we have it
+                # If we get these errors, try to get the real name of the file without accessing it.
+                if ex.winerror in (1, 5, 32, 50, 87, 1920, 1921):
+                    try:
+                        name = _findfirstfile(path)
+                        path, _ = split(path)
+                    except OSError:
+                        path, name = split(path)
+                else:
+                    path, name = split(path)
                 if path and not name:
                     return path + tail
                 tail = join(name, tail) if tail else name

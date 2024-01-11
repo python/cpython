@@ -12,10 +12,10 @@ extern "C" {
 
 #include "pycore_ast_state.h"     // struct ast_state
 #include "pycore_atexit.h"        // struct atexit_state
-#include "pycore_atomic.h"        // _Py_atomic_address
 #include "pycore_ceval_state.h"   // struct _ceval_state
 #include "pycore_code.h"          // struct callable_cache
 #include "pycore_context.h"       // struct _Py_context_state
+#include "pycore_crossinterp.h"   // struct _xidregistry
 #include "pycore_dict_state.h"    // struct _Py_dict_state
 #include "pycore_dtoa.h"          // struct _dtoa_state
 #include "pycore_exceptions.h"    // struct _Py_exc_state
@@ -27,8 +27,10 @@ extern "C" {
 #include "pycore_import.h"        // struct _import_state
 #include "pycore_instruments.h"   // _PY_MONITORING_EVENTS
 #include "pycore_list.h"          // struct _Py_list_state
+#include "pycore_mimalloc.h"      // struct _mimalloc_interp_state
 #include "pycore_object_state.h"  // struct _py_object_state
 #include "pycore_obmalloc.h"      // struct _obmalloc_state
+#include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_tuple.h"         // struct _Py_tuple_state
 #include "pycore_typeobject.h"    // struct types_state
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
@@ -38,6 +40,10 @@ extern "C" {
 struct _Py_long_state {
     int max_str_digits;
 };
+
+
+/* cross-interpreter data registry */
+
 
 /* interpreter state */
 
@@ -67,12 +73,13 @@ struct _is {
     int _initialized;
     int finalizing;
 
-    uint64_t monitoring_version;
-    uint64_t last_restart_version;
+    uintptr_t last_restart_version;
     struct pythreads {
         uint64_t next_unique_id;
         /* The linked list of threads, newest first. */
         PyThreadState *head;
+        /* The thread currently executing in the __main__ module, if any. */
+        PyThreadState *main;
         /* Used in Modules/_threadmodule.c. */
         long count;
         /* Support for runtime thread stack size tuning.
@@ -92,7 +99,9 @@ struct _is {
        Use _PyInterpreterState_GetFinalizing()
        and _PyInterpreterState_SetFinalizing()
        to access it, don't access it directly. */
-    _Py_atomic_address _finalizing;
+    PyThreadState* _finalizing;
+    /* The ID of the OS thread in which we are finalizing. */
+    unsigned long _finalizing_id;
 
     struct _gc_runtime_state gc;
 
@@ -146,6 +155,9 @@ struct _is {
     Py_ssize_t co_extra_user_count;
     freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];
 
+    /* cross-interpreter data and utils */
+    struct _xi_state xi;
+
 #ifdef HAVE_FORK
     PyObject *before_forkers;
     PyObject *after_forkers_parent;
@@ -155,6 +167,10 @@ struct _is {
     struct _warnings_runtime_state warnings;
     struct atexit_state atexit;
 
+#if defined(Py_GIL_DISABLED)
+    struct _mimalloc_interp_state mimalloc;
+#endif
+
     struct _obmalloc_state obmalloc;
 
     PyObject *audit_hooks;
@@ -163,9 +179,11 @@ struct _is {
     // One bit is set for each non-NULL entry in code_watchers
     uint8_t active_code_watchers;
 
+#if !defined(Py_GIL_DISABLED)
+    struct _Py_freelist_state freelist_state;
+#endif
     struct _py_object_state object_state;
     struct _Py_unicode_state unicode;
-    struct _Py_float_state float_state;
     struct _Py_long_state long_state;
     struct _dtoa_state dtoa;
     struct _py_func_state func_state;
@@ -174,7 +192,6 @@ struct _is {
     PySliceObject *slice_cache;
 
     struct _Py_tuple_state tuple;
-    struct _Py_list_state list;
     struct _Py_dict_state dict_state;
     struct _Py_async_gen_state async_gen;
     struct _Py_context_state context;
@@ -184,11 +201,12 @@ struct _is {
     struct types_state types;
     struct callable_cache callable_cache;
     _PyOptimizerObject *optimizer;
+    _PyExecutorObject *executor_list_head;
     uint16_t optimizer_resume_threshold;
     uint16_t optimizer_backedge_threshold;
+    uint32_t next_func_version;
 
-    _Py_Monitors monitors;
-    bool f_opcode_trace_set;
+    _Py_GlobalMonitors monitors;
     bool sys_profile_initialized;
     bool sys_trace_initialized;
     Py_ssize_t sys_profiling_threads; /* Count of threads with c_profilefunc set */
@@ -199,8 +217,9 @@ struct _is {
     struct _Py_interp_cached_objects cached_objects;
     struct _Py_interp_static_objects static_objects;
 
-   /* the initial PyInterpreterState.threads.head */
-    PyThreadState _initial_thread;
+    /* the initial PyInterpreterState.threads.head */
+    _PyThreadStateImpl _initial_thread;
+    Py_ssize_t _interactive_src_count;
 };
 
 
@@ -211,35 +230,35 @@ extern void _PyInterpreterState_Clear(PyThreadState *tstate);
 
 static inline PyThreadState*
 _PyInterpreterState_GetFinalizing(PyInterpreterState *interp) {
-    return (PyThreadState*)_Py_atomic_load_relaxed(&interp->_finalizing);
+    return (PyThreadState*)_Py_atomic_load_ptr_relaxed(&interp->_finalizing);
+}
+
+static inline unsigned long
+_PyInterpreterState_GetFinalizingID(PyInterpreterState *interp) {
+    return _Py_atomic_load_ulong_relaxed(&interp->_finalizing_id);
 }
 
 static inline void
 _PyInterpreterState_SetFinalizing(PyInterpreterState *interp, PyThreadState *tstate) {
-    _Py_atomic_store_relaxed(&interp->_finalizing, (uintptr_t)tstate);
+    _Py_atomic_store_ptr_relaxed(&interp->_finalizing, tstate);
+    if (tstate == NULL) {
+        _Py_atomic_store_ulong_relaxed(&interp->_finalizing_id, 0);
+    }
+    else {
+        // XXX Re-enable this assert once gh-109860 is fixed.
+        //assert(tstate->thread_id == PyThread_get_thread_ident());
+        _Py_atomic_store_ulong_relaxed(&interp->_finalizing_id,
+                                       tstate->thread_id);
+    }
 }
 
 
-/* cross-interpreter data registry */
+// Export for the _xxinterpchannels module.
+PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpID(int64_t);
 
-/* For now we use a global registry of shareable classes.  An
-   alternative would be to add a tp_* slot for a class's
-   crossinterpdatafunc. It would be simpler and more efficient. */
-
-struct _xidregitem;
-
-struct _xidregitem {
-    struct _xidregitem *prev;
-    struct _xidregitem *next;
-    PyObject *cls;  // weakref to a PyTypeObject
-    crossinterpdatafunc getdata;
-};
-
-extern PyInterpreterState* _PyInterpreterState_LookUpID(int64_t);
-
-extern int _PyInterpreterState_IDInitref(PyInterpreterState *);
-extern int _PyInterpreterState_IDIncref(PyInterpreterState *);
-extern void _PyInterpreterState_IDDecref(PyInterpreterState *);
+PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
+PyAPI_FUNC(int) _PyInterpreterState_IDIncref(PyInterpreterState *);
+PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
 
 extern const PyConfig* _PyInterpreterState_GetConfig(PyInterpreterState *interp);
 
@@ -310,6 +329,10 @@ might not be allowed in the current interpreter (i.e. os.fork() would fail).
 
 extern int _PyInterpreterState_HasFeature(PyInterpreterState *interp,
                                           unsigned long feature);
+
+PyAPI_FUNC(PyStatus) _PyInterpreterState_New(
+    PyThreadState *tstate,
+    PyInterpreterState **pinterp);
 
 
 #ifdef __cplusplus
