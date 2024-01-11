@@ -36,14 +36,14 @@
 
 #include "Python.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "pycore_runtime.h"       // _Py_ID
 #include "structmember.h"         // PyMemberDef
 
 
-#define WINDOWS_LEAN_AND_MEAN
 #include "windows.h"
 #include <crtdbg.h>
 #include "winreparse.h"
+
+#include "pycore_runtime.h"       // _Py_ID
 
 #if defined(MS_WIN32) && !defined(MS_WIN64)
 #define HANDLE_TO_PYNUM(handle) \
@@ -785,8 +785,13 @@ gethandle(PyObject* obj, const char* name)
 static PyObject *
 sortenvironmentkey(PyObject *module, PyObject *item)
 {
-    return _winapi_LCMapStringEx_impl(NULL, LOCALE_NAME_INVARIANT,
-                                      LCMAP_UPPERCASE, item);
+    PyObject *result = NULL;
+    PyObject *locale = PyUnicode_FromWideChar(LOCALE_NAME_INVARIANT, -1);
+    if (locale) {
+        result = _winapi_LCMapStringEx_impl(NULL, locale, LCMAP_UPPERCASE, item);
+        Py_DECREF(locale);
+    }
+    return result;
 }
 
 static PyMethodDef sortenvironmentkey_def = {
