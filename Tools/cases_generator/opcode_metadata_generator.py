@@ -51,6 +51,8 @@ FLAGS = [
     "ERROR",
     "ESCAPES",
     "EXIT",
+    "PURE",
+    "PASSTHROUGH",
 ]
 
 
