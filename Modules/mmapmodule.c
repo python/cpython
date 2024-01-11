@@ -32,8 +32,6 @@
 #  include <unistd.h>             // close()
 #endif
 
-#if !defined(MS_WINDOWS_SYSTEM)
-
 #ifndef MS_WINDOWS
 #define UNIX
 # ifdef HAVE_FCNTL_H
@@ -1771,5 +1769,3 @@ PyInit_mmap(void)
 {
     return PyModuleDef_Init(&mmapmodule);
 }
-
-#endif /* !MS_WINDOWS || MS_WINDOWS_DESKTOP || MS_WINDOWS_GAMES */
