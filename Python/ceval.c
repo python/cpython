@@ -745,6 +745,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 
     _Py_CODEUNIT *next_instr;
     PyObject **stack_pointer;
+    _PyUOpInstruction *next_uop = NULL;
 
 
 start_frame:
@@ -991,12 +992,12 @@ enter_tier_two:
 #endif
 
     OPT_STAT_INC(traces_executed);
-    _PyUOpInstruction *next_uop = current_executor->trace;
     uint16_t uopcode;
 #ifdef Py_STATS
     uint64_t trace_uop_execution_counter = 0;
 #endif
 
+    assert(next_uop->opcode == _START_EXECUTOR || next_uop->opcode == _COLD_EXIT);
     for (;;) {
         uopcode = next_uop->opcode;
         DPRINTF(3,
@@ -1059,32 +1060,32 @@ error_tier_two:
     frame->return_offset = 0;  // Don't leave this random
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(current_executor);
+    current_executor = NULL;
     goto resume_with_error;
 
 // Jump here from DEOPT_IF()
 deoptimize:
     next_instr = next_uop[-1].target + _PyCode_CODE(_PyFrame_GetCode(frame));
-    DPRINTF(2, "DEOPT: [UOp %d (%s), oparg %d, operand %" PRIu64 ", target %d @ %d -> %s]\n",
+    DPRINTF(2, "DEOPT: [UOp %d (%s), oparg %d, operand %" PRIu64 ", target %d -> %s]\n",
             uopcode, _PyUOpName(uopcode), next_uop[-1].oparg, next_uop[-1].operand, next_uop[-1].target,
-            (int)(next_uop - current_executor->trace - 1),
-            _PyOpcode_OpName[frame->instr_ptr->op.code]);
+            _PyOpcode_OpName[next_instr->op.code]);
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     UOP_STAT_INC(uopcode, miss);
     Py_DECREF(current_executor);
+    current_executor = NULL;
     DISPATCH();
 
 // Jump here from EXIT_IF()
 side_exit:
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     UOP_STAT_INC(uopcode, miss);
-    _PyExitData *exit = &current_executor->exits[next_uop[-1].target];
-    DPRINTF(2, "SIDE EXIT: [UOp %d (%s), oparg %d, operand %" PRIu64 ", target %d @ %d -> %s]\n",
-            uopcode, _PyUOpName(uopcode), next_uop[-1].oparg, next_uop[-1].operand, exit->target,
-            (int)(next_uop - current_executor->trace - 1),
-            _PyOpcode_OpName[frame->instr_ptr->op.code]);
+    uint32_t exit_id = next_uop[-1].target;
+    _PyExitData *exit = &current_executor->exits[exit_id];
+    DPRINTF(2, "SIDE EXIT: [UOp %d (%s), oparg %d, operand %" PRIu64 ", exit %u, hotness %d, target %d -> %s]\n",
+            uopcode, _PyUOpName(uopcode), next_uop[-1].oparg, next_uop[-1].operand, exit_id, exit->hotness, exit->target,
+            _PyOpcode_OpName[_PyCode_CODE(_PyFrame_GetCode(frame))[exit->target].op.code]);
     Py_INCREF(exit->executor);
-    Py_DECREF(current_executor);
-    current_executor = exit->executor;
+    next_uop = exit->executor->trace;
     GOTO_TIER_TWO();
 
 }

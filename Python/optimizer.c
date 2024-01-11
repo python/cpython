@@ -162,21 +162,6 @@ PyUnstable_SetOptimizer(_PyOptimizerObject *optimizer)
     Py_DECREF(old);
 }
 
-static void
-dump_uop(_PyUOpInstruction *uop)
-{
-    printf("    %s\n", _PyOpcode_uop_name[uop->opcode]);
-}
-
-static void
-dump_executor(_PyExecutorObject *executor)
-{
-    printf("Executor:\n");
-    for (uint32_t i = 0; i < executor->code_size; i++) {
-        dump_uop(&executor->trace[i]);
-    }
-}
-
 /* Returns 1 if optimized, 0 if not optimized, and -1 for an error.
  * If optimized, *executor_ptr contains a new reference to the executor
  */
@@ -194,11 +179,9 @@ _PyOptimizer_Optimize(
     _PyOptimizerObject *opt = interp->optimizer;
     int err = opt->optimize(opt, code, start, executor_ptr, (int)(stack_pointer - _PyFrame_Stackbase(frame)));
     if (err <= 0) {
-        assert(*executor_ptr == NULL);
         return err;
     }
     assert(*executor_ptr != NULL);
-    dump_executor(*executor_ptr);
     int index = get_index_for_executor(code, start);
     if (index < 0) {
         /* Out of memory. Don't raise and assume that the
@@ -260,7 +243,7 @@ _PyUOpName(int index)
 static Py_ssize_t
 uop_len(_PyExecutorObject *self)
 {
-    return Py_SIZE(self);
+    return self->code_size;
 }
 
 static PyObject *
@@ -758,12 +741,7 @@ compute_used(_PyUOpInstruction *buffer, uint32_t *used, int *exit_count_ptr)
 /* Executor side exits */
 
 typedef struct _cold_exit {
-    PyObject_VAR_HEAD
-    _PyVMData vm_data;
-    union {
-        void *jit_code; // Will be a function pointer
-        _PyUOpInstruction *trace;
-    };
+    _PyExecutorObject base;
     _PyUOpInstruction cold;
 } _PyColdExitObject;
 
@@ -792,13 +770,13 @@ initialize_cold_exits(void) {
     }
     cold_exits_initialized = 1;
     for (int i = 0; i < UOP_MAX_TRACE_LENGTH; i++) {
-        COLD_EXITS[i].ob_base.ob_base.ob_refcnt = _Py_IMMORTAL_REFCNT;
-        COLD_EXITS[i].ob_base.ob_base.ob_type = &_PyUOpExecutor_Type;
-        COLD_EXITS[i].ob_base.ob_size = 0;
-        COLD_EXITS[i].vm_data = (_PyVMData){ 0 };
+        COLD_EXITS[i].base.ob_base.ob_base.ob_refcnt = _Py_IMMORTAL_REFCNT;
+        COLD_EXITS[i].base.ob_base.ob_base.ob_type = &_PyUOpExecutor_Type;
+        COLD_EXITS[i].base.ob_base.ob_size = 0;
+        COLD_EXITS[i].base.vm_data = (_PyVMData){ 0 };
         COLD_EXITS[i].cold.opcode = _COLD_EXIT;
         COLD_EXITS[i].cold.oparg = i;
-        COLD_EXITS[i].trace = &COLD_EXITS[i].cold;
+        COLD_EXITS[i].base.trace = &COLD_EXITS[i].cold;
     }
 }
 
@@ -816,17 +794,17 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
     uint32_t used[(UOP_MAX_TRACE_LENGTH + 31)/32] = { 0 };
     int exit_count;
     int length = compute_used(buffer, used, &exit_count);
-    _PyExecutorObject *executor = allocate_executor(exit_count, length);
+    _PyExecutorObject *executor = allocate_executor(exit_count, length+1);
     if (executor == NULL) {
         return NULL;
     }
     /* Initialize exits */
     for (int i = 0; i < exit_count; i++) {
         executor->exits[i].executor = (_PyExecutorObject *)&COLD_EXITS[i];
-        executor->exits[i].hotness = -273; /* Physics reference */
+        executor->exits[i].hotness = -67;
     }
-    int next_exit = 0;
-    int dest = length - 1;
+    int next_exit = exit_count-1;
+    int dest = length;
     /* Scan backwards, so that we see the destinations of jumps before the jumps themselves. */
     for (int i = UOP_MAX_TRACE_LENGTH-1; i >= 0; i--) {
         if (!BIT_IS_SET(used, i)) {
@@ -844,15 +822,17 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
         if (_PyUop_Flags[opcode] & HAS_EXIT_FLAG) {
             executor->exits[next_exit].target = buffer[i].target;
             executor->trace[dest].target = next_exit;
-            next_exit++;
+            next_exit--;
         }
         /* Set the oparg to be the destination offset,
          * so that we can set the oparg of earlier jumps correctly. */
         buffer[i].oparg = dest;
         dest--;
     }
-    assert(next_exit == exit_count);
-    assert(dest == -1);
+    assert(next_exit == -1);
+    assert(dest == 0);
+    executor->trace[0].opcode = _START_EXECUTOR;
+    executor->trace[0].operand = (uintptr_t)executor;
     _Py_ExecutorInit(executor, dependencies);
 #ifdef Py_DEBUG
     char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
@@ -1180,6 +1160,9 @@ void
 _Py_ExecutorClear(_PyExecutorObject *executor)
 {
     unlink_executor(executor);
+    for (uint32_t i = 0; i < executor->exit_count; i++) {
+        Py_DECREF(executor->exits[i].executor);
+    }
 }
 
 void

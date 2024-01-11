@@ -2336,7 +2336,9 @@ dummy_func(
                 int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer, &executor);
                 ERROR_IF(optimized < 0, error);
                 if (optimized) {
-                    current_executor = executor;
+                    assert(current_executor == NULL);
+                    current_executor = (_PyExecutorObject *)Py_None;
+                    next_uop = executor->trace;
                     GOTO_TIER_TWO();
                 }
                 else {
@@ -2367,12 +2369,13 @@ dummy_func(
         inst(ENTER_EXECUTOR, (--)) {
             TIER_ONE_ONLY
             CHECK_EVAL_BREAKER();
-
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
             if (executor->vm_data.valid) {
+                assert(current_executor == NULL);
+                current_executor = (_PyExecutorObject *)Py_None;
                 Py_INCREF(executor);
-                current_executor = executor;
+                next_uop = executor->trace;
                 GOTO_TIER_TWO();
             }
             else {
@@ -4040,7 +4043,7 @@ dummy_func(
         }
 
         op(_JUMP_TO_TOP, (--)) {
-            next_uop = current_executor->trace;
+            next_uop = &current_executor->trace[1];
             CHECK_EVAL_BREAKER();
         }
 
@@ -4081,29 +4084,43 @@ dummy_func(
 
         op(_COLD_EXIT, (--)) {
             TIER_TWO_ONLY
+            assert(current_executor->trace[0].opcode != _COLD_EXIT);
             _PyExitData *exit = &current_executor->exits[oparg];
-            Py_DECREF(current_executor);
             exit->hotness++;
-            DEOPT_IF(exit->hotness < 0);
+            if (exit->hotness < 0) {
+                next_instr = exit->target + _PyCode_CODE(_PyFrame_GetCode(frame));
+                Py_DECREF(current_executor);
+                current_executor = NULL;
+                DISPATCH();
+            }
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
             _PyExecutorObject *executor;
             if (target->op.code == ENTER_EXECUTOR) {
-                executor = code->co_executors->executors[oparg & 255];
+                executor = code->co_executors->executors[target->op.arg];
                 Py_INCREF(executor);
             } else {
-                printf("Hot side exit.\n");
                 int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor);
                 if (optimized <= 0) {
+                    Py_DECREF(current_executor);
+                    current_executor = NULL;
                     next_instr = target;
                     exit->hotness = -10000; /* Choose a better number */
                     ERROR_IF(optimized < 0, error);
                     DISPATCH();
                 }
             }
-            exit->executor = current_executor = executor;
-            Py_INCREF(current_executor);
+            Py_INCREF(executor);
+            exit->executor = executor;
+            next_uop = executor->trace;
             GOTO_TIER_TWO();
+        }
+
+        op(_START_EXECUTOR, (executor/4 --)) {
+            TIER_TWO_ONLY
+            Py_DECREF(current_executor);
+            Py_INCREF(executor);
+            current_executor = (_PyExecutorObject*)executor;
         }
 
 

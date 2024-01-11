@@ -2379,8 +2379,10 @@
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
             if (executor->vm_data.valid) {
+                assert(current_executor == NULL);
+                current_executor = (_PyExecutorObject *)Py_None;
                 Py_INCREF(executor);
-                current_executor = executor;
+                next_uop = executor->trace;
                 GOTO_TIER_TWO();
             }
             else {
@@ -3301,7 +3303,9 @@
                 int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer, &executor);
                 if (optimized < 0) goto error;
                 if (optimized) {
-                    current_executor = executor;
+                    assert(current_executor == NULL);
+                    current_executor = (_PyExecutorObject *)Py_None;
+                    next_uop = executor->trace;
                     GOTO_TIER_TWO();
                 }
                 else {

@@ -44,10 +44,10 @@ typedef struct _exit_data {
 
 typedef struct _PyExecutorObject {
     PyObject_VAR_HEAD
+    _PyUOpInstruction *trace;
     _PyVMData vm_data; /* Used by the VM, but opaque to the optimizer */
     uint32_t exit_count;
     uint32_t code_size;
-    _PyUOpInstruction *trace;
     _PyExitData exits[1];
 } _PyExecutorObject;
 

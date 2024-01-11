@@ -3354,7 +3354,7 @@
         }
 
         case _JUMP_TO_TOP: {
-            next_uop = current_executor->trace;
+            next_uop = &current_executor->trace[1];
             CHECK_EVAL_BREAKER();
             break;
         }
@@ -3411,29 +3411,45 @@
         case _COLD_EXIT: {
             oparg = CURRENT_OPARG();
             TIER_TWO_ONLY
+            assert(current_executor->trace[0].opcode != _COLD_EXIT);
             _PyExitData *exit = &current_executor->exits[oparg];
-            Py_DECREF(current_executor);
             exit->hotness++;
-            if (exit->hotness < 0) goto deoptimize;
+            if (exit->hotness < 0) {
+                next_instr = exit->target + _PyCode_CODE(_PyFrame_GetCode(frame));
+                Py_DECREF(current_executor);
+                current_executor = NULL;
+                DISPATCH();
+            }
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
             _PyExecutorObject *executor;
             if (target->op.code == ENTER_EXECUTOR) {
-                executor = code->co_executors->executors[oparg & 255];
+                executor = code->co_executors->executors[target->op.arg];
                 Py_INCREF(executor);
             } else {
-                printf("Hot side exit.\n");
                 int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor);
                 if (optimized <= 0) {
+                    Py_DECREF(current_executor);
+                    current_executor = NULL;
                     next_instr = target;
                     exit->hotness = -10000; /* Choose a better number */
                     if (optimized < 0) goto error_tier_two;
                     DISPATCH();
                 }
             }
-            exit->executor = current_executor = executor;
-            Py_INCREF(current_executor);
+            Py_INCREF(executor);
+            exit->executor = executor;
+            next_uop = executor->trace;
             GOTO_TIER_TWO();
+            break;
+        }
+
+        case _START_EXECUTOR: {
+            PyObject *executor = (PyObject *)CURRENT_OPERAND();
+            TIER_TWO_ONLY
+            Py_DECREF(current_executor);
+            Py_INCREF(executor);
+            current_executor = (_PyExecutorObject*)executor;
             break;
         }
 
