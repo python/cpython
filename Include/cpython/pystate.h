@@ -217,7 +217,7 @@ struct _ts {
 
 #if defined(__has_feature)  /* Clang */
 #  if __has_feature(address_sanitizer) /* is ASAN enabled? */
-#    define Py_C_RECURSION_LIMIT 7000
+#    define Py_C_RECURSION_LIMIT 5000
 #  endif
 #endif
 
