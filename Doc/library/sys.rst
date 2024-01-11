@@ -1260,11 +1260,9 @@ always available.
 
     .. versionchanged:: 3.12
 
-        Earlier versions of Python looked for a method called
-        :meth:`!find_module` as fallback if a :data:`meta_path` entry doesn't
-        have a :meth:`~importlib.abc.MetaPathFinder.find_spec` method.
-        In this version, this behavior has been removed and the method wouldn't
-        be called as a fallback.
+        Removed the fallback that looked for a :meth:`!find_module` method
+        if a :data:`meta_path` entry didn't have a
+        :meth:`~importlib.abc.MetaPathFinder.find_spec` method.
 
 .. data:: modules
 
