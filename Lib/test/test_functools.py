@@ -1875,11 +1875,9 @@ class TestLRU:
             return fib(n-1) + fib(n-2)
 
         if not support.Py_DEBUG:
+            depth = support.Py_C_RECURSION_LIMIT*2//7
             with support.infinite_recursion():
-                if sys.platform == 'win32':
-                    fib(1200)
-                else:
-                    fib(2500)
+                fib(depth)
         if self.module == c_functools:
             fib.cache_clear()
             with support.infinite_recursion():
