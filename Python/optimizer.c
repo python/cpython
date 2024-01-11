@@ -226,8 +226,8 @@ static PyMethodDef executor_methods[] = {
 ///////////////////// Experimental UOp Optimizer /////////////////////
 
 static void
-uop_dealloc(_PyUOpExecutorObject *self) {
-    _Py_ExecutorClear((_PyExecutorObject *)self);
+uop_dealloc(_PyExecutorObject *self) {
+    _Py_ExecutorClear(self);
     PyObject_Free(self);
 }
 
@@ -238,13 +238,13 @@ _PyUOpName(int index)
 }
 
 static Py_ssize_t
-uop_len(_PyUOpExecutorObject *self)
+uop_len(_PyExecutorObject *self)
 {
     return Py_SIZE(self);
 }
 
 static PyObject *
-uop_item(_PyUOpExecutorObject *self, Py_ssize_t index)
+uop_item(_PyExecutorObject *self, Py_ssize_t index)
 {
     Py_ssize_t len = uop_len(self);
     if (index < 0 || index >= len) {
@@ -282,7 +282,7 @@ PySequenceMethods uop_as_sequence = {
 PyTypeObject _PyUOpExecutor_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "uop_executor",
-    .tp_basicsize = offsetof(_PyUOpExecutorObject, trace),
+    .tp_basicsize = offsetof(_PyExecutorObject, trace),
     .tp_itemsize = sizeof(_PyUOpInstruction),
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .tp_dealloc = (destructor)uop_dealloc,
@@ -433,8 +433,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
         }
 
         if (opcode == ENTER_EXECUTOR) {
-            _PyExecutorObject *executor =
-                (_PyExecutorObject *)code->co_executors->executors[oparg&255];
+            _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
             opcode = executor->vm_data.opcode;
             DPRINTF(2, "  * ENTER_EXECUTOR -> %s\n",  _PyOpcode_OpName[opcode]);
             oparg = (oparg & 0xffffff00) | executor->vm_data.oparg;
@@ -719,7 +718,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
 {
     uint32_t used[(_Py_UOP_MAX_TRACE_LENGTH + 31)/32] = { 0 };
     int length = compute_used(buffer, used);
-    _PyUOpExecutorObject *executor = PyObject_NewVar(_PyUOpExecutorObject, &_PyUOpExecutor_Type, length);
+    _PyExecutorObject *executor = PyObject_NewVar(_PyExecutorObject, &_PyUOpExecutor_Type, length);
     if (executor == NULL) {
         return NULL;
     }
@@ -744,7 +743,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
         dest--;
     }
     assert(dest == -1);
-    _Py_ExecutorInit((_PyExecutorObject *)executor, dependencies);
+    _Py_ExecutorInit(executor, dependencies);
 #ifdef Py_DEBUG
     char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
     int lltrace = 0;
@@ -763,7 +762,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
         }
     }
 #endif
-    return (_PyExecutorObject *)executor;
+    return executor;
 }
 
 static int
@@ -829,7 +828,7 @@ PyUnstable_Optimizer_NewUOpOptimizer(void)
 }
 
 static void
-counter_dealloc(_PyUOpExecutorObject *self) {
+counter_dealloc(_PyExecutorObject *self) {
     PyObject *opt = (PyObject *)self->trace[0].operand;
     Py_DECREF(opt);
     uop_dealloc(self);
@@ -838,7 +837,7 @@ counter_dealloc(_PyUOpExecutorObject *self) {
 PyTypeObject _PyCounterExecutor_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "counting_executor",
-    .tp_basicsize = offsetof(_PyUOpExecutorObject, trace),
+    .tp_basicsize = offsetof(_PyExecutorObject, trace),
     .tp_itemsize = sizeof(_PyUOpInstruction),
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .tp_dealloc = (destructor)counter_dealloc,
