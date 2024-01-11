@@ -62,8 +62,8 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    the same file.  If you specify the name of an existing tag, that tag is
    opened, otherwise a new tag of this name is created.  If this parameter is
    omitted or ``None``, the mapping is created without a name.  Avoiding the
-   use of the tag parameter will assist in keeping your code portable between
-   Unix and Windows.
+   use of the *tagname* parameter will assist in keeping your code portable
+   between Unix and Windows.
 
    *offset* may be specified as a non-negative integer offset. mmap references
    will be relative to the offset from the beginning of the file. *offset*

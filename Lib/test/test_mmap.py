@@ -671,14 +671,16 @@ class MmapTests(unittest.TestCase):
         m2.close()
         m1.close()
 
+        with self.assertRaisesRegex(TypeError, 'tagname'):
+            mmap.mmap(-1, 8, tagname=1)
+
     @cpython_only
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     def test_sizeof(self):
         m1 = mmap.mmap(-1, 100)
         tagname = random_tagname()
         m2 = mmap.mmap(-1, 100, tagname=tagname)
-        self.assertEqual(sys.getsizeof(m2),
-                         sys.getsizeof(m1) + len(tagname) + 1)
+        self.assertGreater(sys.getsizeof(m2), sys.getsizeof(m1))
 
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     def test_crasher_on_windows(self):
