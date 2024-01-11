@@ -4855,6 +4855,7 @@
                 #if TIER_ONE
                 assert(frame != &entry_frame);
                 #endif
+                
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 assert(EMPTY());
                 _Py_LeaveRecursiveCallPy(tstate);
