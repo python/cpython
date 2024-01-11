@@ -35,9 +35,8 @@
 /* See https://www.python.org/2.4/license for licensing details. */
 
 #include "Python.h"
-#include "pycore_global_objects.h" // _Py_SINGLETON
-#include "pycore_global_strings.h" // _Py_ID
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_runtime.h"       // _Py_ID
 #include "structmember.h"         // PyMemberDef
 
 
