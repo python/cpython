@@ -22,7 +22,7 @@
 
 This module provides :term:`abstract base classes <abstract base class>` that
 can be used to test whether a class provides a particular interface; for
-example, whether it is :term:`hashable` or whether it is a mapping.
+example, whether it is :term:`hashable` or whether it is a :term:`mapping`.
 
 An :func:`issubclass` or :func:`isinstance` test for an interface works in one
 of three ways.
@@ -73,7 +73,7 @@ of the API:
    >>> isinstance(D(), Sequence)
    True
 
-In this example, class :class:`D` does not need to define
+In this example, class :class:`!D` does not need to define
 ``__contains__``, ``__iter__``, and ``__reversed__`` because the
 :ref:`in-operator <comparisons>`, the :term:`iteration <iterable>`
 logic, and the :func:`reversed` function automatically fall back to
@@ -87,7 +87,7 @@ the required methods (unless those methods have been set to
 
     class E:
         def __iter__(self): ...
-        def __next__(next): ...
+        def __next__(self): ...
 
 .. doctest::
 
@@ -183,14 +183,14 @@ ABC                            Inherits from          Abstract Methods        Mi
 
 .. rubric:: Footnotes
 
-.. [1] These ABCs override :meth:`object.__subclasshook__` to support
+.. [1] These ABCs override :meth:`~abc.ABCMeta.__subclasshook__` to support
    testing an interface by verifying the required methods are present
    and have not been set to :const:`None`.  This only works for simple
    interfaces.  More complex interfaces require registration or direct
    subclassing.
 
 .. [2] Checking ``isinstance(obj, Iterable)`` detects classes that are
-   registered as :class:`Iterable` or that have an :meth:`__iter__`
+   registered as :class:`Iterable` or that have an :meth:`~container.__iter__`
    method, but it does not detect classes that iterate with the
    :meth:`~object.__getitem__` method.  The only reliable way to determine
    whether an object is :term:`iterable` is to call ``iter(obj)``.
@@ -202,26 +202,27 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
 .. class:: Container
 
-   ABC for classes that provide the :meth:`__contains__` method.
+   ABC for classes that provide the :meth:`~object.__contains__` method.
 
 .. class:: Hashable
 
-   ABC for classes that provide the :meth:`__hash__` method.
+   ABC for classes that provide the :meth:`~object.__hash__` method.
 
 .. class:: Sized
 
-   ABC for classes that provide the :meth:`__len__` method.
+   ABC for classes that provide the :meth:`~object.__len__` method.
 
 .. class:: Callable
 
-   ABC for classes that provide the :meth:`__call__` method.
+   ABC for classes that provide the :meth:`~object.__call__` method.
 
 .. class:: Iterable
 
-   ABC for classes that provide the :meth:`__iter__` method.
+   ABC for classes that provide the :meth:`~container.__iter__` method.
 
    Checking ``isinstance(obj, Iterable)`` detects classes that are registered
-   as :class:`Iterable` or that have an :meth:`__iter__` method, but it does
+   as :class:`Iterable` or that have an :meth:`~container.__iter__` method,
+   but it does
    not detect classes that iterate with the :meth:`~object.__getitem__` method.
    The only reliable way to determine whether an object is :term:`iterable`
    is to call ``iter(obj)``.
@@ -240,17 +241,17 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
 .. class:: Reversible
 
-   ABC for iterable classes that also provide the :meth:`__reversed__`
+   ABC for iterable classes that also provide the :meth:`~object.__reversed__`
    method.
 
    .. versionadded:: 3.6
 
 .. class:: Generator
 
-   ABC for generator classes that implement the protocol defined in
-   :pep:`342` that extends iterators with the :meth:`~generator.send`,
+   ABC for :term:`generator` classes that implement the protocol defined in
+   :pep:`342` that extends :term:`iterators <iterator>` with the
+   :meth:`~generator.send`,
    :meth:`~generator.throw` and :meth:`~generator.close` methods.
-   See also the definition of :term:`generator`.
 
    .. versionadded:: 3.5
 
@@ -261,7 +262,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
    ABCs for read-only and mutable :term:`sequences <sequence>`.
 
    Implementation note: Some of the mixin methods, such as
-   :meth:`__iter__`, :meth:`__reversed__` and :meth:`index`, make
+   :meth:`~container.__iter__`, :meth:`~object.__reversed__` and :meth:`index`, make
    repeated calls to the underlying :meth:`~object.__getitem__` method.
    Consequently, if :meth:`~object.__getitem__` is implemented with constant
    access speed, the mixin methods will have linear performance;
@@ -282,7 +283,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
 .. class:: Set
            MutableSet
 
-   ABCs for read-only and mutable sets.
+   ABCs for read-only and mutable :ref:`sets <types-set>`.
 
 .. class:: Mapping
            MutableMapping
@@ -299,16 +300,16 @@ Collections Abstract Base Classes -- Detailed Descriptions
 .. class:: Awaitable
 
    ABC for :term:`awaitable` objects, which can be used in :keyword:`await`
-   expressions.  Custom implementations must provide the :meth:`__await__`
-   method.
+   expressions.  Custom implementations must provide the
+   :meth:`~object.__await__` method.
 
    :term:`Coroutine <coroutine>` objects and instances of the
    :class:`~collections.abc.Coroutine` ABC are all instances of this ABC.
 
    .. note::
-      In CPython, generator-based coroutines (generators decorated with
-      :func:`types.coroutine`) are
-      *awaitables*, even though they do not have an :meth:`__await__` method.
+      In CPython, generator-based coroutines (:term:`generators <generator>`
+      decorated with :func:`@types.coroutine <types.coroutine>`) are
+      *awaitables*, even though they do not have an :meth:`~object.__await__` method.
       Using ``isinstance(gencoro, Awaitable)`` for them will return ``False``.
       Use :func:`inspect.isawaitable` to detect them.
 
@@ -316,17 +317,17 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
 .. class:: Coroutine
 
-   ABC for coroutine compatible classes.  These implement the
+   ABC for :term:`coroutine` compatible classes.  These implement the
    following methods, defined in :ref:`coroutine-objects`:
    :meth:`~coroutine.send`, :meth:`~coroutine.throw`, and
    :meth:`~coroutine.close`.  Custom implementations must also implement
-   :meth:`__await__`.  All :class:`Coroutine` instances are also instances of
-   :class:`Awaitable`.  See also the definition of :term:`coroutine`.
+   :meth:`~object.__await__`.  All :class:`Coroutine` instances are also
+   instances of :class:`Awaitable`.
 
    .. note::
-      In CPython, generator-based coroutines (generators decorated with
-      :func:`types.coroutine`) are
-      *awaitables*, even though they do not have an :meth:`__await__` method.
+      In CPython, generator-based coroutines (:term:`generators <generator>`
+      decorated with :func:`@types.coroutine <types.coroutine>`) are
+      *awaitables*, even though they do not have an :meth:`~object.__await__` method.
       Using ``isinstance(gencoro, Coroutine)`` for them will return ``False``.
       Use :func:`inspect.isawaitable` to detect them.
 
@@ -334,7 +335,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
 .. class:: AsyncIterable
 
-   ABC for classes that provide ``__aiter__`` method.  See also the
+   ABC for classes that provide an ``__aiter__`` method.  See also the
    definition of :term:`asynchronous iterable`.
 
    .. versionadded:: 3.5
@@ -348,7 +349,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
 .. class:: AsyncGenerator
 
-   ABC for asynchronous generator classes that implement the protocol
+   ABC for :term:`asynchronous generator` classes that implement the protocol
    defined in :pep:`525` and :pep:`492`.
 
    .. versionadded:: 3.6
@@ -373,9 +374,9 @@ particular functionality, for example::
 Several of the ABCs are also useful as mixins that make it easier to develop
 classes supporting container APIs.  For example, to write a class supporting
 the full :class:`Set` API, it is only necessary to supply the three underlying
-abstract methods: :meth:`__contains__`, :meth:`__iter__`, and :meth:`__len__`.
-The ABC supplies the remaining methods such as :meth:`__and__` and
-:meth:`isdisjoint`::
+abstract methods: :meth:`~object.__contains__`, :meth:`~container.__iter__`, and
+:meth:`~object.__len__`. The ABC supplies the remaining methods such as
+:meth:`!__and__` and :meth:`~frozenset.isdisjoint`::
 
     class ListBasedSet(collections.abc.Set):
         ''' Alternate set implementation favoring space over speed
@@ -403,23 +404,24 @@ Notes on using :class:`Set` and :class:`MutableSet` as a mixin:
 
 (1)
    Since some set operations create new sets, the default mixin methods need
-   a way to create new instances from an iterable. The class constructor is
+   a way to create new instances from an :term:`iterable`. The class constructor is
    assumed to have a signature in the form ``ClassName(iterable)``.
-   That assumption is factored-out to an internal classmethod called
-   :meth:`_from_iterable` which calls ``cls(iterable)`` to produce a new set.
+   That assumption is factored-out to an internal :class:`classmethod` called
+   :meth:`!_from_iterable` which calls ``cls(iterable)`` to produce a new set.
    If the :class:`Set` mixin is being used in a class with a different
-   constructor signature, you will need to override :meth:`_from_iterable`
+   constructor signature, you will need to override :meth:`!_from_iterable`
    with a classmethod or regular method that can construct new instances from
    an iterable argument.
 
 (2)
    To override the comparisons (presumably for speed, as the
-   semantics are fixed), redefine :meth:`__le__` and :meth:`__ge__`,
+   semantics are fixed), redefine :meth:`~object.__le__` and
+   :meth:`~object.__ge__`,
    then the other operations will automatically follow suit.
 
 (3)
-   The :class:`Set` mixin provides a :meth:`_hash` method to compute a hash value
-   for the set; however, :meth:`__hash__` is not defined because not all sets
+   The :class:`Set` mixin provides a :meth:`!_hash` method to compute a hash value
+   for the set; however, :meth:`~object.__hash__` is not defined because not all sets
    are :term:`hashable` or immutable.  To add set hashability using mixins,
    inherit from both :meth:`Set` and :meth:`Hashable`, then define
    ``__hash__ = Set._hash``.

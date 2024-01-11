@@ -392,16 +392,10 @@ remove_unusable_flags(PyObject *m)
             break;
         }
         else {
-            PyObject *flag_name = PyUnicode_FromString(win_runtime_flags[i].flag_name);
-            if (flag_name == NULL) {
+            if (PyDict_PopString(dict, win_runtime_flags[i].flag_name,
+                                 NULL) < 0) {
                 return -1;
             }
-            PyObject *v = _PyDict_Pop(dict, flag_name, Py_None);
-            Py_DECREF(flag_name);
-            if (v == NULL) {
-                return -1;
-            }
-            Py_DECREF(v);
         }
     }
     return 0;
@@ -7077,17 +7071,23 @@ _socket_socket_if_nametoindex_impl(PySocketSockObject *self, PyObject *oname)
 static PyObject *
 socket_if_indextoname(PyObject *self, PyObject *arg)
 {
-#ifdef MS_WINDOWS
-    NET_IFINDEX index;
-#else
-    unsigned long index;
-#endif
-    char name[IF_NAMESIZE + 1];
-
-    index = PyLong_AsUnsignedLong(arg);
-    if (index == (unsigned long) -1)
+    unsigned long index_long = PyLong_AsUnsignedLong(arg);
+    if (index_long == (unsigned long) -1 && PyErr_Occurred()) {
         return NULL;
+    }
 
+#ifdef MS_WINDOWS
+    NET_IFINDEX index = (NET_IFINDEX)index_long;
+#else
+    unsigned int index = (unsigned int)index_long;
+#endif
+
+    if ((unsigned long)index != index_long) {
+        PyErr_SetString(PyExc_OverflowError, "index is too large");
+        return NULL;
+    }
+
+    char name[IF_NAMESIZE + 1];
     if (if_indextoname(index, name) == NULL) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
@@ -8808,6 +8808,9 @@ socket_exec(PyObject *m)
 #endif
 #ifdef NI_DGRAM
     ADD_INT_MACRO(m, NI_DGRAM);
+#endif
+#ifdef NI_IDN
+    ADD_INT_MACRO(m, NI_IDN);
 #endif
 
     /* shutdown() parameters */

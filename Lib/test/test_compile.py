@@ -12,6 +12,7 @@ import warnings
 from test import support
 from test.support import (script_helper, requires_debug_ranges,
                           requires_specialization, Py_C_RECURSION_LIMIT)
+from test.support.bytecode_helper import instructions_with_positions
 from test.support.os_helper import FakePath
 
 class TestSpecifics(unittest.TestCase):
@@ -442,6 +443,23 @@ class TestSpecifics(unittest.TestCase):
         self.assertIn("__not_mangled__", A.f.__code__.co_varnames)
         self.assertIn("_A__mangled_mod", A.f.__code__.co_varnames)
         self.assertIn("__package__", A.f.__code__.co_varnames)
+
+    def test_condition_expression_with_dead_blocks_compiles(self):
+        # See gh-113054
+        compile('if (5 if 5 else T): 0', '<eval>', 'exec')
+
+    def test_condition_expression_with_redundant_comparisons_compiles(self):
+        # See gh-113054
+        compile('if 9<9<9and 9or 9:9', '<eval>', 'exec')
+
+    def test_dead_code_with_except_handler_compiles(self):
+        compile(textwrap.dedent("""
+                if None:
+                    with CM:
+                        x = 1
+                else:
+                    x = 2
+               """), '<eval>', 'exec')
 
     def test_compile_invalid_namedexpr(self):
         # gh-109351
@@ -1346,8 +1364,8 @@ class TestSourcePositions(unittest.TestCase):
     def assertOpcodeSourcePositionIs(self, code, opcode,
             line, end_line, column, end_column, occurrence=1):
 
-        for instr, position in zip(
-            dis.Bytecode(code, show_caches=True), code.co_positions(), strict=True
+        for instr, position in instructions_with_positions(
+            dis.Bytecode(code), code.co_positions()
         ):
             if instr.opname == opcode:
                 occurrence -= 1

@@ -32,6 +32,9 @@ typedef struct {
     PyDictValues *ma_values;
 } PyDictObject;
 
+PyAPI_FUNC(PyObject *) _PyDict_GetItem_KnownHash(PyObject *mp, PyObject *key,
+                                                 Py_hash_t hash);
+PyAPI_FUNC(PyObject *) _PyDict_GetItemStringWithError(PyObject *, const char *);
 PyAPI_FUNC(PyObject *) PyDict_SetDefault(
     PyObject *mp, PyObject *key, PyObject *defaultobj);
 
@@ -46,6 +49,10 @@ static inline Py_ssize_t PyDict_GET_SIZE(PyObject *op) {
 
 PyAPI_FUNC(int) PyDict_ContainsString(PyObject *mp, const char *key);
 
+PyAPI_FUNC(PyObject *) _PyDict_NewPresized(Py_ssize_t minused);
+
+PyAPI_FUNC(int) PyDict_Pop(PyObject *dict, PyObject *key, PyObject **result);
+PyAPI_FUNC(int) PyDict_PopString(PyObject *dict, const char *key, PyObject **result);
 PyAPI_FUNC(PyObject *) _PyDict_Pop(PyObject *dict, PyObject *key, PyObject *default_value);
 
 /* Dictionary watchers */

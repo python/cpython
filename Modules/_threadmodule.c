@@ -967,11 +967,8 @@ local_clear(localobject *self)
         HEAD_UNLOCK(runtime);
         while (tstate) {
             if (tstate->dict) {
-                PyObject *v = _PyDict_Pop(tstate->dict, self->key, Py_None);
-                if (v != NULL) {
-                    Py_DECREF(v);
-                }
-                else {
+                if (PyDict_Pop(tstate->dict, self->key, NULL) < 0) {
+                    // Silently ignore error
                     PyErr_Clear();
                 }
             }

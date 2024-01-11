@@ -1,1 +1,0 @@
-Added :func:`io.text_encoding()`, :data:`io.DEFAULT_BUFFER_SIZE`, and :class:`io.IncrementalNewlineDecoder` to ``io.__all__``.

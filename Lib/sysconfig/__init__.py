@@ -26,24 +26,24 @@ _ALWAYS_STR = {
 
 _INSTALL_SCHEMES = {
     'posix_prefix': {
-        'stdlib': '{installed_base}/{platlibdir}/python{py_version_short}',
-        'platstdlib': '{platbase}/{platlibdir}/python{py_version_short}',
-        'purelib': '{base}/lib/python{py_version_short}/site-packages',
-        'platlib': '{platbase}/{platlibdir}/python{py_version_short}/site-packages',
+        'stdlib': '{installed_base}/{platlibdir}/{implementation_lower}{py_version_short}',
+        'platstdlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short}',
+        'purelib': '{base}/lib/{implementation_lower}{py_version_short}/site-packages',
+        'platlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short}/site-packages',
         'include':
-            '{installed_base}/include/python{py_version_short}{abiflags}',
+            '{installed_base}/include/{implementation_lower}{py_version_short}{abiflags}',
         'platinclude':
-            '{installed_platbase}/include/python{py_version_short}{abiflags}',
+            '{installed_platbase}/include/{implementation_lower}{py_version_short}{abiflags}',
         'scripts': '{base}/bin',
         'data': '{base}',
         },
     'posix_home': {
-        'stdlib': '{installed_base}/lib/python',
-        'platstdlib': '{base}/lib/python',
-        'purelib': '{base}/lib/python',
-        'platlib': '{base}/lib/python',
-        'include': '{installed_base}/include/python',
-        'platinclude': '{installed_base}/include/python',
+        'stdlib': '{installed_base}/lib/{implementation_lower}',
+        'platstdlib': '{base}/lib/{implementation_lower}',
+        'purelib': '{base}/lib/{implementation_lower}',
+        'platlib': '{base}/lib/{implementation_lower}',
+        'include': '{installed_base}/include/{implementation_lower}',
+        'platinclude': '{installed_base}/include/{implementation_lower}',
         'scripts': '{base}/bin',
         'data': '{base}',
         },
@@ -75,14 +75,14 @@ _INSTALL_SCHEMES = {
     # Downstream distributors who patch posix_prefix/nt scheme are encouraged to
     # leave the following schemes unchanged
     'posix_venv': {
-        'stdlib': '{installed_base}/{platlibdir}/python{py_version_short}',
-        'platstdlib': '{platbase}/{platlibdir}/python{py_version_short}',
-        'purelib': '{base}/lib/python{py_version_short}/site-packages',
-        'platlib': '{platbase}/{platlibdir}/python{py_version_short}/site-packages',
+        'stdlib': '{installed_base}/{platlibdir}/{implementation_lower}{py_version_short}',
+        'platstdlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short}',
+        'purelib': '{base}/lib/{implementation_lower}{py_version_short}/site-packages',
+        'platlib': '{platbase}/{platlibdir}/{implementation_lower}{py_version_short}/site-packages',
         'include':
-            '{installed_base}/include/python{py_version_short}{abiflags}',
+            '{installed_base}/include/{implementation_lower}{py_version_short}{abiflags}',
         'platinclude':
-            '{installed_platbase}/include/python{py_version_short}{abiflags}',
+            '{installed_platbase}/include/{implementation_lower}{py_version_short}{abiflags}',
         'scripts': '{base}/bin',
         'data': '{base}',
         },
@@ -104,6 +104,8 @@ if os.name == 'nt':
 else:
     _INSTALL_SCHEMES['venv'] = _INSTALL_SCHEMES['posix_venv']
 
+def _get_implementation():
+    return 'Python'
 
 # NOTE: site.py has copy of this function.
 # Sync it when modify this function.
@@ -121,7 +123,7 @@ def _getuserbase():
 
     if os.name == "nt":
         base = os.environ.get("APPDATA") or "~"
-        return joinuser(base, "Python")
+        return joinuser(base,  _get_implementation())
 
     if sys.platform == "darwin" and sys._framework:
         return joinuser("~", "Library", sys._framework,
@@ -135,29 +137,29 @@ if _HAS_USER_BASE:
     _INSTALL_SCHEMES |= {
         # NOTE: When modifying "purelib" scheme, update site._get_path() too.
         'nt_user': {
-            'stdlib': '{userbase}/Python{py_version_nodot_plat}',
-            'platstdlib': '{userbase}/Python{py_version_nodot_plat}',
-            'purelib': '{userbase}/Python{py_version_nodot_plat}/site-packages',
-            'platlib': '{userbase}/Python{py_version_nodot_plat}/site-packages',
-            'include': '{userbase}/Python{py_version_nodot_plat}/Include',
-            'scripts': '{userbase}/Python{py_version_nodot_plat}/Scripts',
+            'stdlib': '{userbase}/{implementation}{py_version_nodot_plat}',
+            'platstdlib': '{userbase}/{implementation}{py_version_nodot_plat}',
+            'purelib': '{userbase}/{implementation}{py_version_nodot_plat}/site-packages',
+            'platlib': '{userbase}/{implementation}{py_version_nodot_plat}/site-packages',
+            'include': '{userbase}/{implementation}{py_version_nodot_plat}/Include',
+            'scripts': '{userbase}/{implementation}{py_version_nodot_plat}/Scripts',
             'data': '{userbase}',
             },
         'posix_user': {
-            'stdlib': '{userbase}/{platlibdir}/python{py_version_short}',
-            'platstdlib': '{userbase}/{platlibdir}/python{py_version_short}',
-            'purelib': '{userbase}/lib/python{py_version_short}/site-packages',
-            'platlib': '{userbase}/lib/python{py_version_short}/site-packages',
-            'include': '{userbase}/include/python{py_version_short}',
+            'stdlib': '{userbase}/{platlibdir}/{implementation_lower}{py_version_short}',
+            'platstdlib': '{userbase}/{platlibdir}/{implementation_lower}{py_version_short}',
+            'purelib': '{userbase}/lib/{implementation_lower}{py_version_short}/site-packages',
+            'platlib': '{userbase}/lib/{implementation_lower}{py_version_short}/site-packages',
+            'include': '{userbase}/include/{implementation_lower}{py_version_short}',
             'scripts': '{userbase}/bin',
             'data': '{userbase}',
             },
         'osx_framework_user': {
-            'stdlib': '{userbase}/lib/python',
-            'platstdlib': '{userbase}/lib/python',
-            'purelib': '{userbase}/lib/python/site-packages',
-            'platlib': '{userbase}/lib/python/site-packages',
-            'include': '{userbase}/include/python{py_version_short}',
+            'stdlib': '{userbase}/lib/{implementation_lower}',
+            'platstdlib': '{userbase}/lib/{implementation_lower}',
+            'purelib': '{userbase}/lib/{implementation_lower}/site-packages',
+            'platlib': '{userbase}/lib/{implementation_lower}/site-packages',
+            'include': '{userbase}/include/{implementation_lower}{py_version_short}',
             'scripts': '{userbase}/bin',
             'data': '{userbase}',
             },
@@ -348,7 +350,7 @@ def _init_non_posix(vars):
     vars['BINLIBDEST'] = get_path('platstdlib')
     vars['INCLUDEPY'] = get_path('include')
 
-    # Add EXT_SUFFIX, SOABI, and Py_NOGIL
+    # Add EXT_SUFFIX, SOABI, and Py_GIL_DISABLED
     vars.update(_sysconfig.config_vars())
 
     vars['LIBDIR'] = _safe_realpath(os.path.join(get_config_var('installed_base'), 'libs'))
@@ -404,7 +406,7 @@ def get_config_h_filename():
     """Return the path of pyconfig.h."""
     if _PYTHON_BUILD:
         if os.name == "nt":
-            inc_dir = os.path.join(_PROJECT_BASE, "PC")
+            inc_dir = os.path.dirname(sys._base_executable)
         else:
             inc_dir = _PROJECT_BASE
     else:
@@ -459,6 +461,8 @@ def _init_config_vars():
     _CONFIG_VARS['platbase'] = _EXEC_PREFIX
     _CONFIG_VARS['projectbase'] = _PROJECT_BASE
     _CONFIG_VARS['platlibdir'] = sys.platlibdir
+    _CONFIG_VARS['implementation'] = _get_implementation()
+    _CONFIG_VARS['implementation_lower'] = _get_implementation().lower()
     try:
         _CONFIG_VARS['abiflags'] = sys.abiflags
     except AttributeError:
