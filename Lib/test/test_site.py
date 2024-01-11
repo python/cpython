@@ -299,10 +299,9 @@ class HelperFunctionsTests(unittest.TestCase):
             self.assertEqual(dirs[-1], wanted)
         else:
             # other platforms
-            self.assertEqual(len(dirs), 2)
-            self.assertEqual(dirs[0], 'xoxo')
+            self.assertEqual(len(dirs), 1)
             wanted = os.path.join('xoxo', 'lib', 'site-packages')
-            self.assertEqual(os.path.normcase(dirs[1]),
+            self.assertEqual(os.path.normcase(dirs[0]),
                              os.path.normcase(wanted))
 
     @unittest.skipUnless(HAS_USER_SITE, 'need user site')

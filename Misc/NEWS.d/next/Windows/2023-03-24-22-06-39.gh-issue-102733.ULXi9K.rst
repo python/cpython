@@ -1,0 +1,1 @@
+Stop the :func:`site.getsitepackages` function from returning non-site package directories on windows. Patch by Robert Prater

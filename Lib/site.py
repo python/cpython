@@ -380,7 +380,6 @@ def getsitepackages(prefixes=None):
                                     "site-packages")
                 sitepackages.append(path)
         else:
-            sitepackages.append(prefix)
             sitepackages.append(os.path.join(prefix, "Lib", "site-packages"))
     return sitepackages
 
