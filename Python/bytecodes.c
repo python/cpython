@@ -330,14 +330,14 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
-        op(_TO_BOOL, (unused/2, value -- res)) {
+        op(_TO_BOOL, (value -- res)) {
             int err = PyObject_IsTrue(value);
             DECREF_INPUTS();
             ERROR_IF(err < 0, error);
             res = err ? Py_True : Py_False;
         }
 
-        macro(TO_BOOL) = _SPECIALIZE_TO_BOOL + _TO_BOOL;
+        macro(TO_BOOL) = _SPECIALIZE_TO_BOOL + unused/2 + _TO_BOOL;
 
         inst(TO_BOOL_BOOL, (unused/1, unused/2, value -- value)) {
             DEOPT_IF(!PyBool_Check(value));
@@ -416,7 +416,7 @@ dummy_func(
             DEOPT_IF(!PyLong_CheckExact(right));
         }
 
-        op(_BINARY_OP_MULTIPLY_INT, (unused/1, left, right -- res)) {
+        op(_BINARY_OP_MULTIPLY_INT, (left, right -- res)) {
             STAT_INC(BINARY_OP, hit);
             res = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
@@ -424,7 +424,7 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        op(_BINARY_OP_ADD_INT, (unused/1, left, right -- res)) {
+        op(_BINARY_OP_ADD_INT, (left, right -- res)) {
             STAT_INC(BINARY_OP, hit);
             res = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
@@ -432,7 +432,7 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        op(_BINARY_OP_SUBTRACT_INT, (unused/1, left, right -- res)) {
+        op(_BINARY_OP_SUBTRACT_INT, (left, right -- res)) {
             STAT_INC(BINARY_OP, hit);
             res = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
@@ -441,18 +441,18 @@ dummy_func(
         }
 
         macro(BINARY_OP_MULTIPLY_INT) =
-            _GUARD_BOTH_INT + _BINARY_OP_MULTIPLY_INT;
+            _GUARD_BOTH_INT + unused/1 + _BINARY_OP_MULTIPLY_INT;
         macro(BINARY_OP_ADD_INT) =
-            _GUARD_BOTH_INT + _BINARY_OP_ADD_INT;
+            _GUARD_BOTH_INT + unused/1 + _BINARY_OP_ADD_INT;
         macro(BINARY_OP_SUBTRACT_INT) =
-            _GUARD_BOTH_INT + _BINARY_OP_SUBTRACT_INT;
+            _GUARD_BOTH_INT + unused/1 + _BINARY_OP_SUBTRACT_INT;
 
         op(_GUARD_BOTH_FLOAT, (left, right -- left, right)) {
             DEOPT_IF(!PyFloat_CheckExact(left));
             DEOPT_IF(!PyFloat_CheckExact(right));
         }
 
-        op(_BINARY_OP_MULTIPLY_FLOAT, (unused/1, left, right -- res)) {
+        op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res)) {
             STAT_INC(BINARY_OP, hit);
             double dres =
                 ((PyFloatObject *)left)->ob_fval *
@@ -460,7 +460,7 @@ dummy_func(
             DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
         }
 
-        op(_BINARY_OP_ADD_FLOAT, (unused/1, left, right -- res)) {
+        op(_BINARY_OP_ADD_FLOAT, (left, right -- res)) {
             STAT_INC(BINARY_OP, hit);
             double dres =
                 ((PyFloatObject *)left)->ob_fval +
@@ -468,7 +468,7 @@ dummy_func(
             DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
         }
 
-        op(_BINARY_OP_SUBTRACT_FLOAT, (unused/1, left, right -- res)) {
+        op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res)) {
             STAT_INC(BINARY_OP, hit);
             double dres =
                 ((PyFloatObject *)left)->ob_fval -
@@ -477,18 +477,18 @@ dummy_func(
         }
 
         macro(BINARY_OP_MULTIPLY_FLOAT) =
-            _GUARD_BOTH_FLOAT + _BINARY_OP_MULTIPLY_FLOAT;
+            _GUARD_BOTH_FLOAT + unused/1 + _BINARY_OP_MULTIPLY_FLOAT;
         macro(BINARY_OP_ADD_FLOAT) =
-            _GUARD_BOTH_FLOAT + _BINARY_OP_ADD_FLOAT;
+            _GUARD_BOTH_FLOAT + unused/1 + _BINARY_OP_ADD_FLOAT;
         macro(BINARY_OP_SUBTRACT_FLOAT) =
-            _GUARD_BOTH_FLOAT + _BINARY_OP_SUBTRACT_FLOAT;
+            _GUARD_BOTH_FLOAT + unused/1 + _BINARY_OP_SUBTRACT_FLOAT;
 
         op(_GUARD_BOTH_UNICODE, (left, right -- left, right)) {
             DEOPT_IF(!PyUnicode_CheckExact(left));
             DEOPT_IF(!PyUnicode_CheckExact(right));
         }
 
-        op(_BINARY_OP_ADD_UNICODE, (unused/1, left, right -- res)) {
+        op(_BINARY_OP_ADD_UNICODE, (left, right -- res)) {
             STAT_INC(BINARY_OP, hit);
             res = PyUnicode_Concat(left, right);
             _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
@@ -497,7 +497,7 @@ dummy_func(
         }
 
         macro(BINARY_OP_ADD_UNICODE) =
-            _GUARD_BOTH_UNICODE + _BINARY_OP_ADD_UNICODE;
+            _GUARD_BOTH_UNICODE + unused/1 + _BINARY_OP_ADD_UNICODE;
 
         // This is a subtle one. It's a super-instruction for
         // BINARY_OP_ADD_UNICODE followed by STORE_FAST
@@ -505,7 +505,7 @@ dummy_func(
         // So the inputs are the same as for all BINARY_OP
         // specializations, but there is no output.
         // At the end we just skip over the STORE_FAST.
-        op(_BINARY_OP_INPLACE_ADD_UNICODE, (unused/1, left, right --)) {
+        op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right --)) {
             TIER_ONE_ONLY
             assert(next_instr->op.code == STORE_FAST);
             PyObject **target_local = &GETLOCAL(next_instr->op.arg);
@@ -533,7 +533,7 @@ dummy_func(
         }
 
         macro(BINARY_OP_INPLACE_ADD_UNICODE) =
-            _GUARD_BOTH_UNICODE + _BINARY_OP_INPLACE_ADD_UNICODE;
+            _GUARD_BOTH_UNICODE + unused/1 + _BINARY_OP_INPLACE_ADD_UNICODE;
 
         family(BINARY_SUBSCR, INLINE_CACHE_ENTRIES_BINARY_SUBSCR) = {
             BINARY_SUBSCR_DICT,
@@ -1100,7 +1100,7 @@ dummy_func(
 
         inst(POP_EXCEPT, (exc_value -- )) {
             _PyErr_StackItem *exc_info = tstate->exc_info;
-            Py_XSETREF(exc_info->exc_value, exc_value);
+            Py_XSETREF(exc_info->exc_value, exc_value == Py_None ? NULL : exc_value);
         }
 
         inst(RERAISE, (values[oparg], exc -- values[oparg])) {
@@ -1295,14 +1295,14 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
-        op(_STORE_ATTR, (unused/3, v, owner --)) {
+        op(_STORE_ATTR, (v, owner --)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err = PyObject_SetAttr(owner, name, v);
             DECREF_INPUTS();
             ERROR_IF(err, error);
         }
 
-        macro(STORE_ATTR) = _SPECIALIZE_STORE_ATTR + _STORE_ATTR;
+        macro(STORE_ATTR) = _SPECIALIZE_STORE_ATTR + unused/3 + _STORE_ATTR;
 
         inst(DELETE_ATTR, (owner --)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
@@ -1414,7 +1414,7 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
-        op(_LOAD_GLOBAL, (unused/1, unused/1, unused/1 -- res, null if (oparg & 1))) {
+        op(_LOAD_GLOBAL, ( -- res, null if (oparg & 1))) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
             if (PyDict_CheckExact(GLOBALS())
                 && PyDict_CheckExact(BUILTINS()))
@@ -1451,7 +1451,12 @@ dummy_func(
             null = NULL;
         }
 
-        macro(LOAD_GLOBAL) = _SPECIALIZE_LOAD_GLOBAL + _LOAD_GLOBAL;
+        macro(LOAD_GLOBAL) =
+            _SPECIALIZE_LOAD_GLOBAL +
+            counter/1 +
+            globals_version/1 +
+            builtins_version/1 +
+            _LOAD_GLOBAL;
 
         op(_GUARD_GLOBALS_VERSION, (version/1 --)) {
             PyDictObject *dict = (PyDictObject *)GLOBALS();
@@ -1853,7 +1858,7 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
-        op(_LOAD_ATTR, (unused/8, owner -- attr, self_or_null if (oparg & 1))) {
+        op(_LOAD_ATTR, (owner -- attr, self_or_null if (oparg & 1))) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
             if (oparg & 1) {
                 /* Designed to work in tandem with CALL, pushes two values. */
@@ -1886,7 +1891,10 @@ dummy_func(
             }
         }
 
-        macro(LOAD_ATTR) = _SPECIALIZE_LOAD_ATTR + _LOAD_ATTR;
+        macro(LOAD_ATTR) =
+            _SPECIALIZE_LOAD_ATTR +
+            unused/8 +
+            _LOAD_ATTR;
 
         pseudo(LOAD_METHOD) = {
             LOAD_ATTR,
@@ -2317,12 +2325,18 @@ dummy_func(
             // Double-check that the opcode isn't instrumented or something:
             if (ucounter > threshold && this_instr->op.code == JUMP_BACKWARD) {
                 OPT_STAT_INC(attempts);
-                int optimized = _PyOptimizer_BackEdge(frame, this_instr, next_instr, stack_pointer);
+                _Py_CODEUNIT *start = this_instr;
+                /* Back up over EXTENDED_ARGs so optimizer sees the whole instruction */
+                while (oparg > 255) {
+                    oparg >>= 8;
+                    start--;
+                }
+                int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer);
                 ERROR_IF(optimized < 0, error);
                 if (optimized) {
                     // Rewind and enter the executor:
-                    assert(this_instr->op.code == ENTER_EXECUTOR);
-                    next_instr = this_instr;
+                    assert(start->op.code == ENTER_EXECUTOR);
+                    next_instr = start;
                     this_instr[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
                 }
                 else {
@@ -2356,20 +2370,25 @@ dummy_func(
 
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _PyExecutorObject *executor = (_PyExecutorObject *)code->co_executors->executors[oparg&255];
-            Py_INCREF(executor);
-            if (executor->execute == _PyUOpExecute) {
+            if (executor->vm_data.valid) {
+                Py_INCREF(executor);
                 current_executor = (_PyUOpExecutorObject *)executor;
                 GOTO_TIER_TWO();
             }
-            next_instr = executor->execute(executor, frame, stack_pointer);
-            frame = tstate->current_frame;
-            if (next_instr == NULL) {
-                goto resume_with_error;
+            else {
+                /* ENTER_EXECUTOR will be the first code unit of the instruction */
+                assert(oparg < 256);
+                code->co_executors->executors[oparg] = NULL;
+                opcode = this_instr->op.code = executor->vm_data.opcode;
+                this_instr->op.arg = executor->vm_data.oparg;
+                oparg = executor->vm_data.oparg;
+                Py_DECREF(executor);
+                next_instr = this_instr;
+                DISPATCH_GOTO();
             }
-            stack_pointer = _PyFrame_GetStackPointer(frame);
         }
 
-        replaced op(_POP_JUMP_IF_FALSE, (unused/1, cond -- )) {
+        replaced op(_POP_JUMP_IF_FALSE, (cond -- )) {
             assert(PyBool_Check(cond));
             int flag = Py_IsFalse(cond);
             #if ENABLE_SPECIALIZATION
@@ -2378,7 +2397,7 @@ dummy_func(
             JUMPBY(oparg * flag);
         }
 
-        replaced op(_POP_JUMP_IF_TRUE, (unused/1, cond -- )) {
+        replaced op(_POP_JUMP_IF_TRUE, (cond -- )) {
             assert(PyBool_Check(cond));
             int flag = Py_IsTrue(cond);
             #if ENABLE_SPECIALIZATION
@@ -2397,13 +2416,13 @@ dummy_func(
             }
         }
 
-        macro(POP_JUMP_IF_TRUE) = _POP_JUMP_IF_TRUE;
+        macro(POP_JUMP_IF_TRUE) = unused/1 + _POP_JUMP_IF_TRUE;
 
-        macro(POP_JUMP_IF_FALSE) = _POP_JUMP_IF_FALSE;
+        macro(POP_JUMP_IF_FALSE) = unused/1 + _POP_JUMP_IF_FALSE;
 
-        macro(POP_JUMP_IF_NONE) = _IS_NONE + _POP_JUMP_IF_TRUE;
+        macro(POP_JUMP_IF_NONE) = unused/1 + _IS_NONE + _POP_JUMP_IF_TRUE;
 
-        macro(POP_JUMP_IF_NOT_NONE) = _IS_NONE + _POP_JUMP_IF_FALSE;
+        macro(POP_JUMP_IF_NOT_NONE) = unused/1 + _IS_NONE + _POP_JUMP_IF_FALSE;
 
         inst(JUMP_BACKWARD_NO_INTERRUPT, (--)) {
             TIER_ONE_ONLY
@@ -3010,7 +3029,7 @@ dummy_func(
         }
 
         // When calling Python, inline the call using DISPATCH_INLINED().
-        op(_CALL, (unused/2, callable, self_or_null, args[oparg] -- res)) {
+        op(_CALL, (callable, self_or_null, args[oparg] -- res)) {
             // oparg counts all of the args, but *not* self:
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -3079,7 +3098,7 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        macro(CALL) = _SPECIALIZE_CALL + _CALL;
+        macro(CALL) = _SPECIALIZE_CALL + unused/2 + _CALL;
 
         op(_CHECK_CALL_BOUND_METHOD_EXACT_ARGS, (callable, null, unused[oparg] -- callable, null, unused[oparg])) {
             DEOPT_IF(null != NULL);
@@ -4045,6 +4064,16 @@ dummy_func(
         op(_CHECK_VALIDITY, (--)) {
             TIER_TWO_ONLY
             DEOPT_IF(!current_executor->base.vm_data.valid);
+        }
+
+        op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
+            value = ptr;
+        }
+
+        /* Internal -- for testing executors */
+        op(_INTERNAL_INCREMENT_OPT_COUNTER, (opt --)) {
+            _PyCounterOptimizerObject *exe = (_PyCounterOptimizerObject *)opt;
+            exe->count++;
         }
 
 

@@ -342,17 +342,18 @@ operation is being performed, so the intermediate analysis object isn't useful:
 
 .. function:: findlinestarts(code)
 
-   This generator function uses the ``co_lines`` method
-   of the code object *code* to find the offsets which are starts of
+   This generator function uses the :meth:`~codeobject.co_lines` method
+   of the :ref:`code object <code-objects>` *code* to find the offsets which
+   are starts of
    lines in the source code.  They are generated as ``(offset, lineno)`` pairs.
 
    .. versionchanged:: 3.6
       Line numbers can be decreasing. Before, they were always increasing.
 
    .. versionchanged:: 3.10
-      The :pep:`626` ``co_lines`` method is used instead of the
+      The :pep:`626` :meth:`~codeobject.co_lines` method is used instead of the
       :attr:`~codeobject.co_firstlineno` and :attr:`~codeobject.co_lnotab`
-      attributes of the code object.
+      attributes of the :ref:`code object <code-objects>`.
 
    .. versionchanged:: 3.13
       Line numbers can be ``None`` for bytecode that does not map to source lines.
@@ -1214,9 +1215,10 @@ iterations of the loop.
    ``super(cls, self).method()``, ``super(cls, self).attr``).
 
    It pops three values from the stack (from top of stack down):
-   - ``self``: the first argument to the current method
-   -  ``cls``: the class within which the current method was defined
-   -  the global ``super``
+
+   * ``self``: the first argument to the current method
+   * ``cls``: the class within which the current method was defined
+   * the global ``super``
 
    With respect to its argument, it works similarly to :opcode:`LOAD_ATTR`,
    except that ``namei`` is shifted left by 2 bits instead of 1.

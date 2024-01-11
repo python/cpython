@@ -819,7 +819,7 @@ always available when needed. Patch by Mark Shannon.
 .. nonce: qKnSqV
 .. section: Core and Builtins
 
-The threading debug (:envvar:`PYTHONTHREADDEBUG` environment variable) is
+The threading debug (:envvar:`!PYTHONTHREADDEBUG` environment variable) is
 deprecated in Python 3.10 and will be removed in Python 3.12. This feature
 requires a debug build of Python. Patch by Victor Stinner.
 
@@ -1642,9 +1642,9 @@ interval specified with nanosecond precision.
 .. nonce: UptGAn
 .. section: Library
 
-Remove from the :mod:`configparser` module: the :class:`SafeConfigParser`
-class, the :attr:`filename` property of the :class:`ParsingError` class, the
-:meth:`readfp` method of the :class:`ConfigParser` class, deprecated since
+Remove from the :mod:`configparser` module: the :class:`!SafeConfigParser`
+class, the :attr:`!filename` property of the :class:`~configparser.ParsingError` class, the
+:meth:`!readfp` method of the :class:`~configparser.ConfigParser` class, deprecated since
 Python 3.2.
 
 Patch by Hugo van Kemenade.
@@ -2808,7 +2808,7 @@ behaves differently than the similar implementation in :mod:`sysconfig`.
 .. nonce: 3hmkWw
 .. section: Library
 
-:class:`smtpd.MailmanProxy` is now removed as it is unusable without an
+:class:`!smtpd.MailmanProxy` is now removed as it is unusable without an
 external module, ``mailman``. Patch by Donghee Na.
 
 ..
@@ -3483,9 +3483,9 @@ Improved reprs of :mod:`threading` synchronization objects:
 Deprecated the following :mod:`unittest` functions, scheduled for removal in
 Python 3.13:
 
-* :func:`~!unittest.findTestCases`
-* :func:`~!unittest.makeSuite`
-* :func:`~!unittest.getTestCaseNames`
+* :func:`!findTestCases`
+* :func:`!makeSuite`
+* :func:`!getTestCaseNames`
 
 Use :class:`~unittest.TestLoader` methods instead:
 
