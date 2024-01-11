@@ -3297,13 +3297,12 @@
                     oparg >>= 8;
                     start--;
                 }
-                int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer);
+                _PyExecutorObject *executor;
+                int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer, &executor);
                 if (optimized < 0) goto error;
                 if (optimized) {
-                    // Rewind and enter the executor:
-                    assert(start->op.code == ENTER_EXECUTOR);
-                    next_instr = start;
-                    this_instr[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
+                    current_executor = executor;
+                    GOTO_TIER_TWO();
                 }
                 else {
                     int backoff = this_instr[1].cache & ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);

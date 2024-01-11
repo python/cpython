@@ -162,8 +162,28 @@ PyUnstable_SetOptimizer(_PyOptimizerObject *optimizer)
     Py_DECREF(old);
 }
 
+static void
+dump_uop(_PyUOpInstruction *uop)
+{
+    printf("    %s\n", _PyOpcode_uop_name[uop->opcode]);
+}
+
+static void
+dump_executor(_PyExecutorObject *executor)
+{
+    printf("Executor:\n");
+    for (uint32_t i = 0; i < executor->code_size; i++) {
+        dump_uop(&executor->trace[i]);
+    }
+}
+
+/* Returns 1 if optimized, 0 if not optimized, and -1 for an error.
+ * If optimized, *executor_ptr contains a new reference to the executor
+ */
 int
-_PyOptimizer_Optimize(_PyInterpreterFrame *frame, _Py_CODEUNIT *start, PyObject **stack_pointer)
+_PyOptimizer_Optimize(
+    _PyInterpreterFrame *frame, _Py_CODEUNIT *start,
+    PyObject **stack_pointer, _PyExecutorObject **executor_ptr)
 {
     PyCodeObject *code = (PyCodeObject *)frame->f_executable;
     assert(PyCode_Check(code));
@@ -172,12 +192,13 @@ _PyOptimizer_Optimize(_PyInterpreterFrame *frame, _Py_CODEUNIT *start, PyObject 
         return 0;
     }
     _PyOptimizerObject *opt = interp->optimizer;
-    _PyExecutorObject *executor = NULL;
-    int err = opt->optimize(opt, code, start, &executor, (int)(stack_pointer - _PyFrame_Stackbase(frame)));
+    int err = opt->optimize(opt, code, start, executor_ptr, (int)(stack_pointer - _PyFrame_Stackbase(frame)));
     if (err <= 0) {
-        assert(executor == NULL);
+        assert(*executor_ptr == NULL);
         return err;
     }
+    assert(*executor_ptr != NULL);
+    dump_executor(*executor_ptr);
     int index = get_index_for_executor(code, start);
     if (index < 0) {
         /* Out of memory. Don't raise and assume that the
@@ -186,11 +207,11 @@ _PyOptimizer_Optimize(_PyInterpreterFrame *frame, _Py_CODEUNIT *start, PyObject 
          * If an optimizer has already produced an executor,
          * it might get confused by the executor disappearing,
          * but there is not much we can do about that here. */
-        Py_DECREF(executor);
+        Py_DECREF(*executor_ptr);
         return 0;
     }
-    insert_executor(code, start, index, executor);
-    Py_DECREF(executor);
+    insert_executor(code, start, index, *executor_ptr);
+    assert((*executor_ptr)->vm_data.valid);
     return 1;
 }
 
@@ -752,9 +773,12 @@ allocate_executor(int exit_count, int length)
 {
     int size = exit_count*sizeof(_PyExitData) + length*sizeof(_PyUOpInstruction);
     _PyExecutorObject *res = PyObject_NewVar(_PyExecutorObject, &_PyUOpExecutor_Type, size);
-    if (res != NULL) {
-        res->trace = (_PyUOpInstruction *)(res->exits + exit_count);
+    if (res == NULL) {
+        return NULL;
     }
+    res->trace = (_PyUOpInstruction *)(res->exits + exit_count);
+    res->code_size = length;
+    res->exit_count = exit_count;
     return res;
 }
 

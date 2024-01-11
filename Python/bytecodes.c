@@ -2331,13 +2331,12 @@ dummy_func(
                     oparg >>= 8;
                     start--;
                 }
-                int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer);
+                _PyExecutorObject *executor;
+                int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer, &executor);
                 ERROR_IF(optimized < 0, error);
                 if (optimized) {
-                    // Rewind and enter the executor:
-                    assert(start->op.code == ENTER_EXECUTOR);
-                    next_instr = start;
-                    this_instr[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
+                    current_executor = executor;
+                    GOTO_TIER_TWO();
                 }
                 else {
                     int backoff = this_instr[1].cache & ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
@@ -4079,13 +4078,13 @@ dummy_func(
             DEOPT_IF(exit->hotness < 0);
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
-            _PyExecutorObject *executor = NULL;
+            _PyExecutorObject *executor;
             if (target->op.code == ENTER_EXECUTOR) {
-                _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
+                executor = code->co_executors->executors[oparg & 255];
                 Py_INCREF(executor);
             } else {
-                _PyOptimizerObject *opt = tstate->interp->optimizer;
-                int optimized = opt->optimize(opt, code, target, &executor, (int)(stack_pointer - _PyFrame_Stackbase(frame)));
+                printf("Hot side exit.\n");
+                int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor);
                 if (optimized <= 0) {
                     next_instr = target;
                     exit->hotness = -10000; /* Choose a better number */

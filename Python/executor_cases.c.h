@@ -3414,13 +3414,13 @@
             if (exit->hotness < 0) goto deoptimize;
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
-            _PyExecutorObject *executor = NULL;
+            _PyExecutorObject *executor;
             if (target->op.code == ENTER_EXECUTOR) {
-                _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
+                executor = code->co_executors->executors[oparg & 255];
                 Py_INCREF(executor);
             } else {
-                _PyOptimizerObject *opt = tstate->interp->optimizer;
-                int optimized = opt->optimize(opt, code, target, &executor, (int)(stack_pointer - _PyFrame_Stackbase(frame)));
+                printf("Hot side exit.\n");
+                int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor);
                 if (optimized <= 0) {
                     next_instr = target;
                     exit->hotness = -10000; /* Choose a better number */

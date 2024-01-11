@@ -45,6 +45,8 @@ typedef struct _exit_data {
 typedef struct _PyExecutorObject {
     PyObject_VAR_HEAD
     _PyVMData vm_data; /* Used by the VM, but opaque to the optimizer */
+    uint32_t exit_count;
+    uint32_t code_size;
     _PyUOpInstruction *trace;
     _PyExitData exits[1];
 } _PyExecutorObject;
@@ -79,7 +81,7 @@ PyAPI_FUNC(_PyOptimizerObject *) PyUnstable_GetOptimizer(void);
 PyAPI_FUNC(_PyExecutorObject *) PyUnstable_GetExecutor(PyCodeObject *code, int offset);
 
 int
-_PyOptimizer_Optimize(struct _PyInterpreterFrame *frame, _Py_CODEUNIT *start, PyObject **stack_pointer);
+_PyOptimizer_Optimize(struct _PyInterpreterFrame *frame, _Py_CODEUNIT *start, PyObject **stack_pointer, _PyExecutorObject **exec_ptr);
 
 extern _PyOptimizerObject _PyOptimizer_Default;
 
