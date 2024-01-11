@@ -214,22 +214,31 @@ struct _ts {
 
 };
 
-#ifdef Py_DEBUG
-   // A debug build is likely built with low optimization level which implies
-   // higher stack memory usage than a release build: use a lower limit.
-#  define Py_C_RECURSION_LIMIT 500
-#elif defined(__wasi__)
-   // WASI has limited call stack. Python's recursion limit depends on code
-   // layout, optimization, and WASI runtime. Wasmtime can handle about 700
-   // recursions, sometimes less. 500 is a more conservative limit.
-#  define Py_C_RECURSION_LIMIT 500
-#elif defined(__s390x__)
-#  define Py_C_RECURSION_LIMIT 1200
-#elif defined(_WIN32)
-#  define Py_C_RECURSION_LIMIT 4000
-#else
-   // This value is duplicated in Lib/test/support/__init__.py
-#  define Py_C_RECURSION_LIMIT 10000
+
+#if defined(__has_feature)  /* Clang */
+#  if __has_feature(address_sanitizer) /* is ASAN enabled? */
+#    define Py_C_RECURSION_LIMIT 7000
+#  endif
+#endif
+
+#ifndef Py_C_RECURSION_LIMIT
+#  ifdef Py_DEBUG
+     // A debug build is likely built with low optimization level which implies
+     // higher stack memory usage than a release build: use a lower limit.
+#    define Py_C_RECURSION_LIMIT 500
+#  elif defined(__wasi__)
+     // WASI has limited call stack. Python's recursion limit depends on code
+     // layout, optimization, and WASI runtime. Wasmtime can handle about 700
+     // recursions, sometimes less. 500 is a more conservative limit.
+#    define Py_C_RECURSION_LIMIT 500
+#  elif defined(__s390x__)
+#    define Py_C_RECURSION_LIMIT 1200
+#  elif defined(_WIN32)
+#    define Py_C_RECURSION_LIMIT 4000
+#  else
+     // This value is duplicated in Lib/test/support/__init__.py
+#    define Py_C_RECURSION_LIMIT 10000
+#  endif
 #endif
 
 
