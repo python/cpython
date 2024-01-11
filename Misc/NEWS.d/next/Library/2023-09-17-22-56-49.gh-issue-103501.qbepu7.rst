@@ -1,2 +1,2 @@
-Raise ``OSError`` instead of return ``[]`` in ``glob.glob`` when max open
+Raise :exc:`OSError` instead of return ``[]`` in :func:`glob.glob` when max open
 file limit reached.
