@@ -371,7 +371,7 @@ def _sanitize_filename(filename):
     return filename
 
 
-class ZipInfo (object):
+class ZipInfo:
     """Class with attributes describing each file in the ZIP archive."""
 
     __slots__ = (
@@ -379,7 +379,7 @@ class ZipInfo (object):
         'filename',
         'date_time',
         'compress_type',
-        '_compresslevel',
+        'compress_level',
         'comment',
         'extra',
         'create_system',
@@ -413,7 +413,7 @@ class ZipInfo (object):
 
         # Standard values:
         self.compress_type = ZIP_STORED # Type of compression for the file
-        self._compresslevel = None      # Level for the compressor
+        self.compress_level = None      # Level for the compressor
         self.comment = b""              # Comment for each file
         self.extra = b""                # ZIP extra data
         if sys.platform == 'win32':
@@ -434,6 +434,18 @@ class ZipInfo (object):
         # Other attributes are set by class ZipFile:
         # header_offset         Byte offset to the file header
         # CRC                   CRC-32 of the uncompressed file
+
+    # Historically ._compresslevel was private for no reason.  People used it as
+    # a public attribute when constructing their own ZipInfo to control the
+    # setting on a per file basis when added to an archive.  We moved it into
+    # .compress_level, this property retains compatibility.
+    @property
+    def _compresslevel(self):
+        return self.compress_level
+
+    @_compresslevel.setter
+    def _compresslevel(self, value):
+        self.compress_level = value
 
     def __repr__(self):
         result = ['<%s filename=%r' % (self.__class__.__name__, self.filename)]
@@ -1191,7 +1203,7 @@ class _ZipWriteFile(io.BufferedIOBase):
         self._zip64 = zip64
         self._zipfile = zf
         self._compressor = _get_compressor(zinfo.compress_type,
-                                           zinfo._compresslevel)
+                                           zinfo.compress_level)
         self._file_size = 0
         self._compress_size = 0
         self._crc = 0
@@ -1603,7 +1615,7 @@ class ZipFile:
         elif mode == 'w':
             zinfo = ZipInfo(name)
             zinfo.compress_type = self.compression
-            zinfo._compresslevel = self.compresslevel
+            zinfo.compress_level = self.compresslevel
         else:
             # Get info object for name
             zinfo = self.getinfo(name)
@@ -1855,9 +1867,9 @@ class ZipFile:
                 zinfo.compress_type = self.compression
 
             if compresslevel is not None:
-                zinfo._compresslevel = compresslevel
+                zinfo.compress_level = compresslevel
             else:
-                zinfo._compresslevel = self.compresslevel
+                zinfo.compress_level = self.compresslevel
 
             with open(filename, "rb") as src, self.open(zinfo, 'w') as dest:
                 shutil.copyfileobj(src, dest, 1024*8)
@@ -1875,7 +1887,7 @@ class ZipFile:
             zinfo = ZipInfo(filename=zinfo_or_arcname,
                             date_time=time.localtime(time.time())[:6])
             zinfo.compress_type = self.compression
-            zinfo._compresslevel = self.compresslevel
+            zinfo.compress_level = self.compresslevel
             if zinfo.filename.endswith('/'):
                 zinfo.external_attr = 0o40775 << 16   # drwxrwxr-x
                 zinfo.external_attr |= 0x10           # MS-DOS directory flag
@@ -1896,7 +1908,7 @@ class ZipFile:
             zinfo.compress_type = compress_type
 
         if compresslevel is not None:
-            zinfo._compresslevel = compresslevel
+            zinfo.compress_level = compresslevel
 
         zinfo.file_size = len(data)            # Uncompressed size
         with self._lock:
