@@ -1015,6 +1015,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(kw));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(kw1));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(kw2));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(kwdefaults));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(lambda));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(last));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(last_exc));

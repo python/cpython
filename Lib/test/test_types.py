@@ -2263,5 +2263,38 @@ class CoroutineTests(unittest.TestCase):
             'close', 'throw'}))
 
 
+class FunctionTests(unittest.TestCase):
+    def test_function_type_defaults(self):
+        def ex(a, /, b, *, c):
+            return a + b + c
+
+        func = types.FunctionType(
+            ex.__code__, {}, "func", (1, 2), None, {'c': 3},
+        )
+
+        self.assertEqual(func(), 6)
+        self.assertEqual(func.__defaults__, (1, 2))
+        self.assertEqual(func.__kwdefaults__, {'c': 3})
+
+        func = types.FunctionType(
+            ex.__code__, {}, "func", None, None, None,
+        )
+        self.assertEqual(func.__defaults__, None)
+        self.assertEqual(func.__kwdefaults__, None)
+
+    def test_function_type_wrong_defaults(self):
+        def ex(a, /, b, *, c):
+            return a + b + c
+
+        with self.assertRaisesRegex(TypeError, 'arg 4'):
+            types.FunctionType(
+                ex.__code__, {}, "func", 1, None, {'c': 3},
+            )
+        with self.assertRaisesRegex(TypeError, 'arg 6'):
+            types.FunctionType(
+                ex.__code__, {}, "func", None, None, 3,
+            )
+
+
 if __name__ == '__main__':
     unittest.main()
