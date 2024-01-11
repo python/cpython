@@ -4,7 +4,7 @@
 .. release date: 2020-10-05
 .. section: Security
 
-Fixes `python3x._pth` being ignored on Windows, caused by the fix for
+Fixes ``python3x._pth`` being ignored on Windows, caused by the fix for
 :issue:`29778` (CVE-2020-15801).
 
 ..
@@ -217,7 +217,7 @@ Port the :mod:`_opcode` extension module to multi-phase initialization
 .. nonce: 3-VJiH
 .. section: Core and Builtins
 
-Fixes the wrong error description in the error raised by using 2 `,` in
+Fixes the wrong error description in the error raised by using 2 ``,`` in
 format string in f-string and :meth:`str.format`.
 
 ..
@@ -747,7 +747,7 @@ Galindo.
 
 Fix a bug where a line with only a line continuation character is not
 considered a blank line at tokenizer level. In such cases, more than a
-single `NEWLINE` token was emitted. The old parser was working around the
+single ``NEWLINE`` token was emitted. The old parser was working around the
 issue, but the new parser threw a :exc:`SyntaxError` for valid input due to
 this. For example, an empty line following a line continuation character was
 interpreted as a :exc:`SyntaxError`.
@@ -1157,7 +1157,7 @@ The :class:`threading.Thread` constructor now uses the target name if the
 .. nonce: bnh-VG
 .. section: Library
 
-fix `tkinter.EventType` Enum so all members are strings, and none are tuples
+fix ``tkinter.EventType`` Enum so all members are strings, and none are tuples
 
 ..
 
@@ -1229,8 +1229,8 @@ Previously there was no way to check that without using private API. See the
 .. nonce: pI_uZQ
 .. section: Library
 
-Honor `object` overrides in `Enum` class creation (specifically, `__str__`,
-`__repr__`, `__format__`, and `__reduce_ex__`).
+Honor ``object`` overrides in ``Enum`` class creation (specifically, ``__str__``,
+``__repr__``, ``__format__``, and ``__reduce_ex__``).
 
 ..
 
@@ -1239,7 +1239,7 @@ Honor `object` overrides in `Enum` class creation (specifically, `__str__`,
 .. nonce: IpYkEe
 .. section: Library
 
-`enum.Flag` and `enum.IntFlag` members are now iterable
+``enum.Flag`` and ``enum.IntFlag`` members are now iterable.
 
 ..
 
@@ -1557,7 +1557,7 @@ activation.
 .. nonce: wqrj8C
 .. section: Library
 
-Recursive evaluation of `typing.ForwardRef` in `get_type_hints`.
+Recursive evaluation of ``typing.ForwardRef`` in ``get_type_hints``.
 
 ..
 
@@ -1851,8 +1851,8 @@ Merry.
 .. nonce: 1dk8Bu
 .. section: Library
 
-:mod:`ensurepip` now disables the use of `pip` cache when installing the
-bundled versions of `pip` and `setuptools`.  Patch by Krzysztof Konopko.
+:mod:`ensurepip` now disables the use of ``pip`` cache when installing the
+bundled versions of ``pip`` and ``setuptools``.  Patch by Krzysztof Konopko.
 
 ..
 
@@ -1933,7 +1933,7 @@ Smith and Tal Einat.
 .. nonce: n7fOwS
 .. section: Library
 
-Added a `defaults` parameter to :class:`logging.Formatter`, to allow
+Added a ``defaults`` parameter to :class:`logging.Formatter`, to allow
 specifying default values for custom fields. Patch by Asaf Alon and Bar
 Harel.
 
@@ -2225,7 +2225,7 @@ policy.
 .. nonce: ps7Yf1
 .. section: Library
 
-func:`hashlib.new` passed ``usedforsecurity`` to OpenSSL EVP constructor
+:func:`hashlib.new` passed ``usedforsecurity`` to OpenSSL EVP constructor
 ``_hashlib.new()``. test_hashlib and test_smtplib handle strict security
 policy better.
 
@@ -2393,8 +2393,8 @@ closes connection during TLS negotiation
 .. nonce: kOOaHn
 .. section: Library
 
-fix default `_missing_` so a duplicate `ValueError` is not set as the
-`__context__` of the original `ValueError`
+fix default ``_missing_`` so a duplicate ``ValueError`` is not set as the
+``__context__`` of the original ``ValueError``.
 
 ..
 
