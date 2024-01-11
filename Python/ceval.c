@@ -17,7 +17,6 @@
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_opcode_metadata.h" // EXTRA_CASES
 #include "pycore_opcode_utils.h"  // MAKE_FUNCTION_*
-#include "pycore_optimizer.h"
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_range.h"         // _PyRangeIterObject
@@ -963,6 +962,7 @@ enter_tier_two:
 
 #ifdef _Py_JIT
 
+    ;  // ;)
     jit_func jitted = current_executor->jit_code;
     next_instr = jitted(frame, stack_pointer, tstate);
     frame = tstate->current_frame;
