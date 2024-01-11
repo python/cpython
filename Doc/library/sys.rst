@@ -1254,10 +1254,13 @@ always available.
     .. versionchanged:: 3.4
 
         :term:`Module specs <module spec>` were introduced in Python 3.4, by
-        :pep:`451`. Earlier versions of Python looked for a method called
-        :meth:`!find_module`.
-        This is still called as a fallback if a :data:`meta_path` entry doesn't
-        have a :meth:`~importlib.abc.MetaPathFinder.find_spec` method.
+        :pep:`451`.
+
+    .. versionchanged:: 3.12
+
+        Removed the fallback that looked for a :meth:`!find_module` method
+        if a :data:`meta_path` entry didn't have a
+        :meth:`~importlib.abc.MetaPathFinder.find_spec` method.
 
 .. data:: modules
 
