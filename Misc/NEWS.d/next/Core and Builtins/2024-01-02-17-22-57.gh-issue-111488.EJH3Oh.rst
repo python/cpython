@@ -1,0 +1,2 @@
+Changed error message in case of no 'in' keyword after 'for' in list
+comprehensions

@@ -466,8 +466,10 @@ later:
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_dict.h"          // _Py_dict_lookup()
+#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include <stddef.h>               // offsetof()
 
 #include "clinic/odictobject.c.h"
@@ -1047,7 +1049,10 @@ _odict_popkey_hash(PyObject *od, PyObject *key, PyObject *failobj,
             return NULL;
         }
         /* Now delete the value from the dict. */
-        value = _PyDict_Pop_KnownHash(od, key, hash, failobj);
+        if (_PyDict_Pop_KnownHash((PyDictObject *)od, key, hash,
+                                  &value) == 0) {
+            value = Py_NewRef(failobj);
+        }
     }
     else if (value == NULL && !PyErr_Occurred()) {
         /* Apply the fallback value, if necessary. */

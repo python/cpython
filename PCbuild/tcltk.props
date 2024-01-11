@@ -2,7 +2,7 @@
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="pyproject.props" Condition="$(__PyProject_Props_Imported) != 'true'" />
   <PropertyGroup>
-    <TclVersion Condition="$(TclVersion) == ''">8.6.13.0</TclVersion>
+    <TclVersion Condition="$(TclVersion) == ''">8.6.13.1</TclVersion>
     <TkVersion Condition="$(TkVersion) == ''">$(TclVersion)</TkVersion>
     <TclMajorVersion>$([System.Version]::Parse($(TclVersion)).Major)</TclMajorVersion>
     <TclMinorVersion>$([System.Version]::Parse($(TclVersion)).Minor)</TclMinorVersion>
