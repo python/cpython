@@ -26,7 +26,7 @@ get_list_state(void)
 {
     _PyFreeListState *state = _PyFreeListState_GET();
     assert(state != NULL);
-    return &state->list;
+    return &state->list_state;
 }
 #endif
 
@@ -124,7 +124,7 @@ void
 _PyList_ClearFreeList(_PyFreeListState *freelist_state, int is_finalization)
 {
 #ifdef WITH_FREELISTS
-    struct _Py_list_state *state = &freelist_state->list;
+    struct _Py_list_state *state = &freelist_state->list_state;
     while (state->numfree > 0) {
         PyListObject *op = state->free_list[--state->numfree];
         assert(PyList_CheckExact(op));

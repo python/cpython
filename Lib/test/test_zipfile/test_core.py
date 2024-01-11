@@ -2272,6 +2272,7 @@ class OtherTests(unittest.TestCase):
             with zipfile.ZipFile(zip_file) as zf:
                 self.assertRaises(RuntimeError, zf.extract, 'a.txt')
 
+    @requires_zlib()
     def test_full_overlap(self):
         data = (
             b'PK\x03\x04\x14\x00\x00\x00\x08\x00\xa0lH\x05\xe2\x1e'
@@ -2300,6 +2301,7 @@ class OtherTests(unittest.TestCase):
             with self.assertRaisesRegex(zipfile.BadZipFile, 'File name.*differ'):
                 zipf.read('b')
 
+    @requires_zlib()
     def test_quoted_overlap(self):
         data = (
             b'PK\x03\x04\x14\x00\x00\x00\x08\x00\xa0lH\x05Y\xfc'
