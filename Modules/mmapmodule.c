@@ -1539,7 +1539,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     m_obj->weakreflist = NULL;
     m_obj->exports = 0;
     /* set the tag name */
-    if (tagname != Py_None) {
+    if (!Py_IsNone(tagname)) {
         if (!PyUnicode_Check(tagname)) {
             Py_DECREF(m_obj);
             return PyErr_Format(PyExc_TypeError, "expected str or None for "
