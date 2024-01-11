@@ -79,6 +79,12 @@ The module defines the following items:
    of the last modification to the file; the fields are described in section
    :ref:`zipinfo-objects`.
 
+   .. versionchanged:: 3.13
+      While the internals of a :class:`!ZipInfo` objects remain
+      un(der)documented, the ``.compress_level`` attribute was renamed from
+      ``._compresslevel``. The old name continues to work as a property for
+      backwards compatibility.
+
 .. function:: is_zipfile(filename)
 
    Returns ``True`` if *filename* is a valid ZIP file based on its magic number,
