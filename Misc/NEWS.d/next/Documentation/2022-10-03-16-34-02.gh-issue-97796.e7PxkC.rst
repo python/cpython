@@ -1,0 +1,2 @@
+Special-case ``typing._AnnotatedAlias`` to not follow ``__origin__`` when
+rendering help via ``pydoc.render_doc``.
