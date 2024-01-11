@@ -450,7 +450,8 @@ class TestSpecifics(unittest.TestCase):
 
     def test_condition_expression_with_redundant_comparisons_compiles(self):
         # See gh-113054
-        compile('if 9<9<9and 9or 9:9', '<eval>', 'exec')
+        with self.assertWarns(SyntaxWarning):
+            compile('if 9<9<9and 9or 9:9', '<eval>', 'exec')
 
     def test_dead_code_with_except_handler_compiles(self):
         compile(textwrap.dedent("""
