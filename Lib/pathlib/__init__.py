@@ -11,6 +11,7 @@ import os
 import posixpath
 import sys
 import warnings
+from itertools import chain
 from _collections_abc import Sequence
 
 try:
@@ -75,6 +76,20 @@ class PurePath(_abc.PurePathBase):
     """
 
     __slots__ = (
+        # The `_drv`, `_root` and `_tail_cached` slots store parsed and
+        # normalized parts of the path. They are set when any of the `drive`,
+        # `root` or `_tail` properties are accessed for the first time. The
+        # three-part division corresponds to the result of
+        # `os.path.splitroot()`, except that the tail is further split on path
+        # separators (i.e. it is a list of strings), and that the root and
+        # tail are normalized.
+        '_drv', '_root', '_tail_cached',
+
+        # The `_str` slot stores the string representation of the path,
+        # computed from the drive, root and tail when `__str__()` is called
+        # for the first time. It's used to implement `_str_normcase`
+        '_str',
+
         # The `_str_normcase_cached` slot stores the string path with
         # normalized case. It is set when the `_str_normcase` property is
         # accessed for the first time. It's used to implement `__eq__()`
@@ -195,6 +210,103 @@ class PurePath(_abc.PurePathBase):
             return NotImplemented
         return self._parts_normcase >= other._parts_normcase
 
+    def __str__(self):
+        """Return the string representation of the path, suitable for
+        passing to system calls."""
+        try:
+            return self._str
+        except AttributeError:
+            self._str = self._format_parsed_parts(self.drive, self.root,
+                                                  self._tail) or '.'
+            return self._str
+
+    @classmethod
+    def _format_parsed_parts(cls, drv, root, tail):
+        if drv or root:
+            return drv + root + cls.pathmod.sep.join(tail)
+        elif tail and cls.pathmod.splitdrive(tail[0])[0]:
+            tail = ['.'] + tail
+        return cls.pathmod.sep.join(tail)
+
+    def _from_parsed_parts(self, drv, root, tail):
+        path_str = self._format_parsed_parts(drv, root, tail)
+        path = self.with_segments(path_str)
+        path._str = path_str or '.'
+        path._drv = drv
+        path._root = root
+        path._tail_cached = tail
+        return path
+
+    @classmethod
+    def _parse_path(cls, path):
+        if not path:
+            return '', '', []
+        sep = cls.pathmod.sep
+        altsep = cls.pathmod.altsep
+        if altsep:
+            path = path.replace(altsep, sep)
+        drv, root, rel = cls.pathmod.splitroot(path)
+        if not root and drv.startswith(sep) and not drv.endswith(sep):
+            drv_parts = drv.split(sep)
+            if len(drv_parts) == 4 and drv_parts[2] not in '?.':
+                # e.g. //server/share
+                root = sep
+            elif len(drv_parts) == 6:
+                # e.g. //?/unc/server/share
+                root = sep
+        parsed = [sys.intern(str(x)) for x in rel.split(sep) if x and x != '.']
+        return drv, root, parsed
+
+    def _load_parts(self):
+        paths = self._raw_paths
+        if len(paths) == 0:
+            path = ''
+        elif len(paths) == 1:
+            path = paths[0]
+        else:
+            path = self.pathmod.join(*paths)
+        self._drv, self._root, self._tail_cached = self._parse_path(path)
+
+    @property
+    def drive(self):
+        """The drive prefix (letter or UNC path), if any."""
+        try:
+            return self._drv
+        except AttributeError:
+            self._load_parts()
+            return self._drv
+
+    @property
+    def root(self):
+        """The root of the path, if any."""
+        try:
+            return self._root
+        except AttributeError:
+            self._load_parts()
+            return self._root
+
+    @property
+    def _tail(self):
+        try:
+            return self._tail_cached
+        except AttributeError:
+            self._load_parts()
+            return self._tail_cached
+
+    @property
+    def anchor(self):
+        """The concatenation of the drive and root, or ''."""
+        return self.drive + self.root
+
+    @property
+    def parts(self):
+        """An object providing sequence-like access to the
+        components in the filesystem path."""
+        if self.drive or self.root:
+            return (self.drive + self.root,) + tuple(self._tail)
+        else:
+            return tuple(self._tail)
+
     @property
     def parent(self):
         """The logical parent of the path."""
@@ -245,10 +357,19 @@ class PurePath(_abc.PurePathBase):
                    "scheduled for removal in Python 3.14")
             warnings.warn(msg, DeprecationWarning, stacklevel=2)
             other = self.with_segments(other, *_deprecated)
-        path = _abc.PurePathBase.relative_to(self, other, walk_up=walk_up)
-        path._drv = path._root = ''
-        path._tail_cached = path._raw_paths.copy()
-        return path
+        elif not isinstance(other, PurePath):
+            other = self.with_segments(other)
+        for step, path in enumerate(chain([other], other.parents)):
+            if path == self or path in self.parents:
+                break
+            elif not walk_up:
+                raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
+            elif path.name == '..':
+                raise ValueError(f"'..' segment in {str(other)!r} cannot be walked")
+        else:
+            raise ValueError(f"{str(self)!r} and {str(other)!r} have different anchors")
+        parts = ['..'] * step + self._tail[len(path._tail):]
+        return self._from_parsed_parts('', '', parts)
 
     def is_relative_to(self, other, /, *_deprecated):
         """Return True if the path is relative to another path or False.
@@ -259,7 +380,9 @@ class PurePath(_abc.PurePathBase):
                    "scheduled for removal in Python 3.14")
             warnings.warn(msg, DeprecationWarning, stacklevel=2)
             other = self.with_segments(other, *_deprecated)
-        return _abc.PurePathBase.is_relative_to(self, other)
+        elif not isinstance(other, PurePath):
+            other = self.with_segments(other)
+        return other == self or other in self.parents
 
     def as_uri(self):
         """Return the path as a URI."""
@@ -395,7 +518,7 @@ class Path(_abc.PathBase, PurePath):
     def _scandir(self):
         return os.scandir(self)
 
-    def _make_child_entry(self, entry):
+    def _make_child_entry(self, entry, is_dir=False):
         # Transform an entry yielded from _scandir() into a path object.
         path_str = entry.name if str(self) == '.' else entry.path
         path = self.with_segments(path_str)
