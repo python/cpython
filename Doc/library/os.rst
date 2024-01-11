@@ -984,6 +984,9 @@ as internal buffering of data.
    <fd_inheritance>` by default or non-inheritable if *inheritable*
    is ``False``.
 
+   If *fd* is equal to *fd2* and *inheritable* is ``True``, the "inheritable"
+   flag of the specified file descriptor is not changed.
+
    .. availability:: not WASI.
 
    .. versionchanged:: 3.4

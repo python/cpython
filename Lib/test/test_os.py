@@ -2255,7 +2255,7 @@ class TestInvalidFD(unittest.TestCase):
             -2**31,
         ]
         for fd, fd2 in itertools.product(fds, repeat=2):
-            if fd != fd2:
+            if fd != valid_fd or fd2 != valid_fd:
                 with self.subTest(fd=fd, fd2=fd2):
                     with self.assertRaises(OSError) as ctx:
                         os.dup2(fd, fd2)
@@ -4476,6 +4476,26 @@ class FDInheritanceTests(unittest.TestCase):
         self.addCleanup(os.close, fd3)
         self.assertEqual(os.dup2(fd, fd3, inheritable=False), fd3)
         self.assertFalse(os.get_inheritable(fd3))
+
+    @unittest.skipUnless(hasattr(os, 'dup2'), "need os.dup2()")
+    @unittest.skipIf(hasattr(sys, 'getandroidapilevel') and
+                     sys.getandroidapilevel() < 23,
+                     "bpo-26935: os.dup2() fails for equal fds on old Android")
+    def test_dup2_eq_fd(self):
+        fd = os.open(__file__, os.O_RDONLY)
+        self.addCleanup(os.close, fd)
+
+        # Non-inheritability is preserved by default and even with explicit
+        # inheritable=True.
+        os.dup2(fd, fd)
+        self.assertFalse(os.get_inheritable(fd))
+        os.dup2(fd, fd, inheritable=True)
+        self.assertFalse(os.get_inheritable(fd))
+
+        # gh-77043: Inheritability is removed with inheritable=False.
+        os.set_inheritable(fd, True)
+        os.dup2(fd, fd, inheritable=False)
+        self.assertFalse(os.get_inheritable(fd))
 
     @unittest.skipUnless(hasattr(os, 'openpty'), "need os.openpty()")
     def test_openpty(self):
