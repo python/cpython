@@ -1,4 +1,5 @@
 import unittest
+from unittest import mock
 from test import support
 from test.support import os_helper
 from test.support import socket_helper
@@ -6432,6 +6433,28 @@ class SendfileUsingSendfileTest(SendfileUsingSendTest):
     """
     def meth_from_sock(self, sock):
         return getattr(sock, "_sendfile_use_sendfile")
+
+    def _test_blocksize(self):
+        address = self.serv.getsockname()
+        file = open(os_helper.TESTFN, 'rb')
+        with socket.create_connection(address) as sock, file as file:
+            meth = self.meth_from_sock(sock)
+            with mock.patch('os.sendfile', wraps=os.sendfile) as mocked:
+                sent = meth(file, offset=10)
+                self.assertEqual(mocked.call_count, 2)
+                # blocksize is the blocksize argument in first call.
+                blocksize = mocked.call_args_list[0][0][3]
+                self.assertEqual(blocksize, self.FILESIZE - 10)
+            self.assertEqual(sent, self.FILESIZE - 10)
+            self.assertEqual(file.tell(), self.FILESIZE)
+
+    def test_blocksize(self):
+        # gh-112341: Check whether the blocksize is exactly fsize - offset if
+        # count is not specified when calling os.sendfile.
+        conn = self.accept_conn()
+        data = self.recv_data(conn)
+        self.assertEqual(len(data), self.FILESIZE - 10)
+        self.assertEqual(data, self.FILEDATA[10:])
 
 
 @unittest.skipUnless(HAVE_SOCKET_ALG, 'AF_ALG required')
