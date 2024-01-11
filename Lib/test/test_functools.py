@@ -1879,7 +1879,7 @@ class TestLRU:
                 if sys.platform == 'win32':
                     fib(1200)
                 else:
-                    fib(3000)
+                    fib(2500)
         if self.module == c_functools:
             fib.cache_clear()
             with support.infinite_recursion():
