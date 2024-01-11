@@ -292,19 +292,6 @@ emit(const StencilGroup *group, uint64_t patches[])
     copy_and_patch((char *)patches[HoleValue_DATA], &group->data, patches);
 }
 
-// This becomes the executor's execute member, and handles some setup/teardown:
-static _Py_CODEUNIT *
-execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame,
-        PyObject **stack_pointer)
-{
-    PyThreadState *tstate = PyThreadState_Get();
-    assert(PyObject_TypeCheck(executor, &_PyUOpExecutor_Type));
-    jit_func jitted = ((_PyUOpExecutorObject *)executor)->jit_code;
-    _Py_CODEUNIT *next_instr = jitted(frame, stack_pointer, tstate);
-    Py_DECREF(executor);
-    return next_instr;
-}
-
 // Compiles executor in-place. Don't forget to call _PyJIT_Free later!
 int
 _PyJIT_Compile(_PyUOpExecutorObject *executor)
@@ -354,7 +341,6 @@ _PyJIT_Compile(_PyUOpExecutorObject *executor)
         jit_free(memory, code_size + data_size);
         goto fail;
     }
-    executor->base.execute = execute;
     executor->jit_code = memory;
     executor->jit_size = code_size + data_size;
     return 1;

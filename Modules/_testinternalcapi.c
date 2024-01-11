@@ -968,7 +968,7 @@ get_counter_optimizer(PyObject *self, PyObject *arg)
 static PyObject *
 get_uop_optimizer(PyObject *self, PyObject *arg)
 {
-    return PyUnstable_Optimizer_NewUOpOptimizer(false);
+    return PyUnstable_Optimizer_NewUOpOptimizer();
 }
 
 static PyObject *

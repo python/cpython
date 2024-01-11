@@ -2380,16 +2380,8 @@
             _PyExecutorObject *executor = (_PyExecutorObject *)code->co_executors->executors[oparg&255];
             if (executor->vm_data.valid) {
                 Py_INCREF(executor);
-                if (executor->execute == _PyUOpExecute) {
-                    current_executor = (_PyUOpExecutorObject *)executor;
-                    GOTO_TIER_TWO();
-                }
-                next_instr = executor->execute(executor, frame, stack_pointer);
-                frame = tstate->current_frame;
-                if (next_instr == NULL) {
-                    goto resume_with_error;
-                }
-                stack_pointer = _PyFrame_GetStackPointer(frame);
+                current_executor = (_PyUOpExecutorObject *)executor;
+                GOTO_TIER_TWO();
             }
             else {
                 code->co_executors->executors[oparg & 255] = NULL;

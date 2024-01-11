@@ -26,16 +26,6 @@ typedef struct {
     _PyUOpInstruction trace[1];
 } _PyUOpExecutorObject;
 
-typedef struct {
-    _PyOptimizerObject base;
-    bool jit;
-} _PyUOpOptimizerObject;
-
-_Py_CODEUNIT *_PyUOpExecute(
-    _PyExecutorObject *executor,
-    _PyInterpreterFrame *frame,
-    PyObject **stack_pointer);
-
 #ifdef __cplusplus
 }
 #endif

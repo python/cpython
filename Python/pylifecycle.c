@@ -1226,19 +1226,20 @@ init_interp_main(PyThreadState *tstate)
 
     // Turn on experimental tier 2 (uops-based) optimizer
     if (is_main_interp) {
+#ifndef _Py_JIT
+        // No JIT, maybe use tier two interpreter:
         char *envvar = Py_GETENV("PYTHON_UOPS");
-        bool interpret_tier_two = envvar != NULL && *envvar > '0';
+        int enabled = envvar != NULL && *envvar > '0';
         if (_Py_get_xoption(&config->xoptions, L"uops") != NULL) {
-            interpret_tier_two = true;
+            enabled = 1;
         }
-#ifdef _Py_JIT
-        bool jit_tier_two = true;
+        if (enabled) {
 #else
-        bool jit_tier_two = false;
+        // Always enable tier two for JIT builds (ignoring the environment
+        // variable and X option above):
+        if (true) {
 #endif
-        if (interpret_tier_two || jit_tier_two) {
-            // If both are set, the interpreter wins:
-            PyObject *opt = PyUnstable_Optimizer_NewUOpOptimizer(!interpret_tier_two);
+            PyObject *opt = PyUnstable_Optimizer_NewUOpOptimizer();
             if (opt == NULL) {
                 return _PyStatus_ERR("can't initialize optimizer");
             }
@@ -1763,10 +1764,10 @@ finalize_interp_types(PyInterpreterState *interp)
     _PySlice_Fini(interp);
 
     _PyUnicode_Fini(interp);
-    _PyFloat_Fini(interp);
 
     _PyFreeListState *state = _PyFreeListState_GET();
     _PyList_Fini(state);
+    _PyFloat_Fini(state);
 
 #ifdef Py_DEBUG
     _PyStaticObjects_CheckRefcnt(interp);

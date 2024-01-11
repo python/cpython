@@ -122,6 +122,10 @@ static inline void _PyGC_SET_FINALIZED(PyObject *op) {
     PyGC_Head *gc = _Py_AS_GC(op);
     _PyGCHead_SET_FINALIZED(gc);
 }
+static inline void _PyGC_CLEAR_FINALIZED(PyObject *op) {
+    PyGC_Head *gc = _Py_AS_GC(op);
+    gc->_gc_prev &= ~_PyGC_PREV_MASK_FINALIZED;
+}
 
 
 /* GC runtime state */
@@ -243,7 +247,7 @@ extern PyObject *_PyGC_GetReferrers(PyInterpreterState *interp, PyObject *objs);
 extern void _PyGC_ClearAllFreeLists(PyInterpreterState *interp);
 extern void _Py_ClearFreeLists(_PyFreeListState *state, int is_finalization);
 extern void _PyTuple_ClearFreeList(PyInterpreterState *interp);
-extern void _PyFloat_ClearFreeList(PyInterpreterState *interp);
+extern void _PyFloat_ClearFreeList(_PyFreeListState *state, int is_finalization);
 extern void _PyList_ClearFreeList(_PyFreeListState *state, int is_finalization);
 extern void _PyDict_ClearFreeList(PyInterpreterState *interp);
 extern void _PyAsyncGen_ClearFreeLists(PyInterpreterState *interp);

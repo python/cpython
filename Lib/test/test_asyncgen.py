@@ -1701,6 +1701,14 @@ class TestUnawaitedWarnings(unittest.TestCase):
         async def gen():
             yield 1
 
+        # gh-113753: asend objects allocated from a free-list should warn.
+        # Ensure there is a finalized 'asend' object ready to be reused.
+        try:
+            g = gen()
+            g.asend(None).send(None)
+        except StopIteration:
+            pass
+
         msg = f"coroutine method 'asend' of '{gen.__qualname__}' was never awaited"
         with self.assertWarnsRegex(RuntimeWarning, msg):
             g = gen()

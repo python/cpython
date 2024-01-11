@@ -15,7 +15,6 @@ void
 _PyGC_ClearAllFreeLists(PyInterpreterState *interp)
 {
     _PyTuple_ClearFreeList(interp);
-    _PyFloat_ClearFreeList(interp);
     _PyDict_ClearFreeList(interp);
     _PyAsyncGen_ClearFreeLists(interp);
     _PyContext_ClearFreeList(interp);
