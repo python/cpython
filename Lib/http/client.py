@@ -69,6 +69,7 @@ Req-sent-unread-response       _CS_REQ_SENT       <response_class>
 """
 
 import email.parser
+import email.policy
 import email.message
 import errno
 import http
@@ -240,7 +241,8 @@ def _parse_header_lines(header_lines, _class=HTTPMessage):
 
     """
     hstring = b''.join(header_lines).decode('iso-8859-1')
-    return email.parser.Parser(_class=_class).parsestr(hstring)
+    return email.parser.Parser(_class=_class,
+                               policy=email.policy.default).parsestr(hstring)
 
 def parse_headers(fp, _class=HTTPMessage):
     """Parses only RFC2822 headers from a file pointer."""

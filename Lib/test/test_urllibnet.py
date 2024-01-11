@@ -195,12 +195,10 @@ class urlretrieveNetworkTests(unittest.TestCase):
     @support.requires_resource('walltime')
     def test_data_header(self):
         with self.urlretrieve(self.logo) as (file_location, fileheaders):
-            datevalue = fileheaders.get('Date')
-            dateformat = '%a, %d %b %Y %H:%M:%S GMT'
-            try:
-                time.strptime(datevalue, dateformat)
-            except ValueError:
-                self.fail('Date value not in %r format' % dateformat)
+            date = fileheaders.get('Date')
+            self.assertIsInstance(date, email.headerregistry.DateHeader,
+                                  "Date is not an instance of email.headerregistery.DateHeader")
+            self.assertIsNotNone(date.datetime, "Date is not in RFC 5322 format")
 
     def test_reporthook(self):
         records = []
