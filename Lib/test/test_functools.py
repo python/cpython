@@ -1876,7 +1876,15 @@ class TestLRU:
 
         if not support.Py_DEBUG:
             with support.infinite_recursion():
-                fib(2500)
+                if sys.platform == 'win32':
+                    fib(1200)
+                else:
+                    fib(3000)
+        if self.module == c_functools:
+            fib.cache_clear()
+            with support.infinite_recursion():
+                with self.assertRaises(RecursionError):
+                    fib(10000)
 
 
 @py_functools.lru_cache()
