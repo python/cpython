@@ -169,6 +169,12 @@
     <ClCompile Include="..\Python\gc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\gc_free_threading.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\gc_gil.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Modules\gcmodule.c">
       <Filter>Source Files</Filter>
     </ClCompile>

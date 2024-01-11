@@ -3393,7 +3393,25 @@
 
         case _CHECK_VALIDITY: {
             TIER_TWO_ONLY
-            if (!current_executor->base.vm_data.valid) goto deoptimize;
+            if (!current_executor->vm_data.valid) goto deoptimize;
+            break;
+        }
+
+        case _LOAD_CONST_INLINE_BORROW: {
+            PyObject *value;
+            PyObject *ptr = (PyObject *)CURRENT_OPERAND();
+            value = ptr;
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            break;
+        }
+
+        case _INTERNAL_INCREMENT_OPT_COUNTER: {
+            PyObject *opt;
+            opt = stack_pointer[-1];
+            _PyCounterOptimizerObject *exe = (_PyCounterOptimizerObject *)opt;
+            exe->count++;
+            stack_pointer += -1;
             break;
         }
 
@@ -3402,9 +3420,22 @@
             TIER_TWO_ONLY
             _PyExitData *exit = PyOptimizer_GetExit(current_executor, oparg);
             Py_DECREF(current_executor);
-            current_executor = exit->exit;
-            Py_INCREF(current_executor);
-            if (1) goto deoptimize;
+            exit->hotness++;
+            if (exit->hotness < 0) goto deoptimize;
+            PyCodeObject *code = _PyFrame_GetCode(frame);
+            _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
+            _PyOptimizerObject *opt = interp->optimizer;
+            _PyExecutorObject *executor = NULL;
+            int optimized = opt->optimize(opt, code, target, &executor, (int)(stack_pointer - _PyFrame_Stackbase(frame)));
+            if (optimized < 0) goto error_tier_two;
+            if (optimized) {
+                exit->exit = executor;
+                Py_INCREF(executor);
+                GOTO_TIER_TWO();
+            }
+            else {
+                exit->hotness = -10000; /* Choose a better number */
+            }
             break;
         }
 
