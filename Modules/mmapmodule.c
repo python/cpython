@@ -29,10 +29,6 @@
 #include "structmember.h"         // PyMemberDef
 #include <stddef.h>               // offsetof()
 
-// to support MS_WINDOWS_SYSTEM OpenFileMappingA / CreateFileMappingA
-// need to be replaced with OpenFileMappingW / CreateFileMappingW
-#if !defined(MS_WINDOWS) || defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_GAMES)
-
 #ifndef MS_WINDOWS
 #define UNIX
 # ifdef HAVE_FCNTL_H
@@ -113,7 +109,7 @@ typedef struct {
 #ifdef MS_WINDOWS
     HANDLE      map_handle;
     HANDLE      file_handle;
-    char *      tagname;
+    wchar_t *   tagname;
 #endif
 
 #ifdef UNIX
@@ -531,7 +527,7 @@ mmap_resize_method(mmap_object *self,
         CloseHandle(self->map_handle);
         /* if the file mapping still exists, it cannot be resized. */
         if (self->tagname) {
-            self->map_handle = OpenFileMappingA(FILE_MAP_WRITE, FALSE,
+            self->map_handle = OpenFileMappingW(FILE_MAP_WRITE, FALSE,
                                     self->tagname);
             if (self->map_handle) {
                 PyErr_SetFromWindowsErr(ERROR_USER_MAPPED_FILE);
@@ -560,7 +556,7 @@ mmap_resize_method(mmap_object *self,
 
         /* create a new file mapping and map a new view */
         /* FIXME: call CreateFileMappingW with wchar_t tagname */
-        self->map_handle = CreateFileMappingA(
+        self->map_handle = CreateFileMappingW(
             self->file_handle,
             NULL,
             PAGE_READWRITE,
@@ -836,7 +832,7 @@ mmap__sizeof__method(mmap_object *self, void *unused)
 {
     size_t res = _PyObject_SIZE(Py_TYPE(self));
     if (self->tagname) {
-        res += strlen(self->tagname) + 1;
+        res += (wcslen(self->tagname) + 1) * sizeof(self->tagname[0]);
     }
     return PyLong_FromSize_t(res);
 }
@@ -1390,7 +1386,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     DWORD off_lo;       /* lower 32 bits of offset */
     DWORD size_hi;      /* upper 32 bits of size */
     DWORD size_lo;      /* lower 32 bits of size */
-    const char *tagname = "";
+    PyObject *tagname = Py_None;
     DWORD dwErr = 0;
     int fileno;
     HANDLE fh = 0;
@@ -1400,7 +1396,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
                                 "tagname",
                                 "access", "offset", NULL };
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "in|ziL", keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "in|OiL", keywords,
                                      &fileno, &map_size,
                                      &tagname, &access, &offset)) {
         return NULL;
@@ -1533,17 +1529,19 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     m_obj->weakreflist = NULL;
     m_obj->exports = 0;
     /* set the tag name */
-    if (tagname != NULL && *tagname != '\0') {
-        m_obj->tagname = PyMem_Malloc(strlen(tagname)+1);
+    if (!Py_IsNone(tagname)) {
+        if (!PyUnicode_Check(tagname)) {
+            Py_DECREF(m_obj);
+            return PyErr_Format(PyExc_TypeError, "expected str or None for "
+                                "'tagname', not %.200s",
+                                Py_TYPE(tagname)->tp_name);
+        }
+        m_obj->tagname = PyUnicode_AsWideCharString(tagname, NULL);
         if (m_obj->tagname == NULL) {
-            PyErr_NoMemory();
             Py_DECREF(m_obj);
             return NULL;
         }
-        strcpy(m_obj->tagname, tagname);
     }
-    else
-        m_obj->tagname = NULL;
 
     m_obj->access = (access_mode)access;
     size_hi = (DWORD)(size >> 32);
@@ -1552,7 +1550,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     off_lo = (DWORD)(offset & 0xFFFFFFFF);
     /* For files, it would be sufficient to pass 0 as size.
        For anonymous maps, we have to pass the size explicitly. */
-    m_obj->map_handle = CreateFileMappingA(m_obj->file_handle,
+    m_obj->map_handle = CreateFileMappingW(m_obj->file_handle,
                                            NULL,
                                            flProtect,
                                            size_hi,
@@ -1763,5 +1761,3 @@ PyInit_mmap(void)
 {
     return PyModuleDef_Init(&mmapmodule);
 }
-
-#endif /* !MS_WINDOWS || MS_WINDOWS_DESKTOP || MS_WINDOWS_GAMES */
