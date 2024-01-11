@@ -27,6 +27,7 @@ extern "C" {
 #include "pycore_import.h"        // struct _import_state
 #include "pycore_instruments.h"   // _PY_MONITORING_EVENTS
 #include "pycore_list.h"          // struct _Py_list_state
+#include "pycore_mimalloc.h"      // struct _mimalloc_interp_state
 #include "pycore_object_state.h"  // struct _py_object_state
 #include "pycore_obmalloc.h"      // struct _obmalloc_state
 #include "pycore_tstate.h"        // _PyThreadStateImpl
@@ -166,6 +167,10 @@ struct _is {
     struct _warnings_runtime_state warnings;
     struct atexit_state atexit;
 
+#if defined(Py_GIL_DISABLED)
+    struct _mimalloc_interp_state mimalloc;
+#endif
+
     struct _obmalloc_state obmalloc;
 
     PyObject *audit_hooks;
@@ -174,9 +179,11 @@ struct _is {
     // One bit is set for each non-NULL entry in code_watchers
     uint8_t active_code_watchers;
 
+#if !defined(Py_GIL_DISABLED)
+    struct _Py_freelist_state freelist_state;
+#endif
     struct _py_object_state object_state;
     struct _Py_unicode_state unicode;
-    struct _Py_float_state float_state;
     struct _Py_long_state long_state;
     struct _dtoa_state dtoa;
     struct _py_func_state func_state;
@@ -185,7 +192,6 @@ struct _is {
     PySliceObject *slice_cache;
 
     struct _Py_tuple_state tuple;
-    struct _Py_list_state list;
     struct _Py_dict_state dict_state;
     struct _Py_async_gen_state async_gen;
     struct _Py_context_state context;
