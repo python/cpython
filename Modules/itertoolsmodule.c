@@ -2767,7 +2767,7 @@ combinations_next(combinationsobject *co)
                 if (++i == r) {
                     break;
                 }
-                
+
                 indices[i] = indices[i - 1] + 1;
             }
         }
