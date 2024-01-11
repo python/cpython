@@ -135,7 +135,6 @@ def replace_sync_sp(
     next(tkn_iter)
     next(tkn_iter)
     next(tkn_iter)
-    out.emit_at("", tkn)
     stack.flush(out)
 
 
