@@ -962,18 +962,18 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
 }
 
 
-static void maybe_freelist_clear(PyInterpreterState *, int);
+static void maybe_freelist_clear(_PyFreeListState *, int);
 
 void
-_PyTuple_Fini(PyInterpreterState *interp)
+_PyTuple_Fini(_PyFreeListState *state)
 {
-    maybe_freelist_clear(interp, 1);
+    maybe_freelist_clear(state, 1);
 }
 
 void
-_PyTuple_ClearFreeList(PyInterpreterState *interp)
+_PyTuple_ClearFreeList(_PyFreeListState *state, int is_finalization)
 {
-    maybe_freelist_clear(interp, 0);
+    maybe_freelist_clear(state, is_finalization);
 }
 
 /*********************** Tuple Iterator **************************/
@@ -1125,18 +1125,14 @@ tuple_iter(PyObject *seq)
  * freelists *
  *************/
 
-#define STATE (interp->tuple)
+#define STATE (state->tuple_state)
 #define FREELIST_FINALIZED (STATE.numfree[0] < 0)
 
 static inline PyTupleObject *
 maybe_freelist_pop(Py_ssize_t size)
 {
-#if PyTuple_NFREELISTS > 0
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-#ifdef Py_DEBUG
-    /* maybe_freelist_pop() must not be called after maybe_freelist_fini(). */
-    assert(!FREELIST_FINALIZED);
-#endif
+#ifdef WITH_FREELISTS
+    _PyFreeListState *state = _PyFreeListState_GET();
     if (size == 0) {
         return NULL;
     }
@@ -1169,18 +1165,15 @@ maybe_freelist_pop(Py_ssize_t size)
 static inline int
 maybe_freelist_push(PyTupleObject *op)
 {
-#if PyTuple_NFREELISTS > 0
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-#ifdef Py_DEBUG
-    /* maybe_freelist_push() must not be called after maybe_freelist_fini(). */
-    assert(!FREELIST_FINALIZED);
-#endif
+#ifdef WITH_FREELISTS
+    _PyFreeListState *state = _PyFreeListState_GET();
     if (Py_SIZE(op) == 0) {
         return 0;
     }
     Py_ssize_t index = Py_SIZE(op) - 1;
     if (index < PyTuple_NFREELISTS
         && STATE.numfree[index] < PyTuple_MAXFREELIST
+        && STATE.numfree[index] >= 0
         && Py_IS_TYPE(op, &PyTuple_Type))
     {
         /* op is the head of a linked list, with the first item
@@ -1196,9 +1189,9 @@ maybe_freelist_push(PyTupleObject *op)
 }
 
 static void
-maybe_freelist_clear(PyInterpreterState *interp, int fini)
+maybe_freelist_clear(_PyFreeListState *state, int fini)
 {
-#if PyTuple_NFREELISTS > 0
+#ifdef WITH_FREELISTS
     for (Py_ssize_t i = 0; i < PyTuple_NFREELISTS; i++) {
         PyTupleObject *p = STATE.free_list[i];
         STATE.free_list[i] = NULL;
@@ -1216,8 +1209,8 @@ maybe_freelist_clear(PyInterpreterState *interp, int fini)
 void
 _PyTuple_DebugMallocStats(FILE *out)
 {
-#if PyTuple_NFREELISTS > 0
-    PyInterpreterState *interp = _PyInterpreterState_GET();
+#ifdef WITH_FREELISTS
+    _PyFreeListState *state = _PyFreeListState_GET();
     for (int i = 0; i < PyTuple_NFREELISTS; i++) {
         int len = i + 1;
         char buf[128];
