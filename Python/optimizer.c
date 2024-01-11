@@ -7,7 +7,6 @@
 #include "pycore_optimizer.h"     // _Py_uop_analyze_and_optimize()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_uop_ids.h"
-#include "pycore_uops.h"
 #include "cpython/optimizer.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -16,6 +15,8 @@
 #define NEED_OPCODE_METADATA
 #include "pycore_uop_metadata.h" // Uop tables
 #undef NEED_OPCODE_METADATA
+
+#define UOP_MAX_TRACE_LENGTH 512
 
 #define MAX_EXECUTORS_SIZE 256
 
@@ -703,7 +704,7 @@ compute_used(_PyUOpInstruction *buffer, uint32_t *used)
 {
     int count = 0;
     SET_BIT(used, 0);
-    for (int i = 0; i < _Py_UOP_MAX_TRACE_LENGTH; i++) {
+    for (int i = 0; i < UOP_MAX_TRACE_LENGTH; i++) {
         if (!BIT_IS_SET(used, i)) {
             continue;
         }
@@ -735,7 +736,7 @@ compute_used(_PyUOpInstruction *buffer, uint32_t *used)
 static _PyExecutorObject *
 make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
 {
-    uint32_t used[(_Py_UOP_MAX_TRACE_LENGTH + 31)/32] = { 0 };
+    uint32_t used[(UOP_MAX_TRACE_LENGTH + 31)/32] = { 0 };
     int length = compute_used(buffer, used);
     _PyExecutorObject *executor = PyObject_NewVar(_PyExecutorObject, &_PyUOpExecutor_Type, length);
     if (executor == NULL) {
@@ -743,7 +744,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
     }
     int dest = length - 1;
     /* Scan backwards, so that we see the destinations of jumps before the jumps themselves. */
-    for (int i = _Py_UOP_MAX_TRACE_LENGTH-1; i >= 0; i--) {
+    for (int i = UOP_MAX_TRACE_LENGTH-1; i >= 0; i--) {
         if (!BIT_IS_SET(used, i)) {
             continue;
         }
@@ -794,8 +795,8 @@ uop_optimize(
 {
     _PyBloomFilter dependencies;
     _Py_BloomFilter_Init(&dependencies);
-    _PyUOpInstruction buffer[_Py_UOP_MAX_TRACE_LENGTH];
-    int err = translate_bytecode_to_trace(code, instr, buffer, _Py_UOP_MAX_TRACE_LENGTH, &dependencies);
+    _PyUOpInstruction buffer[UOP_MAX_TRACE_LENGTH];
+    int err = translate_bytecode_to_trace(code, instr, buffer, UOP_MAX_TRACE_LENGTH, &dependencies);
     if (err <= 0) {
         // Error or nothing translated
         return err;
@@ -803,7 +804,7 @@ uop_optimize(
     OPT_STAT_INC(traces_created);
     char *uop_optimize = Py_GETENV("PYTHONUOPSOPTIMIZE");
     if (uop_optimize == NULL || *uop_optimize > '0') {
-        err = _Py_uop_analyze_and_optimize(code, buffer, _Py_UOP_MAX_TRACE_LENGTH, curr_stackentries);
+        err = _Py_uop_analyze_and_optimize(code, buffer, UOP_MAX_TRACE_LENGTH, curr_stackentries);
         if (err < 0) {
             return -1;
         }
