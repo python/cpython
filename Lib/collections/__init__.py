@@ -789,9 +789,9 @@ class Counter(dict):
         if not isinstance(other, Counter):
             return NotImplemented
 
-        for obj in (self, other):
-            for key in obj:
-                if self[key] != other[key]:
+        for obj1, obj2 in ((self, other), (other, self)):
+            for k, v in obj1.items():
+                if v != obj2[k]:
                     return False
         return True
 
