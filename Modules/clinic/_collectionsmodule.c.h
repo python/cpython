@@ -31,7 +31,7 @@ PyDoc_STRVAR(_collections_deque_popleft__doc__,
 "popleft($self, /)\n"
 "--\n"
 "\n"
-"Remove and return the rightmost element.");
+"Remove and return the leftmost element.");
 
 #define _COLLECTIONS_DEQUE_POPLEFT_METHODDEF    \
     {"popleft", (PyCFunction)_collections_deque_popleft, METH_NOARGS, _collections_deque_popleft__doc__},
@@ -490,4 +490,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=bfdddc7a5fbf9b08 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5c65de75bddef4ad input=a9049054013a1b77]*/

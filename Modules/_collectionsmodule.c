@@ -277,12 +277,12 @@ _collections.deque.popleft
 
      deque: dequeobject
 
-Remove and return the rightmost element.
+Remove and return the leftmost element.
 [clinic start generated code]*/
 
 static PyObject *
 _collections_deque_popleft_impl(dequeobject *deque)
-/*[clinic end generated code: output=8cd77178b5116aba input=39d64df4664392d3]*/
+/*[clinic end generated code: output=8cd77178b5116aba input=0ca92ec89734848a]*/
 {
     PyObject *item;
     block *prevblock;
