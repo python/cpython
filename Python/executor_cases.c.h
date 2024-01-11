@@ -3393,7 +3393,7 @@
 
         case _CHECK_VALIDITY: {
             TIER_TWO_ONLY
-            if (!current_executor->base.vm_data.valid) goto deoptimize;
+            if (!current_executor->vm_data.valid) goto deoptimize;
             break;
         }
 

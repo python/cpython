@@ -246,7 +246,7 @@ extern PyObject *_PyGC_GetReferrers(PyInterpreterState *interp, PyObject *objs);
 // Functions to clear types free lists
 extern void _PyGC_ClearAllFreeLists(PyInterpreterState *interp);
 extern void _Py_ClearFreeLists(_PyFreeListState *state, int is_finalization);
-extern void _PyTuple_ClearFreeList(PyInterpreterState *interp);
+extern void _PyTuple_ClearFreeList(_PyFreeListState *state, int is_finalization);
 extern void _PyFloat_ClearFreeList(_PyFreeListState *state, int is_finalization);
 extern void _PyList_ClearFreeList(_PyFreeListState *state, int is_finalization);
 extern void _PyDict_ClearFreeList(PyInterpreterState *interp);
