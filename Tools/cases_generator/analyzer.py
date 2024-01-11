@@ -24,6 +24,7 @@ class Properties:
 
     pure: bool
     passthrough: bool
+    guard: bool
 
     def dump(self, indent: str) -> None:
         print(indent, end="")
@@ -50,6 +51,7 @@ class Properties:
             has_free=any(p.has_free for p in properties),
             pure=all(p.pure for p in properties),
             passthrough=all(p.passthrough for p in properties),
+            guard=all(p.guard for p in properties),
         )
 
 
@@ -71,6 +73,7 @@ SKIP_PROPERTIES = Properties(
     has_free=False,
     pure=False,
     passthrough=False,
+    guard=False,
 )
 
 
@@ -448,10 +451,13 @@ def compute_properties(op: parser.InstDef) -> Properties:
         or variable_used(op, "PyCell_GET")
         or variable_used(op, "PyCell_SET")
     )
+    infallible = is_infallible(op)
+    deopts = variable_used(op, "DEOPT_IF")
+    passthrough = stack_effect_only_peeks(op) and infallible
     return Properties(
         escapes=makes_escaping_api_call(op),
-        infallible=is_infallible(op),
-        deopts=variable_used(op, "DEOPT_IF"),
+        infallible=infallible,
+        deopts=deopts,
         oparg=variable_used(op, "oparg"),
         jumps=variable_used(op, "JUMPBY"),
         eval_breaker=variable_used(op, "CHECK_EVAL_BREAKER"),
@@ -466,7 +472,8 @@ def compute_properties(op: parser.InstDef) -> Properties:
         and not has_free,
         has_free=has_free,
         pure="pure" in op.annotations,
-        passthrough=stack_effect_only_peeks(op) and is_infallible(op),
+        passthrough=passthrough,
+        guard=passthrough and deopts,
     )
 
 
