@@ -1629,7 +1629,7 @@ done:
 }
 
 /*[clinic input]
-@text_signature "($self, iterable=None, maxlen=None)"
+@text_signature "([iterable[, maxlen]])"
 _collections.deque.__init__
 
     deque: dequeobject
@@ -1642,7 +1642,7 @@ A list-like sequence optimized for data accesses near its endpoints.
 static int
 _collections_deque___init___impl(dequeobject *deque, PyObject *iterable,
                                  PyObject *maxlen)
-/*[clinic end generated code: output=9fbb306da99f6694 input=2966a2a0176e4506]*/
+/*[clinic end generated code: output=9fbb306da99f6694 input=aa6219250dc91d12]*/
 
 {
     Py_ssize_t maxlenval = -1;

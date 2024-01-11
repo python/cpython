@@ -321,7 +321,7 @@ _collections_deque___reduce__(dequeobject *deque, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_collections_deque___init____doc__,
-"deque($self, iterable=None, maxlen=None)\n"
+"deque([iterable[, maxlen]])\n"
 "--\n"
 "\n"
 "A list-like sequence optimized for data accesses near its endpoints.");
@@ -490,4 +490,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5c65de75bddef4ad input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8f7f860b44810b2c input=a9049054013a1b77]*/
