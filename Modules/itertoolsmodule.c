@@ -2721,7 +2721,7 @@ combinations_next(combinationsobject *co)
          */
         assert(r == 0 || Py_REFCNT(result) == 1);
 
-        /* Seems like we allow 0-length combination ranges. */ 
+        /* Seems like we allow 0-length combination ranges. */
         if (0 == r) goto empty;
 
         /* Scan indices right-to-left until finding one that is not
