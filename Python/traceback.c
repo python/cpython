@@ -968,7 +968,7 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
             if (MAX_FRAME_DEPTH < depth) {
                 PUTS(fd, "plus ");
                 _Py_DumpDecimal(fd, depth);
-                PUTS(fd, "frames\n");
+                PUTS(fd, " frames\n");
             }
             break;
         }
