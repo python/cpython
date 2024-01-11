@@ -228,7 +228,7 @@ struct _ts {
 #elif defined(_WIN32)
 #  define Py_C_RECURSION_LIMIT 4000
 #elif defined(_Py_ADDRESS_SANITIZER)
-#  define Py_C_RECURSION_LIMIT 7000
+#  define Py_C_RECURSION_LIMIT 8000
 #else
    // This value is duplicated in Lib/test/support/__init__.py
 #  define Py_C_RECURSION_LIMIT 10000
