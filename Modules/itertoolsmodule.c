@@ -2667,12 +2667,14 @@ combinations_traverse(combinationsobject *co, visitproc visit, void *arg)
 }
 
 /* macro that maps a combination index value to its pool element */
-#define SET_COMBINATION_VALUE(i)                \
+#define ITERTOOLS_SET_COMBINATION_VALUE(i)      \
+do {                                            \
     elem = PyTuple_GET_ITEM(pool, indices[i]);  \
     Py_INCREF(elem);                            \
     oldelem = PyTuple_GET_ITEM(result, i);      \
     PyTuple_SET_ITEM(result, i, elem);          \
-    Py_DECREF(oldelem);
+    Py_DECREF(oldelem);                         \
+} while (0)
 
 static PyObject *
 combinations_next(combinationsobject *co)
@@ -2752,7 +2754,7 @@ combinations_next(combinationsobject *co)
             /* Update the indices and the result tuple
                starting with i, the leftmost index that changed */
             for (;;) {
-                SET_COMBINATION_VALUE(i)
+                ITERTOOLS_SET_COMBINATION_VALUE(i);
                 if (i == r - 1)
                     break;
 
@@ -2762,7 +2764,7 @@ combinations_next(combinationsobject *co)
         }
         else {
             ++indices[i];
-            SET_COMBINATION_VALUE(i)
+            ITERTOOLS_SET_COMBINATION_VALUE(i);
         }
     }
 
@@ -2772,6 +2774,8 @@ empty:
     co->stopped = 1;
     return NULL;
 }
+
+#undef ITERTOOLS_SET_COMBINATION_VALUE
 
 static PyObject *
 combinations_reduce(combinationsobject *lz, PyObject *Py_UNUSED(ignored))
