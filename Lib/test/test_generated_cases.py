@@ -751,7 +751,7 @@ class TestGeneratedCases(unittest.TestCase):
 
     def test_annotated_inst(self):
         input = """
-        passthrough inst(OP, (--)) {
+        pure inst(OP, (--)) {
             ham();
         }
         """
