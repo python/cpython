@@ -2684,7 +2684,7 @@ combinations_next(combinationsobject *co)
     PyObject *result = co->result;
     Py_ssize_t n = PyTuple_GET_SIZE(pool);
     Py_ssize_t r = co->r;
-    Py_ssize_t i, j, index;
+    Py_ssize_t i;
 
     if (co->stopped)
         return NULL;
@@ -2696,8 +2696,7 @@ combinations_next(combinationsobject *co)
             goto empty;
         co->result = result;
         for (i=0; i<r ; i++) {
-            index = indices[i];
-            elem = PyTuple_GET_ITEM(pool, index);
+            elem = PyTuple_GET_ITEM(pool, indices[i]);
             Py_INCREF(elem);
             PyTuple_SET_ITEM(result, i, elem);
         }
@@ -2722,10 +2721,12 @@ combinations_next(combinationsobject *co)
          */
         assert(r == 0 || Py_REFCNT(result) == 1);
 
-        i = r - 1;
+        /* Seems like we allow 0-length combination ranges. */ 
+        if (0 == r) goto empty;
 
         /* Scan indices right-to-left until finding one that is not
            at its maximum (i + n - r). */
+        i = r - 1;
         if (indices[i] == i + n - r) {
             /* If we only have one index, at max value, we're done. */
             if (0 == i)
