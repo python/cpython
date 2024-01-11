@@ -1095,21 +1095,6 @@ delete_garbage(PyThreadState *tstate, GCState *gcstate,
     }
 }
 
-/* Clear all free lists
- * All free lists are cleared during the collection of the highest generation.
- * Allocated items in the free list may keep a pymalloc arena occupied.
- * Clearing the free lists may give back memory to the OS earlier.
- */
-static void
-clear_freelists(PyInterpreterState *interp)
-{
-    _PyTuple_ClearFreeList(interp);
-    _PyFloat_ClearFreeList(interp);
-    _PyList_ClearFreeList(interp);
-    _PyDict_ClearFreeList(interp);
-    _PyAsyncGen_ClearFreeLists(interp);
-    _PyContext_ClearFreeList(interp);
-}
 
 /* Deduce which objects among "base" are unreachable from outside the list
    and move them to 'unreachable'. The process consist in the following steps:
@@ -1451,7 +1436,8 @@ gc_collect_full(PyThreadState *tstate,
     gcstate->old[1].count = 0;
 
     gcstate->work_to_do = - gcstate->young.threshold * 2;
-    clear_freelists(tstate->interp);
+
+    _PyGC_ClearAllFreeLists(tstate->interp);
     validate_old(gcstate);
     add_stats(gcstate, 2, stats);
 }
