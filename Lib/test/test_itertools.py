@@ -2579,14 +2579,14 @@ class SizeofTest(unittest.TestCase):
         check(product(*(('abc',) * 10)), basesize + 10 * self.ssize_t)
 
     def test_combinations_sizeof(self):
-        basesize = support.calcobjsize('3Pni')
+        basesize = support.calcobjsize('3Pnni')
         check = self.check_sizeof
         check(combinations('abcd', 3), basesize + 3 * self.ssize_t)
         check(combinations(range(10), 4), basesize + 4 * self.ssize_t)
 
     def test_combinations_with_replacement_sizeof(self):
         cwr = combinations_with_replacement
-        basesize = support.calcobjsize('3Pni')
+        basesize = support.calcobjsize('3Pnni')
         check = self.check_sizeof
         check(cwr('abcd', 3), basesize + 3 * self.ssize_t)
         check(cwr(range(10), 4), basesize + 4 * self.ssize_t)
