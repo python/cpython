@@ -767,6 +767,14 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
         }
     }
 #endif
+#ifdef _Py_JIT
+    executor->jit_code = NULL;
+    executor->jit_size = 0;
+    if (_PyJIT_Compile(executor) <= 0) {
+        Py_DECREF(executor);
+        return NULL;
+    }
+#endif
     return (_PyExecutorObject *)executor;
 }
 
@@ -796,18 +804,8 @@ uop_optimize(
     }
     _PyExecutorObject *executor = make_executor_from_uops(buffer, &dependencies);
     if (executor == NULL) {
-        return -1;
+        return PyErr_Occurred() ? -1 : 0;
     }
-#ifdef _Py_JIT
-    _PyUOpExecutorObject *uop_executor = (_PyUOpExecutorObject *)executor;
-    uop_executor->jit_code = NULL;
-    uop_executor->jit_size = 0;
-    err = _PyJIT_Compile(uop_executor);
-    if (err <= 0) {
-        Py_DECREF(executor);
-        return err;
-    }
-#endif
     OPT_HIST(Py_SIZE(executor), optimized_trace_length_hist);
     *exec_ptr = executor;
     return 1;

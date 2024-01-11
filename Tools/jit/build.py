@@ -312,6 +312,7 @@ class Target(typing.Generic[_S, _R]):
             #   and makes no assumptions about data (not available on aarch64)
             # - "large": makes no assumptions about either code or data
             "-mcmodel=large",
+            "-std=c11",
         ]
         clang = llvm.require_tool("clang", echo=self.verbose)
         await run(clang, *flags, "-o", o, c, echo=self.verbose)
