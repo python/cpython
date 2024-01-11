@@ -1711,6 +1711,7 @@ class ZipFile:
             zinfo.external_attr = 0o600 << 16  # permissions: ?rw-------
 
         # Compressed size can be larger than uncompressed size
+        # If you find this heuristic annoying, see GH-113931.
         zip64 = force_zip64 or (zinfo.file_size * 1.05 > ZIP64_LIMIT)
         if not self._allowZip64 and zip64:
             raise LargeZipFile("Filesize would require ZIP64 extensions")
@@ -1843,15 +1844,18 @@ class ZipFile:
     def write(self, filename, arcname=None,
               compress_type=None, compresslevel=None,
               *, zinfo=None, precompressed=None):
-        """Put the bytes from a file into the archive as arcname.
+        """Copy the bytes from a file into the archive as arcname.
 
-        filename may instead be a file like object open for reading in binary
-        mode. If so it will be read from and closed. It must have a .name
-        attribute (as file objects do) in order to construct a ZipInfo unless
-        the zinfo parameter is provided.
+        *filename* may instead be a file like object open for reading in binary
+        mode suitable for use by ``shutil.copyfileobj``. If so it will be read
+        from and closed. It must have a .name attribute (as file objects do)
+        unless the *zinfo* parameter is provided.
 
-        A ZipInfo instance zinfo may be supplied instead of arcname.  If
-        neither is supplied, filename without a drive letter or leading path
+        A ``ZipInfo`` instance *zinfo* may be supplied instead of *arcname* if
+        you wish to control additional details such as specifying permissions, a
+        specific timestamp, or the uncompressed .file_size when the not reading
+        from a regular uncompressed file.  If neither *arcname* or *zinfo* is
+        supplied, the source *filename* without a drive letter or leading path
         separators will be used as the name within the archive.
 
         If *precompressed* is True, file data is assumed to already have been
@@ -1879,7 +1883,16 @@ class ZipFile:
         if precompressed:
             assert zinfo is not None, "precompressed requires zinfo"
             assert zinfo.CRC is not None
-        elif not zinfo:
+        elif zinfo:
+            if not fileobj:
+                # We do not use os.stat() or os.fstat() when a fileobj was
+                # given, even if it has fileobj.name.  It might not be a
+                # regular file with a size.  It could be a device, pipe,
+                # socket, duck-type, etc.
+                zinfo.file_size = os.stat(filename).st_size
+            # We do not have a way to detect when ZipInfo.file_size was not
+            # explicitly set.
+        else:
             zinfo = ZipInfo.from_file(filename, arcname,
                                       strict_timestamps=self._strict_timestamps)
 
