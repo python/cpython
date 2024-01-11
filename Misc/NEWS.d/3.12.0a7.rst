@@ -429,7 +429,7 @@ an awaitable object. Patch by Kumar Aditya.
 Speed up setting or deleting mutable attributes on non-dataclass subclasses
 of frozen dataclasses. Due to the implementation of ``__setattr__`` and
 ``__delattr__`` for frozen dataclasses, this previously had a time
-complexity of ``O(n)``. It now has a time complexity of ``O(1)``.
+complexity of *O*\ (*n*). It now has a time complexity of *O*\ (1).
 
 ..
 
