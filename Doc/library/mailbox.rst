@@ -13,8 +13,8 @@
 
 This module defines two classes, :class:`Mailbox` and :class:`Message`, for
 accessing and manipulating on-disk mailboxes and the messages they contain.
-:class:`Mailbox` offers a dictionary-like mapping from keys to messages.
-:class:`Message` extends the :mod:`email.message` module's
+:class:`!Mailbox` offers a dictionary-like mapping from keys to messages.
+:class:`!Message` extends the :mod:`email.message` module's
 :class:`~email.message.Message` class with format-specific state and behavior.
 Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
 
@@ -27,37 +27,38 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
 
 .. _mailbox-objects:
 
-:class:`Mailbox` objects
-------------------------
+:class:`!Mailbox` objects
+-------------------------
 
 .. class:: Mailbox
 
    A mailbox, which may be inspected and modified.
 
-   The :class:`Mailbox` class defines an interface and is not intended to be
+   The :class:`!Mailbox` class defines an interface and is not intended to be
    instantiated.  Instead, format-specific subclasses should inherit from
-   :class:`Mailbox` and your code should instantiate a particular subclass.
+   :class:`!Mailbox` and your code should instantiate a particular subclass.
 
-   The :class:`Mailbox` interface is dictionary-like, with small keys
-   corresponding to messages. Keys are issued by the :class:`Mailbox` instance
-   with which they will be used and are only meaningful to that :class:`Mailbox`
+   The :class:`!Mailbox` interface is dictionary-like, with small keys
+   corresponding to messages. Keys are issued by the :class:`!Mailbox` instance
+   with which they will be used and are only meaningful to that :class:`!Mailbox`
    instance. A key continues to identify a message even if the corresponding
    message is modified, such as by replacing it with another message.
 
-   Messages may be added to a :class:`Mailbox` instance using the set-like
+   Messages may be added to a :class:`!Mailbox` instance using the set-like
    method :meth:`add` and removed using a ``del`` statement or the set-like
    methods :meth:`remove` and :meth:`discard`.
 
-   :class:`Mailbox` interface semantics differ from dictionary semantics in some
+   :class:`!Mailbox` interface semantics differ from dictionary semantics in some
    noteworthy ways. Each time a message is requested, a new representation
    (typically a :class:`Message` instance) is generated based upon the current
    state of the mailbox. Similarly, when a message is added to a
-   :class:`Mailbox` instance, the provided message representation's contents are
+   :class:`!Mailbox` instance, the provided message representation's contents are
    copied. In neither case is a reference to the message representation kept by
-   the :class:`Mailbox` instance.
+   the :class:`!Mailbox` instance.
 
-   The default :class:`Mailbox` iterator iterates over message representations,
-   not keys as the default dictionary iterator does. Moreover, modification of a
+   The default :class:`!Mailbox` :term:`iterator` iterates over message
+   representations, not keys as the default :class:`dictionary <dict>`
+   iterator does. Moreover, modification of a
    mailbox during iteration is safe and well-defined. Messages added to the
    mailbox after an iterator is created will not be seen by the
    iterator. Messages removed from the mailbox before the iterator yields them
@@ -69,14 +70,15 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
 
       Be very cautious when modifying mailboxes that might be simultaneously
       changed by some other process.  The safest mailbox format to use for such
-      tasks is Maildir; try to avoid using single-file formats such as mbox for
+      tasks is :class:`Maildir`; try to avoid using single-file formats such as
+      :class:`mbox` for
       concurrent writing.  If you're modifying a mailbox, you *must* lock it by
       calling the :meth:`lock` and :meth:`unlock` methods *before* reading any
       messages in the file or making any changes by adding or deleting a
       message.  Failing to lock the mailbox runs the risk of losing messages or
       corrupting the entire mailbox.
 
-   :class:`Mailbox` instances have the following methods:
+   :class:`!Mailbox` instances have the following methods:
 
 
    .. method:: add(message)
@@ -127,21 +129,23 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
 
 
    .. method:: iterkeys()
-               keys()
 
-      Return an iterator over all keys if called as :meth:`iterkeys` or return a
-      list of keys if called as :meth:`keys`.
+      Return an :term:`iterator` over all keys
+
+
+   .. method:: keys()
+
+      The same as :meth:`iterkeys`, except that a :class:`list` is returned
+      rather than an :term:`iterator`
 
 
    .. method:: itervalues()
                __iter__()
-               values()
 
-      Return an iterator over representations of all messages if called as
-      :meth:`itervalues` or :meth:`__iter__` or return a list of such
-      representations if called as :meth:`values`. The messages are represented
+      Return an :term:`iterator` over representations of all messages.
+      The messages are represented
       as instances of the appropriate format-specific :class:`Message` subclass
-      unless a custom message factory was specified when the :class:`Mailbox`
+      unless a custom message factory was specified when the :class:`!Mailbox`
       instance was initialized.
 
       .. note::
@@ -150,15 +154,25 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
          iterate over keys.
 
 
-   .. method:: iteritems()
-               items()
+   .. method:: values()
 
-      Return an iterator over (*key*, *message*) pairs, where *key* is a key and
-      *message* is a message representation, if called as :meth:`iteritems` or
-      return a list of such pairs if called as :meth:`items`. The messages are
+      The same as :meth:`itervalues`, except that a :class:`list` is returned
+      rather than an :term:`iterator`
+
+
+   .. method:: iteritems()
+
+      Return an :term:`iterator` over (*key*, *message*) pairs, where *key* is
+      a key and *message* is a message representation. The messages are
       represented as instances of the appropriate format-specific
       :class:`Message` subclass unless a custom message factory was specified
-      when the :class:`Mailbox` instance was initialized.
+      when the :class:`!Mailbox` instance was initialized.
+
+
+   .. method:: items()
+
+      The same as :meth:`iteritems`, except that a :class:`list` of pairs is
+      returned rather than an :term:`iterator` of pairs.
 
 
    .. method:: get(key, default=None)
@@ -167,9 +181,9 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
       Return a representation of the message corresponding to *key*. If no such
       message exists, *default* is returned if the method was called as
       :meth:`get` and a :exc:`KeyError` exception is raised if the method was
-      called as :meth:`~object.__getitem__`. The message is represented as an instance
+      called as :meth:`!__getitem__`. The message is represented as an instance
       of the appropriate format-specific :class:`Message` subclass unless a
-      custom message factory was specified when the :class:`Mailbox` instance
+      custom message factory was specified when the :class:`!Mailbox` instance
       was initialized.
 
 
@@ -198,21 +212,23 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
 
    .. method:: get_file(key)
 
-      Return a file-like representation of the message corresponding to *key*,
+      Return a :term:`file-like <file-like object>` representation of the
+      message corresponding to *key*,
       or raise a :exc:`KeyError` exception if no such message exists.  The
       file-like object behaves as if open in binary mode.  This file should be
       closed once it is no longer needed.
 
       .. versionchanged:: 3.2
-         The file object really is a binary file; previously it was incorrectly
-         returned in text mode.  Also, the file-like object now supports the
-         context management protocol: you can use a :keyword:`with` statement to
-         automatically close it.
+         The file object really is a :term:`binary file`; previously it was
+         incorrectly returned in text mode.  Also, the :term:`file-like object`
+         now supports the :term:`context manager` protocol: you can use a
+         :keyword:`with` statement to automatically close it.
 
       .. note::
 
-         Unlike other representations of messages, file-like representations are
-         not necessarily independent of the :class:`Mailbox` instance that
+         Unlike other representations of messages,
+         :term:`file-like <file-like object>` representations are not
+         necessarily independent of the :class:`!Mailbox` instance that
          created them or of the underlying mailbox.  More specific documentation
          is provided by each subclass.
 
@@ -238,7 +254,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
       the message. If no such message exists, return *default*. The message is
       represented as an instance of the appropriate format-specific
       :class:`Message` subclass unless a custom message factory was specified
-      when the :class:`Mailbox` instance was initialized.
+      when the :class:`!Mailbox` instance was initialized.
 
 
    .. method:: popitem()
@@ -248,7 +264,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
       message. If the mailbox is empty, raise a :exc:`KeyError` exception. The
       message is represented as an instance of the appropriate format-specific
       :class:`Message` subclass unless a custom message factory was specified
-      when the :class:`Mailbox` instance was initialized.
+      when the :class:`!Mailbox` instance was initialized.
 
 
    .. method:: update(arg)
@@ -259,7 +275,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
       *message* as if by using :meth:`__setitem__`. As with :meth:`__setitem__`,
       each *key* must already correspond to a message in the mailbox or else a
       :exc:`KeyError` exception will be raised, so in general it is incorrect
-      for *arg* to be a :class:`Mailbox` instance.
+      for *arg* to be a :class:`!Mailbox` instance.
 
       .. note::
 
@@ -269,7 +285,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    .. method:: flush()
 
       Write any pending changes to the filesystem. For some :class:`Mailbox`
-      subclasses, changes are always written immediately and :meth:`flush` does
+      subclasses, changes are always written immediately and :meth:`!flush` does
       nothing, but you should still make a habit of calling this method.
 
 
@@ -290,13 +306,13 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    .. method:: close()
 
       Flush the mailbox, unlock it if necessary, and close any open files. For
-      some :class:`Mailbox` subclasses, this method does nothing.
+      some :class:`!Mailbox` subclasses, this method does nothing.
 
 
 .. _mailbox-maildir:
 
-:class:`Maildir`
-^^^^^^^^^^^^^^^^
+:class:`!Maildir` objects
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 .. class:: Maildir(dirname, factory=None, create=True)
@@ -330,11 +346,11 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    Folders of the style introduced by the Courier mail transfer agent are also
    supported. Any subdirectory of the main mailbox is considered a folder if
    ``'.'`` is the first character in its name. Folder names are represented by
-   :class:`Maildir` without the leading ``'.'``. Each folder is itself a Maildir
+   :class:`!Maildir` without the leading ``'.'``. Each folder is itself a Maildir
    mailbox but should not contain other folders. Instead, a logical nesting is
    indicated using ``'.'`` to delimit levels, e.g., "Archived.2005.07".
 
-   .. note::
+   .. attribute:: Maildir.colon
 
       The Maildir specification requires the use of a colon (``':'``) in certain
       message file names. However, some operating systems do not permit this
@@ -346,9 +362,12 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
          import mailbox
          mailbox.Maildir.colon = '!'
 
-      The :attr:`colon` attribute may also be set on a per-instance basis.
+      The :attr:`!colon` attribute may also be set on a per-instance basis.
 
-   :class:`Maildir` instances have all of the methods of :class:`Mailbox` in
+   .. versionchanged:: 3.13
+      :class:`Maildir` now ignores files with a leading dot.
+
+   :class:`!Maildir` instances have all of the methods of :class:`Mailbox` in
    addition to the following:
 
 
@@ -359,14 +378,14 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
 
    .. method:: get_folder(folder)
 
-      Return a :class:`Maildir` instance representing the folder whose name is
+      Return a :class:`!Maildir` instance representing the folder whose name is
       *folder*. A :exc:`NoSuchMailboxError` exception is raised if the folder
       does not exist.
 
 
    .. method:: add_folder(folder)
 
-      Create a folder whose name is *folder* and return a :class:`Maildir`
+      Create a folder whose name is *folder* and return a :class:`!Maildir`
       instance representing it.
 
 
@@ -383,7 +402,109 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
       last 36 hours. The Maildir specification says that mail-reading programs
       should do this occasionally.
 
-   Some :class:`Mailbox` methods implemented by :class:`Maildir` deserve special
+
+   .. method:: get_flags(key)
+
+      Return as a string the flags that are set on the message
+      corresponding to *key*.
+      This is the same as ``get_message(key).get_flags()`` but much
+      faster, because it does not open the message file.
+      Use this method when iterating over the keys to determine which
+      messages are interesting to get.
+
+      If you do have a :class:`MaildirMessage` object, use
+      its :meth:`~MaildirMessage.get_flags` method instead, because
+      changes made by the message's :meth:`~MaildirMessage.set_flags`,
+      :meth:`~MaildirMessage.add_flag` and :meth:`~MaildirMessage.remove_flag`
+      methods are not reflected here until the mailbox's
+      :meth:`__setitem__` method is called.
+
+      .. versionadded:: 3.13
+
+
+   .. method:: set_flags(key, flags)
+
+      On the message corresponding to *key*, set the flags specified
+      by *flags* and unset all others.
+      Calling ``some_mailbox.set_flags(key, flags)`` is similar to ::
+
+         one_message = some_mailbox.get_message(key)
+         one_message.set_flags(flags)
+         some_mailbox[key] = one_message
+
+      but faster, because it does not open the message file.
+
+      If you do have a :class:`MaildirMessage` object, use
+      its :meth:`~MaildirMessage.set_flags` method instead, because
+      changes made with this mailbox method will not be visible to the
+      message object's method, :meth:`~MaildirMessage.get_flags`.
+
+      .. versionadded:: 3.13
+
+
+   .. method:: add_flag(key, flag)
+
+      On the message corresponding to *key*, set the flags specified
+      by *flag* without changing other flags. To add more than one
+      flag at a time, *flag* may be a string of more than one character.
+
+      Considerations for using this method versus the message object's
+      :meth:`~MaildirMessage.add_flag` method are similar to
+      those for :meth:`set_flags`; see the discussion there.
+
+      .. versionadded:: 3.13
+
+
+   .. method:: remove_flag(key, flag)
+
+      On the message corresponding to *key*, unset the flags specified
+      by *flag* without changing other flags. To remove more than one
+      flag at a time, *flag* may be a string of more than one character.
+
+      Considerations for using this method versus the message object's
+      :meth:`~MaildirMessage.remove_flag` method are similar to
+      those for :meth:`set_flags`; see the discussion there.
+
+      .. versionadded:: 3.13
+
+
+   .. method:: get_info(key)
+
+      Return a string containing the info for the message
+      corresponding to *key*.
+      This is the same as ``get_message(key).get_info()`` but much
+      faster, because it does not open the message file.
+      Use this method when iterating over the keys to determine which
+      messages are interesting to get.
+
+      If you do have a :class:`MaildirMessage` object, use
+      its :meth:`~MaildirMessage.get_info` method instead, because
+      changes made by the message's :meth:`~MaildirMessage.set_info` method
+      are not reflected here until the mailbox's :meth:`__setitem__` method
+      is called.
+
+      .. versionadded:: 3.13
+
+
+   .. method:: set_info(key, info)
+
+      Set the info of the message corresponding to *key* to *info*.
+      Calling ``some_mailbox.set_info(key, flags)`` is similar to ::
+
+         one_message = some_mailbox.get_message(key)
+         one_message.set_info(info)
+         some_mailbox[key] = one_message
+
+      but faster, because it does not open the message file.
+
+      If you do have a :class:`MaildirMessage` object, use
+      its :meth:`~MaildirMessage.set_info` method instead, because
+      changes made with this mailbox method will not be visible to the
+      message object's method, :meth:`~MaildirMessage.get_info`.
+
+      .. versionadded:: 3.13
+
+   Some :class:`Mailbox` methods implemented by :class:`!Maildir` deserve special
    remarks:
 
 
@@ -414,7 +535,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
 
    .. method:: close()
 
-      :class:`Maildir` instances do not keep any open files and the underlying
+      :class:`!Maildir` instances do not keep any open files and the underlying
       mailboxes do not support locking, so this method does nothing.
 
 
@@ -437,8 +558,8 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
 
 .. _mailbox-mbox:
 
-:class:`mbox`
-^^^^^^^^^^^^^
+:class:`!mbox` objects
+^^^^^^^^^^^^^^^^^^^^^^
 
 
 .. class:: mbox(path, factory=None, create=True)
@@ -455,22 +576,22 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    each message indicated by a line whose first five characters are "From ".
 
    Several variations of the mbox format exist to address perceived shortcomings in
-   the original. In the interest of compatibility, :class:`mbox` implements the
+   the original. In the interest of compatibility, :class:`!mbox` implements the
    original format, which is sometimes referred to as :dfn:`mboxo`. This means that
    the :mailheader:`Content-Length` header, if present, is ignored and that any
    occurrences of "From " at the beginning of a line in a message body are
    transformed to ">From " when storing the message, although occurrences of ">From
    " are not transformed to "From " when reading the message.
 
-   Some :class:`Mailbox` methods implemented by :class:`mbox` deserve special
+   Some :class:`Mailbox` methods implemented by :class:`!mbox` deserve special
    remarks:
 
 
    .. method:: get_file(key)
 
-      Using the file after calling :meth:`flush` or :meth:`close` on the
-      :class:`mbox` instance may yield unpredictable results or raise an
-      exception.
+      Using the file after calling :meth:`~Mailbox.flush` or
+      :meth:`~Mailbox.close` on the :class:`!mbox` instance may yield
+      unpredictable results or raise an exception.
 
 
    .. method:: lock()
@@ -494,8 +615,8 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
 
 .. _mailbox-mh:
 
-:class:`MH`
-^^^^^^^^^^^
+:class:`!MH` objects
+^^^^^^^^^^^^^^^^^^^^
 
 
 .. class:: MH(path, factory=None, create=True)
@@ -515,13 +636,17 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    messages without moving them to sub-folders. Sequences are defined in a file
    called :file:`.mh_sequences` in each folder.
 
-   The :class:`MH` class manipulates MH mailboxes, but it does not attempt to
+   The :class:`!MH` class manipulates MH mailboxes, but it does not attempt to
    emulate all of :program:`mh`'s behaviors. In particular, it does not modify
    and is not affected by the :file:`context` or :file:`.mh_profile` files that
    are used by :program:`mh` to store its state and configuration.
 
-   :class:`MH` instances have all of the methods of :class:`Mailbox` in addition
+   :class:`!MH` instances have all of the methods of :class:`Mailbox` in addition
    to the following:
+
+   .. versionchanged:: 3.13
+
+      Supported folders that don't contain a :file:`.mh_sequences` file.
 
 
    .. method:: list_folders()
@@ -531,14 +656,14 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
 
    .. method:: get_folder(folder)
 
-      Return an :class:`MH` instance representing the folder whose name is
+      Return an :class:`!MH` instance representing the folder whose name is
       *folder*. A :exc:`NoSuchMailboxError` exception is raised if the folder
       does not exist.
 
 
    .. method:: add_folder(folder)
 
-      Create a folder whose name is *folder* and return an :class:`MH` instance
+      Create a folder whose name is *folder* and return an :class:`!MH` instance
       representing it.
 
 
@@ -572,7 +697,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
          Already-issued keys are invalidated by this operation and should not be
          subsequently used.
 
-   Some :class:`Mailbox` methods implemented by :class:`MH` deserve special
+   Some :class:`Mailbox` methods implemented by :class:`!MH` deserve special
    remarks:
 
 
@@ -608,7 +733,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
 
    .. method:: close()
 
-      :class:`MH` instances do not keep any open files, so this method is
+      :class:`!MH` instances do not keep any open files, so this method is
       equivalent to :meth:`unlock`.
 
 
@@ -624,8 +749,8 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
 
 .. _mailbox-babyl:
 
-:class:`Babyl`
-^^^^^^^^^^^^^^
+:class:`!Babyl` objects
+^^^^^^^^^^^^^^^^^^^^^^^
 
 
 .. class:: Babyl(path, factory=None, create=True)
@@ -652,7 +777,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    message, and a list of all user-defined labels found in the mailbox is kept
    in the Babyl options section.
 
-   :class:`Babyl` instances have all of the methods of :class:`Mailbox` in
+   :class:`!Babyl` instances have all of the methods of :class:`Mailbox` in
    addition to the following:
 
 
@@ -667,7 +792,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
          options section, but the Babyl section is updated whenever the mailbox
          is modified.
 
-   Some :class:`Mailbox` methods implemented by :class:`Babyl` deserve special
+   Some :class:`Mailbox` methods implemented by :class:`!Babyl` deserve special
    remarks:
 
 
@@ -700,8 +825,8 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
 
 .. _mailbox-mmdf:
 
-:class:`MMDF`
-^^^^^^^^^^^^^
+:class:`!MMDF` objects
+^^^^^^^^^^^^^^^^^^^^^^
 
 
 .. class:: MMDF(path, factory=None, create=True)
@@ -722,15 +847,15 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    ">From " when storing messages because the extra message separator lines
    prevent mistaking such occurrences for the starts of subsequent messages.
 
-   Some :class:`Mailbox` methods implemented by :class:`MMDF` deserve special
+   Some :class:`Mailbox` methods implemented by :class:`!MMDF` deserve special
    remarks:
 
 
    .. method:: get_file(key)
 
-      Using the file after calling :meth:`flush` or :meth:`close` on the
-      :class:`MMDF` instance may yield unpredictable results or raise an
-      exception.
+      Using the file after calling :meth:`~Mailbox.flush` or
+      :meth:`~Mailbox.close` on the :class:`!MMDF` instance may yield
+      unpredictable results or raise an exception.
 
 
    .. method:: lock()
@@ -752,20 +877,20 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
 
 .. _mailbox-message-objects:
 
-:class:`Message` objects
-------------------------
+:class:`!Message` objects
+-------------------------
 
 
 .. class:: Message(message=None)
 
    A subclass of the :mod:`email.message` module's
-   :class:`~email.message.Message`. Subclasses of :class:`mailbox.Message` add
+   :class:`~email.message.Message`. Subclasses of :class:`!mailbox.Message` add
    mailbox-format-specific state and behavior.
 
    If *message* is omitted, the new instance is created in a default, empty state.
    If *message* is an :class:`email.message.Message` instance, its contents are
    copied; furthermore, any format-specific information is converted insofar as
-   possible if *message* is a :class:`Message` instance. If *message* is a string,
+   possible if *message* is a :class:`!Message` instance. If *message* is a string,
    a byte string,
    or a file, it should contain an :rfc:`2822`\ -compliant message, which is read
    and parsed.  Files should be open in binary mode, but text mode files
@@ -780,18 +905,18 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    such as whether a message has been read by the user or marked as important is
    retained, because it applies to the message itself.
 
-   There is no requirement that :class:`Message` instances be used to represent
+   There is no requirement that :class:`!Message` instances be used to represent
    messages retrieved using :class:`Mailbox` instances. In some situations, the
-   time and memory required to generate :class:`Message` representations might
-   not be acceptable. For such situations, :class:`Mailbox` instances also
+   time and memory required to generate :class:`!Message` representations might
+   not be acceptable. For such situations, :class:`!Mailbox` instances also
    offer string and file-like representations, and a custom message factory may
-   be specified when a :class:`Mailbox` instance is initialized.
+   be specified when a :class:`!Mailbox` instance is initialized.
 
 
 .. _mailbox-maildirmessage:
 
-:class:`MaildirMessage`
-^^^^^^^^^^^^^^^^^^^^^^^
+:class:`!MaildirMessage` objects
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 .. class:: MaildirMessage(message=None)
@@ -826,7 +951,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    | T    | Trashed | Marked for subsequent deletion |
    +------+---------+--------------------------------+
 
-   :class:`MaildirMessage` instances offer the following methods:
+   :class:`!MaildirMessage` instances offer the following methods:
 
 
    .. method:: get_subdir()
@@ -838,7 +963,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
       .. note::
 
          A message is typically moved from :file:`new` to :file:`cur` after its
-         mailbox has been accessed, whether or not the message is has been
+         mailbox has been accessed, whether or not the message has been
          read. A message ``msg`` has been read if ``"S" in msg.get_flags()`` is
          ``True``.
 
@@ -903,7 +1028,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
 
       Set "info" to *info*, which should be a string.
 
-When a :class:`MaildirMessage` instance is created based upon an
+When a :class:`!MaildirMessage` instance is created based upon an
 :class:`mboxMessage` or :class:`MMDFMessage` instance, the :mailheader:`Status`
 and :mailheader:`X-Status` headers are omitted and the following conversions
 take place:
@@ -923,7 +1048,7 @@ take place:
 | T flag             | D flag                                       |
 +--------------------+----------------------------------------------+
 
-When a :class:`MaildirMessage` instance is created based upon an
+When a :class:`!MaildirMessage` instance is created based upon an
 :class:`MHMessage` instance, the following conversions take place:
 
 +-------------------------------+--------------------------+
@@ -938,7 +1063,7 @@ When a :class:`MaildirMessage` instance is created based upon an
 | R flag                        | "replied" sequence       |
 +-------------------------------+--------------------------+
 
-When a :class:`MaildirMessage` instance is created based upon a
+When a :class:`!MaildirMessage` instance is created based upon a
 :class:`BabylMessage` instance, the following conversions take place:
 
 +-------------------------------+-------------------------------+
@@ -958,8 +1083,8 @@ When a :class:`MaildirMessage` instance is created based upon a
 
 .. _mailbox-mboxmessage:
 
-:class:`mboxMessage`
-^^^^^^^^^^^^^^^^^^^^
+:class:`!mboxMessage` objects
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 .. class:: mboxMessage(message=None)
@@ -995,7 +1120,7 @@ When a :class:`MaildirMessage` instance is created based upon a
    "D", "F", and "A" flags are stored in the :mailheader:`X-Status` header. The
    flags and headers typically appear in the order mentioned.
 
-   :class:`mboxMessage` instances offer the following methods:
+   :class:`!mboxMessage` instances offer the following methods:
 
 
    .. method:: get_from()
@@ -1043,7 +1168,7 @@ When a :class:`MaildirMessage` instance is created based upon a
       remove more than one flag at a time, *flag* maybe a string of more than
       one character.
 
-When an :class:`mboxMessage` instance is created based upon a
+When an :class:`!mboxMessage` instance is created based upon a
 :class:`MaildirMessage` instance, a "From " line is generated based upon the
 :class:`MaildirMessage` instance's delivery date, and the following conversions
 take place:
@@ -1062,7 +1187,7 @@ take place:
 | A flag          | R flag                        |
 +-----------------+-------------------------------+
 
-When an :class:`mboxMessage` instance is created based upon an
+When an :class:`!mboxMessage` instance is created based upon an
 :class:`MHMessage` instance, the following conversions take place:
 
 +-------------------+--------------------------+
@@ -1077,7 +1202,7 @@ When an :class:`mboxMessage` instance is created based upon an
 | A flag            | "replied" sequence       |
 +-------------------+--------------------------+
 
-When an :class:`mboxMessage` instance is created based upon a
+When an :class:`!mboxMessage` instance is created based upon a
 :class:`BabylMessage` instance, the following conversions take place:
 
 +-------------------+-----------------------------+
@@ -1092,7 +1217,8 @@ When an :class:`mboxMessage` instance is created based upon a
 | A flag            | "answered" label            |
 +-------------------+-----------------------------+
 
-When a :class:`Message` instance is created based upon an :class:`MMDFMessage`
+When a :class:`!mboxMessage` instance is created based upon an
+:class:`MMDFMessage`
 instance, the "From " line is copied and all flags directly correspond:
 
 +-----------------+----------------------------+
@@ -1112,8 +1238,8 @@ instance, the "From " line is copied and all flags directly correspond:
 
 .. _mailbox-mhmessage:
 
-:class:`MHMessage`
-^^^^^^^^^^^^^^^^^^
+:class:`!MHMessage` objects
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 .. class:: MHMessage(message=None)
@@ -1137,7 +1263,7 @@ instance, the "From " line is copied and all flags directly correspond:
    | flagged  | Marked as important                      |
    +----------+------------------------------------------+
 
-   :class:`MHMessage` instances offer the following methods:
+   :class:`!MHMessage` instances offer the following methods:
 
 
    .. method:: get_sequences()
@@ -1159,7 +1285,7 @@ instance, the "From " line is copied and all flags directly correspond:
 
       Remove *sequence* from the list of sequences that include this message.
 
-When an :class:`MHMessage` instance is created based upon a
+When an :class:`!MHMessage` instance is created based upon a
 :class:`MaildirMessage` instance, the following conversions take place:
 
 +--------------------+-------------------------------+
@@ -1172,7 +1298,7 @@ When an :class:`MHMessage` instance is created based upon a
 | "flagged" sequence | F flag                        |
 +--------------------+-------------------------------+
 
-When an :class:`MHMessage` instance is created based upon an
+When an :class:`!MHMessage` instance is created based upon an
 :class:`mboxMessage` or :class:`MMDFMessage` instance, the :mailheader:`Status`
 and :mailheader:`X-Status` headers are omitted and the following conversions
 take place:
@@ -1188,7 +1314,7 @@ take place:
 | "flagged" sequence | F flag                                       |
 +--------------------+----------------------------------------------+
 
-When an :class:`MHMessage` instance is created based upon a
+When an :class:`!MHMessage` instance is created based upon a
 :class:`BabylMessage` instance, the following conversions take place:
 
 +--------------------+-----------------------------+
@@ -1202,8 +1328,8 @@ When an :class:`MHMessage` instance is created based upon a
 
 .. _mailbox-babylmessage:
 
-:class:`BabylMessage`
-^^^^^^^^^^^^^^^^^^^^^
+:class:`!BabylMessage` objects
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 .. class:: BabylMessage(message=None)
@@ -1232,11 +1358,11 @@ When an :class:`MHMessage` instance is created based upon a
    | resent    | Resent                                   |
    +-----------+------------------------------------------+
 
-   By default, Rmail displays only visible headers. The :class:`BabylMessage`
+   By default, Rmail displays only visible headers. The :class:`!BabylMessage`
    class, though, uses the original headers because they are more
    complete. Visible headers may be accessed explicitly if desired.
 
-   :class:`BabylMessage` instances offer the following methods:
+   :class:`!BabylMessage` instances offer the following methods:
 
 
    .. method:: get_labels()
@@ -1275,7 +1401,7 @@ When an :class:`MHMessage` instance is created based upon a
 
    .. method:: update_visible()
 
-      When a :class:`BabylMessage` instance's original headers are modified, the
+      When a :class:`!BabylMessage` instance's original headers are modified, the
       visible headers are not automatically modified to correspond. This method
       updates the visible headers as follows: each visible header with a
       corresponding original header is set to the value of the original header,
@@ -1285,7 +1411,7 @@ When an :class:`MHMessage` instance is created based upon a
       present in the original headers but not the visible headers are added to
       the visible headers.
 
-When a :class:`BabylMessage` instance is created based upon a
+When a :class:`!BabylMessage` instance is created based upon a
 :class:`MaildirMessage` instance, the following conversions take place:
 
 +-------------------+-------------------------------+
@@ -1300,7 +1426,7 @@ When a :class:`BabylMessage` instance is created based upon a
 | "forwarded" label | P flag                        |
 +-------------------+-------------------------------+
 
-When a :class:`BabylMessage` instance is created based upon an
+When a :class:`!BabylMessage` instance is created based upon an
 :class:`mboxMessage` or :class:`MMDFMessage` instance, the :mailheader:`Status`
 and :mailheader:`X-Status` headers are omitted and the following conversions
 take place:
@@ -1316,7 +1442,7 @@ take place:
 | "answered" label | A flag                                       |
 +------------------+----------------------------------------------+
 
-When a :class:`BabylMessage` instance is created based upon an
+When a :class:`!BabylMessage` instance is created based upon an
 :class:`MHMessage` instance, the following conversions take place:
 
 +------------------+--------------------------+
@@ -1330,8 +1456,8 @@ When a :class:`BabylMessage` instance is created based upon an
 
 .. _mailbox-mmdfmessage:
 
-:class:`MMDFMessage`
-^^^^^^^^^^^^^^^^^^^^
+:class:`!MMDFMessage` objects
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 .. class:: MMDFMessage(message=None)
@@ -1365,7 +1491,7 @@ When a :class:`BabylMessage` instance is created based upon an
    "D", "F", and "A" flags are stored in the :mailheader:`X-Status` header. The
    flags and headers typically appear in the order mentioned.
 
-   :class:`MMDFMessage` instances offer the following methods, which are
+   :class:`!MMDFMessage` instances offer the following methods, which are
    identical to those offered by :class:`mboxMessage`:
 
 
@@ -1414,7 +1540,7 @@ When a :class:`BabylMessage` instance is created based upon an
       remove more than one flag at a time, *flag* maybe a string of more than
       one character.
 
-When an :class:`MMDFMessage` instance is created based upon a
+When an :class:`!MMDFMessage` instance is created based upon a
 :class:`MaildirMessage` instance, a "From " line is generated based upon the
 :class:`MaildirMessage` instance's delivery date, and the following conversions
 take place:
@@ -1433,7 +1559,7 @@ take place:
 | A flag          | R flag                        |
 +-----------------+-------------------------------+
 
-When an :class:`MMDFMessage` instance is created based upon an
+When an :class:`!MMDFMessage` instance is created based upon an
 :class:`MHMessage` instance, the following conversions take place:
 
 +-------------------+--------------------------+
@@ -1448,7 +1574,7 @@ When an :class:`MMDFMessage` instance is created based upon an
 | A flag            | "replied" sequence       |
 +-------------------+--------------------------+
 
-When an :class:`MMDFMessage` instance is created based upon a
+When an :class:`!MMDFMessage` instance is created based upon a
 :class:`BabylMessage` instance, the following conversions take place:
 
 +-------------------+-----------------------------+
@@ -1463,7 +1589,7 @@ When an :class:`MMDFMessage` instance is created based upon a
 | A flag            | "answered" label            |
 +-------------------+-----------------------------+
 
-When an :class:`MMDFMessage` instance is created based upon an
+When an :class:`!MMDFMessage` instance is created based upon an
 :class:`mboxMessage` instance, the "From " line is copied and all flags directly
 correspond:
 
@@ -1485,7 +1611,7 @@ correspond:
 Exceptions
 ----------
 
-The following exception classes are defined in the :mod:`mailbox` module:
+The following exception classes are defined in the :mod:`!mailbox` module:
 
 
 .. exception:: Error()

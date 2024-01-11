@@ -306,7 +306,7 @@ Pure paths provide the following methods and properties:
 .. attribute:: PurePath.pathmod
 
    The implementation of the :mod:`os.path` module used for low-level path
-   operations: either ``posixpath`` or ``ntpath``.
+   operations: either :mod:`posixpath` or :mod:`ntpath`.
 
    .. versionadded:: 3.13
 
@@ -594,6 +594,9 @@ Pure paths provide the following methods and properties:
       >>> pattern = PurePath('*.py')
       >>> PurePath('a/b.py').match(pattern)
       True
+
+   .. versionchanged:: 3.12
+      Accepts an object implementing the :class:`os.PathLike` interface.
 
    As with other methods, case-sensitivity follows platform defaults::
 
@@ -1017,14 +1020,20 @@ call fails (for example because the path doesn't exist).
       future Python release, patterns with this ending will match both files
       and directories. Add a trailing slash to match only directories.
 
-.. method:: Path.group()
+.. method:: Path.group(*, follow_symlinks=True)
 
-   Return the name of the group owning the file.  :exc:`KeyError` is raised
+   Return the name of the group owning the file. :exc:`KeyError` is raised
    if the file's gid isn't found in the system database.
+
+   This method normally follows symlinks; to get the group of the symlink, add
+   the argument ``follow_symlinks=False``.
 
    .. versionchanged:: 3.13
       Raises :exc:`UnsupportedOperation` if the :mod:`grp` module is not
       available. In previous versions, :exc:`NotImplementedError` was raised.
+
+   .. versionchanged:: 3.13
+      The *follow_symlinks* parameter was added.
 
 
 .. method:: Path.is_dir(*, follow_symlinks=True)
@@ -1291,14 +1300,20 @@ call fails (for example because the path doesn't exist).
       '#!/usr/bin/env python3\n'
 
 
-.. method:: Path.owner()
+.. method:: Path.owner(*, follow_symlinks=True)
 
-   Return the name of the user owning the file.  :exc:`KeyError` is raised
+   Return the name of the user owning the file. :exc:`KeyError` is raised
    if the file's uid isn't found in the system database.
+
+   This method normally follows symlinks; to get the owner of the symlink, add
+   the argument ``follow_symlinks=False``.
 
    .. versionchanged:: 3.13
       Raises :exc:`UnsupportedOperation` if the :mod:`pwd` module is not
       available. In previous versions, :exc:`NotImplementedError` was raised.
+
+   .. versionchanged:: 3.13
+      The *follow_symlinks* parameter was added.
 
 
 .. method:: Path.read_bytes()
@@ -1314,7 +1329,7 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.5
 
 
-.. method:: Path.read_text(encoding=None, errors=None)
+.. method:: Path.read_text(encoding=None, errors=None, newline=None)
 
    Return the decoded contents of the pointed-to file as a string::
 
@@ -1329,6 +1344,8 @@ call fails (for example because the path doesn't exist).
 
    .. versionadded:: 3.5
 
+   .. versionchanged:: 3.13
+      The *newline* parameter was added.
 
 .. method:: Path.readlink()
 

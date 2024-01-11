@@ -1,3 +1,0 @@
-Fix invalid state handling in :class:`asyncio.TaskGroup` and
-:class:`asyncio.Timeout`. They now raise proper RuntimeError if they are
-improperly used and are left in consistent state after this.

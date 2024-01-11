@@ -160,15 +160,9 @@ static PyObject *
 get_dialect_from_registry(PyObject *name_obj, _csvstate *module_state)
 {
     PyObject *dialect_obj;
-
-    dialect_obj = PyDict_GetItemWithError(module_state->dialects, name_obj);
-    if (dialect_obj == NULL) {
-        if (!PyErr_Occurred())
-            PyErr_Format(module_state->error_obj, "unknown dialect");
+    if (PyDict_GetItemRef(module_state->dialects, name_obj, &dialect_obj) == 0) {
+        PyErr_SetString(module_state->error_obj, "unknown dialect");
     }
-    else
-        Py_INCREF(dialect_obj);
-
     return dialect_obj;
 }
 
@@ -843,7 +837,8 @@ parse_process_char(ReaderObj *self, _csvstate *module_state, Py_UCS4 c)
             self->state = START_RECORD;
         else {
             PyErr_Format(module_state->error_obj,
-                         "new-line character seen in unquoted field - do you need to open the file in universal-newline mode?");
+                         "new-line character seen in unquoted field - "
+                         "do you need to open the file with newline=''?");
             return -1;
         }
         break;

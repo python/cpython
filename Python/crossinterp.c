@@ -5,9 +5,58 @@
 #include "pycore_ceval.h"         // _Py_simple_func
 #include "pycore_crossinterp.h"   // struct _xid
 #include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_namespace.h"     //_PyNamespace_New()
 #include "pycore_pyerrors.h"      // _PyErr_Clear()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_typeobject.h"    // _PyType_GetModuleName()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
+
+
+/**************/
+/* exceptions */
+/**************/
+
+/* InterpreterError extends Exception */
+
+static PyTypeObject _PyExc_InterpreterError = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "InterpreterError",
+    .tp_doc = PyDoc_STR("An interpreter was not found."),
+    //.tp_base = (PyTypeObject *)PyExc_BaseException,
+};
+PyObject *PyExc_InterpreterError = (PyObject *)&_PyExc_InterpreterError;
+
+/* InterpreterNotFoundError extends InterpreterError */
+
+static PyTypeObject _PyExc_InterpreterNotFoundError = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "InterpreterNotFoundError",
+    .tp_doc = PyDoc_STR("An interpreter was not found."),
+    .tp_base = &_PyExc_InterpreterError,
+};
+PyObject *PyExc_InterpreterNotFoundError = (PyObject *)&_PyExc_InterpreterNotFoundError;
+
+/* lifecycle */
+
+static int
+init_exceptions(PyInterpreterState *interp)
+{
+    _PyExc_InterpreterError.tp_base = (PyTypeObject *)PyExc_BaseException;
+    if (_PyStaticType_InitBuiltin(interp, &_PyExc_InterpreterError) < 0) {
+        return -1;
+    }
+    if (_PyStaticType_InitBuiltin(interp, &_PyExc_InterpreterNotFoundError) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+static void
+fini_exceptions(PyInterpreterState *interp)
+{
+    _PyStaticType_Dealloc(interp, &_PyExc_InterpreterNotFoundError);
+    _PyStaticType_Dealloc(interp, &_PyExc_InterpreterError);
+}
 
 
 /***************************/
@@ -454,16 +503,17 @@ _xidregistry_clear(struct _xidregistry *xidregistry)
 static void
 _xidregistry_lock(struct _xidregistry *registry)
 {
-    if (registry->mutex != NULL) {
-        PyThread_acquire_lock(registry->mutex, WAIT_LOCK);
+    if (registry->global) {
+        PyMutex_Lock(&registry->mutex);
     }
+    // else: Within an interpreter we rely on the GIL instead of a separate lock.
 }
 
 static void
 _xidregistry_unlock(struct _xidregistry *registry)
 {
-    if (registry->mutex != NULL) {
-        PyThread_release_lock(registry->mutex);
+    if (registry->global) {
+        PyMutex_Unlock(&registry->mutex);
     }
 }
 
@@ -564,6 +614,8 @@ _lookup_getdata_from_registry(PyInterpreterState *interp, PyObject *obj)
 
 /* cross-interpreter data for builtin types */
 
+// bytes
+
 struct _shared_bytes_data {
     char *bytes;
     Py_ssize_t len;
@@ -594,6 +646,8 @@ _bytes_shared(PyThreadState *tstate, PyObject *obj,
     }
     return 0;
 }
+
+// str
 
 struct _shared_str_data {
     int kind;
@@ -626,6 +680,8 @@ _str_shared(PyThreadState *tstate, PyObject *obj,
     return 0;
 }
 
+// int
+
 static PyObject *
 _new_long_object(_PyCrossInterpreterData *data)
 {
@@ -653,6 +709,8 @@ _long_shared(PyThreadState *tstate, PyObject *obj,
     return 0;
 }
 
+// float
+
 static PyObject *
 _new_float_object(_PyCrossInterpreterData *data)
 {
@@ -676,6 +734,8 @@ _float_shared(PyThreadState *tstate, PyObject *obj,
     return 0;
 }
 
+// None
+
 static PyObject *
 _new_none_object(_PyCrossInterpreterData *data)
 {
@@ -692,6 +752,8 @@ _none_shared(PyThreadState *tstate, PyObject *obj,
     // data->data, data->obj and data->free remain NULL
     return 0;
 }
+
+// bool
 
 static PyObject *
 _new_bool_object(_PyCrossInterpreterData *data)
@@ -712,6 +774,103 @@ _bool_shared(PyThreadState *tstate, PyObject *obj,
     // data->obj and data->free remain NULL
     return 0;
 }
+
+// tuple
+
+struct _shared_tuple_data {
+    Py_ssize_t len;
+    _PyCrossInterpreterData **data;
+};
+
+static PyObject *
+_new_tuple_object(_PyCrossInterpreterData *data)
+{
+    struct _shared_tuple_data *shared = (struct _shared_tuple_data *)(data->data);
+    PyObject *tuple = PyTuple_New(shared->len);
+    if (tuple == NULL) {
+        return NULL;
+    }
+
+    for (Py_ssize_t i = 0; i < shared->len; i++) {
+        PyObject *item = _PyCrossInterpreterData_NewObject(shared->data[i]);
+        if (item == NULL){
+            Py_DECREF(tuple);
+            return NULL;
+        }
+        PyTuple_SET_ITEM(tuple, i, item);
+    }
+    return tuple;
+}
+
+static void
+_tuple_shared_free(void* data)
+{
+    struct _shared_tuple_data *shared = (struct _shared_tuple_data *)(data);
+#ifndef NDEBUG
+    int64_t interpid = PyInterpreterState_GetID(_PyInterpreterState_GET());
+#endif
+    for (Py_ssize_t i = 0; i < shared->len; i++) {
+        if (shared->data[i] != NULL) {
+            assert(shared->data[i]->interpid == interpid);
+            _PyCrossInterpreterData_Release(shared->data[i]);
+            PyMem_RawFree(shared->data[i]);
+            shared->data[i] = NULL;
+        }
+    }
+    PyMem_Free(shared->data);
+    PyMem_RawFree(shared);
+}
+
+static int
+_tuple_shared(PyThreadState *tstate, PyObject *obj,
+             _PyCrossInterpreterData *data)
+{
+    Py_ssize_t len = PyTuple_GET_SIZE(obj);
+    if (len < 0) {
+        return -1;
+    }
+    struct _shared_tuple_data *shared = PyMem_RawMalloc(sizeof(struct _shared_tuple_data));
+    if (shared == NULL){
+        PyErr_NoMemory();
+        return -1;
+    }
+
+    shared->len = len;
+    shared->data = (_PyCrossInterpreterData **) PyMem_Calloc(shared->len, sizeof(_PyCrossInterpreterData *));
+    if (shared->data == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+
+    for (Py_ssize_t i = 0; i < shared->len; i++) {
+        _PyCrossInterpreterData *data = _PyCrossInterpreterData_New();
+        if (data == NULL) {
+            goto error;  // PyErr_NoMemory already set
+        }
+        PyObject *item = PyTuple_GET_ITEM(obj, i);
+
+        int res = -1;
+        if (!_Py_EnterRecursiveCallTstate(tstate, " while sharing a tuple")) {
+            res = _PyObject_GetCrossInterpreterData(item, data);
+            _Py_LeaveRecursiveCallTstate(tstate);
+        }
+        if (res < 0) {
+            PyMem_RawFree(data);
+            goto error;
+        }
+        shared->data[i] = data;
+    }
+    _PyCrossInterpreterData_Init(
+            data, tstate->interp, shared, obj, _new_tuple_object);
+    data->free = _tuple_shared_free;
+    return 0;
+
+error:
+    _tuple_shared_free(shared);
+    return -1;
+}
+
+// registration
 
 static void
 _register_builtins_for_crossinterpreter_data(struct _xidregistry *xidregistry)
@@ -745,6 +904,11 @@ _register_builtins_for_crossinterpreter_data(struct _xidregistry *xidregistry)
     if (_xidregistry_add_type(xidregistry, &PyFloat_Type, _float_shared) != 0) {
         Py_FatalError("could not register float for cross-interpreter sharing");
     }
+
+    // tuple
+    if (_xidregistry_add_type(xidregistry, &PyTuple_Type, _tuple_shared) != 0) {
+        Py_FatalError("could not register tuple for cross-interpreter sharing");
+    }
 }
 
 /* registry lifecycle */
@@ -758,18 +922,9 @@ _xidregistry_init(struct _xidregistry *registry)
     registry->initialized = 1;
 
     if (registry->global) {
-        // We manage the mutex lifecycle in pystate.c.
-        assert(registry->mutex != NULL);
-
         // Registering the builtins is cheap so we don't bother doing it lazily.
         assert(registry->head == NULL);
         _register_builtins_for_crossinterpreter_data(registry);
-    }
-    else {
-        // Within an interpreter we rely on the GIL instead of a separate lock.
-        assert(registry->mutex == NULL);
-
-        // There's nothing else to initialize.
     }
 }
 
@@ -782,17 +937,6 @@ _xidregistry_fini(struct _xidregistry *registry)
     registry->initialized = 0;
 
     _xidregistry_clear(registry);
-
-    if (registry->global) {
-        // We manage the mutex lifecycle in pystate.c.
-        assert(registry->mutex != NULL);
-    }
-    else {
-        // There's nothing else to finalize.
-
-        // Within an interpreter we rely on the GIL instead of a separate lock.
-        assert(registry->mutex == NULL);
-    }
 }
 
 
@@ -801,21 +945,107 @@ _xidregistry_fini(struct _xidregistry *registry)
 /*************************/
 
 static const char *
-_copy_string_obj_raw(PyObject *strobj)
+_copy_string_obj_raw(PyObject *strobj, Py_ssize_t *p_size)
 {
-    const char *str = PyUnicode_AsUTF8(strobj);
+    Py_ssize_t size = -1;
+    const char *str = PyUnicode_AsUTF8AndSize(strobj, &size);
     if (str == NULL) {
         return NULL;
     }
 
-    char *copied = PyMem_RawMalloc(strlen(str)+1);
+    char *copied = PyMem_RawMalloc(size+1);
     if (copied == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
     strcpy(copied, str);
+    if (p_size != NULL) {
+        *p_size = size;
+    }
     return copied;
 }
+
+
+static int
+_convert_exc_to_TracebackException(PyObject *exc, PyObject **p_tbexc)
+{
+    PyObject *args = NULL;
+    PyObject *kwargs = NULL;
+    PyObject *create = NULL;
+
+    // This is inspired by _PyErr_Display().
+    PyObject *tbmod = PyImport_ImportModule("traceback");
+    if (tbmod == NULL) {
+        return -1;
+    }
+    PyObject *tbexc_type = PyObject_GetAttrString(tbmod, "TracebackException");
+    Py_DECREF(tbmod);
+    if (tbexc_type == NULL) {
+        return -1;
+    }
+    create = PyObject_GetAttrString(tbexc_type, "from_exception");
+    Py_DECREF(tbexc_type);
+    if (create == NULL) {
+        return -1;
+    }
+
+    args = PyTuple_Pack(1, exc);
+    if (args == NULL) {
+        goto error;
+    }
+
+    kwargs = PyDict_New();
+    if (kwargs == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItemString(kwargs, "save_exc_type", Py_False) < 0) {
+        goto error;
+    }
+    if (PyDict_SetItemString(kwargs, "lookup_lines", Py_False) < 0) {
+        goto error;
+    }
+
+    PyObject *tbexc = PyObject_Call(create, args, kwargs);
+    Py_DECREF(args);
+    Py_DECREF(kwargs);
+    Py_DECREF(create);
+    if (tbexc == NULL) {
+        goto error;
+    }
+
+    *p_tbexc = tbexc;
+    return 0;
+
+error:
+    Py_XDECREF(args);
+    Py_XDECREF(kwargs);
+    Py_XDECREF(create);
+    return -1;
+}
+
+
+static const char *
+_format_TracebackException(PyObject *tbexc)
+{
+    PyObject *lines = PyObject_CallMethod(tbexc, "format", NULL);
+    if (lines == NULL) {
+        return NULL;
+    }
+    PyObject *formatted_obj = PyUnicode_Join(&_Py_STR(empty), lines);
+    Py_DECREF(lines);
+    if (formatted_obj == NULL) {
+        return NULL;
+    }
+
+    Py_ssize_t size = -1;
+    const char *formatted = _copy_string_obj_raw(formatted_obj, &size);
+    Py_DECREF(formatted_obj);
+    // We remove trailing the newline added by TracebackException.format().
+    assert(formatted[size-1] == '\n');
+    ((char *)formatted)[size-1] = '\0';
+    return formatted;
+}
+
 
 static int
 _release_xid_data(_PyCrossInterpreterData *data, int rawfree)
@@ -832,6 +1062,368 @@ _release_xid_data(_PyCrossInterpreterData *data, int rawfree)
     }
     PyErr_SetRaisedException(exc);
     return res;
+}
+
+
+/***********************/
+/* exception snapshots */
+/***********************/
+
+static int
+_excinfo_init_type(struct _excinfo_type *info, PyObject *exc)
+{
+    /* Note that this copies directly rather than into an intermediate
+       struct and does not clear on error.  If we need that then we
+       should have a separate function to wrap this one
+       and do all that there. */
+    PyObject *strobj = NULL;
+
+    PyTypeObject *type = Py_TYPE(exc);
+    if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+        assert(_Py_IsImmortal((PyObject *)type));
+        info->builtin = type;
+    }
+    else {
+        // Only builtin types are preserved.
+        info->builtin = NULL;
+    }
+
+    // __name__
+    strobj = PyType_GetName(type);
+    if (strobj == NULL) {
+        return -1;
+    }
+    info->name = _copy_string_obj_raw(strobj, NULL);
+    Py_DECREF(strobj);
+    if (info->name == NULL) {
+        return -1;
+    }
+
+    // __qualname__
+    strobj = PyType_GetQualName(type);
+    if (strobj == NULL) {
+        return -1;
+    }
+    info->qualname = _copy_string_obj_raw(strobj, NULL);
+    Py_DECREF(strobj);
+    if (info->name == NULL) {
+        return -1;
+    }
+
+    // __module__
+    strobj = _PyType_GetModuleName(type);
+    if (strobj == NULL) {
+        return -1;
+    }
+    info->module = _copy_string_obj_raw(strobj, NULL);
+    Py_DECREF(strobj);
+    if (info->name == NULL) {
+        return -1;
+    }
+
+    return 0;
+}
+
+static void
+_excinfo_clear_type(struct _excinfo_type *info)
+{
+    if (info->builtin != NULL) {
+        assert(info->builtin->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
+        assert(_Py_IsImmortal((PyObject *)info->builtin));
+    }
+    if (info->name != NULL) {
+        PyMem_RawFree((void *)info->name);
+    }
+    if (info->qualname != NULL) {
+        PyMem_RawFree((void *)info->qualname);
+    }
+    if (info->module != NULL) {
+        PyMem_RawFree((void *)info->module);
+    }
+    *info = (struct _excinfo_type){NULL};
+}
+
+static void
+_excinfo_normalize_type(struct _excinfo_type *info,
+                        const char **p_module, const char **p_qualname)
+{
+    if (info->name == NULL) {
+        assert(info->builtin == NULL);
+        assert(info->qualname == NULL);
+        assert(info->module == NULL);
+        // This is inspired by TracebackException.format_exception_only().
+        *p_module = NULL;
+        *p_qualname = NULL;
+        return;
+    }
+
+    const char *module = info->module;
+    const char *qualname = info->qualname;
+    if (qualname == NULL) {
+        qualname = info->name;
+    }
+    assert(module != NULL);
+    if (strcmp(module, "builtins") == 0) {
+        module = NULL;
+    }
+    else if (strcmp(module, "__main__") == 0) {
+        module = NULL;
+    }
+    *p_qualname = qualname;
+    *p_module = module;
+}
+
+static void
+_PyXI_excinfo_Clear(_PyXI_excinfo *info)
+{
+    _excinfo_clear_type(&info->type);
+    if (info->msg != NULL) {
+        PyMem_RawFree((void *)info->msg);
+    }
+    if (info->errdisplay != NULL) {
+        PyMem_RawFree((void *)info->errdisplay);
+    }
+    *info = (_PyXI_excinfo){{NULL}};
+}
+
+static PyObject *
+_PyXI_excinfo_format(_PyXI_excinfo *info)
+{
+    const char *module, *qualname;
+    _excinfo_normalize_type(&info->type, &module, &qualname);
+    if (qualname != NULL) {
+        if (module != NULL) {
+            if (info->msg != NULL) {
+                return PyUnicode_FromFormat("%s.%s: %s",
+                                            module, qualname, info->msg);
+            }
+            else {
+                return PyUnicode_FromFormat("%s.%s", module, qualname);
+            }
+        }
+        else {
+            if (info->msg != NULL) {
+                return PyUnicode_FromFormat("%s: %s", qualname, info->msg);
+            }
+            else {
+                return PyUnicode_FromString(qualname);
+            }
+        }
+    }
+    else if (info->msg != NULL) {
+        return PyUnicode_FromString(info->msg);
+    }
+    else {
+        Py_RETURN_NONE;
+    }
+}
+
+static const char *
+_PyXI_excinfo_InitFromException(_PyXI_excinfo *info, PyObject *exc)
+{
+    assert(exc != NULL);
+
+    if (PyErr_GivenExceptionMatches(exc, PyExc_MemoryError)) {
+        _PyXI_excinfo_Clear(info);
+        return NULL;
+    }
+    const char *failure = NULL;
+
+    if (_excinfo_init_type(&info->type, exc) < 0) {
+        failure = "error while initializing exception type snapshot";
+        goto error;
+    }
+
+    // Extract the exception message.
+    PyObject *msgobj = PyObject_Str(exc);
+    if (msgobj == NULL) {
+        failure = "error while formatting exception";
+        goto error;
+    }
+    info->msg = _copy_string_obj_raw(msgobj, NULL);
+    Py_DECREF(msgobj);
+    if (info->msg == NULL) {
+        failure = "error while copying exception message";
+        goto error;
+    }
+
+    // Pickle a traceback.TracebackException.
+    PyObject *tbexc = NULL;
+    if (_convert_exc_to_TracebackException(exc, &tbexc) < 0) {
+#ifdef Py_DEBUG
+        PyErr_FormatUnraisable("Exception ignored while creating TracebackException");
+#endif
+        PyErr_Clear();
+    }
+    else {
+        info->errdisplay = _format_TracebackException(tbexc);
+        Py_DECREF(tbexc);
+        if (info->errdisplay == NULL) {
+#ifdef Py_DEBUG
+            PyErr_FormatUnraisable("Exception ignored while formating TracebackException");
+#endif
+            PyErr_Clear();
+        }
+    }
+
+    return NULL;
+
+error:
+    assert(failure != NULL);
+    _PyXI_excinfo_Clear(info);
+    return failure;
+}
+
+static void
+_PyXI_excinfo_Apply(_PyXI_excinfo *info, PyObject *exctype)
+{
+    PyObject *tbexc = NULL;
+    if (info->errdisplay != NULL) {
+        tbexc = PyUnicode_FromString(info->errdisplay);
+        if (tbexc == NULL) {
+            PyErr_Clear();
+        }
+    }
+
+    PyObject *formatted = _PyXI_excinfo_format(info);
+    PyErr_SetObject(exctype, formatted);
+    Py_DECREF(formatted);
+
+    if (tbexc != NULL) {
+        PyObject *exc = PyErr_GetRaisedException();
+        if (PyObject_SetAttrString(exc, "_errdisplay", tbexc) < 0) {
+#ifdef Py_DEBUG
+            PyErr_FormatUnraisable("Exception ignored when setting _errdisplay");
+#endif
+            PyErr_Clear();
+        }
+        Py_DECREF(tbexc);
+        PyErr_SetRaisedException(exc);
+    }
+}
+
+static PyObject *
+_PyXI_excinfo_TypeAsObject(_PyXI_excinfo *info)
+{
+    PyObject *ns = _PyNamespace_New(NULL);
+    if (ns == NULL) {
+        return NULL;
+    }
+    int empty = 1;
+
+    if (info->type.name != NULL) {
+        PyObject *name = PyUnicode_FromString(info->type.name);
+        if (name == NULL) {
+            goto error;
+        }
+        int res = PyObject_SetAttrString(ns, "__name__", name);
+        Py_DECREF(name);
+        if (res < 0) {
+            goto error;
+        }
+        empty = 0;
+    }
+
+    if (info->type.qualname != NULL) {
+        PyObject *qualname = PyUnicode_FromString(info->type.qualname);
+        if (qualname == NULL) {
+            goto error;
+        }
+        int res = PyObject_SetAttrString(ns, "__qualname__", qualname);
+        Py_DECREF(qualname);
+        if (res < 0) {
+            goto error;
+        }
+        empty = 0;
+    }
+
+    if (info->type.module != NULL) {
+        PyObject *module = PyUnicode_FromString(info->type.module);
+        if (module == NULL) {
+            goto error;
+        }
+        int res = PyObject_SetAttrString(ns, "__module__", module);
+        Py_DECREF(module);
+        if (res < 0) {
+            goto error;
+        }
+        empty = 0;
+    }
+
+    if (empty) {
+        Py_CLEAR(ns);
+    }
+
+    return ns;
+
+error:
+    Py_DECREF(ns);
+    return NULL;
+}
+
+static PyObject *
+_PyXI_excinfo_AsObject(_PyXI_excinfo *info)
+{
+    PyObject *ns = _PyNamespace_New(NULL);
+    if (ns == NULL) {
+        return NULL;
+    }
+    int res;
+
+    PyObject *type = _PyXI_excinfo_TypeAsObject(info);
+    if (type == NULL) {
+        if (PyErr_Occurred()) {
+            goto error;
+        }
+        type = Py_NewRef(Py_None);
+    }
+    res = PyObject_SetAttrString(ns, "type", type);
+    Py_DECREF(type);
+    if (res < 0) {
+        goto error;
+    }
+
+    PyObject *msg = info->msg != NULL
+        ? PyUnicode_FromString(info->msg)
+        : Py_NewRef(Py_None);
+    if (msg == NULL) {
+        goto error;
+    }
+    res = PyObject_SetAttrString(ns, "msg", msg);
+    Py_DECREF(msg);
+    if (res < 0) {
+        goto error;
+    }
+
+    PyObject *formatted = _PyXI_excinfo_format(info);
+    if (formatted == NULL) {
+        goto error;
+    }
+    res = PyObject_SetAttrString(ns, "formatted", formatted);
+    Py_DECREF(formatted);
+    if (res < 0) {
+        goto error;
+    }
+
+    if (info->errdisplay != NULL) {
+        PyObject *tbexc = PyUnicode_FromString(info->errdisplay);
+        if (tbexc == NULL) {
+            PyErr_Clear();
+        }
+        else {
+            res = PyObject_SetAttrString(ns, "errdisplay", tbexc);
+            Py_DECREF(tbexc);
+            if (res < 0) {
+                goto error;
+            }
+        }
+    }
+
+    return ns;
+
+error:
+    Py_DECREF(ns);
+    return NULL;
 }
 
 
@@ -890,72 +1482,69 @@ _PyXI_ApplyErrorCode(_PyXI_errcode code, PyInterpreterState *interp)
 /* shared exceptions */
 
 static const char *
-_PyXI_InitExceptionInfo(_PyXI_exception_info *info,
-                        PyObject *excobj, _PyXI_errcode code)
+_PyXI_InitError(_PyXI_error *error, PyObject *excobj, _PyXI_errcode code)
 {
-    if (info->interp == NULL) {
-        info->interp = PyInterpreterState_Get();
+    if (error->interp == NULL) {
+        error->interp = PyInterpreterState_Get();
     }
 
     const char *failure = NULL;
     if (code == _PyXI_ERR_UNCAUGHT_EXCEPTION) {
         // There is an unhandled exception we need to propagate.
-        failure = _Py_excinfo_InitFromException(&info->uncaught, excobj);
+        failure = _PyXI_excinfo_InitFromException(&error->uncaught, excobj);
         if (failure != NULL) {
-            // We failed to initialize info->uncaught.
+            // We failed to initialize error->uncaught.
             // XXX Print the excobj/traceback?  Emit a warning?
             // XXX Print the current exception/traceback?
             if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
-                info->code = _PyXI_ERR_NO_MEMORY;
+                error->code = _PyXI_ERR_NO_MEMORY;
             }
             else {
-                info->code = _PyXI_ERR_OTHER;
+                error->code = _PyXI_ERR_OTHER;
             }
             PyErr_Clear();
         }
         else {
-            info->code = code;
+            error->code = code;
         }
-        assert(info->code != _PyXI_ERR_NO_ERROR);
+        assert(error->code != _PyXI_ERR_NO_ERROR);
     }
     else {
         // There is an error code we need to propagate.
         assert(excobj == NULL);
         assert(code != _PyXI_ERR_NO_ERROR);
-        info->code = code;
-        _Py_excinfo_Clear(&info->uncaught);
+        error->code = code;
+        _PyXI_excinfo_Clear(&error->uncaught);
     }
     return failure;
 }
 
-void
-_PyXI_ApplyExceptionInfo(_PyXI_exception_info *info, PyObject *exctype)
+PyObject *
+_PyXI_ApplyError(_PyXI_error *error)
 {
-    if (exctype == NULL) {
-        exctype = PyExc_RuntimeError;
-    }
-    if (info->code == _PyXI_ERR_UNCAUGHT_EXCEPTION) {
+    if (error->code == _PyXI_ERR_UNCAUGHT_EXCEPTION) {
         // Raise an exception that proxies the propagated exception.
-        _Py_excinfo_Apply(&info->uncaught, exctype);
+       return _PyXI_excinfo_AsObject(&error->uncaught);
     }
-    else if (info->code == _PyXI_ERR_NOT_SHAREABLE) {
+    else if (error->code == _PyXI_ERR_NOT_SHAREABLE) {
         // Propagate the exception directly.
-        _set_xid_lookup_failure(info->interp, NULL, info->uncaught.msg);
+        _set_xid_lookup_failure(error->interp, NULL, error->uncaught.msg);
     }
     else {
         // Raise an exception corresponding to the code.
-        assert(info->code != _PyXI_ERR_NO_ERROR);
-        (void)_PyXI_ApplyErrorCode(info->code, info->interp);
-        if (info->uncaught.type != NULL || info->uncaught.msg != NULL) {
+        assert(error->code != _PyXI_ERR_NO_ERROR);
+        (void)_PyXI_ApplyErrorCode(error->code, error->interp);
+        if (error->uncaught.type.name != NULL || error->uncaught.msg != NULL) {
             // __context__ will be set to a proxy of the propagated exception.
             PyObject *exc = PyErr_GetRaisedException();
-            _Py_excinfo_Apply(&info->uncaught, exctype);
+            _PyXI_excinfo_Apply(&error->uncaught, PyExc_RuntimeError);
             PyObject *exc2 = PyErr_GetRaisedException();
             PyException_SetContext(exc, exc2);
             PyErr_SetRaisedException(exc);
         }
     }
     assert(PyErr_Occurred());
+    return NULL;
 }
 
 /* shared namespaces */
@@ -994,7 +1583,7 @@ _sharednsitem_is_initialized(_PyXI_namespace_item *item)
 static int
 _sharednsitem_init(_PyXI_namespace_item *item, PyObject *key)
 {
-    item->name = _copy_string_obj_raw(key);
+    item->name = _copy_string_obj_raw(key, NULL);
     if (item->name == NULL) {
         assert(!_sharednsitem_is_initialized(item));
         return -1;
@@ -1382,7 +1971,7 @@ _PyXI_NamespaceFromDict(PyObject *nsobj, _PyXI_session *session)
 
 error:
     assert(PyErr_Occurred()
-           || (session != NULL && session->exc_override != NULL));
+           || (session != NULL && session->error_override != NULL));
     _sharedns_free(ns);
     return NULL;
 }
@@ -1416,9 +2005,9 @@ _enter_session(_PyXI_session *session, PyInterpreterState *interp)
     assert(!session->running);
     assert(session->main_ns == NULL);
     // Set elsewhere and cleared in _capture_current_exception().
-    assert(session->exc_override == NULL);
+    assert(session->error_override == NULL);
     // Set elsewhere and cleared in _PyXI_ApplyCapturedException().
-    assert(session->exc == NULL);
+    assert(session->error == NULL);
 
     // Switch to interpreter.
     PyThreadState *tstate = PyThreadState_Get();
@@ -1487,23 +2076,23 @@ _propagate_not_shareable_error(_PyXI_session *session)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (PyErr_ExceptionMatches(_get_not_shareable_error_type(interp))) {
         // We want to propagate the exception directly.
-        session->_exc_override = _PyXI_ERR_NOT_SHAREABLE;
-        session->exc_override = &session->_exc_override;
+        session->_error_override = _PyXI_ERR_NOT_SHAREABLE;
+        session->error_override = &session->_error_override;
     }
 }
 
 static void
 _capture_current_exception(_PyXI_session *session)
 {
-    assert(session->exc == NULL);
+    assert(session->error == NULL);
     if (!PyErr_Occurred()) {
-        assert(session->exc_override == NULL);
+        assert(session->error_override == NULL);
         return;
     }
 
     // Handle the exception override.
-    _PyXI_errcode *override = session->exc_override;
-    session->exc_override = NULL;
+    _PyXI_errcode *override = session->error_override;
+    session->error_override = NULL;
     _PyXI_errcode errcode = override != NULL
         ? *override
         : _PyXI_ERR_UNCAUGHT_EXCEPTION;
@@ -1526,19 +2115,19 @@ _capture_current_exception(_PyXI_session *session)
     }
 
     // Capture the exception.
-    _PyXI_exception_info *exc = &session->_exc;
-    *exc = (_PyXI_exception_info){
+    _PyXI_error *err = &session->_error;
+    *err = (_PyXI_error){
         .interp = session->init_tstate->interp,
     };
     const char *failure;
     if (excval == NULL) {
-        failure = _PyXI_InitExceptionInfo(exc, NULL, errcode);
+        failure = _PyXI_InitError(err, NULL, errcode);
     }
     else {
-        failure = _PyXI_InitExceptionInfo(exc, excval,
-                                          _PyXI_ERR_UNCAUGHT_EXCEPTION);
+        failure = _PyXI_InitError(err, excval, _PyXI_ERR_UNCAUGHT_EXCEPTION);
+        Py_DECREF(excval);
         if (failure == NULL && override != NULL) {
-            exc->code = errcode;
+            err->code = errcode;
         }
     }
 
@@ -1548,40 +2137,29 @@ _capture_current_exception(_PyXI_session *session)
         fprintf(stderr,
                 "RunFailedError: script raised an uncaught exception (%s)",
                 failure);
-        exc = NULL;
-    }
-
-    // a temporary hack  (famous last words)
-    if (excval != NULL) {
-        // XXX Store the traceback info (or rendered traceback) on
-        // _PyXI_excinfo, attach it to the exception when applied,
-        // and teach PyErr_Display() to print it.
-#ifdef Py_DEBUG
-        // XXX Drop this once _Py_excinfo picks up the slack.
-        PyErr_Display(NULL, excval, NULL);
-#endif
-        Py_DECREF(excval);
+        err = NULL;
     }
 
     // Finished!
     assert(!PyErr_Occurred());
-    session->exc = exc;
+    session->error  = err;
 }
 
-void
-_PyXI_ApplyCapturedException(_PyXI_session *session, PyObject *excwrapper)
+PyObject *
+_PyXI_ApplyCapturedException(_PyXI_session *session)
 {
     assert(!PyErr_Occurred());
-    assert(session->exc != NULL);
-    _PyXI_ApplyExceptionInfo(session->exc, excwrapper);
-    assert(PyErr_Occurred());
-    session->exc = NULL;
+    assert(session->error != NULL);
+    PyObject *res = _PyXI_ApplyError(session->error);
+    assert((res == NULL) != (PyErr_Occurred() == NULL));
+    session->error = NULL;
+    return res;
 }
 
 int
 _PyXI_HasCapturedException(_PyXI_session *session)
 {
-    return session->exc != NULL;
+    return session->error != NULL;
 }
 
 int
@@ -1593,7 +2171,7 @@ _PyXI_Enter(_PyXI_session *session,
     if (nsupdates != NULL) {
         sharedns = _PyXI_NamespaceFromDict(nsupdates, NULL);
         if (sharedns == NULL && PyErr_Occurred()) {
-            assert(session->exc == NULL);
+            assert(session->error == NULL);
             return -1;
         }
     }
@@ -1643,7 +2221,7 @@ error:
     assert(PyErr_Occurred());
     // We want to propagate all exceptions here directly (best effort).
     assert(errcode != _PyXI_ERR_UNCAUGHT_EXCEPTION);
-    session->exc_override = &errcode;
+    session->error_override = &errcode;
     _capture_current_exception(session);
     _exit_session(session);
     if (sharedns != NULL) {
@@ -1698,4 +2276,19 @@ _PyXI_Fini(PyInterpreterState *interp)
     if (_Py_IsMainInterpreter(interp)) {
         _xidregistry_fini(_get_global_xidregistry(interp->runtime));
     }
+}
+
+PyStatus
+_PyXI_InitTypes(PyInterpreterState *interp)
+{
+    if (init_exceptions(interp) < 0) {
+        return _PyStatus_ERR("failed to initialize an exception type");
+    }
+    return _PyStatus_OK();
+}
+
+void
+_PyXI_FiniTypes(PyInterpreterState *interp)
+{
+    fini_exceptions(interp);
 }

@@ -48,6 +48,11 @@ Body.enum.converters['loweralpha'] = \
     Body.enum.converters['lowerroman'] = \
     Body.enum.converters['upperroman'] = lambda x: None
 
+# monkey-patch the productionlist directive to allow hyphens in group names
+# https://github.com/sphinx-doc/sphinx/issues/11854
+from sphinx.domains import std
+
+std.token_re = re.compile(r'`((~?[\w-]*:)?\w+)`')
 
 # Support for marking up and linking to bugs.python.org issues
 
@@ -127,8 +132,8 @@ class Availability(SphinxDirective):
     # known platform, libc, and threading implementations
     known_platforms = frozenset({
         "AIX", "Android", "BSD", "DragonFlyBSD", "Emscripten", "FreeBSD",
-        "Linux", "NetBSD", "OpenBSD", "POSIX", "Solaris", "Unix", "VxWorks",
-        "WASI", "Windows", "macOS",
+        "GNU/kFreeBSD", "Linux", "NetBSD", "OpenBSD", "POSIX", "Solaris",
+        "Unix", "VxWorks", "WASI", "Windows", "macOS",
         # libc
         "BSD libc", "glibc", "musl",
         # POSIX platforms with pthreads
