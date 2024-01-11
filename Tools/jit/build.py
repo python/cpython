@@ -275,10 +275,10 @@ class Target(typing.Generic[_S, _R]):
             stencil.holes.append(hole)
 
     def _handle_section(self, section: _S, group: StencilGroup) -> None:
-        raise NotImplementedError()
+        raise NotImplementedError(type(self))
 
     def _handle_relocation(self, base: int, relocation: _R, raw: bytes) -> Hole:
-        raise NotImplementedError()
+        raise NotImplementedError(type(self))
 
     async def _compile(
         self, opname: str, c: pathlib.Path, tempdir: pathlib.Path
@@ -306,10 +306,10 @@ class Target(typing.Generic[_S, _R]):
             # Don't make calls to weird stack-smashing canaries:
             "-fno-stack-protector",
             # We have three options for code model:
-            # - "small": the default, assumes that code and data reside in the lowest
-            #   2GB of memory (128MB on aarch64)
-            # - "medium": assumes that code resides in the lowest 2GB of memory, and
-            #   makes no assumptions about data (not available on aarch64)
+            # - "small": the default, assumes that code and data reside in the
+            #   lowest 2GB of memory (128MB on aarch64)
+            # - "medium": assumes that code resides in the lowest 2GB of memory,
+            #   and makes no assumptions about data (not available on aarch64)
             # - "large": makes no assumptions about either code or data
             "-mcmodel=large",
         ]
@@ -332,6 +332,7 @@ class Target(typing.Generic[_S, _R]):
     def build(self, out: pathlib.Path) -> None:
         jit_stencils = out / "jit_stencils.h"
         hasher = hashlib.sha256()
+        hasher.update(self.sha256())
         hasher.update(PYTHON_EXECUTOR_CASES_C_H.read_bytes())
         hasher.update((out / "pyconfig.h").read_bytes())
         for dirpath, _, filenames in sorted(os.walk(TOOLS_JIT)):
