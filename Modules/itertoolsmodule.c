@@ -2724,25 +2724,30 @@ combinations_next(combinationsobject *co)
         assert(r == 0 || Py_REFCNT(result) == 1);
 
         /* Seems like we allow 0-length combination ranges. */
-        if (0 == r) goto empty;
+        if (0 == r) {
+            goto empty;
+        }
 
         /* Scan indices right-to-left until finding one that is not
            at its maximum (i + n - r). */
         i = r - 1;
         if (indices[i] == i + n - r) {
             /* If we only have one index, at max value, we're done. */
-            if (0 == i)
+            if (0 == i) {
                 goto empty;
+            }
 
             for (;;) {
                 --i;
-                if (indices[i] < i + n - r)
+                if (indices[i] < i + n - r) {
                     break;
+                }
 
                 /* If i is zero, then the indices are all at
                    their maximum value and we're done. */
-                if (0 == i)
+                if (0 == i) {
                     goto empty;
+                }
             }
 
             /* Increment the current index which we know is not at its
@@ -2755,8 +2760,9 @@ combinations_next(combinationsobject *co)
                starting with i, the leftmost index that changed */
             for (;;) {
                 ITERTOOLS_SET_COMBINATION_VALUE(i);
-                if (i == r - 1)
+                if (i == r - 1) {
                     break;
+                }
 
                 ++i;
                 indices[i] = indices[i - 1] + 1;
