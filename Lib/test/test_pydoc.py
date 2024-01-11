@@ -1701,6 +1701,10 @@ class TestHelper(unittest.TestCase):
         self.assertEqual(sorted(pydoc.Helper.keywords),
                          sorted(keyword.kwlist))
 
+    def test_soft_keywords(self):
+        self.assertEqual(sorted(pydoc.Helper.soft_keywords),
+                         sorted(keyword.softkwlist))
+
 
 class PydocWithMetaClasses(unittest.TestCase):
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),

@@ -1,0 +1,1 @@
+Improve handling of ``match``, ``case`` and ``type`` soft keywords in Python interactive documentation.
