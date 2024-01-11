@@ -2572,6 +2572,7 @@ typedef struct {
     PyObject *pool;         /* input converted to a tuple */
     Py_ssize_t *indices;    /* one index per result element */
     PyObject *result;       /* most recently returned result tuple */
+    Py_ssize_t n_r_delta;   /* maximum possible value for first index (n - r) */
     Py_ssize_t r;           /* size of result tuple */
     int stopped;            /* set to 1 when the iterator is exhausted */
 } combinationsobject;
@@ -2624,6 +2625,7 @@ itertools_combinations_impl(PyTypeObject *type, PyObject *iterable,
     co->pool = pool;
     co->indices = indices;
     co->result = NULL;
+    co->n_r_delta = n - r;
     co->r = r;
     co->stopped = r > n ? 1 : 0;
 
@@ -2684,7 +2686,7 @@ combinations_next(combinationsobject *co)
     PyObject *pool = co->pool;
     Py_ssize_t *indices = co->indices;
     PyObject *result = co->result;
-    Py_ssize_t n = PyTuple_GET_SIZE(pool);
+    Py_ssize_t n_r_delta = co->n_r_delta;
     Py_ssize_t r = co->r;
     Py_ssize_t i;
 
@@ -2731,7 +2733,7 @@ combinations_next(combinationsobject *co)
         /* Scan indices right-to-left until finding one that is not
            at its maximum (i + n - r). */
         i = r - 1;
-        if (indices[i] == i + n - r) {
+        if (indices[i] == i + n_r_delta) {
             /* If we only have one index, at max value, we're done. */
             if (0 == i) {
                 goto empty;
@@ -2739,7 +2741,7 @@ combinations_next(combinationsobject *co)
 
             for (;;) {
                 --i;
-                if (indices[i] < i + n - r) {
+                if (indices[i] < i + n_r_delta) {
                     break;
                 }
 
@@ -2760,11 +2762,12 @@ combinations_next(combinationsobject *co)
                starting with i, the leftmost index that changed */
             for (;;) {
                 ITERTOOLS_SET_COMBINATION_VALUE(i);
-                if (i == r - 1) {
+
+                /* Increment i and break if it's past the maximum offset */
+                if (++i == r) {
                     break;
                 }
-
-                ++i;
+                
                 indices[i] = indices[i - 1] + 1;
             }
         }
@@ -2819,7 +2822,7 @@ combinations_setstate(combinationsobject *lz, PyObject *state)
     ITERTOOL_PICKLE_DEPRECATION;
     PyObject *result;
     Py_ssize_t i;
-    Py_ssize_t n = PyTuple_GET_SIZE(lz->pool);
+    Py_ssize_t n = lz->n_r_delta + lz->r;
 
     if (!PyTuple_Check(state) || PyTuple_GET_SIZE(state) != lz->r) {
         PyErr_SetString(PyExc_ValueError, "invalid arguments");
@@ -2920,6 +2923,7 @@ typedef struct {
     PyObject *pool;         /* input converted to a tuple */
     Py_ssize_t *indices;    /* one index per result element */
     PyObject *result;       /* most recently returned result tuple */
+    Py_ssize_t n;           /* size of pool */
     Py_ssize_t r;           /* size of result tuple */
     int stopped;            /* set to 1 when the cwr iterator is exhausted */
 } cwrobject;
@@ -2972,6 +2976,7 @@ itertools_combinations_with_replacement_impl(PyTypeObject *type,
     co->pool = pool;
     co->indices = indices;
     co->result = NULL;
+    co->n = n;
     co->r = r;
     co->stopped = !n && r;
 
@@ -3022,7 +3027,7 @@ cwr_next(cwrobject *co)
     PyObject *pool = co->pool;
     Py_ssize_t *indices = co->indices;
     PyObject *result = co->result;
-    Py_ssize_t n = PyTuple_GET_SIZE(pool);
+    Py_ssize_t n = co->n;
     Py_ssize_t r = co->r;
     Py_ssize_t i, index;
 
@@ -3135,7 +3140,7 @@ cwr_setstate(cwrobject *lz, PyObject *state)
         return NULL;
     }
 
-    n = PyTuple_GET_SIZE(lz->pool);
+    n = lz->n;
     for (i=0; i<lz->r; i++) {
         PyObject* indexObject = PyTuple_GET_ITEM(state, i);
         Py_ssize_t index = PyLong_AsSsize_t(indexObject);
