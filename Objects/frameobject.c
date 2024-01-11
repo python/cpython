@@ -926,6 +926,7 @@ frame_tp_clear(PyFrameObject *f)
         Py_CLEAR(locals[i]);
     }
     f->f_frame->stacktop = 0;
+    Py_CLEAR(f->f_frame->f_locals);
     return 0;
 }
 
