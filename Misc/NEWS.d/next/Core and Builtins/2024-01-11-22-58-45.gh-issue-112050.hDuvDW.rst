@@ -1,0 +1,1 @@
+Convert most methods on collections.deque to use Argument Clinic. This is in preparation for making deques thread-safe when the GIL is disabled. To do so, we'll use Clinic's critical_section directive.
