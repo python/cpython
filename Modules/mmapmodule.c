@@ -1654,6 +1654,39 @@ mmap_exec(PyObject *module)
 #ifdef MAP_CONCEAL
     ADD_INT_MACRO(module, MAP_CONCEAL);
 #endif
+#ifdef MAP_NORESERVE
+    ADD_INT_MACRO(module, MAP_NORESERVE);
+#endif
+#ifdef MAP_NOEXTEND
+    ADD_INT_MACRO(module, MAP_NOEXTEND);
+#endif
+#ifdef MAP_HASSEMAPHORE
+    ADD_INT_MACRO(module, MAP_HASSEMAPHORE);
+#endif
+#ifdef MAP_NOCACHE
+    ADD_INT_MACRO(module, MAP_NOCACHE);
+#endif
+#ifdef MAP_JIT
+    ADD_INT_MACRO(module, MAP_JIT);
+#endif
+#ifdef MAP_RESILIENT_CODESIGN
+    ADD_INT_MACRO(module, MAP_RESILIENT_CODESIGN);
+#endif
+#ifdef MAP_RESILIENT_MEDIA
+    ADD_INT_MACRO(module, MAP_RESILIENT_MEDIA);
+#endif
+#ifdef MAP_32BIT
+    ADD_INT_MACRO(module, MAP_32BIT);
+#endif
+#ifdef MAP_TRANSLATED_ALLOW_EXECUTE
+    ADD_INT_MACRO(module, MAP_TRANSLATED_ALLOW_EXECUTE);
+#endif
+#ifdef MAP_UNIX03
+    ADD_INT_MACRO(module, MAP_UNIX03);
+#endif
+#ifdef MAP_TPRO
+    ADD_INT_MACRO(module, MAP_TPRO);
+#endif
     if (PyModule_AddIntConstant(module, "PAGESIZE", (long)my_getpagesize()) < 0 ) {
         return -1;
     }
