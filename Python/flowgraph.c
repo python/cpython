@@ -504,6 +504,23 @@ no_redundant_jumps(cfg_builder *g) {
     return true;
 }
 
+static bool
+no_exits_without_lineno(basicblock *entryblock) {
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        cfg_instr *last = basicblock_last_instr(b);
+        if (last == NULL) {
+            continue;
+        }
+        if (last->i_loc.lineno < 0) {
+            if (last->i_opcode == RETURN_VALUE) {
+                assert(0);
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 #endif
 
 /***** CFG preprocessing (jump targets and exceptions) *****/
@@ -2368,40 +2385,12 @@ propagate_line_numbers(basicblock *entryblock) {
     }
 }
 
-/* Make sure that all returns have a line number, even if early passes
- * have failed to propagate a correct line number.
- * The resulting line number may not be correct according to PEP 626,
- * but should be "good enough", and no worse than in older versions. */
-static void
-guarantee_lineno_for_exits(basicblock *entryblock, int firstlineno) {
-    int lineno = firstlineno;
-    assert(lineno > 0);
-    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        cfg_instr *last = basicblock_last_instr(b);
-        if (last == NULL) {
-            continue;
-        }
-        if (last->i_loc.lineno < 0) {
-            if (last->i_opcode == RETURN_VALUE) {
-                for (int i = 0; i < b->b_iused; i++) {
-                    assert(b->b_instr[i].i_loc.lineno < 0);
-
-                    b->b_instr[i].i_loc.lineno = lineno;
-                }
-            }
-        }
-        else {
-            lineno = last->i_loc.lineno;
-        }
-    }
-}
-
 static int
 resolve_line_numbers(cfg_builder *g, int firstlineno)
 {
-    RETURN_IF_ERROR(duplicate_exits_without_lineno(g));
     propagate_line_numbers(g->g_entryblock);
-    guarantee_lineno_for_exits(g->g_entryblock, firstlineno);
+    RETURN_IF_ERROR(duplicate_exits_without_lineno(g));
+    assert(no_exits_without_lineno(g->g_entryblock));
     return SUCCESS;
 }
 
