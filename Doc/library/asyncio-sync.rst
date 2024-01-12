@@ -268,7 +268,7 @@ Condition
 
       The predicate must be a callable which result will be
       interpreted as a boolean value.  The method will repeatedly
-      :meth:`wait` unil it evaluates to *true*. The final value is the
+      :meth:`wait` until the predicate evaluates to *true*. The final value is the
       return value.
 
 
