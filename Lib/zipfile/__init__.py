@@ -435,10 +435,7 @@ class ZipInfo:
         # header_offset         Byte offset to the file header
         # CRC                   CRC-32 of the uncompressed file
 
-    # Historically ._compresslevel was private for no reason.  People used it as
-    # a public attribute when constructing their own ZipInfo to control the
-    # setting on a per file basis when added to an archive.  We moved it into
-    # .compress_level, this property retains compatibility.
+    # Maintain backward compatibility with the old protected attribute name.
     @property
     def _compresslevel(self):
         return self.compress_level
