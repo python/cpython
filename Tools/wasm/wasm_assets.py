@@ -6,25 +6,22 @@ contains:
 
 - a stripped down, pyc-only stdlib zip file, e.g. {PREFIX}/lib/python311.zip
 - os.py as marker module {PREFIX}/lib/python3.11/os.py
-- empty lib-dynload directory, to make sure it is copied into the bundle {PREFIX}/lib/python3.11/lib-dynload/.empty
+- empty lib-dynload directory, to make sure it is copied into the bundle:
+    {PREFIX}/lib/python3.11/lib-dynload/.empty
 """
 
 import argparse
 import pathlib
 import shutil
 import sys
+import sysconfig
 import zipfile
+from typing import Dict
 
 # source directory
 SRCDIR = pathlib.Path(__file__).parent.parent.parent.absolute()
 SRCDIR_LIB = SRCDIR / "Lib"
 
-# sysconfig data relative to build dir.
-SYSCONFIGDATA = pathlib.PurePath(
-    "build",
-    f"lib.emscripten-wasm32-{sys.version_info.major}.{sys.version_info.minor}",
-    "_sysconfigdata__emscripten_wasm32-emscripten.py",
-)
 
 # Library directory relative to $(prefix).
 WASM_LIB = pathlib.PurePath("lib")
@@ -45,17 +42,8 @@ OMIT_FILES = (
     # package management
     "ensurepip/",
     "venv/",
-    # build system
-    "distutils/",
-    "lib2to3/",
-    # deprecated
-    "asyncore.py",
-    "asynchat.py",
-    "uu.py",
-    "xdrlib.py",
     # other platforms
     "_aix_support.py",
-    "_bootsubprocess.py",
     "_osx_support.py",
     # webbrowser
     "antigravity.py",
@@ -63,29 +51,24 @@ OMIT_FILES = (
     # Pure Python implementations of C extensions
     "_pydecimal.py",
     "_pyio.py",
+    # concurrent threading
+    "concurrent/futures/thread.py",
     # Misc unused or large files
     "pydoc_data/",
-    "msilib/",
 )
 
 # Synchronous network I/O and protocols are not supported; for example,
 # socket.create_connection() raises an exception:
 # "BlockingIOError: [Errno 26] Operation in progress".
 OMIT_NETWORKING_FILES = (
-    "cgi.py",
-    "cgitb.py",
     "email/",
     "ftplib.py",
     "http/",
     "imaplib.py",
     "mailbox.py",
-    "mailcap.py",
-    "nntplib.py",
     "poplib.py",
-    "smtpd.py",
     "smtplib.py",
     "socketserver.py",
-    "telnetlib.py",
     # keep urllib.parse for pydoc
     "urllib/error.py",
     "urllib/request.py",
@@ -96,30 +79,46 @@ OMIT_NETWORKING_FILES = (
 
 OMIT_MODULE_FILES = {
     "_asyncio": ["asyncio/"],
-    "audioop": ["aifc.py", "sunau.py", "wave.py"],
-    "_crypt": ["crypt.py"],
     "_curses": ["curses/"],
     "_ctypes": ["ctypes/"],
     "_decimal": ["decimal.py"],
     "_dbm": ["dbm/ndbm.py"],
     "_gdbm": ["dbm/gnu.py"],
     "_json": ["json/"],
-    "_multiprocessing": ["concurrent/", "multiprocessing/"],
+    "_multiprocessing": ["concurrent/futures/process.py", "multiprocessing/"],
     "pyexpat": ["xml/", "xmlrpc/"],
     "readline": ["rlcompleter.py"],
     "_sqlite3": ["sqlite3/"],
     "_ssl": ["ssl.py"],
     "_tkinter": ["idlelib/", "tkinter/", "turtle.py", "turtledemo/"],
-
     "_zoneinfo": ["zoneinfo/"],
 }
 
-# regression test sub directories
-OMIT_SUBDIRS = (
-    "ctypes/test/",
-    "tkinter/test/",
-    "unittest/test/",
+SYSCONFIG_NAMES = (
+    "_sysconfigdata__emscripten_wasm32-emscripten",
+    "_sysconfigdata__emscripten_wasm32-emscripten",
+    "_sysconfigdata__wasi_wasm32-wasi",
+    "_sysconfigdata__wasi_wasm64-wasi",
 )
+
+
+def get_builddir(args: argparse.Namespace) -> pathlib.Path:
+    """Get builddir path from pybuilddir.txt"""
+    with open("pybuilddir.txt", encoding="utf-8") as f:
+        builddir = f.read()
+    return pathlib.Path(builddir)
+
+
+def get_sysconfigdata(args: argparse.Namespace) -> pathlib.Path:
+    """Get path to sysconfigdata relative to build root"""
+    assert isinstance(args.builddir, pathlib.Path)
+    data_name: str = sysconfig._get_sysconfigdata_name()  # type: ignore[attr-defined]
+    if not data_name.startswith(SYSCONFIG_NAMES):
+        raise ValueError(
+            f"Invalid sysconfig data name '{data_name}'.", SYSCONFIG_NAMES
+        )
+    filename = data_name + ".py"
+    return args.builddir / filename
 
 
 def create_stdlib_zip(
@@ -127,30 +126,33 @@ def create_stdlib_zip(
     *,
     optimize: int = 0,
 ) -> None:
-    def filterfunc(name: str) -> bool:
-        return not name.startswith(args.omit_subdirs_absolute)
+    def filterfunc(filename: str) -> bool:
+        pathname = pathlib.Path(filename).resolve()
+        return pathname not in args.omit_files_absolute
 
     with zipfile.PyZipFile(
-        args.wasm_stdlib_zip, mode="w", compression=args.compression, optimize=optimize
+        args.wasm_stdlib_zip,
+        mode="w",
+        compression=args.compression,
+        optimize=optimize,
     ) as pzf:
         if args.compresslevel is not None:
             pzf.compresslevel = args.compresslevel
         pzf.writepy(args.sysconfig_data)
         for entry in sorted(args.srcdir_lib.iterdir()):
+            entry = entry.resolve()
             if entry.name == "__pycache__":
-                continue
-            if entry in args.omit_files_absolute:
                 continue
             if entry.name.endswith(".py") or entry.is_dir():
                 # writepy() writes .pyc files (bytecode).
                 pzf.writepy(entry, filterfunc=filterfunc)
 
 
-def detect_extension_modules(args: argparse.Namespace):
+def detect_extension_modules(args: argparse.Namespace) -> Dict[str, bool]:
     modules = {}
 
     # disabled by Modules/Setup.local ?
-    with open(args.builddir / "Makefile") as f:
+    with open(args.buildroot / "Makefile") as f:
         for line in f:
             if line.startswith("MODDISABLED_NAMES="):
                 disabled = line.split("=", 1)[1].strip().split()
@@ -161,17 +163,16 @@ def detect_extension_modules(args: argparse.Namespace):
     # disabled by configure?
     with open(args.sysconfig_data) as f:
         data = f.read()
-    loc = {}
+    loc: Dict[str, Dict[str, str]] = {}
     exec(data, globals(), loc)
 
-    for name, value in loc["build_time_vars"].items():
-        if value not in {"yes", "missing", "disabled", "n/a"}:
+    for key, value in loc["build_time_vars"].items():
+        if not key.startswith("MODULE_") or not key.endswith("_STATE"):
             continue
-        if not name.startswith("MODULE_"):
-            continue
-        if name.endswith(("_CFLAGS", "_DEPS", "_LDFLAGS")):
-            continue
-        modname = name.removeprefix("MODULE_").lower()
+        if value not in {"yes", "disabled", "missing", "n/a"}:
+            raise ValueError(f"Unsupported value '{value}' for {key}")
+
+        modname = key[7:-6].lower()
         if modname not in modules:
             modules[modname] = value == "yes"
     return modules
@@ -183,8 +184,8 @@ def path(val: str) -> pathlib.Path:
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "--builddir",
-    help="absolute build directory",
+    "--buildroot",
+    help="absolute path to build root",
     default=pathlib.Path(".").absolute(),
     type=path,
 )
@@ -196,13 +197,13 @@ parser.add_argument(
 )
 
 
-def main():
+def main() -> None:
     args = parser.parse_args()
 
     relative_prefix = args.prefix.relative_to(pathlib.Path("/"))
     args.srcdir = SRCDIR
     args.srcdir_lib = SRCDIR_LIB
-    args.wasm_root = args.builddir / relative_prefix
+    args.wasm_root = args.buildroot / relative_prefix
     args.wasm_stdlib_zip = args.wasm_root / WASM_STDLIB_ZIP
     args.wasm_stdlib = args.wasm_root / WASM_STDLIB
     args.wasm_dynload = args.wasm_root / WASM_DYNLOAD
@@ -212,21 +213,22 @@ def main():
     args.compression = zipfile.ZIP_DEFLATED
     args.compresslevel = 9
 
-    args.sysconfig_data = args.builddir / SYSCONFIGDATA
+    args.builddir = get_builddir(args)
+    args.sysconfig_data = get_sysconfigdata(args)
     if not args.sysconfig_data.is_file():
-        raise ValueError(f"sysconfigdata file {SYSCONFIGDATA} missing.")
+        raise ValueError(f"sysconfigdata file {args.sysconfig_data} missing.")
 
     extmods = detect_extension_modules(args)
     omit_files = list(OMIT_FILES)
-    omit_files.extend(OMIT_NETWORKING_FILES)
+    if sysconfig.get_platform().startswith("emscripten"):
+        omit_files.extend(OMIT_NETWORKING_FILES)
     for modname, modfiles in OMIT_MODULE_FILES.items():
         if not extmods.get(modname):
             omit_files.extend(modfiles)
 
-    args.omit_files_absolute = {args.srcdir_lib / name for name in omit_files}
-    args.omit_subdirs_absolute = tuple(
-        str(args.srcdir_lib / name) for name in OMIT_SUBDIRS
-    )
+    args.omit_files_absolute = {
+        (args.srcdir_lib / name).resolve() for name in omit_files
+    }
 
     # Empty, unused directory for dynamic libs, but required for site initialization.
     args.wasm_dynload.mkdir(parents=True, exist_ok=True)

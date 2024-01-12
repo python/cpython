@@ -283,7 +283,7 @@ Make sure sys.argv remains as a list when running trace.
 .. nonce: bvHDOc
 .. section: Library
 
-Fixed `asyncio.Condition` issue which silently ignored cancellation after
+Fixed ``asyncio.Condition`` issue which silently ignored cancellation after
 notifying and cancelling a conditional lock. Patch by Bar Harel.
 
 ..
@@ -599,7 +599,7 @@ deprecation.
 .. nonce: w1m_8r
 .. section: Documentation
 
-Improve docstrings for `pathlib.PurePath` subclasses.
+Improve docstrings for ``pathlib.PurePath`` subclasses.
 
 ..
 

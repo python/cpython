@@ -17,6 +17,11 @@
                     <RegistryValue Key="Help\Main Python Documentation" Type="string" Value="[#Doc_html_index.html]" KeyPath="yes" />
                 </RegistryKey>                                                                                
             </Component>
+
+            <Component Id="doc_folder" Directory="Doc" Guid="{22FD42DB-EC66-4B1C-B1FC-44E0CF7B2462}">
+                <CreateFolder />
+                <RemoveFolder Id="Remove_doc_folder" On="uninstall" />
+            </Component>
         </Feature>
         <Feature Id="Shortcuts" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
             <ComponentGroupRef Id="doc_html" />

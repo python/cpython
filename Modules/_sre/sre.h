@@ -18,10 +18,10 @@
 #define SRE_CODE Py_UCS4
 #if SIZEOF_SIZE_T > 4
 # define SRE_MAXREPEAT (~(SRE_CODE)0)
-# define SRE_MAXGROUPS ((~(SRE_CODE)0) / 2)
+# define SRE_MAXGROUPS ((SRE_CODE)INT32_MAX / 2)
 #else
 # define SRE_MAXREPEAT ((SRE_CODE)PY_SSIZE_T_MAX)
-# define SRE_MAXGROUPS ((SRE_CODE)PY_SSIZE_T_MAX / SIZEOF_SIZE_T / 2)
+# define SRE_MAXGROUPS ((SRE_CODE)PY_SSIZE_T_MAX / SIZEOF_VOID_P / 2)
 #endif
 
 typedef struct {
@@ -29,8 +29,6 @@ typedef struct {
     Py_ssize_t groups; /* must be first! */
     PyObject* groupindex; /* dict */
     PyObject* indexgroup; /* tuple */
-    /* the number of REPEATs */
-    Py_ssize_t repeat_count;
     /* compatibility */
     PyObject* pattern; /* pattern source (or None) */
     int flags; /* flags used when compiling pattern source */
@@ -54,6 +52,17 @@ typedef struct {
     Py_ssize_t mark[1];
 } MatchObject;
 
+typedef struct {
+    PyObject_VAR_HEAD
+    Py_ssize_t chunks;  /* the number of group references and non-NULL literals
+                         * self->chunks <= 2*Py_SIZE(self) + 1 */
+    PyObject *literal;
+    struct {
+        Py_ssize_t index;
+        PyObject *literal;  /* NULL if empty */
+    } items[0];
+} TemplateObject;
+
 typedef struct SRE_REPEAT_T {
     Py_ssize_t count;
     const SRE_CODE* pattern; /* points to REPEAT operator arguments */
@@ -73,20 +82,20 @@ typedef struct {
     Py_ssize_t pos, endpos;
     int isbytes;
     int charsize; /* character size */
-    /* registers */
-    Py_ssize_t lastindex;
-    Py_ssize_t lastmark;
-    const void** mark;
     int match_all;
     int must_advance;
+    int debug;
+    /* marks */
+    int lastmark;
+    int lastindex;
+    const void** mark;
     /* dynamically allocated stuff */
     char* data_stack;
     size_t data_stack_size;
     size_t data_stack_base;
     /* current repeat context */
     SRE_REPEAT *repeat;
-    /* repeat contexts array */
-    SRE_REPEAT *repeats_array;
+    unsigned int sigcount;
 } SRE_STATE;
 
 typedef struct {

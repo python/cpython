@@ -13,7 +13,7 @@ import sysconfig
 import types
 
 
-CORE_VENV_DEPS = ('pip', 'setuptools')
+CORE_VENV_DEPS = ('pip',)
 logger = logging.getLogger(__name__)
 
 
@@ -41,11 +41,13 @@ class EnvBuilder:
                      environment
     :param prompt: Alternative terminal prefix for the environment.
     :param upgrade_deps: Update the base venv modules to the latest on PyPI
+    :param scm_ignore_files: Create ignore files for the SCMs specified by the
+                             iterable.
     """
 
     def __init__(self, system_site_packages=False, clear=False,
                  symlinks=False, upgrade=False, with_pip=False, prompt=None,
-                 upgrade_deps=False):
+                 upgrade_deps=False, *, scm_ignore_files=frozenset()):
         self.system_site_packages = system_site_packages
         self.clear = clear
         self.symlinks = symlinks
@@ -56,6 +58,7 @@ class EnvBuilder:
             prompt = os.path.basename(os.getcwd())
         self.prompt = prompt
         self.upgrade_deps = upgrade_deps
+        self.scm_ignore_files = frozenset(map(str.lower, scm_ignore_files))
 
     def create(self, env_dir):
         """
@@ -66,6 +69,8 @@ class EnvBuilder:
         """
         env_dir = os.path.abspath(env_dir)
         context = self.ensure_directories(env_dir)
+        for scm in self.scm_ignore_files:
+            getattr(self, f"create_{scm}_ignore_file")(context)
         # See issue 24875. We need system_site_packages to be False
         # until after pip is installed.
         true_system_site_packages = self.system_site_packages
@@ -116,7 +121,7 @@ class EnvBuilder:
             elif os.path.islink(d) or os.path.isfile(d):
                 raise ValueError('Unable to create directory %r' % d)
 
-        if os.pathsep in env_dir:
+        if os.pathsep in os.fspath(env_dir):
             raise ValueError(f'Refusing to create a venv in {env_dir} because '
                              f'it contains the PATH separator {os.pathsep}.')
         if os.path.exists(env_dir) and self.clear:
@@ -128,6 +133,11 @@ class EnvBuilder:
         context.prompt = '(%s) ' % prompt
         create_if_needed(env_dir)
         executable = sys._base_executable
+        if not executable:  # see gh-96861
+            raise ValueError('Unable to determine path to the running '
+                             'Python interpreter. Provide an explicit path or '
+                             'check that your PATH environment variable is '
+                             'correctly set.')
         dirname, exename = os.path.split(os.path.abspath(executable))
         context.executable = executable
         context.python_dir = dirname
@@ -138,6 +148,7 @@ class EnvBuilder:
 
         context.inc_path = incpath
         create_if_needed(incpath)
+        context.lib_path = libpath
         create_if_needed(libpath)
         # Issue 21197: create lib64 as a symlink to lib on 64-bit non-OS X POSIX
         if ((sys.maxsize > 2**32) and (os.name == 'posix') and
@@ -204,6 +215,8 @@ class EnvBuilder:
                 args.append('--upgrade-deps')
             if self.orig_prompt is not None:
                 args.append(f'--prompt="{self.orig_prompt}"')
+            if not self.scm_ignore_files:
+                args.append('--without-scm-ignore-files')
 
             args.append(context.env_dir)
             args = ' '.join(args)
@@ -217,7 +230,7 @@ class EnvBuilder:
             force_copy = not self.symlinks
             if not force_copy:
                 try:
-                    if not os.path.islink(dst): # can't link to itself!
+                    if not os.path.islink(dst):  # can't link to itself!
                         if relative_symlinks_ok:
                             assert os.path.dirname(src) == os.path.dirname(dst)
                             os.symlink(os.path.basename(src), dst)
@@ -254,7 +267,7 @@ class EnvBuilder:
                                  basename + ext)
             # Builds or venv's from builds need to remap source file
             # locations, as we do not put them into Lib/venv/scripts
-            if sysconfig.is_python_build(True) or not os.path.isfile(srcfn):
+            if sysconfig.is_python_build() or not os.path.isfile(srcfn):
                 if basename.endswith('_d'):
                     ext = '_d' + ext
                     basename = basename[:-2]
@@ -271,6 +284,19 @@ class EnvBuilder:
                 return
 
             shutil.copyfile(src, dst)
+
+    def create_git_ignore_file(self, context):
+        """
+        Create a .gitignore file in the environment directory.
+
+        The contents of the file cause the entire environment directory to be
+        ignored by git.
+        """
+        gitignore_path = os.path.join(context.env_dir, '.gitignore')
+        with open(gitignore_path, 'w', encoding='utf-8') as file:
+            file.write('# Created by venv; '
+                       'see https://docs.python.org/3/library/venv.html\n')
+            file.write('*\n')
 
     def setup_python(self, context):
         """
@@ -305,7 +331,7 @@ class EnvBuilder:
                     f for f in os.listdir(dirname) if
                     os.path.normcase(os.path.splitext(f)[1]) in ('.exe', '.dll')
                 ]
-                if sysconfig.is_python_build(True):
+                if sysconfig.is_python_build():
                     suffixes = [
                         f for f in suffixes if
                         os.path.normcase(f).startswith(('python', 'vcruntime'))
@@ -320,7 +346,7 @@ class EnvBuilder:
                 if os.path.lexists(src):
                     copier(src, os.path.join(binpath, suffix))
 
-            if sysconfig.is_python_build(True):
+            if sysconfig.is_python_build():
                 # copy init.tcl
                 for root, dirs, files in os.walk(context.python_dir):
                     if 'init.tcl' in files:
@@ -333,14 +359,25 @@ class EnvBuilder:
                         shutil.copyfile(src, dst)
                         break
 
+    def _call_new_python(self, context, *py_args, **kwargs):
+        """Executes the newly created Python using safe-ish options"""
+        # gh-98251: We do not want to just use '-I' because that masks
+        # legitimate user preferences (such as not writing bytecode). All we
+        # really need is to ensure that the path variables do not overrule
+        # normal venv handling.
+        args = [context.env_exec_cmd, *py_args]
+        kwargs['env'] = env = os.environ.copy()
+        env['VIRTUAL_ENV'] = context.env_dir
+        env.pop('PYTHONHOME', None)
+        env.pop('PYTHONPATH', None)
+        kwargs['cwd'] = context.env_dir
+        kwargs['executable'] = context.env_exec_cmd
+        subprocess.check_output(args, **kwargs)
+
     def _setup_pip(self, context):
         """Installs or upgrades pip in a virtual environment"""
-        # We run ensurepip in isolated mode to avoid side effects from
-        # environment vars, the current directory and anything else
-        # intended for the global Python environment
-        cmd = [context.env_exec_cmd, '-Im', 'ensurepip', '--upgrade',
-                                                         '--default-pip']
-        subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+        self._call_new_python(context, '-m', 'ensurepip', '--upgrade',
+                              '--default-pip', stderr=subprocess.STDOUT)
 
     def setup_scripts(self, context):
         """
@@ -401,11 +438,11 @@ class EnvBuilder:
         binpath = context.bin_path
         plen = len(path)
         for root, dirs, files in os.walk(path):
-            if root == path: # at top-level, remove irrelevant dirs
+            if root == path:  # at top-level, remove irrelevant dirs
                 for d in dirs[:]:
                     if d not in ('common', os.name):
                         dirs.remove(d)
-                continue # ignore files in top level
+                continue  # ignore files in top level
             for f in files:
                 if (os.name == 'nt' and f.startswith('python')
                         and f.endswith(('.exe', '.pdb'))):
@@ -439,96 +476,96 @@ class EnvBuilder:
         logger.debug(
             f'Upgrading {CORE_VENV_DEPS} packages in {context.bin_path}'
         )
-        cmd = [context.env_exec_cmd, '-m', 'pip', 'install', '--upgrade']
-        cmd.extend(CORE_VENV_DEPS)
-        subprocess.check_call(cmd)
+        self._call_new_python(context, '-m', 'pip', 'install', '--upgrade',
+                              *CORE_VENV_DEPS)
 
 
 def create(env_dir, system_site_packages=False, clear=False,
-           symlinks=False, with_pip=False, prompt=None, upgrade_deps=False):
+           symlinks=False, with_pip=False, prompt=None, upgrade_deps=False,
+           *, scm_ignore_files=frozenset()):
     """Create a virtual environment in a directory."""
     builder = EnvBuilder(system_site_packages=system_site_packages,
                          clear=clear, symlinks=symlinks, with_pip=with_pip,
-                         prompt=prompt, upgrade_deps=upgrade_deps)
+                         prompt=prompt, upgrade_deps=upgrade_deps,
+                         scm_ignore_files=scm_ignore_files)
     builder.create(env_dir)
 
-def main(args=None):
-    compatible = True
-    if sys.version_info < (3, 3):
-        compatible = False
-    elif not hasattr(sys, 'base_prefix'):
-        compatible = False
-    if not compatible:
-        raise ValueError('This script is only for use with Python >= 3.3')
-    else:
-        import argparse
 
-        parser = argparse.ArgumentParser(prog=__name__,
-                                         description='Creates virtual Python '
-                                                     'environments in one or '
-                                                     'more target '
-                                                     'directories.',
-                                         epilog='Once an environment has been '
-                                                'created, you may wish to '
-                                                'activate it, e.g. by '
-                                                'sourcing an activate script '
-                                                'in its bin directory.')
-        parser.add_argument('dirs', metavar='ENV_DIR', nargs='+',
-                            help='A directory to create the environment in.')
-        parser.add_argument('--system-site-packages', default=False,
-                            action='store_true', dest='system_site',
-                            help='Give the virtual environment access to the '
-                                 'system site-packages dir.')
-        if os.name == 'nt':
-            use_symlinks = False
-        else:
-            use_symlinks = True
-        group = parser.add_mutually_exclusive_group()
-        group.add_argument('--symlinks', default=use_symlinks,
-                           action='store_true', dest='symlinks',
-                           help='Try to use symlinks rather than copies, '
-                                'when symlinks are not the default for '
-                                'the platform.')
-        group.add_argument('--copies', default=not use_symlinks,
-                           action='store_false', dest='symlinks',
-                           help='Try to use copies rather than symlinks, '
-                                'even when symlinks are the default for '
-                                'the platform.')
-        parser.add_argument('--clear', default=False, action='store_true',
-                            dest='clear', help='Delete the contents of the '
-                                               'environment directory if it '
-                                               'already exists, before '
-                                               'environment creation.')
-        parser.add_argument('--upgrade', default=False, action='store_true',
-                            dest='upgrade', help='Upgrade the environment '
-                                               'directory to use this version '
-                                               'of Python, assuming Python '
-                                               'has been upgraded in-place.')
-        parser.add_argument('--without-pip', dest='with_pip',
-                            default=True, action='store_false',
-                            help='Skips installing or upgrading pip in the '
-                                 'virtual environment (pip is bootstrapped '
-                                 'by default)')
-        parser.add_argument('--prompt',
-                            help='Provides an alternative prompt prefix for '
-                                 'this environment.')
-        parser.add_argument('--upgrade-deps', default=False, action='store_true',
-                            dest='upgrade_deps',
-                            help='Upgrade core dependencies: {} to the latest '
-                                 'version in PyPI'.format(
-                                 ' '.join(CORE_VENV_DEPS)))
-        options = parser.parse_args(args)
-        if options.upgrade and options.clear:
-            raise ValueError('you cannot supply --upgrade and --clear together.')
-        builder = EnvBuilder(system_site_packages=options.system_site,
-                             clear=options.clear,
-                             symlinks=options.symlinks,
-                             upgrade=options.upgrade,
-                             with_pip=options.with_pip,
-                             prompt=options.prompt,
-                             upgrade_deps=options.upgrade_deps)
-        for d in options.dirs:
-            builder.create(d)
+def main(args=None):
+    import argparse
+
+    parser = argparse.ArgumentParser(prog=__name__,
+                                     description='Creates virtual Python '
+                                                 'environments in one or '
+                                                 'more target '
+                                                 'directories.',
+                                     epilog='Once an environment has been '
+                                            'created, you may wish to '
+                                            'activate it, e.g. by '
+                                            'sourcing an activate script '
+                                            'in its bin directory.')
+    parser.add_argument('dirs', metavar='ENV_DIR', nargs='+',
+                        help='A directory to create the environment in.')
+    parser.add_argument('--system-site-packages', default=False,
+                        action='store_true', dest='system_site',
+                        help='Give the virtual environment access to the '
+                             'system site-packages dir.')
+    if os.name == 'nt':
+        use_symlinks = False
+    else:
+        use_symlinks = True
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--symlinks', default=use_symlinks,
+                       action='store_true', dest='symlinks',
+                       help='Try to use symlinks rather than copies, '
+                            'when symlinks are not the default for '
+                            'the platform.')
+    group.add_argument('--copies', default=not use_symlinks,
+                       action='store_false', dest='symlinks',
+                       help='Try to use copies rather than symlinks, '
+                            'even when symlinks are the default for '
+                            'the platform.')
+    parser.add_argument('--clear', default=False, action='store_true',
+                        dest='clear', help='Delete the contents of the '
+                                           'environment directory if it '
+                                           'already exists, before '
+                                           'environment creation.')
+    parser.add_argument('--upgrade', default=False, action='store_true',
+                        dest='upgrade', help='Upgrade the environment '
+                                             'directory to use this version '
+                                             'of Python, assuming Python '
+                                             'has been upgraded in-place.')
+    parser.add_argument('--without-pip', dest='with_pip',
+                        default=True, action='store_false',
+                        help='Skips installing or upgrading pip in the '
+                             'virtual environment (pip is bootstrapped '
+                             'by default)')
+    parser.add_argument('--prompt',
+                        help='Provides an alternative prompt prefix for '
+                             'this environment.')
+    parser.add_argument('--upgrade-deps', default=False, action='store_true',
+                        dest='upgrade_deps',
+                        help=f'Upgrade core dependencies ({", ".join(CORE_VENV_DEPS)}) '
+                             'to the latest version in PyPI')
+    parser.add_argument('--without-scm-ignore-files', dest='scm_ignore_files',
+                        action='store_const', const=frozenset(),
+                        default=frozenset(['git']),
+                        help='Skips adding SCM ignore files to the environment '
+                             'directory (Git is supported by default).')
+    options = parser.parse_args(args)
+    if options.upgrade and options.clear:
+        raise ValueError('you cannot supply --upgrade and --clear together.')
+    builder = EnvBuilder(system_site_packages=options.system_site,
+                         clear=options.clear,
+                         symlinks=options.symlinks,
+                         upgrade=options.upgrade,
+                         with_pip=options.with_pip,
+                         prompt=options.prompt,
+                         upgrade_deps=options.upgrade_deps,
+                         scm_ignore_files=options.scm_ignore_files)
+    for d in options.dirs:
+        builder.create(d)
+
 
 if __name__ == '__main__':
     rc = 1

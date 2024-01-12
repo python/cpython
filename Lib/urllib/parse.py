@@ -25,14 +25,19 @@ currently not entirely compliant with this RFC due to defacto
 scenarios for parsing, and for backward compatibility purposes, some
 parsing quirks from older RFCs are retained. The testcases in
 test_urlparse.py provides a good indicator of parsing behavior.
+
+The WHATWG URL Parser spec should also be considered.  We are not compliant with
+it either due to existing user code API behavior expectations (Hyrum's Law).
+It serves as a useful guide when making changes.
 """
 
 from collections import namedtuple
 import functools
+import math
 import re
-import sys
 import types
 import warnings
+import ipaddress
 
 __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
            "urlsplit", "urlunsplit", "urlencode", "parse_qs",
@@ -47,18 +52,18 @@ __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
 
 uses_relative = ['', 'ftp', 'http', 'gopher', 'nntp', 'imap',
                  'wais', 'file', 'https', 'shttp', 'mms',
-                 'prospero', 'rtsp', 'rtspu', 'sftp',
+                 'prospero', 'rtsp', 'rtsps', 'rtspu', 'sftp',
                  'svn', 'svn+ssh', 'ws', 'wss']
 
 uses_netloc = ['', 'ftp', 'http', 'gopher', 'nntp', 'telnet',
                'imap', 'wais', 'file', 'mms', 'https', 'shttp',
-               'snews', 'prospero', 'rtsp', 'rtspu', 'rsync',
+               'snews', 'prospero', 'rtsp', 'rtsps', 'rtspu', 'rsync',
                'svn', 'svn+ssh', 'sftp', 'nfs', 'git', 'git+ssh',
-               'ws', 'wss']
+               'ws', 'wss', 'itms-services']
 
 uses_params = ['', 'ftp', 'hdl', 'prospero', 'http', 'imap',
-               'https', 'shttp', 'rtsp', 'rtspu', 'sip', 'sips',
-               'mms', 'sftp', 'tel']
+               'https', 'shttp', 'rtsp', 'rtsps', 'rtspu', 'sip',
+               'sips', 'mms', 'sftp', 'tel']
 
 # These are not actually used anymore, but should stay for backwards
 # compatibility.  (They are undocumented, but have a public-looking name.)
@@ -67,7 +72,7 @@ non_hierarchical = ['gopher', 'hdl', 'mailto', 'news',
                     'telnet', 'wais', 'imap', 'snews', 'sip', 'sips']
 
 uses_query = ['', 'http', 'wais', 'imap', 'https', 'shttp', 'mms',
-              'gopher', 'rtsp', 'rtspu', 'sip', 'sips']
+              'gopher', 'rtsp', 'rtsps', 'rtspu', 'sip', 'sips']
 
 uses_fragment = ['', 'ftp', 'hdl', 'http', 'gopher', 'news',
                  'nntp', 'wais', 'https', 'shttp', 'snews',
@@ -78,6 +83,10 @@ scheme_chars = ('abcdefghijklmnopqrstuvwxyz'
                 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
                 '0123456789'
                 '+-.')
+
+# Leading and trailing C0 control and space to be stripped per WHATWG spec.
+# == "".join([chr(i) for i in range(0, 0x20 + 1)])
+_WHATWG_C0_CONTROL_OR_SPACE = '\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f '
 
 # Unsafe bytes to be removed per WHATWG spec
 _UNSAFE_URL_BYTES_TO_REMOVE = ['\t', '\r', '\n']
@@ -167,12 +176,11 @@ class _NetlocResultMixinBase(object):
     def port(self):
         port = self._hostinfo[1]
         if port is not None:
-            try:
-                port = int(port, 10)
-            except ValueError:
-                message = f'Port could not be cast to integer value as {port!r}'
-                raise ValueError(message) from None
-            if not ( 0 <= port <= 65535):
+            if port.isdigit() and port.isascii():
+                port = int(port)
+            else:
+                raise ValueError(f"Port could not be cast to integer value as {port!r}")
+            if not (0 <= port <= 65535):
                 raise ValueError("Port out of range 0-65535")
         return port
 
@@ -428,6 +436,17 @@ def _checknetloc(netloc):
             raise ValueError("netloc '" + netloc + "' contains invalid " +
                              "characters under NFKC normalization")
 
+# Valid bracketed hosts are defined in
+# https://www.rfc-editor.org/rfc/rfc3986#page-49 and https://url.spec.whatwg.org/
+def _check_bracketed_host(hostname):
+    if hostname.startswith('v'):
+        if not re.match(r"\Av[a-fA-F0-9]+\..+\Z", hostname):
+            raise ValueError(f"IPvFuture address is invalid")
+    else:
+        ip = ipaddress.ip_address(hostname) # Throws Value Error if not IPv6 or IPv4
+        if isinstance(ip, ipaddress.IPv4Address):
+            raise ValueError(f"An IPv4 address cannot be in brackets")
+
 # typed=True avoids BytesWarnings being emitted during cache key
 # comparison since this API supports both bytes and str input.
 @functools.lru_cache(typed=True)
@@ -453,6 +472,10 @@ def urlsplit(url, scheme='', allow_fragments=True):
     """
 
     url, scheme, _coerce_result = _coerce_args(url, scheme)
+    # Only lstrip url as some applications rely on preserving trailing space.
+    # (https://url.spec.whatwg.org/#concept-basic-url-parser would strip both)
+    url = url.lstrip(_WHATWG_C0_CONTROL_OR_SPACE)
+    scheme = scheme.strip(_WHATWG_C0_CONTROL_OR_SPACE)
 
     for b in _UNSAFE_URL_BYTES_TO_REMOVE:
         url = url.replace(b, "")
@@ -461,18 +484,20 @@ def urlsplit(url, scheme='', allow_fragments=True):
     allow_fragments = bool(allow_fragments)
     netloc = query = fragment = ''
     i = url.find(':')
-    if i > 0:
+    if i > 0 and url[0].isascii() and url[0].isalpha():
         for c in url[:i]:
             if c not in scheme_chars:
                 break
         else:
             scheme, url = url[:i].lower(), url[i+1:]
-
     if url[:2] == '//':
         netloc, url = _splitnetloc(url, 2)
         if (('[' in netloc and ']' not in netloc) or
                 (']' in netloc and '[' not in netloc)):
             raise ValueError("Invalid IPv6 URL")
+        if '[' in netloc and ']' in netloc:
+            bracketed_host = netloc.partition('[')[2].partition(']')[0]
+            _check_bracketed_host(bracketed_host)
     if allow_fragments and '#' in url:
         url, fragment = url.split('#', 1)
     if '?' in url:
@@ -601,6 +626,9 @@ _hextobyte = None
 
 def unquote_to_bytes(string):
     """unquote_to_bytes('abc%20def') -> b'abc def'."""
+    return bytes(_unquote_impl(string))
+
+def _unquote_impl(string: bytes | bytearray | str) -> bytes | bytearray:
     # Note: strings are encoded as UTF-8. This is only an issue if it contains
     # unescaped non-ASCII characters, which URIs should not.
     if not string:
@@ -612,8 +640,8 @@ def unquote_to_bytes(string):
     bits = string.split(b'%')
     if len(bits) == 1:
         return string
-    res = [bits[0]]
-    append = res.append
+    res = bytearray(bits[0])
+    append = res.extend
     # Delay the initialization of the table to not waste memory
     # if the function is never called
     global _hextobyte
@@ -627,9 +655,19 @@ def unquote_to_bytes(string):
         except KeyError:
             append(b'%')
             append(item)
-    return b''.join(res)
+    return res
 
 _asciire = re.compile('([\x00-\x7f]+)')
+
+def _generate_unquoted_parts(string, encoding, errors):
+    previous_match_end = 0
+    for ascii_match in _asciire.finditer(string):
+        start, end = ascii_match.span()
+        yield string[previous_match_end:start]  # Non-ASCII
+        # The ascii_match[1] group == string[start:end].
+        yield _unquote_impl(ascii_match[1]).decode(encoding, errors)
+        previous_match_end = end
+    yield string[previous_match_end:]  # Non-ASCII tail
 
 def unquote(string, encoding='utf-8', errors='replace'):
     """Replace %xx escapes by their single-character equivalent. The optional
@@ -642,21 +680,16 @@ def unquote(string, encoding='utf-8', errors='replace'):
     unquote('abc%20def') -> 'abc def'.
     """
     if isinstance(string, bytes):
-        return unquote_to_bytes(string).decode(encoding, errors)
+        return _unquote_impl(string).decode(encoding, errors)
     if '%' not in string:
+        # Is it a string-like object?
         string.split
         return string
     if encoding is None:
         encoding = 'utf-8'
     if errors is None:
         errors = 'replace'
-    bits = _asciire.split(string)
-    res = [bits[0]]
-    append = res.append
-    for i in range(1, len(bits), 2):
-        append(unquote_to_bytes(bits[i]).decode(encoding, errors))
-        append(bits[i + 1])
-    return ''.join(res)
+    return ''.join(_generate_unquoted_parts(string, encoding, errors))
 
 
 def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
@@ -907,7 +940,14 @@ def quote_from_bytes(bs, safe='/'):
     if not bs.rstrip(_ALWAYS_SAFE_BYTES + safe):
         return bs.decode()
     quoter = _byte_quoter_factory(safe)
-    return ''.join([quoter(char) for char in bs])
+    if (bs_len := len(bs)) < 200_000:
+        return ''.join(map(quoter, bs))
+    else:
+        # This saves memory - https://github.com/python/cpython/issues/95865
+        chunk_size = math.isqrt(bs_len)
+        chunks = [''.join(map(quoter, bs[i:i+chunk_size]))
+                  for i in range(0, bs_len, chunk_size)]
+        return ''.join(chunks)
 
 def urlencode(query, doseq=False, safe='', encoding=None, errors=None,
               quote_via=quote_plus):
@@ -1125,15 +1165,15 @@ def splitnport(host, defport=-1):
 def _splitnport(host, defport=-1):
     """Split host and port, returning numeric port.
     Return given default port if no ':' found; defaults to -1.
-    Return numerical port if a valid number are found after ':'.
+    Return numerical port if a valid number is found after ':'.
     Return None if ':' but not a valid number."""
     host, delim, port = host.rpartition(':')
     if not delim:
         host = port
     elif port:
-        try:
+        if port.isdigit() and port.isascii():
             nport = int(port)
-        except ValueError:
+        else:
             nport = None
         return host, nport
     return host, defport
