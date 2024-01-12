@@ -15,6 +15,7 @@ These tools would be used to:
 * Generate the tier 2 interpreter
 * Generate documentation for instructions
 * Generate metadata about instructions, such as stack use (done).
+* Generate the tier 2 optimizer's abstract interpreter.
 
 Having a single definition file ensures that there is a single source
 of truth for bytecode semantics.
@@ -108,7 +109,10 @@ and a piece of C code describing its semantics::
     NAME [":" type] [ "if" "(" C-expression ")" ]
 
   type:
-    NAME ["*"]
+    NAME ["*"] | type_prop
+
+  type_prop:
+    "&" "(" NAME ["+" NAME] ")"
 
   stream:
     NAME "/" size
@@ -138,7 +142,27 @@ The following definitions may occur:
 The optional `type` in an `object` is the C type. It defaults to `PyObject *`.
 The objects before the "--" are the objects on top of the stack at the start of
 the instruction. Those after the "--" are the objects on top of the stack at the
-end of the instruction.
+end of the instruction. When prefixed by a `&`, the `type` production rule follows the
+`type_prop` production rule. This indicates the type of the value is of that specific type
+after the operation. In this case, the type may also contain 64-bit refinement information
+that is fetched from a previously defined operand in the instruction header, such as
+a type version tag. This follows the format `type + refinement`. The list of possible types
+and their refinements are below. They obey the following predicates:
+
+
+* `PYLONG_TYPE`: `Py_TYPE(val) == &PyLong_Type`
+* `PYFLOAT_TYPE`: `Py_TYPE(val) == &PyFloat_Type`
+* `PYUNICODE_TYPE`: `Py_TYPE(val) == &PYUNICODE_TYPE`
+* `NULL_TYPE`: `val == NULL`
+* `GUARD_TYPE_VERSION_TYPE`: `type->tp_version_tag == auxillary`
+* `GUARD_DORV_VALUES_TYPE`: `_PyDictOrValues_IsValues(obj)`
+* `GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_TYPE`:
+  `_PyDictOrValues_IsValues(obj) || _PyObject_MakeInstanceAttributesFromDict(obj, dorv)`
+* `GUARD_KEYS_VERSION_TYPE`: `owner_heap_type->ht_cached_keys->dk_version == auxillary`
+* `PYMETHOD_TYPE`: `Py_TYPE(val) == &PyMethod_Type`
+* `PYFUNCTION_TYPE_VERSION_TYPE`:
+  `PyFunction_Check(callable) && func->func_version == auxillary && code->co_argcount == oparg + (self_or_null != NULL)`
+
 
 An `inst` without `stack_effect` is a transitional form to allow the original C code
 definitions to be copied. It lacks information to generate anything other than the
@@ -157,6 +181,15 @@ will be skipped in the instruction stream.
 By convention cache effects (`stream`) must precede the input effects.
 
 The name `oparg` is pre-defined as a 32 bit value fetched from the instruction stream.
+
+### Special instruction annotations
+
+Instruction headers may be prefixed by one or more annotations. The non-exhaustive
+list of annotations and their meanings are as follows:
+
+* `override`. For external use by other interpreter definitions to override the current
+   instruction definition.
+* `pure`. This instruction has no side effects.
 
 ### Special functions/macros
 
