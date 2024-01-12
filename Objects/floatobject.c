@@ -131,7 +131,7 @@ PyFloat_FromDouble(double fval)
 #ifdef WITH_FREELISTS
     struct _Py_float_state *state = get_float_state();
     op = state->free_list;
-    if (op != NULL && state->numfree > 0) {
+    if (op != NULL) {
         state->free_list = (PyFloatObject *) Py_TYPE(op);
         state->numfree--;
         OBJECT_STAT_INC(from_freelist);
