@@ -478,6 +478,7 @@ class LocalsTest(unittest.TestCase):
         try:
             inner()
         except ZeroDivisionError as exc:
+            support.gc_collect()
             self.assertIsNotNone(wr())
             print(exc.__traceback__.tb_frame.f_locals)
         support.gc_collect()
