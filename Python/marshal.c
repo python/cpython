@@ -1377,7 +1377,7 @@ r_object(RFILE *p)
 
             if (!p->allow_code) {
                 PyErr_SetString(PyExc_ValueError,
-                                "loading of code objects is prohibited");
+                                "loading of code objects is disallowed");
                 break;
             }
             idx = r_ref_reserve(flag, p);
