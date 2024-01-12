@@ -4,6 +4,8 @@ Released after 2023-10-02
 =========================
 
 
+gh-113903: Fix rare failure of test.test_idle, in test_configdialog.
+
 gh-113729: Fix the "Help -> IDLE Doc" menu bug in 3.11.7 and 3.12.1.
 
 gh-57795: Enter selected text into the Find box when opening
