@@ -42,7 +42,7 @@ listings of documented functions, miscellaneous topics, and undocumented
 functions respectively.
 """
 
-import string, sys
+import inspect, string, sys
 
 __all__ = ["Cmd"]
 
@@ -305,6 +305,7 @@ class Cmd:
             except AttributeError:
                 try:
                     doc=getattr(self, 'do_' + arg).__doc__
+                    doc = inspect.cleandoc(doc)
                     if doc:
                         self.stdout.write("%s\n"%str(doc))
                         return

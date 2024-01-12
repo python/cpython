@@ -510,6 +510,19 @@ class TestPlistlib(unittest.TestCase):
         data2 = plistlib.dumps(pl2)
         self.assertEqual(data, data2)
 
+    def test_loads_str_with_xml_fmt(self):
+        pl = self._create()
+        b = plistlib.dumps(pl)
+        s = b.decode()
+        self.assertIsInstance(s, str)
+        pl2 = plistlib.loads(s)
+        self.assertEqual(pl, pl2)
+
+    def test_loads_str_with_binary_fmt(self):
+        msg = "value must be bytes-like object when fmt is FMT_BINARY"
+        with self.assertRaisesRegex(TypeError, msg):
+            plistlib.loads('test', fmt=plistlib.FMT_BINARY)
+
     def test_indentation_array(self):
         data = [[[[[[[[{'test': b'aaaaaa'}]]]]]]]]
         self.assertEqual(plistlib.loads(plistlib.dumps(data)), data)
@@ -885,7 +898,8 @@ class TestPlistlib(unittest.TestCase):
         for fmt in ALL_FORMATS:
             s = plistlib.dumps(dt, fmt=fmt, aware_datetime=True)
             parsed = plistlib.loads(s, aware_datetime=False)
-            self.assertEqual(parsed, dt)
+            expected = dt.astimezone(datetime.UTC).replace(tzinfo=None)
+            self.assertEqual(parsed, expected)
 
 
 class TestBinaryPlistlib(unittest.TestCase):
