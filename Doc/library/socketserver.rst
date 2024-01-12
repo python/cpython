@@ -528,8 +528,8 @@ The difference is that the ``readline()`` call in the second handler will call
 single ``recv()`` call in the first handler will just return what has been sent
 from the client in one ``sendall()`` call.
 
-The handlers presented above close the connection after handling a single request. 
-It is possible, however, to keep the connection open to handle many requests, 
+The handlers presented above close the connection after handling a single request.
+It is possible, however, to keep the connection open to handle many requests,
 until the client hangs up::
 
    class MyTCPHandler(socketserver.BaseRequestHandler):
