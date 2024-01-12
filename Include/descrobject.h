@@ -83,6 +83,7 @@ struct PyMemberDef {
 #define Py_READONLY            1
 #define Py_AUDIT_READ          2 // Added in 3.10, harmless no-op before that
 #define _Py_WRITE_RESTRICTED   4 // Deprecated, no-op. Do not reuse the value.
+#define Py_RELATIVE_OFFSET     8
 
 PyAPI_FUNC(PyObject *) PyMember_GetOne(const char *, PyMemberDef *);
 PyAPI_FUNC(int) PyMember_SetOne(char *, PyMemberDef *, PyObject *);

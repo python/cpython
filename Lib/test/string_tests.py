@@ -8,18 +8,12 @@ from test.support import import_helper
 from collections import UserList
 import random
 
+
 class Sequence:
     def __init__(self, seq='wxyz'): self.seq = seq
     def __len__(self): return len(self.seq)
     def __getitem__(self, i): return self.seq[i]
 
-class BadSeq1(Sequence):
-    def __init__(self): self.seq = [7, 'hello', 123]
-    def __str__(self): return '{0} {1} {2}'.format(*self.seq)
-
-class BadSeq2(Sequence):
-    def __init__(self): self.seq = ['a', 'b', 'c']
-    def __len__(self): return 8
 
 class BaseTest:
     # These tests are for buffers of values (bytes) and not
@@ -27,7 +21,7 @@ class BaseTest:
     # and various string implementations
 
     # The type to be tested
-    # Change in subclasses to change the behaviour of fixtesttype()
+    # Change in subclasses to change the behaviour of fixtype()
     type2test = None
 
     # Whether the "contained items" of the container are integers in
@@ -36,7 +30,7 @@ class BaseTest:
     contains_bytes = False
 
     # All tests pass their arguments to the testing methods
-    # as str objects. fixtesttype() can be used to propagate
+    # as str objects. fixtype() can be used to propagate
     # these arguments to the appropriate type
     def fixtype(self, obj):
         if isinstance(obj, str):
@@ -159,6 +153,12 @@ class BaseTest:
                 if rem or r1 != r2:
                     self.assertEqual(rem, 0, '%s != 0 for %s' % (rem, i))
                     self.assertEqual(r1, r2, '%s != %s for %s' % (r1, r2, i))
+
+    def test_count_keyword(self):
+        self.assertEqual('aa'.replace('a', 'b', 0), 'aa'.replace('a', 'b', count=0))
+        self.assertEqual('aa'.replace('a', 'b', 1), 'aa'.replace('a', 'b', count=1))
+        self.assertEqual('aa'.replace('a', 'b', 2), 'aa'.replace('a', 'b', count=2))
+        self.assertEqual('aa'.replace('a', 'b', 3), 'aa'.replace('a', 'b', count=3))
 
     def test_find(self):
         self.checkequal(0, 'abcdefghiabc', 'find', 'abc')
@@ -327,11 +327,12 @@ class BaseTest:
             for i in range(len(s)):
                 if s.startswith(p, i):
                     return i
+            if p == '' and s == '':
+                return 0
             return -1
 
-        rr = random.randrange
-        choices = random.choices
-        for _ in range(1000):
+        def check_pattern(rr):
+            choices = random.choices
             p0 = ''.join(choices('abcde', k=rr(10))) * rr(10, 20)
             p = p0[:len(p0) - rr(10)] # pop off some characters
             left = ''.join(choices('abcdef', k=rr(2000)))
@@ -340,6 +341,13 @@ class BaseTest:
             with self.subTest(p=p, text=text):
                 self.checkequal(reference_find(p, text),
                                 text, 'find', p)
+
+        rr = random.randrange
+        for _ in range(1000):
+            check_pattern(rr)
+
+        # Test that empty string always work:
+        check_pattern(lambda *args: 0)
 
     def test_find_many_lengths(self):
         haystack_repeats = [a * 10**e for e in range(6) for a in (1,2,5)]
@@ -1096,7 +1104,7 @@ class BaseTest:
         self.checkraises(TypeError, 'abc', 'splitlines', 42, 42)
 
 
-class CommonTest(BaseTest):
+class StringLikeTest(BaseTest):
     # This testcase contains tests that can be used in all
     # stringlike classes. Currently this is str and UserString.
 
@@ -1126,11 +1134,6 @@ class CommonTest(BaseTest):
         # check with Ll chars with no upper - nothing changes here
         self.checkequal('\u019b\u1d00\u1d86\u0221\u1fb7',
                         '\u019b\u1d00\u1d86\u0221\u1fb7', 'capitalize')
-
-
-class MixinStrUnicodeUserStringTest:
-    # additional tests that only work for
-    # stringlike objects, i.e. str, UserString
 
     def test_startswith(self):
         self.checkequal(True, 'hello', 'startswith', 'he')
@@ -1313,8 +1316,11 @@ class MixinStrUnicodeUserStringTest:
             self.checkequal(((('a' * i) + '-') * i)[:-1], '-', 'join',
                  ('a' * i,) * i)
 
-        #self.checkequal(str(BadSeq1()), ' ', 'join', BadSeq1())
-        self.checkequal('a b c', ' ', 'join', BadSeq2())
+        class LiesAboutLengthSeq(Sequence):
+            def __init__(self): self.seq = ['a', 'b', 'c']
+            def __len__(self): return 8
+
+        self.checkequal('a b c', ' ', 'join', LiesAboutLengthSeq())
 
         self.checkraises(TypeError, ' ', 'join')
         self.checkraises(TypeError, ' ', 'join', None)

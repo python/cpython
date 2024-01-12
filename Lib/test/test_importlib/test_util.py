@@ -8,13 +8,28 @@ importlib_util = util.import_importlib('importlib.util')
 import importlib.util
 import os
 import pathlib
+import re
 import string
 import sys
 from test import support
+import textwrap
 import types
 import unittest
 import unittest.mock
 import warnings
+
+try:
+    import _testsinglephase
+except ImportError:
+    _testsinglephase = None
+try:
+    import _testmultiphase
+except ImportError:
+    _testmultiphase = None
+try:
+    import _xxsubinterpreters as _interpreters
+except ModuleNotFoundError:
+    _interpreters = None
 
 
 class DecodeSourceBytesTests:
@@ -635,6 +650,118 @@ class MagicNumberTests(unittest.TestCase):
             "community stakeholders."
         )
         self.assertEqual(EXPECTED_MAGIC_NUMBER, actual, msg)
+
+
+@unittest.skipIf(_interpreters is None, 'subinterpreters required')
+class IncompatibleExtensionModuleRestrictionsTests(unittest.TestCase):
+
+    def run_with_own_gil(self, script):
+        interpid = _interpreters.create(isolated=True)
+        def ensure_destroyed():
+            try:
+                _interpreters.destroy(interpid)
+            except _interpreters.InterpreterNotFoundError:
+                pass
+        self.addCleanup(ensure_destroyed)
+        excsnap = _interpreters.exec(interpid, script)
+        if excsnap is not None:
+            if excsnap.type.__name__ == 'ImportError':
+                raise ImportError(excsnap.msg)
+
+    def run_with_shared_gil(self, script):
+        interpid = _interpreters.create(isolated=False)
+        def ensure_destroyed():
+            try:
+                _interpreters.destroy(interpid)
+            except _interpreters.InterpreterNotFoundError:
+                pass
+        self.addCleanup(ensure_destroyed)
+        excsnap = _interpreters.exec(interpid, script)
+        if excsnap is not None:
+            if excsnap.type.__name__ == 'ImportError':
+                raise ImportError(excsnap.msg)
+
+    @unittest.skipIf(_testsinglephase is None, "test requires _testsinglephase module")
+    def test_single_phase_init_module(self):
+        script = textwrap.dedent('''
+            from importlib.util import _incompatible_extension_module_restrictions
+            with _incompatible_extension_module_restrictions(disable_check=True):
+                import _testsinglephase
+            ''')
+        with self.subTest('check disabled, shared GIL'):
+            self.run_with_shared_gil(script)
+        with self.subTest('check disabled, per-interpreter GIL'):
+            self.run_with_own_gil(script)
+
+        script = textwrap.dedent(f'''
+            from importlib.util import _incompatible_extension_module_restrictions
+            with _incompatible_extension_module_restrictions(disable_check=False):
+                import _testsinglephase
+            ''')
+        with self.subTest('check enabled, shared GIL'):
+            with self.assertRaises(ImportError):
+                self.run_with_shared_gil(script)
+        with self.subTest('check enabled, per-interpreter GIL'):
+            with self.assertRaises(ImportError):
+                self.run_with_own_gil(script)
+
+    @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
+    def test_incomplete_multi_phase_init_module(self):
+        prescript = textwrap.dedent(f'''
+            from importlib.util import spec_from_loader, module_from_spec
+            from importlib.machinery import ExtensionFileLoader
+
+            name = '_test_shared_gil_only'
+            filename = {_testmultiphase.__file__!r}
+            loader = ExtensionFileLoader(name, filename)
+            spec = spec_from_loader(name, loader)
+
+            ''')
+
+        script = prescript + textwrap.dedent('''
+            from importlib.util import _incompatible_extension_module_restrictions
+            with _incompatible_extension_module_restrictions(disable_check=True):
+                module = module_from_spec(spec)
+                loader.exec_module(module)
+            ''')
+        with self.subTest('check disabled, shared GIL'):
+            self.run_with_shared_gil(script)
+        with self.subTest('check disabled, per-interpreter GIL'):
+            self.run_with_own_gil(script)
+
+        script = prescript + textwrap.dedent('''
+            from importlib.util import _incompatible_extension_module_restrictions
+            with _incompatible_extension_module_restrictions(disable_check=False):
+                module = module_from_spec(spec)
+                loader.exec_module(module)
+            ''')
+        with self.subTest('check enabled, shared GIL'):
+            self.run_with_shared_gil(script)
+        with self.subTest('check enabled, per-interpreter GIL'):
+            with self.assertRaises(ImportError):
+                self.run_with_own_gil(script)
+
+    @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
+    def test_complete_multi_phase_init_module(self):
+        script = textwrap.dedent('''
+            from importlib.util import _incompatible_extension_module_restrictions
+            with _incompatible_extension_module_restrictions(disable_check=True):
+                import _testmultiphase
+            ''')
+        with self.subTest('check disabled, shared GIL'):
+            self.run_with_shared_gil(script)
+        with self.subTest('check disabled, per-interpreter GIL'):
+            self.run_with_own_gil(script)
+
+        script = textwrap.dedent(f'''
+            from importlib.util import _incompatible_extension_module_restrictions
+            with _incompatible_extension_module_restrictions(disable_check=False):
+                import _testmultiphase
+            ''')
+        with self.subTest('check enabled, shared GIL'):
+            self.run_with_shared_gil(script)
+        with self.subTest('check enabled, per-interpreter GIL'):
+            self.run_with_own_gil(script)
 
 
 if __name__ == '__main__':

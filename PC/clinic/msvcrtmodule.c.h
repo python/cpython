@@ -2,11 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(msvcrt_heapmin__doc__,
 "heapmin($module, /)\n"
@@ -59,11 +55,11 @@ msvcrt_locking(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("locking", nargs, 3, 3)) {
         goto exit;
     }
-    fd = _PyLong_AsInt(args[0]);
+    fd = PyLong_AsInt(args[0]);
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    mode = _PyLong_AsInt(args[1]);
+    mode = PyLong_AsInt(args[1]);
     if (mode == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -105,11 +101,11 @@ msvcrt_setmode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("setmode", nargs, 2, 2)) {
         goto exit;
     }
-    fd = _PyLong_AsInt(args[0]);
+    fd = PyLong_AsInt(args[0]);
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    flags = _PyLong_AsInt(args[1]);
+    flags = PyLong_AsInt(args[1]);
     if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -154,7 +150,7 @@ msvcrt_open_osfhandle(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!handle && PyErr_Occurred()) {
         goto exit;
     }
-    flags = _PyLong_AsInt(args[1]);
+    flags = PyLong_AsInt(args[1]);
     if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -189,7 +185,7 @@ msvcrt_get_osfhandle(PyObject *module, PyObject *arg)
     int fd;
     void *_return_value;
 
-    fd = _PyLong_AsInt(arg);
+    fd = PyLong_AsInt(arg);
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -207,7 +203,7 @@ PyDoc_STRVAR(msvcrt_kbhit__doc__,
 "kbhit($module, /)\n"
 "--\n"
 "\n"
-"Return true if a keypress is waiting to be read.");
+"Returns a nonzero value if a keypress is waiting to be read. Otherwise, return 0.");
 
 #define MSVCRT_KBHIT_METHODDEF    \
     {"kbhit", (PyCFunction)msvcrt_kbhit, METH_NOARGS, msvcrt_kbhit__doc__},
@@ -261,6 +257,8 @@ msvcrt_getch(PyObject *module, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
+#if defined(MS_WINDOWS_DESKTOP)
+
 PyDoc_STRVAR(msvcrt_getwch__doc__,
 "getwch($module, /)\n"
 "--\n"
@@ -284,6 +282,8 @@ msvcrt_getwch(PyObject *module, PyObject *Py_UNUSED(ignored))
 
     return return_value;
 }
+
+#endif /* defined(MS_WINDOWS_DESKTOP) */
 
 PyDoc_STRVAR(msvcrt_getche__doc__,
 "getche($module, /)\n"
@@ -309,6 +309,8 @@ msvcrt_getche(PyObject *module, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
+#if defined(MS_WINDOWS_DESKTOP)
+
 PyDoc_STRVAR(msvcrt_getwche__doc__,
 "getwche($module, /)\n"
 "--\n"
@@ -332,6 +334,8 @@ msvcrt_getwche(PyObject *module, PyObject *Py_UNUSED(ignored))
 
     return return_value;
 }
+
+#endif /* defined(MS_WINDOWS_DESKTOP) */
 
 PyDoc_STRVAR(msvcrt_putch__doc__,
 "putch($module, char, /)\n"
@@ -367,6 +371,8 @@ exit:
     return return_value;
 }
 
+#if defined(MS_WINDOWS_DESKTOP)
+
 PyDoc_STRVAR(msvcrt_putwch__doc__,
 "putwch($module, unicode_char, /)\n"
 "--\n"
@@ -389,9 +395,6 @@ msvcrt_putwch(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("putwch", "argument", "a unicode character", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg)) {
-        goto exit;
-    }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
         _PyArg_BadArgument("putwch", "argument", "a unicode character", arg);
         goto exit;
@@ -402,6 +405,8 @@ msvcrt_putwch(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
+
+#endif /* defined(MS_WINDOWS_DESKTOP) */
 
 PyDoc_STRVAR(msvcrt_ungetch__doc__,
 "ungetch($module, char, /)\n"
@@ -441,6 +446,8 @@ exit:
     return return_value;
 }
 
+#if defined(MS_WINDOWS_DESKTOP)
+
 PyDoc_STRVAR(msvcrt_ungetwch__doc__,
 "ungetwch($module, unicode_char, /)\n"
 "--\n"
@@ -463,9 +470,6 @@ msvcrt_ungetwch(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("ungetwch", "argument", "a unicode character", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg)) {
-        goto exit;
-    }
     if (PyUnicode_GET_LENGTH(arg) != 1) {
         _PyArg_BadArgument("ungetwch", "argument", "a unicode character", arg);
         goto exit;
@@ -476,6 +480,8 @@ msvcrt_ungetwch(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
+
+#endif /* defined(MS_WINDOWS_DESKTOP) */
 
 #if defined(_DEBUG)
 
@@ -504,7 +510,7 @@ msvcrt_CrtSetReportFile(PyObject *module, PyObject *const *args, Py_ssize_t narg
     if (!_PyArg_CheckPositional("CrtSetReportFile", nargs, 2, 2)) {
         goto exit;
     }
-    type = _PyLong_AsInt(args[0]);
+    type = PyLong_AsInt(args[0]);
     if (type == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -551,11 +557,11 @@ msvcrt_CrtSetReportMode(PyObject *module, PyObject *const *args, Py_ssize_t narg
     if (!_PyArg_CheckPositional("CrtSetReportMode", nargs, 2, 2)) {
         goto exit;
     }
-    type = _PyLong_AsInt(args[0]);
+    type = PyLong_AsInt(args[0]);
     if (type == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    mode = _PyLong_AsInt(args[1]);
+    mode = PyLong_AsInt(args[1]);
     if (mode == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -594,7 +600,7 @@ msvcrt_set_error_mode(PyObject *module, PyObject *arg)
     int mode;
     long _return_value;
 
-    mode = _PyLong_AsInt(arg);
+    mode = PyLong_AsInt(arg);
     if (mode == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -609,6 +615,8 @@ exit:
 }
 
 #endif /* defined(_DEBUG) */
+
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM))
 
 PyDoc_STRVAR(msvcrt_GetErrorMode__doc__,
 "GetErrorMode($module, /)\n"
@@ -627,6 +635,8 @@ msvcrt_GetErrorMode(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return msvcrt_GetErrorMode_impl(module);
 }
+
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)) */
 
 PyDoc_STRVAR(msvcrt_SetErrorMode__doc__,
 "SetErrorMode($module, mode, /)\n"
@@ -656,6 +666,22 @@ exit:
     return return_value;
 }
 
+#ifndef MSVCRT_GETWCH_METHODDEF
+    #define MSVCRT_GETWCH_METHODDEF
+#endif /* !defined(MSVCRT_GETWCH_METHODDEF) */
+
+#ifndef MSVCRT_GETWCHE_METHODDEF
+    #define MSVCRT_GETWCHE_METHODDEF
+#endif /* !defined(MSVCRT_GETWCHE_METHODDEF) */
+
+#ifndef MSVCRT_PUTWCH_METHODDEF
+    #define MSVCRT_PUTWCH_METHODDEF
+#endif /* !defined(MSVCRT_PUTWCH_METHODDEF) */
+
+#ifndef MSVCRT_UNGETWCH_METHODDEF
+    #define MSVCRT_UNGETWCH_METHODDEF
+#endif /* !defined(MSVCRT_UNGETWCH_METHODDEF) */
+
 #ifndef MSVCRT_CRTSETREPORTFILE_METHODDEF
     #define MSVCRT_CRTSETREPORTFILE_METHODDEF
 #endif /* !defined(MSVCRT_CRTSETREPORTFILE_METHODDEF) */
@@ -667,4 +693,8 @@ exit:
 #ifndef MSVCRT_SET_ERROR_MODE_METHODDEF
     #define MSVCRT_SET_ERROR_MODE_METHODDEF
 #endif /* !defined(MSVCRT_SET_ERROR_MODE_METHODDEF) */
-/*[clinic end generated code: output=204bae9fee7f6124 input=a9049054013a1b77]*/
+
+#ifndef MSVCRT_GETERRORMODE_METHODDEF
+    #define MSVCRT_GETERRORMODE_METHODDEF
+#endif /* !defined(MSVCRT_GETERRORMODE_METHODDEF) */
+/*[clinic end generated code: output=de9687b46212c2ed input=a9049054013a1b77]*/
