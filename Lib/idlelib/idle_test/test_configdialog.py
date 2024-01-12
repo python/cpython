@@ -425,15 +425,16 @@ class HighPageTest(unittest.TestCase):
         count = 0
         hs = d.highlight_sample
         hs.focus_force()
-        hs.see(1.0)
-        hs.update_idletasks()
 
         def tag_to_element(elem):
             for element, tag in d.theme_elements.items():
                 elem[tag] = element
 
-        def click_it(start):
-            x, y, dx, dy = hs.bbox(start)
+        def click_char(start_index):
+            "Simulate click on character."
+            hs.see(start_index)
+            hs.update_idletasks()
+            x, y, dx, dy = hs.bbox(start_index)
             x += dx // 2
             y += dy // 2
             hs.event_generate('<Enter>', x=0, y=0)
@@ -449,7 +450,7 @@ class HighPageTest(unittest.TestCase):
         for tag in hs.tag_names():
             for start_index in hs.tag_ranges(tag)[0::2]:
                 count += 1
-                click_it(start_index)
+                click_char(start_index)
                 eq(d.highlight_target.get(), elem[tag])
                 eq(d.set_highlight_target.called, count)
 
