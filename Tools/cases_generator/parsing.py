@@ -75,7 +75,7 @@ class StackEffect(Node):
     size: str = ""  # Optional `[size]`
     # Note: size cannot be combined with type or cond
 
-    # Optional `(type, aux)`
+    # Optional `(type, refinement)`
     type_prop: None | tuple[str, None | str] = field(
         default_factory=lambda: None, init=True, compare=False, hash=False
     )
@@ -273,10 +273,10 @@ class Parser(PLexer):
                 if self.expect(lx.AND):
                     consumed_bracket = self.expect(lx.LPAREN) is not None
                     type_prop_text = self.require(lx.IDENTIFIER).text.strip()
-                    aux = None
+                    refinement = None
                     if self.expect(lx.PLUS):
-                        aux = self.require(lx.IDENTIFIER).text.strip()
-                    type_prop = (type_prop_text, aux)
+                        refinement = self.require(lx.IDENTIFIER).text.strip()
+                    type_prop = (type_prop_text, refinement)
                     if consumed_bracket:
                         self.require(lx.RPAREN)
             cond_text = ""
