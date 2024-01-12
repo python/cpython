@@ -801,7 +801,7 @@ dummy_func(
         // We definitely pop the return value off the stack on entry.
         // We also push it onto the stack on exit, but that's a
         // different frame, and it's accounted for by _PUSH_FRAME.
-        pure op(_POP_FRAME, (retval --)) {
+        op(_POP_FRAME, (retval --)) {
             #if TIER_ONE
             assert(frame != &entry_frame);
             #endif
@@ -3150,7 +3150,7 @@ dummy_func(
         // The 'unused' output effect represents the return value
         // (which will be pushed when the frame returns).
         // It is needed so CALL_PY_EXACT_ARGS matches its family.
-        pure op(_PUSH_FRAME, (new_frame: _PyInterpreterFrame* -- unused if (0))) {
+        op(_PUSH_FRAME, (new_frame: _PyInterpreterFrame* -- unused if (0))) {
             // Write it out explicitly because it's subtly different.
             // Eventually this should be the only occurrence of this code.
             assert(tstate->interp->eval_frame == NULL);
