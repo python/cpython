@@ -645,17 +645,6 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
             zinfo = zipfp.getinfo(TESTFN)
             self.assertEqual(zinfo.date_time, (2107, 12, 31, 23, 59, 59))
 
-    def test_ZipInfo_compresslevel_property(self):
-        zinfo = zipfile.ZipInfo("xxx")
-        self.assertFalse(zinfo._compresslevel)
-        self.assertFalse(zinfo.compress_level)
-        zinfo._compresslevel = 99  # test the legacy @property.setter
-        self.assertEqual(zinfo.compress_level, 99)
-        self.assertEqual(zinfo._compresslevel, 99)
-        zinfo.compress_level = 8
-        self.assertEqual(zinfo.compress_level, 8)
-        self.assertEqual(zinfo._compresslevel, 8)
-
 
 @requires_zlib()
 class DeflateTestsWithSourceFile(AbstractTestsWithSourceFile,
@@ -3021,6 +3010,17 @@ class ZipInfoTests(unittest.TestCase):
         self.assertTrue(zi.is_dir())
         self.assertEqual(zi.compress_type, zipfile.ZIP_STORED)
         self.assertEqual(zi.file_size, 0)
+
+    def test_compresslevel_property(self):
+        zinfo = zipfile.ZipInfo("xxx")
+        self.assertFalse(zinfo._compresslevel)
+        self.assertFalse(zinfo.compress_level)
+        zinfo._compresslevel = 99  # test the legacy @property.setter
+        self.assertEqual(zinfo.compress_level, 99)
+        self.assertEqual(zinfo._compresslevel, 99)
+        zinfo.compress_level = 8
+        self.assertEqual(zinfo.compress_level, 8)
+        self.assertEqual(zinfo._compresslevel, 8)
 
 
 class CommandLineTest(unittest.TestCase):
