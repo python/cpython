@@ -1,0 +1,3 @@
+Specify a low recursion depth for ``test_bad_getattr()`` in
+``test.pickletester`` to avoid exhausting the stack under a pydebug build
+for WASI.
