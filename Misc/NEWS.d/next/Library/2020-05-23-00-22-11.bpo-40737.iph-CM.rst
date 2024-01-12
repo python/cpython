@@ -1,1 +1,0 @@
-Fix possible reference leak for :mod:`sqlite3` initialization.

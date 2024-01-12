@@ -3,7 +3,7 @@ import functools
 import sys
 import threading
 import unittest
-from test.support import import_fresh_module
+from test.support.import_helper import import_fresh_module
 
 OS_ENV_LOCK = threading.Lock()
 TZPATH_LOCK = threading.Lock()

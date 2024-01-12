@@ -6,6 +6,8 @@
 
 --------------
 
+.. include:: ../includes/wasm-notavail.rst
+
 Memory-mapped file objects behave like both :class:`bytearray` and like
 :term:`file objects <file object>`.  You can use mmap objects in most places
 where :class:`bytearray` are expected; for example, you can use the :mod:`re`
@@ -17,7 +19,7 @@ the current file position, and :meth:`seek` through the file to different positi
 A memory-mapped file is created by the :class:`~mmap.mmap` constructor, which is
 different on Unix and on Windows.  In either case you must provide a file
 descriptor for a file opened for update. If you wish to map an existing Python
-file object, use its :meth:`fileno` method to obtain the correct value for the
+file object, use its :meth:`~io.IOBase.fileno` method to obtain the correct value for the
 *fileno* parameter.  Otherwise, you can open the file using the
 :func:`os.open` function, which returns a file descriptor directly (the file
 still needs to be closed when done).
@@ -60,8 +62,8 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    the same file.  If you specify the name of an existing tag, that tag is
    opened, otherwise a new tag of this name is created.  If this parameter is
    omitted or ``None``, the mapping is created without a name.  Avoiding the
-   use of the tag parameter will assist in keeping your code portable between
-   Unix and Windows.
+   use of the *tagname* parameter will assist in keeping your code portable
+   between Unix and Windows.
 
    *offset* may be specified as a non-negative integer offset. mmap references
    will be relative to the offset from the beginning of the file. *offset*
@@ -102,7 +104,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
    To ensure validity of the created memory mapping the file specified
    by the descriptor *fileno* is internally automatically synchronized
-   with physical backing store on Mac OS X and OpenVMS.
+   with the physical backing store on macOS.
 
    This example shows a simple way of using :class:`~mmap.mmap`::
 
@@ -256,6 +258,14 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       with :const:`ACCESS_READ` or :const:`ACCESS_COPY`, resizing the map will
       raise a :exc:`TypeError` exception.
 
+      **On Windows**: Resizing the map will raise an :exc:`OSError` if there are other
+      maps against the same named file. Resizing an anonymous map (ie against the
+      pagefile) will silently create a new map with the original data copied over
+      up to the length of the new size.
+
+      .. versionchanged:: 3.11
+         Correctly fails if attempting to resize when another map is held
+         Allows resize against an anonymous map on Windows
 
    .. method:: rfind(sub[, start[, end]])
 
@@ -275,6 +285,14 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       values are ``os.SEEK_CUR`` or ``1`` (seek relative to the current
       position) and ``os.SEEK_END`` or ``2`` (seek relative to the file's end).
 
+      .. versionchanged:: 3.13
+         Return the new absolute position instead of ``None``.
+
+   .. method:: seekable()
+
+      Return whether the file supports seeking, and the return value is always ``True``.
+
+      .. versionadded:: 3.13
 
    .. method:: size()
 
@@ -337,6 +355,8 @@ MADV_* Constants
           MADV_NOCORE
           MADV_CORE
           MADV_PROTECT
+          MADV_FREE_REUSABLE
+          MADV_FREE_REUSE
 
    These options can be passed to :meth:`mmap.madvise`.  Not every option will
    be present on every system.
@@ -352,13 +372,43 @@ MAP_* Constants
 
 .. data:: MAP_SHARED
           MAP_PRIVATE
-          MAP_DENYWRITE
-          MAP_EXECUTABLE
+          MAP_32BIT
+          MAP_ALIGNED_SUPER
           MAP_ANON
           MAP_ANONYMOUS
+          MAP_CONCEAL
+          MAP_DENYWRITE
+          MAP_EXECUTABLE
+          MAP_HASSEMAPHORE
+          MAP_JIT
+          MAP_NOCACHE
+          MAP_NOEXTEND
+          MAP_NORESERVE
           MAP_POPULATE
+          MAP_RESILIENT_CODESIGN
+          MAP_RESILIENT_MEDIA
+          MAP_STACK
+          MAP_TPRO
+          MAP_TRANSLATED_ALLOW_EXECUTE
+          MAP_UNIX03
 
-    These are the various flags that can be passed to :meth:`mmap.mmap`. Note that some options might not be present on some systems.
+    These are the various flags that can be passed to :meth:`mmap.mmap`.  :data:`MAP_ALIGNED_SUPER`
+    is only available at FreeBSD and :data:`MAP_CONCEAL` is only available at OpenBSD.  Note
+    that some options might not be present on some systems.
 
     .. versionchanged:: 3.10
-       Added MAP_POPULATE constant.
+       Added :data:`MAP_POPULATE` constant.
+
+    .. versionadded:: 3.11
+       Added :data:`MAP_STACK` constant.
+
+    .. versionadded:: 3.12
+       Added :data:`MAP_ALIGNED_SUPER` and :data:`MAP_CONCEAL` constants.
+
+    .. versionadded:: 3.13
+       Added :data:`MAP_32BIT`, :data:`MAP_HASSEMAPHORE`, :data:`MAP_JIT`,
+       :data:`MAP_NOCACHE`, :data:`MAP_NOEXTEND`, :data:`MAP_NORESERVE`,
+       :data:`MAP_RESILIENT_CODESIGN`, :data:`MAP_RESILIENT_MEDIA`,
+       :data:`MAP_TPRO`, :data:`MAP_TRANSLATED_ALLOW_EXECUTE`, and
+       :data:`MAP_UNIX03` constants.
+
