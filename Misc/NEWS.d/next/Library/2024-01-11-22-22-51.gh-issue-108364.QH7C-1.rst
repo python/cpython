@@ -1,0 +1,3 @@
+:meth:`sqlite3.Connection.iterdump` now ensures that foreign key support is
+disabled before dumping the database schema, if there is any foreign key
+violation. Patch by Erlend E. Aasland and Mariusz Felisiak.

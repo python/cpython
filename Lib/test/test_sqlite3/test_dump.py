@@ -20,7 +20,8 @@ class DumpTests(MemoryDatabaseMixin, unittest.TestCase):
                 ,
                 "CREATE TABLE t1(id integer primary key, s1 text, " \
                 "t1_i1 integer not null, i2 integer, unique (s1), " \
-                "constraint t1_idx1 unique (i2));"
+                "constraint t1_idx1 unique (i2), " \
+                "constraint t1_i1_idx1 unique (t1_i1));"
                 ,
                 "INSERT INTO \"t1\" VALUES(1,'foo',10,20);"
                 ,
@@ -29,6 +30,9 @@ class DumpTests(MemoryDatabaseMixin, unittest.TestCase):
                 "CREATE TABLE t2(id integer, t2_i1 integer, " \
                 "t2_i2 integer, primary key (id)," \
                 "foreign key(t2_i1) references t1(t1_i1));"
+                ,
+                # Foreign key violation.
+                "INSERT INTO \"t2\" VALUES(1,2,3);"
                 ,
                 "CREATE TRIGGER trigger_1 update of t1_i1 on t1 " \
                 "begin " \
@@ -41,8 +45,12 @@ class DumpTests(MemoryDatabaseMixin, unittest.TestCase):
         [self.cu.execute(s) for s in expected_sqls]
         i = self.cx.iterdump()
         actual_sqls = [s for s in i]
-        expected_sqls = ['BEGIN TRANSACTION;'] + expected_sqls + \
-            ['COMMIT;']
+        expected_sqls = [
+            "PRAGMA foreign_keys=OFF;",
+            "BEGIN TRANSACTION;",
+            *expected_sqls,
+            "COMMIT;",
+        ]
         [self.assertEqual(expected_sqls[i], actual_sqls[i])
             for i in range(len(expected_sqls))]
 
