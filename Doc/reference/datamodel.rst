@@ -1246,20 +1246,20 @@ Methods on code objects
 
    * ``start`` (an :class:`int`) represents the offset (inclusive) of the start
      of the :term:`bytecode` range
-   * ``end`` (an :class:`int`) represents the offset (inclusive) of the end of
+   * ``end`` (an :class:`int`) represents the offset (exclusive) of the end of
      the :term:`bytecode` range
    * ``lineno`` is an :class:`int` representing the line number of the
      :term:`bytecode` range, or ``None`` if the bytecodes in the given range
      have no line number
 
-   The items yielded generated will have the following properties:
+   The items yielded will have the following properties:
 
    * The first range yielded will have a ``start`` of 0.
    * The ``(start, end)`` ranges will be non-decreasing and consecutive. That
      is, for any pair of :class:`tuple`\s, the ``start`` of the second will be
      equal to the ``end`` of the first.
    * No range will be backwards: ``end >= start`` for all triples.
-   * The :class:`tuple` yielded will have ``end`` equal to the size of the
+   * The last :class:`tuple` yielded will have ``end`` equal to the size of the
      :term:`bytecode`.
 
    Zero-width ranges, where ``start == end``, are allowed. Zero-width ranges
