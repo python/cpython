@@ -1,0 +1,1 @@
+Make closure work on :mod:`pdb`
