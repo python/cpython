@@ -114,11 +114,7 @@ void _PySlice_ClearCache(_PyFreeListState *state)
 
 void _PySlice_Fini(_PyFreeListState *state)
 {
-    PySliceObject *obj = state->slice_state.slice_cache;
-    if (obj != NULL) {
-        state->slice_state.slice_cache = NULL;
-        PyObject_GC_Del(obj);
-    }
+    _PySlice_ClearCache(state);
 }
 
 /* start, stop, and step are python objects with None indicating no
