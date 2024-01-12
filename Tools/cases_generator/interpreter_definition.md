@@ -144,7 +144,7 @@ The objects before the "--" are the objects on top of the stack at the start of
 the instruction. Those after the "--" are the objects on top of the stack at the
 end of the instruction. When prefixed by a `&`, the `type` production rule follows the
 `type_prop` production rule. This indicates the stack effect is of that specific type
-after the operation. In this case, the type may also consist of auxillary information
+after the operation. In this case, the type may also consist of 64-bit auxillary information
 that is fetched from a previously defined operand in the instruction header, such as
 a type version tag. This follows the format `type + auxillary`. For a list of the
 types and what they correspond to, see [Appendix A - Types](#Appendix-A-Types).
