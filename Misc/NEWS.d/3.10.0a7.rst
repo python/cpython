@@ -261,7 +261,7 @@ the annotations _Py_NO_SANITIZE_ADDRESS, _Py_NO_SANITIZE_THREAD, and
 _Py_NO_SANITIZE_MEMORY. Those annotations are no longer needed.
 
 To disable the radix tree map, set a preprocessor flag as follows:
-`-DWITH_PYMALLOC_RADIX_TREE=0`.
+``-DWITH_PYMALLOC_RADIX_TREE=0``.
 
 Co-authored-by: Tim Peters <tim.peters@gmail.com>
 
@@ -664,11 +664,11 @@ on failure.
 .. nonce: f1dr_5
 .. section: Library
 
-Enum's `repr()` and `str()` have changed: `repr()` is now
-*EnumClass.MemberName* and `str()` is *MemberName*.  Additionally, stdlib
+Enum's ``repr()`` and ``str()`` have changed: ``repr()`` is now
+*EnumClass.MemberName* and ``str()`` is *MemberName*.  Additionally, stdlib
 Enum's whose contents are available as module attributes, such as
-`RegexFlag.IGNORECASE`, have their `repr()` as *module.name*, e.g.
-`re.IGNORECASE`.
+``RegexFlag.IGNORECASE``, have their ``repr()`` as *module.name*, e.g.
+``re.IGNORECASE``.
 
 ..
 

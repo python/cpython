@@ -251,8 +251,8 @@ and "surrogatepass" error handlers.
 .. nonce: FM72m-
 .. section: Core and Builtins
 
-speed up `PyObject_IsInstance` and `PyObject_IsSubclass` in the common case
-that the second argument has metaclass `type`.
+speed up ``PyObject_IsInstance`` and ``PyObject_IsSubclass`` in the common case
+that the second argument has metaclass ``type``.
 
 ..
 
@@ -261,8 +261,8 @@ that the second argument has metaclass `type`.
 .. nonce: ds5wQa
 .. section: Core and Builtins
 
-Add a new `PyErr_FormatV` function, similar to `PyErr_Format` but accepting
-a `va_list` argument.
+Add a new ``PyErr_FormatV`` function, similar to ``PyErr_Format`` but accepting
+a ``va_list`` argument.
 
 ..
 
@@ -1522,7 +1522,7 @@ Fixed fcntl() with integer argument on 64-bit big-endian platforms.
 .. nonce: 62MLqr
 .. section: Library
 
-Add an `--sort-keys` option to json.tool CLI.
+Add an ``--sort-keys`` option to ``json.tool`` CLI.
 
 ..
 
@@ -1745,7 +1745,7 @@ already failed.
 .. section: Library
 
 Make it possible to examine the errors from unittest discovery without
-executing the test suite. The new `errors` attribute on TestLoader exposes
+executing the test suite. The new ``errors`` attribute on ``TestLoader`` exposes
 these non-fatal errors encountered during discovery.
 
 ..
@@ -2342,9 +2342,9 @@ as normal call attributes.
 .. nonce: Nghn-Y
 .. section: Library
 
-load_tests() is now unconditionally run when it is present in a package's
-__init__.py.  TestLoader.loadTestsFromModule() still accepts use_load_tests,
-but it is deprecated and ignored.  A new keyword-only attribute `pattern` is
+``load_tests()`` is now unconditionally run when it is present in a package's
+``__init__.py``.  ``TestLoader.loadTestsFromModule()`` still accepts use_load_tests,
+but it is deprecated and ignored.  A new keyword-only attribute ``pattern`` is
 added and documented.  Patch given by Robert Collins, tweaked by Barry
 Warsaw.
 
@@ -2736,8 +2736,8 @@ Convert posixmodule to use Argument Clinic.
 .. nonce: YccmZF
 .. section: Library
 
-Add an *exists_ok* argument to `Pathlib.mkdir()` to mimic `mkdir -p` and
-`os.makedirs()` functionality.  When true, ignore FileExistsErrors.  Patch
+Add an *exists_ok* argument to ``Pathlib.mkdir()`` to mimic ``mkdir -p`` and
+``os.makedirs()`` functionality.  When true, ignore ``FileExistsErrors``.  Patch
 by Berker Peksag.
 
 ..
@@ -3930,7 +3930,7 @@ has been called.
 .. nonce: 5CDoox
 .. section: Library
 
-New keyword argument `unsafe` to Mock. It raises `AttributeError` incase of
+New keyword argument ``unsafe`` to Mock. It raises ``AttributeError`` incase of
 an attribute startswith assert or assret.
 
 ..
@@ -4173,7 +4173,7 @@ provide better security by default.
 .. nonce: FP5FY0
 .. section: Library
 
-`assertRaisesRegex` and `assertWarnsRegex` now raise a TypeError if the
+``assertRaisesRegex`` and ``assertWarnsRegex`` now raise a ``TypeError`` if the
 second argument is not a string or compiled regex.
 
 ..

@@ -266,8 +266,8 @@ The :func:`os.unsetenv` function is now also available on Windows.
 .. nonce: D2tSXk
 .. section: Library
 
-Fixed a regression with the `ignore` callback of :func:`shutil.copytree`.
-The argument types are now str and List[str] again.
+Fixed a regression with the ``ignore`` callback of :func:`shutil.copytree`.
+The argument types are now ``str`` and ``List[str]`` again.
 
 ..
 
@@ -507,8 +507,8 @@ for examples of :class:`!NNTP` news reader server and nntplib tests.
 .. nonce: ihRT1z
 .. section: Library
 
-Proxy the `SimpleHTTPRequestHandler.guess_type` to `mimetypes.guess_type` so
-the `mimetypes.init` is called lazily to avoid unnecessary costs when
+Proxy the ``SimpleHTTPRequestHandler.guess_type`` to ``mimetypes.guess_type`` so
+the ``mimetypes.init`` is called lazily to avoid unnecessary costs when
 :mod:`http.server` module is imported.
 
 ..
@@ -547,10 +547,10 @@ all options.  Giovanni Lombardo contributed part of the patch.
 .. nonce: nzwGyG
 .. section: Library
 
-If an exception were to be thrown in `Logger.isEnabledFor` (say, by asyncio
-timeouts or stopit) , the `logging` global lock may not be released
+If an exception were to be thrown in ``Logger.isEnabledFor`` (say, by asyncio
+timeouts or stopit) , the ``logging`` global lock may not be released
 appropriately, resulting in deadlock.  This change wraps that block of code
-with `try...finally` to ensure the lock is released.
+with ``try...finally`` to ensure the lock is released.
 
 ..
 
@@ -571,7 +571,7 @@ new task spawning before exception raising.
 .. section: Library
 
 Correctly parenthesize filter-based statements that contain lambda
-expressions in mod:`!lib2to3`. Patch by Donghee Na.
+expressions in :mod:`!lib2to3`. Patch by Donghee Na.
 
 ..
 
@@ -732,9 +732,9 @@ different process.
 .. nonce: beZ0Sk
 .. section: Library
 
-Removes trailing space in formatted currency with `international=True` and a
-locale with symbol following value. E.g. `locale.currency(12.34,
-international=True)` returned `'12,34 EUR '` instead of `'12,34 EUR'`.
+Removes trailing space in formatted currency with ``international=True`` and a
+locale with symbol following value. E.g. ``locale.currency(12.34,
+international=True)`` returned ``'12,34 EUR '`` instead of ``'12,34 EUR'``.
 
 ..
 
@@ -835,7 +835,7 @@ functions are now required to build Python.
 .. nonce: aBmj13
 .. section: Build
 
-Updated the documentation in `./configure --help` to show default values,
+Updated the documentation in ``./configure --help`` to show default values,
 reference documentation where required and add additional explanation where
 needed.
 
