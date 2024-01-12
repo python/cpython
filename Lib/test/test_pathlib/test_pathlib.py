@@ -349,16 +349,6 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
         with self.assertWarns(DeprecationWarning):
             p.is_relative_to('a', 'b')
 
-    def test_relative_to_bytes(self):
-        P = self.cls
-        p = P('a/b')
-        self.assertRaises(TypeError, p.relative_to, b'a')
-
-    def test_is_relative_to_bytes(self):
-        P = self.cls
-        p = P('a/b')
-        self.assertRaises(TypeError, p.is_relative_to, b'a')
-
     def test_match_empty(self):
         P = self.cls
         self.assertRaises(ValueError, P('a').match, '')

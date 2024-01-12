@@ -473,16 +473,11 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertRaises(ValueError, P('a/b').with_suffix, './.d')
         self.assertRaises(ValueError, P('a/b').with_suffix, '.d/.')
 
-    def test_relative_to_bytes(self):
-        P = self.cls
-        p = P('a/b')
-        with self.assertWarns(BytesWarning):
-            self.assertRaises(ValueError, p.relative_to, b'a')
-
     def test_relative_to_common(self):
         P = self.cls
         p = P('a/b')
         self.assertRaises(TypeError, p.relative_to)
+        self.assertRaises(TypeError, p.relative_to, b'a')
         self.assertEqual(p.relative_to(P('')), P('a/b'))
         self.assertEqual(p.relative_to(''), P('a/b'))
         self.assertEqual(p.relative_to(P('a')), P('b'))
@@ -553,16 +548,11 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertRaises(ValueError, p.relative_to, P("a/.."), walk_up=True)
         self.assertRaises(ValueError, p.relative_to, P("/a/.."), walk_up=True)
 
-    def test_is_relative_to_bytes(self):
-        P = self.cls
-        p = P('a/b')
-        with self.assertWarns(BytesWarning):
-            self.assertFalse(p.is_relative_to(b'a'))
-
     def test_is_relative_to_common(self):
         P = self.cls
         p = P('a/b')
         self.assertRaises(TypeError, p.is_relative_to)
+        self.assertRaises(TypeError, p.is_relative_to, b'a')
         self.assertTrue(p.is_relative_to(P('')))
         self.assertTrue(p.is_relative_to(''))
         self.assertTrue(p.is_relative_to(P('a')))
