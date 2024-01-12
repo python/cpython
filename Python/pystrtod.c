@@ -472,7 +472,7 @@ _Py_dg_dtoa_hex(double x, int precision, int always_add_sign,
 
     /* mantissa */
     const char *hexmap = upper ? Py_hexdigits_upper : Py_hexdigits;
-    assert(0 <= (int)m < 16);
+    assert(0 <= (int)m && (int)m < 16);
     s[si] = hexmap[(int)m];
     si++;
     m -= (int)m;
@@ -480,7 +480,7 @@ _Py_dg_dtoa_hex(double x, int precision, int always_add_sign,
     for (int i = 0; i < precision; i++) {
         si++;
         m *= 16.0;
-        assert(0 <= (int)m < 16);
+        assert(0 <= (int)m && (int)m < 16);
         s[si] = hexmap[(int)m];
         m -= (int)m;
     }
