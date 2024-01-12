@@ -516,7 +516,7 @@ Define THREAD_STACK_SIZE for VxWorks.
 .. nonce: x8TASR
 .. section: Library
 
-[Enum] `_EnumDict.update()` is now supported
+[Enum] ``_EnumDict.update()`` is now supported.
 
 ..
 
