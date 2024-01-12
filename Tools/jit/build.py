@@ -149,10 +149,10 @@ class StencilGroup:
             if value_part and not symbol and not addend:
                 addend_part = ""
             else:
-                addend_part = f"&{symbol} + " if symbol else ""
-                addend_part += format_addend(addend)
+                addend_part = f"&{symbol}" if symbol else ""
+                addend_part += format_addend(addend, signed=symbol is not None)
                 if value_part:
-                    value_part += " + "
+                    value_part += "+"
             self.data.disassembly.append(
                 f"{len(self.data.body):x}: {value_part}{addend_part}"
             )
@@ -632,7 +632,7 @@ def dump(stencil_groups: dict[str, StencilGroup]) -> typing.Iterator[str]:
         size = len(stencil.code.body) + 1
         yield f"static const unsigned char {opname}_code_body[{size}] = {{"
         for i in range(0, len(stencil.code.body), 8):
-            row = " ".join(f"0x{byte:02x}," for byte in stencil.code.body[i : i + 8])
+            row = " ".join(f"{byte:#02x}," for byte in stencil.code.body[i : i + 8])
             yield f"    {row}"
         yield "};"
         if stencil.code.holes:
@@ -640,7 +640,7 @@ def dump(stencil_groups: dict[str, StencilGroup]) -> typing.Iterator[str]:
             yield f"static const Hole {opname}_code_holes[{size}] = {{"
             for hole in sorted(stencil.code.holes, key=lambda hole: hole.offset):
                 parts = [
-                    hex(hole.offset),
+                    f"{hole.offset:#x}",
                     f"HoleKind_{hole.kind}",
                     f"HoleValue_{hole.value.name}",
                     f"&{hole.symbol}" if hole.symbol else "NULL",
@@ -657,7 +657,7 @@ def dump(stencil_groups: dict[str, StencilGroup]) -> typing.Iterator[str]:
             yield f"static const unsigned char {opname}_data_body[{size}] = {{"
             for i in range(0, len(stencil.data.body), 8):
                 row = " ".join(
-                    f"0x{byte:02x}," for byte in stencil.data.body[i : i + 8]
+                    f"{byte:#02x}," for byte in stencil.data.body[i : i + 8]
                 )
                 yield f"    {row}"
             yield "};"
@@ -668,7 +668,7 @@ def dump(stencil_groups: dict[str, StencilGroup]) -> typing.Iterator[str]:
             yield f"static const Hole {opname}_data_holes[{size}] = {{"
             for hole in sorted(stencil.data.holes, key=lambda hole: hole.offset):
                 parts = [
-                    hex(hole.offset),
+                    f"{hole.offset:#x}",
                     f"HoleKind_{hole.kind}",
                     f"HoleValue_{hole.value.name}",
                     f"&{hole.symbol}" if hole.symbol else "NULL",
@@ -682,11 +682,11 @@ def dump(stencil_groups: dict[str, StencilGroup]) -> typing.Iterator[str]:
     yield from dump_footer(opnames)
 
 
-def format_addend(addend: int) -> str:
+def format_addend(addend: int, signed: bool = False) -> str:
     addend %= 1 << 64
     if addend & (1 << 63):
         addend -= 1 << 64
-    return hex(addend)
+    return f"{addend:{'+#x' if signed else '#x'}}"
 
 
 def main() -> None:
