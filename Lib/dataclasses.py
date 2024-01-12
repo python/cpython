@@ -591,13 +591,13 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
         '__dataclass_builtins_object__': object,
     })
 
-    body_lines = []
-    for f in fields:
-        line = _field_init(f, frozen, locals, self_name, slots)
+    body_lines = [
+        line
+        for f in fields
         # line is None means that this field doesn't require
         # initialization (it's a pseudo-field).  Just skip it.
-        if line:
-            body_lines.append(line)
+        if (line := _field_init(f, frozen, locals, self_name, slots))
+    ]
 
     # Does this class have a post-init function?
     if has_post_init:
@@ -1342,11 +1342,10 @@ def _asdict_inner(obj, dict_factory):
                 for f in fields(obj)
             }
         else:
-            result = []
-            for f in fields(obj):
-                value = _asdict_inner(getattr(obj, f.name), dict_factory)
-                result.append((f.name, value))
-            return dict_factory(result)
+            return dict_factory([
+                (f.name, _asdict_inner(getattr(obj, f.name), dict_factory))
+                for f in fields(obj)
+            ])
     elif isinstance(obj, tuple) and hasattr(obj, '_fields'):
         # obj is a namedtuple.  Recurse into it, but the returned
         # object is another namedtuple of the same type.  This is
@@ -1416,11 +1415,10 @@ def _astuple_inner(obj, tuple_factory):
     if type(obj) in _ATOMIC_TYPES:
         return obj
     elif _is_dataclass_instance(obj):
-        result = []
-        for f in fields(obj):
-            value = _astuple_inner(getattr(obj, f.name), tuple_factory)
-            result.append(value)
-        return tuple_factory(result)
+        return tuple_factory([
+            _astuple_inner(getattr(obj, f.name), tuple_factory)
+            for f in fields(obj)
+        ])
     elif isinstance(obj, tuple) and hasattr(obj, '_fields'):
         # obj is a namedtuple.  Recurse into it, but the returned
         # object is another namedtuple of the same type.  This is
