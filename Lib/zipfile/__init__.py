@@ -1,9 +1,12 @@
-"""
-Read and write ZIP files.
+"""Read and write .zip files."""
 
-XXX references to utf-8 need further investigation.
-"""
+# As documented by PKWare's APPNOTE.TXT .ZIP File Format Specification:
+# https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT
+
+import abc
 import binascii
+from collections.abc import Callable
+import dataclasses
 import importlib.util
 import io
 import os
@@ -15,21 +18,11 @@ import threading
 import time
 
 try:
-    import zlib # We may need its compression method
+    import zlib
     crc32 = zlib.crc32
 except ImportError:
     zlib = None
     crc32 = binascii.crc32
-
-try:
-    import bz2 # We may need its compression method
-except ImportError:
-    bz2 = None
-
-try:
-    import lzma # We may need its compression method
-except ImportError:
-    lzma = None
 
 __all__ = ["BadZipFile", "BadZipfile", "error",
            "ZIP_STORED", "ZIP_DEFLATED", "ZIP_BZIP2", "ZIP_LZMA",
@@ -53,13 +46,14 @@ ZIP64_LIMIT = (1 << 31) - 1
 ZIP_FILECOUNT_LIMIT = (1 << 16) - 1
 ZIP_MAX_COMMENT = (1 << 16) - 1
 
-# constants for Zip file compression methods
+# PKWare zip appnote section 4.4.5 compression method id constants for methods
+# supported by the standard library.
 ZIP_STORED = 0
 ZIP_DEFLATED = 8
 ZIP_BZIP2 = 12
 ZIP_LZMA = 14
-# Other ZIP compression methods not supported
 
+# Defined in PKWare zip appnote section 4.4.3.
 DEFAULT_VERSION = 20
 ZIP64_VERSION = 45
 BZIP2_VERSION = 46
@@ -490,10 +484,9 @@ class ZipInfo (object):
             compress_size = 0xffffffff
             min_version = ZIP64_VERSION
 
-        if self.compress_type == ZIP_BZIP2:
-            min_version = max(BZIP2_VERSION, min_version)
-        elif self.compress_type == ZIP_LZMA:
-            min_version = max(LZMA_VERSION, min_version)
+        c_ver = _compression_method_id_to_version.get(self.compress_type)
+        if c_ver:
+            min_version = max(c_ver, min_version)
 
         self.extract_version = max(min_version, self.extract_version)
         self.create_version = max(min_version, self.create_version)
@@ -658,57 +651,170 @@ def _ZipDecrypter(pwd):
     return decrypter
 
 
-class LZMACompressor:
-
-    def __init__(self):
-        self._comp = None
-
-    def _init(self):
-        props = lzma._encode_filter_properties({'id': lzma.FILTER_LZMA1})
-        self._comp = lzma.LZMACompressor(lzma.FORMAT_RAW, filters=[
-            lzma._decode_filter_properties(lzma.FILTER_LZMA1, props)
-        ])
-        return struct.pack('<BBH', 9, 4, len(props)) + props
-
-    def compress(self, data):
-        if self._comp is None:
-            return self._init() + self._comp.compress(data)
-        return self._comp.compress(data)
-
-    def flush(self):
-        if self._comp is None:
-            return self._init() + self._comp.flush()
-        return self._comp.flush()
+class _DeflateCompressorProxy:
+    def __new__(cls, compresslevel=None):
+        if compresslevel is not None:
+            return zlib.compressobj(compresslevel, zlib.DEFLATED, -15)
+        return zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, -15)
 
 
-class LZMADecompressor:
-
-    def __init__(self):
-        self._decomp = None
-        self._unconsumed = b''
-        self.eof = False
-
-    def decompress(self, data):
-        if self._decomp is None:
-            self._unconsumed += data
-            if len(self._unconsumed) <= 4:
-                return b''
-            psize, = struct.unpack('<H', self._unconsumed[2:4])
-            if len(self._unconsumed) <= 4 + psize:
-                return b''
-
-            self._decomp = lzma.LZMADecompressor(lzma.FORMAT_RAW, filters=[
-                lzma._decode_filter_properties(lzma.FILTER_LZMA1,
-                                               self._unconsumed[4:4 + psize])
-            ])
-            data = self._unconsumed[4 + psize:]
-            del self._unconsumed
-
-        result = self._decomp.decompress(data)
-        self.eof = self._decomp.eof
-        return result
+class _DeflateDecompressorProxy:
+    def __new__(cls):
+        return zlib.decompressobj(-15)
 
 
+class _OnDemandDeflateBase:
+    @staticmethod
+    def _load_and_register():
+        if not zlib:
+            raise UnknownCompressionError("Requires the (missing) zlib module.")
+        _register_compressor_impl(name="deflate",
+                                  compression_type=ZIP_DEFLATED,
+                                  compressor=_DeflateCompressorProxy,
+                                  decompressor=_DeflateDecompressorProxy,
+                                  override="stdlib",
+                                  is_stdlib=True,
+                                  appnote_version=DEFAULT_VERSION)
+        return zlib
+
+
+class _OnDemandDeflateCompressor(_OnDemandDeflateBase):
+    def __new__(cls, compresslevel=None):
+        cls._load_and_register()  # Replace this class or raise.
+        return _DeflateCompressorProxy(compresslevel)
+
+
+class _OnDemandDeflateDecompressor(_OnDemandDeflateBase):
+    def __new__(cls):
+        cls._load_and_register()  # Replace this class or raise.
+        return _DeflateDecompressorProxy()
+
+
+class _OnDemandBZ2Base:
+    @staticmethod
+    def _load_and_register():
+        try:
+            import bz2
+        except ImportError:
+            raise UnknownCompressionError("Requires the (missing) bz2 module.")
+        _register_compressor_impl(name="bzip2",
+                                  compression_type=ZIP_BZIP2,
+                                  compressor=bz2._ZipBZ2CompressorProxy,
+                                  decompressor=bz2._ZipBZ2Decompressor,
+                                  override="stdlib",
+                                  is_stdlib=True,
+                                  appnote_version=BZIP2_VERSION)
+        return bz2
+
+
+class _OnDemandBZ2Compressor(_OnDemandBZ2Base):
+    def __new__(cls, compresslevel=None):
+        bz2 = cls._load_and_register()  # Replace this class or raise.
+        return bz2._ZipBZ2CompressorProxy(compresslevel)
+
+
+class _OnDemandBZ2Decompressor(_OnDemandBZ2Base):
+    def __new__(cls):
+        bz2 = cls._load_and_register()  # Replace this class or raise.
+        return bz2._ZipBZ2Decompressor()
+
+
+class _OnDemandLZMABase:
+    @staticmethod
+    def _load_and_register():
+        try:
+            import lzma
+        except ImportError:
+            raise UnknownCompressionError("Requires the (missing) lzma module.")
+        _register_compressor_impl(
+                name="lzma",
+                compression_type=ZIP_LZMA,
+                compressor=lzma._ZipLZMACompressor,
+                decompressor=lzma._ZipLZMADecompressor,
+                override="stdlib",
+                is_stdlib=True,
+                appnote_version=LZMA_VERSION,
+                # Compressed data includes an end-of-stream (EOS) marker.
+                flag_bits=_MASK_COMPRESS_OPTION_1,
+        )
+        return lzma
+
+
+class _OnDemandLZMACompressor(_OnDemandLZMABase):
+    def __new__(cls, compresslevel=None):
+        lzma = cls._load_and_register()  # Replace this class or raise.
+        return lzma._ZipLZMACompressor(compresslevel)
+
+
+class _OnDemandLZMADecompressor(_OnDemandLZMABase):
+    def __new__(cls):
+        lzma = cls._load_and_register()  # Replace this class or raise.
+        return lzma._ZipLZMADecompressor()
+
+
+class AbstractCompressor(metaclass=abc.ABCMeta):
+    """Protocol like definition of what a compressor must implement."""
+    @abc.abstractmethod
+    def compress(self, data: bytes) -> bytes:
+        pass
+
+    @abc.abstractmethod
+    def flush(self) -> bytes:
+        pass
+
+
+class AbstractDecompressor(metaclass=abc.ABCMeta):
+    """Protocol like definition of what a decompressor must implement."""
+    @abc.abstractmethod
+    def decompress(self, /, data: bytes, max_length: int) -> bytes:
+        # Returns up to max_length decompressed bytes from the compressed data.
+        pass
+
+    @abc.abstractmethod
+    def flush(self) -> bytes:
+        # Returns any remaining decompressed bytes.
+        pass
+
+    @abc.abstractproperty
+    def eof(self) -> bool:
+        # True when the stream has been exhausted. For compressors lacking
+        # such a concept, always return False.
+        return False
+
+    # Optional attributes or properties that will be used when present:
+    #
+    #   needs_input: bool
+    #       True when no compressed data remains buffered internally.
+    #   unconsumed_tail: bytes
+    #       Compressed data fed into decompress() that was not consumed yet;
+    #       this will be re-fed into the decompress method potentially with
+    #       subsequent data appended to it.  This is the zlib Decompressor API;
+    #       not recommended.  Self buffering w/.needs_input is more sensible.
+
+
+@dataclasses.dataclass(eq=True, kw_only=True, slots=True)
+class _ZipCompressionMethod:
+    name: str
+    compression_method_id: int
+    # The compressor's single argument is compresslevel.
+    compressor: Callable[[None|int], AbstractCompressor]
+    decompressor: Callable[[], AbstractDecompressor]
+    is_stdlib: bool
+    flag_bits: int = 0
+
+
+# For updates to compressor_names, _compressors_by_appnote_4_4_5_method_id,
+# and _compression_method_id_to_version.
+_compressor_register_lock = threading.Lock()
+
+_compression_method_id_to_version = {
+    ZIP_STORED: DEFAULT_VERSION,
+    ZIP_DEFLATED: DEFAULT_VERSION,
+    ZIP_BZIP2: BZIP2_VERSION,
+    ZIP_LZMA: LZMA_VERSION,
+}
+
+# A mapping of pkware appnote 4.4.5 method id's to their name.
 compressor_names = {
     0: 'store',
     1: 'shrink',
@@ -723,63 +829,211 @@ compressor_names = {
     10: 'implode',
     12: 'bzip2',
     14: 'lzma',
+    16: 'cmpsc',
     18: 'terse',
     19: 'lz77',
+    93: 'zstandard',
+    94: 'mp3',
+    95: 'xz',
+    96: 'jpeg',
     97: 'wavpack',
     98: 'ppmd',
+    99: 'AE-x',
 }
+
+_compressors_by_appnote_4_4_5_method_id = {
+    ZIP_DEFLATED: _ZipCompressionMethod(
+            name='deflate',
+            compression_method_id=ZIP_DEFLATED,
+            compressor=_OnDemandDeflateCompressor,
+            decompressor=_OnDemandDeflateDecompressor,
+            is_stdlib=True,
+    ),
+    ZIP_BZIP2: _ZipCompressionMethod(
+            name='bzip2',
+            compression_method_id=ZIP_BZIP2,
+            compressor=_OnDemandBZ2Compressor,
+            decompressor=_OnDemandBZ2Decompressor,
+            is_stdlib=True,
+    ),
+    ZIP_LZMA: _ZipCompressionMethod(
+            name='lzma',
+            compression_method_id=ZIP_LZMA,
+            compressor=_OnDemandLZMACompressor,
+            decompressor=_OnDemandLZMADecompressor,
+            is_stdlib=True,
+            # Compressed data includes an end-of-stream (EOS) marker.
+            flag_bits=_MASK_COMPRESS_OPTION_1,
+    ),
+}
+
+
+def register_compressor(
+        name: str, *,
+        compression_type: int,
+        compressor,
+        decompressor,
+        override: str,
+        appnote_version: int = 63,
+        flag_bits: int = 0,
+):
+    """Registers a compression & decompression method with the zipfile module.
+
+    While Python's standard library supports some classic methods, there are
+    newer methods or even more performant implementations of existing ones.
+    This API allows third party providers of those to add them, or override
+    implementations.
+
+    *name* is a string name to identify the compression type as, used only for
+    informational purposes.
+
+    *compression_type* must be an integer compression method type as defined
+    in https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT section
+    "4.4.5 compression method"
+
+    *compressor* must be a callable taking a single compresslevel argument
+    and returning an instance implementing the AbstractCompressor API by
+    having compress and flush methods.  The compresslevel will always be
+    passed as None or the int value supplied to ZipFile API calls.
+
+    *decompressor* must be a callable returning an instance implementing the
+    AbstractDecompressor API by having decompress and flush methods.
+
+    *override*, controls when an error might be raised by this function if an
+    existing compressor matching *compression_type* is already registered.  In
+    all cases, if the compressor being registered matches the existing
+    registered compressor, no error will be raised.  A value of "never" means
+    always raise an error if a method is registered for the supplied
+    *compression_type*.  A value of "stdlib" means only raise an error if the
+    existing compressor was not provided by the Python standard library.  A
+    value of "always" means the new registration always succeeds and replaces
+    the existing registration, if any.
+
+    *appnote_version*, if specified, sets the minimum PKWare appnote standard
+    required for the compression format implemented as described in appnote
+    section "4.4.3".  The default of 63 indicates the last non-patch update to
+    the zip spec from 2006 (6.3.x).  Unless you are registering support for one
+    of the esoteric or ancient compression methods, stick with the default.
+
+    *flag_bits*, if specified, will be |= into the PKWare appnote section
+    "4.4.4 general purpose bit flag" in headers using this compression type.
+    It is uncommon to need this.
+
+    It is not possible to override *compression_type* ``ZIP_STORED``.
+
+    Raises RuntimeError when the registration would override an existing
+    compressor based on the ``override`` specification.
+    """
+    # User friendly parameter checking.
+    if not isinstance(name, str):
+        raise TypeError("name must be a str.")
+    if not isinstance(compression_type, int):
+        raise TypeError("compression_type must be an integer.")
+    if compression_type == ZIP_STORED:
+        raise RuntimeError("compression_type=ZIP_STORED is never overridable.")
+    if not callable(compressor):
+        raise TypeError("compressor must be callable.")
+    if not callable(decompressor):
+        raise TypeError("decompressor must be callable.")
+    if override not in {"always", "never", "stdlib"}:
+        raise ValueError('override must be "never", "stdlib", or "always".')
+    if flag_bits < 0 or flag_bits > 0xffff:
+        raise ValueError('flag_bits out of range.')
+
+    return _register_compressor_impl(
+            name, compression_type, compressor, decompressor, override, False,
+            appnote_version, flag_bits)
+
+
+def _register_compressor_impl(
+        name, compression_type, compressor, decompressor, override, is_stdlib,
+        appnote_version, flag_bits=0
+):
+    with _compressor_register_lock:
+        existing_compressor = _compressors_by_appnote_4_4_5_method_id.get(
+                compression_type, None)
+        new_compressor = _ZipCompressionMethod(
+                name=name,
+                compression_method_id=compression_type,
+                compressor=compressor,
+                decompressor=decompressor,
+                is_stdlib=is_stdlib,
+                flag_bits=flag_bits,
+        )
+        if existing_compressor and new_compressor != existing_compressor:
+            match override:
+                case "always":
+                    pass
+                case "stdlib":
+                    if not existing_compressor.is_stdlib:
+                        raise RuntimeError(
+                                "Not overriding non-stdlib "
+                                f"{existing_compressor=} for {name!r}.")
+                case "never":
+                    raise RuntimeError(
+                            f"Not overriding {existing_compressor=} "
+                            f"for {name!r}.")
+                case _:
+                    assert "unreachable"  # Our caller checked the values.
+        _compressors_by_appnote_4_4_5_method_id[compression_type] = new_compressor
+        compressor_names[compression_type] = name
+        _compression_method_id_to_version[compression_type] = appnote_version
+
+
+class _AlsoRuntimeError(abc.ABCMeta):
+    # RuntimeError was raised instead of NotImplementedError when stdlib
+    # compression modules were not found for a given compression method.  This
+    # allows our more specific exception to match both.  Just inheriting from
+    # both is not possible due to the Exception heirarchy.
+    def __instancecheck__(self, instance):
+        return instance in (RuntimeError, self.__class__)
+
+
+class UnknownCompressionError(NotImplementedError, metaclass=_AlsoRuntimeError):
+    """Raised when a zipfile compression method is unsupported."""
+
 
 def _check_compression(compression):
     if compression == ZIP_STORED:
         pass
     elif compression == ZIP_DEFLATED:
-        if not zlib:
-            raise RuntimeError(
-                "Compression requires the (missing) zlib module")
+        _OnDemandDeflateBase._load_and_register()  # raises when unavailable.
     elif compression == ZIP_BZIP2:
-        if not bz2:
-            raise RuntimeError(
-                "Compression requires the (missing) bz2 module")
+        _OnDemandBZ2Base._load_and_register()  # raises when unavailable.
     elif compression == ZIP_LZMA:
-        if not lzma:
-            raise RuntimeError(
-                "Compression requires the (missing) lzma module")
+        _OnDemandLZMABase._load_and_register()  # raises when unavailable.
+    elif compression not in _compressors_by_appnote_4_4_5_method_id:
+        raise UnknownCompressionError(f"Compression method {compression} "
+                                      "is not supported.")
     else:
-        raise NotImplementedError("That compression method is not supported")
+        # Check that instantiation succeeds to allow for third party dynamic
+        # ones like we use for our own OnDemand stdlib built-ins.
+        # This preserves when and where the exception gets raised.
+        zip_comp_method = _compressors_by_appnote_4_4_5_method_id[compression]
+        try:
+            zip_comp_method.compressor(None)
+        except Exception:
+            descr = compressor_names.get(compression)
+            raise UnknownCompressionError(
+                    "Could not construct a compressor for compression method "
+                    f"{compression}{f' ({descr})' if descr else ''}.")
 
 
 def _get_compressor(compress_type, compresslevel=None):
-    if compress_type == ZIP_DEFLATED:
-        if compresslevel is not None:
-            return zlib.compressobj(compresslevel, zlib.DEFLATED, -15)
-        return zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, -15)
-    elif compress_type == ZIP_BZIP2:
-        if compresslevel is not None:
-            return bz2.BZ2Compressor(compresslevel)
-        return bz2.BZ2Compressor()
-    # compresslevel is ignored for ZIP_LZMA
-    elif compress_type == ZIP_LZMA:
-        return LZMACompressor()
-    else:
-        return None
+    zip_method = _compressors_by_appnote_4_4_5_method_id.get(compress_type)
+    return zip_method.compressor(compresslevel) if zip_method else None
 
 
 def _get_decompressor(compress_type):
-    _check_compression(compress_type)
     if compress_type == ZIP_STORED:
         return None
-    elif compress_type == ZIP_DEFLATED:
-        return zlib.decompressobj(-15)
-    elif compress_type == ZIP_BZIP2:
-        return bz2.BZ2Decompressor()
-    elif compress_type == ZIP_LZMA:
-        return LZMADecompressor()
-    else:
-        descr = compressor_names.get(compress_type)
-        if descr:
-            raise NotImplementedError("compression type %d (%s)" % (compress_type, descr))
-        else:
-            raise NotImplementedError("compression type %d" % (compress_type,))
+    zip_method = _compressors_by_appnote_4_4_5_method_id.get(compress_type)
+    if zip_method:
+        return zip_method.decompressor()
+    descr = compressor_names.get(compress_type)
+    raise UnknownCompressionError(
+            "compression method "
+            f"{compress_type}{f' ({descr})' if descr else ''}.")
 
 
 class _SharedFile:
@@ -1056,27 +1310,27 @@ class ZipExtFile(io.BufferedIOBase):
             return b''
 
         # Read from file.
-        if self._compress_type == ZIP_DEFLATED:
-            ## Handle unconsumed data.
-            data = self._decompressor.unconsumed_tail
+        if (data := getattr(self._decompressor, 'unconsumed_tail', b'')):
+            # Handle unconsumed data if the decompressor requires it (zlib).
             if n > len(data):
                 data += self._read2(n - len(data))
         else:
-            data = self._read2(n)
+            # bz2 & lzma offer .needs_input instead of .unconsumed_tail.
+            if getattr(self._decompressor, 'needs_input', True):
+                data = self._read2(n)
 
         if self._compress_type == ZIP_STORED:
             self._eof = self._compress_left <= 0
-        elif self._compress_type == ZIP_DEFLATED:
+        else:
             n = max(n, self.MIN_READ_SIZE)
             data = self._decompressor.decompress(data, n)
-            self._eof = (self._decompressor.eof or
-                         self._compress_left <= 0 and
-                         not self._decompressor.unconsumed_tail)
+            self._eof = (
+                    self._decompressor.eof or
+                    self._compress_left <= 0 and
+                    not getattr(self._decompressor, 'unconsumed_tail', b'')
+            )
             if self._eof:
                 data += self._decompressor.flush()
-        else:
-            data = self._decompressor.decompress(data)
-            self._eof = self._decompressor.eof or self._compress_left <= 0
 
         data = data[:self._left]
         self._left -= len(data)
@@ -1186,12 +1440,11 @@ class ZipExtFile(io.BufferedIOBase):
 
 
 class _ZipWriteFile(io.BufferedIOBase):
-    def __init__(self, zf, zinfo, zip64):
+    def __init__(self, zf, zinfo, zip64, compressor):
         self._zinfo = zinfo
         self._zip64 = zip64
         self._zipfile = zf
-        self._compressor = _get_compressor(zinfo.compress_type,
-                                           zinfo._compresslevel)
+        self._compressor = compressor
         self._file_size = 0
         self._compress_size = 0
         self._crc = 0
@@ -1268,9 +1521,8 @@ class _ZipWriteFile(io.BufferedIOBase):
             self._zipfile._writing = False
 
 
-
 class ZipFile:
-    """ Class with methods to open, read, write, close, list zip files.
+    """Class with methods to open, read, write, close, list zip files.
 
     z = ZipFile(file, mode="r", compression=ZIP_STORED, allowZip64=True,
                 compresslevel=None)
@@ -1280,16 +1532,16 @@ class ZipFile:
     mode: The mode can be either read 'r', write 'w', exclusive create 'x',
           or append 'a'.
     compression: ZIP_STORED (no compression), ZIP_DEFLATED (requires zlib),
-                 ZIP_BZIP2 (requires bz2) or ZIP_LZMA (requires lzma).
+                 ZIP_BZIP2 (requires bz2), ZIP_LZMA (requires lzma), or other
+                 compression types registered using register_compressor().
     allowZip64: if True ZipFile will create files with ZIP64 extensions when
                 needed, otherwise it will raise an exception when this would
                 be necessary.
     compresslevel: None (default for the given compression type) or an integer
                    specifying the level to pass to the compressor.
-                   When using ZIP_STORED or ZIP_LZMA this keyword has no effect.
+                   When using ZIP_STORED or ZIP_LZMA this value has no effect.
                    When using ZIP_DEFLATED integers 0 through 9 are accepted.
                    When using ZIP_BZIP2 integers 1 through 9 are accepted.
-
     """
 
     fp = None                   # Set here since __del__ checks it
@@ -1685,14 +1937,18 @@ class ZipFile:
                              "another write handle open on it. "
                              "Close the first handle before opening another.")
 
+        # Do this before modifying any state in-case we cannot get a compressor.
+        compressor = _get_compressor(zinfo.compress_type, zinfo._compresslevel)
+
         # Size and CRC are overwritten with correct data after processing the file
         zinfo.compress_size = 0
         zinfo.CRC = 0
 
-        zinfo.flag_bits = 0x00
-        if zinfo.compress_type == ZIP_LZMA:
-            # Compressed data includes an end-of-stream (EOS) marker
-            zinfo.flag_bits |= _MASK_COMPRESS_OPTION_1
+        if zinfo.compress_type == ZIP_STORED:
+            zinfo.flag_bits = 0
+        else:
+            zinfo.flag_bits = _compressors_by_appnote_4_4_5_method_id[
+                    zinfo.compress_type].flag_bits
         if not self._seekable:
             zinfo.flag_bits |= _MASK_USE_DATA_DESCRIPTOR
 
@@ -1714,7 +1970,7 @@ class ZipFile:
         self.fp.write(zinfo.FileHeader(zip64))
 
         self._writing = True
-        return _ZipWriteFile(self, zinfo, zip64)
+        return _ZipWriteFile(self, zinfo, zip64, compressor)
 
     def extract(self, member, path=None, pwd=None):
         """Extract a member from the archive to the current working directory,
@@ -1926,9 +2182,9 @@ class ZipFile:
             if self._seekable:
                 self.fp.seek(self.start_dir)
             zinfo.header_offset = self.fp.tell()  # Start of header bytes
-            if zinfo.compress_type == ZIP_LZMA:
-            # Compressed data includes an end-of-stream (EOS) marker
-                zinfo.flag_bits |= _MASK_COMPRESS_OPTION_1
+            if zinfo.compress_type != ZIP_STORED:
+                zinfo.flag_bits |= _compressors_by_appnote_4_4_5_method_id[
+                    zinfo.compress_type].flag_bits
 
             self._writecheck(zinfo)
             self._didModify = True
@@ -1997,10 +2253,9 @@ class ZipFile:
 
                 min_version = ZIP64_VERSION
 
-            if zinfo.compress_type == ZIP_BZIP2:
-                min_version = max(BZIP2_VERSION, min_version)
-            elif zinfo.compress_type == ZIP_LZMA:
-                min_version = max(LZMA_VERSION, min_version)
+            c_ver = _compression_method_id_to_version.get(zinfo.compress_type)
+            if c_ver:
+                min_version = max(c_ver, min_version)
 
             extract_version = max(min_version, zinfo.extract_version)
             create_version = max(min_version, zinfo.create_version)

@@ -342,3 +342,30 @@ def decompress(data):
                              "end-of-stream marker was reached")
         data = decomp.unused_data
     return b"".join(results)
+
+
+# For use by zipfile.register_compressor().
+class _ZipBZ2CompressorProxy:
+    def __new__(cls, compresslevel=None):
+        if compresslevel is not None:
+            return BZ2Compressor(compresslevel)
+        return BZ2Compressor()
+
+
+class _ZipBZ2Decompressor:
+    def __init__(self):
+        self._decomp = BZ2Decompressor()
+        self.decompress = self._decomp.decompress
+
+    @property
+    def eof(self):
+        return self._decomp.eof
+
+    @property
+    def needs_input(self):
+        return self._decomp.needs_input
+
+    def flush(self):
+        if not self._decomp.eof and not self._decomp.needs_input:
+            return self.decompress(b'')
+        return b''
