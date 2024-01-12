@@ -1,0 +1,1 @@
+Speed up Counter.__eq__ by up to 8x.
