@@ -68,7 +68,7 @@ static size_t jump;
 static uint16_t invert, counter, index, hint;
 #define unused 0  // Used in a macro def, can't be static
 static uint32_t type_version;
-static _PyUOpExecutorObject *current_executor;
+static _PyExecutorObject *current_executor;
 
 static PyObject *
 dummy_func(
@@ -2369,10 +2369,10 @@ dummy_func(
             CHECK_EVAL_BREAKER();
 
             PyCodeObject *code = _PyFrame_GetCode(frame);
-            _PyExecutorObject *executor = (_PyExecutorObject *)code->co_executors->executors[oparg&255];
+            _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
             if (executor->vm_data.valid) {
                 Py_INCREF(executor);
-                current_executor = (_PyUOpExecutorObject *)executor;
+                current_executor = executor;
                 GOTO_TIER_TWO();
             }
             else {
@@ -4063,7 +4063,7 @@ dummy_func(
 
         op(_CHECK_VALIDITY, (--)) {
             TIER_TWO_ONLY
-            DEOPT_IF(!current_executor->base.vm_data.valid);
+            DEOPT_IF(!current_executor->vm_data.valid);
         }
 
         op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
