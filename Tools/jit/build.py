@@ -631,7 +631,7 @@ def dump_stencil(opname: str, group: StencilGroup) -> typing.Iterator[str]:
             size = len(stencil.body) + 1
             yield f"static const unsigned char {opname}_{part}_body[{size}] = {{"
             for i in range(0, len(stencil.body), 8):
-                row = " ".join(f"{byte:#02x}," for byte in stencil.body[i : i + 8])
+                row = " ".join(f"{byte:#04x}," for byte in stencil.body[i : i + 8])
                 yield f"    {row}"
             yield "};"
         else:
