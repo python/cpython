@@ -629,9 +629,12 @@ def dump(stencil_groups: dict[str, StencilGroup]) -> typing.Iterator[str]:
         assert stencil.code
         for line in stencil.code.disassembly:
             yield f"// {line}"
-        body = ", ".join(f"0x{byte:02x}" for byte in stencil.code.body)
         size = len(stencil.code.body) + 1
-        yield f"static const unsigned char {opname}_code_body[{size}] = {{{body}}};"
+        yield f"static const unsigned char {opname}_code_body[{size}] = {{"
+        for i in range(0, len(stencil.code.body), 8):
+            row = " ".join(f"0x{byte:02x}," for byte in stencil.code.body[i : i + 8])
+            yield f"    {row}"
+        yield "};"
         if stencil.code.holes:
             size = len(stencil.code.holes) + 1
             yield f"static const Hole {opname}_code_holes[{size}] = {{"
@@ -649,10 +652,15 @@ def dump(stencil_groups: dict[str, StencilGroup]) -> typing.Iterator[str]:
             yield f"static const Hole {opname}_code_holes[1];"
         for line in stencil.data.disassembly:
             yield f"// {line}"
-        body = ", ".join(f"0x{byte:02x}" for byte in stencil.data.body)
         if stencil.data.body:
             size = len(stencil.data.body) + 1
-            yield f"static const unsigned char {opname}_data_body[{size}] = {{{body}}};"
+            yield f"static const unsigned char {opname}_data_body[{size}] = {{"
+            for i in range(0, len(stencil.data.body), 8):
+                row = " ".join(
+                    f"0x{byte:02x}," for byte in stencil.data.body[i : i + 8]
+                )
+                yield f"    {row}"
+            yield "};"
         else:
             yield f"static const unsigned char {opname}_data_body[1];"
         if stencil.data.holes:
