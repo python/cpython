@@ -1933,6 +1933,7 @@ set_issuperset_impl(PySetObject *so, PyObject *other)
     Py_RETURN_TRUE;
 }
 
+// TODO: Make thread-safe in free-threaded builds
 static PyObject *
 set_richcompare(PySetObject *v, PyObject *w, int op)
 {
@@ -2483,6 +2484,7 @@ PySet_Add(PyObject *anyset, PyObject *key)
     return set_add_key((PySetObject *)anyset, key);
 }
 
+// TODO: Make thread-safe in free-threaded builds
 int
 _PySet_NextEntry(PyObject *set, Py_ssize_t *pos, PyObject **key, Py_hash_t *hash)
 {
