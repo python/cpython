@@ -18,15 +18,14 @@
 .. note::
 
    The Python runtime does not enforce function and variable type annotations.
-   They can be used by third party tools such as type checkers, IDEs, linters,
-   etc.
+   They can be used by third party tools such as :term:`type checkers <static type checker>`,
+   IDEs, linters, etc.
 
 --------------
 
-This module provides runtime support for type hints. The most fundamental
-support consists of the types :data:`Any`, :data:`Union`, :data:`Callable`,
-:class:`TypeVar`, and :class:`Generic`. For a specification, please see
-:pep:`484`. For a simplified introduction to type hints, see :pep:`483`.
+This module provides runtime support for type hints. For the original
+specification of the typing system, see :pep:`484`. For a simplified
+introduction to type hints, see :pep:`483`.
 
 
 The function below takes and returns a string and is annotated as follows::
@@ -47,16 +46,18 @@ For a summary of deprecated features and a deprecation timeline, please see
 
 .. seealso::
 
-   For a quick overview of type hints, refer to
-   `this cheat sheet <https://mypy.readthedocs.io/en/stable/cheat_sheet_py3.html>`_.
+   `"Typing cheat sheet" <https://mypy.readthedocs.io/en/stable/cheat_sheet_py3.html>`_
+       A quick overview of type hints (hosted at the mypy docs)
 
-   The "Type System Reference" section of https://mypy.readthedocs.io/ -- since
-   the Python typing system is standardised via PEPs, this reference should
-   broadly apply to most Python type checkers, although some parts may still be
-   specific to mypy.
+   "Type System Reference" section of `the mypy docs <https://mypy.readthedocs.io/en/stable/index.html>`_
+      The Python typing system is standardised via PEPs, so this reference
+      should broadly apply to most Python type checkers. (Some parts may still
+      be specific to mypy.)
 
-   The documentation at https://typing.readthedocs.io/ serves as useful reference
-   for type system features, useful typing related tools and typing best practices.
+   `"Static Typing with Python" <https://typing.readthedocs.io/en/latest/>`_
+      Type-checker-agnostic documentation written by the community detailing
+      type system features, useful typing related tools and typing best
+      practices.
 
 .. _relevant-peps:
 
@@ -158,9 +159,6 @@ Type aliases are useful for simplifying complex type signatures. For example::
            servers: Sequence[tuple[tuple[str, int], dict[str, str]]]) -> None:
        ...
 
-Note that ``None`` as a type hint is a special case and is replaced by
-``type(None)``.
-
 The :keyword:`type` statement is new in Python 3.12. For backwards
 compatibility, type aliases can also be created through simple assignment::
 
@@ -260,18 +258,21 @@ See :pep:`484` for more details.
    The performance of calling ``NewType`` has been restored to its level in
    Python 3.9.
 
+.. _annotating-callables:
 
-Callable
-========
+Annotating callable objects
+===========================
 
-Frameworks expecting callback functions of specific signatures might be
-type hinted using ``Callable[[Arg1Type, Arg2Type], ReturnType]``.
+Functions -- or other :term:`callable` objects -- can be annotated using
+:class:`collections.abc.Callable` or :data:`typing.Callable`.
+``Callable[[int], str]`` signifies a function that takes a single parameter
+of type :class:`int` and returns a :class:`str`.
 
 For example:
 
 .. testcode::
 
-   from collections.abc import Callable
+   from collections.abc import Callable, Awaitable
 
    def feeder(get_next_item: Callable[[], str]) -> None:
        ...  # Body
@@ -285,9 +286,49 @@ For example:
 
    callback: Callable[[str], Awaitable[None]] = on_update
 
-It is possible to declare the return type of a callable without specifying
-the call signature by substituting a literal ellipsis
-for the list of arguments in the type hint: ``Callable[..., ReturnType]``.
+The subscription syntax must always be used with exactly two values: the
+argument list and the return type.  The argument list must be a list of types,
+a :class:`ParamSpec`, :data:`Concatenate`, or an ellipsis. The return type must
+be a single type.
+
+If a literal ellipsis ``...`` is given as the argument list, it indicates that
+a callable with any arbitrary parameter list would be acceptable:
+
+.. testcode::
+
+   def concat(x: str, y: str) -> str:
+       return x + y
+
+   x: Callable[..., str]
+   x = str     # OK
+   x = concat  # Also OK
+
+``Callable`` cannot express complex signatures such as functions that take a
+variadic number of arguments, :ref:`overloaded functions <overload>`, or
+functions that have keyword-only parameters. However, these signatures can be
+expressed by defining a :class:`Protocol` class with a
+:meth:`~object.__call__` method:
+
+.. testcode::
+
+   from collections.abc import Iterable
+   from typing import Protocol
+
+   class Combiner(Protocol):
+       def __call__(self, *vals: bytes, maxlen: int | None = None) -> list[bytes]: ...
+
+   def batch_proc(data: Iterable[bytes], cb_results: Combiner) -> bytes:
+       for item in data:
+           ...
+
+   def good_cb(*vals: bytes, maxlen: int | None = None) -> list[bytes]:
+       ...
+   def bad_cb(*vals: bytes, maxitems: int | None) -> list[bytes]:
+       ...
+
+   batch_proc([], good_cb)  # OK
+   batch_proc([], bad_cb)   # Error! Argument 2 has incompatible type because of
+                            # different name and kind in the callback
 
 Callables which take other callables as arguments may indicate that their
 parameter types are dependent on each other using :class:`ParamSpec`.
@@ -348,6 +389,114 @@ Or by using the :class:`TypeVar` factory directly::
 .. versionchanged:: 3.12
    Syntactic support for generics is new in Python 3.12.
 
+.. _annotating-tuples:
+
+Annotating tuples
+=================
+
+For most containers in Python, the typing system assumes that all elements in
+the container will be of the same type. For example::
+
+   from collections.abc import Mapping
+
+   # Type checker will infer that all elements in ``x`` are meant to be ints
+   x: list[int] = []
+
+   # Type checker error: ``list`` only accepts a single type argument:
+   y: list[int, str] = [1, 'foo']
+
+   # Type checker will infer that all keys in ``z`` are meant to be strings,
+   # and that all values in ``z`` are meant to be either strings or ints
+   z: Mapping[str, str | int] = {}
+
+:class:`list` only accepts one type argument, so a type checker would emit an
+error on the ``y`` assignment above. Similarly,
+:class:`~collections.abc.Mapping` only accepts two type arguments: the first
+indicates the type of the keys, and the second indicates the type of the
+values.
+
+Unlike most other Python containers, however, it is common in idiomatic Python
+code for tuples to have elements which are not all of the same type. For this
+reason, tuples are special-cased in Python's typing system. :class:`tuple`
+accepts *any number* of type arguments::
+
+   # OK: ``x`` is assigned to a tuple of length 1 where the sole element is an int
+   x: tuple[int] = (5,)
+
+   # OK: ``y`` is assigned to a tuple of length 2;
+   # element 1 is an int, element 2 is a str
+   y: tuple[int, str] = (5, "foo")
+
+   # Error: the type annotation indicates a tuple of length 1,
+   # but ``z`` has been assigned to a tuple of length 3
+   z: tuple[int] = (1, 2, 3)
+
+To denote a tuple which could be of *any* length, and in which all elements are
+of the same type ``T``, use ``tuple[T, ...]``. To denote an empty tuple, use
+``tuple[()]``. Using plain ``tuple`` as an annotation is equivalent to using
+``tuple[Any, ...]``::
+
+   x: tuple[int, ...] = (1, 2)
+   # These reassignments are OK: ``tuple[int, ...]`` indicates x can be of any length
+   x = (1, 2, 3)
+   x = ()
+   # This reassignment is an error: all elements in ``x`` must be ints
+   x = ("foo", "bar")
+
+   # ``y`` can only ever be assigned to an empty tuple
+   y: tuple[()] = ()
+
+   z: tuple = ("foo", "bar")
+   # These reassignments are OK: plain ``tuple`` is equivalent to ``tuple[Any, ...]``
+   z = (1, 2, 3)
+   z = ()
+
+.. _type-of-class-objects:
+
+The type of class objects
+=========================
+
+A variable annotated with ``C`` may accept a value of type ``C``. In
+contrast, a variable annotated with ``type[C]`` (or
+:class:`typing.Type[C] <Type>`) may accept values that are classes
+themselves -- specifically, it will accept the *class object* of ``C``. For
+example::
+
+   a = 3         # Has type ``int``
+   b = int       # Has type ``type[int]``
+   c = type(a)   # Also has type ``type[int]``
+
+Note that ``type[C]`` is covariant::
+
+   class User: ...
+   class ProUser(User): ...
+   class TeamUser(User): ...
+
+   def make_new_user(user_class: type[User]) -> User:
+       # ...
+       return user_class()
+
+   make_new_user(User)      # OK
+   make_new_user(ProUser)   # Also OK: ``type[ProUser]`` is a subtype of ``type[User]``
+   make_new_user(TeamUser)  # Still fine
+   make_new_user(User())    # Error: expected ``type[User]`` but got ``User``
+   make_new_user(int)       # Error: ``type[int]`` is not a subtype of ``type[User]``
+
+The only legal parameters for :class:`type` are classes, :data:`Any`,
+:ref:`type variables <generics>`, and unions of any of these types.
+For example::
+
+   def new_non_team_user(user_class: type[BasicUser | ProUser]): ...
+
+   new_non_team_user(BasicUser)  # OK
+   new_non_team_user(ProUser)    # OK
+   new_non_team_user(TeamUser)   # Error: ``type[TeamUser]`` is not a subtype
+                                 # of ``type[BasicUser | ProUser]``
+   new_non_team_user(User)       # Also an error
+
+``type[Any]`` is equivalent to :class:`type`, which is the root of Python's
+:ref:`metaclass hierarchy <metaclasses>`.
+
 .. _user-defined-generics:
 
 User-defined generic types
@@ -377,7 +526,7 @@ A user-defined class can be defined as a generic class.
            self.logger.info('%s: %s', self.name, message)
 
 This syntax indicates that the class ``LoggedVar`` is parameterised around a
-single :class:`type variable <TypeVar>` ``T`` . This also makes ``T`` valid as
+single :ref:`type variable <typevar>` ``T`` . This also makes ``T`` valid as
 a type within the class body.
 
 Generic classes implicitly inherit from :class:`Generic`. For compatibility
@@ -657,25 +806,7 @@ can define new custom protocols to fully enjoy structural subtyping
 Module contents
 ===============
 
-The module defines the following classes, functions and decorators.
-
-.. note::
-
-   This module defines several deprecated aliases to pre-existing
-   standard library classes. These were originally included in the typing
-   module in order to support parameterizing these generic classes using ``[]``.
-   However, the aliases became redundant in Python 3.9 when the
-   corresponding pre-existing classes were enhanced to support ``[]``.
-
-   The redundant types are deprecated as of Python 3.9 but no
-   deprecation warnings are issued by the interpreter.
-   It is expected that type checkers will flag the deprecated types
-   when the checked program targets Python 3.9 or newer.
-
-   The deprecated types will be removed from the :mod:`typing` module
-   no sooner than the first Python version released 5 years after the release of Python 3.9.0.
-   See details in :pep:`585`—*Type Hinting Generics In Standard Collections*.
-
+The ``typing`` module defines the following classes, functions and decorators.
 
 Special typing primitives
 -------------------------
@@ -683,7 +814,8 @@ Special typing primitives
 Special types
 """""""""""""
 
-These can be used as types in annotations and do not support ``[]``.
+These can be used as types in annotations. They do not support subscription
+using ``[]``.
 
 .. data:: Any
 
@@ -699,24 +831,56 @@ These can be used as types in annotations and do not support ``[]``.
 
 .. data:: AnyStr
 
-   ``AnyStr`` is a :ref:`constrained type variable <typing-constrained-typevar>` defined as
-   ``AnyStr = TypeVar('AnyStr', str, bytes)``.
+   A :ref:`constrained type variable <typing-constrained-typevar>`.
 
-   It is meant to be used for functions that may accept any kind of string
-   without allowing different kinds of strings to mix. For example::
+   Definition::
+
+      AnyStr = TypeVar('AnyStr', str, bytes)
+
+   ``AnyStr`` is meant to be used for functions that may accept :class:`str` or
+   :class:`bytes` arguments but cannot allow the two to mix.
+
+   For example::
 
       def concat(a: AnyStr, b: AnyStr) -> AnyStr:
           return a + b
 
-      concat(u"foo", u"bar")  # Ok, output has type 'unicode'
-      concat(b"foo", b"bar")  # Ok, output has type 'bytes'
-      concat(u"foo", b"bar")  # Error, cannot mix unicode and bytes
+      concat("foo", "bar")    # OK, output has type 'str'
+      concat(b"foo", b"bar")  # OK, output has type 'bytes'
+      concat("foo", b"bar")   # Error, cannot mix str and bytes
+
+   Note that, despite its name, ``AnyStr`` has nothing to do with the
+   :class:`Any` type, nor does it mean "any string". In particular, ``AnyStr``
+   and ``str | bytes`` are different from each other and have different use
+   cases::
+
+      # Invalid use of AnyStr:
+      # The type variable is used only once in the function signature,
+      # so cannot be "solved" by the type checker
+      def greet_bad(cond: bool) -> AnyStr:
+          return "hi there!" if cond else b"greetings!"
+
+      # The better way of annotating this function:
+      def greet_proper(cond: bool) -> str | bytes:
+          return "hi there!" if cond else b"greetings!"
+
+   .. deprecated-removed:: 3.13 3.18
+      Deprecated in favor of the new :ref:`type parameter syntax <type-params>`.
+      Use ``class A[T: (str, bytes)]: ...`` instead of importing ``AnyStr``. See
+      :pep:`695` for more details.
+
+      In Python 3.16, ``AnyStr`` will be removed from ``typing.__all__``, and
+      deprecation warnings will be emitted at runtime when it is accessed or
+      imported from ``typing``. ``AnyStr`` will be removed from ``typing``
+      in Python 3.18.
 
 .. data:: LiteralString
 
-   Special type that includes only literal strings. A string
+   Special type that includes only literal strings.
+
+   Any string
    literal is compatible with ``LiteralString``, as is another
-   ``LiteralString``, but an object typed as just ``str`` is not.
+   ``LiteralString``. However, an object typed as just ``str`` is not.
    A string created by composing ``LiteralString``-typed objects
    is also acceptable as a ``LiteralString``.
 
@@ -728,15 +892,15 @@ These can be used as types in annotations and do not support ``[]``.
           ...
 
       def caller(arbitrary_string: str, literal_string: LiteralString) -> None:
-          run_query("SELECT * FROM students")  # ok
-          run_query(literal_string)  # ok
-          run_query("SELECT * FROM " + literal_string)  # ok
+          run_query("SELECT * FROM students")  # OK
+          run_query(literal_string)  # OK
+          run_query("SELECT * FROM " + literal_string)  # OK
           run_query(arbitrary_string)  # type checker error
           run_query(  # type checker error
               f"SELECT * FROM students WHERE name = {arbitrary_string}"
           )
 
-   This is useful for sensitive APIs where arbitrary user-generated
+   ``LiteralString`` is useful for sensitive APIs where arbitrary user-generated
    strings could generate problems. For example, the two cases above
    that generate type checker errors could be vulnerable to an SQL
    injection attack.
@@ -766,7 +930,7 @@ These can be used as types in annotations and do not support ``[]``.
               case str():
                   print("It's a str")
               case _:
-                  never_call_me(arg)  # ok, arg is of type Never
+                  never_call_me(arg)  # OK, arg is of type Never
 
    .. versionadded:: 3.11
 
@@ -776,6 +940,7 @@ These can be used as types in annotations and do not support ``[]``.
 .. data:: NoReturn
 
    Special type indicating that a function never returns.
+
    For example::
 
       from typing import NoReturn
@@ -795,15 +960,20 @@ These can be used as types in annotations and do not support ``[]``.
 .. data:: Self
 
    Special type to represent the current enclosed class.
+
    For example::
 
-      from typing import Self
+      from typing import Self, reveal_type
 
       class Foo:
           def return_self(self) -> Self:
               ...
               return self
 
+      class SubclassOfFoo(Foo): pass
+
+      reveal_type(Foo().return_self())  # Revealed type is "Foo"
+      reveal_type(SubclassOfFoo().return_self())  # Revealed type is "SubclassOfFoo"
 
    This annotation is semantically equivalent to the following,
    albeit in a more succinct fashion::
@@ -817,21 +987,28 @@ These can be used as types in annotations and do not support ``[]``.
               ...
               return self
 
-   In general if something currently follows the pattern of::
-
-      class Foo:
-          def return_self(self) -> "Foo":
-              ...
-              return self
-
-   You should use :data:`Self` as calls to ``SubclassOfFoo.return_self`` would have
-   ``Foo`` as the return type and not ``SubclassOfFoo``.
+   In general, if something returns ``self``, as in the above examples, you
+   should use ``Self`` as the return annotation. If ``Foo.return_self`` was
+   annotated as returning ``"Foo"``, then the type checker would infer the
+   object returned from ``SubclassOfFoo.return_self`` as being of type ``Foo``
+   rather than ``SubclassOfFoo``.
 
    Other common use cases include:
 
    - :class:`classmethod`\s that are used as alternative constructors and return instances
      of the ``cls`` parameter.
    - Annotating an :meth:`~object.__enter__` method which returns self.
+
+   You should not use ``Self`` as the return annotation if the method is not
+   guaranteed to return an instance of a subclass when the class is
+   subclassed::
+
+      class Eggs:
+          # Self would be an incorrect return annotation here,
+          # as the object returned is always an instance of Eggs,
+          # even in subclasses
+          def returns_eggs(self) -> "Eggs":
+              return Eggs()
 
    See :pep:`673` for more details.
 
@@ -884,27 +1061,8 @@ These can be used as types in annotations and do not support ``[]``.
 Special forms
 """""""""""""
 
-These can be used as types in annotations using ``[]``, each having a unique syntax.
-
-.. data:: Tuple
-
-   Deprecated alias for :class:`tuple`.
-
-   ``Tuple[X, Y]`` is the type of a tuple of two items
-   with the first item of type X and the second of type Y. The type of
-   the empty tuple can be written as ``Tuple[()]``.
-
-   Example: ``Tuple[T1, T2]`` is a tuple of two elements corresponding
-   to type variables T1 and T2.  ``Tuple[int, float, str]`` is a tuple
-   of an int, a float and a string.
-
-   To specify a variable-length tuple of homogeneous type,
-   use literal ellipsis, e.g. ``Tuple[int, ...]``. A plain ``Tuple`` annotation
-   is equivalent to ``tuple``, ``Tuple[Any, ...]``, or ``tuple[Any, ...]``.
-
-   .. deprecated:: 3.9
-      :class:`builtins.tuple <tuple>` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
+These can be used as types in annotations. They all support subscription using
+``[]``, but each has a unique syntax.
 
 .. data:: Union
 
@@ -943,8 +1101,6 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
 .. data:: Optional
 
-   Optional type.
-
    ``Optional[X]`` is equivalent to ``X | None`` (or ``Union[X, None]``).
 
    Note that this is not the same concept as an optional argument,
@@ -966,53 +1122,16 @@ These can be used as types in annotations using ``[]``, each having a unique syn
       Optional can now be written as ``X | None``. See
       :ref:`union type expressions<types-union>`.
 
-.. data:: Callable
-
-   Deprecated alias to :class:`collections.abc.Callable`.
-
-   ``Callable[[int], str]`` signifies a function that takes a single parameter
-   of type :class:`int` and returns a :class:`str`.
-
-   The subscription syntax must always be used with exactly two
-   values: the argument list and the return type.  The argument list
-   must be a list of types, a :class:`ParamSpec`, :data:`Concatenate`,
-   or an ellipsis. The return type must be a single type.
-
-   There is no syntax to indicate optional or keyword arguments;
-   such function types are rarely used as callback types.
-   ``Callable[..., ReturnType]`` (literal ellipsis) can be used to
-   type hint a callable taking any number of arguments and returning
-   ``ReturnType``.  A plain :data:`Callable` is equivalent to
-   ``Callable[..., Any]``, and in turn to
-   :class:`collections.abc.Callable`.
-
-   Callables which take other callables as arguments may indicate that their
-   parameter types are dependent on each other using :class:`ParamSpec`.
-   Additionally, if that callable adds or removes arguments from other
-   callables, the :data:`Concatenate` operator may be used.  They
-   take the form ``Callable[ParamSpecVariable, ReturnType]`` and
-   ``Callable[Concatenate[Arg1Type, Arg2Type, ..., ParamSpecVariable], ReturnType]``
-   respectively.
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.Callable` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-   .. versionchanged:: 3.10
-      ``Callable`` now supports :class:`ParamSpec` and :data:`Concatenate`.
-      See :pep:`612` for more details.
-
-   .. seealso::
-      The documentation for :class:`ParamSpec` and :class:`Concatenate` provide
-      examples of usage with ``Callable``.
-
 .. data:: Concatenate
 
-   Used with :data:`Callable` and :class:`ParamSpec` to type annotate a higher
-   order callable which adds, removes, or transforms parameters of another
+   Special form for annotating higher-order functions.
+
+   ``Concatenate`` can be used in conjunction with :ref:`Callable <annotating-callables>` and
+   :class:`ParamSpec` to annotate a higher-order callable which adds, removes,
+   or transforms parameters of another
    callable.  Usage is in the form
    ``Concatenate[Arg1Type, Arg2Type, ..., ParamSpecVariable]``. ``Concatenate``
-   is currently only valid when used as the first argument to a :data:`Callable`.
+   is currently only valid when used as the first argument to a :ref:`Callable <annotating-callables>`.
    The last parameter to ``Concatenate`` must be a :class:`ParamSpec` or
    ellipsis (``...``).
 
@@ -1026,16 +1145,13 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
       from collections.abc import Callable
       from threading import Lock
-      from typing import Concatenate, ParamSpec, TypeVar
-
-      P = ParamSpec('P')
-      R = TypeVar('R')
+      from typing import Concatenate
 
       # Use this lock to ensure that only one thread is executing a function
       # at any time.
       my_lock = Lock()
 
-      def with_lock(f: Callable[Concatenate[Lock, P], R]) -> Callable[P, R]:
+      def with_lock[**P, R](f: Callable[Concatenate[Lock, P], R]) -> Callable[P, R]:
           '''A type-safe decorator which provides a lock.'''
           def inner(*args: P.args, **kwargs: P.kwargs) -> R:
               # Provide the lock as the first argument.
@@ -1056,72 +1172,28 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    .. seealso::
 
       * :pep:`612` -- Parameter Specification Variables (the PEP which introduced
-        ``ParamSpec`` and ``Concatenate``).
-      * :class:`ParamSpec` and :class:`Callable`.
-
-
-.. class:: Type(Generic[CT_co])
-
-   Deprecated alias to :class:`type`.
-
-   A variable annotated with ``C`` may accept a value of type ``C``. In
-   contrast, a variable annotated with ``type[C]`` or ``Type[C]`` may accept values that are
-   classes themselves -- specifically, it will accept the *class object* of
-   ``C``. For example::
-
-      a = 3         # Has type 'int'
-      b = int       # Has type 'Type[int]'
-      c = type(a)   # Also has type 'Type[int]'
-
-   Note that ``Type[C]`` is covariant::
-
-      class User: ...
-      class BasicUser(User): ...
-      class ProUser(User): ...
-      class TeamUser(User): ...
-
-      # Accepts User, BasicUser, ProUser, TeamUser, ...
-      def make_new_user(user_class: Type[User]) -> User:
-          # ...
-          return user_class()
-
-   The fact that ``Type[C]`` is covariant implies that all subclasses of
-   ``C`` should implement the same constructor signature and class method
-   signatures as ``C``. The type checker should flag violations of this,
-   but should also allow constructor calls in subclasses that match the
-   constructor calls in the indicated base class. How the type checker is
-   required to handle this particular case may change in future revisions of
-   :pep:`484`.
-
-   The only legal parameters for :class:`Type` are classes, :data:`Any`,
-   :ref:`type variables <generics>`, and unions of any of these types.
-   For example::
-
-      def new_non_team_user(user_class: Type[BasicUser | ProUser]): ...
-
-   ``Type[Any]`` is equivalent to ``Type`` which in turn is equivalent
-   to ``type``, which is the root of Python's metaclass hierarchy.
-
-   .. versionadded:: 3.5.2
-
-   .. deprecated:: 3.9
-      :class:`builtins.type <type>` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
+        ``ParamSpec`` and ``Concatenate``)
+      * :class:`ParamSpec`
+      * :ref:`annotating-callables`
 
 .. data:: Literal
 
-   A type that can be used to indicate to type checkers that the
-   corresponding variable or function parameter has a value equivalent to
-   the provided literal (or one of several literals). For example::
+   Special typing form to define "literal types".
+
+   ``Literal`` can be used to indicate to type checkers that the
+   annotated object has a value equivalent to one of the
+   provided literals.
+
+   For example::
 
       def validate_simple(data: Any) -> Literal[True]:  # always returns True
           ...
 
-      MODE = Literal['r', 'rb', 'w', 'wb']
-      def open_helper(file: str, mode: MODE) -> str:
+      type Mode = Literal['r', 'rb', 'w', 'wb']
+      def open_helper(file: str, mode: Mode) -> str:
           ...
 
-      open_helper('/some/path', 'r')  # Passes type check
+      open_helper('/some/path', 'r')      # Passes type check
       open_helper('/other/path', 'typo')  # Error in type checker
 
    ``Literal[...]`` cannot be subclassed. At runtime, an arbitrary value
@@ -1164,8 +1236,12 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
 .. data:: Final
 
-   A special typing construct to indicate to type checkers that a name
-   cannot be re-assigned or overridden in a subclass. For example::
+   Special typing construct to indicate final names to type checkers.
+
+   Final names cannot be reassigned in any scope. Final names declared in class
+   scopes cannot be overridden in subclasses.
+
+   For example::
 
       MAX_SIZE: Final = 9000
       MAX_SIZE += 1  # Error reported by type checker
@@ -1183,10 +1259,17 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
 .. data:: Required
 
+   Special typing construct to mark a :class:`TypedDict` key as required.
+
+   This is mainly useful for ``total=False`` TypedDicts. See :class:`TypedDict`
+   and :pep:`655` for more details.
+
+   .. versionadded:: 3.11
+
 .. data:: NotRequired
 
-   Special typing constructs that mark individual keys of a :class:`TypedDict`
-   as either required or non-required respectively.
+   Special typing construct to mark a :class:`TypedDict` key as potentially
+   missing.
 
    See :class:`TypedDict` and :pep:`655` for more details.
 
@@ -1215,7 +1298,7 @@ These can be used as types in annotations using ``[]``, each having a unique syn
    completely disables typechecking for a function or class.
 
    The responsibility of how to interpret the metadata
-   lies with the the tool or library encountering an
+   lies with the tool or library encountering an
    ``Annotated`` annotation. A tool or library encountering an ``Annotated`` type
    can scan through the metadata elements to determine if they are of interest
    (e.g., using :func:`isinstance`).
@@ -1335,7 +1418,9 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
 .. data:: TypeGuard
 
-   Special typing form used to annotate the return type of a user-defined
+   Special typing construct for marking user-defined type guard functions.
+
+   ``TypeGuard`` can be used to annotate the return type of a user-defined
    type guard function.  ``TypeGuard`` only accepts a single type argument.
    At runtime, functions marked this way should return a boolean.
 
@@ -1402,9 +1487,10 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 
 .. data:: Unpack
 
-   A typing operator that conceptually marks an object as having been
-   unpacked. For example, using the unpack operator ``*`` on a
-   :class:`type variable tuple <TypeVarTuple>` is equivalent to using ``Unpack``
+   Typing operator to conceptually mark an object as having been unpacked.
+
+   For example, using the unpack operator ``*`` on a
+   :ref:`type variable tuple <typevartuple>` is equivalent to using ``Unpack``
    to mark the type variable tuple as having been unpacked::
 
       Ts = TypeVarTuple('Ts')
@@ -1446,7 +1532,8 @@ These can be used as types in annotations using ``[]``, each having a unique syn
 Building generic types and type aliases
 """""""""""""""""""""""""""""""""""""""
 
-The following objects are not used directly in annotations. Instead, they are building blocks
+The following classes should not be used directly as annotations.
+Their intended purpose is to be building blocks
 for creating generic types and type aliases.
 
 These objects can be created through special syntax
@@ -1493,6 +1580,8 @@ without the dedicated syntax, as documented below.
           def __getitem__(self, key: KT) -> VT:
               ...
               # Etc.
+
+.. _typevar:
 
 .. class:: TypeVar(name, *constraints, bound=None, covariant=False, contravariant=False, infer_variance=False)
 
@@ -1638,9 +1727,11 @@ without the dedicated syntax, as documented below.
       :ref:`type parameter <type-params>` syntax introduced by :pep:`695`.
       The ``infer_variance`` parameter was added.
 
+.. _typevartuple:
+
 .. class:: TypeVarTuple(name)
 
-   Type variable tuple. A specialized form of :class:`type variable <TypeVar>`
+   Type variable tuple. A specialized form of :ref:`type variable <typevar>`
    that enables *variadic* generics.
 
    Type variable tuples can be declared in :ref:`type parameter lists <type-params>`
@@ -1758,7 +1849,7 @@ without the dedicated syntax, as documented below.
 .. class:: ParamSpec(name, *, bound=None, covariant=False, contravariant=False)
 
    Parameter specification variable.  A specialized version of
-   :class:`type variables <TypeVar>`.
+   :ref:`type variables <typevar>`.
 
    In :ref:`type parameter lists <type-params>`, parameter specifications
    can be declared with two asterisks (``**``)::
@@ -1843,8 +1934,9 @@ without the dedicated syntax, as documented below.
 
    .. seealso::
       * :pep:`612` -- Parameter Specification Variables (the PEP which introduced
-        ``ParamSpec`` and ``Concatenate``).
-      * :class:`Callable` and :class:`Concatenate`.
+        ``ParamSpec`` and ``Concatenate``)
+      * :data:`Concatenate`
+      * :ref:`annotating-callables`
 
 .. data:: ParamSpecArgs
 .. data:: ParamSpecKwargs
@@ -1855,11 +1947,16 @@ without the dedicated syntax, as documented below.
    for runtime introspection and have no special meaning to static type checkers.
 
    Calling :func:`get_origin` on either of these objects will return the
-   original ``ParamSpec``::
+   original ``ParamSpec``:
 
-      P = ParamSpec("P")
-      get_origin(P.args)  # returns P
-      get_origin(P.kwargs)  # returns P
+   .. doctest::
+
+      >>> from typing import ParamSpec, get_origin
+      >>> P = ParamSpec("P")
+      >>> get_origin(P.args) is P
+      True
+      >>> get_origin(P.kwargs) is P
+      True
 
    .. versionadded:: 3.10
 
@@ -1932,7 +2029,9 @@ without the dedicated syntax, as documented below.
 Other special directives
 """"""""""""""""""""""""
 
-These are not used in annotations. They are building blocks for declaring types.
+These functions and classes should not be used directly as annotations.
+Their intended purpose is to be building blocks for creating and declaring
+types.
 
 .. class:: NamedTuple
 
@@ -2008,15 +2107,30 @@ These are not used in annotations. They are building blocks for declaring types.
    .. versionchanged:: 3.11
       Added support for generic namedtuples.
 
+   .. deprecated-removed:: 3.13 3.15
+      The undocumented keyword argument syntax for creating NamedTuple classes
+      (``NT = NamedTuple("NT", x=int)``) is deprecated, and will be disallowed
+      in 3.15. Use the class-based syntax or the functional syntax instead.
+
+   .. deprecated-removed:: 3.13 3.15
+      When using the functional syntax to create a NamedTuple class, failing to
+      pass a value to the 'fields' parameter (``NT = NamedTuple("NT")``) is
+      deprecated. Passing ``None`` to the 'fields' parameter
+      (``NT = NamedTuple("NT", None)``) is also deprecated. Both will be
+      disallowed in Python 3.15. To create a NamedTuple class with 0 fields,
+      use ``class NT(NamedTuple): pass`` or ``NT = NamedTuple("NT", [])``.
+
 .. class:: NewType(name, tp)
 
-   A helper class to indicate a distinct type to a typechecker,
-   see :ref:`distinct`. At runtime it returns an object that returns
-   its argument when called.
+   Helper class to create low-overhead :ref:`distinct types <distinct>`.
+
+   A ``NewType`` is considered a distinct type by a typechecker. At runtime,
+   however, calling a ``NewType`` returns its argument unchanged.
+
    Usage::
 
-      UserId = NewType('UserId', int)
-      first_user = UserId(1)
+      UserId = NewType('UserId', int)  # Declare the NewType "UserId"
+      first_user = UserId(1)  # "UserId" returns the argument unchanged at runtime
 
    .. attribute:: __module__
 
@@ -2037,7 +2151,9 @@ These are not used in annotations. They are building blocks for declaring types.
 
 .. class:: Protocol(Generic)
 
-   Base class for protocol classes. Protocol classes are defined like this::
+   Base class for protocol classes.
+
+   Protocol classes are defined like this::
 
       class Proto(Protocol):
           def meth(self) -> int:
@@ -2105,7 +2221,7 @@ These are not used in annotations. They are building blocks for declaring types.
         methods or attributes, not their type signatures or types.
         For example, :class:`ssl.SSLObject`
         is a class, therefore it passes an :func:`issubclass`
-        check against :data:`Callable`.  However, the
+        check against :ref:`Callable <annotating-callables>`. However, the
         ``ssl.SSLObject.__init__`` method exists only to raise a
         :exc:`TypeError` with a more informative message, therefore making
         it impossible to call (instantiate) :class:`ssl.SSLObject`.
@@ -2250,9 +2366,6 @@ These are not used in annotations. They are building blocks for declaring types.
 
       class XZ(X, Z): pass  # raises TypeError
 
-      T = TypeVar('T')
-      class XT(X, Generic[T]): pass  # raises TypeError
-
    A ``TypedDict`` can be generic::
 
       class Group[T](TypedDict):
@@ -2292,6 +2405,13 @@ These are not used in annotations. They are building blocks for declaring types.
          >>> Point3D.__total__
          True
 
+      This attribute reflects *only* the value of the ``total`` argument
+      to the current ``TypedDict`` class, not whether the class is semantically
+      total. For example, a ``TypedDict`` with ``__total__`` set to True may
+      have keys marked with :data:`NotRequired`, or it may inherit from another
+      ``TypedDict`` with ``total=False``. Therefore, it is generally better to use
+      :attr:`__required_keys__` and :attr:`__optional_keys__` for introspection.
+
    .. attribute:: __required_keys__
 
       .. versionadded:: 3.9
@@ -2327,6 +2447,14 @@ These are not used in annotations. They are building blocks for declaring types.
 
       .. versionadded:: 3.9
 
+      .. note::
+
+         If ``from __future__ import annotations`` is used or if annotations
+         are given as strings, annotations are not evaluated when the
+         ``TypedDict`` is defined. Therefore, the runtime introspection that
+         ``__required_keys__`` and ``__optional_keys__`` rely on may not work
+         properly, and the values of the attributes may be incorrect.
+
    See :pep:`589` for more examples and detailed rules of using ``TypedDict``.
 
    .. versionadded:: 3.8
@@ -2341,11 +2469,717 @@ These are not used in annotations. They are building blocks for declaring types.
    .. versionchanged:: 3.13
       Removed support for the keyword-argument method of creating ``TypedDict``\ s.
 
-Generic concrete collections
-----------------------------
+   .. deprecated-removed:: 3.13 3.15
+      When using the functional syntax to create a TypedDict class, failing to
+      pass a value to the 'fields' parameter (``TD = TypedDict("TD")``) is
+      deprecated. Passing ``None`` to the 'fields' parameter
+      (``TD = TypedDict("TD", None)``) is also deprecated. Both will be
+      disallowed in Python 3.15. To create a TypedDict class with 0 fields,
+      use ``class TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``.
 
-Corresponding to built-in types
-"""""""""""""""""""""""""""""""
+Protocols
+---------
+
+The following protocols are provided by the typing module. All are decorated
+with :func:`@runtime_checkable <runtime_checkable>`.
+
+.. class:: SupportsAbs
+
+    An ABC with one abstract method ``__abs__`` that is covariant
+    in its return type.
+
+.. class:: SupportsBytes
+
+    An ABC with one abstract method ``__bytes__``.
+
+.. class:: SupportsComplex
+
+    An ABC with one abstract method ``__complex__``.
+
+.. class:: SupportsFloat
+
+    An ABC with one abstract method ``__float__``.
+
+.. class:: SupportsIndex
+
+    An ABC with one abstract method ``__index__``.
+
+    .. versionadded:: 3.8
+
+.. class:: SupportsInt
+
+    An ABC with one abstract method ``__int__``.
+
+.. class:: SupportsRound
+
+    An ABC with one abstract method ``__round__``
+    that is covariant in its return type.
+
+ABCs for working with IO
+------------------------
+
+.. class:: IO
+           TextIO
+           BinaryIO
+
+   Generic type ``IO[AnyStr]`` and its subclasses ``TextIO(IO[str])``
+   and ``BinaryIO(IO[bytes])``
+   represent the types of I/O streams such as returned by
+   :func:`open`.
+
+Functions and decorators
+------------------------
+
+.. function:: cast(typ, val)
+
+   Cast a value to a type.
+
+   This returns the value unchanged.  To the type checker this
+   signals that the return value has the designated type, but at
+   runtime we intentionally don't check anything (we want this
+   to be as fast as possible).
+
+.. function:: assert_type(val, typ, /)
+
+   Ask a static type checker to confirm that *val* has an inferred type of *typ*.
+
+   At runtime this does nothing: it returns the first argument unchanged with no
+   checks or side effects, no matter the actual type of the argument.
+
+   When a static type checker encounters a call to ``assert_type()``, it
+   emits an error if the value is not of the specified type::
+
+       def greet(name: str) -> None:
+           assert_type(name, str)  # OK, inferred type of `name` is `str`
+           assert_type(name, int)  # type checker error
+
+   This function is useful for ensuring the type checker's understanding of a
+   script is in line with the developer's intentions::
+
+       def complex_function(arg: object):
+           # Do some complex type-narrowing logic,
+           # after which we hope the inferred type will be `int`
+           ...
+           # Test whether the type checker correctly understands our function
+           assert_type(arg, int)
+
+   .. versionadded:: 3.11
+
+.. function:: assert_never(arg, /)
+
+   Ask a static type checker to confirm that a line of code is unreachable.
+
+   Example::
+
+       def int_or_str(arg: int | str) -> None:
+           match arg:
+               case int():
+                   print("It's an int")
+               case str():
+                   print("It's a str")
+               case _ as unreachable:
+                   assert_never(unreachable)
+
+   Here, the annotations allow the type checker to infer that the
+   last case can never execute, because ``arg`` is either
+   an :class:`int` or a :class:`str`, and both options are covered by
+   earlier cases.
+
+   If a type checker finds that a call to ``assert_never()`` is
+   reachable, it will emit an error. For example, if the type annotation
+   for ``arg`` was instead ``int | str | float``, the type checker would
+   emit an error pointing out that ``unreachable`` is of type :class:`float`.
+   For a call to ``assert_never`` to pass type checking, the inferred type of
+   the argument passed in must be the bottom type, :data:`Never`, and nothing
+   else.
+
+   At runtime, this throws an exception when called.
+
+   .. seealso::
+      `Unreachable Code and Exhaustiveness Checking
+      <https://typing.readthedocs.io/en/latest/source/unreachable.html>`__ has more
+      information about exhaustiveness checking with static typing.
+
+   .. versionadded:: 3.11
+
+.. function:: reveal_type(obj, /)
+
+   Ask a static type checker to reveal the inferred type of an expression.
+
+   When a static type checker encounters a call to this function,
+   it emits a diagnostic with the inferred type of the argument. For example::
+
+      x: int = 1
+      reveal_type(x)  # Revealed type is "builtins.int"
+
+   This can be useful when you want to debug how your type checker
+   handles a particular piece of code.
+
+   At runtime, this function prints the runtime type of its argument to
+   :data:`sys.stderr` and returns the argument unchanged (allowing the call to
+   be used within an expression)::
+
+      x = reveal_type(1)  # prints "Runtime type is int"
+      print(x)  # prints "1"
+
+   Note that the runtime type may be different from (more or less specific
+   than) the type statically inferred by a type checker.
+
+   Most type checkers support ``reveal_type()`` anywhere, even if the
+   name is not imported from ``typing``. Importing the name from
+   ``typing``, however, allows your code to run without runtime errors and
+   communicates intent more clearly.
+
+   .. versionadded:: 3.11
+
+.. decorator:: dataclass_transform(*, eq_default=True, order_default=False, \
+                                   kw_only_default=False, frozen_default=False, \
+                                   field_specifiers=(), **kwargs)
+
+   Decorator to mark an object as providing
+   :func:`dataclass <dataclasses.dataclass>`-like behavior.
+
+   ``dataclass_transform`` may be used to
+   decorate a class, metaclass, or a function that is itself a decorator.
+   The presence of ``@dataclass_transform()`` tells a static type checker that the
+   decorated object performs runtime "magic" that
+   transforms a class in a similar way to
+   :func:`@dataclasses.dataclass <dataclasses.dataclass>`.
+
+   Example usage with a decorator function:
+
+   .. testcode::
+
+      @dataclass_transform()
+      def create_model[T](cls: type[T]) -> type[T]:
+          ...
+          return cls
+
+      @create_model
+      class CustomerModel:
+          id: int
+          name: str
+
+   On a base class::
+
+      @dataclass_transform()
+      class ModelBase: ...
+
+      class CustomerModel(ModelBase):
+          id: int
+          name: str
+
+   On a metaclass::
+
+      @dataclass_transform()
+      class ModelMeta(type): ...
+
+      class ModelBase(metaclass=ModelMeta): ...
+
+      class CustomerModel(ModelBase):
+          id: int
+          name: str
+
+   The ``CustomerModel`` classes defined above will
+   be treated by type checkers similarly to classes created with
+   :func:`@dataclasses.dataclass <dataclasses.dataclass>`.
+   For example, type checkers will assume these classes have
+   ``__init__`` methods that accept ``id`` and ``name``.
+
+   The decorated class, metaclass, or function may accept the following bool
+   arguments which type checkers will assume have the same effect as they
+   would have on the
+   :func:`@dataclasses.dataclass<dataclasses.dataclass>` decorator: ``init``,
+   ``eq``, ``order``, ``unsafe_hash``, ``frozen``, ``match_args``,
+   ``kw_only``, and ``slots``. It must be possible for the value of these
+   arguments (``True`` or ``False``) to be statically evaluated.
+
+   The arguments to the ``dataclass_transform`` decorator can be used to
+   customize the default behaviors of the decorated class, metaclass, or
+   function:
+
+   :param bool eq_default:
+       Indicates whether the ``eq`` parameter is assumed to be
+       ``True`` or ``False`` if it is omitted by the caller.
+       Defaults to ``True``.
+
+   :param bool order_default:
+       Indicates whether the ``order`` parameter is
+       assumed to be ``True`` or ``False`` if it is omitted by the caller.
+       Defaults to ``False``.
+
+   :param bool kw_only_default:
+       Indicates whether the ``kw_only`` parameter is
+       assumed to be ``True`` or ``False`` if it is omitted by the caller.
+       Defaults to ``False``.
+
+   :param bool frozen_default:
+       Indicates whether the ``frozen`` parameter is
+       assumed to be ``True`` or ``False`` if it is omitted by the caller.
+       Defaults to ``False``.
+
+       .. versionadded:: 3.12
+
+   :param field_specifiers:
+       Specifies a static list of supported classes
+       or functions that describe fields, similar to :func:`dataclasses.field`.
+       Defaults to ``()``.
+   :type field_specifiers: tuple[Callable[..., Any], ...]
+
+   :param Any \**kwargs:
+       Arbitrary other keyword arguments are accepted in order to allow for
+       possible future extensions.
+
+   Type checkers recognize the following optional parameters on field
+   specifiers:
+
+   .. list-table:: **Recognised parameters for field specifiers**
+      :header-rows: 1
+      :widths: 20 80
+
+      * - Parameter name
+        - Description
+      * - ``init``
+        - Indicates whether the field should be included in the
+          synthesized ``__init__`` method. If unspecified, ``init`` defaults to
+          ``True``.
+      * - ``default``
+        - Provides the default value for the field.
+      * - ``default_factory``
+        - Provides a runtime callback that returns the
+          default value for the field. If neither ``default`` nor
+          ``default_factory`` are specified, the field is assumed to have no
+          default value and must be provided a value when the class is
+          instantiated.
+      * - ``factory``
+        - An alias for the ``default_factory`` parameter on field specifiers.
+      * - ``kw_only``
+        - Indicates whether the field should be marked as
+          keyword-only. If ``True``, the field will be keyword-only. If
+          ``False``, it will not be keyword-only. If unspecified, the value of
+          the ``kw_only`` parameter on the object decorated with
+          ``dataclass_transform`` will be used, or if that is unspecified, the
+          value of ``kw_only_default`` on ``dataclass_transform`` will be used.
+      * - ``alias``
+        - Provides an alternative name for the field. This alternative
+          name is used in the synthesized ``__init__`` method.
+
+   At runtime, this decorator records its arguments in the
+   ``__dataclass_transform__`` attribute on the decorated object.
+   It has no other runtime effect.
+
+   See :pep:`681` for more details.
+
+   .. versionadded:: 3.11
+
+.. _overload:
+
+.. decorator:: overload
+
+   Decorator for creating overloaded functions and methods.
+
+   The ``@overload`` decorator allows describing functions and methods
+   that support multiple different combinations of argument types. A series
+   of ``@overload``-decorated definitions must be followed by exactly one
+   non-``@overload``-decorated definition (for the same function/method).
+
+   ``@overload``-decorated definitions are for the benefit of the
+   type checker only, since they will be overwritten by the
+   non-``@overload``-decorated definition. The non-``@overload``-decorated
+   definition, meanwhile, will be used at
+   runtime but should be ignored by a type checker.  At runtime, calling
+   an ``@overload``-decorated function directly will raise
+   :exc:`NotImplementedError`.
+
+   An example of overload that gives a more
+   precise type than can be expressed using a union or a type variable:
+
+   .. testcode::
+
+      @overload
+      def process(response: None) -> None:
+          ...
+      @overload
+      def process(response: int) -> tuple[int, str]:
+          ...
+      @overload
+      def process(response: bytes) -> str:
+          ...
+      def process(response):
+          ...  # actual implementation goes here
+
+   See :pep:`484` for more details and comparison with other typing semantics.
+
+   .. versionchanged:: 3.11
+      Overloaded functions can now be introspected at runtime using
+      :func:`get_overloads`.
+
+
+.. function:: get_overloads(func)
+
+   Return a sequence of :func:`@overload <overload>`-decorated definitions for
+   *func*.
+
+   *func* is the function object for the implementation of the
+   overloaded function. For example, given the definition of ``process`` in
+   the documentation for :func:`@overload <overload>`,
+   ``get_overloads(process)`` will return a sequence of three function objects
+   for the three defined overloads. If called on a function with no overloads,
+   ``get_overloads()`` returns an empty sequence.
+
+   ``get_overloads()`` can be used for introspecting an overloaded function at
+   runtime.
+
+   .. versionadded:: 3.11
+
+
+.. function:: clear_overloads()
+
+   Clear all registered overloads in the internal registry.
+
+   This can be used to reclaim the memory used by the registry.
+
+   .. versionadded:: 3.11
+
+
+.. decorator:: final
+
+   Decorator to indicate final methods and final classes.
+
+   Decorating a method with ``@final`` indicates to a type checker that the
+   method cannot be overridden in a subclass. Decorating a class with ``@final``
+   indicates that it cannot be subclassed.
+
+   For example::
+
+      class Base:
+          @final
+          def done(self) -> None:
+              ...
+      class Sub(Base):
+          def done(self) -> None:  # Error reported by type checker
+              ...
+
+      @final
+      class Leaf:
+          ...
+      class Other(Leaf):  # Error reported by type checker
+          ...
+
+   There is no runtime checking of these properties. See :pep:`591` for
+   more details.
+
+   .. versionadded:: 3.8
+
+   .. versionchanged:: 3.11
+      The decorator will now attempt to set a ``__final__`` attribute to ``True``
+      on the decorated object. Thus, a check like
+      ``if getattr(obj, "__final__", False)`` can be used at runtime
+      to determine whether an object ``obj`` has been marked as final.
+      If the decorated object does not support setting attributes,
+      the decorator returns the object unchanged without raising an exception.
+
+
+.. decorator:: no_type_check
+
+   Decorator to indicate that annotations are not type hints.
+
+   This works as a class or function :term:`decorator`.  With a class, it
+   applies recursively to all methods and classes defined in that class
+   (but not to methods defined in its superclasses or subclasses). Type
+   checkers will ignore all annotations in a function or class with this
+   decorator.
+
+   ``@no_type_check`` mutates the decorated object in place.
+
+.. decorator:: no_type_check_decorator
+
+   Decorator to give another decorator the :func:`no_type_check` effect.
+
+   This wraps the decorator with something that wraps the decorated
+   function in :func:`no_type_check`.
+
+   .. deprecated-removed:: 3.13 3.15
+      No type checker ever added support for ``@no_type_check_decorator``. It
+      is therefore deprecated, and will be removed in Python 3.15.
+
+.. decorator:: override
+
+   Decorator to indicate that a method in a subclass is intended to override a
+   method or attribute in a superclass.
+
+   Type checkers should emit an error if a method decorated with ``@override``
+   does not, in fact, override anything.
+   This helps prevent bugs that may occur when a base class is changed without
+   an equivalent change to a child class.
+
+   For example:
+
+   .. testcode::
+
+      class Base:
+          def log_status(self) -> None:
+              ...
+
+      class Sub(Base):
+          @override
+          def log_status(self) -> None:  # Okay: overrides Base.log_status
+              ...
+
+          @override
+          def done(self) -> None:  # Error reported by type checker
+              ...
+
+   There is no runtime checking of this property.
+
+   The decorator will attempt to set an ``__override__`` attribute to ``True`` on
+   the decorated object. Thus, a check like
+   ``if getattr(obj, "__override__", False)`` can be used at runtime to determine
+   whether an object ``obj`` has been marked as an override.  If the decorated object
+   does not support setting attributes, the decorator returns the object unchanged
+   without raising an exception.
+
+   See :pep:`698` for more details.
+
+   .. versionadded:: 3.12
+
+
+.. decorator:: type_check_only
+
+   Decorator to mark a class or function as unavailable at runtime.
+
+   This decorator is itself not available at runtime. It is mainly
+   intended to mark classes that are defined in type stub files if
+   an implementation returns an instance of a private class::
+
+      @type_check_only
+      class Response:  # private or not available at runtime
+          code: int
+          def get_header(self, name: str) -> str: ...
+
+      def fetch_response() -> Response: ...
+
+   Note that returning instances of private classes is not recommended.
+   It is usually preferable to make such classes public.
+
+Introspection helpers
+---------------------
+
+.. function:: get_type_hints(obj, globalns=None, localns=None, include_extras=False)
+
+   Return a dictionary containing type hints for a function, method, module
+   or class object.
+
+   This is often the same as ``obj.__annotations__``. In addition,
+   forward references encoded as string literals are handled by evaluating
+   them in ``globals`` and ``locals`` namespaces. For a class ``C``, return
+   a dictionary constructed by merging all the ``__annotations__`` along
+   ``C.__mro__`` in reverse order.
+
+   The function recursively replaces all ``Annotated[T, ...]`` with ``T``,
+   unless ``include_extras`` is set to ``True`` (see :class:`Annotated` for
+   more information). For example:
+
+   .. testcode::
+
+       class Student(NamedTuple):
+           name: Annotated[str, 'some marker']
+
+       assert get_type_hints(Student) == {'name': str}
+       assert get_type_hints(Student, include_extras=False) == {'name': str}
+       assert get_type_hints(Student, include_extras=True) == {
+           'name': Annotated[str, 'some marker']
+       }
+
+   .. note::
+
+      :func:`get_type_hints` does not work with imported
+      :ref:`type aliases <type-aliases>` that include forward references.
+      Enabling postponed evaluation of annotations (:pep:`563`) may remove
+      the need for most forward references.
+
+   .. versionchanged:: 3.9
+      Added ``include_extras`` parameter as part of :pep:`593`.
+      See the documentation on :data:`Annotated` for more information.
+
+   .. versionchanged:: 3.11
+      Previously, ``Optional[t]`` was added for function and method annotations
+      if a default value equal to ``None`` was set.
+      Now the annotation is returned unchanged.
+
+.. function:: get_origin(tp)
+
+   Get the unsubscripted version of a type: for a typing object of the form
+   ``X[Y, Z, ...]`` return ``X``.
+
+   If ``X`` is a typing-module alias for a builtin or
+   :mod:`collections` class, it will be normalized to the original class.
+   If ``X`` is an instance of :class:`ParamSpecArgs` or :class:`ParamSpecKwargs`,
+   return the underlying :class:`ParamSpec`.
+   Return ``None`` for unsupported objects.
+
+   Examples:
+
+   .. testcode::
+
+      assert get_origin(str) is None
+      assert get_origin(Dict[str, int]) is dict
+      assert get_origin(Union[int, str]) is Union
+      P = ParamSpec('P')
+      assert get_origin(P.args) is P
+      assert get_origin(P.kwargs) is P
+
+   .. versionadded:: 3.8
+
+.. function:: get_args(tp)
+
+   Get type arguments with all substitutions performed: for a typing object
+   of the form ``X[Y, Z, ...]`` return ``(Y, Z, ...)``.
+
+   If ``X`` is a union or :class:`Literal` contained in another
+   generic type, the order of ``(Y, Z, ...)`` may be different from the order
+   of the original arguments ``[Y, Z, ...]`` due to type caching.
+   Return ``()`` for unsupported objects.
+
+   Examples:
+
+   .. testcode::
+
+      assert get_args(int) == ()
+      assert get_args(Dict[int, str]) == (int, str)
+      assert get_args(Union[int, str]) == (int, str)
+
+   .. versionadded:: 3.8
+
+.. function:: get_protocol_members(tp)
+
+   Return the set of members defined in a :class:`Protocol`.
+
+   .. doctest::
+
+      >>> from typing import Protocol, get_protocol_members
+      >>> class P(Protocol):
+      ...     def a(self) -> str: ...
+      ...     b: int
+      >>> get_protocol_members(P) == frozenset({'a', 'b'})
+      True
+
+   Raise :exc:`TypeError` for arguments that are not Protocols.
+
+   .. versionadded:: 3.13
+
+.. function:: is_protocol(tp)
+
+   Determine if a type is a :class:`Protocol`.
+
+   For example::
+
+      class P(Protocol):
+          def a(self) -> str: ...
+          b: int
+
+      is_protocol(P)    # => True
+      is_protocol(int)  # => False
+
+   .. versionadded:: 3.13
+
+.. function:: is_typeddict(tp)
+
+   Check if a type is a :class:`TypedDict`.
+
+   For example:
+
+   .. testcode::
+
+      class Film(TypedDict):
+          title: str
+          year: int
+
+      assert is_typeddict(Film)
+      assert not is_typeddict(list | str)
+
+      # TypedDict is a factory for creating typed dicts,
+      # not a typed dict itself
+      assert not is_typeddict(TypedDict)
+
+   .. versionadded:: 3.10
+
+.. class:: ForwardRef
+
+   Class used for internal typing representation of string forward references.
+
+   For example, ``List["SomeClass"]`` is implicitly transformed into
+   ``List[ForwardRef("SomeClass")]``.  ``ForwardRef`` should not be instantiated by
+   a user, but may be used by introspection tools.
+
+   .. note::
+      :pep:`585` generic types such as ``list["SomeClass"]`` will not be
+      implicitly transformed into ``list[ForwardRef("SomeClass")]`` and thus
+      will not automatically resolve to ``list[SomeClass]``.
+
+   .. versionadded:: 3.7.4
+
+Constant
+--------
+
+.. data:: TYPE_CHECKING
+
+   A special constant that is assumed to be ``True`` by 3rd party static
+   type checkers. It is ``False`` at runtime.
+
+   Usage::
+
+      if TYPE_CHECKING:
+          import expensive_mod
+
+      def fun(arg: 'expensive_mod.SomeType') -> None:
+          local_var: expensive_mod.AnotherType = other_fun()
+
+   The first type annotation must be enclosed in quotes, making it a
+   "forward reference", to hide the ``expensive_mod`` reference from the
+   interpreter runtime.  Type annotations for local variables are not
+   evaluated, so the second annotation does not need to be enclosed in quotes.
+
+   .. note::
+
+      If ``from __future__ import annotations`` is used,
+      annotations are not evaluated at function definition time.
+      Instead, they are stored as strings in ``__annotations__``.
+      This makes it unnecessary to use quotes around the annotation
+      (see :pep:`563`).
+
+   .. versionadded:: 3.5.2
+
+.. _generic-concrete-collections:
+.. _deprecated-aliases:
+
+Deprecated aliases
+------------------
+
+This module defines several deprecated aliases to pre-existing
+standard library classes. These were originally included in the typing
+module in order to support parameterizing these generic classes using ``[]``.
+However, the aliases became redundant in Python 3.9 when the
+corresponding pre-existing classes were enhanced to support ``[]`` (see
+:pep:`585`).
+
+The redundant types are deprecated as of Python 3.9. However, while the aliases
+may be removed at some point, removal of these aliases is not currently
+planned. As such, no deprecation warnings are currently issued by the
+interpreter for these aliases.
+
+If at some point it is decided to remove these deprecated aliases, a
+deprecation warning will be issued by the interpreter for at least two releases
+prior to removal. The aliases are guaranteed to remain in the typing module
+without deprecation warnings until at least Python 3.14.
+
+Type checkers are encouraged to flag uses of the deprecated types if the
+program they are checking targets a minimum Python version of 3.9 or newer.
+
+.. _corresponding-to-built-in-types:
+
+Aliases to built-in types
+"""""""""""""""""""""""""
 
 .. class:: Dict(dict, MutableMapping[KT, VT])
 
@@ -2405,10 +3239,34 @@ Corresponding to built-in types
       now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-.. note:: :data:`Tuple` is a special form.
+.. data:: Tuple
 
-Corresponding to types in :mod:`collections`
-""""""""""""""""""""""""""""""""""""""""""""
+   Deprecated alias for :class:`tuple`.
+
+   :class:`tuple` and ``Tuple`` are special-cased in the type system; see
+   :ref:`annotating-tuples` for more details.
+
+   .. deprecated:: 3.9
+      :class:`builtins.tuple <tuple>` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: Type(Generic[CT_co])
+
+   Deprecated alias to :class:`type`.
+
+   See :ref:`type-of-class-objects` for details on using :class:`type` or
+   ``typing.Type`` in type annotations.
+
+   .. versionadded:: 3.5.2
+
+   .. deprecated:: 3.9
+      :class:`builtins.type <type>` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. _corresponding-to-types-in-collections:
+
+Aliases to types in :mod:`collections`
+""""""""""""""""""""""""""""""""""""""
 
 .. class:: DefaultDict(collections.defaultdict, MutableMapping[KT, VT])
 
@@ -2463,26 +3321,20 @@ Corresponding to types in :mod:`collections`
       :class:`collections.deque` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-Other concrete types
-""""""""""""""""""""
+.. _other-concrete-types:
 
-.. class:: IO
-           TextIO
-           BinaryIO
-
-   Generic type ``IO[AnyStr]`` and its subclasses ``TextIO(IO[str])``
-   and ``BinaryIO(IO[bytes])``
-   represent the types of I/O streams such as returned by
-   :func:`open`.
+Aliases to other concrete types
+"""""""""""""""""""""""""""""""
 
 .. class:: Pattern
            Match
 
-   These type aliases
-   correspond to the return types from :func:`re.compile` and
-   :func:`re.match`.  These types (and the corresponding functions)
-   are generic in ``AnyStr`` and can be made specific by writing
-   ``Pattern[str]``, ``Pattern[bytes]``, ``Match[str]``, or
+   Deprecated aliases corresponding to the return types from
+   :func:`re.compile` and :func:`re.match`.
+
+   These types (and the corresponding functions) are generic over
+   :data:`AnyStr`. ``Pattern`` can be specialised as ``Pattern[str]`` or
+   ``Pattern[bytes]``; ``Match`` can be specialised as ``Match[str]`` or
    ``Match[bytes]``.
 
    .. deprecated:: 3.9
@@ -2491,7 +3343,9 @@ Other concrete types
 
 .. class:: Text
 
-   ``Text`` is an alias for ``str``. It is provided to supply a forward
+   Deprecated alias for :class:`str`.
+
+   ``Text`` is provided to supply a forward
    compatible path for Python 2 code: in Python 2, ``Text`` is an alias for
    ``unicode``.
 
@@ -2509,11 +3363,11 @@ Other concrete types
       currently planned, but users are encouraged to use
       :class:`str` instead of ``Text``.
 
-Abstract Base Classes
----------------------
+.. _abstract-base-classes:
+.. _corresponding-to-collections-in-collections-abc:
 
-Corresponding to collections in :mod:`collections.abc`
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
+Aliases to container ABCs in :mod:`collections.abc`
+"""""""""""""""""""""""""""""""""""""""""""""""""""
 
 .. class:: AbstractSet(Collection[T_co])
 
@@ -2568,6 +3422,7 @@ Corresponding to collections in :mod:`collections.abc`
 .. class:: Mapping(Collection[KT], Generic[KT, VT_co])
 
    Deprecated alias to :class:`collections.abc.Mapping`.
+
    This type can be used as follows::
 
       def get_position_in_index(word_list: Mapping[str, int], word: str) -> int:
@@ -2627,86 +3482,10 @@ Corresponding to collections in :mod:`collections.abc`
       :class:`collections.abc.ValuesView` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-Corresponding to other types in :mod:`collections.abc`
+.. _asynchronous-programming:
+
+Aliases to asynchronous ABCs in :mod:`collections.abc`
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
-
-.. class:: Iterable(Generic[T_co])
-
-   Deprecated alias to :class:`collections.abc.Iterable`.
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.Iterable` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: Iterator(Iterable[T_co])
-
-   Deprecated alias to :class:`collections.abc.Iterator`.
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.Iterator` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: Generator(Iterator[YieldType], Generic[YieldType, SendType, ReturnType])
-
-   Deprecated alias to :class:`collections.abc.Generator`.
-
-   A generator can be annotated by the generic type
-   ``Generator[YieldType, SendType, ReturnType]``. For example::
-
-      def echo_round() -> Generator[int, float, str]:
-          sent = yield 0
-          while sent >= 0:
-              sent = yield round(sent)
-          return 'Done'
-
-   Note that unlike many other generics in the typing module, the ``SendType``
-   of :class:`Generator` behaves contravariantly, not covariantly or
-   invariantly.
-
-   If your generator will only yield values, set the ``SendType`` and
-   ``ReturnType`` to ``None``::
-
-      def infinite_stream(start: int) -> Generator[int, None, None]:
-          while True:
-              yield start
-              start += 1
-
-   Alternatively, annotate your generator as having a return type of
-   either ``Iterable[YieldType]`` or ``Iterator[YieldType]``::
-
-      def infinite_stream(start: int) -> Iterator[int]:
-          while True:
-              yield start
-              start += 1
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.Generator` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: Hashable
-
-   Deprecated alias to :class:`collections.abc.Hashable`.
-
-   .. deprecated:: 3.12
-      Use :class:`collections.abc.Hashable` directly instead.
-
-.. class:: Reversible(Iterable[T_co])
-
-   Deprecated alias to :class:`collections.abc.Reversible`.
-
-   .. deprecated:: 3.9
-      :class:`collections.abc.Reversible` now supports subscripting (``[]``).
-      See :pep:`585` and :ref:`types-genericalias`.
-
-.. class:: Sized
-
-   Deprecated alias to :class:`collections.abc.Sized`.
-
-   .. deprecated:: 3.12
-      Use :class:`collections.abc.Sized` directly instead.
-
-Asynchronous programming
-""""""""""""""""""""""""
 
 .. class:: Coroutine(Awaitable[ReturnType], Generic[YieldType, SendType, ReturnType])
 
@@ -2797,9 +3576,105 @@ Asynchronous programming
       :class:`collections.abc.Awaitable` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
+.. _corresponding-to-other-types-in-collections-abc:
 
-Context manager types
-"""""""""""""""""""""
+Aliases to other ABCs in :mod:`collections.abc`
+"""""""""""""""""""""""""""""""""""""""""""""""
+
+.. class:: Iterable(Generic[T_co])
+
+   Deprecated alias to :class:`collections.abc.Iterable`.
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.Iterable` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: Iterator(Iterable[T_co])
+
+   Deprecated alias to :class:`collections.abc.Iterator`.
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.Iterator` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. data:: Callable
+
+   Deprecated alias to :class:`collections.abc.Callable`.
+
+   See :ref:`annotating-callables` for details on how to use
+   :class:`collections.abc.Callable` and ``typing.Callable`` in type annotations.
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.Callable` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+   .. versionchanged:: 3.10
+      ``Callable`` now supports :class:`ParamSpec` and :data:`Concatenate`.
+      See :pep:`612` for more details.
+
+.. class:: Generator(Iterator[YieldType], Generic[YieldType, SendType, ReturnType])
+
+   Deprecated alias to :class:`collections.abc.Generator`.
+
+   A generator can be annotated by the generic type
+   ``Generator[YieldType, SendType, ReturnType]``. For example::
+
+      def echo_round() -> Generator[int, float, str]:
+          sent = yield 0
+          while sent >= 0:
+              sent = yield round(sent)
+          return 'Done'
+
+   Note that unlike many other generics in the typing module, the ``SendType``
+   of :class:`Generator` behaves contravariantly, not covariantly or
+   invariantly.
+
+   If your generator will only yield values, set the ``SendType`` and
+   ``ReturnType`` to ``None``::
+
+      def infinite_stream(start: int) -> Generator[int, None, None]:
+          while True:
+              yield start
+              start += 1
+
+   Alternatively, annotate your generator as having a return type of
+   either ``Iterable[YieldType]`` or ``Iterator[YieldType]``::
+
+      def infinite_stream(start: int) -> Iterator[int]:
+          while True:
+              yield start
+              start += 1
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.Generator` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: Hashable
+
+   Deprecated alias to :class:`collections.abc.Hashable`.
+
+   .. deprecated:: 3.12
+      Use :class:`collections.abc.Hashable` directly instead.
+
+.. class:: Reversible(Iterable[T_co])
+
+   Deprecated alias to :class:`collections.abc.Reversible`.
+
+   .. deprecated:: 3.9
+      :class:`collections.abc.Reversible` now supports subscripting (``[]``).
+      See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: Sized
+
+   Deprecated alias to :class:`collections.abc.Sized`.
+
+   .. deprecated:: 3.12
+      Use :class:`collections.abc.Sized` directly instead.
+
+.. _context-manager-types:
+
+Aliases to :mod:`contextlib` ABCs
+"""""""""""""""""""""""""""""""""
 
 .. class:: ContextManager(Generic[T_co])
 
@@ -2825,567 +3700,6 @@ Context manager types
       now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
 
-Protocols
----------
-
-These protocols are decorated with :func:`runtime_checkable`.
-
-.. class:: SupportsAbs
-
-    An ABC with one abstract method ``__abs__`` that is covariant
-    in its return type.
-
-.. class:: SupportsBytes
-
-    An ABC with one abstract method ``__bytes__``.
-
-.. class:: SupportsComplex
-
-    An ABC with one abstract method ``__complex__``.
-
-.. class:: SupportsFloat
-
-    An ABC with one abstract method ``__float__``.
-
-.. class:: SupportsIndex
-
-    An ABC with one abstract method ``__index__``.
-
-    .. versionadded:: 3.8
-
-.. class:: SupportsInt
-
-    An ABC with one abstract method ``__int__``.
-
-.. class:: SupportsRound
-
-    An ABC with one abstract method ``__round__``
-    that is covariant in its return type.
-
-Functions and decorators
-------------------------
-
-.. function:: cast(typ, val)
-
-   Cast a value to a type.
-
-   This returns the value unchanged.  To the type checker this
-   signals that the return value has the designated type, but at
-   runtime we intentionally don't check anything (we want this
-   to be as fast as possible).
-
-.. function:: assert_type(val, typ, /)
-
-   Ask a static type checker to confirm that *val* has an inferred type of *typ*.
-
-   At runtime this does nothing: it returns the first argument unchanged with no
-   checks or side effects, no matter the actual type of the argument.
-
-   When a static type checker encounters a call to ``assert_type()``, it
-   emits an error if the value is not of the specified type::
-
-       def greet(name: str) -> None:
-           assert_type(name, str)  # OK, inferred type of `name` is `str`
-           assert_type(name, int)  # type checker error
-
-   This function is useful for ensuring the type checker's understanding of a
-   script is in line with the developer's intentions::
-
-       def complex_function(arg: object):
-           # Do some complex type-narrowing logic,
-           # after which we hope the inferred type will be `int`
-           ...
-           # Test whether the type checker correctly understands our function
-           assert_type(arg, int)
-
-   .. versionadded:: 3.11
-
-.. function:: assert_never(arg, /)
-
-   Ask a static type checker to confirm that a line of code is unreachable.
-
-   Example::
-
-       def int_or_str(arg: int | str) -> None:
-           match arg:
-               case int():
-                   print("It's an int")
-               case str():
-                   print("It's a str")
-               case _ as unreachable:
-                   assert_never(unreachable)
-
-   Here, the annotations allow the type checker to infer that the
-   last case can never execute, because ``arg`` is either
-   an :class:`int` or a :class:`str`, and both options are covered by
-   earlier cases.
-   If a type checker finds that a call to ``assert_never()`` is
-   reachable, it will emit an error. For example, if the type annotation
-   for ``arg`` was instead ``int | str | float``, the type checker would
-   emit an error pointing out that ``unreachable`` is of type :class:`float`.
-   For a call to ``assert_never`` to pass type checking, the inferred type of
-   the argument passed in must be the bottom type, :data:`Never`, and nothing
-   else.
-
-   At runtime, this throws an exception when called.
-
-   .. seealso::
-      `Unreachable Code and Exhaustiveness Checking
-      <https://typing.readthedocs.io/en/latest/source/unreachable.html>`__ has more
-      information about exhaustiveness checking with static typing.
-
-   .. versionadded:: 3.11
-
-.. function:: reveal_type(obj, /)
-
-   Reveal the inferred static type of an expression.
-
-   When a static type checker encounters a call to this function,
-   it emits a diagnostic with the type of the argument. For example::
-
-      x: int = 1
-      reveal_type(x)  # Revealed type is "builtins.int"
-
-   This can be useful when you want to debug how your type checker
-   handles a particular piece of code.
-
-   The function returns its argument unchanged, which allows using
-   it within an expression::
-
-      x = reveal_type(1)  # Revealed type is "builtins.int"
-
-   Most type checkers support ``reveal_type()`` anywhere, even if the
-   name is not imported from ``typing``. Importing the name from
-   ``typing`` allows your code to run without runtime errors and
-   communicates intent more clearly.
-
-   At runtime, this function prints the runtime type of its argument to stderr
-   and returns it unchanged::
-
-      x = reveal_type(1)  # prints "Runtime type is int"
-      print(x)  # prints "1"
-
-   .. versionadded:: 3.11
-
-.. decorator:: dataclass_transform
-
-   :data:`~typing.dataclass_transform` may be used to
-   decorate a class, metaclass, or a function that is itself a decorator.
-   The presence of ``@dataclass_transform()`` tells a static type checker that the
-   decorated object performs runtime "magic" that
-   transforms a class, giving it :func:`dataclasses.dataclass`-like behaviors.
-
-   Example usage with a decorator function:
-
-   .. testcode::
-
-      @dataclass_transform()
-      def create_model[T](cls: type[T]) -> type[T]:
-          ...
-          return cls
-
-      @create_model
-      class CustomerModel:
-          id: int
-          name: str
-
-   On a base class::
-
-      @dataclass_transform()
-      class ModelBase: ...
-
-      class CustomerModel(ModelBase):
-          id: int
-          name: str
-
-   On a metaclass::
-
-      @dataclass_transform()
-      class ModelMeta(type): ...
-
-      class ModelBase(metaclass=ModelMeta): ...
-
-      class CustomerModel(ModelBase):
-          id: int
-          name: str
-
-   The ``CustomerModel`` classes defined above will
-   be treated by type checkers similarly to classes created with
-   :func:`@dataclasses.dataclass <dataclasses.dataclass>`.
-   For example, type checkers will assume these classes have
-   ``__init__`` methods that accept ``id`` and ``name``.
-
-   The decorated class, metaclass, or function may accept the following bool
-   arguments which type checkers will assume have the same effect as they
-   would have on the
-   :func:`@dataclasses.dataclass<dataclasses.dataclass>` decorator: ``init``,
-   ``eq``, ``order``, ``unsafe_hash``, ``frozen``, ``match_args``,
-   ``kw_only``, and ``slots``. It must be possible for the value of these
-   arguments (``True`` or ``False``) to be statically evaluated.
-
-   The arguments to the ``dataclass_transform`` decorator can be used to
-   customize the default behaviors of the decorated class, metaclass, or
-   function:
-
-   * ``eq_default`` indicates whether the ``eq`` parameter is assumed to be
-     ``True`` or ``False`` if it is omitted by the caller.
-   * ``order_default`` indicates whether the ``order`` parameter is
-     assumed to be True or False if it is omitted by the caller.
-   * ``kw_only_default`` indicates whether the ``kw_only`` parameter is
-     assumed to be True or False if it is omitted by the caller.
-   * ``frozen_default`` indicates whether the ``frozen`` parameter is
-     assumed to be True or False if it is omitted by the caller.
-
-     .. versionadded:: 3.12
-   * ``field_specifiers`` specifies a static list of supported classes
-     or functions that describe fields, similar to ``dataclasses.field()``.
-   * Arbitrary other keyword arguments are accepted in order to allow for
-     possible future extensions.
-
-   Type checkers recognize the following optional arguments on field
-   specifiers:
-
-   * ``init`` indicates whether the field should be included in the
-     synthesized ``__init__`` method. If unspecified, ``init`` defaults to
-     ``True``.
-   * ``default`` provides the default value for the field.
-   * ``default_factory`` provides a runtime callback that returns the
-     default value for the field. If neither ``default`` nor
-     ``default_factory`` are specified, the field is assumed to have no
-     default value and must be provided a value when the class is
-     instantiated.
-   * ``factory`` is an alias for ``default_factory``.
-   * ``kw_only`` indicates whether the field should be marked as
-     keyword-only. If ``True``, the field will be keyword-only. If
-     ``False``, it will not be keyword-only. If unspecified, the value of
-     the ``kw_only`` parameter on the object decorated with
-     ``dataclass_transform`` will be used, or if that is unspecified, the
-     value of ``kw_only_default`` on ``dataclass_transform`` will be used.
-   * ``alias`` provides an alternative name for the field. This alternative
-     name is used in the synthesized ``__init__`` method.
-
-   At runtime, this decorator records its arguments in the
-   ``__dataclass_transform__`` attribute on the decorated object.
-   It has no other runtime effect.
-
-   See :pep:`681` for more details.
-
-   .. versionadded:: 3.11
-
-.. decorator:: overload
-
-   The ``@overload`` decorator allows describing functions and methods
-   that support multiple different combinations of argument types. A series
-   of ``@overload``-decorated definitions must be followed by exactly one
-   non-``@overload``-decorated definition (for the same function/method).
-   The ``@overload``-decorated definitions are for the benefit of the
-   type checker only, since they will be overwritten by the
-   non-``@overload``-decorated definition, while the latter is used at
-   runtime but should be ignored by a type checker.  At runtime, calling
-   a ``@overload``-decorated function directly will raise
-   :exc:`NotImplementedError`. An example of overload that gives a more
-   precise type than can be expressed using a union or a type variable:
-
-   .. testcode::
-
-      @overload
-      def process(response: None) -> None:
-          ...
-      @overload
-      def process(response: int) -> tuple[int, str]:
-          ...
-      @overload
-      def process(response: bytes) -> str:
-          ...
-      def process(response):
-          ...  # actual implementation goes here
-
-   See :pep:`484` for more details and comparison with other typing semantics.
-
-   .. versionchanged:: 3.11
-      Overloaded functions can now be introspected at runtime using
-      :func:`get_overloads`.
-
-
-.. function:: get_overloads(func)
-
-   Return a sequence of :func:`@overload <overload>`-decorated definitions for
-   *func*. *func* is the function object for the implementation of the
-   overloaded function. For example, given the definition of ``process`` in
-   the documentation for :func:`@overload <overload>`,
-   ``get_overloads(process)`` will return a sequence of three function objects
-   for the three defined overloads. If called on a function with no overloads,
-   ``get_overloads()`` returns an empty sequence.
-
-   ``get_overloads()`` can be used for introspecting an overloaded function at
-   runtime.
-
-   .. versionadded:: 3.11
-
-
-.. function:: clear_overloads()
-
-   Clear all registered overloads in the internal registry. This can be used
-   to reclaim the memory used by the registry.
-
-   .. versionadded:: 3.11
-
-
-.. decorator:: final
-
-   A decorator to indicate to type checkers that the decorated method
-   cannot be overridden, and the decorated class cannot be subclassed.
-   For example::
-
-      class Base:
-          @final
-          def done(self) -> None:
-              ...
-      class Sub(Base):
-          def done(self) -> None:  # Error reported by type checker
-              ...
-
-      @final
-      class Leaf:
-          ...
-      class Other(Leaf):  # Error reported by type checker
-          ...
-
-   There is no runtime checking of these properties. See :pep:`591` for
-   more details.
-
-   .. versionadded:: 3.8
-
-   .. versionchanged:: 3.11
-      The decorator will now set the ``__final__`` attribute to ``True``
-      on the decorated object. Thus, a check like
-      ``if getattr(obj, "__final__", False)`` can be used at runtime
-      to determine whether an object ``obj`` has been marked as final.
-      If the decorated object does not support setting attributes,
-      the decorator returns the object unchanged without raising an exception.
-
-
-.. decorator:: no_type_check
-
-   Decorator to indicate that annotations are not type hints.
-
-   This works as class or function :term:`decorator`.  With a class, it
-   applies recursively to all methods and classes defined in that class
-   (but not to methods defined in its superclasses or subclasses).
-
-   This mutates the function(s) in place.
-
-.. decorator:: no_type_check_decorator
-
-   Decorator to give another decorator the :func:`no_type_check` effect.
-
-   This wraps the decorator with something that wraps the decorated
-   function in :func:`no_type_check`.
-
-
-.. decorator:: override
-
-   A decorator for methods that indicates to type checkers that this method
-   should override a method or attribute with the same name on a base class.
-   This helps prevent bugs that may occur when a base class is changed without
-   an equivalent change to a child class.
-
-   For example:
-
-   .. testcode::
-
-      class Base:
-          def log_status(self) -> None:
-              ...
-
-      class Sub(Base):
-          @override
-          def log_status(self) -> None:  # Okay: overrides Base.log_status
-              ...
-
-          @override
-          def done(self) -> None:  # Error reported by type checker
-              ...
-
-   There is no runtime checking of this property.
-
-   The decorator will set the ``__override__`` attribute to ``True`` on
-   the decorated object. Thus, a check like
-   ``if getattr(obj, "__override__", False)`` can be used at runtime to determine
-   whether an object ``obj`` has been marked as an override.  If the decorated object
-   does not support setting attributes, the decorator returns the object unchanged
-   without raising an exception.
-
-   See :pep:`698` for more details.
-
-   .. versionadded:: 3.12
-
-
-.. decorator:: type_check_only
-
-   Decorator to mark a class or function to be unavailable at runtime.
-
-   This decorator is itself not available at runtime. It is mainly
-   intended to mark classes that are defined in type stub files if
-   an implementation returns an instance of a private class::
-
-      @type_check_only
-      class Response:  # private or not available at runtime
-          code: int
-          def get_header(self, name: str) -> str: ...
-
-      def fetch_response() -> Response: ...
-
-   Note that returning instances of private classes is not recommended.
-   It is usually preferable to make such classes public.
-
-Introspection helpers
----------------------
-
-.. function:: get_type_hints(obj, globalns=None, localns=None, include_extras=False)
-
-   Return a dictionary containing type hints for a function, method, module
-   or class object.
-
-   This is often the same as ``obj.__annotations__``. In addition,
-   forward references encoded as string literals are handled by evaluating
-   them in ``globals`` and ``locals`` namespaces. For a class ``C``, return
-   a dictionary constructed by merging all the ``__annotations__`` along
-   ``C.__mro__`` in reverse order.
-
-   The function recursively replaces all ``Annotated[T, ...]`` with ``T``,
-   unless ``include_extras`` is set to ``True`` (see :class:`Annotated` for
-   more information). For example:
-
-   .. testcode::
-
-       class Student(NamedTuple):
-           name: Annotated[str, 'some marker']
-
-       assert get_type_hints(Student) == {'name': str}
-       assert get_type_hints(Student, include_extras=False) == {'name': str}
-       assert get_type_hints(Student, include_extras=True) == {
-           'name': Annotated[str, 'some marker']
-       }
-
-   .. note::
-
-      :func:`get_type_hints` does not work with imported
-      :ref:`type aliases <type-aliases>` that include forward references.
-      Enabling postponed evaluation of annotations (:pep:`563`) may remove
-      the need for most forward references.
-
-   .. versionchanged:: 3.9
-      Added ``include_extras`` parameter as part of :pep:`593`.
-
-   .. versionchanged:: 3.11
-      Previously, ``Optional[t]`` was added for function and method annotations
-      if a default value equal to ``None`` was set.
-      Now the annotation is returned unchanged.
-
-.. function:: get_origin(tp)
-
-   Get the unsubscripted version of a type: for a typing object of the form
-   ``X[Y, Z, ...]`` return ``X``. If ``X`` is a generic alias for a builtin or
-   :mod:`collections` class, it gets normalized to the original class.
-   If ``X`` is an instance of :class:`ParamSpecArgs` or :class:`ParamSpecKwargs`,
-   return the underlying :class:`ParamSpec`.
-   Return ``None`` for unsupported objects.
-   Examples:
-
-   .. testcode::
-
-      assert get_origin(str) is None
-      assert get_origin(Dict[str, int]) is dict
-      assert get_origin(Union[int, str]) is Union
-      P = ParamSpec('P')
-      assert get_origin(P.args) is P
-      assert get_origin(P.kwargs) is P
-
-   .. versionadded:: 3.8
-
-.. function:: get_args(tp)
-
-   Get type arguments with all substitutions performed: for a typing object
-   of the form ``X[Y, Z, ...]`` return ``(Y, Z, ...)``.
-   If ``X`` is a union or :class:`Literal` contained in another
-   generic type, the order of ``(Y, Z, ...)`` may be different from the order
-   of the original arguments ``[Y, Z, ...]`` due to type caching.
-   Return ``()`` for unsupported objects.
-   Examples:
-
-   .. testcode::
-
-      assert get_args(int) == ()
-      assert get_args(Dict[int, str]) == (int, str)
-      assert get_args(Union[int, str]) == (int, str)
-
-   .. versionadded:: 3.8
-
-.. function:: is_typeddict(tp)
-
-   Check if a type is a :class:`TypedDict`.
-
-   For example:
-
-   .. testcode::
-
-      class Film(TypedDict):
-          title: str
-          year: int
-
-      assert is_typeddict(Film)
-      assert not is_typeddict(list | str)
-
-      # TypedDict is a factory for creating typed dicts,
-      # not a typed dict itself
-      assert not is_typeddict(TypedDict)
-
-   .. versionadded:: 3.10
-
-.. class:: ForwardRef
-
-   A class used for internal typing representation of string forward references.
-   For example, ``List["SomeClass"]`` is implicitly transformed into
-   ``List[ForwardRef("SomeClass")]``.  This class should not be instantiated by
-   a user, but may be used by introspection tools.
-
-   .. note::
-      :pep:`585` generic types such as ``list["SomeClass"]`` will not be
-      implicitly transformed into ``list[ForwardRef("SomeClass")]`` and thus
-      will not automatically resolve to ``list[SomeClass]``.
-
-   .. versionadded:: 3.7.4
-
-Constant
---------
-
-.. data:: TYPE_CHECKING
-
-   A special constant that is assumed to be ``True`` by 3rd party static
-   type checkers. It is ``False`` at runtime. Usage::
-
-      if TYPE_CHECKING:
-          import expensive_mod
-
-      def fun(arg: 'expensive_mod.SomeType') -> None:
-          local_var: expensive_mod.AnotherType = other_fun()
-
-   The first type annotation must be enclosed in quotes, making it a
-   "forward reference", to hide the ``expensive_mod`` reference from the
-   interpreter runtime.  Type annotations for local variables are not
-   evaluated, so the second annotation does not need to be enclosed in quotes.
-
-   .. note::
-
-      If ``from __future__ import annotations`` is used,
-      annotations are not evaluated at function definition time.
-      Instead, they are stored as strings in ``__annotations__``.
-      This makes it unnecessary to use quotes around the annotation
-      (see :pep:`563`).
-
-   .. versionadded:: 3.5.2
-
 Deprecation Timeline of Major Features
 ======================================
 
@@ -3393,18 +3707,38 @@ Certain features in ``typing`` are deprecated and may be removed in a future
 version of Python. The following table summarizes major deprecations for your
 convenience. This is subject to change, and not all deprecations are listed.
 
-+----------------------------------+---------------+-------------------+----------------+
-|  Feature                         | Deprecated in | Projected removal | PEP/issue      |
-+==================================+===============+===================+================+
-|  ``typing`` versions of standard | 3.9           | Undecided         | :pep:`585`     |
-|  collections                     |               |                   |                |
-+----------------------------------+---------------+-------------------+----------------+
-|  ``typing.ByteString``           | 3.9           | 3.14              | :gh:`91896`    |
-+----------------------------------+---------------+-------------------+----------------+
-|  ``typing.Text``                 | 3.11          | Undecided         | :gh:`92332`    |
-+----------------------------------+---------------+-------------------+----------------+
-|  ``typing.Hashable`` and         | 3.12          | Undecided         | :gh:`94309`    |
-|  ``typing.Sized``                |               |                   |                |
-+----------------------------------+---------------+-------------------+----------------+
-|  ``typing.TypeAlias``            | 3.12          | Undecided         | :pep:`695`     |
-+----------------------------------+---------------+-------------------+----------------+
+.. list-table::
+   :header-rows: 1
+
+   * - Feature
+     - Deprecated in
+     - Projected removal
+     - PEP/issue
+   * - ``typing`` versions of standard collections
+     - 3.9
+     - Undecided (see :ref:`deprecated-aliases` for more information)
+     - :pep:`585`
+   * - :class:`typing.ByteString`
+     - 3.9
+     - 3.14
+     - :gh:`91896`
+   * - :data:`typing.Text`
+     - 3.11
+     - Undecided
+     - :gh:`92332`
+   * - :class:`typing.Hashable` and :class:`typing.Sized`
+     - 3.12
+     - Undecided
+     - :gh:`94309`
+   * - :data:`typing.TypeAlias`
+     - 3.12
+     - Undecided
+     - :pep:`695`
+   * - :func:`@typing.no_type_check_decorator <no_type_check_decorator>`
+     - 3.13
+     - 3.15
+     - :gh:`106309`
+   * - :data:`typing.AnyStr`
+     - 3.13
+     - 3.18
+     - :gh:`105578`

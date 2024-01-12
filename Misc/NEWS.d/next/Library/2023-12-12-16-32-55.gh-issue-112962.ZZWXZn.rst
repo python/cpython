@@ -1,0 +1,3 @@
+:mod:`dis` module functions add cache information to the
+:class:`~dis.Instruction` instance rather than creating fake
+:class:`~dis.Instruction` instances to represent the cache entries.

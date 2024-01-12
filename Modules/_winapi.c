@@ -36,7 +36,9 @@
 
 #include "Python.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "structmember.h"         // PyMemberDef
+#include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
+#include "pycore_pystate.h"       // _PyInterpreterState_GET
+
 
 
 #ifndef WINDOWS_LEAN_AND_MEAN
@@ -52,13 +54,13 @@
     PyLong_FromUnsignedLong((unsigned long) handle)
 #define PYNUM_TO_HANDLE(obj) ((HANDLE)PyLong_AsUnsignedLong(obj))
 #define F_POINTER "k"
-#define T_POINTER T_ULONG
+#define T_POINTER Py_T_ULONG
 #else
 #define HANDLE_TO_PYNUM(handle) \
     PyLong_FromUnsignedLongLong((unsigned long long) handle)
 #define PYNUM_TO_HANDLE(obj) ((HANDLE)PyLong_AsUnsignedLongLong(obj))
 #define F_POINTER "K"
-#define T_POINTER T_ULONGLONG
+#define T_POINTER Py_T_ULONGLONG
 #endif
 
 #define F_HANDLE F_POINTER
@@ -133,7 +135,7 @@ overlapped_dealloc(OverlappedObject *self)
         {
             /* The operation is no longer pending -- nothing to do. */
         }
-        else if (_Py_IsInterpreterFinalizing(PyInterpreterState_Get()))
+        else if (_Py_IsInterpreterFinalizing(_PyInterpreterState_GET()))
         {
             /* The operation is still pending -- give a warning.  This
                will probably only happen on Windows XP. */
@@ -210,7 +212,7 @@ class DWORD_return_converter(CReturnConverter):
         self.declare(data)
         self.err_occurred_if("_return_value == PY_DWORD_MAX", data)
         data.return_conversion.append(
-            'return_value = Py_BuildValue("k", _return_value);\n')
+            'return_value = PyLong_FromUnsignedLong(_return_value);\n')
 
 class LPVOID_return_converter(CReturnConverter):
     type = 'LPVOID'
@@ -221,7 +223,7 @@ class LPVOID_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = HANDLE_TO_PYNUM(_return_value);\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=011ee0c3a2244bfe]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=ef52a757a1830d92]*/
 
 #include "clinic/_winapi.c.h"
 
@@ -320,7 +322,7 @@ static PyMethodDef overlapped_methods[] = {
 static PyMemberDef overlapped_members[] = {
     {"event", T_HANDLE,
      offsetof(OverlappedObject, overlapped) + offsetof(OVERLAPPED, hEvent),
-     READONLY, "overlapped event handle"},
+     Py_READONLY, "overlapped event handle"},
     {NULL}
 };
 
@@ -772,12 +774,157 @@ gethandle(PyObject* obj, const char* name)
     return ret;
 }
 
+static PyObject *
+sortenvironmentkey(PyObject *module, PyObject *item)
+{
+    return _winapi_LCMapStringEx_impl(NULL, LOCALE_NAME_INVARIANT,
+                                      LCMAP_UPPERCASE, item);
+}
+
+static PyMethodDef sortenvironmentkey_def = {
+    "sortenvironmentkey", _PyCFunction_CAST(sortenvironmentkey), METH_O, "",
+};
+
+static int
+sort_environment_keys(PyObject *keys)
+{
+    PyObject *keyfunc = PyCFunction_New(&sortenvironmentkey_def, NULL);
+    if (keyfunc == NULL) {
+        return -1;
+    }
+    PyObject *kwnames = Py_BuildValue("(s)", "key");
+    if (kwnames == NULL) {
+        Py_DECREF(keyfunc);
+        return -1;
+    }
+    PyObject *args[] = { keys, keyfunc };
+    PyObject *ret = PyObject_VectorcallMethod(&_Py_ID(sort), args, 1, kwnames);
+    Py_DECREF(keyfunc);
+    Py_DECREF(kwnames);
+    if (ret == NULL) {
+        return -1;
+    }
+    Py_DECREF(ret);
+
+    return 0;
+}
+
+static int
+compare_string_ordinal(PyObject *str1, PyObject *str2, int *result)
+{
+    wchar_t *s1 = PyUnicode_AsWideCharString(str1, NULL);
+    if (s1 == NULL) {
+        return -1;
+    }
+    wchar_t *s2 = PyUnicode_AsWideCharString(str2, NULL);
+    if (s2 == NULL) {
+        PyMem_Free(s1);
+        return -1;
+    }
+    *result = CompareStringOrdinal(s1, -1, s2, -1, TRUE);
+    PyMem_Free(s1);
+    PyMem_Free(s2);
+    return 0;
+}
+
+static PyObject *
+dedup_environment_keys(PyObject *keys)
+{
+    PyObject *result = PyList_New(0);
+    if (result == NULL) {
+        return NULL;
+    }
+
+    // Iterate over the pre-ordered keys, check whether the current key is equal
+    // to the next key (ignoring case), if different, insert the current value
+    // into the result list. If they are equal, do nothing because we always
+    // want to keep the last inserted one.
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(keys); i++) {
+        PyObject *key = PyList_GET_ITEM(keys, i);
+
+        // The last key will always be kept.
+        if (i + 1 == PyList_GET_SIZE(keys)) {
+            if (PyList_Append(result, key) < 0) {
+                Py_DECREF(result);
+                return NULL;
+            }
+            continue;
+        }
+
+        PyObject *next_key = PyList_GET_ITEM(keys, i + 1);
+        int compare_result;
+        if (compare_string_ordinal(key, next_key, &compare_result) < 0) {
+            Py_DECREF(result);
+            return NULL;
+        }
+        if (compare_result == CSTR_EQUAL) {
+            continue;
+        }
+        if (PyList_Append(result, key) < 0) {
+            Py_DECREF(result);
+            return NULL;
+        }
+    }
+
+    return result;
+}
+
+static PyObject *
+normalize_environment(PyObject *environment)
+{
+    PyObject *keys = PyMapping_Keys(environment);
+    if (keys == NULL) {
+        return NULL;
+    }
+
+    if (sort_environment_keys(keys) < 0) {
+        Py_DECREF(keys);
+        return NULL;
+    }
+
+    PyObject *normalized_keys = dedup_environment_keys(keys);
+    Py_DECREF(keys);
+    if (normalized_keys == NULL) {
+        return NULL;
+    }
+
+    PyObject *result = PyDict_New();
+    if (result == NULL) {
+        Py_DECREF(normalized_keys);
+        return NULL;
+    }
+
+    for (int i = 0; i < PyList_GET_SIZE(normalized_keys); i++) {
+        PyObject *key = PyList_GET_ITEM(normalized_keys, i);
+        PyObject *value = PyObject_GetItem(environment, key);
+        if (value == NULL) {
+            Py_DECREF(normalized_keys);
+            Py_DECREF(result);
+            return NULL;
+        }
+
+        int ret = PyObject_SetItem(result, key, value);
+        Py_DECREF(value);
+        if (ret < 0) {
+            Py_DECREF(normalized_keys);
+            Py_DECREF(result);
+            return NULL;
+        }
+    }
+
+    Py_DECREF(normalized_keys);
+
+    return result;
+}
+
 static wchar_t *
 getenvironment(PyObject* environment)
 {
     Py_ssize_t i, envsize, totalsize;
     wchar_t *buffer = NULL, *p, *end;
-    PyObject *keys, *values;
+    PyObject *normalized_environment = NULL;
+    PyObject *keys = NULL;
+    PyObject *values = NULL;
 
     /* convert environment dictionary to windows environment string */
     if (! PyMapping_Check(environment)) {
@@ -786,16 +933,32 @@ getenvironment(PyObject* environment)
         return NULL;
     }
 
-    keys = PyMapping_Keys(environment);
-    if (!keys) {
+    normalized_environment = normalize_environment(environment);
+    if (normalize_environment == NULL) {
         return NULL;
     }
-    values = PyMapping_Values(environment);
+
+    keys = PyMapping_Keys(normalized_environment);
+    if (!keys) {
+        goto error;
+    }
+    values = PyMapping_Values(normalized_environment);
     if (!values) {
         goto error;
     }
 
     envsize = PyList_GET_SIZE(keys);
+
+    if (envsize == 0) {
+        // A environment block must be terminated by two null characters --
+        // one for the last string and one for the block.
+        buffer = PyMem_Calloc(2, sizeof(wchar_t));
+        if (!buffer) {
+            PyErr_NoMemory();
+        }
+        goto cleanup;
+    }
+
     if (PyList_GET_SIZE(values) != envsize) {
         PyErr_SetString(PyExc_RuntimeError,
             "environment changed size during iteration");
@@ -869,7 +1032,9 @@ getenvironment(PyObject* environment)
     *p++ = L'\0';
     assert(p == end);
 
- error:
+cleanup:
+error:
+    Py_XDECREF(normalized_environment);
     Py_XDECREF(keys);
     Py_XDECREF(values);
     return buffer;
@@ -1525,40 +1690,56 @@ _winapi.LCMapStringEx
 
     locale: LPCWSTR
     flags: DWORD
-    src: LPCWSTR
+    src: unicode
 
 [clinic start generated code]*/
 
 static PyObject *
 _winapi_LCMapStringEx_impl(PyObject *module, LPCWSTR locale, DWORD flags,
-                           LPCWSTR src)
-/*[clinic end generated code: output=cf4713d80e2b47c9 input=9fe26f95d5ab0001]*/
+                           PyObject *src)
+/*[clinic end generated code: output=b90e6b26e028ff0a input=3e3dcd9b8164012f]*/
 {
     if (flags & (LCMAP_SORTHANDLE | LCMAP_HASH | LCMAP_BYTEREV |
                  LCMAP_SORTKEY)) {
         return PyErr_Format(PyExc_ValueError, "unsupported flags");
     }
 
-    int dest_size = LCMapStringEx(locale, flags, src, -1, NULL, 0,
+    Py_ssize_t src_size;
+    wchar_t *src_ = PyUnicode_AsWideCharString(src, &src_size);
+    if (!src_) {
+        return NULL;
+    }
+    if (src_size > INT_MAX) {
+        PyMem_Free(src_);
+        PyErr_SetString(PyExc_OverflowError, "input string is too long");
+        return NULL;
+    }
+
+    int dest_size = LCMapStringEx(locale, flags, src_, (int)src_size, NULL, 0,
                                   NULL, NULL, 0);
-    if (dest_size == 0) {
-        return PyErr_SetFromWindowsErr(0);
+    if (dest_size <= 0) {
+        DWORD error = GetLastError();
+        PyMem_Free(src_);
+        return PyErr_SetFromWindowsErr(error);
     }
 
     wchar_t* dest = PyMem_NEW(wchar_t, dest_size);
     if (dest == NULL) {
+        PyMem_Free(src_);
         return PyErr_NoMemory();
     }
 
-    int nmapped = LCMapStringEx(locale, flags, src, -1, dest, dest_size,
+    int nmapped = LCMapStringEx(locale, flags, src_, (int)src_size, dest, dest_size,
                                 NULL, NULL, 0);
-    if (nmapped == 0) {
+    if (nmapped <= 0) {
         DWORD error = GetLastError();
+        PyMem_Free(src_);
         PyMem_DEL(dest);
         return PyErr_SetFromWindowsErr(error);
     }
 
-    PyObject *ret = PyUnicode_FromWideChar(dest, dest_size - 1);
+    PyMem_Free(src_);
+    PyObject *ret = PyUnicode_FromWideChar(dest, nmapped);
     PyMem_DEL(dest);
 
     return ret;

@@ -1,7 +1,8 @@
 #include "Python.h"
 #include "errcode.h"
-#include "../Parser/tokenizer.h"
-#include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
+#include "../Parser/lexer/state.h"
+#include "../Parser/lexer/lexer.h"
+#include "../Parser/tokenizer/tokenizer.h"
 #include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
 
 static struct PyModuleDef _tokenizemodule;
@@ -206,6 +207,9 @@ tokenizeriter_next(tokenizeriterobject *it)
         line = PyUnicode_FromString("");
     } else {
         Py_ssize_t size = it->tok->inp - line_start;
+        if (size >= 1 && it->tok->implicit_newline) {
+            size -= 1;
+        }
         line = PyUnicode_DecodeUTF8(line_start, size, "replace");
     }
     if (line == NULL) {
@@ -221,7 +225,7 @@ tokenizeriter_next(tokenizeriterobject *it)
         col_offset = _PyPegen_byte_offset_to_character_offset(line, token.start - line_start);
     }
     if (token.end != NULL && token.end >= it->tok->line_start) {
-        end_col_offset = _PyPegen_byte_offset_to_character_offset(line, token.end - it->tok->line_start);
+        end_col_offset = _PyPegen_byte_offset_to_character_offset_raw(it->tok->line_start, token.end - it->tok->line_start);
     }
 
     if (it->tok->tok_extra_tokens) {
@@ -233,9 +237,6 @@ tokenizeriter_next(tokenizeriterobject *it)
         // implementation
         if (type > DEDENT && type < OP) {
             type = OP;
-        }
-        else if (type == ASYNC || type == AWAIT) {
-            type = NAME;
         }
         else if (type == NEWLINE) {
             Py_DECREF(str);

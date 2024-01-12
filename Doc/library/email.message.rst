@@ -67,7 +67,7 @@ message objects.
       with the base :class:`~email.message.Message` class *maxheaderlen* is
       accepted, but defaults to ``None``, which means that by default the line
       length is controlled by the
-      :attr:`~email.policy.EmailPolicy.max_line_length` of the policy.  The
+      :attr:`~email.policy.Policy.max_line_length` of the policy.  The
       *policy* argument may be used to override the default policy obtained
       from the message instance.  This can be used to control some of the
       formatting produced by the method, since the specified *policy* will be
@@ -213,7 +213,7 @@ message objects.
          del msg['subject']
          msg['subject'] = 'Python roolz!'
 
-      If the :mod:`policy` defines certain headers to be unique (as the standard
+      If the :mod:`policy <email.policy>` defines certain headers to be unique (as the standard
       policies do), this method may raise a :exc:`ValueError` when an attempt
       is made to assign a value to such a header when one already exists.  This
       behavior is intentional for consistency's sake, but do not depend on it
@@ -247,7 +247,7 @@ message objects.
    .. method:: get(name, failobj=None)
 
       Return the value of the named header field.  This is identical to
-      :meth:`__getitem__` except that optional *failobj* is returned if the
+      :meth:`~object.__getitem__` except that optional *failobj* is returned if the
       named header is missing (*failobj* defaults to ``None``).
 
 
@@ -378,7 +378,7 @@ message objects.
       deprecated.
 
       Note that existing parameter values of headers may be accessed through
-      the :attr:`~email.headerregistry.BaseHeader.params` attribute of the
+      the :attr:`~email.headerregistry.ParameterizedMIMEHeader.params` attribute of the
       header value (for example, ``msg['Content-Type'].params['charset']``).
 
       .. versionchanged:: 3.4 ``replace`` keyword was added.
@@ -691,7 +691,7 @@ message objects.
 
    .. method:: clear_content()
 
-      Remove the payload and all of the :exc:`Content-` headers, leaving
+      Remove the payload and all of the :mailheader:`!Content-` headers, leaving
       all other headers intact and in their original order.
 
 
