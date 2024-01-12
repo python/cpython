@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import lexer
 import parser
 from typing import Optional
@@ -21,6 +21,10 @@ class Properties:
     uses_co_names: bool
     uses_locals: bool
     has_free: bool
+
+    pure: bool
+    passthrough: bool
+    guard: bool
 
     def dump(self, indent: str) -> None:
         print(indent, end="")
@@ -45,6 +49,9 @@ class Properties:
             uses_co_names=any(p.uses_co_names for p in properties),
             uses_locals=any(p.uses_locals for p in properties),
             has_free=any(p.has_free for p in properties),
+            pure=all(p.pure for p in properties),
+            passthrough=all(p.passthrough for p in properties),
+            guard=all(p.guard for p in properties),
         )
 
 
@@ -64,6 +71,9 @@ SKIP_PROPERTIES = Properties(
     uses_co_names=False,
     uses_locals=False,
     has_free=False,
+    pure=False,
+    passthrough=False,
+    guard=False,
 )
 
 
@@ -88,6 +98,9 @@ class StackItem:
     condition: str | None
     size: str
     peek: bool = False
+    type_prop: None | tuple[str, None | str] = field(
+        default_factory=lambda: None, init=True, compare=False, hash=False
+    )
 
     def __str__(self) -> str:
         cond = f" if ({self.condition})" if self.condition else ""
@@ -259,7 +272,9 @@ def override_error(
 
 
 def convert_stack_item(item: parser.StackEffect) -> StackItem:
-    return StackItem(item.name, item.type, item.cond, (item.size or "1"))
+    return StackItem(
+        item.name, item.type, item.cond, (item.size or "1"), type_prop=item.type_prop
+    )
 
 
 def analyze_stack(op: parser.InstDef) -> StackEffect:
@@ -377,7 +392,6 @@ def makes_escaping_api_call(instr: parser.InstDef) -> bool:
     return False
 
 
-
 EXITS = {
     "DISPATCH",
     "GO_TO_INSTRUCTION",
@@ -417,16 +431,33 @@ def always_exits(op: parser.InstDef) -> bool:
     return False
 
 
+def stack_effect_only_peeks(instr: parser.InstDef) -> bool:
+    stack_inputs = [s for s in instr.inputs if not isinstance(s, parser.CacheEffect)]
+    if len(stack_inputs) != len(instr.outputs):
+        return False
+    if len(stack_inputs) == 0:
+        return False
+    if any(s.cond for s in stack_inputs) or any(s.cond for s in instr.outputs):
+        return False
+    return all(
+        (s.name == other.name and s.type == other.type and s.size == other.size)
+        for s, other in zip(stack_inputs, instr.outputs)
+    )
+
+
 def compute_properties(op: parser.InstDef) -> Properties:
     has_free = (
         variable_used(op, "PyCell_New")
         or variable_used(op, "PyCell_GET")
         or variable_used(op, "PyCell_SET")
     )
+    infallible = is_infallible(op)
+    deopts = variable_used(op, "DEOPT_IF")
+    passthrough = stack_effect_only_peeks(op) and infallible
     return Properties(
         escapes=makes_escaping_api_call(op),
-        infallible=is_infallible(op),
-        deopts=variable_used(op, "DEOPT_IF"),
+        infallible=infallible,
+        deopts=deopts,
         oparg=variable_used(op, "oparg"),
         jumps=variable_used(op, "JUMPBY"),
         eval_breaker=variable_used(op, "CHECK_EVAL_BREAKER"),
@@ -440,6 +471,9 @@ def compute_properties(op: parser.InstDef) -> Properties:
         uses_locals=(variable_used(op, "GETLOCAL") or variable_used(op, "SETLOCAL"))
         and not has_free,
         has_free=has_free,
+        pure="pure" in op.annotations,
+        passthrough=passthrough,
+        guard=passthrough and deopts,
     )
 
 
@@ -686,9 +720,7 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
         inst = instructions["BINARY_OP_INPLACE_ADD_UNICODE"]
         inst.family = families["BINARY_OP"]
         families["BINARY_OP"].members.append(inst)
-    opmap, first_arg, min_instrumented = assign_opcodes(
-        instructions, families, pseudos
-    )
+    opmap, first_arg, min_instrumented = assign_opcodes(instructions, families, pseudos)
     return Analysis(
         instructions, uops, families, pseudos, opmap, first_arg, min_instrumented
     )
