@@ -832,6 +832,36 @@ A ``TarInfo`` object has the following public data attributes:
       :meth:`~TarFile.extractall`, causing extraction to skip applying this
       attribute.
 
+.. attribute:: TarInfo.chksum
+
+   Header checksum.
+
+
+.. attribute:: TarInfo.devmajor
+
+   Device major number.
+
+
+.. attribute:: TarInfo.devminor
+
+   Device minor number.
+
+
+.. attribute:: TarInfo.offset
+
+   The tar header starts here.
+
+
+.. attribute:: TarInfo.offset_data
+
+   The file's data starts here.
+
+
+.. attribute:: TarInfo.sparse
+
+   Sparse member information.
+
+
 .. attribute:: TarInfo.pax_headers
    :type: dict
 
