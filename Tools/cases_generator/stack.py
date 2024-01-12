@@ -3,6 +3,8 @@ from analyzer import StackItem, Instruction, Uop
 from dataclasses import dataclass
 from cwriter import CWriter
 
+UNUSED = {"unused"}
+
 
 def maybe_parenthesize(sym: str) -> str:
     """Add parentheses around a string if it contains an operator
@@ -29,6 +31,7 @@ def var_size(var: StackItem) -> str:
     else:
         return var.size
 
+
 @dataclass
 class StackOffset:
     "The stack offset of the virtual base of the stack from the physical stack pointer"
@@ -47,10 +50,7 @@ class StackOffset:
         self.pushed.append(var_size(item))
 
     def __sub__(self, other: "StackOffset") -> "StackOffset":
-        return StackOffset(
-            self.popped + other.pushed,
-            self.pushed + other.popped
-        )
+        return StackOffset(self.popped + other.pushed, self.pushed + other.popped)
 
     def __neg__(self) -> "StackOffset":
         return StackOffset(self.pushed, self.popped)
@@ -134,18 +134,18 @@ class Stack:
                 )
             if popped.name == var.name:
                 return ""
-            elif popped.name == "unused":
+            elif popped.name in UNUSED:
                 self.defined.add(var.name)
                 return (
                     f"{var.name} = {indirect}stack_pointer[{self.top_offset.to_c()}];\n"
                 )
-            elif var.name == "unused":
+            elif var.name in UNUSED:
                 return ""
             else:
                 self.defined.add(var.name)
                 return f"{var.name} = {popped.name};\n"
         self.base_offset.pop(var)
-        if var.name == "unused":
+        if var.name in UNUSED:
             return ""
         else:
             self.defined.add(var.name)
@@ -159,7 +159,7 @@ class Stack:
 
     def push(self, var: StackItem) -> str:
         self.variables.append(var)
-        if var.is_array() and var.name not in self.defined and var.name != "unused":
+        if var.is_array() and var.name not in self.defined and var.name not in UNUSED:
             c_offset = self.top_offset.to_c()
             self.top_offset.push(var)
             self.defined.add(var.name)
@@ -172,7 +172,7 @@ class Stack:
         for var in self.variables:
             if not var.peek:
                 cast = "(PyObject *)" if var.type else ""
-                if var.name != "unused" and not var.is_array():
+                if var.name not in UNUSED and not var.is_array():
                     if var.condition:
                         out.emit(f"if ({var.condition}) ")
                     out.emit(
