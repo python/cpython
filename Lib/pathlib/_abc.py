@@ -406,6 +406,11 @@ class PurePathBase:
         name = self.name.partition('.')[0].partition(':')[0].rstrip(' ')
         return name.upper() in _WIN_RESERVED_NAMES
 
+    @property
+    def _pattern_parts(self):
+        """List of path components, to be used with patterns in glob()."""
+        return list(self.parts)
+
     def match(self, path_pattern, *, case_sensitive=None):
         """
         Return True if this path matches the given pattern.
@@ -415,11 +420,10 @@ class PurePathBase:
         if case_sensitive is None:
             case_sensitive = _is_case_sensitive(self.pathmod)
         sep = path_pattern.pathmod.sep
-        pattern_str = str(path_pattern)
         if path_pattern.anchor:
-            pass
+            pattern_str = str(path_pattern)
         elif path_pattern.parts:
-            pattern_str = f'**{sep}{pattern_str}'
+            pattern_str = str('**' / path_pattern)
         else:
             raise ValueError("empty pattern")
         match = _compile_pattern(pattern_str, sep, case_sensitive)
@@ -706,16 +710,14 @@ class PathBase(PurePathBase):
         """Iterate over this subtree and yield all existing files (of any
         kind, including directories) matching the given relative pattern.
         """
-        path_pattern = self.with_segments(pattern)
-        if path_pattern.anchor:
+        if not isinstance(pattern, PurePathBase):
+            pattern = self.with_segments(pattern)
+        if pattern.anchor:
             raise NotImplementedError("Non-relative patterns are unsupported")
-        elif not path_pattern.parts:
+        elif not pattern.parts:
             raise ValueError("Unacceptable pattern: {!r}".format(pattern))
 
-        pattern_parts = list(path_pattern.parts)
-        if not self.pathmod.basename(pattern):
-            # GH-65238: pathlib doesn't preserve trailing slash. Add it back.
-            pattern_parts.append('')
+        pattern_parts = pattern._pattern_parts
 
         if case_sensitive is None:
             # TODO: evaluate case-sensitivity of each directory in _select_children().
@@ -752,7 +754,7 @@ class PathBase(PurePathBase):
 
                     # Filter out paths that don't match pattern.
                     prefix_len = len(str(self._make_child_relpath('_'))) - 1
-                    match = _compile_pattern(str(path_pattern), sep, case_sensitive)
+                    match = _compile_pattern(str(pattern), sep, case_sensitive)
                     paths = (path for path in paths if match(str(path), prefix_len))
                     return paths
 
@@ -775,8 +777,10 @@ class PathBase(PurePathBase):
         directories) matching the given relative pattern, anywhere in
         this subtree.
         """
-        return self.glob(
-            f'**/{pattern}', case_sensitive=case_sensitive, follow_symlinks=follow_symlinks)
+        if not isinstance(pattern, PurePathBase):
+            pattern = self.with_segments(pattern)
+        pattern = '**' / pattern
+        return self.glob(pattern, case_sensitive=case_sensitive, follow_symlinks=follow_symlinks)
 
     def walk(self, top_down=True, on_error=None, follow_symlinks=False):
         """Walk the directory tree from this directory, similar to os.walk()."""
