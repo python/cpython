@@ -890,13 +890,14 @@ PyTypeObject PySetIter_Type = {
 static PyObject *
 set_iter(PySetObject *so)
 {
+    Py_ssize_t size = set_len(so);
     setiterobject *si = PyObject_GC_New(setiterobject, &PySetIter_Type);
     if (si == NULL)
         return NULL;
     si->si_set = (PySetObject*)Py_NewRef(so);
-    si->si_used = so->used;
+    si->si_used = size;
     si->si_pos = 0;
-    si->len = so->used;
+    si->len = size;
     _PyObject_GC_TRACK(si);
     return (PyObject *)si;
 }
