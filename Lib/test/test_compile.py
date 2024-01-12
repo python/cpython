@@ -1098,6 +1098,21 @@ class TestSpecifics(unittest.TestCase):
         code_lines = self.get_code_lines(test.__code__)
         self.assertEqual(expected_lines, code_lines)
 
+    def test_line_number_synthetic_jump_multiple_predecessors(self):
+        def f():
+            for x in it:
+                try:
+                    if C1:
+                        yield 2
+                except OSError:
+                    pass
+
+        # Ensure that all JUMP_BACKWARDs have line number
+        code = f.__code__
+        for inst in dis.Bytecode(code):
+            if inst.opname == 'JUMP_BACKWARD':
+                self.assertIsNotNone(inst.positions.lineno)
+
     def test_lineno_of_backward_jump(self):
         # Issue gh-107901
         def f():
