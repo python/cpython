@@ -55,7 +55,7 @@ class ClearTest(unittest.TestCase):
         # The reference was released by .clear()
         self.assertIs(None, wr())
 
-    def test_clear_locals_cur_frame_issue113939(self):
+    def test_clear_locals_issue113939(self):
         class C:
             pass
         wr = None
@@ -67,6 +67,7 @@ class ClearTest(unittest.TestCase):
         try:
             inner()
         except ZeroDivisionError as exc:
+            support.gc_collect()
             self.assertIsNotNone(wr())
             print(exc.__traceback__.tb_next.tb_frame.f_locals)
             exc.__traceback__.tb_next.tb_frame.clear()
