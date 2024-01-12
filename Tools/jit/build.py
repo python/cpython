@@ -567,12 +567,12 @@ def dump_header() -> typing.Iterator[str]:
     yield f"// $ {shlex.join([sys.executable, *sys.argv])}"
     yield ""
     yield "typedef enum {"
-    for kind in sorted(typing.get_args(schema.HoleKind)):
+    for kind in typing.get_args(schema.HoleKind):
         yield f"    HoleKind_{kind},"
     yield "} HoleKind;"
     yield ""
     yield "typedef enum {"
-    for value in sorted(HoleValue, key=lambda value: value.name):
+    for value in HoleValue:
         yield f"    HoleValue_{value.name},"
     yield "} HoleValue;"
     yield ""
@@ -598,7 +598,7 @@ def dump_header() -> typing.Iterator[str]:
     yield ""
 
 
-def dump_footer(opnames: list[str]) -> typing.Iterator[str]:
+def dump_footer(opnames: typing.Iterable[str]) -> typing.Iterator[str]:
     yield "#define INIT_STENCIL(STENCIL) {                         \\"
     yield "    .body_size = Py_ARRAY_LENGTH(STENCIL##_body) - 1,   \\"
     yield "    .body = STENCIL##_body,                             \\"
@@ -617,56 +617,29 @@ def dump_footer(opnames: list[str]) -> typing.Iterator[str]:
     yield "};"
     yield ""
     yield "#define GET_PATCHES() { \\"
-    for value in sorted(HoleValue, key=lambda value: value.name):
+    for value in HoleValue:
         yield f"    [HoleValue_{value.name}] = (uint64_t)0xBADBADBADBADBADB, \\"
     yield "}"
 
 
-def dump(stencil_groups: dict[str, StencilGroup]) -> typing.Iterator[str]:
-    yield from dump_header()
-    opnames = []
-    for opname, stencil in sorted(stencil_groups.items()):
-        opnames.append(opname)
-        yield f"// {opname}"
-        assert stencil.code
-        for line in stencil.code.disassembly:
+def dump_stencil(opname: str, group: StencilGroup) -> typing.Iterator[str]:
+    yield f"// {opname}"
+    for part, stencil in [("code", group.code), ("data", group.data)]:
+        for line in stencil.disassembly:
             yield f"// {line}"
-        size = len(stencil.code.body) + 1
-        yield f"static const unsigned char {opname}_code_body[{size}] = {{"
-        for i in range(0, len(stencil.code.body), 8):
-            row = " ".join(f"{byte:#02x}," for byte in stencil.code.body[i : i + 8])
-            yield f"    {row}"
-        yield "};"
-        if stencil.code.holes:
-            size = len(stencil.code.holes) + 1
-            yield f"static const Hole {opname}_code_holes[{size}] = {{"
-            for hole in sorted(stencil.code.holes, key=lambda hole: hole.offset):
-                parts = [
-                    f"{hole.offset:#x}",
-                    f"HoleKind_{hole.kind}",
-                    f"HoleValue_{hole.value.name}",
-                    f"&{hole.symbol}" if hole.symbol else "NULL",
-                    format_addend(hole.addend),
-                ]
-                yield f"    {{{', '.join(parts)}}},"
-            yield "};"
-        else:
-            yield f"static const Hole {opname}_code_holes[1];"
-        for line in stencil.data.disassembly:
-            yield f"// {line}"
-        if stencil.data.body:
-            size = len(stencil.data.body) + 1
-            yield f"static const unsigned char {opname}_data_body[{size}] = {{"
-            for i in range(0, len(stencil.data.body), 8):
-                row = " ".join(f"{byte:#02x}," for byte in stencil.data.body[i : i + 8])
+        if stencil.body:
+            size = len(stencil.body) + 1
+            yield f"static const unsigned char {opname}_{part}_body[{size}] = {{"
+            for i in range(0, len(stencil.body), 8):
+                row = " ".join(f"{byte:#02x}," for byte in stencil.body[i : i + 8])
                 yield f"    {row}"
             yield "};"
         else:
-            yield f"static const unsigned char {opname}_data_body[1];"
-        if stencil.data.holes:
-            size = len(stencil.data.holes) + 1
-            yield f"static const Hole {opname}_data_holes[{size}] = {{"
-            for hole in sorted(stencil.data.holes, key=lambda hole: hole.offset):
+            yield f"static const unsigned char {opname}_{part}_body[1];"
+        if stencil.holes:
+            size = len(stencil.holes) + 1
+            yield f"static const Hole {opname}_{part}_holes[{size}] = {{"
+            for hole in stencil.holes:
                 parts = [
                     f"{hole.offset:#x}",
                     f"HoleKind_{hole.kind}",
@@ -677,9 +650,15 @@ def dump(stencil_groups: dict[str, StencilGroup]) -> typing.Iterator[str]:
                 yield f"    {{{', '.join(parts)}}},"
             yield "};"
         else:
-            yield f"static const Hole {opname}_data_holes[1];"
-        yield ""
-    yield from dump_footer(opnames)
+            yield f"static const Hole {opname}_{part}_holes[1];"
+    yield ""
+
+
+def dump(groups: dict[str, StencilGroup]) -> typing.Iterator[str]:
+    yield from dump_header()
+    for opname, group in groups.items():
+        yield from dump_stencil(opname, group)
+    yield from dump_footer(groups)
 
 
 def format_addend(addend: int, signed: bool = False) -> str:
