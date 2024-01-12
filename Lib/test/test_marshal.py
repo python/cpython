@@ -142,16 +142,16 @@ class CodeTestCase(unittest.TestCase):
         co = ExceptionTestCase.test_exceptions.__code__
         data = {'a': [({co, 0},)]}
         dump = marshal.dumps(data, allow_code=True)
+        self.assertEqual(marshal.loads(dump, allow_code=True), data)
         with self.assertRaises(ValueError):
             marshal.dumps(data, allow_code=False)
-        self.assertEqual(marshal.loads(dump, allow_code=True), data)
         with self.assertRaises(ValueError):
             marshal.loads(dump, allow_code=False)
 
         marshal.dump(data, io.BytesIO(), allow_code=True)
+        self.assertEqual(marshal.load(io.BytesIO(dump), allow_code=True), data)
         with self.assertRaises(ValueError):
             marshal.dump(data, io.BytesIO(), allow_code=False)
-        self.assertEqual(marshal.load(io.BytesIO(dump), allow_code=True), data)
         with self.assertRaises(ValueError):
             marshal.load(io.BytesIO(dump), allow_code=False)
 

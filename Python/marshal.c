@@ -78,6 +78,7 @@ module marshal
 #define WFERR_UNMARSHALLABLE 1
 #define WFERR_NESTEDTOODEEP 2
 #define WFERR_NOMEMORY 3
+#define WFERR_CODE_NOT_ALLOWED 4
 
 typedef struct {
     FILE *fp;
@@ -555,7 +556,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
     }
     else if (PyCode_Check(v)) {
         if (!p->allow_code) {
-            p->error = WFERR_UNMARSHALLABLE;
+            p->error = WFERR_CODE_NOT_ALLOWED;
             return;
         }
         PyCodeObject *co = (PyCodeObject *)v;
@@ -1377,7 +1378,7 @@ r_object(RFILE *p)
 
             if (!p->allow_code) {
                 PyErr_SetString(PyExc_ValueError,
-                                "loading of code objects is disallowed");
+                                "unmarshalling code objects is disallowed");
                 break;
             }
             idx = r_ref_reserve(flag, p);
@@ -1693,12 +1694,24 @@ _PyMarshal_WriteObjectToString(PyObject *x, int version, int allow_code)
     }
     if (wf.error != WFERR_OK) {
         Py_XDECREF(wf.str);
-        if (wf.error == WFERR_NOMEMORY)
+        switch (wf.error) {
+        case WFERR_NOMEMORY:
             PyErr_NoMemory();
-        else
+            break;
+        case WFERR_NESTEDTOODEEP:
             PyErr_SetString(PyExc_ValueError,
-              (wf.error==WFERR_UNMARSHALLABLE)?"unmarshallable object"
-               :"object too deeply nested to marshal");
+                            "object too deeply nested to marshal");
+            break;
+        case WFERR_CODE_NOT_ALLOWED:
+            PyErr_SetString(PyExc_ValueError,
+                            "marshalling code objects is disallowed");
+            break;
+        default:
+        case WFERR_UNMARSHALLABLE:
+            PyErr_SetString(PyExc_ValueError,
+                            "unmarshallable object");
+            break;
+        }
         return NULL;
     }
     return wf.str;
