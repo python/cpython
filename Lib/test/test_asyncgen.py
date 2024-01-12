@@ -385,9 +385,12 @@ class AsyncGenTest(unittest.TestCase):
         me = gen()
         ai = me.__aiter__()
         an = ai.__anext__()
-
-        with self.assertRaisesRegex(RuntimeError,
-                r'anext\(\): asynchronous generator is already running'):
+        with (
+            self.assertRaisesRegex(RuntimeError,
+                r'anext\(\): asynchronous generator is already running'),
+            self.assertWarnsRegex(RuntimeWarning,
+                f"coroutine method 'asend' of '{gen.__qualname__}' was never awaited")
+        ):
             an.__next__()
 
     def test_async_gen_3_arg_deprecation_warning(self):
