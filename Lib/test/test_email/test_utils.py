@@ -147,7 +147,7 @@ class LocaltimeTests(unittest.TestCase):
     def test_variable_tzname(self):
         t0 = datetime.datetime(1984, 1, 1, tzinfo=datetime.timezone.utc)
         t1 = utils.localtime(t0)
-        if t1.tzname() == 'Europe':
+        if t1.tzname() in ('Europe', 'UTC'):
             self.skipTest("Can't find a Kyiv timezone database")
         self.assertEqual(t1.tzname(), 'MSK')
         t0 = datetime.datetime(1994, 1, 1, tzinfo=datetime.timezone.utc)
