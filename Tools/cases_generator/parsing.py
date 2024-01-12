@@ -271,13 +271,14 @@ class Parser(PLexer):
                     if self.expect(lx.TIMES):
                         type_text += " *"
                 if self.expect(lx.AND):
-                    self.require(lx.LPAREN)
+                    consumed_bracket = self.expect(lx.LPAREN) is not None
                     type_prop_text = self.require(lx.IDENTIFIER).text.strip()
                     aux = None
                     if self.expect(lx.PLUS):
                         aux = self.require(lx.IDENTIFIER).text.strip()
                     type_prop = (type_prop_text, aux)
-                    self.require(lx.RPAREN)
+                    if consumed_bracket:
+                        self.require(lx.RPAREN)
             cond_text = ""
             if self.expect(lx.IF):
                 self.require(lx.LPAREN)

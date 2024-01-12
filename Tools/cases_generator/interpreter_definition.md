@@ -142,9 +142,9 @@ The following definitions may occur:
 The optional `type` in an `object` is the C type. It defaults to `PyObject *`.
 The objects before the "--" are the objects on top of the stack at the start of
 the instruction. Those after the "--" are the objects on top of the stack at the
-end of the instruction. When prefixed by a `&`, the type rule follows the
-`type_prop` rule. This indicates the stack effect is of that specific type
-after the operation. In this case, the type may also contain auxillary information
+end of the instruction. When prefixed by a `&`, the `type` production rule follows the
+`type_prop` production rule. This indicates the stack effect is of that specific type
+after the operation. In this case, the type may also consist of auxillary information
 that is fetched from a previously defined operand in the instruction header, such as
 a type version tag. This follows the format `type + auxillary`. For a list of the
 types and what they correspond to, see [Appendix A - Types](#Appendix-A-Types).
@@ -174,9 +174,7 @@ list of annotations and their meanings are as follows:
 
 * `override`. For external use by other interpreter definitions to override the current
    instruction definition.
-* `pure`. This instruction has no side effects visible to the Python user. It may
-   still have side effects on the CPython interpreter state. All other instructions without
-   this annotation are assumed to be not pure.
+* `pure`. This instruction has no side effects.
 
 ### Special functions/macros
 
@@ -446,16 +444,16 @@ and the tables for use by disassemblers.
 
 ## Appendix A: Types
 
-The following types correspond to the following information:
-* `PYLONG_TYPE`: `&PyLong_Type`
-* `PYFLOAT_TYPE`: `&PyFloat_Type`
-* `PYUNICODE_TYPE`: `&PYUNICODE_TYPE`
-* `NULL_TYPE`: `NULL`
+The following types obeys the following predicates:
+* `PYLONG_TYPE`: `Py_TYPE(val) == &PyLong_Type`
+* `PYFLOAT_TYPE`: `Py_TYPE(val) == &PyFloat_Type`
+* `PYUNICODE_TYPE`: `Py_TYPE(val) == &PYUNICODE_TYPE`
+* `NULL_TYPE`: `val == NULL`
 * `GUARD_TYPE_VERSION_TYPE`: `type->tp_version_tag == auxillary`
 * `GUARD_DORV_VALUES_TYPE`: `_PyDictOrValues_IsValues(obj)`
 * `GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_TYPE`:
   `_PyDictOrValues_IsValues(obj) || _PyObject_MakeInstanceAttributesFromDict(obj, dorv)`
 * `GUARD_KEYS_VERSION_TYPE`: `owner_heap_type->ht_cached_keys->dk_version == auxillary`
-* `PYMETHOD_TYPE`: `&PyMethod_Type`
+* `PYMETHOD_TYPE`: `Py_TYPE(val) == &PyMethod_Type`
 * `PYFUNCTION_TYPE_VERSION_TYPE`:
   `PyFunction_Check(callable) && func->func_version == auxillary && code->co_argcount == oparg + (self_or_null != NULL)`
