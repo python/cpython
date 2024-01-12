@@ -164,10 +164,15 @@ class PurePathBase:
         """
         return type(self)(*pathsegments)
 
+    @property
+    def _raw_path(self):
+        """The joined but unnormalized path."""
+        return self.pathmod.join(*self._raw_paths)
+
     def __str__(self):
         """Return the string representation of the path, suitable for
         passing to system calls."""
-        return self.pathmod.join(*self._raw_paths)
+        return self._raw_path
 
     def as_posix(self):
         """Return the string representation of the path with forward (/)
@@ -177,23 +182,23 @@ class PurePathBase:
     @property
     def drive(self):
         """The drive prefix (letter or UNC path), if any."""
-        return self.pathmod.splitdrive(str(self))[0]
+        return self.pathmod.splitdrive(self._raw_path)[0]
 
     @property
     def root(self):
         """The root of the path, if any."""
-        return self.pathmod.splitroot(str(self))[1]
+        return self.pathmod.splitroot(self._raw_path)[1]
 
     @property
     def anchor(self):
         """The concatenation of the drive and root, or ''."""
-        drive, root, _ =  self.pathmod.splitroot(str(self))
+        drive, root, _ =  self.pathmod.splitroot(self._raw_path)
         return drive + root
 
     @property
     def name(self):
         """The final path component, if any."""
-        return self.pathmod.basename(str(self))
+        return self.pathmod.basename(self._raw_path)
 
     @property
     def suffix(self):
@@ -237,7 +242,7 @@ class PurePathBase:
         dirname = self.pathmod.dirname
         if dirname(name):
             raise ValueError(f"Invalid name {name!r}")
-        return self.with_segments(dirname(str(self)), name)
+        return self.with_segments(dirname(self._raw_path), name)
 
     def with_stem(self, stem):
         """Return a new path with the stem changed."""
@@ -268,7 +273,7 @@ class PurePathBase:
         anchor0, parts0 = self._stack
         anchor1, parts1 = other._stack
         if anchor0 != anchor1:
-            raise ValueError(f"{str(self)!r} and {str(other)!r} have different anchors")
+            raise ValueError(f"{self._raw_path!r} and {other._raw_path!r} have different anchors")
         while parts0 and parts1 and parts0[-1] == parts1[-1]:
             parts0.pop()
             parts1.pop()
@@ -276,9 +281,9 @@ class PurePathBase:
             if not part or part == '.':
                 pass
             elif not walk_up:
-                raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
+                raise ValueError(f"{self._raw_path!r} is not in the subpath of {other._raw_path!r}")
             elif part == '..':
-                raise ValueError(f"'..' segment in {str(other)!r} cannot be walked")
+                raise ValueError(f"'..' segment in {other._raw_path!r} cannot be walked")
             else:
                 parts0.append('..')
         return self.with_segments('', *reversed(parts0))
@@ -337,7 +342,7 @@ class PurePathBase:
         *parts* is a reversed list of parts following the anchor.
         """
         split = self.pathmod.split
-        path = str(self)
+        path = self._raw_path
         parent, name = split(path)
         names = []
         while path != parent:
@@ -349,7 +354,7 @@ class PurePathBase:
     @property
     def parent(self):
         """The logical parent of the path."""
-        path = str(self)
+        path = self._raw_path
         parent = self.pathmod.dirname(path)
         if path != parent:
             parent = self.with_segments(parent)
@@ -361,7 +366,7 @@ class PurePathBase:
     def parents(self):
         """A sequence of this path's logical parents."""
         dirname = self.pathmod.dirname
-        path = str(self)
+        path = self._raw_path
         parent = dirname(path)
         parents = []
         while path != parent:
@@ -383,7 +388,7 @@ class PurePathBase:
                     return True
             return False
         else:
-            return self.pathmod.isabs(str(self))
+            return self.pathmod.isabs(self._raw_path)
 
     def is_reserved(self):
         """Return True if the path contains one of the special names reserved
@@ -898,7 +903,7 @@ class PathBase(PurePathBase):
                         # encountered during resolution.
                         link_count += 1
                         if link_count >= self._max_symlinks:
-                            raise OSError(ELOOP, "Too many symbolic links in path", str(self))
+                            raise OSError(ELOOP, "Too many symbolic links in path", self._raw_path)
                         target_root, target_parts = path.readlink()._stack
                         # If the symlink target is absolute (like '/etc/hosts'), set the current
                         # path to its uppermost parent (like '/').
@@ -912,7 +917,7 @@ class PathBase(PurePathBase):
                         parts.extend(target_parts)
                         continue
                     elif parts and not S_ISDIR(st.st_mode):
-                        raise NotADirectoryError(ENOTDIR, "Not a directory", str(self))
+                        raise NotADirectoryError(ENOTDIR, "Not a directory", self._raw_path)
                 except OSError:
                     if strict:
                         raise
