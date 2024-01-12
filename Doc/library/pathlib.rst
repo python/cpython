@@ -306,7 +306,7 @@ Pure paths provide the following methods and properties:
 .. attribute:: PurePath.pathmod
 
    The implementation of the :mod:`os.path` module used for low-level path
-   operations: either ``posixpath`` or ``ntpath``.
+   operations: either :mod:`posixpath` or :mod:`ntpath`.
 
    .. versionadded:: 3.13
 
@@ -594,6 +594,9 @@ Pure paths provide the following methods and properties:
       >>> pattern = PurePath('*.py')
       >>> PurePath('a/b.py').match(pattern)
       True
+
+   .. versionchanged:: 3.12
+      Accepts an object implementing the :class:`os.PathLike` interface.
 
    As with other methods, case-sensitivity follows platform defaults::
 

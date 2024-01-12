@@ -1250,7 +1250,7 @@ instance::
     <function D.f at 0x00C45070>
 
     >>> d.f.__self__
-    <__main__.D object at 0x1012e1f98>
+    <__main__.D object at 0x00B18C90>
 
 If you have ever wondered where *self* comes from in regular methods or where
 *cls* comes from in class methods, this is it!
@@ -1342,7 +1342,8 @@ Using the non-data descriptor protocol, a pure Python version of
 The :func:`functools.update_wrapper` call adds a ``__wrapped__`` attribute
 that refers to the underlying function.  Also it carries forward
 the attributes necessary to make the wrapper look like the wrapped
-function: ``__name__``, ``__qualname__``, ``__doc__``, and ``__annotations__``.
+function: :attr:`~function.__name__`, :attr:`~function.__qualname__`,
+:attr:`~function.__doc__`, and :attr:`~function.__annotations__`.
 
 .. testcode::
     :hide:
@@ -1522,8 +1523,9 @@ Using the non-data descriptor protocol, a pure Python version of
 The :func:`functools.update_wrapper` call in ``ClassMethod`` adds a
 ``__wrapped__`` attribute that refers to the underlying function.  Also
 it carries forward the attributes necessary to make the wrapper look
-like the wrapped function: ``__name__``, ``__qualname__``, ``__doc__``,
-and ``__annotations__``.
+like the wrapped function: :attr:`~function.__name__`,
+:attr:`~function.__qualname__`, :attr:`~function.__doc__`,
+and :attr:`~function.__annotations__`.
 
 
 Member objects and __slots__

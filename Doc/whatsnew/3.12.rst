@@ -343,7 +343,9 @@ cores. This is currently only available through the C-API,
 though a Python API is :pep:`anticipated for 3.13 <554>`.
 
 Use the new :c:func:`Py_NewInterpreterFromConfig` function to
-create an interpreter with its own GIL::
+create an interpreter with its own GIL:
+
+.. code-block:: c
 
    PyInterpreterConfig config = {
        .check_multi_interp_extensions = 1,
@@ -1894,6 +1896,15 @@ Changes in the Python API
 
   * Mixing tabs and spaces as indentation in the same file is not supported anymore and will
     raise a :exc:`TabError`.
+
+* The :mod:`threading` module now expects the :mod:`!_thread` module to have
+  an ``_is_main_interpreter`` attribute.  It is a function with no
+  arguments that returns ``True`` if the current interpreter is the
+  main interpreter.
+
+  Any library or application that provides a custom ``_thread`` module
+  should provide ``_is_main_interpreter()``.
+  (See :gh:`112826`.)
 
 Build Changes
 =============

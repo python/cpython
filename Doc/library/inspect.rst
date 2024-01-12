@@ -492,7 +492,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    Methods implemented via descriptors that also pass one of the other tests
    return ``False`` from the :func:`ismethoddescriptor` test, simply because the
    other tests promise more -- you can, e.g., count on having the
-   :ref:`__func__ <instance-methods>` attribute (etc) when an object passes
+   :attr:`~method.__func__` attribute (etc) when an object passes
    :func:`ismethod`.
 
 
@@ -1225,9 +1225,10 @@ Classes and functions
    * If ``obj`` is a class, ``globals`` defaults to
      ``sys.modules[obj.__module__].__dict__`` and ``locals`` defaults
      to the ``obj`` class namespace.
-   * If ``obj`` is a callable, ``globals`` defaults to ``obj.__globals__``,
+   * If ``obj`` is a callable, ``globals`` defaults to
+     :attr:`obj.__globals__ <function.__globals__>`,
      although if ``obj`` is a wrapped function (using
-     ``functools.update_wrapper()``) it is first unwrapped.
+     :func:`functools.update_wrapper`) it is first unwrapped.
 
    Calling ``get_annotations`` is best practice for accessing the
    annotations dict of any object.  See :ref:`annotations-howto` for
