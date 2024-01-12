@@ -7,7 +7,6 @@
 #include "pycore_optimizer.h"     // _Py_uop_analyze_and_optimize()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_uop_ids.h"
-#include "pycore_uops.h"
 #include "cpython/optimizer.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -16,6 +15,8 @@
 #define NEED_OPCODE_METADATA
 #include "pycore_uop_metadata.h" // Uop tables
 #undef NEED_OPCODE_METADATA
+
+#define UOP_MAX_TRACE_LENGTH 512
 
 #define MAX_EXECUTORS_SIZE 256
 
@@ -224,8 +225,8 @@ static PyMethodDef executor_methods[] = {
 ///////////////////// Experimental UOp Optimizer /////////////////////
 
 static void
-uop_dealloc(_PyUOpExecutorObject *self) {
-    _Py_ExecutorClear((_PyExecutorObject *)self);
+uop_dealloc(_PyExecutorObject *self) {
+    _Py_ExecutorClear(self);
     PyObject_Free(self);
 }
 
@@ -236,13 +237,13 @@ _PyUOpName(int index)
 }
 
 static Py_ssize_t
-uop_len(_PyUOpExecutorObject *self)
+uop_len(_PyExecutorObject *self)
 {
     return Py_SIZE(self);
 }
 
 static PyObject *
-uop_item(_PyUOpExecutorObject *self, Py_ssize_t index)
+uop_item(_PyExecutorObject *self, Py_ssize_t index)
 {
     Py_ssize_t len = uop_len(self);
     if (index < 0 || index >= len) {
@@ -280,7 +281,7 @@ PySequenceMethods uop_as_sequence = {
 PyTypeObject _PyUOpExecutor_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "uop_executor",
-    .tp_basicsize = offsetof(_PyUOpExecutorObject, trace),
+    .tp_basicsize = offsetof(_PyExecutorObject, trace),
     .tp_itemsize = sizeof(_PyUOpInstruction),
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .tp_dealloc = (destructor)uop_dealloc,
@@ -423,8 +424,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
 
         if (opcode == ENTER_EXECUTOR) {
             assert(oparg < 256);
-            _PyExecutorObject *executor =
-                (_PyExecutorObject *)code->co_executors->executors[oparg];
+            _PyExecutorObject *executor = code->co_executors->executors[oparg];
             opcode = executor->vm_data.opcode;
             DPRINTF(2, "  * ENTER_EXECUTOR -> %s\n",  _PyOpcode_OpName[opcode]);
             oparg = executor->vm_data.oparg;
@@ -704,7 +704,7 @@ compute_used(_PyUOpInstruction *buffer, uint32_t *used)
 {
     int count = 0;
     SET_BIT(used, 0);
-    for (int i = 0; i < _Py_UOP_MAX_TRACE_LENGTH; i++) {
+    for (int i = 0; i < UOP_MAX_TRACE_LENGTH; i++) {
         if (!BIT_IS_SET(used, i)) {
             continue;
         }
@@ -736,15 +736,15 @@ compute_used(_PyUOpInstruction *buffer, uint32_t *used)
 static _PyExecutorObject *
 make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
 {
-    uint32_t used[(_Py_UOP_MAX_TRACE_LENGTH + 31)/32] = { 0 };
+    uint32_t used[(UOP_MAX_TRACE_LENGTH + 31)/32] = { 0 };
     int length = compute_used(buffer, used);
-    _PyUOpExecutorObject *executor = PyObject_NewVar(_PyUOpExecutorObject, &_PyUOpExecutor_Type, length);
+    _PyExecutorObject *executor = PyObject_NewVar(_PyExecutorObject, &_PyUOpExecutor_Type, length);
     if (executor == NULL) {
         return NULL;
     }
     int dest = length - 1;
     /* Scan backwards, so that we see the destinations of jumps before the jumps themselves. */
-    for (int i = _Py_UOP_MAX_TRACE_LENGTH-1; i >= 0; i--) {
+    for (int i = UOP_MAX_TRACE_LENGTH-1; i >= 0; i--) {
         if (!BIT_IS_SET(used, i)) {
             continue;
         }
@@ -763,7 +763,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
         dest--;
     }
     assert(dest == -1);
-    _Py_ExecutorInit((_PyExecutorObject *)executor, dependencies);
+    _Py_ExecutorInit(executor, dependencies);
 #ifdef Py_DEBUG
     char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
     int lltrace = 0;
@@ -782,7 +782,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
         }
     }
 #endif
-    return (_PyExecutorObject *)executor;
+    return executor;
 }
 
 static int
@@ -795,8 +795,8 @@ uop_optimize(
 {
     _PyBloomFilter dependencies;
     _Py_BloomFilter_Init(&dependencies);
-    _PyUOpInstruction buffer[_Py_UOP_MAX_TRACE_LENGTH];
-    int err = translate_bytecode_to_trace(code, instr, buffer, _Py_UOP_MAX_TRACE_LENGTH, &dependencies);
+    _PyUOpInstruction buffer[UOP_MAX_TRACE_LENGTH];
+    int err = translate_bytecode_to_trace(code, instr, buffer, UOP_MAX_TRACE_LENGTH, &dependencies);
     if (err <= 0) {
         // Error or nothing translated
         return err;
@@ -804,7 +804,7 @@ uop_optimize(
     OPT_STAT_INC(traces_created);
     char *uop_optimize = Py_GETENV("PYTHONUOPSOPTIMIZE");
     if (uop_optimize == NULL || *uop_optimize > '0') {
-        err = _Py_uop_analyze_and_optimize(code, buffer, _Py_UOP_MAX_TRACE_LENGTH, curr_stackentries);
+        err = _Py_uop_analyze_and_optimize(code, buffer, UOP_MAX_TRACE_LENGTH, curr_stackentries);
         if (err < 0) {
             return -1;
         }
@@ -848,7 +848,7 @@ PyUnstable_Optimizer_NewUOpOptimizer(void)
 }
 
 static void
-counter_dealloc(_PyUOpExecutorObject *self) {
+counter_dealloc(_PyExecutorObject *self) {
     PyObject *opt = (PyObject *)self->trace[0].operand;
     Py_DECREF(opt);
     uop_dealloc(self);
@@ -857,7 +857,7 @@ counter_dealloc(_PyUOpExecutorObject *self) {
 PyTypeObject _PyCounterExecutor_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "counting_executor",
-    .tp_basicsize = offsetof(_PyUOpExecutorObject, trace),
+    .tp_basicsize = offsetof(_PyExecutorObject, trace),
     .tp_itemsize = sizeof(_PyUOpInstruction),
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .tp_dealloc = (destructor)counter_dealloc,
