@@ -11,12 +11,10 @@ extern "C" {
 
 #ifdef _Py_JIT
 
-#include "pycore_uops.h"
-
 typedef _Py_CODEUNIT *(*jit_func)(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *tstate);
 
-int _PyJIT_Compile(_PyUOpExecutorObject *executor);
-void _PyJIT_Free(_PyUOpExecutorObject *executor);
+int _PyJIT_Compile(_PyExecutorObject *executor);
+void _PyJIT_Free(_PyExecutorObject *executor);
 
 #endif  // _Py_JIT
 

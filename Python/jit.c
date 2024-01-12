@@ -294,7 +294,7 @@ emit(const StencilGroup *group, uint64_t patches[])
 
 // Compiles executor in-place. Don't forget to call _PyJIT_Free later!
 int
-_PyJIT_Compile(_PyUOpExecutorObject *executor)
+_PyJIT_Compile(_PyExecutorObject *executor)
 {
     // Loop once to find the total compiled size:
     size_t code_size = 0;
@@ -349,7 +349,7 @@ fail:
 }
 
 void
-_PyJIT_Free(_PyUOpExecutorObject *executor)
+_PyJIT_Free(_PyExecutorObject *executor)
 {
     char *memory = (char *)executor->jit_code;
     size_t size = executor->jit_size;
