@@ -132,10 +132,6 @@ PyFloat_FromDouble(double fval)
     struct _Py_float_state *state = get_float_state();
     op = state->free_list;
     if (op != NULL) {
-#ifdef Py_DEBUG
-        // PyFloat_FromDouble() must not be called after _PyFloat_Fini()
-        assert(state->numfree != -1);
-#endif
         state->free_list = (PyFloatObject *) Py_TYPE(op);
         state->numfree--;
         OBJECT_STAT_INC(from_freelist);
