@@ -1864,8 +1864,9 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
     HANDLE hFile;
     BY_HANDLE_FILE_INFORMATION fileInfo;
     FILE_BASIC_INFO basicInfo;
+    FILE_BASIC_INFO *pBasicInfo = NULL;
     FILE_ID_INFO idInfo;
-    FILE_ID_INFO *pIdInfo = &idInfo;
+    FILE_ID_INFO *pIdInfo = NULL;
     FILE_ATTRIBUTE_TAG_INFO tagInfo = { 0 };
     DWORD fileType, error;
     BOOL isUnhandledTag = FALSE;
@@ -2016,14 +2017,17 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
             retval = -1;
             goto cleanup;
         }
+
+        /* Successfully got FileBasicInfo, so we'll pass it along */
+        pBasicInfo = &basicInfo;
+
+        if (GetFileInformationByHandleEx(hFile, FileIdInfo, &idInfo, sizeof(idInfo))) {
+            /* Successfully got FileIdInfo, so pass it along */
+            pIdInfo = &idInfo;
+        }
     }
 
-    if (!GetFileInformationByHandleEx(hFile, FileIdInfo, &idInfo, sizeof(idInfo))) {
-        /* Failed to get FileIdInfo, so do not pass it along */
-        pIdInfo = NULL;
-    }
-
-    _Py_attribute_data_to_stat(&fileInfo, tagInfo.ReparseTag, &basicInfo, pIdInfo, result);
+    _Py_attribute_data_to_stat(&fileInfo, tagInfo.ReparseTag, pBasicInfo, pIdInfo, result);
     update_st_mode_from_path(path, fileInfo.dwFileAttributes, result);
 
 cleanup:
