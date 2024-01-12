@@ -833,12 +833,13 @@ Functions
 .. function:: xml.etree.ElementInclude.default_loader(href, parse, encoding=None)
    :module:
 
-   Default loader. This default loader reads an included resource from disk. *href* is a URL.
-   *parse* is for parse mode either "xml" or "text".  *encoding*
-   is an optional text encoding.  If not given, encoding is ``utf-8``.  Returns the
-   expanded resource.  If the parse mode is ``"xml"``, this is an Element
-   instance.  If the parse mode is "text", this is a Unicode string.  If the
-   loader fails, it can return None or raise an exception.
+   Default loader. This default loader reads an included resource from disk.
+   *href* is a URL. *parse* is for parse mode either "xml" or "text".
+   *encoding* is an optional text encoding. If not given, encoding is ``utf-8``.
+   Returns the expanded resource.
+   If the parse mode is ``"xml"``, this is an :class:`Element` instance.
+   If the parse mode is ``"text"``, this is a string.
+   If the loader fails, it can return None or raise an exception.
 
 
 .. function:: xml.etree.ElementInclude.include(elem, loader=None, base_url=None, \
