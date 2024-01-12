@@ -1,11 +1,9 @@
-"""
-Build a template JIT for CPython, based on copy-and-patch.
-"""
+"""Build an experimental just-in-time compiler for CPython."""
 
-# XXX: I'll probably refactor this file a bit before merging to make it easier
-# to understand... it's changed a lot over the last few months, and the way
-# things are done here definitely has some historical cruft. The high-level
-# architecture and the actual generated code probably won't change, though.
+# XXX: I'll probably refactor this file a bit to make it easier to understand...
+# it's changed a lot over the last few months, and the way things are done here
+# definitely has some historical cruft. The high-level architecture and the
+# actual generated code probably won't change, though.
 
 import argparse
 import asyncio
@@ -32,35 +30,54 @@ TOOLS_JIT_BUILD = pathlib.Path(__file__).resolve()
 TOOLS_JIT = TOOLS_JIT_BUILD.parent
 TOOLS = TOOLS_JIT.parent
 CPYTHON = TOOLS.parent
-INCLUDE = CPYTHON / "Include"
-INCLUDE_INTERNAL = INCLUDE / "internal"
-INCLUDE_INTERNAL_MIMALLOC = INCLUDE_INTERNAL / "mimalloc"
-PYTHON = CPYTHON / "Python"
-PYTHON_EXECUTOR_CASES_C_H = PYTHON / "executor_cases.c.h"
+PYTHON_EXECUTOR_CASES_C_H = CPYTHON / "Python" / "executor_cases.c.h"
 TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template.c"
 
 
 @enum.unique
 class HoleValue(enum.Enum):
+    """
+    Different "base" values that can be patched into holes (usually combined with the
+    address of a symbol and/or an addend).
+    """
+
+    # The base address of the machine code for the current uop (exposed as _JIT_ENTRY):
     CODE = enum.auto()
+    # The base address of the machine code for the next uop (exposed as _JIT_CONTINUE):
     CONTINUE = enum.auto()
+    # The base address of the read-only data for this uop:
     DATA = enum.auto()
+    # The address of the current executor (exposed as _JIT_EXECUTOR):
     EXECUTOR = enum.auto()
+    # The base address of the "global" offset table located in the read-only data.
+    # Shouldn't be present in the final stencils, since these are all replaced with
+    # equivalent DATA values:
     GOT = enum.auto()
+    # The current uop's oparg (exposed as _JIT_OPARG):
     OPARG = enum.auto()
+    # The current uop's operand (exposed as _JIT_OPERAND):
     OPERAND = enum.auto()
+    # The current uop's target (exposed as _JIT_TARGET):
     TARGET = enum.auto()
+    # The base address of the machine code for the first uop (exposed as _JIT_TOP):
     TOP = enum.auto()
+    # A hardcoded value of zero (used for symbol lookups):
     ZERO = enum.auto()
 
 
 @dataclasses.dataclass
 class Hole:
+    """A "hole" in the stencil to be patched with a computed runtime value."""
+
     offset: int
     kind: schema.HoleKind
+    # Patch with this base value:
     value: HoleValue
+    # ...plus the address of this symbol:
     symbol: str | None
+    # ...plus this addend:
     addend: int
+    # Convenience method:
     replace = dataclasses.replace
 
 
@@ -72,12 +89,11 @@ _R = typing.TypeVar(
 
 @dataclasses.dataclass
 class Stencil:
-    body: bytearray = dataclasses.field(default_factory=bytearray)
-    holes: list[Hole] = dataclasses.field(default_factory=list)
-    disassembly: list[str] = dataclasses.field(default_factory=list)
+    body: bytearray = dataclasses.field(default_factory=bytearray, init=False)
+    holes: list[Hole] = dataclasses.field(default_factory=list, init=False)
+    disassembly: list[str] = dataclasses.field(default_factory=list, init=False)
     symbols: dict[str, int] = dataclasses.field(default_factory=dict, init=False)
-    offsets: dict[int, int] = dataclasses.field(default_factory=dict, init=False)
-    relocations: list[Hole] = dataclasses.field(default_factory=list, init=False)
+    sections: dict[int, int] = dataclasses.field(default_factory=dict, init=False)
 
     def pad(self, alignment: int) -> None:
         offset = len(self.body)
@@ -117,8 +133,8 @@ class Stencil:
 
 @dataclasses.dataclass
 class StencilGroup:
-    code: Stencil = dataclasses.field(default_factory=Stencil)
-    data: Stencil = dataclasses.field(default_factory=Stencil)
+    code: Stencil = dataclasses.field(default_factory=Stencil, init=False)
+    data: Stencil = dataclasses.field(default_factory=Stencil, init=False)
     global_offset_table: dict[str, int] = dataclasses.field(
         default_factory=dict, init=False
     )
@@ -152,7 +168,7 @@ class StencilGroup:
                 addend_part = ""
             else:
                 addend_part = f"&{symbol}" if symbol else ""
-                addend_part += format_addend(addend, signed=symbol is not None)
+                addend_part += _format_addend(addend, signed=symbol is not None)
                 if value_part:
                     value_part += "+"
             self.data.disassembly.append(
@@ -164,9 +180,9 @@ class StencilGroup:
 _SEMAPHORE = asyncio.BoundedSemaphore(os.cpu_count() or 1)
 
 
-async def run(
+async def _run(
     *args: str | os.PathLike[str], capture: bool = False, echo: bool = False
-) -> bytes | None:
+) -> bytes:
     stdout = subprocess.PIPE if capture else None
     async with _SEMAPHORE:
         if echo:
@@ -189,7 +205,7 @@ def _symbol_to_value(symbol: str) -> tuple[HoleValue, str | None]:
 
 
 @dataclasses.dataclass
-class Target(typing.Generic[_S, _R]):
+class _Target(typing.Generic[_S, _R]):
     triple: str
     _: dataclasses.KW_ONLY
     alignment: int = 1
@@ -197,20 +213,24 @@ class Target(typing.Generic[_S, _R]):
     debug: bool = False
     verbose: bool = False
 
-    def sha256(self) -> bytes:
+    def _compute_digest(self, out: pathlib.Path) -> str:
         hasher = hashlib.sha256()
         hasher.update(self.triple.encode())
         hasher.update(self.alignment.to_bytes())
         hasher.update(self.prefix.encode())
-        return hasher.digest()
+        hasher.update(PYTHON_EXECUTOR_CASES_C_H.read_bytes())
+        hasher.update((out / "pyconfig.h").read_bytes())
+        for dirpath, _, filenames in sorted(os.walk(TOOLS_JIT)):
+            for filename in filenames:
+                hasher.update(pathlib.Path(dirpath, filename).read_bytes())
+        return hasher.hexdigest()
 
-    async def parse(self, path: pathlib.Path) -> StencilGroup:
+    async def _parse(self, path: pathlib.Path) -> StencilGroup:
         group = StencilGroup()
         objdump = llvm.find_tool("llvm-objdump", echo=self.verbose)
         if objdump is not None:
             flags = ["--disassemble", "--reloc"]
-            output = await run(objdump, *flags, path, capture=True, echo=self.verbose)
-            assert output is not None
+            output = await _run(objdump, *flags, path, capture=True, echo=self.verbose)
             group.code.disassembly.extend(
                 line.expandtabs().strip()
                 for line in output.decode().splitlines()
@@ -226,8 +246,7 @@ class Target(typing.Generic[_S, _R]):
             "--section-symbols",
             "--sections",
         ]
-        output = await run(readobj, *flags, path, capture=True, echo=self.verbose)
-        assert output is not None
+        output = await _run(readobj, *flags, path, capture=True, echo=self.verbose)
         # --elf-output-style=JSON is only *slightly* broken on Mach-O...
         output = output.replace(b"PrivateExtern\n", b"\n")
         output = output.replace(b"Extern\n", b"\n")
@@ -243,16 +262,16 @@ class Target(typing.Generic[_S, _R]):
             group.data.disassembly.append(line)
         group.data.pad(8)
         self._process_relocations(group.code, group)
-        remaining: list[Hole] = []
-        for hole in group.code.holes:
+        holes = group.code.holes
+        group.code.holes = []
+        for hole in holes:
             if (
                 hole.kind in {"R_AARCH64_CALL26", "R_AARCH64_JUMP26"}
                 and hole.value is HoleValue.ZERO
             ):
-                remaining.extend(group.code.emit_aarch64_trampoline(hole))
+                group.code.holes.extend(group.code.emit_aarch64_trampoline(hole))
             else:
-                remaining.append(hole)
-        group.code.holes[:] = remaining
+                group.code.holes.append(hole)
         group.code.pad(self.alignment)
         self._process_relocations(group.data, group)
         group.emit_global_offset_table()
@@ -260,21 +279,22 @@ class Target(typing.Generic[_S, _R]):
         group.data.holes.sort(key=lambda hole: hole.offset)
         return group
 
-    def _process_relocations(self, stencil: Stencil, group: StencilGroup) -> None:
-        for hole in stencil.relocations:
+    @staticmethod
+    def _process_relocations(stencil: Stencil, group: StencilGroup) -> None:
+        stencil.holes.sort(key=lambda hole: hole.offset)
+        for hole in stencil.holes:
             if hole.value is HoleValue.GOT:
                 value, symbol = HoleValue.DATA, None
                 addend = hole.addend + group.global_offset_table_lookup(hole.symbol)
-                hole = hole.replace(value=value, symbol=symbol, addend=addend)
             elif hole.symbol in group.data.symbols:
                 value, symbol = HoleValue.DATA, None
                 addend = hole.addend + group.data.symbols[hole.symbol]
-                hole = hole.replace(value=value, symbol=symbol, addend=addend)
             elif hole.symbol in group.code.symbols:
                 value, symbol = HoleValue.CODE, None
                 addend = hole.addend + group.code.symbols[hole.symbol]
-                hole = hole.replace(value=value, symbol=symbol, addend=addend)
-            stencil.holes.append(hole)
+            else:
+                continue
+            hole.value, hole.symbol, hole.addend = value, symbol, addend
 
     def _handle_section(self, section: _S, group: StencilGroup) -> None:
         raise NotImplementedError(type(self))
@@ -294,10 +314,10 @@ class Target(typing.Generic[_S, _R]):
             "-D_PyJIT_ACTIVE",
             "-D_Py_JIT",
             "-I.",
-            f"-I{INCLUDE}",
-            f"-I{INCLUDE_INTERNAL}",
-            f"-I{INCLUDE_INTERNAL_MIMALLOC}",
-            f"-I{PYTHON}",
+            f"-I{CPYTHON / 'Include'}",
+            f"-I{CPYTHON / 'Include' / 'internal'}",
+            f"-I{CPYTHON / 'Include' / 'internal' / 'mimalloc'}",
+            f"-I{CPYTHON / 'Python'}",
             "-O3",
             "-c",
             "-fno-asynchronous-unwind-tables",
@@ -317,10 +337,10 @@ class Target(typing.Generic[_S, _R]):
             "-std=c11",
         ]
         clang = llvm.require_tool("clang", echo=self.verbose)
-        await run(clang, *flags, "-o", o, c, echo=self.verbose)
-        return await self.parse(o)
+        await _run(clang, *flags, "-o", o, c, echo=self.verbose)
+        return await self._parse(o)
 
-    async def build_stencils(self) -> dict[str, StencilGroup]:
+    async def _build_stencils(self) -> dict[str, StencilGroup]:
         generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
         opnames = sorted(re.findall(r"\n {8}case (\w+): \{\n", generated_cases))
         tasks = []
@@ -334,41 +354,34 @@ class Target(typing.Generic[_S, _R]):
 
     def build(self, out: pathlib.Path) -> None:
         jit_stencils = out / "jit_stencils.h"
-        hasher = hashlib.sha256()
-        hasher.update(self.sha256())
-        hasher.update(PYTHON_EXECUTOR_CASES_C_H.read_bytes())
-        hasher.update((out / "pyconfig.h").read_bytes())
-        for dirpath, _, filenames in sorted(os.walk(TOOLS_JIT)):
-            for filename in filenames:
-                hasher.update(pathlib.Path(dirpath, filename).read_bytes())
-        digest = hasher.hexdigest()
+        digest = self._compute_digest(out)
         if jit_stencils.exists():
             with jit_stencils.open() as file:
                 if file.readline().removeprefix("// ").removesuffix("\n") == digest:
                     return
-        stencil_groups = asyncio.run(self.build_stencils())
+        stencil_groups = asyncio.run(self._build_stencils())
         with jit_stencils.open("w") as file:
             file.write(f"// {digest}\n")
             for line in dump(stencil_groups):
                 file.write(f"{line}\n")
 
 
-class ELF(Target[schema.ELFSection, schema.ELFRelocation]):
+class ELF(_Target[schema.ELFSection, schema.ELFRelocation]):
     def _handle_section(self, section: schema.ELFSection, group: StencilGroup) -> None:
         section_type = section["Type"]["Value"]
         flags = {flag["Name"] for flag in section["Flags"]["Flags"]}
         if section_type == "SHT_RELA":
             assert "SHF_INFO_LINK" in flags, flags
             assert not section["Symbols"]
-            if section["Info"] in group.code.offsets:
+            if section["Info"] in group.code.sections:
                 stencil = group.code
             else:
                 stencil = group.data
-            base = stencil.offsets[section["Info"]]
+            base = stencil.sections[section["Info"]]
             for wrapped_relocation in section["Relocations"]:
                 relocation = wrapped_relocation["Relocation"]
                 hole = self._handle_relocation(base, relocation, stencil.body)
-                stencil.relocations.append(hole)
+                stencil.holes.append(hole)
         elif section_type == "SHT_PROGBITS":
             if "SHF_ALLOC" not in flags:
                 return
@@ -376,7 +389,7 @@ class ELF(Target[schema.ELFSection, schema.ELFRelocation]):
                 stencil = group.code
             else:
                 stencil = group.data
-            stencil.offsets[section["Index"]] = len(stencil.body)
+            stencil.sections[section["Index"]] = len(stencil.body)
             for wrapped_symbol in section["Symbols"]:
                 symbol = wrapped_symbol["Symbol"]
                 offset = len(stencil.body) + symbol["Value"]
@@ -414,7 +427,7 @@ class ELF(Target[schema.ELFSection, schema.ELFRelocation]):
         return Hole(offset, kind, value, symbol, addend)
 
 
-class COFF(Target[schema.COFFSection, schema.COFFRelocation]):
+class COFF(_Target[schema.COFFSection, schema.COFFRelocation]):
     def _handle_section(self, section: schema.COFFSection, group: StencilGroup) -> None:
         flags = {flag["Name"] for flag in section["Characteristics"]["Flags"]}
         if "SectionData" in section:
@@ -428,7 +441,7 @@ class COFF(Target[schema.COFFSection, schema.COFFRelocation]):
             stencil = group.data
         else:
             return
-        base = stencil.offsets[section["Number"]] = len(stencil.body)
+        base = stencil.sections[section["Number"]] = len(stencil.body)
         stencil.body.extend(section_data_bytes)
         for wrapped_symbol in section["Symbols"]:
             symbol = wrapped_symbol["Symbol"]
@@ -439,7 +452,7 @@ class COFF(Target[schema.COFFSection, schema.COFFRelocation]):
         for wrapped_relocation in section["Relocations"]:
             relocation = wrapped_relocation["Relocation"]
             hole = self._handle_relocation(base, relocation, stencil.body)
-            stencil.relocations.append(hole)
+            stencil.holes.append(hole)
 
     def _handle_relocation(
         self, base: int, relocation: schema.COFFRelocation, raw: bytes
@@ -468,7 +481,7 @@ class COFF(Target[schema.COFFSection, schema.COFFRelocation]):
         return Hole(offset, kind, value, symbol, addend)
 
 
-class MachO(Target[schema.MachOSection, schema.MachORelocation]):
+class MachO(_Target[schema.MachOSection, schema.MachORelocation]):
     def _handle_section(
         self, section: schema.MachOSection, group: StencilGroup
     ) -> None:
@@ -486,7 +499,7 @@ class MachO(Target[schema.MachOSection, schema.MachORelocation]):
             stencil = group.data
             bias = len(group.code.body)
             stencil.symbols[name] = len(group.code.body)
-        base = stencil.offsets[section["Index"]] = section["Address"] - bias
+        base = stencil.sections[section["Index"]] = section["Address"] - bias
         stencil.body.extend(
             [0] * (section["Address"] - len(group.code.body) - len(group.data.body))
         )
@@ -502,7 +515,7 @@ class MachO(Target[schema.MachOSection, schema.MachORelocation]):
         for wrapped_relocation in section["Relocations"]:
             relocation = wrapped_relocation["Relocation"]
             hole = self._handle_relocation(base, relocation, stencil.body)
-            stencil.relocations.append(hole)
+            stencil.holes.append(hole)
 
     def _handle_relocation(
         self, base: int, relocation: schema.MachORelocation, raw: bytes
@@ -545,6 +558,7 @@ class MachO(Target[schema.MachOSection, schema.MachORelocation]):
 def get_target(
     host: str, *, debug: bool = False, verbose: bool = False
 ) -> COFF | ELF | MachO:
+    """Build a _Target for the given host "triple" and options."""
     target: COFF | ELF | MachO
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
         target = MachO("aarch64-apple-darwin", alignment=8, prefix="_")
@@ -563,7 +577,7 @@ def get_target(
     return dataclasses.replace(target, debug=debug, verbose=verbose)
 
 
-def dump_header() -> typing.Iterator[str]:
+def _dump_header() -> typing.Iterator[str]:
     yield f"// $ {shlex.join([sys.executable, *sys.argv])}"
     yield ""
     yield "typedef enum {"
@@ -598,7 +612,7 @@ def dump_header() -> typing.Iterator[str]:
     yield ""
 
 
-def dump_footer(opnames: typing.Iterable[str]) -> typing.Iterator[str]:
+def _dump_footer(opnames: typing.Iterable[str]) -> typing.Iterator[str]:
     yield "#define INIT_STENCIL(STENCIL) {                         \\"
     yield "    .body_size = Py_ARRAY_LENGTH(STENCIL##_body) - 1,   \\"
     yield "    .body = STENCIL##_body,                             \\"
@@ -622,7 +636,7 @@ def dump_footer(opnames: typing.Iterable[str]) -> typing.Iterator[str]:
     yield "}"
 
 
-def dump_stencil(opname: str, group: StencilGroup) -> typing.Iterator[str]:
+def _dump_stencil(opname: str, group: StencilGroup) -> typing.Iterator[str]:
     yield f"// {opname}"
     for part, stencil in [("code", group.code), ("data", group.data)]:
         for line in stencil.disassembly:
@@ -645,7 +659,7 @@ def dump_stencil(opname: str, group: StencilGroup) -> typing.Iterator[str]:
                     f"HoleKind_{hole.kind}",
                     f"HoleValue_{hole.value.name}",
                     f"&{hole.symbol}" if hole.symbol else "NULL",
-                    format_addend(hole.addend),
+                    _format_addend(hole.addend),
                 ]
                 yield f"    {{{', '.join(parts)}}},"
             yield "};"
@@ -655,13 +669,13 @@ def dump_stencil(opname: str, group: StencilGroup) -> typing.Iterator[str]:
 
 
 def dump(groups: dict[str, StencilGroup]) -> typing.Iterator[str]:
-    yield from dump_header()
+    yield from _dump_header()
     for opname, group in groups.items():
-        yield from dump_stencil(opname, group)
-    yield from dump_footer(groups)
+        yield from _dump_stencil(opname, group)
+    yield from _dump_footer(groups)
 
 
-def format_addend(addend: int, signed: bool = False) -> str:
+def _format_addend(addend: int, signed: bool = False) -> str:
     """Convert unsigned 64-bit values to signed 64-bit values, and format as hex."""
     addend %= 1 << 64
     if addend & (1 << 63):

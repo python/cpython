@@ -1,5 +1,4 @@
 """Utilities for locating LLVM tools."""
-
 import functools
 import re
 import shlex
@@ -9,7 +8,6 @@ LLVM_VERSION = 16
 
 
 def _check_tool_version(name: str, *, echo: bool = False) -> bool:
-    """Check if an LLVM tool matches LLVM_VERSION."""
     args = [name, "--version"]
     if echo:
         print(shlex.join(args))
