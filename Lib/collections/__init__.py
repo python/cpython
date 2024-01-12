@@ -789,10 +789,15 @@ class Counter(dict):
         if not isinstance(other, Counter):
             return NotImplemented
 
-        for obj1, obj2 in ((self, other), (other, self)):
-            for k, v in obj1.items():
-                if v != obj2[k]:
-                    return False
+        if super().__eq__(other):
+            return True
+
+        for k, v in self.items():
+            if v != other[k]:
+                return False
+        for k, v in other.items():
+            if v != self[k]:
+                return False
         return True
 
     def __ne__(self, other):
