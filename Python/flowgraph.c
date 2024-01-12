@@ -2257,15 +2257,17 @@ convert_pseudo_ops(basicblock *entryblock)
 
 static inline bool
 is_exit_or_eval_check_without_lineno(basicblock *b) {
-    if (! (basicblock_exits_scope(b) || basicblock_has_eval_break(b))) {
+    if (basicblock_exits_scope(b) || basicblock_has_eval_break(b)) {
+        for (int i = 0; i < b->b_iused; i++) {
+            if (b->b_instr[i].i_loc.lineno >= 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+    else {
         return false;
     }
-    for (int i = 0; i < b->b_iused; i++) {
-        if (b->b_instr[i].i_loc.lineno >= 0) {
-            return false;
-        }
-    }
-    return true;
 }
 
 
