@@ -24,8 +24,8 @@ fixes.
 .. nonce: 0yiA5Q
 .. section: Core and Builtins
 
-Fix an assertion failure in `subprocess.Popen()` on Windows, in case the env
-argument has a bad keys() method. Patch by Oren Milman.
+Fix an assertion failure in ``subprocess.Popen()`` on Windows, in case the env
+argument has a bad ``keys()`` method. Patch by Oren Milman.
 
 ..
 
@@ -34,7 +34,7 @@ argument has a bad keys() method. Patch by Oren Milman.
 .. nonce: rS-FlC
 .. section: Core and Builtins
 
-Fix an assertion failure in `PyErr_WriteUnraisable()` in case of an
+Fix an assertion failure in ``PyErr_WriteUnraisable()`` in case of an
 exception with a bad ``__module__`` attribute. Patch by Oren Milman.
 
 ..
@@ -95,7 +95,7 @@ plans to remove the functions from sys/types.h.
 .. nonce: t8QggK
 .. section: Core and Builtins
 
-Fix an assertion failure in `zipimport.zipimporter.get_data` on Windows,
+Fix an assertion failure in ``zipimport.zipimporter.get_data`` on Windows,
 when the return value of ``pathname.replace('/','\\')`` isn't a string.
 Patch by Oren Milman.
 
@@ -106,7 +106,7 @@ Patch by Oren Milman.
 .. nonce: YMduKF
 .. section: Core and Builtins
 
-Fix an assertion failure in the write() method of `io.TextIOWrapper`, when
+Fix an assertion failure in the ``write()`` method of ``io.TextIOWrapper``, when
 the encoder doesn't return a bytes object. Patch by Oren Milman.
 
 ..
@@ -116,7 +116,7 @@ the encoder doesn't return a bytes object. Patch by Oren Milman.
 .. nonce: dRJzqR
 .. section: Core and Builtins
 
-Fix a crash in some methods of `io.TextIOWrapper`, when the decoder's state
+Fix a crash in some methods of ``io.TextIOWrapper``, when the decoder's state
 is invalid. Patch by Oren Milman.
 
 ..
@@ -477,7 +477,7 @@ attributes to help the garbage collector to destroy all widgets.
 .. nonce: 1t2hn5
 .. section: Library
 
-Fix `copyreg._slotnames()` mangled attribute calculation for classes whose
+Fix ``copyreg._slotnames()`` mangled attribute calculation for classes whose
 name begins with an underscore. Patch by Shane Harvey.
 
 ..
@@ -585,7 +585,7 @@ socket.close() now ignores ECONNRESET error.
 .. nonce: CLvEvV
 .. section: Library
 
-Fix out of bounds write in `asyncio.CFuture.remove_done_callback()`.
+Fix out of bounds write in ``asyncio.CFuture.remove_done_callback()``.
 
 ..
 
@@ -933,7 +933,7 @@ Add tests for configdialog keys tab. Patch by Cheryl Sabella.
 .. nonce: sqE1FS
 .. section: IDLE
 
-IDLE: Calltips use `inspect.signature` instead of `inspect.getfullargspec`.
+IDLE: Calltips use ``inspect.signature`` instead of ``inspect.getfullargspec``.
 This improves calltips for builtins converted to use Argument Clinic. Patch
 by Louie Lu.
 
