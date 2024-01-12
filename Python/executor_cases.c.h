@@ -2013,8 +2013,6 @@
             break;
         }
 
-        /* _JUMP_BACKWARD is not a viable micro-op for tier 2 */
-
         /* _POP_JUMP_IF_FALSE is not a viable micro-op for tier 2 */
 
         /* _POP_JUMP_IF_TRUE is not a viable micro-op for tier 2 */
@@ -3414,14 +3412,15 @@
             assert(current_executor->trace[0].opcode != _COLD_EXIT);
             _PyExitData *exit = &current_executor->exits[oparg];
             exit->hotness++;
+            assert(exit->executor->trace[0].opcode == _COLD_EXIT);
+            PyCodeObject *code = _PyFrame_GetCode(frame);
+            _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
             if (exit->hotness < 0) {
-                next_instr = exit->target + _PyCode_CODE(_PyFrame_GetCode(frame));
+                next_instr = target;
                 Py_DECREF(current_executor);
                 current_executor = NULL;
                 DISPATCH();
             }
-            PyCodeObject *code = _PyFrame_GetCode(frame);
-            _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
             _PyExecutorObject *executor;
             if (target->op.code == ENTER_EXECUTOR) {
                 executor = code->co_executors->executors[target->op.arg];
@@ -3429,10 +3428,10 @@
             } else {
                 int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor);
                 if (optimized <= 0) {
+                    exit->hotness = -10000; /* Choose a better number */
                     Py_DECREF(current_executor);
                     current_executor = NULL;
                     next_instr = target;
-                    exit->hotness = -10000; /* Choose a better number */
                     if (optimized < 0) goto error_tier_two;
                     DISPATCH();
                 }
@@ -3448,7 +3447,6 @@
             PyObject *executor = (PyObject *)CURRENT_OPERAND();
             TIER_TWO_ONLY
             Py_DECREF(current_executor);
-            Py_INCREF(executor);
             current_executor = (_PyExecutorObject*)executor;
             break;
         }

@@ -2,6 +2,7 @@
 #include "opcode.h"
 #include "pycore_interp.h"
 #include "pycore_bitutils.h"        // _Py_popcount32()
+#include "pycore_object.h"          // _PyObject_GC_UNTRACK()
 #include "pycore_opcode_metadata.h" // _PyOpcode_OpName[]
 #include "pycore_opcode_utils.h"  // MAX_REAL_OPCODE
 #include "pycore_optimizer.h"     // _Py_uop_analyze_and_optimize()
@@ -230,8 +231,9 @@ static PyMethodDef executor_methods[] = {
 
 static void
 uop_dealloc(_PyExecutorObject *self) {
+    _PyObject_GC_UNTRACK(self);
     _Py_ExecutorClear(self);
-    PyObject_Free(self);
+    PyObject_GC_Del(self);
 }
 
 const char *
@@ -282,15 +284,69 @@ PySequenceMethods uop_as_sequence = {
     .sq_item = (ssizeargfunc)uop_item,
 };
 
+static void
+unlink_executor(_PyExecutorObject *executor)
+{
+    if (!executor->vm_data.linked) {
+        return;
+    }
+    _PyExecutorLinkListNode *links = &executor->vm_data.links;
+    _PyExecutorObject *next = links->next;
+    _PyExecutorObject *prev = links->previous;
+    if (next != NULL) {
+        next->vm_data.links.previous = prev;
+    }
+    if (prev != NULL) {
+        prev->vm_data.links.next = next;
+    }
+    else {
+        // prev == NULL implies that executor is the list head
+        PyInterpreterState *interp = PyInterpreterState_Get();
+        assert(interp->executor_list_head == executor);
+        interp->executor_list_head = next;
+    }
+    executor->vm_data.linked = false;
+}
+
+/* This must be called by executors during dealloc */
+void
+_Py_ExecutorClear(_PyExecutorObject *executor)
+{
+    executor->vm_data.valid = 0;
+    unlink_executor(executor);
+    for (uint32_t i = 0; i < executor->exit_count; i++) {
+        Py_CLEAR(executor->exits[i].executor);
+    }
+}
+
+static int
+executor_clear(PyObject *o)
+{
+    _Py_ExecutorClear((_PyExecutorObject *)o);
+    return 0;
+}
+
+static int
+executor_traverse(PyObject *o, visitproc visit, void *arg)
+{
+    _PyExecutorObject *executor = (_PyExecutorObject *)o;
+    for (uint32_t i = 0; i < executor->exit_count; i++) {
+        Py_VISIT(executor->exits[i].executor);
+    }
+    return 0;
+}
+
 PyTypeObject _PyUOpExecutor_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "uop_executor",
     .tp_basicsize = offsetof(_PyExecutorObject, exits),
     .tp_itemsize = 1,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_HAVE_GC,
     .tp_dealloc = (destructor)uop_dealloc,
     .tp_as_sequence = &uop_as_sequence,
     .tp_methods = executor_methods,
+    .tp_traverse = executor_traverse,
+    .tp_clear = executor_clear,
 };
 
 /* TO DO -- Generate these tables */
@@ -315,6 +371,7 @@ BRANCH_TO_GUARD[4][2] = {
 };
 
 #define TRACE_STACK_SIZE 5
+
 
 #define CONFIDENCE_RANGE 1000
 #define CONFIDENCE_CUTOFF 333
@@ -751,7 +808,7 @@ static _PyExecutorObject *
 allocate_executor(int exit_count, int length)
 {
     int size = exit_count*sizeof(_PyExitData) + length*sizeof(_PyUOpInstruction);
-    _PyExecutorObject *res = PyObject_NewVar(_PyExecutorObject, &_PyUOpExecutor_Type, size);
+    _PyExecutorObject *res = PyObject_GC_NewVar(_PyExecutorObject, &_PyUOpExecutor_Type, size);
     if (res == NULL) {
         return NULL;
     }
@@ -852,6 +909,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
         }
     }
 #endif
+    _PyObject_GC_TRACK(executor);
     return executor;
 }
 
@@ -919,7 +977,8 @@ PyUnstable_Optimizer_NewUOpOptimizer(void)
 
 static void
 counter_dealloc(_PyExecutorObject *self) {
-    PyObject *opt = (PyObject *)self->trace[0].operand;
+    /* The optimizer is the operand of the first uop. */
+    PyObject *opt = (PyObject *)self->trace[1].operand;
     Py_DECREF(opt);
     uop_dealloc(self);
 }
@@ -927,11 +986,13 @@ counter_dealloc(_PyExecutorObject *self) {
 PyTypeObject _PyCounterExecutor_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "counting_executor",
-    .tp_basicsize = offsetof(_PyExecutorObject, trace),
-    .tp_itemsize = sizeof(_PyUOpInstruction),
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .tp_basicsize = offsetof(_PyExecutorObject, exits),
+    .tp_itemsize = 1,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_HAVE_GC,
     .tp_dealloc = (destructor)counter_dealloc,
     .tp_methods = executor_methods,
+    .tp_traverse = executor_traverse,
+    .tp_clear = executor_clear,
 };
 
 static int
@@ -1120,29 +1181,6 @@ link_executor(_PyExecutorObject *executor)
     assert(interp->executor_list_head->vm_data.links.previous == NULL);
 }
 
-static void
-unlink_executor(_PyExecutorObject *executor)
-{
-    if (!executor->vm_data.linked) {
-        return;
-    }
-    _PyExecutorLinkListNode *links = &executor->vm_data.links;
-    _PyExecutorObject *next = links->next;
-    _PyExecutorObject *prev = links->previous;
-    if (next != NULL) {
-        next->vm_data.links.previous = prev;
-    }
-    if (prev != NULL) {
-        prev->vm_data.links.next = next;
-    }
-    else {
-        // prev == NULL implies that executor is the list head
-        PyInterpreterState *interp = PyInterpreterState_Get();
-        assert(interp->executor_list_head == executor);
-        interp->executor_list_head = next;
-    }
-    executor->vm_data.linked = false;
-}
 
 /* This must be called by optimizers before using the executor */
 void
@@ -1153,16 +1191,6 @@ _Py_ExecutorInit(_PyExecutorObject *executor, _PyBloomFilter *dependency_set)
         executor->vm_data.bloom.bits[i] = dependency_set->bits[i];
     }
     link_executor(executor);
-}
-
-/* This must be called by executors during dealloc */
-void
-_Py_ExecutorClear(_PyExecutorObject *executor)
-{
-    unlink_executor(executor);
-    for (uint32_t i = 0; i < executor->exit_count; i++) {
-        Py_DECREF(executor->exits[i].executor);
-    }
 }
 
 void

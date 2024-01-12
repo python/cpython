@@ -2314,6 +2314,7 @@ dummy_func(
         }
 
         inst(JUMP_BACKWARD, (unused/1 --)) {
+            TIER_ONE_ONLY
             CHECK_EVAL_BREAKER();
             assert(oparg <= INSTR_OFFSET());
             JUMPBY(-oparg);
@@ -4087,14 +4088,15 @@ dummy_func(
             assert(current_executor->trace[0].opcode != _COLD_EXIT);
             _PyExitData *exit = &current_executor->exits[oparg];
             exit->hotness++;
+            assert(exit->executor->trace[0].opcode == _COLD_EXIT);
+            PyCodeObject *code = _PyFrame_GetCode(frame);
+            _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
             if (exit->hotness < 0) {
-                next_instr = exit->target + _PyCode_CODE(_PyFrame_GetCode(frame));
+                next_instr = target;
                 Py_DECREF(current_executor);
                 current_executor = NULL;
                 DISPATCH();
             }
-            PyCodeObject *code = _PyFrame_GetCode(frame);
-            _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
             _PyExecutorObject *executor;
             if (target->op.code == ENTER_EXECUTOR) {
                 executor = code->co_executors->executors[target->op.arg];
@@ -4102,10 +4104,10 @@ dummy_func(
             } else {
                 int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor);
                 if (optimized <= 0) {
+                    exit->hotness = -10000; /* Choose a better number */
                     Py_DECREF(current_executor);
                     current_executor = NULL;
                     next_instr = target;
-                    exit->hotness = -10000; /* Choose a better number */
                     ERROR_IF(optimized < 0, error);
                     DISPATCH();
                 }
@@ -4119,7 +4121,6 @@ dummy_func(
         op(_START_EXECUTOR, (executor/4 --)) {
             TIER_TWO_ONLY
             Py_DECREF(current_executor);
-            Py_INCREF(executor);
             current_executor = (_PyExecutorObject*)executor;
         }
 

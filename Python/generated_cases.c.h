@@ -3281,6 +3281,7 @@
             next_instr += 2;
             INSTRUCTION_STATS(JUMP_BACKWARD);
             /* Skip 1 cache entry */
+            TIER_ONE_ONLY
             CHECK_EVAL_BREAKER();
             assert(oparg <= INSTR_OFFSET());
             JUMPBY(-oparg);
