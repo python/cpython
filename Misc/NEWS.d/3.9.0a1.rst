@@ -1304,7 +1304,7 @@ parameter. Patch by Pablo Galindo.
 .. nonce: J12cWT
 .. section: Library
 
-Fixed `hmac.new` and `hmac.HMAC` to raise TypeError instead of ValueError
+Fixed ``hmac.new`` and ``hmac.HMAC`` to raise TypeError instead of ValueError
 when the digestmod parameter, now required in 3.8, is omitted.  Also
 clarified the hmac module documentation and docstrings.
 
@@ -1478,7 +1478,7 @@ Removes _AwaitEvent from AsyncMock.
 .. section: Library
 
 Allow the rare code that wants to send invalid http requests from the
-`http.client` library a way to do so.  The fixes for bpo-30458 led to
+``http.client`` library a way to do so.  The fixes for bpo-30458 led to
 breakage for some projects that were relying on this ability to test their
 own behavior in the face of bad requests.
 
@@ -1813,9 +1813,9 @@ Update importlib.metadata with changes from `importlib_metadata 0.21
 .. nonce: 8zn2o3
 .. section: Library
 
-Remove `__code__` check in AsyncMock that incorrectly evaluated function
-specs as async objects but failed to evaluate classes with `__await__` but
-no `__code__` attribute defined as async objects.
+Remove ``__code__`` check in AsyncMock that incorrectly evaluated function
+specs as async objects but failed to evaluate classes with ``__await__`` but
+no ``__code__`` attribute defined as async objects.
 
 ..
 
@@ -1976,11 +1976,11 @@ thread at a time.
 .. nonce: kP-n4L
 .. section: Library
 
-Subscripts to the `unittest.mock.call` objects now receive the same chaining
+Subscripts to the ``unittest.mock.call`` objects now receive the same chaining
 mechanism as any other custom attributes, so that the following usage no
-longer raises a `TypeError`:
+longer raises a ``TypeError``:
 
-call().foo().__getitem__('bar')
+``call().foo().__getitem__('bar')``
 
 Patch by blhsing
 
@@ -2210,7 +2210,7 @@ Add C fastpath for statistics.NormalDist.inv_cdf() Patch by Donghee Na
 .. nonce: Ene6L-
 .. section: Library
 
-Remove the deprecated method `threading.Thread.isAlive()`. Patch by Donghee
+Remove the deprecated method ``threading.Thread.isAlive()``. Patch by Donghee
 Na.
 
 ..
@@ -2260,8 +2260,8 @@ directories are added and that duplicates are excluded.
 .. nonce: xfvdb_
 .. section: Library
 
-Renamed and documented `test.bytecode_helper` as
-`test.support.bytecode_helper`. Patch by Joannah Nanjekye.
+Renamed and documented ``test.bytecode_helper`` as
+``test.support.bytecode_helper``. Patch by Joannah Nanjekye.
 
 ..
 
@@ -2289,8 +2289,8 @@ many small lines are passed. Patch by Sergey Fedoseev.
 .. nonce: ycbL2z
 .. section: Library
 
-`ensurepip` now uses `importlib.resources.read_binary()` to read data
-instead of `pkgutil.get_data()`. Patch by Joannah Nanjekye.
+``ensurepip`` now uses ``importlib.resources.read_binary()`` to read data
+instead of ``pkgutil.get_data()``. Patch by Joannah Nanjekye.
 
 ..
 
@@ -2524,8 +2524,8 @@ Make internal attributes for statistics.NormalDist() private.
 .. nonce: S5am28
 .. section: Library
 
-Fix `NonCallableMock._call_matcher` returning tuple instead of `_Call`
-object when `self._spec_signature` exists. Patch by Elizabeth Uselton
+Fix ``NonCallableMock._call_matcher`` returning tuple instead of ``_Call``
+object when ``self._spec_signature`` exists. Patch by Elizabeth Uselton
 
 ..
 
@@ -2673,7 +2673,7 @@ which had a too large value in some situations.
 .. nonce: 0i1MR-
 .. section: Library
 
-Fixes a possible hang when using a timeout on `subprocess.run()` while
+Fixes a possible hang when using a timeout on ``subprocess.run()`` while
 capturing output.  If the child process spawned its own children or
 otherwise connected its stdout or stderr handles with another process, we
 could hang after the timeout was reached and our child was killed when
@@ -2708,8 +2708,8 @@ The distutils ``bdist_wininst`` command is deprecated in Python 3.8, use
 .. nonce: O53a5S
 .. section: Library
 
-When `Enum.__str__` is overridden in a derived class, the override will be
-used by `Enum.__format__` regardless of whether mixin classes are present.
+When ``Enum.__str__`` is overridden in a derived class, the override will be
+used by ``Enum.__format__`` regardless of whether mixin classes are present.
 
 ..
 
@@ -3195,9 +3195,9 @@ Remove ``Enum._convert`` method, deprecated in 3.8.
 .. nonce: TTzHxj
 .. section: Library
 
-`argparse._ActionsContainer.add_argument` now throws error, if someone
+``argparse._ActionsContainer.add_argument`` now throws error, if someone
 accidentally pass FileType class object instead of instance of FileType as
-`type` argument
+``type`` argument.
 
 ..
 
@@ -3458,7 +3458,7 @@ Patch contributed by Rémi Lapeyre.
 .. section: Library
 
 Fixes a bug in :mod:`cgi` module when a multipart/form-data request has no
-`Content-Length` header.
+``Content-Length`` header.
 
 ..
 
@@ -3566,8 +3566,8 @@ source argument. Patch by Emily Morehouse and Maxwell "5.13b" McKinnon.
 .. nonce: 0stF0u
 .. section: Library
 
-Added __format__ to IPv4 and IPv6 classes.  Always outputs a fully zero-
-padded string. Supports b/x/n modifiers (bin/hex/native format).  Native
+Added ``__format__`` to IPv4 and IPv6 classes.  Always outputs a fully
+zero-padded string. Supports b/x/n modifiers (bin/hex/native format).  Native
 format for IPv4 is bin, native format for IPv6 is hex. Also supports '#' and
 '_' modifiers.
 
@@ -3789,7 +3789,7 @@ verify the maildir folder layout correctness. Patch by Sviatoslav Sydorenko.
 .. nonce: 7tiFR-
 .. section: Documentation
 
-Fix `importlib` examples to insert any newly created modules via
+Fix ``importlib`` examples to insert any newly created modules via
 importlib.util.module_from_spec() immediately into sys.modules instead of
 after calling loader.exec_module().
 
@@ -3888,7 +3888,7 @@ Make C-API docs clear about what the "main" interpreter is.
 .. nonce: Iqiqtm
 .. section: Documentation
 
-The documentation for decimal string formatting using the `:g` specifier has
+The documentation for decimal string formatting using the ``:g`` specifier has
 been updated to reflect the correct exponential notation cutoff point.
 Original patch contributed by Tuomas Suutari.
 
@@ -4450,8 +4450,8 @@ Fix _hashlib build when Blake2 is disabled, but OpenSSL supports it.
 .. nonce: buCO84
 .. section: Build
 
-Misc/python-config.in now uses `getvar()` for all still existing
-`sysconfig.get_config_var()` calls. Patch by Joannah Nanjekye.
+Misc/python-config.in now uses ``getvar()`` for all still existing
+``sysconfig.get_config_var()`` calls. Patch by Joannah Nanjekye.
 
 ..
 

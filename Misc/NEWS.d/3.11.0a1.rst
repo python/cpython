@@ -3204,7 +3204,7 @@ deprecated, for removal in 3.14.
 .. section: Library
 
 When :class:`http.server.SimpleHTTPRequestHandler` sends a ``301 (Moved
-Permanently)`` for a directory path not ending with `/`, add a
+Permanently)`` for a directory path not ending with ``/``, add a
 ``Content-Length: 0`` header. This improves the behavior for certain
 clients.
 
@@ -3240,7 +3240,7 @@ Patch by Erlend E. Aasland.
 .. nonce: m72tlH
 .. section: Library
 
-AIX: `Lib/_aix_support.get_platform()` may fail in an AIX WPAR. The fileset
+AIX: ``Lib/_aix_support.get_platform()`` may fail in an AIX WPAR. The fileset
 bos.rte appears to have a builddate in both LPAR and WPAR so this fileset is
 queried rather than bos.mp64. To prevent a similar situation (no builddate
 in ODM) a value (9988) sufficient for completing a build is provided. Patch
@@ -3685,9 +3685,9 @@ equivalents are valid.
 .. nonce: aJuvQF
 .. section: Documentation
 
-Removed the othergui.rst file, any references to it, and the list of GUI
+Removed the ``othergui.rst`` file, any references to it, and the list of GUI
 frameworks in the FAQ. In their place I've added links to the Python Wiki
-`page on GUI frameworks <https://wiki.python.org/moin/GuiProgramming>`.
+`page on GUI frameworks <https://wiki.python.org/moin/GuiProgramming>`_.
 
 ..
 

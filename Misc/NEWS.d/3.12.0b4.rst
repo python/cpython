@@ -185,7 +185,7 @@ Added PY_THROW event hook for :mod:`cProfile` for generators
 .. nonce: W7tMRb
 .. section: Library
 
-Added `asyncio.taskgroups.__all__` to `asyncio.__all__` for export in star
+Added ``asyncio.taskgroups.__all__`` to ``asyncio.__all__`` for export in star
 imports.
 
 ..
