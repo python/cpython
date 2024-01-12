@@ -123,7 +123,7 @@ There is a new function parameter syntax ``/`` to indicate that some
 function parameters must be specified positionally and cannot be used as
 keyword arguments.  This is the same notation shown by ``help()`` for C
 functions annotated with Larry Hastings'
-:ref:`Argument Clinic <howto-clinic>` tool.
+`Argument Clinic <https://devguide.python.org/development-tools/clinic/>`__ tool.
 
 In the following example, parameters *a* and *b* are positional-only,
 while *c* or *d* can be positional or keyword, and *e* or *f* are
@@ -404,7 +404,7 @@ Other Language Changes
   or :meth:`~object.__complex__` is not available.
   (Contributed by Serhiy Storchaka in :issue:`20092`.)
 
-* Added support of ``\N{name}`` escapes in :mod:`regular expressions <re>`::
+* Added support of :samp:`\\N\\{{name}\\}` escapes in :mod:`regular expressions <re>`::
 
     >>> notice = 'Copyright © 2019'
     >>> copyright_year_pattern = re.compile(r'\N{copyright sign}\s*(\d{4})')
@@ -947,7 +947,7 @@ This made it difficult to update, experiment with, or teach the various
 logging configuration options using the interactive prompt or a Jupyter
 notebook.
 
-(Suggested by Raymond Hettinger, implemented by Dong-hee Na, and
+(Suggested by Raymond Hettinger, implemented by Donghee Na, and
 reviewed by Vinay Sajip in :issue:`33897`.)
 
 
@@ -1086,7 +1086,7 @@ pathlib
 contain characters unrepresentable at the OS level.
 (Contributed by Serhiy Storchaka in :issue:`33721`.)
 
-Added :meth:`pathlib.Path.link_to()` which creates a hard link pointing
+Added :meth:`!pathlib.Path.link_to()` which creates a hard link pointing
 to a path.
 (Contributed by Joannah Nanjekye in :issue:`26978`)
 Note that ``link_to`` was deprecated in 3.10 and removed in 3.12 in
@@ -1305,7 +1305,7 @@ Zackery Spytz in :issue:`25451`.)
 time
 ----
 
-Added new clock :data:`~time.CLOCK_UPTIME_RAW` for macOS 10.12.
+Added new clock :const:`~time.CLOCK_UPTIME_RAW` for macOS 10.12.
 (Contributed by Joannah Nanjekye in :issue:`35702`.)
 
 
@@ -1574,12 +1574,12 @@ Build and C API Changes
   * :c:func:`Py_INCREF`, :c:func:`Py_DECREF`
   * :c:func:`Py_XINCREF`, :c:func:`Py_XDECREF`
   * :c:func:`PyObject_INIT`, :c:func:`PyObject_INIT_VAR`
-  * Private functions: :c:func:`_PyObject_GC_TRACK`,
-    :c:func:`_PyObject_GC_UNTRACK`, :c:func:`_Py_Dealloc`
+  * Private functions: :c:func:`!_PyObject_GC_TRACK`,
+    :c:func:`!_PyObject_GC_UNTRACK`, :c:func:`!_Py_Dealloc`
 
   (Contributed by Victor Stinner in :issue:`35059`.)
 
-* The :c:func:`PyByteArray_Init` and :c:func:`PyByteArray_Fini` functions have
+* The :c:func:`!PyByteArray_Init` and :c:func:`!PyByteArray_Fini` functions have
   been removed. They did nothing since Python 2.7.4 and Python 3.2.0, were
   excluded from the limited API (stable ABI), and were not documented.
   (Contributed by Victor Stinner in :issue:`35713`.)
@@ -1628,7 +1628,7 @@ Build and C API Changes
   parameter for indicating the number of positional-only arguments.
   (Contributed by Pablo Galindo in :issue:`37221`.)
 
-* :c:func:`Py_SetPath` now sets :data:`sys.executable` to the program full
+* :c:func:`!Py_SetPath` now sets :data:`sys.executable` to the program full
   path (:c:func:`Py_GetProgramFullPath`) rather than to the program name
   (:c:func:`Py_GetProgramName`).
   (Contributed by Victor Stinner in :issue:`38234`.)
@@ -1653,7 +1653,7 @@ Deprecated
   deprecated and will be prohibited in Python 3.9.
   (Contributed by Elvis Pranskevichus in :issue:`34075`.)
 
-* The :meth:`__getitem__` methods of :class:`xml.dom.pulldom.DOMEventStream`,
+* The :meth:`~object.__getitem__` methods of :class:`xml.dom.pulldom.DOMEventStream`,
   :class:`wsgiref.util.FileWrapper` and :class:`fileinput.FileInput` have been
   deprecated.
 
@@ -1714,7 +1714,7 @@ Deprecated
 
 * The :meth:`~threading.Thread.isAlive()` method of :class:`threading.Thread`
   has been deprecated.
-  (Contributed by Dong-hee Na in :issue:`35283`.)
+  (Contributed by Donghee Na in :issue:`35283`.)
 
 * Many builtin and extension functions that take integer arguments will
   now emit a deprecation warning for :class:`~decimal.Decimal`\ s,
@@ -1774,7 +1774,7 @@ The following features and APIs have been removed from Python 3.8:
   to help eliminate confusion as to what Python interpreter the ``pyvenv``
   script is tied to. (Contributed by Brett Cannon in :issue:`25427`.)
 
-* ``parse_qs``, ``parse_qsl``, and ``escape`` are removed from the :mod:`cgi`
+* ``parse_qs``, ``parse_qsl``, and ``escape`` are removed from the :mod:`!cgi`
   module.  They are deprecated in Python 3.2 or older. They should be imported
   from the ``urllib.parse`` and ``html`` modules instead.
 
@@ -1839,18 +1839,18 @@ Changes in Python behavior
   classes will affect their string representation.
   (Contributed by Serhiy Storchaka in :issue:`36793`.)
 
-* On AIX, :attr:`sys.platform` doesn't contain the major version anymore.
+* On AIX, :data:`sys.platform` doesn't contain the major version anymore.
   It is always ``'aix'``, instead of ``'aix3'`` .. ``'aix7'``.  Since
   older Python versions include the version number, so it is recommended to
   always use ``sys.platform.startswith('aix')``.
   (Contributed by M. Felt in :issue:`36588`.)
 
-* :c:func:`PyEval_AcquireLock` and :c:func:`PyEval_AcquireThread` now
+* :c:func:`!PyEval_AcquireLock` and :c:func:`!PyEval_AcquireThread` now
   terminate the current thread if called while the interpreter is
   finalizing, making them consistent with :c:func:`PyEval_RestoreThread`,
   :c:func:`Py_END_ALLOW_THREADS`, and :c:func:`PyGILState_Ensure`. If this
-  behavior is not desired, guard the call by checking :c:func:`_Py_IsFinalizing`
-  or :c:func:`sys.is_finalizing`.
+  behavior is not desired, guard the call by checking :c:func:`!_Py_IsFinalizing`
+  or :func:`sys.is_finalizing`.
   (Contributed by Joannah Nanjekye in :issue:`36475`.)
 
 
@@ -2021,7 +2021,7 @@ Changes in the C API
   *cf_flags*.
   (Contributed by Guido van Rossum in :issue:`35766`.)
 
-* The :c:func:`PyEval_ReInitThreads` function has been removed from the C API.
+* The :c:func:`!PyEval_ReInitThreads` function has been removed from the C API.
   It should not be called explicitly: use :c:func:`PyOS_AfterFork_Child`
   instead.
   (Contributed by Victor Stinner in :issue:`36728`.)
@@ -2061,8 +2061,8 @@ Changes in the C API
 
   * Remove :c:macro:`Py_INCREF` on the type object after allocating an
     instance - if any.
-    This may happen after calling :c:func:`PyObject_New`,
-    :c:func:`PyObject_NewVar`, :c:func:`PyObject_GC_New`,
+    This may happen after calling :c:macro:`PyObject_New`,
+    :c:macro:`PyObject_NewVar`, :c:func:`PyObject_GC_New`,
     :c:func:`PyObject_GC_NewVar`, or any other custom allocator that uses
     :c:func:`PyObject_Init` or :c:func:`PyObject_INIT`.
 
@@ -2116,12 +2116,12 @@ Changes in the C API
   extension types across feature releases, anymore.  A :c:type:`PyTypeObject`
   exported by a third-party extension module is supposed to have all the
   slots expected in the current Python version, including
-  :c:member:`~PyTypeObject.tp_finalize` (:const:`Py_TPFLAGS_HAVE_FINALIZE`
+  :c:member:`~PyTypeObject.tp_finalize` (:c:macro:`Py_TPFLAGS_HAVE_FINALIZE`
   is not checked anymore before reading :c:member:`~PyTypeObject.tp_finalize`).
 
   (Contributed by Antoine Pitrou in :issue:`32388`.)
 
-* The functions :c:func:`PyNode_AddChild` and :c:func:`PyParser_AddToken` now accept
+* The functions :c:func:`!PyNode_AddChild` and :c:func:`!PyParser_AddToken` now accept
   two additional ``int`` arguments *end_lineno* and *end_col_offset*.
 
 * The :file:`libpython38.a` file to allow MinGW tools to link directly against
@@ -2229,7 +2229,7 @@ The benchmarks were measured on an
 `Intel® Core™ i7-4960HQ processor
 <https://ark.intel.com/content/www/us/en/ark/products/76088/intel-core-i7-4960hq-processor-6m-cache-up-to-3-80-ghz.html>`_
 running the macOS 64-bit builds found at
-`python.org <https://www.python.org/downloads/mac-osx/>`_.
+`python.org <https://www.python.org/downloads/macos/>`_.
 The benchmark script displays timings in nanoseconds.
 
 
@@ -2251,7 +2251,7 @@ query parameter separators in :func:`urllib.parse.parse_qs` and
 :func:`urllib.parse.parse_qsl`.  Due to security concerns, and to conform with
 newer W3C recommendations, this has been changed to allow only a single
 separator key, with ``&`` as the default.  This change also affects
-:func:`cgi.parse` and :func:`cgi.parse_multipart` as they use the affected
+:func:`!cgi.parse` and :func:`!cgi.parse_multipart` as they use the affected
 functions internally. For more details, please see their respective
 documentation.
 (Contributed by Adam Goldschmidt, Senthil Kumaran and Ken Jin in :issue:`42967`.)

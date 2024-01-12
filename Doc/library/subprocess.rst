@@ -57,10 +57,13 @@ underlying :class:`Popen` interface can be used directly.
    and combine both streams into one, use ``stdout=PIPE`` and ``stderr=STDOUT``
    instead of *capture_output*.
 
-   The *timeout* argument is passed to :meth:`Popen.communicate`. If the timeout
-   expires, the child process will be killed and waited for.  The
-   :exc:`TimeoutExpired` exception will be re-raised after the child process
-   has terminated.
+   A *timeout* may be specified in seconds, it is internally passed on to
+   :meth:`Popen.communicate`. If the timeout expires, the child process will be
+   killed and waited for. The :exc:`TimeoutExpired` exception will be
+   re-raised after the child process has terminated. The initial process
+   creation itself cannot be interrupted on many platform APIs so you are not
+   guaranteed to see a timeout exception until at least after however long
+   process creation takes.
 
    The *input* argument is passed to :meth:`Popen.communicate` and thus to the
    subprocess's stdin.  If used it must be a byte sequence, or a string if
@@ -110,6 +113,14 @@ underlying :class:`Popen` interface can be used directly.
 
       Added the *text* parameter, as a more understandable alias of *universal_newlines*.
       Added the *capture_output* parameter.
+
+   .. versionchanged:: 3.12
+
+      Changed Windows shell search order for ``shell=True``. The current
+      directory and ``%PATH%`` are replaced with ``%COMSPEC%`` and
+      ``%SystemRoot%\System32\cmd.exe``. As a result, dropping a
+      malicious program named ``cmd.exe`` into a current directory no
+      longer works.
 
 .. class:: CompletedProcess
 
@@ -270,15 +281,14 @@ default values. The arguments that are most commonly needed are:
 
    *stdin*, *stdout* and *stderr* specify the executed program's standard input,
    standard output and standard error file handles, respectively.  Valid values
-   are :data:`PIPE`, :data:`DEVNULL`, an existing file descriptor (a positive
-   integer), an existing file object with a valid file descriptor, and ``None``.
-   :data:`PIPE` indicates that a new pipe to the child should be created.
-   :data:`DEVNULL` indicates that the special file :data:`os.devnull` will
-   be used.  With the default settings of ``None``, no redirection will occur;
-   the child's file handles will be inherited from the parent.
-   Additionally, *stderr* can be :data:`STDOUT`, which indicates that the
-   stderr data from the child process should be captured into the same file
-   handle as for *stdout*.
+   are ``None``, :data:`PIPE`, :data:`DEVNULL`, an existing file descriptor (a
+   positive integer), and an existing :term:`file object` with a valid file
+   descriptor.  With the default settings of ``None``, no redirection will
+   occur.  :data:`PIPE` indicates that a new pipe to the child should be
+   created.  :data:`DEVNULL` indicates that the special file :data:`os.devnull`
+   will be used.  Additionally, *stderr* can be :data:`STDOUT`, which indicates
+   that the stderr data from the child process should be captured into the same
+   file handle as for *stdout*.
 
    .. index::
       single: universal newlines; subprocess module
@@ -455,10 +465,10 @@ functions.
    :func:`open` function when creating the stdin/stdout/stderr pipe
    file objects:
 
-   - :const:`0` means unbuffered (read and write are one
+   - ``0`` means unbuffered (read and write are one
      system call and can return short)
-   - :const:`1` means line buffered
-     (only usable if ``universal_newlines=True`` i.e., in a text mode)
+   - ``1`` means line buffered
+     (only usable if ``text=True`` or ``universal_newlines=True``)
    - any other positive value means use a buffer of approximately that
      size
    - negative bufsize (the default) means the system default of
@@ -467,7 +477,7 @@ functions.
    .. versionchanged:: 3.3.1
       *bufsize* now defaults to -1 to enable buffering by default to match the
       behavior that most code expects.  In versions prior to Python 3.2.4 and
-      3.3.1 it incorrectly defaulted to :const:`0` which was unbuffered
+      3.3.1 it incorrectly defaulted to ``0`` which was unbuffered
       and allowed short reads.  This was unintentional and did not match the
       behavior of Python 2 as most code expected.
 
@@ -488,17 +498,24 @@ functions.
       *executable* parameter accepts a bytes and :term:`path-like object`
       on Windows.
 
+   .. versionchanged:: 3.12
+
+      Changed Windows shell search order for ``shell=True``. The current
+      directory and ``%PATH%`` are replaced with ``%COMSPEC%`` and
+      ``%SystemRoot%\System32\cmd.exe``. As a result, dropping a
+      malicious program named ``cmd.exe`` into a current directory no
+      longer works.
+
    *stdin*, *stdout* and *stderr* specify the executed program's standard input,
    standard output and standard error file handles, respectively.  Valid values
-   are :data:`PIPE`, :data:`DEVNULL`, an existing file descriptor (a positive
-   integer), an existing :term:`file object` with a valid file descriptor,
-   and ``None``.  :data:`PIPE` indicates that a new pipe to the child should
-   be created.  :data:`DEVNULL` indicates that the special file
-   :data:`os.devnull` will be used. With the default settings of ``None``,
-   no redirection will occur; the child's file handles will be inherited from
-   the parent.  Additionally, *stderr* can be :data:`STDOUT`, which indicates
+   are ``None``, :data:`PIPE`, :data:`DEVNULL`, an existing file descriptor (a
+   positive integer), and an existing :term:`file object` with a valid file
+   descriptor.  With the default settings of ``None``, no redirection will
+   occur.  :data:`PIPE` indicates that a new pipe to the child should be
+   created.  :data:`DEVNULL` indicates that the special file :data:`os.devnull`
+   will be used.  Additionally, *stderr* can be :data:`STDOUT`, which indicates
    that the stderr data from the applications should be captured into the same
-   file handle as for stdout.
+   file handle as for *stdout*.
 
    If *preexec_fn* is set to a callable object, this object will be called in the
    child process just before the child is executed.
@@ -524,8 +541,8 @@ functions.
       :exc:`RuntimeError`. The new restriction may affect applications that
       are deployed in mod_wsgi, uWSGI, and other embedded environments.
 
-   If *close_fds* is true, all file descriptors except :const:`0`, :const:`1` and
-   :const:`2` will be closed before the child process is executed.  Otherwise
+   If *close_fds* is true, all file descriptors except ``0``, ``1`` and
+   ``2`` will be closed before the child process is executed.  Otherwise
    when *close_fds* is false, file descriptors obey their inheritable flag
    as described in :ref:`fd_inheritance`.
 
@@ -649,18 +666,18 @@ functions.
    passed to the underlying ``CreateProcess`` function.
    *creationflags*, if given, can be one or more of the following flags:
 
-      * :data:`CREATE_NEW_CONSOLE`
-      * :data:`CREATE_NEW_PROCESS_GROUP`
-      * :data:`ABOVE_NORMAL_PRIORITY_CLASS`
-      * :data:`BELOW_NORMAL_PRIORITY_CLASS`
-      * :data:`HIGH_PRIORITY_CLASS`
-      * :data:`IDLE_PRIORITY_CLASS`
-      * :data:`NORMAL_PRIORITY_CLASS`
-      * :data:`REALTIME_PRIORITY_CLASS`
-      * :data:`CREATE_NO_WINDOW`
-      * :data:`DETACHED_PROCESS`
-      * :data:`CREATE_DEFAULT_ERROR_MODE`
-      * :data:`CREATE_BREAKAWAY_FROM_JOB`
+   * :data:`CREATE_NEW_CONSOLE`
+   * :data:`CREATE_NEW_PROCESS_GROUP`
+   * :data:`ABOVE_NORMAL_PRIORITY_CLASS`
+   * :data:`BELOW_NORMAL_PRIORITY_CLASS`
+   * :data:`HIGH_PRIORITY_CLASS`
+   * :data:`IDLE_PRIORITY_CLASS`
+   * :data:`NORMAL_PRIORITY_CLASS`
+   * :data:`REALTIME_PRIORITY_CLASS`
+   * :data:`CREATE_NO_WINDOW`
+   * :data:`DETACHED_PROCESS`
+   * :data:`CREATE_DEFAULT_ERROR_MODE`
+   * :data:`CREATE_BREAKAWAY_FROM_JOB`
 
    *pipesize* can be used to change the size of the pipe when
    :data:`PIPE` is used for *stdin*, *stdout* or *stderr*. The size of the pipe
@@ -720,13 +737,13 @@ arguments.
 code.
 
 All of the functions and methods that accept a *timeout* parameter, such as
-:func:`call` and :meth:`Popen.communicate` will raise :exc:`TimeoutExpired` if
+:func:`run` and :meth:`Popen.communicate` will raise :exc:`TimeoutExpired` if
 the timeout expires before the process exits.
 
 Exceptions defined in this module all inherit from :exc:`SubprocessError`.
 
-   .. versionadded:: 3.3
-      The :exc:`SubprocessError` base class was added.
+.. versionadded:: 3.3
+   The :exc:`SubprocessError` base class was added.
 
 .. _subprocess-security:
 
@@ -774,9 +791,10 @@ Instances of the :class:`Popen` class have the following methods:
 
    .. note::
 
-      The function is implemented using a busy loop (non-blocking call and
-      short sleeps). Use the :mod:`asyncio` module for an asynchronous wait:
-      see :class:`asyncio.create_subprocess_exec`.
+      When the ``timeout`` parameter is not ``None``, then (on POSIX) the
+      function is implemented using a busy loop (non-blocking call and short
+      sleeps). Use the :mod:`asyncio` module for an asynchronous wait: see
+      :class:`asyncio.create_subprocess_exec`.
 
    .. versionchanged:: 3.3
       *timeout* was added.
@@ -849,7 +867,8 @@ Instances of the :class:`Popen` class have the following methods:
    On Windows :meth:`kill` is an alias for :meth:`terminate`.
 
 
-The following attributes are also available:
+The following attributes are also set by the class for you to access.
+Reassigning them to new values is unsupported:
 
 .. attribute:: Popen.args
 
@@ -862,9 +881,9 @@ The following attributes are also available:
 
    If the *stdin* argument was :data:`PIPE`, this attribute is a writeable
    stream object as returned by :func:`open`. If the *encoding* or *errors*
-   arguments were specified or the *universal_newlines* argument was ``True``,
-   the stream is a text stream, otherwise it is a byte stream. If the *stdin*
-   argument was not :data:`PIPE`, this attribute is ``None``.
+   arguments were specified or the *text* or *universal_newlines* argument
+   was ``True``, the stream is a text stream, otherwise it is a byte stream.
+   If the *stdin* argument was not :data:`PIPE`, this attribute is ``None``.
 
 
 .. attribute:: Popen.stdout
@@ -872,9 +891,9 @@ The following attributes are also available:
    If the *stdout* argument was :data:`PIPE`, this attribute is a readable
    stream object as returned by :func:`open`. Reading from the stream provides
    output from the child process. If the *encoding* or *errors* arguments were
-   specified or the *universal_newlines* argument was ``True``, the stream is a
-   text stream, otherwise it is a byte stream. If the *stdout* argument was not
-   :data:`PIPE`, this attribute is ``None``.
+   specified or the *text* or *universal_newlines* argument was ``True``, the
+   stream is a text stream, otherwise it is a byte stream. If the *stdout*
+   argument was not :data:`PIPE`, this attribute is ``None``.
 
 
 .. attribute:: Popen.stderr
@@ -882,9 +901,9 @@ The following attributes are also available:
    If the *stderr* argument was :data:`PIPE`, this attribute is a readable
    stream object as returned by :func:`open`. Reading from the stream provides
    error output from the child process. If the *encoding* or *errors* arguments
-   were specified or the *universal_newlines* argument was ``True``, the stream
-   is a text stream, otherwise it is a byte stream. If the *stderr* argument was
-   not :data:`PIPE`, this attribute is ``None``.
+   were specified or the *text* or *universal_newlines* argument was ``True``, the
+   stream is a text stream, otherwise it is a byte stream. If the *stderr* argument
+   was not :data:`PIPE`, this attribute is ``None``.
 
 .. warning::
 
@@ -904,9 +923,12 @@ The following attributes are also available:
 
 .. attribute:: Popen.returncode
 
-   The child return code, set by :meth:`poll` and :meth:`wait` (and indirectly
-   by :meth:`communicate`).  A ``None`` value indicates that the process
-   hasn't terminated yet.
+   The child return code. Initially ``None``, :attr:`returncode` is set by
+   a call to the :meth:`poll`, :meth:`wait`, or :meth:`communicate` methods
+   if they detect that the process has terminated.
+
+   A ``None`` value indicates that the process hadn't yet terminated at the
+   time of the last method call.
 
    A negative value ``-N`` indicates that the child was terminated by signal
    ``N`` (POSIX only).
@@ -1159,6 +1181,14 @@ calls these functions.
    .. versionchanged:: 3.3
       *timeout* was added.
 
+   .. versionchanged:: 3.12
+
+      Changed Windows shell search order for ``shell=True``. The current
+      directory and ``%PATH%`` are replaced with ``%COMSPEC%`` and
+      ``%SystemRoot%\System32\cmd.exe``. As a result, dropping a
+      malicious program named ``cmd.exe`` into a current directory no
+      longer works.
+
 .. function:: check_call(args, *, stdin=None, stdout=None, stderr=None, \
                          shell=False, cwd=None, timeout=None, \
                          **other_popen_kwargs)
@@ -1190,6 +1220,14 @@ calls these functions.
 
    .. versionchanged:: 3.3
       *timeout* was added.
+
+   .. versionchanged:: 3.12
+
+      Changed Windows shell search order for ``shell=True``. The current
+      directory and ``%PATH%`` are replaced with ``%COMSPEC%`` and
+      ``%SystemRoot%\System32\cmd.exe``. As a result, dropping a
+      malicious program named ``cmd.exe`` into a current directory no
+      longer works.
 
 
 .. function:: check_output(args, *, stdin=None, stderr=None, shell=False, \
@@ -1245,6 +1283,14 @@ calls these functions.
 
    .. versionadded:: 3.7
       *text* was added as a more readable alias for *universal_newlines*.
+
+   .. versionchanged:: 3.12
+
+      Changed Windows shell search order for ``shell=True``. The current
+      directory and ``%PATH%`` are replaced with ``%COMSPEC%`` and
+      ``%SystemRoot%\System32\cmd.exe``. As a result, dropping a
+      malicious program named ``cmd.exe`` into a current directory no
+      longer works.
 
 
 .. _subprocess-replacements:
@@ -1415,8 +1461,8 @@ Return code handling translates as follows::
        print("There were some errors")
 
 
-Replacing functions from the :mod:`popen2` module
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Replacing functions from the :mod:`!popen2` module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. note::
 
@@ -1565,7 +1611,7 @@ improves performance.
 
 If you ever encounter a presumed highly unusual situation where you need to
 prevent ``vfork()`` from being used by Python, you can set the
-:attr:`subprocess._USE_VFORK` attribute to a false value.
+:const:`subprocess._USE_VFORK` attribute to a false value.
 
 ::
 
@@ -1573,7 +1619,7 @@ prevent ``vfork()`` from being used by Python, you can set the
 
 Setting this has no impact on use of ``posix_spawn()`` which could use
 ``vfork()`` internally within its libc implementation.  There is a similar
-:attr:`subprocess._USE_POSIX_SPAWN` attribute if you need to prevent use of
+:const:`subprocess._USE_POSIX_SPAWN` attribute if you need to prevent use of
 that.
 
 ::
@@ -1583,7 +1629,7 @@ that.
 It is safe to set these to false on any Python version. They will have no
 effect on older versions when unsupported. Do not assume the attributes are
 available to read. Despite their names, a true value does not indicate that the
-corresponding function will be used, only that that it may be.
+corresponding function will be used, only that it may be.
 
 Please file issues any time you have to use these private knobs with a way to
 reproduce the issue you were seeing. Link to that issue from a comment in your

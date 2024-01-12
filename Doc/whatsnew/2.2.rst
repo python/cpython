@@ -143,8 +143,8 @@ To make the set of types complete, new type objects such as :func:`dict` and
            return fcntl.lockf(self.fileno(), operation,
                               length, start, whence)
 
-The now-obsolete :mod:`posixfile` module contained a class that emulated all of
-a file object's methods and also added a :meth:`lock` method, but this class
+The now-obsolete :mod:`!posixfile` module contained a class that emulated all of
+a file object's methods and also added a :meth:`!lock` method, but this class
 couldn't be passed to internal functions that expected a built-in file,
 something which is possible with our new :class:`LockableFile`.
 
@@ -424,22 +424,22 @@ Another significant addition to 2.2 is an iteration interface at both the C and
 Python levels.  Objects can define how they can be looped over by callers.
 
 In Python versions up to 2.1, the usual way to make ``for item in obj`` work is
-to define a :meth:`__getitem__` method that looks something like this::
+to define a :meth:`~object.__getitem__` method that looks something like this::
 
    def __getitem__(self, index):
        return <next item>
 
-:meth:`__getitem__` is more properly used to define an indexing operation on an
+:meth:`~object.__getitem__` is more properly used to define an indexing operation on an
 object so that you can write ``obj[5]`` to retrieve the sixth element.  It's a
 bit misleading when you're using this only to support :keyword:`for` loops.
 Consider some file-like object that wants to be looped over; the *index*
 parameter is essentially meaningless, as the class probably assumes that a
-series of :meth:`__getitem__` calls will be made with *index* incrementing by
-one each time.  In other words, the presence of the :meth:`__getitem__` method
+series of :meth:`~object.__getitem__` calls will be made with *index* incrementing by
+one each time.  In other words, the presence of the :meth:`~object.__getitem__` method
 doesn't mean that using ``file[5]``  to randomly access the sixth element will
 work, though it really should.
 
-In Python 2.2, iteration can be implemented separately, and :meth:`__getitem__`
+In Python 2.2, iteration can be implemented separately, and :meth:`~object.__getitem__`
 methods can be limited to classes that really do support random access.  The
 basic idea of iterators is  simple.  A new built-in function, ``iter(obj)``
 or ``iter(C, sentinel)``, is used to get an iterator. ``iter(obj)`` returns
@@ -632,10 +632,10 @@ queen threatens another) and the Knight's Tour (a route that takes a knight to
 every square of an $NxN$ chessboard without visiting any square twice).
 
 The idea of generators comes from other programming languages, especially Icon
-(https://www.cs.arizona.edu/icon/), where the idea of generators is central.  In
+(https://www2.cs.arizona.edu/icon/), where the idea of generators is central.  In
 Icon, every expression and function call behaves like a generator.  One example
 from "An Overview of the Icon Programming Language" at
-https://www.cs.arizona.edu/icon/docs/ipd266.htm gives an idea of what this looks
+https://www2.cs.arizona.edu/icon/docs/ipd266.htm gives an idea of what this looks
 like::
 
    sentence := "Store it in the neighboring harbor"
@@ -1078,17 +1078,17 @@ code, none of the changes described here will affect you very much.
 
   To upgrade an extension module to the new API, perform the following steps:
 
-* Rename :c:func:`Py_TPFLAGS_GC` to :c:func:`PyTPFLAGS_HAVE_GC`.
+* Rename :c:macro:`!Py_TPFLAGS_GC` to :c:macro:`Py_TPFLAGS_HAVE_GC`.
 
 * Use :c:func:`PyObject_GC_New` or :c:func:`PyObject_GC_NewVar` to allocate
     objects, and :c:func:`PyObject_GC_Del` to deallocate them.
 
-* Rename :c:func:`PyObject_GC_Init` to :c:func:`PyObject_GC_Track` and
-    :c:func:`PyObject_GC_Fini` to :c:func:`PyObject_GC_UnTrack`.
+* Rename :c:func:`!PyObject_GC_Init` to :c:func:`PyObject_GC_Track` and
+  :c:func:`!PyObject_GC_Fini` to :c:func:`PyObject_GC_UnTrack`.
 
-* Remove :c:func:`PyGC_HEAD_SIZE` from object size calculations.
+* Remove :c:macro:`!PyGC_HEAD_SIZE` from object size calculations.
 
-* Remove calls to :c:func:`PyObject_AS_GC` and :c:func:`PyObject_FROM_GC`.
+* Remove calls to :c:func:`!PyObject_AS_GC` and :c:func:`!PyObject_FROM_GC`.
 
 * A new ``et`` format sequence was added to :c:func:`PyArg_ParseTuple`; ``et``
   takes both a parameter and an encoding name, and converts the parameter to the
@@ -1105,11 +1105,11 @@ code, none of the changes described here will affect you very much.
   expected, and a set of pointers to :c:expr:`PyObject*` variables that will be
   filled in with argument values.
 
-* Two new flags :const:`METH_NOARGS` and :const:`METH_O` are available in method
+* Two new flags :c:macro:`METH_NOARGS` and :c:macro:`METH_O` are available in method
   definition tables to simplify implementation of methods with no arguments or a
   single untyped argument. Calling such methods is more efficient than calling a
-  corresponding method that uses :const:`METH_VARARGS`.  Also, the old
-  :const:`METH_OLDARGS` style of writing C methods is  now officially deprecated.
+  corresponding method that uses :c:macro:`METH_VARARGS`.  Also, the old
+  :c:macro:`!METH_OLDARGS` style of writing C methods is  now officially deprecated.
 
 * Two new wrapper functions, :c:func:`PyOS_snprintf` and :c:func:`PyOS_vsnprintf`
   were added to provide  cross-platform implementations for the relatively new
@@ -1219,7 +1219,7 @@ Some of the more notable changes are:
   operator, but these features were rarely used and therefore buggy.  The
   :meth:`tolist` method and the :attr:`start`, :attr:`stop`, and :attr:`step`
   attributes are also being deprecated.  At the C level, the fourth argument to
-  the :c:func:`PyRange_New` function, ``repeat``, has also been deprecated.
+  the :c:func:`!PyRange_New` function, ``repeat``, has also been deprecated.
 
 * There were a bunch of patches to the dictionary implementation, mostly to fix
   potential core dumps if a dictionary contains objects that sneakily changed

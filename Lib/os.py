@@ -131,6 +131,7 @@ if _exists("_have_functions"):
     _set = set()
     _add("HAVE_FCHDIR",     "chdir")
     _add("HAVE_FCHMOD",     "chmod")
+    _add("MS_WINDOWS",      "chmod")
     _add("HAVE_FCHOWN",     "chown")
     _add("HAVE_FDOPENDIR",  "listdir")
     _add("HAVE_FDOPENDIR",  "scandir")
@@ -171,6 +172,7 @@ if _exists("_have_functions"):
     _add("HAVE_FSTATAT",    "stat")
     _add("HAVE_LCHFLAGS",   "chflags")
     _add("HAVE_LCHMOD",     "chmod")
+    _add("MS_WINDOWS",      "chmod")
     if _exists("lchown"): # mac os x10.3
         _add("HAVE_LCHOWN", "chown")
     _add("HAVE_LINKAT",     "link")
@@ -341,11 +343,11 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
     """
     sys.audit("os.walk", top, topdown, onerror, followlinks)
 
-    stack = [(False, fspath(top))]
+    stack = [fspath(top)]
     islink, join = path.islink, path.join
     while stack:
-        must_yield, top = stack.pop()
-        if must_yield:
+        top = stack.pop()
+        if isinstance(top, tuple):
             yield top
             continue
 
@@ -422,13 +424,13 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
                 # the caller can replace the directory entry during the "yield"
                 # above.
                 if followlinks or not islink(new_path):
-                    stack.append((False, new_path))
+                    stack.append(new_path)
         else:
             # Yield after sub-directory traversal if going bottom up
-            stack.append((True, (top, dirs, nondirs)))
+            stack.append((top, dirs, nondirs))
             # Traverse into sub-directories
             for new_path in reversed(walk_dirs):
-                stack.append((False, new_path))
+                stack.append(new_path)
 
 __all__.append("walk")
 
@@ -1061,6 +1063,12 @@ def _fspath(path):
         else:
             raise TypeError("expected str, bytes or os.PathLike object, "
                             "not " + path_type.__name__)
+    except TypeError:
+        if path_type.__fspath__ is None:
+            raise TypeError("expected str, bytes or os.PathLike object, "
+                            "not " + path_type.__name__) from None
+        else:
+            raise
     if isinstance(path_repr, (str, bytes)):
         return path_repr
     else:
@@ -1078,6 +1086,8 @@ if not _exists('fspath'):
 class PathLike(abc.ABC):
 
     """Abstract base class for implementing the file system path protocol."""
+
+    __slots__ = ()
 
     @abc.abstractmethod
     def __fspath__(self):
@@ -1128,3 +1138,17 @@ if name == 'nt':
             cookie,
             nt._remove_dll_directory
         )
+
+
+if _exists('sched_getaffinity') and sys._get_cpu_count_config() < 0:
+    def process_cpu_count():
+        """
+        Get the number of CPUs of the current process.
+
+        Return the number of logical CPUs usable by the calling thread of the
+        current process. Return None if indeterminable.
+        """
+        return len(sched_getaffinity(0))
+else:
+    # Just an alias to cpu_count() (same docstring)
+    process_cpu_count = cpu_count

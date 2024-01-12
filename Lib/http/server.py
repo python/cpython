@@ -2,18 +2,18 @@
 
 Note: BaseHTTPRequestHandler doesn't implement any HTTP request; see
 SimpleHTTPRequestHandler for simple implementations of GET, HEAD and POST,
-and CGIHTTPRequestHandler for CGI scripts.
+and (deprecated) CGIHTTPRequestHandler for CGI scripts.
 
-It does, however, optionally implement HTTP/1.1 persistent connections,
-as of version 0.3.
+It does, however, optionally implement HTTP/1.1 persistent connections.
 
 Notes on CGIHTTPRequestHandler
 ------------------------------
 
-This class implements GET and POST requests to cgi-bin scripts.
+This class is deprecated. It implements GET and POST requests to cgi-bin scripts.
 
-If the os.fork() function is not present (e.g. on Windows),
-subprocess.Popen() is used as a fallback, with slightly altered semantics.
+If the os.fork() function is not present (Windows), subprocess.Popen() is used,
+with slightly altered but never documented semantics.  Use from a threaded
+process is likely to trigger a warning at os.fork() time.
 
 In all cases, the implementation is intentionally naive -- all
 requests are executed synchronously.
@@ -300,6 +300,10 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
                 #   - Leading zeros MUST be ignored by recipients.
                 if len(version_number) != 2:
                     raise ValueError
+                if any(not component.isdigit() for component in version_number):
+                    raise ValueError("non digit in http version")
+                if any(len(component) > 10 for component in version_number):
+                    raise ValueError("unreasonable length http version")
                 version_number = int(version_number[0]), int(version_number[1])
             except (ValueError, IndexError):
                 self.send_error(
@@ -652,8 +656,8 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     """
 
-    index_pages = ["index.html", "index.htm"]
     server_version = "SimpleHTTP/" + __version__
+    index_pages = ("index.html", "index.htm")
     extensions_map = _encodings_map_default = {
         '.gz': 'application/gzip',
         '.Z': 'application/octet-stream',
@@ -661,11 +665,9 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         '.xz': 'application/x-xz',
     }
 
-    def __init__(self, *args, directory=None, index_pages=None, **kwargs):
+    def __init__(self, *args, directory=None, **kwargs):
         if directory is None:
             directory = os.getcwd()
-        if index_pages is not None:
-            self.index_pages = index_pages
         self.directory = os.fspath(directory)
         super().__init__(*args, **kwargs)
 
@@ -793,7 +795,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             displaypath = urllib.parse.unquote(self.path,
                                                errors='surrogatepass')
         except UnicodeDecodeError:
-            displaypath = urllib.parse.unquote(path)
+            displaypath = urllib.parse.unquote(self.path)
         displaypath = html.escape(displaypath, quote=False)
         enc = sys.getfilesystemencoding()
         title = f'Directory listing for {displaypath}'
@@ -983,6 +985,12 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
     The POST command is *only* implemented for CGI scripts.
 
     """
+
+    def __init__(self, *args, **kwargs):
+        import warnings
+        warnings._deprecated("http.server.CGIHTTPRequestHandler",
+                             remove=(3, 15))
+        super().__init__(*args, **kwargs)
 
     # Determine platform specifics
     have_fork = hasattr(os, 'fork')
