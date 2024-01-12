@@ -1190,6 +1190,7 @@
             PyObject *v = GETLOCAL(oparg);
             if (v == NULL) goto unbound_local_error_tier_two;
             SETLOCAL(oparg, NULL);
+            Py_CLEAR(LOCALS());
             break;
         }
 
