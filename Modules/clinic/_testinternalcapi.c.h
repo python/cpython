@@ -3,10 +3,69 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
+PyDoc_STRVAR(_testinternalcapi_compiler_cleandoc__doc__,
+"compiler_cleandoc($module, /, doc)\n"
+"--\n"
+"\n"
+"C implementation of inspect.cleandoc().");
+
+#define _TESTINTERNALCAPI_COMPILER_CLEANDOC_METHODDEF    \
+    {"compiler_cleandoc", _PyCFunction_CAST(_testinternalcapi_compiler_cleandoc), METH_FASTCALL|METH_KEYWORDS, _testinternalcapi_compiler_cleandoc__doc__},
+
+static PyObject *
+_testinternalcapi_compiler_cleandoc_impl(PyObject *module, PyObject *doc);
+
+static PyObject *
+_testinternalcapi_compiler_cleandoc(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(doc), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"doc", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "compiler_cleandoc",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *doc;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("compiler_cleandoc", "argument 'doc'", "str", args[0]);
+        goto exit;
+    }
+    doc = args[0];
+    return_value = _testinternalcapi_compiler_cleandoc_impl(module, doc);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_testinternalcapi_compiler_codegen__doc__,
 "compiler_codegen($module, /, ast, filename, optimize, compile_mode=0)\n"
@@ -64,14 +123,14 @@ _testinternalcapi_compiler_codegen(PyObject *module, PyObject *const *args, Py_s
     }
     ast = args[0];
     filename = args[1];
-    optimize = _PyLong_AsInt(args[2]);
+    optimize = PyLong_AsInt(args[2]);
     if (optimize == -1 && PyErr_Occurred()) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    compile_mode = _PyLong_AsInt(args[3]);
+    compile_mode = PyLong_AsInt(args[3]);
     if (compile_mode == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -135,7 +194,7 @@ _testinternalcapi_optimize_cfg(PyObject *module, PyObject *const *args, Py_ssize
     }
     instructions = args[0];
     consts = args[1];
-    nlocals = _PyLong_AsInt(args[2]);
+    nlocals = PyLong_AsInt(args[2]);
     if (nlocals == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -206,4 +265,21 @@ _testinternalcapi_assemble_code_object(PyObject *module, PyObject *const *args, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2965f1578b986218 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_testinternalcapi_test_long_numbits__doc__,
+"test_long_numbits($module, /)\n"
+"--\n"
+"\n");
+
+#define _TESTINTERNALCAPI_TEST_LONG_NUMBITS_METHODDEF    \
+    {"test_long_numbits", (PyCFunction)_testinternalcapi_test_long_numbits, METH_NOARGS, _testinternalcapi_test_long_numbits__doc__},
+
+static PyObject *
+_testinternalcapi_test_long_numbits_impl(PyObject *module);
+
+static PyObject *
+_testinternalcapi_test_long_numbits(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _testinternalcapi_test_long_numbits_impl(module);
+}
+/*[clinic end generated code: output=679bf53bbae20085 input=a9049054013a1b77]*/

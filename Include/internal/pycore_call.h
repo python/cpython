@@ -8,27 +8,28 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_identifier.h"    // _Py_Identifier
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
-// Export for shared stdlib extensions like the math extension,
-// function used via inlined _PyObject_VectorcallTstate() function.
+/* Suggested size (number of positional arguments) for arrays of PyObject*
+   allocated on a C stack to avoid allocating memory on the heap memory. Such
+   array is used to pass positional arguments to call functions of the
+   PyObject_Vectorcall() family.
+
+   The size is chosen to not abuse the C stack and so limit the risk of stack
+   overflow. The size is also chosen to allow using the small stack for most
+   function calls of the Python standard library. On 64-bit CPU, it allocates
+   40 bytes on the stack. */
+#define _PY_FASTCALL_SMALL_STACK 5
+
+
+// Export for 'math' shared extension, used via _PyObject_VectorcallTstate()
+// static inline function.
 PyAPI_FUNC(PyObject*) _Py_CheckFunctionResult(
     PyThreadState *tstate,
     PyObject *callable,
     PyObject *result,
     const char *where);
-
-/* Convert keyword arguments from the FASTCALL (stack: C array, kwnames: tuple)
-   format to a Python dictionary ("kwargs" dict).
-
-   The type of kwnames keys is not checked. The final function getting
-   arguments is responsible to check if all keys are strings, for example using
-   PyArg_ParseTupleAndKeywords() or PyArg_ValidateKeywordArguments().
-
-   Duplicate keys are merged using the last value. If duplicate keys must raise
-   an exception, the caller is responsible to implement an explicit keys on
-   kwnames. */
-extern PyObject* _PyStack_AsDict(PyObject *const *values, PyObject *kwnames);
 
 extern PyObject* _PyObject_Call_Prepend(
     PyThreadState *tstate,
@@ -37,7 +38,7 @@ extern PyObject* _PyObject_Call_Prepend(
     PyObject *args,
     PyObject *kwargs);
 
-extern PyObject* _PyObject_FastCallDictTstate(
+extern PyObject* _PyObject_VectorcallDictTstate(
     PyThreadState *tstate,
     PyObject *callable,
     PyObject *const *args,
@@ -56,17 +57,10 @@ extern PyObject * _PyObject_CallMethodFormat(
     const char *format,
     ...);
 
-// Export for shared stdlib extensions like the array extension
+// Export for 'array' shared extension
 PyAPI_FUNC(PyObject*) _PyObject_CallMethod(
     PyObject *obj,
     PyObject *name,
-    const char *format, ...);
-
-/* Like PyObject_CallMethod(), but expect a _Py_Identifier*
-   as the method name. */
-extern PyObject* _PyObject_CallMethodId(
-    PyObject *obj,
-    _Py_Identifier *name,
     const char *format, ...);
 
 extern PyObject* _PyObject_CallMethodIdObjArgs(
@@ -105,12 +99,11 @@ _PyObject_CallMethodIdOneArg(PyObject *self, _Py_Identifier *name, PyObject *arg
 
 /* === Vectorcall protocol (PEP 590) ============================= */
 
-// Call callable using tp_call. Arguments are like PyObject_Vectorcall()
-// or PyObject_FastCallDict() (both forms are supported),
+// Call callable using tp_call. Arguments are like PyObject_Vectorcall(),
 // except that nargs is plainly the number of arguments without flags.
 //
-// Export for shared stdlib extensions like the math extension,
-// function used via inlined _PyObject_VectorcallTstate() function.
+// Export for 'math' shared extension, used via _PyObject_VectorcallTstate()
+// static inline function.
 PyAPI_FUNC(PyObject*) _PyObject_MakeTpCall(
     PyThreadState *tstate,
     PyObject *callable,
@@ -191,14 +184,6 @@ _PyObject_CallNoArgs(PyObject *func) {
     return _PyObject_VectorcallTstate(tstate, func, NULL, 0, NULL);
 }
 
-
-static inline PyObject *
-_PyObject_FastCallTstate(PyThreadState *tstate, PyObject *func,
-                         PyObject *const *args, Py_ssize_t nargs)
-{
-    EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_API, func);
-    return _PyObject_VectorcallTstate(tstate, func, args, (size_t)nargs, NULL);
-}
 
 extern PyObject *const *
 _PyStack_UnpackDict(PyThreadState *tstate,

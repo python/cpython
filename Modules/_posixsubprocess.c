@@ -6,29 +6,30 @@
 #include "Python.h"
 #include "pycore_fileutils.h"
 #include "pycore_pystate.h"
+#include "pycore_signal.h"        // _Py_RestoreSignals()
 #if defined(HAVE_PIPE2) && !defined(_GNU_SOURCE)
-# define _GNU_SOURCE
+#  define _GNU_SOURCE
 #endif
-#include <unistd.h>
-#include <fcntl.h>
+#include <unistd.h>               // close()
+#include <fcntl.h>                // fcntl()
 #ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
+#  include <sys/types.h>
 #endif
 #if defined(HAVE_SYS_STAT_H)
-#include <sys/stat.h>
+#  include <sys/stat.h>           // stat()
 #endif
 #ifdef HAVE_SYS_SYSCALL_H
-#include <sys/syscall.h>
+#  include <sys/syscall.h>
 #endif
 #if defined(HAVE_SYS_RESOURCE_H)
-#include <sys/resource.h>
+#  include <sys/resource.h>
 #endif
 #ifdef HAVE_DIRENT_H
-#include <dirent.h>
+#  include <dirent.h>             // opendir()
 #endif
-#ifdef HAVE_GRP_H
-#include <grp.h>
-#endif /* HAVE_GRP_H */
+#if defined(HAVE_SETGROUPS)
+#  include <grp.h>                // setgroups()
+#endif
 
 #include "posixmodule.h"
 
@@ -86,15 +87,16 @@ class pid_t_converter(CConverter):
     type = 'pid_t'
     format_unit = '" _Py_PARSE_PID "'
 
-    def parse_arg(self, argname, displayname):
-        return """
+    def parse_arg(self, argname, displayname, *, limited_capi):
+        return self.format_code("""
             {paramname} = PyLong_AsPid({argname});
             if ({paramname} == -1 && PyErr_Occurred()) {{{{
                 goto exit;
             }}}}
-            """.format(argname=argname, paramname=self.parser_name)
+            """,
+            argname=argname)
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=5af1c116d56cbb5a]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=c94349aa1aad151d]*/
 
 #include "clinic/_posixsubprocess.c.h"
 
@@ -739,8 +741,9 @@ child_exec(char *const exec_array[],
     if (child_umask >= 0)
         umask(child_umask);  /* umask() always succeeds. */
 
-    if (restore_signals)
+    if (restore_signals) {
         _Py_RestoreSignals();
+    }
 
 #ifdef VFORK_USABLE
     if (child_sigmask) {
@@ -764,8 +767,10 @@ child_exec(char *const exec_array[],
 #endif
 
 #ifdef HAVE_SETGROUPS
-    if (extra_group_size > 0)
+    if (extra_group_size >= 0) {
+        assert((extra_group_size == 0) == (extra_groups == NULL));
         POSIX_CALL(setgroups(extra_group_size, extra_groups));
+    }
 #endif /* HAVE_SETGROUPS */
 
 #ifdef HAVE_SETREGID
@@ -1019,13 +1024,12 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
     pid_t pid = -1;
     int need_to_reenable_gc = 0;
     char *const *argv = NULL, *const *envp = NULL;
-    Py_ssize_t extra_group_size = 0;
     int need_after_fork = 0;
     int saved_errno = 0;
     int *c_fds_to_keep = NULL;
     Py_ssize_t fds_to_keep_len = PyTuple_GET_SIZE(py_fds_to_keep);
 
-    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     if ((preexec_fn != Py_None) && interp->finalizing) {
         PyErr_SetString(PyExc_RuntimeError,
                         "preexec_fn not supported at interpreter shutdown");
@@ -1099,6 +1103,13 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
             goto cleanup;
         cwd = PyBytes_AsString(cwd_obj2);
     }
+
+    // Special initial value meaning that subprocess API was called with
+    // extra_groups=None leading to _posixsubprocess.fork_exec(gids=None).
+    // We use this to differentiate between code desiring a setgroups(0, NULL)
+    // call vs no call at all.  The fast vfork() code path could be used when
+    // there is no setgroups call.
+    Py_ssize_t extra_group_size = -2;
 
     if (extra_groups_packed != Py_None) {
 #ifdef HAVE_SETGROUPS

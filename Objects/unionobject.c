@@ -3,7 +3,7 @@
 #include "pycore_object.h"  // _PyObject_GC_TRACK/UNTRACK
 #include "pycore_typevarobject.h"  // _PyTypeAlias_Type
 #include "pycore_unionobject.h"
-#include "structmember.h"
+
 
 
 static PyObject *make_union(PyObject *);
@@ -186,37 +186,30 @@ union_repr_item(_PyUnicodeWriter *writer, PyObject *p)
 {
     PyObject *qualname = NULL;
     PyObject *module = NULL;
-    PyObject *tmp;
     PyObject *r = NULL;
-    int err;
+    int rc;
 
     if (p == (PyObject *)&_PyNone_Type) {
         return _PyUnicodeWriter_WriteASCIIString(writer, "None", 4);
     }
 
-    if (_PyObject_LookupAttr(p, &_Py_ID(__origin__), &tmp) < 0) {
+    if ((rc = PyObject_HasAttrWithError(p, &_Py_ID(__origin__))) > 0 &&
+        (rc = PyObject_HasAttrWithError(p, &_Py_ID(__args__))) > 0)
+    {
+        // It looks like a GenericAlias
+        goto use_repr;
+    }
+    if (rc < 0) {
         goto exit;
     }
 
-    if (tmp) {
-        Py_DECREF(tmp);
-        if (_PyObject_LookupAttr(p, &_Py_ID(__args__), &tmp) < 0) {
-            goto exit;
-        }
-        if (tmp) {
-            // It looks like a GenericAlias
-            Py_DECREF(tmp);
-            goto use_repr;
-        }
-    }
-
-    if (_PyObject_LookupAttr(p, &_Py_ID(__qualname__), &qualname) < 0) {
+    if (PyObject_GetOptionalAttr(p, &_Py_ID(__qualname__), &qualname) < 0) {
         goto exit;
     }
     if (qualname == NULL) {
         goto use_repr;
     }
-    if (_PyObject_LookupAttr(p, &_Py_ID(__module__), &module) < 0) {
+    if (PyObject_GetOptionalAttr(p, &_Py_ID(__module__), &module) < 0) {
         goto exit;
     }
     if (module == NULL || module == Py_None) {
@@ -244,9 +237,9 @@ exit:
     if (r == NULL) {
         return -1;
     }
-    err = _PyUnicodeWriter_WriteStr(writer, r);
+    rc = _PyUnicodeWriter_WriteStr(writer, r);
     Py_DECREF(r);
-    return err;
+    return rc;
 }
 
 static PyObject *
@@ -273,7 +266,7 @@ error:
 }
 
 static PyMemberDef union_members[] = {
-        {"__args__", T_OBJECT, offsetof(unionobject, args), READONLY},
+        {"__args__", _Py_T_OBJECT, offsetof(unionobject, args), Py_READONLY},
         {0}
 };
 
@@ -331,7 +324,8 @@ union_parameters(PyObject *self, void *Py_UNUSED(unused))
 }
 
 static PyGetSetDef union_properties[] = {
-    {"__parameters__", union_parameters, (setter)NULL, "Type variables in the types.UnionType.", NULL},
+    {"__parameters__", union_parameters, (setter)NULL,
+     PyDoc_STR("Type variables in the types.UnionType."), NULL},
     {0}
 };
 

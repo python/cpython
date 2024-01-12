@@ -4,16 +4,25 @@
 
 /* === Object Protocol ================================================== */
 
-/* Suggested size (number of positional arguments) for arrays of PyObject*
-   allocated on a C stack to avoid allocating memory on the heap memory. Such
-   array is used to pass positional arguments to call functions of the
-   PyObject_Vectorcall() family.
+/* Like PyObject_CallMethod(), but expect a _Py_Identifier*
+   as the method name. */
+PyAPI_FUNC(PyObject*) _PyObject_CallMethodId(
+    PyObject *obj,
+    _Py_Identifier *name,
+    const char *format, ...);
 
-   The size is chosen to not abuse the C stack and so limit the risk of stack
-   overflow. The size is also chosen to allow using the small stack for most
-   function calls of the Python standard library. On 64-bit CPU, it allocates
-   40 bytes on the stack. */
-#define _PY_FASTCALL_SMALL_STACK 5
+/* Convert keyword arguments from the FASTCALL (stack: C array, kwnames: tuple)
+   format to a Python dictionary ("kwargs" dict).
+
+   The type of kwnames keys is not checked. The final function getting
+   arguments is responsible to check if all keys are strings, for example using
+   PyArg_ParseTupleAndKeywords() or PyArg_ValidateKeywordArguments().
+
+   Duplicate keys are merged using the last value. If duplicate keys must raise
+   an exception, the caller is responsible to implement an explicit keys on
+   kwnames. */
+PyAPI_FUNC(PyObject*) _PyStack_AsDict(PyObject *const *values, PyObject *kwnames);
+
 
 /* === Vectorcall protocol (PEP 590) ============================= */
 
@@ -29,6 +38,16 @@ _PyVectorcall_NARGS(size_t n)
 
 PyAPI_FUNC(vectorcallfunc) PyVectorcall_Function(PyObject *callable);
 
+// Backwards compatibility aliases (PEP 590) for API that was provisional
+// in Python 3.8
+#define _PyObject_Vectorcall PyObject_Vectorcall
+#define _PyObject_VectorcallMethod PyObject_VectorcallMethod
+#define _PyObject_FastCallDict PyObject_VectorcallDict
+#define _PyVectorcall_Function PyVectorcall_Function
+#define _PyObject_CallOneArg PyObject_CallOneArg
+#define _PyObject_CallMethodNoArgs PyObject_CallMethodNoArgs
+#define _PyObject_CallMethodOneArg PyObject_CallMethodOneArg
+
 /* Same as PyObject_Vectorcall except that keyword arguments are passed as
    dict, which may be NULL if there are no keyword arguments. */
 PyAPI_FUNC(PyObject *) PyObject_VectorcallDict(
@@ -36,12 +55,6 @@ PyAPI_FUNC(PyObject *) PyObject_VectorcallDict(
     PyObject *const *args,
     size_t nargsf,
     PyObject *kwargs);
-
-// Same as PyObject_Vectorcall(), except without keyword arguments
-PyAPI_FUNC(PyObject *) _PyObject_FastCall(
-    PyObject *func,
-    PyObject *const *args,
-    Py_ssize_t nargs);
 
 PyAPI_FUNC(PyObject *) PyObject_CallOneArg(PyObject *func, PyObject *arg);
 
@@ -72,13 +85,3 @@ PyAPI_FUNC(Py_ssize_t) PyObject_LengthHint(PyObject *o, Py_ssize_t);
    need to be corrected for a negative index. */
 #define PySequence_ITEM(o, i)\
     ( Py_TYPE(o)->tp_as_sequence->sq_item((o), (i)) )
-
-/* === Mapping protocol ================================================= */
-
-// Convert Python int to Py_ssize_t. Do nothing if the argument is None.
-// Cannot be moved to the internal C API: used by Argument Clinic.
-PyAPI_FUNC(int) _Py_convert_optional_to_ssize_t(PyObject *, void *);
-
-// Same as PyNumber_Index but can return an instance of a subclass of int.
-// Cannot be moved to the internal C API: used by Argument Clinic.
-PyAPI_FUNC(PyObject *) _PyNumber_Index(PyObject *o);

@@ -34,7 +34,7 @@ Slice Objects
    *length* as errors.
 
    Returns ``0`` on success and ``-1`` on error with no exception set (unless one of
-   the indices was not :const:`None` and failed to be converted to an integer,
+   the indices was not ``None`` and failed to be converted to an integer,
    in which case ``-1`` is returned with an exception set).
 
    You probably do not want to use this function.
@@ -119,8 +119,7 @@ Ellipsis Object
 .. c:var:: PyObject *Py_Ellipsis
 
    The Python ``Ellipsis`` object.  This object has no methods.  Like
-   :c:data:`Py_None`, it is an `immortal <https://peps.python.org/pep-0683/>`_.
-   singleton object.
+   :c:data:`Py_None`, it is an :term:`immortal` singleton object.
 
    .. versionchanged:: 3.12
       :c:data:`Py_Ellipsis` is immortal.
