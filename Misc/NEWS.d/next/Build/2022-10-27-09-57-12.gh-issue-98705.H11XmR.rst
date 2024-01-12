@@ -1,2 +1,0 @@
-``__bool__`` is defined in AIX system header files which breaks the build in
-AIX, so undefine it.

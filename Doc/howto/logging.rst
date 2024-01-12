@@ -89,9 +89,8 @@ described below (in increasing order of severity):
 |              | itself may be unable to continue running.   |
 +--------------+---------------------------------------------+
 
-The default level is ``WARNING``, which means that only events of this level
-and above will be tracked, unless the logging package is configured to do
-otherwise.
+The default level is ``WARNING``, which means that only events of this severity and higher
+will be tracked, unless the logging package is configured to do otherwise.
 
 Events that are tracked can be handled in different ways. The simplest way of
 handling tracked events is to print them to the console. Another common way
@@ -418,6 +417,7 @@ The flow of log event information in loggers and handlers is illustrated in the
 following diagram.
 
 .. image:: logging_flow.png
+   :class: invert-in-dark-mode
 
 Loggers
 ^^^^^^^
@@ -978,7 +978,7 @@ provided:
 
 #. :class:`NullHandler` instances do nothing with error messages. They are used
    by library developers who want to use logging, but want to avoid the 'No
-   handlers could be found for logger XXX' message which can be displayed if
+   handlers could be found for logger *XXX*' message which can be displayed if
    the library user has not configured logging. See :ref:`library-config` for
    more information.
 

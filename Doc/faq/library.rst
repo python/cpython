@@ -111,7 +111,7 @@ Is there an equivalent to C's onexit() in Python?
 -------------------------------------------------
 
 The :mod:`atexit` module provides a register function that is similar to C's
-:c:func:`onexit`.
+:c:func:`!onexit`.
 
 
 Why don't my signal handlers work?
@@ -397,7 +397,7 @@ These aren't::
    D[x] = D[x] + 1
 
 Operations that replace other objects may invoke those other objects'
-:meth:`__del__` method when their reference count reaches zero, and that can
+:meth:`~object.__del__` method when their reference count reaches zero, and that can
 affect things.  This is especially true for the mass updates to dictionaries and
 lists.  When in doubt, use a mutex!
 
@@ -566,7 +566,7 @@ use ``p.read(n)``.
    Note on a bug in popen2: unless your program calls ``wait()`` or
    ``waitpid()``, finished child processes are never removed, and eventually
    calls to popen2 will fail because of a limit on the number of child
-   processes.  Calling :func:`os.waitpid` with the :data:`os.WNOHANG` option can
+   processes.  Calling :func:`os.waitpid` with the :const:`os.WNOHANG` option can
    prevent this; a good place to insert such a call would be before calling
    ``popen2`` again.
 
@@ -669,41 +669,6 @@ and client-side web systems.
 A summary of available frameworks is maintained by Paul Boddie at
 https://wiki.python.org/moin/WebProgramming\ .
 
-Cameron Laird maintains a useful set of pages about Python web technologies at
-https://web.archive.org/web/20210224183619/http://phaseit.net/claird/comp.lang.python/web_python.
-
-
-How can I mimic CGI form submission (METHOD=POST)?
---------------------------------------------------
-
-I would like to retrieve web pages that are the result of POSTing a form. Is
-there existing code that would let me do this easily?
-
-Yes. Here's a simple example that uses :mod:`urllib.request`::
-
-   #!/usr/local/bin/python
-
-   import urllib.request
-
-   # build the query string
-   qs = "First=Josephine&MI=Q&Last=Public"
-
-   # connect and send the server a path
-   req = urllib.request.urlopen('http://www.some-server.out-there'
-                                '/cgi-bin/some-cgi-script', data=qs)
-   with req:
-       msg, hdrs = req.read(), req.info()
-
-Note that in general for percent-encoded POST operations, query strings must be
-quoted using :func:`urllib.parse.urlencode`.  For example, to send
-``name=Guy Steele, Jr.``::
-
-   >>> import urllib.parse
-   >>> urllib.parse.urlencode({'name': 'Guy Steele, Jr.'})
-   'name=Guy+Steele%2C+Jr.'
-
-.. seealso:: :ref:`urllib-howto` for extensive examples.
-
 
 What module should I use to help with generating HTML?
 ------------------------------------------------------
@@ -765,14 +730,17 @@ The :mod:`select` module is commonly used to help with asynchronous I/O on
 sockets.
 
 To prevent the TCP connect from blocking, you can set the socket to non-blocking
-mode.  Then when you do the :meth:`socket.connect`, you will either connect immediately
+mode.  Then when you do the :meth:`~socket.socket.connect`,
+you will either connect immediately
 (unlikely) or get an exception that contains the error number as ``.errno``.
 ``errno.EINPROGRESS`` indicates that the connection is in progress, but hasn't
 finished yet.  Different OSes will return different values, so you're going to
 have to check what's returned on your system.
 
-You can use the :meth:`socket.connect_ex` method to avoid creating an exception.  It will
-just return the errno value.  To poll, you can call :meth:`socket.connect_ex` again later
+You can use the :meth:`~socket.socket.connect_ex` method
+to avoid creating an exception.
+It will just return the errno value.
+To poll, you can call :meth:`~socket.socket.connect_ex` again later
 -- ``0`` or ``errno.EISCONN`` indicate that you're connected -- or you can pass this
 socket to :meth:`select.select` to check if it's writable.
 
@@ -780,7 +748,7 @@ socket to :meth:`select.select` to check if it's writable.
    The :mod:`asyncio` module provides a general purpose single-threaded and
    concurrent asynchronous library, which can be used for writing non-blocking
    network code.
-   The third-party `Twisted <https://twistedmatrix.com/trac/>`_ library is
+   The third-party `Twisted <https://twisted.org/>`_ library is
    a popular and feature-rich alternative.
 
 

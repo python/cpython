@@ -1,2 +1,0 @@
-Fix wrong lineno in exception message on :keyword:`continue` or
-:keyword:`break` which are not in a loop. Patch by Dong-hee Na.

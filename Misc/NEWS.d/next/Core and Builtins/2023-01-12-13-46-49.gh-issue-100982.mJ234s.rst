@@ -1,4 +1,0 @@
-Adds a new :opcode:`COMPARE_AND_BRANCH` instruction. This is a bit more
-efficient when performing a comparison immediately followed by a branch, and
-restores the design intent of PEP 659 that specializations are local to a
-single instruction.
