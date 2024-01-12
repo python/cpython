@@ -344,7 +344,7 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
                     pass
                 A.__getattr__ = B.__getattr__ = X.__getattr__
                 return (A(), B())
-        with support.infinite_recursion():
+        with support.infinite_recursion(25):
             self.assertRaises(RecursionError, issubclass, X(), int)
 
 
