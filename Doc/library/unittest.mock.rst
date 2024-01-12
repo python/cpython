@@ -1960,8 +1960,8 @@ Mocking Magic Methods
 ~~~~~~~~~~~~~~~~~~~~~
 
 :class:`Mock` supports mocking the Python protocol methods, also known as
-"magic methods". This allows mock objects to replace containers or other
-objects that implement Python protocols.
+:term:`"magic methods" <magic method>`. This allows mock objects to replace
+containers or other objects that implement Python protocols.
 
 Because magic methods are looked up differently from normal methods [#]_, this
 support has been specially implemented. This means that only specific magic
@@ -2059,8 +2059,8 @@ There are two ``MagicMock`` variants: :class:`MagicMock` and :class:`NonCallable
 .. class:: MagicMock(*args, **kw)
 
    ``MagicMock`` is a subclass of :class:`Mock` with default implementations
-   of most of the magic methods. You can use ``MagicMock`` without having to
-   configure the magic methods yourself.
+   of most of the :term:`magic methods <magic method>`. You can use
+   ``MagicMock`` without having to configure the magic methods yourself.
 
    The constructor parameters have the same meaning as for :class:`Mock`.
 
