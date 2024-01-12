@@ -795,8 +795,12 @@ class Counter(dict):
         for k, v in self.items():
             if v != other[k]:
                 return False
+
+        # we've already checked all the common keys,
+        # so now we can just check that any keys that
+        # aren't in self are equal to zero
         for k, v in other.items():
-            if v != self[k]:
+            if v and k not in self:
                 return False
         return True
 
