@@ -430,11 +430,11 @@ class HighPageTest(unittest.TestCase):
             for element, tag in d.theme_elements.items():
                 elem[tag] = element
 
-        def click_char(start_index):
-            "Simulate click on character."
-            hs.see(start_index)
+        def click_char(index):
+            "Simulate click on character at *index*."
+            hs.see(index)
             hs.update_idletasks()
-            x, y, dx, dy = hs.bbox(start_index)
+            x, y, dx, dy = hs.bbox(index)
             x += dx // 2
             y += dy // 2
             hs.event_generate('<Enter>', x=0, y=0)
@@ -448,11 +448,13 @@ class HighPageTest(unittest.TestCase):
         # If highlight_sample has a tag that isn't in theme_elements, there
         # will be a KeyError in the test run.
         for tag in hs.tag_names():
-            for start_index in hs.tag_ranges(tag)[0::2]:
-                count += 1
-                click_char(start_index)
+            try:
+                click_char(hs.tag_nextrange(tag, "1.0")[0])
                 eq(d.highlight_target.get(), elem[tag])
+                count += 1
                 eq(d.set_highlight_target.called, count)
+            except IndexError:
+                pass  # Skip unused tag.
 
     def test_highlight_sample_double_click(self):
         # Test double click on highlight_sample.
