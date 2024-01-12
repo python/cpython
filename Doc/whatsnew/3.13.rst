@@ -247,7 +247,7 @@ marshal
 
 * Add the *allow_code* parameter in module functions.
   Passing ``allow_code=False`` prevents serialization and de-serialization of
-  code objects which is incompatible between Python versions.
+  code objects which are incompatible between Python versions.
   (Contributed by Serhiy Storchaka in :gh:`113626`.)
 
 mmap
