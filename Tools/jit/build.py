@@ -1,4 +1,6 @@
-"""A template JIT for CPython 3.13, based on copy-and-patch."""
+"""
+Build a template JIT for CPython, based on copy-and-patch.
+"""
 
 # XXX: I'll probably refactor this file a bit before merging to make it easier
 # to understand... it's changed a lot over the last few months, and the way
@@ -656,9 +658,7 @@ def dump(stencil_groups: dict[str, StencilGroup]) -> typing.Iterator[str]:
             size = len(stencil.data.body) + 1
             yield f"static const unsigned char {opname}_data_body[{size}] = {{"
             for i in range(0, len(stencil.data.body), 8):
-                row = " ".join(
-                    f"{byte:#02x}," for byte in stencil.data.body[i : i + 8]
-                )
+                row = " ".join(f"{byte:#02x}," for byte in stencil.data.body[i : i + 8])
                 yield f"    {row}"
             yield "};"
         else:
@@ -683,6 +683,7 @@ def dump(stencil_groups: dict[str, StencilGroup]) -> typing.Iterator[str]:
 
 
 def format_addend(addend: int, signed: bool = False) -> str:
+    """Convert unsigned 64-bit values to signed 64-bit values, and format as hex."""
     addend %= 1 << 64
     if addend & (1 << 63):
         addend -= 1 << 64
@@ -690,7 +691,8 @@ def format_addend(addend: int, signed: bool = False) -> str:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser()
+    """Build the JIT!"""
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("target", help="a PEP 11 target triple to compile for")
     parser.add_argument(
         "-d", "--debug", action="store_true", help="compile for a debug build of Python"
