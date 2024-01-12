@@ -476,7 +476,8 @@ class DummyPurePathTest(unittest.TestCase):
     def test_relative_to_bytes(self):
         P = self.cls
         p = P('a/b')
-        self.assertRaises(ValueError, p.relative_to, b'a')
+        with self.assertWarns(BytesWarning):
+            self.assertRaises(ValueError, p.relative_to, b'a')
 
     def test_relative_to_common(self):
         P = self.cls
@@ -555,7 +556,8 @@ class DummyPurePathTest(unittest.TestCase):
     def test_is_relative_to_bytes(self):
         P = self.cls
         p = P('a/b')
-        self.assertFalse(p.is_relative_to(b'a'))
+        with self.assertWarns(BytesWarning):
+            self.assertFalse(p.is_relative_to(b'a'))
 
     def test_is_relative_to_common(self):
         P = self.cls
