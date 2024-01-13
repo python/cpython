@@ -1525,25 +1525,12 @@ error:
     return NULL;
 }
 
-static int
-PyCArrayType_traverse(PyTypeObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return PyType_Type.tp_traverse((PyObject *)self, visit, arg);
-}
-
-static int
-PyCArrayType_clear(PyObject *self)
-{
-    return PyType_Type.tp_clear(self);
-}
-
 static PyType_Slot pycarray_type_slots[] = {
     {Py_tp_doc, PyDoc_STR("metatype for the Array Objects")},
-    {Py_tp_traverse, PyCArrayType_traverse},
+    {Py_tp_traverse, CDataType_traverse},
     {Py_tp_methods, CDataType_methods},
     {Py_tp_new, PyCArrayType_new},
-    {Py_tp_clear, PyCArrayType_clear},
+    {Py_tp_clear, CDataType_clear},
 
     // Sequence protocol.
     {Py_sq_repeat, CDataType_repeat},
@@ -2195,19 +2182,6 @@ PyCSimpleType_from_param(PyObject *type, PyObject *value)
     return NULL;
 }
 
-static int
-PyCSimpleType_traverse(PyTypeObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return PyType_Type.tp_traverse((PyObject *)self, visit, arg);
-}
-
-static int
-PyCSimpleType_clear(PyObject *self)
-{
-    return PyType_Type.tp_clear(self);
-}
-
 static PyMethodDef PyCSimpleType_methods[] = {
     { "from_param", PyCSimpleType_from_param, METH_O, from_param_doc },
     { "from_address", CDataType_from_address, METH_O, from_address_doc },
@@ -2221,8 +2195,8 @@ static PyType_Slot pycsimple_type_slots[] = {
     {Py_tp_doc, PyDoc_STR("metatype for the PyCSimpleType Objects")},
     {Py_tp_methods, PyCSimpleType_methods},
     {Py_tp_new, PyCSimpleType_new},
-    {Py_tp_traverse, PyCSimpleType_traverse},
-    {Py_tp_clear, PyCSimpleType_clear},
+    {Py_tp_traverse, CDataType_traverse},
+    {Py_tp_clear, CDataType_clear},
 
     // Sequence protocol.
     {Py_sq_repeat, CDataType_repeat},
