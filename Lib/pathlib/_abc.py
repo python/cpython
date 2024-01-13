@@ -1,3 +1,16 @@
+"""
+Abstract base classes for rich path objects.
+
+This module is published as a PyPI package called "pathlib-abc".
+
+This module is also a *PRIVATE* part of the Python standard library, where
+it's developed alongside pathlib. If it finds success and maturity as a PyPI
+package, it could become a public part of the standard library.
+
+Two base classes are defined here -- PurePathBase and PathBase -- that
+resemble pathlib's PurePath and Path respectively.
+"""
+
 import functools
 import posixpath
 from errno import ENOENT, ENOTDIR, EBADF, ELOOP, EINVAL
