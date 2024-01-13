@@ -1280,9 +1280,9 @@ call fails (for example because the path doesn't exist).
    If *exist_ok* is false (the default), :exc:`FileExistsError` is
    raised if the target directory already exists.
 
-   If *exist_ok* is true, :exc:`FileExistsError` exceptions will be
-   ignored (same behavior as the POSIX ``mkdir -p`` command), but only if the
-   last path component is not an existing non-directory file.
+   If *exist_ok* is true, :exc:`FileExistsError` is raised only if the given
+   path already exists in the file system and is not a directory (same
+   behavior as the POSIX ``mkdir -p`` command).
 
    .. versionchanged:: 3.5
       The *exist_ok* parameter was added.
