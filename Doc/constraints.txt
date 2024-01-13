@@ -15,10 +15,10 @@ requests<3
 snowballstemmer<3
 sphinxcontrib-applehelp<1.0.5
 sphinxcontrib-devhelp<1.0.6
-sphinxcontrib-htmlhelp<2.1
+sphinxcontrib-htmlhelp<2.0.5
 sphinxcontrib-jsmath<1.1
-sphinxcontrib-qthelp<1.1
-sphinxcontrib-serializinghtml<1.2
+sphinxcontrib-qthelp<1.0.7
+sphinxcontrib-serializinghtml<1.1.10
 
 # Direct dependencies of Jinja2 (Jinja is a dependency of Sphinx, see above)
 MarkupSafe<2.2
