@@ -3,7 +3,7 @@ from analyzer import StackItem, Instruction, Uop
 from dataclasses import dataclass
 from cwriter import CWriter
 
-UNUSED = {"unused"}
+UNUSED = {"unused", "__unused_"}
 
 
 def maybe_parenthesize(sym: str) -> str:
