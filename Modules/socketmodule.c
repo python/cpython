@@ -3113,16 +3113,14 @@ internal_settimeout(PySocketSockObject *s, _PyTime_t timeout) {
 
             #ifdef MS_WINDOWS
             DWORD zero = 0;
-            if (setsockopt(s->sock_fd, SOL_SOCKET, SO_SNDTIMEO, (char *)&zero,
-                           sizeof(DWORD)) != 0)
             #else
             struct timeval zero = {
                 .tv_sec = 0,
                 .tv_usec = 0,
             };
-            if (setsockopt(s->sock_fd, SOL_SOCKET, SO_SNDTIMEO, (char *)&zero,
-                           sizeof(struct timeval)) != 0)
             #endif
+            if (setsockopt(s->sock_fd, SOL_SOCKET, SO_SNDTIMEO, (char *)&zero,
+                           sizeof(zero)) != 0)
             {
                 // EINVAL means remote closed the socket fd or shutdown has been
                 // called.
@@ -3131,13 +3129,8 @@ internal_settimeout(PySocketSockObject *s, _PyTime_t timeout) {
                     return -1;
                 }
             }
-            #ifdef MS_WINDOWS
             if (setsockopt(s->sock_fd, SOL_SOCKET, SO_RCVTIMEO, (char *)&zero,
-                           sizeof(int)) != 0)
-            #else
-            if (setsockopt(s->sock_fd, SOL_SOCKET, SO_RCVTIMEO, (char *)&zero,
-                           sizeof(struct timeval)) != 0)
-            #endif
+                           sizeof(zero)) != 0)
             {
                 // EINVAL means remote closed the socket fd or shutdown has been
                 // called.
@@ -3150,19 +3143,17 @@ internal_settimeout(PySocketSockObject *s, _PyTime_t timeout) {
             block = 1;
 
             #ifdef MS_WINDOWS
-            _PyTime_t timeout_as_ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_FLOOR);
-            DWORD timeout_ms = INFINITE;
+            _PyTime_t timeout_as_ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_TIMEOUT);
+            DWORD timeout_tv = INFINITE;
             if ((DWORD)timeout_as_ms == timeout_as_ms) {
-                timeout_ms = (DWORD)timeout_as_ms;
+                timeout_tv = (DWORD)timeout_as_ms;
             }
-            if (setsockopt(s->sock_fd, SOL_SOCKET, SO_SNDTIMEO,
-                           (char *)&timeout_ms, sizeof(DWORD)) != 0)
             #else
             struct timeval timeout_tv;
             _PyTime_AsTimeval(timeout, &timeout_tv, _PyTime_ROUND_TIMEOUT);
-            if (setsockopt(s->sock_fd, SOL_SOCKET, SO_SNDTIMEO,
-                           (char *)&timeout_tv, sizeof(struct timeval)) != 0)
             #endif
+            if (setsockopt(s->sock_fd, SOL_SOCKET, SO_SNDTIMEO,
+                           (char *)&timeout_tv, sizeof(timeout_tv)) != 0)
             {
                 // EINVAL means remote closed the socket fd or shutdown has been
                 // called.
@@ -3171,13 +3162,8 @@ internal_settimeout(PySocketSockObject *s, _PyTime_t timeout) {
                     return -1;
                 }
             }
-            #ifdef MS_WINDOWS
             if (setsockopt(s->sock_fd, SOL_SOCKET, SO_RCVTIMEO,
-                           (char *)&timeout_ms, sizeof(int)) != 0)
-            #else
-            if (setsockopt(s->sock_fd, SOL_SOCKET, SO_RCVTIMEO,
-                           (char *)&timeout_tv, sizeof(struct timeval)) != 0)
-            #endif
+                           (char *)&timeout_tv, sizeof(timeout_tv)) != 0)
             {
                 // EINVAL means remote closed the socket fd or shutdown has been
                 // called.
