@@ -1,5 +1,6 @@
 import unittest
-from test.support import cpython_only, requires_limited_api, skip_on_s390x
+from test.support import (cpython_only, is_wasi, requires_limited_api, Py_DEBUG,
+                          set_recursion_limit, skip_on_s390x)
 try:
     import _testcapi
 except ImportError:
@@ -990,6 +991,7 @@ class TestErrorMessagesSuggestions(unittest.TestCase):
 class TestRecursion(unittest.TestCase):
 
     @skip_on_s390x
+    @unittest.skipIf(is_wasi and Py_DEBUG, "requires deep stack")
     def test_super_deep(self):
 
         def recurse(n):
@@ -1010,9 +1012,7 @@ class TestRecursion(unittest.TestCase):
             if m:
                 _testcapi.pyobject_vectorcall(py_recurse, (1000, m), ())
 
-        depth = sys.getrecursionlimit()
-        sys.setrecursionlimit(100_000)
-        try:
+        with set_recursion_limit(100_000):
             recurse(90_000)
             with self.assertRaises(RecursionError):
                 recurse(101_000)
@@ -1022,8 +1022,6 @@ class TestRecursion(unittest.TestCase):
             c_py_recurse(90)
             with self.assertRaises(RecursionError):
                 c_py_recurse(100_000)
-        finally:
-            sys.setrecursionlimit(depth)
 
 
 class TestFunctionWithManyArgs(unittest.TestCase):
