@@ -10,12 +10,25 @@
 			<key>CFBundleTypeExtensions</key>
 			<array>
 				<string>py</string>
-				<string>pyw</string>
 			</array>
 			<key>CFBundleTypeIconFile</key>
 			<string>PythonSource.icns</string>
 			<key>CFBundleTypeName</key>
 			<string>Python Script</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>NSDocumentClass</key>
+			<string>MyDocument</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>pyw</string>
+			</array>
+			<key>CFBundleTypeIconFile</key>
+			<string>PythonSource.icns</string>
+			<key>CFBundleTypeName</key>
+			<string>Python GUI Script</string>
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
 			<key>NSDocumentClass</key>
