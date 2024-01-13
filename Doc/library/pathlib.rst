@@ -973,17 +973,15 @@ call fails (for example because the path doesn't exist).
       [PosixPath('pathlib.py'), PosixPath('setup.py'), PosixPath('test_pathlib.py')]
       >>> sorted(Path('.').glob('*/*.py'))
       [PosixPath('docs/conf.py')]
-
-   Patterns are the same as for :mod:`fnmatch`, with the addition of "``**``"
-   which means "this directory and all subdirectories, recursively".  In other
-   words, it enables recursive globbing::
-
       >>> sorted(Path('.').glob('**/*.py'))
       [PosixPath('build/lib/pathlib.py'),
        PosixPath('docs/conf.py'),
        PosixPath('pathlib.py'),
        PosixPath('setup.py'),
        PosixPath('test_pathlib.py')]
+
+   .. seealso::
+      :ref:`pattern-language` documentation.
 
    .. note::
       Using the "``**``" pattern in large directory trees may consume
@@ -1019,6 +1017,24 @@ call fails (for example because the path doesn't exist).
       Emits :exc:`FutureWarning` if the pattern ends with "``**``". In a
       future Python release, patterns with this ending will match both files
       and directories. Add a trailing slash to match only directories.
+
+
+.. method:: Path.rglob(pattern, *, case_sensitive=None, follow_symlinks=None)
+
+   Glob the given relative *pattern* recursively.  This is exactly like
+   calling :func:`Path.glob` with "``**/``" added in front of the *pattern*.
+
+   .. seealso::
+      :ref:`pattern-language` and :meth:`Path.glob` documentation.
+
+   .. audit-event:: pathlib.Path.rglob self,pattern pathlib.Path.rglob
+
+   .. versionchanged:: 3.12
+      The *case_sensitive* parameter was added.
+
+   .. versionchanged:: 3.13
+      The *follow_symlinks* parameter was added.
+
 
 .. method:: Path.group(*, follow_symlinks=True)
 
@@ -1447,41 +1463,6 @@ call fails (for example because the path doesn't exist).
       strict mode, and no exception is raised in non-strict mode. In previous
       versions, :exc:`RuntimeError` is raised no matter the value of *strict*.
 
-.. method:: Path.rglob(pattern, *, case_sensitive=None, follow_symlinks=None)
-
-   Glob the given relative *pattern* recursively.  This is like calling
-   :func:`Path.glob` with "``**/``" added in front of the *pattern*, where
-   *patterns* are the same as for :mod:`fnmatch`::
-
-      >>> sorted(Path().rglob("*.py"))
-      [PosixPath('build/lib/pathlib.py'),
-       PosixPath('docs/conf.py'),
-       PosixPath('pathlib.py'),
-       PosixPath('setup.py'),
-       PosixPath('test_pathlib.py')]
-
-   By default, or when the *case_sensitive* keyword-only argument is set to
-   ``None``, this method matches paths using platform-specific casing rules:
-   typically, case-sensitive on POSIX, and case-insensitive on Windows.
-   Set *case_sensitive* to ``True`` or ``False`` to override this behaviour.
-
-   By default, or when the *follow_symlinks* keyword-only argument is set to
-   ``None``, this method follows symlinks except when expanding "``**``"
-   wildcards. Set *follow_symlinks* to ``True`` to always follow symlinks, or
-   ``False`` to treat all symlinks as files.
-
-   .. audit-event:: pathlib.Path.rglob self,pattern pathlib.Path.rglob
-
-   .. versionchanged:: 3.11
-      Return only directories if *pattern* ends with a pathname components
-      separator (:data:`~os.sep` or :data:`~os.altsep`).
-
-   .. versionchanged:: 3.12
-      The *case_sensitive* parameter was added.
-
-   .. versionchanged:: 3.13
-      The *follow_symlinks* parameter was added.
-
 .. method:: Path.rmdir()
 
    Remove this directory.  The directory must be empty.
@@ -1607,6 +1588,33 @@ call fails (for example because the path doesn't exist).
 
    .. versionchanged:: 3.10
       The *newline* parameter was added.
+
+
+.. _pattern-language:
+
+Pattern language
+----------------
+
+:meth:`PurePath.match`, :meth:`Path.glob` and :meth:`Path.rglob` accept
+patterns with shell-style wildcards.
+
+The "``**``" wildcard matches any number of file or directory segments. In
+other words, it enabled recursive globbing. If "``**``" occurs in any position
+other than a full pattern segment, :exc:`ValueError` is raised.
+
+The "``*``" wildcard matches precisely one file or directory segment when it
+occurs as a full pattern segment, or any number of non-separator characters
+when it occurs elsewhere.
+
+The "``?``" wildcard matches a single non-separator character. Character
+ranges such as "``[seq]``" and "``[!seq]``" match a single character within or
+without the range.
+
+If the pattern ends with a path separator, only directories are matched.
+
+For a literal match, wrap the meta-characters in brackets.
+For example, ``"[?]"`` matches the character ``"?"``.
+
 
 Correspondence to tools in the :mod:`os` module
 -----------------------------------------------

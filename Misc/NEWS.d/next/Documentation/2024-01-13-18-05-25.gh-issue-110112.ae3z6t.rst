@@ -1,0 +1,1 @@
+Document :mod:`pathlib` pattern language in its own subsection.
