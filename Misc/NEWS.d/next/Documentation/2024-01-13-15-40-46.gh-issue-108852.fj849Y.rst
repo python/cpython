@@ -1,0 +1,2 @@
+Added support for :program:`nushell` in virtual environments. Patch by
+Hormet Yiltiz, Jakub Žádník, and Mel Massadian.

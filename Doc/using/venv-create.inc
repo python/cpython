@@ -78,6 +78,8 @@ The command, if run with ``-h``, will show the available options::
    ``--without-scm-ignore-file`` was added along with creating an ignore file
    for ``git`` by default.
 
+   :program:`nushell` activation overlay script was added.
+
 .. versionchanged:: 3.12
 
    ``setuptools`` is no longer a core venv dependency.
