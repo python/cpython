@@ -4988,6 +4988,9 @@ written in Python, such as a mail server's external command delivery program.
 
    .. versionadded:: 3.3
 
+   .. versionchanged:: 3.13
+      This function is now available on macOS as well.
+
 
 .. function:: waitpid(pid, options, /)
 

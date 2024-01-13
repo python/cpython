@@ -207,6 +207,9 @@
     <ClCompile Include="..\Python\formatter_unicode.c" />
     <ClCompile Include="..\Python\frame.c" />
     <ClCompile Include="..\Python\future.c" />
+    <ClCompile Include="..\Python\gc.c" />
+    <ClCompile Include="..\Python\gc_gil.c" />
+    <ClCompile Include="..\Python\gc_free_threading.c" />
     <ClCompile Include="..\Python\getargs.c" />
     <ClCompile Include="..\Python\getcompiler.c" />
     <ClCompile Include="..\Python\getcopyright.c" />
@@ -266,117 +269,117 @@
     <None Include="..\Lib\importlib\_bootstrap.py">
       <ModName>importlib._bootstrap</ModName>
       <IntFile>$(IntDir)importlib._bootstrap.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\importlib._bootstrap.h</OutFile>
+      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\importlib._bootstrap.h</OutFile>
     </None>
     <None Include="..\Lib\importlib\_bootstrap_external.py">
       <ModName>importlib._bootstrap_external</ModName>
       <IntFile>$(IntDir)importlib._bootstrap_external.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\importlib._bootstrap_external.h</OutFile>
+      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\importlib._bootstrap_external.h</OutFile>
     </None>
     <None Include="..\Lib\zipimport.py">
       <ModName>zipimport</ModName>
       <IntFile>$(IntDir)zipimport.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\zipimport.h</OutFile>
+      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\zipimport.h</OutFile>
     </None>
     <None Include="..\Lib\abc.py">
       <ModName>abc</ModName>
       <IntFile>$(IntDir)abc.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\abc.h</OutFile>
+      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\abc.h</OutFile>
     </None>
     <None Include="..\Lib\codecs.py">
       <ModName>codecs</ModName>
       <IntFile>$(IntDir)codecs.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\codecs.h</OutFile>
+      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\codecs.h</OutFile>
     </None>
     <None Include="..\Lib\io.py">
       <ModName>io</ModName>
       <IntFile>$(IntDir)io.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\io.h</OutFile>
+      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\io.h</OutFile>
     </None>
     <None Include="..\Lib\_collections_abc.py">
       <ModName>_collections_abc</ModName>
       <IntFile>$(IntDir)_collections_abc.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\_collections_abc.h</OutFile>
+      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\_collections_abc.h</OutFile>
     </None>
     <None Include="..\Lib\_sitebuiltins.py">
       <ModName>_sitebuiltins</ModName>
       <IntFile>$(IntDir)_sitebuiltins.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\_sitebuiltins.h</OutFile>
+      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\_sitebuiltins.h</OutFile>
     </None>
     <None Include="..\Lib\genericpath.py">
       <ModName>genericpath</ModName>
       <IntFile>$(IntDir)genericpath.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\genericpath.h</OutFile>
+      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\genericpath.h</OutFile>
     </None>
     <None Include="..\Lib\ntpath.py">
       <ModName>ntpath</ModName>
       <IntFile>$(IntDir)ntpath.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\ntpath.h</OutFile>
+      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\ntpath.h</OutFile>
     </None>
     <None Include="..\Lib\posixpath.py">
       <ModName>posixpath</ModName>
       <IntFile>$(IntDir)posixpath.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\posixpath.h</OutFile>
+      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\posixpath.h</OutFile>
     </None>
     <None Include="..\Lib\os.py">
       <ModName>os</ModName>
       <IntFile>$(IntDir)os.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\os.h</OutFile>
+      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\os.h</OutFile>
     </None>
     <None Include="..\Lib\site.py">
       <ModName>site</ModName>
       <IntFile>$(IntDir)site.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\site.h</OutFile>
+      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\site.h</OutFile>
     </None>
     <None Include="..\Lib\stat.py">
       <ModName>stat</ModName>
       <IntFile>$(IntDir)stat.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\stat.h</OutFile>
+      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\stat.h</OutFile>
     </None>
     <None Include="..\Lib\importlib\util.py">
       <ModName>importlib.util</ModName>
       <IntFile>$(IntDir)importlib.util.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\importlib.util.h</OutFile>
+      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\importlib.util.h</OutFile>
     </None>
     <None Include="..\Lib\importlib\machinery.py">
       <ModName>importlib.machinery</ModName>
       <IntFile>$(IntDir)importlib.machinery.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\importlib.machinery.h</OutFile>
+      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\importlib.machinery.h</OutFile>
     </None>
     <None Include="..\Lib\runpy.py">
       <ModName>runpy</ModName>
       <IntFile>$(IntDir)runpy.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\runpy.h</OutFile>
+      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\runpy.h</OutFile>
     </None>
     <None Include="..\Lib\__hello__.py">
       <ModName>__hello__</ModName>
       <IntFile>$(IntDir)__hello__.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\__hello__.h</OutFile>
+      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\__hello__.h</OutFile>
     </None>
     <None Include="..\Lib\__phello__\__init__.py">
       <ModName>__phello__</ModName>
       <IntFile>$(IntDir)__phello__.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\__phello__.h</OutFile>
+      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\__phello__.h</OutFile>
     </None>
     <None Include="..\Lib\__phello__\ham\__init__.py">
       <ModName>__phello__.ham</ModName>
       <IntFile>$(IntDir)__phello__.ham.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\__phello__.ham.h</OutFile>
+      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\__phello__.ham.h</OutFile>
     </None>
     <None Include="..\Lib\__phello__\ham\eggs.py">
       <ModName>__phello__.ham.eggs</ModName>
       <IntFile>$(IntDir)__phello__.ham.eggs.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\__phello__.ham.eggs.h</OutFile>
+      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\__phello__.ham.eggs.h</OutFile>
     </None>
     <None Include="..\Lib\__phello__\spam.py">
       <ModName>__phello__.spam</ModName>
       <IntFile>$(IntDir)__phello__.spam.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\__phello__.spam.h</OutFile>
+      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\__phello__.spam.h</OutFile>
     </None>
     <None Include="..\Tools\freeze\flag.py">
       <ModName>frozen_only</ModName>
       <IntFile>$(IntDir)frozen_only.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\frozen_only.h</OutFile>
+      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\frozen_only.h</OutFile>
     </None>
     <!-- END frozen modules -->
   </ItemGroup>
@@ -385,34 +388,34 @@
     <GetPath Include="..\Modules\getpath.py">
       <ModName>getpath</ModName>
       <IntFile>$(IntDir)getpath.g.h</IntFile>
-      <OutFile>$(PySourcePath)Python\frozen_modules\getpath.h</OutFile>
+      <OutFile>$(GeneratedFrozenModulesDir)Python\frozen_modules\getpath.h</OutFile>
     </GetPath>
   </ItemGroup>
   <ItemGroup>
     <!-- BEGIN freeze mappings -->
-    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\importlib._bootstrap.h" FrozenId="importlib._bootstrap" />
-    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\importlib._bootstrap_external.h" FrozenId="importlib._bootstrap_external" />
-    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\zipimport.h" FrozenId="zipimport" />
-    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\abc.h" FrozenId="abc" />
-    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\codecs.h" FrozenId="codecs" />
-    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\io.h" FrozenId="io" />
-    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\_collections_abc.h" FrozenId="_collections_abc" />
-    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\_sitebuiltins.h" FrozenId="_sitebuiltins" />
-    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\genericpath.h" FrozenId="genericpath" />
-    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\ntpath.h" FrozenId="ntpath" />
-    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\posixpath.h" FrozenId="posixpath" />
-    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\os.h" FrozenId="os" />
-    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\site.h" FrozenId="site" />
-    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\stat.h" FrozenId="stat" />
-    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\importlib.util.h" FrozenId="importlib.util" />
-    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\importlib.machinery.h" FrozenId="importlib.machinery" />
-    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\runpy.h" FrozenId="runpy" />
-    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\__hello__.h" FrozenId="__hello__" />
-    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\__phello__.h" FrozenId="__phello__" />
-    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\__phello__.ham.h" FrozenId="__phello__.ham" />
-    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\__phello__.ham.eggs.h" FrozenId="__phello__.ham.eggs" />
-    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\__phello__.spam.h" FrozenId="__phello__.spam" />
-    <FrozenModule Include="$(PySourcePath)\Python\frozen_modules\frozen_only.h" FrozenId="frozen_only" />
+    <FrozenModule Include="$(GeneratedFrozenModulesDir)Python\frozen_modules\importlib._bootstrap.h" FrozenId="importlib._bootstrap" />
+    <FrozenModule Include="$(GeneratedFrozenModulesDir)Python\frozen_modules\importlib._bootstrap_external.h" FrozenId="importlib._bootstrap_external" />
+    <FrozenModule Include="$(GeneratedFrozenModulesDir)Python\frozen_modules\zipimport.h" FrozenId="zipimport" />
+    <FrozenModule Include="$(GeneratedFrozenModulesDir)Python\frozen_modules\abc.h" FrozenId="abc" />
+    <FrozenModule Include="$(GeneratedFrozenModulesDir)Python\frozen_modules\codecs.h" FrozenId="codecs" />
+    <FrozenModule Include="$(GeneratedFrozenModulesDir)Python\frozen_modules\io.h" FrozenId="io" />
+    <FrozenModule Include="$(GeneratedFrozenModulesDir)Python\frozen_modules\_collections_abc.h" FrozenId="_collections_abc" />
+    <FrozenModule Include="$(GeneratedFrozenModulesDir)Python\frozen_modules\_sitebuiltins.h" FrozenId="_sitebuiltins" />
+    <FrozenModule Include="$(GeneratedFrozenModulesDir)Python\frozen_modules\genericpath.h" FrozenId="genericpath" />
+    <FrozenModule Include="$(GeneratedFrozenModulesDir)Python\frozen_modules\ntpath.h" FrozenId="ntpath" />
+    <FrozenModule Include="$(GeneratedFrozenModulesDir)Python\frozen_modules\posixpath.h" FrozenId="posixpath" />
+    <FrozenModule Include="$(GeneratedFrozenModulesDir)Python\frozen_modules\os.h" FrozenId="os" />
+    <FrozenModule Include="$(GeneratedFrozenModulesDir)Python\frozen_modules\site.h" FrozenId="site" />
+    <FrozenModule Include="$(GeneratedFrozenModulesDir)Python\frozen_modules\stat.h" FrozenId="stat" />
+    <FrozenModule Include="$(GeneratedFrozenModulesDir)Python\frozen_modules\importlib.util.h" FrozenId="importlib.util" />
+    <FrozenModule Include="$(GeneratedFrozenModulesDir)Python\frozen_modules\importlib.machinery.h" FrozenId="importlib.machinery" />
+    <FrozenModule Include="$(GeneratedFrozenModulesDir)Python\frozen_modules\runpy.h" FrozenId="runpy" />
+    <FrozenModule Include="$(GeneratedFrozenModulesDir)Python\frozen_modules\__hello__.h" FrozenId="__hello__" />
+    <FrozenModule Include="$(GeneratedFrozenModulesDir)Python\frozen_modules\__phello__.h" FrozenId="__phello__" />
+    <FrozenModule Include="$(GeneratedFrozenModulesDir)Python\frozen_modules\__phello__.ham.h" FrozenId="__phello__.ham" />
+    <FrozenModule Include="$(GeneratedFrozenModulesDir)Python\frozen_modules\__phello__.ham.eggs.h" FrozenId="__phello__.ham.eggs" />
+    <FrozenModule Include="$(GeneratedFrozenModulesDir)Python\frozen_modules\__phello__.spam.h" FrozenId="__phello__.spam" />
+    <FrozenModule Include="$(GeneratedFrozenModulesDir)Python\frozen_modules\frozen_only.h" FrozenId="frozen_only" />
     <!-- END freeze mappings -->
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
@@ -484,7 +487,7 @@ $(IntDir)\deepfreeze_mappings.txt
       Overwrite="true"
       Lines="@(FrozenModule->'%(FullPath):%(FrozenId)')" />
     <!-- BEGIN deepfreeze rule -->
-    <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\build\deepfreeze.py" -f "$(IntDir)\deepfreeze_mappings.txt" -o "$(PySourcePath)Python\deepfreeze\deepfreeze.c"' />
+    <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\build\deepfreeze.py" -f "$(IntDir)\deepfreeze_mappings.txt" -o "$(GeneratedFrozenModulesDir)deepfreeze.c"' />
     <!-- END deepfreeze rule -->
   </Target>
   <Target Name="_CleanFrozen" BeforeTargets="CoreClean" Condition="$(Configuration) != 'PGUpdate'">
@@ -493,7 +496,7 @@ $(IntDir)\deepfreeze_mappings.txt
       <Clean Include="%(None.OutFile)" />
       <Clean Include="%(GetPath.IntFile)" />
       <Clean Include="%(GetPath.OutFile)" />
-      <Clean Include="$(PySourcePath)Python\deepfreeze\deepfreeze.c" />
+      <Clean Include="$(GeneratedFrozenModulesDir)deepfreeze.c" />
     </ItemGroup>
   </Target>
 </Project>

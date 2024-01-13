@@ -10,6 +10,8 @@ from ctypes import (CDLL, CFUNCTYPE, Structure,
                     c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
                     c_long, c_ulong, c_longlong, c_ulonglong,
                     c_float, c_double)
+from ._support import (_CData, PyCPointerType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
+                       Py_TPFLAGS_IMMUTABLETYPE)
 
 
 ctype_types = [c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
@@ -19,6 +21,18 @@ python_types = [int, int, int, int, int, int,
 
 
 class PointersTestCase(unittest.TestCase):
+    def test_inheritance_hierarchy(self):
+        self.assertEqual(_Pointer.mro(), [_Pointer, _CData, object])
+
+        self.assertEqual(PyCPointerType.__name__, "PyCPointerType")
+        self.assertEqual(type(PyCPointerType), type)
+
+    def test_type_flags(self):
+        for cls in _Pointer, PyCPointerType:
+            with self.subTest(cls=cls):
+                self.assertTrue(_Pointer.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
+                self.assertFalse(_Pointer.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
+
     def test_pointer_crash(self):
 
         class A(POINTER(c_ulong)):
