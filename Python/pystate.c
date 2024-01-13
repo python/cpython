@@ -1458,6 +1458,8 @@ clear_datastack(PyThreadState *tstate)
 void
 _Py_ClearFreeLists(_PyFreeListState *state, int is_finalization)
 {
+    _PyFloat_ClearFreeList(state, is_finalization);
+    _PyTuple_ClearFreeList(state, is_finalization);
     _PyList_ClearFreeList(state, is_finalization);
 }
 
