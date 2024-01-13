@@ -1510,9 +1510,11 @@ call fails (for example because the path doesn't exist).
 
 .. method:: Path.symlink_to(target, target_is_directory=False)
 
-   Make this path a symbolic link to *target*.  Under Windows,
-   *target_is_directory* must be true (default ``False``) if the link's target
-   is a directory.  Under POSIX, *target_is_directory*'s value is ignored.
+   Make this path a symbolic link to *target*.  Under Windows, if the target
+   is present, the type of the symlink will be created to match.  Otherwise,
+   the symlink will be created as a directory if *target_is_directory* is
+   ``True`` or a file symlink (the default) otherwise.  Under POSIX,
+   *target_is_directory*'s value is ignored.
 
    ::
 

@@ -1,0 +1,2 @@
+Fix misleading documentation for *target_is_directory* parameter of
+:meth:`pathlib.Path.symlink_to`.
