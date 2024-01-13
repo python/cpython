@@ -44,21 +44,22 @@ SPECIALLY_HANDLED_ABSTRACT_INSTR = {
     "COPY",
     "POP_TOP",
     "PUSH_NULL",
-    "END_SEND",
     "SWAP",
 
     # Frame stuff
     "_PUSH_FRAME",
     "_POP_FRAME",
     "_SHRINK_STACK",
+}
 
-
-    # Shouldn't appear in abstract interpreter
-    "_LOAD_FAST_NO_INCREF",
-    "_LOAD_CONST_IMMEDIATE",
-    "_SWAP_AND_POP",
-    "_STORE_COMMON",
-    "_LOAD_COMMON",
+NO_CONST_OR_TYPE_EVALUATE = {
+    "_RESUME_CHECK",
+    "_GUARD_GLOBALS_VERSION",
+    "_GUARD_BUILTINS_VERSION",
+    "_CHECK_MANAGED_OBJECT_HAS_VALUES",
+    "_CHECK_PEP_523",
+    "_CHECK_STACK_SPACE",
+    "_INIT_CALL_PY_EXACT_ARGS",
 }
 
 def declare_variables(
@@ -182,7 +183,7 @@ def _write_body_abstract_interp_pure_uop(
 
     assert len(uop.stack.outputs) == 1, f"Currently we only support 1 stack output for pure ops: {uop}"
     # uop is mandatory - we cannot const evaluate it
-    if uop.properties.mandatory:
+    if uop.name in NO_CONST_OR_TYPE_EVALUATE:
         out.emit(f"{mangled_uop.stack.outputs[0].name} = {new_sym(None, arr_var_size, arr_var_name, len(mangled_uop.stack.inputs), subexpressions)}")
         return
 
@@ -218,7 +219,7 @@ def _write_body_abstract_interp_pure_uop(
     out.emit(f"if ({mangled_uop.stack.outputs[0].name} == NULL) goto error;\n")
 
     # Perform type propagation
-    if (typ := uop.stack.outputs[0].typeprop) is not None:
+    if (typ := uop.stack.outputs[0].type_prop) is not None:
         typname, aux = typ
         aux = "0" if aux is None else aux
         out.emit("// Type propagation\n")
@@ -231,7 +232,7 @@ def _write_body_abstract_interp_guard_uop(
 ) -> None:
     # 1. Attempt to perform guard elimination
     # 2. Type propagate for guard success
-    if uop.properties.mandatory:
+    if uop.name in NO_CONST_OR_TYPE_EVALUATE:
         out.emit("goto guard_required;")
         return
 
@@ -263,7 +264,7 @@ def _write_body_abstract_interp_guard_uop(
         out.emit("}\n")
 
     # Does the input specify typed inputs?
-    if not any(output_var.typeprop for output_var in mangled_uop.stack.outputs):
+    if not any(output_var.type_prop for output_var in mangled_uop.stack.outputs):
         return
     # If the input types already match, eliminate the guard
     # Read the cache information to check the auxiliary type information
@@ -276,7 +277,7 @@ def _write_body_abstract_interp_guard_uop(
     for output_var in mangled_uop.stack.outputs:
         if output_var.name in UNUSED:
             continue
-        if (typ := output_var.typeprop) is not None:
+        if (typ := output_var.type_prop) is not None:
             typname, aux = typ
             aux = "0" if aux is None else aux
             # Check that the input type information match (including auxiliary info)
