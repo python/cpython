@@ -1,0 +1,1 @@
+Explain that :meth:`PurePath.is_relative_to` is a purely lexical operation.
