@@ -96,10 +96,14 @@ containing the virtual environment):
 |             | csh/tcsh   | :samp:`$ source {<venv>}/bin/activate.csh`       |
 |             +------------+--------------------------------------------------+
 |             | PowerShell | :samp:`$ {<venv>}/bin/Activate.ps1`              |
+|             +------------+--------------------------------------------------+
+|             | Nushell    | :samp:`$ overlay use {<venv>}/bin/activate.nu`   |
 +-------------+------------+--------------------------------------------------+
 | Windows     | cmd.exe    | :samp:`C:\\> {<venv>}\\Scripts\\activate.bat`    |
 |             +------------+--------------------------------------------------+
 |             | PowerShell | :samp:`PS C:\\> {<venv>}\\Scripts\\Activate.ps1` |
+|             +------------+--------------------------------------------------+
+|             | Nushell    | :samp:`$ overlay use {<venv>}/bin/activate.nu`   |
 +-------------+------------+--------------------------------------------------+
 
 .. versionadded:: 3.4
@@ -108,6 +112,9 @@ containing the virtual environment):
 .. versionadded:: 3.8
    PowerShell activation scripts installed under POSIX for PowerShell Core
    support.
+
+.. versionadded:: 3.13
+   :program:`nushell` activation overlay script was added.
 
 You don't specifically *need* to activate a virtual environment,
 as you can just specify the full path to that environment's
