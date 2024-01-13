@@ -307,6 +307,13 @@ os
   :c:func:`!posix_spawn_file_actions_addclosefrom_np`.
   (Contributed by Jakub Kulik in :gh:`113117`.)
 
+os.path
+-------
+
+* On Windows, :func:`os.path.isabs` no longer considers paths starting with
+  exactly one (back)slash to be absolute.
+  (Contributed by Barney Gale and Jon Foster in :gh:`44626`.)
+
 pathlib
 -------
 

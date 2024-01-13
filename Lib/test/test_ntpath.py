@@ -227,10 +227,18 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.split("//conky/mountpoint/")', ('//conky/mountpoint/', ''))
 
     def test_isabs(self):
+        tester('ntpath.isabs("foo\\bar")', 0)
+        tester('ntpath.isabs("foo/bar")', 0)
         tester('ntpath.isabs("c:\\")', 1)
+        tester('ntpath.isabs("c:\\foo\\bar")', 1)
+        tester('ntpath.isabs("c:/foo/bar")', 1)
         tester('ntpath.isabs("\\\\conky\\mountpoint\\")', 1)
-        tester('ntpath.isabs("\\foo")', 1)
-        tester('ntpath.isabs("\\foo\\bar")', 1)
+
+        # gh-44626: paths with only a drive or root are not absolute.
+        tester('ntpath.isabs("\\foo\\bar")', 0)
+        tester('ntpath.isabs("/foo/bar")', 0)
+        tester('ntpath.isabs("c:foo\\bar")', 0)
+        tester('ntpath.isabs("c:foo/bar")', 0)
 
         # gh-96290: normal UNC paths and device paths without trailing backslashes
         tester('ntpath.isabs("\\\\conky\\mountpoint")', 1)
