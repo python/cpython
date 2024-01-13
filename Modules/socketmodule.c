@@ -3124,7 +3124,7 @@ internal_settimeout(PySocketSockObject *s, _PyTime_t timeout) {
                            sizeof(struct timeval)) != 0)
             #endif
             {
-                // EINVAL means emote closed the socket fd or shutdown has been
+                // EINVAL means remote closed the socket fd or shutdown has been
                 // called.
                 if (!CHECK_ERRNO(EINVAL)) {
                     set_error();
@@ -3139,7 +3139,7 @@ internal_settimeout(PySocketSockObject *s, _PyTime_t timeout) {
                            sizeof(struct timeval)) != 0)
             #endif
             {
-                // EINVAL means emote closed the socket fd or shutdown has been
+                // EINVAL means remote closed the socket fd or shutdown has been
                 // called.
                 if (!CHECK_ERRNO(EINVAL)) {
                     set_error();
@@ -3160,7 +3160,7 @@ internal_settimeout(PySocketSockObject *s, _PyTime_t timeout) {
                            (char *)&timeout_tv, sizeof(struct timeval)) != 0)
             #endif
             {
-                // EINVAL means emote closed the socket fd or shutdown has been
+                // EINVAL means remote closed the socket fd or shutdown has been
                 // called.
                 if (!CHECK_ERRNO(EINVAL)) {
                     set_error();
@@ -3175,7 +3175,7 @@ internal_settimeout(PySocketSockObject *s, _PyTime_t timeout) {
                            (char *)&timeout_tv, sizeof(struct timeval)) != 0)
             #endif
             {
-                // EINVAL means emote closed the socket fd or shutdown has been
+                // EINVAL means remote closed the socket fd or shutdown has been
                 // called.
                 if (!CHECK_ERRNO(EINVAL)) {
                     set_error();
