@@ -261,6 +261,30 @@ class FractionTest(unittest.TestCase):
         self.assertRaisesMessage(
             ValueError, "Invalid literal for Fraction: '1.1e+1__1'",
             F, "1.1e+1__1")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '123.dd'",
+            F, "123.dd")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '123.5_dd'",
+            F, "123.5_dd")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: 'dd.5'",
+            F, "dd.5")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '7_dd'",
+            F, "7_dd")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1/dd'",
+            F, "1/dd")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1/123_dd'",
+            F, "1/123_dd")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '789edd'",
+            F, "789edd")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '789e2_dd'",
+            F, "789e2_dd")
         # Test catastrophic backtracking.
         val = "9"*50 + "_"
         self.assertRaisesMessage(
