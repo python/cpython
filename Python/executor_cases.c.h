@@ -3381,19 +3381,9 @@
             break;
         }
 
-        case _INSERT: {
-            PyObject *top;
-            oparg = CURRENT_OPARG();
-            top = stack_pointer[-1];
-            // Inserts TOS at position specified by oparg;
-            memmove(&stack_pointer[-1 - oparg], &stack_pointer[-oparg], oparg * sizeof(stack_pointer[0]));
-            stack_pointer[-1 - oparg] = top;
-            break;
-        }
-
         case _CHECK_VALIDITY: {
             TIER_TWO_ONLY
-            if (!current_executor->base.vm_data.valid) goto deoptimize;
+            if (!current_executor->vm_data.valid) goto deoptimize;
             break;
         }
 

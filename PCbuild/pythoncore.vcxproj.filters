@@ -804,9 +804,6 @@
     <ClInclude Include="..\Include\internal\pycore_unionobject.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\pycore_uops.h">
-      <Filter>Include\internal</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\internal\mimalloc\mimalloc.h">
       <Filter>Include\internal\mimalloc</Filter>
     </ClInclude>
