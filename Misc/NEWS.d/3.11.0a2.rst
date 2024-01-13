@@ -507,7 +507,7 @@ Waygood.
 .. section: Library
 
 Make :func:`inspect.getmodule` catch ``FileNotFoundError`` raised by
-:'func:`inspect.getabsfile`, and return ``None`` to indicate that the module
+:func:`inspect.getabsfile`, and return ``None`` to indicate that the module
 could not be determined.
 
 ..
@@ -897,8 +897,8 @@ was often the case on macOS.
 .. nonce: F18qcE
 .. section: Tests
 
-Add more test cases for `@functools.singledispatchmethod` when combined with
-`@classmethod` or `@staticmethod`.
+Add more test cases for ``@functools.singledispatchmethod`` when combined with
+``@classmethod`` or ``@staticmethod``.
 
 ..
 

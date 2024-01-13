@@ -578,11 +578,11 @@ dis_asyncwith = """\
 
 %4d   L12:     CLEANUP_THROW
 
-  --   L13:     JUMP_BACKWARD           26 (to L5)
+  --   L13:     JUMP_BACKWARD_NO_INTERRUPT 25 (to L5)
 
 %4d   L14:     CLEANUP_THROW
 
-  --   L15:     JUMP_BACKWARD           11 (to L11)
+  --   L15:     JUMP_BACKWARD_NO_INTERRUPT 9 (to L11)
 
 %4d   L16:     PUSH_EXC_INFO
                 WITH_EXCEPT_START
