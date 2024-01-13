@@ -46,7 +46,6 @@ SPECIALLY_HANDLED_ABSTRACT_INSTR = {
     "PUSH_NULL",
     "SWAP",
     "END_SEND",
-
     # Frame stuff
     "_PUSH_FRAME",
     "_POP_FRAME",
@@ -63,12 +62,13 @@ NO_CONST_OR_TYPE_EVALUATE = {
     "_INIT_CALL_PY_EXACT_ARGS",
 }
 
+
 def declare_variables(
-        uop: Uop,
-        out: CWriter,
-        default_type: str = "_Py_UOpsSymbolicExpression *",
-        skip_inputs: bool = False,
-        skip_peeks: bool = False,
+    uop: Uop,
+    out: CWriter,
+    default_type: str = "_Py_UOpsSymbolicExpression *",
+    skip_inputs: bool = False,
+    skip_peeks: bool = False,
 ) -> None:
     variables = set(UNUSED)
     if not skip_inputs:
@@ -77,7 +77,7 @@ def declare_variables(
                 continue
             if var.name not in variables:
                 type = var.type if var.type else default_type
-                if var.size > '1' and type == "PyObject **":
+                if var.size > "1" and type == "PyObject **":
                     type = "_Py_UOpsSymbolicExpression **"
                 variables.add(var.name)
                 if var.condition:
@@ -97,12 +97,12 @@ def declare_variables(
 
 
 def tier2_replace_deopt(
-        out: CWriter,
-        tkn: Token,
-        tkn_iter: Iterator[Token],
-        uop: Uop,
-        unused: Stack,
-        inst: Instruction | None,
+    out: CWriter,
+    tkn: Token,
+    tkn_iter: Iterator[Token],
+    uop: Uop,
+    unused: Stack,
+    inst: Instruction | None,
 ) -> None:
     out.emit_at("if ", tkn)
     out.emit(next(tkn_iter))
@@ -117,22 +117,23 @@ TIER2_REPLACEMENT_FUNCTIONS["DEOPT_IF"] = tier2_replace_deopt
 
 
 def _write_body_abstract_interp_impure_uop(
-        mangled_uop: Uop, uop: Uop, out: CWriter, stack: Stack
+    mangled_uop: Uop, uop: Uop, out: CWriter, stack: Stack
 ) -> None:
-
     # Simply make all outputs effects unknown
 
     for var in mangled_uop.stack.outputs:
         if var.name in UNUSED or var.peek:
             continue
 
-        if var.size == '1':
+        if var.size == "1":
             out.emit(f"{var.name} = sym_init_unknown(ctx);\n")
             out.emit(f"if({var.name} == NULL) goto error;\n")
             if var.name in ("null", "__null_"):
                 out.emit(f"sym_set_type({var.name}, NULL_TYPE, 0);\n")
         else:
-            out.emit(f"for (int case_gen_i = 0; case_gen_i < {var.size}; case_gen_i++) {{\n")
+            out.emit(
+                f"for (int case_gen_i = 0; case_gen_i < {var.size}; case_gen_i++) {{\n"
+            )
             out.emit(f"{var.name}[case_gen_i] = sym_init_unknown(ctx);\n")
             out.emit(f"if({var.name}[case_gen_i] == NULL) goto error;\n")
             out.emit("}\n")
@@ -141,16 +142,21 @@ def _write_body_abstract_interp_impure_uop(
 def mangle_uop_names(uop: Uop) -> Uop:
     uop = dataclasses.replace(uop)
     new_stack = dataclasses.replace(uop.stack)
-    new_stack.inputs = [dataclasses.replace(var, name=f"__{var.name}_") for var in uop.stack.inputs]
-    new_stack.outputs = [dataclasses.replace(var, name=f"__{var.name}_") for var in uop.stack.outputs]
+    new_stack.inputs = [
+        dataclasses.replace(var, name=f"__{var.name}_") for var in uop.stack.inputs
+    ]
+    new_stack.outputs = [
+        dataclasses.replace(var, name=f"__{var.name}_") for var in uop.stack.outputs
+    ]
     uop.stack = new_stack
     return uop
+
 
 # Returns a tuple of a pointer to an array of subexpressions, the length of said array
 # and a string containing the join of all other subexpressions obtained from stack input.
 # This grabs variadic inputs that depend on things like oparg or cache
 def get_subexpressions(input_vars: list[StackItem]) -> tuple[str, int, str]:
-    arr_var = [(var.name, var) for var in input_vars if var.size > '1']
+    arr_var = [(var.name, var) for var in input_vars if var.size > "1"]
     assert len(arr_var) <= 1, "Can have at most one array input from oparg/cache"
     arr_var_name = arr_var[0][0] if len(arr_var) == 1 else None
     arr_var_size = (arr_var[0][1].size or 0) if arr_var_name is not None else 0
@@ -161,12 +167,13 @@ def get_subexpressions(input_vars: list[StackItem]) -> tuple[str, int, str]:
         var = ", " + var
     return arr_var_name, arr_var_size, var
 
+
 def new_sym(
-        constant: str | None,
-        arr_var_size: int | str | None,
-        arr_var_name: str | None,
-        subexpresion_count: int | str,
-        subexpressions: str
+    constant: str | None,
+    arr_var_size: int | str | None,
+    arr_var_name: str | None,
+    subexpresion_count: int | str,
+    subexpressions: str,
 ) -> str:
     return (
         f"_Py_UOpsSymbolicExpression_New("
@@ -177,24 +184,35 @@ def new_sym(
 
 
 def _write_body_abstract_interp_pure_uop(
-        mangled_uop: Uop, uop: Uop, out: CWriter, stack: Stack
+    mangled_uop: Uop, uop: Uop, out: CWriter, stack: Stack
 ) -> None:
+    arr_var_name, arr_var_size, subexpressions = get_subexpressions(
+        mangled_uop.stack.inputs
+    )
 
-    arr_var_name, arr_var_size, subexpressions = get_subexpressions(mangled_uop.stack.inputs)
-
-    assert len(uop.stack.outputs) == 1, f"Currently we only support 1 stack output for pure ops: {uop}"
+    assert (
+        len(uop.stack.outputs) == 1
+    ), f"Currently we only support 1 stack output for pure ops: {uop}"
     # uop is mandatory - we cannot const evaluate it
+    sym = new_sym(
+        None, arr_var_size, arr_var_name, len(mangled_uop.stack.inputs), subexpressions
+    )
     if uop.name in NO_CONST_OR_TYPE_EVALUATE:
-        out.emit(f"{mangled_uop.stack.outputs[0].name} = {new_sym(None, arr_var_size, arr_var_name, len(mangled_uop.stack.inputs), subexpressions)}")
+        out.emit(f"{mangled_uop.stack.outputs[0].name} = {sym}")
         return
-
 
     # Constant prop only handles one output, and no variadic inputs.
     # Perhaps in the future we can support these.
-    if all(input.size == '1' for input in uop.stack.inputs):
+    if all(input.size == "1" for input in uop.stack.inputs):
         # We can try a constant evaluation
         out.emit("// Constant evaluation\n")
-        predicates = " && ".join([f"is_const({var.name})" for var in mangled_uop.stack.inputs if var.name not in UNUSED])
+        predicates = " && ".join(
+            [
+                f"is_const({var.name})"
+                for var in mangled_uop.stack.inputs
+                if var.name not in UNUSED
+            ]
+        )
 
         out.emit(f"if ({predicates or 0}){{\n")
         declare_variables(uop, out, default_type="PyObject *")
@@ -202,19 +220,22 @@ def _write_body_abstract_interp_pure_uop(
             out.emit(f"{var.name} = get_const({mangled_var.name});\n")
         emit_tokens(out, uop, stack, None, TIER2_REPLACEMENT_FUNCTIONS)
         out.emit("\n")
-        maybe_const_val = new_sym(f'(PyObject *){uop.stack.outputs[0].name}', None, None,
-                                  len(mangled_uop.stack.inputs), subexpressions)
+        maybe_const_val = new_sym(
+            f"(PyObject *){uop.stack.outputs[0].name}",
+            None,
+            None,
+            len(mangled_uop.stack.inputs),
+            subexpressions,
+        )
         out.emit(f"{mangled_uop.stack.outputs[0].name} = {maybe_const_val}\n")
 
         out.emit("}\n")
         out.emit("else {\n")
-        sym = new_sym(None, None, None,
-                      len(mangled_uop.stack.inputs), subexpressions)
+        sym = new_sym(None, None, None, len(mangled_uop.stack.inputs), subexpressions)
         out.emit(f"{mangled_uop.stack.outputs[0].name} = {sym}\n")
         out.emit("}\n")
     else:
-        sym = new_sym(None, None, None,
-                      len(mangled_uop.stack.inputs), subexpressions)
+        sym = new_sym(None, None, None, len(mangled_uop.stack.inputs), subexpressions)
         out.emit(f"{mangled_uop.stack.outputs[0].name} = {sym}\n")
 
     out.emit(f"if ({mangled_uop.stack.outputs[0].name} == NULL) goto error;\n")
@@ -228,8 +249,9 @@ def _write_body_abstract_interp_pure_uop(
             f"sym_set_type({mangled_uop.stack.outputs[0].name}, {typname}, (uint32_t){aux});"
         )
 
+
 def _write_body_abstract_interp_guard_uop(
-        mangled_uop: Uop, uop: Uop, out: CWriter, stack: Stack
+    mangled_uop: Uop, uop: Uop, out: CWriter, stack: Stack
 ) -> None:
     # 1. Attempt to perform guard elimination
     # 2. Type propagate for guard success
@@ -247,7 +269,13 @@ def _write_body_abstract_interp_guard_uop(
             out.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND();\n")
 
     out.emit("// Constant evaluation \n")
-    predicates_str = " && ".join([f"is_const({var.name})" for var in mangled_uop.stack.inputs if var.name not in UNUSED])
+    predicates_str = " && ".join(
+        [
+            f"is_const({var.name})"
+            for var in mangled_uop.stack.inputs
+            if var.name not in UNUSED
+        ]
+    )
     if predicates_str:
         out.emit(f"if ({predicates_str}) {{\n")
         declare_variables(uop, out, default_type="PyObject *")
@@ -270,9 +298,13 @@ def _write_body_abstract_interp_guard_uop(
     predicates = []
     propagates = []
 
-    assert len(mangled_uop.stack.outputs) == len(mangled_uop.stack.inputs), "guards must have same number of args"
-    assert [output == input_ for output, input_ in zip(mangled_uop.stack.outputs, mangled_uop.stack.inputs)], \
-        "guards must forward their stack values"
+    assert len(mangled_uop.stack.outputs) == len(
+        mangled_uop.stack.inputs
+    ), "guards must have same number of args"
+    assert [
+        output == input_
+        for output, input_ in zip(mangled_uop.stack.outputs, mangled_uop.stack.inputs)
+    ], "guards must forward their stack values"
     for output_var in mangled_uop.stack.outputs:
         if output_var.name in UNUSED:
             continue
@@ -302,13 +334,13 @@ def _write_body_abstract_interp_guard_uop(
     out.emit("}\n")
 
 
-
-
 def write_abstract_uop(mangled_uop: Uop, uop: Uop, out: CWriter, stack: Stack) -> None:
     try:
         out.start_line()
         for var in reversed(mangled_uop.stack.inputs):
-            is_impure = not mangled_uop.properties.pure and not mangled_uop.properties.guard
+            is_impure = (
+                not mangled_uop.properties.pure and not mangled_uop.properties.guard
+            )
             old_var_name = var.name
             # code smell, but basically impure ops don't use any of their inputs
             if is_impure:
@@ -333,7 +365,7 @@ SKIPS = ("_EXTENDED_ARG",)
 
 
 def generate_tier2_abstract(
-        filenames: list[str], analysis: Analysis, outfile: TextIO, lines: bool
+    filenames: list[str], analysis: Analysis, outfile: TextIO, lines: bool
 ) -> None:
     write_header(__file__, filenames, outfile)
     outfile.write(
