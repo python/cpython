@@ -508,6 +508,8 @@ Pure paths provide the following methods and properties:
       >>> p.is_relative_to('/usr')
       False
 
+   If multiple arguments are supplied, they are joined together.
+
    .. versionadded:: 3.9
 
 
@@ -588,6 +590,8 @@ Pure paths provide the following methods and properties:
         File "pathlib.py", line 694, in relative_to
           .format(str(self), str(formatted)))
       ValueError: '/etc/passwd' is not in the subpath of '/usr' OR one path is relative and the other absolute.
+
+   If multiple arguments are supplied, they are joined together.
 
    NOTE: This function is part of :class:`PurePath` and works with strings. It does not check or access the underlying file structure.
 

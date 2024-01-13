@@ -1,0 +1,3 @@
+Document that multiple arguments are joined together when given to
+:meth:`pathlib.PurePath.relative_to` or
+:meth:`~pathlib.PurePath.is_relative_to`
