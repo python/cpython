@@ -1,0 +1,2 @@
+Disable ``test_super_deep()`` from ``test_call`` under pydebug builds on
+WASI; the stack depth is too small to make the test useful.
