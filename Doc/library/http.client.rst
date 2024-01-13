@@ -648,6 +648,8 @@ method attribute. Here is an example session that uses the ``PUT`` method::
 HTTPMessage Objects
 -------------------
 
+.. class:: HTTPMessage(email.message.Message)
+
 An :class:`http.client.HTTPMessage` instance holds the headers from an HTTP
 response.  It is implemented using the :class:`email.message.Message` class.
 
