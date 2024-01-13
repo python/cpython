@@ -154,7 +154,7 @@ class PathModuleBase:
         """The character used to separate path components."""
         self._unsupported('sep')
 
-    def join(self, *paths):
+    def join(self, path, *paths):
         """Join path segments."""
         self._unsupported('join()')
 
