@@ -25,7 +25,7 @@ probably additional platforms, as long as OpenSSL is installed on that platform.
 
    Some behavior may be platform dependent, since calls are made to the
    operating system socket APIs.  The installed version of OpenSSL may also
-   cause variations in behavior. For example, TLSv1.3 with OpenSSL version
+   cause variations in behavior. For example, TLSv1.3 comes with OpenSSL version
    1.1.1.
 
 .. warning::
@@ -907,6 +907,12 @@ Constants
    Whether the OpenSSL library has built-in support for the TLS 1.3 protocol.
 
    .. versionadded:: 3.7
+
+.. data:: HAS_PSK
+
+   Whether the OpenSSL library has built-in support for TLS-PSK.
+
+   .. versionadded:: 3.13
 
 .. data:: CHANNEL_BINDING_TYPES
 
@@ -2050,6 +2056,9 @@ to speed up repeated connections from the same clients.
           return 'ClientId_1', psk_table.get(hint, b'')
       context.set_psk_client_callback(callback)
 
+   This method will raise :exc:`NotImplementedError` if :data:`HAS_PSK` is
+   ``False``.
+
    .. versionadded:: 3.13
 
 .. method:: SSLContext.set_psk_server_callback(callback, identity_hint=None)
@@ -2091,6 +2100,9 @@ to speed up repeated connections from the same clients.
       def callback(identity):
           return psk_table.get(identity, b'')
       context.set_psk_server_callback(callback, 'ServerId_1')
+
+   This method will raise :exc:`NotImplementedError` if :data:`HAS_PSK` is
+   ``False``.
 
    .. versionadded:: 3.13
 

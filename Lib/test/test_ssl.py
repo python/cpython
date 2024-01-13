@@ -4259,6 +4259,7 @@ class ThreadedTests(unittest.TestCase):
                                  'Session refers to a different SSLContext.')
 
     @requires_tls_version('TLSv1_2')
+    @unittest.skipUnless(ssl.HAS_PSK, 'TLS-PSK disabled on this OpenSSL build')
     def test_psk(self):
         psk = bytes.fromhex('deadbeef')
 
@@ -4326,6 +4327,7 @@ class ThreadedTests(unittest.TestCase):
                 s.connect((HOST, server.port))
 
     @requires_tls_version('TLSv1_3')
+    @unittest.skipUnless(ssl.HAS_PSK, 'TLS-PSK disabled on this OpenSSL build')
     def test_psk_tls1_3(self):
         psk = bytes.fromhex('deadbeef')
         identity_hint = 'identity-hint'

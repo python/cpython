@@ -735,8 +735,9 @@ newPyTclObject(Tcl_Obj *arg)
 }
 
 static void
-PyTclObject_dealloc(PyTclObject *self)
+PyTclObject_dealloc(PyObject *_self)
 {
+    PyTclObject *self = (PyTclObject *)_self;
     PyObject *tp = (PyObject *) Py_TYPE(self);
     Tcl_DecrRefCount(self->value);
     Py_XDECREF(self->string);
@@ -749,8 +750,9 @@ PyDoc_STRVAR(PyTclObject_string__doc__,
 "the string representation of this object, either as str or bytes");
 
 static PyObject *
-PyTclObject_string(PyTclObject *self, void *ignored)
+PyTclObject_string(PyObject *_self, void *ignored)
 {
+    PyTclObject *self = (PyTclObject *)_self;
     if (!self->string) {
         self->string = unicodeFromTclObj(self->value);
         if (!self->string)
@@ -760,8 +762,9 @@ PyTclObject_string(PyTclObject *self, void *ignored)
 }
 
 static PyObject *
-PyTclObject_str(PyTclObject *self)
+PyTclObject_str(PyObject *_self)
 {
+    PyTclObject *self = (PyTclObject *)_self;
     if (self->string) {
         return Py_NewRef(self->string);
     }
@@ -770,9 +773,10 @@ PyTclObject_str(PyTclObject *self)
 }
 
 static PyObject *
-PyTclObject_repr(PyTclObject *self)
+PyTclObject_repr(PyObject *_self)
 {
-    PyObject *repr, *str = PyTclObject_str(self);
+    PyTclObject *self = (PyTclObject *)_self;
+    PyObject *repr, *str = PyTclObject_str(_self);
     if (str == NULL)
         return NULL;
     repr = PyUnicode_FromFormat("<%s object: %R>",
@@ -809,23 +813,24 @@ PyTclObject_richcompare(PyObject *self, PyObject *other, int op)
 PyDoc_STRVAR(get_typename__doc__, "name of the Tcl type");
 
 static PyObject*
-get_typename(PyTclObject* obj, void* ignored)
+get_typename(PyObject *self, void* ignored)
 {
+    PyTclObject *obj = (PyTclObject *)self;
     return unicodeFromTclString(obj->value->typePtr->name);
 }
 
 
 static PyGetSetDef PyTclObject_getsetlist[] = {
-    {"typename", (getter)get_typename, NULL, get_typename__doc__},
-    {"string", (getter)PyTclObject_string, NULL,
+    {"typename", get_typename, NULL, get_typename__doc__},
+    {"string", PyTclObject_string, NULL,
      PyTclObject_string__doc__},
     {0},
 };
 
 static PyType_Slot PyTclObject_Type_slots[] = {
-    {Py_tp_dealloc, (destructor)PyTclObject_dealloc},
-    {Py_tp_repr, (reprfunc)PyTclObject_repr},
-    {Py_tp_str, (reprfunc)PyTclObject_str},
+    {Py_tp_dealloc, PyTclObject_dealloc},
+    {Py_tp_repr, PyTclObject_repr},
+    {Py_tp_str, PyTclObject_str},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_richcompare, PyTclObject_richcompare},
     {Py_tp_getset, PyTclObject_getsetlist},
@@ -1202,7 +1207,7 @@ typedef struct Tkapp_CallEvent {
     Tcl_Condition *done;
 } Tkapp_CallEvent;
 
-void
+static void
 Tkapp_CallDeallocArgs(Tcl_Obj** objv, Tcl_Obj** objStore, int objc)
 {
     int i;
@@ -1306,8 +1311,9 @@ Tkapp_ObjectResult(TkappObject *self)
    hold the Python lock. */
 
 static int
-Tkapp_CallProc(Tkapp_CallEvent *e, int flags)
+Tkapp_CallProc(Tcl_Event *evPtr, int flags)
 {
+    Tkapp_CallEvent *e = (Tkapp_CallEvent *)evPtr;
     Tcl_Obj *objStore[ARGSZ];
     Tcl_Obj **objv;
     int objc;
@@ -1385,7 +1391,7 @@ Tkapp_Call(PyObject *selfptr, PyObject *args)
             PyErr_NoMemory();
             return NULL;
         }
-        ev->ev.proc = (Tcl_EventProc*)Tkapp_CallProc;
+        ev->ev.proc = Tkapp_CallProc;
         ev->self = self;
         ev->args = args;
         ev->res = &res;
@@ -1624,8 +1630,9 @@ var_perform(VarEvent *ev)
 }
 
 static int
-var_proc(VarEvent* ev, int flags)
+var_proc(Tcl_Event *evPtr, int flags)
 {
+    VarEvent *ev = (VarEvent *)evPtr;
     ENTER_PYTHON
     var_perform(ev);
     Tcl_MutexLock(&var_mutex);
@@ -1663,7 +1670,7 @@ var_invoke(EventFunc func, PyObject *selfptr, PyObject *args, int flags)
         ev->res = &res;
         ev->exc = &exc;
         ev->cond = &cond;
-        ev->ev.proc = (Tcl_EventProc*)var_proc;
+        ev->ev.proc = var_proc;
         Tkapp_ThreadSend(self, (Tcl_Event*)ev, &cond, &var_mutex);
         Tcl_ConditionFinalize(&cond);
         if (!res) {
@@ -2236,8 +2243,9 @@ typedef struct CommandEvent{
 } CommandEvent;
 
 static int
-Tkapp_CommandProc(CommandEvent *ev, int flags)
+Tkapp_CommandProc(Tcl_Event *evPtr, int flags)
 {
+    CommandEvent *ev = (CommandEvent *)evPtr;
     if (ev->create)
         *ev->status = Tcl_CreateObjCommand(
             ev->interp, ev->name, PythonCmd,
@@ -2290,7 +2298,7 @@ _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
             PyMem_Free(data);
             return NULL;
         }
-        ev->ev.proc = (Tcl_EventProc*)Tkapp_CommandProc;
+        ev->ev.proc = Tkapp_CommandProc;
         ev->interp = self->interp;
         ev->create = 1;
         ev->name = name;
@@ -2343,7 +2351,7 @@ _tkinter_tkapp_deletecommand_impl(TkappObject *self, const char *name)
             PyErr_NoMemory();
             return NULL;
         }
-        ev->ev.proc = (Tcl_EventProc*)Tkapp_CommandProc;
+        ev->ev.proc = Tkapp_CommandProc;
         ev->interp = self->interp;
         ev->create = 0;
         ev->name = name;
