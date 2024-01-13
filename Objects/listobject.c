@@ -849,6 +849,7 @@ py_list_clear_impl(PyListObject *self)
 }
 
 /*[clinic input]
+@critical_section
 list.copy
 
 Return a shallow copy of the list.
@@ -856,12 +857,13 @@ Return a shallow copy of the list.
 
 static PyObject *
 list_copy_impl(PyListObject *self)
-/*[clinic end generated code: output=ec6b72d6209d418e input=6453ab159e84771f]*/
+/*[clinic end generated code: output=ec6b72d6209d418e input=81c54b0c7bb4f73d]*/
 {
     return list_slice(self, 0, Py_SIZE(self));
 }
 
 /*[clinic input]
+@critical_section
 list.append
 
      object: object
@@ -871,8 +873,8 @@ Append object to the end of the list.
 [clinic start generated code]*/
 
 static PyObject *
-list_append(PyListObject *self, PyObject *object)
-/*[clinic end generated code: output=7c096003a29c0eae input=43a3fe48a7066e91]*/
+list_append_impl(PyListObject *self, PyObject *object)
+/*[clinic end generated code: output=78423561d92ed405 input=122b0853de54004f]*/
 {
     if (_PyList_AppendTakeRef(self, Py_NewRef(object)) < 0) {
         return NULL;
@@ -2655,7 +2657,7 @@ PyList_AsTuple(PyObject *v)
     PyObject *ret;
     PyListObject *self = (PyListObject *)v;
     Py_BEGIN_CRITICAL_SECTION(self);
-    ret = _PyTuple_FromArray(((PyListObject *)v)->ob_item, Py_SIZE(v));
+    ret = _PyTuple_FromArray(self->ob_item, Py_SIZE(v));
     Py_END_CRITICAL_SECTION();
     return ret;
 }
