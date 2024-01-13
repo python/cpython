@@ -33,6 +33,15 @@ __all__ = [
     ]
 
 
+# Reference for Windows paths can be found at
+# https://learn.microsoft.com/en-gb/windows/win32/fileio/naming-a-file .
+_WIN_RESERVED_NAMES = frozenset(
+    {'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$'} |
+    {f'COM{c}' for c in '123456789\xb9\xb2\xb3'} |
+    {f'LPT{c}' for c in '123456789\xb9\xb2\xb3'}
+)
+
+
 class _PathParents(Sequence):
     """This object provides sequence-like access to the logical ancestors
     of a path.  Don't try to construct it yourself."""
@@ -385,6 +394,33 @@ class PurePath(_abc.PurePathBase):
         elif not isinstance(other, PurePath):
             other = self.with_segments(other)
         return other == self or other in self.parents
+
+    def is_absolute(self):
+        """True if the path is absolute (has both a root and, if applicable,
+        a drive)."""
+        if self.pathmod is posixpath:
+            # Optimization: work with raw paths on POSIX.
+            for path in self._raw_paths:
+                if path.startswith('/'):
+                    return True
+            return False
+        return self.pathmod.isabs(self)
+
+    def is_reserved(self):
+        """Return True if the path contains one of the special names reserved
+        by the system, if any."""
+        if self.pathmod is not ntpath or not self.name:
+            return False
+
+        # NOTE: the rules for reserved names seem somewhat complicated
+        # (e.g. r"..\NUL" is reserved but not r"foo\NUL" if "foo" does not
+        # exist). We err on the side of caution and return True for paths
+        # which are not considered reserved by Windows.
+        if self.drive.startswith('\\\\'):
+            # UNC paths are never reserved.
+            return False
+        name = self.name.partition('.')[0].partition(':')[0].rstrip(' ')
+        return name.upper() in _WIN_RESERVED_NAMES
 
     def as_uri(self):
         """Return the path as a URI."""

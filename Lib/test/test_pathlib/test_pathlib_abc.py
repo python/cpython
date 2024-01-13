@@ -73,7 +73,6 @@ class PurePathBaseTest(unittest.TestCase):
         self.assertRaises(e, p.relative_to, '')
         self.assertRaises(e, p.is_relative_to, '')
         self.assertRaises(e, p.is_absolute)
-        self.assertRaises(e, p.is_reserved)
         self.assertRaises(e, p.match, '*')
 
     def test_magic_methods(self):
