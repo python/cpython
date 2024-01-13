@@ -257,7 +257,9 @@ class PurePath(_abc.PurePathBase):
         parsed = [sys.intern(str(x)) for x in rel.split(sep) if x and x != '.']
         return drv, root, parsed
 
-    def _load_parts(self):
+    @property
+    def _raw_path(self):
+        """The joined but unnormalized path."""
         paths = self._raw_paths
         if len(paths) == 0:
             path = ''
@@ -265,7 +267,7 @@ class PurePath(_abc.PurePathBase):
             path = paths[0]
         else:
             path = self.pathmod.join(*paths)
-        self._drv, self._root, self._tail_cached = self._parse_path(path)
+        return path
 
     @property
     def drive(self):
@@ -273,7 +275,7 @@ class PurePath(_abc.PurePathBase):
         try:
             return self._drv
         except AttributeError:
-            self._load_parts()
+            self._drv, self._root, self._tail_cached = self._parse_path(self._raw_path)
             return self._drv
 
     @property
@@ -282,7 +284,7 @@ class PurePath(_abc.PurePathBase):
         try:
             return self._root
         except AttributeError:
-            self._load_parts()
+            self._drv, self._root, self._tail_cached = self._parse_path(self._raw_path)
             return self._root
 
     @property
@@ -290,7 +292,7 @@ class PurePath(_abc.PurePathBase):
         try:
             return self._tail_cached
         except AttributeError:
-            self._load_parts()
+            self._drv, self._root, self._tail_cached = self._parse_path(self._raw_path)
             return self._tail_cached
 
     @property
