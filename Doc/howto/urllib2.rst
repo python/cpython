@@ -507,7 +507,7 @@ than the URL you pass to .add_password() will also match. ::
 
     In the above example we only supplied our ``HTTPBasicAuthHandler`` to
     ``build_opener``. By default openers have the handlers for normal situations
-    -- ``ProxyHandler`` (if a proxy setting such as an :envvar:`http_proxy`
+    -- ``ProxyHandler`` (if a proxy setting such as an :envvar:`!http_proxy`
     environment variable is set), ``UnknownHandler``, ``HTTPHandler``,
     ``HTTPDefaultErrorHandler``, ``HTTPRedirectHandler``, ``FTPHandler``,
     ``FileHandler``, ``DataHandler``, ``HTTPErrorProcessor``.

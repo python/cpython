@@ -78,7 +78,7 @@ The :mod:`urllib.request` module defines the following functions:
    :class:`UnknownHandler` to ensure this never happens).
 
    In addition, if proxy settings are detected (for example, when a ``*_proxy``
-   environment variable like :envvar:`http_proxy` is set),
+   environment variable like :envvar:`!http_proxy` is set),
    :class:`ProxyHandler` is default installed and makes sure the requests are
    handled through the proxy.
 
@@ -1273,7 +1273,7 @@ Use of Basic HTTP Authentication::
 :func:`build_opener` provides many handlers by default, including a
 :class:`ProxyHandler`.  By default, :class:`ProxyHandler` uses the environment
 variables named ``<scheme>_proxy``, where ``<scheme>`` is the URL scheme
-involved.  For example, the :envvar:`http_proxy` environment variable is read to
+involved.  For example, the :envvar:`!http_proxy` environment variable is read to
 obtain the HTTP proxy's URL.
 
 This example replaces the default :class:`ProxyHandler` with one that uses
