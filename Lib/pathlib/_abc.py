@@ -165,27 +165,12 @@ class PathModuleBase:
         """
         self._unsupported('split()')
 
-    def dirname(self, path):
-        """Return everything before the final path separator."""
-        return self.split(path)[0]
-
-    def basename(self, path):
-        """Return everything after the final path separator."""
-        return self.split(path)[1]
-
     def splitroot(self, path):
         """Split the pathname path into a 3-item tuple (drive, root, tail),
         where *drive* is a device name or mount point, *root* is a string of
         separators after the drive, and *tail* is everything after the root.
         Any part may be empty."""
         self._unsupported('splitroot()')
-
-    def splitdrive(self, path):
-        """Split the pathname path into a 2-item tuple (drive, tail), where
-        *drive* is a device name or mount point, and *tail* is everything
-        after the drive. Either part may be empty."""
-        drive, root, rel = self.splitroot(path)
-        return drive, root + rel
 
     def normcase(self, path):
         """Normalize the case of the path."""
@@ -247,7 +232,7 @@ class PurePathBase:
     @property
     def drive(self):
         """The drive prefix (letter or UNC path), if any."""
-        return self.pathmod.splitdrive(self._raw_path)[0]
+        return self.pathmod.splitroot(self._raw_path)[0]
 
     @property
     def root(self):
@@ -263,7 +248,7 @@ class PurePathBase:
     @property
     def name(self):
         """The final path component, if any."""
-        return self.pathmod.basename(self._raw_path)
+        return self.pathmod.split(self._raw_path)[1]
 
     @property
     def suffix(self):
@@ -304,10 +289,10 @@ class PurePathBase:
 
     def with_name(self, name):
         """Return a new path with the file name changed."""
-        dirname = self.pathmod.dirname
-        if dirname(name):
+        split = self.pathmod.split
+        if split(name)[0]:
             raise ValueError(f"Invalid name {name!r}")
-        return self.with_segments(dirname(self._raw_path), name)
+        return self.with_segments(split(self._raw_path)[0], name)
 
     def with_stem(self, stem):
         """Return a new path with the stem changed."""
@@ -424,7 +409,7 @@ class PurePathBase:
     def parent(self):
         """The logical parent of the path."""
         path = self._raw_path
-        parent = self.pathmod.dirname(path)
+        parent = self.pathmod.split(path)[0]
         if path != parent:
             parent = self.with_segments(parent)
             parent._resolving = self._resolving
@@ -434,14 +419,14 @@ class PurePathBase:
     @property
     def parents(self):
         """A sequence of this path's logical parents."""
-        dirname = self.pathmod.dirname
+        split = self.pathmod.split
         path = self._raw_path
-        parent = dirname(path)
+        parent = split(path)[0]
         parents = []
         while path != parent:
             parents.append(self.with_segments(parent))
             path = parent
-            parent = dirname(path)
+            parent = split(path)[0]
         return tuple(parents)
 
     def is_absolute(self):
@@ -756,7 +741,7 @@ class PathBase(PurePathBase):
             raise ValueError("Unacceptable pattern: {!r}".format(pattern))
 
         pattern_parts = list(path_pattern.parts)
-        if not self.pathmod.basename(pattern):
+        if not self.pathmod.split(pattern)[1]:
             # GH-65238: pathlib doesn't preserve trailing slash. Add it back.
             pattern_parts.append('')
 
