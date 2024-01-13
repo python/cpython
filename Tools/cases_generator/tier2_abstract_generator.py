@@ -45,6 +45,7 @@ SPECIALLY_HANDLED_ABSTRACT_INSTR = {
     "POP_TOP",
     "PUSH_NULL",
     "SWAP",
+    "END_SEND",
 
     # Frame stuff
     "_PUSH_FRAME",
@@ -246,8 +247,6 @@ def _write_body_abstract_interp_guard_uop(
             out.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND();\n")
 
     out.emit("// Constant evaluation \n")
-    # TODO if we encode all type information of constants, then we shouldn't even need
-    # this part, and we can just do a type check.
     predicates_str = " && ".join([f"is_const({var.name})" for var in mangled_uop.stack.inputs if var.name not in UNUSED])
     if predicates_str:
         out.emit(f"if ({predicates_str}) {{\n")
@@ -311,6 +310,7 @@ def write_abstract_uop(mangled_uop: Uop, uop: Uop, out: CWriter, stack: Stack) -
         for var in reversed(mangled_uop.stack.inputs):
             is_impure = not mangled_uop.properties.pure and not mangled_uop.properties.guard
             old_var_name = var.name
+            # code smell, but basically impure ops don't use any of their inputs
             if is_impure:
                 var.name = "unused"
             out.emit(stack.pop(var))
