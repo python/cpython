@@ -395,13 +395,13 @@ The response returned by urlopen (or the :exc:`~urllib.error.HTTPError` instance
 useful methods :meth:`!info` and :meth:`!geturl` and is defined in the module
 :mod:`urllib.response`.
 
-**geturl** - this returns the real URL of the page fetched. This is useful
-because ``urlopen`` (or the opener object used) may have followed a
-redirect. The URL of the page fetched may not be the same as the URL requested.
+* **geturl** - this returns the real URL of the page fetched. This is useful
+  because ``urlopen`` (or the opener object used) may have followed a
+  redirect. The URL of the page fetched may not be the same as the URL requested.
 
-**info** - this returns a dictionary-like object that describes the page
-fetched, particularly the headers sent by the server. It is currently an
-:class:`http.client.HTTPMessage` instance.
+* **info** - this returns a dictionary-like object that describes the page
+  fetched, particularly the headers sent by the server. It is currently an
+  :class:`http.client.HTTPMessage` instance.
 
 Typical headers include 'Content-length', 'Content-type', and so on. See the
 `Quick Reference to HTTP Headers <https://jkorpela.fi/http.html>`_
