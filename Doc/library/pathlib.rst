@@ -844,7 +844,7 @@ conforming to :rfc:`8089`.
    Represent the path as a 'file' URI.  :exc:`ValueError` is raised if
    the path isn't absolute.
 
-   ::
+   .. code-block:: pycon
 
       >>> p = PosixPath('/etc/passwd')
       >>> p.as_uri()
