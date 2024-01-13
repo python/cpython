@@ -192,9 +192,9 @@ class PurePathBase:
     """
 
     __slots__ = (
-        # The `_raw_paths` slot stores unnormalized string paths. This is set
-        # in the `__init__()` method.
-        '_raw_paths',
+        # The `_raw_path` slot store a joined string path. This is set in the
+        # `__init__()` method.
+        '_raw_path',
 
         # The '_resolving' slot stores a boolean indicating whether the path
         # is being processed by `PathBase.resolve()`. This prevents duplicate
@@ -203,8 +203,8 @@ class PurePathBase:
     )
     pathmod = PathModuleBase()
 
-    def __init__(self, *paths):
-        self._raw_paths = paths
+    def __init__(self, path, *paths):
+        self._raw_path = self.pathmod.join(path, *paths) if paths else path
         self._resolving = False
 
     def with_segments(self, *pathsegments):
@@ -213,11 +213,6 @@ class PurePathBase:
         are created from methods like `iterdir()`.
         """
         return type(self)(*pathsegments)
-
-    @property
-    def _raw_path(self):
-        """The joined but unnormalized path."""
-        return self.pathmod.join(*self._raw_paths)
 
     def __str__(self):
         """Return the string representation of the path, suitable for
@@ -374,17 +369,17 @@ class PurePathBase:
         paths) or a totally different path (if one of the arguments is
         anchored).
         """
-        return self.with_segments(*self._raw_paths, *pathsegments)
+        return self.with_segments(self._raw_path, *pathsegments)
 
     def __truediv__(self, key):
         try:
-            return self.joinpath(key)
+            return self.with_segments(self._raw_path, key)
         except TypeError:
             return NotImplemented
 
     def __rtruediv__(self, key):
         try:
-            return self.with_segments(key, *self._raw_paths)
+            return self.with_segments(key, self._raw_path)
         except TypeError:
             return NotImplemented
 

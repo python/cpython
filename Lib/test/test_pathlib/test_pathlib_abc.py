@@ -42,8 +42,6 @@ class PurePathBaseTest(unittest.TestCase):
     def test_unsupported_operation_pure(self):
         p = self.cls('foo')
         e = UnsupportedOperation
-        self.assertRaises(e, str, p)
-        self.assertRaises(e, p.as_posix)
         with self.assertRaises(e):
             p.drive
         with self.assertRaises(e):
@@ -64,6 +62,11 @@ class PurePathBaseTest(unittest.TestCase):
             p.suffix
         with self.assertRaises(e):
             p.suffixes
+        with self.assertRaises(e):
+            p / 'bar'
+        with self.assertRaises(e):
+            'bar' / p
+        self.assertRaises(e, p.joinpath, 'bar')
         self.assertRaises(e, p.with_name, 'bar')
         self.assertRaises(e, p.with_stem, 'bar')
         self.assertRaises(e, p.with_suffix, '.txt')

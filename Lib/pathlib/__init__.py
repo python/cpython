@@ -85,6 +85,10 @@ class PurePath(_abc.PurePathBase):
     """
 
     __slots__ = (
+        # The `_raw_paths` slot stores unnormalized string paths. This is set
+        # in the `__init__()` method.
+        '_raw_paths',
+
         # The `_drv`, `_root` and `_tail_cached` slots store parsed and
         # normalized parts of the path. They are set when any of the `drive`,
         # `root` or `_tail` properties are accessed for the first time. The
@@ -149,6 +153,26 @@ class PurePath(_abc.PurePathBase):
                 paths.append(path)
         # Avoid calling super().__init__, as an optimisation
         self._raw_paths = paths
+
+    def joinpath(self, *pathsegments):
+        """Combine this path with one or several arguments, and return a
+        new path representing either a subpath (if all arguments are relative
+        paths) or a totally different path (if one of the arguments is
+        anchored).
+        """
+        return self.with_segments(self, *pathsegments)
+
+    def __truediv__(self, key):
+        try:
+            return self.with_segments(self, key)
+        except TypeError:
+            return NotImplemented
+
+    def __rtruediv__(self, key):
+        try:
+            return self.with_segments(key, self)
+        except TypeError:
+            return NotImplemented
 
     def __reduce__(self):
         # Using the parts tuple helps share interned path parts
