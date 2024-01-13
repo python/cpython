@@ -533,7 +533,7 @@ Pure paths provide the following methods and properties:
 
       >>> u = PurePath('/usr')
       >>> u == p or u in p.parents
-      True
+      False
 
    .. versionadded:: 3.9
 
