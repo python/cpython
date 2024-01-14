@@ -1,0 +1,2 @@
+Add ``doc`` parameter to :func:`dataclasses.field`, so it can be stored and
+shown as a documentation / metadata.

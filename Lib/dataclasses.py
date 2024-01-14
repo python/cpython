@@ -303,11 +303,12 @@ class Field:
                  'compare',
                  'metadata',
                  'kw_only',
+                 'doc',
                  '_field_type',  # Private: not to be used by user code.
                  )
 
     def __init__(self, default, default_factory, init, repr, hash, compare,
-                 metadata, kw_only):
+                 metadata, kw_only, doc):
         self.name = None
         self.type = None
         self.default = default
@@ -320,6 +321,7 @@ class Field:
                          if metadata is None else
                          types.MappingProxyType(metadata))
         self.kw_only = kw_only
+        self.doc = doc
         self._field_type = None
 
     @_recursive_repr
@@ -335,6 +337,7 @@ class Field:
                 f'compare={self.compare!r},'
                 f'metadata={self.metadata!r},'
                 f'kw_only={self.kw_only!r},'
+                f'doc={self.doc!r},'
                 f'_field_type={self._field_type}'
                 ')')
 
@@ -402,7 +405,7 @@ class _DataclassParams:
 # so that a type checker can be told (via overloads) that this is a
 # function whose type depends on its parameters.
 def field(*, default=MISSING, default_factory=MISSING, init=True, repr=True,
-          hash=None, compare=True, metadata=None, kw_only=MISSING):
+          hash=None, compare=True, metadata=None, kw_only=MISSING, doc=None):
     """Return an object to identify dataclass fields.
 
     default is the default value of the field.  default_factory is a
@@ -414,7 +417,7 @@ def field(*, default=MISSING, default_factory=MISSING, init=True, repr=True,
     comparison functions.  metadata, if specified, must be a mapping
     which is stored but not otherwise examined by dataclass.  If kw_only
     is true, the field will become a keyword-only parameter to
-    __init__().
+    __init__().  doc is an optional docstring for this field.
 
     It is an error to specify both default and default_factory.
     """
@@ -422,7 +425,7 @@ def field(*, default=MISSING, default_factory=MISSING, init=True, repr=True,
     if default is not MISSING and default_factory is not MISSING:
         raise ValueError('cannot specify both default and default_factory')
     return Field(default, default_factory, init, repr, hash, compare,
-                 metadata, kw_only)
+                 metadata, kw_only, doc)
 
 
 def _fields_in_init_order(fields):
@@ -1156,7 +1159,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     if weakref_slot and not slots:
         raise TypeError('weakref_slot is True but slots is False')
     if slots:
-        cls = _add_slots(cls, frozen, weakref_slot)
+        cls = _add_slots(cls, frozen, weakref_slot, fields)
 
     abc.update_abstractmethods(cls)
 
@@ -1191,7 +1194,7 @@ def _get_slots(cls):
             raise TypeError(f"Slots of '{cls.__name__}' cannot be determined")
 
 
-def _add_slots(cls, is_frozen, weakref_slot):
+def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
     # Need to create a new class, since we can't set __slots__
     #  after a class has been created.
 
@@ -1208,16 +1211,17 @@ def _add_slots(cls, is_frozen, weakref_slot):
     )
     # The slots for our class.  Remove slots from our base classes.  Add
     # '__weakref__' if weakref_slot was given, unless it is already present.
-    cls_dict["__slots__"] = tuple(
-        itertools.filterfalse(
+    cls_dict["__slots__"] = {
+        slot: getattr(defined_fields.get(slot), 'doc', None)
+        for slot in itertools.filterfalse(
             inherited_slots.__contains__,
             itertools.chain(
                 # gh-93521: '__weakref__' also needs to be filtered out if
                 # already present in inherited_slots
                 field_names, ('__weakref__',) if weakref_slot else ()
             )
-        ),
-    )
+        )
+    }
 
     for field_name in field_names:
         # Remove our attributes, if present. They'll still be
