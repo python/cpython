@@ -1,4 +1,7 @@
-Description of the internal format of the line number table
+Description of the internal format of the line number table in Python 3.10
+and earlier.
+
+(For 3.11 onwards, see Objects/locations.md)
 
 Conceptually, the line number table consists of a sequence of triples:
     start-offset (inclusive), end-offset (exclusive), line-number.
@@ -57,7 +60,7 @@ Final form:
 Iterating over the table.
 -------------------------
 
-For the `co_lines` attribute we want to emit the full form, omitting the (350, 360, No line number) and empty entries.
+For the `co_lines` method we want to emit the full form, omitting the (350, 360, No line number) and empty entries.
 
 The code is as follows:
 

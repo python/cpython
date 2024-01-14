@@ -3,6 +3,8 @@
 #endif
 
 #include "Python.h"
+#include "pycore_dict.h"          // _PyDict_GetItem_KnownHash()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
@@ -529,7 +531,7 @@ future_init(FutureObj *fut, PyObject *loop)
     }
     if (is_true && !_Py_IsInterpreterFinalizing(_PyInterpreterState_GET())) {
         /* Only try to capture the traceback if the interpreter is not being
-           finalized.  The original motivation to add a `_Py_IsFinalizing()`
+           finalized.  The original motivation to add a `Py_IsFinalizing()`
            call was to prevent SIGSEGV when a Future is created in a __del__
            method, which is called during the interpreter shutdown and the
            traceback module is already unloaded.
@@ -595,12 +597,27 @@ future_set_exception(asyncio_state *state, FutureObj *fut, PyObject *exc)
         PyErr_SetString(PyExc_TypeError, "invalid exception object");
         return NULL;
     }
-    if (Py_IS_TYPE(exc_val, (PyTypeObject *)PyExc_StopIteration)) {
+    if (PyErr_GivenExceptionMatches(exc_val, PyExc_StopIteration)) {
+        const char *msg = "StopIteration interacts badly with "
+                          "generators and cannot be raised into a "
+                          "Future";
+        PyObject *message = PyUnicode_FromString(msg);
+        if (message == NULL) {
+            Py_DECREF(exc_val);
+            return NULL;
+        }
+        PyObject *err = PyObject_CallOneArg(PyExc_RuntimeError, message);
+        Py_DECREF(message);
+        if (err == NULL) {
+            Py_DECREF(exc_val);
+            return NULL;
+        }
+        assert(PyExceptionInstance_Check(err));
+
+        PyException_SetCause(err, Py_NewRef(exc_val));
+        PyException_SetContext(err, Py_NewRef(exc_val));
         Py_DECREF(exc_val);
-        PyErr_SetString(PyExc_TypeError,
-                        "StopIteration interacts badly with generators "
-                        "and cannot be raised into a Future");
-        return NULL;
+        exc_val = err;
     }
 
     assert(!fut->fut_exception);
@@ -815,7 +832,7 @@ FutureObj_clear(FutureObj *fut)
     Py_CLEAR(fut->fut_source_tb);
     Py_CLEAR(fut->fut_cancel_msg);
     Py_CLEAR(fut->fut_cancelled_exc);
-    _PyObject_ClearManagedDict((PyObject *)fut);
+    PyObject_ClearManagedDict((PyObject *)fut);
     return 0;
 }
 
@@ -833,7 +850,7 @@ FutureObj_traverse(FutureObj *fut, visitproc visit, void *arg)
     Py_VISIT(fut->fut_source_tb);
     Py_VISIT(fut->fut_cancel_msg);
     Py_VISIT(fut->fut_cancelled_exc);
-    _PyObject_VisitManagedDict((PyObject *)fut, visit, arg);
+    PyObject_VisitManagedDict((PyObject *)fut, visit, arg);
     return 0;
 }
 
@@ -1398,7 +1415,8 @@ FutureObj_get_state(FutureObj *fut, void *Py_UNUSED(ignored))
     default:
         assert (0);
     }
-    return Py_XNewRef(ret);
+    assert(_Py_IsImmortal(ret));
+    return ret;
 }
 
 static PyObject *
@@ -2179,7 +2197,7 @@ TaskObj_traverse(TaskObj *task, visitproc visit, void *arg)
     Py_VISIT(fut->fut_source_tb);
     Py_VISIT(fut->fut_cancel_msg);
     Py_VISIT(fut->fut_cancelled_exc);
-    _PyObject_VisitManagedDict((PyObject *)fut, visit, arg);
+    PyObject_VisitManagedDict((PyObject *)fut, visit, arg);
     return 0;
 }
 
@@ -2751,7 +2769,6 @@ gen_status_from_result(PyObject **result)
 static PyObject *
 task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
 {
-    int res;
     int clear_exc = 0;
     PyObject *result = NULL;
     PyObject *coro;
@@ -2768,20 +2785,7 @@ task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
     if (task->task_must_cancel) {
         assert(exc != Py_None);
 
-        if (exc) {
-            /* Check if exc is a CancelledError */
-            res = PyObject_IsInstance(exc, state->asyncio_CancelledError);
-            if (res == -1) {
-                /* An error occurred, abort */
-                goto fail;
-            }
-            if (res == 0) {
-                /* exc is not CancelledError; reset it to NULL */
-                exc = NULL;
-            }
-        }
-
-        if (!exc) {
+        if (!exc || !PyErr_GivenExceptionMatches(exc, state->asyncio_CancelledError)) {
             /* exc was not a CancelledError */
             exc = create_cancelled_error(state, (FutureObj*)task);
 
@@ -3511,15 +3515,11 @@ _asyncio_current_task_impl(PyObject *module, PyObject *loop)
         Py_INCREF(loop);
     }
 
-    ret = PyDict_GetItemWithError(state->current_tasks, loop);
+    int rc = PyDict_GetItemRef(state->current_tasks, loop, &ret);
     Py_DECREF(loop);
-    if (ret == NULL && PyErr_Occurred()) {
-        return NULL;
-    }
-    else if (ret == NULL) {
+    if (rc == 0) {
         Py_RETURN_NONE;
     }
-    Py_INCREF(ret);
     return ret;
 }
 

@@ -3,10 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_long.h"          // _PyLong_UnsignedLong_Converter()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(py_sha3_new__doc__,
 "sha3_224(data=b\'\', /, *, usedforsecurity=True)\n"
@@ -193,4 +194,4 @@ _sha3_shake_128_hexdigest(SHA3object *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=907cb475f3dc9ee0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a8e76a880d1421ec input=a9049054013a1b77]*/

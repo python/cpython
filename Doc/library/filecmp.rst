@@ -100,7 +100,7 @@ The :class:`dircmp` class
    used to get various bits of information about the directory trees being
    compared.
 
-   Note that via :meth:`__getattr__` hooks, all attributes are computed lazily,
+   Note that via :meth:`~object.__getattr__` hooks, all attributes are computed lazily,
    so there is no speed penalty if only those attributes which are lightweight
    to compute are used.
 

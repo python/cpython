@@ -1,3 +1,6 @@
+// clinic/vectorcall.c.h uses internal pycore_modsupport.h API
+#define PYTESTCAPI_NEED_INTERNAL_API
+
 #include "parts.h"
 #include "clinic/vectorcall.c.h"
 
@@ -155,10 +158,9 @@ VectorCallClass_vectorcall(PyObject *callable,
 }
 
 /*[clinic input]
-module _testcapi
 class _testcapi.VectorCallClass "PyObject *" "&PyType_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=8423a8e919f2f0df]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=95c63c1a47f9a995]*/
 
 /*[clinic input]
 _testcapi.VectorCallClass.set_vectorcall
