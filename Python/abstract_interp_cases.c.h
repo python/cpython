@@ -921,7 +921,7 @@
             if(__attr_ == NULL) goto error;
             __self_or_null_ = sym_init_unknown(ctx);
             if(__self_or_null_ == NULL) goto error;
-            sym_set_type(__self_or_null_, NULL_TYPE, 0);
+            sym_set_type(__self_or_null_, SELF_OR_NULL, 0);
             stack_pointer[-1] = __attr_;
             if (oparg & 1) stack_pointer[0] = __self_or_null_;
             stack_pointer += (oparg & 1);

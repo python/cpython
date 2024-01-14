@@ -68,6 +68,8 @@ typedef enum {
     PYMETHOD_TYPE = 7,
     GUARD_DORV_VALUES_TYPE = 8,
     GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_TYPE = 9,
+    // Can't statically determine if self or null.
+    SELF_OR_NULL = 10,
 
     INVALID_TYPE = 31,
 } _Py_UOpsSymExprTypeEnum;
@@ -1198,8 +1200,11 @@ uop_abstract_interpret_single_inst(
                 goto error;
             }
             stack_pointer = ctx->frame->stack_pointer;
-            for (int i = 0; i < argcount; i++) {
-                sym_copy_type(args[i], ctx->frame->locals[i]);
+            // Cannot determine statically, so we can't propagate types.
+            if (!sym_is_type(self_or_null, SELF_OR_NULL)) {
+                for (int i = 0; i < argcount; i++) {
+                    sym_copy_type(args[i], ctx->frame->locals[i]);
+                }
             }
             break;
         }
