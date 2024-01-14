@@ -1356,7 +1356,20 @@ def _asdict_inner(obj, dict_factory):
             _asdict_inner(k, dict_factory): _asdict_inner(v, dict_factory)
             for k, v in obj.items()
         }
-    elif isinstance(obj, tuple):
+    elif obj_type is tuple:
+        return tuple([_asdict_inner(v, dict_factory) for v in obj])
+    elif issubclass(obj_type, dict):
+        if hasattr(obj_type, 'default_factory'):
+            # obj is a defaultdict, which has a different constructor from
+            # dict as it requires the default_factory as its first arg.
+            result = obj_type(getattr(obj, 'default_factory'))
+            for k, v in obj.items():
+                result[_asdict_inner(k, dict_factory)] = _asdict_inner(v, dict_factory)
+            return result
+        return obj_type((_asdict_inner(k, dict_factory),
+                         _asdict_inner(v, dict_factory))
+                         for k, v in obj.items())
+    elif issubclass(obj_type, tuple):
         if hasattr(obj, '_fields'):
             # obj is a namedtuple.  Recurse into it, but the returned
             # object is another namedtuple of the same type.  This is
@@ -1376,24 +1389,13 @@ def _asdict_inner(obj, dict_factory):
             #   dict.  Note that if we returned dicts here instead of
             #   namedtuples, we could no longer call asdict() on a data
             #   structure where a namedtuple was used as a dict key.
-            return type(obj)(*[_asdict_inner(v, dict_factory) for v in obj])
+            return obj_type(*[_asdict_inner(v, dict_factory) for v in obj])
         else:
-            return tuple([_asdict_inner(v, dict_factory) for v in obj])
+            return obj_type(_asdict_inner(v, dict_factory) for v in obj)
     elif issubclass(obj_type, list):
         # Assume we can create an object of this type by passing in a
         # generator
-        return type(obj)(_asdict_inner(v, dict_factory) for v in obj)
-    elif issubclass(obj_type, dict):
-        if hasattr(type(obj), 'default_factory'):
-            # obj is a defaultdict, which has a different constructor from
-            # dict as it requires the default_factory as its first arg.
-            result = type(obj)(getattr(obj, 'default_factory'))
-            for k, v in obj.items():
-                result[_asdict_inner(k, dict_factory)] = _asdict_inner(v, dict_factory)
-            return result
-        return type(obj)((_asdict_inner(k, dict_factory),
-                          _asdict_inner(v, dict_factory))
-                         for k, v in obj.items())
+        return obj_type(_asdict_inner(v, dict_factory) for v in obj)
     else:
         return copy.deepcopy(obj)
 
