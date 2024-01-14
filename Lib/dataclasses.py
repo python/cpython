@@ -1357,17 +1357,6 @@ def _asdict_inner(obj, dict_factory):
         }
     elif obj_type is tuple:
         return tuple([_asdict_inner(v, dict_factory) for v in obj])
-    elif issubclass(obj_type, dict):
-        if hasattr(obj_type, 'default_factory'):
-            # obj is a defaultdict, which has a different constructor from
-            # dict as it requires the default_factory as its first arg.
-            result = obj_type(obj.default_factory)
-            for k, v in obj.items():
-                result[_asdict_inner(k, dict_factory)] = _asdict_inner(v, dict_factory)
-            return result
-        return obj_type((_asdict_inner(k, dict_factory),
-                         _asdict_inner(v, dict_factory))
-                        for k, v in obj.items())
     elif issubclass(obj_type, tuple):
         if hasattr(obj, '_fields'):
             # obj is a namedtuple.  Recurse into it, but the returned
@@ -1395,6 +1384,17 @@ def _asdict_inner(obj, dict_factory):
         # Assume we can create an object of this type by passing in a
         # generator
         return obj_type(_asdict_inner(v, dict_factory) for v in obj)
+    elif issubclass(obj_type, dict):
+        if hasattr(obj_type, 'default_factory'):
+            # obj is a defaultdict, which has a different constructor from
+            # dict as it requires the default_factory as its first arg.
+            result = obj_type(obj.default_factory)
+            for k, v in obj.items():
+                result[_asdict_inner(k, dict_factory)] = _asdict_inner(v, dict_factory)
+            return result
+        return obj_type((_asdict_inner(k, dict_factory),
+                         _asdict_inner(v, dict_factory))
+                        for k, v in obj.items())
     else:
         return copy.deepcopy(obj)
 
