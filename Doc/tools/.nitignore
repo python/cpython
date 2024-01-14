@@ -25,7 +25,6 @@ Doc/glossary.rst
 Doc/howto/descriptor.rst
 Doc/howto/enum.rst
 Doc/howto/logging.rst
-Doc/howto/urllib2.rst
 Doc/library/2to3.rst
 Doc/library/aifc.rst
 Doc/library/ast.rst
@@ -57,7 +56,6 @@ Doc/library/fcntl.rst
 Doc/library/ftplib.rst
 Doc/library/functools.rst
 Doc/library/getopt.rst
-Doc/library/http.client.rst
 Doc/library/http.cookiejar.rst
 Doc/library/http.server.rst
 Doc/library/importlib.rst
