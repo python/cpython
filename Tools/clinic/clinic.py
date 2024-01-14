@@ -23,7 +23,6 @@ import os
 import pprint
 import re
 import shlex
-import string
 import sys
 import textwrap
 
@@ -270,24 +269,6 @@ class CRenderData:
         self.unlock: list[str] = []
 
 
-class FormatCounterFormatter(string.Formatter):
-    """
-    This counts how many instances of each formatter
-    "replacement string" appear in the format string.
-
-    e.g. after evaluating "string {a}, {b}, {c}, {a}"
-         the counts dict would now look like
-         {'a': 2, 'b': 1, 'c': 1}
-    """
-    def __init__(self) -> None:
-        self.counts = collections.Counter[str]()
-
-    def get_value(
-        self, key: str, args: object, kwargs: object  # type: ignore[override]
-    ) -> Literal['']:
-        self.counts[key] += 1
-        return ''
-
 class Language(metaclass=abc.ABCMeta):
 
     start_line = ""
@@ -341,7 +322,7 @@ class Language(metaclass=abc.ABCMeta):
             fields = ['dsl_name']
             fields.extend(additional_fields)
             line: str = getattr(self, attr)
-            fcf = FormatCounterFormatter()
+            fcf = libclinic.FormatCounterFormatter()
             fcf.format(line)
             def local_fail(should_be_there_but_isnt: bool) -> None:
                 if should_be_there_but_isnt:
