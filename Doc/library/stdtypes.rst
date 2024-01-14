@@ -2277,7 +2277,7 @@ expression support in the :mod:`re` module).
    .. versionchanged:: 3.13
       *count* is now supported as a keyword argument.
       
-      For example::
+   For example::
 
       >>> 'spam, spam, spam'.replace('spam', 'eggs')
       'eggs, eggs, eggs'
