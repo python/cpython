@@ -1151,6 +1151,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
 
     def test_matches_pathbase_api(self):
         our_names = {name for name in dir(self.cls) if name[0] != '_'}
+        our_names.remove('is_reserved')  # only present in PurePath
         path_names = {name for name in dir(pathlib._abc.PathBase) if name[0] != '_'}
         self.assertEqual(our_names, path_names)
         for attr_name in our_names:
