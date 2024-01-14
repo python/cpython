@@ -27,7 +27,7 @@ class PathModuleBaseTest(unittest.TestCase):
             m.sep
         self.assertRaises(e, m.join, 'foo')
         self.assertRaises(e, m.split, 'foo')
-        self.assertRaises(e, m.splitroot, 'foo')
+        self.assertRaises(e, m.splitdrive, 'foo')
         self.assertRaises(e, m.normcase, 'foo')
         self.assertRaises(e, m.isabs, 'foo')
 
