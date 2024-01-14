@@ -1,5 +1,3 @@
-import time
-
 import re
 import sys
 import copy
@@ -1337,7 +1335,8 @@ def _asdict_inner(obj, dict_factory):
     obj_type = type(obj)
     if obj_type in _ATOMIC_TYPES:
         return obj
-    elif _is_dataclass_instance(obj):
+    # dataclass instance
+    elif hasattr(obj_type, _FIELDS):
         # fast path for the common case
         if dict_factory is dict:
             return {
@@ -1362,13 +1361,13 @@ def _asdict_inner(obj, dict_factory):
         if hasattr(obj_type, 'default_factory'):
             # obj is a defaultdict, which has a different constructor from
             # dict as it requires the default_factory as its first arg.
-            result = obj_type(getattr(obj, 'default_factory'))
+            result = obj_type(obj.default_factory)
             for k, v in obj.items():
                 result[_asdict_inner(k, dict_factory)] = _asdict_inner(v, dict_factory)
             return result
         return obj_type((_asdict_inner(k, dict_factory),
                          _asdict_inner(v, dict_factory))
-                         for k, v in obj.items())
+                        for k, v in obj.items())
     elif issubclass(obj_type, tuple):
         if hasattr(obj, '_fields'):
             # obj is a namedtuple.  Recurse into it, but the returned
