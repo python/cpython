@@ -3528,7 +3528,7 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
 
     /* connect() failed */
 
-    /* save error, PyErr_CheckSignals() can replace it */
+    /* save error, PyErr_CheckSignals() / internal_setblocking() can replace it */
     err = GET_SOCK_ERROR;
 
     if (s->sock_timeout > 0) {
@@ -3537,7 +3537,7 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
         }
     }
 
-    if (CHECK_ERRNO(EINTR)) {
+    if (err == EINTR) {
         if (PyErr_CheckSignals())
             return -1;
 
@@ -3560,7 +3560,8 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
 
     if (!wait_connect) {
         if (raise) {
-            /* restore error, maybe replaced by PyErr_CheckSignals() */
+            /* restore error, maybe replaced by PyErr_CheckSignals() or
+               internal_setblocing() */
             SET_SOCK_ERROR(err);
             s->errorhandler();
             return -1;
