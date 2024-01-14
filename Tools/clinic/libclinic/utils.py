@@ -37,8 +37,9 @@ def create_regex(
 ) -> re.Pattern[str]:
     """Create a regex object for matching marker lines."""
     group_re = r"\w+" if word else ".+"
-    pattern = r"{}({}){}"
+    before = re.escape(before)
+    after = re.escape(after)
+    pattern = fr"{before}({group_re}){after}"
     if whole_line:
-        pattern = "^" + pattern + "$"
-    pattern = pattern.format(re.escape(before), group_re, re.escape(after))
+        pattern = fr"^{pattern}$"
     return re.compile(pattern)
