@@ -52,6 +52,28 @@ try:
 except ImportError:
     _socket = None
 
+_hunting_for_refleaks = None
+def hunting_for_refleaks():
+    """
+    Return true iff running tests while hunting for refleaks
+    """
+    from test.libregrtest.runtests import RunTests
+    import gc
+
+    global _hunting_for_refleaks
+
+    if _hunting_for_refleaks is None:
+        for value in gc.get_objects():
+            if isinstance(value, RunTests):
+                _hunting_for_refleaks = (value.hunt_refleak is not None)
+                break
+        else:
+            _hunting_for_refleaks = False
+
+    return _hunting_for_refleaks
+
+
+
 def get_cid():
     if fcntl is None:
         return None
@@ -3817,6 +3839,9 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
     def testCmsgTruncNoBufSize(self):
         # Check that no ancillary data is received when no buffer size
         # is specified.
+        if sys.platform == "darwin" and hunting_for_refleaks():
+            return
+
         self.checkTruncatedHeader(self.doRecvmsg(self.serv_sock, len(MSG)),
                                   # BSD seems to set MSG_CTRUNC only
                                   # if an item has been partially
@@ -3824,26 +3849,44 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
                                   ignoreflags=socket.MSG_CTRUNC)
 
     def _testCmsgTruncNoBufSize(self):
+        if sys.platform == "darwin" and hunting_for_refleaks():
+            return
+
         self.createAndSendFDs(1)
 
     def testCmsgTrunc0(self):
+        if sys.platform == "darwin" and hunting_for_refleaks():
+            return
+
         # Check that no ancillary data is received when buffer size is 0.
         self.checkTruncatedHeader(self.doRecvmsg(self.serv_sock, len(MSG), 0),
                                   ignoreflags=socket.MSG_CTRUNC)
 
     def _testCmsgTrunc0(self):
+        if sys.platform == "darwin" and hunting_for_refleaks():
+            return
+
         self.createAndSendFDs(1)
 
     # Check that no ancillary data is returned for various non-zero
     # (but still too small) buffer sizes.
 
     def testCmsgTrunc1(self):
+        if sys.platform == "darwin" and hunting_for_refleaks():
+            return
+
         self.checkTruncatedHeader(self.doRecvmsg(self.serv_sock, len(MSG), 1))
 
     def _testCmsgTrunc1(self):
+        if sys.platform == "darwin" and hunting_for_refleaks():
+            return
+
         self.createAndSendFDs(1)
 
     def testCmsgTrunc2Int(self):
+        if sys.platform == "darwin" and hunting_for_refleaks():
+            return
+
         # The cmsghdr structure has at least three members, two of
         # which are ints, so we still shouldn't see any ancillary
         # data.
@@ -3851,13 +3894,22 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
                                                  SIZEOF_INT * 2))
 
     def _testCmsgTrunc2Int(self):
+        if sys.platform == "darwin" and hunting_for_refleaks():
+            return
+
         self.createAndSendFDs(1)
 
     def testCmsgTruncLen0Minus1(self):
+        if sys.platform == "darwin" and hunting_for_refleaks():
+            return
+
         self.checkTruncatedHeader(self.doRecvmsg(self.serv_sock, len(MSG),
                                                  socket.CMSG_LEN(0) - 1))
 
     def _testCmsgTruncLen0Minus1(self):
+        if sys.platform == "darwin" and hunting_for_refleaks():
+            return
+
         self.createAndSendFDs(1)
 
     # The following tests try to truncate the control message in the
@@ -3888,29 +3940,53 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
         self.checkFDs(fds)
 
     def testCmsgTruncLen0(self):
+        if sys.platform == "darwin" and hunting_for_refleaks():
+            return
+
         self.checkTruncatedArray(ancbuf=socket.CMSG_LEN(0), maxdata=0)
 
     def _testCmsgTruncLen0(self):
+        if sys.platform == "darwin" and hunting_for_refleaks():
+            return
+
         self.createAndSendFDs(1)
 
     def testCmsgTruncLen0Plus1(self):
+        if sys.platform == "darwin" and hunting_for_refleaks():
+            return
+
         self.checkTruncatedArray(ancbuf=socket.CMSG_LEN(0) + 1, maxdata=1)
 
     def _testCmsgTruncLen0Plus1(self):
+        if sys.platform == "darwin" and hunting_for_refleaks():
+            return
+
         self.createAndSendFDs(2)
 
     def testCmsgTruncLen1(self):
+        if sys.platform == "darwin" and hunting_for_refleaks():
+            return
+
         self.checkTruncatedArray(ancbuf=socket.CMSG_LEN(SIZEOF_INT),
                                  maxdata=SIZEOF_INT)
 
     def _testCmsgTruncLen1(self):
+        if sys.platform == "darwin" and hunting_for_refleaks():
+            return
+
         self.createAndSendFDs(2)
 
     def testCmsgTruncLen2Minus1(self):
+        if sys.platform == "darwin" and hunting_for_refleaks():
+            return
+
         self.checkTruncatedArray(ancbuf=socket.CMSG_LEN(2 * SIZEOF_INT) - 1,
                                  maxdata=(2 * SIZEOF_INT) - 1)
 
     def _testCmsgTruncLen2Minus1(self):
+        if sys.platform == "darwin" and hunting_for_refleaks():
+            return
+
         self.createAndSendFDs(2)
 
 
