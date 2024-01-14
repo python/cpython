@@ -1,6 +1,9 @@
+import collections
 import hashlib
-import re
 import os
+import re
+import string
+from typing import Literal
 
 
 def write_file(filename: str, new_contents: str) -> None:
@@ -39,7 +42,27 @@ def create_regex(
     group_re = r"\w+" if word else ".+"
     before = re.escape(before)
     after = re.escape(after)
-    pattern = fr"{before}({group_re}){after}"
+    pattern = rf"{before}({group_re}){after}"
     if whole_line:
-        pattern = fr"^{pattern}$"
+        pattern = rf"^{pattern}$"
     return re.compile(pattern)
+
+
+class FormatCounterFormatter(string.Formatter):
+    """
+    This counts how many instances of each formatter
+    "replacement string" appear in the format string.
+
+    e.g. after evaluating "string {a}, {b}, {c}, {a}"
+         the counts dict would now look like
+         {'a': 2, 'b': 1, 'c': 1}
+    """
+
+    def __init__(self) -> None:
+        self.counts = collections.Counter[str]()
+
+    def get_value(
+        self, key: str, args: object, kwargs: object  # type: ignore[override]
+    ) -> Literal[""]:
+        self.counts[key] += 1
+        return ""
