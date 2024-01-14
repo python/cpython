@@ -1637,7 +1637,7 @@ expression support in the :mod:`re` module).
    <dd>
    <details>
    <summary><a style="cursor:pointer;">See example</a></summary>
-      
+
 >>> 'PYTHON IS AMAZING'.capitalize()
 'Python is amazing'
 >>> 'ǋemačka Starts With a non-english Digraph'.capitalize()
@@ -1670,7 +1670,7 @@ expression support in the :mod:`re` module).
    <dd>
    <details>
    <summary><a style="cursor:pointer;">See example</a></summary>
-      
+
 >>> 'ß'.casefold()
 'ss'
 >>> 'ß'.lower()
@@ -1693,7 +1693,7 @@ expression support in the :mod:`re` module).
    <dd>
    <details>
    <summary><a style="cursor:pointer;">See example</a></summary>
-      
+
 >>> 'Python'.center(10)
 '  Python  '
 >>> 'Python'.center(10, '-')
@@ -1721,7 +1721,7 @@ expression support in the :mod:`re` module).
    <dd>
    <details>
    <summary><a style="cursor:pointer;">See example</a></summary>
-      
+
 >>> 'spam, spam, spam'.count('spam')
 3
 >>> 'spam, spam, spam'.count('spam', 5)
@@ -2276,7 +2276,7 @@ expression support in the :mod:`re` module).
 
    .. versionchanged:: 3.13
       *count* is now supported as a keyword argument.
-      
+
    For example::
 
       >>> 'spam, spam, spam'.replace('spam', 'eggs')
