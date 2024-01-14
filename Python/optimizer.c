@@ -802,10 +802,8 @@ uop_optimize(
         return err;
     }
     OPT_STAT_INC(traces_created);
-    err = _Py_uop_analyze_and_optimize(code, buffer, UOP_MAX_TRACE_LENGTH, curr_stackentries);
-    if (err < 0) {
-        return -1;
-    }
+    // This clears its errors, so if it fails it just doesn't optimize.
+    _Py_uop_analyze_and_optimize(code, buffer, UOP_MAX_TRACE_LENGTH, curr_stackentries);
     _PyExecutorObject *executor = make_executor_from_uops(buffer, &dependencies);
     if (executor == NULL) {
         return -1;

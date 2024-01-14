@@ -3440,7 +3440,7 @@
                            something was returned by a descriptor protocol).  Set
                            the second element of the stack to NULL, to signal
                            CALL that it's not a method call.
-                           NULL | meth | arg1 | ... | argN
+                           meth | NULL | arg1 | ... | argN
                          */
                         Py_DECREF(owner);
                         if (attr == NULL) goto pop_1_error;

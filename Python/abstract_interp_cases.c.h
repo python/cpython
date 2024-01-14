@@ -620,6 +620,10 @@
         }
 
         case _UNPACK_SEQUENCE: {
+            for (int case_gen_i = 0; case_gen_i < oparg; case_gen_i++) {
+                *(stack_pointer + case_gen_i) = sym_init_unknown(ctx);
+                if(*(stack_pointer + case_gen_i) == NULL) goto error;
+            }
             stack_pointer += -1 + oparg;
             break;
         }
@@ -628,8 +632,8 @@
             PyObject **__values_;
             __values_ = &stack_pointer[-1];
             for (int case_gen_i = 0; case_gen_i < oparg; case_gen_i++) {
-                __values_[case_gen_i] = sym_init_unknown(ctx);
-                if(__values_[case_gen_i] == NULL) goto error;
+                *(stack_pointer + case_gen_i) = sym_init_unknown(ctx);
+                if(*(stack_pointer + case_gen_i) == NULL) goto error;
             }
             stack_pointer += -1 + oparg;
             break;
@@ -639,8 +643,8 @@
             PyObject **__values_;
             __values_ = &stack_pointer[-1];
             for (int case_gen_i = 0; case_gen_i < oparg; case_gen_i++) {
-                __values_[case_gen_i] = sym_init_unknown(ctx);
-                if(__values_[case_gen_i] == NULL) goto error;
+                *(stack_pointer + case_gen_i) = sym_init_unknown(ctx);
+                if(*(stack_pointer + case_gen_i) == NULL) goto error;
             }
             stack_pointer += -1 + oparg;
             break;
@@ -650,14 +654,22 @@
             PyObject **__values_;
             __values_ = &stack_pointer[-1];
             for (int case_gen_i = 0; case_gen_i < oparg; case_gen_i++) {
-                __values_[case_gen_i] = sym_init_unknown(ctx);
-                if(__values_[case_gen_i] == NULL) goto error;
+                *(stack_pointer + case_gen_i) = sym_init_unknown(ctx);
+                if(*(stack_pointer + case_gen_i) == NULL) goto error;
             }
             stack_pointer += -1 + oparg;
             break;
         }
 
         case _UNPACK_EX: {
+            for (int case_gen_i = 0; case_gen_i < oparg & 0xFF; case_gen_i++) {
+                *(stack_pointer + case_gen_i) = sym_init_unknown(ctx);
+                if(*(stack_pointer + case_gen_i) == NULL) goto error;
+            }
+            for (int case_gen_i = 0; case_gen_i < oparg >> 8; case_gen_i++) {
+                *(stack_pointer + case_gen_i) = sym_init_unknown(ctx);
+                if(*(stack_pointer + case_gen_i) == NULL) goto error;
+            }
             stack_pointer += (oparg >> 8) + (oparg & 0xFF);
             break;
         }
@@ -909,6 +921,7 @@
             if(__attr_ == NULL) goto error;
             __self_or_null_ = sym_init_unknown(ctx);
             if(__self_or_null_ == NULL) goto error;
+            sym_set_type(__self_or_null_, NULL_TYPE, 0);
             stack_pointer[-1] = __attr_;
             if (oparg & 1) stack_pointer[0] = __self_or_null_;
             stack_pointer += (oparg & 1);
@@ -1419,6 +1432,7 @@
             _Py_UOpsSymbolicExpression *__next_;
             __next_ = sym_init_unknown(ctx);
             if(__next_ == NULL) goto error;
+            sym_set_type(__next_, PYLONG_TYPE, 0);
             stack_pointer[0] = __next_;
             stack_pointer += 1;
             break;

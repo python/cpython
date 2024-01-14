@@ -289,6 +289,7 @@ typedef struct sym_arena {
 
 typedef struct frequent_syms {
     _Py_UOpsSymbolicExpression *nulL_sym;
+    _Py_UOpsSymbolicExpression *push_nulL_sym;
 } frequent_syms;
 
 // Tier 2 types meta interpreter
@@ -320,7 +321,7 @@ abstractinterp_dealloc(PyObject *o)
 {
     _Py_UOpsAbstractInterpContext *self = (_Py_UOpsAbstractInterpContext *)o;
     Py_XDECREF(self->frame);
-    Py_DECREF(self->ir);
+    Py_XDECREF(self->ir);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
@@ -422,7 +423,7 @@ abstractinterp_context_new(PyCodeObject *co,
     // IR and sym setup
     self->ir = ir;
     self->frequent_syms.nulL_sym = NULL;
-
+    self->frequent_syms.push_nulL_sym = NULL;
 
     return self;
 
@@ -431,6 +432,8 @@ error:
     if (self != NULL) {
         self->s_arena.arena = NULL;
     }
+    self->frame = NULL;
+    self->ir = NULL;
     Py_XDECREF(self);
     Py_XDECREF(ir);
     Py_XDECREF(frame);
@@ -559,15 +562,25 @@ sym_type_get_refinement(_Py_UOpsSymbolicExpression *sym, _Py_UOpsSymExprTypeEnum
 static inline PyFunctionObject *
 extract_func_from_sym(_Py_UOpsSymbolicExpression *frame_sym)
 {
+#ifdef Py_DEBUG
+char *uop_debug = Py_GETENV(DEBUG_ENV);
+    int lltrace = 0;
+    if (uop_debug != NULL && *uop_debug >= '0') {
+        lltrace = *uop_debug - '0';  // TODO: Parse an int and all that
+    }
+    DPRINTF(3, "write_stack_to_ir\n");
+#endif
     switch(frame_sym->inst.opcode) {
         case _INIT_CALL_PY_EXACT_ARGS: {
             _Py_UOpsSymbolicExpression *callable_sym = frame_sym->operands[0];
             if (!sym_is_type(callable_sym, PYFUNCTION_TYPE_VERSION_TYPE)) {
+                DPRINTF(2, "error: _PUSH_FRAME not function type\n");
                 return NULL;
             }
             uint64_t func_version = sym_type_get_refinement(callable_sym, PYFUNCTION_TYPE_VERSION_TYPE);
             PyFunctionObject *func = _PyFunction_LookupByVersion((uint32_t)func_version);
             if (func == NULL) {
+                DPRINTF(2, "error: _PUSH_FRAME cannot find func version\n");
                 return NULL;
             }
             return func;
@@ -824,10 +837,25 @@ sym_init_null(_Py_UOpsAbstractInterpContext *ctx)
     if (null_sym == NULL) {
         return NULL;
     }
-    null_sym->inst.opcode = PUSH_NULL;
     sym_set_type(null_sym, NULL_TYPE, 0);
     ctx->frequent_syms.nulL_sym = null_sym;
 
+    return null_sym;
+}
+
+static _Py_UOpsSymbolicExpression*
+sym_init_push_null(_Py_UOpsAbstractInterpContext *ctx)
+{
+    if (ctx->frequent_syms.push_nulL_sym != NULL) {
+        return ctx->frequent_syms.push_nulL_sym;
+    }
+    _Py_UOpsSymbolicExpression *null_sym = sym_init_unknown(ctx);
+    if (null_sym == NULL) {
+        return NULL;
+    }
+    null_sym->inst.opcode = PUSH_NULL;
+    sym_set_type(null_sym, NULL_TYPE, 0);
+    ctx->frequent_syms.push_nulL_sym = null_sym;
     return null_sym;
 }
 
@@ -994,7 +1022,6 @@ GETITEM(_Py_UOpsAbstractInterpContext *ctx, Py_ssize_t i) {
 
 static int
 uop_abstract_interpret_single_inst(
-    PyCodeObject *co,
     _PyUOpInstruction *inst,
     _PyUOpInstruction *end,
     _Py_UOpsAbstractInterpContext *ctx
@@ -1009,7 +1036,7 @@ uop_abstract_interpret_single_inst(
 #endif
 
 #define STACK_LEVEL()     ((int)(stack_pointer - ctx->frame->stack))
-#define STACK_SIZE()      (co->co_stacksize)
+#define STACK_SIZE()      (ctx->frame->stack_len)
 #define BASIC_STACKADJ(n) (stack_pointer += n)
 
 #ifdef Py_DEBUG
@@ -1056,29 +1083,34 @@ uop_abstract_interpret_single_inst(
         case LOAD_FAST_CHECK:
             STACK_GROW(1);
             PEEK(1) = GETLOCAL(oparg);
-            // Value might be uninitialized, and might error.
-            if(PEEK(1)->inst.opcode == INIT_FAST) {
-                // In that case, to be safe, treat it as an impure region
-                ctx->curr_region_id++;
-                ctx->frame->stack_pointer = stack_pointer;
-                write_stack_to_ir(ctx, inst, true);
-            }
+            assert(PEEK(1)->inst.opcode == INIT_FAST);
+            PEEK(1)->inst.opcode = LOAD_FAST_CHECK;
+            ctx->frame->stack_pointer = stack_pointer;
+            write_stack_to_ir(ctx, inst, true);
             break;
         case LOAD_FAST:
             STACK_GROW(1);
             // Guaranteed by the CPython bytecode compiler to not be uninitialized.
             PEEK(1) = GETLOCAL(oparg);
+            if (sym_is_type(PEEK(1), NULL_TYPE)) {
+                PEEK(1)->inst.opcode = LOAD_FAST_CHECK;
+            }
             assert(PEEK(1));
 
             break;
         case LOAD_FAST_AND_CLEAR: {
             STACK_GROW(1);
             PEEK(1) = GETLOCAL(oparg);
-            _Py_UOpsSymbolicExpression *null_sym =  sym_init_null(ctx);
-            if (null_sym == NULL) {
+            assert(PEEK(1)->inst.opcode == INIT_FAST);
+            PEEK(1)->inst.opcode = LOAD_FAST_AND_CLEAR;
+            ctx->frame->stack_pointer = stack_pointer;
+            write_stack_to_ir(ctx, inst, true);
+            _Py_UOpsSymbolicExpression *new_local =  sym_init_var(ctx, oparg);
+            if (new_local == NULL) {
                 goto error;
             }
-            GETLOCAL(oparg) = null_sym;
+            sym_set_type(new_local, NULL_TYPE, 0);
+            GETLOCAL(oparg) = new_local;
             break;
         }
         case LOAD_CONST: {
@@ -1101,6 +1133,8 @@ uop_abstract_interpret_single_inst(
             break;
         }
         case COPY: {
+            write_stack_to_ir(ctx, inst, true);
+            ir_plain_inst(ctx->ir, *inst);
             _Py_UOpsSymbolicExpression *bottom = PEEK(1 + (oparg - 1));
             STACK_GROW(1);
             _Py_UOpsSymbolicExpression *temp = sym_init_unknown(ctx);
@@ -1120,7 +1154,7 @@ uop_abstract_interpret_single_inst(
 
         case PUSH_NULL: {
             STACK_GROW(1);
-            _Py_UOpsSymbolicExpression *null_sym =  sym_init_null(ctx);
+            _Py_UOpsSymbolicExpression *null_sym =  sym_init_push_null(ctx);
             if (null_sym == NULL) {
                 goto error;
             }
@@ -1309,7 +1343,7 @@ uop_abstract_interpret(
         }
 
         status = uop_abstract_interpret_single_inst(
-            co, curr, end, ctx
+            curr, end, ctx
         );
         if (status == ABSTRACT_INTERP_ERROR) {
             goto error;
@@ -1635,6 +1669,9 @@ _Py_uop_analyze_and_optimize(
 
     return 0;
 error:
+    if (PyErr_Occurred()) {
+        PyErr_Clear();
+    }
     PyMem_Free(temp_writebuffer);
     return -1;
 }

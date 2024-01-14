@@ -121,7 +121,7 @@ def _write_body_abstract_interp_impure_uop(
     # Simply make all outputs effects unknown
 
     for var in mangled_uop.stack.outputs:
-        if var.name in UNUSED or var.peek:
+        if (var.name in UNUSED and var.size == "1") or var.peek:
             continue
 
         if var.size == "1":
@@ -129,12 +129,17 @@ def _write_body_abstract_interp_impure_uop(
             out.emit(f"if({var.name} == NULL) goto error;\n")
             if var.name in ("null", "__null_"):
                 out.emit(f"sym_set_type({var.name}, NULL_TYPE, 0);\n")
+            elif var.type_prop:
+                out.emit(f"sym_set_type({var.name}, {var.type_prop[0]}, 0);\n")
         else:
+            # See UNPACK_SEQUENCE for when we need this.
             out.emit(
                 f"for (int case_gen_i = 0; case_gen_i < {var.size}; case_gen_i++) {{\n"
             )
-            out.emit(f"{var.name}[case_gen_i] = sym_init_unknown(ctx);\n")
-            out.emit(f"if({var.name}[case_gen_i] == NULL) goto error;\n")
+            out.emit(f"*(stack_pointer + case_gen_i) = sym_init_unknown(ctx);\n")
+            out.emit(f"if(*(stack_pointer + case_gen_i) == NULL) goto error;\n")
+            if var.type_prop:
+                out.emit(f"sym_set_type(*(stack_pointer + case_gen_i), {var.type_prop[0]}, 0);\n")
             out.emit("}\n")
 
 
