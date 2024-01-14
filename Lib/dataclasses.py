@@ -1,3 +1,5 @@
+import time
+
 import re
 import sys
 import copy
@@ -1332,7 +1334,8 @@ def asdict(obj, *, dict_factory=dict):
 
 
 def _asdict_inner(obj, dict_factory):
-    if type(obj) in _ATOMIC_TYPES:
+    obj_type = type(obj)
+    if obj_type in _ATOMIC_TYPES:
         return obj
     elif _is_dataclass_instance(obj):
         # fast path for the common case
@@ -1346,33 +1349,41 @@ def _asdict_inner(obj, dict_factory):
                 (f.name, _asdict_inner(getattr(obj, f.name), dict_factory))
                 for f in fields(obj)
             ])
-    elif isinstance(obj, tuple) and hasattr(obj, '_fields'):
-        # obj is a namedtuple.  Recurse into it, but the returned
-        # object is another namedtuple of the same type.  This is
-        # similar to how other list- or tuple-derived classes are
-        # treated (see below), but we just need to create them
-        # differently because a namedtuple's __init__ needs to be
-        # called differently (see bpo-34363).
+    elif obj_type is list:
+        return [_asdict_inner(v, dict_factory) for v in obj]
+    elif obj_type is dict:
+        return {
+            _asdict_inner(k, dict_factory): _asdict_inner(v, dict_factory)
+            for k, v in obj.items()
+        }
+    elif isinstance(obj, tuple):
+        if hasattr(obj, '_fields'):
+            # obj is a namedtuple.  Recurse into it, but the returned
+            # object is another namedtuple of the same type.  This is
+            # similar to how other list- or tuple-derived classes are
+            # treated (see below), but we just need to create them
+            # differently because a namedtuple's __init__ needs to be
+            # called differently (see bpo-34363).
 
-        # I'm not using namedtuple's _asdict()
-        # method, because:
-        # - it does not recurse in to the namedtuple fields and
-        #   convert them to dicts (using dict_factory).
-        # - I don't actually want to return a dict here.  The main
-        #   use case here is json.dumps, and it handles converting
-        #   namedtuples to lists.  Admittedly we're losing some
-        #   information here when we produce a json list instead of a
-        #   dict.  Note that if we returned dicts here instead of
-        #   namedtuples, we could no longer call asdict() on a data
-        #   structure where a namedtuple was used as a dict key.
-
-        return type(obj)(*[_asdict_inner(v, dict_factory) for v in obj])
-    elif isinstance(obj, (list, tuple)):
+            # I'm not using namedtuple's _asdict()
+            # method, because:
+            # - it does not recurse in to the namedtuple fields and
+            #   convert them to dicts (using dict_factory).
+            # - I don't actually want to return a dict here.  The main
+            #   use case here is json.dumps, and it handles converting
+            #   namedtuples to lists.  Admittedly we're losing some
+            #   information here when we produce a json list instead of a
+            #   dict.  Note that if we returned dicts here instead of
+            #   namedtuples, we could no longer call asdict() on a data
+            #   structure where a namedtuple was used as a dict key.
+            return type(obj)(*[_asdict_inner(v, dict_factory) for v in obj])
+        else:
+            return tuple([_asdict_inner(v, dict_factory) for v in obj])
+    elif issubclass(obj_type, list):
         # Assume we can create an object of this type by passing in a
-        # generator (which is not true for namedtuples, handled
-        # above).
+        # generator
         return type(obj)(_asdict_inner(v, dict_factory) for v in obj)
-    elif isinstance(obj, dict):
+    elif issubclass(obj_type, dict):
         if hasattr(type(obj), 'default_factory'):
             # obj is a defaultdict, which has a different constructor from
             # dict as it requires the default_factory as its first arg.
