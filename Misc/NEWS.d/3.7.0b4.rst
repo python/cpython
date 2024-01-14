@@ -371,8 +371,8 @@ suffixes).
 .. nonce: o7G_UO
 .. section: Build
 
-By default, modules configured in `Modules/Setup` are no longer built with
-`-DPy_BUILD_CORE`. Instead, modules that specifically need that preprocessor
+By default, modules configured in ``Modules/Setup`` are no longer built with
+``-DPy_BUILD_CORE``. Instead, modules that specifically need that preprocessor
 definition include it in their individual entries.
 
 ..

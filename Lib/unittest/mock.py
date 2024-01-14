@@ -212,17 +212,12 @@ def _set_async_signature(mock, original, instance=False, is_async_mock=False):
     # signature as the original.
 
     skipfirst = isinstance(original, type)
-    result = _get_signature_object(original, instance, skipfirst)
-    if result is None:
-        return mock
-    func, sig = result
+    func, sig = _get_signature_object(original, instance, skipfirst)
     def checksig(*args, **kwargs):
         sig.bind(*args, **kwargs)
     _copy_func_details(func, checksig)
 
     name = original.__name__
-    if not name.isidentifier():
-        name = 'funcopy'
     context = {'_checksig_': checksig, 'mock': mock}
     src = """async def %s(*args, **kwargs):
     _checksig_(*args, **kwargs)
@@ -862,7 +857,7 @@ class NonCallableMock(Base):
 
 
     def _format_mock_failure_message(self, args, kwargs, action='call'):
-        message = 'expected %s not found.\nExpected: %s\nActual: %s'
+        message = 'expected %s not found.\nExpected: %s\n  Actual: %s'
         expected_string = self._format_mock_call_signature(args, kwargs)
         call_args = self.call_args
         actual_string = self._format_mock_call_signature(*call_args)
@@ -965,7 +960,7 @@ class NonCallableMock(Base):
         if self.call_args is None:
             expected = self._format_mock_call_signature(args, kwargs)
             actual = 'not called.'
-            error_message = ('expected call not found.\nExpected: %s\nActual: %s'
+            error_message = ('expected call not found.\nExpected: %s\n  Actual: %s'
                     % (expected, actual))
             raise AssertionError(error_message)
 
@@ -1015,8 +1010,8 @@ class NonCallableMock(Base):
                                     for e in expected])
                 raise AssertionError(
                     f'{problem}\n'
-                    f'Expected: {_CallList(calls)}'
-                    f'{self._calls_repr(prefix="Actual").rstrip(".")}'
+                    f'Expected: {_CallList(calls)}\n'
+                    f'  Actual: {safe_repr(self.mock_calls)}'
                 ) from cause
             return
 
@@ -1090,7 +1085,7 @@ class NonCallableMock(Base):
         return klass(**kw)
 
 
-    def _calls_repr(self, prefix="Calls"):
+    def _calls_repr(self):
         """Renders self.mock_calls as a string.
 
         Example: "\nCalls: [call(1), call(2)]."
@@ -1100,7 +1095,7 @@ class NonCallableMock(Base):
         """
         if not self.mock_calls:
             return ""
-        return f"\n{prefix}: {safe_repr(self.mock_calls)}."
+        return f"\nCalls: {safe_repr(self.mock_calls)}."
 
 
 # Denylist for forbidden attribute names in safe mode
@@ -2234,8 +2229,11 @@ class MagicProxy(Base):
         return self.create_mock()
 
 
-_CODE_ATTRS = dir(CodeType)
-_CODE_SIG = inspect.signature(partial(CodeType.__init__, None))
+try:
+    _CODE_SIG = inspect.signature(partial(CodeType.__init__, None))
+    _CODE_ATTRS = dir(CodeType)
+except ValueError:
+    _CODE_SIG = None
 
 
 class AsyncMockMixin(Base):
@@ -2255,9 +2253,12 @@ class AsyncMockMixin(Base):
         self.__dict__['_mock_await_count'] = 0
         self.__dict__['_mock_await_args'] = None
         self.__dict__['_mock_await_args_list'] = _CallList()
-        code_mock = NonCallableMock(spec_set=_CODE_ATTRS)
-        code_mock.__dict__["_spec_class"] = CodeType
-        code_mock.__dict__["_spec_signature"] = _CODE_SIG
+        if _CODE_SIG:
+            code_mock = NonCallableMock(spec_set=_CODE_ATTRS)
+            code_mock.__dict__["_spec_class"] = CodeType
+            code_mock.__dict__["_spec_signature"] = _CODE_SIG
+        else:
+            code_mock = NonCallableMock(spec_set=CodeType)
         code_mock.co_flags = (
             inspect.CO_COROUTINE
             + inspect.CO_VARARGS
@@ -3012,9 +3013,7 @@ class ThreadingMixin(Base):
     DEFAULT_TIMEOUT = None
 
     def _get_child_mock(self, /, **kw):
-        if "timeout" in kw:
-            kw["timeout"] = kw.pop("timeout")
-        elif isinstance(kw.get("parent"), ThreadingMixin):
+        if isinstance(kw.get("parent"), ThreadingMixin):
             kw["timeout"] = kw["parent"]._mock_wait_timeout
         elif isinstance(kw.get("_new_parent"), ThreadingMixin):
             kw["timeout"] = kw["_new_parent"]._mock_wait_timeout
@@ -3070,7 +3069,7 @@ class ThreadingMixin(Base):
                    f" timeout({timeout}).")
             raise AssertionError(msg)
 
-    def wait_until_any_call(self, *args, **kwargs):
+    def wait_until_any_call_with(self, *args, **kwargs):
         """Wait until the mock object is called with given args.
 
         Waits for the timeout in seconds provided in the constructor.

@@ -4,6 +4,7 @@ import sys
 import textwrap
 import unittest
 
+from test import support
 from test.support.bytecode_helper import BytecodeTestCase, CfgOptimizationTestCase
 
 
@@ -522,6 +523,7 @@ class TestTranforms(BytecodeTestCase):
             return (y for x in a for y in [f(x)])
         self.assertEqual(count_instr_recursively(genexpr, 'FOR_ITER'), 1)
 
+    @support.requires_resource('cpu')
     def test_format_combinations(self):
         flags = '-+ #0'
         testcases = [
@@ -991,6 +993,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_NAME', 1, 11),
             ('POP_JUMP_IF_TRUE', lbl := self.Label(), 12),
             ('LOAD_CONST', 2, 13),
+            ('RETURN_VALUE', 13),
             lbl,
             ('LOAD_CONST', 3, 14),
             ('RETURN_VALUE', 14),
@@ -998,7 +1001,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         expected_insts = [
             ('LOAD_NAME', 1, 11),
             ('POP_JUMP_IF_TRUE', lbl := self.Label(), 12),
-            ('LOAD_CONST', 1, 13),
+            ('RETURN_CONST', 1, 13),
             lbl,
             ('RETURN_CONST', 2, 14),
         ]
@@ -1072,6 +1075,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('STORE_FAST', 1, 4),
             ('STORE_FAST', 1, 4),
             ('POP_TOP', 0, 4),
+            ('LOAD_CONST', 0, 5),
             ('RETURN_VALUE', 5)
         ]
         expected_insts = [
@@ -1080,7 +1084,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('NOP', 0, 3),
             ('STORE_FAST', 1, 4),
             ('POP_TOP', 0, 4),
-            ('RETURN_VALUE', 5)
+            ('RETURN_CONST', 0)
         ]
         self.cfg_optimization_test(insts, expected_insts, consts=list(range(3)), nlocals=1)
 
@@ -1092,6 +1096,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('STORE_FAST', 1, 4),
             ('STORE_FAST', 1, 4),
             ('STORE_FAST', 1, 4),
+            ('LOAD_CONST', 0, 5),
             ('RETURN_VALUE', 5)
         ]
         expected_insts = [
@@ -1100,7 +1105,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('NOP', 0, 3),
             ('POP_TOP', 0, 4),
             ('STORE_FAST', 1, 4),
-            ('RETURN_VALUE', 5)
+            ('RETURN_CONST', 0, 5)
         ]
         self.cfg_optimization_test(insts, expected_insts, consts=list(range(3)), nlocals=1)
 
@@ -1112,10 +1117,60 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('STORE_FAST', 1, 4),
             ('STORE_FAST', 1, 5),
             ('STORE_FAST', 1, 6),
+            ('LOAD_CONST', 0, 5),
             ('RETURN_VALUE', 5)
         ]
-        self.cfg_optimization_test(insts, insts, consts=list(range(3)), nlocals=1)
+        expected_insts = [
+            ('LOAD_CONST', 0, 1),
+            ('LOAD_CONST', 1, 2),
+            ('LOAD_CONST', 2, 3),
+            ('STORE_FAST', 1, 4),
+            ('STORE_FAST', 1, 5),
+            ('STORE_FAST', 1, 6),
+            ('RETURN_CONST', 0, 5)
+        ]
+        self.cfg_optimization_test(insts, expected_insts, consts=list(range(3)), nlocals=1)
 
+    def test_unconditional_jump_threading(self):
+
+        def get_insts(lno1, lno2, op1, op2):
+            return [
+                       lbl2 := self.Label(),
+                       ('LOAD_NAME', 0, 10),
+                       (op1, lbl1 := self.Label(), lno1),
+                       ('LOAD_NAME', 1, 20),
+                       lbl1,
+                       (op2, lbl2, lno2),
+                   ]
+
+
+        for op1 in ('JUMP', 'JUMP_NO_INTERRUPT'):
+            for op2 in ('JUMP', 'JUMP_NO_INTERRUPT'):
+                # different lines
+                lno1, lno2 = (4, 5)
+                with self.subTest(lno = (lno1, lno2), ops = (op1, op2)):
+                    insts = get_insts(lno1, lno2, op1, op2)
+                    expected_insts = [
+                        ('LOAD_NAME', 0, 10),
+                        ('NOP', 0, 4),
+                        (op2, 0, 5),
+                    ]
+                    self.cfg_optimization_test(insts, expected_insts, consts=list(range(5)))
+
+                # Threading
+                for lno1, lno2 in [(-1, -1), (-1, 5), (6, -1), (7, 7)]:
+                    with self.subTest(lno = (lno1, lno2), ops = (op1, op2)):
+                        insts = get_insts(lno1, lno2, op1, op2)
+                        lno = lno1 if lno1 != -1 else lno2
+                        if lno == -1:
+                            lno = 10  # Propagated from the line before
+
+                        op = 'JUMP' if 'JUMP' in (op1, op2) else 'JUMP_NO_INTERRUPT'
+                        expected_insts = [
+                            ('LOAD_NAME', 0, 10),
+                            (op, 0, lno),
+                        ]
+                        self.cfg_optimization_test(insts, expected_insts, consts=list(range(5)))
 
 if __name__ == "__main__":
     unittest.main()

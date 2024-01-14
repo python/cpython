@@ -5,6 +5,7 @@ import time
 import unittest
 import sys
 import os.path
+import zoneinfo
 
 class DateTimeTests(unittest.TestCase):
 
@@ -142,16 +143,12 @@ class LocaltimeTests(unittest.TestCase):
         t2 = utils.localtime(t0.replace(tzinfo=None))
         self.assertEqual(t1, t2)
 
-    # XXX: Need a more robust test for Olson's tzdata
-    @unittest.skipIf(sys.platform.startswith('win'),
-                     "Windows does not use Olson's TZ database")
-    @unittest.skipUnless(os.path.exists('/usr/share/zoneinfo') or
-                         os.path.exists('/usr/lib/zoneinfo'),
-                         "Can't find the Olson's TZ database")
-    @test.support.run_with_tz('Europe/Kiev')
+    @test.support.run_with_tz('Europe/Kyiv')
     def test_variable_tzname(self):
         t0 = datetime.datetime(1984, 1, 1, tzinfo=datetime.timezone.utc)
         t1 = utils.localtime(t0)
+        if t1.tzname() in ('Europe', 'UTC'):
+            self.skipTest("Can't find a Kyiv timezone database")
         self.assertEqual(t1.tzname(), 'MSK')
         t0 = datetime.datetime(1994, 1, 1, tzinfo=datetime.timezone.utc)
         t1 = utils.localtime(t0)
