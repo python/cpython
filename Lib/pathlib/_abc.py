@@ -165,12 +165,11 @@ class PathModuleBase:
         """
         self._unsupported('split()')
 
-    def splitroot(self, path):
-        """Split the pathname path into a 3-item tuple (drive, root, tail),
-        where *drive* is a device name or mount point, *root* is a string of
-        separators after the drive, and *tail* is everything after the root.
-        Any part may be empty."""
-        self._unsupported('splitroot()')
+    def splitdrive(self, path):
+        """Split the path into a 2-item tuple (drive, tail), where *drive* is
+        a device name or mount point, and *tail* is everything after the
+        drive. Either part may be empty."""
+        self._unsupported('splitdrive()')
 
     def normcase(self, path):
         """Normalize the case of the path."""
@@ -227,18 +226,17 @@ class PurePathBase:
     @property
     def drive(self):
         """The drive prefix (letter or UNC path), if any."""
-        return self.pathmod.splitroot(self._raw_path)[0]
+        return self.pathmod.splitdrive(self.anchor)[0]
 
     @property
     def root(self):
         """The root of the path, if any."""
-        return self.pathmod.splitroot(self._raw_path)[1]
+        return self.pathmod.splitdrive(self.anchor)[1]
 
     @property
     def anchor(self):
         """The concatenation of the drive and root, or ''."""
-        drive, root, _ =  self.pathmod.splitroot(self._raw_path)
-        return drive + root
+        return self._stack[0]
 
     @property
     def name(self):
