@@ -3,6 +3,7 @@ from test import support
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import threading_helper
+from test.support import refleak_helper
 
 import _thread as thread
 import array
@@ -52,27 +53,6 @@ try:
 except ImportError:
     _socket = None
 
-_hunting_for_refleaks = None
-def hunting_for_refleaks():
-    """
-    Return true iff running tests while hunting for refleaks
-    """
-    from test.libregrtest.runtests import RunTests
-    import gc
-
-    global _hunting_for_refleaks
-
-    if _hunting_for_refleaks is None:
-        for value in gc.get_objects():
-            if isinstance(value, RunTests):
-                _hunting_for_refleaks = (value.hunt_refleak is not None)
-                break
-        else:
-            _hunting_for_refleaks = False
-
-    return _hunting_for_refleaks
-
-
 def skipForRefleakHuntinIf(condition, issueref):
     if not condition:
         def decorator(f):
@@ -83,7 +63,7 @@ def skipForRefleakHuntinIf(condition, issueref):
         def decorator(f):
             @contextlib.wraps(f)
             def wrapper(*args, **kwds):
-                if hunting_for_refleaks():
+                if refleak_helper.hunting_for_refleaks():
                     raise unittest.SkipTest(f"ignore while hunting for refleaks, see {issueref}")
 
                 return f(*args, **kwds)
@@ -91,7 +71,7 @@ def skipForRefleakHuntinIf(condition, issueref):
             def client_skip(f):
                 @contextlib.wraps(f)
                 def wrapper(*args, **kwds):
-                    if hunting_for_refleaks():
+                    if refleak_helper.hunting_for_refleaks():
                         return
 
                     return f(*args, **kwds)
@@ -3886,9 +3866,6 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
 
     @testCmsgTrunc0.client_skip
     def _testCmsgTrunc0(self):
-        if sys.platform == "darwin" and hunting_for_refleaks():
-            return
-
         self.createAndSendFDs(1)
 
     # Check that no ancillary data is returned for various non-zero
