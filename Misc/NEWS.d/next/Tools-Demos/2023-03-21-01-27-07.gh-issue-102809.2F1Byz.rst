@@ -1,1 +1,0 @@
-``Misc/gdbinit`` was removed.

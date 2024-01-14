@@ -69,7 +69,7 @@ Task lifetime support
 =====================
 
 A third party task implementation should call the following functions to keep a task
-visible by :func:`asyncio.get_tasks` and :func:`asyncio.current_task`:
+visible by :func:`asyncio.all_tasks` and :func:`asyncio.current_task`:
 
 .. function:: _register_task(task)
 

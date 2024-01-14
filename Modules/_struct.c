@@ -7,12 +7,12 @@
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
+#include "pycore_bytesobject.h"   // _PyBytesWriter
+#include "pycore_long.h"          // _PyLong_AsByteArray()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "structmember.h"         // PyMemberDef
-#include <ctype.h>
+
+#include <stddef.h>               // offsetof()
 
 /*[clinic input]
 class Struct "PyStructObject *" "&PyStructType"
@@ -107,19 +107,22 @@ class cache_struct_converter(CConverter):
     type = 'PyStructObject *'
     converter = 'cache_struct_converter'
     c_default = "NULL"
+    broken_limited_capi = True
 
-    def parse_arg(self, argname, displayname):
-        return """
+    def parse_arg(self, argname, displayname, *, limited_capi):
+        assert not limited_capi
+        return self.format_code("""
             if (!{converter}(module, {argname}, &{paramname})) {{{{
                 goto exit;
             }}}}
-            """.format(argname=argname, paramname=self.name,
-                       converter=self.converter)
+            """,
+            argname=argname,
+            converter=self.converter)
 
     def cleanup(self):
         return "Py_XDECREF(%s);\n" % self.name
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=d6746621c2fb1a7d]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=c33b27d6b06006c6]*/
 
 static int cache_struct_converter(PyObject *, PyObject *, PyStructObject **);
 
@@ -1550,9 +1553,28 @@ prepare_s(PyStructObject *self)
     return -1;
 }
 
+static PyObject *
+s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    PyObject *self;
+
+    assert(type != NULL);
+    allocfunc alloc_func = PyType_GetSlot(type, Py_tp_alloc);
+    assert(alloc_func != NULL);
+
+    self = alloc_func(type, 0);
+    if (self != NULL) {
+        PyStructObject *s = (PyStructObject*)self;
+        s->s_format = Py_NewRef(Py_None);
+        s->s_codes = NULL;
+        s->s_size = -1;
+        s->s_len = -1;
+    }
+    return self;
+}
+
 /*[clinic input]
-@classmethod
-Struct.__new__
+Struct.__init__
 
     format: object
 
@@ -1564,24 +1586,16 @@ the format string.
 See help(struct) for more on format strings.
 [clinic start generated code]*/
 
-static PyObject *
-Struct_impl(PyTypeObject *type, PyObject *format)
-/*[clinic end generated code: output=49468b044e334308 input=8b91868eb1df0e28]*/
+static int
+Struct___init___impl(PyStructObject *self, PyObject *format)
+/*[clinic end generated code: output=b8e80862444e92d0 input=192a4575a3dde802]*/
 {
-    allocfunc alloc = PyType_GetSlot(type, Py_tp_alloc);
-    assert(alloc != NULL);
-    PyStructObject *self = (PyStructObject *)alloc(type, 0);
-
-    if (self == NULL) {
-        return NULL;
-    }
+    int ret = 0;
 
     if (PyUnicode_Check(format)) {
         format = PyUnicode_AsASCIIString(format);
-        if (format == NULL) {
-            Py_DECREF(self);
-            return NULL;
-        }
+        if (format == NULL)
+            return -1;
     }
     else {
         Py_INCREF(format);
@@ -1589,23 +1603,18 @@ Struct_impl(PyTypeObject *type, PyObject *format)
 
     if (!PyBytes_Check(format)) {
         Py_DECREF(format);
-        Py_DECREF(self);
         PyErr_Format(PyExc_TypeError,
                      "Struct() argument 1 must be a str or bytes object, "
                      "not %.200s",
                      _PyType_Name(Py_TYPE(format)));
-        return NULL;
+        return -1;
     }
 
-    self->s_format = format;
+    Py_SETREF(self->s_format, format);
 
-    if (prepare_s(self) < 0) {
-        Py_DECREF(self);
-        return NULL;
-    }
-    return (PyObject *)self;
+    ret = prepare_s(self);
+    return ret;
 }
-
 
 static int
 s_clear(PyStructObject *s)
@@ -1832,11 +1841,6 @@ unpackiter_iternext(unpackiterobject *self)
     return result;
 }
 
-PyObject *unpackiter_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
-    PyErr_Format(PyExc_TypeError, "Cannot create '%.200s objects", _PyType_Name(type));
-    return NULL;
-}
-
 static PyType_Slot unpackiter_type_slots[] = {
     {Py_tp_dealloc, unpackiter_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
@@ -1844,7 +1848,6 @@ static PyType_Slot unpackiter_type_slots[] = {
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, unpackiter_iternext},
     {Py_tp_methods, unpackiter_methods},
-    {Py_tp_new, unpackiter_new},
     {0, 0},
 };
 
@@ -1853,7 +1856,7 @@ static PyType_Spec unpackiter_type_spec = {
     sizeof(unpackiterobject),
     0,
     (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-     Py_TPFLAGS_IMMUTABLETYPE),
+     Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION),
     unpackiter_type_slots
 };
 
@@ -2170,6 +2173,19 @@ s_sizeof(PyStructObject *self, void *unused)
     return PyLong_FromSize_t(size);
 }
 
+static PyObject *
+s_repr(PyStructObject *self)
+{
+    PyObject* fmt = PyUnicode_FromStringAndSize(
+        PyBytes_AS_STRING(self->s_format), PyBytes_GET_SIZE(self->s_format));
+    if (fmt == NULL) {
+        return NULL;
+    }
+    PyObject* s = PyUnicode_FromFormat("%s(%R)", _PyType_Name(Py_TYPE(self)), fmt);
+    Py_DECREF(fmt);
+    return s;
+}
+
 /* List of functions */
 
 static struct PyMethodDef s_methods[] = {
@@ -2183,13 +2199,13 @@ static struct PyMethodDef s_methods[] = {
 };
 
 static PyMemberDef s_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(PyStructObject, weakreflist), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(PyStructObject, weakreflist), Py_READONLY},
     {NULL}  /* sentinel */
 };
 
 static PyGetSetDef s_getsetlist[] = {
-    {"format", (getter)s_get_format, (setter)NULL, "struct format string", NULL},
-    {"size", (getter)s_get_size, (setter)NULL, "struct size in bytes", NULL},
+    {"format", (getter)s_get_format, (setter)NULL, PyDoc_STR("struct format string"), NULL},
+    {"size", (getter)s_get_size, (setter)NULL, PyDoc_STR("struct size in bytes"), NULL},
     {NULL} /* sentinel */
 };
 
@@ -2202,14 +2218,16 @@ static PyType_Slot PyStructType_slots[] = {
     {Py_tp_dealloc, s_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_setattro, PyObject_GenericSetAttr},
+    {Py_tp_repr, s_repr},
     {Py_tp_doc, (void*)s__doc__},
     {Py_tp_traverse, s_traverse},
     {Py_tp_clear, s_clear},
     {Py_tp_methods, s_methods},
     {Py_tp_members, s_members},
     {Py_tp_getset, s_getsetlist},
-    {Py_tp_new, Struct},
+    {Py_tp_init, Struct___init__},
     {Py_tp_alloc, PyType_GenericAlloc},
+    {Py_tp_new, s_new},
     {Py_tp_free, PyObject_GC_Del},
     {0, 0},
 };
@@ -2239,19 +2257,12 @@ cache_struct_converter(PyObject *module, PyObject *fmt, PyStructObject **ptr)
         return 1;
     }
 
-    if (state->cache == NULL) {
-        state->cache = PyDict_New();
-        if (state->cache == NULL)
-            return 0;
-    }
-
-    s_object = PyDict_GetItemWithError(state->cache, fmt);
-    if (s_object != NULL) {
-        *ptr = (PyStructObject *)Py_NewRef(s_object);
-        return Py_CLEANUP_SUPPORTED;
-    }
-    else if (PyErr_Occurred()) {
+    if (PyDict_GetItemRef(state->cache, fmt, &s_object) < 0) {
         return 0;
+    }
+    if (s_object != NULL) {
+        *ptr = (PyStructObject *)s_object;
+        return Py_CLEANUP_SUPPORTED;
     }
 
     s_object = PyObject_CallOneArg(state->PyStructType, fmt);
@@ -2277,7 +2288,7 @@ static PyObject *
 _clearcache_impl(PyObject *module)
 /*[clinic end generated code: output=ce4fb8a7bf7cb523 input=463eaae04bab3211]*/
 {
-    Py_CLEAR(get_struct_state(module)->cache);
+    PyDict_Clear(get_struct_state(module)->cache);
     Py_RETURN_NONE;
 }
 
@@ -2501,6 +2512,11 @@ _structmodule_exec(PyObject *m)
 {
     _structmodulestate *state = get_struct_state(m);
 
+    state->cache = PyDict_New();
+    if (state->cache == NULL) {
+        return -1;
+    }
+
     state->PyStructType = PyType_FromModuleAndSpec(
         m, &PyStructType_spec, NULL);
     if (state->PyStructType == NULL) {
@@ -2572,6 +2588,7 @@ _structmodule_exec(PyObject *m)
 
 static PyModuleDef_Slot _structmodule_slots[] = {
     {Py_mod_exec, _structmodule_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 
