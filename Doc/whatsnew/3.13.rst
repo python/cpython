@@ -313,6 +313,9 @@ os.path
 * Add :func:`os.path.isreserved` to check if a path is reserved on the current
   system. This function is only available on Windows.
   (Contributed by Barney Gale in :gh:`88569`.)
+* On Windows, :func:`os.path.isabs` no longer considers paths starting with
+  exactly one (back)slash to be absolute.
+  (Contributed by Barney Gale and Jon Foster in :gh:`44626`.)
 
 pathlib
 -------

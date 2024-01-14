@@ -3381,19 +3381,27 @@
             break;
         }
 
-        case _INSERT: {
-            PyObject *top;
-            oparg = CURRENT_OPARG();
-            top = stack_pointer[-1];
-            // Inserts TOS at position specified by oparg;
-            memmove(&stack_pointer[-1 - oparg], &stack_pointer[-oparg], oparg * sizeof(stack_pointer[0]));
-            stack_pointer[-1 - oparg] = top;
+        case _CHECK_VALIDITY: {
+            TIER_TWO_ONLY
+            if (!current_executor->vm_data.valid) goto deoptimize;
             break;
         }
 
-        case _CHECK_VALIDITY: {
-            TIER_TWO_ONLY
-            if (!current_executor->base.vm_data.valid) goto deoptimize;
+        case _LOAD_CONST_INLINE_BORROW: {
+            PyObject *value;
+            PyObject *ptr = (PyObject *)CURRENT_OPERAND();
+            value = ptr;
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            break;
+        }
+
+        case _INTERNAL_INCREMENT_OPT_COUNTER: {
+            PyObject *opt;
+            opt = stack_pointer[-1];
+            _PyCounterOptimizerObject *exe = (_PyCounterOptimizerObject *)opt;
+            exe->count++;
+            stack_pointer += -1;
             break;
         }
 

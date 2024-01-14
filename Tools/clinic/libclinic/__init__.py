@@ -15,6 +15,11 @@ from .formatting import (
     wrap_declarations,
     wrapped_c_string_literal,
 )
+from .utils import (
+    create_regex,
+    compute_checksum,
+    write_file,
+)
 
 
 __all__ = [
@@ -32,6 +37,11 @@ __all__ = [
     "suffix_all_lines",
     "wrap_declarations",
     "wrapped_c_string_literal",
+
+    # Utility functions
+    "create_regex",
+    "compute_checksum",
+    "write_file",
 ]
 
 
