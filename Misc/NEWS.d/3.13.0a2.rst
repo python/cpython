@@ -199,7 +199,7 @@ their debugging to ``PYTHON_UOPS`` and ``PYTHON_LLTRACE``.
 .. nonce: 11h6Mc
 .. section: Core and Builtins
 
-Speed up :obj:`Traceback` object creation by lazily compute the line number.
+Speed up :class:`Traceback` object creation by lazily compute the line number.
 Patch by Pablo Galindo
 
 ..

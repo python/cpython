@@ -584,8 +584,8 @@ Use the frame bound builtins when offering a name suggestion in
 .. nonce: qtm-9T
 .. section: Library
 
-In :mod:`importlib._bootstrap`, enhance namespace package repr to `<module
-'x' (namespace) from ['path']>`.
+In :mod:`importlib._bootstrap`, enhance namespace package repr to ``<module
+'x' (namespace) from ['path']>``.
 
 ..
 

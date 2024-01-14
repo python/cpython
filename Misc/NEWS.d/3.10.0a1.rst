@@ -1220,7 +1220,7 @@ class
 
 Previously there was no way to check that without using private API. See the
 `relevant issue in python/typing
-<https://github.com/python/typing/issues/751>`
+<https://github.com/python/typing/issues/751>`_.
 
 ..
 

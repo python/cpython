@@ -92,7 +92,7 @@ The module provides the following classes:
    .. versionchanged:: 3.4.3
       This class now performs all the necessary certificate and hostname checks
       by default. To revert to the previous, unverified, behavior
-      :func:`ssl._create_unverified_context` can be passed to the *context*
+      :func:`!ssl._create_unverified_context` can be passed to the *context*
       parameter.
 
    .. versionchanged:: 3.8
@@ -103,7 +103,7 @@ The module provides the following classes:
    .. versionchanged:: 3.10
       This class now sends an ALPN extension with protocol indicator
       ``http/1.1`` when no *context* is given. Custom *context* should set
-      ALPN protocols with :meth:`~ssl.SSLContext.set_alpn_protocol`.
+      ALPN protocols with :meth:`~ssl.SSLContext.set_alpn_protocols`.
 
    .. versionchanged:: 3.12
       The deprecated *key_file*, *cert_file* and *check_hostname* parameters
@@ -124,7 +124,7 @@ This module provides the following function:
 .. function:: parse_headers(fp)
 
    Parse the headers from a file pointer *fp* representing a HTTP
-   request/response. The file has to be a :class:`BufferedIOBase` reader
+   request/response. The file has to be a :class:`~io.BufferedIOBase` reader
    (i.e. not text) and must provide a valid :rfc:`2822` style header.
 
    This function returns an instance of :class:`http.client.HTTPMessage`
@@ -416,7 +416,7 @@ HTTPConnection Objects
    .. versionadded:: 3.7
 
 
-As an alternative to using the :meth:`request` method described above, you can
+As an alternative to using the :meth:`~HTTPConnection.request` method described above, you can
 also send your request step by step, by using the four functions below.
 
 
@@ -647,6 +647,8 @@ method attribute. Here is an example session that uses the ``PUT`` method::
 
 HTTPMessage Objects
 -------------------
+
+.. class:: HTTPMessage(email.message.Message)
 
 An :class:`http.client.HTTPMessage` instance holds the headers from an HTTP
 response.  It is implemented using the :class:`email.message.Message` class.
