@@ -740,7 +740,7 @@ sym_copy_type(_Py_UOpsSymbolicExpression *from_sym, _Py_UOpsSymbolicExpression *
 static void
 sym_copy_immutable_type_info(_Py_UOpsSymbolicExpression *from_sym, _Py_UOpsSymbolicExpression *to_sym)
 {
-    uint32_t immutables = (1 << NULL_TYPE | 1 << PYLONG_TYPE | 1 << PYFLOAT_TYPE | 1 << PYUNICODE_TYPE);
+    uint32_t immutables = (1 << NULL_TYPE | 1 << PYLONG_TYPE | 1 << PYFLOAT_TYPE | 1 << PYUNICODE_TYPE | 1 << SELF_OR_NULL);
     to_sym->sym_type.types = (from_sym->sym_type.types & immutables);
     Py_XSETREF(to_sym->const_val, Py_XNewRef(from_sym->const_val));
 }
@@ -1085,7 +1085,7 @@ uop_abstract_interpret_single_inst(
         case LOAD_FAST_CHECK:
             STACK_GROW(1);
             PEEK(1) = GETLOCAL(oparg);
-            assert(PEEK(1)->inst.opcode == INIT_FAST);
+            assert(PEEK(1)->inst.opcode == INIT_FAST || PEEK(1)->inst.opcode == LOAD_FAST_CHECK);
             PEEK(1)->inst.opcode = LOAD_FAST_CHECK;
             ctx->frame->stack_pointer = stack_pointer;
             write_stack_to_ir(ctx, inst, true);
