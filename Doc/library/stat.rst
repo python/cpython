@@ -396,15 +396,15 @@ The following flags can be used in the *flags* argument of :func:`os.chflags`:
 
    The file should not be displayed in a GUI (macOS 10.5+).
 
-.. data:: SF_SUPPORTED
-
-   All super-user supported flags
-
-   .. versionadded: 3.13
-
 .. data:: SF_SETTABLE
 
    All super-user changeable flags
+
+   .. versionadded: 3.13
+
+.. data:: SF_SUPPORTED
+
+   All super-user supported flags
 
    .. availability:: macOS
 
