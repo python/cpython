@@ -25,6 +25,7 @@ class Properties:
     pure: bool
     passthrough: bool
     guard: bool
+    specially_handled_in_optimizer: bool
 
     def dump(self, indent: str) -> None:
         print(indent, end="")
@@ -52,6 +53,7 @@ class Properties:
             pure=all(p.pure for p in properties),
             passthrough=all(p.passthrough for p in properties),
             guard=all(p.guard for p in properties),
+            specially_handled_in_optimizer=False,
         )
 
 
@@ -74,6 +76,7 @@ SKIP_PROPERTIES = Properties(
     pure=False,
     passthrough=False,
     guard=False,
+    specially_handled_in_optimizer=False,
 )
 
 
@@ -446,6 +449,9 @@ def stack_effect_only_peeks(instr: parser.InstDef) -> bool:
 
 
 def compute_properties(op: parser.InstDef) -> Properties:
+    # Importing here to avoid a circular import.
+    from tier2_abstract_generator import SPECIALLY_HANDLED_ABSTRACT_INSTR
+
     has_free = (
         variable_used(op, "PyCell_New")
         or variable_used(op, "PyCell_GET")
@@ -473,7 +479,8 @@ def compute_properties(op: parser.InstDef) -> Properties:
         has_free=has_free,
         pure="pure" in op.annotations,
         passthrough=passthrough,
-        guard=passthrough and deopts,
+        guard=passthrough and deopts and infallible,
+        specially_handled_in_optimizer=op.name in SPECIALLY_HANDLED_ABSTRACT_INSTR,
     )
 
 

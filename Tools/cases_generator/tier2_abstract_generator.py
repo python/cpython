@@ -45,11 +45,9 @@ SPECIALLY_HANDLED_ABSTRACT_INSTR = {
     "POP_TOP",
     "PUSH_NULL",
     "SWAP",
-    "END_SEND",
     # Frame stuff
     "_PUSH_FRAME",
     "_POP_FRAME",
-    "_SHRINK_STACK",
 }
 
 NO_CONST_OR_TYPE_EVALUATE = {
@@ -60,6 +58,7 @@ NO_CONST_OR_TYPE_EVALUATE = {
     "_CHECK_PEP_523",
     "_CHECK_STACK_SPACE",
     "_INIT_CALL_PY_EXACT_ARGS",
+    "_END_SEND",
 }
 
 
@@ -292,6 +291,7 @@ def _write_body_abstract_interp_guard_uop(
 
     # Does the input specify typed inputs?
     if not any(output_var.type_prop for output_var in mangled_uop.stack.outputs):
+        out.emit("goto guard_required;\n")
         return
     # If the input types already match, eliminate the guard
     # Read the cache information to check the auxiliary type information

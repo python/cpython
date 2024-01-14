@@ -232,7 +232,10 @@ extern "C" {
 #define _CHECK_VALIDITY 379
 #define _LOAD_CONST_INLINE_BORROW 380
 #define _INTERNAL_INCREMENT_OPT_COUNTER 381
-#define MAX_UOP_ID 381
+#define _LOAD_CONST_INLINE 382
+#define INIT_FAST 383
+#define _SHRINK_STACK 384
+#define MAX_UOP_ID 384
 
 #ifdef __cplusplus
 }

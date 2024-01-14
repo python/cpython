@@ -3405,4 +3405,24 @@
             break;
         }
 
+        case _LOAD_CONST_INLINE: {
+            PyObject *value;
+            PyObject *ptr = (PyObject *)CURRENT_OPERAND();
+            value = Py_NewRef(ptr);
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            break;
+        }
+
+        case INIT_FAST: {
+            // Nothing, just a sentinel.
+            break;
+        }
+
+        case _SHRINK_STACK: {
+            oparg = CURRENT_OPARG();
+            stack_pointer += -oparg;
+            break;
+        }
+
 #undef TIER_TWO

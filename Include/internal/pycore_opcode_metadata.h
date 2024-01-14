@@ -911,6 +911,7 @@ enum InstructionFormat {
 #define HAS_ESCAPES_FLAG (512)
 #define HAS_PURE_FLAG (1024)
 #define HAS_PASSTHROUGH_FLAG (2048)
+#define HAS_SPECIAL_OPT_FLAG (4096)
 #define OPCODE_HAS_ARG(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_ARG_FLAG))
 #define OPCODE_HAS_CONST(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_CONST_FLAG))
 #define OPCODE_HAS_NAME(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_NAME_FLAG))
@@ -923,6 +924,7 @@ enum InstructionFormat {
 #define OPCODE_HAS_ESCAPES(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_ESCAPES_FLAG))
 #define OPCODE_HAS_PURE(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_PURE_FLAG))
 #define OPCODE_HAS_PASSTHROUGH(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_PASSTHROUGH_FLAG))
+#define OPCODE_HAS_SPECIAL_OPT(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_SPECIAL_OPT_FLAG))
 
 #define OPARG_FULL 0
 #define OPARG_CACHE_1 1

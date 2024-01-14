@@ -52,6 +52,7 @@ FLAGS = [
     "ESCAPES",
     "PURE",
     "PASSTHROUGH",
+    "SPECIAL_OPT",
 ]
 
 

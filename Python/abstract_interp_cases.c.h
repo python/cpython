@@ -18,6 +18,17 @@
 
         /* _INSTRUMENTED_RESUME is not a viable micro-op for tier 2 */
 
+        case _END_SEND: {
+            _Py_UOpsSymbolicExpression *__value_;
+            _Py_UOpsSymbolicExpression *__receiver_;
+            __value_ = stack_pointer[-1];
+            __receiver_ = stack_pointer[-2];
+            __value_ = _Py_UOpsSymbolicExpression_New(ctx, *inst, NULL, 0, NULL, 2 , __receiver_, __value_);
+            stack_pointer[-2] = __value_;
+            stack_pointer += -1;
+            break;
+        }
+
         case _UNARY_NEGATIVE: {
             _Py_UOpsSymbolicExpression *__res_;
             __res_ = sym_init_unknown(ctx);
@@ -67,6 +78,7 @@
                 DPRINTF(3, "const eliminated guard\n");
                 break;
             }
+            goto guard_required;
             break;
         }
 
@@ -968,6 +980,7 @@
                 DPRINTF(3, "const eliminated guard\n");
                 break;
             }
+            goto guard_required;
             break;
         }
 
@@ -1001,6 +1014,7 @@
                 DPRINTF(3, "const eliminated guard\n");
                 break;
             }
+            goto guard_required;
             break;
         }
 
@@ -1047,6 +1061,7 @@
                 DPRINTF(3, "const eliminated guard\n");
                 break;
             }
+            goto guard_required;
             break;
         }
 
@@ -1281,6 +1296,7 @@
                 DPRINTF(3, "const eliminated guard\n");
                 break;
             }
+            goto guard_required;
             break;
         }
 
@@ -1302,6 +1318,7 @@
                 DPRINTF(3, "const eliminated guard\n");
                 break;
             }
+            goto guard_required;
             break;
         }
 
@@ -1326,6 +1343,7 @@
                 DPRINTF(3, "const eliminated guard\n");
                 break;
             }
+            goto guard_required;
             break;
         }
 
@@ -1347,6 +1365,7 @@
                 DPRINTF(3, "const eliminated guard\n");
                 break;
             }
+            goto guard_required;
             break;
         }
 
@@ -1372,6 +1391,7 @@
                 DPRINTF(3, "const eliminated guard\n");
                 break;
             }
+            goto guard_required;
             break;
         }
 
@@ -1391,6 +1411,7 @@
                 DPRINTF(3, "const eliminated guard\n");
                 break;
             }
+            goto guard_required;
             break;
         }
 
@@ -1568,6 +1589,7 @@
                 DPRINTF(3, "const eliminated guard\n");
                 break;
             }
+            goto guard_required;
             break;
         }
 
@@ -1949,6 +1971,24 @@
 
         case _INTERNAL_INCREMENT_OPT_COUNTER: {
             stack_pointer += -1;
+            break;
+        }
+
+        case _LOAD_CONST_INLINE: {
+            _Py_UOpsSymbolicExpression *__value_;
+            __value_ = sym_init_unknown(ctx);
+            if(__value_ == NULL) goto error;
+            stack_pointer[0] = __value_;
+            stack_pointer += 1;
+            break;
+        }
+
+        case INIT_FAST: {
+            break;
+        }
+
+        case _SHRINK_STACK: {
+            stack_pointer += -oparg;
             break;
         }
 

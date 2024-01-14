@@ -4071,6 +4071,18 @@ dummy_func(
             exe->count++;
         }
 
+        op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
+            value = Py_NewRef(ptr);
+        }
+
+        // Represents a possibly uninitialized value in the abstract interpreter.
+        op(INIT_FAST, (--)) {
+            // Nothing, just a sentinel.
+        }
+
+        op(_SHRINK_STACK, (unused[oparg] --)) {
+        }
+
 
 // END BYTECODES //
 
