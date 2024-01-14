@@ -1754,15 +1754,8 @@ expression support in the :mod:`re` module).
    See :ref:`error-handlers` for details.
 
    For performance reasons, the value of *errors* is not checked for validity
-   unless an encoding error actually occurs,
-   :ref:`devmode` is enabled
-   or a :ref:`debug build <debug-build>` is used. For example::
-
-      >>> encoded_str_to_byte = 'Python'.encode()
-      >>> type(encoded_str_to_byte)
-      <class 'bytes'>
-      >>> encoded_str_to_byte
-      b'Python'
+   unless an encoding error actually occurs, :ref:`devmode` is enabled or a
+   :ref:`debug build <debug-build>` is used.
 
    .. versionchanged:: 3.1
       Added support for keyword arguments.
@@ -1771,6 +1764,23 @@ expression support in the :mod:`re` module).
       The value of the *errors* argument is now checked in :ref:`devmode` and
       in :ref:`debug mode <debug-build>`.
 
+.. raw:: html
+
+   <dd>
+   <details>
+   <summary><a style="cursor:pointer;">See example</a></summary>
+
+>>> encoded_str_to_byte = 'Python'.encode()
+>>> type(encoded_str_to_byte)
+<class 'bytes'>
+>>> encoded_str_to_byte
+b'Python'
+
+.. raw:: html
+
+   </details>
+   </dd>
+
 
 .. method:: str.endswith(suffix[, start[, end]])
 
@@ -1778,18 +1788,29 @@ expression support in the :mod:`re` module).
    ``False``.  *suffix* can also be a tuple of suffixes to look for.  With optional
    *start*, test beginning at that position.  With optional *end*, stop comparing
    at that position. Use the *start* and *end* is equivalent to
-   ``str[start:end].endswith(suffix)``. For example::
-
-      >>> 'Python'.endswith('on')
-      True
-      >>> 'a tuple of suffixes'.endswith(('at', 'in'))
-      False
-      >>> 'a tuple of suffixes'.endswith(('at', 'es'))
-      True
-      >>> 'Python is amazing'.endswith('is', 0, 9)
-      True
+   ``str[start:end].endswith(suffix)``.
 
    See also :meth:`startswith` and :meth:`removesuffix`.
+
+.. raw:: html
+
+   <dd>
+   <details>
+   <summary><a style="cursor:pointer;">See example</a></summary>
+
+>>> 'Python'.endswith('on')
+True
+>>> 'a tuple of suffixes'.endswith(('at', 'in'))
+False
+>>> 'a tuple of suffixes'.endswith(('at', 'es'))
+True
+>>> 'Python is amazing'.endswith('is', 0, 9)
+True
+
+.. raw:: html
+
+   </details>
+   </dd>
 
 
 .. method:: str.expandtabs(tabsize=8)
@@ -1805,15 +1826,26 @@ expression support in the :mod:`re` module).
    (``\n``) or return (``\r``), it is copied and the current column is reset to
    zero.  Any other character is copied unchanged and the current column is
    incremented by one regardless of how the character is represented when
-   printed. For example::
+   printed.
 
-      >>> '01\t012\t0123\t01234'.expandtabs()
-      '01      012     0123    01234'
-      >>> '01\t012\t0123\t01234'.expandtabs(4)
-      '01  012 0123    01234'
-      >>> print('01\t012\n0123\t01234'.expandtabs(4))
-      01  012
-      0123    01234
+.. raw:: html
+
+   <dd>
+   <details>
+   <summary><a style="cursor:pointer;">See example</a></summary>
+
+>>> '01\t012\t0123\t01234'.expandtabs()
+'01      012     0123    01234'
+>>> '01\t012\t0123\t01234'.expandtabs(4)
+'01  012 0123    01234'
+>>> print('01\t012\n0123\t01234'.expandtabs(4))
+01  012
+0123    01234
+
+.. raw:: html
+
+   </details>
+   </dd>
 
 
 .. method:: str.find(sub[, start[, end]])
