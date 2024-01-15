@@ -69,7 +69,7 @@
         case _TO_BOOL_BOOL: {
             _Py_UOpsSymbolicExpression *__value_;
             __value_ = stack_pointer[-1];
-            // Constant evaluation 
+            // Constant evaluation
             if (is_const(__value_)) {
                 PyObject *value;
                 value = get_const(__value_);
@@ -135,7 +135,7 @@
             _Py_UOpsSymbolicExpression *__left_;
             __right_ = stack_pointer[-1];
             __left_ = stack_pointer[-2];
-            // Constant evaluation 
+            // Constant evaluation
             if (is_const(__left_) && is_const(__right_)) {
                 PyObject *right;
                 PyObject *left;
@@ -147,13 +147,13 @@
                 DPRINTF(3, "const eliminated guard\n");
                 break;
             }
-            // Type guard elimination 
+            // Type guard elimination
             if (sym_matches_type((_Py_UOpsSymbolicExpression *)__left_, PYLONG_TYPE, (uint32_t)0) && sym_matches_type((_Py_UOpsSymbolicExpression *)__right_, PYLONG_TYPE, (uint32_t)0)){
                 DPRINTF(2, "type propagation eliminated guard\n");
                 break;
             }
             else {
-                // Type propagation 
+                // Type propagation
                 sym_set_type((_Py_UOpsSymbolicExpression *)__left_, PYLONG_TYPE, (uint32_t)0);
                 sym_set_type((_Py_UOpsSymbolicExpression *)__right_, PYLONG_TYPE, (uint32_t)0);
                 goto guard_required;
@@ -262,7 +262,7 @@
             _Py_UOpsSymbolicExpression *__left_;
             __right_ = stack_pointer[-1];
             __left_ = stack_pointer[-2];
-            // Constant evaluation 
+            // Constant evaluation
             if (is_const(__left_) && is_const(__right_)) {
                 PyObject *right;
                 PyObject *left;
@@ -274,13 +274,13 @@
                 DPRINTF(3, "const eliminated guard\n");
                 break;
             }
-            // Type guard elimination 
+            // Type guard elimination
             if (sym_matches_type((_Py_UOpsSymbolicExpression *)__left_, PYFLOAT_TYPE, (uint32_t)0) && sym_matches_type((_Py_UOpsSymbolicExpression *)__right_, PYFLOAT_TYPE, (uint32_t)0)){
                 DPRINTF(2, "type propagation eliminated guard\n");
                 break;
             }
             else {
-                // Type propagation 
+                // Type propagation
                 sym_set_type((_Py_UOpsSymbolicExpression *)__left_, PYFLOAT_TYPE, (uint32_t)0);
                 sym_set_type((_Py_UOpsSymbolicExpression *)__right_, PYFLOAT_TYPE, (uint32_t)0);
                 goto guard_required;
@@ -386,7 +386,7 @@
             _Py_UOpsSymbolicExpression *__left_;
             __right_ = stack_pointer[-1];
             __left_ = stack_pointer[-2];
-            // Constant evaluation 
+            // Constant evaluation
             if (is_const(__left_) && is_const(__right_)) {
                 PyObject *right;
                 PyObject *left;
@@ -398,13 +398,13 @@
                 DPRINTF(3, "const eliminated guard\n");
                 break;
             }
-            // Type guard elimination 
+            // Type guard elimination
             if (sym_matches_type((_Py_UOpsSymbolicExpression *)__left_, PYUNICODE_TYPE, (uint32_t)0) && sym_matches_type((_Py_UOpsSymbolicExpression *)__right_, PYUNICODE_TYPE, (uint32_t)0)){
                 DPRINTF(2, "type propagation eliminated guard\n");
                 break;
             }
             else {
-                // Type propagation 
+                // Type propagation
                 sym_set_type((_Py_UOpsSymbolicExpression *)__left_, PYUNICODE_TYPE, (uint32_t)0);
                 sym_set_type((_Py_UOpsSymbolicExpression *)__right_, PYUNICODE_TYPE, (uint32_t)0);
                 goto guard_required;
@@ -932,7 +932,7 @@
             _Py_UOpsSymbolicExpression *__owner_;
             __owner_ = stack_pointer[-1];
             uint32_t type_version = (uint32_t)CURRENT_OPERAND();
-            // Constant evaluation 
+            // Constant evaluation
             if (is_const(__owner_)) {
                 PyObject *owner;
                 owner = get_const(__owner_);
@@ -943,13 +943,13 @@
                 DPRINTF(3, "const eliminated guard\n");
                 break;
             }
-            // Type guard elimination 
+            // Type guard elimination
             if (sym_matches_type((_Py_UOpsSymbolicExpression *)__owner_, GUARD_TYPE_VERSION_TYPE, (uint32_t)type_version)){
                 DPRINTF(2, "type propagation eliminated guard\n");
                 break;
             }
             else {
-                // Type propagation 
+                // Type propagation
                 sym_set_type((_Py_UOpsSymbolicExpression *)__owner_, GUARD_TYPE_VERSION_TYPE, (uint32_t)type_version);
                 goto guard_required;
             }
@@ -981,7 +981,7 @@
             _Py_UOpsSymbolicExpression *__owner_;
             __owner_ = stack_pointer[-1];
             uint32_t type_version = (uint32_t)CURRENT_OPERAND();
-            // Constant evaluation 
+            // Constant evaluation
             if (is_const(__owner_)) {
                 PyObject *owner;
                 owner = get_const(__owner_);
@@ -1014,7 +1014,7 @@
         case _CHECK_ATTR_WITH_HINT: {
             _Py_UOpsSymbolicExpression *__owner_;
             __owner_ = stack_pointer[-1];
-            // Constant evaluation 
+            // Constant evaluation
             if (is_const(__owner_)) {
                 PyObject *owner;
                 owner = get_const(__owner_);
@@ -1063,7 +1063,7 @@
             _Py_UOpsSymbolicExpression *__owner_;
             __owner_ = stack_pointer[-1];
             uint32_t type_version = (uint32_t)CURRENT_OPERAND();
-            // Constant evaluation 
+            // Constant evaluation
             if (is_const(__owner_)) {
                 PyObject *owner;
                 owner = get_const(__owner_);
@@ -1099,7 +1099,7 @@
         case _GUARD_DORV_VALUES: {
             _Py_UOpsSymbolicExpression *__owner_;
             __owner_ = stack_pointer[-1];
-            // Constant evaluation 
+            // Constant evaluation
             if (is_const(__owner_)) {
                 PyObject *owner;
                 owner = get_const(__owner_);
@@ -1110,13 +1110,13 @@
                 DPRINTF(3, "const eliminated guard\n");
                 break;
             }
-            // Type guard elimination 
+            // Type guard elimination
             if (sym_matches_type((_Py_UOpsSymbolicExpression *)__owner_, GUARD_DORV_VALUES_TYPE, (uint32_t)0)){
                 DPRINTF(2, "type propagation eliminated guard\n");
                 break;
             }
             else {
-                // Type propagation 
+                // Type propagation
                 sym_set_type((_Py_UOpsSymbolicExpression *)__owner_, GUARD_DORV_VALUES_TYPE, (uint32_t)0);
                 goto guard_required;
             }
@@ -1300,7 +1300,7 @@
         case _ITER_CHECK_LIST: {
             _Py_UOpsSymbolicExpression *__iter_;
             __iter_ = stack_pointer[-1];
-            // Constant evaluation 
+            // Constant evaluation
             if (is_const(__iter_)) {
                 PyObject *iter;
                 iter = get_const(__iter_);
@@ -1318,7 +1318,7 @@
         case _GUARD_NOT_EXHAUSTED_LIST: {
             _Py_UOpsSymbolicExpression *__iter_;
             __iter_ = stack_pointer[-1];
-            // Constant evaluation 
+            // Constant evaluation
             if (is_const(__iter_)) {
                 PyObject *iter;
                 iter = get_const(__iter_);
@@ -1347,7 +1347,7 @@
         case _ITER_CHECK_TUPLE: {
             _Py_UOpsSymbolicExpression *__iter_;
             __iter_ = stack_pointer[-1];
-            // Constant evaluation 
+            // Constant evaluation
             if (is_const(__iter_)) {
                 PyObject *iter;
                 iter = get_const(__iter_);
@@ -1365,7 +1365,7 @@
         case _GUARD_NOT_EXHAUSTED_TUPLE: {
             _Py_UOpsSymbolicExpression *__iter_;
             __iter_ = stack_pointer[-1];
-            // Constant evaluation 
+            // Constant evaluation
             if (is_const(__iter_)) {
                 PyObject *iter;
                 iter = get_const(__iter_);
@@ -1394,7 +1394,7 @@
         case _ITER_CHECK_RANGE: {
             _Py_UOpsSymbolicExpression *__iter_;
             __iter_ = stack_pointer[-1];
-            // Constant evaluation 
+            // Constant evaluation
             if (is_const(__iter_)) {
                 PyObject *iter;
                 iter = get_const(__iter_);
@@ -1413,7 +1413,7 @@
         case _GUARD_NOT_EXHAUSTED_RANGE: {
             _Py_UOpsSymbolicExpression *__iter_;
             __iter_ = stack_pointer[-1];
-            // Constant evaluation 
+            // Constant evaluation
             if (is_const(__iter_)) {
                 PyObject *iter;
                 iter = get_const(__iter_);
@@ -1491,7 +1491,7 @@
         case _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT: {
             _Py_UOpsSymbolicExpression *__owner_;
             __owner_ = stack_pointer[-1];
-            // Constant evaluation 
+            // Constant evaluation
             if (is_const(__owner_)) {
                 PyObject *owner;
                 owner = get_const(__owner_);
@@ -1502,13 +1502,13 @@
                 DPRINTF(3, "const eliminated guard\n");
                 break;
             }
-            // Type guard elimination 
+            // Type guard elimination
             if (sym_matches_type((_Py_UOpsSymbolicExpression *)__owner_, GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_TYPE, (uint32_t)0)){
                 DPRINTF(2, "type propagation eliminated guard\n");
                 break;
             }
             else {
-                // Type propagation 
+                // Type propagation
                 sym_set_type((_Py_UOpsSymbolicExpression *)__owner_, GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_TYPE, (uint32_t)0);
                 goto guard_required;
             }
@@ -1519,7 +1519,7 @@
             _Py_UOpsSymbolicExpression *__owner_;
             __owner_ = stack_pointer[-1];
             uint32_t keys_version = (uint32_t)CURRENT_OPERAND();
-            // Constant evaluation 
+            // Constant evaluation
             if (is_const(__owner_)) {
                 PyObject *owner;
                 owner = get_const(__owner_);
@@ -1530,13 +1530,13 @@
                 DPRINTF(3, "const eliminated guard\n");
                 break;
             }
-            // Type guard elimination 
+            // Type guard elimination
             if (sym_matches_type((_Py_UOpsSymbolicExpression *)__owner_, GUARD_KEYS_VERSION_TYPE, (uint32_t)keys_version)){
                 DPRINTF(2, "type propagation eliminated guard\n");
                 break;
             }
             else {
-                // Type propagation 
+                // Type propagation
                 sym_set_type((_Py_UOpsSymbolicExpression *)__owner_, GUARD_KEYS_VERSION_TYPE, (uint32_t)keys_version);
                 goto guard_required;
             }
@@ -1590,7 +1590,7 @@
         case _CHECK_ATTR_METHOD_LAZY_DICT: {
             _Py_UOpsSymbolicExpression *__owner_;
             __owner_ = stack_pointer[-1];
-            // Constant evaluation 
+            // Constant evaluation
             if (is_const(__owner_)) {
                 PyObject *owner;
                 owner = get_const(__owner_);
@@ -1629,7 +1629,7 @@
             _Py_UOpsSymbolicExpression *__callable_;
             __null_ = stack_pointer[-1 - oparg];
             __callable_ = stack_pointer[-2 - oparg];
-            // Constant evaluation 
+            // Constant evaluation
             if (is_const(__callable_) && is_const(__null_)) {
                 PyObject *null;
                 PyObject *callable;
@@ -1641,13 +1641,13 @@
                 DPRINTF(3, "const eliminated guard\n");
                 break;
             }
-            // Type guard elimination 
+            // Type guard elimination
             if (sym_matches_type((_Py_UOpsSymbolicExpression *)__callable_, PYMETHOD_TYPE, (uint32_t)0) && sym_matches_type((_Py_UOpsSymbolicExpression *)__null_, NULL_TYPE, (uint32_t)0)){
                 DPRINTF(2, "type propagation eliminated guard\n");
                 break;
             }
             else {
-                // Type propagation 
+                // Type propagation
                 sym_set_type((_Py_UOpsSymbolicExpression *)__callable_, PYMETHOD_TYPE, (uint32_t)0);
                 sym_set_type((_Py_UOpsSymbolicExpression *)__null_, NULL_TYPE, (uint32_t)0);
                 goto guard_required;
@@ -1677,7 +1677,7 @@
             __self_or_null_ = stack_pointer[-1 - oparg];
             __callable_ = stack_pointer[-2 - oparg];
             uint32_t func_version = (uint32_t)CURRENT_OPERAND();
-            // Constant evaluation 
+            // Constant evaluation
             if (is_const(__callable_) && is_const(__self_or_null_)) {
                 PyObject *self_or_null;
                 PyObject *callable;
@@ -1692,13 +1692,13 @@
                 DPRINTF(3, "const eliminated guard\n");
                 break;
             }
-            // Type guard elimination 
+            // Type guard elimination
             if (sym_matches_type((_Py_UOpsSymbolicExpression *)__callable_, PYFUNCTION_TYPE_VERSION_TYPE, (uint32_t)func_version)){
                 DPRINTF(2, "type propagation eliminated guard\n");
                 break;
             }
             else {
-                // Type propagation 
+                // Type propagation
                 sym_set_type((_Py_UOpsSymbolicExpression *)__callable_, PYFUNCTION_TYPE_VERSION_TYPE, (uint32_t)func_version);
                 goto guard_required;
             }

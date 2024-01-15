@@ -159,7 +159,7 @@ def mangle_uop_names(uop: Uop) -> Uop:
 # Returns a tuple of a pointer to an array of subexpressions, the length of said array
 # and a string containing the join of all other subexpressions obtained from stack input.
 # This grabs variadic inputs that depend on things like oparg or cache
-def get_subexpressions(input_vars: list[StackItem]) -> tuple[str, int, str]:
+def get_subexpressions(input_vars: list[StackItem]) -> tuple[str | None, int, str]:
     arr_var = [(var.name, var) for var in input_vars if var.size > "1"]
     assert len(arr_var) <= 1, "Can have at most one array input from oparg/cache"
     arr_var_name = arr_var[0][0] if len(arr_var) == 1 else None
@@ -272,7 +272,7 @@ def _write_body_abstract_interp_guard_uop(
                 cast = f"uint{cache.size*16}_t"
             out.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND();\n")
 
-    out.emit("// Constant evaluation \n")
+    out.emit("// Constant evaluation\n")
     predicates_str = " && ".join(
         [
             f"is_const({var.name})"
@@ -325,14 +325,14 @@ def _write_body_abstract_interp_guard_uop(
                 f"sym_set_type((_Py_UOpsSymbolicExpression *){output_var.name}, {typname}, (uint32_t){aux})"
             )
 
-    out.emit("// Type guard elimination \n")
+    out.emit("// Type guard elimination\n")
     out.emit(f"if ({' && '.join(predicates)}){{\n")
     out.emit('DPRINTF(2, "type propagation eliminated guard\\n");\n')
     out.emit("break;\n")
     out.emit("}\n")
     # Else we need the guard
     out.emit("else {\n")
-    out.emit("// Type propagation \n")
+    out.emit("// Type propagation\n")
     for prop in propagates:
         out.emit(f"{prop};\n")
     out.emit("goto guard_required;\n")
