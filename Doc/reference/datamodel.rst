@@ -2308,7 +2308,7 @@ class defining the method.
    this method is implicitly converted to a class method.
 
    Keyword arguments which are given to a new class are passed to
-   the parent's class ``__init_subclass__``. For compatibility with
+   the parent class's ``__init_subclass__``. For compatibility with
    other classes using ``__init_subclass__``, one should take out the
    needed keyword arguments and pass the others over to the base
    class, as in::

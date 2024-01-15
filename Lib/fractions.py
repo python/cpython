@@ -55,17 +55,17 @@ def _hash_algorithm(numerator, denominator):
     return -2 if result == -1 else result
 
 _RATIONAL_FORMAT = re.compile(r"""
-    \A\s*                                 # optional whitespace at the start,
-    (?P<sign>[-+]?)                       # an optional sign, then
-    (?=\d|\.\d)                           # lookahead for digit or .digit
-    (?P<num>\d*|\d+(_\d+)*)               # numerator (possibly empty)
-    (?:                                   # followed by
-       (?:\s*/\s*(?P<denom>\d+(_\d+)*))?  # an optional denominator
-    |                                     # or
-       (?:\.(?P<decimal>d*|\d+(_\d+)*))?  # an optional fractional part
-       (?:E(?P<exp>[-+]?\d+(_\d+)*))?     # and optional exponent
+    \A\s*                                  # optional whitespace at the start,
+    (?P<sign>[-+]?)                        # an optional sign, then
+    (?=\d|\.\d)                            # lookahead for digit or .digit
+    (?P<num>\d*|\d+(_\d+)*)                # numerator (possibly empty)
+    (?:                                    # followed by
+       (?:\s*/\s*(?P<denom>\d+(_\d+)*))?   # an optional denominator
+    |                                      # or
+       (?:\.(?P<decimal>\d*|\d+(_\d+)*))?  # an optional fractional part
+       (?:E(?P<exp>[-+]?\d+(_\d+)*))?      # and optional exponent
     )
-    \s*\Z                                 # and optional whitespace to finish
+    \s*\Z                                  # and optional whitespace to finish
 """, re.VERBOSE | re.IGNORECASE)
 
 
