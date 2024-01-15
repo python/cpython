@@ -12,6 +12,7 @@
     <IntDir>$(IntDir.Replace(`\\`, `\`))</IntDir>
     <!-- pyconfig.h is updated by pythoncore.vcxproj, so it's always in pythoncore's IntDir -->
     <GeneratedPyConfigDir>$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)$(ArchName)_$(Configuration)\pythoncore\</GeneratedPyConfigDir>
+    <GeneratedFrozenModulesDir>$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)_frozen\</GeneratedFrozenModulesDir>
     <TargetName Condition="'$(TargetName)' == ''">$(ProjectName)</TargetName>
     <TargetName>$(TargetName)$(PyDebugExt)</TargetName>
     <GenerateManifest>false</GenerateManifest>
@@ -28,6 +29,7 @@
 
     <!-- See https://developercommunity.visualstudio.com/t/Regression-in-MSVC-1433-1434-ARM64-co/10224361 -->
     <MSVCHasBrokenARM64Clamping Condition="$(_VCToolsVersion) == '14.34' or $(_VCToolsVersion) == '14.35'">true</MSVCHasBrokenARM64Clamping>
+    <MSVCHasBrokenARM64SignExtension Condition="$(_VCToolsVersion) == '14.37'">true</MSVCHasBrokenARM64SignExtension>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -61,6 +63,7 @@
       <AdditionalOptions Condition="$(PlatformToolset) == 'ClangCL'">-Wno-deprecated-non-prototype -Wno-unused-label -Wno-pointer-sign -Wno-incompatible-pointer-types-discards-qualifiers -Wno-unused-function %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="$(Configuration) != 'Debug' and $(PlatformToolset) == 'ClangCL'">-flto %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="$(MSVCHasBrokenARM64Clamping) == 'true' and $(Platform) == 'ARM64'">-d2pattern-opt-disable:-932189325 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="$(MSVCHasBrokenARM64SignExtension) == 'true' and $(Platform) == 'ARM64'">-d2ssa-patterns-all- %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="$(GenerateSourceDependencies) == 'true'">/sourceDependencies "$(IntDir.Trim(`\`))" %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ClCompile Condition="$(Configuration) == 'Debug'">

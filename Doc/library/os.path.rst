@@ -239,11 +239,15 @@ the :mod:`glob` module.)
 .. function:: isabs(path)
 
    Return ``True`` if *path* is an absolute pathname.  On Unix, that means it
-   begins with a slash, on Windows that it begins with a (back)slash after chopping
-   off a potential drive letter.
+   begins with a slash, on Windows that it begins with two (back)slashes, or a
+   drive letter, colon, and (back)slash together.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.13
+      On Windows, returns ``False`` if the given path starts with exactly one
+      (back)slash.
 
 
 .. function:: isfile(path)

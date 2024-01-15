@@ -2,8 +2,10 @@ import io
 import os
 import sys
 import errno
+import ntpath
 import pathlib
 import pickle
+import posixpath
 import socket
 import stat
 import tempfile
@@ -13,6 +15,7 @@ from urllib.request import pathname2url
 
 from test.support import import_helper
 from test.support import is_emscripten, is_wasi
+from test.support import set_recursion_limit
 from test.support import os_helper
 from test.support.os_helper import TESTFN, FakePath
 from test.test_pathlib import test_pathlib_abc
@@ -39,6 +42,66 @@ if hasattr(os, 'geteuid'):
 class PurePathTest(test_pathlib_abc.DummyPurePathTest):
     cls = pathlib.PurePath
 
+    # Make sure any symbolic links in the base test path are resolved.
+    base = os.path.realpath(TESTFN)
+
+    # Keys are canonical paths, values are list of tuples of arguments
+    # supposed to produce equal paths.
+    equivalences = {
+        'a/b': [
+            ('a', 'b'), ('a/', 'b'), ('a', 'b/'), ('a/', 'b/'),
+            ('a/b/',), ('a//b',), ('a//b//',),
+            # Empty components get removed.
+            ('', 'a', 'b'), ('a', '', 'b'), ('a', 'b', ''),
+            ],
+        '/b/c/d': [
+            ('a', '/b/c', 'd'), ('/a', '/b/c', 'd'),
+            # Empty components get removed.
+            ('/', 'b', '', 'c/d'), ('/', '', 'b/c/d'), ('', '/b/c/d'),
+            ],
+    }
+
+    def test_concrete_class(self):
+        if self.cls is pathlib.PurePath:
+            expected = pathlib.PureWindowsPath if os.name == 'nt' else pathlib.PurePosixPath
+        else:
+            expected = self.cls
+        p = self.cls('a')
+        self.assertIs(type(p), expected)
+
+    def test_concrete_pathmod(self):
+        if self.cls is pathlib.PurePosixPath:
+            expected = posixpath
+        elif self.cls is pathlib.PureWindowsPath:
+            expected = ntpath
+        else:
+            expected = os.path
+        p = self.cls('a')
+        self.assertIs(p.pathmod, expected)
+
+    def test_different_pathmods_unequal(self):
+        p = self.cls('a')
+        if p.pathmod is posixpath:
+            q = pathlib.PureWindowsPath('a')
+        else:
+            q = pathlib.PurePosixPath('a')
+        self.assertNotEqual(p, q)
+
+    def test_different_pathmods_unordered(self):
+        p = self.cls('a')
+        if p.pathmod is posixpath:
+            q = pathlib.PureWindowsPath('a')
+        else:
+            q = pathlib.PurePosixPath('a')
+        with self.assertRaises(TypeError):
+            p < q
+        with self.assertRaises(TypeError):
+            p <= q
+        with self.assertRaises(TypeError):
+            p > q
+        with self.assertRaises(TypeError):
+            p >= q
+
     def test_constructor_nested(self):
         P = self.cls
         P(FakePath("a/b/c"))
@@ -47,6 +110,47 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
         self.assertEqual(P(P('a'), P('b')), P('a/b'))
         self.assertEqual(P(P('a'), P('b'), P('c')), P(FakePath("a/b/c")))
         self.assertEqual(P(P('./a:b')), P('./a:b'))
+
+    def _check_parse_path(self, raw_path, *expected):
+        sep = self.pathmod.sep
+        actual = self.cls._parse_path(raw_path.replace('/', sep))
+        self.assertEqual(actual, expected)
+        if altsep := self.pathmod.altsep:
+            actual = self.cls._parse_path(raw_path.replace('/', altsep))
+            self.assertEqual(actual, expected)
+
+    def test_parse_path_common(self):
+        check = self._check_parse_path
+        sep = self.pathmod.sep
+        check('',         '', '', [])
+        check('a',        '', '', ['a'])
+        check('a/',       '', '', ['a'])
+        check('a/b',      '', '', ['a', 'b'])
+        check('a/b/',     '', '', ['a', 'b'])
+        check('a/b/c/d',  '', '', ['a', 'b', 'c', 'd'])
+        check('a/b//c/d', '', '', ['a', 'b', 'c', 'd'])
+        check('a/b/c/d',  '', '', ['a', 'b', 'c', 'd'])
+        check('.',        '', '', [])
+        check('././b',    '', '', ['b'])
+        check('a/./b',    '', '', ['a', 'b'])
+        check('a/./.',    '', '', ['a'])
+        check('/a/b',     '', sep, ['a', 'b'])
+
+    def test_empty_path(self):
+        # The empty path points to '.'
+        p = self.cls('')
+        self.assertEqual(str(p), '.')
+        # Special case for the empty path.
+        self._check_str('.', ('',))
+
+    def test_parts_interning(self):
+        P = self.cls
+        p = P('/usr/bin/foo')
+        q = P('/usr/local/bin')
+        # 'usr'
+        self.assertIs(p.parts[1], q.parts[1])
+        # 'bin'
+        self.assertIs(p.parts[2], q.parts[3])
 
     def test_join_nested(self):
         P = self.cls
@@ -60,14 +164,28 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
 
     def test_pickling_common(self):
         P = self.cls
-        p = P('/a/b')
-        for proto in range(0, pickle.HIGHEST_PROTOCOL + 1):
-            dumped = pickle.dumps(p, proto)
-            pp = pickle.loads(dumped)
-            self.assertIs(pp.__class__, p.__class__)
-            self.assertEqual(pp, p)
-            self.assertEqual(hash(pp), hash(p))
-            self.assertEqual(str(pp), str(p))
+        for pathstr in ('a', 'a/', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c', 'a/b/c/'):
+            with self.subTest(pathstr=pathstr):
+                p = P(pathstr)
+                for proto in range(0, pickle.HIGHEST_PROTOCOL + 1):
+                    dumped = pickle.dumps(p, proto)
+                    pp = pickle.loads(dumped)
+                    self.assertIs(pp.__class__, p.__class__)
+                    self.assertEqual(pp, p)
+                    self.assertEqual(hash(pp), hash(p))
+                    self.assertEqual(str(pp), str(p))
+
+    def test_repr_common(self):
+        for pathstr in ('a', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c'):
+            with self.subTest(pathstr=pathstr):
+                p = self.cls(pathstr)
+                clsname = p.__class__.__name__
+                r = repr(p)
+                # The repr() is in the form ClassName("forward-slashes path").
+                self.assertTrue(r.startswith(clsname + '('), r)
+                self.assertTrue(r.endswith(')'), r)
+                inner = r[len(clsname) + 1 : -1]
+                self.assertEqual(eval(inner), p.as_posix())
 
     def test_fspath_common(self):
         P = self.cls
@@ -106,6 +224,37 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
         sep = os.fsencode(self.sep)
         P = self.cls
         self.assertEqual(bytes(P('a/b')), b'a' + sep + b'b')
+
+    def test_eq_common(self):
+        P = self.cls
+        self.assertEqual(P('a/b'), P('a/b'))
+        self.assertEqual(P('a/b'), P('a', 'b'))
+        self.assertNotEqual(P('a/b'), P('a'))
+        self.assertNotEqual(P('a/b'), P('/a/b'))
+        self.assertNotEqual(P('a/b'), P())
+        self.assertNotEqual(P('/a/b'), P('/'))
+        self.assertNotEqual(P(), P('/'))
+        self.assertNotEqual(P(), "")
+        self.assertNotEqual(P(), {})
+        self.assertNotEqual(P(), int)
+
+    def test_equivalences(self):
+        for k, tuples in self.equivalences.items():
+            canon = k.replace('/', self.sep)
+            posix = k.replace(self.sep, '/')
+            if canon != posix:
+                tuples = tuples + [
+                    tuple(part.replace('/', self.sep) for part in t)
+                    for t in tuples
+                    ]
+                tuples.append((posix, ))
+            pcanon = self.cls(canon)
+            for t in tuples:
+                p = self.cls(*t)
+                self.assertEqual(p, pcanon, "failed with args {}".format(t))
+                self.assertEqual(hash(p), hash(pcanon))
+                self.assertEqual(str(p), canon)
+                self.assertEqual(p.as_posix(), posix)
 
     def test_ordering_common(self):
         # Ordering is tuple-alike.
@@ -152,6 +301,58 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
                 self.assertIs(q.__class__, p.__class__)
                 self.assertEqual(q, p)
                 self.assertEqual(repr(q), r)
+
+    def test_name_empty(self):
+        P = self.cls
+        self.assertEqual(P('').name, '')
+        self.assertEqual(P('.').name, '')
+        self.assertEqual(P('/a/b/.').name, 'b')
+
+    def test_stem_empty(self):
+        P = self.cls
+        self.assertEqual(P('').stem, '')
+        self.assertEqual(P('.').stem, '')
+
+    def test_with_name_empty(self):
+        P = self.cls
+        self.assertRaises(ValueError, P('').with_name, 'd.xml')
+        self.assertRaises(ValueError, P('.').with_name, 'd.xml')
+        self.assertRaises(ValueError, P('/').with_name, 'd.xml')
+        self.assertRaises(ValueError, P('a/b').with_name, '')
+        self.assertRaises(ValueError, P('a/b').with_name, '.')
+
+    def test_with_stem_empty(self):
+        P = self.cls
+        self.assertRaises(ValueError, P('').with_stem, 'd')
+        self.assertRaises(ValueError, P('.').with_stem, 'd')
+        self.assertRaises(ValueError, P('/').with_stem, 'd')
+        self.assertRaises(ValueError, P('a/b').with_stem, '')
+        self.assertRaises(ValueError, P('a/b').with_stem, '.')
+
+    def test_with_suffix_empty(self):
+        # Path doesn't have a "filename" component.
+        P = self.cls
+        self.assertRaises(ValueError, P('').with_suffix, '.gz')
+        self.assertRaises(ValueError, P('.').with_suffix, '.gz')
+        self.assertRaises(ValueError, P('/').with_suffix, '.gz')
+
+    def test_relative_to_several_args(self):
+        P = self.cls
+        p = P('a/b')
+        with self.assertWarns(DeprecationWarning):
+            p.relative_to('a', 'b')
+            p.relative_to('a', 'b', walk_up=True)
+
+    def test_is_relative_to_several_args(self):
+        P = self.cls
+        p = P('a/b')
+        with self.assertWarns(DeprecationWarning):
+            p.is_relative_to('a', 'b')
+
+    def test_match_empty(self):
+        P = self.cls
+        self.assertRaises(ValueError, P('a').match, '')
+        self.assertRaises(ValueError, P('a').match, '.')
 
 
 class PurePosixPathTest(PurePathTest):
@@ -810,10 +1011,14 @@ class PureWindowsPathTest(PurePathTest):
         self.assertTrue(P('c:/a').is_absolute())
         self.assertTrue(P('c:/a/b/').is_absolute())
         # UNC paths are absolute by definition.
+        self.assertTrue(P('//').is_absolute())
+        self.assertTrue(P('//a').is_absolute())
         self.assertTrue(P('//a/b').is_absolute())
         self.assertTrue(P('//a/b/').is_absolute())
         self.assertTrue(P('//a/b/c').is_absolute())
         self.assertTrue(P('//a/b/c/d').is_absolute())
+        self.assertTrue(P('//?/UNC/').is_absolute())
+        self.assertTrue(P('//?/UNC/spam').is_absolute())
 
     def test_join(self):
         P = self.cls
@@ -943,6 +1148,20 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
                                                  dir=os.getcwd()))
         self.addCleanup(os_helper.rmtree, d)
         return d
+
+    def test_matches_pathbase_api(self):
+        our_names = {name for name in dir(self.cls) if name[0] != '_'}
+        our_names.remove('is_reserved')  # only present in PurePath
+        path_names = {name for name in dir(pathlib._abc.PathBase) if name[0] != '_'}
+        self.assertEqual(our_names, path_names)
+        for attr_name in our_names:
+            if attr_name == 'pathmod':
+                # On Windows, Path.pathmod is ntpath, but PathBase.pathmod is
+                # posixpath, and so their docstrings differ.
+                continue
+            our_attr = getattr(self.cls, attr_name)
+            path_attr = getattr(pathlib._abc.PathBase, attr_name)
+            self.assertEqual(our_attr.__doc__, path_attr.__doc__)
 
     def test_concrete_class(self):
         if self.cls is pathlib.Path:
@@ -1586,6 +1805,60 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
             for it in iters:
                 self.assertEqual(next(it), expected)
             path = path / 'd'
+
+    def test_walk_above_recursion_limit(self):
+        recursion_limit = 40
+        # directory_depth > recursion_limit
+        directory_depth = recursion_limit + 10
+        base = self.cls(self.base, 'deep')
+        path = base.joinpath(*(['d'] * directory_depth))
+        path.mkdir(parents=True)
+
+        with set_recursion_limit(recursion_limit):
+            list(base.walk())
+            list(base.walk(top_down=False))
+
+    def test_glob_many_open_files(self):
+        depth = 30
+        P = self.cls
+        p = base = P(self.base) / 'deep'
+        p.mkdir()
+        for _ in range(depth):
+            p /= 'd'
+            p.mkdir()
+        pattern = '/'.join(['*'] * depth)
+        iters = [base.glob(pattern) for j in range(100)]
+        for it in iters:
+            self.assertEqual(next(it), p)
+        iters = [base.rglob('d') for j in range(100)]
+        p = base
+        for i in range(depth):
+            p = p / 'd'
+            for it in iters:
+                self.assertEqual(next(it), p)
+
+    def test_glob_above_recursion_limit(self):
+        recursion_limit = 50
+        # directory_depth > recursion_limit
+        directory_depth = recursion_limit + 10
+        base = self.cls(self.base, 'deep')
+        path = base.joinpath(*(['d'] * directory_depth))
+        path.mkdir(parents=True)
+
+        with set_recursion_limit(recursion_limit):
+            list(base.glob('**/'))
+
+    def test_glob_recursive_no_trailing_slash(self):
+        P = self.cls
+        p = P(self.base)
+        with self.assertWarns(FutureWarning):
+            p.glob('**')
+        with self.assertWarns(FutureWarning):
+            p.glob('*/**')
+        with self.assertWarns(FutureWarning):
+            p.rglob('**')
+        with self.assertWarns(FutureWarning):
+            p.rglob('*/**')
 
 
 @only_posix

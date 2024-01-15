@@ -20,7 +20,7 @@ In interactive mode, it then returns to the primary prompt; when input came from
 a file, it exits with a nonzero exit status after printing the stack trace.
 (Exceptions handled by an :keyword:`except` clause in a :keyword:`try` statement
 are not errors in this context.)  Some errors are unconditionally fatal and
-cause an exit with a nonzero exit; this applies to internal inconsistencies and
+cause an exit with a nonzero exit status; this applies to internal inconsistencies and
 some cases of running out of memory.  All error messages are written to the
 standard error stream; normal output from executed commands is written to
 standard output.

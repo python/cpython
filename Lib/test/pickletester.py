@@ -1825,6 +1825,14 @@ class AbstractPickleTests:
             t2 = self.loads(p)
             self.assert_is_copy(t, t2)
 
+    def test_unicode_memoization(self):
+        # Repeated str is re-used (even when escapes added).
+        for proto in protocols:
+            for s in '', 'xyz', 'xyz\n', 'x\\yz', 'x\xa1yz\r':
+                p = self.dumps((s, s), proto)
+                s1, s2 = self.loads(p)
+                self.assertIs(s1, s2)
+
     def test_bytes(self):
         for proto in protocols:
             for s in b'', b'xyz', b'xyz'*100:
@@ -2429,7 +2437,7 @@ class AbstractPickleTests:
         # Issue #3514: crash when there is an infinite loop in __getattr__
         x = BadGetattr()
         for proto in range(2):
-            with support.infinite_recursion():
+            with support.infinite_recursion(25):
                 self.assertRaises(RuntimeError, self.dumps, x, proto)
         for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
             s = self.dumps(x, proto)

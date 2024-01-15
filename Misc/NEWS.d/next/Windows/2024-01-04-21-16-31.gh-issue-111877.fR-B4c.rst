@@ -1,0 +1,2 @@
+:func:`os.stat` calls were returning incorrect time values for files that
+could not be accessed directly.
