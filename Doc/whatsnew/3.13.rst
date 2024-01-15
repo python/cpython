@@ -1366,7 +1366,7 @@ New Features
 * Modified :c:func:`_PyUnicode_ClearInterned` function to always delete all
   interned strings during a call to :c:func:`Py_Finalize`. This makes all
   is backwards incompatible to any C-Extension that holds onto an interned
-  string after a call to c:func:`Py_Finalize` and is then reused after a 
+  string after a call to c:func:`Py_Finalize` and is then reused after a
   call to c:func:`Py_Initialize`. Any issues arising from this behavior will
   normally result in crashes during the exectuion of the subsequent call to
   c:func:`Py_Initatilize` from accessing uninitialized memory. To fix, use
