@@ -9,12 +9,12 @@ leaving the user to a potential vulnerabilities. That said, the history of
 how these interned strings are handled have been changing during throughout
 different versions. For example:
 
-* In Python 3.9 and older, interned strings were never deleted. Only special
-build for Valgrind and Purity cleared them at exit
-* In Python 3.10 and 3.11, interned strings are always deleted at exit
-* In Python 3.12, interned strings are deleted only if Python is built in
-debug mode: they are not deleted in release mode
-* In Python 3.13, interned strings will now be akll deleted
+  * In Python 3.9 and older, interned strings were never deleted. Only special
+    build for Valgrind and Purity cleared them at exit
+  * In Python 3.10 and 3.11, interned strings are always deleted at exit
+  * In Python 3.12, interned strings are deleted only if Python is built in
+    debug mode: they are not deleted in release mode
+  * In Python 3.13, interned strings will now be akll deleted
 
 Given how we've changed guarantees throughout different versions, we do not
 expect that users actively rely on this behavior for their extensions.
