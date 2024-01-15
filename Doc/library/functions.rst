@@ -668,7 +668,7 @@ are always available.  They are listed here in alphabetical order.
       sign: "+" | "-"
       infinity: "Infinity" | "inf"
       nan: "nan"
-      digit: <a Unicode decimal digit, i.e. all characters the Unicode general category Nd>
+      digit: <a Unicode decimal digit, i.e. characters in Unicode general category Nd>
       digitpart: `digit` (["_"] `digit`)*
       number: [`digitpart`] "." `digitpart` | `digitpart` ["."]
       exponent: ("e" | "E") ["+" | "-"] `digitpart`
