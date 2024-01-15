@@ -3087,7 +3087,7 @@ class Win32NtTests(unittest.TestCase):
 
     @support.requires_subprocess()
     def test_stat_inaccessible_file(self):
-        filename = os.path.abspath(os_helper.TESTFN)
+        filename = os.path.abspath("test_stat_inaccessible_file.txt")
         ICACLS = os.path.expandvars(r"%SystemRoot%\System32\icacls.exe")
 
         with open(filename, "wb") as f:
@@ -3123,11 +3123,6 @@ class Win32NtTests(unittest.TestCase):
 
         self.addCleanup(cleanup)
 
-        # Read permissions back. This will help diagnose in case of failure
-        out = subprocess.check_output([ICACLS, filename], stderr=subprocess.STDOUT)
-        if support.verbose:
-            print(out.decode("oem", "backslashreplace"))
-
         if support.verbose:
             print("File:", filename)
             print("stat with access:", stat1)
@@ -3138,6 +3133,11 @@ class Win32NtTests(unittest.TestCase):
 
         if support.verbose:
             print(" without access:", stat2)
+
+        # Read permissions back. This will help diagnose in case of failure
+        out = subprocess.check_output([ICACLS, filename], stderr=subprocess.STDOUT)
+        if support.verbose:
+            print(out.decode("oem", "backslashreplace"))
 
         # We cannot get st_dev/st_ino, so ensure those are 0 or else our test
         # is not set up correctly
