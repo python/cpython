@@ -1295,7 +1295,7 @@ These can be used as types in annotations. They all support subscription using
    In this way, ``Annotated`` differs from the
    :func:`@no_type_check <no_type_check>` decorator, which can also be used for
    adding annotations outside the scope of the typing system, but
-   completely disables typechecking for a function or class.
+   completely disables typechecking for a function.
 
    The responsibility of how to interpret the metadata
    lies with the tool or library encountering an
@@ -2882,14 +2882,21 @@ Functions and decorators
 
 .. decorator:: no_type_check
 
-   Decorator to indicate that annotations are not type hints.
+   Decorator to make type checkers ignore a function.
 
-   This works as a class or function :term:`decorator`.  With a class, it
-   applies recursively to all methods and classes defined in that class
-   (but not to methods defined in its superclasses or subclasses). Type
-   checkers will ignore all annotations in a function or class with this
-   decorator.
+   When applied to a function, ``@no_type_check`` indicates that static type
+   checkers should suppress all type-related errors within that function. From the
+   perspective of a caller, all of the function's parameters and return type are
+   always assumed to be Any, even if they are otherwise annotated or the type
+   checker would normally infer the return type.
 
+   When applied to a class, the behavior of ``@no_type_check`` is unspecified;
+   static type checkers should feel free to ignore it.
+
+   At runtime, this works as a class or function :term:`decorator`. It sets the
+   ``__no_type_check__`` attribute on the decorated object to ``True``. With a
+   class, it applies recursively to all methods and classes defined in that
+   class (but not to methods defined in its superclasses or subclasses).
    ``@no_type_check`` mutates the decorated object in place.
 
 .. decorator:: no_type_check_decorator
