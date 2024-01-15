@@ -461,7 +461,7 @@ class SSLProtocol(protocols.BufferedProtocol):
                 logger.debug("%r received EOF", self)
 
             if self._state == SSLProtocolState.DO_HANDSHAKE:
-                self._on_handshake_complete(ConnectionResetError)
+                self._on_handshake_complete(ConnectionResetError())
 
             elif self._state == SSLProtocolState.WRAPPED:
                 self._set_state(SSLProtocolState.FLUSHING)
@@ -571,21 +571,17 @@ class SSLProtocol(protocols.BufferedProtocol):
             self._handshake_timeout_handle = None
 
         sslobj = self._sslobj
-        try:
-            if handshake_exc is None:
-                self._set_state(SSLProtocolState.WRAPPED)
-            else:
-                raise handshake_exc
-
+        if handshake_exc is None:
+            self._set_state(SSLProtocolState.WRAPPED)
             peercert = sslobj.getpeercert()
-        except Exception as exc:
+        else:
             self._set_state(SSLProtocolState.UNWRAPPED)
-            if isinstance(exc, ssl.CertificateError):
+            if isinstance(handshake_exc, ssl.CertificateError):
                 msg = 'SSL handshake failed on verifying the certificate'
             else:
                 msg = 'SSL handshake failed'
-            self._fatal_error(exc, msg)
-            self._wakeup_waiter(exc)
+            self._fatal_error(handshake_exc, msg)
+            self._wakeup_waiter(handshake_exc)
             return
 
         if self._loop.get_debug():
