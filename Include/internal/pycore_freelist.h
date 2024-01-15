@@ -59,10 +59,19 @@ struct _Py_float_state {
 #endif
 };
 
+struct _Py_slice_state {
+#ifdef WITH_FREELISTS
+    /* Using a cache is very effective since typically only a single slice is
+       created and then deleted again. */
+    PySliceObject *slice_cache;
+#endif
+};
+
 typedef struct _Py_freelist_state {
     struct _Py_float_state float_state;
     struct _Py_tuple_state tuple_state;
     struct _Py_list_state list_state;
+    struct _Py_slice_state slice_state;
 } _PyFreeListState;
 
 #ifdef __cplusplus
