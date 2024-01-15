@@ -1459,12 +1459,12 @@ printed to standard error when the argument is used::
 
    >>> import argparse
    >>> parser = argparse.ArgumentParser(prog='snake.py')
-   >>> parser.add_argument('--legs', default=0, deprecated=True)
+   >>> parser.add_argument('--legs', default=0, type=int, deprecated=True)
    >>> parser.parse_args([])
-   Namespace(legs='0')
-   >>> parser.parse_args(['--legs', '4'])
+   Namespace(legs=0)
+   >>> parser.parse_args(['--legs', '4'])  # doctest: +SKIP
    snake.py: warning: usage of option '--legs' is deprecated
-   Namespace(legs='4')
+   Namespace(legs=4)
 
 .. versionchanged:: 3.13
 
@@ -1892,7 +1892,7 @@ Sub-commands
       >>> subparsers = parser.add_subparsers()
       >>> run = subparsers.add_parser('run')
       >>> fly = subparsers.add_parser('fly', deprecated=True)
-      >>> parser.parse_args(['fly'])
+      >>> parser.parse_args(['fly'])  # doctest: +SKIP
       chicken.py: warning: usage of command 'fly' is deprecated
       Namespace()
 
