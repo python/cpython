@@ -1507,6 +1507,14 @@ class _DummyThread(Thread):
     def join(self, timeout=None):
         raise RuntimeError("cannot join a dummy thread")
 
+    def _after_fork(self, new_ident=None):
+        if new_ident is not None:
+            self.__class__ = _MainThread
+            self._name = 'MainThread'
+            self._daemonic = False
+            self._set_tstate_lock()
+        Thread._after_fork(self, new_ident=new_ident)
+
 
 # Global API functions
 
@@ -1697,9 +1705,6 @@ def _after_fork():
         # by threading.Thread. For example, a thread spawned
         # by thread.start_new_thread().
         current = _MainThread()
-    else:
-        if isinstance(current, _DummyThread):
-            current = _MainThread()
 
     _main_thread = current
 

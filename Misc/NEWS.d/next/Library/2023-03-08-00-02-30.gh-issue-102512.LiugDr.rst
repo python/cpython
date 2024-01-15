@@ -1,2 +1,4 @@
-Fix handling threading after os.fork() called from a foreign thread (aka
-DummyThread).
+When :func:`os.fork` is called from a foreign thread (aka ``_DummyThread``),
+the type of the thread in a child process is changed to ``_MainThread``.
+Also changed its name and daemonic status, it can be now joined.
+
