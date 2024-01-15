@@ -1,6 +1,6 @@
 This updates the interned string deallocation function
-`_PyUnicode_ClearInterned` to delete all interned strings during runtime
-finalization when calling `Py_Finalize`, regardless of their reference
+``_PyUnicode_ClearInterned`` to delete all interned strings during runtime
+finalization when calling ``Py_Finalize``, regardless of their reference
 count.
 
 Worth noting that if an extension accidentally holds onto a interned string,
