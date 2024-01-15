@@ -466,7 +466,8 @@ class LocalsTest(unittest.TestCase):
     Tests for locals.
     """
 
-    def test_locals_cur_frame_issue113939(self):
+    def test_locals_cleared_after_exception_handled(self):
+        # see gh-113939
         class C:
             pass
         wr = None
