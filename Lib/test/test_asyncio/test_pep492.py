@@ -77,7 +77,7 @@ class LockTests(BaseTest):
             self.assertFalse(lock.locked())
             with self.assertRaisesRegex(
                 TypeError,
-                "can't be used in 'await' expression"
+                "can't be awaited"
             ):
                 with await lock:
                     pass

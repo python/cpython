@@ -1043,7 +1043,7 @@ _PyCoro_GetAwaitableIter(PyObject *o)
     }
 
     PyErr_Format(PyExc_TypeError,
-                 "'%.100s' object can't be used in 'await' expression",
+                 "'%.100s' object can't be awaited",
                  ot->tp_name);
     return NULL;
 }
