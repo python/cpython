@@ -1053,10 +1053,10 @@ class TracebackException:
         self._str = _safe_string(exc_value, 'exception')
         notes = None
         try:
-            notes = getattr(exc_value, '__notes__', None)
-        except Exception:
-            pass
-        self.__notes__ = notes
+            self.__notes__ = getattr(exc_value, '__notes__', None)
+        except Exception as e:
+            self.__notes__ = [
+                f'Ignored exception getting __notes__: {_safe_string(e, '__notes__', repr)}']
 
         self._is_syntax_error = False
         self._have_exc_type = exc_type is not None

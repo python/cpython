@@ -2219,7 +2219,9 @@ class BaseExceptionReportingTests:
         e = BrokenException(123)
         vanilla = self.get_report(e)
         e.broken = True
-        self.assertEqual(self.get_report(e), vanilla)
+        self.assertEqual(
+            self.get_report(e),
+            vanilla + "Ignored exception getting __notes__: ValueError('no __notes__')\n")
 
     def test_exception_with_multiple_notes(self):
         for e in [ValueError(42), SyntaxError('bad syntax')]:
