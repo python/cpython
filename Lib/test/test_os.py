@@ -3087,7 +3087,7 @@ class Win32NtTests(unittest.TestCase):
 
     @support.requires_subprocess()
     def test_stat_inaccessible_file(self):
-        filename = os_helper.TESTFN
+        filename = os.path.abspath(os_helper.TESTFN)
         ICACLS = os.path.expandvars(r"%SystemRoot%\System32\icacls.exe")
 
         with open(filename, "wb") as f:
