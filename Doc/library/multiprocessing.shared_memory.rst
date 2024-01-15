@@ -48,9 +48,9 @@ copying of data.
    As a resource for sharing data across processes, shared memory blocks
    may outlive the original process that created them.  When one process
    no longer needs access to a shared memory block that might still be
-   needed by other processes, the :meth:`close()` method should be called.
+   needed by other processes, the :meth:`close` method should be called.
    When a shared memory block is no longer needed by any process, the
-   :meth:`unlink()` method should be called to ensure proper cleanup.
+   :meth:`unlink` method should be called to ensure proper cleanup.
 
    :param name:
       The unique name for the requested shared memory, specified as a string.
@@ -213,8 +213,8 @@ same :py:func:`!numpy.ndarray` from two distinct Python shells:
    This new process's sole purpose is to manage the life cycle
    of all shared memory blocks created through it.  To trigger the release
    of all shared memory blocks managed by that process, call
-   :meth:`~multiprocessing.managers.BaseManager.shutdown()` on the instance.
-   This triggers a :meth:`SharedMemory.unlink()` call on all of the
+   :meth:`~multiprocessing.managers.BaseManager.shutdown` on the instance.
+   This triggers a :meth:`SharedMemory.unlink` call on all of the
    :class:`SharedMemory` objects managed by that process and then
    stops the process itself.  By creating :class:`!SharedMemory` instances
    through a :class:`!SharedMemoryManager`, we avoid the need to manually track
