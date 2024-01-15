@@ -11,7 +11,7 @@ if sys.version_info < (3, 11):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("target", help="a PEP 11 target triple to compile for")
+    parser.add_argument("target", type=_targets.get_target, help="a PEP 11 target triple to compile for")
     parser.add_argument(
         "-d", "--debug", action="store_true", help="compile for a debug build of Python"
     )
@@ -19,5 +19,5 @@ if __name__ == "__main__":
         "-v", "--verbose", action="store_true", help="echo commands as they are run"
     )
     args = parser.parse_args()
-    target = _targets.get_target(args.target, debug=args.debug, verbose=args.verbose)
+    target = args.target.replace(debug=args.debug, verbose=args.verbose)
     target.build(pathlib.Path.cwd())

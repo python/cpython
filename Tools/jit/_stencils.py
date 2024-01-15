@@ -68,7 +68,6 @@ class Stencil:
     body: bytearray = dataclasses.field(default_factory=bytearray, init=False)
     holes: list[Hole] = dataclasses.field(default_factory=list, init=False)
     disassembly: list[str] = dataclasses.field(default_factory=list, init=False)
-    symbols: dict[str, int] = dataclasses.field(default_factory=dict, init=False)
     sections: dict[int, int] = dataclasses.field(default_factory=dict, init=False)
 
     def pad(self, alignment: int) -> None:
@@ -112,23 +111,20 @@ class Stencil:
 class StencilGroup:
     code: Stencil = dataclasses.field(default_factory=Stencil, init=False)
     data: Stencil = dataclasses.field(default_factory=Stencil, init=False)
+    symbols: dict[str, tuple[HoleValue, int]] = dataclasses.field(default_factory=dict, init=False)
     _got: dict[str, int] = dataclasses.field(default_factory=dict, init=False)
 
     def process_relocations(self) -> None:
         for stencil in [self.code, self.data]:
             for hole in stencil.holes:
                 if hole.value is HoleValue.GOT:
-                    value, symbol = HoleValue.DATA, None
-                    addend = hole.addend + self._global_offset_table_lookup(hole.symbol)
-                    hole.value, hole.symbol, hole.addend = value, symbol, addend
-                elif hole.symbol in self.data.symbols:
-                    value, symbol = HoleValue.DATA, None
-                    addend = hole.addend + self.data.symbols[hole.symbol]
-                    hole.value, hole.symbol, hole.addend = value, symbol, addend
-                elif hole.symbol in self.code.symbols:
-                    value, symbol = HoleValue.CODE, None
-                    addend = hole.addend + self.code.symbols[hole.symbol]
-                    hole.value, hole.symbol, hole.addend = value, symbol, addend
+                    value, addend = HoleValue.DATA, self._global_offset_table_lookup(hole.symbol)
+                    addend += hole.addend
+                    hole.value, hole.symbol, hole.addend = value, None, addend
+                elif hole.symbol in self.symbols:
+                    value, addend = self.symbols[hole.symbol]
+                    addend += hole.addend
+                    hole.value, hole.symbol, hole.addend = value, None, addend
         self._emit_global_offset_table()
 
     def _global_offset_table_lookup(self, symbol: str | None) -> int:
@@ -140,12 +136,9 @@ class StencilGroup:
     def _emit_global_offset_table(self) -> None:
         got = len(self.data.body)
         for s, offset in self._got.items():
-            if s in self.code.symbols:
-                value, symbol = HoleValue.CODE, None
-                addend = self.code.symbols[s]
-            elif s in self.data.symbols:
-                value, symbol = HoleValue.DATA, None
-                addend = self.data.symbols[s]
+            if s in self.symbols:
+                value, addend = self.symbols[s]
+                symbol = None
             else:
                 value, symbol = symbol_to_value(s)
                 addend = 0

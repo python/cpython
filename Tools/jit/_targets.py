@@ -78,15 +78,15 @@ class _Target(typing.Generic[_S, _R]):
         sections: list[dict[typing.Literal["Section"], _S]] = json.loads(output)
         for wrapped_section in sections:
             self._handle_section(wrapped_section["Section"], group)
-        assert group.code.symbols["_JIT_ENTRY"] == 0
+        assert group.symbols["_JIT_ENTRY"] == (_stencils.HoleValue.CODE, 0)
         if group.data.body:
             line = f"0: {str(bytes(group.data.body)).removeprefix('b')}"
             group.data.disassembly.append(line)
-        # XXX: Do this in the group._process_relocations() method?
+        # XXX: Do this in the group.process_relocations() method?
         group.data.pad(8)
         group.process_relocations()
         holes = group.code.holes
-        # XXX: Do this in the group._process_relocations() method?
+        # XXX: Do this in the group.process_relocations() method?
         group.code.holes = []
         for hole in holes:
             if (
@@ -197,8 +197,10 @@ class _ELF(
             if "SHF_ALLOC" not in flags:
                 return
             if "SHF_EXECINSTR" in flags:
+                value = _stencils.HoleValue.CODE
                 stencil = group.code
             else:
+                value = _stencils.HoleValue.DATA
                 stencil = group.data
             stencil.sections[section["Index"]] = len(stencil.body)
             for wrapped_symbol in section["Symbols"]:
@@ -206,8 +208,8 @@ class _ELF(
                 offset = len(stencil.body) + symbol["Value"]
                 name = symbol["Name"]["Value"]
                 name = name.removeprefix(self.prefix)
-                assert name not in stencil.symbols
-                stencil.symbols[name] = offset
+                assert name not in group.symbols
+                group.symbols[name] = value, offset
             section_data = section["SectionData"]
             stencil.body.extend(section_data["Bytes"])
             assert not section["Relocations"]
@@ -251,8 +253,10 @@ class _COFF(
             # Zeroed BSS data, seen with printf debugging calls:
             section_data_bytes = [0] * section["RawDataSize"]
         if "IMAGE_SCN_MEM_EXECUTE" in flags:
+            value = _stencils.HoleValue.CODE
             stencil = group.code
         elif "IMAGE_SCN_MEM_READ" in flags:
+            value = _stencils.HoleValue.DATA
             stencil = group.data
         else:
             return
@@ -263,7 +267,8 @@ class _COFF(
             offset = base + symbol["Value"]
             name = symbol["Name"]
             name = name.removeprefix(self.prefix)
-            stencil.symbols[name] = offset
+            assert name not in group.symbols
+            group.symbols[name] = value, offset
         for wrapped_relocation in section["Relocations"]:
             relocation = wrapped_relocation["Relocation"]
             hole = self._handle_relocation(base, relocation, stencil.body)
@@ -309,13 +314,17 @@ class _MachO(
         name = section["Name"]["Value"]
         name = name.removeprefix(self.prefix)
         if "SomeInstructions" in flags:
+            value = _stencils.HoleValue.CODE
             stencil = group.code
             bias = 0
-            stencil.symbols[name] = section["Address"] - bias
+            assert name not in group.symbols
+            group.symbols[name] = value, section["Address"] - bias
         else:
+            value = _stencils.HoleValue.DATA
             stencil = group.data
             bias = len(group.code.body)
-            stencil.symbols[name] = len(group.code.body)
+            assert name not in group.symbols
+            group.symbols[name] = value, len(group.code.body)
         base = stencil.sections[section["Index"]] = section["Address"] - bias
         stencil.body.extend(
             [0] * (section["Address"] - len(group.code.body) - len(group.data.body))
@@ -327,7 +336,8 @@ class _MachO(
             offset = symbol["Value"] - bias
             name = symbol["Name"]["Value"]
             name = name.removeprefix(self.prefix)
-            stencil.symbols[name] = offset
+            assert name not in group.symbols
+            group.symbols[name] = value, offset
         assert "Relocations" in section
         for wrapped_relocation in section["Relocations"]:
             relocation = wrapped_relocation["Relocation"]
@@ -372,20 +382,18 @@ class _MachO(
         return _stencils.Hole(offset, kind, value, symbol, addend)
 
 
-def get_target(
-    host: str, *, debug: bool = False, verbose: bool = False
-) -> _COFF | _ELF | _MachO:
+def get_target(host: str) -> _COFF | _ELF | _MachO:
     """Build a _Target for the given host "triple" and options."""
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
-        return _MachO(host, alignment=8, prefix="_", debug=debug, verbose=verbose)
+        return _MachO(host, alignment=8, prefix="_")
     if re.fullmatch(r"aarch64-.*-linux-gnu", host):
-        return _ELF(host, alignment=8, debug=debug, verbose=verbose)
+        return _ELF(host, alignment=8)
     if re.fullmatch(r"i686-pc-windows-msvc", host):
-        return _COFF(host, prefix="_", debug=debug, verbose=verbose)
+        return _COFF(host, prefix="_")
     if re.fullmatch(r"x86_64-apple-darwin.*", host):
-        return _MachO(host, prefix="_", debug=debug, verbose=verbose)
+        return _MachO(host, prefix="_")
     if re.fullmatch(r"x86_64-pc-windows-msvc", host):
-        return _COFF(host, debug=debug, verbose=verbose)
+        return _COFF(host)
     if re.fullmatch(r"x86_64-.*-linux-gnu", host):
-        return _ELF(host, debug=debug, verbose=verbose)
+        return _ELF(host)
     raise ValueError(host)
