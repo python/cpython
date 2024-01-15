@@ -187,9 +187,6 @@ struct _is {
     struct _Py_long_state long_state;
     struct _dtoa_state dtoa;
     struct _py_func_state func_state;
-    /* Using a cache is very effective since typically only a single slice is
-       created and then deleted again. */
-    PySliceObject *slice_cache;
 
     struct _Py_tuple_state tuple;
     struct _Py_dict_state dict_state;
