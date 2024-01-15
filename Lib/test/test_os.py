@@ -3099,7 +3099,7 @@ class Win32NtTests(unittest.TestCase):
             # Remove all permissions from the file
             out = subprocess.check_output([ICACLS, filename, "/inheritance:r"],
                                     stderr=subprocess.STDOUT)
-            print(out)
+            print(out.decode('ascii', 'backslashreplace'))
         except subprocess.CalledProcessError as ex:
             if support.verbose:
                 print(ICACLS, filename, "/inheritance:r", "failed.")
