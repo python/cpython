@@ -1335,9 +1335,8 @@ def _asdict_inner(obj, dict_factory):
     obj_type = type(obj)
     if obj_type in _ATOMIC_TYPES:
         return obj
-    # dataclass instance
     elif hasattr(obj_type, _FIELDS):
-        # fast path for the common case
+        # dataclass instance: fast path for the common case
         if dict_factory is dict:
             return {
                 f.name: _asdict_inner(getattr(obj, f.name), dict)
@@ -1348,6 +1347,7 @@ def _asdict_inner(obj, dict_factory):
                 (f.name, _asdict_inner(getattr(obj, f.name), dict_factory))
                 for f in fields(obj)
             ])
+    # handle the builtin types first for speed; subclasses handled below
     elif obj_type is list:
         return [_asdict_inner(v, dict_factory) for v in obj]
     elif obj_type is dict:
@@ -1380,10 +1380,6 @@ def _asdict_inner(obj, dict_factory):
             return obj_type(*[_asdict_inner(v, dict_factory) for v in obj])
         else:
             return obj_type(_asdict_inner(v, dict_factory) for v in obj)
-    elif issubclass(obj_type, list):
-        # Assume we can create an object of this type by passing in a
-        # generator
-        return obj_type(_asdict_inner(v, dict_factory) for v in obj)
     elif issubclass(obj_type, dict):
         if hasattr(obj_type, 'default_factory'):
             # obj is a defaultdict, which has a different constructor from
@@ -1395,6 +1391,10 @@ def _asdict_inner(obj, dict_factory):
         return obj_type((_asdict_inner(k, dict_factory),
                          _asdict_inner(v, dict_factory))
                         for k, v in obj.items())
+    elif issubclass(obj_type, list):
+        # Assume we can create an object of this type by passing in a
+        # generator
+        return obj_type(_asdict_inner(v, dict_factory) for v in obj)
     else:
         return copy.deepcopy(obj)
 
