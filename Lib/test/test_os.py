@@ -3095,11 +3095,6 @@ class Win32NtTests(unittest.TestCase):
 
         stat1 = os.stat(filename)
 
-        # Read permissions back. This will help diagnose in case of failure
-        out = subprocess.check_output([ICACLS, filename], stderr=subprocess.STDOUT)
-        if support.verbose:
-            print(out.decode("oem", "backslashreplace"))
-
         try:
             # Remove all permissions from the file
             subprocess.check_output([ICACLS, filename, "/inheritance:r"],
@@ -3113,6 +3108,22 @@ class Win32NtTests(unittest.TestCase):
             except OSError:
                 pass
             self.skipTest("Unable to create inaccessible file")
+
+        # We should now not be able to open the file. If we can, the test isn't
+        # going to work. A few retries to try and catch slow updates
+        try:
+            for _ in range(5):
+                with open(filename, "rb") as f:
+                    pass
+                time.sleep(0.5)
+        except PermissionError:
+            pass
+        else:
+            try:
+                os.unlink(filename)
+            except Exception:
+                pass
+            self.skipTest("Still had access to inaccessible file")
 
         def cleanup():
             # Give delete permission. We are the file owner, so we can do this
@@ -3133,11 +3144,6 @@ class Win32NtTests(unittest.TestCase):
 
         if support.verbose:
             print(" without access:", stat2)
-
-        # Read permissions back. This will help diagnose in case of failure
-        out = subprocess.check_output([ICACLS, filename], stderr=subprocess.STDOUT)
-        if support.verbose:
-            print(out.decode("oem", "backslashreplace"))
 
         # We cannot get st_dev/st_ino, so ensure those are 0 or else our test
         # is not set up correctly
