@@ -1,3 +1,4 @@
+"""Utilities for writing StencilGroups out to a C header file."""
 import shlex
 import sys
 import typing
