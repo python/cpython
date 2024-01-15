@@ -777,7 +777,7 @@ The add_argument() method
    * dest_ - The name of the attribute to be added to the object returned by
      :meth:`parse_args`.
 
-   * deprecated_ - Whether or not the usage of the argument is deprecated.
+   * deprecated_ - Whether or not use of the argument is deprecated.
 
 The following sections describe how each of these are used.
 
@@ -1447,16 +1447,15 @@ behavior::
 deprecated
 ^^^^^^^^^^
 
-During projects lifecycle some arguments could be removed from the
-command line, before removing these arguments definitively you would inform
-your user that arguments are deprecated and will be removed.
+During a project's lifetime, some arguments may need to be removed from the
+command line. Before removing them, you should inform
+your users that the arguments are deprecated and will be removed.
 The ``deprecated`` keyword argument of
-:meth:`~ArgumentParser.add_argument`, whose value default to ``False``,
+:meth:`~ArgumentParser.add_argument`, which defaults to ``False``,
 specifies if the argument is deprecated and will be removed
-from the command-line available arguments in the future.
-For arguments, if ``deprecated`` is ``True`` then a warning will be
-printed to the standard error if the argument is given by user in the
-command line parameters::
+in the future.
+For arguments, if ``deprecated`` is ``True``, then a warning will be
+printed to standard error when the argument is used::
 
    >>> import argparse
    >>> parser = argparse.ArgumentParser(prog='snake.py')
