@@ -1442,7 +1442,7 @@ behavior::
    Namespace(bar='XXX')
 
 
-.. _deprecated::
+.. _deprecated:
 
 deprecated
 ^^^^^^^^^^

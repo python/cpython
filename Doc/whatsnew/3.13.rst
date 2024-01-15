@@ -161,6 +161,7 @@ argrapse
   :meth:`~argparse.ArgumentParser.add_argument` and :meth:`!add_parser`
   which allows to deprecate command-line options, positional arguments and
   subcommands.
+  (Contributed by Serhiy Storchaka in :gh:`18208`).
 
 array
 -----
