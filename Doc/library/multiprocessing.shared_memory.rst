@@ -21,7 +21,7 @@ on a multicore or symmetric multiprocessor (SMP) machine.  To assist with
 the life-cycle management of shared memory especially across distinct
 processes, a :class:`~multiprocessing.managers.BaseManager` subclass,
 :class:`SharedMemoryManager`, is also provided in the
-``multiprocessing.managers`` module.
+:mod:`multiprocessing.managers` module.
 
 In this module, shared memory refers to "System V style" shared memory blocks
 (though is not necessarily implemented explicitly as such) and does not refer
@@ -153,7 +153,7 @@ instances::
 
 The following example demonstrates a practical use of the :class:`SharedMemory`
 class with `NumPy arrays <https://numpy.org/>`_, accessing the
-same ``numpy.ndarray`` from two distinct Python shells:
+same :py:func:`!numpy.ndarray` from two distinct Python shells:
 
 .. doctest::
    :options: +SKIP
@@ -216,8 +216,8 @@ same ``numpy.ndarray`` from two distinct Python shells:
    :meth:`~multiprocessing.managers.BaseManager.shutdown()` on the instance.
    This triggers a :meth:`SharedMemory.unlink()` call on all of the
    :class:`SharedMemory` objects managed by that process and then
-   stops the process itself.  By creating ``SharedMemory`` instances
-   through a ``SharedMemoryManager``, we avoid the need to manually track
+   stops the process itself.  By creating :class:`!SharedMemory` instances
+   through a :class:`!SharedMemoryManager`, we avoid the need to manually track
    and trigger the freeing of shared memory resources.
 
    This class provides methods for creating and returning :class:`SharedMemory`
@@ -226,18 +226,18 @@ same ``numpy.ndarray`` from two distinct Python shells:
 
    Refer to :class:`multiprocessing.managers.BaseManager` for a description
    of the inherited *address* and *authkey* optional input arguments and how
-   they may be used to connect to an existing ``SharedMemoryManager`` service
-   from other processes.
+   they may be used to connect to an existing :class:`!SharedMemoryManager`
+   service from other processes.
 
    .. method:: SharedMemory(size)
 
       Create and return a new :class:`SharedMemory` object with the
-      specified ``size`` in bytes.
+      specified *size* in bytes.
 
    .. method:: ShareableList(sequence)
 
       Create and return a new :class:`ShareableList` object, initialized
-      by the values from the input ``sequence``.
+      by the values from the input *sequence*.
 
 
 The following example demonstrates the basic mechanisms of a
@@ -289,19 +289,19 @@ shared memory blocks created using that manager are all released when the
    only the ``int`` (signed 64-bit), ``float``, ``bool``, ``str`` (less
    than 10M bytes each when encoded as utf-8), ``bytes`` (less than 10M
    bytes each), and ``None`` built-in data types.  It also notably
-   differs from the built-in ``list`` type in that these lists can not
+   differs from the built-in :class:`list` type in that these lists can not
    change their overall length (i.e. no append, insert, etc.) and do not
    support the dynamic creation of new :class:`ShareableList` instances
    via slicing.
 
-   *sequence* is used in populating a new ``ShareableList`` full of values.
+   *sequence* is used in populating a new :class:`!ShareableList` full of values.
    Set to ``None`` (the default) to instead attach to an already existing
-   ``ShareableList`` by its unique shared memory name.
+   :class:`!ShareableList` by its unique shared memory name.
 
    *name* is the unique name for the requested shared memory, as described
    in the definition for :class:`SharedMemory`.  When attaching to an
-   existing ``ShareableList``, specify its shared memory block's unique
-   name while leaving ``sequence`` set to ``None``.
+   existing :class:`!ShareableList`, specify its shared memory block's unique
+   name while leaving *sequence* set to ``None``.
 
    .. note::
 
@@ -334,12 +334,12 @@ shared memory blocks created using that manager are all released when the
 
    .. method:: count(value)
 
-      Returns the number of occurrences of ``value``.
+      Return the number of occurrences of *value*.
 
    .. method:: index(value)
 
-      Returns first index position of ``value``.  Raises :exc:`ValueError` if
-      ``value`` is not present.
+      Return first index position of *value*.  Raises :exc:`ValueError` if
+      *value* is not present.
 
    .. attribute:: format
 
@@ -399,8 +399,8 @@ behind it:
    >>> c.shm.close()
    >>> c.shm.unlink()
 
-The following examples demonstrates that ``ShareableList``
-(and underlying ``SharedMemory``) objects
+The following examples demonstrates that :class:`ShareableList`
+(and underlying :class:`SharedMemory`) objects
 can be pickled and unpickled if needed.
 Note, that it will still be the same shared object.
 This happens, because the deserialized object has
