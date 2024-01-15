@@ -55,7 +55,8 @@ class ClearTest(unittest.TestCase):
         # The reference was released by .clear()
         self.assertIs(None, wr())
 
-    def test_clear_locals_issue113939(self):
+    def test_clear_locals_after_f_locals_access(self):
+        # see gh-113939
         class C:
             pass
         wr = None
