@@ -1171,8 +1171,8 @@ class ArgsTestCase(BaseTestCase):
                                 stderr=subprocess.STDOUT)
         self.check_executed_tests(output, [test], failed=test, stats=1)
 
-        line = 'beginning 6 repetitions\n123456\n......\n'
-        self.check_line(output, re.escape(line))
+        line = r'beginning 6 repetitions. .*\n123:456\n[.0-9X]{3} 111\n'
+        self.check_line(output, line)
 
         line2 = '%s leaked [1, 1, 1] %s, sum=3\n' % (test, what)
         self.assertIn(line2, output)
