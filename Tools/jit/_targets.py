@@ -197,7 +197,6 @@ class _ELF(
                 offset = len(stencil.body) + symbol["Value"]
                 name = symbol["Name"]["Value"]
                 name = name.removeprefix(self.prefix)
-                assert name not in group.symbols
                 group.symbols[name] = value, offset
             stencil.body.extend(section["SectionData"]["Bytes"])
             assert not section["Relocations"]
@@ -255,7 +254,6 @@ class _COFF(
             offset = base + symbol["Value"]
             name = symbol["Name"]
             name = name.removeprefix(self.prefix)
-            assert name not in group.symbols
             group.symbols[name] = value, offset
         for wrapped_relocation in section["Relocations"]:
             relocation = wrapped_relocation["Relocation"]
@@ -303,16 +301,14 @@ class _MachO(
         if "SomeInstructions" in flags:
             value = _stencils.HoleValue.CODE
             stencil = group.code
-            bias = 0
-            assert name not in group.symbols
-            group.symbols[name] = value, section["Address"] - bias
+            start_address = 0
+            group.symbols[name] = value, section["Address"] - start_address
         else:
             value = _stencils.HoleValue.DATA
             stencil = group.data
-            bias = len(group.code.body)
-            assert name not in group.symbols
+            start_address = len(group.code.body)
             group.symbols[name] = value, len(group.code.body)
-        base = stencil.sections[section["Index"]] = section["Address"] - bias
+        base = stencil.sections[section["Index"]] = section["Address"] - start_address
         stencil.body.extend(
             [0] * (section["Address"] - len(group.code.body) - len(group.data.body))
         )
@@ -320,10 +316,9 @@ class _MachO(
         assert "Symbols" in section
         for wrapped_symbol in section["Symbols"]:
             symbol = wrapped_symbol["Symbol"]
-            offset = symbol["Value"] - bias
+            offset = symbol["Value"] - start_address
             name = symbol["Name"]["Value"]
             name = name.removeprefix(self.prefix)
-            assert name not in group.symbols
             group.symbols[name] = value, offset
         assert "Relocations" in section
         for wrapped_relocation in section["Relocations"]:
