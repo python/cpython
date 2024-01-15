@@ -1,7 +1,11 @@
-frame.clear(), clear locals, not just fast locals. This is relevant once
-frame.f_locals was accessed, which would contain also references to all the
-locals.
+frame.clear():
+Clear frame.f_locals as well, and not only the fast locals.
+This is relevant once frame.f_locals was accessed,
+which would contain also references to all the locals.
 
-Also, if frame.f_locals was accessed of the current frame, e.g. like
-exception handling code might do, for any DELETE_FAST, reset frame.f_locals,
-such that objects can be freed, e.g. the exception.
+Opcode DELETE_FAST:
+Also clear frame.f_locals, and not only the fast local.
+If frame.f_locals was accessed of the current frame,
+e.g. like exception handling code might do,
+frame.f_locals still holds references to the locals,
+even though you would expect that they are freed.
