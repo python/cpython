@@ -88,7 +88,6 @@ class Stencil:
         self.disassembly.append(f"{offset:x}: {' '.join(['00'] * padding)}")
         self.body.extend([0] * padding)
 
-    # XXX: Probably belongs in _targets:
     def emit_aarch64_trampoline(self, hole: Hole) -> None:
         """Even with the large code model, AArch64 Linux insists on 28-bit jumps."""
         base = len(self.body)

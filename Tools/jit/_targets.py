@@ -6,6 +6,7 @@ import json
 import os
 import pathlib
 import re
+import sys
 import tempfile
 import typing
 
@@ -13,6 +14,9 @@ import _llvm
 import _schema
 import _stencils
 import _writer
+
+if sys.version_info < (3, 11):
+    raise RuntimeError("Building the JIT compiler requires Python 3.11 or newer!")
 
 TOOLS_JIT_BUILD = pathlib.Path(__file__).resolve()
 TOOLS_JIT = TOOLS_JIT_BUILD.parent
@@ -83,7 +87,6 @@ class _Target(typing.Generic[_S, _R]):
         if group.data.body:
             line = f"0: {str(bytes(group.data.body)).removeprefix('b')}"
             group.data.disassembly.append(line)
-        # XXX: Do this in the group.process_relocations() method?
         group.process_relocations()
         return group
 
@@ -196,8 +199,7 @@ class _ELF(
                 name = name.removeprefix(self.prefix)
                 assert name not in group.symbols
                 group.symbols[name] = value, offset
-            section_data = section["SectionData"]
-            stencil.body.extend(section_data["Bytes"])
+            stencil.body.extend(section["SectionData"]["Bytes"])
             assert not section["Relocations"]
         else:
             assert section_type in {
@@ -295,7 +297,6 @@ class _MachO(
     ) -> None:
         assert section["Address"] >= len(group.code.body)
         assert "SectionData" in section
-        section_data = section["SectionData"]
         flags = {flag["Name"] for flag in section["Attributes"]["Flags"]}
         name = section["Name"]["Value"]
         name = name.removeprefix(self.prefix)
@@ -315,7 +316,7 @@ class _MachO(
         stencil.body.extend(
             [0] * (section["Address"] - len(group.code.body) - len(group.data.body))
         )
-        stencil.body.extend(section_data["Bytes"])
+        stencil.body.extend(section["SectionData"]["Bytes"])
         assert "Symbols" in section
         for wrapped_symbol in section["Symbols"]:
             symbol = wrapped_symbol["Symbol"]

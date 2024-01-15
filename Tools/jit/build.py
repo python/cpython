@@ -2,12 +2,8 @@
 
 import argparse
 import pathlib
-import sys
 
 import _targets
-
-if sys.version_info < (3, 11):
-    raise RuntimeError("Building the JIT compiler requires Python 3.11 or newer!")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
