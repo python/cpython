@@ -390,11 +390,12 @@ Initializing and finalizing the interpreter
    time (without calling :c:func:`Py_Initialize` again first).  Normally the
    return value is ``0``.  If there were errors during finalization
    (flushing buffered data), ``-1`` is returned.
- 
+
    Note that Python will do a best effort at freeing all memory allocated by the Python
    interpreter.  Therefore, any C-Extension should make sure to correctly clean up all
    of the preveiously allocated PyObjects before using them in subsequent calls to
-   `Py_Initialize`.  Otherwise it introduces vulnerabilities and incorrect behavior.
+   :c:func:`Py_Initialize`.  Otherwise it could introduce vulnerabilities and incorrect
+   behavior.
 
    This function is provided for a number of reasons.  An embedding application
    might want to restart Python without having to restart the application itself.
