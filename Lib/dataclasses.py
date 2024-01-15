@@ -591,13 +591,13 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
         '__dataclass_builtins_object__': object,
     })
 
-    body_lines = [
-        line
-        for f in fields
+    body_lines = []
+    for f in fields:
+        line = _field_init(f, frozen, locals, self_name, slots)
         # line is None means that this field doesn't require
         # initialization (it's a pseudo-field).  Just skip it.
-        if (line := _field_init(f, frozen, locals, self_name, slots))
-    ]
+        if line:
+            body_lines.append(line)
 
     # Does this class have a post-init function?
     if has_post_init:
