@@ -24,7 +24,6 @@ Doc/glossary.rst
 Doc/howto/descriptor.rst
 Doc/howto/enum.rst
 Doc/howto/logging.rst
-Doc/howto/urllib2.rst
 Doc/library/ast.rst
 Doc/library/asyncio-extending.rst
 Doc/library/asyncio-policy.rst
@@ -49,7 +48,6 @@ Doc/library/faulthandler.rst
 Doc/library/fcntl.rst
 Doc/library/ftplib.rst
 Doc/library/functools.rst
-Doc/library/http.client.rst
 Doc/library/http.cookiejar.rst
 Doc/library/http.server.rst
 Doc/library/importlib.rst
@@ -67,7 +65,6 @@ Doc/library/pickletools.rst
 Doc/library/platform.rst
 Doc/library/plistlib.rst
 Doc/library/profile.rst
-Doc/library/pyclbr.rst
 Doc/library/pydoc.rst
 Doc/library/pyexpat.rst
 Doc/library/readline.rst
@@ -78,7 +75,6 @@ Doc/library/smtplib.rst
 Doc/library/socket.rst
 Doc/library/ssl.rst
 Doc/library/stdtypes.rst
-Doc/library/string.rst
 Doc/library/subprocess.rst
 Doc/library/termios.rst
 Doc/library/test.rst

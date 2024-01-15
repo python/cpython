@@ -49,7 +49,7 @@ get_testcapi_state(PyObject *module)
 
 static PyObject *
 get_testerror(PyObject *self) {
-    testcapistate_t *state = get_testcapi_state((PyObject *)Py_TYPE(self));
+    testcapistate_t *state = get_testcapi_state(self);
     return state->error;
 }
 
@@ -2409,6 +2409,32 @@ type_get_version(PyObject *self, PyObject *type)
     return res;
 }
 
+static PyObject *
+type_modified(PyObject *self, PyObject *type)
+{
+    if (!PyType_Check(type)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a type");
+        return NULL;
+    }
+    PyType_Modified((PyTypeObject *)type);
+    Py_RETURN_NONE;
+}
+
+// Circumvents standard version assignment machinery - use with caution and only on
+// short-lived heap types
+static PyObject *
+type_assign_specific_version_unsafe(PyObject *self, PyObject *args)
+{
+    PyTypeObject *type;
+    unsigned int version;
+    if (!PyArg_ParseTuple(args, "Oi:type_assign_specific_version_unsafe", &type, &version)) {
+        return NULL;
+    }
+    assert(!PyType_HasFeature(type, Py_TPFLAGS_IMMUTABLETYPE));
+    type->tp_version_tag = version;
+    type->tp_flags |= Py_TPFLAGS_VALID_VERSION_TAG;
+    Py_RETURN_NONE;
+}
 
 static PyObject *
 type_assign_version(PyObject *self, PyObject *type)
@@ -3342,6 +3368,9 @@ static PyMethodDef TestMethods[] = {
     {"test_py_is_macros", test_py_is_macros, METH_NOARGS},
     {"test_py_is_funcs", test_py_is_funcs, METH_NOARGS},
     {"type_get_version", type_get_version, METH_O, PyDoc_STR("type->tp_version_tag")},
+    {"type_modified", type_modified, METH_O, PyDoc_STR("PyType_Modified")},
+    {"type_assign_specific_version_unsafe", type_assign_specific_version_unsafe, METH_VARARGS,
+     PyDoc_STR("forcefully assign type->tp_version_tag")},
     {"type_assign_version", type_assign_version, METH_O, PyDoc_STR("PyUnstable_Type_AssignVersionTag")},
     {"type_get_tp_bases", type_get_tp_bases, METH_O},
     {"type_get_tp_mro", type_get_tp_mro, METH_O},
@@ -3947,7 +3976,6 @@ PyInit__testcapi(void)
 
     testcapistate_t *state = get_testcapi_state(m);
     state->error = PyErr_NewException("_testcapi.error", NULL, NULL);
-    Py_INCREF(state->error);
     PyModule_AddObject(m, "error", state->error);
 
     if (PyType_Ready(&ContainerNoGC_type) < 0) {

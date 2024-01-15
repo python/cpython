@@ -208,13 +208,13 @@ The grammar for a replacement field is as follows:
 
 .. productionlist:: format-string
    replacement_field: "{" [`field_name`] ["!" `conversion`] [":" `format_spec`] "}"
-   field_name: arg_name ("." `attribute_name` | "[" `element_index` "]")*
-   arg_name: [`identifier` | `digit`+]
-   attribute_name: `identifier`
-   element_index: `digit`+ | `index_string`
+   field_name: `arg_name` ("." `attribute_name` | "[" `element_index` "]")*
+   arg_name: [`~python-grammar:identifier` | `~python-grammar:digit`+]
+   attribute_name: `~python-grammar:identifier`
+   element_index: `~python-grammar:digit`+ | `index_string`
    index_string: <any source character except "]"> +
    conversion: "r" | "s" | "a"
-   format_spec: <described in the next section>
+   format_spec: `format-spec:format_spec`
 
 In less formal terms, the replacement field can start with a *field_name* that specifies
 the object whose value is to be formatted and inserted
@@ -316,9 +316,9 @@ The general form of a *standard format specifier* is:
    fill: <any character>
    align: "<" | ">" | "=" | "^"
    sign: "+" | "-" | " "
-   width: `digit`+
+   width: `~python-grammar:digit`+
    grouping_option: "_" | ","
-   precision: `digit`+
+   precision: `~python-grammar:digit`+
    type: "b" | "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "n" | "o" | "s" | "x" | "X" | "%"
 
 If a valid *align* value is specified, it can be preceded by a *fill*
