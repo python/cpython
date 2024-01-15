@@ -13,6 +13,8 @@ import codecs
 import subprocess
 import binascii
 import collections
+import time
+import zoneinfo
 from test import support
 from test.support import os_helper
 from io import BytesIO
@@ -508,6 +510,19 @@ class TestPlistlib(unittest.TestCase):
         data2 = plistlib.dumps(pl2)
         self.assertEqual(data, data2)
 
+    def test_loads_str_with_xml_fmt(self):
+        pl = self._create()
+        b = plistlib.dumps(pl)
+        s = b.decode()
+        self.assertIsInstance(s, str)
+        pl2 = plistlib.loads(s)
+        self.assertEqual(pl, pl2)
+
+    def test_loads_str_with_binary_fmt(self):
+        msg = "value must be bytes-like object when fmt is FMT_BINARY"
+        with self.assertRaisesRegex(TypeError, msg):
+            plistlib.loads('test', fmt=plistlib.FMT_BINARY)
+
     def test_indentation_array(self):
         data = [[[[[[[[{'test': b'aaaaaa'}]]]]]]]]
         self.assertEqual(plistlib.loads(plistlib.dumps(data)), data)
@@ -838,6 +853,54 @@ class TestPlistlib(unittest.TestCase):
                                     "XML entity declarations are not supported"):
             plistlib.loads(XML_PLIST_WITH_ENTITY, fmt=plistlib.FMT_XML)
 
+    def test_load_aware_datetime(self):
+        dt = plistlib.loads(b"<plist><date>2023-12-10T08:03:30Z</date></plist>",
+                            aware_datetime=True)
+        self.assertEqual(dt.tzinfo, datetime.UTC)
+
+    @unittest.skipUnless("America/Los_Angeles" in zoneinfo.available_timezones(),
+                         "Can't find timezone datebase")
+    def test_dump_aware_datetime(self):
+        dt = datetime.datetime(2345, 6, 7, 8, 9, 10,
+                               tzinfo=zoneinfo.ZoneInfo("America/Los_Angeles"))
+        for fmt in ALL_FORMATS:
+            s = plistlib.dumps(dt, fmt=fmt, aware_datetime=True)
+            loaded_dt = plistlib.loads(s, fmt=fmt, aware_datetime=True)
+            self.assertEqual(loaded_dt.tzinfo, datetime.UTC)
+            self.assertEqual(loaded_dt, dt)
+
+    def test_dump_utc_aware_datetime(self):
+        dt = datetime.datetime(2345, 6, 7, 8, 9, 10, tzinfo=datetime.UTC)
+        for fmt in ALL_FORMATS:
+            s = plistlib.dumps(dt, fmt=fmt, aware_datetime=True)
+            loaded_dt = plistlib.loads(s, fmt=fmt, aware_datetime=True)
+            self.assertEqual(loaded_dt.tzinfo, datetime.UTC)
+            self.assertEqual(loaded_dt, dt)
+
+    @unittest.skipUnless("America/Los_Angeles" in zoneinfo.available_timezones(),
+                         "Can't find timezone datebase")
+    def test_dump_aware_datetime_without_aware_datetime_option(self):
+        dt = datetime.datetime(2345, 6, 7, 8,
+                               tzinfo=zoneinfo.ZoneInfo("America/Los_Angeles"))
+        s = plistlib.dumps(dt, fmt=plistlib.FMT_XML, aware_datetime=False)
+        self.assertIn(b"2345-06-07T08:00:00Z", s)
+
+    def test_dump_utc_aware_datetime_without_aware_datetime_option(self):
+        dt = datetime.datetime(2345, 6, 7, 8, tzinfo=datetime.UTC)
+        s = plistlib.dumps(dt, fmt=plistlib.FMT_XML, aware_datetime=False)
+        self.assertIn(b"2345-06-07T08:00:00Z", s)
+
+    def test_dump_naive_datetime_with_aware_datetime_option(self):
+        # Save a naive datetime with aware_datetime set to true.  This will lead
+        # to having different time as compared to the current machine's
+        # timezone, which is UTC.
+        dt = datetime.datetime(2003, 6, 7, 8, tzinfo=None)
+        for fmt in ALL_FORMATS:
+            s = plistlib.dumps(dt, fmt=fmt, aware_datetime=True)
+            parsed = plistlib.loads(s, aware_datetime=False)
+            expected = dt.astimezone(datetime.UTC).replace(tzinfo=None)
+            self.assertEqual(parsed, expected)
+
 
 class TestBinaryPlistlib(unittest.TestCase):
 
@@ -962,6 +1025,28 @@ class TestBinaryPlistlib(unittest.TestCase):
                 with self.assertRaises(plistlib.InvalidFileException):
                     plistlib.loads(b'bplist00' + data, fmt=plistlib.FMT_BINARY)
 
+    def test_load_aware_datetime(self):
+        data = (b'bplist003B\x04>\xd0d\x00\x00\x00\x08\x00\x00\x00\x00\x00\x00'
+                b'\x01\x01\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00'
+                b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x11')
+        self.assertEqual(plistlib.loads(data, aware_datetime=True),
+                         datetime.datetime(2345, 6, 7, 8, tzinfo=datetime.UTC))
+
+    @unittest.skipUnless("America/Los_Angeles" in zoneinfo.available_timezones(),
+                         "Can't find timezone datebase")
+    def test_dump_aware_datetime_without_aware_datetime_option(self):
+        dt = datetime.datetime(2345, 6, 7, 8,
+                               tzinfo=zoneinfo.ZoneInfo("America/Los_Angeles"))
+        msg = "can't subtract offset-naive and offset-aware datetimes"
+        with self.assertRaisesRegex(TypeError, msg):
+            plistlib.dumps(dt, fmt=plistlib.FMT_BINARY, aware_datetime=False)
+
+    def test_dump_utc_aware_datetime_without_aware_datetime_option(self):
+        dt = datetime.datetime(2345, 6, 7, 8, tzinfo=datetime.UTC)
+        msg = "can't subtract offset-naive and offset-aware datetimes"
+        with self.assertRaisesRegex(TypeError, msg):
+            plistlib.dumps(dt, fmt=plistlib.FMT_BINARY, aware_datetime=False)
+
 
 class TestKeyedArchive(unittest.TestCase):
     def test_keyed_archive_data(self):
@@ -1071,6 +1156,7 @@ class TestPlutil(unittest.TestCase):
             p = json.loads(f.read())
             self.assertEqual(p.get("HexType"), 16777228)
             self.assertEqual(p.get("IntType"), 83)
+
 
 if __name__ == '__main__':
     unittest.main()

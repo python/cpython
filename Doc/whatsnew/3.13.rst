@@ -132,6 +132,11 @@ Other Language Changes
   equivalent of the :option:`-X frozen_modules <-X>` command-line option.
   (Contributed by Yilei Yang in :gh:`111374`.)
 
+* The new :envvar:`PYTHON_HISTORY` environment variable can be used to change
+  the location of a ``.python_history`` file.
+  (Contributed by Levi Sabah, Zackery Spytz and Hugo van Kemenade in
+  :gh:`73965`.)
+
 New Modules
 ===========
 
@@ -301,6 +306,13 @@ os
   use in ``file_actions=`` on platforms that support
   :c:func:`!posix_spawn_file_actions_addclosefrom_np`.
   (Contributed by Jakub Kulik in :gh:`113117`.)
+
+os.path
+-------
+
+* On Windows, :func:`os.path.isabs` no longer considers paths starting with
+  exactly one (back)slash to be absolute.
+  (Contributed by Barney Gale and Jon Foster in :gh:`44626`.)
 
 pathlib
 -------
@@ -816,7 +828,8 @@ although there is currently no date scheduled for their removal.
 
 * :mod:`!sre_compile`, :mod:`!sre_constants` and :mod:`!sre_parse` modules.
 
-* :attr:`~codeobject.co_lnotab`: use the ``co_lines`` attribute instead.
+* :attr:`codeobject.co_lnotab`: use the :meth:`codeobject.co_lines` method
+  instead.
 
 * :class:`typing.Text` (:gh:`92332`).
 
