@@ -77,6 +77,7 @@ class Stencil:
         self.disassembly.append(f"{offset:x}: {' '.join(['00'] * padding)}")
         self.body.extend([0] * padding)
 
+    # XXX: Probably belongs in _targets:
     def emit_aarch64_trampoline(self, hole: Hole) -> typing.Iterator[Hole]:
         """Even with the large code model, AArch64 Linux insists on 28-bit jumps."""
         base = len(self.body)
@@ -111,22 +112,34 @@ class Stencil:
 class StencilGroup:
     code: Stencil = dataclasses.field(default_factory=Stencil, init=False)
     data: Stencil = dataclasses.field(default_factory=Stencil, init=False)
-    global_offset_table: dict[str, int] = dataclasses.field(
-        default_factory=dict, init=False
-    )
+    _got: dict[str, int] = dataclasses.field(default_factory=dict, init=False)
 
-    def global_offset_table_lookup(self, symbol: str | None) -> int:
-        """Even when disabling PIC, macOS insists on using the global offset table."""
+    def process_relocations(self) -> None:
+        for stencil in [self.code, self.data]:
+            for hole in stencil.holes:
+                if hole.value is HoleValue.GOT:
+                    value, symbol = HoleValue.DATA, None
+                    addend = hole.addend + self._global_offset_table_lookup(hole.symbol)
+                    hole.value, hole.symbol, hole.addend = value, symbol, addend
+                elif hole.symbol in self.data.symbols:
+                    value, symbol = HoleValue.DATA, None
+                    addend = hole.addend + self.data.symbols[hole.symbol]
+                    hole.value, hole.symbol, hole.addend = value, symbol, addend
+                elif hole.symbol in self.code.symbols:
+                    value, symbol = HoleValue.CODE, None
+                    addend = hole.addend + self.code.symbols[hole.symbol]
+                    hole.value, hole.symbol, hole.addend = value, symbol, addend
+        self._emit_global_offset_table()
+
+    def _global_offset_table_lookup(self, symbol: str | None) -> int:
         if symbol is None:
             return len(self.data.body)
-        default = 8 * len(self.global_offset_table)
-        return len(self.data.body) + self.global_offset_table.setdefault(
-            symbol, default
-        )
+        default = 8 * len(self._got)
+        return len(self.data.body) + self._got.setdefault(symbol, default)
 
-    def emit_global_offset_table(self) -> None:
-        global_offset_table = len(self.data.body)
-        for s, offset in self.global_offset_table.items():
+    def _emit_global_offset_table(self) -> None:
+        got = len(self.data.body)
+        for s, offset in self._got.items():
             if s in self.code.symbols:
                 value, symbol = HoleValue.CODE, None
                 addend = self.code.symbols[s]
@@ -137,7 +150,7 @@ class StencilGroup:
                 value, symbol = symbol_to_value(s)
                 addend = 0
             self.data.holes.append(
-                Hole(global_offset_table + offset, "R_X86_64_64", value, symbol, addend)
+                Hole(got + offset, "R_X86_64_64", value, symbol, addend)
             )
             value_part = value.name if value is not HoleValue.ZERO else ""
             if value_part and not symbol and not addend:
@@ -154,11 +167,12 @@ class StencilGroup:
 
 
 def symbol_to_value(symbol: str) -> tuple[HoleValue, str | None]:
-    try:
-        if symbol.startswith("_JIT_"):
-            return HoleValue[symbol.removeprefix("_JIT_")], None
-    except KeyError:
-        pass
+    if symbol.startswith("_JIT_"):
+        s = symbol.removeprefix("_JIT_")
+        try:
+            return HoleValue[s], None
+        except KeyError:
+            pass
     return HoleValue.ZERO, symbol
 
 

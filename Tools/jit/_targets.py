@@ -82,9 +82,11 @@ class _Target(typing.Generic[_S, _R]):
         if group.data.body:
             line = f"0: {str(bytes(group.data.body)).removeprefix('b')}"
             group.data.disassembly.append(line)
+        # XXX: Do this in the group._process_relocations() method?
         group.data.pad(8)
-        self._process_relocations(group.code, group)
+        group.process_relocations()
         holes = group.code.holes
+        # XXX: Do this in the group._process_relocations() method?
         group.code.holes = []
         for hole in holes:
             if (
@@ -94,31 +96,11 @@ class _Target(typing.Generic[_S, _R]):
                 group.code.holes.extend(group.code.emit_aarch64_trampoline(hole))
             else:
                 group.code.holes.append(hole)
+        # XXX: Do this in the group._process_relocations() method?
         group.code.pad(self.alignment)
-        self._process_relocations(group.data, group)
-        group.emit_global_offset_table()
         group.code.holes.sort(key=lambda hole: hole.offset)
         group.data.holes.sort(key=lambda hole: hole.offset)
         return group
-
-    @staticmethod
-    def _process_relocations(
-        stencil: _stencils.Stencil, group: _stencils.StencilGroup
-    ) -> None:
-        stencil.holes.sort(key=lambda hole: hole.offset)
-        for hole in stencil.holes:
-            if hole.value is _stencils.HoleValue.GOT:
-                value, symbol = _stencils.HoleValue.DATA, None
-                addend = hole.addend + group.global_offset_table_lookup(hole.symbol)
-                hole.value, hole.symbol, hole.addend = value, symbol, addend
-            elif hole.symbol in group.data.symbols:
-                value, symbol = _stencils.HoleValue.DATA, None
-                addend = hole.addend + group.data.symbols[hole.symbol]
-                hole.value, hole.symbol, hole.addend = value, symbol, addend
-            elif hole.symbol in group.code.symbols:
-                value, symbol = _stencils.HoleValue.CODE, None
-                addend = hole.addend + group.code.symbols[hole.symbol]
-                hole.value, hole.symbol, hole.addend = value, symbol, addend
 
     def _handle_section(self, section: _S, group: _stencils.StencilGroup) -> None:
         raise NotImplementedError(type(self))
