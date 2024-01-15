@@ -3097,8 +3097,9 @@ class Win32NtTests(unittest.TestCase):
 
         try:
             # Remove all permissions from the file
-            subprocess.check_output([ICACLS, filename, "/inheritance:r"],
+            out = subprocess.check_output([ICACLS, filename, "/inheritance:r"],
                                     stderr=subprocess.STDOUT)
+            print(out)
         except subprocess.CalledProcessError as ex:
             if support.verbose:
                 print(ICACLS, filename, "/inheritance:r", "failed.")
