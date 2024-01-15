@@ -108,6 +108,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    be associated with the map's underlying file.
    This means that the :meth:`~mmap.mmap.size` and :meth:`~mmap.mmap.resize`
    methods will fail.
+   This mode is useful to limit the number of open file descriptors.
 
    To ensure validity of the created memory mapping the file specified
    by the descriptor *fileno* is internally automatically synchronized
