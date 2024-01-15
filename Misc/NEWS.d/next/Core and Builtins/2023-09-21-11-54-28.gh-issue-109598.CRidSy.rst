@@ -1,0 +1,3 @@
+:c:func:`PyComplex_RealAsDouble`/:c:func:`PyComplex_ImagAsDouble` now tries to
+convert an object to a :class:`complex` instance using its ``__complex__()`` method
+before falling back to the ``__float__()`` method.  Patch by Sergey B Kirpichev.
