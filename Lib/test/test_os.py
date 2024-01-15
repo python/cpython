@@ -3095,11 +3095,15 @@ class Win32NtTests(unittest.TestCase):
 
         stat1 = os.stat(filename)
 
+        # Read permissions back. This will help diagnose in case of failure
+        out = subprocess.check_output([ICACLS, filename], stderr=subprocess.STDOUT)
+        if support.verbose:
+            print(out.decode("oem", "backslashreplace"))
+
         try:
             # Remove all permissions from the file
-            out = subprocess.check_output([ICACLS, filename, "/inheritance:r"],
+            subprocess.check_output([ICACLS, filename, "/inheritance:r"],
                                     stderr=subprocess.STDOUT)
-            print(out.decode('ascii', 'backslashreplace'))
         except subprocess.CalledProcessError as ex:
             if support.verbose:
                 print(ICACLS, filename, "/inheritance:r", "failed.")
@@ -3118,6 +3122,11 @@ class Win32NtTests(unittest.TestCase):
             os.unlink(filename)
 
         self.addCleanup(cleanup)
+
+        # Read permissions back. This will help diagnose in case of failure
+        out = subprocess.check_output([ICACLS, filename], stderr=subprocess.STDOUT)
+        if support.verbose:
+            print(out.decode("oem", "backslashreplace"))
 
         if support.verbose:
             print("File:", filename)
