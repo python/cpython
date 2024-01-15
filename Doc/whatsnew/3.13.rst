@@ -154,6 +154,14 @@ ast
   possible to obtain an optimized ``AST``.
   (Contributed by Irit Katriel in :gh:`108113`).
 
+argrapse
+--------
+
+* Add parameter *deprecated* in methods
+  :meth:`~argparse.ArgumentParser.add_argument` and :meth:`!add_parser`
+  which allows to deprecate command-line options, positional arguments and
+  subcommands.
+
 array
 -----
 

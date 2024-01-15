@@ -777,6 +777,8 @@ The add_argument() method
    * dest_ - The name of the attribute to be added to the object returned by
      :meth:`parse_args`.
 
+   * deprecated_ - Whether or not the usage of the argument is deprecated.
+
 The following sections describe how each of these are used.
 
 
@@ -1439,6 +1441,35 @@ behavior::
    >>> parser.parse_args('--foo XXX'.split())
    Namespace(bar='XXX')
 
+
+.. _deprecated::
+
+deprecated
+^^^^^^^^^^
+
+During projects lifecycle some arguments could be removed from the
+command line, before removing these arguments definitively you would inform
+your user that arguments are deprecated and will be removed.
+The ``deprecated`` keyword argument of
+:meth:`~ArgumentParser.add_argument`, whose value default to ``False``,
+specifies if the argument is deprecated and will be removed
+from the command-line available arguments in the future.
+For arguments, if ``deprecated`` is ``True`` then a warning will be
+printed to the standard error if the argument is given by user in the
+command line parameters::
+
+   >>> import argparse
+   >>> parser = argparse.ArgumentParser(prog='snake.py')
+   >>> parser.add_argument('--legs', default=0, deprecated=True)
+   >>> parser.parse_args([])
+   Namespace(legs='0')
+   >>> parser.parse_args(['--legs', '4'])
+   snake.py: warning: usage of option '--legs' is deprecated
+   Namespace(legs='4')
+
+.. versionchanged:: 3.13
+
+
 Action classes
 ^^^^^^^^^^^^^^
 
@@ -1842,7 +1873,8 @@ Sub-commands
 
        {foo,bar}   additional help
 
-   Furthermore, ``add_parser`` supports an additional ``aliases`` argument,
+   Furthermore, :meth:`~_SubParsersAction.add_parser` supports an additional
+   *aliases* argument,
    which allows multiple strings to refer to the same subparser. This example,
    like ``svn``, aliases ``co`` as a shorthand for ``checkout``::
 
@@ -1852,6 +1884,20 @@ Sub-commands
      >>> checkout.add_argument('foo')
      >>> parser.parse_args(['co', 'bar'])
      Namespace(foo='bar')
+
+   :meth:`~_SubParsersAction.add_parser` supports also an additional
+   *deprecated* argument, which allows to deprecate the subparser.
+
+      >>> import argparse
+      >>> parser = argparse.ArgumentParser(prog='chicken.py')
+      >>> subparsers = parser.add_subparsers()
+      >>> run = subparsers.add_parser('run')
+      >>> fly = subparsers.add_parser('fly', deprecated=True)
+      >>> parser.parse_args(['fly'])
+      chicken.py: warning: usage of command 'fly' is deprecated
+      Namespace()
+
+   .. versionadded:: 3.13
 
    One particularly effective way of handling sub-commands is to combine the use
    of the :meth:`add_subparsers` method with calls to :meth:`set_defaults` so
