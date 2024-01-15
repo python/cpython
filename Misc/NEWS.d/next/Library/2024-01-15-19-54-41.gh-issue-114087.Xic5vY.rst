@@ -1,0 +1,1 @@
+Speed up dataclasses.asdict by up to 1.35x.
