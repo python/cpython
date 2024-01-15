@@ -668,16 +668,15 @@ are always available.  They are listed here in alphabetical order.
       sign: "+" | "-"
       infinity: "Infinity" | "inf"
       nan: "nan"
-      digitpart: `!digit` (["_"] `!digit`)*
+      digit: <a Unicode decimal digit, i.e. characters in Unicode general category Nd>
+      digitpart: `digit` (["_"] `digit`)*
       number: [`digitpart`] "." `digitpart` | `digitpart` ["."]
       exponent: ("e" | "E") ["+" | "-"] `digitpart`
       floatnumber: number [`exponent`]
       floatvalue: [`sign`] (`floatnumber` | `infinity` | `nan`)
 
-   Here ``digit`` is a Unicode decimal digit (character in the Unicode general
-   category ``Nd``). Case is not significant, so, for example, "inf", "Inf",
-   "INFINITY", and "iNfINity" are all acceptable spellings for positive
-   infinity.
+   Case is not significant, so, for example, "inf", "Inf", "INFINITY", and
+   "iNfINity" are all acceptable spellings for positive infinity.
 
    Otherwise, if the argument is an integer or a floating point number, a
    floating point number with the same value (within Python's floating point
