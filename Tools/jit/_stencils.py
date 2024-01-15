@@ -53,15 +53,14 @@ class Hole:
     replace = dataclasses.replace
 
     def as_c(self) -> str:
-        return ", ".join(
-            [
-                f"{self.offset:#x}",
-                f"HoleKind_{self.kind}",
-                f"HoleValue_{self.value.name}",
-                f"&{self.symbol}" if self.symbol else "NULL",
-                _format_addend(self.addend),
-            ]
-        )
+        parts = [
+            f"{self.offset:#x}",
+            f"HoleKind_{self.kind}",
+            f"HoleValue_{self.value.name}",
+            f"&{self.symbol}" if self.symbol else "NULL",
+            _format_addend(self.addend),
+        ]
+        return f"{{{', '.join(parts)}}}"
 
 
 @dataclasses.dataclass
