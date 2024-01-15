@@ -369,7 +369,7 @@ class CompileallTestsBase:
         script = script_helper.make_script(path, "test", "1 / 0")
         bc = importlib.util.cache_from_source(script)
         stripdir = os.path.join(self.directory, *(fullpath[:2] + ['fake']))
-        with contextlib.redirect_stdout(io.StringIO()):
+        with support.captured_stdout():
             compileall.compile_dir(path, quiet=True, stripdir=stripdir)
         rc, out, err = script_helper.assert_python_failure(bc)
         expected_not_in = os.path.join(self.directory, *fullpath[2:])
