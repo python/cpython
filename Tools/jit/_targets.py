@@ -1,3 +1,4 @@
+"""Target-specific code generation, parsing, and processing."""
 import asyncio
 import dataclasses
 import hashlib
@@ -83,23 +84,7 @@ class _Target(typing.Generic[_S, _R]):
             line = f"0: {str(bytes(group.data.body)).removeprefix('b')}"
             group.data.disassembly.append(line)
         # XXX: Do this in the group.process_relocations() method?
-        group.data.pad(8)
         group.process_relocations()
-        holes = group.code.holes
-        # XXX: Do this in the group.process_relocations() method?
-        group.code.holes = []
-        for hole in holes:
-            if (
-                hole.kind in {"R_AARCH64_CALL26", "R_AARCH64_JUMP26"}
-                and hole.value is _stencils.HoleValue.ZERO
-            ):
-                group.code.holes.extend(group.code.emit_aarch64_trampoline(hole))
-            else:
-                group.code.holes.append(hole)
-        # XXX: Do this in the group._process_relocations() method?
-        group.code.pad(self.alignment)
-        group.code.holes.sort(key=lambda hole: hole.offset)
-        group.data.holes.sort(key=lambda hole: hole.offset)
         return group
 
     def _handle_section(self, section: _S, group: _stencils.StencilGroup) -> None:
@@ -163,6 +148,7 @@ class _Target(typing.Generic[_S, _R]):
         return {task.get_name(): task.result() for task in tasks}
 
     def build(self, out: pathlib.Path) -> None:
+        """Build jit_stencils.h in the given directory."""
         digest = f"// {self._compute_digest(out)}\n"
         jit_stencils = out / "jit_stencils.h"
         if not jit_stencils.exists() or not jit_stencils.read_text().startswith(digest):
