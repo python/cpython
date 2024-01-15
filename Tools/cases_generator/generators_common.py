@@ -124,7 +124,7 @@ def replace_decrefs(
             out.emit(f"Py_DECREF({var.name});\n")
 
 
-def replace_store_sp(
+def replace_sync_sp(
     out: CWriter,
     tkn: Token,
     tkn_iter: Iterator[Token],
@@ -135,9 +135,7 @@ def replace_store_sp(
     next(tkn_iter)
     next(tkn_iter)
     next(tkn_iter)
-    out.emit_at("", tkn)
     stack.flush(out)
-    out.emit("_PyFrame_SetStackPointer(frame, stack_pointer);\n")
 
 
 def replace_check_eval_breaker(
@@ -160,7 +158,7 @@ REPLACEMENT_FUNCTIONS = {
     "ERROR_IF": replace_error,
     "DECREF_INPUTS": replace_decrefs,
     "CHECK_EVAL_BREAKER": replace_check_eval_breaker,
-    "STORE_SP": replace_store_sp,
+    "SYNC_SP": replace_sync_sp,
 }
 
 ReplacementFunctionType = Callable[

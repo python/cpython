@@ -1011,10 +1011,14 @@ class PureWindowsPathTest(PurePathTest):
         self.assertTrue(P('c:/a').is_absolute())
         self.assertTrue(P('c:/a/b/').is_absolute())
         # UNC paths are absolute by definition.
+        self.assertTrue(P('//').is_absolute())
+        self.assertTrue(P('//a').is_absolute())
         self.assertTrue(P('//a/b').is_absolute())
         self.assertTrue(P('//a/b/').is_absolute())
         self.assertTrue(P('//a/b/c').is_absolute())
         self.assertTrue(P('//a/b/c/d').is_absolute())
+        self.assertTrue(P('//?/UNC/').is_absolute())
+        self.assertTrue(P('//?/UNC/spam').is_absolute())
 
     def test_join(self):
         P = self.cls
@@ -1147,6 +1151,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
 
     def test_matches_pathbase_api(self):
         our_names = {name for name in dir(self.cls) if name[0] != '_'}
+        our_names.remove('is_reserved')  # only present in PurePath
         path_names = {name for name in dir(pathlib._abc.PathBase) if name[0] != '_'}
         self.assertEqual(our_names, path_names)
         for attr_name in our_names:
