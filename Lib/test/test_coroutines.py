@@ -1036,7 +1036,7 @@ class CoroutineTest(unittest.TestCase):
         async def foo(): return await Awaitable()
 
         with self.assertRaisesRegex(
-            TypeError, "object Awaitable can't be used in 'await' expression"):
+            TypeError, "'Awaitable' object can't be used in 'await' expression"):
 
             run_async(foo())
 
