@@ -805,7 +805,8 @@ dummy_func(
             #if TIER_ONE
             assert(frame != &entry_frame);
             #endif
-            STORE_SP();
+            SYNC_SP();
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             assert(EMPTY());
             _Py_LeaveRecursiveCallPy(tstate);
             // GH-99729: We need to unlink the frame *before* clearing it:
@@ -3154,7 +3155,8 @@ dummy_func(
             // Write it out explicitly because it's subtly different.
             // Eventually this should be the only occurrence of this code.
             assert(tstate->interp->eval_frame == NULL);
-            STORE_SP();
+            SYNC_SP();
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             new_frame->previous = frame;
             CALL_STAT_INC(inlined_py_calls);
             frame = tstate->current_frame = new_frame;
@@ -4013,20 +4015,27 @@ dummy_func(
         ///////// Tier-2 only opcodes /////////
 
         op (_GUARD_IS_TRUE_POP, (flag -- )) {
-            DEOPT_IF(Py_IsFalse(flag));
+            SYNC_SP();
+            DEOPT_IF(!Py_IsTrue(flag));
             assert(Py_IsTrue(flag));
         }
 
         op (_GUARD_IS_FALSE_POP, (flag -- )) {
-            DEOPT_IF(Py_IsTrue(flag));
+            SYNC_SP();
+            DEOPT_IF(!Py_IsFalse(flag));
             assert(Py_IsFalse(flag));
         }
 
         op (_GUARD_IS_NONE_POP, (val -- )) {
-            DEOPT_IF(!Py_IsNone(val));
+            SYNC_SP();
+            if (!Py_IsNone(val)) {
+                Py_DECREF(val);
+                DEOPT_IF(1);
+            }
         }
 
         op (_GUARD_IS_NOT_NONE_POP, (val -- )) {
+            SYNC_SP();
             DEOPT_IF(Py_IsNone(val));
             Py_DECREF(val);
         }

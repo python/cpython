@@ -464,7 +464,7 @@ def compute_properties(op: parser.InstDef) -> Properties:
         ends_with_eval_breaker=eval_breaker_at_end(op),
         needs_this=variable_used(op, "this_instr"),
         always_exits=always_exits(op),
-        stores_sp=variable_used(op, "STORE_SP"),
+        stores_sp=variable_used(op, "SYNC_SP"),
         tier_one_only=variable_used(op, "TIER_ONE_ONLY"),
         uses_co_consts=variable_used(op, "FRAME_CO_CONSTS"),
         uses_co_names=variable_used(op, "FRAME_CO_NAMES"),

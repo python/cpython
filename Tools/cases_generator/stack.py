@@ -169,6 +169,7 @@ class Stack:
             return ""
 
     def flush(self, out: CWriter) -> None:
+        out.start_line()
         for var in self.variables:
             if not var.peek:
                 cast = "(PyObject *)" if var.type else ""
@@ -189,6 +190,7 @@ class Stack:
         self.base_offset.clear()
         self.top_offset.clear()
         self.peek_offset.clear()
+        out.start_line()
 
     def as_comment(self) -> str:
         return f"/* Variables: {[v.name for v in self.variables]}. Base offset: {self.base_offset.to_c()}. Top offset: {self.top_offset.to_c()} */"

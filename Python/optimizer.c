@@ -481,18 +481,19 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                     goto done;
                 }
                 uint32_t uopcode = BRANCH_TO_GUARD[opcode - POP_JUMP_IF_FALSE][jump_likely];
-                _Py_CODEUNIT *next_instr = instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
                 DPRINTF(2, "%s(%d): counter=%x, bitcount=%d, likely=%d, confidence=%d, uopcode=%s\n",
                         _PyOpcode_OpName[opcode], oparg,
                         counter, bitcount, jump_likely, confidence, _PyUOpName(uopcode));
-                ADD_TO_TRACE(uopcode, max_length, 0, target);
+                _Py_CODEUNIT *next_instr = instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
+                _Py_CODEUNIT *target_instr = next_instr + oparg;
                 if (jump_likely) {
-                    _Py_CODEUNIT *target_instr = next_instr + oparg;
                     DPRINTF(2, "Jump likely (%x = %d bits), continue at byte offset %d\n",
                             instr[1].cache, bitcount, 2 * INSTR_IP(target_instr, code));
                     instr = target_instr;
+                    ADD_TO_TRACE(uopcode, max_length, 0, INSTR_IP(next_instr, code));
                     goto top;
                 }
+                ADD_TO_TRACE(uopcode, max_length, 0, INSTR_IP(target_instr, code));
                 break;
             }
 

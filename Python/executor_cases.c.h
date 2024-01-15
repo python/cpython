@@ -3318,35 +3318,38 @@
         case _GUARD_IS_TRUE_POP: {
             PyObject *flag;
             flag = stack_pointer[-1];
-            if (Py_IsFalse(flag)) goto deoptimize;
-            assert(Py_IsTrue(flag));
             stack_pointer += -1;
+            if (!Py_IsTrue(flag)) goto deoptimize;
+            assert(Py_IsTrue(flag));
             break;
         }
 
         case _GUARD_IS_FALSE_POP: {
             PyObject *flag;
             flag = stack_pointer[-1];
-            if (Py_IsTrue(flag)) goto deoptimize;
-            assert(Py_IsFalse(flag));
             stack_pointer += -1;
+            if (!Py_IsFalse(flag)) goto deoptimize;
+            assert(Py_IsFalse(flag));
             break;
         }
 
         case _GUARD_IS_NONE_POP: {
             PyObject *val;
             val = stack_pointer[-1];
-            if (!Py_IsNone(val)) goto deoptimize;
             stack_pointer += -1;
+            if (!Py_IsNone(val)) {
+                Py_DECREF(val);
+                if (1) goto deoptimize;
+            }
             break;
         }
 
         case _GUARD_IS_NOT_NONE_POP: {
             PyObject *val;
             val = stack_pointer[-1];
+            stack_pointer += -1;
             if (Py_IsNone(val)) goto deoptimize;
             Py_DECREF(val);
-            stack_pointer += -1;
             break;
         }
 
