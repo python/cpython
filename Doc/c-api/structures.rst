@@ -415,7 +415,7 @@ definition with the same method name.
    which will be used as name of the module the function is defined in.
    If unavailable, it can be set to :const:`None` or ``NULL``.
 
-   .. seealso: :attr:`function.__module__`
+   .. seealso:: :attr:`function.__module__`
 
    The *cls* parameter will be passed as the *defining_class*
    argument to the C function.
