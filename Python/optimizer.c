@@ -325,10 +325,11 @@ BRANCH_TO_GUARD[4][2] = {
 
 #define ADD_TO_TRACE(OPCODE, OPARG, OPERAND, TARGET) \
     DPRINTF(2, \
-            "  ADD_TO_TRACE(%s, %d, %" PRIu64 ")\n", \
+            "  ADD_TO_TRACE(%s, %d, %" PRIu64 ", %d)\n", \
             _PyUOpName(OPCODE), \
             (OPARG), \
-            (uint64_t)(OPERAND)); \
+            (uint64_t)(OPERAND), \
+            TARGET); \
     assert(trace_length < max_length); \
     trace[trace_length].opcode = (OPCODE); \
     trace[trace_length].oparg = (OPARG); \
@@ -803,7 +804,10 @@ uop_optimize(
     }
     OPT_STAT_INC(traces_created);
     // This clears its errors, so if it fails it just doesn't optimize.
-    _Py_uop_analyze_and_optimize(code, buffer, UOP_MAX_TRACE_LENGTH, curr_stackentries);
+    err = _Py_uop_analyze_and_optimize(code, buffer, UOP_MAX_TRACE_LENGTH, curr_stackentries);
+    if (err < 0) {
+        return -1;
+    }
     _PyExecutorObject *executor = make_executor_from_uops(buffer, &dependencies);
     if (executor == NULL) {
         return -1;

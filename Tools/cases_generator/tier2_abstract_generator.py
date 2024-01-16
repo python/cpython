@@ -26,6 +26,7 @@ from generators_common import (
     emit_to,
     REPLACEMENT_FUNCTIONS,
 )
+from tier2_abstract_common import SPECIALLY_HANDLED_ABSTRACT_INSTR
 from tier2_generator import tier2_replace_error
 from cwriter import CWriter
 from typing import TextIO, Iterator
@@ -34,21 +35,6 @@ from stack import StackOffset, Stack, SizeMismatch, UNUSED
 
 DEFAULT_OUTPUT = ROOT / "Python/abstract_interp_cases.c.h"
 
-SPECIALLY_HANDLED_ABSTRACT_INSTR = {
-    "LOAD_FAST",
-    "LOAD_FAST_CHECK",
-    "LOAD_FAST_AND_CLEAR",
-    "LOAD_CONST",
-    "STORE_FAST",
-    "STORE_FAST_MAYBE_NULL",
-    "COPY",
-    "POP_TOP",
-    "PUSH_NULL",
-    "SWAP",
-    # Frame stuff
-    "_PUSH_FRAME",
-    "_POP_FRAME",
-}
 
 NO_CONST_OR_TYPE_EVALUATE = {
     "_RESUME_CHECK",
@@ -159,7 +145,7 @@ def mangle_uop_names(uop: Uop) -> Uop:
 # Returns a tuple of a pointer to an array of subexpressions, the length of said array
 # and a string containing the join of all other subexpressions obtained from stack input.
 # This grabs variadic inputs that depend on things like oparg or cache
-def get_subexpressions(input_vars: list[StackItem]) -> tuple[str | None, int, str]:
+def get_subexpressions(input_vars: list[StackItem]) -> tuple[str | None, int | str, str]:
     arr_var = [(var.name, var) for var in input_vars if var.size > "1"]
     assert len(arr_var) <= 1, "Can have at most one array input from oparg/cache"
     arr_var_name = arr_var[0][0] if len(arr_var) == 1 else None

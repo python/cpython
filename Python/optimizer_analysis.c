@@ -38,7 +38,6 @@ _PyOpcode_isterminal(uint32_t opcode)
             opcode == _LOAD_FAST_CHECK ||
             opcode == _LOAD_FAST_AND_CLEAR ||
             opcode == INIT_FAST ||
-            opcode == LOAD_CONST ||
             opcode == CACHE ||
             opcode == PUSH_NULL);
 }
@@ -700,10 +699,6 @@ _Py_UOpsSymbolicExpression_New(_Py_UOpsAbstractInterpContext *ctx,
     va_start(curr, num_subexprs);
 
     for (; i < num_subexprs; i++) {
-        // Note: no incref here. symexprs are kept alive by the global expression
-        // table.
-        // We intentionally don't want to hold a reference to it so we don't
-        // need GC.
         operands[i] = va_arg(curr, _Py_UOpsSymbolicExpression *);
         assert(operands[i]);
     }
@@ -961,10 +956,10 @@ write_stack_to_ir(_Py_UOpsAbstractInterpContext *ctx, _PyUOpInstruction *curr, b
         ctx->frame->stack[i] = new_stack;
     }
     // Write bookkeeping ops, but don't write duplicates.
-    if((curr-1)->opcode == _CHECK_VALIDITY && (curr-2)->opcode == _SET_IP) {
-        ir_plain_inst(ctx->ir, *(curr-2));
-        ir_plain_inst(ctx->ir, *(curr-1));
-    }
+//    if((curr-1)->opcode == _CHECK_VALIDITY && (curr-2)->opcode == _SET_IP) {
+//        ir_plain_inst(ctx->ir, *(curr-2));
+//        ir_plain_inst(ctx->ir, *(curr-1));
+//    }
     return 0;
 
 error:
@@ -1076,7 +1071,7 @@ uop_abstract_interpret_single_inst(
     _Py_UOpsSymbolicExpression **stack_pointer = ctx->frame->stack_pointer;
 
 
-    DPRINTF(2, "Abstract interpreting %s:%d ",
+    DPRINTF(3, "Abstract interpreting %s:%d ",
             (opcode >= 300 ? _PyOpcode_uop_name : _PyOpcode_OpName)[opcode],
             oparg);
     switch (opcode) {
@@ -1097,6 +1092,7 @@ uop_abstract_interpret_single_inst(
             if (sym_is_type(PEEK(1), NULL_TYPE)) {
                 PEEK(1)->inst.opcode = LOAD_FAST_CHECK;
             }
+            PEEK(1)->inst.target = inst->target;
             assert(PEEK(1));
 
             break;
@@ -1260,6 +1256,11 @@ uop_abstract_interpret_single_inst(
             stack_pointer[-1] = new_bottom;
             break;
         }
+        case _SET_IP:
+        case _CHECK_VALIDITY:
+            write_stack_to_ir(ctx, inst, true);
+            ir_plain_inst(ctx->ir, *inst);
+            break;
         default:
             DPRINTF(1, "Unknown opcode in abstract interpreter\n");
             Py_UNREACHABLE();
@@ -1274,7 +1275,7 @@ uop_abstract_interpret_single_inst(
         }
         DPRINTF(3, "} \n");
     }
-    DPRINTF(2, " stack_level %d\n", STACK_LEVEL());
+    DPRINTF(3, " stack_level %d\n", STACK_LEVEL());
     ctx->frame->stack_pointer = stack_pointer;
     assert(STACK_LEVEL() >= 0);
 
@@ -1288,7 +1289,7 @@ error:
     return ABSTRACT_INTERP_ERROR;
 
 guard_required:
-    DPRINTF(2, " stack_level %d\n", STACK_LEVEL());
+    DPRINTF(3, " stack_level %d\n", STACK_LEVEL());
     ctx->frame->stack_pointer = stack_pointer;
     assert(STACK_LEVEL() >= 0);
 
@@ -1334,7 +1335,7 @@ uop_abstract_interpret(
             !op_is_specially_handled(curr->opcode) &&
             !op_is_bookkeeping(curr->opcode) &&
             !op_is_passthrough(curr->opcode)) {
-            DPRINTF(2, "Impure %s\n", (curr->opcode >= 300 ? _PyOpcode_uop_name : _PyOpcode_OpName)[curr->opcode]);
+            DPRINTF(3, "Impure %s\n", (curr->opcode >= 300 ? _PyOpcode_uop_name : _PyOpcode_OpName)[curr->opcode]);
             if (first_impure) {
                 write_stack_to_ir(ctx, curr, false);
                 clear_locals_type_info(ctx);
@@ -1354,7 +1355,7 @@ uop_abstract_interpret(
             goto error;
         }
         else if (status == ABSTRACT_INTERP_GUARD_REQUIRED) {
-            DPRINTF(2, "GUARD\n");
+            DPRINTF(3, "GUARD\n");
             // Emit the state of the stack first.
             // Since this is a guard, copy over the type info
             write_stack_to_ir(ctx, curr, true);
@@ -1404,10 +1405,11 @@ emit_i(_Py_UOpsEmitter *emitter,
         DPRINTF(2, "out of emission space\n");
         return -1;
     }
-    DPRINTF(3, "Emitting instruction at [%d] op: %s, oparg: %d, operand: %" PRIu64 " \n",
+    DPRINTF(2, "Emitting instruction at [%d] op: %s, oparg: %d, target: %d, operand: %" PRIu64 " \n",
             emitter->curr_i,
             (inst.opcode >= 300 ? _PyOpcode_uop_name : _PyOpcode_OpName)[inst.opcode],
             inst.oparg,
+            inst.target,
             inst.operand);
     emitter->writebuffer[emitter->curr_i] = inst;
     emitter->curr_i++;
@@ -1431,12 +1433,23 @@ count_stack_operands(_Py_UOpsSymbolicExpression *sym)
 static int
 compile_sym_to_uops(_Py_UOpsEmitter *emitter,
                    _Py_UOpsSymbolicExpression *sym,
-                    _Py_UOpsAbstractInterpContext *ctx,
-                   bool do_cse)
+                    _Py_UOpsAbstractInterpContext *ctx)
 {
-    _PyUOpInstruction inst;
+    _PyUOpInstruction inst = sym->inst;;
     // Since CPython is a stack machine, just compile in the order
     // seen in the operands, then the instruction itself.
+
+    if (_PyOpcode_isterminal(sym->inst.opcode)) {
+        // These are for unknown stack entries.
+        if (_PyOpcode_isstackvalue(sym->inst.opcode)) {
+            // Leave it be. These are initial values from the start
+            return 0;
+        }
+        if (sym->inst.opcode == INIT_FAST) {
+            inst.opcode = LOAD_FAST;
+        }
+        return emit_i(emitter, inst);
+    }
 
     // Constant propagated value, load immediate constant
     if (sym->const_val != NULL && !_PyOpcode_isstackvalue(sym->inst.opcode)) {
@@ -1455,22 +1468,9 @@ compile_sym_to_uops(_Py_UOpsEmitter *emitter,
         }
 
         inst.opcode = _LOAD_CONST_INLINE;
-        inst.oparg = 0;
+        inst.oparg = sym->inst.oparg;
         // TODO memory leak.
         inst.operand = (uint64_t)Py_NewRef(sym->const_val);
-        return emit_i(emitter, inst);
-    }
-
-    if (_PyOpcode_isterminal(sym->inst.opcode)) {
-        // These are for unknown stack entries.
-        if (_PyOpcode_isstackvalue(sym->inst.opcode)) {
-            // Leave it be. These are initial values from the start
-            return 0;
-        }
-        inst = sym->inst;
-        if (sym->inst.opcode == INIT_FAST) {
-            inst.opcode = LOAD_FAST;
-        }
         return emit_i(emitter, inst);
     }
 
@@ -1484,7 +1484,7 @@ compile_sym_to_uops(_Py_UOpsEmitter *emitter,
         if (compile_sym_to_uops(
             emitter,
             sym->operands[i],
-            ctx, true) < 0) {
+            ctx) < 0) {
             return -1;
         }
     }
@@ -1537,7 +1537,7 @@ emit_uops_from_ctx(
                         (curr->expr->inst.opcode >= 300 ? _PyOpcode_uop_name : _PyOpcode_OpName)[curr->expr->inst.opcode],
                         curr->expr->inst.oparg,
                         (void *)curr->expr->inst.operand);
-                if (compile_sym_to_uops(&emitter, curr->expr, ctx, true) < 0) {
+                if (compile_sym_to_uops(&emitter, curr->expr, ctx) < 0) {
                     goto error;
                 }
                 // Anything less means no assignment target at all.
@@ -1633,6 +1633,7 @@ _Py_uop_analyze_and_optimize(
 )
 {
     _PyUOpInstruction *temp_writebuffer = NULL;
+    bool err_occurred = false;
 
     temp_writebuffer = PyMem_New(_PyUOpInstruction, buffer_size * OVERALLOCATE_FACTOR);
     if (temp_writebuffer == NULL) {
@@ -1662,9 +1663,6 @@ _Py_uop_analyze_and_optimize(
         goto error;
     }
 
-    // Pass: fix up side exit stubs. This MUST be called as the last pass!
-    // trace_len = copy_over_exit_stubs(buffer, original_trace_len, temp_writebuffer, trace_len);
-
     // Fill in our new trace!
     memcpy(buffer, temp_writebuffer, buffer_size * sizeof(_PyUOpInstruction));
 
@@ -1674,9 +1672,13 @@ _Py_uop_analyze_and_optimize(
 
     return 0;
 error:
-    if (PyErr_Occurred()) {
-        PyErr_Clear();
-    }
+    // The only valid error we can raise is MemoryError.
+    // Other times it's not really errors but things like not being able
+    // to fetch a function version because the function got deleted.
+    err_occurred = PyErr_Occurred();
+//    if (err_occurred && !PyErr_ExceptionMatches(PyExc_MemoryError)) {
+//        PyErr_Clear();
+//    }
     PyMem_Free(temp_writebuffer);
-    return -1;
+    return err_occurred ? -1 : 0;
 }

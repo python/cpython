@@ -1958,19 +1958,11 @@
             break;
         }
 
-        case _SET_IP: {
-            break;
-        }
-
         case _SAVE_RETURN_OFFSET: {
             break;
         }
 
         case _EXIT_TRACE: {
-            break;
-        }
-
-        case _CHECK_VALIDITY: {
             break;
         }
 

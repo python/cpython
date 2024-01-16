@@ -3,6 +3,7 @@ import lexer
 import parser
 from typing import Optional
 
+from tier2_abstract_common import SPECIALLY_HANDLED_ABSTRACT_INSTR
 
 @dataclass
 class Properties:
@@ -449,8 +450,6 @@ def stack_effect_only_peeks(instr: parser.InstDef) -> bool:
 
 
 def compute_properties(op: parser.InstDef) -> Properties:
-    # Importing here to avoid a circular import.
-    from tier2_abstract_generator import SPECIALLY_HANDLED_ABSTRACT_INSTR
 
     has_free = (
         variable_used(op, "PyCell_New")
