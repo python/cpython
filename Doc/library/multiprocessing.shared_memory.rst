@@ -145,7 +145,7 @@ instances::
 
 The following example demonstrates a practical use of the :class:`SharedMemory`
 class with `NumPy arrays <https://numpy.org/>`_, accessing the
-same :py:func:`!numpy.ndarray` from two distinct Python shells:
+same :class:`!numpy.ndarray` from two distinct Python shells:
 
 .. doctest::
    :options: +SKIP
