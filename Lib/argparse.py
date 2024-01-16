@@ -88,7 +88,6 @@ __all__ = [
 import os as _os
 import re as _re
 import sys as _sys
-import warnings
 
 from gettext import gettext as _, ngettext
 
