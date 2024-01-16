@@ -5324,26 +5324,26 @@ class TestDeprecatedArguments(TestCase):
         with captured_stderr() as stderr:
             parser.parse_args(['--foo', 'spam'])
         stderr = stderr.getvalue()
-        self.assertRegex(stderr, "warning: usage of option '--foo' is deprecated")
+        self.assertRegex(stderr, "warning: option '--foo' is deprecated")
         self.assertEqual(stderr.count('is deprecated'), 1)
 
         with captured_stderr() as stderr:
             parser.parse_args(['-f', 'spam'])
         stderr = stderr.getvalue()
-        self.assertRegex(stderr, "warning: usage of option '-f' is deprecated")
+        self.assertRegex(stderr, "warning: option '-f' is deprecated")
         self.assertEqual(stderr.count('is deprecated'), 1)
 
         with captured_stderr() as stderr:
             parser.parse_args(['--foo', 'spam', '-f', 'ham'])
         stderr = stderr.getvalue()
-        self.assertRegex(stderr, "warning: usage of option '--foo' is deprecated")
-        self.assertRegex(stderr, "warning: usage of option '-f' is deprecated")
+        self.assertRegex(stderr, "warning: option '--foo' is deprecated")
+        self.assertRegex(stderr, "warning: option '-f' is deprecated")
         self.assertEqual(stderr.count('is deprecated'), 2)
 
         with captured_stderr() as stderr:
             parser.parse_args(['--foo', 'spam', '--foo', 'ham'])
         stderr = stderr.getvalue()
-        self.assertRegex(stderr, "warning: usage of option '--foo' is deprecated")
+        self.assertRegex(stderr, "warning: option '--foo' is deprecated")
         self.assertEqual(stderr.count('is deprecated'), 1)
 
     def test_deprecated_boolean_option(self):
@@ -5353,26 +5353,26 @@ class TestDeprecatedArguments(TestCase):
         with captured_stderr() as stderr:
             parser.parse_args(['--foo'])
         stderr = stderr.getvalue()
-        self.assertRegex(stderr, "warning: usage of option '--foo' is deprecated")
+        self.assertRegex(stderr, "warning: option '--foo' is deprecated")
         self.assertEqual(stderr.count('is deprecated'), 1)
 
         with captured_stderr() as stderr:
             parser.parse_args(['-f'])
         stderr = stderr.getvalue()
-        self.assertRegex(stderr, "warning: usage of option '-f' is deprecated")
+        self.assertRegex(stderr, "warning: option '-f' is deprecated")
         self.assertEqual(stderr.count('is deprecated'), 1)
 
         with captured_stderr() as stderr:
             parser.parse_args(['--no-foo'])
         stderr = stderr.getvalue()
-        self.assertRegex(stderr, "warning: usage of option '--no-foo' is deprecated")
+        self.assertRegex(stderr, "warning: option '--no-foo' is deprecated")
         self.assertEqual(stderr.count('is deprecated'), 1)
 
         with captured_stderr() as stderr:
             parser.parse_args(['--foo', '--no-foo'])
         stderr = stderr.getvalue()
-        self.assertRegex(stderr, "warning: usage of option '--foo' is deprecated")
-        self.assertRegex(stderr, "warning: usage of option '--no-foo' is deprecated")
+        self.assertRegex(stderr, "warning: option '--foo' is deprecated")
+        self.assertRegex(stderr, "warning: option '--no-foo' is deprecated")
         self.assertEqual(stderr.count('is deprecated'), 2)
 
     def test_deprecated_arguments(self):
@@ -5388,14 +5388,14 @@ class TestDeprecatedArguments(TestCase):
         with captured_stderr() as stderr:
             parser.parse_args(['spam'])
         stderr = stderr.getvalue()
-        self.assertRegex(stderr, "warning: usage of argument 'foo' is deprecated")
+        self.assertRegex(stderr, "warning: argument 'foo' is deprecated")
         self.assertEqual(stderr.count('is deprecated'), 1)
 
         with captured_stderr() as stderr:
             parser.parse_args(['spam', 'ham'])
         stderr = stderr.getvalue()
-        self.assertRegex(stderr, "warning: usage of argument 'foo' is deprecated")
-        self.assertRegex(stderr, "warning: usage of argument 'bar' is deprecated")
+        self.assertRegex(stderr, "warning: argument 'foo' is deprecated")
+        self.assertRegex(stderr, "warning: argument 'bar' is deprecated")
         self.assertEqual(stderr.count('is deprecated'), 2)
 
     def test_deprecated_varargument(self):
@@ -5410,13 +5410,13 @@ class TestDeprecatedArguments(TestCase):
         with captured_stderr() as stderr:
             parser.parse_args(['spam'])
         stderr = stderr.getvalue()
-        self.assertRegex(stderr, "warning: usage of argument 'foo' is deprecated")
+        self.assertRegex(stderr, "warning: argument 'foo' is deprecated")
         self.assertEqual(stderr.count('is deprecated'), 1)
 
         with captured_stderr() as stderr:
             parser.parse_args(['spam', 'ham'])
         stderr = stderr.getvalue()
-        self.assertRegex(stderr, "warning: usage of argument 'foo' is deprecated")
+        self.assertRegex(stderr, "warning: argument 'foo' is deprecated")
         self.assertEqual(stderr.count('is deprecated'), 1)
 
     def test_deprecated_subparser(self):
@@ -5433,13 +5433,13 @@ class TestDeprecatedArguments(TestCase):
         with captured_stderr() as stderr:
             parser.parse_args(['foo'])
         stderr = stderr.getvalue()
-        self.assertRegex(stderr, "warning: usage of command 'foo' is deprecated")
+        self.assertRegex(stderr, "warning: command 'foo' is deprecated")
         self.assertEqual(stderr.count('is deprecated'), 1)
 
         with captured_stderr() as stderr:
             parser.parse_args(['baz'])
         stderr = stderr.getvalue()
-        self.assertRegex(stderr, "warning: usage of command 'baz' is deprecated")
+        self.assertRegex(stderr, "warning: command 'baz' is deprecated")
         self.assertEqual(stderr.count('is deprecated'), 1)
 
 

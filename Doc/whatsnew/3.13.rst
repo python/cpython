@@ -154,7 +154,7 @@ ast
   possible to obtain an optimized ``AST``.
   (Contributed by Irit Katriel in :gh:`108113`).
 
-argrapse
+argparse
 --------
 
 * Add parameter *deprecated* in methods

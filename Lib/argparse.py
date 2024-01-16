@@ -1280,7 +1280,7 @@ class _SubParsersAction(Action):
             raise ArgumentError(self, msg)
 
         if parser_name in self._deprecated:
-            parser._warning(_("usage of command '%(parser_name)s' is deprecated") %
+            parser._warning(_("command '%(parser_name)s' is deprecated") %
                             {'parser_name': parser_name})
 
         # parse all the remaining options into the namespace
@@ -2107,7 +2107,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             assert action_tuples
             for action, args, option_string in action_tuples:
                 if action.deprecated and option_string not in warned:
-                    self._warning(_("usage of option '%(option)s' is deprecated") %
+                    self._warning(_("option '%(option)s' is deprecated") %
                                   {'option': option_string})
                     warned.add(option_string)
                 take_action(action, args, option_string)
@@ -2130,7 +2130,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 args = arg_strings[start_index: start_index + arg_count]
                 start_index += arg_count
                 if args and action.deprecated and action.dest not in warned:
-                    self._warning(_("usage of argument '%(argument_name)s' is deprecated") %
+                    self._warning(_("argument '%(argument_name)s' is deprecated") %
                                   {'argument_name': action.dest})
                     warned.add(action.dest)
                 take_action(action, args)
