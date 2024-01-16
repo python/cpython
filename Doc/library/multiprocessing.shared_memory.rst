@@ -20,7 +20,7 @@ and management of shared memory to be accessed by one or more processes
 on a multicore or symmetric multiprocessor (SMP) machine.  To assist with
 the life-cycle management of shared memory especially across distinct
 processes, a :class:`~multiprocessing.managers.BaseManager` subclass,
-:class:`SharedMemoryManager`, is also provided in the
+:class:`multiprocessing.managers.SharedMemoryManager`, is also provided in the
 :mod:`multiprocessing.managers` module.
 
 In this module, shared memory refers to "System V style" shared memory blocks
@@ -233,7 +233,7 @@ same :class:`!numpy.ndarray` from two distinct Python shells:
 
 
 The following example demonstrates the basic mechanisms of a
-:class:`SharedMemoryManager`:
+:class:`~multiprocessing.managers.SharedMemoryManager`:
 
 .. doctest::
    :options: +SKIP
@@ -251,9 +251,9 @@ The following example demonstrates the basic mechanisms of a
    >>> smm.shutdown()  # Calls unlink() on sl, raw_shm, and another_sl
 
 The following example depicts a potentially more convenient pattern for using
-:class:`SharedMemoryManager` objects via the :keyword:`with` statement to
-ensure that all shared memory blocks are released after they are no longer
-needed:
+:class:`~multiprocessing.managers.SharedMemoryManager` objects via the
+:keyword:`with` statement to ensure that all shared memory blocks are released
+after they are no longer needed:
 
 .. doctest::
    :options: +SKIP
@@ -269,12 +269,13 @@ needed:
    ...     p2.join()   # Wait for all work to complete in both processes
    ...     total_result = sum(sl)  # Consolidate the partial results now in sl
 
-When using a :class:`SharedMemoryManager` in a :keyword:`with` statement, the
-shared memory blocks created using that manager are all released when the
-:keyword:`with` statement's code block finishes execution.
+When using a :class:`~multiprocessing.managers.SharedMemoryManager`
+in a :keyword:`with` statement, the shared memory blocks created using that
+manager are all released when the :keyword:`!with` statement's code block
+finishes execution.
 
 
-.. class:: ShareableList(sequence=None, \*, name=None)
+.. class:: ShareableList(sequence=None, *, name=None)
 
    Provides a mutable list-like object where all values stored within are
    stored in a shared memory block.
