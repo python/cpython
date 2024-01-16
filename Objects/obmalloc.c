@@ -615,11 +615,7 @@ _PyMem_GetCurrentAllocatorName(void)
 int
 _PyMem_DebugEnabled(void)
 {
-#ifdef WITH_PYMALLOC
     return _PyRuntime.allocators.is_debug_enabled;
-#else
-    return 0;
-#endif
 }
 
 #ifdef WITH_PYMALLOC
