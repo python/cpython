@@ -350,7 +350,6 @@ def isreserved(path):
 
 def _isreservedname(name):
     """Return true if the filename is reserved by the system."""
-    name = os.fsdecode(name)
     # Trailing dots and spaces are reserved.
     if name.endswith(('.', ' ')) and name not in ('.', '..'):
         return True

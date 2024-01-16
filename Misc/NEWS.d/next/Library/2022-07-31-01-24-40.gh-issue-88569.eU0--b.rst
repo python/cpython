@@ -1,4 +1,4 @@
-Add :func:`ntpath.isreserved`, which identifies reserved pathnames on
-Windows; reserved names include "NUL", "AUX" and "CON".
+Add :func:`os.path.isreserved`, which identifies reserved pathnames such
+as "NUL", "AUX" and "CON". This function is only available on Windows.
 
 Deprecate :meth:`pathlib.PurePath.is_reserved`.
