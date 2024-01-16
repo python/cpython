@@ -1269,7 +1269,7 @@ get_token_missing(void)
 void
 _PyContext_ClearFreeList(_PyFreeListState *freelist_state, int is_finalization)
 {
-#if WITH_FREELISTS
+#ifdef WITH_FREELISTS
     struct _Py_context_state *state = &freelist_state->context_state;
     for (; state->numfree > 0; state->numfree--) {
         PyContext *ctx = state->freelist;
