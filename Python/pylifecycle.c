@@ -1752,15 +1752,13 @@ finalize_interp_types(PyInterpreterState *interp)
     _PyUnicode_ClearInterned(interp);
 
     _PyDict_Fini(interp);
-
-    _PySlice_Fini(interp);
-
     _PyUnicode_Fini(interp);
 
     _PyFreeListState *state = _PyFreeListState_GET();
     _PyTuple_Fini(state);
     _PyList_Fini(state);
     _PyFloat_Fini(state);
+    _PySlice_Fini(state);
 
 #ifdef Py_DEBUG
     _PyStaticObjects_CheckRefcnt(interp);
