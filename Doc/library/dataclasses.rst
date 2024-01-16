@@ -361,7 +361,7 @@ Module contents
      assert asdict(c) == {'mylist': [{'x': 0, 'y': 0}, {'x': 10, 'y': 4}]}
 
    Shallow dataclasses can be created from the corresponding dict with keyword
-   arguemnt unpacking. This does not work for a nested structure though.
+   argument unpacking. This does not work for a nested structure though.
 
      p = Point(10, 20)
      pd = asdict(p)
