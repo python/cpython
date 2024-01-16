@@ -31,7 +31,7 @@ struct _types_runtime_state {
 struct type_cache_entry {
     unsigned int version;  // initialized from type->tp_version_tag
 #ifdef Py_GIL_DISABLED
-    int sequence;
+   _PySeqLock sequence;
 #endif
     PyObject *name;        // reference to exactly a str or None
     PyObject *value;       // borrowed reference or NULL
