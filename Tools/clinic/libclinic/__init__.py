@@ -16,8 +16,9 @@ from .formatting import (
     wrapped_c_string_literal,
 )
 from .utils import (
-    create_regex,
+    FormatCounterFormatter,
     compute_checksum,
+    create_regex,
     write_file,
 )
 
@@ -39,8 +40,9 @@ __all__ = [
     "wrapped_c_string_literal",
 
     # Utility functions
-    "create_regex",
+    "FormatCounterFormatter",
     "compute_checksum",
+    "create_regex",
     "write_file",
 ]
 

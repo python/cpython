@@ -16,7 +16,6 @@ _PyGC_ClearAllFreeLists(PyInterpreterState *interp)
 {
     _PyDict_ClearFreeList(interp);
     _PyAsyncGen_ClearFreeLists(interp);
-    _PyContext_ClearFreeList(interp);
 
     HEAD_LOCK(&_PyRuntime);
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)interp->threads.head;

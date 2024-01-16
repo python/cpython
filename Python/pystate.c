@@ -1461,6 +1461,7 @@ _Py_ClearFreeLists(_PyFreeListState *state, int is_finalization)
     _PyFloat_ClearFreeList(state, is_finalization);
     _PyTuple_ClearFreeList(state, is_finalization);
     _PyList_ClearFreeList(state, is_finalization);
+    _PyContext_ClearFreeList(state, is_finalization);
 }
 
 void
@@ -1549,6 +1550,7 @@ PyThreadState_Clear(PyThreadState *tstate)
     // Each thread should clear own freelists in free-threading builds.
     _PyFreeListState *freelist_state = &((_PyThreadStateImpl*)tstate)->freelist_state;
     _Py_ClearFreeLists(freelist_state, 0);
+    _PySlice_ClearCache(freelist_state);
 #endif
 
     _PyThreadState_ClearMimallocHeaps(tstate);

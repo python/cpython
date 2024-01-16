@@ -454,6 +454,7 @@ jobs:
       uses: hendrikmuhs/ccache-action@v1.2
       with:
         save: ${{ github.event_name == 'push' }}
+        max-size: "200M"
     - name: Configure CPython
       run: ./configure --config-cache --with-address-sanitizer --without-pymalloc
     - name: Build CPython
