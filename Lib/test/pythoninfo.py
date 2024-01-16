@@ -870,6 +870,7 @@ def collect_windows(info_add):
         return
 
     # windows.RtlAreLongPathsEnabled: RtlAreLongPathsEnabled()
+    # windows.is_admin: IsUserAnAdmin()
     try:
         import ctypes
         if not hasattr(ctypes, 'WinDLL'):
@@ -888,6 +889,12 @@ def collect_windows(info_add):
             RtlAreLongPathsEnabled.argtypes = ()
             res = bool(RtlAreLongPathsEnabled())
         info_add('windows.RtlAreLongPathsEnabled', res)
+
+        shell32 = ctypes.windll.shell32
+        IsUserAnAdmin = shell32.IsUserAnAdmin
+        IsUserAnAdmin.restype = BOOLEAN
+        IsUserAnAdmin.argtypes = ()
+        info_add('windows.is_admin', IsUserAnAdmin())
 
     try:
         import _winapi
