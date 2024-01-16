@@ -4,7 +4,7 @@ finalization when calling ``Py_Finalize``, regardless of their reference
 count.
 
 Worth noting that if an extension accidentally holds onto a interned string,
-event after calling Py_Finalize, it will result in use-after-free error,
+even after calling Py_Finalize, it will result in use-after-free error,
 leaving the user to a potential vulnerabilities. That said, the history of
 how these interned strings are handled have been changing during throughout
 different versions.
