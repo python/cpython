@@ -8,7 +8,7 @@
 
 .. index:: single: filenames; wildcard expansion
 
-.. index:: module: re
+.. index:: pair: module; re
 
 --------------
 
@@ -38,7 +38,7 @@ special characters used in shell-style wildcards are:
 For a literal match, wrap the meta-characters in brackets.
 For example, ``'[?]'`` matches the character ``'?'``.
 
-.. index:: module: glob
+.. index:: pair: module; glob
 
 Note that the filename separator (``'/'`` on Unix) is *not* special to this
 module.  See module :mod:`glob` for pathname expansion (:mod:`glob` uses

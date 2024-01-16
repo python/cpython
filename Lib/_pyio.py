@@ -33,11 +33,8 @@ DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
 # Rebind for compatibility
 BlockingIOError = BlockingIOError
 
-# Does io.IOBase finalizer log the exception if the close() method fails?
-# The exception is ignored silently by default in release build.
-_IOBASE_EMITS_UNRAISABLE = (hasattr(sys, "gettotalrefcount") or sys.flags.dev_mode)
 # Does open() check its 'errors' argument?
-_CHECK_ERRORS = _IOBASE_EMITS_UNRAISABLE
+_CHECK_ERRORS = (hasattr(sys, "gettotalrefcount") or sys.flags.dev_mode)
 
 
 def text_encoding(encoding, stacklevel=2):
@@ -416,18 +413,9 @@ class IOBase(metaclass=abc.ABCMeta):
         if closed:
             return
 
-        if _IOBASE_EMITS_UNRAISABLE:
-            self.close()
-        else:
-            # The try/except block is in case this is called at program
-            # exit time, when it's possible that globals have already been
-            # deleted, and then the close() call might fail.  Since
-            # there's nothing we can do about such failures and they annoy
-            # the end users, we suppress the traceback.
-            try:
-                self.close()
-            except:
-                pass
+        # If close() fails, the caller logs the exception with
+        # sys.unraisablehook. close() must be called at the end at __del__().
+        self.close()
 
     ### Inquiries ###
 
@@ -2210,8 +2198,9 @@ class TextIOWrapper(TextIOBase):
         self.buffer.write(b)
         if self._line_buffering and (haslf or "\r" in s):
             self.flush()
-        self._set_decoded_chars('')
-        self._snapshot = None
+        if self._snapshot is not None:
+            self._set_decoded_chars('')
+            self._snapshot = None
         if self._decoder:
             self._decoder.reset()
         return length
@@ -2525,8 +2514,9 @@ class TextIOWrapper(TextIOBase):
             # Read everything.
             result = (self._get_decoded_chars() +
                       decoder.decode(self.buffer.read(), final=True))
-            self._set_decoded_chars('')
-            self._snapshot = None
+            if self._snapshot is not None:
+                self._set_decoded_chars('')
+                self._snapshot = None
             return result
         else:
             # Keep reading chunks until we have size characters to return.

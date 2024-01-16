@@ -19,6 +19,28 @@
 #  define inline __inline__
 #endif
 
+/******************************************************************************/
+/* Macros that KaRaMeL will generate.                                         */
+/******************************************************************************/
+
+/* For "bare" targets that do not have a C stdlib, the user might want to use
+ * [-add-early-include '"mydefinitions.h"'] and override these. */
+#ifndef KRML_HOST_PRINTF
+#  define KRML_HOST_PRINTF printf
+#endif
+
+#if (                                                                          \
+    (defined __STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) &&             \
+    (!(defined KRML_HOST_EPRINTF)))
+#  define KRML_HOST_EPRINTF(...) fprintf(stderr, __VA_ARGS__)
+#elif !(defined KRML_HOST_EPRINTF) && defined(_MSC_VER)
+#  define KRML_HOST_EPRINTF(...) fprintf(stderr, __VA_ARGS__)
+#endif
+
+#ifndef KRML_HOST_EXIT
+#  define KRML_HOST_EXIT exit
+#endif
+
 #ifndef KRML_HOST_MALLOC
 #  define KRML_HOST_MALLOC malloc
 #endif
@@ -34,6 +56,28 @@
 #ifndef KRML_HOST_IGNORE
 #  define KRML_HOST_IGNORE(x) (void)(x)
 #endif
+
+/* In FStar.Buffer.fst, the size of arrays is uint32_t, but it's a number of
+ * *elements*. Do an ugly, run-time check (some of which KaRaMeL can eliminate).
+ */
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 4))
+#  define _KRML_CHECK_SIZE_PRAGMA                                              \
+    _Pragma("GCC diagnostic ignored \"-Wtype-limits\"")
+#else
+#  define _KRML_CHECK_SIZE_PRAGMA
+#endif
+
+#define KRML_CHECK_SIZE(size_elt, sz)                                          \
+  do {                                                                         \
+    _KRML_CHECK_SIZE_PRAGMA                                                    \
+    if (((size_t)(sz)) > ((size_t)(SIZE_MAX / (size_elt)))) {                  \
+      KRML_HOST_PRINTF(                                                        \
+          "Maximum allocatable size exceeded, aborting before overflow at "    \
+          "%s:%d\n",                                                           \
+          __FILE__, __LINE__);                                                 \
+      KRML_HOST_EXIT(253);                                                     \
+    }                                                                          \
+  } while (0)
 
 /* Macros for prettier unrolling of loops */
 #define KRML_LOOP1(i, n, x) { \

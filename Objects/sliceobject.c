@@ -16,8 +16,9 @@ this type and there is exactly one in existence.
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
-#include "structmember.h"         // PyMemberDef
+
 
 static PyObject *
 ellipsis_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
@@ -26,7 +27,17 @@ ellipsis_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         PyErr_SetString(PyExc_TypeError, "EllipsisType takes no arguments");
         return NULL;
     }
-    return Py_NewRef(Py_Ellipsis);
+    return Py_Ellipsis;
+}
+
+static void
+ellipsis_dealloc(PyObject *ellipsis)
+{
+    /* This should never get called, but we also don't want to SEGV if
+     * we accidentally decref Ellipsis out of existence. Instead,
+     * since Ellipsis is an immortal object, re-set the reference count.
+     */
+    _Py_SetImmortal(ellipsis);
 }
 
 static PyObject *
@@ -51,7 +62,7 @@ PyTypeObject PyEllipsis_Type = {
     "ellipsis",                         /* tp_name */
     0,                                  /* tp_basicsize */
     0,                                  /* tp_itemsize */
-    0, /*never called*/                 /* tp_dealloc */
+    ellipsis_dealloc,                   /* tp_dealloc */
     0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
@@ -87,22 +98,23 @@ PyTypeObject PyEllipsis_Type = {
     ellipsis_new,                       /* tp_new */
 };
 
-PyObject _Py_EllipsisObject = {
-    _PyObject_EXTRA_INIT
-    1, &PyEllipsis_Type
-};
+PyObject _Py_EllipsisObject = _PyObject_HEAD_INIT(&PyEllipsis_Type);
 
 
 /* Slice object implementation */
 
-
-void _PySlice_Fini(PyInterpreterState *interp)
+void _PySlice_ClearCache(_PyFreeListState *state)
 {
-    PySliceObject *obj = interp->slice_cache;
+    PySliceObject *obj = state->slice_state.slice_cache;
     if (obj != NULL) {
-        interp->slice_cache = NULL;
+        state->slice_state.slice_cache = NULL;
         PyObject_GC_Del(obj);
     }
+}
+
+void _PySlice_Fini(_PyFreeListState *state)
+{
+    _PySlice_ClearCache(state);
 }
 
 /* start, stop, and step are python objects with None indicating no
@@ -114,11 +126,11 @@ _PyBuildSlice_Consume2(PyObject *start, PyObject *stop, PyObject *step)
 {
     assert(start != NULL && stop != NULL && step != NULL);
 
-    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyFreeListState *state = _PyFreeListState_GET();
     PySliceObject *obj;
-    if (interp->slice_cache != NULL) {
-        obj = interp->slice_cache;
-        interp->slice_cache = NULL;
+    if (state->slice_state.slice_cache != NULL) {
+        obj = state->slice_state.slice_cache;
+        state->slice_state.slice_cache = NULL;
         _Py_NewReference((PyObject *)obj);
     }
     else {
@@ -346,13 +358,13 @@ Create a slice object.  This is used for extended slicing (e.g. a[0:10:2]).");
 static void
 slice_dealloc(PySliceObject *r)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyFreeListState *state = _PyFreeListState_GET();
     _PyObject_GC_UNTRACK(r);
     Py_DECREF(r->step);
     Py_DECREF(r->start);
     Py_DECREF(r->stop);
-    if (interp->slice_cache == NULL) {
-        interp->slice_cache = r;
+    if (state->slice_state.slice_cache == NULL) {
+        state->slice_state.slice_cache = r;
     }
     else {
         PyObject_GC_Del(r);
@@ -366,9 +378,9 @@ slice_repr(PySliceObject *r)
 }
 
 static PyMemberDef slice_members[] = {
-    {"start", T_OBJECT, offsetof(PySliceObject, start), READONLY},
-    {"stop", T_OBJECT, offsetof(PySliceObject, stop), READONLY},
-    {"step", T_OBJECT, offsetof(PySliceObject, step), READONLY},
+    {"start", _Py_T_OBJECT, offsetof(PySliceObject, start), Py_READONLY},
+    {"stop", _Py_T_OBJECT, offsetof(PySliceObject, stop), Py_READONLY},
+    {"step", _Py_T_OBJECT, offsetof(PySliceObject, step), Py_READONLY},
     {0}
 };
 
@@ -404,7 +416,7 @@ _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
 
     /* Convert step to an integer; raise for zero step. */
     if (self->step == Py_None) {
-        step = Py_NewRef(_PyLong_GetOne());
+        step = _PyLong_GetOne();
         step_is_negative = 0;
     }
     else {
@@ -432,7 +444,7 @@ _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
             goto error;
     }
     else {
-        lower = Py_NewRef(_PyLong_GetZero());
+        lower = _PyLong_GetZero();
         upper = Py_NewRef(length);
     }
 
