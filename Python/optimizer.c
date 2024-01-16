@@ -1237,8 +1237,8 @@ _Py_Executors_InvalidateAll(PyInterpreterState *interp)
 }
 
 /* The following table is generated from this script:
-print(f'static_assert(UOP_MAX_TRACE_LENGTH == {UOP_MAX_TRACE_LENGTH}, "COLD_EXITS must be regenerated");')
-print("static _PyColdExitObject COLD_EXITS[{UOP_MAX_TRACE_LENGTH}] = {")
+print(f'static_assert(UOP_MAX_TRACE_LENGTH == {UOP_MAX_TRACE_LENGTH}, "COLD_EXITS must be regenerated");\n')
+print("static _PyColdExitObject COLD_EXITS[] = {")
 for i in range(UOP_MAX_TRACE_LENGTH):
     print(f"    [{i}] = {{ .base = {{ PyVarObject_HEAD_INIT(&_ColdExit_Type, 0) .vm_data = {{ 0 }},"
           f" .trace = &COLD_EXITS[{i}].uop }}, .uop.opcode = _COLD_EXIT, .uop.oparg = {i} }},")
@@ -1246,7 +1246,8 @@ print("};")
 */
 
 static_assert(UOP_MAX_TRACE_LENGTH == 512, "COLD_EXITS must be regenerated");
-static _PyColdExitObject COLD_EXITS[512] = {
+
+static _PyColdExitObject COLD_EXITS[] = {
     [0] = { .base = { PyVarObject_HEAD_INIT(&_ColdExit_Type, 0) .vm_data = { 0 }, .trace = &COLD_EXITS[0].uop }, .uop.opcode = _COLD_EXIT, .uop.oparg = 0 },
     [1] = { .base = { PyVarObject_HEAD_INIT(&_ColdExit_Type, 0) .vm_data = { 0 }, .trace = &COLD_EXITS[1].uop }, .uop.opcode = _COLD_EXIT, .uop.oparg = 1 },
     [2] = { .base = { PyVarObject_HEAD_INIT(&_ColdExit_Type, 0) .vm_data = { 0 }, .trace = &COLD_EXITS[2].uop }, .uop.opcode = _COLD_EXIT, .uop.oparg = 2 },
