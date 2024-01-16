@@ -1126,7 +1126,7 @@ class AST_Tests(unittest.TestCase):
     def test_ast_recursion_limit(self):
         fail_depth = support.EXCEEDS_RECURSION_LIMIT
         crash_depth = 100_000
-        success_depth = 1200
+        success_depth = int(support.Py_C_RECURSION_LIMIT * 0.8)
         if _testinternalcapi is not None:
             remaining = _testinternalcapi.get_c_recursion_remaining()
             success_depth = min(success_depth, remaining)
