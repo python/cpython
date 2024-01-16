@@ -133,7 +133,9 @@ _PyType_IsReady(PyTypeObject *type)
 
 extern PyObject* _Py_type_getattro_impl(PyTypeObject *type, PyObject *name,
                                         int *suppress_missing_attribute);
-extern PyObject* _Py_type_getattro(PyTypeObject *type, PyObject *name);
+extern PyObject* _Py_type_getattro(PyObject *type, PyObject *name);
+
+extern PyObject* _Py_BaseObject_RichCompare(PyObject* self, PyObject* other, int op);
 
 extern PyObject* _Py_slot_tp_getattro(PyObject *self, PyObject *name);
 extern PyObject* _Py_slot_tp_getattr_hook(PyObject *self, PyObject *name);
@@ -142,6 +144,11 @@ extern PyTypeObject _PyBufferWrapper_Type;
 
 extern PyObject* _PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj,
                                  PyObject *name, int *meth_found);
+
+
+// This is exported for the _testinternalcapi module.
+PyAPI_FUNC(PyObject *) _PyType_GetModuleName(PyTypeObject *);
+
 
 #ifdef __cplusplus
 }

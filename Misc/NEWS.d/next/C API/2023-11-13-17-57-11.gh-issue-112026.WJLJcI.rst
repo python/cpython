@@ -1,3 +1,0 @@
-Add again ``<ctype.h>`` and ``<unistd.h>`` includes in ``Python.h``, but
-don't include them in the limited C API version 3.13 and newer. Patch by
-Victor Stinner.

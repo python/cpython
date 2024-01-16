@@ -386,6 +386,7 @@ class Stats:
         trace_too_short = self._data["Optimization trace too short"]
         inner_loop = self._data["Optimization inner loop"]
         recursive_call = self._data["Optimization recursive call"]
+        low_confidence = self._data["Optimization low confidence"]
 
         return {
             "Optimization attempts": (attempts, None),
@@ -396,6 +397,7 @@ class Stats:
             "Trace too short": (trace_too_short, attempts),
             "Inner loop found": (inner_loop, attempts),
             "Recursive call": (recursive_call, attempts),
+            "Low confidence": (low_confidence, attempts),
             "Traces executed": (executed, None),
             "Uops executed": (uops, executed),
         }
@@ -1152,12 +1154,13 @@ def output_markdown(
             print("Stats gathered on:", date.today(), file=out)
 
 
-def output_stats(inputs: list[Path], json_output=TextIO | None):
+def output_stats(inputs: list[Path], json_output=str | None):
     match len(inputs):
         case 1:
             data = load_raw_data(Path(inputs[0]))
             if json_output is not None:
-                save_raw_data(data, json_output)  # type: ignore
+                with open(json_output, 'w', encoding='utf-8') as f:
+                    save_raw_data(data, f)  # type: ignore
             stats = Stats(data)
             output_markdown(sys.stdout, LAYOUT, stats)
         case 2:
@@ -1193,7 +1196,6 @@ def main():
     parser.add_argument(
         "--json-output",
         nargs="?",
-        type=argparse.FileType("w"),
         help="Output complete raw results to the given JSON file.",
     )
 

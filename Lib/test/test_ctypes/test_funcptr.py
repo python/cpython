@@ -3,6 +3,8 @@ import ctypes
 import unittest
 from ctypes import (CDLL, Structure, CFUNCTYPE, sizeof, _CFuncPtr,
                     c_void_p, c_char_p, c_char, c_int, c_uint, c_long)
+from ._support import (_CData, PyCFuncPtrType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
+                       Py_TPFLAGS_IMMUTABLETYPE)
 
 
 try:
@@ -15,6 +17,18 @@ lib = CDLL(_ctypes_test.__file__)
 
 
 class CFuncPtrTestCase(unittest.TestCase):
+    def test_inheritance_hierarchy(self):
+        self.assertEqual(_CFuncPtr.mro(), [_CFuncPtr, _CData, object])
+
+        self.assertEqual(PyCFuncPtrType.__name__, "PyCFuncPtrType")
+        self.assertEqual(type(PyCFuncPtrType), type)
+
+    def test_type_flags(self):
+        for cls in _CFuncPtr, PyCFuncPtrType:
+            with self.subTest(cls=cls):
+                self.assertTrue(_CFuncPtr.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
+                self.assertFalse(_CFuncPtr.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
+
     def test_basic(self):
         X = WINFUNCTYPE(c_int, c_int, c_int)
 

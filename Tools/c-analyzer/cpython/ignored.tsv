@@ -165,6 +165,7 @@ Python/pylifecycle.c	fatal_error	reentrant	-
 
 # explicitly protected, internal-only
 Modules/_xxinterpchannelsmodule.c	-	_globals	-
+Modules/_xxinterpqueuesmodule.c	-	_globals	-
 
 # set once during module init
 Modules/_decimal/_decimal.c	-	minalloc_is_set	-
@@ -599,6 +600,9 @@ Modules/_xxtestfuzz/fuzzer.c	-	re_error_exception	-
 Modules/_xxtestfuzz/fuzzer.c	-	struct_error	-
 Modules/_xxtestfuzz/fuzzer.c	-	struct_unpack_method	-
 Modules/_xxtestfuzz/fuzzer.c	-	xmlparser_type	-
+Modules/_xxtestfuzz/fuzzer.c	-	pycompile_scratch	-
+Modules/_xxtestfuzz/fuzzer.c	-	start_vals	-
+Modules/_xxtestfuzz/fuzzer.c	-	optimize_vals	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	CSV_READER_INITIALIZED	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	JSON_LOADS_INITIALIZED	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	SRE_COMPILE_INITIALIZED	-

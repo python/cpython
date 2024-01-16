@@ -1,0 +1,2 @@
+Add support of :func:`os.fchmod` and a file descriptor in :func:`os.chmod`
+on Windows.
