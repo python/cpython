@@ -258,8 +258,8 @@ class Condition(_ContextManagerMixin, mixins._LoopBoundMixin):
         the same condition variable in another coroutine.  Once
         awakened, it re-acquires the lock and returns True.
 
-        This method may return without having been explicitly awoken by
-        a notify() or notify_all(), which is why the caller should always
+        This method may return spuriously,
+        which is why the caller should always
         re-check the state and be prepared to wait() again.
         """
         if not self.locked():
@@ -288,7 +288,7 @@ class Condition(_ContextManagerMixin, mixins._LoopBoundMixin):
                     except exceptions.CancelledError as e:
                         err = e
 
-                if err:
+                if err is not None:
                     try:
                         raise err  # Re-raise most recent exception instance.
                     finally:
@@ -305,7 +305,7 @@ class Condition(_ContextManagerMixin, mixins._LoopBoundMixin):
     async def wait_for(self, predicate):
         """Wait until a predicate becomes true.
 
-        The predicate should be a callable which result will be
+        The predicate should be a callable whose result will be
         interpreted as a boolean value.  The method will repeatedly
         wait() until it evaluates to true.  The final predicate value is
         the return value.
@@ -321,8 +321,8 @@ class Condition(_ContextManagerMixin, mixins._LoopBoundMixin):
         If the calling coroutine has not acquired the lock when this method
         is called, a RuntimeError is raised.
 
-        This method wakes up n of the coroutines waiting for the
-        condition variable; it is a no-op if no coroutines are waiting.
+        This method wakes up n of the coroutines waiting for the condition
+         variable; if fewer than n are waiting, they are all awoken.
 
         Note: an awakened coroutine does not actually return from its
         wait() call until it can reacquire the lock. Since notify() does
