@@ -56,9 +56,9 @@ parse_tuple_and_keywords(PyObject *self, PyObject *args)
             keywords[i] = PyBytes_AS_STRING(o);
         }
         else {
-            PyErr_Format(PyExc_ValueError,
+            PyErr_SetString(PyExc_ValueError,
                 "parse_tuple_and_keywords: "
-                "keywords must be str or bytes", i);
+                "keywords must be str or bytes");
             goto exit;
         }
     }
