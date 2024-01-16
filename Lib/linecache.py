@@ -166,13 +166,11 @@ def lazycache(filename, module_globals):
         return False
     # Try for a __loader__, if available
     if module_globals and '__name__' in module_globals:
-        name = module_globals['__name__']
-        if (loader := module_globals.get('__loader__')) is None:
-            if spec := module_globals.get('__spec__'):
-                try:
-                    loader = spec.loader
-                except AttributeError:
-                    pass
+        spec = module_globals.get('__spec__')
+        name = getattr(spec, 'name', None) or module_globals['__name__']
+        loader = getattr(spec, 'loader', None)
+        if loader is None:
+            loader = module_globals.get('__loader__')
         get_source = getattr(loader, 'get_source', None)
 
         if name and get_source:
