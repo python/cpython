@@ -1866,6 +1866,7 @@ class TestLRU:
 
     @support.skip_on_s390x
     @unittest.skipIf(support.is_wasi, "WASI has limited C stack")
+    @unittest.skipIf(support.PGO, "PGO builds may have reduced C stack")
     def test_lru_recursion(self):
 
         @self.module.lru_cache
