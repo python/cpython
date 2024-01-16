@@ -14,7 +14,7 @@ and hold the reference count and class of the object, respectively.
 
 Since the introduction of the cycle GC, there has also been a pre-header.
 Before 3.11, this pre-header was two words in size.
-It should be considered opaque to all of the code except the cycle GC.
+It should be considered opaque to all code except the cycle GC.
 
 ## 3.11 pre-header
 
