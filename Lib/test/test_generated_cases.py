@@ -9,7 +9,7 @@ from test import test_tools
 
 
 def skip_if_different_mount_drives():
-    if sys.platform != 'win32':
+    if sys.platform != "win32":
         return
     ROOT = os.path.dirname(os.path.dirname(__file__))
     root_drive = os.path.splitroot(ROOT)[0]
@@ -22,11 +22,13 @@ def skip_if_different_mount_drives():
             f"directory have different mount drives "
             f"({cwd_drive} and {root_drive})"
         )
+
+
 skip_if_different_mount_drives()
 
 
-test_tools.skip_if_missing('cases_generator')
-with test_tools.imports_under_tool('cases_generator'):
+test_tools.skip_if_missing("cases_generator")
+with test_tools.imports_under_tool("cases_generator"):
     from analyzer import StackItem
     import parser
     from stack import Stack
@@ -39,13 +41,14 @@ def handle_stderr():
     else:
         return support.captured_stderr()
 
+
 class TestEffects(unittest.TestCase):
     def test_effect_sizes(self):
         stack = Stack()
         inputs = [
-            x:= StackItem("x", None, "", "1"),
-            y:= StackItem("y", None, "", "oparg"),
-            z:= StackItem("z", None, "", "oparg*2"),
+            x := StackItem("x", None, "", "1"),
+            y := StackItem("y", None, "", "oparg"),
+            z := StackItem("z", None, "", "oparg*2"),
         ]
         outputs = [
             StackItem("x", None, "", "1"),
@@ -96,9 +99,7 @@ class TestGeneratedCases(unittest.TestCase):
 
         with handle_stderr():
             tier1_generator.generate_tier1_from_files(
-                [self.temp_input_filename],
-                self.temp_output_filename,
-                False
+                [self.temp_input_filename], self.temp_output_filename, False
             )
 
         with open(self.temp_output_filename) as temp_output:
@@ -750,7 +751,7 @@ class TestGeneratedCases(unittest.TestCase):
 
     def test_annotated_inst(self):
         input = """
-        guard inst(OP, (--)) {
+        pure inst(OP, (--)) {
             ham();
         }
         """
@@ -767,7 +768,7 @@ class TestGeneratedCases(unittest.TestCase):
 
     def test_annotated_op(self):
         input = """
-        guard op(OP, (--)) {
+        pure op(OP, (--)) {
             spam();
         }
         macro(M) = OP;
@@ -784,7 +785,7 @@ class TestGeneratedCases(unittest.TestCase):
         self.run_cases_test(input, output)
 
         input = """
-        guard register specializing op(OP, (--)) {
+        pure register specializing op(OP, (--)) {
             spam();
         }
         macro(M) = OP;

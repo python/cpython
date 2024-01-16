@@ -626,12 +626,16 @@ _PyMem_PymallocEnabled(void)
 static int
 _PyMem_MimallocEnabled(void)
 {
+#ifdef Py_GIL_DISABLED
+    return 1;
+#else
     if (_PyMem_DebugEnabled()) {
         return (_PyMem_Debug.obj.alloc.malloc == _PyObject_MiMalloc);
     }
     else {
         return (_PyObject.malloc == _PyObject_MiMalloc);
     }
+#endif
 }
 #endif  // WITH_MIMALLOC
 
@@ -1041,20 +1045,35 @@ static bool count_blocks(
     *(size_t *)allocated_blocks += area->used;
     return 1;
 }
+
+static Py_ssize_t
+get_mimalloc_allocated_blocks(PyInterpreterState *interp)
+{
+    size_t allocated_blocks = 0;
+#ifdef Py_GIL_DISABLED
+    for (PyThreadState *t = interp->threads.head; t != NULL; t = t->next) {
+        _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)t;
+        for (int i = 0; i < _Py_MIMALLOC_HEAP_COUNT; i++) {
+            mi_heap_t *heap = &tstate->mimalloc.heaps[i];
+            mi_heap_visit_blocks(heap, false, &count_blocks, &allocated_blocks);
+        }
+    }
+    // TODO(sgross): count blocks in abandoned segments.
+#else
+    // TODO(sgross): this only counts the current thread's blocks.
+    mi_heap_t *heap = mi_heap_get_default();
+    mi_heap_visit_blocks(heap, false, &count_blocks, &allocated_blocks);
+#endif
+    return allocated_blocks;
+}
 #endif
 
 Py_ssize_t
 _PyInterpreterState_GetAllocatedBlocks(PyInterpreterState *interp)
 {
 #ifdef WITH_MIMALLOC
-    // TODO(sgross): this only counts the current thread's blocks.
     if (_PyMem_MimallocEnabled()) {
-        size_t allocated_blocks = 0;
-
-        mi_heap_t *heap = mi_heap_get_default();
-        mi_heap_visit_blocks(heap, false, &count_blocks, &allocated_blocks);
-
-        return allocated_blocks;
+        return get_mimalloc_allocated_blocks(interp);
     }
 #endif
 
@@ -1105,7 +1124,7 @@ _PyInterpreterState_FinalizeAllocatedBlocks(PyInterpreterState *interp)
 
 static Py_ssize_t get_num_global_allocated_blocks(_PyRuntimeState *);
 
-/* We preserve the number of blockss leaked during runtime finalization,
+/* We preserve the number of blocks leaked during runtime finalization,
    so they can be reported if the runtime is initialized again. */
 // XXX We don't lose any information by dropping this,
 // so we should consider doing so.
@@ -1121,16 +1140,6 @@ _Py_FinalizeAllocatedBlocks(_PyRuntimeState *runtime)
 static Py_ssize_t
 get_num_global_allocated_blocks(_PyRuntimeState *runtime)
 {
-#ifdef WITH_MIMALLOC
-    if (_PyMem_MimallocEnabled()) {
-        size_t allocated_blocks = 0;
-
-        mi_heap_t *heap = mi_heap_get_default();
-        mi_heap_visit_blocks(heap, false, &count_blocks, &allocated_blocks);
-
-        return allocated_blocks;
-    }
-#endif
     Py_ssize_t total = 0;
     if (_PyRuntimeState_GetFinalizing(runtime) != NULL) {
         PyInterpreterState *interp = _PyInterpreterState_Main();
