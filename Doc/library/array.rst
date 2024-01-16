@@ -79,14 +79,16 @@ The module defines the following type:
 .. class:: array(typecode[, initializer])
 
    A new array whose items are restricted by *typecode*, and initialized
-   from the optional *initializer* value, which must be a list, a
-   :term:`bytes-like object`, or iterable over elements of the
-   appropriate type.
+   from the optional *initializer* value, which must be a :class:`bytes`
+   or :class:`bytearray` object, a unicode string, or iterable over elements
+   of the appropriate type.
 
-   If given a list or string, the initializer is passed to the new array's
-   :meth:`fromlist`, :meth:`frombytes`, or :meth:`fromunicode` method (see below)
-   to add initial items to the array.  Otherwise, the iterable initializer is
-   passed to the :meth:`extend` method.
+   If given a :class:`bytes` or :class:`bytearray` object, the initializer
+   is passed to the new array's :meth:`frombytes` method;
+   if given a unicode string, the initializer is passed to the
+   :meth:`fromunicode` method;
+   otherwise, the initializer's iterator is passed to the :meth:`extend` method
+   to add initial items to the array.
 
    Array objects support the ordinary sequence operations of indexing, slicing,
    concatenation, and multiplication.  When using slice assignment, the assigned
@@ -152,10 +154,11 @@ The module defines the following type:
       must be the right type to be appended to the array.
 
 
-   .. method:: frombytes(s)
+   .. method:: frombytes(buffer)
 
-      Appends items from the string, interpreting the string as an array of machine
-      values (as if it had been read from a file using the :meth:`fromfile` method).
+      Appends items from the :term:`bytes-like object`, interpreting
+      it's content as an array of machine values (as if it had been read
+      from a file using the :meth:`fromfile` method).
 
       .. versionadded:: 3.2
          :meth:`!fromstring` is renamed to :meth:`frombytes` for clarity.
@@ -244,7 +247,7 @@ The module defines the following type:
       obtain a unicode string from an array of some other type.
 
 
-When an array object is printed or converted to a string, it is represented as
+When an array object is converted to a string, it is represented as
 ``array(typecode, initializer)``.  The *initializer* is omitted if the array is
 empty, otherwise it is a string if the *typecode* is ``'u'`` or ``'w'``,
 otherwise it is a list of numbers.
