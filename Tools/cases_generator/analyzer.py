@@ -5,6 +5,7 @@ from typing import Optional
 
 from tier2_abstract_common import SPECIALLY_HANDLED_ABSTRACT_INSTR
 
+
 @dataclass
 class Properties:
     escapes: bool
@@ -450,7 +451,6 @@ def stack_effect_only_peeks(instr: parser.InstDef) -> bool:
 
 
 def compute_properties(op: parser.InstDef) -> Properties:
-
     has_free = (
         variable_used(op, "PyCell_New")
         or variable_used(op, "PyCell_GET")

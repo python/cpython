@@ -125,7 +125,9 @@ def _write_body_abstract_interp_impure_uop(
             out.emit(f"*(stack_pointer + case_gen_i) = sym_init_unknown(ctx);\n")
             out.emit(f"if(*(stack_pointer + case_gen_i) == NULL) goto error;\n")
             if var.type_prop:
-                out.emit(f"sym_set_type(*(stack_pointer + case_gen_i), {var.type_prop[0]}, 0);\n")
+                out.emit(
+                    f"sym_set_type(*(stack_pointer + case_gen_i), {var.type_prop[0]}, 0);\n"
+                )
             out.emit("}\n")
 
 
@@ -145,7 +147,9 @@ def mangle_uop_names(uop: Uop) -> Uop:
 # Returns a tuple of a pointer to an array of subexpressions, the length of said array
 # and a string containing the join of all other subexpressions obtained from stack input.
 # This grabs variadic inputs that depend on things like oparg or cache
-def get_subexpressions(input_vars: list[StackItem]) -> tuple[str | None, int | str, str]:
+def get_subexpressions(
+    input_vars: list[StackItem],
+) -> tuple[str | None, int | str, str]:
     arr_var = [(var.name, var) for var in input_vars if var.size > "1"]
     assert len(arr_var) <= 1, "Can have at most one array input from oparg/cache"
     arr_var_name = arr_var[0][0] if len(arr_var) == 1 else None
