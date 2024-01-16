@@ -64,7 +64,7 @@ static int
 contextvar_del(PyContextVar *var);
 
 
-#if PyContext_MAXFREELIST > 0
+#ifdef WITH_FREELISTS
 static struct _Py_context_state *
 get_context_state(void)
 {
@@ -340,13 +340,9 @@ static inline PyContext *
 _context_alloc(void)
 {
     PyContext *ctx;
-#if PyContext_MAXFREELIST > 0
+#ifdef WITH_FREELISTS
     struct _Py_context_state *state = get_context_state();
-#ifdef Py_DEBUG
-    // _context_alloc() must not be called after _PyContext_Fini()
-    assert(state->numfree != -1);
-#endif
-    if (state->numfree) {
+    if (state->numfree > 0) {
         state->numfree--;
         ctx = state->freelist;
         state->freelist = (PyContext *)ctx->ctx_weakreflist;
