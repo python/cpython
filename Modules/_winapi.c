@@ -530,7 +530,12 @@ _winapi_CreateJunction_impl(PyObject *module, LPCWSTR src_path,
 {
     /* Privilege adjustment */
     HANDLE token = NULL;
-    TOKEN_PRIVILEGES tp;
+    struct {
+        TOKEN_PRIVILEGES base;
+        /* overallocate by a few array elements */
+        LUID_AND_ATTRIBUTES privs[4];
+    } tp, previousTp;
+    int previousTpSize = 0;
 
     /* Reparse data buffer */
     const USHORT prefix_len = 4;
@@ -554,17 +559,21 @@ _winapi_CreateJunction_impl(PyObject *module, LPCWSTR src_path,
 
     /* Adjust privileges to allow rewriting directory entry as a
        junction point. */
-    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES, &token))
+    if (!OpenProcessToken(GetCurrentProcess(),
+                          TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &token)) {
         goto cleanup;
+    }
 
-    if (!LookupPrivilegeValue(NULL, SE_RESTORE_NAME, &tp.Privileges[0].Luid))
+    if (!LookupPrivilegeValue(NULL, SE_RESTORE_NAME, &tp.base.Privileges[0].Luid)) {
         goto cleanup;
+    }
 
-    tp.PrivilegeCount = 1;
-    tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-    if (!AdjustTokenPrivileges(token, FALSE, &tp, sizeof(TOKEN_PRIVILEGES),
-                               NULL, NULL))
+    tp.base.PrivilegeCount = 1;
+    tp.base.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+    if (!AdjustTokenPrivileges(token, FALSE, &tp.base, sizeof(previousTp),
+                               &previousTp.base, &previousTpSize)) {
         goto cleanup;
+    }
 
     if (GetFileAttributesW(src_path) == INVALID_FILE_ATTRIBUTES)
         goto cleanup;
@@ -644,6 +653,11 @@ _winapi_CreateJunction_impl(PyObject *module, LPCWSTR src_path,
 
 cleanup:
     ret = GetLastError();
+
+    if (previousTpSize) {
+        AdjustTokenPrivileges(token, FALSE, &previousTp.base, previousTpSize,
+                              NULL, NULL);
+    }
 
     if (token != NULL)
         CloseHandle(token);
