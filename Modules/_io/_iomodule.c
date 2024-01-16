@@ -7,11 +7,14 @@
     Mostly written by Amaury Forgeot d'Arc
 */
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "_iomodule.h"
-#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_long.h"          // _PyLong_Sign()
+#include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+
+#include "_iomodule.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>

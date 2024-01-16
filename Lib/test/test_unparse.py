@@ -197,6 +197,10 @@ class UnparseTestCase(ASTTestCase):
         self.check_ast_roundtrip('''f"a\\r\\nb"''')
         self.check_ast_roundtrip('''f"\\u2028{'x'}"''')
 
+    def test_fstrings_pep701(self):
+        self.check_ast_roundtrip('f" something { my_dict["key"] } something else "')
+        self.check_ast_roundtrip('f"{f"{f"{f"{f"{f"{1+1}"}"}"}"}"}"')
+
     def test_strings(self):
         self.check_ast_roundtrip("u'foo'")
         self.check_ast_roundtrip("r'foo'")
@@ -378,8 +382,15 @@ class UnparseTestCase(ASTTestCase):
             )
         )
 
-    def test_invalid_fstring_backslash(self):
-        self.check_invalid(ast.FormattedValue(value=ast.Constant(value="\\\\")))
+    def test_fstring_backslash(self):
+        # valid since Python 3.12
+        self.assertEqual(ast.unparse(
+                            ast.FormattedValue(
+                                value=ast.Constant(value="\\\\"),
+                                conversion=-1,
+                                format_spec=None,
+                            )
+                        ), "{'\\\\\\\\'}")
 
     def test_invalid_yield_from(self):
         self.check_invalid(ast.YieldFrom(value=None))
@@ -502,11 +513,11 @@ class CosmeticTestCase(ASTTestCase):
         self.check_src_roundtrip("class X(*args, **kwargs):\n    pass")
 
     def test_fstrings(self):
-        self.check_src_roundtrip('''f\'\'\'-{f"""*{f"+{f'.{x}.'}+"}*"""}-\'\'\'''')
-        self.check_src_roundtrip('''f"\\u2028{'x'}"''')
+        self.check_src_roundtrip("f'-{f'*{f'+{f'.{x}.'}+'}*'}-'")
+        self.check_src_roundtrip("f'\\u2028{'x'}'")
         self.check_src_roundtrip(r"f'{x}\n'")
-        self.check_src_roundtrip('''f''\'{"""\n"""}\\n''\'''')
-        self.check_src_roundtrip('''f''\'{f"""{x}\n"""}\\n''\'''')
+        self.check_src_roundtrip("f'{'\\n'}\\n'")
+        self.check_src_roundtrip("f'{f'{x}\\n'}\\n'")
 
     def test_docstrings(self):
         docstrings = (
@@ -624,6 +635,20 @@ class CosmeticTestCase(ASTTestCase):
         self.check_src_roundtrip("[a, b] = [c, d] = [e, f] = g")
         self.check_src_roundtrip("a, b = [c, d] = e, f = g")
 
+    def test_multiquote_joined_string(self):
+        self.check_ast_roundtrip("f\"'''{1}\\\"\\\"\\\"\" ")
+        self.check_ast_roundtrip("""f"'''{1}""\\"" """)
+        self.check_ast_roundtrip("""f'""\"{1}''' """)
+        self.check_ast_roundtrip("""f'""\"{1}""\\"' """)
+
+        self.check_ast_roundtrip("""f"'''{"\\n"}""\\"" """)
+        self.check_ast_roundtrip("""f'""\"{"\\n"}''' """)
+        self.check_ast_roundtrip("""f'""\"{"\\n"}""\\"' """)
+
+        self.check_ast_roundtrip("""f'''""\"''\\'{"\\n"}''' """)
+        self.check_ast_roundtrip("""f'''""\"''\\'{"\\n\\"'"}''' """)
+        self.check_ast_roundtrip("""f'''""\"''\\'{""\"\\n\\"'''""\" '''\\n'''}''' """)
+
 
 class ManualASTCreationTestCase(unittest.TestCase):
     """Test that AST nodes created without a type_params field unparse correctly."""
@@ -705,7 +730,8 @@ class DirectoryTestCase(ASTTestCase):
     test_directories = (lib_dir, lib_dir / "test")
     run_always_files = {"test_grammar.py", "test_syntax.py", "test_compile.py",
                         "test_ast.py", "test_asdl_parser.py", "test_fstring.py",
-                        "test_patma.py"}
+                        "test_patma.py", "test_type_alias.py", "test_type_params.py",
+                        "test_tokenize.py"}
 
     _files_to_test = None
 

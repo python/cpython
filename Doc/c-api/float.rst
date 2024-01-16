@@ -109,7 +109,7 @@ Pack functions
 The pack routines write 2, 4 or 8 bytes, starting at *p*. *le* is an
 :c:expr:`int` argument, non-zero if you want the bytes string in little-endian
 format (exponent last, at ``p+1``, ``p+3``, or ``p+6`` ``p+7``), zero if you
-want big-endian format (exponent first, at *p*). The :c:data:`PY_BIG_ENDIAN`
+want big-endian format (exponent first, at *p*). The :c:macro:`PY_BIG_ENDIAN`
 constant can be used to use the native endian: it is equal to ``1`` on big
 endian processor, or ``0`` on little endian processor.
 
@@ -140,7 +140,7 @@ Unpack functions
 The unpack routines read 2, 4 or 8 bytes, starting at *p*.  *le* is an
 :c:expr:`int` argument, non-zero if the bytes string is in little-endian format
 (exponent last, at ``p+1``, ``p+3`` or ``p+6`` and ``p+7``), zero if big-endian
-(exponent first, at *p*). The :c:data:`PY_BIG_ENDIAN` constant can be used to
+(exponent first, at *p*). The :c:macro:`PY_BIG_ENDIAN` constant can be used to
 use the native endian: it is equal to ``1`` on big endian processor, or ``0``
 on little endian processor.
 

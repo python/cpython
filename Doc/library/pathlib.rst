@@ -303,6 +303,13 @@ Methods and properties
 
 Pure paths provide the following methods and properties:
 
+.. attribute:: PurePath.pathmod
+
+   The implementation of the :mod:`os.path` module used for low-level path
+   operations: either :mod:`posixpath` or :mod:`ntpath`.
+
+   .. versionadded:: 3.13
+
 .. attribute:: PurePath.drive
 
    A string representing the drive letter or name, if any::
@@ -432,7 +439,7 @@ Pure paths provide the following methods and properties:
 
 .. attribute:: PurePath.suffix
 
-   The file extension of the final component, if any::
+   The last dot-separated portion of the final component, if any::
 
       >>> PurePosixPath('my/library/setup.py').suffix
       '.py'
@@ -441,10 +448,11 @@ Pure paths provide the following methods and properties:
       >>> PurePosixPath('my/library').suffix
       ''
 
+   This is commonly called the file extension.
 
 .. attribute:: PurePath.suffixes
 
-   A list of the path's file extensions::
+   A list of the path's suffixes, often called file extensions::
 
       >>> PurePosixPath('my/library.tar.gar').suffixes
       ['.tar', '.gar']
@@ -586,6 +594,9 @@ Pure paths provide the following methods and properties:
       >>> pattern = PurePath('*.py')
       >>> PurePath('a/b.py').match(pattern)
       True
+
+   .. versionchanged:: 3.12
+      Accepts an object implementing the :class:`os.PathLike` interface.
 
    As with other methods, case-sensitivity follows platform defaults::
 
@@ -842,6 +853,42 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.5
 
 
+.. classmethod:: Path.from_uri(uri)
+
+   Return a new path object from parsing a 'file' URI conforming to
+   :rfc:`8089`. For example::
+
+       >>> p = Path.from_uri('file:///etc/hosts')
+       PosixPath('/etc/hosts')
+
+   On Windows, DOS device and UNC paths may be parsed from URIs::
+
+       >>> p = Path.from_uri('file:///c:/windows')
+       WindowsPath('c:/windows')
+       >>> p = Path.from_uri('file://server/share')
+       WindowsPath('//server/share')
+
+   Several variant forms are supported::
+
+       >>> p = Path.from_uri('file:////server/share')
+       WindowsPath('//server/share')
+       >>> p = Path.from_uri('file://///server/share')
+       WindowsPath('//server/share')
+       >>> p = Path.from_uri('file:c:/windows')
+       WindowsPath('c:/windows')
+       >>> p = Path.from_uri('file:/c|/windows')
+       WindowsPath('c:/windows')
+
+   :exc:`ValueError` is raised if the URI does not start with ``file:``, or
+   the parsed path isn't absolute.
+
+   :func:`os.fsdecode` is used to decode percent-escaped byte sequences, and
+   so file URIs are not portable across machines with different
+   :ref:`filesystem encodings <filesystem-encoding>`.
+
+   .. versionadded:: 3.13
+
+
 .. method:: Path.stat(*, follow_symlinks=True)
 
    Return a :class:`os.stat_result` object containing information about this path, like :func:`os.stat`.
@@ -946,6 +993,10 @@ call fails (for example because the path doesn't exist).
       Set *follow_symlinks* to ``True`` or ``False`` to improve performance
       of recursive globbing.
 
+   This method calls :meth:`Path.is_dir` on the top-level directory and
+   propagates any :exc:`OSError` exception that is raised. Subsequent
+   :exc:`OSError` exceptions from scanning directories are suppressed.
+
    By default, or when the *case_sensitive* keyword-only argument is set to
    ``None``, this method matches paths using platform-specific casing rules:
    typically, case-sensitive on POSIX, and case-insensitive on Windows.
@@ -968,14 +1019,25 @@ call fails (for example because the path doesn't exist).
    .. versionchanged:: 3.13
       The *follow_symlinks* parameter was added.
 
-.. method:: Path.group()
+   .. versionchanged:: 3.13
+      Emits :exc:`FutureWarning` if the pattern ends with "``**``". In a
+      future Python release, patterns with this ending will match both files
+      and directories. Add a trailing slash to match only directories.
 
-   Return the name of the group owning the file.  :exc:`KeyError` is raised
+.. method:: Path.group(*, follow_symlinks=True)
+
+   Return the name of the group owning the file. :exc:`KeyError` is raised
    if the file's gid isn't found in the system database.
+
+   This method normally follows symlinks; to get the group of the symlink, add
+   the argument ``follow_symlinks=False``.
 
    .. versionchanged:: 3.13
       Raises :exc:`UnsupportedOperation` if the :mod:`grp` module is not
       available. In previous versions, :exc:`NotImplementedError` was raised.
+
+   .. versionchanged:: 3.13
+      The *follow_symlinks* parameter was added.
 
 
 .. method:: Path.is_dir(*, follow_symlinks=True)
@@ -1242,14 +1304,20 @@ call fails (for example because the path doesn't exist).
       '#!/usr/bin/env python3\n'
 
 
-.. method:: Path.owner()
+.. method:: Path.owner(*, follow_symlinks=True)
 
-   Return the name of the user owning the file.  :exc:`KeyError` is raised
+   Return the name of the user owning the file. :exc:`KeyError` is raised
    if the file's uid isn't found in the system database.
+
+   This method normally follows symlinks; to get the owner of the symlink, add
+   the argument ``follow_symlinks=False``.
 
    .. versionchanged:: 3.13
       Raises :exc:`UnsupportedOperation` if the :mod:`pwd` module is not
       available. In previous versions, :exc:`NotImplementedError` was raised.
+
+   .. versionchanged:: 3.13
+      The *follow_symlinks* parameter was added.
 
 
 .. method:: Path.read_bytes()
@@ -1265,7 +1333,7 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.5
 
 
-.. method:: Path.read_text(encoding=None, errors=None)
+.. method:: Path.read_text(encoding=None, errors=None, newline=None)
 
    Return the decoded contents of the pointed-to file as a string::
 
@@ -1280,6 +1348,8 @@ call fails (for example because the path doesn't exist).
 
    .. versionadded:: 3.5
 
+   .. versionchanged:: 3.13
+      The *newline* parameter was added.
 
 .. method:: Path.readlink()
 
@@ -1368,14 +1438,18 @@ call fails (for example because the path doesn't exist).
       >>> p.resolve()
       PosixPath('/home/antoine/pathlib/setup.py')
 
-   If the path doesn't exist and *strict* is ``True``, :exc:`FileNotFoundError`
-   is raised.  If *strict* is ``False``, the path is resolved as far as possible
-   and any remainder is appended without checking whether it exists.  If an
-   infinite loop is encountered along the resolution path, :exc:`RuntimeError`
-   is raised.
+   If a path doesn't exist or a symlink loop is encountered, and *strict* is
+   ``True``, :exc:`OSError` is raised.  If *strict* is ``False``, the path is
+   resolved as far as possible and any remainder is appended without checking
+   whether it exists.
 
    .. versionchanged:: 3.6
       The *strict* parameter was added (pre-3.6 behavior is strict).
+
+   .. versionchanged:: 3.13
+      Symlink loops are treated like other errors: :exc:`OSError` is raised in
+      strict mode, and no exception is raised in non-strict mode. In previous
+      versions, :exc:`RuntimeError` is raised no matter the value of *strict*.
 
 .. method:: Path.rglob(pattern, *, case_sensitive=None, follow_symlinks=None)
 
