@@ -993,6 +993,10 @@ call fails (for example because the path doesn't exist).
       Set *follow_symlinks* to ``True`` or ``False`` to improve performance
       of recursive globbing.
 
+   This method calls :meth:`Path.is_dir` on the top-level directory and
+   propagates any :exc:`OSError` exception that is raised. Subsequent
+   :exc:`OSError` exceptions from scanning directories are suppressed.
+
    By default, or when the *case_sensitive* keyword-only argument is set to
    ``None``, this method matches paths using platform-specific casing rules:
    typically, case-sensitive on POSIX, and case-insensitive on Windows.
