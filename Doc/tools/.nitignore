@@ -57,7 +57,6 @@ Doc/library/logging.handlers.rst
 Doc/library/lzma.rst
 Doc/library/mmap.rst
 Doc/library/multiprocessing.rst
-Doc/library/multiprocessing.shared_memory.rst
 Doc/library/optparse.rst
 Doc/library/os.rst
 Doc/library/pickle.rst

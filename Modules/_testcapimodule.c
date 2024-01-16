@@ -112,12 +112,12 @@ test_sizeof_c_types(PyObject *self, PyObject *Py_UNUSED(ignored))
         return (PyObject*)NULL;              \
     }
 #define IS_SIGNED(TYPE) (((TYPE)-1) < (TYPE)0)
-#define CHECK_SIGNNESS(TYPE, SIGNED)         \
-    if (IS_SIGNED(TYPE) != SIGNED) {         \
-        PyErr_Format(get_testerror(self),    \
-            "%s signness is, instead of %i",  \
-            #TYPE, IS_SIGNED(TYPE), SIGNED); \
-        return (PyObject*)NULL;              \
+#define CHECK_SIGNNESS(TYPE, SIGNED)            \
+    if (IS_SIGNED(TYPE) != SIGNED) {            \
+        PyErr_Format(get_testerror(self),       \
+            "%s signness is %i, instead of %i", \
+            #TYPE, IS_SIGNED(TYPE), SIGNED);    \
+        return (PyObject*)NULL;                 \
     }
 
     /* integer types */
