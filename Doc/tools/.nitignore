@@ -66,7 +66,6 @@ Doc/library/lzma.rst
 Doc/library/mmap.rst
 Doc/library/msilib.rst
 Doc/library/multiprocessing.rst
-Doc/library/multiprocessing.shared_memory.rst
 Doc/library/nntplib.rst
 Doc/library/optparse.rst
 Doc/library/os.rst
