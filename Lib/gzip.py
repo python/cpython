@@ -606,10 +606,6 @@ def compress(data, compresslevel=_COMPRESS_LEVEL_BEST, *, mtime=None):
     mtime can be used to set the modification time. The modification time is
     set to the current time by default.
     """
-    if mtime == 0:
-        # Use zlib as it creates the header with 0 mtime by default.
-        # This is faster and with less overhead.
-        return zlib.compress(data, level=compresslevel, wbits=31)
     header = _create_simple_gzip_header(compresslevel, mtime)
     trailer = struct.pack("<LL", zlib.crc32(data), (len(data) & 0xffffffff))
     # Wbits=-15 creates a raw deflate block.

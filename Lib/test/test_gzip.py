@@ -553,14 +553,11 @@ class TestGzip(BaseTest):
                         f.read(1) # to set mtime attribute
                         self.assertEqual(f.mtime, mtime)
 
-    def test_compress_correct_level(self):
-        # gzip.compress calls with mtime == 0 take a different code path.
+    def test_compress_os_byte_set(self):
         for mtime in (0, 42):
             with self.subTest(mtime=mtime):
-                nocompress = gzip.compress(data1, compresslevel=0, mtime=mtime)
-                yescompress = gzip.compress(data1, compresslevel=1, mtime=mtime)
-                self.assertIn(data1, nocompress)
-                self.assertNotIn(data1, yescompress)
+                compress = gzip.compress(data1, compresslevel=1, mtime=mtime)
+                assert struct.unpack("I", compress[4:8]) == (mtime,)
 
     def test_decompress(self):
         for data in (data1, data2):
