@@ -401,22 +401,25 @@ definition with the same method name.
 
 .. c:function:: PyObject * PyCMethod_New(PyMethodDef *ml, PyObject *self, PyObject *module, PyTypeObject *cls)
 
-   Turn *ml* into a Python :term:`callable` object.  The caller must ensure that
-   *ml* outlives the :term:`callable`.  Typically, *ml* is defined as a static
-   variable.
+   Turn *ml* into a Python :term:`callable` object.
+   The caller must ensure that *ml* outlives the :term:`callable`.
+   Typically, *ml* is defined as a static variable.
 
-   The *self* parameter will be passed as the *self* argument to the C function
-   in ``ml->ml_meth`` when invoked.  *self* can be ``NULL``.
+   The *self* parameter will be passed as the *self* argument
+   to the C function in ``ml->ml_meth`` when invoked.
+   *self* can be ``NULL``.
 
-   The :term:`callable` object's ``__module__`` attribute can be set from the
-   given *module* argument.  *module* should be a Python string, which will be
-   used as name of the module the function is defined in.  If unavailable, it
-   can be set to :const:`None` or ``NULL``.
+   The :term:`callable` object's ``__module__`` attribute
+   can be set from the given *module* argument.
+   *module* should be a Python string,
+   which will be used as name of the module the function is defined in.
+   If unavailable, it can be set to :const:`None` or ``NULL``.
 
    .. seealso: :attr:`function.__module__`
 
-   The *cls* parameter will be passed as the *defining_class* argument to the C
-   function.  Must be set if :c:macro:`METH_METHOD` is set on ``ml->ml_flags``.
+   The *cls* parameter will be passed as the *defining_class*
+   argument to the C function.
+   Must be set if :c:macro:`METH_METHOD` is set on ``ml->ml_flags``.
 
 
 .. c:function:: PyObject * PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
