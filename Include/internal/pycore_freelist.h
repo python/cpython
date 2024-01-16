@@ -70,7 +70,7 @@ struct _Py_slice_state {
 };
 
 struct _Py_context_state {
-#if PyContext_MAXFREELIST > 0
+#ifdef WITH_FREELISTS
     // List of free PyContext objects
     PyContext *freelist;
     int numfree;
