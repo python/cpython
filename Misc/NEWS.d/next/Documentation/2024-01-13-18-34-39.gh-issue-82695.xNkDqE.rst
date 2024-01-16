@@ -1,2 +1,0 @@
-Clarify :meth:`pathlib.Path.mkdir` documentation by removing a double
-negative.
