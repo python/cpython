@@ -217,7 +217,7 @@ Condition
    .. method:: notify(n=1)
 
       Wake up *n* tasks (1 by default) waiting on this
-      condition.  If fewer than *n* tasks are waiting they are all awoken.
+      condition.  If fewer than *n* tasks are waiting they are all awakened.
 
       The lock must be acquired before this method is called and
       released shortly after.  If called with an *unlocked* lock
