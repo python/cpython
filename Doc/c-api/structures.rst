@@ -411,7 +411,7 @@ definition with the same method name.
    The :term:`callable` object's ``__module__`` attribute can be set from the
    given *module* argument.  *module* should be a Python string, which will be
    used as name of the module the function is defined in.  If unavailable, it
-   can be set to :cost:`None` or ``NULL``.
+   can be set to :const:`None` or ``NULL``.
 
    The *cls* parameter will be passed as the *defining_class* argument to the C
    function.  Must be set if :c:macro:`METH_METHOD` is set on ``ml->ml_flags``.
