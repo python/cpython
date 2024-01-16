@@ -197,28 +197,28 @@ same :class:`!numpy.ndarray` from two distinct Python shells:
 .. class:: SharedMemoryManager([address[, authkey]])
    :module: multiprocessing.managers
 
-   A subclass of :class:`~multiprocessing.managers.BaseManager` which can be
+   A subclass of :class:`multiprocessing.managers.BaseManager` which can be
    used for the management of shared memory blocks across processes.
 
    A call to :meth:`~multiprocessing.managers.BaseManager.start` on a
-   :class:`SharedMemoryManager` instance causes a new process to be started.
+   :class:`!SharedMemoryManager` instance causes a new process to be started.
    This new process's sole purpose is to manage the life cycle
    of all shared memory blocks created through it.  To trigger the release
    of all shared memory blocks managed by that process, call
    :meth:`~multiprocessing.managers.BaseManager.shutdown` on the instance.
-   This triggers a :meth:`SharedMemory.unlink` call on all of the
-   :class:`SharedMemory` objects managed by that process and then
-   stops the process itself.  By creating :class:`SharedMemory` instances
-   through a :class:`SharedMemoryManager`, we avoid the need to manually track
+   This triggers a :meth:`~multiprocessing.shared_memory.SharedMemory.unlink` call
+   on all of the :class:`SharedMemory` objects managed by that process and then
+   stops the process itself.  By creating :class:`!SharedMemory` instances
+   through a :class:`!SharedMemoryManager`, we avoid the need to manually track
    and trigger the freeing of shared memory resources.
 
    This class provides methods for creating and returning :class:`SharedMemory`
    instances and for creating a list-like object (:class:`ShareableList`)
    backed by shared memory.
 
-   Refer to :class:`multiprocessing.managers.BaseManager` for a description
+   Refer to :class:`~multiprocessing.managers.BaseManager` for a description
    of the inherited *address* and *authkey* optional input arguments and how
-   they may be used to connect to an existing :class:`SharedMemoryManager` service
+   they may be used to connect to an existing :class:`!SharedMemoryManager` service
    from other processes.
 
    .. method:: SharedMemory(size)
@@ -289,7 +289,7 @@ shared memory blocks created using that manager are all released when the
 
    It also notably differs from the built-in :class:`list` type
    in that these lists can not change their overall length
-   (i.e. no :meth:`~list.append`, :meth:`~list.insert`, etc.) and do not
+   (i.e. no :meth:`!append`, :meth:`!insert`, etc.) and do not
    support the dynamic creation of new :class:`!ShareableList` instances
    via slicing.
 
