@@ -1416,7 +1416,7 @@ class KeyOrderingTest(unittest.TestCase):
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        extra = {'__doc__', '__version__'}
+        extra = {'__version__'}
         support.check__all__(self, csv, ('csv', '_csv'), extra=extra)
 
     def test_subclassable(self):
