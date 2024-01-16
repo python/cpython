@@ -421,6 +421,8 @@ definition with the same method name.
    argument to the C function.
    Must be set if :c:macro:`METH_METHOD` is set on ``ml->ml_flags``.
 
+   .. versionadded:: 3.9
+
 
 .. c:function:: PyObject * PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
 
@@ -430,8 +432,6 @@ definition with the same method name.
 .. c:function:: PyObject * PyCFunction_New(PyMethodDef *ml, PyObject *self)
 
    Equivalent to ``PyCMethod_New(ml, self, NULL, NULL)``.
-
-   .. versionadded:: 3.9
 
 
 Accessing attributes of extension types
