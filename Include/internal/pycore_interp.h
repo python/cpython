@@ -191,7 +191,6 @@ struct _is {
     struct _Py_tuple_state tuple;
     struct _Py_dict_state dict_state;
     struct _Py_async_gen_state async_gen;
-    struct _Py_context_state context;
     struct _Py_exc_state exc_state;
 
     struct ast_state ast;

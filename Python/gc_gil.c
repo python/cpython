@@ -13,7 +13,6 @@ _PyGC_ClearAllFreeLists(PyInterpreterState *interp)
 {
     _PyDict_ClearFreeList(interp);
     _PyAsyncGen_ClearFreeLists(interp);
-    _PyContext_ClearFreeList(interp);
 
     _Py_ClearFreeLists(&interp->freelist_state, 0);
 }
