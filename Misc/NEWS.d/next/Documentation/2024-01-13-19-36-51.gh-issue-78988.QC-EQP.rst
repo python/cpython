@@ -1,1 +1,0 @@
-Document :meth:`pathlib.Path.glob` exception propagation.
