@@ -72,23 +72,13 @@
 
 __all__ = [
     # public symbols
-    "Comment",
-    "dump",
-    "Element", "ElementTree",
-    "fromstring", "fromstringlist",
-    "indent", "iselement", "iterparse",
-    "parse", "ParseError",
-    "PI", "ProcessingInstruction",
-    "QName",
-    "SubElement",
-    "tostring", "tostringlist",
-    "TreeBuilder",
-    "VERSION",
-    "XML", "XMLID",
-    "XMLParser", "XMLPullParser",
-    "register_namespace",
-    "canonicalize", "C14NWriterTarget",
-    ]
+    "Comment", "dump", "Element", "ElementTree", "fromstring",
+    "fromstringlist", "indent", "iselement", "iterparse", "parse",
+    "ParseError", "PI", "ProcessingInstruction", "QName", "SubElement",
+    "tostring", "tostringlist", "TreeBuilder", "VERSION", "XML", "XMLID",
+    "XMLParser", "XMLPullParser", "register_namespace", "canonicalize",
+    "C14NWriterTarget", "ShortEmptyElements"
+]
 
 VERSION = "1.3.0"
 
@@ -99,6 +89,7 @@ import io
 import collections
 import collections.abc
 import contextlib
+import enum
 
 from . import ElementPath
 
@@ -510,6 +501,46 @@ class QName:
 # --------------------------------------------------------------------
 
 
+class ShortEmptyElements(enum.Enum):
+    """
+    This class creates backwards compatibility with the boolean value of
+    *short_empty_elements* that existed prior to 3.??.
+
+    Assuming the tag `<q/>`, the results will be:
+
+    *SPACE* (default): `<q />`
+    *NOSPACE*: `<q/>`
+    *NONE*: `<q></q>`
+    """
+    SPACE = " "
+    NOSPACE = ""
+    NONE = False
+
+    def __bool__(self):
+        return self != ShortEmptyElements.NONE
+
+    @classmethod
+    def _missing_(cls, value):
+        if value is enum.no_arg:
+            return cls.SPACE
+        elif isinstance(value, bool):
+            return cls.SPACE if value else cls.NONE
+        else:
+            return super()._missing_(value)
+
+    @classmethod
+    def tag_defaultdict(cls, short_empty_elements):
+        if not isinstance(short_empty_elements, collections.defaultdict):
+            if isinstance(short_empty_elements, ShortEmptyElements):
+                return collections.defaultdict(lambda: short_empty_elements)
+            elif short_empty_elements:
+                return collections.defaultdict(lambda: ShortEmptyElements.SPACE)
+            else:
+                return collections.defaultdict(lambda: ShortEmptyElements.NONE)
+        else:
+            return short_empty_elements
+
+
 class ElementTree:
     """An XML element hierarchy.
 
@@ -678,6 +709,7 @@ class ElementTree:
     def write(self, file_or_filename,
               encoding=None,
               xml_declaration=None,
+              xml_declaration_quotes="'",
               default_namespace=None,
               method=None, *,
               short_empty_elements=True):
@@ -693,6 +725,9 @@ class ElementTree:
                                is added if encoding IS NOT either of:
                                US-ASCII, UTF-8, or Unicode
 
+          *xml_declaration_quotes* -- Changes character used in XML declaration,
+                                      should be a *str*.
+
           *default_namespace* -- sets the default XML namespace (for "xmlns")
 
           *method* -- either "xml" (default), "html, "text", or "c14n"
@@ -701,8 +736,12 @@ class ElementTree:
                                     that contain no content. If True (default)
                                     they are emitted as a single self-closed
                                     tag, otherwise they are emitted as a pair
-                                    of start/end tags
+                                    of start/end tags.
 
+                                    For more control, can be a
+                                    *ShortEmptyElements* object, or a
+                                    defaultdict keyed by tags as strings and
+                                    valued with such objects.
         """
         if not method:
             method = "xml"
@@ -713,18 +752,21 @@ class ElementTree:
                 encoding = "utf-8"
             else:
                 encoding = "us-ascii"
+        if not xml_declaration_quotes in ['"', "'"]:
+            raise ValueError("xml_declaration_quotes must be either ' or \"")
         with _get_writer(file_or_filename, encoding) as (write, declared_encoding):
             if method == "xml" and (xml_declaration or
                     (xml_declaration is None and
                      encoding.lower() != "unicode" and
                      declared_encoding.lower() not in ("utf-8", "us-ascii"))):
-                write("<?xml version='1.0' encoding='%s'?>\n" % (
-                    declared_encoding,))
+                write("<?xml version={0}1.0{0} encoding={0}{1}{0}?>\n"
+                      .format(xml_declaration_quotes, declared_encoding))
             if method == "text":
                 _serialize_text(write, self._root)
             else:
                 qnames, namespaces = _namespaces(self._root, default_namespace)
                 serialize = _serialize[method]
+                short_empty_elements = ShortEmptyElements.tag_defaultdict(short_empty_elements)
                 serialize(write, self._root, qnames, namespaces,
                           short_empty_elements=short_empty_elements)
 
@@ -883,7 +925,7 @@ def _serialize_xml(write, elem, qnames, namespaces,
                     else:
                         v = _escape_attrib(v)
                     write(" %s=\"%s\"" % (qnames[k], v))
-            if text or len(elem) or not short_empty_elements:
+            if text or len(elem) or not short_empty_elements[tag]:
                 write(">")
                 if text:
                     write(_escape_cdata(text))
@@ -892,7 +934,7 @@ def _serialize_xml(write, elem, qnames, namespaces,
                                    short_empty_elements=short_empty_elements)
                 write("</" + tag + ">")
             else:
-                write(" />")
+                write(short_empty_elements[tag].value+"/>")
     if elem.tail:
         write(_escape_cdata(elem.tail))
 

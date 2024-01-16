@@ -1,0 +1,1 @@
+Added two fine-grained formatting options to ``xml.etree.ElementTree`` so programmers can prevent Git diffs from occurring due to incompatible XML libraries. Spaces can now be eliminated in e.g. ``<q />`` (as ``<q/>``) (``ShortEmptyElements``), and double quotes can be used in the XML declaration (``XMLDeclarationQuotes``).
