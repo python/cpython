@@ -94,8 +94,9 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <StackReserveSize Condition="$(Configuration) != 'Debug'">2000000</StackReserveSize>
+      <StackReserveSize>2000000</StackReserveSize>
       <StackReserveSize Condition="$(Configuration) == 'Debug'">12000000</StackReserveSize>
+      <StackReserveSize Condition="$(Configuration) == 'PGInstrument'">12000000</StackReserveSize>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
