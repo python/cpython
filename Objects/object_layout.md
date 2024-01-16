@@ -7,7 +7,7 @@ Each Python object starts with two fields:
 * ob_refcnt
 * ob_type
 
-which the form the header common to all Python objects, for all versions,
+which form the header common to all Python objects, for all versions,
 and hold the reference count and class of the object, respectively.
 
 ## Pre-header
@@ -36,7 +36,7 @@ and the ``dict`` field points to the dictionary.
 
 ## 3.12 pre-header
 
-In 3.12 the pointer to the list of weak references is added to the
+In 3.12, the pointer to the list of weak references is added to the
 pre-header. In order to make space for it, the ``dict`` and ``values``
 pointers are combined into a single tagged pointer:
 
@@ -62,7 +62,7 @@ the values pointer, to enable the (legacy) C-API function
 * ob_refcnt
 * ob_type
 
-For a "normal" Python object, that is one that doesn't inherit from a builtin
+For a "normal" Python object, one that doesn't inherit from a builtin
 class or have slots, the header and pre-header form the entire object.
 
 ![Layout of "normal" object in 3.12](./object_layout_312.png)
