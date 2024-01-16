@@ -864,26 +864,36 @@ def collect_subprocess(info_add):
 
 
 def collect_windows(info_add):
+    if sys.platform != "win32":
+        # Code specific to Windows
+        return
+
+    # windows.RtlAreLongPathsEnabled: RtlAreLongPathsEnabled()
+    # windows.is_admin: IsUserAnAdmin()
     try:
         import ctypes
+        if not hasattr(ctypes, 'WinDLL'):
+            raise ImportError
     except ImportError:
-        return
-
-    if not hasattr(ctypes, 'WinDLL'):
-        return
-
-    ntdll = ctypes.WinDLL('ntdll')
-    BOOLEAN = ctypes.c_ubyte
-
-    try:
-        RtlAreLongPathsEnabled = ntdll.RtlAreLongPathsEnabled
-    except AttributeError:
-        res = '<function not available>'
+        pass
     else:
-        RtlAreLongPathsEnabled.restype = BOOLEAN
-        RtlAreLongPathsEnabled.argtypes = ()
-        res = bool(RtlAreLongPathsEnabled())
-    info_add('windows.RtlAreLongPathsEnabled', res)
+        ntdll = ctypes.WinDLL('ntdll')
+        BOOLEAN = ctypes.c_ubyte
+        try:
+            RtlAreLongPathsEnabled = ntdll.RtlAreLongPathsEnabled
+        except AttributeError:
+            res = '<function not available>'
+        else:
+            RtlAreLongPathsEnabled.restype = BOOLEAN
+            RtlAreLongPathsEnabled.argtypes = ()
+            res = bool(RtlAreLongPathsEnabled())
+        info_add('windows.RtlAreLongPathsEnabled', res)
+
+        shell32 = ctypes.windll.shell32
+        IsUserAnAdmin = shell32.IsUserAnAdmin
+        IsUserAnAdmin.restype = BOOLEAN
+        IsUserAnAdmin.argtypes = ()
+        info_add('windows.is_admin', IsUserAnAdmin())
 
     try:
         import _winapi
@@ -892,6 +902,7 @@ def collect_windows(info_add):
     except (ImportError, AttributeError):
         pass
 
+    # windows.version_caption: "wmic os get Caption,Version /value" command
     import subprocess
     try:
         # When wmic.exe output is redirected to a pipe,
@@ -918,6 +929,7 @@ def collect_windows(info_add):
                 if line:
                     info_add('windows.version', line)
 
+    # windows.ver: "ver" command
     try:
         proc = subprocess.Popen(["ver"], shell=True,
                                 stdout=subprocess.PIPE,
@@ -935,6 +947,22 @@ def collect_windows(info_add):
         line = output.splitlines()[0]
         if line:
             info_add('windows.ver', line)
+
+    # windows.developer_mode: get AllowDevelopmentWithoutDevLicense registry
+    import winreg
+    try:
+        key = winreg.OpenKey(
+            winreg.HKEY_LOCAL_MACHINE,
+            r"SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock")
+        subkey = "AllowDevelopmentWithoutDevLicense"
+        try:
+            value, value_type = winreg.QueryValueEx(key, subkey)
+        finally:
+            winreg.CloseKey(key)
+    except OSError:
+        pass
+    else:
+        info_add('windows.developer_mode', "enabled" if value else "disabled")
 
 
 def collect_fips(info_add):
