@@ -247,6 +247,14 @@ ipaddress
 * Add the :attr:`ipaddress.IPv4Address.ipv6_mapped` property, which returns the IPv4-mapped IPv6 address.
   (Contributed by Charles Machalow in :gh:`109466`.)
 
+marshal
+-------
+
+* Add the *allow_code* parameter in module functions.
+  Passing ``allow_code=False`` prevents serialization and de-serialization of
+  code objects which are incompatible between Python versions.
+  (Contributed by Serhiy Storchaka in :gh:`113626`.)
+
 mmap
 ----
 
@@ -254,6 +262,9 @@ mmap
   that can be used where it requires a file-like object with seekable and
   the :meth:`~mmap.mmap.seek` method return the new absolute position.
   (Contributed by Donghee Na and Sylvie Liberman in :gh:`111835`.)
+* :class:`mmap.mmap` now has a *trackfd* parameter on Unix; if it is ``False``,
+  the file descriptor specified by *fileno* will not be duplicated.
+  (Contributed by Zackery Spytz and Petr Viktorin in :gh:`78502`.)
 
 opcode
 ------
