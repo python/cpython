@@ -85,7 +85,7 @@ The module defines the following type:
 
    If given a :class:`bytes` or :class:`bytearray` object, the initializer
    is passed to the new array's :meth:`frombytes` method;
-   if given a unicode string, the initializer is passed to the
+   if given a Unicode string, the initializer is passed to the
    :meth:`fromunicode` method;
    otherwise, the initializer's iterator is passed to the :meth:`extend` method
    to add initial items to the array.
@@ -157,7 +157,7 @@ The module defines the following type:
    .. method:: frombytes(buffer)
 
       Appends items from the :term:`bytes-like object`, interpreting
-      it's content as an array of machine values (as if it had been read
+      its content as an array of machine values (as if it had been read
       from a file using the :meth:`fromfile` method).
 
       .. versionadded:: 3.2
