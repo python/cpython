@@ -108,16 +108,14 @@ PyUnstable_Replace_Executor(PyCodeObject *code, _Py_CODEUNIT *instr, _PyExecutor
 }
 
 static int
-error_optimize(
+never_optimize(
     _PyOptimizerObject* self,
     PyCodeObject *code,
     _Py_CODEUNIT *instr,
     _PyExecutorObject **exec,
     int Py_UNUSED(stack_entries))
 {
-    assert(0);
-    PyErr_Format(PyExc_SystemError, "Should never call error_optimize");
-    return -1;
+    return 0;
 }
 
 PyTypeObject _PyDefaultOptimizer_Type = {
@@ -130,7 +128,7 @@ PyTypeObject _PyDefaultOptimizer_Type = {
 
 _PyOptimizerObject _PyOptimizer_Default = {
     PyObject_HEAD_INIT(&_PyDefaultOptimizer_Type)
-    .optimize = error_optimize,
+    .optimize = never_optimize,
     .resume_threshold = INT16_MAX,
     .backedge_threshold = INT16_MAX,
 };
@@ -773,6 +771,9 @@ compute_used(_PyUOpInstruction *buffer, uint32_t *used, int *exit_count_ptr)
         }
         count++;
         int opcode = buffer[i].opcode;
+        if (_PyUop_Flags[opcode] & HAS_EXIT_FLAG) {
+            exit_count++;
+        }
         if (opcode == _JUMP_TO_TOP || opcode == _EXIT_TRACE) {
             continue;
         }
@@ -782,9 +783,6 @@ compute_used(_PyUOpInstruction *buffer, uint32_t *used, int *exit_count_ptr)
         if (_PyUop_Flags[opcode] & HAS_JUMP_FLAG) {
             /* Mark target as reachable */
             SET_BIT(used, buffer[i].oparg);
-        }
-        if (_PyUop_Flags[opcode] & HAS_EXIT_FLAG) {
-            exit_count++;
         }
         if (opcode == NOP) {
             count--;

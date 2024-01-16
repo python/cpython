@@ -4065,7 +4065,7 @@ dummy_func(
 
         op(_EXIT_TRACE, (--)) {
             TIER_TWO_ONLY
-            DEOPT_IF(1);
+            EXIT_IF(1);
         }
 
         op(_CHECK_VALIDITY, (--)) {

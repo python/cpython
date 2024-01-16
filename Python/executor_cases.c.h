@@ -3378,7 +3378,7 @@
 
         case _EXIT_TRACE: {
             TIER_TWO_ONLY
-            if (1) goto deoptimize;
+            if (1) goto side_exit;
             break;
         }
 
