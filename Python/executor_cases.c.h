@@ -141,7 +141,7 @@
         case _TO_BOOL_BOOL: {
             PyObject *value;
             value = stack_pointer[-1];
-            if (!PyBool_Check(value)) goto deoptimize;
+            if (!PyBool_Check(value)) goto side_exit;
             STAT_INC(TO_BOOL, hit);
             break;
         }
@@ -150,7 +150,7 @@
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
-            if (!PyLong_CheckExact(value)) goto deoptimize;
+            if (!PyLong_CheckExact(value)) goto side_exit;
             STAT_INC(TO_BOOL, hit);
             if (_PyLong_IsZero((PyLongObject *)value)) {
                 assert(_Py_IsImmortal(value));
@@ -168,7 +168,7 @@
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
-            if (!PyList_CheckExact(value)) goto deoptimize;
+            if (!PyList_CheckExact(value)) goto side_exit;
             STAT_INC(TO_BOOL, hit);
             res = Py_SIZE(value) ? Py_True : Py_False;
             Py_DECREF(value);
@@ -181,7 +181,7 @@
             PyObject *res;
             value = stack_pointer[-1];
             // This one is a bit weird, because we expect *some* failures:
-            if (!Py_IsNone(value)) goto deoptimize;
+            if (!Py_IsNone(value)) goto side_exit;
             STAT_INC(TO_BOOL, hit);
             res = Py_False;
             stack_pointer[-1] = res;
@@ -192,7 +192,7 @@
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
-            if (!PyUnicode_CheckExact(value)) goto deoptimize;
+            if (!PyUnicode_CheckExact(value)) goto side_exit;
             STAT_INC(TO_BOOL, hit);
             if (value == &_Py_STR(empty)) {
                 assert(_Py_IsImmortal(value));
@@ -214,7 +214,7 @@
             uint32_t version = (uint32_t)CURRENT_OPERAND();
             // This one is a bit weird, because we expect *some* failures:
             assert(version);
-            if (Py_TYPE(value)->tp_version_tag != version) goto deoptimize;
+            if (Py_TYPE(value)->tp_version_tag != version) goto side_exit;
             STAT_INC(TO_BOOL, hit);
             Py_DECREF(value);
             res = Py_True;
@@ -238,8 +238,8 @@
             PyObject *left;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (!PyLong_CheckExact(left)) goto deoptimize;
-            if (!PyLong_CheckExact(right)) goto deoptimize;
+            if (!PyLong_CheckExact(left)) goto side_exit;
+            if (!PyLong_CheckExact(right)) goto side_exit;
             break;
         }
 
@@ -296,8 +296,8 @@
             PyObject *left;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (!PyFloat_CheckExact(left)) goto deoptimize;
-            if (!PyFloat_CheckExact(right)) goto deoptimize;
+            if (!PyFloat_CheckExact(left)) goto side_exit;
+            if (!PyFloat_CheckExact(right)) goto side_exit;
             break;
         }
 
@@ -354,8 +354,8 @@
             PyObject *left;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (!PyUnicode_CheckExact(left)) goto deoptimize;
-            if (!PyUnicode_CheckExact(right)) goto deoptimize;
+            if (!PyUnicode_CheckExact(left)) goto side_exit;
+            if (!PyUnicode_CheckExact(right)) goto side_exit;
             break;
         }
 
@@ -1623,7 +1623,7 @@
             uint32_t type_version = (uint32_t)CURRENT_OPERAND();
             PyTypeObject *tp = Py_TYPE(owner);
             assert(type_version != 0);
-            if (tp->tp_version_tag != type_version) goto deoptimize;
+            if (tp->tp_version_tag != type_version) goto side_exit;
             break;
         }
 
