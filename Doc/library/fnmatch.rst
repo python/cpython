@@ -71,7 +71,7 @@ cache the compiled regex patterns in the following functions: :func:`fnmatch`,
 
 .. function:: fnmatchcase(name, pat)
 
-   Test whether filename *name* matches pattern *pat*,
+   Test whether the filename string *name* matches the pattern string *pat*,
    returning ``True`` or ``False``;
    the comparison is case-sensitive and does not apply :func:`os.path.normcase`.
 
