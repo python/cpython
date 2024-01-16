@@ -439,12 +439,14 @@ set_up_allocators_unlocked(PyMemAllocatorName allocator)
         (void)set_default_allocator_unlocked(PYMEM_DOMAIN_RAW, pydebug, NULL);
         (void)set_default_allocator_unlocked(PYMEM_DOMAIN_MEM, pydebug, NULL);
         (void)set_default_allocator_unlocked(PYMEM_DOMAIN_OBJ, pydebug, NULL);
+        _PyRuntime.allocators.is_debug_enabled = pydebug;
         break;
 
     case PYMEM_ALLOCATOR_DEBUG:
         (void)set_default_allocator_unlocked(PYMEM_DOMAIN_RAW, 1, NULL);
         (void)set_default_allocator_unlocked(PYMEM_DOMAIN_MEM, 1, NULL);
         (void)set_default_allocator_unlocked(PYMEM_DOMAIN_OBJ, 1, NULL);
+        _PyRuntime.allocators.is_debug_enabled = 1;
         break;
 
 #ifdef WITH_PYMALLOC
@@ -458,7 +460,9 @@ set_up_allocators_unlocked(PyMemAllocatorName allocator)
         set_allocator_unlocked(PYMEM_DOMAIN_MEM, &pymalloc);
         set_allocator_unlocked(PYMEM_DOMAIN_OBJ, &pymalloc);
 
-        if (allocator == PYMEM_ALLOCATOR_PYMALLOC_DEBUG) {
+        int is_debug = (allocator == PYMEM_ALLOCATOR_PYMALLOC_DEBUG);
+        _PyRuntime.allocators.is_debug_enabled = is_debug;
+        if (is_debug) {
             set_up_debug_hooks_unlocked();
         }
         break;
@@ -477,7 +481,9 @@ set_up_allocators_unlocked(PyMemAllocatorName allocator)
         PyMemAllocatorEx objmalloc = MIMALLOC_OBJALLOC;
         set_allocator_unlocked(PYMEM_DOMAIN_OBJ, &objmalloc);
 
-        if (allocator == PYMEM_ALLOCATOR_MIMALLOC_DEBUG) {
+        int is_debug = (allocator == PYMEM_ALLOCATOR_MIMALLOC_DEBUG);
+        _PyRuntime.allocators.is_debug_enabled = is_debug;
+        if (is_debug) {
             set_up_debug_hooks_unlocked();
         }
 
@@ -493,7 +499,9 @@ set_up_allocators_unlocked(PyMemAllocatorName allocator)
         set_allocator_unlocked(PYMEM_DOMAIN_MEM, &malloc_alloc);
         set_allocator_unlocked(PYMEM_DOMAIN_OBJ, &malloc_alloc);
 
-        if (allocator == PYMEM_ALLOCATOR_MALLOC_DEBUG) {
+        int is_debug = (allocator == PYMEM_ALLOCATOR_MALLOC_DEBUG);
+        _PyRuntime.allocators.is_debug_enabled = is_debug;
+        if (is_debug) {
             set_up_debug_hooks_unlocked();
         }
         break;
@@ -604,13 +612,13 @@ _PyMem_GetCurrentAllocatorName(void)
 }
 
 
-#ifdef WITH_PYMALLOC
-static int
+int
 _PyMem_DebugEnabled(void)
 {
-    return (_PyObject.malloc == _PyMem_DebugMalloc);
+    return _PyRuntime.allocators.is_debug_enabled;
 }
 
+#ifdef WITH_PYMALLOC
 static int
 _PyMem_PymallocEnabled(void)
 {
@@ -695,6 +703,7 @@ set_up_debug_hooks_unlocked(void)
     set_up_debug_hooks_domain_unlocked(PYMEM_DOMAIN_RAW);
     set_up_debug_hooks_domain_unlocked(PYMEM_DOMAIN_MEM);
     set_up_debug_hooks_domain_unlocked(PYMEM_DOMAIN_OBJ);
+    _PyRuntime.allocators.is_debug_enabled = 1;
 }
 
 void
