@@ -6,8 +6,6 @@ __author__ = "Steve Dower <steve.dower@python.org>"
 __version__ = "3.8"
 
 
-import sys
-
 __all__ = ["PYTHON_CAT_NAME", "PYTHON_CDF_NAME"]
 
 

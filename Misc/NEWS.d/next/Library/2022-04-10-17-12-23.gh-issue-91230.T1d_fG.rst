@@ -1,3 +1,0 @@
-:func:`warnings.catch_warnings` now accepts arguments for
-:func:`warnings.simplefilter`, providing a more concise way to
-locally ignore warnings or convert them to errors.

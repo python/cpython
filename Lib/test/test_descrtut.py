@@ -1,7 +1,7 @@
 # This contains most of the executable examples from Guido's descr
 # tutorial, once at
 #
-#     http://www.python.org/2.2/descrintro.html
+#     https://www.python.org/download/releases/2.2.3/descrintro/
 #
 # A few examples left implicit in the writeup were fleshed out, a few were
 # skipped due to lack of interest (e.g., faking super() by hand isn't
@@ -9,7 +9,6 @@
 # deterministic.
 
 from test.support import sortdict
-import pprint
 import doctest
 import unittest
 
@@ -140,7 +139,7 @@ instance variables cannot be assigned to:
     >>> a.x1 = 1
     Traceback (most recent call last):
       File "<stdin>", line 1, in ?
-    AttributeError: 'defaultdict2' object has no attribute 'x1'
+    AttributeError: 'defaultdict2' object has no attribute 'x1' and no __dict__ for setting new attributes
     >>>
 
 """
@@ -167,6 +166,7 @@ For instance of built-in types, x.__class__ is now the same as type(x):
 
 You can get the information from the list type:
 
+    >>> import pprint
     >>> pprint.pprint(dir(list))    # like list.__dict__.keys(), but sorted
     ['__add__',
      '__class__',

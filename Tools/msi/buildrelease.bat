@@ -12,7 +12,9 @@ rem
 rem The following substitutions will be applied to the release URI:
 rem     Variable        Description         Example
 rem     {arch}          architecture        amd64, win32
-set RELEASE_URI=https://www.python.org/{arch}
+rem Do not change the scheme to https. Otherwise, releases built with this
+rem script will not be upgradable to/from official releases of Python.
+set RELEASE_URI=http://www.python.org/{arch}
 
 rem This is the URL that will be used to download installation files.
 rem The files available from the default URL *will* conflict with your
@@ -44,27 +46,28 @@ set BUILDZIP=1
 
 
 :CheckOpts
-if "%1" EQU "-h" goto Help
-if "%1" EQU "-c" (set CERTNAME=%~2) && shift && shift && goto CheckOpts
-if "%1" EQU "--certificate" (set CERTNAME=%~2) && shift && shift && goto CheckOpts
-if "%1" EQU "-o" (set OUTDIR=%~2) && shift && shift && goto CheckOpts
-if "%1" EQU "--out" (set OUTDIR=%~2) && shift && shift && goto CheckOpts
-if "%1" EQU "-D" (set SKIPDOC=1) && shift && goto CheckOpts
-if "%1" EQU "--skip-doc" (set SKIPDOC=1) && shift && goto CheckOpts
-if "%1" EQU "-B" (set SKIPBUILD=1) && shift && goto CheckOpts
-if "%1" EQU "--skip-build" (set SKIPBUILD=1) && shift && goto CheckOpts
-if "%1" EQU "--download" (set DOWNLOAD_URL=%~2) && shift && shift && goto CheckOpts
-if "%1" EQU "--test" (set TESTTARGETDIR=%~2) && shift && shift && goto CheckOpts
-if "%1" EQU "-b" (set TARGET=Build) && shift && goto CheckOpts
-if "%1" EQU "--build" (set TARGET=Build) && shift && goto CheckOpts
-if "%1" EQU "-x86" (set BUILDX86=1) && shift && goto CheckOpts
-if "%1" EQU "-x64" (set BUILDX64=1) && shift && goto CheckOpts
-if "%1" EQU "-arm64" (set BUILDARM64=1) && shift && goto CheckOpts
-if "%1" EQU "--pgo" (set PGO=%~2) && shift && shift && goto CheckOpts
-if "%1" EQU "--skip-pgo" (set PGO=) && shift && goto CheckOpts
-if "%1" EQU "--skip-nuget" (set BUILDNUGET=) && shift && goto CheckOpts
-if "%1" EQU "--skip-zip" (set BUILDZIP=) && shift && goto CheckOpts
-if "%1" EQU "--skip-msi" (set BUILDMSI=) && shift && goto CheckOpts
+if    "%1" EQU "-h" goto Help
+if    "%1" EQU "-c" (set CERTNAME=%~2) && shift && shift && goto CheckOpts
+if    "%1" EQU "--certificate" (set CERTNAME=%~2) && shift && shift && goto CheckOpts
+if    "%1" EQU "-o" (set OUTDIR=%~2) && shift && shift && goto CheckOpts
+if    "%1" EQU "--out" (set OUTDIR=%~2) && shift && shift && goto CheckOpts
+if    "%1" EQU "-D" (set SKIPDOC=1) && shift && goto CheckOpts
+if    "%1" EQU "--skip-doc" (set SKIPDOC=1) && shift && goto CheckOpts
+if    "%1" EQU "-B" (set SKIPBUILD=1) && shift && goto CheckOpts
+if    "%1" EQU "--skip-build" (set SKIPBUILD=1) && shift && goto CheckOpts
+if    "%1" EQU "--download" (set DOWNLOAD_URL=%~2) && shift && shift && goto CheckOpts
+if    "%1" EQU "--test" (set TESTTARGETDIR=%~2) && shift && shift && goto CheckOpts
+if    "%1" EQU "-b" (set TARGET=Build) && shift && goto CheckOpts
+if    "%1" EQU "--build" (set TARGET=Build) && shift && goto CheckOpts
+if /I "%1" EQU "-x86" (set BUILDX86=1) && shift && goto CheckOpts
+if /I "%1" EQU "-Win32" (set BUILDX86=1) && shift && goto CheckOpts
+if /I "%1" EQU "-x64" (set BUILDX64=1) && shift && goto CheckOpts
+if /I "%1" EQU "-arm64" (set BUILDARM64=1) && shift && goto CheckOpts
+if    "%1" EQU "--pgo" (set PGO=%~2) && shift && shift && goto CheckOpts
+if    "%1" EQU "--skip-pgo" (set PGO=) && shift && goto CheckOpts
+if    "%1" EQU "--skip-nuget" (set BUILDNUGET=) && shift && goto CheckOpts
+if    "%1" EQU "--skip-zip" (set BUILDZIP=) && shift && goto CheckOpts
+if    "%1" EQU "--skip-msi" (set BUILDMSI=) && shift && goto CheckOpts
 
 if "%1" NEQ "" echo Invalid option: "%1" && exit /B 1
 

@@ -2915,6 +2915,45 @@ class TestFolding(TestEmailBase):
                         "mich.  And that's\n"
                    " all I'm sayin.\n")
 
+    def test_unicode_after_unknown_not_combined(self):
+        self._test(parser.get_unstructured("=?unknown-8bit?q?=A4?=\xa4"),
+                   "=?unknown-8bit?q?=A4?==?utf-8?q?=C2=A4?=\n")
+        prefix = "0123456789 "*5
+        self._test(parser.get_unstructured(prefix + "=?unknown-8bit?q?=A4?=\xa4"),
+                   prefix + "=?unknown-8bit?q?=A4?=\n =?utf-8?q?=C2=A4?=\n")
+
+    def test_ascii_after_unknown_not_combined(self):
+        self._test(parser.get_unstructured("=?unknown-8bit?q?=A4?=abc"),
+                   "=?unknown-8bit?q?=A4?=abc\n")
+        prefix = "0123456789 "*5
+        self._test(parser.get_unstructured(prefix + "=?unknown-8bit?q?=A4?=abc"),
+                   prefix + "=?unknown-8bit?q?=A4?=\n =?utf-8?q?abc?=\n")
+
+    def test_unknown_after_unicode_not_combined(self):
+        self._test(parser.get_unstructured("\xa4"
+                                           "=?unknown-8bit?q?=A4?="),
+                   "=?utf-8?q?=C2=A4?==?unknown-8bit?q?=A4?=\n")
+        prefix = "0123456789 "*5
+        self._test(parser.get_unstructured(prefix + "\xa4=?unknown-8bit?q?=A4?="),
+                   prefix + "=?utf-8?q?=C2=A4?=\n =?unknown-8bit?q?=A4?=\n")
+
+    def test_unknown_after_ascii_not_combined(self):
+        self._test(parser.get_unstructured("abc"
+                                           "=?unknown-8bit?q?=A4?="),
+                   "abc=?unknown-8bit?q?=A4?=\n")
+        prefix = "0123456789 "*5
+        self._test(parser.get_unstructured(prefix + "abcd=?unknown-8bit?q?=A4?="),
+                   prefix + "abcd\n =?unknown-8bit?q?=A4?=\n")
+
+    def test_unknown_after_unknown(self):
+        self._test(parser.get_unstructured("=?unknown-8bit?q?=C2?="
+                                           "=?unknown-8bit?q?=A4?="),
+                   "=?unknown-8bit?q?=C2=A4?=\n")
+        prefix = "0123456789 "*5
+        self._test(parser.get_unstructured(prefix + "=?unknown-8bit?q?=C2?="
+                                           "=?unknown-8bit?q?=A4?="),
+                   prefix + "=?unknown-8bit?q?=C2?=\n =?unknown-8bit?q?=A4?=\n")
+
     # XXX Need test of an encoded word so long that it needs to be wrapped
 
     def test_simple_address(self):

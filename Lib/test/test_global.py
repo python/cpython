@@ -9,13 +9,8 @@ import warnings
 class GlobalTests(unittest.TestCase):
 
     def setUp(self):
-        self._warnings_manager = check_warnings()
-        self._warnings_manager.__enter__()
+        self.enterContext(check_warnings())
         warnings.filterwarnings("error", module="<test string>")
-
-    def tearDown(self):
-        self._warnings_manager.__exit__(None, None, None)
-
 
     def test1(self):
         prog_text_1 = """\
@@ -54,9 +49,7 @@ x = 2
 
 
 def setUpModule():
-    cm = warnings.catch_warnings()
-    cm.__enter__()
-    unittest.addModuleCleanup(cm.__exit__, None, None, None)
+    unittest.enterModuleContext(warnings.catch_warnings())
     warnings.filterwarnings("error", module="<test string>")
 
 

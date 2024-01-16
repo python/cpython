@@ -1,1 +1,0 @@
-Add the ``TCP_CONNECTION_INFO`` option (available on macOS) to :mod:`socket`.
