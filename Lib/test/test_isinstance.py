@@ -310,7 +310,7 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
             @property
             def __bases__(self):
                 return self.__bases__
-        with support.infinite_recursion():
+        with support.infinite_recursion(25):
             self.assertRaises(RecursionError, issubclass, X(), int)
             self.assertRaises(RecursionError, issubclass, int, X())
             self.assertRaises(RecursionError, isinstance, 1, X())

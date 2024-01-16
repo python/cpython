@@ -233,9 +233,10 @@ def configure_wasi_python(context, working_dir):
          env=updated_env(env_additions | wasi_sdk_env(context)),
          quiet=context.quiet)
 
+    python_wasm = working_dir / "python.wasm"
     exec_script = working_dir / "python.sh"
     with exec_script.open("w", encoding="utf-8") as file:
-        file.write(f'#!/bin/sh\nexec {host_runner} "$@"\n')
+        file.write(f'#!/bin/sh\nexec {host_runner} {python_wasm} "$@"\n')
     exec_script.chmod(0o755)
     print(f"🏃‍♀️ Created {exec_script} ... ")
     sys.stdout.flush()
@@ -272,9 +273,7 @@ def main():
                         # Map the checkout to / to load the stdlib from /Lib.
                         "--dir {HOST_DIR}::{GUEST_DIR} "
                         # Set PYTHONPATH to the sysconfig data.
-                        "--env {ENV_VAR_NAME}={ENV_VAR_VALUE} "
-                        # Path to the WASM binary.
-                        "{PYTHON_WASM}")
+                        "--env {ENV_VAR_NAME}={ENV_VAR_VALUE}")
 
     parser = argparse.ArgumentParser()
     subcommands = parser.add_subparsers(dest="subcommand")
@@ -310,8 +309,8 @@ def main():
                                      "$WASI_SDK_PATH or /opt/wasi-sdk")
         subcommand.add_argument("--host-runner", action="store",
                         default=default_host_runner, dest="host_runner",
-                        help="Command template for running the WebAssembly "
-                             "code (default meant for wasmtime 14 or newer: "
+                        help="Command template for running the WASI host "
+                             "(default designed for wasmtime 14 or newer: "
                                 f"`{default_host_runner}`)")
 
     context = parser.parse_args()
