@@ -38,8 +38,8 @@ copying of data.
 
 .. class:: SharedMemory(name=None, create=False, size=0, *, track=True)
 
-   Create an instance of the :class:`!SharedMemory` class to either
-   create a new shared memory block or attache to an existing shared
+   Create an instance of the :class:`!SharedMemory` class for either
+   creating a new shared memory block or attaching to an existing shared
    memory block.  Each shared memory block is assigned a unique name.
    In this way, one process can create a shared memory block with a
    particular name and a different process can attach to that same shared
