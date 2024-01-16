@@ -360,6 +360,18 @@ Module contents
      c = C([Point(0, 0), Point(10, 4)])
      assert asdict(c) == {'mylist': [{'x': 0, 'y': 0}, {'x': 10, 'y': 4}]}
 
+   Shallow dataclasses can be created from the corresponding dict with keyword
+   arguemnt unpacking. This does not work for a nested structure though.
+
+     p = Point(10, 20)
+     pd = asdict(p)
+     assert p == Point(**pd)
+
+     c = C([Point(0, 0), Point(10, 4)])
+     cd = asdict(c)
+     print(c)        # C(mylist=[Point(x=0, y=0), Point(x=10, y=4)])
+     print(C(**cd))  # C(mylist=[{'x': 0, 'y': 0}, {'x': 10, 'y': 4}])
+
    To create a shallow copy, the following workaround may be used::
 
      dict((field.name, getattr(obj, field.name)) for field in fields(obj))
