@@ -79,7 +79,7 @@ struct types_state {
 extern PyStatus _PyTypes_InitTypes(PyInterpreterState *);
 extern void _PyTypes_FiniTypes(PyInterpreterState *);
 extern void _PyTypes_Fini(PyInterpreterState *);
-void _PyTypes_AfterFork(void);
+extern void _PyTypes_AfterFork(void);
 
 /* other API */
 

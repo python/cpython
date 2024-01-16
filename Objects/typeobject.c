@@ -686,9 +686,15 @@ type_cache_clear(struct type_cache *cache, PyObject *value)
 {
     for (Py_ssize_t i = 0; i < (1 << MCACHE_SIZE_EXP); i++) {
         struct type_cache_entry *entry = &cache->hashtable[i];
+#ifdef Py_GIL_DISABLED
+        _PySeqLock_LockWrite(&entry->sequence);
+#endif
         entry->version = 0;
         Py_XSETREF(entry->name, _Py_XNewRef(value));
         entry->value = NULL;
+#ifdef Py_GIL_DISABLED
+        _PySeqLock_UnlockWrite(&entry->sequence);
+#endif
     }
 }
 
@@ -4903,6 +4909,8 @@ update_cache(struct type_cache_entry *entry, PyObject *name, unsigned int versio
     entry->value = value;  /* borrowed */
     assert(_PyASCIIObject_CAST(name)->hash != -1);
     OBJECT_STAT_INC_COND(type_cache_collisions, entry->name != Py_None && entry->name != name);
+    // We're releasing this under the lock for simplicity sake because it's always a
+    // exact unicode object or Py_None so it's safe to do so.
     Py_SETREF(entry->name, Py_NewRef(name));
 }
 
@@ -4933,15 +4941,17 @@ update_cache_gil_disabled(struct type_cache_entry *entry, PyObject *name,
 
 #endif
 
-void _PyTypes_AfterFork() {
+void
+_PyTypes_AfterFork()
+{
 #ifdef Py_GIL_DISABLED
     struct type_cache *cache = get_type_cache();
-    for (int i = 0; i < 1 << MCACHE_SIZE_EXP; i++) {
+    for (Py_ssize_t i = 0; i < (1 << MCACHE_SIZE_EXP); i++) {
         struct type_cache_entry *entry = &cache->hashtable[i];
         if (_PySeqLock_AfterFork(&entry->sequence)) {
             // Entry was in the process of updating while forking, clear it...
             entry->value = NULL;
-            entry->name = NULL;
+            Py_SETREF(entry->name, Py_None);
             entry->version = 0;
         }
     }
@@ -5005,6 +5015,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
     if (MCACHE_CACHEABLE_NAME(name)) {
         has_version = assign_version_tag(interp, type);
         version = type->tp_version_tag;
+        assert(!has_version || _PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG));
     }
     END_TYPE_LOCK()
 
@@ -5030,8 +5041,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
 #else
         update_cache(entry, name, version, res);
 #endif
-        assert(_PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG));
-}
+    }
     return res;
 }
 
@@ -9506,13 +9516,13 @@ fail:
     return -1;
 }
 
-static int
-releasebuffer_maybe_call_super_unlocked(PyObject *self, Py_buffer *buffer, releasebufferproc *base_releasebuffer)
+static releasebufferproc
+releasebuffer_maybe_call_super_unlocked(PyObject *self, Py_buffer *buffer)
 {
     PyTypeObject *self_type = Py_TYPE(self);
     PyObject *mro = lookup_tp_mro(self_type);
     if (mro == NULL) {
-        return -1;
+        return NULL;
     }
 
     assert(PyTuple_Check(mro));
@@ -9526,9 +9536,8 @@ releasebuffer_maybe_call_super_unlocked(PyObject *self, Py_buffer *buffer, relea
     }
     i++;  /* skip self_type */
     if (i >= n)
-        return -1;
+        return NULL;
 
-    *base_releasebuffer = NULL;
     for (; i < n; i++) {
         PyObject *obj = PyTuple_GET_ITEM(mro, i);
         if (!PyType_Check(obj)) {
@@ -9538,28 +9547,25 @@ releasebuffer_maybe_call_super_unlocked(PyObject *self, Py_buffer *buffer, relea
         if (base_type->tp_as_buffer != NULL
             && base_type->tp_as_buffer->bf_releasebuffer != NULL
             && base_type->tp_as_buffer->bf_releasebuffer != slot_bf_releasebuffer) {
-            *base_releasebuffer = base_type->tp_as_buffer->bf_releasebuffer;
-            break;
+            return base_type->tp_as_buffer->bf_releasebuffer;
         }
     }
 
-    return 0;
+    return NULL;
 }
 
-static int
+static void
 releasebuffer_maybe_call_super(PyObject *self, Py_buffer *buffer)
 {
-    int res;
     releasebufferproc base_releasebuffer;
 
     BEGIN_TYPE_LOCK();
-    res = releasebuffer_maybe_call_super_unlocked(self, buffer, &base_releasebuffer);
+    base_releasebuffer = releasebuffer_maybe_call_super_unlocked(self, buffer);
     END_TYPE_LOCK();
 
-    if (res == 0) {
+    if (base_releasebuffer != NULL) {
         base_releasebuffer(self, buffer);
     }
-    return res;
 }
 
 static void
@@ -9636,11 +9642,7 @@ static void
 slot_bf_releasebuffer(PyObject *self, Py_buffer *buffer)
 {
     releasebuffer_call_python(self, buffer);
-    if (releasebuffer_maybe_call_super(self, buffer) < 0) {
-        if (PyErr_Occurred()) {
-            PyErr_WriteUnraisable(self);
-        }
-    }
+    releasebuffer_maybe_call_super(self, buffer);
 }
 
 static PyObject *
