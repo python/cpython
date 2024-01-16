@@ -115,6 +115,7 @@ class BaseTestCase(unittest.TestCase):
 
 
 class ThreadTests(BaseTestCase):
+    maxDiff = 9999
 
     @cpython_only
     def test_name(self):
@@ -679,11 +680,11 @@ class ThreadTests(BaseTestCase):
             ident = threading.get_ident()
             pid = os.fork()
             if pid == 0:
+                print("current ident", threading.get_ident() == ident)
                 main = threading.main_thread()
-                print(main.name)
-                print(main.ident == ident)
-                print(main is threading.current_thread())
-                print(main.ident == threading.get_ident())
+                print("main", main.name)
+                print("main ident", main.ident == ident)
+                print("current is main", threading.current_thread() is main)
             else:
                 support.wait_process(pid, exitcode=0)
         """
@@ -691,10 +692,10 @@ class ThreadTests(BaseTestCase):
         data = out.decode().replace('\r', '')
         self.assertEqual(err, b"")
         self.assertEqual(data,
-                         "MainThread\n"
-                         "True\n"
-                         "True\n"
-                         "True\n")
+                         "current ident True\n"
+                         "main MainThread\n"
+                         "main ident True\n"
+                         "current is main True\n")
 
     @skip_unless_reliable_fork
     @unittest.skipUnless(hasattr(os, 'waitpid'), "test needs os.waitpid()")
@@ -710,11 +711,11 @@ class ThreadTests(BaseTestCase):
                             "always", category=DeprecationWarning)
                     pid = os.fork()
                     if pid == 0:
+                        print("current ident", threading.get_ident() == ident)
                         main = threading.main_thread()
-                        print(main.name, type(main).__name__)
-                        print(main.ident == ident)
-                        print(main is threading.current_thread())
-                        print(main.ident == threading.get_ident())
+                        print("main", main.name, type(main).__name__)
+                        print("main ident", main.ident == ident)
+                        print("current is main", threading.current_thread() is main)
                         # stdout is fully buffered because not a tty,
                         # we have to flush before exit.
                         sys.stdout.flush()
@@ -731,10 +732,11 @@ class ThreadTests(BaseTestCase):
         data = out.decode().replace('\r', '')
         self.assertEqual(err.decode('utf-8'), "")
         self.assertEqual(data,
-                         "Thread-1 (func) Thread\n"
-                         "True\n"
-                         "True\n"
-                         "True\n")
+                         "current ident True\n"
+                         "main Thread-1 (func) Thread\n"
+                         "main ident True\n"
+                         "current is main True\n"
+                         )
 
     @unittest.skipIf(sys.platform in platforms_to_skip, "due to known OS bug")
     @support.requires_fork()
@@ -749,18 +751,18 @@ class ThreadTests(BaseTestCase):
                 if %s:
                     # call current_thread() before fork to allocate DummyThread
                     current = threading.current_thread()
-                    print(current.name, type(current).__name__)
-                print(ident in threading._active)
+                    print("current", current.name, type(current).__name__)
+                print("ident in _active", ident in threading._active)
                 # flush before fork, so child won't flush it again
                 sys.stdout.flush()
                 pid = os.fork()
                 if pid == 0:
+                    print("current ident", threading.get_ident() == ident)
                     main = threading.main_thread()
-                    print(main.name, type(main).__name__)
-                    print(main.ident == ident)
-                    print(main is threading.current_thread())
-                    print(main.ident == threading.get_ident())
-                    print([t.name for t in list(threading._dangling)])
+                    print("main", main.name, type(main).__name__)
+                    print("main ident", main.ident == ident)
+                    print("current is main", threading.current_thread() is main)
+                    print("_dangling", [t.name for t in list(threading._dangling)])
                     # stdout is fully buffered because not a tty,
                     # we have to flush before exit.
                     sys.stdout.flush()
@@ -791,16 +793,15 @@ class ThreadTests(BaseTestCase):
         # may lead to deadlocks in the child"
         _, out, err = assert_python_ok("-W", "ignore::DeprecationWarning", "-c", code)
         data = out.decode().replace('\r', '')
-        self.maxDiff = 9999
         self.assertEqual(err.decode(), "")
         self.assertEqual(data,
-                         ("Dummy-1 _DummyThread\n" if create_dummy else "") +
-                         str(create_dummy) + "\n" +
-                         "MainThread _MainThread\n"
-                         "True\n"
-                         "True\n"
-                         "True\n"
-                         "['MainThread']\n")
+                         ("current Dummy-1 _DummyThread\n" if create_dummy else "") +
+                         f"ident in _active {create_dummy!s}\n" +
+                         "current ident True\n"
+                         "main MainThread _MainThread\n"
+                         "main ident True\n"
+                         "current is main True\n"
+                         "_dangling ['MainThread']\n")
 
     def test_main_thread_after_fork_from_dummy_thread(self, create_dummy=False):
         self.test_main_thread_after_fork_from_foreign_thread(create_dummy=True)
