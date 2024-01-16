@@ -402,6 +402,21 @@ PyContextVar_Reset:int:::
 PyContextVar_Reset:PyObject*:var:0:
 PyContextVar_Reset:PyObject*:token:-1:
 
+PyCFunction_New:PyObject*::+1:
+PyCFunction_New:PyMethodDef*:ml::
+PyCFunction_New:PyObject*:self:+1:
+
+PyCFunction_NewEx:PyObject*::+1:
+PyCFunction_NewEx:PyMethodDef*:ml::
+PyCFunction_NewEx:PyObject*:self:+1:
+PyCFunction_NewEx:PyObject*:module:+1:
+
+PyCMethod_New:PyObject*::+1:
+PyCMethod_New:PyMethodDef*:ml::
+PyCMethod_New:PyObject*:self:+1:
+PyCMethod_New:PyObject*:module:+1:
+PyCMethod_New:PyObject*:cls:+1:
+
 PyDate_Check:int:::
 PyDate_Check:PyObject*:ob:0:
 
