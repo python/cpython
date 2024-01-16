@@ -289,7 +289,7 @@ shared memory blocks created using that manager are all released when the
 
    It also notably differs from the built-in :class:`list` type
    in that these lists can not change their overall length
-   (i.e. no :func:`~list.append`, :func:`~list.insert`, etc.) and do not
+   (i.e. no :meth:`~list.append`, :meth:`~list.insert`, etc.) and do not
    support the dynamic creation of new :class:`!ShareableList` instances
    via slicing.
 
