@@ -5,7 +5,7 @@
 List Objects
 ------------
 
-.. index:: object: list
+.. index:: pair: object; list
 
 
 .. c:type:: PyListObject
@@ -45,7 +45,7 @@ List Objects
 
 .. c:function:: Py_ssize_t PyList_Size(PyObject *list)
 
-   .. index:: builtin: len
+   .. index:: pair: built-in function; len
 
    Return the length of the list object in *list*; this is equivalent to
    ``len(list)`` on a list object.
@@ -86,6 +86,10 @@ List Objects
    Macro form of :c:func:`PyList_SetItem` without error checking. This is
    normally only used to fill in new lists where there is no previous content.
 
+   Bounds checking is performed as an assertion if Python is built in
+   :ref:`debug mode <debug-build>` or :option:`with assertions
+   <--with-assertions>`.
+
    .. note::
 
       This macro "steals" a reference to *item*, and, unlike
@@ -124,6 +128,30 @@ List Objects
    list is not supported.
 
 
+.. c:function:: int PyList_Extend(PyObject *list, PyObject *iterable)
+
+   Extend *list* with the contents of *iterable*.  This is the same as
+   ``PyList_SetSlice(list, PY_SSIZE_T_MAX, PY_SSIZE_T_MAX, iterable)``
+   and analogous to ``list.extend(iterable)`` or ``list += iterable``.
+
+   Raise an exception and return ``-1`` if *list* is not a :class:`list`
+   object. Return 0 on success.
+
+   .. versionadded:: 3.13
+
+
+.. c:function:: int PyList_Clear(PyObject *list)
+
+   Remove all items from *list*.  This is the same as
+   ``PyList_SetSlice(list, 0, PY_SSIZE_T_MAX, NULL)`` and analogous to
+   ``list.clear()`` or ``del list[:]``.
+
+   Raise an exception and return ``-1`` if *list* is not a :class:`list`
+   object.  Return 0 on success.
+
+   .. versionadded:: 3.13
+
+
 .. c:function:: int PyList_Sort(PyObject *list)
 
    Sort the items of *list* in place.  Return ``0`` on success, ``-1`` on
@@ -138,7 +166,7 @@ List Objects
 
 .. c:function:: PyObject* PyList_AsTuple(PyObject *list)
 
-   .. index:: builtin: tuple
+   .. index:: pair: built-in function; tuple
 
    Return a new tuple object containing the contents of *list*; equivalent to
    ``tuple(list)``.

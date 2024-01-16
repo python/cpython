@@ -89,7 +89,7 @@ problem. Define :c:macro:`PY_CALL_TRAMPOLINE` to enable call trampolines.
 .. section: Core and Builtins
 
 Some Windows system error codes(>= 10000) are now mapped into the correct
-errno and may now raise a subclass of :exc:`OSError`. Patch by Dong-hee Na.
+errno and may now raise a subclass of :exc:`OSError`. Patch by Donghee Na.
 
 ..
 
@@ -275,7 +275,7 @@ initializing to ``list_extend``. Patch by Jeremiah Pascual.
 .. nonce: cnaIK3
 .. section: Core and Builtins
 
-Speed up throwing exception in generator with :const:`METH_FASTCALL` calling
+Speed up throwing exception in generator with :c:macro:`METH_FASTCALL` calling
 convention. Patch by Kumar Aditya.
 
 ..
@@ -717,7 +717,7 @@ Fix :class:`asyncio.Semaphore` re-aquiring FIFO order.
 .. nonce: uaEDcI
 .. section: Library
 
-The :mod:`asynchat`, :mod:`asyncore` and  :mod:`smtpd` modules have been
+The :mod:`!asynchat`, :mod:`!asyncore` and  :mod:`!smtpd` modules have been
 deprecated since at least Python 3.6. Their documentation and deprecation
 warnings and have now been updated to note they will removed in Python 3.12
 (:pep:`594`).
@@ -989,7 +989,7 @@ references in :ref:`PEP 585 generic aliases <types-genericalias>`.
 .. nonce: xnhT4a
 .. section: Library
 
-Add :exc:`DeprecationWarning` to :class:`LegacyInterpolation`, deprecated in
+Add :exc:`DeprecationWarning` to :class:`!LegacyInterpolation`, deprecated in
 the docstring since Python 3.2. Will be removed in Python 3.13. Use
 :class:`BasicInterpolation` or :class:`ExtendedInterpolation` instead.
 
@@ -1038,8 +1038,8 @@ Add optional parameter *dir_fd* in :func:`shutil.rmtree`.
 .. nonce: AixHW7
 .. section: Library
 
-:meth:`~unittest.TestProgram.usageExit` is marked deprecated, to be removed
-in 3.13.
+:meth:`!unittest.TestProgram.usageExit` is marked as deprecated,
+to be removed in Python 3.13.
 
 ..
 
@@ -1324,7 +1324,7 @@ extensions.
 .. section: Tests
 
 A test case for :func:`os.sendfile` is converted from deprecated
-:mod:`asyncore` (see :pep:`594`) to :mod:`asyncio`. Patch by Oleg Iarygin.
+:mod:`!asyncore` (see :pep:`594`) to :mod:`asyncio`. Patch by Oleg Iarygin.
 
 ..
 
@@ -1599,7 +1599,7 @@ Call the public :func:`sys.get_asyncgen_hooks` and
 .. section: C API
 
 Remove private functions ``_PySys_GetObjectId()`` and
-``_PySys_SetObjectId()``. Patch by Dong-hee Na.
+``_PySys_SetObjectId()``. Patch by Donghee Na.
 
 ..
 
