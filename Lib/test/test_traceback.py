@@ -1601,6 +1601,21 @@ class BaseExceptionReportingTests:
         err_msg = '<note str() failed>'
         self.assertEqual(self.get_report(e), vanilla + err_msg + '\nFinal Note\n')
 
+        # an exception with a broken __getattr__ raising a non expected error
+        class BrokenException(Exception):
+            broken = False
+            def __getattr__(self, name):
+                if self.broken:
+                    raise ValueError(f'no {name}')
+                raise AttributeError(name)
+
+        e = BrokenException(123)
+        vanilla = self.get_report(e)
+        e.broken = True
+        self.assertEqual(
+            self.get_report(e),
+            vanilla + "Ignored error getting __notes__: ValueError('no __notes__')\n")
+
     def test_exception_with_multiple_notes(self):
         for e in [ValueError(42), SyntaxError('bad syntax')]:
             with self.subTest(e=e):
