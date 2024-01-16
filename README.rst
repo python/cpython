@@ -14,7 +14,7 @@ This is Python version 3.13.0 alpha 2
    :target: https://discuss.python.org/
 
 
-Copyright © 2001-2023 Python Software Foundation.  All rights reserved.
+Copyright © 2001-2024 Python Software Foundation.  All rights reserved.
 
 See the end of this file for further copyright and license information.
 
@@ -224,7 +224,7 @@ Copyright and License Information
 ---------------------------------
 
 
-Copyright © 2001-2023 Python Software Foundation.  All rights reserved.
+Copyright © 2001-2024 Python Software Foundation.  All rights reserved.
 
 Copyright © 2000 BeOpen.com.  All rights reserved.
 
