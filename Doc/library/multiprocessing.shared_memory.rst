@@ -20,7 +20,7 @@ and management of shared memory to be accessed by one or more processes
 on a multicore or symmetric multiprocessor (SMP) machine.  To assist with
 the life-cycle management of shared memory especially across distinct
 processes, a :class:`~multiprocessing.managers.BaseManager` subclass,
-:class:`SharedMemoryManager`, is also provided in the
+:class:`~multiprocessing.managers.SharedMemoryManager`, is also provided in the
 :mod:`multiprocessing.managers` module.
 
 In this module, shared memory refers to "System V style" shared memory blocks
@@ -97,8 +97,8 @@ copying of data.
       instance.  :meth:`close` should be called once access to the shared
       memory block from this instance is no longer needed.  Depending
       on operating system, the underlying memory may or may not be freed
-      even if all handles to it have been closed.
-      To ensure proper cleanup, use the :meth:`unlink` method.
+      even if all handles to it have been closed.  To ensure proper cleanup,
+      use the :meth:`unlink` method.
 
    .. method:: unlink()
 
@@ -153,7 +153,7 @@ instances::
 
 The following example demonstrates a practical use of the :class:`SharedMemory`
 class with `NumPy arrays <https://numpy.org/>`_, accessing the
-same :py:func:`!numpy.ndarray` from two distinct Python shells:
+same :class:`!numpy.ndarray` from two distinct Python shells:
 
 .. doctest::
    :options: +SKIP
@@ -205,17 +205,17 @@ same :py:func:`!numpy.ndarray` from two distinct Python shells:
 .. class:: SharedMemoryManager([address[, authkey]])
    :module: multiprocessing.managers
 
-   A subclass of :class:`~multiprocessing.managers.BaseManager` which can be
+   A subclass of :class:`multiprocessing.managers.BaseManager` which can be
    used for the management of shared memory blocks across processes.
 
    A call to :meth:`~multiprocessing.managers.BaseManager.start` on a
-   :class:`SharedMemoryManager` instance causes a new process to be started.
+   :class:`!SharedMemoryManager` instance causes a new process to be started.
    This new process's sole purpose is to manage the life cycle
    of all shared memory blocks created through it.  To trigger the release
    of all shared memory blocks managed by that process, call
    :meth:`~multiprocessing.managers.BaseManager.shutdown` on the instance.
-   This triggers a :meth:`SharedMemory.unlink` call on all of the
-   :class:`SharedMemory` objects managed by that process and then
+   This triggers a :meth:`~multiprocessing.shared_memory.SharedMemory.unlink` call
+   on all of the :class:`SharedMemory` objects managed by that process and then
    stops the process itself.  By creating :class:`!SharedMemory` instances
    through a :class:`!SharedMemoryManager`, we avoid the need to manually track
    and trigger the freeing of shared memory resources.
@@ -224,10 +224,10 @@ same :py:func:`!numpy.ndarray` from two distinct Python shells:
    instances and for creating a list-like object (:class:`ShareableList`)
    backed by shared memory.
 
-   Refer to :class:`multiprocessing.managers.BaseManager` for a description
+   Refer to :class:`~multiprocessing.managers.BaseManager` for a description
    of the inherited *address* and *authkey* optional input arguments and how
-   they may be used to connect to an existing :class:`!SharedMemoryManager`
-   service from other processes.
+   they may be used to connect to an existing :class:`!SharedMemoryManager` service
+   from other processes.
 
    .. method:: SharedMemory(size)
 
@@ -241,7 +241,7 @@ same :py:func:`!numpy.ndarray` from two distinct Python shells:
 
 
 The following example demonstrates the basic mechanisms of a
-:class:`SharedMemoryManager`:
+:class:`~multiprocessing.managers.SharedMemoryManager`:
 
 .. doctest::
    :options: +SKIP
@@ -259,9 +259,9 @@ The following example demonstrates the basic mechanisms of a
    >>> smm.shutdown()  # Calls unlink() on sl, raw_shm, and another_sl
 
 The following example depicts a potentially more convenient pattern for using
-:class:`SharedMemoryManager` objects via the :keyword:`with` statement to
-ensure that all shared memory blocks are released after they are no longer
-needed:
+:class:`~multiprocessing.managers.SharedMemoryManager` objects via the
+:keyword:`with` statement to ensure that all shared memory blocks are released
+after they are no longer needed:
 
 .. doctest::
    :options: +SKIP
@@ -277,25 +277,33 @@ needed:
    ...     p2.join()   # Wait for all work to complete in both processes
    ...     total_result = sum(sl)  # Consolidate the partial results now in sl
 
-When using a :class:`SharedMemoryManager` in a :keyword:`with` statement, the
-shared memory blocks created using that manager are all released when the
-:keyword:`with` statement's code block finishes execution.
+When using a :class:`~multiprocessing.managers.SharedMemoryManager`
+in a :keyword:`with` statement, the shared memory blocks created using that
+manager are all released when the :keyword:`!with` statement's code block
+finishes execution.
 
 
-.. class:: ShareableList(sequence=None, \*, name=None)
+.. class:: ShareableList(sequence=None, *, name=None)
 
    Provide a mutable list-like object where all values stored within are
-   stored in a shared memory block.  This constrains storable values to
-   only the ``int`` (signed 64-bit), ``float``, ``bool``, ``str`` (less
-   than 10M bytes each when encoded as utf-8), ``bytes`` (less than 10M
-   bytes each), and ``None`` built-in data types.  It also notably
-   differs from the built-in :class:`list` type in that these lists can not
-   change their overall length (i.e. no append, insert, etc.) and do not
-   support the dynamic creation of new :class:`ShareableList` instances
+   stored in a shared memory block.
+   This constrains storable values to the following built-in data types:
+
+   * :class:`int` (signed 64-bit)
+   * :class:`float`
+   * :class:`bool`
+   * :class:`str` (less than 10M bytes each when encoded as UTF-8)
+   * :class:`bytes` (less than 10M bytes each)
+   * ``None``
+
+   It also notably differs from the built-in :class:`list` type
+   in that these lists can not change their overall length
+   (i.e. no :meth:`!append`, :meth:`!insert`, etc.) and do not
+   support the dynamic creation of new :class:`!ShareableList` instances
    via slicing.
 
    *sequence* is used in populating a new :class:`!ShareableList` full of values.
-   Set to ``None`` (the default) to instead attach to an already existing
+   Set to ``None`` to instead attach to an already existing
    :class:`!ShareableList` by its unique shared memory name.
 
    *name* is the unique name for the requested shared memory, as described
@@ -308,7 +316,7 @@ shared memory blocks created using that manager are all released when the
       A known issue exists for :class:`bytes` and :class:`str` values.
       If they end with ``\x00`` nul bytes or characters, those may be
       *silently stripped* when fetching them by index from the
-      :class:`ShareableList`. This ``.rstrip(b'\x00')`` behavior is
+      :class:`!ShareableList`. This ``.rstrip(b'\x00')`` behavior is
       considered a bug and may go away in the future. See :gh:`106939`.
 
    For applications where rstripping of trailing nulls is a problem,
@@ -338,8 +346,8 @@ shared memory blocks created using that manager are all released when the
 
    .. method:: index(value)
 
-      Return first index position of *value*.  Raises :exc:`ValueError` if
-      *value* is not present.
+      Return first index position of *value*.
+      Raise :exc:`ValueError` if *value* is not present.
 
    .. attribute:: format
 

@@ -1875,8 +1875,14 @@ class TestLRU:
             return fib(n-1) + fib(n-2)
 
         if not support.Py_DEBUG:
+            depth = support.Py_C_RECURSION_LIMIT*2//7
             with support.infinite_recursion():
-                fib(2500)
+                fib(depth)
+        if self.module == c_functools:
+            fib.cache_clear()
+            with support.infinite_recursion():
+                with self.assertRaises(RecursionError):
+                    fib(10000)
 
 
 @py_functools.lru_cache()
