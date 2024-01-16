@@ -38,7 +38,8 @@ copying of data.
 
 .. class:: SharedMemory(name=None, create=False, size=0)
 
-   Creates a new shared memory block or attaches to an existing shared
+   Create an instance of the :class:`!SharedMemory` class for either
+   creating a new shared memory block or attaching to an existing shared
    memory block.  Each shared memory block is assigned a unique name.
    In this way, one process can create a shared memory block with a
    particular name and a different process can attach to that same shared
@@ -51,22 +52,27 @@ copying of data.
    When a shared memory block is no longer needed by any process, the
    :meth:`unlink` method should be called to ensure proper cleanup.
 
-   *name* is the unique name for the requested shared memory, specified as
-   a string.  When creating a new shared memory block, if ``None`` (the
-   default) is supplied for the name, a novel name will be generated.
+   :param name:
+      The unique name for the requested shared memory, specified as a string.
+      When creating a new shared memory block, if ``None`` (the default)
+      is supplied for the name, a novel name will be generated.
+   :type name: str | None
 
-   *create* controls whether a new shared memory block is created (``True``)
-   or an existing shared memory block is attached (``False``).
+   :param bool create:
+      Control whether a new shared memory block is created (``True``)
+      or an existing shared memory block is attached (``False``).
 
-   *size* specifies the requested number of bytes when creating a new shared
-   memory block.  Because some platforms choose to allocate chunks of memory
-   based upon that platform's memory page size, the exact size of the shared
-   memory block may be larger or equal to the size requested.  When attaching
-   to an existing shared memory block, the *size* parameter is ignored.
+   :param int size:
+      The requested number of bytes when creating a new shared memory block.
+      Because some platforms choose to allocate chunks of memory
+      based upon that platform's memory page size, the exact size of the shared
+      memory block may be larger or equal to the size requested.
+      When attaching to an existing shared memory block,
+      the *size* parameter is ignored.
 
    .. method:: close()
 
-      Closes access to the shared memory from this instance.  In order to
+      Close access to the shared memory from this instance.  In order to
       ensure proper cleanup of resources, all instances should call
       :meth:`close` once the instance is no longer needed.  Note that calling
       :meth:`!close` does not cause the shared memory block itself to be
@@ -74,7 +80,7 @@ copying of data.
 
    .. method:: unlink()
 
-      Requests that the underlying shared memory block be destroyed.  In
+      Request that the underlying shared memory block be destroyed.  In
       order to ensure proper cleanup of resources, :meth:`unlink` should be
       called once (and only once) across all processes which have need
       for the shared memory block.  After requesting its destruction, a
@@ -258,7 +264,7 @@ finishes execution.
 
 .. class:: ShareableList(sequence=None, *, name=None)
 
-   Provides a mutable list-like object where all values stored within are
+   Provide a mutable list-like object where all values stored within are
    stored in a shared memory block.
    This constrains storable values to the following built-in data types:
 
@@ -315,12 +321,12 @@ finishes execution.
 
    .. method:: count(value)
 
-      Returns the number of occurrences of *value*.
+      Return the number of occurrences of *value*.
 
    .. method:: index(value)
 
-      Returns first index position of *value*.  Raises :exc:`ValueError` if
-      *value* is not present.
+      Return first index position of *value*.
+      Raise :exc:`ValueError` if *value* is not present.
 
    .. attribute:: format
 
