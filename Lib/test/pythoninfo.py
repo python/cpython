@@ -865,6 +865,10 @@ def collect_subprocess(info_add):
 
 
 def collect_windows(info_add):
+    if sys.platform != "win32":
+        # Code specific to Windows
+        return
+
     # windows.RtlAreLongPathsEnabled: RtlAreLongPathsEnabled()
     try:
         import ctypes
