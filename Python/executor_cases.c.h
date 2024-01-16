@@ -3451,4 +3451,11 @@
             break;
         }
 
+        case _FATAL_ERROR: {
+            TIER_TWO_ONLY
+            assert(0);
+            Py_FatalError("Fatal error uop executed.");
+            break;
+        }
+
 #undef TIER_TWO

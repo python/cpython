@@ -206,6 +206,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_INTERNAL_INCREMENT_OPT_COUNTER] = 0,
     [_COLD_EXIT] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_START_EXECUTOR] = 0,
+    [_FATAL_ERROR] = HAS_ESCAPES_FLAG,
 };
 
 const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
@@ -279,6 +280,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_END_SEND] = "_END_SEND",
     [_EXIT_INIT_CHECK] = "_EXIT_INIT_CHECK",
     [_EXIT_TRACE] = "_EXIT_TRACE",
+    [_FATAL_ERROR] = "_FATAL_ERROR",
     [_FORMAT_SIMPLE] = "_FORMAT_SIMPLE",
     [_FORMAT_WITH_SPEC] = "_FORMAT_WITH_SPEC",
     [_FOR_ITER_TIER_TWO] = "_FOR_ITER_TIER_TWO",

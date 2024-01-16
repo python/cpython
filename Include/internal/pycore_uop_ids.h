@@ -233,7 +233,8 @@ extern "C" {
 #define _INTERNAL_INCREMENT_OPT_COUNTER 381
 #define _COLD_EXIT 382
 #define _START_EXECUTOR 383
-#define MAX_UOP_ID 383
+#define _FATAL_ERROR 384
+#define MAX_UOP_ID 384
 
 #ifdef __cplusplus
 }

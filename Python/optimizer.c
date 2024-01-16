@@ -797,10 +797,22 @@ compute_used(_PyUOpInstruction *buffer, uint32_t *used, int *exit_count_ptr)
 
 /* Executor side exits */
 
-typedef struct _cold_exit {
-    _PyExecutorObject base;
-    _PyUOpInstruction cold;
-} _PyColdExitObject;
+static void
+cold_dealloc(_PyExecutorObject *self) {
+    _Py_ExecutorClear(self);
+    PyObject_Free(self);
+}
+
+PyTypeObject _ColdExit_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    .tp_name = "cold_exit",
+    .tp_basicsize = offsetof(_PyExecutorObject, exits),
+    .tp_itemsize = 1,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .tp_dealloc = (destructor)cold_dealloc,
+    .tp_as_sequence = &uop_as_sequence,
+    .tp_methods = executor_methods,
+};
 
 static _PyColdExitObject COLD_EXITS[UOP_MAX_TRACE_LENGTH];
 
@@ -818,6 +830,15 @@ allocate_executor(int exit_count, int length)
     return res;
 }
 
+_PyColdExitObject Py_FatalErrorExecutor = {
+    .base = {
+        PyVarObject_HEAD_INIT(&_ColdExit_Type, 0)
+        .vm_data = { 0 },
+        .trace = &Py_FatalErrorExecutor.uop
+    },
+    .uop.opcode = _FATAL_ERROR,
+};
+
 static int cold_exits_initialized = 0;
 
 static void
@@ -828,12 +849,12 @@ initialize_cold_exits(void) {
     cold_exits_initialized = 1;
     for (int i = 0; i < UOP_MAX_TRACE_LENGTH; i++) {
         COLD_EXITS[i].base.ob_base.ob_base.ob_refcnt = _Py_IMMORTAL_REFCNT;
-        COLD_EXITS[i].base.ob_base.ob_base.ob_type = &_PyUOpExecutor_Type;
+        COLD_EXITS[i].base.ob_base.ob_base.ob_type = &_ColdExit_Type;
         COLD_EXITS[i].base.ob_base.ob_size = 0;
         COLD_EXITS[i].base.vm_data = (_PyVMData){ 0 };
-        COLD_EXITS[i].cold.opcode = _COLD_EXIT;
-        COLD_EXITS[i].cold.oparg = i;
-        COLD_EXITS[i].base.trace = &COLD_EXITS[i].cold;
+        COLD_EXITS[i].uop.opcode = _COLD_EXIT;
+        COLD_EXITS[i].uop.oparg = i;
+        COLD_EXITS[i].base.trace = &COLD_EXITS[i].uop;
     }
 }
 

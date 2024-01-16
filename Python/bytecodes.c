@@ -2338,7 +2338,7 @@ dummy_func(
                 ERROR_IF(optimized < 0, error);
                 if (optimized) {
                     assert(current_executor == NULL);
-                    current_executor = (_PyExecutorObject *)Py_None;
+                    current_executor = (_PyExecutorObject *)&Py_FatalErrorExecutor;
                     next_uop = executor->trace;
                     GOTO_TIER_TWO();
                 }
@@ -2374,7 +2374,7 @@ dummy_func(
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
             if (executor->vm_data.valid) {
                 assert(current_executor == NULL);
-                current_executor = (_PyExecutorObject *)Py_None;
+                current_executor = (_PyExecutorObject *)&Py_FatalErrorExecutor;
                 Py_INCREF(executor);
                 next_uop = executor->trace;
                 GOTO_TIER_TWO();
@@ -4005,14 +4005,14 @@ dummy_func(
 
         inst(CACHE, (--)) {
             TIER_ONE_ONLY
-            assert(0 && "Executing a cache.");
-            Py_UNREACHABLE();
+            assert(0);
+            Py_FatalError("Executing a cache.");
         }
 
         inst(RESERVED, (--)) {
             TIER_ONE_ONLY
-            assert(0 && "Executing RESERVED instruction.");
-            Py_UNREACHABLE();
+            assert(0);
+            Py_FatalError("Executing RESERVED instruction.");
         }
 
         ///////// Tier-2 only opcodes /////////
@@ -4122,6 +4122,12 @@ dummy_func(
             TIER_TWO_ONLY
             Py_DECREF(current_executor);
             current_executor = (_PyExecutorObject*)executor;
+        }
+
+        op(_FATAL_ERROR, (--)) {
+            TIER_TWO_ONLY
+            assert(0);
+            Py_FatalError("Fatal error uop executed.");
         }
 
 
