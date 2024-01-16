@@ -1,0 +1,1 @@
+Enable the tier 2 optimizer for all uops.
