@@ -19,8 +19,10 @@ import winreg
 
 
 PY_EXE = "py.exe"
+DEBUG_BUILD = False
 if sys.executable.casefold().endswith("_d.exe".casefold()):
     PY_EXE = "py_d.exe"
+    DEBUG_BUILD = True
 
 # Registry data to create. On removal, everything beneath top-level names will
 # be deleted.
@@ -232,7 +234,7 @@ class RunPyMixin:
             p.stdin.close()
             p.wait(10)
             out = p.stdout.read().decode("utf-8", "replace")
-            err = p.stderr.read().decode("ascii", "replace")
+            err = p.stderr.read().decode("ascii", "replace").replace("\uFFFD", "?")
         if p.returncode != expect_returncode and support.verbose and not allow_fail:
             print("++ COMMAND ++")
             print([self.py_exe, *args])
@@ -273,7 +275,7 @@ class RunPyMixin:
     def fake_venv(self):
         venv = Path.cwd() / "Scripts"
         venv.mkdir(exist_ok=True, parents=True)
-        venv_exe = (venv / Path(sys.executable).name)
+        venv_exe = (venv / ("python_d.exe" if DEBUG_BUILD else "python.exe"))
         venv_exe.touch()
         try:
             yield venv_exe, {"VIRTUAL_ENV": str(venv.parent)}
@@ -521,6 +523,9 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
                     self.assertEqual(str(venv_exe), m.group(1))
                     break
             else:
+                if support.verbose:
+                    print(data["stdout"])
+                    print(data["stderr"])
                 self.fail("did not find active venv path")
 
             data = self.run_py(["-0"], env=env)
@@ -616,25 +621,29 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         self.assertEqual("True", data["SearchInfo.oldStyleTag"])
 
     def test_search_path(self):
-        stem = Path(sys.executable).stem
+        exe = Path("arbitrary-exe-name.exe").absolute()
+        exe.touch()
+        self.addCleanup(exe.unlink)
         with self.py_ini(TEST_PY_DEFAULTS):
-            with self.script(f"#! /usr/bin/env {stem} -prearg") as script:
+            with self.script(f"#! /usr/bin/env {exe.stem} -prearg") as script:
                 data = self.run_py(
                     [script, "-postarg"],
-                    env={"PATH": f"{Path(sys.executable).parent};{os.getenv('PATH')}"},
+                    env={"PATH": f"{exe.parent};{os.getenv('PATH')}"},
                 )
-        self.assertEqual(f"{sys.executable} -prearg {script} -postarg", data["stdout"].strip())
+        self.assertEqual(f"{exe} -prearg {script} -postarg", data["stdout"].strip())
 
     def test_search_path_exe(self):
         # Leave the .exe on the name to ensure we don't add it a second time
-        name = Path(sys.executable).name
+        exe = Path("arbitrary-exe-name.exe").absolute()
+        exe.touch()
+        self.addCleanup(exe.unlink)
         with self.py_ini(TEST_PY_DEFAULTS):
-            with self.script(f"#! /usr/bin/env {name} -prearg") as script:
+            with self.script(f"#! /usr/bin/env {exe.name} -prearg") as script:
                 data = self.run_py(
                     [script, "-postarg"],
-                    env={"PATH": f"{Path(sys.executable).parent};{os.getenv('PATH')}"},
+                    env={"PATH": f"{exe.parent};{os.getenv('PATH')}"},
                 )
-        self.assertEqual(f"{sys.executable} -prearg {script} -postarg", data["stdout"].strip())
+        self.assertEqual(f"{exe} -prearg {script} -postarg", data["stdout"].strip())
 
     def test_recursive_search_path(self):
         stem = self.get_py_exe().stem
@@ -727,15 +736,18 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
             data = self.run_py([script], expect_returncode=103)
 
         with self.fake_venv() as (venv_exe, env):
-            # Put a real Python (ourselves) on PATH as a distraction.
+            # Put a "normal" Python on PATH as a distraction.
             # The active VIRTUAL_ENV should be preferred when the name isn't an
             # exact match.
-            env["PATH"] = f"{Path(sys.executable).parent};{os.environ['PATH']}"
+            exe = Path(Path(venv_exe).name).absolute()
+            exe.touch()
+            self.addCleanup(exe.unlink)
+            env["PATH"] = f"{exe.parent};{os.environ['PATH']}"
 
             with self.script(f'#! /usr/bin/env {stem} arg1') as script:
                 data = self.run_py([script], env=env)
             self.assertEqual(data["stdout"].strip(), f"{venv_exe} arg1 {script}")
 
-            with self.script(f'#! /usr/bin/env {Path(sys.executable).stem} arg1') as script:
+            with self.script(f'#! /usr/bin/env {exe.stem} arg1') as script:
                 data = self.run_py([script], env=env)
-            self.assertEqual(data["stdout"].strip(), f"{sys.executable} arg1 {script}")
+            self.assertEqual(data["stdout"].strip(), f"{exe} arg1 {script}")
