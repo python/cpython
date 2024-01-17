@@ -247,7 +247,7 @@ class _proto_member:
         delattr(enum_class, member_name)
         # second step: create member based on enum_class
         value = self.value
-        if not isinstance(value, tuple):
+        if type(value) is not tuple:
             args = (value, )
         else:
             args = value
@@ -1726,7 +1726,7 @@ def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
                 else:
                     # create the member
                     if use_args:
-                        if not isinstance(value, tuple):
+                        if type(value) is not tuple:
                             value = (value, )
                         member = new_member(enum_class, *value)
                         value = value[0]
@@ -1773,7 +1773,7 @@ def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
                 else:
                     # create the member
                     if use_args:
-                        if not isinstance(value, tuple):
+                        if type(value) is not tuple:
                             value = (value, )
                         member = new_member(enum_class, *value)
                         value = value[0]
