@@ -1,1 +1,0 @@
-Fix an ``AttributeError`` during asyncio SSL protocol aborts in SSL-over-SSL scenarios.

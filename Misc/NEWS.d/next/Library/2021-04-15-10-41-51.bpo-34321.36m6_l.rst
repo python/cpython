@@ -1,2 +1,0 @@
-:class:`mmap.mmap` now has a *trackfd* parameter on Unix; if it is
-``False``, the file descriptor specified by *fileno* will not be duplicated.

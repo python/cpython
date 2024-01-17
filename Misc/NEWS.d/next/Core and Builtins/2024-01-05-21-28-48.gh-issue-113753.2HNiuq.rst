@@ -1,2 +1,0 @@
-Fix an issue where the finalizer of ``PyAsyncGenASend`` objects might not be
-called if they were allocated from a free list.

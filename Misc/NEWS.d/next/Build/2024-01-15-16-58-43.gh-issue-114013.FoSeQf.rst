@@ -1,4 +1,0 @@
-Fix ``Tools/wasm/wasi.py`` to not include the path to ``python.wasm`` as
-part of ``HOSTRUNNER``. The environment variable is meant to specify how to
-run the WASI host only, having ``python.wasm`` and relevant flags appended
-to the ``HOSTRUNNER``. This fixes ``make test`` work.

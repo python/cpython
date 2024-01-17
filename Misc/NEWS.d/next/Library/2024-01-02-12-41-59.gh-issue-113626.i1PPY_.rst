@@ -1,3 +1,0 @@
-Add support for the *allow_code* argument in the :mod:`marshal` module.
-Passing ``allow_code=False`` prevents serialization and de-serialization of
-code objects which is incompatible between Python versions.

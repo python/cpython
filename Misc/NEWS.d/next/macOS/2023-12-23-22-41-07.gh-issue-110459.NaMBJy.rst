@@ -1,2 +1,0 @@
-Running ``configure ... --with-openssl-rpath=X/Y/Z`` no longer fails to detect
-OpenSSL on macOS.

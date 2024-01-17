@@ -1,2 +1,0 @@
-Fix a regression caused by a fix to gh-93162 whereby you couldn't configure
-a :class:`QueueHandler` without specifying handlers.
