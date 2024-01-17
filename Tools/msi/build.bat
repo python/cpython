@@ -22,6 +22,9 @@ if    "%~1" EQU "--no-test-marker" (set BUILDTEST=) && shift && goto CheckOpts
 if    "%~1" EQU "--test-marker" (set BUILDTEST=--test-marker) && shift && goto CheckOpts
 if    "%~1" EQU "--pack" (set BUILDPACK=1) && shift && goto CheckOpts
 if    "%~1" EQU "-r" (set REBUILD=-r) && shift && goto CheckOpts
+rem %IncludeFreethreaded% is recognised by the MSI build, but not the regular build.
+rem We use it to build twice and then build the installer with its extra option
+if /I "%~1" EQU "--disable-gil" (set IncludeFreethreaded=true) && shift && goto CheckOpts
 
 if not defined BUILDX86 if not defined BUILDX64 if not defined BUILDARM64 (set BUILDX86=1) && (set BUILDX64=1)
 
@@ -42,6 +45,20 @@ if errorlevel 1 exit /B %ERRORLEVEL%
 if defined BUILDARM64 call "%PCBUILD%build.bat" -p ARM64 -d -e %REBUILD% %BUILDTEST%
 if errorlevel 1 exit /B %ERRORLEVEL%
 if defined BUILDARM64  call "%PCBUILD%build.bat" -p ARM64 -e %REBUILD% %BUILDTEST%
+if errorlevel 1 exit /B %ERRORLEVEL%
+
+if /I "%IncludeFreethreaded%"=="true" (
+    rem Cannot "exit /B" inside an if block because %ERRORLEVEL% will be wrong.
+    rem We just skip everything after the first "errorlevel 1" and then exit after
+    if defined BUILDX86 call "%PCBUILD%build.bat" -p Win32 -d -e %REBUILD% %BUILDTEST% --disable-gil
+    if not errorlevel 1 if defined BUILDX86 call "%PCBUILD%build.bat" -p Win32 -e %REBUILD% %BUILDTEST% --disable-gil
+
+    if not errorlevel 1 if defined BUILDX64 call "%PCBUILD%build.bat" -p x64 -d -e %REBUILD% %BUILDTEST% --disable-gil
+    if not errorlevel 1 if defined BUILDX64 call "%PCBUILD%build.bat" -p x64 -e %REBUILD% %BUILDTEST% --disable-gil
+
+    if not errorlevel 1 if defined BUILDARM64 call "%PCBUILD%build.bat" -p ARM64 -d -e %REBUILD% %BUILDTEST% --disable-gil
+    if not errorlevel 1 if defined BUILDARM64  call "%PCBUILD%build.bat" -p ARM64 -e %REBUILD% %BUILDTEST% --disable-gil
+)
 if errorlevel 1 exit /B %ERRORLEVEL%
 
 if defined BUILDDOC call "%PCBUILD%..\Doc\make.bat" html
