@@ -802,18 +802,22 @@ which incur interpreter overhead.
    import operator
    import random
 
+
    def take(n, iterable):
        "Return first n items of the iterable as a list."
        return list(islice(iterable, n))
+
 
    def prepend(value, iterable):
        "Prepend a single value in front of an iterable."
        # prepend(1, [2, 3, 4]) --> 1 2 3 4
        return chain([value], iterable)
 
+
    def tabulate(function, start=0):
        "Return function(0), function(1), ..."
        return map(function, count(start))
+
 
    def repeatfunc(func, times=None, *args):
        """Repeat calls to func with specified arguments.
@@ -824,18 +828,22 @@ which incur interpreter overhead.
            return starmap(func, repeat(args))
        return starmap(func, repeat(args, times))
 
+
    def flatten(list_of_lists):
        "Flatten one level of nesting."
        return chain.from_iterable(list_of_lists)
+
 
    def ncycles(iterable, n):
        "Returns the sequence elements n times."
        return chain.from_iterable(repeat(tuple(iterable), n))
 
+
    def tail(n, iterable):
        "Return an iterator over the last n items."
        # tail(3, 'ABCDEFG') --> E F G
        return iter(collections.deque(iterable, maxlen=n))
+
 
    def consume(iterator, n=None):
        "Advance the iterator n-steps ahead. If n is None, consume entirely."
@@ -847,18 +855,22 @@ which incur interpreter overhead.
            # advance to the empty slice starting at position n
            next(islice(iterator, n, n), None)
 
+
    def nth(iterable, n, default=None):
        "Returns the nth item or a default value."
        return next(islice(iterable, n, None), default)
+
 
    def quantify(iterable, pred=bool):
        "Given a predicate that returns True or False, count the True results."
        return sum(map(pred, iterable))
 
+
    def all_equal(iterable):
        "Returns True if all the elements are equal to each other."
        g = groupby(iterable)
        return next(g, True) and not next(g, False)
+
 
    def first_true(iterable, default=False, pred=None):
        """Returns the first true value in the iterable.
@@ -872,6 +884,7 @@ which incur interpreter overhead.
        # first_true([a,b,c], x) --> a or b or c or x
        # first_true([a,b], x, f) --> a if f(a) else b if f(b) else x
        return next(filter(pred, iterable), default)
+
 
    def unique_everseen(iterable, key=None):
        "List unique elements, preserving order. Remember all elements ever seen."
@@ -889,6 +902,7 @@ which incur interpreter overhead.
                    seen.add(k)
                    yield element
 
+
    def unique_justseen(iterable, key=None):
        "List unique elements, preserving order. Remember only the element just seen."
        # unique_justseen('AAAABBBCCDAABBB') --> A B C D A B
@@ -896,6 +910,7 @@ which incur interpreter overhead.
        if key is None:
            return map(operator.itemgetter(0), groupby(iterable))
        return map(next, map(operator.itemgetter(1), groupby(iterable, key)))
+
 
    def iter_index(iterable, value, start=0, stop=None):
        "Return indices where a value occurs in a sequence or iterable."
@@ -917,6 +932,7 @@ which incur interpreter overhead.
            except ValueError:
                pass
 
+
    def sliding_window(iterable, n):
        "Collect data into overlapping fixed-length chunks or blocks."
        # sliding_window('ABCDEFG', 4) --> ABCD BCDE CDEF DEFG
@@ -925,6 +941,7 @@ which incur interpreter overhead.
        for x in it:
            window.append(x)
            yield tuple(window)
+
 
    def grouper(iterable, n, *, incomplete='fill', fillvalue=None):
        "Collect data into non-overlapping fixed-length chunks or blocks."
@@ -942,6 +959,7 @@ which incur interpreter overhead.
            case _:
                raise ValueError('Expected fill, strict, or ignore')
 
+
    def roundrobin(*iterables):
        "Visit input iterables in a cycle until each is exhausted."
        # roundrobin('ABC', 'D', 'EF') --> A D E B F C
@@ -957,6 +975,7 @@ which incur interpreter overhead.
                num_active -= 1
                nexts = cycle(islice(nexts, num_active))
 
+
    def partition(pred, iterable):
        """Partition entries into false entries and true entries.
 
@@ -966,11 +985,13 @@ which incur interpreter overhead.
        t1, t2 = tee(iterable)
        return filterfalse(pred, t1), filter(pred, t2)
 
+
    def subslices(seq):
        "Return all contiguous non-empty subslices of a sequence."
        # subslices('ABCD') --> A AB ABC ABCD B BC BCD C CD D
        slices = starmap(slice, combinations(range(len(seq) + 1), 2))
        return map(operator.getitem, repeat(seq), slices)
+
 
    def iter_except(func, exception, first=None):
        """ Call a function repeatedly until an exception is raised.
@@ -1041,26 +1062,31 @@ The following recipes have a more mathematical flavor:
        s = list(iterable)
        return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
+
    def sum_of_squares(it):
        "Add up the squares of the input values."
        # sum_of_squares([10, 20, 30]) -> 1400
        return math.sumprod(*tee(it))
+
 
    def reshape(matrix, cols):
        "Reshape a 2-D matrix to have a given number of columns."
        # reshape([(0, 1), (2, 3), (4, 5)], 3) -->  (0, 1, 2), (3, 4, 5)
        return batched(chain.from_iterable(matrix), cols, strict=True)
 
+
    def transpose(matrix):
        "Swap the rows and columns of a 2-D matrix."
        # transpose([(1, 2, 3), (11, 22, 33)]) --> (1, 11) (2, 22) (3, 33)
        return zip(*matrix, strict=True)
+
 
    def matmul(m1, m2):
        "Multiply two matrices."
        # matmul([(7, 5), (3, 5)], [(2, 5), (7, 9)]) --> (49, 80), (41, 60)
        n = len(m2[0])
        return batched(starmap(math.sumprod, product(m1, transpose(m2))), n)
+
 
    def convolve(signal, kernel):
        """Discrete linear convolution of two iterables.
@@ -1084,6 +1110,7 @@ The following recipes have a more mathematical flavor:
        windowed_signal = sliding_window(padded_signal, n)
        return map(math.sumprod, repeat(kernel), windowed_signal)
 
+
    def polynomial_from_roots(roots):
        """Compute a polynomial's coefficients from its roots.
 
@@ -1092,6 +1119,7 @@ The following recipes have a more mathematical flavor:
        # polynomial_from_roots([5, -4, 3]) --> [1, -4, -17, 60]
        factors = zip(repeat(1), map(operator.neg, roots))
        return list(functools.reduce(convolve, factors, [1]))
+
 
    def polynomial_eval(coefficients, x):
        """Evaluate a polynomial at a specific value.
@@ -1106,6 +1134,7 @@ The following recipes have a more mathematical flavor:
        powers = map(pow, repeat(x), reversed(range(n)))
        return math.sumprod(coefficients, powers)
 
+
    def polynomial_derivative(coefficients):
        """Compute the first derivative of a polynomial.
 
@@ -1116,6 +1145,7 @@ The following recipes have a more mathematical flavor:
        n = len(coefficients)
        powers = reversed(range(1, n))
        return list(map(operator.mul, coefficients, powers))
+
 
    def sieve(n):
        "Primes less than n."
@@ -1131,6 +1161,7 @@ The following recipes have a more mathematical flavor:
            start = p*p
        yield from iter_index(data, 1, start)
 
+
    def factor(n):
        "Prime factors of n."
        # factor(99) --> 3 3 11
@@ -1144,6 +1175,7 @@ The following recipes have a more mathematical flavor:
                    return
        if n > 1:
            yield n
+
 
    def totient(n):
        "Count of natural numbers up to n that are coprime to n."
