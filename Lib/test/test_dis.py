@@ -2,6 +2,7 @@
 
 import contextlib
 import dis
+import functools
 import io
 import re
 import sys
@@ -577,11 +578,11 @@ dis_asyncwith = """\
 
 %4d   L12:     CLEANUP_THROW
 
-  --   L13:     JUMP_BACKWARD           26 (to L5)
+  --   L13:     JUMP_BACKWARD_NO_INTERRUPT 25 (to L5)
 
 %4d   L14:     CLEANUP_THROW
 
-  --   L15:     JUMP_BACKWARD           11 (to L11)
+  --   L15:     JUMP_BACKWARD_NO_INTERRUPT 9 (to L11)
 
 %4d   L16:     PUSH_EXC_INFO
                 WITH_EXCEPT_START
@@ -1209,8 +1210,13 @@ class DisTests(DisTestBase):
         got = self.get_disassembly(loop_test, adaptive=True)
         expected = dis_loop_test_quickened_code
         if _testinternalcapi.get_optimizer():
-            # We *may* see ENTER_EXECUTOR in the disassembly
-            got = got.replace("ENTER_EXECUTOR", "JUMP_BACKWARD ")
+            # We *may* see ENTER_EXECUTOR in the disassembly. This is a
+            # temporary hack to keep the test working until dis is able to
+            # handle the instruction correctly (GH-112383):
+            got = got.replace(
+                "ENTER_EXECUTOR          16",
+                "JUMP_BACKWARD           16 (to L1)",
+            )
         self.do_disassembly_compare(got, expected)
 
     @cpython_only
@@ -1736,34 +1742,34 @@ expected_opinfo_jumpy = [
   Instruction(opname='POP_EXCEPT', opcode=31, arg=None, argval=None, argrepr='', offset=328, start_offset=328, starts_line=False, line_number=25, label=None, positions=None),
   Instruction(opname='POP_TOP', opcode=32, arg=None, argval=None, argrepr='', offset=330, start_offset=330, starts_line=False, line_number=25, label=None, positions=None),
   Instruction(opname='POP_TOP', opcode=32, arg=None, argval=None, argrepr='', offset=332, start_offset=332, starts_line=False, line_number=25, label=None, positions=None),
-  Instruction(opname='JUMP_BACKWARD', opcode=77, arg=27, argval=284, argrepr='to L11', offset=334, start_offset=334, starts_line=False, line_number=25, label=None, positions=None),
-  Instruction(opname='COPY', opcode=61, arg=3, argval=3, argrepr='', offset=338, start_offset=338, starts_line=True, line_number=None, label=None, positions=None),
-  Instruction(opname='POP_EXCEPT', opcode=31, arg=None, argval=None, argrepr='', offset=340, start_offset=340, starts_line=False, line_number=None, label=None, positions=None),
-  Instruction(opname='RERAISE', opcode=102, arg=1, argval=1, argrepr='', offset=342, start_offset=342, starts_line=False, line_number=None, label=None, positions=None),
-  Instruction(opname='PUSH_EXC_INFO', opcode=33, arg=None, argval=None, argrepr='', offset=344, start_offset=344, starts_line=False, line_number=None, label=None, positions=None),
-  Instruction(opname='LOAD_GLOBAL', opcode=91, arg=4, argval='ZeroDivisionError', argrepr='ZeroDivisionError', offset=346, start_offset=346, starts_line=True, line_number=22, label=None, positions=None),
-  Instruction(opname='CHECK_EXC_MATCH', opcode=7, arg=None, argval=None, argrepr='', offset=356, start_offset=356, starts_line=False, line_number=22, label=None, positions=None),
-  Instruction(opname='POP_JUMP_IF_FALSE', opcode=97, arg=15, argval=392, argrepr='to L13', offset=358, start_offset=358, starts_line=False, line_number=22, label=None, positions=None),
-  Instruction(opname='POP_TOP', opcode=32, arg=None, argval=None, argrepr='', offset=362, start_offset=362, starts_line=False, line_number=22, label=None, positions=None),
-  Instruction(opname='LOAD_GLOBAL', opcode=91, arg=3, argval='print', argrepr='print + NULL', offset=364, start_offset=364, starts_line=True, line_number=23, label=None, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=83, arg=9, argval='Here we go, here we go, here we go...', argrepr="'Here we go, here we go, here we go...'", offset=374, start_offset=374, starts_line=False, line_number=23, label=None, positions=None),
-  Instruction(opname='CALL', opcode=53, arg=1, argval=1, argrepr='', offset=376, start_offset=376, starts_line=False, line_number=23, label=None, positions=None),
-  Instruction(opname='POP_TOP', opcode=32, arg=None, argval=None, argrepr='', offset=384, start_offset=384, starts_line=False, line_number=23, label=None, positions=None),
-  Instruction(opname='POP_EXCEPT', opcode=31, arg=None, argval=None, argrepr='', offset=386, start_offset=386, starts_line=False, line_number=23, label=None, positions=None),
-  Instruction(opname='JUMP_BACKWARD', opcode=77, arg=54, argval=284, argrepr='to L11', offset=388, start_offset=388, starts_line=False, line_number=23, label=None, positions=None),
-  Instruction(opname='RERAISE', opcode=102, arg=0, argval=0, argrepr='', offset=392, start_offset=392, starts_line=True, line_number=22, label=13, positions=None),
-  Instruction(opname='COPY', opcode=61, arg=3, argval=3, argrepr='', offset=394, start_offset=394, starts_line=True, line_number=None, label=None, positions=None),
-  Instruction(opname='POP_EXCEPT', opcode=31, arg=None, argval=None, argrepr='', offset=396, start_offset=396, starts_line=False, line_number=None, label=None, positions=None),
-  Instruction(opname='RERAISE', opcode=102, arg=1, argval=1, argrepr='', offset=398, start_offset=398, starts_line=False, line_number=None, label=None, positions=None),
-  Instruction(opname='PUSH_EXC_INFO', opcode=33, arg=None, argval=None, argrepr='', offset=400, start_offset=400, starts_line=False, line_number=None, label=None, positions=None),
-  Instruction(opname='LOAD_GLOBAL', opcode=91, arg=3, argval='print', argrepr='print + NULL', offset=402, start_offset=402, starts_line=True, line_number=28, label=None, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=83, arg=10, argval="OK, now we're done", argrepr='"OK, now we\'re done"', offset=412, start_offset=412, starts_line=False, line_number=28, label=None, positions=None),
-  Instruction(opname='CALL', opcode=53, arg=1, argval=1, argrepr='', offset=414, start_offset=414, starts_line=False, line_number=28, label=None, positions=None),
-  Instruction(opname='POP_TOP', opcode=32, arg=None, argval=None, argrepr='', offset=422, start_offset=422, starts_line=False, line_number=28, label=None, positions=None),
-  Instruction(opname='RERAISE', opcode=102, arg=0, argval=0, argrepr='', offset=424, start_offset=424, starts_line=False, line_number=28, label=None, positions=None),
-  Instruction(opname='COPY', opcode=61, arg=3, argval=3, argrepr='', offset=426, start_offset=426, starts_line=True, line_number=None, label=None, positions=None),
-  Instruction(opname='POP_EXCEPT', opcode=31, arg=None, argval=None, argrepr='', offset=428, start_offset=428, starts_line=False, line_number=None, label=None, positions=None),
-  Instruction(opname='RERAISE', opcode=102, arg=1, argval=1, argrepr='', offset=430, start_offset=430, starts_line=False, line_number=None, label=None, positions=None),
+  Instruction(opname='JUMP_BACKWARD_NO_INTERRUPT', opcode=78, arg=26, argval=284, argrepr='to L11', offset=334, start_offset=334, starts_line=False, line_number=25, label=None, positions=None),
+  Instruction(opname='COPY', opcode=61, arg=3, argval=3, argrepr='', offset=336, start_offset=336, starts_line=True, line_number=None, label=None, positions=None),
+  Instruction(opname='POP_EXCEPT', opcode=31, arg=None, argval=None, argrepr='', offset=338, start_offset=338, starts_line=False, line_number=None, label=None, positions=None),
+  Instruction(opname='RERAISE', opcode=102, arg=1, argval=1, argrepr='', offset=340, start_offset=340, starts_line=False, line_number=None, label=None, positions=None),
+  Instruction(opname='PUSH_EXC_INFO', opcode=33, arg=None, argval=None, argrepr='', offset=342, start_offset=342, starts_line=False, line_number=None, label=None, positions=None),
+  Instruction(opname='LOAD_GLOBAL', opcode=91, arg=4, argval='ZeroDivisionError', argrepr='ZeroDivisionError', offset=344, start_offset=344, starts_line=True, line_number=22, label=None, positions=None),
+  Instruction(opname='CHECK_EXC_MATCH', opcode=7, arg=None, argval=None, argrepr='', offset=354, start_offset=354, starts_line=False, line_number=22, label=None, positions=None),
+  Instruction(opname='POP_JUMP_IF_FALSE', opcode=97, arg=14, argval=388, argrepr='to L13', offset=356, start_offset=356, starts_line=False, line_number=22, label=None, positions=None),
+  Instruction(opname='POP_TOP', opcode=32, arg=None, argval=None, argrepr='', offset=360, start_offset=360, starts_line=False, line_number=22, label=None, positions=None),
+  Instruction(opname='LOAD_GLOBAL', opcode=91, arg=3, argval='print', argrepr='print + NULL', offset=362, start_offset=362, starts_line=True, line_number=23, label=None, positions=None),
+  Instruction(opname='LOAD_CONST', opcode=83, arg=9, argval='Here we go, here we go, here we go...', argrepr="'Here we go, here we go, here we go...'", offset=372, start_offset=372, starts_line=False, line_number=23, label=None, positions=None),
+  Instruction(opname='CALL', opcode=53, arg=1, argval=1, argrepr='', offset=374, start_offset=374, starts_line=False, line_number=23, label=None, positions=None),
+  Instruction(opname='POP_TOP', opcode=32, arg=None, argval=None, argrepr='', offset=382, start_offset=382, starts_line=False, line_number=23, label=None, positions=None),
+  Instruction(opname='POP_EXCEPT', opcode=31, arg=None, argval=None, argrepr='', offset=384, start_offset=384, starts_line=False, line_number=23, label=None, positions=None),
+  Instruction(opname='JUMP_BACKWARD_NO_INTERRUPT', opcode=78, arg=52, argval=284, argrepr='to L11', offset=386, start_offset=386, starts_line=False, line_number=23, label=None, positions=None),
+  Instruction(opname='RERAISE', opcode=102, arg=0, argval=0, argrepr='', offset=388, start_offset=388, starts_line=True, line_number=22, label=13, positions=None),
+  Instruction(opname='COPY', opcode=61, arg=3, argval=3, argrepr='', offset=390, start_offset=390, starts_line=True, line_number=None, label=None, positions=None),
+  Instruction(opname='POP_EXCEPT', opcode=31, arg=None, argval=None, argrepr='', offset=392, start_offset=392, starts_line=False, line_number=None, label=None, positions=None),
+  Instruction(opname='RERAISE', opcode=102, arg=1, argval=1, argrepr='', offset=394, start_offset=394, starts_line=False, line_number=None, label=None, positions=None),
+  Instruction(opname='PUSH_EXC_INFO', opcode=33, arg=None, argval=None, argrepr='', offset=396, start_offset=396, starts_line=False, line_number=None, label=None, positions=None),
+  Instruction(opname='LOAD_GLOBAL', opcode=91, arg=3, argval='print', argrepr='print + NULL', offset=398, start_offset=398, starts_line=True, line_number=28, label=None, positions=None),
+  Instruction(opname='LOAD_CONST', opcode=83, arg=10, argval="OK, now we're done", argrepr='"OK, now we\'re done"', offset=408, start_offset=408, starts_line=False, line_number=28, label=None, positions=None),
+  Instruction(opname='CALL', opcode=53, arg=1, argval=1, argrepr='', offset=410, start_offset=410, starts_line=False, line_number=28, label=None, positions=None),
+  Instruction(opname='POP_TOP', opcode=32, arg=None, argval=None, argrepr='', offset=418, start_offset=418, starts_line=False, line_number=28, label=None, positions=None),
+  Instruction(opname='RERAISE', opcode=102, arg=0, argval=0, argrepr='', offset=420, start_offset=420, starts_line=False, line_number=28, label=None, positions=None),
+  Instruction(opname='COPY', opcode=61, arg=3, argval=3, argrepr='', offset=422, start_offset=422, starts_line=True, line_number=None, label=None, positions=None),
+  Instruction(opname='POP_EXCEPT', opcode=31, arg=None, argval=None, argrepr='', offset=424, start_offset=424, starts_line=False, line_number=None, label=None, positions=None),
+  Instruction(opname='RERAISE', opcode=102, arg=1, argval=1, argrepr='', offset=426, start_offset=426, starts_line=False, line_number=None, label=None, positions=None),
 ]
 
 # One last piece of inspect fodder to check the default line number handling
@@ -1982,19 +1988,27 @@ class InstructionTests(InstructionTestCase):
         self.assertEqual(f(opcode.opmap["BINARY_OP"], 3, *args), (3, '<<'))
         self.assertEqual(f(opcode.opmap["CALL_INTRINSIC_1"], 2, *args), (2, 'INTRINSIC_IMPORT_STAR'))
 
+    def get_instructions(self, code):
+        return dis._get_instructions_bytes(code)
+
     def test_start_offset(self):
         # When no extended args are present,
         # start_offset should be equal to offset
+
         instructions = list(dis.Bytecode(_f))
         for instruction in instructions:
             self.assertEqual(instruction.offset, instruction.start_offset)
+
+        def last_item(iterable):
+            return functools.reduce(lambda a, b : b, iterable)
 
         code = bytes([
             opcode.opmap["LOAD_FAST"], 0x00,
             opcode.opmap["EXTENDED_ARG"], 0x01,
             opcode.opmap["POP_JUMP_IF_TRUE"], 0xFF,
         ])
-        jump = list(dis._get_instructions_bytes(code))[-1]
+        labels_map = dis._make_labels_map(code)
+        jump = last_item(self.get_instructions(code))
         self.assertEqual(4, jump.offset)
         self.assertEqual(2, jump.start_offset)
 
@@ -2006,7 +2020,7 @@ class InstructionTests(InstructionTestCase):
             opcode.opmap["POP_JUMP_IF_TRUE"], 0xFF,
             opcode.opmap["CACHE"], 0x00,
         ])
-        jump = list(dis._get_instructions_bytes(code))[-1]
+        jump = last_item(self.get_instructions(code))
         self.assertEqual(8, jump.offset)
         self.assertEqual(2, jump.start_offset)
 
@@ -2021,7 +2035,7 @@ class InstructionTests(InstructionTestCase):
             opcode.opmap["POP_JUMP_IF_TRUE"], 0xFF,
             opcode.opmap["CACHE"], 0x00,
         ])
-        instructions = list(dis._get_instructions_bytes(code))
+        instructions = list(self.get_instructions(code))
         # 1st jump
         self.assertEqual(4, instructions[2].offset)
         self.assertEqual(2, instructions[2].start_offset)
@@ -2042,7 +2056,7 @@ class InstructionTests(InstructionTestCase):
             opcode.opmap["CACHE"], 0x00,
             opcode.opmap["CACHE"], 0x00
         ])
-        instructions = list(dis._get_instructions_bytes(code))
+        instructions = list(self.get_instructions(code))
         self.assertEqual(2, instructions[0].cache_offset)
         self.assertEqual(10, instructions[0].end_offset)
         self.assertEqual(12, instructions[1].cache_offset)

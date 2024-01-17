@@ -32,7 +32,7 @@ from test.support.script_helper import (assert_python_ok,
 from test.support import threading_helper
 from test.support import (reap_children, captured_output, captured_stdout,
                           captured_stderr, is_emscripten, is_wasi,
-                          requires_docstrings)
+                          requires_docstrings, MISSING_C_DOCSTRINGS)
 from test.support.os_helper import (TESTFN, rmtree, unlink)
 from test import pydoc_mod
 
@@ -745,14 +745,18 @@ class PydocDocTest(unittest.TestCase):
 
     def test_is_package_when_not_package(self):
         with os_helper.temp_cwd() as test_dir:
-            self.assertFalse(pydoc.ispackage(test_dir))
+            with self.assertWarns(DeprecationWarning) as cm:
+                self.assertFalse(pydoc.ispackage(test_dir))
+            self.assertEqual(cm.filename, __file__)
 
     def test_is_package_when_is_package(self):
         with os_helper.temp_cwd() as test_dir:
             init_path = os.path.join(test_dir, '__init__.py')
             open(init_path, 'w').close()
-            self.assertTrue(pydoc.ispackage(test_dir))
+            with self.assertWarns(DeprecationWarning) as cm:
+                self.assertTrue(pydoc.ispackage(test_dir))
             os.remove(init_path)
+            self.assertEqual(cm.filename, __file__)
 
     def test_allmethods(self):
         # issue 17476: allmethods was no longer returning unbound methods.
@@ -906,12 +910,13 @@ class A(builtins.object)
  |  ----------------------------------------------------------------------
  |  Data descriptors defined here:
  |
- |  __dict__
- |      dictionary for instance variables
+ |  __dict__%s
  |
- |  __weakref__
- |      list of weak references to the object
-''' % __name__)
+ |  __weakref__%s
+''' % (__name__,
+       '' if MISSING_C_DOCSTRINGS else '\n |      dictionary for instance variables',
+       '' if MISSING_C_DOCSTRINGS else '\n |      list of weak references to the object',
+      ))
 
         def func(
             arg1: Callable[[Annotated[int, 'Some doc']], str],
@@ -1154,13 +1159,15 @@ class TestDescriptions(unittest.TestCase):
         doc = pydoc.render_doc(typing.List[int], renderer=pydoc.plaintext)
         self.assertIn('_GenericAlias in module typing', doc)
         self.assertIn('List = class list(object)', doc)
-        self.assertIn(list.__doc__.strip().splitlines()[0], doc)
+        if not MISSING_C_DOCSTRINGS:
+            self.assertIn(list.__doc__.strip().splitlines()[0], doc)
 
         self.assertEqual(pydoc.describe(list[int]), 'GenericAlias')
         doc = pydoc.render_doc(list[int], renderer=pydoc.plaintext)
         self.assertIn('GenericAlias in module builtins', doc)
         self.assertIn('\nclass list(object)', doc)
-        self.assertIn(list.__doc__.strip().splitlines()[0], doc)
+        if not MISSING_C_DOCSTRINGS:
+            self.assertIn(list.__doc__.strip().splitlines()[0], doc)
 
     def test_union_type(self):
         self.assertEqual(pydoc.describe(typing.Union[int, str]), '_UnionGenericAlias')
@@ -1174,7 +1181,8 @@ class TestDescriptions(unittest.TestCase):
         doc = pydoc.render_doc(int | str, renderer=pydoc.plaintext)
         self.assertIn('UnionType in module types object', doc)
         self.assertIn('\nclass UnionType(builtins.object)', doc)
-        self.assertIn(types.UnionType.__doc__.strip().splitlines()[0], doc)
+        if not MISSING_C_DOCSTRINGS:
+            self.assertIn(types.UnionType.__doc__.strip().splitlines()[0], doc)
 
     def test_special_form(self):
         self.assertEqual(pydoc.describe(typing.NoReturn), '_SpecialForm')
@@ -1327,6 +1335,7 @@ class TestDescriptions(unittest.TestCase):
             "__class_getitem__(object, /) method of builtins.type instance")
 
     @support.cpython_only
+    @requires_docstrings
     def test_module_level_callable_unrepresentable_default(self):
         import _testcapi
         builtin = _testcapi.func_with_unrepresentable_signature
@@ -1334,6 +1343,7 @@ class TestDescriptions(unittest.TestCase):
             "func_with_unrepresentable_signature(a, b=<x>)")
 
     @support.cpython_only
+    @requires_docstrings
     def test_builtin_staticmethod_unrepresentable_default(self):
         self.assertEqual(self._get_summary_line(str.maketrans),
             "maketrans(x, y=<unrepresentable>, z=<unrepresentable>, /)")
@@ -1343,6 +1353,7 @@ class TestDescriptions(unittest.TestCase):
             "staticmeth(a, b=<x>)")
 
     @support.cpython_only
+    @requires_docstrings
     def test_unbound_builtin_method_unrepresentable_default(self):
         self.assertEqual(self._get_summary_line(dict.pop),
             "pop(self, key, default=<unrepresentable>, /)")
@@ -1352,6 +1363,7 @@ class TestDescriptions(unittest.TestCase):
             "meth(self, /, a, b=<x>)")
 
     @support.cpython_only
+    @requires_docstrings
     def test_bound_builtin_method_unrepresentable_default(self):
         self.assertEqual(self._get_summary_line({}.pop),
             "pop(key, default=<unrepresentable>, /) "
@@ -1363,6 +1375,7 @@ class TestDescriptions(unittest.TestCase):
             "method of _testcapi.DocStringUnrepresentableSignatureTest instance")
 
     @support.cpython_only
+    @requires_docstrings
     def test_unbound_builtin_classmethod_unrepresentable_default(self):
         import _testcapi
         cls = _testcapi.DocStringUnrepresentableSignatureTest
@@ -1371,6 +1384,7 @@ class TestDescriptions(unittest.TestCase):
             "classmeth(type, /, a, b=<x>)")
 
     @support.cpython_only
+    @requires_docstrings
     def test_bound_builtin_classmethod_unrepresentable_default(self):
         import _testcapi
         cls = _testcapi.DocStringUnrepresentableSignatureTest
