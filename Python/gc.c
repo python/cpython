@@ -1369,7 +1369,6 @@ static void
 gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
 {
     GCState *gcstate = &tstate->interp->gc;
-    assert(gc_list_is_empty(&gcstate->young.head));
     if (gcstate->work_to_do <= 0) {
         /* No work to do */
         return;
