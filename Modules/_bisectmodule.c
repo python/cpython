@@ -3,8 +3,12 @@
 Converted to C by Dmitry Vasiliev (dima at hlabs.spb.ru).
 */
 
-#define PY_SSIZE_T_CLEAN
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
+#include "pycore_call.h"          // _PyObject_CallMethod()
 
 /*[clinic input]
 module _bisect
@@ -457,6 +461,7 @@ bisect_modexec(PyObject *m)
 
 static PyModuleDef_Slot bisect_slots[] = {
     {Py_mod_exec, bisect_modexec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

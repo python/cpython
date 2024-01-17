@@ -605,15 +605,15 @@ Using ``ABC`` as a base class has essentially the same effect as specifying
 aifc
 ----
 
-The :meth:`~aifc.aifc.getparams` method now returns a namedtuple rather than a
+The :meth:`!getparams` method now returns a namedtuple rather than a
 plain tuple.  (Contributed by Claudiu Popa in :issue:`17818`.)
 
-:func:`aifc.open` now supports the context management protocol: when used in a
-:keyword:`with` block, the :meth:`~aifc.aifc.close` method of the returned
+:func:`!aifc.open` now supports the context management protocol: when used in a
+:keyword:`with` block, the :meth:`!close` method of the returned
 object will be called automatically at the end of the block.  (Contributed by
 Serhiy Storchacha in :issue:`16486`.)
 
-The :meth:`~aifc.aifc.writeframesraw` and :meth:`~aifc.aifc.writeframes`
+The :meth:`!writeframesraw` and :meth:`!writeframes`
 methods now accept any :term:`bytes-like object`.  (Contributed by Serhiy
 Storchaka in :issue:`8311`.)
 
@@ -629,14 +629,14 @@ by Lucas Maystre in :issue:`11175`.)
 audioop
 -------
 
-:mod:`audioop` now supports 24-bit samples.  (Contributed by Serhiy Storchaka
+:mod:`!audioop` now supports 24-bit samples.  (Contributed by Serhiy Storchaka
 in :issue:`12866`.)
 
-New :func:`~audioop.byteswap` function converts big-endian samples to
+New :func:`!byteswap` function converts big-endian samples to
 little-endian and vice versa.  (Contributed by Serhiy Storchaka in
 :issue:`19641`.)
 
-All :mod:`audioop` functions now accept any :term:`bytes-like object`.  Strings
+All :mod:`!audioop` functions now accept any :term:`bytes-like object`.  Strings
 are not accepted: they didn't work before, now they raise an error right away.
 (Contributed by Serhiy Storchaka in :issue:`16685`.)
 
@@ -775,7 +775,7 @@ of a given opcode and argument, information that is not otherwise available.
 doctest
 -------
 
-A new :ref:`option flag <doctest-options>`, :data:`~doctest.FAIL_FAST`, halts
+A new :ref:`option flag <doctest-options>`, :const:`~doctest.FAIL_FAST`, halts
 test running as soon as the first failure is detected.  (Contributed by R.
 David Murray and Daniel Urban in :issue:`16522`.)
 
@@ -841,7 +841,7 @@ for example, if the file might have been changed and re-checked in less time
 than the resolution of a particular filesystem's file modification time field.
 (Contributed by Mark Levitt in :issue:`18149`.)
 
-New module attribute :data:`~filecmp.DEFAULT_IGNORES` provides the list of
+New module attribute :const:`~filecmp.DEFAULT_IGNORES` provides the list of
 directories that are used as the default value for the *ignore* parameter of
 the :func:`~filecmp.dircmp` function.  (Contributed by Eli Bendersky in
 :issue:`15442`.)
@@ -991,18 +991,18 @@ for the :meth:`~importlib.abc.InspectLoader.get_code` method.  However,
 it will normally be desirable to override the default implementation
 for performance reasons.  (Contributed by Brett Cannon in :issue:`18072`.)
 
-The :func:`~importlib.reload` function has been moved from :mod:`imp` to
-:mod:`importlib` as part of the :mod:`imp` module deprecation.  (Contributed by
+The :func:`~importlib.reload` function has been moved from :mod:`!imp` to
+:mod:`importlib` as part of the :mod:`!imp` module deprecation.  (Contributed by
 Berker Peksag in :issue:`18193`.)
 
 :mod:`importlib.util` now has a :data:`~importlib.util.MAGIC_NUMBER` attribute
 providing access to the bytecode version number.  This replaces the
-:func:`~imp.get_magic` function in the deprecated :mod:`imp` module.
+:func:`!get_magic` function in the deprecated :mod:`!imp` module.
 (Contributed by Brett Cannon in :issue:`18192`.)
 
 New :mod:`importlib.util` functions :func:`~importlib.util.cache_from_source`
 and :func:`~importlib.util.source_from_cache` replace the same-named functions
-in the deprecated :mod:`imp` module.  (Contributed by Brett Cannon in
+in the deprecated :mod:`!imp` module.  (Contributed by Brett Cannon in
 :issue:`18194`.)
 
 The :mod:`importlib` bootstrap :class:`.NamespaceLoader` now conforms to
@@ -1189,7 +1189,7 @@ Windows).  (Contributed by Brian Curtin in :issue:`11939`.)
 root on Windows.  (Contributed by Tim Golden in :issue:`9035`.)
 
 :func:`os.open` supports two new flags on platforms that provide them,
-:data:`~os.O_PATH` (un-opened file descriptor), and :data:`~os.O_TMPFILE`
+:const:`~os.O_PATH` (un-opened file descriptor), and :const:`~os.O_TMPFILE`
 (unnamed temporary file; as of 3.4.0 release available only on Linux systems
 with a kernel version of 3.11 or newer that have uapi headers).  (Contributed
 by Christian Heimes in :issue:`18673` and Benjamin Peterson, respectively.)
@@ -1238,8 +1238,8 @@ plistlib
 stdlib serialization protocols, with new :func:`~plistlib.load`,
 :func:`~plistlib.dump`, :func:`~plistlib.loads`, and :func:`~plistlib.dumps`
 functions.  (The older API is now deprecated.)  In addition to the already
-supported XML plist format (:data:`~plistlib.FMT_XML`), it also now supports
-the binary plist format (:data:`~plistlib.FMT_BINARY`).  (Contributed by Ronald
+supported XML plist format (:const:`~plistlib.FMT_XML`), it also now supports
+the binary plist format (:const:`~plistlib.FMT_BINARY`).  (Contributed by Ronald
 Oussoren and others in :issue:`14455`.)
 
 
@@ -1323,14 +1323,14 @@ ability to query or set the resource limits for processes other than the one
 making the call.  (Contributed by Christian Heimes in :issue:`16595`.)
 
 On Linux kernel version 2.6.36 or later, there are also some new
-Linux specific constants: :attr:`~resource.RLIMIT_MSGQUEUE`,
-:attr:`~resource.RLIMIT_NICE`, :attr:`~resource.RLIMIT_RTPRIO`,
-:attr:`~resource.RLIMIT_RTTIME`, and :attr:`~resource.RLIMIT_SIGPENDING`.
+Linux specific constants: :const:`~resource.RLIMIT_MSGQUEUE`,
+:const:`~resource.RLIMIT_NICE`, :const:`~resource.RLIMIT_RTPRIO`,
+:const:`~resource.RLIMIT_RTTIME`, and :const:`~resource.RLIMIT_SIGPENDING`.
 (Contributed by Christian Heimes in :issue:`19324`.)
 
 On FreeBSD version 9 and later, there some new FreeBSD specific constants:
-:attr:`~resource.RLIMIT_SBSIZE`, :attr:`~resource.RLIMIT_SWAP`, and
-:attr:`~resource.RLIMIT_NPTS`.  (Contributed by Claudiu Popa in
+:const:`~resource.RLIMIT_SBSIZE`, :const:`~resource.RLIMIT_SWAP`, and
+:const:`~resource.RLIMIT_NPTS`.  (Contributed by Claudiu Popa in
 :issue:`19343`.)
 
 
@@ -1369,9 +1369,9 @@ error.  (Contributed by Atsuo Ishimoto and Hynek Schlawack in
 smtpd
 -----
 
-The :class:`~smtpd.SMTPServer` and :class:`~smtpd.SMTPChannel` classes now
+The :class:`!SMTPServer` and :class:`!SMTPChannel` classes now
 accept a *map* keyword argument which, if specified, is passed in to
-:class:`asynchat.async_chat` as its *map* argument.  This allows an application
+:class:`!asynchat.async_chat` as its *map* argument.  This allows an application
 to avoid affecting the global socket map.  (Contributed by Vinay Sajip in
 :issue:`11959`.)
 
@@ -1388,7 +1388,7 @@ try/except statement by code that only cares whether or not an error occurred.
 socket
 ------
 
-The socket module now supports the :data:`~socket.CAN_BCM` protocol on
+The socket module now supports the :const:`~socket.CAN_BCM` protocol on
 platforms that support it.  (Contributed by Brian Thorne in :issue:`15359`.)
 
 Socket objects have new methods to get or set their :ref:`inheritable flag
@@ -1399,7 +1399,7 @@ The ``socket.AF_*`` and ``socket.SOCK_*`` constants are now enumeration values
 using the new :mod:`enum` module.  This allows meaningful names to be printed
 during debugging, instead of integer "magic numbers".
 
-The :data:`~socket.AF_LINK` constant is now available on BSD and OSX.
+The :const:`~socket.AF_LINK` constant is now available on BSD and OSX.
 
 :func:`~socket.inet_pton` and :func:`~socket.inet_ntop` are now supported
 on Windows.  (Contributed by Atsuo Ishimoto in :issue:`7171`.)
@@ -1460,8 +1460,8 @@ Heimes in :issue:`18147`.)
 If OpenSSL 0.9.8 or later is available, :class:`~ssl.SSLContext` has a new
 attribute :attr:`~ssl.SSLContext.verify_flags` that can be used to control the
 certificate verification process by setting it to some combination of the new
-constants :data:`~ssl.VERIFY_DEFAULT`, :data:`~ssl.VERIFY_CRL_CHECK_LEAF`,
-:data:`~ssl.VERIFY_CRL_CHECK_CHAIN`, or :data:`~ssl.VERIFY_X509_STRICT`.
+constants :const:`~ssl.VERIFY_DEFAULT`, :const:`~ssl.VERIFY_CRL_CHECK_LEAF`,
+:const:`~ssl.VERIFY_CRL_CHECK_CHAIN`, or :const:`~ssl.VERIFY_X509_STRICT`.
 OpenSSL does not do any CRL verification by default.  (Contributed by
 Christien Heimes in :issue:`8813`.)
 
@@ -1500,7 +1500,7 @@ implementation is required as most of the values aren't standardized and
 are platform-dependent.  (Contributed by Christian Heimes in :issue:`11016`.)
 
 The module supports new :mod:`~stat.ST_MODE` flags, :mod:`~stat.S_IFDOOR`,
-:attr:`~stat.S_IFPORT`, and :attr:`~stat.S_IFWHT`.  (Contributed by
+:const:`~stat.S_IFPORT`, and :const:`~stat.S_IFWHT`.  (Contributed by
 Christian Hiemes in :issue:`11016`.)
 
 
@@ -1528,10 +1528,10 @@ work on Windows.  This change was actually inadvertently made in 3.3.4.
 sunau
 -----
 
-The :meth:`~sunau.getparams` method now returns a namedtuple rather than a
+The :meth:`!getparams` method now returns a namedtuple rather than a
 plain tuple.  (Contributed by Claudiu Popa in :issue:`18901`.)
 
-:meth:`sunau.open` now supports the context management protocol: when used in a
+:meth:`!sunau.open` now supports the context management protocol: when used in a
 :keyword:`with` block, the ``close`` method of the returned object will be
 called automatically at the end of the block.  (Contributed by Serhiy Storchaka
 in :issue:`18878`.)
@@ -1540,8 +1540,8 @@ in :issue:`18878`.)
 support for writing 24 sample using the module.  (Contributed by
 Serhiy Storchaka in :issue:`19261`.)
 
-The :meth:`~sunau.AU_write.writeframesraw` and
-:meth:`~sunau.AU_write.writeframes` methods now accept any :term:`bytes-like
+The :meth:`!writeframesraw` and
+:meth:`!writeframes` methods now accept any :term:`bytes-like
 object`.  (Contributed by Serhiy Storchaka in :issue:`8311`.)
 
 
@@ -1849,7 +1849,7 @@ Python's default implementation to a SipHash implementation on platforms that
 have a 64 bit data type.  Any performance differences in comparison with the
 older FNV algorithm are trivial.
 
-The PEP adds additional fields to the :attr:`sys.hash_info` named tuple to
+The PEP adds additional fields to the :data:`sys.hash_info` named tuple to
 describe the hash algorithm in use by the currently executing binary.  Otherwise,
 the PEP does not alter any existing CPython APIs.
 
@@ -1891,7 +1891,7 @@ Other Build and C API Changes
   allowing retrieval of function pointers from named type slots when using
   the limited API.  (Contributed by Martin von Löwis in :issue:`17162`.)
 
-* The new :c:func:`Py_SetStandardStreamEncoding` pre-initialization API
+* The new :c:func:`!Py_SetStandardStreamEncoding` pre-initialization API
   allows applications embedding the CPython interpreter to reliably force
   a particular encoding and error handler for the standard streams.
   (Contributed by Bastien Montagne and Nick Coghlan in :issue:`16129`.)
@@ -1936,7 +1936,7 @@ Other Improvements
 * The :ref:`python <using-on-cmdline>` command has a new :ref:`option
   <using-on-misc-options>`, ``-I``, which causes it to run in "isolated mode",
   which means that :data:`sys.path` contains neither the script's directory nor
-  the user's ``site-packages`` directory, and all :envvar:`PYTHON*` environment
+  the user's ``site-packages`` directory, and all :envvar:`!PYTHON*` environment
   variables are ignored (it implies both ``-s`` and ``-E``).  Other
   restrictions may also be applied in the future, with the goal being to
   isolate the execution of a script from the user's environment.  This is
@@ -2077,31 +2077,31 @@ Deprecations in the Python API
 ------------------------------
 
 * As mentioned in :ref:`whatsnew-pep-451`, a number of :mod:`importlib`
-  methods and functions are deprecated: :meth:`importlib.find_loader` is
+  methods and functions are deprecated: :meth:`!importlib.find_loader` is
   replaced by :func:`importlib.util.find_spec`;
-  :meth:`importlib.machinery.PathFinder.find_module` is replaced by
+  :meth:`!importlib.machinery.PathFinder.find_module` is replaced by
   :meth:`importlib.machinery.PathFinder.find_spec`;
-  :meth:`importlib.abc.MetaPathFinder.find_module` is replaced by
+  :meth:`!importlib.abc.MetaPathFinder.find_module` is replaced by
   :meth:`importlib.abc.MetaPathFinder.find_spec`;
-  :meth:`importlib.abc.PathEntryFinder.find_loader` and
-  :meth:`~importlib.abc.PathEntryFinder.find_module` are replaced by
-  :meth:`importlib.abc.PathEntryFinder.find_spec`; all of the ``xxxLoader`` ABC
-  ``load_module`` methods (:meth:`importlib.abc.Loader.load_module`,
-  :meth:`importlib.abc.InspectLoader.load_module`,
-  :meth:`importlib.abc.FileLoader.load_module`,
-  :meth:`importlib.abc.SourceLoader.load_module`) should no longer be
+  :meth:`!importlib.abc.PathEntryFinder.find_loader` and
+  :meth:`!find_module` are replaced by
+  :meth:`importlib.abc.PathEntryFinder.find_spec`; all of the :samp:`{xxx}Loader` ABC
+  ``load_module`` methods (:meth:`!importlib.abc.Loader.load_module`,
+  :meth:`!importlib.abc.InspectLoader.load_module`,
+  :meth:`!importlib.abc.FileLoader.load_module`,
+  :meth:`!importlib.abc.SourceLoader.load_module`) should no longer be
   implemented, instead loaders should implement an
   ``exec_module`` method
   (:meth:`importlib.abc.Loader.exec_module`,
   :meth:`importlib.abc.InspectLoader.exec_module`
   :meth:`importlib.abc.SourceLoader.exec_module`) and let the import system
   take care of the rest; and
-  :meth:`importlib.abc.Loader.module_repr`,
-  :meth:`importlib.util.module_for_loader`, :meth:`importlib.util.set_loader`,
-  and :meth:`importlib.util.set_package` are no longer needed because their
+  :meth:`!importlib.abc.Loader.module_repr`,
+  :meth:`!importlib.util.module_for_loader`, :meth:`!importlib.util.set_loader`,
+  and :meth:`!importlib.util.set_package` are no longer needed because their
   functions are now handled automatically by the import system.
 
-* The :mod:`imp` module is pending deprecation. To keep compatibility with
+* The :mod:`!imp` module is pending deprecation. To keep compatibility with
   Python 2/3 code bases, the module's removal is currently not scheduled.
 
 * The :mod:`formatter` module is pending deprecation and is slated for removal
@@ -2277,7 +2277,7 @@ Changes in the Python API
   in a backwards-compatible fashion, use e.g.
   ``getattr(module, '__loader__', None) is not None``.  (:issue:`17115`.)
 
-* :meth:`importlib.util.module_for_loader` now sets ``__loader__`` and
+* :meth:`!importlib.util.module_for_loader` now sets ``__loader__`` and
   ``__package__`` unconditionally to properly support reloading. If this is not
   desired then you will need to set these attributes manually. You can use
   :func:`importlib.util.module_to_load` for module management.
@@ -2300,7 +2300,7 @@ Changes in the Python API
   then you can see if the module's ``__spec__.location`` is set to ``'frozen'``,
   check if the loader is a subclass of
   :class:`importlib.machinery.FrozenImporter`,
-  or if Python 2 compatibility is necessary you can use :func:`imp.is_frozen`.
+  or if Python 2 compatibility is necessary you can use :func:`!imp.is_frozen`.
 
 * :func:`py_compile.compile` now raises :exc:`FileExistsError` if the file path
   it would write to is a symlink or a non-regular file. This is to act as a
@@ -2370,12 +2370,12 @@ Changes in the Python API
   :issue:`18011`.)  Note: this change was also inadvertently applied in Python
   3.3.3.
 
-* The :attr:`~cgi.FieldStorage.file` attribute is now automatically closed when
-  the creating :class:`cgi.FieldStorage` instance is garbage collected. If you
-  were pulling the file object out separately from the :class:`cgi.FieldStorage`
+* The :attr:`!file` attribute is now automatically closed when
+  the creating :class:`!cgi.FieldStorage` instance is garbage collected. If you
+  were pulling the file object out separately from the :class:`!cgi.FieldStorage`
   instance and not keeping the instance alive, then you should either store the
-  entire :class:`cgi.FieldStorage` instance or read the contents of the file
-  before the :class:`cgi.FieldStorage` instance is garbage collected.
+  entire :class:`!cgi.FieldStorage` instance or read the contents of the file
+  before the :class:`!cgi.FieldStorage` instance is garbage collected.
 
 * Calling ``read`` or ``write`` on a closed SSL socket now raises an
   informative :exc:`ValueError` rather than the previous more mysterious
@@ -2405,8 +2405,8 @@ Changes in the Python API
   storage).  (:issue:`17094`.)
 
 * Parameter names in ``__annotations__`` dicts are now mangled properly,
-  similarly to ``__kwdefaults__``.  (Contributed by Yury Selivanov in
-  :issue:`20625`.)
+  similarly to :attr:`~function.__kwdefaults__`.
+  (Contributed by Yury Selivanov in :issue:`20625`.)
 
 * :attr:`hashlib.hash.name` now always returns the identifier in lower case.
   Previously some builtin hashes had uppercase names, but now that it is a
@@ -2434,7 +2434,7 @@ Changes in the Python API
   matched the input type, so if your code was depending on the return value
   being, say, a ``bytearray``, you will need to change your code.
 
-* :mod:`audioop` functions now raise an error immediately if passed string
+* :mod:`!audioop` functions now raise an error immediately if passed string
   input, instead of failing randomly later on (:issue:`16685`).
 
 * The new *convert_charrefs* argument to :class:`~html.parser.HTMLParser`

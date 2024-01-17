@@ -18,7 +18,7 @@ interface to the :c:func:`fcntl` and :c:func:`ioctl` Unix routines.  For a
 complete description of these calls, see :manpage:`fcntl(2)` and
 :manpage:`ioctl(2)` Unix manual pages.
 
-.. include:: ../includes/wasm-notavail.rst
+.. availability:: Unix, not Emscripten, not WASI.
 
 All functions in this module take a file descriptor *fd* as their first
 argument.  This can be an integer file descriptor, such as returned by
@@ -172,9 +172,9 @@ The module defines the following functions:
    which the lock starts, relative to *whence*, and *whence* is as with
    :func:`io.IOBase.seek`, specifically:
 
-   * :const:`0` -- relative to the start of the file (:data:`os.SEEK_SET`)
-   * :const:`1` -- relative to the current buffer position (:data:`os.SEEK_CUR`)
-   * :const:`2` -- relative to the end of the file (:data:`os.SEEK_END`)
+   * ``0`` -- relative to the start of the file (:const:`os.SEEK_SET`)
+   * ``1`` -- relative to the current buffer position (:const:`os.SEEK_CUR`)
+   * ``2`` -- relative to the end of the file (:const:`os.SEEK_END`)
 
    The default for *start* is 0, which means to start at the beginning of the file.
    The default for *len* is 0 which means to lock to the end of the file.  The
@@ -201,7 +201,7 @@ using the :func:`flock` call may be better.
 .. seealso::
 
    Module :mod:`os`
-      If the locking flags :data:`~os.O_SHLOCK` and :data:`~os.O_EXLOCK` are
+      If the locking flags :const:`~os.O_SHLOCK` and :const:`~os.O_EXLOCK` are
       present in the :mod:`os` module (on BSD only), the :func:`os.open`
       function provides an alternative to the :func:`lockf` and :func:`flock`
       functions.
