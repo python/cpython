@@ -1214,11 +1214,11 @@ get_exception_notes(struct exception_print_context *ctx, PyObject *value, PyObje
         }
         note = PyUnicode_FromFormat("Ignored error getting __notes__: %R", errvalue);
         if (!note) {
-            Py_XDECREF(*notes);
+            Py_DECREF(*notes);
             goto error;
         }
         if (PyList_SetItem(*notes, 0, note) < 0) {
-            Py_XDECREF(*notes);
+            Py_DECREF(*notes);
             goto error;
         }
     }
