@@ -54,9 +54,10 @@ Objects/genobject.c	-	_PyAsyncGenASend_Type	-
 Objects/genobject.c	-	_PyAsyncGenAThrow_Type	-
 Objects/genobject.c	-	_PyAsyncGenWrappedValue_Type	-
 Objects/genobject.c	-	_PyCoroWrapper_Type	-
-Objects/interpreteridobject.c	-	_PyInterpreterID_Type	-
+Objects/interpreteridobject.c	-	PyInterpreterID_Type	-
 Objects/iterobject.c	-	PyCallIter_Type	-
 Objects/iterobject.c	-	PySeqIter_Type	-
+Objects/iterobject.c	-	_PyAnextAwaitable_Type	-
 Objects/listobject.c	-	PyListIter_Type	-
 Objects/listobject.c	-	PyListRevIter_Type	-
 Objects/listobject.c	-	PyList_Type	-
@@ -70,6 +71,7 @@ Objects/moduleobject.c	-	PyModule_Type	-
 Objects/namespaceobject.c	-	_PyNamespace_Type	-
 Objects/object.c	-	_PyNone_Type	-
 Objects/object.c	-	_PyNotImplemented_Type	-
+Objects/object.c 	-	_PyAnextAwaitable_Type	-
 Objects/odictobject.c	-	PyODictItems_Type	-
 Objects/odictobject.c	-	PyODictIter_Type	-
 Objects/odictobject.c	-	PyODictKeys_Type	-
@@ -112,8 +114,6 @@ Objects/codeobject.c	-	_PyLineIterator	-
 # Not in a .h file:
 Objects/codeobject.c	-	_PyPositionsIterator	-
 Objects/genericaliasobject.c	-	_Py_GenericAliasIterType	-
-# Not in a .h file:
-Objects/iterobject.c	-	_PyAnextAwaitable_Type	-
 # Not in a .h file:
 Objects/memoryobject.c	-	_PyMemoryIter_Type	-
 Objects/unicodeobject.c	-	_PyUnicodeASCIIIter_Type	-
@@ -290,6 +290,10 @@ Objects/exceptions.c	-	PyExc_UnicodeWarning	-
 Objects/exceptions.c	-	PyExc_BytesWarning	-
 Objects/exceptions.c	-	PyExc_ResourceWarning	-
 Objects/exceptions.c	-	PyExc_EncodingWarning	-
+Python/crossinterp.c	-	_PyExc_InterpreterError	-
+Python/crossinterp.c	-	_PyExc_InterpreterNotFoundError	-
+Python/crossinterp.c	-	PyExc_InterpreterError	-
+Python/crossinterp.c	-	PyExc_InterpreterNotFoundError	-
 
 ##-----------------------
 ## singletons
@@ -322,6 +326,12 @@ Modules/_testcapi/vectorcall.c	-	MethodDescriptorBase_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptorDerived_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptorNopGet_Type	-
 Modules/_testcapi/vectorcall.c	-	MethodDescriptor2_Type	-
+Modules/_testclinic.c	-	DeprStarInit	-
+Modules/_testclinic.c	-	DeprStarInitNoInline	-
+Modules/_testclinic.c	-	DeprStarNew	-
+Modules/_testclinic.c	-	DeprKwdInit	-
+Modules/_testclinic.c	-	DeprKwdInitNoInline	-
+Modules/_testclinic.c	-	DeprKwdNew	-
 
 
 ##################################
@@ -375,12 +385,6 @@ Modules/_datetimemodule.c	-	PyDateTime_IsoCalendarDateType	-
 Modules/_datetimemodule.c	-	PyDateTime_TZInfoType	-
 Modules/_datetimemodule.c	-	PyDateTime_TimeType	-
 Modules/_datetimemodule.c	-	PyDateTime_TimeZoneType	-
-Modules/_decimal/_decimal.c	-	PyDecContextManager_Type	-
-Modules/_decimal/_decimal.c	-	PyDecContext_Type	-
-Modules/_decimal/_decimal.c	-	PyDecSignalDictMixin_Type	-
-Modules/_decimal/_decimal.c	-	PyDec_Type	-
-Modules/ossaudiodev.c	-	OSSAudioType	-
-Modules/ossaudiodev.c	-	OSSMixerType	-
 Modules/xxmodule.c	-	Null_Type	-
 Modules/xxmodule.c	-	Str_Type	-
 Modules/xxmodule.c	-	Xxo_Type	-
@@ -391,8 +395,6 @@ Modules/xxsubtype.c	-	spamlist_type	-
 ## non-static types - initialized once
 
 ## heap types
-Modules/_decimal/_decimal.c	-	DecimalTuple	-
-Modules/_decimal/_decimal.c	-	PyDecSignalDict_Type	-
 Modules/_tkinter.c	-	PyTclObject_Type	-
 Modules/_tkinter.c	-	Tkapp_Type	-
 Modules/_tkinter.c	-	Tktt_Type	-
@@ -401,9 +403,7 @@ Modules/xxlimited_35.c	-	Xxo_Type	-
 ## exception types
 Modules/_ctypes/_ctypes.c	-	PyExc_ArgError	-
 Modules/_cursesmodule.c	-	PyCursesError	-
-Modules/_decimal/_decimal.c	-	DecimalException	-
 Modules/_tkinter.c	-	Tkinter_TclError	-
-Modules/ossaudiodev.c	-	OSSAudioError	-
 Modules/xxlimited_35.c	-	ErrorObject	-
 Modules/xxmodule.c	-	ErrorObject	-
 
@@ -422,29 +422,12 @@ Modules/_ctypes/_ctypes.c	-	_unpickle	-
 Modules/_ctypes/_ctypes.c	PyCArrayType_from_ctype	cache	-
 Modules/_cursesmodule.c	-	ModDict	-
 Modules/_datetimemodule.c	datetime_strptime	module	-
-Modules/_datetimemodule.c	-	PyDateTime_TimeZone_UTC	-
-Modules/_datetimemodule.c	-	PyDateTime_Epoch	-
-Modules/_datetimemodule.c	-	us_per_ms	-
-Modules/_datetimemodule.c	-	us_per_second	-
-Modules/_datetimemodule.c	-	us_per_minute	-
-Modules/_datetimemodule.c	-	us_per_hour	-
-Modules/_datetimemodule.c	-	us_per_day	-
-Modules/_datetimemodule.c	-	us_per_week	-
-Modules/_datetimemodule.c	-	seconds_per_day	-
-Modules/_decimal/_decimal.c	-	basic_context_template	-
-Modules/_decimal/_decimal.c	-	current_context_var	-
-Modules/_decimal/_decimal.c	-	default_context_template	-
-Modules/_decimal/_decimal.c	-	extended_context_template	-
-Modules/_decimal/_decimal.c	-	round_map	-
-Modules/_decimal/_decimal.c	-	Rational	-
-Modules/_decimal/_decimal.c	-	SignalTuple	-
 
 ## state
-Modules/_asynciomodule.c	-	fi_freelist	-
-Modules/_asynciomodule.c	-	fi_freelist_len	-
 Modules/_ctypes/_ctypes.c	-	_ctypes_ptrtype_cache	-
 Modules/_ctypes/_ctypes.c	-	global_state	-
 Modules/_ctypes/ctypes.h	-	global_state	-
+Modules/_datetimemodule.c	-	_datetime_global_state	-
 Modules/_tkinter.c	-	tcl_lock	-
 Modules/_tkinter.c	-	excInCmd	-
 Modules/_tkinter.c	-	valInCmd	-
@@ -457,9 +440,6 @@ Modules/_tkinter.c	-	trbInCmd	-
 ##-----------------------
 ## initialized once
 
-## pre-allocated buffer
-Modules/nismodule.c	nisproc_maplist_2	res	-
-
 ## other
 Include/datetime.h	-	PyDateTimeAPI	-
 Modules/_ctypes/cfield.c	_ctypes_get_fielddesc	initialized	-
@@ -468,12 +448,6 @@ Modules/_cursesmodule.c	-	initialised	-
 Modules/_cursesmodule.c	-	initialised_setupterm	-
 Modules/_cursesmodule.c	-	initialisedcolors	-
 Modules/_cursesmodule.c	-	screen_encoding	-
-Modules/_decimal/_decimal.c	-	_py_long_multiply	-
-Modules/_decimal/_decimal.c	-	_py_long_floor_divide	-
-Modules/_decimal/_decimal.c	-	_py_long_power	-
-Modules/_decimal/_decimal.c	-	_py_float_abs	-
-Modules/_decimal/_decimal.c	-	_py_long_bit_length	-
-Modules/_decimal/_decimal.c	-	_py_float_as_integer_ratio	-
 Modules/_elementtree.c	-	expat_capi	-
 Modules/readline.c	-	libedit_append_replace_history_offset	-
 Modules/readline.c	-	using_libedit_emulation	-

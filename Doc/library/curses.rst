@@ -641,7 +641,8 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: update_lines_cols()
 
-   Update :envvar:`LINES` and :envvar:`COLS`. Useful for detecting manual screen resize.
+   Update the :const:`LINES` and :const:`COLS` module variables.
+   Useful for detecting manual screen resize.
 
    .. versionadded:: 3.5
 
@@ -1342,10 +1343,27 @@ The :mod:`curses` module defines the following data members:
 .. data:: COLORS
 
    The maximum number of colors the terminal can support.
+   It is defined only after the call to :func:`start_color`.
 
 .. data:: COLOR_PAIRS
 
    The maximum number of color pairs the terminal can support.
+   It is defined only after the call to :func:`start_color`.
+
+.. data:: COLS
+
+   The width of the screen, i.e., the number of columns.
+   It is defined only after the call to :func:`initscr`.
+   Updated by :func:`update_lines_cols`, :func:`resizeterm` and
+   :func:`resize_term`.
+
+.. data:: LINES
+
+   The height of the screen, i.e., the number of lines.
+   It is defined only after the call to :func:`initscr`.
+   Updated by :func:`update_lines_cols`, :func:`resizeterm` and
+   :func:`resize_term`.
+
 
 Some constants are available to specify character cell attributes.
 The exact constants available are system dependent.
@@ -1630,6 +1648,8 @@ keys); also, the following keypad mappings are standard:
 | :kbd:`Page Down` | KEY_NPAGE |
 +------------------+-----------+
 
+.. _curses-acs-codes:
+
 The following table lists characters from the alternate character set. These are
 inherited from the VT100 terminal, and will generally be  available on software
 emulations such as X terminals.  When there is no graphic available, curses
@@ -1751,9 +1771,9 @@ The following table lists mouse button constants used by :meth:`getmouse`:
 | .. data:: BUTTON_ALT             | Control was down during button state change |
 +----------------------------------+---------------------------------------------+
 
-   .. versionchanged:: 3.10
-      The ``BUTTON5_*`` constants are now exposed if they are provided by the
-      underlying curses library.
+.. versionchanged:: 3.10
+   The ``BUTTON5_*`` constants are now exposed if they are provided by the
+   underlying curses library.
 
 The following table lists the predefined colors:
 

@@ -95,7 +95,7 @@ class GetLineIndentTest(unittest.TestCase):
 def insert(text, string):
     text.delete('1.0', 'end')
     text.insert('end', string)
-    text.update()  # Force update for colorizer to finish.
+    text.update_idletasks()  # Force update for colorizer to finish.
 
 
 class IndentAndNewlineTest(unittest.TestCase):
@@ -201,8 +201,8 @@ class IndentSearcherTest(unittest.TestCase):
         test_info = (# text, (block, indent))
                      ("", (None, None)),
                      ("[1,", (None, None)),  # TokenError
-                     ("if 1:\n", ('if 1:', None)),
-                     ("if 1:\n  2\n  3\n", ('if 1:', '  2')),
+                     ("if 1:\n", ('if 1:\n', None)),
+                     ("if 1:\n  2\n  3\n", ('if 1:\n', '  2\n')),
                      )
         for code, expected_pair in test_info:
             with self.subTest(code=code):

@@ -103,6 +103,12 @@
     <ClCompile Include="..\Python\context.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\critical_section.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\crossinterp.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\descrobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -158,6 +164,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\future.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\gc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\gc_free_threading.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\gc_gil.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\gcmodule.c">
@@ -220,6 +235,9 @@
     <ClCompile Include="..\Python\legacy_tracing.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\lock.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\interpreteridobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -277,7 +295,16 @@
     <ClCompile Include="..\Objects\odictobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\optimizer.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\optimizer_analysis.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Parser\parser.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\parking_lot.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\pathconfig.c">
@@ -388,7 +415,28 @@
     <ClCompile Include="..\Parser\token.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Parser\tokenizer.c">
+    <ClCompile Include="..\Parser\lexer\lexer.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Parser\lexer\buffer.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Parser\lexer\state.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Parser\tokenizer\string_tokenizer.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Parser\tokenizer\utf8_tokenizer.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Parser\tokenizer\file_tokenizer.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Parser\tokenizer\readline_tokenizer.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Parser\tokenizer\helpers.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\traceback.c">

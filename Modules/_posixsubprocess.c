@@ -5,29 +5,31 @@
 
 #include "Python.h"
 #include "pycore_fileutils.h"
+#include "pycore_pystate.h"
+#include "pycore_signal.h"        // _Py_RestoreSignals()
 #if defined(HAVE_PIPE2) && !defined(_GNU_SOURCE)
-# define _GNU_SOURCE
+#  define _GNU_SOURCE
 #endif
-#include <unistd.h>
-#include <fcntl.h>
+#include <unistd.h>               // close()
+#include <fcntl.h>                // fcntl()
 #ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
+#  include <sys/types.h>
 #endif
 #if defined(HAVE_SYS_STAT_H)
-#include <sys/stat.h>
+#  include <sys/stat.h>           // stat()
 #endif
 #ifdef HAVE_SYS_SYSCALL_H
-#include <sys/syscall.h>
+#  include <sys/syscall.h>
 #endif
 #if defined(HAVE_SYS_RESOURCE_H)
-#include <sys/resource.h>
+#  include <sys/resource.h>
 #endif
 #ifdef HAVE_DIRENT_H
-#include <dirent.h>
+#  include <dirent.h>             // opendir()
 #endif
-#ifdef HAVE_GRP_H
-#include <grp.h>
-#endif /* HAVE_GRP_H */
+#if defined(HAVE_SETGROUPS)
+#  include <grp.h>                // setgroups()
+#endif
 
 #include "posixmodule.h"
 
@@ -85,15 +87,16 @@ class pid_t_converter(CConverter):
     type = 'pid_t'
     format_unit = '" _Py_PARSE_PID "'
 
-    def parse_arg(self, argname, displayname):
-        return """
+    def parse_arg(self, argname, displayname, *, limited_capi):
+        return self.format_code("""
             {paramname} = PyLong_AsPid({argname});
             if ({paramname} == -1 && PyErr_Occurred()) {{{{
                 goto exit;
             }}}}
-            """.format(argname=argname, paramname=self.parser_name)
+            """,
+            argname=argname)
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=5af1c116d56cbb5a]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=c94349aa1aad151d]*/
 
 #include "clinic/_posixsubprocess.c.h"
 
@@ -180,6 +183,88 @@ _is_fd_in_sorted_fd_sequence(int fd, int *fd_sequence,
     } while (search_min <= search_max);
     return 0;
 }
+
+
+// Forward declaration
+static void _Py_FreeCharPArray(char *const array[]);
+
+/*
+ * Flatten a sequence of bytes() objects into a C array of
+ * NULL terminated string pointers with a NULL char* terminating the array.
+ * (ie: an argv or env list)
+ *
+ * Memory allocated for the returned list is allocated using PyMem_Malloc()
+ * and MUST be freed by _Py_FreeCharPArray().
+ */
+static char *const *
+_PySequence_BytesToCharpArray(PyObject* self)
+{
+    char **array;
+    Py_ssize_t i, argc;
+    PyObject *item = NULL;
+    Py_ssize_t size;
+
+    argc = PySequence_Size(self);
+    if (argc == -1)
+        return NULL;
+
+    assert(argc >= 0);
+
+    if ((size_t)argc > (PY_SSIZE_T_MAX-sizeof(char *)) / sizeof(char *)) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    array = PyMem_Malloc((argc + 1) * sizeof(char *));
+    if (array == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    for (i = 0; i < argc; ++i) {
+        char *data;
+        item = PySequence_GetItem(self, i);
+        if (item == NULL) {
+            /* NULL terminate before freeing. */
+            array[i] = NULL;
+            goto fail;
+        }
+        /* check for embedded null bytes */
+        if (PyBytes_AsStringAndSize(item, &data, NULL) < 0) {
+            /* NULL terminate before freeing. */
+            array[i] = NULL;
+            goto fail;
+        }
+        size = PyBytes_GET_SIZE(item) + 1;
+        array[i] = PyMem_Malloc(size);
+        if (!array[i]) {
+            PyErr_NoMemory();
+            goto fail;
+        }
+        memcpy(array[i], data, size);
+        Py_DECREF(item);
+    }
+    array[argc] = NULL;
+
+    return array;
+
+fail:
+    Py_XDECREF(item);
+    _Py_FreeCharPArray(array);
+    return NULL;
+}
+
+
+/* Free's a NULL terminated char** array of C strings. */
+static void
+_Py_FreeCharPArray(char *const array[])
+{
+    Py_ssize_t i;
+    for (i = 0; array[i] != NULL; ++i) {
+        PyMem_Free(array[i]);
+    }
+    PyMem_Free((void*)array);
+}
+
 
 /*
  * Do all the Python C API calls in the parent process to turn the pass_fds
@@ -559,7 +644,7 @@ reset_signal_handlers(const sigset_t *child_sigmask)
  * required by POSIX but not supported natively on Linux. Another reason to
  * avoid this family of functions is that sharing an address space between
  * processes running with different privileges is inherently insecure.
- * See bpo-35823 for further discussion and references.
+ * See https://bugs.python.org/issue35823 for discussion and references.
  *
  * In some C libraries, setrlimit() has the same thread list/signalling
  * behavior since resource limits were per-thread attributes before
@@ -656,8 +741,9 @@ child_exec(char *const exec_array[],
     if (child_umask >= 0)
         umask(child_umask);  /* umask() always succeeds. */
 
-    if (restore_signals)
+    if (restore_signals) {
         _Py_RestoreSignals();
+    }
 
 #ifdef VFORK_USABLE
     if (child_sigmask) {
@@ -681,8 +767,10 @@ child_exec(char *const exec_array[],
 #endif
 
 #ifdef HAVE_SETGROUPS
-    if (extra_group_size > 0)
+    if (extra_group_size >= 0) {
+        assert((extra_group_size == 0) == (extra_groups == NULL));
         POSIX_CALL(setgroups(extra_group_size, extra_groups));
+    }
 #endif /* HAVE_SETGROUPS */
 
 #ifdef HAVE_SETREGID
@@ -798,6 +886,7 @@ do_fork_exec(char *const exec_array[],
     pid_t pid;
 
 #ifdef VFORK_USABLE
+    PyThreadState *vfork_tstate_save;
     if (child_sigmask) {
         /* These are checked by our caller; verify them in debug builds. */
         assert(uid == (uid_t)-1);
@@ -805,7 +894,22 @@ do_fork_exec(char *const exec_array[],
         assert(extra_group_size < 0);
         assert(preexec_fn == Py_None);
 
+        /* Drop the GIL so that other threads can continue execution while this
+         * thread in the parent remains blocked per vfork-semantics on the
+         * child's exec syscall outcome. Exec does filesystem access which
+         * can take an arbitrarily long time. This addresses GH-104372.
+         *
+         * The vfork'ed child still runs in our address space. Per POSIX it
+         * must be limited to nothing but exec, but the Linux implementation
+         * is a little more usable. See the child_exec() comment - The child
+         * MUST NOT re-acquire the GIL.
+         */
+        vfork_tstate_save = PyEval_SaveThread();
         pid = vfork();
+        if (pid != 0) {
+            // Not in the child process, reacquire the GIL.
+            PyEval_RestoreThread(vfork_tstate_save);
+        }
         if (pid == (pid_t)-1) {
             /* If vfork() fails, fall back to using fork(). When it isn't
              * allowed in a process by the kernel, vfork can return -1
@@ -819,6 +923,7 @@ do_fork_exec(char *const exec_array[],
     }
 
     if (pid != 0) {
+        // Parent process.
         return pid;
     }
 
@@ -919,13 +1024,17 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
     pid_t pid = -1;
     int need_to_reenable_gc = 0;
     char *const *argv = NULL, *const *envp = NULL;
-    Py_ssize_t extra_group_size = 0;
     int need_after_fork = 0;
     int saved_errno = 0;
     int *c_fds_to_keep = NULL;
     Py_ssize_t fds_to_keep_len = PyTuple_GET_SIZE(py_fds_to_keep);
 
-    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if ((preexec_fn != Py_None) && interp->finalizing) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "preexec_fn not supported at interpreter shutdown");
+        return NULL;
+    }
     if ((preexec_fn != Py_None) && (interp != PyInterpreterState_Main())) {
         PyErr_SetString(PyExc_RuntimeError,
                         "preexec_fn not supported within subinterpreters");
@@ -994,6 +1103,13 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
             goto cleanup;
         cwd = PyBytes_AsString(cwd_obj2);
     }
+
+    // Special initial value meaning that subprocess API was called with
+    // extra_groups=None leading to _posixsubprocess.fork_exec(gids=None).
+    // We use this to differentiate between code desiring a setgroups(0, NULL)
+    // call vs no call at all.  The fast vfork() code path could be used when
+    // there is no setgroups call.
+    Py_ssize_t extra_group_size = -2;
 
     if (extra_groups_packed != Py_None) {
 #ifdef HAVE_SETGROUPS
