@@ -2380,6 +2380,7 @@ class TestCounter(unittest.TestCase):
     def test_eq(self):
         self.assertEqual(Counter(a=3, b=2, c=0), Counter('ababa'))
         self.assertNotEqual(Counter(a=3, b=2), Counter('babab'))
+        self.assertNotEqual(Counter(), Counter({'a': []}))
 
     def test_le(self):
         self.assertTrue(Counter(a=3, b=2, c=0) <= Counter('ababa'))

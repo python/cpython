@@ -800,7 +800,7 @@ class Counter(dict):
         # so now we can just check that any keys that
         # aren't in self are equal to zero
         for k, v in other.items():
-            if v and k not in self:
+            if v != 0 and k not in self:
                 return False
         return True
 
