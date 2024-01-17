@@ -26,16 +26,14 @@ sudo ./llvm.sh 16
 Install LLVM 16 with [Homebrew](https://brew.sh):
 
 ```sh
-$ brew install llvm@16
+brew install llvm@16
 ```
 
 Homebrew won't add any of the tools to your `$PATH`. That's okay; the build script knows how to find them.
 
 ### Windows
 
-LLVM 16 can be installed on Windows by using the installers published on [LLVM's GitHub releases page](https://github.com/llvm/llvm-project/releases/tag/llvmorg-16.0.6).
-
-[Here's a recent one.](https://github.com/llvm/llvm-project/releases/download/llvmorg-16.0.6/LLVM-16.0.6-win64.exe) **When installing, be sure to select the option labeled "Add LLVM to the system PATH".**
+Install LLVM 16 [by searching for it on LLVM's GitHub releases page](https://github.com/llvm/llvm-project/releases?q=16), clicking on "Assets", downloading the appropriate Windows installer for your platform (likely the file ending with `-win64.exe`), and running it. **When installing, be sure to select the option labeled "Add LLVM to the system PATH".**
 
 ## Building
 
