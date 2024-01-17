@@ -72,6 +72,7 @@
   <Import Project="python.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
+    <TargetName>$(PyExeName)</TargetName>
     <ConfigurationType>Application</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
@@ -132,7 +133,7 @@
     </PropertyGroup>
     <Exec Command='setlocal
 set PYTHONPATH=$(PySourcePath)Lib
-"$(OutDir)python$(PyDebugExt).exe" "$(PySourcePath)PC\validate_ucrtbase.py" $(UcrtName)' ContinueOnError="true" />
+"$(OutDir)$(PyExeName)$(PyDebugExt).exe" "$(PySourcePath)PC\validate_ucrtbase.py" $(UcrtName)' ContinueOnError="true" />
   </Target>
   <Target Name="GeneratePythonBat" AfterTargets="AfterBuild">
     <PropertyGroup>
@@ -145,7 +146,7 @@ set PYTHONPATH=$(PySourcePath)Lib
 @echo Running $(Configuration)^|$(Platform) interpreter...
 @setlocal
 @set PYTHONHOME=$(PySourcePath)
-@"$(OutDir)python$(PyDebugExt).exe" %*
+@"$(OutDir)$(PyExeName)$(PyDebugExt).exe" %*
 </_Content>
       <_ExistingContent Condition="Exists('$(PySourcePath)python.bat')">$([System.IO.File]::ReadAllText('$(PySourcePath)python.bat'))</_ExistingContent>
     </PropertyGroup>

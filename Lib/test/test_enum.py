@@ -3201,6 +3201,7 @@ class TestSpecial(unittest.TestCase):
                 [x.value for x in NTEnum],
                 [TTuple(id=0, a=0, blist=[]), TTuple(id=1, a=2, blist=[4]), TTuple(id=2, a=4, blist=[0, 1, 2])],
                 )
+
         self.assertRaises(AttributeError, getattr, NTEnum.NONE, 'id')
         #
         class NTCEnum(TTuple, Enum):

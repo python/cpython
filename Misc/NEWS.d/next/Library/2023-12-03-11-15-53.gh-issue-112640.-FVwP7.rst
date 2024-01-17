@@ -1,2 +1,0 @@
-Add ``kwdefaults`` parameter to :data:`types.FunctionType` to set
-default keyword argument values.
