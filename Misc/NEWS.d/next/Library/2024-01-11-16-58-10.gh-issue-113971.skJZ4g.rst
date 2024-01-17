@@ -1,4 +1,0 @@
-The :class:`zipfile.ZipInfo` previously protected ``._compresslevel``
-attribute has been made public as ``.compress_level`` with the old
-``_compresslevel`` name remaining available as a property to retain
-compatibility.
