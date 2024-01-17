@@ -1,0 +1,2 @@
+Deprecate subclassing pure-Python ``datetime.timezone``.
+This is consistent with C-extension implementation.
