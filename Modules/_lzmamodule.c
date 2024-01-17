@@ -1497,9 +1497,7 @@ _lzma__decode_filter_properties_impl(PyObject *module, lzma_vli filter_id,
 
     /* We use vanilla free() here instead of PyMem_Free() - filter.options was
        allocated by lzma_properties_decode() using the default allocator. */
-    if (filter.options) {
-        free(filter.options);
-    }
+    free(filter.options);
     return result;
 }
 
