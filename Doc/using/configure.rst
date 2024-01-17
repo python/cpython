@@ -74,13 +74,20 @@ files. Commands to regenerate all generated files::
 The ``Makefile.pre.in`` file documents generated files, their inputs, and tools used
 to regenerate them. Search for ``regen-*`` make targets.
 
-The ``make regen-configure`` command runs `tiran/cpython_autoconf
-<https://github.com/tiran/cpython_autoconf>`_ container for reproducible build;
-see container ``entry.sh`` script. The container is optional, the following
-command can be run locally, the generated files depend on autoconf and aclocal
-versions::
+configure script
+----------------
+
+The ``make regen-configure`` command regenerates the ``aclocal.m4`` file and
+the ``configure`` script using the ``Tools/build/regen-configure.sh`` shell
+script which uses an Ubuntu container to get the same tools versions and have a
+reproducible output.
+
+The container is optional, the following command can be run locally::
 
     autoreconf -ivf -Werror
+
+The generated files can change depending on the exact ``autoconf-archive``,
+``aclocal`` and ``pkg-config`` versions.
 
 
 .. _configure-options:
@@ -280,10 +287,15 @@ General Options
 
    .. versionadded:: 3.11
 
+.. _free-threading-build:
+
 .. option:: --disable-gil
 
    Enables **experimental** support for running Python without the
-   :term:`global interpreter lock` (GIL).
+   :term:`global interpreter lock` (GIL): free threading build.
+
+   Defines the ``Py_GIL_DISABLED`` macro and adds ``"t"`` to
+   :data:`sys.abiflags`.
 
    See :pep:`703` "Making the Global Interpreter Lock Optional in CPython".
 
@@ -732,6 +744,13 @@ Debug options
    (default is no).
 
    .. versionadded:: 3.6
+
+.. option:: --with-thread-sanitizer
+
+   Enable ThreadSanitizer data race detector, ``tsan``
+   (default is no).
+
+   .. versionadded:: 3.13
 
 
 Linker options

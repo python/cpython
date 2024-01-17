@@ -7,6 +7,7 @@ executing have not been removed.
 import unittest
 import test.support
 from test import support
+from test.support.script_helper import assert_python_ok
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import captured_stderr
@@ -18,6 +19,7 @@ import io
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import sysconfig
@@ -194,6 +196,45 @@ class HelperFunctionsTests(unittest.TestCase):
         finally:
             pth_file.cleanup()
 
+    def test_addsitedir_dotfile(self):
+        pth_file = PthFile('.dotfile')
+        pth_file.cleanup(prep=True)
+        try:
+            pth_file.create()
+            site.addsitedir(pth_file.base_dir, set())
+            self.assertNotIn(site.makepath(pth_file.good_dir_path)[0], sys.path)
+            self.assertIn(pth_file.base_dir, sys.path)
+        finally:
+            pth_file.cleanup()
+
+    @unittest.skipUnless(hasattr(os, 'chflags'), 'test needs os.chflags()')
+    def test_addsitedir_hidden_flags(self):
+        pth_file = PthFile()
+        pth_file.cleanup(prep=True)
+        try:
+            pth_file.create()
+            st = os.stat(pth_file.file_path)
+            os.chflags(pth_file.file_path, st.st_flags | stat.UF_HIDDEN)
+            site.addsitedir(pth_file.base_dir, set())
+            self.assertNotIn(site.makepath(pth_file.good_dir_path)[0], sys.path)
+            self.assertIn(pth_file.base_dir, sys.path)
+        finally:
+            pth_file.cleanup()
+
+    @unittest.skipUnless(sys.platform == 'win32', 'test needs Windows')
+    @support.requires_subprocess()
+    def test_addsitedir_hidden_file_attribute(self):
+        pth_file = PthFile()
+        pth_file.cleanup(prep=True)
+        try:
+            pth_file.create()
+            subprocess.check_call(['attrib', '+H', pth_file.file_path])
+            site.addsitedir(pth_file.base_dir, set())
+            self.assertNotIn(site.makepath(pth_file.good_dir_path)[0], sys.path)
+            self.assertIn(pth_file.base_dir, sys.path)
+        finally:
+            pth_file.cleanup()
+
     # This tests _getuserbase, hence the double underline
     # to distinguish from a test for getuserbase
     def test__getuserbase(self):
@@ -337,6 +378,19 @@ class HelperFunctionsTests(unittest.TestCase):
             mock_isdir.assert_called_once_with(user_site)
             mock_addsitedir.assert_not_called()
             self.assertFalse(known_paths)
+
+    def test_gethistoryfile(self):
+        filename = 'file'
+        rc, out, err = assert_python_ok('-c',
+            f'import site; assert site.gethistoryfile() == "{filename}"',
+            PYTHON_HISTORY=filename)
+        self.assertEqual(rc, 0)
+
+        # Check that PYTHON_HISTORY is ignored in isolated mode.
+        rc, out, err = assert_python_ok('-I', '-c',
+            f'import site; assert site.gethistoryfile() != "{filename}"',
+            PYTHON_HISTORY=filename)
+        self.assertEqual(rc, 0)
 
     def test_trace(self):
         message = "bla-bla-bla"
@@ -641,10 +695,24 @@ class _pthFileTests(unittest.TestCase):
             sys_path.append(abs_path)
         return sys_path
 
+    def _get_pth_lines(self, libpath: str, *, import_site: bool):
+        pth_lines = ['fake-path-name']
+        # include 200 lines of `libpath` in _pth lines (or fewer
+        # if the `libpath` is long enough to get close to 32KB
+        # see https://github.com/python/cpython/issues/113628)
+        encoded_libpath_length = len(libpath.encode("utf-8"))
+        repetitions = min(200, 30000 // encoded_libpath_length)
+        if repetitions <= 2:
+            self.skipTest(
+                f"Python stdlib path is too long ({encoded_libpath_length:,} bytes)")
+        pth_lines.extend(libpath for _ in range(repetitions))
+        pth_lines.extend(['', '# comment'])
+        if import_site:
+            pth_lines.append('import site')
+        return pth_lines
+
     @support.requires_subprocess()
     def test_underpth_basic(self):
-        libpath = test.support.STDLIB_DIR
-        exe_prefix = os.path.dirname(sys.executable)
         pth_lines = ['#.', '# ..', *sys.path, '.', '..']
         exe_file = self._create_underpth_exe(pth_lines)
         sys_path = self._calc_sys_path_for_underpth_nosite(
@@ -666,12 +734,7 @@ class _pthFileTests(unittest.TestCase):
     def test_underpth_nosite_file(self):
         libpath = test.support.STDLIB_DIR
         exe_prefix = os.path.dirname(sys.executable)
-        pth_lines = [
-            'fake-path-name',
-            *[libpath for _ in range(200)],
-            '',
-            '# comment',
-        ]
+        pth_lines = self._get_pth_lines(libpath, import_site=False)
         exe_file = self._create_underpth_exe(pth_lines)
         sys_path = self._calc_sys_path_for_underpth_nosite(
             os.path.dirname(exe_file),
@@ -695,13 +758,8 @@ class _pthFileTests(unittest.TestCase):
     def test_underpth_file(self):
         libpath = test.support.STDLIB_DIR
         exe_prefix = os.path.dirname(sys.executable)
-        exe_file = self._create_underpth_exe([
-            'fake-path-name',
-            *[libpath for _ in range(200)],
-            '',
-            '# comment',
-            'import site'
-        ])
+        exe_file = self._create_underpth_exe(
+            self._get_pth_lines(libpath, import_site=True))
         sys_prefix = os.path.dirname(exe_file)
         env = os.environ.copy()
         env['PYTHONPATH'] = 'from-env'
@@ -720,13 +778,8 @@ class _pthFileTests(unittest.TestCase):
     def test_underpth_dll_file(self):
         libpath = test.support.STDLIB_DIR
         exe_prefix = os.path.dirname(sys.executable)
-        exe_file = self._create_underpth_exe([
-            'fake-path-name',
-            *[libpath for _ in range(200)],
-            '',
-            '# comment',
-            'import site'
-        ], exe_pth=False)
+        exe_file = self._create_underpth_exe(
+            self._get_pth_lines(libpath, import_site=True), exe_pth=False)
         sys_prefix = os.path.dirname(exe_file)
         env = os.environ.copy()
         env['PYTHONPATH'] = 'from-env'

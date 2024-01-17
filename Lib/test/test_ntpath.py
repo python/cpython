@@ -227,10 +227,18 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.split("//conky/mountpoint/")', ('//conky/mountpoint/', ''))
 
     def test_isabs(self):
+        tester('ntpath.isabs("foo\\bar")', 0)
+        tester('ntpath.isabs("foo/bar")', 0)
         tester('ntpath.isabs("c:\\")', 1)
+        tester('ntpath.isabs("c:\\foo\\bar")', 1)
+        tester('ntpath.isabs("c:/foo/bar")', 1)
         tester('ntpath.isabs("\\\\conky\\mountpoint\\")', 1)
-        tester('ntpath.isabs("\\foo")', 1)
-        tester('ntpath.isabs("\\foo\\bar")', 1)
+
+        # gh-44626: paths with only a drive or root are not absolute.
+        tester('ntpath.isabs("\\foo\\bar")', 0)
+        tester('ntpath.isabs("/foo/bar")', 0)
+        tester('ntpath.isabs("c:foo\\bar")', 0)
+        tester('ntpath.isabs("c:foo/bar")', 0)
 
         # gh-96290: normal UNC paths and device paths without trailing backslashes
         tester('ntpath.isabs("\\\\conky\\mountpoint")', 1)
@@ -256,6 +264,7 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.join("a", "b", "c")', 'a\\b\\c')
         tester('ntpath.join("a\\", "b", "c")', 'a\\b\\c')
         tester('ntpath.join("a", "b\\", "c")', 'a\\b\\c')
+        tester('ntpath.join("a", "b", "c\\")', 'a\\b\\c\\')
         tester('ntpath.join("a", "b", "\\c")', '\\c')
         tester('ntpath.join("d:\\", "\\pleep")', 'd:\\pleep')
         tester('ntpath.join("d:\\", "a", "b")', 'd:\\a\\b')
@@ -313,6 +322,16 @@ class TestNtpath(NtpathTestCase):
         tester("ntpath.join('\\\\computer\\', 'share')", '\\\\computer\\share')
         tester("ntpath.join('\\\\computer\\share\\', 'a')", '\\\\computer\\share\\a')
         tester("ntpath.join('\\\\computer\\share\\a\\', 'b')", '\\\\computer\\share\\a\\b')
+        # Second part is anchored, so that the first part is ignored.
+        tester("ntpath.join('a', 'Z:b', 'c')", 'Z:b\\c')
+        tester("ntpath.join('a', 'Z:\\b', 'c')", 'Z:\\b\\c')
+        tester("ntpath.join('a', '\\\\b\\c', 'd')", '\\\\b\\c\\d')
+        # Second part has a root but not drive.
+        tester("ntpath.join('a', '\\b', 'c')", '\\b\\c')
+        tester("ntpath.join('Z:/a', '/b', 'c')", 'Z:\\b\\c')
+        tester("ntpath.join('//?/Z:/a', '/b', 'c')",  '\\\\?\\Z:\\b\\c')
+        tester("ntpath.join('D:a', './c:b')", 'D:a\\.\\c:b')
+        tester("ntpath.join('D:/a', './c:b')", 'D:\\a\\.\\c:b')
 
     def test_normpath(self):
         tester("ntpath.normpath('A//////././//.//B')", r'A\B')

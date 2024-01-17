@@ -259,6 +259,36 @@ SyntaxError: expected ':'
 Traceback (most recent call last):
 SyntaxError: invalid syntax
 
+Comprehensions without 'in' keyword:
+
+>>> [x for x if range(1)]
+Traceback (most recent call last):
+SyntaxError: 'in' expected after for-loop variables
+
+>>> tuple(x for x if range(1))
+Traceback (most recent call last):
+SyntaxError: 'in' expected after for-loop variables
+
+>>> [x for x() in a]
+Traceback (most recent call last):
+SyntaxError: cannot assign to function call
+
+>>> [x for a, b, (c + 1, d()) in y]
+Traceback (most recent call last):
+SyntaxError: cannot assign to expression
+
+>>> [x for a, b, (c + 1, d()) if y]
+Traceback (most recent call last):
+SyntaxError: 'in' expected after for-loop variables
+
+>>> [x for x+1 in y]
+Traceback (most recent call last):
+SyntaxError: cannot assign to expression
+
+>>> [x for x+1, x() in y]
+Traceback (most recent call last):
+SyntaxError: cannot assign to expression
+
 Comprehensions creating tuples without parentheses
 should produce a specialized error message:
 
@@ -1752,6 +1782,28 @@ Corner-cases that used to crash:
     Traceback (most recent call last):
     SyntaxError: positional patterns follow keyword patterns
 
+Non-matching 'elif'/'else' statements:
+
+    >>> if a == b:
+    ...     ...
+    ...     elif a == c:
+    Traceback (most recent call last):
+    SyntaxError: 'elif' must match an if-statement here
+
+    >>> if x == y:
+    ...     ...
+    ...     else:
+    Traceback (most recent call last):
+    SyntaxError: 'else' must match a valid statement here
+
+    >>> elif m == n:
+    Traceback (most recent call last):
+    SyntaxError: 'elif' must match an if-statement here
+
+    >>> else:
+    Traceback (most recent call last):
+    SyntaxError: 'else' must match a valid statement here
+
 Uses of the star operator which should fail:
 
 A[:*b]
@@ -1995,6 +2047,7 @@ Invalid expressions in type scopes:
 
 import re
 import doctest
+import textwrap
 import unittest
 
 from test import support
@@ -2006,8 +2059,8 @@ class SyntaxTestCase(unittest.TestCase):
                      lineno=None, offset=None, end_lineno=None, end_offset=None):
         """Check that compiling code raises SyntaxError with errtext.
 
-        errtest is a regular expression that must be present in the
-        test of the exception raised.  If subclass is specified it
+        errtext is a regular expression that must be present in the
+        test of the exception raised. If subclass is specified, it
         is the expected subclass of SyntaxError (e.g. IndentationError).
         """
         try:
@@ -2030,6 +2083,22 @@ class SyntaxTestCase(unittest.TestCase):
 
         else:
             self.fail("compile() did not raise SyntaxError")
+
+    def _check_noerror(self, code,
+                       errtext="compile() raised unexpected SyntaxError",
+                       filename="<testcase>", mode="exec", subclass=None):
+        """Check that compiling code does not raise a SyntaxError.
+
+        errtext is the message passed to self.fail if there is
+        a SyntaxError. If the subclass parameter is specified,
+        it is the subclass of SyntaxError (e.g. IndentationError)
+        that the raised error is checked against.
+        """
+        try:
+            compile(code, filename, mode)
+        except SyntaxError as err:
+            if (not subclass) or isinstance(err, subclass):
+                self.fail(errtext)
 
     def test_expression_with_assignment(self):
         self._check_error(
@@ -2241,6 +2310,31 @@ if x:
         code += f"{' '*4*12}pass"
         self._check_error(code, "too many statically nested blocks")
 
+    @support.cpython_only
+    def test_with_statement_many_context_managers(self):
+        # See gh-113297
+
+        def get_code(n):
+            code = textwrap.dedent("""
+                def bug():
+                    with (
+                    a
+                """)
+            for i in range(n):
+                code += f"    as a{i}, a\n"
+            code += "): yield a"
+            return code
+
+        CO_MAXBLOCKS = 20  # static nesting limit of the compiler
+
+        for n in range(CO_MAXBLOCKS):
+            with self.subTest(f"within range: {n=}"):
+                compile(get_code(n), "<string>", "exec")
+
+        for n in range(CO_MAXBLOCKS, CO_MAXBLOCKS + 5):
+            with self.subTest(f"out of range: {n=}"):
+                self._check_error(get_code(n), "too many statically nested blocks")
+
     def test_barry_as_flufl_with_syntax_errors(self):
         # The "barry_as_flufl" rule can produce some "bugs-at-a-distance" if
         # is reading the wrong token in the presence of syntax errors later
@@ -2296,6 +2390,12 @@ func(
 """
         self._check_error(code, "parenthesis '\\)' does not match opening parenthesis '\\['")
 
+        self._check_error("match y:\n case e(e=v,v,", " was never closed")
+
+        # Examples with dencodings
+        s = b'# coding=latin\n(aaaaaaaaaaaaaaaaa\naaaaaaaaaaa\xb5'
+        self._check_error(s, r"'\(' was never closed")
+
     def test_error_string_literal(self):
 
         self._check_error("'blech", r"unterminated string literal \(.*\)$")
@@ -2311,6 +2411,7 @@ func(
 
     def test_invisible_characters(self):
         self._check_error('print\x17("Hello")', "invalid non-printable character")
+        self._check_error(b"with(0,,):\n\x01", "invalid non-printable character")
 
     def test_match_call_does_not_raise_syntax_error(self):
         code = """
@@ -2371,6 +2472,25 @@ while 1:
                      break
 """
         self._check_error(source, "too many statically nested blocks")
+
+    def test_syntax_error_non_matching_elif_else_statements(self):
+        # Check bpo-45759: 'elif' statements that doesn't match an
+        # if-statement or 'else' statements that doesn't match any
+        # valid else-able statement (e.g. 'while')
+        self._check_error(
+            "elif m == n:\n    ...",
+            "'elif' must match an if-statement here")
+        self._check_error(
+            "else:\n    ...",
+            "'else' must match a valid statement here")
+        self._check_noerror("if a == b:\n    ...\nelif a == c:\n    ...")
+        self._check_noerror("if x == y:\n    ...\nelse:\n    ...")
+        self._check_error(
+            "else = 123",
+            "invalid syntax")
+        self._check_error(
+            "elif 55 = 123",
+            "cannot assign to literal here")
 
     @support.cpython_only
     def test_error_on_parser_stack_overflow(self):

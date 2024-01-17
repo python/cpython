@@ -386,11 +386,6 @@ symtable_new(void)
     return NULL;
 }
 
-/* Using a scaling factor means this should automatically adjust when
-   the recursion limit is adjusted for small or large C stack allocations.
-*/
-#define COMPILER_STACK_FRAME_SCALE 2
-
 struct symtable *
 _PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
 {
@@ -417,9 +412,9 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
     }
     /* Be careful here to prevent overflow. */
     int recursion_depth = Py_C_RECURSION_LIMIT - tstate->c_recursion_remaining;
-    starting_recursion_depth = recursion_depth * COMPILER_STACK_FRAME_SCALE;
+    starting_recursion_depth = recursion_depth;
     st->recursion_depth = starting_recursion_depth;
-    st->recursion_limit = Py_C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
+    st->recursion_limit = Py_C_RECURSION_LIMIT;
 
     /* Make the initial symbol information gathering pass */
     if (!symtable_enter_block(st, &_Py_ID(top), ModuleBlock, (void *)mod, 0, 0, 0, 0)) {
@@ -497,18 +492,14 @@ _PySymtable_Lookup(struct symtable *st, void *key)
     k = PyLong_FromVoidPtr(key);
     if (k == NULL)
         return NULL;
-    v = PyDict_GetItemWithError(st->st_blocks, k);
-    Py_DECREF(k);
-
-    if (v) {
-        assert(PySTEntry_Check(v));
-    }
-    else if (!PyErr_Occurred()) {
+    if (PyDict_GetItemRef(st->st_blocks, k, &v) == 0) {
         PyErr_SetString(PyExc_KeyError,
                         "unknown symbol table entry");
     }
+    Py_DECREF(k);
 
-    return (PySTEntryObject *)Py_XNewRef(v);
+    assert(v == NULL || PySTEntry_Check(v));
+    return (PySTEntryObject *)v;
 }
 
 long
@@ -981,6 +972,12 @@ update_symbols(PyObject *symbols, PyObject *scopes,
         }
         Py_DECREF(name);
     }
+
+    /* Check if loop ended because of exception in PyIter_Next */
+    if (PyErr_Occurred()) {
+        goto error;
+    }
+
     Py_DECREF(itr);
     Py_DECREF(v_free);
     return 1;

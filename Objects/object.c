@@ -296,16 +296,18 @@ _Py_DecRef(PyObject *o)
     Py_DECREF(o);
 }
 
-#ifdef Py_NOGIL
+#ifdef Py_GIL_DISABLED
+# ifdef Py_REF_DEBUG
 static inline int
 is_shared_refcnt_dead(Py_ssize_t shared)
 {
-#if SIZEOF_SIZE_T == 8
+#  if SIZEOF_SIZE_T == 8
     return shared == (Py_ssize_t)0xDDDDDDDDDDDDDDDD;
-#else
+#  else
     return shared == (Py_ssize_t)0xDDDDDDDD;
-#endif
+#  endif
 }
+# endif
 
 void
 _Py_DecRefSharedDebug(PyObject *o, const char *filename, int lineno)
@@ -412,7 +414,7 @@ _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra)
     _Py_atomic_store_uintptr_relaxed(&op->ob_tid, 0);
     return refcnt;
 }
-#endif
+#endif  /* Py_GIL_DISABLED */
 
 
 /**************************************/
@@ -507,9 +509,7 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
 
     /* tp_finalize resurrected it!  Make it look like the original Py_DECREF
      * never happened. */
-    Py_ssize_t refcnt = Py_REFCNT(self);
-    _Py_NewReferenceNoTotal(self);
-    Py_SET_REFCNT(self, refcnt);
+    _Py_ResurrectReference(self);
 
     _PyObject_ASSERT(self,
                      (!_PyType_IS_GC(Py_TYPE(self))
@@ -1194,7 +1194,7 @@ PyObject_GetOptionalAttr(PyObject *v, PyObject *name, PyObject **result)
         }
         return 0;
     }
-    if (tp->tp_getattro == (getattrofunc)_Py_type_getattro) {
+    if (tp->tp_getattro == _Py_type_getattro) {
         int supress_missing_attribute_exception = 0;
         *result = _Py_type_getattro_impl((PyTypeObject*)v, name, &supress_missing_attribute_exception);
         if (supress_missing_attribute_exception) {
@@ -1488,19 +1488,14 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     }
     if (dict != NULL) {
         Py_INCREF(dict);
-        PyObject *attr = PyDict_GetItemWithError(dict, name);
-        if (attr != NULL) {
-            *method = Py_NewRef(attr);
+        if (PyDict_GetItemRef(dict, name, method) != 0) {
+            // found or error
             Py_DECREF(dict);
             Py_XDECREF(descr);
             return 0;
         }
+        // not found
         Py_DECREF(dict);
-
-        if (PyErr_Occurred()) {
-            Py_XDECREF(descr);
-            return 0;
-        }
     }
 
     if (meth_found) {
@@ -1605,21 +1600,17 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
     }
     if (dict != NULL) {
         Py_INCREF(dict);
-        res = PyDict_GetItemWithError(dict, name);
+        int rc = PyDict_GetItemRef(dict, name, &res);
+        Py_DECREF(dict);
         if (res != NULL) {
-            Py_INCREF(res);
-            Py_DECREF(dict);
             goto done;
         }
-        else {
-            Py_DECREF(dict);
-            if (PyErr_Occurred()) {
-                if (suppress && PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                    PyErr_Clear();
-                }
-                else {
-                    goto done;
-                }
+        else if (rc < 0) {
+            if (suppress && PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                PyErr_Clear();
+            }
+            else {
+                goto done;
             }
         }
     }
@@ -2033,7 +2024,7 @@ PyTypeObject _PyNone_Type = {
     0,                  /*tp_doc */
     0,                  /*tp_traverse */
     0,                  /*tp_clear */
-    0,                  /*tp_richcompare */
+    _Py_BaseObject_RichCompare, /*tp_richcompare */
     0,                  /*tp_weaklistoffset */
     0,                  /*tp_iter */
     0,                  /*tp_iternext */
@@ -2366,7 +2357,7 @@ new_reference(PyObject *op)
         _PyTraceMalloc_NewReference(op);
     }
     // Skip the immortal object check in Py_SET_REFCNT; always set refcnt to 1
-#if !defined(Py_NOGIL)
+#if !defined(Py_GIL_DISABLED)
     op->ob_refcnt = 1;
 #else
     op->ob_tid = _Py_ThreadId();
@@ -2394,6 +2385,17 @@ void
 _Py_NewReferenceNoTotal(PyObject *op)
 {
     new_reference(op);
+}
+
+void
+_Py_ResurrectReference(PyObject *op)
+{
+    if (_PyRuntime.tracemalloc.config.tracing) {
+        _PyTraceMalloc_NewReference(op);
+    }
+#ifdef Py_TRACE_REFS
+    _Py_AddToAllObjects(op);
+#endif
 }
 
 

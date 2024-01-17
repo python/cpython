@@ -1,8 +1,6 @@
-#ifndef _MSC_VER
-#include "pyconfig.h"   // Py_NOGIL
-#endif
+#include "pyconfig.h"   // Py_GIL_DISABLED
 
-#ifndef Py_NOGIL
+#ifndef Py_GIL_DISABLED
 // Need limited C API version 3.13 for PySys_Audit()
 #define Py_LIMITED_API 0x030d0000
 #endif

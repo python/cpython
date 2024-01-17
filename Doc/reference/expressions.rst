@@ -823,12 +823,18 @@ An attribute reference is a primary followed by a period and a name:
 
 The primary must evaluate to an object of a type that supports attribute
 references, which most objects do.  This object is then asked to produce the
-attribute whose name is the identifier.  This production can be customized by
-overriding the :meth:`__getattr__` method.  If this attribute is not available,
-the exception :exc:`AttributeError` is raised.  Otherwise, the type and value of
-the object produced is determined by the object.  Multiple evaluations of the
-same attribute reference may yield different objects.
+attribute whose name is the identifier. The type and value produced is
+determined by the object.  Multiple evaluations of the same attribute
+reference may yield different objects.
 
+This production can be customized by overriding the
+:meth:`~object.__getattribute__` method or the :meth:`~object.__getattr__`
+method.  The :meth:`!__getattribute__` method is called first and either
+returns a value or raises :exc:`AttributeError` if the attribute is not
+available.
+
+If an :exc:`AttributeError` is raised and the object has a :meth:`!__getattr__`
+method, that method is called as a fallback.
 
 .. _subscriptions:
 
@@ -1781,10 +1787,11 @@ Or, when processing a file stream in chunks:
    while chunk := file.read(9000):
        process(chunk)
 
-Assignment expressions must be surrounded by parentheses when used
-as sub-expressions in slicing, conditional, lambda,
-keyword-argument, and comprehension-if expressions
-and in ``assert`` and ``with`` statements.
+Assignment expressions must be surrounded by parentheses when
+used as expression statements and when used as sub-expressions in
+slicing, conditional, lambda,
+keyword-argument, and comprehension-if expressions and
+in ``assert``, ``with``, and ``assignment`` statements.
 In all other places where they can be used, parentheses are not required,
 including in ``if`` and ``while`` statements.
 
