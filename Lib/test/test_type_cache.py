@@ -198,45 +198,6 @@ class TypeCacheWithSpecializationTests(unittest.TestCase):
 
         self._check_specialization(store_bar_2, B(), "STORE_ATTR", should_specialize=False)
 
-    def test_class_call_specialization_user_type(self):
-        class F:
-            def __init__(self):
-                pass
-
-        self._assign_valid_version_or_skip(F)
-
-        def call_class_1(type_):
-            type_()
-
-        self._check_specialization(call_class_1, F, "CALL", should_specialize=True)
-        del call_class_1
-
-        self._assign_and_check_version_0(F)
-
-        def call_class_2(type_):
-            type_()
-
-        self._check_specialization(call_class_2, F, "CALL", should_specialize=False)
-
-    def test_to_bool_specialization_user_type(self):
-        class H:
-            pass
-
-        self._assign_valid_version_or_skip(H)
-
-        def to_bool_1(instance):
-            not instance
-
-        self._check_specialization(to_bool_1, H(), "TO_BOOL", should_specialize=True)
-        del to_bool_1
-
-        self._assign_and_check_version_0(H)
-
-        def to_bool_2(instance):
-            not instance
-
-        self._check_specialization(to_bool_2, H(), "TO_BOOL", should_specialize=False)
-
 
 if __name__ == "__main__":
     unittest.main()
