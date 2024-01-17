@@ -1080,15 +1080,15 @@ _collections_deque_reverse_impl(dequeobject *deque)
 _collections.deque.count
 
     deque: dequeobject
-    v: object
+    value: object
     /
 
-Return number of occurrences of v.
+Return number of occurrences of value.
 [clinic start generated code]*/
 
 static PyObject *
-_collections_deque_count(dequeobject *deque, PyObject *v)
-/*[clinic end generated code: output=4fd47b6bf522f071 input=45addc7d85e4a336]*/
+_collections_deque_count(dequeobject *deque, PyObject *value)
+/*[clinic end generated code: output=af6b1cb43c292e51 input=3cf536abfdeda205]*/
 {
     block *b = deque->leftblock;
     Py_ssize_t index = deque->leftindex;
@@ -1101,7 +1101,7 @@ _collections_deque_count(dequeobject *deque, PyObject *v)
     while (--n >= 0) {
         CHECK_NOT_END(b);
         item = Py_NewRef(b->data[index]);
-        cmp = PyObject_RichCompareBool(item, v, Py_EQ);
+        cmp = PyObject_RichCompareBool(item, value, Py_EQ);
         Py_DECREF(item);
         if (cmp < 0)
             return NULL;
@@ -1166,7 +1166,7 @@ deque_len(dequeobject *deque)
 _collections.deque.index
 
     deque: dequeobject
-    v: object
+    value: object
     start: object(converter='_PyEval_SliceIndexNotNone', type='Py_ssize_t', c_default='0') = NULL
     stop: object(converter='_PyEval_SliceIndexNotNone', type='Py_ssize_t', c_default='Py_SIZE(deque)') = NULL
     /
@@ -1177,9 +1177,9 @@ Raises ValueError if the value is not present.
 [clinic start generated code]*/
 
 static PyObject *
-_collections_deque_index_impl(dequeobject *deque, PyObject *v,
+_collections_deque_index_impl(dequeobject *deque, PyObject *value,
                               Py_ssize_t start, Py_ssize_t stop)
-/*[clinic end generated code: output=5b2a991d7315b3cf input=b31d3a5c49cb8725]*/
+/*[clinic end generated code: output=7c30082173b46d2b input=4cc5446d58d4335e]*/
 {
     Py_ssize_t i, n;
     PyObject *item;
@@ -1219,7 +1219,7 @@ _collections_deque_index_impl(dequeobject *deque, PyObject *v,
     while (--n >= 0) {
         CHECK_NOT_END(b);
         item = b->data[index];
-        cmp = PyObject_RichCompareBool(item, v, Py_EQ);
+        cmp = PyObject_RichCompareBool(item, value, Py_EQ);
         if (cmp > 0)
             return PyLong_FromSsize_t(stop - n - 1);
         if (cmp < 0)
@@ -1235,7 +1235,7 @@ _collections_deque_index_impl(dequeobject *deque, PyObject *v,
             index = 0;
         }
     }
-    PyErr_Format(PyExc_ValueError, "%R is not in deque", v);
+    PyErr_Format(PyExc_ValueError, "%R is not in deque", value);
     return NULL;
 }
 

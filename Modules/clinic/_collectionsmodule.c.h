@@ -197,10 +197,10 @@ _collections_deque_reverse(dequeobject *deque, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_collections_deque_count__doc__,
-"count($self, v, /)\n"
+"count($self, value, /)\n"
 "--\n"
 "\n"
-"Return number of occurrences of v.");
+"Return number of occurrences of value.");
 
 #define _COLLECTIONS_DEQUE_COUNT_METHODDEF    \
     {"count", (PyCFunction)_collections_deque_count, METH_O, _collections_deque_count__doc__},
@@ -217,21 +217,21 @@ PyDoc_STRVAR(_collections_deque_index__doc__,
     {"index", _PyCFunction_CAST(_collections_deque_index), METH_FASTCALL, _collections_deque_index__doc__},
 
 static PyObject *
-_collections_deque_index_impl(dequeobject *deque, PyObject *v,
+_collections_deque_index_impl(dequeobject *deque, PyObject *value,
                               Py_ssize_t start, Py_ssize_t stop);
 
 static PyObject *
 _collections_deque_index(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *v;
+    PyObject *value;
     Py_ssize_t start = 0;
     Py_ssize_t stop = Py_SIZE(deque);
 
     if (!_PyArg_CheckPositional("index", nargs, 1, 3)) {
         goto exit;
     }
-    v = args[0];
+    value = args[0];
     if (nargs < 2) {
         goto skip_optional;
     }
@@ -245,7 +245,7 @@ _collections_deque_index(dequeobject *deque, PyObject *const *args, Py_ssize_t n
         goto exit;
     }
 skip_optional:
-    return_value = _collections_deque_index_impl(deque, v, start, stop);
+    return_value = _collections_deque_index_impl(deque, value, start, stop);
 
 exit:
     return return_value;
@@ -490,4 +490,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5f817800f678ca2d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=564d113856aeef1c input=a9049054013a1b77]*/
