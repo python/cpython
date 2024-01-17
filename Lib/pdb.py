@@ -592,29 +592,23 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self._error_exc()
 
     def _replace_convenience_variables(self, line):
-        """Replace the convenience variables in line"""
+        """Replace the convenience variables in 'line' with their values.
+           e.g. $foo is replaced by __pdb_convenience_variables["foo"].
+           Note: such pattern in string literals will be skipped"""
 
         if "$" not in line:
             return line
 
-        last_token_is_dollar = False
-        dollar_start = None
-        dollar_end = None
+        dollar_start = dollar_end = -1
         replace_variables = []
         try:
             for t in tokenize.generate_tokens(io.StringIO(line).readline):
                 token_type, token_string, start, end, _ = t
                 if token_type == token.OP and token_string == '$':
-                    last_token_is_dollar = True
-                    dollar_end = end
-                    dollar_start = start
-                else:
-                    if (last_token_is_dollar and
-                        token_type == token.NAME and
-                        start == dollar_end):
-                        # line is a one-line command so we only care about column
-                        replace_variables.append((dollar_start[1], end[1], token_string))
-                    last_token_is_dollar = False
+                    dollar_start, dollar_end = start, end
+                elif start == dollar_end and token_type == token.NAME:
+                    # line is a one-line command so we only care about column
+                    replace_variables.append((dollar_start[1], end[1], token_string))
         except tokenize.TokenError:
             return line
 
@@ -622,13 +616,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             return line
 
         last_end = 0
-        new_line = ''
+        line_pieces = []
         for start, end, name in replace_variables:
-            new_line += line[last_end:start] + f'__pdb_convenience_variables["{name}"]'
+            line_pieces.append(line[last_end:start] + f'__pdb_convenience_variables["{name}"]')
             last_end = end
-        new_line += line[last_end:]
+        line_pieces.append(line[last_end:])
 
-        return new_line
+        return ''.join(line_pieces)
 
     def precmd(self, line):
         """Handle alias expansion and ';;' separator."""
