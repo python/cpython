@@ -1,0 +1,5 @@
+Moved `csv` module docstring from `Modules/_csv.c` to `Lib/csv.py` and
+removed `__doc__` from `csv.__all__`.
+
+Moved `csv.__version__` from `Modules/_csv.c` to `Lib/csv.py` and removed
+`__version__` from `csv.__all__`.
