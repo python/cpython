@@ -3076,6 +3076,7 @@ compiler_for(struct compiler *c, stmt_ty s)
 
     USE_LABEL(c, cleanup);
     ADDOP(c, NO_LOCATION, END_FOR);
+    ADDOP(c, NO_LOCATION, POP_TOP);
 
     compiler_pop_fblock(c, FOR_LOOP, start);
 
@@ -5391,6 +5392,7 @@ compiler_sync_comprehension_generator(struct compiler *c, location loc,
 
         USE_LABEL(c, anchor);
         ADDOP(c, NO_LOCATION, END_FOR);
+        ADDOP(c, NO_LOCATION, POP_TOP);
     }
 
     return SUCCESS;
