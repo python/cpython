@@ -1,0 +1,1 @@
+Make ``queue.SimpleQueue`` thread safe when the GIL is disabled. Existing semantics and behavior should be preserved, but the implementation is changed to ensure thread-safety when the GIL is disabled.
