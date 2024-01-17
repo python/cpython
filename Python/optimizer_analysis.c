@@ -20,9 +20,6 @@ inline_consts(PyCodeObject *co, _PyUOpInstruction *buffer, int buffer_size)
         int opcode = buffer[pc].opcode;
         switch(opcode) {
             case _LOAD_CONST: {
-                if (co == NULL) {
-                    printf("NULL co @ %d\n", pc);
-                }
                 assert(co != NULL);
                 PyObject *val = PyTuple_GET_ITEM(co->co_consts, buffer[pc].oparg);
                 buffer[pc].opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
