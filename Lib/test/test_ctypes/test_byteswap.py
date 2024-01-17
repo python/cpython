@@ -352,5 +352,24 @@ class Test(unittest.TestCase):
                 self.assertEqual(s.point.x, 1)
                 self.assertEqual(s.point.y, 2)
 
+    def test_build_struct_union_opposite_system_byteorder(self):
+        # gh-105102
+        if sys.byteorder == "little":
+            _Structure = BigEndianStructure
+            _Union = BigEndianUnion
+        else:
+            _Structure = LittleEndianStructure
+            _Union = LittleEndianUnion
+
+        class S1(_Structure):
+            _fields_ = [("a", c_byte), ("b", c_byte)]
+
+        class U1(_Union):
+            _fields_ = [("s1", S1), ("ab", c_short)]
+
+        class S2(_Structure):
+            _fields_ = [("u1", U1), ("c", c_byte)]
+
+
 if __name__ == "__main__":
     unittest.main()
