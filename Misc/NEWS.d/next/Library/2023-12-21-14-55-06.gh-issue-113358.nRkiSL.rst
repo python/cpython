@@ -1,1 +1,1 @@
-Fix rendering tracebacks with exceptions with a broken __getattr__
+Fix rendering tracebacks for exceptions with a broken ``__getattr__``.
