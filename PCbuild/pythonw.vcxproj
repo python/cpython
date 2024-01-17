@@ -89,8 +89,11 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <Link>
-      <StackReserveSize Condition="$(Configuration) != 'Debug'">2000000</StackReserveSize>
-      <StackReserveSize Condition="$(Configuration) == 'Debug'">8000000</StackReserveSize>
+      <StackReserveSize>2000000</StackReserveSize>
+      <StackReserveSize Condition="$(Configuration) == 'Debug'">12000000</StackReserveSize>
+      <StackReserveSize Condition="$(Configuration) == 'PGInstrument'">12000000</StackReserveSize>
+      <!-- HACK: Need additional memory to avoid crashing until gh-113655 is fixed -->
+      <StackReserveSize Condition="$(Configuration) == 'PGUpdate'">3000000</StackReserveSize>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

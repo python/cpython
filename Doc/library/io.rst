@@ -253,12 +253,12 @@ The implementation of I/O streams is organized as a hierarchy of classes.  First
 specify the various categories of streams, then concrete classes providing the
 standard stream implementations.
 
-   .. note::
+.. note::
 
-      The abstract base classes also provide default implementations of some
-      methods in order to help implementation of concrete stream classes.  For
-      example, :class:`BufferedIOBase` provides unoptimized implementations of
-      :meth:`!readinto` and :meth:`!readline`.
+   The abstract base classes also provide default implementations of some
+   methods in order to help implementation of concrete stream classes.  For
+   example, :class:`BufferedIOBase` provides unoptimized implementations of
+   :meth:`!readinto` and :meth:`!readline`.
 
 At the top of the I/O hierarchy is the abstract base class :class:`IOBase`.  It
 defines the basic interface to a stream.  Note, however, that there is no

@@ -1,6 +1,0 @@
-Seems that in some conditions, OpenSSL will return ``SSL_ERROR_SYSCALL``
-instead of ``SSL_ERROR_SSL`` when a certification verification has failed,
-but the error parameters will still contain ``ERR_LIB_SSL`` and
-``SSL_R_CERTIFICATE_VERIFY_FAILED``. We are now detecting this situation and
-raising the appropiate ``ssl.SSLCertVerificationError``. Patch by Pablo
-Galindo

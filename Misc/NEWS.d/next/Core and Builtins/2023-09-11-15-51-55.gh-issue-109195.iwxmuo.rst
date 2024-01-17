@@ -1,4 +1,0 @@
-Fix source location for the ``LOAD_*`` instruction preceding a
-``LOAD_SUPER_ATTR`` to load the ``super`` global (or shadowing variable) so
-that it encompasses only the name ``super`` and not the following
-parentheses.

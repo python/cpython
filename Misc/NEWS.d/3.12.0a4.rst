@@ -23,10 +23,10 @@ Remove :opcode:`UNARY_POSITIVE`, :opcode:`ASYNC_GEN_WRAP` and
 .. nonce: D7H6j4
 .. section: Core and Builtins
 
-Add new :opcode:`CALL_INSTRINSIC_1` instruction. Remove
+Add new :opcode:`CALL_INTRINSIC_1` instruction. Remove
 :opcode:`IMPORT_STAR`, :opcode:`PRINT_EXPR` and
 :opcode:`STOPITERATION_ERROR`, replacing them with the
-:opcode:`CALL_INSTRINSIC_1` instruction.
+:opcode:`CALL_INTRINSIC_1` instruction.
 
 ..
 
@@ -147,8 +147,8 @@ clinic.
 .. nonce: yRWQ1y
 .. section: Core and Builtins
 
-Improve the output of ``co_lines`` by emitting only one entry for each line
-range.
+Improve the output of :meth:`codeobject.co_lines` by emitting only one entry
+for each line range.
 
 ..
 

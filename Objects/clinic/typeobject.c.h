@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_BadArgument()
+
 PyDoc_STRVAR(type___instancecheck____doc__,
 "__instancecheck__($self, instance, /)\n"
 "--\n"
@@ -260,4 +262,4 @@ object___dir__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return object___dir___impl(self);
 }
-/*[clinic end generated code: output=943f639f264362d9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b56c87f9cace1921 input=a9049054013a1b77]*/

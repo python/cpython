@@ -1,2 +1,0 @@
-Fix exit code for ``unittest`` if all tests are skipped.
-Patch by Egor Eliseev.

@@ -1,6 +1,7 @@
 import unittest
 from collections import OrderedDict, UserDict
 from types import MappingProxyType
+from test import support
 import _testcapi
 
 
@@ -30,7 +31,7 @@ class CAPITest(unittest.TestCase):
         self.assertFalse(check(UserDict({1: 2})))
         self.assertFalse(check([1, 2]))
         self.assertFalse(check(object()))
-        #self.assertFalse(check(NULL))
+        # CRASHES check(NULL)
 
     def test_dict_checkexact(self):
         check = _testcapi.dict_checkexact
@@ -39,7 +40,7 @@ class CAPITest(unittest.TestCase):
         self.assertFalse(check(UserDict({1: 2})))
         self.assertFalse(check([1, 2]))
         self.assertFalse(check(object()))
-        #self.assertFalse(check(NULL))
+        # CRASHES check(NULL)
 
     def test_dict_new(self):
         dict_new = _testcapi.dict_new
@@ -118,7 +119,12 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(getitem(dct2, 'a'), 1)
         self.assertIs(getitem(dct2, 'b'), KeyError)
 
-        self.assertIs(getitem({}, []), KeyError)  # unhashable
+        with support.catch_unraisable_exception() as cm:
+            self.assertIs(getitem({}, []), KeyError)  # unhashable
+            self.assertEqual(cm.unraisable.exc_type, TypeError)
+            self.assertEqual(str(cm.unraisable.exc_value),
+                             "unhashable type: 'list'")
+
         self.assertIs(getitem(42, 'a'), KeyError)
         self.assertIs(getitem([1], 0), KeyError)
         # CRASHES getitem({}, NULL)
@@ -135,7 +141,12 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(getitemstring(dct2, b'a'), 1)
         self.assertIs(getitemstring(dct2, b'b'), KeyError)
 
-        self.assertIs(getitemstring({}, INVALID_UTF8), KeyError)
+        with support.catch_unraisable_exception() as cm:
+            self.assertIs(getitemstring({}, INVALID_UTF8), KeyError)
+            self.assertEqual(cm.unraisable.exc_type, UnicodeDecodeError)
+            self.assertRegex(str(cm.unraisable.exc_value),
+                             "'utf-8' codec can't decode")
+
         self.assertIs(getitemstring(42, b'a'), KeyError)
         self.assertIs(getitemstring([], b'a'), KeyError)
         # CRASHES getitemstring({}, NULL)
@@ -420,6 +431,93 @@ class CAPITest(unittest.TestCase):
         # CRASHES mergefromseq2(42, [], 0)
         # CRASHES mergefromseq2({}, NULL, 0)
         # CRASHES mergefromseq2(NULL, {}, 0)
+
+    def test_dict_pop(self):
+        # Test PyDict_Pop()
+        dict_pop = _testcapi.dict_pop
+        dict_pop_null = _testcapi.dict_pop_null
+
+        # key present, get removed value
+        mydict = {"key": "value", "key2": "value2"}
+        self.assertEqual(dict_pop(mydict, "key"), (1, "value"))
+        self.assertEqual(mydict, {"key2": "value2"})
+        self.assertEqual(dict_pop(mydict, "key2"), (1, "value2"))
+        self.assertEqual(mydict, {})
+
+        # key present, ignore removed value
+        mydict = {"key": "value", "key2": "value2"}
+        self.assertEqual(dict_pop_null(mydict, "key"), 1)
+        self.assertEqual(mydict, {"key2": "value2"})
+        self.assertEqual(dict_pop_null(mydict, "key2"), 1)
+        self.assertEqual(mydict, {})
+
+        # key missing, expect removed value; empty dict has a fast path
+        self.assertEqual(dict_pop({}, "key"), (0, NULL))
+        self.assertEqual(dict_pop({"a": 1}, "key"), (0, NULL))
+
+        # key missing, ignored removed value; empty dict has a fast path
+        self.assertEqual(dict_pop_null({}, "key"), 0)
+        self.assertEqual(dict_pop_null({"a": 1}, "key"), 0)
+
+        # dict error
+        not_dict = UserDict({1: 2})
+        self.assertRaises(SystemError, dict_pop, not_dict, "key")
+        self.assertRaises(SystemError, dict_pop_null, not_dict, "key")
+
+        # key error; don't hash key if dict is empty
+        not_hashable_key = ["list"]
+        self.assertEqual(dict_pop({}, not_hashable_key), (0, NULL))
+        with self.assertRaises(TypeError):
+            dict_pop({'key': 1}, not_hashable_key)
+        dict_pop({}, NULL)  # key is not checked if dict is empty
+
+        # CRASHES dict_pop(NULL, "key")
+        # CRASHES dict_pop({"a": 1}, NULL)
+
+    def test_dict_popstring(self):
+        # Test PyDict_PopString()
+        dict_popstring = _testcapi.dict_popstring
+        dict_popstring_null = _testcapi.dict_popstring_null
+
+        # key present, get removed value
+        mydict = {"key": "value", "key2": "value2"}
+        self.assertEqual(dict_popstring(mydict, "key"), (1, "value"))
+        self.assertEqual(mydict, {"key2": "value2"})
+        self.assertEqual(dict_popstring(mydict, "key2"), (1, "value2"))
+        self.assertEqual(mydict, {})
+
+        # key present, ignore removed value
+        mydict = {"key": "value", "key2": "value2"}
+        self.assertEqual(dict_popstring_null(mydict, "key"), 1)
+        self.assertEqual(mydict, {"key2": "value2"})
+        self.assertEqual(dict_popstring_null(mydict, "key2"), 1)
+        self.assertEqual(mydict, {})
+
+        # key missing; empty dict has a fast path
+        self.assertEqual(dict_popstring({}, "key"), (0, NULL))
+        self.assertEqual(dict_popstring_null({}, "key"), 0)
+        self.assertEqual(dict_popstring({"a": 1}, "key"), (0, NULL))
+        self.assertEqual(dict_popstring_null({"a": 1}, "key"), 0)
+
+        # non-ASCII key
+        non_ascii = '\U0001f40d'
+        dct = {'\U0001f40d': 123}
+        self.assertEqual(dict_popstring(dct, '\U0001f40d'.encode()), (1, 123))
+        dct = {'\U0001f40d': 123}
+        self.assertEqual(dict_popstring_null(dct, '\U0001f40d'.encode()), 1)
+
+        # dict error
+        not_dict = UserDict({1: 2})
+        self.assertRaises(SystemError, dict_popstring, not_dict, "key")
+        self.assertRaises(SystemError, dict_popstring_null, not_dict, "key")
+
+        # key error
+        self.assertRaises(UnicodeDecodeError, dict_popstring, {1: 2}, INVALID_UTF8)
+        self.assertRaises(UnicodeDecodeError, dict_popstring_null, {1: 2}, INVALID_UTF8)
+
+        # CRASHES dict_popstring(NULL, "key")
+        # CRASHES dict_popstring({}, NULL)
+        # CRASHES dict_popstring({"a": 1}, NULL)
 
 
 if __name__ == "__main__":

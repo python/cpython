@@ -1,3 +1,0 @@
-:meth:`pathlib.Path.resolve` now treats symlink loops like other errors: in
-strict mode, :exc:`OSError` is raised, and in non-strict mode, no exception
-is raised.

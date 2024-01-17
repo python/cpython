@@ -1,4 +1,0 @@
-regrtest: Add ``--fast-ci`` and ``--slow-ci`` options. ``--fast-ci`` uses a
-default timeout of 10 minutes and ``-u all,-cpu`` (skip slowest tests).
-``--slow-ci`` uses a default timeout of 20 minues and ``-u all`` (run all
-tests). Patch by Victor Stinner.

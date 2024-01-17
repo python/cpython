@@ -1,2 +1,0 @@
-Opcode IDs for specialized opcodes are allocated in their own range to
-improve stability of the IDs for the 'real' opcodes.

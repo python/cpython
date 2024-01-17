@@ -21,7 +21,7 @@ from test.support import (captured_stdout, captured_stderr,
                           skip_if_broken_multiprocessing_synchronize, verbose,
                           requires_subprocess, is_emscripten, is_wasi,
                           requires_venv_with_pip, TEST_HOME_DIR,
-                          requires_resource)
+                          requires_resource, copy_python_src_ignore)
 from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree)
 import unittest
 import venv
@@ -47,13 +47,18 @@ def check_output(cmd, encoding=None):
     p = subprocess.Popen(cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        encoding=encoding)
+        env={**os.environ, "PYTHONHOME": ""})
     out, err = p.communicate()
     if p.returncode:
         if verbose and err:
-            print(err.decode('utf-8', 'backslashreplace'))
+            print(err.decode(encoding or 'utf-8', 'backslashreplace'))
         raise subprocess.CalledProcessError(
             p.returncode, cmd, out, err)
+    if encoding:
+        return (
+            out.decode(encoding, 'backslashreplace'),
+            err.decode(encoding, 'backslashreplace'),
+        )
     return out, err
 
 class BaseTest(unittest.TestCase):
@@ -281,8 +286,18 @@ class BasicTest(BaseTest):
             ('get_config_h_filename()', sysconfig.get_config_h_filename())):
             with self.subTest(call):
                 cmd[2] = 'import sysconfig; print(sysconfig.%s)' % call
-                out, err = check_output(cmd)
-                self.assertEqual(out.strip(), expected.encode(), err)
+                out, err = check_output(cmd, encoding='utf-8')
+                self.assertEqual(out.strip(), expected, err)
+        for attr, expected in (
+            ('executable', self.envpy()),
+            # Usually compare to sys.executable, but if we're running in our own
+            # venv then we really need to compare to our base executable
+            ('_base_executable', sys._base_executable),
+        ):
+            with self.subTest(attr):
+                cmd[2] = f'import sys; print(sys.{attr})'
+                out, err = check_output(cmd, encoding='utf-8')
+                self.assertEqual(out.strip(), expected, err)
 
     @requireVenvCreate
     @unittest.skipUnless(can_symlink(), 'Needs symlinks')
@@ -303,8 +318,19 @@ class BasicTest(BaseTest):
             ('get_config_h_filename()', sysconfig.get_config_h_filename())):
             with self.subTest(call):
                 cmd[2] = 'import sysconfig; print(sysconfig.%s)' % call
-                out, err = check_output(cmd)
-                self.assertEqual(out.strip(), expected.encode(), err)
+                out, err = check_output(cmd, encoding='utf-8')
+                self.assertEqual(out.strip(), expected, err)
+        for attr, expected in (
+            ('executable', self.envpy()),
+            # Usually compare to sys.executable, but if we're running in our own
+            # venv then we really need to compare to our base executable
+            # HACK: Test fails on POSIX with unversioned binary (PR gh-113033)
+            #('_base_executable', sys._base_executable),
+        ):
+            with self.subTest(attr):
+                cmd[2] = f'import sys; print(sys.{attr})'
+                out, err = check_output(cmd, encoding='utf-8')
+                self.assertEqual(out.strip(), expected, err)
 
     if sys.platform == 'win32':
         ENV_SUBDIRS = (
@@ -560,12 +586,6 @@ class BasicTest(BaseTest):
                                     stdlib_zip)
         additional_pythonpath_for_non_installed = []
 
-        # gh-109748: Don't copy __pycache__/ sub-directories, because they can
-        # be modified by other Python tests running in parallel.
-        ignored_names = {'__pycache__'}
-        def ignore_pycache(src, names):
-            return ignored_names
-
         # Copy stdlib files to the non-installed python so venv can
         # correctly calculate the prefix.
         for eachpath in sys.path:
@@ -575,7 +595,11 @@ class BasicTest(BaseTest):
                         eachpath,
                         os.path.join(non_installed_dir, platlibdir))
             elif os.path.isfile(os.path.join(eachpath, "os.py")):
-                for name in os.listdir(eachpath):
+                names = os.listdir(eachpath)
+                ignored_names = copy_python_src_ignore(eachpath, names)
+                for name in names:
+                    if name in ignored_names:
+                        continue
                     if name == "site-packages":
                         continue
                     fn = os.path.join(eachpath, name)
@@ -583,7 +607,7 @@ class BasicTest(BaseTest):
                         shutil.copy(fn, libdir)
                     elif os.path.isdir(fn):
                         shutil.copytree(fn, os.path.join(libdir, name),
-                                        ignore=ignore_pycache)
+                                        ignore=copy_python_src_ignore)
             else:
                 additional_pythonpath_for_non_installed.append(
                     eachpath)

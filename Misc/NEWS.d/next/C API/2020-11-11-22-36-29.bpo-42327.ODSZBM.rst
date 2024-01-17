@@ -1,1 +1,0 @@
-Add :c:func:`PyModule_Add` function: similar to :c:func:`PyModule_AddObjectRef` and :c:func:`PyModule_AddObject`, but always steals a reference to the value.

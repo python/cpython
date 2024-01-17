@@ -516,7 +516,11 @@ class BuildProfile:
     def getenv(self) -> Dict[str, Any]:
         """Generate environ dict for platform"""
         env = os.environ.copy()
-        env.setdefault("MAKEFLAGS", f"-j{os.cpu_count()}")
+        if hasattr(os, 'process_cpu_count'):
+            cpu_count = os.process_cpu_count()
+        else:
+            cpu_count = os.cpu_count()
+        env.setdefault("MAKEFLAGS", f"-j{cpu_count}")
         platenv = self.host.platform.getenv(self)
         for key, value in platenv.items():
             if value is None:

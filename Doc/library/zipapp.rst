@@ -54,7 +54,7 @@ The following options are understood:
 
 .. program:: zipapp
 
-.. cmdoption:: -o <output>, --output=<output>
+.. option:: -o <output>, --output=<output>
 
    Write the output to a file named *output*.  If this option is not specified,
    the output filename will be the same as the input *source*, with the
@@ -64,13 +64,13 @@ The following options are understood:
    An output filename must be specified if the *source* is an archive (and in
    that case, *output* must not be the same as *source*).
 
-.. cmdoption:: -p <interpreter>, --python=<interpreter>
+.. option:: -p <interpreter>, --python=<interpreter>
 
    Add a ``#!`` line to the archive specifying *interpreter* as the command
    to run.  Also, on POSIX, make the archive executable.  The default is to
    write no ``#!`` line, and not make the file executable.
 
-.. cmdoption:: -m <mainfn>, --main=<mainfn>
+.. option:: -m <mainfn>, --main=<mainfn>
 
    Write a ``__main__.py`` file to the archive that executes *mainfn*.  The
    *mainfn* argument should have the form "pkg.mod:fn", where "pkg.mod" is a
@@ -79,7 +79,7 @@ The following options are understood:
 
    :option:`--main` cannot be specified when copying an archive.
 
-.. cmdoption:: -c, --compress
+.. option:: -c, --compress
 
    Compress files with the deflate method, reducing the size of the output
    file. By default, files are stored uncompressed in the archive.
@@ -88,13 +88,13 @@ The following options are understood:
 
    .. versionadded:: 3.7
 
-.. cmdoption:: --info
+.. option:: --info
 
    Display the interpreter embedded in the archive, for diagnostic purposes.  In
    this case, any other options are ignored and SOURCE must be an archive, not a
    directory.
 
-.. cmdoption:: -h, --help
+.. option:: -h, --help
 
    Print a short usage message and exit.
 

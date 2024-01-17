@@ -1,2 +1,0 @@
-Optimize :meth:`SelectSelector.select` for many iteration case. Patch By
-Donghee Na.

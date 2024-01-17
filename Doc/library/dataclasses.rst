@@ -319,13 +319,11 @@ Module contents
    module-level method (see below).  Users should never instantiate a
    :class:`Field` object directly.  Its documented attributes are:
 
-     - ``name``: The name of the field.
-
-     - ``type``: The type of the field.
-
-     - ``default``, ``default_factory``, ``init``, ``repr``, ``hash``,
-       ``compare``, ``metadata``, and ``kw_only`` have the identical
-       meaning and values as they do in the :func:`field` function.
+   - ``name``: The name of the field.
+   - ``type``: The type of the field.
+   - ``default``, ``default_factory``, ``init``, ``repr``, ``hash``,
+     ``compare``, ``metadata``, and ``kw_only`` have the identical
+     meaning and values as they do in the :func:`field` function.
 
    Other attributes may exist, but they are private and must not be
    inspected or relied on.
@@ -538,10 +536,10 @@ class :meth:`~object.__init__` methods. If the base class has an :meth:`~object.
 that has to be called, it is common to call this method in a
 :meth:`__post_init__` method::
 
-    @dataclass
     class Rectangle:
-        height: float
-        width: float
+        def __init__(self, height, width):
+          self.height = height
+          self.width = width
 
     @dataclass
     class Square(Rectangle):

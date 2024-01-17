@@ -21,6 +21,7 @@ STDLIB_DIR = os.path.join(ROOT_DIR, 'Lib')
 # .gitattributes and .gitignore files needs to be updated.
 FROZEN_MODULES_DIR = os.path.join(ROOT_DIR, 'Python', 'frozen_modules')
 DEEPFROZEN_MODULES_DIR = os.path.join(ROOT_DIR, 'Python', 'deepfreeze')
+DEEPFREEZE_MAPPING_FNAME = 'deepfreeze_mappings.txt'
 
 FROZEN_FILE = os.path.join(ROOT_DIR, 'Python', 'frozen.c')
 MAKEFILE = os.path.join(ROOT_DIR, 'Makefile.pre.in')
@@ -467,6 +468,17 @@ def replace_block(lines, start_marker, end_marker, replacements, file):
     return lines[:start_pos + 1] + replacements + lines[end_pos:]
 
 
+class UniqueList(list):
+    def __init__(self):
+        self._seen = set()
+
+    def append(self, item):
+        if item in self._seen:
+            return
+        super().append(item)
+        self._seen.add(item)
+
+
 def regen_frozen(modules):
     headerlines = []
     parentdir = os.path.dirname(FROZEN_FILE)
@@ -476,7 +488,7 @@ def regen_frozen(modules):
         header = relpath_for_posix_display(src.frozenfile, parentdir)
         headerlines.append(f'#include "{header}"')
 
-    externlines = []
+    externlines = UniqueList()
     bootstraplines = []
     stdliblines = []
     testlines = []
@@ -645,7 +657,9 @@ def regen_pcbuild(modules):
     projlines = []
     filterlines = []
     corelines = []
-    deepfreezerules = ['\t<Exec Command=\'$(PythonForBuild) "$(PySourcePath)Tools\\build\\deepfreeze.py" ^']
+    deepfreezemappingsfile = f'$(IntDir)\\{DEEPFREEZE_MAPPING_FNAME}'
+    deepfreezerules = [f'    <Exec Command=\'$(PythonForBuild) "$(PySourcePath)Tools\\build\\deepfreeze.py" -f "{deepfreezemappingsfile}" -o "$(GeneratedFrozenModulesDir)deepfreeze.c"\' />']
+    deepfreezemappings = []
     for src in _iter_sources(modules):
         pyfile = relpath_for_windows_display(src.pyfile, ROOT_DIR)
         header = relpath_for_windows_display(src.frozenfile, ROOT_DIR)
@@ -653,16 +667,15 @@ def regen_pcbuild(modules):
         projlines.append(f'    <None Include="..\\{pyfile}">')
         projlines.append(f'      <ModName>{src.frozenid}</ModName>')
         projlines.append(f'      <IntFile>$(IntDir){intfile}</IntFile>')
-        projlines.append(f'      <OutFile>$(PySourcePath){header}</OutFile>')
+        projlines.append(f'      <OutFile>$(GeneratedFrozenModulesDir){header}</OutFile>')
         projlines.append(f'    </None>')
 
         filterlines.append(f'    <None Include="..\\{pyfile}">')
         filterlines.append('      <Filter>Python Files</Filter>')
         filterlines.append('    </None>')
-        deepfreezerules.append(f'\t\t "$(PySourcePath){header}:{src.frozenid}" ^')
-    deepfreezerules.append('\t\t "-o" "$(PySourcePath)Python\\deepfreeze\\deepfreeze.c"\'/>' )
+        deepfreezemappings.append(f'    <FrozenModule Include="$(GeneratedFrozenModulesDir){header}" FrozenId="{src.frozenid}" />\n')
 
-    corelines.append(f'    <ClCompile Include="..\\Python\\deepfreeze\\deepfreeze.c" />')
+    corelines.append(f'    <ClCompile Include="$(GeneratedFrozenModulesDir)deepfreeze.c" />')
 
     print(f'# Updating {os.path.relpath(PCBUILD_PROJECT)}')
     with updating_file_with_tmpfile(PCBUILD_PROJECT) as (infile, outfile):
@@ -672,6 +685,26 @@ def regen_pcbuild(modules):
             '<!-- BEGIN frozen modules -->',
             '<!-- END frozen modules -->',
             projlines,
+            PCBUILD_PROJECT,
+        )
+        outfile.writelines(lines)
+    with updating_file_with_tmpfile(PCBUILD_PROJECT) as (infile, outfile):
+        lines = infile.readlines()
+        lines = replace_block(
+            lines,
+            '<!-- BEGIN freeze mappings -->',
+            '<!-- END freeze mappings -->',
+            deepfreezemappings,
+            PCBUILD_PROJECT,
+        )
+        outfile.writelines(lines)
+    with updating_file_with_tmpfile(PCBUILD_PROJECT) as (infile, outfile):
+        lines = infile.readlines()
+        lines = replace_block(
+            lines,
+            '<!-- BEGIN freeze mapping file -->',
+            '<!-- END freeze mapping file -->',
+            [deepfreezemappingsfile, ],
             PCBUILD_PROJECT,
         )
         outfile.writelines(lines)

@@ -14,8 +14,7 @@ from test import support
 from test.support import os_helper
 
 
-MS_WINDOWS = (sys.platform == 'win32')
-if MS_WINDOWS:
+if support.MS_WINDOWS:
     import msvcrt
 else:
     from asyncio import unix_events
@@ -283,7 +282,7 @@ class SubprocessMixin:
         rfd, wfd = os.pipe()
         self.addCleanup(os.close, rfd)
         self.addCleanup(os.close, wfd)
-        if MS_WINDOWS:
+        if support.MS_WINDOWS:
             handle = msvcrt.get_osfhandle(rfd)
             os.set_handle_inheritable(handle, True)
             code = textwrap.dedent(f'''
@@ -976,8 +975,13 @@ if sys.platform != 'win32':
 
             async def main():
                 # asyncio.Runner did not call asyncio.set_event_loop()
-                with self.assertRaises(RuntimeError):
-                    asyncio.get_event_loop_policy().get_event_loop()
+                with warnings.catch_warnings():
+                    warnings.simplefilter('error', DeprecationWarning)
+                    # get_event_loop() raises DeprecationWarning if
+                    # set_event_loop() was never called and RuntimeError if
+                    # it was called at least once.
+                    with self.assertRaises((RuntimeError, DeprecationWarning)):
+                        asyncio.get_event_loop_policy().get_event_loop()
                 return await asyncio.to_thread(asyncio.run, in_thread())
             with self.assertWarns(DeprecationWarning):
                 asyncio.set_child_watcher(asyncio.PidfdChildWatcher())
