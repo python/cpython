@@ -2766,6 +2766,7 @@ def _refold_parse_tree(parse_tree, *, policy):
     encoding = 'utf-8' if policy.utf8 else 'us-ascii'
     lines = ['']
     last_ew = None
+    last_charset = None
     wrap_as_ew_blocked = 0
     want_encoding = False
     end_ew_not_allowed = Terminal('', 'wrap_as_ew_blocked')
@@ -2820,8 +2821,14 @@ def _refold_parse_tree(parse_tree, *, policy):
             else:
                 # It's a terminal, wrap it as an encoded word, possibly
                 # combining it with previously encoded words if allowed.
+                if (last_ew is not None and
+                    charset != last_charset and
+                    (last_charset == 'unknown-8bit' or
+                     last_charset == 'utf-8' and charset != 'us-ascii')):
+                    last_ew = None
                 last_ew = _fold_as_ew(tstr, lines, maxlen, last_ew,
                                       part.ew_combine_allowed, charset)
+                last_charset = charset
             want_encoding = False
             continue
         if len(tstr) <= maxlen - len(lines[-1]):

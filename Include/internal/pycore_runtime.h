@@ -21,7 +21,6 @@ extern "C" {
 #include "pycore_pymem.h"           // struct _pymem_allocators
 #include "pycore_pythread.h"        // struct _pythread_runtime_state
 #include "pycore_signal.h"          // struct _signals_runtime_state
-#include "pycore_time.h"            // struct _time_runtime_state
 #include "pycore_tracemalloc.h"     // struct _tracemalloc_runtime_state
 #include "pycore_typeobject.h"      // struct _types_runtime_state
 #include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_state
@@ -174,7 +173,7 @@ typedef struct pyruntimestate {
     unsigned long _finalizing_id;
 
     struct pyinterpreters {
-        PyThread_type_lock mutex;
+        PyMutex mutex;
         /* The linked list of interpreters, newest first. */
         PyInterpreterState *head;
         /* The runtime's initial interpreter, which has a special role
@@ -205,7 +204,6 @@ typedef struct pyruntimestate {
     struct _pymem_allocators allocators;
     struct _obmalloc_global_state obmalloc;
     struct pyhash_runtime_state pyhash_state;
-    struct _time_runtime_state time;
     struct _pythread_runtime_state threads;
     struct _signals_runtime_state signals;
 
@@ -236,7 +234,7 @@ typedef struct pyruntimestate {
     Py_OpenCodeHookFunction open_code_hook;
     void *open_code_userdata;
     struct {
-        PyThread_type_lock mutex;
+        PyMutex mutex;
         _Py_AuditHookEntry *head;
     } audit_hooks;
 

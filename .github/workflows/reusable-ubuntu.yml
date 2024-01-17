@@ -41,6 +41,9 @@ jobs:
         echo "PATH=/usr/lib/ccache:$PATH" >> $GITHUB_ENV
     - name: Configure ccache action
       uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        save: ${{ github.event_name == 'push' }}
+        max-size: "200M"
     - name: Setup directory envs for out-of-tree builds
       run: |
         echo "CPYTHON_RO_SRCDIR=$(realpath -m ${GITHUB_WORKSPACE}/../cpython-ro-srcdir)" >> $GITHUB_ENV

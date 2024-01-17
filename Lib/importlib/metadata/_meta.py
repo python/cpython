@@ -49,7 +49,7 @@ class SimplePath(Protocol[_T]):
     A minimal subset of pathlib.Path required by PathDistribution.
     """
 
-    def joinpath(self) -> _T:
+    def joinpath(self, other: Union[str, _T]) -> _T:
         ...  # pragma: no cover
 
     def __truediv__(self, other: Union[str, _T]) -> _T:

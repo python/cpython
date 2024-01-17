@@ -1205,6 +1205,18 @@ always available.
 
    .. versionadded:: 3.12
 
+.. function:: _is_interned(string)
+
+   Return :const:`True` if the given string is "interned", :const:`False`
+   otherwise.
+
+   .. versionadded:: 3.13
+
+   .. impl-detail::
+
+      It is not guaranteed to exist in all implementations of Python.
+
+
 .. data:: last_type
           last_value
           last_traceback
@@ -1256,10 +1268,13 @@ always available.
     .. versionchanged:: 3.4
 
         :term:`Module specs <module spec>` were introduced in Python 3.4, by
-        :pep:`451`. Earlier versions of Python looked for a method called
-        :meth:`!find_module`.
-        This is still called as a fallback if a :data:`meta_path` entry doesn't
-        have a :meth:`~importlib.abc.MetaPathFinder.find_spec` method.
+        :pep:`451`.
+
+    .. versionchanged:: 3.12
+
+        Removed the fallback that looked for a :meth:`!find_module` method
+        if a :data:`meta_path` entry didn't have a
+        :meth:`~importlib.abc.MetaPathFinder.find_spec` method.
 
 .. data:: modules
 
@@ -1588,7 +1603,8 @@ always available.
       :file:`Objects/lnotab_notes.txt` for a detailed explanation of how this
       works.
       Per-line events may be disabled for a frame by setting
-      :attr:`!f_trace_lines` to :const:`False` on that :ref:`frame <frame-objects>`.
+      :attr:`~frame.f_trace_lines` to :const:`False` on that
+      :ref:`frame <frame-objects>`.
 
    ``'return'``
       A function (or other code block) is about to return.  The local trace
@@ -1606,7 +1622,7 @@ always available.
       opcode details).  The local trace function is called; *arg* is
       ``None``; the return value specifies the new local trace function.
       Per-opcode events are not emitted by default: they must be explicitly
-      requested by setting :attr:`!f_trace_opcodes` to :const:`True` on the
+      requested by setting :attr:`~frame.f_trace_opcodes` to :const:`True` on the
       :ref:`frame <frame-objects>`.
 
    Note that as an exception is propagated down the chain of callers, an
@@ -1636,8 +1652,8 @@ always available.
 
    .. versionchanged:: 3.7
 
-      ``'opcode'`` event type added; :attr:`!f_trace_lines` and
-      :attr:`!f_trace_opcodes` attributes added to frames
+      ``'opcode'`` event type added; :attr:`~frame.f_trace_lines` and
+      :attr:`~frame.f_trace_opcodes` attributes added to frames
 
 .. function:: set_asyncgen_hooks(firstiter, finalizer)
 
@@ -1731,8 +1747,16 @@ always available.
 
    .. availability:: Windows.
 
+   .. note::
+      Changing the filesystem encoding after Python startup is risky because
+      the old fsencoding or paths encoded by the old fsencoding may be cached
+      somewhere. Use :envvar:`PYTHONLEGACYWINDOWSFSENCODING` instead.
+
    .. versionadded:: 3.6
       See :pep:`529` for more details.
+
+   .. deprecated-removed:: 3.13 3.16
+      Use :envvar:`PYTHONLEGACYWINDOWSFSENCODING` instead.
 
 .. data:: stdin
           stdout

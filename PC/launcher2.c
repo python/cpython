@@ -438,7 +438,7 @@ typedef struct {
     bool list;
     // if true, only list detected runtimes with paths without launching
     bool listPaths;
-    // if true, display help message before contiuning
+    // if true, display help message before continuing
     bool help;
     // if set, limits search to registry keys with the specified Company
     // This is intended for debugging and testing only

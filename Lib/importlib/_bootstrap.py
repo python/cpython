@@ -824,10 +824,16 @@ def _module_repr_from_spec(spec):
     """Return the repr to use for the module."""
     name = '?' if spec.name is None else spec.name
     if spec.origin is None:
-        if spec.loader is None:
+        loader = spec.loader
+        if loader is None:
             return f'<module {name!r}>'
+        elif (
+            _bootstrap_external is not None
+            and isinstance(loader, _bootstrap_external.NamespaceLoader)
+        ):
+            return f'<module {name!r} (namespace) from {list(loader._path)}>'
         else:
-            return f'<module {name!r} (namespace) from {list(spec.loader._path)}>'
+            return f'<module {name!r} ({loader!r})>'
     else:
         if spec.has_location:
             return f'<module {name!r} from {spec.origin!r}>'
