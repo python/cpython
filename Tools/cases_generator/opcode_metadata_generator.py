@@ -50,6 +50,8 @@ FLAGS = [
     "DEOPT",
     "ERROR",
     "ESCAPES",
+    "PURE",
+    "PASSTHROUGH",
 ]
 
 
