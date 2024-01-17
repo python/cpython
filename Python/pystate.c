@@ -1462,6 +1462,7 @@ _Py_ClearFreeLists(_PyFreeListState *state, int is_finalization)
     _PyTuple_ClearFreeList(state, is_finalization);
     _PyList_ClearFreeList(state, is_finalization);
     _PyContext_ClearFreeList(state, is_finalization);
+    _PyAsyncGen_ClearFreeLists(state, is_finalization);
 }
 
 void
