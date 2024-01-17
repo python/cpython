@@ -1,11 +1,12 @@
 name: JIT
 on:
-  - pull_request
-  - push
+  pull_request:
+    paths: '**jit**'
+  push:
+    paths: '**jit**'
+  workflow_dispatch:
 jobs:
   jit:
-    # Comment this line to run JIT CI:
-    # if: false  # XXX: Uncomment before merging.
     name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }})
     runs-on: ${{ matrix.runner }}
     strategy:
@@ -69,7 +70,7 @@ jobs:
       - name: Windows
         if: runner.os == 'Windows'
         run: |
-          choco install llvm --allow-downgrade --version ${{ matrix.llvm }}
+          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}
           ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '--pgo' }} -p ${{ matrix.architecture }}
           ./PCbuild/rt.bat ${{ matrix.debug && '-d' }} -p ${{ matrix.architecture }} -q --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3
 
