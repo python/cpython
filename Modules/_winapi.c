@@ -2174,12 +2174,16 @@ Supports a larger number of handles than WaitForMultipleObjects
 
 Note that the handles may be waited on other threads, which could cause
 issues for objects like mutexes that become associated with the thread
-that was waiting for them.
+that was waiting for them. Objects may also be left signalled, even if
+the wait fails.
 
-It is generally recommended to use WaitForMultipleObjects whenever
-possible, and only switch to BatchedWaitForMultipleObjects for scenarios
-where you control all the handles involved, such as your own thread pool
-or files.
+It is recommended to use WaitForMultipleObjects whenever possible, and
+only switch to BatchedWaitForMultipleObjects for scenarios where you
+control all the handles involved, such as your own thread pool or
+files, and all wait objects are left unmodified by a wait (for example,
+manual reset events, threads, and files/pipes).
+
+Overlapped handles returned from this module use manual reset events.
 [clinic start generated code]*/
 
 static PyObject *
@@ -2281,6 +2285,7 @@ _winapi_BatchedWaitForMultipleObjects_impl(PyObject *module,
                 long long time_to_deadline = deadline - GetTickCount64();
                 if (time_to_deadline <= 0) {
                     err = WAIT_TIMEOUT;
+                    break;
                 } else if (time_to_deadline < UINT_MAX) {
                     timeout = (DWORD)time_to_deadline;
                 }
