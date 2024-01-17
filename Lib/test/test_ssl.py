@@ -150,6 +150,9 @@ OP_CIPHER_SERVER_PREFERENCE = getattr(ssl, "OP_CIPHER_SERVER_PREFERENCE", 0)
 OP_ENABLE_MIDDLEBOX_COMPAT = getattr(ssl, "OP_ENABLE_MIDDLEBOX_COMPAT", 0)
 OP_IGNORE_UNEXPECTED_EOF = getattr(ssl, "OP_IGNORE_UNEXPECTED_EOF", 0)
 
+# *_TIMEOUT constants are available in test.support in 3.9+
+SHORT_TIMEOUT = 30.0
+
 # Ubuntu has patched OpenSSL and changed behavior of security level 2
 # see https://bugs.python.org/issue41561#msg389003
 def is_ubuntu():
@@ -4835,7 +4838,7 @@ class TestPreHandshakeClose(unittest.TestCase):
             self.listener = None  # set by .start()
             self.port = None  # set by .start()
             if timeout is None:
-                self.timeout = support.SHORT_TIMEOUT
+                self.timeout = SHORT_TIMEOUT
             else:
                 self.timeout = timeout
             super().__init__(name=name)
@@ -4917,7 +4920,7 @@ class TestPreHandshakeClose(unittest.TestCase):
 
         def call_after_accept(unused):
             server_accept_called.set()
-            if not ready_for_server_wrap_socket.wait(support.SHORT_TIMEOUT):
+            if not ready_for_server_wrap_socket.wait(SHORT_TIMEOUT):
                 raise RuntimeError("wrap_socket event never set, test may fail.")
             return False  # Tell the server thread to continue.
 
@@ -4961,7 +4964,7 @@ class TestPreHandshakeClose(unittest.TestCase):
         client_can_continue_with_wrap_socket = threading.Event()
 
         def call_after_accept(conn_to_client):
-            if not server_can_continue_with_wrap_socket.wait(support.SHORT_TIMEOUT):
+            if not server_can_continue_with_wrap_socket.wait(SHORT_TIMEOUT):
                 print("ERROR: test client took too long")
 
             # This forces an immediate connection close via RST on .close().
@@ -4987,7 +4990,7 @@ class TestPreHandshakeClose(unittest.TestCase):
             client.connect(server.listener.getsockname())
             server_can_continue_with_wrap_socket.set()
 
-            if not client_can_continue_with_wrap_socket.wait(support.SHORT_TIMEOUT):
+            if not client_can_continue_with_wrap_socket.wait(SHORT_TIMEOUT):
                 self.fail("test server took too long")
             ssl_ctx = ssl.create_default_context()
             try:
@@ -5026,7 +5029,7 @@ class TestPreHandshakeClose(unittest.TestCase):
                 http.client.HTTPConnection.connect(self)
 
                 # Wait for our fault injection server to have done its thing.
-                if not server_responding.wait(support.SHORT_TIMEOUT) and support.verbose:
+                if not server_responding.wait(SHORT_TIMEOUT) and support.verbose:
                     sys.stdout.write("server_responding event never set.")
                 self.sock = self._context.wrap_socket(
                         self.sock, server_hostname=self.host)
@@ -5104,7 +5107,7 @@ def test_main(verbose=False):
     tests = [
         ContextTests, BasicSocketTests, SSLErrorTests, MemoryBIOTests,
         SSLObjectTests, SimpleBackgroundTests, ThreadedTests,
-        TestPostHandshakeAuth, TestSSLDebug
+        TestPostHandshakeAuth, TestSSLDebug, TestPreHandshakeClose
     ]
 
     if support.is_resource_enabled('network'):
