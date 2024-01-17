@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 static int
 pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
@@ -1557,10 +1557,6 @@ deserialize(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, 
         if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
             goto exit;
         }
-        if (!PyBuffer_IsContiguous(&data, 'C')) {
-            _PyArg_BadArgument("deserialize", "argument 1", "contiguous buffer", args[0]);
-            goto exit;
-        }
     }
     if (!noptargs) {
         goto skip_optional_kwonly;
@@ -1822,4 +1818,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=f06b254bc5c2bcaf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=90b5b9c14261b8d7 input=a9049054013a1b77]*/

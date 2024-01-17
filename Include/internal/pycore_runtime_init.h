@@ -58,7 +58,7 @@ extern PyTypeObject _PyExc_MemoryError;
             .interpreter_frame = { \
                 .previous = offsetof(_PyInterpreterFrame, previous), \
                 .executable = offsetof(_PyInterpreterFrame, f_executable), \
-                .prev_instr = offsetof(_PyInterpreterFrame, prev_instr), \
+                .instr_ptr = offsetof(_PyInterpreterFrame, instr_ptr), \
                 .localsplus = offsetof(_PyInterpreterFrame, localsplus), \
                 .owner = offsetof(_PyInterpreterFrame, owner), \
             }, \
@@ -86,6 +86,7 @@ extern PyTypeObject _PyExc_MemoryError;
             .standard = _pymem_allocators_standard_INIT(runtime), \
             .debug = _pymem_allocators_debug_INIT, \
             .obj_arena = _pymem_allocators_obj_arena_INIT, \
+            .is_debug_enabled = _pymem_is_debug_enabled_INIT, \
         }, \
         .obmalloc = _obmalloc_global_state_INIT, \
         .pyhash_state = pyhash_state_INIT, \
@@ -94,6 +95,11 @@ extern PyTypeObject _PyExc_MemoryError;
             /* This prevents interpreters from getting created \
               until _PyInterpreterState_Enable() is called. */ \
             .next_id = -1, \
+        }, \
+        .xi = { \
+            .registry = { \
+                .global = 1, \
+            }, \
         }, \
         /* A TSS key must be initialized with Py_tss_NEEDS_INIT \
            in accordance with the specification. */ \
@@ -129,13 +135,13 @@ extern PyTypeObject _PyExc_MemoryError;
                     .latin1 = _Py_str_latin1_INIT, \
                 }, \
                 .tuple_empty = { \
-                    .ob_base = _PyVarObject_HEAD_INIT(&PyTuple_Type, 0) \
+                    .ob_base = _PyVarObject_HEAD_INIT(&PyTuple_Type, 0), \
                 }, \
                 .hamt_bitmap_node_empty = { \
-                    .ob_base = _PyVarObject_HEAD_INIT(&_PyHamt_BitmapNode_Type, 0) \
+                    .ob_base = _PyVarObject_HEAD_INIT(&_PyHamt_BitmapNode_Type, 0), \
                 }, \
                 .context_token_missing = { \
-                    .ob_base = _PyObject_HEAD_INIT(&_PyContextTokenMissing_Type) \
+                    .ob_base = _PyObject_HEAD_INIT(&_PyContextTokenMissing_Type), \
                 }, \
             }, \
         }, \
@@ -172,19 +178,26 @@ extern PyTypeObject _PyExc_MemoryError;
             .singletons = { \
                 ._not_used = 1, \
                 .hamt_empty = { \
-                    .ob_base = _PyObject_HEAD_INIT(&_PyHamt_Type) \
+                    .ob_base = _PyObject_HEAD_INIT(&_PyHamt_Type), \
                     .h_root = (PyHamtNode*)&_Py_SINGLETON(hamt_bitmap_node_empty), \
                 }, \
                 .last_resort_memory_error = { \
-                    _PyObject_HEAD_INIT(&_PyExc_MemoryError) \
+                    _PyObject_HEAD_INIT(&_PyExc_MemoryError), \
+                    .args = (PyObject*)&_Py_SINGLETON(tuple_empty) \
                 }, \
             }, \
         }, \
-        ._initial_thread = _PyThreadState_INIT, \
+        ._initial_thread = _PyThreadStateImpl_INIT, \
+    }
+
+#define _PyThreadStateImpl_INIT \
+    { \
+        .base = _PyThreadState_INIT, \
     }
 
 #define _PyThreadState_INIT \
     { \
+        ._whence = _PyThreadState_WHENCE_NOTSET, \
         .py_recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
         .context_ver = 1, \
     }
@@ -192,7 +205,7 @@ extern PyTypeObject _PyExc_MemoryError;
 #ifdef Py_TRACE_REFS
 # define _py_object_state_INIT(INTERP) \
     { \
-        .refchain = {&INTERP.object_state.refchain, &INTERP.object_state.refchain}, \
+        .refchain = NULL, \
     }
 #else
 # define _py_object_state_INIT(INTERP) \
@@ -204,7 +217,7 @@ extern PyTypeObject _PyExc_MemoryError;
 
 #define _PyBytes_SIMPLE_INIT(CH, LEN) \
     { \
-        _PyVarObject_HEAD_INIT(&PyBytes_Type, (LEN)) \
+        _PyVarObject_HEAD_INIT(&PyBytes_Type, (LEN)), \
         .ob_shash = -1, \
         .ob_sval = { (CH) }, \
     }
@@ -215,7 +228,7 @@ extern PyTypeObject _PyExc_MemoryError;
 
 #define _PyUnicode_ASCII_BASE_INIT(LITERAL, ASCII) \
     { \
-        .ob_base = _PyObject_HEAD_INIT(&PyUnicode_Type) \
+        .ob_base = _PyObject_HEAD_INIT(&PyUnicode_Type), \
         .length = sizeof(LITERAL) - 1, \
         .hash = -1, \
         .state = { \

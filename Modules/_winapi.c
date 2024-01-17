@@ -212,7 +212,7 @@ class DWORD_return_converter(CReturnConverter):
         self.declare(data)
         self.err_occurred_if("_return_value == PY_DWORD_MAX", data)
         data.return_conversion.append(
-            'return_value = Py_BuildValue("k", _return_value);\n')
+            'return_value = PyLong_FromUnsignedLong(_return_value);\n')
 
 class LPVOID_return_converter(CReturnConverter):
     type = 'LPVOID'
@@ -223,7 +223,7 @@ class LPVOID_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = HANDLE_TO_PYNUM(_return_value);\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=011ee0c3a2244bfe]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=ef52a757a1830d92]*/
 
 #include "clinic/_winapi.c.h"
 
@@ -532,7 +532,12 @@ _winapi_CreateJunction_impl(PyObject *module, LPCWSTR src_path,
 {
     /* Privilege adjustment */
     HANDLE token = NULL;
-    TOKEN_PRIVILEGES tp;
+    struct {
+        TOKEN_PRIVILEGES base;
+        /* overallocate by a few array elements */
+        LUID_AND_ATTRIBUTES privs[4];
+    } tp, previousTp;
+    int previousTpSize = 0;
 
     /* Reparse data buffer */
     const USHORT prefix_len = 4;
@@ -556,17 +561,21 @@ _winapi_CreateJunction_impl(PyObject *module, LPCWSTR src_path,
 
     /* Adjust privileges to allow rewriting directory entry as a
        junction point. */
-    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES, &token))
+    if (!OpenProcessToken(GetCurrentProcess(),
+                          TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &token)) {
         goto cleanup;
+    }
 
-    if (!LookupPrivilegeValue(NULL, SE_RESTORE_NAME, &tp.Privileges[0].Luid))
+    if (!LookupPrivilegeValue(NULL, SE_RESTORE_NAME, &tp.base.Privileges[0].Luid)) {
         goto cleanup;
+    }
 
-    tp.PrivilegeCount = 1;
-    tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-    if (!AdjustTokenPrivileges(token, FALSE, &tp, sizeof(TOKEN_PRIVILEGES),
-                               NULL, NULL))
+    tp.base.PrivilegeCount = 1;
+    tp.base.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+    if (!AdjustTokenPrivileges(token, FALSE, &tp.base, sizeof(previousTp),
+                               &previousTp.base, &previousTpSize)) {
         goto cleanup;
+    }
 
     if (GetFileAttributesW(src_path) == INVALID_FILE_ATTRIBUTES)
         goto cleanup;
@@ -646,6 +655,11 @@ _winapi_CreateJunction_impl(PyObject *module, LPCWSTR src_path,
 
 cleanup:
     ret = GetLastError();
+
+    if (previousTpSize) {
+        AdjustTokenPrivileges(token, FALSE, &previousTp.base, previousTpSize,
+                              NULL, NULL);
+    }
 
     if (token != NULL)
         CloseHandle(token);
@@ -774,12 +788,157 @@ gethandle(PyObject* obj, const char* name)
     return ret;
 }
 
+static PyObject *
+sortenvironmentkey(PyObject *module, PyObject *item)
+{
+    return _winapi_LCMapStringEx_impl(NULL, LOCALE_NAME_INVARIANT,
+                                      LCMAP_UPPERCASE, item);
+}
+
+static PyMethodDef sortenvironmentkey_def = {
+    "sortenvironmentkey", _PyCFunction_CAST(sortenvironmentkey), METH_O, "",
+};
+
+static int
+sort_environment_keys(PyObject *keys)
+{
+    PyObject *keyfunc = PyCFunction_New(&sortenvironmentkey_def, NULL);
+    if (keyfunc == NULL) {
+        return -1;
+    }
+    PyObject *kwnames = Py_BuildValue("(s)", "key");
+    if (kwnames == NULL) {
+        Py_DECREF(keyfunc);
+        return -1;
+    }
+    PyObject *args[] = { keys, keyfunc };
+    PyObject *ret = PyObject_VectorcallMethod(&_Py_ID(sort), args, 1, kwnames);
+    Py_DECREF(keyfunc);
+    Py_DECREF(kwnames);
+    if (ret == NULL) {
+        return -1;
+    }
+    Py_DECREF(ret);
+
+    return 0;
+}
+
+static int
+compare_string_ordinal(PyObject *str1, PyObject *str2, int *result)
+{
+    wchar_t *s1 = PyUnicode_AsWideCharString(str1, NULL);
+    if (s1 == NULL) {
+        return -1;
+    }
+    wchar_t *s2 = PyUnicode_AsWideCharString(str2, NULL);
+    if (s2 == NULL) {
+        PyMem_Free(s1);
+        return -1;
+    }
+    *result = CompareStringOrdinal(s1, -1, s2, -1, TRUE);
+    PyMem_Free(s1);
+    PyMem_Free(s2);
+    return 0;
+}
+
+static PyObject *
+dedup_environment_keys(PyObject *keys)
+{
+    PyObject *result = PyList_New(0);
+    if (result == NULL) {
+        return NULL;
+    }
+
+    // Iterate over the pre-ordered keys, check whether the current key is equal
+    // to the next key (ignoring case), if different, insert the current value
+    // into the result list. If they are equal, do nothing because we always
+    // want to keep the last inserted one.
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(keys); i++) {
+        PyObject *key = PyList_GET_ITEM(keys, i);
+
+        // The last key will always be kept.
+        if (i + 1 == PyList_GET_SIZE(keys)) {
+            if (PyList_Append(result, key) < 0) {
+                Py_DECREF(result);
+                return NULL;
+            }
+            continue;
+        }
+
+        PyObject *next_key = PyList_GET_ITEM(keys, i + 1);
+        int compare_result;
+        if (compare_string_ordinal(key, next_key, &compare_result) < 0) {
+            Py_DECREF(result);
+            return NULL;
+        }
+        if (compare_result == CSTR_EQUAL) {
+            continue;
+        }
+        if (PyList_Append(result, key) < 0) {
+            Py_DECREF(result);
+            return NULL;
+        }
+    }
+
+    return result;
+}
+
+static PyObject *
+normalize_environment(PyObject *environment)
+{
+    PyObject *keys = PyMapping_Keys(environment);
+    if (keys == NULL) {
+        return NULL;
+    }
+
+    if (sort_environment_keys(keys) < 0) {
+        Py_DECREF(keys);
+        return NULL;
+    }
+
+    PyObject *normalized_keys = dedup_environment_keys(keys);
+    Py_DECREF(keys);
+    if (normalized_keys == NULL) {
+        return NULL;
+    }
+
+    PyObject *result = PyDict_New();
+    if (result == NULL) {
+        Py_DECREF(normalized_keys);
+        return NULL;
+    }
+
+    for (int i = 0; i < PyList_GET_SIZE(normalized_keys); i++) {
+        PyObject *key = PyList_GET_ITEM(normalized_keys, i);
+        PyObject *value = PyObject_GetItem(environment, key);
+        if (value == NULL) {
+            Py_DECREF(normalized_keys);
+            Py_DECREF(result);
+            return NULL;
+        }
+
+        int ret = PyObject_SetItem(result, key, value);
+        Py_DECREF(value);
+        if (ret < 0) {
+            Py_DECREF(normalized_keys);
+            Py_DECREF(result);
+            return NULL;
+        }
+    }
+
+    Py_DECREF(normalized_keys);
+
+    return result;
+}
+
 static wchar_t *
 getenvironment(PyObject* environment)
 {
     Py_ssize_t i, envsize, totalsize;
     wchar_t *buffer = NULL, *p, *end;
-    PyObject *keys, *values;
+    PyObject *normalized_environment = NULL;
+    PyObject *keys = NULL;
+    PyObject *values = NULL;
 
     /* convert environment dictionary to windows environment string */
     if (! PyMapping_Check(environment)) {
@@ -788,11 +947,16 @@ getenvironment(PyObject* environment)
         return NULL;
     }
 
-    keys = PyMapping_Keys(environment);
-    if (!keys) {
+    normalized_environment = normalize_environment(environment);
+    if (normalize_environment == NULL) {
         return NULL;
     }
-    values = PyMapping_Values(environment);
+
+    keys = PyMapping_Keys(normalized_environment);
+    if (!keys) {
+        goto error;
+    }
+    values = PyMapping_Values(normalized_environment);
     if (!values) {
         goto error;
     }
@@ -884,6 +1048,7 @@ getenvironment(PyObject* environment)
 
 cleanup:
 error:
+    Py_XDECREF(normalized_environment);
     Py_XDECREF(keys);
     Py_XDECREF(values);
     return buffer;

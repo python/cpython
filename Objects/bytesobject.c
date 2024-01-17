@@ -722,11 +722,11 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                 if (--fmtcnt >= 0)
                     c = *fmt++;
             }
-            else if (c >= 0 && isdigit(c)) {
+            else if (c >= 0 && Py_ISDIGIT(c)) {
                 width = c - '0';
                 while (--fmtcnt >= 0) {
                     c = Py_CHARMASK(*fmt++);
-                    if (!isdigit(c))
+                    if (!Py_ISDIGIT(c))
                         break;
                     if (width > (PY_SSIZE_T_MAX - ((int)c - '0')) / 10) {
                         PyErr_SetString(
@@ -761,11 +761,11 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                     if (--fmtcnt >= 0)
                         c = *fmt++;
                 }
-                else if (c >= 0 && isdigit(c)) {
+                else if (c >= 0 && Py_ISDIGIT(c)) {
                     prec = c - '0';
                     while (--fmtcnt >= 0) {
                         c = Py_CHARMASK(*fmt++);
-                        if (!isdigit(c))
+                        if (!Py_ISDIGIT(c))
                             break;
                         if (prec > (INT_MAX - ((int)c - '0')) / 10) {
                             PyErr_SetString(

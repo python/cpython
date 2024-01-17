@@ -1,4 +1,0 @@
-Use a ``WeakValueDictionary`` to track the lists containing the modules each
-thread is currently importing. This helps avoid a reference leak from
-keeping the list around longer than necessary. Weakrefs are used as GC can't
-interrupt the cleanup.

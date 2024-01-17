@@ -3,13 +3,13 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywordsWithVararg()
 
 PyDoc_STRVAR(typevar_new__doc__,
-"typevar(name, *constraints, *, bound=None, covariant=False,\n"
+"typevar(name, *constraints, bound=None, covariant=False,\n"
 "        contravariant=False, infer_variance=False)\n"
 "--\n"
 "\n"
@@ -591,4 +591,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d614edf64f28e346 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5a582d9d89ad787b input=a9049054013a1b77]*/

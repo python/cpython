@@ -4,15 +4,13 @@ import os
 import shlex
 import sys
 import sysconfig
+from test import support
 
 from setuptools import setup, Extension
 
 
-MS_WINDOWS = (sys.platform == 'win32')
-
-
 SOURCE = 'extension.cpp'
-if not MS_WINDOWS:
+if not support.MS_WINDOWS:
     # C++ compiler flags for GCC and clang
     CPPFLAGS = [
         # gh-91321: The purpose of _testcppext extension is to check that building

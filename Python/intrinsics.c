@@ -5,11 +5,12 @@
 #include "pycore_frame.h"
 #include "pycore_function.h"
 #include "pycore_global_objects.h"
-#include "pycore_intrinsics.h"
-#include "pycore_pyerrors.h"
-#include "pycore_runtime.h"
+#include "pycore_compile.h"       // _PyCompile_GetUnaryIntrinsicName, etc
+#include "pycore_intrinsics.h"    // INTRINSIC_PRINT
+#include "pycore_pyerrors.h"      // _PyErr_SetString()
+#include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_sysmodule.h"     // _PySys_GetAttr()
-#include "pycore_typevarobject.h"
+#include "pycore_typevarobject.h" // _Py_make_typevar()
 
 
 /******** Unary functions ********/
@@ -269,7 +270,7 @@ _PyIntrinsics_BinaryFunctions[] = {
 #undef INTRINSIC_FUNC_ENTRY
 
 PyObject*
-PyUnstable_GetUnaryIntrinsicName(int index)
+_PyCompile_GetUnaryIntrinsicName(int index)
 {
     if (index < 0 || index > MAX_INTRINSIC_1) {
         return NULL;
@@ -278,7 +279,7 @@ PyUnstable_GetUnaryIntrinsicName(int index)
 }
 
 PyObject*
-PyUnstable_GetBinaryIntrinsicName(int index)
+_PyCompile_GetBinaryIntrinsicName(int index)
 {
     if (index < 0 || index > MAX_INTRINSIC_2) {
         return NULL;

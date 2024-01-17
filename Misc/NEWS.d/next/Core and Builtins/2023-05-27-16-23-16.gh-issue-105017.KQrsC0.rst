@@ -1,1 +1,0 @@
-Do not include an additional final ``NL`` token when parsing files having CRLF lines. Patch by Marta Gómez.

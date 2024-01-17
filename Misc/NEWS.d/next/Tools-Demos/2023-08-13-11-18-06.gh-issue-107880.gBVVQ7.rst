@@ -1,2 +1,0 @@
-Argument Clinic can now clone :meth:`!__init__` and :meth:`!__new__`
-methods.

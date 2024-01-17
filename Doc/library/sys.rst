@@ -22,6 +22,8 @@ always available.
 
    .. versionadded:: 3.2
 
+   .. availability:: Unix.
+
 
 .. function:: addaudithook(hook)
 
@@ -173,7 +175,11 @@ always available.
 
    Call ``func(*args)``, while tracing is enabled.  The tracing state is saved,
    and restored afterwards.  This is intended to be called from a debugger from
-   a checkpoint, to recursively debug some other code.
+   a checkpoint, to recursively debug or profile some other code.
+
+   Tracing is suspended while calling a tracing function set by
+   :func:`settrace` or :func:`setprofile` to avoid infinite recursion.
+   :func:`!call_tracing` enables explicit recursion of the tracing function.
 
 
 .. data:: copyright
@@ -378,7 +384,7 @@ always available.
 
    This function prints out a given traceback and exception to ``sys.stderr``.
 
-   When an exception is raised and uncaught, the interpreter calls
+   When an exception other than :exc:`SystemExit` is raised and uncaught, the interpreter calls
    ``sys.excepthook`` with three arguments, the exception class, exception
    instance, and a traceback object.  In an interactive session this happens just
    before control is returned to the prompt; in a Python program this happens just
@@ -753,7 +759,7 @@ always available.
 
    Return the current value of the flags that are used for
    :c:func:`dlopen` calls.  Symbolic names for the flag values can be
-   found in the :mod:`os` module (``RTLD_xxx`` constants, e.g.
+   found in the :mod:`os` module (:samp:`RTLD_{xxx}` constants, e.g.
    :const:`os.RTLD_LAZY`).
 
    .. availability:: Unix.
@@ -825,7 +831,7 @@ always available.
 
    Note that the returned value may not actually reflect how many
    references to the object are actually held.  For example, some
-   objects are "immortal" and have a very high refcount that does not
+   objects are :term:`immortal` and have a very high refcount that does not
    reflect the actual number of references.  Consequently, do not rely
    on the returned value to be accurate, other than a value of 0 or 1.
 
@@ -1176,8 +1182,8 @@ always available.
    names used in Python programs are automatically interned, and the dictionaries
    used to hold module, class or instance attributes have interned keys.
 
-   Interned strings are not immortal; you must keep a reference to the return
-   value of :func:`intern` around to benefit from it.
+   Interned strings are not :term:`immortal`; you must keep a reference to the
+   return value of :func:`intern` around to benefit from it.
 
 
 .. function:: is_finalizing()
@@ -1198,6 +1204,18 @@ always available.
    module for more information.)
 
    .. versionadded:: 3.12
+
+.. function:: _is_interned(string)
+
+   Return :const:`True` if the given string is "interned", :const:`False`
+   otherwise.
+
+   .. versionadded:: 3.13
+
+   .. impl-detail::
+
+      It is not guaranteed to exist in all implementations of Python.
+
 
 .. data:: last_type
           last_value
@@ -1250,10 +1268,13 @@ always available.
     .. versionchanged:: 3.4
 
         :term:`Module specs <module spec>` were introduced in Python 3.4, by
-        :pep:`451`. Earlier versions of Python looked for a method called
-        :meth:`!find_module`.
-        This is still called as a fallback if a :data:`meta_path` entry doesn't
-        have a :meth:`~importlib.abc.MetaPathFinder.find_spec` method.
+        :pep:`451`.
+
+    .. versionchanged:: 3.12
+
+        Removed the fallback that looked for a :meth:`!find_module` method
+        if a :data:`meta_path` entry didn't have a
+        :meth:`~importlib.abc.MetaPathFinder.find_spec` method.
 
 .. data:: modules
 
@@ -1441,7 +1462,7 @@ always available.
    lazy resolving of symbols when importing a module, if called as
    ``sys.setdlopenflags(0)``.  To share symbols across extension modules, call as
    ``sys.setdlopenflags(os.RTLD_GLOBAL)``.  Symbolic names for the flag values
-   can be found in the :mod:`os` module (``RTLD_xxx`` constants, e.g.
+   can be found in the :mod:`os` module (:samp:`RTLD_{xxx}` constants, e.g.
    :const:`os.RTLD_LAZY`).
 
    .. availability:: Unix.
@@ -1471,12 +1492,15 @@ always available.
    its return value is not used, so it can simply return ``None``.  Error in the profile
    function will cause itself unset.
 
+   .. note::
+      The same tracing mechanism is used for :func:`!setprofile` as :func:`settrace`.
+      To trace calls with :func:`!setprofile` inside a tracing function
+      (e.g. in a debugger breakpoint), see :func:`call_tracing`.
+
    Profile functions should have three arguments: *frame*, *event*, and
    *arg*. *frame* is the current stack frame.  *event* is a string: ``'call'``,
    ``'return'``, ``'c_call'``, ``'c_return'``, or ``'c_exception'``. *arg* depends
    on the event type.
-
-   .. audit-event:: sys.setprofile "" sys.setprofile
 
    The events have the following meaning:
 
@@ -1498,6 +1522,9 @@ always available.
 
    ``'c_exception'``
       A C function has raised an exception.  *arg* is the C function object.
+
+   .. audit-event:: sys.setprofile "" sys.setprofile
+
 
 .. function:: setrecursionlimit(limit)
 
@@ -1552,12 +1579,15 @@ always available.
    function to be used for the new scope, or ``None`` if the scope shouldn't be
    traced.
 
-   The local trace function should return a reference to itself (or to another
-   function for further tracing in that scope), or ``None`` to turn off tracing
-   in that scope.
+   The local trace function should return a reference to itself, or to another
+   function which would then be used as the local trace function for the scope.
 
    If there is any error occurred in the trace function, it will be unset, just
    like ``settrace(None)`` is called.
+
+   .. note::
+      Tracing is disabled while calling the trace function (e.g. a function set by
+      :func:`!settrace`). For recursive tracing see :func:`call_tracing`.
 
    The events have the following meaning:
 
@@ -1573,7 +1603,8 @@ always available.
       :file:`Objects/lnotab_notes.txt` for a detailed explanation of how this
       works.
       Per-line events may be disabled for a frame by setting
-      :attr:`!f_trace_lines` to :const:`False` on that :ref:`frame <frame-objects>`.
+      :attr:`~frame.f_trace_lines` to :const:`False` on that
+      :ref:`frame <frame-objects>`.
 
    ``'return'``
       A function (or other code block) is about to return.  The local trace
@@ -1591,7 +1622,7 @@ always available.
       opcode details).  The local trace function is called; *arg* is
       ``None``; the return value specifies the new local trace function.
       Per-opcode events are not emitted by default: they must be explicitly
-      requested by setting :attr:`!f_trace_opcodes` to :const:`True` on the
+      requested by setting :attr:`~frame.f_trace_opcodes` to :const:`True` on the
       :ref:`frame <frame-objects>`.
 
    Note that as an exception is propagated down the chain of callers, an
@@ -1621,8 +1652,8 @@ always available.
 
    .. versionchanged:: 3.7
 
-      ``'opcode'`` event type added; :attr:`!f_trace_lines` and
-      :attr:`!f_trace_opcodes` attributes added to frames
+      ``'opcode'`` event type added; :attr:`~frame.f_trace_lines` and
+      :attr:`~frame.f_trace_opcodes` attributes added to frames
 
 .. function:: set_asyncgen_hooks(firstiter, finalizer)
 
@@ -1716,8 +1747,16 @@ always available.
 
    .. availability:: Windows.
 
+   .. note::
+      Changing the filesystem encoding after Python startup is risky because
+      the old fsencoding or paths encoded by the old fsencoding may be cached
+      somewhere. Use :envvar:`PYTHONLEGACYWINDOWSFSENCODING` instead.
+
    .. versionadded:: 3.6
       See :pep:`529` for more details.
+
+   .. deprecated-removed:: 3.13 3.16
+      Use :envvar:`PYTHONLEGACYWINDOWSFSENCODING` instead.
 
 .. data:: stdin
           stdout
@@ -1779,7 +1818,7 @@ always available.
       However, if you are writing a library (and do not control in which
       context its code will be executed), be aware that the standard streams
       may be replaced with file-like objects like :class:`io.StringIO` which
-      do not support the :attr:!buffer` attribute.
+      do not support the :attr:`!buffer` attribute.
 
 
 .. data:: __stdin__
@@ -1952,6 +1991,13 @@ always available.
 
    .. availability:: Windows.
 
+
+.. data:: monitoring
+   :noindex:
+
+   Namespace containing functions and constants for register callbacks
+   and controlling monitoring events.
+   See  :mod:`sys.monitoring` for details.
 
 .. data:: _xoptions
 

@@ -23,10 +23,8 @@ import collections
 from collections import defaultdict
 import collections.abc
 import copyreg
-import contextlib
 import functools
 import operator
-import re as stdlib_re  # Avoid confusion with the typing.re namespace on <=3.11
 import sys
 import types
 from types import WrapperDescriptorType, MethodWrapperType, MethodDescriptorType, GenericAlias
@@ -214,8 +212,12 @@ def _should_unflatten_callable_args(typ, args):
 
     For example::
 
-        assert collections.abc.Callable[[int, int], str].__args__ == (int, int, str)
-        assert collections.abc.Callable[ParamSpec, str].__args__ == (ParamSpec, str)
+        >>> import collections.abc
+        >>> P = ParamSpec('P')
+        >>> collections.abc.Callable[[int, int], str].__args__ == (int, int, str)
+        True
+        >>> collections.abc.Callable[P, str].__args__ == (P, str)
+        True
 
     As a result, if we need to reconstruct the Callable from its __args__,
     we need to unflatten it.
@@ -257,7 +259,10 @@ def _collect_parameters(args):
 
     For example::
 
-        assert _collect_parameters((T, Callable[P, T])) == (T, P)
+        >>> P = ParamSpec('P')
+        >>> T = TypeVar('T')
+        >>> _collect_parameters((T, Callable[P, T]))
+        (~T, ~P)
     """
     parameters = []
     for t in args:
@@ -485,7 +490,7 @@ class _SpecialForm(_Final, _NotIterable, _root=True):
         return self._getitem(self, parameters)
 
 
-class _LiteralSpecialForm(_SpecialForm, _root=True):
+class _TypedCacheSpecialForm(_SpecialForm, _root=True):
     def __getitem__(self, parameters):
         if not isinstance(parameters, tuple):
             parameters = (parameters,)
@@ -718,7 +723,7 @@ def Optional(self, parameters):
     arg = _type_check(parameters, f"{self} requires a single type.")
     return Union[arg, type(None)]
 
-@_LiteralSpecialForm
+@_TypedCacheSpecialForm
 @_tp_cache(typed=True)
 def Literal(self, *parameters):
     """Special typing form to define literal types (a.k.a. value types).
@@ -937,13 +942,6 @@ def _is_unpacked_typevartuple(x: Any) -> bool:
 
 def _is_typevar_like(x: Any) -> bool:
     return isinstance(x, (TypeVar, ParamSpec)) or _is_unpacked_typevartuple(x)
-
-
-class _PickleUsingNameMixin:
-    """Mixin enabling pickling based on self.__name__."""
-
-    def __reduce__(self):
-        return self.__name__
 
 
 def _typevar_subst(self, arg):
@@ -1672,13 +1670,14 @@ class _TypingEllipsis:
 _TYPING_INTERNALS = frozenset({
     '__parameters__', '__orig_bases__',  '__orig_class__',
     '_is_protocol', '_is_runtime_protocol', '__protocol_attrs__',
-    '__callable_proto_members_only__', '__type_params__',
+    '__non_callable_proto_members__', '__type_params__',
 })
 
 _SPECIAL_NAMES = frozenset({
     '__abstractmethods__', '__annotations__', '__dict__', '__doc__',
     '__init__', '__module__', '__new__', '__slots__',
-    '__subclasshook__', '__weakref__', '__class_getitem__'
+    '__subclasshook__', '__weakref__', '__class_getitem__',
+    '__match_args__',
 })
 
 # These special attributes will be not collected as protocol members.
@@ -1783,6 +1782,31 @@ copyreg.pickle(ParamSpecKwargs, _pickle_pskwargs)
 del _pickle_psargs, _pickle_pskwargs
 
 
+# Preload these once, as globals, as a micro-optimisation.
+# This makes a significant difference to the time it takes
+# to do `isinstance()`/`issubclass()` checks
+# against runtime-checkable protocols with only one callable member.
+_abc_instancecheck = ABCMeta.__instancecheck__
+_abc_subclasscheck = ABCMeta.__subclasscheck__
+
+
+def _type_check_issubclass_arg_1(arg):
+    """Raise TypeError if `arg` is not an instance of `type`
+    in `issubclass(arg, <protocol>)`.
+
+    In most cases, this is verified by type.__subclasscheck__.
+    Checking it again unnecessarily would slow down issubclass() checks,
+    so, we don't perform this check unless we absolutely have to.
+
+    For various error paths, however,
+    we want to ensure that *this* error message is shown to the user
+    where relevant, rather than a typing.py-specific error message.
+    """
+    if not isinstance(arg, type):
+        # Same error message as for issubclass(1, int).
+        raise TypeError('issubclass() arg 1 must be a class')
+
+
 class _ProtocolMeta(ABCMeta):
     # This metaclass is somewhat unfortunate,
     # but is necessary for several reasons...
@@ -1809,11 +1833,6 @@ class _ProtocolMeta(ABCMeta):
         super().__init__(*args, **kwargs)
         if getattr(cls, "_is_protocol", False):
             cls.__protocol_attrs__ = _get_protocol_attrs(cls)
-            # PEP 544 prohibits using issubclass()
-            # with protocols that have non-method members.
-            cls.__callable_proto_members_only__ = all(
-                callable(getattr(cls, attr, None)) for attr in cls.__protocol_attrs__
-            )
 
     def __subclasscheck__(cls, other):
         if cls is Protocol:
@@ -1822,22 +1841,24 @@ class _ProtocolMeta(ABCMeta):
             getattr(cls, '_is_protocol', False)
             and not _allow_reckless_class_checks()
         ):
-            if not isinstance(other, type):
-                # Same error message as for issubclass(1, int).
-                raise TypeError('issubclass() arg 1 must be a class')
-            if (
-                not cls.__callable_proto_members_only__
-                and cls.__dict__.get("__subclasshook__") is _proto_hook
-            ):
-                raise TypeError(
-                    "Protocols with non-method members don't support issubclass()"
-                )
             if not getattr(cls, '_is_runtime_protocol', False):
+                _type_check_issubclass_arg_1(other)
                 raise TypeError(
                     "Instance and class checks can only be used with "
                     "@runtime_checkable protocols"
                 )
-        return super().__subclasscheck__(other)
+            if (
+                # this attribute is set by @runtime_checkable:
+                cls.__non_callable_proto_members__
+                and cls.__dict__.get("__subclasshook__") is _proto_hook
+            ):
+                _type_check_issubclass_arg_1(other)
+                non_method_attrs = sorted(cls.__non_callable_proto_members__)
+                raise TypeError(
+                    "Protocols with non-method members don't support issubclass()."
+                    f" Non-method members: {str(non_method_attrs)[1:-1]}."
+                )
+        return _abc_subclasscheck(cls, other)
 
     def __instancecheck__(cls, instance):
         # We need this method for situations where attributes are
@@ -1846,7 +1867,7 @@ class _ProtocolMeta(ABCMeta):
             return type.__instancecheck__(cls, instance)
         if not getattr(cls, "_is_protocol", False):
             # i.e., it's a concrete subclass of a protocol
-            return super().__instancecheck__(instance)
+            return _abc_instancecheck(cls, instance)
 
         if (
             not getattr(cls, '_is_runtime_protocol', False) and
@@ -1855,7 +1876,7 @@ class _ProtocolMeta(ABCMeta):
             raise TypeError("Instance and class checks can only be used with"
                             " @runtime_checkable protocols")
 
-        if super().__instancecheck__(instance):
+        if _abc_instancecheck(cls, instance):
             return True
 
         getattr_static = _lazy_load_getattr_static()
@@ -1864,7 +1885,8 @@ class _ProtocolMeta(ABCMeta):
                 val = getattr_static(instance, attr)
             except AttributeError:
                 break
-            if val is None and callable(getattr(cls, attr, None)):
+            # this attribute is set by @runtime_checkable:
+            if val is None and attr not in cls.__non_callable_proto_members__:
                 break
         else:
             return True
@@ -2001,7 +2023,9 @@ class _AnnotatedAlias(_NotIterable, _GenericAlias, _root=True):
         return (self.__origin__,)
 
 
-class Annotated:
+@_TypedCacheSpecialForm
+@_tp_cache(typed=True)
+def Annotated(self, *params):
     """Add context-specific metadata to a type.
 
     Example: Annotated[int, runtime_check.Unsigned] indicates to the
@@ -2048,30 +2072,17 @@ class Annotated:
       where T1, T2 etc. are TypeVars, which would be invalid, because
       only one type should be passed to Annotated.
     """
-
-    __slots__ = ()
-
-    def __new__(cls, *args, **kwargs):
-        raise TypeError("Type Annotated cannot be instantiated.")
-
-    @_tp_cache
-    def __class_getitem__(cls, params):
-        if not isinstance(params, tuple) or len(params) < 2:
-            raise TypeError("Annotated[...] should be used "
-                            "with at least two arguments (a type and an "
-                            "annotation).")
-        if _is_unpacked_typevartuple(params[0]):
-            raise TypeError("Annotated[...] should not be used with an "
-                            "unpacked TypeVarTuple")
-        msg = "Annotated[t, ...]: t must be a type."
-        origin = _type_check(params[0], msg, allow_special_forms=True)
-        metadata = tuple(params[1:])
-        return _AnnotatedAlias(origin, metadata)
-
-    def __init_subclass__(cls, *args, **kwargs):
-        raise TypeError(
-            "Cannot subclass {}.Annotated".format(cls.__module__)
-        )
+    if len(params) < 2:
+        raise TypeError("Annotated[...] should be used "
+                        "with at least two arguments (a type and an "
+                        "annotation).")
+    if _is_unpacked_typevartuple(params[0]):
+        raise TypeError("Annotated[...] should not be used with an "
+                        "unpacked TypeVarTuple")
+    msg = "Annotated[t, ...]: t must be a type."
+    origin = _type_check(params[0], msg, allow_special_forms=True)
+    metadata = tuple(params[1:])
+    return _AnnotatedAlias(origin, metadata)
 
 
 def runtime_checkable(cls):
@@ -2097,6 +2108,22 @@ def runtime_checkable(cls):
         raise TypeError('@runtime_checkable can be only applied to protocol classes,'
                         ' got %r' % cls)
     cls._is_runtime_protocol = True
+    # PEP 544 prohibits using issubclass()
+    # with protocols that have non-method members.
+    # See gh-113320 for why we compute this attribute here,
+    # rather than in `_ProtocolMeta.__init__`
+    cls.__non_callable_proto_members__ = set()
+    for attr in cls.__protocol_attrs__:
+        try:
+            is_callable = callable(getattr(cls, attr, None))
+        except Exception as e:
+            raise TypeError(
+                f"Failed to determine whether protocol member {attr!r} "
+                "is a method member"
+            ) from e
+        else:
+            if not is_callable:
+                cls.__non_callable_proto_members__.add(attr)
     return cls
 
 
@@ -2264,14 +2291,15 @@ def get_origin(tp):
 
     Examples::
 
-        assert get_origin(Literal[42]) is Literal
-        assert get_origin(int) is None
-        assert get_origin(ClassVar[int]) is ClassVar
-        assert get_origin(Generic) is Generic
-        assert get_origin(Generic[T]) is Generic
-        assert get_origin(Union[T, int]) is Union
-        assert get_origin(List[Tuple[T, T]][int]) is list
-        assert get_origin(P.args) is P
+        >>> P = ParamSpec('P')
+        >>> assert get_origin(Literal[42]) is Literal
+        >>> assert get_origin(int) is None
+        >>> assert get_origin(ClassVar[int]) is ClassVar
+        >>> assert get_origin(Generic) is Generic
+        >>> assert get_origin(Generic[T]) is Generic
+        >>> assert get_origin(Union[T, int]) is Union
+        >>> assert get_origin(List[Tuple[T, T]][int]) is list
+        >>> assert get_origin(P.args) is P
     """
     if isinstance(tp, _AnnotatedAlias):
         return Annotated
@@ -2292,11 +2320,12 @@ def get_args(tp):
 
     Examples::
 
-        assert get_args(Dict[str, int]) == (str, int)
-        assert get_args(int) == ()
-        assert get_args(Union[int, Union[T, int], str][int]) == (int, str)
-        assert get_args(Union[int, Tuple[T, int]][str]) == (int, Tuple[str, int])
-        assert get_args(Callable[[], T][int]) == ([], int)
+        >>> T = TypeVar('T')
+        >>> assert get_args(Dict[str, int]) == (str, int)
+        >>> assert get_args(int) == ()
+        >>> assert get_args(Union[int, Union[T, int], str][int]) == (int, str)
+        >>> assert get_args(Union[int, Tuple[T, int]][str]) == (int, Tuple[str, int])
+        >>> assert get_args(Callable[[], T][int]) == ([], int)
     """
     if isinstance(tp, _AnnotatedAlias):
         return (tp.__origin__,) + tp.__metadata__
@@ -2315,12 +2344,15 @@ def is_typeddict(tp):
 
     For example::
 
-        class Film(TypedDict):
-            title: str
-            year: int
-
-        is_typeddict(Film)              # => True
-        is_typeddict(Union[list, str])  # => False
+        >>> from typing import TypedDict
+        >>> class Film(TypedDict):
+        ...     title: str
+        ...     year: int
+        ...
+        >>> is_typeddict(Film)
+        True
+        >>> is_typeddict(dict)
+        False
     """
     return isinstance(tp, _TypedDictMeta)
 
@@ -2592,8 +2624,6 @@ MappingView = _alias(collections.abc.MappingView, 1)
 KeysView = _alias(collections.abc.KeysView, 1)
 ItemsView = _alias(collections.abc.ItemsView, 2)
 ValuesView = _alias(collections.abc.ValuesView, 1)
-ContextManager = _alias(contextlib.AbstractContextManager, 1, name='ContextManager')
-AsyncContextManager = _alias(contextlib.AbstractAsyncContextManager, 1, name='AsyncContextManager')
 Dict = _alias(dict, 2, inst=False, name='Dict')
 DefaultDict = _alias(collections.defaultdict, 2, name='DefaultDict')
 OrderedDict = _alias(collections.OrderedDict, 2)
@@ -2748,11 +2778,26 @@ class NamedTupleMeta(type):
             class_getitem = _generic_class_getitem
             nm_tpl.__class_getitem__ = classmethod(class_getitem)
         # update from user namespace without overriding special namedtuple attributes
-        for key in ns:
+        for key, val in ns.items():
             if key in _prohibited:
                 raise AttributeError("Cannot overwrite NamedTuple attribute " + key)
-            elif key not in _special and key not in nm_tpl._fields:
-                setattr(nm_tpl, key, ns[key])
+            elif key not in _special:
+                if key not in nm_tpl._fields:
+                    setattr(nm_tpl, key, val)
+                try:
+                    set_name = type(val).__set_name__
+                except AttributeError:
+                    pass
+                else:
+                    try:
+                        set_name(val, nm_tpl, key)
+                    except BaseException as e:
+                        e.add_note(
+                            f"Error calling __set_name__ on {type(val).__name__!r} "
+                            f"instance {key!r} in {typename!r}"
+                        )
+                        raise
+
         if Generic in bases:
             nm_tpl.__init_subclass__()
         return nm_tpl
@@ -2874,8 +2919,14 @@ class _TypedDictMeta(type):
 
         for base in bases:
             annotations.update(base.__dict__.get('__annotations__', {}))
-            required_keys.update(base.__dict__.get('__required_keys__', ()))
-            optional_keys.update(base.__dict__.get('__optional_keys__', ()))
+
+            base_required = base.__dict__.get('__required_keys__', set())
+            required_keys |= base_required
+            optional_keys -= base_required
+
+            base_optional = base.__dict__.get('__optional_keys__', set())
+            required_keys -= base_optional
+            optional_keys |= base_optional
 
         annotations.update(own_annotations)
         for annotation_key, annotation_type in own_annotations.items():
@@ -2887,19 +2938,27 @@ class _TypedDictMeta(type):
                     annotation_origin = get_origin(annotation_type)
 
             if annotation_origin is Required:
-                required_keys.add(annotation_key)
+                is_required = True
             elif annotation_origin is NotRequired:
-                optional_keys.add(annotation_key)
-            elif total:
+                is_required = False
+            else:
+                is_required = total
+
+            if is_required:
                 required_keys.add(annotation_key)
+                optional_keys.discard(annotation_key)
             else:
                 optional_keys.add(annotation_key)
+                required_keys.discard(annotation_key)
 
+        assert required_keys.isdisjoint(optional_keys), (
+            f"Required keys overlap with optional keys in {name}:"
+            f" {required_keys=}, {optional_keys=}"
+        )
         tp_dict.__annotations__ = annotations
         tp_dict.__required_keys__ = frozenset(required_keys)
         tp_dict.__optional_keys__ = frozenset(optional_keys)
-        if not hasattr(tp_dict, '__total__'):
-            tp_dict.__total__ = total
+        tp_dict.__total__ = total
         return tp_dict
 
     __call__ = dict  # static method
@@ -2921,15 +2980,15 @@ def TypedDict(typename, fields=_sentinel, /, *, total=True):
 
     Usage::
 
-        class Point2D(TypedDict):
-            x: int
-            y: int
-            label: str
-
-        a: Point2D = {'x': 1, 'y': 2, 'label': 'good'}  # OK
-        b: Point2D = {'z': 3, 'label': 'bad'}           # Fails type check
-
-        assert Point2D(x=1, y=2, label='first') == dict(x=1, y=2, label='first')
+        >>> class Point2D(TypedDict):
+        ...     x: int
+        ...     y: int
+        ...     label: str
+        ...
+        >>> a: Point2D = {'x': 1, 'y': 2, 'label': 'good'}  # OK
+        >>> b: Point2D = {'z': 3, 'label': 'bad'}           # Fails type check
+        >>> Point2D(x=1, y=2, label='first') == dict(x=1, y=2, label='first')
+        True
 
     The type info can be accessed via the Point2D.__annotations__ dict, and
     the Point2D.__required_keys__ and Point2D.__optional_keys__ frozensets.
@@ -3251,12 +3310,8 @@ class TextIO(IO[str]):
         pass
 
 
-Pattern = _alias(stdlib_re.Pattern, 1)
-Match = _alias(stdlib_re.Match, 1)
-
-
 def reveal_type[T](obj: T, /) -> T:
-    """Reveal the inferred type of a variable.
+    """Ask a static type checker to reveal the inferred type of an expression.
 
     When a static type checker encounters a call to ``reveal_type()``,
     it will emit the inferred type of the argument::
@@ -3268,7 +3323,7 @@ def reveal_type[T](obj: T, /) -> T:
     will produce output similar to 'Revealed type is "builtins.int"'.
 
     At runtime, the function prints the runtime type of the
-    argument and returns it unchanged.
+    argument and returns the argument unchanged.
     """
     print(f"Runtime type is {type(obj).__name__!r}", file=sys.stderr)
     return obj
@@ -3372,7 +3427,7 @@ def override[F: _Func](method: F, /) -> F:
     Usage::
 
         class Base:
-            def method(self) -> None: ...
+            def method(self) -> None:
                 pass
 
         class Child(Base):
@@ -3431,11 +3486,29 @@ def get_protocol_members(tp: type, /) -> frozenset[str]:
         >>> class P(Protocol):
         ...     def a(self) -> str: ...
         ...     b: int
-        >>> get_protocol_members(P)
-        frozenset({'a', 'b'})
+        >>> get_protocol_members(P) == frozenset({'a', 'b'})
+        True
 
     Raise a TypeError for arguments that are not Protocols.
     """
     if not is_protocol(tp):
         raise TypeError(f'{tp!r} is not a Protocol')
     return frozenset(tp.__protocol_attrs__)
+
+
+def __getattr__(attr):
+    """Improve the import time of the typing module.
+
+    Soft-deprecated objects which are costly to create
+    are only created on-demand here.
+    """
+    if attr in {"Pattern", "Match"}:
+        import re
+        obj = _alias(getattr(re, attr), 1)
+    elif attr in {"ContextManager", "AsyncContextManager"}:
+        import contextlib
+        obj = _alias(getattr(contextlib, f"Abstract{attr}"), 1, name=attr)
+    else:
+        raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
+    globals()[attr] = obj
+    return obj

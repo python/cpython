@@ -3,12 +3,12 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
-#include "pycore_fileutils.h"      // _PyLong_FileDescriptor_Converter()
-#include "pycore_long.h"           // _PyLong_UnsignedShort_Converter()
+#include "pycore_fileutils.h"     // _PyLong_FileDescriptor_Converter()
+#include "pycore_long.h"          // _PyLong_UnsignedShort_Converter()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(select_select__doc__,
 "select($module, rlist, wlist, xlist, timeout=None, /)\n"
@@ -1311,4 +1311,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=a215af2157f038c7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4c2dcb31cb17c2c6 input=a9049054013a1b77]*/

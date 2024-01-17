@@ -1,5 +1,8 @@
 #ifndef Py_INTERNAL_PYMEM_H
 #define Py_INTERNAL_PYMEM_H
+
+#include "pycore_lock.h"            // PyMutex
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -30,7 +33,7 @@ typedef struct {
 } debug_alloc_api_t;
 
 struct _pymem_allocators {
-    PyThread_type_lock mutex;
+    PyMutex mutex;
     struct {
         PyMemAllocatorEx raw;
         PyMemAllocatorEx mem;
@@ -41,6 +44,7 @@ struct _pymem_allocators {
         debug_alloc_api_t mem;
         debug_alloc_api_t obj;
     } debug;
+    int is_debug_enabled;
     PyObjectArenaAllocator obj_arena;
 };
 
@@ -61,7 +65,7 @@ extern int _PyMem_SetDefaultAllocator(
    - PYMEM_FORBIDDENBYTE: untouchable bytes at each end of a block
 
    Byte patterns 0xCB, 0xDB and 0xFB have been replaced with 0xCD, 0xDD and
-   0xFD to use the same values than Windows CRT debug malloc() and free().
+   0xFD to use the same values as Windows CRT debug malloc() and free().
    If modified, _PyMem_IsPtrFreed() should be updated as well. */
 #define PYMEM_CLEANBYTE      0xCD
 #define PYMEM_DEADBYTE       0xDD
@@ -103,6 +107,8 @@ extern int _PyMem_GetAllocatorName(
    PYMEM_ALLOCATOR_NOT_SET does nothing. */
 extern int _PyMem_SetupAllocators(PyMemAllocatorName allocator);
 
+/* Is the debug allocator enabled? */
+extern int _PyMem_DebugEnabled(void);
 
 #ifdef __cplusplus
 }

@@ -37,6 +37,11 @@ on efficient attribute extraction for output formatting and manipulation.
    Package `dateutil <https://dateutil.readthedocs.io/en/stable/>`_
       Third-party library with expanded time zone and parsing support.
 
+   Package `DateType <https://pypi.org/project/datetype/>`_
+      Third-party library that introduces distinct static types to e.g. allow
+      :term:`static type checkers <static type checker>`
+      to differentiate between naive and aware datetimes.
+
 .. _datetime-naive-aware:
 
 Aware and Naive Objects
@@ -648,6 +653,9 @@ Instance methods:
        >>> d.replace(day=26)
        datetime.date(2002, 12, 26)
 
+   :class:`date` objects are also supported by generic function
+   :func:`copy.replace`.
+
 
 .. method:: date.timetuple()
 
@@ -1247,6 +1255,9 @@ Instance methods:
    ``tzinfo=None`` can be specified to create a naive datetime from an aware
    datetime with no conversion of date and time data.
 
+   :class:`datetime` objects are also supported by generic function
+   :func:`copy.replace`.
+
    .. versionadded:: 3.6
       Added the ``fold`` argument.
 
@@ -1788,6 +1799,8 @@ Other constructor:
 
    Examples::
 
+   .. doctest::
+
        >>> from datetime import time
        >>> time.fromisoformat('04:23:01')
        datetime.time(4, 23, 1)
@@ -1797,7 +1810,7 @@ Other constructor:
        datetime.time(4, 23, 1)
        >>> time.fromisoformat('04:23:01.000384')
        datetime.time(4, 23, 1, 384)
-       >>> time.fromisoformat('04:23:01,000')
+       >>> time.fromisoformat('04:23:01,000384')
        datetime.time(4, 23, 1, 384)
        >>> time.fromisoformat('04:23:01+04:00')
        datetime.time(4, 23, 1, tzinfo=datetime.timezone(datetime.timedelta(seconds=14400)))
@@ -1822,6 +1835,9 @@ Instance methods:
    new values by whichever keyword arguments are specified. Note that
    ``tzinfo=None`` can be specified to create a naive :class:`.time` from an
    aware :class:`.time`, without conversion of the time data.
+
+   :class:`time` objects are also supported by generic function
+   :func:`copy.replace`.
 
    .. versionadded:: 3.6
       Added the ``fold`` argument.
@@ -1971,7 +1987,8 @@ Examples of working with a :class:`.time` object::
    American EST and EDT.
 
    Special requirement for pickling:  A :class:`tzinfo` subclass must have an
-   :meth:`__init__` method that can be called with no arguments, otherwise it can be
+   :meth:`~object.__init__` method that can be called with no arguments,
+   otherwise it can be
    pickled but possibly not unpickled again. This is a technical requirement that
    may be relaxed in the future.
 

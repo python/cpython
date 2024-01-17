@@ -100,6 +100,13 @@ static PyMethodDef test_methods[] = {
     {"test_with_docstring",
         test_with_docstring,              METH_VARARGS,
         PyDoc_STR("This is a pretty normal docstring.")},
+    {"func_with_unrepresentable_signature",
+        (PyCFunction)test_with_docstring, METH_VARARGS,
+        PyDoc_STR(
+            "func_with_unrepresentable_signature($module, /, a, b=<x>)\n"
+            "--\n\n"
+            "This docstring has a signature with unrepresentable default."
+        )},
     {NULL},
 };
 
@@ -140,6 +147,40 @@ static PyTypeObject DocStringNoSignatureTest = {
     .tp_new = PyType_GenericNew,
 };
 
+static PyMethodDef DocStringUnrepresentableSignatureTest_methods[] = {
+    {"meth",
+        (PyCFunction)test_with_docstring, METH_VARARGS,
+        PyDoc_STR(
+            "meth($self, /, a, b=<x>)\n"
+            "--\n\n"
+            "This docstring has a signature with unrepresentable default."
+        )},
+    {"classmeth",
+        (PyCFunction)test_with_docstring, METH_VARARGS|METH_CLASS,
+        PyDoc_STR(
+            "classmeth($type, /, a, b=<x>)\n"
+            "--\n\n"
+            "This docstring has a signature with unrepresentable default."
+        )},
+    {"staticmeth",
+        (PyCFunction)test_with_docstring, METH_VARARGS|METH_STATIC,
+        PyDoc_STR(
+            "staticmeth(a, b=<x>)\n"
+            "--\n\n"
+            "This docstring has a signature with unrepresentable default."
+        )},
+    {NULL},
+};
+
+static PyTypeObject DocStringUnrepresentableSignatureTest = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "_testcapi.DocStringUnrepresentableSignatureTest",
+    .tp_basicsize = sizeof(PyObject),
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_methods = DocStringUnrepresentableSignatureTest_methods,
+    .tp_new = PyType_GenericNew,
+};
+
 int
 _PyTestCapi_Init_Docstring(PyObject *mod)
 {
@@ -147,6 +188,9 @@ _PyTestCapi_Init_Docstring(PyObject *mod)
         return -1;
     }
     if (PyModule_AddType(mod, &DocStringNoSignatureTest) < 0) {
+        return -1;
+    }
+    if (PyModule_AddType(mod, &DocStringUnrepresentableSignatureTest) < 0) {
         return -1;
     }
     return 0;

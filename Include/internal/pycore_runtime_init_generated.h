@@ -785,10 +785,9 @@ extern "C" {
     INIT_ID(after_in_child), \
     INIT_ID(after_in_parent), \
     INIT_ID(aggregate_class), \
-    INIT_ID(alias), \
+    INIT_ID(allow_code), \
     INIT_ID(append), \
     INIT_ID(argdefs), \
-    INIT_ID(args), \
     INIT_ID(arguments), \
     INIT_ID(argv), \
     INIT_ID(as_integer_ratio), \
@@ -826,6 +825,7 @@ extern "C" {
     INIT_ID(call), \
     INIT_ID(call_exception_handler), \
     INIT_ID(call_soon), \
+    INIT_ID(callback), \
     INIT_ID(cancel), \
     INIT_ID(capath), \
     INIT_ID(category), \
@@ -896,7 +896,6 @@ extern "C" {
     INIT_ID(dont_inherit), \
     INIT_ID(dst), \
     INIT_ID(dst_dir_fd), \
-    INIT_ID(duration), \
     INIT_ID(e), \
     INIT_ID(eager_start), \
     INIT_ID(effective_ids), \
@@ -912,8 +911,6 @@ extern "C" {
     INIT_ID(errors), \
     INIT_ID(event), \
     INIT_ID(eventmask), \
-    INIT_ID(exc_type), \
-    INIT_ID(exc_value), \
     INIT_ID(excepthook), \
     INIT_ID(exception), \
     INIT_ID(existing_file_name), \
@@ -944,7 +941,6 @@ extern "C" {
     INIT_ID(flush), \
     INIT_ID(follow_symlinks), \
     INIT_ID(format), \
-    INIT_ID(frequency), \
     INIT_ID(from_param), \
     INIT_ID(fromlist), \
     INIT_ID(fromtimestamp), \
@@ -975,6 +971,7 @@ extern "C" {
     INIT_ID(hook), \
     INIT_ID(id), \
     INIT_ID(ident), \
+    INIT_ID(identity_hint), \
     INIT_ID(ignore), \
     INIT_ID(imag), \
     INIT_ID(importlib), \
@@ -995,6 +992,7 @@ extern "C" {
     INIT_ID(instructions), \
     INIT_ID(intern), \
     INIT_ID(intersection), \
+    INIT_ID(interval), \
     INIT_ID(is_running), \
     INIT_ID(isatty), \
     INIT_ID(isinstance), \
@@ -1016,6 +1014,7 @@ extern "C" {
     INIT_ID(kw), \
     INIT_ID(kw1), \
     INIT_ID(kw2), \
+    INIT_ID(kwdefaults), \
     INIT_ID(lambda), \
     INIT_ID(last), \
     INIT_ID(last_exc), \
@@ -1165,7 +1164,6 @@ extern "C" {
     INIT_ID(seek), \
     INIT_ID(seekable), \
     INIT_ID(selectors), \
-    INIT_ID(self), \
     INIT_ID(send), \
     INIT_ID(sep), \
     INIT_ID(sequence), \
@@ -1187,7 +1185,6 @@ extern "C" {
     INIT_ID(sleep), \
     INIT_ID(sock), \
     INIT_ID(sort), \
-    INIT_ID(sound), \
     INIT_ID(source), \
     INIT_ID(source_traceback), \
     INIT_ID(src), \
@@ -1229,7 +1226,6 @@ extern "C" {
     INIT_ID(timetuple), \
     INIT_ID(top), \
     INIT_ID(trace_callback), \
-    INIT_ID(traceback), \
     INIT_ID(trailers), \
     INIT_ID(translate), \
     INIT_ID(true), \

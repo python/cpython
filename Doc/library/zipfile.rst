@@ -79,6 +79,11 @@ The module defines the following items:
    of the last modification to the file; the fields are described in section
    :ref:`zipinfo-objects`.
 
+   .. versionadded:: 3.13
+      A public ``.compress_level`` attribute has been added to expose the
+      formerly protected ``._compresslevel``.  The older protected name
+      continues to work as a property for backwards compatibility.
+
 .. function:: is_zipfile(filename)
 
    Returns ``True`` if *filename* is a valid ZIP file based on its magic number,
@@ -906,27 +911,27 @@ For a list of the files in a ZIP archive, use the :option:`-l` option:
 Command-line options
 ~~~~~~~~~~~~~~~~~~~~
 
-.. cmdoption:: -l <zipfile>
-               --list <zipfile>
+.. option:: -l <zipfile>
+            --list <zipfile>
 
    List files in a zipfile.
 
-.. cmdoption:: -c <zipfile> <source1> ... <sourceN>
-               --create <zipfile> <source1> ... <sourceN>
+.. option:: -c <zipfile> <source1> ... <sourceN>
+            --create <zipfile> <source1> ... <sourceN>
 
    Create zipfile from source files.
 
-.. cmdoption:: -e <zipfile> <output_dir>
-               --extract <zipfile> <output_dir>
+.. option:: -e <zipfile> <output_dir>
+            --extract <zipfile> <output_dir>
 
    Extract zipfile into target directory.
 
-.. cmdoption:: -t <zipfile>
-               --test <zipfile>
+.. option:: -t <zipfile>
+            --test <zipfile>
 
    Test whether the zipfile is valid or not.
 
-.. cmdoption:: --metadata-encoding <encoding>
+.. option:: --metadata-encoding <encoding>
 
    Specify encoding of member names for :option:`-l`, :option:`-e` and
    :option:`-t`.

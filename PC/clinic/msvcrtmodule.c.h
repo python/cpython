@@ -2,11 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(msvcrt_heapmin__doc__,
 "heapmin($module, /)\n"
@@ -207,7 +203,7 @@ PyDoc_STRVAR(msvcrt_kbhit__doc__,
 "kbhit($module, /)\n"
 "--\n"
 "\n"
-"Return true if a keypress is waiting to be read.");
+"Returns a nonzero value if a keypress is waiting to be read. Otherwise, return 0.");
 
 #define MSVCRT_KBHIT_METHODDEF    \
     {"kbhit", (PyCFunction)msvcrt_kbhit, METH_NOARGS, msvcrt_kbhit__doc__},
@@ -701,4 +697,4 @@ exit:
 #ifndef MSVCRT_GETERRORMODE_METHODDEF
     #define MSVCRT_GETERRORMODE_METHODDEF
 #endif /* !defined(MSVCRT_GETERRORMODE_METHODDEF) */
-/*[clinic end generated code: output=f70de1b6d0e700cd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=de9687b46212c2ed input=a9049054013a1b77]*/
