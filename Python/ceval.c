@@ -745,7 +745,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 
     _Py_CODEUNIT *next_instr;
     PyObject **stack_pointer;
-    _PyUOpInstruction *next_uop = NULL;
+    const _PyUOpInstruction *next_uop = NULL;
 
 
 start_frame:
@@ -1081,8 +1081,8 @@ side_exit:
     UOP_STAT_INC(uopcode, miss);
     uint32_t exit_id = next_uop[-1].target;
     _PyExitData *exit = &current_executor->exits[exit_id];
-    DPRINTF(2, "SIDE EXIT: [UOp %d (%s), oparg %d, operand %" PRIu64 ", exit %u, hotness %d, target %d -> %s]\n",
-            uopcode, _PyUOpName(uopcode), next_uop[-1].oparg, next_uop[-1].operand, exit_id, exit->hotness, exit->target,
+    DPRINTF(2, "SIDE EXIT: [UOp %d (%s), oparg %d, operand %" PRIu64 ", exit %u, temp %d, target %d -> %s]\n",
+            uopcode, _PyUOpName(uopcode), next_uop[-1].oparg, next_uop[-1].operand, exit_id, exit->temperature, exit->target,
             _PyOpcode_OpName[_PyCode_CODE(_PyFrame_GetCode(frame))[exit->target].op.code]);
     Py_INCREF(exit->executor);
     next_uop = exit->executor->trace;

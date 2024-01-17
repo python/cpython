@@ -812,7 +812,7 @@ PyTypeObject _ColdExit_Type = {
     .tp_methods = executor_methods,
 };
 
-static _PyColdExitObject COLD_EXITS[UOP_MAX_TRACE_LENGTH];
+static const _PyColdExitObject COLD_EXITS[UOP_MAX_TRACE_LENGTH];
 
 static _PyExecutorObject *
 allocate_executor(int exit_count, int length)
@@ -855,38 +855,38 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
     /* Initialize exits */
     for (int i = 0; i < exit_count; i++) {
         executor->exits[i].executor = (_PyExecutorObject *)&COLD_EXITS[i];
-        executor->exits[i].hotness = -67;
+        executor->exits[i].temperature = -67;
     }
     int next_exit = exit_count-1;
-    int dest = length;
+    _PyUOpInstruction *dest = (_PyUOpInstruction *)&executor->trace[length];
     /* Scan backwards, so that we see the destinations of jumps before the jumps themselves. */
     for (int i = UOP_MAX_TRACE_LENGTH-1; i >= 0; i--) {
         if (!BIT_IS_SET(used, i)) {
             continue;
         }
-        executor->trace[dest] = buffer[i];
+        *dest = buffer[i];
         int opcode = buffer[i].opcode;
         if (opcode == _POP_JUMP_IF_FALSE ||
             opcode == _POP_JUMP_IF_TRUE)
         {
             /* The oparg of the target will already have been set to its new offset */
-            int oparg = executor->trace[dest].oparg;
-            executor->trace[dest].oparg = buffer[oparg].oparg;
+            int oparg = dest->oparg;
+            dest->oparg = buffer[oparg].oparg;
         }
         if (_PyUop_Flags[opcode] & HAS_EXIT_FLAG) {
             executor->exits[next_exit].target = buffer[i].target;
-            executor->trace[dest].target = next_exit;
+            dest->target = next_exit;
             next_exit--;
         }
         /* Set the oparg to be the destination offset,
          * so that we can set the oparg of earlier jumps correctly. */
-        buffer[i].oparg = dest;
+        buffer[i].oparg = dest - executor->trace;
         dest--;
     }
     assert(next_exit == -1);
-    assert(dest == 0);
-    executor->trace[0].opcode = _START_EXECUTOR;
-    executor->trace[0].operand = (uintptr_t)executor;
+    assert(dest == executor->trace);
+    dest->opcode = _START_EXECUTOR;
+    dest->operand = (uintptr_t)executor;
     _Py_ExecutorInit(executor, dependencies);
 #ifdef Py_DEBUG
     char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
@@ -1247,7 +1247,7 @@ print("};")
 
 static_assert(UOP_MAX_TRACE_LENGTH == 512, "COLD_EXITS must be regenerated");
 
-static _PyColdExitObject COLD_EXITS[] = {
+static const _PyColdExitObject COLD_EXITS[] = {
     [0] = { .base = { PyVarObject_HEAD_INIT(&_ColdExit_Type, 0) .vm_data = { 0 }, .trace = &COLD_EXITS[0].uop }, .uop.opcode = _COLD_EXIT, .uop.oparg = 0 },
     [1] = { .base = { PyVarObject_HEAD_INIT(&_ColdExit_Type, 0) .vm_data = { 0 }, .trace = &COLD_EXITS[1].uop }, .uop.opcode = _COLD_EXIT, .uop.oparg = 1 },
     [2] = { .base = { PyVarObject_HEAD_INIT(&_ColdExit_Type, 0) .vm_data = { 0 }, .trace = &COLD_EXITS[2].uop }, .uop.opcode = _COLD_EXIT, .uop.oparg = 2 },

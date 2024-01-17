@@ -38,13 +38,13 @@ typedef struct {
 
 typedef struct _exit_data {
     uint32_t target;
-    int16_t hotness;
+    int16_t temperature;
     struct _PyExecutorObject *executor;
 } _PyExitData;
 
 typedef struct _PyExecutorObject {
     PyObject_VAR_HEAD
-    _PyUOpInstruction *trace;
+    const _PyUOpInstruction *trace;
     _PyVMData vm_data; /* Used by the VM, but opaque to the optimizer */
     uint32_t exit_count;
     uint32_t code_size;

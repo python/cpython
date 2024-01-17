@@ -4087,11 +4087,11 @@ dummy_func(
             TIER_TWO_ONLY
             assert(current_executor->trace[0].opcode != _COLD_EXIT);
             _PyExitData *exit = &current_executor->exits[oparg];
-            exit->hotness++;
+            exit->temperature++;
             assert(exit->executor->trace[0].opcode == _COLD_EXIT);
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
-            if (exit->hotness < 0) {
+            if (exit->temperature < 0) {
                 next_instr = target;
                 Py_DECREF(current_executor);
                 current_executor = NULL;
@@ -4104,7 +4104,7 @@ dummy_func(
             } else {
                 int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor);
                 if (optimized <= 0) {
-                    exit->hotness = -10000; /* Choose a better number */
+                    exit->temperature = -10000; /* Choose a better number */
                     Py_DECREF(current_executor);
                     current_executor = NULL;
                     next_instr = target;
