@@ -32,7 +32,12 @@
 */
 
 #include "Python.h"
+#include "pycore_ceval.h"         // _PyEval_GetBuiltin()
+#include "pycore_dict.h"          // _PyDict_Contains_KnownHash()
+#include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_pyerrors.h"      // _PyErr_SetKeyError()
+#include "pycore_setobject.h"     // _PySet_NextEntry() definition
 #include <stddef.h>               // offsetof()
 
 /* Object used as dummy key to fill deleted entries */
@@ -937,7 +942,10 @@ set_update(PySetObject *so, PyObject *args)
 }
 
 PyDoc_STRVAR(update_doc,
-"Update a set with the union of itself and others.");
+"update($self, /, *others)\n\
+--\n\
+\n\
+Update the set, adding elements from all others.");
 
 /* XXX Todo:
    If aligned memory allocations become available, make the
@@ -1136,9 +1144,10 @@ set_union(PySetObject *so, PyObject *args)
 }
 
 PyDoc_STRVAR(union_doc,
- "Return the union of sets as a new set.\n\
+"union($self, /, *others)\n\
+--\n\
 \n\
-(i.e. all elements that are in either set.)");
+Return a new set with elements from the set and all others.");
 
 static PyObject *
 set_or(PySetObject *so, PyObject *other)
@@ -1276,9 +1285,10 @@ set_intersection_multi(PySetObject *so, PyObject *args)
 }
 
 PyDoc_STRVAR(intersection_doc,
-"Return the intersection of two sets as a new set.\n\
+"intersection($self, /, *others)\n\
+--\n\
 \n\
-(i.e. all elements that are in both sets.)");
+Return a new set with elements common to the set and all others.");
 
 static PyObject *
 set_intersection_update(PySetObject *so, PyObject *other)
@@ -1307,7 +1317,10 @@ set_intersection_update_multi(PySetObject *so, PyObject *args)
 }
 
 PyDoc_STRVAR(intersection_update_doc,
-"Update a set with the intersection of itself and another.");
+"intersection_update($self, /, *others)\n\
+--\n\
+\n\
+Update the set, keeping only elements found in it and all others.");
 
 static PyObject *
 set_and(PySetObject *so, PyObject *other)
@@ -1465,7 +1478,10 @@ set_difference_update(PySetObject *so, PyObject *args)
 }
 
 PyDoc_STRVAR(difference_update_doc,
-"Remove all elements of another set from this set.");
+"difference_update($self, /, *others)\n\
+--\n\
+\n\
+Update the set, removing elements found in others.");
 
 static PyObject *
 set_copy_and_difference(PySetObject *so, PyObject *other)
@@ -1582,9 +1598,10 @@ set_difference_multi(PySetObject *so, PyObject *args)
 }
 
 PyDoc_STRVAR(difference_doc,
-"Return the difference of two or more sets as a new set.\n\
+"difference($self, /, *others)\n\
+--\n\
 \n\
-(i.e. all elements that are in this set but not the others.)");
+Return a new set with elements in the set that are not in the others.");
 static PyObject *
 set_sub(PySetObject *so, PyObject *other)
 {
@@ -1668,7 +1685,10 @@ set_symmetric_difference_update(PySetObject *so, PyObject *other)
 }
 
 PyDoc_STRVAR(symmetric_difference_update_doc,
-"Update a set with the symmetric difference of itself and another.");
+"symmetric_difference_update($self, other, /)\n\
+--\n\
+\n\
+Update the set, keeping only elements found in either set, but not in both.");
 
 static PyObject *
 set_symmetric_difference(PySetObject *so, PyObject *other)
@@ -1689,9 +1709,10 @@ set_symmetric_difference(PySetObject *so, PyObject *other)
 }
 
 PyDoc_STRVAR(symmetric_difference_doc,
-"Return the symmetric difference of two sets as a new set.\n\
+"symmetric_difference($self, other, /)\n\
+--\n\
 \n\
-(i.e. all elements that are in exactly one of the sets.)");
+Return a new set with elements in either the set or other but not both.");
 
 static PyObject *
 set_xor(PySetObject *so, PyObject *other)
@@ -2017,13 +2038,6 @@ static PySequenceMethods set_as_sequence = {
 
 /* set object ********************************************************/
 
-#ifdef Py_DEBUG
-static PyObject *test_c_api(PySetObject *so, PyObject *Py_UNUSED(ignored));
-
-PyDoc_STRVAR(test_c_api_doc, "Exercises C API.  Returns True.\n\
-All is well if assertions don't fail.");
-#endif
-
 static PyMethodDef set_methods[] = {
     {"add",             (PyCFunction)set_add,           METH_O,
      add_doc},
@@ -2061,10 +2075,6 @@ static PyMethodDef set_methods[] = {
      symmetric_difference_doc},
     {"symmetric_difference_update",(PyCFunction)set_symmetric_difference_update,        METH_O,
      symmetric_difference_update_doc},
-#ifdef Py_DEBUG
-    {"test_c_api",      (PyCFunction)test_c_api,        METH_NOARGS,
-     test_c_api_doc},
-#endif
     {"union",           (PyCFunction)set_union,         METH_VARARGS,
      union_doc},
     {"update",          (PyCFunction)set_update,        METH_VARARGS,
@@ -2106,8 +2116,8 @@ static PyNumberMethods set_as_number = {
 };
 
 PyDoc_STRVAR(set_doc,
-"set() -> new empty set object\n\
-set(iterable) -> new set object\n\
+"set(iterable=(), /)\n\
+--\n\
 \n\
 Build an unordered collection of unique elements.");
 
@@ -2207,8 +2217,8 @@ static PyNumberMethods frozenset_as_number = {
 };
 
 PyDoc_STRVAR(frozenset_doc,
-"frozenset() -> empty frozenset object\n\
-frozenset(iterable) -> frozenset object\n\
+"frozenset(iterable=(), /)\n\
+--\n\
 \n\
 Build an immutable unordered collection of unique elements.");
 
@@ -2363,148 +2373,6 @@ _PySet_Update(PyObject *set, PyObject *iterable)
 /* Exported for the gdb plugin's benefit. */
 PyObject *_PySet_Dummy = dummy;
 
-#ifdef Py_DEBUG
-
-/* Test code to be called with any three element set.
-   Returns True and original set is restored. */
-
-#define assertRaises(call_return_value, exception)              \
-    do {                                                        \
-        assert(call_return_value);                              \
-        assert(PyErr_ExceptionMatches(exception));              \
-        PyErr_Clear();                                          \
-    } while(0)
-
-static PyObject *
-test_c_api(PySetObject *so, PyObject *Py_UNUSED(ignored))
-{
-    Py_ssize_t count;
-    const char *s;
-    Py_ssize_t i;
-    PyObject *elem=NULL, *dup=NULL, *t, *f, *dup2, *x=NULL;
-    PyObject *ob = (PyObject *)so;
-    Py_hash_t hash;
-    PyObject *str;
-
-    /* Verify preconditions */
-    assert(PyAnySet_Check(ob));
-    assert(PyAnySet_CheckExact(ob));
-    assert(!PyFrozenSet_CheckExact(ob));
-
-    /* so.clear(); so |= set("abc"); */
-    str = PyUnicode_FromString("abc");
-    if (str == NULL)
-        return NULL;
-    set_clear_internal(so);
-    if (set_update_internal(so, str)) {
-        Py_DECREF(str);
-        return NULL;
-    }
-    Py_DECREF(str);
-
-    /* Exercise type/size checks */
-    assert(PySet_Size(ob) == 3);
-    assert(PySet_GET_SIZE(ob) == 3);
-
-    /* Raise TypeError for non-iterable constructor arguments */
-    assertRaises(PySet_New(Py_None) == NULL, PyExc_TypeError);
-    assertRaises(PyFrozenSet_New(Py_None) == NULL, PyExc_TypeError);
-
-    /* Raise TypeError for unhashable key */
-    dup = PySet_New(ob);
-    assertRaises(PySet_Discard(ob, dup) == -1, PyExc_TypeError);
-    assertRaises(PySet_Contains(ob, dup) == -1, PyExc_TypeError);
-    assertRaises(PySet_Add(ob, dup) == -1, PyExc_TypeError);
-
-    /* Exercise successful pop, contains, add, and discard */
-    elem = PySet_Pop(ob);
-    assert(PySet_Contains(ob, elem) == 0);
-    assert(PySet_GET_SIZE(ob) == 2);
-    assert(PySet_Add(ob, elem) == 0);
-    assert(PySet_Contains(ob, elem) == 1);
-    assert(PySet_GET_SIZE(ob) == 3);
-    assert(PySet_Discard(ob, elem) == 1);
-    assert(PySet_GET_SIZE(ob) == 2);
-    assert(PySet_Discard(ob, elem) == 0);
-    assert(PySet_GET_SIZE(ob) == 2);
-
-    /* Exercise clear */
-    dup2 = PySet_New(dup);
-    assert(PySet_Clear(dup2) == 0);
-    assert(PySet_Size(dup2) == 0);
-    Py_DECREF(dup2);
-
-    /* Raise SystemError on clear or update of frozen set */
-    f = PyFrozenSet_New(dup);
-    assertRaises(PySet_Clear(f) == -1, PyExc_SystemError);
-    assertRaises(_PySet_Update(f, dup) == -1, PyExc_SystemError);
-    assert(PySet_Add(f, elem) == 0);
-    Py_INCREF(f);
-    assertRaises(PySet_Add(f, elem) == -1, PyExc_SystemError);
-    Py_DECREF(f);
-    Py_DECREF(f);
-
-    /* Exercise direct iteration */
-    i = 0, count = 0;
-    while (_PySet_NextEntry((PyObject *)dup, &i, &x, &hash)) {
-        s = PyUnicode_AsUTF8(x);
-        assert(s && (s[0] == 'a' || s[0] == 'b' || s[0] == 'c'));
-        count++;
-    }
-    assert(count == 3);
-
-    /* Exercise updates */
-    dup2 = PySet_New(NULL);
-    assert(_PySet_Update(dup2, dup) == 0);
-    assert(PySet_Size(dup2) == 3);
-    assert(_PySet_Update(dup2, dup) == 0);
-    assert(PySet_Size(dup2) == 3);
-    Py_DECREF(dup2);
-
-    /* Raise SystemError when self argument is not a set or frozenset. */
-    t = PyTuple_New(0);
-    assertRaises(PySet_Size(t) == -1, PyExc_SystemError);
-    assertRaises(PySet_Contains(t, elem) == -1, PyExc_SystemError);
-    Py_DECREF(t);
-
-    /* Raise SystemError when self argument is not a set. */
-    f = PyFrozenSet_New(dup);
-    assert(PySet_Size(f) == 3);
-    assert(PyFrozenSet_CheckExact(f));
-    assertRaises(PySet_Discard(f, elem) == -1, PyExc_SystemError);
-    assertRaises(PySet_Pop(f) == NULL, PyExc_SystemError);
-    Py_DECREF(f);
-
-    /* Raise KeyError when popping from an empty set */
-    assert(PyNumber_InPlaceSubtract(ob, ob) == ob);
-    Py_DECREF(ob);
-    assert(PySet_GET_SIZE(ob) == 0);
-    assertRaises(PySet_Pop(ob) == NULL, PyExc_KeyError);
-
-    /* Restore the set from the copy using the PyNumber API */
-    assert(PyNumber_InPlaceOr(ob, dup) == ob);
-    Py_DECREF(ob);
-
-    /* Verify constructors accept NULL arguments */
-    f = PySet_New(NULL);
-    assert(f != NULL);
-    assert(PySet_GET_SIZE(f) == 0);
-    Py_DECREF(f);
-    f = PyFrozenSet_New(NULL);
-    assert(f != NULL);
-    assert(PyFrozenSet_CheckExact(f));
-    assert(PySet_GET_SIZE(f) == 0);
-    Py_DECREF(f);
-
-    Py_DECREF(elem);
-    Py_DECREF(dup);
-    Py_RETURN_TRUE;
-}
-
-#undef assertRaises
-
-#endif
-
 /***** Dummy Struct  *************************************************/
 
 static PyObject *
@@ -2542,8 +2410,4 @@ static PyTypeObject _PySetDummy_Type = {
     Py_TPFLAGS_DEFAULT, /*tp_flags */
 };
 
-static PyObject _dummy_struct = {
-    _PyObject_EXTRA_INIT
-    { _Py_IMMORTAL_REFCNT },
-    &_PySetDummy_Type
-};
+static PyObject _dummy_struct = _PyObject_HEAD_INIT(&_PySetDummy_Type);

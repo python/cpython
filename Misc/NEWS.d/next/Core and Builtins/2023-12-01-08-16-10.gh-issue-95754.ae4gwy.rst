@@ -1,0 +1,1 @@
+Provide a better error message when accessing invalid attributes on partially initialized modules. The origin of the module being accessed is now included in the message to help with the common issue of shadowing other modules.

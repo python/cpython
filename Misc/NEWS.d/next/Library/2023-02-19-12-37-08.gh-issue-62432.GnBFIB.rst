@@ -1,3 +1,0 @@
-The :mod:`unittest` runner will now exit with status code 5 if no tests
-were run. It is common for test runner misconfiguration to fail to find
-any tests, this should be an error.
