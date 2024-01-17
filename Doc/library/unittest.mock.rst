@@ -820,8 +820,9 @@ apply to method calls on the mock object.
 
 .. class:: PropertyMock(*args, **kwargs)
 
-   A mock intended to be used as a property, or other descriptor, on a class.
-   :class:`PropertyMock` provides :meth:`__get__` and :meth:`__set__` methods
+   A mock intended to be used as a :class:`property`, or other
+   :term:`descriptor`, on a class. :class:`PropertyMock` provides
+   :meth:`~object.__get__` and :meth:`~object.__set__` methods
    so you can specify a return value when it is fetched.
 
    Fetching a :class:`PropertyMock` instance from an object calls the mock, with
@@ -1658,8 +1659,9 @@ Keywords can be used in the :func:`patch.dict` call to set values in the diction
 :func:`patch.dict` can be used with dictionary like objects that aren't actually
 dictionaries. At the very minimum they must support item getting, setting,
 deleting and either iteration or membership test. This corresponds to the
-magic methods :meth:`~object.__getitem__`, :meth:`__setitem__`, :meth:`__delitem__` and either
-:meth:`__iter__` or :meth:`__contains__`.
+magic methods :meth:`~object.__getitem__`, :meth:`~object.__setitem__`,
+:meth:`~object.__delitem__` and either :meth:`~container.__iter__` or
+:meth:`~object.__contains__`.
 
     >>> class Container:
     ...     def __init__(self):
@@ -1958,8 +1960,8 @@ Mocking Magic Methods
 ~~~~~~~~~~~~~~~~~~~~~
 
 :class:`Mock` supports mocking the Python protocol methods, also known as
-"magic methods". This allows mock objects to replace containers or other
-objects that implement Python protocols.
+:term:`"magic methods" <magic method>`. This allows mock objects to replace
+containers or other objects that implement Python protocols.
 
 Because magic methods are looked up differently from normal methods [#]_, this
 support has been specially implemented. This means that only specific magic
@@ -2057,8 +2059,8 @@ There are two ``MagicMock`` variants: :class:`MagicMock` and :class:`NonCallable
 .. class:: MagicMock(*args, **kw)
 
    ``MagicMock`` is a subclass of :class:`Mock` with default implementations
-   of most of the magic methods. You can use ``MagicMock`` without having to
-   configure the magic methods yourself.
+   of most of the :term:`magic methods <magic method>`. You can use
+   ``MagicMock`` without having to configure the magic methods yourself.
 
    The constructor parameters have the same meaning as for :class:`Mock`.
 
@@ -2122,7 +2124,7 @@ For example:
    >>> object() in mock
    False
 
-The two equality methods, :meth:`__eq__` and :meth:`__ne__`, are special.
+The two equality methods, :meth:`!__eq__` and :meth:`!__ne__`, are special.
 They do the default equality comparison on identity, using the
 :attr:`~Mock.side_effect` attribute, unless you change their return value to
 return something else::
@@ -2472,8 +2474,8 @@ mock_open
       *read_data* is now reset on each call to the *mock*.
 
    .. versionchanged:: 3.8
-      Added :meth:`__iter__` to implementation so that iteration (such as in for
-      loops) correctly consumes *read_data*.
+      Added :meth:`~container.__iter__` to implementation so that iteration
+      (such as in for loops) correctly consumes *read_data*.
 
 Using :func:`open` as a context manager is a great way to ensure your file handles
 are closed properly and is becoming common::
@@ -2655,7 +2657,7 @@ able to use autospec. On the other hand it is much better to design your
 objects so that introspection is safe [#]_.
 
 A more serious problem is that it is common for instance attributes to be
-created in the :meth:`__init__` method and not to exist on the class at all.
+created in the :meth:`~object.__init__` method and not to exist on the class at all.
 *autospec* can't know about any dynamically created attributes and restricts
 the api to visible attributes. ::
 
@@ -2696,8 +2698,9 @@ this particular scenario:
     AttributeError: Mock object has no attribute 'a'
 
 Probably the best way of solving the problem is to add class attributes as
-default values for instance members initialised in :meth:`__init__`. Note that if
-you are only setting default attributes in :meth:`__init__` then providing them via
+default values for instance members initialised in :meth:`~object.__init__`.
+Note that if
+you are only setting default attributes in :meth:`!__init__` then providing them via
 class attributes (shared between instances of course) is faster too. e.g.
 
 .. code-block:: python

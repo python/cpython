@@ -534,10 +534,10 @@ class :meth:`~object.__init__` methods. If the base class has an :meth:`~object.
 that has to be called, it is common to call this method in a
 :meth:`__post_init__` method::
 
-    @dataclass
     class Rectangle:
-        height: float
-        width: float
+        def __init__(self, height, width):
+          self.height = height
+          self.width = width
 
     @dataclass
     class Square(Rectangle):

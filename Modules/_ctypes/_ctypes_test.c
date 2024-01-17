@@ -81,51 +81,11 @@ typedef struct {
 } Test2;
 
 EXPORT(int)
-_testfunc_array_in_struct1(Test2 in)
+_testfunc_array_in_struct2(Test2 in)
 {
     int result = 0;
-
-    for (unsigned i = 0; i < 16; i++)
+    for (unsigned i = 0; i < sizeof(in.data)/sizeof(in.data[0]); i++)
         result += in.data[i];
-    /* As the structure is passed by value, changes to it shouldn't be
-     * reflected in the caller.
-     */
-    memset(in.data, 0, sizeof(in.data));
-    return result;
-}
-
-typedef struct {
-    double data[2];
-} Test3;
-
-typedef struct {
-    float data[2];
-    float more_data[2];
-} Test3B;
-
-EXPORT(double)
-_testfunc_array_in_struct2(Test3 in)
-{
-    double result = 0;
-
-    for (unsigned i = 0; i < 2; i++)
-        result += in.data[i];
-    /* As the structure is passed by value, changes to it shouldn't be
-     * reflected in the caller.
-     */
-    memset(in.data, 0, sizeof(in.data));
-    return result;
-}
-
-EXPORT(double)
-_testfunc_array_in_struct2a(Test3B in)
-{
-    double result = 0;
-
-    for (unsigned i = 0; i < 2; i++)
-        result += in.data[i];
-    for (unsigned i = 0; i < 2; i++)
-        result += in.more_data[i];
     /* As the structure is passed by value, changes to it shouldn't be
      * reflected in the caller.
      */
@@ -134,39 +94,141 @@ _testfunc_array_in_struct2a(Test3B in)
 }
 
 /*
- * See gh-110190. structs containing arrays of up to four floating point types
- * (max 32 bytes) are passed in registers on Arm.
+ * Test3A struct test the MAX_STRUCT_SIZE 16 with single precision floats.
+ * These structs should be passed via registers on all platforms and they are
+ * used for within bounds tests.
+ */
+typedef struct {
+    float data[2];
+    float more_data[2];
+} Test3A;
+
+EXPORT(double)
+_testfunc_array_in_struct3A(Test3A in)
+{
+    double result = 0;
+
+    for (unsigned i = 0; i < sizeof(in.data)/sizeof(in.data[0]); i++)
+        result += in.data[i];
+    for (unsigned i = 0; i < sizeof(in.more_data)/sizeof(in.more_data[0]); i++)
+        result += in.more_data[i];
+    /* As the structure is passed by value, changes to it shouldn't be
+     * reflected in the caller.
+     */
+    memset(in.data, 0, sizeof(in.data));
+    return result;
+}
+
+/* The structs Test3B..Test3E use the same functions hence using the MACRO
+ * to define their implementation.
  */
 
+#define _TESTFUNC_ARRAY_IN_STRUCT_IMPL                                  \
+    double result = 0;                                                  \
+                                                                        \
+    for (unsigned i = 0; i < sizeof(in.data)/sizeof(in.data[0]); i++)   \
+        result += in.data[i];                                           \
+    /* As the structure is passed by value, changes to it shouldn't be  \
+     * reflected in the caller.                                         \
+     */                                                                 \
+    memset(in.data, 0, sizeof(in.data));                                \
+    return result;                                                      \
+
+#define _TESTFUNC_ARRAY_IN_STRUCT_SET_DEFAULTS_IMPL                     \
+    for (unsigned i = 0; i < sizeof(s.data)/sizeof(s.data[0]); i++)     \
+        s.data[i] = (double)i+1;                                        \
+    return s;                                                           \
+
+
+/*
+ * Test3B struct test the MAX_STRUCT_SIZE 16 with double precision floats.
+ * These structs should be passed via registers on all platforms and they are
+ * used for within bounds tests.
+ */
+typedef struct {
+    double data[2];
+} Test3B;
+
+EXPORT(double)
+_testfunc_array_in_struct3B(Test3B in)
+{
+    _TESTFUNC_ARRAY_IN_STRUCT_IMPL
+}
+
+EXPORT(Test3B)
+_testfunc_array_in_struct3B_set_defaults(void)
+{
+    Test3B s;
+    _TESTFUNC_ARRAY_IN_STRUCT_SET_DEFAULTS_IMPL
+}
+
+/*
+ * Test3C struct tests the MAX_STRUCT_SIZE 32. Structs containing arrays of up
+ * to four floating point types are passed in registers on Arm platforms.
+ * This struct is used for within bounds test on Arm platfroms and for an
+ * out-of-bounds tests for platfroms where MAX_STRUCT_SIZE is less than 32.
+ * See gh-110190.
+ */
 typedef struct {
     double data[4];
 } Test3C;
 
-EXPORT(Test3C)
-_testfunc_array_in_struct_set_defaults_3C(void)
+EXPORT(double)
+_testfunc_array_in_struct3C(Test3C in)
 {
-    Test3C s;
-    s.data[0] = 1.0;
-    s.data[1] = 2.0;
-    s.data[2] = 3.0;
-    s.data[3] = 4.0;
-    return s;
+    _TESTFUNC_ARRAY_IN_STRUCT_IMPL
 }
 
+EXPORT(Test3C)
+_testfunc_array_in_struct3C_set_defaults(void)
+{
+    Test3C s;
+    _TESTFUNC_ARRAY_IN_STRUCT_SET_DEFAULTS_IMPL
+}
+
+/*
+ * Test3D struct tests the MAX_STRUCT_SIZE 64. Structs containing arrays of up
+ * to eight floating point types are passed in registers on PPC64LE platforms.
+ * This struct is used for within bounds test on PPC64LE platfroms and for an
+ * out-of-bounds tests for platfroms where MAX_STRUCT_SIZE is less than 64.
+ * See gh-110190.
+ */
 typedef struct {
-    double data[5];
+    double data[8];
 } Test3D;
 
+EXPORT(double)
+_testfunc_array_in_struct3D(Test3D in)
+{
+    _TESTFUNC_ARRAY_IN_STRUCT_IMPL
+}
+
 EXPORT(Test3D)
-_testfunc_array_in_struct_set_defaults_3D(void)
+_testfunc_array_in_struct3D_set_defaults(void)
 {
     Test3D s;
-    s.data[0] = 1.0;
-    s.data[1] = 2.0;
-    s.data[2] = 3.0;
-    s.data[3] = 4.0;
-    s.data[4] = 5.0;
-    return s;
+    _TESTFUNC_ARRAY_IN_STRUCT_SET_DEFAULTS_IMPL
+}
+
+/*
+ * Test3E struct tests the out-of-bounds for all architectures.
+ * See gh-110190.
+ */
+typedef struct {
+    double data[9];
+} Test3E;
+
+EXPORT(double)
+_testfunc_array_in_struct3E(Test3E in)
+{
+    _TESTFUNC_ARRAY_IN_STRUCT_IMPL
+}
+
+EXPORT(Test3E)
+_testfunc_array_in_struct3E_set_defaults(void)
+{
+    Test3E s;
+    _TESTFUNC_ARRAY_IN_STRUCT_SET_DEFAULTS_IMPL
 }
 
 typedef union {

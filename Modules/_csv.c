@@ -841,7 +841,8 @@ parse_process_char(ReaderObj *self, _csvstate *module_state, Py_UCS4 c)
             self->state = START_RECORD;
         else {
             PyErr_Format(module_state->error_obj,
-                         "new-line character seen in unquoted field - do you need to open the file in universal-newline mode?");
+                         "new-line character seen in unquoted field - "
+                         "do you need to open the file with newline=''?");
             return -1;
         }
         break;

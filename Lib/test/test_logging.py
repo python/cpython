@@ -43,6 +43,7 @@ import sys
 import tempfile
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test import support
+from test.support import import_helper
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import threading_helper
@@ -3891,6 +3892,26 @@ class ConfigDictTest(BaseTest):
         self.apply_config(config)
         # Logger should be enabled, since explicitly mentioned
         self.assertFalse(logger.disabled)
+
+    def test_111615(self):
+        # See gh-111615
+        import_helper.import_module('_multiprocessing')  # see gh-113692
+        mp = import_helper.import_module('multiprocessing')
+
+        config = {
+            'version': 1,
+            'handlers': {
+                'sink': {
+                    'class': 'logging.handlers.QueueHandler',
+                    'queue': mp.get_context('spawn').Queue(),
+                },
+            },
+            'root': {
+                'handlers': ['sink'],
+                'level': 'DEBUG',
+            },
+        }
+        logging.config.dictConfig(config)
 
 class ManagerTest(BaseTest):
     def test_manager_loggerclass(self):

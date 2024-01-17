@@ -634,6 +634,7 @@ if sys.platform == 'darwin':
             self.name = val
 
         def open(self, url, new=0, autoraise=True):
+            sys.audit("webbrowser.open", url)
             if self.name == 'default':
                 script = 'open location "%s"' % url.replace('"', '%22') # opens in default browser
             else:

@@ -791,9 +791,10 @@ Instances of the :class:`Popen` class have the following methods:
 
    .. note::
 
-      The function is implemented using a busy loop (non-blocking call and
-      short sleeps). Use the :mod:`asyncio` module for an asynchronous wait:
-      see :class:`asyncio.create_subprocess_exec`.
+      When the ``timeout`` parameter is not ``None``, then (on POSIX) the
+      function is implemented using a busy loop (non-blocking call and short
+      sleeps). Use the :mod:`asyncio` module for an asynchronous wait: see
+      :class:`asyncio.create_subprocess_exec`.
 
    .. versionchanged:: 3.3
       *timeout* was added.
@@ -1460,8 +1461,8 @@ Return code handling translates as follows::
        print("There were some errors")
 
 
-Replacing functions from the :mod:`popen2` module
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Replacing functions from the :mod:`!popen2` module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. note::
 

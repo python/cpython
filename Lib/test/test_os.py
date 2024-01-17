@@ -3077,6 +3077,66 @@ class Win32NtTests(unittest.TestCase):
             except subprocess.TimeoutExpired:
                 proc.terminate()
 
+    @support.requires_subprocess()
+    def test_stat_inaccessible_file(self):
+        filename = os_helper.TESTFN
+        ICACLS = os.path.expandvars(r"%SystemRoot%\System32\icacls.exe")
+
+        with open(filename, "wb") as f:
+            f.write(b'Test data')
+
+        stat1 = os.stat(filename)
+
+        try:
+            # Remove all permissions from the file
+            subprocess.check_output([ICACLS, filename, "/inheritance:r"],
+                                    stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as ex:
+            if support.verbose:
+                print(ICACLS, filename, "/inheritance:r", "failed.")
+                print(ex.stdout.decode("oem", "replace").rstrip())
+            try:
+                os.unlink(filename)
+            except OSError:
+                pass
+            self.skipTest("Unable to create inaccessible file")
+
+        def cleanup():
+            # Give delete permission. We are the file owner, so we can do this
+            # even though we removed all permissions earlier.
+            subprocess.check_output([ICACLS, filename, "/grant", "Everyone:(D)"],
+                                    stderr=subprocess.STDOUT)
+            os.unlink(filename)
+
+        self.addCleanup(cleanup)
+
+        if support.verbose:
+            print("File:", filename)
+            print("stat with access:", stat1)
+
+        # First test - we shouldn't raise here, because we still have access to
+        # the directory and can extract enough information from its metadata.
+        stat2 = os.stat(filename)
+
+        if support.verbose:
+            print(" without access:", stat2)
+
+        # We cannot get st_dev/st_ino, so ensure those are 0 or else our test
+        # is not set up correctly
+        self.assertEqual(0, stat2.st_dev)
+        self.assertEqual(0, stat2.st_ino)
+
+        # st_mode and st_size should match (for a normal file, at least)
+        self.assertEqual(stat1.st_mode, stat2.st_mode)
+        self.assertEqual(stat1.st_size, stat2.st_size)
+
+        # st_ctime and st_mtime should be the same
+        self.assertEqual(stat1.st_ctime, stat2.st_ctime)
+        self.assertEqual(stat1.st_mtime, stat2.st_mtime)
+
+        # st_atime should be the same or later
+        self.assertGreaterEqual(stat1.st_atime, stat2.st_atime)
+
 
 @os_helper.skip_unless_symlink
 class NonLocalSymlinkTests(unittest.TestCase):

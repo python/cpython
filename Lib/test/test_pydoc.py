@@ -29,7 +29,7 @@ from test.support.script_helper import (assert_python_ok,
 from test.support import threading_helper
 from test.support import (reap_children, captured_output, captured_stdout,
                           captured_stderr, is_emscripten, is_wasi,
-                          requires_docstrings)
+                          requires_docstrings, MISSING_C_DOCSTRINGS)
 from test.support.os_helper import (TESTFN, rmtree, unlink)
 from test import pydoc_mod
 
@@ -1062,13 +1062,15 @@ class TestDescriptions(unittest.TestCase):
         doc = pydoc.render_doc(typing.List[int], renderer=pydoc.plaintext)
         self.assertIn('_GenericAlias in module typing', doc)
         self.assertIn('List = class list(object)', doc)
-        self.assertIn(list.__doc__.strip().splitlines()[0], doc)
+        if not MISSING_C_DOCSTRINGS:
+            self.assertIn(list.__doc__.strip().splitlines()[0], doc)
 
         self.assertEqual(pydoc.describe(list[int]), 'GenericAlias')
         doc = pydoc.render_doc(list[int], renderer=pydoc.plaintext)
         self.assertIn('GenericAlias in module builtins', doc)
         self.assertIn('\nclass list(object)', doc)
-        self.assertIn(list.__doc__.strip().splitlines()[0], doc)
+        if not MISSING_C_DOCSTRINGS:
+            self.assertIn(list.__doc__.strip().splitlines()[0], doc)
 
     def test_union_type(self):
         self.assertEqual(pydoc.describe(typing.Union[int, str]), '_UnionGenericAlias')
@@ -1082,7 +1084,8 @@ class TestDescriptions(unittest.TestCase):
         doc = pydoc.render_doc(int | str, renderer=pydoc.plaintext)
         self.assertIn('UnionType in module types object', doc)
         self.assertIn('\nclass UnionType(builtins.object)', doc)
-        self.assertIn(types.UnionType.__doc__.strip().splitlines()[0], doc)
+        if not MISSING_C_DOCSTRINGS:
+            self.assertIn(types.UnionType.__doc__.strip().splitlines()[0], doc)
 
     def test_special_form(self):
         self.assertEqual(pydoc.describe(typing.NoReturn), '_SpecialForm')

@@ -309,6 +309,10 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
                                     Py_ssize_t end_lineno, Py_ssize_t end_col_offset,
                                     const char *errmsg, va_list va)
 {
+    // Bail out if we already have an error set.
+    if (p->error_indicator && PyErr_Occurred()) {
+        return NULL;
+    }
     PyObject *value = NULL;
     PyObject *errstr = NULL;
     PyObject *error_line = NULL;
