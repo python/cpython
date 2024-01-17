@@ -1201,9 +1201,9 @@ error:
 
 static int
 get_exception_notes(struct exception_print_context *ctx, PyObject *value, PyObject **notes) {
-    PyObject *type;
-    PyObject *errvalue;
-    PyObject *tback;
+    PyObject *type = NULL;
+    PyObject *errvalue = NULL;
+    PyObject *tback = NULL;
     PyObject *note = NULL;
 
     if (_PyObject_LookupAttr(value, &_Py_ID(__notes__), notes) < 0) {
@@ -1223,9 +1223,15 @@ get_exception_notes(struct exception_print_context *ctx, PyObject *value, PyObje
         }
     }
 
+    Py_XDECREF(type);
+    Py_XDECREF(errvalue);
+    Py_XDECREF(tback);
     return 0;
 error:
     Py_XDECREF(note);
+    Py_XDECREF(type);
+    Py_XDECREF(errvalue);
+    Py_XDECREF(tback);
     return -1;
 }
 
