@@ -106,6 +106,7 @@ def filter_gitignored_paths(paths: list[str]) -> list[str]:
     # Non-matching files show up as '::<whitespace><path>'
     git_check_ignore_proc = subprocess.run(
         ["git", "check-ignore", "--verbose", "--non-matching", *paths],
+        cwd=CPYTHON_ROOT_DIR,
         check=False,
         stdout=subprocess.PIPE,
     )
