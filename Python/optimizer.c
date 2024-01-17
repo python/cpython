@@ -801,7 +801,7 @@ cold_dealloc(_PyExecutorObject *self) {
     PyObject_Free(self);
 }
 
-PyTypeObject _ColdExit_Type = {
+static PyTypeObject _ColdExit_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "cold_exit",
     .tp_basicsize = offsetof(_PyExecutorObject, exits),

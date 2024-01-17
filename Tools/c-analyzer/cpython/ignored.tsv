@@ -381,6 +381,9 @@ Python/optimizer.c	-	_PyCounterOptimizer_Type	-
 Python/optimizer.c	-	_PyUOpExecutor_Type	-
 Python/optimizer.c	-	_PyUOpOptimizer_Type	-
 Python/optimizer.c	-	_PyOptimizer_Default	-
+Python/optimizer.c	-	_ColdExit_Type	-
+Python/optimizer.c	-	COLD_EXITS	-
+Python/optimizer.c	-	Py_FatalErrorExecutor	-
 
 ##-----------------------
 ## test code
