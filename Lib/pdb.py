@@ -612,7 +612,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                     if (last_token_is_dollar and
                         token_type == token.NAME and
                         start == dollar_end):
-                        # line is a one line command so we only care about column
+                        # line is a one-line command so we only care about column
                         replace_variables.append((dollar_start[1], end[1], token_string))
                     last_token_is_dollar = False
         except tokenize.TokenError:
