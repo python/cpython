@@ -221,10 +221,6 @@ class LZMAFile(_compression.BaseStream):
         self._check_can_read()
         return self._buffer.readline(size)
 
-    def __iter__(self):
-        self._check_can_read()
-        return self._buffer.__iter__()
-
     def write(self, data):
         """Write a bytes object to the file.
 

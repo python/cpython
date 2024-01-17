@@ -1,5 +1,4 @@
-import ast
-import re
+import os.path
 import token
 from typing import IO, Any, Dict, Optional, Sequence, Set, Text, Tuple
 
@@ -103,7 +102,7 @@ class PythonCallMakerVisitor(GrammarVisitor):
         if name in ("NAME", "NUMBER", "STRING", "OP", "TYPE_COMMENT"):
             name = name.lower()
             return name, f"self.{name}()"
-        if name in ("NEWLINE", "DEDENT", "INDENT", "ENDMARKER", "ASYNC", "AWAIT"):
+        if name in ("NEWLINE", "DEDENT", "INDENT", "ENDMARKER"):
             # Avoid using names that can be Python keywords
             return "_" + name.lower(), f"self.expect({name!r})"
         return name, f"self.{name}()"
@@ -214,7 +213,8 @@ class PythonParserGenerator(ParserGenerator, GrammarVisitor):
         self.collect_rules()
         header = self.grammar.metas.get("header", MODULE_PREFIX)
         if header is not None:
-            self.print(header.rstrip("\n").format(filename=filename))
+            basename = os.path.basename(filename)
+            self.print(header.rstrip("\n").format(filename=basename))
         subheader = self.grammar.metas.get("subheader", "")
         if subheader:
             self.print(subheader)

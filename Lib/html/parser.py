@@ -89,6 +89,7 @@ class HTMLParser(_markupbase.ParserBase):
         If convert_charrefs is True (the default), all character references
         are automatically converted to the corresponding Unicode characters.
         """
+        super().__init__()
         self.convert_charrefs = convert_charrefs
         self.reset()
 
@@ -98,7 +99,7 @@ class HTMLParser(_markupbase.ParserBase):
         self.lasttag = '???'
         self.interesting = interesting_normal
         self.cdata_elem = None
-        _markupbase.ParserBase.reset(self)
+        super().reset()
 
     def feed(self, data):
         r"""Feed data to the parser.
@@ -328,13 +329,6 @@ class HTMLParser(_markupbase.ParserBase):
 
         end = rawdata[k:endpos].strip()
         if end not in (">", "/>"):
-            lineno, offset = self.getpos()
-            if "\n" in self.__starttag_text:
-                lineno = lineno + self.__starttag_text.count("\n")
-                offset = len(self.__starttag_text) \
-                         - self.__starttag_text.rfind("\n")
-            else:
-                offset = offset + len(self.__starttag_text)
             self.handle_data(rawdata[i:endpos])
             return endpos
         if end.endswith('/>'):

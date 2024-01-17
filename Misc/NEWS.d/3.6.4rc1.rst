@@ -138,7 +138,7 @@ integer with binary base.
 .. section: Core and Builtins
 
 Fixed an assertion failure in Python parser in case of a bad
-`unicodedata.normalize()`. Patch by Oren Milman.
+``unicodedata.normalize()``. Patch by Oren Milman.
 
 ..
 
@@ -147,7 +147,7 @@ Fixed an assertion failure in Python parser in case of a bad
 .. nonce: wT9Iy7
 .. section: Core and Builtins
 
-Raise a `TypeError` with a helpful error message when class creation fails
+Raise a ``TypeError`` with a helpful error message when class creation fails
 due to a metaclass with a bad ``__prepare__()`` method. Patch by Oren
 Milman.
 
@@ -158,7 +158,7 @@ Milman.
 .. nonce: OxwINs
 .. section: Core and Builtins
 
-Fix an assertion failure in `_warnings.warn()` in case of a bad ``__name__``
+Fix an assertion failure in ``_warnings.warn()`` in case of a bad ``__name__``
 global. Patch by Oren Milman.
 
 ..
@@ -168,8 +168,8 @@ global. Patch by Oren Milman.
 .. nonce: VomaFa
 .. section: Core and Builtins
 
-Fix an assertion failure in `json`, in case `_json.make_encoder()` received
-a bad `encoder()` argument. Patch by Oren Milman.
+Fix an assertion failure in ``json``, in case ``_json.make_encoder()`` received
+a bad ``encoder()`` argument. Patch by Oren Milman.
 
 ..
 
@@ -189,7 +189,7 @@ such a module. Patch by Oren Milman.
 .. nonce: r7m2sj
 .. section: Core and Builtins
 
-Fix an assertion failure in `ctypes` class definition, in case the class has
+Fix an assertion failure in ``ctypes`` class definition, in case the class has
 an attribute whose name is specified in ``_anonymous_`` but not in
 ``_fields_``. Patch by Oren Milman.
 
@@ -200,7 +200,7 @@ an attribute whose name is specified in ``_anonymous_`` but not in
 .. nonce: o06iKD
 .. section: Core and Builtins
 
-Fix an assertion failure in `_random.Random.seed()` in case the argument has
+Fix an assertion failure in ``_random.Random.seed()`` in case the argument has
 a bad ``__abs__()`` method. Patch by Oren Milman.
 
 ..
@@ -220,7 +220,7 @@ string. Patch by Oren Milman.
 .. nonce: bNE2l-
 .. section: Core and Builtins
 
-Fix a crash in the ``__setstate__()`` method of `ctypes._CData`, in case of
+Fix a crash in the ``__setstate__()`` method of ``ctypes._CData``, in case of
 a bad ``__dict__``. Patch by Oren Milman.
 
 ..
@@ -240,8 +240,8 @@ float with a bad as_integer_ratio() method. Patch by Oren Milman.
 .. nonce: 7lzaKV
 .. section: Core and Builtins
 
-Fix an assertion failure in `warnings.warn_explicit`, when the return value
-of the received loader's get_source() has a bad splitlines() method. Patch
+Fix an assertion failure in ``warnings.warn_explicit``, when the return value
+of the received loader's ``get_source()`` has a bad ``splitlines()`` method. Patch
 by Oren Milman.
 
 ..
@@ -251,8 +251,8 @@ by Oren Milman.
 .. nonce: j7ZvN_
 .. section: Core and Builtins
 
-`PyErr_PrintEx()` clears now the ignored exception that may be raised by
-`_PySys_SetObjectId()`, for example when no memory.
+``PyErr_PrintEx()`` clears now the ignored exception that may be raised by
+``_PySys_SetObjectId()``, for example when no memory.
 
 ..
 
@@ -294,7 +294,7 @@ by Nir Soffer.
 .. nonce: Nj3A0x
 .. section: Library
 
-Make :meth:`msilib.SummaryInformation.GetProperty` return ``None`` when the
+Make :meth:`!msilib.SummaryInformation.GetProperty` return ``None`` when the
 value of property is ``VT_EMPTY``.  Initial patch by Mark Mc Mahon.
 
 ..
@@ -316,7 +316,7 @@ Initial patch by Robin Wellner.
 .. nonce: xWT9k0
 .. section: Library
 
-:func:`msilib.OpenDatabase` now raises a better exception message when it
+:func:`!msilib.OpenDatabase` now raises a better exception message when it
 couldn't open or create an MSI file.  Initial patch by William Tisäter.
 
 ..
@@ -599,8 +599,8 @@ On Windows, faulthandler.enable() now ignores MSC and COM exceptions.
 .. nonce: XrVMME
 .. section: Library
 
-Prevent crashes in `_elementtree` due to unsafe cleanup of `Element.text`
-and `Element.tail`. Patch by Oren Milman.
+Prevent crashes in ``_elementtree`` due to unsafe cleanup of ``Element.text``
+and ``Element.tail``. Patch by Oren Milman.
 
 ..
 
@@ -813,8 +813,8 @@ reference leaks.
 .. nonce: lo7FQX
 .. section: Tests
 
-Add the `set_nomemory(start, stop)` and `remove_mem_hooks()` functions to
-the _testcapi module.
+Add the ``set_nomemory(start, stop)`` and ``remove_mem_hooks()`` functions to
+the ``_testcapi`` module.
 
 ..
 
@@ -897,7 +897,7 @@ Prevent double substitution of prefix in python-config.sh.
 .. nonce: KUDjno
 .. section: Build
 
-Avoid wholesale rebuild after `make regen-all` if nothing changed.
+Avoid wholesale rebuild after ``make regen-all`` if nothing changed.
 
 ..
 
@@ -1123,7 +1123,7 @@ and Py_SetPath()
 .. nonce: Q3T_8n
 .. section: C API
 
-The `PyExc_RecursionErrorInst` singleton is removed and
-`PyErr_NormalizeException()` does not use it anymore. This singleton is
+The ``PyExc_RecursionErrorInst`` singleton is removed and
+``PyErr_NormalizeException()`` does not use it anymore. This singleton is
 persistent and its members being never cleared may cause a segfault during
 finalization of the interpreter. See also issue #22898.

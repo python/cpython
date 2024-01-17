@@ -245,35 +245,15 @@ class Fault(Error):
 
 ##
 # Backwards compatibility
-
 boolean = Boolean = bool
 
-##
-# Wrapper for XML-RPC DateTime values.  This converts a time value to
-# the format used by XML-RPC.
-# <p>
-# The value can be given as a datetime object, as a string in the
-# format "yyyymmddThh:mm:ss", as a 9-item time tuple (as returned by
-# time.localtime()), or an integer value (as returned by time.time()).
-# The wrapper uses time.localtime() to convert an integer to a time
-# tuple.
-#
-# @param value The time, given as a datetime object, an ISO 8601 string,
-#              a time tuple, or an integer time value.
 
-
-# Issue #13305: different format codes across platforms
-_day0 = datetime(1, 1, 1)
-if _day0.strftime('%Y') == '0001':      # Mac OS X
-    def _iso8601_format(value):
-        return value.strftime("%Y%m%dT%H:%M:%S")
-elif _day0.strftime('%4Y') == '0001':   # Linux
-    def _iso8601_format(value):
-        return value.strftime("%4Y%m%dT%H:%M:%S")
-else:
-    def _iso8601_format(value):
-        return value.strftime("%Y%m%dT%H:%M:%S").zfill(17)
-del _day0
+def _iso8601_format(value):
+    if value.tzinfo is not None:
+        # XML-RPC only uses the naive portion of the datetime
+        value = value.replace(tzinfo=None)
+    # XML-RPC doesn't use '-' separator in the date part
+    return value.isoformat(timespec='seconds').replace('-', '')
 
 
 def _strftime(value):
@@ -844,9 +824,9 @@ class MultiCallIterator:
 
     def __getitem__(self, i):
         item = self.results[i]
-        if type(item) == type({}):
+        if isinstance(item, dict):
             raise Fault(item['faultCode'], item['faultString'])
-        elif type(item) == type([]):
+        elif isinstance(item, list):
             return item[0]
         else:
             raise ValueError("unexpected type in multicall result")
@@ -1333,10 +1313,7 @@ class Transport:
 
         p, u = self.getparser()
 
-        while 1:
-            data = stream.read(1024)
-            if not data:
-                break
+        while data := stream.read(1024):
             if self.verbose:
                 print("body:", repr(data))
             p.feed(data)

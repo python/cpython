@@ -197,10 +197,6 @@ class BZ2File(_compression.BaseStream):
         self._check_can_read()
         return self._buffer.readline(size)
 
-    def __iter__(self):
-        self._check_can_read()
-        return self._buffer.__iter__()
-
     def readlines(self, size=-1):
         """Read a list of lines of uncompressed bytes from the file.
 

@@ -6,10 +6,8 @@ import re
 import signal
 import subprocess
 import sys
-import sysconfig
 from test import support
-from test.support import os_helper
-from test.support import script_helper, is_android
+from test.support import os_helper, script_helper, is_android, MS_WINDOWS
 import tempfile
 import unittest
 from textwrap import dedent
@@ -19,18 +17,10 @@ try:
 except ImportError:
     _testcapi = None
 
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test module requires subprocess")
+
 TIMEOUT = 0.5
-MS_WINDOWS = (os.name == 'nt')
-_cflags = sysconfig.get_config_var('CFLAGS') or ''
-_config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
-UB_SANITIZER = (
-    '-fsanitize=undefined' in _cflags or
-    '--with-undefined-behavior-sanitizer' in _config_args
-)
-MEMORY_SANITIZER = (
-    '-fsanitize=memory' in _cflags or
-    '--with-memory-sanitizer' in _config_args
-)
 
 
 def expected_traceback(lineno1, lineno2, header, min_count=1):
@@ -43,7 +33,7 @@ def expected_traceback(lineno1, lineno2, header, min_count=1):
         return '^' + regex + '$'
 
 def skip_segfault_on_android(test):
-    # Issue #32138: Raising SIGSEGV on Android may not cause a crash.
+    # gh-76319: Raising SIGSEGV on Android may not cause a crash.
     return unittest.skipIf(is_android,
                            'raising SIGSEGV on Android is unreliable')(test)
 
@@ -71,8 +61,16 @@ class FaultHandlerTests(unittest.TestCase):
         pass_fds = []
         if fd is not None:
             pass_fds.append(fd)
+        env = dict(os.environ)
+
+        # Sanitizers must not handle SIGSEGV (ex: for test_enable_fd())
+        option = 'handle_segv=0'
+        support.set_sanitizer_env_var(env, option)
+
         with support.SuppressCrashReport():
-            process = script_helper.spawn_python('-c', code, pass_fds=pass_fds)
+            process = script_helper.spawn_python('-c', code,
+                                                 pass_fds=pass_fds,
+                                                 env=env)
             with process:
                 output, stderr = process.communicate()
                 exitcode = process.wait()
@@ -277,7 +275,7 @@ class FaultHandlerTests(unittest.TestCase):
                 """,
                 2,
                 'xyz',
-                func='test_fatal_error',
+                func='_testcapi_fatal_error_impl',
                 py_fatal_error=True)
 
     def test_fatal_error(self):
@@ -311,8 +309,6 @@ class FaultHandlerTests(unittest.TestCase):
             3,
             'Segmentation fault')
 
-    @unittest.skipIf(UB_SANITIZER or MEMORY_SANITIZER,
-                     "sanitizer builds change crashing process output.")
     @skip_segfault_on_android
     def test_enable_file(self):
         with temporary_filename() as filename:
@@ -328,8 +324,6 @@ class FaultHandlerTests(unittest.TestCase):
 
     @unittest.skipIf(sys.platform == "win32",
                      "subprocess doesn't support pass_fds on Windows")
-    @unittest.skipIf(UB_SANITIZER or MEMORY_SANITIZER,
-                     "sanitizer builds change crashing process output.")
     @skip_segfault_on_android
     def test_enable_fd(self):
         with tempfile.TemporaryFile('wb+') as fp:
@@ -412,6 +406,7 @@ class FaultHandlerTests(unittest.TestCase):
         finally:
             sys.stderr = orig_stderr
 
+    @support.requires_subprocess()
     def test_disabled_by_default(self):
         # By default, the module should be disabled
         code = "import faulthandler; print(faulthandler.is_enabled())"
@@ -420,6 +415,7 @@ class FaultHandlerTests(unittest.TestCase):
         output = subprocess.check_output(args)
         self.assertEqual(output.rstrip(), b"False")
 
+    @support.requires_subprocess()
     def test_sys_xoptions(self):
         # Test python -X faulthandler
         code = "import faulthandler; print(faulthandler.is_enabled())"
@@ -432,6 +428,7 @@ class FaultHandlerTests(unittest.TestCase):
         output = subprocess.check_output(args, env=env)
         self.assertEqual(output.rstrip(), b"True")
 
+    @support.requires_subprocess()
     def test_env_var(self):
         # empty env var
         code = "import faulthandler; print(faulthandler.is_enabled())"
@@ -680,6 +677,7 @@ class FaultHandlerTests(unittest.TestCase):
         with tempfile.TemporaryFile('wb+') as fp:
             self.check_dump_traceback_later(fd=fp.fileno())
 
+    @support.requires_resource('walltime')
     def test_dump_traceback_later_twice(self):
         self.check_dump_traceback_later(loops=2)
 
