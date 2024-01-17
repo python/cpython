@@ -76,10 +76,20 @@
     <Exec Command="$(PythonForBuild) Tools\build\generate_global_objects.py"
           WorkingDirectory="$(PySourcePath)" />
   </Target>
+  
+  <Target Name="_RegenJIT" Condition="'$(UseJIT)' == 'true'" DependsOnTargets="_UpdatePyconfig;FindPythonForBuild">
+    <PropertyGroup>
+      <JITArgs Condition="$(Platform) == 'ARM64'">aarch64-pc-windows-msvc</JITArgs>
+      <JITArgs Condition="$(Platform) == 'Win32'">i686-pc-windows-msvc</JITArgs>
+      <JITArgs Condition="$(Platform) == 'x64'">x86_64-pc-windows-msvc</JITArgs>
+      <JITArgs Condition="$(Configuration) == 'Debug'">$(JITArgs) --debug</JITArgs>
+    </PropertyGroup>
+    <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" $(JITArgs)' WorkingDirectory="$(IntDir)"/>
+  </Target>
 
   <Target Name="Regen"
           Condition="$(Configuration) != 'PGUpdate'"
-          DependsOnTargets="_TouchRegenSources;_RegenPegen;_RegenAST_H;_RegenTokens;_RegenKeywords;_RegenGlobalObjects">
+          DependsOnTargets="_TouchRegenSources;_RegenPegen;_RegenAST_H;_RegenTokens;_RegenKeywords;_RegenGlobalObjects;_RegenJIT">
     <Message Text="Generated sources are up to date" Importance="high" />
   </Target>
 

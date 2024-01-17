@@ -1337,6 +1337,9 @@
     <ClCompile Include="..\Python\instrumentation.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\jit.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\legacy_tracing.c">
       <Filter>Source Files</Filter>
     </ClCompile>

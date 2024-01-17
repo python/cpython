@@ -104,6 +104,7 @@
       <AdditionalIncludeDirectories Condition="$(IncludeExternals)">$(zlibDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_USRDLL;Py_BUILD_CORE;Py_BUILD_CORE_BUILTIN;Py_ENABLE_SHARED;MS_DLL_ID="$(SysWinVer)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="$(IncludeExternals)">_Py_HAVE_ZLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(UseJIT)' == 'true'">_Py_JIT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>version.lib;ws2_32.lib;pathcch.lib;bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -676,14 +677,6 @@
                       Lines="$(PyConfigHText)"
                       Overwrite="true"
                       Condition="$(PyConfigHText.TrimEnd()) != $(OldPyConfigH.TrimEnd())" />
-  </Target>
-  <Target Name="_BuildJIT" BeforeTargets="PrepareForBuild" Condition="'$(UseJIT)' == 'true'" DependsOnTargets="_UpdatePyconfig;FindPythonForBuild">
-    <PropertyGroup>
-      <JITArgs Condition="$(Platform) == 'Win32'">i686-pc-windows-msvc</JITArgs>
-      <JITArgs Condition="$(Platform) == 'x64'">x86_64-pc-windows-msvc</JITArgs>
-      <JITArgs Condition="$(Configuration) == 'Debug'">$(JITArgs) --debug</JITArgs>
-    </PropertyGroup>
-    <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" $(JITArgs)' WorkingDirectory="$(IntDir)"/>
   </Target>
   <Target Name="_CopyPyconfig" Inputs="$(IntDir)pyconfig.h" Outputs="$(OutDir)pyconfig.h" AfterTargets="Build" DependsOnTargets="_UpdatePyconfig">
     <Copy SourceFiles="$(IntDir)pyconfig.h" DestinationFolder="$(OutDir)" />
