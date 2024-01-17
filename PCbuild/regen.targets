@@ -28,6 +28,9 @@
     </_TokenOutputs>
     <_KeywordSources Include="$(PySourcePath)Grammar\python.gram;$(PySourcePath)Grammar\Tokens" />
     <_KeywordOutputs Include="$(PySourcePath)Lib\keyword.py" />
+    <!-- Taken from _Target._compute_digest in Tools\jit\_targets.py: -->
+    <_JITSources Include="$(PySourcePath)Python\executor_cases.c.h;$(IntDir)pyconfig.h;$(PySourcePath)Tools\jit\**"/>
+    <_JITOutputs Include="$(IntDir)jit_stencils.h"/>
   </ItemGroup>
 
   <Target Name="_TouchRegenSources" Condition="$(ForceRegen) == 'true'">
@@ -77,7 +80,11 @@
           WorkingDirectory="$(PySourcePath)" />
   </Target>
   
-  <Target Name="_RegenJIT" Condition="'$(UseJIT)' == 'true'" DependsOnTargets="_UpdatePyconfig;FindPythonForBuild">
+  <Target Name="_RegenJIT"
+          Condition="'$(UseJIT)' == 'true'"
+          DependsOnTargets="_UpdatePyconfig;FindPythonForBuild"
+          Inputs="@(_JITSources)"
+          Outputs="@(_JITOutputs)">
     <PropertyGroup>
       <JITArgs Condition="$(Platform) == 'ARM64'">aarch64-pc-windows-msvc</JITArgs>
       <JITArgs Condition="$(Platform) == 'Win32'">i686-pc-windows-msvc</JITArgs>
@@ -87,9 +94,12 @@
     <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" $(JITArgs)' WorkingDirectory="$(IntDir)"/>
   </Target>
 
-  <Target Name="Regen"
+  <Target Name="_RegenNoPGUpdate"
           Condition="$(Configuration) != 'PGUpdate'"
-          DependsOnTargets="_TouchRegenSources;_RegenPegen;_RegenAST_H;_RegenTokens;_RegenKeywords;_RegenGlobalObjects;_RegenJIT">
+          DependsOnTargets="_TouchRegenSources;_RegenPegen;_RegenAST_H;_RegenTokens;_RegenKeywords;_RegenGlobalObjects">
+  </Target>
+
+  <Target Name="Regen" DependsOnTargets="_RegenNoPGUpdate;_RegenJIT">
     <Message Text="Generated sources are up to date" Importance="high" />
   </Target>
 

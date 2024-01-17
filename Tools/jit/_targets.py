@@ -46,6 +46,7 @@ class _Target(typing.Generic[_S, _R]):
         hasher.update(self.triple.encode())
         hasher.update(self.alignment.to_bytes())
         hasher.update(self.prefix.encode())
+        # These dependencies are also reflected in _JITSources in regen.targets:
         hasher.update(PYTHON_EXECUTOR_CASES_C_H.read_bytes())
         hasher.update((out / "pyconfig.h").read_bytes())
         for dirpath, _, filenames in sorted(os.walk(TOOLS_JIT)):
