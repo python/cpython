@@ -4070,6 +4070,10 @@ dummy_func(
             DEOPT_IF(!current_executor->vm_data.valid);
         }
 
+        op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
+            value = Py_NewRef(ptr);
+        }
+
         op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
             value = ptr;
         }

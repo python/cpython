@@ -13,6 +13,34 @@
 #include "pycore_optimizer.h"
 
 static void
+inline_consts(PyCodeObject *co, _PyUOpInstruction *buffer, int buffer_size)
+{
+
+    for (int pc = 0; pc < buffer_size; pc++) {
+        int opcode = buffer[pc].opcode;
+        switch(opcode) {
+            case _LOAD_CONST: {
+                if (co == NULL) {
+                    printf("NULL co @ %d\n", pc);
+                }
+                assert(co != NULL);
+                PyObject *val = PyTuple_GET_ITEM(co->co_consts, buffer[pc].oparg);
+                buffer[pc].opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
+                buffer[pc].operand = (uintptr_t)val;
+                break;
+            }
+            case _PUSH_FRAME:
+            case _POP_FRAME:
+                co = (PyCodeObject *)buffer[pc].operand;
+                break;
+            case _JUMP_TO_TOP:
+            case _EXIT_TRACE:
+                return;
+        }
+    }
+}
+
+static void
 remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
 {
     int last_set_ip = -1;
@@ -59,6 +87,7 @@ _Py_uop_analyze_and_optimize(
     int curr_stacklen
 )
 {
+    inline_consts(co, buffer, buffer_size);
     remove_unneeded_uops(buffer, buffer_size);
     return 0;
 }
