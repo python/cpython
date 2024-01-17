@@ -221,7 +221,6 @@ class HelperFunctionsTests(unittest.TestCase):
             pth_file.cleanup()
 
     @unittest.skipUnless(sys.platform == 'win32', 'test needs Windows')
-    @support.requires_subprocess()
     def test_addsitedir_hidden_file_attribute(self):
         pth_file = PthFile()
         pth_file.cleanup(prep=True)
