@@ -3,6 +3,7 @@ import builtins
 import dis
 import enum
 import os
+import re
 import sys
 import textwrap
 import types
@@ -11,6 +12,10 @@ import warnings
 import weakref
 from functools import partial
 from textwrap import dedent
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = None
 
 from test import support
 from test.support.import_helper import import_fresh_module
@@ -99,6 +104,8 @@ exec_tests = [
     # With
     "with x as y: pass",
     "with x as y, z as q: pass",
+    "with (x as y): pass",
+    "with (x, y): pass",
     # Raise
     "raise Exception('string')",
     # TryExcept
@@ -355,6 +362,38 @@ class AST_Tests(unittest.TestCase):
         for snippet in snippets_to_validate:
             tree = ast.parse(snippet)
             compile(tree, '<string>', 'exec')
+
+    def test_optimization_levels__debug__(self):
+        cases = [(-1, '__debug__'), (0, '__debug__'), (1, False), (2, False)]
+        for (optval, expected) in cases:
+            with self.subTest(optval=optval, expected=expected):
+                res1 = ast.parse("__debug__", optimize=optval)
+                res2 = ast.parse(ast.parse("__debug__"), optimize=optval)
+                for res in [res1, res2]:
+                    self.assertIsInstance(res.body[0], ast.Expr)
+                    if isinstance(expected, bool):
+                        self.assertIsInstance(res.body[0].value, ast.Constant)
+                        self.assertEqual(res.body[0].value.value, expected)
+                    else:
+                        self.assertIsInstance(res.body[0].value, ast.Name)
+                        self.assertEqual(res.body[0].value.id, expected)
+
+    def test_optimization_levels_const_folding(self):
+        folded = ('Expr', (1, 0, 1, 5), ('Constant', (1, 0, 1, 5), 3, None))
+        not_folded = ('Expr', (1, 0, 1, 5),
+                         ('BinOp', (1, 0, 1, 5),
+                             ('Constant', (1, 0, 1, 1), 1, None),
+                             ('Add',),
+                             ('Constant', (1, 4, 1, 5), 2, None)))
+
+        cases = [(-1, not_folded), (0, not_folded), (1, folded), (2, folded)]
+        for (optval, expected) in cases:
+            with self.subTest(optval=optval):
+                tree1 = ast.parse("1 + 2", optimize=optval)
+                tree2 = ast.parse(ast.parse("1 + 2"), optimize=optval)
+                for tree in [tree1, tree2]:
+                    res = to_tuple(tree.body[0])
+                    self.assertEqual(res, expected)
 
     def test_invalid_position_information(self):
         invalid_linenos = [
@@ -1087,7 +1126,10 @@ class AST_Tests(unittest.TestCase):
     def test_ast_recursion_limit(self):
         fail_depth = support.EXCEEDS_RECURSION_LIMIT
         crash_depth = 100_000
-        success_depth = 1200
+        success_depth = int(support.Py_C_RECURSION_LIMIT * 0.8)
+        if _testinternalcapi is not None:
+            remaining = _testinternalcapi.get_c_recursion_remaining()
+            success_depth = min(success_depth, remaining)
 
         def check_limit(prefix, repeated):
             expect_ok = prefix + repeated * success_depth
@@ -1109,6 +1151,32 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(SyntaxError,
             msg="source code string cannot contain null bytes"):
             ast.parse("a\0b")
+
+    def assert_none_check(self, node: type[ast.AST], attr: str, source: str) -> None:
+        with self.subTest(f"{node.__name__}.{attr}"):
+            tree = ast.parse(source)
+            found = 0
+            for child in ast.walk(tree):
+                if isinstance(child, node):
+                    setattr(child, attr, None)
+                    found += 1
+            self.assertEqual(found, 1)
+            e = re.escape(f"field '{attr}' is required for {node.__name__}")
+            with self.assertRaisesRegex(ValueError, f"^{e}$"):
+                compile(tree, "<test>", "exec")
+
+    def test_none_checks(self) -> None:
+        tests = [
+            (ast.alias, "name", "import spam as SPAM"),
+            (ast.arg, "arg", "def spam(SPAM): spam"),
+            (ast.comprehension, "target", "[spam for SPAM in spam]"),
+            (ast.comprehension, "iter", "[spam for spam in SPAM]"),
+            (ast.keyword, "value", "spam(**SPAM)"),
+            (ast.match_case, "pattern", "match spam:\n case SPAM: spam"),
+            (ast.withitem, "context_expr", "with SPAM: spam"),
+        ]
+        for node, attr, source in tests:
+            self.assert_none_check(node, attr, source)
 
 class ASTHelpers_Test(unittest.TestCase):
     maxDiff = None
@@ -1591,6 +1659,8 @@ class ASTValidatorTests(unittest.TestCase):
         f = ast.FunctionDef("x", a, [ast.Pass()], [],
                             ast.Name("x", ast.Store()), None, [])
         self.stmt(f, "must have Load context")
+        f = ast.FunctionDef("x", ast.arguments(), [ast.Pass()])
+        self.stmt(f)
         def fac(args):
             return ast.FunctionDef("x", args, [ast.Pass()], [], None, None, [])
         self._check_arguments(fac, self.stmt)
@@ -1969,6 +2039,7 @@ class ASTValidatorTests(unittest.TestCase):
             'ast.NameConstant is deprecated and will be removed in Python 3.14; use ast.Constant instead',
         ])
 
+    @support.requires_resource('cpu')
     def test_stdlib_validates(self):
         stdlib = os.path.dirname(ast.__file__)
         tests = [fn for fn in os.listdir(stdlib) if fn.endswith(".py")]
@@ -2952,6 +3023,8 @@ exec_results = [
 ('Module', [('If', (1, 0, 6, 6), ('Name', (1, 3, 1, 4), 'a', ('Load',)), [('Pass', (2, 2, 2, 6))], [('If', (3, 0, 6, 6), ('Name', (3, 5, 3, 6), 'b', ('Load',)), [('Pass', (4, 2, 4, 6))], [('Pass', (6, 2, 6, 6))])])], []),
 ('Module', [('With', (1, 0, 1, 17), [('withitem', ('Name', (1, 5, 1, 6), 'x', ('Load',)), ('Name', (1, 10, 1, 11), 'y', ('Store',)))], [('Pass', (1, 13, 1, 17))], None)], []),
 ('Module', [('With', (1, 0, 1, 25), [('withitem', ('Name', (1, 5, 1, 6), 'x', ('Load',)), ('Name', (1, 10, 1, 11), 'y', ('Store',))), ('withitem', ('Name', (1, 13, 1, 14), 'z', ('Load',)), ('Name', (1, 18, 1, 19), 'q', ('Store',)))], [('Pass', (1, 21, 1, 25))], None)], []),
+('Module', [('With', (1, 0, 1, 19), [('withitem', ('Name', (1, 6, 1, 7), 'x', ('Load',)), ('Name', (1, 11, 1, 12), 'y', ('Store',)))], [('Pass', (1, 15, 1, 19))], None)], []),
+('Module', [('With', (1, 0, 1, 17), [('withitem', ('Name', (1, 6, 1, 7), 'x', ('Load',)), None), ('withitem', ('Name', (1, 9, 1, 10), 'y', ('Load',)), None)], [('Pass', (1, 13, 1, 17))], None)], []),
 ('Module', [('Raise', (1, 0, 1, 25), ('Call', (1, 6, 1, 25), ('Name', (1, 6, 1, 15), 'Exception', ('Load',)), [('Constant', (1, 16, 1, 24), 'string', None)], []), None)], []),
 ('Module', [('Try', (1, 0, 4, 6), [('Pass', (2, 2, 2, 6))], [('ExceptHandler', (3, 0, 4, 6), ('Name', (3, 7, 3, 16), 'Exception', ('Load',)), None, [('Pass', (4, 2, 4, 6))])], [], [])], []),
 ('Module', [('Try', (1, 0, 4, 6), [('Pass', (2, 2, 2, 6))], [], [], [('Pass', (4, 2, 4, 6))])], []),

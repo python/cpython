@@ -1,4 +1,4 @@
-// Macros needed by ceval.c and bytecodes.c
+// Macros and other things needed by ceval.c, and bytecodes.c
 
 /* Computed GOTOs, or
        the-optimization-commonly-but-improperly-known-as-"threaded code"
@@ -60,29 +60,28 @@
 #endif
 
 #ifdef Py_STATS
-#define INSTRUCTION_START(op) \
+#define INSTRUCTION_STATS(op) \
     do { \
-        frame->prev_instr = next_instr++; \
         OPCODE_EXE_INC(op); \
-        if (_py_stats) _py_stats->opcode_stats[lastopcode].pair_count[op]++; \
+        if (_Py_stats) _Py_stats->opcode_stats[lastopcode].pair_count[op]++; \
         lastopcode = op; \
     } while (0)
 #else
-#define INSTRUCTION_START(op) (frame->prev_instr = next_instr++)
+#define INSTRUCTION_STATS(op) ((void)0)
 #endif
 
 #if USE_COMPUTED_GOTOS
-#  define TARGET(op) TARGET_##op: INSTRUCTION_START(op);
+#  define TARGET(op) TARGET_##op:
 #  define DISPATCH_GOTO() goto *opcode_targets[opcode]
 #else
-#  define TARGET(op) case op: TARGET_##op: INSTRUCTION_START(op);
+#  define TARGET(op) case op: TARGET_##op:
 #  define DISPATCH_GOTO() goto dispatch_opcode
 #endif
 
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
 #ifdef LLTRACE
-#define PRE_DISPATCH_GOTO() if (lltrace) { \
-    lltrace_instruction(frame, stack_pointer, next_instr); }
+#define PRE_DISPATCH_GOTO() if (lltrace >= 5) { \
+    lltrace_instruction(frame, stack_pointer, next_instr, opcode, oparg); }
 #else
 #define PRE_DISPATCH_GOTO() ((void)0)
 #endif
@@ -107,17 +106,21 @@
     do {                                                \
         assert(tstate->interp->eval_frame == NULL);     \
         _PyFrame_SetStackPointer(frame, stack_pointer); \
-        frame->prev_instr = next_instr - 1;             \
         (NEW_FRAME)->previous = frame;                  \
-        frame = cframe.current_frame = (NEW_FRAME);     \
+        frame = tstate->current_frame = (NEW_FRAME);     \
         CALL_STAT_INC(inlined_py_calls);                \
         goto start_frame;                               \
     } while (0)
 
+// Use this instead of 'goto error' so Tier 2 can go to a different label
+#define GOTO_ERROR(LABEL) goto LABEL
+
 #define CHECK_EVAL_BREAKER() \
     _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY(); \
-    if (_Py_atomic_load_relaxed_int32(&tstate->interp->ceval.eval_breaker)) { \
-        goto handle_eval_breaker; \
+    if (_Py_atomic_load_uintptr_relaxed(&tstate->interp->ceval.eval_breaker) & _PY_EVAL_EVENTS_MASK) { \
+        if (_Py_HandlePending(tstate) != 0) { \
+            GOTO_ERROR(error); \
+        } \
     }
 
 
@@ -138,14 +141,19 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 /* Code access macros */
 
 /* The integer overflow is checked by an assertion below. */
-#define INSTR_OFFSET() ((int)(next_instr - _PyCode_CODE(frame->f_code)))
+#define INSTR_OFFSET() ((int)(next_instr - _PyCode_CODE(_PyFrame_GetCode(frame))))
 #define NEXTOPARG()  do { \
         _Py_CODEUNIT word = *next_instr; \
         opcode = word.op.code; \
         oparg = word.op.arg; \
     } while (0)
-#define JUMPTO(x)       (next_instr = _PyCode_CODE(frame->f_code) + (x))
+
+/* JUMPBY makes the generator identify the instruction as a jump. SKIP_OVER is
+ * for advancing to the next instruction, taking into account cache entries
+ * and skipped instructions.
+ */
 #define JUMPBY(x)       (next_instr += (x))
+#define SKIP_OVER(x)    (next_instr += (x))
 
 /* OpCode prediction macros
     Some opcodes tend to come in pairs thus making it possible to
@@ -174,21 +182,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 */
 
 #define PREDICT_ID(op)          PRED_##op
-
-#if USE_COMPUTED_GOTOS
-#define PREDICT(op)             if (0) goto PREDICT_ID(op)
-#else
-#define PREDICT(next_op) \
-    do { \
-        _Py_CODEUNIT word = *next_instr; \
-        opcode = word.op.code; \
-        if (opcode == next_op) { \
-            oparg = word.op.arg; \
-            INSTRUCTION_START(next_op); \
-            goto PREDICT_ID(next_op); \
-        } \
-    } while(0)
-#endif
 #define PREDICTED(op)           PREDICT_ID(op):
 
 
@@ -197,7 +190,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 /* The stack can grow at most MAXINT deep, as co_nlocals and
    co_stacksize are ints. */
 #define STACK_LEVEL()     ((int)(stack_pointer - _PyFrame_Stackbase(frame)))
-#define STACK_SIZE()      (frame->f_code->co_stacksize)
+#define STACK_SIZE()      (_PyFrame_GetCode(frame)->co_stacksize)
 #define EMPTY()           (STACK_LEVEL() == 0)
 #define TOP()             (stack_pointer[-1])
 #define SECOND()          (stack_pointer[-2])
@@ -234,8 +227,14 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define STACK_SHRINK(n)        BASIC_STACKADJ(-(n))
 #endif
 
+
+/* Data access macros */
+#define FRAME_CO_CONSTS (_PyFrame_GetCode(frame)->co_consts)
+#define FRAME_CO_NAMES  (_PyFrame_GetCode(frame)->co_names)
+
 /* Local variable macros */
 
+#define LOCALS_ARRAY    (frame->localsplus)
 #define GETLOCAL(i)     (frame->localsplus[i])
 
 /* The SETLOCAL() macro must not DECREF the local variable in-place and
@@ -259,10 +258,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         if (ADAPTIVE_COUNTER_IS_ZERO(next_instr->cache)) {       \
             STAT_INC((INSTNAME), deopt);                         \
         }                                                        \
-        else {                                                   \
-            /* This is about to be (incorrectly) incremented: */ \
-            STAT_DEC((INSTNAME), deferred);                      \
-        }                                                        \
     } while (0)
 #else
 #define UPDATE_MISS_STATS(INSTNAME) ((void)0)
@@ -280,6 +275,8 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define GLOBALS() frame->f_globals
 #define BUILTINS() frame->f_builtins
 #define LOCALS() frame->f_locals
+#define CONSTS() _PyFrame_GetCode(frame)->co_consts
+#define NAMES() _PyFrame_GetCode(frame)->co_names
 
 #define DTRACE_FUNCTION_ENTRY()  \
     if (PyDTrace_FUNCTION_ENTRY_ENABLED()) { \
@@ -300,14 +297,15 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 
 #define INCREMENT_ADAPTIVE_COUNTER(COUNTER)          \
     do {                                             \
-        assert(!ADAPTIVE_COUNTER_IS_MAX((COUNTER))); \
         (COUNTER) += (1 << ADAPTIVE_BACKOFF_BITS);   \
     } while (0);
 
+#define UNBOUNDLOCAL_ERROR_MSG \
+    "cannot access local variable '%s' where it is not associated with a value"
+#define UNBOUNDFREE_ERROR_MSG \
+    "cannot access free variable '%s' where it is not associated with a value" \
+    " in enclosing scope"
 #define NAME_ERROR_MSG "name '%.200s' is not defined"
-
-#define KWNAMES_LEN() \
-    (kwnames == NULL ? 0 : ((int)PyTuple_GET_SIZE(kwnames)))
 
 #define DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dval, result) \
 do { \
@@ -323,7 +321,7 @@ do { \
     }\
     else { \
         result = PyFloat_FromDouble(dval); \
-        if ((result) == NULL) goto error; \
+        if ((result) == NULL) GOTO_ERROR(error); \
         _Py_DECREF_NO_DEALLOC(left); \
         _Py_DECREF_NO_DEALLOC(right); \
     } \
@@ -342,3 +340,58 @@ do { \
         goto error; \
     } \
 } while (0);
+
+typedef PyObject *(*convertion_func_ptr)(PyObject *);
+
+static const convertion_func_ptr CONVERSION_FUNCTIONS[4] = {
+    [FVC_STR] = PyObject_Str,
+    [FVC_REPR] = PyObject_Repr,
+    [FVC_ASCII] = PyObject_ASCII
+};
+
+// GH-89279: Force inlining by using a macro.
+#if defined(_MSC_VER) && SIZEOF_INT == 4
+#define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) (assert(sizeof((ATOMIC_VAL)->_value) == 4), *((volatile int*)&((ATOMIC_VAL)->_value)))
+#else
+#define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) _Py_atomic_load_relaxed(ATOMIC_VAL)
+#endif
+
+static inline int _Py_EnterRecursivePy(PyThreadState *tstate) {
+    return (tstate->py_recursion_remaining-- <= 0) &&
+        _Py_CheckRecursiveCallPy(tstate);
+}
+
+static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
+    tstate->py_recursion_remaining++;
+}
+
+/* Marker to specify tier 1 only instructions */
+#define TIER_ONE_ONLY
+
+/* Marker to specify tier 2 only instructions */
+#define TIER_TWO_ONLY
+
+/* Implementation of "macros" that modify the instruction pointer,
+ * stack pointer, or frame pointer.
+ * These need to treated differently by tier 1 and 2.
+ * The Tier 1 version is here; Tier 2 is inlined in ceval.c. */
+
+#define LOAD_IP(OFFSET) do { \
+        next_instr = frame->instr_ptr + (OFFSET); \
+    } while (0)
+
+/* There's no STORE_IP(), it's inlined by the code generator. */
+
+#define STORE_SP() \
+_PyFrame_SetStackPointer(frame, stack_pointer)
+
+#define LOAD_SP() \
+stack_pointer = _PyFrame_GetStackPointer(frame);
+
+/* Tier-switching macros. */
+
+#define GOTO_TIER_TWO() goto enter_tier_two;
+
+#define CURRENT_OPARG() (next_uop[-1].oparg)
+
+#define CURRENT_OPERAND() (next_uop[-1].operand)

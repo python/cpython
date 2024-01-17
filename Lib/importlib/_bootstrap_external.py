@@ -413,6 +413,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.11a7 3492 (make POP_JUMP_IF_NONE/NOT_NONE/TRUE/FALSE relative)
 #     Python 3.11a7 3493 (Make JUMP_IF_TRUE_OR_POP/JUMP_IF_FALSE_OR_POP relative)
 #     Python 3.11a7 3494 (New location info table)
+#     Python 3.11b4 3495 (Set line number of module's RESUME instr to 0 per PEP 626)
 #     Python 3.12a1 3500 (Remove PRECALL opcode)
 #     Python 3.12a1 3501 (YIELD_VALUE oparg == stack_depth)
 #     Python 3.12a1 3502 (LOAD_FAST_CHECK, no NULL-check in LOAD_FAST)
@@ -445,8 +446,25 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.12b1 3529 (Inline list/dict/set comprehensions)
 #     Python 3.12b1 3530 (Shrink the LOAD_SUPER_ATTR caches)
 #     Python 3.12b1 3531 (Add PEP 695 changes)
+#     Python 3.13a1 3550 (Plugin optimizer support)
+#     Python 3.13a1 3551 (Compact superinstructions)
+#     Python 3.13a1 3552 (Remove LOAD_FAST__LOAD_CONST and LOAD_CONST__LOAD_FAST)
+#     Python 3.13a1 3553 (Add SET_FUNCTION_ATTRIBUTE)
+#     Python 3.13a1 3554 (more efficient bytecodes for f-strings)
+#     Python 3.13a1 3555 (generate specialized opcodes metadata from bytecodes.c)
+#     Python 3.13a1 3556 (Convert LOAD_CLOSURE to a pseudo-op)
+#     Python 3.13a1 3557 (Make the conversion to boolean in jumps explicit)
+#     Python 3.13a1 3558 (Reorder the stack items for CALL)
+#     Python 3.13a1 3559 (Generate opcode IDs from bytecodes.c)
+#     Python 3.13a1 3560 (Add RESUME_CHECK instruction)
+#     Python 3.13a1 3561 (Add cache entry to branch instructions)
+#     Python 3.13a1 3562 (Assign opcode IDs for internal ops in separate range)
+#     Python 3.13a1 3563 (Add CALL_KW and remove KW_NAMES)
+#     Python 3.13a1 3564 (Removed oparg from YIELD_VALUE, changed oparg values of RESUME)
+#     Python 3.13a1 3565 (Oparg of YIELD_VALUE indicates whether it is in a yield-from)
+#     Python 3.13a1 3566 (Emit JUMP_NO_INTERRUPT instead of JUMP for non-loop no-lineno cases)
 
-#     Python 3.13 will start with 3550
+#     Python 3.14 will start with 3600
 
 #     Please don't copy-paste the same pre-release tag for new entries above!!!
 #     You should always use the *upcoming* tag. For example, if 3.12a6 came out
@@ -461,7 +479,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3531).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3566).to_bytes(2, 'little') + b'\r\n'
 
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 

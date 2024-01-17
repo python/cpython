@@ -101,7 +101,7 @@ extern struct symtable* _PySymtable_Build(
     struct _mod *mod,
     PyObject *filename,
     PyFutureFeatures *future);
-PyAPI_FUNC(PySTEntryObject *) PySymtable_Lookup(struct symtable *, void *);
+extern PySTEntryObject* _PySymtable_Lookup(struct symtable *, void *);
 
 extern void _PySymtable_Free(struct symtable *);
 

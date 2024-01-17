@@ -12,7 +12,7 @@ import tempfile
 import textwrap
 import unittest
 import warnings
-from test.support import no_tracing, verbose, requires_subprocess
+from test.support import no_tracing, verbose, requires_subprocess, requires_resource
 from test.support.import_helper import forget, make_legacy_pyc, unload
 from test.support.os_helper import create_empty_file, temp_dir
 from test.support.script_helper import make_script, make_zip_script
@@ -661,8 +661,10 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
             mod_name = 'script'
             script_name = pathlib.Path(self._make_test_script(script_dir,
                                                               mod_name))
-            self._check_script(script_name, "<run_path>", script_name,
-                               script_name, expect_spec=False)
+            self._check_script(script_name, "<run_path>",
+                               os.fsdecode(script_name),
+                               os.fsdecode(script_name),
+                               expect_spec=False)
 
     def test_basic_script_no_suffix(self):
         with temp_dir() as script_dir:
@@ -733,6 +735,7 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
             self._check_import_error(zip_name, msg)
 
     @no_tracing
+    @requires_resource('cpu')
     def test_main_recursion_error(self):
         with temp_dir() as script_dir, temp_dir() as dummy_dir:
             mod_name = '__main__'
