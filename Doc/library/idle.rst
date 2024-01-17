@@ -442,8 +442,8 @@ assume that the keys have not been re-bound to something else.)
 
 * :kbd:`C-Home` and :kbd:`C-End` go to beginning or end of the file.
 
-* :kbd:`Backspace` and :kbd:`Del` (or `C-d`) delete the previous or
-  next character.
+* :kbd:`Backspace` and :kbd:`Del` (or :kbd:`C-d`) delete the previous
+  or next character.
 
 * :kbd:`C-Backspace` and :kbd:`C-Del` delete one word left or right.
 
