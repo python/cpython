@@ -65,7 +65,7 @@ SETTINGS:
 
 import re
 import types
-from _csv import Error, __version__, writer, reader, register_dialect, \
+from _csv import Error, writer, reader, register_dialect, \
                  unregister_dialect, get_dialect, list_dialects, \
                  field_size_limit, \
                  QUOTE_MINIMAL, QUOTE_ALL, QUOTE_NONNUMERIC, QUOTE_NONE, \
@@ -79,8 +79,11 @@ __all__ = ["QUOTE_MINIMAL", "QUOTE_ALL", "QUOTE_NONNUMERIC", "QUOTE_NONE",
            "Error", "Dialect", "excel", "excel_tab",
            "field_size_limit", "reader", "writer",
            "register_dialect", "get_dialect", "list_dialects", "Sniffer",
-           "unregister_dialect", "__version__", "DictReader", "DictWriter",
+           "unregister_dialect", "DictReader", "DictWriter",
            "unix_dialect"]
+
+__version__ = "1.0"
+
 
 class Dialect:
     """Describe a CSV dialect.

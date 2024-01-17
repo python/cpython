@@ -8,8 +8,6 @@ module instead.
 
 */
 
-#define MODULE_VERSION "1.0"
-
 // clinic/_csv.c.h uses internal pycore_modsupport.h API
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
@@ -1677,12 +1675,6 @@ csv_exec(PyObject *module) {
     temp = PyType_FromModuleAndSpec(module, &Writer_Type_spec, NULL);
     module_state->writer_type = (PyTypeObject *)temp;
     if (PyModule_AddObjectRef(module, "Writer", temp) < 0) {
-        return -1;
-    }
-
-    /* Add version to the module. */
-    if (PyModule_AddStringConstant(module, "__version__",
-                                   MODULE_VERSION) == -1) {
         return -1;
     }
 

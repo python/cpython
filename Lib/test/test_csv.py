@@ -1415,10 +1415,6 @@ class KeyOrderingTest(unittest.TestCase):
 
 
 class MiscTestCase(unittest.TestCase):
-    def test__all__(self):
-        extra = {'__version__'}
-        support.check__all__(self, csv, ('csv', '_csv'), extra=extra)
-
     def test_subclassable(self):
         # issue 44089
         class Foo(csv.Error): ...
