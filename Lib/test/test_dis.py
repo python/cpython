@@ -577,14 +577,10 @@ dis_asyncwith = """\
                 RETURN_CONST             0 (None)
 
 %4d   L12:     CLEANUP_THROW
-
-  --   L13:     JUMP_BACKWARD_NO_INTERRUPT 25 (to L5)
-
-%4d   L14:     CLEANUP_THROW
-
-  --   L15:     JUMP_BACKWARD_NO_INTERRUPT 9 (to L11)
-
-%4d   L16:     PUSH_EXC_INFO
+       L13:     JUMP_BACKWARD_NO_INTERRUPT 25 (to L5)
+       L14:     CLEANUP_THROW
+       L15:     JUMP_BACKWARD_NO_INTERRUPT 9 (to L11)
+       L16:     PUSH_EXC_INFO
                 WITH_EXCEPT_START
                 GET_AWAITABLE            2
                 LOAD_CONST               0 (None)
@@ -629,8 +625,6 @@ ExceptionTable:
        _asyncwith.__code__.co_firstlineno + 2,
        _asyncwith.__code__.co_firstlineno + 1,
        _asyncwith.__code__.co_firstlineno + 3,
-       _asyncwith.__code__.co_firstlineno + 1,
-       _asyncwith.__code__.co_firstlineno + 1,
        _asyncwith.__code__.co_firstlineno + 1,
        _asyncwith.__code__.co_firstlineno + 3,
        )
