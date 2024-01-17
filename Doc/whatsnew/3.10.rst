@@ -1327,6 +1327,14 @@ The :mod:`shelve` module now uses :const:`pickle.DEFAULT_PROTOCOL` by default
 instead of :mod:`pickle` protocol ``3`` when creating shelves.
 (Contributed by Zackery Spytz in :issue:`34204`.)
 
+shutil
+------
+
+The :func:`shutil.copyfile` supports the same files with new
+*ignore_same_file* argument. If the *ignore_same_file* is set and the
+*src* and *dst* are the same file, the function does nothing and returns *dst*.
+(Contributed by Milan Balazs in :issue:`43165`.)
+
 statistics
 ----------
 

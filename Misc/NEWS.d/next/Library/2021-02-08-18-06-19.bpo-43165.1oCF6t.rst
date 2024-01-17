@@ -1,0 +1,3 @@
+The :func:`shutil.copyfile` supports the same files with new *ignore_same_file*
+argument. If the *ignore_same_file* is set and the*src* and *dst* are
+the same file, the function does nothing and returns *dst*.

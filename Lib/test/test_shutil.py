@@ -1561,6 +1561,12 @@ class TestCopy(BaseTest, unittest.TestCase):
         self.assertRaises(Error, shutil.copyfile, src_file, src_file)
         # Make sure file is not corrupted.
         self.assertEqual(read_file(src_file), 'foo')
+        # If the "ignore_same_file" is set the "SameFileError" exception shouldn't be raised.
+        dst_file = shutil.copyfile(src_file, src_file, ignore_same_file=True)
+        # The return value should be the dst
+        self.assertEqual(dst_file, src_file)
+        # Make sure file is not corrupted.
+        self.assertEqual(read_file(dst_file), 'foo')
 
     @unittest.skipIf(MACOS or SOLARIS or _winapi, 'On MACOS, Solaris and Windows the errors are not confusing (though different)')
     # gh-92670: The test uses a trailing slash to force the OS consider
@@ -1592,7 +1598,6 @@ class TestCopy(BaseTest, unittest.TestCase):
         self.assertRaises(err, shutil.copyfile, src_dir, dst)
         self.assertRaises(err, shutil.copyfile, src_file, src_dir)
         self.assertRaises(err, shutil.copyfile, dir2, src_dir)
-
 
 class TestArchives(BaseTest, unittest.TestCase):
 
