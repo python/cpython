@@ -1,5 +1,7 @@
-Moved `csv` module docstring from `Modules/_csv.c` to `Lib/csv.py` and
-removed `__doc__` from `csv.__all__`.
+Move the :mod:`csv` module docstring to the :mod:`!csv` module
+instead of reexporting it from the internal :mod:`!_csv` module,
+and remove ``__doc__`` from ``csv.__all__``.
 
-Moved `csv.__version__` from `Modules/_csv.c` to `Lib/csv.py` and removed
-`__version__` from `csv.__all__`.
+Move :attr:`!csv.__version__` to the :mod:`!csv` module
+instead of reexporting it from the internal :mod:`!_csv` module,
+and remove ``__version__`` from ``csv.__all__``.
