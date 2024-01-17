@@ -1299,6 +1299,18 @@ static bool mi_segment_check_free(mi_segment_t* segment, size_t slices_needed, s
   return has_page;
 }
 
+static mi_heap_t* mi_heap_by_tag(mi_heap_t* heap, uint8_t tag) {
+  if (heap->tag == tag) {
+    return heap;
+  }
+  for (mi_heap_t *curr = heap->tld->heaps; curr != NULL; curr = curr->next) {
+    if (curr->tag == tag) {
+      return curr;
+    }
+  }
+  return NULL;
+}
+
 // Reclaim an abandoned segment; returns NULL if the segment was freed
 // set `right_page_reclaimed` to `true` if it reclaimed a page of the right `block_size` that was not full.
 static mi_segment_t* mi_segment_reclaim(mi_segment_t* segment, mi_heap_t* heap, size_t requested_block_size, bool* right_page_reclaimed, mi_segments_tld_t* tld) {
@@ -1321,6 +1333,7 @@ static mi_segment_t* mi_segment_reclaim(mi_segment_t* segment, mi_heap_t* heap, 
     if (mi_slice_is_used(slice)) {
       // in use: reclaim the page in our heap
       mi_page_t* page = mi_slice_to_page(slice);
+      mi_heap_t* target_heap = mi_heap_by_tag(heap, page->tag);
       mi_assert_internal(page->is_committed);
       mi_assert_internal(mi_page_thread_free_flag(page)==MI_NEVER_DELAYED_FREE);
       mi_assert_internal(mi_page_heap(page) == NULL);
@@ -1328,7 +1341,7 @@ static mi_segment_t* mi_segment_reclaim(mi_segment_t* segment, mi_heap_t* heap, 
       _mi_stat_decrease(&tld->stats->pages_abandoned, 1);
       segment->abandoned--;
       // set the heap again and allow delayed free again
-      mi_page_set_heap(page, heap);
+      mi_page_set_heap(page, target_heap);
       _mi_page_use_delayed_free(page, MI_USE_DELAYED_FREE, true); // override never (after heap is set)
       _mi_page_free_collect(page, false); // ensure used count is up to date
       if (mi_page_all_free(page)) {
@@ -1337,8 +1350,9 @@ static mi_segment_t* mi_segment_reclaim(mi_segment_t* segment, mi_heap_t* heap, 
       }
       else {
         // otherwise reclaim it into the heap
-        _mi_page_reclaim(heap, page);
-        if (requested_block_size == page->xblock_size && mi_page_has_any_available(page)) {
+        _mi_page_reclaim(target_heap, page);
+        if (requested_block_size == page->xblock_size && mi_page_has_any_available(page) &&
+            heap == target_heap) {
           if (right_page_reclaimed != NULL) { *right_page_reclaimed = true; }
         }
       }

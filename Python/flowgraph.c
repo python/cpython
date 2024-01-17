@@ -316,6 +316,16 @@ basicblock_exits_scope(const basicblock *b) {
     return last && IS_SCOPE_EXIT_OPCODE(last->i_opcode);
 }
 
+static inline int
+basicblock_has_eval_break(const basicblock *b) {
+    for (int i = 0; i < b->b_iused; i++) {
+        if (OPCODE_HAS_EVAL_BREAK(b->b_instr[i].i_opcode)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static bool
 cfg_builder_current_block_is_terminated(cfg_builder *g)
 {
@@ -481,9 +491,12 @@ no_redundant_jumps(cfg_builder *g) {
             if (IS_UNCONDITIONAL_JUMP_OPCODE(last->i_opcode)) {
                 basicblock *next = next_nonempty_block(b->b_next);
                 basicblock *jump_target = next_nonempty_block(last->i_target);
-                assert(jump_target != next);
                 if (jump_target == next) {
-                    return false;
+                    assert(next);
+                    if (last->i_loc.lineno == next->b_instr[0].i_loc.lineno) {
+                        assert(0);
+                        return false;
+                    }
                 }
             }
         }
@@ -1097,6 +1110,7 @@ remove_redundant_jumps(cfg_builder *g) {
             }
         }
     }
+
     return SUCCESS;
 }
 
@@ -1135,11 +1149,15 @@ jump_thread(cfg_instr *inst, cfg_instr *target, int opcode)
     assert(is_jump(target));
     // bpo-45773: If inst->i_target == target->i_target, then nothing actually
     // changes (and we fall into an infinite loop):
-    if ((inst->i_loc.lineno == target->i_loc.lineno || target->i_loc.lineno == -1) &&
+    if ((inst->i_loc.lineno == target->i_loc.lineno ||
+         inst->i_loc.lineno == -1 || target->i_loc.lineno == -1) &&
         inst->i_target != target->i_target)
     {
         inst->i_target = target->i_target;
         inst->i_opcode = opcode;
+        if (inst->i_loc.lineno == -1) {
+            inst->i_loc = target->i_loc;
+        }
         return true;
     }
     return false;
@@ -1602,9 +1620,14 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 }
                 break;
             case JUMP:
+            case JUMP_NO_INTERRUPT:
                 switch (target->i_opcode) {
                     case JUMP:
                         i -= jump_thread(inst, target, JUMP);
+                        continue;
+                    case JUMP_NO_INTERRUPT:
+                        i -= jump_thread(inst, target, opcode);
+                        continue;
                 }
                 break;
             case FOR_ITER:
@@ -2151,7 +2174,7 @@ push_cold_blocks_to_end(cfg_builder *g) {
             if (!IS_LABEL(b->b_next->b_label)) {
                 b->b_next->b_label.id = next_lbl++;
             }
-            basicblock_addop(explicit_jump, JUMP, b->b_next->b_label.id, NO_LOCATION);
+            basicblock_addop(explicit_jump, JUMP_NO_INTERRUPT, b->b_next->b_label.id, NO_LOCATION);
             explicit_jump->b_cold = 1;
             explicit_jump->b_next = b->b_next;
             b->b_next = explicit_jump;
@@ -2233,16 +2256,18 @@ convert_pseudo_ops(basicblock *entryblock)
 }
 
 static inline bool
-is_exit_without_lineno(basicblock *b) {
-    if (!basicblock_exits_scope(b)) {
+is_exit_or_eval_check_without_lineno(basicblock *b) {
+    if (basicblock_exits_scope(b) || basicblock_has_eval_break(b)) {
+        for (int i = 0; i < b->b_iused; i++) {
+            if (b->b_instr[i].i_loc.lineno >= 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+    else {
         return false;
     }
-    for (int i = 0; i < b->b_iused; i++) {
-        if (b->b_instr[i].i_loc.lineno >= 0) {
-            return false;
-        }
-    }
-    return true;
 }
 
 
@@ -2270,7 +2295,7 @@ duplicate_exits_without_lineno(cfg_builder *g)
         }
         if (is_jump(last)) {
             basicblock *target = next_nonempty_block(last->i_target);
-            if (is_exit_without_lineno(target) && target->b_predecessors > 1) {
+            if (is_exit_or_eval_check_without_lineno(target) && target->b_predecessors > 1) {
                 basicblock *new_target = copy_basicblock(g, target);
                 if (new_target == NULL) {
                     return ERROR;
@@ -2290,7 +2315,7 @@ duplicate_exits_without_lineno(cfg_builder *g)
      * fall through, and thus can only have a single predecessor */
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         if (BB_HAS_FALLTHROUGH(b) && b->b_next && b->b_iused > 0) {
-            if (is_exit_without_lineno(b->b_next)) {
+            if (is_exit_or_eval_check_without_lineno(b->b_next)) {
                 cfg_instr *last = basicblock_last_instr(b);
                 assert(last != NULL);
                 b->b_next->b_instr[0].i_loc = last->i_loc;

@@ -3201,6 +3201,22 @@ class TestSpecial(unittest.TestCase):
                 [x.value for x in NTEnum],
                 [TTuple(id=0, a=0, blist=[]), TTuple(id=1, a=2, blist=[4]), TTuple(id=2, a=4, blist=[0, 1, 2])],
                 )
+        #
+        class NTDEnum(Enum):
+            def __new__(cls, t_value):
+                member = object.__new__(cls)
+                member._value_ = t_value[0]
+                member.id = t_value[0]
+                member.a = t_value[1]
+                member.blist = t_value[2]
+                return member
+            NONE = TTuple(0, 0, [])
+            A = TTuple(1, 2, [4])
+            B = TTuple(2, 4, [0, 1, 2])
+        self.assertEqual(repr(NTDEnum.NONE), "<NTDEnum.NONE: 0>")
+        self.assertEqual(NTDEnum.NONE.id, 0)
+        self.assertEqual(NTDEnum.A.a, 2)
+        self.assertEqual(NTDEnum.B.blist, [0, 1 ,2])
 
     def test_flag_with_custom_new(self):
         class FlagFromChar(IntFlag):
