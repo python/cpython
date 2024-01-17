@@ -465,16 +465,18 @@ _PyRWMutex_Unlock(_PyRWMutex *rwmutex)
 void _PySeqLock_LockWrite(_PySeqLock *seqlock)
 {
     // lock the entry by setting by moving to an odd sequence number
-    int prev = seqlock->sequence;
+    uint32_t prev = _Py_atomic_load_uint32_relaxed(&seqlock->sequence);
     while (1) {
         if (SEQLOCK_IS_UPDATING(prev)) {
             // Someone else is currently updating the cache
             _Py_yield();
-            prev = _Py_atomic_load_int32_relaxed(&seqlock->sequence);
-        } else if (_Py_atomic_compare_exchange_int32(&seqlock->sequence, &prev, prev + 1)) {
+            prev = _Py_atomic_load_uint32_relaxed(&seqlock->sequence);
+        }
+        else if (_Py_atomic_compare_exchange_uint32(&seqlock->sequence, &prev, prev + 1)) {
             // We've locked the cache
             break;
-        } else {
+        }
+        else {
             _Py_yield();
         }
     }
@@ -482,34 +484,34 @@ void _PySeqLock_LockWrite(_PySeqLock *seqlock)
 
 void _PySeqLock_AbandonWrite(_PySeqLock *seqlock)
 {
-    int new_seq = seqlock->sequence - 1;
+    uint32_t new_seq = seqlock->sequence - 1;
     assert(!SEQLOCK_IS_UPDATING(new_seq));
-    _Py_atomic_exchange_int32(&seqlock->sequence, new_seq);
+    _Py_atomic_store_uint32(&seqlock->sequence, new_seq);
 }
 
 void _PySeqLock_UnlockWrite(_PySeqLock *seqlock)
 {
-    int new_seq = seqlock->sequence + 1;
+    uint32_t new_seq = seqlock->sequence + 1;
     assert(!SEQLOCK_IS_UPDATING(new_seq));
-    _Py_atomic_exchange_int32(&seqlock->sequence, new_seq);
+    _Py_atomic_store_uint32(&seqlock->sequence, new_seq);
 }
 
-int _PySeqLock_BeginRead(_PySeqLock *seqlock)
+uint32_t _PySeqLock_BeginRead(_PySeqLock *seqlock)
 {
-    int sequence = _Py_atomic_load_int_acquire(&seqlock->sequence);
+    uint32_t sequence = _Py_atomic_load_uint32_acquire(&seqlock->sequence);
     while (SEQLOCK_IS_UPDATING(sequence)) {
         _Py_yield();
-        sequence = _Py_atomic_load_int_acquire(&seqlock->sequence);
+        sequence = _Py_atomic_load_uint32_acquire(&seqlock->sequence);
     }
 
     return sequence;
 }
 
-int _PySeqLock_EndRead(_PySeqLock *seqlock, int previous)
+uint32_t _PySeqLock_EndRead(_PySeqLock *seqlock, uint32_t previous)
 {
     // Synchronize again and validate that the entry hasn't been updated
     // while we were readying the values.
-     if (_Py_atomic_load_int_acquire(&seqlock->sequence) == previous) {
+     if (_Py_atomic_load_uint32_acquire(&seqlock->sequence) == previous) {
         return 1;
      }
 
@@ -517,7 +519,7 @@ int _PySeqLock_EndRead(_PySeqLock *seqlock, int previous)
      return 0;
 }
 
-int _PySeqLock_AfterFork(_PySeqLock *seqlock)
+uint32_t _PySeqLock_AfterFork(_PySeqLock *seqlock)
 {
     // Synchronize again and validate that the entry hasn't been updated
     // while we were readying the values.

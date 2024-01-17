@@ -60,13 +60,13 @@ class object "PyObject *" "&PyBaseObject_Type"
 // in odd behaviors w.r.t. running with the GIL as the outer type lock could
 // be released and reacquired during a subclass update if there's contention
 // on the subclass lock.
-#define BEGIN_TYPE_LOCK()                                           \
-    {                                                               \
-    _PyCriticalSection _cs;                                         \
-    _PyCriticalSection_Begin(&_cs, &_PyRuntime.types.type_mutex);   \
+#define BEGIN_TYPE_LOCK()                                               \
+    {                                                                   \
+        _PyCriticalSection _cs;                                         \
+        _PyCriticalSection_Begin(&_cs, &_PyRuntime.types.type_mutex);   \
 
-#define END_TYPE_LOCK()                                             \
-        _PyCriticalSection_End(&_cs);                               \
+#define END_TYPE_LOCK()                                                 \
+        _PyCriticalSection_End(&_cs);                                   \
     }
 
 #define ASSERT_TYPE_LOCK_HELD() \
