@@ -1,2 +1,0 @@
-Fix an issue that caused important instruction pointer updates to be
-optimized out of tier two traces.
