@@ -193,11 +193,7 @@ class _SafeQueue(Queue):
 def _get_chunks(*iterables, chunksize):
     """ Iterates over zip()ed iterables in chunks. """
     it = zip(*iterables)
-    while True:
-        chunk = tuple(itertools.islice(it, chunksize))
-        if not chunk:
-            return
-        yield chunk
+    return itertools.batched(it, chunksize)
 
 
 def _process_chunk(fn, chunk):
