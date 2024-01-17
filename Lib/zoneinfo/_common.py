@@ -11,7 +11,7 @@ def load_tzdata(key):
     try:
         return resources.files(package_name).joinpath(resource_name).open("rb")
     except (ImportError, FileNotFoundError, UnicodeEncodeError):
-        # There are three types of exception that can be raised that all amount
+        # There are some types of exception that can be raised that all amount
         # to "we cannot find this key":
         #
         # ImportError: If package_name doesn't exist (e.g. if tzdata is not
@@ -22,6 +22,19 @@ def load_tzdata(key):
         # UnicodeEncodeError: If package_name or resource_name are not UTF-8,
         #   such as keys containing a surrogate character.
         raise ZoneInfoNotFoundError(f"No time zone found with key {key}")
+    except (IsADirectoryError, PermissionError):
+        # A few exceptions inherited from OSError can be raised in various scenarios:
+        #
+        # IsADirectoryError: If the resource_name links to a directory
+        #   (e.g. Australia)
+        # PermissionError: If the resource_name links to a directory on Windows
+        #   (e.g. Pacific)
+        resource_path = importlib.resources.files(package_name).joinpath(key)
+
+        if resource_path.is_dir():
+            raise ZoneInfoNotFoundError(f"No time zone found with key {key}")
+        else:
+            raise
 
 
 def load_data(fobj):
