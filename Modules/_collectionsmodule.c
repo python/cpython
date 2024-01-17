@@ -458,12 +458,12 @@ _collections.deque.extend
     iterable: object
     /
 
-Extend the right side of the deque with elements from the iterable
+Extend the right side of the deque with elements from the iterable.
 [clinic start generated code]*/
 
 static PyObject *
 _collections_deque_extend(dequeobject *deque, PyObject *iterable)
-/*[clinic end generated code: output=a58014bf32cb0b9d input=5a75e68f72ed8f09]*/
+/*[clinic end generated code: output=a58014bf32cb0b9d input=e021ff3e1c2cd868]*/
 {
     PyObject *it, *item;
     PyObject *(*iternext)(PyObject *);
@@ -513,12 +513,12 @@ _collections.deque.extendleft
     iterable: object
     /
 
-Extend the left side of the deque with elements from the iterable
+Extend the left side of the deque with elements from the iterable.
 [clinic start generated code]*/
 
 static PyObject *
 _collections_deque_extendleft(dequeobject *deque, PyObject *iterable)
-/*[clinic end generated code: output=0a0df3269097f284 input=8dae4c4f9d852a4c]*/
+/*[clinic end generated code: output=0a0df3269097f284 input=31a1bfe62f99746b]*/
 {
     PyObject *it, *item;
     PyObject *(*iternext)(PyObject *);
@@ -1034,12 +1034,12 @@ _collections.deque.reverse
 
     deque: dequeobject
 
-Reverse *IN PLACE*
+Reverse *IN PLACE*.
 [clinic start generated code]*/
 
 static PyObject *
 _collections_deque_reverse_impl(dequeobject *deque)
-/*[clinic end generated code: output=8f859d206158686e input=651e0257414fac22]*/
+/*[clinic end generated code: output=8f859d206158686e input=db89ccbd043ccf3c]*/
 {
     block *leftblock = deque->leftblock;
     block *rightblock = deque->rightblock;
@@ -1083,12 +1083,12 @@ _collections.deque.count
     v: object
     /
 
-Return number of occurrences of v
+Return number of occurrences of v.
 [clinic start generated code]*/
 
 static PyObject *
 _collections_deque_count(dequeobject *deque, PyObject *v)
-/*[clinic end generated code: output=4fd47b6bf522f071 input=38d3b9f0f9993e26]*/
+/*[clinic end generated code: output=4fd47b6bf522f071 input=45addc7d85e4a336]*/
 {
     block *b = deque->leftblock;
     Py_ssize_t index = deque->leftindex;
@@ -1255,13 +1255,13 @@ _collections.deque.insert
     value: object
     /
 
-Insert value before index
+Insert value before index.
 [clinic start generated code]*/
 
 static PyObject *
 _collections_deque_insert_impl(dequeobject *deque, Py_ssize_t index,
                                PyObject *value)
-/*[clinic end generated code: output=f913d56fc97caddf input=0593cc27bffa766a]*/
+/*[clinic end generated code: output=f913d56fc97caddf input=6c381062f9dcab0a]*/
 {
     Py_ssize_t n = Py_SIZE(deque);
     PyObject *rv;
@@ -1672,12 +1672,12 @@ _collections.deque.__sizeof__
 
     deque: dequeobject
 
-Return the size of the deque in memory, in bytes
+Return the size of the deque in memory, in bytes.
 [clinic start generated code]*/
 
 static PyObject *
 _collections_deque___sizeof___impl(dequeobject *deque)
-/*[clinic end generated code: output=1a66234430a294a3 input=c0c535e64766f446]*/
+/*[clinic end generated code: output=1a66234430a294a3 input=3d6a0b57c12c6f11]*/
 {
     size_t res = _PyObject_SIZE(Py_TYPE(deque));
     size_t blocks;

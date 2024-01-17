@@ -67,7 +67,7 @@ PyDoc_STRVAR(_collections_deque_extend__doc__,
 "extend($self, iterable, /)\n"
 "--\n"
 "\n"
-"Extend the right side of the deque with elements from the iterable");
+"Extend the right side of the deque with elements from the iterable.");
 
 #define _COLLECTIONS_DEQUE_EXTEND_METHODDEF    \
     {"extend", (PyCFunction)_collections_deque_extend, METH_O, _collections_deque_extend__doc__},
@@ -76,7 +76,7 @@ PyDoc_STRVAR(_collections_deque_extendleft__doc__,
 "extendleft($self, iterable, /)\n"
 "--\n"
 "\n"
-"Extend the left side of the deque with elements from the iterable");
+"Extend the left side of the deque with elements from the iterable.");
 
 #define _COLLECTIONS_DEQUE_EXTENDLEFT_METHODDEF    \
     {"extendleft", (PyCFunction)_collections_deque_extendleft, METH_O, _collections_deque_extendleft__doc__},
@@ -182,7 +182,7 @@ PyDoc_STRVAR(_collections_deque_reverse__doc__,
 "reverse($self, /)\n"
 "--\n"
 "\n"
-"Reverse *IN PLACE*");
+"Reverse *IN PLACE*.");
 
 #define _COLLECTIONS_DEQUE_REVERSE_METHODDEF    \
     {"reverse", (PyCFunction)_collections_deque_reverse, METH_NOARGS, _collections_deque_reverse__doc__},
@@ -200,7 +200,7 @@ PyDoc_STRVAR(_collections_deque_count__doc__,
 "count($self, v, /)\n"
 "--\n"
 "\n"
-"Return number of occurrences of v");
+"Return number of occurrences of v.");
 
 #define _COLLECTIONS_DEQUE_COUNT_METHODDEF    \
     {"count", (PyCFunction)_collections_deque_count, METH_O, _collections_deque_count__doc__},
@@ -255,7 +255,7 @@ PyDoc_STRVAR(_collections_deque_insert__doc__,
 "insert($self, index, value, /)\n"
 "--\n"
 "\n"
-"Insert value before index");
+"Insert value before index.");
 
 #define _COLLECTIONS_DEQUE_INSERT_METHODDEF    \
     {"insert", _PyCFunction_CAST(_collections_deque_insert), METH_FASTCALL, _collections_deque_insert__doc__},
@@ -391,7 +391,7 @@ PyDoc_STRVAR(_collections_deque___sizeof____doc__,
 "__sizeof__($self, /)\n"
 "--\n"
 "\n"
-"Return the size of the deque in memory, in bytes");
+"Return the size of the deque in memory, in bytes.");
 
 #define _COLLECTIONS_DEQUE___SIZEOF___METHODDEF    \
     {"__sizeof__", (PyCFunction)_collections_deque___sizeof__, METH_NOARGS, _collections_deque___sizeof____doc__},
@@ -490,4 +490,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8f7f860b44810b2c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5f817800f678ca2d input=a9049054013a1b77]*/
