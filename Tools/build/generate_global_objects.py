@@ -124,8 +124,13 @@ IDENTIFIERS = [
     '__buffer__',
     '__release_buffer__',
 
-    #Workaround for GH-108918
+    #Workarounds for GH-108918
+    'alias',
+    'args',
+    'exc_type',
+    'exc_value',
     'self',
+    'traceback',
 ]
 
 NON_GENERATED_IMMORTAL_OBJECTS = [
