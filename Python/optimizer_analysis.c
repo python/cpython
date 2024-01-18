@@ -72,8 +72,8 @@ check_globals_version(_PyUOpInstruction *inst, PyObject *obj)
 }
 
 static void
-remove_globals(_PyUOpInstruction *buffer, int buffer_size,
-               _PyInterpreterFrame *frame, _PyBloomFilter *dependencies)
+remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
+               int buffer_size, _PyBloomFilter *dependencies)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
@@ -204,8 +204,17 @@ peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_s
             }
             case _PUSH_FRAME:
             case _POP_FRAME:
-                co = (PyCodeObject *)buffer[pc].operand;
+            {
+                PyFunctionObject *func = (PyFunctionObject *)buffer[pc].operand;
+                if (func == NULL) {
+                    co = NULL;
+                }
+                else {
+                    assert(PyFunction_Check(func));
+                    co = (PyCodeObject *)func->func_code;
+                }
                 break;
+            }
             case _JUMP_TO_TOP:
             case _EXIT_TRACE:
                 return;
@@ -260,6 +269,7 @@ _Py_uop_analyze_and_optimize(
     int curr_stacklen
 )
 {
+    remove_globals(frame, buffer, buffer_size, dependencies);
     peephole_opt(frame, buffer, buffer_size);
     remove_unneeded_uops(buffer, buffer_size);
     return 0;

@@ -359,7 +359,8 @@ BRANCH_TO_GUARD[4][2] = {
         ADD_TO_TRACE(_EXIT_TRACE, 0, 0, 0); \
         goto done; \
     } \
-    trace_stack[trace_stack_depth].code = code; \
+    assert(func->func_code == (PyObject *)code); \
+    trace_stack[trace_stack_depth].func = func; \
     trace_stack[trace_stack_depth].instr = instr; \
     trace_stack_depth++;
 #define TRACE_STACK_POP() \
@@ -367,7 +368,8 @@ BRANCH_TO_GUARD[4][2] = {
         Py_FatalError("Trace stack underflow\n"); \
     } \
     trace_stack_depth--; \
-    code = trace_stack[trace_stack_depth].code; \
+    func = trace_stack[trace_stack_depth].func; \
+    code = (PyCodeObject *)trace_stack[trace_stack_depth].func->func_code; \
     instr = trace_stack[trace_stack_depth].instr;
 
 /* Returns 1 on success,
@@ -384,13 +386,15 @@ translate_bytecode_to_trace(
 {
     bool progress_needed = true;
     PyCodeObject *code = (PyCodeObject *)frame->f_executable;
+    PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
+    assert(PyFunction_Check(func));
     PyCodeObject *initial_code = code;
     _Py_BloomFilter_Add(dependencies, initial_code);
     _Py_CODEUNIT *initial_instr = instr;
     int trace_length = 0;
     int max_length = buffer_size;
     struct {
-        PyCodeObject *code;
+        PyFunctionObject *func;
         _Py_CODEUNIT *instr;
     } trace_stack[TRACE_STACK_SIZE];
     int trace_stack_depth = 0;
@@ -591,7 +595,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                             TRACE_STACK_POP();
                             /* Set the operand to the code object returned to,
                              * to assist optimization passes */
-                            trace[trace_length-1].operand = (uintptr_t)code;
+                            trace[trace_length-1].operand = (uintptr_t)func;
                             DPRINTF(2,
                                 "Returning to %s (%s:%d) at byte offset %d\n",
                                 PyUnicode_AsUTF8(code->co_qualname),
@@ -607,10 +611,10 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 // Add one to account for the actual opcode/oparg pair:
                                 + 1;
                             uint32_t func_version = read_u32(&instr[func_version_offset].cache);
-                            PyFunctionObject *func = _PyFunction_LookupByVersion(func_version);
+                            PyFunctionObject *new_func = _PyFunction_LookupByVersion(func_version);
                             DPRINTF(3, "Function object: %p\n", func);
-                            if (func != NULL) {
-                                PyCodeObject *new_code = (PyCodeObject *)PyFunction_GET_CODE(func);
+                            if (new_func != NULL) {
+                                PyCodeObject *new_code = (PyCodeObject *)PyFunction_GET_CODE(new_func);
                                 if (new_code == code) {
                                     // Recursive call, bail (we could be here forever).
                                     DPRINTF(2, "Bailing on recursive call to %s (%s:%d)\n",
@@ -635,8 +639,9 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 _Py_BloomFilter_Add(dependencies, new_code);
                                 /* Set the operand to the callee's code object,
                                 * to assist optimization passes */
-                                trace[trace_length-1].operand = (uintptr_t)new_code;
+                                trace[trace_length-1].operand = (uintptr_t)new_func;
                                 code = new_code;
+                                func = new_func;
                                 instr = _PyCode_CODE(code);
                                 DPRINTF(2,
                                     "Continuing in %s (%s:%d) at byte offset %d\n",
