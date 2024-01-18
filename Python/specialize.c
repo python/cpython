@@ -268,6 +268,16 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
 }
 
 static void
+print_rare_event_stats(FILE *out, RareEventStats *stats)
+{
+    fprintf(out, "Rare event (set_class): %" PRIu64 "\n", stats->set_class);
+    fprintf(out, "Rare event (set_bases): %" PRIu64 "\n", stats->set_bases);
+    fprintf(out, "Rare event (set_eval_frame_func): %" PRIu64 "\n", stats->set_eval_frame_func);
+    fprintf(out, "Rare event (builtin_dict): %" PRIu64 "\n", stats->builtin_dict);
+    fprintf(out, "Rare event (func_modification): %" PRIu64 "\n", stats->func_modification);
+}
+
+static void
 print_stats(FILE *out, PyStats *stats)
 {
     print_spec_stats(out, stats->opcode_stats);
@@ -275,6 +285,7 @@ print_stats(FILE *out, PyStats *stats)
     print_object_stats(out, &stats->object_stats);
     print_gc_stats(out, stats->gc_stats);
     print_optimization_stats(out, &stats->optimization_stats);
+    print_rare_event_stats(out, &stats->rare_event_stats);
 }
 
 void

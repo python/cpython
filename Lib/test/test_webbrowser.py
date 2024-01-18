@@ -307,6 +307,7 @@ class ImportTest(unittest.TestCase):
             webbrowser.get('fakebrowser')
         self.assertIsNotNone(webbrowser._tryorder)
 
+    @unittest.skipIf(" " in sys.executable, "test assumes no space in path (GH-114452)")
     def test_synthesize(self):
         webbrowser = import_helper.import_fresh_module('webbrowser')
         name = os.path.basename(sys.executable).lower()

@@ -60,6 +60,21 @@ struct _stoptheworld_state {
 
 /* cross-interpreter data registry */
 
+/* Tracks some rare events per-interpreter, used by the optimizer to turn on/off
+   specific optimizations. */
+typedef struct _rare_events {
+    /* Setting an object's class, obj.__class__ = ... */
+    uint8_t set_class;
+    /* Setting the bases of a class, cls.__bases__ = ... */
+    uint8_t set_bases;
+    /* Setting the PEP 523 frame eval function, _PyInterpreterState_SetFrameEvalFunc() */
+    uint8_t set_eval_frame_func;
+    /* Modifying the builtins,  __builtins__.__dict__[var] = ... */
+    uint8_t builtin_dict;
+    int builtins_dict_watcher_id;
+    /* Modifying a function, e.g. func.__defaults__ = ..., etc. */
+    uint8_t func_modification;
+} _rare_events;
 
 /* interpreter state */
 
@@ -217,6 +232,7 @@ struct _is {
     uint16_t optimizer_resume_threshold;
     uint16_t optimizer_backedge_threshold;
     uint32_t next_func_version;
+    _rare_events rare_events;
 
     _Py_GlobalMonitors monitors;
     bool sys_profile_initialized;
@@ -346,6 +362,19 @@ PyAPI_FUNC(PyStatus) _PyInterpreterState_New(
     PyThreadState *tstate,
     PyInterpreterState **pinterp);
 
+
+#define RARE_EVENT_INTERP_INC(interp, name) \
+    do { \
+        /* saturating add */ \
+        if (interp->rare_events.name < UINT8_MAX) interp->rare_events.name++; \
+        RARE_EVENT_STAT_INC(name); \
+    } while (0); \
+
+#define RARE_EVENT_INC(name) \
+    do { \
+        PyInterpreterState *interp = PyInterpreterState_Get(); \
+        RARE_EVENT_INTERP_INC(interp, name); \
+    } while (0); \
 
 #ifdef __cplusplus
 }

@@ -78,6 +78,9 @@ FTP objects
    A 2-tuple ``(host, port)`` for the socket to bind to as its
    source address before connecting.
 
+.. |param_doc_encoding| replace::
+   The encoding for directories and filenames (default: ``'utf-8'``).
+
 .. class:: FTP(host='', user='', passwd='', acct='', timeout=None, \
                source_address=None, *, encoding='utf-8')
 
@@ -108,8 +111,7 @@ FTP objects
    :type source_address: tuple | None
 
    :param str encoding:
-      The *encoding* parameter specifies the encoding
-      for directories and filenames.
+      |param_doc_encoding|
 
    The :class:`FTP` class supports the :keyword:`with` statement, e.g.:
 
@@ -447,19 +449,53 @@ FTP_TLS objects
 .. class:: FTP_TLS(host='', user='', passwd='', acct='', *, context=None, \
                    timeout=None, source_address=None, encoding='utf-8')
 
-   A :class:`FTP` subclass which adds TLS support to FTP as described in
+   An :class:`FTP` subclass which adds TLS support to FTP as described in
    :rfc:`4217`.
-   Connect as usual to port 21 implicitly securing the FTP control connection
-   before authenticating. Securing the data connection requires the user to
-   explicitly ask for it by calling the :meth:`prot_p` method.  *context*
-   is a :class:`ssl.SSLContext` object which allows bundling SSL configuration
-   options, certificates and private keys into a single (potentially
-   long-lived) structure.  Please read :ref:`ssl-security` for best practices.
+   Connect to port 21 implicitly securing the FTP control connection
+   before authenticating.
+
+   .. note::
+      The user must explicitly secure the data connection
+      by calling the :meth:`prot_p` method.
+
+   :param str host:
+      The hostname to connect to.
+      If given, :code:`connect(host)` is implicitly called by the constructor.
+
+   :param str user:
+      |param_doc_user|
+      If given, :code:`login(host, passwd, acct)` is implicitly called
+      by the constructor.
+
+   :param str passwd:
+      |param_doc_passwd|
+
+   :param str acct:
+      |param_doc_acct|
+
+   :param context:
+      An SSL context object which allows bundling SSL configuration options,
+      certificates and private keys into a single, potentially long-lived,
+      structure.
+      Please read :ref:`ssl-security` for best practices.
+   :type context: :class:`ssl.SSLContext`
+
+   :param timeout:
+      A timeout in seconds for blocking operations like :meth:`~FTP.connect`
+      (default: the global default timeout setting).
+   :type timeout: int | None
+
+   :param source_address:
+      |param_doc_source_address|
+   :type source_address: tuple | None
+
+   :param str encoding:
+      |param_doc_encoding|
 
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.3
-      *source_address* parameter was added.
+      Added the *source_address* parameter.
 
    .. versionchanged:: 3.4
       The class now supports hostname check with
