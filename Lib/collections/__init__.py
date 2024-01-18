@@ -789,7 +789,7 @@ class Counter(dict):
         if not isinstance(other, Counter):
             return NotImplemented
 
-        if super().__eq__(other):
+        if super().__eq__(other) is True:
             return True
 
         for k, v in self.items():
