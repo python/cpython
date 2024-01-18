@@ -1558,14 +1558,14 @@ def replace(obj, /, **changes):
     return _replace(obj, **changes)
 
 
-def _replace(obj, /, **changes):
+def _replace(self, /, **changes):
     # We're going to mutate 'changes', but that's okay because it's a
-    # new dict, even if called with 'replace(obj, **my_changes)'.
+    # new dict, even if called with 'replace(self, **my_changes)'.
 
     # It's an error to have init=False fields in 'changes'.
-    # If a field is not in 'changes', read its value from the provided obj.
+    # If a field is not in 'changes', read its value from the provided 'self'.
 
-    for f in getattr(obj, _FIELDS).values():
+    for f in getattr(self, _FIELDS).values():
         # Only consider normal fields or InitVars.
         if f._field_type is _FIELD_CLASSVAR:
             continue
@@ -1582,11 +1582,11 @@ def _replace(obj, /, **changes):
             if f._field_type is _FIELD_INITVAR and f.default is MISSING:
                 raise TypeError(f"InitVar {f.name!r} "
                                 f'must be specified with replace()')
-            changes[f.name] = getattr(obj, f.name)
+            changes[f.name] = getattr(self, f.name)
 
     # Create the new object, which calls __init__() and
     # __post_init__() (if defined), using all of the init fields we've
     # added and/or left in 'changes'.  If there are values supplied in
     # changes that aren't fields, this will correctly raise a
     # TypeError.
-    return obj.__class__(**changes)
+    return self.__class__(**changes)
