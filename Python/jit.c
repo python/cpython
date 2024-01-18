@@ -37,14 +37,14 @@ get_page_size(void)
 }
 
 static void
-jit_warn(const char *message)
+jit_error(const char *message)
 {
 #ifdef MS_WINDOWS
     int hint = GetLastError();
 #else
     int hint = errno;
 #endif
-    PyErr_WarnFormat(PyExc_RuntimeWarning, 0, "JIT %s (%d)", message, hint);
+    PyErr_Format(PyExc_RuntimeWarning, "JIT %s (%d)", message, hint);
 }
 
 static char *
@@ -62,13 +62,13 @@ jit_alloc(size_t size)
     int failed = memory == MAP_FAILED;
 #endif
     if (failed) {
-        jit_warn("unable to allocate memory");
+        jit_error("unable to allocate memory");
         return NULL;
     }
     return memory;
 }
 
-static void
+static int
 jit_free(char *memory, size_t size)
 {
     assert(size);
@@ -79,8 +79,10 @@ jit_free(char *memory, size_t size)
     int failed = munmap(memory, size);
 #endif
     if (failed) {
-        jit_warn("unable to free memory");
+        jit_error("unable to free memory");
+        return -1;
     }
+    return 0;
 }
 
 static int
@@ -94,7 +96,7 @@ mark_executable(char *memory, size_t size)
     // i-cache (I cannot begin to tell you how horrible that is to debug):
 #ifdef MS_WINDOWS
     if (!FlushInstructionCache(GetCurrentProcess(), memory, size)) {
-        jit_warn("unable to flush instruction cache");
+        jit_error("unable to flush instruction cache");
         return -1;
     }
     int old;
@@ -104,7 +106,7 @@ mark_executable(char *memory, size_t size)
     int failed = mprotect(memory, size, PROT_EXEC | PROT_READ);
 #endif
     if (failed) {
-        jit_warn("unable to protect executable memory");
+        jit_error("unable to protect executable memory");
         return -1;
     }
     return 0;
@@ -124,7 +126,7 @@ mark_readable(char *memory, size_t size)
     int failed = mprotect(memory, size, PROT_READ);
 #endif
     if (failed) {
-        jit_warn("unable to protect readable memory");
+        jit_error("unable to protect executable memory");
         return -1;
     }
     return 0;
@@ -134,25 +136,26 @@ mark_readable(char *memory, size_t size)
 
 // Warning! AArch64 requires you to get your hands dirty. These are your gloves:
 
-// value[i : i + n]
+// value[value_start : value_start + len]
 static uint32_t
-get_bits(uint64_t value, uint8_t i, uint8_t n)
+get_bits(uint64_t value, uint8_t value_start, uint8_t width)
 {
-    assert(n <= 32);
-    return (value >> i) & ((1ULL << n) - 1);
+    assert(width <= 32);
+    return (value >> value_start) & ((1ULL << width) - 1);
 }
 
-// *loc[i : i + n] = value[j : j + n]
+// *loc[loc_start : loc_start + width] = value[value_start : value_start + width]
 static void
-set_bits(uint32_t *loc, uint8_t i, uint8_t n, uint64_t value, uint8_t j)
+set_bits(uint32_t *loc, uint8_t loc_start, uint64_t value, uint8_t value_start,
+         uint8_t width)
 {
-    assert(i + n <= 32);
+    assert(loc_start + width <= 32);
     // Clear the bits we're about to patch:
-    *loc &= ~(((1ULL << n) - 1) << i);
-    assert(get_bits(*loc, i, n) == 0);
+    *loc &= ~(((1ULL << width) - 1) << loc_start);
+    assert(get_bits(*loc, loc_start, width) == 0);
     // Patch the bits:
-    *loc |= get_bits(value, j, n) << i;
-    assert(get_bits(*loc, i, n) == get_bits(value, j, n));
+    *loc |= get_bits(value, value_start, width) << loc_start;
+    assert(get_bits(*loc, loc_start, width) == get_bits(value, value_start, width));
 }
 
 // See https://developer.arm.com/documentation/ddi0602/2023-09/Base-Instructions
@@ -180,109 +183,110 @@ set_bits(uint32_t *loc, uint8_t i, uint8_t n, uint64_t value, uint8_t j)
 // - x86_64-unknown-linux-gnu:
 //   - https://github.com/llvm/llvm-project/blob/main/lld/ELF/Arch/X86_64.cpp
 static void
-patch(char *base, const Hole *hole, uint64_t *patches)
+patch(char *base, const Stencil *stencil, uint64_t *patches)
 {
-    void *location = base + hole->offset;
-    uint64_t value = patches[hole->value] + (uint64_t)hole->symbol + hole->addend;
-    uint32_t *loc32 = (uint32_t *)location;
-    uint64_t *loc64 = (uint64_t *)location;
-    switch (hole->kind) {
-        case HoleKind_IMAGE_REL_I386_DIR32:
-            // 32-bit absolute address.
-            // Check that we're not out of range of 32 unsigned bits:
-            assert(value < (1ULL << 32));
-            *loc32 = (uint32_t)value;
-            return;
-        case HoleKind_ARM64_RELOC_UNSIGNED:
-        case HoleKind_IMAGE_REL_AMD64_ADDR64:
-        case HoleKind_R_AARCH64_ABS64:
-        case HoleKind_X86_64_RELOC_UNSIGNED:
-        case HoleKind_R_X86_64_64:
-            // 64-bit absolute address.
-            *loc64 = value;
-            return;
-        case HoleKind_R_AARCH64_CALL26:
-        case HoleKind_R_AARCH64_JUMP26:
-            // 28-bit relative branch.
-            assert(IS_AARCH64_BRANCH(*loc32));
-            value -= (uint64_t)location;
-            // Check that we're not out of range of 28 signed bits:
-            assert((int64_t)value >= -(1 << 27));
-            assert((int64_t)value < (1 << 27));
-            // Since instructions are 4-byte aligned, only use 26 bits:
-            assert(get_bits(value, 0, 2) == 0);
-            set_bits(loc32, 0, 26, value, 2);
-            return;
-        case HoleKind_R_AARCH64_MOVW_UABS_G0_NC:
-            // 16-bit low part of an absolute address.
-            assert(IS_AARCH64_MOV(*loc32));
-            // Check the implicit shift (this is "part 0 of 3"):
-            assert(get_bits(*loc32, 21, 2) == 0);
-            set_bits(loc32, 5, 16, value, 0);
-            return;
-        case HoleKind_R_AARCH64_MOVW_UABS_G1_NC:
-            // 16-bit middle-low part of an absolute address.
-            assert(IS_AARCH64_MOV(*loc32));
-            // Check the implicit shift (this is "part 1 of 3"):
-            assert(get_bits(*loc32, 21, 2) == 1);
-            set_bits(loc32, 5, 16, value, 16);
-            return;
-        case HoleKind_R_AARCH64_MOVW_UABS_G2_NC:
-            // 16-bit middle-high part of an absolute address.
-            assert(IS_AARCH64_MOV(*loc32));
-            // Check the implicit shift (this is "part 2 of 3"):
-            assert(get_bits(*loc32, 21, 2) == 2);
-            set_bits(loc32, 5, 16, value, 32);
-            return;
-        case HoleKind_R_AARCH64_MOVW_UABS_G3:
-            // 16-bit high part of an absolute address.
-            assert(IS_AARCH64_MOV(*loc32));
-            // Check the implicit shift (this is "part 3 of 3"):
-            assert(get_bits(*loc32, 21, 2) == 3);
-            set_bits(loc32, 5, 16, value, 48);
-            return;
-        case HoleKind_ARM64_RELOC_GOT_LOAD_PAGE21:
-            // 21-bit count of pages between this page and an absolute address's
-            // page... I know, I know, it's weird. Pairs nicely with
-            // ARM64_RELOC_GOT_LOAD_PAGEOFF12 (below).
-            assert(IS_AARCH64_ADRP(*loc32));
-            // Number of pages between this page and the value's page:
-            value = (value >> 12) - ((uint64_t)location >> 12);
-            // Check that we're not out of range of 21 signed bits:
-            assert((int64_t)value >= -(1 << 20));
-            assert((int64_t)value < (1 << 20));
-            // value[0:2] goes in loc[29:31]:
-            set_bits(loc32, 29, 2, value, 0);
-            // value[2:21] goes in loc[5:26]:
-            set_bits(loc32, 5, 19, value, 2);
-            return;
-        case HoleKind_ARM64_RELOC_GOT_LOAD_PAGEOFF12:
-            // 12-bit low part of an absolute address. Pairs nicely with
-            // ARM64_RELOC_GOT_LOAD_PAGE21 (above).
-            assert(IS_AARCH64_LDR_OR_STR(*loc32) || IS_AARCH64_ADD_OR_SUB(*loc32));
-            // There might be an implicit shift encoded in the instruction:
-            uint8_t shift = 0;
-            if (IS_AARCH64_LDR_OR_STR(*loc32)) {
-                shift = (uint8_t)get_bits(*loc32, 30, 2);
-                // If both of these are set, the shift is supposed to be 4.
-                // That's pretty weird, and it's never actually been observed...
-                assert(get_bits(*loc32, 23, 1) == 0 || get_bits(*loc32, 26, 1) == 0);
-            }
-            value = get_bits(value, 0, 12);
-            assert(get_bits(value, 0, shift) == 0);
-            set_bits(loc32, 10, 12, value, shift);
-            return;
+    for (uint64_t i = 0; i < stencil->holes_size; i++) {
+        Hole *hole = &stencil->holes[i];
+        void *location = base + hole->offset;
+        uint64_t value = patches[hole->value] + (uint64_t)hole->symbol + hole->addend;
+        uint32_t *loc32 = (uint32_t *)location;
+        uint64_t *loc64 = (uint64_t *)location;
+        switch (hole->kind) {
+            case HoleKind_IMAGE_REL_I386_DIR32:
+                // 32-bit absolute address.
+                // Check that we're not out of range of 32 unsigned bits:
+                assert(value < (1ULL << 32));
+                *loc32 = (uint32_t)value;
+                continue;
+            case HoleKind_ARM64_RELOC_UNSIGNED:
+            case HoleKind_IMAGE_REL_AMD64_ADDR64:
+            case HoleKind_R_AARCH64_ABS64:
+            case HoleKind_X86_64_RELOC_UNSIGNED:
+            case HoleKind_R_X86_64_64:
+                // 64-bit absolute address.
+                *loc64 = value;
+                continue;
+            case HoleKind_R_AARCH64_CALL26:
+            case HoleKind_R_AARCH64_JUMP26:
+                // 28-bit relative branch.
+                assert(IS_AARCH64_BRANCH(*loc32));
+                value -= (uint64_t)location;
+                // Check that we're not out of range of 28 signed bits:
+                assert((int64_t)value >= -(1 << 27));
+                assert((int64_t)value < (1 << 27));
+                // Since instructions are 4-byte aligned, only use 26 bits:
+                assert(get_bits(value, 0, 2) == 0);
+                set_bits(loc32, 0, value, 2, 26);
+                continue;
+            case HoleKind_R_AARCH64_MOVW_UABS_G0_NC:
+                // 16-bit low part of an absolute address.
+                assert(IS_AARCH64_MOV(*loc32));
+                // Check the implicit shift (this is "part 0 of 3"):
+                assert(get_bits(*loc32, 21, 2) == 0);
+                set_bits(loc32, 5, value, 0, 16);
+                continue;
+            case HoleKind_R_AARCH64_MOVW_UABS_G1_NC:
+                // 16-bit middle-low part of an absolute address.
+                assert(IS_AARCH64_MOV(*loc32));
+                // Check the implicit shift (this is "part 1 of 3"):
+                assert(get_bits(*loc32, 21, 2) == 1);
+                set_bits(loc32, 5, value, 16, 16);
+                continue;
+            case HoleKind_R_AARCH64_MOVW_UABS_G2_NC:
+                // 16-bit middle-high part of an absolute address.
+                assert(IS_AARCH64_MOV(*loc32));
+                // Check the implicit shift (this is "part 2 of 3"):
+                assert(get_bits(*loc32, 21, 2) == 2);
+                set_bits(loc32, 5, value, 32, 16);
+                continue;
+            case HoleKind_R_AARCH64_MOVW_UABS_G3:
+                // 16-bit high part of an absolute address.
+                assert(IS_AARCH64_MOV(*loc32));
+                // Check the implicit shift (this is "part 3 of 3"):
+                assert(get_bits(*loc32, 21, 2) == 3);
+                set_bits(loc32, 5, value, 48, 16);
+                continue;
+            case HoleKind_ARM64_RELOC_GOT_LOAD_PAGE21:
+                // 21-bit count of pages between this page and an absolute address's
+                // page... I know, I know, it's weird. Pairs nicely with
+                // ARM64_RELOC_GOT_LOAD_PAGEOFF12 (below).
+                assert(IS_AARCH64_ADRP(*loc32));
+                // Number of pages between this page and the value's page:
+                value = (value >> 12) - ((uint64_t)location >> 12);
+                // Check that we're not out of range of 21 signed bits:
+                assert((int64_t)value >= -(1 << 20));
+                assert((int64_t)value < (1 << 20));
+                // value[0:2] goes in loc[29:31]:
+                set_bits(loc32, 29, value, 0, 2);
+                // value[2:21] goes in loc[5:26]:
+                set_bits(loc32, 5, value, 2, 19);
+                continue;
+            case HoleKind_ARM64_RELOC_GOT_LOAD_PAGEOFF12:
+                // 12-bit low part of an absolute address. Pairs nicely with
+                // ARM64_RELOC_GOT_LOAD_PAGE21 (above).
+                assert(IS_AARCH64_LDR_OR_STR(*loc32) || IS_AARCH64_ADD_OR_SUB(*loc32));
+                // There might be an implicit shift encoded in the instruction:
+                uint8_t shift = 0;
+                if (IS_AARCH64_LDR_OR_STR(*loc32)) {
+                    shift = (uint8_t)get_bits(*loc32, 30, 2);
+                    // If both of these are set, the shift is supposed to be 4.
+                    // That's pretty weird, and it's never actually been observed...
+                    assert(get_bits(*loc32, 23, 1) == 0 || get_bits(*loc32, 26, 1) == 0);
+                }
+                value = get_bits(value, 0, 12);
+                assert(get_bits(value, 0, shift) == 0);
+                set_bits(loc32, 10, value, shift, 12);
+                continue;
+        }
+        Py_UNREACHABLE();
     }
-    Py_UNREACHABLE();
 }
 
 static void
 copy_and_patch(char *base, const Stencil *stencil, uint64_t *patches)
 {
     memcpy(base, stencil->body, stencil->body_size);
-    for (uint64_t i = 0; i < stencil->holes_size; i++) {
-        patch(base, &stencil->holes[i], patches);
-    }
+    patch(base, stencil, patches);
 }
 
 static void
@@ -312,7 +316,7 @@ _PyJIT_Compile(_PyExecutorObject *executor)
     data_size += page_size - (data_size & (page_size - 1));
     char *memory = jit_alloc(code_size + data_size);
     if (memory == NULL) {
-        goto fail;
+        return -1;
     }
     // Loop again to emit the code:
     char *code = memory;
@@ -339,13 +343,11 @@ _PyJIT_Compile(_PyExecutorObject *executor)
         mark_readable(memory + code_size, data_size))
     {
         jit_free(memory, code_size + data_size);
-        goto fail;
+        return -1;
     }
     executor->jit_code = memory;
     executor->jit_size = code_size + data_size;
-    return 1;
-fail:
-    return PyErr_Occurred() ? -1 : 0;
+    return 0;
 }
 
 void
@@ -356,7 +358,9 @@ _PyJIT_Free(_PyExecutorObject *executor)
     if (memory) {
         executor->jit_code = NULL;
         executor->jit_size = 0;
-        jit_free(memory, size);
+        if (jit_free(memory, size)) {
+            PyErr_WriteUnraisable(NULL);
+        }
     }
 }
 
