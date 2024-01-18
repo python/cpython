@@ -1991,9 +1991,9 @@ class POSIXProcessTestCase(BaseTestCase):
 
     @unittest.skipUnless(hasattr(os, 'setreuid'), 'no setreuid on platform')
     def test_user(self):
-        # For code coverage of the user parameter.  We don't care if we get an
-        # EPERM error from it depending on the test execution environment, that
-        # still indicates that it was called.
+        # For code coverage of the user parameter.  We don't care if we get a
+        # permission error from it depending on the test execution environment,
+        # that still indicates that it was called.
 
         uid = os.geteuid()
         test_users = [65534 if uid != 65534 else 65533, uid]
