@@ -1268,10 +1268,13 @@ always available.
     .. versionchanged:: 3.4
 
         :term:`Module specs <module spec>` were introduced in Python 3.4, by
-        :pep:`451`. Earlier versions of Python looked for a method called
-        :meth:`!find_module`.
-        This is still called as a fallback if a :data:`meta_path` entry doesn't
-        have a :meth:`~importlib.abc.MetaPathFinder.find_spec` method.
+        :pep:`451`.
+
+    .. versionchanged:: 3.12
+
+        Removed the fallback that looked for a :meth:`!find_module` method
+        if a :data:`meta_path` entry didn't have a
+        :meth:`~importlib.abc.MetaPathFinder.find_spec` method.
 
 .. data:: modules
 
@@ -1744,8 +1747,16 @@ always available.
 
    .. availability:: Windows.
 
+   .. note::
+      Changing the filesystem encoding after Python startup is risky because
+      the old fsencoding or paths encoded by the old fsencoding may be cached
+      somewhere. Use :envvar:`PYTHONLEGACYWINDOWSFSENCODING` instead.
+
    .. versionadded:: 3.6
       See :pep:`529` for more details.
+
+   .. deprecated-removed:: 3.13 3.16
+      Use :envvar:`PYTHONLEGACYWINDOWSFSENCODING` instead.
 
 .. data:: stdin
           stdout
