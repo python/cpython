@@ -161,7 +161,7 @@ static PyTypeObject _Py_UOps_Opt_IR_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION
 };
 
-static void
+static int
 ir_store(_Py_UOps_Opt_IR *ir, _Py_UOpsSymbolicExpression *expr, _Py_UOps_IRStore_IdKind store_fast_idx)
 {
     // Don't store stuff we know will never get compiled.
@@ -184,9 +184,13 @@ ir_store(_Py_UOps_Opt_IR *ir, _Py_UOpsSymbolicExpression *expr, _Py_UOps_IRStore
     entry->assignment_target = store_fast_idx;
     entry->expr = expr;
     ir->curr_write++;
+    if (ir->curr_write >= Py_SIZE(ir)) {
+        return -1;
+    }
+    return 0;
 }
 
-static void
+static int
 ir_plain_inst(_Py_UOps_Opt_IR *ir, _PyUOpInstruction inst)
 {
 #ifdef Py_DEBUG
@@ -204,6 +208,10 @@ ir_plain_inst(_Py_UOps_Opt_IR *ir, _PyUOpInstruction inst)
     entry->typ = IR_PLAIN_INST;
     entry->inst = inst;
     ir->curr_write++;
+    if (ir->curr_write >= Py_SIZE(ir)) {
+        return -1;
+    }
+    return 0;
 }
 
 static _Py_UOpsOptIREntry *
@@ -222,11 +230,14 @@ ir_frame_push_info(_Py_UOps_Opt_IR *ir)
     entry->my_virtual_localsplus = NULL;
     entry->prev_frame_ir = NULL;
     ir->curr_write++;
+    if (ir->curr_write >= Py_SIZE(ir)) {
+        return NULL;
+    }
     return entry;
 }
 
 
-static void
+static int
 ir_frame_pop_info(_Py_UOps_Opt_IR *ir)
 {
 #ifdef Py_DEBUG
@@ -240,6 +251,10 @@ ir_frame_pop_info(_Py_UOps_Opt_IR *ir)
     _Py_UOpsOptIREntry *entry = &ir->entries[ir->curr_write];
     entry->typ = IR_FRAME_POP_INFO;
     ir->curr_write++;
+    if (ir->curr_write >= Py_SIZE(entry)) {
+        return -1;
+    }
+    return 0;
 }
 
 typedef struct _Py_UOpsAbstractFrame {
@@ -384,6 +399,9 @@ abstractinterp_context_new(PyCodeObject *co,
         goto error;
     }
     _Py_UOpsOptIREntry *root_frame = ir_frame_push_info(ir);
+    if (root_frame == NULL) {
+        goto error;
+    }
 
     self = PyObject_NewVar(_Py_UOpsAbstractInterpContext,
                                &_Py_UOpsAbstractInterpContext_Type,
@@ -419,6 +437,7 @@ abstractinterp_context_new(PyCodeObject *co,
         goto error;
     }
     self->frame = frame;
+    assert(frame != NULL);
     root_frame->my_virtual_localsplus = self->localsplus;
 
     // IR and sym setup
@@ -942,8 +961,11 @@ write_stack_to_ir(_Py_UOpsAbstractInterpContext *ctx, _PyUOpInstruction *curr, b
 #endif
     // Emit the state of the stack first.
     int stack_entries = ctx->frame->stack_pointer - ctx->frame->stack;
+    assert(stack_entries <= ctx->frame->stack_len);
     for (int i = 0; i < stack_entries; i++) {
-        ir_store(ctx->ir, ctx->frame->stack[i], TARGET_NONE);
+        if (ir_store(ctx->ir, ctx->frame->stack[i], TARGET_NONE) < 0) {
+            goto error;
+        }
         _Py_UOpsSymbolicExpression *new_stack = sym_init_unknown(ctx);
         if (new_stack == NULL) {
             goto error;
@@ -955,11 +977,6 @@ write_stack_to_ir(_Py_UOpsAbstractInterpContext *ctx, _PyUOpInstruction *curr, b
         }
         ctx->frame->stack[i] = new_stack;
     }
-    // Write bookkeeping ops, but don't write duplicates.
-//    if((curr-1)->opcode == _CHECK_VALIDITY && (curr-2)->opcode == _SET_IP) {
-//        ir_plain_inst(ctx->ir, *(curr-2));
-//        ir_plain_inst(ctx->ir, *(curr-1));
-//    }
     return 0;
 
 error:
@@ -1083,7 +1100,9 @@ uop_abstract_interpret_single_inst(
             assert(PEEK(1)->inst.opcode == INIT_FAST || PEEK(1)->inst.opcode == LOAD_FAST_CHECK);
             PEEK(1)->inst.opcode = LOAD_FAST_CHECK;
             ctx->frame->stack_pointer = stack_pointer;
-            write_stack_to_ir(ctx, inst, true);
+            if (write_stack_to_ir(ctx, inst, true) < 0) {
+                goto error;
+            }
             break;
         case LOAD_FAST:
             STACK_GROW(1);
@@ -1102,7 +1121,9 @@ uop_abstract_interpret_single_inst(
             assert(PEEK(1)->inst.opcode == INIT_FAST);
             PEEK(1)->inst.opcode = LOAD_FAST_AND_CLEAR;
             ctx->frame->stack_pointer = stack_pointer;
-            write_stack_to_ir(ctx, inst, true);
+            if (write_stack_to_ir(ctx, inst, true) < 0) {
+                goto error;
+            }
             _Py_UOpsSymbolicExpression *new_local =  sym_init_var(ctx, oparg);
             if (new_local == NULL) {
                 goto error;
@@ -1120,7 +1141,9 @@ uop_abstract_interpret_single_inst(
         case STORE_FAST_MAYBE_NULL:
         case STORE_FAST: {
             _Py_UOpsSymbolicExpression *value = PEEK(1);
-            ir_store(ctx->ir, value, oparg);
+            if (ir_store(ctx->ir, value, oparg) < 0) {
+                goto error;
+            }
             _Py_UOpsSymbolicExpression *new_local = sym_init_var(ctx, oparg);
             if (new_local == NULL) {
                 goto error;
@@ -1131,8 +1154,12 @@ uop_abstract_interpret_single_inst(
             break;
         }
         case COPY: {
-            write_stack_to_ir(ctx, inst, true);
-            ir_plain_inst(ctx->ir, *inst);
+            if (write_stack_to_ir(ctx, inst, true) < 0) {
+                goto error;
+            }
+            if (ir_plain_inst(ctx->ir, *inst) < 0) {
+                goto error;
+            }
             _Py_UOpsSymbolicExpression *bottom = PEEK(1 + (oparg - 1));
             STACK_GROW(1);
             _Py_UOpsSymbolicExpression *temp = sym_init_unknown(ctx);
@@ -1145,7 +1172,9 @@ uop_abstract_interpret_single_inst(
         }
 
         case POP_TOP: {
-            ir_store(ctx->ir, PEEK(1), -1);
+            if (ir_store(ctx->ir, PEEK(1), -1) < 0) {
+                goto error;
+            }
             STACK_SHRINK(1);
             break;
         }
@@ -1164,10 +1193,15 @@ uop_abstract_interpret_single_inst(
             int argcount = oparg;
             _Py_UOpsAbstractFrame *old_frame = ctx->frame;
             // TOS is the new frame.
-            write_stack_to_ir(ctx, inst, true);
+            if (write_stack_to_ir(ctx, inst, true) < 0) {
+                goto error;
+            }
             STACK_SHRINK(1);
             ctx->frame->stack_pointer = stack_pointer;
             _Py_UOpsOptIREntry *frame_ir_entry = ir_frame_push_info(ctx->ir);
+            if (frame_ir_entry == NULL) {
+                goto error;
+            }
 
             PyFunctionObject *func = extract_func_from_sym(ctx->new_frame_sym);
             if (func == NULL) {
@@ -1186,7 +1220,9 @@ uop_abstract_interpret_single_inst(
                 args--;
                 argcount++;
             }
-            ir_plain_inst(ctx->ir, *inst);
+            if (ir_plain_inst(ctx->ir, *inst) < 0) {
+                goto error;
+            }
             if (ctx_frame_push(
                 ctx,
                 frame_ir_entry,
@@ -1207,10 +1243,16 @@ uop_abstract_interpret_single_inst(
 
         case _POP_FRAME: {
             assert(STACK_LEVEL() == 1);
-            write_stack_to_ir(ctx, inst, true);
+            if (write_stack_to_ir(ctx, inst, true) < 0) {
+                goto error;
+            }
             _Py_UOpsOptIREntry *frame_ir_entry = ctx->frame->frame_ir_entry;
-            ir_frame_pop_info(ctx->ir);
-            ir_plain_inst(ctx->ir, *inst);
+            if (ir_frame_pop_info(ctx->ir) < 0) {
+                goto error;
+            }
+            if (ir_plain_inst(ctx->ir, *inst) < 0) {
+                goto error;
+            }
             _Py_UOpsSymbolicExpression *retval = PEEK(1);
             STACK_SHRINK(1);
             ctx->frame->stack_pointer = stack_pointer;
@@ -1231,8 +1273,12 @@ uop_abstract_interpret_single_inst(
         }
 
         case SWAP: {
-            write_stack_to_ir(ctx, inst, true);
-            ir_plain_inst(ctx->ir, *inst);
+            if (write_stack_to_ir(ctx, inst, true) < 0) {
+                goto error;
+            }
+            if (ir_plain_inst(ctx->ir, *inst) < 0) {
+                goto error;
+            }
 
             _Py_UOpsSymbolicExpression *top;
             _Py_UOpsSymbolicExpression *bottom;
@@ -1258,8 +1304,12 @@ uop_abstract_interpret_single_inst(
         }
         case _SET_IP:
         case _CHECK_VALIDITY:
-            write_stack_to_ir(ctx, inst, true);
-            ir_plain_inst(ctx->ir, *inst);
+            if (write_stack_to_ir(ctx, inst, true) < 0) {
+                goto error;
+            }
+            if (ir_plain_inst(ctx->ir, *inst) < 0) {
+                goto error;
+            }
             break;
         default:
             DPRINTF(1, "Unknown opcode in abstract interpreter\n");
@@ -1275,6 +1325,7 @@ uop_abstract_interpret_single_inst(
         }
         DPRINTF(3, "} \n");
     }
+    assert(ctx->frame != NULL);
     DPRINTF(3, " stack_level %d\n", STACK_LEVEL());
     ctx->frame->stack_pointer = stack_pointer;
     assert(STACK_LEVEL() >= 0);
@@ -1337,12 +1388,16 @@ uop_abstract_interpret(
             !op_is_passthrough(curr->opcode)) {
             DPRINTF(3, "Impure %s\n", (curr->opcode >= 300 ? _PyOpcode_uop_name : _PyOpcode_OpName)[curr->opcode]);
             if (first_impure) {
-                write_stack_to_ir(ctx, curr, false);
+                if (write_stack_to_ir(ctx, curr, false) < 0) {
+                    goto error;
+                }
                 clear_locals_type_info(ctx);
             }
             first_impure = false;
             ctx->curr_region_id++;
-            ir_plain_inst(ctx->ir, *curr);
+            if (ir_plain_inst(ctx->ir, *curr) < 0) {
+                goto error;
+            }
         }
         else {
             first_impure = true;
@@ -1358,8 +1413,12 @@ uop_abstract_interpret(
             DPRINTF(3, "GUARD\n");
             // Emit the state of the stack first.
             // Since this is a guard, copy over the type info
-            write_stack_to_ir(ctx, curr, true);
-            ir_plain_inst(ctx->ir, *curr);
+            if (write_stack_to_ir(ctx, curr, true) < 0) {
+                goto error;
+            }
+            if (ir_plain_inst(ctx->ir, *curr) < 0) {
+                goto error;
+            }
         }
 
         curr++;
@@ -1367,7 +1426,9 @@ uop_abstract_interpret(
     }
 
     ctx->terminating = curr;
-    write_stack_to_ir(ctx, curr, false);
+    if (write_stack_to_ir(ctx, curr, false) < 0) {
+        goto error;
+    }
 
     return ctx;
 
@@ -1680,5 +1741,6 @@ error:
 //        PyErr_Clear();
 //    }
     PyMem_Free(temp_writebuffer);
+    remove_unneeded_uops(buffer, buffer_size);
     return err_occurred ? -1 : 0;
 }
