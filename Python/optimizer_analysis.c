@@ -394,7 +394,7 @@ abstractinterp_context_new(PyCodeObject *co,
         goto error;
     }
 
-    ir = _Py_UOpsSSA_IR_New(ir_entries);
+    ir = _Py_UOpsSSA_IR_New(ir_entries * OVERALLOCATE_FACTOR);
     if (ir == NULL) {
         goto error;
     }
