@@ -1111,20 +1111,30 @@ class ThreadTests(BaseTestCase):
         # due to failure of underlying PyThread_start_new_thread() call,
         # its state should be removed from interpreter' thread states list
         # to avoid its double cleanup
+        try:
+            from resource import setrlimit, RLIMIT_NPROC
+        except ImportError as err:
+            self.skipTest(err)  # RLIMIT_NPROC is specific to Linux and BSD
         code = """if 1:
             import resource
-            import threading
+            import _thread
 
-            resource.setrlimit(resource.RLIMIT_NPROC, (150, 150))
+            def f():
+                print("shouldn't be printed")
 
-            while True:
-                t = threading.Thread()
-                t.start()
-                t.join()
+            resource.setrlimit(resource.RLIMIT_NPROC, (0, 0))
+
+            try:
+                _thread.start_new_thread(f, ())
+            except RuntimeError:
+                pass
+            else:
+                exit('successfully created thread')
         """
-        _, out, err = assert_python_failure("-c", code)
+        _, out, err = assert_python_ok("-c", code)
+        self.assertEqual(err, b'')
         self.assertEqual(out, b'')
-        self.assertIn(b"can't start new thread", err)
+
 
 class ThreadJoinOnShutdown(BaseTestCase):
 
