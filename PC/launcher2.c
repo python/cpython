@@ -834,6 +834,16 @@ searchPath(SearchInfo *search, const wchar_t *shebang, int shebangLength)
         return RC_RECURSIVE_SHEBANG;
     }
 
+    // Make sure we didn't find a reparse point that might open the Microsoft Store
+    // If we are, pretend there was no shebang and let normal handling take over
+    WIN32_FIND_DATAW findData;
+    wchar_t hFind = FindFirstFileW(buffer, &findData);
+    if (findData.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+        if (findData.dwReserved0 & IO_REPARSE_TAG_APPEXECLINK) {
+            return RC_NO_SHEBANG;
+        }
+    }
+
     wchar_t *buf = allocSearchInfoBuffer(search, n + 1);
     if (!buf || wcscpy_s(buf, n + 1, buffer)) {
         return RC_NO_MEMORY;
