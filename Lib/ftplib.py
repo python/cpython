@@ -900,11 +900,17 @@ def ftpcp(source, sourcename, target, targetname = '', type = 'I'):
 
 def test():
     '''Test program.
-    Usage: ftp [-d] [-r[file]] host [-l[dir]] [-d[dir]] [-p] [file] ...
+    Usage: ftplib [-d] [-r[file]] host [-l[dir]] [-d[dir]] [-p] [file] ...
 
-    -d dir
-    -l list
-    -p password
+    Options:
+      -d        increase debugging level
+      -r[file]  set alternate ~/.netrc file
+
+    Commands:
+      -l[dir]   list directory
+      -d[dir]   change the current directory
+      -p        toggle passive and active mode
+      file      retrieve the file and write it to stdout
     '''
 
     if len(sys.argv) < 2:
@@ -951,7 +957,9 @@ def test():
             ftp.set_pasv(not ftp.passiveserver)
         else:
             ftp.retrbinary('RETR ' + file, \
-                           sys.stdout.write, 1024)
+                           sys.stdout.buffer.write, 1024)
+            sys.stdout.buffer.flush()
+        sys.stdout.flush()
     ftp.quit()
 
 
