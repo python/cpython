@@ -1222,6 +1222,7 @@ def iterparse(source, events=None, parser=None):
     # Use the internal, undocumented _parser argument for now; When the
     # parser argument of iterparse is removed, this can be killed.
     pullparser = XMLPullParser(events=events, _parser=parser)
+    _root = None
 
     def iterator(source):
         close_source = False
@@ -1239,15 +1240,24 @@ def iterparse(source, events=None, parser=None):
                 pullparser.feed(data)
             root = pullparser._close_and_return_root()
             yield from pullparser.read_events()
-            it.root = root
+            nonlocal _root
+            _root = root
         finally:
             if close_source:
                 source.close()
 
     class IterParseIterator(collections.abc.Iterator):
-        __next__ = iterator(source).__next__
-    it = IterParseIterator()
-    it.root = None
+        def __init__(self, it):
+            self.it = it
+
+        def __next__(self):
+            return next(self.it)
+
+        @property
+        def root(self):
+            return _root
+
+    it = IterParseIterator(iterator(source))
     del iterator, IterParseIterator
 
     next(it)
