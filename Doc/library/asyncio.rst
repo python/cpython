@@ -46,9 +46,9 @@ Additionally, there are **low-level** APIs for
 *library and framework developers* to:
 
 * create and manage :ref:`event loops <asyncio-event-loop>`, which
-  provide asynchronous APIs for :meth:`networking <loop.create_server>`,
-  running :meth:`subprocesses <loop.subprocess_exec>`,
-  handling :meth:`OS signals <loop.add_signal_handler>`, etc;
+  provide asynchronous APIs for :ref:`networking <loop_create_server>`,
+  running :ref:`subprocesses <loop_subprocess_exec>`,
+  handling :ref:`OS signals <loop_add_signal_handler>`, etc;
 
 * implement efficient protocols using
   :ref:`transports <asyncio-transports-protocols>`;

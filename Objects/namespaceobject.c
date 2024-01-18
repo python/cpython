@@ -1,10 +1,10 @@
 // namespace object implementation
 
 #include "Python.h"
+#include "pycore_modsupport.h"    // _PyArg_NoPositional()
 #include "pycore_namespace.h"     // _PyNamespace_Type
 
 #include <stddef.h>               // offsetof()
-
 
 
 typedef struct {

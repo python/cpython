@@ -18,6 +18,12 @@ from test.support.os_helper import TESTFN, unlink
 from test.support.warnings_helper import check_warnings
 from test import support
 
+try:
+    from _testcapi import INT_MAX
+except ImportError:
+    INT_MAX = 2**31 - 1
+
+
 
 class NaiveException(Exception):
     def __init__(self, x):
@@ -253,7 +259,7 @@ class ExceptionTests(unittest.TestCase):
         check('try:\n  pass\nexcept*:\n  pass', 3, 8)
         check('try:\n  pass\nexcept*:\n  pass\nexcept* ValueError:\n  pass', 3, 8)
 
-        # Errors thrown by tokenizer.c
+        # Errors thrown by the tokenizer
         check('(0x+1)', 1, 3)
         check('x = 0xI', 1, 6)
         check('0010 + 2', 1, 1)
@@ -317,6 +323,14 @@ class ExceptionTests(unittest.TestCase):
         check('for 1 in []: pass', 1, 5)
         check('(yield i) = 2', 1, 2)
         check('def f(*):\n  pass', 1, 7)
+
+    @unittest.skipIf(INT_MAX >= sys.maxsize, "Downcasting to int is safe for col_offset")
+    @support.requires_resource('cpu')
+    @support.bigmemtest(INT_MAX, memuse=2, dry_run=False)
+    def testMemoryErrorBigSource(self, size):
+        src = b"if True:\n%*s" % (size, b"pass")
+        with self.assertRaisesRegex(OverflowError, "Parser column offset overflow"):
+            compile(src, '<fragment>', 'exec')
 
     @cpython_only
     def testSettingException(self):
@@ -1777,6 +1791,20 @@ class ExceptionTests(unittest.TestCase):
 
             gc_collect()
 
+    def test_memory_error_in_subinterp(self):
+        # gh-109894: subinterpreters shouldn't count on last resort memory error
+        # when MemoryError is raised through PyErr_NoMemory() call,
+        # and should preallocate memory errors as does the main interpreter.
+        # interp.static_objects.last_resort_memory_error.args
+        # should be initialized to empty tuple to avoid crash on attempt to print it.
+        code = f"""if 1:
+            import _testcapi
+            _testcapi.run_in_subinterp(\"[0]*{sys.maxsize}\")
+            exit(0)
+        """
+        rc, _, err = script_helper.assert_python_ok("-c", code)
+        self.assertIn(b'MemoryError', err)
+
 
 class NameErrorTests(unittest.TestCase):
     def test_name_error_has_name(self):
@@ -1815,6 +1843,13 @@ class NameErrorTests(unittest.TestCase):
 
         self.assertIn("nonsense", err.getvalue())
         self.assertIn("ZeroDivisionError", err.getvalue())
+
+    def test_gh_111654(self):
+        def f():
+            class TestClass:
+                TestClass
+
+        self.assertRaises(NameError, f)
 
     # Note: name suggestion tests live in `test_traceback`.
 
@@ -2045,6 +2080,7 @@ class AssertionErrorTests(unittest.TestCase):
              """,
                 [
                     '    1 < 2 and',
+                    '    3 > 4',
                     'AssertionError',
                 ],
             ),
@@ -2052,7 +2088,7 @@ class AssertionErrorTests(unittest.TestCase):
         for source, expected in cases:
             with self.subTest(source):
                 result = self.write_source(source)
-                self.assertEqual(result[-2:], expected)
+                self.assertEqual(result[-len(expected):], expected)
 
 
 class SyntaxErrorTests(unittest.TestCase):

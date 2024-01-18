@@ -12,6 +12,7 @@ import warnings
 from test import support
 from test.support import (script_helper, requires_debug_ranges,
                           requires_specialization, Py_C_RECURSION_LIMIT)
+from test.support.bytecode_helper import instructions_with_positions
 from test.support.os_helper import FakePath
 
 class TestSpecifics(unittest.TestCase):
@@ -443,6 +444,24 @@ class TestSpecifics(unittest.TestCase):
         self.assertIn("_A__mangled_mod", A.f.__code__.co_varnames)
         self.assertIn("__package__", A.f.__code__.co_varnames)
 
+    def test_condition_expression_with_dead_blocks_compiles(self):
+        # See gh-113054
+        compile('if (5 if 5 else T): 0', '<eval>', 'exec')
+
+    def test_condition_expression_with_redundant_comparisons_compiles(self):
+        # See gh-113054
+        with self.assertWarns(SyntaxWarning):
+            compile('if 9<9<9and 9or 9:9', '<eval>', 'exec')
+
+    def test_dead_code_with_except_handler_compiles(self):
+        compile(textwrap.dedent("""
+                if None:
+                    with CM:
+                        x = 1
+                else:
+                    x = 2
+               """), '<eval>', 'exec')
+
     def test_compile_invalid_namedexpr(self):
         # gh-109351
         m = ast.Module(
@@ -604,12 +623,10 @@ class TestSpecifics(unittest.TestCase):
     @support.cpython_only
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_compiler_recursion_limit(self):
-        # Expected limit is Py_C_RECURSION_LIMIT * 2
-        # Duplicating the limit here is a little ugly.
-        # Perhaps it should be exposed somewhere...
-        fail_depth = Py_C_RECURSION_LIMIT * 2 + 1
+        # Expected limit is Py_C_RECURSION_LIMIT
+        fail_depth = Py_C_RECURSION_LIMIT + 1
         crash_depth = Py_C_RECURSION_LIMIT * 100
-        success_depth = int(Py_C_RECURSION_LIMIT * 1.8)
+        success_depth = int(Py_C_RECURSION_LIMIT * 0.8)
 
         def check_limit(prefix, repeated, mode="single"):
             expect_ok = prefix + repeated * success_depth
@@ -1079,6 +1096,21 @@ class TestSpecifics(unittest.TestCase):
         code_lines = self.get_code_lines(test.__code__)
         self.assertEqual(expected_lines, code_lines)
 
+    def test_line_number_synthetic_jump_multiple_predecessors(self):
+        def f():
+            for x in it:
+                try:
+                    if C1:
+                        yield 2
+                except OSError:
+                    pass
+
+        # Ensure that all JUMP_BACKWARDs have line number
+        code = f.__code__
+        for inst in dis.Bytecode(code):
+            if inst.opname == 'JUMP_BACKWARD':
+                self.assertIsNotNone(inst.positions.lineno)
+
     def test_lineno_of_backward_jump(self):
         # Issue gh-107901
         def f():
@@ -1261,6 +1293,44 @@ class TestSpecifics(unittest.TestCase):
                 except:
                     pass
 
+    def test_cold_block_moved_to_end(self):
+        # See gh-109719
+        def f():
+            while name:
+                try:
+                    break
+                except:
+                    pass
+            else:
+                1 if 1 else 1
+
+    def test_remove_empty_basic_block_with_jump_target_label(self):
+        # See gh-109823
+        def f(x):
+            while x:
+                0 if 1 else 0
+
+    def test_remove_redundant_nop_edge_case(self):
+        # See gh-109889
+        def f():
+            a if (1 if b else c) else d
+
+    def test_global_declaration_in_except_used_in_else(self):
+        # See gh-111123
+        code = textwrap.dedent("""\
+            def f():
+                try:
+                    pass
+                %s Exception:
+                    global a
+                else:
+                    print(a)
+        """)
+
+        g, l = {'a': 5}, {}
+        for kw in ("except", "except*"):
+            exec(code % kw, g, l);
+
 
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):
@@ -1308,8 +1378,8 @@ class TestSourcePositions(unittest.TestCase):
     def assertOpcodeSourcePositionIs(self, code, opcode,
             line, end_line, column, end_column, occurrence=1):
 
-        for instr, position in zip(
-            dis.Bytecode(code, show_caches=True), code.co_positions(), strict=True
+        for instr, position in instructions_with_positions(
+            dis.Bytecode(code), code.co_positions()
         ):
             if instr.opname == opcode:
                 occurrence -= 1

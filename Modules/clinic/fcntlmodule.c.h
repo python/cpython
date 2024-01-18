@@ -3,6 +3,7 @@ preserve
 [clinic start generated code]*/
 
 #include "pycore_fileutils.h"     // _PyLong_FileDescriptor_Converter()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(fcntl_fcntl__doc__,
 "fcntl($module, fd, cmd, arg=0, /)\n"
@@ -245,4 +246,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4d4fac195494faec input=a9049054013a1b77]*/
+/*[clinic end generated code: output=732e33ba92042031 input=a9049054013a1b77]*/

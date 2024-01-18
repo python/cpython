@@ -12,7 +12,7 @@ The following modules have a command-line interface.
 * :ref:`compileall <compileall-cli>`
 * :mod:`cProfile`: see :ref:`profile <profile-cli>`
 * :ref:`difflib <difflib-interface>`
-* :mod:`dis`
+* :ref:`dis <dis-cli>`
 * :mod:`doctest`
 * :mod:`!encodings.rot_13`
 * :mod:`ensurepip`

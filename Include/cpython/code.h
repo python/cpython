@@ -167,7 +167,7 @@ typedef struct {
     PyObject *co_weakreflist;     /* to support weakrefs to code objects */    \
     _PyExecutorArray *co_executors;      /* executors from optimizer */        \
     _PyCoCached *_co_cached;      /* cached co_* attributes */                 \
-    uint64_t _co_instrumentation_version; /* current instrumentation version */  \
+    uintptr_t _co_instrumentation_version; /* current instrumentation version */ \
     _PyCoMonitoringData *_co_monitoring; /* Monitoring data */                 \
     int _co_firsttraceable;       /* index of first traceable instruction */   \
     /* Scratch space for extra data relating to the code object.               \
@@ -207,6 +207,8 @@ struct PyCodeObject _PyCode_DEF(1);
 #define CO_FUTURE_BARRY_AS_BDFL  0x400000
 #define CO_FUTURE_GENERATOR_STOP  0x800000
 #define CO_FUTURE_ANNOTATIONS    0x1000000
+
+#define CO_NO_MONITORING_EVENTS 0x2000000
 
 /* This should be defined if a future statement modifies the syntax.
    For example, when a keyword is added.

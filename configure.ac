@@ -1,15 +1,12 @@
-dnl ***************************************************
-dnl * Please run autoreconf -if to test your changes! *
-dnl ***************************************************
+dnl ************************************************************
+dnl * Please run autoreconf -ivf -Werror to test your changes! *
+dnl ************************************************************
 dnl
 dnl Python's configure script requires autoconf 2.71, autoconf-archive,
-dnl pkgconf's m4 macros.
+dnl aclocal 1.16, and pkg-config.
 dnl
-dnl It is recommended to use a cpython_autoconf container to regenerate the
-dnl configure script:
-dnl
-dnl podman run --rm --pull=always -v $(pwd):/src:Z quay.io/tiran/cpython_autoconf:271
-dnl docker run --rm --pull=always -v $(pwd):/src quay.io/tiran/cpython_autoconf:271
+dnl It is recommended to use the Tools/build/regen-configure.sh shell script
+dnl to regenerate the configure script.
 dnl
 
 # Set VERSION so we only need to edit in one place (i.e., here)
@@ -590,6 +587,14 @@ then
 	darwin*) MACHDEP="darwin";;
 	'')	MACHDEP="unknown";;
     esac
+
+    if test "$ac_sys_system" = "SunOS"; then
+	# For Solaris, there isn't an OS version specific macro defined
+	# in most compilers, so we define one here.
+	SUNOS_VERSION=`echo $ac_sys_release | sed -e 's!\.\([0-9]\)$!.0\1!g' | tr -d '.'`
+	AC_DEFINE_UNQUOTED([Py_SUNOS_VERSION], [$SUNOS_VERSION],
+	                   [The version of SunOS/Solaris as reported by `uname -r' without the dot.])
+    fi
 fi
 AC_MSG_RESULT(["$MACHDEP"])
 
@@ -1489,6 +1494,23 @@ fi
 AC_SUBST([ABIFLAGS])
 ABIFLAGS=""
 
+# Check for --disable-gil
+# --disable-gil
+AC_MSG_CHECKING([for --disable-gil])
+AC_ARG_ENABLE([gil],
+  [AS_HELP_STRING([--disable-gil], [enable experimental support for running without the GIL (default is no)])],
+  [AS_VAR_IF([enable_gil], [yes], [disable_gil=no], [disable_gil=yes])], [disable_gil=no]
+)
+AC_MSG_RESULT([$disable_gil])
+
+if test "$disable_gil" = "yes"
+then
+  AC_DEFINE([Py_GIL_DISABLED], [1],
+            [Define if you want to disable the GIL])
+  # Add "t" for "threaded"
+  ABIFLAGS="${ABIFLAGS}t"
+fi
+
 # Check for --with-pydebug
 AC_MSG_CHECKING([for --with-pydebug])
 AC_ARG_WITH([pydebug],
@@ -2137,10 +2159,15 @@ AS_CASE([$ac_sys_system],
       # without this, configure fails to find pthread_create, sem_init,
       # etc because they are only available in the sysroot for
       # wasm32-wasi-threads.
+      # Note: wasi-threads requires --import-memory.
+      # Note: wasi requires --export-memory.
+      # Note: --export-memory is implicit unless --import-memory is given
+      # Note: this requires LLVM >= 16.
       AS_VAR_APPEND([CFLAGS], [" -target wasm32-wasi-threads -pthread"])
       AS_VAR_APPEND([CFLAGS_NODIST], [" -target wasm32-wasi-threads -pthread"])
       AS_VAR_APPEND([LDFLAGS_NODIST], [" -target wasm32-wasi-threads -pthread"])
       AS_VAR_APPEND([LDFLAGS_NODIST], [" -Wl,--import-memory"])
+      AS_VAR_APPEND([LDFLAGS_NODIST], [" -Wl,--export-memory"])
       AS_VAR_APPEND([LDFLAGS_NODIST], [" -Wl,--max-memory=10485760"])
     ])
 
@@ -2674,7 +2701,7 @@ AC_CHECK_HEADERS([ \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
   sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/poll.h \
   sys/random.h sys/resource.h sys/select.h sys/sendfile.h sys/socket.h sys/soundcard.h sys/stat.h \
-  sys/statvfs.h sys/sys_domain.h sys/syscall.h sys/sysmacros.h sys/termio.h sys/time.h sys/times.h \
+  sys/statvfs.h sys/sys_domain.h sys/syscall.h sys/sysmacros.h sys/termio.h sys/time.h sys/times.h sys/timerfd.h \
   sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h sys/xattr.h sysexits.h syslog.h \
   termios.h util.h utime.h utmp.h \
 ])
@@ -3038,6 +3065,24 @@ with_ubsan="yes"
 [
 AC_MSG_RESULT([no])
 with_ubsan="no"
+])
+
+AC_MSG_CHECKING([for --with-thread-sanitizer])
+AC_ARG_WITH(
+  [thread_sanitizer],
+  [AS_HELP_STRING(
+    [--with-thread-sanitizer],
+    [enable ThreadSanitizer data race detector, 'tsan' (default is no)]
+  )],
+[
+AC_MSG_RESULT([$withval])
+BASECFLAGS="-fsanitize=thread $BASECFLAGS"
+LDFLAGS="-fsanitize=thread $LDFLAGS"
+with_tsan="yes"
+],
+[
+AC_MSG_RESULT([no])
+with_tsan="no"
 ])
 
 # Set info about shared libraries.
@@ -4322,7 +4367,7 @@ ipv6type=unknown
 ipv6lib=none
 ipv6trylibc=no
 
-if test "$ipv6" = "yes"; then
+if test "$ipv6" = yes -a "$cross_compiling" = no; then
 	AC_MSG_CHECKING([ipv6 stack type])
 	for i in inria kame linux-glibc linux-inet6 solaris toshiba v6d zeta;
 	do
@@ -4471,6 +4516,73 @@ then
       [Define if you want documentation strings in extension modules])
 fi
 AC_MSG_RESULT([$with_doc_strings])
+
+# Check for stdatomic.h, required for mimalloc.
+AC_CACHE_CHECK([for stdatomic.h], [ac_cv_header_stdatomic_h], [
+AC_LINK_IFELSE(
+[
+  AC_LANG_SOURCE([[
+    #include <stdatomic.h>
+    atomic_int int_var;
+    atomic_uintptr_t uintptr_var;
+    int main() {
+      atomic_store_explicit(&int_var, 5, memory_order_relaxed);
+      atomic_store_explicit(&uintptr_var, 0, memory_order_relaxed);
+      int loaded_value = atomic_load_explicit(&int_var, memory_order_seq_cst);
+      return 0;
+    }
+  ]])
+],[ac_cv_header_stdatomic_h=yes],[ac_cv_header_stdatomic_h=no])
+])
+
+AS_VAR_IF([ac_cv_header_stdatomic_h], [yes], [
+    AC_DEFINE(HAVE_STD_ATOMIC, 1,
+              [Has stdatomic.h with atomic_int and atomic_uintptr_t])
+])
+
+# Check for GCC >= 4.7 and clang __atomic builtin functions
+AC_CACHE_CHECK([for builtin __atomic_load_n and __atomic_store_n functions], [ac_cv_builtin_atomic], [
+AC_LINK_IFELSE(
+[
+  AC_LANG_SOURCE([[
+    int val;
+    int main() {
+      __atomic_store_n(&val, 1, __ATOMIC_SEQ_CST);
+      (void)__atomic_load_n(&val, __ATOMIC_SEQ_CST);
+      return 0;
+    }
+  ]])
+],[ac_cv_builtin_atomic=yes],[ac_cv_builtin_atomic=no])
+])
+
+AS_VAR_IF([ac_cv_builtin_atomic], [yes], [
+    AC_DEFINE(HAVE_BUILTIN_ATOMIC, 1, [Has builtin __atomic_load_n() and __atomic_store_n() functions])
+])
+
+# --with-mimalloc
+AC_MSG_CHECKING([for --with-mimalloc])
+AC_ARG_WITH([mimalloc],
+  [AS_HELP_STRING([--with-mimalloc],
+                 [build with mimalloc memory allocator (default is yes if C11 stdatomic.h is available.)])],
+  [],
+  [with_mimalloc="$ac_cv_header_stdatomic_h"]
+)
+
+if test "$with_mimalloc" != no; then
+  if test "$ac_cv_header_stdatomic_h" != yes; then
+    # mimalloc-atomic.h wants C11 stdatomic.h on POSIX
+    AC_MSG_ERROR([mimalloc requires stdatomic.h, use --without-mimalloc to disable mimalloc.])
+  fi
+  with_mimalloc=yes
+  AC_DEFINE([WITH_MIMALLOC], [1], [Define if you want to compile in mimalloc memory allocator.])
+  AC_SUBST([MIMALLOC_HEADERS], ['$(MIMALLOC_HEADERS)'])
+elif test "$disable_gil" = "yes"; then
+  AC_MSG_ERROR([--disable-gil requires mimalloc memory allocator (--with-mimalloc).])
+fi
+
+AC_MSG_RESULT([$with_mimalloc])
+AC_SUBST([WITH_MIMALLOC])
+AC_SUBST([MIMALLOC_HEADERS])
 
 # Check for Python-specific malloc support
 AC_MSG_CHECKING([for --with-pymalloc])
@@ -4651,7 +4763,7 @@ fi
 
 # checks for library functions
 AC_CHECK_FUNCS([ \
-  accept4 alarm bind_textdomain_codeset chmod chown clock close_range confstr \
+  accept4 alarm bind_textdomain_codeset chmod chown clock closefrom close_range confstr \
   copy_file_range ctermid dup dup3 execv explicit_bzero explicit_memset \
   faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
   fork fork1 fpathconf fstatat ftime ftruncate futimens futimes futimesat \
@@ -4663,6 +4775,7 @@ AC_CHECK_FUNCS([ \
   lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
   mknod mknodat mktime mmap mremap nice openat opendir pathconf pause pipe \
   pipe2 plock poll posix_fadvise posix_fallocate posix_spawn posix_spawnp \
+  posix_spawn_file_actions_addclosefrom_np \
   pread preadv preadv2 pthread_condattr_setclock pthread_init pthread_kill \
   pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
   rtpSpawn sched_get_priority_max sched_rr_get_interval sched_setaffinity \
@@ -4726,6 +4839,13 @@ PY_CHECK_FUNC([eventfd], [
 #include <sys/eventfd.h>
 #endif
 ])
+
+PY_CHECK_FUNC([timerfd_create], [
+#ifdef HAVE_SYS_TIMERFD_H
+#include <sys/timerfd.h>
+#endif
+],
+[HAVE_TIMERFD_CREATE])
 
 # On some systems (eg. FreeBSD 5), we would find a definition of the
 # functions ctermid_r, setgroups in the library, but no prototype
@@ -5000,6 +5120,7 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #if defined(MAJOR_IN_MKDEV)
 #include <sys/mkdev.h>
 #elif defined(MAJOR_IN_SYSMACROS)
+#include <sys/types.h>
 #include <sys/sysmacros.h>
 #else
 #include <sys/types.h>
@@ -5669,6 +5790,7 @@ AC_C_BIGENDIAN
 #
 # * The Python implementation (always 'cpython-' for us)
 # * The major and minor version numbers
+# * --disable-gil (adds a 't')
 # * --with-pydebug (adds a 'd')
 #
 # Thus for example, Python 3.2 built with wide unicode, pydebug, and pymalloc,
@@ -5964,6 +6086,13 @@ AS_VAR_IF([with_readline], [no], [
       AC_DEFINE([HAVE_RL_APPEND_HISTORY], [1], [Define if readline supports append_history])
     ])
 
+    # in readline as well as newer editline (April 2023)
+    AC_CHECK_TYPE([rl_compdisp_func_t],
+                  [AC_DEFINE([HAVE_RL_COMPDISP_FUNC_T], [1],
+                             [Define if readline supports rl_compdisp_func_t])],
+                  [],
+                  [readline_includes])
+
     m4_undefine([readline_includes])
   ])dnl WITH_SAVE_ENV()
 ])
@@ -6170,9 +6299,11 @@ dnl remove _XOPEN_SOURCE macro from curses cflags. pyconfig.h sets
 dnl the macro to 700.
 CURSES_CFLAGS=$(echo $CURSES_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
 
-if test "$have_curses" = no -a "$ac_sys_system" = "Darwin"; then
+if test "$have_curses" != no -a "$ac_sys_system" = "Darwin"; then
   dnl On macOS, there is no separate /usr/lib/libncursesw nor libpanelw.
-  dnl If we are here, we found a locally-supplied version of libncursesw.
+  dnl System-supplied ncurses combines libncurses/libpanel and supports wide
+  dnl characters, so we can use it like ncursesw.
+  dnl If a locally-supplied version of libncursesw is found, we will use that.
   dnl There should also be a libpanelw.
   dnl _XOPEN_SOURCE defines are usually excluded for macOS, but we need
   dnl _XOPEN_SOURCE_EXTENDED here for ncurses wide char support.
@@ -6475,7 +6606,11 @@ SRCDIRS="\
   Modules/cjkcodecs \
   Modules/expat \
   Objects \
+  Objects/mimalloc \
+  Objects/mimalloc/prim \
   Parser \
+  Parser/tokenizer \
+  Parser/lexer \
   Programs \
   Python \
   Python/frozen_modules \
@@ -6569,49 +6704,6 @@ if test "$ac_cv_gcc_asm_for_x87" = yes; then
         ;;
     esac
 fi
-
-# Check for stdatomic.h
-AC_CACHE_CHECK([for stdatomic.h], [ac_cv_header_stdatomic_h], [
-AC_LINK_IFELSE(
-[
-  AC_LANG_SOURCE([[
-    #include <stdatomic.h>
-    atomic_int int_var;
-    atomic_uintptr_t uintptr_var;
-    int main(void) {
-      atomic_store_explicit(&int_var, 5, memory_order_relaxed);
-      atomic_store_explicit(&uintptr_var, 0, memory_order_relaxed);
-      int loaded_value = atomic_load_explicit(&int_var, memory_order_seq_cst);
-      return 0;
-    }
-  ]])
-],[ac_cv_header_stdatomic_h=yes],[ac_cv_header_stdatomic_h=no])
-])
-
-AS_VAR_IF([ac_cv_header_stdatomic_h], [yes], [
-    AC_DEFINE([HAVE_STD_ATOMIC], [1],
-              [Has stdatomic.h with atomic_int and atomic_uintptr_t])
-])
-
-# Check for GCC >= 4.7 and clang __atomic builtin functions
-AC_CACHE_CHECK([for builtin __atomic_load_n and __atomic_store_n functions], [ac_cv_builtin_atomic], [
-AC_LINK_IFELSE(
-[
-  AC_LANG_SOURCE([[
-    int val;
-    int main(void) {
-      __atomic_store_n(&val, 1, __ATOMIC_SEQ_CST);
-      (void)__atomic_load_n(&val, __ATOMIC_SEQ_CST);
-      return 0;
-    }
-  ]])
-],[ac_cv_builtin_atomic=yes],[ac_cv_builtin_atomic=no])
-])
-
-AS_VAR_IF([ac_cv_builtin_atomic], [yes], [
-    AC_DEFINE([HAVE_BUILTIN_ATOMIC], [1],
-      [Has builtin __atomic_load_n() and __atomic_store_n() functions])
-])
 
 # ensurepip option
 AC_MSG_CHECKING([for ensurepip])
@@ -6735,7 +6827,12 @@ AX_CHECK_OPENSSL([have_openssl=yes],[have_openssl=no])
 AS_VAR_IF([GNULD], [yes], [
   rpath_arg="-Wl,--enable-new-dtags,-rpath="
 ], [
-  rpath_arg="-Wl,-rpath="
+  if test "$ac_sys_system" = "Darwin"
+  then
+     rpath_arg="-Wl,-rpath,"
+  else
+     rpath_arg="-Wl,-rpath="
+  fi
 ])
 
 AC_MSG_CHECKING([for --with-openssl-rpath])
@@ -6947,26 +7044,14 @@ AC_ARG_ENABLE([test-modules],
 AC_MSG_RESULT([$TEST_MODULES])
 AC_SUBST([TEST_MODULES])
 
-# Check for --disable-gil
-# --disable-gil
-AC_MSG_CHECKING([for --disable-gil])
-AC_ARG_ENABLE([gil],
-  [AS_HELP_STRING([--disable-gil], [enable experimental support for running without the GIL (default is no)])],
-  [AS_VAR_IF([enable_gil], [yes], [disable_gil=no], [disable_gil=yes])], [disable_gil=no]
-)
-AC_MSG_RESULT([$disable_gil])
-
-if test "$disable_gil" = "yes"
-then
-  AC_DEFINE([Py_NOGIL], [1],
-            [Define if you want to disable the GIL])
-fi
-
 # gh-109054: Check if -latomic is needed to get <pyatomic.h> atomic functions.
 # On Linux aarch64, GCC may require programs and libraries to be linked
 # explicitly to libatomic. Call _Py_atomic_or_uint64() which may require
 # libatomic __atomic_fetch_or_8(), or not, depending on the C compiler and the
 # compiler flags.
+#
+# gh-112779: On RISC-V, GCC 12 and earlier require libatomic support for 1-byte
+# and 2-byte operations, but not for 8-byte operations.
 #
 # Avoid #include <Python.h> or #include <pyport.h>. The <Python.h> header
 # requires <pyconfig.h> header which is only written below by AC_OUTPUT below.
@@ -6997,12 +7082,19 @@ typedef intptr_t Py_ssize_t;
 
 int main()
 {
-    uint64_t byte;
-    _Py_atomic_store_uint64(&byte, 2);
-    if (_Py_atomic_or_uint64(&byte, 8) != 2) {
+    uint64_t value;
+    _Py_atomic_store_uint64(&value, 2);
+    if (_Py_atomic_or_uint64(&value, 8) != 2) {
         return 1; // error
     }
-    if (_Py_atomic_load_uint64(&byte) != 10) {
+    if (_Py_atomic_load_uint64(&value) != 10) {
+        return 1; // error
+    }
+    uint8_t byte = 0xb8;
+    if (_Py_atomic_or_uint8(&byte, 0x2d) != 0xb8) {
+        return 1; // error
+    }
+    if (_Py_atomic_load_uint8(&byte) != 0xbd) {
         return 1; // error
     }
     return 0; // all good
@@ -7014,7 +7106,8 @@ int main()
 ])
 
 AS_VAR_IF([ac_cv_libatomic_needed], [yes],
-          [LIBS="${LIBS} -latomic"])
+          [LIBS="${LIBS} -latomic"
+           LIBATOMIC=${LIBATOMIC-"-latomic"}])
 _RESTORE_VAR([CPPFLAGS])
 
 
@@ -7052,6 +7145,7 @@ AS_CASE([$ac_sys_system],
       [_tkinter],
       [_xxsubinterpreters],
       [_xxinterpchannels],
+      [_xxinterpqueues],
       [grp],
       [pwd],
       [resource],
@@ -7168,6 +7262,7 @@ PY_STDLIB_MOD_SIMPLE([_struct])
 PY_STDLIB_MOD_SIMPLE([_typing])
 PY_STDLIB_MOD_SIMPLE([_xxsubinterpreters])
 PY_STDLIB_MOD_SIMPLE([_xxinterpchannels])
+PY_STDLIB_MOD_SIMPLE([_xxinterpqueues])
 PY_STDLIB_MOD_SIMPLE([_zoneinfo])
 
 dnl multiprocessing modules
@@ -7286,7 +7381,10 @@ PY_STDLIB_MOD([_hashlib], [], [test "$ac_cv_working_openssl_hashlib" = yes],
   [$OPENSSL_INCLUDES], [$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS])
 
 dnl test modules
-PY_STDLIB_MOD([_testcapi], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_testcapi],
+    [test "$TEST_MODULES" = yes],
+    dnl Modules/_testcapi needs -latomic for 32bit AIX build
+    [], [], [$LIBATOMIC])
 PY_STDLIB_MOD([_testclinic], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testclinic_limited], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testinternalcapi], [test "$TEST_MODULES" = yes])
@@ -7355,3 +7453,10 @@ AS_VAR_IF([PY_SUPPORT_TIER], [0], [AC_MSG_WARN([
 Platform "$host" with compiler "$ac_cv_cc_name" is not supported by the
 CPython core team, see https://peps.python.org/pep-0011/ for more information.
 ])])
+
+if test "$ac_cv_header_stdatomic_h" != "yes"; then
+  AC_MSG_NOTICE(m4_normalize([
+    Your compiler or platform does have a working C11 stdatomic.h. A future
+    version of Python may require stdatomic.h.
+  ]))
+fi

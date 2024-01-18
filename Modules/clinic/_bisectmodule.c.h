@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_bisect_bisect_right__doc__,
 "bisect_right($module, /, a, x, lo=0, hi=None, *, key=None)\n"
@@ -433,4 +434,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=43ece163c3e972df input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4af5bd405149bf5f input=a9049054013a1b77]*/

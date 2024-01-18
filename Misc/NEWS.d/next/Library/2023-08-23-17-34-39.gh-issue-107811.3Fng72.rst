@@ -1,3 +1,0 @@
-:mod:`tarfile`: extraction of members with overly large UID or GID (e.g. on
-an OS with 32-bit :c:type:`!id_t`) now fails in the same way as failing to
-set the ID.

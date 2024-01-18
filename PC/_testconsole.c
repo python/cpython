@@ -133,31 +133,12 @@ _testconsole_read_output_impl(PyObject *module, PyObject *file)
     Py_RETURN_NONE;
 }
 
-/*[clinic input]
-_testconsole.flush_console_input_buffer
-    handle: HANDLE
-
-Flushes the console input buffer.
-
-All input records currently in the input buffer are discarded.
-[clinic start generated code]*/
-
-static PyObject *
-_testconsole_flush_console_input_buffer_impl(PyObject *module, void *handle)
-/*[clinic end generated code: output=1f923a81331465ce input=be8203ae84a288f5]*/
-/*[clinic end generated code:]*/
-{
-    FlushConsoleInputBuffer(handle);
-
-    Py_RETURN_NONE;
-}
 
 #include "clinic\_testconsole.c.h"
 
 PyMethodDef testconsole_methods[] = {
     _TESTCONSOLE_WRITE_INPUT_METHODDEF
     _TESTCONSOLE_READ_OUTPUT_METHODDEF
-    _TESTCONSOLE_FLUSH_CONSOLE_INPUT_BUFFER_METHODDEF
     {NULL, NULL}
 };
 

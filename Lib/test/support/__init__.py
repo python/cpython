@@ -6,7 +6,6 @@ if __name__ != 'test.support':
 import contextlib
 import dataclasses
 import functools
-import getpass
 import _opcode
 import os
 import re
@@ -18,8 +17,6 @@ import time
 import types
 import unittest
 import warnings
-
-from .testresult import get_test_runner
 
 
 __all__ = [
@@ -34,7 +31,6 @@ __all__ = [
     "is_resource_enabled", "requires", "requires_freebsd_version",
     "requires_linux_version", "requires_mac_ver",
     "check_syntax_error",
-    "run_unittest", "run_doctest",
     "requires_gzip", "requires_bz2", "requires_lzma",
     "bigmemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
     "requires_IEEE_754", "requires_zlib",
@@ -46,7 +42,7 @@ __all__ = [
     "check_disallow_instantiation", "check_sanitizer", "skip_if_sanitizer",
     "requires_limited_api", "requires_specialization",
     # sys
-    "is_jython", "is_android", "is_emscripten", "is_wasi",
+    "MS_WINDOWS", "is_jython", "is_android", "is_emscripten", "is_wasi",
     "check_impl_detail", "unix_shell", "setswitchinterval",
     # os
     "get_pagesize",
@@ -75,13 +71,7 @@ __all__ = [
 #
 # The timeout should be long enough for connect(), recv() and send() methods
 # of socket.socket.
-LOOPBACK_TIMEOUT = 5.0
-if sys.platform == 'win32' and ' 32 bit (ARM)' in sys.version:
-    # bpo-37553: test_socket.SendfileUsingSendTest is taking longer than 2
-    # seconds on Windows ARM32 buildbot
-    LOOPBACK_TIMEOUT = 10
-elif sys.platform == 'vxworks':
-    LOOPBACK_TIMEOUT = 10
+LOOPBACK_TIMEOUT = 10.0
 
 # Timeout in seconds for network requests going to the internet. The timeout is
 # short enough to prevent a test to wait for too long if the internet request
@@ -392,6 +382,7 @@ def requires_mac_ver(*min_version):
 
 def skip_if_buildbot(reason=None):
     """Decorator raising SkipTest if running on a buildbot."""
+    import getpass
     if not reason:
         reason = 'not suitable for buildbots'
     try:
@@ -401,10 +392,10 @@ def skip_if_buildbot(reason=None):
         isbuildbot = False
     return unittest.skipIf(isbuildbot, reason)
 
-def check_sanitizer(*, address=False, memory=False, ub=False):
+def check_sanitizer(*, address=False, memory=False, ub=False, thread=False):
     """Returns True if Python is compiled with sanitizer support"""
-    if not (address or memory or ub):
-        raise ValueError('At least one of address, memory, or ub must be True')
+    if not (address or memory or ub or thread):
+        raise ValueError('At least one of address, memory, ub or thread must be True')
 
 
     cflags = sysconfig.get_config_var('CFLAGS') or ''
@@ -421,19 +412,36 @@ def check_sanitizer(*, address=False, memory=False, ub=False):
         '-fsanitize=undefined' in cflags or
         '--with-undefined-behavior-sanitizer' in config_args
     )
+    thread_sanitizer = (
+        '-fsanitize=thread' in cflags or
+        '--with-thread-sanitizer' in config_args
+    )
     return (
         (memory and memory_sanitizer) or
         (address and address_sanitizer) or
-        (ub and ub_sanitizer)
+        (ub and ub_sanitizer) or
+        (thread and thread_sanitizer)
     )
 
 
-def skip_if_sanitizer(reason=None, *, address=False, memory=False, ub=False):
+def skip_if_sanitizer(reason=None, *, address=False, memory=False, ub=False, thread=False):
     """Decorator raising SkipTest if running with a sanitizer active."""
     if not reason:
         reason = 'not working with sanitizers active'
-    skip = check_sanitizer(address=address, memory=memory, ub=ub)
+    skip = check_sanitizer(address=address, memory=memory, ub=ub, thread=thread)
     return unittest.skipIf(skip, reason)
+
+# gh-89363: True if fork() can hang if Python is built with Address Sanitizer
+# (ASAN): libasan race condition, dead lock in pthread_create().
+HAVE_ASAN_FORK_BUG = check_sanitizer(address=True)
+
+
+def set_sanitizer_env_var(env, option):
+    for name in ('ASAN_OPTIONS', 'MSAN_OPTIONS', 'UBSAN_OPTIONS', 'TSAN_OPTIONS'):
+        if name in env:
+            env[name] += f':{option}'
+        else:
+            env[name] = option
 
 
 def system_must_validate_cert(f):
@@ -506,6 +514,8 @@ def has_no_debug_ranges():
 
 def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
     return unittest.skipIf(has_no_debug_ranges(), reason)
+
+MS_WINDOWS = (sys.platform == 'win32')
 
 # Is not actually used in tests, but is kept for compatibility.
 is_jython = sys.platform.startswith('java')
@@ -777,18 +787,25 @@ def check_cflags_pgo():
     # Check if Python was built with ./configure --enable-optimizations:
     # with Profile Guided Optimization (PGO).
     cflags_nodist = sysconfig.get_config_var('PY_CFLAGS_NODIST') or ''
-    pgo_options = (
+    pgo_options = [
         # GCC
         '-fprofile-use',
         # clang: -fprofile-instr-use=code.profclangd
         '-fprofile-instr-use',
         # ICC
         "-prof-use",
-    )
+    ]
+    PGO_PROF_USE_FLAG = sysconfig.get_config_var('PGO_PROF_USE_FLAG')
+    if PGO_PROF_USE_FLAG:
+        pgo_options.append(PGO_PROF_USE_FLAG)
     return any(option in cflags_nodist for option in pgo_options)
 
 
-_header = 'nP'
+Py_GIL_DISABLED = bool(sysconfig.get_config_var('Py_GIL_DISABLED'))
+if Py_GIL_DISABLED:
+    _header = 'PHBBInP'
+else:
+    _header = 'nP'
 _align = '0n'
 _vheader = _header + 'n'
 
@@ -1071,18 +1088,30 @@ def check_impl_detail(**guards):
 
 def no_tracing(func):
     """Decorator to temporarily turn off tracing for the duration of a test."""
-    if not hasattr(sys, 'gettrace'):
-        return func
-    else:
+    trace_wrapper = func
+    if hasattr(sys, 'gettrace'):
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def trace_wrapper(*args, **kwargs):
             original_trace = sys.gettrace()
             try:
                 sys.settrace(None)
                 return func(*args, **kwargs)
             finally:
                 sys.settrace(original_trace)
-        return wrapper
+
+    coverage_wrapper = trace_wrapper
+    if 'test.cov' in sys.modules:  # -Xpresite=test.cov used
+        cov = sys.monitoring.COVERAGE_ID
+        @functools.wraps(func)
+        def coverage_wrapper(*args, **kwargs):
+            original_events = sys.monitoring.get_events(cov)
+            try:
+                sys.monitoring.set_events(cov, 0)
+                return trace_wrapper(*args, **kwargs)
+            finally:
+                sys.monitoring.set_events(cov, original_events)
+
+    return coverage_wrapper
 
 
 def refcount_test(test):
@@ -1107,176 +1136,6 @@ def requires_specialization(test):
     return unittest.skipUnless(
         _opcode.ENABLE_SPECIALIZATION, "requires specialization")(test)
 
-def _filter_suite(suite, pred):
-    """Recursively filter test cases in a suite based on a predicate."""
-    newtests = []
-    for test in suite._tests:
-        if isinstance(test, unittest.TestSuite):
-            _filter_suite(test, pred)
-            newtests.append(test)
-        else:
-            if pred(test):
-                newtests.append(test)
-    suite._tests = newtests
-
-@dataclasses.dataclass(slots=True)
-class TestStats:
-    tests_run: int = 0
-    failures: int = 0
-    skipped: int = 0
-
-    @staticmethod
-    def from_unittest(result):
-        return TestStats(result.testsRun,
-                         len(result.failures),
-                         len(result.skipped))
-
-    @staticmethod
-    def from_doctest(results):
-        return TestStats(results.attempted,
-                         results.failed,
-                         results.skipped)
-
-    def accumulate(self, stats):
-        self.tests_run += stats.tests_run
-        self.failures += stats.failures
-        self.skipped += stats.skipped
-
-
-def _run_suite(suite):
-    """Run tests from a unittest.TestSuite-derived class."""
-    runner = get_test_runner(sys.stdout,
-                             verbosity=verbose,
-                             capture_output=(junit_xml_list is not None))
-
-    result = runner.run(suite)
-
-    if junit_xml_list is not None:
-        junit_xml_list.append(result.get_xml_element())
-
-    if not result.testsRun and not result.skipped and not result.errors:
-        raise TestDidNotRun
-    if not result.wasSuccessful():
-        stats = TestStats.from_unittest(result)
-        if len(result.errors) == 1 and not result.failures:
-            err = result.errors[0][1]
-        elif len(result.failures) == 1 and not result.errors:
-            err = result.failures[0][1]
-        else:
-            err = "multiple errors occurred"
-            if not verbose: err += "; run in verbose mode for details"
-        errors = [(str(tc), exc_str) for tc, exc_str in result.errors]
-        failures = [(str(tc), exc_str) for tc, exc_str in result.failures]
-        raise TestFailedWithDetails(err, errors, failures, stats=stats)
-    return result
-
-
-# By default, don't filter tests
-_match_test_func = None
-
-_accept_test_patterns = None
-_ignore_test_patterns = None
-
-
-def match_test(test):
-    # Function used by support.run_unittest() and regrtest --list-cases
-    if _match_test_func is None:
-        return True
-    else:
-        return _match_test_func(test.id())
-
-
-def _is_full_match_test(pattern):
-    # If a pattern contains at least one dot, it's considered
-    # as a full test identifier.
-    # Example: 'test.test_os.FileTests.test_access'.
-    #
-    # ignore patterns which contain fnmatch patterns: '*', '?', '[...]'
-    # or '[!...]'. For example, ignore 'test_access*'.
-    return ('.' in pattern) and (not re.search(r'[?*\[\]]', pattern))
-
-
-def set_match_tests(accept_patterns=None, ignore_patterns=None):
-    global _match_test_func, _accept_test_patterns, _ignore_test_patterns
-
-    if accept_patterns is None:
-        accept_patterns = ()
-    if ignore_patterns is None:
-        ignore_patterns = ()
-
-    accept_func = ignore_func = None
-
-    if accept_patterns != _accept_test_patterns:
-        accept_patterns, accept_func = _compile_match_function(accept_patterns)
-    if ignore_patterns != _ignore_test_patterns:
-        ignore_patterns, ignore_func = _compile_match_function(ignore_patterns)
-
-    # Create a copy since patterns can be mutable and so modified later
-    _accept_test_patterns = tuple(accept_patterns)
-    _ignore_test_patterns = tuple(ignore_patterns)
-
-    if accept_func is not None or ignore_func is not None:
-        def match_function(test_id):
-            accept = True
-            ignore = False
-            if accept_func:
-                accept = accept_func(test_id)
-            if ignore_func:
-                ignore = ignore_func(test_id)
-            return accept and not ignore
-
-        _match_test_func = match_function
-
-
-def _compile_match_function(patterns):
-    if not patterns:
-        func = None
-        # set_match_tests(None) behaves as set_match_tests(())
-        patterns = ()
-    elif all(map(_is_full_match_test, patterns)):
-        # Simple case: all patterns are full test identifier.
-        # The test.bisect_cmd utility only uses such full test identifiers.
-        func = set(patterns).__contains__
-    else:
-        import fnmatch
-        regex = '|'.join(map(fnmatch.translate, patterns))
-        # The search *is* case sensitive on purpose:
-        # don't use flags=re.IGNORECASE
-        regex_match = re.compile(regex).match
-
-        def match_test_regex(test_id):
-            if regex_match(test_id):
-                # The regex matches the whole identifier, for example
-                # 'test.test_os.FileTests.test_access'.
-                return True
-            else:
-                # Try to match parts of the test identifier.
-                # For example, split 'test.test_os.FileTests.test_access'
-                # into: 'test', 'test_os', 'FileTests' and 'test_access'.
-                return any(map(regex_match, test_id.split(".")))
-
-        func = match_test_regex
-
-    return patterns, func
-
-
-def run_unittest(*classes):
-    """Run tests from unittest.TestCase-derived classes."""
-    valid_types = (unittest.TestSuite, unittest.TestCase)
-    loader = unittest.TestLoader()
-    suite = unittest.TestSuite()
-    for cls in classes:
-        if isinstance(cls, str):
-            if cls in sys.modules:
-                suite.addTest(loader.loadTestsFromModule(sys.modules[cls]))
-            else:
-                raise ValueError("str arguments must be keys in sys.modules")
-        elif isinstance(cls, valid_types):
-            suite.addTest(cls)
-        else:
-            suite.addTest(loader.loadTestsFromTestCase(cls))
-    _filter_suite(suite, match_test)
-    return _run_suite(suite)
 
 #=======================================================================
 # Check for the presence of docstrings.
@@ -1296,38 +1155,6 @@ HAVE_DOCSTRINGS = (_check_docstrings.__doc__ is not None and
 
 requires_docstrings = unittest.skipUnless(HAVE_DOCSTRINGS,
                                           "test requires docstrings")
-
-
-#=======================================================================
-# doctest driver.
-
-def run_doctest(module, verbosity=None, optionflags=0):
-    """Run doctest on the given module.  Return (#failures, #tests).
-
-    If optional argument verbosity is not specified (or is None), pass
-    support's belief about verbosity on to doctest.  Else doctest's
-    usual behavior is used (it searches sys.argv for -v).
-    """
-
-    import doctest
-
-    if verbosity is None:
-        verbosity = verbose
-    else:
-        verbosity = None
-
-    results = doctest.testmod(module,
-                             verbose=verbosity,
-                             optionflags=optionflags)
-    if results.failed:
-        stats = TestStats.from_doctest(results)
-        raise TestFailed(f"{results.failed} of {results.attempted} "
-                         f"doctests failed",
-                         stats=stats)
-    if verbose:
-        print('doctest (%s) ... %d tests with zero failures' %
-              (module.__name__, results.attempted))
-    return results
 
 
 #=======================================================================
@@ -2022,7 +1849,12 @@ class SaveSignals:
 
 def with_pymalloc():
     import _testcapi
-    return _testcapi.WITH_PYMALLOC
+    return _testcapi.WITH_PYMALLOC and not Py_GIL_DISABLED
+
+
+def with_mimalloc():
+    import _testcapi
+    return _testcapi.WITH_MIMALLOC
 
 
 class _ALWAYS_EQ:
@@ -2294,13 +2126,13 @@ def set_recursion_limit(limit):
     finally:
         sys.setrecursionlimit(original_limit)
 
-def infinite_recursion(max_depth=100):
-    """Set a lower limit for tests that interact with infinite recursions
-    (e.g test_ast.ASTHelpers_Test.test_recursion_direct) since on some
-    debug windows builds, due to not enough functions being inlined the
-    stack size might not handle the default recursion limit (1000). See
-    bpo-11105 for details."""
-    if max_depth < 3:
+def infinite_recursion(max_depth=None):
+    if max_depth is None:
+        # Pick a number large enough to cause problems
+        # but not take too long for code that can handle
+        # very deep recursion.
+        max_depth = 20_000
+    elif max_depth < 3:
         raise ValueError("max_depth must be at least 3, got {max_depth}")
     depth = get_recursion_depth()
     depth = max(depth - 1, 1)  # Ignore infinite_recursion() frame.
@@ -2538,11 +2370,23 @@ def adjust_int_max_str_digits(max_digits):
     finally:
         sys.set_int_max_str_digits(current)
 
-#For recursion tests, easily exceeds default recursion limit
-EXCEEDS_RECURSION_LIMIT = 5000
 
-# The default C recursion limit (from Include/cpython/pystate.h).
-Py_C_RECURSION_LIMIT = 1500
+def _get_c_recursion_limit():
+    try:
+        import _testcapi
+        return _testcapi.Py_C_RECURSION_LIMIT
+    except (ImportError, AttributeError):
+        # Originally taken from Include/cpython/pystate.h .
+        if sys.platform == 'win32':
+            return 4000
+        else:
+            return 10000
+
+# The default C recursion limit.
+Py_C_RECURSION_LIMIT = _get_c_recursion_limit()
+
+#For recursion tests, easily exceeds default recursion limit
+EXCEEDS_RECURSION_LIMIT = Py_C_RECURSION_LIMIT * 3
 
 #Windows doesn't have os.uname() but it doesn't support s390x.
 skip_on_s390x = unittest.skipIf(hasattr(os, 'uname') and os.uname().machine == 's390x',
@@ -2565,3 +2409,30 @@ def without_optimizer(func):
         finally:
             _testinternalcapi.set_optimizer(save_opt)
     return wrapper
+
+
+_BASE_COPY_SRC_DIR_IGNORED_NAMES = frozenset({
+    # SRC_DIR/.git
+    '.git',
+    # ignore all __pycache__/ sub-directories
+    '__pycache__',
+})
+
+# Ignore function for shutil.copytree() to copy the Python source code.
+def copy_python_src_ignore(path, names):
+    ignored = _BASE_COPY_SRC_DIR_IGNORED_NAMES
+    if os.path.basename(path) == 'Doc':
+        ignored |= {
+            # SRC_DIR/Doc/build/
+            'build',
+            # SRC_DIR/Doc/venv/
+            'venv',
+        }
+
+    # check if we are at the root of the source code
+    elif 'Modules' in names:
+        ignored |= {
+            # SRC_DIR/build/
+            'build',
+        }
+    return ignored

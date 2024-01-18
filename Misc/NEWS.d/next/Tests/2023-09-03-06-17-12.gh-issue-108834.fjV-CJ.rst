@@ -1,2 +1,0 @@
-Rename regrtest ``--verbose2`` option (``-w``) to ``--rerun``. Keep
-``--verbose2`` as a deprecated alias. Patch by Victor Stinner.

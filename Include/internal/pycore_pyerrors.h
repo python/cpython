@@ -170,11 +170,6 @@ Py_DEPRECATED(3.12) extern void _PyErr_ChainExceptions(PyObject *, PyObject *, P
 // Export for '_zoneinfo' shared extension
 PyAPI_FUNC(void) _PyErr_ChainExceptions1(PyObject *);
 
-// Export for '_lsprof' shared extension
-PyAPI_FUNC(void) _PyErr_WriteUnraisableMsg(
-    const char *err_msg,
-    PyObject *obj);
-
 #ifdef __cplusplus
 }
 #endif
