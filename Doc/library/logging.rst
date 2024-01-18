@@ -390,7 +390,7 @@ is the module's name in the Python package namespace.
 
    .. attribute:: manager
 
-      The logger :class:`~Manager`.
+      The logger ``logging.Manager``.
 
    .. versionchanged:: 3.7
       Loggers can now be pickled and unpickled.
