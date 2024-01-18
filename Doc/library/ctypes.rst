@@ -2111,15 +2111,17 @@ Utility functions
 
 .. function:: buffer_at(address, size, allow_write=False)
 
-   This function returns a memoryview object that references the
+   This function returns a :class:`memoryview` object that references the
    memory starting at *address* up to (but not including) *address +
    size*.  If *allow_write* is set to a truthy value then the
-   memoryview object is mutable.
+   :class:`!memoryview` object is mutable.
 
    This function is similar to :func:`string_at` with the key difference
    of not making a copy of the specified memory.
 
    .. audit-event:: ctypes.buffer_at address,size,allow_write ctypes.buffer_at
+
+   .. versionadded:: 3.13
 
 
 .. _ctypes-data-types:

@@ -1,3 +1,3 @@
-ctypes.buffer_at() now exists to create a memoryview object that refers to
-the supplied pointer and length. Works just like ctypes.string_at() except
+:func:`ctypes.buffer_at` now exists to create a :class:`memoryview` object that refers to
+the supplied pointer and length. Works just like :func:`ctypes.string_at` except
 it avoids a buffer copy.
