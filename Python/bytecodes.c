@@ -4092,11 +4092,14 @@ dummy_func(
             null = NULL;
         }
 
-        op(_CHECK_FUNCTION_VERSION, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
+        op(_CHECK_GLOBALS, (dict/4 -- )) {
             TIER_TWO_ONLY
-            DEOPT_IF(!PyFunction_Check(callable));
-            PyFunctionObject *func = (PyFunctionObject *)callable;
-            DEOPT_IF(func->func_version != func_version);
+            DEOPT_IF(GLOBALS() != dict);
+        }
+
+        op(_CHECK_BUILTINS, (dict/4 -- )) {
+            TIER_TWO_ONLY
+            DEOPT_IF(BUILTINS() != dict);
         }
 
         /* Internal -- for testing executors */

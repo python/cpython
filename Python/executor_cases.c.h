@@ -3436,17 +3436,17 @@
             break;
         }
 
-        case _CHECK_FUNCTION_VERSION: {
-            PyObject *self_or_null;
-            PyObject *callable;
-            oparg = CURRENT_OPARG();
-            self_or_null = stack_pointer[-1 - oparg];
-            callable = stack_pointer[-2 - oparg];
-            uint32_t func_version = (uint32_t)CURRENT_OPERAND();
+        case _CHECK_GLOBALS: {
+            PyObject *dict = (PyObject *)CURRENT_OPERAND();
             TIER_TWO_ONLY
-            if (!PyFunction_Check(callable)) goto deoptimize;
-            PyFunctionObject *func = (PyFunctionObject *)callable;
-            if (func->func_version != func_version) goto deoptimize;
+            if (GLOBALS() != dict) goto deoptimize;
+            break;
+        }
+
+        case _CHECK_BUILTINS: {
+            PyObject *dict = (PyObject *)CURRENT_OPERAND();
+            TIER_TWO_ONLY
+            if (BUILTINS() != dict) goto deoptimize;
             break;
         }
 
