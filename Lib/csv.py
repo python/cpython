@@ -1,6 +1,6 @@
 
 r"""
-csv.py - read/write/investigate CSV files
+CSV parsing and writing.
 
 This module provides classes that assist in the reading and writing
 of Comma Separated Value (CSV) files, and implements the interface
