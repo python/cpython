@@ -80,7 +80,7 @@ The module defines the following type:
 
    A new array whose items are restricted by *typecode*, and initialized
    from the optional *initializer* value, which must be a :class:`bytes`
-   or :class:`bytearray` object, a unicode string, or iterable over elements
+   or :class:`bytearray` object, a Unicode string, or iterable over elements
    of the appropriate type.
 
    If given a :class:`bytes` or :class:`bytearray` object, the initializer
@@ -180,7 +180,7 @@ The module defines the following type:
 
    .. method:: fromunicode(s)
 
-      Extends this array with data from the given unicode string.
+      Extends this array with data from the given Unicode string.
       The array must have type code ``'u'`` or ``'w'``; otherwise a :exc:`ValueError` is raised.
       Use ``array.frombytes(unicodestring.encode(enc))`` to append Unicode data to an
       array of some other type.
@@ -242,9 +242,9 @@ The module defines the following type:
 
    .. method:: tounicode()
 
-      Convert the array to a unicode string.  The array must have a type ``'u'`` or ``'w'``;
+      Convert the array to a Unicode string.  The array must have a type ``'u'`` or ``'w'``;
       otherwise a :exc:`ValueError` is raised. Use ``array.tobytes().decode(enc)`` to
-      obtain a unicode string from an array of some other type.
+      obtain a Unicode string from an array of some other type.
 
 
 When an array object is converted to a string, it is represented as
