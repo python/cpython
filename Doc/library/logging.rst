@@ -383,6 +383,15 @@ is the module's name in the Python package namespace.
 
       .. versionadded:: 3.2
 
+   .. method:: Logger._log(level, msg, args, exc_info=None, extra=None, stack_info=False, stacklevel=1)
+
+      Low-level logging routine which creates a :class:`~LogRecord` and then calls
+      all the handlers of this logger to handle the record.
+
+   .. attribute:: manager
+
+      The logger :class:`~Manager`.
+
    .. versionchanged:: 3.7
       Loggers can now be pickled and unpickled.
 
