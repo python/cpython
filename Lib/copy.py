@@ -170,9 +170,9 @@ def deepcopy(x, memo=None, _nil=[]):
         _keep_alive(x, memo) # Make sure x lives at least as long as d
     return y
 
-_atomic_types =  {type(None), int, float, bool, complex, str, bytes, type, range, property,
-          types.BuiltinFunctionType, type(Ellipsis), type(NotImplemented),
-          types.FunctionType, weakref.ref, types.CodeType}
+_atomic_types =  {types.NoneType, types.EllipsisType, types.NotImplementedType,
+          int, float, bool, complex, bytes, str, types.CodeType, type, range,
+          types.BuiltinFunctionType, types.FunctionType, weakref.ref, property}
 
 _deepcopy_dispatch = {}
 
