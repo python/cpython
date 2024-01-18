@@ -3163,19 +3163,34 @@ class TestSpecial(unittest.TestCase):
                 [x.value for x in NTEnum],
                 [TTuple(id=0, a=0, blist=[]), TTuple(id=1, a=2, blist=[4]), TTuple(id=2, a=4, blist=[0, 1, 2])],
                 )
+
+        self.assertRaises(AttributeError, getattr, NTEnum.NONE, 'id')
+        #
+        class NTCEnum(TTuple, Enum):
+            NONE = 0, 0, []
+            A = 1, 2, [4]
+            B = 2, 4, [0, 1, 2]
+        self.assertEqual(repr(NTCEnum.NONE), "<NTCEnum.NONE: TTuple(id=0, a=0, blist=[])>")
+        self.assertEqual(NTCEnum.NONE.value, TTuple(id=0, a=0, blist=[]))
+        self.assertEqual(NTCEnum.NONE.id, 0)
+        self.assertEqual(NTCEnum.A.a, 2)
+        self.assertEqual(NTCEnum.B.blist, [0, 1 ,2])
+        self.assertEqual(
+                [x.value for x in NTCEnum],
+                [TTuple(id=0, a=0, blist=[]), TTuple(id=1, a=2, blist=[4]), TTuple(id=2, a=4, blist=[0, 1, 2])],
+                )
         #
         class NTDEnum(Enum):
-            def __new__(cls, t_value):
+            def __new__(cls, id, a, blist):
                 member = object.__new__(cls)
-                member._value_ = t_value[0]
-                member.id = t_value[0]
-                member.a = t_value[1]
-                member.blist = t_value[2]
+                member.id = id
+                member.a = a
+                member.blist = blist
                 return member
             NONE = TTuple(0, 0, [])
             A = TTuple(1, 2, [4])
             B = TTuple(2, 4, [0, 1, 2])
-        self.assertEqual(repr(NTDEnum.NONE), "<NTDEnum.NONE: 0>")
+        self.assertEqual(repr(NTDEnum.NONE), "<NTDEnum.NONE: TTuple(id=0, a=0, blist=[])>")
         self.assertEqual(NTDEnum.NONE.id, 0)
         self.assertEqual(NTDEnum.A.a, 2)
         self.assertEqual(NTDEnum.B.blist, [0, 1 ,2])
