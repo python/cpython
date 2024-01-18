@@ -1,0 +1,1 @@
+Adds free-threaded binaries to Windows installer as an optional component.

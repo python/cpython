@@ -12,21 +12,12 @@ resemble pathlib's PurePath and Path respectively.
 """
 
 import functools
-import posixpath
 from errno import ENOENT, ENOTDIR, EBADF, ELOOP, EINVAL
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 
 #
 # Internals
 #
-
-# Reference for Windows paths can be found at
-# https://learn.microsoft.com/en-gb/windows/win32/fileio/naming-a-file .
-_WIN_RESERVED_NAMES = frozenset(
-    {'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$'} |
-    {f'COM{c}' for c in '123456789\xb9\xb2\xb3'} |
-    {f'LPT{c}' for c in '123456789\xb9\xb2\xb3'}
-)
 
 _WINERROR_NOT_READY = 21  # drive exists but is not accessible
 _WINERROR_INVALID_NAME = 123  # fix for bpo-35306
@@ -144,6 +135,52 @@ class UnsupportedOperation(NotImplementedError):
     pass
 
 
+class PathModuleBase:
+    """Base class for path modules, which do low-level path manipulation.
+
+    Path modules provide a subset of the os.path API, specifically those
+    functions needed to provide PurePathBase functionality. Each PurePathBase
+    subclass references its path module via a 'pathmod' class attribute.
+
+    Every method in this base class raises an UnsupportedOperation exception.
+    """
+
+    @classmethod
+    def _unsupported(cls, attr):
+        raise UnsupportedOperation(f"{cls.__name__}.{attr} is unsupported")
+
+    @property
+    def sep(self):
+        """The character used to separate path components."""
+        self._unsupported('sep')
+
+    def join(self, path, *paths):
+        """Join path segments."""
+        self._unsupported('join()')
+
+    def split(self, path):
+        """Split the path into a pair (head, tail), where *head* is everything
+        before the final path separator, and *tail* is everything after.
+        Either part may be empty.
+        """
+        self._unsupported('split()')
+
+    def splitdrive(self, path):
+        """Split the path into a 2-item tuple (drive, tail), where *drive* is
+        a device name or mount point, and *tail* is everything after the
+        drive. Either part may be empty."""
+        self._unsupported('splitdrive()')
+
+    def normcase(self, path):
+        """Normalize the case of the path."""
+        self._unsupported('normcase()')
+
+    def isabs(self, path):
+        """Returns whether the path is absolute, i.e. unaffected by the
+        current directory or drive."""
+        self._unsupported('isabs()')
+
+
 class PurePathBase:
     """Base class for pure path objects.
 
@@ -154,19 +191,19 @@ class PurePathBase:
     """
 
     __slots__ = (
-        # The `_raw_paths` slot stores unnormalized string paths. This is set
-        # in the `__init__()` method.
-        '_raw_paths',
+        # The `_raw_path` slot store a joined string path. This is set in the
+        # `__init__()` method.
+        '_raw_path',
 
         # The '_resolving' slot stores a boolean indicating whether the path
         # is being processed by `PathBase.resolve()`. This prevents duplicate
         # work from occurring when `resolve()` calls `stat()` or `readlink()`.
         '_resolving',
     )
-    pathmod = posixpath
+    pathmod = PathModuleBase()
 
-    def __init__(self, *paths):
-        self._raw_paths = paths
+    def __init__(self, path, *paths):
+        self._raw_path = self.pathmod.join(path, *paths) if paths else path
         self._resolving = False
 
     def with_segments(self, *pathsegments):
@@ -175,11 +212,6 @@ class PurePathBase:
         are created from methods like `iterdir()`.
         """
         return type(self)(*pathsegments)
-
-    @property
-    def _raw_path(self):
-        """The joined but unnormalized path."""
-        return self.pathmod.join(*self._raw_paths)
 
     def __str__(self):
         """Return the string representation of the path, suitable for
@@ -194,23 +226,22 @@ class PurePathBase:
     @property
     def drive(self):
         """The drive prefix (letter or UNC path), if any."""
-        return self.pathmod.splitdrive(self._raw_path)[0]
+        return self.pathmod.splitdrive(self.anchor)[0]
 
     @property
     def root(self):
         """The root of the path, if any."""
-        return self.pathmod.splitroot(self._raw_path)[1]
+        return self.pathmod.splitdrive(self.anchor)[1]
 
     @property
     def anchor(self):
         """The concatenation of the drive and root, or ''."""
-        drive, root, _ =  self.pathmod.splitroot(self._raw_path)
-        return drive + root
+        return self._stack[0]
 
     @property
     def name(self):
         """The final path component, if any."""
-        return self.pathmod.basename(self._raw_path)
+        return self.pathmod.split(self._raw_path)[1]
 
     @property
     def suffix(self):
@@ -251,10 +282,10 @@ class PurePathBase:
 
     def with_name(self, name):
         """Return a new path with the file name changed."""
-        dirname = self.pathmod.dirname
-        if dirname(name):
+        split = self.pathmod.split
+        if split(name)[0]:
             raise ValueError(f"Invalid name {name!r}")
-        return self.with_segments(dirname(self._raw_path), name)
+        return self.with_segments(split(self._raw_path)[0], name)
 
     def with_stem(self, stem):
         """Return a new path with the stem changed."""
@@ -336,17 +367,17 @@ class PurePathBase:
         paths) or a totally different path (if one of the arguments is
         anchored).
         """
-        return self.with_segments(*self._raw_paths, *pathsegments)
+        return self.with_segments(self._raw_path, *pathsegments)
 
     def __truediv__(self, key):
         try:
-            return self.joinpath(key)
+            return self.with_segments(self._raw_path, key)
         except TypeError:
             return NotImplemented
 
     def __rtruediv__(self, key):
         try:
-            return self.with_segments(key, *self._raw_paths)
+            return self.with_segments(key, self._raw_path)
         except TypeError:
             return NotImplemented
 
@@ -371,7 +402,7 @@ class PurePathBase:
     def parent(self):
         """The logical parent of the path."""
         path = self._raw_path
-        parent = self.pathmod.dirname(path)
+        parent = self.pathmod.split(path)[0]
         if path != parent:
             parent = self.with_segments(parent)
             parent._resolving = self._resolving
@@ -381,43 +412,20 @@ class PurePathBase:
     @property
     def parents(self):
         """A sequence of this path's logical parents."""
-        dirname = self.pathmod.dirname
+        split = self.pathmod.split
         path = self._raw_path
-        parent = dirname(path)
+        parent = split(path)[0]
         parents = []
         while path != parent:
             parents.append(self.with_segments(parent))
             path = parent
-            parent = dirname(path)
+            parent = split(path)[0]
         return tuple(parents)
 
     def is_absolute(self):
         """True if the path is absolute (has both a root and, if applicable,
         a drive)."""
-        if self.pathmod is posixpath:
-            # Optimization: work with raw paths on POSIX.
-            for path in self._raw_paths:
-                if path.startswith('/'):
-                    return True
-            return False
-        else:
-            return self.pathmod.isabs(self._raw_path)
-
-    def is_reserved(self):
-        """Return True if the path contains one of the special names reserved
-        by the system, if any."""
-        if self.pathmod is posixpath or not self.name:
-            return False
-
-        # NOTE: the rules for reserved names seem somewhat complicated
-        # (e.g. r"..\NUL" is reserved but not r"foo\NUL" if "foo" does not
-        # exist). We err on the side of caution and return True for paths
-        # which are not considered reserved by Windows.
-        if self.drive.startswith('\\\\'):
-            # UNC paths are never reserved.
-            return False
-        name = self.name.partition('.')[0].partition(':')[0].rstrip(' ')
-        return name.upper() in _WIN_RESERVED_NAMES
+        return self.pathmod.isabs(self._raw_path)
 
     def match(self, path_pattern, *, case_sensitive=None):
         """
@@ -726,7 +734,7 @@ class PathBase(PurePathBase):
             raise ValueError("Unacceptable pattern: {!r}".format(pattern))
 
         pattern_parts = list(path_pattern.parts)
-        if not self.pathmod.basename(pattern):
+        if not self.pathmod.split(pattern)[1]:
             # GH-65238: pathlib doesn't preserve trailing slash. Add it back.
             pattern_parts.append('')
 
