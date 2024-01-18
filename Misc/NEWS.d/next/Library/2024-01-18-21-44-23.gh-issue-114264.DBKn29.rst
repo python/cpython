@@ -1,1 +1,1 @@
-Improve performance of `copy.deepcopy` by adding a fast path for atomic types.
+Improve performance of :func:`copy.deepcopy` by adding a fast path for atomic types.
