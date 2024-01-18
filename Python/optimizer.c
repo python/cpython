@@ -109,7 +109,7 @@ PyUnstable_Replace_Executor(PyCodeObject *code, _Py_CODEUNIT *instr, _PyExecutor
 static int
 error_optimize(
     _PyOptimizerObject* self,
-    PyCodeObject *code,
+    _PyInterpreterFrame *frame,
     _Py_CODEUNIT *instr,
     _PyExecutorObject **exec,
     int Py_UNUSED(stack_entries))
@@ -173,7 +173,7 @@ _PyOptimizer_Optimize(_PyInterpreterFrame *frame, _Py_CODEUNIT *start, PyObject 
     }
     _PyOptimizerObject *opt = interp->optimizer;
     _PyExecutorObject *executor = NULL;
-    int err = opt->optimize(opt, code, start, &executor, (int)(stack_pointer - _PyFrame_Stackbase(frame)));
+    int err = opt->optimize(opt, frame, start, &executor, (int)(stack_pointer - _PyFrame_Stackbase(frame)));
     if (err <= 0) {
         assert(executor == NULL);
         return err;
@@ -376,13 +376,14 @@ BRANCH_TO_GUARD[4][2] = {
  */
 static int
 translate_bytecode_to_trace(
-    PyCodeObject *code,
+    _PyInterpreterFrame *frame,
     _Py_CODEUNIT *instr,
     _PyUOpInstruction *trace,
     int buffer_size,
     _PyBloomFilter *dependencies)
 {
     bool progress_needed = true;
+    PyCodeObject *code = (PyCodeObject *)frame->f_executable;
     PyCodeObject *initial_code = code;
     _Py_BloomFilter_Add(dependencies, initial_code);
     _Py_CODEUNIT *initial_instr = instr;
@@ -795,7 +796,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
 static int
 uop_optimize(
     _PyOptimizerObject *self,
-    PyCodeObject *code,
+    _PyInterpreterFrame *frame,
     _Py_CODEUNIT *instr,
     _PyExecutorObject **exec_ptr,
     int curr_stackentries)
@@ -803,7 +804,7 @@ uop_optimize(
     _PyBloomFilter dependencies;
     _Py_BloomFilter_Init(&dependencies);
     _PyUOpInstruction buffer[UOP_MAX_TRACE_LENGTH];
-    int err = translate_bytecode_to_trace(code, instr, buffer, UOP_MAX_TRACE_LENGTH, &dependencies);
+    int err = translate_bytecode_to_trace(frame, instr, buffer, UOP_MAX_TRACE_LENGTH, &dependencies);
     if (err <= 0) {
         // Error or nothing translated
         return err;
@@ -811,7 +812,7 @@ uop_optimize(
     OPT_STAT_INC(traces_created);
     char *uop_optimize = Py_GETENV("PYTHONUOPSOPTIMIZE");
     if (uop_optimize == NULL || *uop_optimize > '0') {
-        err = _Py_uop_analyze_and_optimize(code, buffer, UOP_MAX_TRACE_LENGTH, curr_stackentries);
+        err = _Py_uop_analyze_and_optimize(frame, buffer, UOP_MAX_TRACE_LENGTH, curr_stackentries);
         if (err < 0) {
             return -1;
         }
@@ -874,12 +875,13 @@ PyTypeObject _PyCounterExecutor_Type = {
 static int
 counter_optimize(
     _PyOptimizerObject* self,
-    PyCodeObject *code,
+    _PyInterpreterFrame *frame,
     _Py_CODEUNIT *instr,
     _PyExecutorObject **exec_ptr,
     int Py_UNUSED(curr_stackentries)
 )
 {
+    PyCodeObject *code = (PyCodeObject *)frame->f_executable;
     int oparg = instr->op.arg;
     while (instr->op.code == EXTENDED_ARG) {
         instr++;

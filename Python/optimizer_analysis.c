@@ -13,8 +13,9 @@
 #include "pycore_optimizer.h"
 
 static void
-peephole_opt(PyCodeObject *co, _PyUOpInstruction *buffer, int buffer_size)
+peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_size)
 {
+    PyCodeObject *co = (PyCodeObject *)frame->f_executable;
     for (int pc = 0; pc < buffer_size; pc++) {
         int opcode = buffer[pc].opcode;
         switch(opcode) {
@@ -86,13 +87,13 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
 
 int
 _Py_uop_analyze_and_optimize(
-    PyCodeObject *co,
+    _PyInterpreterFrame *frame,
     _PyUOpInstruction *buffer,
     int buffer_size,
     int curr_stacklen
 )
 {
-    peephole_opt(co, buffer, buffer_size);
+    peephole_opt(frame, buffer, buffer_size);
     remove_unneeded_uops(buffer, buffer_size);
     return 0;
 }

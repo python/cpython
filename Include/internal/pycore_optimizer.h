@@ -8,7 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-int _Py_uop_analyze_and_optimize(PyCodeObject *code,
+int _Py_uop_analyze_and_optimize(_PyInterpreterFrame *frame,
     _PyUOpInstruction *trace, int trace_len, int curr_stackentries);
 
 extern PyTypeObject _PyCounterExecutor_Type;
