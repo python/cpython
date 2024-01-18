@@ -1079,10 +1079,10 @@ deoptimize:
 side_exit:
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     UOP_STAT_INC(uopcode, miss);
-    uint32_t exit_id = next_uop[-1].target;
-    _PyExitData *exit = &current_executor->exits[exit_id];
+    uint16_t exit_index = next_uop[-1].exit_index;
+    _PyExitData *exit = &current_executor->exits[exit_index];
     DPRINTF(2, "SIDE EXIT: [UOp %d (%s), oparg %d, operand %" PRIu64 ", exit %u, temp %d, target %d -> %s]\n",
-            uopcode, _PyUOpName(uopcode), next_uop[-1].oparg, next_uop[-1].operand, exit_id, exit->temperature, exit->target,
+            uopcode, _PyUOpName(uopcode), next_uop[-1].oparg, next_uop[-1].operand, exit_index, exit->temperature, exit->target,
             _PyOpcode_OpName[_PyCode_CODE(_PyFrame_GetCode(frame))[exit->target].op.code]);
     Py_INCREF(exit->executor);
     next_uop = exit->executor->trace;

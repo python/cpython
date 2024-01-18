@@ -32,7 +32,10 @@ typedef struct {
 typedef struct {
     uint16_t opcode;
     uint16_t oparg;
-    uint32_t target;
+    union {
+        uint32_t target;
+        uint16_t exit_index;
+    };
     uint64_t operand;  // A cache entry
 } _PyUOpInstruction;
 
@@ -57,7 +60,7 @@ typedef struct _cold_exit {
 } _PyColdExitObject;
 
 
-extern _PyColdExitObject Py_FatalErrorExecutor;
+extern _PyColdExitObject Py_NeverExecutedExecutor;
 
 typedef struct _PyOptimizerObject _PyOptimizerObject;
 

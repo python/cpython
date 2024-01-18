@@ -9,8 +9,8 @@ instead of the tier 1 bytecode.
 Since each executor must exit, we also track the "hotness" of those
 exits and attach new executors to those exits.
 
-That way we form a graph of executors that covers the most frequently
-executed parts of the program.
+As the program executes, and the hot parts of the program get optimized,
+a graph of executors will form.
 
 ## Superblocks and Executors
 
@@ -20,7 +20,7 @@ using information gathered by tier 1 to guide that projection to
 form a "superblock", a mostly linear sequence of micro-ops.
 Although mostly linear, it may include a single loop.
 
-We then optimize this superblock to from an optimized superblock,
+We then optimize this superblock to form an optimized superblock,
 which is equivalent but more efficient.
 
 A superblock is a representation of the code we want to execute,
@@ -30,13 +30,15 @@ The executable form is know as an executor.
 Executors are semantically equivalent to the superblock they are
 created from, but are in a form that can be efficiently executable.
 
-There are two execution engines for executors, adn two types of executors:
+There are two execution engines for executors, and two types of executors:
 * The hardware which runs machine code executors created by the JIT compiler.
 * The tier 2 interpreter runs bytecode executors.
 
-The choice of engine is a configuration option.
-We will not support both the tier 2 interpreter and JIT in a
-single executable.
+It would be very wasteful to support both a tier 2 interpreter and
+JIT compiler in the same process.
+For now, we will make the choice of engine a configuration option,
+but we could make it a command line option in the future if that would prove useful.
+
 
 ### Tier 2 Interpreter
 
@@ -64,6 +66,18 @@ Therefore, we want to make those transfers fast.
 
 ### Tier 2 to tier 2
 
+#### Cold exits
+
+All side exits start cold and most stay cold, but a few become
+hot. We want to keep the memory consumption small for the many
+cold exits, but those that become hot need to be fast.
+However we cannot know in advance, which will be which.
+
+So that tier 2 to tier 2 transfers are fast for hot exits,
+exits must be implemented as executors. In order to patch
+executor exits when they get hot, a pointer to the current
+executor must be passed to the exit executor.
+
 #### Handling reference counts
 
 There must be an implicit reference to the currently executing
@@ -72,11 +86,17 @@ Consequently, we must increment the reference count of an
 executor just before executing it, and decrement it just after
 executing it.
 
-Note that since executors are objects, they can contain references to
-themselves, which means we do not need to pass a reference to an
-executor when we start to execute it.
+We want to minimize the amount of data that is passed from
+one executor to the next. In the JIT, this reduces the number
+of arguments in the tailcall, freeing up registers for other uses.
+It is less important in the interpreter, but follwing the same
+design as the JIT simplifies debugging and is good for performance.
+
+Provided that we incref the new executor before executing it, we
+can jump directly to the code of the executor, without needing
+to pass a reference to that executor object.
 However, we do need to pass a reference to the previous executor,
-so that it can be decref'd.
+so that it can be decref'd and for handling of cold exits.
 
 #### The interpreter
 
@@ -91,15 +111,15 @@ points to the currently live executor. When transfering from executor
 3. Start executing `B`
 
 We also make the first instruction in `B` do the following:
-1. Decrement the reference count of `A` (through `current_executor`)
-2. Set `current_executor` to point to `B`
+1. Set `current_executor` to point to `B`
+2. Decrement the reference count of `A`
 
 The net effect of the above is to safely decrement the refcount of `A`,
 increment the refcount of `B` and set `current_executor` to point to `B`.
 
 #### In the JIT
 
-Transfering control form one executor to another is done via tailcalls.
+Transfering control from one executor to another is done via tailcalls.
 
 The compiled executor should do the same, except that there is no local
 variable `current_executor`, so that the old executor, `A`, must be passed
@@ -107,10 +127,13 @@ as an additional parameter when tailcalling.
 
 ### Tier 1 to tier 2
 
-We create a single, immortal executor that cannot be executed.
-We can then perform a tier 1 to tier 2 transfer,
-by setting `current_executor` to this singleton, and then performing
-a tier 2 to tier 2 transfer as above.
+Since the executor doesn't know if the previous code was tier 1 or tier 2,
+we need to make a transfer from tier 1 to tier 2 look like a tier 2 to tier 2
+transfer to the executor.
+
+To do that, we create a single, immortal executor that cannot be executed.
+We can then perform a tier 1 to tier 2 transfer by setting `current_executor`
+to this singleton, and then performing a tier 2 to tier 2 transfer as above.
 
 ### Tier 2 to tier 1
 

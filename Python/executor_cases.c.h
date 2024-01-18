@@ -3446,8 +3446,9 @@
         case _START_EXECUTOR: {
             PyObject *executor = (PyObject *)CURRENT_OPERAND();
             TIER_TWO_ONLY
-            Py_DECREF(current_executor);
+            _PyExecutorObject *old = current_executor;
             current_executor = (_PyExecutorObject*)executor;
+            Py_DECREF(old);
             break;
         }
 

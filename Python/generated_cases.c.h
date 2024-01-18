@@ -740,7 +740,7 @@
             next_instr += 1;
             INSTRUCTION_STATS(CACHE);
             TIER_ONE_ONLY
-            assert(0);
+            assert(0 && "Executing a cache.");
             Py_FatalError("Executing a cache.");
             DISPATCH();
         }
@@ -2381,7 +2381,7 @@
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
             if (executor->vm_data.valid) {
                 assert(current_executor == NULL);
-                current_executor = (_PyExecutorObject *)&Py_FatalErrorExecutor;
+                current_executor = (_PyExecutorObject *)&Py_NeverExecutedExecutor;
                 Py_INCREF(executor);
                 next_uop = executor->trace;
                 GOTO_TIER_TWO();
@@ -3306,7 +3306,7 @@
                 if (optimized < 0) goto error;
                 if (optimized) {
                     assert(current_executor == NULL);
-                    current_executor = (_PyExecutorObject *)&Py_FatalErrorExecutor;
+                    current_executor = (_PyExecutorObject *)&Py_NeverExecutedExecutor;
                     next_uop = executor->trace;
                     GOTO_TIER_TWO();
                 }
@@ -4796,7 +4796,7 @@
             next_instr += 1;
             INSTRUCTION_STATS(RESERVED);
             TIER_ONE_ONLY
-            assert(0);
+            assert(0 && "Executing RESERVED instruction.");
             Py_FatalError("Executing RESERVED instruction.");
             DISPATCH();
         }

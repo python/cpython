@@ -828,11 +828,11 @@ allocate_executor(int exit_count, int length)
     return res;
 }
 
-_PyColdExitObject Py_FatalErrorExecutor = {
+_PyColdExitObject Py_NeverExecutedExecutor = {
     .base = {
         PyVarObject_HEAD_INIT(&_ColdExit_Type, 0)
         .vm_data = { 0 },
-        .trace = &Py_FatalErrorExecutor.uop
+        .trace = &Py_NeverExecutedExecutor.uop
     },
     .uop.opcode = _FATAL_ERROR,
 };
@@ -875,7 +875,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
         }
         if (_PyUop_Flags[opcode] & HAS_EXIT_FLAG) {
             executor->exits[next_exit].target = buffer[i].target;
-            dest->target = next_exit;
+            dest->exit_index = next_exit;
             next_exit--;
         }
         /* Set the oparg to be the destination offset,

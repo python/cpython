@@ -2338,7 +2338,7 @@ dummy_func(
                 ERROR_IF(optimized < 0, error);
                 if (optimized) {
                     assert(current_executor == NULL);
-                    current_executor = (_PyExecutorObject *)&Py_FatalErrorExecutor;
+                    current_executor = (_PyExecutorObject *)&Py_NeverExecutedExecutor;
                     next_uop = executor->trace;
                     GOTO_TIER_TWO();
                 }
@@ -2374,7 +2374,7 @@ dummy_func(
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
             if (executor->vm_data.valid) {
                 assert(current_executor == NULL);
-                current_executor = (_PyExecutorObject *)&Py_FatalErrorExecutor;
+                current_executor = (_PyExecutorObject *)&Py_NeverExecutedExecutor;
                 Py_INCREF(executor);
                 next_uop = executor->trace;
                 GOTO_TIER_TWO();
@@ -4005,13 +4005,13 @@ dummy_func(
 
         inst(CACHE, (--)) {
             TIER_ONE_ONLY
-            assert(0);
+            assert(0 && "Executing a cache.");
             Py_FatalError("Executing a cache.");
         }
 
         inst(RESERVED, (--)) {
             TIER_ONE_ONLY
-            assert(0);
+            assert(0 && "Executing RESERVED instruction.");
             Py_FatalError("Executing RESERVED instruction.");
         }
 
@@ -4120,8 +4120,9 @@ dummy_func(
 
         op(_START_EXECUTOR, (executor/4 --)) {
             TIER_TWO_ONLY
-            Py_DECREF(current_executor);
+            _PyExecutorObject *old = current_executor;
             current_executor = (_PyExecutorObject*)executor;
+            Py_DECREF(old);
         }
 
         op(_FATAL_ERROR, (--)) {
