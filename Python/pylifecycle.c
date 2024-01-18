@@ -663,6 +663,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     if (tstate == NULL) {
         return _PyStatus_ERR("can't make first thread");
     }
+    runtime->main_tstate = tstate;
     _PyThreadState_Bind(tstate);
 
     init_interp_create_gil(tstate, config.gil);

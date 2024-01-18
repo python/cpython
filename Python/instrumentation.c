@@ -891,18 +891,39 @@ static inline int most_significant_bit(uint8_t bits) {
 static uint32_t
 global_version(PyInterpreterState *interp)
 {
-    return interp->ceval.eval_breaker & ~_PY_EVAL_EVENTS_MASK;
+    return interp->ceval.interp_eval_breaker & ~_PY_EVAL_EVENTS_MASK;
 }
 
 static void
-set_global_version(PyInterpreterState *interp, uint32_t version)
+set_version_raw(uintptr_t *breaker, uint32_t version)
 {
-    assert((version & _PY_EVAL_EVENTS_MASK) == 0);
-    uintptr_t old = _Py_atomic_load_uintptr(&interp->ceval.eval_breaker);
+    uintptr_t old = _Py_atomic_load_uintptr(breaker);
     intptr_t new;
     do {
         new = (old & _PY_EVAL_EVENTS_MASK) | version;
-    } while (!_Py_atomic_compare_exchange_uintptr(&interp->ceval.eval_breaker, &old, new));
+    } while (!_Py_atomic_compare_exchange_uintptr(breaker, &old, new));
+}
+
+static void
+set_global_version(PyThreadState *tstate, uint32_t version)
+{
+    assert((version & _PY_EVAL_EVENTS_MASK) == 0);
+    PyInterpreterState *interp = tstate->interp;
+    set_version_raw(&tstate->interp->ceval.interp_eval_breaker, version);
+
+#ifdef Py_GIL_DISABLED
+    // Set the version on all threads in free-threaded builds.
+    _PyRuntimeState *runtime = &_PyRuntime;
+    HEAD_LOCK(runtime);
+    for (; tstate; tstate = PyThreadState_Next(tstate)) {
+        set_version_raw(&tstate->eval_breaker, version);
+    };
+    HEAD_UNLOCK(runtime);
+#else
+    // Normal builds take the current version from interp_eval_breaker when
+    // attaching a thread, so we only have to set the current thread's version.
+    set_version_raw(&tstate->eval_breaker, version);
+#endif
 }
 
 static bool
@@ -1566,7 +1587,7 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
 {
     if (is_version_up_to_date(code, interp)) {
         assert(
-            (interp->ceval.eval_breaker & ~_PY_EVAL_EVENTS_MASK) == 0 ||
+            (interp->ceval.interp_eval_breaker & ~_PY_EVAL_EVENTS_MASK) == 0 ||
             instrumentation_cross_checks(interp, code)
         );
         return 0;
@@ -1778,7 +1799,8 @@ int
 _PyMonitoring_SetEvents(int tool_id, _PyMonitoringEventSet events)
 {
     assert(0 <= tool_id && tool_id < PY_MONITORING_TOOL_IDS);
-    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyInterpreterState *interp = tstate->interp;
     assert(events < (1 << _PY_MONITORING_UNGROUPED_EVENTS));
     if (check_tool(interp, tool_id)) {
         return -1;
@@ -1793,7 +1815,7 @@ _PyMonitoring_SetEvents(int tool_id, _PyMonitoringEventSet events)
         PyErr_Format(PyExc_OverflowError, "events set too many times");
         return -1;
     }
-    set_global_version(interp, new_version);
+    set_global_version(tstate, new_version);
     _Py_Executors_InvalidateAll(interp);
     return instrument_all_executing_code_objects(interp);
 }
@@ -2122,7 +2144,8 @@ monitoring_restart_events_impl(PyObject *module)
      * last restart version > instrumented version for all code objects
      * last restart version < current version
      */
-    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyInterpreterState *interp = tstate->interp;
     uint32_t restart_version = global_version(interp) + MONITORING_VERSION_INCREMENT;
     uint32_t new_version = restart_version + MONITORING_VERSION_INCREMENT;
     if (new_version <= MONITORING_VERSION_INCREMENT) {
@@ -2130,7 +2153,7 @@ monitoring_restart_events_impl(PyObject *module)
         return NULL;
     }
     interp->last_restart_version = restart_version;
-    set_global_version(interp, new_version);
+    set_global_version(tstate, new_version);
     if (instrument_all_executing_code_objects(interp)) {
         return NULL;
     }

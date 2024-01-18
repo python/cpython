@@ -793,7 +793,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     // At this time, all the threads should be cleared so we don't need
     // atomic operations for eval_breaker
-    interp->ceval.eval_breaker = 0;
+    interp->ceval.interp_eval_breaker = 0;
 
     for (int i = 0; i < _PY_MONITORING_UNGROUPED_EVENTS; i++) {
         interp->monitors.tools[i] = 0;
@@ -1306,6 +1306,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
 
     assert(interp != NULL);
     tstate->interp = interp;
+    tstate->eval_breaker = interp->ceval.interp_eval_breaker;
 
     // next/prev are set in add_threadstate().
     assert(tstate->next == NULL);
@@ -1987,8 +1988,7 @@ park_detached_threads(struct _stoptheworld_state *stw)
             }
         }
         else if (state == _Py_THREAD_ATTACHED && t != stw->requester) {
-            // TODO: set this per-thread, rather than per-interpreter.
-            _Py_set_eval_breaker_bit(t->interp, _PY_EVAL_PLEASE_STOP_BIT, 1);
+            _PyThreadState_Signal(t, _PY_EVAL_PLEASE_STOP_BIT);
         }
     }
     stw->thread_countdown -= num_parked;
@@ -2152,18 +2152,41 @@ PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
          * deadlock, we need to release head_mutex before
          * the decref.
          */
-        PyObject *old_exc = tstate->async_exc;
-        tstate->async_exc = Py_XNewRef(exc);
+        Py_XINCREF(exc);
+        PyObject *old_exc = _Py_atomic_exchange_ptr(&tstate->async_exc, exc);
         HEAD_UNLOCK(runtime);
 
         Py_XDECREF(old_exc);
-        _PyEval_SignalAsyncExc(tstate->interp);
+        _PyThreadState_Signal(tstate, _PY_ASYNC_EXCEPTION_BIT);
         return 1;
     }
     HEAD_UNLOCK(runtime);
     return 0;
 }
 
+void
+_PyInterpreterState_SignalAll(PyInterpreterState *interp, uintptr_t bit)
+{
+    _PyRuntimeState *runtime = &_PyRuntime;
+
+    HEAD_LOCK(runtime);
+    for (PyThreadState *tstate = interp->threads.head; tstate != NULL; tstate = tstate->next) {
+        _PyThreadState_Signal(tstate, bit);
+    }
+    HEAD_UNLOCK(runtime);
+}
+
+void
+_PyInterpreterState_UnsignalAll(PyInterpreterState *interp, uintptr_t bit)
+{
+    _PyRuntimeState *runtime = &_PyRuntime;
+
+    HEAD_LOCK(runtime);
+    for (PyThreadState *tstate = interp->threads.head; tstate != NULL; tstate = tstate->next) {
+        _PyThreadState_Unsignal(tstate, bit);
+    }
+    HEAD_UNLOCK(runtime);
+}
 
 //---------------------------------
 // API for the current thread state

@@ -191,7 +191,10 @@ typedef struct pyruntimestate {
         int64_t next_id;
     } interpreters;
 
+    /* Platform-specific identifier and PyThreadState, respectively, for the
+       main thread in the main interpreter. */
     unsigned long main_thread;
+    PyThreadState *main_tstate;
 
     /* ---------- IMPORTANT ---------------------------
      The fields above this line are declared as early as

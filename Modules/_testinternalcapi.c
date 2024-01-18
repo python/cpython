@@ -1650,6 +1650,117 @@ get_rare_event_counters(PyObject *self, PyObject *type)
     );
 }
 
+// The schedule_gc_* functions work together to test GC timing and the eval
+// breaker, when used by
+// test_gc.py:GCSchedulingTests.test_gc_schedule_before_thread_switch().
+//
+// The expected sequence of events is:
+// - thread 2 waits for thread 1 to be ready
+// - thread 1 waits for thread 2 to be ready
+// (both threads are now at known locations in their respective C functions)
+// - thread 1 clears out pending eval breaker flags
+// - thread 2 checks that a GC is not scheduled
+// - thread 1 schedules a GC and releases the GIL without checking its eval breaker
+// - thread 2 checks that a GC is scheduled and returns
+// - thread 1 sees that thread 2 is done and returns, allowing Python code to run again
+typedef enum {
+    SCHEDULE_GC_INIT,
+    SCHEDULE_GC_THREAD1_READY,
+    SCHEDULE_GC_THREAD2_READY,
+    SCHEDULE_GC_THREAD1_CLEARED,
+    SCHEDULE_GC_THREAD2_VERIFIED,
+    SCHEDULE_GC_THREAD1_SCHEDULED,
+    SCHEDULE_GC_THREAD2_DONE,
+
+    SCHEDULE_GC_STOP,
+} schedule_gc_state;
+
+static void
+schedule_gc_state_destructor(PyObject *capsule)
+{
+    void *state = PyCapsule_GetPointer(capsule, NULL);
+    assert(state != NULL);
+    free(state);
+}
+
+static PyObject *
+schedule_gc_new_state(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    schedule_gc_state *state = malloc(sizeof(schedule_gc_state));
+    if (state == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "Failed to allocate state");
+        return NULL;
+    }
+    *state = SCHEDULE_GC_INIT;
+    return PyCapsule_New(state, NULL, schedule_gc_state_destructor);
+}
+
+// Repeatedly release the GIL until the desired state appears in *state.
+#define SCHEDULE_GC_WAIT_FOR(desired) \
+     do { \
+         while (*state != desired) { \
+             if (*state == SCHEDULE_GC_STOP) { \
+                 Py_RETURN_NONE; \
+             } \
+             PyEval_RestoreThread(PyEval_SaveThread()); \
+         } \
+    } while (0)
+
+static PyObject *
+schedule_gc_do_schedule(PyObject *self, PyObject *capsule)
+{
+    PyThreadState *tstate = PyThreadState_Get();
+    schedule_gc_state *state = PyCapsule_GetPointer(capsule, NULL);
+    assert(state != NULL);
+
+    *state = SCHEDULE_GC_THREAD1_READY;
+    SCHEDULE_GC_WAIT_FOR(SCHEDULE_GC_THREAD2_READY);
+
+    if (_Py_HandlePending(tstate) < 0) {
+        *state = SCHEDULE_GC_STOP;
+        return NULL;
+    }
+    *state = SCHEDULE_GC_THREAD1_CLEARED;
+    SCHEDULE_GC_WAIT_FOR(SCHEDULE_GC_THREAD2_VERIFIED);
+
+    _Py_ScheduleGC(tstate);
+    *state = SCHEDULE_GC_THREAD1_SCHEDULED;
+    SCHEDULE_GC_WAIT_FOR(SCHEDULE_GC_THREAD2_DONE);
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+schedule_gc_do_wait(PyObject *self, PyObject *capsule)
+{
+    PyThreadState *tstate = PyThreadState_Get();
+    schedule_gc_state *state = PyCapsule_GetPointer(capsule, NULL);
+    assert(state != NULL);
+
+    SCHEDULE_GC_WAIT_FOR(SCHEDULE_GC_THREAD1_READY);
+
+    *state = SCHEDULE_GC_THREAD2_READY;
+    SCHEDULE_GC_WAIT_FOR(SCHEDULE_GC_THREAD1_CLEARED);
+
+    if (_PyThreadState_IsSignalled(tstate, _PY_GC_SCHEDULED_BIT)) {
+        PyErr_SetString(PyExc_AssertionError,
+                        "GC_SCHEDULED_BIT unexpectedly set");
+        return NULL;
+    }
+    *state = SCHEDULE_GC_THREAD2_VERIFIED;
+    SCHEDULE_GC_WAIT_FOR(SCHEDULE_GC_THREAD1_SCHEDULED);
+
+    if (!_PyThreadState_IsSignalled(tstate, _PY_GC_SCHEDULED_BIT)) {
+        PyErr_SetString(PyExc_AssertionError,
+                        "GC_SCHEDULED_BIT not carried over from thread 1");
+        return NULL;
+    }
+    *state = SCHEDULE_GC_THREAD2_DONE;
+    // Let the GC run naturally once we've returned to Python.
+
+    Py_RETURN_NONE;
+}
+
 
 #ifdef Py_GIL_DISABLED
 static PyObject *
@@ -1727,6 +1838,9 @@ static PyMethodDef module_functions[] = {
     _TESTINTERNALCAPI_TEST_LONG_NUMBITS_METHODDEF
     {"get_type_module_name",    get_type_module_name,            METH_O},
     {"get_rare_event_counters", get_rare_event_counters, METH_NOARGS},
+    {"schedule_gc_new_state", schedule_gc_new_state,     METH_NOARGS},
+    {"schedule_gc_do_schedule", schedule_gc_do_schedule, METH_O},
+    {"schedule_gc_do_wait", schedule_gc_do_wait,         METH_O},
 #ifdef Py_GIL_DISABLED
     {"py_thread_id", get_py_thread_id, METH_NOARGS},
 #endif

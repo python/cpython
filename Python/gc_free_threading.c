@@ -1480,9 +1480,9 @@ PyObject_IS_GC(PyObject *obj)
 }
 
 void
-_Py_ScheduleGC(PyInterpreterState *interp)
+_Py_ScheduleGC(PyThreadState *tstate)
 {
-    _Py_set_eval_breaker_bit(interp, _PY_GC_SCHEDULED_BIT, 1);
+    _PyInterpreterState_SignalAll(tstate->interp, _PY_GC_SCHEDULED_BIT);
 }
 
 void
@@ -1495,13 +1495,14 @@ _PyObject_GC_Link(PyObject *op)
     if (gc_should_collect(gcstate) &&
         !_Py_atomic_load_int_relaxed(&gcstate->collecting))
     {
-        _Py_ScheduleGC(tstate->interp);
+        _Py_ScheduleGC(tstate);
     }
 }
 
 void
 _Py_RunGC(PyThreadState *tstate)
 {
+    _PyInterpreterState_UnsignalAll(tstate->interp, _PY_GC_SCHEDULED_BIT);
     gc_collect_main(tstate, 0, _Py_GC_REASON_HEAP);
 }
 

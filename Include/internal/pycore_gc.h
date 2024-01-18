@@ -287,7 +287,8 @@ extern void _PySlice_ClearCache(_PyFreeListState *state);
 extern void _PyDict_ClearFreeList(_PyFreeListState *state, int is_finalization);
 extern void _PyAsyncGen_ClearFreeLists(_PyFreeListState *state, int is_finalization);
 extern void _PyContext_ClearFreeList(_PyFreeListState *state, int is_finalization);
-extern void _Py_ScheduleGC(PyInterpreterState *interp);
+// Export for '_testinternalcapi' shared extension.
+PyAPI_FUNC(void) _Py_ScheduleGC(PyThreadState *interp);
 extern void _Py_RunGC(PyThreadState *tstate);
 
 #ifdef __cplusplus

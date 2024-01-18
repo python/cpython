@@ -6,6 +6,10 @@ from test.support.import_helper import import_module
 from test.support.os_helper import temp_dir, TESTFN, unlink
 from test.support.script_helper import assert_python_ok, make_script
 from test.support import threading_helper
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = None
 
 import gc
 import sys
@@ -1416,6 +1420,43 @@ class PythonFinalizationTests(unittest.TestCase):
             support.late_deletion(tree)
         """)
         assert_python_ok("-c", code)
+
+
+class GCSchedulingTests(unittest.TestCase):
+    @unittest.skipIf(_testinternalcapi is None,
+                     "Requires functions from _testinternalcapi")
+    @threading_helper.requires_working_threading()
+    def test_gc_schedule_before_thread_switch(self):
+        # Ensure that a scheduled collection is not lost due to thread
+        # switching. Most of the work happens in helper functions in
+        # _testinternalcapi.
+
+        class Cycle:
+            def __init__(self):
+                self._self = self
+
+        thresholds = gc.get_threshold()
+        gc.enable()
+
+        try:
+            state = _testinternalcapi.schedule_gc_new_state()
+
+            def thread1():
+                _testinternalcapi.schedule_gc_do_schedule(state)
+
+            gc.set_threshold(1)
+            threads = [threading.Thread(target=thread1)]
+            with threading_helper.start_threads(threads):
+                r = weakref.ref(Cycle())
+                _testinternalcapi.schedule_gc_do_wait(state)
+
+                # Ensure that at least one GC has happened
+                for i in range(5):
+                    self.assertEqual(1, 1)
+                self.assertIsNone(r())
+        finally:
+            gc.disable()
+            gc.set_threshold(*thresholds)
 
 
 def setUpModule():
