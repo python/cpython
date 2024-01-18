@@ -189,7 +189,7 @@ typedef struct {
     PyObject_HEAD
 
     // Are there threads waiting for items
-    uint8_t threads_waiting;
+    bool has_threads_waiting;
 
     // Items in the queue
     RingBuf buf;
@@ -276,7 +276,7 @@ maybe_unparked_thread(HandoffData *data, PyObject **item, int has_more_waiters)
         *item = data->item;
         data->handed_off = 1;
     }
-    data->queue->threads_waiting = has_more_waiters;
+    data->queue->has_threads_waiting = has_more_waiters;
 }
 
 /*[clinic input]
@@ -303,9 +303,9 @@ _queue_SimpleQueue_put_impl(simplequeueobject *self, PyObject *item,
         .item = Py_NewRef(item),
         .queue = self,
     };
-    if (self->threads_waiting) {
+    if (self->has_threads_waiting) {
         // Try to hand the item off directly if there are threads waiting
-        _PyParkingLot_Unpark(&self->threads_waiting,
+        _PyParkingLot_Unpark(&self->has_threads_waiting,
                              (_Py_unpark_fn_t *)maybe_unparked_thread, &data);
     }
     if (!data.handed_off) {
@@ -407,11 +407,11 @@ _queue_SimpleQueue_get_impl(simplequeueobject *self, PyTypeObject *cls,
         }
 
         uint8_t waiting = 1;
-        self->threads_waiting = waiting;
+        self->has_threads_waiting = waiting;
 
         PyObject *item = NULL;
-        int st = _PyParkingLot_Park(&self->threads_waiting, &waiting,
-                                    sizeof(uint8_t), timeout_ns, &item,
+        int st = _PyParkingLot_Park(&self->has_threads_waiting, &waiting,
+                                    sizeof(bool), timeout_ns, &item,
                                     /* detach */ 1);
         switch (st) {
             case Py_PARK_OK: {
