@@ -141,7 +141,7 @@ class LoaderTest(unittest.TestCase):
     def test_load_dll_with_flags(self):
         _sqlite3 = import_helper.import_module("_sqlite3")
         src = _sqlite3.__file__
-        if src.lower().endswith("_d.pyd"):
+        if os.path.basename(src).partition(".")[0].lower().endswith("_d"):
             ext = "_d.dll"
         else:
             ext = ".dll"

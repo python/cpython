@@ -48,7 +48,7 @@ update the underlying file.
 
 To map anonymous memory, -1 should be passed as the fileno along with the length.
 
-.. class:: mmap(fileno, length, tagname=None, access=ACCESS_DEFAULT[, offset])
+.. class:: mmap(fileno, length, tagname=None, access=ACCESS_DEFAULT, offset=0)
 
    **(Windows version)** Maps *length* bytes from the file specified by the
    file handle *fileno*, and creates a mmap object.  If *length* is larger
@@ -71,7 +71,8 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
    .. audit-event:: mmap.__new__ fileno,length,access,offset mmap.mmap
 
-.. class:: mmap(fileno, length, flags=MAP_SHARED, prot=PROT_WRITE|PROT_READ, access=ACCESS_DEFAULT[, offset])
+.. class:: mmap(fileno, length, flags=MAP_SHARED, prot=PROT_WRITE|PROT_READ, \
+                access=ACCESS_DEFAULT, offset=0, *, trackfd=True)
    :noindex:
 
    **(Unix version)** Maps *length* bytes from the file specified by the file
@@ -102,9 +103,19 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    defaults to 0. *offset* must be a multiple of :const:`ALLOCATIONGRANULARITY`
    which is equal to :const:`PAGESIZE` on Unix systems.
 
+   If *trackfd* is ``False``, the file descriptor specified by *fileno* will
+   not be duplicated, and the resulting :class:`!mmap` object will not
+   be associated with the map's underlying file.
+   This means that the :meth:`~mmap.mmap.size` and :meth:`~mmap.mmap.resize`
+   methods will fail.
+   This mode is useful to limit the number of open file descriptors.
+
    To ensure validity of the created memory mapping the file specified
    by the descriptor *fileno* is internally automatically synchronized
    with the physical backing store on macOS.
+
+   .. versionchanged:: 3.13
+      The *trackfd* parameter was added.
 
    This example shows a simple way of using :class:`~mmap.mmap`::
 
@@ -254,9 +265,12 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
    .. method:: resize(newsize)
 
-      Resizes the map and the underlying file, if any. If the mmap was created
-      with :const:`ACCESS_READ` or :const:`ACCESS_COPY`, resizing the map will
-      raise a :exc:`TypeError` exception.
+      Resizes the map and the underlying file, if any.
+
+      Resizing a map created with *access* of :const:`ACCESS_READ` or
+      :const:`ACCESS_COPY`, will raise a :exc:`TypeError` exception.
+      Resizing a map created with with *trackfd* set to ``False``,
+      will raise a :exc:`ValueError` exception.
 
       **On Windows**: Resizing the map will raise an :exc:`OSError` if there are other
       maps against the same named file. Resizing an anonymous map (ie against the
