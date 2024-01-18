@@ -16,9 +16,7 @@ from io import StringIO
 from test import support
 from test.support import os_helper
 from test.support.import_helper import import_module
-from test.support.pty_helper import run_pty
-# This little helper class is essential for testing pdb under doctest.
-from test.test_doctest import _FakeInput
+from test.support.pty_helper import run_pty, FakeInput
 from unittest.mock import patch
 
 
@@ -30,7 +28,7 @@ class PdbTestInput(object):
 
     def __enter__(self):
         self.real_stdin = sys.stdin
-        sys.stdin = _FakeInput(self.input)
+        sys.stdin = FakeInput(self.input)
         self.orig_trace = sys.gettrace() if hasattr(sys, 'gettrace') else None
 
     def __exit__(self, *exc):
