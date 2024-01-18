@@ -1196,7 +1196,7 @@ Optimizations
 
 * Multiplication of large long integers is now much faster thanks to an
   implementation of Karatsuba multiplication, an algorithm that scales better than
-  the O(n\*n) required for the grade-school multiplication algorithm.  (Original
+  the *O*\ (*n*\ :sup:`2`) required for the grade-school multiplication algorithm.  (Original
   patch by Christopher A. Craig, and significantly reworked by Tim Peters.)
 
 * The ``SET_LINENO`` opcode is now gone.  This may provide a small speed
@@ -1308,7 +1308,7 @@ complete list of changes, or look through the CVS logs for all the details.
   partially sorted order such that, for every index *k*, ``heap[k] <=
   heap[2*k+1]`` and ``heap[k] <= heap[2*k+2]``.  This makes it quick to remove the
   smallest item, and inserting a new item while maintaining the heap property is
-  O(lg n).  (See https://xlinux.nist.gov/dads//HTML/priorityque.html for more
+  *O*\ (log *n*).  (See https://xlinux.nist.gov/dads//HTML/priorityque.html for more
   information about the priority queue data structure.)
 
   The :mod:`heapq` module provides :func:`~heapq.heappush` and :func:`~heapq.heappop` functions

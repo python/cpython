@@ -39,14 +39,14 @@ Executor Objects
              future = executor.submit(pow, 323, 1235)
              print(future.result())
 
-   .. method:: map(func, *iterables, timeout=None, chunksize=1)
+   .. method:: map(fn, *iterables, timeout=None, chunksize=1)
 
-      Similar to :func:`map(func, *iterables) <map>` except:
+      Similar to :func:`map(fn, *iterables) <map>` except:
 
       * the *iterables* are collected immediately rather than lazily;
 
-      * *func* is executed asynchronously and several calls to
-        *func* may be made concurrently.
+      * *fn* is executed asynchronously and several calls to
+        *fn* may be made concurrently.
 
       The returned iterator raises a :exc:`TimeoutError`
       if :meth:`~iterator.__next__` is called and the result isn't available
@@ -54,7 +54,7 @@ Executor Objects
       *timeout* can be an int or a float.  If *timeout* is not specified or
       ``None``, there is no limit to the wait time.
 
-      If a *func* call raises an exception, then that exception will be
+      If a *fn* call raises an exception, then that exception will be
       raised when its value is retrieved from the iterator.
 
       When using :class:`ProcessPoolExecutor`, this method chops *iterables*

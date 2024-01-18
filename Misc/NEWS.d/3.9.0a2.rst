@@ -403,7 +403,7 @@ locale encoding is not UTF-8.
 Prevent UnboundLocalError to pop up in parse_message_id.
 
 parse_message_id() was improperly using a token defined inside an exception
-handler, which was raising `UnboundLocalError` on parsing an invalid value.
+handler, which was raising ``UnboundLocalError`` on parsing an invalid value.
 Patch by Claudiu Popa.
 
 ..
@@ -444,12 +444,12 @@ random.choices() now raises a ValueError when all the weights are zero.
 Raise pickle.UnpicklingError when loading an item from memo for invalid
 input.
 
-The previous code was raising a `KeyError` for both the Python and C
+The previous code was raising a ``KeyError`` for both the Python and C
 implementation. This was caused by the specified index of an invalid input
 which did not exist in the memo structure, where the pickle stores what
-objects it has seen. The malformed input would have caused either a `BINGET`
-or `LONG_BINGET` load from the memo, leading to a `KeyError` as the
-determined index was bogus. Patch by Claudiu Popa
+objects it has seen. The malformed input would have caused either a ``BINGET``
+or ``LONG_BINGET`` load from the memo, leading to a ``KeyError`` as the
+determined index was bogus. Patch by Claudiu Popa.
 
 ..
 
@@ -458,7 +458,7 @@ determined index was bogus. Patch by Claudiu Popa
 .. nonce: iKx23z
 .. section: Library
 
-Calling func:`shutil.copytree` to copy a directory tree from one directory
+Calling func:``shutil.copytree`` to copy a directory tree from one directory
 to another subdirectory resulted in an endless loop and a RecursionError. A
 fix was added to consume an iterator and create the list of the entries to
 be copied, avoiding the recursion for newly created directories. Patch by
@@ -685,7 +685,7 @@ added.
 .. section: Documentation
 
 Update documentation to state that to activate virtual environments under
-fish one should use `source`, not `.` as documented at
+fish one should use ``source``, not ``.`` as documented at
 https://fishshell.com/docs/current/cmds/source.html.
 
 ..
@@ -884,7 +884,7 @@ Add support for building and releasing Windows ARM64 packages.
 
 Fixed a crash on OSX dynamic builds that occurred when re-initializing the
 posix module after a Py_Finalize if the environment had changed since the
-previous `import posix`. Patch by Benoît Hudson.
+previous ``import posix``. Patch by Benoît Hudson.
 
 ..
 

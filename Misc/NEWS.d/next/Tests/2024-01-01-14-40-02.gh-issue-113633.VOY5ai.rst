@@ -1,1 +1,0 @@
-Use module state for the _testcapi extension module.
