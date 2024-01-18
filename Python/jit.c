@@ -186,7 +186,7 @@ static void
 patch(char *base, const Stencil *stencil, uint64_t *patches)
 {
     for (uint64_t i = 0; i < stencil->holes_size; i++) {
-        Hole *hole = &stencil->holes[i];
+        const Hole *hole = &stencil->holes[i];
         void *location = base + hole->offset;
         uint64_t value = patches[hole->value] + (uint64_t)hole->symbol + hole->addend;
         uint32_t *loc32 = (uint32_t *)location;
