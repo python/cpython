@@ -3393,6 +3393,7 @@
         case _LOAD_CONST_INLINE: {
             PyObject *value;
             PyObject *ptr = (PyObject *)CURRENT_OPERAND();
+            TIER_TWO_ONLY
             value = Py_NewRef(ptr);
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -3402,9 +3403,50 @@
         case _LOAD_CONST_INLINE_BORROW: {
             PyObject *value;
             PyObject *ptr = (PyObject *)CURRENT_OPERAND();
+            TIER_TWO_ONLY
             value = ptr;
             stack_pointer[0] = value;
             stack_pointer += 1;
+            break;
+        }
+
+        case _LOAD_CONST_INLINE_WITH_NULL: {
+            PyObject *value;
+            PyObject *null;
+            PyObject *ptr = (PyObject *)CURRENT_OPERAND();
+            TIER_TWO_ONLY
+            value = Py_NewRef(ptr);
+            null = NULL;
+            stack_pointer[0] = value;
+            stack_pointer[1] = null;
+            stack_pointer += 2;
+            break;
+        }
+
+        case _LOAD_CONST_INLINE_BORROW_WITH_NULL: {
+            PyObject *value;
+            PyObject *null;
+            PyObject *ptr = (PyObject *)CURRENT_OPERAND();
+            TIER_TWO_ONLY
+            value = ptr;
+            null = NULL;
+            stack_pointer[0] = value;
+            stack_pointer[1] = null;
+            stack_pointer += 2;
+            break;
+        }
+
+        case _CHECK_FUNCTION_VERSION: {
+            PyObject *self_or_null;
+            PyObject *callable;
+            oparg = CURRENT_OPARG();
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            uint32_t func_version = (uint32_t)CURRENT_OPERAND();
+            TIER_TWO_ONLY
+            if (!PyFunction_Check(callable)) goto deoptimize;
+            PyFunctionObject *func = (PyFunctionObject *)callable;
+            if (func->func_version != func_version) goto deoptimize;
             break;
         }
 
