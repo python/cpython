@@ -1,2 +1,0 @@
-``wasm32-emscripten`` builds for browsers now include
-:mod:`concurrent.futures` for :mod:`asyncio` and :mod:`unittest.mock`.

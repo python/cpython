@@ -8,6 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_freelist.h"   // _PyFreeListState
+
 /* GC information is stored BEFORE the object structure. */
 typedef struct {
     // Pointer to next object in the list.
@@ -19,10 +21,21 @@ typedef struct {
     uintptr_t _gc_prev;
 } PyGC_Head;
 
-static inline PyGC_Head* _Py_AS_GC(PyObject *op) {
-    return (_Py_CAST(PyGC_Head*, op) - 1);
-}
 #define _PyGC_Head_UNUSED PyGC_Head
+
+
+/* Get an object's GC head */
+static inline PyGC_Head* _Py_AS_GC(PyObject *op) {
+    char *gc = ((char*)op) - sizeof(PyGC_Head);
+    return (PyGC_Head*)gc;
+}
+
+/* Get the object given the GC head */
+static inline PyObject* _Py_FROM_GC(PyGC_Head *gc) {
+    char *op = ((char *)gc) + sizeof(PyGC_Head);
+    return (PyObject *)op;
+}
+
 
 /* True if the object is currently tracked by the GC. */
 static inline int _PyObject_GC_IS_TRACKED(PyObject *op) {
@@ -53,23 +66,43 @@ static inline int _PyObject_GC_MAY_BE_TRACKED(PyObject *obj) {
 #define _PyGC_PREV_SHIFT           (2)
 #define _PyGC_PREV_MASK            (((uintptr_t) -1) << _PyGC_PREV_SHIFT)
 
+/* set for debugging information */
+#define _PyGC_DEBUG_STATS             (1<<0) /* print collection statistics */
+#define _PyGC_DEBUG_COLLECTABLE       (1<<1) /* print collectable objects */
+#define _PyGC_DEBUG_UNCOLLECTABLE     (1<<2) /* print uncollectable objects */
+#define _PyGC_DEBUG_SAVEALL           (1<<5) /* save all garbage in gc.garbage */
+#define _PyGC_DEBUG_LEAK              _PyGC_DEBUG_COLLECTABLE | \
+                                      _PyGC_DEBUG_UNCOLLECTABLE | \
+                                      _PyGC_DEBUG_SAVEALL
+
+typedef enum {
+    // GC was triggered by heap allocation
+    _Py_GC_REASON_HEAP,
+
+    // GC was called during shutdown
+    _Py_GC_REASON_SHUTDOWN,
+
+    // GC was called by gc.collect() or PyGC_Collect()
+    _Py_GC_REASON_MANUAL
+} _PyGC_Reason;
+
 // Lowest bit of _gc_next is used for flags only in GC.
 // But it is always 0 for normal code.
 static inline PyGC_Head* _PyGCHead_NEXT(PyGC_Head *gc) {
     uintptr_t next = gc->_gc_next;
-    return _Py_CAST(PyGC_Head*, next);
+    return (PyGC_Head*)next;
 }
 static inline void _PyGCHead_SET_NEXT(PyGC_Head *gc, PyGC_Head *next) {
-    gc->_gc_next = _Py_CAST(uintptr_t, next);
+    gc->_gc_next = (uintptr_t)next;
 }
 
 // Lowest two bits of _gc_prev is used for _PyGC_PREV_MASK_* flags.
 static inline PyGC_Head* _PyGCHead_PREV(PyGC_Head *gc) {
     uintptr_t prev = (gc->_gc_prev & _PyGC_PREV_MASK);
-    return _Py_CAST(PyGC_Head*, prev);
+    return (PyGC_Head*)prev;
 }
 static inline void _PyGCHead_SET_PREV(PyGC_Head *gc, PyGC_Head *prev) {
-    uintptr_t uprev = _Py_CAST(uintptr_t, prev);
+    uintptr_t uprev = (uintptr_t)prev;
     assert((uprev & ~_PyGC_PREV_MASK) == 0);
     gc->_gc_prev = ((gc->_gc_prev & ~_PyGC_PREV_MASK) | uprev);
 }
@@ -88,6 +121,10 @@ static inline int _PyGC_FINALIZED(PyObject *op) {
 static inline void _PyGC_SET_FINALIZED(PyObject *op) {
     PyGC_Head *gc = _Py_AS_GC(op);
     _PyGCHead_SET_FINALIZED(gc);
+}
+static inline void _PyGC_CLEAR_FINALIZED(PyObject *op) {
+    PyGC_Head *gc = _Py_AS_GC(op);
+    gc->_gc_prev &= ~_PyGC_PREV_MASK_FINALIZED;
 }
 
 
@@ -192,16 +229,32 @@ struct _gc_runtime_state {
 
 extern void _PyGC_InitState(struct _gc_runtime_state *);
 
+extern Py_ssize_t _PyGC_Collect(PyThreadState *tstate, int generation,
+                                _PyGC_Reason reason);
 extern Py_ssize_t _PyGC_CollectNoFail(PyThreadState *tstate);
 
+/* Freeze objects tracked by the GC and ignore them in future collections. */
+extern void _PyGC_Freeze(PyInterpreterState *interp);
+/* Unfreezes objects placing them in the oldest generation */
+extern void _PyGC_Unfreeze(PyInterpreterState *interp);
+/* Number of frozen objects */
+extern Py_ssize_t _PyGC_GetFreezeCount(PyInterpreterState *interp);
+
+extern PyObject *_PyGC_GetObjects(PyInterpreterState *interp, Py_ssize_t generation);
+extern PyObject *_PyGC_GetReferrers(PyInterpreterState *interp, PyObject *objs);
 
 // Functions to clear types free lists
-extern void _PyTuple_ClearFreeList(PyInterpreterState *interp);
-extern void _PyFloat_ClearFreeList(PyInterpreterState *interp);
-extern void _PyList_ClearFreeList(PyInterpreterState *interp);
+extern void _PyGC_ClearAllFreeLists(PyInterpreterState *interp);
+extern void _Py_ClearFreeLists(_PyFreeListState *state, int is_finalization);
+extern void _PyTuple_ClearFreeList(_PyFreeListState *state, int is_finalization);
+extern void _PyFloat_ClearFreeList(_PyFreeListState *state, int is_finalization);
+extern void _PyList_ClearFreeList(_PyFreeListState *state, int is_finalization);
+extern void _PySlice_ClearCache(_PyFreeListState *state);
 extern void _PyDict_ClearFreeList(PyInterpreterState *interp);
 extern void _PyAsyncGen_ClearFreeLists(PyInterpreterState *interp);
-extern void _PyContext_ClearFreeList(PyInterpreterState *interp);
+extern void _PyContext_ClearFreeList(_PyFreeListState *state, int is_finalization);
+extern void _Py_ScheduleGC(PyInterpreterState *interp);
+extern void _Py_RunGC(PyThreadState *tstate);
 
 #ifdef __cplusplus
 }

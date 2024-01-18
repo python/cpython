@@ -1,1 +1,0 @@
-Remove dead code from ``CALL_FUNCTION_EX`` opcode.

@@ -47,21 +47,6 @@ class NewLoader(TestLoader):
         module.eggs = self.EGGS
 
 
-class LegacyLoader(TestLoader):
-
-    HAM = -1
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", DeprecationWarning)
-
-        frozen_util = util['Frozen']
-
-        @frozen_util.module_for_loader
-        def load_module(self, module):
-            module.ham = self.HAM
-            return module
-
-
 class ModuleSpecTests:
 
     def setUp(self):
@@ -302,26 +287,6 @@ class ModuleSpecMethodsTests:
                 loaded = self.bootstrap._load(self.spec)
             self.assertNotIn(self.spec.name, sys.modules)
 
-    def test_load_legacy(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", ImportWarning)
-            self.spec.loader = LegacyLoader()
-            with CleanImport(self.spec.name):
-                loaded = self.bootstrap._load(self.spec)
-
-            self.assertEqual(loaded.ham, -1)
-
-    def test_load_legacy_attributes(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", ImportWarning)
-            self.spec.loader = LegacyLoader()
-            with CleanImport(self.spec.name):
-                loaded = self.bootstrap._load(self.spec)
-
-            self.assertIs(loaded.__loader__, self.spec.loader)
-            self.assertEqual(loaded.__package__, self.spec.parent)
-            self.assertIs(loaded.__spec__, self.spec)
-
     def test_load_legacy_attributes_immutable(self):
         module = object()
         with warnings.catch_warnings():
@@ -386,19 +351,6 @@ class ModuleSpecMethodsTests:
         self.assertFalse(hasattr(loaded, '__path__'))
         self.assertFalse(hasattr(loaded, '__file__'))
         self.assertFalse(hasattr(loaded, '__cached__'))
-
-    def test_reload_legacy(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", ImportWarning)
-            self.spec.loader = LegacyLoader()
-            with CleanImport(self.spec.name):
-                loaded = self.bootstrap._load(self.spec)
-                reloaded = self.bootstrap._exec(self.spec, loaded)
-                installed = sys.modules[self.spec.name]
-
-        self.assertEqual(loaded.ham, -1)
-        self.assertIs(reloaded, loaded)
-        self.assertIs(installed, loaded)
 
 
 (Frozen_ModuleSpecMethodsTests,

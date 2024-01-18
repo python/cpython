@@ -17,7 +17,7 @@
 
 .. class:: TopologicalSorter(graph=None)
 
-   Provides functionality to topologically sort a graph of hashable nodes.
+   Provides functionality to topologically sort a graph of :term:`hashable` nodes.
 
    A topological order is a linear ordering of the vertices in a graph such that
    for every directed edge u -> v from vertex u to vertex v, vertex u comes
@@ -37,14 +37,14 @@
    In the general case, the steps required to perform the sorting of a given
    graph are as follows:
 
-         * Create an instance of the :class:`TopologicalSorter` with an optional
-           initial graph.
-         * Add additional nodes to the graph.
-         * Call :meth:`~TopologicalSorter.prepare` on the graph.
-         * While :meth:`~TopologicalSorter.is_active` is ``True``, iterate over
-           the nodes returned by :meth:`~TopologicalSorter.get_ready` and
-           process them. Call :meth:`~TopologicalSorter.done` on each node as it
-           finishes processing.
+   * Create an instance of the :class:`TopologicalSorter` with an optional
+     initial graph.
+   * Add additional nodes to the graph.
+   * Call :meth:`~TopologicalSorter.prepare` on the graph.
+   * While :meth:`~TopologicalSorter.is_active` is ``True``, iterate over
+     the nodes returned by :meth:`~TopologicalSorter.get_ready` and
+     process them. Call :meth:`~TopologicalSorter.done` on each node as it
+     finishes processing.
 
    In case just an immediate sorting of the nodes in the graph is required and
    no parallelism is involved, the convenience method
@@ -85,7 +85,7 @@
    .. method:: add(node, *predecessors)
 
       Add a new node and its predecessors to the graph. Both the *node* and all
-      elements in *predecessors* must be hashable.
+      elements in *predecessors* must be :term:`hashable`.
 
       If called multiple times with the same node argument, the set of
       dependencies will be the union of all dependencies passed in.
@@ -115,7 +115,7 @@
       :meth:`TopologicalSorter.done` is less than the number that have been
       returned by :meth:`TopologicalSorter.get_ready`.
 
-      The :meth:`~TopologicalSorter.__bool__` method of this class defers to
+      The :meth:`~object.__bool__` method of this class defers to
       this function, so instead of::
 
           if ts.is_active():
@@ -204,7 +204,7 @@ The :mod:`graphlib` module defines the following exception classes:
    in the working graph. If multiple cycles exist, only one undefined choice among them will
    be reported and included in the exception.
 
-   The detected cycle can be accessed via the second element in the :attr:`~CycleError.args`
+   The detected cycle can be accessed via the second element in the :attr:`~BaseException.args`
    attribute of the exception instance and consists in a list of nodes, such that each node is,
    in the graph, an immediate predecessor of the next node in the list. In the reported list,
    the first and the last node will be the same, to make it clear that it is cyclic.
