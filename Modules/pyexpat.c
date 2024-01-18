@@ -5,8 +5,8 @@
 #include "Python.h"
 #include "pycore_import.h"        // _PyImport_SetModule()
 #include "pycore_pyhash.h"        // _Py_HashSecret
+#include "pycore_traceback.h"     // _PyTraceback_Add()
 
-#include <ctype.h>
 #include <stddef.h>               // offsetof()
 #include "expat.h"
 #include "pyexpat.h"
@@ -240,19 +240,12 @@ string_intern(xmlparseobject *self, const char* str)
         return result;
     if (!self->intern)
         return result;
-    value = PyDict_GetItemWithError(self->intern, result);
-    if (!value) {
-        if (!PyErr_Occurred() &&
-            PyDict_SetItem(self->intern, result, result) == 0)
-        {
-            return result;
-        }
-        else {
-            Py_DECREF(result);
-            return NULL;
-        }
+    if (PyDict_GetItemRef(self->intern, result, &value) == 0 &&
+        PyDict_SetItem(self->intern, result, result) == 0)
+    {
+        return result;
     }
-    Py_INCREF(value);
+    assert((value != NULL) == !PyErr_Occurred());
     Py_DECREF(result);
     return value;
 }
@@ -895,7 +888,7 @@ static PyObject *
 pyexpat_xmlparser_GetBase_impl(xmlparseobject *self)
 /*[clinic end generated code: output=2886cb21f9a8739a input=918d71c38009620e]*/
 {
-    return Py_BuildValue("z", XML_GetBase(self->itself));
+    return conv_string_to_unicode(XML_GetBase(self->itself));
 }
 
 /*[clinic input]
@@ -1585,7 +1578,7 @@ static PyObject *
 pyexpat_ErrorString_impl(PyObject *module, long code)
 /*[clinic end generated code: output=2feae50d166f2174 input=cc67de010d9e62b3]*/
 {
-    return Py_BuildValue("z", XML_ErrorString((int)code));
+    return conv_string_to_unicode(XML_ErrorString((int)code));
 }
 
 /* List of methods defined in the module */
@@ -2069,9 +2062,7 @@ pyexpat_free(void *module)
 
 static PyModuleDef_Slot pyexpat_slots[] = {
     {Py_mod_exec, pyexpat_exec},
-    // XXX gh-103092: fix isolation.
-    {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
-    //{Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

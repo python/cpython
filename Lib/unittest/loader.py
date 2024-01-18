@@ -84,9 +84,13 @@ class TestLoader(object):
             raise TypeError("Test cases should not be derived from "
                             "TestSuite. Maybe you meant to derive from "
                             "TestCase?")
-        testCaseNames = self.getTestCaseNames(testCaseClass)
-        if not testCaseNames and hasattr(testCaseClass, 'runTest'):
-            testCaseNames = ['runTest']
+        if testCaseClass in (case.TestCase, case.FunctionTestCase):
+            # We don't load any tests from base types that should not be loaded.
+            testCaseNames = []
+        else:
+            testCaseNames = self.getTestCaseNames(testCaseClass)
+            if not testCaseNames and hasattr(testCaseClass, 'runTest'):
+                testCaseNames = ['runTest']
         loaded_suite = self.suiteClass(map(testCaseClass, testCaseNames))
         return loaded_suite
 
@@ -95,7 +99,11 @@ class TestLoader(object):
         tests = []
         for name in dir(module):
             obj = getattr(module, name)
-            if isinstance(obj, type) and issubclass(obj, case.TestCase):
+            if (
+                isinstance(obj, type)
+                and issubclass(obj, case.TestCase)
+                and obj not in (case.TestCase, case.FunctionTestCase)
+            ):
                 tests.append(self.loadTestsFromTestCase(obj))
 
         load_tests = getattr(module, 'load_tests', None)
@@ -164,7 +172,11 @@ class TestLoader(object):
 
         if isinstance(obj, types.ModuleType):
             return self.loadTestsFromModule(obj)
-        elif isinstance(obj, type) and issubclass(obj, case.TestCase):
+        elif (
+            isinstance(obj, type)
+            and issubclass(obj, case.TestCase)
+            and obj not in (case.TestCase, case.FunctionTestCase)
+        ):
             return self.loadTestsFromTestCase(obj)
         elif (isinstance(obj, types.FunctionType) and
               isinstance(parent, type) and

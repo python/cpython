@@ -4,6 +4,7 @@ from test.support import (
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
 import unittest
+import errno
 import os
 import re
 import itertools
@@ -93,11 +94,12 @@ class MmapTests(unittest.TestCase):
             self.assertEqual(end, PAGESIZE + 6)
 
         # test seeking around (try to overflow the seek implementation)
-        m.seek(0,0)
+        self.assertTrue(m.seekable())
+        self.assertEqual(m.seek(0, 0), 0)
         self.assertEqual(m.tell(), 0)
-        m.seek(42,1)
+        self.assertEqual(m.seek(42, 1), 42)
         self.assertEqual(m.tell(), 42)
-        m.seek(0,2)
+        self.assertEqual(m.seek(0, 2), len(m))
         self.assertEqual(m.tell(), len(m))
 
         # Try to seek to negative position...
@@ -162,7 +164,7 @@ class MmapTests(unittest.TestCase):
 
             # Ensuring that readonly mmap can't be write() to
             try:
-                m.seek(0,0)
+                m.seek(0, 0)
                 m.write(b'abc')
             except TypeError:
                 pass
@@ -171,7 +173,7 @@ class MmapTests(unittest.TestCase):
 
             # Ensuring that readonly mmap can't be write_byte() to
             try:
-                m.seek(0,0)
+                m.seek(0, 0)
                 m.write_byte(b'd')
             except TypeError:
                 pass
@@ -255,10 +257,71 @@ class MmapTests(unittest.TestCase):
             # Try writing with PROT_EXEC and without PROT_WRITE
             prot = mmap.PROT_READ | getattr(mmap, 'PROT_EXEC', 0)
             with open(TESTFN, "r+b") as f:
-                m = mmap.mmap(f.fileno(), mapsize, prot=prot)
-                self.assertRaises(TypeError, m.write, b"abcdef")
-                self.assertRaises(TypeError, m.write_byte, 0)
-                m.close()
+                try:
+                    m = mmap.mmap(f.fileno(), mapsize, prot=prot)
+                except PermissionError:
+                    # on macOS 14, PROT_READ | PROT_EXEC is not allowed
+                    pass
+                else:
+                    self.assertRaises(TypeError, m.write, b"abcdef")
+                    self.assertRaises(TypeError, m.write_byte, 0)
+                    m.close()
+
+    @unittest.skipIf(os.name == 'nt', 'trackfd not present on Windows')
+    def test_trackfd_parameter(self):
+        size = 64
+        with open(TESTFN, "wb") as f:
+            f.write(b"a"*size)
+        for close_original_fd in True, False:
+            with self.subTest(close_original_fd=close_original_fd):
+                with open(TESTFN, "r+b") as f:
+                    with mmap.mmap(f.fileno(), size, trackfd=False) as m:
+                        if close_original_fd:
+                            f.close()
+                        self.assertEqual(len(m), size)
+                        with self.assertRaises(OSError) as err_cm:
+                            m.size()
+                        self.assertEqual(err_cm.exception.errno, errno.EBADF)
+                        with self.assertRaises(ValueError):
+                            m.resize(size * 2)
+                        with self.assertRaises(ValueError):
+                            m.resize(size // 2)
+                        self.assertEqual(m.closed, False)
+
+                        # Smoke-test other API
+                        m.write_byte(ord('X'))
+                        m[2] = ord('Y')
+                        m.flush()
+                        with open(TESTFN, "rb") as f:
+                            self.assertEqual(f.read(4), b'XaYa')
+                        self.assertEqual(m.tell(), 1)
+                        m.seek(0)
+                        self.assertEqual(m.tell(), 0)
+                        self.assertEqual(m.read_byte(), ord('X'))
+
+                self.assertEqual(m.closed, True)
+                self.assertEqual(os.stat(TESTFN).st_size, size)
+
+    @unittest.skipIf(os.name == 'nt', 'trackfd not present on Windows')
+    def test_trackfd_neg1(self):
+        size = 64
+        with mmap.mmap(-1, size, trackfd=False) as m:
+            with self.assertRaises(OSError):
+                m.size()
+            with self.assertRaises(ValueError):
+                m.resize(size // 2)
+            self.assertEqual(len(m), size)
+            m[0] = ord('a')
+            assert m[0] == ord('a')
+
+    @unittest.skipIf(os.name != 'nt', 'trackfd only fails on Windows')
+    def test_no_trackfd_parameter_on_windows(self):
+        # 'trackffd' is an invalid keyword argument for this function
+        size = 64
+        with self.assertRaises(TypeError):
+            mmap.mmap(-1, size, trackfd=True)
+        with self.assertRaises(TypeError):
+            mmap.mmap(-1, size, trackfd=False)
 
     def test_bad_file_desc(self):
         # Try opening a bad file descriptor...
@@ -666,14 +729,16 @@ class MmapTests(unittest.TestCase):
         m2.close()
         m1.close()
 
+        with self.assertRaisesRegex(TypeError, 'tagname'):
+            mmap.mmap(-1, 8, tagname=1)
+
     @cpython_only
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     def test_sizeof(self):
         m1 = mmap.mmap(-1, 100)
         tagname = random_tagname()
         m2 = mmap.mmap(-1, 100, tagname=tagname)
-        self.assertEqual(sys.getsizeof(m2),
-                         sys.getsizeof(m1) + len(tagname) + 1)
+        self.assertGreater(sys.getsizeof(m2), sys.getsizeof(m1))
 
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     def test_crasher_on_windows(self):

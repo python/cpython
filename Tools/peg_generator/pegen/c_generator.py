@@ -38,7 +38,11 @@ EXTENSION_PREFIX = """\
 #endif
 
 #ifdef __wasi__
-#  define MAXSTACK 4000
+#  ifdef Py_DEBUG
+#    define MAXSTACK 1000
+#  else
+#    define MAXSTACK 4000
+#  endif
 #else
 #  define MAXSTACK 6000
 #endif
@@ -375,8 +379,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
     def add_level(self) -> None:
         self.print("if (p->level++ == MAXSTACK) {")
         with self.indent():
-            self.print("p->error_indicator = 1;")
-            self.print("PyErr_NoMemory();")
+            self.print("_Pypegen_stack_overflow(p);")
         self.print("}")
 
     def remove_level(self) -> None:
