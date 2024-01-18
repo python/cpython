@@ -126,7 +126,7 @@ mark_readable(char *memory, size_t size)
     int failed = mprotect(memory, size, PROT_READ);
 #endif
     if (failed) {
-        jit_error("unable to protect executable memory");
+        jit_error("unable to protect readable memory");
         return -1;
     }
     return 0;
