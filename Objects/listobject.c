@@ -816,11 +816,10 @@ static PyObject *
 list_insert_impl(PyListObject *self, Py_ssize_t index, PyObject *object)
 /*[clinic end generated code: output=7f35e32f60c8cb78 input=b1987ca998a4ae2d]*/
 {
-    PyObject *ret = Py_None;
     if (ins1(self, index, object) == 0) {
         Py_RETURN_NONE
     }
-    return ret;
+    return NULL;
 }
 
 /*[clinic input]
