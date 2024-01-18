@@ -571,6 +571,21 @@ findArgv0End(const wchar_t *buffer, int bufferLength)
 /******************************************************************************\
  ***                          COMMAND-LINE PARSING                          ***
 \******************************************************************************/
+// Adapted from https://stackoverflow.com/a/65583702
+typedef struct AppExecLinkFile { // For tag IO_REPARSE_TAG_APPEXECLINK
+    DWORD reparseTag;
+    WORD reparseDataLength;
+    WORD reserved;
+    ULONG version;
+    wchar_t stringList[MAX_PATH * 4];  // Multistring (Consecutive UTF-16 strings each ending with a NUL)
+    /* There are normally 4 strings here. Ex:
+        Package ID:  L"Microsoft.DesktopAppInstaller_8wekyb3d8bbwe"
+        Entry Point: L"Microsoft.DesktopAppInstaller_8wekyb3d8bbwe!PythonRedirector"
+        Executable:  L"C:\Program Files\WindowsApps\Microsoft.DesktopAppInstaller_1.17.106910_x64__8wekyb3d8bbwe\AppInstallerPythonRedirector.exe"
+        Applic. Type: L"0"   // Integer as ASCII. "0" = Desktop bridge application; Else sandboxed UWP application
+    */
+} AppExecLinkFile;
+
 
 
 int
@@ -834,12 +849,30 @@ searchPath(SearchInfo *search, const wchar_t *shebang, int shebangLength)
         return RC_RECURSIVE_SHEBANG;
     }
 
-    // Make sure we didn't find a reparse point that might open the Microsoft Store
-    // If we are, pretend there was no shebang and let normal handling take over
+    // Make sure we didn't find a reparse point that will open the Microsoft Store
+    // If we did, pretend there was no shebang and let normal handling take over
     WIN32_FIND_DATAW findData;
     wchar_t hFind = FindFirstFileW(buffer, &findData);
-    if (findData.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-        if (findData.dwReserved0 & IO_REPARSE_TAG_APPEXECLINK) {
+    if (findData.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT &&
+        findData.dwReserved0 & IO_REPARSE_TAG_APPEXECLINK) {
+        const size_t bufSize = sizeof(AppExecLinkFile);
+        wchar_t buf[sizeof(AppExecLinkFile)];
+        AppExecLinkFile *appExecLinkFilePtr;
+
+        HANDLE hReparsePoint = CreateFileW(buffer, 0, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT, NULL);
+        DeviceIoControl(hReparsePoint, FSCTL_GET_REPARSE_POINT, NULL, 0, buf, bufSize, NULL, NULL);
+        CloseHandle(hReparsePoint);
+
+        appExecLinkFilePtr = (AppExecLinkFile*)&buf;
+
+        wchar_t redirectorPackageId[] = L"Microsoft.DesktopAppInstaller";
+        int redirectorStrLen = wcsnlen_s(redirectorPackageId, 29);
+
+        wchar_t partialId[30];
+        wcsncpy_s(partialId, redirectorStrLen + 1, appExecLinkFilePtr->stringList, redirectorStrLen);
+
+        if (0 == wcsncmp(partialId, &redirectorPackageId, redirectorStrLen)) {
+            debug(L"# ignoring redirector that would launch store");
             return RC_NO_SHEBANG;
         }
     }
