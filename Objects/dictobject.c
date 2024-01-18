@@ -5975,7 +5975,7 @@ PyDict_AddWatcher(PyDict_WatchCallback callback)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
-    /* Start at 2, as 0 and 1 as reserved for CPython */
+    /* Start at 2, as 0 and 1 are reserved for CPython */
     for (int i = 2; i < DICT_MAX_WATCHERS; i++) {
         if (!interp->dict_state.watchers[i]) {
             interp->dict_state.watchers[i] = callback;

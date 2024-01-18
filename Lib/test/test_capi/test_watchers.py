@@ -52,6 +52,14 @@ class TestDictWatchers(unittest.TestCase):
             d["foo"] = "baz"
             self.assert_events(["mod:foo:baz"])
 
+    def test_clone(self):
+        d = {}
+        d2 = {"foo": "bar"}
+        with self.watcher() as wid:
+            self.watch(wid, d)
+            d.update(d2)
+            self.assert_events(["clone"])
+
     def test_no_event_if_not_watched(self):
         d = {}
         with self.watcher() as wid:
@@ -71,14 +79,6 @@ class TestDictWatchers(unittest.TestCase):
             self.watch(wid, d)
             d.pop("foo")
             self.assert_events(["del:foo"])
-
-    def test_clone(self):
-        d = {}
-        d2 = {"foo": "bar"}
-        with self.watcher() as wid:
-            self.watch(wid, d)
-            d.update(d2)
-            self.assert_events(["clone"])
 
     def test_clear(self):
         d = {"foo": "bar"}
