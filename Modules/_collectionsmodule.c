@@ -1080,15 +1080,15 @@ deque_reverse_impl(dequeobject *deque)
 _collections.deque.count as deque_count
 
     deque: dequeobject
-    value: object
+    value as v: object
     /
 
 Return number of occurrences of value.
 [clinic start generated code]*/
 
 static PyObject *
-deque_count(dequeobject *deque, PyObject *value)
-/*[clinic end generated code: output=39594ae05ff15239 input=dd7593184e23fe32]*/
+deque_count(dequeobject *deque, PyObject *v)
+/*[clinic end generated code: output=7405d289d94d7b9b input=1892925260ff5d78]*/
 {
     block *b = deque->leftblock;
     Py_ssize_t index = deque->leftindex;
@@ -1101,7 +1101,7 @@ deque_count(dequeobject *deque, PyObject *value)
     while (--n >= 0) {
         CHECK_NOT_END(b);
         item = Py_NewRef(b->data[index]);
-        cmp = PyObject_RichCompareBool(item, value, Py_EQ);
+        cmp = PyObject_RichCompareBool(item, v, Py_EQ);
         Py_DECREF(item);
         if (cmp < 0)
             return NULL;
@@ -1166,7 +1166,7 @@ deque_len(dequeobject *deque)
 _collections.deque.index as deque_index
 
     deque: dequeobject
-    value: object
+    value as v: object
     start: object(converter='_PyEval_SliceIndexNotNone', type='Py_ssize_t', c_default='0') = NULL
     stop: object(converter='_PyEval_SliceIndexNotNone', type='Py_ssize_t', c_default='Py_SIZE(deque)') = NULL
     /
@@ -1177,9 +1177,9 @@ Raises ValueError if the value is not present.
 [clinic start generated code]*/
 
 static PyObject *
-deque_index_impl(dequeobject *deque, PyObject *value, Py_ssize_t start,
+deque_index_impl(dequeobject *deque, PyObject *v, Py_ssize_t start,
                  Py_ssize_t stop)
-/*[clinic end generated code: output=754c388d6c6a8cfe input=8e3f101d57b012b1]*/
+/*[clinic end generated code: output=df45132753175ef9 input=140210c099830f64]*/
 {
     Py_ssize_t i, n;
     PyObject *item;
@@ -1219,7 +1219,7 @@ deque_index_impl(dequeobject *deque, PyObject *value, Py_ssize_t start,
     while (--n >= 0) {
         CHECK_NOT_END(b);
         item = b->data[index];
-        cmp = PyObject_RichCompareBool(item, value, Py_EQ);
+        cmp = PyObject_RichCompareBool(item, v, Py_EQ);
         if (cmp > 0)
             return PyLong_FromSsize_t(stop - n - 1);
         if (cmp < 0)
@@ -1235,7 +1235,7 @@ deque_index_impl(dequeobject *deque, PyObject *value, Py_ssize_t start,
             index = 0;
         }
     }
-    PyErr_Format(PyExc_ValueError, "%R is not in deque", value);
+    PyErr_Format(PyExc_ValueError, "%R is not in deque", v);
     return NULL;
 }
 
@@ -1629,7 +1629,7 @@ done:
 
 /*[clinic input]
 @text_signature "([iterable[, maxlen]])"
-_collections.deque.__init__ as deque___init__
+_collections.deque.__init__ as deque_init
 
     deque: dequeobject
     iterable: object = NULL
@@ -1639,9 +1639,8 @@ A list-like sequence optimized for data accesses near its endpoints.
 [clinic start generated code]*/
 
 static int
-deque___init___impl(dequeobject *deque, PyObject *iterable,
-                    PyObject *maxlenobj)
-/*[clinic end generated code: output=548e947960679dd9 input=8a87b7bfabea2cdf]*/
+deque_init_impl(dequeobject *deque, PyObject *iterable, PyObject *maxlenobj)
+/*[clinic end generated code: output=7084a39d71218dcd input=5ebdffc48a2d27ae]*/
 
 {
     Py_ssize_t maxlen = -1;
@@ -1756,13 +1755,13 @@ static PyType_Slot deque_slots[] = {
     {Py_tp_repr, deque_repr},
     {Py_tp_hash, PyObject_HashNotImplemented},
     {Py_tp_getattro, PyObject_GenericGetAttr},
-    {Py_tp_doc, (void *)deque___init____doc__},
+    {Py_tp_doc, (void *)deque_init__doc__},
     {Py_tp_traverse, deque_traverse},
     {Py_tp_clear, deque_clear},
     {Py_tp_richcompare, deque_richcompare},
     {Py_tp_iter, deque_iter},
     {Py_tp_getset, deque_getset},
-    {Py_tp_init, deque___init__},
+    {Py_tp_init, deque_init},
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_new, deque_new},
     {Py_tp_free, PyObject_GC_Del},

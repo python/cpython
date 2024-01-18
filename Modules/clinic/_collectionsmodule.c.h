@@ -217,21 +217,21 @@ PyDoc_STRVAR(deque_index__doc__,
     {"index", _PyCFunction_CAST(deque_index), METH_FASTCALL, deque_index__doc__},
 
 static PyObject *
-deque_index_impl(dequeobject *deque, PyObject *value, Py_ssize_t start,
+deque_index_impl(dequeobject *deque, PyObject *v, Py_ssize_t start,
                  Py_ssize_t stop);
 
 static PyObject *
 deque_index(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *value;
+    PyObject *v;
     Py_ssize_t start = 0;
     Py_ssize_t stop = Py_SIZE(deque);
 
     if (!_PyArg_CheckPositional("index", nargs, 1, 3)) {
         goto exit;
     }
-    value = args[0];
+    v = args[0];
     if (nargs < 2) {
         goto skip_optional;
     }
@@ -245,7 +245,7 @@ deque_index(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
-    return_value = deque_index_impl(deque, value, start, stop);
+    return_value = deque_index_impl(deque, v, start, stop);
 
 exit:
     return return_value;
@@ -319,18 +319,17 @@ deque___reduce__(dequeobject *deque, PyObject *Py_UNUSED(ignored))
     return deque___reduce___impl(deque);
 }
 
-PyDoc_STRVAR(deque___init____doc__,
+PyDoc_STRVAR(deque_init__doc__,
 "deque([iterable[, maxlen]])\n"
 "--\n"
 "\n"
 "A list-like sequence optimized for data accesses near its endpoints.");
 
 static int
-deque___init___impl(dequeobject *deque, PyObject *iterable,
-                    PyObject *maxlenobj);
+deque_init_impl(dequeobject *deque, PyObject *iterable, PyObject *maxlenobj);
 
 static int
-deque___init__(PyObject *deque, PyObject *args, PyObject *kwargs)
+deque_init(PyObject *deque, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -380,7 +379,7 @@ deque___init__(PyObject *deque, PyObject *args, PyObject *kwargs)
     }
     maxlenobj = fastargs[1];
 skip_optional_pos:
-    return_value = deque___init___impl((dequeobject *)deque, iterable, maxlenobj);
+    return_value = deque_init_impl((dequeobject *)deque, iterable, maxlenobj);
 
 exit:
     return return_value;
@@ -489,4 +488,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0284b71df2a403ec input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3633a5cbc23e8440 input=a9049054013a1b77]*/
