@@ -43,7 +43,6 @@ global_to_const(_PyUOpInstruction *inst, PyObject *obj)
     PyDictObject *dict = (PyDictObject *)obj;
     assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
     PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
-    assert(inst->operand < dict->ma_used);
     assert(inst->operand <= UINT16_MAX);
     PyObject *res = entries[inst->operand].me_value;
     if (res == NULL) {
@@ -59,19 +58,19 @@ global_to_const(_PyUOpInstruction *inst, PyObject *obj)
 }
 
 static int
-check_globals_version(_PyUOpInstruction *inst, PyObject *obj)
+incorrect_keys(_PyUOpInstruction *inst, PyObject *obj)
 {
     if (!PyDict_CheckExact(obj)) {
-        return -1;
+        return 1;
     }
     PyDictObject *dict = (PyDictObject *)obj;
     if (dict->ma_keys->dk_version != inst->operand) {
-        return -1;
+        return 1;
     }
     return 0;
 }
 
-static void
+static int
 remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                int buffer_size, _PyBloomFilter *dependencies)
 {
@@ -104,12 +103,12 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
         int opcode = inst->opcode;
         switch(opcode) {
             case _GUARD_BUILTINS_VERSION:
-                if (check_globals_version(inst, builtins)) {
-                    continue;
+                if (incorrect_keys(inst, builtins)) {
+                    return 0;
                 }
                 if ((builtins_watched & 1) == 0) {
                     PyDict_Watch(0, builtins);
-                    builtins_watched = 1;
+                    builtins_watched |= 1;
                 }
                 if (builtins_checked & 1) {
                     buffer[pc].opcode = NOP;
@@ -121,8 +120,8 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 }
                 break;
             case _GUARD_GLOBALS_VERSION:
-                if (check_globals_version(inst, globals)) {
-                    continue;
+                if (incorrect_keys(inst, globals)) {
+                    return 0;
                 }
                 if ((globals_watched & 1) == 0) {
                     PyDict_Watch(1, globals);
@@ -139,18 +138,16 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 }
                 break;
             case _LOAD_GLOBAL_BUILTINS:
-                if (globals_checked & builtins_checked & globals_watched & builtins_watched & 1) {
-                    global_to_const(inst, builtins);
-                }
+                assert(globals_checked & builtins_checked & globals_watched & builtins_watched & 1);
+                global_to_const(inst, builtins);
                 break;
             case _LOAD_GLOBAL_MODULE:
-                if (globals_checked & globals_watched & 1) {
-                    global_to_const(inst, globals);
-                }
+                assert(globals_checked & globals_watched & 1);
+                global_to_const(inst, globals);
                 break;
             case _JUMP_TO_TOP:
             case _EXIT_TRACE:
-                goto done;
+                return 1;
              case _PUSH_FRAME:
              {
                  globals_checked <<= 1;
@@ -158,6 +155,9 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                  builtins_checked <<= 1;
                  builtins_watched <<= 1;
                  PyFunctionObject *func = (PyFunctionObject *)buffer[pc].operand;
+                 if (func == NULL) {
+                     return 1;
+                 }
                  assert(PyFunction_Check(func));
                  globals = func->func_globals;
                  builtins = func->func_builtins;
@@ -175,8 +175,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                  break;
         }
     }
-    done:
-        return;
+    return 0;
 }
 
 static void
@@ -266,11 +265,15 @@ _Py_uop_analyze_and_optimize(
     _PyInterpreterFrame *frame,
     _PyUOpInstruction *buffer,
     int buffer_size,
-    int curr_stacklen
+    int curr_stacklen,
+    _PyBloomFilter *dependencies
 )
 {
-    remove_globals(frame, buffer, buffer_size, dependencies);
+    int err = remove_globals(frame, buffer, buffer_size, dependencies);
+    if (err <= 0) {
+        return err;
+    }
     peephole_opt(frame, buffer, buffer_size);
     remove_unneeded_uops(buffer, buffer_size);
-    return 0;
+    return 1;
 }

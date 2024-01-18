@@ -817,9 +817,10 @@ uop_optimize(
     OPT_STAT_INC(traces_created);
     char *uop_optimize = Py_GETENV("PYTHONUOPSOPTIMIZE");
     if (uop_optimize == NULL || *uop_optimize > '0') {
-        err = _Py_uop_analyze_and_optimize(frame, buffer, UOP_MAX_TRACE_LENGTH, curr_stackentries);
-        if (err < 0) {
-            return -1;
+        err = _Py_uop_analyze_and_optimize(frame, buffer,
+                                           UOP_MAX_TRACE_LENGTH, curr_stackentries, &dependencies);
+        if (err <= 0) {
+            return err;
         }
     }
     _PyExecutorObject *executor = make_executor_from_uops(buffer, &dependencies);

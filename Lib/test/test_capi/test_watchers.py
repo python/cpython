@@ -52,14 +52,6 @@ class TestDictWatchers(unittest.TestCase):
             d["foo"] = "baz"
             self.assert_events(["mod:foo:baz"])
 
-    def test_clone(self):
-        d = {}
-        d2 = {"foo": "bar"}
-        with self.watcher() as wid:
-            self.watch(wid, d)
-            d.update(d2)
-            self.assert_events(["clone"])
-
     def test_no_event_if_not_watched(self):
         d = {}
         with self.watcher() as wid:
@@ -79,6 +71,14 @@ class TestDictWatchers(unittest.TestCase):
             self.watch(wid, d)
             d.pop("foo")
             self.assert_events(["del:foo"])
+
+    def test_clone(self):
+        d = {}
+        d2 = {"foo": "bar"}
+        with self.watcher() as wid:
+            self.watch(wid, d)
+            d.update(d2)
+            self.assert_events(["clone"])
 
     def test_clear(self):
         d = {"foo": "bar"}
@@ -151,8 +151,8 @@ class TestDictWatchers(unittest.TestCase):
 
     def test_watch_unassigned_watcher_id(self):
         d = {}
-        with self.assertRaisesRegex(ValueError, r"No dict watcher set for ID 1"):
-            self.watch(1, d)
+        with self.assertRaisesRegex(ValueError, r"No dict watcher set for ID 3"):
+            self.watch(3, d)
 
     def test_unwatch_non_dict(self):
         with self.watcher() as wid:
@@ -168,8 +168,8 @@ class TestDictWatchers(unittest.TestCase):
 
     def test_unwatch_unassigned_watcher_id(self):
         d = {}
-        with self.assertRaisesRegex(ValueError, r"No dict watcher set for ID 1"):
-            self.unwatch(1, d)
+        with self.assertRaisesRegex(ValueError, r"No dict watcher set for ID 3"):
+            self.unwatch(3, d)
 
     def test_clear_out_of_range_watcher_id(self):
         with self.assertRaisesRegex(ValueError, r"Invalid dict watcher ID -1"):
@@ -178,8 +178,8 @@ class TestDictWatchers(unittest.TestCase):
             self.clear_watcher(8)  # DICT_MAX_WATCHERS = 8
 
     def test_clear_unassigned_watcher_id(self):
-        with self.assertRaisesRegex(ValueError, r"No dict watcher set for ID 1"):
-            self.clear_watcher(1)
+        with self.assertRaisesRegex(ValueError, r"No dict watcher set for ID 3"):
+            self.clear_watcher(3)
 
 
 class TestTypeWatchers(unittest.TestCase):
