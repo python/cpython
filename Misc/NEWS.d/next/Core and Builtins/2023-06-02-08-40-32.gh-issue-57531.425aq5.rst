@@ -1,1 +1,1 @@
-add BufferedReader.read() return value check for non-blocking stream mode, raise BlockingIOError instead of TypeError with more context for the caller.
+Add BufferedReader.read() return value check for non-blocking stream mode, raise BlockingIOError instead of TypeError with more context for the caller.
