@@ -123,6 +123,9 @@ IDENTIFIERS = [
     '__rdivmod__',
     '__buffer__',
     '__release_buffer__',
+
+    #Workaround for GH-108918
+    'self',
 ]
 
 NON_GENERATED_IMMORTAL_OBJECTS = [
