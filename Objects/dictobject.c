@@ -3293,6 +3293,7 @@ dict_richcompare(PyObject *v, PyObject *w, int op)
 /*[clinic input]
 
 @coexist
+@critical_section
 dict.__contains__
 
   key: object
@@ -3324,6 +3325,7 @@ dict___contains__(PyDictObject *self, PyObject *key)
 }
 
 /*[clinic input]
+@critical_section
 dict.get
 
     key: object
@@ -3559,6 +3561,7 @@ dict_pop_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
 }
 
 /*[clinic input]
+@critical_section
 dict.popitem
 
 Remove and return a (key, value) pair as a 2-tuple.
