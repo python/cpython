@@ -538,7 +538,6 @@ class NamespaceViewer:
     dict = -1  # Needed for self.dict below.
 
     def load_dict(self, dict_, force=0, rpc_client=None):
-        print(self.dict, dict_)
         if dict_ is self.dict and not force:
             return
         subframe = self.subframe
