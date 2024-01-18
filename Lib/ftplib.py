@@ -936,15 +936,14 @@ def test():
         netrcobj = netrc.netrc(rcfile)
     except OSError:
         if rcfile is not None:
-            sys.stderr.write("Could not open account file"
-                             " -- using anonymous login.")
+            print("Could not open account file -- using anonymous login.",
+                  file=sys.stderr)
     else:
         try:
             userid, acct, passwd = netrcobj.authenticators(host)
-        except KeyError:
+        except (KeyError, TypeError):
             # no account for host
-            sys.stderr.write(
-                    "No account -- using anonymous login.")
+            print("No account -- using anonymous login.", file=sys.stderr)
     ftp.login(userid, passwd, acct)
     for file in sys.argv[2:]:
         if file[:2] == '-l':
