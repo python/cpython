@@ -166,7 +166,7 @@ ir_store(_Py_UOps_Opt_IR *ir, _Py_UOpsSymbolicExpression *expr, _Py_UOps_IRStore
 {
     // Don't store stuff we know will never get compiled.
     if(_PyOpcode_isstackvalue(expr->inst.opcode) && store_fast_idx == TARGET_NONE) {
-        return;
+        return 0;
     }
 #ifdef Py_DEBUG
     char *uop_debug = Py_GETENV(DEBUG_ENV);
