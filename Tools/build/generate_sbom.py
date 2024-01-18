@@ -153,24 +153,26 @@ def discover_pip_sbom_package(sbom_data: dict[str, typing.Any]) -> None:
     try:
         raw_text = urlopen(f"https://pypi.org/pypi/pip/{pip_version}/json").read()
         pip_release_metadata = json.loads(raw_text)
-        url: dict[str, typing.Any]
-
-        # Look for a matching artifact filename and then check
-        # its remote checksum to the local one.
-        for url in pip_release_metadata["urls"]:
-            if url["filename"] == pip_wheel_filename:
-                break
-        else:
-            raise ValueError(f"No matching filename on PyPI for '{pip_wheel_filename}'")
-        if url["digests"]["sha256"] != pip_checksum_sha256:
-            raise ValueError(f"Local pip checksum doesn't match artifact on PyPI")
-
-        # Successfully found the download URL for the matching artifact.
-        pip_download_url = url["url"]
-
     except (OSError, ValueError) as e:
         print(f"Couldn't fetch pip's metadata from PyPI: {e}")
-        sys.exit(1)
+        # We either re-use pip's SBOM entry or if we're in CI we fail.
+        if "CI" in os.environ:
+            sys.exit(1)
+        return
+
+    # Look for a matching artifact filename and then check
+    # its remote checksum to the local one.
+    url: dict[str, typing.Any]
+    for url in pip_release_metadata["urls"]:
+        if url["filename"] == pip_wheel_filename:
+            break
+    else:
+        raise ValueError(f"No matching filename on PyPI for '{pip_wheel_filename}'")
+    if url["digests"]["sha256"] != pip_checksum_sha256:
+        raise ValueError(f"Local pip checksum doesn't match artifact on PyPI")
+
+    # Successfully found the download URL for the matching artifact.
+    pip_download_url = url["url"]
 
     # Remove pip from the existing SBOM packages if it's there
     # and then overwrite its entry with our own generated one.
