@@ -2018,11 +2018,10 @@ class POSIXProcessTestCase(BaseTestCase):
                                 user=user,
                                 close_fds=close_fds)
                     except PermissionError as e:  # (EACCES, EPERM)
-                        self.assertIsNone(e.filename)
-                    except OSError as e:
-                        if e.errno not in (errno.EACCES, errno.EPERM):
-                            raise
-                        self.assertIsNone(e.filename)
+                        if e.errno == errno.EACCES:
+                            self.assertEqual(e.filename, sys.executable)
+                        else:
+                            self.assertIsNone(e.filename)
                     else:
                         if isinstance(user, str):
                             user_uid = pwd.getpwnam(user).pw_uid
