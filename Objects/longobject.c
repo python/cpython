@@ -6171,7 +6171,7 @@ long_vectorcall(PyObject *type, PyObject * const*args,
             return long_new_impl(_PyType_CAST(type), args[0], args[1]);
         default:
             return PyErr_Format(PyExc_TypeError,
-                                "int expected at most 2 argument%s, got %zd",
+                                "int expected at most 2 arguments, got %zd",
                                 nargs);
     }
 }

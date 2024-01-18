@@ -1,1 +1,0 @@
-The :func:`!pydoc.ispackage` function has been deprecated.

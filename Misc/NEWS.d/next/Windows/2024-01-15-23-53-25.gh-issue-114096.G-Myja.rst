@@ -1,3 +1,0 @@
-Process privileges that are activated for creating directory junctions are
-now restored afterwards, avoiding behaviour changes in other parts of the
-program.
