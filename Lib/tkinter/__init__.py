@@ -4633,7 +4633,7 @@ class PanedWindow(Widget):
 
 def _test():
     root = Tk()
-    text = "This is Tcl/Tk version %s" % TclVersion
+    text = "This is Tcl/Tk %s" % root.globalgetvar('tk_patchLevel')
     text += "\nThis should be a cedilla: \xe7"
     label = Label(root, text=text)
     label.pack()
