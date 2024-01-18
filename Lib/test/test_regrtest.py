@@ -845,6 +845,8 @@ class ProgramsTestCase(BaseTestCase):
             test_args.append('-x64')   # 64-bit build
         if not support.Py_DEBUG:
             test_args.append('+d')     # Release build, use python.exe
+        if sysconfig.get_config_var("Py_GIL_DISABLED"):
+            test_args.append('--disable-gil')
         self.run_batch(script, *test_args, *self.tests)
 
     @unittest.skipUnless(sys.platform == 'win32', 'Windows only')
@@ -862,6 +864,8 @@ class ProgramsTestCase(BaseTestCase):
             rt_args.append('-x64')   # 64-bit build
         if support.Py_DEBUG:
             rt_args.append('-d')     # Debug build, use python_d.exe
+        if sysconfig.get_config_var("Py_GIL_DISABLED"):
+            rt_args.append('--disable-gil')
         self.run_batch(script, *rt_args, *self.regrtest_args, *self.tests)
 
 

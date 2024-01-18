@@ -695,7 +695,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
 
     stgdict->size = aligned_size;
     stgdict->align = total_align;
-    stgdict->length = len;      /* ADD ffi_ofs? */
+    stgdict->length = ffi_ofs + len;
 
 /*
  * The value of MAX_STRUCT_SIZE depends on the platform Python is running on.

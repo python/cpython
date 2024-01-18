@@ -22,7 +22,7 @@
 #endif
 
 /* Reference the precompiled getpath.py */
-#include "../Python/frozen_modules/getpath.h"
+#include "Python/frozen_modules/getpath.h"
 
 #if (!defined(PREFIX) || !defined(EXEC_PREFIX) \
         || !defined(VERSION) || !defined(VPATH) \

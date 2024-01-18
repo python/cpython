@@ -1,4 +1,0 @@
-Fixed order dependence in running tests in the same process
-when a test that has submodules (e.g. test_importlib) follows a test that
-imports its submodule (e.g. test_importlib.util) and precedes a test
-(e.g. test_unittest or test_compileall) that uses that submodule.
