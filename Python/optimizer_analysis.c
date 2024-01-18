@@ -15,7 +15,6 @@
 static void
 peephole_opt(PyCodeObject *co, _PyUOpInstruction *buffer, int buffer_size)
 {
-
     for (int pc = 0; pc < buffer_size; pc++) {
         int opcode = buffer[pc].opcode;
         switch(opcode) {
