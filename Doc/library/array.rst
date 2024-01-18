@@ -247,19 +247,22 @@ The module defines the following type:
       obtain a Unicode string from an array of some other type.
 
 
-When an array object is converted to a string, it is represented as
-``array(typecode, initializer)``.  The *initializer* is omitted if the array is
-empty, otherwise it is a string if the *typecode* is ``'u'`` or ``'w'``,
-otherwise it is a list of numbers.
-The string is guaranteed to be able to be converted back to an
+The string representation of array objects has a form
+``array(typecode, initializer)``.
+The *initializer* is omitted if the array is empty, otherwise it is
+a Unicode string if the *typecode* is ``'u'`` or ``'w'``, otherwise it is
+a list of numbers.
+The string representation is guaranteed to be able to be converted back to an
 array with the same type and value using :func:`eval`, so long as the
 :class:`~array.array` class has been imported using ``from array import array``.
+Variables ``inf`` and ``nan`` must also be defined if it contains
+corresponding floating point values.
 Examples::
 
    array('l')
    array('w', 'hello \u2641')
    array('l', [1, 2, 3, 4, 5])
-   array('d', [1.0, 2.0, 3.14])
+   array('d', [1.0, 2.0, 3.14, -inf, nan])
 
 
 .. seealso::
