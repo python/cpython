@@ -105,16 +105,20 @@ PyObject _Py_EllipsisObject = _PyObject_HEAD_INIT(&PyEllipsis_Type);
 
 void _PySlice_ClearCache(_PyFreeListState *state)
 {
+#ifdef WITH_FREELISTS
     PySliceObject *obj = state->slice_state.slice_cache;
     if (obj != NULL) {
         state->slice_state.slice_cache = NULL;
         PyObject_GC_Del(obj);
     }
+#endif
 }
 
 void _PySlice_Fini(_PyFreeListState *state)
 {
+#ifdef WITH_FREELISTS
     _PySlice_ClearCache(state);
+#endif
 }
 
 /* start, stop, and step are python objects with None indicating no
@@ -125,15 +129,17 @@ static PySliceObject *
 _PyBuildSlice_Consume2(PyObject *start, PyObject *stop, PyObject *step)
 {
     assert(start != NULL && stop != NULL && step != NULL);
-
-    _PyFreeListState *state = _PyFreeListState_GET();
     PySliceObject *obj;
+#ifdef WITH_FREELISTS
+    _PyFreeListState *state = _PyFreeListState_GET();
     if (state->slice_state.slice_cache != NULL) {
         obj = state->slice_state.slice_cache;
         state->slice_state.slice_cache = NULL;
         _Py_NewReference((PyObject *)obj);
     }
-    else {
+    else
+#endif
+    {
         obj = PyObject_GC_New(PySliceObject, &PySlice_Type);
         if (obj == NULL) {
             goto error;
@@ -358,15 +364,18 @@ Create a slice object.  This is used for extended slicing (e.g. a[0:10:2]).");
 static void
 slice_dealloc(PySliceObject *r)
 {
-    _PyFreeListState *state = _PyFreeListState_GET();
     _PyObject_GC_UNTRACK(r);
     Py_DECREF(r->step);
     Py_DECREF(r->start);
     Py_DECREF(r->stop);
+#ifdef WITH_FREELISTS
+    _PyFreeListState *state = _PyFreeListState_GET();
     if (state->slice_state.slice_cache == NULL) {
         state->slice_state.slice_cache = r;
     }
-    else {
+    else
+#endif
+    {
         PyObject_GC_Del(r);
     }
 }
