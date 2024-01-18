@@ -386,13 +386,6 @@ _queue_SimpleQueue_get_impl(simplequeueobject *self, PyTypeObject *cls,
                             "'timeout' must be a non-negative number");
             return NULL;
         }
-        PY_TIMEOUT_T microseconds =
-            _PyTime_AsMicroseconds(timeout, _PyTime_ROUND_CEILING);
-        if (microseconds > PY_TIMEOUT_MAX) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "timeout value is too large");
-            return NULL;
-        }
         endtime = _PyDeadline_Init(timeout);
     }
 
