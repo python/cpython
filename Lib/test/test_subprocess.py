@@ -2017,11 +2017,12 @@ class POSIXProcessTestCase(BaseTestCase):
                                  "import os; print(os.getuid())"],
                                 user=user,
                                 close_fds=close_fds)
-                    except PermissionError:  # (EACCES, EPERM)
-                        pass
+                    except PermissionError as e:  # (EACCES, EPERM)
+                        self.assertIsNone(e.filename)
                     except OSError as e:
                         if e.errno not in (errno.EACCES, errno.EPERM):
                             raise
+                        self.assertIsNone(e.filename)
                     else:
                         if isinstance(user, str):
                             user_uid = pwd.getpwnam(user).pw_uid
@@ -2065,8 +2066,8 @@ class POSIXProcessTestCase(BaseTestCase):
                                  "import os; print(os.getgid())"],
                                 group=group,
                                 close_fds=close_fds)
-                    except PermissionError:  # (EACCES, EPERM)
-                        pass
+                    except PermissionError as e:  # (EACCES, EPERM)
+                        self.assertIsNone(e.filename)
                     else:
                         if isinstance(group, str):
                             group_gid = grp.getgrnam(group).gr_gid
@@ -2114,7 +2115,8 @@ class POSIXProcessTestCase(BaseTestCase):
                     [sys.executable, "-c",
                      "import os, sys, json; json.dump(os.getgroups(), sys.stdout)"],
                     extra_groups=group_list)
-        except PermissionError:
+        except PermissionError as e:
+            self.assertIsNone(e.filename)
             self.skipTest("setgroup() EPERM; this test may require root.")
         else:
             parent_groups = os.getgroups()
