@@ -897,50 +897,6 @@ print_or_clear_traceback(callback_context *ctx)
     }
 }
 
-static char *
-build_error_message(const char *preamble, const char *message)
-{
-    assert(preamble || message);
-    const size_t len_preamble = preamble ? strlen(preamble) : 0;
-    const size_t len_message = message ? strlen(message) : 0;
-    size_t n = len_preamble + len_message;
-    if (len_preamble && len_message) {
-        n += 2;  // Make room for ": ".
-    }
-    char *buf = PyMem_Malloc(n + 1);
-    if (buf == NULL) {
-        return (char *)PyErr_NoMemory();
-    }
-    buf[n] = 0;
-    if (len_preamble && !len_message) {
-        return strncpy(buf, preamble, n);
-    }
-    if (!len_preamble && len_message) {
-        return strncpy(buf, message, n);
-    }
-    buf = strncpy(buf, preamble, n);
-    buf = strncat(buf, ": ", n);
-    return strncat(buf, message, n);
-}
-
-static char *
-get_result_error_message(callback_context *ctx, const char *preamble,
-                         PyObject *exc)
-{
-    PyObject *msg_obj = PyObject_Str(exc);
-    if (msg_obj == NULL) {
-        return NULL;
-    }
-    const char *msg = PyUnicode_AsUTF8(msg_obj);
-    if (msg == NULL) {
-        Py_DECREF(msg_obj);
-        return NULL;
-    }
-    char *errmsg = build_error_message(preamble, msg);
-    Py_DECREF(msg_obj);
-    return errmsg;
-}
-
 // Checks the Python exception and sets the appropriate SQLite error code.
 static void
 set_sqlite_error(sqlite3_context *context, const char *preamble)
@@ -956,19 +912,22 @@ set_sqlite_error(sqlite3_context *context, const char *preamble)
     }
     else {
         PyObject *exc = PyErr_GetRaisedException();
-
-        char *msg = get_result_error_message(ctx, preamble, exc);
-        if (msg == NULL) {
-            // An exception happened while we tried to build a more detailed
-            // error message; write this as an unraisable exception and pass
-            // the preamble as the sqlite3 error message.
+        const char *msg;
+        PyObject *str = PyUnicode_FromFormat(
+                "%s: %s: %S",
+                preamble, Py_TYPE(exc)->tp_name, exc);
+        if (str == NULL) {
             PyErr_WriteUnraisable(ctx->callable);
-            sqlite3_result_error(context, preamble, -1);
+            msg = preamble;
         }
         else {
-            sqlite3_result_error(context, msg, -1);
-            PyMem_Free(msg);
+            if ((msg = PyUnicode_AsUTF8(str)) == NULL) {
+                PyErr_WriteUnraisable(ctx->callable);
+                msg = preamble;
+            }
         }
+        sqlite3_result_error(context, msg, -1);
+        Py_XDECREF(str);
 
         PyErr_SetRaisedException(exc);
     }
@@ -1030,7 +989,7 @@ step_callback(sqlite3_context *context, int argc, sqlite3_value **params)
     stepmethod = PyObject_GetAttr(*aggregate_instance, ctx->state->str_step);
     if (!stepmethod) {
         set_sqlite_error(context,
-                "user-defined aggregate's 'step' method not defined");
+                "user-defined aggregate's 'step' method raised error");
         goto error;
     }
 
