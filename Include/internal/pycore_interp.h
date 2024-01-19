@@ -16,10 +16,10 @@ extern "C" {
 #include "pycore_code.h"          // struct callable_cache
 #include "pycore_context.h"       // struct _Py_context_state
 #include "pycore_crossinterp.h"   // struct _xidregistry
-#include "pycore_dict_state.h"    // struct _Py_dict_state
 #include "pycore_dtoa.h"          // struct _dtoa_state
 #include "pycore_exceptions.h"    // struct _Py_exc_state
 #include "pycore_floatobject.h"   // struct _Py_float_state
+#include "pycore_freelist.h"      // struct _Py_freelist_state
 #include "pycore_function.h"      // FUNC_MAX_WATCHERS
 #include "pycore_gc.h"            // struct _gc_runtime_state
 #include "pycore_genobject.h"     // struct _Py_async_gen_state

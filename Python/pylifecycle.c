@@ -1749,12 +1749,12 @@ finalize_interp_types(PyInterpreterState *interp)
     // a dict internally.
     _PyUnicode_ClearInterned(interp);
 
-    _PyDict_Fini(interp);
     _PyUnicode_Fini(interp);
 
     _PyFreeListState *state = _PyFreeListState_GET();
     _PyTuple_Fini(state);
     _PyList_Fini(state);
+    _PyDict_Fini(state);
     _PyFloat_Fini(state);
     _PySlice_Fini(state);
     _PyContext_Fini(state);

@@ -17,6 +17,7 @@ extern "C" {
 #  define PyTuple_NFREELISTS PyTuple_MAXSAVESIZE
 #  define PyTuple_MAXFREELIST 2000
 #  define PyList_MAXFREELIST 80
+#  define PyDict_MAXFREELIST 80
 #  define PyFloat_MAXFREELIST 100
 #  define PyContext_MAXFREELIST 255
 # define _PyAsyncGen_MAXFREELIST 80
@@ -24,6 +25,7 @@ extern "C" {
 #  define PyTuple_NFREELISTS 0
 #  define PyTuple_MAXFREELIST 0
 #  define PyList_MAXFREELIST 0
+#  define PyDict_MAXFREELIST 0
 #  define PyFloat_MAXFREELIST 0
 #  define PyContext_MAXFREELIST 0
 #  define _PyAsyncGen_MAXFREELIST 0
@@ -63,6 +65,31 @@ struct _Py_float_state {
 #endif
 };
 
+#define DICT_MAX_WATCHERS 8
+
+struct _Py_dict_state {
+    /*Global counter used to set ma_version_tag field of dictionary.
+     * It is incremented each time that a dictionary is created and each
+     * time that a dictionary is modified. */
+    uint64_t global_version;
+    uint32_t next_keys_version;
+
+#ifdef WITH_FREELISTS
+    /* Dictionary reuse scheme to save calls to malloc and free */
+    PyDictObject *free_list[PyDict_MAXFREELIST];
+    PyDictKeysObject *keys_free_list[PyDict_MAXFREELIST];
+    int numfree;
+    int keys_numfree;
+#endif
+
+    PyDict_WatchCallback watchers[DICT_MAX_WATCHERS];
+};
+
+#define _dict_state_INIT \
+    { \
+        .next_keys_version = 2, \
+    }
+
 struct _Py_slice_state {
 #ifdef WITH_FREELISTS
     /* Using a cache is very effective since typically only a single slice is
@@ -97,6 +124,7 @@ typedef struct _Py_freelist_state {
     struct _Py_float_state float_state;
     struct _Py_tuple_state tuple_state;
     struct _Py_list_state list_state;
+    struct _Py_dict_state dict_state;
     struct _Py_slice_state slice_state;
     struct _Py_context_state context_state;
     struct _Py_async_gen_state async_gen_state;

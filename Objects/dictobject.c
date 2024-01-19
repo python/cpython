@@ -118,6 +118,7 @@ As a consequence of this, split keys have a maximum size of 16.
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_code.h"          // stats
 #include "pycore_dict.h"          // export _PyDict_SizeOf()
+#include "pycore_freelist.h"      // _PyFreeListState_GET()
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
 #include "pycore_object.h"        // _PyObject_GC_TRACK(), _PyDebugAllocatorStats()
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
@@ -242,41 +243,40 @@ static PyObject* dict_iter(PyObject *dict);
 #include "clinic/dictobject.c.h"
 
 
-#if PyDict_MAXFREELIST > 0
+#ifdef WITH_FREELISTS
 static struct _Py_dict_state *
-get_dict_state(PyInterpreterState *interp)
+get_dict_state(void)
 {
-    return &interp->dict_state;
+    _PyFreeListState *state = _PyFreeListState_GET();
+    return &state->dict_state;
 }
 #endif
 
 
 void
-_PyDict_ClearFreeList(PyInterpreterState *interp)
+_PyDict_ClearFreeList(_PyFreeListState *freelist_state, int is_finalization)
 {
-#if PyDict_MAXFREELIST > 0
-    struct _Py_dict_state *state = &interp->dict_state;
-    while (state->numfree) {
+#ifdef WITH_FREELISTS
+    struct _Py_dict_state *state = &freelist_state->dict_state;
+    while (state->numfree > 0) {
         PyDictObject *op = state->free_list[--state->numfree];
         assert(PyDict_CheckExact(op));
         PyObject_GC_Del(op);
     }
-    while (state->keys_numfree) {
+    while (state->keys_numfree > 0) {
         PyObject_Free(state->keys_free_list[--state->keys_numfree]);
+    }
+    if (is_finalization) {
+        state->numfree = -1;
+        state->keys_numfree = -1;
     }
 #endif
 }
 
-
 void
-_PyDict_Fini(PyInterpreterState *interp)
+_PyDict_Fini(_PyFreeListState *freelist_state)
 {
-    _PyDict_ClearFreeList(interp);
-#if defined(Py_DEBUG) && PyDict_MAXFREELIST > 0
-    struct _Py_dict_state *state = &interp->dict_state;
-    state->numfree = -1;
-    state->keys_numfree = -1;
-#endif
+    _PyDict_ClearFreeList(freelist_state, 1);
 }
 
 static inline Py_hash_t
@@ -290,9 +290,8 @@ unicode_get_hash(PyObject *o)
 void
 _PyDict_DebugMallocStats(FILE *out)
 {
-#if PyDict_MAXFREELIST > 0
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _Py_dict_state *state = get_dict_state(interp);
+#ifdef WITH_FREELISTS
+    struct _Py_dict_state *state = get_dict_state();
     _PyDebugAllocatorStats(out, "free PyDictObject",
                            state->numfree, sizeof(PyDictObject));
 #endif
@@ -627,12 +626,8 @@ new_keys_object(PyInterpreterState *interp, uint8_t log2_size, bool unicode)
         log2_bytes = log2_size + 2;
     }
 
-#if PyDict_MAXFREELIST > 0
-    struct _Py_dict_state *state = get_dict_state(interp);
-#ifdef Py_DEBUG
-    // new_keys_object() must not be called after _PyDict_Fini()
-    assert(state->keys_numfree != -1);
-#endif
+#ifdef WITH_FREELISTS
+    struct _Py_dict_state *state = get_dict_state();
     if (log2_size == PyDict_LOG_MINSIZE && unicode && state->keys_numfree > 0) {
         dk = state->keys_free_list[--state->keys_numfree];
         OBJECT_STAT_INC(from_freelist);
@@ -683,14 +678,11 @@ free_keys_object(PyInterpreterState *interp, PyDictKeysObject *keys)
             Py_XDECREF(entries[i].me_value);
         }
     }
-#if PyDict_MAXFREELIST > 0
-    struct _Py_dict_state *state = get_dict_state(interp);
-#ifdef Py_DEBUG
-    // free_keys_object() must not be called after _PyDict_Fini()
-    assert(state->keys_numfree != -1);
-#endif
+#ifdef WITH_FREELISTS
+    struct _Py_dict_state *state = get_dict_state();
     if (DK_LOG_SIZE(keys) == PyDict_LOG_MINSIZE
             && state->keys_numfree < PyDict_MAXFREELIST
+            && state->keys_numfree >= 0
             && DK_IS_UNICODE(keys)) {
         state->keys_free_list[state->keys_numfree++] = keys;
         OBJECT_STAT_INC(to_freelist);
@@ -731,13 +723,9 @@ new_dict(PyInterpreterState *interp,
 {
     PyDictObject *mp;
     assert(keys != NULL);
-#if PyDict_MAXFREELIST > 0
-    struct _Py_dict_state *state = get_dict_state(interp);
-#ifdef Py_DEBUG
-    // new_dict() must not be called after _PyDict_Fini()
-    assert(state->numfree != -1);
-#endif
-    if (state->numfree) {
+#ifdef WITH_FREELISTS
+    struct _Py_dict_state *state = get_dict_state();
+    if (state->numfree > 0) {
         mp = state->free_list[--state->numfree];
         assert (mp != NULL);
         assert (Py_IS_TYPE(mp, &PyDict_Type));
@@ -1552,15 +1540,12 @@ dictresize(PyInterpreterState *interp, PyDictObject *mp,
 #endif
             assert(oldkeys->dk_kind != DICT_KEYS_SPLIT);
             assert(oldkeys->dk_refcnt == 1);
-#if PyDict_MAXFREELIST > 0
-            struct _Py_dict_state *state = get_dict_state(interp);
-#ifdef Py_DEBUG
-            // dictresize() must not be called after _PyDict_Fini()
-            assert(state->keys_numfree != -1);
-#endif
+#ifdef WITH_FREELISTS
+            struct _Py_dict_state *state = get_dict_state();
             if (DK_LOG_SIZE(oldkeys) == PyDict_LOG_MINSIZE &&
                     DK_IS_UNICODE(oldkeys) &&
-                    state->keys_numfree < PyDict_MAXFREELIST)
+                    state->keys_numfree < PyDict_MAXFREELIST &&
+                    state->keys_numfree >= 0)
             {
                 state->keys_free_list[state->keys_numfree++] = oldkeys;
                 OBJECT_STAT_INC(to_freelist);
@@ -2480,13 +2465,9 @@ dict_dealloc(PyObject *self)
         assert(keys->dk_refcnt == 1 || keys == Py_EMPTY_KEYS);
         dictkeys_decref(interp, keys);
     }
-#if PyDict_MAXFREELIST > 0
-    struct _Py_dict_state *state = get_dict_state(interp);
-#ifdef Py_DEBUG
-    // new_dict() must not be called after _PyDict_Fini()
-    assert(state->numfree != -1);
-#endif
-    if (state->numfree < PyDict_MAXFREELIST && Py_IS_TYPE(mp, &PyDict_Type)) {
+#ifdef WITH_FREELISTS
+    struct _Py_dict_state *state = get_dict_state();
+    if (state->numfree < PyDict_MAXFREELIST && state->numfree >=0 && Py_IS_TYPE(mp, &PyDict_Type)) {
         state->free_list[state->numfree++] = mp;
         OBJECT_STAT_INC(to_freelist);
     }
