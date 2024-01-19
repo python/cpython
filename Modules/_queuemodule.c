@@ -127,7 +127,7 @@ resize_ringbuf(RingBuf *buf, Py_ssize_t capacity)
     return 0;
 }
 
-// Returns an owned reference
+// Returns a strong reference from the head of the buffer.
 static PyObject *
 RingBuf_Get(RingBuf *buf)
 {
