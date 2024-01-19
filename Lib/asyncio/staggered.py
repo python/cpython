@@ -3,7 +3,8 @@
 __all__ = 'staggered_race',
 
 import contextlib
-import typing
+from collections.abc import Awaitable, Callable, Iterable
+from typing import Any
 
 from . import events
 from . import exceptions as exceptions_mod
@@ -12,14 +13,14 @@ from . import tasks
 
 
 async def staggered_race(
-        coro_fns: typing.Iterable[typing.Callable[[], typing.Awaitable]],
-        delay: typing.Optional[float],
+        coro_fns: Iterable[Callable[[], Awaitable[Any]]],
+        delay: float | None,
         *,
-        loop: events.AbstractEventLoop = None,
-) -> typing.Tuple[
-    typing.Any,
-    typing.Optional[int],
-    typing.List[typing.Optional[Exception]]
+        loop: events.AbstractEventLoop | None = None,
+) -> tuple[
+    Any,
+    int | None,
+    list[Exception | None]
 ]:
     """Run coroutines with staggered start times and take the first to finish.
 
