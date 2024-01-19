@@ -163,6 +163,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 break;
             }
             case _POP_FRAME:
+            {
                 globals_checked >>= 1;
                 globals_watched >>= 1;
                 builtins_checked >>= 1;
@@ -172,6 +173,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 globals = func->func_globals;
                 builtins = func->func_builtins;
                 break;
+            }
         }
     }
     return 0;
