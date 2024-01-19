@@ -538,14 +538,14 @@ else:
         Return the string at addr."""
         return _wstring_at(ptr, size)
 
-from _ctypes import _buffer_at_addr
+from _ctypes import _memoryview_at_addr
 
-_buffer_at = PYFUNCTYPE(py_object, c_void_p, c_ssize_t, c_int)(_buffer_at_addr)
-def buffer_at(ptr, size, allow_write=False):
-    """buffer_at(addr, size[, allow_write]) -> memoryview
+_memoryview_at = PYFUNCTYPE(py_object, c_void_p, c_ssize_t, c_int)(_memoryview_at_addr)
+def memoryview_at(ptr, size, allow_write=False):
+    """memoryview_at(addr, size[, allow_write]) -> memoryview
 
-    Return the buffer at addr."""
-    return _buffer_at(ptr, size, bool(allow_write))
+    Return a memoryview representing the memory at addr."""
+    return _memoryview_at(ptr, size, bool(allow_write))
 
 if _os.name == "nt": # COM stuff
     def DllGetClassObject(rclsid, riid, ppv):

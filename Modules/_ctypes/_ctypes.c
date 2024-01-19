@@ -5643,9 +5643,9 @@ wstring_at(const wchar_t *ptr, int size)
 }
 
 static PyObject *
-buffer_at(char *ptr, Py_ssize_t size, int allow_write)
+memoryview_at(char *ptr, Py_ssize_t size, int allow_write)
 {
-    if (PySys_Audit("ctypes.buffer_at", "nni", (Py_ssize_t)ptr, size,
+    if (PySys_Audit("ctypes.memoryview_at", "nni", (Py_ssize_t)ptr, size,
                     allow_write) < 0) {
         return NULL;
     }
@@ -5788,7 +5788,7 @@ _ctypes_add_objects(PyObject *mod)
     MOD_ADD("_string_at_addr", PyLong_FromVoidPtr(string_at));
     MOD_ADD("_cast_addr", PyLong_FromVoidPtr(cast));
     MOD_ADD("_wstring_at_addr", PyLong_FromVoidPtr(wstring_at));
-    MOD_ADD("_buffer_at_addr", PyLong_FromVoidPtr(buffer_at));
+    MOD_ADD("_memoryview_at_addr", PyLong_FromVoidPtr(memoryview_at));
 
 /* If RTLD_LOCAL is not defined (Windows!), set it to zero. */
 #if !HAVE_DECL_RTLD_LOCAL
