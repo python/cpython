@@ -2467,7 +2467,9 @@ dict_dealloc(PyObject *self)
     }
 #ifdef WITH_FREELISTS
     struct _Py_dict_state *state = get_dict_state();
-    if (state->numfree < PyDict_MAXFREELIST && state->numfree >=0 && Py_IS_TYPE(mp, &PyDict_Type)) {
+    if (state->numfree < PyDict_MAXFREELIST && state->numfree >=0 && 
+        Py_IS_TYPE(mp, &PyDict_Type))
+    {
         state->free_list[state->numfree++] = mp;
         OBJECT_STAT_INC(to_freelist);
     }
