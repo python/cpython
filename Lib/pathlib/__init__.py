@@ -471,7 +471,8 @@ class PurePath(_abc.PurePathBase):
     def _pattern_parts(self):
         """List of path components, to be used with patterns in glob()."""
         parts = self._tail.copy()
-        if self._raw_path.endswith('**'):
+        pattern = self._raw_path
+        if pattern.endswith('**'):
             # GH-70303: '**' only matches directories. Add trailing slash.
             warnings.warn(
                 "Pattern ending '**' will match files and directories in a "
@@ -479,7 +480,7 @@ class PurePath(_abc.PurePathBase):
                 "directories and remove this warning.",
                 FutureWarning, 4)
             parts.append('')
-        elif self._raw_path[-1] in (self.pathmod.sep, self.pathmod.altsep):
+        elif pattern[-1] in (self.pathmod.sep, self.pathmod.altsep):
             # GH-65238: pathlib doesn't preserve trailing slash. Add it back.
             parts.append('')
         return parts
