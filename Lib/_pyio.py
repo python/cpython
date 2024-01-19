@@ -2516,7 +2516,7 @@ class TextIOWrapper(TextIOBase):
                 raise BlockingIOError(
                     "BufferedReader.read() return None, stream opened in non-blocking mode and not data is available")
             result = (self._get_decoded_chars() +
-                      decoder.decode(self.buffer.read(), final=True))
+                      decoder.decode(input_chunk, final=True))
             if self._snapshot is not None:
                 self._set_decoded_chars('')
                 self._snapshot = None
