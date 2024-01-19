@@ -179,7 +179,7 @@ RingBuf_Len(RingBuf *buf)
 static bool
 RingBuf_IsEmpty(RingBuf *buf)
 {
-    return RingBuf_Len(buf) == 0;
+    return buf->num_items == 0;
 }
 
 typedef struct {
