@@ -78,7 +78,7 @@ RingBuf_Fini(RingBuf *buf)
     buf->num_items = 0;
     buf->items_cap = 0;
     for (Py_ssize_t n = num_items; n > 0; idx = (idx + 1) % cap, n--) {
-        Py_CLEAR(items[idx]);
+        Py_DECREF(items[idx]);
     }
     PyMem_Free(items);
 }
