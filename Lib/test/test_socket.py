@@ -50,6 +50,13 @@ except ImportError:
 HOST = test_support.HOST
 MSG = 'Michael Gilfix was here\n'
 
+def _is_fd_in_blocking_mode(sock):
+    return not bool(
+        fcntl.fcntl(sock, fcntl.F_GETFL, os.O_NONBLOCK) & os.O_NONBLOCK)
+
+
+HAVE_SOCKET_CAN = _have_socket_can()
+
 class SocketTCPTest(unittest.TestCase):
 
     def setUp(self):
@@ -957,8 +964,44 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         # Testing whether set blocking works
         self.serv.setblocking(True)
         self.assertIsNone(self.serv.gettimeout())
+        self.assertTrue(self.serv.getblocking())
+        if fcntl:
+            self.assertTrue(_is_fd_in_blocking_mode(self.serv))
+
         self.serv.setblocking(False)
         self.assertEqual(self.serv.gettimeout(), 0.0)
+        self.assertFalse(self.serv.getblocking())
+        if fcntl:
+            self.assertFalse(_is_fd_in_blocking_mode(self.serv))
+
+        self.serv.settimeout(None)
+        self.assertTrue(self.serv.getblocking())
+        if fcntl:
+            self.assertTrue(_is_fd_in_blocking_mode(self.serv))
+
+        self.serv.settimeout(0)
+        self.assertFalse(self.serv.getblocking())
+        self.assertEqual(self.serv.gettimeout(), 0)
+        if fcntl:
+            self.assertFalse(_is_fd_in_blocking_mode(self.serv))
+
+        self.serv.settimeout(10)
+        self.assertTrue(self.serv.getblocking())
+        self.assertEqual(self.serv.gettimeout(), 10)
+        if fcntl:
+            # When a Python socket has a non-zero timeout, it's
+            # switched internally to a non-blocking mode.
+            # Later, sock.sendall(), sock.recv(), and other socket
+            # operations use a `select()` call and handle EWOULDBLOCK/EGAIN
+            # on all socket operations.  That's how timeouts are
+            # enforced.
+            self.assertFalse(_is_fd_in_blocking_mode(self.serv))
+
+        self.serv.settimeout(0)
+        self.assertFalse(self.serv.getblocking())
+        if fcntl:
+            self.assertFalse(_is_fd_in_blocking_mode(self.serv))
+
         start = time.time()
         try:
             self.serv.accept()
@@ -982,6 +1025,47 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         self.assertIsNone(self.serv.gettimeout())
 
     _testSetBlocking_overflow = test_support.cpython_only(_testSetBlocking)
+
+    @unittest.skipUnless(hasattr(socket, 'SOCK_NONBLOCK'),
+                         'test needs socket.SOCK_NONBLOCK')
+    @support.requires_linux_version(2, 6, 28)
+    def testInitNonBlocking(self):
+        # reinit server socket
+        self.serv.close()
+        self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM |
+                                                  socket.SOCK_NONBLOCK)
+        self.assertFalse(self.serv.getblocking())
+        self.assertEqual(self.serv.gettimeout(), 0)
+        self.port = support.bind_port(self.serv)
+        self.serv.listen()
+        # actual testing
+        start = time.time()
+        try:
+            self.serv.accept()
+        except OSError:
+            pass
+        end = time.time()
+        self.assertTrue((end - start) < 1.0, "Error creating with non-blocking mode.")
+
+    def _testInitNonBlocking(self):
+        pass
+
+    def testInheritFlags(self):
+        # Issue #7995: when calling accept() on a listening socket with a
+        # timeout, the resulting socket should not be non-blocking.
+        self.serv.settimeout(10)
+        try:
+            conn, addr = self.serv.accept()
+            message = conn.recv(len(MSG))
+        finally:
+            conn.close()
+            self.serv.settimeout(None)
+
+    def _testInheritFlags(self):
+        time.sleep(0.1)
+        self.cli.connect((HOST, self.port))
+        time.sleep(0.5)
+        self.cli.send(MSG)
 
     def testAccept(self):
         # Testing non-blocking accept
@@ -1803,6 +1887,728 @@ class TIPCThreadableTest(unittest.TestCase, ThreadableTest):
     def _testStream(self):
         self.cli.send(MSG)
         self.cli.close()
+
+
+class ContextManagersTest(ThreadedTCPSocketTest):
+
+    def _testSocketClass(self):
+        # base test
+        with socket.socket() as sock:
+            self.assertFalse(sock._closed)
+        self.assertTrue(sock._closed)
+        # close inside with block
+        with socket.socket() as sock:
+            sock.close()
+        self.assertTrue(sock._closed)
+        # exception inside with block
+        with socket.socket() as sock:
+            self.assertRaises(OSError, sock.sendall, b'foo')
+        self.assertTrue(sock._closed)
+
+    def testCreateConnectionBase(self):
+        conn, addr = self.serv.accept()
+        self.addCleanup(conn.close)
+        data = conn.recv(1024)
+        conn.sendall(data)
+
+    def _testCreateConnectionBase(self):
+        address = self.serv.getsockname()
+        with socket.create_connection(address) as sock:
+            self.assertFalse(sock._closed)
+            sock.sendall(b'foo')
+            self.assertEqual(sock.recv(1024), b'foo')
+        self.assertTrue(sock._closed)
+
+    def testCreateConnectionClose(self):
+        conn, addr = self.serv.accept()
+        self.addCleanup(conn.close)
+        data = conn.recv(1024)
+        conn.sendall(data)
+
+    def _testCreateConnectionClose(self):
+        address = self.serv.getsockname()
+        with socket.create_connection(address) as sock:
+            sock.close()
+        self.assertTrue(sock._closed)
+        self.assertRaises(OSError, sock.sendall, b'foo')
+
+
+class InheritanceTest(unittest.TestCase):
+    @unittest.skipUnless(hasattr(socket, "SOCK_CLOEXEC"),
+                         "SOCK_CLOEXEC not defined")
+    @support.requires_linux_version(2, 6, 28)
+    def test_SOCK_CLOEXEC(self):
+        with socket.socket(socket.AF_INET,
+                           socket.SOCK_STREAM | socket.SOCK_CLOEXEC) as s:
+            self.assertEqual(s.type, socket.SOCK_STREAM)
+            self.assertFalse(s.get_inheritable())
+
+    def test_default_inheritable(self):
+        sock = socket.socket()
+        with sock:
+            self.assertEqual(sock.get_inheritable(), False)
+
+    def test_dup(self):
+        sock = socket.socket()
+        with sock:
+            newsock = sock.dup()
+            sock.close()
+            with newsock:
+                self.assertEqual(newsock.get_inheritable(), False)
+
+    def test_set_inheritable(self):
+        sock = socket.socket()
+        with sock:
+            sock.set_inheritable(True)
+            self.assertEqual(sock.get_inheritable(), True)
+
+            sock.set_inheritable(False)
+            self.assertEqual(sock.get_inheritable(), False)
+
+    @unittest.skipIf(fcntl is None, "need fcntl")
+    def test_get_inheritable_cloexec(self):
+        sock = socket.socket()
+        with sock:
+            fd = sock.fileno()
+            self.assertEqual(sock.get_inheritable(), False)
+
+            # clear FD_CLOEXEC flag
+            flags = fcntl.fcntl(fd, fcntl.F_GETFD)
+            flags &= ~fcntl.FD_CLOEXEC
+            fcntl.fcntl(fd, fcntl.F_SETFD, flags)
+
+            self.assertEqual(sock.get_inheritable(), True)
+
+    @unittest.skipIf(fcntl is None, "need fcntl")
+    def test_set_inheritable_cloexec(self):
+        sock = socket.socket()
+        with sock:
+            fd = sock.fileno()
+            self.assertEqual(fcntl.fcntl(fd, fcntl.F_GETFD) & fcntl.FD_CLOEXEC,
+                             fcntl.FD_CLOEXEC)
+
+            sock.set_inheritable(True)
+            self.assertEqual(fcntl.fcntl(fd, fcntl.F_GETFD) & fcntl.FD_CLOEXEC,
+                             0)
+
+
+    def test_socketpair(self):
+        s1, s2 = socket.socketpair()
+        self.addCleanup(s1.close)
+        self.addCleanup(s2.close)
+        self.assertEqual(s1.get_inheritable(), False)
+        self.assertEqual(s2.get_inheritable(), False)
+
+
+@unittest.skipUnless(hasattr(socket, "SOCK_NONBLOCK"),
+                     "SOCK_NONBLOCK not defined")
+class NonblockConstantTest(unittest.TestCase):
+    def checkNonblock(self, s, nonblock=True, timeout=0.0):
+        if nonblock:
+            self.assertEqual(s.type, socket.SOCK_STREAM)
+            self.assertEqual(s.gettimeout(), timeout)
+            self.assertTrue(
+                fcntl.fcntl(s, fcntl.F_GETFL, os.O_NONBLOCK) & os.O_NONBLOCK)
+            if timeout == 0:
+                # timeout == 0: means that getblocking() must be False.
+                self.assertFalse(s.getblocking())
+            else:
+                # If timeout > 0, the socket will be in a "blocking" mode
+                # from the standpoint of the Python API.  For Python socket
+                # object, "blocking" means that operations like 'sock.recv()'
+                # will block.  Internally, file descriptors for
+                # "blocking" Python sockets *with timeouts* are in a
+                # *non-blocking* mode, and 'sock.recv()' uses 'select()'
+                # and handles EWOULDBLOCK/EAGAIN to enforce the timeout.
+                self.assertTrue(s.getblocking())
+        else:
+            self.assertEqual(s.type, socket.SOCK_STREAM)
+            self.assertEqual(s.gettimeout(), None)
+            self.assertFalse(
+                fcntl.fcntl(s, fcntl.F_GETFL, os.O_NONBLOCK) & os.O_NONBLOCK)
+            self.assertTrue(s.getblocking())
+
+    @support.requires_linux_version(2, 6, 28)
+    def test_SOCK_NONBLOCK(self):
+        # a lot of it seems silly and redundant, but I wanted to test that
+        # changing back and forth worked ok
+        with socket.socket(socket.AF_INET,
+                           socket.SOCK_STREAM | socket.SOCK_NONBLOCK) as s:
+            self.checkNonblock(s)
+            s.setblocking(1)
+            self.checkNonblock(s, nonblock=False)
+            s.setblocking(0)
+            self.checkNonblock(s)
+            s.settimeout(None)
+            self.checkNonblock(s, nonblock=False)
+            s.settimeout(2.0)
+            self.checkNonblock(s, timeout=2.0)
+            s.setblocking(1)
+            self.checkNonblock(s, nonblock=False)
+        # defaulttimeout
+        t = socket.getdefaulttimeout()
+        socket.setdefaulttimeout(0.0)
+        with socket.socket() as s:
+            self.checkNonblock(s)
+        socket.setdefaulttimeout(None)
+        with socket.socket() as s:
+            self.checkNonblock(s, False)
+        socket.setdefaulttimeout(2.0)
+        with socket.socket() as s:
+            self.checkNonblock(s, timeout=2.0)
+        socket.setdefaulttimeout(None)
+        with socket.socket() as s:
+            self.checkNonblock(s, False)
+        socket.setdefaulttimeout(t)
+
+
+@unittest.skipUnless(os.name == "nt", "Windows specific")
+@unittest.skipUnless(multiprocessing, "need multiprocessing")
+class TestSocketSharing(SocketTCPTest):
+    # This must be classmethod and not staticmethod or multiprocessing
+    # won't be able to bootstrap it.
+    @classmethod
+    def remoteProcessServer(cls, q):
+        # Recreate socket from shared data
+        sdata = q.get()
+        message = q.get()
+
+        s = socket.fromshare(sdata)
+        s2, c = s.accept()
+
+        # Send the message
+        s2.sendall(message)
+        s2.close()
+        s.close()
+
+    def testShare(self):
+        # Transfer the listening server socket to another process
+        # and service it from there.
+
+        # Create process:
+        q = multiprocessing.Queue()
+        p = multiprocessing.Process(target=self.remoteProcessServer, args=(q,))
+        p.start()
+
+        # Get the shared socket data
+        data = self.serv.share(p.pid)
+
+        # Pass the shared socket to the other process
+        addr = self.serv.getsockname()
+        self.serv.close()
+        q.put(data)
+
+        # The data that the server will send us
+        message = b"slapmahfro"
+        q.put(message)
+
+        # Connect
+        s = socket.create_connection(addr)
+        #  listen for the data
+        m = []
+        while True:
+            data = s.recv(100)
+            if not data:
+                break
+            m.append(data)
+        s.close()
+        received = b"".join(m)
+        self.assertEqual(received, message)
+        p.join()
+
+    def testShareLength(self):
+        data = self.serv.share(os.getpid())
+        self.assertRaises(ValueError, socket.fromshare, data[:-1])
+        self.assertRaises(ValueError, socket.fromshare, data+b"foo")
+
+    def compareSockets(self, org, other):
+        # socket sharing is expected to work only for blocking socket
+        # since the internal python timeout value isn't transferred.
+        self.assertEqual(org.gettimeout(), None)
+        self.assertEqual(org.gettimeout(), other.gettimeout())
+
+        self.assertEqual(org.family, other.family)
+        self.assertEqual(org.type, other.type)
+        # If the user specified "0" for proto, then
+        # internally windows will have picked the correct value.
+        # Python introspection on the socket however will still return
+        # 0.  For the shared socket, the python value is recreated
+        # from the actual value, so it may not compare correctly.
+        if org.proto != 0:
+            self.assertEqual(org.proto, other.proto)
+
+    def testShareLocal(self):
+        data = self.serv.share(os.getpid())
+        s = socket.fromshare(data)
+        try:
+            self.compareSockets(self.serv, s)
+        finally:
+            s.close()
+
+    def testTypes(self):
+        families = [socket.AF_INET, socket.AF_INET6]
+        types = [socket.SOCK_STREAM, socket.SOCK_DGRAM]
+        for f in families:
+            for t in types:
+                try:
+                    source = socket.socket(f, t)
+                except OSError:
+                    continue # This combination is not supported
+                try:
+                    data = source.share(os.getpid())
+                    shared = socket.fromshare(data)
+                    try:
+                        self.compareSockets(source, shared)
+                    finally:
+                        shared.close()
+                finally:
+                    source.close()
+
+
+class SendfileUsingSendTest(ThreadedTCPSocketTest):
+    """
+    Test the send() implementation of socket.sendfile().
+    """
+
+    FILESIZE = (10 * 1024 * 1024)  # 10 MiB
+    BUFSIZE = 8192
+    FILEDATA = b""
+    TIMEOUT = 2
+
+    @classmethod
+    def setUpClass(cls):
+        def chunks(total, step):
+            assert total >= step
+            while total > step:
+                yield step
+                total -= step
+            if total:
+                yield total
+
+        chunk = b"".join([random.choice(string.ascii_letters).encode()
+                          for i in range(cls.BUFSIZE)])
+        with open(support.TESTFN, 'wb') as f:
+            for csize in chunks(cls.FILESIZE, cls.BUFSIZE):
+                f.write(chunk)
+        with open(support.TESTFN, 'rb') as f:
+            cls.FILEDATA = f.read()
+            assert len(cls.FILEDATA) == cls.FILESIZE
+
+    @classmethod
+    def tearDownClass(cls):
+        support.unlink(support.TESTFN)
+
+    def accept_conn(self):
+        self.serv.settimeout(self.TIMEOUT)
+        conn, addr = self.serv.accept()
+        conn.settimeout(self.TIMEOUT)
+        self.addCleanup(conn.close)
+        return conn
+
+    def recv_data(self, conn):
+        received = []
+        while True:
+            chunk = conn.recv(self.BUFSIZE)
+            if not chunk:
+                break
+            received.append(chunk)
+        return b''.join(received)
+
+    def meth_from_sock(self, sock):
+        # Depending on the mixin class being run return either send()
+        # or sendfile() method implementation.
+        return getattr(sock, "_sendfile_use_send")
+
+    # regular file
+
+    def _testRegularFile(self):
+        address = self.serv.getsockname()
+        file = open(support.TESTFN, 'rb')
+        with socket.create_connection(address) as sock, file as file:
+            meth = self.meth_from_sock(sock)
+            sent = meth(file)
+            self.assertEqual(sent, self.FILESIZE)
+            self.assertEqual(file.tell(), self.FILESIZE)
+
+    def testRegularFile(self):
+        conn = self.accept_conn()
+        data = self.recv_data(conn)
+        self.assertEqual(len(data), self.FILESIZE)
+        self.assertEqual(data, self.FILEDATA)
+
+    # non regular file
+
+    def _testNonRegularFile(self):
+        address = self.serv.getsockname()
+        file = io.BytesIO(self.FILEDATA)
+        with socket.create_connection(address) as sock, file as file:
+            sent = sock.sendfile(file)
+            self.assertEqual(sent, self.FILESIZE)
+            self.assertEqual(file.tell(), self.FILESIZE)
+            self.assertRaises(socket._GiveupOnSendfile,
+                              sock._sendfile_use_sendfile, file)
+
+    def testNonRegularFile(self):
+        conn = self.accept_conn()
+        data = self.recv_data(conn)
+        self.assertEqual(len(data), self.FILESIZE)
+        self.assertEqual(data, self.FILEDATA)
+
+    # empty file
+
+    def _testEmptyFileSend(self):
+        address = self.serv.getsockname()
+        filename = support.TESTFN + "2"
+        with open(filename, 'wb'):
+            self.addCleanup(support.unlink, filename)
+        file = open(filename, 'rb')
+        with socket.create_connection(address) as sock, file as file:
+            meth = self.meth_from_sock(sock)
+            sent = meth(file)
+            self.assertEqual(sent, 0)
+            self.assertEqual(file.tell(), 0)
+
+    def testEmptyFileSend(self):
+        conn = self.accept_conn()
+        data = self.recv_data(conn)
+        self.assertEqual(data, b"")
+
+    # offset
+
+    def _testOffset(self):
+        address = self.serv.getsockname()
+        file = open(support.TESTFN, 'rb')
+        with socket.create_connection(address) as sock, file as file:
+            meth = self.meth_from_sock(sock)
+            sent = meth(file, offset=5000)
+            self.assertEqual(sent, self.FILESIZE - 5000)
+            self.assertEqual(file.tell(), self.FILESIZE)
+
+    def testOffset(self):
+        conn = self.accept_conn()
+        data = self.recv_data(conn)
+        self.assertEqual(len(data), self.FILESIZE - 5000)
+        self.assertEqual(data, self.FILEDATA[5000:])
+
+    # count
+
+    def _testCount(self):
+        address = self.serv.getsockname()
+        file = open(support.TESTFN, 'rb')
+        with socket.create_connection(address, timeout=2) as sock, file as file:
+            count = 5000007
+            meth = self.meth_from_sock(sock)
+            sent = meth(file, count=count)
+            self.assertEqual(sent, count)
+            self.assertEqual(file.tell(), count)
+
+    def testCount(self):
+        count = 5000007
+        conn = self.accept_conn()
+        data = self.recv_data(conn)
+        self.assertEqual(len(data), count)
+        self.assertEqual(data, self.FILEDATA[:count])
+
+    # count small
+
+    def _testCountSmall(self):
+        address = self.serv.getsockname()
+        file = open(support.TESTFN, 'rb')
+        with socket.create_connection(address, timeout=2) as sock, file as file:
+            count = 1
+            meth = self.meth_from_sock(sock)
+            sent = meth(file, count=count)
+            self.assertEqual(sent, count)
+            self.assertEqual(file.tell(), count)
+
+    def testCountSmall(self):
+        count = 1
+        conn = self.accept_conn()
+        data = self.recv_data(conn)
+        self.assertEqual(len(data), count)
+        self.assertEqual(data, self.FILEDATA[:count])
+
+    # count + offset
+
+    def _testCountWithOffset(self):
+        address = self.serv.getsockname()
+        file = open(support.TESTFN, 'rb')
+        with socket.create_connection(address, timeout=2) as sock, file as file:
+            count = 100007
+            meth = self.meth_from_sock(sock)
+            sent = meth(file, offset=2007, count=count)
+            self.assertEqual(sent, count)
+            self.assertEqual(file.tell(), count + 2007)
+
+    def testCountWithOffset(self):
+        count = 100007
+        conn = self.accept_conn()
+        data = self.recv_data(conn)
+        self.assertEqual(len(data), count)
+        self.assertEqual(data, self.FILEDATA[2007:count+2007])
+
+    # non blocking sockets are not supposed to work
+
+    def _testNonBlocking(self):
+        address = self.serv.getsockname()
+        file = open(support.TESTFN, 'rb')
+        with socket.create_connection(address) as sock, file as file:
+            sock.setblocking(False)
+            meth = self.meth_from_sock(sock)
+            self.assertRaises(ValueError, meth, file)
+            self.assertRaises(ValueError, sock.sendfile, file)
+
+    def testNonBlocking(self):
+        conn = self.accept_conn()
+        if conn.recv(8192):
+            self.fail('was not supposed to receive any data')
+
+    # timeout (non-triggered)
+
+    def _testWithTimeout(self):
+        address = self.serv.getsockname()
+        file = open(support.TESTFN, 'rb')
+        with socket.create_connection(address, timeout=2) as sock, file as file:
+            meth = self.meth_from_sock(sock)
+            sent = meth(file)
+            self.assertEqual(sent, self.FILESIZE)
+
+    def testWithTimeout(self):
+        conn = self.accept_conn()
+        data = self.recv_data(conn)
+        self.assertEqual(len(data), self.FILESIZE)
+        self.assertEqual(data, self.FILEDATA)
+
+    # timeout (triggered)
+
+    def _testWithTimeoutTriggeredSend(self):
+        address = self.serv.getsockname()
+        file = open(support.TESTFN, 'rb')
+        with socket.create_connection(address, timeout=0.01) as sock, \
+                file as file:
+            meth = self.meth_from_sock(sock)
+            self.assertRaises(socket.timeout, meth, file)
+
+    def testWithTimeoutTriggeredSend(self):
+        conn = self.accept_conn()
+        conn.recv(88192)
+
+    # errors
+
+    def _test_errors(self):
+        pass
+
+    def test_errors(self):
+        with open(support.TESTFN, 'rb') as file:
+            with socket.socket(type=socket.SOCK_DGRAM) as s:
+                meth = self.meth_from_sock(s)
+                self.assertRaisesRegex(
+                    ValueError, "SOCK_STREAM", meth, file)
+        with open(support.TESTFN, 'rt') as file:
+            with socket.socket() as s:
+                meth = self.meth_from_sock(s)
+                self.assertRaisesRegex(
+                    ValueError, "binary mode", meth, file)
+        with open(support.TESTFN, 'rb') as file:
+            with socket.socket() as s:
+                meth = self.meth_from_sock(s)
+                self.assertRaisesRegex(TypeError, "positive integer",
+                                       meth, file, count='2')
+                self.assertRaisesRegex(TypeError, "positive integer",
+                                       meth, file, count=0.1)
+                self.assertRaisesRegex(ValueError, "positive integer",
+                                       meth, file, count=0)
+                self.assertRaisesRegex(ValueError, "positive integer",
+                                       meth, file, count=-1)
+
+
+@unittest.skipUnless(hasattr(os, "sendfile"),
+                     'os.sendfile() required for this test.')
+class SendfileUsingSendfileTest(SendfileUsingSendTest):
+    """
+    Test the sendfile() implementation of socket.sendfile().
+    """
+    def meth_from_sock(self, sock):
+        return getattr(sock, "_sendfile_use_sendfile")
+
+
+@unittest.skipUnless(HAVE_SOCKET_ALG, 'AF_ALG required')
+class LinuxKernelCryptoAPI(unittest.TestCase):
+    # tests for AF_ALG
+    def create_alg(self, typ, name):
+        sock = socket.socket(socket.AF_ALG, socket.SOCK_SEQPACKET, 0)
+        try:
+            sock.bind((typ, name))
+        except FileNotFoundError as e:
+            # type / algorithm is not available
+            sock.close()
+            raise unittest.SkipTest(str(e), typ, name)
+        else:
+            return sock
+
+    # bpo-31705: On kernel older than 4.5, sendto() failed with ENOKEY,
+    # at least on ppc64le architecture
+    @support.requires_linux_version(4, 5)
+    def test_sha256(self):
+        expected = bytes.fromhex("ba7816bf8f01cfea414140de5dae2223b00361a396"
+                                 "177a9cb410ff61f20015ad")
+        with self.create_alg('hash', 'sha256') as algo:
+            op, _ = algo.accept()
+            with op:
+                op.sendall(b"abc")
+                self.assertEqual(op.recv(512), expected)
+
+            op, _ = algo.accept()
+            with op:
+                op.send(b'a', socket.MSG_MORE)
+                op.send(b'b', socket.MSG_MORE)
+                op.send(b'c', socket.MSG_MORE)
+                op.send(b'')
+                self.assertEqual(op.recv(512), expected)
+
+    def test_hmac_sha1(self):
+        expected = bytes.fromhex("effcdf6ae5eb2fa2d27416d5f184df9c259a7c79")
+        with self.create_alg('hash', 'hmac(sha1)') as algo:
+            algo.setsockopt(socket.SOL_ALG, socket.ALG_SET_KEY, b"Jefe")
+            op, _ = algo.accept()
+            with op:
+                op.sendall(b"what do ya want for nothing?")
+                self.assertEqual(op.recv(512), expected)
+
+    # Although it should work with 3.19 and newer the test blocks on
+    # Ubuntu 15.10 with Kernel 4.2.0-19.
+    @support.requires_linux_version(4, 3)
+    def test_aes_cbc(self):
+        key = bytes.fromhex('06a9214036b8a15b512e03d534120006')
+        iv = bytes.fromhex('3dafba429d9eb430b422da802c9fac41')
+        msg = b"Single block msg"
+        ciphertext = bytes.fromhex('e353779c1079aeb82708942dbe77181a')
+        msglen = len(msg)
+        with self.create_alg('skcipher', 'cbc(aes)') as algo:
+            algo.setsockopt(socket.SOL_ALG, socket.ALG_SET_KEY, key)
+            op, _ = algo.accept()
+            with op:
+                op.sendmsg_afalg(op=socket.ALG_OP_ENCRYPT, iv=iv,
+                                 flags=socket.MSG_MORE)
+                op.sendall(msg)
+                self.assertEqual(op.recv(msglen), ciphertext)
+
+            op, _ = algo.accept()
+            with op:
+                op.sendmsg_afalg([ciphertext],
+                                 op=socket.ALG_OP_DECRYPT, iv=iv)
+                self.assertEqual(op.recv(msglen), msg)
+
+            # long message
+            multiplier = 1024
+            longmsg = [msg] * multiplier
+            op, _ = algo.accept()
+            with op:
+                op.sendmsg_afalg(longmsg,
+                                 op=socket.ALG_OP_ENCRYPT, iv=iv)
+                enc = op.recv(msglen * multiplier)
+            self.assertEqual(len(enc), msglen * multiplier)
+            self.assertTrue(enc[:msglen], ciphertext)
+
+            op, _ = algo.accept()
+            with op:
+                op.sendmsg_afalg([enc],
+                                 op=socket.ALG_OP_DECRYPT, iv=iv)
+                dec = op.recv(msglen * multiplier)
+            self.assertEqual(len(dec), msglen * multiplier)
+            self.assertEqual(dec, msg * multiplier)
+
+    @support.requires_linux_version(4, 9)  # see issue29324
+    def test_aead_aes_gcm(self):
+        key = bytes.fromhex('c939cc13397c1d37de6ae0e1cb7c423c')
+        iv = bytes.fromhex('b3d8cc017cbb89b39e0f67e2')
+        plain = bytes.fromhex('c3b3c41f113a31b73d9a5cd432103069')
+        assoc = bytes.fromhex('24825602bd12a984e0092d3e448eda5f')
+        expected_ct = bytes.fromhex('93fe7d9e9bfd10348a5606e5cafa7354')
+        expected_tag = bytes.fromhex('0032a1dc85f1c9786925a2e71d8272dd')
+
+        taglen = len(expected_tag)
+        assoclen = len(assoc)
+
+        with self.create_alg('aead', 'gcm(aes)') as algo:
+            algo.setsockopt(socket.SOL_ALG, socket.ALG_SET_KEY, key)
+            algo.setsockopt(socket.SOL_ALG, socket.ALG_SET_AEAD_AUTHSIZE,
+                            None, taglen)
+
+            # send assoc, plain and tag buffer in separate steps
+            op, _ = algo.accept()
+            with op:
+                op.sendmsg_afalg(op=socket.ALG_OP_ENCRYPT, iv=iv,
+                                 assoclen=assoclen, flags=socket.MSG_MORE)
+                op.sendall(assoc, socket.MSG_MORE)
+                op.sendall(plain)
+                res = op.recv(assoclen + len(plain) + taglen)
+                self.assertEqual(expected_ct, res[assoclen:-taglen])
+                self.assertEqual(expected_tag, res[-taglen:])
+
+            # now with msg
+            op, _ = algo.accept()
+            with op:
+                msg = assoc + plain
+                op.sendmsg_afalg([msg], op=socket.ALG_OP_ENCRYPT, iv=iv,
+                                 assoclen=assoclen)
+                res = op.recv(assoclen + len(plain) + taglen)
+                self.assertEqual(expected_ct, res[assoclen:-taglen])
+                self.assertEqual(expected_tag, res[-taglen:])
+
+            # create anc data manually
+            pack_uint32 = struct.Struct('I').pack
+            op, _ = algo.accept()
+            with op:
+                msg = assoc + plain
+                op.sendmsg(
+                    [msg],
+                    ([socket.SOL_ALG, socket.ALG_SET_OP, pack_uint32(socket.ALG_OP_ENCRYPT)],
+                     [socket.SOL_ALG, socket.ALG_SET_IV, pack_uint32(len(iv)) + iv],
+                     [socket.SOL_ALG, socket.ALG_SET_AEAD_ASSOCLEN, pack_uint32(assoclen)],
+                    )
+                )
+                res = op.recv(len(msg) + taglen)
+                self.assertEqual(expected_ct, res[assoclen:-taglen])
+                self.assertEqual(expected_tag, res[-taglen:])
+
+            # decrypt and verify
+            op, _ = algo.accept()
+            with op:
+                msg = assoc + expected_ct + expected_tag
+                op.sendmsg_afalg([msg], op=socket.ALG_OP_DECRYPT, iv=iv,
+                                 assoclen=assoclen)
+                res = op.recv(len(msg) - taglen)
+                self.assertEqual(plain, res[assoclen:])
+
+    @support.requires_linux_version(4, 3)  # see test_aes_cbc
+    def test_drbg_pr_sha256(self):
+        # deterministic random bit generator, prediction resistance, sha256
+        with self.create_alg('rng', 'drbg_pr_sha256') as algo:
+            extra_seed = os.urandom(32)
+            algo.setsockopt(socket.SOL_ALG, socket.ALG_SET_KEY, extra_seed)
+            op, _ = algo.accept()
+            with op:
+                rn = op.recv(32)
+                self.assertEqual(len(rn), 32)
+
+    def test_sendmsg_afalg_args(self):
+        sock = socket.socket(socket.AF_ALG, socket.SOCK_SEQPACKET, 0)
+        with sock:
+            with self.assertRaises(TypeError):
+                sock.sendmsg_afalg()
+
+            with self.assertRaises(TypeError):
+                sock.sendmsg_afalg(op=None)
+
+            with self.assertRaises(TypeError):
+                sock.sendmsg_afalg(1)
+
+            with self.assertRaises(TypeError):
+                sock.sendmsg_afalg(op=socket.ALG_OP_ENCRYPT, assoclen=None)
+
+            with self.assertRaises(TypeError):
+                sock.sendmsg_afalg(op=socket.ALG_OP_ENCRYPT, assoclen=-1)
 
 
 def test_main():

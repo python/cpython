@@ -636,6 +636,23 @@ correspond to Unix system calls applicable to sockets.
    to decode C structures encoded as strings).
 
 
+.. method:: socket.getblocking()
+
+   Return ``True`` if socket is in blocking mode, ``False`` if in
+   non-blocking.
+
+   This is equivalent to checking ``socket.gettimeout() == 0``.
+
+   .. versionadded:: 3.7
+
+
+.. method:: socket.gettimeout()
+
+   Return the timeout in seconds (float) associated with socket operations,
+   or ``None`` if no timeout is set.  This reflects the last call to
+   :meth:`setblocking` or :meth:`settimeout`.
+
+
 .. method:: socket.ioctl(control, option)
 
    :platform: Windows
