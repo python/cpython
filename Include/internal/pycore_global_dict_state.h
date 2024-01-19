@@ -1,5 +1,5 @@
-#ifndef Py_INTERNAL_DICT_GLOBAL_STATE_H
-#define Py_INTERNAL_DICT_GLOBAL_STATE_H
+#ifndef Py_INTERNAL_GLOBAL_DICT_STATE_H
+#define Py_INTERNAL_GLOBAL_DICT_STATE_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -28,4 +28,4 @@ struct _Py_global_dict_state {
 #ifdef __cplusplus
 }
 #endif
-#endif   /* !Py_INTERNAL_DICT_GLOBAL_STATE_H */
+#endif   /* !Py_INTERNAL_GLOBAL_DICT_STATE_H */
