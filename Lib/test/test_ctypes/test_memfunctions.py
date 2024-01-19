@@ -5,6 +5,7 @@ from ctypes import (POINTER, sizeof, cast,
                     create_string_buffer, string_at,
                     create_unicode_buffer, wstring_at,
                     memmove, memset,
+                    memoryview_at, c_void_p,
                     c_char_p, c_byte, c_ubyte, c_wchar)
 
 
@@ -77,6 +78,25 @@ class MemFunctionsTest(unittest.TestCase):
         self.assertEqual(wstring_at(a, 16), "Hello, World\0\0\0\0")
         self.assertEqual(wstring_at(a, 0), "")
 
+    def test_memoryview_at(self):
+        b = (c_byte * 10)()
+
+        foreign_ptr = cast(b, c_void_p)
+        foreign_ptr_size = len(b)
+
+        # memoryview_at() is normally used with pointers given to us
+        # by C APIs. It's an efficient way to get a buffer
+        # representing a dynamically-sized memory region without having
+        # to create an array type first.
+        v = memoryview_at(foreign_ptr, foreign_ptr_size)
+
+        # test that writes to source buffer get reflected in memoryview
+        b[:] = b"0123456789"
+        self.assertEqual(bytes(v), b"0123456789")
+
+        # test that writes to memoryview get reflected in source buffer
+        v[:] = b"9876543210"
+        self.assertEqual(bytes(b), b"9876543210")
 
 if __name__ == "__main__":
     unittest.main()
