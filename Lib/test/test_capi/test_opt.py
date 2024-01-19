@@ -576,13 +576,15 @@ class TestUopsOptimization(unittest.TestCase):
         opt = _testinternalcapi.get_uop_optimizer()
         res = None
         with temporary_optimizer(opt):
-            res = testfunc(64)
+            res = testfunc(32)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        self.assertEqual(res, 127)
+        self.assertEqual(res, 63)
         binop_count = [opname for opname, _, _ in ex if opname == "_BINARY_OP_ADD_INT"]
+        guard_both_int_count = [opname for opname, _, _ in ex if opname == "_GUARD_BOTH_INT"]
         self.assertEqual(len(binop_count), 3)
+        self.assertEqual(len(guard_both_int_count), 1)
 
     def test_int_impure_region(self):
         def testfunc(loops):

@@ -24,7 +24,7 @@
 #define OVERALLOCATE_FACTOR 2
 
 #ifdef Py_DEBUG
-    static const char *DEBUG_ENV = "PY_OPT_DEBUG";
+    static const char *DEBUG_ENV = "PYTHON_OPT_DEBUG";
     #define DPRINTF(level, ...) \
     if (lltrace >= (level)) { printf(__VA_ARGS__); }
 #else
@@ -98,16 +98,6 @@ typedef struct _Py_UOpsSymbolicExpression {
 
     struct _Py_UOpsSymbolicExpression *operands[1];
 } _Py_UOpsSymbolicExpression;
-
-
-static void
-sym_dealloc(PyObject *o)
-{
-    _Py_UOpsSymbolicExpression *self = (_Py_UOpsSymbolicExpression *)o;
-    // Note: we are not decerfing the symbolic expressions because we only hold
-    // a borrowed ref to them. The symexprs are kept alive by the global table.
-    Py_CLEAR(self->const_val);
-}
 
 typedef enum _Py_UOps_IRStore_IdKind {
     TARGET_NONE = -2,
@@ -185,6 +175,7 @@ ir_store(_Py_UOps_Opt_IR *ir, _Py_UOpsSymbolicExpression *expr, _Py_UOps_IRStore
     entry->expr = expr;
     ir->curr_write++;
     if (ir->curr_write >= Py_SIZE(ir)) {
+        DPRINTF(1, "ir_store: ran out of space \n");
         return -1;
     }
     return 0;
@@ -209,6 +200,7 @@ ir_plain_inst(_Py_UOps_Opt_IR *ir, _PyUOpInstruction inst)
     entry->inst = inst;
     ir->curr_write++;
     if (ir->curr_write >= Py_SIZE(ir)) {
+        DPRINTF(1, "ir_plain_inst: ran out of space \n");
         return -1;
     }
     return 0;
@@ -231,6 +223,7 @@ ir_frame_push_info(_Py_UOps_Opt_IR *ir)
     entry->prev_frame_ir = NULL;
     ir->curr_write++;
     if (ir->curr_write >= Py_SIZE(ir)) {
+        DPRINTF(1, "ir_frame_push_info: ran out of space \n");
         return NULL;
     }
     return entry;
@@ -252,6 +245,7 @@ ir_frame_pop_info(_Py_UOps_Opt_IR *ir)
     entry->typ = IR_FRAME_POP_INFO;
     ir->curr_write++;
     if (ir->curr_write >= Py_SIZE(entry)) {
+        DPRINTF(1, "ir_frame_pop_info: ran out of space \n");
         return -1;
     }
     return 0;
@@ -338,6 +332,10 @@ abstractinterp_dealloc(PyObject *o)
     _Py_UOpsAbstractInterpContext *self = (_Py_UOpsAbstractInterpContext *)o;
     Py_XDECREF(self->frame);
     Py_XDECREF(self->ir);
+    Py_ssize_t syms = Py_SIZE(o);
+    for (Py_ssize_t i = 0; i < syms; i++) {
+        Py_CLEAR(self->localsplus[i]);
+    }
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
@@ -756,7 +754,12 @@ sym_copy_immutable_type_info(_Py_UOpsSymbolicExpression *from_sym, _Py_UOpsSymbo
 {
     uint32_t immutables = (1 << NULL_TYPE | 1 << PYLONG_TYPE | 1 << PYFLOAT_TYPE | 1 << PYUNICODE_TYPE | 1 << SELF_OR_NULL);
     to_sym->sym_type.types = (from_sym->sym_type.types & immutables);
-    Py_XSETREF(to_sym->const_val, Py_XNewRef(from_sym->const_val));
+    if (immutables) {
+        Py_XSETREF(to_sym->const_val, Py_XNewRef(from_sym->const_val));
+    }
+    else {
+        Py_CLEAR(to_sym->const_val);
+    }
 }
 
 static void
@@ -1728,6 +1731,7 @@ _Py_uop_analyze_and_optimize(
     memcpy(buffer, temp_writebuffer, buffer_size * sizeof(_PyUOpInstruction));
 
     PyMem_Free(temp_writebuffer);
+    Py_DECREF(ctx);
 
     remove_unneeded_uops(buffer, buffer_size);
 

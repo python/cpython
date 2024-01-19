@@ -225,7 +225,21 @@ static PyMethodDef executor_methods[] = {
 ///////////////////// Experimental UOp Optimizer /////////////////////
 
 static void
+clear_strong_refs_in_uops(_PyExecutorObject *self)
+{
+    Py_ssize_t uop_len = Py_SIZE(self);
+    _PyUOpInstruction *trace = &self->trace[0];
+    for (Py_ssize_t i = 0; i < uop_len; i++) {
+        if (trace[i].opcode == _LOAD_CONST_INLINE) {
+            PyObject *c = (PyObject*)trace[i].operand;
+            Py_CLEAR(c);
+        }
+    }
+}
+
+static void
 uop_dealloc(_PyExecutorObject *self) {
+    clear_strong_refs_in_uops(self);
     _Py_ExecutorClear(self);
     PyObject_Free(self);
 }
