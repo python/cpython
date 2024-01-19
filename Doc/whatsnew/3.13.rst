@@ -146,20 +146,20 @@ New Modules
 Improved Modules
 ================
 
-ast
----
-
-* :func:`ast.parse` now accepts an optional argument ``optimize``
-  which is passed on to the :func:`compile` built-in. This makes it
-  possible to obtain an optimized ``AST``.
-  (Contributed by Irit Katriel in :gh:`108113`).
-
 array
 -----
 
 * Add ``'w'`` type code (``Py_UCS4``) that can be used for Unicode strings.
   It can be used instead of ``'u'`` type code, which is deprecated.
   (Contributed by Inada Naoki in :gh:`80480`.)
+
+ast
+---
+
+* :func:`ast.parse` now accepts an optional argument ``optimize``
+  which is passed on to the :func:`compile` built-in. This makes it
+  possible to obtain an optimized ``AST``.
+  (Contributed by Irit Katriel in :gh:`108113`.)
 
 asyncio
 -------
@@ -180,6 +180,13 @@ copy
   any user classes which define the :meth:`!__replace__` method.
   (Contributed by Serhiy Storchaka in :gh:`108751`.)
 
+dbm
+---
+
+* Add :meth:`dbm.gnu.gdbm.clear` and :meth:`dbm.ndbm.ndbm.clear`  methods that remove all items
+  from the database.
+  (Contributed by Donghee Na in :gh:`107122`.)
+
 dis
 ---
 
@@ -188,13 +195,6 @@ dis
   The offsets can be added with the new ``-O`` command line option or
   the ``show_offsets`` parameter.
   (Contributed by Irit Katriel in :gh:`112137`.)
-
-dbm
----
-
-* Add :meth:`dbm.gnu.gdbm.clear` and :meth:`dbm.ndbm.ndbm.clear`  methods that remove all items
-  from the database.
-  (Contributed by Donghee Na in :gh:`107122`.)
 
 doctest
 -------
