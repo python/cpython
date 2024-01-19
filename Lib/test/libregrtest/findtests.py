@@ -19,7 +19,6 @@ from .utils import (
 SPLITTESTDIRS: set[TestName] = {
     "test_asyncio",
     "test_concurrent_futures",
-    "test_doctests",
     "test_future_stmt",
     "test_gdb",
     "test_inspect",
