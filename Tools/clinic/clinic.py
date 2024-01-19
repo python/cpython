@@ -116,11 +116,11 @@ def warn_or_fail(
     line_number: int | None = None,
 ) -> None:
     joined = " ".join([str(a) for a in args])
-    if clinic:
+    if global_clinic:
         if filename is None:
-            filename = clinic.filename
-        if getattr(clinic, 'block_parser', None) and (line_number is None):
-            line_number = clinic.block_parser.line_number
+            filename = global_clinic.filename
+        if getattr(global_clinic, 'block_parser', None) and (line_number is None):
+            line_number = global_clinic.block_parser.line_number
     error = ClinicError(joined, filename=filename, lineno=line_number)
     if fail:
         raise error
@@ -818,12 +818,6 @@ class CLanguage(Language):
             del parameters[0]
         converters = [p.converter for p in parameters]
 
-        # Copy includes from parameters to Clinic
-        for converter in converters:
-            include = converter.include
-            if include:
-                clinic.add_include(include.filename, include.reason,
-                                   condition=include.condition)
         if f.critical_section:
             clinic.add_include('pycore_critical_section.h', 'Py_BEGIN_CRITICAL_SECTION()')
         has_option_groups = parameters and (parameters[0].group or parameters[-1].group)
@@ -1454,6 +1448,14 @@ class CLanguage(Language):
         compiler_warning = self.compiler_deprecated_warning(f, parameters)
         if compiler_warning:
             parser_definition = compiler_warning + "\n\n" + parser_definition
+
+        # Copy converters includes at the end, since includes can be
+        # added late
+        for converter in converters:
+            include = converter.include
+            if include is not None:
+                clinic.add_include(include.filename, include.reason,
+                                   condition=include.condition)
 
         d = {
             "docstring_prototype" : docstring_prototype,
@@ -2221,7 +2223,7 @@ class Parser(Protocol):
     def parse(self, block: Block) -> None: ...
 
 
-clinic: Clinic | None = None
+global_clinic: Clinic | None = None
 class Clinic:
 
     presets_text = """
@@ -2346,8 +2348,8 @@ impl_definition block
             assert name in self.destination_buffers
             preset[name] = buffer
 
-        global clinic
-        clinic = self
+        global global_clinic
+        global_clinic = self
 
     def add_include(self, name: str, reason: str,
                     *, condition: str | None = None) -> None:
@@ -3263,8 +3265,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         else:
             if expected_literal:
                 expected = f'"{expected}"'
-            if clinic is not None:
-                clinic.add_include('pycore_modsupport.h', '_PyArg_BadArgument()')
+            self.add_include('pycore_modsupport.h', '_PyArg_BadArgument()')
             return f'_PyArg_BadArgument("{{{{name}}}}", "{displayname}", {expected}, {{argname}});'
 
     def format_code(self, fmt: str, *,
@@ -3336,9 +3337,12 @@ class CConverter(metaclass=CConverterAutoRegister):
 
     def add_include(self, name: str, reason: str,
                     *, condition: str | None = None) -> None:
+        include = Include(name, reason, condition)
         if self.include is not None:
+            if self.include == include:
+                return
             raise ValueError("a converter only supports a single include")
-        self.include = Include(name, reason, condition)
+        self.include = include
 
 type_checks = {
     '&PyLong_Type': ('PyLong_Check', 'int'),
