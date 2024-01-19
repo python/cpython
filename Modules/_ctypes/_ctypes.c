@@ -532,8 +532,9 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
 
     /* keep this for bw compatibility */
     int r = PyDict_Contains(result->tp_dict, &_Py_ID(_abstract_));
-    if (r > 0)
+    if (r > 0) {
         return (PyObject *)result;
+    }
     if (r < 0) {
         Py_DECREF(result);
         return NULL;
@@ -580,8 +581,9 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
     else {
         StgDictObject *basedict = PyType_stgdict((PyObject *)result->tp_base);
 
-        if (basedict == NULL)
+        if (basedict == NULL) {
             return (PyObject *)result;
+        }
         /* copy base dict */
         if (-1 == PyCStgDict_clone(dict, basedict)) {
             Py_DECREF(result);
@@ -1035,8 +1037,9 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 
     typedict = PyTuple_GetItem(args, 2);
-    if (!typedict)
+    if (!typedict) {
         return NULL;
+    }
 /*
   stgdict items size, align, length contain info about pointers itself,
   stgdict->proto has info about the pointed to type!
