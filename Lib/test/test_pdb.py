@@ -19,6 +19,9 @@ from test.support.import_helper import import_module
 from test.support.pty_helper import run_pty, FakeInput
 from unittest.mock import patch
 
+# gh-114275: WASI fails to run asyncio tests, similar skip than test_asyncio.
+SKIP_ASYNCIO_TESTS = (not support.has_socket_support)
+
 
 class PdbTestInput(object):
     """Context manager that makes testing Pdb in doctests easier."""
@@ -1693,7 +1696,7 @@ def test_pdb_next_command_for_generator():
     finished
     """
 
-if support.has_socket_support:
+if not SKIP_ASYNCIO_TESTS:
     def test_pdb_next_command_for_coroutine():
         """Testing skip unwindng stack on yield for coroutines for "next" command
 
@@ -1866,7 +1869,7 @@ def test_pdb_return_command_for_generator():
     finished
     """
 
-if support.has_socket_support:
+if not SKIP_ASYNCIO_TESTS:
     def test_pdb_return_command_for_coroutine():
         """Testing no unwindng stack on yield for coroutines for "return" command
 
@@ -1953,7 +1956,7 @@ def test_pdb_until_command_for_generator():
     finished
     """
 
-if support.has_socket_support:
+if not SKIP_ASYNCIO_TESTS:
     def test_pdb_until_command_for_coroutine():
         """Testing no unwindng stack for coroutines
         for "until" command if target breakpoint is not reached
