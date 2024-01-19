@@ -251,6 +251,7 @@ nitpick_ignore += [
     ('py:meth', '__missing__'),
     ('py:attr', '__wrapped__'),
     ('py:meth', 'index'),  # list.index, tuple.index, etc.
+    ('py:meth', 'set.add'),
 ]
 
 # gh-106948: Copy standard C types declared in the "c:type" domain to the
