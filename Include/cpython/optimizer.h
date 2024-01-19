@@ -93,6 +93,7 @@ PyAPI_FUNC(PyObject *)PyUnstable_Optimizer_NewUOpOptimizer(void);
 #define MINIMUM_TIER2_BACKOFF 4
 
 #define _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS 4
+#define _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS 8
 
 #ifdef __cplusplus
 }

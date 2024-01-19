@@ -206,8 +206,8 @@ static inline PyDictUnicodeEntry* DK_UNICODE_ENTRIES(PyDictKeysObject *dk) {
 
 #define DK_IS_UNICODE(dk) ((dk)->dk_kind != DICT_KEYS_GENERAL)
 
-#define DICT_VERSION_INCREMENT (1 << DICT_MAX_WATCHERS)
-#define DICT_VERSION_MASK (DICT_VERSION_INCREMENT - 1)
+#define DICT_VERSION_INCREMENT (1 << (DICT_MAX_WATCHERS + DICT_WATCHED_MUTATION_BITS))
+#define DICT_WATCHER_MASK ((1 << DICT_MAX_WATCHERS) - 1)
 
 #define DICT_NEXT_VERSION(INTERP) \
     ((INTERP)->dict_state.global_version += DICT_VERSION_INCREMENT)
@@ -227,7 +227,7 @@ _PyDict_NotifyEvent(PyInterpreterState *interp,
                     PyObject *value)
 {
     assert(Py_REFCNT((PyObject*)mp) > 0);
-    int watcher_bits = mp->ma_version_tag & DICT_VERSION_MASK;
+    int watcher_bits = mp->ma_version_tag & DICT_WATCHER_MASK;
     if (watcher_bits) {
         _PyDict_SendEvent(watcher_bits, event, mp, key, value);
         return DICT_NEXT_VERSION(interp) | watcher_bits;

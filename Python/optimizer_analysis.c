@@ -14,14 +14,33 @@
 #include <stddef.h>
 #include "pycore_optimizer.h"
 
+static int get_mutations(PyObject* dict) {
+    assert(PyDict_CheckExact(dict));
+    PyDictObject *d = (PyDictObject *)dict;
+    return (d->ma_version_tag >> DICT_MAX_WATCHERS) & ((1 << DICT_WATCHED_MUTATION_BITS)-1);
+}
+
+static int increment_mutations(PyObject* dict) {
+    assert(PyDict_CheckExact(dict));
+    PyDictObject *d = (PyDictObject *)dict;
+    return d->ma_version_tag += (1 << DICT_MAX_WATCHERS);
+}
+
 static int
 globals_watcher_callback(PyDict_WatchEvent event, PyObject* dict,
                          PyObject* key, PyObject* new_value)
 {
-    if (event != PyDict_EVENT_CLONED) {
-        _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), dict);
+    if (event == PyDict_EVENT_CLONED) {
+        return 0;
     }
-    /* TO DO -- Mark the dict, as a warning for future optimization attempts */
+    uint64_t watched_mutations = get_mutations(dict);
+    if (watched_mutations < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
+        _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), dict);
+        increment_mutations(dict);
+    }
+    else {
+        PyDict_Unwatch(1, dict);
+    }
     return 0;
 }
 
@@ -116,6 +135,10 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
             case _GUARD_GLOBALS_VERSION:
                 if (incorrect_keys(inst, globals)) {
                     return 0;
+                }
+                uint64_t watched_mutations = get_mutations(globals);
+                if (watched_mutations >= _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
+                    continue;
                 }
                 if ((globals_watched & 1) == 0) {
                     PyDict_Watch(1, globals);
