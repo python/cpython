@@ -353,7 +353,7 @@ pdb
   the new ``exceptions [exc_number]`` command for Pdb. (Contributed by Matthias
   Bussonnier in :gh:`106676`.)
 
-* Expressions/Statements whose prefix is a pdb command are now correctly
+* Expressions/statements whose prefix is a pdb command are now correctly
   identified and executed.
   (Contributed by Tian Gao in :gh:`108464`.)
 
@@ -484,27 +484,25 @@ Deprecated
   (Contributed by Victor Stinner in :gh:`105733`.)
 
 * :mod:`getopt` and :mod:`optparse` modules: They are now
-  :term:`soft deprecated`: the :mod:`argparse` should be used for new projects.
+  :term:`soft deprecated`: the :mod:`argparse` module should be used for new projects.
   Previously, the :mod:`optparse` module was already deprecated, its removal
   was not scheduled, and no warnings was emitted: so there is no change in
   practice.
   (Contributed by Victor Stinner in :gh:`106535`.)
 
 * :mod:`http.server`: :class:`http.server.CGIHTTPRequestHandler` now emits a
-  :exc:`DeprecationWarning` as it will be removed in 3.15.  Process based CGI
-  http servers have been out of favor for a very long time.  This code was
+  :exc:`DeprecationWarning` as it will be removed in 3.15.  Process-based CGI
+  HTTP servers have been out of favor for a very long time.  This code was
   outdated, unmaintained, and rarely used.  It has a high potential for both
   security and functionality bugs.  This includes removal of the ``--cgi``
   flag to the ``python -m http.server`` command line in 3.15.
 
 * :mod:`sys`: :func:`sys._enablelegacywindowsfsencoding` function.
-  Replace it with :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment variable.
+  Replace it with the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment variable.
   (Contributed by Inada Naoki in :gh:`73427`.)
 
-* :mod:`traceback`:
-
-  * The field *exc_type* of :class:`traceback.TracebackException` is
-    deprecated. Use *exc_type_str* instead.
+* :mod:`traceback`: The field *exc_type* of :class:`traceback.TracebackException`
+  is deprecated. Use *exc_type_str* instead.
 
 * :mod:`typing`:
 
