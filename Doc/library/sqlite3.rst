@@ -338,6 +338,9 @@ Module functions
        The default will change to ``False`` in a future Python release.
    :type autocommit: bool
 
+   :raises ProgrammingError:
+       If the database connection is used by a thread other than the one that created it.
+
    :rtype: ~sqlite3.Connection
 
    .. audit-event:: sqlite3.connect database sqlite3.connect
@@ -362,6 +365,8 @@ Module functions
       They will become keyword-only parameters in Python 3.15.
 
 .. function:: complete_statement(statement)
+
+   :rtype: bool
 
    Return ``True`` if the string *statement* appears to contain
    one or more complete SQL statements.
@@ -388,6 +393,9 @@ Module functions
 .. function:: enable_callback_tracebacks(flag, /)
 
    Enable or disable callback tracebacks.
+
+   :rtype: None
+
    By default you will not get any tracebacks in user-defined functions,
    aggregates, converters, authorizer callbacks etc. If you want to debug them,
    you can call this function with *flag* set to ``True``. Afterwards, you
@@ -422,6 +430,9 @@ Module functions
 
    Register an *adapter* :term:`callable` to adapt the Python type *type*
    into an SQLite type.
+
+   :rtype: None
+
    The adapter is called with a Python object of type *type* as its sole
    argument, and must return a value of a
    :ref:`type that SQLite natively understands <sqlite3-types>`.
@@ -430,6 +441,9 @@ Module functions
 
    Register the *converter* :term:`callable` to convert SQLite objects of type
    *typename* into a Python object of a specific type.
+
+   :rtype: None
+
    The converter is invoked for all SQLite values of type *typename*;
    it is passed a :class:`bytes` object and should return an object of the
    desired Python type.
@@ -641,6 +655,9 @@ Connection objects
    .. method:: cursor(factory=Cursor)
 
       Create and return a :class:`Cursor` object.
+
+      :rtype: ~sqlite3.Connection
+
       The cursor method accepts a single optional parameter *factory*. If
       supplied, this must be a :term:`callable` returning
       an instance of :class:`Cursor` or its subclasses.
@@ -683,6 +700,9 @@ Connection objects
    .. method:: commit()
 
       Commit any pending transaction to the database.
+
+      :rtype: None
+
       If :attr:`autocommit` is ``True``, or there is no open transaction,
       this method does nothing.
       If :attr:`!autocommit` is ``False``, a new transaction is implicitly
@@ -691,6 +711,9 @@ Connection objects
    .. method:: rollback()
 
       Roll back to the start of any pending transaction.
+
+      :rtype: None
+
       If :attr:`autocommit` is ``True``, or there is no open transaction,
       this method does nothing.
       If :attr:`!autocommit` is ``False``, a new transaction is implicitly
@@ -699,6 +722,9 @@ Connection objects
    .. method:: close()
 
       Close the database connection.
+
+      :rtype: None
+
       If :attr:`autocommit` is ``False``,
       any pending transaction is implicitly rolled back.
       If :attr:`!autocommit` is ``True`` or :data:`LEGACY_TRANSACTION_CONTROL`,
@@ -708,17 +734,23 @@ Connection objects
 
    .. method:: execute(sql, parameters=(), /)
 
+      :rtype: ~sqlite3.Cursor
+
       Create a new :class:`Cursor` object and call
       :meth:`~Cursor.execute` on it with the given *sql* and *parameters*.
       Return the new cursor object.
 
    .. method:: executemany(sql, parameters, /)
 
+      :rtype: ~sqlite3.Cursor
+
       Create a new :class:`Cursor` object and call
       :meth:`~Cursor.executemany` on it with the given *sql* and *parameters*.
       Return the new cursor object.
 
    .. method:: executescript(sql_script, /)
+
+      :rtype: ~sqlite3.Cursor
 
       Create a new :class:`Cursor` object and call
       :meth:`~Cursor.executescript` on it with the given *sql_script*.
@@ -747,6 +779,8 @@ Connection objects
           `deterministic <https://sqlite.org/deterministic.html>`_,
           which allows SQLite to perform additional optimizations.
 
+      :rtype: None
+
       .. versionadded:: 3.8
          The *deterministic* parameter.
 
@@ -770,6 +804,8 @@ Connection objects
 
 
    .. method:: create_aggregate(name, n_arg, aggregate_class)
+
+      :rtype: None
 
       Create or remove a user-defined SQL aggregate function.
 
@@ -829,6 +865,8 @@ Connection objects
 
 
    .. method:: create_window_function(name, num_params, aggregate_class, /)
+
+      :rtype: None
 
       Create or remove a user-defined aggregate window function.
 
@@ -916,6 +954,8 @@ Connection objects
 
    .. method:: create_collation(name, callable, /)
 
+      :rtype: None
+
       Create a collation named *name* using the collating function *callable*.
       *callable* is passed two :class:`string <str>` arguments,
       and it should return an :class:`integer <int>`:
@@ -961,12 +1001,16 @@ Connection objects
 
    .. method:: interrupt()
 
+      :rtype: None
+
       Call this method from a different thread to abort any queries that might
       be executing on the connection.
       Aborted queries will raise an :exc:`OperationalError`.
 
 
    .. method:: set_authorizer(authorizer_callback)
+
+      :rtype: None
 
       Register :term:`callable` *authorizer_callback* to be invoked
       for each attempt to access a column of a table in the database.
@@ -998,6 +1042,8 @@ Connection objects
 
    .. method:: set_progress_handler(progress_handler, n)
 
+      :rtype: None
+
       Register :term:`callable` *progress_handler* to be invoked for every *n*
       instructions of the SQLite virtual machine. This is useful if you want to
       get called from SQLite during long-running operations, for example to update
@@ -1016,6 +1062,8 @@ Connection objects
 
 
    .. method:: set_trace_callback(trace_callback)
+
+      :rtype: None
 
       Register :term:`callable` *trace_callback* to be invoked
       for each SQL statement that is actually executed by the SQLite backend.
@@ -1044,6 +1092,8 @@ Connection objects
 
 
    .. method:: enable_load_extension(enabled, /)
+
+      :rtype: None
 
       Enable the SQLite engine to load SQLite extensions from shared libraries
       if *enabled* is ``True``;
@@ -1108,6 +1158,8 @@ Connection objects
 
    .. method:: load_extension(path, /, *, entrypoint=None)
 
+      :rtype: None
+
       Load an SQLite extension from a shared library.
       Enable extension loading with :meth:`enable_load_extension` before
       calling this method.
@@ -1139,6 +1191,8 @@ Connection objects
 
    .. method:: iterdump
 
+      :rtype: :term:`iterator` [ str ]
+
       Return an :term:`iterator` to dump the database as SQL source code.
       Useful when saving an in-memory database for later restoration.
       Similar to the ``.dump`` command in the :program:`sqlite3` shell.
@@ -1161,7 +1215,10 @@ Connection objects
 
    .. method:: backup(target, *, pages=-1, progress=None, name="main", sleep=0.250)
 
+
       Create a backup of an SQLite database.
+
+      :rtype: None
 
       Works even if the database is being accessed by other clients
       or concurrently by the same connection.
@@ -1519,6 +1576,8 @@ Cursor objects
       :raises ProgrammingError:
          If *sql* contains more than one SQL statement.
 
+      :rtype: ~sqlite3.Cursor
+
       If :attr:`~Connection.autocommit` is
       :data:`LEGACY_TRANSACTION_CONTROL`,
       :attr:`~Connection.isolation_level` is not ``None``,
@@ -1557,6 +1616,8 @@ Cursor objects
          If *sql* contains more than one SQL statement,
          or is not a DML statement.
 
+      :rtype: ~sqlite3.Cursor
+
       Example:
 
       .. testcode:: sqlite3.cursor
@@ -1586,6 +1647,8 @@ Cursor objects
 
    .. method:: executescript(sql_script, /)
 
+      :rtype: ~sqlite3.Cursor
+
       Execute the SQL statements in *sql_script*.
       If the :attr:`~Connection.autocommit` is
       :data:`LEGACY_TRANSACTION_CONTROL`
@@ -1611,6 +1674,8 @@ Cursor objects
 
    .. method:: fetchone()
 
+      :rtype: tuple | None
+
       If :attr:`~Cursor.row_factory` is ``None``,
       return the next row query result set as a :class:`tuple`.
       Else, pass it to the row factory and return its result.
@@ -1618,6 +1683,8 @@ Cursor objects
 
 
    .. method:: fetchmany(size=cursor.arraysize)
+
+      :rtype: list [ tuple ]
 
       Return the next set of rows of a query result as a :class:`list`.
       Return an empty list if no more rows are available.
@@ -1635,12 +1702,16 @@ Cursor objects
 
    .. method:: fetchall()
 
+      :rtype: list [ tuple ]
+
       Return all (remaining) rows of a query result as a :class:`list`.
       Return an empty list if no rows are available.
       Note that the :attr:`arraysize` attribute can affect the performance of
       this operation.
 
    .. method:: close()
+
+      :rtype: None
 
       Close the cursor now (rather than whenever ``__del__`` is called).
 
@@ -1649,9 +1720,13 @@ Cursor objects
 
    .. method:: setinputsizes(sizes, /)
 
+      :rtype: None
+
       Required by the DB-API. Does nothing in :mod:`!sqlite3`.
 
    .. method:: setoutputsize(size, column=None, /)
+
+      :rtype: None
 
       Required by the DB-API. Does nothing in :mod:`!sqlite3`.
 
@@ -1749,6 +1824,8 @@ Row objects
 
    .. method:: keys
 
+      :rtype: list
+
       Return a :class:`list` of column names as :class:`strings <str>`.
       Immediately after a query,
       it is the first member of each tuple in :attr:`Cursor.description`.
@@ -1801,6 +1878,8 @@ Blob objects
 
    .. method:: close()
 
+      :rtype: None
+
       Close the blob.
 
       The blob will be unusable from this point onward.  An
@@ -1808,6 +1887,8 @@ Blob objects
       further operation is attempted with the blob.
 
    .. method:: read(length=-1, /)
+
+      :rtype: bytes
 
       Read *length* bytes of data from the blob at the current offset position.
       If the end of the blob is reached, the data up to
@@ -1817,15 +1898,21 @@ Blob objects
 
    .. method:: write(data, /)
 
+      :rtype: None
+
       Write *data* to the blob at the current offset.  This function cannot
       change the blob length.  Writing beyond the end of the blob will raise
       :exc:`ValueError`.
 
    .. method:: tell()
 
+      :rtype: int
+
       Return the current access position of the blob.
 
    .. method:: seek(offset, origin=os.SEEK_SET, /)
+
+      :rtype: None
 
       Set the current access position of the blob to *offset*.  The *origin*
       argument defaults to :const:`os.SEEK_SET` (absolute blob positioning).
