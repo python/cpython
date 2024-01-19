@@ -1401,6 +1401,14 @@ class MiscellaneousTestCase(unittest.TestCase):
         self.assertEqual(filterspec["lc"], 3)
         self.assertEqual(filterspec["dict_size"], 8 << 20)
 
+        # see gh-104282
+        filters = [lzma.FILTER_X86, lzma.FILTER_POWERPC,
+                   lzma.FILTER_IA64, lzma.FILTER_ARM,
+                   lzma.FILTER_ARMTHUMB, lzma.FILTER_SPARC]
+        for f in filters:
+            filterspec = lzma._decode_filter_properties(f, b"")
+            self.assertEqual(filterspec, {"id": f})
+
     def test_filter_properties_roundtrip(self):
         spec1 = lzma._decode_filter_properties(
                 lzma.FILTER_LZMA1, b"]\x00\x00\x80\x00")
