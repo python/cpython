@@ -1201,14 +1201,15 @@ error:
 
 static int
 get_exception_notes(struct exception_print_context *ctx, PyObject *value, PyObject **notes) {
-    PyObject *type = NULL;
-    PyObject *errvalue = NULL;
-    PyObject *tback = NULL;
     PyObject *note = NULL;
 
     if (_PyObject_LookupAttr(value, &_Py_ID(__notes__), notes) < 0) {
+        PyObject *type, *errvalue, *tback;
         PyErr_Fetch(&type, &errvalue, &tback);
         note = PyUnicode_FromFormat("Ignored error getting __notes__: %R", errvalue);
+        Py_XDECREF(type);
+        Py_XDECREF(errvalue);
+        Py_XDECREF(tback);
         if (!note) {
             goto error;
         }
@@ -1220,9 +1221,6 @@ get_exception_notes(struct exception_print_context *ctx, PyObject *value, PyObje
             Py_DECREF(*notes);
             goto error;
         }
-        Py_XDECREF(type);
-        Py_XDECREF(errvalue);
-        Py_XDECREF(tback);
     }
 
     return 0;
