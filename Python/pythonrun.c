@@ -1228,9 +1228,6 @@ get_exception_notes(struct exception_print_context *ctx, PyObject *value, PyObje
     return 0;
 error:
     Py_XDECREF(note);
-    Py_XDECREF(type);
-    Py_XDECREF(errvalue);
-    Py_XDECREF(tback);
     return -1;
 }
 
