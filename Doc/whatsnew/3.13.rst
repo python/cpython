@@ -483,6 +483,15 @@ Deprecated
   Replace ``ctypes.ARRAY(item_type, size)`` with ``item_type * size``.
   (Contributed by Victor Stinner in :gh:`105733`.)
 
+* :mod:`decimal`: Deprecate non-standard format specifier "N" for
+  :class:`decimal.Decimal`.
+  It was not documented and only supported in the C implementation.
+  (Contributed by Serhiy Storchaka in :gh:`89902`.)
+
+* :mod:`dis`: The ``dis.HAVE_ARGUMENT`` separator is deprecated. Check
+  membership in :data:`~dis.hasarg` instead.
+  (Contributed by Irit Katriel in :gh:`109319`.)
+
 * :mod:`getopt` and :mod:`optparse` modules: They are now
   :term:`soft deprecated`: the :mod:`argparse` module should be used for new projects.
   Previously, the :mod:`optparse` module was already deprecated, its removal
@@ -490,12 +499,41 @@ Deprecated
   practice.
   (Contributed by Victor Stinner in :gh:`106535`.)
 
+* :mod:`gettext`: Emit deprecation warning for non-integer numbers in
+  :mod:`gettext` functions and methods that consider plural forms even if the
+  translation was not found.
+  (Contributed by Serhiy Storchaka in :gh:`88434`.)
+
 * :mod:`http.server`: :class:`http.server.CGIHTTPRequestHandler` now emits a
   :exc:`DeprecationWarning` as it will be removed in 3.15.  Process-based CGI
   HTTP servers have been out of favor for a very long time.  This code was
   outdated, unmaintained, and rarely used.  It has a high potential for both
   security and functionality bugs.  This includes removal of the ``--cgi``
   flag to the ``python -m http.server`` command line in 3.15.
+
+* :mod:`pydoc`: Deprecate undocumented :func:`!pydoc.ispackage` function.
+  (Contributed by Zackery Spytz in :gh:`64020`.)
+
+* :mod:`sqlite3`: Passing more than one positional argument to
+  :func:`sqlite3.connect` and the :class:`sqlite3.Connection` constructor is
+  deprecated. The remaining parameters will become keyword-only in Python 3.15.
+
+  Deprecate passing name, number of arguments, and the callable as keyword
+  arguments, for the following :class:`sqlite3.Connection` APIs:
+
+  * :meth:`~sqlite3.Connection.create_function`
+  * :meth:`~sqlite3.Connection.create_aggregate`
+
+  Deprecate passing the callback callable by keyword for the following
+  :class:`sqlite3.Connection` APIs:
+
+  * :meth:`~sqlite3.Connection.set_authorizer`
+  * :meth:`~sqlite3.Connection.set_progress_handler`
+  * :meth:`~sqlite3.Connection.set_trace_callback`
+
+  The affected parameters will become positional-only in Python 3.15.
+
+  (Contributed by Erlend E. Aasland in :gh:`107948` and :gh:`108278`.)
 
 * :mod:`sys`: :func:`sys._enablelegacywindowsfsencoding` function.
   Replace it with the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment variable.
@@ -538,39 +576,6 @@ Deprecated
   They will be removed in Python 3.15.
   (Contributed by Victor Stinner in :gh:`105096`.)
 
-* Passing more than one positional argument to :func:`sqlite3.connect` and the
-  :class:`sqlite3.Connection` constructor is deprecated. The remaining
-  parameters will become keyword-only in Python 3.15.
-
-  Deprecate passing name, number of arguments, and the callable as keyword
-  arguments, for the following :class:`sqlite3.Connection` APIs:
-
-  * :meth:`~sqlite3.Connection.create_function`
-  * :meth:`~sqlite3.Connection.create_aggregate`
-
-  Deprecate passing the callback callable by keyword for the following
-  :class:`sqlite3.Connection` APIs:
-
-  * :meth:`~sqlite3.Connection.set_authorizer`
-  * :meth:`~sqlite3.Connection.set_progress_handler`
-  * :meth:`~sqlite3.Connection.set_trace_callback`
-
-  The affected parameters will become positional-only in Python 3.15.
-
-  (Contributed by Erlend E. Aasland in :gh:`107948` and :gh:`108278`.)
-
-* The ``dis.HAVE_ARGUMENT`` separator is deprecated. Check membership
-  in :data:`~dis.hasarg` instead.
-  (Contributed by Irit Katriel in :gh:`109319`.)
-
-* Deprecate non-standard format specifier "N" for :class:`decimal.Decimal`.
-  It was not documented and only supported in the C implementation.
-  (Contributed by Serhiy Storchaka in :gh:`89902`.)
-
-* Emit deprecation warning for non-integer numbers in :mod:`gettext` functions
-  and methods that consider plural forms even if the translation was not found.
-  (Contributed by Serhiy Storchaka in :gh:`88434`.)
-
 * Calling :meth:`frame.clear` on a suspended frame raises :exc:`RuntimeError`
   (as has always been the case for an executing frame).
   (Contributed by Irit Katriel in :gh:`79932`.)
@@ -580,9 +585,6 @@ Deprecated
   different types are: plain function, generator, async generator and
   coroutine.
   (Contributed by Irit Katriel in :gh:`81137`.)
-
-* Deprecate undocumented :func:`!pydoc.ispackage` function.
-  (Contributed by Zackery Spytz in :gh:`64020`.)
 
 
 Pending Removal in Python 3.14
@@ -645,11 +647,11 @@ Pending Removal in Python 3.14
   :func:`~multiprocessing.set_start_method` APIs to explicitly specify when
   your code *requires* ``'fork'``.  See :ref:`multiprocessing-start-methods`.
 
-* :mod:`pathlib`: :meth:`~pathlib.PurePath.is_relative_to`,
+* :mod:`pathlib`: :meth:`~pathlib.PurePath.is_relative_to` and
   :meth:`~pathlib.PurePath.relative_to`: passing additional arguments is
   deprecated.
 
-* :func:`pkgutil.find_loader` and :func:`pkgutil.get_loader`
+* :mod:`pkgutil`: :func:`~pkgutil.find_loader` and :func:`~pkgutil.get_loader`
   now raise :exc:`DeprecationWarning`;
   use :func:`importlib.util.find_spec` instead.
   (Contributed by Nikita Sobolev in :gh:`97850`.)
@@ -706,6 +708,13 @@ Pending Removal in Python 3.15
   :func:`locale.getlocale()` instead.
   (Contributed by Hugo van Kemenade in :gh:`111187`.)
 
+* :mod:`threading`:
+  Passing any arguments to :func:`threading.RLock` is now deprecated.
+  C version allows any numbers of args and kwargs,
+  but they are just ignored. Python version does not allow any arguments.
+  All arguments will be removed from :func:`threading.RLock` in Python 3.15.
+  (Contributed by Nikita Sobolev in :gh:`102029`.)
+
 * :class:`typing.NamedTuple`:
 
   * The undocumented keyword argument syntax for creating NamedTuple classes
@@ -730,12 +739,6 @@ Pending Removal in Python 3.15
   methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
   They will be removed in Python 3.15.
   (Contributed by Victor Stinner in :gh:`105096`.)
-
-* Passing any arguments to :func:`threading.RLock` is now deprecated.
-  C version allows any numbers of args and kwargs,
-  but they are just ignored. Python version does not allow any arguments.
-  All arguments will be removed from :func:`threading.RLock` in Python 3.15.
-  (Contributed by Nikita Sobolev in :gh:`102029`.)
 
 Pending Removal in Python 3.16
 ------------------------------
@@ -783,6 +786,9 @@ although there is currently no date scheduled for their removal.
   :data:`calendar.FEBRUARY`.
   (Contributed by Prince Roshan in :gh:`103636`.)
 
+* :attr:`codeobject.co_lnotab`: use the :meth:`codeobject.co_lines` method
+  instead.
+
 * :mod:`datetime`:
 
   * :meth:`~datetime.datetime.utcnow`:
@@ -818,11 +824,13 @@ although there is currently no date scheduled for their removal.
   underscore.
   (Contributed by Serhiy Storchaka in :gh:`91760`.)
 
+* :mod:`!sre_compile`, :mod:`!sre_constants` and :mod:`!sre_parse` modules.
+
 * :mod:`ssl` options and protocols:
 
   * :class:`ssl.SSLContext` without protocol argument is deprecated.
   * :class:`ssl.SSLContext`: :meth:`~ssl.SSLContext.set_npn_protocols` and
-    :meth:`!~ssl.SSLContext.selected_npn_protocol` are deprecated: use ALPN
+    :meth:`!selected_npn_protocol` are deprecated: use ALPN
     instead.
   * ``ssl.OP_NO_SSL*`` options
   * ``ssl.OP_NO_TLS*`` options
@@ -834,13 +842,6 @@ although there is currently no date scheduled for their removal.
   * ``ssl.TLSVersion.SSLv3``
   * ``ssl.TLSVersion.TLSv1``
   * ``ssl.TLSVersion.TLSv1_1``
-
-* :mod:`!sre_compile`, :mod:`!sre_constants` and :mod:`!sre_parse` modules.
-
-* :attr:`codeobject.co_lnotab`: use the :meth:`codeobject.co_lines` method
-  instead.
-
-* :class:`typing.Text` (:gh:`92332`).
 
 * :func:`sysconfig.is_python_build` *check_home* parameter is deprecated and
   ignored.
@@ -856,14 +857,10 @@ although there is currently no date scheduled for their removal.
   * :meth:`!threading.currentThread`: use :meth:`threading.current_thread`.
   * :meth:`!threading.activeCount`: use :meth:`threading.active_count`.
 
+* :class:`typing.Text` (:gh:`92332`).
+
 * :class:`unittest.IsolatedAsyncioTestCase`: it is deprecated to return a value
-  that is not None from a test case.
-
-* :mod:`urllib.request`: :class:`~urllib.request.URLopener` and
-  :class:`~urllib.request.FancyURLopener` style of invoking requests is
-  deprecated. Use newer :func:`~urllib.request.urlopen` functions and methods.
-
-* :func:`!urllib.parse.to_bytes`.
+  that is not ``None`` from a test case.
 
 * :mod:`urllib.parse` deprecated functions: :func:`~urllib.parse.urlparse` instead
 
@@ -877,6 +874,11 @@ although there is currently no date scheduled for their removal.
   * ``splittype()``
   * ``splituser()``
   * ``splitvalue()``
+  * ``to_bytes()``
+
+* :mod:`urllib.request`: :class:`~urllib.request.URLopener` and
+  :class:`~urllib.request.FancyURLopener` style of invoking requests is
+  deprecated. Use newer :func:`~urllib.request.urlopen` functions and methods.
 
 * :mod:`wsgiref`: ``SimpleHandler.stdout.write()`` should not do partial
   writes.
