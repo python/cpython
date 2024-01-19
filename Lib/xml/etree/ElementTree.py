@@ -1241,9 +1241,8 @@ def iterparse(source, events=None, parser=None):
                 pullparser.feed(data)
             root = pullparser._close_and_return_root()
             yield from pullparser.read_events()
-            iterator = wr()
-            if iterator:
-                iterator.root = root
+            if it := wr():
+                it.root = root
         finally:
             if close_source:
                 source.close()
