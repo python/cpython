@@ -1708,10 +1708,7 @@ def test_pdb_next_command_for_coroutine():
     ...     await test_coro()
 
     >>> def test_function():
-    ...     loop = asyncio.new_event_loop()
-    ...     loop.run_until_complete(test_main())
-    ...     loop.close()
-    ...     asyncio.set_event_loop_policy(None)
+    ...     asyncio.run(test_main())
     ...     print("finished")
 
     >>> with PdbTestInput(['step',
@@ -1768,10 +1765,7 @@ def test_pdb_next_command_for_asyncgen():
     ...     await test_coro()
 
     >>> def test_function():
-    ...     loop = asyncio.new_event_loop()
-    ...     loop.run_until_complete(test_main())
-    ...     loop.close()
-    ...     asyncio.set_event_loop_policy(None)
+    ...     asyncio.run(test_main())
     ...     print("finished")
 
     >>> with PdbTestInput(['step',
@@ -1880,10 +1874,7 @@ def test_pdb_return_command_for_coroutine():
     ...     await test_coro()
 
     >>> def test_function():
-    ...     loop = asyncio.new_event_loop()
-    ...     loop.run_until_complete(test_main())
-    ...     loop.close()
-    ...     asyncio.set_event_loop_policy(None)
+    ...     asyncio.run(test_main())
     ...     print("finished")
 
     >>> with PdbTestInput(['step',
@@ -1971,10 +1962,7 @@ def test_pdb_until_command_for_coroutine():
     ...     await test_coro()
 
     >>> def test_function():
-    ...     loop = asyncio.new_event_loop()
-    ...     loop.run_until_complete(test_main())
-    ...     loop.close()
-    ...     asyncio.set_event_loop_policy(None)
+    ...     asyncio.run(test_main())
     ...     print("finished")
 
     >>> with PdbTestInput(['step',
