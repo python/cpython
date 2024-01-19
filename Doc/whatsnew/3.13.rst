@@ -1186,7 +1186,7 @@ Changes in the Python API
 
 * The :mod:`threading` module now expects the :mod:`!_thread` module to have
   an ``_is_main_interpreter`` attribute.  It is a function with no
-  arguments that returns ``True`` if the current interpreter is the
+  arguments that return ``True`` if the current interpreter is the
   main interpreter.
 
   Any library or application that provides a custom ``_thread`` module
@@ -1209,7 +1209,7 @@ Build Changes
   (Contributed by Erlend Aasland in :gh:`105875`.)
 
 * Python built with :file:`configure` :option:`--with-trace-refs` (tracing
-  references) is now ABI compatible with Python release build and
+  references) is now ABI compatible with the Python release build and
   :ref:`debug build <debug-build>`.
   (Contributed by Victor Stinner in :gh:`108634`.)
 
@@ -1236,7 +1236,7 @@ New Features
   (Contributed by Inada Naoki in :gh:`104922`.)
 
 * The *keywords* parameter of :c:func:`PyArg_ParseTupleAndKeywords` and
-  :c:func:`PyArg_VaParseTupleAndKeywords` has now type :c:expr:`char * const *`
+  :c:func:`PyArg_VaParseTupleAndKeywords` now has type :c:expr:`char * const *`
   in C and :c:expr:`const char * const *` in C++, instead of :c:expr:`char **`.
   It makes these functions compatible with arguments of type
   :c:expr:`const char * const *`, :c:expr:`const char **` or
@@ -1293,14 +1293,14 @@ New Features
   always steals a reference to the value.
   (Contributed by Serhiy Storchaka in :gh:`86493`.)
 
-* Added :c:func:`PyDict_GetItemRef` and :c:func:`PyDict_GetItemStringRef`
+* Add :c:func:`PyDict_GetItemRef` and :c:func:`PyDict_GetItemStringRef`
   functions: similar to :c:func:`PyDict_GetItemWithError` but returning a
   :term:`strong reference` instead of a :term:`borrowed reference`. Moreover,
   these functions return -1 on error and so checking ``PyErr_Occurred()`` is
   not needed.
   (Contributed by Victor Stinner in :gh:`106004`.)
 
-* Added :c:func:`PyDict_ContainsString` function: same as
+* Add :c:func:`PyDict_ContainsString` function: same as
   :c:func:`PyDict_Contains`, but *key* is specified as a :c:expr:`const char*`
   UTF-8 encoded bytes string, rather than a :c:expr:`PyObject*`.
   (Contributed by Victor Stinner in :gh:`108314`.)
@@ -1358,7 +1358,7 @@ New Features
   (Contributed by Victor Stinner in :gh:`85283`.)
 
 * Add :c:func:`PyErr_FormatUnraisable` function: similar to
-  :c:func:`PyErr_WriteUnraisable`, but allow to customize the warning message.
+  :c:func:`PyErr_WriteUnraisable`, but allow customizing the warning message.
   (Contributed by Serhiy Storchaka in :gh:`108082`.)
 
 * Add :c:func:`PyList_Extend` and :c:func:`PyList_Clear` functions: similar to
@@ -1368,7 +1368,7 @@ New Features
 * Add :c:func:`PyDict_Pop` and :c:func:`PyDict_PopString` functions: remove a
   key from a dictionary and optionally return the removed value. This is
   similar to :meth:`dict.pop`, but without the default value and not raising
-  :exc:`KeyError` if the key missing.
+  :exc:`KeyError` if the key is missing.
   (Contributed by Stefan Behnel and Victor Stinner in :gh:`111262`.)
 
 * Add :c:func:`Py_HashPointer` function to hash a pointer.
