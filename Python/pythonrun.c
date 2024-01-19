@@ -1208,24 +1208,23 @@ get_exception_notes(struct exception_print_context *ctx, PyObject *value, PyObje
 
     if (_PyObject_LookupAttr(value, &_Py_ID(__notes__), notes) < 0) {
         PyErr_Fetch(&type, &errvalue, &tback);
-        *notes = PyList_New(1);
-        if (!*notes) {
-            goto error;
-        }
         note = PyUnicode_FromFormat("Ignored error getting __notes__: %R", errvalue);
         if (!note) {
-            Py_DECREF(*notes);
+            goto error;
+        }
+        *notes = PyList_New(1);
+        if (!*notes) {
             goto error;
         }
         if (PyList_SetItem(*notes, 0, note) < 0) {
             Py_DECREF(*notes);
             goto error;
         }
+        Py_XDECREF(type);
+        Py_XDECREF(errvalue);
+        Py_XDECREF(tback);
     }
 
-    Py_XDECREF(type);
-    Py_XDECREF(errvalue);
-    Py_XDECREF(tback);
     return 0;
 error:
     Py_XDECREF(note);
