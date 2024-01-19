@@ -29,6 +29,7 @@ typedef struct _PyCfgInstruction {
     int i_opcode;
     int i_oparg;
     _PyCompilerSrcLocation i_loc;
+    unsigned i_loc_propagated : 1;  /* location was set by propagate_line_numbers */
     struct _PyCfgBasicblock *i_target; /* target block (if jump instruction) */
     struct _PyCfgBasicblock *i_except; /* target block when exception is raised */
 } cfg_instr;
@@ -504,6 +505,21 @@ no_redundant_jumps(cfg_builder *g) {
     return true;
 }
 
+static bool
+all_exits_have_lineno(basicblock *entryblock) {
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        for (int i = 0; i < b->b_iused; i++) {
+            cfg_instr *instr = &b->b_instr[i];
+            if (instr->i_opcode == RETURN_VALUE) {
+                if (instr->i_loc.lineno < 0) {
+                    assert(0);
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
+}
 #endif
 
 /***** CFG preprocessing (jump targets and exceptions) *****/
@@ -940,7 +956,10 @@ error:
 /***** CFG optimizations *****/
 
 static int
-mark_reachable(basicblock *entryblock) {
+remove_unreachable(basicblock *entryblock) {
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        b->b_predecessors = 0;
+    }
     basicblock **stack = make_cfg_traversal_stack(entryblock);
     if (stack == NULL) {
         return ERROR;
@@ -972,6 +991,14 @@ mark_reachable(basicblock *entryblock) {
         }
     }
     PyMem_Free(stack);
+
+    /* Delete unreachable instructions */
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+       if (b->b_predecessors == 0) {
+            b->b_iused = 0;
+            b->b_except_handler = 0;
+       }
+    }
     return SUCCESS;
 }
 
@@ -1149,13 +1176,15 @@ jump_thread(cfg_instr *inst, cfg_instr *target, int opcode)
     assert(is_jump(target));
     // bpo-45773: If inst->i_target == target->i_target, then nothing actually
     // changes (and we fall into an infinite loop):
+    if (inst->i_loc.lineno == -1) assert(inst->i_loc_propagated);
+    if (target->i_loc.lineno == -1) assert(target->i_loc_propagated);
     if ((inst->i_loc.lineno == target->i_loc.lineno ||
-         inst->i_loc.lineno == -1 || target->i_loc.lineno == -1) &&
+         inst->i_loc_propagated || target->i_loc_propagated) &&
         inst->i_target != target->i_target)
     {
         inst->i_target = target->i_target;
         inst->i_opcode = opcode;
-        if (inst->i_loc.lineno == -1) {
+        if (inst->i_loc_propagated && !target->i_loc_propagated) {
             inst->i_loc = target->i_loc;
         }
         return true;
@@ -1714,6 +1743,7 @@ error:
     return ERROR;
 }
 
+static int resolve_line_numbers(cfg_builder *g, int firstlineno);
 
 /* Perform optimizations on a control flow graph.
    The consts object should still be in list form to allow new constants
@@ -1723,40 +1753,30 @@ error:
    NOPs.  Later those NOPs are removed.
 */
 static int
-optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache)
+optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache, int firstlineno)
 {
     assert(PyDict_CheckExact(const_cache));
     RETURN_IF_ERROR(check_cfg(g));
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         RETURN_IF_ERROR(inline_small_exit_blocks(b));
     }
+    RETURN_IF_ERROR(remove_unreachable(g->g_entryblock));
+    RETURN_IF_ERROR(resolve_line_numbers(g, firstlineno));
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         RETURN_IF_ERROR(optimize_basic_block(const_cache, b, consts));
-        assert(b->b_predecessors == 0);
     }
     RETURN_IF_ERROR(remove_redundant_nops_and_pairs(g->g_entryblock));
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         RETURN_IF_ERROR(inline_small_exit_blocks(b));
     }
-    RETURN_IF_ERROR(mark_reachable(g->g_entryblock));
+    RETURN_IF_ERROR(remove_unreachable(g->g_entryblock));
 
-    /* Delete unreachable instructions */
-    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-       if (b->b_predecessors == 0) {
-            b->b_iused = 0;
-            b->b_except_handler = 0;
-       }
+    for (int n = 0; n < 2; n++) {
+        for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
+            remove_redundant_nops(b);
+        }
+        RETURN_IF_ERROR(remove_redundant_jumps(g));
     }
-    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        remove_redundant_nops(b);
-    }
-    RETURN_IF_ERROR(remove_redundant_jumps(g));
-
-    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        remove_redundant_nops(b);
-    }
-
-    RETURN_IF_ERROR(remove_redundant_jumps(g));
 
     assert(no_redundant_jumps(g));
     return SUCCESS;
@@ -2174,7 +2194,13 @@ push_cold_blocks_to_end(cfg_builder *g) {
             if (!IS_LABEL(b->b_next->b_label)) {
                 b->b_next->b_label.id = next_lbl++;
             }
-            basicblock_addop(explicit_jump, JUMP_NO_INTERRUPT, b->b_next->b_label.id, NO_LOCATION);
+            cfg_instr *prev_instr = basicblock_last_instr(b);
+            // b cannot be empty because at the end of an exception handler
+            // there is always a POP_EXCEPT + RERAISE/RETURN
+            assert(prev_instr);
+
+            basicblock_addop(explicit_jump, JUMP_NO_INTERRUPT, b->b_next->b_label.id,
+                             prev_instr->i_loc);
             explicit_jump->b_cold = 1;
             explicit_jump->b_next = b->b_next;
             b->b_next = explicit_jump;
@@ -2345,6 +2371,7 @@ propagate_line_numbers(basicblock *entryblock) {
         for (int i = 0; i < b->b_iused; i++) {
             if (b->b_instr[i].i_loc.lineno < 0) {
                 b->b_instr[i].i_loc = prev_location;
+                b->b_instr[i].i_loc_propagated = 1;
             }
             else {
                 prev_location = b->b_instr[i].i_loc;
@@ -2354,6 +2381,7 @@ propagate_line_numbers(basicblock *entryblock) {
             if (b->b_next->b_iused > 0) {
                 if (b->b_next->b_instr[0].i_loc.lineno < 0) {
                     b->b_next->b_instr[0].i_loc = prev_location;
+                    b->b_next->b_instr[0].i_loc_propagated = 1;
                 }
             }
         }
@@ -2362,36 +2390,9 @@ propagate_line_numbers(basicblock *entryblock) {
             if (target->b_predecessors == 1) {
                 if (target->b_instr[0].i_loc.lineno < 0) {
                     target->b_instr[0].i_loc = prev_location;
+                    target->b_instr[0].i_loc_propagated = 1;
                 }
             }
-        }
-    }
-}
-
-/* Make sure that all returns have a line number, even if early passes
- * have failed to propagate a correct line number.
- * The resulting line number may not be correct according to PEP 626,
- * but should be "good enough", and no worse than in older versions. */
-static void
-guarantee_lineno_for_exits(basicblock *entryblock, int firstlineno) {
-    int lineno = firstlineno;
-    assert(lineno > 0);
-    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        cfg_instr *last = basicblock_last_instr(b);
-        if (last == NULL) {
-            continue;
-        }
-        if (last->i_loc.lineno < 0) {
-            if (last->i_opcode == RETURN_VALUE) {
-                for (int i = 0; i < b->b_iused; i++) {
-                    assert(b->b_instr[i].i_loc.lineno < 0);
-
-                    b->b_instr[i].i_loc.lineno = lineno;
-                }
-            }
-        }
-        else {
-            lineno = last->i_loc.lineno;
         }
     }
 }
@@ -2401,7 +2402,6 @@ resolve_line_numbers(cfg_builder *g, int firstlineno)
 {
     RETURN_IF_ERROR(duplicate_exits_without_lineno(g));
     propagate_line_numbers(g->g_entryblock);
-    guarantee_lineno_for_exits(g->g_entryblock, firstlineno);
     return SUCCESS;
 }
 
@@ -2417,7 +2417,7 @@ _PyCfg_OptimizeCodeUnit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
     RETURN_IF_ERROR(label_exception_targets(g->g_entryblock));
 
     /** Optimization **/
-    RETURN_IF_ERROR(optimize_cfg(g, consts, const_cache));
+    RETURN_IF_ERROR(optimize_cfg(g, consts, const_cache, firstlineno));
     RETURN_IF_ERROR(remove_unused_consts(g->g_entryblock, consts));
     RETURN_IF_ERROR(
         add_checks_for_loads_of_uninitialized_variables(
@@ -2425,6 +2425,7 @@ _PyCfg_OptimizeCodeUnit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
     insert_superinstructions(g);
 
     RETURN_IF_ERROR(push_cold_blocks_to_end(g));
+    assert(all_exits_have_lineno(g->g_entryblock));
     RETURN_IF_ERROR(resolve_line_numbers(g, firstlineno));
     return SUCCESS;
 }
