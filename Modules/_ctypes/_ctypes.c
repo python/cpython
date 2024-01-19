@@ -5643,15 +5643,15 @@ wstring_at(const wchar_t *ptr, int size)
 }
 
 static PyObject *
-memoryview_at(char *ptr, Py_ssize_t size, int allow_write)
+memoryview_at(char *ptr, Py_ssize_t size, int readonly)
 {
     if (PySys_Audit("ctypes.memoryview_at", "nni", (Py_ssize_t)ptr, size,
-                    allow_write) < 0) {
+                    readonly) < 0) {
         return NULL;
     }
 
     return PyMemoryView_FromMemory(ptr, size,
-                                   allow_write ? PyBUF_WRITE : PyBUF_READ);
+                                   readonly ? PyBUF_READ : PyBUF_WRITE);
 }
 
 static struct PyModuleDef _ctypesmodule = {
