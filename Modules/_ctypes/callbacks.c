@@ -151,6 +151,7 @@ static void _CallPythonObject(void *mem,
     assert(nargs <= CTYPES_MAX_ARGCOUNT);
     PyObject **args = alloca(nargs * sizeof(PyObject *));
     PyObject **cnvs = PySequence_Fast_ITEMS(converters);
+    ctypes_state *st = GLOBAL_STATE();
     for (i = 0; i < nargs; i++) {
         PyObject *cnv = cnvs[i]; // borrowed ref
         StgDictObject *dict;
@@ -175,7 +176,6 @@ static void _CallPythonObject(void *mem,
                 PrintError("create argument %zd:\n", i);
                 goto Done;
             }
-            ctypes_state *st = GLOBAL_STATE();
             if (!CDataObject_Check(st, obj)) {
                 Py_DECREF(obj);
                 PrintError("unexpected result of create argument %zd:\n", i);
@@ -345,10 +345,13 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
     assert(PyTuple_Check(converters));
     nargs = PyTuple_GET_SIZE(converters);
     p = CThunkObject_new(nargs);
-    if (p == NULL) {
+    if (p == NULL)
         return NULL;
-    }
-    assert(CThunk_CheckExact(GLOBAL_STATE(), (PyObject *)p));
+
+#ifdef Py_DEBUG
+    ctypes_state *st = GLOBAL_STATE();
+    assert(CThunk_CheckExact(st, (PyObject *)p));
+#endif
 
     p->pcl_write = Py_ffi_closure_alloc(sizeof(ffi_closure), &p->pcl_exec);
     if (p->pcl_write == NULL) {
