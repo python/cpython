@@ -37,6 +37,9 @@ The :mod:`tty` module defines the following functions:
 
    .. versionadded:: 3.12
 
+   .. versionchanged:: 3.12.2
+      The ``ICRNL`` flag is no longer cleared.
+
 
 .. function:: setraw(fd, when=termios.TCSAFLUSH)
 
@@ -58,6 +61,11 @@ The :mod:`tty` module defines the following functions:
 
    .. versionchanged:: 3.12
       The return value is now the original tty attributes, instead of None.
+
+   .. versionchanged:: 3.12.2
+      The ``ICRNL`` flag is no longer cleared. This matches both the behavior
+      of 3.11 and earlier as well as what Linux, macOS, and BSDs describe in
+      their ``stty(1)`` man pages regarding cbreak mode.
 
 
 .. seealso::
