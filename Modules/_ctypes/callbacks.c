@@ -144,7 +144,8 @@ static void _CallPythonObject(void *mem,
     Py_ssize_t i = 0, j = 0, nargs = 0;
     PyObject *error_object = NULL;
     int *space;
-    PyGILState_STATE state = PyGILState_Ensure();
+    PyGILState_STATE gil_state = PyGILState_Ensure();
+    ctypes_state *state = GLOBAL_STATE();
 
     assert(PyTuple_Check(converters));
     nargs = PyTuple_GET_SIZE(converters);
@@ -175,7 +176,7 @@ static void _CallPythonObject(void *mem,
                 PrintError("create argument %zd:\n", i);
                 goto Done;
             }
-            if (!CDataObject_Check(obj)) {
+            if (!CDataObject_Check(state, obj)) {
                 Py_DECREF(obj);
                 PrintError("unexpected result of create argument %zd:\n", i);
                 goto Done;
@@ -285,7 +286,7 @@ static void _CallPythonObject(void *mem,
     for (j = 0; j < i; j++) {
         Py_DECREF(args[j]);
     }
-    PyGILState_Release(state);
+    PyGILState_Release(gil_state);
 }
 
 static void closure_fcn(ffi_cif *cif,
