@@ -38,9 +38,6 @@ typedef struct {
     PyTypeObject *PyCField_Type;
     PyTypeObject *PyCThunk_Type;
     PyTypeObject *PyCStgDict_Type;
-#ifdef MS_WIN32
-    PyTypeObject *PyComError_Type;
-#endif
     PyTypeObject *StructParam_Type;
     PyTypeObject *PyCStructType_Type;
     PyTypeObject *UnionType_Type;
@@ -55,6 +52,9 @@ typedef struct {
     PyTypeObject *Simple_Type;
     PyTypeObject *PyCPointer_Type;
     PyTypeObject *PyCFuncPtr_Type;
+#ifdef MS_WIN32
+    PyTypeObject *PyComError_Type;
+#endif
 } ctypes_state;
 
 extern ctypes_state global_state;
