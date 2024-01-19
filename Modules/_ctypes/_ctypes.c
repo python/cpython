@@ -3973,7 +3973,8 @@ PyCFuncPtr_call(PyCFuncPtrObject *self, PyObject *inargs, PyObject *kwds)
                             "native com method call without 'this' parameter");
             return NULL;
         }
-        if (!CDataObject_Check(this)) {
+        ctypes_state *state = GLOBAL_STATE();
+        if (!CDataObject_Check(state, this)) {
             PyErr_SetString(PyExc_TypeError,
                             "Expected a COM this pointer as first argument");
             return NULL;
