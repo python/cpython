@@ -1,9 +1,26 @@
 """Unit tests for numbers.py."""
 
+import abc
 import math
 import operator
 import unittest
 from numbers import Complex, Real, Rational, Integral, Number
+
+
+def concretize(cls):
+    def not_implemented(*args, **kwargs):
+        raise NotImplementedError()
+
+    for name in dir(cls):
+        try:
+            value = getattr(cls, name)
+            if value.__isabstractmethod__:
+                setattr(cls, name, not_implemented)
+        except AttributeError:
+            pass
+    abc.update_abstractmethods(cls)
+    return cls
+
 
 class TestNumbers(unittest.TestCase):
     def test_int(self):
@@ -45,13 +62,11 @@ class TestNumbers(unittest.TestCase):
 
 class TestNumbersDefaultMethods(unittest.TestCase):
     def test_complex(self):
+        @concretize
         class MyComplex(Complex):
             def __init__(self, real, imag):
                 self.r = real
                 self.i = imag
-
-            def __complex__(self):
-                raise NotImplementedError
 
             @property
             def real(self):
@@ -68,38 +83,8 @@ class TestNumbersDefaultMethods(unittest.TestCase):
                 if isinstance(other, Number):
                     return MyComplex(self.imag + 0, self.real + other.real)
 
-            def __radd__(self, other):
-                raise NotImplementedError
-
             def __neg__(self):
                 return MyComplex(-self.real, -self.imag)
-
-            def __pos__(self):
-                raise NotImplementedError
-
-            def __mul__(self, other):
-                raise NotImplementedError
-
-            def __rmul__(self, other):
-                raise NotImplementedError
-
-            def __truediv__(self, other):
-                raise NotImplementedError
-
-            def __rtruediv__(self, other):
-                raise NotImplementedError
-
-            def __pow__(self, exponent):
-                raise NotImplementedError
-
-            def __rpow__(self, base):
-                raise NotImplementedError
-
-            def __abs__(self):
-                raise NotImplementedError
-
-            def conjugate(self):
-                raise NotImplementedError
 
             def __eq__(self, other):
                 if isinstance(other, Complex):
@@ -120,60 +105,16 @@ class TestNumbersDefaultMethods(unittest.TestCase):
         self.assertEqual(complex(2, 3) - MyComplex(1, 2), MyComplex(1, 1))
 
     def test_real(self):
+        @concretize
         class MyReal(Real):
             def __init__(self, n):
                 self.n = n
 
-            def __add__(self, other):
-                raise NotImplementedError
-
-            def __radd__(self, other):
-                raise NotImplementedError
-
-            def __neg__(self):
-                raise NotImplementedError
-
             def __pos__(self):
                 return self.n
 
-            def __mul__(self, other):
-                raise NotImplementedError
-
-            def __rmul__(self, other):
-                raise NotImplementedError
-
-            def __truediv__(self, other):
-                raise NotImplementedError
-
-            def __rtruediv__(self, other):
-                raise NotImplementedError
-
-            def __pow__(self, exponent):
-                raise NotImplementedError
-
-            def __rpow__(self, base):
-                raise NotImplementedError
-
-            def __abs__(self):
-                raise NotImplementedError
-
-            def __eq__(self, other):
-                raise NotImplementedError
-
             def __float__(self):
                 return float(self.n)
-
-            def __trunc__(self):
-                raise NotImplementedError
-
-            def __floor__(self):
-                raise NotImplementedError
-
-            def __ceil__(self):
-                raise NotImplementedError
-
-            def __round__(self, ndigits=None):
-                raise NotImplementedError
 
             def __floordiv__(self, other):
                 return self.n // other
@@ -186,14 +127,6 @@ class TestNumbersDefaultMethods(unittest.TestCase):
 
             def __rmod__(self, other):
                 return other % self.n
-
-            def __lt__(self, other):
-                raise NotImplementedError
-
-            def __le__(self, other):
-                raise NotImplementedError
-
-            # test conjugate
 
         # test __divmod__
         self.assertEqual(divmod(MyReal(3), 2), (1, 1))
@@ -215,76 +148,11 @@ class TestNumbersDefaultMethods(unittest.TestCase):
 
 
     def test_rational(self):
+        @concretize
         class MyRational(Rational):
             def __init__(self, numerator, denominator):
                 self.n = numerator
                 self.d = denominator
-
-            def __add__(self, other):
-                raise NotImplementedError
-
-            def __radd__(self, other):
-                raise NotImplementedError
-
-            def __neg__(self):
-                raise NotImplementedError
-
-            def __pos__(self):
-                raise NotImplementedError
-
-            def __mul__(self, other):
-                raise NotImplementedError
-
-            def __rmul__(self, other):
-                raise NotImplementedError
-
-            def __truediv__(self, other):
-                raise NotImplementedError
-
-            def __rtruediv__(self, other):
-                raise NotImplementedError
-
-            def __pow__(self, exponent):
-                raise NotImplementedError
-
-            def __rpow__(self, base):
-                raise NotImplementedError
-
-            def __abs__(self):
-                raise NotImplementedError
-
-            def __eq__(self, other):
-                raise NotImplementedError
-
-            def __trunc__(self):
-                raise NotImplementedError
-
-            def __floor__(self):
-                raise NotImplementedError
-
-            def __ceil__(self):
-                raise NotImplementedError
-
-            def __round__(self, ndigits=None):
-                raise NotImplementedError
-
-            def __floordiv__(self, other):
-                raise NotImplementedError
-
-            def __rfloordiv__(self, other):
-                raise NotImplementedError
-
-            def __mod__(self, other):
-                raise NotImplementedError
-
-            def __rmod__(self, other):
-                raise NotImplementedError
-
-            def __lt__(self, other):
-                raise NotImplementedError
-
-            def __le__(self, other):
-                raise NotImplementedError
 
             @property
             def numerator(self):
@@ -299,111 +167,16 @@ class TestNumbersDefaultMethods(unittest.TestCase):
 
 
     def test_integral(self):
+        @concretize
         class MyIntegral(Integral):
             def __init__(self, n):
                 self.n = n
 
-            def __add__(self, other):
-                raise NotImplementedError
-
-            def __radd__(self, other):
-                raise NotImplementedError
-
-            def __neg__(self):
-                raise NotImplementedError
-
             def __pos__(self):
                 return self.n
 
-            def __mul__(self, other):
-                raise NotImplementedError
-
-            def __rmul__(self, other):
-                raise NotImplementedError
-
-            def __truediv__(self, other):
-                raise NotImplementedError
-
-            def __rtruediv__(self, other):
-                raise NotImplementedError
-
-            def __rpow__(self, base):
-                raise NotImplementedError
-
-            def __abs__(self):
-                raise NotImplementedError
-
-            def __eq__(self, other):
-                raise NotImplementedError
-
-            def __trunc__(self):
-                raise NotImplementedError
-
-            def __floor__(self):
-                raise NotImplementedError
-
-            def __ceil__(self):
-                raise NotImplementedError
-
-            def __round__(self, ndigits=None):
-                raise NotImplementedError
-
-            def __floordiv__(self, other):
-                raise NotImplementedError
-
-            def __rfloordiv__(self, other):
-                raise NotImplementedError
-
-            def __mod__(self, other):
-                raise NotImplementedError
-
-            def __rmod__(self, other):
-                raise NotImplementedError
-
-            def __lt__(self, other):
-                raise NotImplementedError
-
-            def __le__(self, other):
-                raise NotImplementedError
-
             def __int__(self):
                 return self.n
-
-            def __pow__(self, exponent, modulus=None):
-                raise NotImplementedError
-
-            def __lshift__(self, other):
-                raise NotImplementedError
-
-            def __rlshift__(self, other):
-                raise NotImplementedError
-
-            def __rshift__(self, other):
-                raise NotImplementedError
-
-            def __rrshift__(self, other):
-                raise NotImplementedError
-
-            def __and__(self, other):
-                raise NotImplementedError
-
-            def __rand__(self, other):
-                raise NotImplementedError
-
-            def __xor__(self, other):
-                raise NotImplementedError
-
-            def __rxor__(self, other):
-                raise NotImplementedError
-
-            def __or__(self, other):
-                raise NotImplementedError
-
-            def __ror__(self, other):
-                raise NotImplementedError
-
-            def __invert__(self):
-                raise NotImplementedError
 
         # test __index__
         self.assertEqual(operator.index(MyIntegral(123)), 123)
