@@ -3592,14 +3592,6 @@ class TextIOWrapperTest(unittest.TestCase):
         t = self.TextIOWrapper(self.StringIO('a'), encoding="utf-8")
         self.assertRaises(TypeError, t.read)
 
-    def test_read_non_blocking_stream(self):
-        # Issue #57531
-        # io module doesn't support non-blocking files
-        r = self.MockRawIO((None,))
-        b = self.BufferedReader(r, 1000)
-        t = self.TextIOWrapper(b, encoding="utf-8")
-        self.assertRaises(BlockingIOError, t.read)
-
     def test_illegal_encoder(self):
         # Issue 31271: Calling write() while the return value of encoder's
         # encode() is invalid shouldn't cause an assertion failure.
@@ -4004,6 +3996,14 @@ class CTextIOWrapperTest(TextIOWrapperTest):
 class PyTextIOWrapperTest(TextIOWrapperTest):
     io = pyio
     shutdown_error = "LookupError: unknown encoding: ascii"
+
+    def test_read_non_blocking_stream(self):
+        # Issue #57531
+        # io module doesn't support non-blocking files
+        r = self.MockRawIO((None,))
+        b = self.BufferedReader(r, 1000)
+        t = self.TextIOWrapper(b, encoding="utf-8")
+        self.assertRaises(BlockingIOError, t.read)
 
 
 class IncrementalNewlineDecoderTest(unittest.TestCase):
