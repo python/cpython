@@ -789,19 +789,14 @@ class Counter(dict):
         if not isinstance(other, Counter):
             return NotImplemented
 
-        if super().__eq__(other) is True:
+        # direct dict comparison for much faster exact equality check
+        if dict.__eq__(self, other) is True:
             return True
 
-        for k, v in self.items():
-            if v != other[k]:
-                return False
-
-        # we've already checked all the common keys,
-        # so now we can just check that any keys that
-        # aren't in self are equal to zero
-        for k, v in other.items():
-            if v != 0 and k not in self:
-                return False
+        for obj1, obj2 in ((self, other), (other, self)):
+            for k, v in obj1.items():
+                if v != obj2[k]:
+                    return False
         return True
 
     def __ne__(self, other):
