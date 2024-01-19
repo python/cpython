@@ -5581,6 +5581,7 @@ _ctypes_add_types(PyObject *mod)
     MOD_ADD_TYPE(&Struct_Type, st->PyCStructType_Type, st->PyCData_Type);
     MOD_ADD_TYPE(&Union_Type, st->UnionType_Type, st->PyCData_Type);
     MOD_ADD_TYPE(&PyCPointer_Type, st->PyCPointerType_Type, st->PyCData_Type);
+    st->PyCPointer_Type = &PyCPointer_Type;
     MOD_ADD_TYPE(&PyCArray_Type, st->PyCArrayType_Type, st->PyCData_Type);
     st->PyCArray_Type = &PyCArray_Type;
     MOD_ADD_TYPE(&Simple_Type, st->PyCSimpleType_Type, st->PyCData_Type);
