@@ -5643,9 +5643,9 @@ wstring_at(const wchar_t *ptr, int size)
 }
 
 static PyObject *
-buffer_at(char *ptr, int size, int allow_write)
+buffer_at(char *ptr, Py_ssize_t size, int allow_write)
 {
-    if (PySys_Audit("ctypes.buffer_at", "nii", (Py_ssize_t)ptr, size,
+    if (PySys_Audit("ctypes.buffer_at", "nni", (Py_ssize_t)ptr, size,
                     allow_write) < 0) {
         return NULL;
     }

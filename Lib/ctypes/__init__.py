@@ -540,7 +540,7 @@ else:
 
 from _ctypes import _buffer_at_addr
 
-_buffer_at = PYFUNCTYPE(py_object, c_void_p, c_int, c_int)(_buffer_at_addr)
+_buffer_at = PYFUNCTYPE(py_object, c_void_p, c_ssize_t, c_int)(_buffer_at_addr)
 def buffer_at(ptr, size, allow_write=False):
     """buffer_at(addr, size[, allow_write]) -> memoryview
 
