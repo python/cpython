@@ -168,6 +168,13 @@ copy
   any user classes which define the :meth:`!__replace__` method.
   (Contributed by Serhiy Storchaka in :gh:`108751`.)
 
+ctypes
+------
+
+* :func:`ctypes.buffer_at` now exists to create a :class:`memoryview` object that refers to
+  the supplied pointer and length. Works just like :func:`ctypes.string_at` except
+  it avoids a buffer copy.
+
 dbm
 ---
 
