@@ -2334,7 +2334,7 @@ class defining the method.
    .. versionadded:: 3.6
 
 
-When a class is created, ``type.__new__`` scans the class variables
+When a class is created, :meth:`!type.__new__` scans the class variables
 and makes callbacks to those with a :meth:`~object.__set_name__` hook.
 
 .. method:: object.__set_name__(self, owner, name)
