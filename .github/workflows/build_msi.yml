@@ -37,4 +37,4 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Build CPython installer
-      run: .\Tools\msi\build.bat --doc -${{ matrix.type }}
+      run: pwsh -ExecutionPolicy ByPass -NoLogo -c "$env:UseDisableGil = $true; .\Tools\msi\build.bat --doc -${{ matrix.type }}"
