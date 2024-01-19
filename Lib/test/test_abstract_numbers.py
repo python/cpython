@@ -80,8 +80,7 @@ class TestNumbersDefaultMethods(unittest.TestCase):
                 if isinstance(other, Complex):
                     return MyComplex(self.imag + other.imag,
                                      self.real + other.real)
-                if isinstance(other, Number):
-                    return MyComplex(self.imag + 0, self.real + other.real)
+                raise NotImplementedError
 
             def __neg__(self):
                 return MyComplex(-self.real, -self.imag)
@@ -135,7 +134,7 @@ class TestNumbersDefaultMethods(unittest.TestCase):
         self.assertEqual(divmod(3, MyReal(2)), (1, 1))
 
         # test __complex__
-        self.assertEqual(complex(MyReal(1)).imag, 0j)
+        self.assertEqual(complex(MyReal(1)), 1+0j)
 
         # test real
         self.assertEqual(MyReal(3).real, 3)
@@ -163,7 +162,7 @@ class TestNumbersDefaultMethods(unittest.TestCase):
                 return self.d
 
         # test__float__
-        self.assertEqual(float(MyRational(9, 3)), 3)
+        self.assertEqual(float(MyRational(5, 2)), 2.5)
 
 
     def test_integral(self):
