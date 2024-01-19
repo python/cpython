@@ -25,6 +25,8 @@ def concretize(cls):
 class TestNumbers(unittest.TestCase):
     def test_int(self):
         self.assertTrue(issubclass(int, Integral))
+        self.assertTrue(issubclass(int, Rational))
+        self.assertTrue(issubclass(int, Real))
         self.assertTrue(issubclass(int, Complex))
         self.assertTrue(issubclass(int, Number))
 
