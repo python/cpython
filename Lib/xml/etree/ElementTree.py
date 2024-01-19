@@ -99,6 +99,7 @@ import io
 import collections
 import collections.abc
 import contextlib
+import weakref
 
 from . import ElementPath
 
@@ -1222,15 +1223,15 @@ def iterparse(source, events=None, parser=None):
     # Use the internal, undocumented _parser argument for now; When the
     # parser argument of iterparse is removed, this can be killed.
     pullparser = XMLPullParser(events=events, _parser=parser)
-    _root = None
+
+    if not hasattr(source, "read"):
+        source = open(source, "rb")
+        close_source = True
+    else:
+        close_source = False
 
     def iterator(source):
-        close_source = False
         try:
-            if not hasattr(source, "read"):
-                source = open(source, "rb")
-                close_source = True
-            yield None
             while True:
                 yield from pullparser.read_events()
                 # load event buffer
@@ -1240,27 +1241,23 @@ def iterparse(source, events=None, parser=None):
                 pullparser.feed(data)
             root = pullparser._close_and_return_root()
             yield from pullparser.read_events()
-            nonlocal _root
-            _root = root
+            iterator = wr()
+            if iterator:
+                iterator.root = root
         finally:
             if close_source:
                 source.close()
 
     class IterParseIterator(collections.abc.Iterator):
-        def __init__(self, it):
-            self.it = it
+        __next__ = iterator(source).__next__
 
-        def __next__(self):
-            return next(self.it)
+        def __del__(self):
+            if close_source:
+                source.close()
 
-        @property
-        def root(self):
-            return _root
-
-    it = IterParseIterator(iterator(source))
-    del iterator, IterParseIterator
-
-    next(it)
+    it = IterParseIterator()
+    wr = weakref.ref(it)
+    del IterParseIterator
     return it
 
 
