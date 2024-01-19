@@ -65,8 +65,6 @@ struct _Py_float_state {
 #endif
 };
 
-#define DICT_MAX_WATCHERS 8
-
 struct _Py_dict_state {
 #ifdef WITH_FREELISTS
     /* Dictionary reuse scheme to save calls to malloc and free */
