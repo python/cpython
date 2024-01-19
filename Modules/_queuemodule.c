@@ -140,7 +140,7 @@ RingBuf_Get(RingBuf *buf)
         //
         // It's safe it ignore allocation failures here; shrinking is an
         // optimization that isn't required for correctness.
-        resize_ringbuf(buf, buf->items_cap / 2);
+        (void)resize_ringbuf(buf, buf->items_cap / 2);
     }
 
     PyObject *item = buf->items[buf->get_idx];
