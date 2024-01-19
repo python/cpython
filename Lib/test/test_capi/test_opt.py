@@ -629,6 +629,26 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         binop_count = [opname for opname, _, _ in ex if opname == "_BINARY_OP_ADD_INT"]
         self.assertEqual(len(binop_count), 3)
+
+    def test_call_constant_propagate_past_impure(self):
+        def testfunc(n):
+            for i in range(n):
+                x = 1
+                y = 1
+                x // y
+                z = x + y
+            return z
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            res = testfunc(20)
+
+        ex = get_first_executor(testfunc)
+        self.assertEqual(res, 2)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _, _ in ex}
+        self.assertNotIn("_BINARY_OP_ADD_INT", uops)
+
     def test_int_large_pure_region(self):
         def testfunc(loops):
             num = 0
@@ -706,6 +726,27 @@ class TestUopsOptimization(unittest.TestCase):
         uops = {opname for opname, _, _ in ex}
         self.assertIn("_LOAD_ATTR_CLASS", uops)
 
+    def test_call_constant_propagate_in_frame(self):
+        def testfunc(n):
+            def dummy():
+                x = 1
+                y = 1
+                return x+y
+            for i in range(n):
+                x = dummy()
+            return x
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            res = testfunc(20)
+
+        ex = get_first_executor(testfunc)
+        self.assertEqual(res, 2)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _, _ in ex}
+        self.assertIn("_PUSH_FRAME", uops)
+        self.assertNotIn("_BINARY_OP_ADD_INT", uops)
+
     def test_call_constant_propagate_through_frame(self):
         def testfunc(n):
             def dummy(x):
@@ -725,6 +766,22 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_PUSH_FRAME", uops)
         self.assertNotIn("_BINARY_OP_ADD_INT", uops)
 
+    def test_int_type_propagate_through_range(self):
+        def testfunc(n):
+
+            for i in range(n):
+                x = i + i
+            return x
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            res = testfunc(20)
+
+        ex = get_first_executor(testfunc)
+        self.assertEqual(res, 19 * 2)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _, _ in ex}
+        self.assertNotIn("_GUARD_BOTH_INT", uops)
 
     def test_comprehension(self):
         def testfunc(n):

@@ -17,4 +17,5 @@ SPECIALLY_HANDLED_ABSTRACT_INSTR = {
     # Bookkeeping
     "_SET_IP",
     "_CHECK_VALIDITY",
+    "_SAVE_RETURN_OFFSET",
 }
