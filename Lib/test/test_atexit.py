@@ -58,7 +58,7 @@ class FunctionalTest(unittest.TestCase):
 
         with os_helper.temp_dir() as temp_dir:
             output_path = os.path.join(temp_dir, 'output.txt')
-            code = textwrap.dedent(f"""
+            code = textwrap.dedent(rf"""
                 import multiprocessing
                 import os
                 import tempfile
@@ -67,7 +67,7 @@ class FunctionalTest(unittest.TestCase):
                     import atexit
                     def exit_handler():
                         with open('{output_path}', 'a') as f:
-                            f.write(f'|{{arg}}|\\n')
+                            f.write(f'|{{arg}}|\n')
                     atexit.register(exit_handler)
 
                 if __name__ == '__main__':
