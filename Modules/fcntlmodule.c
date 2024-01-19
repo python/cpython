@@ -597,6 +597,9 @@ all_ins(PyObject* m)
     if (PyModule_AddIntMacro(m, F_SET_RW_HINT)) return -1;
     if (PyModule_AddIntMacro(m, F_GET_FILE_RW_HINT)) return -1;
     if (PyModule_AddIntMacro(m, F_SET_FILE_RW_HINT)) return -1;
+#ifndef RWH_WRITE_LIFE_NOT_SET  // typo in Linux < 5.5
+# define RWH_WRITE_LIFE_NOT_SET RWF_WRITE_LIFE_NOT_SET
+#endif
     if (PyModule_AddIntMacro(m, RWH_WRITE_LIFE_NOT_SET)) return -1;
     if (PyModule_AddIntMacro(m, RWH_WRITE_LIFE_NONE)) return -1;
     if (PyModule_AddIntMacro(m, RWH_WRITE_LIFE_SHORT)) return -1;
