@@ -3126,12 +3126,12 @@ _PyDict_MergeEx(PyObject *a, PyObject *b, int override)
 /*[clinic input]
 dict.copy
 
-D.copy() -> a shallow copy of D
+Returns a shallow copy of D.
 [clinic start generated code]*/
 
 static PyObject *
 dict_copy_impl(PyDictObject *self)
-/*[clinic end generated code: output=ffb782cf970a5c39 input=b96949d603dc505c]*/
+/*[clinic end generated code: output=ffb782cf970a5c39 input=6d9903c1b6362e32]*/
 {
     return PyDict_Copy((PyObject *)self);
 }
@@ -3508,12 +3508,12 @@ dict_setdefault_impl(PyDictObject *self, PyObject *key,
 /*[clinic input]
 dict.clear
 
-D.clear() -> None.  Remove all items from D.
+Removes all items.
 [clinic start generated code]*/
 
 static PyObject *
 dict_clear_impl(PyDictObject *self)
-/*[clinic end generated code: output=5139a830df00830a input=31e16ad16e56f4dc]*/
+/*[clinic end generated code: output=5139a830df00830a input=1824e4e555dfaf79]*/
 {
     PyDict_Clear((PyObject *)self);
     Py_RETURN_NONE;
@@ -3706,12 +3706,12 @@ _PyDict_KeysSize(PyDictKeysObject *keys)
 /*[clinic input]
 dict.__sizeof__
 
-D.__sizeof__() -> size of D in memory, in bytes
+Returns size of D in memory, in bytes.
 [clinic start generated code]*/
 
 static PyObject *
 dict___sizeof___impl(PyDictObject *self)
-/*[clinic end generated code: output=44279379b3824bda input=bcde0197a346f7ce]*/
+/*[clinic end generated code: output=44279379b3824bda input=33b3550475672efd]*/
 {
     return PyLong_FromSsize_t(_PyDict_SizeOf(self));
 }
@@ -5247,12 +5247,12 @@ PyTypeObject PyDictKeys_Type = {
 /*[clinic input]
 dict.keys
 
-D.keys() -> a set-like object providing a view on D's keys
+Returns a set-like object providing a view on D's keys.
 [clinic start generated code]*/
 
 static PyObject *
 dict_keys_impl(PyDictObject *self)
-/*[clinic end generated code: output=aac2830c62990358 input=4a20806094eaaed1]*/
+/*[clinic end generated code: output=aac2830c62990358 input=26448b0710052252]*/
 {
     return _PyDictView_New((PyObject *)self, &PyDictKeys_Type);
 }
@@ -5359,12 +5359,12 @@ PyTypeObject PyDictItems_Type = {
 /*[clinic input]
 dict.items
 
-D.items() -> a set-like object providing a view on D's items
+Returns a set-like object providing a view on D's items.
 [clinic start generated code]*/
 
 static PyObject *
 dict_items_impl(PyDictObject *self)
-/*[clinic end generated code: output=88c7db7150c7909a input=7c47bcbd09b31e59]*/
+/*[clinic end generated code: output=88c7db7150c7909a input=21ee5e4c8ead76c4]*/
 {
     return _PyDictView_New((PyObject *)self, &PyDictItems_Type);
 }
@@ -5449,12 +5449,12 @@ PyTypeObject PyDictValues_Type = {
 /*[clinic input]
 dict.values
 
-D.values() -> an object providing a view on D's values
+Returns an object providing a view on D's values.
 [clinic start generated code]*/
 
 static PyObject *
 dict_values_impl(PyDictObject *self)
-/*[clinic end generated code: output=ce9f2e9e8a959dd4 input=004353e8ab5d1aa9]*/
+/*[clinic end generated code: output=ce9f2e9e8a959dd4 input=53354b69fc077e0d]*/
 {
     return _PyDictView_New((PyObject *)self, &PyDictValues_Type);
 }

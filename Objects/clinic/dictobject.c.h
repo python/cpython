@@ -42,7 +42,7 @@ PyDoc_STRVAR(dict_copy__doc__,
 "copy($self, /)\n"
 "--\n"
 "\n"
-"D.copy() -> a shallow copy of D");
+"Returns a shallow copy of D.");
 
 #define DICT_COPY_METHODDEF    \
     {"copy", (PyCFunction)dict_copy, METH_NOARGS, dict_copy__doc__},
@@ -140,7 +140,7 @@ PyDoc_STRVAR(dict_clear__doc__,
 "clear($self, /)\n"
 "--\n"
 "\n"
-"D.clear() -> None.  Remove all items from D.");
+"Removes all items.");
 
 #define DICT_CLEAR_METHODDEF    \
     {"clear", (PyCFunction)dict_clear, METH_NOARGS, dict_clear__doc__},
@@ -216,7 +216,7 @@ PyDoc_STRVAR(dict___sizeof____doc__,
 "__sizeof__($self, /)\n"
 "--\n"
 "\n"
-"D.__sizeof__() -> size of D in memory, in bytes");
+"Returns size of D in memory, in bytes.");
 
 #define DICT___SIZEOF___METHODDEF    \
     {"__sizeof__", (PyCFunction)dict___sizeof__, METH_NOARGS, dict___sizeof____doc__},
@@ -252,7 +252,7 @@ PyDoc_STRVAR(dict_keys__doc__,
 "keys($self, /)\n"
 "--\n"
 "\n"
-"D.keys() -> a set-like object providing a view on D\'s keys");
+"Returns a set-like object providing a view on D\'s keys.");
 
 #define DICT_KEYS_METHODDEF    \
     {"keys", (PyCFunction)dict_keys, METH_NOARGS, dict_keys__doc__},
@@ -270,7 +270,7 @@ PyDoc_STRVAR(dict_items__doc__,
 "items($self, /)\n"
 "--\n"
 "\n"
-"D.items() -> a set-like object providing a view on D\'s items");
+"Returns a set-like object providing a view on D\'s items.");
 
 #define DICT_ITEMS_METHODDEF    \
     {"items", (PyCFunction)dict_items, METH_NOARGS, dict_items__doc__},
@@ -288,7 +288,7 @@ PyDoc_STRVAR(dict_values__doc__,
 "values($self, /)\n"
 "--\n"
 "\n"
-"D.values() -> an object providing a view on D\'s values");
+"Returns an object providing a view on D\'s values.");
 
 #define DICT_VALUES_METHODDEF    \
     {"values", (PyCFunction)dict_values, METH_NOARGS, dict_values__doc__},
@@ -301,4 +301,4 @@ dict_values(PyDictObject *self, PyObject *Py_UNUSED(ignored))
 {
     return dict_values_impl(self);
 }
-/*[clinic end generated code: output=852c83b680d0a4a0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7b0c1b786b53efcf input=a9049054013a1b77]*/
