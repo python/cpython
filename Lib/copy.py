@@ -174,7 +174,7 @@ _atomic_types =  {types.NoneType, types.EllipsisType, types.NotImplementedType,
           int, float, bool, complex, bytes, str, types.CodeType, type, range,
           types.BuiltinFunctionType, types.FunctionType, weakref.ref, property}
 
-_deepcopy_dispatch = {}
+_deepcopy_dispatch = d = {}
 
 
 def _deepcopy_list(x, memo, deepcopy=deepcopy):
@@ -184,7 +184,7 @@ def _deepcopy_list(x, memo, deepcopy=deepcopy):
     for a in x:
         append(deepcopy(a, memo))
     return y
-_deepcopy_dispatch[list] = _deepcopy_list
+d[list] = _deepcopy_list
 
 def _deepcopy_tuple(x, memo, deepcopy=deepcopy):
     y = [deepcopy(a, memo) for a in x]
@@ -201,7 +201,7 @@ def _deepcopy_tuple(x, memo, deepcopy=deepcopy):
     else:
         y = x
     return y
-_deepcopy_dispatch[tuple] = _deepcopy_tuple
+d[tuple] = _deepcopy_tuple
 
 def _deepcopy_dict(x, memo, deepcopy=deepcopy):
     y = {}
@@ -209,12 +209,13 @@ def _deepcopy_dict(x, memo, deepcopy=deepcopy):
     for key, value in x.items():
         y[deepcopy(key, memo)] = deepcopy(value, memo)
     return y
-_deepcopy_dispatch[dict] = _deepcopy_dict
+d[dict] = _deepcopy_dict
 
 def _deepcopy_method(x, memo): # Copy instance methods
     return type(x)(x.__func__, deepcopy(x.__self__, memo))
-_deepcopy_dispatch[types.MethodType] = _deepcopy_method
+d[types.MethodType] = _deepcopy_method
 
+del d
 
 def _keep_alive(x, memo):
     """Keeps a reference to the object x in the memo.
