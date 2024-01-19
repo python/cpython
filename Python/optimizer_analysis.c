@@ -21,7 +21,7 @@
 
 #define MAX_ABSTRACT_INTERP_SIZE 2048
 
-#define OVERALLOCATE_FACTOR 2
+#define OVERALLOCATE_FACTOR 3
 
 #ifdef Py_DEBUG
     static const char *DEBUG_ENV = "PYTHON_OPT_DEBUG";
