@@ -7,6 +7,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_time.h"          // _PyTime_t
 
+#include <stdbool.h>
 #include <stddef.h>               // offsetof()
 
 typedef struct {
@@ -167,6 +168,18 @@ RingBuf_Put(RingBuf *buf, PyObject *item)
     buf->put_idx = (buf->put_idx + 1) % buf->items_cap;
     buf->num_items++;
     return 0;
+}
+
+static Py_ssize_t
+RingBuf_Len(RingBuf *buf)
+{
+    return buf->num_items;
+}
+
+static bool
+RingBuf_IsEmpty(RingBuf *buf)
+{
+    return RingBuf_Len(buf) == 0;
 }
 
 typedef struct {
@@ -366,7 +379,7 @@ _queue_SimpleQueue_get_impl(simplequeueobject *self, PyTypeObject *cls,
      * So we simply try to acquire the lock in a loop, until the condition
      * (queue non-empty) becomes true.
      */
-    while (self->buf.num_items == 0) {
+    while (RingBuf_IsEmpty(&self->buf)) {
         /* First a simple non-blocking try without releasing the GIL */
         r = PyThread_acquire_lock_timed(self->lock, 0, 0);
         if (r == PY_LOCK_FAILURE && microseconds != 0) {
@@ -436,7 +449,7 @@ static int
 _queue_SimpleQueue_empty_impl(simplequeueobject *self)
 /*[clinic end generated code: output=1a02a1b87c0ef838 input=1a98431c45fd66f9]*/
 {
-    return self->buf.num_items == 0;
+    return RingBuf_IsEmpty(&self->buf);
 }
 
 /*[clinic input]
@@ -449,7 +462,7 @@ static Py_ssize_t
 _queue_SimpleQueue_qsize_impl(simplequeueobject *self)
 /*[clinic end generated code: output=f9dcd9d0a90e121e input=7a74852b407868a1]*/
 {
-    return self->buf.num_items;
+    return RingBuf_Len(&self->buf);
 }
 
 static int
