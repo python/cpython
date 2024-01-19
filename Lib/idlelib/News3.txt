@@ -4,6 +4,8 @@ Released after 2023-10-02
 =========================
 
 
+gh-96905: In idlelib code, stop redefining built-ins 'dict' and 'object'.
+
 gh-72284: Improve the lists of features, editor key bindings,
 and shell key bingings in the IDLE doc.
 

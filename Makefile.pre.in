@@ -2143,6 +2143,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_cppext \
 		test/test_ctypes \
 		test/test_dataclasses \
+		test/test_doctest \
 		test/test_email \
 		test/test_email/data \
 		test/test_future_stmt \
