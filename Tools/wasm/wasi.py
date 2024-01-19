@@ -304,13 +304,13 @@ def main():
                                                  "Python)")
     make_host = subcommands.add_parser("make-host",
                                        help="Run `make` for the host/WASI")
-    clean = subcommands.add_parser("clean", help="Delete files created by this "
-                                                 "script")
+    clean = subcommands.add_parser("clean", help="Delete files and directories "
+                                                 "created by this script")
     for subcommand in build, configure_build, make_build, configure_host, make_host:
         subcommand.add_argument("--quiet", action="store_true", default=False,
                         dest="quiet",
                         help="Redirect output from subprocesses to a log file")
-    for subcommand in build, configure_build, configure_host:
+    for subcommand in configure_build, configure_host:
         subcommand.add_argument("--clean", action="store_true", default=False,
                         dest="clean",
                         help="Delete any relevant directories before building")
