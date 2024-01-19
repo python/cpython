@@ -211,7 +211,7 @@ static inline PyDictUnicodeEntry* DK_UNICODE_ENTRIES(PyDictKeysObject *dk) {
 #define DICT_VERSION_MASK (DICT_VERSION_INCREMENT - 1)
 
 #define DICT_NEXT_VERSION(INTERP) \
-    ((INTERP)->dict_state.global_version += DICT_VERSION_INCREMENT)
+    ((INTERP)->global_dict_state.global_version += DICT_VERSION_INCREMENT)
 
 void
 _PyDict_SendEvent(int watcher_bits,

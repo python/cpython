@@ -1834,6 +1834,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_genobject.h \
 		$(srcdir)/Include/internal/pycore_getopt.h \
 		$(srcdir)/Include/internal/pycore_gil.h \
+		$(srcdir)/Include/internal/pycore_global_dict_state.h \
 		$(srcdir)/Include/internal/pycore_global_objects.h \
 		$(srcdir)/Include/internal/pycore_global_objects_fini_generated.h \
 		$(srcdir)/Include/internal/pycore_hamt.h \
