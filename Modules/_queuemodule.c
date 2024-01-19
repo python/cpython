@@ -154,6 +154,8 @@ RingBuf_Get(RingBuf *buf)
 static int
 RingBuf_Put(RingBuf *buf, PyObject *item)
 {
+    assert(buf->num_items <= buf->items_cap);
+
     if (buf->num_items == buf->items_cap) {
         // Buffer is full, grow it.
         if (resize_ringbuf(buf, buf->items_cap * 2) < 0) {
