@@ -4341,6 +4341,7 @@ static PyObject *
 sock_send(PySocketSockObject *s, PyObject *args)
 {
     int flags = 0;
+    int err;
     Py_buffer pbuf;
     struct sock_send ctx;
 
@@ -4354,7 +4355,7 @@ sock_send(PySocketSockObject *s, PyObject *args)
     ctx.buf = pbuf.buf;
     ctx.len = pbuf.len;
     ctx.flags = flags;
-    if (sock_call(s, 1, sock_send_impl, &ctx) < 0) {
+    if (sock_call_ex(s, 1, sock_send_impl, &ctx, 0, &err, s->sock_timeout) < 0) {
         PyBuffer_Release(&pbuf);
         return NULL;
     }
