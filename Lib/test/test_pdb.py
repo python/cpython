@@ -16,9 +16,7 @@ from io import StringIO
 from test import support
 from test.support import os_helper
 from test.support.import_helper import import_module
-from test.support.pty_helper import run_pty
-# This little helper class is essential for testing pdb under doctest.
-from test.test_doctest import _FakeInput
+from test.support.pty_helper import run_pty, FakeInput
 from unittest.mock import patch
 
 
@@ -30,7 +28,7 @@ class PdbTestInput(object):
 
     def __enter__(self):
         self.real_stdin = sys.stdin
-        sys.stdin = _FakeInput(self.input)
+        sys.stdin = FakeInput(self.input)
         self.orig_trace = sys.gettrace() if hasattr(sys, 'gettrace') else None
 
     def __exit__(self, *exc):
@@ -847,9 +845,12 @@ def test_convenience_variables():
 
     >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
     ...     '$_frame.f_lineno', # Check frame convenience variable
+    ...     '$ _frame',         # This should be a syntax error
     ...     '$a = 10',          # Set a convenience variable
     ...     '$a',               # Print its value
+    ...     'p "$a"',           # Print the string $a
     ...     'p $a + 2',         # Do some calculation
+    ...     'p f"$a = {$a}"',   # Make sure $ in string is not converted and f-string works
     ...     'u',                # Switch frame
     ...     '$_frame.f_lineno', # Make sure the frame changed
     ...     '$a',               # Make sure the value persists
@@ -869,11 +870,17 @@ def test_convenience_variables():
     -> try:
     (Pdb) $_frame.f_lineno
     3
+    (Pdb) $ _frame
+    *** SyntaxError: invalid syntax
     (Pdb) $a = 10
     (Pdb) $a
     10
+    (Pdb) p "$a"
+    '$a'
     (Pdb) p $a + 2
     12
+    (Pdb) p f"$a = {$a}"
+    '$a = 10'
     (Pdb) u
     > <doctest test.test_pdb.test_convenience_variables[1]>(2)test_function()
     -> util_function()

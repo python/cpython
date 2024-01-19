@@ -41,6 +41,12 @@ typedef struct {
     PyTypeObject *PyComError_Type;
 #endif
     PyTypeObject *StructParam_Type;
+    PyTypeObject *PyCStructType_Type;
+    PyTypeObject *UnionType_Type;
+    PyTypeObject *PyCPointerType_Type;
+    PyTypeObject *PyCArrayType_Type;
+    PyTypeObject *PyCSimpleType_Type;
+    PyTypeObject *PyCFuncPtrType_Type;
     PyTypeObject *PyCData_Type;
     PyTypeObject *Struct_Type;
     PyTypeObject *Union_Type;
@@ -125,7 +131,7 @@ typedef struct {
     Py_ssize_t b_size;          /* size of memory block in bytes */
     Py_ssize_t b_length;        /* number of references we need */
     Py_ssize_t b_index;         /* index of this object into base's
-                               b_object list */
+                                   b_object list */
     PyObject *b_objects;        /* list of references we need to keep */
     union value b_value;
     /* end of tagCDataObject, additional fields follow */
@@ -156,14 +162,12 @@ extern int PyType_stginfo(PyTypeObject *self, Py_ssize_t *psize, Py_ssize_t *pal
 extern int PyObject_stginfo(PyObject *self, Py_ssize_t *psize, Py_ssize_t *palign, Py_ssize_t *plength);
 
 
-
 #define CDataObject_CheckExact(st, v)       Py_IS_TYPE((v), (st)->PyCData_Type)
 #define CDataObject_Check(st, v)            PyObject_TypeCheck((v), (st)->PyCData_Type)
 #define _CDataObject_HasExternalBuffer(v)  ((v)->b_ptr != (char *)&(v)->b_value)
 
-extern PyTypeObject PyCSimpleType_Type;
-#define PyCSimpleTypeObject_CheckExact(v)       Py_IS_TYPE(v, &PyCSimpleType_Type)
-#define PyCSimpleTypeObject_Check(v)    PyObject_TypeCheck(v, &PyCSimpleType_Type)
+#define PyCSimpleTypeObject_CheckExact(v)       Py_IS_TYPE(v, GLOBAL_STATE()->PyCSimpleType_Type)
+#define PyCSimpleTypeObject_Check(v)    PyObject_TypeCheck(v, GLOBAL_STATE()->PyCSimpleType_Type)
 
 extern struct fielddesc *_ctypes_get_fielddesc(const char *fmt);
 
@@ -177,18 +181,13 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
 extern PyObject *PyCData_AtAddress(PyObject *type, void *buf);
 extern PyObject *PyCData_FromBytes(PyObject *type, char *data, Py_ssize_t length);
 
-extern PyTypeObject PyCArrayType_Type;
-extern PyTypeObject PyCPointerType_Type;
-extern PyTypeObject PyCFuncPtrType_Type;
-extern PyTypeObject PyCStructType_Type;
-
-#define PyCArrayTypeObject_Check(v)     PyObject_TypeCheck(v, &PyCArrayType_Type)
+#define PyCArrayTypeObject_Check(v)     PyObject_TypeCheck(v, GLOBAL_STATE()->PyCArrayType_Type)
 #define ArrayObject_Check(st, v)        PyObject_TypeCheck((v), (st)->PyCArray_Type)
 #define PointerObject_Check(st, v)      PyObject_TypeCheck((v), (st)->PyCPointer_Type)
-#define PyCPointerTypeObject_Check(v)   PyObject_TypeCheck(v, &PyCPointerType_Type)
+#define PyCPointerTypeObject_Check(v)   PyObject_TypeCheck(v, GLOBAL_STATE()->PyCPointerType_Type)
 #define PyCFuncPtrObject_Check(st, v)   PyObject_TypeCheck((v), (st)->PyCFuncPtr_Type)
-#define PyCFuncPtrTypeObject_Check(v)   PyObject_TypeCheck(v, &PyCFuncPtrType_Type)
-#define PyCStructTypeObject_Check(v)    PyObject_TypeCheck(v, &PyCStructType_Type)
+#define PyCFuncPtrTypeObject_Check(v)   PyObject_TypeCheck(v, GLOBAL_STATE()->PyCFuncPtrType_Type)
+#define PyCStructTypeObject_Check(v)    PyObject_TypeCheck(v, GLOBAL_STATE()->PyCStructType_Type)
 
 extern PyObject *
 PyCArrayType_from_ctype(PyObject *itemtype, Py_ssize_t length);

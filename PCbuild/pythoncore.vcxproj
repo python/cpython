@@ -111,6 +111,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\getpath.c">
+      <AdditionalIncludeDirectories>$(GeneratedFrozenModulesDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>
         PREFIX=NULL;
         EXEC_PREFIX=NULL;
@@ -120,7 +121,6 @@
         PLATLIBDIR="DLLs";
         %(PreprocessorDefinitions)
       </PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(PySourcePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -231,6 +231,7 @@
     <ClInclude Include="..\Include\internal\pycore_floatobject.h" />
     <ClInclude Include="..\Include\internal\pycore_format.h" />
     <ClInclude Include="..\Include\internal\pycore_frame.h" />
+    <ClInclude Include="..\Include\internal\pycore_freelist.h" />
     <ClInclude Include="..\Include\internal\pycore_function.h" />
     <ClInclude Include="..\Include\internal\pycore_gc.h" />
     <ClInclude Include="..\Include\internal\pycore_genobject.h" />
@@ -294,7 +295,6 @@
     <ClInclude Include="..\Include\internal\pycore_unionobject.h" />
     <ClInclude Include="..\Include\internal\pycore_unicodeobject.h" />
     <ClInclude Include="..\Include\internal\pycore_unicodeobject_generated.h" />
-    <ClInclude Include="..\Include\internal\pycore_uops.h" />
     <ClInclude Include="..\Include\internal\pycore_warnings.h" />
     <ClInclude Include="..\Include\internal\pycore_weakref.h" />
     <ClInclude Include="..\Include\interpreteridobject.h" />
@@ -424,6 +424,7 @@
     <ClInclude Include="..\Modules\_sre\sre_lib.h" />
     <ClCompile Include="..\Modules\_stat.c" />
     <ClCompile Include="..\Modules\_struct.c" />
+    <ClCompile Include="..\Modules\_suggestions.c" />
     <ClCompile Include="..\Modules\_weakref.c" />
     <ClCompile Include="..\Modules\arraymodule.c" />
     <ClCompile Include="..\Modules\atexitmodule.c" />
@@ -562,8 +563,13 @@
     <ClCompile Include="..\Python\flowgraph.c" />
     <ClCompile Include="..\Python\formatter_unicode.c" />
     <ClCompile Include="..\Python\frame.c" />
-    <ClCompile Include="..\Python\frozen.c" />
+    <ClCompile Include="..\Python\frozen.c">
+      <AdditionalIncludeDirectories>$(GeneratedFrozenModulesDir)Python;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
     <ClCompile Include="..\Python\future.c" />
+    <ClCompile Include="..\Python\gc.c" />
+    <ClCompile Include="..\Python\gc_free_threading.c" />
+    <ClCompile Include="..\Python\gc_gil.c" />
     <ClCompile Include="..\Python\getargs.c" />
     <ClCompile Include="..\Python\getcompiler.c" />
     <ClCompile Include="..\Python\getcopyright.c" />
@@ -617,7 +623,7 @@
   </ItemGroup>
   <ItemGroup>
     <!-- BEGIN deepfreeze -->
-    <ClCompile Include="..\Python\deepfreeze\deepfreeze.c" />
+    <ClCompile Include="$(GeneratedFrozenModulesDir)deepfreeze.c" />
     <!-- END deepfreeze -->
   </ItemGroup>
   <ItemGroup Condition="$(IncludeExternals)">

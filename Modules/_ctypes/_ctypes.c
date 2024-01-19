@@ -867,20 +867,6 @@ CDataType_repeat(PyObject *self, Py_ssize_t length)
     return PyCArrayType_from_ctype(self, length);
 }
 
-static PySequenceMethods CDataType_as_sequence = {
-    0,                          /* inquiry sq_length; */
-    0,                          /* binaryfunc sq_concat; */
-    CDataType_repeat,           /* intargfunc sq_repeat; */
-    0,                          /* intargfunc sq_item; */
-    0,                          /* intintargfunc sq_slice; */
-    0,                          /* intobjargproc sq_ass_item; */
-    0,                          /* intintobjargproc sq_ass_slice; */
-    0,                          /* objobjproc sq_contains; */
-
-    0,                          /* binaryfunc sq_inplace_concat; */
-    0,                          /* intargfunc sq_inplace_repeat; */
-};
-
 static int
 CDataType_clear(PyTypeObject *self)
 {
@@ -894,8 +880,10 @@ static int
 CDataType_traverse(PyTypeObject *self, visitproc visit, void *arg)
 {
     StgDictObject *dict = PyType_stgdict((PyObject *)self);
-    if (dict)
+    if (dict) {
         Py_VISIT(dict->proto);
+    }
+    Py_VISIT(Py_TYPE(self));
     return PyType_Type.tp_traverse((PyObject *)self, visit, arg);
 }
 
@@ -926,91 +914,45 @@ UnionType_setattro(PyObject *self, PyObject *key, PyObject *value)
     return 0;
 }
 
+static PyType_Slot pycstruct_type_slots[] = {
+    {Py_tp_setattro, PyCStructType_setattro},
+    {Py_tp_doc, PyDoc_STR("metatype for the CData Objects")},
+    {Py_tp_traverse, CDataType_traverse},
+    {Py_tp_clear, CDataType_clear},
+    {Py_tp_methods, CDataType_methods},
+    {Py_tp_init, PyCStructType_init},
 
-PyTypeObject PyCStructType_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_ctypes.PyCStructType",                            /* tp_name */
-    0,                                          /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    0,                                          /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    &CDataType_as_sequence,                     /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    0,                                          /* tp_getattro */
-    PyCStructType_setattro,                     /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, /* tp_flags */
-    PyDoc_STR("metatype for the CData Objects"), /* tp_doc */
-    (traverseproc)CDataType_traverse,           /* tp_traverse */
-    (inquiry)CDataType_clear,                   /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    CDataType_methods,                          /* tp_methods */
-    0,                                          /* tp_members */
-    0,                                          /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    PyCStructType_init,                         /* tp_init */
-    0,                                          /* tp_alloc */
-    0,                                          /* tp_new */
-    0,                                          /* tp_free */
+    // Sequence protocol.
+    {Py_sq_repeat, CDataType_repeat},
+    {0, NULL},
 };
 
-static PyTypeObject UnionType_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_ctypes.UnionType",                        /* tp_name */
-    0,                                          /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    0,                                          /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    &CDataType_as_sequence,             /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    0,                                          /* tp_getattro */
-    UnionType_setattro,                         /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, /* tp_flags */
-    PyDoc_STR("metatype for the CData Objects"), /* tp_doc */
-    (traverseproc)CDataType_traverse,           /* tp_traverse */
-    (inquiry)CDataType_clear,                   /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    CDataType_methods,                          /* tp_methods */
-    0,                                          /* tp_members */
-    0,                                          /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    UnionType_init,                             /* tp_init */
-    0,                                          /* tp_alloc */
-    0,                                          /* tp_new */
-    0,                                          /* tp_free */
+PyType_Spec pycstruct_type_spec = {
+    .name = "_ctypes.PyCStructType",
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = pycstruct_type_slots,
 };
 
+static PyType_Slot union_type_slots[] = {
+    {Py_tp_setattro, UnionType_setattro},
+    {Py_tp_doc, PyDoc_STR("metatype for the Union Objects")},
+    {Py_tp_traverse, CDataType_traverse},
+    {Py_tp_clear, CDataType_clear},
+    {Py_tp_methods, CDataType_methods},
+    {Py_tp_init, UnionType_init},
+
+    // Sequence protocol.
+    {Py_sq_repeat, CDataType_repeat},
+    {0, NULL},
+};
+
+static PyType_Spec union_type_spec = {
+    .name = "_ctypes.UnionType",
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = union_type_slots,
+};
 
 /******************************************************************/
 
@@ -1223,46 +1165,23 @@ static PyMethodDef PyCPointerType_methods[] = {
     { NULL, NULL },
 };
 
-PyTypeObject PyCPointerType_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_ctypes.PyCPointerType",                                   /* tp_name */
-    0,                                          /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    0,                                          /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    &CDataType_as_sequence,             /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    0,                                          /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, /* tp_flags */
-    PyDoc_STR("metatype for the Pointer Objects"), /* tp_doc */
-    (traverseproc)CDataType_traverse,           /* tp_traverse */
-    (inquiry)CDataType_clear,                   /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    PyCPointerType_methods,                     /* tp_methods */
-    0,                                          /* tp_members */
-    0,                                          /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    PyCPointerType_init,                        /* tp_init */
-    0,                                          /* tp_alloc */
-    0,                                          /* tp_new */
-    0,                                          /* tp_free */
+static PyType_Slot pycpointer_type_slots[] = {
+    {Py_tp_doc, PyDoc_STR("metatype for the Pointer Objects")},
+    {Py_tp_traverse, CDataType_traverse},
+    {Py_tp_clear, CDataType_clear},
+    {Py_tp_methods, PyCPointerType_methods},
+    {Py_tp_init, PyCPointerType_init},
+
+    // Sequence protocol.
+    {Py_sq_repeat, CDataType_repeat},
+    {0, NULL},
+};
+
+static PyType_Spec pycpointer_type_spec = {
+    .name = "_ctypes.PyCPointerType",
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = pycpointer_type_slots,
 };
 
 
@@ -1592,48 +1511,24 @@ error:
     return -1;
 }
 
-PyTypeObject PyCArrayType_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_ctypes.PyCArrayType",                     /* tp_name */
-    0,                                          /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    0,                                          /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    &CDataType_as_sequence,                     /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    0,                                          /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    PyDoc_STR("metatype for the Array Objects"), /* tp_doc */
-    0,                                          /* tp_traverse */
-    0,                                          /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    CDataType_methods,                          /* tp_methods */
-    0,                                          /* tp_members */
-    0,                                          /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    PyCArrayType_init,                          /* tp_init */
-    0,                                          /* tp_alloc */
-    0,                                          /* tp_new */
-    0,                                          /* tp_free */
+static PyType_Slot pycarray_type_slots[] = {
+    {Py_tp_doc, PyDoc_STR("metatype for the Array Objects")},
+    {Py_tp_traverse, CDataType_traverse},
+    {Py_tp_methods, CDataType_methods},
+    {Py_tp_init, PyCArrayType_init},
+    {Py_tp_clear, CDataType_clear},
+
+    // Sequence protocol.
+    {Py_sq_repeat, CDataType_repeat},
+    {0, NULL},
 };
 
+static PyType_Spec pycarray_type_spec = {
+    .name = "_ctypes.PyCArrayType",
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = pycarray_type_slots,
+};
 
 /******************************************************************/
 /*
@@ -1879,7 +1774,11 @@ c_void_p_from_param(PyObject *type, PyObject *value)
     }
 /* c_char_p, c_wchar_p */
     stgd = PyObject_stgdict(value);
-    if (stgd && CDataObject_Check(st, value) && stgd->proto && PyUnicode_Check(stgd->proto)) {
+    if (stgd
+        && CDataObject_Check(st, value)
+        && stgd->proto
+        && PyUnicode_Check(stgd->proto))
+    {
         PyCArgObject *parg;
 
         switch (PyUnicode_AsUTF8(stgd->proto)[0]) {
@@ -2030,8 +1929,6 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
        since we are a metatype!) */
     result = (PyTypeObject *)self;  // by PyType_Type.tp_new()
 
-    ctypes_state *st = GLOBAL_STATE();
-
     if (PyObject_GetOptionalAttr((PyObject *)result, &_Py_ID(_type_), &proto) < 0) {
         return -1;
     }
@@ -2071,6 +1968,7 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
         goto error;
     }
 
+    ctypes_state *st = GLOBAL_STATE();
     stgdict = (StgDictObject *)_PyObject_CallNoArgs(
         (PyObject *)&PyCStgDict_Type);
     if (!stgdict)
@@ -2095,7 +1993,7 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
 
     stgdict->paramfunc = PyCSimpleType_paramfunc;
 /*
-    if (result->tp_base != &Simple_Type) {
+    if (result->tp_base != st->Simple_Type) {
         stgdict->setfunc = NULL;
         stgdict->getfunc = NULL;
     }
@@ -2157,7 +2055,10 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     PyTypeObject *type = Py_TYPE(self);
-    if (type == &PyCSimpleType_Type && fmt->setfunc_swapped && fmt->getfunc_swapped) {
+    if (type == st->PyCSimpleType_Type
+        && fmt->setfunc_swapped
+        && fmt->getfunc_swapped)
+    {
         PyObject *swapped = CreateSwappedType(type, args, kwds,
                                               proto, fmt);
         StgDictObject *sw_dict;
@@ -2272,46 +2173,23 @@ static PyMethodDef PyCSimpleType_methods[] = {
     { NULL, NULL },
 };
 
-PyTypeObject PyCSimpleType_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_ctypes.PyCSimpleType",                                    /* tp_name */
-    0,                                          /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    0,                                          /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    &CDataType_as_sequence,             /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    0,                                          /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    PyDoc_STR("metatype for the PyCSimpleType Objects"), /* tp_doc */
-    0,                                          /* tp_traverse */
-    0,                                          /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    PyCSimpleType_methods,                      /* tp_methods */
-    0,                                          /* tp_members */
-    0,                                          /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    (initproc)PyCSimpleType_init,               /* tp_init */
-    0,                                          /* tp_alloc */
-    0,                                          /* tp_new */
-    0,                                          /* tp_free */
+static PyType_Slot pycsimple_type_slots[] = {
+    {Py_tp_doc, PyDoc_STR("metatype for the PyCSimpleType Objects")},
+    {Py_tp_methods, PyCSimpleType_methods},
+    {Py_tp_init, PyCSimpleType_init},
+    {Py_tp_traverse, CDataType_traverse},
+    {Py_tp_clear, CDataType_clear},
+
+    // Sequence protocol.
+    {Py_sq_repeat, CDataType_repeat},
+    {0, NULL},
+};
+
+PyType_Spec pycsimple_type_spec = {
+    .name = "_ctypes.PyCSimpleType",
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = pycsimple_type_slots,
 };
 
 /******************************************************************/
@@ -2549,46 +2427,23 @@ PyCFuncPtrType_init(PyObject *self, PyObject *args, PyObject *kwds)
     return 0;
 }
 
-PyTypeObject PyCFuncPtrType_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_ctypes.PyCFuncPtrType",                           /* tp_name */
-    0,                                          /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    0,                                          /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    &CDataType_as_sequence,                     /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    0,                                          /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, /* tp_flags */
-    PyDoc_STR("metatype for C function pointers"), /* tp_doc */
-    (traverseproc)CDataType_traverse,           /* tp_traverse */
-    (inquiry)CDataType_clear,                   /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    CDataType_methods,                          /* tp_methods */
-    0,                                          /* tp_members */
-    0,                                          /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    PyCFuncPtrType_init,                        /* tp_init */
-    0,                                          /* tp_alloc */
-    0,                                          /* tp_new */
-    0,                                          /* tp_free */
+static PyType_Slot pycfuncptr_type_slots[] = {
+    {Py_tp_doc, PyDoc_STR("metatype for C function pointers")},
+    {Py_tp_traverse, CDataType_traverse},
+    {Py_tp_clear, CDataType_clear},
+    {Py_tp_methods, CDataType_methods},
+    {Py_tp_init, PyCFuncPtrType_init},
+
+    // Sequence protocol.
+    {Py_sq_repeat, CDataType_repeat},
+    {0, NULL},
+};
+
+static PyType_Spec pycfuncptr_type_spec = {
+    .name = "_ctypes.PyCFuncPtrType",
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = pycfuncptr_type_slots,
 };
 
 
@@ -2714,9 +2569,8 @@ PyCData_clear(CDataObject *self)
 {
     Py_CLEAR(self->b_objects);
     if ((self->b_needsfree)
-        && _CDataObject_HasExternalBuffer(self)) {
+        && _CDataObject_HasExternalBuffer(self))
         PyMem_Free(self->b_ptr);
-    }
     self->b_ptr = NULL;
     Py_CLEAR(self->b_base);
     return 0;
@@ -2884,9 +2738,7 @@ static PyType_Slot pycdata_slots[] = {
 static PyType_Spec pycdata_spec = {
     .name = "_ctypes._CData",
     .basicsize = sizeof(CDataObject),
-    .flags = (Py_TPFLAGS_DEFAULT |
-              Py_TPFLAGS_BASETYPE |
-              Py_TPFLAGS_HAVE_GC |
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
               Py_TPFLAGS_IMMUTABLETYPE),
     .slots = pycdata_slots,
 };
@@ -4248,9 +4100,7 @@ static PyType_Slot pycfuncptr_slots[] = {
 static PyType_Spec pycfuncptr_spec = {
     .name = "_ctypes.CFuncPtr",
     .basicsize = sizeof(PyCFuncPtrObject),
-    .flags = (Py_TPFLAGS_DEFAULT |
-              Py_TPFLAGS_BASETYPE |
-              Py_TPFLAGS_HAVE_GC |
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
               Py_TPFLAGS_IMMUTABLETYPE),
     .slots = pycfuncptr_slots,
 };
@@ -4380,9 +4230,7 @@ static PyType_Slot struct_slots[] = {
 static PyType_Spec struct_spec = {
     .name = "_ctypes.Structure",
     .basicsize = sizeof(CDataObject),
-    .flags = (Py_TPFLAGS_DEFAULT |
-              Py_TPFLAGS_BASETYPE |
-              Py_TPFLAGS_HAVE_GC |
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
               Py_TPFLAGS_IMMUTABLETYPE),
     .slots = struct_slots,
 };
@@ -4403,9 +4251,7 @@ static PyType_Slot union_slots[] = {
 static PyType_Spec union_spec = {
     .name = "_ctypes.Union",
     .basicsize = sizeof(CDataObject),
-    .flags = (Py_TPFLAGS_DEFAULT |
-              Py_TPFLAGS_BASETYPE |
-              Py_TPFLAGS_HAVE_GC |
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
               Py_TPFLAGS_IMMUTABLETYPE),
     .slots = union_slots,
 };
@@ -4705,9 +4551,7 @@ static PyType_Slot array_slots[] = {
 static PyType_Spec array_spec = {
     .name = "_ctypes.Array",
     .basicsize = sizeof(CDataObject),
-    .flags = (Py_TPFLAGS_DEFAULT |
-              Py_TPFLAGS_BASETYPE |
-              Py_TPFLAGS_HAVE_GC |
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
               Py_TPFLAGS_IMMUTABLETYPE),
     .slots = array_slots,
 };
@@ -4754,7 +4598,7 @@ PyCArrayType_from_ctype(PyObject *itemtype, Py_ssize_t length)
         ((PyTypeObject *)itemtype)->tp_name, (long)length);
 #endif
     ctypes_state *st = GLOBAL_STATE();
-    result = PyObject_CallFunction((PyObject *)&PyCArrayType_Type,
+    result = PyObject_CallFunction((PyObject *)st->PyCArrayType_Type,
                                    "s(O){s:n,s:O}",
                                    name,
                                    st->PyCArray_Type,
@@ -4894,9 +4738,7 @@ static PyType_Slot simple_slots[] = {
 static PyType_Spec simple_spec = {
     .name = "_ctypes._SimpleCData",
     .basicsize = sizeof(CDataObject),
-    .flags = (Py_TPFLAGS_DEFAULT |
-              Py_TPFLAGS_BASETYPE |
-              Py_TPFLAGS_HAVE_GC |
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
               Py_TPFLAGS_IMMUTABLETYPE),
     .slots = simple_slots,
 };
@@ -5236,9 +5078,7 @@ static PyType_Slot pointer_slots[] = {
 static PyType_Spec pointer_spec = {
     .name = "_ctypes._Pointer",
     .basicsize = sizeof(CDataObject),
-    .flags = (Py_TPFLAGS_DEFAULT |
-              Py_TPFLAGS_BASETYPE |
-              Py_TPFLAGS_HAVE_GC |
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
               Py_TPFLAGS_IMMUTABLETYPE),
     .slots = pointer_slots,
 };
@@ -5502,24 +5342,29 @@ _ctypes_add_types(PyObject *mod)
      *
      * Metaclasses
      */
-    TYPE_READY_BASE(&PyCStructType_Type, &PyType_Type);
-    TYPE_READY_BASE(&UnionType_Type, &PyType_Type);
-    TYPE_READY_BASE(&PyCPointerType_Type, &PyType_Type);
-    TYPE_READY_BASE(&PyCArrayType_Type, &PyType_Type);
-    TYPE_READY_BASE(&PyCSimpleType_Type, &PyType_Type);
-    TYPE_READY_BASE(&PyCFuncPtrType_Type, &PyType_Type);
+    CREATE_TYPE(mod, st->PyCStructType_Type, &pycstruct_type_spec,
+                &PyType_Type);
+    CREATE_TYPE(mod, st->UnionType_Type, &union_type_spec, &PyType_Type);
+    CREATE_TYPE(mod, st->PyCPointerType_Type, &pycpointer_type_spec,
+                &PyType_Type);
+    CREATE_TYPE(mod, st->PyCArrayType_Type, &pycarray_type_spec,
+                &PyType_Type);
+    CREATE_TYPE(mod, st->PyCSimpleType_Type, &pycsimple_type_spec,
+                &PyType_Type);
+    CREATE_TYPE(mod, st->PyCFuncPtrType_Type, &pycfuncptr_type_spec,
+                &PyType_Type);
 
     /*************************************************
      *
      * Classes using a custom metaclass
      */
 
-    MOD_ADD_TYPE(st->Struct_Type, &struct_spec, &PyCStructType_Type);
-    MOD_ADD_TYPE(st->Union_Type, &union_spec, &UnionType_Type);
-    MOD_ADD_TYPE(st->PyCPointer_Type, &pointer_spec, &PyCPointerType_Type);
-    MOD_ADD_TYPE(st->PyCArray_Type, &array_spec, &PyCArrayType_Type);
-    MOD_ADD_TYPE(st->Simple_Type, &simple_spec, &PyCSimpleType_Type);
-    MOD_ADD_TYPE(st->PyCFuncPtr_Type, &pycfuncptr_spec, &PyCFuncPtrType_Type);
+    MOD_ADD_TYPE(st->Struct_Type, &struct_spec, st->PyCStructType_Type);
+    MOD_ADD_TYPE(st->Union_Type, &union_spec, st->UnionType_Type);
+    MOD_ADD_TYPE(st->PyCPointer_Type, &pointer_spec, st->PyCPointerType_Type);
+    MOD_ADD_TYPE(st->PyCArray_Type, &array_spec, st->PyCArrayType_Type);
+    MOD_ADD_TYPE(st->Simple_Type, &simple_spec, st->PyCSimpleType_Type);
+    MOD_ADD_TYPE(st->PyCFuncPtr_Type, &pycfuncptr_spec, st->PyCFuncPtrType_Type);
 
     /*************************************************
      *

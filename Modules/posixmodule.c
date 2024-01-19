@@ -1024,7 +1024,7 @@ typedef struct {
     PyObject *TerminalSizeType;
     PyObject *TimesResultType;
     PyObject *UnameResultType;
-#if defined(HAVE_WAITID) && !defined(__APPLE__)
+#if defined(HAVE_WAITID)
     PyObject *WaitidResultType;
 #endif
 #if defined(HAVE_WAIT3) || defined(HAVE_WAIT4)
@@ -1886,8 +1886,9 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
     HANDLE hFile;
     BY_HANDLE_FILE_INFORMATION fileInfo;
     FILE_BASIC_INFO basicInfo;
+    FILE_BASIC_INFO *pBasicInfo = NULL;
     FILE_ID_INFO idInfo;
-    FILE_ID_INFO *pIdInfo = &idInfo;
+    FILE_ID_INFO *pIdInfo = NULL;
     FILE_ATTRIBUTE_TAG_INFO tagInfo = { 0 };
     DWORD fileType, error;
     BOOL isUnhandledTag = FALSE;
@@ -2038,14 +2039,17 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
             retval = -1;
             goto cleanup;
         }
+
+        /* Successfully got FileBasicInfo, so we'll pass it along */
+        pBasicInfo = &basicInfo;
+
+        if (GetFileInformationByHandleEx(hFile, FileIdInfo, &idInfo, sizeof(idInfo))) {
+            /* Successfully got FileIdInfo, so pass it along */
+            pIdInfo = &idInfo;
+        }
     }
 
-    if (!GetFileInformationByHandleEx(hFile, FileIdInfo, &idInfo, sizeof(idInfo))) {
-        /* Failed to get FileIdInfo, so do not pass it along */
-        pIdInfo = NULL;
-    }
-
-    _Py_attribute_data_to_stat(&fileInfo, tagInfo.ReparseTag, &basicInfo, pIdInfo, result);
+    _Py_attribute_data_to_stat(&fileInfo, tagInfo.ReparseTag, pBasicInfo, pIdInfo, result);
     update_st_mode_from_path(path, fileInfo.dwFileAttributes, result);
 
 cleanup:
@@ -2292,7 +2296,7 @@ static PyStructSequence_Desc statvfs_result_desc = {
     10
 };
 
-#if defined(HAVE_WAITID) && !defined(__APPLE__)
+#if defined(HAVE_WAITID)
 PyDoc_STRVAR(waitid_result__doc__,
 "waitid_result: Result from waitid.\n\n\
 This object may be accessed either as a tuple of\n\
@@ -2367,7 +2371,7 @@ _posix_clear(PyObject *module)
     Py_CLEAR(state->TerminalSizeType);
     Py_CLEAR(state->TimesResultType);
     Py_CLEAR(state->UnameResultType);
-#if defined(HAVE_WAITID) && !defined(__APPLE__)
+#if defined(HAVE_WAITID)
     Py_CLEAR(state->WaitidResultType);
 #endif
 #if defined(HAVE_WAIT3) || defined(HAVE_WAIT4)
@@ -2392,7 +2396,7 @@ _posix_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->TerminalSizeType);
     Py_VISIT(state->TimesResultType);
     Py_VISIT(state->UnameResultType);
-#if defined(HAVE_WAITID) && !defined(__APPLE__)
+#if defined(HAVE_WAITID)
     Py_VISIT(state->WaitidResultType);
 #endif
 #if defined(HAVE_WAIT3) || defined(HAVE_WAIT4)
@@ -9518,7 +9522,7 @@ os_wait4_impl(PyObject *module, pid_t pid, int options)
 #endif /* HAVE_WAIT4 */
 
 
-#if defined(HAVE_WAITID) && !defined(__APPLE__)
+#if defined(HAVE_WAITID)
 /*[clinic input]
 os.waitid
 
@@ -9575,7 +9579,7 @@ os_waitid_impl(PyObject *module, idtype_t idtype, id_t id, int options)
 
     return result;
 }
-#endif /* defined(HAVE_WAITID) && !defined(__APPLE__) */
+#endif /* defined(HAVE_WAITID) */
 
 
 #if defined(HAVE_WAITPID)
@@ -11578,8 +11582,8 @@ os_pipe_impl(PyObject *module)
     Py_BEGIN_ALLOW_THREADS
     ok = CreatePipe(&read, &write, &attr, 0);
     if (ok) {
-        fds[0] = _Py_open_osfhandle_noraise(read, _O_RDONLY);
-        fds[1] = _Py_open_osfhandle_noraise(write, _O_WRONLY);
+        fds[0] = _Py_open_osfhandle_noraise(read, _O_RDONLY | _O_NOINHERIT);
+        fds[1] = _Py_open_osfhandle_noraise(write, _O_WRONLY | _O_NOINHERIT);
         if (fds[0] == -1 || fds[1] == -1) {
             CloseHandle(read);
             CloseHandle(write);
@@ -17309,7 +17313,7 @@ posixmodule_exec(PyObject *m)
         return -1;
     }
 
-#if defined(HAVE_WAITID) && !defined(__APPLE__)
+#if defined(HAVE_WAITID)
     waitid_result_desc.name = MODNAME ".waitid_result";
     state->WaitidResultType = (PyObject *)PyStructSequence_NewType(&waitid_result_desc);
     if (PyModule_AddObjectRef(m, "waitid_result", state->WaitidResultType) < 0) {
