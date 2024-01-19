@@ -66,7 +66,7 @@ class FunctionalTest(unittest.TestCase):
                 def test(arg):
                     import atexit
                     def exit_handler():
-                        with open('{output_path}', 'a') as f:
+                        with open({repr(output_path)}, 'a') as f:
                             f.write(f'|{{arg}}|\n')
                     atexit.register(exit_handler)
 
