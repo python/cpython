@@ -1,1 +1,0 @@
-Refactor :class:`queue.SimpleQueue` to store items in a ring buffer instead of a Python list.
