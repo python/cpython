@@ -87,7 +87,7 @@ class pid_t_converter(CConverter):
     type = 'pid_t'
     format_unit = '" _Py_PARSE_PID "'
 
-    def parse_arg(self, argname, displayname, *, limited_capi):
+    def parse_arg(self, argname, displayname, *, limited_capi, clinic):
         return self.format_code("""
             {paramname} = PyLong_AsPid({argname});
             if ({paramname} == -1 && PyErr_Occurred()) {{{{
@@ -96,7 +96,7 @@ class pid_t_converter(CConverter):
             """,
             argname=argname)
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=c94349aa1aad151d]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=aa9c0e6301db8ef6]*/
 
 #include "clinic/_posixsubprocess.c.h"
 

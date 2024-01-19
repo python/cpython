@@ -1011,7 +1011,9 @@ class CLanguage(Language):
                     """ % argname)
 
                 displayname = parameters[0].get_displayname(0)
-                parsearg = converters[0].parse_arg(argname, displayname, limited_capi=limited_capi)
+                parsearg = converters[0].parse_arg(argname, displayname,
+                                                   limited_capi=limited_capi,
+                                                   clinic=clinic)
                 if parsearg is None:
                     parsearg = """
                         if (!PyArg_Parse(%s, "{format_units}:{name}", {parse_arguments})) {{
@@ -1128,7 +1130,9 @@ class CLanguage(Language):
 
                 displayname = p.get_displayname(i+1)
                 argname = argname_fmt % i
-                parsearg = p.converter.parse_arg(argname, displayname, limited_capi=limited_capi)
+                parsearg = p.converter.parse_arg(argname, displayname,
+                                                 limited_capi=limited_capi,
+                                                 clinic=clinic)
                 if parsearg is None:
                     parser_code = None
                     break
@@ -1257,7 +1261,9 @@ class CLanguage(Language):
                         raise ValueError("defining_class should be the first "
                                         "parameter (after self)")
                     displayname = p.get_displayname(i+1)
-                    parsearg = p.converter.parse_arg(argname_fmt % i, displayname, limited_capi=limited_capi)
+                    parsearg = p.converter.parse_arg(argname_fmt % i, displayname,
+                                                     limited_capi=limited_capi,
+                                                     clinic=clinic)
                     if parsearg is None:
                         parser_code = None
                         break
@@ -3248,7 +3254,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         """
         pass
 
-    def bad_argument(self, displayname: str, expected: str, *, limited_capi: bool, expected_literal: bool = True) -> str:
+    def bad_argument(self, displayname: str, expected: str, *, limited_capi: bool, clinic: Clinic, expected_literal: bool = True) -> str:
         assert '"' not in expected
         if limited_capi:
             if expected_literal:
@@ -3282,7 +3288,8 @@ class CConverter(metaclass=CConverterAutoRegister):
             fmt = fmt.replace('{bad_argument2}', bad_argument2)
         return fmt.format(argname=argname, paramname=self.parser_name, **kwargs)
 
-    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+    def parse_arg(self, argname: str, displayname: str,
+                  *, limited_capi: bool, clinic: Clinic) -> str | None:
         if self.format_unit == 'O&':
             return self.format_code("""
                 if (!{converter}({argname}, &{paramname})) {{{{
@@ -3303,7 +3310,9 @@ class CConverter(metaclass=CConverterAutoRegister):
                     {paramname} = {cast}{argname};
                     """,
                     argname=argname,
-                    bad_argument=self.bad_argument(displayname, typename, limited_capi=limited_capi),
+                    bad_argument=self.bad_argument(displayname, typename,
+                                                   limited_capi=limited_capi,
+                                                   clinic=clinic),
                     typecheck=typecheck, typename=typename, cast=cast)
             return self.format_code("""
                 if (!PyObject_TypeCheck({argname}, {subclass_of})) {{{{
@@ -3314,7 +3323,9 @@ class CConverter(metaclass=CConverterAutoRegister):
                 """,
                 argname=argname,
                 bad_argument=self.bad_argument(displayname, '({subclass_of})->tp_name',
-                                               expected_literal=False, limited_capi=limited_capi),
+                                               expected_literal=False,
+                                               limited_capi=limited_capi,
+                                               clinic=clinic),
                 subclass_of=self.subclass_of, cast=cast)
         if self.format_unit == 'O':
             cast = '(%s)' % self.type if self.type != 'PyObject *' else ''
@@ -3396,7 +3407,8 @@ class bool_converter(CConverter):
             self.default = bool(self.default)
             self.c_default = str(int(self.default))
 
-    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+    def parse_arg(self, argname: str, displayname: str,
+                  *, limited_capi: bool, clinic: Clinic) -> str | None:
         if self.format_unit == 'i':
             return self.format_code("""
                 {paramname} = PyLong_AsInt({argname});
@@ -3413,7 +3425,8 @@ class bool_converter(CConverter):
                 }}}}
                 """,
                 argname=argname)
-        return super().parse_arg(argname, displayname, limited_capi=limited_capi)
+        return super().parse_arg(argname, displayname,
+                                 limited_capi=limited_capi, clinic=clinic)
 
 class defining_class_converter(CConverter):
     """
@@ -3449,7 +3462,8 @@ class char_converter(CConverter):
             if self.c_default == '"\'"':
                 self.c_default = r"'\''"
 
-    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+    def parse_arg(self, argname: str, displayname: str,
+                  *, limited_capi: bool, clinic: Clinic) -> str | None:
         if self.format_unit == 'c':
             return self.format_code("""
                 if (PyBytes_Check({argname}) && PyBytes_GET_SIZE({argname}) == 1) {{{{
@@ -3464,9 +3478,12 @@ class char_converter(CConverter):
                 }}}}
                 """,
                 argname=argname,
-                bad_argument=self.bad_argument(displayname, 'a byte string of length 1', limited_capi=limited_capi),
+                bad_argument=self.bad_argument(displayname, 'a byte string of length 1',
+                                               limited_capi=limited_capi,
+                                               clinic=clinic),
             )
-        return super().parse_arg(argname, displayname, limited_capi=limited_capi)
+        return super().parse_arg(argname, displayname,
+                                 limited_capi=limited_capi, clinic=clinic)
 
 
 @add_legacy_c_converter('B', bitwise=True)
@@ -3480,7 +3497,8 @@ class unsigned_char_converter(CConverter):
         if bitwise:
             self.format_unit = 'B'
 
-    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+    def parse_arg(self, argname: str, displayname: str,
+                  *, limited_capi: bool, clinic: Clinic) -> str | None:
         if self.format_unit == 'b':
             return self.format_code("""
                 {{{{
@@ -3517,7 +3535,8 @@ class unsigned_char_converter(CConverter):
                 }}}}
                 """,
                 argname=argname)
-        return super().parse_arg(argname, displayname, limited_capi=limited_capi)
+        return super().parse_arg(argname, displayname,
+                                 limited_capi=limited_capi, clinic=clinic)
 
 class byte_converter(unsigned_char_converter): pass
 
@@ -3527,7 +3546,8 @@ class short_converter(CConverter):
     format_unit = 'h'
     c_ignored_default = "0"
 
-    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+    def parse_arg(self, argname: str, displayname: str,
+                  *, limited_capi: bool, clinic: Clinic) -> str | None:
         if self.format_unit == 'h':
             return self.format_code("""
                 {{{{
@@ -3551,7 +3571,8 @@ class short_converter(CConverter):
                 }}}}
                 """,
                 argname=argname)
-        return super().parse_arg(argname, displayname, limited_capi=limited_capi)
+        return super().parse_arg(argname, displayname,
+                                 limited_capi=limited_capi, clinic=clinic)
 
 class unsigned_short_converter(CConverter):
     type = 'unsigned short'
@@ -3566,7 +3587,8 @@ class unsigned_short_converter(CConverter):
             self.add_include('pycore_long.h',
                              '_PyLong_UnsignedShort_Converter()')
 
-    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+    def parse_arg(self, argname: str, displayname: str,
+                  *, limited_capi: bool, clinic: Clinic) -> str | None:
         if self.format_unit == 'H':
             return self.format_code("""
                 {paramname} = (unsigned short)PyLong_AsUnsignedLongMask({argname});
@@ -3576,7 +3598,8 @@ class unsigned_short_converter(CConverter):
                 """,
                 argname=argname)
         if not limited_capi:
-            return super().parse_arg(argname, displayname, limited_capi=limited_capi)
+            return super().parse_arg(argname, displayname,
+                                     limited_capi=limited_capi, clinic=clinic)
         # NOTE: Raises OverflowError for negative integer.
         return self.format_code("""
             {{{{
@@ -3611,7 +3634,8 @@ class int_converter(CConverter):
         if type is not None:
             self.type = type
 
-    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+    def parse_arg(self, argname: str, displayname: str,
+                  *, limited_capi: bool, clinic: Clinic) -> str | None:
         if self.format_unit == 'i':
             return self.format_code("""
                 {paramname} = PyLong_AsInt({argname});
@@ -3633,9 +3657,12 @@ class int_converter(CConverter):
                 {paramname} = PyUnicode_READ_CHAR({argname}, 0);
                 """,
                 argname=argname,
-                bad_argument=self.bad_argument(displayname, 'a unicode character', limited_capi=limited_capi),
+                bad_argument=self.bad_argument(displayname, 'a unicode character',
+                                              limited_capi=limited_capi,
+                                              clinic=clinic),
             )
-        return super().parse_arg(argname, displayname, limited_capi=limited_capi)
+        return super().parse_arg(argname, displayname,
+                                 limited_capi=limited_capi, clinic=clinic)
 
 class unsigned_int_converter(CConverter):
     type = 'unsigned int'
@@ -3650,7 +3677,8 @@ class unsigned_int_converter(CConverter):
             self.add_include('pycore_long.h',
                              '_PyLong_UnsignedInt_Converter()')
 
-    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+    def parse_arg(self, argname: str, displayname: str,
+                  *, limited_capi: bool, clinic: Clinic) -> str | None:
         if self.format_unit == 'I':
             return self.format_code("""
                 {paramname} = (unsigned int)PyLong_AsUnsignedLongMask({argname});
@@ -3660,7 +3688,8 @@ class unsigned_int_converter(CConverter):
                 """,
                 argname=argname)
         if not limited_capi:
-            return super().parse_arg(argname, displayname, limited_capi=limited_capi)
+            return super().parse_arg(argname, displayname,
+                                     limited_capi=limited_capi, clinic=clinic)
         # NOTE: Raises OverflowError for negative integer.
         return self.format_code("""
             {{{{
@@ -3684,7 +3713,8 @@ class long_converter(CConverter):
     format_unit = 'l'
     c_ignored_default = "0"
 
-    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+    def parse_arg(self, argname: str, displayname: str,
+                  *, limited_capi: bool, clinic: Clinic) -> str | None:
         if self.format_unit == 'l':
             return self.format_code("""
                 {paramname} = PyLong_AsLong({argname});
@@ -3693,7 +3723,8 @@ class long_converter(CConverter):
                 }}}}
                 """,
                 argname=argname)
-        return super().parse_arg(argname, displayname, limited_capi=limited_capi)
+        return super().parse_arg(argname, displayname,
+                                 limited_capi=limited_capi, clinic=clinic)
 
 class unsigned_long_converter(CConverter):
     type = 'unsigned long'
@@ -3708,7 +3739,8 @@ class unsigned_long_converter(CConverter):
             self.add_include('pycore_long.h',
                              '_PyLong_UnsignedLong_Converter()')
 
-    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+    def parse_arg(self, argname: str, displayname: str,
+                  *, limited_capi: bool, clinic: Clinic) -> str | None:
         if self.format_unit == 'k':
             return self.format_code("""
                 if (!PyLong_Check({argname})) {{{{
@@ -3718,10 +3750,13 @@ class unsigned_long_converter(CConverter):
                 {paramname} = PyLong_AsUnsignedLongMask({argname});
                 """,
                 argname=argname,
-                bad_argument=self.bad_argument(displayname, 'int', limited_capi=limited_capi),
+                bad_argument=self.bad_argument(displayname, 'int',
+                                               limited_capi=limited_capi,
+                                               clinic=clinic),
             )
         if not limited_capi:
-            return super().parse_arg(argname, displayname, limited_capi=limited_capi)
+            return super().parse_arg(argname, displayname,
+                                     limited_capi=limited_capi, clinic=clinic)
         # NOTE: Raises OverflowError for negative integer.
         return self.format_code("""
             {paramname} = PyLong_AsUnsignedLong({argname});
@@ -3737,7 +3772,8 @@ class long_long_converter(CConverter):
     format_unit = 'L'
     c_ignored_default = "0"
 
-    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+    def parse_arg(self, argname: str, displayname: str,
+                  *, limited_capi: bool, clinic: Clinic) -> str | None:
         if self.format_unit == 'L':
             return self.format_code("""
                 {paramname} = PyLong_AsLongLong({argname});
@@ -3746,7 +3782,8 @@ class long_long_converter(CConverter):
                 }}}}
                 """,
                 argname=argname)
-        return super().parse_arg(argname, displayname, limited_capi=limited_capi)
+        return super().parse_arg(argname, displayname,
+                                 limited_capi=limited_capi, clinic=clinic)
 
 class unsigned_long_long_converter(CConverter):
     type = 'unsigned long long'
@@ -3761,7 +3798,8 @@ class unsigned_long_long_converter(CConverter):
             self.add_include('pycore_long.h',
                              '_PyLong_UnsignedLongLong_Converter()')
 
-    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+    def parse_arg(self, argname: str, displayname: str,
+                  *, limited_capi: bool, clinic: Clinic) -> str | None:
         if self.format_unit == 'K':
             return self.format_code("""
                 if (!PyLong_Check({argname})) {{{{
@@ -3771,10 +3809,13 @@ class unsigned_long_long_converter(CConverter):
                 {paramname} = PyLong_AsUnsignedLongLongMask({argname});
                 """,
                 argname=argname,
-                bad_argument=self.bad_argument(displayname, 'int', limited_capi=limited_capi),
+                bad_argument=self.bad_argument(displayname, 'int',
+                                               limited_capi=limited_capi,
+                                               clinic=clinic),
             )
         if not limited_capi:
-            return super().parse_arg(argname, displayname, limited_capi=limited_capi)
+            return super().parse_arg(argname, displayname,
+                                     limited_capi=limited_capi, clinic=clinic)
         # NOTE: Raises OverflowError for negative integer.
         return self.format_code("""
             {paramname} = PyLong_AsUnsignedLongLong({argname});
@@ -3800,7 +3841,8 @@ class Py_ssize_t_converter(CConverter):
         else:
             fail(f"Py_ssize_t_converter: illegal 'accept' argument {accept!r}")
 
-    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+    def parse_arg(self, argname: str, displayname: str,
+                  *, limited_capi: bool, clinic: Clinic) -> str | None:
         if self.format_unit == 'n':
             if limited_capi:
                 PyNumber_Index = 'PyNumber_Index'
@@ -3823,7 +3865,8 @@ class Py_ssize_t_converter(CConverter):
                 argname=argname,
                 PyNumber_Index=PyNumber_Index)
         if not limited_capi:
-            return super().parse_arg(argname, displayname, limited_capi=limited_capi)
+            return super().parse_arg(argname, displayname,
+                                     limited_capi=limited_capi, clinic=clinic)
         return self.format_code("""
             if ({argname} != Py_None) {{{{
                 if (PyIndex_Check({argname})) {{{{
@@ -3839,7 +3882,9 @@ class Py_ssize_t_converter(CConverter):
             }}}}
             """,
             argname=argname,
-            bad_argument=self.bad_argument(displayname, 'integer or None', limited_capi=limited_capi),
+            bad_argument=self.bad_argument(displayname, 'integer or None',
+                                           limited_capi=limited_capi,
+                                           clinic=clinic),
         )
 
 
@@ -3856,9 +3901,11 @@ class slice_index_converter(CConverter):
         else:
             fail(f"slice_index_converter: illegal 'accept' argument {accept!r}")
 
-    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+    def parse_arg(self, argname: str, displayname: str,
+                  *, limited_capi: bool, clinic: Clinic) -> str | None:
         if not limited_capi:
-            return super().parse_arg(argname, displayname, limited_capi=limited_capi)
+            return super().parse_arg(argname, displayname,
+                                     limited_capi=limited_capi, clinic=clinic)
         if self.nullable:
             return self.format_code("""
                 if (!Py_IsNone({argname})) {{{{
@@ -3903,7 +3950,8 @@ class size_t_converter(CConverter):
         self.add_include('pycore_long.h',
                          '_PyLong_Size_t_Converter()')
 
-    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+    def parse_arg(self, argname: str, displayname: str,
+                  *, limited_capi: bool, clinic: Clinic) -> str | None:
         if self.format_unit == 'n':
             return self.format_code("""
                 {paramname} = PyNumber_AsSsize_t({argname}, PyExc_OverflowError);
@@ -3913,7 +3961,8 @@ class size_t_converter(CConverter):
                 """,
                 argname=argname)
         if not limited_capi:
-            return super().parse_arg(argname, displayname, limited_capi=limited_capi)
+            return super().parse_arg(argname, displayname,
+                                     limited_capi=limited_capi, clinic=clinic)
         # NOTE: Raises OverflowError for negative integer.
         return self.format_code("""
             {paramname} = PyLong_AsSize_t({argname});
@@ -3948,7 +3997,8 @@ class float_converter(CConverter):
     format_unit = 'f'
     c_ignored_default = "0.0"
 
-    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+    def parse_arg(self, argname: str, displayname: str,
+                  *, limited_capi: bool, clinic: Clinic) -> str | None:
         if self.format_unit == 'f':
             return self.format_code("""
                 if (PyFloat_CheckExact({argname})) {{{{
@@ -3963,7 +4013,8 @@ class float_converter(CConverter):
                 }}}}
                 """,
                 argname=argname)
-        return super().parse_arg(argname, displayname, limited_capi=limited_capi)
+        return super().parse_arg(argname, displayname,
+                                 limited_capi=limited_capi, clinic=clinic)
 
 class double_converter(CConverter):
     type = 'double'
@@ -3971,7 +4022,8 @@ class double_converter(CConverter):
     format_unit = 'd'
     c_ignored_default = "0.0"
 
-    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+    def parse_arg(self, argname: str, displayname: str,
+                  *, limited_capi: bool, clinic: Clinic) -> str | None:
         if self.format_unit == 'd':
             return self.format_code("""
                 if (PyFloat_CheckExact({argname})) {{{{
@@ -3986,7 +4038,8 @@ class double_converter(CConverter):
                 }}}}
                 """,
                 argname=argname)
-        return super().parse_arg(argname, displayname, limited_capi=limited_capi)
+        return super().parse_arg(argname, displayname,
+                                 limited_capi=limited_capi, clinic=clinic)
 
 
 class Py_complex_converter(CConverter):
@@ -3995,7 +4048,8 @@ class Py_complex_converter(CConverter):
     format_unit = 'D'
     c_ignored_default = "{0.0, 0.0}"
 
-    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+    def parse_arg(self, argname: str, displayname: str,
+                  *, limited_capi: bool, clinic: Clinic) -> str | None:
         if self.format_unit == 'D':
             return self.format_code("""
                 {paramname} = PyComplex_AsCComplex({argname});
@@ -4004,7 +4058,8 @@ class Py_complex_converter(CConverter):
                 }}}}
                 """,
                 argname=argname)
-        return super().parse_arg(argname, displayname, limited_capi=limited_capi)
+        return super().parse_arg(argname, displayname,
+                                 limited_capi=limited_capi, clinic=clinic)
 
 
 class object_converter(CConverter):
@@ -4089,7 +4144,8 @@ class str_converter(CConverter):
         else:
             return ""
 
-    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+    def parse_arg(self, argname: str, displayname: str,
+                  *, limited_capi: bool, clinic: Clinic) -> str | None:
         if self.format_unit == 's':
             return self.format_code("""
                 if (!PyUnicode_Check({argname})) {{{{
@@ -4107,7 +4163,9 @@ class str_converter(CConverter):
                 }}}}
                 """,
                 argname=argname,
-                bad_argument=self.bad_argument(displayname, 'str', limited_capi=limited_capi),
+                bad_argument=self.bad_argument(displayname, 'str',
+                                               limited_capi=limited_capi,
+                                               clinic=clinic),
                 length_name=self.length_name)
         if self.format_unit == 'z':
             return self.format_code("""
@@ -4131,9 +4189,12 @@ class str_converter(CConverter):
                 }}}}
                 """,
                 argname=argname,
-                bad_argument=self.bad_argument(displayname, 'str or None', limited_capi=limited_capi),
+                bad_argument=self.bad_argument(displayname, 'str or None',
+                                               limited_capi=limited_capi,
+                                               clinic=clinic),
                 length_name=self.length_name)
-        return super().parse_arg(argname, displayname, limited_capi=limited_capi)
+        return super().parse_arg(argname, displayname,
+                                 limited_capi=limited_capi, clinic=clinic)
 
 #
 # This is the fourth or fifth rewrite of registering all the
@@ -4195,7 +4256,8 @@ class PyBytesObject_converter(CConverter):
     format_unit = 'S'
     # accept = {bytes}
 
-    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+    def parse_arg(self, argname: str, displayname: str,
+                  *, limited_capi: bool, clinic: Clinic) -> str | None:
         if self.format_unit == 'S':
             return self.format_code("""
                 if (!PyBytes_Check({argname})) {{{{
@@ -4205,16 +4267,20 @@ class PyBytesObject_converter(CConverter):
                 {paramname} = ({type}){argname};
                 """,
                 argname=argname,
-                bad_argument=self.bad_argument(displayname, 'bytes', limited_capi=limited_capi),
+                bad_argument=self.bad_argument(displayname, 'bytes',
+                                               limited_capi=limited_capi,
+                                               clinic=clinic),
                 type=self.type)
-        return super().parse_arg(argname, displayname, limited_capi=limited_capi)
+        return super().parse_arg(argname, displayname,
+                                 limited_capi=limited_capi, clinic=clinic)
 
 class PyByteArrayObject_converter(CConverter):
     type = 'PyByteArrayObject *'
     format_unit = 'Y'
     # accept = {bytearray}
 
-    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+    def parse_arg(self, argname: str, displayname: str,
+                  *, limited_capi: bool, clinic: Clinic) -> str | None:
         if self.format_unit == 'Y':
             return self.format_code("""
                 if (!PyByteArray_Check({argname})) {{{{
@@ -4224,16 +4290,20 @@ class PyByteArrayObject_converter(CConverter):
                 {paramname} = ({type}){argname};
                 """,
                 argname=argname,
-                bad_argument=self.bad_argument(displayname, 'bytearray', limited_capi=limited_capi),
+                bad_argument=self.bad_argument(displayname, 'bytearray',
+                                               limited_capi=limited_capi,
+                                               clinic=clinic),
                 type=self.type)
-        return super().parse_arg(argname, displayname, limited_capi=limited_capi)
+        return super().parse_arg(argname, displayname,
+                                 limited_capi=limited_capi, clinic=clinic)
 
 class unicode_converter(CConverter):
     type = 'PyObject *'
     default_type = (str, Null, NoneType)
     format_unit = 'U'
 
-    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+    def parse_arg(self, argname: str, displayname: str,
+                  *, limited_capi: bool, clinic: Clinic) -> str | None:
         if self.format_unit == 'U':
             return self.format_code("""
                 if (!PyUnicode_Check({argname})) {{{{
@@ -4243,9 +4313,12 @@ class unicode_converter(CConverter):
                 {paramname} = {argname};
                 """,
                 argname=argname,
-                bad_argument=self.bad_argument(displayname, 'str', limited_capi=limited_capi),
+                bad_argument=self.bad_argument(displayname, 'str',
+                                               limited_capi=limited_capi,
+                                               clinic=clinic),
             )
-        return super().parse_arg(argname, displayname, limited_capi=limited_capi)
+        return super().parse_arg(argname, displayname,
+                                 limited_capi=limited_capi, clinic=clinic)
 
 @add_legacy_c_converter('u')
 @add_legacy_c_converter('u#', zeroes=True)
@@ -4281,7 +4354,8 @@ class Py_UNICODE_converter(CConverter):
         else:
             return f"""PyMem_Free((void *){self.parser_name});\n"""
 
-    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+    def parse_arg(self, argname: str, displayname: str,
+                  *, limited_capi: bool, clinic: Clinic) -> str | None:
         if not self.length:
             if self.accept == {str}:
                 return self.format_code("""
@@ -4295,7 +4369,9 @@ class Py_UNICODE_converter(CConverter):
                     }}}}
                     """,
                     argname=argname,
-                    bad_argument=self.bad_argument(displayname, 'str', limited_capi=limited_capi),
+                    bad_argument=self.bad_argument(displayname, 'str',
+                                                   limited_capi=limited_capi,
+                                                   clinic=clinic),
                 )
             elif self.accept == {str, NoneType}:
                 return self.format_code("""
@@ -4314,9 +4390,12 @@ class Py_UNICODE_converter(CConverter):
                     }}}}
                     """,
                     argname=argname,
-                    bad_argument=self.bad_argument(displayname, 'str or None', limited_capi=limited_capi),
+                    bad_argument=self.bad_argument(displayname, 'str or None',
+                                                   limited_capi=limited_capi,
+                                                   clinic=clinic),
                 )
-        return super().parse_arg(argname, displayname, limited_capi=limited_capi)
+        return super().parse_arg(argname, displayname,
+                                 limited_capi=limited_capi, clinic=clinic)
 
 @add_legacy_c_converter('s*', accept={str, buffer})
 @add_legacy_c_converter('z*', accept={str, buffer, NoneType})
@@ -4350,7 +4429,8 @@ class Py_buffer_converter(CConverter):
         name = self.name
         return "".join(["if (", name, ".obj) {\n   PyBuffer_Release(&", name, ");\n}\n"])
 
-    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+    def parse_arg(self, argname: str, displayname: str,
+                  *, limited_capi: bool, clinic: Clinic) -> str | None:
         # PyBUF_SIMPLE guarantees that the format units of the buffers are C-contiguous.
         if self.format_unit == 'y*':
             return self.format_code("""
@@ -4359,7 +4439,9 @@ class Py_buffer_converter(CConverter):
                 }}}}
                 """,
                 argname=argname,
-                bad_argument=self.bad_argument(displayname, 'contiguous buffer', limited_capi=limited_capi),
+                bad_argument=self.bad_argument(displayname, 'contiguous buffer',
+                                               limited_capi=limited_capi,
+                                               clinic=clinic),
             )
         elif self.format_unit == 's*':
             return self.format_code("""
@@ -4378,7 +4460,9 @@ class Py_buffer_converter(CConverter):
                 }}}}
                 """,
                 argname=argname,
-                bad_argument=self.bad_argument(displayname, 'contiguous buffer', limited_capi=limited_capi),
+                bad_argument=self.bad_argument(displayname, 'contiguous buffer',
+                                              limited_capi=limited_capi,
+                                              clinic=clinic),
             )
         elif self.format_unit == 'w*':
             return self.format_code("""
@@ -4388,10 +4472,15 @@ class Py_buffer_converter(CConverter):
                 }}}}
                 """,
                 argname=argname,
-                bad_argument=self.bad_argument(displayname, 'read-write bytes-like object', limited_capi=limited_capi),
-                bad_argument2=self.bad_argument(displayname, 'contiguous buffer', limited_capi=limited_capi),
+                bad_argument=self.bad_argument(displayname, 'read-write bytes-like object',
+                                               limited_capi=limited_capi,
+                                               clinic=clinic),
+                bad_argument2=self.bad_argument(displayname, 'contiguous buffer',
+                                                limited_capi=limited_capi,
+                                                clinic=clinic),
             )
-        return super().parse_arg(argname, displayname, limited_capi=limited_capi)
+        return super().parse_arg(argname, displayname,
+                                 limited_capi=limited_capi, clinic=clinic)
 
 
 def correct_name_for_self(

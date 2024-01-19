@@ -38,7 +38,7 @@ class HANDLE_converter(CConverter):
     type = 'void *'
     format_unit = '"_Py_PARSE_UINTPTR"'
 
-    def parse_arg(self, argname, displayname, *, limited_capi):
+    def parse_arg(self, argname, displayname, *, limited_capi, clinic):
         return self.format_code("""
             {paramname} = PyLong_AsVoidPtr({argname});
             if (!{paramname} && PyErr_Occurred()) {{{{
@@ -75,7 +75,7 @@ class wchar_t_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = PyUnicode_FromOrdinal(_return_value);\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=ff031be44ab3250d]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=01864ad0c19dd001]*/
 
 /*[clinic input]
 module msvcrt
