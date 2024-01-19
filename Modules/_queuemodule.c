@@ -406,7 +406,7 @@ _queue_SimpleQueue_get_impl(simplequeueobject *self, PyTypeObject *cls,
             }
         }
 
-        uint8_t waiting = 1;
+        bool waiting = 1;
         self->has_threads_waiting = waiting;
 
         PyObject *item = NULL;
