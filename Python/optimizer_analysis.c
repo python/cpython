@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "opcode.h"
+#include "pycore_dict.h"
 #include "pycore_interp.h"
 #include "pycore_opcode_metadata.h"
 #include "pycore_opcode_utils.h"
@@ -12,16 +13,6 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "pycore_optimizer.h"
-
-static int
-builtins_watcher_callback(PyDict_WatchEvent event, PyObject* dict,
-                          PyObject* key, PyObject* new_value)
-{
-    if (event != PyDict_EVENT_CLONED) {
-        _Py_Executors_InvalidateAll(_PyInterpreterState_GET());
-    }
-    return 0;
-}
 
 static int
 globals_watcher_callback(PyDict_WatchEvent event, PyObject* dict,
@@ -78,6 +69,9 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
     PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
     assert(PyFunction_Check(func));
     PyObject *builtins = frame->f_builtins;
+    if (builtins != interp->builtins) {
+        return 1;
+    }
     PyObject *globals = frame->f_globals;
     assert(func->func_builtins == builtins);
     assert(func->func_globals == globals);
@@ -92,9 +86,6 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
     uint32_t builtins_watched = 0;
     uint32_t globals_checked = 0;
     uint32_t globals_watched = 0;
-    if (interp->dict_state.watchers[0] == NULL) {
-        interp->dict_state.watchers[0] = builtins_watcher_callback;
-    }
     if (interp->dict_state.watchers[1] == NULL) {
         interp->dict_state.watchers[1] = globals_watcher_callback;
     }
@@ -105,6 +96,9 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
             case _GUARD_BUILTINS_VERSION:
                 if (incorrect_keys(inst, builtins)) {
                     return 0;
+                }
+                if (interp->rare_events.builtin_dict >= _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS) {
+                    continue;
                 }
                 if ((builtins_watched & 1) == 0) {
                     PyDict_Watch(0, builtins);
@@ -138,41 +132,46 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 }
                 break;
             case _LOAD_GLOBAL_BUILTINS:
-                assert(globals_checked & builtins_checked & globals_watched & builtins_watched & 1);
-                global_to_const(inst, builtins);
+                if (globals_checked & builtins_checked & globals_watched & builtins_watched & 1) {
+                    global_to_const(inst, builtins);
+                }
                 break;
             case _LOAD_GLOBAL_MODULE:
-                assert(globals_checked & globals_watched & 1);
-                global_to_const(inst, globals);
+                if (globals_checked & globals_watched & 1) {
+                    global_to_const(inst, globals);
+                }
                 break;
             case _JUMP_TO_TOP:
             case _EXIT_TRACE:
                 return 1;
-             case _PUSH_FRAME:
-             {
-                 globals_checked <<= 1;
-                 globals_watched <<= 1;
-                 builtins_checked <<= 1;
-                 builtins_watched <<= 1;
-                 PyFunctionObject *func = (PyFunctionObject *)buffer[pc].operand;
-                 if (func == NULL) {
-                     return 1;
-                 }
-                 assert(PyFunction_Check(func));
-                 globals = func->func_globals;
-                 builtins = func->func_builtins;
-                 break;
-             }
-             case _POP_FRAME:
-                 globals_checked >>= 1;
-                 globals_watched >>= 1;
-                 builtins_checked >>= 1;
-                 builtins_watched >>= 1;
-                 PyFunctionObject *func = (PyFunctionObject *)buffer[pc].operand;
-                 assert(PyFunction_Check(func));
-                 globals = func->func_globals;
-                 builtins = func->func_builtins;
-                 break;
+            case _PUSH_FRAME:
+            {
+                globals_checked <<= 1;
+                globals_watched <<= 1;
+                builtins_checked <<= 1;
+                builtins_watched <<= 1;
+                PyFunctionObject *func = (PyFunctionObject *)buffer[pc].operand;
+                if (func == NULL) {
+                    return 1;
+                }
+                assert(PyFunction_Check(func));
+                globals = func->func_globals;
+                builtins = func->func_builtins;
+                if (builtins != interp->builtins) {
+                    return 1;
+                }
+                break;
+            }
+            case _POP_FRAME:
+                globals_checked >>= 1;
+                globals_watched >>= 1;
+                builtins_checked >>= 1;
+                builtins_watched >>= 1;
+                PyFunctionObject *func = (PyFunctionObject *)buffer[pc].operand;
+                assert(PyFunction_Check(func));
+                globals = func->func_globals;
+                builtins = func->func_builtins;
+                break;
         }
     }
     return 0;
