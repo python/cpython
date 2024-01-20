@@ -160,7 +160,7 @@ static PyTypeObject _Py_UOps_Opt_IR_Type = {
     .tp_name = "uops SSA IR",
     .tp_basicsize = sizeof(_Py_UOps_Opt_IR) - sizeof(_Py_UOpsOptIREntry),
     .tp_itemsize = sizeof(_Py_UOpsOptIREntry),
-    .tp_dealloc = PyObject_Del,
+    .tp_dealloc = (destructor)PyObject_Del,
     .tp_free = PyObject_Free,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION
 };

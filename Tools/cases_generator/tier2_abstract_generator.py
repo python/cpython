@@ -75,6 +75,8 @@ def declare_variables(
     for var in uop.stack.outputs:
         if skip_peeks and var.peek:
             continue
+        if var.size != "1":
+            continue
         if var.name not in variables:
             variables.add(var.name)
             type = default_type
@@ -358,12 +360,13 @@ def _write_body_abstract_interp_guard_uop(
 def write_abstract_uop(mangled_uop: Uop, uop: Uop, out: CWriter, stack: Stack) -> None:
     try:
         out.start_line()
+        is_impure = not mangled_uop.properties.pure and not mangled_uop.properties.guard
         # These types of guards do not need the stack at all.
-        if not (mangled_uop.properties.guard and mangled_uop.name in NO_CONST_OR_TYPE_EVALUATE):
+        if not (
+            mangled_uop.properties.guard
+            and mangled_uop.name in NO_CONST_OR_TYPE_EVALUATE
+        ):
             for var in reversed(mangled_uop.stack.inputs):
-                is_impure = (
-                    not mangled_uop.properties.pure and not mangled_uop.properties.guard
-                )
                 old_var_name = var.name
                 # code smell, but basically impure ops don't use any of their inputs
                 if is_impure:
@@ -372,7 +375,12 @@ def write_abstract_uop(mangled_uop: Uop, uop: Uop, out: CWriter, stack: Stack) -
                 var.name = old_var_name
         if not mangled_uop.properties.stores_sp:
             for i, var in enumerate(mangled_uop.stack.outputs):
+                old_var_name = var.name
+                # Code smell, but impure variadic ops don't use their outputs either.
+                if is_impure and var.size != "1":
+                    var.name = "unused"
                 out.emit(stack.push(var))
+                var.name = old_var_name
         if uop.properties.pure:
             _write_body_abstract_interp_pure_uop(mangled_uop, uop, out, stack)
         elif uop.properties.guard:
@@ -420,7 +428,7 @@ def generate_tier2_abstract(
         if not uop.properties.always_exits:
             # Guards strictly only peek
             if not uop.properties.guard:
-                stack.flush(out)
+                stack.flush(out, cast_type="_Py_UOpsSymbolicExpression *")
             out.emit("break;\n")
         out.start_line()
         out.emit("}")

@@ -621,8 +621,6 @@
         }
 
         case _UNPACK_SEQUENCE_TWO_TUPLE: {
-            _Py_UOpsSymbolicExpression **__values_;
-            __values_ = &stack_pointer[-1];
             for (int case_gen_i = 0; case_gen_i < (oparg); case_gen_i++) {
                 *(stack_pointer + case_gen_i) = sym_init_unknown(ctx);
                 if(*(stack_pointer + case_gen_i) == NULL) goto error;
@@ -632,8 +630,6 @@
         }
 
         case _UNPACK_SEQUENCE_TUPLE: {
-            _Py_UOpsSymbolicExpression **__values_;
-            __values_ = &stack_pointer[-1];
             for (int case_gen_i = 0; case_gen_i < (oparg); case_gen_i++) {
                 *(stack_pointer + case_gen_i) = sym_init_unknown(ctx);
                 if(*(stack_pointer + case_gen_i) == NULL) goto error;
@@ -643,8 +639,6 @@
         }
 
         case _UNPACK_SEQUENCE_LIST: {
-            _Py_UOpsSymbolicExpression **__values_;
-            __values_ = &stack_pointer[-1];
             for (int case_gen_i = 0; case_gen_i < (oparg); case_gen_i++) {
                 *(stack_pointer + case_gen_i) = sym_init_unknown(ctx);
                 if(*(stack_pointer + case_gen_i) == NULL) goto error;
@@ -1709,7 +1703,7 @@
             __self_or_null_ = stack_pointer[-1 - oparg];
             __callable_ = stack_pointer[-2 - oparg];
             __new_frame_ = _Py_UOpsSymbolicExpression_New(ctx, *inst, NULL, oparg, __args_, 2 , __callable_, __self_or_null_);
-            stack_pointer[-2 - oparg] = (PyObject *)__new_frame_;
+            stack_pointer[-2 - oparg] = (_Py_UOpsSymbolicExpression *)__new_frame_;
             stack_pointer += -1 - oparg;
             break;
         }
