@@ -1852,13 +1852,7 @@ True
 
    Return the lowest index in the string where substring *sub* is found within
    the slice ``s[start:end]``.  Optional arguments *start* and *end* are
-   interpreted as in slice notation.  Return ``-1`` if *sub* is not found. For
-   example::
-
-      >>> 'spam, spam, spam'.find('sp')
-      0
-      >>> 'spam, spam, spam'.find('sp', 5)
-      6
+   interpreted as in slice notation.  Return ``-1`` if *sub* is not found.
 
    See also :meth:`rfind` and :meth:`index`.
 
@@ -1871,6 +1865,22 @@ True
          >>> 'Py' in 'Python'
          True
 
+.. raw:: html
+
+   <dd>
+   <details>
+   <summary><a style="cursor:pointer;">See example</a></summary>
+
+>>> 'spam, spam, spam'.find('sp')
+0
+>>> 'spam, spam, spam'.find('sp', 5)
+6
+
+.. raw:: html
+
+   </details>
+   </dd>
+
 
 .. method:: str.format(*args, **kwargs)
 
@@ -1879,10 +1889,7 @@ True
    ``{}``.  Each replacement field contains either the numeric index of a
    positional argument, or the name of a keyword argument.  Returns a copy of
    the string where each replacement field is replaced with the string value of
-   the corresponding argument. For example::
-
-      >>> "The sum of 1 + 2 is {0}".format(1+2)
-      'The sum of 1 + 2 is 3'
+   the corresponding argument.
 
    See :ref:`formatstrings` for a description of the various formatting options
    that can be specified in format strings.
@@ -1902,21 +1909,46 @@ True
       temporarily the ``LC_CTYPE`` locale to the ``LC_NUMERIC`` locale in some
       cases.
 
+.. raw:: html
+
+   <dd>
+   <details>
+   <summary><a style="cursor:pointer;">See example</a></summary>
+
+>>> "The sum of 1 + 2 is {0}".format(1+2)
+'The sum of 1 + 2 is 3'
+
+.. raw:: html
+
+   </details>
+   </dd>
+
 
 .. method:: str.format_map(mapping)
 
    Similar to ``str.format(**mapping)``, except that ``mapping`` is
    used directly and not copied to a :class:`dict`.  This is useful
-   if for example ``mapping`` is a dict subclass. For example::
-
-      >>> class Default(dict):
-      ...     def __missing__(self, key):
-      ...         return key
-      ...
-      >>> '{name} was born in {country}'.format_map(Default(name='Guido'))
-      'Guido was born in country'
+   if for example ``mapping`` is a dict subclass.
 
    .. versionadded:: 3.2
+
+.. raw:: html
+
+   <dd>
+   <details>
+   <summary><a style="cursor:pointer;">See example</a></summary>
+
+>>> class Default(dict):
+...     def __missing__(self, key):
+...         return key
+...
+>>> '{name} was born in {country}'.format_map(Default(name='Guido'))
+'Guido was born in country'
+
+.. raw:: html
+
+   </details>
+   </dd>
 
 
 .. method:: str.index(sub[, start[, end]])
