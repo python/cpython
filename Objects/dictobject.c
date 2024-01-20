@@ -5899,10 +5899,10 @@ uint32_t _PyDictKeys_GetVersionForCurrentState(PyInterpreterState *interp,
     if (dictkeys->dk_version != 0) {
         return dictkeys->dk_version;
     }
-    if (interp->global_dict_state.next_keys_version == 0) {
+    if (interp->dict_state.next_keys_version == 0) {
         return 0;
     }
-    uint32_t v = interp->global_dict_state.next_keys_version++;
+    uint32_t v = interp->dict_state.next_keys_version++;
     dictkeys->dk_version = v;
     return v;
 }
@@ -5914,7 +5914,7 @@ validate_watcher_id(PyInterpreterState *interp, int watcher_id)
         PyErr_Format(PyExc_ValueError, "Invalid dict watcher ID %d", watcher_id);
         return -1;
     }
-    if (!interp->global_dict_state.watchers[watcher_id]) {
+    if (!interp->dict_state.watchers[watcher_id]) {
         PyErr_Format(PyExc_ValueError, "No dict watcher set for ID %d", watcher_id);
         return -1;
     }
@@ -5957,8 +5957,8 @@ PyDict_AddWatcher(PyDict_WatchCallback callback)
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
     for (int i = 0; i < DICT_MAX_WATCHERS; i++) {
-        if (!interp->global_dict_state.watchers[i]) {
-            interp->global_dict_state.watchers[i] = callback;
+        if (!interp->dict_state.watchers[i]) {
+            interp->dict_state.watchers[i] = callback;
             return i;
         }
     }
@@ -5974,7 +5974,7 @@ PyDict_ClearWatcher(int watcher_id)
     if (validate_watcher_id(interp, watcher_id)) {
         return -1;
     }
-    interp->global_dict_state.watchers[watcher_id] = NULL;
+    interp->dict_state.watchers[watcher_id] = NULL;
     return 0;
 }
 
@@ -6000,7 +6000,7 @@ _PyDict_SendEvent(int watcher_bits,
     PyInterpreterState *interp = _PyInterpreterState_GET();
     for (int i = 0; i < DICT_MAX_WATCHERS; i++) {
         if (watcher_bits & 1) {
-            PyDict_WatchCallback cb = interp->global_dict_state.watchers[i];
+            PyDict_WatchCallback cb = interp->dict_state.watchers[i];
             if (cb && (cb(event, (PyObject*)mp, key, value) < 0)) {
                 // We don't want to resurrect the dict by potentially having an
                 // unraisablehook keep a reference to it, so we don't pass the

@@ -855,7 +855,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     }
 
     for (int i=0; i < DICT_MAX_WATCHERS; i++) {
-        interp->global_dict_state.watchers[i] = NULL;
+        interp->dict_state.watchers[i] = NULL;
     }
 
     for (int i=0; i < TYPE_MAX_WATCHERS; i++) {

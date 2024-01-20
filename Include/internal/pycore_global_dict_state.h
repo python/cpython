@@ -10,7 +10,7 @@ extern "C" {
 
 #define DICT_MAX_WATCHERS 8
 
-struct _Py_global_dict_state {
+struct _Py_dict_interp_state {
     /*Global counter used to set ma_version_tag field of dictionary.
      * It is incremented each time that a dictionary is created and each
      * time that a dictionary is modified. */

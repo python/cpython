@@ -189,7 +189,7 @@ struct _is {
     struct _dtoa_state dtoa;
     struct _py_func_state func_state;
 
-    struct _Py_global_dict_state global_dict_state;
+    struct _Py_dict_interp_state dict_state;
     struct _Py_exc_state exc_state;
 
     struct ast_state ast;
