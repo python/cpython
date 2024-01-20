@@ -163,6 +163,66 @@ class _Target(typing.Generic[_S, _R]):
                     file.write(f"{line}\n")
 
 
+class _COFF(
+    _Target[_schema.COFFSection, _schema.COFFRelocation]
+):  # pylint: disable = too-few-public-methods
+    def _handle_section(
+        self, section: _schema.COFFSection, group: _stencils.StencilGroup
+    ) -> None:
+        flags = {flag["Name"] for flag in section["Characteristics"]["Flags"]}
+        if "SectionData" in section:
+            section_data_bytes = section["SectionData"]["Bytes"]
+        else:
+            # Zeroed BSS data, seen with printf debugging calls:
+            section_data_bytes = [0] * section["RawDataSize"]
+        if "IMAGE_SCN_MEM_EXECUTE" in flags:
+            value = _stencils.HoleValue.CODE
+            stencil = group.code
+        elif "IMAGE_SCN_MEM_READ" in flags:
+            value = _stencils.HoleValue.DATA
+            stencil = group.data
+        else:
+            return
+        base = stencil.sections[section["Number"]] = len(stencil.body)
+        stencil.body.extend(section_data_bytes)
+        for wrapped_symbol in section["Symbols"]:
+            symbol = wrapped_symbol["Symbol"]
+            offset = base + symbol["Value"]
+            name = symbol["Name"]
+            name = name.removeprefix(self.prefix)
+            group.symbols[name] = value, offset
+        for wrapped_relocation in section["Relocations"]:
+            relocation = wrapped_relocation["Relocation"]
+            hole = self._handle_relocation(base, relocation, stencil.body)
+            stencil.holes.append(hole)
+
+    def _handle_relocation(
+        self, base: int, relocation: _schema.COFFRelocation, raw: bytes
+    ) -> _stencils.Hole:
+        match relocation:
+            case {
+                "Type": {"Value": "IMAGE_REL_AMD64_ADDR64" as kind},
+                "Symbol": s,
+                "Offset": offset,
+            }:
+                offset += base
+                s = s.removeprefix(self.prefix)
+                value, symbol = _stencils.symbol_to_value(s)
+                addend = int.from_bytes(raw[offset : offset + 8], "little")
+            case {
+                "Type": {"Value": "IMAGE_REL_I386_DIR32" as kind},
+                "Symbol": s,
+                "Offset": offset,
+            }:
+                offset += base
+                s = s.removeprefix(self.prefix)
+                value, symbol = _stencils.symbol_to_value(s)
+                addend = int.from_bytes(raw[offset : offset + 4], "little")
+            case _:
+                raise NotImplementedError(relocation)
+        return _stencils.Hole(offset, kind, value, symbol, addend)
+
+
 class _ELF(
     _Target[_schema.ELFSection, _schema.ELFRelocation]
 ):  # pylint: disable = too-few-public-methods
@@ -223,66 +283,6 @@ class _ELF(
                 offset += base
                 s = s.removeprefix(self.prefix)
                 value, symbol = _stencils.symbol_to_value(s)
-            case _:
-                raise NotImplementedError(relocation)
-        return _stencils.Hole(offset, kind, value, symbol, addend)
-
-
-class _COFF(
-    _Target[_schema.COFFSection, _schema.COFFRelocation]
-):  # pylint: disable = too-few-public-methods
-    def _handle_section(
-        self, section: _schema.COFFSection, group: _stencils.StencilGroup
-    ) -> None:
-        flags = {flag["Name"] for flag in section["Characteristics"]["Flags"]}
-        if "SectionData" in section:
-            section_data_bytes = section["SectionData"]["Bytes"]
-        else:
-            # Zeroed BSS data, seen with printf debugging calls:
-            section_data_bytes = [0] * section["RawDataSize"]
-        if "IMAGE_SCN_MEM_EXECUTE" in flags:
-            value = _stencils.HoleValue.CODE
-            stencil = group.code
-        elif "IMAGE_SCN_MEM_READ" in flags:
-            value = _stencils.HoleValue.DATA
-            stencil = group.data
-        else:
-            return
-        base = stencil.sections[section["Number"]] = len(stencil.body)
-        stencil.body.extend(section_data_bytes)
-        for wrapped_symbol in section["Symbols"]:
-            symbol = wrapped_symbol["Symbol"]
-            offset = base + symbol["Value"]
-            name = symbol["Name"]
-            name = name.removeprefix(self.prefix)
-            group.symbols[name] = value, offset
-        for wrapped_relocation in section["Relocations"]:
-            relocation = wrapped_relocation["Relocation"]
-            hole = self._handle_relocation(base, relocation, stencil.body)
-            stencil.holes.append(hole)
-
-    def _handle_relocation(
-        self, base: int, relocation: _schema.COFFRelocation, raw: bytes
-    ) -> _stencils.Hole:
-        match relocation:
-            case {
-                "Type": {"Value": "IMAGE_REL_AMD64_ADDR64" as kind},
-                "Symbol": s,
-                "Offset": offset,
-            }:
-                offset += base
-                s = s.removeprefix(self.prefix)
-                value, symbol = _stencils.symbol_to_value(s)
-                addend = int.from_bytes(raw[offset : offset + 8], "little")
-            case {
-                "Type": {"Value": "IMAGE_REL_I386_DIR32" as kind},
-                "Symbol": s,
-                "Offset": offset,
-            }:
-                offset += base
-                s = s.removeprefix(self.prefix)
-                value, symbol = _stencils.symbol_to_value(s)
-                addend = int.from_bytes(raw[offset : offset + 4], "little")
             case _:
                 raise NotImplementedError(relocation)
         return _stencils.Hole(offset, kind, value, symbol, addend)
