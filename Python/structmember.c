@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_long.h"          // _PyLong_IsNegative()
+#include <stddef.h>
 
 
 PyObject *
@@ -48,6 +49,9 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         break;
     case Py_T_PYSSIZET:
         v = PyLong_FromSsize_t(*(Py_ssize_t*)addr);
+        break;
+    case Py_T_SIZE:
+        v = PyLong_FromSize_t(*(size_t*)addr);
         break;
     case Py_T_FLOAT:
         v = PyFloat_FromDouble((double)*(float*)addr);
@@ -94,6 +98,59 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
     case _Py_T_NONE:
         v = Py_NewRef(Py_None);
         break;
+    case Py_T_INT8:
+        v = PyLong_FromLong(*(int8_t*)addr);
+        break;
+    case Py_T_UINT8:
+        v = PyLong_FromUnsignedLong(*(uint8_t*)addr);
+        break;
+    case Py_T_INT16:
+        v = PyLong_FromLong(*(int16_t*)addr);
+        break;
+    case Py_T_UINT16:
+        v = PyLong_FromUnsignedLong(*(uint16_t*)addr);
+        break;
+    case Py_T_INT32:
+        v = PyLong_FromLong(*(int32_t*)addr);
+        break;
+    case Py_T_UINT32:
+        v = PyLong_FromUnsignedLong(*(uint32_t*)addr);
+        break;
+    case Py_T_INT64:
+        v = PyLong_FromLongLong(*(int64_t*)addr);
+        break;
+    case Py_T_UINT64:
+        v = PyLong_FromUnsignedLongLong(*(uint64_t*)addr);
+        break;
+    case Py_T_INTMAX:
+        v = _PyLong_FromByteArray((const unsigned char *)addr,
+                                  sizeof(intmax_t), PY_LITTLE_ENDIAN, 1);
+        break;
+    case Py_T_UINTMAX:
+        v = _PyLong_FromByteArray((const unsigned char *)addr,
+                                  sizeof(uintmax_t), PY_LITTLE_ENDIAN, 0);
+        break;
+    case Py_T_INTPTR:
+        v = _PyLong_FromByteArray((const unsigned char *)addr,
+                                  sizeof(intptr_t), PY_LITTLE_ENDIAN, 1);
+        break;
+    case Py_T_UINTPTR:
+        v = _PyLong_FromByteArray((const unsigned char *)addr,
+                                  sizeof(uintptr_t), PY_LITTLE_ENDIAN, 0);
+        break;
+    case Py_T_PTRDIFF:
+        v = _PyLong_FromByteArray((const unsigned char *)addr,
+                                  sizeof(ptrdiff_t), PY_LITTLE_ENDIAN, 1);
+        break;
+#ifndef MS_WINDOWS
+    case Py_T_OFF:
+        v = _PyLong_FromByteArray((const unsigned char *)addr,
+                                  sizeof(off_t), PY_LITTLE_ENDIAN, 1);
+        break;
+#endif
+    case Py_T_PID:
+        v = PyLong_FromPid(*(pid_t*)addr);
+        break;
     default:
         PyErr_SetString(PyExc_SystemError, "bad memberdescr type");
         v = NULL;
@@ -105,6 +162,26 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
     do {                                                        \
     if (PyErr_WarnEx(PyExc_RuntimeWarning, msg, 1) < 0)         \
         return -1;                                              \
+    } while (0)
+
+#define SET_UNSIGNED_INT(N)  do {                                           \
+        if (!PyLong_Check(v)) {                                             \
+            PyErr_SetString(PyExc_TypeError, "an integer is required");     \
+            return -1;                                                      \
+        }                                                                   \
+        return _PyLong_AsByteArray((PyLongObject *)v, (unsigned char *)addr,\
+                                   (N), PY_LITTLE_ENDIAN, 0, 1);            \
+    } while (0)
+
+#define SET_SIGNED_INT(N)  do {                                             \
+        v = _PyNumber_Index(v);                                             \
+        if (v == NULL) {                                                    \
+            return -1;                                                      \
+        }                                                                   \
+        int rc = _PyLong_AsByteArray((PyLongObject *)v, (unsigned char *)addr,\
+                                     (N), PY_LITTLE_ENDIAN, 1, 1);          \
+        Py_DECREF(v);                                                       \
+        return rc;                                                          \
     } while (0)
 
 int
@@ -267,6 +344,14 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
                         return -1;
         break;
         }
+    case Py_T_SIZE: {
+        size_t value = PyLong_AsSize_t(v);
+        if (value == (size_t)-1 && PyErr_Occurred()) {
+            return -1;
+        }
+        *(size_t*)addr = value;
+        break;
+    }
     case Py_T_FLOAT:{
         double double_val = PyFloat_AsDouble(v);
         if ((double_val == -1) && PyErr_Occurred())
@@ -330,6 +415,62 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
             }
             *(unsigned long long*)addr = ulonglong_val;
         }
+        break;
+    }
+    case Py_T_INT8:
+        SET_SIGNED_INT(1);
+        break;
+    case Py_T_UINT8:
+        SET_UNSIGNED_INT(1);
+        break;
+    case Py_T_INT16:
+        SET_SIGNED_INT(2);
+        break;
+    case Py_T_UINT16:
+        SET_UNSIGNED_INT(2);
+        break;
+    case Py_T_INT32:
+        SET_SIGNED_INT(4);
+        break;
+    case Py_T_UINT32:
+        SET_UNSIGNED_INT(4);
+        break;
+    case Py_T_INT64:
+        SET_SIGNED_INT(8);
+        break;
+    case Py_T_UINT64:
+        SET_UNSIGNED_INT(8);
+        break;
+    case Py_T_INTMAX:
+        SET_SIGNED_INT(sizeof(intmax_t));
+        break;
+    case Py_T_UINTMAX:
+        SET_UNSIGNED_INT(sizeof(uintmax_t));
+        break;
+    case Py_T_INTPTR:
+        SET_SIGNED_INT(sizeof(intptr_t));
+        break;
+    case Py_T_UINTPTR:
+        SET_UNSIGNED_INT(sizeof(uintptr_t));
+        break;
+    case Py_T_PTRDIFF:
+        SET_SIGNED_INT(sizeof(ptrdiff_t));
+        break;
+#ifndef MS_WINDOWS
+    case Py_T_OFF:
+        SET_SIGNED_INT(sizeof(off_t));
+        break;
+#endif
+    case Py_T_PID: {
+#if !defined(SIZEOF_PID_T) || SIZEOF_PID_T == SIZEOF_INT
+        pid_t value = PyLong_AsInt(v);
+#else
+        pid_t value = PyLong_AsPid(v);
+#endif
+        if (value == (pid_t)-1 && PyErr_Occurred()) {
+            return -1;
+        }
+        *(pid_t*)addr = value;
         break;
     }
     default:

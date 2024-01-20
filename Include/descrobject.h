@@ -79,6 +79,29 @@ struct PyMemberDef {
 #define Py_T_PYSSIZET  19      /* Py_ssize_t */
 #define _Py_T_NONE     20 // Deprecated. Value is always None.
 
+#define Py_T_SSIZE     Py_T_PYSSIZET
+#define Py_T_SIZE      21
+
+#define Py_T_INT8      22
+#define Py_T_UINT8     23
+#define Py_T_INT16     24
+#define Py_T_UINT16    25
+#define Py_T_INT32     26
+#define Py_T_UINT32    27
+#define Py_T_INT64     28
+#define Py_T_UINT64    29
+#define Py_T_INTMAX    30
+#define Py_T_UINTMAX   31
+#define Py_T_INTPTR    32
+#define Py_T_UINTPTR   33
+#define Py_T_PTRDIFF   34
+#ifdef MS_WINDOWS
+# define Py_T_OFF      Py_T_LONGLONG
+#else
+# define Py_T_OFF      35
+#endif
+#define Py_T_PID       36
+
 /* Flags */
 #define Py_READONLY            1
 #define Py_AUDIT_READ          2 // Added in 3.10, harmless no-op before that

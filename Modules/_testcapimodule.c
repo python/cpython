@@ -3946,6 +3946,16 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "SIZEOF_WCHAR_T", PyLong_FromSsize_t(sizeof(wchar_t)));
     PyModule_AddObject(m, "SIZEOF_VOID_P", PyLong_FromSsize_t(sizeof(void*)));
     PyModule_AddObject(m, "SIZEOF_TIME_T", PyLong_FromSsize_t(sizeof(time_t)));
+    PyModule_AddObject(m, "SIZEOF_INTMAX_T", PyLong_FromSsize_t(sizeof(intmax_t)));
+    PyModule_AddObject(m, "SIZEOF_INTPTR_T", PyLong_FromSsize_t(sizeof(intptr_t)));
+    PyModule_AddObject(m, "SIZEOF_PTRDIFF_T", PyLong_FromSsize_t(sizeof(ptrdiff_t)));
+#ifdef MS_WINDOWS
+    PyModule_AddObject(m, "SIZEOF_OFF_T", PyLong_FromSsize_t(sizeof(long long)));
+#else
+    PyModule_AddObject(m, "SIZEOF_OFF_T", PyLong_FromSsize_t(sizeof(off_t)));
+#endif
+    PyModule_AddObject(m, "SIZEOF_INT", PyLong_FromSsize_t(SIZEOF_PID_T));
+    PyModule_AddObject(m, "SIZEOF_PID_T", PyLong_FromSsize_t(sizeof(pid_t)));
     PyModule_AddObject(m, "Py_Version", PyLong_FromUnsignedLong(Py_Version));
     Py_INCREF(&PyInstanceMethod_Type);
     PyModule_AddObject(m, "instancemethod", (PyObject *)&PyInstanceMethod_Type);
