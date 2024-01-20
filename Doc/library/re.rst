@@ -590,7 +590,7 @@ character ``'$'``.
       (that is, any character in Unicode character category `[Nd]`__).
       This includes ``[0-9]``, and also many other digit characters.
 
-      Matches ``[0-9]`` if the :py:const:`~re.ASCII` flag is used.
+      Matches only ``[0-9]`` if the :py:const:`~re.ASCII` flag is used.
 
       __ https://www.unicode.org/versions/Unicode15.0.0/ch04.pdf#G134153
 
@@ -604,7 +604,7 @@ character ``'$'``.
    Matches any character which is not a decimal digit.
    This is the opposite of ``\d``.
 
-   Matches ``[^0-9]`` if the :py:const:`~re.ASCII` flag is used.
+   Matches only ``[^0-9]`` if the :py:const:`~re.ASCII` flag is used.
 
 .. index:: single: \s; in regular expressions
 
@@ -615,7 +615,7 @@ character ``'$'``.
       non-breaking spaces mandated by typography rules in many
       languages).
 
-      Matches ``[ \t\n\r\f\v]`` if the :py:const:`~re.ASCII` flag is used.
+      Matches only ``[ \t\n\r\f\v]`` if the :py:const:`~re.ASCII` flag is used.
 
    For 8-bit (bytes) patterns:
       Matches characters considered whitespace in the ASCII character set;
@@ -627,7 +627,7 @@ character ``'$'``.
    Matches any character which is not a whitespace character. This is
    the opposite of ``\s``.
 
-   Matches ``[^ \t\n\r\f\v]`` if the :py:const:`~re.ASCII` flag is used.
+   Matches only ``[^ \t\n\r\f\v]`` if the :py:const:`~re.ASCII` flag is used.
 
 .. index:: single: \w; in regular expressions
 
@@ -638,7 +638,7 @@ character ``'$'``.
       (as defined by :py:meth:`str.isalnum`),
       as well as the underscore (``_``).
 
-      Matches ``[a-zA-Z0-9_]`` if the :py:const:`~re.ASCII` flag is used.
+      Matches only ``[a-zA-Z0-9_]`` if the :py:const:`~re.ASCII` flag is used.
 
    For 8-bit (bytes) patterns:
       Matches characters considered alphanumeric in the ASCII character set;
@@ -654,7 +654,7 @@ character ``'$'``.
    By default, matches non-underscore (``_``) characters
    for which :py:meth:`str.isalnum` returns ``False``.
 
-   Matches ``[^a-zA-Z0-9_]`` if the :py:const:`~re.ASCII` flag is used.
+   Matches only ``[^a-zA-Z0-9_]`` if the :py:const:`~re.ASCII` flag is used.
 
    If the :py:const:`~re.LOCALE` flag is used,
    matches characters which are neither alphanumeric in the current locale
