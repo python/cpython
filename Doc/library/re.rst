@@ -712,8 +712,6 @@ regular expressions.  Most non-trivial applications always use the compiled
 form.
 
 
-.. _flags:
-
 Flags
 ^^^^^
 
@@ -882,7 +880,7 @@ Functions
    below.
 
    The expression's behaviour can be modified by specifying a *flags* value.
-   Values can be any of the :ref:`flags` variables, combined using bitwise OR
+   Values can be any of the `flags`_ variables, combined using bitwise OR
    (the ``|`` operator).
 
    The sequence ::
