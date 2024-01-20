@@ -1,0 +1,2 @@
+Make the result of :func:`termios.tcgetattr` reproducible on Alpine Linux.
+Previously it could leave a random garbage in some fields.

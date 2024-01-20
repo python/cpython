@@ -1073,8 +1073,8 @@ are always available.  They are listed here in alphabetical order.
    such as ``sorted(iterable, key=keyfunc, reverse=True)[0]`` and
    ``heapq.nlargest(1, iterable, key=keyfunc)``.
 
-   .. versionadded:: 3.4
-      The *default* keyword-only argument.
+   .. versionchanged:: 3.4
+      Added the *default* keyword-only parameter.
 
    .. versionchanged:: 3.8
       The *key* can be ``None``.
@@ -1111,8 +1111,8 @@ are always available.  They are listed here in alphabetical order.
    such as ``sorted(iterable, key=keyfunc)[0]`` and ``heapq.nsmallest(1,
    iterable, key=keyfunc)``.
 
-   .. versionadded:: 3.4
-      The *default* keyword-only argument.
+   .. versionchanged:: 3.4
+      Added the *default* keyword-only parameter.
 
    .. versionchanged:: 3.8
       The *key* can be ``None``.

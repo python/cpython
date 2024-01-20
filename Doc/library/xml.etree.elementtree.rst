@@ -705,11 +705,11 @@ Functions
    meaning as in :meth:`ElementTree.write`. Returns an (optionally) encoded string
    containing the XML data.
 
-   .. versionadded:: 3.4
-      The *short_empty_elements* parameter.
+   .. versionchanged:: 3.4
+      Added the *short_empty_elements* parameter.
 
-   .. versionadded:: 3.8
-      The *xml_declaration* and *default_namespace* parameters.
+   .. versionchanged:: 3.8
+      Added the *xml_declaration* and *default_namespace* parameters.
 
    .. versionchanged:: 3.8
       The :func:`tostring` function now preserves the attribute order
@@ -732,11 +732,11 @@ Functions
 
    .. versionadded:: 3.2
 
-   .. versionadded:: 3.4
-      The *short_empty_elements* parameter.
+   .. versionchanged:: 3.4
+      Added the *short_empty_elements* parameter.
 
-   .. versionadded:: 3.8
-      The *xml_declaration* and *default_namespace* parameters.
+   .. versionchanged:: 3.8
+      Added the *xml_declaration* and *default_namespace* parameters.
 
    .. versionchanged:: 3.8
       The :func:`tostringlist` function now preserves the attribute order
@@ -858,8 +858,8 @@ Functions
    this is a Unicode string.  If the loader fails, it can return None or
    raise an exception.
 
-   .. versionadded:: 3.9
-      The *base_url* and *max_depth* parameters.
+   .. versionchanged:: 3.9
+      Added the *base_url* and *max_depth* parameters.
 
 
 .. _elementtree-element-objects:
@@ -1189,8 +1189,8 @@ ElementTree Objects
       :term:`file object`; make sure you do not try to write a string to a
       binary stream and vice versa.
 
-      .. versionadded:: 3.4
-         The *short_empty_elements* parameter.
+      .. versionchanged:: 3.4
+         Added the *short_empty_elements* parameter.
 
       .. versionchanged:: 3.8
          The :meth:`write` method now preserves the attribute order specified

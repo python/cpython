@@ -331,6 +331,33 @@ dialect_check_quoting(int quoting)
     return -1;
 }
 
+static int
+dialect_check_char(const char *name, Py_UCS4 c, DialectObj *dialect)
+{
+    if (c == '\r' || c == '\n' || (dialect->skipinitialspace && c == ' ')) {
+        PyErr_Format(PyExc_ValueError, "bad %s value", name);
+        return -1;
+    }
+    if (PyUnicode_FindChar(
+        dialect->lineterminator, c, 0,
+        PyUnicode_GET_LENGTH(dialect->lineterminator), 1) >= 0)
+    {
+        PyErr_Format(PyExc_ValueError, "bad %s or lineterminator value", name);
+        return -1;
+    }
+    return 0;
+}
+
+ static int
+dialect_check_chars(const char *name1, const char *name2, Py_UCS4 c1, Py_UCS4 c2)
+{
+    if (c1 == c2 && c1 != NOT_SET) {
+        PyErr_Format(PyExc_ValueError, "bad %s or %s value", name1, name2);
+        return -1;
+    }
+    return 0;
+}
+
 #define D_OFF(x) offsetof(DialectObj, x)
 
 static struct PyMemberDef Dialect_memberlist[] = {
@@ -506,6 +533,18 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     }
     if (self->lineterminator == NULL) {
         PyErr_SetString(PyExc_TypeError, "lineterminator must be set");
+        goto err;
+    }
+    if (dialect_check_char("delimiter", self->delimiter, self) ||
+        dialect_check_char("escapechar", self->escapechar, self) ||
+        dialect_check_char("quotechar", self->quotechar, self) ||
+        dialect_check_chars("delimiter", "escapechar",
+                            self->delimiter, self->escapechar) ||
+        dialect_check_chars("delimiter", "quotechar",
+                            self->delimiter, self->quotechar) ||
+        dialect_check_chars("escapechar", "quotechar",
+                            self->escapechar, self->quotechar))
+    {
         goto err;
     }
 

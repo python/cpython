@@ -2342,17 +2342,9 @@
             next_instr += 1;
             INSTRUCTION_STATS(END_FOR);
             PyObject *value;
-            // _POP_TOP
             value = stack_pointer[-1];
-            {
-                Py_DECREF(value);
-            }
-            // _POP_TOP
-            value = stack_pointer[-2];
-            {
-                Py_DECREF(value);
-            }
-            stack_pointer += -2;
+            Py_DECREF(value);
+            stack_pointer += -1;
             DISPATCH();
         }
 
@@ -2505,8 +2497,8 @@
                        next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
                     Py_DECREF(iter);
                     STACK_SHRINK(1);
-                    /* Jump forward oparg, then skip following END_FOR instruction */
-                    JUMPBY(oparg + 1);
+                    /* Jump forward oparg, then skip following END_FOR and POP_TOP instruction */
+                    JUMPBY(oparg + 2);
                     DISPATCH();
                 }
                 // Common case: no jump, leave it to the code generator
@@ -2567,8 +2559,8 @@
                     }
                     Py_DECREF(iter);
                     STACK_SHRINK(1);
-                    /* Jump forward oparg, then skip following END_FOR instruction */
-                    JUMPBY(oparg + 1);
+                    /* Jump forward oparg, then skip following END_FOR and POP_TOP instructions */
+                    JUMPBY(oparg + 2);
                     DISPATCH();
                 }
             }
@@ -2608,8 +2600,8 @@
                 if (r->len <= 0) {
                     STACK_SHRINK(1);
                     Py_DECREF(r);
-                    // Jump over END_FOR instruction.
-                    JUMPBY(oparg + 1);
+                    // Jump over END_FOR and POP_TOP instructions.
+                    JUMPBY(oparg + 2);
                     DISPATCH();
                 }
             }
@@ -2655,8 +2647,8 @@
                     }
                     Py_DECREF(iter);
                     STACK_SHRINK(1);
-                    /* Jump forward oparg, then skip following END_FOR instruction */
-                    JUMPBY(oparg + 1);
+                    /* Jump forward oparg, then skip following END_FOR and POP_TOP instructions */
+                    JUMPBY(oparg + 2);
                     DISPATCH();
                 }
             }
@@ -2952,9 +2944,8 @@
                 }
                 PyErr_SetRaisedException(NULL);
             }
-            Py_DECREF(receiver);
             Py_DECREF(value);
-            stack_pointer += -2;
+            stack_pointer += -1;
             DISPATCH();
         }
 
@@ -3005,8 +2996,8 @@
                        next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
                 STACK_SHRINK(1);
                 Py_DECREF(iter);
-                /* Skip END_FOR */
-                target = next_instr + oparg + 1;
+                /* Skip END_FOR and POP_TOP */
+                target = next_instr + oparg + 2;
             }
             INSTRUMENTED_JUMP(this_instr, target, PY_MONITORING_EVENT_BRANCH);
             DISPATCH();
@@ -3156,7 +3147,7 @@
                 if (err) goto error;
                 if (frame->instr_ptr != this_instr) {
                     /* Instrumentation has jumped */
-                    next_instr = this_instr;
+                    next_instr = frame->instr_ptr;
                     DISPATCH();
                 }
             }

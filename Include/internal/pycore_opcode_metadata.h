@@ -176,7 +176,7 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case END_ASYNC_FOR:
             return 2;
         case END_FOR:
-            return 2;
+            return 1;
         case END_SEND:
             return 2;
         case ENTER_EXECUTOR:
@@ -647,7 +647,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case INSTRUMENTED_CALL_KW:
             return 0;
         case INSTRUMENTED_END_FOR:
-            return 0;
+            return 1;
         case INSTRUMENTED_END_SEND:
             return 1;
         case INSTRUMENTED_FOR_ITER:
@@ -1232,7 +1232,7 @@ _PyOpcode_macro_expansion[256] = {
     [DELETE_SUBSCR] = { .nuops = 1, .uops = { { _DELETE_SUBSCR, 0, 0 } } },
     [DICT_MERGE] = { .nuops = 1, .uops = { { _DICT_MERGE, 0, 0 } } },
     [DICT_UPDATE] = { .nuops = 1, .uops = { { _DICT_UPDATE, 0, 0 } } },
-    [END_FOR] = { .nuops = 2, .uops = { { _POP_TOP, 0, 0 }, { _POP_TOP, 0, 0 } } },
+    [END_FOR] = { .nuops = 1, .uops = { { _POP_TOP, 0, 0 } } },
     [END_SEND] = { .nuops = 1, .uops = { { _END_SEND, 0, 0 } } },
     [EXIT_INIT_CHECK] = { .nuops = 1, .uops = { { _EXIT_INIT_CHECK, 0, 0 } } },
     [FORMAT_SIMPLE] = { .nuops = 1, .uops = { { _FORMAT_SIMPLE, 0, 0 } } },

@@ -54,6 +54,13 @@ except AttributeError:
 TIMEOUT_MAX = _thread.TIMEOUT_MAX
 del _thread
 
+# get thread-local implementation, either from the thread
+# module, or from the python fallback
+
+try:
+    from _thread import _local as local
+except ImportError:
+    from _threading_local import local
 
 # Support for profile and trace hooks
 
@@ -1476,10 +1483,36 @@ class _MainThread(Thread):
             _active[self._ident] = self
 
 
+# Helper thread-local instance to detect when a _DummyThread
+# is collected. Not a part of the public API.
+_thread_local_info = local()
+
+
+class _DeleteDummyThreadOnDel:
+    '''
+    Helper class to remove a dummy thread from threading._active on __del__.
+    '''
+
+    def __init__(self, dummy_thread):
+        self._dummy_thread = dummy_thread
+        self._tident = dummy_thread.ident
+        # Put the thread on a thread local variable so that when
+        # the related thread finishes this instance is collected.
+        #
+        # Note: no other references to this instance may be created.
+        # If any client code creates a reference to this instance,
+        # the related _DummyThread will be kept forever!
+        _thread_local_info._track_dummy_thread_ref = self
+
+    def __del__(self):
+        with _active_limbo_lock:
+            if _active.get(self._tident) is self._dummy_thread:
+                _active.pop(self._tident, None)
+
+
 # Dummy thread class to represent threads not started here.
-# These aren't garbage collected when they die, nor can they be waited for.
-# If they invoke anything in threading.py that calls current_thread(), they
-# leave an entry in the _active dict forever after.
+# These should be added to `_active` and removed automatically
+# when they die, although they can't be waited for.
 # Their purpose is to return *something* from current_thread().
 # They are marked as daemon threads so we won't wait for them
 # when we exit (conform previous semantics).
@@ -1489,13 +1522,13 @@ class _DummyThread(Thread):
     def __init__(self):
         Thread.__init__(self, name=_newname("Dummy-%d"),
                         daemon=_daemon_threads_allowed())
-
         self._started.set()
         self._set_ident()
         if _HAVE_THREAD_NATIVE_ID:
             self._set_native_id()
         with _active_limbo_lock:
             _active[self._ident] = self
+        _DeleteDummyThreadOnDel(self)
 
     def _stop(self):
         pass
@@ -1507,6 +1540,14 @@ class _DummyThread(Thread):
 
     def join(self, timeout=None):
         raise RuntimeError("cannot join a dummy thread")
+
+    def _after_fork(self, new_ident=None):
+        if new_ident is not None:
+            self.__class__ = _MainThread
+            self._name = 'MainThread'
+            self._daemonic = False
+            self._set_tstate_lock()
+        Thread._after_fork(self, new_ident=new_ident)
 
 
 # Global API functions
@@ -1668,14 +1709,6 @@ def main_thread():
     """
     # XXX Figure this out for subinterpreters.  (See gh-75698.)
     return _main_thread
-
-# get thread-local implementation, either from the thread
-# module, or from the python fallback
-
-try:
-    from _thread import _local as local
-except ImportError:
-    from _threading_local import local
 
 
 def _after_fork():

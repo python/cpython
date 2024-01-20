@@ -194,7 +194,7 @@ The :mod:`functools` module defines the following functions:
    In contrast, the tuple arguments ``('answer', Decimal(42))`` and
    ``('answer', Fraction(42))`` are treated as equivalent.
 
-   The wrapped function is instrumented with a :func:`cache_parameters`
+   The wrapped function is instrumented with a :func:`!cache_parameters`
    function that returns a new :class:`dict` showing the values for *maxsize*
    and *typed*.  This is for information purposes only.  Mutating the values
    has no effect.
@@ -275,8 +275,8 @@ The :mod:`functools` module defines the following functions:
    .. versionchanged:: 3.8
       Added the *user_function* option.
 
-   .. versionadded:: 3.9
-      Added the function :func:`cache_parameters`
+   .. versionchanged:: 3.9
+      Added the function :func:`!cache_parameters`
 
 .. decorator:: total_ordering
 

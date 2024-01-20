@@ -160,6 +160,9 @@
     Py_FatalError("Unreachable C code path reached")
 #endif
 
+#define _Py_CONTAINER_OF(ptr, type, member) \
+    (type*)((char*)ptr - offsetof(type, member))
+
 // Prevent using an expression as a l-value.
 // For example, "int x; _Py_RVALUE(x) = 1;" fails with a compiler error.
 #define _Py_RVALUE(EXPR) ((void)0, (EXPR))
