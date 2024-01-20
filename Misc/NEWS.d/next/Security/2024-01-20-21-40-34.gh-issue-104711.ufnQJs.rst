@@ -1,0 +1,3 @@
+On the Windows platform, when determining whether a request is CGI or not in
+the :class:`http.server.CGIHTTPRequestHandler`, ignore the driver letters in
+the URL path to prevent CGI source code disclosure and directory listing.
