@@ -73,7 +73,7 @@ async def _find_tool(tool: str, *, echo: bool = False) -> str | None:
     path = f"{tool}-{_LLVM_VERSION}"
     if await _check_tool_version(path, echo=echo):
         return path
-    # My homebrew homies executables:
+    # Homebrew-installed executables:
     prefix = await _get_brew_llvm_prefix(echo=echo)
     if prefix is not None:
         path = os.path.join(prefix, "bin", tool)

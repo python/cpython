@@ -92,7 +92,7 @@ def _dump_stencil(opname: str, group: _stencils.StencilGroup) -> typing.Iterator
 
 
 def dump(groups: dict[str, _stencils.StencilGroup]) -> typing.Iterator[str]:
-    """Yiild a JIT compiler line-by-line as a C header file."""
+    """Yield a JIT compiler line-by-line as a C header file."""
     yield from _dump_header()
     for opname, group in groups.items():
         yield from _dump_stencil(opname, group)
