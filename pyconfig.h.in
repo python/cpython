@@ -960,6 +960,9 @@
 /* Define to 1 if you have the `ptsname' function. */
 #undef HAVE_PTSNAME
 
+/* Define to 1 if you have the `ptsname_r' function. */
+#undef HAVE_PTSNAME_R
+
 /* Define to 1 if you have the <pty.h> header file. */
 #undef HAVE_PTY_H
 

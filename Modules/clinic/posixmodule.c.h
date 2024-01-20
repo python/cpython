@@ -4578,7 +4578,7 @@ exit:
 
 #endif /* defined(HAVE_UNLOCKPT) */
 
-#if defined(HAVE_PTSNAME)
+#if (defined(HAVE_PTSNAME) || defined(HAVE_PTSNAME_R))
 
 PyDoc_STRVAR(os_ptsname__doc__,
 "ptsname($module, fd, /)\n"
@@ -4589,7 +4589,8 @@ PyDoc_STRVAR(os_ptsname__doc__,
 "  fd\n"
 "    File descriptor of a master pseudo-terminal device.\n"
 "\n"
-"Performs a ptsname() C function call.");
+"If the ptsname_r() C function is available, it is called;\n"
+"otherwise, performs a ptsname() C function call.");
 
 #define OS_PTSNAME_METHODDEF    \
     {"ptsname", (PyCFunction)os_ptsname, METH_O, os_ptsname__doc__},
@@ -4612,7 +4613,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_PTSNAME) */
+#endif /* (defined(HAVE_PTSNAME) || defined(HAVE_PTSNAME_R)) */
 
 #if (defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX))
 
@@ -12587,4 +12588,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=12a3bc95d442f74d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=43e4e557c771358a input=a9049054013a1b77]*/

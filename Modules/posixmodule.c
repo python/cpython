@@ -8412,14 +8412,21 @@ os_grantpt_impl(PyObject *module, int fd)
 /*[clinic end generated code: output=dfd580015cf548ab input=0668e3b96760e849]*/
 {
     int ret;
+    int saved_errno;
     PyOS_sighandler_t sig_saved;
 
     sig_saved = PyOS_setsig(SIGCHLD, SIG_DFL);
+
     ret = grantpt(fd);
+    if (ret == -1)
+        saved_errno = errno;
+
     PyOS_setsig(SIGCHLD, sig_saved);
 
-    if (ret == -1)
+    if (ret == -1) {
+        errno = saved_errno;
         return posix_error();
+    }
 
     Py_RETURN_NONE;
 }
@@ -8449,7 +8456,7 @@ os_unlockpt_impl(PyObject *module, int fd)
 }
 #endif /* HAVE_UNLOCKPT */
 
-#ifdef HAVE_PTSNAME
+#if defined(HAVE_PTSNAME) || defined(HAVE_PTSNAME_R)
 /*[clinic input]
 os.ptsname
 
@@ -8459,22 +8466,36 @@ os.ptsname
 
 Return the name of the slave pseudo-terminal device.
 
-Performs a ptsname() C function call.
+If the ptsname_r() C function is available, it is called;
+otherwise, performs a ptsname() C function call.
 [clinic start generated code]*/
 
 static PyObject *
 os_ptsname_impl(PyObject *module, int fd)
-/*[clinic end generated code: output=ef300fadc5675872 input=a00d870c51570c2a]*/
+/*[clinic end generated code: output=ef300fadc5675872 input=1369ccc0546f3130]*/
 {
+#ifdef HAVE_PTSNAME_R
+    int ret;
+    char name[MAXPATHLEN+1];
+
+    ret = ptsname_r(fd, name, sizeof(name));
+    if (ret != 0) {
+        errno = ret;
+        return posix_error();
+    }
+#else
     char *name;
 
     name = ptsname(fd);
+    /* POSIX manpage: Upon failure, ptsname() shall return a null pointer and may set errno.
+       *MAY* set errno? Hmm... */
     if (name == NULL)
         return posix_error();
+#endif /* HAVE_PTSNAME_R */
 
     return PyUnicode_DecodeFSDefault(name);
 }
-#endif /* HAVE_PTSNAME */
+#endif /* defined(HAVE_PTSNAME) || defined(HAVE_PTSNAME_R) */
 
 /* AIX uses /dev/ptc but is otherwise the same as /dev/ptmx */
 #if defined(HAVE_DEV_PTC) && !defined(HAVE_DEV_PTMX)

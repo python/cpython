@@ -1127,6 +1127,7 @@ as internal buffering of data.
 
    Grant access to the slave pseudo-terminal device associated with the
    master pseudo-terminal device to which the file descriptor *fd* refers.
+   The file descriptor *fd* is not closed upon failure.
 
    Calls the C standard library function :c:func:`grantpt`.
 
@@ -1450,6 +1451,10 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    argument is used to set file status flags and file access modes as
    specified in the manual page of :c:func:`posix_openpt` of your system.
 
+   The returned file descriptor is :ref:`non-inheritable <fd_inheritance>`.
+   If the value :data:`O_CLOEXEC` is available on the system, it is added to
+   *oflag*.
+
    .. availability:: Unix, not Emscripten, not WASI.
 
    .. versionadded:: 3.13
@@ -1516,9 +1521,11 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    Return the name of the slave pseudo-terminal device associated with the
    master pseudo-terminal device to which the file descriptor *fd* refers.
+   The file descriptor *fd* is not closed upon failure.
 
-   Calls the C standard library function :c:func:`ptsname`, which is not
-   guaranteed to be thread-safe.
+   Calls the reentrant C standard library function :c:func:`ptsname_r` if
+   it is available; otherwise, the C standard library function
+   :c:func:`ptsname`, which is not guaranteed to be thread-safe, is called.
 
    .. availability:: Unix, not Emscripten, not WASI.
 
@@ -1781,6 +1788,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    Unlock the slave pseudo-terminal device associated with the master
    pseudo-terminal device to which the file descriptor *fd* refers.
+   The file descriptor *fd* is not closed upon failure.
 
    Calls the C standard library function :c:func:`unlockpt`.
 
