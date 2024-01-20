@@ -68,6 +68,10 @@ highlight_language = 'python3'
 # Minimum version of sphinx required
 needs_sphinx = '4.2'
 
+# Create table of contents entries for domain objects (e.g. functions, classes,
+# attributes, etc.). Default is True.
+toc_object_entries = False
+
 # Ignore any .rst files in the includes/ directory;
 # they're embedded in pages but not rendered individually.
 # Ignore any .rst files in the venv/ directory.
