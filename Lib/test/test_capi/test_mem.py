@@ -144,7 +144,7 @@ class PyMemDebugTests(unittest.TestCase):
                         print('MemoryError', outer_cnt, j)
                         _testcapi.remove_mem_hooks()
                         break
-            
+
             _testinternalcapi.set_optimizer(old_opt)
         """
         rc, out, err = assert_python_ok('-c', code)
