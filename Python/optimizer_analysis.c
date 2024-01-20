@@ -593,7 +593,6 @@ frame_new(_Py_UOpsAbstractInterpContext *ctx,
     if (sym_consts == NULL) {
         return NULL;
     }
-    int total_len = stack_len + locals_len;
     _Py_UOpsAbstractFrame *frame = PyObject_New(_Py_UOpsAbstractFrame,
                                                       &_Py_UOpsAbstractFrame_Type);
     if (frame == NULL) {
@@ -1011,9 +1010,9 @@ write_stack_to_ir(_Py_UOpsAbstractInterpContext *ctx, _PyUOpInstruction *curr, b
     DPRINTF(3, "write_stack_to_ir\n");
 #endif
     // Emit the state of the stack first.
-    int stack_entries = ctx->frame->stack_pointer - ctx->frame->stack;
+    Py_ssize_t stack_entries = ctx->frame->stack_pointer - ctx->frame->stack;
     assert(stack_entries <= ctx->frame->stack_len);
-    for (int i = 0; i < stack_entries; i++) {
+    for (Py_ssize_t i = 0; i < stack_entries; i++) {
         if (ir_store(ctx->ir, ctx->frame->stack[i], TARGET_NONE) < 0) {
             goto error;
         }

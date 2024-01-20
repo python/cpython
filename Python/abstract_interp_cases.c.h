@@ -621,7 +621,7 @@
         }
 
         case _UNPACK_SEQUENCE_TWO_TUPLE: {
-            PyObject **__values_;
+            _Py_UOpsSymbolicExpression **__values_;
             __values_ = &stack_pointer[-1];
             for (int case_gen_i = 0; case_gen_i < oparg; case_gen_i++) {
                 *(stack_pointer + case_gen_i) = sym_init_unknown(ctx);
@@ -632,7 +632,7 @@
         }
 
         case _UNPACK_SEQUENCE_TUPLE: {
-            PyObject **__values_;
+            _Py_UOpsSymbolicExpression **__values_;
             __values_ = &stack_pointer[-1];
             for (int case_gen_i = 0; case_gen_i < oparg; case_gen_i++) {
                 *(stack_pointer + case_gen_i) = sym_init_unknown(ctx);
@@ -643,7 +643,7 @@
         }
 
         case _UNPACK_SEQUENCE_LIST: {
-            PyObject **__values_;
+            _Py_UOpsSymbolicExpression **__values_;
             __values_ = &stack_pointer[-1];
             for (int case_gen_i = 0; case_gen_i < oparg; case_gen_i++) {
                 *(stack_pointer + case_gen_i) = sym_init_unknown(ctx);
@@ -949,8 +949,6 @@
         }
 
         case _CHECK_MANAGED_OBJECT_HAS_VALUES: {
-            _Py_UOpsSymbolicExpression *__owner_;
-            __owner_ = stack_pointer[-1];
             goto guard_required;
             break;
         }
@@ -1698,8 +1696,6 @@
         }
 
         case _CHECK_STACK_SPACE: {
-            _Py_UOpsSymbolicExpression *__callable_;
-            __callable_ = stack_pointer[-2 - oparg];
             goto guard_required;
             break;
         }
@@ -1708,7 +1704,7 @@
             _Py_UOpsSymbolicExpression **__args_;
             _Py_UOpsSymbolicExpression *__self_or_null_;
             _Py_UOpsSymbolicExpression *__callable_;
-            _PyInterpreterFrame *__new_frame_;
+            _Py_UOpsSymbolicExpression *__new_frame_;
             __args_ = &stack_pointer[-oparg];
             __self_or_null_ = stack_pointer[-1 - oparg];
             __callable_ = stack_pointer[-2 - oparg];

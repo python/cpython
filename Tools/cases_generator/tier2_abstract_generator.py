@@ -55,14 +55,17 @@ def declare_variables(
     skip_inputs: bool = False,
     skip_peeks: bool = False,
 ) -> None:
+    # Don't declare anything for these guards, they will always be evaluated.
+    if uop.properties.guard and uop.name in NO_CONST_OR_TYPE_EVALUATE:
+        return
     variables = set(UNUSED)
     if not skip_inputs:
         for var in reversed(uop.stack.inputs):
             if skip_peeks and var.peek:
                 continue
             if var.name not in variables:
-                type = var.type if var.type else default_type
-                if var.size > "1" and type == "PyObject **":
+                type = default_type
+                if var.size != "1" and var.type == "PyObject **":
                     type = "_Py_UOpsSymbolicExpression **"
                 variables.add(var.name)
                 if var.condition:
@@ -74,7 +77,9 @@ def declare_variables(
             continue
         if var.name not in variables:
             variables.add(var.name)
-            type = var.type if var.type else default_type
+            type = default_type
+            if var.size != "1" and var.type == "PyObject **":
+                type = "_Py_UOpsSymbolicExpression **"
             if var.condition:
                 out.emit(f"{type}{var.name} = NULL;\n")
             else:
@@ -353,20 +358,21 @@ def _write_body_abstract_interp_guard_uop(
 def write_abstract_uop(mangled_uop: Uop, uop: Uop, out: CWriter, stack: Stack) -> None:
     try:
         out.start_line()
-        for var in reversed(mangled_uop.stack.inputs):
-            is_impure = (
-                not mangled_uop.properties.pure and not mangled_uop.properties.guard
-            )
-            old_var_name = var.name
-            # code smell, but basically impure ops don't use any of their inputs
-            if is_impure:
-                var.name = "unused"
-            out.emit(stack.pop(var))
-            var.name = old_var_name
+        # These types of guards do not need the stack at all.
+        if not (mangled_uop.properties.guard and mangled_uop.name in NO_CONST_OR_TYPE_EVALUATE):
+            for var in reversed(mangled_uop.stack.inputs):
+                is_impure = (
+                    not mangled_uop.properties.pure and not mangled_uop.properties.guard
+                )
+                old_var_name = var.name
+                # code smell, but basically impure ops don't use any of their inputs
+                if is_impure:
+                    var.name = "unused"
+                out.emit(stack.pop(var))
+                var.name = old_var_name
         if not mangled_uop.properties.stores_sp:
             for i, var in enumerate(mangled_uop.stack.outputs):
                 out.emit(stack.push(var))
-        # emit_tokens(out, uop, stack, None, TIER2_REPLACEMENT_FUNCTIONS)
         if uop.properties.pure:
             _write_body_abstract_interp_pure_uop(mangled_uop, uop, out, stack)
         elif uop.properties.guard:
@@ -406,13 +412,15 @@ def generate_tier2_abstract(
             continue
         out.emit(f"case {uop.name}: {{\n")
         mangled_uop = mangle_uop_names(uop)
-        is_impure = not mangled_uop.properties.pure and not mangled_uop.properties.guard
+        is_impure = not (mangled_uop.properties.pure or mangled_uop.properties.guard)
         declare_variables(mangled_uop, out, skip_inputs=is_impure, skip_peeks=is_impure)
         stack = Stack()
         write_abstract_uop(mangled_uop, uop, out, stack)
         out.start_line()
         if not uop.properties.always_exits:
-            stack.flush(out)
+            # Guards strictly only peek
+            if not uop.properties.guard:
+                stack.flush(out)
             out.emit("break;\n")
         out.start_line()
         out.emit("}")
