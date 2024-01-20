@@ -1036,6 +1036,9 @@ call fails (for example because the path doesn't exist).
       future Python release, patterns with this ending will match both files
       and directories. Add a trailing slash to match only directories.
 
+   .. versionchanged:: 3.13
+      The *pattern* parameter accepts a :term:`path-like object`.
+
 .. method:: Path.group(*, follow_symlinks=True)
 
    Return the name of the group owning the file. :exc:`KeyError` is raised
@@ -1497,6 +1500,9 @@ call fails (for example because the path doesn't exist).
 
    .. versionchanged:: 3.13
       The *follow_symlinks* parameter was added.
+
+   .. versionchanged:: 3.13
+      The *pattern* parameter accepts a :term:`path-like object`.
 
 .. method:: Path.rmdir()
 
