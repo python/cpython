@@ -1045,9 +1045,12 @@ class DummyPathTest(DummyPurePathTest):
             _check(p.glob("*/"), ["dirA/", "dirB/", "dirC/", "dirE/", "linkB/"])
 
     def test_glob_empty_pattern(self):
-        p = self.cls('')
-        with self.assertRaisesRegex(ValueError, 'Unacceptable pattern'):
-            list(p.glob(''))
+        def _check(glob, expected):
+            self.assertEqual(set(glob), { P(self.base, q) for q in expected })
+        P = self.cls
+        p = P(self.base)
+        _check(p.glob(""), [""])
+        _check(p.glob("."), ["."])
 
     def test_glob_case_sensitive(self):
         P = self.cls
