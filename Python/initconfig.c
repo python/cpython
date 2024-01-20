@@ -295,6 +295,7 @@ static const char usage_envvars[] =
 "   running a local build).\n"
 "PYTHON_COLORS           : If this variable is set to 1, the interpreter will"
 "   colorize various kinds of output. Setting it to 0 deactivates this behavior.\n"
+"PYTHON_HISTORY          : the location of a .python_history file.\n"
 "These variables have equivalent command-line parameters (see --help for details):\n"
 "PYTHONDEBUG             : enable parser debug mode (-d)\n"
 "PYTHONDONTWRITEBYTECODE : don't write .pyc files (-B)\n"

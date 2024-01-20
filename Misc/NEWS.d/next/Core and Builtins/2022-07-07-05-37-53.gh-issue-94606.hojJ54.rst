@@ -1,3 +1,0 @@
-Fix UnicodeEncodeError when :func:`email.message.get_payload` reads a message
-with a Unicode surrogate character and the message content is not well-formed for
-surrogateescape encoding. Patch by Sidney Markowitz.

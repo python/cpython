@@ -1,27 +1,23 @@
+"""
+Abstract base classes for rich path objects.
+
+This module is published as a PyPI package called "pathlib-abc".
+
+This module is also a *PRIVATE* part of the Python standard library, where
+it's developed alongside pathlib. If it finds success and maturity as a PyPI
+package, it could become a public part of the standard library.
+
+Two base classes are defined here -- PurePathBase and PathBase -- that
+resemble pathlib's PurePath and Path respectively.
+"""
+
 import functools
-import ntpath
-import posixpath
-import sys
-import warnings
-from _collections_abc import Sequence
 from errno import ENOENT, ENOTDIR, EBADF, ELOOP, EINVAL
-from itertools import chain
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 
 #
 # Internals
 #
-
-# Maximum number of symlinks to follow in PathBase.resolve()
-_MAX_SYMLINKS = 40
-
-# Reference for Windows paths can be found at
-# https://learn.microsoft.com/en-gb/windows/win32/fileio/naming-a-file .
-_WIN_RESERVED_NAMES = frozenset(
-    {'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$'} |
-    {f'COM{c}' for c in '123456789\xb9\xb2\xb3'} |
-    {f'LPT{c}' for c in '123456789\xb9\xb2\xb3'}
-)
 
 _WINERROR_NOT_READY = 21  # drive exists but is not accessible
 _WINERROR_INVALID_NAME = 123  # fix for bpo-35306
@@ -65,6 +61,12 @@ def _compile_pattern(pat, sep, case_sensitive):
     # paths shouldn't match wildcards, so we consume it with an atomic group.
     regex = r'(\.\Z)?+' + regex
     return re.compile(regex, flags=flags).match
+
+
+def _select_special(paths, part):
+    """Yield special literal children of the given paths."""
+    for path in paths:
+        yield path._make_child_relpath(part)
 
 
 def _select_children(parent_paths, dir_only, follow_symlinks, match):
@@ -139,33 +141,50 @@ class UnsupportedOperation(NotImplementedError):
     pass
 
 
-class _PathParents(Sequence):
-    """This object provides sequence-like access to the logical ancestors
-    of a path.  Don't try to construct it yourself."""
-    __slots__ = ('_path', '_drv', '_root', '_tail')
+class PathModuleBase:
+    """Base class for path modules, which do low-level path manipulation.
 
-    def __init__(self, path):
-        self._path = path
-        self._drv = path.drive
-        self._root = path.root
-        self._tail = path._tail
+    Path modules provide a subset of the os.path API, specifically those
+    functions needed to provide PurePathBase functionality. Each PurePathBase
+    subclass references its path module via a 'pathmod' class attribute.
 
-    def __len__(self):
-        return len(self._tail)
+    Every method in this base class raises an UnsupportedOperation exception.
+    """
 
-    def __getitem__(self, idx):
-        if isinstance(idx, slice):
-            return tuple(self[i] for i in range(*idx.indices(len(self))))
+    @classmethod
+    def _unsupported(cls, attr):
+        raise UnsupportedOperation(f"{cls.__name__}.{attr} is unsupported")
 
-        if idx >= len(self) or idx < -len(self):
-            raise IndexError(idx)
-        if idx < 0:
-            idx += len(self)
-        return self._path._from_parsed_parts(self._drv, self._root,
-                                             self._tail[:-idx - 1])
+    @property
+    def sep(self):
+        """The character used to separate path components."""
+        self._unsupported('sep')
 
-    def __repr__(self):
-        return "<{}.parents>".format(type(self._path).__name__)
+    def join(self, path, *paths):
+        """Join path segments."""
+        self._unsupported('join()')
+
+    def split(self, path):
+        """Split the path into a pair (head, tail), where *head* is everything
+        before the final path separator, and *tail* is everything after.
+        Either part may be empty.
+        """
+        self._unsupported('split()')
+
+    def splitdrive(self, path):
+        """Split the path into a 2-item tuple (drive, tail), where *drive* is
+        a device name or mount point, and *tail* is everything after the
+        drive. Either part may be empty."""
+        self._unsupported('splitdrive()')
+
+    def normcase(self, path):
+        """Normalize the case of the path."""
+        self._unsupported('normcase()')
+
+    def isabs(self, path):
+        """Returns whether the path is absolute, i.e. unaffected by the
+        current directory or drive."""
+        self._unsupported('isabs()')
 
 
 class PurePathBase:
@@ -178,33 +197,19 @@ class PurePathBase:
     """
 
     __slots__ = (
-        # The `_raw_paths` slot stores unnormalized string paths. This is set
-        # in the `__init__()` method.
-        '_raw_paths',
-
-        # The `_drv`, `_root` and `_tail_cached` slots store parsed and
-        # normalized parts of the path. They are set when any of the `drive`,
-        # `root` or `_tail` properties are accessed for the first time. The
-        # three-part division corresponds to the result of
-        # `os.path.splitroot()`, except that the tail is further split on path
-        # separators (i.e. it is a list of strings), and that the root and
-        # tail are normalized.
-        '_drv', '_root', '_tail_cached',
-
-        # The `_str` slot stores the string representation of the path,
-        # computed from the drive, root and tail when `__str__()` is called
-        # for the first time. It's used to implement `_str_normcase`
-        '_str',
+        # The `_raw_path` slot store a joined string path. This is set in the
+        # `__init__()` method.
+        '_raw_path',
 
         # The '_resolving' slot stores a boolean indicating whether the path
         # is being processed by `PathBase.resolve()`. This prevents duplicate
         # work from occurring when `resolve()` calls `stat()` or `readlink()`.
         '_resolving',
     )
-    pathmod = posixpath
+    pathmod = PathModuleBase()
 
-    def __init__(self, *paths):
-        self._raw_paths = paths
+    def __init__(self, path, *paths):
+        self._raw_path = self.pathmod.join(path, *paths) if paths else path
         self._resolving = False
 
     def with_segments(self, *pathsegments):
@@ -214,65 +219,10 @@ class PurePathBase:
         """
         return type(self)(*pathsegments)
 
-    @classmethod
-    def _parse_path(cls, path):
-        if not path:
-            return '', '', []
-        sep = cls.pathmod.sep
-        altsep = cls.pathmod.altsep
-        if altsep:
-            path = path.replace(altsep, sep)
-        drv, root, rel = cls.pathmod.splitroot(path)
-        if not root and drv.startswith(sep) and not drv.endswith(sep):
-            drv_parts = drv.split(sep)
-            if len(drv_parts) == 4 and drv_parts[2] not in '?.':
-                # e.g. //server/share
-                root = sep
-            elif len(drv_parts) == 6:
-                # e.g. //?/unc/server/share
-                root = sep
-        parsed = [sys.intern(str(x)) for x in rel.split(sep) if x and x != '.']
-        return drv, root, parsed
-
-    def _load_parts(self):
-        paths = self._raw_paths
-        if len(paths) == 0:
-            path = ''
-        elif len(paths) == 1:
-            path = paths[0]
-        else:
-            path = self.pathmod.join(*paths)
-        drv, root, tail = self._parse_path(path)
-        self._drv = drv
-        self._root = root
-        self._tail_cached = tail
-
-    def _from_parsed_parts(self, drv, root, tail):
-        path_str = self._format_parsed_parts(drv, root, tail)
-        path = self.with_segments(path_str)
-        path._str = path_str or '.'
-        path._drv = drv
-        path._root = root
-        path._tail_cached = tail
-        return path
-
-    @classmethod
-    def _format_parsed_parts(cls, drv, root, tail):
-        if drv or root:
-            return drv + root + cls.pathmod.sep.join(tail)
-        elif tail and cls.pathmod.splitdrive(tail[0])[0]:
-            tail = ['.'] + tail
-        return cls.pathmod.sep.join(tail)
-
     def __str__(self):
         """Return the string representation of the path, suitable for
         passing to system calls."""
-        try:
-            return self._str
-        except AttributeError:
-            self._str = self._format_parsed_parts(self.drive, self.root,
-                                                  self._tail) or '.'
-            return self._str
+        return self._raw_path
 
     def as_posix(self):
         """Return the string representation of the path with forward (/)
@@ -282,42 +232,22 @@ class PurePathBase:
     @property
     def drive(self):
         """The drive prefix (letter or UNC path), if any."""
-        try:
-            return self._drv
-        except AttributeError:
-            self._load_parts()
-            return self._drv
+        return self.pathmod.splitdrive(self.anchor)[0]
 
     @property
     def root(self):
         """The root of the path, if any."""
-        try:
-            return self._root
-        except AttributeError:
-            self._load_parts()
-            return self._root
-
-    @property
-    def _tail(self):
-        try:
-            return self._tail_cached
-        except AttributeError:
-            self._load_parts()
-            return self._tail_cached
+        return self.pathmod.splitdrive(self.anchor)[1]
 
     @property
     def anchor(self):
         """The concatenation of the drive and root, or ''."""
-        anchor = self.drive + self.root
-        return anchor
+        return self._stack[0]
 
     @property
     def name(self):
         """The final path component, if any."""
-        tail = self._tail
-        if not tail:
-            return ''
-        return tail[-1]
+        return self.pathmod.split(self._raw_path)[1]
 
     @property
     def suffix(self):
@@ -358,14 +288,10 @@ class PurePathBase:
 
     def with_name(self, name):
         """Return a new path with the file name changed."""
-        m = self.pathmod
-        if not name or m.sep in name or (m.altsep and m.altsep in name) or name == '.':
+        split = self.pathmod.split
+        if split(name)[0]:
             raise ValueError(f"Invalid name {name!r}")
-        tail = self._tail.copy()
-        if not tail:
-            raise ValueError(f"{self!r} has an empty name")
-        tail[-1] = name
-        return self._from_parsed_parts(self.drive, self.root, tail)
+        return self.with_segments(split(self._raw_path)[0], name)
 
     def with_stem(self, stem):
         """Return a new path with the stem changed."""
@@ -383,7 +309,7 @@ class PurePathBase:
         else:
             raise ValueError(f"Invalid suffix {suffix!r}")
 
-    def relative_to(self, other, /, *_deprecated, walk_up=False):
+    def relative_to(self, other, *, walk_up=False):
         """Return the relative path to another path identified by the passed
         arguments.  If the operation is not possible (because this is not
         related to the other path), raise ValueError.
@@ -391,47 +317,55 @@ class PurePathBase:
         The *walk_up* parameter controls whether `..` may be used to resolve
         the path.
         """
-        if _deprecated:
-            msg = ("support for supplying more than one positional argument "
-                   "to pathlib.PurePath.relative_to() is deprecated and "
-                   "scheduled for removal in Python 3.14")
-            warnings.warn(msg, DeprecationWarning, stacklevel=2)
-            other = self.with_segments(other, *_deprecated)
-        elif not isinstance(other, PurePathBase):
+        if not isinstance(other, PurePathBase):
             other = self.with_segments(other)
-        for step, path in enumerate(chain([other], other.parents)):
-            if path == self or path in self.parents:
-                break
+        anchor0, parts0 = self._stack
+        anchor1, parts1 = other._stack
+        if isinstance(anchor0, str) != isinstance(anchor1, str):
+            raise TypeError(f"{self._raw_path!r} and {other._raw_path!r} have different types")
+        if anchor0 != anchor1:
+            raise ValueError(f"{self._raw_path!r} and {other._raw_path!r} have different anchors")
+        while parts0 and parts1 and parts0[-1] == parts1[-1]:
+            parts0.pop()
+            parts1.pop()
+        for part in parts1:
+            if not part or part == '.':
+                pass
             elif not walk_up:
-                raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
-            elif path.name == '..':
-                raise ValueError(f"'..' segment in {str(other)!r} cannot be walked")
-        else:
-            raise ValueError(f"{str(self)!r} and {str(other)!r} have different anchors")
-        parts = ['..'] * step + self._tail[len(path._tail):]
-        return self._from_parsed_parts('', '', parts)
+                raise ValueError(f"{self._raw_path!r} is not in the subpath of {other._raw_path!r}")
+            elif part == '..':
+                raise ValueError(f"'..' segment in {other._raw_path!r} cannot be walked")
+            else:
+                parts0.append('..')
+        return self.with_segments('', *reversed(parts0))
 
-    def is_relative_to(self, other, /, *_deprecated):
+    def is_relative_to(self, other):
         """Return True if the path is relative to another path or False.
         """
-        if _deprecated:
-            msg = ("support for supplying more than one argument to "
-                   "pathlib.PurePath.is_relative_to() is deprecated and "
-                   "scheduled for removal in Python 3.14")
-            warnings.warn(msg, DeprecationWarning, stacklevel=2)
-            other = self.with_segments(other, *_deprecated)
-        elif not isinstance(other, PurePathBase):
+        if not isinstance(other, PurePathBase):
             other = self.with_segments(other)
-        return other == self or other in self.parents
+        anchor0, parts0 = self._stack
+        anchor1, parts1 = other._stack
+        if isinstance(anchor0, str) != isinstance(anchor1, str):
+            raise TypeError(f"{self._raw_path!r} and {other._raw_path!r} have different types")
+        if anchor0 != anchor1:
+            return False
+        while parts0 and parts1 and parts0[-1] == parts1[-1]:
+            parts0.pop()
+            parts1.pop()
+        for part in parts1:
+            if part and part != '.':
+                return False
+        return True
 
     @property
     def parts(self):
         """An object providing sequence-like access to the
         components in the filesystem path."""
-        if self.drive or self.root:
-            return (self.drive + self.root,) + tuple(self._tail)
-        else:
-            return tuple(self._tail)
+        anchor, parts = self._stack
+        if anchor:
+            parts.append(anchor)
+        return tuple(reversed(parts))
 
     def joinpath(self, *pathsegments):
         """Combine this path with one or several arguments, and return a
@@ -439,69 +373,73 @@ class PurePathBase:
         paths) or a totally different path (if one of the arguments is
         anchored).
         """
-        return self.with_segments(*self._raw_paths, *pathsegments)
+        return self.with_segments(self._raw_path, *pathsegments)
 
     def __truediv__(self, key):
         try:
-            return self.joinpath(key)
+            return self.with_segments(self._raw_path, key)
         except TypeError:
             return NotImplemented
 
     def __rtruediv__(self, key):
         try:
-            return self.with_segments(key, *self._raw_paths)
+            return self.with_segments(key, self._raw_path)
         except TypeError:
             return NotImplemented
 
     @property
+    def _stack(self):
+        """
+        Split the path into a 2-tuple (anchor, parts), where *anchor* is the
+        uppermost parent of the path (equivalent to path.parents[-1]), and
+        *parts* is a reversed list of parts following the anchor.
+        """
+        split = self.pathmod.split
+        path = self._raw_path
+        parent, name = split(path)
+        names = []
+        while path != parent:
+            names.append(name)
+            path = parent
+            parent, name = split(path)
+        return path, names
+
+    @property
     def parent(self):
         """The logical parent of the path."""
-        drv = self.drive
-        root = self.root
-        tail = self._tail
-        if not tail:
-            return self
-        path = self._from_parsed_parts(drv, root, tail[:-1])
-        path._resolving = self._resolving
-        return path
+        path = self._raw_path
+        parent = self.pathmod.split(path)[0]
+        if path != parent:
+            parent = self.with_segments(parent)
+            parent._resolving = self._resolving
+            return parent
+        return self
 
     @property
     def parents(self):
         """A sequence of this path's logical parents."""
-        # The value of this property should not be cached on the path object,
-        # as doing so would introduce a reference cycle.
-        return _PathParents(self)
+        split = self.pathmod.split
+        path = self._raw_path
+        parent = split(path)[0]
+        parents = []
+        while path != parent:
+            parents.append(self.with_segments(parent))
+            path = parent
+            parent = split(path)[0]
+        return tuple(parents)
 
     def is_absolute(self):
         """True if the path is absolute (has both a root and, if applicable,
         a drive)."""
-        if self.pathmod is ntpath:
-            # ntpath.isabs() is defective - see GH-44626.
-            return bool(self.drive and self.root)
-        elif self.pathmod is posixpath:
-            # Optimization: work with raw paths on POSIX.
-            for path in self._raw_paths:
-                if path.startswith('/'):
-                    return True
-            return False
-        else:
-            return self.pathmod.isabs(str(self))
+        return self.pathmod.isabs(self._raw_path)
 
-    def is_reserved(self):
-        """Return True if the path contains one of the special names reserved
-        by the system, if any."""
-        if self.pathmod is posixpath or not self._tail:
-            return False
-
-        # NOTE: the rules for reserved names seem somewhat complicated
-        # (e.g. r"..\NUL" is reserved but not r"foo\NUL" if "foo" does not
-        # exist). We err on the side of caution and return True for paths
-        # which are not considered reserved by Windows.
-        if self.drive.startswith('\\\\'):
-            # UNC paths are never reserved.
-            return False
-        name = self._tail[-1].partition('.')[0].partition(':')[0].rstrip(' ')
-        return name.upper() in _WIN_RESERVED_NAMES
+    @property
+    def _pattern_stack(self):
+        """Stack of path components, to be used with patterns in glob()."""
+        anchor, parts = self._stack
+        if anchor:
+            raise NotImplementedError("Non-relative patterns are unsupported")
+        return parts
 
     def match(self, path_pattern, *, case_sensitive=None):
         """
@@ -512,11 +450,10 @@ class PurePathBase:
         if case_sensitive is None:
             case_sensitive = _is_case_sensitive(self.pathmod)
         sep = path_pattern.pathmod.sep
-        pattern_str = str(path_pattern)
-        if path_pattern.drive or path_pattern.root:
-            pass
-        elif path_pattern._tail:
-            pattern_str = f'**{sep}{pattern_str}'
+        if path_pattern.anchor:
+            pattern_str = str(path_pattern)
+        elif path_pattern.parts:
+            pattern_str = str('**' / path_pattern)
         else:
             raise ValueError("empty pattern")
         match = _compile_pattern(pattern_str, sep, case_sensitive)
@@ -538,6 +475,9 @@ class PathBase(PurePathBase):
     such as paths in archive files or on remote storage systems.
     """
     __slots__ = ()
+
+    # Maximum number of symlinks to follow in resolve()
+    _max_symlinks = 40
 
     @classmethod
     def _unsupported(cls, method_name):
@@ -792,96 +732,41 @@ class PathBase(PurePathBase):
         return entry
 
     def _make_child_relpath(self, name):
-        path_str = str(self)
-        tail = self._tail
-        if tail:
-            path_str = f'{path_str}{self.pathmod.sep}{name}'
-        elif path_str != '.':
-            path_str = f'{path_str}{name}'
-        else:
-            path_str = name
-        path = self.with_segments(path_str)
-        path._str = path_str
-        path._drv = self.drive
-        path._root = self.root
-        path._tail_cached = tail + [name]
-        return path
+        return self.joinpath(name)
 
     def glob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
         """Iterate over this subtree and yield all existing files (of any
         kind, including directories) matching the given relative pattern.
         """
-        sys.audit("pathlib.Path.glob", self, pattern)
-        return self._glob(pattern, case_sensitive, follow_symlinks)
-
-    def rglob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
-        """Recursively yield all existing files (of any kind, including
-        directories) matching the given relative pattern, anywhere in
-        this subtree.
-        """
-        sys.audit("pathlib.Path.rglob", self, pattern)
-        return self._glob(f'**/{pattern}', case_sensitive, follow_symlinks)
-
-    def _glob(self, pattern, case_sensitive, follow_symlinks):
-        path_pattern = self.with_segments(pattern)
-        if path_pattern.drive or path_pattern.root:
-            raise NotImplementedError("Non-relative patterns are unsupported")
-        elif not path_pattern._tail:
-            raise ValueError("Unacceptable pattern: {!r}".format(pattern))
-
-        pattern_parts = path_pattern._tail.copy()
-        if pattern[-1] in (self.pathmod.sep, self.pathmod.altsep):
-            # GH-65238: pathlib doesn't preserve trailing slash. Add it back.
-            pattern_parts.append('')
-        if pattern_parts[-1] == '**':
-            # GH-70303: '**' only matches directories. Add trailing slash.
-            warnings.warn(
-                "Pattern ending '**' will match files and directories in a "
-                "future Python release. Add a trailing slash to match only "
-                "directories and remove this warning.",
-                FutureWarning, 3)
-            pattern_parts.append('')
-
+        if not isinstance(pattern, PurePathBase):
+            pattern = self.with_segments(pattern)
         if case_sensitive is None:
             # TODO: evaluate case-sensitivity of each directory in _select_children().
             case_sensitive = _is_case_sensitive(self.pathmod)
 
-        # If symlinks are handled consistently, and the pattern does not
-        # contain '..' components, then we can use a 'walk-and-match' strategy
-        # when expanding '**' wildcards. When a '**' wildcard is encountered,
-        # all following pattern parts are immediately consumed and used to
-        # build a `re.Pattern` object. This pattern is used to filter the
-        # recursive walk. As a result, pattern parts following a '**' wildcard
-        # do not perform any filesystem access, which can be much faster!
-        filter_paths = follow_symlinks is not None and '..' not in pattern_parts
+        stack = pattern._pattern_stack
+        specials = ('', '.', '..')
+        filter_paths = False
         deduplicate_paths = False
         sep = self.pathmod.sep
-        paths = iter([self] if self.is_dir() else [])
-        part_idx = 0
-        while part_idx < len(pattern_parts):
-            part = pattern_parts[part_idx]
-            part_idx += 1
-            if part == '':
-                # Trailing slash.
-                pass
-            elif part == '..':
-                paths = (path._make_child_relpath('..') for path in paths)
+        paths = iter([self.joinpath('')] if self.is_dir() else [])
+        while stack:
+            part = stack.pop()
+            if part in specials:
+                paths = _select_special(paths, part)
             elif part == '**':
                 # Consume adjacent '**' components.
-                while part_idx < len(pattern_parts) and pattern_parts[part_idx] == '**':
-                    part_idx += 1
+                while stack and stack[-1] == '**':
+                    stack.pop()
 
-                if filter_paths and part_idx < len(pattern_parts) and pattern_parts[part_idx] != '':
-                    dir_only = pattern_parts[-1] == ''
-                    paths = _select_recursive(paths, dir_only, follow_symlinks)
+                # Consume adjacent non-special components and enable post-walk
+                # regex filtering, provided we're treating symlinks consistently.
+                if follow_symlinks is not None:
+                    while stack and stack[-1] not in specials:
+                        filter_paths = True
+                        stack.pop()
 
-                    # Filter out paths that don't match pattern.
-                    prefix_len = len(str(self._make_child_relpath('_'))) - 1
-                    match = _compile_pattern(str(path_pattern), sep, case_sensitive)
-                    paths = (path for path in paths if match(str(path), prefix_len))
-                    return paths
-
-                dir_only = part_idx < len(pattern_parts)
+                dir_only = bool(stack)
                 paths = _select_recursive(paths, dir_only, follow_symlinks)
                 if deduplicate_paths:
                     # De-duplicate if we've already seen a '**' component.
@@ -890,14 +775,28 @@ class PathBase(PurePathBase):
             elif '**' in part:
                 raise ValueError("Invalid pattern: '**' can only be an entire path component")
             else:
-                dir_only = part_idx < len(pattern_parts)
+                dir_only = bool(stack)
                 match = _compile_pattern(part, sep, case_sensitive)
                 paths = _select_children(paths, dir_only, follow_symlinks, match)
+        if filter_paths:
+            # Filter out paths that don't match pattern.
+            prefix_len = len(str(self._make_child_relpath('_'))) - 1
+            match = _compile_pattern(str(pattern), sep, case_sensitive)
+            paths = (path for path in paths if match(str(path), prefix_len))
         return paths
+
+    def rglob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
+        """Recursively yield all existing files (of any kind, including
+        directories) matching the given relative pattern, anywhere in
+        this subtree.
+        """
+        if not isinstance(pattern, PurePathBase):
+            pattern = self.with_segments(pattern)
+        pattern = '**' / pattern
+        return self.glob(pattern, case_sensitive=case_sensitive, follow_symlinks=follow_symlinks)
 
     def walk(self, top_down=True, on_error=None, follow_symlinks=False):
         """Walk the directory tree from this directory, similar to os.walk()."""
-        sys.audit("pathlib.Path.walk", self, on_error, follow_symlinks)
         paths = [self]
 
         while paths:
@@ -956,7 +855,7 @@ class PathBase(PurePathBase):
         # enable users to replace the implementation of 'absolute()' in a
         # subclass and benefit from the new behaviour here. This works because
         # os.path.abspath('.') == os.getcwd().
-        return cls().absolute()
+        return cls('').absolute()
 
     def expanduser(self):
         """ Return a new path with expanded ~ and ~user constructs
@@ -977,16 +876,6 @@ class PathBase(PurePathBase):
         self._unsupported("readlink")
     readlink._supported = False
 
-    def _split_stack(self):
-        """
-        Split the path into a 2-tuple (anchor, parts), where *anchor* is the
-        uppermost parent of the path (equivalent to path.parents[-1]), and
-        *parts* is a reversed list of parts following the anchor.
-        """
-        if not self._tail:
-            return self, []
-        return self._from_parsed_parts(self.drive, self.root, []), self._tail[::-1]
-
     def resolve(self, strict=False):
         """
         Make the path absolute, resolving all symlinks on the way and also
@@ -994,11 +883,15 @@ class PathBase(PurePathBase):
         """
         if self._resolving:
             return self
-        path, parts = self._split_stack()
+        path_root, parts = self._stack
+        path = self.with_segments(path_root)
         try:
             path = path.absolute()
         except UnsupportedOperation:
-            pass
+            path_tail = []
+        else:
+            path_root, path_tail = path._stack
+            path_tail.reverse()
 
         # If the user has *not* overridden the `readlink()` method, then symlinks are unsupported
         # and (in non-strict mode) we can improve performance by not calling `stat()`.
@@ -1006,45 +899,49 @@ class PathBase(PurePathBase):
         link_count = 0
         while parts:
             part = parts.pop()
+            if not part or part == '.':
+                continue
             if part == '..':
-                if not path._tail:
-                    if path.root:
+                if not path_tail:
+                    if path_root:
                         # Delete '..' segment immediately following root
                         continue
-                elif path._tail[-1] != '..':
+                elif path_tail[-1] != '..':
                     # Delete '..' segment and its predecessor
-                    path = path.parent
+                    path_tail.pop()
                     continue
-            next_path = path._make_child_relpath(part)
+            path_tail.append(part)
             if querying and part != '..':
-                next_path._resolving = True
+                path = self.with_segments(path_root + self.pathmod.sep.join(path_tail))
+                path._resolving = True
                 try:
-                    st = next_path.stat(follow_symlinks=False)
+                    st = path.stat(follow_symlinks=False)
                     if S_ISLNK(st.st_mode):
                         # Like Linux and macOS, raise OSError(errno.ELOOP) if too many symlinks are
                         # encountered during resolution.
                         link_count += 1
-                        if link_count >= _MAX_SYMLINKS:
-                            raise OSError(ELOOP, "Too many symbolic links in path", str(self))
-                        target, target_parts = next_path.readlink()._split_stack()
+                        if link_count >= self._max_symlinks:
+                            raise OSError(ELOOP, "Too many symbolic links in path", self._raw_path)
+                        target_root, target_parts = path.readlink()._stack
                         # If the symlink target is absolute (like '/etc/hosts'), set the current
                         # path to its uppermost parent (like '/').
-                        if target.root:
-                            path = target
+                        if target_root:
+                            path_root = target_root
+                            path_tail.clear()
+                        else:
+                            path_tail.pop()
                         # Add the symlink target's reversed tail parts (like ['hosts', 'etc']) to
                         # the stack of unresolved path parts.
                         parts.extend(target_parts)
                         continue
                     elif parts and not S_ISDIR(st.st_mode):
-                        raise NotADirectoryError(ENOTDIR, "Not a directory", str(self))
+                        raise NotADirectoryError(ENOTDIR, "Not a directory", self._raw_path)
                 except OSError:
                     if strict:
                         raise
                     else:
                         querying = False
-                next_path._resolving = False
-            path = next_path
-        return path
+        return self.with_segments(path_root + self.pathmod.sep.join(path_tail))
 
     def symlink_to(self, target, target_is_directory=False):
         """
