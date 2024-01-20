@@ -19,8 +19,10 @@ import winreg
 
 
 PY_EXE = "py.exe"
+DEBUG_BUILD = False
 if sys.executable.casefold().endswith("_d.exe".casefold()):
     PY_EXE = "py_d.exe"
+    DEBUG_BUILD = True
 
 # Registry data to create. On removal, everything beneath top-level names will
 # be deleted.
@@ -232,7 +234,7 @@ class RunPyMixin:
             p.stdin.close()
             p.wait(10)
             out = p.stdout.read().decode("utf-8", "replace")
-            err = p.stderr.read().decode("ascii", "replace")
+            err = p.stderr.read().decode("ascii", "replace").replace("\uFFFD", "?")
         if p.returncode != expect_returncode and support.verbose and not allow_fail:
             print("++ COMMAND ++")
             print([self.py_exe, *args])
@@ -273,7 +275,7 @@ class RunPyMixin:
     def fake_venv(self):
         venv = Path.cwd() / "Scripts"
         venv.mkdir(exist_ok=True, parents=True)
-        venv_exe = (venv / Path(sys.executable).name)
+        venv_exe = (venv / ("python_d.exe" if DEBUG_BUILD else "python.exe"))
         venv_exe.touch()
         try:
             yield venv_exe, {"VIRTUAL_ENV": str(venv.parent)}
@@ -394,17 +396,17 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
 
     def test_filter_to_tag(self):
         company = "PythonTestSuite"
-        data = self.run_py([f"-V:3.100"])
+        data = self.run_py(["-V:3.100"])
         self.assertEqual("X.Y.exe", data["LaunchCommand"])
         self.assertEqual(company, data["env.company"])
         self.assertEqual("3.100", data["env.tag"])
 
-        data = self.run_py([f"-V:3.100-32"])
+        data = self.run_py(["-V:3.100-32"])
         self.assertEqual("X.Y-32.exe", data["LaunchCommand"])
         self.assertEqual(company, data["env.company"])
         self.assertEqual("3.100-32", data["env.tag"])
 
-        data = self.run_py([f"-V:3.100-arm64"])
+        data = self.run_py(["-V:3.100-arm64"])
         self.assertEqual("X.Y-arm64.exe -X fake_arg_for_test", data["LaunchCommand"])
         self.assertEqual(company, data["env.company"])
         self.assertEqual("3.100-arm64", data["env.tag"])
@@ -421,7 +423,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
     def test_filter_with_single_install(self):
         company = "PythonTestSuite1"
         data = self.run_py(
-            [f"-V:Nonexistent"],
+            ["-V:Nonexistent"],
             env={"PYLAUNCHER_LIMIT_TO_COMPANY": company},
             expect_returncode=103,
         )
@@ -500,7 +502,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
                     data = self.run_py(["--version"], argv=f'{argv0} --version')
                     self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
                     self.assertEqual("3.100", data["SearchInfo.tag"])
-                    self.assertEqual(f'X.Y.exe --version', data["stdout"].strip())
+                    self.assertEqual("X.Y.exe --version", data["stdout"].strip())
 
     def test_py_default_in_list(self):
         data = self.run_py(["-0"], env=TEST_PY_ENV)
@@ -521,6 +523,9 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
                     self.assertEqual(str(venv_exe), m.group(1))
                     break
             else:
+                if support.verbose:
+                    print(data["stdout"])
+                    print(data["stderr"])
                 self.fail("did not find active venv path")
 
             data = self.run_py(["-0"], env=env)
@@ -616,25 +621,29 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         self.assertEqual("True", data["SearchInfo.oldStyleTag"])
 
     def test_search_path(self):
-        stem = Path(sys.executable).stem
+        exe = Path("arbitrary-exe-name.exe").absolute()
+        exe.touch()
+        self.addCleanup(exe.unlink)
         with self.py_ini(TEST_PY_DEFAULTS):
-            with self.script(f"#! /usr/bin/env {stem} -prearg") as script:
+            with self.script(f"#! /usr/bin/env {exe.stem} -prearg") as script:
                 data = self.run_py(
                     [script, "-postarg"],
-                    env={"PATH": f"{Path(sys.executable).parent};{os.getenv('PATH')}"},
+                    env={"PATH": f"{exe.parent};{os.getenv('PATH')}"},
                 )
-        self.assertEqual(f"{sys.executable} -prearg {script} -postarg", data["stdout"].strip())
+        self.assertEqual(f"{exe} -prearg {script} -postarg", data["stdout"].strip())
 
     def test_search_path_exe(self):
         # Leave the .exe on the name to ensure we don't add it a second time
-        name = Path(sys.executable).name
+        exe = Path("arbitrary-exe-name.exe").absolute()
+        exe.touch()
+        self.addCleanup(exe.unlink)
         with self.py_ini(TEST_PY_DEFAULTS):
-            with self.script(f"#! /usr/bin/env {name} -prearg") as script:
+            with self.script(f"#! /usr/bin/env {exe.name} -prearg") as script:
                 data = self.run_py(
                     [script, "-postarg"],
-                    env={"PATH": f"{Path(sys.executable).parent};{os.getenv('PATH')}"},
+                    env={"PATH": f"{exe.parent};{os.getenv('PATH')}"},
                 )
-        self.assertEqual(f"{sys.executable} -prearg {script} -postarg", data["stdout"].strip())
+        self.assertEqual(f"{exe} -prearg {script} -postarg", data["stdout"].strip())
 
     def test_recursive_search_path(self):
         stem = self.get_py_exe().stem
@@ -662,7 +671,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         self.assertIn("9PJPW5LDXLZ5", cmd)
 
     def test_literal_shebang_absolute(self):
-        with self.script(f"#! C:/some_random_app -witharg") as script:
+        with self.script("#! C:/some_random_app -witharg") as script:
             data = self.run_py([script])
         self.assertEqual(
             f"C:\\some_random_app -witharg {script}",
@@ -670,7 +679,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         )
 
     def test_literal_shebang_relative(self):
-        with self.script(f"#! ..\\some_random_app -witharg") as script:
+        with self.script("#! ..\\some_random_app -witharg") as script:
             data = self.run_py([script])
         self.assertEqual(
             f"{script.parent.parent}\\some_random_app -witharg {script}",
@@ -678,14 +687,14 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         )
 
     def test_literal_shebang_quoted(self):
-        with self.script(f'#! "some random app" -witharg') as script:
+        with self.script('#! "some random app" -witharg') as script:
             data = self.run_py([script])
         self.assertEqual(
             f'"{script.parent}\\some random app" -witharg {script}',
             data["stdout"].strip(),
         )
 
-        with self.script(f'#! some" random "app -witharg') as script:
+        with self.script('#! some" random "app -witharg') as script:
             data = self.run_py([script])
         self.assertEqual(
             f'"{script.parent}\\some random app" -witharg {script}',
@@ -693,7 +702,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         )
 
     def test_literal_shebang_quoted_escape(self):
-        with self.script(f'#! some\\" random "app -witharg') as script:
+        with self.script('#! some\\" random "app -witharg') as script:
             data = self.run_py([script])
         self.assertEqual(
             f'"{script.parent}\\some\\ random app" -witharg {script}',
@@ -717,3 +726,28 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
             f"{expect} arg1 {script}",
             data["stdout"].strip(),
         )
+
+    def test_shebang_command_in_venv(self):
+        stem = "python-that-is-not-on-path"
+
+        # First ensure that our test name doesn't exist, and the launcher does
+        # not match any installed env
+        with self.script(f'#! /usr/bin/env {stem} arg1') as script:
+            data = self.run_py([script], expect_returncode=103)
+
+        with self.fake_venv() as (venv_exe, env):
+            # Put a "normal" Python on PATH as a distraction.
+            # The active VIRTUAL_ENV should be preferred when the name isn't an
+            # exact match.
+            exe = Path(Path(venv_exe).name).absolute()
+            exe.touch()
+            self.addCleanup(exe.unlink)
+            env["PATH"] = f"{exe.parent};{os.environ['PATH']}"
+
+            with self.script(f'#! /usr/bin/env {stem} arg1') as script:
+                data = self.run_py([script], env=env)
+            self.assertEqual(data["stdout"].strip(), f"{venv_exe} arg1 {script}")
+
+            with self.script(f'#! /usr/bin/env {exe.stem} arg1') as script:
+                data = self.run_py([script], env=env)
+            self.assertEqual(data["stdout"].strip(), f"{exe} arg1 {script}")

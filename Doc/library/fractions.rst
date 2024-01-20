@@ -25,7 +25,7 @@ another rational number, or from a string.
 
    The first version requires that *numerator* and *denominator* are instances
    of :class:`numbers.Rational` and returns a new :class:`Fraction` instance
-   with value ``numerator/denominator``. If *denominator* is :const:`0`, it
+   with value ``numerator/denominator``. If *denominator* is ``0``, it
    raises a :exc:`ZeroDivisionError`. The second version requires that
    *other_fraction* is an instance of :class:`numbers.Rational` and returns a
    :class:`Fraction` instance with the same value.  The next two versions accept
@@ -106,6 +106,10 @@ another rational number, or from a string.
       presentation types ``"e"``, ``"E"``, ``"f"``, ``"F"``, ``"g"``, ``"G"``
       and ``"%""``.
 
+   .. versionchanged:: 3.13
+      Formatting of :class:`Fraction` instances without a presentation type
+      now supports fill, alignment, sign handling, minimum width and grouping.
+
    .. attribute:: numerator
 
       Numerator of the Fraction in lowest term.
@@ -118,7 +122,8 @@ another rational number, or from a string.
    .. method:: as_integer_ratio()
 
       Return a tuple of two integers, whose ratio is equal
-      to the Fraction and with a positive denominator.
+      to the original Fraction.  The ratio is in lowest terms
+      and has a positive denominator.
 
       .. versionadded:: 3.8
 
@@ -200,17 +205,36 @@ another rational number, or from a string.
 
    .. method:: __format__(format_spec, /)
 
-      Provides support for float-style formatting of :class:`Fraction`
-      instances via the :meth:`str.format` method, the :func:`format` built-in
-      function, or :ref:`Formatted string literals <f-strings>`. The
-      presentation types ``"e"``, ``"E"``, ``"f"``, ``"F"``, ``"g"``, ``"G"``
-      and ``"%"`` are supported. For these presentation types, formatting for a
-      :class:`Fraction` object ``x`` follows the rules outlined for
-      the :class:`float` type in the :ref:`formatspec` section.
+      Provides support for formatting of :class:`Fraction` instances via the
+      :meth:`str.format` method, the :func:`format` built-in function, or
+      :ref:`Formatted string literals <f-strings>`.
+
+      If the ``format_spec`` format specification string does not end with one
+      of the presentation types ``'e'``, ``'E'``, ``'f'``, ``'F'``, ``'g'``,
+      ``'G'`` or ``'%'`` then formatting follows the general rules for fill,
+      alignment, sign handling, minimum width, and grouping as described in the
+      :ref:`format specification mini-language <formatspec>`. The "alternate
+      form" flag ``'#'`` is supported: if present, it forces the output string
+      to always include an explicit denominator, even when the value being
+      formatted is an exact integer. The zero-fill flag ``'0'`` is not
+      supported.
+
+      If the ``format_spec`` format specification string ends with one of
+      the presentation types ``'e'``, ``'E'``, ``'f'``, ``'F'``, ``'g'``,
+      ``'G'`` or ``'%'`` then formatting follows the rules outlined for the
+      :class:`float` type in the :ref:`formatspec` section.
 
       Here are some examples::
 
          >>> from fractions import Fraction
+         >>> format(Fraction(103993, 33102), '_')
+         '103_993/33_102'
+         >>> format(Fraction(1, 7), '.^+10')
+         '...+1/7...'
+         >>> format(Fraction(3, 1), '')
+         '3'
+         >>> format(Fraction(3, 1), '#')
+         '3/1'
          >>> format(Fraction(1, 7), '.40g')
          '0.1428571428571428571428571428571428571429'
          >>> format(Fraction('1234567.855'), '_.2f')

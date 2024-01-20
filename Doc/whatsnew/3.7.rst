@@ -525,8 +525,8 @@ Other Language Changes
 
 * In order to better support dynamic creation of stack traces,
   :class:`types.TracebackType` can now be instantiated from Python code, and
-  the ``tb_next`` attribute on :ref:`tracebacks <traceback-objects>` is now
-  writable.
+  the :attr:`~traceback.tb_next` attribute on
+  :ref:`tracebacks <traceback-objects>` is now writable.
   (Contributed by Nathaniel J. Smith in :issue:`30579`.)
 
 * When using the :option:`-m` switch, ``sys.path[0]`` is now eagerly expanded
@@ -848,10 +848,10 @@ alternative to script path.  (Contributed by Sanyam Khurana in :issue:`21862`.)
 crypt
 -----
 
-The :mod:`crypt` module now supports the Blowfish hashing method.
+The :mod:`!crypt` module now supports the Blowfish hashing method.
 (Contributed by Serhiy Storchaka in :issue:`31664`.)
 
-The :func:`~crypt.mksalt` function now allows specifying the number of rounds
+The :func:`!mksalt` function now allows specifying the number of rounds
 for hashing.  (Contributed by Serhiy Storchaka in :issue:`31702`.)
 
 
@@ -1133,7 +1133,7 @@ The MIME type of .bmp has been changed from ``'image/x-ms-bmp'`` to
 msilib
 ------
 
-The new :meth:`Database.Close() <msilib.Database.Close>` method can be used
+The new :meth:`!Database.Close()` method can be used
 to close the :abbr:`MSI` database.
 (Contributed by Berker Peksag in :issue:`20486`.)
 
@@ -1280,13 +1280,13 @@ This function should be used instead of :func:`os.close` for better
 compatibility across platforms.
 (Contributed by Christian Heimes in :issue:`32454`.)
 
-The :mod:`socket` module now exposes the :data:`socket.TCP_CONGESTION`
-(Linux 2.6.13), :data:`socket.TCP_USER_TIMEOUT` (Linux 2.6.37), and
-:data:`socket.TCP_NOTSENT_LOWAT` (Linux 3.12) constants.
+The :mod:`socket` module now exposes the :const:`socket.TCP_CONGESTION`
+(Linux 2.6.13), :const:`socket.TCP_USER_TIMEOUT` (Linux 2.6.37), and
+:const:`socket.TCP_NOTSENT_LOWAT` (Linux 3.12) constants.
 (Contributed by Omar Sandoval in :issue:`26273` and
 Nathaniel J. Smith in :issue:`29728`.)
 
-Support for :data:`socket.AF_VSOCK` sockets has been added to allow
+Support for :const:`socket.AF_VSOCK` sockets has been added to allow
 communication between virtual machines and their hosts.
 (Contributed by Cathy Avery in :issue:`27584`.)
 
@@ -1394,7 +1394,7 @@ subprocess
 
 The :func:`subprocess.run` function accepts the new *capture_output*
 keyword argument.  When true, stdout and stderr will be captured.
-This is equivalent to passing :data:`subprocess.PIPE` as *stdout* and
+This is equivalent to passing :const:`subprocess.PIPE` as *stdout* and
 *stderr* arguments.
 (Contributed by Bo Bayles in :issue:`32102`.)
 
@@ -1453,12 +1453,12 @@ time
 
 New clock identifiers have been added:
 
-* :data:`time.CLOCK_BOOTTIME` (Linux): Identical to
-  :data:`time.CLOCK_MONOTONIC`, except it also includes any time that the
+* :const:`time.CLOCK_BOOTTIME` (Linux): Identical to
+  :const:`time.CLOCK_MONOTONIC`, except it also includes any time that the
   system is suspended.
-* :data:`time.CLOCK_PROF` (FreeBSD, NetBSD and OpenBSD): High-resolution
+* :const:`time.CLOCK_PROF` (FreeBSD, NetBSD and OpenBSD): High-resolution
   per-process CPU timer.
-* :data:`time.CLOCK_UPTIME` (FreeBSD, OpenBSD): Time whose absolute value is
+* :const:`time.CLOCK_UPTIME` (FreeBSD, OpenBSD): Time whose absolute value is
   the time the system has been running and not suspended, providing accurate
   uptime measurement.
 
@@ -1547,7 +1547,7 @@ adding ``~`` to the set of characters that are never quoted by default.
 uu
 --
 
-The :func:`uu.encode` function now accepts an optional *backtick*
+The :func:`!uu.encode` function now accepts an optional *backtick*
 keyword argument.  When it's true, zeros are represented by ``'`'``
 instead of spaces.  (Contributed by Xiang Zhang in :issue:`30103`.)
 
@@ -1580,13 +1580,13 @@ The initialization of the default warnings filters has changed as follows:
 * warnings filters enabled via the command line or the environment now have the
   following order of precedence:
 
-     * the ``BytesWarning`` filter for :option:`-b` (or ``-bb``)
-     * any filters specified with the :option:`-W` option
-     * any filters specified with the :envvar:`PYTHONWARNINGS` environment
-       variable
-     * any other CPython specific filters (e.g. the ``default`` filter added
-       for the new ``-X dev`` mode)
-     * any implicit filters defined directly by the warnings machinery
+  * the ``BytesWarning`` filter for :option:`-b` (or ``-bb``)
+  * any filters specified with the :option:`-W` option
+  * any filters specified with the :envvar:`PYTHONWARNINGS` environment
+    variable
+  * any other CPython specific filters (e.g. the ``default`` filter added
+    for the new ``-X dev`` mode)
+  * any implicit filters defined directly by the warnings machinery
 
 * in :ref:`CPython debug builds <debug-build>`, all warnings are now displayed
   by default (the implicit filter list is empty)
@@ -1674,10 +1674,10 @@ The new :c:func:`import__find__load__start` and
 module imports.
 (Contributed by Christian Heimes in :issue:`31574`.)
 
-The fields :c:member:`name` and :c:member:`doc` of structures
+The fields :c:member:`!name` and :c:member:`!doc` of structures
 :c:type:`PyMemberDef`, :c:type:`PyGetSetDef`,
 :c:type:`PyStructSequence_Field`, :c:type:`PyStructSequence_Desc`,
-and :c:type:`wrapperbase` are now of type ``const char *`` rather of
+and :c:struct:`wrapperbase` are now of type ``const char *`` rather of
 ``char *``.  (Contributed by Serhiy Storchaka in :issue:`28761`.)
 
 The result of :c:func:`PyUnicode_AsUTF8AndSize` and :c:func:`PyUnicode_AsUTF8`
@@ -1891,7 +1891,7 @@ Other CPython Implementation Changes
 
 * Trace hooks may now opt out of receiving the ``line`` and opt into receiving
   the ``opcode`` events from the interpreter by setting the corresponding new
-  ``f_trace_lines`` and ``f_trace_opcodes`` attributes on the
+  :attr:`~frame.f_trace_lines` and :attr:`~frame.f_trace_opcodes` attributes on the
   frame being traced. (Contributed by Nick Coghlan in :issue:`31344`.)
 
 * Fixed some consistency problems with namespace package module attributes.
@@ -1940,8 +1940,8 @@ Deprecated Python modules, functions and methods
 aifc
 ----
 
-:func:`aifc.openfp` has been deprecated and will be removed in Python 3.9.
-Use :func:`aifc.open` instead.
+:func:`!aifc.openfp` has been deprecated and will be removed in Python 3.9.
+Use :func:`!aifc.open` instead.
 (Contributed by Brian Curtin in :issue:`31985`.)
 
 
@@ -2004,15 +2004,15 @@ importlib
 ---------
 
 Methods
-:meth:`MetaPathFinder.find_module() <importlib.abc.MetaPathFinder.find_module>`
+:meth:`!MetaPathFinder.find_module()`
 (replaced by
 :meth:`MetaPathFinder.find_spec() <importlib.abc.MetaPathFinder.find_spec>`)
 and
-:meth:`PathEntryFinder.find_loader() <importlib.abc.PathEntryFinder.find_loader>`
+:meth:`!PathEntryFinder.find_loader()`
 (replaced by
 :meth:`PathEntryFinder.find_spec() <importlib.abc.PathEntryFinder.find_spec>`)
 both deprecated in Python 3.4 now emit :exc:`DeprecationWarning`.
-(Contributed by Matthias Bussonnier in :issue:`29576`)
+(Contributed by Matthias Bussonnier in :issue:`29576`.)
 
 The :class:`importlib.abc.ResourceLoader` ABC has been deprecated in
 favour of :class:`importlib.abc.ResourceReader`.
@@ -2061,8 +2061,8 @@ ssl
 sunau
 -----
 
-:func:`sunau.openfp` has been deprecated and will be removed in Python 3.9.
-Use :func:`sunau.open` instead.
+:func:`!sunau.openfp` has been deprecated and will be removed in Python 3.9.
+Use :func:`!sunau.open` instead.
 (Contributed by Brian Curtin in :issue:`31985`.)
 
 
@@ -2144,9 +2144,9 @@ The following features and APIs have been removed from Python 3.7:
 * Removed support of the *exclude* argument in :meth:`tarfile.TarFile.add`.
   It was deprecated in Python 2.7 and 3.2.  Use the *filter* argument instead.
 
-* The ``splitunc()`` function in the :mod:`ntpath` module was deprecated in
-  Python 3.1, and has now been removed.  Use the :func:`~os.path.splitdrive`
-  function instead.
+* The :func:`!ntpath.splitunc` function was deprecated in
+  Python 3.1, and has now been removed.  Use :func:`~os.path.splitdrive`
+  instead.
 
 * :func:`collections.namedtuple` no longer supports the *verbose* parameter
   or ``_source`` attribute which showed the generated source code for the
@@ -2304,9 +2304,9 @@ Changes in the Python API
 * The :attr:`struct.Struct.format` type is now :class:`str` instead of
   :class:`bytes`. (Contributed by Victor Stinner in :issue:`21071`.)
 
-* :func:`~cgi.parse_multipart` now accepts the *encoding* and *errors*
+* :func:`!cgi.parse_multipart` now accepts the *encoding* and *errors*
   arguments and returns the same results as
-  :class:`~FieldStorage`: for non-file fields, the value associated to a key
+  :class:`!FieldStorage`: for non-file fields, the value associated to a key
   is a list of strings, not bytes.
   (Contributed by Pierre Quentel in :issue:`29979`.)
 
@@ -2495,12 +2495,12 @@ either in embedding applications, or in CPython itself.
 :issue:`22257`, and further updated by Nick, Eric, and Victor Stinner in a
 number of other issues). Some known details affected:
 
-* :c:func:`PySys_AddWarnOptionUnicode` is not currently usable by embedding
+* :c:func:`!PySys_AddWarnOptionUnicode` is not currently usable by embedding
   applications due to the requirement to create a Unicode object prior to
-  calling ``Py_Initialize``. Use :c:func:`PySys_AddWarnOption` instead.
+  calling ``Py_Initialize``. Use :c:func:`!PySys_AddWarnOption` instead.
 
 * warnings filters added by an embedding application with
-  :c:func:`PySys_AddWarnOption` should now more consistently take precedence
+  :c:func:`!PySys_AddWarnOption` should now more consistently take precedence
   over the default filters set by the interpreter
 
 Due to changes in the way the default warnings filters are configured,
@@ -2567,7 +2567,7 @@ query parameter separators in :func:`urllib.parse.parse_qs` and
 :func:`urllib.parse.parse_qsl`.  Due to security concerns, and to conform with
 newer W3C recommendations, this has been changed to allow only a single
 separator key, with ``&`` as the default.  This change also affects
-:func:`cgi.parse` and :func:`cgi.parse_multipart` as they use the affected
+:func:`!cgi.parse` and :func:`!cgi.parse_multipart` as they use the affected
 functions internally. For more details, please see their respective
 documentation.
 (Contributed by Adam Goldschmidt, Senthil Kumaran and Ken Jin in :issue:`42967`.)

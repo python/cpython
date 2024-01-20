@@ -10,7 +10,7 @@ import csv
 import gc
 import pickle
 from test import support
-from test.support import warnings_helper
+from test.support import import_helper, check_disallow_instantiation
 from itertools import permutations
 from textwrap import dedent
 from collections import OrderedDict
@@ -187,6 +187,10 @@ class Test_Csv(unittest.TestCase):
                          quoting = csv.QUOTE_ALL)
         self._write_test(['a\nb',1], '"a\nb","1"',
                          quoting = csv.QUOTE_ALL)
+        self._write_test(['a','',None,1], '"a","",,1',
+                         quoting = csv.QUOTE_STRINGS)
+        self._write_test(['a','',None,1], '"a","",,"1"',
+                         quoting = csv.QUOTE_NOTNULL)
 
     def test_write_escape(self):
         self._write_test(['a',1,'p,q'], 'a,1,"p,q"',
@@ -277,18 +281,6 @@ class Test_Csv(unittest.TestCase):
             self.assertRaises(TypeError, writer.writerows, None)
             self.assertRaises(OSError, writer.writerows, BadIterable())
 
-    @support.cpython_only
-    @support.requires_legacy_unicode_capi
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
-    def test_writerows_legacy_strings(self):
-        import _testcapi
-        c = _testcapi.unicode_legacy_string('a')
-        with TemporaryFile("w+", encoding="utf-8", newline='') as fileobj:
-            writer = csv.writer(fileobj)
-            writer.writerows([[c]])
-            fileobj.seek(0)
-            self.assertEqual(fileobj.read(), "a\r\n")
-
     def _read_test(self, input, expect, **kwargs):
         reader = csv.reader(input, **kwargs)
         result = list(reader)
@@ -305,13 +297,18 @@ class Test_Csv(unittest.TestCase):
                           [b'abc'], None)
 
     def test_read_eol(self):
-        self._read_test(['a,b'], [['a','b']])
-        self._read_test(['a,b\n'], [['a','b']])
-        self._read_test(['a,b\r\n'], [['a','b']])
-        self._read_test(['a,b\r'], [['a','b']])
-        self.assertRaises(csv.Error, self._read_test, ['a,b\rc,d'], [])
-        self.assertRaises(csv.Error, self._read_test, ['a,b\nc,d'], [])
-        self.assertRaises(csv.Error, self._read_test, ['a,b\r\nc,d'], [])
+        self._read_test(['a,b', 'c,d'], [['a','b'], ['c','d']])
+        self._read_test(['a,b\n', 'c,d\n'], [['a','b'], ['c','d']])
+        self._read_test(['a,b\r\n', 'c,d\r\n'], [['a','b'], ['c','d']])
+        self._read_test(['a,b\r', 'c,d\r'], [['a','b'], ['c','d']])
+
+        errmsg = "with newline=''"
+        with self.assertRaisesRegex(csv.Error, errmsg):
+            next(csv.reader(['a,b\rc,d']))
+        with self.assertRaisesRegex(csv.Error, errmsg):
+            next(csv.reader(['a,b\nc,d']))
+        with self.assertRaisesRegex(csv.Error, errmsg):
+            next(csv.reader(['a,b\r\nc,d']))
 
     def test_read_eof(self):
         self._read_test(['a,"'], [['a', '']])
@@ -951,7 +948,7 @@ class TestArrayWrites(unittest.TestCase):
 
     def test_char_write(self):
         import array, string
-        a = array.array('u', string.ascii_letters)
+        a = array.array('w', string.ascii_letters)
 
         with TemporaryFile("w+", encoding="utf-8", newline='') as fileobj:
             writer = csv.writer(fileobj, dialect="excel")
@@ -1419,12 +1416,18 @@ class KeyOrderingTest(unittest.TestCase):
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        extra = {'__doc__', '__version__'}
-        support.check__all__(self, csv, ('csv', '_csv'), extra=extra)
+        support.check__all__(self, csv, ('csv', '_csv'))
 
     def test_subclassable(self):
         # issue 44089
         class Foo(csv.Error): ...
+
+    @support.cpython_only
+    def test_disallow_instantiation(self):
+        _csv = import_helper.import_module("_csv")
+        for tp in _csv.Reader, _csv.Writer:
+            with self.subTest(tp=tp):
+                check_disallow_instantiation(self, tp)
 
 if __name__ == '__main__':
     unittest.main()
