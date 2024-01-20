@@ -1236,7 +1236,6 @@ uop_abstract_interpret_single_inst(
 
         case _PUSH_FRAME: {
             int argcount = oparg;
-            _Py_UOpsAbstractFrame *old_frame = ctx->frame;
             // TOS is the new frame.
             if (write_stack_to_ir(ctx, inst, true) < 0) {
                 goto error;
@@ -1291,7 +1290,6 @@ uop_abstract_interpret_single_inst(
             if (write_stack_to_ir(ctx, inst, true) < 0) {
                 goto error;
             }
-            _Py_UOpsOptIREntry *frame_ir_entry = ctx->frame->frame_ir_entry;
             if (ir_frame_pop_info(ctx->ir) < 0) {
                 goto error;
             }

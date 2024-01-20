@@ -118,6 +118,9 @@ class PyMemDebugTests(unittest.TestCase):
     def test_set_nomemory(self):
         code = """if 1:
             import _testcapi
+            import _testinternalcapi
+            old_opt = _testinternalcapi.get_optimizer()
+            _testinternalcapi.set_optimizer(None)
 
             class C(): pass
 
@@ -141,6 +144,8 @@ class PyMemDebugTests(unittest.TestCase):
                         print('MemoryError', outer_cnt, j)
                         _testcapi.remove_mem_hooks()
                         break
+            
+            _testinternalcapi.set_optimizer(old_opt)
         """
         rc, out, err = assert_python_ok('-c', code)
         lines = out.splitlines()

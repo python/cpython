@@ -612,7 +612,7 @@
         }
 
         case _UNPACK_SEQUENCE: {
-            for (int case_gen_i = 0; case_gen_i < oparg; case_gen_i++) {
+            for (int case_gen_i = 0; case_gen_i < (oparg); case_gen_i++) {
                 *(stack_pointer + case_gen_i) = sym_init_unknown(ctx);
                 if(*(stack_pointer + case_gen_i) == NULL) goto error;
             }
@@ -623,7 +623,7 @@
         case _UNPACK_SEQUENCE_TWO_TUPLE: {
             _Py_UOpsSymbolicExpression **__values_;
             __values_ = &stack_pointer[-1];
-            for (int case_gen_i = 0; case_gen_i < oparg; case_gen_i++) {
+            for (int case_gen_i = 0; case_gen_i < (oparg); case_gen_i++) {
                 *(stack_pointer + case_gen_i) = sym_init_unknown(ctx);
                 if(*(stack_pointer + case_gen_i) == NULL) goto error;
             }
@@ -634,7 +634,7 @@
         case _UNPACK_SEQUENCE_TUPLE: {
             _Py_UOpsSymbolicExpression **__values_;
             __values_ = &stack_pointer[-1];
-            for (int case_gen_i = 0; case_gen_i < oparg; case_gen_i++) {
+            for (int case_gen_i = 0; case_gen_i < (oparg); case_gen_i++) {
                 *(stack_pointer + case_gen_i) = sym_init_unknown(ctx);
                 if(*(stack_pointer + case_gen_i) == NULL) goto error;
             }
@@ -645,7 +645,7 @@
         case _UNPACK_SEQUENCE_LIST: {
             _Py_UOpsSymbolicExpression **__values_;
             __values_ = &stack_pointer[-1];
-            for (int case_gen_i = 0; case_gen_i < oparg; case_gen_i++) {
+            for (int case_gen_i = 0; case_gen_i < (oparg); case_gen_i++) {
                 *(stack_pointer + case_gen_i) = sym_init_unknown(ctx);
                 if(*(stack_pointer + case_gen_i) == NULL) goto error;
             }
@@ -654,11 +654,11 @@
         }
 
         case _UNPACK_EX: {
-            for (int case_gen_i = 0; case_gen_i < oparg & 0xFF; case_gen_i++) {
+            for (int case_gen_i = 0; case_gen_i < (oparg & 0xFF); case_gen_i++) {
                 *(stack_pointer + case_gen_i) = sym_init_unknown(ctx);
                 if(*(stack_pointer + case_gen_i) == NULL) goto error;
             }
-            for (int case_gen_i = 0; case_gen_i < oparg >> 8; case_gen_i++) {
+            for (int case_gen_i = 0; case_gen_i < (oparg >> 8); case_gen_i++) {
                 *(stack_pointer + case_gen_i) = sym_init_unknown(ctx);
                 if(*(stack_pointer + case_gen_i) == NULL) goto error;
             }

@@ -146,7 +146,7 @@ def _write_body_abstract_interp_impure_uop(
         else:
             # See UNPACK_SEQUENCE for when we need this.
             out.emit(
-                f"for (int case_gen_i = 0; case_gen_i < {var.size}; case_gen_i++) {{\n"
+                f"for (int case_gen_i = 0; case_gen_i < ({var.size}); case_gen_i++) {{\n"
             )
             out.emit(f"*(stack_pointer + case_gen_i) = sym_init_unknown(ctx);\n")
             out.emit(f"if(*(stack_pointer + case_gen_i) == NULL) goto error;\n")
