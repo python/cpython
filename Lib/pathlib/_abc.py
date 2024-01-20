@@ -430,7 +430,10 @@ class PurePathBase:
     @property
     def _pattern_stack(self):
         """Stack of path components, to be used with patterns in glob()."""
-        return self._stack[1]
+        anchor, parts = self._stack
+        if anchor:
+            raise NotImplementedError("Non-relative patterns are unsupported")
+        return parts
 
     def match(self, path_pattern, *, case_sensitive=None):
         """
@@ -733,11 +736,6 @@ class PathBase(PurePathBase):
         """
         if not isinstance(pattern, PurePathBase):
             pattern = self.with_segments(pattern)
-        if pattern.anchor:
-            raise NotImplementedError("Non-relative patterns are unsupported")
-        elif not pattern.parts:
-            raise ValueError("Unacceptable pattern: {!r}".format(pattern))
-
         if case_sensitive is None:
             # TODO: evaluate case-sensitivity of each directory in _select_children().
             case_sensitive = _is_case_sensitive(self.pathmod)
