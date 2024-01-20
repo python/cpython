@@ -20,5 +20,4 @@ extend-exclude = [
     "test_import/__init__.py",
     "test_pkg.py",
     "test_yield_from.py",
-    "time_hashlib.py",
 ]
