@@ -348,7 +348,7 @@ FTP objects
 FTP_TLS objects
 ^^^^^^^^^^^^^^^
 
-.. class:: FTP_TLS(host='', user='', passwd='', acct='', *, context=None,
+.. class:: FTP_TLS(host='', user='', passwd='', acct='', *, context=None, \
                    timeout=None, source_address=None, encoding='utf-8')
 
    A :class:`FTP` subclass which adds TLS support to FTP as described in
