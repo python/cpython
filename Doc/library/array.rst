@@ -63,8 +63,8 @@ Notes:
 (2)
    Int data types (signed or unsigned) can be 16 or 32 bits depending on the platform. The
    same way that long data types can be 32 or 64 bits depending on the platform. On most
-   machines that run GNU C Library, an int is a 32-bit quantity. On most machines, long 
-   int is also 32-bit, the same size as int. And lastly, on most machines, long long int 
+   machines that run GNU C Library, an int is a 32-bit quantity. On most machines, long
+   int is also 32-bit, the same size as int. And lastly, on most machines, long long int
    are 64-bit quantities. View more at: https://www.gnu.org/software/libc/manual/html_node/Range-of-Type.html
 
 
