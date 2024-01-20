@@ -31,8 +31,9 @@
     #define DPRINTF(level, ...)
 #endif
 
+// This represents a value that "terminates" the symbolic.
 static inline bool
-_PyOpcode_isterminal(uint32_t opcode)
+op_is_terminal(uint32_t opcode)
 {
     return (opcode == _LOAD_FAST ||
             opcode == _LOAD_FAST_CHECK ||
@@ -42,13 +43,14 @@ _PyOpcode_isterminal(uint32_t opcode)
             opcode == PUSH_NULL);
 }
 
+// This represents a value that is already on the stack.
 static inline bool
-_PyOpcode_isstackvalue(uint32_t opcode)
+op_is_stackvalue(uint32_t opcode)
 {
     return (opcode == CACHE);
 }
 
-
+// See the interpreter DSL in ./Tools/cases_generator/interpreter_definition.md for what these correspond to.
 typedef enum {
     // Types with refinement info
     GUARD_KEYS_VERSION_TYPE = 0,
@@ -119,6 +121,14 @@ typedef enum _Py_UOps_IRStore_IdKind {
     TARGET_LOCAL = 0,
 } _Py_UOps_IRStore_IdKind;
 
+/*
+ * The IR has the following types:
+ * IR_PLAIN_INST - a plain CPython bytecode instruction
+ * IR_SYMBOLIC - assign a target the value of a symbolic expression
+ * IR_FRAME_PUSH_INFO - _PUSH_FRAME
+ * IR_FRAME_POP_INFO - _POP_FRAME
+ * IR_NOP - nop
+ */
 typedef enum _Py_UOps_IRStore_EntryKind {
     IR_PLAIN_INST = 0,
     IR_SYMBOLIC = 1,
@@ -169,7 +179,7 @@ static int
 ir_store(_Py_UOps_Opt_IR *ir, _Py_UOpsSymbolicExpression *expr, _Py_UOps_IRStore_IdKind store_fast_idx)
 {
     // Don't store stuff we know will never get compiled.
-    if(_PyOpcode_isstackvalue(expr->inst.opcode) && store_fast_idx == TARGET_NONE) {
+    if(op_is_stackvalue(expr->inst.opcode) && store_fast_idx == TARGET_NONE) {
         return 0;
     }
 #ifdef Py_DEBUG
@@ -1531,7 +1541,7 @@ count_stack_operands(_Py_UOpsSymbolicExpression *sym)
 {
     int total = 0;
     for (Py_ssize_t i = 0; i < sym->operand_count; i++) {
-        if (_PyOpcode_isstackvalue(sym->operands[i]->inst.opcode)) {
+        if (op_is_stackvalue(sym->operands[i]->inst.opcode)) {
             total++;
         }
     }
@@ -1547,9 +1557,9 @@ compile_sym_to_uops(_Py_UOpsEmitter *emitter,
     // Since CPython is a stack machine, just compile in the order
     // seen in the operands, then the instruction itself.
 
-    if (_PyOpcode_isterminal(sym->inst.opcode)) {
+    if (op_is_terminal(sym->inst.opcode)) {
         // These are for unknown stack entries.
-        if (_PyOpcode_isstackvalue(sym->inst.opcode)) {
+        if (op_is_stackvalue(sym->inst.opcode)) {
             // Leave it be. These are initial values from the start
             return 0;
         }
@@ -1560,7 +1570,7 @@ compile_sym_to_uops(_Py_UOpsEmitter *emitter,
     }
 
     // Constant propagated value, load immediate constant
-    if (sym->ty_number->const_val != NULL && !_PyOpcode_isstackvalue(sym->inst.opcode)) {
+    if (sym->ty_number->const_val != NULL && !op_is_stackvalue(sym->inst.opcode)) {
         // Shrink the stack if operands consist of stack values.
         // We don't need them anymore. This could happen because
         // the operands first need to be guarded and the guard could not
