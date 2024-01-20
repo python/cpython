@@ -636,9 +636,6 @@
     <ClInclude Include="..\Include\internal\pycore_gil.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\pycore_global_dict_state.h">
-      <Filter>Include\internal</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_global_objects.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
