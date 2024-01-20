@@ -28,7 +28,19 @@ def clear_executors(func):
         func.__code__ = func.__code__.replace()
 
 
-class TestOptimizerAPI(unittest.TestCase):
+class UopsTestCase(unittest.TestCase):
+    def setUp(self):
+        """For the sake of refleak tests, we need to disable any
+        current optimizers we might have completely.
+        """
+        self.old = _testinternalcapi.get_optimizer()
+        _testinternalcapi.set_optimizer(None)
+
+    def tearDown(self):
+        _testinternalcapi.set_optimizer(self.old)
+
+
+class TestOptimizerAPI(UopsTestCase):
 
     def test_get_counter_optimizer_dealloc(self):
         # See gh-108727
@@ -121,7 +133,7 @@ def get_first_executor(func):
     return None
 
 
-class TestExecutorInvalidation(unittest.TestCase):
+class TestExecutorInvalidation(UopsTestCase):
 
     def setUp(self):
         self.old = _testinternalcapi.get_optimizer()
@@ -183,7 +195,7 @@ class TestExecutorInvalidation(unittest.TestCase):
         _testinternalcapi.invalidate_executors(f.__code__)
         self.assertFalse(exe.is_valid())
 
-class TestUops(unittest.TestCase):
+class TestUops(UopsTestCase):
 
     def test_basic_loop(self):
         def testfunc(x):
@@ -542,7 +554,7 @@ class TestUops(unittest.TestCase):
         # too much already.
         self.assertEqual(count, 1)
 
-class TestUopsOptimization(unittest.TestCase):
+class TestUopsOptimization(UopsTestCase):
 
     def test_int_constant_propagation(self):
         def testfunc(loops):
