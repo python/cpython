@@ -48,7 +48,7 @@ re = glob = None
 
 
 @functools.lru_cache(maxsize=256)
-def _compile_pattern(pat, sep, case_sensitive):
+def _compile_pattern(pat, sep, case_sensitive, recursive=True):
     """Compile given glob pattern to a re.Pattern object (observing case
     sensitivity)."""
     global re, glob
@@ -56,7 +56,7 @@ def _compile_pattern(pat, sep, case_sensitive):
         import re, glob
 
     flags = re.NOFLAG if case_sensitive else re.IGNORECASE
-    regex = glob.translate(pat, recursive=True, include_hidden=True, seps=sep)
+    regex = glob.translate(pat, recursive=recursive, include_hidden=True, seps=sep)
     # The string representation of an empty path is a single dot ('.'). Empty
     # paths shouldn't match wildcards, so we consume it with an atomic group.
     regex = r'(\.\Z)?+' + regex
@@ -450,13 +450,28 @@ class PurePathBase:
         if case_sensitive is None:
             case_sensitive = _is_case_sensitive(self.pathmod)
         sep = path_pattern.pathmod.sep
-        if path_pattern.anchor:
-            pattern_str = str(path_pattern)
-        elif path_pattern.parts:
-            pattern_str = str('**' / path_pattern)
-        else:
+        delta = len(self.parts) - len(path_pattern.parts)
+        if delta < 0:
+            return False  # Path is too short.
+        if delta > 0 and path_pattern.anchor:
+            return False  # Path is too long.
+        if not path_pattern.parts:
             raise ValueError("empty pattern")
-        match = _compile_pattern(pattern_str, sep, case_sensitive)
+        for path, pattern in zip(reversed(self.parts), reversed(path_pattern.parts)):
+            match = _compile_pattern(pattern, sep, case_sensitive, recursive=False)
+            if match(path) is None:
+                return False
+        return True
+
+    def globmatch(self, pattern, *, case_sensitive=None):
+        """
+        Return True if this path matches the given glob-style pattern.
+        """
+        if not isinstance(pattern, PurePathBase):
+            pattern = self.with_segments(pattern)
+        if case_sensitive is None:
+            case_sensitive = _is_case_sensitive(self.pathmod)
+        match = _compile_pattern(str(pattern), pattern.pathmod.sep, case_sensitive)
         return match(str(self)) is not None
 
 

@@ -147,7 +147,7 @@ The :mod:`glob` module defines the following functions:
 
    .. seealso::
 
-     :meth:`pathlib.PurePath.match` and :meth:`pathlib.Path.glob` methods,
+     :meth:`pathlib.PurePath.globmatch` and :meth:`pathlib.Path.glob` methods,
      which call this function to implement pattern matching and globbing.
 
    .. versionadded:: 3.13
