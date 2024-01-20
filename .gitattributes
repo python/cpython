@@ -29,7 +29,7 @@ Lib/test/decimaltestdata/*.decTest         noeol
 Lib/test/test_email/data/*.txt             noeol
 Lib/test/test_importlib/resources/data01/*           noeol
 Lib/test/test_importlib/resources/namespacedata01/*  noeol
-Lib/test/xmltestdata/*                     noeol
+Lib/test/test_xml/xmltestdata/*                     noeol
 
 # Shell scripts should have LF even on Windows because of Cygwin
 Lib/venv/scripts/common/activate text eol=lf

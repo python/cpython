@@ -9,7 +9,7 @@ from xml.dom import pulldom
 from test.support import findfile
 
 
-tstfile = findfile("test.xml", subdir="xmltestdata")
+tstfile = findfile("test.xml", subdir=("test_xml", "xmltestdata"))
 
 # A handy XML snippet, containing attributes, a namespace prefix, and a
 # self-closing tag:

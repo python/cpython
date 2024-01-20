@@ -613,6 +613,8 @@ def findfile(filename, subdir=None):
     if os.path.isabs(filename):
         return filename
     if subdir is not None:
+        if not isinstance(subdir, str):
+            subdir = os.path.join(*subdir)
         filename = os.path.join(subdir, filename)
     path = [TEST_HOME_DIR] + sys.path
     for dn in path:

@@ -37,13 +37,13 @@ from test.support.os_helper import TESTFN
 pyET = None
 ET = None
 
-SIMPLE_XMLFILE = findfile("simple.xml", subdir="xmltestdata")
+SIMPLE_XMLFILE = findfile("simple.xml", subdir=("test_xml", "xmltestdata"))
 try:
     SIMPLE_XMLFILE.encode("utf-8")
 except UnicodeEncodeError:
     raise unittest.SkipTest("filename is not encodable to utf8")
-SIMPLE_NS_XMLFILE = findfile("simple-ns.xml", subdir="xmltestdata")
-UTF8_BUG_XMLFILE = findfile("expat224_utf8_bug.xml", subdir="xmltestdata")
+SIMPLE_NS_XMLFILE = findfile("simple-ns.xml", subdir=("test_xml", "xmltestdata"))
+UTF8_BUG_XMLFILE = findfile("expat224_utf8_bug.xml", subdir=("test_xml", "xmltestdata"))
 
 SAMPLE_XML = """\
 <body>
@@ -4094,7 +4094,7 @@ class C14NTest(unittest.TestCase):
     # output, not roundtripped C14N (see above).
 
     def test_xml_c14n2(self):
-        datadir = findfile("c14n-20", subdir="xmltestdata")
+        datadir = findfile("c14n-20", subdir=("test_xml", "xmltestdata"))
         full_path = partial(os.path.join, datadir)
 
         files = [filename[:-4] for filename in sorted(os.listdir(datadir))

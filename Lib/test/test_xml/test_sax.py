@@ -28,8 +28,8 @@ from test.support import findfile
 from test.support.os_helper import FakePath, TESTFN
 
 
-TEST_XMLFILE = findfile("test.xml", subdir="xmltestdata")
-TEST_XMLFILE_OUT = findfile("test.xml.out", subdir="xmltestdata")
+TEST_XMLFILE = findfile("test.xml", subdir=("test_xml", "xmltestdata"))
+TEST_XMLFILE_OUT = findfile("test.xml.out", subdir=("test_xml", "xmltestdata"))
 try:
     TEST_XMLFILE.encode("utf-8")
     TEST_XMLFILE_OUT.encode("utf-8")

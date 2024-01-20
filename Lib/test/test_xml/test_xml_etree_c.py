@@ -257,7 +257,7 @@ class SizeofTest(unittest.TestCase):
 
 def install_tests():
     # Test classes should have __module__ referring to this module.
-    from test import test_xml_etree
+    from test.test_xml import test_xml_etree
     for name, base in vars(test_xml_etree).items():
         if isinstance(base, type) and issubclass(base, unittest.TestCase):
             class Temp(base):
@@ -270,7 +270,7 @@ def install_tests():
 install_tests()
 
 def setUpModule():
-    from test import test_xml_etree
+    from test.test_xml import test_xml_etree
     test_xml_etree.setUpModule(module=cET)
 
 

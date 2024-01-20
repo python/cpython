@@ -13,7 +13,7 @@ from xml.dom.minidom import getDOMImplementation
 from xml.parsers.expat import ExpatError
 
 
-tstfile = support.findfile("test.xml", subdir="xmltestdata")
+tstfile = support.findfile("test.xml", subdir=("test_xml", "xmltestdata"))
 sample = ("<?xml version='1.0' encoding='us-ascii'?>\n"
           "<!DOCTYPE doc PUBLIC 'http://xml.python.org/public'"
           " 'http://xml.python.org/system' [\n"

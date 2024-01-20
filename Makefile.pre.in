@@ -2317,8 +2317,9 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/tokenizedata \
 		test/tracedmodules \
 		test/typinganndata \
-		test/xmltestdata \
-		test/xmltestdata/c14n-20
+		test/test_xml \
+		test/test_xml/xmltestdata \
+		test/test_xml/xmltestdata/c14n-20
 
 COMPILEALL_OPTS=-j0
 

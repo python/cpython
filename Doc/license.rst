@@ -1009,7 +1009,7 @@ W3C C14N test suite
 -------------------
 
 The C14N 2.0 test suite in the :mod:`test` package
-(``Lib/test/xmltestdata/c14n-20/``) was retrieved from the W3C website at
+(``Lib/test/test_xml/xmltestdata/c14n-20/``) was retrieved from the W3C website at
 https://www.w3.org/TR/xml-c14n2-testcases/ and is distributed under the
 3-clause BSD license::
 
