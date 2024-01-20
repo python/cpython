@@ -450,17 +450,17 @@ class PurePathBase:
         if case_sensitive is None:
             case_sensitive = _is_case_sensitive(self.pathmod)
         sep = path_pattern.pathmod.sep
-        our_parts = self.parts[::-1]
-        pat_parts = path_pattern.parts[::-1]
-        if not pat_parts:
+        path_parts = self.parts[::-1]
+        pattern_parts = path_pattern.parts[::-1]
+        if not pattern_parts:
             raise ValueError("empty pattern")
-        if len(our_parts) < len(pat_parts):
+        if len(path_parts) < len(pattern_parts):
             return False
-        if len(our_parts) > len(pat_parts) and path_pattern.anchor:
+        if len(path_parts) > len(pattern_parts) and path_pattern.anchor:
             return False
-        for our_part, pat_part in zip(our_parts, pat_parts):
-            match = _compile_pattern(pat_part, sep, case_sensitive, recursive=False)
-            if match(our_part) is None:
+        for path_part, pattern_part in zip(path_parts, pattern_parts):
+            match = _compile_pattern(pattern_part, sep, case_sensitive, recursive=False)
+            if match(path_part) is None:
                 return False
         return True
 
