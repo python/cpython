@@ -89,7 +89,7 @@ jobs:
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
           export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
           ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
-          make all --jobs 2
+          make all --jobs 4
           ./python -m test --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3
       - name: Emulated Linux
         if: runner.os == 'Linux' && matrix.architecture != 'x86_64'
@@ -97,16 +97,16 @@ jobs:
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
           export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
           ./configure --prefix="$(pwd)/../build"
-          make install --jobs 2
-          make clean --jobs 2
+          make install --jobs 4
+          make clean --jobs 4
           export HOST=${{ matrix.architecture }}-linux-gnu
           sudo apt install --yes "gcc-$HOST" qemu-user
           ${{ !matrix.debug && matrix.compiler == 'clang' && './configure --enable-optimizations' || '' }}
-          ${{ !matrix.debug && matrix.compiler == 'clang' && 'make profile-run-stamp --jobs 2' || '' }}
+          ${{ !matrix.debug && matrix.compiler == 'clang' && 'make profile-run-stamp --jobs 4' || '' }}
           export CC="${{ matrix.compiler == 'clang' && 'clang --target=$HOST' || '$HOST-gcc' }}"
           export CPP="$CC --preprocess"
           export HOSTRUNNER=qemu-${{ matrix.architecture }}
           export QEMU_LD_PREFIX="/usr/$HOST"
           ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }} --build=x86_64-linux-gnu --host="$HOST" --with-build-python=../build/bin/python3 --with-pkg-config=no ac_cv_buggy_getaddrinfo=no ac_cv_file__dev_ptc=no ac_cv_file__dev_ptmx=yes
-          make all --jobs 2
+          make all --jobs 4
           ./python -m test --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3
