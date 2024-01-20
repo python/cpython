@@ -1035,9 +1035,15 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
         (and the next character is a '/' or the end of the string).
 
         """
+        cgi_directories = self.cgi_directories[:]
+        if sys.platform == 'win32':
+            # Treat the NTFS Alternate Data Stream as cgi_directoies too.
+            for dir in self.cgi_directories:
+                cgi_directories.append(dir + '::$INDEX_ALLOCATION')
+                cgi_directories.append(dir + ':$I30:$INDEX_ALLOCATION')
         collapsed_path = _url_collapse_path(self.path)
         dir_sep = collapsed_path.find('/', 1)
-        while dir_sep > 0 and not collapsed_path[:dir_sep] in self.cgi_directories:
+        while dir_sep > 0 and not collapsed_path[:dir_sep] in cgi_directories:
             dir_sep = collapsed_path.find('/', dir_sep+1)
         if dir_sep > 0:
             head, tail = collapsed_path[:dir_sep], collapsed_path[dir_sep+1:]
