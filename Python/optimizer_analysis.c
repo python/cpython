@@ -24,7 +24,7 @@
 #define OVERALLOCATE_FACTOR 3
 
 #ifdef Py_DEBUG
-    static const char *DEBUG_ENV = "PYTHON_OPT_DEBUG";
+    static const char *const DEBUG_ENV = "PYTHON_OPT_DEBUG";
     #define DPRINTF(level, ...) \
     if (lltrace >= (level)) { printf(__VA_ARGS__); }
 #else
@@ -165,7 +165,7 @@ typedef struct _Py_UOps_Opt_IR {
     _Py_UOpsOptIREntry entries[1];
 } _Py_UOps_Opt_IR;
 
-static PyTypeObject _Py_UOps_Opt_IR_Type = {
+PyTypeObject _Py_UOps_Opt_IR_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "uops SSA IR",
     .tp_basicsize = sizeof(_Py_UOps_Opt_IR) - sizeof(_Py_UOpsOptIREntry),
@@ -303,7 +303,7 @@ abstractframe_dealloc(_Py_UOpsAbstractFrame *self)
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
-static PyTypeObject _Py_UOpsAbstractFrame_Type = {
+PyTypeObject _Py_UOpsAbstractFrame_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "uops abstract frame",
     .tp_basicsize = sizeof(_Py_UOpsAbstractFrame) ,
@@ -376,7 +376,7 @@ abstractinterp_dealloc(PyObject *o)
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
-static PyTypeObject _Py_UOpsAbstractInterpContext_Type = {
+PyTypeObject _Py_UOpsAbstractInterpContext_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "uops abstract interpreter's context",
     .tp_basicsize = sizeof(_Py_UOpsAbstractInterpContext) - sizeof(_Py_UOpsSymbolicExpression *),
