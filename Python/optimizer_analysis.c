@@ -75,7 +75,7 @@ typedef enum {
     INVALID_TYPE = 31,
 } _Py_UOpsSymExprTypeEnum;
 
-const uint32_t IMMUTABLES =
+static const uint32_t IMMUTABLES =
     (
         1 << NULL_TYPE |
         1 << PYLONG_TYPE |
