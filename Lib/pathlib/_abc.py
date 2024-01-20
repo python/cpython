@@ -820,6 +820,8 @@ class PathBase(PurePathBase):
             with scandir_obj as scandir_it:
                 dirnames = []
                 filenames = []
+                if not top_down:
+                    paths.append((path, dirnames, filenames))
                 for entry in scandir_it:
                     try:
                         is_dir = entry.is_dir(follow_symlinks=follow_symlinks)
@@ -828,16 +830,15 @@ class PathBase(PurePathBase):
                         is_dir = False
 
                     if is_dir:
+                        if not top_down:
+                            paths.append(path._make_child_entry(entry))
                         dirnames.append(entry.name)
                     else:
                         filenames.append(entry.name)
 
             if top_down:
                 yield path, dirnames, filenames
-            else:
-                paths.append((path, dirnames, filenames))
-
-            paths += [path._make_child_relpath(d) for d in reversed(dirnames)]
+                paths += [path._make_child_relpath(d) for d in reversed(dirnames)]
 
     def absolute(self):
         """Return an absolute version of this path
