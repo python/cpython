@@ -467,6 +467,29 @@ class PurePath(_abc.PurePathBase):
         from urllib.parse import quote_from_bytes
         return prefix + quote_from_bytes(os.fsencode(path))
 
+    @property
+    def _pattern_stack(self):
+        """Stack of path components, to be used with patterns in glob()."""
+        parts = self._tail.copy()
+        pattern = self._raw_path
+        if self.anchor:
+            raise NotImplementedError("Non-relative patterns are unsupported")
+        elif not parts:
+            raise ValueError("Unacceptable pattern: {!r}".format(pattern))
+        elif pattern[-1] in (self.pathmod.sep, self.pathmod.altsep):
+            # GH-65238: pathlib doesn't preserve trailing slash. Add it back.
+            parts.append('')
+        elif parts[-1] == '**':
+            # GH-70303: '**' only matches directories. Add trailing slash.
+            warnings.warn(
+                "Pattern ending '**' will match files and directories in a "
+                "future Python release. Add a trailing slash to match only "
+                "directories and remove this warning.",
+                FutureWarning, 4)
+            parts.append('')
+        parts.reverse()
+        return parts
+
 
 # Subclassing os.PathLike makes isinstance() checks slower,
 # which in turn makes Path construction slower. Register instead!
@@ -580,7 +603,7 @@ class Path(_abc.PathBase, PurePath):
     def _scandir(self):
         return os.scandir(self)
 
-    def _make_child_entry(self, entry, is_dir=False):
+    def _make_child_entry(self, entry):
         # Transform an entry yielded from _scandir() into a path object.
         path_str = entry.name if str(self) == '.' else entry.path
         path = self.with_segments(path_str)
@@ -591,6 +614,8 @@ class Path(_abc.PathBase, PurePath):
         return path
 
     def _make_child_relpath(self, name):
+        if not name:
+            return self
         path_str = str(self)
         tail = self._tail
         if tail:
@@ -611,14 +636,8 @@ class Path(_abc.PathBase, PurePath):
         kind, including directories) matching the given relative pattern.
         """
         sys.audit("pathlib.Path.glob", self, pattern)
-        if pattern.endswith('**'):
-            # GH-70303: '**' only matches directories. Add trailing slash.
-            warnings.warn(
-                "Pattern ending '**' will match files and directories in a "
-                "future Python release. Add a trailing slash to match only "
-                "directories and remove this warning.",
-                FutureWarning, 2)
-            pattern = f'{pattern}/'
+        if not isinstance(pattern, PurePath):
+            pattern = self.with_segments(pattern)
         return _abc.PathBase.glob(
             self, pattern, case_sensitive=case_sensitive, follow_symlinks=follow_symlinks)
 
@@ -628,15 +647,9 @@ class Path(_abc.PathBase, PurePath):
         this subtree.
         """
         sys.audit("pathlib.Path.rglob", self, pattern)
-        if pattern.endswith('**'):
-            # GH-70303: '**' only matches directories. Add trailing slash.
-            warnings.warn(
-                "Pattern ending '**' will match files and directories in a "
-                "future Python release. Add a trailing slash to match only "
-                "directories and remove this warning.",
-                FutureWarning, 2)
-            pattern = f'{pattern}/'
-        pattern = f'**/{pattern}'
+        if not isinstance(pattern, PurePath):
+            pattern = self.with_segments(pattern)
+        pattern = '**' / pattern
         return _abc.PathBase.glob(
             self, pattern, case_sensitive=case_sensitive, follow_symlinks=follow_symlinks)
 

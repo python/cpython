@@ -1,0 +1,2 @@
+Accept :term:`path-like objects <path-like object>` as patterns in
+:meth:`pathlib.Path.glob` and :meth:`~pathlib.Path.rglob`.

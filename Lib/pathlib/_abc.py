@@ -63,6 +63,12 @@ def _compile_pattern(pat, sep, case_sensitive):
     return re.compile(regex, flags=flags).match
 
 
+def _select_special(paths, part):
+    """Yield special literal children of the given paths."""
+    for path in paths:
+        yield path._make_child_relpath(part)
+
+
 def _select_children(parent_paths, dir_only, follow_symlinks, match):
     """Yield direct children of given paths, filtering by name and type."""
     if follow_symlinks is None:
@@ -84,7 +90,7 @@ def _select_children(parent_paths, dir_only, follow_symlinks, match):
                     except OSError:
                         continue
                 if match(entry.name):
-                    yield parent_path._make_child_entry(entry, dir_only)
+                    yield parent_path._make_child_entry(entry)
 
 
 def _select_recursive(parent_paths, dir_only, follow_symlinks):
@@ -107,7 +113,7 @@ def _select_recursive(parent_paths, dir_only, follow_symlinks):
                 for entry in entries:
                     try:
                         if entry.is_dir(follow_symlinks=follow_symlinks):
-                            paths.append(path._make_child_entry(entry, dir_only))
+                            paths.append(path._make_child_entry(entry))
                             continue
                     except OSError:
                         pass
@@ -427,6 +433,14 @@ class PurePathBase:
         a drive)."""
         return self.pathmod.isabs(self._raw_path)
 
+    @property
+    def _pattern_stack(self):
+        """Stack of path components, to be used with patterns in glob()."""
+        anchor, parts = self._stack
+        if anchor:
+            raise NotImplementedError("Non-relative patterns are unsupported")
+        return parts
+
     def match(self, path_pattern, *, case_sensitive=None):
         """
         Return True if this path matches the given pattern.
@@ -436,11 +450,10 @@ class PurePathBase:
         if case_sensitive is None:
             case_sensitive = _is_case_sensitive(self.pathmod)
         sep = path_pattern.pathmod.sep
-        pattern_str = str(path_pattern)
         if path_pattern.anchor:
-            pass
+            pattern_str = str(path_pattern)
         elif path_pattern.parts:
-            pattern_str = f'**{sep}{pattern_str}'
+            pattern_str = str('**' / path_pattern)
         else:
             raise ValueError("empty pattern")
         match = _compile_pattern(pattern_str, sep, case_sensitive)
@@ -714,10 +727,8 @@ class PathBase(PurePathBase):
         from contextlib import nullcontext
         return nullcontext(self.iterdir())
 
-    def _make_child_entry(self, entry, is_dir=False):
+    def _make_child_entry(self, entry):
         # Transform an entry yielded from _scandir() into a path object.
-        if is_dir:
-            return entry.joinpath('')
         return entry
 
     def _make_child_relpath(self, name):
@@ -727,57 +738,35 @@ class PathBase(PurePathBase):
         """Iterate over this subtree and yield all existing files (of any
         kind, including directories) matching the given relative pattern.
         """
-        path_pattern = self.with_segments(pattern)
-        if path_pattern.anchor:
-            raise NotImplementedError("Non-relative patterns are unsupported")
-        elif not path_pattern.parts:
-            raise ValueError("Unacceptable pattern: {!r}".format(pattern))
-
-        pattern_parts = list(path_pattern.parts)
-        if not self.pathmod.split(pattern)[1]:
-            # GH-65238: pathlib doesn't preserve trailing slash. Add it back.
-            pattern_parts.append('')
-
+        if not isinstance(pattern, PurePathBase):
+            pattern = self.with_segments(pattern)
         if case_sensitive is None:
             # TODO: evaluate case-sensitivity of each directory in _select_children().
             case_sensitive = _is_case_sensitive(self.pathmod)
 
-        # If symlinks are handled consistently, and the pattern does not
-        # contain '..' components, then we can use a 'walk-and-match' strategy
-        # when expanding '**' wildcards. When a '**' wildcard is encountered,
-        # all following pattern parts are immediately consumed and used to
-        # build a `re.Pattern` object. This pattern is used to filter the
-        # recursive walk. As a result, pattern parts following a '**' wildcard
-        # do not perform any filesystem access, which can be much faster!
-        filter_paths = follow_symlinks is not None and '..' not in pattern_parts
+        stack = pattern._pattern_stack
+        specials = ('', '.', '..')
+        filter_paths = False
         deduplicate_paths = False
         sep = self.pathmod.sep
         paths = iter([self.joinpath('')] if self.is_dir() else [])
-        part_idx = 0
-        while part_idx < len(pattern_parts):
-            part = pattern_parts[part_idx]
-            part_idx += 1
-            if part == '':
-                # Trailing slash.
-                pass
-            elif part == '..':
-                paths = (path._make_child_relpath('..') for path in paths)
+        while stack:
+            part = stack.pop()
+            if part in specials:
+                paths = _select_special(paths, part)
             elif part == '**':
                 # Consume adjacent '**' components.
-                while part_idx < len(pattern_parts) and pattern_parts[part_idx] == '**':
-                    part_idx += 1
+                while stack and stack[-1] == '**':
+                    stack.pop()
 
-                if filter_paths and part_idx < len(pattern_parts) and pattern_parts[part_idx] != '':
-                    dir_only = pattern_parts[-1] == ''
-                    paths = _select_recursive(paths, dir_only, follow_symlinks)
+                # Consume adjacent non-special components and enable post-walk
+                # regex filtering, provided we're treating symlinks consistently.
+                if follow_symlinks is not None:
+                    while stack and stack[-1] not in specials:
+                        filter_paths = True
+                        stack.pop()
 
-                    # Filter out paths that don't match pattern.
-                    prefix_len = len(str(self._make_child_relpath('_'))) - 1
-                    match = _compile_pattern(str(path_pattern), sep, case_sensitive)
-                    paths = (path for path in paths if match(str(path), prefix_len))
-                    return paths
-
-                dir_only = part_idx < len(pattern_parts)
+                dir_only = bool(stack)
                 paths = _select_recursive(paths, dir_only, follow_symlinks)
                 if deduplicate_paths:
                     # De-duplicate if we've already seen a '**' component.
@@ -786,9 +775,14 @@ class PathBase(PurePathBase):
             elif '**' in part:
                 raise ValueError("Invalid pattern: '**' can only be an entire path component")
             else:
-                dir_only = part_idx < len(pattern_parts)
+                dir_only = bool(stack)
                 match = _compile_pattern(part, sep, case_sensitive)
                 paths = _select_children(paths, dir_only, follow_symlinks, match)
+        if filter_paths:
+            # Filter out paths that don't match pattern.
+            prefix_len = len(str(self._make_child_relpath('_'))) - 1
+            match = _compile_pattern(str(pattern), sep, case_sensitive)
+            paths = (path for path in paths if match(str(path), prefix_len))
         return paths
 
     def rglob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
@@ -796,8 +790,10 @@ class PathBase(PurePathBase):
         directories) matching the given relative pattern, anywhere in
         this subtree.
         """
-        return self.glob(
-            f'**/{pattern}', case_sensitive=case_sensitive, follow_symlinks=follow_symlinks)
+        if not isinstance(pattern, PurePathBase):
+            pattern = self.with_segments(pattern)
+        pattern = '**' / pattern
+        return self.glob(pattern, case_sensitive=case_sensitive, follow_symlinks=follow_symlinks)
 
     def walk(self, top_down=True, on_error=None, follow_symlinks=False):
         """Walk the directory tree from this directory, similar to os.walk()."""
@@ -824,6 +820,8 @@ class PathBase(PurePathBase):
             with scandir_obj as scandir_it:
                 dirnames = []
                 filenames = []
+                if not top_down:
+                    paths.append((path, dirnames, filenames))
                 for entry in scandir_it:
                     try:
                         is_dir = entry.is_dir(follow_symlinks=follow_symlinks)
@@ -832,16 +830,15 @@ class PathBase(PurePathBase):
                         is_dir = False
 
                     if is_dir:
+                        if not top_down:
+                            paths.append(path._make_child_entry(entry))
                         dirnames.append(entry.name)
                     else:
                         filenames.append(entry.name)
 
             if top_down:
                 yield path, dirnames, filenames
-            else:
-                paths.append((path, dirnames, filenames))
-
-            paths += [path._make_child_relpath(d) for d in reversed(dirnames)]
+                paths += [path._make_child_relpath(d) for d in reversed(dirnames)]
 
     def absolute(self):
         """Return an absolute version of this path
