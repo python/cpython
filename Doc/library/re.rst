@@ -119,9 +119,11 @@ The special characters are:
 ``$``
    Matches the end of the string or just before the newline at the end of the
    string, and in :const:`MULTILINE` mode also matches before a newline.  ``foo``
-   matches both 'foo' and 'foobar', while the regular expression ``foo$`` matches
+   matches both ``'foo'`` and ``'foobar'``, while the regular expression ``foo$``
+   matches
    only 'foo'.  More interestingly, searching for ``foo.$`` in ``'foo1\nfoo2\n'``
-   matches 'foo2' normally, but 'foo1' in :const:`MULTILINE` mode; searching for
+   matches 'foo2' normally, but ``'foo1'`` in :const:`MULTILINE` mode; searching
+   for
    a single ``$`` in ``'foo\n'`` will find two (empty) matches: one just before
    the newline, and one at the end of the string.
 
@@ -129,21 +131,21 @@ The special characters are:
 
 ``*``
    Causes the resulting RE to match 0 or more repetitions of the preceding RE, as
-   many repetitions as are possible.  ``ab*`` will match 'a', 'ab', or 'a' followed
-   by any number of 'b's.
+   many repetitions as are possible.  ``ab*`` will match ``'a'``, ``'ab'``, or
+   ``'a'`` followed by any number of ``'b'`` s.
 
 .. index:: single: + (plus); in regular expressions
 
 ``+``
    Causes the resulting RE to match 1 or more repetitions of the preceding RE.
-   ``ab+`` will match 'a' followed by any non-zero number of 'b's; it will not
-   match just 'a'.
+   ``ab+`` will match ``'a'`` followed by any non-zero number of ``'b'`` s; it
+   will not match just ``'a'``.
 
 .. index:: single: ? (question mark); in regular expressions
 
 ``?``
    Causes the resulting RE to match 0 or 1 repetitions of the preceding RE.
-   ``ab?`` will match either 'a' or 'ab'.
+   ``ab?`` will match either ``'a'`` or ``'ab'``.
 
 .. index::
    single: *?; in regular expressions
