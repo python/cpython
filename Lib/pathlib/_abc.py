@@ -63,6 +63,12 @@ def _compile_pattern(pat, sep, case_sensitive):
     return re.compile(regex, flags=flags).match
 
 
+def _select_special(paths, part):
+    """Yield special literal children of the given paths."""
+    for path in paths:
+        yield path._make_child_relpath(part)
+
+
 def _select_children(parent_paths, dir_only, follow_symlinks, match):
     """Yield direct children of given paths, filtering by name and type."""
     if follow_symlinks is None:
@@ -84,7 +90,7 @@ def _select_children(parent_paths, dir_only, follow_symlinks, match):
                     except OSError:
                         continue
                 if match(entry.name):
-                    yield parent_path._make_child_entry(entry, dir_only)
+                    yield parent_path._make_child_entry(entry)
 
 
 def _select_recursive(parent_paths, dir_only, follow_symlinks):
@@ -107,7 +113,7 @@ def _select_recursive(parent_paths, dir_only, follow_symlinks):
                 for entry in entries:
                     try:
                         if entry.is_dir(follow_symlinks=follow_symlinks):
-                            paths.append(path._make_child_entry(entry, dir_only))
+                            paths.append(path._make_child_entry(entry))
                             continue
                     except OSError:
                         pass
@@ -721,10 +727,8 @@ class PathBase(PurePathBase):
         from contextlib import nullcontext
         return nullcontext(self.iterdir())
 
-    def _make_child_entry(self, entry, is_dir=False):
+    def _make_child_entry(self, entry):
         # Transform an entry yielded from _scandir() into a path object.
-        if is_dir:
-            return entry.joinpath('')
         return entry
 
     def _make_child_relpath(self, name):
@@ -740,39 +744,27 @@ class PathBase(PurePathBase):
             # TODO: evaluate case-sensitivity of each directory in _select_children().
             case_sensitive = _is_case_sensitive(self.pathmod)
 
-        # If symlinks are handled consistently, and the pattern does not
-        # contain '..' components, then we can use a 'walk-and-match' strategy
-        # when expanding '**' wildcards. When a '**' wildcard is encountered,
-        # all following pattern parts are immediately consumed and used to
-        # build a `re.Pattern` object. This pattern is used to filter the
-        # recursive walk. As a result, pattern parts following a '**' wildcard
-        # do not perform any filesystem access, which can be much faster!
         stack = pattern._pattern_stack
-        filter_paths = follow_symlinks is not None and '..' not in stack
+        specials = ('', '.', '..')
+        filter_paths = False
         deduplicate_paths = False
         sep = self.pathmod.sep
         paths = iter([self.joinpath('')] if self.is_dir() else [])
         while stack:
             part = stack.pop()
-            if part == '':
-                # Trailing slash.
-                pass
-            elif part == '..':
-                paths = (path._make_child_relpath('..') for path in paths)
+            if part in specials:
+                paths = _select_special(paths, part)
             elif part == '**':
                 # Consume adjacent '**' components.
                 while stack and stack[-1] == '**':
                     stack.pop()
 
-                if filter_paths and stack and stack[-1] != '':
-                    dir_only = stack[0] == ''
-                    paths = _select_recursive(paths, dir_only, follow_symlinks)
-
-                    # Filter out paths that don't match pattern.
-                    prefix_len = len(str(self._make_child_relpath('_'))) - 1
-                    match = _compile_pattern(str(pattern), sep, case_sensitive)
-                    paths = (path for path in paths if match(str(path), prefix_len))
-                    return paths
+                # Consume adjacent non-special components and enable post-walk
+                # regex filtering, provided we're treating symlinks consistently.
+                if follow_symlinks is not None:
+                    while stack and stack[-1] not in specials:
+                        filter_paths = True
+                        stack.pop()
 
                 dir_only = bool(stack)
                 paths = _select_recursive(paths, dir_only, follow_symlinks)
@@ -786,6 +778,11 @@ class PathBase(PurePathBase):
                 dir_only = bool(stack)
                 match = _compile_pattern(part, sep, case_sensitive)
                 paths = _select_children(paths, dir_only, follow_symlinks, match)
+        if filter_paths:
+            # Filter out paths that don't match pattern.
+            prefix_len = len(str(self._make_child_relpath('_'))) - 1
+            match = _compile_pattern(str(pattern), sep, case_sensitive)
+            paths = (path for path in paths if match(str(path), prefix_len))
         return paths
 
     def rglob(self, pattern, *, case_sensitive=None, follow_symlinks=None):

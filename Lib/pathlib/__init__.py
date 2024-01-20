@@ -603,7 +603,7 @@ class Path(_abc.PathBase, PurePath):
     def _scandir(self):
         return os.scandir(self)
 
-    def _make_child_entry(self, entry, is_dir=False):
+    def _make_child_entry(self, entry):
         # Transform an entry yielded from _scandir() into a path object.
         path_str = entry.name if str(self) == '.' else entry.path
         path = self.with_segments(path_str)
@@ -614,6 +614,8 @@ class Path(_abc.PathBase, PurePath):
         return path
 
     def _make_child_relpath(self, name):
+        if not name:
+            return self
         path_str = str(self)
         tail = self._tail
         if tail:
