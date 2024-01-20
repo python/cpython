@@ -176,8 +176,6 @@
                 right = get_const(__right_);
                 STAT_INC(BINARY_OP, hit);
                 res = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
-                _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-                _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
                 if (res == NULL) goto pop_2_error_tier_two;
 
                 __res_ = _Py_UOpsSymbolicExpression_New(ctx, *inst, (PyObject *)res, 0, NULL, 2 , __left_, __right_);
@@ -208,8 +206,6 @@
                 right = get_const(__right_);
                 STAT_INC(BINARY_OP, hit);
                 res = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
-                _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-                _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
                 if (res == NULL) goto pop_2_error_tier_two;
 
                 __res_ = _Py_UOpsSymbolicExpression_New(ctx, *inst, (PyObject *)res, 0, NULL, 2 , __left_, __right_);
@@ -240,8 +236,6 @@
                 right = get_const(__right_);
                 STAT_INC(BINARY_OP, hit);
                 res = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
-                _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-                _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
                 if (res == NULL) goto pop_2_error_tier_two;
 
                 __res_ = _Py_UOpsSymbolicExpression_New(ctx, *inst, (PyObject *)res, 0, NULL, 2 , __left_, __right_);
@@ -427,8 +421,6 @@
                 right = get_const(__right_);
                 STAT_INC(BINARY_OP, hit);
                 res = PyUnicode_Concat(left, right);
-                _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
-                _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
                 if (res == NULL) goto pop_2_error_tier_two;
 
                 __res_ = _Py_UOpsSymbolicExpression_New(ctx, *inst, (PyObject *)res, 0, NULL, 2 , __left_, __right_);

@@ -783,6 +783,30 @@ class TestUopsOptimization(unittest.TestCase):
         uops = {opname for opname, _, _ in ex}
         self.assertNotIn("_GUARD_BOTH_INT", uops)
 
+    def test_int_value_nubmering(self):
+        def testfunc(n):
+
+            y = 1
+            for i in range(n):
+                x = y
+                z = x
+                a = z
+                b = a
+                res = x + z + a + b
+            return res
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            res = testfunc(20)
+
+        ex = get_first_executor(testfunc)
+        self.assertEqual(res, 4)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _, _ in ex}
+        self.assertIn("_GUARD_BOTH_INT", uops)
+        guard_count = [opname for opname, _, _ in ex if opname == "_GUARD_BOTH_INT"]
+        self.assertEqual(len(guard_count), 1)
+
     def test_comprehension(self):
         def testfunc(n):
             for _ in range(n):

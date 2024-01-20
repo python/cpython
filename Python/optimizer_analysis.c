@@ -309,6 +309,12 @@ typedef struct sym_arena {
     char *arena;
 } sym_arena;
 
+typedef struct ty_arena {
+    int ty_curr_number;
+    int ty_max_number;
+    _Py_UOpsSymType *arena;
+} ty_arena;
+
 typedef struct frequent_syms {
     _Py_UOpsSymbolicExpression *nulL_sym;
     _Py_UOpsSymbolicExpression *push_nulL_sym;
@@ -330,8 +336,7 @@ typedef struct _Py_UOpsAbstractInterpContext {
     // Arena for the symbolic expressions' types.
     // This is separate from the s_arena so that we can free
     // all the constants easily.
-    int ty_curr_number;
-    _Py_UOpsSymType *ty_arena;
+    ty_arena t_arena;
 
     // The terminating instruction for the trace. Could be _JUMP_TO_TOP or
     // _EXIT_TRACE.
@@ -350,10 +355,14 @@ abstractinterp_dealloc(PyObject *o)
     _Py_UOpsAbstractInterpContext *self = (_Py_UOpsAbstractInterpContext *)o;
     Py_XDECREF(self->frame);
     Py_XDECREF(self->ir);
-    Py_ssize_t syms = Py_SIZE(o);
-    for (Py_ssize_t i = 0; i < syms; i++) {
-        Py_CLEAR(self->localsplus[i]);
+    if (self->s_arena.arena != NULL) {
+        int tys = self->t_arena.ty_curr_number;
+        for (int i = 0; i < tys; i++) {
+            Py_CLEAR(self->t_arena.arena[i].const_val);
+        }
     }
+    PyMem_Free(self->t_arena.arena);
+    PyMem_Free(self->s_arena.arena);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
@@ -404,7 +413,7 @@ abstractinterp_context_new(PyCodeObject *co,
     _Py_UOpsAbstractInterpContext *self = NULL;
     _Py_UOps_Opt_IR *ir = NULL;
     char *arena = NULL;
-    _Py_UOpsSymType *ty_arena = NULL;
+    _Py_UOpsSymType *t_arena = NULL;
     Py_ssize_t arena_size = (sizeof(_Py_UOpsSymbolicExpression)) * ir_entries * OVERALLOCATE_FACTOR;
     Py_ssize_t ty_arena_size = (sizeof(_Py_UOpsSymType)) * ir_entries * OVERALLOCATE_FACTOR;
     arena = (char *)PyMem_Malloc(arena_size);
@@ -412,8 +421,8 @@ abstractinterp_context_new(PyCodeObject *co,
         goto error;
     }
 
-    ty_arena = (_Py_UOpsSymType *)PyMem_Malloc(ty_arena_size);
-    if (ty_arena == NULL) {
+    t_arena = (_Py_UOpsSymType *)PyMem_Malloc(ty_arena_size);
+    if (t_arena == NULL) {
         goto error;
     }
 
@@ -444,9 +453,11 @@ abstractinterp_context_new(PyCodeObject *co,
     // Setup the arena for sym expressions.
     self->s_arena.arena = arena;
     self->s_arena.curr_available = arena;
+    assert(arena_size > 0);
     self->s_arena.end = arena + arena_size;
-    self->ty_curr_number = 0;
-    self->ty_arena = ty_arena;
+    self->t_arena.ty_curr_number = 0;
+    self->t_arena.arena = t_arena;
+    self->t_arena.ty_max_number = ir_entries * OVERALLOCATE_FACTOR;
 
     // Frame setup
     self->new_frame_sym = NULL;
@@ -474,8 +485,10 @@ abstractinterp_context_new(PyCodeObject *co,
 
 error:
     PyMem_Free(arena);
-    PyMem_Free(ty_arena);
+    PyMem_Free(t_arena);
     if (self != NULL) {
+        // Important so we don't double free them.
+        self->t_arena.arena = NULL;
         self->s_arena.arena = NULL;
     }
     self->frame = NULL;
@@ -507,7 +520,7 @@ create_sym_consts(_Py_UOpsAbstractInterpContext *ctx, PyObject *co_consts)
 
     return sym_consts;
 error:
-    Py_DECREF(sym_consts);
+    PyMem_Free(sym_consts);
     return NULL;
 }
 
@@ -584,7 +597,7 @@ frame_new(_Py_UOpsAbstractInterpContext *ctx,
     _Py_UOpsAbstractFrame *frame = PyObject_New(_Py_UOpsAbstractFrame,
                                                       &_Py_UOpsAbstractFrame_Type);
     if (frame == NULL) {
-        Py_DECREF(sym_consts);
+        PyMem_Free(sym_consts);
         return NULL;
     }
 
@@ -620,13 +633,13 @@ char *uop_debug = Py_GETENV(DEBUG_ENV);
         case _INIT_CALL_PY_EXACT_ARGS: {
             _Py_UOpsSymbolicExpression *callable_sym = frame_sym->operands[0];
             if (!sym_is_type(callable_sym, PYFUNCTION_TYPE_VERSION_TYPE)) {
-                DPRINTF(2, "error: _PUSH_FRAME not function type\n");
+                DPRINTF(1, "error: _PUSH_FRAME not function type\n");
                 return NULL;
             }
             uint64_t func_version = sym_type_get_refinement(callable_sym, PYFUNCTION_TYPE_VERSION_TYPE);
             PyFunctionObject *func = _PyFunction_LookupByVersion((uint32_t)func_version);
             if (func == NULL) {
-                DPRINTF(2, "error: _PUSH_FRAME cannot find func version\n");
+                DPRINTF(1, "error: _PUSH_FRAME cannot find func version\n");
                 return NULL;
             }
             return func;
@@ -724,17 +737,29 @@ _Py_UOpsSymbolicExpression_New(_Py_UOpsAbstractInterpContext *ctx,
                                _Py_UOpsSymbolicExpression **arr_start,
                                int num_subexprs, ...)
 {
+#ifdef Py_DEBUG
+    char *uop_debug = Py_GETENV(DEBUG_ENV);
+    int lltrace = 0;
+    if (uop_debug != NULL && *uop_debug >= '0') {
+        lltrace = *uop_debug - '0';  // TODO: Parse an int and all that
+    }
+#endif
     int total_subexprs = num_arr + num_subexprs;
 
 
     _Py_UOpsSymbolicExpression *self = (_Py_UOpsSymbolicExpression *)ctx->s_arena.curr_available;
     ctx->s_arena.curr_available += sizeof(_Py_UOpsSymbolicExpression) + sizeof(_Py_UOpsSymbolicExpression *) * total_subexprs;
     if (ctx->s_arena.curr_available >= ctx->s_arena.end) {
+        DPRINTF(1, "out of space for symbolic expression\n");
         return NULL;
     }
 
-    _Py_UOpsSymType *ty = &ctx->ty_arena[ctx->ty_curr_number];
-    ctx->ty_curr_number++;
+    _Py_UOpsSymType *ty = &ctx->t_arena.arena[ctx->t_arena.ty_curr_number];
+    if (ctx->t_arena.ty_curr_number >= ctx->t_arena.ty_max_number) {
+        DPRINTF(1, "out of space for symbolic expression type\n");
+        return NULL;
+    }
+    ctx->t_arena.ty_curr_number++;
     ty->const_val = NULL;
     ty->types = 0;
 
@@ -970,7 +995,7 @@ is_const(_Py_UOpsSymbolicExpression *expr)
 static inline PyObject *
 get_const(_Py_UOpsSymbolicExpression *expr)
 {
-    return Py_NewRef(expr->ty_number->const_val);
+    return expr->ty_number->const_val;
 }
 
 
@@ -1006,6 +1031,7 @@ write_stack_to_ir(_Py_UOpsAbstractInterpContext *ctx, _PyUOpInstruction *curr, b
     return 0;
 
 error:
+    DPRINTF(1, "write_stack_to_ir error\n");
     return -1;
 }
 
@@ -1032,21 +1058,9 @@ typedef enum {
 
 #define DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dval, result) \
 do { \
-    if (Py_REFCNT(left) == 1) { \
-        ((PyFloatObject *)left)->ob_fval = (dval); \
-        _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);\
-        result = (left); \
-    } \
-    else if (Py_REFCNT(right) == 1)  {\
-        ((PyFloatObject *)right)->ob_fval = (dval); \
-        _Py_DECREF_NO_DEALLOC(left); \
-        result = (right); \
-    }\
-    else { \
+    { \
         result = PyFloat_FromDouble(dval); \
         if ((result) == NULL) goto error; \
-        _Py_DECREF_NO_DEALLOC(left); \
-        _Py_DECREF_NO_DEALLOC(right); \
     } \
 } while (0)
 
@@ -1235,6 +1249,7 @@ uop_abstract_interpret_single_inst(
                 goto error;
             }
 
+            assert(ctx->new_frame_sym != NULL);
             PyFunctionObject *func = extract_func_from_sym(ctx->new_frame_sym);
             if (func == NULL) {
                 goto error;
@@ -1243,7 +1258,6 @@ uop_abstract_interpret_single_inst(
 
             _Py_UOpsSymbolicExpression *self_or_null = extract_self_or_null_from_sym(ctx->new_frame_sym);
             assert(self_or_null != NULL);
-            assert(ctx->new_frame_sym != NULL);
             _Py_UOpsSymbolicExpression **args = extract_args_from_sym(ctx->new_frame_sym);
             assert(args != NULL);
             ctx->new_frame_sym = NULL;
@@ -1468,6 +1482,7 @@ uop_abstract_interpret(
     return ctx;
 
 error:
+    Py_XDECREF(ctx);
     return NULL;
 }
 
@@ -1729,6 +1744,7 @@ _Py_uop_analyze_and_optimize(
 {
     _PyUOpInstruction *temp_writebuffer = NULL;
     bool err_occurred = false;
+    _Py_UOpsAbstractInterpContext *ctx = NULL;
 
     temp_writebuffer = PyMem_New(_PyUOpInstruction, buffer_size * OVERALLOCATE_FACTOR);
     if (temp_writebuffer == NULL) {
@@ -1737,7 +1753,7 @@ _Py_uop_analyze_and_optimize(
 
 
     // Pass: Abstract interpretation and symbolic analysis
-    _Py_UOpsAbstractInterpContext *ctx = uop_abstract_interpret(
+    ctx = uop_abstract_interpret(
         co, buffer,
         buffer_size, curr_stacklen);
 
@@ -1768,13 +1784,11 @@ _Py_uop_analyze_and_optimize(
 
     return 0;
 error:
+    Py_XDECREF(ctx);
     // The only valid error we can raise is MemoryError.
     // Other times it's not really errors but things like not being able
     // to fetch a function version because the function got deleted.
     err_occurred = PyErr_Occurred();
-//    if (err_occurred && !PyErr_ExceptionMatches(PyExc_MemoryError)) {
-//        PyErr_Clear();
-//    }
     PyMem_Free(temp_writebuffer);
     remove_unneeded_uops(buffer, buffer_size);
     return err_occurred ? -1 : 0;

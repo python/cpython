@@ -96,9 +96,30 @@ def tier2_replace_deopt(
     out.emit(") goto error;\n")
 
 
+def tier2_replace_decref_specialized(
+    out: CWriter,
+    tkn: Token,
+    tkn_iter: Iterator[Token],
+    uop: Uop,
+    unused: Stack,
+    inst: Instruction | None,
+) -> None:
+    parens = 1
+    next(tkn_iter)  # LPAREN
+    for tkn in tkn_iter:
+        if tkn.kind == "LPAREN":
+            parens += 1
+        if tkn.kind == "RPAREN":
+            parens -= 1
+            if parens == 0:
+                break
+    next(tkn_iter)  # SEMICOLON
+
+
 TIER2_REPLACEMENT_FUNCTIONS = REPLACEMENT_FUNCTIONS.copy()
 TIER2_REPLACEMENT_FUNCTIONS["ERROR_IF"] = tier2_replace_error
 TIER2_REPLACEMENT_FUNCTIONS["DEOPT_IF"] = tier2_replace_deopt
+TIER2_REPLACEMENT_FUNCTIONS["_Py_DECREF_SPECIALIZED"] = tier2_replace_decref_specialized
 
 
 def _write_body_abstract_interp_impure_uop(
