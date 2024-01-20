@@ -1818,6 +1818,13 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
             list(base.walk())
             list(base.walk(top_down=False))
 
+    def test_glob_empty_pattern(self):
+        p = self.cls('')
+        with self.assertRaisesRegex(ValueError, 'Unacceptable pattern'):
+            list(p.glob(''))
+        with self.assertRaisesRegex(ValueError, 'Unacceptable pattern'):
+            list(p.glob('.'))
+
     def test_glob_many_open_files(self):
         depth = 30
         P = self.cls
