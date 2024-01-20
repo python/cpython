@@ -245,7 +245,7 @@ Object Protocol
    class, are considered classes.  However, objects can override this by having
    a :attr:`__bases__` attribute (which must be a tuple of base classes).
 
-   Another function, :attr:`__base__` that is specific to Cpython and also
+   Another function, :attr:`__base__` that is specific to CPython and also
    exists in Jython and PyPy can also be used on a class inheriting from one
    or more classes. When such a class takes arguments in the correct order,
    then starting leftmost.
