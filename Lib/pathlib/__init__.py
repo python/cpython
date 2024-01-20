@@ -468,8 +468,8 @@ class PurePath(_abc.PurePathBase):
         return prefix + quote_from_bytes(os.fsencode(path))
 
     @property
-    def _pattern_parts(self):
-        """List of path components, to be used with patterns in glob()."""
+    def _pattern_stack(self):
+        """Stack of path components, to be used with patterns in glob()."""
         parts = self._tail.copy()
         pattern = self._raw_path
         if pattern.endswith('**'):
@@ -483,6 +483,7 @@ class PurePath(_abc.PurePathBase):
         elif pattern[-1] in (self.pathmod.sep, self.pathmod.altsep):
             # GH-65238: pathlib doesn't preserve trailing slash. Add it back.
             parts.append('')
+        parts.reverse()
         return parts
 
 

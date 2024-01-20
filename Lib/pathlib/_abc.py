@@ -428,9 +428,9 @@ class PurePathBase:
         return self.pathmod.isabs(self._raw_path)
 
     @property
-    def _pattern_parts(self):
-        """List of path components, to be used with patterns in glob()."""
-        return list(self.parts)
+    def _pattern_stack(self):
+        """Stack of path components, to be used with patterns in glob()."""
+        return self._stack[1]
 
     def match(self, path_pattern, *, case_sensitive=None):
         """
@@ -738,8 +738,6 @@ class PathBase(PurePathBase):
         elif not pattern.parts:
             raise ValueError("Unacceptable pattern: {!r}".format(pattern))
 
-        pattern_parts = pattern._pattern_parts
-
         if case_sensitive is None:
             # TODO: evaluate case-sensitivity of each directory in _select_children().
             case_sensitive = _is_case_sensitive(self.pathmod)
@@ -751,14 +749,13 @@ class PathBase(PurePathBase):
         # build a `re.Pattern` object. This pattern is used to filter the
         # recursive walk. As a result, pattern parts following a '**' wildcard
         # do not perform any filesystem access, which can be much faster!
-        filter_paths = follow_symlinks is not None and '..' not in pattern_parts
+        stack = pattern._pattern_stack
+        filter_paths = follow_symlinks is not None and '..' not in stack
         deduplicate_paths = False
         sep = self.pathmod.sep
         paths = iter([self.joinpath('')] if self.is_dir() else [])
-        part_idx = 0
-        while part_idx < len(pattern_parts):
-            part = pattern_parts[part_idx]
-            part_idx += 1
+        while stack:
+            part = stack.pop()
             if part == '':
                 # Trailing slash.
                 pass
@@ -766,11 +763,11 @@ class PathBase(PurePathBase):
                 paths = (path._make_child_relpath('..') for path in paths)
             elif part == '**':
                 # Consume adjacent '**' components.
-                while part_idx < len(pattern_parts) and pattern_parts[part_idx] == '**':
-                    part_idx += 1
+                while stack and stack[-1] == '**':
+                    stack.pop()
 
-                if filter_paths and part_idx < len(pattern_parts) and pattern_parts[part_idx] != '':
-                    dir_only = pattern_parts[-1] == ''
+                if filter_paths and stack and stack[-1] != '':
+                    dir_only = stack[0] == ''
                     paths = _select_recursive(paths, dir_only, follow_symlinks)
 
                     # Filter out paths that don't match pattern.
@@ -779,7 +776,7 @@ class PathBase(PurePathBase):
                     paths = (path for path in paths if match(str(path), prefix_len))
                     return paths
 
-                dir_only = part_idx < len(pattern_parts)
+                dir_only = bool(stack)
                 paths = _select_recursive(paths, dir_only, follow_symlinks)
                 if deduplicate_paths:
                     # De-duplicate if we've already seen a '**' component.
@@ -788,7 +785,7 @@ class PathBase(PurePathBase):
             elif '**' in part:
                 raise ValueError("Invalid pattern: '**' can only be an entire path component")
             else:
-                dir_only = part_idx < len(pattern_parts)
+                dir_only = bool(stack)
                 match = _compile_pattern(part, sep, case_sensitive)
                 paths = _select_children(paths, dir_only, follow_symlinks, match)
         return paths
