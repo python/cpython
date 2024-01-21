@@ -1361,7 +1361,7 @@ sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
 }
 
 PyDoc_STRVAR(set_asyncgen_hooks_doc,
-"set_asyncgen_hooks(* [, firstiter] [, finalizer])\n\
+"set_asyncgen_hooks([firstiter] [, finalizer])\n\
 \n\
 Set a finalizer for async generators objects."
 );
