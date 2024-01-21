@@ -780,12 +780,13 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
     r = []
     query_args = qs.split(separator) if qs else []
     for name_value in query_args:
-        if not name_value and not strict_parsing:
+        if not name_value:
+            if strict_parsing:
+                raise ValueError("Empty query field name")
             continue
+
         nv = name_value.split('=', 1)
         if len(nv) != 2:
-            if strict_parsing:
-                raise ValueError("bad query field: %r" % (name_value,))
             # Handle case of a control-name with no equal sign
             if keep_blank_values:
                 nv.append('')
