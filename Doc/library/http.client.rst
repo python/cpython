@@ -311,7 +311,7 @@ HTTPConnection Objects
       :class:`str` or bytes-like object that is not also a file as the
       body representation.
 
-   .. versionadded:: 3.2
+   .. versionchanged:: 3.2
       *body* can now be an iterable.
 
    .. versionchanged:: 3.6
@@ -461,7 +461,7 @@ also send your request step by step, by using the four functions below.
       This is to avoid premature termination of the read of the request by
       the target server due to malformed encoding.
 
-   .. versionadded:: 3.6
+   .. versionchanged:: 3.6
       Chunked encoding support.  The *encode_chunked* parameter was
       added.
 
