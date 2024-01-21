@@ -1165,6 +1165,37 @@ error:
 }
 
 static int
+get_exception_notes(struct exception_print_context *ctx, PyObject *value, PyObject **notes) {
+    PyObject *note = NULL;
+
+    if (_PyObject_LookupAttr(value, &_Py_ID(__notes__), notes) < 0) {
+        PyObject *type, *errvalue, *tback;
+        PyErr_Fetch(&type, &errvalue, &tback);
+        PyErr_NormalizeException(&type, &errvalue, &tback);
+        note = PyUnicode_FromFormat("Ignored error getting __notes__: %R", errvalue);
+        Py_XDECREF(type);
+        Py_XDECREF(errvalue);
+        Py_XDECREF(tback);
+        if (!note) {
+            goto error;
+        }
+        *notes = PyList_New(1);
+        if (!*notes) {
+            goto error;
+        }
+        if (PyList_SetItem(*notes, 0, note) < 0) {
+            Py_DECREF(*notes);
+            goto error;
+        }
+    }
+
+    return 0;
+error:
+    Py_XDECREF(note);
+    return -1;
+}
+
+static int
 print_exception(struct exception_print_context *ctx, PyObject *value)
 {
     PyObject *notes = NULL;
@@ -1183,7 +1214,7 @@ print_exception(struct exception_print_context *ctx, PyObject *value)
 
     /* grab the type and notes now because value can change below */
     PyObject *type = (PyObject *) Py_TYPE(value);
-    if (_PyObject_LookupAttr(value, &_Py_ID(__notes__), &notes) < 0) {
+    if (get_exception_notes(ctx, value, &notes) < 0) {
         goto error;
     }
 
