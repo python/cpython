@@ -271,7 +271,7 @@ FTP objects
          See the corresponding named parameter to the :meth:`transfercmd` method.
 
       .. versionchanged:: 3.2
-         The *rest* parameter added.
+         The *rest* parameter was added.
 
 
    .. method:: FTP.storlines(cmd, fp, callback=None)
