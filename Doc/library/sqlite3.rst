@@ -343,7 +343,7 @@ Module functions
    .. audit-event:: sqlite3.connect database sqlite3.connect
    .. audit-event:: sqlite3.connect/handle connection_handle sqlite3.connect
 
-   .. verisonchanged:: 3.4
+   .. versionchanged:: 3.4
       Added the *uri* parameter.
 
    .. versionchanged:: 3.7
