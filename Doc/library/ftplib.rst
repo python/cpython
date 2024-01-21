@@ -106,7 +106,7 @@ FTP objects
       This controls the amount of debugging output printed.
       The debug levels are:
 
-      * ``0`` (the default): No debug output.
+      * ``0`` (default): No debug output.
       * ``1``: Produce a moderate amount of debug output,
         generally a single line per request.
       * ``2`` or higher: Produce the maximum amount of debugging output,
