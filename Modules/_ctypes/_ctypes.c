@@ -558,9 +558,8 @@ StructUnionType_init(PyObject *self, PyObject *args, PyObject *kwds, int isStruc
     else {
         StgDictObject *basedict = PyType_stgdict((PyObject *)result->tp_base);
 
-        if (basedict == NULL) {
+        if (basedict == NULL)
             return 0;
-        }
         /* copy base dict */
         if (-1 == PyCStgDict_clone(dict, basedict)) {
             return -1;
