@@ -102,12 +102,15 @@ FTP objects
 
    .. method:: FTP.set_debuglevel(level)
 
-      Set the instance's debugging level.  This controls the amount of debugging
-      output printed.  The default, ``0``, produces no debugging output.  A value of
-      ``1`` produces a moderate amount of debugging output, generally a single line
-      per request.  A value of ``2`` or higher produces the maximum amount of
-      debugging output, logging each line sent and received on the control connection.
+      Set the instance's debugging level as an :class:`int`.
+      This controls the amount of debugging output printed.
+      The debug levels are:
 
+      * ``0`` (default): No debug output.
+      * ``1``: Produce a moderate amount of debug output,
+        generally a single line per request.
+      * ``2`` or higher: Produce the maximum amount of debugging output,
+        logging each line sent and received on the control connection.
 
    .. method:: FTP.connect(host='', port=0, timeout=None, source_address=None)
 
