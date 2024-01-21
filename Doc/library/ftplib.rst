@@ -58,15 +58,40 @@ FTP objects
 .. class:: FTP(host='', user='', passwd='', acct='', timeout=None, \
                source_address=None, *, encoding='utf-8')
 
-   Return a new instance of the :class:`FTP` class.  When *host* is given, the
-   method call ``connect(host)`` is made.  When *user* is given, additionally
-   the method call ``login(user, passwd, acct)`` is made (where *passwd* and
-   *acct* default to the empty string when not given).  The optional *timeout*
-   parameter specifies a timeout in seconds for blocking operations like the
-   connection attempt (if is not specified, the global default timeout setting
-   will be used). *source_address* is a 2-tuple ``(host, port)`` for the socket
-   to bind to as its source address before connecting. The *encoding* parameter
-   specifies the encoding for directories and filenames.
+   Return a new instance of the :class:`FTP` class.
+   When *host* is given, the method call :meth:`connect(host) <connect>`
+   is made by the constructor.
+   When *user* is given, additionally the method call
+   :meth:`login(user, passwd, acct) <connect>` is made.
+
+   :param str host:
+      The hostname to connect to.
+
+   :param str user:
+      The username to log in with.
+      If empty string, ``"anonymous"`` is used.
+
+   :param str passwd:
+      The password to use when logging in.
+      If not given, and if *passwd* is the empty string or ``"-"``,
+      a password will be automatically generated.
+
+   :param str acct:
+      Account information; see the ACCT FTP command.
+
+   :param timeout:
+      A timeout in seconds for blocking operations like :meth:`connect`.
+      If not specified, the global default timeout setting will be used.
+   :type timeout: int | None
+
+   :param source_address:
+      *source_address* is a 2-tuple ``(host, port)`` for the socket
+      to bind to as its source address before connecting.
+   :type source_address: tuple | None
+
+   :param str encoding:
+      The *encoding* parameter specifies the encoding
+      for directories and filenames.
 
    The :class:`FTP` class supports the :keyword:`with` statement, e.g.:
 
