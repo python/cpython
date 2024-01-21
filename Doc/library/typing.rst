@@ -23,7 +23,7 @@
 
 --------------
 
-This module provides runtime support for type hints. 
+This module provides runtime support for type hints.
 
 The function below takes and returns a string and is annotated as follows::
 
@@ -161,16 +161,15 @@ compatibility, type aliases can also be created through simple assignment::
 
    Vector = list[float]
 
-.. deprecated:: 3.12 
-   For reasoning see :data:`TypeAlias`
-
-Additionally and also for backward compatibility types can be marked with 
+Additionally and also for backward compatibility types can be marked with
 :data:`TypeAlias`. ::
 
    from typing import TypeAlias
 
    Vector: TypeAlias = list[float]
 
+.. deprecated:: 3.12
+   For reasoning see :data:`TypeAlias`
 .. _distinct:
 
 NewType
