@@ -5492,17 +5492,6 @@ types, where they are relevant.  Some of these are not reported by the
    The tuple of base classes of a class object.
 
 
-.. attribute:: class.__base__
-
-  ``__base__`` corresponds to the :c:member:`~PyTypeObject.tp_base` in a
-  type object.  At the C level, Python has a single inheritance model
-  that determines the memory layout of instances.  There is a chain
-  involving base classes that contribute to the instance layout.
-  ``__base__`` is the base class that is involved in that chain.
-
-  .. impl-detail::
-    The behavior of the ``__base__`` attribute is dependent on the :term:`CPython` implementation.
-
 .. attribute:: definition.__name__
 
    The name of the class, function, method, descriptor, or
