@@ -267,14 +267,14 @@ The following type-oriented macros are provided for convenience.  Note  that
 .. c:macro:: PyMem_New(TYPE, n)
 
    Same as :c:func:`PyMem_Malloc`, but allocates ``(n * sizeof(TYPE))`` bytes of
-   memory.  Returns a pointer cast to :c:expr:`TYPE*`.  The memory will not have
+   memory.  Returns a pointer cast to ``TYPE*``.  The memory will not have
    been initialized in any way.
 
 
 .. c:macro:: PyMem_Resize(p, TYPE, n)
 
    Same as :c:func:`PyMem_Realloc`, but the memory block is resized to ``(n *
-   sizeof(TYPE))`` bytes.  Returns a pointer cast to :c:expr:`TYPE*`. On return,
+   sizeof(TYPE))`` bytes.  Returns a pointer cast to ``TYPE*``. On return,
    *p* will be a pointer to the new memory area, or ``NULL`` in the event of
    failure.
 
