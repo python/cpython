@@ -59,25 +59,25 @@ FTP objects
                source_address=None, *, encoding='utf-8')
 
    Return a new instance of the :class:`FTP` class.
-   When *host* is given, the method call :meth:`connect(host) <connect>`
-   is made by the constructor.
-   When *user* is given, additionally the method call
-   :meth:`login(user, passwd, acct) <connect>` is made.
 
    :param str host:
       The hostname to connect to.
+      If given, :code:`connect(host)` is implicitly called by the constructor.
+      See the corresponding parameter to :meth:`connect` for more details.
 
    :param str user:
       The username to log in with.
-      If empty string, ``"anonymous"`` is used.
+      If given, :code:`login(host, passwd, acct)` is implicitly called
+      by the constructor.
+      See the corresponding parameter to :meth:`login` for more details.
 
    :param str passwd:
       The password to use when logging in.
-      If not given, and if *passwd* is the empty string or ``"-"``,
-      a password will be automatically generated.
+      See the corresponding parameter to :meth:`login` for more details.
 
    :param str acct:
-      Account information; see the ACCT FTP command.
+      Account information to be used for the ``ACCT`` FTP command.
+      See the corresponding parameter to :meth:`login` for more details.
 
    :param timeout:
       A timeout in seconds for blocking operations like :meth:`connect`.
@@ -140,17 +140,31 @@ FTP objects
 
    .. method:: FTP.connect(host='', port=0, timeout=None, source_address=None)
 
-      Connect to the given host and port.  The default port number is ``21``, as
-      specified by the FTP protocol specification.  It is rarely needed to specify a
-      different port number.  This function should be called only once for each
-      instance; it should not be called at all if a host was given when the instance
-      was created.  All other methods can only be used after a connection has been
-      made.
-      The optional *timeout* parameter specifies a timeout in seconds for the
-      connection attempt. If no *timeout* is passed, the global default timeout
-      setting will be used.
-      *source_address* is a 2-tuple ``(host, port)`` for the socket to bind to as
-      its source address before connecting.
+      Connect to the given host and port.
+      This function should be called only once for each instance;
+      it should not be called if a *host* argument was given
+      when the :class:`FTP` instance was created.
+      All other :class:`!FTP` methods can only be called
+      after a connection has successfully been made.
+
+      :param str host:
+         The host to connect to.
+
+      :param int port:
+         The TCP port to connect to.
+         If no port number is provided, port ``21`` is used,
+         as specified by the FTP protocol specification.
+         It is rarely needed to specify a different port number.
+
+      :param timeout:
+         A timeout in seconds for the connection attempt.
+         If not specified, the global default timeout setting will be used.
+      :type timeout: int | None
+
+      :param source_address:
+         *source_address* is a 2-tuple ``(host, port)`` for the socket
+         to bind to as its source address before connecting.
+      :type source_address: tuple | None
 
       .. audit-event:: ftplib.connect self,host,port ftplib.FTP.connect
 
@@ -167,14 +181,26 @@ FTP objects
 
    .. method:: FTP.login(user='anonymous', passwd='', acct='')
 
-      Log in as the given *user*.  The *passwd* and *acct* parameters are optional and
-      default to the empty string.  If no *user* is specified, it defaults to
-      ``'anonymous'``.  If *user* is ``'anonymous'``, the default *passwd* is
-      ``'anonymous@'``.  This function should be called only once for each instance,
-      after a connection has been established; it should not be called at all if a
-      host and user were given when the instance was created.  Most FTP commands are
-      only allowed after the client has logged in.  The *acct* parameter supplies
-      "accounting information"; few systems implement this.
+      Log on to the connected FTP server.
+      This function should be called only once for each instance,
+      after a connection has been established;
+      it should not be called if the *host* and *user* arguments were given
+      when the :class:`FTP` instance was created.
+      Most FTP commands are only allowed after the client has logged in.
+
+      :param str user:
+         The username to log in with.
+         If no *user* is specified, ``'anonymous'`` will be used.
+
+      :param str passwd:
+         The password to use when logging in.
+         If not given, and if *passwd* is the empty string or ``"-"``,
+         a password will be automatically generated.
+
+      :param str acct:
+         Account information to be used for the ``ACCT`` FTP command.
+         See :rfc:`959` for more details.
+         Few systems implement this.
 
 
    .. method:: FTP.abort()
