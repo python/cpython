@@ -1,0 +1,1 @@
+Compiler propagates line numbers before optimization, leading to more optimization opportunities and removing the need for the ``guarantee_lineno_for_exits`` hack.

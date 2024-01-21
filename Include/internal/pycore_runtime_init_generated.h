@@ -785,6 +785,7 @@ extern "C" {
     INIT_ID(after_in_child), \
     INIT_ID(after_in_parent), \
     INIT_ID(aggregate_class), \
+    INIT_ID(allow_code), \
     INIT_ID(append), \
     INIT_ID(argdefs), \
     INIT_ID(arguments), \
@@ -1013,6 +1014,7 @@ extern "C" {
     INIT_ID(kw), \
     INIT_ID(kw1), \
     INIT_ID(kw2), \
+    INIT_ID(kwdefaults), \
     INIT_ID(lambda), \
     INIT_ID(last), \
     INIT_ID(last_exc), \

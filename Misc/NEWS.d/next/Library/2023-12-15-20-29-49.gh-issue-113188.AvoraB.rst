@@ -1,6 +1,0 @@
-Fix :func:`shutil.copymode` and :func:`shutil.copystat` on Windows.
-Previously they worked differenly if *dst* is a symbolic link:
-they modified the permission bits of *dst* itself
-rather than the file it points to if *follow_symlinks* is true or *src* is
-not a symbolic link, and did not modify the permission bits if
-*follow_symlinks* is false and *src* is a symbolic link.
