@@ -1495,14 +1495,14 @@ Removed
   add ``cc @vstinner`` to the issue to notify Victor Stinner.
   (Contributed by Victor Stinner in :gh:`106320`.)
 
-* Remove functions deprecated in Python 3.9.
+* Remove functions deprecated in Python 3.9:
 
   * ``PyEval_CallObject()``, ``PyEval_CallObjectWithKeywords()``: use
     :c:func:`PyObject_CallNoArgs` or :c:func:`PyObject_Call` instead.
     Warning: :c:func:`PyObject_Call` positional arguments must be a
-    :class:`tuple` and must not be *NULL*, keyword arguments must be a
-    :class:`dict` or *NULL*, whereas removed functions checked arguments type
-    and accepted *NULL* positional and keyword arguments.
+    :class:`tuple` and must not be ``NULL``, keyword arguments must be a
+    :class:`dict` or ``NULL``, whereas removed functions checked arguments type
+    and accepted ``NULL`` positional and keyword arguments.
     To replace ``PyEval_CallObjectWithKeywords(func, NULL, kwargs)`` with
     :c:func:`PyObject_Call`, pass an empty tuple as positional arguments using
     :c:func:`PyTuple_New(0) <PyTuple_New>`.
