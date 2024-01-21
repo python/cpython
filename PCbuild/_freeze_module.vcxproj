@@ -208,6 +208,8 @@
     <ClCompile Include="..\Python\frame.c" />
     <ClCompile Include="..\Python\future.c" />
     <ClCompile Include="..\Python\gc.c" />
+    <ClCompile Include="..\Python\gc_gil.c" />
+    <ClCompile Include="..\Python\gc_free_threading.c" />
     <ClCompile Include="..\Python\getargs.c" />
     <ClCompile Include="..\Python\getcompiler.c" />
     <ClCompile Include="..\Python\getcopyright.c" />

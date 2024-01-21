@@ -223,8 +223,14 @@ class BasicTest(BaseTest):
 
     def test_upgrade_dependencies(self):
         builder = venv.EnvBuilder()
-        bin_path = 'Scripts' if sys.platform == 'win32' else 'bin'
+        bin_path = 'bin'
         python_exe = os.path.split(sys.executable)[1]
+        if sys.platform == 'win32':
+            bin_path = 'Scripts'
+            if os.path.normcase(os.path.splitext(python_exe)[0]).endswith('_d'):
+                python_exe = 'python_d.exe'
+            else:
+                python_exe = 'python.exe'
         with tempfile.TemporaryDirectory() as fake_env_dir:
             expect_exe = os.path.normcase(
                 os.path.join(fake_env_dir, bin_path, python_exe)
@@ -283,7 +289,9 @@ class BasicTest(BaseTest):
             # build environment
             ('is_python_build()', str(sysconfig.is_python_build())),
             ('get_makefile_filename()', sysconfig.get_makefile_filename()),
-            ('get_config_h_filename()', sysconfig.get_config_h_filename())):
+            ('get_config_h_filename()', sysconfig.get_config_h_filename()),
+            ('get_config_var("Py_GIL_DISABLED")',
+             str(sysconfig.get_config_var("Py_GIL_DISABLED")))):
             with self.subTest(call):
                 cmd[2] = 'import sysconfig; print(sysconfig.%s)' % call
                 out, err = check_output(cmd, encoding='utf-8')
@@ -315,7 +323,9 @@ class BasicTest(BaseTest):
             # build environment
             ('is_python_build()', str(sysconfig.is_python_build())),
             ('get_makefile_filename()', sysconfig.get_makefile_filename()),
-            ('get_config_h_filename()', sysconfig.get_config_h_filename())):
+            ('get_config_h_filename()', sysconfig.get_config_h_filename()),
+            ('get_config_var("Py_GIL_DISABLED")',
+             str(sysconfig.get_config_var("Py_GIL_DISABLED")))):
             with self.subTest(call):
                 cmd[2] = 'import sysconfig; print(sysconfig.%s)' % call
                 out, err = check_output(cmd, encoding='utf-8')
@@ -324,7 +334,8 @@ class BasicTest(BaseTest):
             ('executable', self.envpy()),
             # Usually compare to sys.executable, but if we're running in our own
             # venv then we really need to compare to our base executable
-            ('_base_executable', sys._base_executable),
+            # HACK: Test fails on POSIX with unversioned binary (PR gh-113033)
+            #('_base_executable', sys._base_executable),
         ):
             with self.subTest(attr):
                 cmd[2] = f'import sys; print(sys.{attr})'

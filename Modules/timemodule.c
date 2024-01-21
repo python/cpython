@@ -1993,20 +1993,16 @@ time_exec(PyObject *module)
             return -1;
         }
 #endif
-
 #ifdef CLOCK_MONOTONIC
-
         if (PyModule_AddIntMacro(module, CLOCK_MONOTONIC) < 0) {
             return -1;
         }
-
 #endif
 #ifdef CLOCK_MONOTONIC_RAW
         if (PyModule_AddIntMacro(module, CLOCK_MONOTONIC_RAW) < 0) {
             return -1;
         }
 #endif
-
 #ifdef CLOCK_HIGHRES
         if (PyModule_AddIntMacro(module, CLOCK_HIGHRES) < 0) {
             return -1;
@@ -2017,7 +2013,6 @@ time_exec(PyObject *module)
             return -1;
         }
 #endif
-
 #ifdef CLOCK_THREAD_CPUTIME_ID
         if (PyModule_AddIntMacro(module, CLOCK_THREAD_CPUTIME_ID) < 0) {
             return -1;
@@ -2044,8 +2039,17 @@ time_exec(PyObject *module)
         }
 #endif
 #ifdef CLOCK_UPTIME_RAW
-
         if (PyModule_AddIntMacro(module, CLOCK_UPTIME_RAW) < 0) {
+            return -1;
+        }
+#endif
+#ifdef CLOCK_MONOTONIC_RAW_APPROX
+        if (PyModule_AddIntMacro(module, CLOCK_MONOTONIC_RAW_APPROX) < 0) {
+            return -1;
+        }
+#endif
+#ifdef CLOCK_UPTIME_RAW_APPROX
+        if (PyModule_AddIntMacro(module, CLOCK_UPTIME_RAW_APPROX) < 0) {
             return -1;
         }
 #endif

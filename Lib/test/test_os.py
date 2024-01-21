@@ -3085,6 +3085,66 @@ class Win32NtTests(unittest.TestCase):
             except subprocess.TimeoutExpired:
                 proc.terminate()
 
+    @support.requires_subprocess()
+    def test_stat_inaccessible_file(self):
+        filename = os_helper.TESTFN
+        ICACLS = os.path.expandvars(r"%SystemRoot%\System32\icacls.exe")
+
+        with open(filename, "wb") as f:
+            f.write(b'Test data')
+
+        stat1 = os.stat(filename)
+
+        try:
+            # Remove all permissions from the file
+            subprocess.check_output([ICACLS, filename, "/inheritance:r"],
+                                    stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as ex:
+            if support.verbose:
+                print(ICACLS, filename, "/inheritance:r", "failed.")
+                print(ex.stdout.decode("oem", "replace").rstrip())
+            try:
+                os.unlink(filename)
+            except OSError:
+                pass
+            self.skipTest("Unable to create inaccessible file")
+
+        def cleanup():
+            # Give delete permission. We are the file owner, so we can do this
+            # even though we removed all permissions earlier.
+            subprocess.check_output([ICACLS, filename, "/grant", "Everyone:(D)"],
+                                    stderr=subprocess.STDOUT)
+            os.unlink(filename)
+
+        self.addCleanup(cleanup)
+
+        if support.verbose:
+            print("File:", filename)
+            print("stat with access:", stat1)
+
+        # First test - we shouldn't raise here, because we still have access to
+        # the directory and can extract enough information from its metadata.
+        stat2 = os.stat(filename)
+
+        if support.verbose:
+            print(" without access:", stat2)
+
+        # We cannot get st_dev/st_ino, so ensure those are 0 or else our test
+        # is not set up correctly
+        self.assertEqual(0, stat2.st_dev)
+        self.assertEqual(0, stat2.st_ino)
+
+        # st_mode and st_size should match (for a normal file, at least)
+        self.assertEqual(stat1.st_mode, stat2.st_mode)
+        self.assertEqual(stat1.st_size, stat2.st_size)
+
+        # st_ctime and st_mtime should be the same
+        self.assertEqual(stat1.st_ctime, stat2.st_ctime)
+        self.assertEqual(stat1.st_mtime, stat2.st_mtime)
+
+        # st_atime should be the same or later
+        self.assertGreaterEqual(stat1.st_atime, stat2.st_atime)
+
 
 @os_helper.skip_unless_symlink
 class NonLocalSymlinkTests(unittest.TestCase):
@@ -4484,6 +4544,61 @@ class FDInheritanceTests(unittest.TestCase):
         self.addCleanup(os.close, slave_fd)
         self.assertEqual(os.get_inheritable(master_fd), False)
         self.assertEqual(os.get_inheritable(slave_fd), False)
+
+    @unittest.skipUnless(hasattr(os, 'spawnl'), "need os.openpty()")
+    def test_pipe_spawnl(self):
+        # gh-77046: On Windows, os.pipe() file descriptors must be created with
+        # _O_NOINHERIT to make them non-inheritable. UCRT has no public API to
+        # get (_osfile(fd) & _O_NOINHERIT), so use a functional test.
+        #
+        # Make sure that fd is not inherited by a child process created by
+        # os.spawnl(): get_osfhandle() and dup() must fail with EBADF.
+
+        fd, fd2 = os.pipe()
+        self.addCleanup(os.close, fd)
+        self.addCleanup(os.close, fd2)
+
+        code = textwrap.dedent(f"""
+            import errno
+            import os
+            import test.support
+            try:
+                import msvcrt
+            except ImportError:
+                msvcrt = None
+
+            fd = {fd}
+
+            with test.support.SuppressCrashReport():
+                if msvcrt is not None:
+                    try:
+                        handle = msvcrt.get_osfhandle(fd)
+                    except OSError as exc:
+                        if exc.errno != errno.EBADF:
+                            raise
+                        # get_osfhandle(fd) failed with EBADF as expected
+                    else:
+                        raise Exception("get_osfhandle() must fail")
+
+                try:
+                    fd3 = os.dup(fd)
+                except OSError as exc:
+                    if exc.errno != errno.EBADF:
+                        raise
+                    # os.dup(fd) failed with EBADF as expected
+                else:
+                    os.close(fd3)
+                    raise Exception("dup must fail")
+        """)
+
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        with open(filename, "w") as fp:
+            print(code, file=fp, end="")
+
+        cmd = [sys.executable, filename]
+        exitcode = os.spawnl(os.P_WAIT, cmd[0], *cmd)
+        self.assertEqual(exitcode, 0)
 
 
 class PathTConverterTests(unittest.TestCase):

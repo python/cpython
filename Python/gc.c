@@ -9,6 +9,7 @@
 #include "pycore_initconfig.h"
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_object.h"
+#include "pycore_object_alloc.h"  // _PyObject_MallocWithType()
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_weakref.h"       // _PyWeakref_ClearRef()
@@ -1019,21 +1020,6 @@ delete_garbage(PyThreadState *tstate, GCState *gcstate,
     }
 }
 
-/* Clear all free lists
- * All free lists are cleared during the collection of the highest generation.
- * Allocated items in the free list may keep a pymalloc arena occupied.
- * Clearing the free lists may give back memory to the OS earlier.
- */
-static void
-clear_freelists(PyInterpreterState *interp)
-{
-    _PyTuple_ClearFreeList(interp);
-    _PyFloat_ClearFreeList(interp);
-    _PyList_ClearFreeList(interp);
-    _PyDict_ClearFreeList(interp);
-    _PyAsyncGen_ClearFreeLists(interp);
-    _PyContext_ClearFreeList(interp);
-}
 
 // Show stats for objects in each generations
 static void
@@ -1449,7 +1435,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     /* Clear free list only during the collection of the highest
      * generation */
     if (generation == NUM_GENERATIONS-1) {
-        clear_freelists(tstate->interp);
+        _PyGC_ClearAllFreeLists(tstate->interp);
     }
 
     if (_PyErr_Occurred(tstate)) {
@@ -1810,14 +1796,14 @@ _Py_RunGC(PyThreadState *tstate)
 }
 
 static PyObject *
-gc_alloc(size_t basicsize, size_t presize)
+gc_alloc(PyTypeObject *tp, size_t basicsize, size_t presize)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     if (basicsize > PY_SSIZE_T_MAX - presize) {
         return _PyErr_NoMemory(tstate);
     }
     size_t size = presize + basicsize;
-    char *mem = PyObject_Malloc(size);
+    char *mem = _PyObject_MallocWithType(tp, size);
     if (mem == NULL) {
         return _PyErr_NoMemory(tstate);
     }
@@ -1832,7 +1818,7 @@ PyObject *
 _PyObject_GC_New(PyTypeObject *tp)
 {
     size_t presize = _PyType_PreHeaderSize(tp);
-    PyObject *op = gc_alloc(_PyObject_SIZE(tp), presize);
+    PyObject *op = gc_alloc(tp, _PyObject_SIZE(tp), presize);
     if (op == NULL) {
         return NULL;
     }
@@ -1851,7 +1837,7 @@ _PyObject_GC_NewVar(PyTypeObject *tp, Py_ssize_t nitems)
     }
     size_t presize = _PyType_PreHeaderSize(tp);
     size_t size = _PyObject_VAR_SIZE(tp, nitems);
-    op = (PyVarObject *)gc_alloc(size, presize);
+    op = (PyVarObject *)gc_alloc(tp, size, presize);
     if (op == NULL) {
         return NULL;
     }
@@ -1863,7 +1849,7 @@ PyObject *
 PyUnstable_Object_GC_NewWithExtraData(PyTypeObject *tp, size_t extra_size)
 {
     size_t presize = _PyType_PreHeaderSize(tp);
-    PyObject *op = gc_alloc(_PyObject_SIZE(tp) + extra_size, presize);
+    PyObject *op = gc_alloc(tp, _PyObject_SIZE(tp) + extra_size, presize);
     if (op == NULL) {
         return NULL;
     }
@@ -1882,7 +1868,7 @@ _PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
         return (PyVarObject *)PyErr_NoMemory();
     }
     char *mem = (char *)op - presize;
-    mem = (char *)PyObject_Realloc(mem,  presize + basicsize);
+    mem = (char *)_PyObject_ReallocWithType(Py_TYPE(op), mem, presize + basicsize);
     if (mem == NULL) {
         return (PyVarObject *)PyErr_NoMemory();
     }
