@@ -96,8 +96,11 @@ elif os.name == "posix":
     def _is_elf(filename):
         "Return True if the given file is an ELF file"
         elf_header = b'\x7fELF'
-        with open(filename, 'br') as thefile:
-            return thefile.read(4) == elf_header
+        try:
+            with open(filename, 'br') as thefile:
+                return thefile.read(4) == elf_header
+        except FileNotFoundError:
+            return False
 
     def _findLib_gcc(name):
         # Run GCC's linker with the -t (aka --trace) option and examine the
