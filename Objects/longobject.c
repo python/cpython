@@ -3600,7 +3600,7 @@ x_mul(PyLongObject *a, PyLongObject *b)
                 });
 
             while (pb < pbend) {
-                carry += *pz + *pb++ * f;
+                carry += *pb++ * f;
                 *pz++ = (digit)(carry & PyLong_MASK);
                 carry >>= PyLong_SHIFT;
                 assert(carry <= PyLong_MASK);
