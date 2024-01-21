@@ -233,6 +233,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
             try:
                 await waiter
+                transport.close()
             except BaseException:
                 transport.close()
                 raise
