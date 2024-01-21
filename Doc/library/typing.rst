@@ -161,8 +161,11 @@ compatibility, type aliases can also be created through simple assignment::
 
    Vector = list[float]
 
-Or marked with :data:`TypeAlias` to make it explicit that this is a type alias,
-not a normal variable assignment::
+.. deprecated:: 3.12 
+   For reasoning see :data:`TypeAlias`
+
+Additionally and also for backward compatibility types can be marked with 
+:data:`TypeAlias`. ::
 
    from typing import TypeAlias
 
