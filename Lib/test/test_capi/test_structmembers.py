@@ -14,6 +14,13 @@ from _testcapi import (_test_structmembersType_OldAPI,
     PY_SSIZE_T_MAX, PY_SSIZE_T_MIN,
     )
 
+
+class Index:
+    def __init__(self, value):
+        self.value = value
+    def __index__(self):
+        return self.value
+
 # There are two classes: one using <structmember.h> and another using
 # `Py_`-prefixed API. They should behave the same in Python
 
@@ -72,6 +79,10 @@ class ReadWriteTests:
         self.assertEqual(ts.T_INT, INT_MIN)
         ts.T_UINT = UINT_MAX
         self.assertEqual(ts.T_UINT, UINT_MAX)
+        ts.T_UINT = Index(0)
+        self.assertEqual(ts.T_UINT, 0)
+        ts.T_UINT = Index(INT_MAX)
+        self.assertEqual(ts.T_UINT, INT_MAX)
 
     def test_long(self):
         ts = self.ts
@@ -81,6 +92,10 @@ class ReadWriteTests:
         self.assertEqual(ts.T_LONG, LONG_MIN)
         ts.T_ULONG = ULONG_MAX
         self.assertEqual(ts.T_ULONG, ULONG_MAX)
+        ts.T_ULONG = Index(0)
+        self.assertEqual(ts.T_ULONG, 0)
+        ts.T_ULONG = Index(LONG_MAX)
+        self.assertEqual(ts.T_ULONG, LONG_MAX)
 
     def test_py_ssize_t(self):
         ts = self.ts
@@ -172,6 +187,28 @@ class TestWarnings:
         ts = self.ts
         with warnings_helper.check_warnings(('', RuntimeWarning)):
             ts.T_USHORT = USHRT_MAX+1
+
+    def test_int(self):
+        ts = self.ts
+        if LONG_MIN < INT_MIN:
+            with self.assertWarns(RuntimeWarning):
+                ts.T_INT = INT_MIN-1
+        if LONG_MAX > INT_MAX:
+            with self.assertWarns(RuntimeWarning):
+                ts.T_INT = INT_MAX+1
+
+    def test_uint(self):
+        ts = self.ts
+        with self.assertWarns(RuntimeWarning):
+            ts.T_UINT = -1
+        if ULONG_MAX > UINT_MAX:
+            with self.assertWarns(RuntimeWarning):
+                ts.T_UINT = UINT_MAX+1
+
+    def test_ulong(self):
+        ts = self.ts
+        with self.assertWarns(RuntimeWarning):
+            ts.T_ULONG = -1
 
 class TestWarnings_OldAPI(TestWarnings, unittest.TestCase):
     cls = _test_structmembersType_OldAPI
