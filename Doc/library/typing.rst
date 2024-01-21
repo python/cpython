@@ -23,10 +23,7 @@
 
 --------------
 
-This module provides runtime support for type hints. For the original
-specification of the typing system, see :pep:`484`. For a simplified
-introduction to type hints, see :pep:`483`.
-
+This module provides runtime support for type hints. 
 
 The function below takes and returns a string and is annotated as follows::
 
