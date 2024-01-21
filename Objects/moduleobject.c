@@ -12,7 +12,6 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 #include "osdefs.h"               // MAXPATHLEN
-#include "../Python/stdlib_module_names.h"  // _Py_stdlib_module_names
 
 
 static PyMemberDef module_members[] = {
@@ -787,20 +786,6 @@ _PyModuleSpec_IsUninitializedSubmodule(PyObject *spec, PyObject *name)
     return rc;
 }
 
-// TODO: deduplicate with suggestions.c. Where should this go?
-static bool
-is_name_stdlib_module(PyObject* name)
-{
-    const char* the_name = PyUnicode_AsUTF8(name);
-    Py_ssize_t len = Py_ARRAY_LENGTH(_Py_stdlib_module_names);
-    for (Py_ssize_t i = 0; i < len; i++) {
-        if (strcmp(the_name, _Py_stdlib_module_names[i]) == 0) {
-            return 1;
-        }
-    }
-    return 0;
-}
-
 PyObject*
 _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
 {
@@ -871,17 +856,20 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
     int is_script_shadowing_stdlib = 0;
     // Check mod.__name__ in sys.stdlib_module_names
     // and os.path.dirname(mod.__spec__.origin) == os.getcwd()
-    if (origin && is_name_stdlib_module(mod_name)) {
-        wchar_t cwd[MAXPATHLEN], origin_dirname[MAXPATHLEN];
-        if(_Py_wgetcwd(cwd, MAXPATHLEN)) {
-            if (PyUnicode_AsWideChar(origin, origin_dirname, MAXPATHLEN) < 0) {
-                goto done;
-            }
-            wchar_t *sep = wcsrchr(origin_dirname, SEP);
-            if (sep) {
-                *sep = L'\0';
-                if (wcscmp(cwd, origin_dirname) == 0) {
-                    is_script_shadowing_stdlib = 1;
+    if (origin) {
+        PyObject *stdlib = PySys_GetObject("stdlib_module_names");
+        if (stdlib && PyAnySet_Check(stdlib) && PySet_Contains(stdlib, mod_name)) {
+            wchar_t cwd[MAXPATHLEN], origin_dirname[MAXPATHLEN];
+            if(_Py_wgetcwd(cwd, MAXPATHLEN)) {
+                if (PyUnicode_AsWideChar(origin, origin_dirname, MAXPATHLEN) < 0) {
+                    goto done;
+                }
+                wchar_t *sep = wcsrchr(origin_dirname, SEP);
+                if (sep) {
+                    *sep = L'\0';
+                    if (wcscmp(cwd, origin_dirname) == 0) {
+                        is_script_shadowing_stdlib = 1;
+                    }
                 }
             }
         }
