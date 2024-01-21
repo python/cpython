@@ -62,8 +62,7 @@ FTP objects
    When *host* is given, the method call :meth:`connect(host) <connect>`
    is made by the constructor.
    When *user* is given, additionally the method call
-   :meth:`login(user, passwd, acct) <connect>` is made
-   (where *passwd* and *acct* default to the empty string when not given).
+   :meth:`login(user, passwd, acct) <connect>` is made.
 
    :param str host:
       The hostname to connect to.
