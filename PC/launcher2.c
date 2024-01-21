@@ -841,29 +841,57 @@ searchPath(SearchInfo *search, const wchar_t *shebang, int shebangLength)
         return RC_BAD_VIRTUAL_PATH;
     }
 
-    // Check that we aren't going to call ourselves again
-    // If we are, pretend there was no shebang and let normal handling take over
-    if (GetModuleFileNameW(NULL, filename, MAXLEN) &&
-        0 == _comparePath(filename, -1, buffer, -1)) {
-        debug(L"# ignoring recursive shebang command\n");
-        return RC_RECURSIVE_SHEBANG;
-    }
-
     // Make sure we didn't find a reparse point that will open the Microsoft Store
     // If we did, pretend there was no shebang and let normal handling take over
     WIN32_FIND_DATAW findData;
-    wchar_t hFind = FindFirstFileW(buffer, &findData);
+    HANDLE hFind = FindFirstFileW(buffer, &findData);
+    if (!hFind) {
+        if (GetLastError() == ERROR_FILE_NOT_FOUND) {
+            debug(L"# %s on disappeared\n", buffer);
+            // The file found on PATH disappeared. Alias probably disabled by user while trying to run, let normal handling take over
+            RC_NO_SHEBANG;
+        }
+
+        // Other errors should cause us to break
+        winerror(0, L"Failed to find %s on PATH\n", filename);
+        return RC_BAD_VIRTUAL_PATH;
+    }
+
     if (findData.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT &&
         findData.dwReserved0 & IO_REPARSE_TAG_APPEXECLINK) {
         const size_t bufSize = sizeof(AppExecLinkFile);
-        wchar_t buf[sizeof(AppExecLinkFile)];
-        AppExecLinkFile *appExecLinkFilePtr;
+        wchar_t appExecLinkBuf[sizeof(AppExecLinkFile)];
 
         HANDLE hReparsePoint = CreateFileW(buffer, 0, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT, NULL);
-        DeviceIoControl(hReparsePoint, FSCTL_GET_REPARSE_POINT, NULL, 0, buf, bufSize, NULL, NULL);
+        if (!hReparsePoint) {
+            if (GetLastError() == ERROR_FILE_NOT_FOUND) {
+                debug(L"# %s on disappeared\n", buffer);
+                // The file found on PATH disappeared. Alias probably disabled by user while trying to run, let normal handling take over
+                RC_NO_SHEBANG;
+            }
+
+            // Other errors should cause us to break
+            winerror(0, L"Failed to find %s on PATH\n", filename);
+            return RC_BAD_VIRTUAL_PATH;
+        }
+
+        if (!DeviceIoControl(hReparsePoint, FSCTL_GET_REPARSE_POINT, NULL, 0, appExecLinkBuf, bufSize, NULL, NULL)) {
+            if (GetLastError() == ERROR_FILE_NOT_FOUND) {
+                debug(L"# %s on disappeared\n", buffer);
+                // The file found on PATH disappeared. Alias probably disabled by user while trying to run, let normal handling take over
+                RC_NO_SHEBANG;
+            }
+
+            // Other errors should cause us to break
+            winerror(0, L"Failed to find %s on PATH\n", filename);
+            return RC_BAD_VIRTUAL_PATH;
+        }
+
         CloseHandle(hReparsePoint);
 
-        appExecLinkFilePtr = (AppExecLinkFile*)&buf;
+        AppExecLinkFile* appExecLinkFilePtr;
+
+        appExecLinkFilePtr = (AppExecLinkFile*)&appExecLinkBuf;
 
         wchar_t redirectorPackageId[] = L"Microsoft.DesktopAppInstaller";
         int redirectorStrLen = wcsnlen_s(redirectorPackageId, 29);
@@ -872,9 +900,19 @@ searchPath(SearchInfo *search, const wchar_t *shebang, int shebangLength)
         wcsncpy_s(partialId, redirectorStrLen + 1, appExecLinkFilePtr->stringList, redirectorStrLen);
 
         if (0 == wcsncmp(partialId, &redirectorPackageId, redirectorStrLen)) {
-            debug(L"# ignoring redirector that would launch store");
+            debug(L"# ignoring redirector that would launch store\n");
             return RC_NO_SHEBANG;
         }
+    }
+
+    FindClose(hFind);
+
+    // Check that we aren't going to call ourselves again
+    // If we are, pretend there was no shebang and let normal handling take over
+    if (GetModuleFileNameW(NULL, filename, MAXLEN) &&
+        0 == _comparePath(filename, -1, buffer, -1)) {
+        debug(L"# ignoring recursive shebang command\n");
+        return RC_RECURSIVE_SHEBANG;
     }
 
     wchar_t *buf = allocSearchInfoBuffer(search, n + 1);
