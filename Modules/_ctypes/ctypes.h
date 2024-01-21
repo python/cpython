@@ -162,8 +162,8 @@ extern int PyType_stginfo(PyTypeObject *self, Py_ssize_t *psize, Py_ssize_t *pal
 extern int PyObject_stginfo(PyObject *self, Py_ssize_t *psize, Py_ssize_t *palign, Py_ssize_t *plength);
 
 
-#define CDataObject_CheckExact(st, v)       Py_IS_TYPE((v), (st)->PyCData_Type)
-#define CDataObject_Check(st, v)            PyObject_TypeCheck((v), (st)->PyCData_Type)
+#define CDataObject_CheckExact(v)       Py_IS_TYPE(v, GLOBAL_STATE()->PyCData_Type)
+#define CDataObject_Check(v)            PyObject_TypeCheck(v, GLOBAL_STATE()->PyCData_Type)
 #define _CDataObject_HasExternalBuffer(v)  ((v)->b_ptr != (char *)&(v)->b_value)
 
 #define PyCSimpleTypeObject_CheckExact(v)       Py_IS_TYPE(v, GLOBAL_STATE()->PyCSimpleType_Type)
@@ -182,10 +182,10 @@ extern PyObject *PyCData_AtAddress(PyObject *type, void *buf);
 extern PyObject *PyCData_FromBytes(PyObject *type, char *data, Py_ssize_t length);
 
 #define PyCArrayTypeObject_Check(v)     PyObject_TypeCheck(v, GLOBAL_STATE()->PyCArrayType_Type)
-#define ArrayObject_Check(st, v)        PyObject_TypeCheck((v), (st)->PyCArray_Type)
-#define PointerObject_Check(st, v)      PyObject_TypeCheck((v), (st)->PyCPointer_Type)
+#define ArrayObject_Check(v)            PyObject_TypeCheck(v, GLOBAL_STATE()->PyCArray_Type)
+#define PointerObject_Check(v)          PyObject_TypeCheck(v, GLOBAL_STATE()->PyCPointer_Type)
 #define PyCPointerTypeObject_Check(v)   PyObject_TypeCheck(v, GLOBAL_STATE()->PyCPointerType_Type)
-#define PyCFuncPtrObject_Check(st, v)   PyObject_TypeCheck((v), (st)->PyCFuncPtr_Type)
+#define PyCFuncPtrObject_Check(v)       PyObject_TypeCheck(v, GLOBAL_STATE()->PyCFuncPtr_Type)
 #define PyCFuncPtrTypeObject_Check(v)   PyObject_TypeCheck(v, GLOBAL_STATE()->PyCFuncPtrType_Type)
 #define PyCStructTypeObject_Check(v)    PyObject_TypeCheck(v, GLOBAL_STATE()->PyCStructType_Type)
 
