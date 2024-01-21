@@ -221,7 +221,7 @@ FTP objects
       ``NLST`` retrieves a list of file names.
       The *callback* function is called for each line with a string argument
       containing the line with the trailing CRLF stripped.  The default *callback*
-      prints the line to ``sys.stdout``.
+      prints the line to :data:`sys.stdout`.
 
 
    .. method:: FTP.set_pasv(val)
@@ -311,7 +311,7 @@ FTP objects
       current server directory).  Multiple arguments can be used to pass non-standard
       options to the ``LIST`` command.  If the last argument is a function, it is used
       as a *callback* function as for :meth:`retrlines`; the default prints to
-      ``sys.stdout``.  This method returns ``None``.
+      :data:`sys.stdout`.  This method returns ``None``.
 
       .. note:: If your server supports the command, :meth:`mlsd` offers a better API.
 
