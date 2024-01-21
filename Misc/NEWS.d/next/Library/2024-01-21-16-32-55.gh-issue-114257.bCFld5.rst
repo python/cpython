@@ -1,0 +1,1 @@
+Ignore the :exc:`FileNotFound` error in :func:`ctypes.util._is_elf` and just return ``False``.
