@@ -98,7 +98,8 @@ nmake
 
   <Target Name="_CopyToOutput" AfterTargets="Build">
     <ItemGroup>
-      <_Built Include="$(opensslDir)\LICENSE" />
+      <_Built Include="$(opensslDir)\LICENSE" Condition="Exists('$(opensslDir)\LICENSE')"/>
+      <_Built Include="$(opensslDir)\LICENSE.txt" Condition="Exists('$(opensslDir)\LICENSE.txt')"/>
       <_Built Include="$(IntDir)\libcrypto.lib;$(IntDir)\libcrypto-*.dll;$(IntDir)\libcrypto-*.pdb" />
       <_Built Include="$(IntDir)\libssl.lib;$(IntDir)\libssl-*.dll;$(IntDir)\libssl-*.pdb" />
       <_AppLink Include="$(opensslDir)\ms\applink.c" />

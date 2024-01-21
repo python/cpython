@@ -1,0 +1,1 @@
+Determine whether to copy LICENSE or LICENSE.txt by checking if it exists
