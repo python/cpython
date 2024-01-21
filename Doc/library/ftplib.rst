@@ -201,14 +201,27 @@ FTP objects
 
    .. method:: FTP.retrbinary(cmd, callback, blocksize=8192, rest=None)
 
-      Retrieve a file in binary transfer mode.  *cmd* should be an appropriate
-      ``RETR`` command: ``'RETR filename'``. The *callback* function is called for
-      each block of data received, with a single bytes argument giving the data
-      block. The optional *blocksize* argument specifies the maximum chunk size to
-      read on the low-level socket object created to do the actual transfer (which
-      will also be the largest size of the data blocks passed to *callback*).  A
-      reasonable default is chosen. *rest* means the same thing as in the
-      :meth:`transfercmd` method.
+      Retrieve a file in binary transfer mode.
+
+      :param str cmd:
+        An appropriate ``STOR`` command: :samp:`"STOR {filename}"`.
+
+      :param callback:
+         A single parameter callable that is called
+         for each block of data received,
+         with its single argument being the data as :class:`bytes`.
+      :type callback: :term:`callable`
+
+      :param int blocksize:
+         The maximum chunk size to read on the low-level
+         :class:`~socket.socket` object created to do the actual transfer.
+         This also corresponds to the largest size of data
+         that will be passed to *callback*.
+         Defaults to 8192.
+
+      :param int rest:
+         A ``REST`` command to be sent to the server.
+         See the corresponding named parameter to the :meth:`transfercmd` method.
 
 
    .. method:: FTP.retrlines(cmd, callback=None)
@@ -232,16 +245,33 @@ FTP objects
 
    .. method:: FTP.storbinary(cmd, fp, blocksize=8192, callback=None, rest=None)
 
-      Store a file in binary transfer mode.  *cmd* should be an appropriate
-      ``STOR`` command: ``"STOR filename"``. *fp* is a :term:`file object`
-      (opened in binary mode) which is read until EOF using its :meth:`~io.IOBase.read`
-      method in blocks of size *blocksize* to provide the data to be stored.
-      The *blocksize* argument defaults to 8192.  *callback* is an optional single
-      parameter callable that is called on each block of data after it is sent.
-      *rest* means the same thing as in the :meth:`transfercmd` method.
+      Store a file in binary transfer mode.
+
+      :param str cmd:
+        An appropriate ``STOR`` command: :samp:`"STOR {filename}"`.
+
+      :param fp:
+         A file object (opened in binary mode) which is read until EOF,
+         using its :meth:`~io.RawIOBase.read` method in blocks of size *blocksize*
+         to provide the data to be stored.
+      :type fp: :term:`file object`
+
+      :param int blocksize:
+         The read block size.
+         Defaults to 8192.
+
+      :param callback:
+         A single parameter callable that is called
+         for each block of data sent,
+         with its single argument being the data as :class:`bytes`.
+      :type callback: :term:`callable`
+
+      :param int rest:
+         A ``REST`` command to be sent to the server.
+         See the corresponding named parameter to the :meth:`transfercmd` method.
 
       .. versionchanged:: 3.2
-         *rest* parameter added.
+         The *rest* parameter added.
 
 
    .. method:: FTP.storlines(cmd, fp, callback=None)
