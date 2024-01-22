@@ -80,7 +80,7 @@ The module defines the following items:
    :ref:`zipinfo-objects`.
 
    .. versionchanged:: 3.13
-      A public :attr:`compress_level` attribute has been added to expose the
+      A public :attr:`!compress_level` attribute has been added to expose the
       formerly protected :attr:`!_compresslevel`.  The older protected name
       continues to work as a property for backwards compatibility.
 
