@@ -269,6 +269,41 @@ What a mess!
                   "he", " ", "was", " ", "gone"]
         self.check_split(text, expect)
 
+    def test_unicode_em_dash(self):
+        # Test text with Unicode em-dashes
+        text = "Em-dashes should be written \u2014 thus."
+        self.check_wrap(text, 25,
+                        ["Em-dashes should be",
+                         "written \u2014 thus."])
+
+        # Probe the boundaries of the em-dash. Parallels ASCII tests
+        # but widths - 1 since len('\u2014') = len('--') - 1
+        self.check_wrap(text, 28,
+                        ["Em-dashes should be written",
+                         "\u2014 thus."])
+        expect = ["Em-dashes should be written \u2014",
+                  "thus."]
+        self.check_wrap(text, 29, expect)
+        self.check_wrap(text, 34, expect)
+        self.check_wrap(text, 35,
+                        ["Em-dashes should be written \u2014 thus."])
+
+        # Tests for adjacent glyphs not needed for Unicode em-dash
+        # because unlike adjacent hypens, not meaningful or common.
+
+        # All of the above behaviour could be deduced by probing the
+        # _split() method. Note mixed real and simulated em-dashes.
+        text = "Here's an \u2014 em-dash and\u2014here's another---and another! And--more!"
+        expect = ["Here's", " ", "an", " ", "\u2014", " ", "em-", "dash", " ",
+                  "and", "\u2014", "here's", " ", "another", "---",
+                  "and", " ", "another!", " ", "And", "--", "more!"]
+
+        self.check_split(text, expect)
+
+        text = "and then\u2014bam!\u2014he was gone"
+        expect = ["and", " ", "then", "\u2014", "bam!", "\u2014",
+                  "he", " ", "was", " ", "gone"]
+        self.check_split(text, expect)
 
     def test_unix_options (self):
         # Test that Unix-style command-line options are wrapped correctly.
