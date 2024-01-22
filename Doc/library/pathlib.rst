@@ -552,25 +552,25 @@ Pure paths provide the following methods and properties:
       PureWindowsPath('c:/Program Files')
 
 
-.. method:: PurePath.globmatch(pattern, *, case_sensitive=None)
+.. method:: PurePath.full_match(pattern, *, case_sensitive=None)
 
    Match this path against the provided glob-style pattern.  Return ``True``
    if matching is successful, ``False`` otherwise.  For example::
 
-      >>> PurePath('a/b.py').globmatch('a/*.py')
+      >>> PurePath('a/b.py').full_match('a/*.py')
       True
-      >>> PurePath('a/b.py').globmatch('*.py')
+      >>> PurePath('a/b.py').full_match('*.py')
       False
-      >>> PurePath('/a/b/c.py').globmatch('/a/**')
+      >>> PurePath('/a/b/c.py').full_match('/a/**')
       True
-      >>> PurePath('/a/b/c.py').globmatch('**/*.py')
+      >>> PurePath('/a/b/c.py').full_match('**/*.py')
       True
 
    As with other methods, case-sensitivity follows platform defaults::
 
-      >>> PurePosixPath('b.py').globmatch('*.PY')
+      >>> PurePosixPath('b.py').full_match('*.PY')
       False
-      >>> PureWindowsPath('b.py').globmatch('*.PY')
+      >>> PureWindowsPath('b.py').full_match('*.PY')
       True
 
    Set *case_sensitive* to ``True`` or ``False`` to override this behaviour.
@@ -583,7 +583,7 @@ Pure paths provide the following methods and properties:
    Match this path against the provided non-recursive glob-style pattern.
    Return ``True`` if matching is successful, ``False`` otherwise.
 
-   This method is similar to :meth:`~PurePath.globmatch`, but the recursive
+   This method is similar to :meth:`~PurePath.full_match`, but the recursive
    wildcard "``**``" is not supported (it acts like non-recursive "``*``"),
    and if a relative pattern is given, then matching is done from the right::
 

@@ -464,7 +464,7 @@ class PurePathBase:
                 return False
         return True
 
-    def globmatch(self, pattern, *, case_sensitive=None):
+    def full_match(self, pattern, *, case_sensitive=None):
         """
         Return True if this path matches the given glob-style pattern.
         """
