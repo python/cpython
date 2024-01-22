@@ -273,7 +273,7 @@ class ThreadTests(BaseTestCase):
                     found = threading._active.get(tid)
                     if found is not dummy_thread:
                         return f'Expected {found} to be {dummy_thread}.'
-                    if not dummy_thread.is_alive()
+                    if not dummy_thread.is_alive():
                         # gh-29376
                         return 'Expected _DummyThread to be considered alive.'
                     if '_DummyThread' not in repr(threading._active[tid]):
