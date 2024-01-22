@@ -128,14 +128,25 @@ bytes(cdata)
 
 #include "pycore_long.h"          // _PyLong_GetZero()
 
-ctypes_state global_state;
+static PyTypeObject Union_Type;
+static PyTypeObject Struct_Type;
+static PyTypeObject Simple_Type;
+
+ctypes_state global_state = {
+    .PyCStgDict_Type = &PyCStgDict_Type,
+    .PyCData_Type = &PyCData_Type,
+    .Struct_Type = &Struct_Type,
+    .Union_Type = &Union_Type,
+    .PyCArray_Type = &PyCArray_Type,
+    .Simple_Type = &Simple_Type,
+    .PyCPointer_Type = &PyCPointer_Type,
+    .PyCFuncPtr_Type = &PyCFuncPtr_Type,
+};
 
 PyObject *PyExc_ArgError = NULL;
 
 /* This dict maps ctypes types to POINTER types */
 PyObject *_ctypes_ptrtype_cache = NULL;
-
-static PyTypeObject Simple_Type;
 
 /* a callable object used for unpickling:
    strong reference to _ctypes._unpickle() function */
@@ -521,14 +532,16 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
 
     /* keep this for bw compatibility */
     int r = PyDict_Contains(result->tp_dict, &_Py_ID(_abstract_));
-    if (r > 0)
+    if (r > 0) {
         return (PyObject *)result;
+    }
     if (r < 0) {
         Py_DECREF(result);
         return NULL;
     }
 
-    dict = (StgDictObject *)_PyObject_CallNoArgs((PyObject *)&PyCStgDict_Type);
+    ctypes_state *st = GLOBAL_STATE();
+    dict = (StgDictObject *)_PyObject_CallNoArgs((PyObject *)st->PyCStgDict_Type);
     if (!dict) {
         Py_DECREF(result);
         return NULL;
@@ -568,8 +581,9 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
     else {
         StgDictObject *basedict = PyType_stgdict((PyObject *)result->tp_base);
 
-        if (basedict == NULL)
+        if (basedict == NULL) {
             return (PyObject *)result;
+        }
         /* copy base dict */
         if (-1 == PyCStgDict_clone(dict, basedict)) {
             Py_DECREF(result);
@@ -1023,16 +1037,19 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 
     typedict = PyTuple_GetItem(args, 2);
-    if (!typedict)
+    if (!typedict) {
         return NULL;
+    }
 /*
   stgdict items size, align, length contain info about pointers itself,
   stgdict->proto has info about the pointed to type!
 */
+    ctypes_state *st = GLOBAL_STATE();
     stgdict = (StgDictObject *)_PyObject_CallNoArgs(
-        (PyObject *)&PyCStgDict_Type);
-    if (!stgdict)
+        (PyObject *)st->PyCStgDict_Type);
+    if (!stgdict) {
         return NULL;
+    }
     stgdict->size = sizeof(void *);
     stgdict->align = _ctypes_get_fielddesc("P")->pffi_type->alignment;
     stgdict->length = 1;
@@ -1149,7 +1166,8 @@ PyCPointerType_from_param(PyObject *type, PyObject *value)
         break;
     }
 
-    if (PointerObject_Check(value) || ArrayObject_Check(value)) {
+    ctypes_state *st = GLOBAL_STATE();
+    if (PointerObject_Check(st, value) || ArrayObject_Check(st, value)) {
         /* Array instances are also pointers when
            the item types are the same.
         */
@@ -1448,11 +1466,12 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         goto error;
     }
 
+    ctypes_state *st = GLOBAL_STATE();
     stgdict = (StgDictObject *)_PyObject_CallNoArgs(
-        (PyObject *)&PyCStgDict_Type);
-    if (!stgdict)
+        (PyObject *)st->PyCStgDict_Type);
+    if (!stgdict) {
         goto error;
-
+    }
     itemdict = PyType_stgdict(type_attr);
     if (!itemdict) {
         PyErr_SetString(PyExc_TypeError,
@@ -1587,7 +1606,8 @@ c_wchar_p_from_param(PyObject *type, PyObject *value)
     if (res) {
         return Py_NewRef(value);
     }
-    if (ArrayObject_Check(value) || PointerObject_Check(value)) {
+    ctypes_state *st = GLOBAL_STATE();
+    if (ArrayObject_Check(st, value) || PointerObject_Check(st, value)) {
         /* c_wchar array instance or pointer(c_wchar(...)) */
         StgDictObject *dt = PyObject_stgdict(value);
         StgDictObject *dict;
@@ -1597,7 +1617,6 @@ c_wchar_p_from_param(PyObject *type, PyObject *value)
             return Py_NewRef(value);
         }
     }
-    ctypes_state *st = GLOBAL_STATE();
     if (PyCArg_CheckExact(st, value)) {
         /* byref(c_char(...)) */
         PyCArgObject *a = (PyCArgObject *)value;
@@ -1651,7 +1670,8 @@ c_char_p_from_param(PyObject *type, PyObject *value)
     if (res) {
         return Py_NewRef(value);
     }
-    if (ArrayObject_Check(value) || PointerObject_Check(value)) {
+    ctypes_state *st = GLOBAL_STATE();
+    if (ArrayObject_Check(st, value) || PointerObject_Check(st, value)) {
         /* c_char array instance or pointer(c_char(...)) */
         StgDictObject *dt = PyObject_stgdict(value);
         StgDictObject *dict;
@@ -1661,7 +1681,6 @@ c_char_p_from_param(PyObject *type, PyObject *value)
             return Py_NewRef(value);
         }
     }
-    ctypes_state *st = GLOBAL_STATE();
     if (PyCArg_CheckExact(st, value)) {
         /* byref(c_char(...)) */
         PyCArgObject *a = (PyCArgObject *)value;
@@ -1757,13 +1776,13 @@ c_void_p_from_param(PyObject *type, PyObject *value)
         /* c_void_p instances */
         return Py_NewRef(value);
     }
+    ctypes_state *st = GLOBAL_STATE();
 /* ctypes array or pointer instance */
-    if (ArrayObject_Check(value) || PointerObject_Check(value)) {
+    if (ArrayObject_Check(st, value) || PointerObject_Check(st, value)) {
         /* Any array or pointer is accepted */
         return Py_NewRef(value);
     }
 /* byref(...) */
-    ctypes_state *st = GLOBAL_STATE();
     if (PyCArg_CheckExact(st, value)) {
         /* byref(c_xxx()) */
         PyCArgObject *a = (PyCArgObject *)value;
@@ -1772,7 +1791,7 @@ c_void_p_from_param(PyObject *type, PyObject *value)
         }
     }
 /* function pointer */
-    if (PyCFuncPtrObject_Check(value)) {
+    if (PyCFuncPtrObject_Check(st, value)) {
         PyCArgObject *parg;
         PyCFuncPtrObject *func;
         func = (PyCFuncPtrObject *)value;
@@ -1788,7 +1807,11 @@ c_void_p_from_param(PyObject *type, PyObject *value)
     }
 /* c_char_p, c_wchar_p */
     stgd = PyObject_stgdict(value);
-    if (stgd && CDataObject_Check(value) && stgd->proto && PyUnicode_Check(stgd->proto)) {
+    if (stgd
+        && CDataObject_Check(st, value)
+        && stgd->proto
+        && PyUnicode_Check(stgd->proto))
+    {
         PyCArgObject *parg;
 
         switch (PyUnicode_AsUTF8(stgd->proto)[0]) {
@@ -1870,8 +1893,9 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
     if (result == NULL)
         return NULL;
 
+    ctypes_state *st = GLOBAL_STATE();
     stgdict = (StgDictObject *)_PyObject_CallNoArgs(
-        (PyObject *)&PyCStgDict_Type);
+        (PyObject *)st->PyCStgDict_Type);
     if (!stgdict) {
         Py_DECREF(result);
         return NULL;
@@ -1981,11 +2005,12 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         goto error;
     }
 
+    ctypes_state *st = GLOBAL_STATE();
     stgdict = (StgDictObject *)_PyObject_CallNoArgs(
-        (PyObject *)&PyCStgDict_Type);
-    if (!stgdict)
+        (PyObject *)st->PyCStgDict_Type);
+    if (!stgdict) {
         goto error;
-
+    }
     stgdict->ffi_type_pointer = *fmt->pffi_type;
     stgdict->align = fmt->pffi_type->alignment;
     stgdict->length = 0;
@@ -2006,7 +2031,7 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     stgdict->paramfunc = PyCSimpleType_paramfunc;
 /*
-    if (result->tp_base != &Simple_Type) {
+    if (result->tp_base != st->Simple_Type) {
         stgdict->setfunc = NULL;
         stgdict->getfunc = NULL;
     }
@@ -2026,7 +2051,7 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     /* Install from_param class methods in ctypes base classes.
        Overrides the PyCSimpleType_from_param generic method.
      */
-    if (result->tp_base == &Simple_Type) {
+    if (result->tp_base == st->Simple_Type) {
         switch (*proto_str) {
         case 'z': /* c_char_p */
             ml = &c_char_p_method;
@@ -2070,7 +2095,6 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
     }
 
-    ctypes_state *st = GLOBAL_STATE();
     if (type == st->PyCSimpleType_Type
         && fmt->setfunc_swapped
         && fmt->getfunc_swapped)
@@ -2408,11 +2432,12 @@ PyCFuncPtrType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyTypeObject *result;
     StgDictObject *stgdict;
 
+    ctypes_state *st = GLOBAL_STATE();
     stgdict = (StgDictObject *)_PyObject_CallNoArgs(
-        (PyObject *)&PyCStgDict_Type);
-    if (!stgdict)
+        (PyObject *)st->PyCStgDict_Type);
+    if (!stgdict) {
         return NULL;
-
+    }
     stgdict->paramfunc = PyCFuncPtrType_paramfunc;
     /* We do NOT expose the function signature in the format string.  It
        is impossible, generally, because the only requirement for the
@@ -2623,7 +2648,8 @@ static PyMemberDef PyCData_members[] = {
 static PyObject *
 PyCData_item_type(PyObject *type)
 {
-    if (PyCArrayTypeObject_Check(type)) {
+    ctypes_state *st = GLOBAL_STATE();
+    if (PyCArrayTypeObject_Check(st, type)) {
         StgDictObject *stg_dict;
         PyObject *elem_type;
 
@@ -2832,14 +2858,14 @@ PyCData_FromBaseObj(PyObject *type, PyObject *base, Py_ssize_t index, char *adr)
     }
     dict->flags |= DICTFLAG_FINAL;
     cmem = (CDataObject *)((PyTypeObject *)type)->tp_alloc((PyTypeObject *)type, 0);
-    if (cmem == NULL)
+    if (cmem == NULL) {
         return NULL;
-    assert(CDataObject_Check(cmem));
-
+    }
+    assert(CDataObject_Check(GLOBAL_STATE(), cmem));
     cmem->b_length = dict->length;
     cmem->b_size = dict->size;
     if (base) { /* use base's buffer */
-        assert(CDataObject_Check(base));
+        assert(CDataObject_Check(GLOBAL_STATE(), base));
         cmem->b_ptr = adr;
         cmem->b_needsfree = 0;
         cmem->b_base = (CDataObject *)Py_NewRef(base);
@@ -2878,9 +2904,10 @@ PyCData_AtAddress(PyObject *type, void *buf)
     dict->flags |= DICTFLAG_FINAL;
 
     pd = (CDataObject *)((PyTypeObject *)type)->tp_alloc((PyTypeObject *)type, 0);
-    if (!pd)
+    if (!pd) {
         return NULL;
-    assert(CDataObject_Check(pd));
+    }
+    assert(CDataObject_Check(GLOBAL_STATE(), pd));
     pd->b_ptr = (char *)buf;
     pd->b_length = dict->length;
     pd->b_size = dict->size;
@@ -2895,9 +2922,11 @@ PyCData_AtAddress(PyObject *type, void *buf)
 int _ctypes_simple_instance(PyObject *obj)
 {
     PyTypeObject *type = (PyTypeObject *)obj;
+    ctypes_state *st = GLOBAL_STATE();
 
-    if (PyCSimpleTypeObject_Check(type))
-        return type->tp_base != &Simple_Type;
+    if (PyCSimpleTypeObject_Check(st, type)) {
+        return type->tp_base != st->Simple_Type;
+    }
     return 0;
 }
 
@@ -2925,10 +2954,11 @@ _PyCData_set(CDataObject *dst, PyObject *type, SETFUNC setfunc, PyObject *value,
     CDataObject *src;
     int err;
 
-    if (setfunc)
+    if (setfunc) {
         return setfunc(ptr, value, size);
-
-    if (!CDataObject_Check(value)) {
+    }
+    ctypes_state *st = GLOBAL_STATE();
+    if (!CDataObject_Check(st, value)) {
         StgDictObject *dict = PyType_stgdict(type);
         if (dict && dict->setfunc)
             return dict->setfunc(ptr, value, size);
@@ -2950,7 +2980,7 @@ _PyCData_set(CDataObject *dst, PyObject *type, SETFUNC setfunc, PyObject *value,
                                 size, ptr);
             Py_DECREF(ob);
             return result;
-        } else if (value == Py_None && PyCPointerTypeObject_Check(type)) {
+        } else if (value == Py_None && PyCPointerTypeObject_Check(st, type)) {
             *(void **)ptr = NULL;
             Py_RETURN_NONE;
         } else {
@@ -2971,7 +3001,7 @@ _PyCData_set(CDataObject *dst, PyObject *type, SETFUNC setfunc, PyObject *value,
                src->b_ptr,
                size);
 
-        if (PyCPointerTypeObject_Check(type)) {
+        if (PyCPointerTypeObject_Check(st, type)) {
             /* XXX */
         }
 
@@ -2982,8 +3012,8 @@ _PyCData_set(CDataObject *dst, PyObject *type, SETFUNC setfunc, PyObject *value,
         return Py_NewRef(value);
     }
 
-    if (PyCPointerTypeObject_Check(type)
-        && ArrayObject_Check(value)) {
+    if (PyCPointerTypeObject_Check(st, type)
+        && ArrayObject_Check(st, value)) {
         StgDictObject *p1, *p2;
         PyObject *keep;
         p1 = PyObject_stgdict(value);
@@ -3031,8 +3061,9 @@ PyCData_set(PyObject *dst, PyObject *type, SETFUNC setfunc, PyObject *value,
 {
     CDataObject *mem = (CDataObject *)dst;
     PyObject *result;
+    ctypes_state *st = GLOBAL_STATE();
 
-    if (!CDataObject_Check(dst)) {
+    if (!CDataObject_Check(st, dst)) {
         PyErr_SetString(PyExc_TypeError,
                         "not a ctype instance");
         return -1;
@@ -3252,13 +3283,14 @@ static int
 _check_outarg_type(PyObject *arg, Py_ssize_t index)
 {
     StgDictObject *dict;
+    ctypes_state *st = GLOBAL_STATE();
 
-    if (PyCPointerTypeObject_Check(arg))
+    if (PyCPointerTypeObject_Check(st, arg)) {
         return 1;
-
-    if (PyCArrayTypeObject_Check(arg))
+    }
+    if (PyCArrayTypeObject_Check(st, arg)) {
         return 1;
-
+    }
     dict = PyType_stgdict(arg);
     if (dict
         /* simple pointer types, c_void_p, c_wchar_p, BSTR, ... */
@@ -3627,7 +3659,9 @@ static PyObject *
 _byref(PyObject *obj)
 {
     PyCArgObject *parg;
-    if (!CDataObject_Check(obj)) {
+    ctypes_state *st = GLOBAL_STATE();
+
+    if (!CDataObject_Check(st, obj)) {
         PyErr_SetString(PyExc_TypeError,
                         "expected CData instance");
         return NULL;
@@ -3735,6 +3769,7 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
         inargs_index = 1;
     }
 #endif
+    ctypes_state *st = GLOBAL_STATE();
     for (i = 0; i < len; ++i) {
         PyObject *item = PyTuple_GET_ITEM(paramflags, i);
         PyObject *ob;
@@ -3806,11 +3841,13 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
                     ((PyTypeObject *)ob)->tp_name);
                 goto error;
             }
-            if (PyCArrayTypeObject_Check(ob))
+            if (PyCArrayTypeObject_Check(st, ob)) {
                 ob = _PyObject_CallNoArgs(ob);
-            else
+            }
+            else {
                 /* Create an instance of the pointed-to type */
                 ob = _PyObject_CallNoArgs(dict->proto);
+            }
             /*
                XXX Is the following correct any longer?
                We must not pass a byref() to the array then but
@@ -3962,7 +3999,8 @@ PyCFuncPtr_call(PyCFuncPtrObject *self, PyObject *inargs, PyObject *kwds)
                             "native com method call without 'this' parameter");
             return NULL;
         }
-        if (!CDataObject_Check(this)) {
+        ctypes_state *st = GLOBAL_STATE();
+        if (!CDataObject_Check(st, this)) {
             PyErr_SetString(PyExc_TypeError,
                             "Expected a COM this pointer as first argument");
             return NULL;
@@ -4733,12 +4771,11 @@ PyCArrayType_from_ctype(PyObject *itemtype, Py_ssize_t length)
     sprintf(name, "%.200s_Array_%ld",
         ((PyTypeObject *)itemtype)->tp_name, (long)length);
 #endif
-
     ctypes_state *st = GLOBAL_STATE();
     result = PyObject_CallFunction((PyObject *)st->PyCArrayType_Type,
                                    "s(O){s:n,s:O}",
                                    name,
-                                   &PyCArray_Type,
+                                   st->PyCArray_Type,
                                    "_length_",
                                    length,
                                    "_type_",
@@ -4849,8 +4886,9 @@ static PyObject *
 Simple_repr(CDataObject *self)
 {
     PyObject *val, *result;
+    ctypes_state *st = GLOBAL_STATE();
 
-    if (Py_TYPE(self)->tp_base != &Simple_Type) {
+    if (Py_TYPE(self)->tp_base != st->Simple_Type) {
         return PyUnicode_FromFormat("<%s object at %p>",
                                    Py_TYPE(self)->tp_name, self);
     }
@@ -5013,7 +5051,8 @@ Pointer_set_contents(CDataObject *self, PyObject *value, void *closure)
     stgdict = PyObject_stgdict((PyObject *)self);
     assert(stgdict); /* Cannot be NULL for pointer instances */
     assert(stgdict->proto);
-    if (!CDataObject_Check(value)) {
+    ctypes_state *st = GLOBAL_STATE();
+    if (!CDataObject_Check(st, value)) {
         int res = PyObject_IsInstance(value, stgdict->proto);
         if (res == -1)
             return -1;
@@ -5395,11 +5434,14 @@ static int
 cast_check_pointertype(PyObject *arg)
 {
     StgDictObject *dict;
+    ctypes_state *st = GLOBAL_STATE();
 
-    if (PyCPointerTypeObject_Check(arg))
+    if (PyCPointerTypeObject_Check(st, arg)) {
         return 1;
-    if (PyCFuncPtrTypeObject_Check(arg))
+    }
+    if (PyCFuncPtrTypeObject_Check(st, arg)) {
         return 1;
+    }
     dict = PyType_stgdict(arg);
     if (dict != NULL && dict->proto != NULL) {
         if (PyUnicode_Check(dict->proto)
@@ -5432,7 +5474,8 @@ cast(void *ptr, PyObject *src, PyObject *ctype)
       It must certainly contain the source objects one.
       It must contain the source object itself.
      */
-    if (CDataObject_Check(src)) {
+    ctypes_state *st = GLOBAL_STATE();
+    if (CDataObject_Check(st, src)) {
         CDataObject *obj = (CDataObject *)src;
         CDataObject *container;
 
@@ -5536,9 +5579,9 @@ _ctypes_add_types(PyObject *mod)
     */
     CREATE_TYPE(mod, st->PyCArg_Type, &carg_spec, NULL);
     CREATE_TYPE(mod, st->PyCThunk_Type, &cthunk_spec, NULL);
-    TYPE_READY(&PyCData_Type);
+    TYPE_READY(st->PyCData_Type);
     /* StgDict is derived from PyDict_Type */
-    TYPE_READY_BASE(&PyCStgDict_Type, &PyDict_Type);
+    TYPE_READY_BASE(st->PyCStgDict_Type, &PyDict_Type);
 
     /*************************************************
      *
@@ -5561,12 +5604,12 @@ _ctypes_add_types(PyObject *mod)
      * Classes using a custom metaclass
      */
 
-    MOD_ADD_TYPE(&Struct_Type, st->PyCStructType_Type, &PyCData_Type);
-    MOD_ADD_TYPE(&Union_Type, st->UnionType_Type, &PyCData_Type);
-    MOD_ADD_TYPE(&PyCPointer_Type, st->PyCPointerType_Type, &PyCData_Type);
-    MOD_ADD_TYPE(&PyCArray_Type, st->PyCArrayType_Type, &PyCData_Type);
-    MOD_ADD_TYPE(&Simple_Type, st->PyCSimpleType_Type, &PyCData_Type);
-    MOD_ADD_TYPE(&PyCFuncPtr_Type, st->PyCFuncPtrType_Type, &PyCData_Type);
+    MOD_ADD_TYPE(st->Struct_Type, st->PyCStructType_Type, st->PyCData_Type);
+    MOD_ADD_TYPE(st->Union_Type, st->UnionType_Type, st->PyCData_Type);
+    MOD_ADD_TYPE(st->PyCPointer_Type, st->PyCPointerType_Type, st->PyCData_Type);
+    MOD_ADD_TYPE(st->PyCArray_Type, st->PyCArrayType_Type, st->PyCData_Type);
+    MOD_ADD_TYPE(st->Simple_Type, st->PyCSimpleType_Type, st->PyCData_Type);
+    MOD_ADD_TYPE(st->PyCFuncPtr_Type, st->PyCFuncPtrType_Type, st->PyCData_Type);
 
     /*************************************************
      *
