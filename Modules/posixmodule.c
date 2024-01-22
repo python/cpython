@@ -7886,6 +7886,7 @@ parse_file_actions(PyObject *file_actions,
                 }
                 Py_DECREF(path);
                 break;
+            }
 #endif
             default: {
                 PyErr_SetString(PyExc_TypeError,
