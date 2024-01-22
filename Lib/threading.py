@@ -1486,7 +1486,7 @@ class _MainThread(Thread):
 # is collected. Not a part of the public API.
 _thread_local_info = local()
 
-class __DeleteDummyThreadOnDel:
+class _DeleteDummyThreadOnDel:
     '''
     Helper class to remove a dummy thread from threading._active on __del__.
     '''
