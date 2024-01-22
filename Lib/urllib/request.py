@@ -2750,6 +2750,8 @@ elif os.name == 'nt':
             if test == '<local>':
                 if '.' not in rawHost:
                     return 1
+            if test == '':
+                continue
             test = test.replace(".", r"\.")     # mask dots
             test = test.replace("*", r".*")     # change glob sequence
             test = test.replace("?", r".")      # change glob char
