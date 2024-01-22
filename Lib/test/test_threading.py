@@ -275,7 +275,7 @@ class ThreadTests(BaseTestCase):
                         return f'Expected {found} to be {dummy_thread}.'
                     if not dummy_thread.is_alive()
                         # gh-29376
-                        return f'Expected _DummyThread to be considered alive.'
+                        return 'Expected _DummyThread to be considered alive.'
                     if '_DummyThread' not in repr(threading._active[tid]):
                         return f'Expected _DummyThread to be considered alive.'
                 error_message = verify_conditions()
