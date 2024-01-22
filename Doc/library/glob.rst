@@ -78,7 +78,7 @@ For example, ``'[?]'`` matches the character ``'?'``.
       an inordinate amount of time.
 
    .. note::
-      This function could return duplicate path names if *pathname*
+      This function may return duplicate path names if *pathname*
       contains multiple "``**``" patterns and *recursive* is true.
 
    .. versionchanged:: 3.5
@@ -101,7 +101,7 @@ For example, ``'[?]'`` matches the character ``'?'``.
    .. audit-event:: glob.glob/2 pathname,recursive,root_dir,dir_fd glob.iglob
 
    .. note::
-      This function could return duplicate path names if *pathname*
+      This function may return duplicate path names if *pathname*
       contains multiple "``**``" patterns and *recursive* is true.
 
    .. versionchanged:: 3.5
