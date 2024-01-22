@@ -824,6 +824,15 @@ import os
 import types
 collections.__spec__ = types.SimpleNamespace()
 collections.__spec__.origin = os.path.join(os.getcwd(), 'collections.py')
+
+class substr(str):
+    __hash__ = None
+collections.__name__ = substr('collections')
+try:
+    collections.does_not_exist
+except TypeError as e:
+    print(str(e))
+
 import sys
 sys.stdlib_module_names = None
 try:
@@ -840,6 +849,7 @@ except AttributeError as e:
         popen = script_helper.spawn_python('-c', program)
         stdout, stderr = popen.communicate()
         self.assertEqual(stdout.splitlines(), [
+            b"unhashable type: 'substr'",
             b"module 'collections' has no attribute 'does_not_exist'",
             b"module 'collections' has no attribute 'does_not_exist'",
         ])
