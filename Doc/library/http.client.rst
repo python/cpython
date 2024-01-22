@@ -462,8 +462,7 @@ also send your request step by step, by using the four functions below.
       the target server due to malformed encoding.
 
    .. versionchanged:: 3.6
-      Chunked encoding support.  The *encode_chunked* parameter was
-      added.
+      Added chunked encoding support and the *encode_chunked* parameter.
 
 
 .. method:: HTTPConnection.send(data)

@@ -1539,7 +1539,7 @@ handling consistency are valid for these functions.
       :attr:`~Popen.returncode`.
 
    .. versionchanged:: 3.11
-      Added the *encoding* and *errors* arguments.
+      Added the *encoding* and *errors* parameters.
 
 .. function:: getoutput(cmd, *, encoding=None, errors=None)
 

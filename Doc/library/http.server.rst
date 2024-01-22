@@ -439,10 +439,10 @@ to bind to localhost only::
         python -m http.server --bind 127.0.0.1
 
 .. versionchanged:: 3.4
-    ``--bind`` argument was introduced.
+    Added the ``--bind`` option.
 
 .. versionchanged:: 3.8
-    ``--bind`` argument enhanced to support IPv6
+    Support IPv6 in the ``--bind`` option.
 
 By default, the server uses the current directory. The option ``-d/--directory``
 specifies a directory to which it should serve the files. For example,
@@ -451,7 +451,7 @@ the following command uses a specific directory::
         python -m http.server --directory /tmp/
 
 .. versionchanged:: 3.7
-    ``--directory`` argument was introduced.
+    Added the ``--directory`` option.
 
 By default, the server is conformant to HTTP/1.0. The option ``-p/--protocol``
 specifies the HTTP version to which the server is conformant. For example, the
@@ -460,7 +460,7 @@ following command runs an HTTP/1.1 conformant server::
         python -m http.server --protocol HTTP/1.1
 
 .. versionchanged:: 3.11
-    ``--protocol`` argument was introduced.
+    Added the ``--protocol`` option.
 
 .. class:: CGIHTTPRequestHandler(request, client_address, server)
 
