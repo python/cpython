@@ -908,12 +908,13 @@ class TestBinaryPlistlib(unittest.TestCase):
         self.assertIs(b['x'], b)
 
     def test_deep_nesting(self):
-        for N in [300, 100000]:
+        tests = [50, 100_000] if support.is_wasi else [50, 300, 100_000]
+        for N in tests:
             chunks = [b'\xa1' + (i + 1).to_bytes(4, 'big') for i in range(N)]
             try:
                 result = self.decode(*chunks, b'\x54seed', offset_size=4, ref_size=4)
             except RecursionError:
-                pass
+                self.assertGreater(N, sys.getrecursionlimit()//2)
             else:
                 for i in range(N):
                     self.assertIsInstance(result, list)
