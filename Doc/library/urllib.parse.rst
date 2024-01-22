@@ -598,7 +598,7 @@ task isn't already covered by the URL parsing functions above.
 
 .. function:: quote(string, safe='/', encoding=None, errors=None)
 
-   Replace special characters in *string* using the ``%xx`` escape. Letters,
+   Replace special characters in *string* using the :samp:`%{xx}` escape. Letters,
    digits, and the characters ``'_.-~'`` are never quoted. By default, this
    function is intended for quoting the path section of a URL. The optional
    *safe* parameter specifies additional ASCII characters that should not be
@@ -645,7 +645,7 @@ task isn't already covered by the URL parsing functions above.
 
 .. function:: unquote(string, encoding='utf-8', errors='replace')
 
-   Replace ``%xx`` escapes with their single-character equivalent.
+   Replace :samp:`%{xx}` escapes with their single-character equivalent.
    The optional *encoding* and *errors* parameters specify how to decode
    percent-encoded sequences into Unicode characters, as accepted by the
    :meth:`bytes.decode` method.
@@ -676,7 +676,7 @@ task isn't already covered by the URL parsing functions above.
 
 .. function:: unquote_to_bytes(string)
 
-   Replace ``%xx`` escapes with their single-octet equivalent, and return a
+   Replace :samp:`%{xx}` escapes with their single-octet equivalent, and return a
    :class:`bytes` object.
 
    *string* may be either a :class:`str` or a :class:`bytes` object.

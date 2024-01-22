@@ -1,18 +1,19 @@
 # XXX TypeErrors on calling handlers, or on bad return values from a
 # handler, are obscure and unhelpful.
 
-from io import BytesIO
 import os
-import platform
 import sys
 import sysconfig
 import unittest
 import traceback
+from io import BytesIO
+from test import support
+from test.support import os_helper
 
 from xml.parsers import expat
 from xml.parsers.expat import errors
 
-from test.support import sortdict, is_emscripten, is_wasi
+from test.support import sortdict
 
 
 class SetAttributeTest(unittest.TestCase):
@@ -281,12 +282,10 @@ class NamespaceSeparatorTest(unittest.TestCase):
         expat.ParserCreate(namespace_separator=' ')
 
     def test_illegal(self):
-        try:
+        with self.assertRaisesRegex(TypeError,
+                r"ParserCreate\(\) argument (2|'namespace_separator') "
+                r"must be str or None, not int"):
             expat.ParserCreate(namespace_separator=42)
-            self.fail()
-        except TypeError as e:
-            self.assertEqual(str(e),
-                "ParserCreate() argument 'namespace_separator' must be str or None, not int")
 
         try:
             expat.ParserCreate(namespace_separator='too long')
@@ -441,37 +440,59 @@ class BufferTextTest(unittest.TestCase):
 # Test handling of exception from callback:
 class HandlerExceptionTest(unittest.TestCase):
     def StartElementHandler(self, name, attrs):
-        raise RuntimeError(name)
+        raise RuntimeError(f'StartElementHandler: <{name}>')
 
     def check_traceback_entry(self, entry, filename, funcname):
-        self.assertEqual(os.path.basename(entry[0]), filename)
-        self.assertEqual(entry[2], funcname)
+        self.assertEqual(os.path.basename(entry.filename), filename)
+        self.assertEqual(entry.name, funcname)
 
+    @support.cpython_only
     def test_exception(self):
+        # gh-66652: test _PyTraceback_Add() used by pyexpat.c to inject frames
+
+        # Change the current directory to the Python source code directory
+        # if it is available.
+        src_dir = sysconfig.get_config_var('abs_builddir')
+        if src_dir:
+            have_source = os.path.isdir(src_dir)
+        else:
+            have_source = False
+        if have_source:
+            with os_helper.change_cwd(src_dir):
+                self._test_exception(have_source)
+        else:
+            self._test_exception(have_source)
+
+    def _test_exception(self, have_source):
+        # Use path relative to the current directory which should be the Python
+        # source code directory (if it is available).
+        PYEXPAT_C = os.path.join('Modules', 'pyexpat.c')
+
         parser = expat.ParserCreate()
         parser.StartElementHandler = self.StartElementHandler
         try:
             parser.Parse(b"<a><b><c/></b></a>", True)
-            self.fail()
-        except RuntimeError as e:
-            self.assertEqual(e.args[0], 'a',
-                             "Expected RuntimeError for element 'a', but" + \
-                             " found %r" % e.args[0])
-            # Check that the traceback contains the relevant line in pyexpat.c
-            entries = traceback.extract_tb(e.__traceback__)
-            self.assertEqual(len(entries), 3)
-            self.check_traceback_entry(entries[0],
-                                       "test_pyexpat.py", "test_exception")
-            self.check_traceback_entry(entries[1],
-                                       "pyexpat.c", "StartElement")
-            self.check_traceback_entry(entries[2],
-                                       "test_pyexpat.py", "StartElementHandler")
-            if (sysconfig.is_python_build()
-                and not (sys.platform == 'win32' and platform.machine() == 'ARM')
-                and not is_emscripten
-                and not is_wasi
-            ):
-                self.assertIn('call_with_frame("StartElement"', entries[1][3])
+
+            self.fail("the parser did not raise RuntimeError")
+        except RuntimeError as exc:
+            self.assertEqual(exc.args[0], 'StartElementHandler: <a>', exc)
+            entries = traceback.extract_tb(exc.__traceback__)
+
+        self.assertEqual(len(entries), 3, entries)
+        self.check_traceback_entry(entries[0],
+                                   "test_pyexpat.py", "_test_exception")
+        self.check_traceback_entry(entries[1],
+                                   os.path.basename(PYEXPAT_C),
+                                   "StartElement")
+        self.check_traceback_entry(entries[2],
+                                   "test_pyexpat.py", "StartElementHandler")
+
+        # Check that the traceback contains the relevant line in
+        # Modules/pyexpat.c. Skip the test if Modules/pyexpat.c is not
+        # available.
+        if have_source and os.path.exists(PYEXPAT_C):
+            self.assertIn('call_with_frame("StartElement"',
+                          entries[1].line)
 
 
 # Test Current* members:
@@ -523,7 +544,7 @@ class sf1296433Test(unittest.TestCase):
         parser = expat.ParserCreate()
         parser.CharacterDataHandler = handler
 
-        self.assertRaises(Exception, parser.Parse, xml.encode('iso8859'))
+        self.assertRaises(SpecificException, parser.Parse, xml.encode('iso8859'))
 
 class ChardataBufferTest(unittest.TestCase):
     """

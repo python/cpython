@@ -1,6 +1,10 @@
 :mod:`struct` --- Interpret bytes as packed binary data
 =======================================================
 
+.. testsetup:: *
+
+   from struct import *
+
 .. module:: struct
    :synopsis: Interpret bytes as packed binary data.
 
@@ -231,9 +235,9 @@ platform-dependent.
 | ``Q``  | :c:expr:`unsigned long   | integer            | 8              | \(2)       |
 |        | long`                    |                    |                |            |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``n``  | :c:expr:`ssize_t`        | integer            |                | \(3)       |
+| ``n``  | :c:type:`ssize_t`        | integer            |                | \(3)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``N``  | :c:expr:`size_t`         | integer            |                | \(3)       |
+| ``N``  | :c:type:`size_t`         | integer            |                | \(3)       |
 +--------+--------------------------+--------------------+----------------+------------+
 | ``e``  | \(6)                     | float              | 2              | \(4)       |
 +--------+--------------------------+--------------------+----------------+------------+
@@ -597,6 +601,11 @@ The :mod:`struct` module also defines the following type:
       The calculated size of the struct (and hence of the bytes object produced
       by the :meth:`pack` method) corresponding to :attr:`format`.
 
+   .. versionchanged:: 3.13 The *repr()* of structs has changed.  It
+      is now:
+
+         >>> Struct('i')
+         Struct('i')
 
 .. _half precision format: https://en.wikipedia.org/wiki/Half-precision_floating-point_format
 

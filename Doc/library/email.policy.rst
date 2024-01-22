@@ -557,17 +557,17 @@ more closely to the RFCs relevant to their domains.
 With all of these :class:`EmailPolicies <.EmailPolicy>`, the effective API of
 the email package is changed from the Python 3.2 API in the following ways:
 
-   * Setting a header on a :class:`~email.message.Message` results in that
-     header being parsed and a header object created.
+* Setting a header on a :class:`~email.message.Message` results in that
+  header being parsed and a header object created.
 
-   * Fetching a header value from a :class:`~email.message.Message` results
-     in that header being parsed and a header object created and
-     returned.
+* Fetching a header value from a :class:`~email.message.Message` results
+  in that header being parsed and a header object created and
+  returned.
 
-   * Any header object, or any header that is refolded due to the
-     policy settings, is folded using an algorithm that fully implements the
-     RFC folding algorithms, including knowing where encoded words are required
-     and allowed.
+* Any header object, or any header that is refolded due to the
+  policy settings, is folded using an algorithm that fully implements the
+  RFC folding algorithms, including knowing where encoded words are required
+  and allowed.
 
 From the application view, this means that any header obtained through the
 :class:`~email.message.EmailMessage` is a header object with extra

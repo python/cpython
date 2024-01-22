@@ -136,14 +136,22 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
       This function will no longer use :meth:`~object.__int__`.
 
 
+.. c:function:: int PyLong_AsInt(PyObject *obj)
+
+   Similar to :c:func:`PyLong_AsLong`, but store the result in a C
+   :c:expr:`int` instead of a C :c:expr:`long`.
+
+   .. versionadded:: 3.13
+
+
 .. c:function:: long PyLong_AsLongAndOverflow(PyObject *obj, int *overflow)
 
    Return a C :c:expr:`long` representation of *obj*.  If *obj* is not an
    instance of :c:type:`PyLongObject`, first call its :meth:`~object.__index__`
    method (if present) to convert it to a :c:type:`PyLongObject`.
 
-   If the value of *obj* is greater than :const:`LONG_MAX` or less than
-   :const:`LONG_MIN`, set *\*overflow* to ``1`` or ``-1``, respectively, and
+   If the value of *obj* is greater than :c:macro:`LONG_MAX` or less than
+   :c:macro:`LONG_MIN`, set *\*overflow* to ``1`` or ``-1``, respectively, and
    return ``-1``; otherwise, set *\*overflow* to ``0``.  If any other exception
    occurs set *\*overflow* to ``0`` and return ``-1`` as usual.
 
@@ -183,8 +191,8 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    instance of :c:type:`PyLongObject`, first call its :meth:`~object.__index__` method
    (if present) to convert it to a :c:type:`PyLongObject`.
 
-   If the value of *obj* is greater than :const:`LLONG_MAX` or less than
-   :const:`LLONG_MIN`, set *\*overflow* to ``1`` or ``-1``, respectively,
+   If the value of *obj* is greater than :c:macro:`LLONG_MAX` or less than
+   :c:macro:`LLONG_MIN`, set *\*overflow* to ``1`` or ``-1``, respectively,
    and return ``-1``; otherwise, set *\*overflow* to ``0``.  If any other
    exception occurs set *\*overflow* to ``0`` and return ``-1`` as usual.
 

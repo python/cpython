@@ -197,6 +197,27 @@ def splitdoc(doc):
         return lines[0], '\n'.join(lines[2:])
     return '', '\n'.join(lines)
 
+def _getargspec(object):
+    try:
+        signature = inspect.signature(object)
+        if signature:
+            name = getattr(object, '__name__', '')
+            # <lambda> function are always single-line and should not be formatted
+            max_width = (80 - len(name)) if name != '<lambda>' else None
+            return signature.format(max_width=max_width)
+    except (ValueError, TypeError):
+        argspec = getattr(object, '__text_signature__', None)
+        if argspec:
+            if argspec[:2] == '($':
+                argspec = '(' + argspec[2:]
+            if getattr(object, '__self__', None) is not None:
+                # Strip the bound argument.
+                m = re.match(r'\(\w+(?:(?=\))|,\s*(?:/(?:(?=\))|,\s*))?)', argspec)
+                if m:
+                    argspec = '(' + argspec[m.end():]
+        return argspec
+    return None
+
 def classname(object, modname):
     """Get a class name and qualify it with a module name if necessary."""
     name = object.__name__
@@ -324,6 +345,8 @@ def sort_attributes(attrs, object):
 
 def ispackage(path):
     """Guess whether a path refers to a package directory."""
+    warnings.warn('The pydoc.ispackage() function is deprecated',
+                  DeprecationWarning, stacklevel=2)
     if os.path.isdir(path):
         for ext in ('.py', '.pyc'):
             if os.path.isfile(os.path.join(path, '__init__' + ext)):
@@ -1003,14 +1026,9 @@ class HTMLDoc(Doc):
             title = title + '(%s)' % ', '.join(parents)
 
         decl = ''
-        try:
-            signature = inspect.signature(object)
-        except (ValueError, TypeError):
-            signature = None
-        if signature:
-            argspec = str(signature)
-            if argspec and argspec != '()':
-                decl = name + self.escape(argspec) + '\n\n'
+        argspec = _getargspec(object)
+        if argspec and argspec != '()':
+            decl = name + self.escape(argspec) + '\n\n'
 
         doc = getdoc(object)
         if decl:
@@ -1063,18 +1081,13 @@ class HTMLDoc(Doc):
                 anchor, name, reallink)
         argspec = None
         if inspect.isroutine(object):
-            try:
-                signature = inspect.signature(object)
-            except (ValueError, TypeError):
-                signature = None
-            if signature:
-                argspec = str(signature)
-                if realname == '<lambda>':
-                    title = '<strong>%s</strong> <em>lambda</em> ' % name
-                    # XXX lambda's won't usually have func_annotations['return']
-                    # since the syntax doesn't support but it is possible.
-                    # So removing parentheses isn't truly safe.
-                    argspec = argspec[1:-1] # remove parentheses
+            argspec = _getargspec(object)
+            if argspec and realname == '<lambda>':
+                title = '<strong>%s</strong> <em>lambda</em> ' % name
+                # XXX lambda's won't usually have func_annotations['return']
+                # since the syntax doesn't support but it is possible.
+                # So removing parentheses isn't truly safe.
+                argspec = argspec[1:-1] # remove parentheses
         if not argspec:
             argspec = '(...)'
 
@@ -1321,14 +1334,9 @@ location listed above.
         contents = []
         push = contents.append
 
-        try:
-            signature = inspect.signature(object)
-        except (ValueError, TypeError):
-            signature = None
-        if signature:
-            argspec = str(signature)
-            if argspec and argspec != '()':
-                push(name + argspec + '\n')
+        argspec = _getargspec(object)
+        if argspec and argspec != '()':
+            push(name + argspec + '\n')
 
         doc = getdoc(object)
         if doc:
@@ -1492,18 +1500,13 @@ location listed above.
         argspec = None
 
         if inspect.isroutine(object):
-            try:
-                signature = inspect.signature(object)
-            except (ValueError, TypeError):
-                signature = None
-            if signature:
-                argspec = str(signature)
-                if realname == '<lambda>':
-                    title = self.bold(name) + ' lambda '
-                    # XXX lambda's won't usually have func_annotations['return']
-                    # since the syntax doesn't support but it is possible.
-                    # So removing parentheses isn't truly safe.
-                    argspec = argspec[1:-1] # remove parentheses
+            argspec = _getargspec(object)
+            if argspec and realname == '<lambda>':
+                title = self.bold(name) + ' lambda '
+                # XXX lambda's won't usually have func_annotations['return']
+                # since the syntax doesn't support but it is possible.
+                # So removing parentheses isn't truly safe.
+                argspec = argspec[1:-1] # remove parentheses
         if not argspec:
             argspec = '(...)'
         decl = asyncqualifier + title + argspec + note
@@ -2075,20 +2078,22 @@ has the same effect as typing a particular string at the help> prompt.
         self.output.write('\n')
 
     def intro(self):
-        self.output.write('''
-Welcome to Python {0}'s help utility!
-
-If this is your first time using Python, you should definitely check out
-the tutorial on the internet at https://docs.python.org/{0}/tutorial/.
+        self.output.write('''\
+Welcome to Python {0}'s help utility! If this is your first time using
+Python, you should definitely check out the tutorial at
+https://docs.python.org/{0}/tutorial/.
 
 Enter the name of any module, keyword, or topic to get help on writing
-Python programs and using Python modules.  To quit this help utility and
-return to the interpreter, just type "quit".
+Python programs and using Python modules.  To get a list of available
+modules, keywords, symbols, or topics, enter "modules", "keywords",
+"symbols", or "topics".
 
-To get a list of available modules, keywords, symbols, or topics, type
-"modules", "keywords", "symbols", or "topics".  Each module also comes
-with a one-line summary of what it does; to list the modules whose name
-or summary contain a given string such as "spam", type "modules spam".
+Each module also comes with a one-line summary of what it does; to list
+the modules whose name or summary contain a given string such as "spam",
+enter "modules spam".
+
+To quit this help utility and return to the interpreter,
+enter "q" or "quit".
 '''.format('%d.%d' % sys.version_info[:2]))
 
     def list(self, items, columns=4, width=80):

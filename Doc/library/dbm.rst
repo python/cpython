@@ -245,6 +245,13 @@ supported.
 
       Close the ``gdbm`` database.
 
+   .. method:: gdbm.clear()
+
+      Remove all items from the ``gdbm`` database.
+
+      .. versionadded:: 3.13
+
+
 :mod:`dbm.ndbm` --- Interface based on ndbm
 -------------------------------------------
 
@@ -264,6 +271,13 @@ values, and the :meth:`items` and :meth:`values` methods are not supported.
 This module can be used with the "classic" ndbm interface or the GNU GDBM
 compatibility interface. On Unix, the :program:`configure` script will attempt
 to locate the appropriate header file to simplify building this module.
+
+.. warning::
+
+   The ndbm library shipped as part of macOS has an undocumented limitation on the
+   size of values, which can result in corrupted database files
+   when storing values larger than this limit. Reading such corrupted files can
+   result in a hard crash (segmentation fault).
 
 .. exception:: error
 
@@ -312,6 +326,12 @@ to locate the appropriate header file to simplify building this module.
    .. method:: ndbm.close()
 
       Close the ``ndbm`` database.
+
+   .. method:: ndbm.clear()
+
+      Remove all items from the ``ndbm`` database.
+
+      .. versionadded:: 3.13
 
 
 :mod:`dbm.dumb` --- Portable DBM implementation

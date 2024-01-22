@@ -1,11 +1,18 @@
-#define Py_LIMITED_API 0x030c0000 // 3.12
-#include "parts.h"
-
-#ifdef LIMITED_API_AVAILABLE
-
-#include "structmember.h"         // PyMemberDef
-
 /* Test Vectorcall in the limited API */
+
+#include "pyconfig.h"   // Py_GIL_DISABLED
+
+#ifndef Py_GIL_DISABLED
+#define Py_LIMITED_API 0x030c0000 // 3.12
+#endif
+
+#include "parts.h"
+#include "clinic/vectorcall_limited.c.h"
+
+/*[clinic input]
+module _testcapi
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6361033e795369fc]*/
 
 static PyObject *
 LimitedVectorCallClass_tpcall(PyObject *self, PyObject *args, PyObject *kwargs) {
@@ -32,8 +39,16 @@ LimitedVectorCallClass_new(PyTypeObject *tp, PyTypeObject *a, PyTypeObject *kw)
     return self;
 }
 
+/*[clinic input]
+_testcapi.call_vectorcall
+
+    callable: object
+    /
+[clinic start generated code]*/
+
 static PyObject *
-call_vectorcall(PyObject* self, PyObject *callable)
+_testcapi_call_vectorcall(PyObject *module, PyObject *callable)
+/*[clinic end generated code: output=bae81eec97fcaad7 input=55d88f92240957ee]*/
 {
     PyObject *args[3] = { NULL, NULL, NULL };
     PyObject *kwname = NULL, *kwnames = NULL, *result = NULL;
@@ -77,8 +92,16 @@ leave:
     return result;
 }
 
+/*[clinic input]
+_testcapi.call_vectorcall_method
+
+    callable: object
+    /
+[clinic start generated code]*/
+
 static PyObject *
-call_vectorcall_method(PyObject* self, PyObject *callable)
+_testcapi_call_vectorcall_method(PyObject *module, PyObject *callable)
+/*[clinic end generated code: output=e661f48dda08b6fb input=5ba81c27511395b6]*/
 {
     PyObject *args[3] = { NULL, NULL, NULL };
     PyObject *name = NULL, *kwname = NULL,
@@ -132,7 +155,7 @@ leave:
 }
 
 static PyMemberDef LimitedVectorCallClass_members[] = {
-    {"__vectorcalloffset__", T_PYSSIZET, sizeof(PyObject), READONLY},
+    {"__vectorcalloffset__", Py_T_PYSSIZET, sizeof(PyObject), Py_READONLY},
     {NULL}
 };
 
@@ -153,8 +176,8 @@ static PyType_Spec LimitedVectorCallClass_spec = {
 };
 
 static PyMethodDef TestMethods[] = {
-    {"call_vectorcall", call_vectorcall, METH_O},
-    {"call_vectorcall_method", call_vectorcall_method, METH_O},
+    _TESTCAPI_CALL_VECTORCALL_METHODDEF
+    _TESTCAPI_CALL_VECTORCALL_METHOD_METHODDEF
     {NULL},
 };
 
@@ -172,8 +195,6 @@ _PyTestCapi_Init_VectorcallLimited(PyObject *m) {
     if (PyModule_AddType(m, (PyTypeObject *)LimitedVectorCallClass) < 0) {
         return -1;
     }
-
+    Py_DECREF(LimitedVectorCallClass);
     return 0;
 }
-
-#endif // LIMITED_API_AVAILABLE

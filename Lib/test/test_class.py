@@ -455,8 +455,8 @@ class ClassTests(unittest.TestCase):
                 self.attr = 1
 
         a = A()
-        self.assertEqual(_testcapi.hasattr_string(a, "attr"), True)
-        self.assertEqual(_testcapi.hasattr_string(a, "noattr"), False)
+        self.assertEqual(_testcapi.object_hasattrstring(a, b"attr"), 1)
+        self.assertEqual(_testcapi.object_hasattrstring(a, b"noattr"), 0)
         self.assertIsNone(sys.exception())
 
     def testDel(self):
@@ -641,6 +641,14 @@ class ClassTests(unittest.TestCase):
         class B:
             y = 0
             __slots__ = ('z',)
+        class C:
+            __slots__ = ("y",)
+
+            def __setattr__(self, name, value) -> None:
+                if name == "z":
+                    super().__setattr__("y", 1)
+                else:
+                    super().__setattr__(name, value)
 
         error_msg = "'A' object has no attribute 'x'"
         with self.assertRaisesRegex(AttributeError, error_msg):
@@ -653,8 +661,16 @@ class ClassTests(unittest.TestCase):
             B().x
         with self.assertRaisesRegex(AttributeError, error_msg):
             del B().x
-        with self.assertRaisesRegex(AttributeError, error_msg):
+        with self.assertRaisesRegex(
+            AttributeError,
+            "'B' object has no attribute 'x' and no __dict__ for setting new attributes"
+        ):
             B().x = 0
+        with self.assertRaisesRegex(
+            AttributeError,
+            "'C' object has no attribute 'x'"
+        ):
+            C().x = 0
 
         error_msg = "'B' object attribute 'y' is read-only"
         with self.assertRaisesRegex(AttributeError, error_msg):

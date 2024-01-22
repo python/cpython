@@ -29,14 +29,6 @@ Py_DEPRECATED(3.12) PyAPI_DATA(int) Py_HasFileSystemDefaultEncoding;
 Py_DEPRECATED(3.12) PyAPI_DATA(int) Py_UTF8Mode;
 #endif
 
-/* A routine to check if a file descriptor can be select()-ed. */
-#ifdef _MSC_VER
-    /* On Windows, any socket fd can be select()-ed, no matter how high */
-    #define _PyIsSelectable_fd(FD) (1)
-#else
-    #define _PyIsSelectable_fd(FD) ((unsigned int)(FD) < (unsigned int)FD_SETSIZE)
-#endif
-
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_FILEOBJECT_H
 #  include "cpython/fileobject.h"
