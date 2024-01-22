@@ -56,7 +56,7 @@ FTP objects
 ^^^^^^^^^^^
 
 .. Use substitutions for some param docs so we don't need to repeat them
-   multiple places.
+   in multiple places.
 
 .. |param_doc_user| replace::
    The username to log in with.
@@ -67,12 +67,13 @@ FTP objects
    If not given, and if *passwd* is the empty string or ``"-"``,
    a password will be automatically generated.
 
-.. Ideally, we'd like to use the :ref: directive, but Sphinx will not allow it.
+.. Ideally, we'd like to use the :rfc: directive, but Sphinx will not allow it.
 
 .. |param_doc_acct| replace::
    Account information to be used for the ``ACCT`` FTP command.
    Few systems implement this.
-   See RFC-959 for more details.
+   See `RFC-959 <https://datatracker.ietf.org/doc/html/rfc959.html>`__
+   for more details.
 
 .. |param_doc_source_address| replace::
    A 2-tuple ``(host, port)`` for the socket to bind to as its
