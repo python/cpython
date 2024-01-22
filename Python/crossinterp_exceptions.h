@@ -3,7 +3,7 @@
 
 static PyTypeObject _PyExc_InterpreterError = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "InterpreterError",
+    .tp_name = "interpreters.InterpreterError",
     .tp_doc = PyDoc_STR("A cross-interpreter operation failed"),
     //.tp_base = (PyTypeObject *)PyExc_BaseException,
 };
@@ -13,7 +13,7 @@ PyObject *PyExc_InterpreterError = (PyObject *)&_PyExc_InterpreterError;
 
 static PyTypeObject _PyExc_InterpreterNotFoundError = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "InterpreterNotFoundError",
+    .tp_name = "interpreters.InterpreterNotFoundError",
     .tp_doc = PyDoc_STR("An interpreter was not found"),
     .tp_base = &_PyExc_InterpreterError,
 };
@@ -24,7 +24,7 @@ PyObject *PyExc_InterpreterNotFoundError = (PyObject *)&_PyExc_InterpreterNotFou
 static int
 _init_not_shareable_error_type(PyInterpreterState *interp)
 {
-    const char *name = "_interpreters.NotShareableError";
+    const char *name = "interpreters.NotShareableError";
     PyObject *base = PyExc_ValueError;
     PyObject *ns = NULL;
     PyObject *exctype = PyErr_NewException(name, base, ns);
