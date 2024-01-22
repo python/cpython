@@ -443,7 +443,10 @@ class PurePathBase:
 
     def match(self, path_pattern, *, case_sensitive=None):
         """
-        Return True if this path matches the given pattern.
+        Return True if this path matches the given pattern. If the pattern is
+        relative, matching is done from the right; otherwise, the entire path
+        is matched. The recursive wildcard '**' is *not* supported by this
+        method.
         """
         if not isinstance(path_pattern, PurePathBase):
             path_pattern = self.with_segments(path_pattern)
@@ -466,7 +469,8 @@ class PurePathBase:
 
     def full_match(self, pattern, *, case_sensitive=None):
         """
-        Return True if this path matches the given glob-style pattern.
+        Return True if this path matches the given glob-style pattern. The
+        pattern is matched against the entire path.
         """
         if not isinstance(pattern, PurePathBase):
             pattern = self.with_segments(pattern)
