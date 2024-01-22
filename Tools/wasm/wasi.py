@@ -68,7 +68,8 @@ def subdir(working_dir, *, clean_ok=False):
                 terminal_width = 80
             print("⎯" * terminal_width)
             print("📁", working_dir)
-            if clean_ok and context.clean and working_dir.exists():
+            if (clean_ok and getattr(context, "clean", False) and
+                working_dir.exists()):
                 print(f"🚮 Deleting directory (--clean)...")
                 shutil.rmtree(working_dir)
 
