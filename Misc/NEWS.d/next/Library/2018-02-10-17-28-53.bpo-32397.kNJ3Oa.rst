@@ -1,0 +1,5 @@
+Fix ``textwrap.wrap()`` so it's stable.  In certain fiddly circumstances,
+``textwrap.wrap(x)`` wasn't the same as ``textwrap.wrap(textwrap.wrap(x))``,
+which was surprising.  This happened when a line was wrapped at a whitespace
+blob that was longer than 1 character, but the following word *would* have
+fit if that whitespace blob was only 1 character long.
