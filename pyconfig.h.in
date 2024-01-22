@@ -975,6 +975,10 @@
 /* Define to 1 if you have the 'posix_spawnp' function. */
 #undef HAVE_POSIX_SPAWNP
 
+/* Define to 1 if you have the 'posix_spawn_file_actions_addchdir_np'
+   function. */
+#undef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR_NP
+
 /* Define to 1 if you have the 'posix_spawn_file_actions_addclosefrom_np'
    function. */
 #undef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSEFROM_NP
