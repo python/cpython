@@ -88,8 +88,8 @@ copying of data.
       *track* is ignored on Windows, which has its own tracking and
       automatically deletes shared memory when all handles to it have been closed.
 
-   .. versionadded:: 3.13
-      The *track* parameter.
+   .. versionchanged:: 3.13
+      Added the *track* parameter.
 
    .. method:: close()
 

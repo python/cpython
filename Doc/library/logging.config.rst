@@ -127,8 +127,8 @@ in :mod:`logging` itself) and defining handlers which are declared either in
         application (e.g. based on command-line parameters or other aspects
         of the runtime environment) before being passed to ``fileConfig``.
 
-    .. versionadded:: 3.10
-       The *encoding* parameter is added.
+    .. versionchanged:: 3.10
+       Added the *encoding* parameter.
 
     .. versionchanged:: 3.12
        An exception will be thrown if the provided file

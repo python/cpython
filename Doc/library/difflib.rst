@@ -52,8 +52,8 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    the purpose of sequence matching. This heuristic can be turned off by setting
    the ``autojunk`` argument to ``False`` when creating the :class:`SequenceMatcher`.
 
-   .. versionadded:: 3.2
-      The *autojunk* parameter.
+   .. versionchanged:: 3.2
+      Added the *autojunk* parameter.
 
 
 .. class:: Differ
@@ -383,8 +383,8 @@ The :class:`SequenceMatcher` class has this constructor:
    The optional argument *autojunk* can be used to disable the automatic junk
    heuristic.
 
-   .. versionadded:: 3.2
-      The *autojunk* parameter.
+   .. versionchanged:: 3.2
+      Added the *autojunk* parameter.
 
    SequenceMatcher objects get three data attributes: *bjunk* is the
    set of elements of *b* for which *isjunk* is ``True``; *bpopular* is the set of

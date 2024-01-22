@@ -615,14 +615,14 @@ Formatter Objects
        ``logging.Formatter('%(ip)s %(message)s', defaults={"ip": None})``
    :type defaults: dict[str, Any]
 
-   .. versionadded:: 3.2
-      The *style* parameter.
+   .. versionchanged:: 3.2
+      Added the *style* parameter.
 
-   .. versionadded:: 3.8
-      The *validate* parameter.
+   .. versionchanged:: 3.8
+      Added the *validate* parameter.
 
-   .. versionadded:: 3.10
-      The *defaults* parameter.
+   .. versionchanged:: 3.10
+      Added the *defaults* parameter.
 
 
    .. method:: format(record)
