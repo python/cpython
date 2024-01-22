@@ -218,7 +218,7 @@ ZipFile Objects
       That flag takes precedence over *metadata_encoding*, which is
       a Python-specific extension.
 
-   .. versionadded:: 3.2
+   .. versionchanged:: 3.2
       Added the ability to use :class:`ZipFile` as a context manager.
 
    .. versionchanged:: 3.3
@@ -241,8 +241,8 @@ ZipFile Objects
    .. versionchanged:: 3.7
       Add the *compresslevel* parameter.
 
-   .. versionadded:: 3.8
-      The *strict_timestamps* keyword-only argument
+   .. versionchanged:: 3.8
+      The *strict_timestamps* keyword-only parameter
 
    .. versionchanged:: 3.11
       Added support for specifying member name encoding for reading
