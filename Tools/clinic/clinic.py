@@ -1365,7 +1365,6 @@ class CLanguage(Language):
         # called above.
         for converter in converters:
             for include in converter.includes:
-                assert include is not None
                 clinic.add_include(include.filename, include.reason,
                                    condition=include.condition)
 
