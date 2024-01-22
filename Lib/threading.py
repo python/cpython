@@ -1489,7 +1489,6 @@ class _DummyThread(Thread):
     def __init__(self):
         Thread.__init__(self, name=_newname("Dummy-%d"),
                         daemon=_daemon_threads_allowed())
-
         self._started.set()
         self._set_ident()
         if _HAVE_THREAD_NATIVE_ID:
@@ -1507,6 +1506,14 @@ class _DummyThread(Thread):
 
     def join(self, timeout=None):
         raise RuntimeError("cannot join a dummy thread")
+
+    def _after_fork(self, new_ident=None):
+        if new_ident is not None:
+            self.__class__ = _MainThread
+            self._name = 'MainThread'
+            self._daemonic = False
+            self._set_tstate_lock()
+        Thread._after_fork(self, new_ident=new_ident)
 
 
 # Global API functions
