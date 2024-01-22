@@ -460,8 +460,11 @@ class JoinMode(enum.Enum):
     # second column of each input table as a new column
     CHANGE = 1
     # Join using the first column as a key, indicating the change in the second
-    # column of each input table as a ne column, and omit all other columns
+    # column of each input table as a new column, and omit all other columns
     CHANGE_ONE_COLUMN = 2
+    # Join using the first column as a key, and indicate the change as a new
+    # column, but don't sort by the amount of change.
+    CHANGE_NO_SORT = 3
 
 
 class Table:
@@ -484,7 +487,7 @@ class Table:
         match self.join_mode:
             case JoinMode.SIMPLE:
                 return (key, *row_a, *row_b)
-            case JoinMode.CHANGE:
+            case JoinMode.CHANGE | JoinMode.CHANGE_NO_SORT:
                 return (key, *row_a, *row_b, DiffRatio(row_a[0], row_b[0]))
             case JoinMode.CHANGE_ONE_COLUMN:
                 return (key, row_a[0], row_b[0], DiffRatio(row_a[0], row_b[0]))
@@ -497,7 +500,7 @@ class Table:
                     *("Base " + x for x in columns[1:]),
                     *("Head " + x for x in columns[1:]),
                 )
-            case JoinMode.CHANGE:
+            case JoinMode.CHANGE | JoinMode.CHANGE_NO_SORT:
                 return (
                     columns[0],
                     *("Base " + x for x in columns[1:]),
@@ -1027,7 +1030,7 @@ def optimization_section() -> Section:
                     Table(
                         ("Range", "Count:", "Ratio:"),
                         calc_histogram_table(name, den),
-                        JoinMode.CHANGE,
+                        JoinMode.CHANGE_NO_SORT,
                     )
                 ],
             )
