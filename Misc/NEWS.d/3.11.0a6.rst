@@ -1034,7 +1034,7 @@ if zlib uses the s390x hardware accelerator. Patch by Victor Stinner.
 .. nonce: jfciLG
 .. section: Build
 
-Respect `--with-suffix` when building on case-insensitive file systems.
+Respect ``--with-suffix`` when building on case-insensitive file systems.
 
 ..
 
@@ -1151,7 +1151,7 @@ Make query dialogs on Windows start with a cursor in the entry box.
 .. nonce: FhiH5P
 .. section: IDLE
 
-Apply IDLE syntax highlighting to `.pyi` files. Patch by Alex Waygood and
+Apply IDLE syntax highlighting to ``.pyi`` files. Patch by Alex Waygood and
 Terry Jan Reedy.
 
 ..

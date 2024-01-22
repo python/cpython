@@ -5,7 +5,6 @@
 #include "pycore_opcode_utils.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_uop_metadata.h"
-#include "pycore_uops.h"
 #include "pycore_long.h"
 #include "cpython/optimizer.h"
 #include <stdbool.h>

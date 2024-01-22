@@ -311,6 +311,7 @@ typedef struct mi_page_s {
   uint32_t              slice_offset;      // distance from the actual page data slice (0 if a page)
   uint8_t               is_committed : 1;  // `true` if the page virtual memory is committed
   uint8_t               is_zero_init : 1;  // `true` if the page was initially zero initialized
+  uint8_t               tag : 4;           // tag from the owning heap
 
   // layout like this to optimize access in `mi_malloc` and `mi_free`
   uint16_t              capacity;          // number of blocks committed, must be the first field, see `segment.c:page_clear`
@@ -551,6 +552,7 @@ struct mi_heap_s {
   size_t                page_retired_max;                    // largest retired index into the `pages` array.
   mi_heap_t*            next;                                // list of heaps per thread
   bool                  no_reclaim;                          // `true` if this heap should not reclaim abandoned pages
+  uint8_t               tag;                                 // custom identifier for this heap
 };
 
 

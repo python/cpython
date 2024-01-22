@@ -132,6 +132,11 @@ Other Language Changes
   equivalent of the :option:`-X frozen_modules <-X>` command-line option.
   (Contributed by Yilei Yang in :gh:`111374`.)
 
+* The new :envvar:`PYTHON_HISTORY` environment variable can be used to change
+  the location of a ``.python_history`` file.
+  (Contributed by Levi Sabah, Zackery Spytz and Hugo van Kemenade in
+  :gh:`73965`.)
+
 New Modules
 ===========
 
@@ -242,6 +247,14 @@ ipaddress
 * Add the :attr:`ipaddress.IPv4Address.ipv6_mapped` property, which returns the IPv4-mapped IPv6 address.
   (Contributed by Charles Machalow in :gh:`109466`.)
 
+marshal
+-------
+
+* Add the *allow_code* parameter in module functions.
+  Passing ``allow_code=False`` prevents serialization and de-serialization of
+  code objects which are incompatible between Python versions.
+  (Contributed by Serhiy Storchaka in :gh:`113626`.)
+
 mmap
 ----
 
@@ -249,6 +262,9 @@ mmap
   that can be used where it requires a file-like object with seekable and
   the :meth:`~mmap.mmap.seek` method return the new absolute position.
   (Contributed by Donghee Na and Sylvie Liberman in :gh:`111835`.)
+* :class:`mmap.mmap` now has a *trackfd* parameter on Unix; if it is ``False``,
+  the file descriptor specified by *fileno* will not be duplicated.
+  (Contributed by Zackery Spytz and Petr Viktorin in :gh:`78502`.)
 
 opcode
 ------
@@ -301,6 +317,13 @@ os
   use in ``file_actions=`` on platforms that support
   :c:func:`!posix_spawn_file_actions_addclosefrom_np`.
   (Contributed by Jakub Kulik in :gh:`113117`.)
+
+os.path
+-------
+
+* On Windows, :func:`os.path.isabs` no longer considers paths starting with
+  exactly one (back)slash to be absolute.
+  (Contributed by Barney Gale and Jon Foster in :gh:`44626`.)
 
 pathlib
 -------

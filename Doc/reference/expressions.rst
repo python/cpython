@@ -14,7 +14,7 @@ be used to describe syntax, not lexical analysis.  When (one alternative of) a
 syntax rule has the form
 
 .. productionlist:: python-grammar
-   name: `othername`
+   name: othername
 
 and no semantics are given, the semantics of this form of ``name`` are the same
 as for ``othername``.
@@ -422,7 +422,8 @@ Yield expressions
 
 .. productionlist:: python-grammar
    yield_atom: "(" `yield_expression` ")"
-   yield_expression: "yield" [`expression_list` | "from" `expression`]
+   yield_from: "yield" "from" `expression`
+   yield_expression: "yield" `expression_list` | `yield_from`
 
 The yield expression is used when defining a :term:`generator` function
 or an :term:`asynchronous generator` function and
