@@ -1686,11 +1686,13 @@ sizeof_func(PyObject *self, PyObject *obj)
     StgDictObject *dict;
 
     dict = PyType_stgdict(obj);
-    if (dict)
+    if (dict) {
         return PyLong_FromSsize_t(dict->size);
-
-    if (CDataObject_Check(obj))
+    }
+    ctypes_state *st = GLOBAL_STATE();
+    if (CDataObject_Check(st, obj)) {
         return PyLong_FromSsize_t(((CDataObject *)obj)->b_size);
+    }
     PyErr_SetString(PyExc_TypeError,
                     "this type has no size");
     return NULL;
@@ -1744,7 +1746,8 @@ byref(PyObject *self, PyObject *args)
         if (offset == -1 && PyErr_Occurred())
             return NULL;
     }
-    if (!CDataObject_Check(obj)) {
+    ctypes_state *st = GLOBAL_STATE();
+    if (!CDataObject_Check(st, obj)) {
         PyErr_Format(PyExc_TypeError,
                      "byref() argument must be a ctypes instance, not '%s'",
                      Py_TYPE(obj)->tp_name);
@@ -1769,7 +1772,8 @@ PyDoc_STRVAR(addressof_doc,
 static PyObject *
 addressof(PyObject *self, PyObject *obj)
 {
-    if (!CDataObject_Check(obj)) {
+    ctypes_state *st = GLOBAL_STATE();
+    if (!CDataObject_Check(st, obj)) {
         PyErr_SetString(PyExc_TypeError,
                         "invalid type");
         return NULL;
