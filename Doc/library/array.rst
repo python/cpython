@@ -76,14 +76,16 @@ The module defines the following type:
 .. class:: array(typecode[, initializer])
 
    A new array whose items are restricted by *typecode*, and initialized
-   from the optional *initializer* value, which must be a list, a
-   :term:`bytes-like object`, or iterable over elements of the
-   appropriate type.
+   from the optional *initializer* value, which must be a :class:`bytes`
+   or :class:`bytearray` object, a Unicode string, or iterable over elements
+   of the appropriate type.
 
-   If given a list or string, the initializer is passed to the new array's
-   :meth:`fromlist`, :meth:`frombytes`, or :meth:`fromunicode` method (see below)
-   to add initial items to the array.  Otherwise, the iterable initializer is
-   passed to the :meth:`extend` method.
+   If given a :class:`bytes` or :class:`bytearray` object, the initializer
+   is passed to the new array's :meth:`frombytes` method;
+   if given a Unicode string, the initializer is passed to the
+   :meth:`fromunicode` method;
+   otherwise, the initializer's iterator is passed to the :meth:`extend` method
+   to add initial items to the array.
 
    Array objects support the ordinary sequence operations of indexing, slicing,
    concatenation, and multiplication.  When using slice assignment, the assigned
@@ -149,10 +151,11 @@ The module defines the following type:
       must be the right type to be appended to the array.
 
 
-   .. method:: frombytes(s)
+   .. method:: frombytes(buffer)
 
-      Appends items from the string, interpreting the string as an array of machine
-      values (as if it had been read from a file using the :meth:`fromfile` method).
+      Appends items from the :term:`bytes-like object`, interpreting
+      its content as an array of machine values (as if it had been read
+      from a file using the :meth:`fromfile` method).
 
       .. versionadded:: 3.2
          :meth:`!fromstring` is renamed to :meth:`frombytes` for clarity.
@@ -174,9 +177,9 @@ The module defines the following type:
 
    .. method:: fromunicode(s)
 
-      Extends this array with data from the given unicode string.  The array must
-      be a type ``'u'`` array; otherwise a :exc:`ValueError` is raised.  Use
-      ``array.frombytes(unicodestring.encode(enc))`` to append Unicode data to an
+      Extends this array with data from the given Unicode string.
+      The array must have type code ``'u'``; otherwise a :exc:`ValueError` is raised.
+      Use ``array.frombytes(unicodestring.encode(enc))`` to append Unicode data to an
       array of some other type.
 
 
@@ -236,23 +239,27 @@ The module defines the following type:
 
    .. method:: tounicode()
 
-      Convert the array to a unicode string.  The array must be a type ``'u'`` array;
+      Convert the array to a Unicode string.  The array must have a type ``'u'``;
       otherwise a :exc:`ValueError` is raised. Use ``array.tobytes().decode(enc)`` to
-      obtain a unicode string from an array of some other type.
+      obtain a Unicode string from an array of some other type.
 
 
-When an array object is printed or converted to a string, it is represented as
-``array(typecode, initializer)``.  The *initializer* is omitted if the array is
-empty, otherwise it is a string if the *typecode* is ``'u'``, otherwise it is a
-list of numbers.  The string is guaranteed to be able to be converted back to an
+The string representation of array objects has the form
+``array(typecode, initializer)``.
+The *initializer* is omitted if the array is empty, otherwise it is
+a Unicode string if the *typecode* is ``'u'``, otherwise it is
+a list of numbers.
+The string representation is guaranteed to be able to be converted back to an
 array with the same type and value using :func:`eval`, so long as the
 :class:`~array.array` class has been imported using ``from array import array``.
+Variables ``inf`` and ``nan`` must also be defined if it contains
+corresponding floating point values.
 Examples::
 
    array('l')
    array('u', 'hello \u2641')
    array('l', [1, 2, 3, 4, 5])
-   array('d', [1.0, 2.0, 3.14])
+   array('d', [1.0, 2.0, 3.14, -inf, nan])
 
 
 .. seealso::
