@@ -10,7 +10,7 @@
 
 --------------
 
-The :mod:`runpy` module is used to locate and execute Python modules without
+The :mod:`runpy` module is used to locate and run Python modules without
 importing them first. Its main use is to implement the :option:`-m` command
 line switch that allows scripts to be located using the Python module
 namespace rather than the filesystem.
@@ -33,13 +33,13 @@ The :mod:`runpy` module provides two functions:
       pair: module; __main__
 
    Execute the code of the specified module and return the resulting module's
-   globals dictionary. The module code is first located using the standard
+   globals dictionary. The module's code is first located using the standard
    import mechanism (refer to :pep:`302` for details) and then executed in a
    fresh module namespace.
 
    The *mod_name* argument should be an absolute module name.
    If the module name refers to a package rather than a normal
-   module, then that package is imported and the :mod:`!__main__` submodule within
+   module, then that package is imported and the :mod:`__main__` submodule within
    that package is then executed and the resulting module globals dictionary
    returned.
 
@@ -90,7 +90,7 @@ The :mod:`runpy` module provides two functions:
    .. versionchanged:: 3.4
       Updated to take advantage of the module spec feature added by
       :pep:`451`. This allows ``__cached__`` to be set correctly for modules
-      executed this way, as well as ensuring the real module name is always
+      run this way, as well as ensuring the real module name is always
       accessible as ``__spec__.name``.
 
    .. versionchanged:: 3.12
@@ -107,7 +107,7 @@ The :mod:`runpy` module provides two functions:
    module's globals dictionary. As with a script name supplied to the CPython
    command line, *file_path* may refer to a Python source file, a
    compiled bytecode file or a valid :data:`sys.path` entry containing a
-   :mod:`!__main__` module
+   :mod:`__main__` module
    (e.g. a zipfile containing a top-level :file:`__main__.py` file).
 
    For a simple script, the specified code is simply executed in a fresh
@@ -139,7 +139,7 @@ The :mod:`runpy` module provides two functions:
    ``__package__`` will all be set to :const:`None`.
 
    If *file_path* is a reference to a valid :data:`sys.path` entry, then
-   ``__spec__`` will be set appropriately for the imported :mod:`!__main__`
+   ``__spec__`` will be set appropriately for the imported :mod:`__main__`
    module (that is, ``__spec__.name`` will always be ``__main__``).
    ``__file__``, ``__cached__``, ``__loader__`` and ``__package__`` will be
    :ref:`set as normal <import-mod-attrs>` based on the module spec.
