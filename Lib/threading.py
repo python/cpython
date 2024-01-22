@@ -1482,9 +1482,11 @@ class _MainThread(Thread):
         with _active_limbo_lock:
             _active[self._ident] = self
 
+
 # Helper thread-local instance to detect when a _DummyThread
 # is collected. Not a part of the public API.
 _thread_local_info = local()
+
 
 class _DeleteDummyThreadOnDel:
     '''
@@ -1506,6 +1508,7 @@ class _DeleteDummyThreadOnDel:
         with _active_limbo_lock:
             if _active.get(self._tident) is self._dummy_thread:
                 _active.pop(self._tident, None)
+
 
 # Dummy thread class to represent threads not started here.
 # These should be added to `_active` and removed automatically
