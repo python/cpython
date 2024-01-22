@@ -858,19 +858,25 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
     // and os.path.dirname(mod.__spec__.origin) == os.getcwd()
     if (origin) {
         PyObject *stdlib = PySys_GetObject("stdlib_module_names");
-        if (stdlib && PyAnySet_Check(stdlib) && PySet_Contains(stdlib, mod_name)) {
-            wchar_t cwd[MAXPATHLEN], origin_dirname[MAXPATHLEN];
-            if(_Py_wgetcwd(cwd, MAXPATHLEN)) {
-                if (PyUnicode_AsWideChar(origin, origin_dirname, MAXPATHLEN) < 0) {
-                    goto done;
-                }
-                wchar_t *sep = wcsrchr(origin_dirname, SEP);
-                if (sep) {
-                    *sep = L'\0';
-                    if (wcscmp(cwd, origin_dirname) == 0) {
-                        is_script_shadowing_stdlib = 1;
+        if (stdlib && PyAnySet_Check(stdlib)) {
+            int rc = PySet_Contains(stdlib, mod_name);
+            if (rc == 1) {
+                wchar_t cwd[MAXPATHLEN], origin_dirname[MAXPATHLEN];
+                if(_Py_wgetcwd(cwd, MAXPATHLEN)) {
+                    if (PyUnicode_AsWideChar(origin, origin_dirname, MAXPATHLEN) < 0) {
+                        goto done;
+                    }
+                    wchar_t *sep = wcsrchr(origin_dirname, SEP);
+                    if (sep) {
+                        *sep = L'\0';
+                        if (wcscmp(cwd, origin_dirname) == 0) {
+                            is_script_shadowing_stdlib = 1;
+                        }
                     }
                 }
+            }
+            else if (rc == -1) {
+                goto done;
             }
         }
     }
