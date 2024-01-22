@@ -217,7 +217,7 @@ FTP objects
          :class:`~socket.socket` object created to do the actual transfer.
          This also corresponds to the largest size of data
          that will be passed to *callback*.
-         Defaults to 8192.
+         Defaults to ``8192``.
 
       :param int rest:
          A ``REST`` command to be sent to the server.
@@ -258,7 +258,7 @@ FTP objects
 
       :param int blocksize:
          The read block size.
-         Defaults to 8192.
+         Defaults to ``8192``.
 
       :param callback:
          A single parameter callable that is called
