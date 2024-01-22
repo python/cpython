@@ -779,6 +779,54 @@ _shebangStartsWith(const wchar_t *buffer, int bufferLength, const wchar_t *prefi
 
 
 int
+ensure_no_redirector_stub(wchar_t* filename, wchar_t* buffer)
+{
+    // Make sure we didn't find a reparse point that will open the Microsoft Store
+    // If we did, pretend there was no shebang and let normal handling take over
+    WIN32_FIND_DATAW findData;
+    HANDLE hFind = FindFirstFileW(buffer, &findData);
+    if (!hFind) {
+        // Let normal handling take over
+        debug(L"# Did not find %s on PATH\n", filename);
+        return RC_NO_SHEBANG;
+    }
+
+    FindClose(hFind);
+
+    if (!(findData.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT &&
+        findData.dwReserved0 & IO_REPARSE_TAG_APPEXECLINK)) {
+        return 0;
+    }
+
+    AppExecLinkFile appExecLink;
+
+    HANDLE hReparsePoint = CreateFileW(buffer, 0, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT, NULL);
+    if (!hReparsePoint) {
+        // Let normal handling take over
+        debug(L"# Did not find %s on PATH\n", filename);
+        return RC_NO_SHEBANG;
+    }
+
+    if (!DeviceIoControl(hReparsePoint, FSCTL_GET_REPARSE_POINT, NULL, 0, &appExecLink, sizeof(appExecLink), NULL, NULL)) {
+        // Let normal handling take over
+        debug(L"# Did not find %s on PATH\n", filename);
+        return RC_NO_SHEBANG;
+    }
+
+    CloseHandle(hReparsePoint);
+
+    const wchar_t* redirectorPackageId = L"Microsoft.DesktopAppInstaller_8wekyb3d8bbwe";
+
+    if (0 == wcscmp(appExecLink.stringList, redirectorPackageId)) {
+        debug(L"# ignoring redirector that would launch store\n");
+        return RC_NO_SHEBANG;
+    }
+
+    return 0;
+}
+
+
+int
 searchPath(SearchInfo *search, const wchar_t *shebang, int shebangLength)
 {
     if (isEnvVarSet(L"PYLAUNCHER_NO_SEARCH_PATH")) {
@@ -841,71 +889,10 @@ searchPath(SearchInfo *search, const wchar_t *shebang, int shebangLength)
         return RC_BAD_VIRTUAL_PATH;
     }
 
-    // Make sure we didn't find a reparse point that will open the Microsoft Store
-    // If we did, pretend there was no shebang and let normal handling take over
-    WIN32_FIND_DATAW findData;
-    HANDLE hFind = FindFirstFileW(buffer, &findData);
-    if (!hFind) {
-        if (GetLastError() == ERROR_FILE_NOT_FOUND) {
-            debug(L"# %s on disappeared\n", buffer);
-            // The file found on PATH disappeared. Alias probably disabled by user while trying to run, let normal handling take over
-            RC_NO_SHEBANG;
-        }
-
-        // Other errors should cause us to break
-        winerror(0, L"Failed to find %s on PATH\n", filename);
-        return RC_BAD_VIRTUAL_PATH;
+    int result = ensure_no_redirector_stub(filename, buffer);
+    if (result) {
+        return result;
     }
-
-    if (findData.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT &&
-        findData.dwReserved0 & IO_REPARSE_TAG_APPEXECLINK) {
-        const size_t bufSize = sizeof(AppExecLinkFile);
-        wchar_t appExecLinkBuf[sizeof(AppExecLinkFile)];
-
-        HANDLE hReparsePoint = CreateFileW(buffer, 0, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT, NULL);
-        if (!hReparsePoint) {
-            if (GetLastError() == ERROR_FILE_NOT_FOUND) {
-                debug(L"# %s on disappeared\n", buffer);
-                // The file found on PATH disappeared. Alias probably disabled by user while trying to run, let normal handling take over
-                RC_NO_SHEBANG;
-            }
-
-            // Other errors should cause us to break
-            winerror(0, L"Failed to find %s on PATH\n", filename);
-            return RC_BAD_VIRTUAL_PATH;
-        }
-
-        if (!DeviceIoControl(hReparsePoint, FSCTL_GET_REPARSE_POINT, NULL, 0, appExecLinkBuf, bufSize, NULL, NULL)) {
-            if (GetLastError() == ERROR_FILE_NOT_FOUND) {
-                debug(L"# %s on disappeared\n", buffer);
-                // The file found on PATH disappeared. Alias probably disabled by user while trying to run, let normal handling take over
-                RC_NO_SHEBANG;
-            }
-
-            // Other errors should cause us to break
-            winerror(0, L"Failed to find %s on PATH\n", filename);
-            return RC_BAD_VIRTUAL_PATH;
-        }
-
-        CloseHandle(hReparsePoint);
-
-        AppExecLinkFile* appExecLinkFilePtr;
-
-        appExecLinkFilePtr = (AppExecLinkFile*)&appExecLinkBuf;
-
-        wchar_t redirectorPackageId[] = L"Microsoft.DesktopAppInstaller";
-        int redirectorStrLen = wcsnlen_s(redirectorPackageId, 29);
-
-        wchar_t partialId[30];
-        wcsncpy_s(partialId, redirectorStrLen + 1, appExecLinkFilePtr->stringList, redirectorStrLen);
-
-        if (0 == wcsncmp(partialId, &redirectorPackageId, redirectorStrLen)) {
-            debug(L"# ignoring redirector that would launch store\n");
-            return RC_NO_SHEBANG;
-        }
-    }
-
-    FindClose(hFind);
 
     // Check that we aren't going to call ourselves again
     // If we are, pretend there was no shebang and let normal handling take over
