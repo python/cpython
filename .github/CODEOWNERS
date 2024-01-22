@@ -50,13 +50,13 @@ Objects/exceptions.c          @iritkatriel
 Python/traceback.c            @iritkatriel
 
 # Hashing
-**/*hashlib*                  @tiran
-**/*pyhash*                   @tiran
-**/*sha*                      @tiran
-**/*md5*                      @tiran
-**/*blake*                    @tiran
-/Modules/_blake2/**           @tiran
-/Modules/_sha3/**             @tiran
+**/*hashlib*                  @gpshead @tiran
+**/*pyhash*                   @gpshead @tiran
+**/sha*                       @gpshead @tiran
+Modules/md5*                  @gpshead @tiran
+**/*blake*                    @gpshead @tiran
+Modules/_blake2/**            @gpshead @tiran
+Modules/_hacl/**              @gpshead
 
 # logging
 **/*logging*                  @vsajip
@@ -119,6 +119,9 @@ Lib/ast.py                    @isidentical
 # Mock
 /Lib/unittest/mock.py         @cjw296
 /Lib/test/test_unittest/testmock/* @cjw296
+
+# multiprocessing
+**/*multiprocessing*          @gpshead
 
 # SQLite 3
 **/*sqlite*                   @berkerpeksag @erlend-aasland
