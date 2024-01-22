@@ -55,6 +55,33 @@ Reference
 FTP objects
 ^^^^^^^^^^^
 
+.. Use substitutions for some param docs so we don't need to repeat them
+   multiple places.
+
+.. |param_doc_user| replace::
+   The username to log in with.
+   If no *user* is specified, ``'anonymous'`` will be used.
+
+.. |param_doc_passwd| replace::
+   The password to use when logging in.
+   If not given, and if *passwd* is the empty string or ``"-"``,
+   a password will be automatically generated.
+
+.. Ideally, we'd like to use the :ref: directive, but Sphinx will not allow it.
+
+.. |param_doc_acct| replace::
+   Account information to be used for the ``ACCT`` FTP command.
+   Few systems implement this.
+   See RFC-959 for more details.
+
+.. |param_doc_timeout| replace::
+   A timeout in seconds for blocking operations like :meth:`connect`.
+   If not specified, the global default timeout setting will be used.
+
+.. |param_doc_source_address| replace::
+   A 2-tuple ``(host, port)`` for the socket to bind to as its
+   source address before connecting.
+
 .. class:: FTP(host='', user='', passwd='', acct='', timeout=None, \
                source_address=None, *, encoding='utf-8')
 
@@ -63,30 +90,24 @@ FTP objects
    :param str host:
       The hostname to connect to.
       If given, :code:`connect(host)` is implicitly called by the constructor.
-      See the corresponding parameter to :meth:`connect` for more details.
 
    :param str user:
-      The username to log in with.
+      |param_doc_user|
       If given, :code:`login(host, passwd, acct)` is implicitly called
       by the constructor.
-      See the corresponding parameter to :meth:`login` for more details.
 
    :param str passwd:
-      The password to use when logging in.
-      See the corresponding parameter to :meth:`login` for more details.
+      |param_doc_passwd|
 
    :param str acct:
-      Account information to be used for the ``ACCT`` FTP command.
-      See the corresponding parameter to :meth:`login` for more details.
+      |param_doc_acct|
 
    :param timeout:
-      A timeout in seconds for blocking operations like :meth:`connect`.
-      If not specified, the global default timeout setting will be used.
+      |param_doc_timeout|
    :type timeout: int | None
 
    :param source_address:
-      *source_address* is a 2-tuple ``(host, port)`` for the socket
-      to bind to as its source address before connecting.
+      |param_doc_source_address|
    :type source_address: tuple | None
 
    :param str encoding:
@@ -157,13 +178,11 @@ FTP objects
          It is rarely needed to specify a different port number.
 
       :param timeout:
-         A timeout in seconds for the connection attempt.
-         If not specified, the global default timeout setting will be used.
+         |param_doc_timeout|
       :type timeout: int | None
 
       :param source_address:
-         *source_address* is a 2-tuple ``(host, port)`` for the socket
-         to bind to as its source address before connecting.
+         |param_doc_source_address|
       :type source_address: tuple | None
 
       .. audit-event:: ftplib.connect self,host,port ftplib.FTP.connect
@@ -189,18 +208,13 @@ FTP objects
       Most FTP commands are only allowed after the client has logged in.
 
       :param str user:
-         The username to log in with.
-         If no *user* is specified, ``'anonymous'`` will be used.
+         |param_doc_user|
 
       :param str passwd:
-         The password to use when logging in.
-         If not given, and if *passwd* is the empty string or ``"-"``,
-         a password will be automatically generated.
+         |param_doc_passwd|
 
       :param str acct:
-         Account information to be used for the ``ACCT`` FTP command.
-         See :rfc:`959` for more details.
-         Few systems implement this.
+         |param_doc_acct|
 
 
    .. method:: FTP.abort()
