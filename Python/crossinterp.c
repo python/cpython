@@ -172,7 +172,7 @@ _PyCrossInterpreterData_Clear(PyInterpreterState *interp,
     // This must be called in the owning interpreter.
     assert(interp == NULL
            || _PyCrossInterpreterData_INTERPID(data) == -1
-           || _PyCrossInterpreterData_INTERPID(data) == interp->id);
+           || _PyCrossInterpreterData_INTERPID(data) == PyInterpreterState_GetID(interp));
     _xidata_clear(data);
 }
 
