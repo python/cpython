@@ -356,6 +356,7 @@ class TestSuper(unittest.TestCase):
         with import_helper.ready_to_import(name="shadowed_super", source=source):
             import shadowed_super
         self.assertEqual(shadowed_super.C().method(), "truly super")
+        import_helper.unload("shadowed_super")
 
     def test_shadowed_local(self):
         class super:
