@@ -1526,7 +1526,7 @@ class _DummyThread(Thread):
             self._set_native_id()
         with _active_limbo_lock:
             _active[self._ident] = self
-        __DeleteDummyThreadOnDel(self)
+        _DeleteDummyThreadOnDel(self)
 
     def _stop(self):
         pass
