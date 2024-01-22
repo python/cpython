@@ -309,10 +309,10 @@ default values. The arguments that are most commonly needed are:
    If text mode is not used, *stdin*, *stdout* and *stderr* will be opened as
    binary streams. No encoding or line ending conversion is performed.
 
-   .. versionadded:: 3.6
-      Added *encoding* and *errors* parameters.
+   .. versionchanged:: 3.6
+      Added the *encoding* and *errors* parameters.
 
-   .. versionadded:: 3.7
+   .. versionchanged:: 3.7
       Added the *text* parameter as an alias for *universal_newlines*.
 
    .. note::
@@ -686,8 +686,8 @@ functions.
    is only changed on platforms that support this (only Linux at this time of
    writing). Other platforms will ignore this parameter.
 
-   .. versionadded:: 3.10
-      The ``pipesize`` parameter was added.
+   .. versionchanged:: 3.10
+      Added the *pipesize* parameter.
 
    Popen objects are supported as context managers via the :keyword:`with` statement:
    on exit, standard file descriptors are closed, and the process is waited for.
@@ -1540,8 +1540,8 @@ handling consistency are valid for these functions.
       as it did in Python 3.3.3 and earlier.  exitcode has the same value as
       :attr:`~Popen.returncode`.
 
-   .. versionadded:: 3.11
-      Added *encoding* and *errors* arguments.
+   .. versionchanged:: 3.11
+      Added the *encoding* and *errors* parameters.
 
 .. function:: getoutput(cmd, *, encoding=None, errors=None)
 
@@ -1558,8 +1558,8 @@ handling consistency are valid for these functions.
    .. versionchanged:: 3.3.4
       Windows support added
 
-   .. versionadded:: 3.11
-      Added *encoding* and *errors* arguments.
+   .. versionchanged:: 3.11
+      Added the *encoding* and *errors* parameters.
 
 
 Notes
