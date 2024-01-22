@@ -449,9 +449,17 @@ class TestSpecifics(unittest.TestCase):
         compile('if (5 if 5 else T): 0', '<eval>', 'exec')
 
     def test_condition_expression_with_redundant_comparisons_compiles(self):
-        # See gh-113054
-        with self.assertWarns(SyntaxWarning):
-            compile('if 9<9<9and 9or 9:9', '<eval>', 'exec')
+        # See gh-113054, gh-114083
+        exprs = [
+            'if 9<9<9and 9or 9:9',
+            'if 9<9<9and 9or 9or 9:9',
+            'if 9<9<9and 9or 9or 9or 9:9',
+            'if 9<9<9and 9or 9or 9or 9or 9:9',
+        ]
+        for expr in exprs:
+            with self.subTest(expr=expr):
+                with self.assertWarns(SyntaxWarning):
+                    compile(expr, '<eval>', 'exec')
 
     def test_dead_code_with_except_handler_compiles(self):
         compile(textwrap.dedent("""
