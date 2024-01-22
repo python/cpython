@@ -1,3 +1,0 @@
-Mention that :func:`glob.glob` and :func:`glob.iglob` could return
-duplicate path names if multiple "``**``" patterns are present and
-``recursive`` is true.
