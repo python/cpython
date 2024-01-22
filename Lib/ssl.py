@@ -523,6 +523,7 @@ class SSLSocket(socket):
                  server_hostname=None,
                  _context=None):
 
+        self._sslobj = None
         self._makefile_refs = 0
         if _context:
             self._context = _context

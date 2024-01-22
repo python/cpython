@@ -154,7 +154,7 @@ def getfqdn(name=''):
 _socketmethods = (
     'bind', 'connect', 'connect_ex', 'fileno', 'listen',
     'getpeername', 'getsockname', 'getsockopt', 'setsockopt',
-    'sendall', 'setblocking',
+    'sendall', 'getblocking', 'setblocking',
     'settimeout', 'gettimeout', 'shutdown')
 
 if os.name == "nt":
