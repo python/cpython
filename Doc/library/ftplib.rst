@@ -74,10 +74,6 @@ FTP objects
    Few systems implement this.
    See RFC-959 for more details.
 
-.. |param_doc_timeout| replace::
-   A timeout in seconds for blocking operations like :meth:`connect`.
-   If not specified, the global default timeout setting will be used.
-
 .. |param_doc_source_address| replace::
    A 2-tuple ``(host, port)`` for the socket to bind to as its
    source address before connecting.
@@ -103,7 +99,8 @@ FTP objects
       |param_doc_acct|
 
    :param timeout:
-      |param_doc_timeout|
+       A timeout in seconds for blocking operations like :meth:`connect`.
+       If not specified, the global default timeout setting will be used.
    :type timeout: int | None
 
    :param source_address:
@@ -178,7 +175,8 @@ FTP objects
          It is rarely needed to specify a different port number.
 
       :param timeout:
-         |param_doc_timeout|
+         A timeout in seconds for the connection attempt.
+         If not specified, the global default timeout setting will be used.
       :type timeout: int | None
 
       :param source_address:
