@@ -1811,6 +1811,9 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache, int firstl
 
     int removed_nops, removed_jumps;
     do {
+        /* Convergence is guaranteed because the number of
+         * redundant jumps and nops only decreases.
+         */
         removed_nops = remove_redundant_nops(g);
         RETURN_IF_ERROR(removed_nops);
         removed_jumps = remove_redundant_jumps(g);
