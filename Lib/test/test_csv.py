@@ -424,6 +424,9 @@ class Test_Csv(unittest.TestCase):
                         skipinitialspace=True)
         self._read_test([' , , '],
                         [[None, None, None]],
+                        skipinitialspace=True, quoting=csv.QUOTE_NOTNULL)
+        self._read_test([' , , '],
+                        [[None, None, None]],
                         skipinitialspace=True, quoting=csv.QUOTE_STRINGS)
 
     def test_read_bigfield(self):
