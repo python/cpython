@@ -192,7 +192,7 @@ dummy_func(
                 ERROR_IF(err, error);
                 if (frame->instr_ptr != this_instr) {
                     /* Instrumentation has jumped */
-                    next_instr = this_instr;
+                    next_instr = frame->instr_ptr;
                     DISPATCH();
                 }
             }
