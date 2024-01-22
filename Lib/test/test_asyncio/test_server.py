@@ -125,8 +125,12 @@ class SelectorStartServerTests(BaseStartServer, unittest.TestCase):
 class TestServer2(unittest.IsolatedAsyncioTestCase):
 
     async def test_wait_closed_basic(self):
-        async def serve(*args):
-            pass
+        async def serve(rd, wr):
+            try:
+                await rd.read()
+            finally:
+                wr.close()
+                await wr.wait_closed()
 
         srv = await asyncio.start_server(serve, socket_helper.HOSTv4, 0)
         self.addCleanup(srv.close)
@@ -137,7 +141,8 @@ class TestServer2(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(task1.done())
 
         # active count != 0, not closed: should block
-        srv._attach()
+        addr = srv.sockets[0].getsockname()
+        (rd, wr) = await asyncio.open_connection(addr[0], addr[1])
         task2 = asyncio.create_task(srv.wait_closed())
         await asyncio.sleep(0)
         self.assertFalse(task1.done())
@@ -152,7 +157,8 @@ class TestServer2(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(task2.done())
         self.assertFalse(task3.done())
 
-        srv._detach()
+        wr.close()
+        await wr.wait_closed()
         # active count == 0, closed: should unblock
         await task1
         await task2
@@ -161,8 +167,12 @@ class TestServer2(unittest.IsolatedAsyncioTestCase):
 
     async def test_wait_closed_race(self):
         # Test a regression in 3.12.0, should be fixed in 3.12.1
-        async def serve(*args):
-            pass
+        async def serve(rd, wr):
+            try:
+                await rd.read()
+            finally:
+                wr.close()
+                await wr.wait_closed()
 
         srv = await asyncio.start_server(serve, socket_helper.HOSTv4, 0)
         self.addCleanup(srv.close)
@@ -170,10 +180,11 @@ class TestServer2(unittest.IsolatedAsyncioTestCase):
         task = asyncio.create_task(srv.wait_closed())
         await asyncio.sleep(0)
         self.assertFalse(task.done())
-        srv._attach()
+        addr = srv.sockets[0].getsockname()
+        (rd, wr) = await asyncio.open_connection(addr[0], addr[1])
         loop = asyncio.get_running_loop()
         loop.call_soon(srv.close)
-        loop.call_soon(srv._detach)
+        loop.call_soon(wr.close)
         await srv.wait_closed()
 
 
