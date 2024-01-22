@@ -1645,7 +1645,8 @@ Do not instantiate the :class:`Server` class directly.
 
       Close all existing incoming client connections.
 
-      Calls :meth:`Transport.close` on all associated transports.
+      Calls :meth:`~asyncio.BaseTransport.close` on all associated
+      transports.
 
       .. versionadded:: 3.13
 
@@ -1654,7 +1655,8 @@ Do not instantiate the :class:`Server` class directly.
       Close all existing incoming client connections immediately,
       without waiting for pending operations to complete.
 
-      Calls :meth:`Transport.abort` on all associated transports.
+      Calls :meth:`~asyncio.WriteTransport.abort` on all associated
+      transports.
 
       .. versionadded:: 3.13
 
