@@ -1493,7 +1493,7 @@ apply_static_swaps(basicblock *block, int i)
 }
 
 static int
-basicblock_fold_load_const(PyObject *const_cache, basicblock *bb, PyObject *consts)
+basicblock_optimize_load_const(PyObject *const_cache, basicblock *bb, PyObject *consts)
 {
     assert(PyDict_CheckExact(const_cache));
     assert(PyList_CheckExact(consts));
@@ -1615,9 +1615,9 @@ basicblock_fold_load_const(PyObject *const_cache, basicblock *bb, PyObject *cons
 }
 
 static int
-fold_load_const(PyObject *const_cache, cfg_builder *g, PyObject *consts) {
+optimize_load_const(PyObject *const_cache, cfg_builder *g, PyObject *consts) {
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        RETURN_IF_ERROR(basicblock_fold_load_const(const_cache, b, consts));
+        RETURN_IF_ERROR(basicblock_optimize_load_const(const_cache, b, consts));
     }
     return SUCCESS;
 }
@@ -1799,7 +1799,7 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache, int firstl
     }
     RETURN_IF_ERROR(remove_unreachable(g->g_entryblock));
     RETURN_IF_ERROR(resolve_line_numbers(g, firstlineno));
-    RETURN_IF_ERROR(fold_load_const(const_cache, g, consts));
+    RETURN_IF_ERROR(optimize_load_const(const_cache, g, consts));
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         RETURN_IF_ERROR(optimize_basic_block(const_cache, b, consts));
     }
