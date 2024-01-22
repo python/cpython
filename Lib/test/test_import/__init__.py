@@ -804,30 +804,6 @@ class ImportTests(unittest.TestCase):
             ):
                 collections.does_not_exist
 
-    def test_shadowing_stdlib_edge_cases(self):
-        with CleanImport('collections'):
-            import collections
-            collections.__spec__ = types.SimpleNamespace()
-            collections.__spec__.origin = os.path.join(os.getcwd(), 'collections.py')
-
-            with CleanImport('sys'):
-                import sys
-                sys.stdlib_module_names = None
-                with self.assertRaisesRegex(
-                    AttributeError,
-                    r"module 'collections' has no attribute 'does_not_exist'"
-                ):
-                    collections.does_not_exist
-
-                del sys.stdlib_module_names
-                with self.assertRaisesRegex(
-                    AttributeError,
-                    r"module 'collections' has no attribute 'does_not_exist'"
-                ):
-                    collections.does_not_exist
-
-        with CleanImport('collections'):
-            import collections
             del collections.__spec__.origin
             with self.assertRaisesRegex(
                 AttributeError,
@@ -840,6 +816,33 @@ class ImportTests(unittest.TestCase):
                 r"module 'collections' has no attribute 'does_not_exist'$"
             ):
                 collections.does_not_exist
+
+    def test_shadowing_stdlib_sys_edge_cases(self):
+        program = textwrap.dedent('''
+import collections
+import os
+import types
+collections.__spec__ = types.SimpleNamespace()
+collections.__spec__.origin = os.path.join(os.getcwd(), 'collections.py')
+import sys
+sys.stdlib_module_names = None
+try:
+    collections.does_not_exist
+except AttributeError as e:
+    print(str(e))
+
+del sys.stdlib_module_names
+try:
+    collections.does_not_exist
+except AttributeError as e:
+    print(str(e))
+''')
+        popen = script_helper.spawn_python('-c', program)
+        stdout, stderr = popen.communicate()
+        self.assertEqual(stdout.splitlines(), [
+            b"module 'collections' has no attribute 'does_not_exist'",
+            b"module 'collections' has no attribute 'does_not_exist'",
+        ])
 
 
 @skip_if_dont_write_bytecode
