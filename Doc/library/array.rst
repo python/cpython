@@ -247,7 +247,7 @@ The module defines the following type:
       obtain a Unicode string from an array of some other type.
 
 
-The string representation of array objects has a form
+The string representation of array objects has the form
 ``array(typecode, initializer)``.
 The *initializer* is omitted if the array is empty, otherwise it is
 a Unicode string if the *typecode* is ``'u'`` or ``'w'``, otherwise it is
