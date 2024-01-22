@@ -131,7 +131,7 @@ typedef struct {
     Py_UCS4 *field;             /* temporary buffer */
     Py_ssize_t field_size;      /* size of allocated buffer */
     Py_ssize_t field_len;       /* length of current field */
-    bool unquoted_field;
+    bool unquoted_field;        /* true if no quotes around the current field */
     unsigned long line_num;     /* Source-file line number */
 } ReaderObj;
 
