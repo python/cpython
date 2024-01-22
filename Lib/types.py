@@ -1,6 +1,7 @@
 """
 Define names for built-in types that aren't directly accessible as a builtin.
 """
+
 import sys
 
 # Iterators in Python aren't a matter of type but of protocol.  A large
@@ -52,17 +53,14 @@ ModuleType = type(sys)
 
 try:
     raise TypeError
-except TypeError:
-    tb = sys.exc_info()[2]
-    TracebackType = type(tb)
-    FrameType = type(tb.tb_frame)
-    tb = None; del tb
+except TypeError as exc:
+    TracebackType = type(exc.__traceback__)
+    FrameType = type(exc.__traceback__.tb_frame)
 
-# For Jython, the following two types are identical
 GetSetDescriptorType = type(FunctionType.__code__)
 MemberDescriptorType = type(FunctionType.__globals__)
 
-del sys, _f, _g, _C, _c, _ag  # Not for export
+del sys, _f, _g, _C, _c, _ag, _cell_factory  # Not for export
 
 
 # Provide a PEP 3115 compliant mechanism for class creation
@@ -146,6 +144,35 @@ def _calculate_meta(meta, bases):
                         "of the metaclasses of all its bases")
     return winner
 
+
+def get_original_bases(cls, /):
+    """Return the class's "original" bases prior to modification by `__mro_entries__`.
+
+    Examples::
+
+        from typing import TypeVar, Generic, NamedTuple, TypedDict
+
+        T = TypeVar("T")
+        class Foo(Generic[T]): ...
+        class Bar(Foo[int], float): ...
+        class Baz(list[str]): ...
+        Eggs = NamedTuple("Eggs", [("a", int), ("b", str)])
+        Spam = TypedDict("Spam", {"a": int, "b": str})
+
+        assert get_original_bases(Bar) == (Foo[int], float)
+        assert get_original_bases(Baz) == (list[str],)
+        assert get_original_bases(Eggs) == (NamedTuple,)
+        assert get_original_bases(Spam) == (TypedDict,)
+        assert get_original_bases(int) == (object,)
+    """
+    try:
+        return cls.__dict__.get("__orig_bases__", cls.__bases__)
+    except AttributeError:
+        raise TypeError(
+            f"Expected an instance of type, not {type(cls).__name__!r}"
+        ) from None
+
+
 class DynamicClassAttribute:
     """Route attribute access on a class to __getattr__.
 
@@ -155,7 +182,12 @@ class DynamicClassAttribute:
     class's __getattr__ method; this is done by raising AttributeError.
 
     This allows one to have properties active on an instance, and have virtual
-    attributes on the class with the same name (see Enum for an example).
+    attributes on the class with the same name.  (Enum used this between Python
+    versions 3.4 - 3.9 .)
+
+    Subclass from this to use a different method of accessing virtual attributes
+    and still be treated properly by the inspect module. (Enum uses this since
+    Python 3.10 .)
 
     """
     def __init__(self, fget=None, fset=None, fdel=None, doc=None):
@@ -292,5 +324,18 @@ def coroutine(func):
 
     return wrapped
 
+GenericAlias = type(list[int])
+UnionType = type(int | str)
+
+EllipsisType = type(Ellipsis)
+NoneType = type(None)
+NotImplementedType = type(NotImplemented)
+
+def __getattr__(name):
+    if name == 'CapsuleType':
+        import _socket
+        return type(_socket.CAPI)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 __all__ = [n for n in globals() if n[:1] != '_']
+__all__ += ['CapsuleType']

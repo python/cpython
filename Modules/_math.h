@@ -1,41 +1,25 @@
-#ifdef HAVE_ACOSH
-#  define m_acosh acosh
-#else
-/* if the system doesn't have acosh, use the substitute
-   function defined in Modules/_math.c. */
-double _Py_acosh(double x);
-#  define m_acosh _Py_acosh
-#endif
+/* log1p(x) = log(1+x).  The log1p function is designed to avoid the
+   significant loss of precision that arises from direct evaluation when x is
+   small. Use the substitute from _math.h on all platforms: it includes
+   workarounds for buggy handling of zeros.
+ */
 
-#ifdef HAVE_ASINH
-#  define m_asinh asinh
-#else
-/* if the system doesn't have asinh, use the substitute
-   function defined in Modules/_math.c. */
-double _Py_asinh(double x);
-#  define m_asinh _Py_asinh
-#endif
+static double
+_Py_log1p(double x)
+{
+    /* Some platforms (e.g. MacOS X 10.8, see gh-59682) supply a log1p function
+       but don't respect the sign of zero:  log1p(-0.0) gives 0.0 instead of
+       the correct result of -0.0.
 
-#ifdef HAVE_ATANH
-#  define m_atanh atanh
-#else
-/* if the system doesn't have atanh, use the substitute
-   function defined in Modules/_math.c. */
-double _Py_atanh(double x);
-#define m_atanh _Py_atanh
-#endif
+       To save fiddling with configure tests and platform checks, we handle the
+       special case of zero input directly on all platforms.
+    */
+    if (x == 0.0) {
+        return x;
+    }
+    else {
+        return log1p(x);
+    }
+}
 
-#ifdef HAVE_EXPM1
-#  define m_expm1 expm1
-#else
-/* if the system doesn't have expm1, use the substitute
-   function defined in Modules/_math.c. */
-double _Py_expm1(double x);
-#define m_expm1 _Py_expm1
-#endif
-
-double _Py_log1p(double x);
-
-/* Use the substitute from _math.c on all platforms:
-   it includes workarounds for buggy handling of zeros. */
 #define m_log1p _Py_log1p

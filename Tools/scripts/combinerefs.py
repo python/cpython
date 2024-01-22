@@ -33,7 +33,7 @@ or
 
 if the refcount changed.
 
-typename is object->ob_type->tp_name, extracted from the second PYTHONDUMPREFS
+typename is Py_TYPE(object)->tp_name, extracted from the second PYTHONDUMPREFS
 output block.
 
 repr is repr(object), extracted from the first PYTHONDUMPREFS output block.

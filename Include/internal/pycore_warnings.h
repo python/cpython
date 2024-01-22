@@ -17,6 +17,13 @@ struct _warnings_runtime_state {
     long filters_version;
 };
 
+extern int _PyWarnings_InitState(PyInterpreterState *interp);
+
+extern PyObject* _PyWarnings_Init(void);
+
+extern void _PyErr_WarnUnawaitedCoroutine(PyObject *coro);
+extern void _PyErr_WarnUnawaitedAgenMethod(PyAsyncGenObject *agen, PyObject *method);
+
 #ifdef __cplusplus
 }
 #endif

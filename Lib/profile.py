@@ -24,6 +24,8 @@
 # governing permissions and limitations under the License.
 
 
+import importlib.machinery
+import io
 import sys
 import time
 import marshal
@@ -571,6 +573,11 @@ def main():
     (options, args) = parser.parse_args()
     sys.argv[:] = args
 
+    # The script that we're profiling may chdir, so capture the absolute path
+    # to the output file at startup.
+    if options.outfile is not None:
+        options.outfile = os.path.abspath(options.outfile)
+
     if len(args) > 0:
         if options.module:
             import runpy
@@ -582,15 +589,23 @@ def main():
         else:
             progname = args[0]
             sys.path.insert(0, os.path.dirname(progname))
-            with open(progname, 'rb') as fp:
+            with io.open_code(progname) as fp:
                 code = compile(fp.read(), progname, 'exec')
+            spec = importlib.machinery.ModuleSpec(name='__main__', loader=None,
+                                                  origin=progname)
             globs = {
-                '__file__': progname,
-                '__name__': '__main__',
+                '__spec__': spec,
+                '__file__': spec.origin,
+                '__name__': spec.name,
                 '__package__': None,
                 '__cached__': None,
             }
-        runctx(code, globs, None, options.outfile, options.sort)
+        try:
+            runctx(code, globs, None, options.outfile, options.sort)
+        except BrokenPipeError as exc:
+            # Prevent "Exception ignored" during interpreter shutdown.
+            sys.stdout = None
+            sys.exit(exc.errno)
     else:
         parser.print_usage()
     return parser

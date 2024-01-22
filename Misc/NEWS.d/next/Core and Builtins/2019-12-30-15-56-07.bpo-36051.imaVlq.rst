@@ -1,1 +1,0 @@
-Drop the GIL during large ``bytes.join`` operations. Patch by Bruce Merry.

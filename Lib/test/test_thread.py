@@ -2,15 +2,18 @@ import os
 import unittest
 import random
 from test import support
+from test.support import threading_helper
 import _thread as thread
 import time
+import warnings
 import weakref
 
 from test import lock_tests
 
+threading_helper.requires_working_threading(module=True)
+
 NUMTASKS = 10
 NUMTRIPS = 3
-POLL_SLEEP = 0.010 # seconds = 10 ms
 
 _print_mutex = thread.allocate_lock()
 
@@ -32,8 +35,8 @@ class BasicThreadTest(unittest.TestCase):
         self.running = 0
         self.next_ident = 0
 
-        key = support.threading_setup()
-        self.addCleanup(support.threading_cleanup, *key)
+        key = threading_helper.threading_setup()
+        self.addCleanup(threading_helper.threading_cleanup, *key)
 
 
 class ThreadRunningTests(BasicThreadTest):
@@ -58,7 +61,7 @@ class ThreadRunningTests(BasicThreadTest):
                 self.done_mutex.release()
 
     def test_starting_threads(self):
-        with support.wait_threads_exit():
+        with threading_helper.wait_threads_exit():
             # Basic test for thread creation.
             for i in range(NUMTASKS):
                 self.newtask()
@@ -94,7 +97,7 @@ class ThreadRunningTests(BasicThreadTest):
             verbose_print("trying stack_size = (%d)" % tss)
             self.next_ident = 0
             self.created = 0
-            with support.wait_threads_exit():
+            with threading_helper.wait_threads_exit():
                 for i in range(NUMTASKS):
                     self.newtask()
 
@@ -116,21 +119,27 @@ class ThreadRunningTests(BasicThreadTest):
             mut.acquire()
             mut.release()
 
-        with support.wait_threads_exit():
+        with threading_helper.wait_threads_exit():
             thread.start_new_thread(task, ())
-            while not started:
-                time.sleep(POLL_SLEEP)
+            for _ in support.sleeping_retry(support.LONG_TIMEOUT):
+                if started:
+                    break
             self.assertEqual(thread._count(), orig + 1)
+
             # Allow the task to finish.
             mut.release()
+
             # The only reliable way to be sure that the thread ended from the
-            # interpreter's point of view is to wait for the function object to be
-            # destroyed.
+            # interpreter's point of view is to wait for the function object to
+            # be destroyed.
             done = []
             wr = weakref.ref(task, lambda _: done.append(None))
             del task
-            while not done:
-                time.sleep(POLL_SLEEP)
+
+            for _ in support.sleeping_retry(support.LONG_TIMEOUT):
+                if done:
+                    break
+                support.gc_collect()  # For PyPy or other GCs.
             self.assertEqual(thread._count(), orig)
 
     def test_unraisable_exception(self):
@@ -140,16 +149,142 @@ class ThreadRunningTests(BasicThreadTest):
 
         started = thread.allocate_lock()
         with support.catch_unraisable_exception() as cm:
-            with support.wait_threads_exit():
+            with threading_helper.wait_threads_exit():
                 started.acquire()
                 thread.start_new_thread(task, ())
                 started.acquire()
 
             self.assertEqual(str(cm.unraisable.exc_value), "task failed")
-            self.assertIs(cm.unraisable.object, task)
+            self.assertIsNone(cm.unraisable.object)
             self.assertEqual(cm.unraisable.err_msg,
-                             "Exception ignored in thread started by")
+                             f"Exception ignored in thread started by {task!r}")
             self.assertIsNotNone(cm.unraisable.exc_traceback)
+
+    def test_join_thread(self):
+        finished = []
+
+        def task():
+            time.sleep(0.05)
+            finished.append(thread.get_ident())
+
+        with threading_helper.wait_threads_exit():
+            handle = thread.start_joinable_thread(task)
+            handle.join()
+            self.assertEqual(len(finished), 1)
+            self.assertEqual(handle.ident, finished[0])
+
+    def test_join_thread_already_exited(self):
+        def task():
+            pass
+
+        with threading_helper.wait_threads_exit():
+            handle = thread.start_joinable_thread(task)
+            time.sleep(0.05)
+            handle.join()
+
+    def test_join_several_times(self):
+        def task():
+            pass
+
+        with threading_helper.wait_threads_exit():
+            handle = thread.start_joinable_thread(task)
+            handle.join()
+            with self.assertRaisesRegex(ValueError, "not joinable"):
+                handle.join()
+
+    def test_joinable_not_joined(self):
+        handle_destroyed = thread.allocate_lock()
+        handle_destroyed.acquire()
+
+        def task():
+            handle_destroyed.acquire()
+
+        with threading_helper.wait_threads_exit():
+            handle = thread.start_joinable_thread(task)
+            del handle
+            handle_destroyed.release()
+
+    def test_join_from_self(self):
+        errors = []
+        handles = []
+        start_joinable_thread_returned = thread.allocate_lock()
+        start_joinable_thread_returned.acquire()
+        task_tried_to_join = thread.allocate_lock()
+        task_tried_to_join.acquire()
+
+        def task():
+            start_joinable_thread_returned.acquire()
+            try:
+                handles[0].join()
+            except Exception as e:
+                errors.append(e)
+            finally:
+                task_tried_to_join.release()
+
+        with threading_helper.wait_threads_exit():
+            handle = thread.start_joinable_thread(task)
+            handles.append(handle)
+            start_joinable_thread_returned.release()
+            # Can still join after joining failed in other thread
+            task_tried_to_join.acquire()
+            handle.join()
+
+        assert len(errors) == 1
+        with self.assertRaisesRegex(RuntimeError, "Cannot join current thread"):
+            raise errors[0]
+
+    def test_detach_from_self(self):
+        errors = []
+        handles = []
+        start_joinable_thread_returned = thread.allocate_lock()
+        start_joinable_thread_returned.acquire()
+        thread_detached = thread.allocate_lock()
+        thread_detached.acquire()
+
+        def task():
+            start_joinable_thread_returned.acquire()
+            try:
+                handles[0].detach()
+            except Exception as e:
+                errors.append(e)
+            finally:
+                thread_detached.release()
+
+        with threading_helper.wait_threads_exit():
+            handle = thread.start_joinable_thread(task)
+            handles.append(handle)
+            start_joinable_thread_returned.release()
+            thread_detached.acquire()
+            with self.assertRaisesRegex(ValueError, "not joinable"):
+                handle.join()
+
+        assert len(errors) == 0
+
+    def test_detach_then_join(self):
+        lock = thread.allocate_lock()
+        lock.acquire()
+
+        def task():
+            lock.acquire()
+
+        with threading_helper.wait_threads_exit():
+            handle = thread.start_joinable_thread(task)
+            # detach() returns even though the thread is blocked on lock
+            handle.detach()
+            # join() then cannot be called anymore
+            with self.assertRaisesRegex(ValueError, "not joinable"):
+                handle.join()
+            lock.release()
+
+    def test_join_then_detach(self):
+        def task():
+            pass
+
+        with threading_helper.wait_threads_exit():
+            handle = thread.start_joinable_thread(task)
+            handle.join()
+            with self.assertRaisesRegex(ValueError, "not joinable"):
+                handle.detach()
 
 
 class Barrier:
@@ -180,7 +315,7 @@ class Barrier:
 class BarrierTest(BasicThreadTest):
 
     def test_barrier(self):
-        with support.wait_threads_exit():
+        with threading_helper.wait_threads_exit():
             self.bar = Barrier(NUMTASKS)
             self.running = NUMTASKS
             for i in range(NUMTASKS):
@@ -222,33 +357,36 @@ class TestForkInThread(unittest.TestCase):
     def setUp(self):
         self.read_fd, self.write_fd = os.pipe()
 
-    @unittest.skipUnless(hasattr(os, 'fork'), 'need os.fork')
-    @support.reap_threads
+    @support.requires_fork()
+    @threading_helper.reap_threads
     def test_forkinthread(self):
-        status = "not set"
+        pid = None
 
-        def thread1():
-            nonlocal status
+        def fork_thread(read_fd, write_fd):
+            nonlocal pid
 
-            # fork in a thread
-            pid = os.fork()
-            if pid == 0:
-                # child
-                try:
-                    os.close(self.read_fd)
-                    os.write(self.write_fd, b"OK")
-                finally:
-                    os._exit(0)
-            else:
-                # parent
-                os.close(self.write_fd)
-                pid, status = os.waitpid(pid, 0)
+            # Ignore the warning about fork with threads.
+            with warnings.catch_warnings(category=DeprecationWarning,
+                                         action="ignore"):
+                # fork in a thread (DANGER, undefined per POSIX)
+                if (pid := os.fork()):
+                    # parent process
+                    return
 
-        with support.wait_threads_exit():
-            thread.start_new_thread(thread1, ())
-            self.assertEqual(os.read(self.read_fd, 2), b"OK",
-                             "Unable to fork() in thread")
-        self.assertEqual(status, 0)
+            # child process
+            try:
+                os.close(read_fd)
+                os.write(write_fd, b"OK")
+            finally:
+                os._exit(0)
+
+        with threading_helper.wait_threads_exit():
+            thread.start_new_thread(fork_thread, (self.read_fd, self.write_fd))
+            self.assertEqual(os.read(self.read_fd, 2), b"OK")
+            os.close(self.write_fd)
+
+        self.assertIsNotNone(pid)
+        support.wait_process(pid, exitcode=0)
 
     def tearDown(self):
         try:
