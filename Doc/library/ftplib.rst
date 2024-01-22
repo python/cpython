@@ -99,8 +99,8 @@ FTP objects
       |param_doc_acct|
 
    :param timeout:
-       A timeout in seconds for blocking operations like :meth:`connect`.
-       If not specified, the global default timeout setting will be used.
+      A timeout in seconds for blocking operations like :meth:`connect`.
+      If not specified, the global default timeout setting will be used.
    :type timeout: int | None
 
    :param source_address:
