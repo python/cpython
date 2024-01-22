@@ -483,7 +483,7 @@ operations on it as if it was a Python list. The top of the stack corresponds to
 
    Swap the top of the stack with the i-th element::
 
-      STACK[-i], STACK[-1] = stack[-1], STACK[-i]
+      STACK[-i], STACK[-1] = STACK[-1], STACK[-i]
 
    .. versionadded:: 3.11
 
