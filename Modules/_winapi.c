@@ -464,8 +464,9 @@ _winapi_CreateEventW_impl(PyObject *module,
     handle = CreateEventW(security_attributes, manual_reset, initial_state, name);
     Py_END_ALLOW_THREADS
 
-    if (handle == INVALID_HANDLE_VALUE)
+    if (handle == INVALID_HANDLE_VALUE) {
         PyErr_SetFromWindowsErr(0);
+    }
 
     return handle;
 }
@@ -729,8 +730,9 @@ _winapi_CreateMutexW_impl(PyObject *module,
     handle = CreateMutexW(security_attributes, initial_owner, name);
     Py_END_ALLOW_THREADS
 
-    if (handle == INVALID_HANDLE_VALUE)
+    if (handle == INVALID_HANDLE_VALUE) {
         PyErr_SetFromWindowsErr(0);
+    }
 
     return handle;
 }
@@ -1674,8 +1676,9 @@ _winapi_OpenEventW_impl(PyObject *module, DWORD desired_access,
     handle = OpenEventW(desired_access, inherit_handle, name);
     Py_END_ALLOW_THREADS
 
-    if (handle == INVALID_HANDLE_VALUE)
+    if (handle == INVALID_HANDLE_VALUE) {
         PyErr_SetFromWindowsErr(0);
+    }
 
     return handle;
 }
@@ -1704,8 +1707,9 @@ _winapi_OpenMutexW_impl(PyObject *module, DWORD desired_access,
     handle = OpenMutexW(desired_access, inherit_handle, name);
     Py_END_ALLOW_THREADS
 
-    if (handle == INVALID_HANDLE_VALUE)
+    if (handle == INVALID_HANDLE_VALUE) {
         PyErr_SetFromWindowsErr(0);
+    }
 
     return handle;
 }
@@ -2209,8 +2213,9 @@ _winapi_BatchedWaitForMultipleObjects_impl(PyObject *module,
         return NULL;
     }
     nhandles = PySequence_Length(handle_seq);
-    if (nhandles == -1)
+    if (nhandles == -1) {
         return NULL;
+    }
     if (nhandles == 0) {
         return wait_all ? Py_NewRef(Py_None) : PyList_New(0);
     }
