@@ -277,7 +277,7 @@ class ThreadTests(BaseTestCase):
                         # gh-29376
                         return 'Expected _DummyThread to be considered alive.'
                     if '_DummyThread' not in repr(threading._active[tid]):
-                        return f'Expected _DummyThread to be considered alive.'
+                        return 'Expected _DummyThread to be considered alive.'
                 error_message = verify_conditions()
             finally:
                 mutex.release()
