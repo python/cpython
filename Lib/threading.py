@@ -5,7 +5,6 @@ import sys as _sys
 import _thread
 import functools
 import warnings
-import _weakref
 
 from time import monotonic as _time
 from _weakrefset import WeakSet
@@ -108,7 +107,7 @@ def gettrace():
 
 # Synchronization classes
 
-Lock = _allocate_lock
+Lock = type(_allocate_lock())
 
 def RLock(*args, **kwargs):
     """Factory function that returns a new reentrant lock.

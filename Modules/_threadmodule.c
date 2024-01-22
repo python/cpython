@@ -349,6 +349,18 @@ lock__at_fork_reinit(lockobject *self, PyObject *Py_UNUSED(args))
 }
 #endif  /* HAVE_FORK */
 
+static lockobject *newlockobject(PyObject *module);
+
+static PyObject *
+lock_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *module = PyType_GetModuleByDef(type, &thread_module);
+    if (module == NULL) {
+        return NULL;
+    }
+    return (PyObject *)newlockobject(module);
+}
+
 
 static PyMethodDef lock_methods[] = {
     {"acquire_lock", _PyCFunction_CAST(lock_PyThread_acquire_lock),
@@ -398,6 +410,7 @@ static PyType_Slot lock_type_slots[] = {
     {Py_tp_methods, lock_methods},
     {Py_tp_traverse, lock_traverse},
     {Py_tp_members, lock_type_members},
+    {Py_tp_new, lock_new},
     {0, 0}
 };
 
@@ -405,7 +418,7 @@ static PyType_Spec lock_type_spec = {
     .name = "_thread.lock",
     .basicsize = sizeof(lockobject),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-              Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE),
+              Py_TPFLAGS_IMMUTABLETYPE),
     .slots = lock_type_slots,
 };
 
@@ -1439,8 +1452,6 @@ A subthread can use this function to interrupt the main thread.\n\
 Note: the default signal handler for SIGINT raises ``KeyboardInterrupt``."
 );
 
-static lockobject *newlockobject(PyObject *module);
-
 static PyObject *
 thread_PyThread_allocate_lock(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
@@ -1838,10 +1849,14 @@ thread_module_exec(PyObject *module)
     }
 
     // Lock
-    state->lock_type = (PyTypeObject *)PyType_FromSpec(&lock_type_spec);
+    state->lock_type = (PyTypeObject *)PyType_FromModuleAndSpec(module, &lock_type_spec, NULL);
     if (state->lock_type == NULL) {
         return -1;
     }
+    if (PyModule_AddType(module, state->lock_type) < 0) {
+        return -1;
+    }
+    // Old alias: lock -> LockType
     if (PyDict_SetItemString(d, "LockType", (PyObject *)state->lock_type) < 0) {
         return -1;
     }
