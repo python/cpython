@@ -88,7 +88,7 @@ useful than quitting the debugger upon program's exit.
 
 .. versionchanged:: 3.2
    Added the ``-c`` option to execute commands as if given
-   in a :file:`.pdbrc` file, see :ref:`debugger-commands`.
+   in a :file:`.pdbrc` file; see :ref:`debugger-commands`.
 
 .. versionchanged:: 3.7
    Added the ``-m`` option to execute modules similar to the way
@@ -584,7 +584,7 @@ can be overridden by the local file.
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.13
-      ``exit()`` and ``quit()`` can be used to exit :pdbcmd:`interact`
+      ``exit()`` and ``quit()`` can be used to exit the :pdbcmd:`interact`
       command.
 
    .. versionchanged:: 3.13

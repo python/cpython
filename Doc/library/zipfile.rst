@@ -80,8 +80,8 @@ The module defines the following items:
    :ref:`zipinfo-objects`.
 
    .. versionchanged:: 3.13
-      A public ``.compress_level`` attribute has been added to expose the
-      formerly protected ``._compresslevel``.  The older protected name
+      A public :attr:`compress_level` attribute has been added to expose the
+      formerly protected :attr:`!_compresslevel`.  The older protected name
       continues to work as a property for backwards compatibility.
 
 .. function:: is_zipfile(filename)
@@ -242,7 +242,7 @@ ZipFile Objects
       Add the *compresslevel* parameter.
 
    .. versionchanged:: 3.8
-      The *strict_timestamps* keyword-only parameter
+      The *strict_timestamps* keyword-only parameter.
 
    .. versionchanged:: 3.11
       Added support for specifying member name encoding for reading
