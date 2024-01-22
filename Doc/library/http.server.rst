@@ -328,8 +328,8 @@ provides three different variants:
    or the current directory if *directory* is not provided, directly
    mapping the directory structure to HTTP requests.
 
-   .. versionadded:: 3.7
-      The *directory* parameter.
+   .. versionchanged:: 3.7
+      Added the *directory* parameter.
 
    .. versionchanged:: 3.9
       The *directory* parameter accepts a :term:`path-like object`.
@@ -438,11 +438,11 @@ to bind to localhost only::
 
         python -m http.server --bind 127.0.0.1
 
-.. versionadded:: 3.4
-    ``--bind`` argument was introduced.
+.. versionchanged:: 3.4
+   Added the ``--bind`` option.
 
-.. versionadded:: 3.8
-    ``--bind`` argument enhanced to support IPv6
+.. versionchanged:: 3.8
+   Support IPv6 in the ``--bind`` option.
 
 By default, the server uses the current directory. The option ``-d/--directory``
 specifies a directory to which it should serve the files. For example,
@@ -450,8 +450,8 @@ the following command uses a specific directory::
 
         python -m http.server --directory /tmp/
 
-.. versionadded:: 3.7
-    ``--directory`` argument was introduced.
+.. versionchanged:: 3.7
+   Added the ``--directory`` option.
 
 By default, the server is conformant to HTTP/1.0. The option ``-p/--protocol``
 specifies the HTTP version to which the server is conformant. For example, the
@@ -459,8 +459,8 @@ following command runs an HTTP/1.1 conformant server::
 
         python -m http.server --protocol HTTP/1.1
 
-.. versionadded:: 3.11
-    ``--protocol`` argument was introduced.
+.. versionchanged:: 3.11
+   Added the ``--protocol`` option.
 
 .. class:: CGIHTTPRequestHandler(request, client_address, server)
 
@@ -524,5 +524,5 @@ default :class:`BaseHTTPRequestHandler` ``.log_message``
 implementation. This could allow remote clients connecting to your
 server to send nefarious control codes to your terminal.
 
-.. versionadded:: 3.12
+.. versionchanged:: 3.12
    Control characters are scrubbed in stderr logs.

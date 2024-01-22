@@ -2188,8 +2188,8 @@ Loading and running tests
 
    .. versionadded:: 3.2
 
-   .. versionadded:: 3.12
-      Added *durations* keyword argument.
+   .. versionchanged:: 3.12
+      Added the *durations* keyword parameter.
 
 .. data:: defaultTestLoader
 

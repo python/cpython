@@ -48,7 +48,7 @@ at the location you want to break into the debugger, and then run the program.
 You can then step through the code following this statement, and continue
 running without the debugger using the :pdbcmd:`continue` command.
 
-.. versionadded:: 3.7
+.. versionchanged:: 3.7
    The built-in :func:`breakpoint()`, when called with defaults, can be used
    instead of ``import pdb; pdb.set_trace()``.
 
@@ -86,12 +86,12 @@ after normal exit of the program), pdb will restart the program.  Automatic
 restarting preserves pdb's state (such as breakpoints) and in most cases is more
 useful than quitting the debugger upon program's exit.
 
-.. versionadded:: 3.2
-   ``-c`` option is introduced to execute commands as if given
-   in a :file:`.pdbrc` file, see :ref:`debugger-commands`.
+.. versionchanged:: 3.2
+   Added the ``-c`` option to execute commands as if given
+   in a :file:`.pdbrc` file; see :ref:`debugger-commands`.
 
-.. versionadded:: 3.7
-   ``-m`` option is introduced to execute modules similar to the way
+.. versionchanged:: 3.7
+   Added the ``-m`` option to execute modules similar to the way
    ``python -m`` does. As with a script, the debugger will pause execution just
    before the first line of the module.
 
@@ -209,12 +209,12 @@ access further features, you have to do this yourself:
 
    .. audit-event:: pdb.Pdb "" pdb.Pdb
 
-   .. versionadded:: 3.1
-      The *skip* argument.
+   .. versionchanged:: 3.1
+      Added the *skip* parameter.
 
-   .. versionadded:: 3.2
-      The *nosigint* argument.  Previously, a SIGINT handler was never set by
-      Pdb.
+   .. versionchanged:: 3.2
+      Added the *nosigint* parameter.
+      Previously, a SIGINT handler was never set by Pdb.
 
    .. versionchanged:: 3.6
       The *readrc* argument.
@@ -463,8 +463,8 @@ can be overridden by the local file.
    raised or propagated is indicated by ``>>``, if it differs from the current
    line.
 
-   .. versionadded:: 3.2
-      The ``>>`` marker.
+   .. versionchanged:: 3.2
+      Added the ``>>`` marker.
 
 .. pdbcommand:: ll | longlist
 
