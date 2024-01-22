@@ -168,6 +168,10 @@ asyncio
   the Unix socket when the server is closed.
   (Contributed by Pierre Ossman in :gh:`111246`.)
 
+* Add :meth:`asyncio.Server.close_clients` and
+  :meth:`asyncio.Server.abort_clients` methods which allows to more
+  forcefully close an asyncio server.
+
 copy
 ----
 

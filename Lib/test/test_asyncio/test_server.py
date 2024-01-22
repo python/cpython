@@ -187,7 +187,65 @@ class TestServer2(unittest.IsolatedAsyncioTestCase):
         loop.call_soon(wr.close)
         await srv.wait_closed()
 
+    async def test_close_clients(self):
+        async def serve(rd, wr):
+            try:
+                await rd.read()
+            finally:
+                wr.close()
+                await wr.wait_closed()
 
+        srv = await asyncio.start_server(serve, socket_helper.HOSTv4, 0)
+        self.addCleanup(srv.close)
+
+        addr = srv.sockets[0].getsockname()
+        (rd, wr) = await asyncio.open_connection(addr[0], addr[1])
+        self.addCleanup(wr.close)
+
+        task = asyncio.create_task(srv.wait_closed())
+        await asyncio.sleep(0)
+        self.assertFalse(task.done())
+
+        srv.close()
+        srv.close_clients()
+        await asyncio.sleep(0.1) # FIXME: flush call_soon()?
+        self.assertTrue(task.done())
+
+    async def test_abort_clients(self):
+        async def serve(rd, wr):
+            nonlocal s_rd, s_wr
+            s_rd = rd
+            s_wr = wr
+            await wr.wait_closed()
+
+        s_rd = s_wr = None
+        srv = await asyncio.start_server(serve, socket_helper.HOSTv4, 0)
+        self.addCleanup(srv.close)
+
+        addr = srv.sockets[0].getsockname()
+        (c_rd, c_wr) = await asyncio.open_connection(addr[0], addr[1])
+        self.addCleanup(c_wr.close)
+
+        # Make sure both sides are in a paused state
+        while (s_wr.transport.get_write_buffer_size() == 0 or
+               c_wr.transport.is_reading()):
+            while s_wr.transport.get_write_buffer_size() == 0:
+                s_wr.write(b'a' * 65536)
+                await asyncio.sleep(0)
+            await asyncio.sleep(0.1) # FIXME: More socket buffer space magically appears?
+
+        task = asyncio.create_task(srv.wait_closed())
+        await asyncio.sleep(0)
+        self.assertFalse(task.done())
+
+        # Sanity check
+        self.assertNotEqual(s_wr.transport.get_write_buffer_size(), 0)
+        self.assertFalse(c_wr.transport.is_reading())
+
+        srv.close()
+        srv.abort_clients()
+        await asyncio.sleep(0.1) # FIXME: flush call_soon()?
+        self.assertTrue(task.done())
 
 
 # Test the various corner cases of Unix server socket removal
