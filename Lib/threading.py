@@ -1460,7 +1460,6 @@ class _DummyThread(Thread):
     def __init__(self):
         Thread.__init__(self, name=_newname("Dummy-%d"),
                         daemon=_daemon_threads_allowed())
-
         self._started.set()
         self._set_ident()
         if _HAVE_THREAD_NATIVE_ID:
@@ -1685,6 +1684,11 @@ def _after_fork():
                 # its new value since it can have changed.
                 thread._reset_internal_locks(True)
                 ident = get_ident()
+                if isinstance(thread, _DummyThread):
+                    thread.__class__ = _MainThread
+                    thread._name = 'MainThread'
+                    thread._daemonic = False
+                    thread._set_tstate_lock()
                 thread._ident = ident
                 new_active[ident] = thread
             else:
