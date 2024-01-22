@@ -7127,6 +7127,9 @@ enum posix_spawn_file_actions_identifier {
 #ifdef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSEFROM_NP
     ,POSIX_SPAWN_CLOSEFROM
 #endif
+#ifdef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR_NP
+    ,POSIX_SPAWN_CHDIR
+#endif
 };
 
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
@@ -7384,6 +7387,25 @@ parse_file_actions(PyObject *file_actions,
                 }
                 break;
             }
+#endif
+#ifdef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR_NP
+            case POSIX_SPAWN_CHDIR: {
+                PyObject *path;
+                if (!PyArg_ParseTuple(file_action, "OO&"
+                        ";A chdir file_action tuple must have 2 elements",
+                        &tag_obj, PyUnicode_FSConverter, &path))
+                {
+                    goto fail;
+                }
+                errno = posix_spawn_file_actions_addchdir_np(file_actionsp,
+                        PyBytes_AS_STRING(path));
+                if (errno) {
+                    posix_error();
+                    Py_DECREF(path);
+                    goto fail;
+                }
+                Py_DECREF(path);
+                break;
 #endif
             default: {
                 PyErr_SetString(PyExc_TypeError,
@@ -17575,6 +17597,9 @@ all_ins(PyObject *m)
     if (PyModule_AddIntConstant(m, "POSIX_SPAWN_DUP2", POSIX_SPAWN_DUP2)) return -1;
 #ifdef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSEFROM_NP
     if (PyModule_AddIntMacro(m, POSIX_SPAWN_CLOSEFROM)) return -1;
+#endif
+#ifdef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR_NP
+    if (PyModule_AddIntMacro(m, POSIX_SPAWN_CHDIR)) return -1;
 #endif
 #endif
 
