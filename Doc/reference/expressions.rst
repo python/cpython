@@ -994,7 +994,7 @@ but does not affect the semantics.
 
 The primary must evaluate to a callable object (user-defined functions, built-in
 functions, methods of built-in objects, class objects, methods of class
-instances, and all objects having a :meth:`__call__` method are callable).  All
+instances, and all objects having a :meth:`~object.__call__` method are callable).  All
 argument expressions are evaluated before the call is attempted.  Please refer
 to section :ref:`function` for the syntax of formal :term:`parameter` lists.
 
@@ -1152,7 +1152,7 @@ a class instance:
       pair: instance; call
       single: __call__() (object method)
 
-   The class must define a :meth:`__call__` method; the effect is then the same as
+   The class must define a :meth:`~object.__call__` method; the effect is then the same as
    if that method was called.
 
 
@@ -1204,7 +1204,7 @@ Raising ``0.0`` to a negative power results in a :exc:`ZeroDivisionError`.
 Raising a negative number to a fractional power results in a :class:`complex`
 number. (In earlier versions it raised a :exc:`ValueError`.)
 
-This operation can be customized using the special :meth:`__pow__` method.
+This operation can be customized using the special :meth:`~object.__pow__` method.
 
 .. _unary:
 
@@ -1227,7 +1227,7 @@ All unary arithmetic and bitwise operations have the same priority:
    single: - (minus); unary operator
 
 The unary ``-`` (minus) operator yields the negation of its numeric argument; the
-operation can be overridden with the :meth:`__neg__` special method.
+operation can be overridden with the :meth:`~object.__neg__` special method.
 
 .. index::
    single: plus
@@ -1235,7 +1235,7 @@ operation can be overridden with the :meth:`__neg__` special method.
    single: + (plus); unary operator
 
 The unary ``+`` (plus) operator yields its numeric argument unchanged; the
-operation can be overridden with the :meth:`__pos__` special method.
+operation can be overridden with the :meth:`~object.__pos__` special method.
 
 .. index::
    single: inversion
@@ -1244,7 +1244,7 @@ operation can be overridden with the :meth:`__pos__` special method.
 The unary ``~`` (invert) operator yields the bitwise inversion of its integer
 argument.  The bitwise inversion of ``x`` is defined as ``-(x+1)``.  It only
 applies to integral numbers or to custom objects that override the
-:meth:`__invert__` special method.
+:meth:`~object.__invert__` special method.
 
 
 
@@ -1282,8 +1282,8 @@ the other must be a sequence. In the former case, the numbers are converted to a
 common type and then multiplied together.  In the latter case, sequence
 repetition is performed; a negative repetition factor yields an empty sequence.
 
-This operation can be customized using the special :meth:`__mul__` and
-:meth:`__rmul__` methods.
+This operation can be customized using the special :meth:`~object.__mul__` and
+:meth:`~object.__rmul__` methods.
 
 .. index::
    single: matrix multiplication
@@ -1307,8 +1307,8 @@ integer; the result is that of mathematical division with the 'floor' function
 applied to the result.  Division by zero raises the :exc:`ZeroDivisionError`
 exception.
 
-This operation can be customized using the special :meth:`__truediv__` and
-:meth:`__floordiv__` methods.
+This operation can be customized using the special :meth:`~object.__truediv__` and
+:meth:`~object.__floordiv__` methods.
 
 .. index::
    single: modulo
@@ -1333,7 +1333,7 @@ also overloaded by string objects to perform old-style string formatting (also
 known as interpolation).  The syntax for string formatting is described in the
 Python Library Reference, section :ref:`old-string-formatting`.
 
-The *modulo* operation can be customized using the special :meth:`__mod__` method.
+The *modulo* operation can be customized using the special :meth:`~object.__mod__` method.
 
 The floor division operator, the modulo operator, and the :func:`divmod`
 function are not defined for complex numbers.  Instead, convert to a floating
@@ -1349,8 +1349,8 @@ must either both be numbers or both be sequences of the same type.  In the
 former case, the numbers are converted to a common type and then added together.
 In the latter case, the sequences are concatenated.
 
-This operation can be customized using the special :meth:`__add__` and
-:meth:`__radd__` methods.
+This operation can be customized using the special :meth:`~object.__add__` and
+:meth:`~object.__radd__` methods.
 
 .. index::
    single: subtraction
@@ -1360,7 +1360,7 @@ This operation can be customized using the special :meth:`__add__` and
 The ``-`` (subtraction) operator yields the difference of its arguments.  The
 numeric arguments are first converted to a common type.
 
-This operation can be customized using the special :meth:`__sub__` method.
+This operation can be customized using the special :meth:`~object.__sub__` method.
 
 
 .. _shifting:
@@ -1381,8 +1381,8 @@ The shifting operations have lower priority than the arithmetic operations:
 These operators accept integers as arguments.  They shift the first argument to
 the left or right by the number of bits given by the second argument.
 
-This operation can be customized using the special :meth:`__lshift__` and
-:meth:`__rshift__` methods.
+This operation can be customized using the special :meth:`~object.__lshift__` and
+:meth:`~object.__rshift__` methods.
 
 .. index:: pair: exception; ValueError
 
@@ -1409,8 +1409,8 @@ Each of the three bitwise operations has a different priority level:
    pair: operator; & (ampersand)
 
 The ``&`` operator yields the bitwise AND of its arguments, which must be
-integers or one of them must be a custom object overriding :meth:`__and__` or
-:meth:`__rand__` special methods.
+integers or one of them must be a custom object overriding :meth:`~object.__and__` or
+:meth:`~object.__rand__` special methods.
 
 .. index::
    pair: bitwise; xor
@@ -1418,8 +1418,8 @@ integers or one of them must be a custom object overriding :meth:`__and__` or
    pair: operator; ^ (caret)
 
 The ``^`` operator yields the bitwise XOR (exclusive OR) of its arguments, which
-must be integers or one of them must be a custom object overriding :meth:`__xor__` or
-:meth:`__rxor__` special methods.
+must be integers or one of them must be a custom object overriding :meth:`~object.__xor__` or
+:meth:`~object.__rxor__` special methods.
 
 .. index::
    pair: bitwise; or
@@ -1427,8 +1427,8 @@ must be integers or one of them must be a custom object overriding :meth:`__xor_
    pair: operator; | (vertical bar)
 
 The ``|`` operator yields the bitwise (inclusive) OR of its arguments, which
-must be integers or one of them must be a custom object overriding :meth:`__or__` or
-:meth:`__ror__` special methods.
+must be integers or one of them must be a custom object overriding :meth:`~object.__or__` or
+:meth:`~object.__ror__` special methods.
 
 
 .. _comparisons:
@@ -1495,7 +1495,7 @@ comparison implementation.
 Because all types are (direct or indirect) subtypes of :class:`object`, they
 inherit the default comparison behavior from :class:`object`.  Types can
 customize their comparison behavior by implementing
-:dfn:`rich comparison methods` like :meth:`__lt__`, described in
+:dfn:`rich comparison methods` like :meth:`~object.__lt__`, described in
 :ref:`customization`.
 
 The default behavior for equality comparison (``==`` and ``!=``) is based on
@@ -1659,12 +1659,12 @@ substring of *y*.  An equivalent test is ``y.find(x) != -1``.  Empty strings are
 always considered to be a substring of any other string, so ``"" in "abc"`` will
 return ``True``.
 
-For user-defined classes which define the :meth:`__contains__` method, ``x in
+For user-defined classes which define the :meth:`~object.__contains__` method, ``x in
 y`` returns ``True`` if ``y.__contains__(x)`` returns a true value, and
 ``False`` otherwise.
 
-For user-defined classes which do not define :meth:`__contains__` but do define
-:meth:`__iter__`, ``x in y`` is ``True`` if some value ``z``, for which the
+For user-defined classes which do not define :meth:`~object.__contains__` but do define
+:meth:`~object.__iter__`, ``x in y`` is ``True`` if some value ``z``, for which the
 expression ``x is z or x == z`` is true, is produced while iterating over ``y``.
 If an exception is raised during the iteration, it is as if :keyword:`in` raised
 that exception.
