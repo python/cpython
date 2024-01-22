@@ -54,6 +54,29 @@ class DumpTests(MemoryDatabaseMixin, unittest.TestCase):
         [self.assertEqual(expected_sqls[i], actual_sqls[i])
             for i in range(len(expected_sqls))]
 
+    def test_table_dump_filter(self):
+        all_table_sqls = [
+            """CREATE TABLE "test_table_1" ("id_2" INTEGER);""",
+            """INSERT INTO "test_table_1" VALUES(1);""",
+            """INSERT INTO "test_table_1" VALUES(2);""",
+            """CREATE TABLE "some_table_2" ("id_1" INTEGER);""",
+            """INSERT INTO "some_table_2" VALUES(3);""",
+            """INSERT INTO "some_table_2" VALUES(4);""",
+        ]
+        all_views_sqls = [
+            """CREATE VIEW view_1 AS SELECT * FROM some_table_2""",
+            """CREATE VIEW view_2 AS SELECT * FROM test_table_1""",
+        ]
+        # Create database structure.
+        for sql in [*all_table_sqls, *all_views_sqls]:
+            self.cu.execute(sql)
+        # %_table_% matches all tables.
+        dump_sqls = list(self.cx.iterdump(filter="%_table_%"))
+        self.assertEqual(dump_sqls, all_table_sqls)
+        # view_% matches all views.
+        dump_sqls = list(self.cx.iterdump(filter="view_%"))
+        self.assertEqual(dump_sqls, all_views_sqls)
+
     def test_dump_autoincrement(self):
         expected = [
             'CREATE TABLE "t1" (id integer primary key autoincrement);',
