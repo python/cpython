@@ -3508,7 +3508,7 @@ dict_setdefault_impl(PyDictObject *self, PyObject *key,
 /*[clinic input]
 dict.clear
 
-Removes all items.
+Remove all items from the dict.
 [clinic start generated code]*/
 
 static PyObject *
