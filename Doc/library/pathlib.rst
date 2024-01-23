@@ -583,9 +583,10 @@ Pure paths provide the following methods and properties:
    Match this path against the provided non-recursive glob-style pattern.
    Return ``True`` if matching is successful, ``False`` otherwise.
 
-   This method is similar to :meth:`~PurePath.full_match`, but the recursive
-   wildcard "``**``" is not supported (it acts like non-recursive "``*``"),
-   and if a relative pattern is given, then matching is done from the right::
+   This method is similar to :meth:`~PurePath.full_match`, but empty patterns
+   aren't allowed (:exc:`ValueError` is raised), the recursive wildcard
+   "``**``" isn't supported (it acts like non-recursive "``*``"), and if a
+   relative pattern is provided, then matching is done from the right::
 
       >>> PurePath('a/b.py').match('*.py')
       True
