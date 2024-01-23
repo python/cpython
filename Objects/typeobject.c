@@ -1370,6 +1370,7 @@ type_set_bases(PyTypeObject *type, PyObject *new_bases, void *context)
         res = 0;
     }
 
+    RARE_EVENT_INC(set_bases);
     Py_DECREF(old_bases);
     Py_DECREF(old_base);
 
@@ -5841,6 +5842,8 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
         Py_SET_TYPE(self, newto);
         if (oldto->tp_flags & Py_TPFLAGS_HEAPTYPE)
             Py_DECREF(oldto);
+
+        RARE_EVENT_INC(set_class);
         return 0;
     }
     else {

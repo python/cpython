@@ -2370,6 +2370,7 @@ _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp,
         interp->eval_frame = NULL;
     }
     else {
+        RARE_EVENT_INC(set_eval_frame_func);
         interp->eval_frame = eval_frame;
     }
 }
