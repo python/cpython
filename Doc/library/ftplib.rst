@@ -59,8 +59,7 @@ FTP objects
    in multiple places.
 
 .. |param_doc_user| replace::
-   The username to log in with.
-   If no *user* is specified, ``'anonymous'`` will be used.
+   The username to log in with (default: ``'anonymous'``).
 
 .. |param_doc_passwd| replace::
    The password to use when logging in.
@@ -170,14 +169,13 @@ FTP objects
          The host to connect to.
 
       :param int port:
-         The TCP port to connect to.
-         If no port number is provided, port ``21`` is used,
-         as specified by the FTP protocol specification.
+         The TCP port to connect to (default: ``21``,
+         as specified by the FTP protocol specification).
          It is rarely needed to specify a different port number.
 
       :param timeout:
-         A timeout in seconds for the connection attempt.
-         If not specified, the global default timeout setting will be used.
+         A timeout in seconds for the connection attempt
+         (default: the global default timeout setting).
       :type timeout: int | None
 
       :param source_address:
