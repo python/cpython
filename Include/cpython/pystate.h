@@ -102,7 +102,7 @@ struct _ts {
 #endif
     int _whence;
 
-    /* Thread state (_Py_THREAD_ATTACHED, _Py_THREAD_DETACHED, _Py_THREAD_GC).
+    /* Thread state (_Py_THREAD_ATTACHED, _Py_THREAD_DETACHED, _Py_THREAD_SUSPENDED).
        See Include/internal/pycore_pystate.h for more details. */
     int state;
 
