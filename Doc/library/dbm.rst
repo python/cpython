@@ -41,6 +41,21 @@ the Oracle Berkeley DB.
 .. versionchanged:: 3.11
    Accepts :term:`path-like object` for filename.
 
+.. Substitutions for the open() flag param docs;
+   all submodules use the same text.
+
+.. |flag_r| replace::
+   Open existing database for reading only.
+
+.. |flag_w| replace::
+   Open existing database for reading and writing.
+
+.. |flag_c| replace::
+   Open database for reading and writing, creating it if it doesn't exist.
+
+.. |flag_n| replace::
+   Always create a new, empty database, open for reading and writing.
+
 .. function:: open(file, flag='r', mode=0o666)
 
    Open the database file *file* and return a corresponding object.
@@ -51,21 +66,13 @@ the Oracle Berkeley DB.
 
    The optional *flag* argument can be:
 
-   +---------+-------------------------------------------+
-   | Value   | Meaning                                   |
-   +=========+===========================================+
-   | ``'r'`` | Open existing database for reading only   |
-   |         | (default)                                 |
-   +---------+-------------------------------------------+
-   | ``'w'`` | Open existing database for reading and    |
-   |         | writing                                   |
-   +---------+-------------------------------------------+
-   | ``'c'`` | Open database for reading and writing,    |
-   |         | creating it if it doesn't exist           |
-   +---------+-------------------------------------------+
-   | ``'n'`` | Always create a new, empty database, open |
-   |         | for reading and writing                   |
-   +---------+-------------------------------------------+
+   .. csv-table::
+      :header: "Value", "Meaning"
+
+      ``'r'`` (default), |flag_r|
+      ``'w'``, |flag_w|
+      ``'c'``, |flag_c|
+      ``'n'``, |flag_n|
 
    The optional *mode* argument is the Unix mode of the file, used only when the
    database has to be created.  It defaults to octal ``0o666`` (and will be
@@ -233,21 +240,13 @@ supported.
 
    The optional *flag* argument can be:
 
-   +---------+-------------------------------------------+
-   | Value   | Meaning                                   |
-   +=========+===========================================+
-   | ``'r'`` | Open existing database for reading only   |
-   |         | (default)                                 |
-   +---------+-------------------------------------------+
-   | ``'w'`` | Open existing database for reading and    |
-   |         | writing                                   |
-   +---------+-------------------------------------------+
-   | ``'c'`` | Open database for reading and writing,    |
-   |         | creating it if it doesn't exist           |
-   +---------+-------------------------------------------+
-   | ``'n'`` | Always create a new, empty database, open |
-   |         | for reading and writing                   |
-   +---------+-------------------------------------------+
+   .. csv-table::
+      :header: "Value", "Meaning"
+
+      ``'r'`` (default), |flag_r|
+      ``'w'``, |flag_w|
+      ``'c'``, |flag_c|
+      ``'n'``, |flag_n|
 
    The following additional characters may be appended to the flag to control
    how the database is opened:
@@ -365,21 +364,13 @@ to locate the appropriate header file to simplify building this module.
 
    The optional *flag* argument must be one of these values:
 
-   +---------+-------------------------------------------+
-   | Value   | Meaning                                   |
-   +=========+===========================================+
-   | ``'r'`` | Open existing database for reading only   |
-   |         | (default)                                 |
-   +---------+-------------------------------------------+
-   | ``'w'`` | Open existing database for reading and    |
-   |         | writing                                   |
-   +---------+-------------------------------------------+
-   | ``'c'`` | Open database for reading and writing,    |
-   |         | creating it if it doesn't exist           |
-   +---------+-------------------------------------------+
-   | ``'n'`` | Always create a new, empty database, open |
-   |         | for reading and writing                   |
-   +---------+-------------------------------------------+
+   .. csv-table::
+      :header: "Value", "Meaning"
+
+      ``'r'`` (default), |flag_r|
+      ``'w'``, |flag_w|
+      ``'c'``, |flag_c|
+      ``'n'``, |flag_n|
 
    The optional *mode* argument is the Unix mode of the file, used only when the
    database has to be created.  It defaults to octal ``0o666`` (and will be
@@ -444,21 +435,13 @@ The module defines the following:
 
    The optional *flag* argument can be:
 
-   +---------+-------------------------------------------+
-   | Value   | Meaning                                   |
-   +=========+===========================================+
-   | ``'r'`` | Open existing database for reading only   |
-   |         | (default)                                 |
-   +---------+-------------------------------------------+
-   | ``'w'`` | Open existing database for reading and    |
-   |         | writing                                   |
-   +---------+-------------------------------------------+
-   | ``'c'`` | Open database for reading and writing,    |
-   |         | creating it if it doesn't exist           |
-   +---------+-------------------------------------------+
-   | ``'n'`` | Always create a new, empty database, open |
-   |         | for reading and writing                   |
-   +---------+-------------------------------------------+
+   .. csv-table::
+      :header: "Value", "Meaning"
+
+      ``'r'``, |flag_r|
+      ``'w'``, |flag_w|
+      ``'c'`` (default), |flag_c|
+      ``'n'``, |flag_n|
 
    The optional *mode* argument is the Unix mode of the file, used only when the
    database has to be created.  It defaults to octal ``0o666`` (and will be modified
