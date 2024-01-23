@@ -510,6 +510,13 @@ Pure paths provide the following methods and properties:
 
    If multiple arguments are supplied, they are joined together.
 
+   This method is string-based; it neither accesses the filesystem nor treats
+   "``..``" segments specially. The following code is equivalent:
+
+      >>> u = PurePath('/usr')
+      >>> u == p or u in p.parents
+      False
+
    .. versionadded:: 3.9
 
 
