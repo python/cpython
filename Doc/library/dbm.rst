@@ -175,17 +175,13 @@ or any other SQLite browser, including the SQLite CLI.
 
    :param str flag:
 
-      .. list-table::
-         :header-rows: 1
+      .. csv-table::
+         :header: "Value", "Meaning"
 
-         * - ``'r'``
-           - |flag_r|
-         * - ``'w'``
-           - |flag_w|
-         * - ``'c'``
-           - |flag_c|
-         * - ``'n'``
-           - |flag_n|
+         ``'r'`` (default), |flag_r|
+         ``'w'``, |flag_w|
+         ``'c'``, |flag_c|
+         ``'n'``, |flag_n|
 
    :param mode:
       This parameter is ignored by the :mod:`!dbm.sqlite3` module.
