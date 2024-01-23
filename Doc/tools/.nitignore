@@ -50,7 +50,6 @@ Doc/library/functools.rst
 Doc/library/http.cookiejar.rst
 Doc/library/http.server.rst
 Doc/library/importlib.rst
-Doc/library/locale.rst
 Doc/library/logging.config.rst
 Doc/library/logging.handlers.rst
 Doc/library/lzma.rst
