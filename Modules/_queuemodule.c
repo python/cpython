@@ -258,6 +258,7 @@ simplequeue_new_impl(PyTypeObject *type)
 
     return (PyObject *) self;
 }
+
 typedef struct {
     int handed_off;
     simplequeueobject *queue;
@@ -339,6 +340,7 @@ static PyObject *
 empty_error(PyTypeObject *cls)
 {
     PyObject *module = PyType_GetModule(cls);
+    assert(module != NULL);
     simplequeue_state *state = simplequeue_get_state(module);
     PyErr_SetNone(state->EmptyError);
     return NULL;
@@ -374,7 +376,7 @@ _queue_SimpleQueue_get_impl(simplequeueobject *self, PyTypeObject *cls,
 
     // XXX Use PyThread_ParseTimeoutArg().
 
-    if (block != 0 && timeout_obj != Py_None) {
+    if (block != 0 && !Py_IsNone) {
         /* With timeout */
         _PyTime_t timeout;
         if (_PyTime_FromSecondsObject(&timeout,
