@@ -3126,7 +3126,7 @@ _PyDict_MergeEx(PyObject *a, PyObject *b, int override)
 /*[clinic input]
 dict.copy
 
-Returns a shallow copy of the dict.
+Return a shallow copy of the dict.
 [clinic start generated code]*/
 
 static PyObject *
