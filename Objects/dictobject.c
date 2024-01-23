@@ -5449,7 +5449,7 @@ PyTypeObject PyDictValues_Type = {
 /*[clinic input]
 dict.values
 
-Returns an object providing a view on the dict's values.
+Return an object providing a view on the dict's values.
 [clinic start generated code]*/
 
 static PyObject *
