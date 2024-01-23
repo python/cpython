@@ -515,6 +515,13 @@ Pure paths provide the following methods and properties:
       >>> p.is_relative_to('/usr')
       False
 
+   This method is string-based; it neither accesses the filesystem nor treats
+   "``..``" segments specially. The following code is equivalent:
+
+      >>> u = PurePath('/usr')
+      >>> u == p or u in p.parents
+      False
+
    .. versionadded:: 3.9
 
    .. deprecated-removed:: 3.12 3.14
