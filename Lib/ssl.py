@@ -94,6 +94,10 @@ import sys
 import os
 from collections import namedtuple
 from contextlib import closing
+import socket
+
+# import logging
+
 
 import _ssl             # if we can't import it, let the error propagate
 
@@ -590,10 +594,12 @@ class SSLSocket(socket):
                 # the non-blocking dance regardless. Our raise when any data
                 # is found means consuming the data is harmless.
                 notconn_pre_handshake_data = self.recv(1)
-            except OSError as e:
+            except (OSError, socket_error) as e:
+
                 # EINVAL occurs for recv(1) on non-connected on unix sockets.
                 if e.errno not in (errno.ENOTCONN, errno.EINVAL):
                     raise
+
                 notconn_pre_handshake_data = b''
             self.setblocking(blocking)
             if notconn_pre_handshake_data:
@@ -607,7 +613,7 @@ class SSLSocket(socket):
                 notconn_pre_handshake_data_error.library = None
                 try:
                     self.close()
-                except OSError:
+                except (OSError, socket_error):
                     pass
                 raise notconn_pre_handshake_data_error
         else:
@@ -629,7 +635,7 @@ class SSLSocket(socket):
                         raise ValueError("do_handshake_on_connect should not be specified for non-blocking sockets")
                     self.do_handshake()
 
-            except (OSError, ValueError):
+            except (OSError, ValueError, socket_error):
                 self.close()
                 raise
 

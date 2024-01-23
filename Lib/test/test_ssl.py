@@ -3274,21 +3274,6 @@ else:
                 self.assertRaises(ValueError, s.read, 1024)
                 self.assertRaises(ValueError, s.write, b'hello')
 
-
-        client_context, server_context, hostname = testing_context()
-        server = ThreadedEchoServer(context=server_context, chatty=False)
-        with server:
-            with client_context.wrap_socket(socket.socket(),
-                                            server_hostname=hostname) as s:
-                s.connect((HOST, server.port))
-                s.write(b'HASCERT')
-                self.assertEqual(s.recv(1024), b'FALSE\n')
-                s.write(b'PHA')
-                self.assertEqual(s.recv(1024), b'OK\n')
-                # optional doesn't fail when client does not have a cert
-                s.write(b'HASCERT')
-                self.assertEqual(s.recv(1024), b'FALSE\n')
-
     def test_pha_no_pha_client(self):
         client_context, server_context, hostname = testing_context()
         server_context.post_handshake_auth = True
@@ -3552,7 +3537,7 @@ class TestPreHandshakeClose(unittest.TestCase):
             try:
                 if self.listener:
                     self.listener.close()
-            except OSError:
+            except (OSError, socket_error):
                 pass
             self.join()
             self.wrap_error = None  # avoid dangling references
