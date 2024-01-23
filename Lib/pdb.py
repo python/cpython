@@ -2004,6 +2004,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         __main__.__dict__.clear()
         __main__.__dict__.update(target.namespace)
 
+        # Clear the mtime table for program reruns, assume all the files
+        # are up to date.
+        self._file_mtime_table.clear()
+
         self.run(target.code)
 
     def _format_exc(self, exc: BaseException):
