@@ -269,7 +269,7 @@ class ThreadTests(BaseTestCase):
                 self.assertIs(threading._active.get(tid), dummy_thread)
                 # gh-29376
                 self.assert_(
-                    dummy_thread.is_alive(), 
+                    dummy_thread.is_alive(),
                     'Expected _DummyThread to be considered alive.'
                 )
                 self.assertIn('_DummyThread', repr(dummy_thread))
