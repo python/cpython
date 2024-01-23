@@ -609,11 +609,13 @@ def findfile(filename, subdir=None):
 
     Setting *subdir* indicates a relative path to use to find the file
     rather than looking directly in the path directories.
+    It can be either a string or a tuple of strings,
+    which will be joined with the correct path separator.
     """
     if os.path.isabs(filename):
         return filename
     if subdir is not None:
-        if not isinstance(subdir, str):
+        if isinstance(subdir, tuple):
             subdir = os.path.join(*subdir)
         filename = os.path.join(subdir, filename)
     path = [TEST_HOME_DIR] + sys.path
