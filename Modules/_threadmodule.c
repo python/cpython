@@ -364,9 +364,7 @@ lock_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     }
 
     PyObject *module = PyType_GetModuleByDef(type, &thread_module);
-    if (module == NULL) {
-        return NULL;
-    }
+    assert(module != NULL);
     return (PyObject *)newlockobject(module);
 
 error:
