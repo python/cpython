@@ -3126,12 +3126,12 @@ _PyDict_MergeEx(PyObject *a, PyObject *b, int override)
 /*[clinic input]
 dict.copy
 
-Returns a shallow copy of D.
+Returns a shallow copy of the dict.
 [clinic start generated code]*/
 
 static PyObject *
 dict_copy_impl(PyDictObject *self)
-/*[clinic end generated code: output=ffb782cf970a5c39 input=6d9903c1b6362e32]*/
+/*[clinic end generated code: output=ffb782cf970a5c39 input=c3478619cd5ae21d]*/
 {
     return PyDict_Copy((PyObject *)self);
 }
@@ -3706,12 +3706,12 @@ _PyDict_KeysSize(PyDictKeysObject *keys)
 /*[clinic input]
 dict.__sizeof__
 
-Returns size of D in memory, in bytes.
+Returns size of the dict in memory, in bytes.
 [clinic start generated code]*/
 
 static PyObject *
 dict___sizeof___impl(PyDictObject *self)
-/*[clinic end generated code: output=44279379b3824bda input=33b3550475672efd]*/
+/*[clinic end generated code: output=44279379b3824bda input=4390a7fef5801970]*/
 {
     return PyLong_FromSsize_t(_PyDict_SizeOf(self));
 }
@@ -5247,12 +5247,12 @@ PyTypeObject PyDictKeys_Type = {
 /*[clinic input]
 dict.keys
 
-Returns a set-like object providing a view on D's keys.
+Returns a set-like object providing a view on the dict's keys.
 [clinic start generated code]*/
 
 static PyObject *
 dict_keys_impl(PyDictObject *self)
-/*[clinic end generated code: output=aac2830c62990358 input=26448b0710052252]*/
+/*[clinic end generated code: output=aac2830c62990358 input=7f7942e4dbbc4cdf]*/
 {
     return _PyDictView_New((PyObject *)self, &PyDictKeys_Type);
 }
@@ -5449,12 +5449,12 @@ PyTypeObject PyDictValues_Type = {
 /*[clinic input]
 dict.values
 
-Returns an object providing a view on D's values.
+Returns an object providing a view on the dict's values.
 [clinic start generated code]*/
 
 static PyObject *
 dict_values_impl(PyDictObject *self)
-/*[clinic end generated code: output=ce9f2e9e8a959dd4 input=53354b69fc077e0d]*/
+/*[clinic end generated code: output=ce9f2e9e8a959dd4 input=ccd5c09c261cd554]*/
 {
     return _PyDictView_New((PyObject *)self, &PyDictValues_Type);
 }
