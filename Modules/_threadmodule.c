@@ -1863,10 +1863,6 @@ thread_module_exec(PyObject *module)
     if (state->lock_type == NULL) {
         return -1;
     }
-    if (PyModule_AddType(module, state->lock_type) < 0) {
-        return -1;
-    }
-    // Old alias: lock -> LockType
     if (PyDict_SetItemString(d, "LockType", (PyObject *)state->lock_type) < 0) {
         return -1;
     }
