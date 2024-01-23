@@ -3757,7 +3757,7 @@ static PyMethodDef mapp_methods[] = {
     DICT___CONTAINS___METHODDEF
     {"__getitem__",     dict_subscript,                 METH_O | METH_COEXIST,
      getitem__doc__},
-     DICT___SIZEOF___METHODDEF
+    DICT___SIZEOF___METHODDEF
     DICT_GET_METHODDEF
     DICT_SETDEFAULT_METHODDEF
     DICT_POP_METHODDEF
