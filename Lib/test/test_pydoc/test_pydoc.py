@@ -34,7 +34,7 @@ from test.support import (reap_children, captured_output, captured_stdout,
                           captured_stderr, is_emscripten, is_wasi,
                           requires_docstrings, MISSING_C_DOCSTRINGS)
 from test.support.os_helper import (TESTFN, rmtree, unlink)
-from test import pydoc_mod
+from test.test_pydoc import pydoc_mod
 
 
 class nonascii:
@@ -51,7 +51,7 @@ else:
 
 expected_text_pattern = """
 NAME
-    test.pydoc_mod - This is a test module for test_pydoc
+    test.test_pydoc.pydoc_mod - This is a test module for test_pydoc
 %s
 CLASSES
     builtins.object
@@ -124,7 +124,7 @@ FUNCTIONS
 
 DATA
     __xyz__ = 'X, Y and Z'
-    c_alias = test.pydoc_mod.C[int]
+    c_alias = test.test_pydoc.pydoc_mod.C[int]
     list_alias1 = typing.List[int]
     list_alias2 = list[int]
     type_union1 = typing.Union[int, str]
@@ -147,7 +147,7 @@ expected_text_data_docstrings = tuple('\n     |      ' + s if s else ''
                                       for s in expected_data_docstrings)
 
 html2text_of_expected = """
-test.pydoc_mod (version 1.2.3.4)
+test.test_pydoc.pydoc_mod (version 1.2.3.4)
 This is a test module for test_pydoc
 
 Modules
@@ -209,7 +209,7 @@ Functions
 
 Data
     __xyz__ = 'X, Y and Z'
-    c_alias = test.pydoc_mod.C[int]
+    c_alias = test.test_pydoc.pydoc_mod.C[int]
     list_alias1 = typing.List[int]
     list_alias2 = list[int]
     type_union1 = typing.Union[int, str]
@@ -334,7 +334,7 @@ def get_pydoc_link(module):
     "Returns a documentation web link of a module"
     abspath = os.path.abspath
     dirname = os.path.dirname
-    basedir = dirname(dirname(abspath(__file__)))
+    basedir = dirname(dirname(dirname(abspath(__file__))))
     doc = pydoc.TextDoc()
     loc = doc.getdocloc(module, basedir=basedir)
     return loc
@@ -483,7 +483,7 @@ class PydocDocTest(unittest.TestCase):
 
     @requires_docstrings
     def test_not_ascii(self):
-        result = run_pydoc('test.test_pydoc.nonascii', PYTHONIOENCODING='ascii')
+        result = run_pydoc('test.test_pydoc.test_pydoc.nonascii', PYTHONIOENCODING='ascii')
         encoded = nonascii.__doc__.encode('ascii', 'backslashreplace')
         self.assertIn(encoded, result)
 
@@ -663,9 +663,9 @@ class PydocDocTest(unittest.TestCase):
         buf = StringIO()
         helper = pydoc.Helper(output=buf)
         unused, doc_loc = get_pydoc_text(pydoc_mod)
-        module = "test.pydoc_mod"
+        module = "test.test_pydoc.pydoc_mod"
         help_header = """
-        Help on module test.pydoc_mod in test:
+        Help on module test.test_pydoc.pydoc_mod in test.test_pydoc:
 
         """.lstrip()
         help_header = textwrap.dedent(help_header)
@@ -1141,7 +1141,7 @@ class TestDescriptions(unittest.TestCase):
 
     def test_module(self):
         # Check that pydocfodder module can be described
-        from test import pydocfodder
+        from test.test_pydoc import pydocfodder
         doc = pydoc.render_doc(pydocfodder)
         self.assertIn("pydocfodder", doc)
 
@@ -1420,7 +1420,7 @@ class TestDescriptions(unittest.TestCase):
                 self.assertEqual(self._get_summary_line(C.meth),
                         "meth" + unbound)
                 self.assertEqual(self._get_summary_line(C().meth),
-                        "meth" + bound + " method of test.test_pydoc.C instance")
+                        "meth" + bound + " method of test.test_pydoc.test_pydoc.C instance")
                 C.cmeth.__func__.__text_signature__ = text_signature
                 self.assertEqual(self._get_summary_line(C.cmeth),
                         "cmeth" + bound + " method of builtins.type instance")
