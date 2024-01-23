@@ -268,7 +268,7 @@ class ThreadTests(BaseTestCase):
                 self.assertIsInstance(dummy_thread, threading._DummyThread)
                 self.assertIs(threading._active.get(tid), dummy_thread)
                 # gh-29376
-                self.assert_(
+                self.assertTrue(
                     dummy_thread.is_alive(),
                     'Expected _DummyThread to be considered alive.'
                 )
