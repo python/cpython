@@ -8,8 +8,13 @@
 
 --------------
 
-:mod:`dbm` is a generic interface to variants of the DBM database ---
-:mod:`dbm.gnu` or :mod:`dbm.ndbm`.  If none of these modules is installed, the
+:mod:`dbm` is a generic interface to variants of the DBM database:
+
+* :mod:`dbm.sqlite3`
+* :mod:`dbm.gnu`
+* :mod:`dbm.ndbm`
+
+If none of these modules are installed, the
 slow-but-simple implementation in module :mod:`dbm.dumb` will be used.  There
 is a `third party interface <https://www.jcea.es/programacion/pybsddb.htm>`_ to
 the Oracle Berkeley DB.
@@ -128,6 +133,69 @@ then prints out the contents of the database::
 
 
 The individual submodules are described in the following sections.
+
+.. Substitutions for the flag docs; all submodules use the same text.
+
+.. |flag_r| replace::
+   Open existing database for reading only (default)
+
+.. |flag_w| replace::
+   Open existing database for reading and writing
+
+.. |flag_c| replace::
+   Open database for reading and writing, creating it if it doesn't exist.
+
+.. |flag_n| replace::
+   Always create a new, empty database, open for reading and writing.
+
+:mod:`dbm.sqlite3` --- SQLite backend for dbm
+----------------------------------------------
+
+.. module:: dbm.sqlite3
+   :platform: All
+   :synopsis: SQLite backend for dbm
+
+.. versionadded:: 3.13
+
+**Source code:** :source:`Lib/dbm/sqlite3.py`
+
+--------------
+
+This module uses the standard library :mod:`sqlite3` to provide an
+SQLite backend for the :mod:`dbm` module.
+The files created by :mod:`dbm.sqlite3` can thus be opened by :mod:`sqlite3`,
+or any other SQLite browser, including the SQLite CLI.
+
+.. function:: open(filename, flag="r", mode=None)
+
+   Open an SQLite database.
+   The returned object, behaves like a :term:`mapping`,
+   but also implements a :meth:`!close` method
+   and supports a "closing" context manager via the :keyword:`with` keyword.
+
+   Neither keys nor values are coerced to a specific type
+   before being stored in the database.
+
+   :param filename:
+      The path to the database to be opened.
+   :type filename: :term:`path-like object`
+
+   :param str flag:
+
+      .. list-table::
+         :header-rows: 1
+
+         * - ``'r'``
+           - |flag_r|
+         * - ``'w'``
+           - |flag_w|
+         * - ``'c'``
+           - |flag_c|
+         * - ``'n'``
+           - |flag_n|
+
+   :param mode:
+      This parameter is ignored by the :mod:`!dbm.sqlite3` module.
 
 
 :mod:`dbm.gnu` --- GNU's reinterpretation of dbm
