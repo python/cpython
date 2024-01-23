@@ -113,15 +113,8 @@ class CorruptDatabase(_SQLiteDbmTests):
     def len_(db):
         len(db)
 
-    def test_readonly(self):
-        check = partial(self.check, flag="r")
-        check(fn=self.read)
-        check(fn=self.iter)
-        check(fn=self.keys)
-        check(fn=self.del_)
-
     def test_readwrite(self):
-        for flag in "w", "c":
+        for flag in "r", "w", "c":
             with self.subTest(flag=flag):
                 check = partial(self.check, flag=flag)
                 check(fn=self.read)
