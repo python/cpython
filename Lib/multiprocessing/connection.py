@@ -1011,6 +1011,8 @@ if sys.platform == 'win32':
         # returning the first signalled might create starvation issues.)
         L = list(handles)
         ready = []
+        # Windows limits WaitForMultipleObjects at 64 handles, and we use a
+        # few for synchronisation, so we switch to batched waits at 60.
         if len(L) > 60:
             try:
                 res = _winapi.BatchedWaitForMultipleObjects(L, False, timeout)
