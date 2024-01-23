@@ -61,19 +61,13 @@ the Oracle Berkeley DB.
 
    The optional *flag* argument can be:
 
-   .. list-table::
-      :header-rows: 1
+   .. csv-table::
+      :header: "Value", "Meaning"
 
-      * - Value
-        - Meaning
-      * - ``'r'`` (default)
-        - |flag_r|
-      * - ``'w'``
-        - |flag_w|
-      * - ``'c'``
-        - |flag_c|
-      * - ``'n'``
-        - |flag_n|
+      ``'r'`` (default), |flag_r|
+      ``'w'``, |flag_w|
+      ``'c'``, |flag_c|
+      ``'n'``, |flag_n|
 
 
    The optional *mode* argument is the Unix mode of the file, used only when the
@@ -179,36 +173,29 @@ supported.
 
    The optional *flag* argument can be:
 
-   .. list-table::
-      :header-rows: 1
+   .. csv-table::
+      :header: "Value", "Meaning"
 
-      * - Value
-        - Meaning
-      * - ``'r'`` (default)
-        - |flag_r|
-      * - ``'w'``
-        - |flag_w|
-      * - ``'c'``
-        - |flag_c|
-      * - ``'n'``
-        - |flag_n|
+      ``'r'`` (default), |flag_r|
+      ``'w'``, |flag_w|
+      ``'c'``, |flag_c|
+      ``'n'``, |flag_n|
 
    The following additional characters may be appended to the flag to control
    how the database is opened:
 
-   .. list-table::
-      :header-rows: 1
-
-      * - Value
-        - Meaning
-      * - ``'f'``
-        - Open the database in fast mode.
-          Writes to the database will not be synchronized.
-      * - ``'s'``
-        - Synchronized mode.
-          Changes to the database to be immediately written to the file.
-      * - ``'u'``
-        - Do not lock the database.
+   +---------+--------------------------------------------+
+   | Value   | Meaning                                    |
+   +=========+============================================+
+   | ``'f'`` | Open the database in fast mode.  Writes    |
+   |         | to the database will not be synchronized.  |
+   +---------+--------------------------------------------+
+   | ``'s'`` | Synchronized mode. This will cause changes |
+   |         | to the database to be immediately written  |
+   |         | to the file.                               |
+   +---------+--------------------------------------------+
+   | ``'u'`` | Do not lock database.                      |
+   +---------+--------------------------------------------+
 
    Not all flags are valid for all versions of ``gdbm``.  The module constant
    :const:`open_flags` is a string of supported flag characters.  The exception
@@ -310,19 +297,13 @@ to locate the appropriate header file to simplify building this module.
 
    The optional *flag* argument must be one of these values:
 
-   .. list-table::
-      :header-rows: 1
+   .. csv-table::
+      :header: "Value", "Meaning"
 
-      * - Value
-        - Meaning
-      * - ``'r'`` (default)
-        - |flag_r|
-      * - ``'w'``
-        - |flag_w|
-      * - ``'c'``
-        - |flag_c|
-      * - ``'n'``
-        - |flag_n|
+      ``'r'`` (default), |flag_r|
+      ``'w'``, |flag_w|
+      ``'c'``, |flag_c|
+      ``'n'``, |flag_n|
 
    The optional *mode* argument is the Unix mode of the file, used only when the
    database has to be created.  It defaults to octal ``0o666`` (and will be
@@ -387,19 +368,13 @@ The module defines the following:
 
    The optional *flag* argument can be:
 
-   .. list-table::
-      :header-rows: 1
+   .. csv-table::
+      :header: "Value", "Meaning"
 
-      * - Value
-        - Meaning
-      * - ``'r'``
-        - |flag_r|
-      * - ``'w'``
-        - |flag_w|
-      * - ``'c'`` (default)
-        - |flag_c|
-      * - ``'n'``
-        - |flag_n|
+      ``'r'``, |flag_r|
+      ``'w'``, |flag_w|
+      ``'c'`` (default), |flag_c|
+      ``'n'``, |flag_n|
 
    The optional *mode* argument is the Unix mode of the file, used only when the
    database has to be created.  It defaults to octal ``0o666`` (and will be modified
