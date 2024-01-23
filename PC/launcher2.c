@@ -798,14 +798,14 @@ ensure_no_redirector_stub(wchar_t* filename, wchar_t* buffer)
         return 0;
     }
 
-    AppExecLinkFile appExecLink;
-
     HANDLE hReparsePoint = CreateFileW(buffer, 0, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT, NULL);
     if (!hReparsePoint) {
         // Let normal handling take over
         debug(L"# Did not find %s on PATH\n", filename);
         return RC_NO_SHEBANG;
     }
+
+    AppExecLinkFile appExecLink;
 
     if (!DeviceIoControl(hReparsePoint, FSCTL_GET_REPARSE_POINT, NULL, 0, &appExecLink, sizeof(appExecLink), NULL, NULL)) {
         // Let normal handling take over
