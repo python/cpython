@@ -36,6 +36,7 @@ __all__ = ['get_ident', 'active_count', 'Condition', 'current_thread',
 _start_joinable_thread = _thread.start_joinable_thread
 _daemon_threads_allowed = _thread.daemon_threads_allowed
 _allocate_lock = _thread.allocate_lock
+_LockType = _thread.LockType
 _set_sentinel = _thread._set_sentinel
 get_ident = _thread.get_ident
 _is_main_interpreter = _thread._is_main_interpreter
@@ -107,7 +108,7 @@ def gettrace():
 
 # Synchronization classes
 
-Lock = type(_allocate_lock())
+Lock = _LockType
 
 def RLock(*args, **kwargs):
     """Factory function that returns a new reentrant lock.

@@ -5,6 +5,7 @@
 #include "Python.h"
 #include "pycore_interp.h"        // _PyInterpreterState.threads.count
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"       // _PyThreadState_SetCurrent()
 #include "pycore_sysmodule.h"     // _PySys_GetAttr()
@@ -354,11 +355,22 @@ static lockobject *newlockobject(PyObject *module);
 static PyObject *
 lock_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
+    // convert to AC?
+    if (!_PyArg_NoKeywords("lock", kwargs)) {
+        goto error;
+    }
+    if (!_PyArg_CheckPositional("lock", PyTuple_GET_SIZE(args), 0, 0)) {
+        goto error;
+    }
+
     PyObject *module = PyType_GetModuleByDef(type, &thread_module);
     if (module == NULL) {
         return NULL;
     }
     return (PyObject *)newlockobject(module);
+
+error:
+    return NULL;
 }
 
 
