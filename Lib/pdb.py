@@ -439,7 +439,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 self.message('--KeyboardInterrupt--')
 
     def _validate_file_mtime(self):
-        """Check if any of the files loaded in pdb have been modified since
+        """Check if the source file of the current frame has been modified since
         the last time we saw it. If so, give a warning."""
         try:
             filename = self.curframe.f_code.co_filename
@@ -448,7 +448,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             return
         if (filename in self._file_mtime_table and
             mtime != self._file_mtime_table[filename]):
-            self.message(f"*** WARNING: file '{filename}' changed after pdb started")
+            self.message(f"*** WARNING: file '{filename}' was edited after pdb started, "
+                         "running stale code")
         self._file_mtime_table[filename] = mtime
 
     # Called before loop, handles display expressions
