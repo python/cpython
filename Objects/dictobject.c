@@ -3706,7 +3706,7 @@ _PyDict_KeysSize(PyDictKeysObject *keys)
 /*[clinic input]
 dict.__sizeof__
 
-Returns size of the dict in memory, in bytes.
+Return the size of the dict in memory, in bytes.
 [clinic start generated code]*/
 
 static PyObject *
