@@ -5165,7 +5165,8 @@ class MiscTests(unittest.TestCase):
             mykey = 'from Base2'
             mykey2 = 'from Base2'
 
-        X = type('X', (Base,), {MyKey(): 5})
+        with self.assertWarnsRegex(RuntimeWarning, 'X'):
+            X = type('X', (Base,), {MyKey(): 5})
         # mykey is read from Base
         self.assertEqual(X.mykey, 'from Base')
         # mykey2 is read from Base2 because MyKey.__eq__ has set __bases__
