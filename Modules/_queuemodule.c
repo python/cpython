@@ -260,22 +260,22 @@ simplequeue_new_impl(PyTypeObject *type)
 }
 
 typedef struct {
-    int handed_off;
+    bool handed_off;
     simplequeueobject *queue;
     PyObject *item;
 } HandoffData;
 
 static void
-maybe_unparked_thread(HandoffData *data, PyObject **item, int has_more_waiters)
+maybe_handoff_item(HandoffData *data, PyObject **item, int has_more_waiters)
 {
     if (item == NULL) {
-        // Didn't unpark a thread
-        data->handed_off = 0;
+        // No threads were waiting
+        data->handed_off = false;
     }
     else {
-        // Successfully unparked a thread
+        // There was at least one waiting thread, hand off the item
         *item = data->item;
-        data->handed_off = 1;
+        data->handed_off = true;
     }
     data->queue->has_threads_waiting = has_more_waiters;
 }
@@ -307,7 +307,7 @@ _queue_SimpleQueue_put_impl(simplequeueobject *self, PyObject *item,
     if (self->has_threads_waiting) {
         // Try to hand the item off directly if there are threads waiting
         _PyParkingLot_Unpark(&self->has_threads_waiting,
-                             (_Py_unpark_fn_t *)maybe_unparked_thread, &data);
+                             (_Py_unpark_fn_t *)maybe_handoff_item, &data);
     }
     if (!data.handed_off) {
         if (RingBuf_Put(&self->buf, item) < 0) {
