@@ -45,12 +45,10 @@ Doc/library/enum.rst
 Doc/library/exceptions.rst
 Doc/library/faulthandler.rst
 Doc/library/fcntl.rst
-Doc/library/ftplib.rst
 Doc/library/functools.rst
 Doc/library/http.cookiejar.rst
 Doc/library/http.server.rst
 Doc/library/importlib.rst
-Doc/library/locale.rst
 Doc/library/logging.config.rst
 Doc/library/logging.handlers.rst
 Doc/library/lzma.rst

@@ -515,6 +515,13 @@ Pure paths provide the following methods and properties:
       >>> p.is_relative_to('/usr')
       False
 
+   This method is string-based; it neither accesses the filesystem nor treats
+   "``..``" segments specially. The following code is equivalent:
+
+      >>> u = PurePath('/usr')
+      >>> u == p or u in p.parents
+      False
+
    .. versionadded:: 3.9
 
    .. deprecated-removed:: 3.12 3.14
@@ -1299,9 +1306,9 @@ call fails (for example because the path doesn't exist).
    If *exist_ok* is false (the default), :exc:`FileExistsError` is
    raised if the target directory already exists.
 
-   If *exist_ok* is true, :exc:`FileExistsError` exceptions will be
-   ignored (same behavior as the POSIX ``mkdir -p`` command), but only if the
-   last path component is not an existing non-directory file.
+   If *exist_ok* is true, :exc:`FileExistsError` will not be raised unless the given
+   path already exists in the file system and is not a directory (same
+   behavior as the POSIX ``mkdir -p`` command).
 
    .. versionchanged:: 3.5
       The *exist_ok* parameter was added.
@@ -1532,9 +1539,13 @@ call fails (for example because the path doesn't exist).
 
 .. method:: Path.symlink_to(target, target_is_directory=False)
 
-   Make this path a symbolic link to *target*.  Under Windows,
-   *target_is_directory* must be true (default ``False``) if the link's target
-   is a directory.  Under POSIX, *target_is_directory*'s value is ignored.
+   Make this path a symbolic link pointing to *target*.
+
+   On Windows, a symlink represents either a file or a directory, and does not
+   morph to the target dynamically.  If the target is present, the type of the
+   symlink will be created to match. Otherwise, the symlink will be created
+   as a directory if *target_is_directory* is ``True`` or a file symlink (the
+   default) otherwise.  On non-Windows platforms, *target_is_directory* is ignored.
 
    ::
 

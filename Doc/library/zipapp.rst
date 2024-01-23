@@ -171,8 +171,8 @@ The module defines two convenience functions:
    passed to the ``zipfile.ZipFile`` class, and must supply the methods
    needed by that class.
 
-   .. versionadded:: 3.7
-      Added the *filter* and *compressed* arguments.
+   .. versionchanged:: 3.7
+      Added the *filter* and *compressed* parameters.
 
 .. function:: get_interpreter(archive)
 
