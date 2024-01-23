@@ -5247,7 +5247,7 @@ PyTypeObject PyDictKeys_Type = {
 /*[clinic input]
 dict.keys
 
-Returns a set-like object providing a view on the dict's keys.
+Return a set-like object providing a view on the dict's keys.
 [clinic start generated code]*/
 
 static PyObject *
