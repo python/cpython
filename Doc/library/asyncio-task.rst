@@ -829,6 +829,7 @@ Waiting Primitives
    be one of the following constants:
 
    .. list-table::
+      :header-rows: 1
 
       * - Constant
         - Description
