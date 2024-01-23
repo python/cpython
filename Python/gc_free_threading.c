@@ -939,9 +939,11 @@ cleanup_worklist(struct worklist *worklist)
 static void
 gc_collect_internal(PyInterpreterState *interp, struct collection_state *state)
 {
+    _PyEval_StopTheWorld(interp);
     // Find unreachable objects
     int err = deduce_unreachable_heap(interp, state);
     if (err < 0) {
+        _PyEval_StartTheWorld(interp);
         goto error;
     }
 
@@ -955,15 +957,18 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state)
 
     // Clear weakrefs and enqueue callbacks (but do not call them).
     clear_weakrefs(state);
+    _PyEval_StartTheWorld(interp);
 
-    // Call weakref callbacks for dead objects
+    // Call weakref callbacks and finalizers after unpausing other threads to
+    // avoid potential deadlocks.
     call_weakref_callbacks(state);
-
-    // Call tp_finalize on objects with finalizers.
     finalize_garbage(state);
 
     // Handle any objects that may have resurrected after the finalization.
+    _PyEval_StopTheWorld(interp);
     err = handle_resurrected_objects(state);
+    _PyEval_StartTheWorld(interp);
+
     if (err < 0) {
         goto error;
     }

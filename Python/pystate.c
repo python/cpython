@@ -2057,7 +2057,6 @@ start_the_world(struct _stoptheworld_state *stw)
     HEAD_LOCK(runtime);
     stw->requested = 0;
     stw->world_stopped = 0;
-    stw->requester = NULL;
     // Switch threads back to the detached state.
     PyInterpreterState *i;
     PyThreadState *t;
@@ -2068,6 +2067,7 @@ start_the_world(struct _stoptheworld_state *stw)
             _PyParkingLot_UnparkAll(&t->state);
         }
     }
+    stw->requester = NULL;
     HEAD_UNLOCK(runtime);
     if (stw->is_global) {
         _PyRWMutex_Unlock(&runtime->stoptheworld_mutex);
