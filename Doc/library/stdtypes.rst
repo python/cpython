@@ -1640,7 +1640,7 @@ expression support in the :mod:`re` module).
 
 >>> 'PYTHON IS AMAZING'.capitalize()
 'Python is amazing'
->>> 'ǋemačka Starts With a non-english Digraph'.capitalize()
+>>> 'ǋemačka Starts With a non-English Digraph'.capitalize()
 'ǋemačka starts with a non-english digraph'
 
 .. raw:: html
@@ -1657,7 +1657,7 @@ expression support in the :mod:`re` module).
    intended to remove all case distinctions in a string. For example, the German
    lowercase letter ``'ß'`` is equivalent to ``"ss"``. Since it is already
    lowercase, :meth:`lower` would do nothing to ``'ß'``; :meth:`casefold`
-   converts it to ``"ss"``, as follows.
+   converts it to ``"ss"``.
 
    The casefolding algorithm is
    `described in section 3.13 'Default Case Folding' of the Unicode Standard
@@ -1698,6 +1698,8 @@ expression support in the :mod:`re` module).
 '  Python  '
 >>> 'Python'.center(10, '-')
 '--Python--'
+>>> 'Python'.center(9)
+'  Python '
 >>> 'Python'.center(4)
 'Python'
 
@@ -1787,7 +1789,7 @@ b'Python'
    Return ``True`` if the string ends with the specified *suffix*, otherwise return
    ``False``.  *suffix* can also be a tuple of suffixes to look for.  With optional
    *start*, test beginning at that position.  With optional *end*, stop comparing
-   at that position. Use the *start* and *end* is equivalent to
+   at that position. Use of *start* and *end* is equivalent to
    ``str[start:end].endswith(suffix)``.
 
    See also :meth:`startswith` and :meth:`removesuffix`.
@@ -1860,7 +1862,7 @@ True
 
       The :meth:`~str.find` method should be used only if you need to know the
       position of *sub*.  To check if *sub* is a substring or not, use the
-      :keyword:`in` operator. For example::
+      :keyword:`in` operator::
 
          >>> 'Py' in 'Python'
          True
