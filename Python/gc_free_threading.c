@@ -220,7 +220,7 @@ gc_visit_heaps_lock_held(PyInterpreterState *interp, mi_block_visit_fun *visitor
                          struct visitor_args *arg)
 {
     // Offset of PyObject header from start of memory block.
-    Py_ssize_t offset_base = sizeof(PyGC_Head);
+    Py_ssize_t offset_base = 0;
     if (_PyMem_DebugEnabled()) {
         // The debug allocator adds two words at the beginning of each block.
         offset_base += 2 * sizeof(size_t);
@@ -1552,8 +1552,10 @@ gc_alloc(PyTypeObject *tp, size_t basicsize, size_t presize)
     if (mem == NULL) {
         return _PyErr_NoMemory(tstate);
     }
-    ((PyObject **)mem)[0] = NULL;
-    ((PyObject **)mem)[1] = NULL;
+    if (presize) {
+        ((PyObject **)mem)[0] = NULL;
+        ((PyObject **)mem)[1] = NULL;
+    }
     PyObject *op = (PyObject *)(mem + presize);
     _PyObject_GC_Link(op);
     return op;
