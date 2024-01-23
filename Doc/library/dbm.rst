@@ -69,7 +69,6 @@ the Oracle Berkeley DB.
       ``'c'``, |flag_c|
       ``'n'``, |flag_n|
 
-
    The optional *mode* argument is the Unix mode of the file, used only when the
    database has to be created.  It defaults to octal ``0o666`` (and will be
    modified by the prevailing umask).
