@@ -626,12 +626,12 @@ library.
 Access to message catalogs
 --------------------------
 
-.. function:: gettext(msg, /)
-.. function:: dgettext(domain, msg, /)
-.. function:: dcgettext(domain, msg, category, /)
-.. function:: textdomain(domain, /)
-.. function:: bindtextdomain(domain, dir, /)
-.. function:: bind_textdomain_codeset(domain, codeset, /)
+.. function:: gettext(msg)
+.. function:: dgettext(domain, msg)
+.. function:: dcgettext(domain, msg, category)
+.. function:: textdomain(domain)
+.. function:: bindtextdomain(domain, dir)
+.. function:: bind_textdomain_codeset(domain, codeset)
 
 The locale module exposes the C library's gettext interface on systems that
 provide this interface.  It consists of the functions :func:`gettext`,
