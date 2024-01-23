@@ -17,16 +17,16 @@ CPYTHON_ROOT_DIR = pathlib.Path(__file__).parent.parent.parent
 # the license expression is a valid SPDX license expression:
 # See: https://spdx.org/licenses
 ALLOWED_LICENSE_EXPRESSIONS = {
-    "MIT",
-    "CC0-1.0",
     "Apache-2.0",
+    "Apache-2.0 OR BSD-2-Clause",
     "BSD-2-Clause",
     "BSD-3-Clause",
-    "Python-2.0.1",
-    "MPL-2.0",
-    "LGPL-2.1-only",
+    "CC0-1.0",
     "ISC",
-    "Apache-2.0 OR BSD-2-Clause",
+    "LGPL-2.1-only",
+    "MIT",
+    "MPL-2.0",
+    "Python-2.0.1",
 }
 
 # Properties which are required for our purposes.
@@ -138,7 +138,7 @@ def fetch_package_metadata_from_pypi(project: str, version: str, filename: str |
         # Look for a matching artifact filename and then check
         # its remote checksum to the local one.
         for url in release_metadata["urls"]:
-            # Pip can only use Python-only dependencies, so there's
+            # pip can only use Python-only dependencies, so there's
             # no risk of picking the 'incorrect' wheel here.
             if (
                 (filename is None and url["packagetype"] == "bdist_wheel")
