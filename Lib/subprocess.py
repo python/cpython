@@ -1785,7 +1785,7 @@ class Popen:
                 if fd != -1:
                     file_actions.append((os.POSIX_SPAWN_DUP2, fd, fd2))
 
-            if cwd:
+            if cwd is not None:
                 file_actions.append((os.POSIX_SPAWN_CHDIR, cwd))
 
             if close_fds:
