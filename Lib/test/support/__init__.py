@@ -2194,7 +2194,7 @@ def _findwheel(pkgname):
     Otherwise, they are searched for in the test directory.
     """
     wheel_dir = sysconfig.get_config_var('WHEEL_PKG_DIR') or os.path.join(
-        TEST_HOME_DIR, 'whldata',
+        TEST_HOME_DIR, 'wheeldata',
     )
     filenames = os.listdir(wheel_dir)
     filenames = sorted(filenames, reverse=True)  # approximate "newest" first
