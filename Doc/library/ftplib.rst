@@ -221,7 +221,7 @@ FTP objects
 
       :param int rest:
          A ``REST`` command to be sent to the server.
-         See the corresponding named parameter to the :meth:`transfercmd` method.
+         See the documentation for the *rest* parameter of the :meth:`transfercmd` method.
 
 
    .. method:: FTP.retrlines(cmd, callback=None)
@@ -268,7 +268,7 @@ FTP objects
 
       :param int rest:
          A ``REST`` command to be sent to the server.
-         See the corresponding named parameter to the :meth:`transfercmd` method.
+         See the documentation for the *rest* parameter of the :meth:`transfercmd` method.
 
       .. versionchanged:: 3.2
          The *rest* parameter was added.
