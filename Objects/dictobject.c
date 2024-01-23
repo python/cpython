@@ -2641,9 +2641,14 @@ static PyMappingMethods dict_as_mapping = {
     dict_ass_sub, /*mp_ass_subscript*/
 };
 
-static PyObject *
-dict_keys(PyDictObject *mp)
+PyObject *
+PyDict_Keys(PyObject *dict)
 {
+    if (dict == NULL || !PyDict_Check(dict)) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+    PyDictObject *mp = (PyDictObject *)dict;
     PyObject *v;
     Py_ssize_t n;
 
@@ -2672,9 +2677,14 @@ dict_keys(PyDictObject *mp)
     return v;
 }
 
-static PyObject *
-dict_values(PyDictObject *mp)
+PyObject *
+PyDict_Values(PyObject *dict)
 {
+    if (dict == NULL || !PyDict_Check(dict)) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+    PyDictObject *mp = (PyDictObject *)dict;
     PyObject *v;
     Py_ssize_t n;
 
@@ -2703,9 +2713,14 @@ dict_values(PyDictObject *mp)
     return v;
 }
 
-static PyObject *
-dict_items(PyDictObject *mp)
+PyObject *
+PyDict_Items(PyObject *dict)
 {
+    if (dict == NULL || !PyDict_Check(dict)) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+    PyDictObject *mp = (PyDictObject *)dict;
     PyObject *v;
     Py_ssize_t i, n;
     PyObject *item;
@@ -3108,10 +3123,17 @@ _PyDict_MergeEx(PyObject *a, PyObject *b, int override)
     return dict_merge(interp, a, b, override);
 }
 
+/*[clinic input]
+dict.copy
+
+Return a shallow copy of the dict.
+[clinic start generated code]*/
+
 static PyObject *
-dict_copy(PyObject *mp, PyObject *Py_UNUSED(ignored))
+dict_copy_impl(PyDictObject *self)
+/*[clinic end generated code: output=ffb782cf970a5c39 input=73935f042b639de4]*/
 {
-    return PyDict_Copy(mp);
+    return PyDict_Copy((PyObject *)self);
 }
 
 PyObject *
@@ -3215,36 +3237,6 @@ PyDict_Size(PyObject *mp)
         return -1;
     }
     return ((PyDictObject *)mp)->ma_used;
-}
-
-PyObject *
-PyDict_Keys(PyObject *mp)
-{
-    if (mp == NULL || !PyDict_Check(mp)) {
-        PyErr_BadInternalCall();
-        return NULL;
-    }
-    return dict_keys((PyDictObject *)mp);
-}
-
-PyObject *
-PyDict_Values(PyObject *mp)
-{
-    if (mp == NULL || !PyDict_Check(mp)) {
-        PyErr_BadInternalCall();
-        return NULL;
-    }
-    return dict_values((PyDictObject *)mp);
-}
-
-PyObject *
-PyDict_Items(PyObject *mp)
-{
-    if (mp == NULL || !PyDict_Check(mp)) {
-        PyErr_BadInternalCall();
-        return NULL;
-    }
-    return dict_items((PyDictObject *)mp);
 }
 
 /* Return 1 if dicts equal, 0 if not, -1 if error.
@@ -3512,10 +3504,18 @@ dict_setdefault_impl(PyDictObject *self, PyObject *key,
     return Py_XNewRef(val);
 }
 
+
+/*[clinic input]
+dict.clear
+
+Remove all items from the dict.
+[clinic start generated code]*/
+
 static PyObject *
-dict_clear(PyObject *mp, PyObject *Py_UNUSED(ignored))
+dict_clear_impl(PyDictObject *self)
+/*[clinic end generated code: output=5139a830df00830a input=0bf729baba97a4c2]*/
 {
-    PyDict_Clear(mp);
+    PyDict_Clear((PyObject *)self);
     Py_RETURN_NONE;
 }
 
@@ -3703,11 +3703,17 @@ _PyDict_KeysSize(PyDictKeysObject *keys)
     return size;
 }
 
+/*[clinic input]
+dict.__sizeof__
+
+Return the size of the dict in memory, in bytes.
+[clinic start generated code]*/
+
 static PyObject *
-dict_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
+dict___sizeof___impl(PyDictObject *self)
+/*[clinic end generated code: output=44279379b3824bda input=4fec4ddfc44a4d1a]*/
 {
-    PyDictObject *mp = (PyDictObject *)self;
-    return PyLong_FromSsize_t(_PyDict_SizeOf(mp));
+    return PyLong_FromSsize_t(_PyDict_SizeOf(self));
 }
 
 static PyObject *
@@ -3739,56 +3745,31 @@ dict_ior(PyObject *self, PyObject *other)
 PyDoc_STRVAR(getitem__doc__,
 "__getitem__($self, key, /)\n--\n\nReturn self[key].");
 
-PyDoc_STRVAR(sizeof__doc__,
-"D.__sizeof__() -> size of D in memory, in bytes");
-
 PyDoc_STRVAR(update__doc__,
 "D.update([E, ]**F) -> None.  Update D from dict/iterable E and F.\n\
 If E is present and has a .keys() method, then does:  for k in E: D[k] = E[k]\n\
 If E is present and lacks a .keys() method, then does:  for k, v in E: D[k] = v\n\
 In either case, this is followed by: for k in F:  D[k] = F[k]");
 
-PyDoc_STRVAR(clear__doc__,
-"D.clear() -> None.  Remove all items from D.");
-
-PyDoc_STRVAR(copy__doc__,
-"D.copy() -> a shallow copy of D");
-
 /* Forward */
-static PyObject *dictkeys_new(PyObject *, PyObject *);
-static PyObject *dictitems_new(PyObject *, PyObject *);
-static PyObject *dictvalues_new(PyObject *, PyObject *);
-
-PyDoc_STRVAR(keys__doc__,
-             "D.keys() -> a set-like object providing a view on D's keys");
-PyDoc_STRVAR(items__doc__,
-             "D.items() -> a set-like object providing a view on D's items");
-PyDoc_STRVAR(values__doc__,
-             "D.values() -> an object providing a view on D's values");
 
 static PyMethodDef mapp_methods[] = {
     DICT___CONTAINS___METHODDEF
     {"__getitem__",     dict_subscript,                 METH_O | METH_COEXIST,
      getitem__doc__},
-    {"__sizeof__",      dict_sizeof,                    METH_NOARGS,
-     sizeof__doc__},
+    DICT___SIZEOF___METHODDEF
     DICT_GET_METHODDEF
     DICT_SETDEFAULT_METHODDEF
     DICT_POP_METHODDEF
     DICT_POPITEM_METHODDEF
-    {"keys",            dictkeys_new,                   METH_NOARGS,
-    keys__doc__},
-    {"items",           dictitems_new,                  METH_NOARGS,
-    items__doc__},
-    {"values",          dictvalues_new,                 METH_NOARGS,
-    values__doc__},
+    DICT_KEYS_METHODDEF
+    DICT_ITEMS_METHODDEF
+    DICT_VALUES_METHODDEF
     {"update",          _PyCFunction_CAST(dict_update), METH_VARARGS | METH_KEYWORDS,
      update__doc__},
     DICT_FROMKEYS_METHODDEF
-    {"clear",           dict_clear,                     METH_NOARGS,
-     clear__doc__},
-    {"copy",            dict_copy,                      METH_NOARGS,
-     copy__doc__},
+    DICT_CLEAR_METHODDEF
+    DICT_COPY_METHODDEF
     DICT___REVERSED___METHODDEF
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL,              NULL}   /* sentinel */
@@ -5263,10 +5244,17 @@ PyTypeObject PyDictKeys_Type = {
     .tp_getset = dictview_getset,
 };
 
+/*[clinic input]
+dict.keys
+
+Return a set-like object providing a view on the dict's keys.
+[clinic start generated code]*/
+
 static PyObject *
-dictkeys_new(PyObject *dict, PyObject *Py_UNUSED(ignored))
+dict_keys_impl(PyDictObject *self)
+/*[clinic end generated code: output=aac2830c62990358 input=42f48a7a771212a7]*/
 {
-    return _PyDictView_New(dict, &PyDictKeys_Type);
+    return _PyDictView_New((PyObject *)self, &PyDictKeys_Type);
 }
 
 static PyObject *
@@ -5368,10 +5356,17 @@ PyTypeObject PyDictItems_Type = {
     .tp_getset = dictview_getset,
 };
 
+/*[clinic input]
+dict.items
+
+Return a set-like object providing a view on the dict's items.
+[clinic start generated code]*/
+
 static PyObject *
-dictitems_new(PyObject *dict, PyObject *Py_UNUSED(ignored))
+dict_items_impl(PyDictObject *self)
+/*[clinic end generated code: output=88c7db7150c7909a input=87c822872eb71f5a]*/
 {
-    return _PyDictView_New(dict, &PyDictItems_Type);
+    return _PyDictView_New((PyObject *)self, &PyDictItems_Type);
 }
 
 static PyObject *
@@ -5451,10 +5446,17 @@ PyTypeObject PyDictValues_Type = {
     .tp_getset = dictview_getset,
 };
 
+/*[clinic input]
+dict.values
+
+Return an object providing a view on the dict's values.
+[clinic start generated code]*/
+
 static PyObject *
-dictvalues_new(PyObject *dict, PyObject *Py_UNUSED(ignored))
+dict_values_impl(PyDictObject *self)
+/*[clinic end generated code: output=ce9f2e9e8a959dd4 input=b46944f85493b230]*/
 {
-    return _PyDictView_New(dict, &PyDictValues_Type);
+    return _PyDictView_New((PyObject *)self, &PyDictValues_Type);
 }
 
 static PyObject *
