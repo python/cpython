@@ -45,7 +45,6 @@ Doc/library/enum.rst
 Doc/library/exceptions.rst
 Doc/library/faulthandler.rst
 Doc/library/fcntl.rst
-Doc/library/ftplib.rst
 Doc/library/functools.rst
 Doc/library/http.cookiejar.rst
 Doc/library/http.server.rst
