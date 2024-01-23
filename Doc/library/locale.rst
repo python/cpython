@@ -18,7 +18,7 @@ know all the specifics of each country where the software is executed.
 
 .. index:: pair: module; _locale
 
-The :mod:`locale` module is implemented on top of the :mod:`_locale` module,
+The :mod:`locale` module is implemented on top of the :mod:`!_locale` module,
 which in turn uses an ANSI C locale implementation if available.
 
 The :mod:`locale` module defines the following exception and functions:
@@ -192,7 +192,13 @@ The :mod:`locale` module defines the following exception and functions:
       Get a format string for :func:`time.strftime` to represent time in the am/pm
       format.
 
-   .. data:: DAY_1 ... DAY_7
+   .. data:: DAY_1
+             DAY_2
+             DAY_3
+             DAY_4
+             DAY_5
+             DAY_6
+             DAY_7
 
       Get the name of the n-th day of the week.
 
@@ -202,15 +208,43 @@ The :mod:`locale` module defines the following exception and functions:
          international convention (ISO 8601) that Monday is the first day of the
          week.
 
-   .. data:: ABDAY_1 ... ABDAY_7
+   .. data:: ABDAY_1
+             ABDAY_2
+             ABDAY_3
+             ABDAY_4
+             ABDAY_5
+             ABDAY_6
+             ABDAY_7
 
       Get the abbreviated name of the n-th day of the week.
 
-   .. data:: MON_1 ... MON_12
+   .. data:: MON_1
+             MON_2
+             MON_3
+             MON_4
+             MON_5
+             MON_6
+             MON_7
+             MON_8
+             MON_9
+             MON_10
+             MON_11
+             MON_12
 
       Get the name of the n-th month.
 
-   .. data:: ABMON_1 ... ABMON_12
+   .. data:: ABMON_1
+             ABMON_2
+             ABMON_3
+             ABMON_4
+             ABMON_5
+             ABMON_6
+             ABMON_7
+             ABMON_8
+             ABMON_9
+             ABMON_10
+             ABMON_11
+             ABMON_12
 
       Get the abbreviated name of the n-th month.
 
@@ -229,14 +263,14 @@ The :mod:`locale` module defines the following exception and functions:
 
    .. data:: NOEXPR
 
-      Get a regular expression that can be used with the regex(3) function to
+      Get a regular expression that can be used with the ``regex(3)`` function to
       recognize a negative response to a yes/no question.
 
       .. note::
 
          The regular expressions for :const:`YESEXPR` and
          :const:`NOEXPR` use syntax suitable for the
-         :c:func:`regex` function from the C library, which might
+         ``regex`` function from the C library, which might
          differ from the syntax used in :mod:`re`.
 
    .. data:: CRNCYSTR
@@ -591,9 +625,9 @@ the locale is ``C``).
 
 When Python code uses the :mod:`locale` module to change the locale, this also
 affects the embedding application.  If the embedding application doesn't want
-this to happen, it should remove the :mod:`_locale` extension module (which does
+this to happen, it should remove the :mod:`!_locale` extension module (which does
 all the work) from the table of built-in modules in the :file:`config.c` file,
-and make sure that the :mod:`_locale` module is not accessible as a shared
+and make sure that the :mod:`!_locale` module is not accessible as a shared
 library.
 
 
@@ -607,17 +641,18 @@ Access to message catalogs
 .. function:: dcgettext(domain, msg, category)
 .. function:: textdomain(domain)
 .. function:: bindtextdomain(domain, dir)
+.. function:: bind_textdomain_codeset(domain, codeset)
 
 The locale module exposes the C library's gettext interface on systems that
-provide this interface.  It consists of the functions :func:`!gettext`,
-:func:`!dgettext`, :func:`!dcgettext`, :func:`!textdomain`, :func:`!bindtextdomain`,
-and :func:`!bind_textdomain_codeset`.  These are similar to the same functions in
+provide this interface.  It consists of the functions :func:`gettext`,
+:func:`dgettext`, :func:`dcgettext`, :func:`textdomain`, :func:`bindtextdomain`,
+and :func:`bind_textdomain_codeset`.  These are similar to the same functions in
 the :mod:`gettext` module, but use the C library's binary format for message
 catalogs, and the C library's search algorithms for locating message catalogs.
 
 Python applications should normally find no need to invoke these functions, and
 should use :mod:`gettext` instead.  A known exception to this rule are
 applications that link with additional C libraries which internally invoke
-:c:func:`gettext` or :c:func:`dcgettext`.  For these applications, it may be
+C functions ``gettext`` or ``dcgettext``.  For these applications, it may be
 necessary to bind the text domain, so that the libraries can properly locate
 their message catalogs.
