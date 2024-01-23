@@ -5359,7 +5359,7 @@ PyTypeObject PyDictItems_Type = {
 /*[clinic input]
 dict.items
 
-Returns a set-like object providing a view on D's items.
+Return a set-like object providing a view on the dict's items.
 [clinic start generated code]*/
 
 static PyObject *
