@@ -18,7 +18,6 @@ ITER_KEYS = "SELECT key FROM Dict"
 
 
 def _normalize_uri_path(path):
-    path = os.fsdecode(path)
     path = path.replace("?", "%3f")
     path = path.replace("#", "%23")
     while "//" in path:
@@ -47,6 +46,7 @@ class _Database(MutableMapping):
                                  repr(flag))
 
         # We use the URI format when opening the database.
+        path = os.fsdecode(path)
         if not path or path == ":memory:":
             uri = "file:?mode=memory"
         else:
