@@ -402,7 +402,9 @@ if has_c_implementation:
             check_unpickler(recurse(1), 32, 20)
             check_unpickler(recurse(20), 32, 20)
             check_unpickler(recurse(50), 64, 60)
-            check_unpickler(recurse(100), 128, 140)
+            if not (support.is_wasi and support.Py_DEBUG):
+                # stack depth too shallow in pydebug WASI.
+                check_unpickler(recurse(100), 128, 140)
 
             u = unpickler(io.BytesIO(pickle.dumps('a', 0)),
                           encoding='ASCII', errors='strict')
