@@ -21,6 +21,38 @@ class _SQLiteDbmTests(unittest.TestCase):
             os_helper.unlink(self.filename + suffix)
 
 
+class ReadOnly(_SQLiteDbmTests):
+
+    def setUp(self):
+        super().setUp()
+        with dbm_sqlite3.open(self.filename, "w") as db:
+            db["key1"] = "value1"
+            db["key2"] = "value2"
+        self.db = dbm_sqlite3.open(self.filename, "r")
+
+    def tearDown(self):
+        self.db.close()
+        super().tearDown()
+
+    def test_read(self):
+        self.assertEqual(self.db["key1"], "value1")
+        self.assertEqual(self.db["key2"], "value2")
+
+    def test_write(self):
+        with self.assertRaises(dbm_sqlite3.error):
+            self.db["new"] = "value"
+
+    def test_delete(self):
+        with self.assertRaises(dbm_sqlite3.error):
+            del self.db["key1"]
+
+    def test_keys(self):
+        self.assertEqual(self.db.keys(), ["key1", "key2"])
+
+    def test_iter(self):
+        self.assertEqual([k for k in self.db], ["key1", "key2"])
+
+
 class Misuse(_SQLiteDbmTests):
 
     def setUp(self):
@@ -28,8 +60,8 @@ class Misuse(_SQLiteDbmTests):
         self.db = dbm_sqlite3.open(self.filename, "w")
 
     def tearDown(self):
-        super().tearDown()
         self.db.close()
+        super().tearDown()
 
     def test_double_close(self):
         self.db.close()
@@ -58,8 +90,8 @@ class DataTypes(_SQLiteDbmTests):
         self.db = dbm_sqlite3.open(self.filename, "w")
 
     def tearDown(self):
-        super().tearDown()
         self.db.close()
+        super().tearDown()
 
     def test_values(self):
         for value in self.dataset:
