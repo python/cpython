@@ -21,6 +21,34 @@ class _SQLiteDbmTests(unittest.TestCase):
             os_helper.unlink(self.filename + suffix)
 
 
+class Misuse(_SQLiteDbmTests):
+
+    def setUp(self):
+        super().setUp()
+        self.db = dbm_sqlite3.open(self.filename, "w")
+
+    def tearDown(self):
+        super().tearDown()
+        self.db.close()
+
+    def test_double_close(self):
+        self.db.close()
+
+    def test_invalid_flag(self):
+        with self.assertRaises(ValueError):
+            dbm_sqlite3.open(self.filename, flag="invalid")
+
+    def test_double_delete(self):
+        self.db["key"] = "value"
+        del self.db["key"]
+        with self.assertRaises(KeyError):
+            del self.db["key"]
+
+    def test_invalid_key(self):
+        with self.assertRaises(KeyError):
+            self.db["key"]
+
+
 class DataTypes(_SQLiteDbmTests):
 
     dataset = 10, 2.5, "string", b"bytes"
@@ -69,23 +97,46 @@ class CorruptDatabase(_SQLiteDbmTests):
     def write(db):
         db["key"] = "value"
 
+    @staticmethod
+    def iter(db):
+        next(iter(db))
+
+    @staticmethod
+    def keys(db):
+        db.keys()
+
+    @staticmethod
+    def del_(db):
+        del db["key"]
+
+    @staticmethod
+    def len_(db):
+        len(db)
+
     def test_readonly(self):
-        self.check(flag="r", fn=self.read)
+        check = partial(self.check, flag="r")
+        check(fn=self.read)
+        check(fn=self.iter)
+        check(fn=self.keys)
+        check(fn=self.del_)
 
     def test_readwrite(self):
-        check = partial(self.check, flag="w")
-        check(fn=self.read)
-        check(fn=self.write)
-
-    def test_create(self):
-        check = partial(self.check, flag="c")
-        check(fn=self.read)
-        check(fn=self.write)
+        for flag in "w", "c":
+            with self.subTest(flag=flag):
+                check = partial(self.check, flag=flag)
+                check(fn=self.read)
+                check(fn=self.write)
+                check(fn=self.iter)
+                check(fn=self.keys)
+                check(fn=self.del_)
+                check(fn=self.len_)
 
     def test_new(self):
         with closing(dbm_sqlite3.open(self.filename, "n")) as db:
             db["foo"] = "write"
             _ = db["foo"]
+            next(iter(db))
+            del db["foo"]
 
 
 if __name__ == "__main__":

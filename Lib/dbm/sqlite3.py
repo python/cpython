@@ -96,8 +96,9 @@ class _Database(MutableMapping):
                 yield row[0]
 
     def close(self):
-        self.cx.close()
-        self.cx = None
+        if self.cx:
+            self.cx.close()
+            self.cx = None
 
     def keys(self):
         return list(super().keys())
