@@ -218,7 +218,6 @@ added matters.  To illustrate::
       Default: :const:`False`.
 
       .. versionadded:: 3.5
-         The *mangle_from_* parameter.
 
 
    .. attribute:: message_factory

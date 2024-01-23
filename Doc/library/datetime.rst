@@ -855,8 +855,8 @@ Constructor:
 
    If an argument outside those ranges is given, :exc:`ValueError` is raised.
 
-   .. versionadded:: 3.6
-      Added the ``fold`` argument.
+   .. versionchanged:: 3.6
+      Added the *fold* parameter.
 
 Other constructors, all class methods:
 
@@ -1244,8 +1244,8 @@ Instance methods:
    ``tzinfo=None`` can be specified to create a naive datetime from an aware
    datetime with no conversion of date and time data.
 
-   .. versionadded:: 3.6
-      Added the ``fold`` argument.
+   .. versionchanged:: 3.6
+      Added the *fold* parameter.
 
 
 .. method:: datetime.astimezone(tz=None)
@@ -1488,8 +1488,8 @@ Instance methods:
       >>> dt.isoformat(timespec='microseconds')
       '2015-01-01T12:30:59.000000'
 
-   .. versionadded:: 3.6
-      Added the *timespec* argument.
+   .. versionchanged:: 3.6
+      Added the *timespec* parameter.
 
 
 .. method:: datetime.__str__()
@@ -1822,8 +1822,8 @@ Instance methods:
    ``tzinfo=None`` can be specified to create a naive :class:`.time` from an
    aware :class:`.time`, without conversion of the time data.
 
-   .. versionadded:: 3.6
-      Added the ``fold`` argument.
+   .. versionchanged:: 3.6
+      Added the *fold* parameter.
 
 
 .. method:: time.isoformat(timespec='auto')
@@ -1866,8 +1866,8 @@ Instance methods:
       >>> dt.isoformat(timespec='auto')
       '12:34:56'
 
-   .. versionadded:: 3.6
-      Added the *timespec* argument.
+   .. versionchanged:: 3.6
+      Added the *timespec* parameter.
 
 
 .. method:: time.__str__()
