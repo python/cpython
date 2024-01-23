@@ -141,20 +141,6 @@ then prints out the contents of the database::
 
 The individual submodules are described in the following sections.
 
-.. Substitutions for the flag docs; all submodules use the same text.
-
-.. |flag_r| replace::
-   Open existing database for reading only (default)
-
-.. |flag_w| replace::
-   Open existing database for reading and writing
-
-.. |flag_c| replace::
-   Open database for reading and writing, creating it if it doesn't exist.
-
-.. |flag_n| replace::
-   Always create a new, empty database, open for reading and writing.
-
 :mod:`dbm.sqlite3` --- SQLite backend for dbm
 ----------------------------------------------
 
