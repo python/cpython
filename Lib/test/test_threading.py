@@ -255,31 +255,26 @@ class ThreadTests(BaseTestCase):
     def test_foreign_thread(self):
         # Check that a "foreign" thread can use the threading module.
         dummy_thread = None
-        error_message = None
+        error = None
         def f(mutex):
-            # Calling current_thread() forces an entry for the foreign
-            # thread to get made in the threading._active map.
             try:
                 nonlocal dummy_thread
-                nonlocal error_message
+                nonlocal error
+                # Calling current_thread() forces an entry for the foreign
+                # thread to get made in the threading._active map.
                 dummy_thread = threading.current_thread()
                 tid = dummy_thread.ident
-                def verify_conditions():
-                    if tid not in threading._active:
-                        return f'Expected {tid} to be in {threading._active}'
-                    if not isinstance(dummy_thread, threading._DummyThread):
-                        return f'Expected {dummy_thread} to be an instance of threading._DummyThread.'
-                    found = threading._active.get(tid)
-                    if found is not dummy_thread:
-                        return f'Expected {found} to be {dummy_thread}.'
-                    if not dummy_thread.is_alive():
-                        # gh-29376
-                        return 'Expected _DummyThread to be considered alive.'
-                    r = repr(threading._active[tid])
-                    if '_DummyThread' not in r:
-                        return f'Expected "_DummyThread" to be in {r}.'
-                    return None
-                error_message = verify_conditions()
+                self.assertIn(tid, threading._active)
+                self.assertIsInstance(dummy_thread, threading._DummyThread)
+                self.assertIs(threading._active.get(tid), dummy_thread)
+                # gh-29376
+                self.assert_(
+                    dummy_thread.is_alive(), 
+                    'Expected _DummyThread to be considered alive.'
+                )
+                self.assertIn('_DummyThread', repr(dummy_thread))
+            except BaseException as e:
+                error = e
             finally:
                 mutex.release()
 
@@ -289,8 +284,8 @@ class ThreadTests(BaseTestCase):
             tid = _thread.start_new_thread(f, (mutex,))
             # Wait for the thread to finish.
             mutex.acquire()
-        if error_message is not None:
-            self.fail(error_message)
+        if error is not None:
+            raise error
         self.assertEqual(tid, dummy_thread.ident)
         # Issue gh-106236:
         with self.assertRaises(RuntimeError):
