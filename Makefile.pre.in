@@ -2241,6 +2241,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/tokenizedata \
 		test/tracedmodules \
 		test/typinganndata \
+		test/wheeldata \
 		test/xmltestdata \
 		test/xmltestdata/c14n-20 \
 		test/ziptestdata
