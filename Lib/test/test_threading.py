@@ -227,8 +227,6 @@ class ThreadTests(BaseTestCase):
             tid = _thread.start_new_thread(f, ())
             done.wait()
             self.assertEqual(ident[0], tid)
-        # Kill the "immortal" _DummyThread
-        del threading._active[ident[0]]
 
     # run with a small(ish) thread stack size (256 KiB)
     def test_various_ops_small_stack(self):
@@ -256,11 +254,29 @@ class ThreadTests(BaseTestCase):
 
     def test_foreign_thread(self):
         # Check that a "foreign" thread can use the threading module.
+        dummy_thread = None
+        error = None
         def f(mutex):
-            # Calling current_thread() forces an entry for the foreign
-            # thread to get made in the threading._active map.
-            threading.current_thread()
-            mutex.release()
+            try:
+                nonlocal dummy_thread
+                nonlocal error
+                # Calling current_thread() forces an entry for the foreign
+                # thread to get made in the threading._active map.
+                dummy_thread = threading.current_thread()
+                tid = dummy_thread.ident
+                self.assertIn(tid, threading._active)
+                self.assertIsInstance(dummy_thread, threading._DummyThread)
+                self.assertIs(threading._active.get(tid), dummy_thread)
+                # gh-29376
+                self.assertTrue(
+                    dummy_thread.is_alive(),
+                    'Expected _DummyThread to be considered alive.'
+                )
+                self.assertIn('_DummyThread', repr(dummy_thread))
+            except BaseException as e:
+                error = e
+            finally:
+                mutex.release()
 
         mutex = threading.Lock()
         mutex.acquire()
@@ -268,20 +284,25 @@ class ThreadTests(BaseTestCase):
             tid = _thread.start_new_thread(f, (mutex,))
             # Wait for the thread to finish.
             mutex.acquire()
-        self.assertIn(tid, threading._active)
-        self.assertIsInstance(threading._active[tid], threading._DummyThread)
-        #Issue 29376
-        self.assertTrue(threading._active[tid].is_alive())
-        self.assertRegex(repr(threading._active[tid]), '_DummyThread')
-
+        if error is not None:
+            raise error
+        self.assertEqual(tid, dummy_thread.ident)
         # Issue gh-106236:
         with self.assertRaises(RuntimeError):
-            threading._active[tid].join()
-        threading._active[tid]._started.clear()
+            dummy_thread.join()
+        dummy_thread._started.clear()
         with self.assertRaises(RuntimeError):
-            threading._active[tid].is_alive()
-
-        del threading._active[tid]
+            dummy_thread.is_alive()
+        # Busy wait for the following condition: after the thread dies, the
+        # related dummy thread must be removed from threading._active.
+        timeout = 5
+        timeout_at = time.monotonic() + timeout
+        while time.monotonic() < timeout_at:
+            if threading._active.get(dummy_thread.ident) is not dummy_thread:
+                break
+            time.sleep(.1)
+        else:
+            self.fail('It was expected that the created threading._DummyThread was removed from threading._active.')
 
     # PyThreadState_SetAsyncExc() is a CPython-only gimmick, not (currently)
     # exposed at the Python level.  This test relies on ctypes to get at it.
