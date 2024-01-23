@@ -1,5 +1,5 @@
 On Windows, closing the connection writer when cleaning up a broken
-:cls:`multiprocessing.Queue` queue is now done for all queues, rather than
+:class:`multiprocessing.Queue` queue is now done for all queues, rather than
 only in :mod:`concurrent.futures` manager thread.
 This can prevent a deadlock when a ``multiprocessing`` worker process terminates
 without cleaning up.
