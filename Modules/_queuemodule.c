@@ -376,7 +376,7 @@ _queue_SimpleQueue_get_impl(simplequeueobject *self, PyTypeObject *cls,
 
     // XXX Use PyThread_ParseTimeoutArg().
 
-    if (block != 0 && !Py_IsNone) {
+    if (block != 0 && !Py_IsNone(timeout_obj)) {
         /* With timeout */
         _PyTime_t timeout;
         if (_PyTime_FromSecondsObject(&timeout,
