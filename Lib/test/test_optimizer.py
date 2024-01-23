@@ -53,6 +53,7 @@ class TestRareEventCounters(unittest.TestCase):
             orig_counter + 1,
             _testinternalcapi.get_rare_event_counters()["builtin_dict"]
         )
+        del builtins["FOO"]
 
     def test_func_modification(self):
         def func(x=0):
