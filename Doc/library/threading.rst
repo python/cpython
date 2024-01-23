@@ -535,8 +535,8 @@ All methods are executed atomically.
    thread may release it.
 
    .. versionchanged:: 3.13
-      Prior to 3.13 ``Lock`` actually used to be a factory
-      function which returned an instance
+      ``Lock`` is now a class. In earlier Python versions,
+      ``Lock`` used to be a factory function which returned an instance
       of the most efficient version of the concrete Lock class that is supported
       by the platform.
 
