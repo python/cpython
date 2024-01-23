@@ -571,6 +571,7 @@ findArgv0End(const wchar_t *buffer, int bufferLength)
 /******************************************************************************\
  ***                          COMMAND-LINE PARSING                          ***
 \******************************************************************************/
+
 // Adapted from https://stackoverflow.com/a/65583702
 typedef struct AppExecLinkFile { // For tag IO_REPARSE_TAG_APPEXECLINK
     DWORD reparseTag;
@@ -585,7 +586,6 @@ typedef struct AppExecLinkFile { // For tag IO_REPARSE_TAG_APPEXECLINK
         Applic. Type: L"0"   // Integer as ASCII. "0" = Desktop bridge application; Else sandboxed UWP application
     */
 } AppExecLinkFile;
-
 
 
 int
