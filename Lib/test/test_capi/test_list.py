@@ -112,6 +112,15 @@ class CAPITest(unittest.TestCase):
         # CRASHES get_item(21, 2)
         # CRASHES get_item(NULL, 1)
 
+    def test_list_get_item_ref(self):
+        # Test PyList_GetItemRef()
+        get_item_ref = _testcapi.list_get_item_ref
+        lst = [1, 2, [1, 2, 3]]
+        self.assertEqual(get_item_ref(lst, 0), 1)
+        self.assertEqual(get_item_ref(lst, 2), [1, 2, 3])
+        self.assertRaises(IndexError, get_item_ref, lst, 3)
+        self.assertRaises(IndexError, get_item_ref, lst, -1)
+        self.assertRaises(TypeError, get_item_ref, "not a list", 0)
 
     def test_list_setitem(self):
         # Test PyList_SetItem()
