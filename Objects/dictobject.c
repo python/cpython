@@ -3131,7 +3131,7 @@ Return a shallow copy of the dict.
 
 static PyObject *
 dict_copy_impl(PyDictObject *self)
-/*[clinic end generated code: output=ffb782cf970a5c39 input=c3478619cd5ae21d]*/
+/*[clinic end generated code: output=ffb782cf970a5c39 input=73935f042b639de4]*/
 {
     return PyDict_Copy((PyObject *)self);
 }
@@ -3513,7 +3513,7 @@ Remove all items from the dict.
 
 static PyObject *
 dict_clear_impl(PyDictObject *self)
-/*[clinic end generated code: output=5139a830df00830a input=1824e4e555dfaf79]*/
+/*[clinic end generated code: output=5139a830df00830a input=0bf729baba97a4c2]*/
 {
     PyDict_Clear((PyObject *)self);
     Py_RETURN_NONE;
@@ -3711,7 +3711,7 @@ Return the size of the dict in memory, in bytes.
 
 static PyObject *
 dict___sizeof___impl(PyDictObject *self)
-/*[clinic end generated code: output=44279379b3824bda input=4390a7fef5801970]*/
+/*[clinic end generated code: output=44279379b3824bda input=4fec4ddfc44a4d1a]*/
 {
     return PyLong_FromSsize_t(_PyDict_SizeOf(self));
 }
@@ -5252,7 +5252,7 @@ Return a set-like object providing a view on the dict's keys.
 
 static PyObject *
 dict_keys_impl(PyDictObject *self)
-/*[clinic end generated code: output=aac2830c62990358 input=7f7942e4dbbc4cdf]*/
+/*[clinic end generated code: output=aac2830c62990358 input=42f48a7a771212a7]*/
 {
     return _PyDictView_New((PyObject *)self, &PyDictKeys_Type);
 }
@@ -5364,7 +5364,7 @@ Return a set-like object providing a view on the dict's items.
 
 static PyObject *
 dict_items_impl(PyDictObject *self)
-/*[clinic end generated code: output=88c7db7150c7909a input=21ee5e4c8ead76c4]*/
+/*[clinic end generated code: output=88c7db7150c7909a input=87c822872eb71f5a]*/
 {
     return _PyDictView_New((PyObject *)self, &PyDictItems_Type);
 }
@@ -5454,7 +5454,7 @@ Return an object providing a view on the dict's values.
 
 static PyObject *
 dict_values_impl(PyDictObject *self)
-/*[clinic end generated code: output=ce9f2e9e8a959dd4 input=ccd5c09c261cd554]*/
+/*[clinic end generated code: output=ce9f2e9e8a959dd4 input=b46944f85493b230]*/
 {
     return _PyDictView_New((PyObject *)self, &PyDictValues_Type);
 }

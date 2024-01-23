@@ -42,7 +42,7 @@ PyDoc_STRVAR(dict_copy__doc__,
 "copy($self, /)\n"
 "--\n"
 "\n"
-"Returns a shallow copy of the dict.");
+"Return a shallow copy of the dict.");
 
 #define DICT_COPY_METHODDEF    \
     {"copy", (PyCFunction)dict_copy, METH_NOARGS, dict_copy__doc__},
@@ -140,7 +140,7 @@ PyDoc_STRVAR(dict_clear__doc__,
 "clear($self, /)\n"
 "--\n"
 "\n"
-"Removes all items.");
+"Remove all items from the dict.");
 
 #define DICT_CLEAR_METHODDEF    \
     {"clear", (PyCFunction)dict_clear, METH_NOARGS, dict_clear__doc__},
@@ -216,7 +216,7 @@ PyDoc_STRVAR(dict___sizeof____doc__,
 "__sizeof__($self, /)\n"
 "--\n"
 "\n"
-"Returns size of the dict in memory, in bytes.");
+"Return the size of the dict in memory, in bytes.");
 
 #define DICT___SIZEOF___METHODDEF    \
     {"__sizeof__", (PyCFunction)dict___sizeof__, METH_NOARGS, dict___sizeof____doc__},
@@ -252,7 +252,7 @@ PyDoc_STRVAR(dict_keys__doc__,
 "keys($self, /)\n"
 "--\n"
 "\n"
-"Returns a set-like object providing a view on the dict\'s keys.");
+"Return a set-like object providing a view on the dict\'s keys.");
 
 #define DICT_KEYS_METHODDEF    \
     {"keys", (PyCFunction)dict_keys, METH_NOARGS, dict_keys__doc__},
@@ -270,7 +270,7 @@ PyDoc_STRVAR(dict_items__doc__,
 "items($self, /)\n"
 "--\n"
 "\n"
-"Returns a set-like object providing a view on D\'s items.");
+"Return a set-like object providing a view on the dict\'s items.");
 
 #define DICT_ITEMS_METHODDEF    \
     {"items", (PyCFunction)dict_items, METH_NOARGS, dict_items__doc__},
@@ -288,7 +288,7 @@ PyDoc_STRVAR(dict_values__doc__,
 "values($self, /)\n"
 "--\n"
 "\n"
-"Returns an object providing a view on the dict\'s values.");
+"Return an object providing a view on the dict\'s values.");
 
 #define DICT_VALUES_METHODDEF    \
     {"values", (PyCFunction)dict_values, METH_NOARGS, dict_values__doc__},
@@ -301,4 +301,4 @@ dict_values(PyDictObject *self, PyObject *Py_UNUSED(ignored))
 {
     return dict_values_impl(self);
 }
-/*[clinic end generated code: output=6cc89cc533fd201b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f3ac47dfbf341b23 input=a9049054013a1b77]*/
