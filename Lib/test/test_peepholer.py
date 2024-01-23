@@ -767,7 +767,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
             try:
                 1 / 0
             except:
-                print(a, b, c, d, e, f, g)
+                print(a, b, c, d, e, f, g)  # noqa: F823
             a = b = c = d = e = f = g = 1
         self.assertInBytecode(f, 'LOAD_FAST_CHECK')
         self.assertNotInBytecode(f, 'LOAD_FAST')

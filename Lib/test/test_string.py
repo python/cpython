@@ -56,7 +56,7 @@ class ModuleTest(unittest.TestCase):
         self.assertEqual(fmt.format('foo{}{}', 'bar', 6),
                          'foo{}{}'.format('bar', 6))
         self.assertEqual(fmt.format('foo{1}{num}{1}', None, 'bar', num=6),
-                         'foo{1}{num}{1}'.format(None, 'bar', num=6))
+                         'foo{1}{num}{1}'.format(None, 'bar', num=6))  # noqa: F523
         self.assertEqual(fmt.format('{:^{}}', 'bar', 6),
                          '{:^{}}'.format('bar', 6))
         self.assertEqual(fmt.format('{:^{}} {}', 'bar', 6, 'X'),
