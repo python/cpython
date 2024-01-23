@@ -449,7 +449,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if (filename in self._file_mtime_table and
             mtime != self._file_mtime_table[filename]):
             self.message(f"*** WARNING: file '{filename}' was edited after pdb started, "
-                         "running stale code")
+                         "running stale code until restart")
         self._file_mtime_table[filename] = mtime
 
     # Called before loop, handles display expressions
