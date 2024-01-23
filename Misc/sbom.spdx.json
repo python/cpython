@@ -2229,122 +2229,122 @@
   ],
   "relationships": [
     {
-      "relationSpdxElement": "SPDXRef-PACKAGE-requests",
+      "relatedSpdxElement": "SPDXRef-PACKAGE-cachecontrol",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-PACKAGE-pip"
     },
     {
-      "relationSpdxElement": "SPDXRef-PACKAGE-platformdirs",
+      "relatedSpdxElement": "SPDXRef-PACKAGE-certifi",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-PACKAGE-pip"
     },
     {
-      "relationSpdxElement": "SPDXRef-PACKAGE-msgpack",
+      "relatedSpdxElement": "SPDXRef-PACKAGE-chardet",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-PACKAGE-pip"
     },
     {
-      "relationSpdxElement": "SPDXRef-PACKAGE-typing-extensions",
+      "relatedSpdxElement": "SPDXRef-PACKAGE-colorama",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-PACKAGE-pip"
     },
     {
-      "relationSpdxElement": "SPDXRef-PACKAGE-distlib",
+      "relatedSpdxElement": "SPDXRef-PACKAGE-distlib",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-PACKAGE-pip"
     },
     {
-      "relationSpdxElement": "SPDXRef-PACKAGE-chardet",
+      "relatedSpdxElement": "SPDXRef-PACKAGE-distro",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-PACKAGE-pip"
     },
     {
-      "relationSpdxElement": "SPDXRef-PACKAGE-colorama",
+      "relatedSpdxElement": "SPDXRef-PACKAGE-idna",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-PACKAGE-pip"
     },
     {
-      "relationSpdxElement": "SPDXRef-PACKAGE-rich",
+      "relatedSpdxElement": "SPDXRef-PACKAGE-msgpack",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-PACKAGE-pip"
     },
     {
-      "relationSpdxElement": "SPDXRef-PACKAGE-packaging",
+      "relatedSpdxElement": "SPDXRef-PACKAGE-packaging",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-PACKAGE-pip"
     },
     {
-      "relationSpdxElement": "SPDXRef-PACKAGE-setuptools",
+      "relatedSpdxElement": "SPDXRef-PACKAGE-platformdirs",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-PACKAGE-pip"
     },
     {
-      "relationSpdxElement": "SPDXRef-PACKAGE-tomli",
+      "relatedSpdxElement": "SPDXRef-PACKAGE-pygments",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-PACKAGE-pip"
     },
     {
-      "relationSpdxElement": "SPDXRef-PACKAGE-webencodings",
+      "relatedSpdxElement": "SPDXRef-PACKAGE-pyparsing",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-PACKAGE-pip"
     },
     {
-      "relationSpdxElement": "SPDXRef-PACKAGE-resolvelib",
+      "relatedSpdxElement": "SPDXRef-PACKAGE-pyproject-hooks",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-PACKAGE-pip"
     },
     {
-      "relationSpdxElement": "SPDXRef-PACKAGE-pygments",
+      "relatedSpdxElement": "SPDXRef-PACKAGE-requests",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-PACKAGE-pip"
     },
     {
-      "relationSpdxElement": "SPDXRef-PACKAGE-pyproject-hooks",
+      "relatedSpdxElement": "SPDXRef-PACKAGE-resolvelib",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-PACKAGE-pip"
     },
     {
-      "relationSpdxElement": "SPDXRef-PACKAGE-urllib3",
+      "relatedSpdxElement": "SPDXRef-PACKAGE-rich",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-PACKAGE-pip"
     },
     {
-      "relationSpdxElement": "SPDXRef-PACKAGE-six",
+      "relatedSpdxElement": "SPDXRef-PACKAGE-setuptools",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-PACKAGE-pip"
     },
     {
-      "relationSpdxElement": "SPDXRef-PACKAGE-cachecontrol",
+      "relatedSpdxElement": "SPDXRef-PACKAGE-six",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-PACKAGE-pip"
     },
     {
-      "relationSpdxElement": "SPDXRef-PACKAGE-truststore",
+      "relatedSpdxElement": "SPDXRef-PACKAGE-tenacity",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-PACKAGE-pip"
     },
     {
-      "relationSpdxElement": "SPDXRef-PACKAGE-tenacity",
+      "relatedSpdxElement": "SPDXRef-PACKAGE-tomli",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-PACKAGE-pip"
     },
     {
-      "relationSpdxElement": "SPDXRef-PACKAGE-distro",
+      "relatedSpdxElement": "SPDXRef-PACKAGE-truststore",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-PACKAGE-pip"
     },
     {
-      "relationSpdxElement": "SPDXRef-PACKAGE-pyparsing",
+      "relatedSpdxElement": "SPDXRef-PACKAGE-typing-extensions",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-PACKAGE-pip"
     },
     {
-      "relationSpdxElement": "SPDXRef-PACKAGE-certifi",
+      "relatedSpdxElement": "SPDXRef-PACKAGE-urllib3",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-PACKAGE-pip"
     },
     {
-      "relationSpdxElement": "SPDXRef-PACKAGE-idna",
+      "relatedSpdxElement": "SPDXRef-PACKAGE-webencodings",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-PACKAGE-pip"
     },

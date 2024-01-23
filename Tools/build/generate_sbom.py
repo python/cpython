@@ -162,6 +162,63 @@ def fetch_package_metadata_from_pypi(project: str, version: str, filename: str |
         return None
 
 
+def find_ensurepip_pip_wheel() -> pathlib.Path | None:
+    """Try to find the pip wheel bundled in ensurepip. If missing return None"""
+
+    ensurepip_bundled_dir = CPYTHON_ROOT_DIR / "Lib/ensurepip/_bundled"
+
+    pip_wheels = []
+    for wheel_filename in os.listdir(ensurepip_bundled_dir):
+        if wheel_filename.startswith("pip-"):
+            pip_wheels.append(wheel_filename)
+        else:
+            print(f"Unexpected wheel in ensurepip: '{wheel_filename}'")
+            sys.exit(1)
+
+    if len(pip_wheels) == 0:
+        return None
+    elif len(pip_wheels) > 1:
+        print("Multiple pip wheels detected in 'Lib/ensurepip/_bundled'")
+        sys.exit(1)
+    # Otherwise return the one pip wheel.
+    return ensurepip_bundled_dir / pip_wheels[0]
+
+
+def maybe_remove_pip_and_deps_from_sbom(sbom_data: dict[str, typing.Any]) -> None:
+    """
+    Removes pip and its dependencies from the SBOM data
+    if the pip wheel is removed from ensurepip. This is done
+    by redistributors of Python and pip.
+    """
+
+    # If there's a wheel we don't remove anything.
+    if find_ensurepip_pip_wheel() is not None:
+        return
+
+    # Otherwise we traverse the relationships
+    # to find dependent packages to remove.
+    sbom_pip_spdx_id = spdx_id("SPDXRef-PACKAGE-pip")
+    sbom_spdx_ids_to_remove = {sbom_pip_spdx_id}
+
+    # Find all package SPDXIDs that pip depends on.
+    for sbom_relationship in sbom_data["relationships"]:
+        if (
+            sbom_relationship["relationshipType"] == "DEPENDS_ON"
+            and sbom_relationship["spdxElementId"] == sbom_pip_spdx_id
+        ):
+            sbom_spdx_ids_to_remove.add(sbom_relationship["relatedSpdxElement"])
+
+    # Remove all the packages and relationships.
+    sbom_data["packages"] = [
+        sbom_package for sbom_package in sbom_data["packages"]
+        if sbom_package["SPDXID"] not in sbom_spdx_ids_to_remove
+    ]
+    sbom_data["relationships"] = [
+        sbom_relationship for sbom_relationship in sbom_data["relationships"]
+        if sbom_relationship["relatedSpdxElement"] not in sbom_spdx_ids_to_remove
+    ]
+
+
 def discover_pip_sbom_package(sbom_data: dict[str, typing.Any]) -> None:
     """pip is a part of a packaging ecosystem (Python, surprise!) so it's actually
     automatable to discover the metadata we need like the version and checksums
@@ -170,34 +227,26 @@ def discover_pip_sbom_package(sbom_data: dict[str, typing.Any]) -> None:
     """
     global PACKAGE_TO_FILES
 
-    ensurepip_bundled_dir = CPYTHON_ROOT_DIR / "Lib/ensurepip/_bundled"
-    pip_wheels = []
-
-    # Find the hopefully one pip wheel in the bundled directory.
-    for wheel_filename in os.listdir(ensurepip_bundled_dir):
-        if wheel_filename.startswith("pip-"):
-            pip_wheels.append(wheel_filename)
-    if len(pip_wheels) != 1:
-        print("Zero or multiple pip wheels detected in 'Lib/ensurepip/_bundled'")
-        sys.exit(1)
-    pip_wheel_filename = pip_wheels[0]
+    pip_wheel_filepath = find_ensurepip_pip_wheel()
+    if pip_wheel_filepath is None:
+        return  # There's no pip wheel, nothing to discover.
 
     # Add the wheel filename to the list of files so the SBOM file
     # and relationship generator can work its magic on the wheel too.
     PACKAGE_TO_FILES["pip"] = PackageFiles(
-        include=[f"Lib/ensurepip/_bundled/{pip_wheel_filename}"]
+        include=[str(pip_wheel_filepath.relative_to(CPYTHON_ROOT_DIR))]
     )
 
     # Wheel filename format puts the version right after the project name.
-    pip_version = pip_wheel_filename.split("-")[1]
+    pip_version = pip_wheel_filepath.name.split("-")[1]
     pip_checksum_sha256 = hashlib.sha256(
-        (ensurepip_bundled_dir / pip_wheel_filename).read_bytes()
+        pip_wheel_filepath.read_bytes()
     ).hexdigest()
 
     pip_metadata = fetch_package_metadata_from_pypi(
         project="pip",
         version=pip_version,
-        filename=pip_wheel_filename,
+        filename=pip_wheel_filepath.name,
     )
     # We couldn't fetch any metadata from PyPI,
     # so we give up on verifying if we're not in CI.
@@ -209,7 +258,7 @@ def discover_pip_sbom_package(sbom_data: dict[str, typing.Any]) -> None:
         raise ValueError("Unexpected")
 
     # Parse 'pip/_vendor/vendor.txt' from the wheel for sub-dependencies.
-    with zipfile.ZipFile(ensurepip_bundled_dir / pip_wheel_filename) as whl:
+    with zipfile.ZipFile(pip_wheel_filepath) as whl:
         vendor_txt_data = whl.read("pip/_vendor/vendor.txt").decode()
 
         # With this version regex we're assuming that pip isn't using pre-releases.
@@ -303,10 +352,10 @@ def discover_pip_sbom_package(sbom_data: dict[str, typing.Any]) -> None:
             "primaryPackagePurpose": "SOURCE",
         }
     )
-    for sbom_dep_spdx_id in sbom_pip_dependency_spdx_ids:
+    for sbom_dep_spdx_id in sorted(sbom_pip_dependency_spdx_ids):
         sbom_data["relationships"].append({
             "spdxElementId": sbom_pip_spdx_id,
-            "relationSpdxElement": sbom_dep_spdx_id,
+            "relatedSpdxElement": sbom_dep_spdx_id,
             "relationshipType": "DEPENDS_ON"
         })
 
@@ -314,6 +363,10 @@ def discover_pip_sbom_package(sbom_data: dict[str, typing.Any]) -> None:
 def main() -> None:
     sbom_path = CPYTHON_ROOT_DIR / "Misc/sbom.spdx.json"
     sbom_data = json.loads(sbom_path.read_bytes())
+
+    # Check if pip should be removed if the wheel is missing.
+    # We can't reset the SBOM relationship data until checking this.
+    maybe_remove_pip_and_deps_from_sbom(sbom_data)
 
     # We regenerate all of this information. Package information
     # should be preserved though since that is edited by humans.
