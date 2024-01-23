@@ -182,6 +182,14 @@ Functions and classes provided:
    without needing to explicitly close ``page``.  Even if an error occurs,
    ``page.close()`` will be called when the :keyword:`with` block is exited.
 
+   .. note::
+
+      Most types managing resources support the :term:`context manager` protocol,
+      which closes *thing* on leaving the :keyword:`with` statment.
+      As such, :func:`!closing` is most useful for third party types that don't
+      support context managers.
+      This example is purely for illustration purposes,
+      as :func:`~urllib.request.urlopen` would normally be used in a context manager.
 
 .. function:: aclosing(thing)
 
