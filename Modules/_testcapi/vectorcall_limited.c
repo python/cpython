@@ -1,10 +1,8 @@
 /* Test Vectorcall in the limited API */
 
-#ifndef _MSC_VER
-#include "pyconfig.h"   // Py_NOGIL
-#endif
+#include "pyconfig.h"   // Py_GIL_DISABLED
 
-#ifndef Py_NOGIL
+#ifndef Py_GIL_DISABLED
 #define Py_LIMITED_API 0x030c0000 // 3.12
 #endif
 
@@ -197,6 +195,6 @@ _PyTestCapi_Init_VectorcallLimited(PyObject *m) {
     if (PyModule_AddType(m, (PyTypeObject *)LimitedVectorCallClass) < 0) {
         return -1;
     }
-
+    Py_DECREF(LimitedVectorCallClass);
     return 0;
 }

@@ -758,6 +758,63 @@ class ConditionTests(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(asyncio.TimeoutError):
                 await asyncio.wait_for(condition.wait(), timeout=0.5)
 
+    async def test_cancelled_error_wakeup(self):
+        # Test that a cancelled error, received when awaiting wakeup,
+        # will be re-raised un-modified.
+        wake = False
+        raised = None
+        cond = asyncio.Condition()
+
+        async def func():
+            nonlocal raised
+            async with cond:
+                with self.assertRaises(asyncio.CancelledError) as err:
+                    await cond.wait_for(lambda: wake)
+                raised = err.exception
+                raise raised
+
+        task = asyncio.create_task(func())
+        await asyncio.sleep(0)
+        # Task is waiting on the condition, cancel it there.
+        task.cancel(msg="foo")
+        with self.assertRaises(asyncio.CancelledError) as err:
+            await task
+        self.assertEqual(err.exception.args, ("foo",))
+        # We should have got the _same_ exception instance as the one
+        # originally raised.
+        self.assertIs(err.exception, raised)
+
+    async def test_cancelled_error_re_aquire(self):
+        # Test that a cancelled error, received when re-aquiring lock,
+        # will be re-raised un-modified.
+        wake = False
+        raised = None
+        cond = asyncio.Condition()
+
+        async def func():
+            nonlocal raised
+            async with cond:
+                with self.assertRaises(asyncio.CancelledError) as err:
+                    await cond.wait_for(lambda: wake)
+                raised = err.exception
+                raise raised
+
+        task = asyncio.create_task(func())
+        await asyncio.sleep(0)
+        # Task is waiting on the condition
+        await cond.acquire()
+        wake = True
+        cond.notify()
+        await asyncio.sleep(0)
+        # Task is now trying to re-acquire the lock, cancel it there.
+        task.cancel(msg="foo")
+        cond.release()
+        with self.assertRaises(asyncio.CancelledError) as err:
+            await task
+        self.assertEqual(err.exception.args, ("foo",))
+        # We should have got the _same_ exception instance as the one
+        # originally raised.
+        self.assertIs(err.exception, raised)
 
 class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
 
@@ -1044,6 +1101,62 @@ class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
         await asyncio.gather(*tasks, return_exceptions=True)
         self.assertEqual([2, 3], result)
 
+    async def test_acquire_fifo_order_4(self):
+        # Test that a successfule `acquire()` will wake up multiple Tasks
+        # that were waiting in the Semaphore queue due to FIFO rules.
+        sem = asyncio.Semaphore(0)
+        result = []
+        count = 0
+
+        async def c1(result):
+            # First task immediatlly waits for semaphore.  It will be awoken by c2.
+            self.assertEqual(sem._value, 0)
+            await sem.acquire()
+            # We should have woken up all waiting tasks now.
+            self.assertEqual(sem._value, 0)
+            # Create a fourth task.  It should run after c3, not c2.
+            nonlocal t4
+            t4 = asyncio.create_task(c4(result))
+            result.append(1)
+            return True
+
+        async def c2(result):
+            # The second task begins by releasing semaphore three times,
+            # for c1, c2, and c3.
+            sem.release()
+            sem.release()
+            sem.release()
+            self.assertEqual(sem._value, 2)
+            # It is locked, because c1 hasn't woken up yet.
+            self.assertTrue(sem.locked())
+            await sem.acquire()
+            result.append(2)
+            return True
+
+        async def c3(result):
+            await sem.acquire()
+            self.assertTrue(sem.locked())
+            result.append(3)
+            return True
+
+        async def c4(result):
+            result.append(4)
+            return True
+
+        t1 = asyncio.create_task(c1(result))
+        t2 = asyncio.create_task(c2(result))
+        t3 = asyncio.create_task(c3(result))
+        t4 = None
+
+        await asyncio.sleep(0)
+        # Three tasks are in the queue, the first hasn't woken up yet.
+        self.assertEqual(sem._value, 2)
+        self.assertEqual(len(sem._waiters), 3)
+        await asyncio.sleep(0)
+
+        tasks = [t1, t2, t3, t4]
+        await asyncio.gather(*tasks)
+        self.assertEqual([1, 2, 3, 4], result)
 
 class BarrierTests(unittest.IsolatedAsyncioTestCase):
 

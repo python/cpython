@@ -208,8 +208,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
         errors = []
         def onerror(*args):
             errors.append(args)
-        with self.assertWarns(DeprecationWarning):
-            shutil.rmtree(link, onerror=onerror)
+        shutil.rmtree(link, onerror=onerror)
         self.assertEqual(len(errors), 1)
         self.assertIs(errors[0][0], os.path.islink)
         self.assertEqual(errors[0][1], link)
@@ -270,8 +269,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
         errors = []
         def onerror(*args):
             errors.append(args)
-        with self.assertWarns(DeprecationWarning):
-            shutil.rmtree(link, onerror=onerror)
+        shutil.rmtree(link, onerror=onerror)
         self.assertEqual(len(errors), 1)
         self.assertIs(errors[0][0], os.path.islink)
         self.assertEqual(errors[0][1], link)
@@ -319,7 +317,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
         self.assertTrue(os.path.exists(dir3))
         self.assertTrue(os.path.exists(file1))
 
-    def test_rmtree_errors_onerror(self):
+    def test_rmtree_errors(self):
         # filename is guaranteed not to exist
         filename = tempfile.mktemp(dir=self.mkdtemp())
         self.assertRaises(FileNotFoundError, shutil.rmtree, filename)
@@ -328,8 +326,8 @@ class TestRmTree(BaseTest, unittest.TestCase):
 
         # existing file
         tmpdir = self.mkdtemp()
-        write_file((tmpdir, "tstfile"), "")
         filename = os.path.join(tmpdir, "tstfile")
+        write_file(filename, "")
         with self.assertRaises(NotADirectoryError) as cm:
             shutil.rmtree(filename)
         self.assertEqual(cm.exception.filename, filename)
@@ -337,11 +335,23 @@ class TestRmTree(BaseTest, unittest.TestCase):
         # test that ignore_errors option is honored
         shutil.rmtree(filename, ignore_errors=True)
         self.assertTrue(os.path.exists(filename))
+
+        self.assertRaises(TypeError, shutil.rmtree, None)
+        self.assertRaises(TypeError, shutil.rmtree, None, ignore_errors=True)
+        exc = TypeError if shutil.rmtree.avoids_symlink_attacks else NotImplementedError
+        with self.assertRaises(exc):
+            shutil.rmtree(filename, dir_fd='invalid')
+        with self.assertRaises(exc):
+            shutil.rmtree(filename, dir_fd='invalid', ignore_errors=True)
+
+    def test_rmtree_errors_onerror(self):
+        tmpdir = self.mkdtemp()
+        filename = os.path.join(tmpdir, "tstfile")
+        write_file(filename, "")
         errors = []
         def onerror(*args):
             errors.append(args)
-        with self.assertWarns(DeprecationWarning):
-            shutil.rmtree(filename, onerror=onerror)
+        shutil.rmtree(filename, onerror=onerror)
         self.assertEqual(len(errors), 2)
         self.assertIs(errors[0][0], os.scandir)
         self.assertEqual(errors[0][1], filename)
@@ -353,23 +363,9 @@ class TestRmTree(BaseTest, unittest.TestCase):
         self.assertEqual(errors[1][2][1].filename, filename)
 
     def test_rmtree_errors_onexc(self):
-        # filename is guaranteed not to exist
-        filename = tempfile.mktemp(dir=self.mkdtemp())
-        self.assertRaises(FileNotFoundError, shutil.rmtree, filename)
-        # test that ignore_errors option is honored
-        shutil.rmtree(filename, ignore_errors=True)
-
-        # existing file
         tmpdir = self.mkdtemp()
-        write_file((tmpdir, "tstfile"), "")
         filename = os.path.join(tmpdir, "tstfile")
-        with self.assertRaises(NotADirectoryError) as cm:
-            shutil.rmtree(filename)
-        self.assertEqual(cm.exception.filename, filename)
-        self.assertTrue(os.path.exists(filename))
-        # test that ignore_errors option is honored
-        shutil.rmtree(filename, ignore_errors=True)
-        self.assertTrue(os.path.exists(filename))
+        write_file(filename, "")
         errors = []
         def onexc(*args):
             errors.append(args)
@@ -410,8 +406,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
         self.addCleanup(os.chmod, self.child_file_path, old_child_file_mode)
         self.addCleanup(os.chmod, self.child_dir_path, old_child_dir_mode)
 
-        with self.assertWarns(DeprecationWarning):
-            shutil.rmtree(TESTFN, onerror=self.check_args_to_onerror)
+        shutil.rmtree(TESTFN, onerror=self.check_args_to_onerror)
         # Test whether onerror has actually been called.
         self.assertEqual(self.errorState, 3,
                          "Expected call to onerror function did not happen.")
@@ -537,8 +532,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
         self.addCleanup(os.chmod, self.child_file_path, old_child_file_mode)
         self.addCleanup(os.chmod, self.child_dir_path, old_child_dir_mode)
 
-        with self.assertWarns(DeprecationWarning):
-            shutil.rmtree(TESTFN, onerror=onerror, onexc=onexc)
+        shutil.rmtree(TESTFN, onerror=onerror, onexc=onexc)
         self.assertTrue(onexc_called)
         self.assertFalse(onerror_called)
 
@@ -581,6 +575,41 @@ class TestRmTree(BaseTest, unittest.TestCase):
         else:
             self.assertFalse(shutil._use_fd_functions)
             self.assertFalse(shutil.rmtree.avoids_symlink_attacks)
+
+    @unittest.skipUnless(shutil._use_fd_functions, "requires safe rmtree")
+    def test_rmtree_fails_on_close(self):
+        # Test that the error handler is called for failed os.close() and that
+        # os.close() is only called once for a file descriptor.
+        tmp = self.mkdtemp()
+        dir1 = os.path.join(tmp, 'dir1')
+        os.mkdir(dir1)
+        dir2 = os.path.join(dir1, 'dir2')
+        os.mkdir(dir2)
+        def close(fd):
+            orig_close(fd)
+            nonlocal close_count
+            close_count += 1
+            raise OSError
+
+        close_count = 0
+        with support.swap_attr(os, 'close', close) as orig_close:
+            with self.assertRaises(OSError):
+                shutil.rmtree(dir1)
+        self.assertTrue(os.path.isdir(dir2))
+        self.assertEqual(close_count, 2)
+
+        close_count = 0
+        errors = []
+        def onexc(*args):
+            errors.append(args)
+        with support.swap_attr(os, 'close', close) as orig_close:
+            shutil.rmtree(dir1, onexc=onexc)
+        self.assertEqual(len(errors), 2)
+        self.assertIs(errors[0][0], close)
+        self.assertEqual(errors[0][1], dir2)
+        self.assertIs(errors[1][0], close)
+        self.assertEqual(errors[1][1], dir1)
+        self.assertEqual(close_count, 2)
 
     @unittest.skipUnless(shutil._use_fd_functions, "dir_fd is not supported")
     def test_rmtree_with_dir_fd(self):
@@ -637,6 +666,63 @@ class TestRmTree(BaseTest, unittest.TestCase):
             shutil.rmtree(dst, ignore_errors=True)
         finally:
             shutil.rmtree(TESTFN, ignore_errors=True)
+
+    @unittest.skipIf(sys.platform[:6] == 'cygwin',
+                     "This test can't be run on Cygwin (issue #1071513).")
+    @os_helper.skip_if_dac_override
+    @os_helper.skip_unless_working_chmod
+    def test_rmtree_deleted_race_condition(self):
+        # bpo-37260
+        #
+        # Test that a file or a directory deleted after it is enumerated
+        # by scandir() but before unlink() or rmdr() is called doesn't
+        # generate any errors.
+        def _onexc(fn, path, exc):
+            assert fn in (os.rmdir, os.unlink)
+            if not isinstance(exc, PermissionError):
+                raise
+            # Make the parent and the children writeable.
+            for p, mode in zip(paths, old_modes):
+                os.chmod(p, mode)
+            # Remove other dirs except one.
+            keep = next(p for p in dirs if p != path)
+            for p in dirs:
+                if p != keep:
+                    os.rmdir(p)
+            # Remove other files except one.
+            keep = next(p for p in files if p != path)
+            for p in files:
+                if p != keep:
+                    os.unlink(p)
+
+        os.mkdir(TESTFN)
+        paths = [TESTFN] + [os.path.join(TESTFN, f'child{i}')
+                            for i in range(6)]
+        dirs = paths[1::2]
+        files = paths[2::2]
+        for path in dirs:
+            os.mkdir(path)
+        for path in files:
+            write_file(path, '')
+
+        old_modes = [os.stat(path).st_mode for path in paths]
+
+        # Make the parent and the children non-writeable.
+        new_mode = stat.S_IREAD|stat.S_IEXEC
+        for path in reversed(paths):
+            os.chmod(path, new_mode)
+
+        try:
+            shutil.rmtree(TESTFN, onexc=_onexc)
+        except:
+            # Test failed, so cleanup artifacts.
+            for path, mode in zip(paths, old_modes):
+                try:
+                    os.chmod(path, mode)
+                except OSError:
+                    pass
+            shutil.rmtree(TESTFN)
+            raise
 
 
 class TestCopyTree(BaseTest, unittest.TestCase):
@@ -1015,19 +1101,18 @@ class TestCopy(BaseTest, unittest.TestCase):
         shutil.copymode(src, dst)
         self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
         # On Windows, os.chmod does not follow symlinks (issue #15411)
-        if os.name != 'nt':
-            # follow src link
-            os.chmod(dst, stat.S_IRWXO)
-            shutil.copymode(src_link, dst)
-            self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
-            # follow dst link
-            os.chmod(dst, stat.S_IRWXO)
-            shutil.copymode(src, dst_link)
-            self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
-            # follow both links
-            os.chmod(dst, stat.S_IRWXO)
-            shutil.copymode(src_link, dst_link)
-            self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
+        # follow src link
+        os.chmod(dst, stat.S_IRWXO)
+        shutil.copymode(src_link, dst)
+        self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
+        # follow dst link
+        os.chmod(dst, stat.S_IRWXO)
+        shutil.copymode(src, dst_link)
+        self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
+        # follow both links
+        os.chmod(dst, stat.S_IRWXO)
+        shutil.copymode(src_link, dst_link)
+        self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
 
     @unittest.skipUnless(hasattr(os, 'lchmod'), 'requires os.lchmod')
     @os_helper.skip_unless_symlink
@@ -1046,10 +1131,11 @@ class TestCopy(BaseTest, unittest.TestCase):
         os.lchmod(src_link, stat.S_IRWXO|stat.S_IRWXG)
         # link to link
         os.lchmod(dst_link, stat.S_IRWXO)
+        old_mode = os.stat(dst).st_mode
         shutil.copymode(src_link, dst_link, follow_symlinks=False)
         self.assertEqual(os.lstat(src_link).st_mode,
                          os.lstat(dst_link).st_mode)
-        self.assertNotEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
+        self.assertEqual(os.stat(dst).st_mode, old_mode)
         # src link - use chmod
         os.lchmod(dst_link, stat.S_IRWXO)
         shutil.copymode(src_link, dst, follow_symlinks=False)
@@ -1584,6 +1670,17 @@ class TestArchives(BaseTest, unittest.TestCase):
         # now create another tarball using `tar`
         tarball2 = os.path.join(root_dir, 'archive2.tar')
         tar_cmd = ['tar', '-cf', 'archive2.tar', base_dir]
+        if sys.platform == 'darwin':
+            # macOS tar can include extended attributes,
+            # ACLs and other mac specific metadata into the
+            # archive (an recentish version of the OS).
+            #
+            # This feature can be disabled with the
+            # '--no-mac-metadata' option on macOS 11 or
+            # later.
+            import platform
+            if int(platform.mac_ver()[0].split('.')[0]) >= 11:
+                tar_cmd.insert(1, '--no-mac-metadata')
         subprocess.check_call(tar_cmd, cwd=root_dir,
                               stdout=subprocess.DEVNULL)
 
@@ -2591,6 +2688,35 @@ class TestMove(BaseTest, unittest.TestCase):
         finally:
             os.rmdir(dst_dir)
 
+    # bpo-26791: Check that a symlink to a directory can
+    #            be moved into that directory.
+    @mock_rename
+    def _test_move_symlink_to_dir_into_dir(self, dst):
+        src = os.path.join(self.src_dir, 'linktodir')
+        dst_link = os.path.join(self.dst_dir, 'linktodir')
+        os.symlink(self.dst_dir, src, target_is_directory=True)
+        shutil.move(src, dst)
+        self.assertTrue(os.path.islink(dst_link))
+        self.assertTrue(os.path.samefile(self.dst_dir, dst_link))
+        self.assertFalse(os.path.exists(src))
+
+        # Repeat the move operation with the destination
+        # symlink already in place (should raise shutil.Error).
+        os.symlink(self.dst_dir, src, target_is_directory=True)
+        with self.assertRaises(shutil.Error):
+            shutil.move(src, dst)
+        self.assertTrue(os.path.samefile(self.dst_dir, dst_link))
+        self.assertTrue(os.path.exists(src))
+
+    @os_helper.skip_unless_symlink
+    def test_move_symlink_to_dir_into_dir(self):
+        self._test_move_symlink_to_dir_into_dir(self.dst_dir)
+
+    @os_helper.skip_unless_symlink
+    def test_move_symlink_to_dir_into_symlink_to_dir(self):
+        dst = os.path.join(self.src_dir, 'otherlinktodir')
+        os.symlink(self.dst_dir, dst, target_is_directory=True)
+        self._test_move_symlink_to_dir_into_dir(dst)
 
     @os_helper.skip_unless_dac_override
     @unittest.skipUnless(hasattr(os, 'lchflags')

@@ -86,6 +86,7 @@ extern PyTypeObject _PyExc_MemoryError;
             .standard = _pymem_allocators_standard_INIT(runtime), \
             .debug = _pymem_allocators_debug_INIT, \
             .obj_arena = _pymem_allocators_obj_arena_INIT, \
+            .is_debug_enabled = _pymem_is_debug_enabled_INIT, \
         }, \
         .obmalloc = _obmalloc_global_state_INIT, \
         .pyhash_state = pyhash_state_INIT, \
@@ -186,7 +187,12 @@ extern PyTypeObject _PyExc_MemoryError;
                 }, \
             }, \
         }, \
-        ._initial_thread = _PyThreadState_INIT, \
+        ._initial_thread = _PyThreadStateImpl_INIT, \
+    }
+
+#define _PyThreadStateImpl_INIT \
+    { \
+        .base = _PyThreadState_INIT, \
     }
 
 #define _PyThreadState_INIT \

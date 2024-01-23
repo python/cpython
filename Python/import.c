@@ -252,18 +252,21 @@ import_ensure_initialized(PyInterpreterState *interp, PyObject *mod, PyObject *n
        NOTE: because of this, initializing must be set *before*
        stuffing the new module in sys.modules.
     */
-    spec = PyObject_GetAttr(mod, &_Py_ID(__spec__));
-    int busy = _PyModuleSpec_IsInitializing(spec);
-    Py_XDECREF(spec);
-    if (busy) {
-        /* Wait until module is done importing. */
-        PyObject *value = PyObject_CallMethodOneArg(
-            IMPORTLIB(interp), &_Py_ID(_lock_unlock_module), name);
-        if (value == NULL) {
-            return -1;
-        }
-        Py_DECREF(value);
+    int rc = PyObject_GetOptionalAttr(mod, &_Py_ID(__spec__), &spec);
+    if (rc > 0) {
+        rc = _PyModuleSpec_IsInitializing(spec);
+        Py_DECREF(spec);
     }
+    if (rc <= 0) {
+        return rc;
+    }
+    /* Wait until module is done importing. */
+    PyObject *value = PyObject_CallMethodOneArg(
+        IMPORTLIB(interp), &_Py_ID(_lock_unlock_module), name);
+    if (value == NULL) {
+        return -1;
+    }
+    Py_DECREF(value);
     return 0;
 }
 
@@ -415,11 +418,7 @@ remove_module(PyThreadState *tstate, PyObject *name)
 Py_ssize_t
 _PyImport_GetNextModuleIndex(void)
 {
-    PyThread_acquire_lock(EXTENSIONS.mutex, WAIT_LOCK);
-    LAST_MODULE_INDEX++;
-    Py_ssize_t index = LAST_MODULE_INDEX;
-    PyThread_release_lock(EXTENSIONS.mutex);
-    return index;
+    return _Py_atomic_add_ssize(&LAST_MODULE_INDEX, 1) + 1;
 }
 
 static const char *
@@ -879,13 +878,13 @@ gets even messier.
 static inline void
 extensions_lock_acquire(void)
 {
-    PyThread_acquire_lock(_PyRuntime.imports.extensions.mutex, WAIT_LOCK);
+    PyMutex_Lock(&_PyRuntime.imports.extensions.mutex);
 }
 
 static inline void
 extensions_lock_release(void)
 {
-    PyThread_release_lock(_PyRuntime.imports.extensions.mutex);
+    PyMutex_Unlock(&_PyRuntime.imports.extensions.mutex);
 }
 
 /* Magic for extension modules (built-in as well as dynamically

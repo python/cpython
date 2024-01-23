@@ -54,7 +54,7 @@ PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
    Furthermore, we can't use designated initializers in Extensions since these
    are not supported pre-C++20. Thus, keeping an internal copy here is the most
    backwards compatible solution */
-#if defined(Py_NOGIL)
+#if defined(Py_GIL_DISABLED)
 #define _PyObject_HEAD_INIT(type)                   \
     {                                               \
         .ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL,  \
@@ -103,7 +103,7 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
 #ifdef Py_REF_DEBUG
     _Py_AddRefTotal(_PyInterpreterState_GET(), n);
 #endif
-#if !defined(Py_NOGIL)
+#if !defined(Py_GIL_DISABLED)
     op->ob_refcnt += n;
 #else
     if (_Py_IsOwnedByCurrentThread(op)) {
@@ -128,7 +128,7 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
 static inline void _Py_SetImmortal(PyObject *op)
 {
     if (op) {
-#ifdef Py_NOGIL
+#ifdef Py_GIL_DISABLED
         op->ob_tid = _Py_UNOWNED_TID;
         op->ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL;
         op->ob_ref_shared = 0;
@@ -145,7 +145,7 @@ static inline void _Py_SetMortal(PyObject *op, Py_ssize_t refcnt)
 {
     if (op) {
         assert(_Py_IsImmortal(op));
-#ifdef Py_NOGIL
+#ifdef Py_GIL_DISABLED
         op->ob_tid = _Py_UNOWNED_TID;
         op->ob_ref_local = 0;
         op->ob_ref_shared = _Py_REF_SHARED(refcnt, _Py_REF_MERGED);
@@ -169,7 +169,7 @@ static inline void _Py_ClearImmortal(PyObject *op)
         op = NULL; \
     } while (0)
 
-#if !defined(Py_NOGIL)
+#if !defined(Py_GIL_DISABLED)
 static inline void
 _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 {
@@ -210,7 +210,7 @@ _Py_DECREF_NO_DEALLOC(PyObject *op)
 }
 
 #else
-// TODO: implement Py_DECREF specializations for Py_NOGIL build
+// TODO: implement Py_DECREF specializations for Py_GIL_DISABLED build
 static inline void
 _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 {
@@ -238,7 +238,7 @@ _Py_REF_IS_QUEUED(Py_ssize_t ob_ref_shared)
 // Merge the local and shared reference count fields and add `extra` to the
 // refcount when merging.
 Py_ssize_t _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra);
-#endif // !defined(Py_NOGIL)
+#endif // !defined(Py_GIL_DISABLED)
 
 #ifdef Py_REF_DEBUG
 #  undef _Py_DEC_REFTOTAL

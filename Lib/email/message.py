@@ -289,25 +289,26 @@ class Message:
         # cte might be a Header, so for now stringify it.
         cte = str(self.get('content-transfer-encoding', '')).lower()
         # payload may be bytes here.
-        if isinstance(payload, str):
-            if utils._has_surrogates(payload):
-                bpayload = payload.encode('ascii', 'surrogateescape')
-                if not decode:
+        if not decode:
+            if isinstance(payload, str) and utils._has_surrogates(payload):
+                try:
+                    bpayload = payload.encode('ascii', 'surrogateescape')
                     try:
                         payload = bpayload.decode(self.get_param('charset', 'ascii'), 'replace')
                     except LookupError:
                         payload = bpayload.decode('ascii', 'replace')
-            elif decode:
-                try:
-                    bpayload = payload.encode('ascii')
-                except UnicodeError:
-                    # This won't happen for RFC compliant messages (messages
-                    # containing only ASCII code points in the unicode input).
-                    # If it does happen, turn the string into bytes in a way
-                    # guaranteed not to fail.
-                    bpayload = payload.encode('raw-unicode-escape')
-        if not decode:
+                except UnicodeEncodeError:
+                    pass
             return payload
+        if isinstance(payload, str):
+            try:
+                bpayload = payload.encode('ascii', 'surrogateescape')
+            except UnicodeEncodeError:
+                # This won't happen for RFC compliant messages (messages
+                # containing only ASCII code points in the unicode input).
+                # If it does happen, turn the string into bytes in a way
+                # guaranteed not to fail.
+                bpayload = payload.encode('raw-unicode-escape')
         if cte == 'quoted-printable':
             return quopri.decodestring(bpayload)
         elif cte == 'base64':

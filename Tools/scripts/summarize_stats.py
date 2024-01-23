@@ -386,6 +386,7 @@ class Stats:
         trace_too_short = self._data["Optimization trace too short"]
         inner_loop = self._data["Optimization inner loop"]
         recursive_call = self._data["Optimization recursive call"]
+        low_confidence = self._data["Optimization low confidence"]
 
         return {
             "Optimization attempts": (attempts, None),
@@ -396,6 +397,7 @@ class Stats:
             "Trace too short": (trace_too_short, attempts),
             "Inner loop found": (inner_loop, attempts),
             "Recursive call": (recursive_call, attempts),
+            "Low confidence": (low_confidence, attempts),
             "Traces executed": (executed, None),
             "Uops executed": (uops, executed),
         }
@@ -458,8 +460,11 @@ class JoinMode(enum.Enum):
     # second column of each input table as a new column
     CHANGE = 1
     # Join using the first column as a key, indicating the change in the second
-    # column of each input table as a ne column, and omit all other columns
+    # column of each input table as a new column, and omit all other columns
     CHANGE_ONE_COLUMN = 2
+    # Join using the first column as a key, and indicate the change as a new
+    # column, but don't sort by the amount of change.
+    CHANGE_NO_SORT = 3
 
 
 class Table:
@@ -482,7 +487,7 @@ class Table:
         match self.join_mode:
             case JoinMode.SIMPLE:
                 return (key, *row_a, *row_b)
-            case JoinMode.CHANGE:
+            case JoinMode.CHANGE | JoinMode.CHANGE_NO_SORT:
                 return (key, *row_a, *row_b, DiffRatio(row_a[0], row_b[0]))
             case JoinMode.CHANGE_ONE_COLUMN:
                 return (key, row_a[0], row_b[0], DiffRatio(row_a[0], row_b[0]))
@@ -495,7 +500,7 @@ class Table:
                     *("Base " + x for x in columns[1:]),
                     *("Head " + x for x in columns[1:]),
                 )
-            case JoinMode.CHANGE:
+            case JoinMode.CHANGE | JoinMode.CHANGE_NO_SORT:
                 return (
                     columns[0],
                     *("Base " + x for x in columns[1:]),
@@ -1025,7 +1030,7 @@ def optimization_section() -> Section:
                     Table(
                         ("Range", "Count:", "Ratio:"),
                         calc_histogram_table(name, den),
-                        JoinMode.CHANGE,
+                        JoinMode.CHANGE_NO_SORT,
                     )
                 ],
             )
@@ -1152,12 +1157,13 @@ def output_markdown(
             print("Stats gathered on:", date.today(), file=out)
 
 
-def output_stats(inputs: list[Path], json_output=TextIO | None):
+def output_stats(inputs: list[Path], json_output=str | None):
     match len(inputs):
         case 1:
             data = load_raw_data(Path(inputs[0]))
             if json_output is not None:
-                save_raw_data(data, json_output)  # type: ignore
+                with open(json_output, 'w', encoding='utf-8') as f:
+                    save_raw_data(data, f)  # type: ignore
             stats = Stats(data)
             output_markdown(sys.stdout, LAYOUT, stats)
         case 2:
@@ -1193,7 +1199,6 @@ def main():
     parser.add_argument(
         "--json-output",
         nargs="?",
-        type=argparse.FileType("w"),
         help="Output complete raw results to the given JSON file.",
     )
 
