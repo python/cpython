@@ -184,9 +184,12 @@ Functions and classes provided:
 
    .. note::
 
-      As of Python 3, :func:`urllib.request.urlopen` return values can be
-      used as context managers directly; there is no need to use ``closing``
-      with them. The example above is just for illustration purposes.
+      Most types managing resources support the :term:`context manager` protocol,
+      which closes *thing* on leaving the :keyword:`with` statment.
+      As such, :func:`!closing` is most useful for third party types that don't
+      support context managers.
+      This example is purely for illustration purposes,
+      as :func:`~urllib.request.urlopen` would normally be used in a context manager.
 
 .. function:: aclosing(thing)
 
