@@ -57,7 +57,7 @@ if test -z "$VIRTUAL_ENV_DISABLE_PROMPT"
         set -l old_status $status
 
         # Output the venv prompt; color taken from the blue of the Python logo.
-        printf "%s%s%s" (set_color 4B8BBE) "__VENV_PROMPT__" (set_color normal)
+        printf "%s(%s)%s " (set_color 4B8BBE) "__VENV_PROMPT__" (set_color normal)
 
         # Restore the return status of the previous command.
         echo "exit $old_status" | .

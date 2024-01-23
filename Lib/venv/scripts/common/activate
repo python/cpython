@@ -66,7 +66,7 @@ fi
 
 if [ -z "${VIRTUAL_ENV_DISABLE_PROMPT:-}" ] ; then
     _OLD_VIRTUAL_PS1="${PS1:-}"
-    PS1="__VENV_PROMPT__${PS1:-}"
+    PS1="(__VENV_PROMPT__) ${PS1:-}"
     export PS1
 fi
 
