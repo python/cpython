@@ -142,6 +142,23 @@ To avoid slowing down lookups on a near-full table, we resize the table when
 it's USABLE_FRACTION (currently two-thirds) full.
 */
 
+#ifdef Py_GIL_DISABLED
+
+static inline void
+ASSERT_DICT_LOCKED(PyObject *op)
+{
+    if (Py_REFCNT(op) != 1) {
+        _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
+    }
+}
+#define ASSERT_DICT_LOCKED(op) ASSERT_DICT_LOCKED(_Py_CAST(PyObject*, op))
+
+#else
+
+#define ASSERT_DICT_LOCKED(op)
+
+#endif
+
 #define PERTURB_SHIFT 5
 
 /*
@@ -800,7 +817,7 @@ clone_combined_dict_keys(PyDictObject *orig)
     assert(orig->ma_keys != Py_EMPTY_KEYS);
     assert(orig->ma_keys->dk_refcnt == 1);
 
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(orig);
+    ASSERT_DICT_LOCKED(orig);
 
     size_t keys_size = _PyDict_KeysSize(orig->ma_keys);
     PyDictKeysObject *keys = PyMem_Malloc(keys_size);
@@ -1243,7 +1260,7 @@ insertdict(PyInterpreterState *interp, PyDictObject *mp,
 {
     PyObject *old_value;
 
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(mp);
+    ASSERT_DICT_LOCKED(mp);
 
     if (DK_IS_UNICODE(mp->ma_keys) && !PyUnicode_CheckExact(key)) {
         if (insertion_resize(interp, mp, 0) < 0)
@@ -1341,7 +1358,7 @@ insert_to_emptydict(PyInterpreterState *interp, PyDictObject *mp,
                     PyObject *key, Py_hash_t hash, PyObject *value)
 {
     assert(mp->ma_keys == Py_EMPTY_KEYS);
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(mp);
+    ASSERT_DICT_LOCKED(mp);
 
     uint64_t new_version = _PyDict_NotifyEvent(
             interp, PyDict_EVENT_ADDED, mp, key, value);
@@ -1435,7 +1452,7 @@ dictresize(PyInterpreterState *interp, PyDictObject *mp,
     PyDictKeysObject *oldkeys;
     PyDictValues *oldvalues;
 
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(mp);
+    ASSERT_DICT_LOCKED(mp);
 
     if (log2_newsize >= SIZEOF_SIZE_T*8) {
         PyErr_NoMemory();
@@ -1625,7 +1642,6 @@ _PyDict_FromItems(PyObject *const *keys, Py_ssize_t keys_offset,
         return NULL;
     }
 
-    Py_BEGIN_CRITICAL_SECTION(dict);
     ks = keys;
     PyObject *const *vs = values;
 
@@ -1634,14 +1650,11 @@ _PyDict_FromItems(PyObject *const *keys, Py_ssize_t keys_offset,
         PyObject *value = *vs;
         if (setitem_lock_held((PyDictObject *)dict, key, value) < 0) {
             Py_DECREF(dict);
-            dict = NULL;
-            goto exit;
+            return NULL;
         }
         ks += keys_offset;
         vs += values_offset;
     }
-exit:
-    Py_END_CRITICAL_SECTION();
 
     return dict;
 }
@@ -1890,7 +1903,7 @@ _PyDict_LoadGlobal(PyDictObject *globals, PyDictObject *builtins, PyObject *key)
 static int
 setitem_take2_lock_held(PyDictObject *mp, PyObject *key, PyObject *value)
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(mp);
+    ASSERT_DICT_LOCKED(mp);
 
     assert(key);
     assert(value);
@@ -1905,17 +1918,13 @@ setitem_take2_lock_held(PyDictObject *mp, PyObject *key, PyObject *value)
         }
     }
 
-    int res;
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
     if (mp->ma_keys == Py_EMPTY_KEYS) {
         return insert_to_emptydict(interp, mp, key, hash, value);
-    } else {
-        /* insertdict() handles any resizing that might be necessary */
-        res = insertdict(interp, mp, key, hash, value);
     }
-
-    return res;
+    /* insertdict() handles any resizing that might be necessary */
+    return insertdict(interp, mp, key, hash, value);
 }
 
 int
@@ -2010,7 +2019,7 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
 {
     PyObject *old_key;
 
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(mp);
+    ASSERT_DICT_LOCKED(mp);
 
     Py_ssize_t hashpos = lookdict_index(mp->ma_keys, hash, ix);
     assert(hashpos >= 0);
@@ -2075,7 +2084,7 @@ delitem_knownhash_lock_held(PyObject *op, PyObject *key, Py_hash_t hash)
         return -1;
     }
 
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
+    ASSERT_DICT_LOCKED(op);
 
     assert(key);
     assert(hash != -1);
@@ -2114,7 +2123,7 @@ delitemif_lock_held(PyObject *op, PyObject *key,
     PyObject *old_value;
     int res;
 
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
+    ASSERT_DICT_LOCKED(op);
 
     if (!PyDict_Check(op)) {
         PyErr_BadInternalCall();
@@ -2173,7 +2182,7 @@ clear_lock_held(PyObject *op)
     PyDictValues *oldvalues;
     Py_ssize_t i, n;
 
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
+    ASSERT_DICT_LOCKED(op);
 
     if (!PyDict_Check(op))
         return;
@@ -2221,7 +2230,7 @@ PyDict_Clear(PyObject *op)
  * (or if op is not a dictionary)
  */
 int
-next_lock_held(PyObject *op, Py_ssize_t *ppos, PyObject **pkey,
+_PyDict_Next(PyObject *op, Py_ssize_t *ppos, PyObject **pkey,
              PyObject **pvalue, Py_hash_t *phash)
 {
     Py_ssize_t i;
@@ -2232,7 +2241,7 @@ next_lock_held(PyObject *op, Py_ssize_t *ppos, PyObject **pkey,
     if (!PyDict_Check(op))
         return 0;
 
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
+    ASSERT_DICT_LOCKED(op);
 
     mp = (PyDictObject *)op;
     i = *ppos;
@@ -2286,23 +2295,6 @@ next_lock_held(PyObject *op, Py_ssize_t *ppos, PyObject **pkey,
     return 1;
 }
 
-/* Internal version of PyDict_Next that returns a hash value in addition
- * to the key and value.
- * Return 1 on success, return 0 when the reached the end of the dictionary
- * (or if op is not a dictionary)
- */
-int
-_PyDict_Next(PyObject *op, Py_ssize_t *ppos, PyObject **pkey,
-             PyObject **pvalue, Py_hash_t *phash)
-{
-    int res;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    res = next_lock_held(op, ppos, pkey, pvalue, phash);
-    Py_END_CRITICAL_SECTION();
-
-    return res;
-}
-
 /*
  * Iterate over a dict.  Use like so:
  *
@@ -2324,18 +2316,22 @@ _PyDict_Next(PyObject *op, Py_ssize_t *ppos, PyObject **pkey,
 int
 PyDict_Next(PyObject *op, Py_ssize_t *ppos, PyObject **pkey, PyObject **pvalue)
 {
-    return _PyDict_Next(op, ppos, pkey, pvalue, NULL);
+    int res;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    res = _PyDict_Next(op, ppos, pkey, pvalue, NULL);
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 
 /* Internal version of dict.pop(). */
-static int
-pop_knownhash_lock_held(PyDictObject *mp, PyObject *key, Py_hash_t hash,
-                        PyObject **result)
+int
+_PyDict_Pop_KnownHash(PyDictObject *mp, PyObject *key, Py_hash_t hash,
+                      PyObject **result)
 {
     assert(PyDict_Check(mp));
 
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(mp);
+    ASSERT_DICT_LOCKED(mp);
 
     if (mp->ma_used == 0) {
         if (result) {
@@ -2376,22 +2372,10 @@ pop_knownhash_lock_held(PyDictObject *mp, PyObject *key, Py_hash_t hash,
     return 1;
 }
 
-int
-_PyDict_Pop_KnownHash(PyDictObject *mp, PyObject *key, Py_hash_t hash,
-                      PyObject **result)
-{
-    int res;
-    Py_BEGIN_CRITICAL_SECTION(mp);
-    res = pop_knownhash_lock_held(mp, key, hash, result);
-    Py_END_CRITICAL_SECTION();
-
-    return res;
-}
-
 static int
 pop_lock_held(PyObject *op, PyObject *key, PyObject **result)
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
+    ASSERT_DICT_LOCKED(op);
 
     if (!PyDict_Check(op)) {
         if (result) {
@@ -2419,7 +2403,7 @@ pop_lock_held(PyObject *op, PyObject *key, PyObject **result)
             return -1;
         }
     }
-    return pop_knownhash_lock_held(dict, key, hash, result);
+    return _PyDict_Pop_KnownHash(dict, key, hash, result);
 }
 
 int
@@ -2465,6 +2449,56 @@ _PyDict_Pop(PyObject *dict, PyObject *key, PyObject *default_value)
     return result;
 }
 
+static PyDictObject *
+dict_dict_fromkeys(PyInterpreterState *interp, PyDictObject *mp,
+                   PyObject *iterable, PyObject *value)
+{
+    PyObject *oldvalue;
+    Py_ssize_t pos = 0;
+    PyObject *key;
+    Py_hash_t hash;
+    int unicode = DK_IS_UNICODE(((PyDictObject*)iterable)->ma_keys);
+    uint8_t new_size = Py_MAX(
+        estimate_log2_keysize(PyDict_GET_SIZE(iterable)),
+        DK_LOG_SIZE(mp->ma_keys));
+    if (dictresize(interp, mp, new_size, unicode)) {
+        Py_DECREF(mp);
+        return NULL;
+    }
+
+    while (_PyDict_Next(iterable, &pos, &key, &oldvalue, &hash)) {
+        if (insertdict(interp, mp,
+                        Py_NewRef(key), hash, Py_NewRef(value))) {
+            Py_DECREF(mp);
+            return NULL;
+        }
+    }
+    return mp;
+}
+
+static PyDictObject *
+dict_set_fromkeys(PyInterpreterState *interp, PyDictObject *mp,
+                  PyObject *iterable, PyObject *value)
+{
+    Py_ssize_t pos = 0;
+    PyObject *key;
+    Py_hash_t hash;
+
+    if (dictresize(interp, mp,
+                    estimate_log2_keysize(PySet_GET_SIZE(iterable)), 0)) {
+        Py_DECREF(mp);
+        return NULL;
+    }
+
+    while (_PySet_NextEntry(iterable, &pos, &key, &hash)) {
+        if (insertdict(interp, mp, Py_NewRef(key), hash, Py_NewRef(value))) {
+            Py_DECREF(mp);
+            return NULL;
+        }
+    }
+    return mp;
+}
+
 /* Internal version of dict.from_keys().  It is subclass-friendly. */
 PyObject *
 _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
@@ -2483,50 +2517,17 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
     if (PyDict_CheckExact(d)) {
         if (PyDict_CheckExact(iterable)) {
             PyDictObject *mp = (PyDictObject *)d;
-            PyObject *oldvalue;
-            Py_ssize_t pos = 0;
-            PyObject *key;
-            Py_hash_t hash;
 
             Py_BEGIN_CRITICAL_SECTION2(d, iterable);
-            int unicode = DK_IS_UNICODE(((PyDictObject*)iterable)->ma_keys);
-            if (dictresize(interp, mp,
-                           estimate_log2_keysize(PyDict_GET_SIZE(iterable)),
-                           unicode)) {
-                Py_CLEAR(d);
-                goto dict_dict_exit;
-            }
-
-            while (next_lock_held(iterable, &pos, &key, &oldvalue, &hash)) {
-                if (insertdict(interp, mp,
-                               Py_NewRef(key), hash, Py_NewRef(value))) {
-                    Py_CLEAR(d);
-                    goto dict_dict_exit;
-                }
-            }
+            d = (PyObject *)dict_dict_fromkeys(interp, mp, iterable, value);
             Py_END_CRITICAL_SECTION2();
-dict_dict_exit:
             return d;
         } else if (PyAnySet_CheckExact(iterable)) {
             PyDictObject *mp = (PyDictObject *)d;
-            Py_ssize_t pos = 0;
-            PyObject *key;
-            Py_hash_t hash;
-            Py_BEGIN_CRITICAL_SECTION2(d, iterable);
-            if (dictresize(interp, mp,
-                           estimate_log2_keysize(PySet_GET_SIZE(iterable)), 0)) {
-                Py_CLEAR(d);
-                goto dict_set_exit;
-            }
 
-            while (_PySet_NextEntry(iterable, &pos, &key, &hash)) {
-                if (insertdict(interp, mp, Py_NewRef(key), hash, Py_NewRef(value))) {
-                    Py_CLEAR(d);
-                    goto dict_set_exit;
-                }
-            }
+            Py_BEGIN_CRITICAL_SECTION2(d, iterable);
+            d = (PyObject *)dict_set_fromkeys(interp, mp, iterable, value);
             Py_END_CRITICAL_SECTION2();
-dict_set_exit:
             return d;
         }
     }
@@ -2649,7 +2650,7 @@ dict_repr_lock_held(PyObject *self)
        Note that repr may mutate the dict. */
     i = 0;
     first = 1;
-    while (next_lock_held((PyObject *)mp, &i, &key, &value, NULL)) {
+    while (_PyDict_Next((PyObject *)mp, &i, &key, &value, NULL)) {
         PyObject *s;
         int res;
 
@@ -2783,7 +2784,7 @@ static PyMappingMethods dict_as_mapping = {
 static PyObject *
 keys_lock_held(PyObject *dict)
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(dict);
+    ASSERT_DICT_LOCKED(dict);
 
     if (dict == NULL || !PyDict_Check(dict)) {
         PyErr_BadInternalCall();
@@ -2809,7 +2810,7 @@ keys_lock_held(PyObject *dict)
     /* Nothing we do below makes any function calls. */
     Py_ssize_t j = 0, pos = 0;
     PyObject *key;
-    while (next_lock_held((PyObject*)mp, &pos, &key, NULL, NULL)) {
+    while (_PyDict_Next((PyObject*)mp, &pos, &key, NULL, NULL)) {
         assert(j < n);
         PyList_SET_ITEM(v, j, Py_NewRef(key));
         j++;
@@ -2832,7 +2833,7 @@ PyDict_Keys(PyObject *dict)
 static PyObject *
 values_lock_held(PyObject *dict)
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(dict);
+    ASSERT_DICT_LOCKED(dict);
 
     if (dict == NULL || !PyDict_Check(dict)) {
         PyErr_BadInternalCall();
@@ -2858,7 +2859,7 @@ values_lock_held(PyObject *dict)
     /* Nothing we do below makes any function calls. */
     Py_ssize_t j = 0, pos = 0;
     PyObject *value;
-    while (next_lock_held((PyObject*)mp, &pos, NULL, &value, NULL)) {
+    while (_PyDict_Next((PyObject*)mp, &pos, NULL, &value, NULL)) {
         assert(j < n);
         PyList_SET_ITEM(v, j, Py_NewRef(value));
         j++;
@@ -2881,7 +2882,7 @@ PyDict_Values(PyObject *dict)
 static PyObject *
 items_lock_held(PyObject *dict)
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(dict);
+    ASSERT_DICT_LOCKED(dict);
 
     if (dict == NULL || !PyDict_Check(dict)) {
         PyErr_BadInternalCall();
@@ -2920,7 +2921,7 @@ items_lock_held(PyObject *dict)
     /* Nothing we do below makes any function calls. */
     Py_ssize_t j = 0, pos = 0;
     PyObject *key, *value;
-    while (next_lock_held((PyObject*)mp, &pos, &key, &value, NULL)) {
+    while (_PyDict_Next((PyObject*)mp, &pos, &key, &value, NULL)) {
         assert(j < n);
         PyObject *item = PyList_GET_ITEM(v, j);
         PyTuple_SET_ITEM(item, 0, Py_NewRef(key));
@@ -3117,6 +3118,106 @@ PyDict_MergeFromSeq2(PyObject *d, PyObject *seq2, int override)
 }
 
 static int
+dict_dict_merge(PyInterpreterState *interp, PyDictObject *mp, PyDictObject *other, int override)
+{
+    if (other == mp || other->ma_used == 0)
+        /* a.update(a) or a.update({}); nothing to do */
+        return 0;
+    if (mp->ma_used == 0) {
+        /* Since the target dict is empty, PyDict_GetItem()
+            * always returns NULL.  Setting override to 1
+            * skips the unnecessary test.
+            */
+        override = 1;
+        PyDictKeysObject *okeys = other->ma_keys;
+
+        // If other is clean, combined, and just allocated, just clone it.
+        if (other->ma_values == NULL &&
+                other->ma_used == okeys->dk_nentries &&
+                (DK_LOG_SIZE(okeys) == PyDict_LOG_MINSIZE ||
+                    USABLE_FRACTION(DK_SIZE(okeys)/2) < other->ma_used)) {
+            uint64_t new_version = _PyDict_NotifyEvent(
+                    interp, PyDict_EVENT_CLONED, mp, (PyObject *)other, NULL);
+            PyDictKeysObject *keys = clone_combined_dict_keys(other);
+            if (keys == NULL)
+                return -1;
+
+            dictkeys_decref(interp, mp->ma_keys);
+            mp->ma_keys = keys;
+            if (mp->ma_values != NULL) {
+                free_values(mp->ma_values);
+                mp->ma_values = NULL;
+            }
+
+            mp->ma_used = other->ma_used;
+            mp->ma_version_tag = new_version;
+            ASSERT_CONSISTENT(mp);
+
+            if (_PyObject_GC_IS_TRACKED(other) && !_PyObject_GC_IS_TRACKED(mp)) {
+                /* Maintain tracking. */
+                _PyObject_GC_TRACK(mp);
+            }
+
+            return 0;
+        }
+    }
+    /* Do one big resize at the start, rather than
+        * incrementally resizing as we insert new items.  Expect
+        * that there will be no (or few) overlapping keys.
+        */
+    if (USABLE_FRACTION(DK_SIZE(mp->ma_keys)) < other->ma_used) {
+        int unicode = DK_IS_UNICODE(other->ma_keys);
+        if (dictresize(interp, mp,
+                        estimate_log2_keysize(mp->ma_used + other->ma_used),
+                        unicode)) {
+            return -1;
+        }
+    }
+
+    Py_ssize_t orig_size = other->ma_keys->dk_nentries;
+    Py_ssize_t pos = 0;
+    Py_hash_t hash;
+    PyObject *key, *value;
+
+    while (_PyDict_Next((PyObject*)other, &pos, &key, &value, &hash)) {
+        int err = 0;
+        Py_INCREF(key);
+        Py_INCREF(value);
+        if (override == 1) {
+            err = insertdict(interp, mp,
+                                Py_NewRef(key), hash, Py_NewRef(value));
+        }
+        else {
+            err = contains_known_hash_lock_held(mp, key, hash);
+            if (err == 0) {
+                err = insertdict(interp, mp,
+                                    Py_NewRef(key), hash, Py_NewRef(value));
+            }
+            else if (err > 0) {
+                if (override != 0) {
+                    _PyErr_SetKeyError(key);
+                    Py_DECREF(value);
+                    Py_DECREF(key);
+                    return -1;
+                }
+                err = 0;
+            }
+        }
+        Py_DECREF(value);
+        Py_DECREF(key);
+        if (err != 0)
+            return -1;
+
+        if (orig_size != other->ma_keys->dk_nentries) {
+            PyErr_SetString(PyExc_RuntimeError,
+                    "dict mutated during update");
+            return -1;
+        }
+    }
+    return 0;
+}
+
+static int
 dict_merge(PyInterpreterState *interp, PyObject *a, PyObject *b, int override)
 {
     PyDictObject *mp, *other;
@@ -3136,109 +3237,9 @@ dict_merge(PyInterpreterState *interp, PyObject *a, PyObject *b, int override)
     int res = 0;
     if (PyDict_Check(b) && (Py_TYPE(b)->tp_iter == dict_iter)) {
         other = (PyDictObject*)b;
+        int res;
         Py_BEGIN_CRITICAL_SECTION2(a, b);
-        if (other == mp || other->ma_used == 0)
-            /* a.update(a) or a.update({}); nothing to do */
-            goto dict_dict_exit;
-        if (mp->ma_used == 0) {
-            /* Since the target dict is empty, PyDict_GetItem()
-             * always returns NULL.  Setting override to 1
-             * skips the unnecessary test.
-             */
-            override = 1;
-            PyDictKeysObject *okeys = other->ma_keys;
-
-            // If other is clean, combined, and just allocated, just clone it.
-            if (other->ma_values == NULL &&
-                    other->ma_used == okeys->dk_nentries &&
-                    (DK_LOG_SIZE(okeys) == PyDict_LOG_MINSIZE ||
-                     USABLE_FRACTION(DK_SIZE(okeys)/2) < other->ma_used)) {
-                uint64_t new_version = _PyDict_NotifyEvent(
-                        interp, PyDict_EVENT_CLONED, mp, b, NULL);
-                PyDictKeysObject *keys = clone_combined_dict_keys(other);
-                if (keys == NULL) {
-                    res = -1;
-                    goto dict_dict_exit;
-                }
-
-                dictkeys_decref(interp, mp->ma_keys);
-                mp->ma_keys = keys;
-                if (mp->ma_values != NULL) {
-                    free_values(mp->ma_values);
-                    mp->ma_values = NULL;
-                }
-
-                mp->ma_used = other->ma_used;
-                mp->ma_version_tag = new_version;
-                ASSERT_CONSISTENT(mp);
-
-                if (_PyObject_GC_IS_TRACKED(other) && !_PyObject_GC_IS_TRACKED(mp)) {
-                    /* Maintain tracking. */
-                    _PyObject_GC_TRACK(mp);
-                }
-
-                goto dict_dict_exit;
-            }
-        }
-        /* Do one big resize at the start, rather than
-         * incrementally resizing as we insert new items.  Expect
-         * that there will be no (or few) overlapping keys.
-         */
-        if (USABLE_FRACTION(DK_SIZE(mp->ma_keys)) < other->ma_used) {
-            int unicode = DK_IS_UNICODE(other->ma_keys);
-            if (dictresize(interp, mp,
-                           estimate_log2_keysize(mp->ma_used + other->ma_used),
-                           unicode)) {
-                res = -1;
-                goto dict_dict_exit;
-            }
-        }
-
-        Py_ssize_t orig_size = other->ma_keys->dk_nentries;
-        Py_ssize_t pos = 0;
-        Py_hash_t hash;
-        PyObject *key, *value;
-
-        while (next_lock_held((PyObject*)other, &pos, &key, &value, &hash)) {
-            int err = 0;
-            Py_INCREF(key);
-            Py_INCREF(value);
-            if (override == 1) {
-                err = insertdict(interp, mp,
-                                 Py_NewRef(key), hash, Py_NewRef(value));
-            }
-            else {
-                err = contains_known_hash_lock_held(mp, key, hash);
-                if (err == 0) {
-                    err = insertdict(interp, mp,
-                                     Py_NewRef(key), hash, Py_NewRef(value));
-                }
-                else if (err > 0) {
-                    if (override != 0) {
-                        _PyErr_SetKeyError(key);
-                        Py_DECREF(value);
-                        Py_DECREF(key);
-                        res = -1;
-                        goto dict_dict_exit;
-                    }
-                    err = 0;
-                }
-            }
-            Py_DECREF(value);
-            Py_DECREF(key);
-            if (err != 0) {
-                res = -1;
-                goto dict_dict_exit;
-            }
-
-            if (orig_size != other->ma_keys->dk_nentries) {
-                PyErr_SetString(PyExc_RuntimeError,
-                        "dict mutated during update");
-                res = -1;
-                goto dict_dict_exit;
-            }
-        }
-dict_dict_exit:
+        res = dict_dict_merge(interp, (PyDictObject *)a, other, override);
         ASSERT_CONSISTENT(a);
         Py_END_CRITICAL_SECTION2();
         return res;
@@ -3358,7 +3359,7 @@ copy_lock_held(PyObject *o)
     PyDictObject *mp;
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(o);
+    ASSERT_DICT_LOCKED(o);
 
     mp = (PyDictObject *)o;
     if (mp->ma_used == 0) {
@@ -3477,8 +3478,8 @@ dict_equal_lock_held(PyDictObject *a, PyDictObject *b)
 {
     Py_ssize_t i;
 
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(a);
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(b);
+    ASSERT_DICT_LOCKED(a);
+    ASSERT_DICT_LOCKED(b);
 
     if (a->ma_used != b->ma_used)
         /* can't be equal if # of entries differ */
@@ -3641,7 +3642,7 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
     Py_hash_t hash;
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(d);
+    ASSERT_DICT_LOCKED(d);
 
     if (!PyDict_Check(d)) {
         PyErr_BadInternalCall();
@@ -4098,7 +4099,7 @@ contains_known_hash_lock_held(PyDictObject *mp, PyObject *key, Py_ssize_t hash)
     Py_ssize_t ix;
     PyObject *value;
 
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(mp);
+    ASSERT_DICT_LOCKED(mp);
 
     ix = _Py_dict_lookup(mp, key, hash, &value);
     if (ix == DKIX_ERROR)
@@ -4113,7 +4114,7 @@ contains_lock_held(PyDictObject *mp, PyObject *key)
     Py_ssize_t ix;
     PyObject *value;
 
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(mp);
+    ASSERT_DICT_LOCKED(mp);
 
     if (!PyUnicode_CheckExact(key) || (hash = unicode_get_hash(key)) == -1) {
         hash = PyObject_Hash(key);
@@ -4512,7 +4513,7 @@ dictiter_iternextkey_lock_held(PyDictObject *d, PyObject *self)
     PyDictKeysObject *k;
 
     assert (PyDict_Check(d));
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(d);
+    ASSERT_DICT_LOCKED(d);
 
     if (di->di_used != d->ma_used) {
         PyErr_SetString(PyExc_RuntimeError,
@@ -4628,7 +4629,7 @@ dictiter_iternextvalue_lock_held(PyDictObject *d, PyObject *self)
     Py_ssize_t i;
 
     assert (PyDict_Check(d));
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(d);
+    ASSERT_DICT_LOCKED(d);
 
     if (di->di_used != d->ma_used) {
         PyErr_SetString(PyExc_RuntimeError,
@@ -4877,12 +4878,12 @@ PyTypeObject PyDictIterItem_Type = {
 /* dictreviter */
 
 static PyObject *
-dictreviter_iternext_lock_held(PyDictObject *d, PyObject *self)
+dictreviter_iter_PyDict_Next(PyDictObject *d, PyObject *self)
 {
     dictiterobject *di = (dictiterobject *)self;
 
     assert (PyDict_Check(d));
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(d);
+    ASSERT_DICT_LOCKED(d);
 
     if (di->di_used != d->ma_used) {
         PyErr_SetString(PyExc_RuntimeError,
@@ -4984,7 +4985,7 @@ dictreviter_iternext(PyObject *self)
 
     PyObject *value;
     Py_BEGIN_CRITICAL_SECTION(d);
-    value = dictreviter_iternext_lock_held(d, self);
+    value = dictreviter_iter_PyDict_Next(d, self);
     Py_END_CRITICAL_SECTION();
 
     return value;
@@ -5420,8 +5421,8 @@ dictviews_or(PyObject* self, PyObject *other)
 static PyObject *
 dictitems_xor_lock_held(PyObject *d1, PyObject *d2)
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(d1);
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(d2);
+    ASSERT_DICT_LOCKED(d1);
+    ASSERT_DICT_LOCKED(d2);
 
     PyObject *temp_dict = copy_lock_held(d1);
     if (temp_dict == NULL) {
@@ -5437,7 +5438,7 @@ dictitems_xor_lock_held(PyObject *d1, PyObject *d2)
     Py_ssize_t pos = 0;
     Py_hash_t hash;
 
-    while (next_lock_held(d2, &pos, &key, &val2, &hash)) {
+    while (_PyDict_Next(d2, &pos, &key, &val2, &hash)) {
         Py_INCREF(key);
         Py_INCREF(val2);
         val1 = _PyDict_GetItem_KnownHash(temp_dict, key, hash);
@@ -6021,12 +6022,10 @@ _PyObject_MakeInstanceAttributesFromDict(PyObject *obj, PyDictOrValues *dorv)
     return true;
 }
 
-static int
-storeinstanceattr_lock_held(PyObject *obj, PyDictValues *values,
+int
+_PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
                               PyObject *name, PyObject *value)
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(obj);
-
     PyInterpreterState *interp = _PyInterpreterState_GET();
     PyDictKeysObject *keys = CACHED_KEYS(Py_TYPE(obj));
     assert(keys != NULL);
@@ -6081,19 +6080,6 @@ storeinstanceattr_lock_held(PyObject *obj, PyDictValues *values,
         Py_DECREF(old_value);
     }
     return 0;
-}
-
-int
-_PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
-                              PyObject *name, PyObject *value)
-{
-    int res;
-    Py_BEGIN_CRITICAL_SECTION(obj);
-
-    res = storeinstanceattr_lock_held(obj, values, name, value);
-
-    Py_END_CRITICAL_SECTION();
-    return res;
 }
 
 /* Sanity check for managed dicts */

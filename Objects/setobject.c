@@ -32,13 +32,14 @@
 */
 
 #include "Python.h"
-#include "pycore_ceval.h"         // _PyEval_GetBuiltin()
-#include "pycore_dict.h"          // _PyDict_Contains_KnownHash()
-#include "pycore_modsupport.h"    // _PyArg_NoKwnames()
-#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
-#include "pycore_pyerrors.h"      // _PyErr_SetKeyError()
-#include "pycore_setobject.h"     // _PySet_NextEntry() definition
-#include <stddef.h>               // offsetof()
+#include "pycore_ceval.h"               // _PyEval_GetBuiltin()
+#include "pycore_critical_section.h"    // Py_BEGIN_CRITICAL_SECTION, Py_END_CRITICAL_SECTION
+#include "pycore_dict.h"                // _PyDict_Contains_KnownHash()
+#include "pycore_modsupport.h"          // _PyArg_NoKwnames()
+#include "pycore_object.h"              // _PyObject_GC_UNTRACK()
+#include "pycore_pyerrors.h"            // _PyErr_SetKeyError()
+#include "pycore_setobject.h"           // _PySet_NextEntry() definition
+#include <stddef.h>                     // offsetof()
 
 /* Object used as dummy key to fill deleted entries */
 static PyObject _dummy_struct;
@@ -903,11 +904,17 @@ set_update_internal(PySetObject *so, PyObject *other)
             if (set_table_resize(so, (so->used + dictsize)*2) != 0)
                 return -1;
         }
+        int err = 0;
+        Py_BEGIN_CRITICAL_SECTION(other);
         while (_PyDict_Next(other, &pos, &key, &value, &hash)) {
-            if (set_add_entry(so, key, hash))
-                return -1;
+            if (set_add_entry(so, key, hash)) {
+                err = -1;
+                goto exit;
+            }
         }
-        return 0;
+exit:
+        Py_END_CRITICAL_SECTION();
+        return err;
     }
 
     it = PyObject_GetIter(other);
@@ -1621,6 +1628,33 @@ set_isub(PySetObject *so, PyObject *other)
 }
 
 static PyObject *
+set_symmetric_difference_update_dict(PySetObject *so, PyObject *other)
+{
+    PyObject *key;
+    Py_ssize_t pos = 0;
+    Py_hash_t hash;
+    PyObject *value;
+    int rv;
+
+    while (_PyDict_Next(other, &pos, &key, &value, &hash)) {
+        Py_INCREF(key);
+        rv = set_discard_entry(so, key, hash);
+        if (rv < 0) {
+            Py_DECREF(key);
+            return NULL;
+        }
+        if (rv == DISCARD_NOTFOUND) {
+            if (set_add_entry(so, key, hash)) {
+                Py_DECREF(key);
+                return NULL;
+            }
+        }
+        Py_DECREF(key);
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 set_symmetric_difference_update(PySetObject *so, PyObject *other)
 {
     PySetObject *otherset;
@@ -1634,23 +1668,13 @@ set_symmetric_difference_update(PySetObject *so, PyObject *other)
         return set_clear(so, NULL);
 
     if (PyDict_CheckExact(other)) {
-        PyObject *value;
-        while (_PyDict_Next(other, &pos, &key, &value, &hash)) {
-            Py_INCREF(key);
-            rv = set_discard_entry(so, key, hash);
-            if (rv < 0) {
-                Py_DECREF(key);
-                return NULL;
-            }
-            if (rv == DISCARD_NOTFOUND) {
-                if (set_add_entry(so, key, hash)) {
-                    Py_DECREF(key);
-                    return NULL;
-                }
-            }
-            Py_DECREF(key);
-        }
-        Py_RETURN_NONE;
+        PyObject *res;
+
+        Py_BEGIN_CRITICAL_SECTION(other);
+        res = set_symmetric_difference_update_dict(so, other);
+        Py_END_CRITICAL_SECTION();
+
+        return res;
     }
 
     if (PyAnySet_Check(other)) {
