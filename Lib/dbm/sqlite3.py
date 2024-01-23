@@ -17,6 +17,10 @@ DELETE_KEY = "DELETE FROM Dict WHERE key = ?"
 ITER_KEYS = "SELECT key FROM Dict"
 
 
+class error(OSError):
+    pass
+
+
 def _normalize_uri_path(path):
     path = path.replace("?", "%3f")
     path = path.replace("#", "%23")
@@ -55,14 +59,23 @@ class _Database(MutableMapping):
 
         self.cx = sqlite3.connect(uri, autocommit=True, uri=True)
         self.cx.execute("PRAGMA journal_mode = wal")
-        with suppress(sqlite3.OperationalError):
-            self.cx.execute(BUILD_TABLE)
+        if flag == "rwc":
+            with suppress(sqlite3.OperationalError):
+                self.cx.execute(BUILD_TABLE)
+
+    def _execute(self, *args, **kwargs):
+        try:
+            ret = self.cx.execute(*args, **kwargs)
+        except sqlite3.Error as exc:
+            raise error(str(exc))
+        else:
+            return ret
 
     def __len__(self):
-        return self.cx.execute(GET_SIZE).fetchone()[0]
+        return self._execute(GET_SIZE).fetchone()[0]
 
     def __getitem__(self, key):
-        rows = [row for row in self.cx.execute(LOOKUP_KEY, (key,))]
+        rows = [row for row in self._execute(LOOKUP_KEY, (key,))]
         if not rows:
             raise KeyError(key)
         assert len(rows) == 1
@@ -70,15 +83,15 @@ class _Database(MutableMapping):
         return row[0]
 
     def __setitem__(self, key, value):
-        self.cx.execute(STORE_KV, (key, value));
+        self._execute(STORE_KV, (key, value));
 
     def __delitem__(self, key):
         if key not in self:
             raise KeyError(key)
-        self.cx.execute(DELETE_KEY, (key,));
+        self._execute(DELETE_KEY, (key,));
 
     def __iter__(self):
-        with closing(self.cx.execute(ITER_KEYS)) as cu:
+        with closing(self._execute(ITER_KEYS)) as cu:
             for row in cu:
                 yield row[0]
 
@@ -94,10 +107,6 @@ class _Database(MutableMapping):
 
     def __exit__(self, *args):
         self.close()
-
-
-class error(OSError):
-    pass
 
 
 def open(path, flag="r", mode=None):
