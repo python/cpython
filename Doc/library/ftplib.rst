@@ -79,7 +79,7 @@ FTP objects
    source address before connecting.
 
 .. |param_doc_encoding| replace::
-   The encoding for directories and filenames.
+   The encoding for directories and filenames (default: ``'utf-8'``).
 
 .. class:: FTP(host='', user='', passwd='', acct='', timeout=None, \
                source_address=None, *, encoding='utf-8')
