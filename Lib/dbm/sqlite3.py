@@ -96,7 +96,7 @@ class _Database(MutableMapping):
         self.close()
 
 
-class error(OSError, sqlite3.Error):
+class error(OSError):
     pass
 
 
