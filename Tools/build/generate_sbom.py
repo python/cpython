@@ -124,7 +124,7 @@ def filter_gitignored_paths(paths: list[str]) -> list[str]:
     return sorted([line.split()[-1] for line in git_check_ignore_lines if line.startswith("::")])
 
 
-def fetch_package_metadata_from_pypi(project: str, version: str, filename=None) -> tuple[str, str]|None:
+def fetch_package_metadata_from_pypi(project: str, version: str, filename: str | None = None) -> tuple[str, str] | None:
     """
     Fetches the SHA256 checksum and download location from PyPI.
     If we're given a filename then we match with that, otherwise we use wheels.
@@ -138,7 +138,12 @@ def fetch_package_metadata_from_pypi(project: str, version: str, filename=None) 
         # Look for a matching artifact filename and then check
         # its remote checksum to the local one.
         for url in release_metadata["urls"]:
-            if filename is None or (filename is not None and url["filename"] == filename):
+            # Pip can only use Python-only dependencies, so there's
+            # no risk of picking the 'incorrect' wheel here.
+            if (
+                (filename is None and url["packagetype"] == "bdist_wheel")
+                or (filename is not None and url["filename"] == filename)
+            ):
                 break
         else:
             raise ValueError(f"No matching filename on PyPI for '{filename}'")
@@ -221,6 +226,7 @@ def discover_pip_sbom_package(sbom_data: dict[str, typing.Any]) -> None:
             error_if(match is None, f"Couldn't parse line from pip vendor.txt: '{line}'")
             assert match is not None  # Make mypy happy.
 
+            # Parse out and normalize the project name.
             project_name, project_version = match.groups()
             project_name = project_name.lower()
 
@@ -239,6 +245,9 @@ def discover_pip_sbom_package(sbom_data: dict[str, typing.Any]) -> None:
             for package in sbom_data["packages"]:
                 if package["SPDXID"] != sbom_project_spdx_id:
                     continue
+
+                # Only thing missing from this blob is the `licenseConcluded`,
+                # that needs to be triaged by human maintainers if the list changes.
                 package.update({
                     "SPDXID": sbom_project_spdx_id,
                     "name": project_name,
@@ -268,15 +277,6 @@ def discover_pip_sbom_package(sbom_data: dict[str, typing.Any]) -> None:
         for sbom_package in sbom_data["packages"]
         if sbom_package["name"] != "pip"
     ]
-    sbom_data["relationships"] = [
-        sbom_relationship
-        for sbom_relationship in sbom_data["relationships"]
-        if (
-            sbom_relationship["spdxElementId"] == sbom_pip_spdx_id
-            and sbom_relationship["relationshipType"] == "DEPENDS_ON"
-        )
-    ]
-
     sbom_data["packages"].append(
         {
             "SPDXID": sbom_pip_spdx_id,
@@ -315,6 +315,11 @@ def main() -> None:
     sbom_path = CPYTHON_ROOT_DIR / "Misc/sbom.spdx.json"
     sbom_data = json.loads(sbom_path.read_bytes())
 
+    # We regenerate all of this information. Package information
+    # should be preserved though since that is edited by humans.
+    sbom_data["files"] = []
+    sbom_data["relationships"] = []
+
     # Insert pip's SBOM metadata from the wheel.
     discover_pip_sbom_package(sbom_data)
 
@@ -331,9 +336,10 @@ def main() -> None:
             "name" not in package,
             "Package is missing the 'name' field"
         )
+        missing_required_keys = REQUIRED_PROPERTIES_PACKAGE - set(package.keys())
         error_if(
-            not set(package.keys()).issuperset(REQUIRED_PROPERTIES_PACKAGE),
-            f"Package '{package['name']}' is missing required fields",
+            bool(missing_required_keys),
+            f"Package '{package['name']}' is missing required fields: {missing_required_keys}",
         )
         error_if(
             package["SPDXID"] != spdx_id(f"SPDXRef-PACKAGE-{package['name']}"),
@@ -361,10 +367,6 @@ def main() -> None:
             f"License identifier '{license_concluded}' not in SBOM tool allowlist"
         )
 
-    # Regenerate file information from current data.
-    sbom_files = []
-    sbom_relationships = []
-
     # We call 'sorted()' here a lot to avoid filesystem scan order issues.
     for name, files in sorted(PACKAGE_TO_FILES.items()):
         package_spdx_id = spdx_id(f"SPDXRef-PACKAGE-{name}")
@@ -389,7 +391,7 @@ def main() -> None:
                 checksum_sha256 = hashlib.sha256(data).hexdigest()
 
                 file_spdx_id = spdx_id(f"SPDXRef-FILE-{path}")
-                sbom_files.append({
+                sbom_data["files"].append({
                     "SPDXID": file_spdx_id,
                     "fileName": path,
                     "checksums": [
@@ -399,15 +401,13 @@ def main() -> None:
                 })
 
                 # Tie each file back to its respective package.
-                sbom_relationships.append({
+                sbom_data["relationships"].append({
                     "spdxElementId": package_spdx_id,
                     "relatedSpdxElement": file_spdx_id,
                     "relationshipType": "CONTAINS",
                 })
 
     # Update the SBOM on disk
-    sbom_data["files"] = sbom_files
-    sbom_data["relationships"] = sbom_relationships
     sbom_path.write_text(json.dumps(sbom_data, indent=2, sort_keys=True))
 
 

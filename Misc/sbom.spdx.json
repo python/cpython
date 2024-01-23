@@ -2229,6 +2229,126 @@
   ],
   "relationships": [
     {
+      "relationSpdxElement": "SPDXRef-PACKAGE-requests",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-PACKAGE-pip"
+    },
+    {
+      "relationSpdxElement": "SPDXRef-PACKAGE-platformdirs",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-PACKAGE-pip"
+    },
+    {
+      "relationSpdxElement": "SPDXRef-PACKAGE-msgpack",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-PACKAGE-pip"
+    },
+    {
+      "relationSpdxElement": "SPDXRef-PACKAGE-typing-extensions",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-PACKAGE-pip"
+    },
+    {
+      "relationSpdxElement": "SPDXRef-PACKAGE-distlib",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-PACKAGE-pip"
+    },
+    {
+      "relationSpdxElement": "SPDXRef-PACKAGE-chardet",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-PACKAGE-pip"
+    },
+    {
+      "relationSpdxElement": "SPDXRef-PACKAGE-colorama",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-PACKAGE-pip"
+    },
+    {
+      "relationSpdxElement": "SPDXRef-PACKAGE-rich",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-PACKAGE-pip"
+    },
+    {
+      "relationSpdxElement": "SPDXRef-PACKAGE-packaging",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-PACKAGE-pip"
+    },
+    {
+      "relationSpdxElement": "SPDXRef-PACKAGE-setuptools",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-PACKAGE-pip"
+    },
+    {
+      "relationSpdxElement": "SPDXRef-PACKAGE-tomli",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-PACKAGE-pip"
+    },
+    {
+      "relationSpdxElement": "SPDXRef-PACKAGE-webencodings",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-PACKAGE-pip"
+    },
+    {
+      "relationSpdxElement": "SPDXRef-PACKAGE-resolvelib",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-PACKAGE-pip"
+    },
+    {
+      "relationSpdxElement": "SPDXRef-PACKAGE-pygments",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-PACKAGE-pip"
+    },
+    {
+      "relationSpdxElement": "SPDXRef-PACKAGE-pyproject-hooks",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-PACKAGE-pip"
+    },
+    {
+      "relationSpdxElement": "SPDXRef-PACKAGE-urllib3",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-PACKAGE-pip"
+    },
+    {
+      "relationSpdxElement": "SPDXRef-PACKAGE-six",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-PACKAGE-pip"
+    },
+    {
+      "relationSpdxElement": "SPDXRef-PACKAGE-cachecontrol",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-PACKAGE-pip"
+    },
+    {
+      "relationSpdxElement": "SPDXRef-PACKAGE-truststore",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-PACKAGE-pip"
+    },
+    {
+      "relationSpdxElement": "SPDXRef-PACKAGE-tenacity",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-PACKAGE-pip"
+    },
+    {
+      "relationSpdxElement": "SPDXRef-PACKAGE-distro",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-PACKAGE-pip"
+    },
+    {
+      "relationSpdxElement": "SPDXRef-PACKAGE-pyparsing",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-PACKAGE-pip"
+    },
+    {
+      "relationSpdxElement": "SPDXRef-PACKAGE-certifi",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-PACKAGE-pip"
+    },
+    {
+      "relationSpdxElement": "SPDXRef-PACKAGE-idna",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-PACKAGE-pip"
+    },
+    {
       "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-COPYING",
       "relationshipType": "CONTAINS",
       "spdxElementId": "SPDXRef-PACKAGE-expat"
