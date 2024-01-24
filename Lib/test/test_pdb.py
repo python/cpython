@@ -3093,6 +3093,37 @@ def bœr():
         self.assertIn("WARNING:", stdout)
         self.assertIn("was edited after pdb started", stdout)
 
+    def test_file_modified_after_execution_with_restart(self):
+        script = """
+            import random
+            # Any code with a source to step into so this script is not checked
+            # for changes when it's being changed
+            random.randint(1, 4)
+            print("hello")
+        """
+
+        commands = """
+            ll
+            n
+            s
+            filename = $_frame.f_back.f_code.co_filename
+            def change_file(content, filename):
+                with open(filename, "w") as f:
+                    f.write(f"print({content})")
+
+            change_file('world', filename)
+            restart
+            ll
+        """
+
+        stdout, stderr = self.run_pdb_script(script, commands)
+        # Make sure the code is running correctly and the file is edited
+        self.assertIn("hello", stdout)
+        self.assertIn("world", stdout)
+        # The file was edited, but restart should clear the state and consider
+        # the file as up to date
+        self.assertNotIn("WARNING:", stdout)
+
     def test_relative_imports(self):
         self.module_name = 't_main'
         os_helper.rmtree(self.module_name)
