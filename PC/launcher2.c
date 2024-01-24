@@ -810,6 +810,7 @@ ensure_no_redirector_stub(wchar_t* filename, wchar_t* buffer)
     if (!DeviceIoControl(hReparsePoint, FSCTL_GET_REPARSE_POINT, NULL, 0, &appExecLink, sizeof(appExecLink), NULL, NULL)) {
         // Let normal handling take over
         debug(L"# Did not find %s on PATH\n", filename);
+        CloseHandle(hReparsePoint);
         return RC_NO_SHEBANG;
     }
 
