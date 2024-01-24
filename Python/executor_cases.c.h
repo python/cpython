@@ -3423,7 +3423,12 @@
         }
 
         case _SHRINK_STACK: {
+            PyObject **args;
             oparg = CURRENT_OPARG();
+            args = &stack_pointer[-oparg];
+            for (int _i = oparg; --_i >= 0;) {
+                Py_DECREF(args[_i]);
+            }
             stack_pointer += -oparg;
             break;
         }

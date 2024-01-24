@@ -4089,7 +4089,8 @@ dummy_func(
             // Nothing, just a sentinel.
         }
 
-        op(_SHRINK_STACK, (unused[oparg] --)) {
+        op(_SHRINK_STACK, (args[oparg] --)) {
+            DECREF_INPUTS();
         }
 
 
