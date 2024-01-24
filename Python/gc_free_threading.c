@@ -118,6 +118,17 @@ gc_clear_unreachable(PyObject *op)
     op->ob_gc_bits &= ~_PyGC_BITS_UNREACHABLE;
 }
 
+// Initialize the `ob_tid` field to zero if the object is not already
+// initialized as unreachable.
+static void
+gc_maybe_init_refs(PyObject *op)
+{
+    if (!gc_is_unreachable(op)) {
+        gc_set_unreachable(op);
+        op->ob_tid = 0;
+    }
+}
+
 static inline Py_ssize_t
 gc_get_refs(PyObject *op)
 {
@@ -171,6 +182,15 @@ gc_restore_tid(PyObject *op)
     }
 }
 
+static void
+gc_restore_refs(PyObject *op)
+{
+    if (gc_is_unreachable(op)) {
+        gc_restore_tid(op);
+        gc_clear_unreachable(op);
+    }
+}
+
 // Given a mimalloc memory block return the PyObject stored in it or NULL if
 // the block is not allocated or the object is not tracked or is immortal.
 static PyObject *
@@ -192,8 +212,8 @@ op_from_block(void *block, void *arg, bool include_frozen)
 }
 
 static int
-gc_visit_heaps_locked(PyInterpreterState *interp, mi_block_visit_fun *visitor,
-                      struct visitor_args *arg)
+gc_visit_heaps_lock_held(PyInterpreterState *interp, mi_block_visit_fun *visitor,
+                         struct visitor_args *arg)
 {
     // Offset of PyObject header from start of memory block.
     Py_ssize_t offset_base = sizeof(PyGC_Head);
@@ -245,7 +265,7 @@ gc_visit_heaps(PyInterpreterState *interp, mi_block_visit_fun *visitor,
 {
     int err;
     HEAD_LOCK(&_PyRuntime);
-    err = gc_visit_heaps_locked(interp, visitor, arg);
+    err = gc_visit_heaps_lock_held(interp, visitor, arg);
     HEAD_UNLOCK(&_PyRuntime);
     return err;
 }
@@ -257,10 +277,7 @@ visit_decref(PyObject *op, void *arg)
     if (_PyObject_GC_IS_TRACKED(op) && !_Py_IsImmortal(op)) {
         // If update_refs hasn't reached this object yet, mark it
         // as (tentatively) unreachable and initialize ob_tid to zero.
-        if (!gc_is_unreachable(op)) {
-            gc_set_unreachable(op);
-            op->ob_tid = 0;
-        }
+        gc_maybe_init_refs(op);
         gc_decref(op);
     }
     return 0;
@@ -290,32 +307,23 @@ update_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
     if (PyTuple_CheckExact(op)) {
         _PyTuple_MaybeUntrack(op);
         if (!_PyObject_GC_IS_TRACKED(op)) {
-            if (gc_is_unreachable(op)) {
-                gc_restore_tid(op);
-                gc_clear_unreachable(op);
-            }
+            gc_restore_refs(op);
             return true;
         }
     }
     else if (PyDict_CheckExact(op)) {
         _PyDict_MaybeUntrack(op);
         if (!_PyObject_GC_IS_TRACKED(op)) {
-            if (gc_is_unreachable(op)) {
-                gc_restore_tid(op);
-                gc_clear_unreachable(op);
-            }
+            gc_restore_refs(op);
             return true;
         }
     }
 
-    if (!gc_is_unreachable(op)) {
-        gc_set_unreachable(op);
-        op->ob_tid = 0;
-    }
-
-    // Add the actual refcount to ob_tid.
     Py_ssize_t refcount = Py_REFCNT(op);
     _PyObject_ASSERT(op, refcount >= 0);
+
+    // Add the actual refcount to ob_tid.
+    gc_maybe_init_refs(op);
     gc_add_refs(op, refcount);
 
     // Subtract internal references from ob_tid. Objects with ob_tid > 0
