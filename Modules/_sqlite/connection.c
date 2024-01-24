@@ -2018,11 +2018,11 @@ pysqlite_connection_iterdump_impl(pysqlite_Connection *self,
 
     PyObject *retval = PyObject_Vectorcall(iterdump, args, 1, kwnames);
     Py_DECREF(iterdump);
+    Py_DECREF(kwnames);
     return retval;
 
 error:
     Py_DECREF(iterdump);
-    Py_DECREF(args);
     Py_XDECREF(kwnames);
     return NULL;
 }
