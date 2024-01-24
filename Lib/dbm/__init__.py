@@ -38,7 +38,7 @@ import sys
 class error(Exception):
     pass
 
-_names = ['dbm.gnu', 'dbm.ndbm', 'dbm.dumb']
+_names = ['dbm.sqlite3', 'dbm.gnu', 'dbm.ndbm', 'dbm.dumb']
 _defaultmod = None
 _modules = {}
 
@@ -48,13 +48,6 @@ try:
     from dbm import ndbm
 except ImportError:
     ndbm = None
-
-try:
-    import sqlite3
-    _names.insert(0, 'dbm.sqlite3')
-    _has_sqlite3 = True
-except ImportError:
-    _has_sqlite3 = False
 
 
 def open(file, flag='r', mode=0o666):
@@ -173,7 +166,7 @@ def whichdb(filename):
 
     # Check for SQLite3 header string.
     if s16 == b"SQLite format 3\0":
-        return "dbm.sqlite3" if _has_sqlite3 else ""
+        return "dbm.sqlite3"
 
     # Convert to 4-byte int in native byte order -- return "" if impossible
     try:
