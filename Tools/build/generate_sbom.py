@@ -168,12 +168,18 @@ def find_ensurepip_pip_wheel() -> pathlib.Path | None:
     ensurepip_bundled_dir = CPYTHON_ROOT_DIR / "Lib/ensurepip/_bundled"
 
     pip_wheels = []
-    for wheel_filename in os.listdir(ensurepip_bundled_dir):
-        if wheel_filename.startswith("pip-"):
-            pip_wheels.append(wheel_filename)
-        else:
-            print(f"Unexpected wheel in ensurepip: '{wheel_filename}'")
-            sys.exit(1)
+    try:
+        for wheel_filename in os.listdir(ensurepip_bundled_dir):
+            if wheel_filename.startswith("pip-"):
+                pip_wheels.append(wheel_filename)
+            else:
+                print(f"Unexpected wheel in ensurepip: '{wheel_filename}'")
+                sys.exit(1)
+
+    # Ignore this error, likely caused by downstream distributors
+    # deleting the 'ensurepip/_bundled' directory.
+    except FileNotFoundError:
+        pass
 
     if len(pip_wheels) == 0:
         return None
