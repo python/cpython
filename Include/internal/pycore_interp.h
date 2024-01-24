@@ -57,6 +57,22 @@ struct _Py_dict_interp_state {
         .next_keys_version = 2, \
     }
 
+// Support for stop-the-world events. This exists in both the PyRuntime struct
+// for global pauses and in each PyInterpreterState for per-interpreter pauses.
+struct _stoptheworld_state {
+    PyMutex mutex;       // Serializes stop-the-world attempts.
+
+    // NOTE: The below fields are protected by HEAD_LOCK(runtime), not by the
+    // above mutex.
+    bool requested;      // Set when a pause is requested.
+    bool world_stopped;  // Set when the world is stopped.
+    bool is_global;      // Set when contained in PyRuntime struct.
+
+    PyEvent stop_event;  // Set when thread_countdown reaches zero.
+    Py_ssize_t thread_countdown;  // Number of threads that must pause.
+
+    PyThreadState *requester; // Thread that requested the pause (may be NULL).
+};
 
 /* cross-interpreter data registry */
 
@@ -182,6 +198,7 @@ struct _is {
 
     struct _warnings_runtime_state warnings;
     struct atexit_state atexit;
+    struct _stoptheworld_state stoptheworld;
 
 #if defined(Py_GIL_DISABLED)
     struct _mimalloc_interp_state mimalloc;
