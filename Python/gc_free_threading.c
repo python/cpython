@@ -174,7 +174,7 @@ gc_restore_tid(PyObject *op)
 // Given a mimalloc memory block return the PyObject stored in it or NULL if
 // the block is not allocated or the object is not tracked or is immortal.
 static PyObject *
-from_block(void *block, void *arg, bool include_frozen)
+op_from_block(void *block, void *arg, bool include_frozen)
 {
     struct visitor_args *a = arg;
     if (block == NULL) {
@@ -273,7 +273,7 @@ static bool
 update_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
             void *block, size_t block_size, void *args)
 {
-    PyObject *op = from_block(block, args, false);
+    PyObject *op = op_from_block(block, args, false);
     if (op == NULL) {
         return true;
     }
@@ -357,7 +357,7 @@ static bool
 validate_gc_objects(const mi_heap_t *heap, const mi_heap_area_t *area,
                     void *block, size_t block_size, void *args)
 {
-    PyObject *op = from_block(block, args, false);
+    PyObject *op = op_from_block(block, args, false);
     if (op == NULL) {
         return true;
     }
@@ -373,7 +373,7 @@ static bool
 mark_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
                   void *block, size_t block_size, void *args)
 {
-    PyObject *op = from_block(block, args, false);
+    PyObject *op = op_from_block(block, args, false);
     if (op == NULL) {
         return true;
     }
@@ -404,7 +404,7 @@ static bool
 scan_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
                   void *block, size_t block_size, void *args)
 {
-    PyObject *op = from_block(block, args, false);
+    PyObject *op = op_from_block(block, args, false);
     if (op == NULL) {
         return true;
     }
@@ -1137,7 +1137,7 @@ static bool
 visit_get_referrers(const mi_heap_t *heap, const mi_heap_area_t *area,
                     void *block, size_t block_size, void *args)
 {
-    PyObject *op = from_block(block, args, true);
+    PyObject *op = op_from_block(block, args, true);
     if (op == NULL) {
         return true;
     }
@@ -1192,7 +1192,7 @@ static bool
 visit_get_objects(const mi_heap_t *heap, const mi_heap_area_t *area,
                   void *block, size_t block_size, void *args)
 {
-    PyObject *op = from_block(block, args, true);
+    PyObject *op = op_from_block(block, args, true);
     if (op == NULL) {
         return true;
     }
@@ -1240,7 +1240,7 @@ static bool
 visit_freeze(const mi_heap_t *heap, const mi_heap_area_t *area,
              void *block, size_t block_size, void *args)
 {
-    PyObject *op = from_block(block, args, true);
+    PyObject *op = op_from_block(block, args, true);
     if (op != NULL) {
         op->ob_gc_bits |= _PyGC_BITS_FROZEN;
     }
@@ -1258,7 +1258,7 @@ static bool
 visit_unfreeze(const mi_heap_t *heap, const mi_heap_area_t *area,
                void *block, size_t block_size, void *args)
 {
-    PyObject *op = from_block(block, args, true);
+    PyObject *op = op_from_block(block, args, true);
     if (op != NULL) {
         op->ob_gc_bits &= ~_PyGC_BITS_FROZEN;
     }
@@ -1281,7 +1281,7 @@ static bool
 visit_count_frozen(const mi_heap_t *heap, const mi_heap_area_t *area,
                    void *block, size_t block_size, void *args)
 {
-    PyObject *op = from_block(block, args, true);
+    PyObject *op = op_from_block(block, args, true);
     if (op != NULL && (op->ob_gc_bits & _PyGC_BITS_FROZEN) != 0) {
         struct count_frozen_args *arg = (struct count_frozen_args *)args;
         arg->count++;
@@ -1630,7 +1630,7 @@ static bool
 custom_visitor_wrapper(const mi_heap_t *heap, const mi_heap_area_t *area,
                        void *block, size_t block_size, void *args)
 {
-    PyObject *op = from_block(block, args, false);
+    PyObject *op = op_from_block(block, args, false);
     if (op == NULL) {
         return true;
     }
