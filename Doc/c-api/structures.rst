@@ -669,18 +669,18 @@ Defining Getters and Setters
 
       Optional function pointer, providing additional data for getter and setter.
 
-   The ``get`` function takes one :c:expr:`PyObject*` parameter (the
-   instance) and a function pointer (the associated ``closure``)::
+.. c:type:: PyObject *(*getter)(PyObject *, void *)
 
-      typedef PyObject *(*getter)(PyObject *, void *);
+   The ``get`` function takes one :c:expr:`PyObject*` parameter (the
+   instance) and a function pointer (the associated ``closure``):
 
    It should return a new reference on success or ``NULL`` with a set exception
    on failure.
 
-   ``set`` functions take two :c:expr:`PyObject*` parameters (the instance and
-   the value to be set) and a function pointer (the associated ``closure``)::
+.. c:type:: int (*setter)(PyObject *, PyObject *, void *)
 
-      typedef int (*setter)(PyObject *, PyObject *, void *);
+   ``set`` functions take two :c:expr:`PyObject*` parameters (the instance and
+   the value to be set) and a function pointer (the associated ``closure``):
 
    In case the attribute should be deleted the second parameter is ``NULL``.
    Should return ``0`` on success or ``-1`` with a set exception on failure.
