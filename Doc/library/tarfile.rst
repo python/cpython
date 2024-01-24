@@ -869,6 +869,7 @@ A ``TarInfo`` object has the following public data attributes:
 
 
 .. attribute:: TarInfo.sparse
+   :type: list
 
    Sparse member information.
 
