@@ -1793,8 +1793,8 @@ peephole_optimizations(_PyUOpInstruction *buffer, int buffer_size)
                            back->opcode == _CHECK_VALIDITY ||
                            back->opcode == LOAD_FAST) &&
                           load_fast_count < oparg) {
-                        back->opcode = NOP;
                         load_fast_count += back->opcode == LOAD_FAST;
+                        back->opcode = NOP;
                         back--;
                     }
                 }
