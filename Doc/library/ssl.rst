@@ -2453,12 +2453,8 @@ provided.
      :exc:`SSLWantReadError` if it needs more data than the incoming BIO has
      available.
 
-   - There is no module-level ``wrap_bio()`` call like there is for
-     :meth:`~SSLContext.wrap_socket`. An :class:`SSLObject` is always created
-     via an :class:`SSLContext`.
-
    .. versionchanged:: 3.7
-      :class:`SSLObject` instances must to created with
+      :class:`SSLObject` instances must be created with
       :meth:`~SSLContext.wrap_bio`. In earlier versions, it was possible to
       create instances directly. This was never documented or officially
       supported.
