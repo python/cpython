@@ -3828,12 +3828,14 @@ type_new_impl(type_new_ctx *ctx)
 
     if (!_PyDict_HasOnlyStringKeys(type->tp_dict)) {
         PyObject *name_of_class = type_name(type, NULL);
-        if (name_of_class == NULL ||
-            PyErr_WarnFormat(
-                NULL, 1, "non-string key in the __dict__ of class %U",
-                name_of_class
-            ) == -1
-        ) {
+        if (name_of_class == NULL) {
+            return NULL;
+        }
+        if (PyErr_WarnFormat(NULL,
+                            1,
+                            "non-string key in the __dict__ of class %U",
+                            name_of_class) == -1)
+        {
             Py_DECREF(name_of_class);
             goto error;
         }
