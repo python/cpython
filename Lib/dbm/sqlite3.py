@@ -60,7 +60,8 @@ class _Database(MutableMapping):
         self.cx = sqlite3.connect(uri, autocommit=True, uri=True)
         self.cx.execute("PRAGMA journal_mode = wal")
         if flag == "rwc":
-            self._execute(BUILD_TABLE)
+            with closing(self._execute(BUILD_TABLE)):
+                pass
 
     def _execute(self, *args, **kwargs):
         try:
@@ -71,23 +72,26 @@ class _Database(MutableMapping):
             return ret
 
     def __len__(self):
-        return self._execute(GET_SIZE).fetchone()[0]
+        with closing(self._execute(GET_SIZE)) as cu:
+            row = cu.fetchone()
+        return row[0]
 
     def __getitem__(self, key):
-        rows = [row for row in self._execute(LOOKUP_KEY, (key,))]
-        if not rows:
+        with closing(self._execute(LOOKUP_KEY, (key,))) as cu:
+            row = cu.fetchone()
+        if not row:
             raise KeyError(key)
-        assert len(rows) == 1
-        row = rows[0]
         return row[0]
 
     def __setitem__(self, key, value):
-        self._execute(STORE_KV, (key, value));
+        with closing(self._execute(STORE_KV, (key, value))):
+            pass
 
     def __delitem__(self, key):
         if key not in self:
             raise KeyError(key)
-        self._execute(DELETE_KEY, (key,));
+        with closing(self._execute(DELETE_KEY, (key,))):
+            pass
 
     def __iter__(self):
         with closing(self._execute(ITER_KEYS)) as cu:
