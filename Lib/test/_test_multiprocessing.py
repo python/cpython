@@ -2705,6 +2705,7 @@ class _TestPool(BaseTestCase):
         p = self.Pool(3)
         args = [sleep_time for i in range(10_000)]
         result = p.map_async(time.sleep, args, chunksize=1)
+        time.sleep(0.2)  # give some tasks a chance to start
         p.terminate()
         p.join()
 
