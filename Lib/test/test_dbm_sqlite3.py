@@ -63,6 +63,11 @@ class Misuse(_SQLiteDbmTests):
         self.db.close()
         super().tearDown()
 
+    def test_misuse_double_create(self):
+        self.db["key"] = "value"
+        with dbm_sqlite3.open(self.filename, "c") as db:
+            self.assertEqual(db["key"], "value")
+
     def test_misuse_double_close(self):
         self.db.close()
 

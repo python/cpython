@@ -4,7 +4,7 @@ from contextlib import suppress, closing
 from collections.abc import MutableMapping
 
 BUILD_TABLE = """
-  CREATE TABLE Dict (
+  CREATE TABLE IF NOT EXISTS Dict (
     key TEXT NOT NULL,
     value BLOB NOT NULL,
     PRIMARY KEY (key)
@@ -60,8 +60,7 @@ class _Database(MutableMapping):
         self.cx = sqlite3.connect(uri, autocommit=True, uri=True)
         self.cx.execute("PRAGMA journal_mode = wal")
         if flag == "rwc":
-            with suppress(sqlite3.OperationalError):
-                self.cx.execute(BUILD_TABLE)
+            self._execute(BUILD_TABLE)
 
     def _execute(self, *args, **kwargs):
         try:
