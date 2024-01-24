@@ -192,7 +192,7 @@ dummy_func(
                 ERROR_IF(err, error);
                 if (frame->instr_ptr != this_instr) {
                     /* Instrumentation has jumped */
-                    next_instr = this_instr;
+                    next_instr = frame->instr_ptr;
                     DISPATCH();
                 }
             }
@@ -4068,6 +4068,10 @@ dummy_func(
         op(_CHECK_VALIDITY, (--)) {
             TIER_TWO_ONLY
             DEOPT_IF(!current_executor->vm_data.valid);
+        }
+
+        op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
+            value = Py_NewRef(ptr);
         }
 
         op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {

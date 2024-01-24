@@ -1729,6 +1729,7 @@ emit_uops_from_ctx(
 error:
     return -1;
 }
+
 static void
 remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
 {

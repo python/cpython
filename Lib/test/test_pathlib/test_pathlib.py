@@ -1818,6 +1818,13 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
             list(base.walk())
             list(base.walk(top_down=False))
 
+    def test_glob_empty_pattern(self):
+        p = self.cls('')
+        with self.assertRaisesRegex(ValueError, 'Unacceptable pattern'):
+            list(p.glob(''))
+        with self.assertRaisesRegex(ValueError, 'Unacceptable pattern'):
+            list(p.glob('.'))
+
     def test_glob_many_open_files(self):
         depth = 30
         P = self.cls
@@ -1859,6 +1866,22 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
             p.rglob('**')
         with self.assertWarns(FutureWarning):
             p.rglob('*/**')
+
+    def test_glob_pathlike(self):
+        P = self.cls
+        p = P(self.base)
+        pattern = "dir*/file*"
+        expect = {p / "dirB/fileB", p / "dirC/fileC"}
+        self.assertEqual(expect, set(p.glob(P(pattern))))
+        self.assertEqual(expect, set(p.glob(FakePath(pattern))))
+
+    def test_rglob_pathlike(self):
+        P = self.cls
+        p = P(self.base, "dirC")
+        pattern = "**/file*"
+        expect = {p / "fileC", p / "dirD/fileD"}
+        self.assertEqual(expect, set(p.rglob(P(pattern))))
+        self.assertEqual(expect, set(p.rglob(FakePath(pattern))))
 
 
 @only_posix
