@@ -1,6 +1,6 @@
 // This file contains instruction definitions.
-// It is read by Tools/cases_generator/generate_cases.py
-// to generate Python/generated_cases.c.h.
+// It is read by generators stored in Tools/cases_generator/
+// to generate Python/generated_cases.c.h and others.
 // Note that there is some dummy C code at the top and bottom of the file
 // to fool text editors like VS Code into believing this is valid C code.
 // The actual instruction definitions start at // BEGIN BYTECODES //.
