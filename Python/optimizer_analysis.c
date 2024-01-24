@@ -161,7 +161,7 @@ typedef struct _Py_UOps_Opt_IR {
     _Py_UOpsOptIREntry entries[1];
 } _Py_UOps_Opt_IR;
 
-PyTypeObject _Py_UOps_Opt_IR_Type = {
+const PyTypeObject _Py_UOps_Opt_IR_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "uops SSA IR",
     .tp_basicsize = sizeof(_Py_UOps_Opt_IR) - sizeof(_Py_UOpsOptIREntry),
@@ -299,7 +299,7 @@ abstractframe_dealloc(_Py_UOpsAbstractFrame *self)
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
-PyTypeObject _Py_UOpsAbstractFrame_Type = {
+const PyTypeObject _Py_UOpsAbstractFrame_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "uops abstract frame",
     .tp_basicsize = sizeof(_Py_UOpsAbstractFrame) ,
