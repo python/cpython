@@ -148,9 +148,12 @@ gc_decref(PyObject *op)
     op->ob_tid -= 1;
 }
 
+// Merge refcounts while the world is stopped.
 static void
 merge_refcount(PyObject *op, Py_ssize_t extra)
 {
+    assert(_PyInterpreterState_GET()->stoptheworld.world_stopped);
+
     Py_ssize_t refcount = Py_REFCNT(op);
     refcount += extra;
 
@@ -158,6 +161,7 @@ merge_refcount(PyObject *op, Py_ssize_t extra)
     _Py_AddRefTotal(_PyInterpreterState_GET(), extra);
 #endif
 
+    // No atomics necessary; all other threads in this interpreter are paused.
     op->ob_tid = 0;
     op->ob_ref_local = 0;
     op->ob_ref_shared = _Py_REF_SHARED(refcount, _Py_REF_MERGED);
@@ -263,6 +267,10 @@ static int
 gc_visit_heaps(PyInterpreterState *interp, mi_block_visit_fun *visitor,
                struct visitor_args *arg)
 {
+    // Other threads in the interpreter must be paused so that we can safely
+    // traverse their heaps.
+    assert(interp->stoptheworld.world_stopped);
+
     int err;
     HEAD_LOCK(&_PyRuntime);
     err = gc_visit_heaps_lock_held(interp, visitor, arg);
@@ -1167,6 +1175,8 @@ _PyGC_GetReferrers(PyInterpreterState *interp, PyObject *objs)
         return NULL;
     }
 
+    _PyEval_StopTheWorld(interp);
+
     // Append all objects to a worklist. This abuses ob_tid. We will restore
     // it later. NOTE: We can't append to the PyListObject during
     // gc_visit_heaps() because PyList_Append() may reclaim an abandoned
@@ -1174,11 +1184,12 @@ _PyGC_GetReferrers(PyInterpreterState *interp, PyObject *objs)
     struct get_referrers_args args = { .objs = objs };
     gc_visit_heaps(interp, &visit_get_referrers, &args.base);
 
+    bool error = false;
     PyObject *op;
     while ((op = worklist_pop(&args.results)) != NULL) {
         gc_restore_tid(op);
         if (op != objs && PyList_Append(result, op) < 0) {
-            Py_CLEAR(result);
+            error = true;
             break;
         }
     }
@@ -1186,6 +1197,13 @@ _PyGC_GetReferrers(PyInterpreterState *interp, PyObject *objs)
     // In case of error, clear the remaining worklist
     while ((op = worklist_pop(&args.results)) != NULL) {
         gc_restore_tid(op);
+    }
+
+    _PyEval_StartTheWorld(interp);
+
+    if (error) {
+        Py_DECREF(result);
+        return NULL;
     }
 
     return result;
@@ -1220,6 +1238,8 @@ _PyGC_GetObjects(PyInterpreterState *interp, Py_ssize_t generation)
         return NULL;
     }
 
+    _PyEval_StopTheWorld(interp);
+
     // Append all objects to a worklist. This abuses ob_tid. We will restore
     // it later. NOTE: We can't append to the list during gc_visit_heaps()
     // because PyList_Append() may reclaim an abandoned mimalloc segment
@@ -1227,11 +1247,12 @@ _PyGC_GetObjects(PyInterpreterState *interp, Py_ssize_t generation)
     struct get_objects_args args = { 0 };
     gc_visit_heaps(interp, &visit_get_objects, &args.base);
 
+    bool error = false;
     PyObject *op;
     while ((op = worklist_pop(&args.objects)) != NULL) {
         gc_restore_tid(op);
         if (op != result && PyList_Append(result, op) < 0) {
-            Py_CLEAR(result);
+            error = true;
             break;
         }
     }
@@ -1239,6 +1260,13 @@ _PyGC_GetObjects(PyInterpreterState *interp, Py_ssize_t generation)
     // In case of error, clear the remaining worklist
     while ((op = worklist_pop(&args.objects)) != NULL) {
         gc_restore_tid(op);
+    }
+
+    _PyEval_StartTheWorld(interp);
+
+    if (error) {
+        Py_DECREF(result);
+        return NULL;
     }
 
     return result;
@@ -1259,7 +1287,9 @@ void
 _PyGC_Freeze(PyInterpreterState *interp)
 {
     struct visitor_args args;
+    _PyEval_StopTheWorld(interp);
     gc_visit_heaps(interp, &visit_freeze, &args);
+    _PyEval_StartTheWorld(interp);
 }
 
 static bool
@@ -1277,7 +1307,9 @@ void
 _PyGC_Unfreeze(PyInterpreterState *interp)
 {
     struct visitor_args args;
+    _PyEval_StopTheWorld(interp);
     gc_visit_heaps(interp, &visit_unfreeze, &args);
+    _PyEval_StartTheWorld(interp);
 }
 
 struct count_frozen_args {
@@ -1301,7 +1333,9 @@ Py_ssize_t
 _PyGC_GetFreezeCount(PyInterpreterState *interp)
 {
     struct count_frozen_args args = { .count = 0 };
+    _PyEval_StopTheWorld(interp);
     gc_visit_heaps(interp, &visit_count_frozen, &args.base);
+    _PyEval_StartTheWorld(interp);
     return args.count;
 }
 
@@ -1660,7 +1694,9 @@ PyUnstable_GC_VisitObjects(gcvisitobjects_t callback, void *arg)
         .arg = arg,
     };
 
+    _PyEval_StopTheWorld(interp);
     gc_visit_heaps(interp, &custom_visitor_wrapper, &wrapper.base);
+    _PyEval_StartTheWorld(interp);
 }
 
 /* Clear all free lists
