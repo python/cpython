@@ -212,6 +212,9 @@ def _write_body_abstract_interp_pure_uop(
         mangled_uop.stack.inputs
     )
 
+    if uop.name == "_NOP":
+        return
+
     assert (
         len(uop.stack.outputs) == 1
     ), f"Currently we only support 1 stack output for pure ops: {uop}"

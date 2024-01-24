@@ -1652,6 +1652,7 @@
         }
 
         case _CHECK_PEP_523: {
+            goto guard_required;
             break;
         }
 

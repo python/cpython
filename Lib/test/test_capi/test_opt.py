@@ -563,6 +563,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, 1)
         binop_count = [opname for opname, _, _ in ex if opname == "_BINARY_OP_ADD_INT"]
         self.assertEqual(len(binop_count), 0)
+        uops = {opname for opname, _, _ in ex}
+        self.assertNotIn("_SHRINK_STACK", uops)
 
     def test_int_type_propagation(self):
         def testfunc(loops):

@@ -100,14 +100,10 @@ typedef struct {
 
 typedef struct _Py_UOpsSymbolicExpression {
     Py_ssize_t operand_count;
-    Py_ssize_t idx;
 
     // Value numbering but only for types and constant values.
     // https://en.wikipedia.org/wiki/Value_numbering
     _Py_UOpsSymType *ty_number;
-    // The region where this expression was first created.
-    // This matters for anything that isn't immutable
-    int originating_region;
 
     // The following fields are for codegen.
     _PyUOpInstruction inst;
@@ -338,7 +334,6 @@ typedef struct _Py_UOpsAbstractInterpContext {
     // The current "executing" frame.
     _Py_UOpsAbstractFrame *frame;
 
-    int curr_region_id;
     _Py_UOps_Opt_IR *ir;
 
     // Arena for the symbolic expression themselves.
@@ -458,7 +453,6 @@ abstractinterp_context_new(PyCodeObject *co,
         self->localsplus[i] = NULL;
     }
 
-    self->curr_region_id = 0;
 
     // Setup the arena for sym expressions.
     self->s_arena.arena = arena;
@@ -773,13 +767,11 @@ _Py_UOpsSymbolicExpression_New(_Py_UOpsAbstractInterpContext *ctx,
     ty->types = 0;
 
     self->ty_number = ty;
-    self->idx = -1;
     self->ty_number->types = 0;
     self->inst = inst;
     if (const_val != NULL) {
         sym_set_type_from_const(self, const_val);
     }
-    self->originating_region = ctx->curr_region_id;
 
 
 
@@ -971,9 +963,9 @@ op_is_end(uint32_t opcode)
 }
 
 static inline bool
-op_is_passthrough(uint32_t opcode)
+op_is_guard(uint32_t opcode)
 {
-return _PyUop_Flags[opcode] & HAS_PASSTHROUGH_FLAG;
+    return _PyUop_Flags[opcode] & HAS_GUARD_FLAG;
 }
 
 static inline bool
@@ -1008,6 +1000,19 @@ get_const(_Py_UOpsSymbolicExpression *expr)
 }
 
 
+static int
+write_bookkeeping_to_ir(_Py_UOpsAbstractInterpContext *ctx, _PyUOpInstruction *curr)
+{
+    if ((curr-1)->opcode == _CHECK_VALIDITY && ((curr-2)->opcode == _SET_IP)) {
+        if (ir_plain_inst(ctx->ir, *(curr-2)) < 0) {
+            return -1;
+        }
+        if (ir_plain_inst(ctx->ir, *(curr-1)) < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
 
 static int
 write_stack_to_ir(_Py_UOpsAbstractInterpContext *ctx, _PyUOpInstruction *curr, bool copy_types) {
@@ -1037,6 +1042,7 @@ write_stack_to_ir(_Py_UOpsAbstractInterpContext *ctx, _PyUOpInstruction *curr, b
         }
         ctx->frame->stack[i] = new_stack;
     }
+
     return 0;
 
 error:
@@ -1148,36 +1154,57 @@ uop_abstract_interpret_single_inst(
     switch (opcode) {
 #include "abstract_interp_cases.c.h"
         // Note: LOAD_FAST_CHECK is not pure!!!
-        case LOAD_FAST_CHECK:
+        case LOAD_FAST_CHECK: {
             STACK_GROW(1);
-            PEEK(1) = GETLOCAL(oparg);
-            assert(PEEK(1)->inst.opcode == INIT_FAST || PEEK(1)->inst.opcode == LOAD_FAST_CHECK);
-            PEEK(1)->inst.opcode = LOAD_FAST_CHECK;
-            ctx->frame->stack_pointer = stack_pointer;
-            if (write_stack_to_ir(ctx, inst, true) < 0) {
+            if (write_bookkeeping_to_ir(ctx, inst) < 0) {
                 goto error;
             }
+            if (ir_plain_inst(ctx->ir, *inst) < 0) {
+                goto error;
+            }
+            _Py_UOpsSymbolicExpression * local = GETLOCAL(oparg);
+            _Py_UOpsSymbolicExpression * new_local = sym_init_unknown(ctx);
+            if (new_local == NULL) {
+                goto error;
+            }
+            sym_copy_type_number(local, new_local);
+            PEEK(1) = new_local;
             break;
-        case LOAD_FAST:
+        }
+        case LOAD_FAST: {
             STACK_GROW(1);
+            _Py_UOpsSymbolicExpression * local = GETLOCAL(oparg);
+            // Might be NULL - replace with LOAD_FAST_CHECK
+            if (sym_is_type(local, NULL_TYPE)) {
+                if (write_bookkeeping_to_ir(ctx, inst) < 0) {
+                    goto error;
+                }
+                _PyUOpInstruction temp = *inst;
+                temp.opcode = LOAD_FAST_CHECK;
+                if (ir_plain_inst(ctx->ir, temp) < 0) {
+                    goto error;
+                }
+                _Py_UOpsSymbolicExpression * new_local = sym_init_unknown(ctx);
+                if (new_local == NULL) {
+                    goto error;
+                }
+                sym_copy_type_number(local, new_local);
+                PEEK(1) = new_local;
+                break;
+            }
             // Guaranteed by the CPython bytecode compiler to not be uninitialized.
             PEEK(1) = GETLOCAL(oparg);
-            if (sym_is_type(PEEK(1), NULL_TYPE)) {
-                PEEK(1)->inst.opcode = LOAD_FAST_CHECK;
-            }
             PEEK(1)->inst.target = inst->target;
             assert(PEEK(1));
 
             break;
+        }
         case LOAD_FAST_AND_CLEAR: {
             STACK_GROW(1);
             PEEK(1) = GETLOCAL(oparg);
             assert(PEEK(1)->inst.opcode == INIT_FAST);
             PEEK(1)->inst.opcode = LOAD_FAST_AND_CLEAR;
             ctx->frame->stack_pointer = stack_pointer;
-            if (write_stack_to_ir(ctx, inst, true) < 0) {
-                goto error;
-            }
             _Py_UOpsSymbolicExpression *new_local =  sym_init_var(ctx, oparg);
             if (new_local == NULL) {
                 goto error;
@@ -1439,7 +1466,7 @@ uop_abstract_interpret(
         if (!op_is_pure(curr->opcode) &&
             !op_is_specially_handled(curr->opcode) &&
             !op_is_bookkeeping(curr->opcode) &&
-            !op_is_passthrough(curr->opcode)) {
+            !op_is_guard(curr->opcode)) {
             DPRINTF(3, "Impure %s\n", (curr->opcode >= 300 ? _PyOpcode_uop_name : _PyOpcode_OpName)[curr->opcode]);
             if (first_impure) {
                 if (write_stack_to_ir(ctx, curr, false) < 0) {
@@ -1450,7 +1477,6 @@ uop_abstract_interpret(
                 }
             }
             first_impure = false;
-            ctx->curr_region_id++;
             if (ir_plain_inst(ctx->ir, *curr) < 0) {
                 goto error;
             }
@@ -1458,6 +1484,7 @@ uop_abstract_interpret(
         else {
             first_impure = true;
         }
+
 
         status = uop_abstract_interpret_single_inst(
             curr, end, ctx
@@ -1606,7 +1633,6 @@ compile_sym_to_uops(_Py_UOpsEmitter *emitter,
         }
     }
 
-
     // Finally, emit the operation itself.
     return emit_i(emitter, sym->inst);
 }
@@ -1740,6 +1766,46 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
     }
 }
 
+static void
+peephole_optimizations(_PyUOpInstruction *buffer, int buffer_size)
+{
+    for (int i = 0; i < buffer_size; i++) {
+        _PyUOpInstruction *curr = buffer + i;
+        int oparg = curr->oparg;
+        switch(curr->opcode) {
+            case _SHRINK_STACK: {
+                // If all that precedes a _SHRINK_STACK is a bunch of LOAD_FAST,
+                // then we can safely eliminate that without side effects.
+                int load_fast_count = 0;
+                _PyUOpInstruction *back = curr-1;
+                while((back->opcode == _SET_IP ||
+                    back->opcode == _CHECK_VALIDITY ||
+                    back->opcode == LOAD_FAST) &&
+                    load_fast_count < oparg) {
+                    load_fast_count += back->opcode == LOAD_FAST;
+                    back--;
+                }
+                if (load_fast_count == oparg) {
+                    curr->opcode = NOP;
+                    back = curr-1;
+                    load_fast_count = 0;
+                    while((back->opcode == _SET_IP ||
+                           back->opcode == _CHECK_VALIDITY ||
+                           back->opcode == LOAD_FAST) &&
+                          load_fast_count < oparg) {
+                        back->opcode = NOP;
+                        load_fast_count += back->opcode == LOAD_FAST;
+                        back--;
+                    }
+                }
+                break;
+            }
+            default:
+                break;
+        }
+    }
+}
+
 
 int
 _Py_uop_analyze_and_optimize(
@@ -1780,6 +1846,8 @@ _Py_uop_analyze_and_optimize(
     if (trace_len < 0 || trace_len > buffer_size) {
         goto error;
     }
+
+    peephole_optimizations(temp_writebuffer, trace_len);
 
     // Fill in our new trace!
     memcpy(buffer, temp_writebuffer, buffer_size * sizeof(_PyUOpInstruction));

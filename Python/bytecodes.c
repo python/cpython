@@ -133,7 +133,7 @@ dummy_func(
     switch (opcode) {
 
 // BEGIN BYTECODES //
-        inst(NOP, (--)) {
+        pure inst(NOP, (--)) {
         }
 
         family(RESUME, 0) = {

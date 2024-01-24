@@ -211,8 +211,8 @@ def cflags(p: Properties) -> str:
         flags.append("HAS_ESCAPES_FLAG")
     if p.pure:
         flags.append("HAS_PURE_FLAG")
-    if p.passthrough:
-        flags.append("HAS_PASSTHROUGH_FLAG")
+    if p.guard:
+        flags.append("HAS_GUARD_FLAG")
     if p.specially_handled_in_optimizer:
         flags.append("HAS_SPECIAL_OPT_FLAG")
     if flags:

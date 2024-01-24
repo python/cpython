@@ -5,6 +5,9 @@ from typing import Optional
 
 from tier2_abstract_common import SPECIALLY_HANDLED_ABSTRACT_INSTR
 
+SPECIAL_GUARDS = {
+    "_CHECK_PEP_523",
+}
 
 @dataclass
 class Properties:
@@ -478,7 +481,7 @@ def compute_properties(op: parser.InstDef) -> Properties:
         has_free=has_free,
         pure="pure" in op.annotations,
         passthrough=passthrough,
-        guard=passthrough and deopts and infallible,
+        guard=op.name in SPECIAL_GUARDS or (passthrough and deopts and infallible),
         specially_handled_in_optimizer=op.name in SPECIALLY_HANDLED_ABSTRACT_INSTR,
     )
 
