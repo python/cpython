@@ -1945,6 +1945,15 @@
             break;
         }
 
+        case _LOAD_CONST_INLINE: {
+            _Py_UOpsSymbolicExpression *__value_;
+            __value_ = sym_init_unknown(ctx);
+            if(__value_ == NULL) goto error;
+            stack_pointer[0] = __value_;
+            stack_pointer += 1;
+            break;
+        }
+
         case _LOAD_CONST_INLINE_BORROW: {
             _Py_UOpsSymbolicExpression *__value_;
             __value_ = sym_init_unknown(ctx);
@@ -1956,15 +1965,6 @@
 
         case _INTERNAL_INCREMENT_OPT_COUNTER: {
             stack_pointer += -1;
-            break;
-        }
-
-        case _LOAD_CONST_INLINE: {
-            _Py_UOpsSymbolicExpression *__value_;
-            __value_ = sym_init_unknown(ctx);
-            if(__value_ == NULL) goto error;
-            stack_pointer[0] = __value_;
-            stack_pointer += 1;
             break;
         }
 
