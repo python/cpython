@@ -7,9 +7,7 @@ import signal
 import subprocess
 import sys
 from test import support
-from test.support import os_helper
-from test.support import script_helper, is_android
-from test.support import skip_if_sanitizer
+from test.support import os_helper, script_helper, is_android, MS_WINDOWS
 import tempfile
 import unittest
 from textwrap import dedent
@@ -23,7 +21,6 @@ if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
 
 TIMEOUT = 0.5
-MS_WINDOWS = (os.name == 'nt')
 
 
 def expected_traceback(lineno1, lineno2, header, min_count=1):
@@ -36,7 +33,7 @@ def expected_traceback(lineno1, lineno2, header, min_count=1):
         return '^' + regex + '$'
 
 def skip_segfault_on_android(test):
-    # Issue #32138: Raising SIGSEGV on Android may not cause a crash.
+    # gh-76319: Raising SIGSEGV on Android may not cause a crash.
     return unittest.skipIf(is_android,
                            'raising SIGSEGV on Android is unreliable')(test)
 
@@ -64,8 +61,16 @@ class FaultHandlerTests(unittest.TestCase):
         pass_fds = []
         if fd is not None:
             pass_fds.append(fd)
+        env = dict(os.environ)
+
+        # Sanitizers must not handle SIGSEGV (ex: for test_enable_fd())
+        option = 'handle_segv=0'
+        support.set_sanitizer_env_var(env, option)
+
         with support.SuppressCrashReport():
-            process = script_helper.spawn_python('-c', code, pass_fds=pass_fds)
+            process = script_helper.spawn_python('-c', code,
+                                                 pass_fds=pass_fds,
+                                                 env=env)
             with process:
                 output, stderr = process.communicate()
                 exitcode = process.wait()
@@ -270,7 +275,7 @@ class FaultHandlerTests(unittest.TestCase):
                 """,
                 2,
                 'xyz',
-                func='test_fatal_error',
+                func='_testcapi_fatal_error_impl',
                 py_fatal_error=True)
 
     def test_fatal_error(self):
@@ -304,8 +309,6 @@ class FaultHandlerTests(unittest.TestCase):
             3,
             'Segmentation fault')
 
-    @skip_if_sanitizer(memory=True, ub=True, reason="sanitizer "
-                       "builds change crashing process output.")
     @skip_segfault_on_android
     def test_enable_file(self):
         with temporary_filename() as filename:
@@ -321,8 +324,6 @@ class FaultHandlerTests(unittest.TestCase):
 
     @unittest.skipIf(sys.platform == "win32",
                      "subprocess doesn't support pass_fds on Windows")
-    @skip_if_sanitizer(memory=True, ub=True, reason="sanitizer "
-                       "builds change crashing process output.")
     @skip_segfault_on_android
     def test_enable_fd(self):
         with tempfile.TemporaryFile('wb+') as fp:
@@ -676,6 +677,7 @@ class FaultHandlerTests(unittest.TestCase):
         with tempfile.TemporaryFile('wb+') as fp:
             self.check_dump_traceback_later(fd=fp.fileno())
 
+    @support.requires_resource('walltime')
     def test_dump_traceback_later_twice(self):
         self.check_dump_traceback_later(loops=2)
 

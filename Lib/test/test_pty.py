@@ -76,20 +76,21 @@ def expectedFailureIfStdinIsTTY(fun):
         pass
     return fun
 
+
+def write_all(fd, data):
+    written = os.write(fd, data)
+    if written != len(data):
+        # gh-73256, gh-110673: It should never happen, but check just in case
+        raise Exception(f"short write: os.write({fd}, {len(data)} bytes) "
+                        f"wrote {written} bytes")
+
+
 # Marginal testing of pty suite. Cannot do extensive 'do or fail' testing
 # because pty code is not too portable.
 class PtyTest(unittest.TestCase):
     def setUp(self):
-        old_alarm = signal.signal(signal.SIGALRM, self.handle_sig)
-        self.addCleanup(signal.signal, signal.SIGALRM, old_alarm)
-
         old_sighup = signal.signal(signal.SIGHUP, self.handle_sighup)
         self.addCleanup(signal.signal, signal.SIGHUP, old_sighup)
-
-        # isatty() and close() can hang on some platforms. Set an alarm
-        # before running the test to make sure we don't hang forever.
-        self.addCleanup(signal.alarm, 0)
-        signal.alarm(10)
 
         # Save original stdin window size.
         self.stdin_dim = None
@@ -100,9 +101,6 @@ class PtyTest(unittest.TestCase):
                                 self.stdin_dim)
             except tty.error:
                 pass
-
-    def handle_sig(self, sig, frame):
-        self.fail("isatty hung")
 
     @staticmethod
     def handle_sighup(signum, frame):
@@ -181,14 +179,14 @@ class PtyTest(unittest.TestCase):
             os.set_blocking(master_fd, blocking)
 
         debug("Writing to slave_fd")
-        os.write(slave_fd, TEST_STRING_1)
+        write_all(slave_fd, TEST_STRING_1)
         s1 = _readline(master_fd)
         self.assertEqual(b'I wish to buy a fish license.\n',
                          normalize_output(s1))
 
         debug("Writing chunked output")
-        os.write(slave_fd, TEST_STRING_2[:5])
-        os.write(slave_fd, TEST_STRING_2[5:])
+        write_all(slave_fd, TEST_STRING_2[:5])
+        write_all(slave_fd, TEST_STRING_2[5:])
         s2 = _readline(master_fd)
         self.assertEqual(b'For my pet fish, Eric.\n', normalize_output(s2))
 
@@ -312,8 +310,8 @@ class SmallPtyTests(unittest.TestCase):
         self.orig_pty_waitpid = pty.waitpid
         self.fds = []  # A list of file descriptors to close.
         self.files = []
-        self.select_rfds_lengths = []
-        self.select_rfds_results = []
+        self.select_input = []
+        self.select_output = []
         self.tcsetattr_mode_setting = None
 
     def tearDown(self):
@@ -350,8 +348,8 @@ class SmallPtyTests(unittest.TestCase):
 
     def _mock_select(self, rfds, wfds, xfds):
         # This will raise IndexError when no more expected calls exist.
-        self.assertEqual(self.select_rfds_lengths.pop(0), len(rfds))
-        return self.select_rfds_results.pop(0), [], []
+        self.assertEqual((rfds, wfds, xfds), self.select_input.pop(0))
+        return self.select_output.pop(0)
 
     def _make_mock_fork(self, pid):
         def mock_fork():
@@ -371,14 +369,16 @@ class SmallPtyTests(unittest.TestCase):
         masters = [s.fileno() for s in socketpair]
 
         # Feed data.  Smaller than PIPEBUF.  These writes will not block.
-        os.write(masters[1], b'from master')
-        os.write(write_to_stdin_fd, b'from stdin')
+        write_all(masters[1], b'from master')
+        write_all(write_to_stdin_fd, b'from stdin')
 
-        # Expect two select calls, the last one will cause IndexError
+        # Expect three select calls, the last one will cause IndexError
         pty.select = self._mock_select
-        self.select_rfds_lengths.append(2)
-        self.select_rfds_results.append([mock_stdin_fd, masters[0]])
-        self.select_rfds_lengths.append(2)
+        self.select_input.append(([mock_stdin_fd, masters[0]], [], []))
+        self.select_output.append(([mock_stdin_fd, masters[0]], [], []))
+        self.select_input.append(([mock_stdin_fd, masters[0]], [mock_stdout_fd, masters[0]], []))
+        self.select_output.append(([], [mock_stdout_fd, masters[0]], []))
+        self.select_input.append(([mock_stdin_fd, masters[0]], [], []))
 
         with self.assertRaises(IndexError):
             pty._copy(masters[0])

@@ -19,6 +19,10 @@ The :mod:`datetime` module supplies classes for manipulating dates and times.
 While date and time arithmetic is supported, the focus of the implementation is
 on efficient attribute extraction for output formatting and manipulation.
 
+.. tip::
+
+    Skip to :ref:`the format codes <format-codes>`.
+
 .. seealso::
 
    Module :mod:`calendar`
@@ -32,6 +36,11 @@ on efficient attribute extraction for output formatting and manipulation.
 
    Package `dateutil <https://dateutil.readthedocs.io/en/stable/>`_
       Third-party library with expanded time zone and parsing support.
+
+   Package `DateType <https://pypi.org/project/datetype/>`_
+      Third-party library that introduces distinct static types to e.g. allow
+      :term:`static type checkers <static type checker>`
+      to differentiate between naive and aware datetimes.
 
 .. _datetime-naive-aware:
 
@@ -644,6 +653,9 @@ Instance methods:
        >>> d.replace(day=26)
        datetime.date(2002, 12, 26)
 
+   :class:`date` objects are also supported by generic function
+   :func:`copy.replace`.
+
 
 .. method:: date.timetuple()
 
@@ -847,8 +859,8 @@ Constructor:
 
    If an argument outside those ranges is given, :exc:`ValueError` is raised.
 
-   .. versionadded:: 3.6
-      Added the ``fold`` argument.
+   .. versionchanged:: 3.6
+      Added the *fold* parameter.
 
 Other constructors, all class methods:
 
@@ -895,6 +907,10 @@ Other constructors, all class methods:
       as local times, it is preferred to use aware datetimes to represent times
       in UTC. As such, the recommended way to create an object representing the
       current time in UTC is by calling ``datetime.now(timezone.utc)``.
+
+   .. deprecated:: 3.12
+
+      Use :meth:`datetime.now` with :attr:`UTC` instead.
 
 
 .. classmethod:: datetime.fromtimestamp(timestamp, tz=None)
@@ -963,6 +979,10 @@ Other constructors, all class methods:
       is out of the range of values supported by the platform C
       :c:func:`gmtime` function. Raise :exc:`OSError` instead of
       :exc:`ValueError` on :c:func:`gmtime` failure.
+
+   .. deprecated:: 3.12
+
+      Use :meth:`datetime.fromtimestamp` with :attr:`UTC` instead.
 
 
 .. classmethod:: datetime.fromordinal(ordinal)
@@ -1235,8 +1255,11 @@ Instance methods:
    ``tzinfo=None`` can be specified to create a naive datetime from an aware
    datetime with no conversion of date and time data.
 
-   .. versionadded:: 3.6
-      Added the ``fold`` argument.
+   :class:`datetime` objects are also supported by generic function
+   :func:`copy.replace`.
+
+   .. versionchanged:: 3.6
+      Added the *fold* parameter.
 
 
 .. method:: datetime.astimezone(tz=None)
@@ -1479,8 +1502,8 @@ Instance methods:
       >>> dt.isoformat(timespec='microseconds')
       '2015-01-01T12:30:59.000000'
 
-   .. versionadded:: 3.6
-      Added the *timespec* argument.
+   .. versionchanged:: 3.6
+      Added the *timespec* parameter.
 
 
 .. method:: datetime.__str__()
@@ -1776,6 +1799,8 @@ Other constructor:
 
    Examples::
 
+   .. doctest::
+
        >>> from datetime import time
        >>> time.fromisoformat('04:23:01')
        datetime.time(4, 23, 1)
@@ -1785,7 +1810,7 @@ Other constructor:
        datetime.time(4, 23, 1)
        >>> time.fromisoformat('04:23:01.000384')
        datetime.time(4, 23, 1, 384)
-       >>> time.fromisoformat('04:23:01,000')
+       >>> time.fromisoformat('04:23:01,000384')
        datetime.time(4, 23, 1, 384)
        >>> time.fromisoformat('04:23:01+04:00')
        datetime.time(4, 23, 1, tzinfo=datetime.timezone(datetime.timedelta(seconds=14400)))
@@ -1811,8 +1836,11 @@ Instance methods:
    ``tzinfo=None`` can be specified to create a naive :class:`.time` from an
    aware :class:`.time`, without conversion of the time data.
 
-   .. versionadded:: 3.6
-      Added the ``fold`` argument.
+   :class:`time` objects are also supported by generic function
+   :func:`copy.replace`.
+
+   .. versionchanged:: 3.6
+      Added the *fold* parameter.
 
 
 .. method:: time.isoformat(timespec='auto')
@@ -1855,8 +1883,8 @@ Instance methods:
       >>> dt.isoformat(timespec='auto')
       '12:34:56'
 
-   .. versionadded:: 3.6
-      Added the *timespec* argument.
+   .. versionchanged:: 3.6
+      Added the *timespec* parameter.
 
 
 .. method:: time.__str__()
@@ -1959,7 +1987,8 @@ Examples of working with a :class:`.time` object::
    American EST and EDT.
 
    Special requirement for pickling:  A :class:`tzinfo` subclass must have an
-   :meth:`__init__` method that can be called with no arguments, otherwise it can be
+   :meth:`~object.__init__` method that can be called with no arguments,
+   otherwise it can be
    pickled but possibly not unpickled again. This is a technical requirement that
    may be relaxed in the future.
 
@@ -2313,6 +2342,8 @@ versus :meth:`strptime`:
 | Signature      | ``strftime(format)``                                   | ``strptime(date_string, format)``                                            |
 +----------------+--------------------------------------------------------+------------------------------------------------------------------------------+
 
+
+   .. _format-codes:
 
 :meth:`strftime` and :meth:`strptime` Format Codes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
