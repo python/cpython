@@ -301,21 +301,7 @@ class TestTimeZone(unittest.TestCase):
         self.assertIsInstance(timezone.utc, tzinfo)
         self.assertIsInstance(self.EST, tzinfo)
 
-    def test_cannot_subclass_deprecation_warning(self):
-        if '_Fast' in self.__class__.__name__:
-            self.skipTest('Only run for Pure Python implementation')
-
-        msg = (
-            "Subclassing 'datetime.timezone' is deprecated and scheduled for removal "
-            "in Python 3.15."
-        )
-        with self.assertWarnsRegex(DeprecationWarning, msg):
-            class MyTimezone(timezone): pass
-
     def test_cannot_subclass(self):
-        if '_Pure' in self.__class__.__name__:
-            self.skipTest('Only run for Fast C implementation')
-
         msg = "type 'datetime.timezone' is not an acceptable base type"
         with self.assertRaisesRegex(TypeError, msg):
             class MyTimezone(timezone): pass

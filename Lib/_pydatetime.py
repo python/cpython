@@ -2348,16 +2348,7 @@ class timezone(tzinfo):
         return cls._create(offset, name)
 
     def __init_subclass__(cls):
-        # When deprecation ends replace with:
-        #   raise TypeError("type 'datetime.timezone' is not an acceptable base type")
-        import warnings
-        warnings.warn(
-            "Subclassing 'datetime.timezone' is deprecated and scheduled for removal "
-            "in Python 3.15.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super().__init_subclass__()
+        raise TypeError("type 'datetime.timezone' is not an acceptable base type")
 
     @classmethod
     def _create(cls, offset, name=None):
