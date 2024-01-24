@@ -647,6 +647,10 @@ PyOS_AfterFork_Child(void)
         goto fatal_error;
     }
 
+#ifdef Py_GIL_DISABLED
+    _Py_brc_after_fork(tstate->interp);
+#endif
+
     _PySignal_AfterFork();
 
     status = _PyInterpreterState_DeleteExceptMain(runtime);

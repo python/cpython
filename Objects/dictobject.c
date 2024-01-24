@@ -5581,7 +5581,8 @@ _PyObject_MakeInstanceAttributesFromDict(PyObject *obj, PyDictOrValues *dorv)
     // Don't try this at home, kids:
     dict->ma_keys = NULL;
     dict->ma_values = NULL;
-    Py_DECREF(dict);
+    Py_SET_REFCNT(dict, 0);
+    _Py_Dealloc((PyObject *)dict);
     return true;
 }
 

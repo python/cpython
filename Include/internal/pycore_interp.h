@@ -201,6 +201,7 @@ struct _is {
 
 #if defined(Py_GIL_DISABLED)
     struct _mimalloc_interp_state mimalloc;
+    struct _brc_state brc;  // biased reference counting state
 #endif
 
     // Per-interpreter state for the obmalloc allocator.  For the main

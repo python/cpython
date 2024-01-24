@@ -2,6 +2,7 @@
 /* Generic object operations; and implementation of None */
 
 #include "Python.h"
+#include "pycore_brc.h"           // _Py_brc_queue_object()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
 #include "pycore_context.h"       // _PyContextTokenMissing_Type
@@ -344,12 +345,7 @@ _Py_DecRefSharedDebug(PyObject *o, const char *filename, int lineno)
                                                 &shared, new_shared));
 
     if (should_queue) {
-        // TODO: the inter-thread queue is not yet implemented. For now,
-        // we just merge the refcount here.
-        Py_ssize_t refcount = _Py_ExplicitMergeRefcount(o, -1);
-        if (refcount == 0) {
-            _Py_Dealloc(o);
-        }
+        _Py_brc_queue_object(o);
     }
     else if (new_shared == _Py_REF_MERGED) {
         // refcount is zero AND merged
