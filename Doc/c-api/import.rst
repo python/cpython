@@ -13,8 +13,8 @@ Importing Modules
       single: __all__ (package variable)
       single: modules (in module sys)
 
-   This is a wrapper around :c:func:`PyImport_Import()` which takes a ``const char *`` as an argument instead of a ``PyObject *``.
-
+   This is a wrapper around :c:func:`PyImport_Import()` which takes a
+   :c:expr:`const char *` as an argument instead of a :c:expr:`PyObject *`.
 
 .. c:function:: PyObject* PyImport_ImportModuleNoBlock(const char *name)
 
