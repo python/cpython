@@ -20,7 +20,7 @@ PyAPI_FUNC(PyCodeObject*) _PyAST_Compile(
     struct _arena *arena);
 
 /* AST optimizations */
-PyAPI_FUNC(int) _PyCompile_AstOptimize(
+extern int _PyCompile_AstOptimize(
     struct _mod *mod,
     PyObject *filename,
     PyCompilerFlags *flags,
@@ -102,11 +102,26 @@ int _PyCompile_EnsureArrayLargeEnough(
 
 int _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj);
 
+
+// Export for '_opcode' extention module
+PyAPI_FUNC(int) _PyCompile_OpcodeIsValid(int opcode);
+PyAPI_FUNC(int) _PyCompile_OpcodeHasArg(int opcode);
+PyAPI_FUNC(int) _PyCompile_OpcodeHasConst(int opcode);
+PyAPI_FUNC(int) _PyCompile_OpcodeHasName(int opcode);
+PyAPI_FUNC(int) _PyCompile_OpcodeHasJump(int opcode);
+PyAPI_FUNC(int) _PyCompile_OpcodeHasFree(int opcode);
+PyAPI_FUNC(int) _PyCompile_OpcodeHasLocal(int opcode);
+PyAPI_FUNC(int) _PyCompile_OpcodeHasExc(int opcode);
+
+PyAPI_FUNC(PyObject*) _PyCompile_GetUnaryIntrinsicName(int index);
+PyAPI_FUNC(PyObject*) _PyCompile_GetBinaryIntrinsicName(int index);
+
 /* Access compiler internals for unit testing */
 
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(PyObject*) _PyCompile_CleanDoc(PyObject *doc);
 
+// Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(PyObject*) _PyCompile_CodeGen(
         PyObject *ast,
         PyObject *filename,
@@ -114,11 +129,13 @@ PyAPI_FUNC(PyObject*) _PyCompile_CodeGen(
         int optimize,
         int compile_mode);
 
+// Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(PyObject*) _PyCompile_OptimizeCfg(
         PyObject *instructions,
         PyObject *consts,
         int nlocals);
 
+// Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(PyCodeObject*)
 _PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
                     PyObject *instructions);

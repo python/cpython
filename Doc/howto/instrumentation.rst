@@ -13,9 +13,9 @@ DTrace and SystemTap are monitoring tools, each providing a way to inspect
 what the processes on a computer system are doing.  They both use
 domain-specific languages allowing a user to write scripts which:
 
-  - filter which processes are to be observed
-  - gather data from the processes of interest
-  - generate reports on the data
+- filter which processes are to be observed
+- gather data from the processes of interest
+- generate reports on the data
 
 As of Python 3.6, CPython can be built with embedded "markers", also
 known as "probes", that can be observed by a DTrace or SystemTap script,
@@ -246,11 +246,9 @@ The output looks like this:
 
 where the columns are:
 
-  - time in microseconds since start of script
-
-  - name of executable
-
-  - PID of process
+- time in microseconds since start of script
+- name of executable
+- PID of process
 
 and the remainder indicates the call/return hierarchy as the script executes.
 

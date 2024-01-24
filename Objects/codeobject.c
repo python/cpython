@@ -7,12 +7,11 @@
 #include "pycore_frame.h"         // FRAME_SPECIALS_SIZE
 #include "pycore_interp.h"        // PyInterpreterState.co_extra_freefuncs
 #include "pycore_opcode_metadata.h" // _PyOpcode_Deopt, _PyOpcode_Caches
+#include "pycore_opcode_utils.h"  // RESUME_AT_FUNC_START
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "clinic/codeobject.c.h"
-
-static PyObject* code_repr(PyCodeObject *co);
 
 static const char *
 code_event_name(PyCodeEvent event) {
@@ -41,21 +40,9 @@ notify_code_watchers(PyCodeEvent event, PyCodeObject *co)
             // callback must be non-null if the watcher bit is set
             assert(cb != NULL);
             if (cb(event, co) < 0) {
-                // Don't risk resurrecting the object if an unraisablehook keeps
-                // a reference; pass a string as context.
-                PyObject *context = NULL;
-                PyObject *repr = code_repr(co);
-                if (repr) {
-                    context = PyUnicode_FromFormat(
-                        "%s watcher callback for %U",
-                        code_event_name(event), repr);
-                    Py_DECREF(repr);
-                }
-                if (context == NULL) {
-                    context = Py_NewRef(Py_None);
-                }
-                PyErr_WriteUnraisable(context);
-                Py_DECREF(context);
+                PyErr_FormatUnraisable(
+                    "Exception ignored in %s watcher callback for %R",
+                    code_event_name(event), co);
             }
         }
         i++;
@@ -427,9 +414,10 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_framesize = nlocalsplus + con->stacksize + FRAME_SPECIALS_SIZE;
     co->co_ncellvars = ncellvars;
     co->co_nfreevars = nfreevars;
-    co->co_version = _Py_next_func_version;
-    if (_Py_next_func_version != 0) {
-        _Py_next_func_version++;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    co->co_version = interp->next_func_version;
+    if (interp->next_func_version != 0) {
+        interp->next_func_version++;
     }
     co->_co_monitoring = NULL;
     co->_co_instrumentation_version = 0;
@@ -655,6 +643,35 @@ PyUnstable_Code_NewWithPosOnlyArgs(
         _Py_set_localsplus_info(offset, name, CO_FAST_FREE,
                                localsplusnames, localspluskinds);
     }
+
+    // gh-110543: Make sure the CO_FAST_HIDDEN flag is set correctly.
+    if (!(flags & CO_OPTIMIZED)) {
+        Py_ssize_t code_len = PyBytes_GET_SIZE(code);
+        _Py_CODEUNIT *code_data = (_Py_CODEUNIT *)PyBytes_AS_STRING(code);
+        Py_ssize_t num_code_units = code_len / sizeof(_Py_CODEUNIT);
+        int extended_arg = 0;
+        for (int i = 0; i < num_code_units; i += 1 + _PyOpcode_Caches[code_data[i].op.code]) {
+            _Py_CODEUNIT *instr = &code_data[i];
+            uint8_t opcode = instr->op.code;
+            if (opcode == EXTENDED_ARG) {
+                extended_arg = extended_arg << 8 | instr->op.arg;
+                continue;
+            }
+            if (opcode == LOAD_FAST_AND_CLEAR) {
+                int oparg = extended_arg << 8 | instr->op.arg;
+                if (oparg >= nlocalsplus) {
+                    PyErr_Format(PyExc_ValueError,
+                                "code: LOAD_FAST_AND_CLEAR oparg %d out of range",
+                                oparg);
+                    goto error;
+                }
+                _PyLocals_Kind kind = _PyLocals_GetKind(localspluskinds, oparg);
+                _PyLocals_SetKind(localspluskinds, oparg, kind | CO_FAST_HIDDEN);
+            }
+            extended_arg = 0;
+        }
+    }
+
     // If any cells were args then nlocalsplus will have shrunk.
     if (nlocalsplus != PyTuple_GET_SIZE(localsplusnames)) {
         if (_PyTuple_Resize(&localsplusnames, nlocalsplus) < 0
@@ -732,7 +749,7 @@ PyUnstable_Code_New(int argcount, int kwonlyargcount,
 // test.test_code.CodeLocationTest.test_code_new_empty to keep it in sync!
 
 static const uint8_t assert0[6] = {
-    RESUME, 0,
+    RESUME, RESUME_AT_FUNC_START,
     LOAD_ASSERTION_ERROR, 0,
     RAISE_VARARGS, 1
 };
@@ -1479,6 +1496,23 @@ clear_executors(PyCodeObject *co)
     co->co_executors = NULL;
 }
 
+void
+_PyCode_Clear_Executors(PyCodeObject *code) {
+    int code_len = (int)Py_SIZE(code);
+    for (int i = 0; i < code_len; i += _PyInstruction_GetLength(code, i)) {
+        _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
+        uint8_t opcode = instr->op.code;
+        uint8_t oparg = instr->op.arg;
+        if (opcode == ENTER_EXECUTOR) {
+            _PyExecutorObject *exec = code->co_executors->executors[oparg];
+            assert(exec->vm_data.opcode != ENTER_EXECUTOR);
+            instr->op.code = exec->vm_data.opcode;
+            instr->op.arg = exec->vm_data.oparg;
+        }
+    }
+    clear_executors(code);
+}
+
 static void
 deopt_code(PyCodeObject *code, _Py_CODEUNIT *instructions)
 {
@@ -1487,7 +1521,7 @@ deopt_code(PyCodeObject *code, _Py_CODEUNIT *instructions)
         int opcode = _Py_GetBaseOpcode(code, i);
         if (opcode == ENTER_EXECUTOR) {
             _PyExecutorObject *exec = code->co_executors->executors[instructions[i].op.arg];
-            opcode = exec->vm_data.opcode;
+            opcode = _PyOpcode_Deopt[exec->vm_data.opcode];
             instructions[i].op.arg = exec->vm_data.oparg;
         }
         assert(opcode != ENTER_EXECUTOR);
@@ -1780,28 +1814,26 @@ code_richcompare(PyObject *self, PyObject *other, int op)
     for (int i = 0; i < Py_SIZE(co); i++) {
         _Py_CODEUNIT co_instr = _PyCode_CODE(co)[i];
         _Py_CODEUNIT cp_instr = _PyCode_CODE(cp)[i];
-        uint8_t co_code = co_instr.op.code;
+        uint8_t co_code = _Py_GetBaseOpcode(co, i);
         uint8_t co_arg = co_instr.op.arg;
-        uint8_t cp_code = cp_instr.op.code;
+        uint8_t cp_code = _Py_GetBaseOpcode(cp, i);
         uint8_t cp_arg = cp_instr.op.arg;
 
         if (co_code == ENTER_EXECUTOR) {
             const int exec_index = co_arg;
             _PyExecutorObject *exec = co->co_executors->executors[exec_index];
-            co_code = exec->vm_data.opcode;
+            co_code = _PyOpcode_Deopt[exec->vm_data.opcode];
             co_arg = exec->vm_data.oparg;
         }
         assert(co_code != ENTER_EXECUTOR);
-        co_code = _PyOpcode_Deopt[co_code];
 
         if (cp_code == ENTER_EXECUTOR) {
             const int exec_index = cp_arg;
             _PyExecutorObject *exec = cp->co_executors->executors[exec_index];
-            cp_code = exec->vm_data.opcode;
+            cp_code = _PyOpcode_Deopt[exec->vm_data.opcode];
             cp_arg = exec->vm_data.oparg;
         }
         assert(cp_code != ENTER_EXECUTOR);
-        cp_code = _PyOpcode_Deopt[cp_code];
 
         if (co_code != cp_code || co_arg != cp_arg) {
             goto unequal;
@@ -2145,6 +2177,7 @@ static struct PyMethodDef code_methods[] = {
     {"co_positions", (PyCFunction)code_positionsiterator, METH_NOARGS},
     CODE_REPLACE_METHODDEF
     CODE__VARNAME_FROM_OPARG_METHODDEF
+    {"__replace__", _PyCFunction_CAST(code_replace), METH_FASTCALL|METH_KEYWORDS},
     {NULL, NULL}                /* sentinel */
 };
 

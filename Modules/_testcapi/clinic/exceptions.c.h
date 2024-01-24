@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_testcapi_err_set_raised__doc__,
 "err_set_raised($module, exception, /)\n"
@@ -299,7 +299,7 @@ _testcapi_raise_exception(PyObject *module, PyObject *const *args, Py_ssize_t na
         goto exit;
     }
     exc = args[0];
-    num_args = _PyLong_AsInt(args[1]);
+    num_args = PyLong_AsInt(args[1]);
     if (num_args == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -395,38 +395,6 @@ PyDoc_STRVAR(_testcapi_set_exception__doc__,
 #define _TESTCAPI_SET_EXCEPTION_METHODDEF    \
     {"set_exception", (PyCFunction)_testcapi_set_exception, METH_O, _testcapi_set_exception__doc__},
 
-PyDoc_STRVAR(_testcapi_write_unraisable_exc__doc__,
-"write_unraisable_exc($module, exception, err_msg, obj, /)\n"
-"--\n"
-"\n");
-
-#define _TESTCAPI_WRITE_UNRAISABLE_EXC_METHODDEF    \
-    {"write_unraisable_exc", _PyCFunction_CAST(_testcapi_write_unraisable_exc), METH_FASTCALL, _testcapi_write_unraisable_exc__doc__},
-
-static PyObject *
-_testcapi_write_unraisable_exc_impl(PyObject *module, PyObject *exc,
-                                    PyObject *err_msg, PyObject *obj);
-
-static PyObject *
-_testcapi_write_unraisable_exc(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    PyObject *exc;
-    PyObject *err_msg;
-    PyObject *obj;
-
-    if (!_PyArg_CheckPositional("write_unraisable_exc", nargs, 3, 3)) {
-        goto exit;
-    }
-    exc = args[0];
-    err_msg = args[1];
-    obj = args[2];
-    return_value = _testcapi_write_unraisable_exc_impl(module, exc, err_msg, obj);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(_testcapi_traceback_print__doc__,
 "traceback_print($module, traceback, file, /)\n"
 "--\n"
@@ -488,4 +456,4 @@ _testcapi_unstable_exc_prep_reraise_star(PyObject *module, PyObject *const *args
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d574342d716e98b5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0b11ef105030a48e input=a9049054013a1b77]*/

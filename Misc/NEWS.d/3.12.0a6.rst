@@ -220,7 +220,7 @@ access of ``builtins.__dict__`` keys mutates the iter object.
 .. section: Core and Builtins
 
 Update :mod:`tracemalloc` to handle presize of object properly. Patch by
-Dong-hee Na.
+Donghee Na.
 
 ..
 

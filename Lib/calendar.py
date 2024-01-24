@@ -10,7 +10,6 @@ import datetime
 from enum import IntEnum, global_enum
 import locale as _locale
 from itertools import repeat
-import warnings
 
 __all__ = ["IllegalMonthError", "IllegalWeekdayError", "setfirstweekday",
            "firstweekday", "isleap", "leapdays", "weekday", "monthrange",
@@ -44,6 +43,7 @@ class IllegalWeekdayError(ValueError):
 
 def __getattr__(name):
     if name in ('January', 'February'):
+        import warnings
         warnings.warn(f"The '{name}' attribute is deprecated, use '{name.upper()}' instead",
                       DeprecationWarning, stacklevel=2)
         if name == 'January':
@@ -721,7 +721,7 @@ def main(args=None):
     parser.add_argument(
         "-L", "--locale",
         default=None,
-        help="locale to be used from month and weekday names"
+        help="locale to use for month and weekday names"
     )
     parser.add_argument(
         "-e", "--encoding",

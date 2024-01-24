@@ -90,7 +90,7 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
         // This may be a newly-created generator or coroutine frame. Since it's
         // dead anyways, just pretend that the first RESUME ran:
         PyCodeObject *code = _PyFrame_GetCode(frame);
-        frame->prev_instr = _PyCode_CODE(code) + code->_co_firsttraceable;
+        frame->instr_ptr = _PyCode_CODE(code) + code->_co_firsttraceable + 1;
     }
     assert(!_PyFrame_IsIncomplete(frame));
     assert(f->f_back == NULL);
@@ -167,10 +167,10 @@ PyUnstable_InterpreterFrame_GetLine(_PyInterpreterFrame *frame)
     return PyCode_Addr2Line(_PyFrame_GetCode(frame), addr);
 }
 
-const PyTypeObject *const PyUnstable_ExecutableKinds[PY_EXECUTABLE_KINDS+1] = {
-    [PY_EXECUTABLE_KIND_SKIP] = &_PyNone_Type,
-    [PY_EXECUTABLE_KIND_PY_FUNCTION] = &PyCode_Type,
-    [PY_EXECUTABLE_KIND_BUILTIN_FUNCTION] = &PyMethod_Type,
-    [PY_EXECUTABLE_KIND_METHOD_DESCRIPTOR] = &PyMethodDescr_Type,
-    [PY_EXECUTABLE_KINDS] = NULL,
+const PyTypeObject *const PyUnstable_ExecutableKinds[PyUnstable_EXECUTABLE_KINDS+1] = {
+    [PyUnstable_EXECUTABLE_KIND_SKIP] = &_PyNone_Type,
+    [PyUnstable_EXECUTABLE_KIND_PY_FUNCTION] = &PyCode_Type,
+    [PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION] = &PyMethod_Type,
+    [PyUnstable_EXECUTABLE_KIND_METHOD_DESCRIPTOR] = &PyMethodDescr_Type,
+    [PyUnstable_EXECUTABLE_KINDS] = NULL,
 };

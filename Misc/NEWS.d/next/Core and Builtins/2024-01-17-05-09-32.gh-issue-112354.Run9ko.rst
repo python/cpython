@@ -1,0 +1,2 @@
+The ``END_FOR`` instruction now pops only one value. This is to better
+support side exits in loops.
