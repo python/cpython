@@ -29,7 +29,6 @@ Doc/library/asyncio-policy.rst
 Doc/library/asyncio-subprocess.rst
 Doc/library/bdb.rst
 Doc/library/collections.rst
-Doc/library/concurrent.futures.rst
 Doc/library/copy.rst
 Doc/library/csv.rst
 Doc/library/ctypes.rst
