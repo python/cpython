@@ -1629,9 +1629,7 @@ def _register_atexit(func, *arg, **kwargs):
     if _SHUTTING_DOWN:
         raise RuntimeError("can't register atexit after shutdown")
 
-    import functools
-    call = functools.partial(func, *arg, **kwargs)
-    _threading_atexits.append(call)
+    _threading_atexits.append(lambda: func(*arg, **kwargs))
 
 
 from _thread import stack_size
