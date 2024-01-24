@@ -37,7 +37,7 @@ class URI(unittest.TestCase):
             with self.subTest(path=path, normalized=normalized):
                 self.assertEqual(_normalize_uri_path(path), normalized)
 
-    @unittest.skip("WIP")
+    @unittest.skipUnless(sys.platform == "win32", "requires Windows")
     def test_uri_windows(self):
         dataset = (
             # Relative subdir.

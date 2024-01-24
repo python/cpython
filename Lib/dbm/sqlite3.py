@@ -35,7 +35,7 @@ def _normalize_uri_path(path):
         if path.drive:
             if not path.is_absolute():
                 path = Path(path).absolute()
-            return Path("/", path).as_posix()
+            return "/" + Path(path).as_posix()
     return path.as_posix()
 
 
