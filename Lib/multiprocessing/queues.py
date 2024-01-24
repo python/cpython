@@ -164,6 +164,11 @@ class Queue(object):
         # gh-94777: Prevent queue writing to a pipe which is no longer read.
         self._reader.close()
 
+        # gh-107219: Close the connection writer which can unblock
+        # Queue._feed() if it was stuck in send_bytes().
+        if sys.platform == 'win32':
+            self._writer.close()
+
         self.close()
         self.join_thread()
 

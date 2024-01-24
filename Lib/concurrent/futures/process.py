@@ -524,11 +524,6 @@ class _ExecutorManagerThread(threading.Thread):
 
         self.call_queue._terminate_broken()
 
-        # gh-107219: Close the connection writer which can unblock
-        # Queue._feed() if it was stuck in send_bytes().
-        if sys.platform == 'win32':
-            self.call_queue._writer.close()
-
         # clean up resources
         self._join_executor_internals(broken=True)
 
