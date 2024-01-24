@@ -619,7 +619,6 @@ class ElementTreeTest(unittest.TestCase):
                 iterparse(SIMPLE_XMLFILE, events)
             self.assertEqual(str(cm.exception), "unknown event 'bogus'")
             del cm
-            gc_collect()
 
         source = io.BytesIO(
             b"<?xml version='1.0' encoding='iso-8859-1'?>\n"
@@ -653,26 +652,22 @@ class ElementTreeTest(unittest.TestCase):
             self.assertEqual(str(cm.exception),
                     'junk after document element: line 1, column 12')
             del cm, it
-            gc_collect()
 
         # Not exhausting the iterator still closes the resource (bpo-43292)
         with warnings_helper.check_no_resource_warning(self):
             it = iterparse(SIMPLE_XMLFILE)
             del it
-            gc_collect()
 
         with warnings_helper.check_no_resource_warning(self):
             it = iterparse(SIMPLE_XMLFILE)
             it.close()
             del it
-            gc_collect()
 
         with warnings_helper.check_no_resource_warning(self):
             it = iterparse(SIMPLE_XMLFILE)
             action, elem = next(it)
             self.assertEqual((action, elem.tag), ('end', 'element'))
             del it, elem
-            gc_collect()
 
         with warnings_helper.check_no_resource_warning(self):
             it = iterparse(SIMPLE_XMLFILE)
@@ -680,7 +675,6 @@ class ElementTreeTest(unittest.TestCase):
             it.close()
             self.assertEqual((action, elem.tag), ('end', 'element'))
             del it, elem
-            gc_collect()
 
         with self.assertRaises(FileNotFoundError):
             iterparse("nonexistent")
