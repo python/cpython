@@ -185,7 +185,7 @@ Functions and classes provided:
    .. note::
 
       Most types managing resources support the :term:`context manager` protocol,
-      which closes *thing* on leaving the :keyword:`with` statment.
+      which closes *thing* on leaving the :keyword:`with` statement.
       As such, :func:`!closing` is most useful for third party types that don't
       support context managers.
       This example is purely for illustration purposes,
