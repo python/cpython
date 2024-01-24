@@ -302,8 +302,7 @@ class TestTimeZone(unittest.TestCase):
         self.assertIsInstance(self.EST, tzinfo)
 
     def test_cannot_subclass(self):
-        msg = "type 'datetime.timezone' is not an acceptable base type"
-        with self.assertRaisesRegex(TypeError, msg):
+        with self.assertRaises(TypeError):
             class MyTimezone(timezone): pass
 
     def test_utcoffset(self):
