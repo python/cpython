@@ -396,6 +396,10 @@ Standard names are defined for the following types:
    data members which use standard conversion functions; it has the same purpose
    as the :class:`property` type, but for classes defined in extension modules.
 
+   In addition, when a class is defined with a :attr:`~object.__slots__` attribute, then for
+   each slot, an instance of :class:`!MemberDescriptorType` will be added as an attribute
+   on the class. This allows the slot to appear in the class's :attr:`~object.__dict__`.
+
    .. impl-detail::
 
       In other implementations of Python, this type may be identical to
