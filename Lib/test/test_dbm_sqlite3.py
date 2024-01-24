@@ -1,12 +1,15 @@
 import sqlite3
+import sys
 import test.support
 import unittest
 from contextlib import closing
 from functools import partial
+from pathlib import PureWindowsPath
 from test.support import cpython_only, import_helper, os_helper
 
 
 dbm_sqlite3 = import_helper.import_module("dbm.sqlite3")
+from dbm.sqlite3 import _normalize_uri_path
 
 
 class _SQLiteDbmTests(unittest.TestCase):
@@ -19,6 +22,41 @@ class _SQLiteDbmTests(unittest.TestCase):
     def tearDown(self):
         for suffix in "", "-wal", "-shm":
             os_helper.unlink(self.filename + suffix)
+
+
+class URI(unittest.TestCase):
+
+    def test_uri_substitutions(self):
+        dataset = (
+            ("relative/b//c", "relative/b/c"),
+            ("/absolute/////b/c", "/absolute/b/c"),
+            ("PRE#MID##END", "PRE%23MID%23%23END"),
+            ("%#?%%#", "%25%23%3f%25%25%23"),
+        )
+        for path, normalized in dataset:
+            with self.subTest(path=path, normalized=normalized):
+                self.assertEqual(_normalize_uri_path(path), normalized)
+
+    @unittest.skip("WIP")
+    def test_uri_windows(self):
+        dataset = (
+            # Relative subdir.
+            (r"2018\January.xlsx",
+             "2018/January.xlsx"),
+            # Relative CWD.
+            (r"..\Publications\TravelBrochure.pdf",
+             "../Publications/TravelBrochure.pdf"),
+            # Absolute with drive letter.
+            (r"C:\Projects\apilibrary\apilibrary.sln",
+             "/C:/Projects/apilibrary/apilibrary.sln"),
+            # Relative with drive letter.
+            (r"C:Projects\apilibrary\apilibrary.sln",
+             "/C:Projects/apilibrary/apilibrary.sln"),
+        )
+        for path, normalized in dataset:
+            with self.subTest(path=path, normalized=normalized):
+                path = PureWindowsPath(path)
+                self.assertEqual(_normalize_uri_path(path), normalized)
 
 
 class ReadOnly(_SQLiteDbmTests):
@@ -163,7 +201,12 @@ class Misuse(_SQLiteDbmTests):
 
     def test_misuse_reinit(self):
         with self.assertRaises(dbm_sqlite3.error):
-            self.db.__init__(":memory:", flag="rw")
+            self.db.__init__("new.db", flag="rw")
+
+    def test_misuse_empty_filename(self):
+        for flag in "r", "w", "c", "n":
+            with self.assertRaises(dbm_sqlite3.error):
+                db = dbm_sqlite3.open("", flag="c")
 
 
 class DataTypes(_SQLiteDbmTests):

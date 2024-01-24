@@ -66,7 +66,10 @@ class _Database(MutableMapping):
         path = _normalize_uri_path(path)
         uri = f"file:{path}?mode={flag}"
 
-        self._cx = sqlite3.connect(uri, autocommit=True, uri=True)
+        try:
+            self._cx = sqlite3.connect(uri, autocommit=True, uri=True)
+        except sqlite3.Error as exc:
+            raise error(str(exc))
 
         # This is an optimization only; it's ok if it fails.
         with suppress(sqlite3.OperationalError):
@@ -110,8 +113,8 @@ class _Database(MutableMapping):
     def __iter__(self):
         try:
             with closing(self._execute(ITER_KEYS)) as cu:
-                    for row in cu:
-                        yield row[0]
+                for row in cu:
+                    yield row[0]
         except sqlite3.Error as exc:
             raise error(str(exc))
 
