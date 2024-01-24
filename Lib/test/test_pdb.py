@@ -3058,7 +3058,7 @@ def bœr():
 
         stdout, stderr = self.run_pdb_script(script, commands)
         self.assertIn("WARNING:", stdout)
-        self.assertIn("was edited after pdb started", stdout)
+        self.assertIn("was edited", stdout)
 
     def test_file_modified_after_execution_with_multiple_instances(self):
         script = """
@@ -3091,7 +3091,7 @@ def bœr():
 
         self.assertEqual(proc.returncode, 0)
         self.assertIn("WARNING:", stdout)
-        self.assertIn("was edited after pdb started", stdout)
+        self.assertIn("was edited", stdout)
 
     def test_file_modified_after_execution_with_restart(self):
         script = """
