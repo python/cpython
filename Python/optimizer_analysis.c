@@ -1613,7 +1613,8 @@ compile_sym_to_uops(_Py_UOpsEmitter *emitter,
             }
         }
 
-        inst.opcode = _LOAD_CONST_INLINE;
+        inst.opcode = _Py_IsImmortal(sym->ty_number->const_val)
+            ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
         inst.oparg = sym->inst.oparg;
         inst.operand = (uint64_t)Py_NewRef(sym->ty_number->const_val);
         return emit_i(emitter, inst);
@@ -1802,6 +1803,9 @@ peephole_optimizations(_PyUOpInstruction *buffer, int buffer_size)
                 }
                 break;
             }
+            case _CHECK_PEP_523:
+                curr->opcode = NOP;
+                break;
             default:
                 break;
         }
