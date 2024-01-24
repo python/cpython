@@ -61,5 +61,5 @@ if __name__ == "__main__":
     if len(args.input) == 0:
         args.input.append(DEFAULT_INPUT)
     data = analyze_files(args.input)
-    with open(args.output, "w") as outfile:
+    with open(args.output, "w", newline="\n") as outfile:
         generate_opcode_header(args.input, data, outfile)

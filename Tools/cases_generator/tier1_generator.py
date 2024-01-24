@@ -187,7 +187,7 @@ def generate_tier1_from_files(
     filenames: list[str], outfilename: str, lines: bool
 ) -> None:
     data = analyze_files(filenames)
-    with open(outfilename, "w") as outfile:
+    with open(outfilename, "w", newline="\n") as outfile:
         generate_tier1(filenames, data, outfile, lines)
 
 
@@ -196,5 +196,5 @@ if __name__ == "__main__":
     if len(args.input) == 0:
         args.input.append(DEFAULT_INPUT)
     data = analyze_files(args.input)
-    with open(args.output, "w") as outfile:
+    with open(args.output, "w", newline="\n") as outfile:
         generate_tier1(args.input, data, outfile, args.emit_line_directives)
