@@ -825,23 +825,22 @@ Waiting Primitives
    *return_when* indicates when this function should return.  It must
    be one of the following constants:
 
-   .. tabularcolumns:: |l|L|
+   .. list-table::
+      :header-rows: 1
 
-   +-----------------------------+----------------------------------------+
-   | Constant                    | Description                            |
-   +=============================+========================================+
-   | :const:`FIRST_COMPLETED`    | The function will return when any      |
-   |                             | future finishes or is cancelled.       |
-   +-----------------------------+----------------------------------------+
-   | :const:`FIRST_EXCEPTION`    | The function will return when any      |
-   |                             | future finishes by raising an          |
-   |                             | exception.  If no future raises an     |
-   |                             | exception then it is equivalent to     |
-   |                             | :const:`ALL_COMPLETED`.                |
-   +-----------------------------+----------------------------------------+
-   | :const:`ALL_COMPLETED`      | The function will return when all      |
-   |                             | futures finish or are cancelled.       |
-   +-----------------------------+----------------------------------------+
+      * - Constant
+        - Description
+
+      * - .. data:: FIRST_COMPLETED
+        - The function will return when any future finishes or is cancelled.
+
+      * - .. data:: FIRST_EXCEPTION
+        - The function will return when any future finishes by raising an
+          exception. If no future raises an exception
+          then it is equivalent to :const:`ALL_COMPLETED`.
+
+      * - .. data:: ALL_COMPLETED
+        - The function will return when all futures finish or are cancelled.
 
    Unlike :func:`~asyncio.wait_for`, ``wait()`` does not cancel the
    futures when a timeout occurs.

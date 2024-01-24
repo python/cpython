@@ -30,7 +30,6 @@ Doc/library/ast.rst
 Doc/library/asyncio-extending.rst
 Doc/library/asyncio-policy.rst
 Doc/library/asyncio-subprocess.rst
-Doc/library/asyncio-task.rst
 Doc/library/audioop.rst
 Doc/library/bdb.rst
 Doc/library/cgi.rst
