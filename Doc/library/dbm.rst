@@ -162,8 +162,8 @@ or any other SQLite browser, including the SQLite CLI.
 .. function:: open(filename, flag="r", mode=None)
 
    Open an SQLite database.
-   The returned object, behaves like a :term:`mapping`,
-   but also implements a :meth:`!close` method
+   The returned object behaves like a :term:`mapping`,
+   implements a :meth:`!close` method,
    and supports a "closing" context manager via the :keyword:`with` keyword.
 
    Neither keys nor values are coerced to a specific type
