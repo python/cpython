@@ -385,7 +385,7 @@ static inline void _PyObject_GC_UNTRACK(
  * where the  reference count modification requires an atomic operation. This
  * allows call sites to specialize for the immortal/local case.
  */
-static inline Py_ALWAYS_INLINE int
+static inline int
 _Py_TryIncrefFast(PyObject *op) {
     uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
     local += 1;
@@ -394,6 +394,7 @@ _Py_TryIncrefFast(PyObject *op) {
         return 1;
     }
     if (_Py_IsOwnedByCurrentThread(op)) {
+        _Py_INCREF_STAT_INC();
         _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, local);
 #ifdef Py_REF_DEBUG
         _Py_IncRefTotal(_PyInterpreterState_GET());
@@ -403,12 +404,11 @@ _Py_TryIncrefFast(PyObject *op) {
     return 0;
 }
 
-static inline Py_ALWAYS_INLINE int
+static inline int
 _Py_TryIncRefShared(PyObject *op)
 {
+    Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared);
     for (;;) {
-        Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared);
-
         // If the shared refcount is zero and the object is either merged
         // or may not have weak references, then we cannot incref it.
         if (shared == 0 || shared == _Py_REF_MERGED) {
@@ -422,6 +422,7 @@ _Py_TryIncRefShared(PyObject *op)
 #ifdef Py_REF_DEBUG
             _Py_IncRefTotal(_PyInterpreterState_GET());
 #endif
+            _Py_INCREF_STAT_INC();
             return 1;
         }
     }
@@ -447,10 +448,9 @@ _Py_TryAcquireObject(PyObject **src, PyObject *op)
 /* Loads and increfs an object from ptr, which may contain a NULL value.
    Safe with concurrent (atomic) updates to ptr.
    NOTE: The writer must set maybe-weakref on the stored object! */
-static inline Py_ALWAYS_INLINE PyObject *
-_Py_XFetchRef(PyObject **ptr)
+static inline PyObject *
+_Py_XGetRef(PyObject **ptr)
 {
-#ifdef Py_NOGIL
     for (;;) {
         PyObject *value = _Py_atomic_load_ptr(ptr);
         if (value == NULL) {
@@ -460,14 +460,11 @@ _Py_XFetchRef(PyObject **ptr)
             return value;
         }
     }
-#else
-    return Py_XNewRef(*ptr);
-#endif
 }
 
 /* Attempts to loads and increfs an object from ptr. Returns NULL
    on failure, which may be due to a NULL value or a concurrent update. */
-static inline Py_ALWAYS_INLINE PyObject *
+static inline PyObject *
 _Py_TryXFetchRef(PyObject **ptr)
 {
     PyObject *value = _Py_atomic_load_ptr(ptr);
@@ -485,32 +482,21 @@ _Py_TryXFetchRef(PyObject **ptr)
 static inline PyObject *
 _Py_NewRefWithLock(PyObject *op)
 {
-    _Py_INCREF_STAT_INC();
-    uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
-    local += 1;
-    if (local == 0) {
+    if (_Py_TryIncrefFast(op)) {
         return op;
     }
-
-#ifdef Py_REF_DEBUG
-    _Py_IncRefTotal(_PyInterpreterState_GET());
-#endif
-    if (_Py_IsOwnedByCurrentThread(op)) {
-        _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, local);
-    }
-    else {
-        for (;;) {
-            Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared);
-            Py_ssize_t new_shared = shared + (1 << _Py_REF_SHARED_SHIFT);
-            if ((shared & _Py_REF_SHARED_FLAG_MASK) == 0) {
-                new_shared |= _Py_REF_MAYBE_WEAKREF;
-            }
-            if (_Py_atomic_compare_exchange_ssize(
-                    &op->ob_ref_shared,
-                    &shared,
-                    new_shared)) {
-                return op;
-            }
+    _Py_INCREF_STAT_INC();
+    for (;;) {
+        Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared);
+        Py_ssize_t new_shared = shared + (1 << _Py_REF_SHARED_SHIFT);
+        if ((shared & _Py_REF_SHARED_FLAG_MASK) == 0) {
+            new_shared |= _Py_REF_MAYBE_WEAKREF;
+        }
+        if (_Py_atomic_compare_exchange_ssize(
+                &op->ob_ref_shared,
+                &shared,
+                new_shared)) {
+            return op;
         }
     }
     return op;
