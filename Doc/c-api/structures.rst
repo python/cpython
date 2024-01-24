@@ -660,7 +660,7 @@ Defining Getters and Setters
    .. c:member:: setter set
 
       Optional C function to set or delete the attribute.
-      If ``NULL``, the attribute is readonly.
+      If ``NULL``, the attribute is read-only.
 
    .. c:member:: const char* doc
 
