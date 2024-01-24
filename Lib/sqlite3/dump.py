@@ -34,7 +34,7 @@ def _iterdump(connection, *, filter=None):
 
     if filter:
         # Return database objects which match the filter pattern.
-        filter_name_clause = 'AND "name" LIKE %s'
+        filter_name_clause = 'AND "name" LIKE ?'
         params = [filter]
     else:
         filter_name_clause = ""
@@ -97,7 +97,7 @@ def _iterdump(connection, *, filter=None):
             "type" IN ('index', 'trigger', 'view')
             {filter_name_clause}
         """
-    schema_res = cu.execute(q)
+    schema_res = cu.execute(q, params)
     for name, type, sql in schema_res.fetchall():
         yield('{0};'.format(sql))
 

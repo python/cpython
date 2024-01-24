@@ -2003,8 +2003,10 @@ pysqlite_connection_iterdump_impl(pysqlite_Connection *self,
         }
         return NULL;
     }
-    PyObject *args[1] = {(PyObject *)self};
-    PyObject *retval = PyObject_Vectorcall(iterdump, args, 1, filter);
+    PyObject *args[2] = {(PyObject *)self, filter};
+    PyObject *kwnames = PyTuple_New(1);
+    PyTuple_SET_ITEM(kwnames, 0, PyUnicode_FromString("filter"));
+    PyObject *retval = PyObject_Vectorcall(iterdump, args, 1, kwnames);
     Py_DECREF(iterdump);
     return retval;
 }
