@@ -1804,7 +1804,11 @@ peephole_optimizations(_PyUOpInstruction *buffer, int buffer_size)
                 break;
             }
             case _CHECK_PEP_523:
-                curr->opcode = NOP;
+                /* Setting the eval frame function invalidates
+                 * all executors, so no need to check dynamically */
+                if (_PyInterpreterState_GET()->eval_frame == NULL) {
+                    curr->opcode = _NOP;
+                }
                 break;
             default:
                 break;
