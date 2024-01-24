@@ -271,7 +271,8 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
 
    .. versionchanged:: 3.3
       When one of the worker processes terminates abruptly, a
-      :exc:`BrokenProcessPool` error is now raised.  Previously, behaviour
+      :exc:`~concurrent.futures.process.BrokenProcessPool` error is now raised.
+      Previously, behaviour
       was undefined but operations on the executor or its futures would often
       freeze or deadlock.
 
@@ -485,23 +486,22 @@ Module Functions
    *return_when* indicates when this function should return.  It must be one of
    the following constants:
 
-   .. tabularcolumns:: |l|L|
+   .. list-table::
+      :header-rows: 1
 
-   +-----------------------------+----------------------------------------+
-   | Constant                    | Description                            |
-   +=============================+========================================+
-   | :const:`FIRST_COMPLETED`    | The function will return when any      |
-   |                             | future finishes or is cancelled.       |
-   +-----------------------------+----------------------------------------+
-   | :const:`FIRST_EXCEPTION`    | The function will return when any      |
-   |                             | future finishes by raising an          |
-   |                             | exception.  If no future raises an     |
-   |                             | exception then it is equivalent to     |
-   |                             | :const:`ALL_COMPLETED`.                |
-   +-----------------------------+----------------------------------------+
-   | :const:`ALL_COMPLETED`      | The function will return when all      |
-   |                             | futures finish or are cancelled.       |
-   +-----------------------------+----------------------------------------+
+      * - Constant
+        - Description
+
+      * - .. data:: FIRST_COMPLETED
+        - The function will return when any future finishes or is cancelled.
+
+      * - .. data:: FIRST_EXCEPTION
+        - The function will return when any future finishes by raising an
+          exception. If no future raises an exception
+          then it is equivalent to :const:`ALL_COMPLETED`.
+
+      * - .. data:: ALL_COMPLETED
+        - The function will return when all futures finish or are cancelled.
 
 .. function:: as_completed(fs, timeout=None)
 
@@ -562,7 +562,8 @@ Exception classes
 .. exception:: BrokenThreadPool
 
    Derived from :exc:`~concurrent.futures.BrokenExecutor`, this exception
-   class is raised when one of the workers of a :class:`ThreadPoolExecutor`
+   class is raised when one of the workers
+   of a :class:`~concurrent.futures.ThreadPoolExecutor`
    has failed initializing.
 
    .. versionadded:: 3.7
@@ -573,7 +574,8 @@ Exception classes
 
    Derived from :exc:`~concurrent.futures.BrokenExecutor` (formerly
    :exc:`RuntimeError`), this exception class is raised when one of the
-   workers of a :class:`ProcessPoolExecutor` has terminated in a non-clean
+   workers of a :class:`~concurrent.futures.ProcessPoolExecutor`
+   has terminated in a non-clean
    fashion (for example, if it was killed from the outside).
 
    .. versionadded:: 3.3
