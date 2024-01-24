@@ -3830,7 +3830,7 @@ type_new_impl(type_new_ctx *ctx)
     if (!_PyDict_HasOnlyStringKeys(type->tp_dict)) {
         PyObject *name_of_class = type_name(type, NULL);
         if (name_of_class == NULL) {
-            return NULL;
+            goto error;
         }
         if (PyErr_WarnFormat(NULL,
                             1,
