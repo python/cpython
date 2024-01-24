@@ -1641,6 +1641,11 @@ always available.
       ``'opcode'`` event type added; :attr:`~frame.f_trace_lines` and
       :attr:`~frame.f_trace_opcodes` attributes added to frames
 
+   .. versionchanged:: 3.12
+      ``'opcode'`` event will only be emitted if :attr:`~frame.f_trace_opcodes`
+      of at least one frame has been set to :const:`True` before :func:`settrace`
+      is called.
+
 .. function:: set_asyncgen_hooks([firstiter] [, finalizer])
 
    Accepts two optional keyword arguments which are callables that accept an
