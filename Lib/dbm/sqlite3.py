@@ -1,17 +1,18 @@
 import os
 import sqlite3
+import sys
+from pathlib import Path
 from contextlib import suppress, closing
 from collections.abc import MutableMapping
 
 BUILD_TABLE = """
   CREATE TABLE IF NOT EXISTS Dict (
-    key TEXT NOT NULL,
-    value BLOB NOT NULL,
-    PRIMARY KEY (key)
+    key TEXT UNIQUE NOT NULL,
+    value BLOB NOT NULL
   )
 """
 GET_SIZE = "SELECT COUNT (key) FROM Dict"
-LOOKUP_KEY = "SELECT value FROM Dict WHERE key = ? LIMIT 1"
+LOOKUP_KEY = "SELECT value FROM Dict WHERE key = ?"
 STORE_KV = "REPLACE INTO Dict (key, value) VALUES (?, ?)"
 DELETE_KEY = "DELETE FROM Dict WHERE key = ?"
 ITER_KEYS = "SELECT key FROM Dict"
@@ -21,17 +22,29 @@ class error(OSError):
     pass
 
 
+_ERR_CLOSED = "DBM object has already been closed"
+_ERR_REINIT = "DBM object does not support reinitialization"
+
+
 def _normalize_uri_path(path):
-    path = path.replace("?", "%3f")
-    path = path.replace("#", "%23")
-    while "//" in path:
-        path = path.replace("//", "/")
-    return path
+    path = os.fsdecode(path)
+    for char in "%", "?", "#":
+        path = path.replace(char, f"%{ord(char):02x}")
+    path = Path(path)
+    if sys.platform == "win32":
+        if path.drive:
+            if not path.is_absolute():
+                path = Path(path).absolute()
+            return Path("/", path).as_posix()
+    return path.as_posix()
 
 
 class _Database(MutableMapping):
 
-    def __init__(self, path, flag):
+    def __init__(self, path, /, flag):
+        if hasattr(self, "_cx"):
+            raise error(_ERR_REINIT)
+
         match flag:
             case "r":
                 flag = "ro"
@@ -46,26 +59,28 @@ class _Database(MutableMapping):
                 except FileNotFoundError:
                     pass
             case _:
-                raise ValueError("Flag must be one of 'r', 'w', 'c', or 'n', not",
-                                 repr(flag))
+                raise ValueError("Flag must be one of 'r', 'w', 'c', or 'n', "
+                                 f"not {flag!r}")
 
         # We use the URI format when opening the database.
-        path = os.fsdecode(path)
-        if not path or path == ":memory:":
-            uri = "file:?mode=memory"
-        else:
-            path = _normalize_uri_path(path)
-            uri = f"file:{path}?mode={flag}"
+        path = _normalize_uri_path(path)
+        uri = f"file:{path}?mode={flag}"
 
-        self.cx = sqlite3.connect(uri, autocommit=True, uri=True)
-        self.cx.execute("PRAGMA journal_mode = wal")
+        self._cx = sqlite3.connect(uri, autocommit=True, uri=True)
+
+        # This is an optimization only; it's ok if it fails.
+        with suppress(sqlite3.OperationalError):
+            self._cx.execute("PRAGMA journal_mode = wal")
+
         if flag == "rwc":
             with closing(self._execute(BUILD_TABLE)):
                 pass
 
     def _execute(self, *args, **kwargs):
+        if not self._cx:
+            raise error(_ERR_CLOSED)
         try:
-            ret = self.cx.execute(*args, **kwargs)
+            ret = self._cx.execute(*args, **kwargs)
         except sqlite3.Error as exc:
             raise error(str(exc))
         else:
@@ -88,20 +103,22 @@ class _Database(MutableMapping):
             pass
 
     def __delitem__(self, key):
-        if key not in self:
-            raise KeyError(key)
-        with closing(self._execute(DELETE_KEY, (key,))):
-            pass
+        with closing(self._execute(DELETE_KEY, (key,))) as cu:
+            if not cu.rowcount:
+                raise KeyError(key)
 
     def __iter__(self):
-        with closing(self._execute(ITER_KEYS)) as cu:
-            for row in cu:
-                yield row[0]
+        try:
+            with closing(self._execute(ITER_KEYS)) as cu:
+                    for row in cu:
+                        yield row[0]
+        except sqlite3.Error as exc:
+            raise error(str(exc))
 
     def close(self):
-        if self.cx:
-            self.cx.close()
-            self.cx = None
+        if self._cx:
+            self._cx.close()
+            self._cx = None
 
     def keys(self):
         return list(super().keys())
@@ -113,5 +130,5 @@ class _Database(MutableMapping):
         self.close()
 
 
-def open(path, flag="r", mode=None):
+def open(path, /, flag="r", mode=None):
     return _Database(path, flag)

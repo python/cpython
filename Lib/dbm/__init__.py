@@ -5,7 +5,7 @@ Use
         import dbm
         d = dbm.open(file, 'w', 0o666)
 
-The returned object is a dbm.gnu, dbm.ndbm or dbm.dumb object, dependent on the
+The returned object is a dbm.sqlite3, dbm.gnu, dbm.ndbm or dbm.dumb object, dependent on the
 type of database being opened (determined by the whichdb function) in the case
 of an existing dbm. If the dbm does not exist and the create or new flag ('c'
 or 'n') was specified, the dbm type will be determined by the availability of

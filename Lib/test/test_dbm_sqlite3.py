@@ -53,6 +53,52 @@ class ReadOnly(_SQLiteDbmTests):
         self.assertEqual([k for k in self.db], ["key1", "key2"])
 
 
+class ReadWrite(_SQLiteDbmTests):
+
+    def setUp(self):
+        super().setUp()
+        self.db = dbm_sqlite3.open(self.filename, "w")
+
+    def tearDown(self):
+        self.db.close()
+        super().tearDown()
+
+    def db_content(self):
+        with closing(sqlite3.connect(self.filename)) as cx:
+            keys = [r[0] for r in cx.execute("SELECT key FROM Dict")]
+            vals = [r[0] for r in cx.execute("SELECT value FROM Dict")]
+        return keys, vals
+
+    def test_readwrite_unique_key(self):
+        self.db["key"] = "value"
+        self.db["key"] = "other"
+        keys, vals = self.db_content()
+        self.assertEqual(keys, ["key"])
+        self.assertEqual(vals, ["other"])
+
+    def test_readwrite_delete(self):
+        self.db["key"] = "value"
+        self.db["new"] = "other"
+
+        del self.db["new"]
+        keys, vals = self.db_content()
+        self.assertEqual(keys, ["key"])
+        self.assertEqual(vals, ["value"])
+
+        del self.db["key"]
+        keys, vals = self.db_content()
+        self.assertEqual(keys, [])
+        self.assertEqual(vals, [])
+
+    def test_readwrite_null_key(self):
+        with self.assertRaises(dbm_sqlite3.error):
+            self.db[None] = "value"
+
+    def test_readwrite_null_value(self):
+        with self.assertRaises(dbm_sqlite3.error):
+            self.db["key"] = None
+
+
 class Misuse(_SQLiteDbmTests):
 
     def setUp(self):
@@ -72,7 +118,8 @@ class Misuse(_SQLiteDbmTests):
         self.db.close()
 
     def test_misuse_invalid_flag(self):
-        with self.assertRaises(ValueError):
+        regex = "must be.*'r'.*'w'.*'c'.*'n', not 'invalid'"
+        with self.assertRaisesRegex(ValueError, regex):
             dbm_sqlite3.open(self.filename, flag="invalid")
 
     def test_misuse_double_delete(self):
@@ -84,6 +131,39 @@ class Misuse(_SQLiteDbmTests):
     def test_misuse_invalid_key(self):
         with self.assertRaises(KeyError):
             self.db["key"]
+
+    def test_misuse_iter_close1(self):
+        self.db["1"] = 1
+        it = iter(self.db)
+        self.db.close()
+        with self.assertRaises(dbm_sqlite3.error):
+            next(it)
+
+    def test_misuse_iter_close2(self):
+        self.db["1"] = 1
+        self.db["2"] = 2
+        it = iter(self.db)
+        next(it)
+        self.db.close()
+        with self.assertRaises(dbm_sqlite3.error):
+            next(it)
+
+    def test_misuse_use_after_close(self):
+        self.db.close()
+        with self.assertRaises(dbm_sqlite3.error):
+            self.db["read"]
+        with self.assertRaises(dbm_sqlite3.error):
+            self.db["write"] = "value"
+        with self.assertRaises(dbm_sqlite3.error):
+            del self.db["del"]
+        with self.assertRaises(dbm_sqlite3.error):
+            len(self.db)
+        with self.assertRaises(dbm_sqlite3.error):
+            self.db.keys()
+
+    def test_misuse_reinit(self):
+        with self.assertRaises(dbm_sqlite3.error):
+            self.db.__init__(":memory:", flag="rw")
 
 
 class DataTypes(_SQLiteDbmTests):
