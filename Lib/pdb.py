@@ -448,7 +448,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             return
         if (filename in self._file_mtime_table and
             mtime != self._file_mtime_table[filename]):
-            self.message(f"*** WARNING: file '{filename}' was edited after pdb started, "
+            self.message(f"*** WARNING: file '{filename}' was edited, "
                          "running stale code until the program is rerun")
         self._file_mtime_table[filename] = mtime
 
