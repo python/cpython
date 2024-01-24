@@ -3390,6 +3390,15 @@
             break;
         }
 
+        case _LOAD_CONST_INLINE: {
+            PyObject *value;
+            PyObject *ptr = (PyObject *)CURRENT_OPERAND();
+            value = Py_NewRef(ptr);
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            break;
+        }
+
         case _LOAD_CONST_INLINE_BORROW: {
             PyObject *value;
             PyObject *ptr = (PyObject *)CURRENT_OPERAND();

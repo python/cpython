@@ -2608,11 +2608,15 @@ _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp,
                                      _PyFrameEvalFunction eval_frame)
 {
     if (eval_frame == _PyEval_EvalFrameDefault) {
-        interp->eval_frame = NULL;
+        eval_frame = NULL;
     }
-    else {
-        interp->eval_frame = eval_frame;
+    if (eval_frame == interp->eval_frame) {
+        return;
     }
+    if (eval_frame != NULL) {
+        _Py_Executors_InvalidateAll(interp);
+    }
+    interp->eval_frame = eval_frame;
 }
 
 

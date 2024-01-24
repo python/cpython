@@ -588,6 +588,9 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                         ADD_TO_TRACE(uop, oparg, operand, target);
                         if (uop == _POP_FRAME) {
                             TRACE_STACK_POP();
+                            /* Set the operand to the code object returned to,
+                             * to assist optimization passes */
+                            trace[trace_length-1].operand = (uintptr_t)code;
                             DPRINTF(2,
                                 "Returning to %s (%s:%d) at byte offset %d\n",
                                 PyUnicode_AsUTF8(code->co_qualname),
@@ -629,6 +632,9 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 instr += _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] + 1;
                                 TRACE_STACK_PUSH();
                                 _Py_BloomFilter_Add(dependencies, new_code);
+                                /* Set the operand to the callee's code object,
+                                * to assist optimization passes */
+                                trace[trace_length-1].operand = (uintptr_t)new_code;
                                 code = new_code;
                                 instr = _PyCode_CODE(code);
                                 DPRINTF(2,
