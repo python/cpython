@@ -26,17 +26,13 @@ _ERR_CLOSED = "DBM object has already been closed"
 _ERR_REINIT = "DBM object does not support reinitialization"
 
 
-def _normalize_uri_path(path):
+def _normalize_uri(path):
     path = os.fsdecode(path)
-    for char in "%", "?", "#":
-        path = path.replace(char, f"%{ord(char):02x}")
     path = Path(path)
-    if sys.platform == "win32":
-        if path.drive:
-            if not path.is_absolute():
-                path = Path(path).absolute()
-            return "/" + Path(path).as_posix()
-    return path.as_posix()
+    uri = path.absolute().as_uri()
+    while "//" in uri:
+        uri = uri.replace("//", "/")
+    return uri
 
 
 class _Database(MutableMapping):
@@ -63,8 +59,8 @@ class _Database(MutableMapping):
                                  f"not {flag!r}")
 
         # We use the URI format when opening the database.
-        path = _normalize_uri_path(path)
-        uri = f"file:{path}?mode={flag}"
+        uri = _normalize_uri(path)
+        uri = f"{uri}?mode={flag}"
 
         try:
             self._cx = sqlite3.connect(uri, autocommit=True, uri=True)

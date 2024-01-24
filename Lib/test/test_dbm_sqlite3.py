@@ -4,12 +4,12 @@ import test.support
 import unittest
 from contextlib import closing
 from functools import partial
-from pathlib import PureWindowsPath
+from pathlib import Path
 from test.support import cpython_only, import_helper, os_helper
 
 
 dbm_sqlite3 = import_helper.import_module("dbm.sqlite3")
-from dbm.sqlite3 import _normalize_uri_path
+from dbm.sqlite3 import _normalize_uri
 
 
 class _SQLiteDbmTests(unittest.TestCase):
@@ -28,14 +28,14 @@ class URI(unittest.TestCase):
 
     def test_uri_substitutions(self):
         dataset = (
-            ("relative/b//c", "relative/b/c"),
-            ("/absolute/////b/c", "/absolute/b/c"),
-            ("PRE#MID##END", "PRE%23MID%23%23END"),
-            ("%#?%%#", "%25%23%3f%25%25%23"),
+            ("/absolute/////b/c", "file:/absolute/b/c"),
+            ("/PRE#MID##END", "file:/PRE%23MID%23%23END"),
+            ("/%#?%%#", "file:/%25%23%3F%25%25%23"),
+            ("/localhost", "file:/localhost"),
         )
         for path, normalized in dataset:
             with self.subTest(path=path, normalized=normalized):
-                self.assertEqual(_normalize_uri_path(path), normalized)
+                self.assertEqual(_normalize_uri(path), normalized)
 
     @unittest.skipUnless(sys.platform == "win32", "requires Windows")
     def test_uri_windows(self):
@@ -55,8 +55,7 @@ class URI(unittest.TestCase):
         )
         for path, normalized in dataset:
             with self.subTest(path=path, normalized=normalized):
-                path = PureWindowsPath(path)
-                self.assertEqual(_normalize_uri_path(path), normalized)
+                self.assertEqual(_normalize_uri(path), normalized)
 
 
 class ReadOnly(_SQLiteDbmTests):
