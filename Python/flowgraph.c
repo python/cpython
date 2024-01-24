@@ -263,8 +263,9 @@ dump_instr(cfg_instr *i)
     if (HAS_TARGET(i->i_opcode)) {
         sprintf(arg, "target: %p [%d] ", i->i_target, i->i_oparg);
     }
-    fprintf(stderr, "line: %d, %s (%d)  %s%s\n",
-                    i->i_loc.lineno, _PyOpcode_OpName[i->i_opcode], i->i_opcode, arg, jump);
+    fprintf(stderr, "line: %d%s, %s (%d)  %s%s\n",
+                    i->i_loc.lineno, i->i_loc_propagated ? "(<-)" : "",
+                    _PyOpcode_OpName[i->i_opcode], i->i_opcode, arg, jump);
 }
 
 static inline int
@@ -938,6 +939,15 @@ label_exception_targets(basicblock *entryblock) {
            PyMem_Free(except_stack);
         }
     }
+
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        for (int i = 0; i < b->b_iused; i++) {
+            cfg_instr *instr = &b->b_instr[i];
+            if (instr->i_opcode == POP_BLOCK) {
+                INSTR_SET_OP0(instr, NOP);
+            }
+        }
+    }
 #ifdef Py_DEBUG
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         assert(b->b_exceptstack == NULL);
@@ -1006,8 +1016,9 @@ basicblock_remove_redundant_nops(basicblock *bb) {
     int dest = 0;
     int prev_lineno = -1;
     for (int src = 0; src < bb->b_iused; src++) {
-        int lineno = bb->b_instr[src].i_loc.lineno;
-        if (bb->b_instr[src].i_opcode == NOP) {
+        cfg_instr *src_instr = &bb->b_instr[src];
+        int lineno = src_instr->i_loc.lineno;
+        if (src_instr->i_opcode == NOP) {
             /* Eliminate no-op if it doesn't have a line number */
             if (lineno < 0) {
                 continue;
@@ -1018,30 +1029,35 @@ basicblock_remove_redundant_nops(basicblock *bb) {
             }
             /* or, if the next instruction has same line number or no line number */
             if (src < bb->b_iused - 1) {
-                int next_lineno = bb->b_instr[src+1].i_loc.lineno;
+                cfg_instr *next_instr = &bb->b_instr[src + 1];
+                int next_lineno = next_instr->i_loc.lineno;
                 if (next_lineno == lineno) {
+                    next_instr->i_loc_propagated = src_instr->i_loc_propagated;
                     continue;
                 }
                 if (next_lineno < 0) {
-                    bb->b_instr[src+1].i_loc = bb->b_instr[src].i_loc;
+                    next_instr->i_loc = src_instr->i_loc;
+                    next_instr->i_loc_propagated = src_instr->i_loc_propagated;
                     continue;
                 }
             }
             else {
-                basicblock *next = next_nonempty_block(bb->b_next);
                 /* or if last instruction in BB and next BB has same line number */
+                basicblock *next = next_nonempty_block(bb->b_next);
                 if (next) {
-                    location next_loc = NO_LOCATION;
+                    cfg_instr *next_instr = NULL;
                     for (int next_i=0; next_i < next->b_iused; next_i++) {
-                        cfg_instr *instr = &next->b_instr[next_i];
-                        if (instr->i_opcode == NOP && instr->i_loc.lineno == NO_LOCATION.lineno) {
+                        next_instr = &next->b_instr[next_i];
+                        if (next_instr->i_opcode == NOP &&
+                            next_instr->i_loc.lineno == NO_LOCATION.lineno)
+                        {
                             /* Skip over NOPs without location, they will be removed */
                             continue;
                         }
-                        next_loc = instr->i_loc;
                         break;
                     }
-                    if (lineno == next_loc.lineno) {
+                    if (next_instr && lineno == next_instr->i_loc.lineno) {
+                        next_instr->i_loc_propagated = src_instr->i_loc_propagated;
                         continue;
                     }
                 }
@@ -2304,7 +2320,7 @@ convert_pseudo_ops(cfg_builder *g)
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
-            if (is_block_push(instr) || instr->i_opcode == POP_BLOCK) {
+            if (is_block_push(instr)) {
                 INSTR_SET_OP0(instr, NOP);
             }
             else if (instr->i_opcode == LOAD_CLOSURE) {
