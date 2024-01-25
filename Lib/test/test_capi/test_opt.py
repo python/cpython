@@ -344,7 +344,7 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
-        self.assertIn("_JUMP_TO_TOP", uops)
+        self.assertIn("_JUMP_ABSOLUTE", uops)
 
     def test_jump_forward(self):
         def testfunc(n):
