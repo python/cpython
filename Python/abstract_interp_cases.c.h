@@ -19,18 +19,18 @@
         /* _INSTRUMENTED_RESUME is not a viable micro-op for tier 2 */
 
         case _END_SEND: {
-            _Py_UOpsSymbolicExpression *__value_;
-            _Py_UOpsSymbolicExpression *__receiver_;
+            _Py_UOpsSymbolicValue *__value_;
+            _Py_UOpsSymbolicValue *__receiver_;
             __value_ = stack_pointer[-1];
             __receiver_ = stack_pointer[-2];
-            __value_ = _Py_UOpsSymbolicExpression_New(ctx, *inst, NULL, 0, NULL, 2 , __receiver_, __value_);
+            __value_ = _Py_UOpsSymbolicValue_New(ctx, NULL); 
             stack_pointer[-2] = __value_;
             stack_pointer += -1;
             break;
         }
 
         case _UNARY_NEGATIVE: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-1] = __res_;
@@ -38,8 +38,8 @@
         }
 
         case _UNARY_NOT: {
-            _Py_UOpsSymbolicExpression *__value_;
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__value_;
+            _Py_UOpsSymbolicValue *__res_;
             __value_ = stack_pointer[-1];
             // Constant evaluation
             if (is_const(__value_)){
@@ -48,10 +48,12 @@
                 value = get_const(__value_);
                 assert(PyBool_Check(value));
                 res = Py_IsFalse(value) ? Py_True : Py_False;
-                __res_ = _Py_UOpsSymbolicExpression_New(ctx, *inst, (PyObject *)res, 0, NULL, 1 , __value_);
-            }
+                __res_ = _Py_UOpsSymbolicValue_New(ctx, (PyObject *)res); 
+                shrink_stack.oparg = 1;
+                 if (emit_const(&ctx->emitter, (PyObject *)res, shrink_stack) < 0) { goto error; }
+                new_inst.opcode = _NOP;}
             else {
-                __res_ = _Py_UOpsSymbolicExpression_New(ctx, *inst, NULL, 0, NULL, 1 , __value_);
+                __res_ = _Py_UOpsSymbolicValue_New(ctx, NULL); 
             }
             if (__res_ == NULL) goto error;
             stack_pointer[-1] = __res_;
@@ -59,7 +61,7 @@
         }
 
         case _TO_BOOL: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-1] = __res_;
@@ -67,7 +69,7 @@
         }
 
         case _TO_BOOL_BOOL: {
-            _Py_UOpsSymbolicExpression *__value_;
+            _Py_UOpsSymbolicValue *__value_;
             __value_ = stack_pointer[-1];
             // Constant evaluation
             if (is_const(__value_)) {
@@ -76,14 +78,13 @@
                 if (!PyBool_Check(value)) goto error;
                 STAT_INC(TO_BOOL, hit);
                 DPRINTF(3, "const eliminated guard\n");
-                break;
+                new_inst.opcode = _NOP;break;
             }
-            goto guard_required;
             break;
         }
 
         case _TO_BOOL_INT: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-1] = __res_;
@@ -91,7 +92,7 @@
         }
 
         case _TO_BOOL_LIST: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-1] = __res_;
@@ -99,7 +100,7 @@
         }
 
         case _TO_BOOL_NONE: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-1] = __res_;
@@ -107,7 +108,7 @@
         }
 
         case _TO_BOOL_STR: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-1] = __res_;
@@ -115,7 +116,7 @@
         }
 
         case _TO_BOOL_ALWAYS_TRUE: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-1] = __res_;
@@ -123,7 +124,7 @@
         }
 
         case _UNARY_INVERT: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-1] = __res_;
@@ -131,8 +132,8 @@
         }
 
         case _GUARD_BOTH_INT: {
-            _Py_UOpsSymbolicExpression *__right_;
-            _Py_UOpsSymbolicExpression *__left_;
+            _Py_UOpsSymbolicValue *__right_;
+            _Py_UOpsSymbolicValue *__left_;
             __right_ = stack_pointer[-1];
             __left_ = stack_pointer[-2];
             // Constant evaluation
@@ -145,26 +146,25 @@
                 if (!PyLong_CheckExact(right)) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                break;
+                new_inst.opcode = _NOP;break;
             }
             // Type guard elimination
-            if (sym_matches_type((_Py_UOpsSymbolicExpression *)__left_, PYLONG_TYPE, (uint32_t)0) && sym_matches_type((_Py_UOpsSymbolicExpression *)__right_, PYLONG_TYPE, (uint32_t)0)){
+            if (sym_matches_type((_Py_UOpsSymbolicValue *)__left_, PYLONG_TYPE, (uint32_t)0) && sym_matches_type((_Py_UOpsSymbolicValue *)__right_, PYLONG_TYPE, (uint32_t)0)){
                 DPRINTF(2, "type propagation eliminated guard\n");
-                break;
+                new_inst.opcode = _NOP;break;
             }
             else {
                 // Type propagation
-                sym_set_type((_Py_UOpsSymbolicExpression *)__left_, PYLONG_TYPE, (uint32_t)0);
-                sym_set_type((_Py_UOpsSymbolicExpression *)__right_, PYLONG_TYPE, (uint32_t)0);
-                goto guard_required;
+                sym_set_type((_Py_UOpsSymbolicValue *)__left_, PYLONG_TYPE, (uint32_t)0);
+                sym_set_type((_Py_UOpsSymbolicValue *)__right_, PYLONG_TYPE, (uint32_t)0);
             }
             break;
         }
 
         case _BINARY_OP_MULTIPLY_INT: {
-            _Py_UOpsSymbolicExpression *__right_;
-            _Py_UOpsSymbolicExpression *__left_;
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__right_;
+            _Py_UOpsSymbolicValue *__left_;
+            _Py_UOpsSymbolicValue *__res_;
             __right_ = stack_pointer[-1];
             __left_ = stack_pointer[-2];
             // Constant evaluation
@@ -178,10 +178,12 @@
                 res = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
                 if (res == NULL) goto pop_2_error_tier_two;
 
-                __res_ = _Py_UOpsSymbolicExpression_New(ctx, *inst, (PyObject *)res, 0, NULL, 2 , __left_, __right_);
-            }
+                __res_ = _Py_UOpsSymbolicValue_New(ctx, (PyObject *)res); 
+                shrink_stack.oparg = 2;
+                 if (emit_const(&ctx->emitter, (PyObject *)res, shrink_stack) < 0) { goto error; }
+                new_inst.opcode = _NOP;}
             else {
-                __res_ = _Py_UOpsSymbolicExpression_New(ctx, *inst, NULL, 0, NULL, 2 , __left_, __right_);
+                __res_ = _Py_UOpsSymbolicValue_New(ctx, NULL); 
             }
             if (__res_ == NULL) goto error;
             // Type propagation
@@ -192,9 +194,9 @@
         }
 
         case _BINARY_OP_ADD_INT: {
-            _Py_UOpsSymbolicExpression *__right_;
-            _Py_UOpsSymbolicExpression *__left_;
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__right_;
+            _Py_UOpsSymbolicValue *__left_;
+            _Py_UOpsSymbolicValue *__res_;
             __right_ = stack_pointer[-1];
             __left_ = stack_pointer[-2];
             // Constant evaluation
@@ -208,10 +210,12 @@
                 res = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
                 if (res == NULL) goto pop_2_error_tier_two;
 
-                __res_ = _Py_UOpsSymbolicExpression_New(ctx, *inst, (PyObject *)res, 0, NULL, 2 , __left_, __right_);
-            }
+                __res_ = _Py_UOpsSymbolicValue_New(ctx, (PyObject *)res); 
+                shrink_stack.oparg = 2;
+                 if (emit_const(&ctx->emitter, (PyObject *)res, shrink_stack) < 0) { goto error; }
+                new_inst.opcode = _NOP;}
             else {
-                __res_ = _Py_UOpsSymbolicExpression_New(ctx, *inst, NULL, 0, NULL, 2 , __left_, __right_);
+                __res_ = _Py_UOpsSymbolicValue_New(ctx, NULL); 
             }
             if (__res_ == NULL) goto error;
             // Type propagation
@@ -222,9 +226,9 @@
         }
 
         case _BINARY_OP_SUBTRACT_INT: {
-            _Py_UOpsSymbolicExpression *__right_;
-            _Py_UOpsSymbolicExpression *__left_;
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__right_;
+            _Py_UOpsSymbolicValue *__left_;
+            _Py_UOpsSymbolicValue *__res_;
             __right_ = stack_pointer[-1];
             __left_ = stack_pointer[-2];
             // Constant evaluation
@@ -238,10 +242,12 @@
                 res = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
                 if (res == NULL) goto pop_2_error_tier_two;
 
-                __res_ = _Py_UOpsSymbolicExpression_New(ctx, *inst, (PyObject *)res, 0, NULL, 2 , __left_, __right_);
-            }
+                __res_ = _Py_UOpsSymbolicValue_New(ctx, (PyObject *)res); 
+                shrink_stack.oparg = 2;
+                 if (emit_const(&ctx->emitter, (PyObject *)res, shrink_stack) < 0) { goto error; }
+                new_inst.opcode = _NOP;}
             else {
-                __res_ = _Py_UOpsSymbolicExpression_New(ctx, *inst, NULL, 0, NULL, 2 , __left_, __right_);
+                __res_ = _Py_UOpsSymbolicValue_New(ctx, NULL); 
             }
             if (__res_ == NULL) goto error;
             // Type propagation
@@ -252,8 +258,8 @@
         }
 
         case _GUARD_BOTH_FLOAT: {
-            _Py_UOpsSymbolicExpression *__right_;
-            _Py_UOpsSymbolicExpression *__left_;
+            _Py_UOpsSymbolicValue *__right_;
+            _Py_UOpsSymbolicValue *__left_;
             __right_ = stack_pointer[-1];
             __left_ = stack_pointer[-2];
             // Constant evaluation
@@ -266,26 +272,25 @@
                 if (!PyFloat_CheckExact(right)) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                break;
+                new_inst.opcode = _NOP;break;
             }
             // Type guard elimination
-            if (sym_matches_type((_Py_UOpsSymbolicExpression *)__left_, PYFLOAT_TYPE, (uint32_t)0) && sym_matches_type((_Py_UOpsSymbolicExpression *)__right_, PYFLOAT_TYPE, (uint32_t)0)){
+            if (sym_matches_type((_Py_UOpsSymbolicValue *)__left_, PYFLOAT_TYPE, (uint32_t)0) && sym_matches_type((_Py_UOpsSymbolicValue *)__right_, PYFLOAT_TYPE, (uint32_t)0)){
                 DPRINTF(2, "type propagation eliminated guard\n");
-                break;
+                new_inst.opcode = _NOP;break;
             }
             else {
                 // Type propagation
-                sym_set_type((_Py_UOpsSymbolicExpression *)__left_, PYFLOAT_TYPE, (uint32_t)0);
-                sym_set_type((_Py_UOpsSymbolicExpression *)__right_, PYFLOAT_TYPE, (uint32_t)0);
-                goto guard_required;
+                sym_set_type((_Py_UOpsSymbolicValue *)__left_, PYFLOAT_TYPE, (uint32_t)0);
+                sym_set_type((_Py_UOpsSymbolicValue *)__right_, PYFLOAT_TYPE, (uint32_t)0);
             }
             break;
         }
 
         case _BINARY_OP_MULTIPLY_FLOAT: {
-            _Py_UOpsSymbolicExpression *__right_;
-            _Py_UOpsSymbolicExpression *__left_;
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__right_;
+            _Py_UOpsSymbolicValue *__left_;
+            _Py_UOpsSymbolicValue *__res_;
             __right_ = stack_pointer[-1];
             __left_ = stack_pointer[-2];
             // Constant evaluation
@@ -300,10 +305,12 @@
                 ((PyFloatObject *)left)->ob_fval *
                 ((PyFloatObject *)right)->ob_fval;
                 DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
-                __res_ = _Py_UOpsSymbolicExpression_New(ctx, *inst, (PyObject *)res, 0, NULL, 2 , __left_, __right_);
-            }
+                __res_ = _Py_UOpsSymbolicValue_New(ctx, (PyObject *)res); 
+                shrink_stack.oparg = 2;
+                 if (emit_const(&ctx->emitter, (PyObject *)res, shrink_stack) < 0) { goto error; }
+                new_inst.opcode = _NOP;}
             else {
-                __res_ = _Py_UOpsSymbolicExpression_New(ctx, *inst, NULL, 0, NULL, 2 , __left_, __right_);
+                __res_ = _Py_UOpsSymbolicValue_New(ctx, NULL); 
             }
             if (__res_ == NULL) goto error;
             // Type propagation
@@ -314,9 +321,9 @@
         }
 
         case _BINARY_OP_ADD_FLOAT: {
-            _Py_UOpsSymbolicExpression *__right_;
-            _Py_UOpsSymbolicExpression *__left_;
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__right_;
+            _Py_UOpsSymbolicValue *__left_;
+            _Py_UOpsSymbolicValue *__res_;
             __right_ = stack_pointer[-1];
             __left_ = stack_pointer[-2];
             // Constant evaluation
@@ -331,10 +338,12 @@
                 ((PyFloatObject *)left)->ob_fval +
                 ((PyFloatObject *)right)->ob_fval;
                 DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
-                __res_ = _Py_UOpsSymbolicExpression_New(ctx, *inst, (PyObject *)res, 0, NULL, 2 , __left_, __right_);
-            }
+                __res_ = _Py_UOpsSymbolicValue_New(ctx, (PyObject *)res); 
+                shrink_stack.oparg = 2;
+                 if (emit_const(&ctx->emitter, (PyObject *)res, shrink_stack) < 0) { goto error; }
+                new_inst.opcode = _NOP;}
             else {
-                __res_ = _Py_UOpsSymbolicExpression_New(ctx, *inst, NULL, 0, NULL, 2 , __left_, __right_);
+                __res_ = _Py_UOpsSymbolicValue_New(ctx, NULL); 
             }
             if (__res_ == NULL) goto error;
             // Type propagation
@@ -345,9 +354,9 @@
         }
 
         case _BINARY_OP_SUBTRACT_FLOAT: {
-            _Py_UOpsSymbolicExpression *__right_;
-            _Py_UOpsSymbolicExpression *__left_;
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__right_;
+            _Py_UOpsSymbolicValue *__left_;
+            _Py_UOpsSymbolicValue *__res_;
             __right_ = stack_pointer[-1];
             __left_ = stack_pointer[-2];
             // Constant evaluation
@@ -362,10 +371,12 @@
                 ((PyFloatObject *)left)->ob_fval -
                 ((PyFloatObject *)right)->ob_fval;
                 DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
-                __res_ = _Py_UOpsSymbolicExpression_New(ctx, *inst, (PyObject *)res, 0, NULL, 2 , __left_, __right_);
-            }
+                __res_ = _Py_UOpsSymbolicValue_New(ctx, (PyObject *)res); 
+                shrink_stack.oparg = 2;
+                 if (emit_const(&ctx->emitter, (PyObject *)res, shrink_stack) < 0) { goto error; }
+                new_inst.opcode = _NOP;}
             else {
-                __res_ = _Py_UOpsSymbolicExpression_New(ctx, *inst, NULL, 0, NULL, 2 , __left_, __right_);
+                __res_ = _Py_UOpsSymbolicValue_New(ctx, NULL); 
             }
             if (__res_ == NULL) goto error;
             // Type propagation
@@ -376,8 +387,8 @@
         }
 
         case _GUARD_BOTH_UNICODE: {
-            _Py_UOpsSymbolicExpression *__right_;
-            _Py_UOpsSymbolicExpression *__left_;
+            _Py_UOpsSymbolicValue *__right_;
+            _Py_UOpsSymbolicValue *__left_;
             __right_ = stack_pointer[-1];
             __left_ = stack_pointer[-2];
             // Constant evaluation
@@ -390,26 +401,25 @@
                 if (!PyUnicode_CheckExact(right)) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                break;
+                new_inst.opcode = _NOP;break;
             }
             // Type guard elimination
-            if (sym_matches_type((_Py_UOpsSymbolicExpression *)__left_, PYUNICODE_TYPE, (uint32_t)0) && sym_matches_type((_Py_UOpsSymbolicExpression *)__right_, PYUNICODE_TYPE, (uint32_t)0)){
+            if (sym_matches_type((_Py_UOpsSymbolicValue *)__left_, PYUNICODE_TYPE, (uint32_t)0) && sym_matches_type((_Py_UOpsSymbolicValue *)__right_, PYUNICODE_TYPE, (uint32_t)0)){
                 DPRINTF(2, "type propagation eliminated guard\n");
-                break;
+                new_inst.opcode = _NOP;break;
             }
             else {
                 // Type propagation
-                sym_set_type((_Py_UOpsSymbolicExpression *)__left_, PYUNICODE_TYPE, (uint32_t)0);
-                sym_set_type((_Py_UOpsSymbolicExpression *)__right_, PYUNICODE_TYPE, (uint32_t)0);
-                goto guard_required;
+                sym_set_type((_Py_UOpsSymbolicValue *)__left_, PYUNICODE_TYPE, (uint32_t)0);
+                sym_set_type((_Py_UOpsSymbolicValue *)__right_, PYUNICODE_TYPE, (uint32_t)0);
             }
             break;
         }
 
         case _BINARY_OP_ADD_UNICODE: {
-            _Py_UOpsSymbolicExpression *__right_;
-            _Py_UOpsSymbolicExpression *__left_;
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__right_;
+            _Py_UOpsSymbolicValue *__left_;
+            _Py_UOpsSymbolicValue *__res_;
             __right_ = stack_pointer[-1];
             __left_ = stack_pointer[-2];
             // Constant evaluation
@@ -423,10 +433,12 @@
                 res = PyUnicode_Concat(left, right);
                 if (res == NULL) goto pop_2_error_tier_two;
 
-                __res_ = _Py_UOpsSymbolicExpression_New(ctx, *inst, (PyObject *)res, 0, NULL, 2 , __left_, __right_);
-            }
+                __res_ = _Py_UOpsSymbolicValue_New(ctx, (PyObject *)res); 
+                shrink_stack.oparg = 2;
+                 if (emit_const(&ctx->emitter, (PyObject *)res, shrink_stack) < 0) { goto error; }
+                new_inst.opcode = _NOP;}
             else {
-                __res_ = _Py_UOpsSymbolicExpression_New(ctx, *inst, NULL, 0, NULL, 2 , __left_, __right_);
+                __res_ = _Py_UOpsSymbolicValue_New(ctx, NULL); 
             }
             if (__res_ == NULL) goto error;
             // Type propagation
@@ -437,7 +449,7 @@
         }
 
         case _BINARY_SUBSCR: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-2] = __res_;
@@ -446,7 +458,7 @@
         }
 
         case _BINARY_SLICE: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-3] = __res_;
@@ -460,7 +472,7 @@
         }
 
         case _BINARY_SUBSCR_LIST_INT: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-2] = __res_;
@@ -469,7 +481,7 @@
         }
 
         case _BINARY_SUBSCR_STR_INT: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-2] = __res_;
@@ -478,7 +490,7 @@
         }
 
         case _BINARY_SUBSCR_TUPLE_INT: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-2] = __res_;
@@ -487,7 +499,7 @@
         }
 
         case _BINARY_SUBSCR_DICT: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-2] = __res_;
@@ -528,7 +540,7 @@
         }
 
         case _CALL_INTRINSIC_1: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-1] = __res_;
@@ -536,7 +548,7 @@
         }
 
         case _CALL_INTRINSIC_2: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-2] = __res_;
@@ -549,7 +561,7 @@
         /* _INSTRUMENTED_RETURN_CONST is not a viable micro-op for tier 2 */
 
         case _GET_AITER: {
-            _Py_UOpsSymbolicExpression *__iter_;
+            _Py_UOpsSymbolicValue *__iter_;
             __iter_ = sym_init_unknown(ctx);
             if(__iter_ == NULL) goto error;
             stack_pointer[-1] = __iter_;
@@ -557,7 +569,7 @@
         }
 
         case _GET_ANEXT: {
-            _Py_UOpsSymbolicExpression *__awaitable_;
+            _Py_UOpsSymbolicValue *__awaitable_;
             __awaitable_ = sym_init_unknown(ctx);
             if(__awaitable_ == NULL) goto error;
             stack_pointer[0] = __awaitable_;
@@ -566,7 +578,7 @@
         }
 
         case _GET_AWAITABLE: {
-            _Py_UOpsSymbolicExpression *__iter_;
+            _Py_UOpsSymbolicValue *__iter_;
             __iter_ = sym_init_unknown(ctx);
             if(__iter_ == NULL) goto error;
             stack_pointer[-1] = __iter_;
@@ -585,7 +597,7 @@
         }
 
         case _LOAD_ASSERTION_ERROR: {
-            _Py_UOpsSymbolicExpression *__value_;
+            _Py_UOpsSymbolicValue *__value_;
             __value_ = sym_init_unknown(ctx);
             if(__value_ == NULL) goto error;
             stack_pointer[0] = __value_;
@@ -594,7 +606,7 @@
         }
 
         case _LOAD_BUILD_CLASS: {
-            _Py_UOpsSymbolicExpression *__bc_;
+            _Py_UOpsSymbolicValue *__bc_;
             __bc_ = sym_init_unknown(ctx);
             if(__bc_ == NULL) goto error;
             stack_pointer[0] = __bc_;
@@ -680,7 +692,7 @@
         }
 
         case _LOAD_LOCALS: {
-            _Py_UOpsSymbolicExpression *__locals_;
+            _Py_UOpsSymbolicValue *__locals_;
             __locals_ = sym_init_unknown(ctx);
             if(__locals_ == NULL) goto error;
             stack_pointer[0] = __locals_;
@@ -689,7 +701,7 @@
         }
 
         case _LOAD_FROM_DICT_OR_GLOBALS: {
-            _Py_UOpsSymbolicExpression *__v_;
+            _Py_UOpsSymbolicValue *__v_;
             __v_ = sym_init_unknown(ctx);
             if(__v_ == NULL) goto error;
             stack_pointer[-1] = __v_;
@@ -697,7 +709,7 @@
         }
 
         case _LOAD_NAME: {
-            _Py_UOpsSymbolicExpression *__v_;
+            _Py_UOpsSymbolicValue *__v_;
             __v_ = sym_init_unknown(ctx);
             if(__v_ == NULL) goto error;
             stack_pointer[0] = __v_;
@@ -706,8 +718,8 @@
         }
 
         case _LOAD_GLOBAL: {
-            _Py_UOpsSymbolicExpression *__res_;
-            _Py_UOpsSymbolicExpression *__null_ = NULL;
+            _Py_UOpsSymbolicValue *__res_;
+            _Py_UOpsSymbolicValue *__null_ = NULL;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             __null_ = sym_init_unknown(ctx);
@@ -728,8 +740,8 @@
         }
 
         case _LOAD_GLOBAL_MODULE: {
-            _Py_UOpsSymbolicExpression *__res_;
-            _Py_UOpsSymbolicExpression *__null_ = NULL;
+            _Py_UOpsSymbolicValue *__res_;
+            _Py_UOpsSymbolicValue *__null_ = NULL;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             __null_ = sym_init_unknown(ctx);
@@ -742,8 +754,8 @@
         }
 
         case _LOAD_GLOBAL_BUILTINS: {
-            _Py_UOpsSymbolicExpression *__res_;
-            _Py_UOpsSymbolicExpression *__null_ = NULL;
+            _Py_UOpsSymbolicValue *__res_;
+            _Py_UOpsSymbolicValue *__null_ = NULL;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             __null_ = sym_init_unknown(ctx);
@@ -768,7 +780,7 @@
         }
 
         case _LOAD_FROM_DICT_OR_DEREF: {
-            _Py_UOpsSymbolicExpression *__value_;
+            _Py_UOpsSymbolicValue *__value_;
             __value_ = sym_init_unknown(ctx);
             if(__value_ == NULL) goto error;
             stack_pointer[-1] = __value_;
@@ -776,7 +788,7 @@
         }
 
         case _LOAD_DEREF: {
-            _Py_UOpsSymbolicExpression *__value_;
+            _Py_UOpsSymbolicValue *__value_;
             __value_ = sym_init_unknown(ctx);
             if(__value_ == NULL) goto error;
             stack_pointer[0] = __value_;
@@ -794,7 +806,7 @@
         }
 
         case _BUILD_STRING: {
-            _Py_UOpsSymbolicExpression *__str_;
+            _Py_UOpsSymbolicValue *__str_;
             __str_ = sym_init_unknown(ctx);
             if(__str_ == NULL) goto error;
             stack_pointer[-oparg] = __str_;
@@ -803,7 +815,7 @@
         }
 
         case _BUILD_TUPLE: {
-            _Py_UOpsSymbolicExpression *__tup_;
+            _Py_UOpsSymbolicValue *__tup_;
             __tup_ = sym_init_unknown(ctx);
             if(__tup_ == NULL) goto error;
             stack_pointer[-oparg] = __tup_;
@@ -812,7 +824,7 @@
         }
 
         case _BUILD_LIST: {
-            _Py_UOpsSymbolicExpression *__list_;
+            _Py_UOpsSymbolicValue *__list_;
             __list_ = sym_init_unknown(ctx);
             if(__list_ == NULL) goto error;
             stack_pointer[-oparg] = __list_;
@@ -831,7 +843,7 @@
         }
 
         case _BUILD_SET: {
-            _Py_UOpsSymbolicExpression *__set_;
+            _Py_UOpsSymbolicValue *__set_;
             __set_ = sym_init_unknown(ctx);
             if(__set_ == NULL) goto error;
             stack_pointer[-oparg] = __set_;
@@ -840,7 +852,7 @@
         }
 
         case _BUILD_MAP: {
-            _Py_UOpsSymbolicExpression *__map_;
+            _Py_UOpsSymbolicValue *__map_;
             __map_ = sym_init_unknown(ctx);
             if(__map_ == NULL) goto error;
             stack_pointer[-oparg*2] = __map_;
@@ -853,7 +865,7 @@
         }
 
         case _BUILD_CONST_KEY_MAP: {
-            _Py_UOpsSymbolicExpression *__map_;
+            _Py_UOpsSymbolicValue *__map_;
             __map_ = sym_init_unknown(ctx);
             if(__map_ == NULL) goto error;
             stack_pointer[-1 - oparg] = __map_;
@@ -879,7 +891,7 @@
         /* _INSTRUMENTED_LOAD_SUPER_ATTR is not a viable micro-op for tier 2 */
 
         case _LOAD_SUPER_ATTR_ATTR: {
-            _Py_UOpsSymbolicExpression *__attr_;
+            _Py_UOpsSymbolicValue *__attr_;
             __attr_ = sym_init_unknown(ctx);
             if(__attr_ == NULL) goto error;
             stack_pointer[-3] = __attr_;
@@ -888,8 +900,8 @@
         }
 
         case _LOAD_SUPER_ATTR_METHOD: {
-            _Py_UOpsSymbolicExpression *__attr_;
-            _Py_UOpsSymbolicExpression *__self_or_null_;
+            _Py_UOpsSymbolicValue *__attr_;
+            _Py_UOpsSymbolicValue *__self_or_null_;
             __attr_ = sym_init_unknown(ctx);
             if(__attr_ == NULL) goto error;
             __self_or_null_ = sym_init_unknown(ctx);
@@ -901,8 +913,8 @@
         }
 
         case _LOAD_ATTR: {
-            _Py_UOpsSymbolicExpression *__attr_;
-            _Py_UOpsSymbolicExpression *__self_or_null_ = NULL;
+            _Py_UOpsSymbolicValue *__attr_;
+            _Py_UOpsSymbolicValue *__self_or_null_ = NULL;
             __attr_ = sym_init_unknown(ctx);
             if(__attr_ == NULL) goto error;
             __self_or_null_ = sym_init_unknown(ctx);
@@ -915,7 +927,7 @@
         }
 
         case _GUARD_TYPE_VERSION: {
-            _Py_UOpsSymbolicExpression *__owner_;
+            _Py_UOpsSymbolicValue *__owner_;
             __owner_ = stack_pointer[-1];
             uint32_t type_version = (uint32_t)CURRENT_OPERAND();
             // Constant evaluation
@@ -927,29 +939,27 @@
                 if (tp->tp_version_tag != type_version) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                break;
+                new_inst.opcode = _NOP;break;
             }
             // Type guard elimination
-            if (sym_matches_type((_Py_UOpsSymbolicExpression *)__owner_, GUARD_TYPE_VERSION_TYPE, (uint32_t)type_version)){
+            if (sym_matches_type((_Py_UOpsSymbolicValue *)__owner_, GUARD_TYPE_VERSION_TYPE, (uint32_t)type_version)){
                 DPRINTF(2, "type propagation eliminated guard\n");
-                break;
+                new_inst.opcode = _NOP;break;
             }
             else {
                 // Type propagation
-                sym_set_type((_Py_UOpsSymbolicExpression *)__owner_, GUARD_TYPE_VERSION_TYPE, (uint32_t)type_version);
-                goto guard_required;
+                sym_set_type((_Py_UOpsSymbolicValue *)__owner_, GUARD_TYPE_VERSION_TYPE, (uint32_t)type_version);
             }
             break;
         }
 
         case _CHECK_MANAGED_OBJECT_HAS_VALUES: {
-            goto guard_required;
             break;
         }
 
         case _LOAD_ATTR_INSTANCE_VALUE: {
-            _Py_UOpsSymbolicExpression *__attr_;
-            _Py_UOpsSymbolicExpression *__null_ = NULL;
+            _Py_UOpsSymbolicValue *__attr_;
+            _Py_UOpsSymbolicValue *__null_ = NULL;
             __attr_ = sym_init_unknown(ctx);
             if(__attr_ == NULL) goto error;
             __null_ = sym_init_unknown(ctx);
@@ -962,7 +972,7 @@
         }
 
         case _CHECK_ATTR_MODULE: {
-            _Py_UOpsSymbolicExpression *__owner_;
+            _Py_UOpsSymbolicValue *__owner_;
             __owner_ = stack_pointer[-1];
             uint32_t type_version = (uint32_t)CURRENT_OPERAND();
             // Constant evaluation
@@ -975,15 +985,14 @@
                 if (dict->ma_keys->dk_version != type_version) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                break;
+                new_inst.opcode = _NOP;break;
             }
-            goto guard_required;
             break;
         }
 
         case _LOAD_ATTR_MODULE: {
-            _Py_UOpsSymbolicExpression *__attr_;
-            _Py_UOpsSymbolicExpression *__null_ = NULL;
+            _Py_UOpsSymbolicValue *__attr_;
+            _Py_UOpsSymbolicValue *__null_ = NULL;
             __attr_ = sym_init_unknown(ctx);
             if(__attr_ == NULL) goto error;
             __null_ = sym_init_unknown(ctx);
@@ -996,7 +1005,7 @@
         }
 
         case _CHECK_ATTR_WITH_HINT: {
-            _Py_UOpsSymbolicExpression *__owner_;
+            _Py_UOpsSymbolicValue *__owner_;
             __owner_ = stack_pointer[-1];
             // Constant evaluation
             if (is_const(__owner_)) {
@@ -1009,15 +1018,14 @@
                 if (dict == NULL) goto error;
                 assert(PyDict_CheckExact((PyObject *)dict));
                 DPRINTF(3, "const eliminated guard\n");
-                break;
+                new_inst.opcode = _NOP;break;
             }
-            goto guard_required;
             break;
         }
 
         case _LOAD_ATTR_WITH_HINT: {
-            _Py_UOpsSymbolicExpression *__attr_;
-            _Py_UOpsSymbolicExpression *__null_ = NULL;
+            _Py_UOpsSymbolicValue *__attr_;
+            _Py_UOpsSymbolicValue *__null_ = NULL;
             __attr_ = sym_init_unknown(ctx);
             if(__attr_ == NULL) goto error;
             __null_ = sym_init_unknown(ctx);
@@ -1030,8 +1038,8 @@
         }
 
         case _LOAD_ATTR_SLOT: {
-            _Py_UOpsSymbolicExpression *__attr_;
-            _Py_UOpsSymbolicExpression *__null_ = NULL;
+            _Py_UOpsSymbolicValue *__attr_;
+            _Py_UOpsSymbolicValue *__null_ = NULL;
             __attr_ = sym_init_unknown(ctx);
             if(__attr_ == NULL) goto error;
             __null_ = sym_init_unknown(ctx);
@@ -1044,7 +1052,7 @@
         }
 
         case _CHECK_ATTR_CLASS: {
-            _Py_UOpsSymbolicExpression *__owner_;
+            _Py_UOpsSymbolicValue *__owner_;
             __owner_ = stack_pointer[-1];
             uint32_t type_version = (uint32_t)CURRENT_OPERAND();
             // Constant evaluation
@@ -1056,15 +1064,14 @@
                 if (((PyTypeObject *)owner)->tp_version_tag != type_version) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                break;
+                new_inst.opcode = _NOP;break;
             }
-            goto guard_required;
             break;
         }
 
         case _LOAD_ATTR_CLASS: {
-            _Py_UOpsSymbolicExpression *__attr_;
-            _Py_UOpsSymbolicExpression *__null_ = NULL;
+            _Py_UOpsSymbolicValue *__attr_;
+            _Py_UOpsSymbolicValue *__null_ = NULL;
             __attr_ = sym_init_unknown(ctx);
             if(__attr_ == NULL) goto error;
             __null_ = sym_init_unknown(ctx);
@@ -1081,7 +1088,7 @@
         /* _LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN is not a viable micro-op for tier 2 */
 
         case _GUARD_DORV_VALUES: {
-            _Py_UOpsSymbolicExpression *__owner_;
+            _Py_UOpsSymbolicValue *__owner_;
             __owner_ = stack_pointer[-1];
             // Constant evaluation
             if (is_const(__owner_)) {
@@ -1092,17 +1099,16 @@
                 if (!_PyDictOrValues_IsValues(dorv)) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                break;
+                new_inst.opcode = _NOP;break;
             }
             // Type guard elimination
-            if (sym_matches_type((_Py_UOpsSymbolicExpression *)__owner_, GUARD_DORV_VALUES_TYPE, (uint32_t)0)){
+            if (sym_matches_type((_Py_UOpsSymbolicValue *)__owner_, GUARD_DORV_VALUES_TYPE, (uint32_t)0)){
                 DPRINTF(2, "type propagation eliminated guard\n");
-                break;
+                new_inst.opcode = _NOP;break;
             }
             else {
                 // Type propagation
-                sym_set_type((_Py_UOpsSymbolicExpression *)__owner_, GUARD_DORV_VALUES_TYPE, (uint32_t)0);
-                goto guard_required;
+                sym_set_type((_Py_UOpsSymbolicValue *)__owner_, GUARD_DORV_VALUES_TYPE, (uint32_t)0);
             }
             break;
         }
@@ -1120,7 +1126,7 @@
         }
 
         case _COMPARE_OP: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-2] = __res_;
@@ -1129,7 +1135,7 @@
         }
 
         case _COMPARE_OP_FLOAT: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-2] = __res_;
@@ -1138,7 +1144,7 @@
         }
 
         case _COMPARE_OP_INT: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-2] = __res_;
@@ -1147,7 +1153,7 @@
         }
 
         case _COMPARE_OP_STR: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-2] = __res_;
@@ -1156,7 +1162,7 @@
         }
 
         case _IS_OP: {
-            _Py_UOpsSymbolicExpression *__b_;
+            _Py_UOpsSymbolicValue *__b_;
             __b_ = sym_init_unknown(ctx);
             if(__b_ == NULL) goto error;
             stack_pointer[-2] = __b_;
@@ -1165,7 +1171,7 @@
         }
 
         case _CONTAINS_OP: {
-            _Py_UOpsSymbolicExpression *__b_;
+            _Py_UOpsSymbolicValue *__b_;
             __b_ = sym_init_unknown(ctx);
             if(__b_ == NULL) goto error;
             stack_pointer[-2] = __b_;
@@ -1174,8 +1180,8 @@
         }
 
         case _CHECK_EG_MATCH: {
-            _Py_UOpsSymbolicExpression *__rest_;
-            _Py_UOpsSymbolicExpression *__match_;
+            _Py_UOpsSymbolicValue *__rest_;
+            _Py_UOpsSymbolicValue *__match_;
             __rest_ = sym_init_unknown(ctx);
             if(__rest_ == NULL) goto error;
             __match_ = sym_init_unknown(ctx);
@@ -1186,7 +1192,7 @@
         }
 
         case _CHECK_EXC_MATCH: {
-            _Py_UOpsSymbolicExpression *__b_;
+            _Py_UOpsSymbolicValue *__b_;
             __b_ = sym_init_unknown(ctx);
             if(__b_ == NULL) goto error;
             stack_pointer[-1] = __b_;
@@ -1200,7 +1206,7 @@
         /* _POP_JUMP_IF_TRUE is not a viable micro-op for tier 2 */
 
         case _IS_NONE: {
-            _Py_UOpsSymbolicExpression *__b_;
+            _Py_UOpsSymbolicValue *__b_;
             __b_ = sym_init_unknown(ctx);
             if(__b_ == NULL) goto error;
             stack_pointer[-1] = __b_;
@@ -1208,7 +1214,7 @@
         }
 
         case _GET_LEN: {
-            _Py_UOpsSymbolicExpression *__len_o_;
+            _Py_UOpsSymbolicValue *__len_o_;
             __len_o_ = sym_init_unknown(ctx);
             if(__len_o_ == NULL) goto error;
             stack_pointer[0] = __len_o_;
@@ -1217,7 +1223,7 @@
         }
 
         case _MATCH_CLASS: {
-            _Py_UOpsSymbolicExpression *__attrs_;
+            _Py_UOpsSymbolicValue *__attrs_;
             __attrs_ = sym_init_unknown(ctx);
             if(__attrs_ == NULL) goto error;
             stack_pointer[-3] = __attrs_;
@@ -1226,7 +1232,7 @@
         }
 
         case _MATCH_MAPPING: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[0] = __res_;
@@ -1235,7 +1241,7 @@
         }
 
         case _MATCH_SEQUENCE: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[0] = __res_;
@@ -1244,7 +1250,7 @@
         }
 
         case _MATCH_KEYS: {
-            _Py_UOpsSymbolicExpression *__values_or_none_;
+            _Py_UOpsSymbolicValue *__values_or_none_;
             __values_or_none_ = sym_init_unknown(ctx);
             if(__values_or_none_ == NULL) goto error;
             stack_pointer[0] = __values_or_none_;
@@ -1253,7 +1259,7 @@
         }
 
         case _GET_ITER: {
-            _Py_UOpsSymbolicExpression *__iter_;
+            _Py_UOpsSymbolicValue *__iter_;
             __iter_ = sym_init_unknown(ctx);
             if(__iter_ == NULL) goto error;
             stack_pointer[-1] = __iter_;
@@ -1261,7 +1267,7 @@
         }
 
         case _GET_YIELD_FROM_ITER: {
-            _Py_UOpsSymbolicExpression *__iter_;
+            _Py_UOpsSymbolicValue *__iter_;
             __iter_ = sym_init_unknown(ctx);
             if(__iter_ == NULL) goto error;
             stack_pointer[-1] = __iter_;
@@ -1271,7 +1277,7 @@
         /* _FOR_ITER is not a viable micro-op for tier 2 */
 
         case _FOR_ITER_TIER_TWO: {
-            _Py_UOpsSymbolicExpression *__next_;
+            _Py_UOpsSymbolicValue *__next_;
             __next_ = sym_init_unknown(ctx);
             if(__next_ == NULL) goto error;
             stack_pointer[0] = __next_;
@@ -1282,7 +1288,7 @@
         /* _INSTRUMENTED_FOR_ITER is not a viable micro-op for tier 2 */
 
         case _ITER_CHECK_LIST: {
-            _Py_UOpsSymbolicExpression *__iter_;
+            _Py_UOpsSymbolicValue *__iter_;
             __iter_ = stack_pointer[-1];
             // Constant evaluation
             if (is_const(__iter_)) {
@@ -1291,16 +1297,15 @@
                 if (Py_TYPE(iter) != &PyListIter_Type) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                break;
+                new_inst.opcode = _NOP;break;
             }
-            goto guard_required;
             break;
         }
 
         /* _ITER_JUMP_LIST is not a viable micro-op for tier 2 */
 
         case _GUARD_NOT_EXHAUSTED_LIST: {
-            _Py_UOpsSymbolicExpression *__iter_;
+            _Py_UOpsSymbolicValue *__iter_;
             __iter_ = stack_pointer[-1];
             // Constant evaluation
             if (is_const(__iter_)) {
@@ -1313,14 +1318,13 @@
                 if (it->it_index >= PyList_GET_SIZE(seq)) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                break;
+                new_inst.opcode = _NOP;break;
             }
-            goto guard_required;
             break;
         }
 
         case _ITER_NEXT_LIST: {
-            _Py_UOpsSymbolicExpression *__next_;
+            _Py_UOpsSymbolicValue *__next_;
             __next_ = sym_init_unknown(ctx);
             if(__next_ == NULL) goto error;
             stack_pointer[0] = __next_;
@@ -1329,7 +1333,7 @@
         }
 
         case _ITER_CHECK_TUPLE: {
-            _Py_UOpsSymbolicExpression *__iter_;
+            _Py_UOpsSymbolicValue *__iter_;
             __iter_ = stack_pointer[-1];
             // Constant evaluation
             if (is_const(__iter_)) {
@@ -1338,16 +1342,15 @@
                 if (Py_TYPE(iter) != &PyTupleIter_Type) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                break;
+                new_inst.opcode = _NOP;break;
             }
-            goto guard_required;
             break;
         }
 
         /* _ITER_JUMP_TUPLE is not a viable micro-op for tier 2 */
 
         case _GUARD_NOT_EXHAUSTED_TUPLE: {
-            _Py_UOpsSymbolicExpression *__iter_;
+            _Py_UOpsSymbolicValue *__iter_;
             __iter_ = stack_pointer[-1];
             // Constant evaluation
             if (is_const(__iter_)) {
@@ -1360,14 +1363,13 @@
                 if (it->it_index >= PyTuple_GET_SIZE(seq)) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                break;
+                new_inst.opcode = _NOP;break;
             }
-            goto guard_required;
             break;
         }
 
         case _ITER_NEXT_TUPLE: {
-            _Py_UOpsSymbolicExpression *__next_;
+            _Py_UOpsSymbolicValue *__next_;
             __next_ = sym_init_unknown(ctx);
             if(__next_ == NULL) goto error;
             stack_pointer[0] = __next_;
@@ -1376,7 +1378,7 @@
         }
 
         case _ITER_CHECK_RANGE: {
-            _Py_UOpsSymbolicExpression *__iter_;
+            _Py_UOpsSymbolicValue *__iter_;
             __iter_ = stack_pointer[-1];
             // Constant evaluation
             if (is_const(__iter_)) {
@@ -1386,16 +1388,15 @@
                 if (Py_TYPE(r) != &PyRangeIter_Type) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                break;
+                new_inst.opcode = _NOP;break;
             }
-            goto guard_required;
             break;
         }
 
         /* _ITER_JUMP_RANGE is not a viable micro-op for tier 2 */
 
         case _GUARD_NOT_EXHAUSTED_RANGE: {
-            _Py_UOpsSymbolicExpression *__iter_;
+            _Py_UOpsSymbolicValue *__iter_;
             __iter_ = stack_pointer[-1];
             // Constant evaluation
             if (is_const(__iter_)) {
@@ -1406,14 +1407,13 @@
                 if (r->len <= 0) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                break;
+                new_inst.opcode = _NOP;break;
             }
-            goto guard_required;
             break;
         }
 
         case _ITER_NEXT_RANGE: {
-            _Py_UOpsSymbolicExpression *__next_;
+            _Py_UOpsSymbolicValue *__next_;
             __next_ = sym_init_unknown(ctx);
             if(__next_ == NULL) goto error;
             sym_set_type(__next_, PYLONG_TYPE, 0);
@@ -1425,8 +1425,8 @@
         /* _FOR_ITER_GEN is not a viable micro-op for tier 2 */
 
         case _BEFORE_ASYNC_WITH: {
-            _Py_UOpsSymbolicExpression *__exit_;
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__exit_;
+            _Py_UOpsSymbolicValue *__res_;
             __exit_ = sym_init_unknown(ctx);
             if(__exit_ == NULL) goto error;
             __res_ = sym_init_unknown(ctx);
@@ -1438,8 +1438,8 @@
         }
 
         case _BEFORE_WITH: {
-            _Py_UOpsSymbolicExpression *__exit_;
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__exit_;
+            _Py_UOpsSymbolicValue *__res_;
             __exit_ = sym_init_unknown(ctx);
             if(__exit_ == NULL) goto error;
             __res_ = sym_init_unknown(ctx);
@@ -1451,7 +1451,7 @@
         }
 
         case _WITH_EXCEPT_START: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[0] = __res_;
@@ -1460,8 +1460,8 @@
         }
 
         case _PUSH_EXC_INFO: {
-            _Py_UOpsSymbolicExpression *__prev_exc_;
-            _Py_UOpsSymbolicExpression *__new_exc_;
+            _Py_UOpsSymbolicValue *__prev_exc_;
+            _Py_UOpsSymbolicValue *__new_exc_;
             __prev_exc_ = sym_init_unknown(ctx);
             if(__prev_exc_ == NULL) goto error;
             __new_exc_ = sym_init_unknown(ctx);
@@ -1473,7 +1473,7 @@
         }
 
         case _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT: {
-            _Py_UOpsSymbolicExpression *__owner_;
+            _Py_UOpsSymbolicValue *__owner_;
             __owner_ = stack_pointer[-1];
             // Constant evaluation
             if (is_const(__owner_)) {
@@ -1484,23 +1484,22 @@
                 if (!_PyDictOrValues_IsValues(*dorv) && !_PyObject_MakeInstanceAttributesFromDict(owner, dorv)) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                break;
+                new_inst.opcode = _NOP;break;
             }
             // Type guard elimination
-            if (sym_matches_type((_Py_UOpsSymbolicExpression *)__owner_, GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_TYPE, (uint32_t)0)){
+            if (sym_matches_type((_Py_UOpsSymbolicValue *)__owner_, GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_TYPE, (uint32_t)0)){
                 DPRINTF(2, "type propagation eliminated guard\n");
-                break;
+                new_inst.opcode = _NOP;break;
             }
             else {
                 // Type propagation
-                sym_set_type((_Py_UOpsSymbolicExpression *)__owner_, GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_TYPE, (uint32_t)0);
-                goto guard_required;
+                sym_set_type((_Py_UOpsSymbolicValue *)__owner_, GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_TYPE, (uint32_t)0);
             }
             break;
         }
 
         case _GUARD_KEYS_VERSION: {
-            _Py_UOpsSymbolicExpression *__owner_;
+            _Py_UOpsSymbolicValue *__owner_;
             __owner_ = stack_pointer[-1];
             uint32_t keys_version = (uint32_t)CURRENT_OPERAND();
             // Constant evaluation
@@ -1512,24 +1511,23 @@
                 if (owner_heap_type->ht_cached_keys->dk_version != keys_version) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                break;
+                new_inst.opcode = _NOP;break;
             }
             // Type guard elimination
-            if (sym_matches_type((_Py_UOpsSymbolicExpression *)__owner_, GUARD_KEYS_VERSION_TYPE, (uint32_t)keys_version)){
+            if (sym_matches_type((_Py_UOpsSymbolicValue *)__owner_, GUARD_KEYS_VERSION_TYPE, (uint32_t)keys_version)){
                 DPRINTF(2, "type propagation eliminated guard\n");
-                break;
+                new_inst.opcode = _NOP;break;
             }
             else {
                 // Type propagation
-                sym_set_type((_Py_UOpsSymbolicExpression *)__owner_, GUARD_KEYS_VERSION_TYPE, (uint32_t)keys_version);
-                goto guard_required;
+                sym_set_type((_Py_UOpsSymbolicValue *)__owner_, GUARD_KEYS_VERSION_TYPE, (uint32_t)keys_version);
             }
             break;
         }
 
         case _LOAD_ATTR_METHOD_WITH_VALUES: {
-            _Py_UOpsSymbolicExpression *__attr_;
-            _Py_UOpsSymbolicExpression *__self_ = NULL;
+            _Py_UOpsSymbolicValue *__attr_;
+            _Py_UOpsSymbolicValue *__self_ = NULL;
             __attr_ = sym_init_unknown(ctx);
             if(__attr_ == NULL) goto error;
             __self_ = sym_init_unknown(ctx);
@@ -1541,8 +1539,8 @@
         }
 
         case _LOAD_ATTR_METHOD_NO_DICT: {
-            _Py_UOpsSymbolicExpression *__attr_;
-            _Py_UOpsSymbolicExpression *__self_ = NULL;
+            _Py_UOpsSymbolicValue *__attr_;
+            _Py_UOpsSymbolicValue *__self_ = NULL;
             __attr_ = sym_init_unknown(ctx);
             if(__attr_ == NULL) goto error;
             __self_ = sym_init_unknown(ctx);
@@ -1554,7 +1552,7 @@
         }
 
         case _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES: {
-            _Py_UOpsSymbolicExpression *__attr_;
+            _Py_UOpsSymbolicValue *__attr_;
             __attr_ = sym_init_unknown(ctx);
             if(__attr_ == NULL) goto error;
             stack_pointer[-1] = __attr_;
@@ -1563,7 +1561,7 @@
         }
 
         case _LOAD_ATTR_NONDESCRIPTOR_NO_DICT: {
-            _Py_UOpsSymbolicExpression *__attr_;
+            _Py_UOpsSymbolicValue *__attr_;
             __attr_ = sym_init_unknown(ctx);
             if(__attr_ == NULL) goto error;
             stack_pointer[-1] = __attr_;
@@ -1572,7 +1570,7 @@
         }
 
         case _CHECK_ATTR_METHOD_LAZY_DICT: {
-            _Py_UOpsSymbolicExpression *__owner_;
+            _Py_UOpsSymbolicValue *__owner_;
             __owner_ = stack_pointer[-1];
             // Constant evaluation
             if (is_const(__owner_)) {
@@ -1585,15 +1583,14 @@
                 if (dict != NULL) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                break;
+                new_inst.opcode = _NOP;break;
             }
-            goto guard_required;
             break;
         }
 
         case _LOAD_ATTR_METHOD_LAZY_DICT: {
-            _Py_UOpsSymbolicExpression *__attr_;
-            _Py_UOpsSymbolicExpression *__self_ = NULL;
+            _Py_UOpsSymbolicValue *__attr_;
+            _Py_UOpsSymbolicValue *__self_ = NULL;
             __attr_ = sym_init_unknown(ctx);
             if(__attr_ == NULL) goto error;
             __self_ = sym_init_unknown(ctx);
@@ -1609,8 +1606,8 @@
         /* _CALL is not a viable micro-op for tier 2 */
 
         case _CHECK_CALL_BOUND_METHOD_EXACT_ARGS: {
-            _Py_UOpsSymbolicExpression *__null_;
-            _Py_UOpsSymbolicExpression *__callable_;
+            _Py_UOpsSymbolicValue *__null_;
+            _Py_UOpsSymbolicValue *__callable_;
             __null_ = stack_pointer[-1 - oparg];
             __callable_ = stack_pointer[-2 - oparg];
             // Constant evaluation
@@ -1623,25 +1620,24 @@
                 if (Py_TYPE(callable) != &PyMethod_Type) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                break;
+                new_inst.opcode = _NOP;break;
             }
             // Type guard elimination
-            if (sym_matches_type((_Py_UOpsSymbolicExpression *)__callable_, PYMETHOD_TYPE, (uint32_t)0) && sym_matches_type((_Py_UOpsSymbolicExpression *)__null_, NULL_TYPE, (uint32_t)0)){
+            if (sym_matches_type((_Py_UOpsSymbolicValue *)__callable_, PYMETHOD_TYPE, (uint32_t)0) && sym_matches_type((_Py_UOpsSymbolicValue *)__null_, NULL_TYPE, (uint32_t)0)){
                 DPRINTF(2, "type propagation eliminated guard\n");
-                break;
+                new_inst.opcode = _NOP;break;
             }
             else {
                 // Type propagation
-                sym_set_type((_Py_UOpsSymbolicExpression *)__callable_, PYMETHOD_TYPE, (uint32_t)0);
-                sym_set_type((_Py_UOpsSymbolicExpression *)__null_, NULL_TYPE, (uint32_t)0);
-                goto guard_required;
+                sym_set_type((_Py_UOpsSymbolicValue *)__callable_, PYMETHOD_TYPE, (uint32_t)0);
+                sym_set_type((_Py_UOpsSymbolicValue *)__null_, NULL_TYPE, (uint32_t)0);
             }
             break;
         }
 
         case _INIT_CALL_BOUND_METHOD_EXACT_ARGS: {
-            _Py_UOpsSymbolicExpression *__func_;
-            _Py_UOpsSymbolicExpression *__self_;
+            _Py_UOpsSymbolicValue *__func_;
+            _Py_UOpsSymbolicValue *__self_;
             __func_ = sym_init_unknown(ctx);
             if(__func_ == NULL) goto error;
             __self_ = sym_init_unknown(ctx);
@@ -1652,13 +1648,12 @@
         }
 
         case _CHECK_PEP_523: {
-            goto guard_required;
             break;
         }
 
         case _CHECK_FUNCTION_EXACT_ARGS: {
-            _Py_UOpsSymbolicExpression *__self_or_null_;
-            _Py_UOpsSymbolicExpression *__callable_;
+            _Py_UOpsSymbolicValue *__self_or_null_;
+            _Py_UOpsSymbolicValue *__callable_;
             __self_or_null_ = stack_pointer[-1 - oparg];
             __callable_ = stack_pointer[-2 - oparg];
             uint32_t func_version = (uint32_t)CURRENT_OPERAND();
@@ -1675,44 +1670,28 @@
                 if (code->co_argcount != oparg + (self_or_null != NULL)) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                break;
+                new_inst.opcode = _NOP;break;
             }
             // Type guard elimination
-            if (sym_matches_type((_Py_UOpsSymbolicExpression *)__callable_, PYFUNCTION_TYPE_VERSION_TYPE, (uint32_t)func_version)){
+            if (sym_matches_type((_Py_UOpsSymbolicValue *)__callable_, PYFUNCTION_TYPE_VERSION_TYPE, (uint32_t)func_version)){
                 DPRINTF(2, "type propagation eliminated guard\n");
-                break;
+                new_inst.opcode = _NOP;break;
             }
             else {
                 // Type propagation
-                sym_set_type((_Py_UOpsSymbolicExpression *)__callable_, PYFUNCTION_TYPE_VERSION_TYPE, (uint32_t)func_version);
-                goto guard_required;
+                sym_set_type((_Py_UOpsSymbolicValue *)__callable_, PYFUNCTION_TYPE_VERSION_TYPE, (uint32_t)func_version);
             }
             break;
         }
 
         case _CHECK_STACK_SPACE: {
-            goto guard_required;
-            break;
-        }
-
-        case _INIT_CALL_PY_EXACT_ARGS: {
-            _Py_UOpsSymbolicExpression **__args_;
-            _Py_UOpsSymbolicExpression *__self_or_null_;
-            _Py_UOpsSymbolicExpression *__callable_;
-            _Py_UOpsSymbolicExpression *__new_frame_;
-            __args_ = &stack_pointer[-oparg];
-            __self_or_null_ = stack_pointer[-1 - oparg];
-            __callable_ = stack_pointer[-2 - oparg];
-            __new_frame_ = _Py_UOpsSymbolicExpression_New(ctx, *inst, NULL, oparg, __args_, 2 , __callable_, __self_or_null_);
-            stack_pointer[-2 - oparg] = (_Py_UOpsSymbolicExpression *)__new_frame_;
-            stack_pointer += -1 - oparg;
             break;
         }
 
         /* _CALL_PY_WITH_DEFAULTS is not a viable micro-op for tier 2 */
 
         case _CALL_TYPE_1: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-2 - oparg] = __res_;
@@ -1721,7 +1700,7 @@
         }
 
         case _CALL_STR_1: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-2 - oparg] = __res_;
@@ -1730,7 +1709,7 @@
         }
 
         case _CALL_TUPLE_1: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-2 - oparg] = __res_;
@@ -1746,7 +1725,7 @@
         }
 
         case _CALL_BUILTIN_CLASS: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-2 - oparg] = __res_;
@@ -1755,7 +1734,7 @@
         }
 
         case _CALL_BUILTIN_O: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-2 - oparg] = __res_;
@@ -1764,7 +1743,7 @@
         }
 
         case _CALL_BUILTIN_FAST: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-2 - oparg] = __res_;
@@ -1773,7 +1752,7 @@
         }
 
         case _CALL_BUILTIN_FAST_WITH_KEYWORDS: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-2 - oparg] = __res_;
@@ -1782,7 +1761,7 @@
         }
 
         case _CALL_LEN: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-2 - oparg] = __res_;
@@ -1791,7 +1770,7 @@
         }
 
         case _CALL_ISINSTANCE: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-2 - oparg] = __res_;
@@ -1800,7 +1779,7 @@
         }
 
         case _CALL_METHOD_DESCRIPTOR_O: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-2 - oparg] = __res_;
@@ -1809,7 +1788,7 @@
         }
 
         case _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-2 - oparg] = __res_;
@@ -1818,7 +1797,7 @@
         }
 
         case _CALL_METHOD_DESCRIPTOR_NOARGS: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-2 - oparg] = __res_;
@@ -1827,7 +1806,7 @@
         }
 
         case _CALL_METHOD_DESCRIPTOR_FAST: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-2 - oparg] = __res_;
@@ -1844,7 +1823,7 @@
         /* _CALL_FUNCTION_EX is not a viable micro-op for tier 2 */
 
         case _MAKE_FUNCTION: {
-            _Py_UOpsSymbolicExpression *__func_;
+            _Py_UOpsSymbolicValue *__func_;
             __func_ = sym_init_unknown(ctx);
             if(__func_ == NULL) goto error;
             stack_pointer[-1] = __func_;
@@ -1852,7 +1831,7 @@
         }
 
         case _SET_FUNCTION_ATTRIBUTE: {
-            _Py_UOpsSymbolicExpression *__func_;
+            _Py_UOpsSymbolicValue *__func_;
             __func_ = sym_init_unknown(ctx);
             if(__func_ == NULL) goto error;
             stack_pointer[-2] = __func_;
@@ -1861,7 +1840,7 @@
         }
 
         case _BUILD_SLICE: {
-            _Py_UOpsSymbolicExpression *__slice_;
+            _Py_UOpsSymbolicValue *__slice_;
             __slice_ = sym_init_unknown(ctx);
             if(__slice_ == NULL) goto error;
             stack_pointer[-2 - ((oparg == 3) ? 1 : 0)] = __slice_;
@@ -1870,7 +1849,7 @@
         }
 
         case _CONVERT_VALUE: {
-            _Py_UOpsSymbolicExpression *__result_;
+            _Py_UOpsSymbolicValue *__result_;
             __result_ = sym_init_unknown(ctx);
             if(__result_ == NULL) goto error;
             stack_pointer[-1] = __result_;
@@ -1878,7 +1857,7 @@
         }
 
         case _FORMAT_SIMPLE: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-1] = __res_;
@@ -1886,7 +1865,7 @@
         }
 
         case _FORMAT_WITH_SPEC: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-2] = __res_;
@@ -1895,7 +1874,7 @@
         }
 
         case _BINARY_OP: {
-            _Py_UOpsSymbolicExpression *__res_;
+            _Py_UOpsSymbolicValue *__res_;
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
             stack_pointer[-2] = __res_;
@@ -1946,7 +1925,7 @@
         }
 
         case _LOAD_CONST_INLINE: {
-            _Py_UOpsSymbolicExpression *__value_;
+            _Py_UOpsSymbolicValue *__value_;
             __value_ = sym_init_unknown(ctx);
             if(__value_ == NULL) goto error;
             stack_pointer[0] = __value_;
@@ -1955,7 +1934,7 @@
         }
 
         case _LOAD_CONST_INLINE_BORROW: {
-            _Py_UOpsSymbolicExpression *__value_;
+            _Py_UOpsSymbolicValue *__value_;
             __value_ = sym_init_unknown(ctx);
             if(__value_ == NULL) goto error;
             stack_pointer[0] = __value_;

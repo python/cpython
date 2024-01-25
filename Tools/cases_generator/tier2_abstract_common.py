@@ -14,6 +14,7 @@ SPECIALLY_HANDLED_ABSTRACT_INSTR = {
     # Frame stuff
     "_PUSH_FRAME",
     "_POP_FRAME",
+    "_INIT_CALL_PY_EXACT_ARGS",
     # Bookkeeping
     "_SET_IP",
     "_CHECK_VALIDITY",

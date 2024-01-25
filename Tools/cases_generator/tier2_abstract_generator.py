@@ -51,7 +51,7 @@ NO_CONST_OR_TYPE_EVALUATE = {
 def declare_variables(
     uop: Uop,
     out: CWriter,
-    default_type: str = "_Py_UOpsSymbolicExpression *",
+    default_type: str = "_Py_UOpsSymbolicValue *",
     skip_inputs: bool = False,
     skip_peeks: bool = False,
 ) -> None:
@@ -66,7 +66,7 @@ def declare_variables(
             if var.name not in variables:
                 type = default_type
                 if var.size != "1" and var.type == "PyObject **":
-                    type = "_Py_UOpsSymbolicExpression **"
+                    type = "_Py_UOpsSymbolicValue **"
                 variables.add(var.name)
                 if var.condition:
                     out.emit(f"{type}{var.name} = NULL;\n")
@@ -81,7 +81,7 @@ def declare_variables(
             variables.add(var.name)
             type = default_type
             if var.size != "1" and var.type == "PyObject **":
-                type = "_Py_UOpsSymbolicExpression **"
+                type = "_Py_UOpsSymbolicValue **"
             if var.condition:
                 out.emit(f"{type}{var.name} = NULL;\n")
             else:
@@ -192,16 +192,10 @@ def get_subexpressions(
 
 def new_sym(
     constant: str | None,
-    arr_var_size: int | str | None,
-    arr_var_name: str | None,
-    subexpresion_count: int | str,
-    subexpressions: str,
 ) -> str:
     return (
-        f"_Py_UOpsSymbolicExpression_New("
-        f"ctx, *inst, {constant or 'NULL'}, "
-        f"{arr_var_size or 0}, {arr_var_name or 'NULL'}, "
-        f"{subexpresion_count} {subexpressions});"
+        f"_Py_UOpsSymbolicValue_New("
+        f"ctx, {constant or 'NULL'}); "
     )
 
 
@@ -219,9 +213,7 @@ def _write_body_abstract_interp_pure_uop(
         len(uop.stack.outputs) == 1
     ), f"Currently we only support 1 stack output for pure ops: {uop}"
     # uop is mandatory - we cannot const evaluate it
-    sym = new_sym(
-        None, arr_var_size, arr_var_name, len(mangled_uop.stack.inputs), subexpressions
-    )
+    sym = new_sym(None)
     if uop.name in NO_CONST_OR_TYPE_EVALUATE:
         out.emit(f"{mangled_uop.stack.outputs[0].name} = {sym}")
         return
@@ -245,22 +237,19 @@ def _write_body_abstract_interp_pure_uop(
             out.emit(f"{var.name} = get_const({mangled_var.name});\n")
         emit_tokens(out, uop, stack, None, TIER2_REPLACEMENT_FUNCTIONS)
         out.emit("\n")
-        maybe_const_val = new_sym(
-            f"(PyObject *){uop.stack.outputs[0].name}",
-            None,
-            None,
-            len(mangled_uop.stack.inputs),
-            subexpressions,
-        )
+        const_val = f"(PyObject *){uop.stack.outputs[0].name}"
+        maybe_const_val = new_sym(const_val)
         out.emit(f"{mangled_uop.stack.outputs[0].name} = {maybe_const_val}\n")
-
+        out.emit(f"shrink_stack.oparg = {len(uop.stack.inputs)};\n")
+        out.emit(f" if (emit_const(&ctx->emitter, {const_val}, shrink_stack) < 0) {{ goto error; }}\n")
+        out.emit("new_inst.opcode = _NOP;")
         out.emit("}\n")
         out.emit("else {\n")
-        sym = new_sym(None, None, None, len(mangled_uop.stack.inputs), subexpressions)
+        sym = new_sym(None)
         out.emit(f"{mangled_uop.stack.outputs[0].name} = {sym}\n")
         out.emit("}\n")
     else:
-        sym = new_sym(None, None, None, len(mangled_uop.stack.inputs), subexpressions)
+        sym = new_sym(None)
         out.emit(f"{mangled_uop.stack.outputs[0].name} = {sym}\n")
 
     out.emit(f"if ({mangled_uop.stack.outputs[0].name} == NULL) goto error;\n")
@@ -281,7 +270,6 @@ def _write_body_abstract_interp_guard_uop(
     # 1. Attempt to perform guard elimination
     # 2. Type propagate for guard success
     if uop.name in NO_CONST_OR_TYPE_EVALUATE:
-        out.emit("goto guard_required;")
         return
 
     for cache in uop.caches:
@@ -310,14 +298,14 @@ def _write_body_abstract_interp_guard_uop(
             out.emit(f"{var.name} = get_const({mangled_var.name});\n")
         emit_tokens(out, uop, stack, None, TIER2_REPLACEMENT_FUNCTIONS)
         out.emit("\n")
-        # Guard elimination - if we are successful, don't add it to the symexpr!
+        # Guard elimination
         out.emit('DPRINTF(3, "const eliminated guard\\n");\n')
+        out.emit("new_inst.opcode = _NOP;")
         out.emit("break;\n")
         out.emit("}\n")
 
     # Does the input specify typed inputs?
     if not any(output_var.type_prop for output_var in mangled_uop.stack.outputs):
-        out.emit("goto guard_required;\n")
         return
     # If the input types already match, eliminate the guard
     # Read the cache information to check the auxiliary type information
@@ -339,16 +327,17 @@ def _write_body_abstract_interp_guard_uop(
             aux = "0" if aux is None else aux
             # Check that the input type information match (including auxiliary info)
             predicates.append(
-                f"sym_matches_type((_Py_UOpsSymbolicExpression *){output_var.name}, {typname}, (uint32_t){aux})"
+                f"sym_matches_type((_Py_UOpsSymbolicValue *){output_var.name}, {typname}, (uint32_t){aux})"
             )
             # Propagate mode - set the types
             propagates.append(
-                f"sym_set_type((_Py_UOpsSymbolicExpression *){output_var.name}, {typname}, (uint32_t){aux})"
+                f"sym_set_type((_Py_UOpsSymbolicValue *){output_var.name}, {typname}, (uint32_t){aux})"
             )
 
     out.emit("// Type guard elimination\n")
     out.emit(f"if ({' && '.join(predicates)}){{\n")
     out.emit('DPRINTF(2, "type propagation eliminated guard\\n");\n')
+    out.emit("new_inst.opcode = _NOP;")
     out.emit("break;\n")
     out.emit("}\n")
     # Else we need the guard
@@ -356,7 +345,6 @@ def _write_body_abstract_interp_guard_uop(
     out.emit("// Type propagation\n")
     for prop in propagates:
         out.emit(f"{prop};\n")
-    out.emit("goto guard_required;\n")
     out.emit("}\n")
 
 
@@ -431,7 +419,7 @@ def generate_tier2_abstract(
         if not uop.properties.always_exits:
             # Guards strictly only peek
             if not uop.properties.guard:
-                stack.flush(out, cast_type="_Py_UOpsSymbolicExpression *")
+                stack.flush(out, cast_type="_Py_UOpsSymbolicValue *")
             out.emit("break;\n")
         out.start_line()
         out.emit("}")
