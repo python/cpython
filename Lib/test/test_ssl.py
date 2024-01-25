@@ -3675,6 +3675,59 @@ class TestPreHandshakeClose(unittest.TestCase):
         self.assertNotEqual(0, wrap_error.args[0])
         self.assertIsNone(wrap_error.library, msg="attr must exist")
 
+    def test_https_client_non_tls_response_ignored(self):
+        server_responding = threading.Event()
+
+        class SynchronizedHTTPSConnection(http.client.HTTPSConnection):
+            def connect(self):
+                # Call clear text HTTP connect(), not the encrypted HTTPS (TLS)
+                # connect(): wrap_socket() is called manually below.
+                http.client.HTTPConnection.connect(self)
+
+                # Wait for our fault injection server to have done its thing.
+                if not server_responding.wait(support.SHORT_TIMEOUT) and support.verbose:
+                    sys.stdout.write("server_responding event never set.")
+                self.sock = self._context.wrap_socket(
+                        self.sock, server_hostname=self.host)
+
+        def call_after_accept(conn_to_client):
+            # This forces an immediate connection close via RST on .close().
+            set_socket_so_linger_on_with_zero_timeout(conn_to_client)
+            conn_to_client.send(
+                    b"HTTP/1.0 402 Payment Required\r\n"
+                    b"\r\n")
+            conn_to_client.close()  # RST
+            server_responding.set()
+            return True  # Tell the server to stop.
+
+        timeout = 2.0
+        server = self.SingleConnectionTestServerThread(
+                call_after_accept=call_after_accept,
+                name="non_tls_http_RST_responder",
+                timeout=timeout)
+        server.__enter__()  # starts it
+        self.addCleanup(server.__exit__)  # ... & unittest.TestCase stops it.
+        # Redundant; call_after_accept sets SO_LINGER on the accepted conn.
+        set_socket_so_linger_on_with_zero_timeout(server.listener)
+
+        connection = SynchronizedHTTPSConnection(
+                server.listener.getsockname()[0],
+                port=server.port,
+                context=ssl.create_default_context(),
+                timeout=timeout,
+        )
+
+        # There are lots of reasons this raises as desired, long before this
+        # test was added. Sending the request requires a successful TLS wrapped
+        # socket; that fails if the connection is broken. It may seem pointless
+        # to test this. It serves as an illustration of something that we never
+        # want to happen... properly not happening.
+        with self.assertRaises(OSError):
+            connection.request("HEAD", "/test", headers={"Host": "localhost"})
+            response = connection.getresponse()
+
+        server.join()
+
 
 def test_main(verbose=False):
     if support.verbose:
