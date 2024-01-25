@@ -42,7 +42,7 @@ Lib/test/test_type_*.py       @JelleZijlstra
 Lib/test/test_capi/test_misc.py  @markshannon @gvanrossum
 Tools/c-analyzer/             @ericsnowcurrently
 
-# dbms
+# dbm
 **/*dbm*                      @corona10 @erlend-aasland @serhiy-storchaka
 
 # Exceptions
