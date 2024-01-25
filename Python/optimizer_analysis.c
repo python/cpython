@@ -34,7 +34,7 @@
 
 #define OVERALLOCATE_FACTOR 3
 
-#define PEEPHOLE_MAX_ATTEMPTS 10
+#define PEEPHOLE_MAX_ATTEMPTS 5
 
 #ifdef Py_DEBUG
     static const char *const DEBUG_ENV = "PYTHON_OPT_DEBUG";
