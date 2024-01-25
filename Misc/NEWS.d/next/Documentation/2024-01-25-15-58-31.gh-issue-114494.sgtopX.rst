@@ -1,0 +1,1 @@
+I updated the logging docstring to use bool instead of integer parameters for exec_info. Originally, it was written as exec_info=1 in 6 places, which I changed to exec_info=True.
