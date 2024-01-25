@@ -903,6 +903,7 @@ label_exception_targets(basicblock *entryblock) {
             }
             else if (instr->i_opcode == POP_BLOCK) {
                 handler = pop_except_block(except_stack);
+                INSTR_SET_OP0(instr, NOP);
             }
             else if (is_jump(instr)) {
                 instr->i_except = handler;
@@ -2313,7 +2314,7 @@ convert_pseudo_ops(cfg_builder *g)
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
-            if (is_block_push(instr) || instr->i_opcode == POP_BLOCK) {
+            if (is_block_push(instr)) {
                 INSTR_SET_OP0(instr, NOP);
             }
             else if (instr->i_opcode == LOAD_CLOSURE) {
