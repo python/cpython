@@ -2003,14 +2003,14 @@ pysqlite_connection_iterdump_impl(pysqlite_Connection *self,
         }
         return NULL;
     }
-    PyObject *args[2] = {(PyObject *)self, filter};
+    PyObject *args[3] = {NULL, (PyObject *)self, filter};
     PyObject *kwnames = Py_BuildValue("(s)", "filter");
     if (!kwnames) {
         Py_DECREF(iterdump);
         return NULL;
     }
-    Py_ssize_t nargs = PyVectorcall_NARGS(1);
-    PyObject *retval = PyObject_Vectorcall(iterdump, args, nargs, kwnames);
+    Py_ssize_t nargsf = 1 | PY_VECTORCALL_ARGUMENTS_OFFSET;
+    PyObject *retval = PyObject_Vectorcall(iterdump, args + 1, nargsf, kwnames);
     Py_DECREF(iterdump);
     Py_DECREF(kwnames);
     return retval;
