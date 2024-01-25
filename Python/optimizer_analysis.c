@@ -1231,12 +1231,14 @@ uop_abstract_interpret(
     _PyUOpInstruction *curr = NULL;
     _PyUOpInstruction *end = NULL;
     AbstractInterpExitCodes status = ABSTRACT_INTERP_NORMAL;
+    bool first_impure = true;
+    int res = 0;
 
 loop_peeling:
     curr = trace;
     end = trace + trace_len;
-
-    bool first_impure = true;
+    first_impure = true;
+    ;
     while (curr < end && !op_is_end(curr->opcode)) {
 
         if (!op_is_pure(curr->opcode) &&
@@ -1297,7 +1299,7 @@ loop_peeling:
     }
 
 
-    int res = ctx->emitter.curr_i;
+    res = ctx->emitter.curr_i;
     Py_DECREF(ctx);
 
     return res;
