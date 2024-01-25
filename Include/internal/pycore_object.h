@@ -430,7 +430,7 @@ _Py_TryIncRefShared(PyObject *op)
 
 /* Tries to incref the object op and ensures that *src still points to it. */
 static inline int
-_Py_TryAcquireObject(PyObject **src, PyObject *op)
+_Py_TryIncref(PyObject **src, PyObject *op)
 {
     if (_Py_TryIncrefFast(op)) {
         return 1;
@@ -456,7 +456,7 @@ _Py_XGetRef(PyObject **ptr)
         if (value == NULL) {
             return value;
         }
-        if (_Py_TryAcquireObject(ptr, value)) {
+        if (_Py_TryIncref(ptr, value)) {
             return value;
         }
     }
@@ -465,13 +465,13 @@ _Py_XGetRef(PyObject **ptr)
 /* Attempts to loads and increfs an object from ptr. Returns NULL
    on failure, which may be due to a NULL value or a concurrent update. */
 static inline PyObject *
-_Py_TryXFetchRef(PyObject **ptr)
+_Py_TryXGetRef(PyObject **ptr)
 {
     PyObject *value = _Py_atomic_load_ptr(ptr);
     if (value == NULL) {
         return value;
     }
-    if (_Py_TryAcquireObject(ptr, value)) {
+    if (_Py_TryIncref(ptr, value)) {
         return value;
     }
     return NULL;
@@ -499,7 +499,6 @@ _Py_NewRefWithLock(PyObject *op)
             return op;
         }
     }
-    return op;
 }
 
 static inline PyObject *
