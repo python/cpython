@@ -1032,16 +1032,12 @@ basicblock_remove_redundant_nops(basicblock *bb) {
                 cfg_instr *next_instr = &bb->b_instr[src + 1];
                 int next_lineno = next_instr->i_loc.lineno;
                 if (next_lineno == lineno) {
-                    if (!src_instr->i_loc_propagated) {
-                        next_instr->i_loc_propagated = 0;
-                    }
+                    next_instr->i_loc_propagated = src_instr->i_loc_propagated;
                     continue;
                 }
                 if (next_lineno < 0) {
                     next_instr->i_loc = src_instr->i_loc;
-                    if (!src_instr->i_loc_propagated) {
-                        next_instr->i_loc_propagated = 0;
-                    }
+                    next_instr->i_loc_propagated = src_instr->i_loc_propagated;
                     continue;
                 }
             }
@@ -1061,9 +1057,7 @@ basicblock_remove_redundant_nops(basicblock *bb) {
                         break;
                     }
                     if (next_instr && lineno == next_instr->i_loc.lineno) {
-                        if (!src_instr->i_loc_propagated) {
-                            next_instr->i_loc_propagated = 0;
-                        }
+                        next_instr->i_loc_propagated = src_instr->i_loc_propagated;
                         continue;
                     }
                 }
