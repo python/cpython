@@ -205,12 +205,10 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_LOAD_CONST_INLINE] = 0,
     [_LOAD_CONST_INLINE_BORROW] = 0,
     [_INTERNAL_INCREMENT_OPT_COUNTER] = 0,
-    [INIT_FAST] = 0,
     [_SHRINK_STACK] = HAS_ARG_FLAG,
 };
 
 const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
-    [INIT_FAST] = "INIT_FAST",
     [_BEFORE_ASYNC_WITH] = "_BEFORE_ASYNC_WITH",
     [_BEFORE_WITH] = "_BEFORE_WITH",
     [_BINARY_OP] = "_BINARY_OP",

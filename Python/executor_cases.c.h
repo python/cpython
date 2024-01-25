@@ -3417,11 +3417,6 @@
             break;
         }
 
-        case INIT_FAST: {
-            // Nothing, just a sentinel.
-            break;
-        }
-
         case _SHRINK_STACK: {
             PyObject **args;
             oparg = CURRENT_OPARG();

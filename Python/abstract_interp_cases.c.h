@@ -1964,10 +1964,6 @@
             break;
         }
 
-        case INIT_FAST: {
-            break;
-        }
-
         case _SHRINK_STACK: {
             stack_pointer += -oparg;
             break;

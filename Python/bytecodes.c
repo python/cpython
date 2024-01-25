@@ -4084,11 +4084,6 @@ dummy_func(
             exe->count++;
         }
 
-        // Represents a possibly uninitialized value in the abstract interpreter.
-        op(INIT_FAST, (--)) {
-            // Nothing, just a sentinel.
-        }
-
         op(_SHRINK_STACK, (args[oparg] --)) {
             DECREF_INPUTS();
         }
