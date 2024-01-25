@@ -210,18 +210,18 @@ class _COFF(
     ) -> _stencils.Hole:
         match relocation:
             case {
-                "Type": {"Value": "IMAGE_REL_AMD64_ADDR64" as kind},
-                "Symbol": s,
                 "Offset": offset,
+                "Symbol": s,
+                "Type": {"Value": "IMAGE_REL_AMD64_ADDR64" as kind},
             }:
                 offset += base
                 s = s.removeprefix(self.prefix)
                 value, symbol = _stencils.symbol_to_value(s)
                 addend = int.from_bytes(raw[offset : offset + 8], "little")
             case {
-                "Type": {"Value": "IMAGE_REL_I386_DIR32" as kind},
-                "Symbol": s,
                 "Offset": offset,
+                "Symbol": s,
+                "Type": {"Value": "IMAGE_REL_I386_DIR32" as kind},
             }:
                 offset += base
                 s = s.removeprefix(self.prefix)
@@ -285,10 +285,10 @@ class _ELF(
     ) -> _stencils.Hole:
         match relocation:
             case {
-                "Type": {"Value": kind},
-                "Symbol": {"Value": s},
-                "Offset": offset,
                 "Addend": addend,
+                "Offset": offset,
+                "Symbol": {"Value": s},
+                "Type": {"Value": kind},
             }:
                 offset += base
                 s = s.removeprefix(self.prefix)
@@ -344,25 +344,25 @@ class _MachO(
         symbol: str | None
         match relocation:
             case {
+                "Offset": offset,
+                "Symbol": {"Value": s},
                 "Type": {
                     "Value": "ARM64_RELOC_GOT_LOAD_PAGE21"
                     | "ARM64_RELOC_GOT_LOAD_PAGEOFF12" as kind
                 },
-                "Symbol": {"Value": s},
-                "Offset": offset,
             }:
                 offset += base
                 s = s.removeprefix(self.prefix)
                 value, symbol = _stencils.HoleValue.GOT, s
                 addend = 0
             case {
-                "Type": {"Value": kind},
+                "Offset": offset,
                 "Section": {"Value": s},
-                "Offset": offset,
-            } | {
                 "Type": {"Value": kind},
-                "Symbol": {"Value": s},
+            } | {
                 "Offset": offset,
+                "Symbol": {"Value": s},
+                "Type": {"Value": kind},
             }:
                 offset += base
                 s = s.removeprefix(self.prefix)
