@@ -1228,11 +1228,13 @@ uop_abstract_interpret(
     if (ctx == NULL) {
         goto error;
     }
+    _PyUOpInstruction *curr = NULL;
+    _PyUOpInstruction *end = NULL;
+    AbstractInterpExitCodes status = ABSTRACT_INTERP_NORMAL;
 
 loop_peeling:
-    _PyUOpInstruction *curr = trace;
-    _PyUOpInstruction *end = trace + trace_len;
-    AbstractInterpExitCodes status = ABSTRACT_INTERP_NORMAL;
+    curr = trace;
+    end = trace + trace_len;
 
     bool first_impure = true;
     while (curr < end && !op_is_end(curr->opcode)) {
