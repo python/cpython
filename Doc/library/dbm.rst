@@ -344,13 +344,14 @@ to locate the appropriate header file to simplify building this module.
 
 --------------
 
-The :mod:`dbm.dumb` module provides a persistent dictionary-like interface which
-is written entirely in Python.  Unlike other modules such as :mod:`dbm.gnu` no
-external library is required.  As with other persistent mappings, the keys and
-values are always stored as bytes.
+The :mod:`dbm.dumb` module provides a persistent :class:`dict`-like interface which
+is written entirely in Python.
+Unlike other :mod:`dbm` backends, such as :mod:`dbm.gnu` no,
+external library is required.
+As with other persistent :term:`mappings <mapping>`,
+the keys and values are always stored as :class:`bytes`.
 
-The module defines the following:
-
+The :mod:`!dbm.dumb` module defines the following:
 
 .. exception:: error
 
@@ -358,12 +359,13 @@ The module defines the following:
    raised for general mapping errors like specifying an incorrect key.
 
 
-.. function:: open(filename[, flag[, mode]])
+.. function:: open(filename, flag="c", mode=0o666)
 
-   Open a ``dumbdbm`` database and return a dumbdbm object.  The *filename* argument is
-   the basename of the database file (without any specific extensions).  When a
-   dumbdbm database is created, files with :file:`.dat` and :file:`.dir` extensions
-   are created.
+   Open a "dumbdbm" database and return a :class:`!dumbdbm` object.
+   The *filename* argument is the basename of the database file
+   (without any specific extensions).
+   When a "dumbdbm" database is created,
+   files with :file:`.dat` and :file:`.dir` extensions are created.
 
    The optional *flag* argument can be:
 
@@ -385,7 +387,7 @@ The module defines the following:
       Python's AST compiler.
 
    .. versionchanged:: 3.5
-      :func:`.open` always creates a new database when the flag has the value
+      :func:`open` always creates a new database when the flag has the value
       ``'n'``.
 
    .. versionchanged:: 3.8
@@ -397,7 +399,7 @@ The module defines the following:
       Accepts :term:`path-like object` for filename.
 
    In addition to the methods provided by the
-   :class:`collections.abc.MutableMapping` class, :class:`dumbdbm` objects
+   :class:`collections.abc.MutableMapping` class, :class:`!dumbdbm` objects
    provide the following methods:
 
    .. method:: dumbdbm.sync()
@@ -407,5 +409,5 @@ The module defines the following:
 
    .. method:: dumbdbm.close()
 
-      Close the ``dumbdbm`` database.
+      Close the "dumbdbm" database.
 
