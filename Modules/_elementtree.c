@@ -11,10 +11,17 @@
  *--------------------------------------------------------------------
  */
 
-#define PY_SSIZE_T_CLEAN
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
+#include "pycore_import.h"        // _PyImport_GetModuleAttrString()
+#include "pycore_pyhash.h"        // _Py_HashSecret
+
+#include <stddef.h>               // offsetof()
+#include "expat.h"
+#include "pyexpat.h"
 
 /* -------------------------------------------------------------------- */
 /* configuration */
@@ -90,6 +97,9 @@ typedef struct {
     PyTypeObject *ElementIter_Type;
     PyTypeObject *TreeBuilder_Type;
     PyTypeObject *XMLParser_Type;
+
+    PyObject *expat_capsule;
+    struct PyExpat_CAPI *expat_capi;
 } elementtreestate;
 
 static struct PyModuleDef elementtreemodule;
@@ -146,6 +156,9 @@ elementtree_clear(PyObject *m)
     Py_CLEAR(st->ElementIter_Type);
     Py_CLEAR(st->TreeBuilder_Type);
     Py_CLEAR(st->XMLParser_Type);
+    Py_CLEAR(st->expat_capsule);
+
+    st->expat_capi = NULL;
     return 0;
 }
 
@@ -164,6 +177,7 @@ elementtree_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(st->ElementIter_Type);
     Py_VISIT(st->TreeBuilder_Type);
     Py_VISIT(st->XMLParser_Type);
+    Py_VISIT(st->expat_capsule);
     return 0;
 }
 
@@ -876,7 +890,6 @@ LOCAL(PyObject *)
 deepcopy(elementtreestate *st, PyObject *object, PyObject *memo)
 {
     /* do a deep copy of the given object */
-    PyObject *stack[2];
 
     /* Fast paths */
     if (object == Py_None || PyUnicode_CheckExact(object)) {
@@ -911,9 +924,8 @@ deepcopy(elementtreestate *st, PyObject *object, PyObject *memo)
         return NULL;
     }
 
-    stack[0] = object;
-    stack[1] = memo;
-    return _PyObject_FastCall(st->deepcopy_obj, stack, 2);
+    PyObject *args[2] = {object, memo};
+    return PyObject_Vectorcall(st->deepcopy_obj, args, 2, NULL);
 }
 
 
@@ -1442,8 +1454,6 @@ _elementtree_Element_iter_impl(ElementObject *self, PyTypeObject *cls,
 /*[clinic end generated code: output=bff29dc5d4566c68 input=f6944c48d3f84c58]*/
 {
     if (PyUnicode_Check(tag)) {
-        if (PyUnicode_READY(tag) < 0)
-            return NULL;
         if (PyUnicode_GET_LENGTH(tag) == 1 && PyUnicode_READ_CHAR(tag, 0) == '*')
             tag = Py_None;
     }
@@ -2848,14 +2858,14 @@ treebuilder_handle_pi(TreeBuilderObject* self, PyObject* target, PyObject* text)
 {
     PyObject* pi;
     PyObject* this;
-    PyObject* stack[2] = {target, text};
 
     if (treebuilder_flush_data(self) < 0) {
         return NULL;
     }
 
     if (self->pi_factory) {
-        pi = _PyObject_FastCall(self->pi_factory, stack, 2);
+        PyObject* args[2] = {target, text};
+        pi = PyObject_Vectorcall(self->pi_factory, args, 2, NULL);
         if (!pi) {
             return NULL;
         }
@@ -3031,14 +3041,7 @@ _elementtree_TreeBuilder_start_impl(TreeBuilderObject *self, PyObject *tag,
 /* ==================================================================== */
 /* the expat interface */
 
-#include "expat.h"
-#include "pyexpat.h"
-
-/* The PyExpat_CAPI structure is an immutable dispatch table, so it can be
- * cached globally without being in per-module state.
- */
-static struct PyExpat_CAPI *expat_capi;
-#define EXPAT(func) (expat_capi->func)
+#define EXPAT(st, func) ((st)->expat_capi->func)
 
 static XML_Memory_Handling_Suite ExpatMemoryHandler = {
     PyObject_Malloc, PyObject_Realloc, PyObject_Free};
@@ -3066,6 +3069,7 @@ typedef struct {
     PyObject *handle_close;
 
     elementtreestate *state;
+    PyObject *elementtree_module;
 } XMLParserObject;
 
 /* helpers */
@@ -3147,7 +3151,7 @@ expat_set_error(elementtreestate *st, enum XML_Error error_code,
     PyObject *errmsg, *error, *position, *code;
 
     errmsg = PyUnicode_FromFormat("%s: line %zd, column %zd",
-                message ? message : EXPAT(ErrorString)(error_code),
+                message ? message : EXPAT(st, ErrorString)(error_code),
                 line, column);
     if (errmsg == NULL)
         return;
@@ -3227,8 +3231,8 @@ expat_default_handler(XMLParserObject* self, const XML_Char* data_in,
         expat_set_error(
             st,
             XML_ERROR_UNDEFINED_ENTITY,
-            EXPAT(GetErrorLineNumber)(self->parser),
-            EXPAT(GetErrorColumnNumber)(self->parser),
+            EXPAT(st, GetErrorLineNumber)(self->parser),
+            EXPAT(st, GetErrorColumnNumber)(self->parser),
             message
             );
     }
@@ -3262,10 +3266,14 @@ expat_start_handler(XMLParserObject* self, const XML_Char* tag_in,
         }
         while (attrib_in[0] && attrib_in[1]) {
             PyObject* key = makeuniversal(self, attrib_in[0]);
+            if (key == NULL) {
+                Py_DECREF(attrib);
+                Py_DECREF(tag);
+                return;
+            }
             PyObject* value = PyUnicode_DecodeUTF8(attrib_in[1], strlen(attrib_in[1]), "strict");
-            if (!key || !value) {
-                Py_XDECREF(value);
-                Py_XDECREF(key);
+            if (value == NULL) {
+                Py_DECREF(key);
                 Py_DECREF(attrib);
                 Py_DECREF(tag);
                 return;
@@ -3371,7 +3379,6 @@ expat_start_ns_handler(XMLParserObject* self, const XML_Char* prefix_in,
     PyObject* res = NULL;
     PyObject* uri;
     PyObject* prefix;
-    PyObject* stack[2];
 
     if (PyErr_Occurred())
         return;
@@ -3410,9 +3417,8 @@ expat_start_ns_handler(XMLParserObject* self, const XML_Char* prefix_in,
             return;
         }
 
-        stack[0] = prefix;
-        stack[1] = uri;
-        res = _PyObject_FastCall(self->handle_start_ns, stack, 2);
+        PyObject* args[2] = {prefix, uri};
+        res = PyObject_Vectorcall(self->handle_start_ns, args, 2, NULL);
         Py_DECREF(uri);
         Py_DECREF(prefix);
     }
@@ -3530,12 +3536,11 @@ expat_start_doctype_handler(XMLParserObject *self,
                                            sysid_obj, NULL);
         Py_XDECREF(res);
     }
-    else if (_PyObject_LookupAttr((PyObject *)self, st->str_doctype, &res) > 0) {
+    else if (PyObject_HasAttrWithError((PyObject *)self, st->str_doctype) > 0) {
         (void)PyErr_WarnEx(PyExc_RuntimeWarning,
                 "The doctype() method of XMLParser is ignored.  "
                 "Define doctype() method on the TreeBuilder target.",
                 1);
-        Py_DECREF(res);
     }
 
     Py_DECREF(doctype_name_obj);
@@ -3550,7 +3555,6 @@ expat_pi_handler(XMLParserObject* self, const XML_Char* target_in,
     PyObject* pi_target;
     PyObject* data;
     PyObject* res;
-    PyObject* stack[2];
 
     if (PyErr_Occurred())
         return;
@@ -3580,9 +3584,8 @@ expat_pi_handler(XMLParserObject* self, const XML_Char* target_in,
         if (!data)
             goto error;
 
-        stack[0] = pi_target;
-        stack[1] = data;
-        res = _PyObject_FastCall(self->handle_pi, stack, 2);
+        PyObject* args[2] = {pi_target, data};
+        res = PyObject_Vectorcall(self->handle_pi, args, 2, NULL);
         Py_XDECREF(res);
         Py_DECREF(data);
         Py_DECREF(pi_target);
@@ -3608,7 +3611,11 @@ xmlparser_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         self->handle_start = self->handle_data = self->handle_end = NULL;
         self->handle_comment = self->handle_pi = self->handle_close = NULL;
         self->handle_doctype = NULL;
-        self->state = get_elementtree_state_by_type(type);
+        self->elementtree_module = PyType_GetModuleByDef(type, &elementtreemodule);
+        assert(self->elementtree_module != NULL);
+        Py_INCREF(self->elementtree_module);
+        // See gh-111784 for explanation why is reference to module needed here.
+        self->state = get_elementtree_state(self->elementtree_module);
     }
     return (PyObject *)self;
 }
@@ -3648,8 +3655,8 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
         Py_CLEAR(self->entity);
         return -1;
     }
-
-    self->parser = EXPAT(ParserCreate_MM)(encoding, &ExpatMemoryHandler, "}");
+    elementtreestate *st = self->state;
+    self->parser = EXPAT(st, ParserCreate_MM)(encoding, &ExpatMemoryHandler, "}");
     if (!self->parser) {
         Py_CLEAR(self->entity);
         Py_CLEAR(self->names);
@@ -3657,15 +3664,14 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
         return -1;
     }
     /* expat < 2.1.0 has no XML_SetHashSalt() */
-    if (EXPAT(SetHashSalt) != NULL) {
-        EXPAT(SetHashSalt)(self->parser,
+    if (EXPAT(st, SetHashSalt) != NULL) {
+        EXPAT(st, SetHashSalt)(self->parser,
                            (unsigned long)_Py_HashSecret.expat.hashsalt);
     }
 
     if (target != Py_None) {
         Py_INCREF(target);
     } else {
-        elementtreestate *st = self->state;
         target = treebuilder_new(st->TreeBuilder_Type, NULL, NULL);
         if (!target) {
             Py_CLEAR(self->entity);
@@ -3713,43 +3719,43 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
     }
 
     /* configure parser */
-    EXPAT(SetUserData)(self->parser, self);
+    EXPAT(st, SetUserData)(self->parser, self);
     if (self->handle_start_ns || self->handle_end_ns)
-        EXPAT(SetNamespaceDeclHandler)(
+        EXPAT(st, SetNamespaceDeclHandler)(
             self->parser,
             (XML_StartNamespaceDeclHandler) expat_start_ns_handler,
             (XML_EndNamespaceDeclHandler) expat_end_ns_handler
             );
-    EXPAT(SetElementHandler)(
+    EXPAT(st, SetElementHandler)(
         self->parser,
         (XML_StartElementHandler) expat_start_handler,
         (XML_EndElementHandler) expat_end_handler
         );
-    EXPAT(SetDefaultHandlerExpand)(
+    EXPAT(st, SetDefaultHandlerExpand)(
         self->parser,
         (XML_DefaultHandler) expat_default_handler
         );
-    EXPAT(SetCharacterDataHandler)(
+    EXPAT(st, SetCharacterDataHandler)(
         self->parser,
         (XML_CharacterDataHandler) expat_data_handler
         );
     if (self->handle_comment)
-        EXPAT(SetCommentHandler)(
+        EXPAT(st, SetCommentHandler)(
             self->parser,
             (XML_CommentHandler) expat_comment_handler
             );
     if (self->handle_pi)
-        EXPAT(SetProcessingInstructionHandler)(
+        EXPAT(st, SetProcessingInstructionHandler)(
             self->parser,
             (XML_ProcessingInstructionHandler) expat_pi_handler
             );
-    EXPAT(SetStartDoctypeDeclHandler)(
+    EXPAT(st, SetStartDoctypeDeclHandler)(
         self->parser,
         (XML_StartDoctypeDeclHandler) expat_start_doctype_handler
         );
-    EXPAT(SetUnknownEncodingHandler)(
+    EXPAT(st, SetUnknownEncodingHandler)(
         self->parser,
-        EXPAT(DefaultUnknownEncodingHandler), NULL
+        EXPAT(st, DefaultUnknownEncodingHandler), NULL
         );
 
     return 0;
@@ -3779,12 +3785,14 @@ xmlparser_gc_traverse(XMLParserObject *self, visitproc visit, void *arg)
 static int
 xmlparser_gc_clear(XMLParserObject *self)
 {
+    elementtreestate *st = self->state;
     if (self->parser != NULL) {
         XML_Parser parser = self->parser;
         self->parser = NULL;
-        EXPAT(ParserFree)(parser);
+        EXPAT(st, ParserFree)(parser);
     }
 
+    Py_CLEAR(self->elementtree_module);
     Py_CLEAR(self->handle_close);
     Py_CLEAR(self->handle_pi);
     Py_CLEAR(self->handle_comment);
@@ -3830,7 +3838,7 @@ expat_parse(elementtreestate *st, XMLParserObject *self, const char *data,
     int ok;
 
     assert(!PyErr_Occurred());
-    ok = EXPAT(Parse)(self->parser, data, data_len, final);
+    ok = EXPAT(st, Parse)(self->parser, data, data_len, final);
 
     if (PyErr_Occurred())
         return NULL;
@@ -3838,9 +3846,9 @@ expat_parse(elementtreestate *st, XMLParserObject *self, const char *data,
     if (!ok) {
         expat_set_error(
             st,
-            EXPAT(GetErrorCode)(self->parser),
-            EXPAT(GetErrorLineNumber)(self->parser),
-            EXPAT(GetErrorColumnNumber)(self->parser),
+            EXPAT(st, GetErrorCode)(self->parser),
+            EXPAT(st, GetErrorLineNumber)(self->parser),
+            EXPAT(st, GetErrorColumnNumber)(self->parser),
             NULL
             );
         return NULL;
@@ -3911,7 +3919,7 @@ _elementtree_XMLParser_feed(XMLParserObject *self, PyObject *data)
             return NULL;
         }
         /* Explicitly set UTF-8 encoding. Return code ignored. */
-        (void)EXPAT(SetEncoding)(self->parser, "utf-8");
+        (void)EXPAT(st, SetEncoding)(self->parser, "utf-8");
 
         return expat_parse(st, self, data_ptr, (int)data_len, 0);
     }
@@ -4099,27 +4107,27 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
             Py_XSETREF(target->end_event_obj, Py_NewRef(event_name_obj));
         } else if (strcmp(event_name, "start-ns") == 0) {
             Py_XSETREF(target->start_ns_event_obj, Py_NewRef(event_name_obj));
-            EXPAT(SetNamespaceDeclHandler)(
+            EXPAT(st, SetNamespaceDeclHandler)(
                 self->parser,
                 (XML_StartNamespaceDeclHandler) expat_start_ns_handler,
                 (XML_EndNamespaceDeclHandler) expat_end_ns_handler
                 );
         } else if (strcmp(event_name, "end-ns") == 0) {
             Py_XSETREF(target->end_ns_event_obj, Py_NewRef(event_name_obj));
-            EXPAT(SetNamespaceDeclHandler)(
+            EXPAT(st, SetNamespaceDeclHandler)(
                 self->parser,
                 (XML_StartNamespaceDeclHandler) expat_start_ns_handler,
                 (XML_EndNamespaceDeclHandler) expat_end_ns_handler
                 );
         } else if (strcmp(event_name, "comment") == 0) {
             Py_XSETREF(target->comment_event_obj, Py_NewRef(event_name_obj));
-            EXPAT(SetCommentHandler)(
+            EXPAT(st, SetCommentHandler)(
                 self->parser,
                 (XML_CommentHandler) expat_comment_handler
                 );
         } else if (strcmp(event_name, "pi") == 0) {
             Py_XSETREF(target->pi_event_obj, Py_NewRef(event_name_obj));
-            EXPAT(SetProcessingInstructionHandler)(
+            EXPAT(st, SetProcessingInstructionHandler)(
                 self->parser,
                 (XML_ProcessingInstructionHandler) expat_pi_handler
                 );
@@ -4135,8 +4143,8 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
 }
 
 static PyMemberDef xmlparser_members[] = {
-    {"entity", T_OBJECT, offsetof(XMLParserObject, entity), READONLY, NULL},
-    {"target", T_OBJECT, offsetof(XMLParserObject, target), READONLY, NULL},
+    {"entity", _Py_T_OBJECT, offsetof(XMLParserObject, entity), Py_READONLY, NULL},
+    {"target", _Py_T_OBJECT, offsetof(XMLParserObject, target), Py_READONLY, NULL},
     {NULL}
 };
 
@@ -4192,7 +4200,7 @@ static PyMethodDef element_methods[] = {
 };
 
 static struct PyMemberDef element_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(ElementObject, weakreflist), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(ElementObject, weakreflist), Py_READONLY},
     {NULL},
 };
 
@@ -4344,14 +4352,17 @@ module_exec(PyObject *m)
         goto error;
 
     /* link against pyexpat */
-    expat_capi = PyCapsule_Import(PyExpat_CAPSULE_NAME, 0);
-    if (expat_capi) {
+    if (!(st->expat_capsule = _PyImport_GetModuleAttrString("pyexpat", "expat_CAPI")))
+        goto error;
+    if (!(st->expat_capi = PyCapsule_GetPointer(st->expat_capsule, PyExpat_CAPSULE_NAME)))
+        goto error;
+    if (st->expat_capi) {
         /* check that it's usable */
-        if (strcmp(expat_capi->magic, PyExpat_CAPI_MAGIC) != 0 ||
-            (size_t)expat_capi->size < sizeof(struct PyExpat_CAPI) ||
-            expat_capi->MAJOR_VERSION != XML_MAJOR_VERSION ||
-            expat_capi->MINOR_VERSION != XML_MINOR_VERSION ||
-            expat_capi->MICRO_VERSION != XML_MICRO_VERSION) {
+        if (strcmp(st->expat_capi->magic, PyExpat_CAPI_MAGIC) != 0 ||
+            (size_t)st->expat_capi->size < sizeof(struct PyExpat_CAPI) ||
+            st->expat_capi->MAJOR_VERSION != XML_MAJOR_VERSION ||
+            st->expat_capi->MINOR_VERSION != XML_MINOR_VERSION ||
+            st->expat_capi->MICRO_VERSION != XML_MICRO_VERSION) {
             PyErr_SetString(PyExc_ImportError,
                             "pyexpat version is incompatible");
             goto error;
@@ -4419,9 +4430,7 @@ error:
 
 static struct PyModuleDef_Slot elementtree_slots[] = {
     {Py_mod_exec, module_exec},
-    // XXX gh-103092: fix isolation.
-    {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
-    //{Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL},
 };
 

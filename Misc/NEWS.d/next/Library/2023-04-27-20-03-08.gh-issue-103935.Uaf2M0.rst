@@ -1,1 +1,0 @@
-Use :func:`io.open_code` for files to be executed instead of raw :func:`open`

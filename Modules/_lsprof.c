@@ -4,7 +4,9 @@
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_ceval.h"         // _PyEval_SetProfile()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+
 #include "rotatingtree.h"
 
 /************************************************************/
@@ -678,6 +680,7 @@ static const struct {
 } callback_table[] = {
     {PY_MONITORING_EVENT_PY_START, "_pystart_callback"},
     {PY_MONITORING_EVENT_PY_RESUME, "_pystart_callback"},
+    {PY_MONITORING_EVENT_PY_THROW, "_pystart_callback"},
     {PY_MONITORING_EVENT_PY_RETURN, "_pyreturn_callback"},
     {PY_MONITORING_EVENT_PY_YIELD, "_pyreturn_callback"},
     {PY_MONITORING_EVENT_PY_UNWIND, "_pyreturn_callback"},
@@ -843,7 +846,7 @@ profiler_dealloc(ProfilerObject *op)
     if (op->flags & POF_ENABLED) {
         PyThreadState *tstate = _PyThreadState_GET();
         if (_PyEval_SetProfile(tstate, NULL, NULL) < 0) {
-            _PyErr_WriteUnraisableMsg("When destroying _lsprof profiler", NULL);
+            PyErr_FormatUnraisable("Exception ignored when destroying _lsprof profiler");
         }
     }
 

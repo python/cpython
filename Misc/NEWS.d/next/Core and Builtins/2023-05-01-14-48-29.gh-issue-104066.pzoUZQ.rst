@@ -1,2 +1,0 @@
-Improve the performance of :func:`hasattr` for module objects with a missing
-attribute.
