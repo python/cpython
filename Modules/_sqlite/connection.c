@@ -2009,8 +2009,8 @@ pysqlite_connection_iterdump_impl(pysqlite_Connection *self,
         Py_DECREF(iterdump);
         return NULL;
     }
-
-    PyObject *retval = PyObject_Vectorcall(iterdump, args, 1, kwnames);
+    Py_ssize_t nargs = PyVectorcall_NARGS(1);
+    PyObject *retval = PyObject_Vectorcall(iterdump, args, nargs, kwnames);
     Py_DECREF(iterdump);
     Py_DECREF(kwnames);
     return retval;
