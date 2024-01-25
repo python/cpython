@@ -1011,7 +1011,14 @@ uop_abstract_interpret_single_inst(
             STACK_GROW(1);
             PEEK(1) = (_Py_UOpsSymbolicValue *)GETITEM(
                 ctx, oparg);
-            assert(PEEK(1)->ty_number->const_val != NULL);
+            assert(is_const(PEEK(1)));
+            // Peephole: inline constants.
+            PyObject *val = get_const(PEEK(1));
+            new_inst.opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
+            if (new_inst.opcode == _LOAD_CONST_INLINE) {
+                Py_INCREF(val);
+            }
+            new_inst.operand = val;
             break;
         }
         case STORE_FAST_MAYBE_NULL:
