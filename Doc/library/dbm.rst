@@ -30,8 +30,8 @@ the Oracle Berkeley DB.
 .. function:: whichdb(filename)
 
    This function attempts to guess which of the several simple database modules
-   available --- :mod:`dbm.gnu`, :mod:`dbm.ndbm` or :mod:`dbm.dumb` --- should
-   be used to open a given file.
+   available --- :mod:`dbm.sqlite3`, :mod:`dbm.gnu`, :mod:`dbm.ndbm`,
+   or :mod:`dbm.dumb` --- should be used to open a given file.
 
    Returns one of the following values: ``None`` if the file can't be opened
    because it's unreadable or doesn't exist; the empty string (``''``) if the
@@ -142,7 +142,7 @@ then prints out the contents of the database::
 The individual submodules are described in the following sections.
 
 :mod:`dbm.sqlite3` --- SQLite backend for dbm
-----------------------------------------------
+---------------------------------------------
 
 .. module:: dbm.sqlite3
    :platform: All
@@ -154,7 +154,7 @@ The individual submodules are described in the following sections.
 
 --------------
 
-This module uses the standard library :mod:`sqlite3` to provide an
+This module uses the standard library :mod:`sqlite3` module to provide an
 SQLite backend for the :mod:`dbm` module.
 The files created by :mod:`dbm.sqlite3` can thus be opened by :mod:`sqlite3`,
 or any other SQLite browser, including the SQLite CLI.
