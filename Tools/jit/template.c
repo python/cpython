@@ -13,7 +13,7 @@
 #include "pycore_setobject.h"
 #include "pycore_sliceobject.h"
 
-#include "Python/ceval_macros.h"
+#include "ceval_macros.h"
 
 #undef CURRENT_OPARG
 #define CURRENT_OPARG() (_oparg)
@@ -70,7 +70,7 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
         PATCH_JUMP(_JIT_TOP);
     }
     switch (opcode) {
-#include "Python/executor_cases.c.h"
+#include "executor_cases.c.h"
         default:
             Py_UNREACHABLE();
     }

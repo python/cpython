@@ -115,6 +115,7 @@ class _Target(typing.Generic[_S, _R]):
             f"-I{CPYTHON / 'Include'}",
             f"-I{CPYTHON / 'Include' / 'internal'}",
             f"-I{CPYTHON / 'Include' / 'internal' / 'mimalloc'}",
+            f"-I{CPYTHON / 'Python'}",
             "-O3",
             "-c",
             "-fno-asynchronous-unwind-tables",
