@@ -535,10 +535,9 @@ All methods are executed atomically.
    thread may release it.
 
    .. versionchanged:: 3.13
-      ``Lock`` is now a class. In earlier Python versions,
-      ``Lock`` used to be a factory function which returned an instance
-      of the most efficient version of the concrete Lock class that is supported
-      by the platform.
+      ``Lock`` is now a class. In earlier Pythons, ``Lock`` was a factory
+      function which returned an instance of the underlying private lock
+      type.
 
 
    .. method:: acquire(blocking=True, timeout=-1)
