@@ -295,6 +295,7 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
             _Py_stats->optimization_stats.name[bucket]++; \
         } \
     } while (0)
+#define RARE_EVENT_STAT_INC(name) do { if (_Py_stats) _Py_stats->rare_event_stats.name++; } while (0)
 
 // Export for '_opcode' shared extension
 PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
@@ -313,6 +314,7 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define UOP_STAT_INC(opname, name) ((void)0)
 #define OPT_UNSUPPORTED_OPCODE(opname) ((void)0)
 #define OPT_HIST(length, name) ((void)0)
+#define RARE_EVENT_STAT_INC(name) ((void)0)
 #endif  // !Py_STATS
 
 // Utility functions for reading/writing 32/64-bit values in the inline caches.

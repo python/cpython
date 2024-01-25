@@ -605,6 +605,12 @@ init_interp_create_gil(PyThreadState *tstate, int gil)
     _PyEval_InitGIL(tstate, own_gil);
 }
 
+static int
+builtins_dict_watcher(PyDict_WatchEvent event, PyObject *dict, PyObject *key, PyObject *new_value)
+{
+    RARE_EVENT_INC(builtin_dict);
+    return 0;
+}
 
 static PyStatus
 pycore_create_interpreter(_PyRuntimeState *runtime,
@@ -1266,6 +1272,14 @@ init_interp_main(PyThreadState *tstate)
         }
     }
 
+    if ((interp->rare_events.builtins_dict_watcher_id = PyDict_AddWatcher(&builtins_dict_watcher)) == -1) {
+        return _PyStatus_ERR("failed to add builtin dict watcher");
+    }
+
+    if (PyDict_Watch(interp->rare_events.builtins_dict_watcher_id, interp->builtins) != 0) {
+        return _PyStatus_ERR("failed to set builtin dict watcher");
+    }
+
     assert(!_PyErr_Occurred(tstate));
 
     return _PyStatus_OK();
@@ -1592,6 +1606,10 @@ static void
 finalize_modules(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
+
+    // Stop collecting stats on __builtin__ modifications during teardown
+    PyDict_Unwatch(interp->rare_events.builtins_dict_watcher_id, interp->builtins);
+
     PyObject *modules = _PyImport_GetModules(interp);
     if (modules == NULL) {
         // Already done

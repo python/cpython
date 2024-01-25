@@ -53,6 +53,15 @@ handle_func_event(PyFunction_WatchEvent event, PyFunctionObject *func,
     if (interp->active_func_watchers) {
         notify_func_watchers(interp, event, func, new_value);
     }
+    switch (event) {
+        case PyFunction_EVENT_MODIFY_CODE:
+        case PyFunction_EVENT_MODIFY_DEFAULTS:
+        case PyFunction_EVENT_MODIFY_KWDEFAULTS:
+            RARE_EVENT_INTERP_INC(interp, func_modification);
+            break;
+        default:
+            break;
+    }
 }
 
 int
