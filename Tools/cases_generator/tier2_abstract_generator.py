@@ -215,7 +215,8 @@ def _write_body_abstract_interp_pure_uop(
     # uop is mandatory - we cannot const evaluate it
     sym = new_sym(None)
     if uop.name in NO_CONST_OR_TYPE_EVALUATE:
-        out.emit(f"{mangled_uop.stack.outputs[0].name} = {sym}")
+        out.emit(f"{mangled_uop.stack.outputs[0].name} = {sym}\n")
+        out.emit(f"if ({mangled_uop.stack.outputs[0].name} == NULL) {{ goto error; }}\n")
         return
 
     # Constant prop only handles one output, and no variadic inputs.
@@ -240,6 +241,7 @@ def _write_body_abstract_interp_pure_uop(
         const_val = f"(PyObject *){uop.stack.outputs[0].name}"
         maybe_const_val = new_sym(const_val)
         out.emit(f"{mangled_uop.stack.outputs[0].name} = {maybe_const_val}\n")
+        out.emit(f"if({mangled_uop.stack.outputs[0].name} == NULL) {{ goto error; }}\n")
         out.emit(f"shrink_stack.oparg = {len(uop.stack.inputs)};\n")
         out.emit(f" if (emit_const(&ctx->emitter, {const_val}, shrink_stack) < 0) {{ goto error; }}\n")
         out.emit("new_inst.opcode = _NOP;")
@@ -247,10 +249,12 @@ def _write_body_abstract_interp_pure_uop(
         out.emit("else {\n")
         sym = new_sym(None)
         out.emit(f"{mangled_uop.stack.outputs[0].name} = {sym}\n")
+        out.emit(f"if ({mangled_uop.stack.outputs[0].name} == NULL) {{ goto error; }}\n")
         out.emit("}\n")
     else:
         sym = new_sym(None)
         out.emit(f"{mangled_uop.stack.outputs[0].name} = {sym}\n")
+        out.emit(f"if ({mangled_uop.stack.outputs[0].name} == NULL) {{ goto error; }}\n")
 
     out.emit(f"if ({mangled_uop.stack.outputs[0].name} == NULL) goto error;\n")
 

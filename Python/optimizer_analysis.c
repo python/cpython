@@ -393,8 +393,8 @@ error:
         self->t_arena.arena = NULL;
         self->s_arena.arena = NULL;
         self->frame_info.arena = NULL;
+        self->frame = NULL;
     }
-    self->frame = NULL;
     Py_XDECREF(self);
     Py_XDECREF(frame);
     return NULL;
@@ -876,6 +876,9 @@ emit_const(uops_emitter *emitter,
     }
     int load_const_opcode = _Py_IsImmortal(const_val)
                             ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
+    if (load_const_opcode == _LOAD_CONST_INLINE) {
+        Py_INCREF(const_val);
+    }
     _PyUOpInstruction load_const = {load_const_opcode, 0, 0, const_val};
     if (emit_i(emitter, load_const) < 0) {
         return -1;
@@ -1078,6 +1081,9 @@ uop_abstract_interpret_single_inst(
             ctx->new_frame_sym.self_or_null = __self_or_null_;
             ctx->new_frame_sym.args = __args_;
             __new_frame_ = _Py_UOpsSymbolicValue_New(ctx, NULL);
+            if (__new_frame_ == NULL) {
+                goto error;
+            }
             stack_pointer[-2 - oparg] = (_Py_UOpsSymbolicValue *)__new_frame_;
             stack_pointer += -1 - oparg;
             break;
