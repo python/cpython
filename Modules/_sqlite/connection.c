@@ -2006,18 +2006,14 @@ pysqlite_connection_iterdump_impl(pysqlite_Connection *self,
     PyObject *args[2] = {(PyObject *)self, filter};
     PyObject *kwnames = Py_BuildValue("(s)", "filter");
     if (!kwnames) {
-        goto error;
+        Py_DECREF(iterdump);
+        return NULL;
     }
 
     PyObject *retval = PyObject_Vectorcall(iterdump, args, 1, kwnames);
     Py_DECREF(iterdump);
     Py_DECREF(kwnames);
     return retval;
-
-error:
-    Py_DECREF(iterdump);
-    Py_XDECREF(kwnames);
-    return NULL;
 }
 
 /*[clinic input]
