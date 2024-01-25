@@ -135,7 +135,7 @@ class _Database(collections.abc.MutableMapping):
                 # position; UTF-8, though, does care sometimes.
                 entry = "%r, %r\n" % (key.decode('Latin-1'), pos_and_siz_pair)
                 f.write(entry)
-        #self._modified = False
+        self._modified = False
 
     sync = _commit
 
