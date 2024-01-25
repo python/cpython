@@ -51,7 +51,7 @@ the Oracle Berkeley DB.
 .. |flag_n| replace::
    Always create a new, empty database, open for reading and writing.
 
-.. function:: open(file, flag='r', mode=0o666)
+.. function:: open(file, flag='r', mode=0o666, /)
 
    Open the database file *file* and return a corresponding object.
 
@@ -152,9 +152,8 @@ The :mod:`dbm.gnu` module provides an interface to the :abbr:`GDBM (GNU dbm)`
 library, similar to the :mod:`dbm.ndbm` module, but with additional
 functionality like crash tolerance.
 
-:class:`!gdbm` objects behave like :term:`mappings <mapping>`,
-except that keys and values are always converted to :class:`bytes` before storing.
-Printing a :class:`!gdbm` object doesn't print the keys and values,
+:class:`!gdbm` objects behave similar to :term:`mappings <mapping>`,
+except that keys and values are always converted to :class:`bytes` before storing,
 and the :meth:`!items` and :meth:`!values` methods are not supported.
 
 .. note::
