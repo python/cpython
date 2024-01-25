@@ -1269,7 +1269,7 @@ loop_peeling:
 
     // If we end in a loop, and we have a lot of space left, unroll the loop for added type stability
     // https://en.wikipedia.org/wiki/Loop_unrolling
-    if (curr->opcode == _JUMP_TO_TOP &&
+    if (!did_loop_peel && curr->opcode == _JUMP_TO_TOP &&
         ((ctx->emitter.curr_i * 2) < (int)(ctx->emitter.writebuffer_end - ctx->emitter.writebuffer))) {
         did_loop_peel = true;
         loop_peel_target = ctx->emitter.curr_i;
