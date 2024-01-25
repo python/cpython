@@ -166,22 +166,8 @@ set_bits(uint32_t *loc, uint8_t loc_start, uint64_t value, uint8_t value_start,
 #define IS_AARCH64_LDR_OR_STR(I) (((I) & 0x3B000000) == 0x39000000)
 #define IS_AARCH64_MOV(I)        (((I) & 0x9F800000) == 0x92800000)
 
-// LLD is an awesome reference for how to perform relocations... just keep in
-// mind that Tools/jit/build.py does some filtering and preprocessing for us!
-// Here's a good place to start for each platform:
-// - aarch64-apple-darwin:
-//   - https://github.com/llvm/llvm-project/blob/main/lld/MachO/Arch/ARM64Common.cpp
-//   - https://github.com/llvm/llvm-project/blob/main/lld/MachO/Arch/ARM64Common.h
-// - aarch64-unknown-linux-gnu:
-//   - https://github.com/llvm/llvm-project/blob/main/lld/ELF/Arch/AArch64.cpp
-// - i686-pc-windows-msvc:
-//   - https://github.com/llvm/llvm-project/blob/main/lld/COFF/Chunks.cpp
-// - x86_64-apple-darwin:
-//   - https://github.com/llvm/llvm-project/blob/main/lld/MachO/Arch/X86_64.cpp
-// - x86_64-pc-windows-msvc:
-//   - https://github.com/llvm/llvm-project/blob/main/lld/COFF/Chunks.cpp
-// - x86_64-unknown-linux-gnu:
-//   - https://github.com/llvm/llvm-project/blob/main/lld/ELF/Arch/X86_64.cpp
+// Fill all of stencil's holes in the memory pointed to by base, using the
+// values in patches.
 static void
 patch(char *base, const Stencil *stencil, uint64_t *patches)
 {
@@ -191,6 +177,22 @@ patch(char *base, const Stencil *stencil, uint64_t *patches)
         uint64_t value = patches[hole->value] + (uint64_t)hole->symbol + hole->addend;
         uint32_t *loc32 = (uint32_t *)location;
         uint64_t *loc64 = (uint64_t *)location;
+        // LLD is a great reference for performing relocations... just keep in
+        // mind that Tools/jit/build.py does filtering and preprocessing for us!
+        // Here's a good place to start for each platform:
+        // - aarch64-apple-darwin:
+        //   - https://github.com/llvm/llvm-project/blob/main/lld/MachO/Arch/ARM64Common.cpp
+        //   - https://github.com/llvm/llvm-project/blob/main/lld/MachO/Arch/ARM64Common.h
+        // - aarch64-unknown-linux-gnu:
+        //   - https://github.com/llvm/llvm-project/blob/main/lld/ELF/Arch/AArch64.cpp
+        // - i686-pc-windows-msvc:
+        //   - https://github.com/llvm/llvm-project/blob/main/lld/COFF/Chunks.cpp
+        // - x86_64-apple-darwin:
+        //   - https://github.com/llvm/llvm-project/blob/main/lld/MachO/Arch/X86_64.cpp
+        // - x86_64-pc-windows-msvc:
+        //   - https://github.com/llvm/llvm-project/blob/main/lld/COFF/Chunks.cpp
+        // - x86_64-unknown-linux-gnu:
+        //   - https://github.com/llvm/llvm-project/blob/main/lld/ELF/Arch/X86_64.cpp
         switch (hole->kind) {
             case HoleKind_IMAGE_REL_I386_DIR32:
                 // 32-bit absolute address.
