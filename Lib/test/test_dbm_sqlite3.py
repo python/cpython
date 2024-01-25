@@ -40,23 +40,12 @@ class URI(unittest.TestCase):
     @unittest.skipUnless(sys.platform == "win32", "requires Windows")
     def test_uri_windows(self):
         dataset = (
-            # Relative subdir.
-            (r"2018\January.xlsx",
-             "file:/2018/January.xlsx"),
-            # Relative CWD.
-            (r"..\Publications\TravelBrochure.pdf",
-             "file:/../Publications/TravelBrochure.pdf"),
             # Absolute with drive letter.
             (r"C:\Projects\apilibrary\apilibrary.sln",
              "file:/C:/Projects/apilibrary/apilibrary.sln"),
-            # Relative with drive letter.
-            (r"C:Projects\apilibrary\apilibrary.sln",
-             "file:/C:Projects/apilibrary/apilibrary.sln"),
         )
         for path, normalized in dataset:
             with self.subTest(path=path, normalized=normalized):
-                if not Path(path).is_absolute():
-                    self.skipTest(f"skipping relative path: {path!r}")
                 self.assertEqual(_normalize_uri(path), normalized)
 
 
