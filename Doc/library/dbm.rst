@@ -51,7 +51,7 @@ the Oracle Berkeley DB.
 .. |flag_n| replace::
    Always create a new, empty database, open for reading and writing.
 
-.. function:: open(file, flag='r', mode=0o666, /)
+.. function:: open(file, flag='r', mode=0o666)
 
    Open the database file *file* and return a corresponding object.
 
@@ -166,7 +166,7 @@ and the :meth:`!items` and :meth:`!values` methods are not supported.
    raised for general mapping errors like specifying an incorrect key.
 
 
-.. function:: open(filename, flag="r", mode=0o666)
+.. function:: open(filename, flag="r", mode=0o666, /)
 
    Open a GDBM database and return a :class:`!gdbm` object.  The *filename*
    argument is the name of the database file.
