@@ -4596,8 +4596,11 @@ class FDInheritanceTests(unittest.TestCase):
         with open(filename, "w") as fp:
             print(code, file=fp, end="")
 
-        cmd = [sys.executable, filename]
-        exitcode = os.spawnl(os.P_WAIT, cmd[0], *cmd)
+        executable = sys.executable
+        cmd = [executable, filename]
+        if os.name == "nt" and " " in cmd[0]:
+            cmd[0] = f'"{cmd[0]}"'
+        exitcode = os.spawnl(os.P_WAIT, executable, *cmd)
         self.assertEqual(exitcode, 0)
 
 
