@@ -954,7 +954,6 @@ label_exception_targets(basicblock *entryblock) {
            PyMem_Free(except_stack);
         }
     }
-
 #ifdef Py_DEBUG
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         assert(b->b_exceptstack == NULL);
