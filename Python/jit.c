@@ -298,13 +298,13 @@ emit(const StencilGroup *group, uint64_t patches[])
 
 // Compiles executor in-place. Don't forget to call _PyJIT_Free later!
 int
-_PyJIT_Compile(_PyExecutorObject *executor)
+_PyJIT_Compile(_PyExecutorObject *executor, _PyUOpInstruction *trace, size_t length)
 {
     // Loop once to find the total compiled size:
     size_t code_size = 0;
     size_t data_size = 0;
-    for (Py_ssize_t i = 0; i < Py_SIZE(executor); i++) {
-        _PyUOpInstruction *instruction = &executor->trace[i];
+    for (size_t i = 0; i < length; i++) {
+        _PyUOpInstruction *instruction = &trace[i];
         const StencilGroup *group = &stencil_groups[instruction->opcode];
         code_size += group->code.body_size;
         data_size += group->data.body_size;
@@ -321,8 +321,8 @@ _PyJIT_Compile(_PyExecutorObject *executor)
     // Loop again to emit the code:
     char *code = memory;
     char *data = memory + code_size;
-    for (Py_ssize_t i = 0; i < Py_SIZE(executor); i++) {
-        _PyUOpInstruction *instruction = &executor->trace[i];
+    for (size_t i = 0; i < length; i++) {
+        _PyUOpInstruction *instruction = &trace[i];
         const StencilGroup *group = &stencil_groups[instruction->opcode];
         // Think of patches as a dictionary mapping HoleValue to uint64_t:
         uint64_t patches[] = GET_PATCHES();

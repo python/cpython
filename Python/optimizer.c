@@ -797,7 +797,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
 #ifdef _Py_JIT
     executor->jit_code = NULL;
     executor->jit_size = 0;
-    if (_PyJIT_Compile(executor)) {
+    if (_PyJIT_Compile(executor, executor->trace, Py_SIZE(executor))) {
         Py_DECREF(executor);
         return NULL;
     }
