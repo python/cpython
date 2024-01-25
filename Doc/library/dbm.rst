@@ -159,7 +159,7 @@ SQLite backend for the :mod:`dbm` module.
 The files created by :mod:`dbm.sqlite3` can thus be opened by :mod:`sqlite3`,
 or any other SQLite browser, including the SQLite CLI.
 
-.. function:: open(filename, flag="r", mode=None)
+.. function:: open(filename, /, flag="r", mode=None)
 
    Open an SQLite database.
    The returned object behaves like a :term:`mapping`,
