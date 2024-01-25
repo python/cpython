@@ -566,6 +566,28 @@ class TestUopsOptimization(unittest.TestCase):
         uops = {opname for opname, _, _ in ex}
         self.assertNotIn("_SHRINK_STACK", uops)
 
+    def test_int_constant_propagation_many(self):
+        def testfunc(loops):
+            num = 0
+            for _ in range(loops):
+                x = 0
+                y = 1
+                a = x + y + x + y + x + y + x + y
+            return a
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        res = None
+        with temporary_optimizer(opt):
+            res = testfunc(64)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        self.assertEqual(res, 4)
+        binop_count = [opname for opname, _, _ in ex if opname == "_BINARY_OP_ADD_INT"]
+        self.assertEqual(len(binop_count), 0)
+        uops = {opname for opname, _, _ in ex}
+        self.assertNotIn("_SHRINK_STACK", uops)
+
     def test_int_type_propagation(self):
         def testfunc(loops):
             num = 0

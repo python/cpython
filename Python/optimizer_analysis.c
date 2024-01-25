@@ -23,6 +23,8 @@
 
 #define OVERALLOCATE_FACTOR 3
 
+#define PEEPHOLE_MAX_ATTEMPTS 10
+
 #ifdef Py_DEBUG
     static const char *const DEBUG_ENV = "PYTHON_OPT_DEBUG";
     #define DPRINTF(level, ...) \
@@ -227,6 +229,7 @@ abstractinterp_dealloc(PyObject *o)
     }
     PyMem_Free(self->t_arena.arena);
     PyMem_Free(self->s_arena.arena);
+    PyMem_Free(self->frame_info.arena);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
@@ -1207,7 +1210,7 @@ error:
 
 }
 
-int
+static int
 uop_abstract_interpret(
     PyCodeObject *co,
     _PyUOpInstruction *trace,
@@ -1323,9 +1326,35 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
     }
 }
 
-static void
+static inline bool
+op_is_zappable(int opcode)
+{
+    switch(opcode) {
+        case _SET_IP:
+        case _CHECK_VALIDITY:
+        case _LOAD_CONST_INLINE:
+        case _LOAD_CONST:
+        case _LOAD_FAST:
+        case _LOAD_CONST_INLINE_BORROW:
+            return true;
+        default:
+            return false;
+    }
+}
+
+static inline bool
+op_is_load(int opcode)
+{
+    return (opcode == _LOAD_CONST_INLINE ||
+        opcode == _LOAD_CONST ||
+        opcode == LOAD_FAST ||
+        opcode == _LOAD_CONST_INLINE_BORROW);
+}
+
+static int
 peephole_optimizations(_PyUOpInstruction *buffer, int buffer_size)
 {
+    bool done = true;
     for (int i = 0; i < buffer_size; i++) {
         _PyUOpInstruction *curr = buffer + i;
         int oparg = curr->oparg;
@@ -1333,24 +1362,20 @@ peephole_optimizations(_PyUOpInstruction *buffer, int buffer_size)
             case _SHRINK_STACK: {
                 // If all that precedes a _SHRINK_STACK is a bunch of LOAD_FAST,
                 // then we can safely eliminate that without side effects.
-                int load_fast_count = 0;
+                int load_count = 0;
                 _PyUOpInstruction *back = curr-1;
-                while((back->opcode == _SET_IP ||
-                    back->opcode == _CHECK_VALIDITY ||
-                    back->opcode == LOAD_FAST) &&
-                    load_fast_count < oparg) {
-                    load_fast_count += back->opcode == LOAD_FAST;
+                while(op_is_zappable(back->opcode) &&
+                    load_count < oparg) {
+                    load_count += op_is_load(back->opcode);
                     back--;
                 }
-                if (load_fast_count == oparg) {
+                if (load_count == oparg) {
+                    done = false;
                     curr->opcode = NOP;
                     back = curr-1;
-                    load_fast_count = 0;
-                    while((back->opcode == _SET_IP ||
-                           back->opcode == _CHECK_VALIDITY ||
-                           back->opcode == LOAD_FAST) &&
-                          load_fast_count < oparg) {
-                        load_fast_count += back->opcode == LOAD_FAST;
+                    load_count = 0;
+                    while(load_count < oparg) {
+                        load_count += op_is_load(back->opcode);
                         back->opcode = NOP;
                         back--;
                     }
@@ -1368,6 +1393,7 @@ peephole_optimizations(_PyUOpInstruction *buffer, int buffer_size)
                 break;
         }
     }
+    return done;
 }
 
 
@@ -1396,7 +1422,11 @@ _Py_uop_analyze_and_optimize(
         goto error;
     }
 
-    peephole_optimizations(temp_writebuffer, new_trace_len);
+    for (int peephole_attempts = 0; peephole_attempts < PEEPHOLE_MAX_ATTEMPTS &&
+        !peephole_optimizations(temp_writebuffer, new_trace_len);
+         peephole_attempts++) {
+
+    }
 
     remove_unneeded_uops(temp_writebuffer, new_trace_len);
 
