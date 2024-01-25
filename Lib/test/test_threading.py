@@ -171,11 +171,21 @@ class ThreadTests(BaseTestCase):
                 t.start()
                 t.join()
 
-    @cpython_only
-    def test_disallow_instantiation(self):
-        # Ensure that the type disallows instantiation (bpo-43916)
-        lock = threading.Lock()
-        test.support.check_disallow_instantiation(self, type(lock))
+    def test_lock_no_args(self):
+        threading.Lock()  # works
+        self.assertRaises(TypeError, threading.Lock, 1)
+        self.assertRaises(TypeError, threading.Lock, a=1)
+        self.assertRaises(TypeError, threading.Lock, 1, 2, a=1, b=2)
+
+    def test_lock_no_subclass(self):
+        # Intentionally disallow subclasses of threading.Lock because they have
+        # never been allowed, so why start now just because the type is public?
+        with self.assertRaises(TypeError):
+            class MyLock(threading.Lock): pass
+
+    def test_lock_or_none(self):
+        import types
+        self.assertIsInstance(threading.Lock | None, types.UnionType)
 
     # Create a bunch of threads, let each do some work, wait until all are
     # done.
