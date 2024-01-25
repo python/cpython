@@ -953,6 +953,15 @@ label_exception_targets(basicblock *entryblock) {
            PyMem_Free(except_stack);
         }
     }
+
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        for (int i = 0; i < b->b_iused; i++) {
+            cfg_instr *instr = &b->b_instr[i];
+            if (instr->i_opcode == POP_BLOCK) {
+                INSTR_SET_OP0(instr, NOP);
+            }
+        }
+    }
 #ifdef Py_DEBUG
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         assert(b->b_exceptstack == NULL);
@@ -2313,7 +2322,7 @@ convert_pseudo_ops(cfg_builder *g)
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
-            if (is_block_push(instr) || instr->i_opcode == POP_BLOCK) {
+            if (is_block_push(instr)) {
                 INSTR_SET_OP0(instr, NOP);
             }
             else if (instr->i_opcode == LOAD_CLOSURE) {
