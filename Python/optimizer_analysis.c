@@ -44,25 +44,6 @@
     #define DPRINTF(level, ...)
 #endif
 
-// This represents a value that "terminates" the symbolic.
-static inline bool
-op_is_terminal(uint32_t opcode)
-{
-    return (opcode == _LOAD_FAST ||
-            opcode == _LOAD_FAST_CHECK ||
-            opcode == _LOAD_FAST_AND_CLEAR ||
-            opcode == INIT_FAST ||
-            opcode == CACHE ||
-            opcode == PUSH_NULL);
-}
-
-// This represents a value that is already on the stack.
-static inline bool
-op_is_stackvalue(uint32_t opcode)
-{
-    return (opcode == CACHE);
-}
-
 // See the interpreter DSL in ./Tools/cases_generator/interpreter_definition.md for what these correspond to.
 typedef enum {
     // Types with refinement info
@@ -878,13 +859,6 @@ emit_const(uops_emitter *emitter,
        PyObject *const_val,
        _PyUOpInstruction shrink_stack)
 {
-#ifdef Py_DEBUG
-    char *uop_debug = Py_GETENV(DEBUG_ENV);
-    int lltrace = 0;
-    if (uop_debug != NULL && *uop_debug >= '0') {
-        lltrace = *uop_debug - '0';  // TODO: Parse an int and all that
-    }
-#endif
     if (emit_i(emitter, shrink_stack) < 0) {
         return -1;
     }
@@ -893,7 +867,7 @@ emit_const(uops_emitter *emitter,
     if (load_const_opcode == _LOAD_CONST_INLINE) {
         Py_INCREF(const_val);
     }
-    _PyUOpInstruction load_const = {load_const_opcode, 0, 0, const_val};
+    _PyUOpInstruction load_const = {load_const_opcode, 0, 0, (uintptr_t)const_val};
     if (emit_i(emitter, load_const) < 0) {
         return -1;
     }
@@ -1007,8 +981,6 @@ uop_abstract_interpret_single_inst(
             _Py_UOpsSymbolicValue * local = GETLOCAL(oparg);
             // Might be NULL - replace with LOAD_FAST_CHECK
             if (sym_is_type(local, NULL_TYPE)) {
-                _PyUOpInstruction temp = *inst;
-                temp.opcode = LOAD_FAST_CHECK;
                 _Py_UOpsSymbolicValue * new_local = sym_init_unknown(ctx);
                 if (new_local == NULL) {
                     goto error;
