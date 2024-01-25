@@ -2004,17 +2004,10 @@ pysqlite_connection_iterdump_impl(pysqlite_Connection *self,
         return NULL;
     }
     PyObject *args[2] = {(PyObject *)self, filter};
-    PyObject *kwnames = PyTuple_New(1);
-    PyObject *py_filter = NULL;
-
+    PyObject *kwnames = Py_BuildValue("(s)", "filter");
     if (!kwnames) {
         goto error;
     }
-    py_filter = PyUnicode_FromString("filter");
-    if (!py_filter) {
-        goto error;
-    }
-    PyTuple_SET_ITEM(kwnames, 0, py_filter);
 
     PyObject *retval = PyObject_Vectorcall(iterdump, args, 1, kwnames);
     Py_DECREF(iterdump);
