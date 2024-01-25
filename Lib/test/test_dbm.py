@@ -222,14 +222,14 @@ class WhichDBTestCase(unittest.TestCase):
 
     @unittest.skipUnless(dbm_sqlite3, reason='Test requires dbm.sqlite3')
     def test_whichdb_sqlite3(self):
-        # Test that databases created by dbm.sqlite3 are detected correctly.
+        # Databases created by dbm.sqlite3 are detected correctly.
         with dbm_sqlite3.open(_fname, "c") as db:
             db["key"] = "value"
         self.assertEqual(self.dbm.whichdb(_fname), "dbm.sqlite3")
 
     @unittest.skipUnless(dbm_sqlite3, reason='Test requires dbm.sqlite3')
     def test_whichdb_sqlite3_existing_db(self):
-        # Test that existing sqlite3 databases are detected correctly.
+        # Existing sqlite3 databases are detected correctly.
         sqlite3 = import_helper.import_module("sqlite3")
         try:
             # Create an empty database.
