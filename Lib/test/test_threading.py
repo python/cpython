@@ -176,6 +176,12 @@ class ThreadTests(BaseTestCase):
         self.assertRaises(TypeError, threading.Lock, a=1)
         self.assertRaises(TypeError, threading.Lock, 1, 2, a=1, b=2)
 
+    def test_lock_no_subclass(self):
+        # Intentionally disallow subclasses of threading.Lock because they have
+        # never been allowed, so why start now just because the type is public?
+        with self.assertRaises(TypeError):
+            class MyLock(threading.Lock): pass
+
     def test_lock_or_none(self):
         import types
         self.assertIsInstance(threading.Lock | None, types.UnionType)
