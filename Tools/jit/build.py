@@ -1,11 +1,13 @@
 """Build an experimental just-in-time compiler for CPython."""
-
 import argparse
 import pathlib
+import shlex
+import sys
 
 import _targets
 
 if __name__ == "__main__":
+    comment = f"$ {shlex.join([sys.executable] + sys.argv)}"
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "target", type=_targets.get_target, help="a PEP 11 target triple to compile for"
@@ -23,4 +25,4 @@ if __name__ == "__main__":
     args.target.debug = args.debug
     args.target.force = args.force
     args.target.verbose = args.verbose
-    args.target.build(pathlib.Path.cwd())
+    args.target.build(pathlib.Path.cwd(), comment=comment)

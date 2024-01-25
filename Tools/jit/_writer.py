@@ -1,6 +1,4 @@
 """Utilities for writing StencilGroups out to a C header file."""
-import shlex
-import sys
 import typing
 
 import _schema
@@ -8,8 +6,6 @@ import _stencils
 
 
 def _dump_header() -> typing.Iterator[str]:
-    yield f"// $ {shlex.join([sys.executable, *sys.argv])}"
-    yield ""
     yield "typedef enum {"
     for kind in typing.get_args(_schema.HoleKind):
         yield f"    HoleKind_{kind},"

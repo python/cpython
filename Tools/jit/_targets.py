@@ -151,20 +151,24 @@ class _Target(typing.Generic[_S, _R]):
                     tasks.append(group.create_task(coro, name=opname))
         return {task.get_name(): task.result() for task in tasks}
 
-    def build(self, out: pathlib.Path) -> None:
+    def build(self, out: pathlib.Path, *, comment: str = "") -> None:
         """Build jit_stencils.h in the given directory."""
         digest = f"// {self._compute_digest(out)}\n"
         jit_stencils = out / "jit_stencils.h"
         if (
-            self.force
-            or not jit_stencils.exists()
-            or not jit_stencils.read_text().startswith(digest)
+            not self.force
+            and jit_stencils.exists()
+            and jit_stencils.read_text().startswith(digest)
         ):
-            stencil_groups = asyncio.run(self._build_stencils())
-            with jit_stencils.open("w") as file:
-                file.write(digest)
-                for line in _writer.dump(stencil_groups):
-                    file.write(f"{line}\n")
+            return
+        stencil_groups = asyncio.run(self._build_stencils())
+        with jit_stencils.open("w") as file:
+            file.write(digest)
+            if comment:
+                file.write(f"// {comment}\n")
+            file.write("")
+            for line in _writer.dump(stencil_groups):
+                file.write(f"{line}\n")
 
 
 class _COFF(
