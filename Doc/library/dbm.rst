@@ -268,9 +268,8 @@ supported.
 
 The :mod:`dbm.ndbm` module provides an interface to the
 :abbr:`NDBM (New Database Manager)` library.
-:class:`!ndbm` objects behave like :term:`mappings <mapping>`,
-except that keys and values are always stored as :class:`bytes`.
-Printing an :class:`!ndbm` object doesn't print the keys and values,
+:class:`!ndbm` objects behave similar to :term:`mappings <mapping>`,
+except that keys and values are always stored as :class:`bytes`,
 and the :meth:`!items` and :meth:`!values` methods are not supported.
 
 This module can be used with the "classic" NDBM interface or the
