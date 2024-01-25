@@ -42,16 +42,16 @@ class URI(unittest.TestCase):
         dataset = (
             # Relative subdir.
             (r"2018\January.xlsx",
-             "2018/January.xlsx"),
+             "file:/2018/January.xlsx"),
             # Relative CWD.
             (r"..\Publications\TravelBrochure.pdf",
-             "../Publications/TravelBrochure.pdf"),
+             "file:/../Publications/TravelBrochure.pdf"),
             # Absolute with drive letter.
             (r"C:\Projects\apilibrary\apilibrary.sln",
-             "/C:/Projects/apilibrary/apilibrary.sln"),
+             "file:/C:/Projects/apilibrary/apilibrary.sln"),
             # Relative with drive letter.
             (r"C:Projects\apilibrary\apilibrary.sln",
-             "/C:Projects/apilibrary/apilibrary.sln"),
+             "file:/C:Projects/apilibrary/apilibrary.sln"),
         )
         for path, normalized in dataset:
             with self.subTest(path=path, normalized=normalized):
