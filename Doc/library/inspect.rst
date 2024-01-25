@@ -340,7 +340,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
       Functions wrapped in :func:`functools.partial` now return ``True`` if the
       wrapped function is a Python generator function.
 
-   .. versionchanged:: 3.12
+   .. versionchanged:: 3.13
       Functions wrapped in :func:`functools.partialmethod` now return ``True``
       if the wrapped function is a Python generator function.
 
@@ -363,12 +363,12 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
       wrapped function is a :term:`coroutine function`.
 
    .. versionchanged:: 3.12
-      Functions wrapped in :func:`functools.partialmethod` now return ``True``
-      if the wrapped function is a :term:`coroutine function`.
-
-   .. versionchanged:: 3.12
       Sync functions marked with :func:`markcoroutinefunction` now return
       ``True``.
+
+   .. versionchanged:: 3.13
+      Functions wrapped in :func:`functools.partialmethod` now return ``True``
+      if the wrapped function is a :term:`coroutine function`.
 
 
 .. function:: markcoroutinefunction(func)
@@ -436,7 +436,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
       Functions wrapped in :func:`functools.partial` now return ``True`` if the
       wrapped function is a :term:`asynchronous generator` function.
 
-   .. versionchanged:: 3.12
+   .. versionchanged:: 3.13
       Functions wrapped in :func:`functools.partialmethod` now return ``True``
       if the wrapped function is a :term:`coroutine function`.
 
