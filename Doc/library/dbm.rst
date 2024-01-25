@@ -51,6 +51,9 @@ the Oracle Berkeley DB.
 .. |flag_n| replace::
    Always create a new, empty database, open for reading and writing.
 
+.. |incompat_note| replace::
+   The file formats created by :mod:`dbm.gnu` and :mod:`dbm.ndbm` are incompatible.
+
 .. function:: open(file, flag='r', mode=0o666)
 
    Open the database file *file* and return a corresponding object.
@@ -149,8 +152,7 @@ The individual submodules are described in the following sections.
 --------------
 
 This module is quite similar to the :mod:`dbm` module, but uses the GNU library
-``gdbm`` instead to provide some additional functionality.  Please note that the
-file formats created by :mod:`dbm.gnu` and :mod:`dbm.ndbm` are incompatible.
+``gdbm`` instead to provide some additional functionality.
 
 The :mod:`dbm.gnu` module provides an interface to the GNU DBM library.
 ``dbm.gnu.gdbm`` objects behave like mappings (dictionaries), except that keys and
@@ -158,6 +160,8 @@ values are always converted to bytes before storing.  Printing a ``gdbm``
 object doesn't print the
 keys and values, and the :meth:`items` and :meth:`values` methods are not
 supported.
+
+.. note:: |incompat_note|
 
 .. exception:: error
 
@@ -251,48 +255,52 @@ supported.
       .. versionadded:: 3.13
 
 
-:mod:`dbm.ndbm` --- Interface based on ndbm
--------------------------------------------
+:mod:`dbm.ndbm` --- New Database Manager
+----------------------------------------
 
 .. module:: dbm.ndbm
    :platform: Unix
-   :synopsis: The standard "database" interface, based on ndbm.
+   :synopsis: The New Database Manager
 
 **Source code:** :source:`Lib/dbm/ndbm.py`
 
 --------------
 
-The :mod:`dbm.ndbm` module provides an interface to the Unix "(n)dbm" library.
-Dbm objects behave like mappings (dictionaries), except that keys and values are
-always stored as bytes. Printing a ``dbm`` object doesn't print the keys and
-values, and the :meth:`items` and :meth:`values` methods are not supported.
+The :mod:`dbm.ndbm` module provides an interface to the
+:abbr:`NDBM (New Database Manager)` library.
+:class:`!ndbm` objects behave like :term:`mappings <mapping>`,
+except that keys and values are always stored as :class:`bytes`.
+Printing an :class:`!ndbm` object doesn't print the keys and values,
+and the :meth:`!items` and :meth:`!values` methods are not supported.
 
-This module can be used with the "classic" ndbm interface or the GNU GDBM
-compatibility interface. On Unix, the :program:`configure` script will attempt
-to locate the appropriate header file to simplify building this module.
+This module can be used with the "classic" NDBM interface or the
+:abbr:`GDBM (GNU dbm)` compatibility interface.
+
+.. note:: |incompat_note|
 
 .. warning::
 
-   The ndbm library shipped as part of macOS has an undocumented limitation on the
+   The NDBM library shipped as part of macOS has an undocumented limitation on the
    size of values, which can result in corrupted database files
    when storing values larger than this limit. Reading such corrupted files can
    result in a hard crash (segmentation fault).
 
 .. exception:: error
 
-   Raised on :mod:`dbm.ndbm`-specific errors, such as I/O errors. :exc:`KeyError` is raised
+   Raised on :mod:`dbm.ndbm` specific errors, such as I/O errors. :exc:`KeyError` is raised
    for general mapping errors like specifying an incorrect key.
 
 
 .. data:: library
 
-   Name of the ``ndbm`` implementation library used.
+   Name of the NDBM implementation library used.
 
 
-.. function:: open(filename[, flag[, mode]])
+.. function:: open(filename, flag="r", mode=0o666, /)
 
-   Open a dbm database and return a ``ndbm`` object.  The *filename* argument is the
-   name of the database file (without the :file:`.dir` or :file:`.pag` extensions).
+   Open an NDBM database and return an :class:`!ndbm` object.
+   The *filename* argument is the name of the database file
+   (without the :file:`.dir` or :file:`.pag` extensions).
 
    The optional *flag* argument must be one of these values:
 
@@ -308,7 +316,7 @@ to locate the appropriate header file to simplify building this module.
    database has to be created.  It defaults to octal ``0o666`` (and will be
    modified by the prevailing umask).
 
-   In addition to the dictionary-like methods, ``ndbm`` objects
+   In addition to the dictionary-like methods, :class:`!ndbm` objects
    provide the following method:
 
    .. versionchanged:: 3.11
@@ -316,11 +324,11 @@ to locate the appropriate header file to simplify building this module.
 
    .. method:: ndbm.close()
 
-      Close the ``ndbm`` database.
+      Close the NDBM database.
 
    .. method:: ndbm.clear()
 
-      Remove all items from the ``ndbm`` database.
+      Remove all items from the NDBM database.
 
       .. versionadded:: 3.13
 
