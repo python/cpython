@@ -1018,7 +1018,7 @@ uop_abstract_interpret_single_inst(
             if (new_inst.opcode == _LOAD_CONST_INLINE) {
                 Py_INCREF(val);
             }
-            new_inst.operand = val;
+            new_inst.operand = (uintptr_t)val;
             break;
         }
         case STORE_FAST_MAYBE_NULL:
