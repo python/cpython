@@ -79,7 +79,6 @@ class Stencil:
     body: bytearray = dataclasses.field(default_factory=bytearray, init=False)
     holes: list[Hole] = dataclasses.field(default_factory=list, init=False)
     disassembly: list[str] = dataclasses.field(default_factory=list, init=False)
-    sections: dict[int, int] = dataclasses.field(default_factory=dict, init=False)
 
     def pad(self, alignment: int) -> None:
         """Pad the stencil to the given alignment."""
@@ -136,7 +135,7 @@ class StencilGroup:
 
     code: Stencil = dataclasses.field(default_factory=Stencil, init=False)
     data: Stencil = dataclasses.field(default_factory=Stencil, init=False)
-    symbols: dict[str, tuple[HoleValue, int]] = dataclasses.field(
+    symbols: dict[int | str, tuple[HoleValue, int]] = dataclasses.field(
         default_factory=dict, init=False
     )
     _got: dict[str, int] = dataclasses.field(default_factory=dict, init=False)

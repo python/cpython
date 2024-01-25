@@ -39,6 +39,7 @@ class _Target(typing.Generic[_S, _R]):
     alignment: int = 1
     prefix: str = ""
     debug: bool = False
+    force: bool = False
     verbose: bool = False
 
     def _compute_digest(self, out: pathlib.Path) -> str:
@@ -114,7 +115,6 @@ class _Target(typing.Generic[_S, _R]):
             f"-I{CPYTHON / 'Include'}",
             f"-I{CPYTHON / 'Include' / 'internal'}",
             f"-I{CPYTHON / 'Include' / 'internal' / 'mimalloc'}",
-            f"-I{CPYTHON / 'Python'}",
             "-O3",
             "-c",
             "-fno-asynchronous-unwind-tables",
@@ -155,7 +155,11 @@ class _Target(typing.Generic[_S, _R]):
         """Build jit_stencils.h in the given directory."""
         digest = f"// {self._compute_digest(out)}\n"
         jit_stencils = out / "jit_stencils.h"
-        if not jit_stencils.exists() or not jit_stencils.read_text().startswith(digest):
+        if (
+            self.force
+            or not jit_stencils.exists()
+            or not jit_stencils.read_text().startswith(digest)
+        ):
             stencil_groups = asyncio.run(self._build_stencils())
             with jit_stencils.open("w") as file:
                 file.write(digest)
@@ -183,7 +187,8 @@ class _COFF(
             stencil = group.data
         else:
             return
-        base = stencil.sections[section["Number"]] = len(stencil.body)
+        base = len(stencil.body)
+        group.symbols[section["Number"]] = value, base
         stencil.body.extend(section_data_bytes)
         for wrapped_symbol in section["Symbols"]:
             symbol = wrapped_symbol["Symbol"]
@@ -234,11 +239,12 @@ class _ELF(
         if section_type == "SHT_RELA":
             assert "SHF_INFO_LINK" in flags, flags
             assert not section["Symbols"]
-            if section["Info"] in group.code.sections:
+            value, base = group.symbols[section["Info"]]
+            if value is _stencils.HoleValue.CODE:
                 stencil = group.code
             else:
+                assert value is _stencils.HoleValue.DATA
                 stencil = group.data
-            base = stencil.sections[section["Info"]]
             for wrapped_relocation in section["Relocations"]:
                 relocation = wrapped_relocation["Relocation"]
                 hole = self._handle_relocation(base, relocation, stencil.body)
@@ -252,7 +258,7 @@ class _ELF(
             else:
                 value = _stencils.HoleValue.DATA
                 stencil = group.data
-            stencil.sections[section["Index"]] = len(stencil.body)
+            group.symbols[section["Index"]] = value, len(stencil.body)
             for wrapped_symbol in section["Symbols"]:
                 symbol = wrapped_symbol["Symbol"]
                 offset = len(stencil.body) + symbol["Value"]
@@ -309,7 +315,8 @@ class _MachO(
             stencil = group.data
             start_address = len(group.code.body)
             group.symbols[name] = value, len(group.code.body)
-        base = stencil.sections[section["Index"]] = section["Address"] - start_address
+        base = section["Address"] - start_address
+        group.symbols[section["Index"]] = value, base
         stencil.body.extend(
             [0] * (section["Address"] - len(group.code.body) - len(group.data.body))
         )
