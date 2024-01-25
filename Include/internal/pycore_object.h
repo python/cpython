@@ -376,6 +376,142 @@ static inline void _PyObject_GC_UNTRACK(
         _PyObject_GC_UNTRACK(__FILE__, __LINE__, _PyObject_CAST(op))
 #endif
 
+#ifdef Py_GIL_DISABLED
+
+/* Tries to increment an object's reference count
+ *
+ * This is a specialized version of _Py_TryIncref that only succeeds if the
+ * object is immortal or local to this thread. It does not handle the case
+ * where the  reference count modification requires an atomic operation. This
+ * allows call sites to specialize for the immortal/local case.
+ */
+static inline int
+_Py_TryIncrefFast(PyObject *op) {
+    uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
+    local += 1;
+    if (local == 0) {
+        // immortal
+        return 1;
+    }
+    if (_Py_IsOwnedByCurrentThread(op)) {
+        _Py_INCREF_STAT_INC();
+        _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, local);
+#ifdef Py_REF_DEBUG
+        _Py_IncRefTotal(_PyInterpreterState_GET());
+#endif
+        return 1;
+    }
+    return 0;
+}
+
+static inline int
+_Py_TryIncRefShared(PyObject *op)
+{
+    Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared);
+    for (;;) {
+        // If the shared refcount is zero and the object is either merged
+        // or may not have weak references, then we cannot incref it.
+        if (shared == 0 || shared == _Py_REF_MERGED) {
+            return 0;
+        }
+
+        if (_Py_atomic_compare_exchange_ssize(
+                &op->ob_ref_shared,
+                &shared,
+                shared + (1 << _Py_REF_SHARED_SHIFT))) {
+#ifdef Py_REF_DEBUG
+            _Py_IncRefTotal(_PyInterpreterState_GET());
+#endif
+            _Py_INCREF_STAT_INC();
+            return 1;
+        }
+    }
+}
+
+/* Tries to incref the object op and ensures that *src still points to it. */
+static inline int
+_Py_TryIncref(PyObject **src, PyObject *op)
+{
+    if (_Py_TryIncrefFast(op)) {
+        return 1;
+    }
+    if (!_Py_TryIncRefShared(op)) {
+        return 0;
+    }
+    if (op != _Py_atomic_load_ptr(src)) {
+        Py_DECREF(op);
+        return 0;
+    }
+    return 1;
+}
+
+/* Loads and increfs an object from ptr, which may contain a NULL value.
+   Safe with concurrent (atomic) updates to ptr.
+   NOTE: The writer must set maybe-weakref on the stored object! */
+static inline PyObject *
+_Py_XGetRef(PyObject **ptr)
+{
+    for (;;) {
+        PyObject *value = _Py_atomic_load_ptr(ptr);
+        if (value == NULL) {
+            return value;
+        }
+        if (_Py_TryIncref(ptr, value)) {
+            return value;
+        }
+    }
+}
+
+/* Attempts to loads and increfs an object from ptr. Returns NULL
+   on failure, which may be due to a NULL value or a concurrent update. */
+static inline PyObject *
+_Py_TryXGetRef(PyObject **ptr)
+{
+    PyObject *value = _Py_atomic_load_ptr(ptr);
+    if (value == NULL) {
+        return value;
+    }
+    if (_Py_TryIncref(ptr, value)) {
+        return value;
+    }
+    return NULL;
+}
+
+/* Like Py_NewRef but also optimistically sets _Py_REF_MAYBE_WEAKREF
+   on objects owned by a different thread. */
+static inline PyObject *
+_Py_NewRefWithLock(PyObject *op)
+{
+    if (_Py_TryIncrefFast(op)) {
+        return op;
+    }
+    _Py_INCREF_STAT_INC();
+    for (;;) {
+        Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared);
+        Py_ssize_t new_shared = shared + (1 << _Py_REF_SHARED_SHIFT);
+        if ((shared & _Py_REF_SHARED_FLAG_MASK) == 0) {
+            new_shared |= _Py_REF_MAYBE_WEAKREF;
+        }
+        if (_Py_atomic_compare_exchange_ssize(
+                &op->ob_ref_shared,
+                &shared,
+                new_shared)) {
+            return op;
+        }
+    }
+}
+
+static inline PyObject *
+_Py_XNewRefWithLock(PyObject *obj)
+{
+    if (obj == NULL) {
+        return NULL;
+    }
+    return _Py_NewRefWithLock(obj);
+}
+
+#endif
+
 #ifdef Py_REF_DEBUG
 extern void _PyInterpreterState_FinalizeRefTotal(PyInterpreterState *);
 extern void _Py_FinalizeRefTotal(_PyRuntimeState *);
