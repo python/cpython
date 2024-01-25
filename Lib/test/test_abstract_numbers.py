@@ -38,10 +38,10 @@ class TestNumbers(unittest.TestCase):
         self.assertEqual(1, int(7).denominator)
 
     def test_float(self):
-        self.assertTrue(issubclass(int, Integral))
+        self.assertFalse(issubclass(float, Integral))
         self.assertFalse(issubclass(float, Rational))
         self.assertTrue(issubclass(float, Real))
-        self.assertTrue(issubclass(int, Complex))
+        self.assertTrue(issubclass(float, Complex))
         self.assertTrue(issubclass(float, Number))
 
         self.assertEqual(7.3, float(7.3).real)
@@ -50,8 +50,8 @@ class TestNumbers(unittest.TestCase):
         self.assertEqual(-7.3, float(-7.3).conjugate())
 
     def test_complex(self):
-        self.assertTrue(issubclass(int, Integral))
-        self.assertFalse(issubclass(float, Rational))
+        self.assertFalse(issubclass(complex, Integral))
+        self.assertFalse(issubclass(complex, Rational))
         self.assertFalse(issubclass(complex, Real))
         self.assertTrue(issubclass(complex, Complex))
         self.assertTrue(issubclass(complex, Number))
