@@ -791,12 +791,15 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
     assert(dest == -1);
     // Rewrite backward jumps
     if (executor->trace[length-1].opcode == _JUMP_ABSOLUTE) {
-        for (int end = length - 1; end > 0; end--) {
+        bool found = false;
+        for (int end = length - 1; end >= 0; end--) {
             if (executor->trace[end].opcode == _JUMP_ABSOLUTE_HEADER) {
                 executor->trace[length-1].oparg = end + 1;
+                found = true;
                 break;
             }
         }
+        assert(found);
     }
     _Py_ExecutorInit(executor, dependencies);
 #ifdef Py_DEBUG
