@@ -25,7 +25,7 @@ another rational number, or from a string.
 
    The first version requires that *numerator* and *denominator* are instances
    of :class:`numbers.Rational` and returns a new :class:`Fraction` instance
-   with value ``numerator/denominator``. If *denominator* is :const:`0`, it
+   with value ``numerator/denominator``. If *denominator* is ``0``, it
    raises a :exc:`ZeroDivisionError`. The second version requires that
    *other_fraction* is an instance of :class:`numbers.Rational` and returns a
    :class:`Fraction` instance with the same value.  The next two versions accept
@@ -77,7 +77,7 @@ another rational number, or from a string.
 
    The :class:`Fraction` class inherits from the abstract base class
    :class:`numbers.Rational`, and implements all of the methods and
-   operations from that class.  :class:`Fraction` instances are hashable,
+   operations from that class.  :class:`Fraction` instances are :term:`hashable`,
    and should be treated as immutable.  In addition,
    :class:`Fraction` has the following properties and methods:
 
@@ -101,6 +101,15 @@ another rational number, or from a string.
    .. versionchanged:: 3.12
       Space is allowed around the slash for string inputs: ``Fraction('2 / 3')``.
 
+   .. versionchanged:: 3.12
+      :class:`Fraction` instances now support float-style formatting, with
+      presentation types ``"e"``, ``"E"``, ``"f"``, ``"F"``, ``"g"``, ``"G"``
+      and ``"%""``.
+
+   .. versionchanged:: 3.13
+      Formatting of :class:`Fraction` instances without a presentation type
+      now supports fill, alignment, sign handling, minimum width and grouping.
+
    .. attribute:: numerator
 
       Numerator of the Fraction in lowest term.
@@ -113,9 +122,16 @@ another rational number, or from a string.
    .. method:: as_integer_ratio()
 
       Return a tuple of two integers, whose ratio is equal
-      to the Fraction and with a positive denominator.
+      to the original Fraction.  The ratio is in lowest terms
+      and has a positive denominator.
 
       .. versionadded:: 3.8
+
+   .. method:: is_integer()
+
+      Return ``True`` if the Fraction is an integer.
+
+      .. versionadded:: 3.12
 
    .. classmethod:: from_float(flt)
 
@@ -186,6 +202,48 @@ another rational number, or from a string.
       nearest multiple of ``Fraction(1, 10**ndigits)`` (logically, if
       ``ndigits`` is negative), again rounding half toward even.  This
       method can also be accessed through the :func:`round` function.
+
+   .. method:: __format__(format_spec, /)
+
+      Provides support for formatting of :class:`Fraction` instances via the
+      :meth:`str.format` method, the :func:`format` built-in function, or
+      :ref:`Formatted string literals <f-strings>`.
+
+      If the ``format_spec`` format specification string does not end with one
+      of the presentation types ``'e'``, ``'E'``, ``'f'``, ``'F'``, ``'g'``,
+      ``'G'`` or ``'%'`` then formatting follows the general rules for fill,
+      alignment, sign handling, minimum width, and grouping as described in the
+      :ref:`format specification mini-language <formatspec>`. The "alternate
+      form" flag ``'#'`` is supported: if present, it forces the output string
+      to always include an explicit denominator, even when the value being
+      formatted is an exact integer. The zero-fill flag ``'0'`` is not
+      supported.
+
+      If the ``format_spec`` format specification string ends with one of
+      the presentation types ``'e'``, ``'E'``, ``'f'``, ``'F'``, ``'g'``,
+      ``'G'`` or ``'%'`` then formatting follows the rules outlined for the
+      :class:`float` type in the :ref:`formatspec` section.
+
+      Here are some examples::
+
+         >>> from fractions import Fraction
+         >>> format(Fraction(103993, 33102), '_')
+         '103_993/33_102'
+         >>> format(Fraction(1, 7), '.^+10')
+         '...+1/7...'
+         >>> format(Fraction(3, 1), '')
+         '3'
+         >>> format(Fraction(3, 1), '#')
+         '3/1'
+         >>> format(Fraction(1, 7), '.40g')
+         '0.1428571428571428571428571428571428571429'
+         >>> format(Fraction('1234567.855'), '_.2f')
+         '1_234_567.86'
+         >>> f"{Fraction(355, 113):*>20.6e}"
+         '********3.141593e+00'
+         >>> old_price, new_price = 499, 672
+         >>> "{:.2%} price increase".format(Fraction(new_price, old_price) - 1)
+         '34.67% price increase'
 
 
 .. seealso::

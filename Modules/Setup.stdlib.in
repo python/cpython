@@ -41,12 +41,14 @@
 @MODULE__QUEUE_TRUE@_queue _queuemodule.c
 @MODULE__RANDOM_TRUE@_random _randommodule.c
 @MODULE__STRUCT_TRUE@_struct _struct.c
-@MODULE__TYPING_TRUE@_typing _typingmodule.c
+
+# build supports subinterpreters
 @MODULE__XXSUBINTERPRETERS_TRUE@_xxsubinterpreters _xxsubinterpretersmodule.c
+@MODULE__XXINTERPCHANNELS_TRUE@_xxinterpchannels _xxinterpchannelsmodule.c
+@MODULE__XXINTERPQUEUES_TRUE@_xxinterpqueues _xxinterpqueuesmodule.c
 @MODULE__ZONEINFO_TRUE@_zoneinfo _zoneinfo.c
 
 # needs libm
-@MODULE_AUDIOOP_TRUE@audioop audioop.c
 @MODULE_MATH_TRUE@math mathmodule.c
 @MODULE_CMATH_TRUE@cmath cmathmodule.c
 @MODULE__STATISTICS_TRUE@_statistics _statisticsmodule.c
@@ -76,11 +78,10 @@
 @MODULE_READLINE_TRUE@readline readline.c
 
 # hashing builtins, can be disabled with --without-builtin-hashlib-hashes
-@MODULE__MD5_TRUE@_md5 md5module.c
-@MODULE__SHA1_TRUE@_sha1 sha1module.c
-@MODULE__SHA256_TRUE@_sha256 sha256module.c
-@MODULE__SHA512_TRUE@_sha512 sha512module.c
-@MODULE__SHA3_TRUE@_sha3 _sha3/sha3module.c
+@MODULE__MD5_TRUE@_md5 md5module.c -I$(srcdir)/Modules/_hacl/include _hacl/Hacl_Hash_MD5.c -D_BSD_SOURCE -D_DEFAULT_SOURCE
+@MODULE__SHA1_TRUE@_sha1 sha1module.c -I$(srcdir)/Modules/_hacl/include _hacl/Hacl_Hash_SHA1.c -D_BSD_SOURCE -D_DEFAULT_SOURCE
+@MODULE__SHA2_TRUE@_sha2 sha2module.c -I$(srcdir)/Modules/_hacl/include Modules/_hacl/libHacl_Hash_SHA2.a
+@MODULE__SHA3_TRUE@_sha3 sha3module.c -I$(srcdir)/Modules/_hacl/include _hacl/Hacl_Hash_SHA3.c -D_BSD_SOURCE -D_DEFAULT_SOURCE
 @MODULE__BLAKE2_TRUE@_blake2 _blake2/blake2module.c _blake2/blake2b_impl.c _blake2/blake2s_impl.c
 
 ############################################################################
@@ -107,22 +108,14 @@
 # Modules with some UNIX dependencies
 #
 
-# needs -lcrypt on some systems
-@MODULE__CRYPT_TRUE@_crypt _cryptmodule.c
 @MODULE_FCNTL_TRUE@fcntl fcntlmodule.c
 @MODULE_GRP_TRUE@grp grpmodule.c
 @MODULE_MMAP_TRUE@mmap mmapmodule.c
-# FreeBSD: nis/yp APIs are in libc
-# Linux: glibc has deprecated SUN RPC, APIs are in libnsl and libtirpc (bpo-32521)
-@MODULE_NIS_TRUE@nis nismodule.c
 # needs sys/soundcard.h or linux/soundcard.h (Linux, FreeBSD)
-@MODULE_OSSAUDIODEV_TRUE@ossaudiodev ossaudiodev.c
 @MODULE__POSIXSUBPROCESS_TRUE@_posixsubprocess _posixsubprocess.c
 @MODULE_RESOURCE_TRUE@resource resource.c
 @MODULE_SELECT_TRUE@select selectmodule.c
 @MODULE__SOCKET_TRUE@_socket socketmodule.c
-# AIX has shadow passwords, but does not provide getspent API
-@MODULE_SPWD_TRUE@spwd spwdmodule.c
 @MODULE_SYSLOG_TRUE@syslog syslogmodule.c
 @MODULE_TERMIOS_TRUE@termios termios.c
 
@@ -168,9 +161,10 @@
 @MODULE_XXSUBTYPE_TRUE@xxsubtype xxsubtype.c
 @MODULE__XXTESTFUZZ_TRUE@_xxtestfuzz _xxtestfuzz/_xxtestfuzz.c _xxtestfuzz/fuzzer.c
 @MODULE__TESTBUFFER_TRUE@_testbuffer _testbuffer.c
-@MODULE__TESTINTERNALCAPI_TRUE@_testinternalcapi _testinternalcapi.c
-@MODULE__TESTCAPI_TRUE@_testcapi _testcapimodule.c _testcapi/vectorcall.c _testcapi/vectorcall_limited.c _testcapi/heaptype.c _testcapi/unicode.c _testcapi/getargs.c _testcapi/pytime.c _testcapi/datetime.c _testcapi/docstring.c _testcapi/mem.c _testcapi/watchers.c _testcapi/long.c _testcapi/float.c _testcapi/structmember.c
+@MODULE__TESTINTERNALCAPI_TRUE@_testinternalcapi _testinternalcapi.c _testinternalcapi/test_lock.c _testinternalcapi/pytime.c _testinternalcapi/set.c _testinternalcapi/test_critical_sections.c
+@MODULE__TESTCAPI_TRUE@_testcapi _testcapimodule.c _testcapi/vectorcall.c _testcapi/vectorcall_limited.c _testcapi/heaptype.c _testcapi/abstract.c _testcapi/bytearray.c _testcapi/bytes.c _testcapi/unicode.c _testcapi/dict.c _testcapi/set.c _testcapi/list.c _testcapi/tuple.c _testcapi/getargs.c _testcapi/datetime.c _testcapi/docstring.c _testcapi/mem.c _testcapi/watchers.c _testcapi/long.c _testcapi/float.c _testcapi/complex.c _testcapi/numbers.c _testcapi/structmember.c _testcapi/exceptions.c _testcapi/code.c _testcapi/buffer.c _testcapi/pyatomic.c _testcapi/pyos.c _testcapi/file.c _testcapi/codec.c _testcapi/immortal.c _testcapi/heaptype_relative.c _testcapi/gc.c _testcapi/sys.c _testcapi/hash.c
 @MODULE__TESTCLINIC_TRUE@_testclinic _testclinic.c
+@MODULE__TESTCLINIC_LIMITED_TRUE@_testclinic_limited _testclinic_limited.c
 
 # Some testing modules MUST be built as shared libraries.
 *shared*

@@ -12,10 +12,11 @@ jobs:
     if: github.repository_owner == 'python'
 
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
     - name: "Check PRs"
-      uses: actions/stale@v6
+      uses: actions/stale@v9
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         stale-pr-message: 'This PR is stale because it has been open for 30 days with no activity.'

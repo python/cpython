@@ -43,6 +43,7 @@ class TestResult(object):
         self.skipped = []
         self.expectedFailures = []
         self.unexpectedSuccesses = []
+        self.collectedDurations = []
         self.shouldStop = False
         self.buffer = False
         self.tb_locals = False
@@ -96,10 +97,12 @@ class TestResult(object):
 
             sys.stdout = self._original_stdout
             sys.stderr = self._original_stderr
-            self._stdout_buffer.seek(0)
-            self._stdout_buffer.truncate()
-            self._stderr_buffer.seek(0)
-            self._stderr_buffer.truncate()
+            if self._stdout_buffer is not None:
+                self._stdout_buffer.seek(0)
+                self._stdout_buffer.truncate()
+            if self._stderr_buffer is not None:
+                self._stderr_buffer.seek(0)
+                self._stderr_buffer.truncate()
 
     def stopTestRun(self):
         """Called once after all tests are executed.
@@ -156,6 +159,17 @@ class TestResult(object):
     def addUnexpectedSuccess(self, test):
         """Called when a test was expected to fail, but succeed."""
         self.unexpectedSuccesses.append(test)
+
+    def addDuration(self, test, elapsed):
+        """Called when a test finished to run, regardless of its outcome.
+        *test* is the test case corresponding to the test method.
+        *elapsed* is the time represented in seconds, and it includes the
+        execution of cleanup functions.
+        """
+        # support for a TextTestRunner using an old TestResult class
+        if hasattr(self, "collectedDurations"):
+            # Pass test repr and not the test object itself to avoid resources leak
+            self.collectedDurations.append((str(test), elapsed))
 
     def wasSuccessful(self):
         """Tells whether or not this result was a success."""

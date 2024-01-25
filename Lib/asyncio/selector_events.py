@@ -261,22 +261,17 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             except (AttributeError, TypeError, ValueError):
                 # This code matches selectors._fileobj_to_fd function.
                 raise ValueError(f"Invalid file object: {fd!r}") from None
-        try:
-            transport = self._transports[fileno]
-        except KeyError:
-            pass
-        else:
-            if not transport.is_closing():
-                raise RuntimeError(
-                    f'File descriptor {fd!r} is used by transport '
-                    f'{transport!r}')
+        transport = self._transports.get(fileno)
+        if transport and not transport.is_closing():
+            raise RuntimeError(
+                f'File descriptor {fd!r} is used by transport '
+                f'{transport!r}')
 
     def _add_reader(self, fd, callback, *args):
         self._check_closed()
         handle = events.Handle(callback, args, self, None)
-        try:
-            key = self._selector.get_key(fd)
-        except KeyError:
+        key = self._selector.get_map().get(fd)
+        if key is None:
             self._selector.register(fd, selectors.EVENT_READ,
                                     (handle, None))
         else:
@@ -290,30 +285,27 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
     def _remove_reader(self, fd):
         if self.is_closed():
             return False
-        try:
-            key = self._selector.get_key(fd)
-        except KeyError:
+        key = self._selector.get_map().get(fd)
+        if key is None:
             return False
+        mask, (reader, writer) = key.events, key.data
+        mask &= ~selectors.EVENT_READ
+        if not mask:
+            self._selector.unregister(fd)
         else:
-            mask, (reader, writer) = key.events, key.data
-            mask &= ~selectors.EVENT_READ
-            if not mask:
-                self._selector.unregister(fd)
-            else:
-                self._selector.modify(fd, mask, (None, writer))
+            self._selector.modify(fd, mask, (None, writer))
 
-            if reader is not None:
-                reader.cancel()
-                return True
-            else:
-                return False
+        if reader is not None:
+            reader.cancel()
+            return True
+        else:
+            return False
 
     def _add_writer(self, fd, callback, *args):
         self._check_closed()
         handle = events.Handle(callback, args, self, None)
-        try:
-            key = self._selector.get_key(fd)
-        except KeyError:
+        key = self._selector.get_map().get(fd)
+        if key is None:
             self._selector.register(fd, selectors.EVENT_WRITE,
                                     (None, handle))
         else:
@@ -328,24 +320,22 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         """Remove a writer callback."""
         if self.is_closed():
             return False
-        try:
-            key = self._selector.get_key(fd)
-        except KeyError:
+        key = self._selector.get_map().get(fd)
+        if key is None:
             return False
+        mask, (reader, writer) = key.events, key.data
+        # Remove both writer and connector.
+        mask &= ~selectors.EVENT_WRITE
+        if not mask:
+            self._selector.unregister(fd)
         else:
-            mask, (reader, writer) = key.events, key.data
-            # Remove both writer and connector.
-            mask &= ~selectors.EVENT_WRITE
-            if not mask:
-                self._selector.unregister(fd)
-            else:
-                self._selector.modify(fd, mask, (reader, None))
+            self._selector.modify(fd, mask, (reader, None))
 
-            if writer is not None:
-                writer.cancel()
-                return True
-            else:
-                return False
+        if writer is not None:
+            writer.cancel()
+            return True
+        else:
+            return False
 
     def add_reader(self, fd, callback, *args):
         """Add a reader callback."""
@@ -794,6 +784,8 @@ class _SelectorTransport(transports._FlowControlMixin,
         self._buffer = collections.deque()
         self._conn_lost = 0  # Set when call to connection_lost scheduled.
         self._closing = False  # Set when close() called.
+        self._paused = False  # Set when pause_reading() called
+
         if self._server is not None:
             self._server._attach()
         loop._transports[self._sock_fd] = self
@@ -838,6 +830,25 @@ class _SelectorTransport(transports._FlowControlMixin,
 
     def is_closing(self):
         return self._closing
+
+    def is_reading(self):
+        return not self.is_closing() and not self._paused
+
+    def pause_reading(self):
+        if not self.is_reading():
+            return
+        self._paused = True
+        self._loop._remove_reader(self._sock_fd)
+        if self._loop.get_debug():
+            logger.debug("%r pauses reading", self)
+
+    def resume_reading(self):
+        if self._closing or not self._paused:
+            return
+        self._paused = False
+        self._add_reader(self._sock_fd, self._read_ready)
+        if self._loop.get_debug():
+            logger.debug("%r resumes reading", self)
 
     def close(self):
         if self._closing:
@@ -898,9 +909,8 @@ class _SelectorTransport(transports._FlowControlMixin,
         return sum(map(len, self._buffer))
 
     def _add_reader(self, fd, callback, *args):
-        if self._closing:
+        if not self.is_reading():
             return
-
         self._loop._add_reader(fd, callback, *args)
 
 
@@ -915,7 +925,6 @@ class _SelectorSocketTransport(_SelectorTransport):
         self._read_ready_cb = None
         super().__init__(loop, sock, protocol, extra, server)
         self._eof = False
-        self._paused = False
         self._empty_waiter = None
         if _HAS_SENDMSG:
             self._write_ready = self._write_sendmsg
@@ -942,25 +951,6 @@ class _SelectorSocketTransport(_SelectorTransport):
             self._read_ready_cb = self._read_ready__data_received
 
         super().set_protocol(protocol)
-
-    def is_reading(self):
-        return not self._paused and not self._closing
-
-    def pause_reading(self):
-        if self._closing or self._paused:
-            return
-        self._paused = True
-        self._loop._remove_reader(self._sock_fd)
-        if self._loop.get_debug():
-            logger.debug("%r pauses reading", self)
-
-    def resume_reading(self):
-        if self._closing or not self._paused:
-            return
-        self._paused = False
-        self._add_reader(self._sock_fd, self._read_ready)
-        if self._loop.get_debug():
-            logger.debug("%r resumes reading", self)
 
     def _read_ready(self):
         self._read_ready_cb()
@@ -1176,6 +1166,9 @@ class _SelectorSocketTransport(_SelectorTransport):
             return
         self._buffer.extend([memoryview(data) for data in list_of_data])
         self._write_ready()
+        # If the entire buffer couldn't be written, register a write handler
+        if self._buffer:
+            self._loop._add_writer(self._sock_fd, self._write_ready)
 
     def can_write_eof(self):
         return True
@@ -1199,6 +1192,7 @@ class _SelectorSocketTransport(_SelectorTransport):
 
     def close(self):
         self._read_ready_cb = None
+        self._write_ready = None
         super().close()
 
 

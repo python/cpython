@@ -127,9 +127,12 @@ This module defines the following functions:
    Its value may be used to uniquely identify this particular thread system-wide
    (until the thread terminates, after which the value may be recycled by the OS).
 
-   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD.
+   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD, GNU/kFreeBSD.
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.13
+      Added support for GNU/kFreeBSD.
 
 
 .. function:: enumerate()
@@ -272,7 +275,7 @@ The instance's values will be different for separate threads.
    A class that represents thread-local data.
 
    For more details and extensive examples, see the documentation string of the
-   :mod:`_threading_local` module.
+   :mod:`!_threading_local` module: :source:`Lib/_threading_local.py`.
 
 
 .. _thread-objects:
@@ -285,7 +288,7 @@ thread of control.  There are two ways to specify the activity: by passing a
 callable object to the constructor, or by overriding the :meth:`~Thread.run`
 method in a subclass.  No other methods (except for the constructor) should be
 overridden in a subclass.  In other words, *only*  override the
-:meth:`~Thread.__init__` and :meth:`~Thread.run` methods of this class.
+``__init__()`` and :meth:`~Thread.run` methods of this class.
 
 Once a thread object is created, its activity must be started by calling the
 thread's :meth:`~Thread.start` method.  This invokes the :meth:`~Thread.run`
@@ -337,7 +340,7 @@ since it is impossible to detect the termination of alien threads.
    are:
 
    *group* should be ``None``; reserved for future extension when a
-   :class:`ThreadGroup` class is implemented.
+   :class:`!ThreadGroup` class is implemented.
 
    *target* is the callable object to be invoked by the :meth:`run` method.
    Defaults to ``None``, meaning nothing is called.
@@ -1009,7 +1012,7 @@ This class represents an action that should be run only after a certain amount
 of time has passed --- a timer.  :class:`Timer` is a subclass of :class:`Thread`
 and as such also functions as an example of creating custom threads.
 
-Timers are started, as with threads, by calling their :meth:`~Timer.start`
+Timers are started, as with threads, by calling their :meth:`Timer.start <Thread.start>`
 method.  The timer can be stopped (before its action has begun) by calling the
 :meth:`~Timer.cancel` method.  The interval the timer will wait before
 executing its action may not be exactly the same as the interval specified by
@@ -1147,10 +1150,10 @@ As an example, here is a simple way to synchronize a client and server thread::
 Using locks, conditions, and semaphores in the :keyword:`!with` statement
 -------------------------------------------------------------------------
 
-All of the objects provided by this module that have :meth:`acquire` and
-:meth:`release` methods can be used as context managers for a :keyword:`with`
-statement.  The :meth:`acquire` method will be called when the block is
-entered, and :meth:`release` will be called when the block is exited.  Hence,
+All of the objects provided by this module that have ``acquire`` and
+``release`` methods can be used as context managers for a :keyword:`with`
+statement.  The ``acquire`` method will be called when the block is
+entered, and ``release`` will be called when the block is exited.  Hence,
 the following snippet::
 
    with some_lock:

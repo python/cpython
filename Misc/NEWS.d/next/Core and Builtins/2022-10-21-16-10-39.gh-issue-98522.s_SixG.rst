@@ -1,3 +1,0 @@
-Add an internal version number to code objects, to give better versioning of
-inner functions and comprehensions, and thus better specialization of those
-functions. This change is invisible to both Python and C extensions.

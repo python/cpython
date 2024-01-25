@@ -246,10 +246,9 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 1.1.1q",
-              url="https://www.openssl.org/source/openssl-1.1.1q.tar.gz",
-              checksum='d7939ce614029cdff0b6c20f0e2e5703158a489a72b2507b8bd51bf8c8fd10ca',
-              patches=['openssl1.1.1q-pr-18719.patch'],
+              name="OpenSSL 3.0.11",
+              url="https://www.openssl.org/source/openssl-3.0.11.tar.gz",
+              checksum='b3425d3bb4a2218d0697eb41f7fc0cdede016ed19ca49d168b78e8d947887f55',
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
@@ -262,14 +261,14 @@ def library_recipes():
             tcl_checksum='81656d3367af032e0ae6157eff134f89'
 
             tk_checksum='5e0faecba458ee1386078fb228d008ba'
-            tk_patches = ['tk868_on_10_8_10_9.patch']
+            tk_patches = ['backport_gh71383_fix.patch', 'tk868_on_10_8_10_9.patch', 'backport_gh110950_fix.patch']
 
         else:
-            tcl_tk_ver='8.6.12'
-            tcl_checksum='87ea890821d2221f2ab5157bc5eb885f'
+            tcl_tk_ver='8.6.13'
+            tcl_checksum='43a1fae7412f61ff11de2cfd05d28cfc3a73762f354a417c62370a54e2caf066'
 
-            tk_checksum='1d6dcf6120356e3d211e056dff5e462a'
-            tk_patches = [ ]
+            tk_checksum='2e65fa069a23365440a3c56c556b8673b5e32a283800d8d9b257e3f584ce0675'
+            tk_patches = ['backport_gh92603_fix.patch', 'backport_gh71383_fix.patch', 'backport_gh110950_fix.patch']
 
 
         base_url = "https://prdownloads.sourceforge.net/tcl/{what}{version}-src.tar.gz"
@@ -360,9 +359,9 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.39.4",
-              url="https://sqlite.org/2022/sqlite-autoconf-3390400.tar.gz",
-              checksum="44b7e6691b0954086f717a6c43b622a5",
+              name="SQLite 3.44.2",
+              url="https://sqlite.org/2023/sqlite-autoconf-3440200.tar.gz",
+              checksum="c02f40fd4f809ced95096250adc5764a",
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
@@ -1148,7 +1147,9 @@ def buildPython():
     # will find them during its extension import sanity checks.
 
     print("Running configure...")
+    print(" NOTE: --with-mimalloc=no pending resolution of weak linking issues")
     runCommand("%s -C --enable-framework --enable-universalsdk=/ "
+               "--with-mimalloc=no "
                "--with-universal-archs=%s "
                "%s "
                "%s "
@@ -1491,7 +1492,7 @@ def packageFromRecipe(targetDir, recipe):
                 IFPkgFlagRelocatable=False,
                 IFPkgFlagRestartAction="NoRestart",
                 IFPkgFlagRootVolumeOnly=True,
-                IFPkgFlagUpdateInstalledLangauges=False,
+                IFPkgFlagUpdateInstalledLanguages=False,
             )
         writePlist(pl, os.path.join(packageContents, 'Info.plist'))
 

@@ -657,11 +657,17 @@ struct _obmalloc_usage {
 #endif /* WITH_PYMALLOC_RADIX_TREE */
 
 
-struct _obmalloc_state {
+struct _obmalloc_global_state {
     int dump_debug_stats;
+    Py_ssize_t interpreter_leaks;
+};
+
+struct _obmalloc_state {
     struct _obmalloc_pools pools;
     struct _obmalloc_mgmt mgmt;
+#if WITH_PYMALLOC_RADIX_TREE
     struct _obmalloc_usage usage;
+#endif
 };
 
 
@@ -675,11 +681,15 @@ void _PyObject_VirtualFree(void *, size_t size);
 
 
 /* This function returns the number of allocated memory blocks, regardless of size */
-PyAPI_FUNC(Py_ssize_t) _Py_GetAllocatedBlocks(void);
+extern Py_ssize_t _Py_GetGlobalAllocatedBlocks(void);
+#define _Py_GetAllocatedBlocks() \
+    _Py_GetGlobalAllocatedBlocks()
+extern Py_ssize_t _PyInterpreterState_GetAllocatedBlocks(PyInterpreterState *);
+extern void _PyInterpreterState_FinalizeAllocatedBlocks(PyInterpreterState *);
 
 
 #ifdef WITH_PYMALLOC
-// Export the symbol for the 3rd party guppy3 project
+// Export the symbol for the 3rd party 'guppy3' project
 PyAPI_FUNC(int) _PyObject_DebugMallocStats(FILE *out);
 #endif
 

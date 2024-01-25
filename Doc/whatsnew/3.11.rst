@@ -2,8 +2,7 @@
   What's New In Python 3.11
 ****************************
 
-:Release: |release|
-:Date: |today|
+:Editor: Pablo Galindo Salgado
 
 .. Rules for maintenance:
 
@@ -46,7 +45,7 @@
    when researching a change.
 
 This article explains the new features in Python 3.11, compared to 3.10.
-
+Python 3.11 was released on October 24, 2022.
 For full details, see the :ref:`changelog <changelog>`.
 
 
@@ -219,17 +218,17 @@ Windows ``py.exe`` launcher improvements
 
 The copy of the :ref:`launcher` included with Python 3.11 has been significantly
 updated. It now supports company/tag syntax as defined in :pep:`514` using the
-``-V:<company>/<tag>`` argument instead of the limited ``-<major>.<minor>``.
+:samp:`-V:{<company>}/{<tag>}` argument instead of the limited :samp:`-{<major>}.{<minor>}`.
 This allows launching distributions other than ``PythonCore``,
-the one hosted on `python.org <https://python.org>`_.
+the one hosted on `python.org <https://www.python.org>`_.
 
 When using ``-V:`` selectors, either company or tag can be omitted, but all
 installs will be searched. For example, ``-V:OtherPython/`` will select the
 "best" tag registered for ``OtherPython``, while ``-V:3.11`` or ``-V:/3.11``
 will select the "best" distribution with tag ``3.11``.
 
-When using the legacy ``-<major>``, ``-<major>.<minor>``,
-``-<major>-<bitness>`` or ``-<major>.<minor>-<bitness>`` arguments,
+When using the legacy :samp:`-{<major>}`, :samp:`-{<major>}.{<minor>}`,
+:samp:`-{<major>}-{<bitness>}` or :samp:`-{<major>}.{<minor>}-{<bitness>}` arguments,
 all existing behaviour should be preserved from past versions,
 and only releases from ``PythonCore`` will be selected.
 However, the ``-64`` suffix now implies "not 32-bit" (not necessarily x86-64),
@@ -460,6 +459,10 @@ Other Language Changes
   :class:`collections.OrderedDict`, :class:`collections.deque`,
   :class:`weakref.WeakSet`, and :class:`datetime.tzinfo` now copies and
   pickles instance attributes implemented as :term:`slots <__slots__>`.
+  This change has an unintended side effect: It trips up a small minority
+  of existing Python projects not expecting :meth:`object.__getstate__` to
+  exist. See the later comments on :gh:`70766` for discussions of what
+  workarounds such code may need.
   (Contributed by Serhiy Storchaka in :issue:`26579`.)
 
 .. _whatsnew311-pythonsafepath:
@@ -496,7 +499,7 @@ Other CPython Implementation Changes
 * The special methods :meth:`~object.__complex__` for :class:`complex`
   and :meth:`~object.__bytes__` for :class:`bytes` are implemented to support
   the :class:`typing.SupportsComplex` and :class:`typing.SupportsBytes` protocols.
-  (Contributed by Mark Dickinson and Dong-hee Na in :issue:`24234`.)
+  (Contributed by Mark Dickinson and Donghee Na in :issue:`24234`.)
 
 * ``siphash13`` is added as a new internal hashing algorithm.
   It has similar security properties as ``siphash24``,
@@ -641,7 +644,7 @@ dataclasses
 datetime
 --------
 
-* Add :attr:`datetime.UTC`, a convenience alias for
+* Add :const:`datetime.UTC`, a convenience alias for
   :attr:`datetime.timezone.utc`. (Contributed by Kabir Kwatra in :gh:`91973`.)
 
 * :meth:`datetime.date.fromisoformat`, :meth:`datetime.time.fromisoformat` and
@@ -667,19 +670,11 @@ enum
   for :meth:`~object.__str__` and :meth:`~object.__format__`
   (used by :func:`str`, :func:`format` and :term:`f-string`\s).
 
-* Changed :class:`~enum.IntEnum`, :class:`~enum.IntFlag` and :class:`~enum.StrEnum`
-  to now inherit from :class:`~enum.ReprEnum`,
-  so their :func:`str` output now matches :func:`format`
-  (both ``str(AnIntEnum.ONE)`` and ``format(AnIntEnum.ONE)`` return ``'1'``,
-  whereas before ``str(AnIntEnum.ONE)`` returned ``'AnIntEnum.ONE'``.
-
-* Changed :meth:`Enum.__format__() <enum.Enum.__format__>`
-  (the default for :func:`format`, :meth:`str.format` and :term:`f-string`\s)
-  of enums with mixed-in types (e.g. :class:`int`, :class:`str`)
-  to also include the class name in the output, not just the member's key.
-  This matches the existing behavior of :meth:`enum.Enum.__str__`,
-  returning e.g. ``'AnEnum.MEMBER'`` for an enum ``AnEnum(str, Enum)``
-  instead of just ``'MEMBER'``.
+* Changed :meth:`Enum.__format__() <enum.Enum.__format__>` (the default for
+  :func:`format`, :meth:`str.format` and :term:`f-string`\s) to always produce
+  the same result as :meth:`Enum.__str__()`:  for enums inheriting from
+  :class:`~enum.ReprEnum` it will be the member's value; for all other enums
+  it will be the enum and member name (e.g. ``Color.RED``).
 
 * Added a new *boundary* class parameter to :class:`~enum.Flag` enums
   and the :class:`~enum.FlagBoundary` enum with its options,
@@ -699,7 +694,7 @@ enum
 * Added the :func:`~enum.global_enum` enum decorator,
   which adjusts :meth:`~object.__repr__` and :meth:`~object.__str__`
   to show values as members of their module rather than the enum class.
-  For example, ``'re.ASCII'`` for the :data:`~re.ASCII` member
+  For example, ``'re.ASCII'`` for the :const:`~re.ASCII` member
   of :class:`re.RegexFlag` rather than ``'RegexFlag.ASCII'``.
 
 * Enhanced :class:`~enum.Flag` to support
@@ -902,7 +897,7 @@ os
 
 * On Windows, :func:`os.urandom` now uses ``BCryptGenRandom()``,
   instead of ``CryptGenRandom()`` which is deprecated.
-  (Contributed by Dong-hee Na in :issue:`44611`.)
+  (Contributed by Donghee Na in :issue:`44611`.)
 
 
 .. _whatsnew311-pathlib:
@@ -1072,8 +1067,8 @@ threading
 
 * On Unix, if the ``sem_clockwait()`` function is available in the C library
   (glibc 2.30 and newer), the :meth:`threading.Lock.acquire` method now uses
-  the monotonic clock (:data:`time.CLOCK_MONOTONIC`) for the timeout, rather
-  than using the system clock (:data:`time.CLOCK_REALTIME`), to not be affected
+  the monotonic clock (:const:`time.CLOCK_MONOTONIC`) for the timeout, rather
+  than using the system clock (:const:`time.CLOCK_REALTIME`), to not be affected
   by system clock changes.
   (Contributed by Victor Stinner in :issue:`41710`.)
 
@@ -1094,7 +1089,7 @@ time
   <https://docs.microsoft.com/en-us/windows-hardware/drivers/kernel/high-resolution-timers>`_
   which has a resolution of 100 nanoseconds (10\ :sup:`-7` seconds). Previously,
   it had a resolution of 1 millisecond (10\ :sup:`-3` seconds).
-  (Contributed by Benjamin Szőke, Dong-hee Na, Eryk Sun and Victor Stinner in :issue:`21302` and :issue:`45429`.)
+  (Contributed by Benjamin Szőke, Donghee Na, Eryk Sun and Victor Stinner in :issue:`21302` and :issue:`45429`.)
 
 
 .. _whatsnew311-tkinter:
@@ -1310,7 +1305,7 @@ This section covers specific optimizations independent of the
 
 * :func:`unicodedata.normalize`
   now normalizes pure-ASCII strings in constant time.
-  (Contributed by Dong-hee Na in :issue:`44987`.)
+  (Contributed by Donghee Na in :issue:`44987`.)
 
 
 .. _whatsnew311-faster-cpython:
@@ -1318,14 +1313,17 @@ This section covers specific optimizations independent of the
 Faster CPython
 ==============
 
-CPython 3.11 is on average `25% faster <https://github.com/faster-cpython/ideas#published-results>`_
-than CPython 3.10 when measured with the
+CPython 3.11 is an average of
+`25% faster <https://github.com/faster-cpython/ideas#published-results>`_
+than CPython 3.10 as measured with the
 `pyperformance <https://github.com/python/pyperformance>`_ benchmark suite,
-and compiled with GCC on Ubuntu Linux. Depending on your workload, the speedup
-could be up to 10-60% faster.
+when compiled with GCC on Ubuntu Linux.
+Depending on your workload, the overall speedup could be 10-60%.
 
-This project focuses on two major areas in Python: faster startup and faster
-runtime. Other optimizations not under this project are listed in `Optimizations`_.
+This project focuses on two major areas in Python:
+:ref:`whatsnew311-faster-startup` and :ref:`whatsnew311-faster-runtime`.
+Optimizations not covered by this project are listed separately under
+:ref:`whatsnew311-optimizations`.
 
 
 .. _whatsnew311-faster-startup:
@@ -1338,8 +1336,8 @@ Faster Startup
 Frozen imports / Static code objects
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Python caches bytecode in the :ref:`__pycache__<tut-pycache>` directory to
-speed up module loading.
+Python caches :term:`bytecode` in the :ref:`__pycache__ <tut-pycache>`
+directory to speed up module loading.
 
 Previously in 3.10, Python module execution looked like this:
 
@@ -1348,8 +1346,9 @@ Previously in 3.10, Python module execution looked like this:
    Read __pycache__ -> Unmarshal -> Heap allocated code object -> Evaluate
 
 In Python 3.11, the core modules essential for Python startup are "frozen".
-This means that their code objects (and bytecode) are statically allocated
-by the interpreter. This reduces the steps in module execution process to this:
+This means that their :ref:`codeobjects` (and bytecode)
+are statically allocated by the interpreter.
+This reduces the steps in module execution process to:
 
 .. code-block:: text
 
@@ -1358,7 +1357,7 @@ by the interpreter. This reduces the steps in module execution process to this:
 Interpreter startup is now 10-15% faster in Python 3.11. This has a big
 impact for short-running programs using Python.
 
-(Contributed by Eric Snow, Guido van Rossum and Kumar Aditya in numerous issues.)
+(Contributed by Eric Snow, Guido van Rossum and Kumar Aditya in many issues.)
 
 
 .. _whatsnew311-faster-runtime:
@@ -1371,17 +1370,19 @@ Faster Runtime
 Cheaper, lazy Python frames
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Python frames are created whenever Python calls a Python function. This frame
-holds execution information. The following are new frame optimizations:
+Python frames, holding execution information,
+are created whenever Python calls a Python function.
+The following are new frame optimizations:
 
 - Streamlined the frame creation process.
 - Avoided memory allocation by generously re-using frame space on the C stack.
 - Streamlined the internal frame struct to contain only essential information.
   Frames previously held extra debugging and memory management information.
 
-Old-style frame objects are now created only when requested by debuggers or
-by Python introspection functions such as ``sys._getframe`` or
-``inspect.currentframe``. For most user code, no frame objects are
+Old-style :ref:`frame objects <frame-objects>`
+are now created only when requested by debuggers
+or by Python introspection functions such as :func:`sys._getframe` and
+:func:`inspect.currentframe`. For most user code, no frame objects are
 created at all. As a result, nearly all Python functions calls have sped
 up significantly. We measured a 3-7% speedup in pyperformance.
 
@@ -1402,10 +1403,11 @@ In 3.11, when CPython detects Python code calling another Python function,
 it sets up a new frame, and "jumps" to the new code inside the new frame. This
 avoids calling the C interpreting function altogether.
 
-Most Python function calls now consume no C stack space. This speeds up
-most of such calls. In simple recursive functions like fibonacci or
-factorial, a 1.7x speedup was observed. This also means recursive functions
-can recurse significantly deeper (if the user increases the recursion limit).
+Most Python function calls now consume no C stack space, speeding them up.
+In simple recursive functions like fibonacci or
+factorial, we observed a 1.7x speedup. This also means recursive functions
+can recurse significantly deeper
+(if the user increases the recursion limit with :func:`sys.setrecursionlimit`).
 We measured a 1-3% improvement in pyperformance.
 
 (Contributed by Pablo Galindo and Mark Shannon in :issue:`45256`.)
@@ -1416,7 +1418,7 @@ We measured a 1-3% improvement in pyperformance.
 PEP 659: Specializing Adaptive Interpreter
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:pep:`659` is one of the key parts of the faster CPython project. The general
+:pep:`659` is one of the key parts of the Faster CPython project. The general
 idea is that while Python is a dynamic language, most code has regions where
 objects and types rarely change. This concept is known as *type stability*.
 
@@ -1425,17 +1427,18 @@ in the executing code. Python will then replace the current operation with a
 more specialized one. This specialized operation uses fast paths available only
 to those use cases/types, which generally outperform their generic
 counterparts. This also brings in another concept called *inline caching*, where
-Python caches the results of expensive operations directly in the bytecode.
+Python caches the results of expensive operations directly in the
+:term:`bytecode`.
 
 The specializer will also combine certain common instruction pairs into one
-superinstruction. This reduces the overhead during execution.
+superinstruction, reducing the overhead during execution.
 
 Python will only specialize
 when it sees code that is "hot" (executed multiple times). This prevents Python
-from wasting time for run-once code. Python can also de-specialize when code is
+from wasting time on run-once code. Python can also de-specialize when code is
 too dynamic or when the use changes. Specialization is attempted periodically,
-and specialization attempts are not too expensive. This allows specialization
-to adapt to new circumstances.
+and specialization attempts are not too expensive,
+allowing specialization to adapt to new circumstances.
 
 (PEP written by Mark Shannon, with ideas inspired by Stefan Brunthaler.
 See :pep:`659` for more information. Implementation by Mark Shannon and Brandt
@@ -1448,32 +1451,32 @@ Bucher, with additional help from Irit Katriel and Dennis Sweeney.)
 | Operation     | Form               | Specialization                                        | Operation speedup | Contributor(s)    |
 |               |                    |                                                       | (up to)           |                   |
 +===============+====================+=======================================================+===================+===================+
-| Binary        | ``x+x; x*x; x-x;`` | Binary add, multiply and subtract for common types    | 10%               | Mark Shannon,     |
-| operations    |                    | such as ``int``, ``float``, and ``str`` take custom   |                   | Dong-hee Na,      |
-|               |                    | fast paths for their underlying types.                |                   | Brandt Bucher,    |
+| Binary        | ``x + x``          | Binary add, multiply and subtract for common types    | 10%               | Mark Shannon,     |
+| operations    |                    | such as :class:`int`, :class:`float` and :class:`str` |                   | Donghee Na,       |
+|               | ``x - x``          | take custom fast paths for their underlying types.    |                   | Brandt Bucher,    |
 |               |                    |                                                       |                   | Dennis Sweeney    |
+|               | ``x * x``          |                                                       |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
-| Subscript     | ``a[i]``           | Subscripting container types such as ``list``,        | 10-25%            | Irit Katriel,     |
-|               |                    | ``tuple`` and ``dict`` directly index the underlying  |                   | Mark Shannon      |
-|               |                    | data structures.                                      |                   |                   |
+| Subscript     | ``a[i]``           | Subscripting container types such as :class:`list`,   | 10-25%            | Irit Katriel,     |
+|               |                    | :class:`tuple` and :class:`dict` directly index       |                   | Mark Shannon      |
+|               |                    | the underlying data structures.                       |                   |                   |
 |               |                    |                                                       |                   |                   |
-|               |                    | Subscripting custom ``__getitem__``                   |                   |                   |
+|               |                    | Subscripting custom :meth:`~object.__getitem__`       |                   |                   |
 |               |                    | is also inlined similar to :ref:`inline-calls`.       |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
 | Store         | ``a[i] = z``       | Similar to subscripting specialization above.         | 10-25%            | Dennis Sweeney    |
 | subscript     |                    |                                                       |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
 | Calls         | ``f(arg)``         | Calls to common builtin (C) functions and types such  | 20%               | Mark Shannon,     |
-|               | ``C(arg)``         | as ``len`` and ``str`` directly call their underlying |                   | Ken Jin           |
-|               |                    | C version. This avoids going through the internal     |                   |                   |
-|               |                    | calling convention.                                   |                   |                   |
-|               |                    |                                                       |                   |                   |
+|               |                    | as :func:`len` and :class:`str` directly call their   |                   | Ken Jin           |
+|               | ``C(arg)``         | underlying C version. This avoids going through the   |                   |                   |
+|               |                    | internal calling convention.                          |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
-| Load          | ``print``          | The object's index in the globals/builtins namespace  | [1]_              | Mark Shannon      |
-| global        | ``len``            | is cached. Loading globals and builtins require       |                   |                   |
-| variable      |                    | zero namespace lookups.                               |                   |                   |
+| Load          | ``print``          | The object's index in the globals/builtins namespace  | [#load-global]_   | Mark Shannon      |
+| global        |                    | is cached. Loading globals and builtins require       |                   |                   |
+| variable      | ``len``            | zero namespace lookups.                               |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
-| Load          | ``o.attr``         | Similar to loading global variables. The attribute's  | [2]_              | Mark Shannon      |
+| Load          | ``o.attr``         | Similar to loading global variables. The attribute's  | [#load-attr]_     | Mark Shannon      |
 | attribute     |                    | index inside the class/object's namespace is cached.  |                   |                   |
 |               |                    | In most cases, attribute loading will require zero    |                   |                   |
 |               |                    | namespace lookups.                                    |                   |                   |
@@ -1485,14 +1488,15 @@ Bucher, with additional help from Irit Katriel and Dennis Sweeney.)
 | Store         | ``o.attr = z``     | Similar to load attribute optimization.               | 2%                | Mark Shannon      |
 | attribute     |                    |                                                       | in pyperformance  |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
-| Unpack        | ``*seq``           | Specialized for common containers such as ``list``    | 8%                | Brandt Bucher     |
-| Sequence      |                    | and ``tuple``. Avoids internal calling convention.    |                   |                   |
+| Unpack        | ``*seq``           | Specialized for common containers such as             | 8%                | Brandt Bucher     |
+| Sequence      |                    | :class:`list` and :class:`tuple`.                     |                   |                   |
+|               |                    | Avoids internal calling convention.                   |                   |                   |
 +---------------+--------------------+-------------------------------------------------------+-------------------+-------------------+
 
-.. [1] A similar optimization already existed since Python 3.8.  3.11
-       specializes for more forms and reduces some overhead.
+.. [#load-global] A similar optimization already existed since Python 3.8.
+       3.11 specializes for more forms and reduces some overhead.
 
-.. [2] A similar optimization already existed since Python 3.10.
+.. [#load-attr] A similar optimization already existed since Python 3.10.
        3.11 specializes for more forms. Furthermore, all attribute loads should
        be sped up by :issue:`45947`.
 
@@ -1502,13 +1506,24 @@ Bucher, with additional help from Irit Katriel and Dennis Sweeney.)
 Misc
 ----
 
-* Objects now require less memory due to lazily created object namespaces. Their
-  namespace dictionaries now also share keys more freely.
+* Objects now require less memory due to lazily created object namespaces.
+  Their namespace dictionaries now also share keys more freely.
   (Contributed Mark Shannon in :issue:`45340` and :issue:`40116`.)
+
+* "Zero-cost" exceptions are implemented, eliminating the cost
+  of :keyword:`try` statements when no exception is raised.
+  (Contributed by Mark Shannon in :issue:`40222`.)
 
 * A more concise representation of exceptions in the interpreter reduced the
   time required for catching an exception by about 10%.
   (Contributed by Irit Katriel in :issue:`45711`.)
+
+* :mod:`re`'s regular expression matching engine has been partially refactored,
+  and now uses computed gotos (or "threaded code") on supported platforms. As a
+  result, Python 3.11 executes the `pyperformance regular expression benchmarks
+  <https://pyperformance.readthedocs.io/benchmarks.html#regex-dna>`_ up to 10%
+  faster than Python 3.10.
+  (Contributed by Brandt Bucher in :gh:`91404`.)
 
 
 .. _whatsnew311-faster-cpython-faq:
@@ -1516,35 +1531,47 @@ Misc
 FAQ
 ---
 
-| Q: How should I write my code to utilize these speedups?
-|
-| A: You don't have to change your code. Write Pythonic code that follows common
-  best practices. The Faster CPython project optimizes for common code
-  patterns we observe.
-|
-|
-| Q: Will CPython 3.11 use more memory?
-|
-| A: Maybe not. We don't expect memory use to exceed 20% more than 3.10.
-  This is offset by memory optimizations for frame objects and object
-  dictionaries as mentioned above.
-|
-|
-| Q: I don't see any speedups in my workload. Why?
-|
-| A: Certain code won't have noticeable benefits. If your code spends most of
-  its time on I/O operations, or already does most of its
-  computation in a C extension library like numpy, there won't be significant
-  speedup. This project currently benefits pure-Python workloads the most.
-|
-| Furthermore, the pyperformance figures are a geometric mean. Even within the
-  pyperformance benchmarks, certain benchmarks have slowed down slightly, while
-  others have sped up by nearly 2x!
-|
-|
-| Q: Is there a JIT compiler?
-|
-| A: No. We're still exploring other optimizations.
+.. _faster-cpython-faq-my-code:
+
+How should I write my code to utilize these speedups?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Write Pythonic code that follows common best practices;
+you don't have to change your code.
+The Faster CPython project optimizes for common code patterns we observe.
+
+
+.. _faster-cpython-faq-memory:
+
+Will CPython 3.11 use more memory?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Maybe not; we don't expect memory use to exceed 20% higher than 3.10.
+This is offset by memory optimizations for frame objects and object
+dictionaries as mentioned above.
+
+
+.. _faster-cpython-ymmv:
+
+I don't see any speedups in my workload. Why?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Certain code won't have noticeable benefits. If your code spends most of
+its time on I/O operations, or already does most of its
+computation in a C extension library like NumPy, there won't be significant
+speedups. This project currently benefits pure-Python workloads the most.
+
+Furthermore, the pyperformance figures are a geometric mean. Even within the
+pyperformance benchmarks, certain benchmarks have slowed down slightly, while
+others have sped up by nearly 2x!
+
+
+.. _faster-cpython-jit:
+
+Is there a JIT compiler?
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+No. We're still exploring other optimizations.
 
 
 .. _whatsnew311-faster-cpython-about:
@@ -1708,24 +1735,24 @@ Modules
   slated for removal in Python 3.13:
 
   +---------------------+---------------------+---------------------+---------------------+---------------------+
-  | :mod:`aifc`         | :mod:`chunk`        | :mod:`msilib`       | :mod:`pipes`        | :mod:`telnetlib`    |
+  | :mod:`!aifc`        | :mod:`!chunk`       | :mod:`!msilib`      | :mod:`!pipes`       | :mod:`!telnetlib`   |
   +---------------------+---------------------+---------------------+---------------------+---------------------+
-  | :mod:`audioop`      | :mod:`crypt`        | :mod:`nis`          | :mod:`sndhdr`       | :mod:`uu`           |
+  | :mod:`!audioop`     | :mod:`!crypt`       | :mod:`!nis`         | :mod:`!sndhdr`      | :mod:`!uu`          |
   +---------------------+---------------------+---------------------+---------------------+---------------------+
-  | :mod:`cgi`          | :mod:`imghdr`       | :mod:`nntplib`      | :mod:`spwd`         | :mod:`xdrlib`       |
+  | :mod:`!cgi`         | :mod:`!imghdr`      | :mod:`!nntplib`     | :mod:`!spwd`        | :mod:`!xdrlib`      |
   +---------------------+---------------------+---------------------+---------------------+---------------------+
-  | :mod:`cgitb`        | :mod:`mailcap`      | :mod:`ossaudiodev`  | :mod:`sunau`        |                     |
+  | :mod:`!cgitb`       | :mod:`!mailcap`     | :mod:`!ossaudiodev` | :mod:`!sunau`       |                     |
   +---------------------+---------------------+---------------------+---------------------+---------------------+
 
   (Contributed by Brett Cannon in :issue:`47061` and Victor Stinner in
   :gh:`68966`.)
 
-* The :mod:`asynchat`, :mod:`asyncore` and  :mod:`smtpd` modules have been
+* The :mod:`!asynchat`, :mod:`!asyncore` and  :mod:`!smtpd` modules have been
   deprecated since at least Python 3.6. Their documentation and deprecation
   warnings have now been updated to note they will be removed in Python 3.12.
   (Contributed by Hugo van Kemenade in :issue:`47022`.)
 
-* The :mod:`lib2to3` package and :ref:`2to3 <2to3-reference>` tool
+* The :mod:`!lib2to3` package and ``2to3`` tool
   are now deprecated and may not be able to parse Python 3.10 or newer.
   See :pep:`617`, introducing the new PEG parser, for details.
   (Contributed by Victor Stinner in :issue:`40360`.)
@@ -1746,7 +1773,7 @@ Standard Library
 
   * the :class:`!configparser.SafeConfigParser` class
   * the :attr:`!configparser.ParsingError.filename` property
-  * the :meth:`configparser.RawConfigParser.readfp` method
+  * the :meth:`!configparser.RawConfigParser.readfp` method
 
   (Contributed by Hugo van Kemenade in :issue:`45173`.)
 
@@ -1771,7 +1798,7 @@ Standard Library
   * :func:`importlib.resources.path`
 
 * The :func:`locale.getdefaultlocale` function is deprecated and will be
-  removed in Python 3.13. Use :func:`locale.setlocale`,
+  removed in Python 3.15. Use :func:`locale.setlocale`,
   :func:`locale.getpreferredencoding(False) <locale.getpreferredencoding>` and
   :func:`locale.getlocale` functions instead.
   (Contributed by Victor Stinner in :gh:`90817`.)
@@ -1789,12 +1816,12 @@ Standard Library
   (Contributed by Serhiy Storchaka in :gh:`91760`.)
 
 * In the :mod:`re` module, the :func:`!re.template` function
-  and the corresponding :data:`!re.TEMPLATE` and :data:`!re.T` flags
+  and the corresponding :const:`!re.TEMPLATE` and :const:`!re.T` flags
   are deprecated, as they were undocumented and lacked an obvious purpose.
   They will be removed in Python 3.13.
   (Contributed by Serhiy Storchaka and Miro Hrončok in :gh:`92728`.)
 
-* :func:`turtle.settiltangle` has been deprecated since Python 3.1;
+* :func:`!turtle.settiltangle` has been deprecated since Python 3.1;
   it now emits a deprecation warning and will be removed in Python 3.13. Use
   :func:`turtle.tiltangle` instead (it was earlier incorrectly marked
   as deprecated, and its docstring is now corrected).
@@ -1812,7 +1839,7 @@ Standard Library
 
 * :class:`!webbrowser.MacOSX` is deprecated and will be removed in Python 3.13.
   It is untested, undocumented, and not used by :mod:`webbrowser` itself.
-  (Contributed by Dong-hee Na in :issue:`42255`.)
+  (Contributed by Donghee Na in :issue:`42255`.)
 
 * The behavior of returning a value from a :class:`~unittest.TestCase` and
   :class:`~unittest.IsolatedAsyncioTestCase` test methods (other than the
@@ -1833,6 +1860,10 @@ Standard Library
 
   (Contributed by Erlend E. Aasland in :issue:`5846`.)
 
+* :meth:`!unittest.TestProgram.usageExit` is marked deprecated, to be removed
+  in 3.13.
+  (Contributed by Carlos Damázio in :gh:`67048`.)
+
 
 .. _whatsnew311-pending-removal:
 .. _whatsnew311-python-api-pending-removal:
@@ -1846,35 +1877,35 @@ and will be removed in Python 3.12.
 C APIs pending removal are
 :ref:`listed separately <whatsnew311-c-api-pending-removal>`.
 
-* The :mod:`asynchat` module
-* The :mod:`asyncore` module
+* The :mod:`!asynchat` module
+* The :mod:`!asyncore` module
 * The :ref:`entire distutils package <distutils-deprecated>`
-* The :mod:`imp` module
+* The :mod:`!imp` module
 * The :class:`typing.io <typing.IO>` namespace
 * The :class:`typing.re <typing.Pattern>` namespace
 * :func:`!cgi.log`
-* :func:`importlib.find_loader`
-* :meth:`importlib.abc.Loader.module_repr`
-* :meth:`importlib.abc.MetaPathFinder.find_module`
-* :meth:`importlib.abc.PathEntryFinder.find_loader`
-* :meth:`importlib.abc.PathEntryFinder.find_module`
+* :func:`!importlib.find_loader`
+* :meth:`!importlib.abc.Loader.module_repr`
+* :meth:`!importlib.abc.MetaPathFinder.find_module`
+* :meth:`!importlib.abc.PathEntryFinder.find_loader`
+* :meth:`!importlib.abc.PathEntryFinder.find_module`
 * :meth:`!importlib.machinery.BuiltinImporter.find_module`
 * :meth:`!importlib.machinery.BuiltinLoader.module_repr`
 * :meth:`!importlib.machinery.FileFinder.find_loader`
 * :meth:`!importlib.machinery.FileFinder.find_module`
 * :meth:`!importlib.machinery.FrozenImporter.find_module`
 * :meth:`!importlib.machinery.FrozenLoader.module_repr`
-* :meth:`importlib.machinery.PathFinder.find_module`
+* :meth:`!importlib.machinery.PathFinder.find_module`
 * :meth:`!importlib.machinery.WindowsRegistryFinder.find_module`
-* :func:`importlib.util.module_for_loader`
+* :func:`!importlib.util.module_for_loader`
 * :func:`!importlib.util.set_loader_wrapper`
 * :func:`!importlib.util.set_package_wrapper`
-* :class:`pkgutil.ImpImporter`
-* :class:`pkgutil.ImpLoader`
-* :meth:`pathlib.Path.link_to`
+* :class:`!pkgutil.ImpImporter`
+* :class:`!pkgutil.ImpLoader`
+* :meth:`!pathlib.Path.link_to`
 * :func:`!sqlite3.enable_shared_cache`
 * :func:`!sqlite3.OptimizedUnicode`
-* :envvar:`PYTHONTHREADDEBUG` environment variable
+* :envvar:`!PYTHONTHREADDEBUG` environment variable
 * The following deprecated aliases in :mod:`unittest`:
 
     ============================ =============================== ===============
@@ -1953,7 +1984,7 @@ Removed C APIs are :ref:`listed separately <whatsnew311-c-api-removed>`.
   :meth:`!NullTranslations.set_output_charset` methods,
   and the *codeset* parameter of :func:`!translation` and :func:`!install`,
   since they are only used for the :func:`!l*gettext` functions.
-  (Contributed by Dong-hee Na and Serhiy Storchaka in :issue:`44235`.)
+  (Contributed by Donghee Na and Serhiy Storchaka in :issue:`44235`.)
 
 * Removed from the :mod:`inspect` module:
 
@@ -1976,9 +2007,9 @@ Removed C APIs are :ref:`listed separately <whatsnew311-c-api-removed>`.
   because it was not used and added by mistake in previous versions.
   (Contributed by Nikita Sobolev in :issue:`46483`.)
 
-* Removed the :class:`!MailmanProxy` class in the :mod:`smtpd` module,
+* Removed the :class:`!MailmanProxy` class in the :mod:`!smtpd` module,
   as it is unusable without the external :mod:`!mailman` package.
-  (Contributed by Dong-hee Na in :issue:`35800`.)
+  (Contributed by Donghee Na in :issue:`35800`.)
 
 * Removed the deprecated :meth:`!split` method of :class:`!_tkinter.TkappType`.
   (Contributed by Erlend E. Aasland in :issue:`38371`.)
@@ -2083,30 +2114,22 @@ Build Changes
   and WASI contributed by Christian Heimes in :gh:`90473`;
   platforms promoted in :gh:`95085`)
 
-* Building Python now requires:
+* Building CPython now requires:
 
-  * A `C11 <https://en.cppreference.com/w/c/11>`_ compiler.
+  * A `C11 <https://en.cppreference.com/w/c/11>`_ compiler and standard library.
     `Optional C11 features
     <https://en.wikipedia.org/wiki/C11_(C_standard_revision)#Optional_features>`_
     are not required.
-    (Contributed by Victor Stinner in :issue:`46656`.)
+    (Contributed by Victor Stinner in :issue:`46656`,
+    :issue:`45440` and :issue:`46640`.)
 
   * Support for `IEEE 754 <https://en.wikipedia.org/wiki/IEEE_754>`_
     floating point numbers.
     (Contributed by Victor Stinner in :issue:`46917`.)
 
-  * Support for `floating point Not-a-Number (NaN)
-    <https://en.wikipedia.org/wiki/NaN#Floating_point>`_,
-    as the :c:macro:`!Py_NO_NAN` macro has been removed.
-    (Contributed by Victor Stinner in :issue:`46656`.)
-
-  * A `C99 <https://en.cppreference.com/w/c/99>`_
-    ``<math.h>`` header file providing the
-    :c:func:`!copysign`, :c:func:`!hypot`, :c:func:`!isfinite`,
-    :c:func:`!isinf`, :c:func:`!isnan`, and :c:func:`!round` functions
-    (contributed by Victor Stinner in :issue:`45440`);
-    and a :c:data:`!NAN` constant or the :c:func:`!__builtin_nan` function
-    (Contributed by Victor Stinner in :issue:`46640`).
+* The :c:macro:`!Py_NO_NAN` macro has been removed.
+  Since CPython now requires IEEE 754 floats, NaN values are always available.
+  (Contributed by Victor Stinner in :issue:`46656`.)
 
 * The :mod:`tkinter` package now requires `Tcl/Tk <https://www.tcl.tk>`_
   version 8.5.12 or newer.
@@ -2128,7 +2151,7 @@ Build Changes
 * CPython can now be built with the
   `ThinLTO <https://clang.llvm.org/docs/ThinLTO.html>`_ option
   via passing ``thin`` to :option:`--with-lto`, i.e. ``--with-lto=thin``.
-  (Contributed by Dong-hee Na and Brett Holman in :issue:`44340`.)
+  (Contributed by Donghee Na and Brett Holman in :issue:`44340`.)
 
 * Freelists for object structs can now be disabled. A new :program:`configure`
   option :option:`--without-freelists` can be used to disable all freelists
@@ -2197,7 +2220,7 @@ New Features
   * :c:func:`PyBuffer_SizeFromFormat`
   * :c:func:`PyBuffer_ToContiguous`
   * :c:func:`PyBuffer_FromContiguous`
-  * :c:func:`PyBuffer_CopyData`
+  * :c:func:`PyObject_CopyData`
   * :c:func:`PyBuffer_IsContiguous`
   * :c:func:`PyBuffer_FillContiguousStrides`
   * :c:func:`PyBuffer_FillInfo`
@@ -2208,7 +2231,7 @@ New Features
 
   (Contributed by Christian Heimes in :issue:`45459`.)
 
-* Added the :c:data:`PyType_GetModuleByDef` function, used to get the module
+* Added the :c:func:`PyType_GetModuleByDef` function, used to get the module
   in which a method was defined, in cases where this information is not
   available directly (via :c:type:`PyCMethod`).
   (Contributed by Petr Viktorin in :issue:`46613`.)
@@ -2328,11 +2351,11 @@ Porting to Python 3.11
     #endif
 
 * The :c:func:`PyType_Ready` function now raises an error if a type is defined
-  with the :const:`Py_TPFLAGS_HAVE_GC` flag set but has no traverse function
+  with the :c:macro:`Py_TPFLAGS_HAVE_GC` flag set but has no traverse function
   (:c:member:`PyTypeObject.tp_traverse`).
   (Contributed by Victor Stinner in :issue:`44263`.)
 
-* Heap types with the :const:`Py_TPFLAGS_IMMUTABLETYPE` flag can now inherit
+* Heap types with the :c:macro:`Py_TPFLAGS_IMMUTABLETYPE` flag can now inherit
   the :pep:`590` vectorcall protocol.  Previously, this was only possible for
   :ref:`static types <static-types>`.
   (Contributed by Erlend E. Aasland in :issue:`43908`)
@@ -2435,11 +2458,12 @@ Porting to Python 3.11
   * ``f_valuestack``: removed.
 
   The Python frame object is now created lazily. A side effect is that the
-  ``f_back`` member must not be accessed directly, since its value is now also
+  :attr:`~frame.f_back` member must not be accessed directly,
+  since its value is now also
   computed lazily. The :c:func:`PyFrame_GetBack` function must be called
   instead.
 
-  Debuggers that accessed the ``f_locals`` directly *must* call
+  Debuggers that accessed the :attr:`~frame.f_locals` directly *must* call
   :c:func:`PyFrame_GetLocals` instead. They no longer need to call
   :c:func:`PyFrame_FastToLocalsWithError` or :c:func:`PyFrame_LocalsToFast`,
   in fact they should not call those functions. The necessary updating of the
@@ -2466,7 +2490,7 @@ Porting to Python 3.11
       #endif
 
   Or use the `pythoncapi_compat project
-  <https://github.com/python/pythoncapi_compat>`__ to get these two
+  <https://github.com/python/pythoncapi-compat>`__ to get these two
   functions on older Python versions.
 
 * Changes of the :c:type:`PyThreadState` structure members:
@@ -2518,8 +2542,8 @@ Porting to Python 3.11
       }
       #endif
 
-  Or use `the pythoncapi_compat project
-  <https://github.com/python/pythoncapi_compat>`__ to get these functions
+  Or use `the pythoncapi-compat project
+  <https://github.com/python/pythoncapi-compat>`__ to get these functions
   on old Python functions.
 
 * Distributors are encouraged to build Python with the optimized Blake2
@@ -2543,18 +2567,18 @@ Deprecated
 
 * Deprecate the following functions to configure the Python initialization:
 
-  * :c:func:`PySys_AddWarnOptionUnicode`
-  * :c:func:`PySys_AddWarnOption`
-  * :c:func:`PySys_AddXOption`
-  * :c:func:`PySys_HasWarnOptions`
-  * :c:func:`PySys_SetArgvEx`
-  * :c:func:`PySys_SetArgv`
-  * :c:func:`PySys_SetPath`
-  * :c:func:`Py_SetPath`
-  * :c:func:`Py_SetProgramName`
-  * :c:func:`Py_SetPythonHome`
-  * :c:func:`Py_SetStandardStreamEncoding`
-  * :c:func:`_Py_SetProgramFullPath`
+  * :c:func:`!PySys_AddWarnOptionUnicode`
+  * :c:func:`!PySys_AddWarnOption`
+  * :c:func:`!PySys_AddXOption`
+  * :c:func:`!PySys_HasWarnOptions`
+  * :c:func:`!PySys_SetArgvEx`
+  * :c:func:`!PySys_SetArgv`
+  * :c:func:`!PySys_SetPath`
+  * :c:func:`!Py_SetPath`
+  * :c:func:`!Py_SetProgramName`
+  * :c:func:`!Py_SetPythonHome`
+  * :c:func:`!Py_SetStandardStreamEncoding`
+  * :c:func:`!_Py_SetProgramFullPath`
 
   Use the new :c:type:`PyConfig` API of the :ref:`Python Initialization Configuration
   <init-config>` instead (:pep:`587`).
@@ -2572,22 +2596,22 @@ Pending Removal in Python 3.12
 The following C APIs have been deprecated in earlier Python releases,
 and will be removed in Python 3.12.
 
-* :c:func:`PyUnicode_AS_DATA`
-* :c:func:`PyUnicode_AS_UNICODE`
-* :c:func:`PyUnicode_AsUnicodeAndSize`
-* :c:func:`PyUnicode_AsUnicode`
-* :c:func:`PyUnicode_FromUnicode`
-* :c:func:`PyUnicode_GET_DATA_SIZE`
-* :c:func:`PyUnicode_GET_SIZE`
-* :c:func:`PyUnicode_GetSize`
+* :c:func:`!PyUnicode_AS_DATA`
+* :c:func:`!PyUnicode_AS_UNICODE`
+* :c:func:`!PyUnicode_AsUnicodeAndSize`
+* :c:func:`!PyUnicode_AsUnicode`
+* :c:func:`!PyUnicode_FromUnicode`
+* :c:func:`!PyUnicode_GET_DATA_SIZE`
+* :c:func:`!PyUnicode_GET_SIZE`
+* :c:func:`!PyUnicode_GetSize`
 * :c:func:`PyUnicode_IS_COMPACT`
 * :c:func:`PyUnicode_IS_READY`
 * :c:func:`PyUnicode_READY`
-* :c:func:`Py_UNICODE_WSTR_LENGTH`
-* :c:func:`_PyUnicode_AsUnicode`
-* :c:macro:`PyUnicode_WCHAR_KIND`
+* :c:func:`!PyUnicode_WSTR_LENGTH`
+* :c:func:`!_PyUnicode_AsUnicode`
+* :c:macro:`!PyUnicode_WCHAR_KIND`
 * :c:type:`PyUnicodeObject`
-* :c:func:`PyUnicode_InternImmortal()`
+* :c:func:`!PyUnicode_InternImmortal`
 
 
 .. _whatsnew311-c-api-removed:
@@ -2595,7 +2619,7 @@ and will be removed in Python 3.12.
 Removed
 -------
 
-* :c:func:`PyFrame_BlockSetup` and :c:func:`PyFrame_BlockPop` have been
+* :c:func:`!PyFrame_BlockSetup` and :c:func:`!PyFrame_BlockPop` have been
   removed.
   (Contributed by Mark Shannon in :issue:`40222`.)
 
@@ -2631,7 +2655,7 @@ Removed
   * :c:func:`PyMarshal_WriteObjectToString`
   * the ``Py_MARSHAL_VERSION`` macro
 
-  These are not part of the :ref:`limited API <stable-abi-list>`.
+  These are not part of the :ref:`limited API <limited-api-list>`.
 
   (Contributed by Victor Stinner in :issue:`45474`.)
 

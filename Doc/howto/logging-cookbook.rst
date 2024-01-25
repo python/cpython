@@ -307,7 +307,7 @@ Suppose you configure logging with the following JSON:
                 "class": "logging.StreamHandler",
                 "level": "INFO",
                 "formatter": "simple",
-                "stream": "ext://sys.stdout",
+                "stream": "ext://sys.stdout"
             },
             "stderr": {
                 "class": "logging.StreamHandler",
@@ -332,18 +332,20 @@ Suppose you configure logging with the following JSON:
         }
     }
 
-This configuration does *almost* what we want, except that ``sys.stdout`` would
-show messages of severity ``ERROR`` and above as well as ``INFO`` and
-``WARNING`` messages. To prevent this, we can set up a filter which excludes
-those messages and add it to the relevant handler. This can be configured by
+This configuration does *almost* what we want, except that ``sys.stdout`` would show messages
+of severity ``ERROR`` and only events of this severity and higher will be tracked
+as well as ``INFO`` and ``WARNING`` messages. To prevent this, we can set up a filter which
+excludes those messages and add it to the relevant handler. This can be configured by
 adding a ``filters`` section parallel to ``formatters`` and ``handlers``:
 
 .. code-block:: json
 
-    "filters": {
-        "warnings_and_below": {
-            "()" : "__main__.filter_maker",
-            "level": "WARNING"
+    {
+        "filters": {
+            "warnings_and_below": {
+                "()" : "__main__.filter_maker",
+                "level": "WARNING"
+            }
         }
     }
 
@@ -351,12 +353,14 @@ and changing the section on the ``stdout`` handler to add it:
 
 .. code-block:: json
 
-    "stdout": {
-        "class": "logging.StreamHandler",
-        "level": "INFO",
-        "formatter": "simple",
-        "stream": "ext://sys.stdout",
-        "filters": ["warnings_and_below"]
+    {
+        "stdout": {
+            "class": "logging.StreamHandler",
+            "level": "INFO",
+            "formatter": "simple",
+            "stream": "ext://sys.stdout",
+            "filters": ["warnings_and_below"]
+        }
     }
 
 A filter is just a function, so we can define the ``filter_maker`` (a factory
@@ -757,7 +761,7 @@ printed on the console; on the server side, you should see something like:
 
 Note that there are some security issues with pickle in some scenarios. If
 these affect you, you can use an alternative serialization scheme by overriding
-the :meth:`~handlers.SocketHandler.makePickle` method and implementing your
+the :meth:`~SocketHandler.makePickle` method and implementing your
 alternative there, as well as adapting the above script to use your alternative
 serialization.
 
@@ -830,6 +834,8 @@ To test these files, do the following in a POSIX environment:
 
 You may need to tweak the configuration files in the unlikely event that the
 configured ports clash with something else in your test environment.
+
+.. currentmodule:: logging
 
 .. _context-info:
 
@@ -1131,7 +1137,7 @@ each request is handled by a thread:
                                                  'context can be used to '
                                                  'populate logs')
         aa = ap.add_argument
-        aa('--count', '-c', default=100, help='How many requests to simulate')
+        aa('--count', '-c', type=int, default=100, help='How many requests to simulate')
         options = ap.parse_args()
 
         # Create the dummy webapps and put them in a list which we can use to select
@@ -1542,7 +1548,7 @@ Sometimes you want to let a log file grow to a certain size, then open a new
 file and log to that. You may want to keep a certain number of these files, and
 when that many files have been created, rotate the files so that the number of
 files and the size of the files both remain bounded. For this usage pattern, the
-logging package provides a :class:`~handlers.RotatingFileHandler`::
+logging package provides a :class:`RotatingFileHandler`::
 
    import glob
    import logging
@@ -1589,6 +1595,8 @@ and each time it reaches the size limit it is renamed with the suffix
 
 Obviously this example sets the log length much too small as an extreme
 example.  You would want to set *maxBytes* to an appropriate value.
+
+.. currentmodule:: logging
 
 .. _format-styles:
 
@@ -1720,7 +1728,7 @@ when (and if) the logged message is actually about to be output to a log by a
 handler. So the only slightly unusual thing which might trip you up is that the
 parentheses go around the format string and the arguments, not just the format
 string. That's because the __ notation is just syntax sugar for a constructor
-call to one of the XXXMessage classes.
+call to one of the :samp:`{XXX}Message` classes.
 
 If you prefer, you can use a :class:`LoggerAdapter` to achieve a similar effect
 to the above, as in the following example::
@@ -1836,6 +1844,7 @@ However, it should be borne in mind that each link in the chain adds run-time
 overhead to all logging operations, and the technique should only be used when
 the use of a :class:`Filter` does not provide the desired result.
 
+.. currentmodule:: logging.handlers
 
 .. _zeromq-handlers:
 
@@ -1913,6 +1922,8 @@ of queues, for example a ZeroMQ 'subscribe' socket. Here's an example::
    :ref:`A more advanced logging tutorial <logging-advanced-tutorial>`
 
 
+.. currentmodule:: logging
+
 An example dictionary-based configuration
 -----------------------------------------
 
@@ -1982,26 +1993,47 @@ Using a rotator and namer to customize log rotation processing
 --------------------------------------------------------------
 
 An example of how you can define a namer and rotator is given in the following
-snippet, which shows zlib-based compression of the log file::
+runnable script, which shows gzip compression of the log file::
+
+    import gzip
+    import logging
+    import logging.handlers
+    import os
+    import shutil
 
     def namer(name):
         return name + ".gz"
 
     def rotator(source, dest):
-        with open(source, "rb") as sf:
-            data = sf.read()
-            compressed = zlib.compress(data, 9)
-            with open(dest, "wb") as df:
-                df.write(compressed)
+        with open(source, 'rb') as f_in:
+            with gzip.open(dest, 'wb') as f_out:
+                shutil.copyfileobj(f_in, f_out)
         os.remove(source)
 
-    rh = logging.handlers.RotatingFileHandler(...)
+
+    rh = logging.handlers.RotatingFileHandler('rotated.log', maxBytes=128, backupCount=5)
     rh.rotator = rotator
     rh.namer = namer
 
-These are not "true" .gz files, as they are bare compressed data, with no
-"container" such as you’d find in an actual gzip file. This snippet is just
-for illustration purposes.
+    root = logging.getLogger()
+    root.setLevel(logging.INFO)
+    root.addHandler(rh)
+    f = logging.Formatter('%(asctime)s %(message)s')
+    rh.setFormatter(f)
+    for i in range(1000):
+        root.info(f'Message no. {i + 1}')
+
+After running this, you will see six new files, five of which are compressed:
+
+.. code-block:: shell-session
+
+    $ ls rotated.log*
+    rotated.log       rotated.log.2.gz  rotated.log.4.gz
+    rotated.log.1.gz  rotated.log.3.gz  rotated.log.5.gz
+    $ zcat rotated.log.1.gz
+    2023-01-20 02:28:17,767 Message no. 996
+    2023-01-20 02:28:17,767 Message no. 997
+    2023-01-20 02:28:17,767 Message no. 998
 
 A more elaborate multiprocessing example
 ----------------------------------------
@@ -2517,7 +2549,7 @@ should be logged, or the ``extra`` keyword parameter to indicate additional
 contextual information to be added to the log). So you cannot directly make
 logging calls using :meth:`str.format` or :class:`string.Template` syntax,
 because internally the logging package uses %-formatting to merge the format
-string and the variable arguments. There would no changing this while preserving
+string and the variable arguments. There would be no changing this while preserving
 backward compatibility, since all logging calls which are out there in existing
 code will be using %-format strings.
 
@@ -2612,7 +2644,7 @@ when (and if) the logged message is actually about to be output to a log by a
 handler. So the only slightly unusual thing which might trip you up is that the
 parentheses go around the format string and the arguments, not just the format
 string. That’s because the __ notation is just syntax sugar for a constructor
-call to one of the ``XXXMessage`` classes shown above.
+call to one of the :samp:`{XXX}Message` classes shown above.
 
 
 .. _filters-dictconfig:
@@ -3607,7 +3639,7 @@ refer to the comments in the code snippet for more detailed information.
 Logging to syslog with RFC5424 support
 --------------------------------------
 
-Although :rfc:`5424` dates from 2009, most syslog servers are configured by detault to
+Although :rfc:`5424` dates from 2009, most syslog servers are configured by default to
 use the older :rfc:`3164`, which hails from 2001. When ``logging`` was added to Python
 in 2003, it supported the earlier (and only existing) protocol at the time. Since
 RFC5424 came out, as there has not been widespread deployment of it in syslog
@@ -3798,7 +3830,7 @@ then running the script results in
     WARNING:demo:division by zero
 
 As you can see, this output isn't ideal. That's because the underlying code
-which writes to ``sys.stderr`` makes mutiple writes, each of which results in a
+which writes to ``sys.stderr`` makes multiple writes, each of which results in a
 separate logged line (for example, the last three lines above). To get around
 this problem, you need to buffer things and only output log lines when newlines
 are seen. Let's use a slghtly better implementation of ``LoggerWriter``:
@@ -3893,8 +3925,8 @@ that in other languages such as Java and C#, loggers are often static class
 attributes. However, this pattern doesn't make sense in Python, where the
 module (and not the class) is the unit of software decomposition.
 
-Adding handlers other than :class:`NullHandler` to a logger in a library
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Adding handlers other than :class:`~logging.NullHandler` to a logger in a library
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Configuring logging by adding handlers, formatters and filters is the
 responsibility of the application developer, not the library developer. If you

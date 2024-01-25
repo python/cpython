@@ -4,10 +4,13 @@ import errno
 import os
 import re
 import stat
+import string
 import sys
 import time
 import unittest
 import warnings
+
+from test import support
 
 
 # Filename used for testing
@@ -244,15 +247,15 @@ def can_chmod():
     global _can_chmod
     if _can_chmod is not None:
         return _can_chmod
-    if not hasattr(os, "chown"):
+    if not hasattr(os, "chmod"):
         _can_chmod = False
         return _can_chmod
     try:
         with open(TESTFN, "wb") as f:
             try:
-                os.chmod(TESTFN, 0o777)
+                os.chmod(TESTFN, 0o555)
                 mode1 = os.stat(TESTFN).st_mode
-                os.chmod(TESTFN, 0o666)
+                os.chmod(TESTFN, 0o777)
                 mode2 = os.stat(TESTFN).st_mode
             except OSError as e:
                 can = False
@@ -299,6 +302,10 @@ def can_dac_override():
             else:
                 _can_dac_override = True
     finally:
+        try:
+            os.chmod(TESTFN, 0o700)
+        except OSError:
+            pass
         unlink(TESTFN)
 
     return _can_dac_override
@@ -589,10 +596,17 @@ def fd_count():
     """Count the number of open file descriptors.
     """
     if sys.platform.startswith(('linux', 'freebsd', 'emscripten')):
+        fd_path = "/proc/self/fd"
+    elif sys.platform == "darwin":
+        fd_path = "/dev/fd"
+    else:
+        fd_path = None
+
+    if fd_path is not None:
         try:
-            names = os.listdir("/proc/self/fd")
+            names = os.listdir(fd_path)
             # Subtract one because listdir() internally opens a file
-            # descriptor to list the content of the /proc/self/fd/ directory.
+            # descriptor to list the content of the directory.
             return len(names) - 1
         except FileNotFoundError:
             pass
@@ -716,3 +730,40 @@ class EnvironmentVarGuard(collections.abc.MutableMapping):
             else:
                 self._environ[k] = v
         os.environ = self._environ
+
+
+try:
+    if support.MS_WINDOWS:
+        import ctypes
+        kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
+
+        ERROR_FILE_NOT_FOUND = 2
+        DDD_REMOVE_DEFINITION = 2
+        DDD_EXACT_MATCH_ON_REMOVE = 4
+        DDD_NO_BROADCAST_SYSTEM = 8
+    else:
+        raise AttributeError
+except (ImportError, AttributeError):
+    def subst_drive(path):
+        raise unittest.SkipTest('ctypes or kernel32 is not available')
+else:
+    @contextlib.contextmanager
+    def subst_drive(path):
+        """Temporarily yield a substitute drive for a given path."""
+        for c in reversed(string.ascii_uppercase):
+            drive = f'{c}:'
+            if (not kernel32.QueryDosDeviceW(drive, None, 0) and
+                    ctypes.get_last_error() == ERROR_FILE_NOT_FOUND):
+                break
+        else:
+            raise unittest.SkipTest('no available logical drive')
+        if not kernel32.DefineDosDeviceW(
+                DDD_NO_BROADCAST_SYSTEM, drive, path):
+            raise ctypes.WinError(ctypes.get_last_error())
+        try:
+            yield drive
+        finally:
+            if not kernel32.DefineDosDeviceW(
+                    DDD_REMOVE_DEFINITION | DDD_EXACT_MATCH_ON_REMOVE,
+                    drive, path):
+                raise ctypes.WinError(ctypes.get_last_error())
