@@ -129,5 +129,17 @@ class _Database(MutableMapping):
         self.close()
 
 
-def open(path, /, flag="r", mode=None):
-    return _Database(path, flag)
+def open(filename, /, flag="r", mode=None):
+    """Open a dbm.sqlite3 database and return the dbm object.
+
+    The 'filename' parameter is the name of the database file.
+
+    The optional 'flag' parameter can be one of ...:
+        'r' (default): open an existing database for read only access
+        'w': open an existing database for read/write access
+        'c': create a database if it does not exist; open for read/write access
+        'n': always create a new, empty database; open for read/write access
+
+    The optional 'mode' parameter is ignored.
+    """
+    return _Database(filename, flag)
