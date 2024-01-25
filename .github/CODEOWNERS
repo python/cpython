@@ -42,6 +42,9 @@ Lib/test/test_type_*.py       @JelleZijlstra
 Lib/test/test_capi/test_misc.py  @markshannon @gvanrossum
 Tools/c-analyzer/             @ericsnowcurrently
 
+# dbm
+**/*dbm*                      @corona10 @erlend-aasland @serhiy-storchaka
+
 # Exceptions
 Lib/traceback.py              @iritkatriel
 Lib/test/test_except*.py      @iritkatriel
