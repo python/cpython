@@ -322,6 +322,9 @@ static inline void _PyObject_GC_TRACK(
                           "object is in generation which is garbage collected",
                           filename, lineno, __func__);
 
+#ifdef Py_GIL_DISABLED
+    op->ob_gc_bits |= _PyGC_BITS_TRACKED;
+#else
     PyInterpreterState *interp = _PyInterpreterState_GET();
     PyGC_Head *generation0 = interp->gc.generation0;
     PyGC_Head *last = (PyGC_Head*)(generation0->_gc_prev);
@@ -329,6 +332,7 @@ static inline void _PyObject_GC_TRACK(
     _PyGCHead_SET_PREV(gc, last);
     _PyGCHead_SET_NEXT(gc, generation0);
     generation0->_gc_prev = (uintptr_t)gc;
+#endif
 }
 
 /* Tell the GC to stop tracking this object.
@@ -352,6 +356,9 @@ static inline void _PyObject_GC_UNTRACK(
                           "object not tracked by the garbage collector",
                           filename, lineno, __func__);
 
+#ifdef Py_GIL_DISABLED
+    op->ob_gc_bits &= ~_PyGC_BITS_TRACKED;
+#else
     PyGC_Head *gc = _Py_AS_GC(op);
     PyGC_Head *prev = _PyGCHead_PREV(gc);
     PyGC_Head *next = _PyGCHead_NEXT(gc);
@@ -359,6 +366,7 @@ static inline void _PyObject_GC_UNTRACK(
     _PyGCHead_SET_PREV(next, prev);
     gc->_gc_next = 0;
     gc->_gc_prev &= _PyGC_PREV_MASK_FINALIZED;
+#endif
 }
 
 // Macros to accept any type for the parameter, and to automatically pass
