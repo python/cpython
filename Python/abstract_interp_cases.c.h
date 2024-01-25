@@ -23,7 +23,7 @@
             _Py_UOpsSymbolicValue *__receiver_;
             __value_ = stack_pointer[-1];
             __receiver_ = stack_pointer[-2];
-            __value_ = _Py_UOpsSymbolicValue_New(ctx, NULL); 
+            __value_ = _Py_UOpsSymbolicValue_New(ctx, NULL);
             if (__value_ == NULL) { goto error; }
             stack_pointer[-2] = __value_;
             stack_pointer += -1;
@@ -49,13 +49,13 @@
                 value = get_const(__value_);
                 assert(PyBool_Check(value));
                 res = Py_IsFalse(value) ? Py_True : Py_False;
-                __res_ = _Py_UOpsSymbolicValue_New(ctx, (PyObject *)res); 
+                __res_ = _Py_UOpsSymbolicValue_New(ctx, (PyObject *)res);
                 if(__res_ == NULL) { goto error; }
                 shrink_stack.oparg = 1;
                  if (emit_const(&ctx->emitter, (PyObject *)res, shrink_stack) < 0) { goto error; }
                 new_inst.opcode = _NOP;}
             else {
-                __res_ = _Py_UOpsSymbolicValue_New(ctx, NULL); 
+                __res_ = _Py_UOpsSymbolicValue_New(ctx, NULL);
                 if (__res_ == NULL) { goto error; }
             }
             if (__res_ == NULL) goto error;
@@ -181,13 +181,13 @@
                 res = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
                 if (res == NULL) goto pop_2_error_tier_two;
 
-                __res_ = _Py_UOpsSymbolicValue_New(ctx, (PyObject *)res); 
+                __res_ = _Py_UOpsSymbolicValue_New(ctx, (PyObject *)res);
                 if(__res_ == NULL) { goto error; }
                 shrink_stack.oparg = 2;
                  if (emit_const(&ctx->emitter, (PyObject *)res, shrink_stack) < 0) { goto error; }
                 new_inst.opcode = _NOP;}
             else {
-                __res_ = _Py_UOpsSymbolicValue_New(ctx, NULL); 
+                __res_ = _Py_UOpsSymbolicValue_New(ctx, NULL);
                 if (__res_ == NULL) { goto error; }
             }
             if (__res_ == NULL) goto error;
@@ -215,13 +215,13 @@
                 res = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
                 if (res == NULL) goto pop_2_error_tier_two;
 
-                __res_ = _Py_UOpsSymbolicValue_New(ctx, (PyObject *)res); 
+                __res_ = _Py_UOpsSymbolicValue_New(ctx, (PyObject *)res);
                 if(__res_ == NULL) { goto error; }
                 shrink_stack.oparg = 2;
                  if (emit_const(&ctx->emitter, (PyObject *)res, shrink_stack) < 0) { goto error; }
                 new_inst.opcode = _NOP;}
             else {
-                __res_ = _Py_UOpsSymbolicValue_New(ctx, NULL); 
+                __res_ = _Py_UOpsSymbolicValue_New(ctx, NULL);
                 if (__res_ == NULL) { goto error; }
             }
             if (__res_ == NULL) goto error;
@@ -249,13 +249,13 @@
                 res = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
                 if (res == NULL) goto pop_2_error_tier_two;
 
-                __res_ = _Py_UOpsSymbolicValue_New(ctx, (PyObject *)res); 
+                __res_ = _Py_UOpsSymbolicValue_New(ctx, (PyObject *)res);
                 if(__res_ == NULL) { goto error; }
                 shrink_stack.oparg = 2;
                  if (emit_const(&ctx->emitter, (PyObject *)res, shrink_stack) < 0) { goto error; }
                 new_inst.opcode = _NOP;}
             else {
-                __res_ = _Py_UOpsSymbolicValue_New(ctx, NULL); 
+                __res_ = _Py_UOpsSymbolicValue_New(ctx, NULL);
                 if (__res_ == NULL) { goto error; }
             }
             if (__res_ == NULL) goto error;
@@ -314,13 +314,13 @@
                 ((PyFloatObject *)left)->ob_fval *
                 ((PyFloatObject *)right)->ob_fval;
                 DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
-                __res_ = _Py_UOpsSymbolicValue_New(ctx, (PyObject *)res); 
+                __res_ = _Py_UOpsSymbolicValue_New(ctx, (PyObject *)res);
                 if(__res_ == NULL) { goto error; }
                 shrink_stack.oparg = 2;
                  if (emit_const(&ctx->emitter, (PyObject *)res, shrink_stack) < 0) { goto error; }
                 new_inst.opcode = _NOP;}
             else {
-                __res_ = _Py_UOpsSymbolicValue_New(ctx, NULL); 
+                __res_ = _Py_UOpsSymbolicValue_New(ctx, NULL);
                 if (__res_ == NULL) { goto error; }
             }
             if (__res_ == NULL) goto error;
@@ -349,13 +349,13 @@
                 ((PyFloatObject *)left)->ob_fval +
                 ((PyFloatObject *)right)->ob_fval;
                 DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
-                __res_ = _Py_UOpsSymbolicValue_New(ctx, (PyObject *)res); 
+                __res_ = _Py_UOpsSymbolicValue_New(ctx, (PyObject *)res);
                 if(__res_ == NULL) { goto error; }
                 shrink_stack.oparg = 2;
                  if (emit_const(&ctx->emitter, (PyObject *)res, shrink_stack) < 0) { goto error; }
                 new_inst.opcode = _NOP;}
             else {
-                __res_ = _Py_UOpsSymbolicValue_New(ctx, NULL); 
+                __res_ = _Py_UOpsSymbolicValue_New(ctx, NULL);
                 if (__res_ == NULL) { goto error; }
             }
             if (__res_ == NULL) goto error;
@@ -384,13 +384,13 @@
                 ((PyFloatObject *)left)->ob_fval -
                 ((PyFloatObject *)right)->ob_fval;
                 DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
-                __res_ = _Py_UOpsSymbolicValue_New(ctx, (PyObject *)res); 
+                __res_ = _Py_UOpsSymbolicValue_New(ctx, (PyObject *)res);
                 if(__res_ == NULL) { goto error; }
                 shrink_stack.oparg = 2;
                  if (emit_const(&ctx->emitter, (PyObject *)res, shrink_stack) < 0) { goto error; }
                 new_inst.opcode = _NOP;}
             else {
-                __res_ = _Py_UOpsSymbolicValue_New(ctx, NULL); 
+                __res_ = _Py_UOpsSymbolicValue_New(ctx, NULL);
                 if (__res_ == NULL) { goto error; }
             }
             if (__res_ == NULL) goto error;
@@ -448,13 +448,13 @@
                 res = PyUnicode_Concat(left, right);
                 if (res == NULL) goto pop_2_error_tier_two;
 
-                __res_ = _Py_UOpsSymbolicValue_New(ctx, (PyObject *)res); 
+                __res_ = _Py_UOpsSymbolicValue_New(ctx, (PyObject *)res);
                 if(__res_ == NULL) { goto error; }
                 shrink_stack.oparg = 2;
                  if (emit_const(&ctx->emitter, (PyObject *)res, shrink_stack) < 0) { goto error; }
                 new_inst.opcode = _NOP;}
             else {
-                __res_ = _Py_UOpsSymbolicValue_New(ctx, NULL); 
+                __res_ = _Py_UOpsSymbolicValue_New(ctx, NULL);
                 if (__res_ == NULL) { goto error; }
             }
             if (__res_ == NULL) goto error;

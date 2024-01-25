@@ -195,7 +195,7 @@ def new_sym(
 ) -> str:
     return (
         f"_Py_UOpsSymbolicValue_New("
-        f"ctx, {constant or 'NULL'}); "
+        f"ctx, {constant or 'NULL'});"
     )
 
 

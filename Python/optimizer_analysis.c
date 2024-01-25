@@ -1,3 +1,14 @@
+/*
+ * This file contains the optimizer for CPython uops.
+ * It performs a traditional data-flow analysis[1] over the trace of uops.
+ * Using the information gained, it chooses to emit, or skip certain instructions
+ * if possible.
+ *
+ * [1] For information on data-flow analysis, please see page 27 onwards in
+ * https://ilyasergey.net/CS4212/_static/lectures/PLDI-Week-12-dataflow.pdf
+ * Credits to the courses UPenn Compilers (CIS 341) and NUS Compiler Design (CS4212).
+ *
+ * */
 #include "Python.h"
 #include "pycore_interp.h"
 #include "pycore_opcode_metadata.h"
