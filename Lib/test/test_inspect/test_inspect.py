@@ -3418,7 +3418,7 @@ class TestSignatureObject(unittest.TestCase):
 
     def test_signature_on_fake_partialmethod(self):
         def foo(a): pass
-        foo._partialmethod = 'spam'
+        foo.__partialmethod__ = 'spam'
         self.assertEqual(str(inspect.signature(foo)), '(a)')
 
     def test_signature_on_decorated(self):

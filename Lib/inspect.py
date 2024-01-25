@@ -2563,7 +2563,7 @@ def _signature_from_callable(obj, *,
             return sig
 
     try:
-        partialmethod = obj._partialmethod
+        partialmethod = obj.__partialmethod__
     except AttributeError:
         pass
     else:
