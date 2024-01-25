@@ -3122,6 +3122,23 @@ class Win32NtTests(unittest.TestCase):
             print("File:", filename)
             print("stat with access:", stat1)
 
+        # We should now not be able to open the file.
+        # If we can, the test isn't going to be useful.
+        try:
+            _winapi.CloseHandle(_winapi.CreateFile(
+                filename,
+                0x80, # FILE_READ_ATTRIBUTES
+                0,
+                0,
+                _winapi.OPEN_EXISTING,
+                0x02000000, # FILE_FLAG_BACKUP_SEMANTICS
+                0,
+            ))
+        except PermissionError:
+            pass
+        else:
+            self.skipTest("Still had access to inaccessible file")
+
         # First test - we shouldn't raise here, because we still have access to
         # the directory and can extract enough information from its metadata.
         stat2 = os.stat(filename)
