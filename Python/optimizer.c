@@ -776,7 +776,8 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
         executor->trace[dest] = buffer[i];
         int opcode = buffer[i].opcode;
         if (opcode == _POP_JUMP_IF_FALSE ||
-            opcode == _POP_JUMP_IF_TRUE)
+            opcode == _POP_JUMP_IF_TRUE ||
+            opcode == _JUMP_ABSOLUTE)
         {
             /* The oparg of the target will already have been set to its new offset */
             int oparg = executor->trace[dest].oparg;

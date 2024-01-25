@@ -1217,7 +1217,8 @@ uop_abstract_interpret(
         lltrace = *uop_debug - '0';  // TODO: Parse an int and all that
     }
 #endif
-    // Initialize the symbolic consts
+    bool did_loop_peel = false;
+    int loop_peel_target = 0;
 
     _Py_UOpsAbstractInterpContext *ctx = NULL;
 
@@ -1228,6 +1229,7 @@ uop_abstract_interpret(
         goto error;
     }
 
+loop_peeling:
     _PyUOpInstruction *curr = trace;
     _PyUOpInstruction *end = trace + trace_len;
     AbstractInterpExitCodes status = ABSTRACT_INTERP_NORMAL;
@@ -1264,13 +1266,35 @@ uop_abstract_interpret(
     }
 
     assert(op_is_end(curr->opcode));
-    if (emit_i(&ctx->emitter, *curr) < 0) {
-        goto error;
+
+    // If we end in a loop, and we have a lot of space left, unroll the loop for added type stability
+    // https://en.wikipedia.org/wiki/Loop_unrolling
+    if (!did_loop_peel && curr->opcode == _JUMP_TO_TOP &&
+        ((ctx->emitter.curr_i * 2) < (int)(ctx->emitter.writebuffer_end - ctx->emitter.writebuffer))) {
+        did_loop_peel = true;
+        loop_peel_target = ctx->emitter.curr_i;
+        DPRINTF(2, "loop_peeling!\n");
+        goto loop_peeling;
+    }
+    else {
+        if (did_loop_peel) {
+            assert(curr->opcode == _JUMP_TO_TOP);
+            _PyUOpInstruction jump_rel = {_JUMP_ABSOLUTE, (ctx->emitter.curr_i), 0, 0};
+            if (emit_i(&ctx->emitter, jump_rel) < 0) {
+                goto error;
+            }
+        } else {
+            if (emit_i(&ctx->emitter, *curr) < 0) {
+                goto error;
+            }
+        }
     }
 
+
+    int res = ctx->emitter.curr_i;
     Py_DECREF(ctx);
 
-    return (int)(curr - trace);
+    return res;
 
 error:
     Py_XDECREF(ctx);
