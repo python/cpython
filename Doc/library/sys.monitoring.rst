@@ -75,9 +75,6 @@ following IDs are pre-defined to make co-operation of tools easier::
   sys.monitoring.PROFILER_ID = 2
   sys.monitoring.OPTIMIZER_ID = 5
 
-There is no obligation to set an ID, nor is there anything preventing a tool
-from using an ID even it is already in use.
-However, tools are encouraged to use a unique ID and respect other tools.
 
 Events
 ------
