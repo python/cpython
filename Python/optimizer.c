@@ -793,7 +793,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
     if (executor->trace[length-1].opcode == _JUMP_ABSOLUTE) {
         for (int end = length - 1; end > 0; end--) {
             if (executor->trace[end].opcode == _JUMP_ABSOLUTE_HEADER) {
-                executor->trace[length-1].oparg = end;
+                executor->trace[length-1].oparg = end + 1;
                 break;
             }
         }
