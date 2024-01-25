@@ -1269,18 +1269,22 @@ loop_peeling:
 
     // If we end in a loop, and we have a lot of space left, unroll the loop for added type stability
     // https://en.wikipedia.org/wiki/Loop_unrolling
-    if (!did_loop_peel && curr->opcode == _JUMP_TO_TOP &&
+    if (curr->opcode == _JUMP_TO_TOP &&
         ((ctx->emitter.curr_i * 2) < (int)(ctx->emitter.writebuffer_end - ctx->emitter.writebuffer))) {
         did_loop_peel = true;
         loop_peel_target = ctx->emitter.curr_i;
+        _PyUOpInstruction jump_header = {_JUMP_ABSOLUTE_HEADER, (ctx->emitter.curr_i), 0, 0};
+        if (emit_i(&ctx->emitter, jump_header) < 0) {
+            goto error;
+        }
         DPRINTF(2, "loop_peeling!\n");
         goto loop_peeling;
     }
     else {
         if (did_loop_peel) {
             assert(curr->opcode == _JUMP_TO_TOP);
-            _PyUOpInstruction jump_rel = {_JUMP_ABSOLUTE, (ctx->emitter.curr_i), 0, 0};
-            if (emit_i(&ctx->emitter, jump_rel) < 0) {
+            _PyUOpInstruction jump_abs = {_JUMP_ABSOLUTE, (ctx->emitter.curr_i), 0, 0};
+            if (emit_i(&ctx->emitter, jump_abs) < 0) {
                 goto error;
             }
         } else {

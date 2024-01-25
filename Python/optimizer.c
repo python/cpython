@@ -735,7 +735,7 @@ compute_used(_PyUOpInstruction *buffer, uint32_t *used)
         }
         count++;
         int opcode = buffer[i].opcode;
-        if (opcode == _JUMP_TO_TOP || opcode == _EXIT_TRACE) {
+        if (opcode == _JUMP_TO_TOP || opcode == _EXIT_TRACE || opcode == _JUMP_ABSOLUTE) {
             continue;
         }
         /* All other micro-ops fall through, so i+1 is reachable */
@@ -789,6 +789,15 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
         dest--;
     }
     assert(dest == -1);
+    // Rewrite backward jumps
+    if (executor->trace[length-1].opcode == _JUMP_ABSOLUTE) {
+        for (int end = length - 1; end > 0; end--) {
+            if (executor->trace[end].opcode == _JUMP_ABSOLUTE_HEADER) {
+                executor->trace[length-1].oparg = end;
+                break;
+            }
+        }
+    }
     _Py_ExecutorInit(executor, dependencies);
 #ifdef Py_DEBUG
     char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");

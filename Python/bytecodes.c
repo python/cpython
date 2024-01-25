@@ -4070,6 +4070,9 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
+        op(_JUMP_ABSOLUTE_HEADER, (--)) {
+        }
+
         op(_CHECK_VALIDITY, (--)) {
             TIER_TWO_ONLY
             DEOPT_IF(!current_executor->vm_data.valid);
