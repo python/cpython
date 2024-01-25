@@ -1419,7 +1419,7 @@ _Py_uop_analyze_and_optimize(
     _PyUOpInstruction *temp_writebuffer = NULL;
     bool err_occurred = false;
 
-    temp_writebuffer = PyMem_New(_PyUOpInstruction, buffer_size * OVERALLOCATE_FACTOR);
+    temp_writebuffer = PyMem_New(_PyUOpInstruction, buffer_size);
     if (temp_writebuffer == NULL) {
         goto error;
     }
