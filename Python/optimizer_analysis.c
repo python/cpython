@@ -1431,6 +1431,7 @@ _Py_uop_analyze_and_optimize(
 {
     _PyUOpInstruction *temp_writebuffer = NULL;
     bool err_occurred = false;
+    bool done = false;
 
     temp_writebuffer = PyMem_New(_PyUOpInstruction, buffer_size);
     if (temp_writebuffer == NULL) {
@@ -1446,7 +1447,6 @@ _Py_uop_analyze_and_optimize(
         goto error;
     }
 
-    bool done = false;
     for (int peephole_attempts = 0; peephole_attempts < PEEPHOLE_MAX_ATTEMPTS &&
         !done;
          peephole_attempts++) {
@@ -1476,6 +1476,11 @@ error:
     // to fetch a function version because the function got deleted.
     err_occurred = PyErr_Occurred();
     PyMem_Free(temp_writebuffer);
+    for (int peephole_attempts = 0; peephole_attempts < PEEPHOLE_MAX_ATTEMPTS &&
+                                    !done;
+         peephole_attempts++) {
+        done = peephole_optimizations(buffer, buffer_size);
+    }
     remove_unneeded_uops(buffer, buffer_size);
     return err_occurred ? -1 : 0;
 }
