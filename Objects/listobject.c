@@ -383,18 +383,11 @@ list_dealloc(PyObject *self)
 }
 
 static PyObject *
-list_repr(PyObject *self)
+list_repr_impl(PyListObject *v)
 {
-    PyListObject *v = (PyListObject *)self;
-    Py_ssize_t i;
     PyObject *s;
     _PyUnicodeWriter writer;
-
-    if (Py_SIZE(v) == 0) {
-        return PyUnicode_FromString("[]");
-    }
-
-    i = Py_ReprEnter((PyObject*)v);
+    Py_ssize_t i = Py_ReprEnter((PyObject*)v);
     if (i != 0) {
         return i > 0 ? PyUnicode_FromString("[...]") : NULL;
     }
@@ -439,10 +432,28 @@ error:
     return NULL;
 }
 
+static PyObject *
+list_repr(PyObject *self)
+{
+    PyListObject *v = (PyListObject *)self;
+    PyObject *ret = NULL;
+    if (Py_SIZE(v) == 0) {
+        return PyUnicode_FromString("[]");
+    }
+    Py_BEGIN_CRITICAL_SECTION(v);
+    ret = list_repr_impl(v);
+    Py_END_CRITICAL_SECTION();
+    return ret;
+}
+
 static Py_ssize_t
 list_length(PyObject *a)
 {
+#ifdef Py_GIL_DISABLED
+    return _Py_atomic_load_ssize_relaxed(&(_PyVarObject_CAST(a)->ob_size));
+#else
     return Py_SIZE(a);
+#endif
 }
 
 static int
