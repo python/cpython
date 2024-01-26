@@ -233,6 +233,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     # but in case there are recursions, we stop at 999.
     MAX_CHAINED_EXCEPTION_DEPTH = 999
 
+    _file_mtime_table = {}
+
     def __init__(self, completekey='tab', stdin=None, stdout=None, skip=None,
                  nosigint=False, readrc=True):
         bdb.Bdb.__init__(self, skip=skip)
@@ -436,6 +438,20 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 break
             except KeyboardInterrupt:
                 self.message('--KeyboardInterrupt--')
+
+    def _validate_file_mtime(self):
+        """Check if the source file of the current frame has been modified since
+        the last time we saw it. If so, give a warning."""
+        try:
+            filename = self.curframe.f_code.co_filename
+            mtime = os.path.getmtime(filename)
+        except Exception:
+            return
+        if (filename in self._file_mtime_table and
+            mtime != self._file_mtime_table[filename]):
+            self.message(f"*** WARNING: file '{filename}' was edited, "
+                         "running stale code until the program is rerun")
+        self._file_mtime_table[filename] = mtime
 
     # Called before loop, handles display expressions
     # Set up convenience variable containers
@@ -681,6 +697,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         a breakpoint command list definition.
         """
         if not self.commands_defining:
+            self._validate_file_mtime()
             return cmd.Cmd.onecmd(self, line)
         else:
             return self.handle_command_def(line)
@@ -2020,6 +2037,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         import __main__
         __main__.__dict__.clear()
         __main__.__dict__.update(target.namespace)
+
+        # Clear the mtime table for program reruns, assume all the files
+        # are up to date.
+        self._file_mtime_table.clear()
 
         self.run(target.code)
 
