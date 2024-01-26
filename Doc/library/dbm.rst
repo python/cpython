@@ -414,5 +414,5 @@ The :mod:`!dbm.dumb` module defines the following:
 
    .. method:: dumbdbm.close()
 
-      Close the "dumbdbm" database.
+      Close the database.
 
