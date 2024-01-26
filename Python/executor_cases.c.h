@@ -3384,6 +3384,17 @@
             break;
         }
 
+        case _JUMP_ABSOLUTE: {
+            oparg = CURRENT_OPARG();
+            next_uop = current_executor->trace + oparg;
+            CHECK_EVAL_BREAKER();
+            break;
+        }
+
+        case _JUMP_ABSOLUTE_HEADER: {
+            break;
+        }
+
         case _CHECK_VALIDITY: {
             TIER_TWO_ONLY
             if (!current_executor->vm_data.valid) goto deoptimize;

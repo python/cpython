@@ -344,7 +344,7 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
-        self.assertIn("_JUMP_TO_TOP", uops)
+        self.assertIn("_JUMP_ABSOLUTE", uops)
 
     def test_jump_forward(self):
         def testfunc(n):
@@ -607,7 +607,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, 63)
         binop_count = [opname for opname, _, _ in ex if opname == "_BINARY_OP_ADD_INT"]
         guard_both_int_count = [opname for opname, _, _ in ex if opname == "_GUARD_BOTH_INT"]
-        self.assertEqual(len(binop_count), 3)
+        self.assertGreaterEqual(len(binop_count), 3)
         self.assertEqual(len(guard_both_int_count), 1)
 
     def test_int_impure_region(self):
@@ -629,7 +629,7 @@ class TestUopsOptimization(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         binop_count = [opname for opname, _, _ in ex if opname == "_BINARY_OP_ADD_INT"]
-        self.assertEqual(len(binop_count), 3)
+        self.assertGreaterEqual(len(binop_count), 3)
 
     def test_int_impure_region_attr(self):
         class A:
@@ -652,7 +652,7 @@ class TestUopsOptimization(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         binop_count = [opname for opname, _, _ in ex if opname == "_BINARY_OP_ADD_INT"]
-        self.assertEqual(len(binop_count), 3)
+        self.assertGreaterEqual(len(binop_count), 3)
 
     def test_call_constant_propagate_past_impure(self):
         def testfunc(n):
@@ -691,7 +691,7 @@ class TestUopsOptimization(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         binop_count = [opname for opname, _, _ in ex if opname == "_BINARY_OP_ADD_INT"]
-        self.assertEqual(len(binop_count), 11)
+        self.assertGreaterEqual(len(binop_count), 11)
 
     def test_call_py_exact_args(self):
         def testfunc(n):
@@ -844,6 +844,30 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
         self.assertNotIn("_BINARY_OP_ADD_INT", uops)
+
+    def test_loop_peeling(self):
+        def testfunc(loops):
+            num = 0
+            for _ in range(loops):
+                x = 0
+                y = 1
+                a = x + y
+            return 1
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        res = None
+        with temporary_optimizer(opt):
+            res = testfunc(64)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        self.assertEqual(res, 1)
+        binop_count = [opname for opname, _, _ in ex if opname == "_BINARY_OP_ADD_INT"]
+        self.assertEqual(len(binop_count), 0)
+        uops = {opname for opname, _, _ in ex}
+        self.assertNotIn("_SHRINK_STACK", uops)
+        iter_next_count = [opname for opname, _, _ in ex if opname == "_ITER_NEXT_RANGE"]
+        self.assertGreaterEqual(len(iter_next_count), 2)
 
     def test_truncated_zipfile(self):
         import io

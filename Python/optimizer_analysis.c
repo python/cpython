@@ -1217,6 +1217,7 @@ uop_abstract_interpret(
         lltrace = *uop_debug - '0';  // TODO: Parse an int and all that
     }
 #endif
+    bool did_loop_peel = false;
 
     _Py_UOpsAbstractInterpContext *ctx = NULL;
 
@@ -1226,12 +1227,17 @@ uop_abstract_interpret(
     if (ctx == NULL) {
         goto error;
     }
-
-    _PyUOpInstruction *curr = trace;
-    _PyUOpInstruction *end = trace + trace_len;
+    _PyUOpInstruction *curr = NULL;
+    _PyUOpInstruction *end = NULL;
     AbstractInterpExitCodes status = ABSTRACT_INTERP_NORMAL;
-
     bool first_impure = true;
+    int res = 0;
+
+loop_peeling:
+    curr = trace;
+    end = trace + trace_len;
+    first_impure = true;
+    ;
     while (curr < end && !op_is_end(curr->opcode)) {
 
         if (!op_is_pure(curr->opcode) &&
@@ -1263,13 +1269,38 @@ uop_abstract_interpret(
     }
 
     assert(op_is_end(curr->opcode));
-    if (emit_i(&ctx->emitter, *curr) < 0) {
-        goto error;
+
+    // If we end in a loop, and we have a lot of space left, peel the loop for added type stability
+    // https://en.wikipedia.org/wiki/Loop_splitting
+    if (!did_loop_peel && curr->opcode == _JUMP_TO_TOP &&
+        ((ctx->emitter.curr_i * 3) < (int)(ctx->emitter.writebuffer_end - ctx->emitter.writebuffer))) {
+        did_loop_peel = true;
+        _PyUOpInstruction jump_header = {_JUMP_ABSOLUTE_HEADER, (ctx->emitter.curr_i), 0, 0};
+        if (emit_i(&ctx->emitter, jump_header) < 0) {
+            goto error;
+        }
+        DPRINTF(2, "loop_peeling!\n");
+        goto loop_peeling;
+    }
+    else {
+        if (did_loop_peel) {
+            assert(curr->opcode == _JUMP_TO_TOP);
+            _PyUOpInstruction jump_abs = {_JUMP_ABSOLUTE, (ctx->emitter.curr_i), 0, 0};
+            if (emit_i(&ctx->emitter, jump_abs) < 0) {
+                goto error;
+            }
+        } else {
+            if (emit_i(&ctx->emitter, *curr) < 0) {
+                goto error;
+            }
+        }
     }
 
+
+    res = ctx->emitter.curr_i;
     Py_DECREF(ctx);
 
-    return (int)(curr - trace);
+    return res;
 
 error:
     Py_XDECREF(ctx);
@@ -1349,7 +1380,7 @@ peephole_optimizations(_PyUOpInstruction *buffer, int buffer_size)
         int oparg = curr->oparg;
         switch(curr->opcode) {
             case _SHRINK_STACK: {
-                // If all that precedes a _SHRINK_STACK is a bunch of LOAD_FAST,
+                // If all that precedes a _SHRINK_STACK is a bunch of loads,
                 // then we can safely eliminate that without side effects.
                 int load_count = 0;
                 _PyUOpInstruction *back = curr-1;
@@ -1365,6 +1396,10 @@ peephole_optimizations(_PyUOpInstruction *buffer, int buffer_size)
                     load_count = 0;
                     while(load_count < oparg) {
                         load_count += op_is_load(back->opcode);
+                        if (back->opcode == _LOAD_CONST_INLINE) {
+                            PyObject *const_val = (PyObject *)back->operand;
+                            Py_CLEAR(const_val);
+                        }
                         back->opcode = NOP;
                         back--;
                     }

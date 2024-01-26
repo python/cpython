@@ -4065,6 +4065,14 @@ dummy_func(
             DEOPT_IF(1);
         }
 
+        op(_JUMP_ABSOLUTE, (--)) {
+            next_uop = current_executor->trace + oparg;
+            CHECK_EVAL_BREAKER();
+        }
+
+        op(_JUMP_ABSOLUTE_HEADER, (--)) {
+        }
+
         op(_CHECK_VALIDITY, (--)) {
             TIER_TWO_ONLY
             DEOPT_IF(!current_executor->vm_data.valid);
