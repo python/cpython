@@ -1258,6 +1258,7 @@ def iterparse(source, events=None, parser=None):
 
         def __del__(self):
             # TODO: Emit a ResourceWarning if it was not explicitly closed.
+            # (When the close() method will be supported in all maintained Python versions.)
             if close_source:
                 source.close()
 
