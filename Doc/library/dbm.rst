@@ -81,7 +81,7 @@ deleted, and the :keyword:`in` operator and the :meth:`!keys` method are
 available, as well as :meth:`!get` and :meth:`!setdefault`.
 
 .. versionchanged:: 3.2
-   :meth:`get` and :meth:`setdefault` are now available in all database modules.
+   :meth:`!get` and :meth:`!setdefault` are now available in all database modules.
 
 .. versionchanged:: 3.8
    Deleting a key from a read-only database raises database module specific error
