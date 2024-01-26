@@ -34,8 +34,8 @@ the Oracle Berkeley DB.
    * the empty string (``''``) if the file's format can't be guessed
    * a string containing the required module name, such as ``'dbm.ndbm'`` or ``'dbm.gnu'``
 
-.. versionchanged:: 3.11
-   Accepts :term:`path-like object` for filename.
+   .. versionchanged:: 3.11
+      *filename* accepts a :term:`path-like object`.
 
 .. Substitutions for the open() flag param docs;
    all submodules use the same text.
@@ -78,6 +78,9 @@ the Oracle Berkeley DB.
    database has to be created.  It defaults to octal ``0o666`` (and will be
    modified by the prevailing umask).
 
+   .. versionchanged:: 3.11
+      *file* accepts a :term:`path-like object`.
+
 
 The object returned by :func:`open` supports the same basic functionality as a
 :class:`dict`; keys and their corresponding values can be stored, retrieved, and
@@ -90,9 +93,6 @@ available, as well as :meth:`!get` and :meth:`!setdefault`.
 .. versionchanged:: 3.8
    Deleting a key from a read-only database raises database module specific error
    instead of :exc:`KeyError`.
-
-.. versionchanged:: 3.11
-   Accepts :term:`path-like object` for file.
 
 Key and values are always stored as :class:`bytes`. This means that when
 strings are used they are implicitly converted to the default encoding before
