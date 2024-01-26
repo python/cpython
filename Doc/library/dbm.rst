@@ -351,13 +351,14 @@ This module can be used with the "classic" NDBM interface or the
 
 --------------
 
-The :mod:`dbm.dumb` module provides a persistent dictionary-like interface which
-is written entirely in Python.  Unlike other modules such as :mod:`dbm.gnu` no
-external library is required.  As with other persistent mappings, the keys and
-values are always stored as bytes.
+The :mod:`dbm.dumb` module provides a persistent :class:`dict`-like
+interface which is written entirely in Python.
+Unlike other :mod:`dbm` backends, such as :mod:`dbm.gnu`, no
+external library is required.
+As with other :mod:`dbm` backends,
+the keys and values are always stored as :class:`bytes`.
 
-The module defines the following:
-
+The :mod:`!dbm.dumb` module defines the following:
 
 .. exception:: error
 
@@ -365,26 +366,33 @@ The module defines the following:
    raised for general mapping errors like specifying an incorrect key.
 
 
-.. function:: open(filename[, flag[, mode]])
+.. function:: open(filename, flag="c", mode=0o666)
 
-   Open a ``dumbdbm`` database and return a dumbdbm object.  The *filename* argument is
-   the basename of the database file (without any specific extensions).  When a
-   dumbdbm database is created, files with :file:`.dat` and :file:`.dir` extensions
-   are created.
+   Open a :mod:`!dbm.dumb` database.
+   The returned database object behaves similar to a :term:`mapping`,
+   in addition to providing :meth:`~dumbdbm.sync` and :meth:`~dumbdbm.close`
+   methods.
 
-   The optional *flag* argument can be:
+   :param filename:
+      The basename of the database file (without extensions).
+      A new database creates the following files:
 
-   .. csv-table::
-      :header: "Value", "Meaning"
+      - :file:`{filename}.dat`
+      - :file:`{filename}.dir`
+   :type database: :term:`path-like object`
 
-      ``'r'``, |flag_r|
-      ``'w'``, |flag_w|
-      ``'c'`` (default), |flag_c|
-      ``'n'``, |flag_n|
+   :param str flag:
+      .. csv-table::
+         :header: "Value", "Meaning"
 
-   The optional *mode* argument is the Unix mode of the file, used only when the
-   database has to be created.  It defaults to octal ``0o666`` (and will be modified
-   by the prevailing umask).
+         ``'r'``, |flag_r|
+         ``'w'``, |flag_w|
+         ``'c'`` (default), |flag_c|
+         ``'n'``, |flag_n|
+
+   :param int mode:
+      The Unix file access mode of the file (default: ``0o666``),
+      used only when the database has to be created.
 
    .. warning::
       It is possible to crash the Python interpreter when loading a database
@@ -392,20 +400,18 @@ The module defines the following:
       Python's AST compiler.
 
    .. versionchanged:: 3.5
-      :func:`.open` always creates a new database when the flag has the value
-      ``'n'``.
+      :func:`open` always creates a new database when *flag* is ``'n'``.
 
    .. versionchanged:: 3.8
-      A database opened with flags ``'r'`` is now read-only.  Opening with
-      flags ``'r'`` and ``'w'`` no longer creates a database if it does not
-      exist.
+      A database opened read-only if *flag* is ``'r'``.
+      A database is not created if it does not exist if *flag* is ``'r'`` or ``'w'``.
 
    .. versionchanged:: 3.11
-      Accepts :term:`path-like object` for filename.
+      *filename* accepts a :term:`path-like object`.
 
    In addition to the methods provided by the
-   :class:`collections.abc.MutableMapping` class, :class:`dumbdbm` objects
-   provide the following methods:
+   :class:`collections.abc.MutableMapping` class,
+   the following methods are provided:
 
    .. method:: dumbdbm.sync()
 
@@ -414,5 +420,5 @@ The module defines the following:
 
    .. method:: dumbdbm.close()
 
-      Close the ``dumbdbm`` database.
+      Close the database.
 
