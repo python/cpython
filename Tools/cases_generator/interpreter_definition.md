@@ -6,7 +6,7 @@ The CPython interpreter is defined in C, meaning that the semantics of the
 bytecode instructions, the dispatching mechanism, error handling, and
 tracing and instrumentation are all intermixed.
 
-This document proposes defining a custom C-like DSL for defining the 
+This document proposes defining a custom C-like DSL for defining the
 instruction semantics and tools for generating the code deriving from
 the instruction definitions.
 
@@ -46,7 +46,7 @@ passes from the semantic definition, reducing errors.
 
 As we improve the performance of CPython, we need to optimize larger regions
 of code, use more complex optimizations and, ultimately, translate to machine
-code. 
+code.
 
 All of these steps introduce the possibility of more bugs, and require more code
 to be written. One way to mitigate this is through the use of code generators.
@@ -62,7 +62,7 @@ blocks as the instructions for the tier 1 (PEP 659) interpreter.
 Rewriting all the instructions is tedious and error-prone, and changing the
 instructions is a maintenance headache as both versions need to be kept in sync.
 
-By using a code generator and using a common source for the instructions, or 
+By using a code generator and using a common source for the instructions, or
 parts of instructions, we can reduce the potential for errors considerably.
 
 
@@ -75,7 +75,7 @@ We update it as the need arises.
 
 Each op definition has a kind, a name, a stack and instruction stream effect,
 and a piece of C code describing its semantics::
- 
+
 ```
   file:
     (definition | family | pseudo)+
@@ -86,7 +86,7 @@ and a piece of C code describing its semantics::
     "op" "(" NAME "," stack_effect ")" "{" C-code "}"
     |
     "macro" "(" NAME ")" "=" uop ("+" uop)* ";"
- 
+
   stack_effect:
     "(" [inputs] "--" [outputs] ")"
 
@@ -201,6 +201,7 @@ Those functions include:
 * `DEOPT_IF(cond, instruction)`. Deoptimize if `cond` is met.
 * `ERROR_IF(cond, label)`. Jump to error handler at `label` if `cond` is true.
 * `DECREF_INPUTS()`. Generate `Py_DECREF()` calls for the input stack effects.
+* `SYNC_SP()`. Synchronizes the physical stack pointer with the stack effects.
 
 Note that the use of `DECREF_INPUTS()` is optional -- manual calls
 to `Py_DECREF()` or other approaches are also acceptable
@@ -445,7 +446,7 @@ rather than popping and pushing, such that `LOAD_ATTR_SLOT` would look something
                 stack_pointer += 1;
             }
             s1 = res;
-        }   
+        }
         next_instr += (1 + 1 + 2 + 1 + 4);
         stack_pointer[-1] = s1;
         DISPATCH();

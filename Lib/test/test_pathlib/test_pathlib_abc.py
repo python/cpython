@@ -5,7 +5,7 @@ import errno
 import stat
 import unittest
 
-from pathlib._abc import UnsupportedOperation, PurePathBase, PathBase
+from pathlib._abc import UnsupportedOperation, PathModuleBase, PurePathBase, PathBase
 import posixpath
 
 from test.support.os_helper import TESTFN
@@ -17,6 +17,20 @@ class UnsupportedOperationTest(unittest.TestCase):
         self.assertTrue(isinstance(UnsupportedOperation(), NotImplementedError))
 
 
+class PathModuleBaseTest(unittest.TestCase):
+    cls = PathModuleBase
+
+    def test_unsupported_operation(self):
+        m = self.cls()
+        e = UnsupportedOperation
+        with self.assertRaises(e):
+            m.sep
+        self.assertRaises(e, m.join, 'foo')
+        self.assertRaises(e, m.split, 'foo')
+        self.assertRaises(e, m.splitdrive, 'foo')
+        self.assertRaises(e, m.normcase, 'foo')
+        self.assertRaises(e, m.isabs, 'foo')
+
 #
 # Tests for the pure classes.
 #
@@ -24,6 +38,42 @@ class UnsupportedOperationTest(unittest.TestCase):
 
 class PurePathBaseTest(unittest.TestCase):
     cls = PurePathBase
+
+    def test_unsupported_operation_pure(self):
+        p = self.cls('foo')
+        e = UnsupportedOperation
+        with self.assertRaises(e):
+            p.drive
+        with self.assertRaises(e):
+            p.root
+        with self.assertRaises(e):
+            p.anchor
+        with self.assertRaises(e):
+            p.parts
+        with self.assertRaises(e):
+            p.parent
+        with self.assertRaises(e):
+            p.parents
+        with self.assertRaises(e):
+            p.name
+        with self.assertRaises(e):
+            p.stem
+        with self.assertRaises(e):
+            p.suffix
+        with self.assertRaises(e):
+            p.suffixes
+        with self.assertRaises(e):
+            p / 'bar'
+        with self.assertRaises(e):
+            'bar' / p
+        self.assertRaises(e, p.joinpath, 'bar')
+        self.assertRaises(e, p.with_name, 'bar')
+        self.assertRaises(e, p.with_stem, 'bar')
+        self.assertRaises(e, p.with_suffix, '.txt')
+        self.assertRaises(e, p.relative_to, '')
+        self.assertRaises(e, p.is_relative_to, '')
+        self.assertRaises(e, p.is_absolute)
+        self.assertRaises(e, p.match, '*')
 
     def test_magic_methods(self):
         P = self.cls
@@ -39,11 +89,12 @@ class PurePathBaseTest(unittest.TestCase):
         self.assertIs(P.__ge__, object.__ge__)
 
     def test_pathmod(self):
-        self.assertIs(self.cls.pathmod, posixpath)
+        self.assertIsInstance(self.cls.pathmod, PathModuleBase)
 
 
 class DummyPurePath(PurePathBase):
     __slots__ = ()
+    pathmod = posixpath
 
     def __eq__(self, other):
         if not isinstance(other, DummyPurePath):
@@ -198,29 +249,8 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertFalse(P('/ab.py').match('/a/*.py'))
         self.assertFalse(P('/a/b/c.py').match('/a/*.py'))
         # Multi-part glob-style pattern.
-        self.assertTrue(P('a').match('**'))
-        self.assertTrue(P('c.py').match('**'))
-        self.assertTrue(P('a/b/c.py').match('**'))
-        self.assertTrue(P('/a/b/c.py').match('**'))
-        self.assertTrue(P('/a/b/c.py').match('/**'))
-        self.assertTrue(P('/a/b/c.py').match('/a/**'))
-        self.assertTrue(P('/a/b/c.py').match('**/*.py'))
-        self.assertTrue(P('/a/b/c.py').match('/**/*.py'))
+        self.assertFalse(P('/a/b/c.py').match('/**/*.py'))
         self.assertTrue(P('/a/b/c.py').match('/a/**/*.py'))
-        self.assertTrue(P('/a/b/c.py').match('/a/b/**/*.py'))
-        self.assertTrue(P('/a/b/c.py').match('/**/**/**/**/*.py'))
-        self.assertFalse(P('c.py').match('**/a.py'))
-        self.assertFalse(P('c.py').match('c/**'))
-        self.assertFalse(P('a/b/c.py').match('**/a'))
-        self.assertFalse(P('a/b/c.py').match('**/a/b'))
-        self.assertFalse(P('a/b/c.py').match('**/a/b/c'))
-        self.assertFalse(P('a/b/c.py').match('**/a/b/c.'))
-        self.assertFalse(P('a/b/c.py').match('**/a/b/c./**'))
-        self.assertFalse(P('a/b/c.py').match('**/a/b/c./**'))
-        self.assertFalse(P('a/b/c.py').match('/a/b/c.py/**'))
-        self.assertFalse(P('a/b/c.py').match('/**/a/b/c.py'))
-        self.assertRaises(ValueError, P('a').match, '**a/b/c')
-        self.assertRaises(ValueError, P('a').match, 'a/b/c**')
         # Case-sensitive flag
         self.assertFalse(P('A.py').match('a.PY', case_sensitive=True))
         self.assertTrue(P('A.py').match('a.PY', case_sensitive=False))
@@ -228,8 +258,81 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertTrue(P('/a/b/c.py').match('/A/*/*.Py', case_sensitive=False))
         # Matching against empty path
         self.assertFalse(P('').match('*'))
-        self.assertTrue(P('').match('**'))
+        self.assertFalse(P('').match('**'))
         self.assertFalse(P('').match('**/*'))
+
+    def test_full_match_common(self):
+        P = self.cls
+        # Simple relative pattern.
+        self.assertTrue(P('b.py').full_match('b.py'))
+        self.assertFalse(P('a/b.py').full_match('b.py'))
+        self.assertFalse(P('/a/b.py').full_match('b.py'))
+        self.assertFalse(P('a.py').full_match('b.py'))
+        self.assertFalse(P('b/py').full_match('b.py'))
+        self.assertFalse(P('/a.py').full_match('b.py'))
+        self.assertFalse(P('b.py/c').full_match('b.py'))
+        # Wildcard relative pattern.
+        self.assertTrue(P('b.py').full_match('*.py'))
+        self.assertFalse(P('a/b.py').full_match('*.py'))
+        self.assertFalse(P('/a/b.py').full_match('*.py'))
+        self.assertFalse(P('b.pyc').full_match('*.py'))
+        self.assertFalse(P('b./py').full_match('*.py'))
+        self.assertFalse(P('b.py/c').full_match('*.py'))
+        # Multi-part relative pattern.
+        self.assertTrue(P('ab/c.py').full_match('a*/*.py'))
+        self.assertFalse(P('/d/ab/c.py').full_match('a*/*.py'))
+        self.assertFalse(P('a.py').full_match('a*/*.py'))
+        self.assertFalse(P('/dab/c.py').full_match('a*/*.py'))
+        self.assertFalse(P('ab/c.py/d').full_match('a*/*.py'))
+        # Absolute pattern.
+        self.assertTrue(P('/b.py').full_match('/*.py'))
+        self.assertFalse(P('b.py').full_match('/*.py'))
+        self.assertFalse(P('a/b.py').full_match('/*.py'))
+        self.assertFalse(P('/a/b.py').full_match('/*.py'))
+        # Multi-part absolute pattern.
+        self.assertTrue(P('/a/b.py').full_match('/a/*.py'))
+        self.assertFalse(P('/ab.py').full_match('/a/*.py'))
+        self.assertFalse(P('/a/b/c.py').full_match('/a/*.py'))
+        # Multi-part glob-style pattern.
+        self.assertTrue(P('a').full_match('**'))
+        self.assertTrue(P('c.py').full_match('**'))
+        self.assertTrue(P('a/b/c.py').full_match('**'))
+        self.assertTrue(P('/a/b/c.py').full_match('**'))
+        self.assertTrue(P('/a/b/c.py').full_match('/**'))
+        self.assertTrue(P('/a/b/c.py').full_match('/a/**'))
+        self.assertTrue(P('/a/b/c.py').full_match('**/*.py'))
+        self.assertTrue(P('/a/b/c.py').full_match('/**/*.py'))
+        self.assertTrue(P('/a/b/c.py').full_match('/a/**/*.py'))
+        self.assertTrue(P('/a/b/c.py').full_match('/a/b/**/*.py'))
+        self.assertTrue(P('/a/b/c.py').full_match('/**/**/**/**/*.py'))
+        self.assertFalse(P('c.py').full_match('**/a.py'))
+        self.assertFalse(P('c.py').full_match('c/**'))
+        self.assertFalse(P('a/b/c.py').full_match('**/a'))
+        self.assertFalse(P('a/b/c.py').full_match('**/a/b'))
+        self.assertFalse(P('a/b/c.py').full_match('**/a/b/c'))
+        self.assertFalse(P('a/b/c.py').full_match('**/a/b/c.'))
+        self.assertFalse(P('a/b/c.py').full_match('**/a/b/c./**'))
+        self.assertFalse(P('a/b/c.py').full_match('**/a/b/c./**'))
+        self.assertFalse(P('a/b/c.py').full_match('/a/b/c.py/**'))
+        self.assertFalse(P('a/b/c.py').full_match('/**/a/b/c.py'))
+        self.assertRaises(ValueError, P('a').full_match, '**a/b/c')
+        self.assertRaises(ValueError, P('a').full_match, 'a/b/c**')
+        # Case-sensitive flag
+        self.assertFalse(P('A.py').full_match('a.PY', case_sensitive=True))
+        self.assertTrue(P('A.py').full_match('a.PY', case_sensitive=False))
+        self.assertFalse(P('c:/a/B.Py').full_match('C:/A/*.pY', case_sensitive=True))
+        self.assertTrue(P('/a/b/c.py').full_match('/A/*/*.Py', case_sensitive=False))
+        # Matching against empty path
+        self.assertFalse(P('').full_match('*'))
+        self.assertTrue(P('').full_match('**'))
+        self.assertFalse(P('').full_match('**/*'))
+        # Matching with empty pattern
+        self.assertTrue(P('').full_match(''))
+        self.assertTrue(P('.').full_match('.'))
+        self.assertFalse(P('/').full_match(''))
+        self.assertFalse(P('/').full_match('.'))
+        self.assertFalse(P('foo').full_match(''))
+        self.assertFalse(P('foo').full_match('.'))
 
     def test_parts_common(self):
         # `parts` returns a tuple.
@@ -669,6 +772,7 @@ class DummyPath(PathBase):
     memory.
     """
     __slots__ = ()
+    pathmod = posixpath
 
     _files = {}
     _directories = {}
@@ -993,9 +1097,12 @@ class DummyPathTest(DummyPurePathTest):
             _check(p.glob("*/"), ["dirA/", "dirB/", "dirC/", "dirE/", "linkB/"])
 
     def test_glob_empty_pattern(self):
-        p = self.cls('')
-        with self.assertRaisesRegex(ValueError, 'Unacceptable pattern'):
-            list(p.glob(''))
+        def _check(glob, expected):
+            self.assertEqual(set(glob), { P(self.base, q) for q in expected })
+        P = self.cls
+        p = P(self.base)
+        _check(p.glob(""), [""])
+        _check(p.glob("."), ["."])
 
     def test_glob_case_sensitive(self):
         P = self.cls

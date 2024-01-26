@@ -439,12 +439,14 @@ set_up_allocators_unlocked(PyMemAllocatorName allocator)
         (void)set_default_allocator_unlocked(PYMEM_DOMAIN_RAW, pydebug, NULL);
         (void)set_default_allocator_unlocked(PYMEM_DOMAIN_MEM, pydebug, NULL);
         (void)set_default_allocator_unlocked(PYMEM_DOMAIN_OBJ, pydebug, NULL);
+        _PyRuntime.allocators.is_debug_enabled = pydebug;
         break;
 
     case PYMEM_ALLOCATOR_DEBUG:
         (void)set_default_allocator_unlocked(PYMEM_DOMAIN_RAW, 1, NULL);
         (void)set_default_allocator_unlocked(PYMEM_DOMAIN_MEM, 1, NULL);
         (void)set_default_allocator_unlocked(PYMEM_DOMAIN_OBJ, 1, NULL);
+        _PyRuntime.allocators.is_debug_enabled = 1;
         break;
 
 #ifdef WITH_PYMALLOC
@@ -458,7 +460,9 @@ set_up_allocators_unlocked(PyMemAllocatorName allocator)
         set_allocator_unlocked(PYMEM_DOMAIN_MEM, &pymalloc);
         set_allocator_unlocked(PYMEM_DOMAIN_OBJ, &pymalloc);
 
-        if (allocator == PYMEM_ALLOCATOR_PYMALLOC_DEBUG) {
+        int is_debug = (allocator == PYMEM_ALLOCATOR_PYMALLOC_DEBUG);
+        _PyRuntime.allocators.is_debug_enabled = is_debug;
+        if (is_debug) {
             set_up_debug_hooks_unlocked();
         }
         break;
@@ -477,7 +481,9 @@ set_up_allocators_unlocked(PyMemAllocatorName allocator)
         PyMemAllocatorEx objmalloc = MIMALLOC_OBJALLOC;
         set_allocator_unlocked(PYMEM_DOMAIN_OBJ, &objmalloc);
 
-        if (allocator == PYMEM_ALLOCATOR_MIMALLOC_DEBUG) {
+        int is_debug = (allocator == PYMEM_ALLOCATOR_MIMALLOC_DEBUG);
+        _PyRuntime.allocators.is_debug_enabled = is_debug;
+        if (is_debug) {
             set_up_debug_hooks_unlocked();
         }
 
@@ -493,7 +499,9 @@ set_up_allocators_unlocked(PyMemAllocatorName allocator)
         set_allocator_unlocked(PYMEM_DOMAIN_MEM, &malloc_alloc);
         set_allocator_unlocked(PYMEM_DOMAIN_OBJ, &malloc_alloc);
 
-        if (allocator == PYMEM_ALLOCATOR_MALLOC_DEBUG) {
+        int is_debug = (allocator == PYMEM_ALLOCATOR_MALLOC_DEBUG);
+        _PyRuntime.allocators.is_debug_enabled = is_debug;
+        if (is_debug) {
             set_up_debug_hooks_unlocked();
         }
         break;
@@ -604,13 +612,13 @@ _PyMem_GetCurrentAllocatorName(void)
 }
 
 
-#ifdef WITH_PYMALLOC
-static int
+int
 _PyMem_DebugEnabled(void)
 {
-    return (_PyObject.malloc == _PyMem_DebugMalloc);
+    return _PyRuntime.allocators.is_debug_enabled;
 }
 
+#ifdef WITH_PYMALLOC
 static int
 _PyMem_PymallocEnabled(void)
 {
@@ -626,12 +634,16 @@ _PyMem_PymallocEnabled(void)
 static int
 _PyMem_MimallocEnabled(void)
 {
+#ifdef Py_GIL_DISABLED
+    return 1;
+#else
     if (_PyMem_DebugEnabled()) {
         return (_PyMem_Debug.obj.alloc.malloc == _PyObject_MiMalloc);
     }
     else {
         return (_PyObject.malloc == _PyObject_MiMalloc);
     }
+#endif
 }
 #endif  // WITH_MIMALLOC
 
@@ -691,6 +703,7 @@ set_up_debug_hooks_unlocked(void)
     set_up_debug_hooks_domain_unlocked(PYMEM_DOMAIN_RAW);
     set_up_debug_hooks_domain_unlocked(PYMEM_DOMAIN_MEM);
     set_up_debug_hooks_domain_unlocked(PYMEM_DOMAIN_OBJ);
+    _PyRuntime.allocators.is_debug_enabled = 1;
 }
 
 void
@@ -1041,20 +1054,35 @@ static bool count_blocks(
     *(size_t *)allocated_blocks += area->used;
     return 1;
 }
+
+static Py_ssize_t
+get_mimalloc_allocated_blocks(PyInterpreterState *interp)
+{
+    size_t allocated_blocks = 0;
+#ifdef Py_GIL_DISABLED
+    for (PyThreadState *t = interp->threads.head; t != NULL; t = t->next) {
+        _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)t;
+        for (int i = 0; i < _Py_MIMALLOC_HEAP_COUNT; i++) {
+            mi_heap_t *heap = &tstate->mimalloc.heaps[i];
+            mi_heap_visit_blocks(heap, false, &count_blocks, &allocated_blocks);
+        }
+    }
+    // TODO(sgross): count blocks in abandoned segments.
+#else
+    // TODO(sgross): this only counts the current thread's blocks.
+    mi_heap_t *heap = mi_heap_get_default();
+    mi_heap_visit_blocks(heap, false, &count_blocks, &allocated_blocks);
+#endif
+    return allocated_blocks;
+}
 #endif
 
 Py_ssize_t
 _PyInterpreterState_GetAllocatedBlocks(PyInterpreterState *interp)
 {
 #ifdef WITH_MIMALLOC
-    // TODO(sgross): this only counts the current thread's blocks.
     if (_PyMem_MimallocEnabled()) {
-        size_t allocated_blocks = 0;
-
-        mi_heap_t *heap = mi_heap_get_default();
-        mi_heap_visit_blocks(heap, false, &count_blocks, &allocated_blocks);
-
-        return allocated_blocks;
+        return get_mimalloc_allocated_blocks(interp);
     }
 #endif
 
@@ -1105,7 +1133,7 @@ _PyInterpreterState_FinalizeAllocatedBlocks(PyInterpreterState *interp)
 
 static Py_ssize_t get_num_global_allocated_blocks(_PyRuntimeState *);
 
-/* We preserve the number of blockss leaked during runtime finalization,
+/* We preserve the number of blocks leaked during runtime finalization,
    so they can be reported if the runtime is initialized again. */
 // XXX We don't lose any information by dropping this,
 // so we should consider doing so.
@@ -1121,16 +1149,6 @@ _Py_FinalizeAllocatedBlocks(_PyRuntimeState *runtime)
 static Py_ssize_t
 get_num_global_allocated_blocks(_PyRuntimeState *runtime)
 {
-#ifdef WITH_MIMALLOC
-    if (_PyMem_MimallocEnabled()) {
-        size_t allocated_blocks = 0;
-
-        mi_heap_t *heap = mi_heap_get_default();
-        mi_heap_visit_blocks(heap, false, &count_blocks, &allocated_blocks);
-
-        return allocated_blocks;
-    }
-#endif
     Py_ssize_t total = 0;
     if (_PyRuntimeState_GetFinalizing(runtime) != NULL) {
         PyInterpreterState *interp = _PyInterpreterState_Main();

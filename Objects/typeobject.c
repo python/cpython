@@ -11,6 +11,7 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
 #include "pycore_object.h"        // _PyType_HasFeature()
+#include "pycore_object_alloc.h"  // _PyObject_MallocWithType()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // _Py_Mangle()
@@ -1370,6 +1371,7 @@ type_set_bases(PyTypeObject *type, PyObject *new_bases, void *context)
         res = 0;
     }
 
+    RARE_EVENT_INC(set_bases);
     Py_DECREF(old_bases);
     Py_DECREF(old_base);
 
@@ -1729,7 +1731,7 @@ _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems)
     const size_t size = _PyObject_VAR_SIZE(type, nitems+1);
 
     const size_t presize = _PyType_PreHeaderSize(type);
-    char *alloc = PyObject_Malloc(size + presize);
+    char *alloc = _PyObject_MallocWithType(type, size + presize);
     if (alloc  == NULL) {
         return PyErr_NoMemory();
     }
@@ -5841,6 +5843,8 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
         Py_SET_TYPE(self, newto);
         if (oldto->tp_flags & Py_TPFLAGS_HEAPTYPE)
             Py_DECREF(oldto);
+
+        RARE_EVENT_INC(set_class);
         return 0;
     }
     else {

@@ -11,7 +11,7 @@ extern "C" {
 
 /* runtime lifecycle */
 
-extern void _PySlice_Fini(PyInterpreterState *);
+extern void _PySlice_Fini(_PyFreeListState *);
 
 extern PyObject *
 _PyBuildSlice_ConsumeRefs(PyObject *start, PyObject *stop);

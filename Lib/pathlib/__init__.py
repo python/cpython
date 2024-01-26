@@ -33,6 +33,15 @@ __all__ = [
     ]
 
 
+# Reference for Windows paths can be found at
+# https://learn.microsoft.com/en-gb/windows/win32/fileio/naming-a-file .
+_WIN_RESERVED_NAMES = frozenset(
+    {'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$'} |
+    {f'COM{c}' for c in '123456789\xb9\xb2\xb3'} |
+    {f'LPT{c}' for c in '123456789\xb9\xb2\xb3'}
+)
+
+
 class _PathParents(Sequence):
     """This object provides sequence-like access to the logical ancestors
     of a path.  Don't try to construct it yourself."""
@@ -76,6 +85,10 @@ class PurePath(_abc.PurePathBase):
     """
 
     __slots__ = (
+        # The `_raw_paths` slot stores unnormalized string paths. This is set
+        # in the `__init__()` method.
+        '_raw_paths',
+
         # The `_drv`, `_root` and `_tail_cached` slots store parsed and
         # normalized parts of the path. They are set when any of the `drive`,
         # `root` or `_tail` properties are accessed for the first time. The
@@ -140,6 +153,26 @@ class PurePath(_abc.PurePathBase):
                 paths.append(path)
         # Avoid calling super().__init__, as an optimisation
         self._raw_paths = paths
+
+    def joinpath(self, *pathsegments):
+        """Combine this path with one or several arguments, and return a
+        new path representing either a subpath (if all arguments are relative
+        paths) or a totally different path (if one of the arguments is
+        anchored).
+        """
+        return self.with_segments(self, *pathsegments)
+
+    def __truediv__(self, key):
+        try:
+            return self.with_segments(self, key)
+        except TypeError:
+            return NotImplemented
+
+    def __rtruediv__(self, key):
+        try:
+            return self.with_segments(key, self)
+        except TypeError:
+            return NotImplemented
 
     def __reduce__(self):
         # Using the parts tuple helps share interned path parts
@@ -386,6 +419,33 @@ class PurePath(_abc.PurePathBase):
             other = self.with_segments(other)
         return other == self or other in self.parents
 
+    def is_absolute(self):
+        """True if the path is absolute (has both a root and, if applicable,
+        a drive)."""
+        if self.pathmod is posixpath:
+            # Optimization: work with raw paths on POSIX.
+            for path in self._raw_paths:
+                if path.startswith('/'):
+                    return True
+            return False
+        return self.pathmod.isabs(self)
+
+    def is_reserved(self):
+        """Return True if the path contains one of the special names reserved
+        by the system, if any."""
+        if self.pathmod is not ntpath or not self.name:
+            return False
+
+        # NOTE: the rules for reserved names seem somewhat complicated
+        # (e.g. r"..\NUL" is reserved but not r"foo\NUL" if "foo" does not
+        # exist). We err on the side of caution and return True for paths
+        # which are not considered reserved by Windows.
+        if self.drive.startswith('\\\\'):
+            # UNC paths are never reserved.
+            return False
+        name = self.name.partition('.')[0].partition(':')[0].rstrip(' ')
+        return name.upper() in _WIN_RESERVED_NAMES
+
     def as_uri(self):
         """Return the path as a URI."""
         if not self.is_absolute():
@@ -407,6 +467,36 @@ class PurePath(_abc.PurePathBase):
         from urllib.parse import quote_from_bytes
         return prefix + quote_from_bytes(os.fsencode(path))
 
+    @property
+    def _pattern_stack(self):
+        """Stack of path components, to be used with patterns in glob()."""
+        parts = self._tail.copy()
+        pattern = self._raw_path
+        if self.anchor:
+            raise NotImplementedError("Non-relative patterns are unsupported")
+        elif not parts:
+            raise ValueError("Unacceptable pattern: {!r}".format(pattern))
+        elif pattern[-1] in (self.pathmod.sep, self.pathmod.altsep):
+            # GH-65238: pathlib doesn't preserve trailing slash. Add it back.
+            parts.append('')
+        elif parts[-1] == '**':
+            # GH-70303: '**' only matches directories. Add trailing slash.
+            warnings.warn(
+                "Pattern ending '**' will match files and directories in a "
+                "future Python release. Add a trailing slash to match only "
+                "directories and remove this warning.",
+                FutureWarning, 4)
+            parts.append('')
+        parts.reverse()
+        return parts
+
+    @property
+    def _pattern_str(self):
+        """The path expressed as a string, for use in pattern-matching."""
+        # The string representation of an empty path is a single dot ('.'). Empty
+        # paths shouldn't match wildcards, so we change it to the empty string.
+        path_str = str(self)
+        return '' if path_str == '.' else path_str
 
 # Subclassing os.PathLike makes isinstance() checks slower,
 # which in turn makes Path construction slower. Register instead!
@@ -520,7 +610,7 @@ class Path(_abc.PathBase, PurePath):
     def _scandir(self):
         return os.scandir(self)
 
-    def _make_child_entry(self, entry, is_dir=False):
+    def _make_child_entry(self, entry):
         # Transform an entry yielded from _scandir() into a path object.
         path_str = entry.name if str(self) == '.' else entry.path
         path = self.with_segments(path_str)
@@ -531,6 +621,8 @@ class Path(_abc.PathBase, PurePath):
         return path
 
     def _make_child_relpath(self, name):
+        if not name:
+            return self
         path_str = str(self)
         tail = self._tail
         if tail:
@@ -551,14 +643,8 @@ class Path(_abc.PathBase, PurePath):
         kind, including directories) matching the given relative pattern.
         """
         sys.audit("pathlib.Path.glob", self, pattern)
-        if pattern.endswith('**'):
-            # GH-70303: '**' only matches directories. Add trailing slash.
-            warnings.warn(
-                "Pattern ending '**' will match files and directories in a "
-                "future Python release. Add a trailing slash to match only "
-                "directories and remove this warning.",
-                FutureWarning, 2)
-            pattern = f'{pattern}/'
+        if not isinstance(pattern, PurePath):
+            pattern = self.with_segments(pattern)
         return _abc.PathBase.glob(
             self, pattern, case_sensitive=case_sensitive, follow_symlinks=follow_symlinks)
 
@@ -568,15 +654,9 @@ class Path(_abc.PathBase, PurePath):
         this subtree.
         """
         sys.audit("pathlib.Path.rglob", self, pattern)
-        if pattern.endswith('**'):
-            # GH-70303: '**' only matches directories. Add trailing slash.
-            warnings.warn(
-                "Pattern ending '**' will match files and directories in a "
-                "future Python release. Add a trailing slash to match only "
-                "directories and remove this warning.",
-                FutureWarning, 2)
-            pattern = f'{pattern}/'
-        pattern = f'**/{pattern}'
+        if not isinstance(pattern, PurePath):
+            pattern = self.with_segments(pattern)
+        pattern = '**' / pattern
         return _abc.PathBase.glob(
             self, pattern, case_sensitive=case_sensitive, follow_symlinks=follow_symlinks)
 
