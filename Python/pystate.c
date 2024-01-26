@@ -10,6 +10,7 @@
 #include "pycore_frame.h"
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_object.h"        // _PyType_InitCache()
+#include "pycore_object_stack.h"  // _PyObjectStackChunk_ClearFreeList()
 #include "pycore_parking_lot.h"   // _PyParkingLot_AfterFork()
 #include "pycore_pyerrors.h"      // _PyErr_Clear()
 #include "pycore_pylifecycle.h"   // _PyAST_Fini()
@@ -1469,6 +1470,7 @@ _Py_ClearFreeLists(_PyFreeListState *state, int is_finalization)
     _PyDict_ClearFreeList(state, is_finalization);
     _PyContext_ClearFreeList(state, is_finalization);
     _PyAsyncGen_ClearFreeLists(state, is_finalization);
+    _PyObjectStackChunk_ClearFreeList(state, is_finalization);
 }
 
 void
@@ -2056,7 +2058,6 @@ start_the_world(struct _stoptheworld_state *stw)
     HEAD_LOCK(runtime);
     stw->requested = 0;
     stw->world_stopped = 0;
-    stw->requester = NULL;
     // Switch threads back to the detached state.
     PyInterpreterState *i;
     PyThreadState *t;
@@ -2067,6 +2068,7 @@ start_the_world(struct _stoptheworld_state *stw)
             _PyParkingLot_UnparkAll(&t->state);
         }
     }
+    stw->requester = NULL;
     HEAD_UNLOCK(runtime);
     if (stw->is_global) {
         _PyRWMutex_Unlock(&runtime->stoptheworld_mutex);
@@ -2609,11 +2611,16 @@ _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp,
                                      _PyFrameEvalFunction eval_frame)
 {
     if (eval_frame == _PyEval_EvalFrameDefault) {
-        interp->eval_frame = NULL;
+        eval_frame = NULL;
     }
-    else {
-        interp->eval_frame = eval_frame;
+    if (eval_frame == interp->eval_frame) {
+        return;
     }
+    if (eval_frame != NULL) {
+        _Py_Executors_InvalidateAll(interp);
+    }
+    RARE_EVENT_INC(set_eval_frame_func);
+    interp->eval_frame = eval_frame;
 }
 
 
