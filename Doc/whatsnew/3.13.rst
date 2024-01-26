@@ -519,7 +519,7 @@ Deprecated
   deprecated. The remaining parameters will become keyword-only in Python 3.15.
 
   Deprecate passing name, number of arguments, and the callable as keyword
-  arguments, for the following :class:`sqlite3.Connection` APIs:
+  arguments for the following :class:`sqlite3.Connection` APIs:
 
   * :meth:`~sqlite3.Connection.create_function`
   * :meth:`~sqlite3.Connection.create_aggregate`
