@@ -336,7 +336,8 @@ pathlib
   object from a 'file' URI (``file:/``).
   (Contributed by Barney Gale in :gh:`107465`.)
 
-* Add support for recursive wildcards in :meth:`pathlib.PurePath.match`.
+* Add :meth:`pathlib.PurePath.full_match` for matching paths with
+  shell-style wildcards, including the recursive wildcard "``**``".
   (Contributed by Barney Gale in :gh:`73435`.)
 
 * Add *follow_symlinks* keyword-only argument to :meth:`pathlib.Path.glob`,
