@@ -143,9 +143,22 @@ def rgb_to_hsv(r, g, b):
 def hsv_to_rgb(h, s, v):
     if s == 0.0:
         return v, v, v
-    i, f = divmod(h * 6.0, 1.0)
-    p = v * (1.0 - s)
-    q = v * (1.0 - s * f)
-    t = v * (1.0 - s * (1.0 - f))
-    i = int(i) % 6
-    return [(v, t, p), (q, v, p), (p, v, t), (p, q, v), (t, p, v), (v, p, q)][i]
+    i = int(h*6.0) # XXX assume int() truncates!
+    f = (h*6.0) - i
+    p = v*(1.0 - s)
+    q = v*(1.0 - s*f)
+    t = v*(1.0 - s*(1.0-f))
+    i = i%6
+    if i == 0:
+        return v, t, p
+    elif i == 1:
+        return q, v, p
+    elif i == 2:
+        return p, v, t
+    elif i == 3:
+        return p, q, v
+    elif i == 4:
+        return t, p, v
+    elif i == 5:
+        return v, p, q
+    # Cannot get here
