@@ -19,6 +19,7 @@ from test.support import set_recursion_limit
 from test.support import os_helper
 from test.support.os_helper import TESTFN, FakePath
 from test.test_pathlib import test_pathlib_abc
+from test.test_pathlib.test_pathlib_abc import needs_symlinks
 
 try:
     import grp, pwd
@@ -1638,9 +1639,8 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
                 self.assertNotIn(str(p12), concurrently_created)
             self.assertTrue(p.exists())
 
+    @needs_symlinks
     def test_symlink_to(self):
-        if not self.can_symlink:
-            self.skipTest("symlinks required")
         P = self.cls(self.base)
         target = P / 'fileA'
         # Symlinking a path target.
