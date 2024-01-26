@@ -1657,6 +1657,7 @@ Pattern                    Meaning
 ``"**/*.py"``              Any path with a final segment ending ``".py"``.
 ``"assets/**"``            Any path starting with ``"assets/"``.
 ``"assets/**/*"``          Any path starting with ``"assets/"``, excluding ``"assets/"`` itself.
+=========================  ===========================================
 
 
 Correspondence to tools in the :mod:`os` module
