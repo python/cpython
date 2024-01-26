@@ -19,18 +19,13 @@ from test.support import set_recursion_limit
 from test.support import os_helper
 from test.support.os_helper import TESTFN, FakePath
 from test.test_pathlib import test_pathlib_abc
-from test.test_pathlib.test_pathlib_abc import needs_symlinks
+from test.test_pathlib.test_pathlib_abc import needs_posix, needs_windows, needs_symlinks
 
 try:
     import grp, pwd
 except ImportError:
     grp = pwd = None
 
-
-only_nt = unittest.skipIf(os.name != 'nt',
-                          'test requires a Windows-compatible system')
-only_posix = unittest.skipIf(os.name == 'nt',
-                             'test requires a POSIX-compatible system')
 
 root_in_posix = False
 if hasattr(os, 'geteuid'):
@@ -1305,7 +1300,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertEqual(p.stat().st_mode, new_mode)
 
     # On Windows, os.chmod does not follow symlinks (issue #15411)
-    @only_posix
+    @needs_posix
     @os_helper.skip_unless_working_chmod
     def test_chmod_follow_symlinks_true(self):
         p = self.cls(self.base) / 'linkA'
@@ -1574,7 +1569,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.cls('/').resolve().mkdir(exist_ok=True)
         self.cls('/').resolve().mkdir(parents=True, exist_ok=True)
 
-    @only_nt  # XXX: not sure how to test this on POSIX.
+    @needs_windows  # XXX: not sure how to test this on POSIX.
     def test_mkdir_with_unknown_drive(self):
         for d in 'ZYXWVUTSRQPONMLKJIHGFEDCBA':
             p = self.cls(d + ':\\')
@@ -1884,7 +1879,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertEqual(expect, set(p.rglob(FakePath(pattern))))
 
 
-@only_posix
+@unittest.skipIf(os.name == 'nt', 'test requires a POSIX-compatible system')
 class PosixPathTest(PathTest, PurePosixPathTest):
     cls = pathlib.PosixPath
 
@@ -2060,7 +2055,7 @@ class PosixPathTest(PathTest, PurePosixPathTest):
         self.assertEqual(P.from_uri('file:' + pathname2url('//foo/bar')), P('//foo/bar'))
 
 
-@only_nt
+@unittest.skipIf(os.name != 'nt', 'test requires a Windows-compatible system')
 class WindowsPathTest(PathTest, PureWindowsPathTest):
     cls = pathlib.WindowsPath
 

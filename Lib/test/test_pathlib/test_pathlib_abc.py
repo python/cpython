@@ -137,9 +137,9 @@ class DummyPurePathTest(unittest.TestCase):
 
     def setUp(self):
         name = self.id().split('.')[-1]
-        if name in _tests_needing_posix and not self.cls.pathmod is not posixpath:
+        if name in _tests_needing_posix and self.cls.pathmod is not posixpath:
             self.skipTest('requires POSIX-flavoured path class')
-        if name in _tests_needing_windows and not self.cls.pathmod is posixpath:
+        if name in _tests_needing_windows and self.cls.pathmod is posixpath:
             self.skipTest('requires Windows-flavoured path class')
         p = self.cls('a')
         self.pathmod = p.pathmod
