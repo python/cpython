@@ -67,7 +67,7 @@ struct _Py_float_state {
 #endif
 };
 
-struct _Py_dict_state {
+struct _Py_dict_freelist {
 #ifdef WITH_FREELISTS
     /* Dictionary reuse scheme to save calls to malloc and free */
     PyDictObject *free_list[PyDict_MAXFREELIST];
@@ -118,7 +118,7 @@ typedef struct _Py_freelist_state {
     struct _Py_float_state floats;
     struct _Py_tuple_state tuples;
     struct _Py_list_state lists;
-    struct _Py_dict_state dicts;
+    struct _Py_dict_freelist dicts;
     struct _Py_slice_state slices;
     struct _Py_context_state contexts;
     struct _Py_async_gen_state async_gens;

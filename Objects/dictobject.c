@@ -244,7 +244,7 @@ static PyObject* dict_iter(PyObject *dict);
 
 
 #ifdef WITH_FREELISTS
-static struct _Py_dict_state *
+static struct _Py_dict_freelist *
 get_dict_state(void)
 {
     _PyFreeListState *state = _PyFreeListState_GET();
@@ -257,7 +257,7 @@ void
 _PyDict_ClearFreeList(_PyFreeListState *freelist_state, int is_finalization)
 {
 #ifdef WITH_FREELISTS
-    struct _Py_dict_state *state = &freelist_state->dicts;
+    struct _Py_dict_freelist *state = &freelist_state->dicts;
     while (state->numfree > 0) {
         PyDictObject *op = state->free_list[--state->numfree];
         assert(PyDict_CheckExact(op));
@@ -294,7 +294,7 @@ void
 _PyDict_DebugMallocStats(FILE *out)
 {
 #ifdef WITH_FREELISTS
-    struct _Py_dict_state *state = get_dict_state();
+    struct _Py_dict_freelist *state = get_dict_state();
     _PyDebugAllocatorStats(out, "free PyDictObject",
                            state->numfree, sizeof(PyDictObject));
 #endif
@@ -630,7 +630,7 @@ new_keys_object(PyInterpreterState *interp, uint8_t log2_size, bool unicode)
     }
 
 #ifdef WITH_FREELISTS
-    struct _Py_dict_state *state = get_dict_state();
+    struct _Py_dict_freelist *state = get_dict_state();
     if (log2_size == PyDict_LOG_MINSIZE && unicode && state->keys_numfree > 0) {
         dk = state->keys_free_list[--state->keys_numfree];
         OBJECT_STAT_INC(from_freelist);
@@ -682,7 +682,7 @@ free_keys_object(PyInterpreterState *interp, PyDictKeysObject *keys)
         }
     }
 #ifdef WITH_FREELISTS
-    struct _Py_dict_state *state = get_dict_state();
+    struct _Py_dict_freelist *state = get_dict_state();
     if (DK_LOG_SIZE(keys) == PyDict_LOG_MINSIZE
             && state->keys_numfree < PyDict_MAXFREELIST
             && state->keys_numfree >= 0
@@ -727,7 +727,7 @@ new_dict(PyInterpreterState *interp,
     PyDictObject *mp;
     assert(keys != NULL);
 #ifdef WITH_FREELISTS
-    struct _Py_dict_state *state = get_dict_state();
+    struct _Py_dict_freelist *state = get_dict_state();
     if (state->numfree > 0) {
         mp = state->free_list[--state->numfree];
         assert (mp != NULL);
@@ -1544,7 +1544,7 @@ dictresize(PyInterpreterState *interp, PyDictObject *mp,
             assert(oldkeys->dk_kind != DICT_KEYS_SPLIT);
             assert(oldkeys->dk_refcnt == 1);
 #ifdef WITH_FREELISTS
-            struct _Py_dict_state *state = get_dict_state();
+            struct _Py_dict_freelist *state = get_dict_state();
             if (DK_LOG_SIZE(oldkeys) == PyDict_LOG_MINSIZE &&
                     DK_IS_UNICODE(oldkeys) &&
                     state->keys_numfree < PyDict_MAXFREELIST &&
@@ -2469,7 +2469,7 @@ dict_dealloc(PyObject *self)
         dictkeys_decref(interp, keys);
     }
 #ifdef WITH_FREELISTS
-    struct _Py_dict_state *state = get_dict_state();
+    struct _Py_dict_freelist *state = get_dict_state();
     if (state->numfree < PyDict_MAXFREELIST && state->numfree >=0 &&
         Py_IS_TYPE(mp, &PyDict_Type))
     {
