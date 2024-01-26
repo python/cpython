@@ -1595,22 +1595,21 @@ call fails (for example because the path doesn't exist).
 Pattern language
 ----------------
 
-:meth:`PurePath.match`, :meth:`Path.glob` and :meth:`Path.rglob` accept
-patterns with shell-style wildcards.
+The following wildcards are supported in patterns for
+:meth:`~PurePath.full_match`, :meth:`~Path.glob` and :meth:`~Path.rglob`:
 
-The "``**``" wildcard matches any number of file or directory segments. In
-other words, it enabled recursive globbing. If "``**``" occurs in any position
-other than a full pattern segment, :exc:`ValueError` is raised.
-
-The "``*``" wildcard matches precisely one file or directory segment when it
-occurs as a full pattern segment, or any number of non-separator characters
-when it occurs elsewhere.
-
-The "``?``" wildcard matches a single non-separator character. Character
-ranges such as "``[seq]``" and "``[!seq]``" match a single character within or
-without the range.
-
-If the pattern ends with a path separator, only directories are matched.
+"``**``" (standalone segment)
+  Matches any number of file or directory segments.
+"``*``" (standalone segment)
+  Matches one non-empty file or directory segment.
+"``*``" (otherwise)
+  Matches any number of non-separator characters.
+"``?``"
+  Matches one non-separator character.
+"``[seq]``"
+  Matches one character in *seq*.
+"``[!seq]``"
+  Matches one character not in *seq*.
 
 For a literal match, wrap the meta-characters in brackets.
 For example, ``"[?]"`` matches the character ``"?"``.
