@@ -1218,7 +1218,6 @@ uop_abstract_interpret(
     }
 #endif
     bool did_loop_peel = false;
-    int loop_peel_target = 0;
 
     _Py_UOpsAbstractInterpContext *ctx = NULL;
 
@@ -1271,12 +1270,11 @@ loop_peeling:
 
     assert(op_is_end(curr->opcode));
 
-    // If we end in a loop, and we have a lot of space left, unroll the loop for added type stability
-    // https://en.wikipedia.org/wiki/Loop_unrolling
+    // If we end in a loop, and we have a lot of space left, peel the loop for added type stability
+    // https://en.wikipedia.org/wiki/Loop_splitting
     if (!did_loop_peel && curr->opcode == _JUMP_TO_TOP &&
-        ((ctx->emitter.curr_i * 2) < (int)(ctx->emitter.writebuffer_end - ctx->emitter.writebuffer))) {
+        ((ctx->emitter.curr_i * 3) < (int)(ctx->emitter.writebuffer_end - ctx->emitter.writebuffer))) {
         did_loop_peel = true;
-        loop_peel_target = ctx->emitter.curr_i;
         _PyUOpInstruction jump_header = {_JUMP_ABSOLUTE_HEADER, (ctx->emitter.curr_i), 0, 0};
         if (emit_i(&ctx->emitter, jump_header) < 0) {
             goto error;
@@ -1382,7 +1380,7 @@ peephole_optimizations(_PyUOpInstruction *buffer, int buffer_size)
         int oparg = curr->oparg;
         switch(curr->opcode) {
             case _SHRINK_STACK: {
-                // If all that precedes a _SHRINK_STACK is a bunch of LOAD_FAST,
+                // If all that precedes a _SHRINK_STACK is a bunch of loads,
                 // then we can safely eliminate that without side effects.
                 int load_count = 0;
                 _PyUOpInstruction *back = curr-1;
@@ -1398,6 +1396,10 @@ peephole_optimizations(_PyUOpInstruction *buffer, int buffer_size)
                     load_count = 0;
                     while(load_count < oparg) {
                         load_count += op_is_load(back->opcode);
+                        if (back->opcode == _LOAD_CONST_INLINE) {
+                            PyObject *const_val = (PyObject *)back->operand;
+                            Py_CLEAR(const_val);
+                        }
                         back->opcode = NOP;
                         back--;
                     }
