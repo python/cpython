@@ -364,7 +364,7 @@ The :mod:`!dbm.dumb` module defines the following:
 .. function:: open(filename, flag="c", mode=0o666)
 
    Open a :mod:`!dbm.dumb` database.
-   The returned object behaves similar to a :term:`mapping`,
+   The returned database object behaves similar to a :term:`mapping`,
    in addition to providing :meth:`~dumbdbm.sync` and :meth:`~dumbdbm.close`
    methods.
 
