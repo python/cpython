@@ -324,6 +324,9 @@ typedef struct {
     PyObject *set_hostname;
 #endif
     int check_hostname;
+#ifdef TLS1_3_VERSION
+    int post_handshake_auth;
+#endif
 } PySSLContext;
 
 typedef struct {
@@ -605,6 +608,28 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     mode |= SSL_MODE_AUTO_RETRY;
 #endif
     SSL_set_mode(self->ssl, mode);
+
+   /* bpo-37428: newPySSLSocket() sets SSL_VERIFY_POST_HANDSHAKE flag for
+     * server sockets and SSL_set_post_handshake_auth() for client. */
+// #ifdef TLS1_3_VERSION
+//     if (sslctx->post_handshake_auth == 1) {
+//         if (socket_type == PY_SSL_SERVER) {
+//             /* bpo-37428: OpenSSL does not ignore SSL_VERIFY_POST_HANDSHAKE.
+//              * Set SSL_VERIFY_POST_HANDSHAKE flag only for server sockets and
+//              * only in combination with SSL_VERIFY_PEER flag. */
+//             int mode = SSL_get_verify_mode(self->ssl);
+//             if (mode & SSL_VERIFY_PEER) {
+//                 int (*verify_cb)(int, X509_STORE_CTX *) = NULL;
+//                 verify_cb = SSL_get_verify_callback(self->ssl);
+//                 mode |= SSL_VERIFY_POST_HANDSHAKE;
+//                 SSL_set_verify(self->ssl, mode, verify_cb);
+//             }
+//         } else {
+//             /* client socket */
+//             SSL_set_post_handshake_auth(self->ssl, 1);
+//         }
+//     }
+// #endif
 
 #if HAVE_SNI
     if (server_hostname != NULL) {
@@ -2308,6 +2333,11 @@ context_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
 #endif
 
+#ifdef TLS1_3_VERSION
+    self->post_handshake_auth = 0;
+    SSL_CTX_set_post_handshake_auth(self->ctx, self->post_handshake_auth);
+#endif
+
     return (PyObject *)self;
 }
 
@@ -2527,6 +2557,8 @@ static int
 set_verify_mode(PySSLContext *self, PyObject *arg, void *c)
 {
     int n, mode;
+    int (*verify_cb)(int, X509_STORE_CTX *) = NULL;
+
     if (!PyArg_Parse(arg, "i", &n))
         return -1;
     if (n == PY_SSL_CERT_NONE)
@@ -2540,13 +2572,20 @@ set_verify_mode(PySSLContext *self, PyObject *arg, void *c)
                         "invalid value for verify_mode");
         return -1;
     }
+
     if (mode == SSL_VERIFY_NONE && self->check_hostname) {
         PyErr_SetString(PyExc_ValueError,
                         "Cannot set verify_mode to CERT_NONE when "
                         "check_hostname is enabled.");
         return -1;
     }
-    SSL_CTX_set_verify(self->ctx, mode, NULL);
+
+  /* bpo-37428: newPySSLSocket() sets SSL_VERIFY_POST_HANDSHAKE flag for
+     * server sockets and SSL_set_post_handshake_auth() for client. */
+
+    /* keep current verify cb */
+    verify_cb = SSL_CTX_get_verify_callback(self->ctx);
+    SSL_CTX_set_verify(self->ctx, mode, verify_cb);
     return 0;
 }
 
@@ -2650,6 +2689,27 @@ set_check_hostname(PySSLContext *self, PyObject *arg, void *c)
     self->check_hostname = check_hostname;
     return 0;
 }
+
+#if TLS1_3_VERSION
+static int
+set_post_handshake_auth(PySSLContext *self, PyObject *arg, void *c) {
+    if (arg == NULL) {
+        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
+        return -1;
+    }
+    int pha = PyObject_IsTrue(arg);
+
+    if (pha == -1) {
+        return -1;
+    }
+    self->post_handshake_auth = pha;
+
+    /* bpo-37428: newPySSLSocket() sets SSL_VERIFY_POST_HANDSHAKE flag for
+     * server sockets and SSL_set_post_handshake_auth() for client. */
+
+    return 0;
+}
+#endif
 
 
 typedef struct {
