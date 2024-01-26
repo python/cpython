@@ -11,6 +11,27 @@ import posixpath
 from test.support.os_helper import TESTFN
 
 
+_tests_needing_posix = set()
+_tests_needing_windows = set()
+_tests_needing_symlinks = set()
+
+
+def needs_posix(fn):
+    """Decorator that marks a test as requiring a POSIX-flavoured path class."""
+    _tests_needing_posix.add(fn.__name__)
+    return fn
+
+def needs_windows(fn):
+    """Decorator that marks a test as requiring a Windows-flavoured path class."""
+    _tests_needing_windows.add(fn.__name__)
+    return fn
+
+def needs_symlinks(fn):
+    """Decorator that marks a test as requiring a path class that supports symlinks."""
+    _tests_needing_symlinks.add(fn.__name__)
+    return fn
+
+
 class UnsupportedOperationTest(unittest.TestCase):
     def test_is_notimplemented(self):
         self.assertTrue(issubclass(UnsupportedOperation, NotImplementedError))
@@ -115,6 +136,11 @@ class DummyPurePathTest(unittest.TestCase):
     base = f'/this/path/kills/fascists/{TESTFN}'
 
     def setUp(self):
+        name = self.id().split('.')[-1]
+        if name in _tests_needing_posix and self.cls.pathmod is not posixpath:
+            self.skipTest('requires POSIX-flavoured path class')
+        if name in _tests_needing_windows and self.cls.pathmod is posixpath:
+            self.skipTest('requires Windows-flavoured path class')
         p = self.cls('a')
         self.pathmod = p.pathmod
         self.sep = self.pathmod.sep
@@ -888,6 +914,9 @@ class DummyPathTest(DummyPurePathTest):
 
     def setUp(self):
         super().setUp()
+        name = self.id().split('.')[-1]
+        if name in _tests_needing_symlinks and not self.can_symlink:
+            self.skipTest('requires symlinks')
         pathmod = self.cls.pathmod
         p = self.cls(self.base)
         p.mkdir(parents=True)
@@ -1045,9 +1074,8 @@ class DummyPathTest(DummyPurePathTest):
             expected += ['linkA', 'linkB', 'brokenLink', 'brokenLinkLoop']
         self.assertEqual(paths, { P(self.base, q) for q in expected })
 
+    @needs_symlinks
     def test_iterdir_symlink(self):
-        if not self.can_symlink:
-            self.skipTest("symlinks required")
         # __iter__ on a symlink to a directory.
         P = self.cls
         p = P(self.base, 'linkB')
@@ -1116,9 +1144,8 @@ class DummyPathTest(DummyPurePathTest):
         _check(path, "dirb/file*", True, [])
         _check(path, "dirb/file*", False, ["dirB/fileB"])
 
+    @needs_symlinks
     def test_glob_follow_symlinks_common(self):
-        if not self.can_symlink:
-            self.skipTest("symlinks required")
         def _check(path, glob, expected):
             actual = {path for path in path.glob(glob, follow_symlinks=True)
                       if path.parts.count("linkD") <= 1}  # exclude symlink loop.
@@ -1144,9 +1171,8 @@ class DummyPathTest(DummyPurePathTest):
         _check(p, "dir*/*/../dirD/**/", ["dirC/dirD/../dirD/"])
         _check(p, "*/dirD/**/", ["dirC/dirD/"])
 
+    @needs_symlinks
     def test_glob_no_follow_symlinks_common(self):
-        if not self.can_symlink:
-            self.skipTest("symlinks required")
         def _check(path, glob, expected):
             actual = {path for path in path.glob(glob, follow_symlinks=False)}
             self.assertEqual(actual, { P(self.base, q) for q in expected })
@@ -1210,9 +1236,8 @@ class DummyPathTest(DummyPurePathTest):
         _check(p.rglob("*.txt"), ["dirC/novel.txt"])
         _check(p.rglob("*.*"), ["dirC/novel.txt"])
 
+    @needs_symlinks
     def test_rglob_follow_symlinks_common(self):
-        if not self.can_symlink:
-            self.skipTest("symlinks required")
         def _check(path, glob, expected):
             actual = {path for path in path.rglob(glob, follow_symlinks=True)
                       if path.parts.count("linkD") <= 1}  # exclude symlink loop.
@@ -1243,9 +1268,8 @@ class DummyPathTest(DummyPurePathTest):
         _check(p, "*.txt", ["dirC/novel.txt"])
         _check(p, "*.*", ["dirC/novel.txt"])
 
+    @needs_symlinks
     def test_rglob_no_follow_symlinks_common(self):
-        if not self.can_symlink:
-            self.skipTest("symlinks required")
         def _check(path, glob, expected):
             actual = {path for path in path.rglob(glob, follow_symlinks=False)}
             self.assertEqual(actual, { P(self.base, q) for q in expected })
@@ -1269,10 +1293,9 @@ class DummyPathTest(DummyPurePathTest):
         _check(p, "*.txt", ["dirC/novel.txt"])
         _check(p, "*.*", ["dirC/novel.txt"])
 
+    @needs_symlinks
     def test_rglob_symlink_loop(self):
         # Don't get fooled by symlink loops (Issue #26012).
-        if not self.can_symlink:
-            self.skipTest("symlinks required")
         P = self.cls
         p = P(self.base)
         given = set(p.rglob('*'))
@@ -1302,10 +1325,9 @@ class DummyPathTest(DummyPurePathTest):
         self.assertEqual(set(p.glob("xyzzy/..")), set())
         self.assertEqual(set(p.glob("/".join([".."] * 50))), { P(self.base, *[".."] * 50)})
 
+    @needs_symlinks
     def test_glob_permissions(self):
         # See bpo-38894
-        if not self.can_symlink:
-            self.skipTest("symlinks required")
         P = self.cls
         base = P(self.base) / 'permissions'
         base.mkdir()
@@ -1322,19 +1344,17 @@ class DummyPathTest(DummyPurePathTest):
         self.assertEqual(len(set(base.glob("*/fileC"))), 50)
         self.assertEqual(len(set(base.glob("*/file*"))), 50)
 
+    @needs_symlinks
     def test_glob_long_symlink(self):
         # See gh-87695
-        if not self.can_symlink:
-            self.skipTest("symlinks required")
         base = self.cls(self.base) / 'long_symlink'
         base.mkdir()
         bad_link = base / 'bad_link'
         bad_link.symlink_to("bad" * 200)
         self.assertEqual(sorted(base.glob('**/*')), [bad_link])
 
+    @needs_symlinks
     def test_readlink(self):
-        if not self.can_symlink:
-            self.skipTest("symlinks required")
         P = self.cls(self.base)
         self.assertEqual((P / 'linkA').readlink(), self.cls('fileA'))
         self.assertEqual((P / 'brokenLink').readlink(),
@@ -1358,9 +1378,8 @@ class DummyPathTest(DummyPurePathTest):
     # This can be used to check both relative and absolute resolutions.
     _check_resolve_relative = _check_resolve_absolute = _check_resolve
 
+    @needs_symlinks
     def test_resolve_common(self):
-        if not self.can_symlink:
-            self.skipTest("symlinks required")
         P = self.cls
         p = P(self.base, 'foo')
         with self.assertRaises(OSError) as cm:
@@ -1419,10 +1438,9 @@ class DummyPathTest(DummyPurePathTest):
             # resolves to 'dirB/..' first before resolving to parent of dirB.
             self._check_resolve_relative(p, P(self.base, 'foo', 'in', 'spam'), False)
 
+    @needs_symlinks
     def test_resolve_dot(self):
         # See http://web.archive.org/web/20200623062557/https://bitbucket.org/pitrou/pathlib/issues/9/
-        if not self.can_symlink:
-            self.skipTest("symlinks required")
         pathmod = self.pathmod
         p = self.cls(self.base)
         p.joinpath('0').symlink_to('.', target_is_directory=True)
@@ -1441,11 +1459,9 @@ class DummyPathTest(DummyPurePathTest):
             path.resolve(strict=True)
         self.assertEqual(cm.exception.errno, errno.ELOOP)
 
+    @needs_posix
+    @needs_symlinks
     def test_resolve_loop(self):
-        if not self.can_symlink:
-            self.skipTest("symlinks required")
-        if self.cls.pathmod is not posixpath:
-            self.skipTest("symlink loops work differently with concrete Windows paths")
         # Loops with relative symlinks.
         self.cls(self.base, 'linkX').symlink_to('linkX/inside')
         self._check_symlink_loop(self.base, 'linkX')
@@ -1487,9 +1503,8 @@ class DummyPathTest(DummyPurePathTest):
         self.assertEqual(statA.st_dev, statC.st_dev)
         # other attributes not used by pathlib.
 
+    @needs_symlinks
     def test_stat_no_follow_symlinks(self):
-        if not self.can_symlink:
-            self.skipTest("symlinks required")
         p = self.cls(self.base) / 'linkA'
         st = p.stat()
         self.assertNotEqual(st, p.stat(follow_symlinks=False))
@@ -1499,9 +1514,8 @@ class DummyPathTest(DummyPurePathTest):
         st = p.stat()
         self.assertEqual(st, p.stat(follow_symlinks=False))
 
+    @needs_symlinks
     def test_lstat(self):
-        if not self.can_symlink:
-            self.skipTest("symlinks required")
         p = self.cls(self.base)/ 'linkA'
         st = p.stat()
         self.assertNotEqual(st, p.lstat())
@@ -1634,9 +1648,6 @@ class DummyPathTest(DummyPurePathTest):
         self.assertIs((P / 'fileA\x00').is_char_device(), False)
 
     def _check_complex_symlinks(self, link0_target):
-        if not self.can_symlink:
-            self.skipTest("symlinks required")
-
         # Test solving a non-looping chain of symlinks (issue #19887).
         pathmod = self.pathmod
         P = self.cls(self.base)
@@ -1682,12 +1693,15 @@ class DummyPathTest(DummyPurePathTest):
         finally:
             os.chdir(old_path)
 
+    @needs_symlinks
     def test_complex_symlinks_absolute(self):
         self._check_complex_symlinks(self.base)
 
+    @needs_symlinks
     def test_complex_symlinks_relative(self):
         self._check_complex_symlinks('.')
 
+    @needs_symlinks
     def test_complex_symlinks_relative_dot_dot(self):
         self._check_complex_symlinks(self.pathmod.join('dirA', '..'))
 
@@ -1803,9 +1817,8 @@ class DummyPathTest(DummyPurePathTest):
                 raise AssertionError(f"Unexpected path: {path}")
         self.assertTrue(seen_testfn)
 
+    @needs_symlinks
     def test_walk_follow_symlinks(self):
-        if not self.can_symlink:
-            self.skipTest("symlinks required")
         self.setUpWalk()
         walk_it = self.walk_path.walk(follow_symlinks=True)
         for root, dirs, files in walk_it:
@@ -1816,9 +1829,8 @@ class DummyPathTest(DummyPurePathTest):
         else:
             self.fail("Didn't follow symlink with follow_symlinks=True")
 
+    @needs_symlinks
     def test_walk_symlink_location(self):
-        if not self.can_symlink:
-            self.skipTest("symlinks required")
         self.setUpWalk()
         # Tests whether symlinks end up in filenames or dirnames depending
         # on the `follow_symlinks` argument.
