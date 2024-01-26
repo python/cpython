@@ -156,12 +156,11 @@ The individual submodules are described in the following sections.
 The :mod:`dbm.gnu` module provides an interface to the :abbr:`GDBM (GNU dbm)`
 library, similar to the :mod:`dbm.ndbm` module, but with additional
 functionality like crash tolerance.
+|incompat_note|
 
 :class:`!gdbm` objects behave similar to :term:`mappings <mapping>`,
 except that keys and values are always converted to :class:`bytes` before storing,
 and the :meth:`!items` and :meth:`!values` methods are not supported.
-
-.. note:: |incompat_note|
 
 .. exception:: error
 
@@ -274,8 +273,7 @@ and the :meth:`!items` and :meth:`!values` methods are not supported.
 
 This module can be used with the "classic" NDBM interface or the
 :abbr:`GDBM (GNU dbm)` compatibility interface.
-
-.. note:: |incompat_note|
+|incompat_note|
 
 .. warning::
 
