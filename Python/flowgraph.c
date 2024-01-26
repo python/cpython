@@ -29,7 +29,6 @@ typedef struct _PyCfgInstruction {
     int i_opcode;
     int i_oparg;
     _PyCompilerSrcLocation i_loc;
-    unsigned i_loc_propagated : 1;  /* location was set by propagate_line_numbers */
     struct _PyCfgBasicblock *i_target; /* target block (if jump instruction) */
     struct _PyCfgBasicblock *i_except; /* target block when exception is raised */
 } cfg_instr;
@@ -146,6 +145,16 @@ basicblock_next_instr(basicblock *b)
     return b->b_iused++;
 }
 
+static cfg_instr *
+basicblock_last_instr(const basicblock *b) {
+    assert(b->b_iused >= 0);
+    if (b->b_iused > 0) {
+        assert(b->b_instr != NULL);
+        return &b->b_instr[b->b_iused - 1];
+    }
+    return NULL;
+}
+
 /* Allocate a new block and return a pointer to it.
    Returns NULL on error.
 */
@@ -186,6 +195,22 @@ basicblock_addop(basicblock *b, int opcode, int oparg, location loc)
     return SUCCESS;
 }
 
+static int
+basicblock_add_jump(basicblock *b, int opcode, basicblock *target, location loc)
+{
+    cfg_instr *last = basicblock_last_instr(b);
+    if (last && is_jump(last)) {
+        return ERROR;
+    }
+
+    RETURN_IF_ERROR(
+        basicblock_addop(b, opcode, target->b_label.id, loc));
+    last = basicblock_last_instr(b);
+    assert(last && last->i_opcode == opcode);
+    last->i_target = target;
+    return SUCCESS;
+}
+
 static inline int
 basicblock_append_instructions(basicblock *target, basicblock *source)
 {
@@ -197,16 +222,6 @@ basicblock_append_instructions(basicblock *target, basicblock *source)
         target->b_instr[n] = source->b_instr[i];
     }
     return SUCCESS;
-}
-
-static cfg_instr *
-basicblock_last_instr(const basicblock *b) {
-    assert(b->b_iused >= 0);
-    if (b->b_iused > 0) {
-        assert(b->b_instr != NULL);
-        return &b->b_instr[b->b_iused - 1];
-    }
-    return NULL;
 }
 
 static inline int
@@ -560,8 +575,8 @@ normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
     if (backwards_jump == NULL) {
         return ERROR;
     }
-    basicblock_addop(backwards_jump, JUMP, target->b_label.id, last->i_loc);
-    backwards_jump->b_instr[0].i_target = target;
+    RETURN_IF_ERROR(
+        basicblock_add_jump(backwards_jump, JUMP, target, last->i_loc));
     last->i_opcode = reversed_opcode;
     last->i_target = b->b_next;
 
@@ -888,6 +903,7 @@ label_exception_targets(basicblock *entryblock) {
             }
             else if (instr->i_opcode == POP_BLOCK) {
                 handler = pop_except_block(except_stack);
+                INSTR_SET_OP0(instr, NOP);
             }
             else if (is_jump(instr)) {
                 instr->i_except = handler;
@@ -1141,13 +1157,7 @@ remove_redundant_jumps(cfg_builder *g) {
             basicblock *next = next_nonempty_block(b->b_next);
             if (jump_target == next) {
                 changes++;
-                if (last->i_loc_propagated) {
-                    b->b_iused--;
-                }
-                else {
-                    assert(last->i_loc.lineno != -1);
-                    INSTR_SET_OP0(last, NOP);
-                }
+                INSTR_SET_OP0(last, NOP);
             }
         }
     }
@@ -1184,23 +1194,23 @@ inline_small_exit_blocks(basicblock *bb) {
 // target->i_target using the provided opcode. Return whether or not the
 // optimization was successful.
 static bool
-jump_thread(cfg_instr *inst, cfg_instr *target, int opcode)
+jump_thread(basicblock *bb, cfg_instr *inst, cfg_instr *target, int opcode)
 {
     assert(is_jump(inst));
     assert(is_jump(target));
+    assert(inst == basicblock_last_instr(bb));
     // bpo-45773: If inst->i_target == target->i_target, then nothing actually
     // changes (and we fall into an infinite loop):
-    if (inst->i_loc.lineno == -1) assert(inst->i_loc_propagated);
-    if (target->i_loc.lineno == -1) assert(target->i_loc_propagated);
-    if ((inst->i_loc.lineno == target->i_loc.lineno ||
-         inst->i_loc_propagated || target->i_loc_propagated) &&
-        inst->i_target != target->i_target)
-    {
-        inst->i_target = target->i_target;
-        inst->i_opcode = opcode;
-        if (inst->i_loc_propagated && !target->i_loc_propagated) {
-            inst->i_loc = target->i_loc;
-        }
+    if (inst->i_target != target->i_target) {
+        /* Change inst to NOP and append a jump to target->i_target. The
+         * NOP will be removed later if it's not needed for the lineno.
+         */
+        INSTR_SET_OP0(inst, NOP);
+
+        RETURN_IF_ERROR(
+            basicblock_add_jump(
+                bb, opcode, target->i_target, target->i_loc));
+
         return true;
     }
     return false;
@@ -1673,29 +1683,29 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
             case POP_JUMP_IF_NONE:
                 switch (target->i_opcode) {
                     case JUMP:
-                        i -= jump_thread(inst, target, inst->i_opcode);
+                        i -= jump_thread(bb, inst, target, inst->i_opcode);
                 }
                 break;
             case POP_JUMP_IF_FALSE:
                 switch (target->i_opcode) {
                     case JUMP:
-                        i -= jump_thread(inst, target, POP_JUMP_IF_FALSE);
+                        i -= jump_thread(bb, inst, target, POP_JUMP_IF_FALSE);
                 }
                 break;
             case POP_JUMP_IF_TRUE:
                 switch (target->i_opcode) {
                     case JUMP:
-                        i -= jump_thread(inst, target, POP_JUMP_IF_TRUE);
+                        i -= jump_thread(bb, inst, target, POP_JUMP_IF_TRUE);
                 }
                 break;
             case JUMP:
             case JUMP_NO_INTERRUPT:
                 switch (target->i_opcode) {
                     case JUMP:
-                        i -= jump_thread(inst, target, JUMP);
+                        i -= jump_thread(bb, inst, target, JUMP);
                         continue;
                     case JUMP_NO_INTERRUPT:
-                        i -= jump_thread(inst, target, opcode);
+                        i -= jump_thread(bb, inst, target, opcode);
                         continue;
                 }
                 break;
@@ -1707,7 +1717,7 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                      * of FOR_ITER.
                      */
                     /*
-                    i -= jump_thread(inst, target, FOR_ITER);
+                    i -= jump_thread(bb, inst, target, FOR_ITER);
                     */
                 }
                 break;
@@ -2304,7 +2314,7 @@ convert_pseudo_ops(cfg_builder *g)
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
-            if (is_block_push(instr) || instr->i_opcode == POP_BLOCK) {
+            if (is_block_push(instr)) {
                 INSTR_SET_OP0(instr, NOP);
             }
             else if (instr->i_opcode == LOAD_CLOSURE) {
@@ -2410,7 +2420,6 @@ propagate_line_numbers(basicblock *entryblock) {
         for (int i = 0; i < b->b_iused; i++) {
             if (b->b_instr[i].i_loc.lineno < 0) {
                 b->b_instr[i].i_loc = prev_location;
-                b->b_instr[i].i_loc_propagated = 1;
             }
             else {
                 prev_location = b->b_instr[i].i_loc;
@@ -2420,7 +2429,6 @@ propagate_line_numbers(basicblock *entryblock) {
             if (b->b_next->b_iused > 0) {
                 if (b->b_next->b_instr[0].i_loc.lineno < 0) {
                     b->b_next->b_instr[0].i_loc = prev_location;
-                    b->b_next->b_instr[0].i_loc_propagated = 1;
                 }
             }
         }
@@ -2429,7 +2437,6 @@ propagate_line_numbers(basicblock *entryblock) {
             if (target->b_predecessors == 1) {
                 if (target->b_instr[0].i_loc.lineno < 0) {
                     target->b_instr[0].i_loc = prev_location;
-                    target->b_instr[0].i_loc_propagated = 1;
                 }
             }
         }

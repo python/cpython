@@ -1,6 +1,6 @@
 // This file contains instruction definitions.
-// It is read by Tools/cases_generator/generate_cases.py
-// to generate Python/generated_cases.c.h.
+// It is read by generators stored in Tools/cases_generator/
+// to generate Python/generated_cases.c.h and others.
 // Note that there is some dummy C code at the top and bottom of the file
 // to fool text editors like VS Code into believing this is valid C code.
 // The actual instruction definitions start at // BEGIN BYTECODES //.
@@ -265,9 +265,9 @@ dummy_func(
             res = NULL;
         }
 
-        macro(END_FOR) = POP_TOP + POP_TOP;
+        macro(END_FOR) = POP_TOP;
 
-        inst(INSTRUMENTED_END_FOR, (receiver, value --)) {
+        inst(INSTRUMENTED_END_FOR, (receiver, value -- receiver)) {
             TIER_ONE_ONLY
             /* Need to create a fake StopIteration error here,
              * to conform to PEP 380 */
@@ -2550,8 +2550,8 @@ dummy_func(
                        next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
                 Py_DECREF(iter);
                 STACK_SHRINK(1);
-                /* Jump forward oparg, then skip following END_FOR instruction */
-                JUMPBY(oparg + 1);
+                /* Jump forward oparg, then skip following END_FOR and POP_TOP instruction */
+                JUMPBY(oparg + 2);
                 DISPATCH();
             }
             // Common case: no jump, leave it to the code generator
@@ -2599,8 +2599,8 @@ dummy_func(
                        next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
                 STACK_SHRINK(1);
                 Py_DECREF(iter);
-                /* Skip END_FOR */
-                target = next_instr + oparg + 1;
+                /* Skip END_FOR and POP_TOP */
+                target = next_instr + oparg + 2;
             }
             INSTRUMENTED_JUMP(this_instr, target, PY_MONITORING_EVENT_BRANCH);
         }
@@ -2621,8 +2621,8 @@ dummy_func(
                 }
                 Py_DECREF(iter);
                 STACK_SHRINK(1);
-                /* Jump forward oparg, then skip following END_FOR instruction */
-                JUMPBY(oparg + 1);
+                /* Jump forward oparg, then skip following END_FOR and POP_TOP instructions */
+                JUMPBY(oparg + 2);
                 DISPATCH();
             }
         }
@@ -2667,8 +2667,8 @@ dummy_func(
                 }
                 Py_DECREF(iter);
                 STACK_SHRINK(1);
-                /* Jump forward oparg, then skip following END_FOR instruction */
-                JUMPBY(oparg + 1);
+                /* Jump forward oparg, then skip following END_FOR and POP_TOP instructions */
+                JUMPBY(oparg + 2);
                 DISPATCH();
             }
         }
@@ -2709,8 +2709,8 @@ dummy_func(
             if (r->len <= 0) {
                 STACK_SHRINK(1);
                 Py_DECREF(r);
-                // Jump over END_FOR instruction.
-                JUMPBY(oparg + 1);
+                // Jump over END_FOR and POP_TOP instructions.
+                JUMPBY(oparg + 2);
                 DISPATCH();
             }
         }
@@ -4068,6 +4068,10 @@ dummy_func(
         op(_CHECK_VALIDITY, (--)) {
             TIER_TWO_ONLY
             DEOPT_IF(!current_executor->vm_data.valid);
+        }
+
+        op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
+            value = Py_NewRef(ptr);
         }
 
         op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
