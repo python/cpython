@@ -45,6 +45,30 @@ Tools/c-analyzer/             @ericsnowcurrently
 # dbm
 **/*dbm*                      @corona10 @erlend-aasland @serhiy-storchaka
 
+# runtime state/lifecycle
+**/*pylifecycle*              @ericsnowcurrently
+**/*pystate*                  @ericsnowcurrently
+**/*preconfig*                @ericsnowcurrently
+**/*initconfig*               @ericsnowcurrently
+**/*pathconfig*               @ericsnowcurrently
+**/*sysmodule*                @ericsnowcurrently
+**/*bltinmodule*              @ericsnowcurrently
+**/*gil*                      @ericsnowcurrently
+Include/internal/pycore_runtime.h   @ericsnowcurrently
+Include/internal/pycore_interp.h    @ericsnowcurrently
+Include/internal/pycore_tstate.h    @ericsnowcurrently
+Include/internal/pycore_*_state.h   @ericsnowcurrently
+Include/internal/pycore_*_init.h    @ericsnowcurrently
+Include/internal/pycore_atexit.h    @ericsnowcurrently
+Include/internal/pycore_freelist.h  @ericsnowcurrently
+Include/internal/pycore_global_objects.h  @ericsnowcurrently
+Include/internal/pycore_obmalloc.h  @ericsnowcurrently
+Include/internal/pycore_pymem.h     @ericsnowcurrently
+Modules/main.c                @ericsnowcurrently
+Programs/_bootstrap_python.c  @ericsnowcurrently
+Programs/python.c             @ericsnowcurrently
+Tools/build/generate_global_objects.py  @ericsnowcurrently
+
 # Exceptions
 Lib/traceback.py              @iritkatriel
 Lib/test/test_except*.py      @iritkatriel
@@ -79,7 +103,20 @@ Modules/_hacl/**              @gpshead
 # Import (including importlib).
 **/*import*                   @brettcannon @ericsnowcurrently @ncoghlan @warsaw
 /Python/import.c              @kumaraditya303
-**/*importlib/resources/*      @jaraco @warsaw @FFY00
+Python/dynload_*.c            @ericsnowcurrently
+**/*freeze*                   @ericsnowcurrently
+**/*frozen*                   @ericsnowcurrently
+**/*modsupport*               @ericsnowcurrently
+**/*modulefinder*             @ericsnowcurrently
+**/*moduleobject*             @ericsnowcurrently
+**/*multiphase*               @ericsnowcurrently
+**/*pkgutil*                  @ericsnowcurrently
+**/*pythonrun*                @ericsnowcurrently
+**/*runpy*                    @ericsnowcurrently
+**/*singlephase*              @ericsnowcurrently
+Lib/test/test_module/         @ericsnowcurrently
+Doc/c-api/module.rst          @ericsnowcurrently
+**/*importlib/resources/*     @jaraco @warsaw @FFY00
 **/importlib/metadata/*       @jaraco @warsaw
 
 # Dates and times
@@ -198,6 +235,8 @@ Doc/c-api/stable.rst          @encukou
 Doc/howto/clinic.rst          @erlend-aasland
 
 # Subinterpreters
+**/*interpreteridobject.*     @ericsnowcurrently
+**/*crossinterp*              @ericsnowcurrently
 Lib/test/support/interpreters/  @ericsnowcurrently
 Modules/_xx*interp*module.c   @ericsnowcurrently
 Lib/test/test_interpreters/   @ericsnowcurrently
