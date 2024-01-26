@@ -1464,10 +1464,8 @@ clear_datastack(PyThreadState *tstate)
 void
 _Py_ClearFreeLists(_PyFreeListState *state, int is_finalization)
 {
-    // With Py_GIL_DISABLED:
-    // We only need to clear the freelists for the thread state we're using
-    // to finalize the current interpreter. Freelists for all other thread states
-    // are cleared elsewhere.
+    // In the free-threaded build, freelists are per-PyThreadState and cleared in PyThreadState_Clear()
+    // In the default build, freelists are per-interpreter and cleared in finalize_interp_types()
     _PyFloat_ClearFreeList(state, is_finalization);
     _PyTuple_ClearFreeList(state, is_finalization);
     _PyList_ClearFreeList(state, is_finalization);
