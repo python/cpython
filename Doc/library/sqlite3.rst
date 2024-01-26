@@ -1143,12 +1143,12 @@ Connection objects
       Useful when saving an in-memory database for later restoration.
       Similar to the ``.dump`` command in the :program:`sqlite3` shell.
 
-      :param entrypoint:
+      :param filter:
 
         An optional ``LIKE`` pattern for database objects to dump, e.g. ``prefix_%``.
         If ``None`` (the default), all database objects will be included.
 
-      :type entrypoint: str | None
+      :type filter: str | None
 
       Example:
 
