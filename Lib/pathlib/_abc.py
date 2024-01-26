@@ -47,8 +47,8 @@ def _is_case_sensitive(pathmod):
 re = glob = None
 
 
-@functools.lru_cache(maxsize=256)
-def _compile_pattern(pat, sep, case_sensitive):
+@functools.lru_cache(maxsize=512)
+def _compile_pattern(pat, sep, case_sensitive, recursive=True):
     """Compile given glob pattern to a re.Pattern object (observing case
     sensitivity)."""
     global re, glob
@@ -56,10 +56,7 @@ def _compile_pattern(pat, sep, case_sensitive):
         import re, glob
 
     flags = re.NOFLAG if case_sensitive else re.IGNORECASE
-    regex = glob.translate(pat, recursive=True, include_hidden=True, seps=sep)
-    # The string representation of an empty path is a single dot ('.'). Empty
-    # paths shouldn't match wildcards, so we consume it with an atomic group.
-    regex = r'(\.\Z)?+' + regex
+    regex = glob.translate(pat, recursive=recursive, include_hidden=True, seps=sep)
     return re.compile(regex, flags=flags).match
 
 
@@ -441,23 +438,48 @@ class PurePathBase:
             raise NotImplementedError("Non-relative patterns are unsupported")
         return parts
 
+    @property
+    def _pattern_str(self):
+        """The path expressed as a string, for use in pattern-matching."""
+        return str(self)
+
     def match(self, path_pattern, *, case_sensitive=None):
         """
-        Return True if this path matches the given pattern.
+        Return True if this path matches the given pattern. If the pattern is
+        relative, matching is done from the right; otherwise, the entire path
+        is matched. The recursive wildcard '**' is *not* supported by this
+        method.
         """
         if not isinstance(path_pattern, PurePathBase):
             path_pattern = self.with_segments(path_pattern)
         if case_sensitive is None:
             case_sensitive = _is_case_sensitive(self.pathmod)
         sep = path_pattern.pathmod.sep
-        if path_pattern.anchor:
-            pattern_str = str(path_pattern)
-        elif path_pattern.parts:
-            pattern_str = str('**' / path_pattern)
-        else:
+        path_parts = self.parts[::-1]
+        pattern_parts = path_pattern.parts[::-1]
+        if not pattern_parts:
             raise ValueError("empty pattern")
-        match = _compile_pattern(pattern_str, sep, case_sensitive)
-        return match(str(self)) is not None
+        if len(path_parts) < len(pattern_parts):
+            return False
+        if len(path_parts) > len(pattern_parts) and path_pattern.anchor:
+            return False
+        for path_part, pattern_part in zip(path_parts, pattern_parts):
+            match = _compile_pattern(pattern_part, sep, case_sensitive, recursive=False)
+            if match(path_part) is None:
+                return False
+        return True
+
+    def full_match(self, pattern, *, case_sensitive=None):
+        """
+        Return True if this path matches the given glob-style pattern. The
+        pattern is matched against the entire path.
+        """
+        if not isinstance(pattern, PurePathBase):
+            pattern = self.with_segments(pattern)
+        if case_sensitive is None:
+            case_sensitive = _is_case_sensitive(self.pathmod)
+        match = _compile_pattern(pattern._pattern_str, pattern.pathmod.sep, case_sensitive)
+        return match(self._pattern_str) is not None
 
 
 
@@ -781,8 +803,8 @@ class PathBase(PurePathBase):
         if filter_paths:
             # Filter out paths that don't match pattern.
             prefix_len = len(str(self._make_child_relpath('_'))) - 1
-            match = _compile_pattern(str(pattern), sep, case_sensitive)
-            paths = (path for path in paths if match(str(path), prefix_len))
+            match = _compile_pattern(pattern._pattern_str, sep, case_sensitive)
+            paths = (path for path in paths if match(path._pattern_str, prefix_len))
         return paths
 
     def rglob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
