@@ -146,23 +146,11 @@ class PolicyAPITests(unittest.TestCase):
         p_ascii = email.policy.default.clone()
         p_utf8 = email.policy.default.clone(utf8=True)
 
-        self.assertEqual(
-            p_ascii.fold('Subject', msg['Subject']),
-            expected_ascii
-        )
-        self.assertEqual(
-            p_utf8.fold('Subject', msg['Subject']),
-            expected_utf8
-        )
+        self.assertEqual(p_ascii.fold('Subject', msg['Subject']), expected_ascii)
+        self.assertEqual(p_utf8.fold('Subject', msg['Subject']), expected_utf8)
 
-        self.assertEqual(
-            p_ascii.fold('Subject', s),
-            expected_ascii
-        )
-        self.assertEqual(
-            p_utf8.fold('Subject', s),
-            expected_utf8
-        )
+        self.assertEqual(p_ascii.fold('Subject', s), expected_ascii)
+        self.assertEqual(p_utf8.fold('Subject', s), expected_utf8)
 
     def test_fold_zero_max_line_length(self):
         expected = 'Subject: =?utf-8?q?=C3=A1?=\n'
