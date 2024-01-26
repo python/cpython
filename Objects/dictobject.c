@@ -248,7 +248,7 @@ static struct _Py_dict_state *
 get_dict_state(void)
 {
     _PyFreeListState *state = _PyFreeListState_GET();
-    return &state->dict_state;
+    return &state->dicts;
 }
 #endif
 
@@ -257,7 +257,7 @@ void
 _PyDict_ClearFreeList(_PyFreeListState *freelist_state, int is_finalization)
 {
 #ifdef WITH_FREELISTS
-    struct _Py_dict_state *state = &freelist_state->dict_state;
+    struct _Py_dict_state *state = &freelist_state->dicts;
     while (state->numfree > 0) {
         PyDictObject *op = state->free_list[--state->numfree];
         assert(PyDict_CheckExact(op));

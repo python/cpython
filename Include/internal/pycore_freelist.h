@@ -109,7 +109,7 @@ typedef struct _Py_freelist_state {
     struct _Py_float_state float_state;
     struct _Py_tuple_state tuple_state;
     struct _Py_list_state list_state;
-    struct _Py_dict_state dict_state;
+    struct _Py_dict_state dicts;
     struct _Py_slice_state slice_state;
     struct _Py_context_state context_state;
     struct _Py_async_gen_state async_gen_state;
