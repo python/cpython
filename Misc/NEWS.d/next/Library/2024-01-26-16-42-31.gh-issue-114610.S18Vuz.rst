@@ -1,0 +1,2 @@
+Raise :exc:`ValueError` when an empty stem is supplied to
+:meth:`pathlib.PurePath.with_stem` but the path has a file extension.

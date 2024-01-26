@@ -292,7 +292,13 @@ class PurePathBase:
 
     def with_stem(self, stem):
         """Return a new path with the stem changed."""
-        return self.with_name(stem + self.suffix)
+        suffix = self.suffix
+        if not suffix:
+            return self.with_name(stem)
+        if not stem:
+            raise ValueError(f"{self!r} has a non-empty suffix")
+        else:
+            return self.with_name(stem + suffix)
 
     def with_suffix(self, suffix):
         """Return a new path with the file suffix changed.  If the path
