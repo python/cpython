@@ -188,7 +188,7 @@ class PurePathBase:
     """Base class for pure path objects.
 
     This class *does not* provide several magic methods that are defined in
-    its subclass PurePath. They are: __fspath__, __bytes__, __reduce__,
+    its subclass RawPurePath. They are: __fspath__, __bytes__, __reduce__,
     __hash__, __eq__, __lt__, __le__, __gt__, __ge__. Its initializer and path
     joining methods accept only strings, not os.PathLike objects more broadly.
     """
