@@ -1355,6 +1355,9 @@
     <ClCompile Include="..\Python\mystrtoul.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\object_stack.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\optimizer.c">
       <Filter>Python</Filter>
     </ClCompile>

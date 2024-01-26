@@ -490,6 +490,13 @@ class PurePath(_abc.PurePathBase):
         parts.reverse()
         return parts
 
+    @property
+    def _pattern_str(self):
+        """The path expressed as a string, for use in pattern-matching."""
+        # The string representation of an empty path is a single dot ('.'). Empty
+        # paths shouldn't match wildcards, so we change it to the empty string.
+        path_str = str(self)
+        return '' if path_str == '.' else path_str
 
 # Subclassing os.PathLike makes isinstance() checks slower,
 # which in turn makes Path construction slower. Register instead!

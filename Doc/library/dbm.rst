@@ -28,10 +28,11 @@ the Oracle Berkeley DB.
    available --- :mod:`dbm.gnu`, :mod:`dbm.ndbm` or :mod:`dbm.dumb` --- should
    be used to open a given file.
 
-   Returns one of the following values: ``None`` if the file can't be opened
-   because it's unreadable or doesn't exist; the empty string (``''``) if the
-   file's format can't be guessed; or a string containing the required module
-   name, such as ``'dbm.ndbm'`` or ``'dbm.gnu'``.
+   Return one of the following values:
+
+   * ``None`` if the file can't be opened because it's unreadable or doesn't exist
+   * the empty string (``''``) if the file's format can't be guessed
+   * a string containing the required module name, such as ``'dbm.ndbm'`` or ``'dbm.gnu'``
 
 .. versionchanged:: 3.11
    Accepts :term:`path-like object` for filename.
@@ -74,13 +75,13 @@ the Oracle Berkeley DB.
    modified by the prevailing umask).
 
 
-The object returned by :func:`.open` supports the same basic functionality as
-dictionaries; keys and their corresponding values can be stored, retrieved, and
-deleted, and the :keyword:`in` operator and the :meth:`keys` method are
-available, as well as :meth:`get` and :meth:`setdefault`.
+The object returned by :func:`open` supports the same basic functionality as a
+:class:`dict`; keys and their corresponding values can be stored, retrieved, and
+deleted, and the :keyword:`in` operator and the :meth:`!keys` method are
+available, as well as :meth:`!get` and :meth:`!setdefault`.
 
 .. versionchanged:: 3.2
-   :meth:`get` and :meth:`setdefault` are now available in all database modules.
+   :meth:`!get` and :meth:`!setdefault` are now available in all database modules.
 
 .. versionchanged:: 3.8
    Deleting a key from a read-only database raises database module specific error
@@ -89,7 +90,7 @@ available, as well as :meth:`get` and :meth:`setdefault`.
 .. versionchanged:: 3.11
    Accepts :term:`path-like object` for file.
 
-Key and values are always stored as bytes. This means that when
+Key and values are always stored as :class:`bytes`. This means that when
 strings are used they are implicitly converted to the default encoding before
 being stored.
 
@@ -137,27 +138,28 @@ then prints out the contents of the database::
 The individual submodules are described in the following sections.
 
 
-:mod:`dbm.gnu` --- GNU's reinterpretation of dbm
-------------------------------------------------
+:mod:`dbm.gnu` --- GNU database manager
+---------------------------------------
 
 .. module:: dbm.gnu
    :platform: Unix
-   :synopsis: GNU's reinterpretation of dbm.
+   :synopsis: GNU database manager
 
 **Source code:** :source:`Lib/dbm/gnu.py`
 
 --------------
 
-This module is quite similar to the :mod:`dbm` module, but uses the GNU library
-``gdbm`` instead to provide some additional functionality.  Please note that the
-file formats created by :mod:`dbm.gnu` and :mod:`dbm.ndbm` are incompatible.
+The :mod:`dbm.gnu` module provides an interface to the :abbr:`GDBM (GNU dbm)`
+library, similar to the :mod:`dbm.ndbm` module, but with additional
+functionality like crash tolerance.
 
-The :mod:`dbm.gnu` module provides an interface to the GNU DBM library.
-``dbm.gnu.gdbm`` objects behave like mappings (dictionaries), except that keys and
-values are always converted to bytes before storing.  Printing a ``gdbm``
-object doesn't print the
-keys and values, and the :meth:`items` and :meth:`values` methods are not
-supported.
+:class:`!gdbm` objects behave similar to :term:`mappings <mapping>`,
+except that keys and values are always converted to :class:`bytes` before storing,
+and the :meth:`!items` and :meth:`!values` methods are not supported.
+
+.. note::
+   The file formats created by :mod:`dbm.gnu` and :mod:`dbm.ndbm` are
+   incompatible and can not be used interchangeably.
 
 .. exception:: error
 
@@ -165,9 +167,9 @@ supported.
    raised for general mapping errors like specifying an incorrect key.
 
 
-.. function:: open(filename[, flag[, mode]])
+.. function:: open(filename, flag="r", mode=0o666, /)
 
-   Open a ``gdbm`` database and return a :class:`gdbm` object.  The *filename*
+   Open a GDBM database and return a :class:`!gdbm` object.  The *filename*
    argument is the name of the database file.
 
    The optional *flag* argument can be:
@@ -196,14 +198,14 @@ supported.
    | ``'u'`` | Do not lock database.                      |
    +---------+--------------------------------------------+
 
-   Not all flags are valid for all versions of ``gdbm``.  The module constant
+   Not all flags are valid for all versions of GDBM.  The module constant
    :const:`open_flags` is a string of supported flag characters.  The exception
    :exc:`error` is raised if an invalid flag is specified.
 
    The optional *mode* argument is the Unix mode of the file, used only when the
    database has to be created.  It defaults to octal ``0o666``.
 
-   In addition to the dictionary-like methods, ``gdbm`` objects have the
+   In addition to the dictionary-like methods, :class:`gdbm` objects have the
    following methods:
 
    .. versionchanged:: 3.11
@@ -212,7 +214,7 @@ supported.
    .. method:: gdbm.firstkey()
 
       It's possible to loop over every key in the database using this method  and the
-      :meth:`nextkey` method.  The traversal is ordered by ``gdbm``'s internal
+      :meth:`nextkey` method.  The traversal is ordered by GDBM's internal
       hash values, and won't be sorted by the key values.  This method returns
       the starting key.
 
@@ -230,7 +232,7 @@ supported.
    .. method:: gdbm.reorganize()
 
       If you have carried out a lot of deletions and would like to shrink the space
-      used by the ``gdbm`` file, this routine will reorganize the database.  ``gdbm``
+      used by the GDBM file, this routine will reorganize the database.  :class:`!gdbm`
       objects will not shorten the length of a database file except by using this
       reorganization; otherwise, deleted file space will be kept and reused as new
       (key, value) pairs are added.
@@ -242,11 +244,11 @@ supported.
 
    .. method:: gdbm.close()
 
-      Close the ``gdbm`` database.
+      Close the GDBM database.
 
    .. method:: gdbm.clear()
 
-      Remove all items from the ``gdbm`` database.
+      Remove all items from the GDBM database.
 
       .. versionadded:: 3.13
 
