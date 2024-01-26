@@ -151,14 +151,14 @@ def hsv_to_rgb(h, s, v):
     i = i%6
     if i == 0:
         return v, t, p
-    elif i == 1:
+    if i == 1:
         return q, v, p
-    elif i == 2:
+    if i == 2:
         return p, v, t
-    elif i == 3:
+    if i == 3:
         return p, q, v
-    elif i == 4:
+    if i == 4:
         return t, p, v
-    elif i == 5:
+    if i == 5:
         return v, p, q
     # Cannot get here
