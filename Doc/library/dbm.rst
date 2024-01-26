@@ -179,14 +179,10 @@ or any other SQLite browser, including the SQLite CLI.
    :type filename: :term:`path-like object`
 
    :param str flag:
-
-      .. csv-table::
-         :header: "Value", "Meaning"
-
-         ``'r'`` (default), |flag_r|
-         ``'w'``, |flag_w|
-         ``'c'``, |flag_c|
-         ``'n'``, |flag_n|
+      * ``'r'`` (default), |flag_r|
+      * ``'w'``, |flag_w|
+      * ``'c'``, |flag_c|
+      * ``'n'``, |flag_n|
 
    :param mode:
       This parameter is ignored by the :mod:`!dbm.sqlite3` module.
