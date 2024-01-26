@@ -60,21 +60,19 @@ the :mod:`io` APIs instead.
    raised if the end of the file is reached immediately.
 
 
-.. c:type:: PyObject * (*Py_OpenCodeHookFunction)(PyObject *, void *)
-
-   Equivalent of :c:expr:`PyObject *(\*)(PyObject *path,
-   void *userData)`, where *path* is guaranteed to be
-   :c:type:`PyUnicodeObject`.
-
-   .. versionadded:: 3.8
-
-
 .. c:function:: int PyFile_SetOpenCodeHook(Py_OpenCodeHookFunction handler)
 
    Overrides the normal behavior of :func:`io.open_code` to pass its parameter
    through the provided handler.
 
-   The *handler* is a function of type :c:type:`Py_OpenCodeHookFunction`.
+   The *handler* is a function of type:
+
+   .. c:namespace:: NULL
+   .. c:type:: PyObject * (*Py_OpenCodeHookFunction)(PyObject *, void *)
+
+      Equivalent of :c:expr:`PyObject *(\*)(PyObject *path,
+      void *userData)`, where *path* is guaranteed to be
+      :c:type:`PyUnicodeObject`.
 
    The *userData* pointer is passed into the hook function. Since hook
    functions may be called from different runtimes, this pointer should not
