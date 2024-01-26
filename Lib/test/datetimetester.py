@@ -301,6 +301,10 @@ class TestTimeZone(unittest.TestCase):
         self.assertIsInstance(timezone.utc, tzinfo)
         self.assertIsInstance(self.EST, tzinfo)
 
+    def test_cannot_subclass(self):
+        with self.assertRaises(TypeError):
+            class MyTimezone(timezone): pass
+
     def test_utcoffset(self):
         dummy = self.DT
         for h in [0, 1.5, 12]:

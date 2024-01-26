@@ -1,0 +1,2 @@
+Prohibit subclassing pure-Python :class:`datetime.timezone`. This is consistent
+with C-extension implementation. Patch by Mariusz Felisiak.
