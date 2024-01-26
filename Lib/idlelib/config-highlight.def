@@ -22,6 +22,10 @@ hit-foreground= #ffffff
 hit-background= #000000
 error-foreground= #000000
 error-background= #ff7777
+context-foreground= #000000
+context-background= lightgray
+linenumber-foreground= gray
+linenumber-background= #ffffff
 #cursor (only foreground can be set, restart IDLE)
 cursor-foreground= black
 #shell window
@@ -53,6 +57,10 @@ hit-foreground= #ffffff
 hit-background= #000000
 error-foreground= #000000
 error-background= #ff7777
+context-foreground= #000000
+context-background= lightgray
+linenumber-foreground= gray
+linenumber-background= #ffffff
 #cursor (only foreground can be set, restart IDLE)
 cursor-foreground= black
 #shell window
@@ -91,3 +99,7 @@ stdout-background = #002240
 hit-foreground = #002240
 comment-background = #002240
 break-foreground = #FFFFFF
+context-foreground= #ffffff
+context-background= #454545
+linenumber-foreground= gray
+linenumber-background= #002240

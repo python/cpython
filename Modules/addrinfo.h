@@ -162,7 +162,9 @@ struct sockaddr_storage {
 #ifdef __cplusplus
 extern "C" {
 #endif
+#ifdef ENABLE_IPV6
 extern void freehostent(struct hostent *);
+#endif
 #ifdef __cplusplus
 }
 #endif

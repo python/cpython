@@ -1,3 +1,0 @@
-``random.Random.choice()`` now raises ``IndexError`` for empty sequences
-consistently even when called from subclasses without a ``getrandbits()``
-implementation.

@@ -1,22 +1,23 @@
 /*
    BLAKE2 reference source code package - optimized C implementations
-  
-   Copyright 2012, Samuel Neves <sneves@dei.uc.pt>.  You may use this under the
-   terms of the CC0, the OpenSSL Licence, or the Apache Public License 2.0, at
-   your option.  The terms of these licenses can be found at:
-  
-   - CC0 1.0 Universal : http://creativecommons.org/publicdomain/zero/1.0
-   - OpenSSL license   : https://www.openssl.org/source/license.html
-   - Apache 2.0        : http://www.apache.org/licenses/LICENSE-2.0
-  
-   More information about the BLAKE2 hash function can be found at
-   https://blake2.net.
+
+   Written in 2012 by Samuel Neves <sneves@dei.uc.pt>
+
+   To the extent possible under law, the author(s) have dedicated all copyright
+   and related and neighboring rights to this software to the public domain
+   worldwide. This software is distributed without any warranty.
+
+   You should have received a copy of the CC0 Public Domain Dedication along with
+   this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 */
 #pragma once
 #ifndef __BLAKE2B_ROUND_H__
 #define __BLAKE2B_ROUND_H__
 
-#define LOADU(p)  _mm_loadu_si128( (const __m128i *)(p) )
+#define LOAD(p)  _mm_load_si128( (__m128i *)(p) )
+#define STORE(p,r) _mm_store_si128((__m128i *)(p), r)
+
+#define LOADU(p)  _mm_loadu_si128( (__m128i *)(p) )
 #define STOREU(p,r) _mm_storeu_si128((__m128i *)(p), r)
 
 #define TOF(reg) _mm_castsi128_ps((reg))
@@ -61,7 +62,7 @@
   \
   row2l = _mm_roti_epi64(row2l, -24); \
   row2h = _mm_roti_epi64(row2h, -24); \
- 
+
 #define G2(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h,b0,b1) \
   row1l = _mm_add_epi64(_mm_add_epi64(row1l, b0), row2l); \
   row1h = _mm_add_epi64(_mm_add_epi64(row1h, b1), row2h); \
@@ -80,7 +81,7 @@
   \
   row2l = _mm_roti_epi64(row2l, -63); \
   row2h = _mm_roti_epi64(row2h, -63); \
- 
+
 #if defined(HAVE_SSSE3)
 #define DIAGONALIZE(row1l,row2l,row3l,row4l,row1h,row2h,row3h,row4h) \
   t0 = _mm_alignr_epi8(row2h, row2l, 8); \
@@ -137,7 +138,7 @@
 
 #endif
 
-#if defined(HAVE_SSE41)
+#if defined(HAVE_SSE4_1)
 #include "blake2b-load-sse41.h"
 #else
 #include "blake2b-load-sse2.h"

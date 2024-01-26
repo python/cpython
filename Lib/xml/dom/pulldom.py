@@ -216,12 +216,6 @@ class DOMEventStream:
         self.parser.setFeature(xml.sax.handler.feature_namespaces, 1)
         self.parser.setContentHandler(self.pulldom)
 
-    def __getitem__(self, pos):
-        rc = self.getEvent()
-        if rc:
-            return rc
-        raise IndexError
-
     def __next__(self):
         rc = self.getEvent()
         if rc:

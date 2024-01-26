@@ -565,6 +565,41 @@ bytes8 = ArgumentDescriptor(
               the number of bytes, and the second argument is that many bytes.
               """)
 
+
+def read_bytearray8(f):
+    r"""
+    >>> import io, struct, sys
+    >>> read_bytearray8(io.BytesIO(b"\x00\x00\x00\x00\x00\x00\x00\x00abc"))
+    bytearray(b'')
+    >>> read_bytearray8(io.BytesIO(b"\x03\x00\x00\x00\x00\x00\x00\x00abcdef"))
+    bytearray(b'abc')
+    >>> bigsize8 = struct.pack("<Q", sys.maxsize//3)
+    >>> read_bytearray8(io.BytesIO(bigsize8 + b"abcdef"))  #doctest: +ELLIPSIS
+    Traceback (most recent call last):
+    ...
+    ValueError: expected ... bytes in a bytearray8, but only 6 remain
+    """
+
+    n = read_uint8(f)
+    assert n >= 0
+    if n > sys.maxsize:
+        raise ValueError("bytearray8 byte count > sys.maxsize: %d" % n)
+    data = f.read(n)
+    if len(data) == n:
+        return bytearray(data)
+    raise ValueError("expected %d bytes in a bytearray8, but only %d remain" %
+                     (n, len(data)))
+
+bytearray8 = ArgumentDescriptor(
+              name="bytearray8",
+              n=TAKEN_FROM_ARGUMENT8U,
+              reader=read_bytearray8,
+              doc="""A counted bytearray.
+
+              The first argument is an 8-byte little-endian unsigned int giving
+              the number of bytes, and the second argument is that many bytes.
+              """)
+
 def read_unicodestringnl(f):
     r"""
     >>> import io
@@ -970,6 +1005,11 @@ pybytes = StackObject(
     obtype=bytes,
     doc="A Python bytes object.")
 
+pybytearray = StackObject(
+    name='bytearray',
+    obtype=bytearray,
+    doc="A Python bytearray object.")
+
 pyunicode = StackObject(
     name='str',
     obtype=str,
@@ -1004,6 +1044,11 @@ pyfrozenset = StackObject(
     name="frozenset",
     obtype=set,
     doc="A Python frozenset object.")
+
+pybuffer = StackObject(
+    name='buffer',
+    obtype=object,
+    doc="A Python buffer-like object.")
 
 anyobject = StackObject(
     name='any',
@@ -1265,7 +1310,7 @@ opcodes = [
       object instead.
       """),
 
-    # Bytes (protocol 3 only; older protocols don't support bytes at all)
+    # Bytes (protocol 3 and higher)
 
     I(name='BINBYTES',
       code='B',
@@ -1306,6 +1351,39 @@ opcodes = [
       which are taken literally as the string content.
       """),
 
+    # Bytearray (protocol 5 and higher)
+
+    I(name='BYTEARRAY8',
+      code='\x96',
+      arg=bytearray8,
+      stack_before=[],
+      stack_after=[pybytearray],
+      proto=5,
+      doc="""Push a Python bytearray object.
+
+      There are two arguments:  the first is an 8-byte unsigned int giving
+      the number of bytes in the bytearray, and the second is that many bytes,
+      which are taken literally as the bytearray content.
+      """),
+
+    # Out-of-band buffer (protocol 5 and higher)
+
+    I(name='NEXT_BUFFER',
+      code='\x97',
+      arg=None,
+      stack_before=[],
+      stack_after=[pybuffer],
+      proto=5,
+      doc="Push an out-of-band buffer object."),
+
+    I(name='READONLY_BUFFER',
+      code='\x98',
+      arg=None,
+      stack_before=[pybuffer],
+      stack_after=[pybuffer],
+      proto=5,
+      doc="Make an out-of-band buffer object read-only."),
+
     # Ways to spell None.
 
     I(name='NONE',
@@ -1325,9 +1403,7 @@ opcodes = [
       stack_before=[],
       stack_after=[pybool],
       proto=2,
-      doc="""True.
-
-      Push True onto the stack."""),
+      doc="Push True onto the stack."),
 
     I(name='NEWFALSE',
       code='\x89',
@@ -1335,9 +1411,7 @@ opcodes = [
       stack_before=[],
       stack_after=[pybool],
       proto=2,
-      doc="""True.
-
-      Push False onto the stack."""),
+      doc="Push False onto the stack."),
 
     # Ways to spell Unicode strings.
 
@@ -2774,10 +2848,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='disassemble one or more pickle files')
     parser.add_argument(
-        'pickle_file', type=argparse.FileType('br'),
+        'pickle_file',
         nargs='*', help='the pickle file')
     parser.add_argument(
-        '-o', '--output', default=sys.stdout, type=argparse.FileType('w'),
+        '-o', '--output',
         help='the file where the output should be written')
     parser.add_argument(
         '-m', '--memo', action='store_true',
@@ -2802,15 +2876,26 @@ if __name__ == "__main__":
     if args.test:
         _test()
     else:
-        annotate = 30 if args.annotate else 0
         if not args.pickle_file:
             parser.print_help()
-        elif len(args.pickle_file) == 1:
-            dis(args.pickle_file[0], args.output, None,
-                args.indentlevel, annotate)
         else:
+            annotate = 30 if args.annotate else 0
             memo = {} if args.memo else None
-            for f in args.pickle_file:
-                preamble = args.preamble.format(name=f.name)
-                args.output.write(preamble + '\n')
-                dis(f, args.output, memo, args.indentlevel, annotate)
+            if args.output is None:
+                output = sys.stdout
+            else:
+                output = open(args.output, 'w')
+            try:
+                for arg in args.pickle_file:
+                    if len(args.pickle_file) > 1:
+                        name = '<stdin>' if arg == '-' else arg
+                        preamble = args.preamble.format(name=name)
+                        output.write(preamble + '\n')
+                    if arg == '-':
+                        dis(sys.stdin.buffer, output, memo, args.indentlevel, annotate)
+                    else:
+                        with open(arg, 'rb') as f:
+                            dis(f, output, memo, args.indentlevel, annotate)
+            finally:
+                if output is not sys.stdout:
+                    output.close()
