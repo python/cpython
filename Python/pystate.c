@@ -17,6 +17,7 @@
 #include "pycore_pystate.h"
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_sysmodule.h"     // _PySys_Audit()
+#include "pycore_obmalloc.h"      // _PyMem_obmalloc_state_on_heap()
 
 /* --------------------------------------------------------------------------
 CAUTION
@@ -547,7 +548,7 @@ free_interpreter(PyInterpreterState *interp)
     // The main interpreter is statically allocated so
     // should not be freed.
     if (interp != &_PyRuntime._main_interpreter) {
-        if (interp->obmalloc && interp->obmalloc->heap_allocated) {
+        if (_PyMem_obmalloc_state_on_heap(interp)) {
             // interpreter has its own obmalloc state, free it
             PyMem_RawFree(interp->obmalloc);
             interp->obmalloc = NULL;

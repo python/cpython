@@ -32,6 +32,7 @@
 #include "pycore_typevarobject.h" // _Py_clear_generic_types()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
+#include "pycore_obmalloc.h"      // _PyMem_init_obmalloc()
 
 #include "opcode.h"
 
@@ -606,10 +607,6 @@ init_interp_create_gil(PyThreadState *tstate, int gil)
 }
 
 
-// defined in obmalloc.c
-int _PyMem_init_obmalloc(PyInterpreterState *interp, _PyRuntimeState *runtime);
-
-
 static PyStatus
 pycore_create_interpreter(_PyRuntimeState *runtime,
                           const PyConfig *src_config,
@@ -646,7 +643,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     // initialize the interp->obmalloc state.  This must be done after
     // the settings are loaded (so that feature_flags are set) but before
     // any calls are made to obmalloc functions.
-    if (!_PyMem_init_obmalloc(interp, runtime)) {
+    if (_PyMem_init_obmalloc(interp) < 0) {
         return  _PyStatus_NO_MEMORY();
     }
 
@@ -2135,7 +2132,7 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
     // initialize the interp->obmalloc state.  This must be done after
     // the settings are loaded (so that feature_flags are set) but before
     // any calls are made to obmalloc functions.
-    if (!_PyMem_init_obmalloc(interp, runtime)) {
+    if (_PyMem_init_obmalloc(interp) < 0) {
         status = _PyStatus_NO_MEMORY();
         goto error;
     }

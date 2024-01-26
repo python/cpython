@@ -973,6 +973,7 @@ typedef struct _obmalloc_state OMState;
  * will be allocated in the BSS which is a small performance win.  The radix
  * tree arrays are fairly large but are sparsely used.  */
 static struct _obmalloc_state obmalloc_state_main;
+static bool obmalloc_state_initialized;
 
 static inline int
 has_own_state(PyInterpreterState *interp)
@@ -1075,7 +1076,7 @@ _PyInterpreterState_FinalizeAllocatedBlocks(PyInterpreterState *interp)
         Py_ssize_t leaked = _PyInterpreterState_GetAllocatedBlocks(interp);
         assert(has_own_state(interp) || leaked == 0);
         interp->runtime->obmalloc.interpreter_leaks += leaked;
-        if (interp->obmalloc->heap_allocated && leaked == 0) {
+        if (_PyMem_obmalloc_state_on_heap(interp) && leaked == 0) {
             // free the obmalloc arenas and radix tree nodes.  If leaked > 0
             // then some of the memory allocated by obmalloc has not been
             // freed.  It might be safe to free the arenas in that case but
@@ -2633,6 +2634,7 @@ _PyObject_DebugDumpAddress(const void *p)
     _PyMem_DumpTraceback(fileno(stderr), p);
 }
 
+
 static size_t
 printone(FILE *out, const char* msg, size_t value)
 {
@@ -2683,32 +2685,57 @@ _PyDebugAllocatorStats(FILE *out,
     (void)printone(out, buf2, num_blocks * sizeof_block);
 }
 
-int _PyMem_init_obmalloc(PyInterpreterState *interp, _PyRuntimeState *runtime)
+// Return true if the obmalloc state structure is heap allocated,
+// by PyMem_RawCalloc().  For the main interpreter, this structure
+// allocated in the BSS.  Allocating that way gives some memory savings
+// and a small performance win (at least on a demand paged OS).  On
+// 64-bit platforms, the obmalloc structure is 256 kB. Most of that
+// memory is for the arena_map_top array.  Since normally only one entry
+// of that array is used, only one page of resident memory is actually
+// used, rather than the full 256 kB.
+bool _PyMem_obmalloc_state_on_heap(PyInterpreterState *interp)
+{
+#if WITH_PYMALLOC
+    return interp->obmalloc && interp->obmalloc != &obmalloc_state_main;
+#else
+    return false;
+#endif
+}
+
+#ifdef WITH_PYMALLOC
+static void
+init_obmalloc_pools(PyInterpreterState *interp)
+{
+    // initialize the obmalloc->pools structure.  This must be done
+    // before the obmalloc alloc/free functions can be called.
+    poolp temp[OBMALLOC_USED_POOLS_SIZE] =
+        _obmalloc_pools_INIT(interp->obmalloc->pools);
+    memcpy(&interp->obmalloc->pools.used, temp, sizeof(temp));
+}
+#endif /* WITH_PYMALLOC */
+
+int _PyMem_init_obmalloc(PyInterpreterState *interp)
 {
 #ifdef WITH_PYMALLOC
     /* Initialize obmalloc, but only for subinterpreters,
        since the main interpreter is initialized statically. */
-    if (interp == &runtime->_main_interpreter
-            || (interp->feature_flags & Py_RTFLAGS_USE_MAIN_OBMALLOC)) {
+    if (_Py_IsMainInterpreter(interp)
+            || _PyInterpreterState_HasFeature(interp,
+                                              Py_RTFLAGS_USE_MAIN_OBMALLOC)) {
         interp->obmalloc = &obmalloc_state_main;
-        interp->obmalloc->heap_allocated = false;
+        if (!obmalloc_state_initialized) {
+            init_obmalloc_pools(interp);
+            obmalloc_state_initialized = true;
+        }
     } else {
         interp->obmalloc = PyMem_RawCalloc(1, sizeof(struct _obmalloc_state));
         if (interp->obmalloc == NULL) {
-            return 0;
+            return -1;
         }
-        interp->obmalloc->heap_allocated = true;
-    }
-    if (!interp->obmalloc->initialized) {
-        // initialize the obmalloc->pools structure.  This must be done
-        // before the obmalloc alloc/free functions can be called.
-        poolp temp[OBMALLOC_USED_POOLS_SIZE] =
-            _obmalloc_pools_INIT(interp->obmalloc->pools);
-        memcpy(&interp->obmalloc->pools.used, temp, sizeof(temp));
-        interp->obmalloc->initialized = true;
+        init_obmalloc_pools(interp);
     }
 #endif /* WITH_PYMALLOC */
-    return 1;
+    return 0; // success
 }
 
 
