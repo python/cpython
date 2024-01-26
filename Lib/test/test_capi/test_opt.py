@@ -709,6 +709,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = {opname for opname, _, _ in ex}
         self.assertIn("_PUSH_FRAME", uops)
         self.assertIn("_BINARY_OP_ADD_INT", uops)
+        self.assertNotIn("_CHECK_PEP_523", uops)
 
     def test_frame_instance_method(self):
         class A:

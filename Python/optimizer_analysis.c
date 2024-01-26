@@ -30,9 +30,9 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#define MAX_ABSTRACT_INTERP_SIZE 2048
+#define MAX_ABSTRACT_INTERP_SIZE 4096
 
-#define OVERALLOCATE_FACTOR 3
+#define OVERALLOCATE_FACTOR 8
 
 #define PEEPHOLE_MAX_ATTEMPTS 5
 
@@ -1446,10 +1446,11 @@ _Py_uop_analyze_and_optimize(
         goto error;
     }
 
+    bool done = false;
     for (int peephole_attempts = 0; peephole_attempts < PEEPHOLE_MAX_ATTEMPTS &&
-        !peephole_optimizations(temp_writebuffer, new_trace_len);
+        !done;
          peephole_attempts++) {
-
+        done = peephole_optimizations(temp_writebuffer, new_trace_len);
     }
 
     remove_unneeded_uops(temp_writebuffer, new_trace_len);
