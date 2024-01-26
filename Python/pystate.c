@@ -1464,6 +1464,10 @@ clear_datastack(PyThreadState *tstate)
 void
 _Py_ClearFreeLists(_PyFreeListState *state, int is_finalization)
 {
+    // With Py_GIL_DISABLED:
+    // We only need to clear the freelists for the thread state we're using
+    // to finalize the current interpreter. Freelists for all other thread states
+    // are cleared elsewhere.
     _PyFloat_ClearFreeList(state, is_finalization);
     _PyTuple_ClearFreeList(state, is_finalization);
     _PyList_ClearFreeList(state, is_finalization);

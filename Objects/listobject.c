@@ -139,6 +139,9 @@ _PyList_ClearFreeList(_PyFreeListState *freelist_state, int is_finalization)
 void
 _PyList_Fini(_PyFreeListState *state)
 {
+    // With Py_GIL_DISABLED:
+    // See `_Py_ClearFreeLists()` about why we only need to clear the freelists
+    // for the current thread state.
     _PyList_ClearFreeList(state, 1);
 }
 
