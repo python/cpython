@@ -15,6 +15,8 @@
 #include "pycore_weakref.h"       // _PyWeakref_ClearRef()
 #include "pydtrace.h"
 
+#ifndef Py_GIL_DISABLED
+
 typedef struct _gc_runtime_state GCState;
 
 #ifdef Py_DEBUG
@@ -964,10 +966,10 @@ finalize_garbage(PyThreadState *tstate, PyGC_Head *collectable)
         PyGC_Head *gc = GC_NEXT(collectable);
         PyObject *op = FROM_GC(gc);
         gc_list_move(gc, &seen);
-        if (!_PyGCHead_FINALIZED(gc) &&
+        if (!_PyGC_FINALIZED(op) &&
             (finalize = Py_TYPE(op)->tp_finalize) != NULL)
         {
-            _PyGCHead_SET_FINALIZED(gc);
+            _PyGC_SET_FINALIZED(op);
             Py_INCREF(op);
             finalize(op);
             assert(!_PyErr_Occurred(tstate));
@@ -1942,3 +1944,5 @@ PyUnstable_GC_VisitObjects(gcvisitobjects_t callback, void *arg)
 done:
     gcstate->enabled = origenstate;
 }
+
+#endif  // Py_GIL_DISABLED
