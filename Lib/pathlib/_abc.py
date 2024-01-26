@@ -47,7 +47,7 @@ def _is_case_sensitive(pathmod):
 re = glob = None
 
 
-@functools.lru_cache(maxsize=256)
+@functools.lru_cache(maxsize=512)
 def _compile_pattern(pat, sep, case_sensitive, recursive=True):
     """Compile given glob pattern to a re.Pattern object (observing case
     sensitivity)."""
