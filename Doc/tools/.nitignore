@@ -14,7 +14,6 @@ Doc/c-api/memoryview.rst
 Doc/c-api/module.rst
 Doc/c-api/object.rst
 Doc/c-api/stable.rst
-Doc/c-api/structures.rst
 Doc/c-api/sys.rst
 Doc/c-api/type.rst
 Doc/c-api/typeobj.rst
@@ -29,7 +28,6 @@ Doc/library/asyncio-policy.rst
 Doc/library/asyncio-subprocess.rst
 Doc/library/bdb.rst
 Doc/library/collections.rst
-Doc/library/concurrent.futures.rst
 Doc/library/csv.rst
 Doc/library/datetime.rst
 Doc/library/dbm.rst
