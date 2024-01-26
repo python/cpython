@@ -19,6 +19,7 @@ from collections import namedtuple
 # import types, weakref  # Deferred to single_dispatch()
 from reprlib import recursive_repr
 from _thread import RLock
+from types import MappingProxyType
 
 # Avoid importing types, so we can speedup import time
 GenericAlias = type(list[int])
@@ -477,7 +478,7 @@ def _make_key(args, kwds, typed,
         return key[0]
     return _HashedSeq(key)
 
-def lru_cache(maxsize=128, typed=False):
+def lru_cache(maxsize=128, typed=False, access_cache=False):
     """Least-recently-used cache decorator.
 
     If *maxsize* is set to None, the LRU features are disabled and the cache
@@ -487,6 +488,9 @@ def lru_cache(maxsize=128, typed=False):
     For example, f(decimal.Decimal("3.0")) and f(3.0) will be treated as
     distinct calls with distinct results. Some types such as str and int may
     be cached separately even when typed is false.
+
+    If *access_cache* is True, function cache wrapped by MappingProxyType will
+    be available in "cache" attribute.
 
     Arguments to the cached function must be hashable.
 
@@ -510,21 +514,21 @@ def lru_cache(maxsize=128, typed=False):
     elif callable(maxsize) and isinstance(typed, bool):
         # The user_function was passed in directly via the maxsize argument
         user_function, maxsize = maxsize, 128
-        wrapper = _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo)
-        wrapper.cache_parameters = lambda : {'maxsize': maxsize, 'typed': typed}
+        wrapper = _lru_cache_wrapper(user_function, maxsize, typed, access_cache, _CacheInfo)
+        wrapper.cache_parameters = lambda: {'maxsize': maxsize, 'typed': typed, 'access_cache': access_cache}
         return update_wrapper(wrapper, user_function)
     elif maxsize is not None:
         raise TypeError(
             'Expected first argument to be an integer, a callable, or None')
 
     def decorating_function(user_function):
-        wrapper = _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo)
-        wrapper.cache_parameters = lambda : {'maxsize': maxsize, 'typed': typed}
+        wrapper = _lru_cache_wrapper(user_function, maxsize, typed, access_cache, _CacheInfo)
+        wrapper.cache_parameters = lambda: {'maxsize': maxsize, 'typed': typed, 'access_cache': access_cache}
         return update_wrapper(wrapper, user_function)
 
     return decorating_function
 
-def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
+def _lru_cache_wrapper(user_function, maxsize, typed, access_cache, _CacheInfo):
     # Constants shared by all lru cache instances:
     sentinel = object()          # unique object used to signal cache misses
     make_key = _make_key         # build a key from the function arguments
@@ -638,6 +642,8 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
 
     wrapper.cache_info = cache_info
     wrapper.cache_clear = cache_clear
+    if access_cache:
+        wrapper.cache = MappingProxyType(cache)
     return wrapper
 
 try:
