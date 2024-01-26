@@ -69,7 +69,7 @@ static struct _Py_context_state *
 get_context_state(void)
 {
     _PyFreeListState *state = _PyFreeListState_GET();
-    return &state->context_state;
+    return &state->contexts;
 }
 #endif
 
@@ -1270,7 +1270,7 @@ void
 _PyContext_ClearFreeList(_PyFreeListState *freelist_state, int is_finalization)
 {
 #ifdef WITH_FREELISTS
-    struct _Py_context_state *state = &freelist_state->context_state;
+    struct _Py_context_state *state = &freelist_state->contexts;
     for (; state->numfree > 0; state->numfree--) {
         PyContext *ctx = state->freelist;
         state->freelist = (PyContext *)ctx->ctx_weakreflist;
