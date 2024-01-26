@@ -141,7 +141,7 @@ Module contents
      then :func:`dataclass` *may* add an implicit :meth:`~object.__hash__` method.
      Although not recommended, you can force :func:`dataclass` to create a
      :meth:`~object.__hash__` method with ``unsafe_hash=True``. This might be the case
-     if your class is logically immutable but can nonetheless be mutated.
+     if your class is logically immutable but can still be mutated.
      This is a specialized use case and should be considered carefully.
 
      Here are the rules governing implicit creation of a :meth:`~object.__hash__`

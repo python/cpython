@@ -531,7 +531,7 @@ An :class:`IMAP4` instance has the following methods:
       allowed creation of such tags, and popular IMAP servers, such as Gmail,
       accept and produce such flags.  There are non-Python programs which also
       create such tags.  Although it is an RFC violation and IMAP clients and
-      servers are supposed to be strict, imaplib nonetheless continues to allow
+      servers are supposed to be strict, imaplib still continues to allow
       such tags to be created for backward compatibility reasons, and as of
       Python 3.6, handles them if they are sent from the server, since this
       improves real-world compatibility.
