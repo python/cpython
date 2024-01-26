@@ -1941,14 +1941,6 @@
             break;
         }
 
-        case _JUMP_ABSOLUTE: {
-            break;
-        }
-
-        case _JUMP_ABSOLUTE_HEADER: {
-            break;
-        }
-
         case _LOAD_CONST_INLINE: {
             _Py_UOpsSymbolicValue *__value_;
             __value_ = sym_init_unknown(ctx);
