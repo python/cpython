@@ -437,7 +437,7 @@ list_repr(PyObject *self)
 {
     PyListObject *v = (PyListObject *)self;
     PyObject *ret = NULL;
-    if (Py_SIZE(v) == 0) {
+    if (PyList_GET_SIZE(v) == 0) {
         return PyUnicode_FromString("[]");
     }
     Py_BEGIN_CRITICAL_SECTION(v);
@@ -449,11 +449,7 @@ list_repr(PyObject *self)
 static Py_ssize_t
 list_length(PyObject *a)
 {
-#ifdef Py_GIL_DISABLED
-    return _Py_atomic_load_ssize_relaxed(&(_PyVarObject_CAST(a)->ob_size));
-#else
-    return Py_SIZE(a);
-#endif
+    return PyList_GET_SIZE(a);
 }
 
 static int
