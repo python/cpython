@@ -21,7 +21,7 @@ module pyexpat
 #define XML_COMBINED_VERSION (10000*XML_MAJOR_VERSION+100*XML_MINOR_VERSION+XML_MICRO_VERSION)
 
 static XML_Memory_Handling_Suite ExpatMemoryHandler = {
-    PyObject_Malloc, PyObject_Realloc, PyObject_Free};
+    PyMem_Malloc, PyMem_Realloc, PyMem_Free};
 
 enum HandlerTypes {
     StartElement,
