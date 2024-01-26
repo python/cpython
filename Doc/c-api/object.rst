@@ -19,6 +19,14 @@ Object Protocol
    to NotImplemented and return it).
 
 
+.. c:macro:: Py_PRINT_RAW
+
+   Flag to be used with multiple functions that print the object (like
+   :c:func:`PyObject_Print` and :c:func:`PyFile_WriteObject`).
+   If passed, these function would use the :func:`str` of the object
+   instead of the :func:`repr`.
+
+
 .. c:function:: int PyObject_Print(PyObject *o, FILE *fp, int flags)
 
    Print an object *o*, on file *fp*.  Returns ``-1`` on error.  The flags argument
