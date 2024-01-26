@@ -102,7 +102,7 @@ will automatically close them when done.
    returned by :func:`~dbm.open`.
 
 .. versionchanged:: 3.8
-   Deleting a key from a read-only database raises database module specific error
+   Deleting a key from a read-only database raises a database module specific exception
    instead of :exc:`KeyError`.
 
 The following example records some hostnames and a corresponding title,  and
