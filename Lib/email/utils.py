@@ -43,13 +43,6 @@ TICK = "'"
 specialsre = re.compile(r'[][\\()<>@,:;".]')
 escapesre = re.compile(r'[\\"]')
 
-def _has_non_ascii(s):
-    """Return True if s contains non-ascii character."""
-    try:
-        s.encode('ascii')
-        return False
-    except UnicodeEncodeError:
-        return True
 
 def _has_surrogates(s):
     """Return True if s may contain surrogate-escaped binary data."""
