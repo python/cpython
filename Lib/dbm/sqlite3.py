@@ -72,43 +72,39 @@ class _Database(MutableMapping):
             self._cx.execute("PRAGMA journal_mode = wal")
 
         if flag == "rwc":
-            with closing(self._execute(BUILD_TABLE)):
-                pass
+            self._execute(BUILD_TABLE)
 
     def _execute(self, *args, **kwargs):
         if not self._cx:
             raise error(_ERR_CLOSED)
         try:
-            ret = self._cx.execute(*args, **kwargs)
+            return closing(self._cx.execute(*args, **kwargs))
         except sqlite3.Error as exc:
             raise error(str(exc))
-        else:
-            return ret
 
     def __len__(self):
-        with closing(self._execute(GET_SIZE)) as cu:
+        with self._execute(GET_SIZE) as cu:
             row = cu.fetchone()
         return row[0]
 
     def __getitem__(self, key):
-        with closing(self._execute(LOOKUP_KEY, (key,))) as cu:
+        with self._execute(LOOKUP_KEY, (key,)) as cu:
             row = cu.fetchone()
         if not row:
             raise KeyError(key)
         return row[0]
 
     def __setitem__(self, key, value):
-        with closing(self._execute(STORE_KV, (key, value))):
-            pass
+        self._execute(STORE_KV, (key, value))
 
     def __delitem__(self, key):
-        with closing(self._execute(DELETE_KEY, (key,))) as cu:
+        with self._execute(DELETE_KEY, (key,)) as cu:
             if not cu.rowcount:
                 raise KeyError(key)
 
     def __iter__(self):
         try:
-            with closing(self._execute(ITER_KEYS)) as cu:
+            with self._execute(ITER_KEYS) as cu:
                 for row in cu:
                     yield row[0]
         except sqlite3.Error as exc:
