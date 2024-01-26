@@ -1,0 +1,1 @@
+colorsys code optimization: Simple Code, Using elif
