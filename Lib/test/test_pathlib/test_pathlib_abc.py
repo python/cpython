@@ -326,6 +326,9 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertFalse(P('').full_match('*'))
         self.assertTrue(P('').full_match('**'))
         self.assertFalse(P('').full_match('**/*'))
+        # Matching with empty pattern
+        self.assertTrue(P('').full_match(''))
+        self.assertTrue(P('.').full_match('.'))
 
     def test_parts_common(self):
         # `parts` returns a tuple.
