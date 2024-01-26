@@ -1634,21 +1634,29 @@ Pattern language
 The following wildcards are supported in patterns for
 :meth:`~PurePath.full_match`, :meth:`~Path.glob` and :meth:`~Path.rglob`:
 
-"``**``" (standalone segment)
-  Matches any number of file or directory segments.
-"``*``" (standalone segment)
-  Matches one non-empty file or directory segment.
-"``*``" (otherwise)
-  Matches any number of non-separator characters.
-"``?``"
-  Matches one non-separator character.
-"``[seq]``"
-  Matches one character in *seq*.
-"``[!seq]``"
-  Matches one character not in *seq*.
+=========================  ===========================================
+Wildcard                   Matches
+=========================  ===========================================
+"``**``" (full segment)    Any number of file or directory segments.
+"``*``" (full segment)     One file or directory segment.
+"``*``" (otherwise)        Any number of non-separator characters.
+"``?``"                    One non-separator character.
+"``[seq]``"                One character in *seq*.
+"``[!seq]``"               One character not in *seq*.
+=========================  ===========================================
 
 For a literal match, wrap the meta-characters in brackets.
 For example, ``"[?]"`` matches the character ``"?"``.
+
+The "``**``" wildcard enables recursive globbing:
+
+=========================  ===========================================
+Pattern                    Meaning
+=========================  ===========================================
+``"**/*"``                 Any path with at least one segment.
+``"**/*.py"``              Any path with a final segment ending ``".py"``.
+``"assets/**"``            Any path starting with ``"assets/"``.
+``"assets/**/*"``          Any path starting with ``"assets/"``, excluding ``"assets/"`` itself.
 
 
 Correspondence to tools in the :mod:`os` module
