@@ -28,10 +28,11 @@ the Oracle Berkeley DB.
    available --- :mod:`dbm.gnu`, :mod:`dbm.ndbm` or :mod:`dbm.dumb` --- should
    be used to open a given file.
 
-   Returns one of the following values: ``None`` if the file can't be opened
-   because it's unreadable or doesn't exist; the empty string (``''``) if the
-   file's format can't be guessed; or a string containing the required module
-   name, such as ``'dbm.ndbm'`` or ``'dbm.gnu'``.
+   Return one of the following values:
+
+   * ``None`` if the file can't be opened because it's unreadable or doesn't exist
+   * the empty string (``''``) if the file's format can't be guessed
+   * a string containing the required module name, such as ``'dbm.ndbm'`` or ``'dbm.gnu'``
 
 .. versionchanged:: 3.11
    Accepts :term:`path-like object` for filename.
@@ -74,13 +75,13 @@ the Oracle Berkeley DB.
    modified by the prevailing umask).
 
 
-The object returned by :func:`.open` supports the same basic functionality as
-dictionaries; keys and their corresponding values can be stored, retrieved, and
-deleted, and the :keyword:`in` operator and the :meth:`keys` method are
-available, as well as :meth:`get` and :meth:`setdefault`.
+The object returned by :func:`open` supports the same basic functionality as a
+:class:`dict`; keys and their corresponding values can be stored, retrieved, and
+deleted, and the :keyword:`in` operator and the :meth:`!keys` method are
+available, as well as :meth:`!get` and :meth:`!setdefault`.
 
 .. versionchanged:: 3.2
-   :meth:`get` and :meth:`setdefault` are now available in all database modules.
+   :meth:`!get` and :meth:`!setdefault` are now available in all database modules.
 
 .. versionchanged:: 3.8
    Deleting a key from a read-only database raises database module specific error
@@ -89,7 +90,7 @@ available, as well as :meth:`get` and :meth:`setdefault`.
 .. versionchanged:: 3.11
    Accepts :term:`path-like object` for file.
 
-Key and values are always stored as bytes. This means that when
+Key and values are always stored as :class:`bytes`. This means that when
 strings are used they are implicitly converted to the default encoding before
 being stored.
 
