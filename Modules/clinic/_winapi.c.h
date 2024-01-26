@@ -161,7 +161,7 @@ PyDoc_STRVAR(_winapi_CreateFile__doc__,
     {"CreateFile", _PyCFunction_CAST(_winapi_CreateFile), METH_FASTCALL, _winapi_CreateFile__doc__},
 
 static HANDLE
-_winapi_CreateFile_impl(PyObject *module, LPCTSTR file_name,
+_winapi_CreateFile_impl(PyObject *module, LPCWSTR file_name,
                         DWORD desired_access, DWORD share_mode,
                         LPSECURITY_ATTRIBUTES security_attributes,
                         DWORD creation_disposition,
@@ -171,7 +171,7 @@ static PyObject *
 _winapi_CreateFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    LPCTSTR file_name;
+    LPCWSTR file_name = NULL;
     DWORD desired_access;
     DWORD share_mode;
     LPSECURITY_ATTRIBUTES security_attributes;
@@ -180,8 +180,8 @@ _winapi_CreateFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     HANDLE template_file;
     HANDLE _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "skk" F_POINTER "kk" F_HANDLE ":CreateFile",
-        &file_name, &desired_access, &share_mode, &security_attributes, &creation_disposition, &flags_and_attributes, &template_file)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&kk" F_POINTER "kk" F_HANDLE ":CreateFile",
+        _PyUnicode_WideCharString_Converter, &file_name, &desired_access, &share_mode, &security_attributes, &creation_disposition, &flags_and_attributes, &template_file)) {
         goto exit;
     }
     _return_value = _winapi_CreateFile_impl(module, file_name, desired_access, share_mode, security_attributes, creation_disposition, flags_and_attributes, template_file);
@@ -194,6 +194,9 @@ _winapi_CreateFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     return_value = HANDLE_TO_PYNUM(_return_value);
 
 exit:
+    /* Cleanup for file_name */
+    PyMem_Free((void *)file_name);
+
     return return_value;
 }
 
@@ -1479,4 +1482,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=9d43ae4bdbe1126a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a1f20d03c363db1d input=a9049054013a1b77]*/

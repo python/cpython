@@ -439,7 +439,7 @@ _winapi_ConnectNamedPipe_impl(PyObject *module, HANDLE handle,
 /*[clinic input]
 _winapi.CreateFile -> HANDLE
 
-    file_name: LPCTSTR
+    file_name: LPCWSTR
     desired_access: DWORD
     share_mode: DWORD
     security_attributes: LPSECURITY_ATTRIBUTES
@@ -450,12 +450,12 @@ _winapi.CreateFile -> HANDLE
 [clinic start generated code]*/
 
 static HANDLE
-_winapi_CreateFile_impl(PyObject *module, LPCTSTR file_name,
+_winapi_CreateFile_impl(PyObject *module, LPCWSTR file_name,
                         DWORD desired_access, DWORD share_mode,
                         LPSECURITY_ATTRIBUTES security_attributes,
                         DWORD creation_disposition,
                         DWORD flags_and_attributes, HANDLE template_file)
-/*[clinic end generated code: output=417ddcebfc5a3d53 input=6423c3e40372dbd5]*/
+/*[clinic end generated code: output=818c811e5e04d550 input=1fa870ed1c2e3d69]*/
 {
     HANDLE handle;
 
@@ -466,14 +466,15 @@ _winapi_CreateFile_impl(PyObject *module, LPCTSTR file_name,
     }
 
     Py_BEGIN_ALLOW_THREADS
-    handle = CreateFile(file_name, desired_access,
-                        share_mode, security_attributes,
-                        creation_disposition,
-                        flags_and_attributes, template_file);
+    handle = CreateFileW(file_name, desired_access,
+                         share_mode, security_attributes,
+                         creation_disposition,
+                         flags_and_attributes, template_file);
     Py_END_ALLOW_THREADS
 
-    if (handle == INVALID_HANDLE_VALUE)
+    if (handle == INVALID_HANDLE_VALUE) {
         PyErr_SetFromWindowsErr(0);
+    }
 
     return handle;
 }
