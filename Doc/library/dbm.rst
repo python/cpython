@@ -58,41 +58,33 @@ the Oracle Berkeley DB.
 
 .. function:: open(file, flag='r', mode=0o666)
 
-   Open the database file *file* and return a corresponding object.
+   Open a database and return the corresponding database object.
 
-   If the database file already exists, the :func:`whichdb` function is used to
-   determine its type and the appropriate module is used; if it does not exist,
-   the first module listed above that can be imported is used.
+   :param file:
+      The database file to open.
 
-   The optional *flag* argument can be:
+      If the database file already exists, the :func:`whichdb` function is used to
+      determine its type and the appropriate module is used; if it does not exist,
+      the first submodule listed above that can be imported is used.
+   :type file: :term:`path-like object`
 
-   .. csv-table::
-      :header: "Value", "Meaning"
+   :param str flag:
+      * ``'r'`` (default), |flag_r|
+      * ``'w'``, |flag_w|
+      * ``'c'``, |flag_c|
+      * ``'n'``, |flag_n|
 
-      ``'r'`` (default), |flag_r|
-      ``'w'``, |flag_w|
-      ``'c'``, |flag_c|
-      ``'n'``, |flag_n|
-
-   The optional *mode* argument is the Unix mode of the file, used only when the
-   database has to be created.  It defaults to octal ``0o666`` (and will be
-   modified by the prevailing umask).
+   :param int mode:
+      The Unix file access mode of the file (default: octal ``0o666``),
+      used only when the database has to be created.
 
    .. versionchanged:: 3.11
       *file* accepts a :term:`path-like object`.
 
-
-The object returned by :func:`open` supports the same basic functionality as a
+The object returned by :func:`~dbm.open` supports the same basic functionality as a
 :class:`dict`; keys and their corresponding values can be stored, retrieved, and
 deleted, and the :keyword:`in` operator and the :meth:`!keys` method are
-available, as well as :meth:`!get` and :meth:`!setdefault`.
-
-.. versionchanged:: 3.2
-   :meth:`!get` and :meth:`!setdefault` are now available in all database modules.
-
-.. versionchanged:: 3.8
-   Deleting a key from a read-only database raises database module specific error
-   instead of :exc:`KeyError`.
+available, as well as :meth:`!get` and :meth:`!setdefault` methods.
 
 Key and values are always stored as :class:`bytes`. This means that when
 strings are used they are implicitly converted to the default encoding before
@@ -101,9 +93,17 @@ being stored.
 These objects also support being used in a :keyword:`with` statement, which
 will automatically close them when done.
 
+.. versionchanged:: 3.2
+   :meth:`!get` and :meth:`!setdefault` methods are now available for all
+   :mod:`dbm` backends.
+
 .. versionchanged:: 3.4
    Added native support for the context management protocol to the objects
-   returned by :func:`.open`.
+   returned by :func:`~dbm.open`.
+
+.. versionchanged:: 3.8
+   Deleting a key from a read-only database raises a database module specific exception
+   instead of :exc:`KeyError`.
 
 The following example records some hostnames and a corresponding title,  and
 then prints out the contents of the database::
