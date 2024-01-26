@@ -1642,11 +1642,11 @@ get_rare_event_counters(PyObject *self, PyObject *type)
 
     return Py_BuildValue(
         "{sksksksksk}",
-        "set_class", interp->rare_events.set_class,
-        "set_bases", interp->rare_events.set_bases,
-        "set_eval_frame_func", interp->rare_events.set_eval_frame_func,
-        "builtin_dict", interp->rare_events.builtin_dict,
-        "func_modification", interp->rare_events.func_modification
+        "set_class", (unsigned long)interp->rare_events.set_class,
+        "set_bases", (unsigned long)interp->rare_events.set_bases,
+        "set_eval_frame_func", (unsigned long)interp->rare_events.set_eval_frame_func,
+        "builtin_dict", (unsigned long)interp->rare_events.builtin_dict,
+        "func_modification", (unsigned long)interp->rare_events.func_modification
     );
 }
 
