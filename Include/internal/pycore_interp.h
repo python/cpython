@@ -16,6 +16,7 @@ extern "C" {
 #include "pycore_code.h"          // struct callable_cache
 #include "pycore_context.h"       // struct _Py_context_state
 #include "pycore_crossinterp.h"   // struct _xidregistry
+#include "pycore_dict_state.h"    // struct _Py_dict_interp_state
 #include "pycore_dtoa.h"          // struct _dtoa_state
 #include "pycore_exceptions.h"    // struct _Py_exc_state
 #include "pycore_floatobject.h"   // struct _Py_float_state
@@ -40,22 +41,6 @@ extern "C" {
 struct _Py_long_state {
     int max_str_digits;
 };
-
-#define DICT_MAX_WATCHERS 8
-
-struct _Py_dict_interp_state {
-    /*Global counter used to set ma_version_tag field of dictionary.
-     * It is incremented each time that a dictionary is created and each
-     * time that a dictionary is modified. */
-    uint64_t global_version;
-    uint32_t next_keys_version;
-    PyDict_WatchCallback watchers[DICT_MAX_WATCHERS];
-};
-
-#define _dict_state_INIT \
-    { \
-        .next_keys_version = 2, \
-    }
 
 // Support for stop-the-world events. This exists in both the PyRuntime struct
 // for global pauses and in each PyInterpreterState for per-interpreter pauses.
