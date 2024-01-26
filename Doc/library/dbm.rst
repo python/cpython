@@ -285,7 +285,7 @@ This module can be used with the "classic" NDBM interface or the
 
 .. exception:: error
 
-   Raised on :mod:`dbm.ndbm` specific errors, such as I/O errors. :exc:`KeyError` is raised
+   Raised on :mod:`dbm.ndbm`-specific errors, such as I/O errors. :exc:`KeyError` is raised
    for general mapping errors like specifying an incorrect key.
 
 
