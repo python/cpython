@@ -59,8 +59,8 @@ anything that depends on it.
 .. section: Core and Builtins
 
 Fix the tokenizer to display the correct error message, when there is a
-SyntaxError on the last input character and no newline follows. It used to
-be `unexpected EOF while parsing`, while it should be `invalid syntax`.
+``SyntaxError`` on the last input character and no newline follows. It used to
+be ``unexpected EOF while parsing``, while it should be ``invalid syntax``.
 
 ..
 
@@ -79,7 +79,7 @@ evaluation for annotations activated. Patch by Batuhan Taskaya.
 .. nonce: vXPze5
 .. section: Core and Builtins
 
-Report a specialized error message, `invalid string prefix`, when the
+Report a specialized error message, ``invalid string prefix``, when the
 tokenizer encounters a string with an invalid prefix.
 
 ..
@@ -434,7 +434,7 @@ for the correspondent concrete type (``list`` in this case).
 .. nonce: ux8FUr
 .. section: Library
 
-func:`inspect.getdoc` no longer returns docstring inherited from the type of
+:func:`inspect.getdoc` no longer returns docstring inherited from the type of
 the object or from parent class if it is a class if it is not defined in the
 object itself. In :mod:`pydoc` the documentation string is now shown not
 only for class, function, method etc, but for any object that has its own
@@ -504,7 +504,7 @@ extension. This allows the use of functions such as ``json_object``.
 .. nonce: 4EcyIN
 .. section: Library
 
-Wait in `KqueueSelector.select` when no fds are registered
+Wait in ``KqueueSelector.select`` when no fds are registered
 
 ..
 
@@ -701,7 +701,7 @@ per header: use the realm of the first Basic challenge.
 .. section: Library
 
 Removed daemon threads from :mod:`concurrent.futures` by adding an internal
-`threading._register_atexit()`, which calls registered functions prior to
+``threading._register_atexit()``, which calls registered functions prior to
 joining all non-daemon threads. This allows for compatibility with
 subinterpreters, which don't support daemon threads.
 
@@ -781,9 +781,9 @@ Added :pep:`584` operators to :class:`weakref.WeakKeyDictionary`.
 .. nonce: 56Yokh
 .. section: Library
 
-Fix linear runtime behaviour of the `__getitem__` and `__setitem__` methods
+Fix linear runtime behaviour of the ``__getitem__`` and ``__setitem__`` methods
 in :class:`multiprocessing.shared_memory.ShareableList`. This avoids
-quadratic performance when iterating a `ShareableList`. Patch by Thomas
+quadratic performance when iterating a ``ShareableList``. Patch by Thomas
 Krennwallner.
 
 ..
@@ -793,9 +793,9 @@ Krennwallner.
 .. nonce: AxXZNz
 .. section: Library
 
-Remove undocumented support for *closing* a `pathlib.Path` object via its
+Remove undocumented support for *closing* a ``pathlib.Path`` object via its
 context manager. The context manager magic methods remain, but they are now
-a no-op, making `Path` objects immutable.
+a no-op, making ``Path`` objects immutable.
 
 ..
 

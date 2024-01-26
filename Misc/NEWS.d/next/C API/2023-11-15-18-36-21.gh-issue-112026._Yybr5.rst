@@ -1,3 +1,0 @@
-Add again the private ``_PyThreadState_UncheckedGet()`` function as an alias
-to the new public :c:func:`PyThreadState_GetUnchecked` function. Patch by
-Victor Stinner.

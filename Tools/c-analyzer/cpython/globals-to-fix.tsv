@@ -290,6 +290,10 @@ Objects/exceptions.c	-	PyExc_UnicodeWarning	-
 Objects/exceptions.c	-	PyExc_BytesWarning	-
 Objects/exceptions.c	-	PyExc_ResourceWarning	-
 Objects/exceptions.c	-	PyExc_EncodingWarning	-
+Python/crossinterp.c	-	_PyExc_InterpreterError	-
+Python/crossinterp.c	-	_PyExc_InterpreterNotFoundError	-
+Python/crossinterp.c	-	PyExc_InterpreterError	-
+Python/crossinterp.c	-	PyExc_InterpreterNotFoundError	-
 
 ##-----------------------
 ## singletons

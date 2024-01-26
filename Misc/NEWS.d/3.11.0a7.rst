@@ -717,7 +717,7 @@ Fix :class:`asyncio.Semaphore` re-aquiring FIFO order.
 .. nonce: uaEDcI
 .. section: Library
 
-The :mod:`asynchat`, :mod:`asyncore` and  :mod:`smtpd` modules have been
+The :mod:`!asynchat`, :mod:`!asyncore` and  :mod:`!smtpd` modules have been
 deprecated since at least Python 3.6. Their documentation and deprecation
 warnings and have now been updated to note they will removed in Python 3.12
 (:pep:`594`).
@@ -1038,8 +1038,8 @@ Add optional parameter *dir_fd* in :func:`shutil.rmtree`.
 .. nonce: AixHW7
 .. section: Library
 
-:meth:`~!unittest.TestProgram.usageExit` is marked deprecated, to be removed
-in 3.13.
+:meth:`!unittest.TestProgram.usageExit` is marked as deprecated,
+to be removed in Python 3.13.
 
 ..
 
@@ -1324,7 +1324,7 @@ extensions.
 .. section: Tests
 
 A test case for :func:`os.sendfile` is converted from deprecated
-:mod:`asyncore` (see :pep:`594`) to :mod:`asyncio`. Patch by Oleg Iarygin.
+:mod:`!asyncore` (see :pep:`594`) to :mod:`asyncio`. Patch by Oleg Iarygin.
 
 ..
 

@@ -880,7 +880,7 @@ Update the ``repr`` of :class:`typing.Unpack` according to :pep:`692`.
 .. section: Library
 
 Make :mod:`dis` display the names of the args for
-:opcode:`CALL_INTRINSIC_*`.
+:opcode:`!CALL_INTRINSIC_*`.
 
 ..
 

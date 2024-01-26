@@ -6,7 +6,7 @@
 
 #include "pycore_critical_section.h"
 
-#ifdef Py_NOGIL
+#ifdef Py_GIL_DISABLED
 #define assert_nogil assert
 #define assert_gil(x)
 #else
@@ -25,7 +25,7 @@ test_critical_sections(PyObject *self, PyObject *Py_UNUSED(args))
     assert(d2 != NULL);
 
     // Beginning a critical section should lock the associated object and
-    // push the critical section onto the thread's stack (in Py_NOGIL builds).
+    // push the critical section onto the thread's stack (in Py_GIL_DISABLED builds).
     Py_BEGIN_CRITICAL_SECTION(d1);
     assert_nogil(PyMutex_IsLocked(&d1->ob_mutex));
     assert_nogil(_PyCriticalSection_IsActive(PyThreadState_GET()->critical_section));

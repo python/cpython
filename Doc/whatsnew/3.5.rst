@@ -878,7 +878,7 @@ size of decompressed data. (Contributed by Nikolaus Rath in :issue:`15955`.)
 cgi
 ---
 
-The :class:`~cgi.FieldStorage` class now supports the :term:`context manager`
+The :class:`!FieldStorage` class now supports the :term:`context manager`
 protocol.  (Contributed by Berker Peksag in :issue:`20289`.)
 
 
@@ -1252,7 +1252,7 @@ Oberkirch in :issue:`21800`.)
 imghdr
 ------
 
-The :func:`~!imghdr.what` function now recognizes the
+The :func:`!what` function now recognizes the
 `OpenEXR <https://www.openexr.com>`_ format
 (contributed by Martin Vignali and Claudiu Popa in :issue:`20295`),
 and the `WebP <https://en.wikipedia.org/wiki/WebP>`_ format
@@ -1663,34 +1663,34 @@ during debugging, instead of integer "magic numbers".
 smtpd
 -----
 
-Both the :class:`~smtpd.SMTPServer` and :class:`~smtpd.SMTPChannel` classes now
+Both the :class:`!SMTPServer` and :class:`!SMTPChannel` classes now
 accept a *decode_data* keyword argument to determine if the ``DATA`` portion of
 the SMTP transaction is decoded using the ``"utf-8"`` codec or is instead
 provided to the
-:meth:`SMTPServer.process_message() <smtpd.SMTPServer.process_message>`
+:meth:`!SMTPServer.process_message()`
 method as a byte string.  The default is ``True`` for backward compatibility
 reasons, but will change to ``False`` in Python 3.6.  If *decode_data* is set
 to ``False``, the ``process_message`` method must be prepared to accept keyword
 arguments.
 (Contributed by Maciej Szulik in :issue:`19662`.)
 
-The :class:`~smtpd.SMTPServer` class now advertises the ``8BITMIME`` extension
+The :class:`!SMTPServer` class now advertises the ``8BITMIME`` extension
 (:rfc:`6152`) if *decode_data* has been set ``True``.  If the client
 specifies ``BODY=8BITMIME`` on the ``MAIL`` command, it is passed to
-:meth:`SMTPServer.process_message() <smtpd.SMTPServer.process_message>`
+:meth:`!SMTPServer.process_message()`
 via the *mail_options* keyword.
 (Contributed by Milan Oberkirch and R.  David Murray in :issue:`21795`.)
 
-The :class:`~smtpd.SMTPServer` class now also supports the ``SMTPUTF8``
+The :class:`!SMTPServer` class now also supports the ``SMTPUTF8``
 extension (:rfc:`6531`: Internationalized Email).  If the client specified
 ``SMTPUTF8 BODY=8BITMIME`` on the ``MAIL`` command, they are passed to
-:meth:`SMTPServer.process_message() <smtpd.SMTPServer.process_message>`
+:meth:`!SMTPServer.process_message()`
 via the *mail_options* keyword.  It is the responsibility of the
 ``process_message`` method to correctly handle the ``SMTPUTF8`` data.
 (Contributed by Milan Oberkirch in :issue:`21725`.)
 
 It is now possible to provide, directly or via name resolution, IPv6
-addresses in the :class:`~smtpd.SMTPServer` constructor, and have it
+addresses in the :class:`!SMTPServer` constructor, and have it
 successfully connect.  (Contributed by Milan Oberkirch in :issue:`14758`.)
 
 
@@ -1714,7 +1714,7 @@ support :rfc:`6531` (SMTPUTF8).
 sndhdr
 ------
 
-The :func:`~sndhdr.what` and :func:`~sndhdr.whathdr` functions  now return
+The :func:`!what` and :func:`!whathdr` functions  now return
 a :func:`~collections.namedtuple`.  (Contributed by Claudiu Popa in
 :issue:`18615`.)
 
@@ -1947,7 +1947,8 @@ traceback
 ---------
 
 New :func:`~traceback.walk_stack` and :func:`~traceback.walk_tb`
-functions to conveniently traverse frame and traceback objects.
+functions to conveniently traverse frame and
+:ref:`traceback objects <traceback-objects>`.
 (Contributed by Robert Collins in :issue:`17911`.)
 
 New lightweight classes: :class:`~traceback.TracebackException`,
@@ -2295,9 +2296,9 @@ slated for removal in Python 3.6.
 The :func:`asyncio.async` function is deprecated in favor of
 :func:`~asyncio.ensure_future`.
 
-The :mod:`smtpd` module has in the past always decoded the DATA portion of
+The :mod:`!smtpd` module has in the past always decoded the DATA portion of
 email messages using the ``utf-8`` codec.  This can now be controlled by the
-new *decode_data* keyword to :class:`~smtpd.SMTPServer`.  The default value is
+new *decode_data* keyword to :class:`!SMTPServer`.  The default value is
 ``True``, but this default is deprecated.  Specify the *decode_data* keyword
 with an appropriate value to avoid the deprecation warning.
 

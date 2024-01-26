@@ -287,10 +287,15 @@ General Options
 
    .. versionadded:: 3.11
 
+.. _free-threading-build:
+
 .. option:: --disable-gil
 
    Enables **experimental** support for running Python without the
-   :term:`global interpreter lock` (GIL).
+   :term:`global interpreter lock` (GIL): free threading build.
+
+   Defines the ``Py_GIL_DISABLED`` macro and adds ``"t"`` to
+   :data:`sys.abiflags`.
 
    See :pep:`703` "Making the Global Interpreter Lock Optional in CPython".
 
@@ -739,6 +744,13 @@ Debug options
    (default is no).
 
    .. versionadded:: 3.6
+
+.. option:: --with-thread-sanitizer
+
+   Enable ThreadSanitizer data race detector, ``tsan``
+   (default is no).
+
+   .. versionadded:: 3.13
 
 
 Linker options

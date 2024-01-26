@@ -1,1 +1,0 @@
-Call loop exception handler for exceptions in ``client_connected_cb`` of :func:`asyncio.start_server` so that applications can handle it. Patch by Kumar Aditya.

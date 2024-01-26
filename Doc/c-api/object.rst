@@ -47,9 +47,8 @@ Object Protocol
 
 .. c:function:: int PyObject_HasAttr(PyObject *o, PyObject *attr_name)
 
-   Returns ``1`` if *o* has the attribute *attr_name*, and ``0`` otherwise.  This
-   is equivalent to the Python expression ``hasattr(o, attr_name)``.  This function
-   always succeeds.
+   Returns ``1`` if *o* has the attribute *attr_name*, and ``0`` otherwise.
+   This function always succeeds.
 
    .. note::
 

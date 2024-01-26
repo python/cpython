@@ -77,12 +77,6 @@ except ImportError:
         return s.replace('/', '\\').lower()
 
 
-# Return whether a path is absolute.
-# Trivial in Posix, harder on Windows.
-# For Windows it is absolute if it starts with a slash or backslash (current
-# volume), or if a pathname after the volume-letter-and-colon or UNC-resource
-# starts with a slash or backslash.
-
 def isabs(s):
     """Test whether a path is absolute"""
     s = os.fspath(s)
@@ -90,16 +84,15 @@ def isabs(s):
         sep = b'\\'
         altsep = b'/'
         colon_sep = b':\\'
+        double_sep = b'\\\\'
     else:
         sep = '\\'
         altsep = '/'
         colon_sep = ':\\'
+        double_sep = '\\\\'
     s = s[:3].replace(altsep, sep)
     # Absolute: UNC, device, and paths with a drive and root.
-    # LEGACY BUG: isabs("/x") should be false since the path has no drive.
-    if s.startswith(sep) or s.startswith(colon_sep, 1):
-        return True
-    return False
+    return s.startswith(colon_sep, 1) or s.startswith(double_sep)
 
 
 # Join two (or more) paths.
