@@ -1,0 +1,1 @@
+Add Mach-O linkage support for :func:`platform.architecture()`.
