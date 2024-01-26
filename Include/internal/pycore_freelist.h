@@ -20,6 +20,7 @@ extern "C" {
 #  define PyFloat_MAXFREELIST 100
 #  define PyContext_MAXFREELIST 255
 # define _PyAsyncGen_MAXFREELIST 80
+#  define _PyObjectStackChunk_MAXFREELIST 4
 #else
 #  define PyTuple_NFREELISTS 0
 #  define PyTuple_MAXFREELIST 0
@@ -27,6 +28,7 @@ extern "C" {
 #  define PyFloat_MAXFREELIST 0
 #  define PyContext_MAXFREELIST 0
 #  define _PyAsyncGen_MAXFREELIST 0
+#  define _PyObjectStackChunk_MAXFREELIST 0
 #endif
 
 struct _Py_list_state {
@@ -93,6 +95,13 @@ struct _Py_async_gen_state {
 #endif
 };
 
+struct _PyObjectStackChunk;
+
+struct _Py_object_stack_state {
+    struct _PyObjectStackChunk *free_list;
+    Py_ssize_t numfree;
+};
+
 typedef struct _Py_freelist_state {
     struct _Py_float_state float_state;
     struct _Py_tuple_state tuple_state;
@@ -100,6 +109,7 @@ typedef struct _Py_freelist_state {
     struct _Py_slice_state slice_state;
     struct _Py_context_state context_state;
     struct _Py_async_gen_state async_gen_state;
+    struct _Py_object_stack_state object_stack_state;
 } _PyFreeListState;
 
 #ifdef __cplusplus

@@ -439,6 +439,7 @@ PYTHON_OBJS=	\
 		Python/modsupport.o \
 		Python/mysnprintf.o \
 		Python/mystrtoul.o \
+		Python/object_stack.o \
 		Python/optimizer.o \
 		Python/optimizer_analysis.o \
 		Python/parking_lot.o \
@@ -1832,6 +1833,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_frame.h \
 		$(srcdir)/Include/internal/pycore_freelist.h \
 		$(srcdir)/Include/internal/pycore_function.h \
+		$(srcdir)/Include/internal/pycore_gc.h \
 		$(srcdir)/Include/internal/pycore_genobject.h \
 		$(srcdir)/Include/internal/pycore_getopt.h \
 		$(srcdir)/Include/internal/pycore_gil.h \
@@ -1853,6 +1855,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_namespace.h \
 		$(srcdir)/Include/internal/pycore_object.h \
 		$(srcdir)/Include/internal/pycore_object_alloc.h \
+		$(srcdir)/Include/internal/pycore_object_stack.h \
 		$(srcdir)/Include/internal/pycore_object_state.h \
 		$(srcdir)/Include/internal/pycore_obmalloc.h \
 		$(srcdir)/Include/internal/pycore_obmalloc_init.h \
