@@ -1005,14 +1005,6 @@ call fails (for example because the path doesn't exist).
    .. seealso::
       :ref:`pattern-language` documentation.
 
-   .. note::
-      Using the "``**``" pattern in large directory trees may consume
-      an inordinate amount of time.
-
-   .. tip::
-      Set *follow_symlinks* to ``True`` or ``False`` to improve performance
-      of recursive globbing.
-
    This method calls :meth:`Path.is_dir` on the top-level directory and
    propagates any :exc:`OSError` exception that is raised. Subsequent
    :exc:`OSError` exceptions from scanning directories are suppressed.
@@ -1026,6 +1018,10 @@ call fails (for example because the path doesn't exist).
    ``None``, this method follows symlinks except when expanding "``**``"
    wildcards. Set *follow_symlinks* to ``True`` to always follow symlinks, or
    ``False`` to treat all symlinks as files.
+
+   .. tip::
+      Set *follow_symlinks* to ``True`` or ``False`` to improve performance
+      of recursive globbing.
 
    .. audit-event:: pathlib.Path.glob self,pattern pathlib.Path.glob
 
@@ -1645,19 +1641,23 @@ Wildcard                   Matches
 "``[!seq]``"               One character not in *seq*.
 =========================  ===========================================
 
-For a literal match, wrap the meta-characters in brackets.
-For example, ``"[?]"`` matches the character ``"?"``.
-
-The "``**``" wildcard enables recursive globbing:
+The "``**``" wildcard enables recursive globbing. A few examples:
 
 =========================  ===========================================
 Pattern                    Meaning
 =========================  ===========================================
-``"**/*"``                 Any path with at least one segment.
-``"**/*.py"``              Any path with a final segment ending ``".py"``.
-``"assets/**"``            Any path starting with ``"assets/"``.
-``"assets/**/*"``          Any path starting with ``"assets/"``, excluding ``"assets/"`` itself.
+"``**/*``"                 Any path with at least one segment.
+"``**/*.py``"              Any path with a final segment ending "``.py``".
+"``assets/**``"            Any path starting with "``assets/``".
+"``assets/**/*``"          Any path starting with "``assets/``", excluding "``assets/``" itself.
 =========================  ===========================================
+
+.. note::
+   Globbing with the "``**``" wildcard in large directory trees may consume
+   an inordinate amount of time.
+
+For a literal match, wrap the meta-characters in brackets.
+For example, ``"[?]"`` matches the character ``"?"``.
 
 
 Correspondence to tools in the :mod:`os` module
