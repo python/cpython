@@ -372,8 +372,8 @@ The :mod:`!dbm.dumb` module defines the following:
       The basename of the database file (without extensions).
       A new database creates the following files:
 
-      - :samp:`{filename}.dat`
-      - :samp:`{filename}.dir`
+      - :file:`{filename}.dat`
+      - :file:`{filename}.dir`
    :type database: :term:`path-like object`
 
    :param str flag:
