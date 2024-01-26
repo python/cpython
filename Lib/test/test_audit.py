@@ -207,9 +207,9 @@ class AuditTest(unittest.TestCase):
             print(*events, sep='\n')
         actual = [(ev[0], ev[2]) for ev in events]
         expected = [
-            ("_thread.start_new_thread", "(<test_func>, (), None)"),
+            ("_thread.start_new_thread", "(<test_func>, (), None, None, 0)"),
             ("test.test_func", "()"),
-            ("_thread.start_joinable_thread", "(<test_func>,)"),
+            ("_thread.start_joinable_thread", "(<test_func>, None, 0)"),
             ("test.test_func", "()"),
         ]
 

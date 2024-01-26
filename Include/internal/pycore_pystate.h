@@ -214,6 +214,9 @@ static inline PyInterpreterState* _PyInterpreterState_GET(void) {
 extern PyThreadState * _PyThreadState_New(
     PyInterpreterState *interp,
     int whence);
+extern PyThreadState *
+_PyThreadState_NewWithEvent(PyInterpreterState *interp, int whence,
+                            _PyEventRc *done_event);
 extern void _PyThreadState_Bind(PyThreadState *tstate);
 extern void _PyThreadState_DeleteExcept(PyThreadState *tstate);
 extern void _PyThreadState_ClearMimallocHeaps(PyThreadState *tstate);

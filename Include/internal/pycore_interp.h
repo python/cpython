@@ -297,6 +297,7 @@ PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpID(int64_t);
 PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
 PyAPI_FUNC(int) _PyInterpreterState_IDIncref(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);
+PyAPI_FUNC(void) _PyInterpreterState_WaitForThreads(PyInterpreterState *);
 
 extern const PyConfig* _PyInterpreterState_GetConfig(PyInterpreterState *interp);
 

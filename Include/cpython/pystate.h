@@ -61,6 +61,8 @@ struct _py_trashcan {
     PyObject *delete_later;
 };
 
+typedef struct _PyEventRc _PyEventRc;
+
 struct _ts {
     /* See Python/ceval.c for comments explaining most fields */
 
@@ -156,31 +158,13 @@ struct _ts {
      */
     uintptr_t critical_section;
 
-    /* Called when a thread state is deleted normally, but not when it
-     * is destroyed after fork().
-     * Pain:  to prevent rare but fatal shutdown errors (issue 18808),
-     * Thread.join() must wait for the join'ed thread's tstate to be unlinked
-     * from the tstate chain.  That happens at the end of a thread's life,
-     * in pystate.c.
-     * The obvious way doesn't quite work:  create a lock which the tstate
-     * unlinking code releases, and have Thread.join() wait to acquire that
-     * lock.  The problem is that we _are_ at the end of the thread's life:
-     * if the thread holds the last reference to the lock, decref'ing the
-     * lock will delete the lock, and that may trigger arbitrary Python code
-     * if there's a weakref, with a callback, to the lock.  But by this time
-     * _PyRuntime.gilstate.tstate_current is already NULL, so only the simplest
-     * of C code can be allowed to run (in particular it must not be possible to
-     * release the GIL).
-     * So instead of holding the lock directly, the tstate holds a weakref to
-     * the lock:  that's the value of on_delete_data below.  Decref'ing a
-     * weakref is harmless.
-     * on_delete points to _threadmodule.c's static release_sentinel() function.
-     * After the tstate is unlinked, release_sentinel is called with the
-     * weakref-to-lock (on_delete_data) argument, and release_sentinel releases
-     * the indirectly held lock.
+    /* Boolean storing whether or not this is a daemon thread. All non-daemon
+     * threads are joined prior to interpreter exit.
      */
-    void (*on_delete)(void *);
-    void *on_delete_data;
+    int is_daemon;
+
+    /* Set when the thread has finished execution and is about to be freed. */
+    _PyEventRc *done_event;
 
     int coroutine_origin_tracking_depth;
 

@@ -4,6 +4,7 @@
 
 #include "Python.h"
 #include "pycore_interp.h"        // _PyInterpreterState.threads.count
+#include "pycore_lock.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_pylifecycle.h"
@@ -30,6 +31,7 @@ typedef struct {
     PyTypeObject *local_type;
     PyTypeObject *local_dummy_type;
     PyTypeObject *thread_handle_type;
+    PyTypeObject *event_type;
 } thread_module_state;
 
 static inline thread_module_state*
@@ -39,6 +41,124 @@ get_thread_state(PyObject *module)
     assert(state != NULL);
     return (thread_module_state *)state;
 }
+
+// Event type
+
+typedef struct {
+    PyObject_HEAD
+    _PyEventRc *event;
+} PyEventObject;
+
+static void
+event_dealloc(PyEventObject *self)
+{
+    if (self->event) {
+        _PyEventRc_Decref(self->event);
+        self->event = NULL;
+    }
+    Py_TYPE(self)->tp_free(self);
+}
+
+static PyObject *
+wrap_event(PyTypeObject *type, _PyEventRc *event)
+{
+    PyEventObject *self;
+    self = (PyEventObject *)type->tp_alloc(type, 0);
+    if (self != NULL) {
+        self->event = event;
+        _PyEventRc_Incref(event);
+    }
+    return (PyObject *)self;
+}
+
+static PyObject *
+event_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    _PyEventRc *event = _PyEventRc_New();
+    if (event == NULL) {
+        PyErr_SetString(ThreadError, "can't allocate event");
+        return NULL;
+    }
+    PyObject *result = wrap_event(type, event);
+    _PyEventRc_Decref(event);
+    return result;
+}
+
+static PyObject *
+event_repr(PyEventObject *self)
+{
+    int is_set = _PyEvent_IsSet(&self->event->event);
+    return PyUnicode_FromFormat("<_thread.Event object is_set=%d at %p>",
+                                is_set, self);
+}
+
+static PyObject *
+event_is_set(PyEventObject *self, PyObject *Py_UNUSED(ignored))
+{
+    if (_PyEvent_IsSet(&self->event->event)) {
+        Py_RETURN_TRUE;
+    }
+    else {
+        Py_RETURN_FALSE;
+    }
+}
+
+static PyObject *
+event_set(PyEventObject *self, PyObject *Py_UNUSED(ignored))
+{
+    _PyEvent_Notify(&self->event->event);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+event_wait(PyEventObject *self, PyObject *args)
+{
+    PyObject *timeout_obj = NULL;
+    if (!PyArg_ParseTuple(args, "|O:wait", &timeout_obj)) {
+        return NULL;
+    }
+
+    _PyTime_t timeout_ns = -1;
+    if (timeout_obj && timeout_obj != Py_None) {
+        int err = _PyTime_FromSecondsObject(&timeout_ns, timeout_obj,
+                                            _PyTime_ROUND_TIMEOUT);
+
+        if (err < 0) {
+            return NULL;
+        }
+    }
+
+    int ok = PyEvent_WaitTimed(&self->event->event, timeout_ns);
+    if (ok) {
+        Py_RETURN_TRUE;
+    }
+    else {
+        Py_RETURN_FALSE;
+    }
+}
+
+static PyMethodDef event_methods[] = {
+    {"is_set", (PyCFunction)event_is_set, METH_NOARGS, NULL},
+    {"set", (PyCFunction)event_set, METH_NOARGS, NULL},
+    {"wait", (PyCFunction)event_wait, METH_VARARGS, NULL},
+    {NULL, NULL} /* sentinel */
+};
+
+static PyType_Slot event_type_slots[] = {
+    {Py_tp_repr, (reprfunc)event_repr},
+    {Py_tp_methods, event_methods},
+    {Py_tp_alloc, PyType_GenericAlloc},
+    {Py_tp_dealloc, (destructor)event_dealloc},
+    {Py_tp_new, event_new},
+    {0, 0},
+};
+
+static PyType_Spec event_type_spec = {
+    .name = "_thread.Event",
+    .basicsize = sizeof(PyEventObject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = event_type_slots,
+};
 
 // _ThreadHandle type
 
@@ -1272,11 +1392,24 @@ PyDoc_STRVAR(daemon_threads_allowed_doc,
 Return True if daemon threads are allowed in the current interpreter,\n\
 and False otherwise.\n");
 
+static _PyEventRc *
+unpack_or_create_event(PyObject *op)
+{
+    if (op) {
+        _PyEventRc *event = ((PyEventObject *)op)->event;
+        _PyEventRc_Incref(event);
+        return event;
+    }
+    else {
+        return _PyEventRc_New();
+    }
+}
+
 static int
-do_start_new_thread(thread_module_state* state,
-                    PyObject *func, PyObject* args, PyObject* kwargs,
-                    int joinable,
-                    PyThread_ident_t* ident, PyThread_handle_t* handle)
+do_start_new_thread(thread_module_state *state, PyObject *func, PyObject *args,
+                    PyObject *kwargs, int joinable, PyThread_ident_t *ident,
+                    PyThread_handle_t *handle, PyObject *done_event,
+                    int daemon)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (!_PyInterpreterState_HasFeature(interp, Py_RTFLAGS_THREADS)) {
@@ -1298,7 +1431,15 @@ do_start_new_thread(thread_module_state* state,
         PyErr_NoMemory();
         return -1;
     }
-    boot->tstate = _PyThreadState_New(interp, _PyThreadState_WHENCE_THREADING);
+    _PyEventRc *event = unpack_or_create_event(done_event);
+    if (event == NULL) {
+        PyMem_RawFree(boot);
+        PyErr_NoMemory();
+        return -1;
+    }
+    boot->tstate = _PyThreadState_NewWithEvent(
+        interp, _PyThreadState_WHENCE_THREADING, event);
+    _PyEventRc_Decref(event);
     if (boot->tstate == NULL) {
         PyMem_RawFree(boot);
         if (!PyErr_Occurred()) {
@@ -1306,6 +1447,7 @@ do_start_new_thread(thread_module_state* state,
         }
         return -1;
     }
+    boot->tstate->is_daemon = daemon;
     boot->func = Py_NewRef(func);
     boot->args = Py_NewRef(args);
     boot->kwargs = Py_XNewRef(kwargs);
@@ -1328,14 +1470,20 @@ do_start_new_thread(thread_module_state* state,
 }
 
 static PyObject *
-thread_PyThread_start_new_thread(PyObject *module, PyObject *fargs)
+thread_PyThread_start_new_thread(PyObject *module, PyObject *fargs,
+                                 PyObject *fkwargs)
 {
+    PyObject *done_event = NULL;
+    static char *keywords[] = {"function",   "args",   "kwargs",
+                               "done_event", "daemon", NULL};
     PyObject *func, *args, *kwargs = NULL;
+    int daemon = 0;
     thread_module_state *state = get_thread_state(module);
-
-    if (!PyArg_UnpackTuple(fargs, "start_new_thread", 2, 3,
-                           &func, &args, &kwargs))
+    if (!PyArg_ParseTupleAndKeywords(
+            fargs, fkwargs, "OO|OO!p:start_new_thread", keywords, &func, &args,
+            &kwargs, state->event_type, &done_event)) {
         return NULL;
+    }
     if (!PyCallable_Check(func)) {
         PyErr_SetString(PyExc_TypeError,
                         "first arg must be callable");
@@ -1352,22 +1500,23 @@ thread_PyThread_start_new_thread(PyObject *module, PyObject *fargs)
         return NULL;
     }
 
-    if (PySys_Audit("_thread.start_new_thread", "OOO",
-                    func, args, kwargs ? kwargs : Py_None) < 0) {
+    if (PySys_Audit("_thread.start_new_thread", "OOOOi", func, args,
+                    kwargs ? kwargs : Py_None,
+                    done_event ? done_event : Py_None, daemon) < 0) {
         return NULL;
     }
 
     PyThread_ident_t ident = 0;
     PyThread_handle_t handle;
     if (do_start_new_thread(state, func, args, kwargs, /*joinable=*/ 0,
-                            &ident, &handle)) {
+                            &ident, &handle, done_event, daemon)) {
         return NULL;
     }
     return PyLong_FromUnsignedLongLong(ident);
 }
 
 PyDoc_STRVAR(start_new_doc,
-"start_new_thread(function, args[, kwargs])\n\
+"start_new_thread(function, args[, kwargs[, done_event[, daemon]]])\n\
 (start_new() is an obsolete synonym)\n\
 \n\
 Start a new thread and return its identifier.\n\
@@ -1377,12 +1526,24 @@ tuple args and keyword arguments taken from the optional dictionary\n\
 kwargs.  The thread exits when the function returns; the return value\n\
 is ignored.  The thread will also exit when the function raises an\n\
 unhandled exception; a stack trace will be printed unless the exception\n\
-is SystemExit.\n");
+is SystemExit. The optional done_event will be set when the thread is\n\
+finished. The runtime will not wait for the thread to exit when shutting\n\
+down if daemon is truthy.\n");
 
 static PyObject *
-thread_PyThread_start_joinable_thread(PyObject *module, PyObject *func)
+thread_PyThread_start_joinable_thread(PyObject *module, PyObject *fargs,
+                                      PyObject *fkwargs)
 {
+    PyObject *done_event = NULL;
+    static char *keywords[] = {"function", "done_event", "daemon", NULL};
+    PyObject *func = NULL;
+    int daemon = 0;
     thread_module_state *state = get_thread_state(module);
+    if (!PyArg_ParseTupleAndKeywords(
+            fargs, fkwargs, "O|O!p:start_joinable_thread", keywords, &func,
+            state->event_type, &done_event, &daemon)) {
+        return NULL;
+    }
 
     if (!PyCallable_Check(func)) {
         PyErr_SetString(PyExc_TypeError,
@@ -1390,7 +1551,8 @@ thread_PyThread_start_joinable_thread(PyObject *module, PyObject *func)
         return NULL;
     }
 
-    if (PySys_Audit("_thread.start_joinable_thread", "O", func) < 0) {
+    if (PySys_Audit("_thread.start_joinable_thread", "OOi", func,
+                    done_event ? done_event : Py_None, daemon) < 0) {
         return NULL;
     }
 
@@ -1404,7 +1566,7 @@ thread_PyThread_start_joinable_thread(PyObject *module, PyObject *func)
         return NULL;
     }
     if (do_start_new_thread(state, func, args, /*kwargs=*/ NULL, /*joinable=*/ 1,
-                            &hobj->ident, &hobj->handle)) {
+                            &hobj->ident, &hobj->handle, done_event, daemon)) {
         Py_DECREF(args);
         Py_DECREF(hobj);
         return NULL;
@@ -1415,7 +1577,7 @@ thread_PyThread_start_joinable_thread(PyObject *module, PyObject *func)
 }
 
 PyDoc_STRVAR(start_joinable_doc,
-"start_joinable_thread(function)\n\
+"start_joinable_thread(function[, done_event[, daemon]])\n\
 \n\
 *For internal use only*: start a new thread.\n\
 \n\
@@ -1423,7 +1585,9 @@ Like start_new_thread(), this starts a new thread calling the given function.\n\
 Unlike start_new_thread(), this returns a handle object with methods to join\n\
 or detach the given thread.\n\
 This function is not for third-party code, please use the\n\
-`threading` module instead.\n");
+`threading` module instead. The optional done_event will be set when the thread\n\
+is finished. During finalization the runtime will not wait for the thread\n\
+to exit if daemon is truthy.\n");
 
 static PyObject *
 thread_PyThread_exit_thread(PyObject *self, PyObject *Py_UNUSED(ignored))
@@ -1535,64 +1699,18 @@ yet finished.\n\
 This function is meant for internal and specialized purposes only.\n\
 In most applications `threading.enumerate()` should be used instead.");
 
-static void
-release_sentinel(void *weakref_raw)
-{
-    PyObject *weakref = _PyObject_CAST(weakref_raw);
-
-    /* Tricky: this function is called when the current thread state
-       is being deleted.  Therefore, only simple C code can safely
-       execute here. */
-    lockobject *lock = (lockobject *)_PyWeakref_GET_REF(weakref);
-    if (lock != NULL) {
-        if (lock->locked) {
-            PyThread_release_lock(lock->lock_lock);
-            lock->locked = 0;
-        }
-        Py_DECREF(lock);
-    }
-
-    /* Deallocating a weakref with a NULL callback only calls
-       PyObject_GC_Del(), which can't call any Python code. */
-    Py_DECREF(weakref);
-}
-
 static PyObject *
-thread__set_sentinel(PyObject *module, PyObject *Py_UNUSED(ignored))
+thread__get_done_event(PyObject *module, PyObject *Py_UNUSED(ignore))
 {
-    PyObject *wr;
-    PyThreadState *tstate = _PyThreadState_GET();
-    lockobject *lock;
-
-    if (tstate->on_delete_data != NULL) {
-        /* We must support the re-creation of the lock from a
-           fork()ed child. */
-        assert(tstate->on_delete == &release_sentinel);
-        wr = (PyObject *) tstate->on_delete_data;
-        tstate->on_delete = NULL;
-        tstate->on_delete_data = NULL;
-        Py_DECREF(wr);
-    }
-    lock = newlockobject(module);
-    if (lock == NULL)
-        return NULL;
-    /* The lock is owned by whoever called _set_sentinel(), but the weakref
-       hangs to the thread state. */
-    wr = PyWeakref_NewRef((PyObject *) lock, NULL);
-    if (wr == NULL) {
-        Py_DECREF(lock);
-        return NULL;
-    }
-    tstate->on_delete_data = (void *) wr;
-    tstate->on_delete = &release_sentinel;
-    return (PyObject *) lock;
+    PyThreadState *tstate = PyThreadState_Get();
+    thread_module_state *state = get_thread_state(module);
+    return wrap_event(state->event_type, tstate->done_event);
 }
 
-PyDoc_STRVAR(_set_sentinel_doc,
-"_set_sentinel() -> lock\n\
+PyDoc_STRVAR(_get_done_event_doc,
+"_get_done_event() -> _thread.Event\n\
 \n\
-Set a sentinel lock that will be released when the current thread\n\
-state is finalized (after it is untied from the interpreter).\n\
+Return the done event for the current thread.\n\
 \n\
 This is a private API for the threading module.");
 
@@ -1802,13 +1920,26 @@ PyDoc_STRVAR(thread__is_main_interpreter_doc,
 \n\
 Return True if the current interpreter is the main Python interpreter.");
 
+static PyObject *
+thread_shutdown(PyObject *self, PyObject *args)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    _PyInterpreterState_WaitForThreads(interp);
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(shutdown_doc,
+"_shutdown()\n\
+\n\
+Waits for all non-daemon threads (other than the calling thread) to stop.");
+
 static PyMethodDef thread_methods[] = {
-    {"start_new_thread",        (PyCFunction)thread_PyThread_start_new_thread,
-     METH_VARARGS, start_new_doc},
-    {"start_new",               (PyCFunction)thread_PyThread_start_new_thread,
-     METH_VARARGS, start_new_doc},
-    {"start_joinable_thread",   (PyCFunction)thread_PyThread_start_joinable_thread,
-     METH_O, start_joinable_doc},
+    {"start_new_thread",        _PyCFunction_CAST(thread_PyThread_start_new_thread),
+     METH_VARARGS | METH_KEYWORDS, start_new_doc},
+    {"start_new",               _PyCFunction_CAST(thread_PyThread_start_new_thread),
+     METH_VARARGS | METH_KEYWORDS, start_new_doc},
+    {"start_joinable_thread",   _PyCFunction_CAST(thread_PyThread_start_joinable_thread),
+     METH_VARARGS | METH_KEYWORDS, start_joinable_doc},
     {"daemon_threads_allowed",  (PyCFunction)thread_daemon_threads_allowed,
      METH_NOARGS, daemon_threads_allowed_doc},
     {"allocate_lock",           thread_PyThread_allocate_lock,
@@ -1821,6 +1952,8 @@ static PyMethodDef thread_methods[] = {
      METH_NOARGS, exit_doc},
     {"interrupt_main",          (PyCFunction)thread_PyThread_interrupt_main,
      METH_VARARGS, interrupt_doc},
+    {"_get_done_event",         thread__get_done_event,
+     METH_NOARGS, _get_done_event_doc},
     {"get_ident",               thread_get_ident,
      METH_NOARGS, get_ident_doc},
 #ifdef PY_HAVE_THREAD_NATIVE_ID
@@ -1831,12 +1964,12 @@ static PyMethodDef thread_methods[] = {
      METH_NOARGS, _count_doc},
     {"stack_size",              (PyCFunction)thread_stack_size,
      METH_VARARGS, stack_size_doc},
-    {"_set_sentinel",           thread__set_sentinel,
-     METH_NOARGS, _set_sentinel_doc},
     {"_excepthook",             thread_excepthook,
      METH_O, excepthook_doc},
     {"_is_main_interpreter",    thread__is_main_interpreter,
      METH_NOARGS, thread__is_main_interpreter_doc},
+    {"_shutdown",               thread_shutdown,
+     METH_NOARGS, shutdown_doc},
     {NULL,                      NULL}           /* sentinel */
 };
 
@@ -1926,6 +2059,16 @@ thread_module_exec(PyObject *module)
         return -1;
     }
 
+    // Event
+    state->event_type = (PyTypeObject *)PyType_FromModuleAndSpec(
+        module, &event_type_spec, NULL);
+    if (state->event_type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(module, state->event_type) < 0) {
+        return -1;
+    }
+
     return 0;
 }
 
@@ -1939,6 +2082,7 @@ thread_module_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->local_type);
     Py_VISIT(state->local_dummy_type);
     Py_VISIT(state->thread_handle_type);
+    Py_VISIT(state->event_type);
     return 0;
 }
 
@@ -1951,6 +2095,7 @@ thread_module_clear(PyObject *module)
     Py_CLEAR(state->local_type);
     Py_CLEAR(state->local_dummy_type);
     Py_CLEAR(state->thread_handle_type);
+    Py_CLEAR(state->event_type);
     return 0;
 }
 
