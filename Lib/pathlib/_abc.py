@@ -299,10 +299,13 @@ class PurePathBase:
         has no suffix, add given suffix.  If the given suffix is an empty
         string, remove the suffix from the path.
         """
+        stem = self.stem
         if not suffix:
-            return self.with_name(self.stem)
+            return self.with_name(stem)
+        elif not stem:
+            raise ValueError(f"{self!r} has an empty name")
         elif suffix.startswith('.') and len(suffix) > 1:
-            return self.with_name(self.stem + suffix)
+            return self.with_name(stem + suffix)
         else:
             raise ValueError(f"Invalid suffix {suffix!r}")
 

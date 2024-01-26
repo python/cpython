@@ -556,16 +556,9 @@ class DummyPurePathTest(unittest.TestCase):
         # Stripping suffix.
         self.assertEqual(P('a/b.py').with_suffix(''), P('a/b'))
         self.assertEqual(P('/a/b').with_suffix(''), P('/a/b'))
-
-    def test_with_suffix_empty(self):
-        P = self.cls
         # Path doesn't have a "filename" component.
-        self.assertEqual(P('').with_suffix('.gz'), P('.gz'))
-        self.assertEqual(P('.').with_suffix('.gz'), P('..gz'))
-        self.assertEqual(P('/').with_suffix('.gz'), P('/.gz'))
-
-    def test_with_suffix_seps(self):
-        P = self.cls
+        self.assertRaises(ValueError, P('').with_suffix, '.gz')
+        self.assertRaises(ValueError, P('/').with_suffix, '.gz')
         # Invalid suffix.
         self.assertRaises(ValueError, P('a/b').with_suffix, 'gz')
         self.assertRaises(ValueError, P('a/b').with_suffix, '/')
