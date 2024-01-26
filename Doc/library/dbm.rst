@@ -157,10 +157,6 @@ The :mod:`dbm.gnu` module provides an interface to the :abbr:`GDBM (GNU dbm)`
 library, similar to the :mod:`dbm.ndbm` module, but with additional
 functionality like crash tolerance.
 
-:class:`!gdbm` objects behave similar to :term:`mappings <mapping>`,
-except that keys and values are always converted to :class:`bytes` before storing,
-and the :meth:`!items` and :meth:`!values` methods are not supported.
-
 .. note:: |incompat_note|
 
 .. exception:: error
@@ -207,8 +203,9 @@ and the :meth:`!items` and :meth:`!values` methods are not supported.
    The optional *mode* argument is the Unix mode of the file, used only when the
    database has to be created.  It defaults to octal ``0o666``.
 
-   In addition to the dictionary-like methods, :class:`gdbm` objects have the
-   following methods:
+   :class:`!gdbm` objects behave similar to :term:`mappings <mapping>`,
+   but :meth:`!items` and :meth:`!values` methods are not supported.
+   The following methods are also provided:
 
    .. versionchanged:: 3.11
       Accepts :term:`path-like object` for filename.
@@ -268,10 +265,6 @@ and the :meth:`!items` and :meth:`!values` methods are not supported.
 
 The :mod:`dbm.ndbm` module provides an interface to the
 :abbr:`NDBM (New Database Manager)` library.
-:class:`!ndbm` objects behave similar to :term:`mappings <mapping>`,
-except that keys and values are always stored as :class:`bytes`,
-and the :meth:`!items` and :meth:`!values` methods are not supported.
-
 This module can be used with the "classic" NDBM interface or the
 :abbr:`GDBM (GNU dbm)` compatibility interface.
 
@@ -315,8 +308,9 @@ This module can be used with the "classic" NDBM interface or the
    database has to be created.  It defaults to octal ``0o666`` (and will be
    modified by the prevailing umask).
 
-   In addition to the dictionary-like methods, :class:`!ndbm` objects
-   provide the following method:
+   :class:`!ndbm` objects behave similar to :term:`mappings <mapping>`,
+   but :meth:`!items` and :meth:`!values` methods are not supported.
+   The following methods are also provided:
 
    .. versionchanged:: 3.11
       Accepts :term:`path-like object` for filename.
@@ -353,8 +347,7 @@ This module can be used with the "classic" NDBM interface or the
 
 The :mod:`dbm.dumb` module provides a persistent dictionary-like interface which
 is written entirely in Python.  Unlike other modules such as :mod:`dbm.gnu` no
-external library is required.  As with other persistent mappings, the keys and
-values are always stored as bytes.
+external library is required.
 
 The module defines the following:
 
