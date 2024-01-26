@@ -435,11 +435,11 @@ error:
 static PyObject *
 list_repr(PyObject *self)
 {
-    PyListObject *v = (PyListObject *)self;
-    PyObject *ret = NULL;
-    if (PyList_GET_SIZE(v) == 0) {
+    if (PyList_GET_SIZE(self) == 0) {
         return PyUnicode_FromString("[]");
     }
+    PyListObject *v = (PyListObject *)self;
+    PyObject *ret = NULL;
     Py_BEGIN_CRITICAL_SECTION(v);
     ret = list_repr_impl(v);
     Py_END_CRITICAL_SECTION();
