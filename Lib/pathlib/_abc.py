@@ -771,7 +771,7 @@ class PathBase(PurePathBase):
         filter_paths = False
         deduplicate_paths = False
         sep = self.pathmod.sep
-        paths = iter([self.joinpath('')] if self.is_dir() else [])
+        paths = iter([self] if self.is_dir() else [])
         while stack:
             part = stack.pop()
             if part in specials:
