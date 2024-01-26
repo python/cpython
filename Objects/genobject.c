@@ -1688,7 +1688,9 @@ _PyAsyncGen_Fini(_PyFreeListState *state)
     // With Py_GIL_DISABLED:
     // See `_Py_ClearFreeLists()` about why we only need to clear the freelists
     // for the current thread state.
+#ifndef Py_GIL_DISABLED
     _PyAsyncGen_ClearFreeLists(state, 1);
+#endif
 }
 
 
