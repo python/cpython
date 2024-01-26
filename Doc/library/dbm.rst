@@ -344,9 +344,9 @@ to locate the appropriate header file to simplify building this module.
 
 --------------
 
-The :mod:`dbm.dumb` module provides a persistent :class:`dict`-like interface which
-is written entirely in Python.
-Unlike other :mod:`dbm` backends, such as :mod:`dbm.gnu` no,
+The :mod:`dbm.dumb` module provides a persistent :class:`dict`-like
+interface which is written entirely in Python.
+Unlike other :mod:`dbm` backends, such as :mod:`dbm.gnu` no
 external library is required.
 As with other persistent :term:`mappings <mapping>`,
 the keys and values are always stored as :class:`bytes`.
