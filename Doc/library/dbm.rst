@@ -179,6 +179,7 @@ or any other SQLite browser, including the SQLite CLI.
    :type filename: :term:`path-like object`
 
    :param str flag:
+
       * ``'r'`` (default), |flag_r|
       * ``'w'``, |flag_w|
       * ``'c'``, |flag_c|
