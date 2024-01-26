@@ -295,8 +295,9 @@ dealloc_extra(ElementObjectExtra *extra)
     for (i = 0; i < extra->length; i++)
         Py_DECREF(extra->children[i]);
 
-    if (extra->children != extra->_children)
+    if (extra->children != extra->_children) {
         PyMem_Free(extra->children);
+    }
 
     PyMem_Free(extra);
 }
@@ -496,13 +497,15 @@ element_resize(ElementObject* self, Py_ssize_t extra)
              * false alarm always assume at least one child to be safe.
              */
             children = PyMem_Realloc(self->extra->children,
-                                        size * sizeof(PyObject*));
-            if (!children)
+                                     size * sizeof(PyObject*));
+            if (!children) {
                 goto nomemory;
+            }
         } else {
             children = PyMem_Malloc(size * sizeof(PyObject*));
-            if (!children)
+            if (!children) {
                 goto nomemory;
+            }
             /* copy existing children from static area to malloc buffer */
             memcpy(children, self->extra->children,
                    self->extra->length * sizeof(PyObject*));
