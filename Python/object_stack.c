@@ -12,7 +12,7 @@ static struct _Py_object_stack_state *
 get_state(void)
 {
     _PyFreeListState *state = _PyFreeListState_GET();
-    return &state->object_stack_state;
+    return &state->object_stacks;
 }
 
 _PyObjectStackChunk *
@@ -76,7 +76,7 @@ _PyObjectStackChunk_ClearFreeList(_PyFreeListState *free_lists, int is_finalizat
         return;
     }
 
-    struct _Py_object_stack_state *state = &free_lists->object_stack_state;
+    struct _Py_object_stack_state *state = &free_lists->object_stacks;
     while (state->numfree > 0) {
         _PyObjectStackChunk *buf = state->free_list;
         state->free_list = buf->prev;
