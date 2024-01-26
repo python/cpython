@@ -279,7 +279,9 @@ _PyDict_Fini(_PyFreeListState *freelist_state)
     // With Py_GIL_DISABLED:
     // See `_Py_ClearFreeLists()` about why we only need to clear the freelists
     // for the current thread state.
+#ifndef Py_GIL_DISABLED
     _PyDict_ClearFreeList(freelist_state, 1);
+#endif
 }
 
 static inline Py_hash_t
