@@ -402,6 +402,20 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
                 self.assertEqual(t.utcoffset(), offset.utcoffset)
                 self.assertEqual(t.dst(), offset.dst)
 
+    def test_cache_exception(self):
+        class ComparisonError(Exception):
+            pass
+
+        class Incomparable(str):
+            def __eq__(self, other):
+                raise ComparisonError
+            def __hash__(self):
+                return id(self)
+
+        key = Incomparable("America/Los_Angeles")
+        with self.assertRaises(ComparisonError):
+            self.klass(key)
+
 
 class CZoneInfoTest(ZoneInfoTest):
     module = c_zoneinfo
@@ -1504,6 +1518,33 @@ class ZoneInfoCacheTest(TzPathUserMixin, ZoneInfoTestBase):
         self.assertIsNot(la0, la1)
         self.assertIsNot(dub0, dub1)
         self.assertIs(tok0, tok1)
+
+    def test_clear_cache_refleak(self):
+        class ComparisonError(Exception):
+            pass
+
+        class Stringy(str):
+            def __new__(cls, value):
+                rv = super().__new__(cls, value)
+                rv.allow_comparisons = True
+                return rv
+            def __eq__(self, other):
+                if not self.allow_comparisons:
+                    raise ComparisonError
+                return super().__eq__(other)
+            def __hash__(self):
+                return hash(self[:])
+
+        key = Stringy("America/Los_Angeles")
+        self.klass(key)
+        key.allow_comparisons = False
+        try:
+            # Note: This is try/except rather than assertRaises because
+            # there is no guarantee that the key is even still in the cache,
+            # or that the key for the cache is the original `key` object.
+            self.klass.clear_cache(only_keys="America/Los_Angeles")
+        except ComparisonError:
+            pass
 
 
 class CZoneInfoCacheTest(ZoneInfoCacheTest):
