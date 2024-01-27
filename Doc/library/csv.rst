@@ -88,7 +88,7 @@ The :mod:`csv` module defines the following functions:
 
    Return a writer object responsible for converting the user's data into delimited
    strings on the given file-like object.  *csvfile* can be any object with a
-   :meth:`write <io.TextIOBase.write>` method.  If *csvfile* is a file object, it should be opened with
+   :meth:`~io.TextIOBase.write` method.  If *csvfile* is a file object, it should be opened with
    ``newline=''`` [1]_.  An optional *dialect*
    parameter can be given which is used to define a set of parameters specific to a
    particular CSV dialect.  It may be an instance of a subclass of the
@@ -197,10 +197,10 @@ The :mod:`csv` module defines the following classes:
    Create an object which operates like a regular writer but maps dictionaries
    onto output rows.  The *fieldnames* parameter is a :mod:`sequence
    <collections.abc>` of keys that identify the order in which values in the
-   dictionary passed to the :meth:`writerow<csvwriter.writerow>` method are written to file
+   dictionary passed to the :meth:`~csvwriter.writerow` method are written to file
    *f*.  The optional *restval* parameter specifies the value to be
    written if the dictionary is missing a key in *fieldnames*.  If the
-   dictionary passed to the :meth:`writerow<csvwriter.writerow>` method contains a key not found in
+   dictionary passed to the :meth:`~csvwriter.writerow` method contains a key not found in
    *fieldnames*, the optional *extrasaction* parameter indicates what action to
    take.
    If it is set to ``'raise'``, the default value, a :exc:`ValueError`
