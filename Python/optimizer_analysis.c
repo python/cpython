@@ -951,7 +951,6 @@ uop_abstract_interpret_single_inst(
 
 #define CURRENT_OPERAND() (operand)
 
-#define STAT_INC(opname, name) ((void)0)
 #define TIER_TWO_ONLY ((void)0)
 
     int oparg = inst->oparg;
