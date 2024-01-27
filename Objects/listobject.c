@@ -501,7 +501,7 @@ static PyObject *
 list_slice(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
 {
     PyListObject *np;
-    PyObject **src, **dest;
+    PyObject **src;
     Py_ssize_t i, len;
     len = ihigh - ilow;
     if (len <= 0) {
@@ -512,7 +512,6 @@ list_slice(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
         return NULL;
 
     src = a->ob_item + ilow;
-    dest = np->ob_item;
     for (i = 0; i < len; i++) {
         PyObject *v = src[i];
         _Py_SET_ITEMREF(np, i, v);
