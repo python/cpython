@@ -327,7 +327,7 @@ modules, and one that knows how to import modules from an :term:`import path`
    finders replaced :meth:`~importlib.abc.MetaPathFinder.find_module`, which
    is now deprecated.  While it will continue to work without change, the
    import machinery will try it only if the finder does not implement
-   ``find_spec()``.
+   :meth:`~importlib.abc.MetaPathFinder.find_spec`.
 
 .. versionchanged:: 3.10
    Use of :meth:`~importlib.abc.MetaPathFinder.find_module` by the import system
@@ -795,7 +795,7 @@ attributes on package objects are also used.  These provide additional ways
 that the import machinery can be customized.
 
 :data:`sys.path` contains a list of strings providing search locations for
-modules and packages.  It is initialized from the :data:`PYTHONPATH`
+modules and packages.  It is initialized from the :envvar:`PYTHONPATH`
 environment variable and various other installation- and
 implementation-specific defaults.  Entries in :data:`sys.path` can name
 directories on the file system, zip files, and potentially other "locations"
