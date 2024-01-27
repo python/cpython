@@ -248,6 +248,7 @@ ir_frame_push_info(_Py_UOpsAbstractInterpContext *ctx, _PyUOpInstruction *push_f
     DPRINTF(3, "ir_frame_push_info\n");
 #endif
     if (ctx->frame_info.curr_number >= ctx->frame_info.max_number) {
+        OPT_STAT_INC(optimizer_failure_reason_no_memory);
         DPRINTF(1, "ir_frame_push_info: ran out of space \n");
         return NULL;
     }
@@ -531,6 +532,7 @@ char *uop_debug = Py_GETENV(DEBUG_ENV);
         uint64_t func_version = sym_type_get_refinement(callable_sym, PYFUNCTION_TYPE_VERSION_TYPE);
         PyFunctionObject *func = _PyFunction_LookupByVersion((uint32_t)func_version);
         if (func == NULL) {
+            OPT_STAT_INC(optimizer_failure_reason_null_function);
             DPRINTF(1, "error: _PUSH_FRAME cannot find func version\n");
             return NULL;
         }
@@ -607,12 +609,14 @@ _Py_UOpsSymbolicValue_New(_Py_UOpsAbstractInterpContext *ctx,
     _Py_UOpsSymbolicValue *self = (_Py_UOpsSymbolicValue *)ctx->s_arena.curr_available;
     ctx->s_arena.curr_available += sizeof(_Py_UOpsSymbolicValue) + sizeof(_Py_UOpsSymbolicValue *);
     if (ctx->s_arena.curr_available >= ctx->s_arena.end) {
+        OPT_STAT_INC(optimizer_failure_reason_no_memory);
         DPRINTF(1, "out of space for symbolic expression\n");
         return NULL;
     }
 
     _Py_UOpsSymType *ty = &ctx->t_arena.arena[ctx->t_arena.ty_curr_number];
     if (ctx->t_arena.ty_curr_number >= ctx->t_arena.ty_max_number) {
+        OPT_STAT_INC(optimizer_failure_reason_no_memory);
         DPRINTF(1, "out of space for symbolic expression type\n");
         return NULL;
     }
@@ -1429,6 +1433,7 @@ _Py_uop_analyze_and_optimize(
     int curr_stacklen
 )
 {
+    OPT_STAT_INC(optimizer_attempts);
     _PyUOpInstruction *temp_writebuffer = NULL;
     bool err_occurred = false;
     bool done = false;
@@ -1469,6 +1474,7 @@ _Py_uop_analyze_and_optimize(
         after++;
     }
 
+    OPT_STAT_INC(optimizer_successes);
     return 0;
 error:
     // The only valid error we can raise is MemoryError.
