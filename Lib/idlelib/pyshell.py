@@ -63,27 +63,24 @@ try:  # In case IDLE started with -n.
     quit.eof = eof
 except NameError: # In case python started with -S.
     pass
-
-# Override warnings module to write to warning_stream.  Initialize to send IDLE
-# internal warnings to the console.  ScriptBinding.check_syntax() will
-# temporarily redirect the stream to the shell window to display warnings when
-# checking user's code.
+  
+# Override warnings.show_warning to write to IDLE format to warning_stream.
+# Initially send IDLE internal warnings to the console, if present.
+# Send to Shell.stderr (traceback stream) when available.
 warning_stream = sys.__stderr__  # None, at least on Windows, if no console.
 
 def idle_showwarning(
         message, category, filename, lineno, file=None, line=None):
-    """Show Idle-format warning (after replacing warnings.showwarning).
+    """Print Idle-format warning to warning_stream.
 
-    The differences are the formatter called, the file=None replacement,
-    which can be None, the capture of the consequence AttributeError,
-    and the output of a hard-coded prompt.
+    Difference from show_warning are the formatter, the file=None
+    replacement, and the capture of the consequence AttributeError.
     """
     if file is None:
         file = warning_stream
     try:
         file.write(idle_formatwarning(
                 message, category, filename, lineno, line=line))
-        file.write(">>> ")
     except (AttributeError, OSError):
         pass  # if file (probably __stderr__) is invalid, skip warning.
 
@@ -684,13 +681,12 @@ class ModifiedInterpreter(InteractiveInterpreter):
             self.runcode(code)
 
     def runsource(self, source):
-        "Extend base class method: Stuff the source in the line cache first"
+        "Return overriden base call after caching source."
         filename = self.stuffsource(source)
-        # at the moment, InteractiveInterpreter expects str
-        assert isinstance(source, str)
-        # InteractiveInterpreter.runsource() calls its runcode() method,
-        # which is overridden (see below)
-        return InteractiveInterpreter.runsource(self, source, filename)
+        # II.runsource() calls .runcode(), overridden below.
+        with warnings.catch_warnings():
+            warnings.filterwarnings('once')
+            return InteractiveInterpreter.runsource(self, source, filename)
 
     def stuffsource(self, source):
         "Stuff source in the filename cache"
@@ -937,6 +933,8 @@ class PyShell(OutputWindow):
             sys.stdout = self.stdout
             sys.stderr = self.stderr
             sys.stdin = self.stdin
+        global warning_stream
+        warning_stream = self.stderr
         try:
             # page help() text to shell.
             import pydoc # import must be done here to capture i/o rebinding.
@@ -1119,10 +1117,12 @@ class PyShell(OutputWindow):
         self.close_debugger()
         if use_subprocess:
             self.interp.kill_subprocess()
-        # Restore std streams
+        # Restore std streams and warning_stream
         sys.stdout = self.save_stdout
         sys.stderr = self.save_stderr
         sys.stdin = self.save_stdin
+        global warning_stream
+        warning_stream = sys.__stderr__
         # Break cycles
         self.interp = None
         self.console = None
