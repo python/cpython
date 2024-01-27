@@ -2334,8 +2334,10 @@ context_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 #endif
 
 #ifdef TLS1_3_VERSION
-    self->post_handshake_auth = 0;
-    SSL_CTX_set_post_handshake_auth(self->ctx, self->post_handshake_auth);
+    {
+        self->post_handshake_auth = 0;
+        SSL_CTX_set_post_handshake_auth(self->ctx, self->post_handshake_auth);
+    }
 #endif
 
     return (PyObject *)self;
@@ -3575,6 +3577,13 @@ static PyGetSetDef context_getsetlist[] = {
 #endif
     {"verify_mode", (getter) get_verify_mode,
                     (setter) set_verify_mode, NULL},
+    {"post_handshake_auth", (getter) get_post_handshake_auth,
+#ifdef TLS1_3_VERSION
+                            (setter) set_post_handshake_auth,
+#else
+                            NULL,
+#endif
+    },
     {NULL},            /* sentinel */
 };
 
