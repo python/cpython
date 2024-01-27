@@ -2690,6 +2690,15 @@ set_check_hostname(PySSLContext *self, PyObject *arg, void *c)
     return 0;
 }
 
+static PyObject *
+get_post_handshake_auth(PySSLContext *self, void *c) {
+#if TLS1_3_VERSION
+    return PyBool_FromLong(self->post_handshake_auth);
+#else
+    Py_RETURN_NONE;
+#endif
+}
+
 #if TLS1_3_VERSION
 static int
 set_post_handshake_auth(PySSLContext *self, PyObject *arg, void *c) {
