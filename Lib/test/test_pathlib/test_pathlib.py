@@ -1232,6 +1232,8 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
             list(p.glob(''))
         with self.assertRaisesRegex(ValueError, 'Unacceptable pattern'):
             list(p.glob('.'))
+        with self.assertRaisesRegex(ValueError, 'Unacceptable pattern'):
+            list(p.glob('./'))
 
     def test_glob_many_open_files(self):
         depth = 30
