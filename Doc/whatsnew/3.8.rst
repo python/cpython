@@ -1623,8 +1623,8 @@ Build and C API Changes
   allocation or deallocation may need to be adjusted.
   (Contributed by Eddie Elizondo in :issue:`35810`.)
 
-* The new function :c:func:`PyCode_NewWithPosOnlyArgs` allows to create
-  code objects like :c:func:`PyCode_New`, but with an extra *posonlyargcount*
+* The new function :c:func:`!PyCode_NewWithPosOnlyArgs` allows to create
+  code objects like :c:func:`!PyCode_New`, but with an extra *posonlyargcount*
   parameter for indicating the number of positional-only arguments.
   (Contributed by Pablo Galindo in :issue:`37221`.)
 

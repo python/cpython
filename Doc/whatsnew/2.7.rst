@@ -2130,7 +2130,7 @@ Changes to Python's build process and to the C API include:
   only the filename, function name, and first line number are required.
   This is useful for extension modules that are attempting to
   construct a more useful traceback stack.  Previously such
-  extensions needed to call :c:func:`PyCode_New`, which had many
+  extensions needed to call :c:func:`!PyCode_New`, which had many
   more arguments.  (Added by Jeffrey Yasskin.)
 
 * New function: :c:func:`PyErr_NewExceptionWithDoc` creates a new
