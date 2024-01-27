@@ -684,7 +684,7 @@ The ``isocalendar()`` methods of :class:`datetime.date` and
 .. nonce: t6kW_1
 .. section: Documentation
 
-Add version of removal for explicit passing of coros to `asyncio.wait()`'s
+Add version of removal for explicit passing of coros to ``asyncio.wait()``'s
 documentation
 
 ..

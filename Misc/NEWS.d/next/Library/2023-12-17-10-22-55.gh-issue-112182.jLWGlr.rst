@@ -1,0 +1,3 @@
+:meth:`asyncio.futures.Future.set_exception()` now transforms :exc:`StopIteration`
+into :exc:`RuntimeError` instead of hanging or other misbehavior. Patch
+contributed by Jamie Phan.

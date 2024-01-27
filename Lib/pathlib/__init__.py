@@ -9,6 +9,10 @@ import io
 import ntpath
 import os
 import posixpath
+import sys
+import warnings
+from itertools import chain
+from _collections_abc import Sequence
 
 try:
     import pwd
@@ -29,6 +33,35 @@ __all__ = [
     ]
 
 
+class _PathParents(Sequence):
+    """This object provides sequence-like access to the logical ancestors
+    of a path.  Don't try to construct it yourself."""
+    __slots__ = ('_path', '_drv', '_root', '_tail')
+
+    def __init__(self, path):
+        self._path = path
+        self._drv = path.drive
+        self._root = path.root
+        self._tail = path._tail
+
+    def __len__(self):
+        return len(self._tail)
+
+    def __getitem__(self, idx):
+        if isinstance(idx, slice):
+            return tuple(self[i] for i in range(*idx.indices(len(self))))
+
+        if idx >= len(self) or idx < -len(self):
+            raise IndexError(idx)
+        if idx < 0:
+            idx += len(self)
+        return self._path._from_parsed_parts(self._drv, self._root,
+                                             self._tail[:-idx - 1])
+
+    def __repr__(self):
+        return "<{}.parents>".format(type(self._path).__name__)
+
+
 UnsupportedOperation = _abc.UnsupportedOperation
 
 
@@ -43,6 +76,20 @@ class PurePath(_abc.PurePathBase):
     """
 
     __slots__ = (
+        # The `_drv`, `_root` and `_tail_cached` slots store parsed and
+        # normalized parts of the path. They are set when any of the `drive`,
+        # `root` or `_tail` properties are accessed for the first time. The
+        # three-part division corresponds to the result of
+        # `os.path.splitroot()`, except that the tail is further split on path
+        # separators (i.e. it is a list of strings), and that the root and
+        # tail are normalized.
+        '_drv', '_root', '_tail_cached',
+
+        # The `_str` slot stores the string representation of the path,
+        # computed from the drive, root and tail when `__str__()` is called
+        # for the first time. It's used to implement `_str_normcase`
+        '_str',
+
         # The `_str_normcase_cached` slot stores the string path with
         # normalized case. It is set when the `_str_normcase` property is
         # accessed for the first time. It's used to implement `__eq__()`
@@ -93,7 +140,6 @@ class PurePath(_abc.PurePathBase):
                 paths.append(path)
         # Avoid calling super().__init__, as an optimisation
         self._raw_paths = paths
-        self._resolving = False
 
     def __reduce__(self):
         # Using the parts tuple helps share interned path parts
@@ -164,6 +210,182 @@ class PurePath(_abc.PurePathBase):
             return NotImplemented
         return self._parts_normcase >= other._parts_normcase
 
+    def __str__(self):
+        """Return the string representation of the path, suitable for
+        passing to system calls."""
+        try:
+            return self._str
+        except AttributeError:
+            self._str = self._format_parsed_parts(self.drive, self.root,
+                                                  self._tail) or '.'
+            return self._str
+
+    @classmethod
+    def _format_parsed_parts(cls, drv, root, tail):
+        if drv or root:
+            return drv + root + cls.pathmod.sep.join(tail)
+        elif tail and cls.pathmod.splitdrive(tail[0])[0]:
+            tail = ['.'] + tail
+        return cls.pathmod.sep.join(tail)
+
+    def _from_parsed_parts(self, drv, root, tail):
+        path_str = self._format_parsed_parts(drv, root, tail)
+        path = self.with_segments(path_str)
+        path._str = path_str or '.'
+        path._drv = drv
+        path._root = root
+        path._tail_cached = tail
+        return path
+
+    @classmethod
+    def _parse_path(cls, path):
+        if not path:
+            return '', '', []
+        sep = cls.pathmod.sep
+        altsep = cls.pathmod.altsep
+        if altsep:
+            path = path.replace(altsep, sep)
+        drv, root, rel = cls.pathmod.splitroot(path)
+        if not root and drv.startswith(sep) and not drv.endswith(sep):
+            drv_parts = drv.split(sep)
+            if len(drv_parts) == 4 and drv_parts[2] not in '?.':
+                # e.g. //server/share
+                root = sep
+            elif len(drv_parts) == 6:
+                # e.g. //?/unc/server/share
+                root = sep
+        parsed = [sys.intern(str(x)) for x in rel.split(sep) if x and x != '.']
+        return drv, root, parsed
+
+    @property
+    def _raw_path(self):
+        """The joined but unnormalized path."""
+        paths = self._raw_paths
+        if len(paths) == 0:
+            path = ''
+        elif len(paths) == 1:
+            path = paths[0]
+        else:
+            path = self.pathmod.join(*paths)
+        return path
+
+    @property
+    def drive(self):
+        """The drive prefix (letter or UNC path), if any."""
+        try:
+            return self._drv
+        except AttributeError:
+            self._drv, self._root, self._tail_cached = self._parse_path(self._raw_path)
+            return self._drv
+
+    @property
+    def root(self):
+        """The root of the path, if any."""
+        try:
+            return self._root
+        except AttributeError:
+            self._drv, self._root, self._tail_cached = self._parse_path(self._raw_path)
+            return self._root
+
+    @property
+    def _tail(self):
+        try:
+            return self._tail_cached
+        except AttributeError:
+            self._drv, self._root, self._tail_cached = self._parse_path(self._raw_path)
+            return self._tail_cached
+
+    @property
+    def anchor(self):
+        """The concatenation of the drive and root, or ''."""
+        return self.drive + self.root
+
+    @property
+    def parts(self):
+        """An object providing sequence-like access to the
+        components in the filesystem path."""
+        if self.drive or self.root:
+            return (self.drive + self.root,) + tuple(self._tail)
+        else:
+            return tuple(self._tail)
+
+    @property
+    def parent(self):
+        """The logical parent of the path."""
+        drv = self.drive
+        root = self.root
+        tail = self._tail
+        if not tail:
+            return self
+        return self._from_parsed_parts(drv, root, tail[:-1])
+
+    @property
+    def parents(self):
+        """A sequence of this path's logical parents."""
+        # The value of this property should not be cached on the path object,
+        # as doing so would introduce a reference cycle.
+        return _PathParents(self)
+
+    @property
+    def name(self):
+        """The final path component, if any."""
+        tail = self._tail
+        if not tail:
+            return ''
+        return tail[-1]
+
+    def with_name(self, name):
+        """Return a new path with the file name changed."""
+        m = self.pathmod
+        if not name or m.sep in name or (m.altsep and m.altsep in name) or name == '.':
+            raise ValueError(f"Invalid name {name!r}")
+        tail = self._tail.copy()
+        if not tail:
+            raise ValueError(f"{self!r} has an empty name")
+        tail[-1] = name
+        return self._from_parsed_parts(self.drive, self.root, tail)
+
+    def relative_to(self, other, /, *_deprecated, walk_up=False):
+        """Return the relative path to another path identified by the passed
+        arguments.  If the operation is not possible (because this is not
+        related to the other path), raise ValueError.
+
+        The *walk_up* parameter controls whether `..` may be used to resolve
+        the path.
+        """
+        if _deprecated:
+            msg = ("support for supplying more than one positional argument "
+                   "to pathlib.PurePath.relative_to() is deprecated and "
+                   "scheduled for removal in Python 3.14")
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
+            other = self.with_segments(other, *_deprecated)
+        elif not isinstance(other, PurePath):
+            other = self.with_segments(other)
+        for step, path in enumerate(chain([other], other.parents)):
+            if path == self or path in self.parents:
+                break
+            elif not walk_up:
+                raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
+            elif path.name == '..':
+                raise ValueError(f"'..' segment in {str(other)!r} cannot be walked")
+        else:
+            raise ValueError(f"{str(self)!r} and {str(other)!r} have different anchors")
+        parts = ['..'] * step + self._tail[len(path._tail):]
+        return self._from_parsed_parts('', '', parts)
+
+    def is_relative_to(self, other, /, *_deprecated):
+        """Return True if the path is relative to another path or False.
+        """
+        if _deprecated:
+            msg = ("support for supplying more than one argument to "
+                   "pathlib.PurePath.is_relative_to() is deprecated and "
+                   "scheduled for removal in Python 3.14")
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
+            other = self.with_segments(other, *_deprecated)
+        elif not isinstance(other, PurePath):
+            other = self.with_segments(other)
+        return other == self or other in self.parents
+
     def as_uri(self):
         """Return the path as a URI."""
         if not self.is_absolute():
@@ -230,7 +452,6 @@ class Path(_abc.PathBase, PurePath):
 
     def __init__(self, *args, **kwargs):
         if kwargs:
-            import warnings
             msg = ("support for supplying keyword arguments to pathlib.PurePath "
                    "is deprecated and scheduled for removal in Python {remove}")
             warnings._deprecated("pathlib.PurePath(**kwargs)", msg, remove=(3, 14))
@@ -299,9 +520,71 @@ class Path(_abc.PathBase, PurePath):
     def _scandir(self):
         return os.scandir(self)
 
-    def _make_child_entry(self, entry):
+    def _make_child_entry(self, entry, is_dir=False):
         # Transform an entry yielded from _scandir() into a path object.
-        return self._make_child_relpath(entry.name)
+        path_str = entry.name if str(self) == '.' else entry.path
+        path = self.with_segments(path_str)
+        path._str = path_str
+        path._drv = self.drive
+        path._root = self.root
+        path._tail_cached = self._tail + [entry.name]
+        return path
+
+    def _make_child_relpath(self, name):
+        path_str = str(self)
+        tail = self._tail
+        if tail:
+            path_str = f'{path_str}{self.pathmod.sep}{name}'
+        elif path_str != '.':
+            path_str = f'{path_str}{name}'
+        else:
+            path_str = name
+        path = self.with_segments(path_str)
+        path._str = path_str
+        path._drv = self.drive
+        path._root = self.root
+        path._tail_cached = tail + [name]
+        return path
+
+    def glob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
+        """Iterate over this subtree and yield all existing files (of any
+        kind, including directories) matching the given relative pattern.
+        """
+        sys.audit("pathlib.Path.glob", self, pattern)
+        if pattern.endswith('**'):
+            # GH-70303: '**' only matches directories. Add trailing slash.
+            warnings.warn(
+                "Pattern ending '**' will match files and directories in a "
+                "future Python release. Add a trailing slash to match only "
+                "directories and remove this warning.",
+                FutureWarning, 2)
+            pattern = f'{pattern}/'
+        return _abc.PathBase.glob(
+            self, pattern, case_sensitive=case_sensitive, follow_symlinks=follow_symlinks)
+
+    def rglob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
+        """Recursively yield all existing files (of any kind, including
+        directories) matching the given relative pattern, anywhere in
+        this subtree.
+        """
+        sys.audit("pathlib.Path.rglob", self, pattern)
+        if pattern.endswith('**'):
+            # GH-70303: '**' only matches directories. Add trailing slash.
+            warnings.warn(
+                "Pattern ending '**' will match files and directories in a "
+                "future Python release. Add a trailing slash to match only "
+                "directories and remove this warning.",
+                FutureWarning, 2)
+            pattern = f'{pattern}/'
+        pattern = f'**/{pattern}'
+        return _abc.PathBase.glob(
+            self, pattern, case_sensitive=case_sensitive, follow_symlinks=follow_symlinks)
+
+    def walk(self, top_down=True, on_error=None, follow_symlinks=False):
+        """Walk the directory tree from this directory, similar to os.walk()."""
+        sys.audit("pathlib.Path.walk", self, on_error, follow_symlinks)
+        return _abc.PathBase.walk(
+            self, top_down=top_down, on_error=on_error, follow_symlinks=follow_symlinks)
 
     def absolute(self):
         """Return an absolute version of this path

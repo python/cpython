@@ -82,6 +82,14 @@ def spdx_id(value: str) -> str:
     return re.sub(r"[^a-zA-Z0-9.\-]+", "-", value)
 
 
+def error_if(value: bool, error_message: str) -> None:
+    """Prints an error if a comparison fails along with a link to the devguide"""
+    if value:
+        print(error_message)
+        print("See 'https://devguide.python.org/developer-workflow/sbom' for more information.")
+        sys.exit(1)
+
+
 def filter_gitignored_paths(paths: list[str]) -> list[str]:
     """
     Filter out paths excluded by the gitignore file.
@@ -206,22 +214,47 @@ def main() -> None:
     discover_pip_sbom_package(sbom_data)
 
     # Ensure all packages in this tool are represented also in the SBOM file.
-    assert {package["name"] for package in sbom_data["packages"]} == set(PACKAGE_TO_FILES)
+    error_if(
+        {package["name"] for package in sbom_data["packages"]} != set(PACKAGE_TO_FILES),
+        "Packages defined in SBOM tool don't match those defined in SBOM file.",
+    )
 
     # Make a bunch of assertions about the SBOM data to ensure it's consistent.
     for package in sbom_data["packages"]:
-
         # Properties and ID must be properly formed.
-        assert set(package.keys()) == REQUIRED_PROPERTIES_PACKAGE
-        assert package["SPDXID"] == spdx_id(f"SPDXRef-PACKAGE-{package['name']}")
+        error_if(
+            "name" not in package,
+            "Package is missing the 'name' field"
+        )
+        error_if(
+            set(package.keys()) != REQUIRED_PROPERTIES_PACKAGE,
+            f"Package '{package['name']}' is missing required fields",
+        )
+        error_if(
+            package["SPDXID"] != spdx_id(f"SPDXRef-PACKAGE-{package['name']}"),
+            f"Package '{package['name']}' has a malformed SPDXID",
+        )
 
         # Version must be in the download and external references.
         version = package["versionInfo"]
-        assert version in package["downloadLocation"]
-        assert all(version in ref["referenceLocator"] for ref in package["externalRefs"])
+        error_if(
+            version not in package["downloadLocation"],
+            f"Version '{version}' for package '{package['name']} not in 'downloadLocation' field",
+        )
+        error_if(
+            any(version not in ref["referenceLocator"] for ref in package["externalRefs"]),
+            (
+                f"Version '{version}' for package '{package['name']} not in "
+                f"all 'externalRefs[].referenceLocator' fields"
+            ),
+        )
 
         # License must be on the approved list for SPDX.
-        assert package["licenseConcluded"] in ALLOWED_LICENSE_EXPRESSIONS, package["licenseConcluded"]
+        license_concluded = package["licenseConcluded"]
+        error_if(
+            license_concluded not in ALLOWED_LICENSE_EXPRESSIONS,
+            f"License identifier '{license_concluded}' not in SBOM tool allowlist"
+        )
 
     # Regenerate file information from current data.
     sbom_files = []
@@ -232,11 +265,13 @@ def main() -> None:
         package_spdx_id = spdx_id(f"SPDXRef-PACKAGE-{name}")
         exclude = files.exclude or ()
         for include in sorted(files.include):
-
             # Find all the paths and then filter them through .gitignore.
             paths = glob.glob(include, root_dir=CPYTHON_ROOT_DIR, recursive=True)
             paths = filter_gitignored_paths(paths)
-            assert paths, include  # Make sure that every value returns something!
+            error_if(
+                len(paths) == 0,
+                f"No valid paths found at path '{include}' for package '{name}",
+            )
 
             for path in paths:
                 # Skip directories and excluded files

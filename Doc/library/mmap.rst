@@ -62,8 +62,8 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    the same file.  If you specify the name of an existing tag, that tag is
    opened, otherwise a new tag of this name is created.  If this parameter is
    omitted or ``None``, the mapping is created without a name.  Avoiding the
-   use of the tag parameter will assist in keeping your code portable between
-   Unix and Windows.
+   use of the *tagname* parameter will assist in keeping your code portable
+   between Unix and Windows.
 
    *offset* may be specified as a non-negative integer offset. mmap references
    will be relative to the offset from the beginning of the file. *offset*
@@ -372,14 +372,25 @@ MAP_* Constants
 
 .. data:: MAP_SHARED
           MAP_PRIVATE
-          MAP_DENYWRITE
-          MAP_EXECUTABLE
+          MAP_32BIT
+          MAP_ALIGNED_SUPER
           MAP_ANON
           MAP_ANONYMOUS
-          MAP_POPULATE
-          MAP_STACK
-          MAP_ALIGNED_SUPER
           MAP_CONCEAL
+          MAP_DENYWRITE
+          MAP_EXECUTABLE
+          MAP_HASSEMAPHORE
+          MAP_JIT
+          MAP_NOCACHE
+          MAP_NOEXTEND
+          MAP_NORESERVE
+          MAP_POPULATE
+          MAP_RESILIENT_CODESIGN
+          MAP_RESILIENT_MEDIA
+          MAP_STACK
+          MAP_TPRO
+          MAP_TRANSLATED_ALLOW_EXECUTE
+          MAP_UNIX03
 
     These are the various flags that can be passed to :meth:`mmap.mmap`.  :data:`MAP_ALIGNED_SUPER`
     is only available at FreeBSD and :data:`MAP_CONCEAL` is only available at OpenBSD.  Note
@@ -392,5 +403,12 @@ MAP_* Constants
        Added :data:`MAP_STACK` constant.
 
     .. versionadded:: 3.12
-       Added :data:`MAP_ALIGNED_SUPER` constant.
-       Added :data:`MAP_CONCEAL` constant.
+       Added :data:`MAP_ALIGNED_SUPER` and :data:`MAP_CONCEAL` constants.
+
+    .. versionadded:: 3.13
+       Added :data:`MAP_32BIT`, :data:`MAP_HASSEMAPHORE`, :data:`MAP_JIT`,
+       :data:`MAP_NOCACHE`, :data:`MAP_NOEXTEND`, :data:`MAP_NORESERVE`,
+       :data:`MAP_RESILIENT_CODESIGN`, :data:`MAP_RESILIENT_MEDIA`,
+       :data:`MAP_TPRO`, :data:`MAP_TRANSLATED_ALLOW_EXECUTE`, and
+       :data:`MAP_UNIX03` constants.
+

@@ -25,7 +25,6 @@
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_typeobject.h"    // _PySuper_Lookup()
 #include "pycore_uop_ids.h"       // Uops
-#include "pycore_uops.h"          // _PyUOpExecutorObject
 #include "pycore_pyerrors.h"
 
 #include "pycore_dict.h"
@@ -739,7 +738,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     }
 
     /* State shared between Tier 1 and Tier 2 interpreter */
-    _PyUOpExecutorObject *current_executor = NULL;
+    _PyExecutorObject *current_executor = NULL;
 
     /* Local "register" variables.
      * These are cached values from the frame and code object.  */
@@ -2111,6 +2110,9 @@ do_monitor_exc(PyThreadState *tstate, _PyInterpreterFrame *frame,
                _Py_CODEUNIT *instr, int event)
 {
     assert(event < _PY_MONITORING_UNGROUPED_EVENTS);
+    if (_PyFrame_GetCode(frame)->co_flags & CO_NO_MONITORING_EVENTS) {
+        return 0;
+    }
     PyObject *exc = PyErr_GetRaisedException();
     assert(exc != NULL);
     int err = _Py_call_instrumentation_arg(tstate, event, frame, instr, exc);

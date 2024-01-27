@@ -7,6 +7,7 @@ executing have not been removed.
 import unittest
 import test.support
 from test import support
+from test.support.script_helper import assert_python_ok
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import captured_stderr
@@ -337,6 +338,19 @@ class HelperFunctionsTests(unittest.TestCase):
             mock_isdir.assert_called_once_with(user_site)
             mock_addsitedir.assert_not_called()
             self.assertFalse(known_paths)
+
+    def test_gethistoryfile(self):
+        filename = 'file'
+        rc, out, err = assert_python_ok('-c',
+            f'import site; assert site.gethistoryfile() == "{filename}"',
+            PYTHON_HISTORY=filename)
+        self.assertEqual(rc, 0)
+
+        # Check that PYTHON_HISTORY is ignored in isolated mode.
+        rc, out, err = assert_python_ok('-I', '-c',
+            f'import site; assert site.gethistoryfile() != "{filename}"',
+            PYTHON_HISTORY=filename)
+        self.assertEqual(rc, 0)
 
     def test_trace(self):
         message = "bla-bla-bla"

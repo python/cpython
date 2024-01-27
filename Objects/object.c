@@ -509,9 +509,7 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
 
     /* tp_finalize resurrected it!  Make it look like the original Py_DECREF
      * never happened. */
-    Py_ssize_t refcnt = Py_REFCNT(self);
-    _Py_NewReferenceNoTotal(self);
-    Py_SET_REFCNT(self, refcnt);
+    _Py_ResurrectReference(self);
 
     _PyObject_ASSERT(self,
                      (!_PyType_IS_GC(Py_TYPE(self))
@@ -2387,6 +2385,17 @@ void
 _Py_NewReferenceNoTotal(PyObject *op)
 {
     new_reference(op);
+}
+
+void
+_Py_ResurrectReference(PyObject *op)
+{
+    if (_PyRuntime.tracemalloc.config.tracing) {
+        _PyTraceMalloc_NewReference(op);
+    }
+#ifdef Py_TRACE_REFS
+    _Py_AddToAllObjects(op);
+#endif
 }
 
 

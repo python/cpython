@@ -67,7 +67,6 @@ Doc/library/pickletools.rst
 Doc/library/platform.rst
 Doc/library/plistlib.rst
 Doc/library/profile.rst
-Doc/library/pyclbr.rst
 Doc/library/pydoc.rst
 Doc/library/pyexpat.rst
 Doc/library/readline.rst
@@ -78,7 +77,6 @@ Doc/library/smtplib.rst
 Doc/library/socket.rst
 Doc/library/ssl.rst
 Doc/library/stdtypes.rst
-Doc/library/string.rst
 Doc/library/subprocess.rst
 Doc/library/termios.rst
 Doc/library/test.rst

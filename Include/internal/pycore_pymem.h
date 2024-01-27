@@ -64,7 +64,7 @@ extern int _PyMem_SetDefaultAllocator(
    - PYMEM_FORBIDDENBYTE: untouchable bytes at each end of a block
 
    Byte patterns 0xCB, 0xDB and 0xFB have been replaced with 0xCD, 0xDD and
-   0xFD to use the same values than Windows CRT debug malloc() and free().
+   0xFD to use the same values as Windows CRT debug malloc() and free().
    If modified, _PyMem_IsPtrFreed() should be updated as well. */
 #define PYMEM_CLEANBYTE      0xCD
 #define PYMEM_DEADBYTE       0xDD

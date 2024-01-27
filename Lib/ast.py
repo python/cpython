@@ -1812,8 +1812,7 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(prog='python -m ast')
-    parser.add_argument('infile', type=argparse.FileType(mode='rb'), nargs='?',
-                        default='-',
+    parser.add_argument('infile', nargs='?', default='-',
                         help='the file to parse; defaults to stdin')
     parser.add_argument('-m', '--mode', default='exec',
                         choices=('exec', 'single', 'eval', 'func_type'),
@@ -1827,9 +1826,14 @@ def main():
                         help='indentation of nodes (number of spaces)')
     args = parser.parse_args()
 
-    with args.infile as infile:
-        source = infile.read()
-    tree = parse(source, args.infile.name, args.mode, type_comments=args.no_type_comments)
+    if args.infile == '-':
+        name = '<stdin>'
+        source = sys.stdin.buffer.read()
+    else:
+        name = args.infile
+        with open(args.infile, 'rb') as infile:
+            source = infile.read()
+    tree = parse(source, name, args.mode, type_comments=args.no_type_comments)
     print(dump(tree, include_attributes=args.include_attributes, indent=args.indent))
 
 if __name__ == '__main__':

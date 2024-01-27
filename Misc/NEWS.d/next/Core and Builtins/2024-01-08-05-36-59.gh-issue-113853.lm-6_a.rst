@@ -1,0 +1,2 @@
+Guarantee that all executors make progress. This then guarantees that tier 2
+execution always makes progress.

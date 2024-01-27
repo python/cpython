@@ -510,7 +510,7 @@ Remove special-casing of ``__new__`` in :meth:`enum.Enum.__dir__`.
 
 Improve day constants in :mod:`calendar`.
 
-Now all constants (`MONDAY` ... `SUNDAY`) are documented, tested, and added
+Now all constants (``MONDAY`` ... ``SUNDAY``) are documented, tested, and added
 to ``__all__``.
 
 ..

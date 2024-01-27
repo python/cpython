@@ -1,0 +1,3 @@
+:func:`asyncio.TaskGroup()` and :func:`asyncio.timeout()` context managers
+now handle :exc:`~asyncio.CancelledError` subclasses as well as exact
+:exc:`!CancelledError`.

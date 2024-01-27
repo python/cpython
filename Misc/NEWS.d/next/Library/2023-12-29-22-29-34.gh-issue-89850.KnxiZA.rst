@@ -1,0 +1,5 @@
+Add default implementations of :meth:`pickle.Pickler.persistent_id` and
+:meth:`pickle.Unpickler.persistent_load` methods in the C implementation.
+Calling ``super().persistent_id()`` and ``super().persistent_load()`` in
+subclasses of the C implementation of :class:`pickle.Pickler` and
+:class:`pickle.Unpickler` classes no longer causes infinite recursion.

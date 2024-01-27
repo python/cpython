@@ -1497,6 +1497,13 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             if hasattr(self, wrong_name):
                 return f"self.{wrong_name}"
 
+    try:
+        import _suggestions
+    except ImportError:
+        pass
+    else:
+        return _suggestions._generate_suggestions(d, wrong_name)
+
     # Compute closest match
 
     if len(d) > _MAX_CANDIDATE_ITEMS:

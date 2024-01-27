@@ -206,8 +206,8 @@ directories installed using ``make altinstall`` contain the major and minor
 version and can thus live side-by-side.  ``make install`` also creates
 ``${prefix}/bin/python3`` which refers to ``${prefix}/bin/python3.X``.  If you
 intend to install multiple versions using the same prefix you must decide which
-version (if any) is your "primary" version.  Install that version using ``make
-install``.  Install all other versions using ``make altinstall``.
+version (if any) is your "primary" version.  Install that version using
+``make install``.  Install all other versions using ``make altinstall``.
 
 For example, if you want to install Python 2.7, 3.6, and 3.13 with 3.13 being the
 primary version, you would execute ``make install`` in your 3.13 build directory

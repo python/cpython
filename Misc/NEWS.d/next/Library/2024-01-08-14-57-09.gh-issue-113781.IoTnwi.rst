@@ -1,0 +1,2 @@
+Silence unraisable AttributeError when warnings are emitted during Python
+finalization.

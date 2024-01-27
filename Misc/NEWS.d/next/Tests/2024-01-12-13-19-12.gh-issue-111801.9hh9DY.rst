@@ -1,0 +1,3 @@
+Lower the recursion limit in ``test_isinstance`` for
+``test_infinitely_many_bases()``. This prevents a stack overflow on a
+pydebug build of WASI.

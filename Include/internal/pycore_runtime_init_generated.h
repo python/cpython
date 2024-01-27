@@ -1013,6 +1013,7 @@ extern "C" {
     INIT_ID(kw), \
     INIT_ID(kw1), \
     INIT_ID(kw2), \
+    INIT_ID(kwdefaults), \
     INIT_ID(lambda), \
     INIT_ID(last), \
     INIT_ID(last_exc), \
@@ -1162,7 +1163,6 @@ extern "C" {
     INIT_ID(seek), \
     INIT_ID(seekable), \
     INIT_ID(selectors), \
-    INIT_ID(self), \
     INIT_ID(send), \
     INIT_ID(sep), \
     INIT_ID(sequence), \

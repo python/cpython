@@ -1,0 +1,3 @@
+unittest runner: Don't exit 5 if tests were skipped. The intention of
+exiting 5 was to detect issues where the test suite wasn't discovered at
+all. If we skipped tests, it was correctly discovered.

@@ -1,4 +1,4 @@
-import collections.abc
+import collections
 import io
 import os
 import errno
@@ -43,6 +43,8 @@ class PurePathBaseTest(unittest.TestCase):
 
 
 class DummyPurePath(PurePathBase):
+    __slots__ = ()
+
     def __eq__(self, other):
         if not isinstance(other, DummyPurePath):
             return NotImplemented
@@ -51,28 +53,15 @@ class DummyPurePath(PurePathBase):
     def __hash__(self):
         return hash(str(self))
 
+    def __repr__(self):
+        return "{}({!r})".format(self.__class__.__name__, self.as_posix())
+
 
 class DummyPurePathTest(unittest.TestCase):
     cls = DummyPurePath
 
     # Use a base path that's unrelated to any real filesystem path.
     base = f'/this/path/kills/fascists/{TESTFN}'
-
-    # Keys are canonical paths, values are list of tuples of arguments
-    # supposed to produce equal paths.
-    equivalences = {
-        'a/b': [
-            ('a', 'b'), ('a/', 'b'), ('a', 'b/'), ('a/', 'b/'),
-            ('a/b/',), ('a//b',), ('a//b//',),
-            # Empty components get removed.
-            ('', 'a', 'b'), ('a', '', 'b'), ('a', 'b', ''),
-            ],
-        '/b/c/d': [
-            ('a', '/b/c', 'd'), ('/a', '/b/c', 'd'),
-            # Empty components get removed.
-            ('/', 'b', '', 'c/d'), ('/', '', 'b/c/d'), ('', '/b/c/d'),
-            ],
-    }
 
     def setUp(self):
         p = self.cls('a')
@@ -129,31 +118,6 @@ class DummyPurePathTest(unittest.TestCase):
         for parent in p.parents:
             self.assertEqual(42, parent.session_id)
 
-    def _check_parse_path(self, raw_path, *expected):
-        sep = self.pathmod.sep
-        actual = self.cls._parse_path(raw_path.replace('/', sep))
-        self.assertEqual(actual, expected)
-        if altsep := self.pathmod.altsep:
-            actual = self.cls._parse_path(raw_path.replace('/', altsep))
-            self.assertEqual(actual, expected)
-
-    def test_parse_path_common(self):
-        check = self._check_parse_path
-        sep = self.pathmod.sep
-        check('',         '', '', [])
-        check('a',        '', '', ['a'])
-        check('a/',       '', '', ['a'])
-        check('a/b',      '', '', ['a', 'b'])
-        check('a/b/',     '', '', ['a', 'b'])
-        check('a/b/c/d',  '', '', ['a', 'b', 'c', 'd'])
-        check('a/b//c/d', '', '', ['a', 'b', 'c', 'd'])
-        check('a/b/c/d',  '', '', ['a', 'b', 'c', 'd'])
-        check('.',        '', '', [])
-        check('././b',    '', '', ['b'])
-        check('a/./b',    '', '', ['a', 'b'])
-        check('a/./.',    '', '', ['a'])
-        check('/a/b',     '', sep, ['a', 'b'])
-
     def test_join_common(self):
         P = self.cls
         p = P('a/b')
@@ -189,8 +153,6 @@ class DummyPurePathTest(unittest.TestCase):
         # Canonicalized paths roundtrip.
         for pathstr in ('a', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c'):
             self._check_str(pathstr, (pathstr,))
-        # Special case for the empty path.
-        self._check_str('.', ('',))
         # Other tests for str() are in test_equivalences().
 
     def test_as_posix_common(self):
@@ -199,23 +161,12 @@ class DummyPurePathTest(unittest.TestCase):
             self.assertEqual(P(pathstr).as_posix(), pathstr)
         # Other tests for as_posix() are in test_equivalences().
 
-    def test_eq_common(self):
+    def test_match_empty(self):
         P = self.cls
-        self.assertEqual(P('a/b'), P('a/b'))
-        self.assertEqual(P('a/b'), P('a', 'b'))
-        self.assertNotEqual(P('a/b'), P('a'))
-        self.assertNotEqual(P('a/b'), P('/a/b'))
-        self.assertNotEqual(P('a/b'), P())
-        self.assertNotEqual(P('/a/b'), P('/'))
-        self.assertNotEqual(P(), P('/'))
-        self.assertNotEqual(P(), "")
-        self.assertNotEqual(P(), {})
-        self.assertNotEqual(P(), int)
+        self.assertRaises(ValueError, P('a').match, '')
 
     def test_match_common(self):
         P = self.cls
-        self.assertRaises(ValueError, P('a').match, '')
-        self.assertRaises(ValueError, P('a').match, '.')
         # Simple relative pattern.
         self.assertTrue(P('b.py').match('b.py'))
         self.assertTrue(P('a/b.py').match('b.py'))
@@ -252,7 +203,6 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertTrue(P('a/b/c.py').match('**'))
         self.assertTrue(P('/a/b/c.py').match('**'))
         self.assertTrue(P('/a/b/c.py').match('/**'))
-        self.assertTrue(P('/a/b/c.py').match('**/'))
         self.assertTrue(P('/a/b/c.py').match('/a/**'))
         self.assertTrue(P('/a/b/c.py').match('**/*.py'))
         self.assertTrue(P('/a/b/c.py').match('/**/*.py'))
@@ -277,9 +227,9 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertFalse(P('c:/a/B.Py').match('C:/A/*.pY', case_sensitive=True))
         self.assertTrue(P('/a/b/c.py').match('/A/*/*.Py', case_sensitive=False))
         # Matching against empty path
-        self.assertFalse(P().match('*'))
-        self.assertTrue(P().match('**'))
-        self.assertFalse(P().match('**/*'))
+        self.assertFalse(P('').match('*'))
+        self.assertTrue(P('').match('**'))
+        self.assertFalse(P('').match('**/*'))
 
     def test_parts_common(self):
         # `parts` returns a tuple.
@@ -293,32 +243,14 @@ class DummyPurePathTest(unittest.TestCase):
         parts = p.parts
         self.assertEqual(parts, (sep, 'a', 'b'))
 
-    def test_equivalences(self):
-        for k, tuples in self.equivalences.items():
-            canon = k.replace('/', self.sep)
-            posix = k.replace(self.sep, '/')
-            if canon != posix:
-                tuples = tuples + [
-                    tuple(part.replace('/', self.sep) for part in t)
-                    for t in tuples
-                    ]
-                tuples.append((posix, ))
-            pcanon = self.cls(canon)
-            for t in tuples:
-                p = self.cls(*t)
-                self.assertEqual(p, pcanon, "failed with args {}".format(t))
-                self.assertEqual(hash(p), hash(pcanon))
-                self.assertEqual(str(p), canon)
-                self.assertEqual(p.as_posix(), posix)
-
     def test_parent_common(self):
         # Relative
         P = self.cls
         p = P('a/b/c')
         self.assertEqual(p.parent, P('a/b'))
         self.assertEqual(p.parent.parent, P('a'))
-        self.assertEqual(p.parent.parent.parent, P())
-        self.assertEqual(p.parent.parent.parent.parent, P())
+        self.assertEqual(p.parent.parent.parent, P(''))
+        self.assertEqual(p.parent.parent.parent.parent, P(''))
         # Anchored
         p = P('/a/b/c')
         self.assertEqual(p.parent, P('/a/b'))
@@ -334,17 +266,17 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(len(par), 3)
         self.assertEqual(par[0], P('a/b'))
         self.assertEqual(par[1], P('a'))
-        self.assertEqual(par[2], P('.'))
-        self.assertEqual(par[-1], P('.'))
+        self.assertEqual(par[2], P(''))
+        self.assertEqual(par[-1], P(''))
         self.assertEqual(par[-2], P('a'))
         self.assertEqual(par[-3], P('a/b'))
         self.assertEqual(par[0:1], (P('a/b'),))
         self.assertEqual(par[:2], (P('a/b'), P('a')))
         self.assertEqual(par[:-1], (P('a/b'), P('a')))
-        self.assertEqual(par[1:], (P('a'), P('.')))
-        self.assertEqual(par[::2], (P('a/b'), P('.')))
-        self.assertEqual(par[::-1], (P('.'), P('a'), P('a/b')))
-        self.assertEqual(list(par), [P('a/b'), P('a'), P('.')])
+        self.assertEqual(par[1:], (P('a'), P('')))
+        self.assertEqual(par[::2], (P('a/b'), P('')))
+        self.assertEqual(par[::-1], (P(''), P('a'), P('a/b')))
+        self.assertEqual(list(par), [P('a/b'), P('a'), P('')])
         with self.assertRaises(IndexError):
             par[-4]
         with self.assertRaises(IndexError):
@@ -395,14 +327,17 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('/').anchor, sep)
         self.assertEqual(P('/a/b').anchor, sep)
 
-    def test_name_common(self):
+    def test_name_empty(self):
         P = self.cls
         self.assertEqual(P('').name, '')
-        self.assertEqual(P('.').name, '')
+        self.assertEqual(P('.').name, '.')
+        self.assertEqual(P('/a/b/.').name, '.')
+
+    def test_name_common(self):
+        P = self.cls
         self.assertEqual(P('/').name, '')
         self.assertEqual(P('a/b').name, 'b')
         self.assertEqual(P('/a/b').name, 'b')
-        self.assertEqual(P('/a/b/.').name, 'b')
         self.assertEqual(P('a/b.py').name, 'b.py')
         self.assertEqual(P('/a/b.py').name, 'b.py')
 
@@ -445,10 +380,13 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('a/Some name. Ending with a dot.').suffixes, [])
         self.assertEqual(P('/a/Some name. Ending with a dot.').suffixes, [])
 
-    def test_stem_common(self):
+    def test_stem_empty(self):
         P = self.cls
         self.assertEqual(P('').stem, '')
-        self.assertEqual(P('.').stem, '')
+        self.assertEqual(P('.').stem, '.')
+
+    def test_stem_common(self):
+        P = self.cls
         self.assertEqual(P('..').stem, '..')
         self.assertEqual(P('/').stem, '')
         self.assertEqual(P('a/b').stem, 'b')
@@ -467,11 +405,17 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('/a/b.py').with_name('d.xml'), P('/a/d.xml'))
         self.assertEqual(P('a/Dot ending.').with_name('d.xml'), P('a/d.xml'))
         self.assertEqual(P('/a/Dot ending.').with_name('d.xml'), P('/a/d.xml'))
-        self.assertRaises(ValueError, P('').with_name, 'd.xml')
-        self.assertRaises(ValueError, P('.').with_name, 'd.xml')
-        self.assertRaises(ValueError, P('/').with_name, 'd.xml')
-        self.assertRaises(ValueError, P('a/b').with_name, '')
-        self.assertRaises(ValueError, P('a/b').with_name, '.')
+
+    def test_with_name_empty(self):
+        P = self.cls
+        self.assertEqual(P('').with_name('d.xml'), P('d.xml'))
+        self.assertEqual(P('.').with_name('d.xml'), P('d.xml'))
+        self.assertEqual(P('/').with_name('d.xml'), P('/d.xml'))
+        self.assertEqual(P('a/b').with_name(''), P('a/'))
+        self.assertEqual(P('a/b').with_name('.'), P('a/.'))
+
+    def test_with_name_seps(self):
+        P = self.cls
         self.assertRaises(ValueError, P('a/b').with_name, '/c')
         self.assertRaises(ValueError, P('a/b').with_name, 'c/')
         self.assertRaises(ValueError, P('a/b').with_name, 'c/d')
@@ -485,11 +429,17 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('/a/b.tar.gz').with_stem('d'), P('/a/d.gz'))
         self.assertEqual(P('a/Dot ending.').with_stem('d'), P('a/d'))
         self.assertEqual(P('/a/Dot ending.').with_stem('d'), P('/a/d'))
-        self.assertRaises(ValueError, P('').with_stem, 'd')
-        self.assertRaises(ValueError, P('.').with_stem, 'd')
-        self.assertRaises(ValueError, P('/').with_stem, 'd')
-        self.assertRaises(ValueError, P('a/b').with_stem, '')
-        self.assertRaises(ValueError, P('a/b').with_stem, '.')
+
+    def test_with_stem_empty(self):
+        P = self.cls
+        self.assertEqual(P('').with_stem('d'), P('d'))
+        self.assertEqual(P('.').with_stem('d'), P('d'))
+        self.assertEqual(P('/').with_stem('d'), P('/d'))
+        self.assertEqual(P('a/b').with_stem(''), P('a/'))
+        self.assertEqual(P('a/b').with_stem('.'), P('a/.'))
+
+    def test_with_stem_seps(self):
+        P = self.cls
         self.assertRaises(ValueError, P('a/b').with_stem, '/c')
         self.assertRaises(ValueError, P('a/b').with_stem, 'c/')
         self.assertRaises(ValueError, P('a/b').with_stem, 'c/d')
@@ -503,10 +453,16 @@ class DummyPurePathTest(unittest.TestCase):
         # Stripping suffix.
         self.assertEqual(P('a/b.py').with_suffix(''), P('a/b'))
         self.assertEqual(P('/a/b').with_suffix(''), P('/a/b'))
+
+    def test_with_suffix_empty(self):
+        P = self.cls
         # Path doesn't have a "filename" component.
-        self.assertRaises(ValueError, P('').with_suffix, '.gz')
-        self.assertRaises(ValueError, P('.').with_suffix, '.gz')
-        self.assertRaises(ValueError, P('/').with_suffix, '.gz')
+        self.assertEqual(P('').with_suffix('.gz'), P('.gz'))
+        self.assertEqual(P('.').with_suffix('.gz'), P('..gz'))
+        self.assertEqual(P('/').with_suffix('.gz'), P('/.gz'))
+
+    def test_with_suffix_seps(self):
+        P = self.cls
         # Invalid suffix.
         self.assertRaises(ValueError, P('a/b').with_suffix, 'gz')
         self.assertRaises(ValueError, P('a/b').with_suffix, '/')
@@ -522,30 +478,26 @@ class DummyPurePathTest(unittest.TestCase):
         p = P('a/b')
         self.assertRaises(TypeError, p.relative_to)
         self.assertRaises(TypeError, p.relative_to, b'a')
-        self.assertEqual(p.relative_to(P()), P('a/b'))
+        self.assertEqual(p.relative_to(P('')), P('a/b'))
         self.assertEqual(p.relative_to(''), P('a/b'))
         self.assertEqual(p.relative_to(P('a')), P('b'))
         self.assertEqual(p.relative_to('a'), P('b'))
         self.assertEqual(p.relative_to('a/'), P('b'))
-        self.assertEqual(p.relative_to(P('a/b')), P())
-        self.assertEqual(p.relative_to('a/b'), P())
-        self.assertEqual(p.relative_to(P(), walk_up=True), P('a/b'))
+        self.assertEqual(p.relative_to(P('a/b')), P(''))
+        self.assertEqual(p.relative_to('a/b'), P(''))
+        self.assertEqual(p.relative_to(P(''), walk_up=True), P('a/b'))
         self.assertEqual(p.relative_to('', walk_up=True), P('a/b'))
         self.assertEqual(p.relative_to(P('a'), walk_up=True), P('b'))
         self.assertEqual(p.relative_to('a', walk_up=True), P('b'))
         self.assertEqual(p.relative_to('a/', walk_up=True), P('b'))
-        self.assertEqual(p.relative_to(P('a/b'), walk_up=True), P())
-        self.assertEqual(p.relative_to('a/b', walk_up=True), P())
+        self.assertEqual(p.relative_to(P('a/b'), walk_up=True), P(''))
+        self.assertEqual(p.relative_to('a/b', walk_up=True), P(''))
         self.assertEqual(p.relative_to(P('a/c'), walk_up=True), P('../b'))
         self.assertEqual(p.relative_to('a/c', walk_up=True), P('../b'))
         self.assertEqual(p.relative_to(P('a/b/c'), walk_up=True), P('..'))
         self.assertEqual(p.relative_to('a/b/c', walk_up=True), P('..'))
         self.assertEqual(p.relative_to(P('c'), walk_up=True), P('../a/b'))
         self.assertEqual(p.relative_to('c', walk_up=True), P('../a/b'))
-        # With several args.
-        with self.assertWarns(DeprecationWarning):
-            p.relative_to('a', 'b')
-            p.relative_to('a', 'b', walk_up=True)
         # Unrelated paths.
         self.assertRaises(ValueError, p.relative_to, P('c'))
         self.assertRaises(ValueError, p.relative_to, P('a/b/c'))
@@ -565,15 +517,15 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(p.relative_to(P('/a')), P('b'))
         self.assertEqual(p.relative_to('/a'), P('b'))
         self.assertEqual(p.relative_to('/a/'), P('b'))
-        self.assertEqual(p.relative_to(P('/a/b')), P())
-        self.assertEqual(p.relative_to('/a/b'), P())
+        self.assertEqual(p.relative_to(P('/a/b')), P(''))
+        self.assertEqual(p.relative_to('/a/b'), P(''))
         self.assertEqual(p.relative_to(P('/'), walk_up=True), P('a/b'))
         self.assertEqual(p.relative_to('/', walk_up=True), P('a/b'))
         self.assertEqual(p.relative_to(P('/a'), walk_up=True), P('b'))
         self.assertEqual(p.relative_to('/a', walk_up=True), P('b'))
         self.assertEqual(p.relative_to('/a/', walk_up=True), P('b'))
-        self.assertEqual(p.relative_to(P('/a/b'), walk_up=True), P())
-        self.assertEqual(p.relative_to('/a/b', walk_up=True), P())
+        self.assertEqual(p.relative_to(P('/a/b'), walk_up=True), P(''))
+        self.assertEqual(p.relative_to('/a/b', walk_up=True), P(''))
         self.assertEqual(p.relative_to(P('/a/c'), walk_up=True), P('../b'))
         self.assertEqual(p.relative_to('/a/c', walk_up=True), P('../b'))
         self.assertEqual(p.relative_to(P('/a/b/c'), walk_up=True), P('..'))
@@ -584,7 +536,7 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertRaises(ValueError, p.relative_to, P('/c'))
         self.assertRaises(ValueError, p.relative_to, P('/a/b/c'))
         self.assertRaises(ValueError, p.relative_to, P('/a/c'))
-        self.assertRaises(ValueError, p.relative_to, P())
+        self.assertRaises(ValueError, p.relative_to, P(''))
         self.assertRaises(ValueError, p.relative_to, '')
         self.assertRaises(ValueError, p.relative_to, P('a'))
         self.assertRaises(ValueError, p.relative_to, P("../a"))
@@ -601,15 +553,12 @@ class DummyPurePathTest(unittest.TestCase):
         p = P('a/b')
         self.assertRaises(TypeError, p.is_relative_to)
         self.assertRaises(TypeError, p.is_relative_to, b'a')
-        self.assertTrue(p.is_relative_to(P()))
+        self.assertTrue(p.is_relative_to(P('')))
         self.assertTrue(p.is_relative_to(''))
         self.assertTrue(p.is_relative_to(P('a')))
         self.assertTrue(p.is_relative_to('a/'))
         self.assertTrue(p.is_relative_to(P('a/b')))
         self.assertTrue(p.is_relative_to('a/b'))
-        # With several args.
-        with self.assertWarns(DeprecationWarning):
-            p.is_relative_to('a', 'b')
         # Unrelated paths.
         self.assertFalse(p.is_relative_to(P('c')))
         self.assertFalse(p.is_relative_to(P('a/b/c')))
@@ -627,7 +576,7 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertFalse(p.is_relative_to(P('/c')))
         self.assertFalse(p.is_relative_to(P('/a/b/c')))
         self.assertFalse(p.is_relative_to(P('/a/c')))
-        self.assertFalse(p.is_relative_to(P()))
+        self.assertFalse(p.is_relative_to(P('')))
         self.assertFalse(p.is_relative_to(''))
         self.assertFalse(p.is_relative_to(P('a')))
 
@@ -641,7 +590,7 @@ class PathBaseTest(PurePathBaseTest):
 
     def test_unsupported_operation(self):
         P = self.cls
-        p = self.cls()
+        p = self.cls('')
         e = UnsupportedOperation
         self.assertRaises(e, p.stat)
         self.assertRaises(e, p.lstat)
@@ -685,13 +634,13 @@ class PathBaseTest(PurePathBaseTest):
 
     def test_as_uri_common(self):
         e = UnsupportedOperation
-        self.assertRaises(e, self.cls().as_uri)
+        self.assertRaises(e, self.cls('').as_uri)
 
     def test_fspath_common(self):
-        self.assertRaises(TypeError, os.fspath, self.cls())
+        self.assertRaises(TypeError, os.fspath, self.cls(''))
 
     def test_as_bytes_common(self):
-        self.assertRaises(TypeError, bytes, self.cls())
+        self.assertRaises(TypeError, bytes, self.cls(''))
 
 
 class DummyPathIO(io.BytesIO):
@@ -709,11 +658,18 @@ class DummyPathIO(io.BytesIO):
         super().close()
 
 
+DummyPathStatResult = collections.namedtuple(
+    'DummyPathStatResult',
+    'st_mode st_ino st_dev st_nlink st_uid st_gid st_size st_atime st_mtime st_ctime')
+
+
 class DummyPath(PathBase):
     """
     Simple implementation of PathBase that keeps files and directories in
     memory.
     """
+    __slots__ = ()
+
     _files = {}
     _directories = {}
     _symlinks = {}
@@ -725,6 +681,9 @@ class DummyPath(PathBase):
 
     def __hash__(self):
         return hash(str(self))
+
+    def __repr__(self):
+        return "{}({!r})".format(self.__class__.__name__, self.as_posix())
 
     def stat(self, *, follow_symlinks=True):
         if follow_symlinks:
@@ -739,7 +698,7 @@ class DummyPath(PathBase):
             st_mode = stat.S_IFLNK
         else:
             raise FileNotFoundError(errno.ENOENT, "Not found", str(self))
-        return os.stat_result((st_mode, hash(str(self)), 0, 0, 0, 0, 0, 0, 0, 0))
+        return DummyPathStatResult(st_mode, hash(str(self)), 0, 0, 0, 0, 0, 0, 0, 0)
 
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
@@ -892,11 +851,6 @@ class DummyPathTest(DummyPurePathTest):
         self.assertRaises(FileNotFoundError, r.samefile, r)
         self.assertRaises(FileNotFoundError, r.samefile, non_existent)
 
-    def test_empty_path(self):
-        # The empty path points to '.'
-        p = self.cls('')
-        self.assertEqual(str(p), '.')
-
     def test_exists(self):
         P = self.cls
         p = P(self.base)
@@ -1039,7 +993,7 @@ class DummyPathTest(DummyPurePathTest):
             _check(p.glob("*/"), ["dirA/", "dirB/", "dirC/", "dirE/", "linkB/"])
 
     def test_glob_empty_pattern(self):
-        p = self.cls()
+        p = self.cls('')
         with self.assertRaisesRegex(ValueError, 'Unacceptable pattern'):
             list(p.glob(''))
 
@@ -1060,7 +1014,7 @@ class DummyPathTest(DummyPurePathTest):
             self.skipTest("symlinks required")
         def _check(path, glob, expected):
             actual = {path for path in path.glob(glob, follow_symlinks=True)
-                      if "linkD" not in path.parent.parts}  # exclude symlink loop.
+                      if path.parts.count("linkD") <= 1}  # exclude symlink loop.
             self.assertEqual(actual, { P(self.base, q) for q in expected })
         P = self.cls
         p = P(self.base)
@@ -1070,13 +1024,15 @@ class DummyPathTest(DummyPurePathTest):
         _check(p, "*B/*", ["dirB/fileB", "dirB/linkD", "linkB/fileB", "linkB/linkD"])
         _check(p, "*/fileB", ["dirB/fileB", "linkB/fileB"])
         _check(p, "*/", ["dirA/", "dirB/", "dirC/", "dirE/", "linkB/"])
-        _check(p, "dir*/*/..", ["dirC/dirD/..", "dirA/linkC/.."])
+        _check(p, "dir*/*/..", ["dirC/dirD/..", "dirA/linkC/..", "dirB/linkD/.."])
         _check(p, "dir*/**/", ["dirA/", "dirA/linkC/", "dirA/linkC/linkD/", "dirB/", "dirB/linkD/",
                                "dirC/", "dirC/dirD/", "dirE/"])
         _check(p, "dir*/**/..", ["dirA/..", "dirA/linkC/..", "dirB/..",
+                                 "dirB/linkD/..", "dirA/linkC/linkD/..",
                                  "dirC/..", "dirC/dirD/..", "dirE/.."])
         _check(p, "dir*/*/**/", ["dirA/linkC/", "dirA/linkC/linkD/", "dirB/linkD/", "dirC/dirD/"])
-        _check(p, "dir*/*/**/..", ["dirA/linkC/..", "dirC/dirD/.."])
+        _check(p, "dir*/*/**/..", ["dirA/linkC/..", "dirA/linkC/linkD/..",
+                                   "dirB/linkD/..", "dirC/dirD/.."])
         _check(p, "dir*/**/fileC", ["dirC/fileC"])
         _check(p, "dir*/*/../dirD/**/", ["dirC/dirD/../dirD/"])
         _check(p, "*/dirD/**/", ["dirC/dirD/"])
@@ -1131,7 +1087,7 @@ class DummyPathTest(DummyPurePathTest):
                 "dirA/", "dirA/linkC/", "dirB/", "dirB/linkD/", "dirC/",
                 "dirC/dirD/", "dirE/", "linkB/",
             ])
-        _check(p.rglob(""), ["./", "dirA/", "dirB/", "dirC/", "dirE/", "dirC/dirD/"])
+        _check(p.rglob(""), ["", "dirA/", "dirB/", "dirC/", "dirE/", "dirC/dirD/"])
 
         p = P(self.base, "dirC")
         _check(p.rglob("*"), ["dirC/fileC", "dirC/novel.txt",
@@ -1152,18 +1108,21 @@ class DummyPathTest(DummyPurePathTest):
             self.skipTest("symlinks required")
         def _check(path, glob, expected):
             actual = {path for path in path.rglob(glob, follow_symlinks=True)
-                      if 'linkD' not in path.parent.parts}  # exclude symlink loop.
+                      if path.parts.count("linkD") <= 1}  # exclude symlink loop.
             self.assertEqual(actual, { P(self.base, q) for q in expected })
         P = self.cls
         p = P(self.base)
-        _check(p, "fileB", ["dirB/fileB", "dirA/linkC/fileB", "linkB/fileB"])
+        _check(p, "fileB", ["dirB/fileB", "dirA/linkC/fileB", "linkB/fileB",
+                            "dirA/linkC/linkD/fileB", "dirB/linkD/fileB", "linkB/linkD/fileB"])
         _check(p, "*/fileA", [])
-        _check(p, "*/fileB", ["dirB/fileB", "dirA/linkC/fileB", "linkB/fileB"])
+        _check(p, "*/fileB", ["dirB/fileB", "dirA/linkC/fileB", "linkB/fileB",
+                              "dirA/linkC/linkD/fileB", "dirB/linkD/fileB", "linkB/linkD/fileB"])
         _check(p, "file*", ["fileA", "dirA/linkC/fileB", "dirB/fileB",
+                            "dirA/linkC/linkD/fileB", "dirB/linkD/fileB", "linkB/linkD/fileB",
                             "dirC/fileC", "dirC/dirD/fileD", "linkB/fileB"])
         _check(p, "*/", ["dirA/", "dirA/linkC/", "dirA/linkC/linkD/", "dirB/", "dirB/linkD/",
                          "dirC/", "dirC/dirD/", "dirE/", "linkB/", "linkB/linkD/"])
-        _check(p, "", ["./", "dirA/", "dirA/linkC/", "dirA/linkC/linkD/", "dirB/", "dirB/linkD/",
+        _check(p, "", ["", "dirA/", "dirA/linkC/", "dirA/linkC/linkD/", "dirB/", "dirB/linkD/",
                        "dirC/", "dirE/", "dirC/dirD/", "linkB/", "linkB/linkD/"])
 
         p = P(self.base, "dirC")
@@ -1190,7 +1149,7 @@ class DummyPathTest(DummyPurePathTest):
         _check(p, "*/fileB", ["dirB/fileB"])
         _check(p, "file*", ["fileA", "dirB/fileB", "dirC/fileC", "dirC/dirD/fileD", ])
         _check(p, "*/", ["dirA/", "dirB/", "dirC/", "dirC/dirD/", "dirE/"])
-        _check(p, "", ["./", "dirA/", "dirB/", "dirC/", "dirE/", "dirC/dirD/"])
+        _check(p, "", ["", "dirA/", "dirB/", "dirC/", "dirE/", "dirC/dirD/"])
 
         p = P(self.base, "dirC")
         _check(p, "*", ["dirC/fileC", "dirC/novel.txt",
@@ -1265,19 +1224,6 @@ class DummyPathTest(DummyPurePathTest):
         bad_link = base / 'bad_link'
         bad_link.symlink_to("bad" * 200)
         self.assertEqual(sorted(base.glob('**/*')), [bad_link])
-
-    def test_glob_recursive_no_trailing_slash(self):
-        P = self.cls
-        p = P(self.base)
-        with self.assertWarns(FutureWarning):
-            p.glob('**')
-        with self.assertWarns(FutureWarning):
-            p.glob('*/**')
-        with self.assertWarns(FutureWarning):
-            p.rglob('**')
-        with self.assertWarns(FutureWarning):
-            p.rglob('*/**')
-
 
     def test_readlink(self):
         if not self.can_symlink:
@@ -1580,15 +1526,6 @@ class DummyPathTest(DummyPurePathTest):
         self.assertIs((P / 'fileA\udfff').is_char_device(), False)
         self.assertIs((P / 'fileA\x00').is_char_device(), False)
 
-    def test_parts_interning(self):
-        P = self.cls
-        p = P('/usr/bin/foo')
-        q = P('/usr/local/bin')
-        # 'usr'
-        self.assertIs(p.parts[1], q.parts[1])
-        # 'bin'
-        self.assertIs(p.parts[2], q.parts[3])
-
     def _check_complex_symlinks(self, link0_target):
         if not self.can_symlink:
             self.skipTest("symlinks required")
@@ -1617,7 +1554,7 @@ class DummyPathTest(DummyPurePathTest):
 
         # Resolve relative paths.
         try:
-            self.cls().absolute()
+            self.cls('').absolute()
         except UnsupportedOperation:
             return
         old_path = os.getcwd()
@@ -1796,6 +1733,11 @@ class DummyPathTest(DummyPurePathTest):
 
 
 class DummyPathWithSymlinks(DummyPath):
+    __slots__ = ()
+
+    # Reduce symlink traversal limit to make tests run faster.
+    _max_symlinks = 20
+
     def readlink(self):
         path = str(self.parent.resolve() / self.name)
         if path in self._symlinks:

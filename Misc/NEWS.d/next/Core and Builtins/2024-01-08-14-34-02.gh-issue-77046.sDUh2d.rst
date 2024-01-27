@@ -1,0 +1,3 @@
+On Windows, file descriptors wrapping Windows handles are now created non
+inheritable by default (:pep:`446`). Patch by Zackery Spytz and Victor
+Stinner.

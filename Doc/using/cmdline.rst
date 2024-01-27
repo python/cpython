@@ -369,7 +369,7 @@ Miscellaneous options
 
    Hash randomization is intended to provide protection against a
    denial-of-service caused by carefully chosen inputs that exploit the worst
-   case performance of a dict construction, O(n\ :sup:`2`) complexity.  See
+   case performance of a dict construction, *O*\ (*n*\ :sup:`2`) complexity.  See
    http://ocert.org/advisories/ocert-2011-003.html for details.
 
    :envvar:`PYTHONHASHSEED` allows you to set a fixed value for the hash
@@ -1136,6 +1136,14 @@ conflict.
    If this variable is set to ``1``, the interpreter will colorize various kinds
    of output. Setting it to ``0`` deactivates this behavior.
    See also :ref:`using-on-controlling-color`.
+
+   .. versionadded:: 3.13
+
+.. envvar:: PYTHON_HISTORY
+
+   This environment variable can be used to set the location of a
+   ``.python_history`` file (by default, it is ``.python_history`` in the
+   user's home directory).
 
    .. versionadded:: 3.13
 
