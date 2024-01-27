@@ -462,29 +462,5 @@ class TestCAPI(unittest.TestCase):
         # The following line should not cause a segmentation fault.
         self.assertIsNone(frame.f_back)
 
-class LocalsTest(unittest.TestCase):
-    """
-    Tests for locals.
-    """
-
-    def test_locals_cleared_after_exception_handled(self):
-        # see gh-113939
-        class C:
-            pass
-        wr = None
-        def inner():
-            nonlocal wr
-            c = C()
-            wr = weakref.ref(c)
-            1/0
-        try:
-            inner()
-        except ZeroDivisionError as exc:
-            support.gc_collect()
-            self.assertIsNotNone(wr())
-            print(exc.__traceback__.tb_frame.f_locals)
-        support.gc_collect()
-        self.assertIsNone(wr())
-
 if __name__ == "__main__":
     unittest.main()

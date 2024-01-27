@@ -1508,7 +1508,6 @@ dummy_func(
             PyObject *v = GETLOCAL(oparg);
             ERROR_IF(v == NULL, unbound_local_error);
             SETLOCAL(oparg, NULL);
-            Py_CLEAR(LOCALS());
         }
 
         inst(MAKE_CELL, (--)) {
