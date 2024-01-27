@@ -336,7 +336,7 @@ PyList_Insert(PyObject *op, Py_ssize_t where, PyObject *newitem)
 int
 _PyList_AppendTakeRefListResize(PyListObject *self, PyObject *newitem)
 {
-    Py_ssize_t len = PyList_GET_SIZE(self);
+    Py_ssize_t len = Py_SIZE(self);
     assert(self->allocated == -1 || self->allocated == len);
     if (list_resize(self, len + 1) < 0) {
         Py_DECREF(newitem);
