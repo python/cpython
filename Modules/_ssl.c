@@ -4682,6 +4682,11 @@ _ssl__SSLContext_get_ca_certs_impl(PySSLContext *self, int binary_form)
 
     store = SSL_CTX_get_cert_store(self->ctx);
     objs = X509_STORE_get1_objects(store);
+    if (objs == NULL) {
+        PyErr_SetString(PyExc_MemoryError, "failed to query cert store");
+        goto error;
+    }
+
     for (i = 0; i < sk_X509_OBJECT_num(objs); i++) {
         X509_OBJECT *obj;
         X509 *cert;
