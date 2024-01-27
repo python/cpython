@@ -31,11 +31,9 @@ get_list_state(void)
 #endif
 
 #ifdef Py_GIL_DISABLED
-  #define _Py_SET_ITEMREF(op, i, v) \
-    _Py_atomic_store_ptr_relaxed(&((PyListObject *)(op))->ob_item[i], Py_NewRef(v))
+  #define _Py_SET_ITEMREF(op, i, v) _Py_atomic_store_ptr_relaxed(&((PyListObject *)(op))->ob_item[i], Py_NewRef(v))
 #else
-    #define _Py_SET_ITEMREF(op, i, v) \
-        ((PyListObject *)(op))->ob_item[i] = Py_NewRef(v)
+  #define _Py_SET_ITEMREF(op, i, v) ((PyListObject *)(op))->ob_item[i] = Py_NewRef(v)
 #endif
 
 
