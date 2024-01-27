@@ -1293,7 +1293,7 @@ always available.
    The list of the original command line arguments passed to the Python
    executable.
 
-   Note that the elements of *sys.orig_argv* are the arguments to the Python interpreter,
+   The elements of *sys.orig_argv* are the arguments to the Python interpreter,
    while the elements of :data:`sys.argv` are the arguments to the user's script.
    Arguments consumed by the interpreter itself will be present in *sys.orig_argv*
    and missing from :data:`sys.argv`.
