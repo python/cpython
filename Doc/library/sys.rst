@@ -1298,8 +1298,6 @@ always available.
    Arguments consumed by the interpreter itself will be present in *sys.orig_argv*
    and missing from :data:`sys.argv`.
 
-   See also :data:`sys.argv`.
-
    .. versionadded:: 3.10
 
 
