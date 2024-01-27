@@ -234,8 +234,10 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
         self.assertNotEqual(P(), {})
         self.assertNotEqual(P(), int)
 
-    def test_equivalences(self):
-        for k, tuples in self.equivalences.items():
+    def test_equivalences(self, equivalences=None):
+        if equivalences is None:
+            equivalences = self.equivalences
+        for k, tuples in equivalences.items():
             canon = k.replace('/', self.sep)
             posix = k.replace(self.sep, '/')
             if canon != posix:
@@ -356,11 +358,8 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
         self.assertRaises(ValueError, P('a').match, '')
         self.assertRaises(ValueError, P('a').match, '.')
 
-
-class PurePosixPathTest(PurePathTest):
-    cls = pathlib.PurePosixPath
-
-    def test_parse_path(self):
+    @needs_posix
+    def test_parse_path_posix(self):
         check = self._check_parse_path
         # Collapsing of excess leading slashes, except for the double-slash
         # special case.
@@ -372,25 +371,29 @@ class PurePosixPathTest(PurePathTest):
         check('c:\\a',   '', '', ['c:\\a',])
         check('\\a',     '', '', ['\\a',])
 
-    def test_root(self):
+    @needs_posix
+    def test_root_posix(self):
         P = self.cls
         self.assertEqual(P('/a/b').root, '/')
         self.assertEqual(P('///a/b').root, '/')
         # POSIX special case for two leading slashes.
         self.assertEqual(P('//a/b').root, '//')
 
-    def test_eq(self):
+    @needs_posix
+    def test_eq_posix(self):
         P = self.cls
         self.assertNotEqual(P('a/b'), P('A/b'))
         self.assertEqual(P('/a'), P('///a'))
         self.assertNotEqual(P('/a'), P('//a'))
 
-    def test_as_uri(self):
+    @needs_posix
+    def test_as_uri_posix(self):
         P = self.cls
         self.assertEqual(P('/').as_uri(), 'file:///')
         self.assertEqual(P('/a/b.c').as_uri(), 'file:///a/b.c')
         self.assertEqual(P('/a/b%#c').as_uri(), 'file:///a/b%25%23c')
 
+    @needs_posix
     def test_as_uri_non_ascii(self):
         from urllib.parse import quote_from_bytes
         P = self.cls
@@ -401,11 +404,13 @@ class PurePosixPathTest(PurePathTest):
         self.assertEqual(P('/a/b\xe9').as_uri(),
                          'file:///a/b' + quote_from_bytes(os.fsencode('\xe9')))
 
-    def test_match(self):
+    @needs_posix
+    def test_match_posix(self):
         P = self.cls
         self.assertFalse(P('A.py').match('a.PY'))
 
-    def test_is_absolute(self):
+    @needs_posix
+    def test_is_absolute_posix(self):
         P = self.cls
         self.assertFalse(P().is_absolute())
         self.assertFalse(P('a').is_absolute())
@@ -416,7 +421,8 @@ class PurePosixPathTest(PurePathTest):
         self.assertTrue(P('//a').is_absolute())
         self.assertTrue(P('//a/b').is_absolute())
 
-    def test_join(self):
+    @needs_posix
+    def test_join_posix(self):
         P = self.cls
         p = P('//a')
         pp = p.joinpath('b')
@@ -426,7 +432,8 @@ class PurePosixPathTest(PurePathTest):
         pp = P('//a').joinpath('/c')
         self.assertEqual(pp, P('/c'))
 
-    def test_div(self):
+    @needs_posix
+    def test_div_posix(self):
         # Basically the same as joinpath().
         P = self.cls
         p = P('//a')
@@ -437,18 +444,14 @@ class PurePosixPathTest(PurePathTest):
         pp = P('//a') / '/c'
         self.assertEqual(pp, P('/c'))
 
+    @needs_posix
     def test_parse_windows_path(self):
         P = self.cls
         p = P('c:', 'a', 'b')
         pp = P(pathlib.PureWindowsPath('c:\\a\\b'))
         self.assertEqual(p, pp)
 
-
-class PureWindowsPathTest(PurePathTest):
-    cls = pathlib.PureWindowsPath
-
-    equivalences = PurePathTest.equivalences.copy()
-    equivalences.update({
+    windows_equivalences = {
         './a:b': [ ('./a:b',) ],
         'c:a': [ ('c:', 'a'), ('c:', 'a/'), ('.', 'c:', 'a') ],
         'c:/a': [
@@ -459,9 +462,14 @@ class PureWindowsPathTest(PurePathTest):
         '//a/b/c': [
             ('//a/b', 'c'), ('//a/b/', 'c'),
             ],
-    })
+    }
 
-    def test_parse_path(self):
+    @needs_windows
+    def test_equivalences_windows(self):
+        self.test_equivalences(self.windows_equivalences)
+
+    @needs_windows
+    def test_parse_path_windows(self):
         check = self._check_parse_path
         # First part is anchored.
         check('c:',                  'c:', '', [])
@@ -509,7 +517,8 @@ class PureWindowsPathTest(PurePathTest):
         check('D:a/c:b',             'D:', '', ['a', 'c:b'])
         check('D:/a/c:b',            'D:', '\\', ['a', 'c:b'])
 
-    def test_str(self):
+    @needs_windows
+    def test_str_windows(self):
         p = self.cls('a/b/c')
         self.assertEqual(str(p), 'a\\b\\c')
         p = self.cls('c:/a/b/c')
@@ -521,7 +530,8 @@ class PureWindowsPathTest(PurePathTest):
         p = self.cls('//a/b/c/d')
         self.assertEqual(str(p), '\\\\a\\b\\c\\d')
 
-    def test_str_subclass(self):
+    @needs_windows
+    def test_str_subclass_windows(self):
         self._check_str_subclass('.\\a:b')
         self._check_str_subclass('c:')
         self._check_str_subclass('c:a')
@@ -533,7 +543,8 @@ class PureWindowsPathTest(PurePathTest):
         self._check_str_subclass('\\\\some\\share\\a')
         self._check_str_subclass('\\\\some\\share\\a\\b.txt')
 
-    def test_eq(self):
+    @needs_windows
+    def test_eq_windows(self):
         P = self.cls
         self.assertEqual(P('c:a/b'), P('c:a/b'))
         self.assertEqual(P('c:a/b'), P('c:', 'a', 'b'))
@@ -546,7 +557,8 @@ class PureWindowsPathTest(PurePathTest):
         self.assertEqual(P('//Some/SHARE/a/B'), P('//somE/share/A/b'))
         self.assertEqual(P('\u0130'), P('i\u0307'))
 
-    def test_as_uri(self):
+    @needs_windows
+    def test_as_uri_windows(self):
         P = self.cls
         with self.assertRaises(ValueError):
             P('/a/b').as_uri()
@@ -562,7 +574,8 @@ class PureWindowsPathTest(PurePathTest):
         self.assertEqual(P('//some/share/a/b%#c\xe9').as_uri(),
                          'file://some/share/a/b%25%23c%C3%A9')
 
-    def test_match(self):
+    @needs_windows
+    def test_match_windows(self):
         P = self.cls
         # Absolute patterns.
         self.assertTrue(P('c:/b.py').match('*:/*.py'))
@@ -589,7 +602,8 @@ class PureWindowsPathTest(PurePathTest):
         self.assertFalse(P('c:/b.py').match('c:*.py'))  # 'c:/' vs 'c:'
         self.assertFalse(P('//some/share/a.py').match('/*.py'))  # '//some/share/' vs '/'
 
-    def test_ordering_common(self):
+    @needs_windows
+    def test_ordering_windows(self):
         # Case-insensitivity.
         def assertOrderedEqual(a, b):
             self.assertLessEqual(a, b)
@@ -606,7 +620,8 @@ class PureWindowsPathTest(PurePathTest):
         self.assertFalse(p < q)
         self.assertFalse(p > q)
 
-    def test_parts(self):
+    @needs_windows
+    def test_parts_windows(self):
         P = self.cls
         p = P('c:a/b')
         parts = p.parts
@@ -618,7 +633,8 @@ class PureWindowsPathTest(PurePathTest):
         parts = p.parts
         self.assertEqual(parts, ('\\\\a\\b\\', 'c', 'd'))
 
-    def test_parent(self):
+    @needs_windows
+    def test_parent_windows(self):
         # Anchored
         P = self.cls
         p = P('z:a/b/c')
@@ -636,7 +652,8 @@ class PureWindowsPathTest(PurePathTest):
         self.assertEqual(p.parent.parent, P('//a/b'))
         self.assertEqual(p.parent.parent.parent, P('//a/b'))
 
-    def test_parents(self):
+    @needs_windows
+    def test_parents_windows(self):
         # Anchored
         P = self.cls
         p = P('z:a/b/')
@@ -682,7 +699,8 @@ class PureWindowsPathTest(PurePathTest):
         with self.assertRaises(IndexError):
             par[2]
 
-    def test_drive(self):
+    @needs_windows
+    def test_drive_windows(self):
         P = self.cls
         self.assertEqual(P('c:').drive, 'c:')
         self.assertEqual(P('c:a/b').drive, 'c:')
@@ -693,7 +711,8 @@ class PureWindowsPathTest(PurePathTest):
         self.assertEqual(P('//a/b/c/d').drive, '\\\\a\\b')
         self.assertEqual(P('./c:a').drive, '')
 
-    def test_root(self):
+    @needs_windows
+    def test_root_windows(self):
         P = self.cls
         self.assertEqual(P('c:').root, '')
         self.assertEqual(P('c:a/b').root, '')
@@ -703,7 +722,8 @@ class PureWindowsPathTest(PurePathTest):
         self.assertEqual(P('//a/b/').root, '\\')
         self.assertEqual(P('//a/b/c/d').root, '\\')
 
-    def test_anchor(self):
+    @needs_windows
+    def test_anchor_windows(self):
         P = self.cls
         self.assertEqual(P('c:').anchor, 'c:')
         self.assertEqual(P('c:a/b').anchor, 'c:')
@@ -713,7 +733,8 @@ class PureWindowsPathTest(PurePathTest):
         self.assertEqual(P('//a/b/').anchor, '\\\\a\\b\\')
         self.assertEqual(P('//a/b/c/d').anchor, '\\\\a\\b\\')
 
-    def test_name(self):
+    @needs_windows
+    def test_name_windows(self):
         P = self.cls
         self.assertEqual(P('c:').name, '')
         self.assertEqual(P('c:/').name, '')
@@ -724,7 +745,8 @@ class PureWindowsPathTest(PurePathTest):
         self.assertEqual(P('//My.py/Share.php').name, '')
         self.assertEqual(P('//My.py/Share.php/a/b').name, 'b')
 
-    def test_suffix(self):
+    @needs_windows
+    def test_suffix_windows(self):
         P = self.cls
         self.assertEqual(P('c:').suffix, '')
         self.assertEqual(P('c:/').suffix, '')
@@ -743,7 +765,8 @@ class PureWindowsPathTest(PurePathTest):
         self.assertEqual(P('//My.py/Share.php').suffix, '')
         self.assertEqual(P('//My.py/Share.php/a/b').suffix, '')
 
-    def test_suffixes(self):
+    @needs_windows
+    def test_suffixes_windows(self):
         P = self.cls
         self.assertEqual(P('c:').suffixes, [])
         self.assertEqual(P('c:/').suffixes, [])
@@ -762,7 +785,8 @@ class PureWindowsPathTest(PurePathTest):
         self.assertEqual(P('c:a/Some name. Ending with a dot.').suffixes, [])
         self.assertEqual(P('c:/a/Some name. Ending with a dot.').suffixes, [])
 
-    def test_stem(self):
+    @needs_windows
+    def test_stem_windows(self):
         P = self.cls
         self.assertEqual(P('c:').stem, '')
         self.assertEqual(P('c:.').stem, '')
@@ -776,7 +800,8 @@ class PureWindowsPathTest(PurePathTest):
         self.assertEqual(P('c:a/Some name. Ending with a dot.').stem,
                          'Some name. Ending with a dot.')
 
-    def test_with_name(self):
+    @needs_windows
+    def test_with_name_windows(self):
         P = self.cls
         self.assertEqual(P('c:a/b').with_name('d.xml'), P('c:a/d.xml'))
         self.assertEqual(P('c:/a/b').with_name('d.xml'), P('c:/a/d.xml'))
@@ -792,7 +817,8 @@ class PureWindowsPathTest(PurePathTest):
         self.assertRaises(ValueError, P('c:a/b').with_name, 'd:/e')
         self.assertRaises(ValueError, P('c:a/b').with_name, '//My/Share')
 
-    def test_with_stem(self):
+    @needs_windows
+    def test_with_stem_windows(self):
         P = self.cls
         self.assertEqual(P('c:a/b').with_stem('d'), P('c:a/d'))
         self.assertEqual(P('c:/a/b').with_stem('d'), P('c:/a/d'))
@@ -808,7 +834,8 @@ class PureWindowsPathTest(PurePathTest):
         self.assertRaises(ValueError, P('c:a/b').with_stem, 'd:/e')
         self.assertRaises(ValueError, P('c:a/b').with_stem, '//My/Share')
 
-    def test_with_suffix(self):
+    @needs_windows
+    def test_with_suffix_windows(self):
         P = self.cls
         self.assertEqual(P('c:a/b').with_suffix('.gz'), P('c:a/b.gz'))
         self.assertEqual(P('c:/a/b').with_suffix('.gz'), P('c:/a/b.gz'))
@@ -832,7 +859,8 @@ class PureWindowsPathTest(PurePathTest):
         self.assertRaises(ValueError, P('c:a/b').with_suffix, '.c/d')
         self.assertRaises(ValueError, P('c:a/b').with_suffix, '.c\\d')
 
-    def test_relative_to(self):
+    @needs_windows
+    def test_relative_to_windows(self):
         P = self.cls
         p = P('C:Foo/Bar')
         self.assertEqual(p.relative_to(P('c:')), P('Foo/Bar'))
@@ -937,7 +965,8 @@ class PureWindowsPathTest(PurePathTest):
         self.assertRaises(ValueError, p.relative_to, P('//z/Share/Foo'), walk_up=True)
         self.assertRaises(ValueError, p.relative_to, P('//Server/z/Foo'), walk_up=True)
 
-    def test_is_relative_to(self):
+    @needs_windows
+    def test_is_relative_to_windows(self):
         P = self.cls
         p = P('C:Foo/Bar')
         self.assertTrue(p.is_relative_to(P('c:')))
@@ -990,7 +1019,8 @@ class PureWindowsPathTest(PurePathTest):
         self.assertFalse(p.is_relative_to(P('//z/Share/Foo')))
         self.assertFalse(p.is_relative_to(P('//Server/z/Foo')))
 
-    def test_is_absolute(self):
+    @needs_windows
+    def test_is_absolute_windows(self):
         P = self.cls
         # Under NT, only paths with both a drive and a root are absolute.
         self.assertFalse(P().is_absolute())
@@ -1015,7 +1045,8 @@ class PureWindowsPathTest(PurePathTest):
         self.assertTrue(P('//?/UNC/').is_absolute())
         self.assertTrue(P('//?/UNC/spam').is_absolute())
 
-    def test_join(self):
+    @needs_windows
+    def test_join_windows(self):
         P = self.cls
         p = P('C:/a/b')
         pp = p.joinpath('x/y')
@@ -1052,7 +1083,8 @@ class PureWindowsPathTest(PurePathTest):
         pp = P('//./BootPartition').joinpath('Windows')
         self.assertEqual(pp, P('//./BootPartition/Windows'))
 
-    def test_div(self):
+    @needs_windows
+    def test_div_windows(self):
         # Basically the same as joinpath().
         P = self.cls
         p = P('C:/a/b')
@@ -1076,6 +1108,14 @@ class PureWindowsPathTest(PurePathTest):
         self.assertEqual(p / P('./d:s'), P('C:/a/b/d:s'))
         self.assertEqual(p / P('./dd:s'), P('C:/a/b/dd:s'))
         self.assertEqual(p / P('E:d:s'), P('E:d:s'))
+
+
+class PurePosixPathTest(PurePathTest):
+    cls = pathlib.PurePosixPath
+
+
+class PureWindowsPathTest(PurePathTest):
+    cls = pathlib.PureWindowsPath
 
 
 class PurePathSubclassTest(PurePathTest):
@@ -1842,12 +1882,8 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertEqual(expect, set(p.rglob(P(pattern))))
         self.assertEqual(expect, set(p.rglob(FakePath(pattern))))
 
-
-@unittest.skipIf(os.name == 'nt', 'test requires a POSIX-compatible system')
-class PosixPathTest(PathTest, PurePosixPathTest):
-    cls = pathlib.PosixPath
-
-    def test_absolute(self):
+    @needs_posix
+    def test_absolute_posix(self):
         P = self.cls
         self.assertEqual(str(P('/').absolute()), '/')
         self.assertEqual(str(P('/a').absolute()), '/a')
@@ -1862,6 +1898,7 @@ class PosixPathTest(PathTest, PurePosixPathTest):
         is_emscripten or is_wasi,
         "umask is not implemented on Emscripten/WASI."
     )
+    @needs_posix
     def test_open_mode(self):
         old_mask = os.umask(0)
         self.addCleanup(os.umask, old_mask)
@@ -1876,6 +1913,7 @@ class PosixPathTest(PathTest, PurePosixPathTest):
         st = os.stat(self.pathmod.join(self.base, 'other_new_file'))
         self.assertEqual(stat.S_IMODE(st.st_mode), 0o644)
 
+    @needs_posix
     def test_resolve_root(self):
         current_directory = os.getcwd()
         try:
@@ -1889,6 +1927,7 @@ class PosixPathTest(PathTest, PurePosixPathTest):
         is_emscripten or is_wasi,
         "umask is not implemented on Emscripten/WASI."
     )
+    @needs_posix
     def test_touch_mode(self):
         old_mask = os.umask(0)
         self.addCleanup(os.umask, old_mask)
@@ -1904,7 +1943,8 @@ class PosixPathTest(PathTest, PurePosixPathTest):
         st = os.stat(self.pathmod.join(self.base, 'masked_new_file'))
         self.assertEqual(stat.S_IMODE(st.st_mode), 0o750)
 
-    def test_glob(self):
+    @needs_posix
+    def test_glob_posix(self):
         P = self.cls
         p = P(self.base)
         given = set(p.glob("FILEa"))
@@ -1912,7 +1952,8 @@ class PosixPathTest(PathTest, PurePosixPathTest):
         self.assertEqual(given, expect)
         self.assertEqual(set(p.glob("FILEa*")), set())
 
-    def test_rglob(self):
+    @needs_posix
+    def test_rglob_posix(self):
         P = self.cls
         p = P(self.base, "dirC")
         given = set(p.rglob("FILEd"))
@@ -1924,7 +1965,8 @@ class PosixPathTest(PathTest, PurePosixPathTest):
                          'pwd module does not expose getpwall()')
     @unittest.skipIf(sys.platform == "vxworks",
                      "no home directory on VxWorks")
-    def test_expanduser(self):
+    @needs_posix
+    def test_expanduser_posix(self):
         P = self.cls
         import_helper.import_module('pwd')
         import pwd
@@ -1979,6 +2021,7 @@ class PosixPathTest(PathTest, PurePosixPathTest):
 
     @unittest.skipIf(sys.platform != "darwin",
                      "Bad file descriptor in /dev/fd affects only macOS")
+    @needs_posix
     def test_handling_bad_descriptor(self):
         try:
             file_descriptors = list(pathlib.Path('/dev/fd').rglob("*"))[3:]
@@ -2000,7 +2043,8 @@ class PosixPathTest(PathTest, PurePosixPathTest):
                 self.fail("Bad file descriptor not handled.")
             raise
 
-    def test_from_uri(self):
+    @needs_posix
+    def test_from_uri_posix(self):
         P = self.cls
         self.assertEqual(P.from_uri('file:/foo/bar'), P('/foo/bar'))
         self.assertEqual(P.from_uri('file://foo/bar'), P('//foo/bar'))
@@ -2013,17 +2057,14 @@ class PosixPathTest(PathTest, PurePosixPathTest):
         self.assertRaises(ValueError, P.from_uri, 'file:foo/bar')
         self.assertRaises(ValueError, P.from_uri, 'http://foo/bar')
 
-    def test_from_uri_pathname2url(self):
+    @needs_posix
+    def test_from_uri_pathname2url_posix(self):
         P = self.cls
         self.assertEqual(P.from_uri('file:' + pathname2url('/foo/bar')), P('/foo/bar'))
         self.assertEqual(P.from_uri('file:' + pathname2url('//foo/bar')), P('//foo/bar'))
 
-
-@unittest.skipIf(os.name != 'nt', 'test requires a Windows-compatible system')
-class WindowsPathTest(PathTest, PureWindowsPathTest):
-    cls = pathlib.WindowsPath
-
-    def test_absolute(self):
+    @needs_windows
+    def test_absolute_windows(self):
         P = self.cls
 
         # Simple absolute paths.
@@ -2068,7 +2109,8 @@ class WindowsPathTest(PathTest, PureWindowsPathTest):
             self.assertEqual(str(P(other_drive).absolute()), other_cwd)
             self.assertEqual(str(P(other_drive + 'foo').absolute()), other_cwd + '\\foo')
 
-    def test_glob(self):
+    @needs_windows
+    def test_glob_windows(self):
         P = self.cls
         p = P(self.base)
         self.assertEqual(set(p.glob("FILEa")), { P(self.base, "fileA") })
@@ -2077,14 +2119,16 @@ class WindowsPathTest(PathTest, PureWindowsPathTest):
         self.assertEqual(set(map(str, p.glob("FILEa"))), {f"{p}\\fileA"})
         self.assertEqual(set(map(str, p.glob("F*a"))), {f"{p}\\fileA"})
 
-    def test_rglob(self):
+    @needs_windows
+    def test_rglob_windows(self):
         P = self.cls
         p = P(self.base, "dirC")
         self.assertEqual(set(p.rglob("FILEd")), { P(self.base, "dirC/dirD/fileD") })
         self.assertEqual(set(p.rglob("*\\")), { P(self.base, "dirC/dirD/") })
         self.assertEqual(set(map(str, p.rglob("FILEd"))), {f"{p}\\dirD\\fileD"})
 
-    def test_expanduser(self):
+    @needs_windows
+    def test_expanduser_windows(self):
         P = self.cls
         with os_helper.EnvironmentVarGuard() as env:
             env.pop('HOME', None)
@@ -2137,7 +2181,8 @@ class WindowsPathTest(PathTest, PureWindowsPathTest):
             env['HOME'] = 'C:\\Users\\eve'
             check()
 
-    def test_from_uri(self):
+    @needs_windows
+    def test_from_uri_windows(self):
         P = self.cls
         # DOS drive paths
         self.assertEqual(P.from_uri('file:c:/path/to/file'), P('c:/path/to/file'))
@@ -2158,20 +2203,33 @@ class WindowsPathTest(PathTest, PureWindowsPathTest):
         self.assertRaises(ValueError, P.from_uri, 'file:foo/bar')
         self.assertRaises(ValueError, P.from_uri, 'http://foo/bar')
 
-    def test_from_uri_pathname2url(self):
+    @needs_windows
+    def test_from_uri_pathname2url_windows(self):
         P = self.cls
         self.assertEqual(P.from_uri('file:' + pathname2url(r'c:\path\to\file')), P('c:/path/to/file'))
         self.assertEqual(P.from_uri('file:' + pathname2url(r'\\server\path\to\file')), P('//server/path/to/file'))
 
-    def test_owner(self):
+    @needs_windows
+    def test_owner_windows(self):
         P = self.cls
         with self.assertRaises(pathlib.UnsupportedOperation):
             P('c:/').owner()
 
-    def test_group(self):
+    @needs_windows
+    def test_group_windows(self):
         P = self.cls
         with self.assertRaises(pathlib.UnsupportedOperation):
             P('c:/').group()
+
+
+@unittest.skipIf(os.name == 'nt', 'test requires a POSIX-compatible system')
+class PosixPathTest(PathTest, PurePosixPathTest):
+    cls = pathlib.PosixPath
+
+
+@unittest.skipIf(os.name != 'nt', 'test requires a Windows-compatible system')
+class WindowsPathTest(PathTest, PureWindowsPathTest):
+    cls = pathlib.WindowsPath
 
 
 class PathSubclassTest(PathTest):
