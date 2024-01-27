@@ -65,7 +65,7 @@ class HierarchyTest(unittest.TestCase):
         +-- NotADirectoryError                                        ENOTDIR
         +-- PermissionError                        EACCES, EPERM, ENOTCAPABLE
         +-- ProcessLookupError                                          ESRCH
-        +-- TimeoutError                                            ETIMEDOUT
+        +-- TimeoutError                                     ETIME, ETIMEDOUT
     """
     def _make_map(s):
         _map = {}

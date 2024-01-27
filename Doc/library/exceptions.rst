@@ -789,6 +789,9 @@ depending on the system error code.
    Raised when a system function timed out at the system level.
    Corresponds to :c:data:`errno` :py:const:`~errno.ETIMEDOUT`.
 
+   .. versionchanged:: 3.10
+      ``ETIME`` is now mapped to :exc:`TimeoutError`.
+
 .. versionadded:: 3.3
    All the above :exc:`OSError` subclasses were added.
 
