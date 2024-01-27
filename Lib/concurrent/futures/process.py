@@ -190,16 +190,6 @@ class _SafeQueue(Queue):
             super()._on_queue_feeder_error(e, obj)
 
 
-def _get_chunks(*iterables, chunksize):
-    """ Iterates over zip()ed iterables in chunks. """
-    it = zip(*iterables)
-    while True:
-        chunk = tuple(itertools.islice(it, chunksize))
-        if not chunk:
-            return
-        yield chunk
-
-
 def _process_chunk(fn, chunk):
     """ Processes a chunk of an iterable passed to map.
 
@@ -847,7 +837,7 @@ class ProcessPoolExecutor(_base.Executor):
             raise ValueError("chunksize must be >= 1.")
 
         results = super().map(partial(_process_chunk, fn),
-                              _get_chunks(*iterables, chunksize=chunksize),
+                              itertools.batched(zip(*iterables), chunksize),
                               timeout=timeout)
         return _chain_from_iterable_of_lists(results)
 
