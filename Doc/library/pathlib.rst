@@ -1641,6 +1641,9 @@ Wildcard                   Matches
 "``[!seq]``"               One character not in *seq*.
 =========================  ===========================================
 
+For a literal match, wrap the meta-characters in brackets.
+For example, ``"[?]"`` matches the character ``"?"``.
+
 The "``**``" wildcard enables recursive globbing. A few examples:
 
 =========================  ===========================================
@@ -1653,11 +1656,8 @@ Pattern                    Meaning
 =========================  ===========================================
 
 .. note::
-   Globbing with the "``**``" wildcard in large directory trees may consume
-   an inordinate amount of time.
-
-For a literal match, wrap the meta-characters in brackets.
-For example, ``"[?]"`` matches the character ``"?"``.
+   Globbing with the "``**``" wildcard visits every directory in the tree.
+   Large directory trees may take a long time to search.
 
 
 Correspondence to tools in the :mod:`os` module
