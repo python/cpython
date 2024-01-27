@@ -203,7 +203,17 @@ struct _is {
     struct _mimalloc_interp_state mimalloc;
 #endif
 
-    struct _obmalloc_state obmalloc;
+    // Per-interpreter state for the obmalloc allocator.  For the main
+    // interpreter and for all interpreters that don't have their
+    // own obmalloc state, this points to the static structure in
+    // obmalloc.c obmalloc_state_main.  For other interpreters, it is
+    // heap allocated by _PyMem_init_obmalloc() and freed when the
+    // interpreter structure is freed.  In the case of a heap allocated
+    // obmalloc state, it is not safe to hold on to or use memory after
+    // the interpreter is freed. The obmalloc state corresponding to
+    // that allocated memory is gone.  See free_obmalloc_arenas() for
+    // more comments.
+    struct _obmalloc_state *obmalloc;
 
     PyObject *audit_hooks;
     PyType_WatchCallback type_watchers[TYPE_MAX_WATCHERS];
