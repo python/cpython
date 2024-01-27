@@ -19,7 +19,7 @@
 // This is the length of the trace we project initially.
 #define UOP_MAX_TRACE_LENGTH 512
 // This the above + additional working space we need.
-#define UOP_MAX_TRACE_WORKING_LENGTH (UOP_MAX_TRACE_LENGTH * 4)
+#define UOP_MAX_TRACE_WORKING_LENGTH UOP_MAX_TRACE_LENGTH * 2
 
 #define MAX_EXECUTORS_SIZE 256
 
