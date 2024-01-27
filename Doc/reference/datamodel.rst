@@ -2009,7 +2009,7 @@ not found on a module object through the normal lookup, i.e.
 the module ``__dict__`` before raising an :exc:`AttributeError`. If found,
 it is called with the attribute name and the result is returned.
 
-The ``__dir__`` function should accept no arguments, and return a sequence of
+The ``__dir__`` function should accept no arguments, and return an iterable of
 strings that represents the names accessible on module. If present, this
 function overrides the standard :func:`dir` search on a module.
 
