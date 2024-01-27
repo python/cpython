@@ -97,6 +97,7 @@ nitpick_ignore = [
     ('c:func', 'free'),
     ('c:func', 'gettimeofday'),
     ('c:func', 'gmtime'),
+    ('c:func', 'localeconv'),
     ('c:func', 'localtime'),
     ('c:func', 'main'),
     ('c:func', 'malloc'),
