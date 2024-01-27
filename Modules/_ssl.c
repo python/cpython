@@ -4566,7 +4566,9 @@ static X509_OBJECT *x509_object_dup(const X509_OBJECT *obj)
             ok = X509_OBJECT_set1_X509(ret, X509_OBJECT_get0_X509(obj));
             break;
         case X509_LU_CRL:
-            ok = X509_OBJECT_set1_X509_CRL(ret, X509_OBJECT_get0_X509_CRL(obj));
+            /* X509_OBJECT_get0_X509_CRL was not const-correct prior to 3.0.*/
+            ok = X509_OBJECT_set1_X509_CRL(
+                ret, X509_OBJECT_get0_X509_CRL((X509_OBJECT *)obj));
             break;
         default:
             /* We cannot duplicate unrecognized types in a polyfill, but it is
