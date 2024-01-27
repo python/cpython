@@ -41,9 +41,40 @@ struct _Py_long_state {
     int max_str_digits;
 };
 
+// Support for stop-the-world events. This exists in both the PyRuntime struct
+// for global pauses and in each PyInterpreterState for per-interpreter pauses.
+struct _stoptheworld_state {
+    PyMutex mutex;       // Serializes stop-the-world attempts.
+
+    // NOTE: The below fields are protected by HEAD_LOCK(runtime), not by the
+    // above mutex.
+    bool requested;      // Set when a pause is requested.
+    bool world_stopped;  // Set when the world is stopped.
+    bool is_global;      // Set when contained in PyRuntime struct.
+
+    PyEvent stop_event;  // Set when thread_countdown reaches zero.
+    Py_ssize_t thread_countdown;  // Number of threads that must pause.
+
+    PyThreadState *requester; // Thread that requested the pause (may be NULL).
+};
 
 /* cross-interpreter data registry */
 
+/* Tracks some rare events per-interpreter, used by the optimizer to turn on/off
+   specific optimizations. */
+typedef struct _rare_events {
+    /* Setting an object's class, obj.__class__ = ... */
+    uint8_t set_class;
+    /* Setting the bases of a class, cls.__bases__ = ... */
+    uint8_t set_bases;
+    /* Setting the PEP 523 frame eval function, _PyInterpreterState_SetFrameEvalFunc() */
+    uint8_t set_eval_frame_func;
+    /* Modifying the builtins,  __builtins__.__dict__[var] = ... */
+    uint8_t builtin_dict;
+    int builtins_dict_watcher_id;
+    /* Modifying a function, e.g. func.__defaults__ = ..., etc. */
+    uint8_t func_modification;
+} _rare_events;
 
 /* interpreter state */
 
@@ -166,12 +197,23 @@ struct _is {
 
     struct _warnings_runtime_state warnings;
     struct atexit_state atexit;
+    struct _stoptheworld_state stoptheworld;
 
 #if defined(Py_GIL_DISABLED)
     struct _mimalloc_interp_state mimalloc;
 #endif
 
-    struct _obmalloc_state obmalloc;
+    // Per-interpreter state for the obmalloc allocator.  For the main
+    // interpreter and for all interpreters that don't have their
+    // own obmalloc state, this points to the static structure in
+    // obmalloc.c obmalloc_state_main.  For other interpreters, it is
+    // heap allocated by _PyMem_init_obmalloc() and freed when the
+    // interpreter structure is freed.  In the case of a heap allocated
+    // obmalloc state, it is not safe to hold on to or use memory after
+    // the interpreter is freed. The obmalloc state corresponding to
+    // that allocated memory is gone.  See free_obmalloc_arenas() for
+    // more comments.
+    struct _obmalloc_state *obmalloc;
 
     PyObject *audit_hooks;
     PyType_WatchCallback type_watchers[TYPE_MAX_WATCHERS];
@@ -187,14 +229,9 @@ struct _is {
     struct _Py_long_state long_state;
     struct _dtoa_state dtoa;
     struct _py_func_state func_state;
-    /* Using a cache is very effective since typically only a single slice is
-       created and then deleted again. */
-    PySliceObject *slice_cache;
 
     struct _Py_tuple_state tuple;
     struct _Py_dict_state dict_state;
-    struct _Py_async_gen_state async_gen;
-    struct _Py_context_state context;
     struct _Py_exc_state exc_state;
 
     struct ast_state ast;
@@ -205,6 +242,7 @@ struct _is {
     uint16_t optimizer_resume_threshold;
     uint16_t optimizer_backedge_threshold;
     uint32_t next_func_version;
+    _rare_events rare_events;
 
     _Py_GlobalMonitors monitors;
     bool sys_profile_initialized;
@@ -334,6 +372,19 @@ PyAPI_FUNC(PyStatus) _PyInterpreterState_New(
     PyThreadState *tstate,
     PyInterpreterState **pinterp);
 
+
+#define RARE_EVENT_INTERP_INC(interp, name) \
+    do { \
+        /* saturating add */ \
+        if (interp->rare_events.name < UINT8_MAX) interp->rare_events.name++; \
+        RARE_EVENT_STAT_INC(name); \
+    } while (0); \
+
+#define RARE_EVENT_INC(name) \
+    do { \
+        PyInterpreterState *interp = PyInterpreterState_Get(); \
+        RARE_EVENT_INTERP_INC(interp, name); \
+    } while (0); \
 
 #ifdef __cplusplus
 }
