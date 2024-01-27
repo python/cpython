@@ -64,12 +64,12 @@ static int
 contextvar_del(PyContextVar *var);
 
 
-#if PyContext_MAXFREELIST > 0
+#ifdef WITH_FREELISTS
 static struct _Py_context_state *
 get_context_state(void)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    return &interp->context;
+    _PyFreeListState *state = _PyFreeListState_GET();
+    return &state->context_state;
 }
 #endif
 
@@ -340,13 +340,9 @@ static inline PyContext *
 _context_alloc(void)
 {
     PyContext *ctx;
-#if PyContext_MAXFREELIST > 0
+#ifdef WITH_FREELISTS
     struct _Py_context_state *state = get_context_state();
-#ifdef Py_DEBUG
-    // _context_alloc() must not be called after _PyContext_Fini()
-    assert(state->numfree != -1);
-#endif
-    if (state->numfree) {
+    if (state->numfree > 0) {
         state->numfree--;
         ctx = state->freelist;
         state->freelist = (PyContext *)ctx->ctx_weakreflist;
@@ -471,13 +467,9 @@ context_tp_dealloc(PyContext *self)
     }
     (void)context_tp_clear(self);
 
-#if PyContext_MAXFREELIST > 0
+#ifdef WITH_FREELISTS
     struct _Py_context_state *state = get_context_state();
-#ifdef Py_DEBUG
-    // _context_alloc() must not be called after _PyContext_Fini()
-    assert(state->numfree != -1);
-#endif
-    if (state->numfree < PyContext_MAXFREELIST) {
+    if (state->numfree >= 0 && state->numfree < PyContext_MAXFREELIST) {
         state->numfree++;
         self->ctx_weakreflist = (PyObject *)state->freelist;
         state->freelist = self;
@@ -1275,28 +1267,27 @@ get_token_missing(void)
 
 
 void
-_PyContext_ClearFreeList(PyInterpreterState *interp)
+_PyContext_ClearFreeList(_PyFreeListState *freelist_state, int is_finalization)
 {
-#if PyContext_MAXFREELIST > 0
-    struct _Py_context_state *state = &interp->context;
-    for (; state->numfree; state->numfree--) {
+#ifdef WITH_FREELISTS
+    struct _Py_context_state *state = &freelist_state->context_state;
+    for (; state->numfree > 0; state->numfree--) {
         PyContext *ctx = state->freelist;
         state->freelist = (PyContext *)ctx->ctx_weakreflist;
         ctx->ctx_weakreflist = NULL;
         PyObject_GC_Del(ctx);
+    }
+    if (is_finalization) {
+        state->numfree = -1;
     }
 #endif
 }
 
 
 void
-_PyContext_Fini(PyInterpreterState *interp)
+_PyContext_Fini(_PyFreeListState *state)
 {
-    _PyContext_ClearFreeList(interp);
-#if defined(Py_DEBUG) && PyContext_MAXFREELIST > 0
-    struct _Py_context_state *state = &interp->context;
-    state->numfree = -1;
-#endif
+    _PyContext_ClearFreeList(state, 1);
 }
 
 

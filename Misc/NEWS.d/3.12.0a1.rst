@@ -1462,7 +1462,7 @@ expression, but there's no trailing brace. For example, f"{i=".
 .. nonce: Jf6gAj
 .. section: Core and Builtins
 
-Cache the result of :c:func:`PyCode_GetCode` function to restore the O(1)
+Cache the result of :c:func:`PyCode_GetCode` function to restore the *O*\ (1)
 lookup of the :attr:`~types.CodeType.co_code` attribute.
 
 ..

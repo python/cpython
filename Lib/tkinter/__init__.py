@@ -1260,6 +1260,8 @@ class Misc:
 
     def winfo_pathname(self, id, displayof=0):
         """Return the pathname of the widget given by ID."""
+        if isinstance(id, int):
+            id = hex(id)
         args = ('winfo', 'pathname') \
                + self._displayof(displayof) + (id,)
         return self.tk.call(args)
@@ -4713,7 +4715,7 @@ class PanedWindow(Widget):
 
 def _test():
     root = Tk()
-    text = "This is Tcl/Tk version %s" % TclVersion
+    text = "This is Tcl/Tk %s" % root.globalgetvar('tk_patchLevel')
     text += "\nThis should be a cedilla: \xe7"
     label = Label(root, text=text)
     label.pack()
