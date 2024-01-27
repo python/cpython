@@ -155,7 +155,6 @@ extern PyTypeObject _PyExc_MemoryError;
     { \
         .id_refcount = -1, \
         .imports = IMPORTS_INIT, \
-        .obmalloc = _obmalloc_state_INIT(INTERP.obmalloc), \
         .ceval = { \
             .recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
         }, \
