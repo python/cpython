@@ -1242,6 +1242,13 @@ linecache
 When a module does not define ``__loader__``, fall back to ``__spec__.loader``.
 (Contributed by Brett Cannon in :issue:`42133`.)
 
+multiprocessing
+---------------
+
+Add a new :func:`multiprocessing.main_process` function to access the main
+process.
+(Contributed by Zackery Spytz in :issue:`38520`.)
+
 os
 --
 

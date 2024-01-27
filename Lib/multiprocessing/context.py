@@ -37,6 +37,7 @@ class BaseContext(object):
     current_process = staticmethod(process.current_process)
     parent_process = staticmethod(process.parent_process)
     active_children = staticmethod(process.active_children)
+    main_process = staticmethod(process.main_process)
 
     def cpu_count(self):
         '''Returns the number of CPUs in the system'''

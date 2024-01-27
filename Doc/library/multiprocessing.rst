@@ -1025,6 +1025,12 @@ Miscellaneous
 
    .. versionadded:: 3.8
 
+.. function:: main_process()
+
+   Return the main :class:`Process` object.
+
+   .. versionadded:: 3.10
+
 .. function:: freeze_support()
 
    Add support for when a program which uses :mod:`multiprocessing` has been
