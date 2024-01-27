@@ -1771,7 +1771,7 @@ set_issubset(PySetObject *so, PyObject *other)
 }
 
 PyDoc_STRVAR(issubset_doc,
-"issubset($self, /, other)\n\
+"issubset($self, other, /)\n\
 --\n\
 \n\
 Test whether every element in the set is in other.");
@@ -1807,7 +1807,7 @@ set_issuperset(PySetObject *so, PyObject *other)
 }
 
 PyDoc_STRVAR(issuperset_doc,
-"issuperset($self, /, other)\n\
+"issuperset($self, other, /)\n\
 --\n\
 \n\
 Test whether every element in other is in the set.");
