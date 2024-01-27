@@ -893,7 +893,6 @@ class BaseProxy(object):
             del tls.connection
 
     def _after_fork(self):
-        self._manager = None
         try:
             self._incref()
         except Exception as e:
