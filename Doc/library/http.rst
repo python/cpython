@@ -95,7 +95,9 @@ Code    Enum Name                           Details
 ``411`` ``LENGTH_REQUIRED``                 HTTP/1.1 :rfc:`7231`, Section 6.5.10
 ``412`` ``PRECONDITION_FAILED``             HTTP/1.1 :rfc:`7232`, Section 4.2
 ``413`` ``REQUEST_ENTITY_TOO_LARGE``        HTTP/1.1 :rfc:`7231`, Section 6.5.11
+``413`` ``PAYLOAD_TOO_LARGE``               HTTP/1.1 :rfc:`7231`, Section 6.5.11
 ``414`` ``REQUEST_URI_TOO_LONG``            HTTP/1.1 :rfc:`7231`, Section 6.5.12
+``414`` ``URI_TOO_LONG``                    HTTP/1.1 :rfc:`7231`, Section 6.5.12
 ``415`` ``UNSUPPORTED_MEDIA_TYPE``          HTTP/1.1 :rfc:`7231`, Section 6.5.13
 ``416`` ``REQUESTED_RANGE_NOT_SATISFIABLE`` HTTP/1.1 Range Requests :rfc:`7233`, Section 4.4
 ``417`` ``EXPECTATION_FAILED``              HTTP/1.1 :rfc:`7231`, Section 6.5.14
