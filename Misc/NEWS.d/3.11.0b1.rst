@@ -403,8 +403,8 @@ so this led to crashes. The problem is now fixed.
 .. nonce: 6S_uoU
 .. section: Core and Builtins
 
-Make opcodes :opcode:`JUMP_IF_TRUE_OR_POP` and
-:opcode:`JUMP_IF_FALSE_OR_POP` relative rather than absolute.
+Make opcodes :opcode:`!JUMP_IF_TRUE_OR_POP` and
+:opcode:`!JUMP_IF_FALSE_OR_POP` relative rather than absolute.
 
 ..
 

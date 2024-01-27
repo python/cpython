@@ -672,7 +672,7 @@ enum
 
 * Changed :meth:`Enum.__format__() <enum.Enum.__format__>` (the default for
   :func:`format`, :meth:`str.format` and :term:`f-string`\s) to always produce
-  the same result as :meth:`Enum.__str__()`:  for enums inheriting from
+  the same result as :meth:`Enum.__str__() <enum.Enum.__str__>`:  for enums inheriting from
   :class:`~enum.ReprEnum` it will be the member's value; for all other enums
   it will be the enum and member name (e.g. ``Color.RED``).
 
@@ -1604,7 +1604,7 @@ raw, adaptive bytecode containing quickened data.
 New opcodes
 -----------
 
-* :opcode:`ASYNC_GEN_WRAP`, :opcode:`RETURN_GENERATOR` and :opcode:`SEND`,
+* :opcode:`!ASYNC_GEN_WRAP`, :opcode:`RETURN_GENERATOR` and :opcode:`SEND`,
   used in generators and co-routines.
 
 * :opcode:`COPY_FREE_VARS`,
@@ -1615,7 +1615,7 @@ New opcodes
 
 * :opcode:`MAKE_CELL`, to create :ref:`cell-objects`.
 
-* :opcode:`CHECK_EG_MATCH`  and  :opcode:`PREP_RERAISE_STAR`,
+* :opcode:`CHECK_EG_MATCH`  and  :opcode:`!PREP_RERAISE_STAR`,
   to handle the :ref:`new exception groups and except* <whatsnew311-pep654>`
   added in :pep:`654`.
 
@@ -1630,38 +1630,38 @@ New opcodes
 Replaced opcodes
 ----------------
 
-+------------------------------------+-----------------------------------+-----------------------------------------+
-| Replaced Opcode(s)                 | New Opcode(s)                     | Notes                                   |
-+====================================+===================================+=========================================+
-| | :opcode:`!BINARY_*`              | :opcode:`BINARY_OP`               | Replaced all numeric binary/in-place    |
-| | :opcode:`!INPLACE_*`             |                                   | opcodes with a single opcode            |
-+------------------------------------+-----------------------------------+-----------------------------------------+
-| | :opcode:`!CALL_FUNCTION`         | | :opcode:`CALL`                  | Decouples argument shifting for methods |
-| | :opcode:`!CALL_FUNCTION_KW`      | | :opcode:`KW_NAMES`              | from handling of keyword arguments;     |
-| | :opcode:`!CALL_METHOD`           | | :opcode:`PRECALL`               | allows better specialization of calls   |
-|                                    | | :opcode:`PUSH_NULL`             |                                         |
-+------------------------------------+-----------------------------------+-----------------------------------------+
-| | :opcode:`!DUP_TOP`               | | :opcode:`COPY`                  | Stack manipulation instructions         |
-| | :opcode:`!DUP_TOP_TWO`           | | :opcode:`SWAP`                  |                                         |
-| | :opcode:`!ROT_TWO`               |                                   |                                         |
-| | :opcode:`!ROT_THREE`             |                                   |                                         |
-| | :opcode:`!ROT_FOUR`              |                                   |                                         |
-| | :opcode:`!ROT_N`                 |                                   |                                         |
-+------------------------------------+-----------------------------------+-----------------------------------------+
-| | :opcode:`!JUMP_IF_NOT_EXC_MATCH` | | :opcode:`CHECK_EXC_MATCH`       | Now performs check but doesn't jump     |
-+------------------------------------+-----------------------------------+-----------------------------------------+
-| | :opcode:`!JUMP_ABSOLUTE`         | | :opcode:`JUMP_BACKWARD`         | See [#bytecode-jump]_;                  |
-| | :opcode:`!POP_JUMP_IF_FALSE`     | | :opcode:`POP_JUMP_BACKWARD_IF_* | ``TRUE``, ``FALSE``,                    |
-| | :opcode:`!POP_JUMP_IF_TRUE`      |   <POP_JUMP_BACKWARD_IF_TRUE>`    | ``NONE`` and ``NOT_NONE`` variants      |
-|                                    | | :opcode:`POP_JUMP_FORWARD_IF_*  | for each direction                      |
-|                                    |   <POP_JUMP_FORWARD_IF_TRUE>`     |                                         |
-+------------------------------------+-----------------------------------+-----------------------------------------+
-| | :opcode:`!SETUP_WITH`            | :opcode:`BEFORE_WITH`             | :keyword:`with` block setup             |
-| | :opcode:`!SETUP_ASYNC_WITH`      |                                   |                                         |
-+------------------------------------+-----------------------------------+-----------------------------------------+
++------------------------------------+------------------------------------+-----------------------------------------+
+| Replaced Opcode(s)                 | New Opcode(s)                      | Notes                                   |
++====================================+====================================+=========================================+
+| | :opcode:`!BINARY_*`              | :opcode:`BINARY_OP`                | Replaced all numeric binary/in-place    |
+| | :opcode:`!INPLACE_*`             |                                    | opcodes with a single opcode            |
++------------------------------------+------------------------------------+-----------------------------------------+
+| | :opcode:`!CALL_FUNCTION`         | | :opcode:`CALL`                   | Decouples argument shifting for methods |
+| | :opcode:`!CALL_FUNCTION_KW`      | | :opcode:`!KW_NAMES`              | from handling of keyword arguments;     |
+| | :opcode:`!CALL_METHOD`           | | :opcode:`!PRECALL`               | allows better specialization of calls   |
+|                                    | | :opcode:`PUSH_NULL`              |                                         |
++------------------------------------+------------------------------------+-----------------------------------------+
+| | :opcode:`!DUP_TOP`               | | :opcode:`COPY`                   | Stack manipulation instructions         |
+| | :opcode:`!DUP_TOP_TWO`           | | :opcode:`SWAP`                   |                                         |
+| | :opcode:`!ROT_TWO`               |                                    |                                         |
+| | :opcode:`!ROT_THREE`             |                                    |                                         |
+| | :opcode:`!ROT_FOUR`              |                                    |                                         |
+| | :opcode:`!ROT_N`                 |                                    |                                         |
++------------------------------------+------------------------------------+-----------------------------------------+
+| | :opcode:`!JUMP_IF_NOT_EXC_MATCH` | | :opcode:`CHECK_EXC_MATCH`        | Now performs check but doesn't jump     |
++------------------------------------+------------------------------------+-----------------------------------------+
+| | :opcode:`!JUMP_ABSOLUTE`         | | :opcode:`JUMP_BACKWARD`          | See [#bytecode-jump]_;                  |
+| | :opcode:`!POP_JUMP_IF_FALSE`     | | :opcode:`!POP_JUMP_BACKWARD_IF_*`| ``TRUE``, ``FALSE``,                    |
+| | :opcode:`!POP_JUMP_IF_TRUE`      | | :opcode:`!POP_JUMP_FORWARD_IF_*` | ``NONE`` and ``NOT_NONE`` variants      |
+|                                    |                                    | for each direction                      |
+|                                    |                                    |                                         |
++------------------------------------+------------------------------------+-----------------------------------------+
+| | :opcode:`!SETUP_WITH`            | :opcode:`BEFORE_WITH`              | :keyword:`with` block setup             |
+| | :opcode:`!SETUP_ASYNC_WITH`      |                                    |                                         |
++------------------------------------+------------------------------------+-----------------------------------------+
 
 .. [#bytecode-jump] All jump opcodes are now relative, including the
-   existing :opcode:`JUMP_IF_TRUE_OR_POP` and :opcode:`JUMP_IF_FALSE_OR_POP`.
+   existing :opcode:`!JUMP_IF_TRUE_OR_POP` and :opcode:`!JUMP_IF_FALSE_OR_POP`.
    The argument is now an offset from the current instruction
    rather than an absolute location.
 
@@ -1967,7 +1967,7 @@ Removed C APIs are :ref:`listed separately <whatsnew311-c-api-removed>`.
 
   (Contributed by Victor Stinner in :issue:`45085`.)
 
-* Removed the :mod:`distutils` ``bdist_msi`` command deprecated in Python 3.9.
+* Removed the :mod:`!distutils` ``bdist_msi`` command deprecated in Python 3.9.
   Use ``bdist_wheel`` (wheel packages) instead.
   (Contributed by Hugo van Kemenade in :issue:`45124`.)
 
@@ -2295,7 +2295,7 @@ Porting to Python 3.11
   as its second parameter, instead of ``PyFrameObject*``.
   See :pep:`523` for more details of how to use this function pointer type.
 
-* :c:func:`PyCode_New` and :c:func:`PyCode_NewWithPosOnlyArgs` now take
+* :c:func:`!PyCode_New` and :c:func:`!PyCode_NewWithPosOnlyArgs` now take
   an additional ``exception_table`` argument.
   Using these functions should be avoided, if at all possible.
   To get a custom code object: create a code object using the compiler,
@@ -2402,7 +2402,7 @@ Porting to Python 3.11
   been included directly, consider including ``Python.h`` instead.
   (Contributed by Victor Stinner in :issue:`35134`.)
 
-* The :c:func:`PyUnicode_CHECK_INTERNED` macro has been excluded from the
+* The :c:func:`!PyUnicode_CHECK_INTERNED` macro has been excluded from the
   limited C API. It was never usable there, because it used internal structures
   which are not available in the limited C API.
   (Contributed by Victor Stinner in :issue:`46007`.)
@@ -2465,7 +2465,7 @@ Porting to Python 3.11
 
   Debuggers that accessed the :attr:`~frame.f_locals` directly *must* call
   :c:func:`PyFrame_GetLocals` instead. They no longer need to call
-  :c:func:`PyFrame_FastToLocalsWithError` or :c:func:`PyFrame_LocalsToFast`,
+  :c:func:`!PyFrame_FastToLocalsWithError` or :c:func:`!PyFrame_LocalsToFast`,
   in fact they should not call those functions. The necessary updating of the
   frame is now managed by the virtual machine.
 
@@ -2604,8 +2604,8 @@ and will be removed in Python 3.12.
 * :c:func:`!PyUnicode_GET_DATA_SIZE`
 * :c:func:`!PyUnicode_GET_SIZE`
 * :c:func:`!PyUnicode_GetSize`
-* :c:func:`PyUnicode_IS_COMPACT`
-* :c:func:`PyUnicode_IS_READY`
+* :c:func:`!PyUnicode_IS_COMPACT`
+* :c:func:`!PyUnicode_IS_READY`
 * :c:func:`PyUnicode_READY`
 * :c:func:`!PyUnicode_WSTR_LENGTH`
 * :c:func:`!_PyUnicode_AsUnicode`
@@ -2660,7 +2660,7 @@ Removed
   (Contributed by Victor Stinner in :issue:`45474`.)
 
 * Exclude :c:func:`PyWeakref_GET_OBJECT` from the limited C API. It never
-  worked since the :c:type:`PyWeakReference` structure is opaque in the
+  worked since the :c:type:`!PyWeakReference` structure is opaque in the
   limited C API.
   (Contributed by Victor Stinner in :issue:`35134`.)
 
