@@ -893,10 +893,10 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
         """
         base, ext = posixpath.splitext(path)
-        guess = self.extensions_map.get(ext,
-                self.extensions_map.get(ext.lower(),
-                mimetypes.guess_type(path)[0]))
-        return guess or self.default_content_type
+        return self.extensions_map.get(ext) or \
+            self.extensions_map.get(ext.lower()) or \
+            mimetypes.guess_type(path)[0] or \
+            self.default_content_type
 
 
 # Utilities for CGIHTTPRequestHandler
@@ -1292,7 +1292,7 @@ if __name__ == '__main__':
                         default='HTTP/1.0',
                         help='conform to this HTTP version '
                              '(default: %(default)s)')
-    parser.add_argument('-c', '--content-type',  # parsed into content_type
+    parser.add_argument('--content-type',  # parsed into content_type
                         default=BaseHTTPRequestHandler.default_content_type,
                         help='sets default content type for unknown extensions')
     parser.add_argument('port', default=8000, type=int, nargs='?',
