@@ -492,7 +492,7 @@ DictReader objects have the following public attribute:
 Writer Objects
 --------------
 
-:class:`Writer<writer>` objects (:class:`DictWriter` instances and objects returned by
+:class:`writer` objects (:class:`DictWriter` instances and objects returned by
 the :func:`writer` function) have the following public methods.  A *row* must be
 an iterable of strings or numbers for :class:`writer` objects and a dictionary
 mapping fieldnames to strings or numbers (by passing them through :func:`str`
