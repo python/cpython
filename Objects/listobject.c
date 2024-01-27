@@ -258,10 +258,7 @@ PyList_GetItem(PyObject *op, Py_ssize_t i)
         PyErr_SetObject(PyExc_IndexError, &_Py_STR(list_err));
         return NULL;
     }
-    Py_BEGIN_CRITICAL_SECTION(op);
-    ret = ((PyListObject *)op) -> ob_item[i];
-    Py_END_CRITICAL_SECTION();
-    return ret;
+    return ((PyListObject *)op) -> ob_item[i];
 }
 
 int
@@ -488,7 +485,7 @@ static PyObject *
 list_item(PyObject *aa, Py_ssize_t i)
 {
     PyListObject *a = (PyListObject *)aa;
-    if (!valid_index(i, Py_SIZE(a))) {
+    if (!valid_index(i, PyList_GET_SIZE(a))) {
         PyErr_SetObject(PyExc_IndexError, &_Py_STR(list_err));
         return NULL;
     }
