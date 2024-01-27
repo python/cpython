@@ -172,12 +172,8 @@ Object Protocol
 .. c:function:: int PyObject_RichCompareBool(PyObject *o1, PyObject *o2, int opid)
 
    Compare the values of *o1* and *o2* using the operation specified by *opid*,
-   which must be one of :c:macro:`Py_LT`, :c:macro:`Py_LE`, :c:macro:`Py_EQ`,
-   :c:macro:`Py_NE`, :c:macro:`Py_GT`, or :c:macro:`Py_GE`, corresponding to ``<``,
-   ``<=``, ``==``, ``!=``, ``>``, or ``>=`` respectively. Returns ``-1`` on error,
-   ``0`` if the result is false, ``1`` otherwise. This is the equivalent of the
-   Python expression ``o1 op o2``, where ``op`` is the operator corresponding to
-   *opid*.
+   like :c:func:`PyObject_RichCompare`, but returns ``-1`` on error, ``0`` if
+   the result is false, ``1`` otherwise.
 
 .. note::
    If *o1* and *o2* are the same object, :c:func:`PyObject_RichCompareBool`
