@@ -672,7 +672,7 @@ enum
 
 * Changed :meth:`Enum.__format__() <enum.Enum.__format__>` (the default for
   :func:`format`, :meth:`str.format` and :term:`f-string`\s) to always produce
-  the same result as :meth:`Enum.__str__()`:  for enums inheriting from
+  the same result as :meth:`Enum.__str__() <enum.Enum.__str__>`:  for enums inheriting from
   :class:`~enum.ReprEnum` it will be the member's value; for all other enums
   it will be the enum and member name (e.g. ``Color.RED``).
 
@@ -2465,7 +2465,7 @@ Porting to Python 3.11
 
   Debuggers that accessed the :attr:`~frame.f_locals` directly *must* call
   :c:func:`PyFrame_GetLocals` instead. They no longer need to call
-  :c:func:`PyFrame_FastToLocalsWithError` or :c:func:`PyFrame_LocalsToFast`,
+  :c:func:`!PyFrame_FastToLocalsWithError` or :c:func:`!PyFrame_LocalsToFast`,
   in fact they should not call those functions. The necessary updating of the
   frame is now managed by the virtual machine.
 
@@ -2604,8 +2604,8 @@ and will be removed in Python 3.12.
 * :c:func:`!PyUnicode_GET_DATA_SIZE`
 * :c:func:`!PyUnicode_GET_SIZE`
 * :c:func:`!PyUnicode_GetSize`
-* :c:func:`PyUnicode_IS_COMPACT`
-* :c:func:`PyUnicode_IS_READY`
+* :c:func:`!PyUnicode_IS_COMPACT`
+* :c:func:`!PyUnicode_IS_READY`
 * :c:func:`PyUnicode_READY`
 * :c:func:`!PyUnicode_WSTR_LENGTH`
 * :c:func:`!_PyUnicode_AsUnicode`
@@ -2660,7 +2660,7 @@ Removed
   (Contributed by Victor Stinner in :issue:`45474`.)
 
 * Exclude :c:func:`PyWeakref_GET_OBJECT` from the limited C API. It never
-  worked since the :c:type:`PyWeakReference` structure is opaque in the
+  worked since the :c:type:`!PyWeakReference` structure is opaque in the
   limited C API.
   (Contributed by Victor Stinner in :issue:`35134`.)
 
