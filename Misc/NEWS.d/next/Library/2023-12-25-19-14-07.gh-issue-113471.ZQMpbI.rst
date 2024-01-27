@@ -1,1 +1,1 @@
-Adds ability to set default content-type for no extension/unrecognized extension on http.server module.
+Adds ability to set default content-type for no extension/unrecognized extension on :mod:`http.server` module.
