@@ -1877,6 +1877,8 @@ True
 0
 >>> 'spam, spam, spam'.find('sp', 5)
 6
+>>> 'spam, spam, spam'.find('eggs')
+-1
 
 .. raw:: html
 
@@ -1956,14 +1958,25 @@ True
 .. method:: str.index(sub[, start[, end]])
 
    Like :meth:`~str.find`, but raise :exc:`ValueError` when the substring is
-   not found. For example::
-
-      >>> 'spam, spam, spam'.index('eggs')
-      Traceback (most recent call last):
-        File "<stdin>", line 1, in <module>
-      ValueError: substring not found
+   not found.
 
    See also :meth:`rindex`.
+
+   .. raw:: html
+
+      <dd>
+      <details>
+      <summary><a style="cursor:pointer;">See example</a></summary>
+
+   >>> 'spam, spam, spam'.index('eggs')
+   Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+   ValueError: substring not found
+
+   .. raw:: html
+
+      </details>
+      </dd>
 
 
 .. method:: str.isalnum()
@@ -1971,16 +1984,27 @@ True
    Return ``True`` if all characters in the string are alphanumeric and there is at
    least one character, ``False`` otherwise.  A character ``c`` is alphanumeric if one
    of the following returns ``True``: ``c.isalpha()``, ``c.isdecimal()``,
-   ``c.isdigit()``, or ``c.isnumeric()``. For example::
+   ``c.isdigit()``, or ``c.isnumeric()``.
 
-      >>> ''.isalnum()
-      False
-      >>> 'abc123'.isalnum()
-      True
-      >>> 'abc123!@#'.isalnum()
-      False
-      >>> ' '.isalnum()
-      False
+   .. raw:: html
+
+      <dd>
+      <details>
+      <summary><a style="cursor:pointer;">See example</a></summary>
+
+   >>> ''.isalnum()
+   False
+   >>> 'abc123'.isalnum()
+   True
+   >>> 'abc123!@#'.isalnum()
+   False
+   >>> ' '.isalnum()
+   False
+
+   .. raw:: html
+
+      </details>
+      </dd>
 
 
 .. method:: str.isalpha()
@@ -1991,40 +2015,62 @@ True
    property being one of "Lm", "Lt", "Lu", "Ll", or "Lo".  Note that this is different
    from the `Alphabetic property defined in the section 4.10 'Letters, Alphabetic, and
    Ideographic' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.0.0/ch04.pdf>`_. For example::
-
-      >>> 'a commom word'.isalpha()
-      False
-      >>> 'acommomword'.isalpha()
-      True
-      >>> 'µ'.isalpha()
-      True
-      >>> 'æ'.isalpha()
-      True
-      >>> 'Ŧ'.isalpha()
-      True
+   <https://www.unicode.org/versions/Unicode15.0.0/ch04.pdf>`_.
 
    See Unicode Properties section in :ref:`unicode-howto`.
+
+   .. raw:: html
+
+      <dd>
+      <details>
+      <summary><a style="cursor:pointer;">See example</a></summary>
+
+   >>> 'a commom word'.isalpha()
+   False
+   >>> 'acommomword'.isalpha()
+   True
+   >>> 'µ'.isalpha()
+   True
+   >>> 'æ'.isalpha()
+   True
+   >>> 'Ŧ'.isalpha()
+   True
+
+   .. raw:: html
+
+      </details>
+      </dd>
 
 
 .. method:: str.isascii()
 
    Return ``True`` if the string is empty or all characters in the string are ASCII,
    ``False`` otherwise.
-   ASCII characters have code points in the range U+0000-U+007F. For example::
-
-      >>> 'a commom word'.isascii()
-      True
-      >>> 'acommomword'.isascii()
-      True
-      >>> 'µ'.isascii()
-      False
-      >>> 'æ'.isascii()
-      False
-      >>> 'Ŧ'.isascii()
-      False
+   ASCII characters have code points in the range U+0000-U+007F.
 
    .. versionadded:: 3.7
+
+   .. raw:: html
+
+      <dd>
+      <details>
+      <summary><a style="cursor:pointer;">See example</a></summary>
+
+   >>> 'a commom word'.isascii()
+   True
+   >>> 'acommomword'.isascii()
+   True
+   >>> 'µ'.isascii()
+   False
+   >>> 'æ'.isascii()
+   False
+   >>> 'Ŧ'.isascii()
+   False
+
+   .. raw:: html
+
+      </details>
+      </dd>
 
 
 .. method:: str.isdecimal()
@@ -2034,16 +2080,27 @@ True
    otherwise. Decimal characters are those that can be used to form
    numbers in base 10, e.g. U+0660, ARABIC-INDIC DIGIT
    ZERO.  Formally a decimal character is a character in the Unicode
-   General Category "Nd". For example::
-
-      >>> '0123456789'.isdecimal()
-      True
-      >>> '٠١٢٣٤٥٦٧٨٩'.isdecimal()  # ARABIC-INDIC DIGIT ZERO TO NINE
-      True
-      >>> '²'.isdecimal(), '²'.isdigit()
-      (False, True)
+   General Category "Nd".
 
    See also :meth:`isdigit`. Decimal numbers is a digit numbers subset.
+
+   .. raw:: html
+
+      <dd>
+      <details>
+      <summary><a style="cursor:pointer;">See example</a></summary>
+
+   >>> '0123456789'.isdecimal()
+   True
+   >>> '٠١٢٣٤٥٦٧٨٩'.isdecimal()  # ARABIC-INDIC DIGIT ZERO TO NINE
+   True
+   >>> '²'.isdecimal(), '²'.isdigit()
+   (False, True)
+
+   .. raw:: html
+
+      </details>
+      </dd>
 
 
 .. method:: str.isdigit()
@@ -2053,16 +2110,27 @@ True
    special handling, such as the compatibility superscript digits.
    This covers digits which cannot be used to form numbers in base 10,
    like the Kharosthi numbers.  Formally, a digit is a character that has the
-   property value Numeric_Type=Digit or Numeric_Type=Decimal. For example::
-
-      >>> '0123456789'.isdigit()
-      True
-      >>> '٠١٢٣٤٥٦٧٨٩'.isdigit() # ARABIC-INDIC DIGIT ZERO TO NINE
-      True
-      >>> '²'.isdigit(), '²'.isdecimal()
-      (True, False)
+   property value Numeric_Type=Digit or Numeric_Type=Decimal.
 
    See also :meth:`isdecimal`. Digit numbers is a decimal numbers superset.
+
+   .. raw:: html
+
+      <dd>
+      <details>
+      <summary><a style="cursor:pointer;">See example</a></summary>
+
+   >>> '0123456789'.isdigit()
+   True
+   >>> '٠١٢٣٤٥٦٧٨٩'.isdigit() # ARABIC-INDIC DIGIT ZERO TO NINE
+   True
+   >>> '²'.isdigit(), '²'.isdecimal()
+   (True, False)
+
+   .. raw:: html
+
+      </details>
+      </dd>
 
 
 .. method:: str.isidentifier()
@@ -2071,33 +2139,56 @@ True
    definition, section :ref:`identifiers`.
 
    :func:`keyword.iskeyword` can be used to test whether string ``s`` is a reserved
-   identifier, such as :keyword:`def` and :keyword:`class`. For example::
+   identifier, such as :keyword:`def` and :keyword:`class`.
 
-      >>> from keyword import iskeyword
+   .. raw:: html
 
-      >>> 'hello'.isidentifier(), iskeyword('hello')
-      (True, False)
-      >>> 'def'.isidentifier(), iskeyword('def')
-      (True, True)
+      <dd>
+      <details>
+      <summary><a style="cursor:pointer;">See example</a></summary>
+
+   >>> from keyword import iskeyword
+   >>> 'hello1'.isidentifier(), iskeyword('hello1')
+   (True, False)
+   >>> '1hello'.isidentifier(), iskeyword('1hello')
+   (False, False)
+   >>> 'def'.isidentifier(), iskeyword('def')
+   (True, True)
+
+   .. raw:: html
+
+      </details>
+      </dd>
 
 
 .. method:: str.islower()
 
    Return ``True`` if all cased characters [4]_ in the string are lowercase and
-   there is at least one cased character, ``False`` otherwise. For example::
-
-      >>> 'BANANA'.islower()
-      False
-      >>> 'banana'.islower()
-      True
-      >>> 'baNana'.islower()
-      False
-      >>> ' '.islower()
-      False
-      >>> ''.islower()
-      False
+   there is at least one cased character, ``False`` otherwise.
 
    See also :meth:`isupper`.
+
+   .. raw:: html
+
+      <dd>
+      <details>
+      <summary><a style="cursor:pointer;">See example</a></summary>
+
+   >>> 'BANANA'.islower()
+   False
+   >>> 'banana'.islower()
+   True
+   >>> 'baNana'.islower()
+   False
+   >>> ' '.islower()
+   False
+   >>> ''.islower()
+   False
+
+   .. raw:: html
+
+      </details>
+      </dd>
 
 
 .. method:: str.isnumeric()
@@ -2107,19 +2198,30 @@ True
    otherwise. Numeric characters include digit characters, and all characters
    that have the Unicode numeric value property, e.g. U+2155,
    VULGAR FRACTION ONE FIFTH.  Formally, numeric characters are those with the property
-   value Numeric_Type=Digit, Numeric_Type=Decimal or Numeric_Type=Numeric. For example::
-
-      >>> '0123456789'.isnumeric()
-      True
-      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric() # ARABIC-INDIC DIGIT ZERO TO NINE
-      True
-      >>> '⅕'.isnumeric() # VULGAR FRACTION ONE FIFTH
-      True
-      >>> '²'.isdigit(), '²'.isdecimal(), '²'.isnumeric()
-      (True, False, True)
+   value Numeric_Type=Digit, Numeric_Type=Decimal or Numeric_Type=Numeric.
 
    See also :meth:`isdecimal` and :meth:`isdigit`. Numeric characters is a
    decimal numbers superset.
+
+   .. raw:: html
+
+      <dd>
+      <details>
+      <summary><a style="cursor:pointer;">See example</a></summary>
+
+   >>> '0123456789'.isnumeric()
+   True
+   >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric() # ARABIC-INDIC DIGIT ZERO TO NINE
+   True
+   >>> '⅕'.isnumeric() # VULGAR FRACTION ONE FIFTH
+   True
+   >>> '²'.isdigit(), '²'.isdecimal(), '²'.isnumeric()
+   (True, False, True)
+
+   .. raw:: html
+
+      </details>
+      </dd>
 
 
 .. method:: str.isprintable()
@@ -2130,18 +2232,29 @@ True
    ASCII space (0x20) which is considered printable.  (Note that printable
    characters in this context are those which should not be escaped when
    :func:`repr` is invoked on a string.  It has no bearing on the handling of
-   strings written to :data:`sys.stdout` or :data:`sys.stderr`.) For example::
-
-      >>> ''.isprintable()
-      True
-      >>> ' '.isprintable()
-      True
-      >>> '\t\n'.isprintable() # TAB and BREAK LINE
-      False
-      >>> '\u3000'.isprintable() # IDEOGRAPHIC SPACE
-      False
+   strings written to :data:`sys.stdout` or :data:`sys.stderr`.)
 
    See also :meth:`isspace`.
+
+   .. raw:: html
+
+      <dd>
+      <details>
+      <summary><a style="cursor:pointer;">See example</a></summary>
+
+   >>> ''.isprintable()
+   True
+   >>> ' '.isprintable()
+   True
+   >>> '\t\n'.isprintable() # TAB and BREAK LINE
+   False
+   >>> '\u3000'.isprintable() # IDEOGRAPHIC SPACE
+   False
+
+   .. raw:: html
+
+      </details>
+      </dd>
 
 
 .. method:: str.isspace()
@@ -2152,54 +2265,86 @@ True
    A character is *whitespace* if in the Unicode character database
    (see :mod:`unicodedata`), either its general category is ``Zs``
    ("Separator, space"), or its bidirectional class is one of ``WS``,
-   ``B``, or ``S``. For example::
-
-      >>> ''.isspace()
-      False
-      >>> ' '.isspace()
-      True
-      >>> '\t\n'.isspace() # TAB and BREAK LINE
-      True
-      >>> '\u3000'.isspace() # IDEOGRAPHIC SPACE
-      True
+   ``B``, or ``S``.
 
    See also :meth:`isprintable`.
+
+   .. raw:: html
+
+      <dd>
+      <details>
+      <summary><a style="cursor:pointer;">See example</a></summary>
+
+   >>> ''.isspace()
+   False
+   >>> ' '.isspace()
+   True
+   >>> '\t\n'.isspace() # TAB and BREAK LINE
+   True
+   >>> '\u3000'.isspace() # IDEOGRAPHIC SPACE
+   True
+
+   .. raw:: html
+
+      </details>
+      </dd>
 
 
 .. method:: str.istitle()
 
    Return ``True`` if the string is a titlecased string and there is at least one
    character, for example uppercase characters may only follow uncased characters
-   and lowercase characters only cased ones.  Return ``False`` otherwise. For
-   example::
-
-      >>> 'Spam, Spam, Spam'.istitle()
-      True
-      >>> 'spam, spam, spam'.istitle()
-      False
-      >>> 'SPAM, SPAM, SPAM'.istitle()
-      False
+   and lowercase characters only cased ones.  Return ``False`` otherwise.
 
    See also :meth:`title`.
+
+   .. raw:: html
+
+      <dd>
+      <details>
+      <summary><a style="cursor:pointer;">See example</a></summary>
+
+   >>> 'Spam, Spam, Spam'.istitle()
+   True
+   >>> 'spam, spam, spam'.istitle()
+   False
+   >>> 'SPAM, SPAM, SPAM'.istitle()
+   False
+
+   .. raw:: html
+
+      </details>
+      </dd>
 
 
 .. method:: str.isupper()
 
    Return ``True`` if all cased characters [4]_ in the string are uppercase and
-   there is at least one cased character, ``False`` otherwise. For example::
-
-      >>> 'BANANA'.isupper()
-      True
-      >>> 'banana'.isupper()
-      False
-      >>> 'baNana'.isupper()
-      False
-      >>> ' '.isupper()
-      False
-      >>> ''.isupper()
-      False
+   there is at least one cased character, ``False`` otherwise.
 
    See also :meth:`islower`.
+
+   .. raw:: html
+
+      <dd>
+      <details>
+      <summary><a style="cursor:pointer;">See example</a></summary>
+
+   >>> 'BANANA'.isupper()
+   True
+   >>> 'banana'.isupper()
+   False
+   >>> 'baNana'.isupper()
+   False
+   >>> ' '.isupper()
+   False
+   >>> ''.isupper()
+   False
+
+   .. raw:: html
+
+      </details>
+      </dd>
 
 
 .. _meth-str-join:
