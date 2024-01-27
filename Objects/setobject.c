@@ -1774,7 +1774,7 @@ PyDoc_STRVAR(issubset_doc,
 "issubset($self, /, other)\n\
 --\n\
 \n\
-Return True if all elements in this set are found in other(iterable).");
+Test whether every element in the set is in other.");
 
 static PyObject *
 set_issuperset(PySetObject *so, PyObject *other)
@@ -1810,7 +1810,7 @@ PyDoc_STRVAR(issuperset_doc,
 "issuperset($self, /, other)\n\
 --\n\
 \n\
-Return True if all elements in other(iterable) are found in this set.");
+Test whether every element in other is in the set.");
 
 static PyObject *
 set_richcompare(PySetObject *v, PyObject *w, int op)
