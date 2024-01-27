@@ -252,7 +252,6 @@ PyList_GetItem(PyObject *op, Py_ssize_t i)
         PyErr_BadInternalCall();
         return NULL;
     }
-    PyObject *ret = NULL;
     if (!valid_index(i, PyList_GET_SIZE(op))) {
         _Py_DECLARE_STR(list_err, "list index out of range");
         PyErr_SetObject(PyExc_IndexError, &_Py_STR(list_err));
