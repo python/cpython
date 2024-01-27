@@ -87,7 +87,6 @@ Doc/library/xmlrpc.server.rst
 Doc/library/zlib.rst
 Doc/reference/compound_stmts.rst
 Doc/reference/datamodel.rst
-Doc/reference/import.rst
 Doc/tutorial/datastructures.rst
 Doc/using/windows.rst
 Doc/whatsnew/2.0.rst
