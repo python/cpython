@@ -1,4 +1,5 @@
 from test.support import verbose, reap_children
+from test.support.os_helper import TESTFN, unlink
 from test.support.import_helper import import_module
 
 # Skip these tests if termios or fcntl are not available
@@ -292,7 +293,26 @@ class PtyTest(unittest.TestCase):
         self.assertEqual(data, b"")
 
     def test_spawn_doesnt_hang(self):
-        pty.spawn([sys.executable, '-c', 'print("hi there")'])
+        self.addCleanup(unlink, TESTFN)
+        with open(TESTFN, 'wb') as f:
+            STDOUT_FILENO = 1
+            dup_stdout = os.dup(STDOUT_FILENO)
+            os.dup2(f.fileno(), STDOUT_FILENO)
+            buf = b''
+            def master_read(fd):
+                nonlocal buf
+                data = os.read(fd, 1024)
+                buf += data
+                return data
+            try:
+                pty.spawn([sys.executable, '-c', 'print("hi there")'],
+                          master_read)
+            finally:
+                os.dup2(dup_stdout, STDOUT_FILENO)
+                os.close(dup_stdout)
+        self.assertEqual(buf, b'hi there\r\n')
+        with open(TESTFN, 'rb') as f:
+            self.assertEqual(f.read(), b'hi there\r\n')
 
 class SmallPtyTests(unittest.TestCase):
     """These tests don't spawn children or hang."""
