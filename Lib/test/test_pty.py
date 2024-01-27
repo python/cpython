@@ -292,7 +292,7 @@ class PtyTest(unittest.TestCase):
         self.assertEqual(data, b"")
 
     def test_spawn_doesnt_hang(self):
-        pty.spawn([sys.executable, '-c', 'print("1 + 1")'])
+        pty.spawn([sys.executable, '-c', '1 + 1'])
 
 class SmallPtyTests(unittest.TestCase):
     """These tests don't spawn children or hang."""
