@@ -89,18 +89,6 @@ my_getpagesize(void)
 #  define MAP_ANONYMOUS MAP_ANON
 #endif
 
-typedef struct {
-    PyTypeObject *mmap_object_type;
-} _mmap_state;
-
-static inline _mmap_state *
-get_module_state(PyObject *module)
-{
-    void *state = PyModule_GetState(module);
-    assert(state != NULL);
-    return (_mmap_state*)state;
-}
-
 typedef enum
 {
     ACCESS_DEFAULT,
@@ -1671,8 +1659,6 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
 static int
 mmap_exec(PyObject *module)
 {
-    _mmap_state *st = get_module_state(module);
-
     if (PyModule_AddObjectRef(module, "error", PyExc_OSError) < 0) {
         return -1;
     }
@@ -1682,7 +1668,6 @@ mmap_exec(PyObject *module)
     if (mmap_object_type == NULL) {
         return -1;
     }
-    st->mmap_object_type = (PyTypeObject *)mmap_object_type;
     int rc = PyModule_AddType(module, (PyTypeObject *)mmap_object_type);
     Py_DECREF(mmap_object_type);
     if (rc < 0) {
@@ -1910,7 +1895,7 @@ static PyModuleDef_Slot mmap_slots[] = {
 static struct PyModuleDef mmapmodule = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "mmap",
-    .m_size = sizeof(_mmap_state),
+    .m_size = 0,
     .m_slots = mmap_slots,
 };
 
