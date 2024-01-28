@@ -1,0 +1,2 @@
+Fix incorrect deprecation warning for 'N' specifier in
+:class:`~decimal.Decimal` format. Based on patch by Stefan Krah.

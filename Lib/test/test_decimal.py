@@ -1237,7 +1237,10 @@ class FormatTest:
         else:
             self.assertRaises(ValueError, format, h, 'N')
             self.assertRaises(ValueError, format, h, '010.3N')
-
+        self.assertEqual(format(h, 'N>10.3'), 'NN6.63E-34')
+        self.assertEqual(format(h, 'N>10.3n'), 'NN6.63e-34')
+        self.assertEqual(format(h, 'N>10.3e'), 'N6.626e-34')
+        self.assertEqual(format(h, 'N>10.3f'), 'NNNNN0.000')
 
     @run_with_locale('LC_ALL', 'ps_AF')
     def test_wide_char_separator_decimal_point(self):
