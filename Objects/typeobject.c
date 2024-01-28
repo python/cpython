@@ -3828,19 +3828,14 @@ type_new_impl(type_new_ctx *ctx)
     fixup_slot_dispatchers(type);
 
     if (!_PyDict_HasOnlyStringKeys(type->tp_dict)) {
-        PyObject *name_of_class = type_name(type, NULL);
-        if (name_of_class == NULL) {
+        if (PyErr_WarnFormat(
+                PyExc_RuntimeWarning,
+                1,
+                "non-string key in the __dict__ of class %.200s",
+                type->tp_name) == -1)
+{
             goto error;
         }
-        if (PyErr_WarnFormat(NULL,
-                            1,
-                            "non-string key in the __dict__ of class %U",
-                            name_of_class) == -1)
-        {
-            Py_DECREF(name_of_class);
-            goto error;
-        }
-        Py_DECREF(name_of_class);
     }
 
     if (type_new_set_names(type) < 0) {
