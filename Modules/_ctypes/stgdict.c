@@ -486,7 +486,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         size = offset = basedict->size;
         align = basedict->align;
         union_size = 0;
-        total_align = align ? align : forced_alignment;
+        total_align = max(align ? align : 1, forced_alignment);
         stgdict->ffi_type_pointer.type = FFI_TYPE_STRUCT;
         stgdict->ffi_type_pointer.elements = PyMem_New(ffi_type *, basedict->length + len + 1);
         if (stgdict->ffi_type_pointer.elements == NULL) {
