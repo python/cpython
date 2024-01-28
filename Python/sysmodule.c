@@ -2127,6 +2127,27 @@ sys__clear_type_cache_impl(PyObject *module)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+sys._clear_executors
+
+Clear and invalidate all tier two executors.
+[clinic start generated code]*/
+
+static PyObject *
+sys__clear_executors_impl(PyObject *module)
+/*[clinic end generated code: output=edab315b685eb29b input=073c8664b9ae8106]*/
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    for (PyCodeObject *code = interp->code_list_head; code; code = code->_co_list_next) {
+        if (code->co_executors != NULL) {
+            _PyCode_Clear_Executors(code);
+        }
+    }
+    // Anything left is currently running, and should exit quickly to tier one:
+    _Py_Executors_InvalidateAll(interp);
+    Py_RETURN_NONE;
+}
+
 /* Note that, for now, we do not have a per-interpreter equivalent
   for sys.is_finalizing(). */
 
@@ -2461,6 +2482,7 @@ static PyMethodDef sys_methods[] = {
     {"audit", _PyCFunction_CAST(sys_audit), METH_FASTCALL, audit_doc },
     {"breakpointhook", _PyCFunction_CAST(sys_breakpointhook),
      METH_FASTCALL | METH_KEYWORDS, breakpointhook_doc},
+    SYS__CLEAR_EXECUTORS_METHODDEF
     SYS__CLEAR_TYPE_CACHE_METHODDEF
     SYS__CURRENT_FRAMES_METHODDEF
     SYS__CURRENT_EXCEPTIONS_METHODDEF
