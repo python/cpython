@@ -988,9 +988,7 @@ static struct PyMethodDef mmap_object_methods[] = {
     {"write_byte",      (PyCFunction) mmap_write_byte_method,   METH_VARARGS},
     {"__enter__",       (PyCFunction) mmap__enter__method,      METH_NOARGS},
     {"__exit__",        (PyCFunction) mmap__exit__method,       METH_VARARGS},
-#ifdef MMAP_MMAP_MPROTECT_METHODDEF
     MMAP_MMAP_MPROTECT_METHODDEF
-#endif
 #ifdef MS_WINDOWS
     {"__sizeof__",      (PyCFunction) mmap__sizeof__method,     METH_NOARGS},
 #endif
