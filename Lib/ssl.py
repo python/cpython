@@ -994,16 +994,16 @@ class SSLSocket(socket):
         if context.check_hostname and not server_hostname:
             raise ValueError("check_hostname requires server_hostname")
 
+        sock_timeout = sock.gettimeout()
         kwargs = dict(
             family=sock.family, type=sock.type, proto=sock.proto,
             fileno=sock.fileno()
         )
         self = cls.__new__(cls, **kwargs)
         super(SSLSocket, self).__init__(**kwargs)
+        socket.detach()
+        # Now SSLSocket is responsible for closing the file descriptor.
         try:
-            sock_timeout = sock.gettimeout()
-            sock.detach()
-
             self._context = context
             self._session = session
             self._closed = False
