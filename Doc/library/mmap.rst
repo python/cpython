@@ -359,7 +359,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 .. _prot-constants:
 
 PROT_* Constants
-+++++++++++++++
+++++++++++++++++
 
 .. data:: PROT_READ
           PROT_WRITE
