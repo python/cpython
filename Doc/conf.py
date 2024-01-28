@@ -292,6 +292,9 @@ html_theme_options = {
     'root_include_title': False   # We use the version switcher instead.
 }
 
+if os.getenv("READTHEDOCS"):
+    html_theme_options["hosted_on"] = '<a href="https://about.readthedocs.com/">Read the Docs</a>'
+
 # Override stylesheet fingerprinting for Windows CHM htmlhelp to fix GH-91207
 # https://github.com/python/cpython/issues/91207
 if any('htmlhelp' in arg for arg in sys.argv):
