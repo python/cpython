@@ -26,7 +26,7 @@ get_list_state(void)
 {
     _PyFreeListState *state = _PyFreeListState_GET();
     assert(state != NULL);
-    return &state->list_state;
+    return &state->lists;
 }
 #endif
 
@@ -124,7 +124,7 @@ void
 _PyList_ClearFreeList(_PyFreeListState *freelist_state, int is_finalization)
 {
 #ifdef WITH_FREELISTS
-    struct _Py_list_state *state = &freelist_state->list_state;
+    struct _Py_list_state *state = &freelist_state->lists;
     while (state->numfree > 0) {
         PyListObject *op = state->free_list[--state->numfree];
         assert(PyList_CheckExact(op));
@@ -383,18 +383,11 @@ list_dealloc(PyObject *self)
 }
 
 static PyObject *
-list_repr(PyObject *self)
+list_repr_impl(PyListObject *v)
 {
-    PyListObject *v = (PyListObject *)self;
-    Py_ssize_t i;
     PyObject *s;
     _PyUnicodeWriter writer;
-
-    if (Py_SIZE(v) == 0) {
-        return PyUnicode_FromString("[]");
-    }
-
-    i = Py_ReprEnter((PyObject*)v);
+    Py_ssize_t i = Py_ReprEnter((PyObject*)v);
     if (i != 0) {
         return i > 0 ? PyUnicode_FromString("[...]") : NULL;
     }
@@ -439,10 +432,24 @@ error:
     return NULL;
 }
 
+static PyObject *
+list_repr(PyObject *self)
+{
+    if (PyList_GET_SIZE(self) == 0) {
+        return PyUnicode_FromString("[]");
+    }
+    PyListObject *v = (PyListObject *)self;
+    PyObject *ret = NULL;
+    Py_BEGIN_CRITICAL_SECTION(v);
+    ret = list_repr_impl(v);
+    Py_END_CRITICAL_SECTION();
+    return ret;
+}
+
 static Py_ssize_t
 list_length(PyObject *a)
 {
-    return Py_SIZE(a);
+    return PyList_GET_SIZE(a);
 }
 
 static int
