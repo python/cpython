@@ -547,12 +547,6 @@ sym_set_type(_Py_UOpsSymbolicValue *sym, _Py_UOpsSymExprTypeEnum typ, uint64_t r
     }
 }
 
-static void
-sym_copy_type_number(_Py_UOpsSymbolicValue *from_sym, _Py_UOpsSymbolicValue *to_sym)
-{
-    to_sym->ty_number = from_sym->ty_number;
-}
-
 // Note: for this, to_sym MUST point to brand new sym.
 static void
 sym_copy_immutable_type_info(_Py_UOpsSymbolicValue *from_sym, _Py_UOpsSymbolicValue *to_sym)
@@ -960,7 +954,7 @@ uop_abstract_interpret_single_inst(
             // Cannot determine statically, so we can't propagate types.
             if (!sym_is_type(self_or_null, SELF_OR_NULL)) {
                 for (int i = 0; i < argcount; i++) {
-                    sym_copy_type_number(args[i], ctx->frame->locals[i]);
+                    ctx->frame->locals[i] = args[i];
                 }
             }
             break;
@@ -978,12 +972,7 @@ uop_abstract_interpret_single_inst(
             stack_pointer = ctx->frame->stack_pointer;
             // Push retval into new frame.
             STACK_GROW(1);
-            _Py_UOpsSymbolicValue *new_retval = sym_init_unknown(ctx);
-            if (new_retval == NULL) {
-                goto error;
-            }
-            sym_copy_type_number(retval, new_retval);
-            PEEK(1) = new_retval;
+            PEEK(1) = retval;
             break;
         }
 
