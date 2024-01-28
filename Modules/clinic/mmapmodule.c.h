@@ -5,6 +5,8 @@ preserve
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
+#if defined(HAVE_MPROTECT)
+
 PyDoc_STRVAR(mmap_mmap_mprotect__doc__,
 "mprotect($self, prot, start=0, length=-1, /)\n"
 "--\n"
@@ -68,4 +70,10 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3acd77c6d0a50f49 input=a9049054013a1b77]*/
+
+#endif /* defined(HAVE_MPROTECT) */
+
+#ifndef MMAP_MMAP_MPROTECT_METHODDEF
+    #define MMAP_MMAP_MPROTECT_METHODDEF
+#endif /* !defined(MMAP_MMAP_MPROTECT_METHODDEF) */
+/*[clinic end generated code: output=0e46b747e4ce93bf input=a9049054013a1b77]*/

@@ -942,7 +942,7 @@ mmap_mmap_mprotect_impl(mmap_object *self, int prot, Py_ssize_t start,
 
     Py_RETURN_NONE;
 }
-#endif
+#endif  // HAVE_MPROTECT
 
 #include "clinic/mmapmodule.c.h"
 
