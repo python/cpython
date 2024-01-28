@@ -382,7 +382,15 @@ def requires_mac_ver(*min_version):
 def requires_musl():
     """Decorator raising SkipTest if the musl is not available."""
     import subprocess
-    proc = subprocess.run(["ldd"], stderr=subprocess.PIPE, universal_newlines=True)
+    if sys.platform == "darwin":
+        _cmd = "otool -L"
+    elif sys.platform == "linux":
+        _cmd = "ldd"
+    else:
+        return False
+
+    proc = subprocess.run(_cmd.split(), stderr=subprocess.PIPE, universal_newlines=True)
+
     if "musl" in proc.stderr:
         skip = False
     else:

@@ -205,6 +205,9 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
         binary = f.read(chunksize)
         pos = 0
         while pos < len(binary):
+            # We first check 'musl' in the binary, because the next
+            # condition of looking for 'libc' in binary will be
+            # true for the case of musl.
             if b'musl' in binary:
                 mv = _get_musl_version(executable)
                 return "musl", mv
@@ -1362,8 +1365,8 @@ def freedesktop_os_release():
 
 ### musl libc version support
 # These functions were copied and adapted from the packaging module:
-# https://github.com/pypa/packaging/blob/main/src/packaging/_musllinux.py
-# https://github.com/pypa/packaging/blob/main/src/packaging/_elffile.py
+# https://github.com/pypa/packaging/blob/4d8534061364e3cbfee582192ab81a095ec2db51/src/packaging/_musllinux.py
+# https://github.com/pypa/packaging/blob/4d8534061364e3cbfee582192ab81a095ec2db51/src/packaging/_elffile.py
 
 class ELFInvalid(ValueError):
     pass
