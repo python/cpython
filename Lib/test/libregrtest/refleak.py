@@ -200,15 +200,9 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
 
     # Clear caches
     clear_caches()
-
-    # Clear executors and type cache at the end, since the previous function
-    # calls can create executors and modify types:
-    try:
-        import _testinternalcapi
-    except ImportError:
-        pass
-    else:
-        _testinternalcapi.invalidate_executors()
+    # Clear executors and type cache at the end (previous function calls can
+    # create new executors and modify types):
+    sys._clear_executors()
     sys._clear_type_cache()
 
 
