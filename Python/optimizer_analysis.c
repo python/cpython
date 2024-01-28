@@ -38,7 +38,7 @@
 
 #ifdef Py_DEBUG
     static const char *const DEBUG_ENV = "PYTHON_OPT_DEBUG";
-    static inline int get_lltrace() {
+    static inline int get_lltrace(void) {
         char *uop_debug = Py_GETENV(DEBUG_ENV);
         int lltrace = 0;
         if (uop_debug != NULL && *uop_debug >= '0') {
@@ -231,8 +231,6 @@ abstractinterp_context_new(PyCodeObject *co,
         goto error;
     }
 
-
-
     self = PyObject_NewVar(_Py_UOpsAbstractInterpContext,
                                &_Py_UOpsAbstractInterpContext_Type,
                                MAX_ABSTRACT_INTERP_SIZE);
@@ -409,19 +407,19 @@ sym_type_get_refinement(_Py_UOpsSymType *sym, _Py_UOpsSymExprTypeEnum typ);
 static inline PyFunctionObject *
 extract_func_from_sym(_Py_UOpsSymType *callable_sym)
 {
-        assert(callable_sym != NULL);
-        if (!sym_is_type(callable_sym, PYFUNCTION_TYPE_VERSION_TYPE)) {
-            DPRINTF(1, "error: _PUSH_FRAME not function type\n");
-            return NULL;
-        }
-        uint64_t func_version = sym_type_get_refinement(callable_sym, PYFUNCTION_TYPE_VERSION_TYPE);
-        PyFunctionObject *func = _PyFunction_LookupByVersion((uint32_t)func_version);
-        if (func == NULL) {
-            OPT_STAT_INC(optimizer_failure_reason_null_function);
-            DPRINTF(1, "error: _PUSH_FRAME cannot find func version\n");
-            return NULL;
-        }
-        return func;
+    assert(callable_sym != NULL);
+    if (!sym_is_type(callable_sym, PYFUNCTION_TYPE_VERSION_TYPE)) {
+        DPRINTF(1, "error: _PUSH_FRAME not function type\n");
+        return NULL;
+    }
+    uint64_t func_version = sym_type_get_refinement(callable_sym, PYFUNCTION_TYPE_VERSION_TYPE);
+    PyFunctionObject *func = _PyFunction_LookupByVersion((uint32_t)func_version);
+    if (func == NULL) {
+        OPT_STAT_INC(optimizer_failure_reason_null_function);
+        DPRINTF(1, "error: _PUSH_FRAME cannot find func version\n");
+        return NULL;
+    }
+    return func;
 }
 
 
@@ -882,13 +880,14 @@ uop_abstract_interpret_single_inst(
         case _INIT_CALL_PY_EXACT_ARGS: {
             // Don't put in the new frame. Leave it be so that _PUSH_FRAME
             // can extract callable, self_or_null and args later.
-            // Set stack pointer to the callable.
-            stack_pointer += -1 - oparg;
+            // This also means our stack pointer diverges from the real VM.
             break;
         }
 
         case _PUSH_FRAME: {
             int argcount = oparg;
+            // _INIT_CALL_PY_EXACT_ARGS's real stack effect in the VM.
+            stack_pointer += -1 - oparg;
             // TOS is the new callable, above it self_or_null and args
 
             PyFunctionObject *func = extract_func_from_sym(PEEK(1));
