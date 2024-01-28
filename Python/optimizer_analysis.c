@@ -168,7 +168,7 @@ typedef struct _Py_UOpsAbstractInterpContext {
 
     _Py_UOpsSymType **water_level;
     _Py_UOpsSymType **limit;
-    _Py_UOpsSymType *localsplus[1];
+    _Py_UOpsSymType *locals_and_stack[1];
 } _Py_UOpsAbstractInterpContext;
 
 static void
@@ -240,10 +240,10 @@ abstractinterp_context_new(PyCodeObject *co,
         goto error;
     }
 
-    self->limit = self->localsplus + MAX_ABSTRACT_INTERP_SIZE;
-    self->water_level = self->localsplus;
+    self->limit = self->locals_and_stack + MAX_ABSTRACT_INTERP_SIZE;
+    self->water_level = self->locals_and_stack;
     for (int i = 0 ; i < MAX_ABSTRACT_INTERP_SIZE; i++) {
-        self->localsplus[i] = NULL;
+        self->locals_and_stack[i] = NULL;
     }
 
 
