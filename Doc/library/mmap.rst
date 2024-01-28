@@ -236,7 +236,8 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
       Change the access protections to *prot* to the memory region beginning at
       *start* and extending *length* bytes.  *prot* must be one of the
-      :ref:`PROT_* constants <prot-constants>` available on the system.
+      :ref:`PROT_* constants <prot-constants>` available on the system,
+      or :ref:`PAGE_* constants <page-constants>` on Windows.
       *start* and *length* are omitted, the entire mapping is spanned.  On
       some systems (including Linux), *start* must be a multiple of the
       :const:`PAGESIZE`.
@@ -368,7 +369,25 @@ PROT_* Constants
    These options can be passed to :meth:`mmap.mmap` and :meth:`mmap.mprotect`.
    Not available on Windows.
 
-   .. availability:: not Windows.
+.. _page-constants:
+
+PAGE_* Constants
+++++++++++++++++
+
+.. data:: PAGE_EXECUTE
+          PAGE_EXECUTE_READ
+          PAGE_EXECUTE_READWRITE
+          PAGE_EXECUTE_WRITECOPY
+          PAGE_NOACCESS
+          PAGE_READONLY
+          PAGE_READWRITE
+          PAGE_WRITECOPY
+          PAGE_TARGETS_INVALID
+          PAGE_TARGETS_NO_UPDATE
+
+   .. availability:: Windows.
+
+   These options can be passed to :meth:`mmap.mprotect`.
 
 .. _madvise-constants:
 
