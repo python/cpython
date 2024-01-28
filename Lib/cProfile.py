@@ -44,6 +44,7 @@ class Profile(_lsprof.Profiler):
         if not hasattr(sort, '__iter__') or isinstance(sort, str):
             sort = (sort,)
         pstats.Stats(self).strip_dirs().sort_stats(*sort).print_stats()
+
     def dump_stats(self, file):
         import marshal
         with open(file, 'wb') as f:
