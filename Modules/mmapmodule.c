@@ -130,7 +130,7 @@ typedef struct {
 
 /*[clinic input]
 module mmap
-class mmap.mmap "mmap_object *" "clinic_state()->mmap_object_type"
+class mmap.mmap "mmap_object *" "mmap_object_type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=7bf834eba16b5376]*/
 
