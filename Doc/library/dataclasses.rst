@@ -538,8 +538,8 @@ that has to be called, it is common to call this method in a
 
     class Rectangle:
         def __init__(self, height, width):
-          self.height = height
-          self.width = width
+            self.height = height
+            self.width = width
 
     @dataclass
     class Square(Rectangle):
