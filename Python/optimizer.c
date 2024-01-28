@@ -800,6 +800,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
             }
         }
         assert(found);
+        (void)found;
     }
     _Py_ExecutorInit(executor, dependencies);
 #ifdef Py_DEBUG
