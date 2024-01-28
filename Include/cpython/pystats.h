@@ -124,6 +124,9 @@ typedef struct _optimization_stats {
     uint64_t optimizer_successes;
     uint64_t optimizer_failure_reason_null_function;
     uint64_t optimizer_failure_reason_no_memory;
+    uint64_t loop_body_duplication_attempts;
+    uint64_t loop_body_duplication_successes;
+    uint64_t loop_body_duplication_no_mem;
 } OptimizationStats;
 
 typedef struct _stats {

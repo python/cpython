@@ -989,6 +989,7 @@ uop_abstract_interpret(
     _PyUOpInstruction *end = NULL;
     AbstractInterpExitCodes status = ABSTRACT_INTERP_NORMAL;
     bool first_impure = true;
+    bool has_enough_space_to_duplicate_loop = true;
     int res = 0;
 
 loop_peeling:
@@ -1030,18 +1031,27 @@ loop_peeling:
 
     // If we end in a loop, and we have a lot of space left, peel the loop for added type stability
     // https://en.wikipedia.org/wiki/Loop_splitting
-    if (!did_loop_peel && curr->opcode == _JUMP_TO_TOP &&
-        ((ctx->emitter.curr_i * 3) < (int)(ctx->emitter.writebuffer_end - ctx->emitter.writebuffer))) {
+    has_enough_space_to_duplicate_loop = ((ctx->emitter.curr_i * 2) <
+        (int)(ctx->emitter.writebuffer_end - ctx->emitter.writebuffer));
+    if (!did_loop_peel && curr->opcode == _JUMP_TO_TOP && has_enough_space_to_duplicate_loop) {
+        OPT_STAT_INC(loop_body_duplication_attempts);
         did_loop_peel = true;
         _PyUOpInstruction jump_header = {_JUMP_ABSOLUTE_HEADER, (ctx->emitter.curr_i), 0, 0};
         if (emit_i(&ctx->emitter, jump_header) < 0) {
             goto error;
         }
-        DPRINTF(2, "loop_peeling!\n");
+        DPRINTF(1, "loop_peeling!\n");
         goto loop_peeling;
     }
     else {
+#if  defined(Py_STATS) || defined(Py_DEBUG)
+        if(!did_loop_peel && curr->opcode == _JUMP_TO_TOP && !has_enough_space_to_duplicate_loop)  {
+            OPT_STAT_INC(loop_body_duplication_no_mem);
+            DPRINTF(1, "no space for loop peeling\n");
+        }
+#endif
         if (did_loop_peel) {
+            OPT_STAT_INC(loop_body_duplication_successes);
             assert(curr->opcode == _JUMP_TO_TOP);
             _PyUOpInstruction jump_abs = {_JUMP_ABSOLUTE, (ctx->emitter.curr_i), 0, 0};
             if (emit_i(&ctx->emitter, jump_abs) < 0) {
