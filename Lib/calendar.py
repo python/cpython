@@ -737,7 +737,7 @@ def main(args=None):
     parser.add_argument(
         "-f", "--first-weekday",
         type=int, default=0,
-        help="weekday to start each week (default 0)"
+        help="weekday (0 is Monday, 6 is Sunday) to start each week (default 0)"
     )
     parser.add_argument(
         "year",

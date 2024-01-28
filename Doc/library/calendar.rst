@@ -588,7 +588,7 @@ The following options are accepted:
 
 .. option:: --first-weekday WEEKDAY, -f WEEKDAY
 
-   The weekday to start each week.
+   The weekday (``0`` is Monday, ``6`` is Sunday) to start each week.
    Must be a number between 0 and 6.
    Defaults to 0.
 
