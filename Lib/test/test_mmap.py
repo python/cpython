@@ -897,6 +897,18 @@ class MmapTests(unittest.TestCase):
         self.assertEqual(m.madvise(mmap.MADV_NORMAL, 0, 2), None)
         self.assertEqual(m.madvise(mmap.MADV_NORMAL, 0, size), None)
 
+    @unittest.skipUnless(hasattr(mmap.mmap, 'mprotect'), 'needs mprotect')
+    def test_mprotect(self):
+        size = 2 * PAGESIZE
+        m = mmap.mmap(-1, size)
+
+        with self.assertRaisesRegex(ValueError, "mprotect start out of bounds"):
+            m.mprotect(mmap.PROT_EXEC, -1)
+        with self.assertRaisesRegex(ValueError, "mprotect length out of bounds"):
+            m.mprotect(mmap.PROT_EXEC, 0, size + 1)
+
+        m.mprotect(mmap.PROT_READ, 0, size)
+
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     def test_resize_up_when_mapped_to_pagefile(self):
         """If the mmap is backed by the pagefile ensure a resize up can happen

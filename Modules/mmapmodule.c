@@ -89,6 +89,10 @@ my_getpagesize(void)
 #  define MAP_ANONYMOUS MAP_ANON
 #endif
 
+typedef struct {
+    PyTypeObject *mmap_object_type;
+} _mmap_state;
+
 typedef enum
 {
     ACCESS_DEFAULT,
@@ -123,6 +127,12 @@ typedef struct {
     PyObject *weakreflist;
     access_mode access;
 } mmap_object;
+
+/*[clinic input]
+module mmap
+class mmap.mmap "mmap_object *" "clinic_state()->mmap_object_type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=7bf834eba16b5376]*/
 
 static int
 mmap_object_traverse(mmap_object *m_obj, visitproc visit, void *arg)
@@ -896,6 +906,46 @@ mmap_madvise_method(mmap_object *self, PyObject *args)
 }
 #endif // HAVE_MADVISE
 
+#ifdef HAVE_MPROTECT
+/*[clinic input]
+mmap.mmap.mprotect
+    prot: int
+    start: Py_ssize_t = 0
+    length: Py_ssize_t = -1
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+mmap_mmap_mprotect_impl(mmap_object *self, int prot, Py_ssize_t start,
+                        Py_ssize_t length)
+/*[clinic end generated code: output=5d0923571db44207 input=5632169def6c8789]*/
+{
+    CHECK_VALID(NULL);
+
+    if (start < 0 || start >= self->size) {
+        PyErr_SetString(PyExc_ValueError, "mprotect start out of bounds");
+        return NULL;
+    }
+    if (length == -1) {
+        length = self->size;
+    }
+    if (start + length > self->size) {
+        PyErr_SetString(PyExc_ValueError, "mprotect length out of bounds");
+        return NULL;
+    }
+
+    if (mprotect(self->data + start, length, prot) != 0) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+#endif
+
+#include "clinic/mmapmodule.c.h"
+
 static struct PyMemberDef mmap_object_members[] = {
     {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(mmap_object, weakreflist), Py_READONLY},
     {NULL},
@@ -922,6 +972,9 @@ static struct PyMethodDef mmap_object_methods[] = {
     {"write_byte",      (PyCFunction) mmap_write_byte_method,   METH_VARARGS},
     {"__enter__",       (PyCFunction) mmap__enter__method,      METH_NOARGS},
     {"__exit__",        (PyCFunction) mmap__exit__method,       METH_VARARGS},
+#ifdef HAVE_MPROTECT
+    MMAP_MMAP_MPROTECT_METHODDEF
+#endif
 #ifdef MS_WINDOWS
     {"__sizeof__",      (PyCFunction) mmap__sizeof__method,     METH_NOARGS},
 #endif
@@ -1807,7 +1860,7 @@ static PyModuleDef_Slot mmap_slots[] = {
 static struct PyModuleDef mmapmodule = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "mmap",
-    .m_size = 0,
+    .m_size = sizeof(_mmap_state),
     .m_slots = mmap_slots,
 };
 
