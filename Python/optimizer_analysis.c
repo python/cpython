@@ -101,14 +101,6 @@ typedef struct {
 } _Py_UOpsSymType;
 
 
-typedef struct _Py_UOpsSymbolicValue {
-    // Value numbering but only for types and constant values.
-    // https://en.wikipedia.org/wiki/Value_numbering
-    _Py_UOpsSymType *ty_number;
-    // More fields can be added later if we want to support
-    // more optimizations.
-} _Py_UOpsSymbolicValue;
-
 typedef struct _Py_UOpsAbstractFrame {
     PyObject_HEAD
     // Strong reference.
@@ -117,14 +109,14 @@ typedef struct _Py_UOpsAbstractFrame {
     struct _Py_UOpsAbstractFrame *next;
     // Symbolic version of co_consts
     int sym_consts_len;
-    _Py_UOpsSymbolicValue **sym_consts;
+    _Py_UOpsSymType **sym_consts;
     // Max stacklen
     int stack_len;
     int locals_len;
 
-    _Py_UOpsSymbolicValue **stack_pointer;
-    _Py_UOpsSymbolicValue **stack;
-    _Py_UOpsSymbolicValue **locals;
+    _Py_UOpsSymType **stack_pointer;
+    _Py_UOpsSymType **stack;
+    _Py_UOpsSymType **locals;
 } _Py_UOpsAbstractFrame;
 
 static void
@@ -145,12 +137,6 @@ PyTypeObject _Py_UOpsAbstractFrame_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION
 };
 
-typedef struct sym_arena {
-    char *curr_available;
-    char *end;
-    char *arena;
-} sym_arena;
-
 typedef struct ty_arena {
     int ty_curr_number;
     int ty_max_number;
@@ -158,7 +144,7 @@ typedef struct ty_arena {
 } ty_arena;
 
 typedef struct frequent_syms {
-    _Py_UOpsSymbolicValue *push_nulL_sym;
+    _Py_UOpsSymType *push_nulL_sym;
 } frequent_syms;
 
 typedef struct uops_emitter {
@@ -173,20 +159,16 @@ typedef struct _Py_UOpsAbstractInterpContext {
     // The current "executing" frame.
     _Py_UOpsAbstractFrame *frame;
 
-    // Arena for the symbolic expression themselves.
-    sym_arena s_arena;
-    // Arena for the symbolic expressions' types.
-    // This is separate from the s_arena so that we can free
-    // all the constants easily.
+    // Arena for the symbolic types.
     ty_arena t_arena;
 
     frequent_syms frequent_syms;
 
     uops_emitter emitter;
 
-    _Py_UOpsSymbolicValue **water_level;
-    _Py_UOpsSymbolicValue **limit;
-    _Py_UOpsSymbolicValue *localsplus[1];
+    _Py_UOpsSymType **water_level;
+    _Py_UOpsSymType **limit;
+    _Py_UOpsSymType *localsplus[1];
 } _Py_UOpsAbstractInterpContext;
 
 static void
@@ -194,22 +176,21 @@ abstractinterp_dealloc(PyObject *o)
 {
     _Py_UOpsAbstractInterpContext *self = (_Py_UOpsAbstractInterpContext *)o;
     Py_XDECREF(self->frame);
-    if (self->s_arena.arena != NULL) {
+    if (self->t_arena.arena != NULL) {
         int tys = self->t_arena.ty_curr_number;
         for (int i = 0; i < tys; i++) {
             Py_CLEAR(self->t_arena.arena[i].const_val);
         }
     }
     PyMem_Free(self->t_arena.arena);
-    PyMem_Free(self->s_arena.arena);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 PyTypeObject _Py_UOpsAbstractInterpContext_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "uops abstract interpreter's context",
-    .tp_basicsize = sizeof(_Py_UOpsAbstractInterpContext) - sizeof(_Py_UOpsSymbolicValue *),
-    .tp_itemsize = sizeof(_Py_UOpsSymbolicValue *),
+    .tp_basicsize = sizeof(_Py_UOpsAbstractInterpContext) - sizeof(_Py_UOpsSymType *),
+    .tp_itemsize = sizeof(_Py_UOpsSymType *),
     .tp_dealloc = (destructor)abstractinterp_dealloc,
     .tp_free = PyObject_Free,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION
@@ -222,7 +203,7 @@ frame_new(_Py_UOpsAbstractInterpContext *ctx,
 static inline int
 frame_push(_Py_UOpsAbstractInterpContext *ctx,
            _Py_UOpsAbstractFrame *frame,
-           _Py_UOpsSymbolicValue **localsplus_start,
+           _Py_UOpsSymType **localsplus_start,
            int locals_len,
            int curr_stacklen,
            int total_len);
@@ -243,19 +224,13 @@ abstractinterp_context_new(PyCodeObject *co,
     _Py_UOpsAbstractInterpContext *self = NULL;
     char *arena = NULL;
     _Py_UOpsSymType *t_arena = NULL;
-    Py_ssize_t arena_size = (sizeof(_Py_UOpsSymbolicValue)) * ir_entries * OVERALLOCATE_FACTOR;
     Py_ssize_t ty_arena_size = (sizeof(_Py_UOpsSymType)) * ir_entries * OVERALLOCATE_FACTOR;
-
-
-    arena = (char *)PyMem_Malloc(arena_size);
-    if (arena == NULL) {
-        goto error;
-    }
 
     t_arena = (_Py_UOpsSymType *)PyMem_Malloc(ty_arena_size);
     if (t_arena == NULL) {
         goto error;
     }
+
 
 
     self = PyObject_NewVar(_Py_UOpsAbstractInterpContext,
@@ -273,10 +248,6 @@ abstractinterp_context_new(PyCodeObject *co,
 
 
     // Setup the arena for sym expressions.
-    self->s_arena.arena = arena;
-    self->s_arena.curr_available = arena;
-    assert(arena_size > 0);
-    self->s_arena.end = arena + arena_size;
     self->t_arena.ty_curr_number = 0;
     self->t_arena.arena = t_arena;
     self->t_arena.ty_max_number = ir_entries * OVERALLOCATE_FACTOR;
@@ -313,7 +284,6 @@ error:
     if (self != NULL) {
         // Important so we don't double free them.
         self->t_arena.arena = NULL;
-        self->s_arena.arena = NULL;
         self->frame = NULL;
     }
     Py_XDECREF(self);
@@ -321,19 +291,19 @@ error:
     return NULL;
 }
 
-static inline _Py_UOpsSymbolicValue*
+static inline _Py_UOpsSymType*
 sym_init_const(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val, int const_idx);
 
-static inline _Py_UOpsSymbolicValue **
+static inline _Py_UOpsSymType **
 create_sym_consts(_Py_UOpsAbstractInterpContext *ctx, PyObject *co_consts)
 {
     Py_ssize_t co_const_len = PyTuple_GET_SIZE(co_consts);
-    _Py_UOpsSymbolicValue **sym_consts = PyMem_New(_Py_UOpsSymbolicValue *, co_const_len);
+    _Py_UOpsSymType **sym_consts = PyMem_New(_Py_UOpsSymType *, co_const_len);
     if (sym_consts == NULL) {
         return NULL;
     }
     for (Py_ssize_t i = 0; i < co_const_len; i++) {
-        _Py_UOpsSymbolicValue *res = sym_init_const(ctx, Py_NewRef(PyTuple_GET_ITEM(co_consts, i)), (int)i);
+        _Py_UOpsSymType *res = sym_init_const(ctx, Py_NewRef(PyTuple_GET_ITEM(co_consts, i)), (int)i);
         if (res == NULL) {
             goto error;
         }
@@ -347,11 +317,11 @@ error:
 }
 
 
-static inline _Py_UOpsSymbolicValue*
+static inline _Py_UOpsSymType*
 sym_init_unknown(_Py_UOpsAbstractInterpContext *ctx);
 
 static void
-sym_copy_immutable_type_info(_Py_UOpsSymbolicValue *from_sym, _Py_UOpsSymbolicValue *to_sym);
+sym_copy_immutable_type_info(_Py_UOpsSymType *from_sym, _Py_UOpsSymType *to_sym);
 
 /*
  * The reason why we have a separate frame_push and frame_initialize is to mimic
@@ -360,7 +330,7 @@ sym_copy_immutable_type_info(_Py_UOpsSymbolicValue *from_sym, _Py_UOpsSymbolicVa
 static inline int
 frame_push(_Py_UOpsAbstractInterpContext *ctx,
            _Py_UOpsAbstractFrame *frame,
-           _Py_UOpsSymbolicValue **localsplus_start,
+           _Py_UOpsSymType **localsplus_start,
            int locals_len,
            int curr_stacklen,
            int total_len)
@@ -381,7 +351,7 @@ frame_initalize(_Py_UOpsAbstractInterpContext *ctx, _Py_UOpsAbstractFrame *frame
 {
     // Initialize with the initial state of all local variables
     for (int i = 0; i < locals_len; i++) {
-        _Py_UOpsSymbolicValue *local = sym_init_unknown(ctx);
+        _Py_UOpsSymType *local = sym_init_unknown(ctx);
         if (local == NULL) {
             goto error;
         }
@@ -391,7 +361,7 @@ frame_initalize(_Py_UOpsAbstractInterpContext *ctx, _Py_UOpsAbstractFrame *frame
 
     // Initialize the stack as well
     for (int i = 0; i < curr_stacklen; i++) {
-        _Py_UOpsSymbolicValue *stackvar = sym_init_unknown(ctx);
+        _Py_UOpsSymType *stackvar = sym_init_unknown(ctx);
         if (stackvar == NULL) {
             goto error;
         }
@@ -409,7 +379,7 @@ frame_new(_Py_UOpsAbstractInterpContext *ctx,
                           PyObject *co_consts, int stack_len, int locals_len,
                           int curr_stacklen)
 {
-    _Py_UOpsSymbolicValue **sym_consts = create_sym_consts(ctx, co_consts);
+    _Py_UOpsSymType **sym_consts = create_sym_consts(ctx, co_consts);
     if (sym_consts == NULL) {
         return NULL;
     }
@@ -432,12 +402,12 @@ frame_new(_Py_UOpsAbstractInterpContext *ctx,
 }
 
 static inline bool
-sym_is_type(_Py_UOpsSymbolicValue *sym, _Py_UOpsSymExprTypeEnum typ);
+sym_is_type(_Py_UOpsSymType *sym, _Py_UOpsSymExprTypeEnum typ);
 static inline uint64_t
-sym_type_get_refinement(_Py_UOpsSymbolicValue *sym, _Py_UOpsSymExprTypeEnum typ);
+sym_type_get_refinement(_Py_UOpsSymType *sym, _Py_UOpsSymExprTypeEnum typ);
 
 static inline PyFunctionObject *
-extract_func_from_sym(_Py_UOpsSymbolicValue *callable_sym)
+extract_func_from_sym(_Py_UOpsSymType *callable_sym)
 {
         assert(callable_sym != NULL);
         if (!sym_is_type(callable_sym, PYFUNCTION_TYPE_VERSION_TYPE)) {
@@ -460,7 +430,7 @@ static int
 ctx_frame_push(
     _Py_UOpsAbstractInterpContext *ctx,
     PyCodeObject *co,
-    _Py_UOpsSymbolicValue **localsplus_start
+    _Py_UOpsSymType **localsplus_start
 )
 {
     _Py_UOpsAbstractFrame *frame = frame_new(ctx,
@@ -503,33 +473,26 @@ ctx_frame_pop(
 }
 
 static void
-sym_set_type_from_const(_Py_UOpsSymbolicValue *sym, PyObject *obj);
+sym_set_type_from_const(_Py_UOpsSymType *sym, PyObject *obj);
 
 // Steals a reference to const_val
-static _Py_UOpsSymbolicValue*
-_Py_UOpsSymbolicValue_New(_Py_UOpsAbstractInterpContext *ctx,
+static _Py_UOpsSymType*
+_Py_UOpsSymType_New(_Py_UOpsAbstractInterpContext *ctx,
                                PyObject *const_val)
 {
-    _Py_UOpsSymbolicValue *self = (_Py_UOpsSymbolicValue *)ctx->s_arena.curr_available;
-    ctx->s_arena.curr_available += sizeof(_Py_UOpsSymbolicValue) + sizeof(_Py_UOpsSymbolicValue *);
-    if (ctx->s_arena.curr_available >= ctx->s_arena.end) {
-        OPT_STAT_INC(optimizer_failure_reason_no_memory);
-        DPRINTF(1, "out of space for symbolic expression\n");
-        return NULL;
-    }
-
-    _Py_UOpsSymType *ty = &ctx->t_arena.arena[ctx->t_arena.ty_curr_number];
+    _Py_UOpsSymType *self = &ctx->t_arena.arena[ctx->t_arena.ty_curr_number];
     if (ctx->t_arena.ty_curr_number >= ctx->t_arena.ty_max_number) {
         OPT_STAT_INC(optimizer_failure_reason_no_memory);
         DPRINTF(1, "out of space for symbolic expression type\n");
         return NULL;
     }
     ctx->t_arena.ty_curr_number++;
-    ty->const_val = NULL;
-    ty->types = 0;
+    self->const_val = NULL;
+    self->types = 0;
 
-    self->ty_number = ty;
-    self->ty_number->types = 0;
+    self->const_val = NULL;
+    self->types = 0;
+
     if (const_val != NULL) {
         sym_set_type_from_const(self, const_val);
     }
@@ -539,30 +502,30 @@ _Py_UOpsSymbolicValue_New(_Py_UOpsAbstractInterpContext *ctx,
 
 
 static void
-sym_set_type(_Py_UOpsSymbolicValue *sym, _Py_UOpsSymExprTypeEnum typ, uint64_t refinement)
+sym_set_type(_Py_UOpsSymType *sym, _Py_UOpsSymExprTypeEnum typ, uint64_t refinement)
 {
-    sym->ty_number->types |= 1 << typ;
+    sym->types |= 1 << typ;
     if (typ <= MAX_TYPE_WITH_REFINEMENT) {
-        sym->ty_number->refinement[typ] = refinement;
+        sym->refinement[typ] = refinement;
     }
 }
 
 // Note: for this, to_sym MUST point to brand new sym.
 static void
-sym_copy_immutable_type_info(_Py_UOpsSymbolicValue *from_sym, _Py_UOpsSymbolicValue *to_sym)
+sym_copy_immutable_type_info(_Py_UOpsSymType *from_sym, _Py_UOpsSymType *to_sym)
 {
-    to_sym->ty_number->types = (from_sym->ty_number->types & IMMUTABLES);
-    if (to_sym->ty_number->types) {
-        to_sym->ty_number->const_val = Py_XNewRef(from_sym->ty_number->const_val);
+    to_sym->types = (from_sym->types & IMMUTABLES);
+    if (to_sym->types) {
+        to_sym->const_val = Py_XNewRef(from_sym->const_val);
     }
 }
 
 // Steals a reference to obj
 static void
-sym_set_type_from_const(_Py_UOpsSymbolicValue *sym, PyObject *obj)
+sym_set_type_from_const(_Py_UOpsSymType *sym, PyObject *obj)
 {
     PyTypeObject *tp = Py_TYPE(obj);
-    sym->ty_number->const_val = obj;
+    sym->const_val = obj;
 
     if (tp == &PyLong_Type) {
         sym_set_type(sym, PYLONG_TYPE, 0);
@@ -597,18 +560,18 @@ sym_set_type_from_const(_Py_UOpsSymbolicValue *sym, PyObject *obj)
 }
 
 
-static inline _Py_UOpsSymbolicValue*
+static inline _Py_UOpsSymType*
 sym_init_unknown(_Py_UOpsAbstractInterpContext *ctx)
 {
-    return _Py_UOpsSymbolicValue_New(ctx,NULL);
+    return _Py_UOpsSymType_New(ctx,NULL);
 }
 
 // Steals a reference to const_val
-static inline _Py_UOpsSymbolicValue*
+static inline _Py_UOpsSymType*
 sym_init_const(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val, int const_idx)
 {
     assert(const_val != NULL);
-    _Py_UOpsSymbolicValue *temp = _Py_UOpsSymbolicValue_New(
+    _Py_UOpsSymType *temp = _Py_UOpsSymType_New(
         ctx,
         const_val
     );
@@ -619,13 +582,13 @@ sym_init_const(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val, int cons
     return temp;
 }
 
-static _Py_UOpsSymbolicValue*
+static _Py_UOpsSymType*
 sym_init_push_null(_Py_UOpsAbstractInterpContext *ctx)
 {
     if (ctx->frequent_syms.push_nulL_sym != NULL) {
         return ctx->frequent_syms.push_nulL_sym;
     }
-    _Py_UOpsSymbolicValue *null_sym = sym_init_unknown(ctx);
+    _Py_UOpsSymType *null_sym = sym_init_unknown(ctx);
     if (null_sym == NULL) {
         return NULL;
     }
@@ -635,32 +598,32 @@ sym_init_push_null(_Py_UOpsAbstractInterpContext *ctx)
 }
 
 static inline bool
-sym_is_type(_Py_UOpsSymbolicValue *sym, _Py_UOpsSymExprTypeEnum typ)
+sym_is_type(_Py_UOpsSymType *sym, _Py_UOpsSymExprTypeEnum typ)
 {
-    if ((sym->ty_number->types & (1 << typ)) == 0) {
+    if ((sym->types & (1 << typ)) == 0) {
         return false;
     }
     return true;
 }
 
 static inline bool
-sym_matches_type(_Py_UOpsSymbolicValue *sym, _Py_UOpsSymExprTypeEnum typ, uint64_t refinement)
+sym_matches_type(_Py_UOpsSymType *sym, _Py_UOpsSymExprTypeEnum typ, uint64_t refinement)
 {
     if (!sym_is_type(sym, typ)) {
         return false;
     }
     if (typ <= MAX_TYPE_WITH_REFINEMENT) {
-        return sym->ty_number->refinement[typ] == refinement;
+        return sym->refinement[typ] == refinement;
     }
     return true;
 }
 
 static uint64_t
-sym_type_get_refinement(_Py_UOpsSymbolicValue *sym, _Py_UOpsSymExprTypeEnum typ)
+sym_type_get_refinement(_Py_UOpsSymType *sym, _Py_UOpsSymExprTypeEnum typ)
 {
     assert(sym_is_type(sym, typ));
     assert(typ <= MAX_TYPE_WITH_REFINEMENT);
-    return sym->ty_number->refinement[typ];
+    return sym->refinement[typ];
 }
 
 
@@ -697,15 +660,15 @@ op_is_specially_handled(uint32_t opcode)
 }
 
 static inline bool
-is_const(_Py_UOpsSymbolicValue *expr)
+is_const(_Py_UOpsSymType *expr)
 {
-    return expr->ty_number->const_val != NULL;
+    return expr->const_val != NULL;
 }
 
 static inline PyObject *
-get_const(_Py_UOpsSymbolicValue *expr)
+get_const(_Py_UOpsSymType *expr)
 {
-    return expr->ty_number->const_val;
+    return expr->const_val;
 }
 
 
@@ -713,7 +676,7 @@ static int
 clear_locals_type_info(_Py_UOpsAbstractInterpContext *ctx) {
     int locals_entries = ctx->frame->locals_len;
     for (int i = 0; i < locals_entries; i++) {
-        _Py_UOpsSymbolicValue *new_local = sym_init_unknown(ctx);
+        _Py_UOpsSymType *new_local = sym_init_unknown(ctx);
         if (new_local == NULL) {
             return -1;
         }
@@ -791,7 +754,7 @@ do { \
 #ifndef Py_DEBUG
 #define GETITEM(ctx, i) (ctx->frame->sym_consts[(i)])
 #else
-static inline _Py_UOpsSymbolicValue *
+static inline _Py_UOpsSymType *
 GETITEM(_Py_UOpsAbstractInterpContext *ctx, Py_ssize_t i) {
     assert(i < ctx->frame->sym_consts_len);
     return ctx->frame->sym_consts[i];
@@ -840,7 +803,7 @@ uop_abstract_interpret_single_inst(
     uint32_t opcode = inst->opcode;
     uint64_t operand = inst->operand;
 
-    _Py_UOpsSymbolicValue **stack_pointer = ctx->frame->stack_pointer;
+    _Py_UOpsSymType **stack_pointer = ctx->frame->stack_pointer;
     _PyUOpInstruction new_inst = *inst;
     _PyUOpInstruction shrink_stack = {_SHRINK_STACK, 0, 0, 0};
 
@@ -853,7 +816,7 @@ uop_abstract_interpret_single_inst(
         // Note: LOAD_FAST_CHECK is not pure!!!
         case LOAD_FAST_CHECK: {
             STACK_GROW(1);
-            _Py_UOpsSymbolicValue *local = GETLOCAL(oparg);
+            _Py_UOpsSymType *local = GETLOCAL(oparg);
             // We guarantee this will error - just bail and don't optimize it.
             if (sym_is_type(local, NULL_TYPE)) {
                 goto error;
@@ -863,7 +826,7 @@ uop_abstract_interpret_single_inst(
         }
         case LOAD_FAST: {
             STACK_GROW(1);
-            _Py_UOpsSymbolicValue * local = GETLOCAL(oparg);
+            _Py_UOpsSymType * local = GETLOCAL(oparg);
             if (sym_is_type(local, NULL_TYPE)) {
                 Py_UNREACHABLE();
             }
@@ -880,7 +843,7 @@ uop_abstract_interpret_single_inst(
         }
         case LOAD_CONST: {
             STACK_GROW(1);
-            PEEK(1) = (_Py_UOpsSymbolicValue *)GETITEM(
+            PEEK(1) = (_Py_UOpsSymType *)GETITEM(
                 ctx, oparg);
             assert(is_const(PEEK(1)));
             // Peephole: inline constants.
@@ -894,13 +857,13 @@ uop_abstract_interpret_single_inst(
         }
         case STORE_FAST_MAYBE_NULL:
         case STORE_FAST: {
-            _Py_UOpsSymbolicValue *value = PEEK(1);
+            _Py_UOpsSymType *value = PEEK(1);
             GETLOCAL(oparg) = value;
             STACK_SHRINK(1);
             break;
         }
         case COPY: {
-            _Py_UOpsSymbolicValue *bottom = PEEK(1 + (oparg - 1));
+            _Py_UOpsSymType *bottom = PEEK(1 + (oparg - 1));
             STACK_GROW(1);
             PEEK(1) = bottom;
             break;
@@ -908,7 +871,7 @@ uop_abstract_interpret_single_inst(
 
         case PUSH_NULL: {
             STACK_GROW(1);
-            _Py_UOpsSymbolicValue *null_sym =  sym_init_push_null(ctx);
+            _Py_UOpsSymType *null_sym =  sym_init_push_null(ctx);
             if (null_sym == NULL) {
                 goto error;
             }
@@ -934,9 +897,9 @@ uop_abstract_interpret_single_inst(
             }
             PyCodeObject *co = (PyCodeObject *)func->func_code;
 
-            _Py_UOpsSymbolicValue *self_or_null = PEEK(0);
+            _Py_UOpsSymType *self_or_null = PEEK(0);
             assert(self_or_null != NULL);
-            _Py_UOpsSymbolicValue **args = &PEEK(-1);
+            _Py_UOpsSymType **args = &PEEK(-1);
             assert(args != NULL);
             // Bound method fiddling, same as _INIT_CALL_PY_EXACT_ARGS
             if (!sym_is_type(self_or_null, NULL_TYPE) &&
@@ -962,7 +925,7 @@ uop_abstract_interpret_single_inst(
 
         case _POP_FRAME: {
             assert(STACK_LEVEL() == 1);
-            _Py_UOpsSymbolicValue *retval = PEEK(1);
+            _Py_UOpsSymType *retval = PEEK(1);
             STACK_SHRINK(1);
             ctx->frame->stack_pointer = stack_pointer;
 

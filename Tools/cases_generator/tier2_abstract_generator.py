@@ -51,7 +51,7 @@ NO_CONST_OR_TYPE_EVALUATE = {
 def declare_variables(
     uop: Uop,
     out: CWriter,
-    default_type: str = "_Py_UOpsSymbolicValue *",
+    default_type: str = "_Py_UOpsSymType *",
     skip_inputs: bool = False,
     skip_peeks: bool = False,
 ) -> None:
@@ -66,7 +66,7 @@ def declare_variables(
             if var.name not in variables:
                 type = default_type
                 if var.size != "1" and var.type == "PyObject **":
-                    type = "_Py_UOpsSymbolicValue **"
+                    type = "_Py_UOpsSymType **"
                 variables.add(var.name)
                 if var.condition:
                     out.emit(f"{type}{var.name} = NULL;\n")
@@ -81,7 +81,7 @@ def declare_variables(
             variables.add(var.name)
             type = default_type
             if var.size != "1" and var.type == "PyObject **":
-                type = "_Py_UOpsSymbolicValue **"
+                type = "_Py_UOpsSymType **"
             if var.condition:
                 out.emit(f"{type}{var.name} = NULL;\n")
             else:
@@ -194,7 +194,7 @@ def new_sym(
     constant: str | None,
 ) -> str:
     return (
-        f"_Py_UOpsSymbolicValue_New("
+        f"_Py_UOpsSymType_New("
         f"ctx, {constant or 'NULL'});"
     )
 
@@ -331,11 +331,11 @@ def _write_body_abstract_interp_guard_uop(
             aux = "0" if aux is None else aux
             # Check that the input type information match (including auxiliary info)
             predicates.append(
-                f"sym_matches_type((_Py_UOpsSymbolicValue *){output_var.name}, {typname}, (uint32_t){aux})"
+                f"sym_matches_type((_Py_UOpsSymType *){output_var.name}, {typname}, (uint32_t){aux})"
             )
             # Propagate mode - set the types
             propagates.append(
-                f"sym_set_type((_Py_UOpsSymbolicValue *){output_var.name}, {typname}, (uint32_t){aux})"
+                f"sym_set_type((_Py_UOpsSymType *){output_var.name}, {typname}, (uint32_t){aux})"
             )
 
     out.emit("// Type guard elimination\n")
@@ -417,7 +417,7 @@ def generate_tier2_abstract(
         if not uop.properties.always_exits:
             # Guards strictly only peek
             if not uop.properties.guard:
-                stack.flush(out, cast_type="_Py_UOpsSymbolicValue *")
+                stack.flush(out, cast_type="_Py_UOpsSymType *")
             out.emit("break;\n")
         out.start_line()
         out.emit("}")
