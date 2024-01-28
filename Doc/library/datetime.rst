@@ -1771,7 +1771,7 @@ different type, :exc:`TypeError` is raised unless the comparison is ``==`` or
 ``!=``. The latter cases return :const:`False` or :const:`True`, respectively.
 
 .. versionchanged:: 3.3
-  Equality comparisons between aware and naive :class:`~.datetime.time` instances
+  Equality comparisons between aware and naive :class:`.time` instances
   don't raise :exc:`TypeError`.
 
 In Boolean contexts, a :class:`.time` object is always considered to be true.
