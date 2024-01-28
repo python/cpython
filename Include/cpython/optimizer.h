@@ -23,7 +23,6 @@ typedef struct _bloom_filter {
 typedef struct {
     uint8_t opcode;
     uint8_t oparg;
-    uint8_t valid;
     uint8_t linked;
     _PyBloomFilter bloom;
     _PyExecutorLinkListNode links;

@@ -2369,10 +2369,9 @@
             TIER_ONE_ONLY
             CHECK_EVAL_BREAKER();
             PyCodeObject *code = _PyFrame_GetCode(frame);
-            _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
-            assert(executor->vm_data.valid);
-            Py_INCREF(executor);
-            current_executor = executor;
+            current_executor = code->co_executors->executors[oparg & 255];
+            assert(current_executor->vm_data.code == code);
+            Py_INCREF(current_executor);
             GOTO_TIER_TWO();
             DISPATCH();
         }

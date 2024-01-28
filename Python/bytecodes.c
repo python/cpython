@@ -2370,10 +2370,9 @@ dummy_func(
             CHECK_EVAL_BREAKER();
 
             PyCodeObject *code = _PyFrame_GetCode(frame);
-            _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
-            assert(executor->vm_data.valid);
-            Py_INCREF(executor);
-            current_executor = executor;
+            current_executor = code->co_executors->executors[oparg & 255];
+            assert(current_executor->vm_data.code == code);
+            Py_INCREF(current_executor);
             GOTO_TIER_TWO();
         }
 
@@ -4055,7 +4054,7 @@ dummy_func(
 
         op(_CHECK_VALIDITY, (--)) {
             TIER_TWO_ONLY
-            DEOPT_IF(!current_executor->vm_data.valid);
+            DEOPT_IF(current_executor->vm_data.code == NULL);
         }
 
         op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {

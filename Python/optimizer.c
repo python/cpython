@@ -229,7 +229,7 @@ PyUnstable_GetExecutor(PyCodeObject *code, int offset)
 static PyObject *
 is_valid(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return PyBool_FromLong(((_PyExecutorObject *)self)->vm_data.valid);
+    return PyBool_FromLong(((_PyExecutorObject *)self)->vm_data.code != NULL);
 }
 
 static PyMethodDef executor_methods[] = {
@@ -1112,7 +1112,6 @@ unlink_executor(_PyExecutorObject *executor)
 void
 _Py_ExecutorInit(_PyExecutorObject *executor, _PyBloomFilter *dependency_set)
 {
-    executor->vm_data.valid = true;
     for (int i = 0; i < BLOOM_FILTER_WORDS; i++) {
         executor->vm_data.bloom.bits[i] = dependency_set->bits[i];
     }
@@ -1129,7 +1128,7 @@ _Py_ExecutorClear(_PyExecutorObject *executor)
 void
 _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj)
 {
-    assert(executor->vm_data.valid);
+    assert(executor->vm_data.code != NULL);
     _Py_BloomFilter_Add(&executor->vm_data.bloom, obj);
 }
 
@@ -1145,10 +1144,9 @@ _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj)
     /* Walk the list of executors */
     /* TO DO -- Use a tree to avoid traversing as many objects */
     for (_PyExecutorObject *exec = interp->executor_list_head; exec != NULL;) {
-        assert(exec->vm_data.valid);
+        assert(exec->vm_data.code != NULL);
         _PyExecutorObject *next = exec->vm_data.links.next;
         if (bloom_filter_may_contain(&exec->vm_data.bloom, &obj_filter)) {
-            exec->vm_data.valid = false;
             unlink_executor(exec);
             _PyExecutor_Remove(exec);
         }
@@ -1162,7 +1160,6 @@ _Py_Executors_InvalidateAll(PyInterpreterState *interp)
 {
     /* Walk the list of executors */
     for (_PyExecutorObject *exec = interp->executor_list_head; exec != NULL;) {
-        assert(exec->vm_data.valid);
         Py_INCREF(exec);
         if (exec->vm_data.code) {
             _PyCode_Clear_Executors(exec->vm_data.code);
@@ -1170,7 +1167,6 @@ _Py_Executors_InvalidateAll(PyInterpreterState *interp)
         _PyExecutorObject *next = exec->vm_data.links.next;
         exec->vm_data.links.next = NULL;
         exec->vm_data.links.previous = NULL;
-        exec->vm_data.valid = false;
         exec->vm_data.linked = false;
         Py_DECREF(exec);
         exec = next;
