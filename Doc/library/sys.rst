@@ -196,6 +196,16 @@ always available.
    This function should be used for internal and specialized purposes only.
 
 
+.. function:: _clear_executors()
+
+   Clear and invalidate all tier two executors, which are used to speed up "hot"
+   Python code.
+
+   This function should be used for internal and specialized purposes only.
+
+   .. versionadded:: 3.13
+
+
 .. function:: _current_frames()
 
    Return a dictionary mapping each thread's identifier to the topmost stack frame
@@ -724,7 +734,7 @@ always available.
    regardless of their size.  This function is mainly useful for tracking
    and debugging memory leaks.  Because of the interpreter's internal
    caches, the result can vary from call to call; you may have to call
-   :func:`_clear_type_cache()` and :func:`gc.collect()` to get more
+   :func:`_clear_type_cache()`, :func:`_clear_executors()`, and :func:`gc.collect()` to get more
    predictable results.
 
    If a Python build or implementation cannot reasonably compute this
