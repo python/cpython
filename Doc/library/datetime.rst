@@ -631,7 +631,7 @@ Notes:
    date2.toordinal()``. Date comparison raises :exc:`TypeError` if
    the other comparand isn't also a :class:`date` object. However,
    ``NotImplemented`` is returned instead if the other comparand has a
-   :meth:`~date.timetuple` attribute. This hook gives other kinds of date objects a
+   :attr:`~date.timetuple` attribute. This hook gives other kinds of date objects a
    chance at implementing mixed-type comparison. If not, when a :class:`date`
    object is compared to an object of a different type, :exc:`TypeError` is raised
    unless the comparison is ``==`` or ``!=``. The latter cases return
@@ -1215,7 +1215,7 @@ Supported operations:
       object addresses, datetime comparison normally raises :exc:`TypeError` if the
       other comparand isn't also a :class:`.datetime` object. However,
       ``NotImplemented`` is returned instead if the other comparand has a
-      :meth:`~date.timetuple` attribute. This hook gives other kinds of date objects a
+      :attr:`~.datetime.timetuple` attribute. This hook gives other kinds of date objects a
       chance at implementing mixed-type comparison. If not, when a :class:`.datetime`
       object is compared to an object of a different type, :exc:`TypeError` is raised
       unless the comparison is ``==`` or ``!=``. The latter cases return
