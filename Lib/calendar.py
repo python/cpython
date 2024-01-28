@@ -735,7 +735,7 @@ def main(args=None):
         help="output type (text or html)"
     )
     parser.add_argument(
-        "-f", "--firstweekday",
+        "-f", "--first-weekday",
         type=int, default=0,
         help="weekday to start each week (default 0)"
     )
@@ -766,7 +766,7 @@ def main(args=None):
             cal = LocaleHTMLCalendar(locale=locale)
         else:
             cal = HTMLCalendar()
-        cal.setfirstweekday(options.firstweekday)
+        cal.setfirstweekday(options.first_weekday)
         encoding = options.encoding
         if encoding is None:
             encoding = sys.getdefaultencoding()
@@ -781,7 +781,7 @@ def main(args=None):
             cal = LocaleTextCalendar(locale=locale)
         else:
             cal = TextCalendar()
-        cal.setfirstweekday(options.firstweekday)
+        cal.setfirstweekday(options.first_weekday)
         optdict = dict(w=options.width, l=options.lines)
         if options.month is None:
             optdict["c"] = options.spacing

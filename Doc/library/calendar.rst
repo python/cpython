@@ -586,7 +586,7 @@ The following options are accepted:
    or as an HTML document.
 
 
-.. option:: --firstweekday WEEKDAY, -f WEEKDAY
+.. option:: --first-weekday WEEKDAY, -f WEEKDAY
 
    The weekday to start each week.
    Must be a number between 0 and 6.
