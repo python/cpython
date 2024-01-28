@@ -93,6 +93,14 @@ typedef struct {
     PyTypeObject *mmap_object_type;
 } _mmap_state;
 
+static inline _mmap_state *
+get_module_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (_mmap_state*)state;
+}
+
 typedef enum
 {
     ACCESS_DEFAULT,
@@ -132,7 +140,7 @@ typedef struct {
 module mmap
 class mmap.mmap "mmap_object *" "mmap_object_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=7bf834eba16b5376]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=4ebde54549b9daa7]*/
 
 static int
 mmap_object_traverse(mmap_object *m_obj, visitproc visit, void *arg)
@@ -1665,6 +1673,8 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
 static int
 mmap_exec(PyObject *module)
 {
+    _mmap_state *st = get_module_state(module);
+
     if (PyModule_AddObjectRef(module, "error", PyExc_OSError) < 0) {
         return -1;
     }
@@ -1674,6 +1684,7 @@ mmap_exec(PyObject *module)
     if (mmap_object_type == NULL) {
         return -1;
     }
+    st->mmap_object_type = (PyTypeObject *)mmap_object_type;
     int rc = PyModule_AddType(module, (PyTypeObject *)mmap_object_type);
     Py_DECREF(mmap_object_type);
     if (rc < 0) {
