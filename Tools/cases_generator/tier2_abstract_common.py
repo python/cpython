@@ -8,9 +8,7 @@ SPECIALLY_HANDLED_ABSTRACT_INSTR = {
     "STORE_FAST",
     "STORE_FAST_MAYBE_NULL",
     "COPY",
-    "POP_TOP",
     "PUSH_NULL",
-    "SWAP",
     # Frame stuff
     "_PUSH_FRAME",
     "_POP_FRAME",

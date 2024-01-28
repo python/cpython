@@ -18,6 +18,13 @@
 
         /* _INSTRUMENTED_RESUME is not a viable micro-op for tier 2 */
 
+        case _POP_TOP: {
+            _Py_UOpsSymbolicValue *__value_;
+            __value_ = stack_pointer[-1];
+            stack_pointer += -1;
+            break;
+        }
+
         case _END_SEND: {
             _Py_UOpsSymbolicValue *__value_;
             _Py_UOpsSymbolicValue *__receiver_;
@@ -43,7 +50,7 @@
             _Py_UOpsSymbolicValue *__res_;
             __value_ = stack_pointer[-1];
             // Constant evaluation
-            if (is_const(__value_)){
+            if (is_const(__value_)) {
                 PyObject *value;
                 PyObject *res;
                 value = get_const(__value_);
@@ -53,7 +60,8 @@
                 if(__res_ == NULL) { goto error; }
                 shrink_stack.oparg = 1;
                  if (emit_const(&ctx->emitter, (PyObject *)res, shrink_stack) < 0) { goto error; }
-                new_inst.opcode = _NOP;}
+                new_inst.opcode = _NOP;
+            }
             else {
                 __res_ = _Py_UOpsSymbolicValue_New(ctx, NULL);
                 if (__res_ == NULL) { goto error; }
@@ -81,7 +89,8 @@
                 if (!PyBool_Check(value)) goto error;
                 STAT_INC(TO_BOOL, hit);
                 DPRINTF(3, "const eliminated guard\n");
-                new_inst.opcode = _NOP;break;
+                new_inst.opcode = _NOP;
+                break;
             }
             break;
         }
@@ -149,12 +158,14 @@
                 if (!PyLong_CheckExact(right)) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                new_inst.opcode = _NOP;break;
+                new_inst.opcode = _NOP;
+                break;
             }
             // Type guard elimination
-            if (sym_matches_type((_Py_UOpsSymbolicValue *)__left_, PYLONG_TYPE, (uint32_t)0) && sym_matches_type((_Py_UOpsSymbolicValue *)__right_, PYLONG_TYPE, (uint32_t)0)){
+            if (sym_matches_type((_Py_UOpsSymbolicValue *)__left_, PYLONG_TYPE, (uint32_t)0) && sym_matches_type((_Py_UOpsSymbolicValue *)__right_, PYLONG_TYPE, (uint32_t)0)) {
                 DPRINTF(2, "type propagation eliminated guard\n");
-                new_inst.opcode = _NOP;break;
+                new_inst.opcode = _NOP;
+                break;
             }
             else {
                 // Type propagation
@@ -171,7 +182,7 @@
             __right_ = stack_pointer[-1];
             __left_ = stack_pointer[-2];
             // Constant evaluation
-            if (is_const(__left_) && is_const(__right_)){
+            if (is_const(__left_) && is_const(__right_)) {
                 PyObject *right;
                 PyObject *left;
                 PyObject *res;
@@ -185,7 +196,8 @@
                 if(__res_ == NULL) { goto error; }
                 shrink_stack.oparg = 2;
                  if (emit_const(&ctx->emitter, (PyObject *)res, shrink_stack) < 0) { goto error; }
-                new_inst.opcode = _NOP;}
+                new_inst.opcode = _NOP;
+            }
             else {
                 __res_ = _Py_UOpsSymbolicValue_New(ctx, NULL);
                 if (__res_ == NULL) { goto error; }
@@ -205,7 +217,7 @@
             __right_ = stack_pointer[-1];
             __left_ = stack_pointer[-2];
             // Constant evaluation
-            if (is_const(__left_) && is_const(__right_)){
+            if (is_const(__left_) && is_const(__right_)) {
                 PyObject *right;
                 PyObject *left;
                 PyObject *res;
@@ -219,7 +231,8 @@
                 if(__res_ == NULL) { goto error; }
                 shrink_stack.oparg = 2;
                  if (emit_const(&ctx->emitter, (PyObject *)res, shrink_stack) < 0) { goto error; }
-                new_inst.opcode = _NOP;}
+                new_inst.opcode = _NOP;
+            }
             else {
                 __res_ = _Py_UOpsSymbolicValue_New(ctx, NULL);
                 if (__res_ == NULL) { goto error; }
@@ -239,7 +252,7 @@
             __right_ = stack_pointer[-1];
             __left_ = stack_pointer[-2];
             // Constant evaluation
-            if (is_const(__left_) && is_const(__right_)){
+            if (is_const(__left_) && is_const(__right_)) {
                 PyObject *right;
                 PyObject *left;
                 PyObject *res;
@@ -253,7 +266,8 @@
                 if(__res_ == NULL) { goto error; }
                 shrink_stack.oparg = 2;
                  if (emit_const(&ctx->emitter, (PyObject *)res, shrink_stack) < 0) { goto error; }
-                new_inst.opcode = _NOP;}
+                new_inst.opcode = _NOP;
+            }
             else {
                 __res_ = _Py_UOpsSymbolicValue_New(ctx, NULL);
                 if (__res_ == NULL) { goto error; }
@@ -281,12 +295,14 @@
                 if (!PyFloat_CheckExact(right)) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                new_inst.opcode = _NOP;break;
+                new_inst.opcode = _NOP;
+                break;
             }
             // Type guard elimination
-            if (sym_matches_type((_Py_UOpsSymbolicValue *)__left_, PYFLOAT_TYPE, (uint32_t)0) && sym_matches_type((_Py_UOpsSymbolicValue *)__right_, PYFLOAT_TYPE, (uint32_t)0)){
+            if (sym_matches_type((_Py_UOpsSymbolicValue *)__left_, PYFLOAT_TYPE, (uint32_t)0) && sym_matches_type((_Py_UOpsSymbolicValue *)__right_, PYFLOAT_TYPE, (uint32_t)0)) {
                 DPRINTF(2, "type propagation eliminated guard\n");
-                new_inst.opcode = _NOP;break;
+                new_inst.opcode = _NOP;
+                break;
             }
             else {
                 // Type propagation
@@ -303,7 +319,7 @@
             __right_ = stack_pointer[-1];
             __left_ = stack_pointer[-2];
             // Constant evaluation
-            if (is_const(__left_) && is_const(__right_)){
+            if (is_const(__left_) && is_const(__right_)) {
                 PyObject *right;
                 PyObject *left;
                 PyObject *res;
@@ -318,7 +334,8 @@
                 if(__res_ == NULL) { goto error; }
                 shrink_stack.oparg = 2;
                  if (emit_const(&ctx->emitter, (PyObject *)res, shrink_stack) < 0) { goto error; }
-                new_inst.opcode = _NOP;}
+                new_inst.opcode = _NOP;
+            }
             else {
                 __res_ = _Py_UOpsSymbolicValue_New(ctx, NULL);
                 if (__res_ == NULL) { goto error; }
@@ -338,7 +355,7 @@
             __right_ = stack_pointer[-1];
             __left_ = stack_pointer[-2];
             // Constant evaluation
-            if (is_const(__left_) && is_const(__right_)){
+            if (is_const(__left_) && is_const(__right_)) {
                 PyObject *right;
                 PyObject *left;
                 PyObject *res;
@@ -353,7 +370,8 @@
                 if(__res_ == NULL) { goto error; }
                 shrink_stack.oparg = 2;
                  if (emit_const(&ctx->emitter, (PyObject *)res, shrink_stack) < 0) { goto error; }
-                new_inst.opcode = _NOP;}
+                new_inst.opcode = _NOP;
+            }
             else {
                 __res_ = _Py_UOpsSymbolicValue_New(ctx, NULL);
                 if (__res_ == NULL) { goto error; }
@@ -373,7 +391,7 @@
             __right_ = stack_pointer[-1];
             __left_ = stack_pointer[-2];
             // Constant evaluation
-            if (is_const(__left_) && is_const(__right_)){
+            if (is_const(__left_) && is_const(__right_)) {
                 PyObject *right;
                 PyObject *left;
                 PyObject *res;
@@ -388,7 +406,8 @@
                 if(__res_ == NULL) { goto error; }
                 shrink_stack.oparg = 2;
                  if (emit_const(&ctx->emitter, (PyObject *)res, shrink_stack) < 0) { goto error; }
-                new_inst.opcode = _NOP;}
+                new_inst.opcode = _NOP;
+            }
             else {
                 __res_ = _Py_UOpsSymbolicValue_New(ctx, NULL);
                 if (__res_ == NULL) { goto error; }
@@ -416,12 +435,14 @@
                 if (!PyUnicode_CheckExact(right)) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                new_inst.opcode = _NOP;break;
+                new_inst.opcode = _NOP;
+                break;
             }
             // Type guard elimination
-            if (sym_matches_type((_Py_UOpsSymbolicValue *)__left_, PYUNICODE_TYPE, (uint32_t)0) && sym_matches_type((_Py_UOpsSymbolicValue *)__right_, PYUNICODE_TYPE, (uint32_t)0)){
+            if (sym_matches_type((_Py_UOpsSymbolicValue *)__left_, PYUNICODE_TYPE, (uint32_t)0) && sym_matches_type((_Py_UOpsSymbolicValue *)__right_, PYUNICODE_TYPE, (uint32_t)0)) {
                 DPRINTF(2, "type propagation eliminated guard\n");
-                new_inst.opcode = _NOP;break;
+                new_inst.opcode = _NOP;
+                break;
             }
             else {
                 // Type propagation
@@ -438,7 +459,7 @@
             __right_ = stack_pointer[-1];
             __left_ = stack_pointer[-2];
             // Constant evaluation
-            if (is_const(__left_) && is_const(__right_)){
+            if (is_const(__left_) && is_const(__right_)) {
                 PyObject *right;
                 PyObject *left;
                 PyObject *res;
@@ -452,7 +473,8 @@
                 if(__res_ == NULL) { goto error; }
                 shrink_stack.oparg = 2;
                  if (emit_const(&ctx->emitter, (PyObject *)res, shrink_stack) < 0) { goto error; }
-                new_inst.opcode = _NOP;}
+                new_inst.opcode = _NOP;
+            }
             else {
                 __res_ = _Py_UOpsSymbolicValue_New(ctx, NULL);
                 if (__res_ == NULL) { goto error; }
@@ -956,12 +978,14 @@
                 if (tp->tp_version_tag != type_version) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                new_inst.opcode = _NOP;break;
+                new_inst.opcode = _NOP;
+                break;
             }
             // Type guard elimination
-            if (sym_matches_type((_Py_UOpsSymbolicValue *)__owner_, GUARD_TYPE_VERSION_TYPE, (uint32_t)type_version)){
+            if (sym_matches_type((_Py_UOpsSymbolicValue *)__owner_, GUARD_TYPE_VERSION_TYPE, (uint32_t)type_version)) {
                 DPRINTF(2, "type propagation eliminated guard\n");
-                new_inst.opcode = _NOP;break;
+                new_inst.opcode = _NOP;
+                break;
             }
             else {
                 // Type propagation
@@ -1002,7 +1026,8 @@
                 if (dict->ma_keys->dk_version != type_version) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                new_inst.opcode = _NOP;break;
+                new_inst.opcode = _NOP;
+                break;
             }
             break;
         }
@@ -1035,7 +1060,8 @@
                 if (dict == NULL) goto error;
                 assert(PyDict_CheckExact((PyObject *)dict));
                 DPRINTF(3, "const eliminated guard\n");
-                new_inst.opcode = _NOP;break;
+                new_inst.opcode = _NOP;
+                break;
             }
             break;
         }
@@ -1081,7 +1107,8 @@
                 if (((PyTypeObject *)owner)->tp_version_tag != type_version) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                new_inst.opcode = _NOP;break;
+                new_inst.opcode = _NOP;
+                break;
             }
             break;
         }
@@ -1116,12 +1143,14 @@
                 if (!_PyDictOrValues_IsValues(dorv)) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                new_inst.opcode = _NOP;break;
+                new_inst.opcode = _NOP;
+                break;
             }
             // Type guard elimination
-            if (sym_matches_type((_Py_UOpsSymbolicValue *)__owner_, GUARD_DORV_VALUES_TYPE, (uint32_t)0)){
+            if (sym_matches_type((_Py_UOpsSymbolicValue *)__owner_, GUARD_DORV_VALUES_TYPE, (uint32_t)0)) {
                 DPRINTF(2, "type propagation eliminated guard\n");
-                new_inst.opcode = _NOP;break;
+                new_inst.opcode = _NOP;
+                break;
             }
             else {
                 // Type propagation
@@ -1314,7 +1343,8 @@
                 if (Py_TYPE(iter) != &PyListIter_Type) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                new_inst.opcode = _NOP;break;
+                new_inst.opcode = _NOP;
+                break;
             }
             break;
         }
@@ -1335,7 +1365,8 @@
                 if (it->it_index >= PyList_GET_SIZE(seq)) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                new_inst.opcode = _NOP;break;
+                new_inst.opcode = _NOP;
+                break;
             }
             break;
         }
@@ -1359,7 +1390,8 @@
                 if (Py_TYPE(iter) != &PyTupleIter_Type) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                new_inst.opcode = _NOP;break;
+                new_inst.opcode = _NOP;
+                break;
             }
             break;
         }
@@ -1380,7 +1412,8 @@
                 if (it->it_index >= PyTuple_GET_SIZE(seq)) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                new_inst.opcode = _NOP;break;
+                new_inst.opcode = _NOP;
+                break;
             }
             break;
         }
@@ -1405,7 +1438,8 @@
                 if (Py_TYPE(r) != &PyRangeIter_Type) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                new_inst.opcode = _NOP;break;
+                new_inst.opcode = _NOP;
+                break;
             }
             break;
         }
@@ -1424,7 +1458,8 @@
                 if (r->len <= 0) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                new_inst.opcode = _NOP;break;
+                new_inst.opcode = _NOP;
+                break;
             }
             break;
         }
@@ -1501,12 +1536,14 @@
                 if (!_PyDictOrValues_IsValues(*dorv) && !_PyObject_MakeInstanceAttributesFromDict(owner, dorv)) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                new_inst.opcode = _NOP;break;
+                new_inst.opcode = _NOP;
+                break;
             }
             // Type guard elimination
-            if (sym_matches_type((_Py_UOpsSymbolicValue *)__owner_, GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_TYPE, (uint32_t)0)){
+            if (sym_matches_type((_Py_UOpsSymbolicValue *)__owner_, GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_TYPE, (uint32_t)0)) {
                 DPRINTF(2, "type propagation eliminated guard\n");
-                new_inst.opcode = _NOP;break;
+                new_inst.opcode = _NOP;
+                break;
             }
             else {
                 // Type propagation
@@ -1528,12 +1565,14 @@
                 if (owner_heap_type->ht_cached_keys->dk_version != keys_version) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                new_inst.opcode = _NOP;break;
+                new_inst.opcode = _NOP;
+                break;
             }
             // Type guard elimination
-            if (sym_matches_type((_Py_UOpsSymbolicValue *)__owner_, GUARD_KEYS_VERSION_TYPE, (uint32_t)keys_version)){
+            if (sym_matches_type((_Py_UOpsSymbolicValue *)__owner_, GUARD_KEYS_VERSION_TYPE, (uint32_t)keys_version)) {
                 DPRINTF(2, "type propagation eliminated guard\n");
-                new_inst.opcode = _NOP;break;
+                new_inst.opcode = _NOP;
+                break;
             }
             else {
                 // Type propagation
@@ -1600,7 +1639,8 @@
                 if (dict != NULL) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                new_inst.opcode = _NOP;break;
+                new_inst.opcode = _NOP;
+                break;
             }
             break;
         }
@@ -1637,12 +1677,14 @@
                 if (Py_TYPE(callable) != &PyMethod_Type) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                new_inst.opcode = _NOP;break;
+                new_inst.opcode = _NOP;
+                break;
             }
             // Type guard elimination
-            if (sym_matches_type((_Py_UOpsSymbolicValue *)__callable_, PYMETHOD_TYPE, (uint32_t)0) && sym_matches_type((_Py_UOpsSymbolicValue *)__null_, NULL_TYPE, (uint32_t)0)){
+            if (sym_matches_type((_Py_UOpsSymbolicValue *)__callable_, PYMETHOD_TYPE, (uint32_t)0) && sym_matches_type((_Py_UOpsSymbolicValue *)__null_, NULL_TYPE, (uint32_t)0)) {
                 DPRINTF(2, "type propagation eliminated guard\n");
-                new_inst.opcode = _NOP;break;
+                new_inst.opcode = _NOP;
+                break;
             }
             else {
                 // Type propagation
@@ -1687,12 +1729,14 @@
                 if (code->co_argcount != oparg + (self_or_null != NULL)) goto error;
 
                 DPRINTF(3, "const eliminated guard\n");
-                new_inst.opcode = _NOP;break;
+                new_inst.opcode = _NOP;
+                break;
             }
             // Type guard elimination
-            if (sym_matches_type((_Py_UOpsSymbolicValue *)__callable_, PYFUNCTION_TYPE_VERSION_TYPE, (uint32_t)func_version)){
+            if (sym_matches_type((_Py_UOpsSymbolicValue *)__callable_, PYFUNCTION_TYPE_VERSION_TYPE, (uint32_t)func_version)) {
                 DPRINTF(2, "type propagation eliminated guard\n");
-                new_inst.opcode = _NOP;break;
+                new_inst.opcode = _NOP;
+                break;
             }
             else {
                 // Type propagation
@@ -1896,6 +1940,16 @@
             if(__res_ == NULL) goto error;
             stack_pointer[-2] = __res_;
             stack_pointer += -1;
+            break;
+        }
+
+        case _SWAP: {
+            _Py_UOpsSymbolicValue *__top_;
+            _Py_UOpsSymbolicValue *__bottom_;
+            __top_ = stack_pointer[-1];
+            __bottom_ = stack_pointer[-2 - (oparg-2)];
+            stack_pointer[-2 - (oparg-2)] = __top_;
+            stack_pointer[-1] = __bottom_;
             break;
         }
 

@@ -206,7 +206,7 @@ def _write_body_abstract_interp_pure_uop(
         mangled_uop.stack.inputs
     )
 
-    if uop.name == "_NOP":
+    if uop.name in {"_NOP", "_SWAP", "_POP_TOP"}:
         return
 
     assert (
@@ -232,7 +232,7 @@ def _write_body_abstract_interp_pure_uop(
             ]
         )
 
-        out.emit(f"if ({predicates or 0}){{\n")
+        out.emit(f"if ({predicates or 0}) {{\n")
         declare_variables(uop, out, default_type="PyObject *")
         for var, mangled_var in zip(uop.stack.inputs, mangled_uop.stack.inputs):
             out.emit(f"{var.name} = get_const({mangled_var.name});\n")
@@ -244,7 +244,7 @@ def _write_body_abstract_interp_pure_uop(
         out.emit(f"if({mangled_uop.stack.outputs[0].name} == NULL) {{ goto error; }}\n")
         out.emit(f"shrink_stack.oparg = {len(uop.stack.inputs)};\n")
         out.emit(f" if (emit_const(&ctx->emitter, {const_val}, shrink_stack) < 0) {{ goto error; }}\n")
-        out.emit("new_inst.opcode = _NOP;")
+        out.emit("new_inst.opcode = _NOP;\n")
         out.emit("}\n")
         out.emit("else {\n")
         sym = new_sym(None)
@@ -304,7 +304,7 @@ def _write_body_abstract_interp_guard_uop(
         out.emit("\n")
         # Guard elimination
         out.emit('DPRINTF(3, "const eliminated guard\\n");\n')
-        out.emit("new_inst.opcode = _NOP;")
+        out.emit("new_inst.opcode = _NOP;\n")
         out.emit("break;\n")
         out.emit("}\n")
 
@@ -339,9 +339,9 @@ def _write_body_abstract_interp_guard_uop(
             )
 
     out.emit("// Type guard elimination\n")
-    out.emit(f"if ({' && '.join(predicates)}){{\n")
+    out.emit(f"if ({' && '.join(predicates)}) {{\n")
     out.emit('DPRINTF(2, "type propagation eliminated guard\\n");\n')
-    out.emit("new_inst.opcode = _NOP;")
+    out.emit("new_inst.opcode = _NOP;\n")
     out.emit("break;\n")
     out.emit("}\n")
     # Else we need the guard
@@ -362,20 +362,14 @@ def write_abstract_uop(mangled_uop: Uop, uop: Uop, out: CWriter, stack: Stack) -
             and mangled_uop.name in NO_CONST_OR_TYPE_EVALUATE
         ):
             for var in reversed(mangled_uop.stack.inputs):
-                old_var_name = var.name
-                # code smell, but basically impure ops don't use any of their inputs
-                if is_impure:
-                    var.name = "unused"
-                out.emit(stack.pop(var))
-                var.name = old_var_name
+                definition = stack.pop(var)
+                if not is_impure:
+                    out.emit(definition)
         if not mangled_uop.properties.stores_sp:
             for i, var in enumerate(mangled_uop.stack.outputs):
-                old_var_name = var.name
-                # Code smell, but impure variadic ops don't use their outputs either.
-                if is_impure and var.size != "1":
-                    var.name = "unused"
-                out.emit(stack.push(var))
-                var.name = old_var_name
+                definition = stack.push(var)
+                if not (is_impure and var.size != "1"):
+                    out.emit(definition)
         if uop.properties.pure:
             _write_body_abstract_interp_pure_uop(mangled_uop, uop, out, stack)
         elif uop.properties.guard:
