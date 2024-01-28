@@ -392,10 +392,10 @@ def skip_if_buildbot(reason=None):
         isbuildbot = False
     return unittest.skipIf(isbuildbot, reason)
 
-def check_sanitizer(*, address=False, memory=False, ub=False):
+def check_sanitizer(*, address=False, memory=False, ub=False, thread=False):
     """Returns True if Python is compiled with sanitizer support"""
-    if not (address or memory or ub):
-        raise ValueError('At least one of address, memory, or ub must be True')
+    if not (address or memory or ub or thread):
+        raise ValueError('At least one of address, memory, ub or thread must be True')
 
 
     cflags = sysconfig.get_config_var('CFLAGS') or ''
@@ -412,18 +412,23 @@ def check_sanitizer(*, address=False, memory=False, ub=False):
         '-fsanitize=undefined' in cflags or
         '--with-undefined-behavior-sanitizer' in config_args
     )
+    thread_sanitizer = (
+        '-fsanitize=thread' in cflags or
+        '--with-thread-sanitizer' in config_args
+    )
     return (
         (memory and memory_sanitizer) or
         (address and address_sanitizer) or
-        (ub and ub_sanitizer)
+        (ub and ub_sanitizer) or
+        (thread and thread_sanitizer)
     )
 
 
-def skip_if_sanitizer(reason=None, *, address=False, memory=False, ub=False):
+def skip_if_sanitizer(reason=None, *, address=False, memory=False, ub=False, thread=False):
     """Decorator raising SkipTest if running with a sanitizer active."""
     if not reason:
         reason = 'not working with sanitizers active'
-    skip = check_sanitizer(address=address, memory=memory, ub=ub)
+    skip = check_sanitizer(address=address, memory=memory, ub=ub, thread=thread)
     return unittest.skipIf(skip, reason)
 
 # gh-89363: True if fork() can hang if Python is built with Address Sanitizer
@@ -432,7 +437,7 @@ HAVE_ASAN_FORK_BUG = check_sanitizer(address=True)
 
 
 def set_sanitizer_env_var(env, option):
-    for name in ('ASAN_OPTIONS', 'MSAN_OPTIONS', 'UBSAN_OPTIONS'):
+    for name in ('ASAN_OPTIONS', 'MSAN_OPTIONS', 'UBSAN_OPTIONS', 'TSAN_OPTIONS'):
         if name in env:
             env[name] += f':{option}'
         else:
@@ -2188,7 +2193,9 @@ def _findwheel(pkgname):
     If set, the wheels are searched for in WHEEL_PKG_DIR (see ensurepip).
     Otherwise, they are searched for in the test directory.
     """
-    wheel_dir = sysconfig.get_config_var('WHEEL_PKG_DIR') or TEST_HOME_DIR
+    wheel_dir = sysconfig.get_config_var('WHEEL_PKG_DIR') or os.path.join(
+        TEST_HOME_DIR, 'wheeldata',
+    )
     filenames = os.listdir(wheel_dir)
     filenames = sorted(filenames, reverse=True)  # approximate "newest" first
     for filename in filenames:
@@ -2372,7 +2379,10 @@ def _get_c_recursion_limit():
         return _testcapi.Py_C_RECURSION_LIMIT
     except (ImportError, AttributeError):
         # Originally taken from Include/cpython/pystate.h .
-        return 8000
+        if sys.platform == 'win32':
+            return 4000
+        else:
+            return 10000
 
 # The default C recursion limit.
 Py_C_RECURSION_LIMIT = _get_c_recursion_limit()

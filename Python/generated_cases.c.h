@@ -2342,17 +2342,9 @@
             next_instr += 1;
             INSTRUCTION_STATS(END_FOR);
             PyObject *value;
-            // _POP_TOP
             value = stack_pointer[-1];
-            {
-                Py_DECREF(value);
-            }
-            // _POP_TOP
-            value = stack_pointer[-2];
-            {
-                Py_DECREF(value);
-            }
-            stack_pointer += -2;
+            Py_DECREF(value);
+            stack_pointer += -1;
             DISPATCH();
         }
 
@@ -2371,24 +2363,29 @@
         }
 
         TARGET(ENTER_EXECUTOR) {
-            frame->instr_ptr = next_instr;
+            _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(ENTER_EXECUTOR);
             TIER_ONE_ONLY
             CHECK_EVAL_BREAKER();
             PyCodeObject *code = _PyFrame_GetCode(frame);
-            _PyExecutorObject *executor = (_PyExecutorObject *)code->co_executors->executors[oparg&255];
-            Py_INCREF(executor);
-            if (executor->execute == _PyUOpExecute) {
-                current_executor = (_PyUOpExecutorObject *)executor;
+            _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
+            if (executor->vm_data.valid) {
+                Py_INCREF(executor);
+                current_executor = executor;
                 GOTO_TIER_TWO();
             }
-            next_instr = executor->execute(executor, frame, stack_pointer);
-            frame = tstate->current_frame;
-            if (next_instr == NULL) {
-                goto resume_with_error;
+            else {
+                /* ENTER_EXECUTOR will be the first code unit of the instruction */
+                assert(oparg < 256);
+                code->co_executors->executors[oparg] = NULL;
+                opcode = this_instr->op.code = executor->vm_data.opcode;
+                this_instr->op.arg = executor->vm_data.oparg;
+                oparg = executor->vm_data.oparg;
+                Py_DECREF(executor);
+                next_instr = this_instr;
+                DISPATCH_GOTO();
             }
-            stack_pointer = _PyFrame_GetStackPointer(frame);
             DISPATCH();
         }
 
@@ -2500,8 +2497,8 @@
                        next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
                     Py_DECREF(iter);
                     STACK_SHRINK(1);
-                    /* Jump forward oparg, then skip following END_FOR instruction */
-                    JUMPBY(oparg + 1);
+                    /* Jump forward oparg, then skip following END_FOR and POP_TOP instruction */
+                    JUMPBY(oparg + 2);
                     DISPATCH();
                 }
                 // Common case: no jump, leave it to the code generator
@@ -2562,8 +2559,8 @@
                     }
                     Py_DECREF(iter);
                     STACK_SHRINK(1);
-                    /* Jump forward oparg, then skip following END_FOR instruction */
-                    JUMPBY(oparg + 1);
+                    /* Jump forward oparg, then skip following END_FOR and POP_TOP instructions */
+                    JUMPBY(oparg + 2);
                     DISPATCH();
                 }
             }
@@ -2603,8 +2600,8 @@
                 if (r->len <= 0) {
                     STACK_SHRINK(1);
                     Py_DECREF(r);
-                    // Jump over END_FOR instruction.
-                    JUMPBY(oparg + 1);
+                    // Jump over END_FOR and POP_TOP instructions.
+                    JUMPBY(oparg + 2);
                     DISPATCH();
                 }
             }
@@ -2650,8 +2647,8 @@
                     }
                     Py_DECREF(iter);
                     STACK_SHRINK(1);
-                    /* Jump forward oparg, then skip following END_FOR instruction */
-                    JUMPBY(oparg + 1);
+                    /* Jump forward oparg, then skip following END_FOR and POP_TOP instructions */
+                    JUMPBY(oparg + 2);
                     DISPATCH();
                 }
             }
@@ -2947,9 +2944,8 @@
                 }
                 PyErr_SetRaisedException(NULL);
             }
-            Py_DECREF(receiver);
             Py_DECREF(value);
-            stack_pointer += -2;
+            stack_pointer += -1;
             DISPATCH();
         }
 
@@ -3000,8 +2996,8 @@
                        next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
                 STACK_SHRINK(1);
                 Py_DECREF(iter);
-                /* Skip END_FOR */
-                target = next_instr + oparg + 1;
+                /* Skip END_FOR and POP_TOP */
+                target = next_instr + oparg + 2;
             }
             INSTRUMENTED_JUMP(this_instr, target, PY_MONITORING_EVENT_BRANCH);
             DISPATCH();
@@ -3151,7 +3147,7 @@
                 if (err) goto error;
                 if (frame->instr_ptr != this_instr) {
                     /* Instrumentation has jumped */
-                    next_instr = this_instr;
+                    next_instr = frame->instr_ptr;
                     DISPATCH();
                 }
             }
@@ -3286,12 +3282,18 @@
             // Double-check that the opcode isn't instrumented or something:
             if (ucounter > threshold && this_instr->op.code == JUMP_BACKWARD) {
                 OPT_STAT_INC(attempts);
-                int optimized = _PyOptimizer_BackEdge(frame, this_instr, next_instr, stack_pointer);
+                _Py_CODEUNIT *start = this_instr;
+                /* Back up over EXTENDED_ARGs so optimizer sees the whole instruction */
+                while (oparg > 255) {
+                    oparg >>= 8;
+                    start--;
+                }
+                int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer);
                 if (optimized < 0) goto error;
                 if (optimized) {
                     // Rewind and enter the executor:
-                    assert(this_instr->op.code == ENTER_EXECUTOR);
-                    next_instr = this_instr;
+                    assert(start->op.code == ENTER_EXECUTOR);
+                    next_instr = start;
                     this_instr[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
                 }
                 else {

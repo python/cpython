@@ -1,1 +1,0 @@
-Fix test_editor hang on macOS Catalina.
