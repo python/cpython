@@ -1,1 +1,0 @@
-Added :exc:`IndexError` to :meth:`pop` of :class:`list`.
