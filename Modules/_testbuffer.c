@@ -2823,63 +2823,86 @@ PyInit__testbuffer(void)
     PyObject *m;
 
     m = PyModule_Create(&_testbuffermodule);
-    if (m == NULL)
+    if (m == NULL) {
         return NULL;
+    }
 
     Py_SET_TYPE(&NDArray_Type, &PyType_Type);
     Py_INCREF(&NDArray_Type);
-    PyModule_AddObject(m, "ndarray", (PyObject *)&NDArray_Type);
+    if (PyModule_AddObject(m, "ndarray", (PyObject *)&NDArray_Type) < 0) {
+        Py_DECREF(&NDArray_Type);
+        return NULL;
+    }
 
     Py_SET_TYPE(&StaticArray_Type, &PyType_Type);
     Py_INCREF(&StaticArray_Type);
-    PyModule_AddObject(m, "staticarray", (PyObject *)&StaticArray_Type);
+    if (PyModule_AddObject(m, "staticarray", (PyObject *)&StaticArray_Type) < 0) {
+        goto error;
+    }
 
     structmodule = PyImport_ImportModule("struct");
-    if (structmodule == NULL)
-        return NULL;
+    if (structmodule == NULL) {
+        goto error;
+    }
 
     Struct = PyObject_GetAttrString(structmodule, "Struct");
+    if (Struct == NULL) {
+        goto error;
+    }
     calcsize = PyObject_GetAttrString(structmodule, "calcsize");
-    if (Struct == NULL || calcsize == NULL)
-        return NULL;
+    if (calcsize == NULL) {
+        goto error;
+    }
 
     simple_format = PyUnicode_FromString(simple_fmt);
-    if (simple_format == NULL)
-        return NULL;
+    if (simple_format == NULL) {
+        goto error;
+    }
 
-    PyModule_AddIntMacro(m, ND_MAX_NDIM);
-    PyModule_AddIntMacro(m, ND_VAREXPORT);
-    PyModule_AddIntMacro(m, ND_WRITABLE);
-    PyModule_AddIntMacro(m, ND_FORTRAN);
-    PyModule_AddIntMacro(m, ND_SCALAR);
-    PyModule_AddIntMacro(m, ND_PIL);
-    PyModule_AddIntMacro(m, ND_GETBUF_FAIL);
-    PyModule_AddIntMacro(m, ND_GETBUF_UNDEFINED);
-    PyModule_AddIntMacro(m, ND_REDIRECT);
+#define ADD_INT_MACRO(m, macro)                                             \
+    do {                                                                    \
+        if (PyModule_AddIntConstant(m, #macro, macro) < 0) {                \
+            goto error;                                                     \
+        }                                                                   \
+    } while (0)
 
-    PyModule_AddIntMacro(m, PyBUF_SIMPLE);
-    PyModule_AddIntMacro(m, PyBUF_WRITABLE);
-    PyModule_AddIntMacro(m, PyBUF_FORMAT);
-    PyModule_AddIntMacro(m, PyBUF_ND);
-    PyModule_AddIntMacro(m, PyBUF_STRIDES);
-    PyModule_AddIntMacro(m, PyBUF_INDIRECT);
-    PyModule_AddIntMacro(m, PyBUF_C_CONTIGUOUS);
-    PyModule_AddIntMacro(m, PyBUF_F_CONTIGUOUS);
-    PyModule_AddIntMacro(m, PyBUF_ANY_CONTIGUOUS);
-    PyModule_AddIntMacro(m, PyBUF_FULL);
-    PyModule_AddIntMacro(m, PyBUF_FULL_RO);
-    PyModule_AddIntMacro(m, PyBUF_RECORDS);
-    PyModule_AddIntMacro(m, PyBUF_RECORDS_RO);
-    PyModule_AddIntMacro(m, PyBUF_STRIDED);
-    PyModule_AddIntMacro(m, PyBUF_STRIDED_RO);
-    PyModule_AddIntMacro(m, PyBUF_CONTIG);
-    PyModule_AddIntMacro(m, PyBUF_CONTIG_RO);
+    ADD_INT_MACRO(m, ND_MAX_NDIM);
+    ADD_INT_MACRO(m, ND_VAREXPORT);
+    ADD_INT_MACRO(m, ND_WRITABLE);
+    ADD_INT_MACRO(m, ND_FORTRAN);
+    ADD_INT_MACRO(m, ND_SCALAR);
+    ADD_INT_MACRO(m, ND_PIL);
+    ADD_INT_MACRO(m, ND_GETBUF_FAIL);
+    ADD_INT_MACRO(m, ND_GETBUF_UNDEFINED);
+    ADD_INT_MACRO(m, ND_REDIRECT);
 
-    PyModule_AddIntMacro(m, PyBUF_READ);
-    PyModule_AddIntMacro(m, PyBUF_WRITE);
+    ADD_INT_MACRO(m, PyBUF_SIMPLE);
+    ADD_INT_MACRO(m, PyBUF_WRITABLE);
+    ADD_INT_MACRO(m, PyBUF_FORMAT);
+    ADD_INT_MACRO(m, PyBUF_ND);
+    ADD_INT_MACRO(m, PyBUF_STRIDES);
+    ADD_INT_MACRO(m, PyBUF_INDIRECT);
+    ADD_INT_MACRO(m, PyBUF_C_CONTIGUOUS);
+    ADD_INT_MACRO(m, PyBUF_F_CONTIGUOUS);
+    ADD_INT_MACRO(m, PyBUF_ANY_CONTIGUOUS);
+    ADD_INT_MACRO(m, PyBUF_FULL);
+    ADD_INT_MACRO(m, PyBUF_FULL_RO);
+    ADD_INT_MACRO(m, PyBUF_RECORDS);
+    ADD_INT_MACRO(m, PyBUF_RECORDS_RO);
+    ADD_INT_MACRO(m, PyBUF_STRIDED);
+    ADD_INT_MACRO(m, PyBUF_STRIDED_RO);
+    ADD_INT_MACRO(m, PyBUF_CONTIG);
+    ADD_INT_MACRO(m, PyBUF_CONTIG_RO);
+
+    ADD_INT_MACRO(m, PyBUF_READ);
+    ADD_INT_MACRO(m, PyBUF_WRITE);
+
+#undef ADD_INT_MACRO
 
     return m;
+
+error:
+    Py_DECREF(&NDArray_Type);
+    Py_DECREF(&StaticArray_Type);
+    return NULL;
 }
-
-
-
