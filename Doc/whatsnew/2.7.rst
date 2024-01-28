@@ -282,7 +282,7 @@ How does the :class:`~collections.OrderedDict` work?  It maintains a
 doubly linked list of keys, appending new keys to the list as they're inserted.
 A secondary dictionary maps keys to their corresponding list node, so
 deletion doesn't have to traverse the entire linked list and therefore
-remains O(1).
+remains *O*\ (1).
 
 The standard library now supports use of ordered dictionaries in several
 modules.
@@ -2130,7 +2130,7 @@ Changes to Python's build process and to the C API include:
   only the filename, function name, and first line number are required.
   This is useful for extension modules that are attempting to
   construct a more useful traceback stack.  Previously such
-  extensions needed to call :c:func:`PyCode_New`, which had many
+  extensions needed to call :c:func:`!PyCode_New`, which had many
   more arguments.  (Added by Jeffrey Yasskin.)
 
 * New function: :c:func:`PyErr_NewExceptionWithDoc` creates a new

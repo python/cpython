@@ -418,6 +418,8 @@ PYTHON_OBJS=	\
 		Python/frozenmain.o \
 		Python/future.o \
 		Python/gc.o \
+		Python/gc_free_threading.o \
+		Python/gc_gil.o \
 		Python/getargs.o \
 		Python/getcompiler.o \
 		Python/getcopyright.o \
@@ -437,6 +439,7 @@ PYTHON_OBJS=	\
 		Python/modsupport.o \
 		Python/mysnprintf.o \
 		Python/mystrtoul.o \
+		Python/object_stack.o \
 		Python/optimizer.o \
 		Python/optimizer_analysis.o \
 		Python/parking_lot.o \
@@ -547,7 +550,7 @@ LINK_PYTHON_OBJS=@LINK_PYTHON_OBJS@
 # On some systems, object files that reference DTrace probes need to be modified
 # in-place by dtrace(1).
 DTRACE_DEPS = \
-	Python/ceval.o Python/import.o Python/sysmodule.o Modules/gcmodule.o
+	Python/ceval.o Python/gc.o Python/import.o Python/sysmodule.o
 
 ##########################################################################
 # decimal's libmpdec
@@ -1648,8 +1651,8 @@ Include/pydtrace_probes.h: $(srcdir)/Include/pydtrace.d
 	mv $@.tmp $@
 
 Python/ceval.o: $(srcdir)/Include/pydtrace.h
+Python/gc.o: $(srcdir)/Include/pydtrace.h
 Python/import.o: $(srcdir)/Include/pydtrace.h
-Modules/gcmodule.o: $(srcdir)/Include/pydtrace.h
 
 Python/pydtrace.o: $(srcdir)/Include/pydtrace.d $(DTRACE_DEPS)
 	$(DTRACE) $(DFLAGS) -o $@ -G -s $< $(DTRACE_DEPS)
@@ -1828,7 +1831,9 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_floatobject.h \
 		$(srcdir)/Include/internal/pycore_format.h \
 		$(srcdir)/Include/internal/pycore_frame.h \
+		$(srcdir)/Include/internal/pycore_freelist.h \
 		$(srcdir)/Include/internal/pycore_function.h \
+		$(srcdir)/Include/internal/pycore_gc.h \
 		$(srcdir)/Include/internal/pycore_genobject.h \
 		$(srcdir)/Include/internal/pycore_getopt.h \
 		$(srcdir)/Include/internal/pycore_gil.h \
@@ -1849,6 +1854,8 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_moduleobject.h \
 		$(srcdir)/Include/internal/pycore_namespace.h \
 		$(srcdir)/Include/internal/pycore_object.h \
+		$(srcdir)/Include/internal/pycore_object_alloc.h \
+		$(srcdir)/Include/internal/pycore_object_stack.h \
 		$(srcdir)/Include/internal/pycore_object_state.h \
 		$(srcdir)/Include/internal/pycore_obmalloc.h \
 		$(srcdir)/Include/internal/pycore_obmalloc_init.h \
@@ -1892,7 +1899,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_unionobject.h \
 		$(srcdir)/Include/internal/pycore_unicodeobject.h \
 		$(srcdir)/Include/internal/pycore_unicodeobject_generated.h \
-		$(srcdir)/Include/internal/pycore_uops.h \
 		$(srcdir)/Include/internal/pycore_uop_metadata.h \
 		$(srcdir)/Include/internal/pycore_warnings.h \
 		$(srcdir)/Include/internal/pycore_weakref.h \
@@ -2219,6 +2225,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_cppext \
 		test/test_ctypes \
 		test/test_dataclasses \
+		test/test_doctest \
 		test/test_email \
 		test/test_email/data \
 		test/test_future_stmt \
@@ -2314,6 +2321,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/tokenizedata \
 		test/tracedmodules \
 		test/typinganndata \
+		test/wheeldata \
 		test/xmltestdata \
 		test/xmltestdata/c14n-20
 
