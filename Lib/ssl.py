@@ -1001,7 +1001,7 @@ class SSLSocket(socket):
         )
         self = cls.__new__(cls, **kwargs)
         super(SSLSocket, self).__init__(**kwargs)
-        socket.detach()
+        sock.detach()
         # Now SSLSocket is responsible for closing the file descriptor.
         try:
             self._context = context
