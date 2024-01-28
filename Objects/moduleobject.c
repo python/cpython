@@ -853,7 +853,7 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
         }
     }
 
-    int is_script_shadowing_stdlib = 0;
+    bool is_script_shadowing_stdlib = 0;
     // Check mod.__name__ in sys.stdlib_module_names
     // and os.path.dirname(mod.__spec__.origin) == os.getcwd()
     if (origin) {
@@ -862,7 +862,7 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
             int rc = PySet_Contains(stdlib, mod_name);
             if (rc == 1) {
                 wchar_t cwd[MAXPATHLEN], origin_dirname[MAXPATHLEN];
-                if(_Py_wgetcwd(cwd, MAXPATHLEN)) {
+                if (_Py_wgetcwd(cwd, MAXPATHLEN)) {
                     if (PyUnicode_AsWideChar(origin, origin_dirname, MAXPATHLEN) < 0) {
                         goto done;
                     }

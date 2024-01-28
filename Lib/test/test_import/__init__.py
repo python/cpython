@@ -818,7 +818,7 @@ class ImportTests(unittest.TestCase):
                 collections.does_not_exist
 
     def test_shadowing_stdlib_sys_edge_cases(self):
-        program = textwrap.dedent('''
+        program = '''
 import collections
 import os
 import types
@@ -845,7 +845,7 @@ try:
     collections.does_not_exist
 except AttributeError as e:
     print(str(e))
-''')
+'''
         popen = script_helper.spawn_python('-c', program)
         stdout, stderr = popen.communicate()
         self.assertEqual(stdout.splitlines(), [
