@@ -392,7 +392,7 @@ def mkdtemp(suffix=None, prefix=None, dir=None):
                 continue
             else:
                 raise
-        return _os.path.abspath(file)
+        return _os.path.realpath(_os.path.abspath(file))
 
     raise FileExistsError(_errno.EEXIST,
                           "No usable temporary directory name found")

@@ -859,6 +859,13 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
         finally:
             os.rmdir(path)
 
+    def test_path_is_realpath(self):
+        try:
+            path = tempfile.mkdtemp()
+            self.assertEqual(os.path.realpath(path), path)
+        finally:
+            os.rmdir(path)
+
 
 class TestMktemp(BaseTestCase):
     """Test mktemp()."""
