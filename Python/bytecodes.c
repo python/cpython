@@ -2371,22 +2371,10 @@ dummy_func(
 
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
-            if (executor->vm_data.valid) {
-                Py_INCREF(executor);
-                current_executor = executor;
-                GOTO_TIER_TWO();
-            }
-            else {
-                /* ENTER_EXECUTOR will be the first code unit of the instruction */
-                assert(oparg < 256);
-                code->co_executors->executors[oparg] = NULL;
-                opcode = this_instr->op.code = executor->vm_data.opcode;
-                this_instr->op.arg = executor->vm_data.oparg;
-                oparg = executor->vm_data.oparg;
-                Py_DECREF(executor);
-                next_instr = this_instr;
-                DISPATCH_GOTO();
-            }
+            assert(executor->vm_data.valid);
+            Py_INCREF(executor);
+            current_executor = executor;
+            GOTO_TIER_TWO();
         }
 
         replaced op(_POP_JUMP_IF_FALSE, (cond -- )) {

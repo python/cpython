@@ -27,6 +27,8 @@ typedef struct {
     uint8_t linked;
     _PyBloomFilter bloom;
     _PyExecutorLinkListNode links;
+    PyCodeObject *code;  // Weak.
+    int index;
 } _PyVMData;
 
 typedef struct {
@@ -84,7 +86,8 @@ void _Py_BloomFilter_Init(_PyBloomFilter *);
 void _Py_BloomFilter_Add(_PyBloomFilter *bloom, void *obj);
 PyAPI_FUNC(void) _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj);
 PyAPI_FUNC(void) _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj);
-extern void _Py_Executors_InvalidateAll(PyInterpreterState *interp);
+PyAPI_FUNC(void) _Py_Executors_InvalidateAll(PyInterpreterState *interp);
+void _PyExecutor_Remove(_PyExecutorObject *executor);
 
 /* For testing */
 PyAPI_FUNC(PyObject *)PyUnstable_Optimizer_NewCounter(void);

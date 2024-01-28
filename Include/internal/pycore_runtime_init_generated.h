@@ -880,6 +880,7 @@ extern "C" {
     INIT_ID(default), \
     INIT_ID(defaultaction), \
     INIT_ID(delete), \
+    INIT_ID(dependency), \
     INIT_ID(depth), \
     INIT_ID(detect_types), \
     INIT_ID(deterministic), \

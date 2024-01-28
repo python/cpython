@@ -266,6 +266,66 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_testinternalcapi_invalidate_executors__doc__,
+"invalidate_executors($module, /, dependency=<unrepresentable>)\n"
+"--\n"
+"\n");
+
+#define _TESTINTERNALCAPI_INVALIDATE_EXECUTORS_METHODDEF    \
+    {"invalidate_executors", _PyCFunction_CAST(_testinternalcapi_invalidate_executors), METH_FASTCALL|METH_KEYWORDS, _testinternalcapi_invalidate_executors__doc__},
+
+static PyObject *
+_testinternalcapi_invalidate_executors_impl(PyObject *module,
+                                            PyObject *dependency);
+
+static PyObject *
+_testinternalcapi_invalidate_executors(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(dependency), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"dependency", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "invalidate_executors",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *dependency = NULL;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    dependency = args[0];
+skip_optional_pos:
+    return_value = _testinternalcapi_invalidate_executors_impl(module, dependency);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_testinternalcapi_test_long_numbits__doc__,
 "test_long_numbits($module, /)\n"
 "--\n"
@@ -282,4 +342,4 @@ _testinternalcapi_test_long_numbits(PyObject *module, PyObject *Py_UNUSED(ignore
 {
     return _testinternalcapi_test_long_numbits_impl(module);
 }
-/*[clinic end generated code: output=679bf53bbae20085 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=88923251416ab15e input=a9049054013a1b77]*/

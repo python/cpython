@@ -67,6 +67,23 @@ get_index_for_executor(PyCodeObject *code, _Py_CODEUNIT *instr)
     return size;
 }
 
+void
+_PyExecutor_Remove(_PyExecutorObject *executor)
+{
+    PyCodeObject *code = executor->vm_data.code;
+    if (code == NULL) {
+        return;
+    }
+    _Py_CODEUNIT *instruction = &_PyCode_CODE(code)[executor->vm_data.index];
+    assert(instruction->op.code == ENTER_EXECUTOR);
+    int index = instruction->op.arg;
+    assert(code->co_executors->executors[index] == executor);
+    instruction->op.code = executor->vm_data.opcode;
+    instruction->op.arg = executor->vm_data.oparg;
+    executor->vm_data.code = NULL;
+    Py_CLEAR(code->co_executors->executors[index]);
+}
+
 static void
 insert_executor(PyCodeObject *code, _Py_CODEUNIT *instr, int index, _PyExecutorObject *executor)
 {
@@ -74,24 +91,21 @@ insert_executor(PyCodeObject *code, _Py_CODEUNIT *instr, int index, _PyExecutorO
     if (instr->op.code == ENTER_EXECUTOR) {
         assert(index == instr->op.arg);
         _PyExecutorObject *old = code->co_executors->executors[index];
-        executor->vm_data.opcode = old->vm_data.opcode;
-        executor->vm_data.oparg = old->vm_data.oparg;
-        old->vm_data.opcode = 0;
-        code->co_executors->executors[index] = executor;
-        Py_DECREF(old);
+        _PyExecutor_Remove(old);
     }
     else {
         assert(code->co_executors->size == index);
         assert(code->co_executors->capacity > index);
-        executor->vm_data.opcode = instr->op.code;
-        executor->vm_data.oparg = instr->op.arg;
-        code->co_executors->executors[index] = executor;
-        assert(index < MAX_EXECUTORS_SIZE);
-        instr->op.code = ENTER_EXECUTOR;
-        instr->op.arg = index;
         code->co_executors->size++;
     }
-    return;
+    executor->vm_data.opcode = instr->op.code;
+    executor->vm_data.oparg = instr->op.arg;
+    executor->vm_data.code = code;
+    executor->vm_data.index = instr - _PyCode_CODE(code);
+    code->co_executors->executors[index] = executor;
+    assert(index < MAX_EXECUTORS_SIZE);
+    instr->op.code = ENTER_EXECUTOR;
+    instr->op.arg = index;
 }
 
 int
@@ -1115,7 +1129,7 @@ _Py_ExecutorClear(_PyExecutorObject *executor)
 void
 _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj)
 {
-    assert(executor->vm_data.valid = true);
+    assert(executor->vm_data.valid);
     _Py_BloomFilter_Add(&executor->vm_data.bloom, obj);
 }
 
@@ -1136,6 +1150,7 @@ _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj)
         if (bloom_filter_may_contain(&exec->vm_data.bloom, &obj_filter)) {
             exec->vm_data.valid = false;
             unlink_executor(exec);
+            _PyExecutor_Remove(exec);
         }
         exec = next;
     }
@@ -1148,11 +1163,16 @@ _Py_Executors_InvalidateAll(PyInterpreterState *interp)
     /* Walk the list of executors */
     for (_PyExecutorObject *exec = interp->executor_list_head; exec != NULL;) {
         assert(exec->vm_data.valid);
+        Py_INCREF(exec);
+        if (exec->vm_data.code) {
+            _PyCode_Clear_Executors(exec->vm_data.code);
+        }
         _PyExecutorObject *next = exec->vm_data.links.next;
         exec->vm_data.links.next = NULL;
         exec->vm_data.links.previous = NULL;
         exec->vm_data.valid = false;
         exec->vm_data.linked = false;
+        Py_DECREF(exec);
         exec = next;
     }
     interp->executor_list_head = NULL;

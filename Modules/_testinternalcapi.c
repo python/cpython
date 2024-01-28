@@ -1029,11 +1029,26 @@ add_executor_dependency(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+
+_testinternalcapi.invalidate_executors -> object
+
+  dependency: object = NULL
+
+[clinic start generated code]*/
+
 static PyObject *
-invalidate_executors(PyObject *self, PyObject *obj)
+_testinternalcapi_invalidate_executors_impl(PyObject *module,
+                                            PyObject *dependency)
+/*[clinic end generated code: output=79497cfcf0826eaa input=8c3282b374a51e1f]*/
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
-    _Py_Executors_InvalidateDependency(interp, obj);
+    if (dependency) {
+        _Py_Executors_InvalidateDependency(interp, dependency);
+    }
+    else {
+        _Py_Executors_InvalidateAll(interp);
+    }
     Py_RETURN_NONE;
 }
 
@@ -1698,7 +1713,7 @@ static PyMethodDef module_functions[] = {
     {"get_counter_optimizer", get_counter_optimizer, METH_NOARGS, NULL},
     {"get_uop_optimizer", get_uop_optimizer, METH_NOARGS, NULL},
     {"add_executor_dependency", add_executor_dependency, METH_VARARGS, NULL},
-    {"invalidate_executors", invalidate_executors, METH_O, NULL},
+    _TESTINTERNALCAPI_INVALIDATE_EXECUTORS_METHODDEF
     {"pending_threadfunc", _PyCFunction_CAST(pending_threadfunc),
      METH_VARARGS | METH_KEYWORDS},
     {"pending_identify", pending_identify, METH_VARARGS, NULL},

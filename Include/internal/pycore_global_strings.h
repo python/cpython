@@ -371,6 +371,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(default)
         STRUCT_FOR_ID(defaultaction)
         STRUCT_FOR_ID(delete)
+        STRUCT_FOR_ID(dependency)
         STRUCT_FOR_ID(depth)
         STRUCT_FOR_ID(detect_types)
         STRUCT_FOR_ID(deterministic)
