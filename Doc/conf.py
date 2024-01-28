@@ -352,12 +352,9 @@ html_split_index = True
 
 latex_engine = 'xelatex'
 
-# Get LaTeX to handle Unicode correctly
 latex_elements = {
-}
-
-# Additional stuff for the LaTeX preamble.
-latex_elements['preamble'] = r'''
+    # For the LaTeX preamble.
+    'preamble': r'''
 \authoraddress{
   \sphinxstrong{Python Software Foundation}\\
   Email: \sphinxemail{docs@python.org}
@@ -365,13 +362,12 @@ latex_elements['preamble'] = r'''
 \let\Verbatim=\OriginalVerbatim
 \let\endVerbatim=\endOriginalVerbatim
 \setcounter{tocdepth}{2}
-'''
-
-# The paper size ('letter' or 'a4').
-latex_elements['papersize'] = 'a4'
-
-# The font size ('10pt', '11pt' or '12pt').
-latex_elements['pointsize'] = '10pt'
+''',
+    # The paper size ('letter' or 'a4').
+    'papersize': 'a4',
+    # The font size ('10pt', '11pt' or '12pt').
+    'pointsize': '10pt',
+}
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).
