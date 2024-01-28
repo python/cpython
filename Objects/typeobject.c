@@ -3833,7 +3833,7 @@ type_new_impl(type_new_ctx *ctx)
                 1,
                 "non-string key in the __dict__ of class %.200s",
                 type->tp_name) == -1)
-{
+        {
             goto error;
         }
     }
