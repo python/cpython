@@ -80,13 +80,14 @@ class Repr:
 
         method_name = "repr_" + typename
 
-        if not hasattr(self, method_name):
+        _method = getattr(self, method_name, None)
+        if not _method:
             return self.repr_instance(x, level)
 
         # we have a predefined method for this type,
         # but it has been set in a subclass
         if method_name not in self._lookup:
-            return getattr(self, method_name)(x, level)
+            return _method(x, level)
 
         module = getattr(_type, "__module__", None)
         is_shadowed = (module, typename) != self._lookup[method_name]
@@ -96,7 +97,7 @@ class Repr:
             # the same name as x, but it is not x
             return self.repr_instance(x, level)
 
-        return getattr(self, method_name)(x, level)
+        return _method(x, level)
 
     def _join(self, pieces, level):
         if self.indent is None:
