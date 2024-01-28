@@ -1347,7 +1347,7 @@ Instance methods:
 
    where ``yday = d.toordinal() - date(d.year, 1, 1).toordinal() + 1``
    is the day number within the current year starting with ``1`` for January
-   1st. The :attr:`~.time.struct_time.tm_isdst` flag of the result is set according to the
+   1st. The :attr:`~time.struct_time.tm_isdst` flag of the result is set according to the
    :meth:`dst` method: :attr:`.tzinfo` is ``None`` or :meth:`dst` returns
    ``None``, :attr:`!tm_isdst` is set to ``-1``; else if :meth:`dst` returns a
    non-zero value, :attr:`!tm_isdst` is set to ``1``; else :attr:`!tm_isdst` is
@@ -2035,7 +2035,7 @@ Examples of working with a :class:`.time` object::
    already been added to the UTC offset returned by :meth:`utcoffset`, so there's
    no need to consult :meth:`dst` unless you're interested in obtaining DST info
    separately. For example, :meth:`datetime.timetuple` calls its :attr:`~.datetime.tzinfo`
-   attribute's :meth:`dst` method to determine how the :attr:`~.time.struct_time.tm_isdst` flag
+   attribute's :meth:`dst` method to determine how the :attr:`~time.struct_time.tm_isdst` flag
    should be set, and :meth:`tzinfo.fromutc` calls :meth:`dst` to account for
    DST changes when crossing time zones.
 
