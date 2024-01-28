@@ -116,6 +116,9 @@ extern PyTypeObject _PyExc_MemoryError;
         }, \
         .faulthandler = _faulthandler_runtime_state_INIT, \
         .tracemalloc = _tracemalloc_runtime_state_INIT, \
+        .stoptheworld = { \
+            .is_global = 1, \
+        }, \
         .float_state = { \
             .float_format = _py_float_format_unknown, \
             .double_format = _py_float_format_unknown, \
@@ -152,7 +155,6 @@ extern PyTypeObject _PyExc_MemoryError;
     { \
         .id_refcount = -1, \
         .imports = IMPORTS_INIT, \
-        .obmalloc = _obmalloc_state_INIT(INTERP.obmalloc), \
         .ceval = { \
             .recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
         }, \

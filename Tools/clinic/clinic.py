@@ -818,12 +818,6 @@ class CLanguage(Language):
             del parameters[0]
         converters = [p.converter for p in parameters]
 
-        # Copy includes from parameters to Clinic
-        for converter in converters:
-            include = converter.include
-            if include:
-                clinic.add_include(include.filename, include.reason,
-                                   condition=include.condition)
         if f.critical_section:
             clinic.add_include('pycore_critical_section.h', 'Py_BEGIN_CRITICAL_SECTION()')
         has_option_groups = parameters and (parameters[0].group or parameters[-1].group)
@@ -1366,6 +1360,13 @@ class CLanguage(Language):
             parser_definition = parser_body(parser_prototype, *parser_code,
                                             declarations=declarations)
 
+
+        # Copy includes from parameters to Clinic after parse_arg() has been
+        # called above.
+        for converter in converters:
+            for include in converter.includes:
+                clinic.add_include(include.filename, include.reason,
+                                   condition=include.condition)
 
         if new_or_init:
             methoddef_define = ''
@@ -2988,7 +2989,6 @@ class CConverter(metaclass=CConverterAutoRegister):
     # Only set by self_converter.
     signature_name: str | None = None
 
-    include: Include | None = None
     broken_limited_capi: bool = False
 
     # keep in sync with self_converter.__init__!
@@ -3008,6 +3008,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         self.name = ensure_legal_c_identifier(name)
         self.py_name = py_name
         self.unused = unused
+        self.includes: list[Include] = []
 
         if default is not unspecified:
             if (self.default_type
@@ -3263,8 +3264,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         else:
             if expected_literal:
                 expected = f'"{expected}"'
-            if clinic is not None:
-                clinic.add_include('pycore_modsupport.h', '_PyArg_BadArgument()')
+            self.add_include('pycore_modsupport.h', '_PyArg_BadArgument()')
             return f'_PyArg_BadArgument("{{{{name}}}}", "{displayname}", {expected}, {{argname}});'
 
     def format_code(self, fmt: str, *,
@@ -3336,9 +3336,8 @@ class CConverter(metaclass=CConverterAutoRegister):
 
     def add_include(self, name: str, reason: str,
                     *, condition: str | None = None) -> None:
-        if self.include is not None:
-            raise ValueError("a converter only supports a single include")
-        self.include = Include(name, reason, condition)
+        include = Include(name, reason, condition)
+        self.includes.append(include)
 
 type_checks = {
     '&PyLong_Type': ('PyLong_Check', 'int'),

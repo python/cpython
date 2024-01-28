@@ -572,9 +572,10 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 uop = _PyUOp_Replacements[uop];
                                 assert(uop != 0);
                                 if (uop == _FOR_ITER_TIER_TWO) {
-                                    target += 1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1 + extended;
-                                    assert(_PyCode_CODE(code)[target-1].op.code == END_FOR ||
-                                            _PyCode_CODE(code)[target-1].op.code == INSTRUMENTED_END_FOR);
+                                    target += 1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 2 + extended;
+                                    assert(_PyCode_CODE(code)[target-2].op.code == END_FOR ||
+                                            _PyCode_CODE(code)[target-2].op.code == INSTRUMENTED_END_FOR);
+                                    assert(_PyCode_CODE(code)[target-1].op.code == POP_TOP);
                                 }
                                 break;
                             default:
@@ -588,6 +589,9 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                         ADD_TO_TRACE(uop, oparg, operand, target);
                         if (uop == _POP_FRAME) {
                             TRACE_STACK_POP();
+                            /* Set the operand to the code object returned to,
+                             * to assist optimization passes */
+                            trace[trace_length-1].operand = (uintptr_t)code;
                             DPRINTF(2,
                                 "Returning to %s (%s:%d) at byte offset %d\n",
                                 PyUnicode_AsUTF8(code->co_qualname),
@@ -629,6 +633,9 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 instr += _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] + 1;
                                 TRACE_STACK_PUSH();
                                 _Py_BloomFilter_Add(dependencies, new_code);
+                                /* Set the operand to the callee's code object,
+                                * to assist optimization passes */
+                                trace[trace_length-1].operand = (uintptr_t)new_code;
                                 code = new_code;
                                 instr = _PyCode_CODE(code);
                                 DPRINTF(2,
