@@ -1550,7 +1550,7 @@ Instance methods:
 Examples of Usage: :class:`.datetime`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Examples of working with :class:`~.datetime.datetime` objects:
+Examples of working with :class:`.datetime` objects:
 
 .. doctest::
 
