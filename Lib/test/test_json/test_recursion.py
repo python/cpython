@@ -85,10 +85,10 @@ class TestRecursion:
         for x in range(100000):
             l, d = [l], {'k':d}
         with self.assertRaises(RecursionError):
-            with support.infinite_recursion():
+            with support.infinite_recursion(5000):
                 self.dumps(l)
         with self.assertRaises(RecursionError):
-            with support.infinite_recursion():
+            with support.infinite_recursion(5000):
                 self.dumps(d)
 
     def test_endless_recursion(self):
@@ -99,7 +99,7 @@ class TestRecursion:
                 return [o]
 
         with self.assertRaises(RecursionError):
-            with support.infinite_recursion():
+            with support.infinite_recursion(1000):
                 EndlessJSONEncoder(check_circular=False).encode(5j)
 
 
