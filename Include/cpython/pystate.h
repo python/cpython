@@ -102,7 +102,7 @@ struct _ts {
 #endif
     int _whence;
 
-    /* Thread state (_Py_THREAD_ATTACHED, _Py_THREAD_DETACHED, _Py_THREAD_GC).
+    /* Thread state (_Py_THREAD_ATTACHED, _Py_THREAD_DETACHED, _Py_THREAD_SUSPENDED).
        See Include/internal/pycore_pystate.h for more details. */
     int state;
 
@@ -217,17 +217,24 @@ struct _ts {
 #ifdef Py_DEBUG
    // A debug build is likely built with low optimization level which implies
    // higher stack memory usage than a release build: use a lower limit.
-#  define Py_C_RECURSION_LIMIT 500
+#  if defined(__wasi__)
+     // Based on wasmtime 16.
+#    define Py_C_RECURSION_LIMIT 150
+#  else
+#    define Py_C_RECURSION_LIMIT 500
+#  endif
 #elif defined(__wasi__)
-   // WASI has limited call stack. Python's recursion limit depends on code
-   // layout, optimization, and WASI runtime. Wasmtime can handle about 700
-   // recursions, sometimes less. 500 is a more conservative limit.
+   // Based on wasmtime 16.
 #  define Py_C_RECURSION_LIMIT 500
 #elif defined(__s390x__)
-#  define Py_C_RECURSION_LIMIT 1200
+#  define Py_C_RECURSION_LIMIT 800
+#elif defined(_WIN32)
+#  define Py_C_RECURSION_LIMIT 4000
+#elif defined(_Py_ADDRESS_SANITIZER)
+#  define Py_C_RECURSION_LIMIT 4000
 #else
    // This value is duplicated in Lib/test/support/__init__.py
-#  define Py_C_RECURSION_LIMIT 8000
+#  define Py_C_RECURSION_LIMIT 10000
 #endif
 
 

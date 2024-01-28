@@ -728,12 +728,11 @@ class _Unparser(NodeVisitor):
     output source code for the abstract syntax; original formatting
     is disregarded."""
 
-    def __init__(self, *, _avoid_backslashes=False):
+    def __init__(self):
         self._source = []
         self._precedences = {}
         self._type_ignores = {}
         self._indent = 0
-        self._avoid_backslashes = _avoid_backslashes
         self._in_try_star = False
 
     def interleave(self, inter, f, seq):
@@ -1270,14 +1269,14 @@ class _Unparser(NodeVisitor):
         quote_type = quote_types[0]
         self.write(f"{quote_type}{value}{quote_type}")
 
-    def _write_fstring_inner(self, node, scape_newlines=False):
+    def _write_fstring_inner(self, node, escape_newlines=False):
         if isinstance(node, JoinedStr):
             # for both the f-string itself, and format_spec
             for value in node.values:
-                self._write_fstring_inner(value, scape_newlines=scape_newlines)
+                self._write_fstring_inner(value, escape_newlines=escape_newlines)
         elif isinstance(node, Constant) and isinstance(node.value, str):
             value = node.value.replace("{", "{{").replace("}", "}}")
-            if scape_newlines:
+            if escape_newlines:
                 value = value.replace("\n", "\\n")
             self.write(value)
         elif isinstance(node, FormattedValue):
@@ -1303,7 +1302,7 @@ class _Unparser(NodeVisitor):
                 self.write(":")
                 self._write_fstring_inner(
                     node.format_spec,
-                    scape_newlines=True
+                    escape_newlines=True
                 )
 
     def visit_Name(self, node):
@@ -1324,8 +1323,6 @@ class _Unparser(NodeVisitor):
                 .replace("inf", _INFSTR)
                 .replace("nan", f"({_INFSTR}-{_INFSTR})")
             )
-        elif self._avoid_backslashes and isinstance(value, str):
-            self._write_str_avoiding_backslashes(value)
         else:
             self.write(repr(value))
 

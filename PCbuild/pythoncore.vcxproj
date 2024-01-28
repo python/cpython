@@ -255,6 +255,7 @@
     <ClInclude Include="..\Include\internal\pycore_moduleobject.h" />
     <ClInclude Include="..\Include\internal\pycore_namespace.h" />
     <ClInclude Include="..\Include\internal\pycore_object.h" />
+    <ClInclude Include="..\Include\internal\pycore_object_alloc.h" />
     <ClInclude Include="..\Include\internal\pycore_object_state.h" />
     <ClInclude Include="..\Include\internal\pycore_obmalloc.h" />
     <ClInclude Include="..\Include\internal\pycore_obmalloc_init.h" />
@@ -590,6 +591,7 @@
     <ClCompile Include="..\Python\modsupport.c" />
     <ClCompile Include="..\Python\mysnprintf.c" />
     <ClCompile Include="..\Python\mystrtoul.c" />
+    <ClCompile Include="..\Python\object_stack.c" />
     <ClCompile Include="..\Python\optimizer.c" />
     <ClCompile Include="..\Python\optimizer_analysis.c" />
     <ClCompile Include="..\Python\parking_lot.c" />
