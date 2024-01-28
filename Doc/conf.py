@@ -430,9 +430,9 @@ coverage_c_path = [
 
 # Regexes to find C items in the source files.
 coverage_c_regexes = {
-    'cfunction': (r'^PyAPI_FUNC\(.*\)\s+([^_][\w_]+)'),
-    'data': (r'^PyAPI_DATA\(.*\)\s+([^_][\w_]+)'),
-    'macro': (r'^#define ([^_][\w_]+)\(.*\)[\s|\\]'),
+    'cfunction': r'^PyAPI_FUNC\(.*\)\s+([^_][\w_]+)',
+    'data': r'^PyAPI_DATA\(.*\)\s+([^_][\w_]+)',
+    'macro': r'^#define ([^_][\w_]+)\(.*\)[\s|\\]',
 }
 
 # The coverage checker will ignore all C items whose names match these regexes
