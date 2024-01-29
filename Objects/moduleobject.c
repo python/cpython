@@ -791,8 +791,8 @@ _is_module_possibly_shadowing(PyObject *origin)
 {
     // origin must be a unicode subtype
     // Returns 1 if the module at origin could be shadowing a module of the
-    // same name. The exact condition we check is:
-    // not sys.flags.safe_path and os.path.dirname(origin) == sys.path[0]
+    // same name later in the module search path. The condition we check is basically:
+    // not sys.flags.safe_path and os.path.dirname(origin) == (sys.path[0] or os.getcwd())
     // Returns 0 otherwise (or if we aren't sure)
     // Returns -1 if an error occurred that should be propagated
     if (origin == NULL) {
@@ -803,7 +803,7 @@ _is_module_possibly_shadowing(PyObject *origin)
         return 0;
     }
 
-    PyObject *sys_path = PySys_GetObject(&_Py_ID(path));
+    PyObject *sys_path = PySys_GetObject("path");
     if (sys_path == NULL || !PyList_Check(sys_path) || PyList_GET_SIZE(sys_path) == 0) {
         return 0;
     }
