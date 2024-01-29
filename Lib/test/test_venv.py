@@ -169,7 +169,7 @@ class BasicTest(BaseTest):
             ('--clear', 'clear', True),
             ('--upgrade', 'upgrade', True),
             ('--upgrade-deps', 'upgrade_deps', True),
-            ('--prompt', 'prompt', True),
+            ('--prompt="foobar"', 'prompt', 'foobar'),
             ('--without-scm-ignore-files', 'scm_ignore_files', frozenset()),
         ]
         for opt, attr, value in options:
@@ -201,7 +201,7 @@ class BasicTest(BaseTest):
         self.run_with_capture(builder.create, self.env_dir)
         context = builder.ensure_directories(self.env_dir)
         data = self.get_text_file_contents('pyvenv.cfg')
-        self.assertEqual(context.prompt, '(%s) ' % env_name)
+        self.assertEqual(context.prompt, env_name)
         self.assertNotIn("prompt = ", data)
 
         rmtree(self.env_dir)
@@ -209,7 +209,7 @@ class BasicTest(BaseTest):
         self.run_with_capture(builder.create, self.env_dir)
         context = builder.ensure_directories(self.env_dir)
         data = self.get_text_file_contents('pyvenv.cfg')
-        self.assertEqual(context.prompt, '(My prompt) ')
+        self.assertEqual(context.prompt, 'My prompt')
         self.assertIn("prompt = 'My prompt'\n", data)
 
         rmtree(self.env_dir)
@@ -218,7 +218,7 @@ class BasicTest(BaseTest):
         self.run_with_capture(builder.create, self.env_dir)
         context = builder.ensure_directories(self.env_dir)
         data = self.get_text_file_contents('pyvenv.cfg')
-        self.assertEqual(context.prompt, '(%s) ' % cwd)
+        self.assertEqual(context.prompt, cwd)
         self.assertIn("prompt = '%s'\n" % cwd, data)
 
     def test_upgrade_dependencies(self):

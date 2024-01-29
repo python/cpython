@@ -151,7 +151,7 @@ class BufferSizesTests(BaseTests, unittest.TestCase):
             print('6. Inplace')
         savestdout = sys.stdout
         try:
-            fi = FileInput(files=(t1, t2, t3, t4), inplace=1, encoding="utf-8")
+            fi = FileInput(files=(t1, t2, t3, t4), inplace=True, encoding="utf-8")
             for line in fi:
                 line = line[:-1].upper()
                 print(line)
@@ -256,7 +256,7 @@ class FileInputTests(BaseTests, unittest.TestCase):
     def test_file_opening_hook(self):
         try:
             # cannot use openhook and inplace mode
-            fi = FileInput(inplace=1, openhook=lambda f, m: None)
+            fi = FileInput(inplace=True, openhook=lambda f, m: None)
             self.fail("FileInput should raise if both inplace "
                              "and openhook arguments are given")
         except ValueError:
