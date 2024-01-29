@@ -1,28 +1,19 @@
 from ctypes import (
-    c_char, c_uint32, c_ubyte, alignment, sizeof,
+    c_char, c_uint32, c_ubyte, c_byte, alignment, sizeof,
     BigEndianStructure, LittleEndianStructure,
     BigEndianUnion, LittleEndianUnion,
 )
-import inspect
+import struct
 import unittest
 
 
 class TestAlignedStructures(unittest.TestCase):
     def test_aligned_string(self):
-        for base, data in (
-            (LittleEndianStructure, bytearray(
-                b'\x07\x00\x00\x00\x00\x00\x00\x00'
-                b'\x00\x00\x00\x00\x00\x00\x00\x00'
-                b'\x68\x65\x6c\x6c\x6f\x20\x77\x6f'
-                b'\x72\x6c\x64\x21\x00\x00\x00\x00'
-            )),
-            (BigEndianStructure, bytearray(
-                b'\x00\x00\x00\x07\x00\x00\x00\x00'
-                b'\x00\x00\x00\x00\x00\x00\x00\x00'
-                b'\x68\x65\x6c\x6c\x6f\x20\x77\x6f'
-                b'\x72\x6c\x64\x21\x00\x00\x00\x00'
-            )),
+        for base, e in (
+            (LittleEndianStructure, "<"),
+            (BigEndianStructure, ">"),
         ):
+            data =  bytearray(struct.pack(f"{e}i12x16s", 7, b"hello world!"))
             class Aligned(base):
                 _align_ = 16
                 _fields_ = [
@@ -38,16 +29,16 @@ class TestAlignedStructures(unittest.TestCase):
             main = Main.from_buffer(data)
             self.assertEqual(main.first, 7)
             self.assertEqual(main.string.value, b'hello world!')
-            self.assertEqual(
-                bytes(main.string.__buffer__(inspect.BufferFlags.SIMPLE)),
-                b'\x68\x65\x6c\x6c\x6f\x20\x77\x6f\x72\x6c\x64\x21\x00\x00\x00\x00'
-            )
+            self.assertEqual(bytes(main.string), b'hello world!\0\0\0\0')
             self.assertEqual(Main.string.offset, 16)
+            self.assertEqual(Main.string.size, 16)
+            self.assertEqual(alignment(main.string), 16)
+            self.assertEqual(alignment(main), 16)
 
     def test_aligned_structures(self):
         for base, data in (
-            (LittleEndianStructure, bytearray(b"\1\0\1\0\7\0\0\0")),
-            (BigEndianStructure, bytearray(b"\1\0\1\0\0\0\0\7")),
+            (LittleEndianStructure, bytearray(b"\1\0\0\0\1\0\1\0\7\0\0\0")),
+            (BigEndianStructure, bytearray(b"\1\0\0\0\1\0\1\0\0\0\0\7")),
         ):
             class SomeBools(base):
                 _align_ = 4
@@ -58,10 +49,27 @@ class TestAlignedStructures(unittest.TestCase):
                 ]
             class Main(base):
                 _fields_ = [
-                    ("x", SomeBools),
-                    ("y", c_uint32),
+                    ("x", c_ubyte),
+                    ("y", SomeBools),
+                    ("z", c_uint32),
                 ]
 
+            main = Main.from_buffer(data)
+            self.assertEqual(alignment(SomeBools), 4)
+            self.assertEqual(alignment(main), 4)
+            self.assertEqual(alignment(main.y), 4)
+            self.assertEqual(Main.x.size, 1)
+            self.assertEqual(Main.y.offset, 4)
+            self.assertEqual(Main.y.size, 4)
+            self.assertEqual(main.y.bool1, True)
+            self.assertEqual(main.y.bool2, False)
+            self.assertEqual(main.y.bool3, True)
+            self.assertEqual(Main.z.offset, 8)
+            self.assertEqual(main.z, 7)
+
+    def test_oversized_structure(self):
+        data = bytearray(b"\0" * 8)
+        for base in (LittleEndianStructure, BigEndianStructure):
             class SomeBoolsTooBig(base):
                 _align_ = 8
                 _fields_ = [
@@ -69,34 +77,24 @@ class TestAlignedStructures(unittest.TestCase):
                     ("bool2", c_ubyte),
                     ("bool3", c_ubyte),
                 ]
-            class MainTooBig(base):
+            class Main(base):
                 _fields_ = [
-                    ("x", SomeBoolsTooBig),
-                    ("y", c_uint32),
+                    ("y", SomeBoolsTooBig),
+                    ("z", c_uint32),
                 ]
-            main = Main.from_buffer(data)
-            self.assertEqual(main.y, 7)
-            self.assertEqual(alignment(SomeBools), 4)
-            self.assertEqual(main.x.bool1, True)
-            self.assertEqual(main.x.bool2, False)
-            self.assertEqual(main.x.bool3, True)
-
             with self.assertRaises(ValueError) as ctx:
-                MainTooBig.from_buffer(data)
+                Main.from_buffer(data)
                 self.assertEqual(
                     ctx.exception.args[0],
                     'Buffer size too small (4 instead of at least 8 bytes)'
                 )
 
     def test_aligned_subclasses(self):
-        for base, data in (
-            (LittleEndianStructure, bytearray(
-                b"\1\0\0\0\2\0\0\0\3\0\0\0\4\0\0\0"
-            )),
-            (BigEndianStructure, bytearray(
-                b"\0\0\0\1\0\0\0\2\0\0\0\3\0\0\0\4"
-            )),
+        for base, e in (
+            (LittleEndianStructure, "<"),
+            (BigEndianStructure, ">"),
         ):
+            data = bytearray(struct.pack(f"{e}4i", 1, 2, 3, 4))
             class UnalignedSub(base):
                 x: c_uint32
                 _fields_ = [
@@ -105,7 +103,6 @@ class TestAlignedStructures(unittest.TestCase):
 
             class AlignedStruct(UnalignedSub):
                 _align_ = 8
-                y: c_uint32
                 _fields_ = [
                     ("y", c_uint32),
                 ]
@@ -124,21 +121,20 @@ class TestAlignedStructures(unittest.TestCase):
             self.assertEqual(main.a, 1)
             self.assertEqual(main.b.x, 3)
             self.assertEqual(main.b.y, 4)
+            self.assertEqual(Main.b.offset, 8)
+            self.assertEqual(Main.b.size, 8)
 
     def test_aligned_union(self):
-        for sbase, ubase, data in (
-            (LittleEndianStructure, LittleEndianUnion, bytearray(
-                b"\1\0\0\0\2\0\0\0\3\0\0\0\4\0\0\0"
-            )),
-            (BigEndianStructure, BigEndianUnion, bytearray(
-                b"\0\0\0\1\0\0\0\2\0\0\0\3\0\0\0\4"
-            )),
+        for sbase, ubase, e in (
+            (LittleEndianStructure, LittleEndianUnion, "<"),
+            (BigEndianStructure, BigEndianUnion, ">"),
         ):
+            data = bytearray(struct.pack(f"{e}4i", 1, 2, 3, 4))
             class AlignedUnion(ubase):
                 _align_ = 8
                 _fields_ = [
                     ("a", c_uint32),
-                    ("b", c_ubyte * 8),
+                    ("b", c_ubyte * 7),
                 ]
 
             class Main(sbase):
@@ -150,22 +146,18 @@ class TestAlignedStructures(unittest.TestCase):
             main = Main.from_buffer(data)
             self.assertEqual(main.first, 1)
             self.assertEqual(main.union.a, 3)
-            if ubase == LittleEndianUnion:
-                self.assertEqual(bytes(main.union.b), b"\3\0\0\0\4\0\0\0")
-            else:
-                self.assertEqual(bytes(main.union.b), b"\0\0\0\3\0\0\0\4")
+            self.assertEqual(bytes(main.union.b), data[8:-1])
             self.assertEqual(Main.union.offset, 8)
-            self.assertEqual(len(bytes(main.union.b)), 8)
+            self.assertEqual(Main.union.size, 8)
+            self.assertEqual(alignment(main.union), 8)
+            self.assertEqual(alignment(main), 8)
 
     def test_aligned_struct_in_union(self):
-        for sbase, ubase, data in (
-            (LittleEndianStructure, LittleEndianUnion, bytearray(
-                b"\1\0\0\0\2\0\0\0\3\0\0\0\4\0\0\0"
-            )),
-            (BigEndianStructure, BigEndianUnion, bytearray(
-                b"\0\0\0\1\0\0\0\2\0\0\0\3\0\0\0\4"
-            )),
+        for sbase, ubase, e in (
+            (LittleEndianStructure, LittleEndianUnion, "<"),
+            (BigEndianStructure, BigEndianUnion, ">"),
         ):
+            data = bytearray(struct.pack(f"{e}4i", 1, 2, 3, 4))
             class Sub(sbase):
                 _align_ = 8
                 _fields_ = [
@@ -187,11 +179,62 @@ class TestAlignedStructures(unittest.TestCase):
 
             main = Main.from_buffer(data)
             self.assertEqual(Main.first.size, 4)
+            self.assertEqual(alignment(main.union), 8)
+            self.assertEqual(alignment(main), 8)
             self.assertEqual(Main.union.offset, 8)
+            self.assertEqual(Main.union.size, 8)
             self.assertEqual(main.first, 1)
             self.assertEqual(main.union.a, 3)
             self.assertEqual(main.union.b.x, 3)
             self.assertEqual(main.union.b.y, 4)
+
+    def test_smaller_aligned_subclassed_union(self):
+        for ubase, e in (
+            (LittleEndianUnion, "<"),
+            (BigEndianUnion, ">"),
+        ):
+            data = bytearray(struct.pack(f"{e}I", 0xD60102D6))
+            class SubUnion(ubase):
+                _align_ = 2
+                _fields_ = [
+                    ("unsigned", c_ubyte),
+                    ("signed", c_byte),
+                ]
+
+            class Main(SubUnion):
+                _fields_ = [
+                    ("num", c_uint32)
+                ]
+
+            main = Main.from_buffer(data)
+            self.assertEqual(alignment(main), 4)
+            self.assertEqual(main.num, 0xD60102D6)
+            self.assertEqual(main.unsigned, 0xD6)
+            self.assertEqual(main.signed, -42)
+
+    def test_larger_aligned_subclassed_union(self):
+        for ubase, e in (
+            (LittleEndianUnion, "<"),
+            (BigEndianUnion, ">"),
+        ):
+            data = bytearray(struct.pack(f"{e}I4x", 0xD60102D6))
+            class SubUnion(ubase):
+                _align_ = 8
+                _fields_ = [
+                    ("unsigned", c_ubyte),
+                    ("signed", c_byte),
+                ]
+
+            class Main(SubUnion):
+                _fields_ = [
+                    ("num", c_uint32)
+                ]
+
+            main = Main.from_buffer(data)
+            self.assertEqual(alignment(main), 8)
+            self.assertEqual(main.num, 0xD60102D6)
+            self.assertEqual(main.unsigned, 0xD6)
+            self.assertEqual(main.signed, -42)
 
 
 if __name__ == '__main__':
