@@ -808,13 +808,13 @@ _is_module_possibly_shadowing(PyObject *origin)
         return 0;
     }
     wchar_t sys_path_0[MAXPATHLEN];
-    int rc = PyUnicode_AsWideChar(PyList_GET_ITEM(sys_path, 0), sys_path_0, MAXPATHLEN - 1);
-    if (rc < 0) {
+    Py_ssize_t size = PyUnicode_AsWideChar(PyList_GET_ITEM(sys_path, 0), sys_path_0, MAXPATHLEN - 1);
+    if (size < 0) {
         return -1;
     }
-    assert(rc < MAXPATHLEN);
-    sys_path_0[rc] = L'\0';
-    if (rc == 0) {
+    assert(size < MAXPATHLEN);
+    sys_path_0[size] = L'\0';
+    if (size == 0) {
         // if sys.path[0] == "", treat it as if it were the current directory
         if (!_Py_wgetcwd(sys_path_0, MAXPATHLEN)) {
             return -1;
@@ -822,12 +822,12 @@ _is_module_possibly_shadowing(PyObject *origin)
     }
 
     wchar_t origin_dirname[MAXPATHLEN];
-    rc = PyUnicode_AsWideChar(origin, origin_dirname, MAXPATHLEN - 1);
-    if (rc < 0) {
+    size = PyUnicode_AsWideChar(origin, origin_dirname, MAXPATHLEN - 1);
+    if (size < 0) {
         return -1;
     }
-    assert(rc < MAXPATHLEN);
-    origin_dirname[rc] = L'\0';
+    assert(size < MAXPATHLEN);
+    origin_dirname[size] = L'\0';
 
     wchar_t *sep = wcsrchr(origin_dirname, SEP);
     if (!sep) {
