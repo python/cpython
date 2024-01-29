@@ -2241,7 +2241,7 @@ only EST (fixed offset -5 hours), or only EDT (fixed offset -4 hours)).
 .. _datetime-timezone:
 
 :class:`timezone` Objects
---------------------------
+-------------------------
 
 The :class:`timezone` class is a subclass of :class:`tzinfo`, each
 instance of which represents a timezone defined by a fixed offset from
@@ -2346,7 +2346,7 @@ versus :meth:`~.datetime.strptime`:
    .. _format-codes:
 
 :meth:`~.datetime.strftime` and :meth:`~.datetime.strptime` Format Codes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 These methods accept format codes that can be used to parse and format dates::
 
