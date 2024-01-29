@@ -166,3 +166,7 @@ Lib/ast.py                    @isidentical
 
 # zipfile.Path
 **/*zipfile/_path/*           @jaraco
+
+# SBOM
+/Misc/sbom.spdx.json          @sethmlarson
+/Tools/build/generate_sbom.py @sethmlarson
