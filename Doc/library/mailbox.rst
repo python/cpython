@@ -1027,8 +1027,8 @@ When a :class:`!MaildirMessage` instance is created based upon a
       leading "From " or trailing newline. For convenience, *time_* may be
       specified and will be formatted appropriately and appended to *from_*. If
       *time_* is specified, it should be a :class:`time.struct_time` instance, a
-      tuple suitable for passing to :meth:`time.strftime`, or ``True`` (to use
-      :meth:`time.gmtime`).
+      tuple suitable for passing to :func:`time.strftime`, or ``True`` (to use
+      :func:`time.gmtime`).
 
 
    .. method:: get_flags()
@@ -1399,8 +1399,8 @@ When a :class:`!BabylMessage` instance is created based upon an
       leading "From " or trailing newline. For convenience, *time_* may be
       specified and will be formatted appropriately and appended to *from_*. If
       *time_* is specified, it should be a :class:`time.struct_time` instance, a
-      tuple suitable for passing to :meth:`time.strftime`, or ``True`` (to use
-      :meth:`time.gmtime`).
+      tuple suitable for passing to :func:`time.strftime`, or ``True`` (to use
+      :func:`time.gmtime`).
 
 
    .. method:: get_flags()
