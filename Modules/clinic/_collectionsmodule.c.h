@@ -10,236 +10,236 @@ preserve
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
-PyDoc_STRVAR(_collections_deque_pop__doc__,
+PyDoc_STRVAR(deque_pop__doc__,
 "pop($self, /)\n"
 "--\n"
 "\n"
 "Remove and return the rightmost element.");
 
-#define _COLLECTIONS_DEQUE_POP_METHODDEF    \
-    {"pop", (PyCFunction)_collections_deque_pop, METH_NOARGS, _collections_deque_pop__doc__},
+#define DEQUE_POP_METHODDEF    \
+    {"pop", (PyCFunction)deque_pop, METH_NOARGS, deque_pop__doc__},
 
 static PyObject *
-_collections_deque_pop_impl(dequeobject *deque);
+deque_pop_impl(dequeobject *deque);
 
 static PyObject *
-_collections_deque_pop(dequeobject *deque, PyObject *Py_UNUSED(ignored))
+deque_pop(dequeobject *deque, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(deque);
-    return_value = _collections_deque_pop_impl(deque);
+    return_value = deque_pop_impl(deque);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
 
-PyDoc_STRVAR(_collections_deque_popleft__doc__,
+PyDoc_STRVAR(deque_popleft__doc__,
 "popleft($self, /)\n"
 "--\n"
 "\n"
-"Remove and return the rightmost element.");
+"Remove and return the leftmost element.");
 
-#define _COLLECTIONS_DEQUE_POPLEFT_METHODDEF    \
-    {"popleft", (PyCFunction)_collections_deque_popleft, METH_NOARGS, _collections_deque_popleft__doc__},
-
-static PyObject *
-_collections_deque_popleft_impl(dequeobject *deque);
+#define DEQUE_POPLEFT_METHODDEF    \
+    {"popleft", (PyCFunction)deque_popleft, METH_NOARGS, deque_popleft__doc__},
 
 static PyObject *
-_collections_deque_popleft(dequeobject *deque, PyObject *Py_UNUSED(ignored))
+deque_popleft_impl(dequeobject *deque);
+
+static PyObject *
+deque_popleft(dequeobject *deque, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(deque);
-    return_value = _collections_deque_popleft_impl(deque);
+    return_value = deque_popleft_impl(deque);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
 
-PyDoc_STRVAR(_collections_deque_append__doc__,
+PyDoc_STRVAR(deque_append__doc__,
 "append($self, item, /)\n"
 "--\n"
 "\n"
 "Add an element to the right side of the deque.");
 
-#define _COLLECTIONS_DEQUE_APPEND_METHODDEF    \
-    {"append", (PyCFunction)_collections_deque_append, METH_O, _collections_deque_append__doc__},
+#define DEQUE_APPEND_METHODDEF    \
+    {"append", (PyCFunction)deque_append, METH_O, deque_append__doc__},
 
 static PyObject *
-_collections_deque_append_impl(dequeobject *deque, PyObject *item);
+deque_append_impl(dequeobject *deque, PyObject *item);
 
 static PyObject *
-_collections_deque_append(dequeobject *deque, PyObject *item)
+deque_append(dequeobject *deque, PyObject *item)
 {
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(deque);
-    return_value = _collections_deque_append_impl(deque, item);
+    return_value = deque_append_impl(deque, item);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
 
-PyDoc_STRVAR(_collections_deque_appendleft__doc__,
+PyDoc_STRVAR(deque_appendleft__doc__,
 "appendleft($self, item, /)\n"
 "--\n"
 "\n"
 "Add an element to the left side of the deque.");
 
-#define _COLLECTIONS_DEQUE_APPENDLEFT_METHODDEF    \
-    {"appendleft", (PyCFunction)_collections_deque_appendleft, METH_O, _collections_deque_appendleft__doc__},
+#define DEQUE_APPENDLEFT_METHODDEF    \
+    {"appendleft", (PyCFunction)deque_appendleft, METH_O, deque_appendleft__doc__},
 
 static PyObject *
-_collections_deque_appendleft_impl(dequeobject *deque, PyObject *item);
+deque_appendleft_impl(dequeobject *deque, PyObject *item);
 
 static PyObject *
-_collections_deque_appendleft(dequeobject *deque, PyObject *item)
+deque_appendleft(dequeobject *deque, PyObject *item)
 {
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(deque);
-    return_value = _collections_deque_appendleft_impl(deque, item);
+    return_value = deque_appendleft_impl(deque, item);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
 
-PyDoc_STRVAR(_collections_deque_extend__doc__,
+PyDoc_STRVAR(deque_extend__doc__,
 "extend($self, iterable, /)\n"
 "--\n"
 "\n"
-"Extend the right side of the deque with elements from the iterable");
+"Extend the right side of the deque with elements from the iterable.");
 
-#define _COLLECTIONS_DEQUE_EXTEND_METHODDEF    \
-    {"extend", (PyCFunction)_collections_deque_extend, METH_O, _collections_deque_extend__doc__},
-
-static PyObject *
-_collections_deque_extend_impl(dequeobject *deque, PyObject *iterable);
+#define DEQUE_EXTEND_METHODDEF    \
+    {"extend", (PyCFunction)deque_extend, METH_O, deque_extend__doc__},
 
 static PyObject *
-_collections_deque_extend(dequeobject *deque, PyObject *iterable)
+deque_extend_impl(dequeobject *deque, PyObject *iterable);
+
+static PyObject *
+deque_extend(dequeobject *deque, PyObject *iterable)
 {
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(deque);
-    return_value = _collections_deque_extend_impl(deque, iterable);
+    return_value = deque_extend_impl(deque, iterable);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
 
-PyDoc_STRVAR(_collections_deque_extendleft__doc__,
+PyDoc_STRVAR(deque_extendleft__doc__,
 "extendleft($self, iterable, /)\n"
 "--\n"
 "\n"
-"Extend the left side of the deque with elements from the iterable");
+"Extend the left side of the deque with elements from the iterable.");
 
-#define _COLLECTIONS_DEQUE_EXTENDLEFT_METHODDEF    \
-    {"extendleft", (PyCFunction)_collections_deque_extendleft, METH_O, _collections_deque_extendleft__doc__},
-
-static PyObject *
-_collections_deque_extendleft_impl(dequeobject *deque, PyObject *iterable);
+#define DEQUE_EXTENDLEFT_METHODDEF    \
+    {"extendleft", (PyCFunction)deque_extendleft, METH_O, deque_extendleft__doc__},
 
 static PyObject *
-_collections_deque_extendleft(dequeobject *deque, PyObject *iterable)
+deque_extendleft_impl(dequeobject *deque, PyObject *iterable);
+
+static PyObject *
+deque_extendleft(dequeobject *deque, PyObject *iterable)
 {
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(deque);
-    return_value = _collections_deque_extendleft_impl(deque, iterable);
+    return_value = deque_extendleft_impl(deque, iterable);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
 
-PyDoc_STRVAR(_collections_deque_copy__doc__,
+PyDoc_STRVAR(deque_copy__doc__,
 "copy($self, /)\n"
 "--\n"
 "\n"
 "Return a shallow copy of a deque.");
 
-#define _COLLECTIONS_DEQUE_COPY_METHODDEF    \
-    {"copy", (PyCFunction)_collections_deque_copy, METH_NOARGS, _collections_deque_copy__doc__},
+#define DEQUE_COPY_METHODDEF    \
+    {"copy", (PyCFunction)deque_copy, METH_NOARGS, deque_copy__doc__},
 
 static PyObject *
-_collections_deque_copy_impl(dequeobject *deque);
+deque_copy_impl(dequeobject *deque);
 
 static PyObject *
-_collections_deque_copy(dequeobject *deque, PyObject *Py_UNUSED(ignored))
+deque_copy(dequeobject *deque, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(deque);
-    return_value = _collections_deque_copy_impl(deque);
+    return_value = deque_copy_impl(deque);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
 
-PyDoc_STRVAR(_collections_deque___copy____doc__,
+PyDoc_STRVAR(deque___copy____doc__,
 "__copy__($self, /)\n"
 "--\n"
 "\n"
 "Return a shallow copy of a deque.");
 
-#define _COLLECTIONS_DEQUE___COPY___METHODDEF    \
-    {"__copy__", (PyCFunction)_collections_deque___copy__, METH_NOARGS, _collections_deque___copy____doc__},
+#define DEQUE___COPY___METHODDEF    \
+    {"__copy__", (PyCFunction)deque___copy__, METH_NOARGS, deque___copy____doc__},
 
 static PyObject *
-_collections_deque___copy___impl(dequeobject *deque);
+deque___copy___impl(dequeobject *deque);
 
 static PyObject *
-_collections_deque___copy__(dequeobject *deque, PyObject *Py_UNUSED(ignored))
+deque___copy__(dequeobject *deque, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(deque);
-    return_value = _collections_deque___copy___impl(deque);
+    return_value = deque___copy___impl(deque);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
 
-PyDoc_STRVAR(_collections_deque_clear__doc__,
+PyDoc_STRVAR(deque_clearmethod__doc__,
 "clear($self, /)\n"
 "--\n"
 "\n"
 "Remove all elements from the deque.");
 
-#define _COLLECTIONS_DEQUE_CLEAR_METHODDEF    \
-    {"clear", (PyCFunction)_collections_deque_clear, METH_NOARGS, _collections_deque_clear__doc__},
+#define DEQUE_CLEARMETHOD_METHODDEF    \
+    {"clear", (PyCFunction)deque_clearmethod, METH_NOARGS, deque_clearmethod__doc__},
 
 static PyObject *
-_collections_deque_clear_impl(dequeobject *deque);
+deque_clearmethod_impl(dequeobject *deque);
 
 static PyObject *
-_collections_deque_clear(dequeobject *deque, PyObject *Py_UNUSED(ignored))
+deque_clearmethod(dequeobject *deque, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(deque);
-    return_value = _collections_deque_clear_impl(deque);
+    return_value = deque_clearmethod_impl(deque);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
 
-PyDoc_STRVAR(_collections_deque_rotate__doc__,
+PyDoc_STRVAR(deque_rotate__doc__,
 "rotate($self, n=1, /)\n"
 "--\n"
 "\n"
 "Rotate the deque n steps to the right.  If n is negative, rotates left.");
 
-#define _COLLECTIONS_DEQUE_ROTATE_METHODDEF    \
-    {"rotate", _PyCFunction_CAST(_collections_deque_rotate), METH_FASTCALL, _collections_deque_rotate__doc__},
+#define DEQUE_ROTATE_METHODDEF    \
+    {"rotate", _PyCFunction_CAST(deque_rotate), METH_FASTCALL, deque_rotate__doc__},
 
 static PyObject *
-_collections_deque_rotate_impl(dequeobject *deque, Py_ssize_t n);
+deque_rotate_impl(dequeobject *deque, Py_ssize_t n);
 
 static PyObject *
-_collections_deque_rotate(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
+deque_rotate(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t n = 1;
@@ -264,62 +264,62 @@ _collections_deque_rotate(dequeobject *deque, PyObject *const *args, Py_ssize_t 
     }
 skip_optional:
     Py_BEGIN_CRITICAL_SECTION(deque);
-    return_value = _collections_deque_rotate_impl(deque, n);
+    return_value = deque_rotate_impl(deque, n);
     Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_collections_deque_reverse__doc__,
+PyDoc_STRVAR(deque_reverse__doc__,
 "reverse($self, /)\n"
 "--\n"
 "\n"
-"Reverse *IN PLACE*");
+"Reverse *IN PLACE*.");
 
-#define _COLLECTIONS_DEQUE_REVERSE_METHODDEF    \
-    {"reverse", (PyCFunction)_collections_deque_reverse, METH_NOARGS, _collections_deque_reverse__doc__},
-
-static PyObject *
-_collections_deque_reverse_impl(dequeobject *deque);
+#define DEQUE_REVERSE_METHODDEF    \
+    {"reverse", (PyCFunction)deque_reverse, METH_NOARGS, deque_reverse__doc__},
 
 static PyObject *
-_collections_deque_reverse(dequeobject *deque, PyObject *Py_UNUSED(ignored))
+deque_reverse_impl(dequeobject *deque);
+
+static PyObject *
+deque_reverse(dequeobject *deque, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(deque);
-    return_value = _collections_deque_reverse_impl(deque);
+    return_value = deque_reverse_impl(deque);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
 
-PyDoc_STRVAR(_collections_deque_count__doc__,
-"count($self, v, /)\n"
+PyDoc_STRVAR(deque_count__doc__,
+"count($self, value, /)\n"
 "--\n"
 "\n"
-"Return number of occurrences of v");
+"Return number of occurrences of value.");
 
-#define _COLLECTIONS_DEQUE_COUNT_METHODDEF    \
-    {"count", (PyCFunction)_collections_deque_count, METH_O, _collections_deque_count__doc__},
-
-static PyObject *
-_collections_deque_count_impl(dequeobject *deque, PyObject *v);
+#define DEQUE_COUNT_METHODDEF    \
+    {"count", (PyCFunction)deque_count, METH_O, deque_count__doc__},
 
 static PyObject *
-_collections_deque_count(dequeobject *deque, PyObject *v)
+deque_count_impl(dequeobject *deque, PyObject *v);
+
+static PyObject *
+deque_count(dequeobject *deque, PyObject *v)
 {
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(deque);
-    return_value = _collections_deque_count_impl(deque, v);
+    return_value = deque_count_impl(deque, v);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
 
-PyDoc_STRVAR(_collections_deque_index__doc__,
+PyDoc_STRVAR(deque_index__doc__,
 "index($self, value, [start, [stop]])\n"
 "--\n"
 "\n"
@@ -327,15 +327,15 @@ PyDoc_STRVAR(_collections_deque_index__doc__,
 "\n"
 "Raises ValueError if the value is not present.");
 
-#define _COLLECTIONS_DEQUE_INDEX_METHODDEF    \
-    {"index", _PyCFunction_CAST(_collections_deque_index), METH_FASTCALL, _collections_deque_index__doc__},
+#define DEQUE_INDEX_METHODDEF    \
+    {"index", _PyCFunction_CAST(deque_index), METH_FASTCALL, deque_index__doc__},
 
 static PyObject *
-_collections_deque_index_impl(dequeobject *deque, PyObject *v,
-                              Py_ssize_t start, Py_ssize_t stop);
+deque_index_impl(dequeobject *deque, PyObject *v, Py_ssize_t start,
+                 Py_ssize_t stop);
 
 static PyObject *
-_collections_deque_index(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
+deque_index(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *v;
@@ -360,28 +360,27 @@ _collections_deque_index(dequeobject *deque, PyObject *const *args, Py_ssize_t n
     }
 skip_optional:
     Py_BEGIN_CRITICAL_SECTION(deque);
-    return_value = _collections_deque_index_impl(deque, v, start, stop);
+    return_value = deque_index_impl(deque, v, start, stop);
     Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_collections_deque_insert__doc__,
+PyDoc_STRVAR(deque_insert__doc__,
 "insert($self, index, value, /)\n"
 "--\n"
 "\n"
-"Insert value before index");
+"Insert value before index.");
 
-#define _COLLECTIONS_DEQUE_INSERT_METHODDEF    \
-    {"insert", _PyCFunction_CAST(_collections_deque_insert), METH_FASTCALL, _collections_deque_insert__doc__},
-
-static PyObject *
-_collections_deque_insert_impl(dequeobject *deque, Py_ssize_t index,
-                               PyObject *value);
+#define DEQUE_INSERT_METHODDEF    \
+    {"insert", _PyCFunction_CAST(deque_insert), METH_FASTCALL, deque_insert__doc__},
 
 static PyObject *
-_collections_deque_insert(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
+deque_insert_impl(dequeobject *deque, Py_ssize_t index, PyObject *value);
+
+static PyObject *
+deque_insert(dequeobject *deque, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t index;
@@ -404,67 +403,66 @@ _collections_deque_insert(dequeobject *deque, PyObject *const *args, Py_ssize_t 
     }
     value = args[1];
     Py_BEGIN_CRITICAL_SECTION(deque);
-    return_value = _collections_deque_insert_impl(deque, index, value);
+    return_value = deque_insert_impl(deque, index, value);
     Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_collections_deque_remove__doc__,
+PyDoc_STRVAR(deque_remove__doc__,
 "remove($self, value, /)\n"
 "--\n"
 "\n"
 "Remove first occurrence of value.");
 
-#define _COLLECTIONS_DEQUE_REMOVE_METHODDEF    \
-    {"remove", (PyCFunction)_collections_deque_remove, METH_O, _collections_deque_remove__doc__},
+#define DEQUE_REMOVE_METHODDEF    \
+    {"remove", (PyCFunction)deque_remove, METH_O, deque_remove__doc__},
 
 static PyObject *
-_collections_deque_remove_impl(dequeobject *deque, PyObject *value);
+deque_remove_impl(dequeobject *deque, PyObject *value);
 
 static PyObject *
-_collections_deque_remove(dequeobject *deque, PyObject *value)
+deque_remove(dequeobject *deque, PyObject *value)
 {
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(deque);
-    return_value = _collections_deque_remove_impl(deque, value);
+    return_value = deque_remove_impl(deque, value);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
 
-PyDoc_STRVAR(_collections_deque___reduce____doc__,
+PyDoc_STRVAR(deque___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
 "\n"
 "Return state information for pickling.");
 
-#define _COLLECTIONS_DEQUE___REDUCE___METHODDEF    \
-    {"__reduce__", (PyCFunction)_collections_deque___reduce__, METH_NOARGS, _collections_deque___reduce____doc__},
+#define DEQUE___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)deque___reduce__, METH_NOARGS, deque___reduce____doc__},
 
 static PyObject *
-_collections_deque___reduce___impl(dequeobject *deque);
+deque___reduce___impl(dequeobject *deque);
 
 static PyObject *
-_collections_deque___reduce__(dequeobject *deque, PyObject *Py_UNUSED(ignored))
+deque___reduce__(dequeobject *deque, PyObject *Py_UNUSED(ignored))
 {
-    return _collections_deque___reduce___impl(deque);
+    return deque___reduce___impl(deque);
 }
 
-PyDoc_STRVAR(_collections_deque___init____doc__,
-"deque($self, iterable=None, maxlen=None)\n"
+PyDoc_STRVAR(deque_init__doc__,
+"deque([iterable[, maxlen]])\n"
 "--\n"
 "\n"
 "A list-like sequence optimized for data accesses near its endpoints.");
 
 static int
-_collections_deque___init___impl(dequeobject *deque, PyObject *iterable,
-                                 PyObject *maxlen);
+deque_init_impl(dequeobject *deque, PyObject *iterable, PyObject *maxlenobj);
 
 static int
-_collections_deque___init__(PyObject *deque, PyObject *args, PyObject *kwargs)
+deque_init(PyObject *deque, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -497,7 +495,7 @@ _collections_deque___init__(PyObject *deque, PyObject *args, PyObject *kwargs)
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
     PyObject *iterable = NULL;
-    PyObject *maxlen = NULL;
+    PyObject *maxlenobj = NULL;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 2, 0, argsbuf);
     if (!fastargs) {
@@ -512,56 +510,56 @@ _collections_deque___init__(PyObject *deque, PyObject *args, PyObject *kwargs)
             goto skip_optional_pos;
         }
     }
-    maxlen = fastargs[1];
+    maxlenobj = fastargs[1];
 skip_optional_pos:
     Py_BEGIN_CRITICAL_SECTION(deque);
-    return_value = _collections_deque___init___impl((dequeobject *)deque, iterable, maxlen);
+    return_value = deque_init_impl((dequeobject *)deque, iterable, maxlenobj);
     Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_collections_deque___sizeof____doc__,
+PyDoc_STRVAR(deque___sizeof____doc__,
 "__sizeof__($self, /)\n"
 "--\n"
 "\n"
-"Return the size of the deque in memory, in bytes");
+"Return the size of the deque in memory, in bytes.");
 
-#define _COLLECTIONS_DEQUE___SIZEOF___METHODDEF    \
-    {"__sizeof__", (PyCFunction)_collections_deque___sizeof__, METH_NOARGS, _collections_deque___sizeof____doc__},
-
-static PyObject *
-_collections_deque___sizeof___impl(dequeobject *deque);
+#define DEQUE___SIZEOF___METHODDEF    \
+    {"__sizeof__", (PyCFunction)deque___sizeof__, METH_NOARGS, deque___sizeof____doc__},
 
 static PyObject *
-_collections_deque___sizeof__(dequeobject *deque, PyObject *Py_UNUSED(ignored))
+deque___sizeof___impl(dequeobject *deque);
+
+static PyObject *
+deque___sizeof__(dequeobject *deque, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(deque);
-    return_value = _collections_deque___sizeof___impl(deque);
+    return_value = deque___sizeof___impl(deque);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
 
-PyDoc_STRVAR(_collections_deque___reversed____doc__,
+PyDoc_STRVAR(deque___reversed____doc__,
 "__reversed__($self, /)\n"
 "--\n"
 "\n"
 "Return a reverse iterator over the deque.");
 
-#define _COLLECTIONS_DEQUE___REVERSED___METHODDEF    \
-    {"__reversed__", (PyCFunction)_collections_deque___reversed__, METH_NOARGS, _collections_deque___reversed____doc__},
+#define DEQUE___REVERSED___METHODDEF    \
+    {"__reversed__", (PyCFunction)deque___reversed__, METH_NOARGS, deque___reversed____doc__},
 
 static PyObject *
-_collections_deque___reversed___impl(dequeobject *deque);
+deque___reversed___impl(dequeobject *deque);
 
 static PyObject *
-_collections_deque___reversed__(dequeobject *deque, PyObject *Py_UNUSED(ignored))
+deque___reversed__(dequeobject *deque, PyObject *Py_UNUSED(ignored))
 {
-    return _collections_deque___reversed___impl(deque);
+    return deque___reversed___impl(deque);
 }
 
 PyDoc_STRVAR(_collections__count_elements__doc__,
@@ -631,4 +629,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a34c1f2f2c576c0b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=64c32b16df7be07a input=a9049054013a1b77]*/

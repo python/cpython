@@ -8,14 +8,14 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-
+#include "pycore_freelist.h"      // _PyFreeListState
 #include "pycore_unicodeobject.h" // _PyUnicodeWriter
 
 /* runtime lifecycle */
 
 extern void _PyFloat_InitState(PyInterpreterState *);
 extern PyStatus _PyFloat_InitTypes(PyInterpreterState *);
-extern void _PyFloat_Fini(PyInterpreterState *);
+extern void _PyFloat_Fini(_PyFreeListState *);
 extern void _PyFloat_FiniType(PyInterpreterState *);
 
 
@@ -33,24 +33,7 @@ struct _Py_float_runtime_state {
 };
 
 
-#ifndef WITH_FREELISTS
-// without freelists
-#  define PyFloat_MAXFREELIST 0
-#endif
 
-#ifndef PyFloat_MAXFREELIST
-#  define PyFloat_MAXFREELIST   100
-#endif
-
-struct _Py_float_state {
-#if PyFloat_MAXFREELIST > 0
-    /* Special free list
-       free_list is a singly-linked list of available PyFloatObjects,
-       linked via abuse of their ob_type members. */
-    int numfree;
-    PyFloatObject *free_list;
-#endif
-};
 
 void _PyFloat_ExactDealloc(PyObject *op);
 

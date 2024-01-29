@@ -20,7 +20,7 @@ jobs:
     - name: Display build info
       run: .\python.bat -m test.pythoninfo
     - name: Tests
-      run: .\PCbuild\rt.bat -p Win32 -d -q --fast-ci
+      run: .\PCbuild\rt.bat -p Win32 -d -q --fast-ci ${{ inputs.free-threading && '--disable-gil' || '' }}
 
   build_win_amd64:
     name: 'build and test (x64)'
@@ -37,7 +37,7 @@ jobs:
     - name: Display build info
       run: .\python.bat -m test.pythoninfo
     - name: Tests
-      run: .\PCbuild\rt.bat -p x64 -d -q --fast-ci
+      run: .\PCbuild\rt.bat -p x64 -d -q --fast-ci ${{ inputs.free-threading && '--disable-gil' || '' }}
 
   build_win_arm64:
     name: 'build (arm64)'

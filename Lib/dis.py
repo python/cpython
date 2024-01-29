@@ -1032,11 +1032,16 @@ def main():
                         help='show inline caches')
     parser.add_argument('-O', '--show-offsets', action='store_true',
                         help='show instruction offsets')
-    parser.add_argument('infile', type=argparse.FileType('rb'), nargs='?', default='-')
+    parser.add_argument('infile', nargs='?', default='-')
     args = parser.parse_args()
-    with args.infile as infile:
-        source = infile.read()
-    code = compile(source, args.infile.name, "exec")
+    if args.infile == '-':
+        name = '<stdin>'
+        source = sys.stdin.buffer.read()
+    else:
+        name = args.infile
+        with open(args.infile, 'rb') as infile:
+            source = infile.read()
+    code = compile(source, name, "exec")
     dis(code, show_caches=args.show_caches, show_offsets=args.show_offsets)
 
 if __name__ == "__main__":
