@@ -2051,7 +2051,7 @@ Examples of working with a :class:`.time` object::
    relies on this, but cannot detect violations; it's the programmer's
    responsibility to ensure it. If a :class:`tzinfo` subclass cannot guarantee
    this, it may be able to override the default implementation of
-   :meth:`tzinfo.fromutc` to work correctly with :meth:`astimezone<datetime.astimezone>` regardless.
+   :meth:`tzinfo.fromutc` to work correctly with :meth:`~.datetime.astimezone` regardless.
 
    Most implementations of :meth:`dst` will probably look like one of these two::
 
@@ -2128,7 +2128,7 @@ There is one more :class:`tzinfo` method that a subclass may wish to override:
    different years. An example of a time zone the default :meth:`fromutc`
    implementation may not handle correctly in all cases is one where the standard
    offset (from UTC) depends on the specific date and time passed, which can happen
-   for political reasons. The default implementations of :meth:`astimezone<datetime.astimezone>` and
+   for political reasons. The default implementations of :meth:`~.datetime.astimezone` and
    :meth:`fromutc` may not produce the result you want if the result is one of the
    hours straddling the moment the standard offset changes.
 
@@ -2194,7 +2194,7 @@ hour that can't be spelled unambiguously in local wall time: the last hour of
 daylight time. In Eastern, that's times of the form 5:MM UTC on the day
 daylight time ends. The local wall clock leaps from 1:59 (daylight time) back
 to 1:00 (standard time) again. Local times of the form 1:MM are ambiguous.
-:meth:`astimezone<datetime.astimezone>` mimics the local clock's behavior by mapping two adjacent UTC
+:meth:`~.datetime.astimezone` mimics the local clock's behavior by mapping two adjacent UTC
 hours into the same local hour then. In the Eastern example, UTC times of the
 form 5:MM and 6:MM both map to 1:MM when converted to Eastern, but earlier times
 have the :attr:`~.datetime.fold` attribute set to 0 and the later times have it set to 1.
@@ -2316,8 +2316,8 @@ Class attributes:
 
 .. _strftime-strptime-behavior:
 
-:meth:`strftime<datetime.strftime>` and :meth:`strptime<datetime.strptime>` Behavior
-------------------------------------------------------------------------------------
+:meth:`~.datetime.strftime` and :meth:`~.datetime.strptime` Behavior
+--------------------------------------------------------------------
 
 :class:`date`, :class:`.datetime`, and :class:`.time` objects all support a
 ``strftime(format)`` method, to create a string representing the time under the
@@ -2485,9 +2485,9 @@ convenience. These parameters all correspond to ISO 8601 date values.
 |           | naive).                        | -03:07:12.345216       |       |
 +-----------+--------------------------------+------------------------+-------+
 
-These may not be available on all platforms when used with the :meth:`strftime<datetime.strftime>`
+These may not be available on all platforms when used with the :meth:`~.datetime.strftime`
 method. The ISO 8601 year and ISO 8601 week directives are not interchangeable
-with the year and week number directives above. Calling :meth:`strptime<datetime.strptime>` with
+with the year and week number directives above. Calling :meth:`~.datetime.strptime` with
 incomplete or ambiguous ISO 8601 directives will raise a :exc:`ValueError`.
 
 The full set of format codes supported varies across platforms, because Python
