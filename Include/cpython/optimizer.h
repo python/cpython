@@ -26,8 +26,8 @@ typedef struct {
     uint8_t linked;
     _PyBloomFilter bloom;
     _PyExecutorLinkListNode links;
-    PyCodeObject *code;  // Weak.
-    int index;
+    PyCodeObject *code;  // Weak (NULL if invalidated).
+    int index;           // Index of the instruction in the code object.
 } _PyVMData;
 
 typedef struct {

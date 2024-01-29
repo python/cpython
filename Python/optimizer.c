@@ -1159,17 +1159,12 @@ void
 _Py_Executors_InvalidateAll(PyInterpreterState *interp)
 {
     /* Walk the list of executors */
-    for (_PyExecutorObject *exec = interp->executor_list_head; exec != NULL;) {
-        Py_INCREF(exec);
-        if (exec->vm_data.code) {
-            _PyCode_Clear_Executors(exec->vm_data.code);
+    while (interp->executor_list_head) {
+        if (interp->executor_list_head->vm_data.code) {
+            _PyCode_Clear_Executors(interp->executor_list_head->vm_data.code);
         }
-        _PyExecutorObject *next = exec->vm_data.links.next;
-        exec->vm_data.links.next = NULL;
-        exec->vm_data.links.previous = NULL;
-        exec->vm_data.linked = false;
-        Py_DECREF(exec);
-        exec = next;
+        else {
+            unlink_executor(interp->executor_list_head);
+        }
     }
-    interp->executor_list_head = NULL;
 }
