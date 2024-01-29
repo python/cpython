@@ -790,41 +790,79 @@ class ImportTests(unittest.TestCase):
         self.assertIn("Frozen object named 'x' is invalid",
                       str(cm.exception))
 
-    def test_cwd_script_shadowing_stdlib(self):
-        with CleanImport('collections'):
-            import collections
-            collections.__spec__ = types.SimpleNamespace()
-            collections.__spec__.origin = os.path.join(os.getcwd(), 'collections.py')
+    def test_script_shadowing_stdlib(self):
+        with os_helper.temp_dir() as tmp:
+            with open(os.path.join(tmp, "collections.py"), "w", encoding='utf-8') as f:
+                f.write("import collections\ncollections.defaultdict")
 
-            with self.assertRaisesRegex(
-                AttributeError,
-                r"module 'collections' has no attribute 'does_not_exist' \(most "
-                r"likely due to '.*collections.py' shadowing the standard "
-                r"library module named 'collections'\)"
-            ):
-                collections.does_not_exist
+            expected_error = (
+                rb"AttributeError: module 'collections' has no attribute 'defaultdict' "
+                rb"\(consider renaming '.*collections.py' since it has the "
+                rb"same name as the standard library module named 'collections'\)"
+            )
 
-            del collections.__spec__.origin
-            with self.assertRaisesRegex(
-                AttributeError,
-                r"module 'collections' has no attribute 'does_not_exist'$"
-            ):
-                collections.does_not_exist
-            del collections.__spec__
-            with self.assertRaisesRegex(
-                AttributeError,
-                r"module 'collections' has no attribute 'does_not_exist'$"
-            ):
-                collections.does_not_exist
+            popen = script_helper.spawn_python('collections.py', cwd=tmp)
+            stdout, stderr = popen.communicate()
+            self.assertRegex(stdout, expected_error)
+
+            popen = script_helper.spawn_python('-m', 'collections', cwd=tmp)
+            stdout, stderr = popen.communicate()
+            self.assertRegex(stdout, expected_error)
+
+            popen = script_helper.spawn_python('-c', 'import collections', cwd=tmp)
+            stdout, stderr = popen.communicate()
+            self.assertRegex(stdout, expected_error)
+
+            # and there's no error at all when using -P
+            popen = script_helper.spawn_python('-P', 'collections.py', cwd=tmp)
+            stdout, stderr = popen.communicate()
+            self.assertEqual(stdout, b'')
+
+    def test_script_shadowing_third_party(self):
+        with os_helper.temp_dir() as tmp:
+            with open(os.path.join(tmp, "numpy.py"), "w", encoding='utf-8') as f:
+                f.write("import numpy\nnumpy.array")
+
+            expected_error = (
+                rb"AttributeError: module 'numpy' has no attribute 'array' "
+                rb"\(consider renaming '.*numpy.py' if it has the "
+                rb"same name as a third party module you intended to import\)\n\Z"
+            )
+
+            popen = script_helper.spawn_python('numpy.py', cwd=tmp)
+            stdout, stderr = popen.communicate()
+            self.assertRegex(stdout, expected_error)
+
+            popen = script_helper.spawn_python('-m', 'numpy', cwd=tmp)
+            stdout, stderr = popen.communicate()
+            self.assertRegex(stdout, expected_error)
+
+            popen = script_helper.spawn_python('-c', 'import numpy', cwd=tmp)
+            stdout, stderr = popen.communicate()
+            self.assertRegex(stdout, expected_error)
+
+    def test_script_possibly_shadowing(self):
+        with os_helper.temp_dir() as tmp:
+            with open(os.path.join(tmp, "numpy.py"), "w", encoding='utf-8') as f:
+                f.write("this_script_does_not_attempt_to_import_numpy = True")
+
+            expected_error = (
+                rb"AttributeError: module 'numpy' has no attribute 'attr'\n\Z"
+            )
+
+            popen = script_helper.spawn_python('-c', 'import numpy; numpy.attr', cwd=tmp)
+            stdout, stderr = popen.communicate()
+            self.assertRegex(stdout, expected_error)
+
 
     def test_shadowing_stdlib_sys_edge_cases(self):
-        program = '''
+        with os_helper.temp_dir() as tmp:
+            with open(os.path.join(tmp, "collections.py"), "w", encoding='utf-8') as f:
+                f.write("shadowing_module = True")
+            with open(os.path.join(tmp, "main.py"), "w", encoding='utf-8') as f:
+                f.write("""
 import collections
-import os
-import types
-collections.__spec__ = types.SimpleNamespace()
-collections.__spec__.origin = os.path.join(os.getcwd(), 'collections.py')
-
+collections.shadowing_module
 class substr(str):
     __hash__ = None
 collections.__name__ = substr('collections')
@@ -832,6 +870,16 @@ try:
     collections.does_not_exist
 except TypeError as e:
     print(str(e))
+""")
+
+            popen = script_helper.spawn_python("main.py", cwd=tmp)
+            stdout, stderr = popen.communicate()
+            self.assertEqual(stdout, b"unhashable type: 'substr'\n")
+
+            with open(os.path.join(tmp, "main.py"), "w", encoding='utf-8') as f:
+                f.write("""
+import collections
+collections.shadowing_module
 
 import sys
 sys.stdlib_module_names = None
@@ -845,14 +893,17 @@ try:
     collections.does_not_exist
 except AttributeError as e:
     print(str(e))
-'''
-        popen = script_helper.spawn_python('-c', program)
-        stdout, stderr = popen.communicate()
-        self.assertEqual(stdout.splitlines(), [
-            b"unhashable type: 'substr'",
-            b"module 'collections' has no attribute 'does_not_exist'",
-            b"module 'collections' has no attribute 'does_not_exist'",
-        ])
+""")
+
+            popen = script_helper.spawn_python("main.py", cwd=tmp)
+            stdout, stderr = popen.communicate()
+            self.assertEqual(
+                stdout.splitlines(),
+                [
+                    b"module 'collections' has no attribute 'does_not_exist'",
+                    b"module 'collections' has no attribute 'does_not_exist'",
+                ],
+            )
 
 
 @skip_if_dont_write_bytecode
