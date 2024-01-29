@@ -896,7 +896,7 @@ except AttributeError as e:
 sys.path = [0]
 try:
     collections.defaultdict
-except TypeError as e:
+except AttributeError as e:
     print(str(e))
 """)
 
@@ -907,7 +907,7 @@ except TypeError as e:
                 [
                     b"module 'collections' has no attribute 'defaultdict'",
                     b"module 'collections' has no attribute 'defaultdict'",
-                    b"bad argument type for built-in operation",
+                    b"module 'collections' has no attribute 'defaultdict'",
                 ],
             )
 

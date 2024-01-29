@@ -807,8 +807,12 @@ _is_module_possibly_shadowing(PyObject *origin)
     if (sys_path == NULL || !PyList_Check(sys_path) || PyList_GET_SIZE(sys_path) == 0) {
         return 0;
     }
-    wchar_t sys_path_0[MAXPATHLEN];
-    Py_ssize_t size = PyUnicode_AsWideChar(PyList_GET_ITEM(sys_path, 0), sys_path_0, MAXPATHLEN - 1);
+    PyObject *py_sys_path_0 = PyList_GET_ITEM(sys_path, 0);
+    if (!PyUnicode_Check(py_sys_path_0)) {
+        return 0;
+    }
+    wchar_t sys_path_0[MAXPATHLEN + 1];
+    Py_ssize_t size = PyUnicode_AsWideChar(py_sys_path_0, sys_path_0, MAXPATHLEN);
     if (size < 0) {
         return -1;
     }
@@ -821,8 +825,8 @@ _is_module_possibly_shadowing(PyObject *origin)
         }
     }
 
-    wchar_t origin_dirname[MAXPATHLEN];
-    size = PyUnicode_AsWideChar(origin, origin_dirname, MAXPATHLEN - 1);
+    wchar_t origin_dirname[MAXPATHLEN + 1];
+    size = PyUnicode_AsWideChar(origin, origin_dirname, MAXPATHLEN);
     if (size < 0) {
         return -1;
     }
