@@ -207,7 +207,7 @@ class SubprocessMixin:
 
     def test_kill_issue43884(self):
         if sys.platform == 'win32':
-            blocking_shell_command = f'{sys.executable} -c "import time; time.sleep(2)"'
+            blocking_shell_command = f'"{sys.executable}" -c "import time; time.sleep(2)"'
         else:
             blocking_shell_command = 'sleep 1; sleep 1'
         creationflags = 0
@@ -745,7 +745,10 @@ class SubprocessMixin:
 
     def test_create_subprocess_env_shell(self) -> None:
         async def main() -> None:
-            cmd = f'''{sys.executable} -c "import os, sys; sys.stdout.write(os.getenv('FOO'))"'''
+            executable = sys.executable
+            if sys.platform == "win32":
+                executable = f'"{executable}"'
+            cmd = f'''{executable} -c "import os, sys; sys.stdout.write(os.getenv('FOO'))"'''
             env = os.environ.copy()
             env["FOO"] = "bar"
             proc = await asyncio.create_subprocess_shell(
@@ -975,8 +978,13 @@ if sys.platform != 'win32':
 
             async def main():
                 # asyncio.Runner did not call asyncio.set_event_loop()
-                with self.assertRaises(RuntimeError):
-                    asyncio.get_event_loop_policy().get_event_loop()
+                with warnings.catch_warnings():
+                    warnings.simplefilter('error', DeprecationWarning)
+                    # get_event_loop() raises DeprecationWarning if
+                    # set_event_loop() was never called and RuntimeError if
+                    # it was called at least once.
+                    with self.assertRaises((RuntimeError, DeprecationWarning)):
+                        asyncio.get_event_loop_policy().get_event_loop()
                 return await asyncio.to_thread(asyncio.run, in_thread())
             with self.assertWarns(DeprecationWarning):
                 asyncio.set_child_watcher(asyncio.PidfdChildWatcher())

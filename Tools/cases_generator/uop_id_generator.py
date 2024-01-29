@@ -24,50 +24,32 @@ from typing import TextIO
 DEFAULT_OUTPUT = ROOT / "Include/internal/pycore_uop_ids.h"
 
 
-OMIT = {"_CACHE", "_RESERVED", "_EXTENDED_ARG"}
-
-
 def generate_uop_ids(
     filenames: list[str], analysis: Analysis, outfile: TextIO, distinct_namespace: bool
 ) -> None:
     write_header(__file__, filenames, outfile)
     out = CWriter(outfile, 0, False)
-    out.emit(
-        """#ifndef Py_CORE_UOP_IDS_H
-#define Py_CORE_UOP_IDS_H
-#ifdef __cplusplus
-extern "C" {
-#endif
+    with out.header_guard("Py_CORE_UOP_IDS_H"):
+        next_id = 1 if distinct_namespace else 300
+        # These two are first by convention
+        out.emit(f"#define _EXIT_TRACE {next_id}\n")
+        next_id += 1
+        out.emit(f"#define _SET_IP {next_id}\n")
+        next_id += 1
+        PRE_DEFINED = {"_EXIT_TRACE", "_SET_IP"}
 
-"""
-    )
+        for uop in analysis.uops.values():
+            if uop.name in PRE_DEFINED:
+                continue
+            if uop.properties.tier_one_only:
+                continue
+            if uop.implicitly_created and not distinct_namespace:
+                out.emit(f"#define {uop.name} {uop.name[1:]}\n")
+            else:
+                out.emit(f"#define {uop.name} {next_id}\n")
+                next_id += 1
 
-    next_id = 1 if distinct_namespace else 300
-    # These two are first by convention
-    out.emit(f"#define _EXIT_TRACE {next_id}\n")
-    next_id += 1
-    out.emit(f"#define _SET_IP {next_id}\n")
-    next_id += 1
-    PRE_DEFINED = {"_EXIT_TRACE", "_SET_IP"}
-
-    for uop in analysis.uops.values():
-        if uop.name in PRE_DEFINED:
-            continue
-        # TODO: We should omit all tier-1 only uops, but
-        # generate_cases.py still generates code for those.
-        if uop.name in OMIT:
-            continue
-        if uop.implicitly_created and not distinct_namespace:
-            out.emit(f"#define {uop.name} {uop.name[1:]}\n")
-        else:
-            out.emit(f"#define {uop.name} {next_id}\n")
-            next_id += 1
-
-    out.emit("\n")
-    out.emit("#ifdef __cplusplus\n")
-    out.emit("}\n")
-    out.emit("#endif\n")
-    out.emit("#endif /* !Py_OPCODE_IDS_H */\n")
+        out.emit(f"#define MAX_UOP_ID {next_id-1}\n")
 
 
 arg_parser = argparse.ArgumentParser(

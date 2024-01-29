@@ -70,7 +70,6 @@ Python/thread_pthread.h
 Python/thread_pthread_stubs.h
 
 # only huge constants (safe but parsing is slow)
-Modules/_ssl_data.h
 Modules/_ssl_data_31.h
 Modules/_ssl_data_300.h
 Modules/_ssl_data_111.h
@@ -84,7 +83,6 @@ Python/deepfreeze/*.c
 Python/frozen_modules/*.h
 Python/generated_cases.c.h
 Python/executor_cases.c.h
-Python/abstract_interp_cases.c.h
 
 # not actually source
 Python/bytecodes.c
@@ -334,7 +332,7 @@ MAX_SIZES = {
     _abs('Python/stdlib_module_names.h'): (5_000, 500),
 
     # These large files are currently ignored (see above).
-    _abs('Modules/_ssl_data.h'): (80_000, 10_000),
+    _abs('Modules/_ssl_data_31.h'): (80_000, 10_000),
     _abs('Modules/_ssl_data_300.h'): (80_000, 10_000),
     _abs('Modules/_ssl_data_111.h'): (80_000, 10_000),
     _abs('Modules/cjkcodecs/mappings_*.h'): (160_000, 2_000),

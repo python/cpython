@@ -936,6 +936,7 @@ class PosixTester(unittest.TestCase):
         posix.utime(os_helper.TESTFN, (now, now))
 
     def check_chmod(self, chmod_func, target, **kwargs):
+        closefd = not isinstance(target, int)
         mode = os.stat(target).st_mode
         try:
             new_mode = mode & ~(stat.S_IWOTH | stat.S_IWGRP | stat.S_IWUSR)
@@ -943,7 +944,7 @@ class PosixTester(unittest.TestCase):
             self.assertEqual(os.stat(target).st_mode, new_mode)
             if stat.S_ISREG(mode):
                 try:
-                    with open(target, 'wb+'):
+                    with open(target, 'wb+', closefd=closefd):
                         pass
                 except PermissionError:
                     pass
@@ -951,10 +952,10 @@ class PosixTester(unittest.TestCase):
             chmod_func(target, new_mode, **kwargs)
             self.assertEqual(os.stat(target).st_mode, new_mode)
             if stat.S_ISREG(mode):
-                with open(target, 'wb+'):
+                with open(target, 'wb+', closefd=closefd):
                     pass
         finally:
-            posix.chmod(target, mode)
+            chmod_func(target, mode)
 
     @os_helper.skip_unless_working_chmod
     def test_chmod_file(self):
@@ -970,6 +971,12 @@ class PosixTester(unittest.TestCase):
     def test_chmod_dir(self):
         target = self.tempdir()
         self.check_chmod(posix.chmod, target)
+
+    @os_helper.skip_unless_working_chmod
+    def test_fchmod_file(self):
+        with open(os_helper.TESTFN, 'wb+') as f:
+            self.check_chmod(posix.fchmod, f.fileno())
+            self.check_chmod(posix.chmod, f.fileno())
 
     @unittest.skipUnless(hasattr(posix, 'lchmod'), 'test needs os.lchmod()')
     def test_lchmod_file(self):

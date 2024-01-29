@@ -133,7 +133,7 @@ _PyType_IsReady(PyTypeObject *type)
 
 extern PyObject* _Py_type_getattro_impl(PyTypeObject *type, PyObject *name,
                                         int *suppress_missing_attribute);
-extern PyObject* _Py_type_getattro(PyTypeObject *type, PyObject *name);
+extern PyObject* _Py_type_getattro(PyObject *type, PyObject *name);
 
 extern PyObject* _Py_BaseObject_RichCompare(PyObject* self, PyObject* other, int op);
 

@@ -4,7 +4,20 @@ Released on 2024-10-xx
 =========================
 
 
+gh-96905: In idlelib code, stop redefining built-ins 'dict' and 'object'.
+
+gh-72284: Improve the lists of features, editor key bindings,
+and shell key bingings in the IDLE doc.
+
+gh-113903: Fix rare failure of test.test_idle, in test_configdialog.
+
+gh-113729: Fix the "Help -> IDLE Doc" menu bug in 3.11.7 and 3.12.1.
+
+gh-57795: Enter selected text into the Find box when opening
+a Replace dialog.  Patch by  Roger Serwy and Zackery Spytz.
+
 gh-113269: Fix test_editor hang on macOS Catalina.
+Patch by Terry Reedy.
 
 gh-112939: Fix processing unsaved files when quitting IDLE on macOS.
 Patch by Ronald Oussoren and Christopher Chavez.
