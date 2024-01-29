@@ -923,7 +923,7 @@ mmap_mmap_mprotect_impl(mmap_object *self, int prot, Py_ssize_t start,
         PyErr_SetString(PyExc_ValueError, "mprotect start out of bounds");
         return NULL;
     }
-    if (length == -1) {
+    if (length < 0) {
         length = self->size;
     }
     if (start + length > self->size) {
