@@ -4,6 +4,7 @@ import contextlib
 import errno
 import io
 import multiprocessing
+from multiprocessing.util import _cleanup_tests as multiprocessing_cleanup_tests
 import os
 import pathlib
 import signal
@@ -15,6 +16,7 @@ import time
 import unittest
 from unittest import mock
 import warnings
+
 from test import support
 from test.support import os_helper
 from test.support import socket_helper
@@ -1903,6 +1905,8 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
 
     @hashlib_helper.requires_hashdigest('md5')
     def test_fork_signal_handling(self):
+        self.addCleanup(multiprocessing_cleanup_tests)
+
         # Sending signal to the forked process should not affect the parent
         # process
         ctx = multiprocessing.get_context('fork')
@@ -1947,6 +1951,8 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
 
     @hashlib_helper.requires_hashdigest('md5')
     def test_fork_asyncio_run(self):
+        self.addCleanup(multiprocessing_cleanup_tests)
+
         ctx = multiprocessing.get_context('fork')
         manager = ctx.Manager()
         self.addCleanup(manager.shutdown)
@@ -1964,6 +1970,8 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
 
     @hashlib_helper.requires_hashdigest('md5')
     def test_fork_asyncio_subprocess(self):
+        self.addCleanup(multiprocessing_cleanup_tests)
+
         ctx = multiprocessing.get_context('fork')
         manager = ctx.Manager()
         self.addCleanup(manager.shutdown)

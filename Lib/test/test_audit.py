@@ -209,6 +209,8 @@ class AuditTest(unittest.TestCase):
         expected = [
             ("_thread.start_new_thread", "(<test_func>, (), None)"),
             ("test.test_func", "()"),
+            ("_thread.start_joinable_thread", "(<test_func>,)"),
+            ("test.test_func", "()"),
         ]
 
         self.assertEqual(actual, expected)

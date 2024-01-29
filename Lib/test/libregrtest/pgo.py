@@ -42,10 +42,10 @@ PGO_TESTS = [
     'test_set',
     'test_sqlite3',
     'test_statistics',
+    'test_str',
     'test_struct',
     'test_tabnanny',
     'test_time',
-    'test_unicode',
     'test_xml_etree',
     'test_xml_etree_c',
 ]

@@ -1,2 +1,0 @@
-Fix test_cppext when the C compiler command ``-std=c11`` option: remove
-``-std=`` options from the compiler command. Patch by Victor Stinner.

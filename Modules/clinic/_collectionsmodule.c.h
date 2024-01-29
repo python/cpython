@@ -3,6 +3,7 @@ preserve
 [clinic start generated code]*/
 
 #include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_collections__count_elements__doc__,
 "_count_elements($module, mapping, iterable, /)\n"
@@ -71,4 +72,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b01ddb9fdecc4a2d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c896a72f8c45930d input=a9049054013a1b77]*/

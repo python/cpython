@@ -4,6 +4,7 @@
 """Unittest for ipaddress module."""
 
 
+import copy
 import unittest
 import re
 import contextlib
@@ -302,6 +303,14 @@ class AddressTestCase_v4(BaseTestCase, CommonTestMixin_v4):
     def test_weakref(self):
         weakref.ref(self.factory('192.0.2.1'))
 
+    def test_ipv6_mapped(self):
+        self.assertEqual(ipaddress.IPv4Address('192.168.1.1').ipv6_mapped,
+                         ipaddress.IPv6Address('::ffff:192.168.1.1'))
+        self.assertEqual(ipaddress.IPv4Address('192.168.1.1').ipv6_mapped,
+                         ipaddress.IPv6Address('::ffff:c0a8:101'))
+        self.assertEqual(ipaddress.IPv4Address('192.168.1.1').ipv6_mapped.ipv4_mapped,
+                         ipaddress.IPv4Address('192.168.1.1'))
+
 
 class AddressTestCase_v6(BaseTestCase, CommonTestMixin_v6):
     factory = ipaddress.IPv6Address
@@ -542,10 +551,16 @@ class AddressTestCase_v6(BaseTestCase, CommonTestMixin_v6):
 
     def test_pickle(self):
         self.pickle_test('2001:db8::')
+        self.pickle_test('2001:db8::%scope')
 
     def test_weakref(self):
         weakref.ref(self.factory('2001:db8::'))
         weakref.ref(self.factory('2001:db8::%scope'))
+
+    def test_copy(self):
+        addr = self.factory('2001:db8::%scope')
+        self.assertEqual(addr, copy.copy(addr))
+        self.assertEqual(addr, copy.deepcopy(addr))
 
 
 class NetmaskTestMixin_v4(CommonTestMixin_v4):

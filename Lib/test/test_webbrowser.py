@@ -272,6 +272,17 @@ class BrowserRegistrationTest(unittest.TestCase):
         self._check_registration(preferred=True)
 
 
+    @unittest.skipUnless(sys.platform == "darwin", "macOS specific test")
+    def test_no_xdg_settings_on_macOS(self):
+        # On macOS webbrowser should not use xdg-settings to
+        # look for X11 based browsers (for those users with
+        # XQuartz installed)
+        with mock.patch("subprocess.check_output") as ck_o:
+            webbrowser.register_standard_browsers()
+
+        ck_o.assert_not_called()
+
+
 class ImportTest(unittest.TestCase):
     def test_register(self):
         webbrowser = import_helper.import_fresh_module('webbrowser')
@@ -296,6 +307,7 @@ class ImportTest(unittest.TestCase):
             webbrowser.get('fakebrowser')
         self.assertIsNotNone(webbrowser._tryorder)
 
+    @unittest.skipIf(" " in sys.executable, "test assumes no space in path (GH-114452)")
     def test_synthesize(self):
         webbrowser = import_helper.import_fresh_module('webbrowser')
         name = os.path.basename(sys.executable).lower()

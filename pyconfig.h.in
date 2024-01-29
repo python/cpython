@@ -157,6 +157,9 @@
 /* Define to 1 if you have the `clock_settime' function. */
 #undef HAVE_CLOCK_SETTIME
 
+/* Define to 1 if you have the `closefrom' function. */
+#undef HAVE_CLOSEFROM
+
 /* Define to 1 if you have the `close_range' function. */
 #undef HAVE_CLOSE_RANGE
 
@@ -902,6 +905,10 @@
 /* Define to 1 if you have the `posix_spawnp' function. */
 #undef HAVE_POSIX_SPAWNP
 
+/* Define to 1 if you have the `posix_spawn_file_actions_addclosefrom_np'
+   function. */
+#undef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSEFROM_NP
+
 /* Define to 1 if you have the `pread' function. */
 #undef HAVE_PREAD
 
@@ -982,6 +989,9 @@
 
 /* Define if you can turn off readline's signal handling. */
 #undef HAVE_RL_CATCH_SIGNAL
+
+/* Define if readline supports rl_compdisp_func_t */
+#undef HAVE_RL_COMPDISP_FUNC_T
 
 /* Define if you have readline 2.2 */
 #undef HAVE_RL_COMPLETION_APPEND_CHARACTER
@@ -1363,6 +1373,9 @@
 /* Define to 1 if you have the <sys/termio.h> header file. */
 #undef HAVE_SYS_TERMIO_H
 
+/* Define to 1 if you have the <sys/timerfd.h> header file. */
+#undef HAVE_SYS_TIMERFD_H
+
 /* Define to 1 if you have the <sys/times.h> header file. */
 #undef HAVE_SYS_TIMES_H
 
@@ -1404,6 +1417,9 @@
 
 /* Define to 1 if you have the `timegm' function. */
 #undef HAVE_TIMEGM
+
+/* Define if you have the 'timerfd_create' function. */
+#undef HAVE_TIMERFD_CREATE
 
 /* Define to 1 if you have the `times' function. */
 #undef HAVE_TIMES
@@ -1602,15 +1618,18 @@
 /* Defined if Python is built as a shared library. */
 #undef Py_ENABLE_SHARED
 
+/* Define if you want to disable the GIL */
+#undef Py_GIL_DISABLED
+
 /* Define hash algorithm for str, bytes and memoryview. SipHash24: 1, FNV: 2,
    SipHash13: 3, externally defined: 0 */
 #undef Py_HASH_ALGORITHM
 
-/* Define if you want to disable the GIL */
-#undef Py_NOGIL
-
 /* Define if you want to enable internal statistics gathering. */
 #undef Py_STATS
+
+/* The version of SunOS/Solaris as reported by `uname -r' without the dot. */
+#undef Py_SUNOS_VERSION
 
 /* Define if you want to enable tracing references for debugging purpose */
 #undef Py_TRACE_REFS
@@ -1811,6 +1830,9 @@
 
 /* Define to 1 if libintl is needed for locale functions. */
 #undef WITH_LIBINTL
+
+/* Define if you want to compile in mimalloc memory allocator. */
+#undef WITH_MIMALLOC
 
 /* Define if you want to produce an OpenStep/Rhapsody framework (shared
    library plus accessory files). */

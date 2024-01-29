@@ -1,3 +1,0 @@
-Remove *cafile*, *capath* and *cadefault* parameters of the
-:func:`urllib.request.urlopen` function, deprecated in Python 3.6. Patch by
-Victor Stinner.
