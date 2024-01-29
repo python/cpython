@@ -2317,6 +2317,7 @@ Class attributes:
 .. _strftime-strptime-behavior:
 
 :meth:`~.datetime.strftime` and :meth:`~.datetime.strptime` Behavior
+--------------------------------------------------------------------
 
 :class:`date`, :class:`.datetime`, and :class:`.time` objects all support a
 ``strftime(format)`` method, to create a string representing the time under the
