@@ -1176,7 +1176,7 @@ peephole_optimizations(_PyUOpInstruction *buffer, int buffer_size)
     return done;
 }
 
-void
+static void
 infallible_optimizations(_PyUOpInstruction *buffer, int buffer_size)
 {
     bool done = false;
