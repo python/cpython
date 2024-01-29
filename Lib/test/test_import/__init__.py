@@ -801,7 +801,7 @@ class ImportTests(unittest.TestCase):
                 rb"same name as the standard library module named 'collections'\)"
             )
 
-            popen = script_helper.spawn_python('collections.py', cwd=tmp)
+            popen = script_helper.spawn_python(os.path.join(tmp, "collections.py"))
             stdout, stderr = popen.communicate()
             self.assertRegex(stdout, expected_error)
 
@@ -829,7 +829,7 @@ class ImportTests(unittest.TestCase):
                 rb"same name as a third party module you intended to import\)\n\Z"
             )
 
-            popen = script_helper.spawn_python('numpy.py', cwd=tmp)
+            popen = script_helper.spawn_python(os.path.join(tmp, "numpy.py"))
             stdout, stderr = popen.communicate()
             self.assertRegex(stdout, expected_error)
 
