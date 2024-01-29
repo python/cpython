@@ -826,7 +826,7 @@ class ImportTests(unittest.TestCase):
             expected_error = (
                 rb"AttributeError: module 'numpy' has no attribute 'array' "
                 rb"\(consider renaming '.*numpy.py' if it has the "
-                rb"same name as a third-party module you intended to import\)\n\Z"
+                rb"same name as a third-party module you intended to import\)\s+\Z"
             )
 
             popen = script_helper.spawn_python(os.path.join(tmp, "numpy.py"))
@@ -847,7 +847,7 @@ class ImportTests(unittest.TestCase):
                 f.write("this_script_does_not_attempt_to_import_numpy = True")
 
             expected_error = (
-                rb"AttributeError: module 'numpy' has no attribute 'attr'\n\Z"
+                rb"AttributeError: module 'numpy' has no attribute 'attr'\s+\Z"
             )
 
             popen = script_helper.spawn_python('-c', 'import numpy; numpy.attr', cwd=tmp)
@@ -873,7 +873,7 @@ except TypeError as e:
 
             popen = script_helper.spawn_python("main.py", cwd=tmp)
             stdout, stderr = popen.communicate()
-            self.assertEqual(stdout, b"unhashable type: 'substr'\n")
+            self.assertEqual(stdout.rstrip(), b"unhashable type: 'substr'")
 
             with open(os.path.join(tmp, "main.py"), "w", encoding='utf-8') as f:
                 f.write("""
