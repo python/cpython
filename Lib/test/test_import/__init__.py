@@ -826,7 +826,7 @@ class ImportTests(unittest.TestCase):
             expected_error = (
                 rb"AttributeError: module 'numpy' has no attribute 'array' "
                 rb"\(consider renaming '.*numpy.py' if it has the "
-                rb"same name as a third party module you intended to import\)\n\Z"
+                rb"same name as a third-party module you intended to import\)\n\Z"
             )
 
             popen = script_helper.spawn_python(os.path.join(tmp, "numpy.py"))
