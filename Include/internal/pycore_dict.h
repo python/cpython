@@ -209,8 +209,14 @@ static inline PyDictUnicodeEntry* DK_UNICODE_ENTRIES(PyDictKeysObject *dk) {
 #define DICT_VERSION_INCREMENT (1 << DICT_MAX_WATCHERS)
 #define DICT_VERSION_MASK (DICT_VERSION_INCREMENT - 1)
 
+#ifdef Py_GIL_DISABLED
+#define DICT_NEXT_VERSION(INTERP) \
+    (_Py_atomic_add_uint64(&(INTERP)->dict_state.global_version, DICT_VERSION_INCREMENT) + DICT_VERSION_INCREMENT)
+
+#else
 #define DICT_NEXT_VERSION(INTERP) \
     ((INTERP)->dict_state.global_version += DICT_VERSION_INCREMENT)
+#endif
 
 void
 _PyDict_SendEvent(int watcher_bits,
