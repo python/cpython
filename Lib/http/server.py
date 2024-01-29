@@ -891,6 +891,26 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         as a default; however it would be permissible (if
         slow) to look inside the data to make a better guess.
 
+        >>> testserver = type('', (), {
+        ...  'makefile': lambda mode, bufsize: open(os.devnull, mode)
+        ... })
+        >>> testhandler = SimpleHTTPRequestHandler(testserver, None, None)
+        >>> testhandler.guess_type('/foo.bar.GZ')  # tests ext.lower()
+        'application/gzip'
+        >>> testhandler.default_content_type = 'nonesuch/nonesuch'
+        >>> testhandler.guess_type('/this/should/give/default')
+        'nonesuch/nonesuch'
+        >>> # check short-circuiting works
+        >>> mimetypes = type('', (), {
+        ...  'guess_type': lambda x: (print('foo'), print('bar'))
+        ... })
+        >>> testhandler.guess_type('/should/show/foo/bar/then/default')
+        foo
+        bar
+        'nonesuch/nonesuch'
+        >>> testhandler.guess_type('/should/not/print/foo.Z')
+        'application/octet-stream'
+
         """
         base, ext = posixpath.splitext(path)
         return self.extensions_map.get(ext) or \
