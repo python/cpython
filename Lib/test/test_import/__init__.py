@@ -892,6 +892,12 @@ try:
     collections.defaultdict
 except AttributeError as e:
     print(str(e))
+
+sys.path = [0]
+try:
+    collections.defaultdict
+except TypeError as e:
+    print(str(e))
 """)
 
             popen = script_helper.spawn_python("main.py", cwd=tmp)
@@ -901,6 +907,7 @@ except AttributeError as e:
                 [
                     b"module 'collections' has no attribute 'defaultdict'",
                     b"module 'collections' has no attribute 'defaultdict'",
+                    b"bad argument type for built-in operation",
                 ],
             )
 
