@@ -1,0 +1,3 @@
+Ensure that deprecation warning for 'N' specifier in :class:`~decimal.Decimal`
+format is not raised for cases where 'N' appears in other places
+in the format specifier. Based on patch by Stefan Krah.

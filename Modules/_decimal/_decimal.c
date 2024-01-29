@@ -3446,6 +3446,14 @@ dec_format(PyObject *dec, PyObject *args)
         if (fmt == NULL) {
             return NULL;
         }
+
+        if (size > 0 && fmt[size-1] == 'N') {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                             "Format specifier 'N' is deprecated", 1) < 0) {
+                return NULL;
+            }
+        }
+
         /* NOTE: If https://github.com/python/cpython/pull/29438 lands, the
          *   format string manipulation below can be eliminated by enhancing
          *   the forked mpd_parse_fmt_str(). */
@@ -3592,12 +3600,6 @@ dec_format(PyObject *dec, PyObject *args)
     size = strlen(decstring);
     if (replace_fillchar) {
         dec_replace_fillchar(decstring);
-    }
-    if (strchr(fmt, 'N') != NULL) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                         "Format specifier 'N' is deprecated", 1) < 0) {
-            goto finish;
-        }
     }
 
     result = PyUnicode_DecodeUTF8(decstring, size, NULL);
