@@ -908,7 +908,7 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
     }
 
     int is_possibly_shadowing = _is_module_possibly_shadowing(origin);
-    if (is_possibly_shadowing < 0) {
+    if (is_possibly_shadowing == -1) {
         goto done;
     }
     int is_possibly_shadowing_stdlib = 0;
