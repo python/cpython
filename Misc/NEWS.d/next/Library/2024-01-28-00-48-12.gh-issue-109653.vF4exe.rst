@@ -1,0 +1,1 @@
+Improve import time of :mod:`importlib.metadata` and :mod:`email.utils`.

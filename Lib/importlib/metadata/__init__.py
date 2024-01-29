@@ -1,7 +1,6 @@
 import os
 import re
 import abc
-import csv
 import sys
 import json
 import email
@@ -478,6 +477,10 @@ class Distribution(DeprecatedNonAbstract):
 
         @pass_none
         def make_files(lines):
+            # Delay csv import, since Distribution.files is not as widely used
+            # as other parts of importlib.metadata
+            import csv
+
             return starmap(make_file, csv.reader(lines))
 
         @pass_none
