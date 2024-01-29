@@ -816,7 +816,7 @@ _is_module_possibly_shadowing(PyObject *origin)
     if (size < 0) {
         return -1;
     }
-    assert(size < MAXPATHLEN);
+    assert(size <= MAXPATHLEN);
     sys_path_0[size] = L'\0';
     if (size == 0) {
         // if sys.path[0] == "", treat it as if it were the current directory
@@ -830,7 +830,7 @@ _is_module_possibly_shadowing(PyObject *origin)
     if (size < 0) {
         return -1;
     }
-    assert(size < MAXPATHLEN);
+    assert(size <= MAXPATHLEN);
     origin_dirname[size] = L'\0';
 
     wchar_t *sep = wcsrchr(origin_dirname, SEP);
