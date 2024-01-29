@@ -774,7 +774,6 @@ A ``TarInfo`` object has the following public data attributes:
       attribute.
 
 .. attribute:: TarInfo.type
-   :type: bytes
 
    File type.  *type* is usually one of these constants: :const:`REGTYPE`,
    :const:`AREGTYPE`, :const:`LNKTYPE`, :const:`SYMTYPE`, :const:`DIRTYPE`,
@@ -870,7 +869,6 @@ A ``TarInfo`` object has the following public data attributes:
 
 
 .. attribute:: TarInfo.sparse
-   :type: Optional[list]
 
    Sparse member information.
 
