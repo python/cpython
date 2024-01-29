@@ -1047,6 +1047,7 @@ extern "C" {
     INIT_ID(max_length), \
     INIT_ID(maxdigits), \
     INIT_ID(maxevents), \
+    INIT_ID(maxlen), \
     INIT_ID(maxmem), \
     INIT_ID(maxsplit), \
     INIT_ID(maxvalue), \
