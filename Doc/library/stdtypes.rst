@@ -2354,12 +2354,23 @@ True
    Return a string which is the concatenation of the strings in *iterable*.
    A :exc:`TypeError` will be raised if there are any non-string values in
    *iterable*, including :class:`bytes` objects.  The separator between
-   elements is the string providing this method. For example::
+   elements is the string providing this method.
 
-      >>> ', '.join(['spam', 'spam', 'spam'])
-      'spam, spam, spam'
-      >>> '-'.join('Python')
-      'P-y-t-h-o-n'
+   .. raw:: html
+
+      <dd>
+      <details>
+      <summary><a style="cursor:pointer;">See example</a></summary>
+
+   >>> ', '.join(['spam', 'spam', 'spam'])
+   'spam, spam, spam'
+   >>> '-'.join('Python')
+   'P-y-t-h-o-n'
+
+   .. raw:: html
+
+      </details>
+      </dd>
 
 
 .. method:: str.ljust(width[, fillchar])
@@ -2367,28 +2378,48 @@ True
    Return the string left justified in a string of length *width*. Padding is
    done using the specified *fillchar* (default is an ASCII space). The
    original string is returned if *width* is less than or equal to ``len(s)``.
-   For example::
-
-      >>> 'Python'.ljust(10)
-      'Python    '
-      >>> 'Python'.ljust(10, '.')
-      'Python....'
 
    See also :meth:`rjust`.
+
+   .. raw:: html
+
+      <dd>
+      <details>
+      <summary><a style="cursor:pointer;">See example</a></summary>
+
+   >>> 'Python'.ljust(10)
+   'Python    '
+   >>> 'Python'.ljust(10, '.')
+   'Python....'
+
+   .. raw:: html
+
+      </details>
+      </dd>
 
 
 .. method:: str.lower()
 
    Return a copy of the string with all the cased characters [4]_ converted to
-   lowercase. For example::
-
-      >>> 'Lower Method Example'.lower()
-      'lower method example'
+   lowercase.
 
    The lowercasing algorithm used is
    `described in section 3.13 'Default Case Folding' of the Unicode Standard
    <https://www.unicode.org/versions/Unicode15.1.0/ch03.pdf>`__.
 
+   .. raw:: html
+
+      <dd>
+      <details>
+      <summary><a style="cursor:pointer;">See example</a></summary>
+
+   >>> 'Lower Method Example'.lower()
+   'lower method example'
+
+   .. raw:: html
+
+      </details>
+      </dd>
 
 .. method:: str.lstrip([chars])
 
@@ -2396,23 +2427,25 @@ True
    argument is a string specifying the set of characters to be removed.  If omitted
    or ``None``, the *chars* argument defaults to removing whitespace.  The *chars*
    argument is not a prefix; rather, all combinations of its values are stripped.
-   For example::
 
-      >>> '   spacious   '.lstrip()
-      'spacious   '
-      >>> 'www.example.com'.lstrip('cmowz.')
-      'example.com'
+   See also :meth:`rstrip` and see :meth:`str.removeprefix` for a method that will
+   remove a single prefix string rather than all of a set of characters.
 
-   See :meth:`str.removeprefix` for a method that will remove a single prefix
-   string rather than all of a set of characters.  For example::
+   .. raw:: html
 
-      >>> 'Arthur: three!'.lstrip('Arthur: ')
-      'ee!'
-      >>> 'Arthur: three!'.removeprefix('Arthur: ')
-      'three!'
+      <dd>
+      <details>
+      <summary><a style="cursor:pointer;">See example</a></summary>
 
-   See also :meth:`rstrip`.
+   >>> '   spacious   '.lstrip()
+   'spacious   '
+   >>> 'www.example.com'.lstrip('cmowz.')
+   'example.com'
 
+   .. raw:: html
+
+      </details>
+      </dd>
 
 .. staticmethod:: str.maketrans(x[, y[, z]])
 
