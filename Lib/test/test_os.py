@@ -4536,13 +4536,46 @@ class FDInheritanceTests(unittest.TestCase):
         self.assertEqual(os.dup2(fd, fd3, inheritable=False), fd3)
         self.assertFalse(os.get_inheritable(fd3))
 
-    @unittest.skipUnless(hasattr(os, 'openpty'), "need os.openpty()")
+@unittest.skipUnless(hasattr(os, 'openpty'), "need os.openpty()")
+class PseudoterminalTests(unittest.TestCase):
+    def open_pty(self):
+        """Open a pty fd-pair, and schedule cleanup for it"""
+        main_fd, second_fd = os.openpty()
+        self.addCleanup(os.close, main_fd)
+        self.addCleanup(os.close, second_fd)
+        return main_fd, second_fd
+
     def test_openpty(self):
-        master_fd, slave_fd = os.openpty()
-        self.addCleanup(os.close, master_fd)
-        self.addCleanup(os.close, slave_fd)
-        self.assertEqual(os.get_inheritable(master_fd), False)
-        self.assertEqual(os.get_inheritable(slave_fd), False)
+        main_fd, second_fd = self.open_pty()
+        self.assertEqual(os.get_inheritable(main_fd), False)
+        self.assertEqual(os.get_inheritable(second_fd), False)
+
+    @unittest.skipUnless(hasattr(os, 'ptsname'), "need os.ptsname()")
+    @unittest.skipUnless(hasattr(os, 'O_RDWR'), "need os.O_RDWR")
+    @unittest.skipUnless(hasattr(os, 'O_NOCTTY'), "need os.O_NOCTTY")
+    def test_open_via_ptsname(self):
+        main_fd, second_fd = self.open_pty()
+        second_path = os.ptsname(main_fd)
+        reopened_second_fd = os.open(second_path, os.O_RDWR|os.O_NOCTTY)
+        self.addCleanup(os.close, reopened_second_fd)
+        os.write(reopened_second_fd, b'foo')
+        self.assertEqual(os.read(main_fd, 3), b'foo')
+
+    @unittest.skipUnless(hasattr(os, 'posix_openpt'), "need os.posix_openpt()")
+    @unittest.skipUnless(hasattr(os, 'grantpt'), "need os.grantpt()")
+    @unittest.skipUnless(hasattr(os, 'unlockpt'), "need os.unlockpt()")
+    @unittest.skipUnless(hasattr(os, 'ptsname'), "need os.ptsname()")
+    @unittest.skipUnless(hasattr(os, 'O_RDWR'), "need os.O_RDWR")
+    @unittest.skipUnless(hasattr(os, 'O_NOCTTY'), "need os.O_NOCTTY")
+    def test_posix_pty_functions(self):
+        mother_fd = os.posix_openpt(os.O_RDWR|os.O_NOCTTY)
+        self.addCleanup(os.close, mother_fd)
+        os.grantpt(mother_fd)
+        os.unlockpt(mother_fd)
+        son_path = os.ptsname(mother_fd)
+        son_fd = os.open(son_path, os.O_RDWR|os.O_NOCTTY)
+        self.addCleanup(os.close, son_fd)
+        self.assertEqual(os.ptsname(mother_fd), os.ttyname(son_fd))
 
     @unittest.skipUnless(hasattr(os, 'spawnl'), "need os.openpty()")
     def test_pipe_spawnl(self):

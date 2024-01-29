@@ -601,6 +601,9 @@
    bcopy. */
 #undef HAVE_GLIBC_MEMMOVE_BUG
 
+/* Define to 1 if you have the `grantpt' function. */
+#undef HAVE_GRANTPT
+
 /* Define to 1 if you have the <grp.h> header file. */
 #undef HAVE_GRP_H
 
@@ -899,6 +902,9 @@
 /* Define to 1 if you have the `posix_fallocate' function. */
 #undef HAVE_POSIX_FALLOCATE
 
+/* Define to 1 if you have the `posix_openpt' function. */
+#undef HAVE_POSIX_OPENPT
+
 /* Define to 1 if you have the `posix_spawn' function. */
 #undef HAVE_POSIX_SPAWN
 
@@ -950,6 +956,12 @@
 
 /* Define if platform requires stubbed pthreads support */
 #undef HAVE_PTHREAD_STUBS
+
+/* Define to 1 if you have the `ptsname' function. */
+#undef HAVE_PTSNAME
+
+/* Define to 1 if you have the `ptsname_r' function. */
+#undef HAVE_PTSNAME_R
 
 /* Define to 1 if you have the <pty.h> header file. */
 #undef HAVE_PTY_H
@@ -1458,6 +1470,9 @@
 
 /* Define to 1 if you have the `unlinkat' function. */
 #undef HAVE_UNLINKAT
+
+/* Define to 1 if you have the `unlockpt' function. */
+#undef HAVE_UNLOCKPT
 
 /* Define to 1 if you have the `unshare' function. */
 #undef HAVE_UNSHARE

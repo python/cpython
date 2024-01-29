@@ -1,0 +1,2 @@
+Add POSIX pseudo-terminal functions :func:`os.posix_openpt`,
+:func:`os.grantpt`, :func:`os.unlockpt`, and :func:`os.ptsname`.
