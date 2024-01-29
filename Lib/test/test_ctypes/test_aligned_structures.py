@@ -1,11 +1,10 @@
 from ctypes import (
     c_char, c_uint32, c_ubyte, alignment, sizeof,
-    Structure, BigEndianStructure, LittleEndianStructure,
-    Union, BigEndianUnion, LittleEndianUnion,
+    BigEndianStructure, LittleEndianStructure,
+    BigEndianUnion, LittleEndianUnion,
 )
 import inspect
 import unittest
-
 
 
 class TestAlignedStructures(unittest.TestCase):
@@ -24,7 +23,6 @@ class TestAlignedStructures(unittest.TestCase):
                 b'\x72\x6c\x64\x21\x00\x00\x00\x00'
             )),
         ):
-
             class Aligned(base):
                 _align_ = 16
                 _fields_ = [
@@ -128,53 +126,72 @@ class TestAlignedStructures(unittest.TestCase):
             self.assertEqual(main.b.y, 4)
 
     def test_aligned_union(self):
-        data = bytearray(b"\1\0\0\0\2\0\0\0\3\0\0\0\4\0\0\0")
+        for sbase, ubase, data in (
+            (LittleEndianStructure, LittleEndianUnion, bytearray(
+                b"\1\0\0\0\2\0\0\0\3\0\0\0\4\0\0\0"
+            )),
+            (BigEndianStructure, BigEndianUnion, bytearray(
+                b"\0\0\0\1\0\0\0\2\0\0\0\3\0\0\0\4"
+            )),
+        ):
+            class AlignedUnion(ubase):
+                _align_ = 8
+                _fields_ = [
+                    ("a", c_uint32),
+                    ("b", c_ubyte * 8),
+                ]
 
-        class AlignedUnion(Union):
-            _align_ = 8
-            _fields_ = [
-                ("a", c_uint32),
-                ("b", c_ubyte * 8),
-            ]
+            class Main(sbase):
+                _fields_ = [
+                    ("first", c_uint32),
+                    ("union", AlignedUnion),
+                ]
 
-        class Main(Structure):
-            _fields_ = [
-                ("first", c_uint32),
-                ("union", AlignedUnion),
-            ]
-
-        main = Main.from_buffer(data)
-        self.assertEqual(Main.union.offset, 8)
-        self.assertEqual(len(bytes(main.union.b)), 8)
+            main = Main.from_buffer(data)
+            self.assertEqual(main.first, 1)
+            self.assertEqual(main.union.a, 3)
+            if ubase == LittleEndianUnion:
+                self.assertEqual(bytes(main.union.b), b"\3\0\0\0\4\0\0\0")
+            else:
+                self.assertEqual(bytes(main.union.b), b"\0\0\0\3\0\0\0\4")
+            self.assertEqual(Main.union.offset, 8)
+            self.assertEqual(len(bytes(main.union.b)), 8)
 
     def test_aligned_struct_in_union(self):
-        data = bytearray(b"\1\0\0\0\2\0\0\0\3\0\0\3\4\0\0\4")
+        for sbase, ubase, data in (
+            (LittleEndianStructure, LittleEndianUnion, bytearray(
+                b"\1\0\0\0\2\0\0\0\3\0\0\0\4\0\0\0"
+            )),
+            (BigEndianStructure, BigEndianUnion, bytearray(
+                b"\0\0\0\1\0\0\0\2\0\0\0\3\0\0\0\4"
+            )),
+        ):
+            class Sub(sbase):
+                _align_ = 8
+                _fields_ = [
+                    ("x", c_uint32),
+                    ("y", c_uint32),
+                ]
 
-        class Sub(Structure):
-            _align_ = 8
-            _fields_ = [
-                ("x", c_uint32),
-                ("y", c_uint32),
-            ]
+            class MainUnion(ubase):
+                _fields_ = [
+                    ("a", c_uint32),
+                    ("b", Sub),
+                ]
 
-        class MainUnion(Union):
-            _fields_ = [
-                ("a", c_uint32),
-                ("b", Sub),
-            ]
+            class Main(sbase):
+                _fields_ = [
+                    ("first", c_uint32),
+                    ("union", MainUnion),
+                ]
 
-        class Main(Structure):
-            _fields_ = [
-                ("first", c_uint32),
-                ("union", MainUnion),
-            ]
-
-        main = Main.from_buffer(data)
-        self.assertEqual(Main.first.size, 4)
-        self.assertEqual(Main.union.offset, 8)
-        self.assertEqual(main.union.a, 0x03000003)
-        self.assertEqual(main.union.b.x, 0x03000003)
-        self.assertEqual(main.union.b.y, 0x04000004)
+            main = Main.from_buffer(data)
+            self.assertEqual(Main.first.size, 4)
+            self.assertEqual(Main.union.offset, 8)
+            self.assertEqual(main.first, 1)
+            self.assertEqual(main.union.a, 3)
+            self.assertEqual(main.union.b.x, 3)
+            self.assertEqual(main.union.b.y, 4)
 
 
 if __name__ == '__main__':
