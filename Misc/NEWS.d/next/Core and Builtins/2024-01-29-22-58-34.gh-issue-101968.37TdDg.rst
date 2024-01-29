@@ -1,0 +1,1 @@
+Fix possible segfault in ``positional_only_passed_as_keyword`` function, when new list created.
