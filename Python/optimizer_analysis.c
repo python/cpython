@@ -153,7 +153,6 @@ typedef struct _Py_UOpsAbstractInterpContext {
     PyObject_HEAD
     // The current "executing" frame.
     _Py_UOpsAbstractFrame *frame;
-    // Need one more for the root frame.
     _Py_UOpsAbstractFrame frames[MAX_ABSTRACT_FRAME_DEPTH];
     int curr_frame_depth;
 
@@ -213,11 +212,10 @@ abstractinterp_context_new(PyCodeObject *co,
     int stack_len = co->co_stacksize;
     _Py_UOpsAbstractFrame *frame = NULL;
     _Py_UOpsAbstractInterpContext *self = NULL;
-    char *arena = NULL;
     _Py_UOpsSymType *t_arena = NULL;
-    Py_ssize_t ty_arena_size = (sizeof(_Py_UOpsSymType)) * ir_entries * OVERALLOCATE_FACTOR;
+    int ty_arena_size = ir_entries * OVERALLOCATE_FACTOR;
 
-    t_arena = (_Py_UOpsSymType *)PyMem_Malloc(ty_arena_size);
+    t_arena = (_Py_UOpsSymType *)PyMem_New(_Py_UOpsSymType, ty_arena_size);
     if (t_arena == NULL) {
         goto error;
     }
@@ -237,7 +235,7 @@ abstractinterp_context_new(PyCodeObject *co,
     // Setup the arena for sym expressions.
     self->t_arena.ty_curr_number = 0;
     self->t_arena.arena = t_arena;
-    self->t_arena.ty_max_number = ir_entries * OVERALLOCATE_FACTOR;
+    self->t_arena.ty_max_number = ty_arena_size;
 
     // Frame setup
 
@@ -267,7 +265,6 @@ abstractinterp_context_new(PyCodeObject *co,
     return self;
 
 error:
-    PyMem_Free(arena);
     PyMem_Free(t_arena);
     if (self != NULL) {
         // Important so we don't double free them.
@@ -374,10 +371,6 @@ frame_new(_Py_UOpsAbstractInterpContext *ctx,
     assert(ctx->curr_frame_depth < MAX_ABSTRACT_FRAME_DEPTH);
     _Py_UOpsAbstractFrame *frame = &ctx->frames[ctx->curr_frame_depth];
     ctx->curr_frame_depth++;
-    if (frame == NULL) {
-        PyMem_Free(sym_consts);
-        return NULL;
-    }
 
 
     frame->sym_consts = sym_consts;
