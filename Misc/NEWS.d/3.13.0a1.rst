@@ -2276,7 +2276,7 @@ creation.
 .. nonce: m2H5Bk
 .. section: Library
 
-Remove unnecessary extra ``__slots__`` in :py:class:`datetime`\'s pure
+Remove unnecessary extra ``__slots__`` in :class:`~datetime.datetime`\'s pure
 python implementation to reduce memory size, as they are defined in the
 superclass. Patch by James Hilton-Balfe
 

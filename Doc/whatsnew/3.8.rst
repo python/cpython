@@ -754,8 +754,8 @@ datetime
 --------
 
 Added new alternate constructors :meth:`datetime.date.fromisocalendar` and
-:meth:`datetime.datetime.fromisocalendar`, which construct :class:`date` and
-:class:`datetime` objects respectively from ISO year, week number, and weekday;
+:meth:`datetime.datetime.fromisocalendar`, which construct :class:`~datetime.date` and
+:class:`~datetime.datetime` objects respectively from ISO year, week number, and weekday;
 these are the inverse of each class's ``isocalendar`` method.
 (Contributed by Paul Ganssle in :issue:`36004`.)
 
