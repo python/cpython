@@ -3570,7 +3570,7 @@ _imp_get_frozen_object_impl(PyObject *module, PyObject *name,
     struct frozen_info info = {0};
     Py_buffer buf = {0};
     if (PyObject_CheckBuffer(dataobj)) {
-        if (PyObject_GetBuffer(dataobj, &buf, PyBUF_READ) != 0) {
+        if (PyObject_GetBuffer(dataobj, &buf, PyBUF_SIMPLE) != 0) {
             return NULL;
         }
         info.data = (const char *)buf.buf;
