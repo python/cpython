@@ -17638,6 +17638,12 @@ then :
   printf "%s\n" "#define HAVE_GETWD 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "grantpt" "ac_cv_func_grantpt"
+if test "x$ac_cv_func_grantpt" = xyes
+then :
+  printf "%s\n" "#define HAVE_GRANTPT 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "if_nameindex" "ac_cv_func_if_nameindex"
 if test "x$ac_cv_func_if_nameindex" = xyes
 then :
@@ -17824,6 +17830,12 @@ then :
   printf "%s\n" "#define HAVE_POSIX_FALLOCATE 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "posix_openpt" "ac_cv_func_posix_openpt"
+if test "x$ac_cv_func_posix_openpt" = xyes
+then :
+  printf "%s\n" "#define HAVE_POSIX_OPENPT 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "posix_spawn" "ac_cv_func_posix_spawn"
 if test "x$ac_cv_func_posix_spawn" = xyes
 then :
@@ -17876,6 +17888,18 @@ ac_fn_c_check_func "$LINENO" "pthread_kill" "ac_cv_func_pthread_kill"
 if test "x$ac_cv_func_pthread_kill" = xyes
 then :
   printf "%s\n" "#define HAVE_PTHREAD_KILL 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "ptsname" "ac_cv_func_ptsname"
+if test "x$ac_cv_func_ptsname" = xyes
+then :
+  printf "%s\n" "#define HAVE_PTSNAME 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "ptsname_r" "ac_cv_func_ptsname_r"
+if test "x$ac_cv_func_ptsname_r" = xyes
+then :
+  printf "%s\n" "#define HAVE_PTSNAME_R 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "pwrite" "ac_cv_func_pwrite"
@@ -18284,6 +18308,12 @@ ac_fn_c_check_func "$LINENO" "unlinkat" "ac_cv_func_unlinkat"
 if test "x$ac_cv_func_unlinkat" = xyes
 then :
   printf "%s\n" "#define HAVE_UNLINKAT 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "unlockpt" "ac_cv_func_unlockpt"
+if test "x$ac_cv_func_unlockpt" = xyes
+then :
+  printf "%s\n" "#define HAVE_UNLOCKPT 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "utimensat" "ac_cv_func_utimensat"
