@@ -193,7 +193,7 @@ class Calendar(object):
     """
 
     def __init__(self, firstweekday=0):
-        self.firstweekday = firstweekday
+        self.firstweekday = firstweekday # 0 = Monday, 6 = Sunday
 
     def getfirstweekday(self):
         return self._firstweekday % 7
