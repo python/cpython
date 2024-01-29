@@ -739,7 +739,7 @@ def main(args):
     parser.add_argument(
         "year",
         nargs='?', type=int,
-        help="year number (1-9999)"
+        help="year number"
     )
     parser.add_argument(
         "month",
