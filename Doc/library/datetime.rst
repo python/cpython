@@ -2317,7 +2317,6 @@ Class attributes:
 .. _strftime-strptime-behavior:
 
 :meth:`~.datetime.strftime` and :meth:`~.datetime.strptime` Behavior
---------------------------------------------------------------------
 
 :class:`date`, :class:`.datetime`, and :class:`.time` objects all support a
 ``strftime(format)`` method, to create a string representing the time under the
@@ -2327,8 +2326,8 @@ Conversely, the :meth:`datetime.strptime` class method creates a
 :class:`.datetime` object from a string representing a date and time and a
 corresponding format string.
 
-The table below provides a high-level comparison of :meth:`strftime<datetime.strftime>`
-versus :meth:`strptime<datetime.strptime>`:
+The table below provides a high-level comparison of :meth:`~.datetime.strftime`
+versus :meth:`~.datetime.strptime`:
 
 +----------------+--------------------------------------------------------+------------------------------------------------------------------------------+
 |                | ``strftime``                                           | ``strptime``                                                                 |
@@ -2345,7 +2344,7 @@ versus :meth:`strptime<datetime.strptime>`:
 
    .. _format-codes:
 
-:meth:`strftime<datetime.strftime>` and :meth:`strptime<datetime.strptime>` Format Codes
+:meth:`~.datetime.strftime` and :meth:`~.datetime.strptime` Format Codes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 These methods accept format codes that can be used to parse and format dates::
@@ -2544,19 +2543,19 @@ Notes:
    contain non-ASCII characters.
 
 (2)
-   The :meth:`strptime<datetime.strptime>` method can parse years in the full [1, 9999] range, but
+   The :meth:`~.datetime.strptime` method can parse years in the full [1, 9999] range, but
    years < 1000 must be zero-filled to 4-digit width.
 
    .. versionchanged:: 3.2
-      In previous versions, :meth:`strftime<datetime.strftime>` method was restricted to
+      In previous versions, :meth:`~.datetime.strftime` method was restricted to
       years >= 1900.
 
    .. versionchanged:: 3.3
-      In version 3.2, :meth:`strftime<datetime.strftime>` method was restricted to
+      In version 3.2, :meth:`~.datetime.strftime` method was restricted to
       years >= 1000.
 
 (3)
-   When used with the :meth:`strptime<datetime.strptime>` method, the ``%p`` directive only affects
+   When used with the :meth:`~.datetime.strptime` method, the ``%p`` directive only affects
    the output hour field if the ``%I`` directive is used to parse the hour.
 
 (4)
@@ -2564,7 +2563,7 @@ Notes:
    leap seconds.
 
 (5)
-   When used with the :meth:`strptime<datetime.strptime>` method, the ``%f`` directive
+   When used with the :meth:`~.datetime.strptime` method, the ``%f`` directive
    accepts from one to six digits and zero pads on the right. ``%f`` is
    an extension to the set of format characters in the C standard (but
    implemented separately in datetime objects, and therefore always
@@ -2577,7 +2576,7 @@ Notes:
    For an aware object:
 
    ``%z``
-      :meth:`utcoffset<datetime.utcoffset>` is transformed into a string of the form
+      :meth:`~.datetime.utcoffset` is transformed into a string of the form
       ``±HHMM[SS[.ffffff]]``, where ``HH`` is a 2-digit string giving the number
       of UTC offset hours, ``MM`` is a 2-digit string giving the number of UTC
       offset minutes, ``SS`` is a 2-digit string giving the number of UTC offset
@@ -2585,14 +2584,14 @@ Notes:
       offset microseconds. The ``ffffff`` part is omitted when the offset is a
       whole number of seconds and both the ``ffffff`` and the ``SS`` part is
       omitted when the offset is a whole number of minutes. For example, if
-      :meth:`utcoffset<datetime.utcoffset>` returns ``timedelta(hours=-3, minutes=-30)``, ``%z`` is
+      :meth:`~.datetime.utcoffset` returns ``timedelta(hours=-3, minutes=-30)``, ``%z`` is
       replaced with the string ``'-0330'``.
 
    .. versionchanged:: 3.7
       The UTC offset is not restricted to a whole number of minutes.
 
    .. versionchanged:: 3.7
-      When the ``%z`` directive is provided to the  :meth:`strptime<datetime.strptime>` method,
+      When the ``%z`` directive is provided to the  :meth:`~.datetime.strptime` method,
       the UTC offsets can have a colon as a separator between hours, minutes
       and seconds.
       For example, ``'+01:00:00'`` will be parsed as an offset of one hour.
@@ -2603,11 +2602,11 @@ Notes:
       hours, minutes and seconds.
 
    ``%Z``
-      In :meth:`strftime<datetime.strftime>`, ``%Z`` is replaced by an empty string if
-      :meth:`tzname<datetime.tzname>` returns ``None``; otherwise ``%Z`` is replaced by the
+      In :meth:`~.datetime.strftime`, ``%Z`` is replaced by an empty string if
+      :meth:`~.datetime.tzname` returns ``None``; otherwise ``%Z`` is replaced by the
       returned value, which must be a string.
 
-      :meth:`strptime<datetime.strptime>` only accepts certain values for ``%Z``:
+      :meth:`~.datetime.strptime` only accepts certain values for ``%Z``:
 
       1. any value in ``time.tzname`` for your machine's locale
       2. the hard-coded values ``UTC`` and ``GMT``
@@ -2617,23 +2616,23 @@ Notes:
       invalid values.
 
    .. versionchanged:: 3.2
-      When the ``%z`` directive is provided to the :meth:`strptime<datetime.strptime>` method, an
+      When the ``%z`` directive is provided to the :meth:`~.datetime.strptime` method, an
       aware :class:`.datetime` object will be produced. The ``tzinfo`` of the
       result will be set to a :class:`timezone` instance.
 
 (7)
-   When used with the :meth:`strptime<datetime.strptime>` method, ``%U`` and ``%W`` are only used
+   When used with the :meth:`~.datetime.strptime` method, ``%U`` and ``%W`` are only used
    in calculations when the day of the week and the calendar year (``%Y``)
    are specified.
 
 (8)
    Similar to ``%U`` and ``%W``, ``%V`` is only used in calculations when the
    day of the week and the ISO year (``%G``) are specified in a
-   :meth:`strptime<datetime.strptime>` format string. Also note that ``%G`` and ``%Y`` are not
+   :meth:`~.datetime.strptime` format string. Also note that ``%G`` and ``%Y`` are not
    interchangeable.
 
 (9)
-   When used with the :meth:`strptime<datetime.strptime>` method, the leading zero is optional
+   When used with the :meth:`~.datetime.strptime` method, the leading zero is optional
    for  formats ``%d``, ``%m``, ``%H``, ``%I``, ``%M``, ``%S``, ``%j``, ``%U``,
    ``%W``, and ``%V``. Format ``%y`` does require a leading zero.
 
