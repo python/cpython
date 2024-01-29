@@ -341,7 +341,7 @@ Glossary
    docstring
       A string literal which appears as the first expression in a class,
       function or module.  While ignored when the suite is executed, it is
-      recognized by the compiler and put into the :attr:`__doc__` attribute
+      recognized by the compiler and put into the :attr:`!__doc__` attribute
       of the enclosing class, function or module.  Since it is available via
       introspection, it is the canonical place for documentation of the
       object.
@@ -754,7 +754,7 @@ Glossary
 
    loader
       An object that loads a module. It must define a method named
-      :meth:`load_module`. A loader is typically returned by a
+      :meth:`!load_module`. A loader is typically returned by a
       :term:`finder`. See :pep:`302` for details and
       :class:`importlib.abc.Loader` for an :term:`abstract base class`.
 
@@ -1104,7 +1104,7 @@ Glossary
       The :class:`collections.abc.Sequence` abstract base class
       defines a much richer interface that goes beyond just
       :meth:`~object.__getitem__` and :meth:`~object.__len__`, adding
-      :meth:`count`, :meth:`index`, :meth:`~object.__contains__`, and
+      :meth:`!count`, :meth:`!index`, :meth:`~object.__contains__`, and
       :meth:`~object.__reversed__`. Types that implement this expanded
       interface can be registered explicitly using
       :func:`~abc.ABCMeta.register`.
