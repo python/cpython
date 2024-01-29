@@ -841,7 +841,7 @@ class ImportTests(unittest.TestCase):
             stdout, stderr = popen.communicate()
             self.assertRegex(stdout, expected_error)
 
-    def test_script_possibly_shadowing(self):
+    def test_script_maybe_not_shadowing_third_party(self):
         with os_helper.temp_dir() as tmp:
             with open(os.path.join(tmp, "numpy.py"), "w", encoding='utf-8') as f:
                 f.write("this_script_does_not_attempt_to_import_numpy = True")
@@ -854,8 +854,7 @@ class ImportTests(unittest.TestCase):
             stdout, stderr = popen.communicate()
             self.assertRegex(stdout, expected_error)
 
-
-    def test_shadowing_stdlib_sys_edge_cases(self):
+    def test_script_shadowing_stdlib_edge_cases(self):
         with os_helper.temp_dir() as tmp:
             with open(os.path.join(tmp, "collections.py"), "w", encoding='utf-8') as f:
                 f.write("shadowing_module = True")
