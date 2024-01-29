@@ -36,8 +36,8 @@
 
 #define PEEPHOLE_MAX_ATTEMPTS 5
 
-// +1 to account for implicit root frame.
-#define MAX_ABSTRACT_FRAME_DEPTH (TRACE_STACK_SIZE + 1)
+// + buffer to account for implicit root frame.
+#define MAX_ABSTRACT_FRAME_DEPTH (TRACE_STACK_SIZE + 2)
 
 #ifdef Py_DEBUG
     static const char *const DEBUG_ENV = "PYTHON_OPT_DEBUG";
@@ -371,9 +371,9 @@ frame_new(_Py_UOpsAbstractInterpContext *ctx,
     if (sym_consts == NULL) {
         return NULL;
     }
+    assert(ctx->curr_frame_depth < MAX_ABSTRACT_FRAME_DEPTH);
     _Py_UOpsAbstractFrame *frame = &ctx->frames[ctx->curr_frame_depth];
     ctx->curr_frame_depth++;
-    assert(ctx->curr_frame_depth <= MAX_ABSTRACT_FRAME_DEPTH);
     if (frame == NULL) {
         PyMem_Free(sym_consts);
         return NULL;

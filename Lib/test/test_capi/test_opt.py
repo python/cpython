@@ -2,6 +2,7 @@ import contextlib
 import opcode
 import textwrap
 import unittest
+import gc
 
 import _testinternalcapi
 
@@ -869,6 +870,31 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_SHRINK_STACK", uops)
         iter_next_count = [opname for opname, _, _ in ex if opname == "_ITER_NEXT_RANGE"]
         self.assertGreaterEqual(len(iter_next_count), 2)
+
+    def test_call_py_exact_args_disappearing(self):
+        def dummy(x):
+            return x+1
+
+        def testfunc(n):
+            for i in range(n):
+                dummy(i)
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        # Trigger specialization
+        testfunc(8)
+        with temporary_optimizer(opt):
+            del dummy
+            gc.collect()
+
+            def dummy(x):
+                return x + 2
+            testfunc(10)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _, _ in ex}
+        self.assertIn("_PUSH_FRAME", uops)
+        self.assertNotIn("_CHECK_PEP_523", uops)
 
     def test_truncated_zipfile(self):
         import io
