@@ -2266,8 +2266,7 @@ else:
             server = ThreadedEchoServer(context=server_context, chatty=True)
             with server:
                 with closing(context.wrap_socket(socket.socket())) as s:
-                    with self.assertRaisesRegexp(ssl.SSLError,
-                                                "certificate verify failed"):
+                    with self.assertRaisesRegexp(ssl.SSLError, "certificate verify failed"):
                         s.connect((HOST, server.port))
 
             # now load a CRL file. The CRL file is signed by the CA.
@@ -2295,8 +2294,7 @@ else:
             # correct hostname should verify
             server = ThreadedEchoServer(context=server_context, chatty=True)
             with server:
-                with closing(context.wrap_socket(socket.socket(),
-                                                 server_hostname="localhost")) as s:
+                with closing(context.wrap_socket(socket.socket(), server_hostname="localhost")) as s:
                     s.connect((HOST, server.port))
                     cert = s.getpeercert()
                     self.assertTrue(cert, "Can't get peer certificate.")
@@ -2304,8 +2302,7 @@ else:
             # incorrect hostname should raise an exception
             server = ThreadedEchoServer(context=server_context, chatty=True)
             with server:
-                with closing(context.wrap_socket(socket.socket(),
-                                                 server_hostname="invalid")) as s:
+                with closing(context.wrap_socket(socket.socket(), server_hostname="invalid")) as s:
                     with self.assertRaisesRegexp(ssl.CertificateError,
                                                 "hostname 'invalid' doesn't match u?'localhost'"):
                         s.connect((HOST, server.port))
@@ -3282,10 +3279,9 @@ else:
 
             server = ThreadedEchoServer(context=server_context, chatty=False)
             with server:
-                with client_context.wrap_socket(socket.socket(),
-                                                server_hostname=hostname) as s:
+                with closing (client_context.wrap_socket(socket.socket(), server_hostname=hostname)) as s:
                     s.connect((HOST, server.port))
-                    with self.assertRaisesRegex(ssl.SSLError, 'not server'):
+                    with self.assertRaisesRegexp(ssl.SSLError, 'not server'):
                         s.verify_client_post_handshake()
                     s.write(b'PHA')
                     self.assertIn(b'extension not received', s.recv(1024))
@@ -3299,8 +3295,7 @@ else:
 
             server = ThreadedEchoServer(context=server_context, chatty=False)
             with server:
-                with client_context.wrap_socket(socket.socket(),
-                                                server_hostname=hostname) as s:
+                with closing(client_context.wrap_socket(socket.socket(), server_hostname=hostname)) as s:
                     s.connect((HOST, server.port))
                     s.write(b'HASCERT')
                     self.assertEqual(s.recv(1024), b'TRUE\n')
@@ -3346,8 +3341,7 @@ else:
 
             server = ThreadedEchoServer(context=server_context, chatty=False)
             with server:
-                with client_context.wrap_socket(socket.socket(),
-                                                server_hostname=hostname) as s:
+                with closing(client_context.wrap_socket(socket.socket(), server_hostname=hostname)) as s:
                     s.connect((HOST, server.port))
                     s.write(b'HASCERT')
                     self.assertEqual(s.recv(1024), b'FALSE\n')
@@ -3400,8 +3394,7 @@ class TestSSLDebug(unittest.TestCase):
         client_context.keylog_filename = support.TESTFN
         server = ThreadedEchoServer(context=server_context, chatty=False)
         with server:
-            with client_context.wrap_socket(socket.socket(),
-                                            server_hostname=hostname) as s:
+            with closing(client_context.wrap_socket(socket.socket(), server_hostname=hostname)) as s:
                 s.connect((HOST, server.port))
         # header, 5 lines for TLS 1.3
         self.assertEqual(self.keylog_lines(), 6)
@@ -3410,8 +3403,7 @@ class TestSSLDebug(unittest.TestCase):
         server_context.keylog_filename = support.TESTFN
         server = ThreadedEchoServer(context=server_context, chatty=False)
         with server:
-            with client_context.wrap_socket(socket.socket(),
-                                            server_hostname=hostname) as s:
+            with closing(client_context.wrap_socket(socket.socket(), server_hostname=hostname)) as s:
                 s.connect((HOST, server.port))
         self.assertGreaterEqual(self.keylog_lines(), 11)
 
@@ -3419,8 +3411,7 @@ class TestSSLDebug(unittest.TestCase):
         server_context.keylog_filename = support.TESTFN
         server = ThreadedEchoServer(context=server_context, chatty=False)
         with server:
-            with client_context.wrap_socket(socket.socket(),
-                                            server_hostname=hostname) as s:
+            with closing(client_context.wrap_socket(socket.socket(), server_hostname=hostname)) as s:
                 s.connect((HOST, server.port))
         self.assertGreaterEqual(self.keylog_lines(), 21)
 
@@ -3473,8 +3464,7 @@ class TestSSLDebug(unittest.TestCase):
 
         server = ThreadedEchoServer(context=server_context, chatty=False)
         with server:
-            with client_context.wrap_socket(socket.socket(),
-                                            server_hostname=hostname) as s:
+            with closing(client_context.wrap_socket(socket.socket(), server_hostname=hostname)) as s:
                 s.connect((HOST, server.port))
 
         self.assertIn(
@@ -3503,11 +3493,9 @@ class TestSSLDebug(unittest.TestCase):
 
         server = ThreadedEchoServer(context=server_context, chatty=False)
         with server:
-            with client_context.wrap_socket(socket.socket(),
-                                            server_hostname=hostname) as s:
+            with closing(client_context.wrap_socket(socket.socket(), server_hostname=hostname)) as s:
                 s.connect((HOST, server.port))
-            with client_context.wrap_socket(socket.socket(),
-                                            server_hostname=hostname) as s:
+            with closing(client_context.wrap_socket(socket.socket(), server_hostname=hostname)) as s:
                 s.connect((HOST, server.port))
 
 
@@ -3747,8 +3735,7 @@ class TestPreHandshakeClose(unittest.TestCase):
 
         server = ThreadedEchoServer(context=server_context, chatty=False)
         with server:
-            with client_context.wrap_socket(socket.socket(),
-                                            server_hostname=hostname) as s:
+            with closing(client_context.wrap_socket(socket.socket(), server_hostname=hostname)) as s:
                 s.connect((HOST, server.port))
                 s.write(b'HASCERT')
                 self.assertEqual(s.recv(1024), b'FALSE\n')
