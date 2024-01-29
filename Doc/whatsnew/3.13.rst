@@ -95,9 +95,8 @@ Improved Error Messages
   (Contributed by Pablo Galindo Salgado in :gh:`112730`.)
 
 * A common mistake is to write a script with the same name as a
-  standard library module. The interpreter now detects this and
-  displays a more helpful error message.
-  (Contributed by Shantanu Jain in :gh:`95754`.)
+  standard library module. When this results in errors, we now
+  display a more helpful error message:
 
   .. code-block:: shell-session
 
@@ -109,7 +108,25 @@ Improved Error Messages
       File "/home/random.py", line 1, in <module>
         import random; print(random.randint(5))
                             ^^^^^^^^^^^^^^
-    AttributeError: module 'random' has no attribute 'randint' (most likely due to '/home/random.py' shadowing the standard library module named 'random')
+    AttributeError: module 'random' has no attribute 'randint' (consider renaming '/home/random.py' since it has the same name as the standard library module named 'random')
+
+  Similarly, if a script has the same name as a third party
+  module it attempts to import, we also display a more helpful
+  error message:
+
+  .. code-block:: shell-session
+
+    $ python numpy.py
+    Traceback (most recent call last):
+      File "/home/numpy.py", line 1, in <module>
+        import numpy as np; np.array([1,2,3])
+        ^^^^^^^^^^^^^^^^^^
+      File "/home/numpy.py", line 1, in <module>
+        import numpy as np; np.array([1,2,3])
+                            ^^^^^^^^
+    AttributeError: module 'numpy' has no attribute 'array' (consider renaming '/home/numpy.py' if it has the same name as a third party module you intended to import)
+
+  (Contributed by Shantanu Jain in :gh:`95754`.)
 
 
 Other Language Changes
