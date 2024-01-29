@@ -1049,6 +1049,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(max_length));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(maxdigits));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(maxevents));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(maxlen));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(maxmem));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(maxsplit));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(maxvalue));
