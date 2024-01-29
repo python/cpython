@@ -27,7 +27,7 @@ jobs:
     env:
       OPENSSL_VER: 1.1.1k
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Install Dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
     - name: 'Restore OpenSSL build'
@@ -76,7 +76,7 @@ jobs:
     name: 'Ubuntu (C Coverage)'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Install Dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
     - name: Configure CPython

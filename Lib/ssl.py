@@ -1049,7 +1049,11 @@ class SSLSocket(socket):
                     self.close()
                 except OSError:
                     pass
-                raise notconn_pre_handshake_data_error
+                try:
+                    raise notconn_pre_handshake_data_error
+                finally:
+                    # Explicitly break the reference cycle.
+                    notconn_pre_handshake_data_error = None
         else:
             connected = True
 

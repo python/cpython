@@ -268,6 +268,22 @@ def _mkstemp_inner(dir, pre, suf, flags, output_type):
     raise FileExistsError(_errno.EEXIST,
                           "No usable temporary file name found")
 
+def _dont_follow_symlinks(func, path, *args):
+    # Pass follow_symlinks=False, unless not supported on this platform.
+    if func in _os.supports_follow_symlinks:
+        func(path, *args, follow_symlinks=False)
+    elif _os.name == 'nt' or not _os.path.islink(path):
+        func(path, *args)
+
+def _resetperms(path):
+    try:
+        chflags = _os.chflags
+    except AttributeError:
+        pass
+    else:
+        _dont_follow_symlinks(chflags, path, 0)
+    _dont_follow_symlinks(_os.chmod, path, 0o700)
+
 
 # User visible interfaces.
 
@@ -789,17 +805,10 @@ class TemporaryDirectory(object):
     def _rmtree(cls, name):
         def onerror(func, path, exc_info):
             if issubclass(exc_info[0], PermissionError):
-                def resetperms(path):
-                    try:
-                        _os.chflags(path, 0)
-                    except AttributeError:
-                        pass
-                    _os.chmod(path, 0o700)
-
                 try:
                     if path != name:
-                        resetperms(_os.path.dirname(path))
-                    resetperms(path)
+                        _resetperms(_os.path.dirname(path))
+                    _resetperms(path)
 
                     try:
                         _os.unlink(path)
