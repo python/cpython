@@ -668,6 +668,7 @@ be finalized; only the internally used file object will be closed. See the
 
 
 .. attribute:: TarFile.pax_headers
+   :type: dict
 
    A dictionary containing key-value pairs of pax global headers.
 
@@ -833,26 +834,31 @@ A ``TarInfo`` object has the following public data attributes:
       attribute.
 
 .. attribute:: TarInfo.chksum
+   :type: int
 
    Header checksum.
 
 
 .. attribute:: TarInfo.devmajor
+   :type: int
 
    Device major number.
 
 
 .. attribute:: TarInfo.devminor
+   :type: int
 
    Device minor number.
 
 
 .. attribute:: TarInfo.offset
+   :type: int
 
    The tar header starts here.
 
 
 .. attribute:: TarInfo.offset_data
+   :type: int
 
    The file's data starts here.
 
