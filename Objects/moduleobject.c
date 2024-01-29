@@ -786,6 +786,60 @@ _PyModuleSpec_IsUninitializedSubmodule(PyObject *spec, PyObject *name)
     return rc;
 }
 
+int
+_is_module_possibly_shadowing(PyObject *origin)
+{
+    // origin must be a unicode subtype
+    // Returns 1 if the module at origin could be shadowing a module of the
+    // same name. The exact condition we check is:
+    // not sys.flags.safe_path and os.path.dirname(origin) == sys.path[0]
+    // Returns 0 otherwise (or if we aren't sure)
+    // Returns -1 if an error occurred that should be propagated
+    if (origin == NULL) {
+        return 0;
+    }
+    const PyConfig *config = _Py_GetConfig();
+    if (config->safe_path) {
+        return 0;
+    }
+
+    PyObject *sys_path = PySys_GetObject(&_Py_ID(path));
+    if (sys_path == NULL || !PyList_Check(sys_path) || PyList_GET_SIZE(sys_path) == 0) {
+        return 0;
+    }
+    wchar_t sys_path_0[MAXPATHLEN];
+    int rc = PyUnicode_AsWideChar(PyList_GET_ITEM(sys_path, 0), sys_path_0, MAXPATHLEN - 1);
+    if (rc < 0) {
+        return -1;
+    }
+    assert(rc < MAXPATHLEN);
+    sys_path_0[rc] = L'\0';
+    if (rc == 0) {
+        // if sys.path[0] == "", treat it as if it were the current directory
+        if (!_Py_wgetcwd(sys_path_0, MAXPATHLEN)) {
+            return -1;
+        }
+    }
+
+    wchar_t origin_dirname[MAXPATHLEN];
+    rc = PyUnicode_AsWideChar(origin, origin_dirname, MAXPATHLEN - 1);
+    if (rc < 0) {
+        return -1;
+    }
+    assert(rc < MAXPATHLEN);
+    origin_dirname[rc] = L'\0';
+
+    wchar_t *sep = wcsrchr(origin_dirname, SEP);
+    if (!sep) {
+        return 0;
+    }
+    *sep = L'\0';
+    if (wcscmp(sys_path_0, origin_dirname) == 0) {
+        return 1;
+    }
+    return 0;
+}
+
 PyObject*
 _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
 {
@@ -853,44 +907,42 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
         }
     }
 
-    bool is_script_shadowing_stdlib = 0;
-    // Check mod.__name__ in sys.stdlib_module_names
-    // and os.path.dirname(mod.__spec__.origin) == os.getcwd()
-    if (origin) {
-        PyObject *stdlib = PySys_GetObject("stdlib_module_names");
-        if (stdlib && PyAnySet_Check(stdlib)) {
-            int rc = PySet_Contains(stdlib, mod_name);
-            if (rc == 1) {
-                wchar_t cwd[MAXPATHLEN], origin_dirname[MAXPATHLEN];
-                if (_Py_wgetcwd(cwd, MAXPATHLEN)) {
-                    if (PyUnicode_AsWideChar(origin, origin_dirname, MAXPATHLEN) < 0) {
-                        goto done;
-                    }
-                    wchar_t *sep = wcsrchr(origin_dirname, SEP);
-                    if (sep) {
-                        *sep = L'\0';
-                        if (wcscmp(cwd, origin_dirname) == 0) {
-                            is_script_shadowing_stdlib = 1;
-                        }
-                    }
-                }
-            }
-            else if (rc == -1) {
+    int is_possibly_shadowing = _is_module_possibly_shadowing(origin);
+    if (is_possibly_shadowing < 0) {
+        goto done;
+    }
+    int is_possibly_shadowing_stdlib = 0;
+    if (is_possibly_shadowing == 1) {
+        PyObject *stdlib_modules = PySys_GetObject("stdlib_module_names");
+        if (stdlib_modules && PyAnySet_Check(stdlib_modules)) {
+            is_possibly_shadowing_stdlib = PySet_Contains(stdlib_modules, mod_name);
+            if (is_possibly_shadowing_stdlib == -1) {
                 goto done;
             }
         }
     }
 
-    if (is_script_shadowing_stdlib == 1) {
+    if (is_possibly_shadowing_stdlib) {
+        assert(origin);
         PyErr_Format(PyExc_AttributeError,
                     "module '%U' has no attribute '%U' "
-                    "(most likely due to '%U' shadowing the standard library "
-                    "module named '%U')",
+                    "(consider renaming '%U' since it has the same "
+                    "name as the standard library module named '%U')",
                     mod_name, name, origin, mod_name);
     } else {
         int rc = _PyModuleSpec_IsInitializing(spec);
         if (rc > 0) {
-            if (origin) {
+            if (is_possibly_shadowing) {
+                assert(origin);
+                // For third party modules, only mention the possibility of
+                // shadowing if the module is being initialized.
+                PyErr_Format(PyExc_AttributeError,
+                            "module '%U' has no attribute '%U' "
+                            "(consider renaming '%U' if it has the same name "
+                            "as a third party module you intended to import)",
+                            mod_name, name, origin);
+            }
+            else if (origin) {
                 PyErr_Format(PyExc_AttributeError,
                             "partially initialized "
                             "module '%U' from '%U' has no attribute '%U' "
