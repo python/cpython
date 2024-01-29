@@ -580,14 +580,22 @@ class ReprTests(unittest.TestCase):
                 with self.assertRaisesRegex(expected_error, expected_msg):
                     r.repr(test_object)
 
-    def test_shadowed_builtin(self):
-        # Issue #113570: repr() should not be fooled by a shadowed builtin
-        # function
+    def test_shadowed_stdlib_array(self):
+        # Issue #113570: repr() should not be fooled by an array
         class array:
             def __repr__(self):
                 return "not array.array"
 
         self.assertEqual(r(array()), "not array.array")
+
+    def test_shadowed_builtin(self):
+        # Issue #113570: repr() should not be fooled
+        # by a shadowed builtin function
+        class list:
+            def __repr__(self):
+                return "not builtins.list"
+
+        self.assertEqual(r(list()), "not builtins.list")
 
     def test_custom_repr(self):
         class MyRepr(Repr):
