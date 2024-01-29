@@ -786,7 +786,7 @@ _PyModuleSpec_IsUninitializedSubmodule(PyObject *spec, PyObject *name)
     return rc;
 }
 
-int
+static int
 _is_module_possibly_shadowing(PyObject *origin)
 {
     // origin must be a unicode subtype
