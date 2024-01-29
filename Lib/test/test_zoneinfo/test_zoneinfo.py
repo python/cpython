@@ -36,6 +36,7 @@ ZONEINFO_DATA_V1 = None
 TEMP_DIR = None
 DATA_DIR = pathlib.Path(__file__).parent / "data"
 ZONEINFO_JSON = DATA_DIR / "zoneinfo_data.json"
+DRIVE = os.path.splitdrive('x:')[0]
 
 # Useful constants
 ZERO = timedelta(0)
@@ -1679,8 +1680,8 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
         """Tests that the environment variable works with reset_tzpath."""
         new_paths = [
             ("", []),
-            ("/etc/zoneinfo", ["/etc/zoneinfo"]),
-            (f"/a/b/c{os.pathsep}/d/e/f", ["/a/b/c", "/d/e/f"]),
+            (f"{DRIVE}/etc/zoneinfo", [f"{DRIVE}/etc/zoneinfo"]),
+            (f"{DRIVE}/a/b/c{os.pathsep}{DRIVE}/d/e/f", [f"{DRIVE}/a/b/c", f"{DRIVE}/d/e/f"]),
         ]
 
         for new_path_var, expected_result in new_paths:
@@ -1694,22 +1695,22 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
         test_cases = [
             [("path/to/somewhere",), ()],
             [
-                ("/usr/share/zoneinfo", "path/to/somewhere",),
-                ("/usr/share/zoneinfo",),
+                (f"{DRIVE}/usr/share/zoneinfo", "path/to/somewhere",),
+                (f"{DRIVE}/usr/share/zoneinfo",),
             ],
             [("../relative/path",), ()],
             [
-                ("/usr/share/zoneinfo", "../relative/path",),
-                ("/usr/share/zoneinfo",),
+                (f"{DRIVE}/usr/share/zoneinfo", "../relative/path",),
+                (f"{DRIVE}/usr/share/zoneinfo",),
             ],
             [("path/to/somewhere", "../relative/path",), ()],
             [
                 (
-                    "/usr/share/zoneinfo",
+                    f"{DRIVE}/usr/share/zoneinfo",
                     "path/to/somewhere",
                     "../relative/path",
                 ),
-                ("/usr/share/zoneinfo",),
+                (f"{DRIVE}/usr/share/zoneinfo",),
             ],
         ]
 
@@ -1727,9 +1728,9 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
                     self.assertSequenceEqual(tzpath, expected_paths)
 
     def test_reset_tzpath_kwarg(self):
-        self.module.reset_tzpath(to=["/a/b/c"])
+        self.module.reset_tzpath(to=[f"{DRIVE}/a/b/c"])
 
-        self.assertSequenceEqual(self.module.TZPATH, ("/a/b/c",))
+        self.assertSequenceEqual(self.module.TZPATH, (f"{DRIVE}/a/b/c",))
 
     def test_reset_tzpath_relative_paths(self):
         bad_values = [
@@ -1758,8 +1759,8 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
                     self.module.reset_tzpath(bad_value)
 
     def test_tzpath_attribute(self):
-        tzpath_0 = ["/one", "/two"]
-        tzpath_1 = ["/three"]
+        tzpath_0 = [f"{DRIVE}/one", f"{DRIVE}/two"]
+        tzpath_1 = [f"{DRIVE}/three"]
 
         with self.tzpath_context(tzpath_0):
             query_0 = self.module.TZPATH

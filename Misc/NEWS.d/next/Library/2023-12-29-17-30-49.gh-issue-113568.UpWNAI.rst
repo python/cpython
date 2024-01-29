@@ -1,2 +1,0 @@
-Raise audit events from :class:`pathlib.Path` and not its private base class
-``PathBase``.

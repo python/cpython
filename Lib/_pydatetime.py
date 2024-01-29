@@ -2347,6 +2347,9 @@ class timezone(tzinfo):
                              "timedelta(hours=24).")
         return cls._create(offset, name)
 
+    def __init_subclass__(cls):
+        raise TypeError("type 'datetime.timezone' is not an acceptable base type")
+
     @classmethod
     def _create(cls, offset, name=None):
         self = tzinfo.__new__(cls)

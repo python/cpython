@@ -2693,13 +2693,19 @@ class _TestPool(BaseTestCase):
                 p.join()
 
     def test_terminate(self):
-        if self.TYPE == 'threads':
-            self.skipTest("Threads cannot be terminated")
-
         # Simulate slow tasks which take "forever" to complete
+        sleep_time = support.LONG_TIMEOUT
+
+        if self.TYPE == 'threads':
+            # Thread pool workers can't be forced to quit, so if the first
+            # task starts early enough, we will end up waiting for it.
+            # Sleep for a shorter time, so the test doesn't block.
+            sleep_time = 1
+
         p = self.Pool(3)
-        args = [support.LONG_TIMEOUT for i in range(10_000)]
+        args = [sleep_time for i in range(10_000)]
         result = p.map_async(time.sleep, args, chunksize=1)
+        time.sleep(0.2)  # give some tasks a chance to start
         p.terminate()
         p.join()
 
