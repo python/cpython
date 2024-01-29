@@ -866,7 +866,7 @@ class substr(str):
     __hash__ = None
 collections.__name__ = substr('collections')
 try:
-    collections.does_not_exist
+    collections.defaultdict
 except TypeError as e:
     print(str(e))
 """)
@@ -883,13 +883,13 @@ collections.shadowing_module
 import sys
 sys.stdlib_module_names = None
 try:
-    collections.does_not_exist
+    collections.defaultdict
 except AttributeError as e:
     print(str(e))
 
 del sys.stdlib_module_names
 try:
-    collections.does_not_exist
+    collections.defaultdict
 except AttributeError as e:
     print(str(e))
 """)
@@ -899,8 +899,8 @@ except AttributeError as e:
             self.assertEqual(
                 stdout.splitlines(),
                 [
-                    b"module 'collections' has no attribute 'does_not_exist'",
-                    b"module 'collections' has no attribute 'does_not_exist'",
+                    b"module 'collections' has no attribute 'defaultdict'",
+                    b"module 'collections' has no attribute 'defaultdict'",
                 ],
             )
 
