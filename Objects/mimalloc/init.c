@@ -14,7 +14,7 @@ terms of the MIT license. A copy of the license can be found in the file
 
 // Empty page used to initialize the small free pages array
 const mi_page_t _mi_page_empty = {
-  0, false, false, false,
+  0, false, false, false, 0,
   0,       // capacity
   0,       // reserved capacity
   { 0 },   // flags
@@ -121,7 +121,8 @@ mi_decl_cache_align const mi_heap_t _mi_heap_empty = {
   0,                // page count
   MI_BIN_FULL, 0,   // page retired min/max
   NULL,             // next
-  false
+  false,
+  0
 };
 
 #define tld_empty_stats  ((mi_stats_t*)((uint8_t*)&tld_empty + offsetof(mi_tld_t,stats)))
@@ -131,7 +132,7 @@ mi_decl_cache_align static const mi_tld_t tld_empty = {
   0,
   false,
   NULL, NULL,
-  { MI_SEGMENT_SPAN_QUEUES_EMPTY, 0, 0, 0, 0, tld_empty_stats, tld_empty_os }, // segments
+  { MI_SEGMENT_SPAN_QUEUES_EMPTY, 0, 0, 0, 0, tld_empty_stats, tld_empty_os, &_mi_abandoned_default }, // segments
   { 0, tld_empty_stats }, // os
   { MI_STATS_NULL }       // stats
 };
@@ -148,7 +149,7 @@ extern mi_heap_t _mi_heap_main;
 static mi_tld_t tld_main = {
   0, false,
   &_mi_heap_main, & _mi_heap_main,
-  { MI_SEGMENT_SPAN_QUEUES_EMPTY, 0, 0, 0, 0, &tld_main.stats, &tld_main.os }, // segments
+  { MI_SEGMENT_SPAN_QUEUES_EMPTY, 0, 0, 0, 0, &tld_main.stats, &tld_main.os, &_mi_abandoned_default }, // segments
   { 0, &tld_main.stats },  // os
   { MI_STATS_NULL }       // stats
 };
@@ -298,7 +299,7 @@ static bool _mi_heap_init(void) {
     if (td == NULL) return false;
 
     _mi_tld_init(&td->tld, &td->heap);
-    _mi_heap_init_ex(&td->heap, &td->tld, _mi_arena_id_none());
+    _mi_heap_init_ex(&td->heap, &td->tld, _mi_arena_id_none(), false, 0);
     _mi_heap_set_default_direct(&td->heap);
   }
   return false;
@@ -308,9 +309,9 @@ void _mi_tld_init(mi_tld_t* tld, mi_heap_t* bheap) {
     _mi_memcpy_aligned(tld, &tld_empty, sizeof(*tld));
     tld->segments.stats = &tld->stats;
     tld->segments.os = &tld->os;
+    tld->segments.abandoned = &_mi_abandoned_default;
     tld->os.stats = &tld->stats;
     tld->heap_backing = bheap;
-    tld->heaps = bheap;
 }
 
 // Free the thread local default heap (called from `mi_thread_done`)

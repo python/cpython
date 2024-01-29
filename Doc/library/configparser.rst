@@ -1045,14 +1045,14 @@ ConfigParser Objects
          config.read(['site.cfg', os.path.expanduser('~/.myapp.cfg')],
                      encoding='cp1250')
 
-      .. versionadded:: 3.2
-         The *encoding* parameter.  Previously, all files were read using the
-         default encoding for :func:`open`.
+      .. versionchanged:: 3.2
+         Added the *encoding* parameter.
+         Previously, all files were read using the default encoding for :func:`open`.
 
-      .. versionadded:: 3.6.1
+      .. versionchanged:: 3.6.1
          The *filenames* parameter accepts a :term:`path-like object`.
 
-      .. versionadded:: 3.7
+      .. versionchanged:: 3.7
          The *filenames* parameter accepts a :class:`bytes` object.
 
 
@@ -1291,9 +1291,9 @@ Exceptions
    that is already present or in strict parsers when a section if found more
    than once in a single input file, string or dictionary.
 
-   .. versionadded:: 3.2
-      Optional ``source`` and ``lineno`` attributes and arguments to
-      :meth:`!__init__` were added.
+   .. versionchanged:: 3.2
+      Added the optional *source* and *lineno* attributes and parameters to
+      :meth:`!__init__`.
 
 
 .. exception:: DuplicateOptionError

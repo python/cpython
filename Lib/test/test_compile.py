@@ -448,6 +448,28 @@ class TestSpecifics(unittest.TestCase):
         # See gh-113054
         compile('if (5 if 5 else T): 0', '<eval>', 'exec')
 
+    def test_condition_expression_with_redundant_comparisons_compiles(self):
+        # See gh-113054, gh-114083
+        exprs = [
+            'if 9<9<9and 9or 9:9',
+            'if 9<9<9and 9or 9or 9:9',
+            'if 9<9<9and 9or 9or 9or 9:9',
+            'if 9<9<9and 9or 9or 9or 9or 9:9',
+        ]
+        for expr in exprs:
+            with self.subTest(expr=expr):
+                with self.assertWarns(SyntaxWarning):
+                    compile(expr, '<eval>', 'exec')
+
+    def test_dead_code_with_except_handler_compiles(self):
+        compile(textwrap.dedent("""
+                if None:
+                    with CM:
+                        x = 1
+                else:
+                    x = 2
+               """), '<eval>', 'exec')
+
     def test_compile_invalid_namedexpr(self):
         # gh-109351
         m = ast.Module(
@@ -609,12 +631,10 @@ class TestSpecifics(unittest.TestCase):
     @support.cpython_only
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_compiler_recursion_limit(self):
-        # Expected limit is Py_C_RECURSION_LIMIT * 2
-        # Duplicating the limit here is a little ugly.
-        # Perhaps it should be exposed somewhere...
-        fail_depth = Py_C_RECURSION_LIMIT * 2 + 1
+        # Expected limit is Py_C_RECURSION_LIMIT
+        fail_depth = Py_C_RECURSION_LIMIT + 1
         crash_depth = Py_C_RECURSION_LIMIT * 100
-        success_depth = int(Py_C_RECURSION_LIMIT * 1.8)
+        success_depth = int(Py_C_RECURSION_LIMIT * 0.8)
 
         def check_limit(prefix, repeated, mode="single"):
             expect_ok = prefix + repeated * success_depth
@@ -1083,6 +1103,21 @@ class TestSpecifics(unittest.TestCase):
         expected_lines = [0, 1, 2, 1]
         code_lines = self.get_code_lines(test.__code__)
         self.assertEqual(expected_lines, code_lines)
+
+    def test_line_number_synthetic_jump_multiple_predecessors(self):
+        def f():
+            for x in it:
+                try:
+                    if C1:
+                        yield 2
+                except OSError:
+                    pass
+
+        # Ensure that all JUMP_BACKWARDs have line number
+        code = f.__code__
+        for inst in dis.Bytecode(code):
+            if inst.opname == 'JUMP_BACKWARD':
+                self.assertIsNotNone(inst.positions.lineno)
 
     def test_lineno_of_backward_jump(self):
         # Issue gh-107901

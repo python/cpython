@@ -1680,7 +1680,7 @@ The ctypes package
 
 The :mod:`ctypes` package, written by Thomas Heller, has been added  to the
 standard library.  :mod:`ctypes` lets you call arbitrary functions  in shared
-libraries or DLLs.  Long-time users may remember the :mod:`dl` module, which
+libraries or DLLs.  Long-time users may remember the :mod:`!dl` module, which
 provides functions for loading shared libraries and calling functions in them.
 The :mod:`ctypes` package is much fancier.
 
@@ -1877,12 +1877,12 @@ The hashlib package
 -------------------
 
 A new :mod:`hashlib` module, written by Gregory P. Smith,  has been added to
-replace the :mod:`md5` and :mod:`sha` modules.  :mod:`hashlib` adds support for
+replace the :mod:`!md5` and :mod:`!sha` modules.  :mod:`hashlib` adds support for
 additional secure hashes (SHA-224, SHA-256, SHA-384, and SHA-512). When
 available, the module uses OpenSSL for fast platform optimized implementations
 of algorithms.
 
-The old :mod:`md5` and :mod:`sha` modules still exist as wrappers around hashlib
+The old :mod:`!md5` and :mod:`!sha` modules still exist as wrappers around hashlib
 to preserve backwards compatibility.  The new module's interface is very close
 to that of the old modules, but not identical. The most significant difference
 is that the constructor functions for creating new hashing objects are named
