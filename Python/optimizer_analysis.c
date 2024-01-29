@@ -32,9 +32,9 @@
 
 #define MAX_ABSTRACT_INTERP_SIZE 2048
 
-#define OVERALLOCATE_FACTOR 3
+#define OVERALLOCATE_FACTOR 5
 
-#define PEEPHOLE_MAX_ATTEMPTS 5
+#define PEEPHOLE_MAX_ATTEMPTS 3
 
 // + buffer to account for implicit root frame.
 #define MAX_ABSTRACT_FRAME_DEPTH (TRACE_STACK_SIZE + 2)
@@ -107,8 +107,6 @@ typedef struct {
 typedef struct _Py_UOpsAbstractFrame {
     // Strong reference.
     struct _Py_UOpsAbstractFrame *prev;
-    // Borrowed reference.
-    struct _Py_UOpsAbstractFrame *next;
     // Symbolic version of co_consts
     int sym_consts_len;
     _Py_UOpsSymType **sym_consts;
@@ -288,7 +286,7 @@ create_sym_consts(_Py_UOpsAbstractInterpContext *ctx, PyObject *co_consts)
         return NULL;
     }
     for (Py_ssize_t i = 0; i < co_const_len; i++) {
-        _Py_UOpsSymType *res = sym_init_const(ctx, Py_NewRef(PyTuple_GET_ITEM(co_consts, i)), (int)i);
+        _Py_UOpsSymType *res = sym_init_const(ctx, PyTuple_GET_ITEM(co_consts, i), (int)i);
         if (res == NULL) {
             goto error;
         }
@@ -470,11 +468,10 @@ _Py_UOpsSymType_New(_Py_UOpsAbstractInterpContext *ctx,
     self->const_val = NULL;
     self->types = 0;
 
-    self->const_val = NULL;
-    self->types = 0;
-
     if (const_val != NULL) {
+        Py_INCREF(const_val);
         sym_set_type_from_const(self, const_val);
+        self->const_val = const_val;
     }
 
     return self;
@@ -496,7 +493,7 @@ sym_copy_immutable_type_info(_Py_UOpsSymType *from_sym, _Py_UOpsSymType *to_sym)
 {
     to_sym->types = (from_sym->types & IMMUTABLES);
     if (to_sym->types) {
-        to_sym->const_val = Py_XNewRef(from_sym->const_val);
+        Py_XSETREF(to_sym->const_val, Py_XNewRef(from_sym->const_val));
     }
 }
 
@@ -505,7 +502,6 @@ static void
 sym_set_type_from_const(_Py_UOpsSymType *sym, PyObject *obj)
 {
     PyTypeObject *tp = Py_TYPE(obj);
-    sym->const_val = obj;
 
     if (tp == &PyLong_Type) {
         sym_set_type(sym, PYLONG_TYPE, 0);
@@ -546,7 +542,7 @@ sym_init_unknown(_Py_UOpsAbstractInterpContext *ctx)
     return _Py_UOpsSymType_New(ctx,NULL);
 }
 
-// Steals a reference to const_val
+// Takes a borrowed reference to const_val.
 static inline _Py_UOpsSymType*
 sym_init_const(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val, int const_idx)
 {
@@ -671,11 +667,13 @@ emit_i(uops_emitter *emitter,
        _PyUOpInstruction inst)
 {
     if (emitter->curr_i < 0) {
-        DPRINTF(2, "out of emission space\n");
+        OPT_STAT_INC(optimizer_failure_reason_no_writebuffer);
+        DPRINTF(1, "out of emission space\n");
         return -1;
     }
     if (emitter->writebuffer + emitter->curr_i >= emitter->writebuffer_end) {
-        DPRINTF(2, "out of emission space\n");
+        OPT_STAT_INC(optimizer_failure_reason_no_writebuffer);
+        DPRINTF(1, "out of emission space\n");
         return -1;
     }
     if (inst.opcode == _NOP) {
@@ -1017,9 +1015,10 @@ loop_peeling:
 
     assert(op_is_end(curr->opcode));
 
-    // If we end in a loop, and we have a lot of space left, peel the loop for added type stability
+    // If we end in a loop, and we have a lot of space left, peel the loop for
+    // poor man's loop invariant code motino for guards
     // https://en.wikipedia.org/wiki/Loop_splitting
-    has_enough_space_to_duplicate_loop = ((ctx->emitter.curr_i * 2) <
+    has_enough_space_to_duplicate_loop = ((ctx->emitter.curr_i * 3) <
         (int)(ctx->emitter.writebuffer_end - ctx->emitter.writebuffer));
     if (!did_loop_peel && curr->opcode == _JUMP_TO_TOP && has_enough_space_to_duplicate_loop) {
         OPT_STAT_INC(loop_body_duplication_attempts);
@@ -1154,7 +1153,8 @@ peephole_optimizations(_PyUOpInstruction *buffer, int buffer_size)
                         load_count += op_is_load(back->opcode);
                         if (back->opcode == _LOAD_CONST_INLINE) {
                             PyObject *const_val = (PyObject *)back->operand;
-                            Py_CLEAR(const_val);
+                            Py_DECREF(const_val);
+                            back->operand = (uintptr_t)NULL;
                         }
                         back->opcode = NOP;
                         back--;
@@ -1174,6 +1174,18 @@ peephole_optimizations(_PyUOpInstruction *buffer, int buffer_size)
         }
     }
     return done;
+}
+
+void
+infallible_optimizations(_PyUOpInstruction *buffer, int buffer_size)
+{
+    bool done = false;
+    for (int peephole_attempts = 0; peephole_attempts < PEEPHOLE_MAX_ATTEMPTS &&
+                                    !done;
+         peephole_attempts++) {
+        done = peephole_optimizations(buffer, buffer_size);
+    }
+    remove_unneeded_uops(buffer, buffer_size);
 }
 
 
@@ -1204,13 +1216,7 @@ _Py_uop_analyze_and_optimize(
         goto error;
     }
 
-    for (int peephole_attempts = 0; peephole_attempts < PEEPHOLE_MAX_ATTEMPTS &&
-        !peephole_optimizations(temp_writebuffer, new_trace_len);
-         peephole_attempts++) {
-
-    }
-
-    remove_unneeded_uops(temp_writebuffer, new_trace_len);
+    infallible_optimizations(temp_writebuffer, new_trace_len);
 
     // Fill in our new trace!
     memcpy(buffer, temp_writebuffer, new_trace_len * sizeof(_PyUOpInstruction));
@@ -1229,16 +1235,11 @@ _Py_uop_analyze_and_optimize(
     OPT_STAT_INC(optimizer_successes);
     return 0;
 error:
+    infallible_optimizations(buffer, buffer_size);
     // The only valid error we can raise is MemoryError.
     // Other times it's not really errors but things like not being able
     // to fetch a function version because the function got deleted.
     err_occurred = PyErr_Occurred();
     PyMem_Free(temp_writebuffer);
-    for (int peephole_attempts = 0; peephole_attempts < PEEPHOLE_MAX_ATTEMPTS &&
-                                    !done;
-         peephole_attempts++) {
-        done = peephole_optimizations(buffer, buffer_size);
-    }
-    remove_unneeded_uops(buffer, buffer_size);
     return err_occurred ? -1 : 0;
 }
