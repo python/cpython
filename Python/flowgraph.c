@@ -162,7 +162,7 @@ basicblock_last_instr(const basicblock *b) {
 static basicblock *
 cfg_builder_new_block(cfg_builder *g)
 {
-    basicblock *b = (basicblock *)PyObject_Calloc(1, sizeof(basicblock));
+    basicblock *b = (basicblock *)PyMem_Calloc(1, sizeof(basicblock));
     if (b == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -437,10 +437,10 @@ _PyCfgBuilder_Free(cfg_builder *g)
     basicblock *b = g->g_block_list;
     while (b != NULL) {
         if (b->b_instr) {
-            PyObject_Free((void *)b->b_instr);
+            PyMem_Free((void *)b->b_instr);
         }
         basicblock *next = b->b_list;
-        PyObject_Free((void *)b);
+        PyMem_Free((void *)b);
         b = next;
     }
     PyMem_Free(g);
