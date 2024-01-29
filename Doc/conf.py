@@ -74,6 +74,10 @@ highlight_language = 'python3'
 # Minimum version of sphinx required
 needs_sphinx = '4.2'
 
+# Create table of contents entries for domain objects (e.g. functions, classes,
+# attributes, etc.). Default is True.
+toc_object_entries = False
+
 # Ignore any .rst files in the includes/ directory;
 # they're embedded in pages but not rendered individually.
 # Ignore any .rst files in the venv/ directory.
@@ -85,22 +89,32 @@ if venvdir is not None:
 nitpick_ignore = [
     # Standard C functions
     ('c:func', 'calloc'),
+    ('c:func', 'ctime'),
     ('c:func', 'dlopen'),
     ('c:func', 'exec'),
     ('c:func', 'fcntl'),
     ('c:func', 'fork'),
     ('c:func', 'free'),
+    ('c:func', 'gettimeofday'),
     ('c:func', 'gmtime'),
+    ('c:func', 'grantpt'),
+    ('c:func', 'localeconv'),
     ('c:func', 'localtime'),
     ('c:func', 'main'),
     ('c:func', 'malloc'),
+    ('c:func', 'mktime'),
+    ('c:func', 'posix_openpt'),
     ('c:func', 'printf'),
+    ('c:func', 'ptsname'),
+    ('c:func', 'ptsname_r'),
     ('c:func', 'realloc'),
     ('c:func', 'snprintf'),
     ('c:func', 'sprintf'),
     ('c:func', 'stat'),
+    ('c:func', 'strftime'),
     ('c:func', 'system'),
     ('c:func', 'time'),
+    ('c:func', 'unlockpt'),
     ('c:func', 'vsnprintf'),
     # Standard C types
     ('c:type', 'FILE'),
@@ -166,6 +180,10 @@ nitpick_ignore = [
     # Deprecated function that was never documented:
     ('py:func', 'getargspec'),
     ('py:func', 'inspect.getargspec'),
+    # Undocumented modules that users shouldn't have to worry about
+    # (implementation details of `os.path`):
+    ('py:mod', 'ntpath'),
+    ('py:mod', 'posixpath'),
 ]
 
 # Temporary undocumented names.
@@ -241,6 +259,12 @@ nitpick_ignore += [
     # be resolved, as the method is currently undocumented. For context, see
     # https://github.com/python/cpython/pull/103289.
     ('py:meth', '_SubParsersAction.add_parser'),
+    # Attributes/methods/etc. that definitely should be documented better,
+    # but are deferred for now:
+    ('py:attr', '__annotations__'),
+    ('py:meth', '__missing__'),
+    ('py:attr', '__wrapped__'),
+    ('py:meth', 'index'),  # list.index, tuple.index, etc.
 ]
 
 # gh-106948: Copy standard C types declared in the "c:type" domain to the

@@ -289,8 +289,8 @@ Directory and files operations
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
-   .. versionadded:: 3.8
-      The *dirs_exist_ok* parameter.
+   .. versionchanged:: 3.8
+      Added the *dirs_exist_ok* parameter.
 
 .. function:: rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None)
 
@@ -346,6 +346,8 @@ Directory and files operations
    .. versionchanged:: 3.13
       :func:`!rmtree` now ignores :exc:`FileNotFoundError` exceptions for all
       but the top-level path.
+      Exceptions other than :exc:`OSError` and subclasses of :exc:`!OSError`
+      are now always propagated to the caller.
 
    .. attribute:: rmtree.avoids_symlink_attacks
 
