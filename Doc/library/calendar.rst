@@ -586,10 +586,16 @@ The following options are accepted:
    or as an HTML document.
 
 
+.. option:: --first-weekday WEEKDAY, -f WEEKDAY
+
+   The weekday to start each week.
+   Must be a number between 0 (Monday) and 6 (Sunday).
+   Defaults to 0.
+
+
 .. option:: year
 
    The year to print the calendar for.
-   Must be a number between 1 and 9999.
    Defaults to the current year.
 
 
