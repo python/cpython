@@ -1664,7 +1664,7 @@ Usage of ``KabulTz`` from above::
 :class:`.time` Objects
 ----------------------
 
-A :class:`time` object represents a (local) time of day, independent of any particular
+A :class:`.time` object represents a (local) time of day, independent of any particular
 day, and subject to adjustment via a :class:`tzinfo` object.
 
 .. class:: time(hour=0, minute=0, second=0, microsecond=0, tzinfo=None, *, fold=0)
@@ -2497,7 +2497,7 @@ information, which are supported in ``datetime.strptime`` but are discarded by
 ``time.strptime``.
 
 For :class:`.time` objects, the format codes for year, month, and day should not
-be used, as :class:`time` objects have no such values. If they're used anyway,
+be used, as :class:`!time` objects have no such values. If they're used anyway,
 ``1900`` is substituted for the year, and ``1`` for the month and day.
 
 For :class:`date` objects, the format codes for hours, minutes, seconds, and
