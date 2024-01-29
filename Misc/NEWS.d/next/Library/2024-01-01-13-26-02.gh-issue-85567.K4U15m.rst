@@ -1,2 +1,0 @@
-Fix resource warnings for unclosed files in :mod:`pickle` and
-:mod:`pickletools` command line interfaces.

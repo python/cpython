@@ -247,6 +247,14 @@ ipaddress
 * Add the :attr:`ipaddress.IPv4Address.ipv6_mapped` property, which returns the IPv4-mapped IPv6 address.
   (Contributed by Charles Machalow in :gh:`109466`.)
 
+marshal
+-------
+
+* Add the *allow_code* parameter in module functions.
+  Passing ``allow_code=False`` prevents serialization and de-serialization of
+  code objects which are incompatible between Python versions.
+  (Contributed by Serhiy Storchaka in :gh:`113626`.)
+
 mmap
 ----
 
@@ -254,6 +262,9 @@ mmap
   that can be used where it requires a file-like object with seekable and
   the :meth:`~mmap.mmap.seek` method return the new absolute position.
   (Contributed by Donghee Na and Sylvie Liberman in :gh:`111835`.)
+* :class:`mmap.mmap` now has a *trackfd* parameter on Unix; if it is ``False``,
+  the file descriptor specified by *fileno* will not be duplicated.
+  (Contributed by Zackery Spytz and Petr Viktorin in :gh:`78502`.)
 
 opcode
 ------
@@ -310,6 +321,9 @@ os
 os.path
 -------
 
+* Add :func:`os.path.isreserved` to check if a path is reserved on the current
+  system. This function is only available on Windows.
+  (Contributed by Barney Gale in :gh:`88569`.)
 * On Windows, :func:`os.path.isabs` no longer considers paths starting with
   exactly one (back)slash to be absolute.
   (Contributed by Barney Gale and Jon Foster in :gh:`44626`.)
@@ -325,7 +339,8 @@ pathlib
   object from a 'file' URI (``file:/``).
   (Contributed by Barney Gale in :gh:`107465`.)
 
-* Add support for recursive wildcards in :meth:`pathlib.PurePath.match`.
+* Add :meth:`pathlib.PurePath.full_match` for matching paths with
+  shell-style wildcards, including the recursive wildcard "``**``".
   (Contributed by Barney Gale in :gh:`73435`.)
 
 * Add *follow_symlinks* keyword-only argument to :meth:`pathlib.Path.glob`,
@@ -485,6 +500,12 @@ Deprecated
   outdated, unmaintained, and rarely used.  It has a high potential for both
   security and functionality bugs.  This includes removal of the ``--cgi``
   flag to the ``python -m http.server`` command line in 3.15.
+
+* :mod:`pathlib`:
+
+  * :meth:`pathlib.PurePath.is_reserved` is deprecated and scheduled for
+    removal in Python 3.15. Use :func:`os.path.isreserved` to detect reserved
+    paths on Windows.
 
 * :mod:`sys`: :func:`sys._enablelegacywindowsfsencoding` function.
   Replace it with :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment variable.
@@ -696,6 +717,12 @@ Pending Removal in Python 3.15
   Use :func:`locale.setlocale()`, :func:`locale.getencoding()` and
   :func:`locale.getlocale()` instead.
   (Contributed by Hugo van Kemenade in :gh:`111187`.)
+
+* :mod:`pathlib`:
+
+  * :meth:`pathlib.PurePath.is_reserved` is deprecated and scheduled for
+    removal in Python 3.15. Use :func:`os.path.isreserved` to detect reserved
+    paths on Windows.
 
 * :class:`typing.NamedTuple`:
 

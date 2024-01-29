@@ -74,6 +74,10 @@ highlight_language = 'python3'
 # Minimum version of sphinx required
 needs_sphinx = '4.2'
 
+# Create table of contents entries for domain objects (e.g. functions, classes,
+# attributes, etc.). Default is True.
+toc_object_entries = False
+
 # Ignore any .rst files in the includes/ directory;
 # they're embedded in pages but not rendered individually.
 # Ignore any .rst files in the venv/ directory.
@@ -85,20 +89,25 @@ if venvdir is not None:
 nitpick_ignore = [
     # Standard C functions
     ('c:func', 'calloc'),
+    ('c:func', 'ctime'),
     ('c:func', 'dlopen'),
     ('c:func', 'exec'),
     ('c:func', 'fcntl'),
     ('c:func', 'fork'),
     ('c:func', 'free'),
+    ('c:func', 'gettimeofday'),
     ('c:func', 'gmtime'),
+    ('c:func', 'localeconv'),
     ('c:func', 'localtime'),
     ('c:func', 'main'),
     ('c:func', 'malloc'),
+    ('c:func', 'mktime'),
     ('c:func', 'printf'),
     ('c:func', 'realloc'),
     ('c:func', 'snprintf'),
     ('c:func', 'sprintf'),
     ('c:func', 'stat'),
+    ('c:func', 'strftime'),
     ('c:func', 'system'),
     ('c:func', 'time'),
     ('c:func', 'vsnprintf'),

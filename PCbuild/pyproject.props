@@ -24,6 +24,13 @@
     <LinkIncremental Condition="$(Configuration) != 'Debug'">false</LinkIncremental>
   </PropertyGroup>
 
+  <PropertyGroup Condition="$(TargetExt) != ''">
+    <TargetNameExt>$(TargetName)$(TargetExt)</TargetNameExt>
+    <_TargetNameSep>$(TargetNameExt.LastIndexOf(`.`))</_TargetNameSep>
+    <TargetName>$(TargetNameExt.Substring(0, $(_TargetNameSep)))</TargetName>
+    <TargetExt>$(TargetNameExt.Substring($(_TargetNameSep)))</TargetExt>
+  </PropertyGroup>
+
   <PropertyGroup Label="MSVC Bug Workarounds" Condition="$(VCToolsVersion) != ''">
     <_VCToolsVersion>$([System.Version]::Parse(`$(VCToolsVersion)`).Major).$([System.Version]::Parse(`$(VCToolsVersion)`).Minor)</_VCToolsVersion>
 
@@ -38,7 +45,7 @@
     <_PlatformPreprocessorDefinition>_WIN32;</_PlatformPreprocessorDefinition>
     <_PlatformPreprocessorDefinition Condition="$(Platform) == 'x64'">_WIN64;</_PlatformPreprocessorDefinition>
     <_PlatformPreprocessorDefinition Condition="$(Platform) == 'x64' and $(PlatformToolset) != 'ClangCL'">_M_X64;$(_PlatformPreprocessorDefinition)</_PlatformPreprocessorDefinition>
-    <_Py3NamePreprocessorDefinition>PY3_DLLNAME=L"$(Py3DllName)";</_Py3NamePreprocessorDefinition>
+    <_Py3NamePreprocessorDefinition>PY3_DLLNAME=L"$(Py3DllName)$(PyDebugExt)";</_Py3NamePreprocessorDefinition>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -158,8 +165,8 @@ public override bool Execute() {
   </UsingTask>
 
   <Target Name="KillPython" BeforeTargets="PrepareForBuild" Condition="'$(KillPython)' == 'true'">
-    <Message Text="Killing any running python$(PyDebugExt)$(PyTestExt).exe instances..." Importance="high" />
-    <KillPython FileName="$(OutDir)python$(PyDebugExt)$(PyTestExt).exe" />
+    <Message Text="Killing any running $(PyExeName)$(PyDebugExt)$(PyTestExt).exe instances..." Importance="high" />
+    <KillPython FileName="$(OutDir)$(PyExeName)$(PyDebugExt)$(PyTestExt).exe" />
   </Target>
 
   <!--

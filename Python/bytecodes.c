@@ -1,6 +1,6 @@
 // This file contains instruction definitions.
-// It is read by Tools/cases_generator/generate_cases.py
-// to generate Python/generated_cases.c.h.
+// It is read by generators stored in Tools/cases_generator/
+// to generate Python/generated_cases.c.h and others.
 // Note that there is some dummy C code at the top and bottom of the file
 // to fool text editors like VS Code into believing this is valid C code.
 // The actual instruction definitions start at // BEGIN BYTECODES //.
@@ -192,7 +192,7 @@ dummy_func(
                 ERROR_IF(err, error);
                 if (frame->instr_ptr != this_instr) {
                     /* Instrumentation has jumped */
-                    next_instr = this_instr;
+                    next_instr = frame->instr_ptr;
                     DISPATCH();
                 }
             }
@@ -265,9 +265,9 @@ dummy_func(
             res = NULL;
         }
 
-        macro(END_FOR) = POP_TOP + POP_TOP;
+        macro(END_FOR) = POP_TOP;
 
-        inst(INSTRUMENTED_END_FOR, (receiver, value --)) {
+        inst(INSTRUMENTED_END_FOR, (receiver, value -- receiver)) {
             TIER_ONE_ONLY
             /* Need to create a fake StopIteration error here,
              * to conform to PEP 380 */
@@ -805,7 +805,8 @@ dummy_func(
             #if TIER_ONE
             assert(frame != &entry_frame);
             #endif
-            STORE_SP();
+            SYNC_SP();
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             assert(EMPTY());
             _Py_LeaveRecursiveCallPy(tstate);
             // GH-99729: We need to unlink the frame *before* clearing it:
@@ -2549,8 +2550,8 @@ dummy_func(
                        next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
                 Py_DECREF(iter);
                 STACK_SHRINK(1);
-                /* Jump forward oparg, then skip following END_FOR instruction */
-                JUMPBY(oparg + 1);
+                /* Jump forward oparg, then skip following END_FOR and POP_TOP instruction */
+                JUMPBY(oparg + 2);
                 DISPATCH();
             }
             // Common case: no jump, leave it to the code generator
@@ -2598,8 +2599,8 @@ dummy_func(
                        next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
                 STACK_SHRINK(1);
                 Py_DECREF(iter);
-                /* Skip END_FOR */
-                target = next_instr + oparg + 1;
+                /* Skip END_FOR and POP_TOP */
+                target = next_instr + oparg + 2;
             }
             INSTRUMENTED_JUMP(this_instr, target, PY_MONITORING_EVENT_BRANCH);
         }
@@ -2620,8 +2621,8 @@ dummy_func(
                 }
                 Py_DECREF(iter);
                 STACK_SHRINK(1);
-                /* Jump forward oparg, then skip following END_FOR instruction */
-                JUMPBY(oparg + 1);
+                /* Jump forward oparg, then skip following END_FOR and POP_TOP instructions */
+                JUMPBY(oparg + 2);
                 DISPATCH();
             }
         }
@@ -2666,8 +2667,8 @@ dummy_func(
                 }
                 Py_DECREF(iter);
                 STACK_SHRINK(1);
-                /* Jump forward oparg, then skip following END_FOR instruction */
-                JUMPBY(oparg + 1);
+                /* Jump forward oparg, then skip following END_FOR and POP_TOP instructions */
+                JUMPBY(oparg + 2);
                 DISPATCH();
             }
         }
@@ -2708,8 +2709,8 @@ dummy_func(
             if (r->len <= 0) {
                 STACK_SHRINK(1);
                 Py_DECREF(r);
-                // Jump over END_FOR instruction.
-                JUMPBY(oparg + 1);
+                // Jump over END_FOR and POP_TOP instructions.
+                JUMPBY(oparg + 2);
                 DISPATCH();
             }
         }
@@ -3154,7 +3155,8 @@ dummy_func(
             // Write it out explicitly because it's subtly different.
             // Eventually this should be the only occurrence of this code.
             assert(tstate->interp->eval_frame == NULL);
-            STORE_SP();
+            SYNC_SP();
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             new_frame->previous = frame;
             CALL_STAT_INC(inlined_py_calls);
             frame = tstate->current_frame = new_frame;
@@ -4013,20 +4015,27 @@ dummy_func(
         ///////// Tier-2 only opcodes /////////
 
         op (_GUARD_IS_TRUE_POP, (flag -- )) {
-            DEOPT_IF(Py_IsFalse(flag));
+            SYNC_SP();
+            DEOPT_IF(!Py_IsTrue(flag));
             assert(Py_IsTrue(flag));
         }
 
         op (_GUARD_IS_FALSE_POP, (flag -- )) {
-            DEOPT_IF(Py_IsTrue(flag));
+            SYNC_SP();
+            DEOPT_IF(!Py_IsFalse(flag));
             assert(Py_IsFalse(flag));
         }
 
         op (_GUARD_IS_NONE_POP, (val -- )) {
-            DEOPT_IF(!Py_IsNone(val));
+            SYNC_SP();
+            if (!Py_IsNone(val)) {
+                Py_DECREF(val);
+                DEOPT_IF(1);
+            }
         }
 
         op (_GUARD_IS_NOT_NONE_POP, (val -- )) {
+            SYNC_SP();
             DEOPT_IF(Py_IsNone(val));
             Py_DECREF(val);
         }
@@ -4059,6 +4068,10 @@ dummy_func(
         op(_CHECK_VALIDITY, (--)) {
             TIER_TWO_ONLY
             DEOPT_IF(!current_executor->vm_data.valid);
+        }
+
+        op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
+            value = Py_NewRef(ptr);
         }
 
         op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
