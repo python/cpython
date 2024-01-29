@@ -900,8 +900,8 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         >>> testhandler.default_content_type = 'nonesuch/nonesuch'
         >>> testhandler.guess_type('/this/should/give/default')
         'nonesuch/nonesuch'
-        >>> # check short-circuiting works
-        >>> mimetypes = type('', (), {
+        >>> # check short-circuiting works using mock mimetypes.guess_type
+        >>> sys.modules[__name__].mimetypes = type('', (), {
         ...  'guess_type': lambda x: (print('foo'), print('bar'))
         ... })
         >>> testhandler.guess_type('/should/show/foo/bar/then/default')
