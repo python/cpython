@@ -669,6 +669,9 @@
     <ClInclude Include="..\Include\internal\pycore_intrinsics.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_jit.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_list.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -1336,6 +1339,9 @@
     </ClCompile>
     <ClCompile Include="..\Python\instrumentation.c">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\jit.c">
+      <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\legacy_tracing.c">
       <Filter>Source Files</Filter>

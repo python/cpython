@@ -920,6 +920,7 @@ LLVM_AR
 PROFILE_TASK
 DEF_MAKE_RULE
 DEF_MAKE_ALL_RULE
+REGEN_JIT_COMMAND
 ABIFLAGS
 LN
 MKDIR_P
@@ -1074,6 +1075,7 @@ with_pydebug
 with_trace_refs
 enable_pystats
 with_assertions
+enable_experimental_jit
 enable_optimizations
 with_lto
 enable_bolt
@@ -1801,6 +1803,9 @@ Optional Features:
   --disable-gil           enable experimental support for running without the
                           GIL (default is no)
   --enable-pystats        enable internal statistics gathering (default is no)
+  --enable-experimental-jit
+                          build the experimental just-in-time compiler
+                          (default is no)
   --enable-optimizations  enable expensive, stable optimizations (PGO, etc.)
                           (default is no)
   --enable-bolt           enable usage of the llvm-bolt post-link optimizer
@@ -7996,6 +8001,32 @@ else
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 fi
+
+# Check for --enable-experimental-jit:
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-experimental-jit" >&5
+printf %s "checking for --enable-experimental-jit... " >&6; }
+# Check whether --enable-experimental-jit was given.
+if test ${enable_experimental_jit+y}
+then :
+  enableval=$enable_experimental_jit;
+else $as_nop
+  enable_experimental_jit=no
+fi
+
+if test "x$enable_experimental_jit" = xno
+then :
+
+else $as_nop
+  as_fn_append CFLAGS_NODIST " -D_Py_JIT"
+           REGEN_JIT_COMMAND="\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py $host"
+           if test "x$Py_DEBUG" = xtrue
+then :
+  as_fn_append REGEN_JIT_COMMAND " --debug"
+fi
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $enable_experimental_jit" >&5
+printf "%s\n" "$enable_experimental_jit" >&6; }
 
 # Enable optimization flags
 

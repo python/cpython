@@ -7,6 +7,7 @@
 #include "pycore_optimizer.h"     // _Py_uop_analyze_and_optimize()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_uop_ids.h"
+#include "pycore_jit.h"
 #include "cpython/optimizer.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -227,6 +228,9 @@ static PyMethodDef executor_methods[] = {
 static void
 uop_dealloc(_PyExecutorObject *self) {
     _Py_ExecutorClear(self);
+#ifdef _Py_JIT
+    _PyJIT_Free(self);
+#endif
     PyObject_Free(self);
 }
 
@@ -788,6 +792,14 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
                    executor->trace[i].target,
                    executor->trace[i].operand);
         }
+    }
+#endif
+#ifdef _Py_JIT
+    executor->jit_code = NULL;
+    executor->jit_size = 0;
+    if (_PyJIT_Compile(executor, executor->trace, Py_SIZE(executor))) {
+        Py_DECREF(executor);
+        return NULL;
     }
 #endif
     return executor;

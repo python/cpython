@@ -104,6 +104,7 @@
       <AdditionalIncludeDirectories Condition="$(IncludeExternals)">$(zlibDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_USRDLL;Py_BUILD_CORE;Py_BUILD_CORE_BUILTIN;Py_ENABLE_SHARED;MS_DLL_ID="$(SysWinVer)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="$(IncludeExternals)">_Py_HAVE_ZLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(UseJIT)' == 'true'">_Py_JIT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>version.lib;ws2_32.lib;pathcch.lib;bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -247,6 +248,7 @@
     <ClInclude Include="..\Include\internal\pycore_initconfig.h" />
     <ClInclude Include="..\Include\internal\pycore_interp.h" />
     <ClInclude Include="..\Include\internal\pycore_intrinsics.h" />
+    <ClInclude Include="..\Include\internal\pycore_jit.h" />
     <ClInclude Include="..\Include\internal\pycore_list.h" />
     <ClInclude Include="..\Include\internal\pycore_llist.h" />
     <ClInclude Include="..\Include\internal\pycore_lock.h" />
@@ -585,6 +587,7 @@
     <ClCompile Include="..\Python\initconfig.c" />
     <ClCompile Include="..\Python\intrinsics.c" />
     <ClCompile Include="..\Python\instrumentation.c" />
+    <ClCompile Include="..\Python\jit.c" />
     <ClCompile Include="..\Python\legacy_tracing.c" />
     <ClCompile Include="..\Python\lock.c" />
     <ClCompile Include="..\Python\marshal.c" />

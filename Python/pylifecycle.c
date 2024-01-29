@@ -1240,12 +1240,19 @@ init_interp_main(PyThreadState *tstate)
 
     // Turn on experimental tier 2 (uops-based) optimizer
     if (is_main_interp) {
+#ifndef _Py_JIT
+        // No JIT, maybe use the tier two interpreter:
         char *envvar = Py_GETENV("PYTHON_UOPS");
         int enabled = envvar != NULL && *envvar > '0';
         if (_Py_get_xoption(&config->xoptions, L"uops") != NULL) {
             enabled = 1;
         }
         if (enabled) {
+#else
+        // Always enable tier two for JIT builds (ignoring the environment
+        // variable and command-line option above):
+        if (true) {
+#endif
             PyObject *opt = PyUnstable_Optimizer_NewUOpOptimizer();
             if (opt == NULL) {
                 return _PyStatus_ERR("can't initialize optimizer");
