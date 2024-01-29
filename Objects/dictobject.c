@@ -874,14 +874,11 @@ lookdict_index(PyDictKeysObject *k, Py_hash_t hash, Py_ssize_t index)
     Py_UNREACHABLE();
 }
 
-typedef void *(*generic_entries_func)(PyDictKeysObject *dk);
-
 static inline Py_ALWAYS_INLINE Py_ssize_t
 do_lookup(PyDictObject *mp, PyDictKeysObject *dk, PyObject *key, Py_hash_t hash,
-          generic_entries_func entries,
           Py_ssize_t (*check_lookup)(PyDictObject *, PyDictKeysObject *, void *, Py_ssize_t ix, PyObject *key, Py_hash_t))
 {
-    void *ep0 = entries(dk);
+    void *ep0 = _DK_ENTRIES(dk);
     size_t mask = DK_MASK(dk);
     size_t perturb = hash;
     size_t i = (size_t)hash & mask;
@@ -889,8 +886,10 @@ do_lookup(PyDictObject *mp, PyDictKeysObject *dk, PyObject *key, Py_hash_t hash,
     for (;;) {
         ix = dictkeys_get_index(dk, i);
         if (ix >= 0) {
-            ix = check_lookup(mp, dk, ep0, ix, key, hash);
-            if (ix != DKIX_DUMMY) {
+            Py_ssize_t cmp = check_lookup(mp, dk, ep0, ix, key, hash);
+            if (cmp < 0) {
+                return cmp;
+            } else if (cmp) {
                 return ix;
             }
         }
@@ -903,8 +902,10 @@ do_lookup(PyDictObject *mp, PyDictKeysObject *dk, PyObject *key, Py_hash_t hash,
         // Manual loop unrolling
         ix = dictkeys_get_index(dk, i);
         if (ix >= 0) {
-            ix = check_lookup(mp, dk, ep0, ix, key, hash);
-            if (ix != DKIX_DUMMY) {
+            Py_ssize_t cmp = check_lookup(mp, dk, ep0, ix, key, hash);
+            if (cmp < 0) {
+                return cmp;
+            } else if (cmp) {
                 return ix;
             }
         }
@@ -917,9 +918,9 @@ do_lookup(PyDictObject *mp, PyDictKeysObject *dk, PyObject *key, Py_hash_t hash,
     Py_UNREACHABLE();
 }
 
-static inline Py_ALWAYS_INLINE
-Py_ssize_t compare_unicode_generic(PyDictObject *mp, PyDictKeysObject *dk,
-                                   void *ep0, Py_ssize_t ix, PyObject *key, Py_hash_t hash)
+static inline Py_ALWAYS_INLINE Py_ssize_t
+compare_unicode_generic(PyDictObject *mp, PyDictKeysObject *dk,
+                        void *ep0, Py_ssize_t ix, PyObject *key, Py_hash_t hash)
 {
     PyDictUnicodeEntry *ep = &((PyDictUnicodeEntry *)ep0)[ix];
     assert(ep->me_key != NULL);
@@ -936,53 +937,51 @@ Py_ssize_t compare_unicode_generic(PyDictObject *mp, PyDictKeysObject *dk,
             return DKIX_ERROR;
         }
         if (dk == mp->ma_keys && ep->me_key == startkey) {
-            if (cmp > 0) {
-                return ix;
-            }
+            return cmp;
         }
         else {
             /* The dict was mutated, restart */
             return DKIX_KEY_CHANGED;
         }
     }
-    return DKIX_DUMMY;
+    return 0;
 }
 
 // Search non-Unicode key from Unicode table
 static Py_ssize_t
 unicodekeys_lookup_generic(PyDictObject *mp, PyDictKeysObject* dk, PyObject *key, Py_hash_t hash)
 {
-    return do_lookup(mp, dk, key, hash, (generic_entries_func)DK_UNICODE_ENTRIES, compare_unicode_generic);
+    return do_lookup(mp, dk, key, hash, compare_unicode_generic);
 }
 
-static inline Py_ALWAYS_INLINE
-Py_ssize_t compare_unicode_unicode(PyDictObject *mp, PyDictKeysObject *dk,
-                                   void *ep0, Py_ssize_t ix, PyObject *key, Py_hash_t hash)
+static inline Py_ALWAYS_INLINE Py_ssize_t
+compare_unicode_unicode(PyDictObject *mp, PyDictKeysObject *dk,
+                        void *ep0, Py_ssize_t ix, PyObject *key, Py_hash_t hash)
 {
     PyDictUnicodeEntry *ep = &((PyDictUnicodeEntry *)ep0)[ix];
     assert(ep->me_key != NULL);
     assert(PyUnicode_CheckExact(ep->me_key));
     if (ep->me_key == key ||
             (unicode_get_hash(ep->me_key) == hash && unicode_eq(ep->me_key, key))) {
-        return ix;
+        return 1;
     }
-    return DKIX_DUMMY;
+    return 0;
 }
 
 static Py_ssize_t _Py_HOT_FUNCTION
 unicodekeys_lookup_unicode(PyDictKeysObject* dk, PyObject *key, Py_hash_t hash)
 {
-    return do_lookup(NULL, dk, key, hash, (generic_entries_func)DK_UNICODE_ENTRIES, compare_unicode_unicode);
+    return do_lookup(NULL, dk, key, hash, compare_unicode_unicode);
 }
 
-static inline Py_ALWAYS_INLINE
-Py_ssize_t compare_generic(PyDictObject *mp, PyDictKeysObject *dk,
-                           void *ep0, Py_ssize_t ix, PyObject *key, Py_hash_t hash)
+static inline Py_ALWAYS_INLINE Py_ssize_t
+compare_generic(PyDictObject *mp, PyDictKeysObject *dk,
+                void *ep0, Py_ssize_t ix, PyObject *key, Py_hash_t hash)
 {
     PyDictKeyEntry *ep = &((PyDictKeyEntry *)ep0)[ix];
     assert(ep->me_key != NULL);
     if (ep->me_key == key) {
-        return ix;
+        return 1;
     }
     if (ep->me_hash == hash) {
         PyObject *startkey = ep->me_key;
@@ -993,22 +992,20 @@ Py_ssize_t compare_generic(PyDictObject *mp, PyDictKeysObject *dk,
             return DKIX_ERROR;
         }
         if (dk == mp->ma_keys && ep->me_key == startkey) {
-            if (cmp > 0) {
-                return ix;
-            }
+            return cmp;
         }
         else {
             /* The dict was mutated, restart */
             return DKIX_KEY_CHANGED;
         }
     }
-    return DKIX_DUMMY;
+    return 0;
 }
 
 static Py_ssize_t
 dictkeys_generic_lookup(PyDictObject *mp, PyDictKeysObject* dk, PyObject *key, Py_hash_t hash)
 {
-    return do_lookup(mp, dk, key, hash, (generic_entries_func)DK_ENTRIES, compare_generic);
+    return do_lookup(mp, dk, key, hash, compare_generic);
 }
 
 /* Lookup a string in a (all unicode) dict keys.
