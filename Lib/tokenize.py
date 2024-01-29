@@ -534,9 +534,7 @@ def _generate_tokens_from_c_tokenizer(source, encoding=None, extra_tokens=False)
     try:
         for info in it:
             yield TokenInfo._make(info)
-    except SyntaxError as e:
-        if type(e) != SyntaxError:
-            raise e from None
+    except SyntaxError:
         msg = _transform_msg(e.msg)
         raise TokenError(msg, (e.lineno, e.offset)) from None
 
