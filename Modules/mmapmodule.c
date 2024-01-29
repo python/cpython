@@ -124,6 +124,12 @@ typedef struct {
     access_mode access;
 } mmap_object;
 
+/*[clinic input]
+module mmap
+class mmap.mmap "mmap_object *" "mmap_object_type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=4ebde54549b9daa7]*/
+
 static int
 mmap_object_traverse(mmap_object *m_obj, visitproc visit, void *arg)
 {
@@ -896,6 +902,54 @@ mmap_madvise_method(mmap_object *self, PyObject *args)
 }
 #endif // HAVE_MADVISE
 
+#if defined(MS_WINDOWS) || defined(HAVE_MPROTECT)
+/*[clinic input]
+mmap.mmap.mprotect
+    prot: int
+    start: Py_ssize_t = 0
+    length: Py_ssize_t = -1
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+mmap_mmap_mprotect_impl(mmap_object *self, int prot, Py_ssize_t start,
+                        Py_ssize_t length)
+/*[clinic end generated code: output=5d0923571db44207 input=5632169def6c8789]*/
+{
+    CHECK_VALID(NULL);
+
+    if (start < 0 || start >= self->size) {
+        PyErr_SetString(PyExc_ValueError, "mprotect start out of bounds");
+        return NULL;
+    }
+    if (length < 0) {
+        length = self->size;
+    }
+    if (start + length > self->size) {
+        PyErr_SetString(PyExc_ValueError, "mprotect length out of bounds");
+        return NULL;
+    }
+
+#ifdef MS_WINDOWS
+    DWORD old;
+    if (VirtualProtect(self->data + start, length, prot, &old) == FALSE) {
+        PyErr_SetFromWindowsErr(GetLastError());
+        return NULL;
+    }
+#else
+    if (mprotect(self->data + start, length, prot) != 0) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return NULL;
+    }
+#endif
+
+    Py_RETURN_NONE;
+}
+#endif
+
+#include "clinic/mmapmodule.c.h"
+
 static struct PyMemberDef mmap_object_members[] = {
     {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(mmap_object, weakreflist), Py_READONLY},
     {NULL},
@@ -922,6 +976,7 @@ static struct PyMethodDef mmap_object_methods[] = {
     {"write_byte",      (PyCFunction) mmap_write_byte_method,   METH_VARARGS},
     {"__enter__",       (PyCFunction) mmap__enter__method,      METH_NOARGS},
     {"__exit__",        (PyCFunction) mmap__exit__method,       METH_VARARGS},
+    MMAP_MMAP_MPROTECT_METHODDEF
 #ifdef MS_WINDOWS
     {"__sizeof__",      (PyCFunction) mmap__sizeof__method,     METH_NOARGS},
 #endif
@@ -1635,6 +1690,39 @@ mmap_exec(PyObject *module)
 #ifdef PROT_WRITE
     ADD_INT_MACRO(module, PROT_WRITE);
 #endif
+
+    // Windows-specific prot values
+#ifdef PAGE_EXECUTE
+    ADD_INT_MACRO(module, PAGE_EXECUTE);
+#endif
+#ifdef PAGE_EXECUTE_READ
+    ADD_INT_MACRO(module, PAGE_EXECUTE_READ);
+#endif
+#ifdef PAGE_EXECUTE_READWRITE
+    ADD_INT_MACRO(module, PAGE_EXECUTE_READWRITE);
+#endif
+#ifdef PAGE_EXECUTE_WRITECOPY
+    ADD_INT_MACRO(module, PAGE_EXECUTE_WRITECOPY);
+#endif
+#ifdef PAGE_NOACCESS
+    ADD_INT_MACRO(module, PAGE_NOACCESS);
+#endif
+#ifdef PAGE_READONLY
+    ADD_INT_MACRO(module, PAGE_READONLY);
+#endif
+#ifdef PAGE_READWRITE
+    ADD_INT_MACRO(module, PAGE_READWRITE);
+#endif
+#ifdef PAGE_WRITECOPY
+    ADD_INT_MACRO(module, PAGE_WRITECOPY);
+#endif
+#ifdef PAGE_TARGETS_INVALID
+    ADD_INT_MACRO(module, PAGE_TARGETS_INVALID);
+#endif
+#ifdef PAGE_TARGETS_NO_UPDATE
+    ADD_INT_MACRO(module, PAGE_TARGETS_NO_UPDATE);
+#endif
+
 
 #ifdef MAP_SHARED
     ADD_INT_MACRO(module, MAP_SHARED);

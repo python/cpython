@@ -232,6 +232,21 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       .. versionadded:: 3.8
 
 
+   .. method:: mprotect(prot[, start[, length]])
+
+      Change the access protections to *prot* to the memory region beginning at
+      *start* and extending *length* bytes.  *prot* must be one of the
+      :ref:`PROT_* constants <prot-constants>` available on the system,
+      or :ref:`PAGE_* constants <page-constants>` on Windows.
+      *start* and *length* are omitted, the entire mapping is spanned.  On
+      some systems (including Linux), *start* must be a multiple of the
+      :const:`PAGESIZE`.
+
+      Availability: Systems with the ``mprotect()`` system call.
+
+      .. versionadded:: 3.13
+
+
    .. method:: move(dest, src, count)
 
       Copy the *count* bytes starting at offset *src* to the destination index
@@ -341,6 +356,38 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       position of the file pointer; the file position is advanced by ``1``. If
       the mmap was created with :const:`ACCESS_READ`, then writing to it will
       raise a :exc:`TypeError` exception.
+
+.. _prot-constants:
+
+PROT_* Constants
+++++++++++++++++
+
+.. data:: PROT_READ
+          PROT_WRITE
+          PROT_EXEC
+
+   These options can be passed to :meth:`mmap.mmap` and :meth:`mmap.mprotect`.
+   Not available on Windows.
+
+.. _page-constants:
+
+PAGE_* Constants
+++++++++++++++++
+
+.. data:: PAGE_EXECUTE
+          PAGE_EXECUTE_READ
+          PAGE_EXECUTE_READWRITE
+          PAGE_EXECUTE_WRITECOPY
+          PAGE_NOACCESS
+          PAGE_READONLY
+          PAGE_READWRITE
+          PAGE_WRITECOPY
+          PAGE_TARGETS_INVALID
+          PAGE_TARGETS_NO_UPDATE
+
+   .. availability:: Windows.
+
+   These options can be passed to :meth:`mmap.mprotect`.
 
 .. _madvise-constants:
 

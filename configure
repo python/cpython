@@ -17752,6 +17752,12 @@ then :
   printf "%s\n" "#define HAVE_MMAP 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "mprotect" "ac_cv_func_mprotect"
+if test "x$ac_cv_func_mprotect" = xyes
+then :
+  printf "%s\n" "#define HAVE_MPROTECT 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "mremap" "ac_cv_func_mremap"
 if test "x$ac_cv_func_mremap" = xyes
 then :
