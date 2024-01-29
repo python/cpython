@@ -36,6 +36,9 @@
 
 #define PEEPHOLE_MAX_ATTEMPTS 5
 
+// +1 to account for implicit root frame.
+#define MAX_ABSTRACT_FRAME_DEPTH (TRACE_STACK_SIZE + 1)
+
 #ifdef Py_DEBUG
     static const char *const DEBUG_ENV = "PYTHON_OPT_DEBUG";
     static inline int get_lltrace(void) {
@@ -102,7 +105,6 @@ typedef struct {
 
 
 typedef struct _Py_UOpsAbstractFrame {
-    PyObject_HEAD
     // Strong reference.
     struct _Py_UOpsAbstractFrame *prev;
     // Borrowed reference.
@@ -122,20 +124,13 @@ typedef struct _Py_UOpsAbstractFrame {
 static void
 abstractframe_dealloc(_Py_UOpsAbstractFrame *self)
 {
+    if (self == NULL) {
+        return;
+    }
     PyMem_Free(self->sym_consts);
-    Py_XDECREF(self->prev);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    abstractframe_dealloc(self->prev);
 }
 
-PyTypeObject _Py_UOpsAbstractFrame_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    .tp_name = "uops abstract frame",
-    .tp_basicsize = sizeof(_Py_UOpsAbstractFrame) ,
-    .tp_itemsize = 0,
-    .tp_dealloc = (destructor)abstractframe_dealloc,
-    .tp_free = PyObject_Free,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION
-};
 
 typedef struct ty_arena {
     int ty_curr_number;
@@ -158,6 +153,9 @@ typedef struct _Py_UOpsAbstractInterpContext {
     PyObject_HEAD
     // The current "executing" frame.
     _Py_UOpsAbstractFrame *frame;
+    // Need one more for the root frame.
+    _Py_UOpsAbstractFrame frames[MAX_ABSTRACT_FRAME_DEPTH];
+    int curr_frame_depth;
 
     // Arena for the symbolic types.
     ty_arena t_arena;
@@ -168,14 +166,16 @@ typedef struct _Py_UOpsAbstractInterpContext {
 
     _Py_UOpsSymType **water_level;
     _Py_UOpsSymType **limit;
-    _Py_UOpsSymType *locals_and_stack[1];
+    _Py_UOpsSymType *locals_and_stack[MAX_ABSTRACT_INTERP_SIZE];
 } _Py_UOpsAbstractInterpContext;
 
 static void
-abstractinterp_dealloc(PyObject *o)
+abstractinterp_dealloc(_Py_UOpsAbstractInterpContext *self)
 {
-    _Py_UOpsAbstractInterpContext *self = (_Py_UOpsAbstractInterpContext *)o;
-    Py_XDECREF(self->frame);
+    if (self == NULL) {
+        return;
+    }
+    abstractframe_dealloc(self->frame);
     if (self->t_arena.arena != NULL) {
         int tys = self->t_arena.ty_curr_number;
         for (int i = 0; i < tys; i++) {
@@ -183,18 +183,9 @@ abstractinterp_dealloc(PyObject *o)
         }
     }
     PyMem_Free(self->t_arena.arena);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    PyMem_Free(self);
 }
 
-PyTypeObject _Py_UOpsAbstractInterpContext_Type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    .tp_name = "uops abstract interpreter's context",
-    .tp_basicsize = sizeof(_Py_UOpsAbstractInterpContext) - sizeof(_Py_UOpsSymType *),
-    .tp_itemsize = sizeof(_Py_UOpsSymType *),
-    .tp_dealloc = (destructor)abstractinterp_dealloc,
-    .tp_free = PyObject_Free,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION
-};
 
 static inline _Py_UOpsAbstractFrame *
 frame_new(_Py_UOpsAbstractInterpContext *ctx,
@@ -231,9 +222,7 @@ abstractinterp_context_new(PyCodeObject *co,
         goto error;
     }
 
-    self = PyObject_NewVar(_Py_UOpsAbstractInterpContext,
-                               &_Py_UOpsAbstractInterpContext_Type,
-                               MAX_ABSTRACT_INTERP_SIZE);
+    self = PyMem_New(_Py_UOpsAbstractInterpContext, 1);
     if (self == NULL) {
         goto error;
     }
@@ -252,6 +241,7 @@ abstractinterp_context_new(PyCodeObject *co,
 
     // Frame setup
 
+    self->curr_frame_depth = 0;
     frame = frame_new(self, co->co_consts, stack_len, locals_len, curr_stacklen);
     if (frame == NULL) {
         goto error;
@@ -284,8 +274,8 @@ error:
         self->t_arena.arena = NULL;
         self->frame = NULL;
     }
-    Py_XDECREF(self);
-    Py_XDECREF(frame);
+    abstractinterp_dealloc(self);
+    abstractframe_dealloc(frame);
     return NULL;
 }
 
@@ -381,8 +371,9 @@ frame_new(_Py_UOpsAbstractInterpContext *ctx,
     if (sym_consts == NULL) {
         return NULL;
     }
-    _Py_UOpsAbstractFrame *frame = PyObject_New(_Py_UOpsAbstractFrame,
-                                                      &_Py_UOpsAbstractFrame_Type);
+    _Py_UOpsAbstractFrame *frame = &ctx->frames[ctx->curr_frame_depth];
+    ctx->curr_frame_depth++;
+    assert(ctx->curr_frame_depth <= MAX_ABSTRACT_FRAME_DEPTH);
     if (frame == NULL) {
         PyMem_Free(sym_consts);
         return NULL;
@@ -394,7 +385,6 @@ frame_new(_Py_UOpsAbstractInterpContext *ctx,
     frame->stack_len = stack_len;
     frame->locals_len = locals_len;
     frame->prev = NULL;
-    frame->next = NULL;
 
     return frame;
 }
@@ -447,7 +437,6 @@ ctx_frame_push(
     }
 
     frame->prev = ctx->frame;
-    ctx->frame->next = frame;
     ctx->frame = frame;
 
 
@@ -465,8 +454,8 @@ ctx_frame_pop(
     frame->prev = NULL;
 
     ctx->water_level = frame->locals;
-    Py_DECREF(frame);
-    ctx->frame->next = NULL;
+    PyMem_Free(frame->sym_consts);
+    ctx->curr_frame_depth--;
     return 0;
 }
 
@@ -881,10 +870,15 @@ uop_abstract_interpret_single_inst(
             // Don't put in the new frame. Leave it be so that _PUSH_FRAME
             // can extract callable, self_or_null and args later.
             // This also means our stack pointer diverges from the real VM.
+
+            // IMPORTANT: make sure there is no interference
+            // between this and _PUSH_FRAME. That is a required invariant.
             break;
         }
 
         case _PUSH_FRAME: {
+            // From _INIT_CALL_PY_EXACT_ARGS
+
             int argcount = oparg;
             // _INIT_CALL_PY_EXACT_ARGS's real stack effect in the VM.
             stack_pointer += -1 - oparg;
@@ -900,9 +894,10 @@ uop_abstract_interpret_single_inst(
             assert(self_or_null != NULL);
             _Py_UOpsSymType **args = &PEEK(-1);
             assert(args != NULL);
-            // Bound method fiddling, same as _INIT_CALL_PY_EXACT_ARGS
             if (!sym_is_type(self_or_null, NULL_TYPE) &&
                 !sym_is_type(self_or_null, SELF_OR_NULL)) {
+                // Bound method fiddling, same as _INIT_CALL_PY_EXACT_ARGS in
+                // VM
                 args--;
                 argcount++;
             }
@@ -1066,12 +1061,12 @@ loop_peeling:
 
 
     res = ctx->emitter.curr_i;
-    Py_DECREF(ctx);
+    abstractinterp_dealloc(ctx);
 
     return res;
 
 error:
-    Py_XDECREF(ctx);
+    abstractinterp_dealloc(ctx);
     return -1;
 }
 
