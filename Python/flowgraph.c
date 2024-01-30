@@ -212,14 +212,14 @@ basicblock_add_jump(basicblock *b, int opcode, basicblock *target, location loc)
 }
 
 static inline int
-basicblock_append_instructions(basicblock *target, basicblock *source)
+basicblock_append_instructions(basicblock *to, basicblock *from)
 {
-    for (int i = 0; i < source->b_iused; i++) {
-        int n = basicblock_next_instr(target);
+    for (int i = 0; i < from->b_iused; i++) {
+        int n = basicblock_next_instr(to);
         if (n < 0) {
             return ERROR;
         }
-        target->b_instr[n] = source->b_instr[i];
+        to->b_instr[n] = from->b_instr[i];
     }
     return SUCCESS;
 }
@@ -292,9 +292,9 @@ static void
 dump_basicblock(const basicblock *b)
 {
     const char *b_return = basicblock_returns(b) ? "return " : "";
-    fprintf(stderr, "%d: [EH=%d CLD=%d WRM=%d NO_FT=%d %p] used: %d, depth: %d, %s\n",
+    fprintf(stderr, "%d: [EH=%d CLD=%d WRM=%d NO_FT=%d %p] used: %d, depth: %d, preds: %d %s\n",
         b->b_label.id, b->b_except_handler, b->b_cold, b->b_warm, BB_NO_FALLTHROUGH(b), b, b->b_iused,
-        b->b_startdepth, b_return);
+        b->b_startdepth, b->b_predecessors, b_return);
     if (b->b_instr) {
         int i;
         for (i = 0; i < b->b_iused; i++) {
@@ -1165,15 +1165,26 @@ remove_redundant_jumps(cfg_builder *g) {
     return changes;
 }
 
+static inline bool
+basicblock_has_no_lineno(basicblock *b) {
+    for (int i = 0; i < b->b_iused; i++) {
+        if (b->b_instr[i].i_loc.lineno >= 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
 /* Maximum size of basic block that should be copied in optimizer */
 #define MAX_COPY_SIZE 4
 
-/* If this block ends with an unconditional jump to a small exit block, then
+/* If this block ends with an unconditional jump to a small exit block or
+ * a block that has no line numbers (and no fallthrough), then
  * remove the jump and extend this block with the target.
  * Returns 1 if extended, 0 if no change, and -1 on error.
  */
 static int
-inline_small_exit_blocks(basicblock *bb) {
+basicblock_inline_small_or_no_lineno_blocks(basicblock *bb) {
     cfg_instr *last = basicblock_last_instr(bb);
     if (last == NULL) {
         return 0;
@@ -1182,12 +1193,44 @@ inline_small_exit_blocks(basicblock *bb) {
         return 0;
     }
     basicblock *target = last->i_target;
-    if (basicblock_exits_scope(target) && target->b_iused <= MAX_COPY_SIZE) {
+    bool small_exit_block = (basicblock_exits_scope(target) &&
+                             target->b_iused <= MAX_COPY_SIZE);
+    bool no_lineno_no_fallthrough = (basicblock_has_no_lineno(target) &&
+                                     !BB_HAS_FALLTHROUGH(target));
+    if (small_exit_block || no_lineno_no_fallthrough) {
+        assert(is_jump(last));
+        int removed_jump_opcode = last->i_opcode;
         INSTR_SET_OP0(last, NOP);
         RETURN_IF_ERROR(basicblock_append_instructions(bb, target));
+        if (no_lineno_no_fallthrough) {
+            last = basicblock_last_instr(bb);
+            if (IS_UNCONDITIONAL_JUMP_OPCODE(last->i_opcode) &&
+                removed_jump_opcode == JUMP)
+            {
+                /* Make sure we don't lose eval breaker checks */
+                last->i_opcode = JUMP;
+            }
+        }
+        target->b_predecessors--;
         return 1;
     }
     return 0;
+}
+
+static int
+inline_small_or_no_lineno_blocks(basicblock *entryblock) {
+    bool changes;
+    do {
+        changes = false;
+        for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+            int res = basicblock_inline_small_or_no_lineno_blocks(b);
+            RETURN_IF_ERROR(res);
+            if (res) {
+                changes = true;
+            }
+        }
+    } while(changes); /* every change removes a jump, ensuring convergence */
+    return changes;
 }
 
 // Attempt to eliminate jumps to jumps by updating inst to jump to
@@ -1804,9 +1847,7 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache, int firstl
 {
     assert(PyDict_CheckExact(const_cache));
     RETURN_IF_ERROR(check_cfg(g));
-    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        RETURN_IF_ERROR(inline_small_exit_blocks(b));
-    }
+    RETURN_IF_ERROR(inline_small_or_no_lineno_blocks(g->g_entryblock));
     RETURN_IF_ERROR(remove_unreachable(g->g_entryblock));
     RETURN_IF_ERROR(resolve_line_numbers(g, firstlineno));
     RETURN_IF_ERROR(optimize_load_const(const_cache, g, consts));
@@ -1814,9 +1855,6 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache, int firstl
         RETURN_IF_ERROR(optimize_basic_block(const_cache, b, consts));
     }
     RETURN_IF_ERROR(remove_redundant_nops_and_pairs(g->g_entryblock));
-    for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
-        RETURN_IF_ERROR(inline_small_exit_blocks(b));
-    }
     RETURN_IF_ERROR(remove_unreachable(g->g_entryblock));
 
     int removed_nops, removed_jumps;
@@ -2333,12 +2371,7 @@ convert_pseudo_ops(cfg_builder *g)
 static inline bool
 is_exit_or_eval_check_without_lineno(basicblock *b) {
     if (basicblock_exits_scope(b) || basicblock_has_eval_break(b)) {
-        for (int i = 0; i < b->b_iused; i++) {
-            if (b->b_instr[i].i_loc.lineno >= 0) {
-                return false;
-            }
-        }
-        return true;
+        return basicblock_has_no_lineno(b);
     }
     else {
         return false;
