@@ -937,7 +937,7 @@ python.worker.js: $(srcdir)/Tools/wasm/python.worker.js
 
 ##########################################################################
 # Build static libmpdec.a
-LIBMPDEC_CFLAGS=@LIBMPDEC_CFLAGS@ $(PY_STDMODULE_CFLAGS) $(CCSHARED)
+LIBMPDEC_CFLAGS=$(PY_STDMODULE_CFLAGS) @LIBMPDEC_CFLAGS@ $(CCSHARED)
 
 # "%.o: %c" is not portable
 Modules/_decimal/libmpdec/basearith.o: $(srcdir)/Modules/_decimal/libmpdec/basearith.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
