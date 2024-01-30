@@ -158,11 +158,15 @@ _PySemaphore_PlatformWait(_PySemaphore *sema, _PyTime_t timeout)
     if (sema->counter == 0) {
         if (timeout >= 0) {
             struct timespec ts;
-
+#if defined(HAVE_PTHREAD_COND_TIMEDWAIT_RELATIVE_NP)
+            _PyTime_AsTimespec_clamp(timeout, &ts);
+            err = pthread_cond_timedwait_relative_np(&sema->cond, &sema->mutex, &ts);
+#else
             _PyTime_t deadline = _PyTime_Add(_PyTime_GetSystemClock(), timeout);
             _PyTime_AsTimespec_clamp(deadline, &ts);
 
             err = pthread_cond_timedwait(&sema->cond, &sema->mutex, &ts);
+#endif // HAVE_PTHREAD_COND_TIMEDWAIT_RELATIVE_NP
         }
         else {
             err = pthread_cond_wait(&sema->cond, &sema->mutex);
