@@ -122,11 +122,11 @@ typedef struct _Py_UOpsAbstractFrame {
 static void
 abstractframe_dealloc(_Py_UOpsAbstractFrame *self)
 {
-    if (self == NULL) {
-        return;
+    _Py_UOpsAbstractFrame *curr = self;
+    while (curr != NULL) {
+        PyMem_Free(curr->sym_consts);
+        curr = curr->prev;
     }
-    PyMem_Free(self->sym_consts);
-    abstractframe_dealloc(self->prev);
 }
 
 
