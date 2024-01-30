@@ -22,6 +22,9 @@ extern int _PyDict_DelItemIf(PyObject *mp, PyObject *key,
 // Export for '_asyncio' shared extension
 PyAPI_FUNC(int) _PyDict_SetItem_KnownHash(PyObject *mp, PyObject *key,
                                           PyObject *item, Py_hash_t hash);
+int _PyDict_SetItem_KnownHash_LockHeld(PyObject *mp, PyObject *key,
+                                       PyObject *item, Py_hash_t hash);
+
 // Export for '_asyncio' shared extension
 PyAPI_FUNC(int) _PyDict_DelItem_KnownHash(PyObject *mp, PyObject *key,
                                           Py_hash_t hash);

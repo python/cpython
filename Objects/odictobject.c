@@ -467,6 +467,7 @@ later:
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
+#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION
 #include "pycore_dict.h"          // _Py_dict_lookup()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
@@ -984,6 +985,7 @@ Done:
 
 
 /*[clinic input]
+@critical_section
 OrderedDict.setdefault
 
     key: object
@@ -997,7 +999,7 @@ Return the value for key if key is in the dictionary, else default.
 static PyObject *
 OrderedDict_setdefault_impl(PyODictObject *self, PyObject *key,
                             PyObject *default_value)
-/*[clinic end generated code: output=97537cb7c28464b6 input=38e098381c1efbc6]*/
+/*[clinic end generated code: output=97537cb7c28464b6 input=d7b93e92734f99b5]*/
 {
     PyObject *result = NULL;
 
@@ -1069,6 +1071,7 @@ _odict_popkey_hash(PyObject *od, PyObject *key, PyObject *failobj,
 
 /* Skips __missing__() calls. */
 /*[clinic input]
+@critical_section
 OrderedDict.pop
 
     key: object
@@ -1083,7 +1086,7 @@ raise a KeyError.
 static PyObject *
 OrderedDict_pop_impl(PyODictObject *self, PyObject *key,
                      PyObject *default_value)
-/*[clinic end generated code: output=7a6447d104e7494b input=7efe36601007dff7]*/
+/*[clinic end generated code: output=7a6447d104e7494b input=a79988887b4a651f]*/
 {
     Py_hash_t hash = PyObject_Hash(key);
     if (hash == -1)
@@ -1095,6 +1098,7 @@ OrderedDict_pop_impl(PyODictObject *self, PyObject *key,
 /* popitem() */
 
 /*[clinic input]
+@critical_section
 OrderedDict.popitem
 
     last: bool = True
@@ -1106,7 +1110,7 @@ Pairs are returned in LIFO order if last is true or FIFO order if false.
 
 static PyObject *
 OrderedDict_popitem_impl(PyODictObject *self, int last)
-/*[clinic end generated code: output=98e7d986690d49eb input=d992ac5ee8305e1a]*/
+/*[clinic end generated code: output=98e7d986690d49eb input=8aafc7433e0a40e7]*/
 {
     PyObject *key, *value, *item = NULL;
     _ODictNode *node;
@@ -1251,6 +1255,7 @@ odict_reversed(PyODictObject *od, PyObject *Py_UNUSED(ignored))
 /* move_to_end() */
 
 /*[clinic input]
+@critical_section
 OrderedDict.move_to_end
 
     key: object
@@ -1263,7 +1268,7 @@ Raise KeyError if the element does not exist.
 
 static PyObject *
 OrderedDict_move_to_end_impl(PyODictObject *self, PyObject *key, int last)
-/*[clinic end generated code: output=fafa4c5cc9b92f20 input=d6ceff7132a2fcd7]*/
+/*[clinic end generated code: output=fafa4c5cc9b92f20 input=09f8bc7053c0f6d4]*/
 {
     _ODictNode *node;
 
@@ -1556,7 +1561,10 @@ static int
 _PyODict_SetItem_KnownHash(PyObject *od, PyObject *key, PyObject *value,
                            Py_hash_t hash)
 {
-    int res = _PyDict_SetItem_KnownHash(od, key, value, hash);
+    int res;
+    Py_BEGIN_CRITICAL_SECTION(od);
+
+    res = _PyDict_SetItem_KnownHash_LockHeld(od, key, value, hash);
     if (res == 0) {
         res = _odict_add_new_node((PyODictObject *)od, key, hash);
         if (res < 0) {
@@ -1566,11 +1574,13 @@ _PyODict_SetItem_KnownHash(PyObject *od, PyObject *key, PyObject *value,
             _PyErr_ChainExceptions1(exc);
         }
     }
+    Py_END_CRITICAL_SECTION();
     return res;
 }
 
-int
-PyODict_SetItem(PyObject *od, PyObject *key, PyObject *value)
+
+static int
+setitem_lock_held(PyObject *od, PyObject *key, PyObject *value)
 {
     Py_hash_t hash = PyObject_Hash(key);
     if (hash == -1)
@@ -1579,7 +1589,17 @@ PyODict_SetItem(PyObject *od, PyObject *key, PyObject *value)
 }
 
 int
-PyODict_DelItem(PyObject *od, PyObject *key)
+PyODict_SetItem(PyObject *od, PyObject *key, PyObject *value)
+{
+    int res;
+    Py_BEGIN_CRITICAL_SECTION(od);
+    res = setitem_lock_held(od, key, value);
+    Py_END_CRITICAL_SECTION();
+    return res;
+}
+
+static int
+del_item_lock_held(PyObject *od, PyObject *key)
 {
     int res;
     Py_hash_t hash = PyObject_Hash(key);
@@ -1589,6 +1609,16 @@ PyODict_DelItem(PyObject *od, PyObject *key)
     if (res < 0)
         return -1;
     return _PyDict_DelItem_KnownHash(od, key, hash);
+}
+
+int
+PyODict_DelItem(PyObject *od, PyObject *key)
+{
+    int res;
+    Py_BEGIN_CRITICAL_SECTION(od);
+    res = del_item_lock_held(od, key);
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 
@@ -1630,16 +1660,11 @@ odictiter_traverse(odictiterobject *di, visitproc visit, void *arg)
 /* In order to protect against modifications during iteration, we track
  * the current key instead of the current node. */
 static PyObject *
-odictiter_nextkey(odictiterobject *di)
+odictiter_nextkey_lock_held(odictiterobject *di)
 {
     PyObject *key = NULL;
     _ODictNode *node;
     int reversed = di->kind & _odict_ITER_REVERSED;
-
-    if (di->di_odict == NULL)
-        return NULL;
-    if (di->di_current == NULL)
-        goto done;  /* We're already done. */
 
     /* Check for unsupported changes. */
     if (di->di_odict->od_state != di->di_state) {
@@ -1680,6 +1705,24 @@ odictiter_nextkey(odictiterobject *di)
 done:
     Py_CLEAR(di->di_odict);
     return key;
+}
+
+static PyObject *
+odictiter_nextkey(odictiterobject *di)
+{
+    if (di->di_odict == NULL)
+        return NULL;
+    if (di->di_current == NULL) {
+        Py_CLEAR(di->di_odict);
+        return NULL;
+    }
+
+
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(di->di_odict);
+    res = odictiter_nextkey_lock_held(di);
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 static PyObject *

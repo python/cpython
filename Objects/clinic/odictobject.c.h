@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(OrderedDict_fromkeys__doc__,
@@ -129,7 +130,9 @@ OrderedDict_setdefault(PyODictObject *self, PyObject *const *args, Py_ssize_t na
     }
     default_value = args[1];
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = OrderedDict_setdefault_impl(self, key, default_value);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -195,7 +198,9 @@ OrderedDict_pop(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs, Py
     }
     default_value = args[1];
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = OrderedDict_pop_impl(self, key, default_value);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -260,7 +265,9 @@ OrderedDict_popitem(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs
         goto exit;
     }
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = OrderedDict_popitem_impl(self, last);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -327,9 +334,11 @@ OrderedDict_move_to_end(PyODictObject *self, PyObject *const *args, Py_ssize_t n
         goto exit;
     }
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = OrderedDict_move_to_end_impl(self, key, last);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=eff78d2a3f9379bd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=78be92f03a70dee4 input=a9049054013a1b77]*/

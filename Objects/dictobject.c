@@ -1915,7 +1915,7 @@ PyDict_SetItem(PyObject *op, PyObject *key, PyObject *value)
 }
 
 int
-_PyDict_SetItem_KnownHash(PyObject *op, PyObject *key, PyObject *value,
+_PyDict_SetItem_KnownHash_LockHeld(PyObject *op, PyObject *key, PyObject *value,
                          Py_hash_t hash)
 {
     PyDictObject *mp;
@@ -1935,6 +1935,19 @@ _PyDict_SetItem_KnownHash(PyObject *op, PyObject *key, PyObject *value,
     }
     /* insertdict() handles any resizing that might be necessary */
     return insertdict(interp, mp, Py_NewRef(key), hash, Py_NewRef(value));
+}
+
+int
+_PyDict_SetItem_KnownHash(PyObject *op, PyObject *key, PyObject *value,
+                         Py_hash_t hash)
+{
+    int res;
+
+    Py_BEGIN_CRITICAL_SECTION(op);
+    res = _PyDict_SetItem_KnownHash_LockHeld(op, key, value, hash);
+
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 static void
