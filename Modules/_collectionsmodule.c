@@ -344,7 +344,7 @@ typedef struct {
 } AppendResult;
 
 static inline AppendResult
-deque_append_locked(dequeobject *deque, PyObject *item)
+deque_append_lock_held(dequeobject *deque, PyObject *item)
 {
     if (deque->rightindex == BLOCKLEN - 1) {
         block *b = newblock(deque);
@@ -387,7 +387,7 @@ static PyObject *
 deque_append_impl(dequeobject *deque, PyObject *item)
 /*[clinic end generated code: output=9c7bcb8b599c6362 input=b0eeeb09b9f5cf18]*/
 {
-    AppendResult res = deque_append_locked(deque, item);
+    AppendResult res = deque_append_lock_held(deque, item);
     Py_XDECREF(res.trimmed);
     if (res.err) {
         return NULL;
@@ -396,7 +396,7 @@ deque_append_impl(dequeobject *deque, PyObject *item)
 }
 
 static inline AppendResult
-deque_appendleft_locked(dequeobject *deque, PyObject *item)
+deque_appendleft_lock_held(dequeobject *deque, PyObject *item)
 {
     if (deque->leftindex == 0) {
         block *b = newblock(deque);
@@ -439,7 +439,7 @@ static PyObject *
 deque_appendleft_impl(dequeobject *deque, PyObject *item)
 /*[clinic end generated code: output=9a192edbcd0f20db input=236c2fbceaf08e14]*/
 {
-    AppendResult res = deque_appendleft_locked(deque, item);
+    AppendResult res = deque_appendleft_lock_held(deque, item);
     Py_XDECREF(res.trimmed);
     if (res.err) {
         return NULL;
@@ -524,7 +524,7 @@ deque_extend_impl(dequeobject *deque, PyObject *iterable)
 
     iternext = *Py_TYPE(it)->tp_iternext;
     while ((item = iternext(it)) != NULL) {
-        AppendResult res = deque_append_locked(deque, item);
+        AppendResult res = deque_append_lock_held(deque, item);
         Py_DECREF(item);
         Py_XDECREF(res.trimmed);
         if (res.err) {
@@ -586,7 +586,7 @@ deque_extendleft_impl(dequeobject *deque, PyObject *iterable)
 
     iternext = *Py_TYPE(it)->tp_iternext;
     while ((item = iternext(it)) != NULL) {
-        AppendResult res = deque_appendleft_locked(deque, item);
+        AppendResult res = deque_appendleft_lock_held(deque, item);
         Py_DECREF(item);
         Py_XDECREF(res.trimmed);
         if (res.err) {
@@ -689,7 +689,7 @@ deque___copy___impl(dequeobject *deque)
 }
 
 static PyObject *
-deque_concat_locked(dequeobject *deque, PyObject *other)
+deque_concat_lock_held(dequeobject *deque, PyObject *other)
 {
     PyObject *new_deque, *result;
     int rv;
@@ -725,7 +725,7 @@ deque_concat(dequeobject *deque, PyObject *other)
 {
     PyObject *result = NULL;
     Py_BEGIN_CRITICAL_SECTION(deque);
-    result = deque_concat_locked(deque, other);
+    result = deque_concat_lock_held(deque, other);
     Py_END_CRITICAL_SECTION();
     return result;
 }
@@ -832,7 +832,7 @@ deque_clearmethod_impl(dequeobject *deque)
 }
 
 static PyObject *
-deque_inplace_repeat_locked(dequeobject *deque, Py_ssize_t n)
+deque_inplace_repeat_lock_held(dequeobject *deque, Py_ssize_t n)
 {
     Py_ssize_t i, m, size;
     PyObject *seq;
@@ -913,7 +913,7 @@ deque_inplace_repeat(dequeobject *deque, Py_ssize_t n)
 {
     PyObject *result = NULL;
     Py_BEGIN_CRITICAL_SECTION(deque);
-    result = deque_inplace_repeat_locked(deque, n);
+    result = deque_inplace_repeat_lock_held(deque, n);
     Py_END_CRITICAL_SECTION();
     return result;
 }
@@ -931,7 +931,7 @@ deque_repeat(dequeobject *deque, Py_ssize_t n)
         return NULL;
     // It's safe to not acquire the per-object lock for new_deque; it's
     // invisible to other threads.
-    rv = deque_inplace_repeat_locked(new_deque, n);
+    rv = deque_inplace_repeat_lock_held(new_deque, n);
     Py_DECREF(new_deque);
     return rv;
 }
@@ -1202,7 +1202,7 @@ deque_count_impl(dequeobject *deque, PyObject *v)
 }
 
 static int
-deque_contains_locked(dequeobject *deque, PyObject *v)
+deque_contains_lock_held(dequeobject *deque, PyObject *v)
 {
     block *b = deque->leftblock;
     Py_ssize_t index = deque->leftindex;
@@ -1238,7 +1238,7 @@ deque_contains(dequeobject *deque, PyObject *v)
 {
     int result = -1;
     Py_BEGIN_CRITICAL_SECTION(deque);
-    result = deque_contains_locked(deque, v);
+    result = deque_contains_lock_held(deque, v);
     Py_END_CRITICAL_SECTION();
     return result;
 }
@@ -1386,7 +1386,7 @@ valid_index(Py_ssize_t i, Py_ssize_t limit)
 }
 
 static PyObject *
-deque_item_locked(dequeobject *deque, Py_ssize_t i)
+deque_item_lock_held(dequeobject *deque, Py_ssize_t i)
 {
     block *b;
     PyObject *item;
@@ -1429,7 +1429,7 @@ deque_item(dequeobject *deque, Py_ssize_t i)
 {
     PyObject *result = NULL;
     Py_BEGIN_CRITICAL_SECTION(deque);
-    result = deque_item_locked(deque, i);
+    result = deque_item_lock_held(deque, i);
     Py_END_CRITICAL_SECTION();
     return result;
 }
@@ -1504,7 +1504,7 @@ deque_remove_impl(dequeobject *deque, PyObject *value)
 }
 
 static int
-deque_ass_item_locked(dequeobject *deque, Py_ssize_t i, PyObject *v)
+deque_ass_item_lock_held(dequeobject *deque, Py_ssize_t i, PyObject *v)
 {
     block *b;
     Py_ssize_t n, len=Py_SIZE(deque), halflen=(len+1)>>1, index=i;
@@ -1540,7 +1540,7 @@ deque_ass_item(dequeobject *deque, Py_ssize_t i, PyObject *v)
 {
     int result = -1;
     Py_BEGIN_CRITICAL_SECTION(deque);
-    result = deque_ass_item_locked(deque, i, v);
+    result = deque_ass_item_lock_held(deque, i, v);
     Py_END_CRITICAL_SECTION();
     return result;
 }
@@ -1970,7 +1970,7 @@ dequeiter_dealloc(dequeiterobject *dio)
 }
 
 static PyObject *
-dequeiter_next_locked(dequeiterobject *it, dequeobject *deque)
+dequeiter_next_lock_held(dequeiterobject *it, dequeobject *deque)
 {
     if (it->deque != deque || it->deque->state != it->state) {
         it->counter = 0;
@@ -2004,7 +2004,7 @@ dequeiter_next(dequeiterobject *it)
 
     PyObject *result = NULL;
     Py_BEGIN_CRITICAL_SECTION2(it, deque);
-    result = dequeiter_next_locked(it, deque);
+    result = dequeiter_next_lock_held(it, deque);
     Py_END_CRITICAL_SECTION2();
 
     return result;
@@ -2118,7 +2118,7 @@ deque_reviter(dequeobject *deque)
 }
 
 static PyObject *
-dequereviter_next_locked(dequeiterobject *it, dequeobject *deque)
+dequereviter_next_lock_held(dequeiterobject *it, dequeobject *deque)
 {
     if (it->deque != deque || it->deque->state != it->state) {
         it->counter = 0;
@@ -2156,7 +2156,7 @@ dequereviter_next(dequeiterobject *it)
 
     PyObject *item = NULL;
     Py_BEGIN_CRITICAL_SECTION2(it, deque);
-    item = dequereviter_next_locked(it, deque);
+    item = dequereviter_next_lock_held(it, deque);
     Py_END_CRITICAL_SECTION2();
 
     return item;
