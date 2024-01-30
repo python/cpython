@@ -10,6 +10,7 @@
 #include "pycore_frame.h"
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_object.h"        // _PyType_InitCache()
+#include "pycore_object_stack.h"  // _PyObjectStackChunk_ClearFreeList()
 #include "pycore_parking_lot.h"   // _PyParkingLot_AfterFork()
 #include "pycore_pyerrors.h"      // _PyErr_Clear()
 #include "pycore_pylifecycle.h"   // _PyAST_Fini()
@@ -17,6 +18,7 @@
 #include "pycore_pystate.h"
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_sysmodule.h"     // _PySys_Audit()
+#include "pycore_obmalloc.h"      // _PyMem_obmalloc_state_on_heap()
 
 /* --------------------------------------------------------------------------
 CAUTION
@@ -552,6 +554,11 @@ free_interpreter(PyInterpreterState *interp)
     // The main interpreter is statically allocated so
     // should not be freed.
     if (interp != &_PyRuntime._main_interpreter) {
+        if (_PyMem_obmalloc_state_on_heap(interp)) {
+            // interpreter has its own obmalloc state, free it
+            PyMem_RawFree(interp->obmalloc);
+            interp->obmalloc = NULL;
+        }
         PyMem_RawFree(interp);
     }
 }
@@ -593,14 +600,6 @@ init_interpreter(PyInterpreterState *interp,
     assert(runtime->interpreters.head == interp);
     assert(next != NULL || (interp == runtime->interpreters.main));
     interp->next = next;
-
-    /* Initialize obmalloc, but only for subinterpreters,
-       since the main interpreter is initialized statically. */
-    if (interp != &runtime->_main_interpreter) {
-        poolp temp[OBMALLOC_USED_POOLS_SIZE] = \
-                _obmalloc_pools_INIT(interp->obmalloc.pools);
-        memcpy(&interp->obmalloc.pools.used, temp, sizeof(temp));
-    }
 
     PyStatus status = _PyObject_InitState(interp);
     if (_PyStatus_EXCEPTION(status)) {
@@ -1468,6 +1467,7 @@ _Py_ClearFreeLists(_PyFreeListState *state, int is_finalization)
     _PyList_ClearFreeList(state, is_finalization);
     _PyContext_ClearFreeList(state, is_finalization);
     _PyAsyncGen_ClearFreeLists(state, is_finalization);
+    _PyObjectStackChunk_ClearFreeList(state, is_finalization);
 }
 
 void
@@ -2055,7 +2055,6 @@ start_the_world(struct _stoptheworld_state *stw)
     HEAD_LOCK(runtime);
     stw->requested = 0;
     stw->world_stopped = 0;
-    stw->requester = NULL;
     // Switch threads back to the detached state.
     PyInterpreterState *i;
     PyThreadState *t;
@@ -2066,6 +2065,7 @@ start_the_world(struct _stoptheworld_state *stw)
             _PyParkingLot_UnparkAll(&t->state);
         }
     }
+    stw->requester = NULL;
     HEAD_UNLOCK(runtime);
     if (stw->is_global) {
         _PyRWMutex_Unlock(&runtime->stoptheworld_mutex);
@@ -2616,6 +2616,7 @@ _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp,
     if (eval_frame != NULL) {
         _Py_Executors_InvalidateAll(interp);
     }
+    RARE_EVENT_INC(set_eval_frame_func);
     interp->eval_frame = eval_frame;
 }
 

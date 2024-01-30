@@ -325,7 +325,8 @@ Objects/obmalloc.c	-	_PyMem_Debug	-
 Objects/obmalloc.c	-	_PyMem_Raw	-
 Objects/obmalloc.c	-	_PyObject	-
 Objects/obmalloc.c	-	last_final_leaks	-
-Objects/obmalloc.c	-	usedpools	-
+Objects/obmalloc.c	-	obmalloc_state_main	-
+Objects/obmalloc.c	-	obmalloc_state_initialized	-
 Objects/typeobject.c	-	name_op	-
 Objects/typeobject.c	-	slotdefs	-
 Objects/unicodeobject.c	-	stripfuncnames	-
