@@ -173,6 +173,7 @@ Options (and corresponding environment variables):\n\
 --help-env: print help about Python environment variables and exit\n\
 --help-xoptions: print help about implementation-specific -X options and exit\n\
 --help-all: print complete help information and exit\n\
+\n\
 Arguments:\n\
 file   : program read from script file\n\
 -      : program read from stdin (default; interactive mode if a tty)\n\
@@ -292,6 +293,7 @@ static const char usage_envvars[] =
 "                  various kinds of output.  Setting it to 0 deactivates\n"
 "                  this behavior.\n"
 "PYTHON_HISTORY  : the location of a .python_history file.\n"
+"\n"
 "These variables have equivalent command-line options (see --help for details):\n"
 "PYTHONDEBUG     : enable parser debug mode (-d)\n"
 "PYTHONDONTWRITEBYTECODE: don't write .pyc files (-B)\n"
