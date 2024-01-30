@@ -312,7 +312,7 @@ def _gettempdir():
 
 def gettempdir():
     """Returns tempfile.tempdir as str."""
-    return _os.fsdecode(_gettempdir())
+    return _os.path.realpath(_os.fsdecode(_gettempdir()))
 
 def gettempdirb():
     """Returns tempfile.tempdir as bytes."""
