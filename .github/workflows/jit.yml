@@ -39,12 +39,10 @@ jobs:
             architecture: x86_64
             runner: macos-13
             compiler: clang
-            # exclude: test_embed
           - target: aarch64-apple-darwin/clang
             architecture: aarch64
             runner: macos-14
             compiler: clang
-            # exclude: test_embed
           - target: x86_64-unknown-linux-gnu/gcc
             architecture: x86_64
             runner: ubuntu-latest
