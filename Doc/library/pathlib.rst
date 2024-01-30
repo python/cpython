@@ -1038,9 +1038,8 @@ call fails (for example because the path doesn't exist).
       The *follow_symlinks* parameter was added.
 
    .. versionchanged:: 3.13
-      Emits :exc:`FutureWarning` if the pattern ends with "``**``". In a
-      future Python release, patterns with this ending will match both files
-      and directories. Add a trailing slash to match only directories.
+      Return files and directories if *pattern* ends with "``**``". In
+      previous versions, only directories were returned.
 
    .. versionchanged:: 3.13
       The *pattern* parameter accepts a :term:`path-like object`.

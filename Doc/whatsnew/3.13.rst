@@ -350,6 +350,11 @@ pathlib
   (Contributed by Barney Gale in :gh:`77609` and :gh:`105793`, and
   Kamil Turek in :gh:`107962`).
 
+* Return files and directories from :meth:`pathlib.Path.glob` and
+  :meth:`~pathlib.Path.rglob` when given a pattern that ends with "``**``". In
+  earlier versions, only directories were returned.
+  (Contributed by Barney Gale in :gh:`70303`).
+
 pdb
 ---
 
@@ -1210,6 +1215,11 @@ Changes in the Python API
 
 * :class:`mailbox.Maildir` now ignores files with a leading dot.
   (Contributed by Zackery Spytz in :gh:`65559`.)
+
+* :meth:`pathlib.Path.glob` and :meth:`~pathlib.Path.rglob` now return both
+  files and directories if a pattern that ends with "``**``" is given, rather
+  than directories only. Users may add a trailing slash to match only
+  directories.
 
 
 Build Changes

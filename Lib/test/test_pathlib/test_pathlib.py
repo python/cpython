@@ -1258,18 +1258,6 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         with set_recursion_limit(recursion_limit):
             list(base.glob('**/'))
 
-    def test_glob_recursive_no_trailing_slash(self):
-        P = self.cls
-        p = P(self.base)
-        with self.assertWarns(FutureWarning):
-            p.glob('**')
-        with self.assertWarns(FutureWarning):
-            p.glob('*/**')
-        with self.assertWarns(FutureWarning):
-            p.rglob('**')
-        with self.assertWarns(FutureWarning):
-            p.rglob('*/**')
-
     def test_glob_pathlike(self):
         P = self.cls
         p = P(self.base)
