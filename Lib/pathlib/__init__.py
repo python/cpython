@@ -465,14 +465,6 @@ class PurePath(_abc.PurePathBase):
         elif pattern[-1] in (self.pathmod.sep, self.pathmod.altsep):
             # GH-65238: pathlib doesn't preserve trailing slash. Add it back.
             parts.append('')
-        elif parts[-1] == '**':
-            # GH-70303: '**' only matches directories. Add trailing slash.
-            warnings.warn(
-                "Pattern ending '**' will match files and directories in a "
-                "future Python release. Add a trailing slash to match only "
-                "directories and remove this warning.",
-                FutureWarning, 4)
-            parts.append('')
         parts.reverse()
         return parts
 
