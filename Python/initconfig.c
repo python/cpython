@@ -288,7 +288,7 @@ static const char usage_envvars[] =
 "PYTHON_FROZEN_MODULES: if this variable is set, it determines whether or not\n"
 "                  frozen modules should be used.  The default is \"on\" (or\n"
 "                  \"off\" if you are running a local build).\n"
-"PYTHON_COLORS   : If this variable is set to 1, the interpreter will colorize\n"
+"PYTHON_COLORS   : if this variable is set to 1, the interpreter will colorize\n"
 "                  various kinds of output.  Setting it to 0 deactivates\n"
 "                  this behavior.\n"
 "PYTHON_HISTORY  : the location of a .python_history file.\n"
