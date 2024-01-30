@@ -611,18 +611,10 @@ Notes:
 (4)
    :class:`date` objects are equal if they represent the same date.
 
-   :class:`!date` objects that are not also :class:`.datetime` instances
-   are never equal to :class:`!datetime` objects, even if they represent
-   the same date.
-
 (5)
    *date1* is considered less than *date2* when *date1* precedes *date2* in time.
    In other words, ``date1 < date2`` if and only if ``date1.toordinal() <
    date2.toordinal()``.
-
-   Order comparison between a :class:`!date` object that is not also a
-   :class:`.datetime` instance and a :class:`!datetime` object raises
-   :exc:`TypeError`.
 
 In Boolean contexts, all :class:`date` objects are considered to be true.
 
