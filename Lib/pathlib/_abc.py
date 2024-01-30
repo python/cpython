@@ -296,6 +296,7 @@ class PurePathBase:
         if not suffix:
             return self.with_name(stem)
         elif not stem:
+            # If the suffix is non-empty, we can't make the stem empty.
             raise ValueError(f"{self!r} has a non-empty suffix")
         else:
             return self.with_name(stem + suffix)
@@ -309,6 +310,7 @@ class PurePathBase:
         if not suffix:
             return self.with_name(stem)
         elif not stem:
+            # If the stem is empty, we can't make the suffix non-empty.
             raise ValueError(f"{self!r} has an empty name")
         elif suffix.startswith('.') and len(suffix) > 1:
             return self.with_name(stem + suffix)
