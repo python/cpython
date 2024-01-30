@@ -2065,25 +2065,32 @@ static PyType_Spec dequeiter_spec = {
 };
 
 /*********************** Deque Reverse Iterator **************************/
-
 static PyObject *
-deque_reviter(dequeobject *deque)
+deque_reviter_lock_held(dequeobject *deque)
 {
-    dequeiterobject *it;
-    Py_BEGIN_CRITICAL_SECTION(deque);
     collections_state *state = find_module_state_by_def(Py_TYPE(deque));
-
-    it = PyObject_GC_New(dequeiterobject, state->dequereviter_type);
-    if (it == NULL)
+    dequeiterobject *it =
+        PyObject_GC_New(dequeiterobject, state->dequereviter_type);
+    if (it == NULL) {
         return NULL;
+    }
     it->b = deque->rightblock;
     it->index = deque->rightindex;
     it->deque = (dequeobject*)Py_NewRef(deque);
     it->state = deque->state;
     it->counter = Py_SIZE(deque);
-    Py_END_CRITICAL_SECTION();
     PyObject_GC_Track(it);
     return (PyObject *)it;
+}
+
+static PyObject *
+deque_reviter(dequeobject *deque)
+{
+    PyObject *it = NULL;
+    Py_BEGIN_CRITICAL_SECTION(deque);
+    it = deque_reviter_lock_held(deque);
+    Py_END_CRITICAL_SECTION();
+    return it;
 }
 
 static PyObject *
