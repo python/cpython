@@ -583,13 +583,13 @@ Supported operations:
 +-------------------------------+----------------------------------------------+
 | ``timedelta = date1 - date2`` | \(3)                                         |
 +-------------------------------+----------------------------------------------+
-| ``date1 == date2``            | Equality comparison. (4)                     |
-| ``date1 != date2``            |                                              |
+| | ``date1 == date2``          | Equality comparison. (4)                     |
+| | ``date1 != date2``          |                                              |
 +-------------------------------+----------------------------------------------+
-| ``date1 < date2``             | Order comparison. (5)                        |
-| ``date1 > date2``             |                                              |
-| ``date1 <= date2``            |                                              |
-| ``date1 >= date2``            |                                              |
+| | ``date1 < date2``           | Order comparison. (5)                        |
+| | ``date1 > date2``           |                                              |
+| | ``date1 <= date2``          |                                              |
+| | ``date1 >= date2``          |                                              |
 +-------------------------------+----------------------------------------------+
 
 Notes:
@@ -1145,12 +1145,13 @@ Supported operations:
 +---------------------------------------+--------------------------------+
 | ``timedelta = datetime1 - datetime2`` | \(3)                           |
 +---------------------------------------+--------------------------------+
-| ``datetime1 == datetime2``            | Equality comparison. (4)       |
+| | ``datetime1 == datetime2``          | Equality comparison. (4)       |
+| | ``datetime1 != datetime2``          |                                |
 +---------------------------------------+--------------------------------+
-| ``datetime1 < datetime2``             | Order comparison. (5)          |
-| ``datetime1 > datetime2``             |                                |
-| ``datetime1 <= datetime2``            |                                |
-| ``datetime1 >= datetime2``            |                                |
+| | ``datetime1 < datetime2``           | Order comparison. (5)          |
+| | ``datetime1 > datetime2``           |                                |
+| | ``datetime1 <= datetime2``          |                                |
+| | ``datetime1 >= datetime2``          |                                |
 +---------------------------------------+--------------------------------+
 
 (1)
