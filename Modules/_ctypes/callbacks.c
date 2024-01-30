@@ -151,6 +151,7 @@ static void _CallPythonObject(void *mem,
     assert(nargs <= CTYPES_MAX_ARGCOUNT);
     PyObject **args = alloca(nargs * sizeof(PyObject *));
     PyObject **cnvs = PySequence_Fast_ITEMS(converters);
+    ctypes_state *st = GLOBAL_STATE();
     for (i = 0; i < nargs; i++) {
         PyObject *cnv = cnvs[i]; // borrowed ref
         StgDictObject *dict;
@@ -175,7 +176,7 @@ static void _CallPythonObject(void *mem,
                 PrintError("create argument %zd:\n", i);
                 goto Done;
             }
-            if (!CDataObject_Check(obj)) {
+            if (!CDataObject_Check(st, obj)) {
                 Py_DECREF(obj);
                 PrintError("unexpected result of create argument %zd:\n", i);
                 goto Done;

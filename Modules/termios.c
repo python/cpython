@@ -98,6 +98,8 @@ termios_tcgetattr_impl(PyObject *module, int fd)
     struct termios mode;
     int r;
 
+    /* Alpine Linux can leave some fields uninitialized. */
+    memset(&mode, 0, sizeof(mode));
     Py_BEGIN_ALLOW_THREADS
     r = tcgetattr(fd, &mode);
     Py_END_ALLOW_THREADS
@@ -840,6 +842,9 @@ static struct constant {
 #ifdef CDSR_OFLOW
     {"CDSR_OFLOW", CDSR_OFLOW},
 #endif
+#ifdef CCTS_OFLOW
+    {"CCTS_OFLOW", CCTS_OFLOW},
+#endif
 #ifdef CCAR_OFLOW
     {"CCAR_OFLOW", CCAR_OFLOW},
 #endif
@@ -912,7 +917,7 @@ static struct constant {
     {"VSTOP", VSTOP},
     {"VSUSP", VSUSP},
 #ifdef VDSUSP
-    {"VDSUSP", VREPRINT},
+    {"VDSUSP", VDSUSP},
 #endif
     {"VEOL", VEOL},
 #ifdef VREPRINT

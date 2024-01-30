@@ -247,8 +247,8 @@ fixes union type expressions not de-duplicating ``GenericAlias`` objects.
 .. nonce: B-Veg7
 .. section: Core and Builtins
 
-The import system triggers a `ImportWarning` when it falls back to using
-`load_module()`.
+The import system triggers a ``ImportWarning`` when it falls back to using
+``load_module()``.
 
 ..
 
@@ -464,8 +464,8 @@ Support signal module on VxWorks.
 .. nonce: r9rNCj
 .. section: Library
 
-We fixed an issue in `pickle.whichmodule` in which importing
-`multiprocessing` could change the how pickle identifies which module an
+We fixed an issue in ``pickle.whichmodule`` in which importing
+``multiprocessing`` could change the how pickle identifies which module an
 object belongs to, potentially breaking the unpickling of those objects.
 
 ..
@@ -602,7 +602,7 @@ function when ``os.open`` fails.
 .. nonce: F363jO
 .. section: Library
 
-Fix `os.sendfile()` on illumos.
+Fix ``os.sendfile()`` on illumos.
 
 ..
 
@@ -718,8 +718,8 @@ Improve asyncio.wait function to create the futures set just one time.
 .. nonce: BzizYV
 .. section: Library
 
-Update various modules in the stdlib to fall back on `__spec__.loader` when
-`__loader__` isn't defined on a module.
+Update various modules in the stdlib to fall back on ``__spec__.loader`` when
+``__loader__`` isn't defined on a module.
 
 ..
 
@@ -728,8 +728,8 @@ Update various modules in the stdlib to fall back on `__spec__.loader` when
 .. nonce: CAsI3O
 .. section: Library
 
-The `load_module()` methods found in importlib now trigger a
-DeprecationWarning.
+The ``load_module()`` methods found in ``importlib`` now trigger a
+``DeprecationWarning``.
 
 ..
 
@@ -872,7 +872,7 @@ extension during TLS handshake when no custom context is supplied.
 .. nonce: 5mi7b0
 .. section: Library
 
-Add func:`os.eventfd` to provide a low level interface for Linux's event
+Add :func:`os.eventfd` to provide a low level interface for Linux's event
 notification file descriptor.
 
 ..

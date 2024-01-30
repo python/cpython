@@ -785,8 +785,11 @@ extern "C" {
     INIT_ID(after_in_child), \
     INIT_ID(after_in_parent), \
     INIT_ID(aggregate_class), \
+    INIT_ID(alias), \
+    INIT_ID(allow_code), \
     INIT_ID(append), \
     INIT_ID(argdefs), \
+    INIT_ID(args), \
     INIT_ID(arguments), \
     INIT_ID(argv), \
     INIT_ID(as_integer_ratio), \
@@ -911,6 +914,8 @@ extern "C" {
     INIT_ID(errors), \
     INIT_ID(event), \
     INIT_ID(eventmask), \
+    INIT_ID(exc_type), \
+    INIT_ID(exc_value), \
     INIT_ID(excepthook), \
     INIT_ID(exception), \
     INIT_ID(existing_file_name), \
@@ -1016,6 +1021,7 @@ extern "C" {
     INIT_ID(kw), \
     INIT_ID(kw1), \
     INIT_ID(kw2), \
+    INIT_ID(kwdefaults), \
     INIT_ID(lambda), \
     INIT_ID(last), \
     INIT_ID(last_exc), \
@@ -1044,6 +1050,7 @@ extern "C" {
     INIT_ID(max_length), \
     INIT_ID(maxdigits), \
     INIT_ID(maxevents), \
+    INIT_ID(maxlen), \
     INIT_ID(maxmem), \
     INIT_ID(maxsplit), \
     INIT_ID(maxvalue), \
@@ -1232,6 +1239,7 @@ extern "C" {
     INIT_ID(timetuple), \
     INIT_ID(top), \
     INIT_ID(trace_callback), \
+    INIT_ID(traceback), \
     INIT_ID(trailers), \
     INIT_ID(translate), \
     INIT_ID(true), \

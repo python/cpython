@@ -345,6 +345,10 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
 
       See :ref:`pickle-persistent` for details and examples of uses.
 
+      .. versionchanged:: 3.13
+         Add the default implementation of this method in the C implementation
+         of :class:`!Pickler`.
+
    .. attribute:: dispatch_table
 
       A pickler object's dispatch table is a registry of *reduction
@@ -445,6 +449,10 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
       :exc:`UnpicklingError` should be raised.
 
       See :ref:`pickle-persistent` for details and examples of uses.
+
+      .. versionchanged:: 3.13
+         Add the default implementation of this method in the C implementation
+         of :class:`!Unpickler`.
 
    .. method:: find_class(module, name)
 
