@@ -3,6 +3,7 @@
 #include "opcode.h"
 
 #include "pycore_code.h"
+#include "pycore_critical_section.h"    // Py_BEGIN_CRITICAL_SECTION, Py_END_CRITICAL_SECTION
 #include "pycore_descrobject.h"   // _PyMethodWrapper_Type
 #include "pycore_dict.h"          // DICT_KEYS_UNICODE
 #include "pycore_function.h"      // _PyFunction_GetVersionForCurrentState()
@@ -600,17 +601,11 @@ static uint32_t function_get_version(PyObject *o, int opcode);
 static uint32_t type_get_version(PyTypeObject *t, int opcode);
 
 static int
-specialize_module_load_attr(
-    PyObject *owner, _Py_CODEUNIT *instr, PyObject *name
-) {
+specialize_module_load_attr_lock_held(
+    PyDictObject *dict, _Py_CODEUNIT *instr, PyObject *name
+)
+{
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
-    PyModuleObject *m = (PyModuleObject *)owner;
-    assert((owner->ob_type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0);
-    PyDictObject *dict = (PyDictObject *)m->md_dict;
-    if (dict == NULL) {
-        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_NO_DICT);
-        return -1;
-    }
     if (dict->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
         SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_NON_STRING_OR_SPLIT);
         return -1;
@@ -642,6 +637,23 @@ specialize_module_load_attr(
     return 0;
 }
 
+static int
+specialize_module_load_attr(
+    PyObject *owner, _Py_CODEUNIT *instr, PyObject *name
+) {
+    PyModuleObject *m = (PyModuleObject *)owner;
+    assert((owner->ob_type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0);
+    PyDictObject *dict = (PyDictObject *)m->md_dict;
+    if (dict == NULL) {
+        SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_NO_DICT);
+        return -1;
+    }
+    int res;
+    Py_BEGIN_CRITICAL_SECTION(dict);
+    res = specialize_module_load_attr_lock_held(dict, instr, name);
+    Py_END_CRITICAL_SECTION();
+    return res;
+}
 
 
 /* Attribute specialization */
@@ -832,10 +844,15 @@ specialize_dict_access(
             return 0;
         }
         // We found an instance with a __dict__.
+        int res;
+        Py_BEGIN_CRITICAL_SECTION(dict);
+
         if (dict->ma_values) {
             SPECIALIZATION_FAIL(base_op, SPEC_FAIL_ATTR_NON_STRING_OR_SPLIT);
-            return 0;
+            res = 0;
+            goto exit;
         }
+
         Py_ssize_t index =
             _PyDict_LookupIndex(dict, name);
         if (index != (uint16_t)index) {
@@ -843,11 +860,17 @@ specialize_dict_access(
                                 index == DKIX_EMPTY ?
                                 SPEC_FAIL_ATTR_NOT_IN_DICT :
                                 SPEC_FAIL_OUT_OF_RANGE);
-            return 0;
+            res = 0;
+            goto exit;
         }
         cache->index = (uint16_t)index;
         write_u32(cache->version, type->tp_version_tag);
         instr->op.code = hint_op;
+
+        res = 1;
+exit:
+        Py_END_CRITICAL_SECTION();
+        return res;
     }
     return 1;
 }
