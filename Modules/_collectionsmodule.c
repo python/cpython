@@ -334,23 +334,13 @@ deque_popleft_impl(dequeobject *deque)
 #define NEEDS_TRIM(deque) \
     ((size_t)((deque)->maxlen) < (size_t)(Py_SIZE(deque)))
 
-typedef struct {
-    // 1 if an error occurred, 0 otherwise
-    int err;
-
-    // A value that was trimmed if the operation would exceed maxlen, NULL
-    // otherwise
-    PyObject *trimmed;
-} AppendResult;
-
-static inline AppendResult
+static inline int
 deque_append_lock_held(dequeobject *deque, PyObject *item)
 {
     if (deque->rightindex == BLOCKLEN - 1) {
         block *b = newblock(deque);
-        if (b == NULL) {
-            return (AppendResult){1, NULL};
-        }
+        if (b == NULL)
+            return -1;
         b->leftlink = deque->rightblock;
         CHECK_END(deque->rightblock->rightlink);
         deque->rightblock->rightlink = b;
@@ -360,16 +350,15 @@ deque_append_lock_held(dequeobject *deque, PyObject *item)
     }
     Py_SET_SIZE(deque, Py_SIZE(deque) + 1);
     deque->rightindex++;
-    Py_INCREF(item);
     deque->rightblock->data[deque->rightindex] = item;
     if (NEEDS_TRIM(deque)) {
-        PyObject *trimmed = deque_popleft_impl(deque);
-        return (AppendResult){0, trimmed};
+        PyObject *olditem = deque_popleft_impl(deque);
+        Py_DECREF(olditem);
     }
     else {
         deque->state++;
-        return (AppendResult){0, NULL};
     }
+    return 0;
 }
 
 /*[clinic input]
@@ -387,22 +376,18 @@ static PyObject *
 deque_append_impl(dequeobject *deque, PyObject *item)
 /*[clinic end generated code: output=9c7bcb8b599c6362 input=b0eeeb09b9f5cf18]*/
 {
-    AppendResult res = deque_append_lock_held(deque, item);
-    Py_XDECREF(res.trimmed);
-    if (res.err) {
+    if (deque_append_lock_held(deque, Py_NewRef(item)) < 0)
         return NULL;
-    }
     Py_RETURN_NONE;
 }
 
-static inline AppendResult
+static inline int
 deque_appendleft_lock_held(dequeobject *deque, PyObject *item)
 {
     if (deque->leftindex == 0) {
         block *b = newblock(deque);
-        if (b == NULL) {
-            return (AppendResult){1, NULL};
-        }
+        if (b == NULL)
+            return -1;
         b->rightlink = deque->leftblock;
         CHECK_END(deque->leftblock->leftlink);
         deque->leftblock->leftlink = b;
@@ -412,16 +397,15 @@ deque_appendleft_lock_held(dequeobject *deque, PyObject *item)
     }
     Py_SET_SIZE(deque, Py_SIZE(deque) + 1);
     deque->leftindex--;
-    Py_INCREF(item);
     deque->leftblock->data[deque->leftindex] = item;
     if (NEEDS_TRIM(deque)) {
-        PyObject *trimmed = deque_pop_impl(deque);
-        return (AppendResult){0, trimmed};
+        PyObject *olditem = deque_pop_impl(deque);
+        Py_DECREF(olditem);
     }
     else {
         deque->state++;
-        return (AppendResult){0, NULL};
     }
+    return 0;
 }
 
 /*[clinic input]
@@ -439,11 +423,8 @@ static PyObject *
 deque_appendleft_impl(dequeobject *deque, PyObject *item)
 /*[clinic end generated code: output=9a192edbcd0f20db input=236c2fbceaf08e14]*/
 {
-    AppendResult res = deque_appendleft_lock_held(deque, item);
-    Py_XDECREF(res.trimmed);
-    if (res.err) {
+    if (deque_appendleft_lock_held(deque, Py_NewRef(item)) < 0)
         return NULL;
-    }
     Py_RETURN_NONE;
 }
 
@@ -524,10 +505,8 @@ deque_extend_impl(dequeobject *deque, PyObject *iterable)
 
     iternext = *Py_TYPE(it)->tp_iternext;
     while ((item = iternext(it)) != NULL) {
-        AppendResult res = deque_append_lock_held(deque, item);
-        Py_DECREF(item);
-        Py_XDECREF(res.trimmed);
-        if (res.err) {
+        if (deque_append_lock_held(deque, item) == -1) {
+            Py_DECREF(item);
             Py_DECREF(it);
             goto done;
         }
@@ -586,10 +565,8 @@ deque_extendleft_impl(dequeobject *deque, PyObject *iterable)
 
     iternext = *Py_TYPE(it)->tp_iternext;
     while ((item = iternext(it)) != NULL) {
-        AppendResult res = deque_appendleft_lock_held(deque, item);
-        Py_DECREF(item);
-        Py_XDECREF(res.trimmed);
-        if (res.err) {
+        if (deque_appendleft_lock_held(deque, item) == -1) {
+            Py_DECREF(item);
             Py_DECREF(it);
             goto done;
         }
