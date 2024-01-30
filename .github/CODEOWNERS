@@ -21,6 +21,7 @@ configure*                    @erlend-aasland @corona10
 **/*context*                  @1st1
 **/*genobject*                @markshannon
 **/*hamt*                     @1st1
+**/*jit*                      @brandtbucher
 Objects/set*                  @rhettinger
 Objects/dict*                 @methane @markshannon
 Objects/typevarobject.c       @JelleZijlstra
@@ -37,7 +38,6 @@ Python/ast_opt.c              @isidentical
 Python/bytecodes.c            @markshannon @gvanrossum
 Python/optimizer*.c           @markshannon @gvanrossum
 Lib/test/test_patma.py        @brandtbucher
-Lib/test/test_peepholer.py    @brandtbucher
 Lib/test/test_type_*.py       @JelleZijlstra
 Lib/test/test_capi/test_misc.py  @markshannon @gvanrossum
 Tools/c-analyzer/             @ericsnowcurrently
