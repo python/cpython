@@ -905,8 +905,6 @@
     added = '3.2'
 [function.PyList_GetItem]
     added = '3.2'
-[function.PyList_GetItemRef]
-    added = '3.13'
 [function.PyList_GetSlice]
     added = '3.2'
 [function.PyList_Insert]
@@ -2483,3 +2481,5 @@
 [function._Py_SetRefcnt]
     added = '3.13'
     abi_only = true
+[function.PyList_GetItemRef]
+    added = '3.13'
