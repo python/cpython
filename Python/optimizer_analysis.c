@@ -36,7 +36,7 @@
 
 #define PEEPHOLE_MAX_ATTEMPTS 3
 
-// + buffer to account for implicit root frame.
+// Need extras for root frame and for overflow frame (see TRACE_STACK_PUSH())
 #define MAX_ABSTRACT_FRAME_DEPTH (TRACE_STACK_SIZE + 2)
 
 #ifdef Py_DEBUG
