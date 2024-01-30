@@ -2017,15 +2017,15 @@ PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(
 static PyObject *
 dequeiter_reduce(dequeiterobject *it, PyObject *Py_UNUSED(ignored))
 {
-    PyTypeObject *ty;
-    dequeobject *deque;
+    PyTypeObject *ty = Py_TYPE(it);
+    // It's safe to access it->deque without holding the per-object lock for it
+    // here; it->deque is only assigned during construction of it.
+    dequeobject *deque = it->deque;
     Py_ssize_t size, counter;
-    Py_BEGIN_CRITICAL_SECTION(it);
-    ty = Py_TYPE(it);
-    deque = it->deque;
+    Py_BEGIN_CRITICAL_SECTION2(it, deque);
     size = Py_SIZE(deque);
     counter = it->counter;
-    Py_END_CRITICAL_SECTION();
+    Py_END_CRITICAL_SECTION2();
     return Py_BuildValue("O(On)", ty, deque, size - counter);
 }
 
