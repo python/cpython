@@ -34,7 +34,6 @@ Doc/library/cgi.rst
 Doc/library/chunk.rst
 Doc/library/collections.rst
 Doc/library/copy.rst
-Doc/library/csv.rst
 Doc/library/dbm.rst
 Doc/library/decimal.rst
 Doc/library/email.charset.rst
