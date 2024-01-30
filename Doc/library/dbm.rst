@@ -350,8 +350,6 @@ interface which is written entirely in Python.
 Unlike other :mod:`dbm` backends, such as :mod:`dbm.gnu`, no
 external library is required.
 
-The module defines the following:
-
 The :mod:`!dbm.dumb` module defines the following:
 
 .. exception:: error
