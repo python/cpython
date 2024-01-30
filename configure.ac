@@ -4796,8 +4796,8 @@ AC_CHECK_FUNCS([ \
   mknod mknodat mktime mmap mremap nice openat opendir pathconf pause pipe \
   pipe2 plock poll posix_fadvise posix_fallocate posix_openpt posix_spawn posix_spawnp \
   posix_spawn_file_actions_addclosefrom_np \
-  pread preadv preadv2 pthread_condattr_setclock pthread_init pthread_kill ptsname ptsname_r \
-  pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
+  pread preadv preadv2 pthread_cond_timedwait_relative_np pthread_condattr_setclock pthread_init \
+  pthread_kill ptsname ptsname_r pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
   rtpSpawn sched_get_priority_max sched_rr_get_interval sched_setaffinity \
   sched_setparam sched_setscheduler sem_clockwait sem_getvalue sem_open \
   sem_timedwait sem_unlink sendfile setegid seteuid setgid sethostname \
