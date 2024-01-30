@@ -41,6 +41,7 @@ from test.support import (TestFailed,
                           darwin_malloc_err_warning, is_emscripten)
 from test.support.import_helper import import_fresh_module
 from test.support import threading_helper
+from test.support import warnings_helper
 import random
 import inspect
 import threading
@@ -1237,7 +1238,14 @@ class FormatTest:
         else:
             self.assertRaises(ValueError, format, h, 'N')
             self.assertRaises(ValueError, format, h, '010.3N')
-
+        with warnings_helper.check_no_warnings(self):
+            self.assertEqual(format(h, 'N>10.3'), 'NN6.63E-34')
+            self.assertEqual(format(h, 'N>10.3n'), 'NN6.63e-34')
+            self.assertEqual(format(h, 'N>10.3e'), 'N6.626e-34')
+            self.assertEqual(format(h, 'N>10.3f'), 'NNNNN0.000')
+            self.assertRaises(ValueError, format, h, '>Nf')
+            self.assertRaises(ValueError, format, h, '10Nf')
+            self.assertRaises(ValueError, format, h, 'Nx')
 
     @run_with_locale('LC_ALL', 'ps_AF')
     def test_wide_char_separator_decimal_point(self):
