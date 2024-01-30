@@ -243,7 +243,7 @@ def _get_candidate_names():
 def _mkstemp_inner(dir, pre, suf, flags, output_type):
     """Code common to mkstemp, TemporaryFile, and NamedTemporaryFile."""
 
-    dir = _os.path.abspath(dir)
+    dir = _os.path.realpath(_os.path.abspath(dir))
     names = _get_candidate_names()
     if output_type is bytes:
         names = map(_os.fsencode, names)
