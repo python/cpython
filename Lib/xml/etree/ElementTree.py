@@ -1256,8 +1256,9 @@ def iterparse(source, events=None, parser=None):
                 source.close()
 
     it = IterParseIterator()
+    it.root = None
     wr = weakref.ref(it)
-    del IterParseIterator
+    del iterator, IterParseIterator
     return it
 
 
