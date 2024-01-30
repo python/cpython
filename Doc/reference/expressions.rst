@@ -1883,8 +1883,9 @@ the unpacking.
 
 .. index:: pair: trailing; comma
 
-The trailing comma is required only to create a single tuple (a.k.a. a
-*singleton*); it is optional in all other cases.  A single expression without a
+A trailing comma is required only to create a one-item tuple,
+such as ``1,``; it is optional in all other cases.
+A single expression without a
 trailing comma doesn't create a tuple, but rather yields the value of that
 expression. (To create an empty tuple, use an empty pair of parentheses:
 ``()``.)
