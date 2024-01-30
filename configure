@@ -920,6 +920,7 @@ LLVM_AR
 PROFILE_TASK
 DEF_MAKE_RULE
 DEF_MAKE_ALL_RULE
+REGEN_JIT_COMMAND
 ABIFLAGS
 LN
 MKDIR_P
@@ -1074,6 +1075,7 @@ with_pydebug
 with_trace_refs
 enable_pystats
 with_assertions
+enable_experimental_jit
 enable_optimizations
 with_lto
 enable_bolt
@@ -1801,6 +1803,9 @@ Optional Features:
   --disable-gil           enable experimental support for running without the
                           GIL (default is no)
   --enable-pystats        enable internal statistics gathering (default is no)
+  --enable-experimental-jit
+                          build the experimental just-in-time compiler
+                          (default is no)
   --enable-optimizations  enable expensive, stable optimizations (PGO, etc.)
                           (default is no)
   --enable-bolt           enable usage of the llvm-bolt post-link optimizer
@@ -7996,6 +8001,32 @@ else
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 fi
+
+# Check for --enable-experimental-jit:
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-experimental-jit" >&5
+printf %s "checking for --enable-experimental-jit... " >&6; }
+# Check whether --enable-experimental-jit was given.
+if test ${enable_experimental_jit+y}
+then :
+  enableval=$enable_experimental_jit;
+else $as_nop
+  enable_experimental_jit=no
+fi
+
+if test "x$enable_experimental_jit" = xno
+then :
+
+else $as_nop
+  as_fn_append CFLAGS_NODIST " -D_Py_JIT"
+           REGEN_JIT_COMMAND="\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py $host"
+           if test "x$Py_DEBUG" = xtrue
+then :
+  as_fn_append REGEN_JIT_COMMAND " --debug"
+fi
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $enable_experimental_jit" >&5
+printf "%s\n" "$enable_experimental_jit" >&6; }
 
 # Enable optimization flags
 
@@ -17607,6 +17638,12 @@ then :
   printf "%s\n" "#define HAVE_GETWD 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "grantpt" "ac_cv_func_grantpt"
+if test "x$ac_cv_func_grantpt" = xyes
+then :
+  printf "%s\n" "#define HAVE_GRANTPT 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "if_nameindex" "ac_cv_func_if_nameindex"
 if test "x$ac_cv_func_if_nameindex" = xyes
 then :
@@ -17793,6 +17830,12 @@ then :
   printf "%s\n" "#define HAVE_POSIX_FALLOCATE 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "posix_openpt" "ac_cv_func_posix_openpt"
+if test "x$ac_cv_func_posix_openpt" = xyes
+then :
+  printf "%s\n" "#define HAVE_POSIX_OPENPT 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "posix_spawn" "ac_cv_func_posix_spawn"
 if test "x$ac_cv_func_posix_spawn" = xyes
 then :
@@ -17829,6 +17872,12 @@ then :
   printf "%s\n" "#define HAVE_PREADV2 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "pthread_cond_timedwait_relative_np" "ac_cv_func_pthread_cond_timedwait_relative_np"
+if test "x$ac_cv_func_pthread_cond_timedwait_relative_np" = xyes
+then :
+  printf "%s\n" "#define HAVE_PTHREAD_COND_TIMEDWAIT_RELATIVE_NP 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "pthread_condattr_setclock" "ac_cv_func_pthread_condattr_setclock"
 if test "x$ac_cv_func_pthread_condattr_setclock" = xyes
 then :
@@ -17845,6 +17894,18 @@ ac_fn_c_check_func "$LINENO" "pthread_kill" "ac_cv_func_pthread_kill"
 if test "x$ac_cv_func_pthread_kill" = xyes
 then :
   printf "%s\n" "#define HAVE_PTHREAD_KILL 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "ptsname" "ac_cv_func_ptsname"
+if test "x$ac_cv_func_ptsname" = xyes
+then :
+  printf "%s\n" "#define HAVE_PTSNAME 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "ptsname_r" "ac_cv_func_ptsname_r"
+if test "x$ac_cv_func_ptsname_r" = xyes
+then :
+  printf "%s\n" "#define HAVE_PTSNAME_R 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "pwrite" "ac_cv_func_pwrite"
@@ -18253,6 +18314,12 @@ ac_fn_c_check_func "$LINENO" "unlinkat" "ac_cv_func_unlinkat"
 if test "x$ac_cv_func_unlinkat" = xyes
 then :
   printf "%s\n" "#define HAVE_UNLINKAT 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "unlockpt" "ac_cv_func_unlockpt"
+if test "x$ac_cv_func_unlockpt" = xyes
+then :
+  printf "%s\n" "#define HAVE_UNLOCKPT 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "utimensat" "ac_cv_func_utimensat"

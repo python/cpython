@@ -146,20 +146,20 @@ New Modules
 Improved Modules
 ================
 
-ast
----
-
-* :func:`ast.parse` now accepts an optional argument ``optimize``
-  which is passed on to the :func:`compile` built-in. This makes it
-  possible to obtain an optimized ``AST``.
-  (Contributed by Irit Katriel in :gh:`108113`).
-
 array
 -----
 
 * Add ``'w'`` type code (``Py_UCS4``) that can be used for Unicode strings.
   It can be used instead of ``'u'`` type code, which is deprecated.
   (Contributed by Inada Naoki in :gh:`80480`.)
+
+ast
+---
+
+* :func:`ast.parse` now accepts an optional argument ``optimize``
+  which is passed on to the :func:`compile` built-in. This makes it
+  possible to obtain an optimized ``AST``.
+  (Contributed by Irit Katriel in :gh:`108113`.)
 
 asyncio
 -------
@@ -180,6 +180,13 @@ copy
   any user classes which define the :meth:`!__replace__` method.
   (Contributed by Serhiy Storchaka in :gh:`108751`.)
 
+dbm
+---
+
+* Add :meth:`dbm.gnu.gdbm.clear` and :meth:`dbm.ndbm.ndbm.clear`  methods that remove all items
+  from the database.
+  (Contributed by Donghee Na in :gh:`107122`.)
+
 dis
 ---
 
@@ -188,13 +195,6 @@ dis
   The offsets can be added with the new ``-O`` command line option or
   the ``show_offsets`` parameter.
   (Contributed by Irit Katriel in :gh:`112137`.)
-
-dbm
----
-
-* Add :meth:`dbm.gnu.gdbm.clear` and :meth:`dbm.ndbm.ndbm.clear`  methods that remove all items
-  from the database.
-  (Contributed by Donghee Na in :gh:`107122`.)
 
 doctest
 -------
@@ -213,7 +213,7 @@ email
   parameter to these two functions: use ``strict=False`` to get the old
   behavior, accept malformed inputs.
   ``getattr(email.utils, 'supports_strict_parsing', False)`` can be use to
-  check if the *strict* paramater is available.
+  check if the *strict* parameter is available.
   (Contributed by Thomas Dwyer and Victor Stinner for :gh:`102988` to improve
   the CVE-2023-27043 fix.)
 
@@ -223,7 +223,7 @@ fractions
 * Formatting for objects of type :class:`fractions.Fraction` now supports
   the standard format specification mini-language rules for fill, alignment,
   sign handling, minimum width and grouping. (Contributed by Mark Dickinson
-  in :gh:`111320`)
+  in :gh:`111320`.)
 
 glob
 ----
@@ -297,17 +297,17 @@ os
   the new environment variable :envvar:`PYTHON_CPU_COUNT` or the new command-line option
   :option:`-X cpu_count <-X>`. This option is useful for users who need to limit
   CPU resources of a container system without having to modify the container (application code).
-  (Contributed by Donghee Na in :gh:`109595`)
+  (Contributed by Donghee Na in :gh:`109595`.)
 
 * Add support of :func:`os.lchmod` and the *follow_symlinks* argument
   in :func:`os.chmod` on Windows.
   Note that the default value of *follow_symlinks* in :func:`!os.lchmod` is
   ``False`` on Windows.
-  (Contributed by Serhiy Storchaka in :gh:`59616`)
+  (Contributed by Serhiy Storchaka in :gh:`59616`.)
 
 * Add support of :func:`os.fchmod` and a file descriptor
   in :func:`os.chmod` on Windows.
-  (Contributed by Serhiy Storchaka in :gh:`113191`)
+  (Contributed by Serhiy Storchaka in :gh:`113191`.)
 
 * :func:`os.posix_spawn` now accepts ``env=None``, which makes the newly spawned
   process use the current process environment.
@@ -350,6 +350,11 @@ pathlib
   (Contributed by Barney Gale in :gh:`77609` and :gh:`105793`, and
   Kamil Turek in :gh:`107962`).
 
+* Return files and directories from :meth:`pathlib.Path.glob` and
+  :meth:`~pathlib.Path.rglob` when given a pattern that ends with "``**``". In
+  earlier versions, only directories were returned.
+  (Contributed by Barney Gale in :gh:`70303`).
+
 pdb
 ---
 
@@ -357,7 +362,7 @@ pdb
   the new ``exceptions [exc_number]`` command for Pdb. (Contributed by Matthias
   Bussonnier in :gh:`106676`.)
 
-* Expressions/Statements whose prefix is a pdb command are now correctly
+* Expressions/statements whose prefix is a pdb command are now correctly
   identified and executed.
   (Contributed by Tian Gao in :gh:`108464`.)
 
@@ -487,34 +492,69 @@ Deprecated
   Replace ``ctypes.ARRAY(item_type, size)`` with ``item_type * size``.
   (Contributed by Victor Stinner in :gh:`105733`.)
 
+* :mod:`decimal`: Deprecate non-standard format specifier "N" for
+  :class:`decimal.Decimal`.
+  It was not documented and only supported in the C implementation.
+  (Contributed by Serhiy Storchaka in :gh:`89902`.)
+
+* :mod:`dis`: The ``dis.HAVE_ARGUMENT`` separator is deprecated. Check
+  membership in :data:`~dis.hasarg` instead.
+  (Contributed by Irit Katriel in :gh:`109319`.)
+
 * :mod:`getopt` and :mod:`optparse` modules: They are now
-  :term:`soft deprecated`: the :mod:`argparse` should be used for new projects.
+  :term:`soft deprecated`: the :mod:`argparse` module should be used for new projects.
   Previously, the :mod:`optparse` module was already deprecated, its removal
   was not scheduled, and no warnings was emitted: so there is no change in
   practice.
   (Contributed by Victor Stinner in :gh:`106535`.)
 
+* :mod:`gettext`: Emit deprecation warning for non-integer numbers in
+  :mod:`gettext` functions and methods that consider plural forms even if the
+  translation was not found.
+  (Contributed by Serhiy Storchaka in :gh:`88434`.)
+
 * :mod:`http.server`: :class:`http.server.CGIHTTPRequestHandler` now emits a
-  :exc:`DeprecationWarning` as it will be removed in 3.15.  Process based CGI
-  http servers have been out of favor for a very long time.  This code was
+  :exc:`DeprecationWarning` as it will be removed in 3.15.  Process-based CGI
+  HTTP servers have been out of favor for a very long time.  This code was
   outdated, unmaintained, and rarely used.  It has a high potential for both
   security and functionality bugs.  This includes removal of the ``--cgi``
   flag to the ``python -m http.server`` command line in 3.15.
 
 * :mod:`pathlib`:
+  :meth:`pathlib.PurePath.is_reserved` is deprecated and scheduled for
+  removal in Python 3.15. Use :func:`os.path.isreserved` to detect reserved
+  paths on Windows.
 
-  * :meth:`pathlib.PurePath.is_reserved` is deprecated and scheduled for
-    removal in Python 3.15. Use :func:`os.path.isreserved` to detect reserved
-    paths on Windows.
+* :mod:`pydoc`: Deprecate undocumented :func:`!pydoc.ispackage` function.
+  (Contributed by Zackery Spytz in :gh:`64020`.)
+
+* :mod:`sqlite3`: Passing more than one positional argument to
+  :func:`sqlite3.connect` and the :class:`sqlite3.Connection` constructor is
+  deprecated. The remaining parameters will become keyword-only in Python 3.15.
+
+  Deprecate passing name, number of arguments, and the callable as keyword
+  arguments for the following :class:`sqlite3.Connection` APIs:
+
+  * :meth:`~sqlite3.Connection.create_function`
+  * :meth:`~sqlite3.Connection.create_aggregate`
+
+  Deprecate passing the callback callable by keyword for the following
+  :class:`sqlite3.Connection` APIs:
+
+  * :meth:`~sqlite3.Connection.set_authorizer`
+  * :meth:`~sqlite3.Connection.set_progress_handler`
+  * :meth:`~sqlite3.Connection.set_trace_callback`
+
+  The affected parameters will become positional-only in Python 3.15.
+
+  (Contributed by Erlend E. Aasland in :gh:`107948` and :gh:`108278`.)
 
 * :mod:`sys`: :func:`sys._enablelegacywindowsfsencoding` function.
-  Replace it with :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment variable.
+  Replace it with the :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment variable.
   (Contributed by Inada Naoki in :gh:`73427`.)
 
-* :mod:`traceback`:
-
-  * The field *exc_type* of :class:`traceback.TracebackException` is
-    deprecated. Use *exc_type_str* instead.
+* :mod:`traceback`: The field *exc_type* of :class:`traceback.TracebackException`
+  is deprecated. Use *exc_type_str* instead.
 
 * :mod:`typing`:
 
@@ -550,39 +590,6 @@ Deprecated
   They will be removed in Python 3.15.
   (Contributed by Victor Stinner in :gh:`105096`.)
 
-* Passing more than one positional argument to :func:`sqlite3.connect` and the
-  :class:`sqlite3.Connection` constructor is deprecated. The remaining
-  parameters will become keyword-only in Python 3.15.
-
-  Deprecate passing name, number of arguments, and the callable as keyword
-  arguments, for the following :class:`sqlite3.Connection` APIs:
-
-  * :meth:`~sqlite3.Connection.create_function`
-  * :meth:`~sqlite3.Connection.create_aggregate`
-
-  Deprecate passing the callback callable by keyword for the following
-  :class:`sqlite3.Connection` APIs:
-
-  * :meth:`~sqlite3.Connection.set_authorizer`
-  * :meth:`~sqlite3.Connection.set_progress_handler`
-  * :meth:`~sqlite3.Connection.set_trace_callback`
-
-  The affected parameters will become positional-only in Python 3.15.
-
-  (Contributed by Erlend E. Aasland in :gh:`107948` and :gh:`108278`.)
-
-* The ``dis.HAVE_ARGUMENT`` separator is deprecated. Check membership
-  in :data:`~dis.hasarg` instead.
-  (Contributed by Irit Katriel in :gh:`109319`.)
-
-* Deprecate non-standard format specifier "N" for :class:`decimal.Decimal`.
-  It was not documented and only supported in the C implementation.
-  (Contributed by Serhiy Storchaka in :gh:`89902`.)
-
-* Emit deprecation warning for non-integer numbers in :mod:`gettext` functions
-  and methods that consider plural forms even if the translation was not found.
-  (Contributed by Serhiy Storchaka in :gh:`88434`.)
-
 * Calling :meth:`frame.clear` on a suspended frame raises :exc:`RuntimeError`
   (as has always been the case for an executing frame).
   (Contributed by Irit Katriel in :gh:`79932`.)
@@ -592,9 +599,6 @@ Deprecated
   different types are: plain function, generator, async generator and
   coroutine.
   (Contributed by Irit Katriel in :gh:`81137`.)
-
-* Deprecate undocumented :func:`!pydoc.ispackage` function.
-  (Contributed by Zackery Spytz in :gh:`64020`.)
 
 
 Pending Removal in Python 3.14
@@ -657,11 +661,11 @@ Pending Removal in Python 3.14
   :func:`~multiprocessing.set_start_method` APIs to explicitly specify when
   your code *requires* ``'fork'``.  See :ref:`multiprocessing-start-methods`.
 
-* :mod:`pathlib`: :meth:`~pathlib.PurePath.is_relative_to`,
+* :mod:`pathlib`: :meth:`~pathlib.PurePath.is_relative_to` and
   :meth:`~pathlib.PurePath.relative_to`: passing additional arguments is
   deprecated.
 
-* :func:`pkgutil.find_loader` and :func:`pkgutil.get_loader`
+* :mod:`pkgutil`: :func:`~pkgutil.find_loader` and :func:`~pkgutil.get_loader`
   now raise :exc:`DeprecationWarning`;
   use :func:`importlib.util.find_spec` instead.
   (Contributed by Nikita Sobolev in :gh:`97850`.)
@@ -719,10 +723,16 @@ Pending Removal in Python 3.15
   (Contributed by Hugo van Kemenade in :gh:`111187`.)
 
 * :mod:`pathlib`:
+  :meth:`pathlib.PurePath.is_reserved` is deprecated and scheduled for
+  removal in Python 3.15. Use :func:`os.path.isreserved` to detect reserved
+  paths on Windows.
 
-  * :meth:`pathlib.PurePath.is_reserved` is deprecated and scheduled for
-    removal in Python 3.15. Use :func:`os.path.isreserved` to detect reserved
-    paths on Windows.
+* :mod:`threading`:
+  Passing any arguments to :func:`threading.RLock` is now deprecated.
+  C version allows any numbers of args and kwargs,
+  but they are just ignored. Python version does not allow any arguments.
+  All arguments will be removed from :func:`threading.RLock` in Python 3.15.
+  (Contributed by Nikita Sobolev in :gh:`102029`.)
 
 * :class:`typing.NamedTuple`:
 
@@ -748,12 +758,6 @@ Pending Removal in Python 3.15
   methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
   They will be removed in Python 3.15.
   (Contributed by Victor Stinner in :gh:`105096`.)
-
-* Passing any arguments to :func:`threading.RLock` is now deprecated.
-  C version allows any numbers of args and kwargs,
-  but they are just ignored. Python version does not allow any arguments.
-  All arguments will be removed from :func:`threading.RLock` in Python 3.15.
-  (Contributed by Nikita Sobolev in :gh:`102029`.)
 
 Pending Removal in Python 3.16
 ------------------------------
@@ -801,6 +805,9 @@ although there is currently no date scheduled for their removal.
   :data:`calendar.FEBRUARY`.
   (Contributed by Prince Roshan in :gh:`103636`.)
 
+* :attr:`codeobject.co_lnotab`: use the :meth:`codeobject.co_lines` method
+  instead.
+
 * :mod:`datetime`:
 
   * :meth:`~datetime.datetime.utcnow`:
@@ -836,11 +843,13 @@ although there is currently no date scheduled for their removal.
   underscore.
   (Contributed by Serhiy Storchaka in :gh:`91760`.)
 
+* :mod:`!sre_compile`, :mod:`!sre_constants` and :mod:`!sre_parse` modules.
+
 * :mod:`ssl` options and protocols:
 
   * :class:`ssl.SSLContext` without protocol argument is deprecated.
   * :class:`ssl.SSLContext`: :meth:`~ssl.SSLContext.set_npn_protocols` and
-    :meth:`!~ssl.SSLContext.selected_npn_protocol` are deprecated: use ALPN
+    :meth:`!selected_npn_protocol` are deprecated: use ALPN
     instead.
   * ``ssl.OP_NO_SSL*`` options
   * ``ssl.OP_NO_TLS*`` options
@@ -852,13 +861,6 @@ although there is currently no date scheduled for their removal.
   * ``ssl.TLSVersion.SSLv3``
   * ``ssl.TLSVersion.TLSv1``
   * ``ssl.TLSVersion.TLSv1_1``
-
-* :mod:`!sre_compile`, :mod:`!sre_constants` and :mod:`!sre_parse` modules.
-
-* :attr:`codeobject.co_lnotab`: use the :meth:`codeobject.co_lines` method
-  instead.
-
-* :class:`typing.Text` (:gh:`92332`).
 
 * :func:`sysconfig.is_python_build` *check_home* parameter is deprecated and
   ignored.
@@ -874,14 +876,10 @@ although there is currently no date scheduled for their removal.
   * :meth:`!threading.currentThread`: use :meth:`threading.current_thread`.
   * :meth:`!threading.activeCount`: use :meth:`threading.active_count`.
 
+* :class:`typing.Text` (:gh:`92332`).
+
 * :class:`unittest.IsolatedAsyncioTestCase`: it is deprecated to return a value
-  that is not None from a test case.
-
-* :mod:`urllib.request`: :class:`~urllib.request.URLopener` and
-  :class:`~urllib.request.FancyURLopener` style of invoking requests is
-  deprecated. Use newer :func:`~urllib.request.urlopen` functions and methods.
-
-* :func:`!urllib.parse.to_bytes`.
+  that is not ``None`` from a test case.
 
 * :mod:`urllib.parse` deprecated functions: :func:`~urllib.parse.urlparse` instead
 
@@ -895,6 +893,11 @@ although there is currently no date scheduled for their removal.
   * ``splittype()``
   * ``splituser()``
   * ``splitvalue()``
+  * ``to_bytes()``
+
+* :mod:`urllib.request`: :class:`~urllib.request.URLopener` and
+  :class:`~urllib.request.FancyURLopener` style of invoking requests is
+  deprecated. Use newer :func:`~urllib.request.urlopen` functions and methods.
 
 * :mod:`wsgiref`: ``SimpleHandler.stdout.write()`` should not do partial
   writes.
@@ -1190,10 +1193,10 @@ Changes in the Python API
 * Functions :c:func:`PyDict_GetItem`, :c:func:`PyDict_GetItemString`,
   :c:func:`PyMapping_HasKey`, :c:func:`PyMapping_HasKeyString`,
   :c:func:`PyObject_HasAttr`, :c:func:`PyObject_HasAttrString`, and
-  :c:func:`PySys_GetObject`, which clear all errors occurred during calling
-  the function, report now them using :func:`sys.unraisablehook`.
-  You can consider to replace these functions with other functions as
-  recomended in the documentation.
+  :c:func:`PySys_GetObject`, which clear all errors which occurred when calling
+  them, now report them using :func:`sys.unraisablehook`.
+  You may replace them with other functions as
+  recommended in the documentation.
   (Contributed by Serhiy Storchaka in :gh:`106672`.)
 
 * An :exc:`OSError` is now raised by :func:`getpass.getuser` for any failure to
@@ -1202,7 +1205,7 @@ Changes in the Python API
 
 * The :mod:`threading` module now expects the :mod:`!_thread` module to have
   an ``_is_main_interpreter`` attribute.  It is a function with no
-  arguments that returns ``True`` if the current interpreter is the
+  arguments that return ``True`` if the current interpreter is the
   main interpreter.
 
   Any library or application that provides a custom ``_thread`` module
@@ -1212,6 +1215,11 @@ Changes in the Python API
 
 * :class:`mailbox.Maildir` now ignores files with a leading dot.
   (Contributed by Zackery Spytz in :gh:`65559`.)
+
+* :meth:`pathlib.Path.glob` and :meth:`~pathlib.Path.rglob` now return both
+  files and directories if a pattern that ends with "``**``" is given, rather
+  than directories only. Users may add a trailing slash to match only
+  directories.
 
 
 Build Changes
@@ -1225,7 +1233,7 @@ Build Changes
   (Contributed by Erlend Aasland in :gh:`105875`.)
 
 * Python built with :file:`configure` :option:`--with-trace-refs` (tracing
-  references) is now ABI compatible with Python release build and
+  references) is now ABI compatible with the Python release build and
   :ref:`debug build <debug-build>`.
   (Contributed by Victor Stinner in :gh:`108634`.)
 
@@ -1252,7 +1260,7 @@ New Features
   (Contributed by Inada Naoki in :gh:`104922`.)
 
 * The *keywords* parameter of :c:func:`PyArg_ParseTupleAndKeywords` and
-  :c:func:`PyArg_VaParseTupleAndKeywords` has now type :c:expr:`char * const *`
+  :c:func:`PyArg_VaParseTupleAndKeywords` now has type :c:expr:`char * const *`
   in C and :c:expr:`const char * const *` in C++, instead of :c:expr:`char **`.
   It makes these functions compatible with arguments of type
   :c:expr:`const char * const *`, :c:expr:`const char **` or
@@ -1309,14 +1317,14 @@ New Features
   always steals a reference to the value.
   (Contributed by Serhiy Storchaka in :gh:`86493`.)
 
-* Added :c:func:`PyDict_GetItemRef` and :c:func:`PyDict_GetItemStringRef`
+* Add :c:func:`PyDict_GetItemRef` and :c:func:`PyDict_GetItemStringRef`
   functions: similar to :c:func:`PyDict_GetItemWithError` but returning a
   :term:`strong reference` instead of a :term:`borrowed reference`. Moreover,
   these functions return -1 on error and so checking ``PyErr_Occurred()`` is
   not needed.
   (Contributed by Victor Stinner in :gh:`106004`.)
 
-* Added :c:func:`PyDict_ContainsString` function: same as
+* Add :c:func:`PyDict_ContainsString` function: same as
   :c:func:`PyDict_Contains`, but *key* is specified as a :c:expr:`const char*`
   UTF-8 encoded bytes string, rather than a :c:expr:`PyObject*`.
   (Contributed by Victor Stinner in :gh:`108314`.)
@@ -1374,7 +1382,7 @@ New Features
   (Contributed by Victor Stinner in :gh:`85283`.)
 
 * Add :c:func:`PyErr_FormatUnraisable` function: similar to
-  :c:func:`PyErr_WriteUnraisable`, but allow to customize the warning mesage.
+  :c:func:`PyErr_WriteUnraisable`, but allow customizing the warning message.
   (Contributed by Serhiy Storchaka in :gh:`108082`.)
 
 * Add :c:func:`PyList_Extend` and :c:func:`PyList_Clear` functions: similar to
@@ -1384,7 +1392,7 @@ New Features
 * Add :c:func:`PyDict_Pop` and :c:func:`PyDict_PopString` functions: remove a
   key from a dictionary and optionally return the removed value. This is
   similar to :meth:`dict.pop`, but without the default value and not raising
-  :exc:`KeyError` if the key missing.
+  :exc:`KeyError` if the key is missing.
   (Contributed by Stefan Behnel and Victor Stinner in :gh:`111262`.)
 
 * Add :c:func:`Py_HashPointer` function to hash a pointer.
@@ -1497,7 +1505,7 @@ Removed
 -------
 
 * Removed chained :class:`classmethod` descriptors (introduced in
-  :issue:`19072`).  This can no longer be used to wrap other descriptors
+  :gh:`63272`).  This can no longer be used to wrap other descriptors
   such as :class:`property`.  The core design of this feature was flawed
   and caused a number of downstream problems.  To "pass-through" a
   :class:`classmethod`, consider using the :attr:`!__wrapped__`
@@ -1511,14 +1519,14 @@ Removed
   add ``cc @vstinner`` to the issue to notify Victor Stinner.
   (Contributed by Victor Stinner in :gh:`106320`.)
 
-* Remove functions deprecated in Python 3.9.
+* Remove functions deprecated in Python 3.9:
 
   * ``PyEval_CallObject()``, ``PyEval_CallObjectWithKeywords()``: use
     :c:func:`PyObject_CallNoArgs` or :c:func:`PyObject_Call` instead.
     Warning: :c:func:`PyObject_Call` positional arguments must be a
-    :class:`tuple` and must not be *NULL*, keyword arguments must be a
-    :class:`dict` or *NULL*, whereas removed functions checked arguments type
-    and accepted *NULL* positional and keyword arguments.
+    :class:`tuple` and must not be ``NULL``, keyword arguments must be a
+    :class:`dict` or ``NULL``, whereas removed functions checked arguments type
+    and accepted ``NULL`` positional and keyword arguments.
     To replace ``PyEval_CallObjectWithKeywords(func, NULL, kwargs)`` with
     :c:func:`PyObject_Call`, pass an empty tuple as positional arguments using
     :c:func:`PyTuple_New(0) <PyTuple_New>`.

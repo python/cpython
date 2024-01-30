@@ -178,7 +178,7 @@ _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
     }
     _Py_DECREF_STAT_INC();
 #ifdef Py_REF_DEBUG
-    _Py_DEC_REFTOTAL(_PyInterpreterState_GET());
+    _Py_DEC_REFTOTAL(PyInterpreterState_Get());
 #endif
     if (--op->ob_refcnt != 0) {
         assert(op->ob_refcnt > 0);
@@ -199,7 +199,7 @@ _Py_DECREF_NO_DEALLOC(PyObject *op)
     }
     _Py_DECREF_STAT_INC();
 #ifdef Py_REF_DEBUG
-    _Py_DEC_REFTOTAL(_PyInterpreterState_GET());
+    _Py_DEC_REFTOTAL(PyInterpreterState_Get());
 #endif
     op->ob_refcnt--;
 #ifdef Py_DEBUG
