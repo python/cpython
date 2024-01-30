@@ -327,13 +327,6 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
         self.assertRaises(ValueError, P('a/b').with_stem, '')
         self.assertRaises(ValueError, P('a/b').with_stem, '.')
 
-    def test_with_suffix_empty(self):
-        # Path doesn't have a "filename" component.
-        P = self.cls
-        self.assertRaises(ValueError, P('').with_suffix, '.gz')
-        self.assertRaises(ValueError, P('.').with_suffix, '.gz')
-        self.assertRaises(ValueError, P('/').with_suffix, '.gz')
-
     def test_relative_to_several_args(self):
         P = self.cls
         p = P('a/b')
