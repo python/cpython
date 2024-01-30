@@ -3037,10 +3037,8 @@ class TestExtendedArgs(unittest.TestCase):
         self.assertEqual(counts, {'call': 1, 'line': 301, 'return': 1})
 
     def test_trace_lots_of_globals(self):
-        count = 1000
-        if _testinternalcapi is not None:
-            remaining = _testinternalcapi.get_c_recursion_remaining()
-            count = min(count, remaining)
+
+        count = min(1000, int(support.Py_C_RECURSION_LIMIT * 0.8))
 
         code = """if 1:
             def f():

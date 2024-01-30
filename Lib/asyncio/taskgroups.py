@@ -73,8 +73,10 @@ class TaskGroup:
                 self._base_error is None):
             self._base_error = exc
 
-        propagate_cancellation_error = \
-            exc if et is exceptions.CancelledError else None
+        if et is not None and issubclass(et, exceptions.CancelledError):
+            propagate_cancellation_error = exc
+        else:
+            propagate_cancellation_error = None
         if self._parent_cancel_requested:
             # If this flag is set we *must* call uncancel().
             if self._parent_task.uncancel() == 0:
@@ -130,10 +132,10 @@ class TaskGroup:
 
         # Propagate CancelledError if there is one, except if there
         # are other errors -- those have priority.
-        if propagate_cancellation_error and not self._errors:
+        if propagate_cancellation_error is not None and not self._errors:
             raise propagate_cancellation_error
 
-        if et is not None and et is not exceptions.CancelledError:
+        if et is not None and not issubclass(et, exceptions.CancelledError):
             self._errors.append(exc)
 
         if self._errors:

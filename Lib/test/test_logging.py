@@ -43,11 +43,13 @@ import sys
 import tempfile
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test import support
+from test.support import import_helper
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import threading_helper
 from test.support import warnings_helper
 from test.support import asyncore
+from test.support import smtpd
 from test.support.logging_helper import TestHandler
 import textwrap
 import threading
@@ -61,9 +63,6 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 from socketserver import (ThreadingUDPServer, DatagramRequestHandler,
                           ThreadingTCPServer, StreamRequestHandler)
-
-with warnings.catch_warnings():
-    from . import smtpd
 
 try:
     import win32evtlog, win32evtlogutil, pywintypes
@@ -3924,7 +3923,8 @@ class ConfigDictTest(BaseTest):
 
     def test_111615(self):
         # See gh-111615
-        import multiprocessing as mp
+        import_helper.import_module('_multiprocessing')  # see gh-113692
+        mp = import_helper.import_module('multiprocessing')
 
         config = {
             'version': 1,

@@ -3318,35 +3318,38 @@
         case _GUARD_IS_TRUE_POP: {
             PyObject *flag;
             flag = stack_pointer[-1];
-            if (Py_IsFalse(flag)) goto deoptimize;
-            assert(Py_IsTrue(flag));
             stack_pointer += -1;
+            if (!Py_IsTrue(flag)) goto deoptimize;
+            assert(Py_IsTrue(flag));
             break;
         }
 
         case _GUARD_IS_FALSE_POP: {
             PyObject *flag;
             flag = stack_pointer[-1];
-            if (Py_IsTrue(flag)) goto deoptimize;
-            assert(Py_IsFalse(flag));
             stack_pointer += -1;
+            if (!Py_IsFalse(flag)) goto deoptimize;
+            assert(Py_IsFalse(flag));
             break;
         }
 
         case _GUARD_IS_NONE_POP: {
             PyObject *val;
             val = stack_pointer[-1];
-            if (!Py_IsNone(val)) goto deoptimize;
             stack_pointer += -1;
+            if (!Py_IsNone(val)) {
+                Py_DECREF(val);
+                if (1) goto deoptimize;
+            }
             break;
         }
 
         case _GUARD_IS_NOT_NONE_POP: {
             PyObject *val;
             val = stack_pointer[-1];
+            stack_pointer += -1;
             if (Py_IsNone(val)) goto deoptimize;
             Py_DECREF(val);
-            stack_pointer += -1;
             break;
         }
 
@@ -3381,19 +3384,36 @@
             break;
         }
 
-        case _INSERT: {
-            PyObject *top;
-            oparg = CURRENT_OPARG();
-            top = stack_pointer[-1];
-            // Inserts TOS at position specified by oparg;
-            memmove(&stack_pointer[-1 - oparg], &stack_pointer[-oparg], oparg * sizeof(stack_pointer[0]));
-            stack_pointer[-1 - oparg] = top;
+        case _CHECK_VALIDITY: {
+            TIER_TWO_ONLY
+            if (!current_executor->vm_data.valid) goto deoptimize;
             break;
         }
 
-        case _CHECK_VALIDITY: {
-            TIER_TWO_ONLY
-            if (!current_executor->base.vm_data.valid) goto deoptimize;
+        case _LOAD_CONST_INLINE: {
+            PyObject *value;
+            PyObject *ptr = (PyObject *)CURRENT_OPERAND();
+            value = Py_NewRef(ptr);
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            break;
+        }
+
+        case _LOAD_CONST_INLINE_BORROW: {
+            PyObject *value;
+            PyObject *ptr = (PyObject *)CURRENT_OPERAND();
+            value = ptr;
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            break;
+        }
+
+        case _INTERNAL_INCREMENT_OPT_COUNTER: {
+            PyObject *opt;
+            opt = stack_pointer[-1];
+            _PyCounterOptimizerObject *exe = (_PyCounterOptimizerObject *)opt;
+            exe->count++;
+            stack_pointer += -1;
             break;
         }
 
