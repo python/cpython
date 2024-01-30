@@ -996,7 +996,7 @@ resize_compact(PyObject *unicode, Py_ssize_t length)
     new_size = (struct_size + (length + 1) * char_size);
 
     if (_PyUnicode_HAS_UTF8_MEMORY(unicode)) {
-        PyObject_Free(_PyUnicode_UTF8(unicode));
+        PyMem_Free(_PyUnicode_UTF8(unicode));
         _PyUnicode_UTF8(unicode) = NULL;
         _PyUnicode_UTF8_LENGTH(unicode) = 0;
     }
@@ -1049,7 +1049,7 @@ resize_inplace(PyObject *unicode, Py_ssize_t length)
 
     if (!share_utf8 && _PyUnicode_HAS_UTF8_MEMORY(unicode))
     {
-        PyObject_Free(_PyUnicode_UTF8(unicode));
+        PyMem_Free(_PyUnicode_UTF8(unicode));
         _PyUnicode_UTF8(unicode) = NULL;
         _PyUnicode_UTF8_LENGTH(unicode) = 0;
     }
@@ -1590,10 +1590,10 @@ unicode_dealloc(PyObject *unicode)
         return;
     }
     if (_PyUnicode_HAS_UTF8_MEMORY(unicode)) {
-        PyObject_Free(_PyUnicode_UTF8(unicode));
+        PyMem_Free(_PyUnicode_UTF8(unicode));
     }
     if (!PyUnicode_IS_COMPACT(unicode) && _PyUnicode_DATA_ANY(unicode)) {
-        PyObject_Free(_PyUnicode_DATA_ANY(unicode));
+        PyMem_Free(_PyUnicode_DATA_ANY(unicode));
     }
 
     Py_TYPE(unicode)->tp_free(unicode);
@@ -5203,7 +5203,7 @@ unicode_fill_utf8(PyObject *unicode)
                     PyBytes_AS_STRING(writer.buffer);
     Py_ssize_t len = end - start;
 
-    char *cache = PyObject_Malloc(len + 1);
+    char *cache = PyMem_Malloc(len + 1);
     if (cache == NULL) {
         _PyBytesWriter_Dealloc(&writer);
         PyErr_NoMemory();
@@ -14674,7 +14674,7 @@ unicode_subtype_new(PyTypeObject *type, PyObject *unicode)
         PyErr_NoMemory();
         goto onError;
     }
-    data = PyObject_Malloc((length + 1) * char_size);
+    data = PyMem_Malloc((length + 1) * char_size);
     if (data == NULL) {
         PyErr_NoMemory();
         goto onError;

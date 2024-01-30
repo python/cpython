@@ -9,7 +9,6 @@ Doc/c-api/gcsupport.rst
 Doc/c-api/init.rst
 Doc/c-api/init_config.rst
 Doc/c-api/intro.rst
-Doc/c-api/memoryview.rst
 Doc/c-api/module.rst
 Doc/c-api/stable.rst
 Doc/c-api/sys.rst
@@ -27,7 +26,6 @@ Doc/library/asyncio-subprocess.rst
 Doc/library/bdb.rst
 Doc/library/collections.rst
 Doc/library/csv.rst
-Doc/library/datetime.rst
 Doc/library/dbm.rst
 Doc/library/decimal.rst
 Doc/library/email.charset.rst
@@ -91,7 +89,6 @@ Doc/tutorial/datastructures.rst
 Doc/using/windows.rst
 Doc/whatsnew/2.0.rst
 Doc/whatsnew/2.1.rst
-Doc/whatsnew/2.2.rst
 Doc/whatsnew/2.4.rst
 Doc/whatsnew/2.5.rst
 Doc/whatsnew/2.6.rst
