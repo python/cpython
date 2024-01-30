@@ -61,16 +61,6 @@ static datetime_state _datetime_global_state;
 
 #define STATIC_STATE() (&_datetime_global_state)
 
-/*[clinic input]
-module datetime
-class datetime.datetime "PyDateTime_DateTime *" "&PyDateTime_DateTimeType"
-class datetime.date "PyDateTime_Date *" "&PyDateTime_DateType"
-class datetime.IsoCalendarDate "PyDateTime_IsoCalendarDate *" "&PyDateTime_IsoCalendarDateType"
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=81bec0fa19837f63]*/
-
-#include "clinic/_datetimemodule.c.h"
-
 /* We require that C int be at least 32 bits, and use int virtually
  * everywhere.  In just a few cases we use a temp long, where a Python
  * API returns a C long.  In such cases, we have to ensure that the
@@ -160,6 +150,17 @@ static PyTypeObject PyDateTime_TZInfoType;
 static PyTypeObject PyDateTime_TimeZoneType;
 
 static int check_tzinfo_subclass(PyObject *p);
+
+/*[clinic input]
+module datetime
+class datetime.datetime "PyDateTime_DateTime *" "&PyDateTime_DateTimeType"
+class datetime.date "PyDateTime_Date *" "&PyDateTime_DateType"
+class datetime.time "PyDateTime_Time *" "&PyDateTime_TimeType"
+class datetime.IsoCalendarDate "PyDateTime_IsoCalendarDate *" "&PyDateTime_IsoCalendarDateType"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6f65a48dd22fa40f]*/
+
+#include "clinic/_datetimemodule.c.h"
 
 
 /* ---------------------------------------------------------------------------
@@ -3466,24 +3467,22 @@ date_timetuple(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
                              0, 0, 0, -1);
 }
 
-static PyObject *
-date_replace(PyDateTime_Date *self, PyObject *args, PyObject *kw)
-{
-    PyObject *clone;
-    PyObject *tuple;
-    int year = GET_YEAR(self);
-    int month = GET_MONTH(self);
-    int day = GET_DAY(self);
+/*[clinic input]
+datetime.date.replace
 
-    if (! PyArg_ParseTupleAndKeywords(args, kw, "|iii:replace", date_kws,
-                                      &year, &month, &day))
-        return NULL;
-    tuple = Py_BuildValue("iii", year, month, day);
-    if (tuple == NULL)
-        return NULL;
-    clone = date_new(Py_TYPE(self), tuple, NULL);
-    Py_DECREF(tuple);
-    return clone;
+    year: int(c_default="GET_YEAR(self)") = unchanged
+    month: int(c_default="GET_MONTH(self)") = unchanged
+    day: int(c_default="GET_DAY(self)") = unchanged
+
+Return date with new specified fields.
+[clinic start generated code]*/
+
+static PyObject *
+datetime_date_replace_impl(PyDateTime_Date *self, int year, int month,
+                           int day)
+/*[clinic end generated code: output=2a9430d1e6318aeb input=0d1f02685b3e90f6]*/
+{
+    return new_date_ex(year, month, day, Py_TYPE(self));
 }
 
 static Py_hash_t
@@ -3596,10 +3595,9 @@ static PyMethodDef date_methods[] = {
      PyDoc_STR("Return the day of the week represented by the date.\n"
                "Monday == 0 ... Sunday == 6")},
 
-    {"replace",     _PyCFunction_CAST(date_replace),      METH_VARARGS | METH_KEYWORDS,
-     PyDoc_STR("Return date with new specified fields.")},
+    DATETIME_DATE_REPLACE_METHODDEF
 
-    {"__replace__", _PyCFunction_CAST(date_replace),      METH_VARARGS | METH_KEYWORDS},
+    {"__replace__", _PyCFunction_CAST(datetime_date_replace), METH_FASTCALL | METH_KEYWORDS},
 
     {"__reduce__", (PyCFunction)date_reduce,        METH_NOARGS,
      PyDoc_STR("__reduce__() -> (cls, state)")},
@@ -4573,36 +4571,28 @@ time_hash(PyDateTime_Time *self)
     return self->hashcode;
 }
 
-static PyObject *
-time_replace(PyDateTime_Time *self, PyObject *args, PyObject *kw)
-{
-    PyObject *clone;
-    PyObject *tuple;
-    int hh = TIME_GET_HOUR(self);
-    int mm = TIME_GET_MINUTE(self);
-    int ss = TIME_GET_SECOND(self);
-    int us = TIME_GET_MICROSECOND(self);
-    PyObject *tzinfo = HASTZINFO(self) ? self->tzinfo : Py_None;
-    int fold = TIME_GET_FOLD(self);
+/*[clinic input]
+datetime.time.replace
 
-    if (! PyArg_ParseTupleAndKeywords(args, kw, "|iiiiO$i:replace",
-                                      time_kws,
-                                      &hh, &mm, &ss, &us, &tzinfo, &fold))
-        return NULL;
-    if (fold != 0 && fold != 1) {
-        PyErr_SetString(PyExc_ValueError,
-                        "fold must be either 0 or 1");
-        return NULL;
-    }
-    tuple = Py_BuildValue("iiiiO", hh, mm, ss, us, tzinfo);
-    if (tuple == NULL)
-        return NULL;
-    clone = time_new(Py_TYPE(self), tuple, NULL);
-    if (clone != NULL) {
-        TIME_SET_FOLD(clone, fold);
-    }
-    Py_DECREF(tuple);
-    return clone;
+    hour: int(c_default="TIME_GET_HOUR(self)") = unchanged
+    minute: int(c_default="TIME_GET_MINUTE(self)") = unchanged
+    second: int(c_default="TIME_GET_SECOND(self)") = unchanged
+    microsecond: int(c_default="TIME_GET_MICROSECOND(self)") = unchanged
+    tzinfo: object(c_default="HASTZINFO(self) ? self->tzinfo : Py_None") = unchanged
+    *
+    fold: int(c_default="TIME_GET_FOLD(self)") = unchanged
+
+Return time with new specified fields.
+[clinic start generated code]*/
+
+static PyObject *
+datetime_time_replace_impl(PyDateTime_Time *self, int hour, int minute,
+                           int second, int microsecond, PyObject *tzinfo,
+                           int fold)
+/*[clinic end generated code: output=0b89a44c299e4f80 input=9b6a35b1e704b0ca]*/
+{
+    return new_time_ex2(hour, minute, second, microsecond, tzinfo, fold,
+                        Py_TYPE(self));
 }
 
 static PyObject *
@@ -4732,10 +4722,9 @@ static PyMethodDef time_methods[] = {
     {"dst",             (PyCFunction)time_dst,          METH_NOARGS,
      PyDoc_STR("Return self.tzinfo.dst(self).")},
 
-    {"replace",     _PyCFunction_CAST(time_replace),          METH_VARARGS | METH_KEYWORDS,
-     PyDoc_STR("Return time with new specified fields.")},
+    DATETIME_TIME_REPLACE_METHODDEF
 
-    {"__replace__", _PyCFunction_CAST(time_replace),          METH_VARARGS | METH_KEYWORDS},
+    {"__replace__", _PyCFunction_CAST(datetime_time_replace), METH_FASTCALL | METH_KEYWORDS},
 
      {"fromisoformat", (PyCFunction)time_fromisoformat, METH_O | METH_CLASS,
      PyDoc_STR("string -> time from a string in ISO 8601 format")},
@@ -6042,40 +6031,32 @@ datetime_hash(PyDateTime_DateTime *self)
     return self->hashcode;
 }
 
-static PyObject *
-datetime_replace(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
-{
-    PyObject *clone;
-    PyObject *tuple;
-    int y = GET_YEAR(self);
-    int m = GET_MONTH(self);
-    int d = GET_DAY(self);
-    int hh = DATE_GET_HOUR(self);
-    int mm = DATE_GET_MINUTE(self);
-    int ss = DATE_GET_SECOND(self);
-    int us = DATE_GET_MICROSECOND(self);
-    PyObject *tzinfo = HASTZINFO(self) ? self->tzinfo : Py_None;
-    int fold = DATE_GET_FOLD(self);
+/*[clinic input]
+datetime.datetime.replace
 
-    if (! PyArg_ParseTupleAndKeywords(args, kw, "|iiiiiiiO$i:replace",
-                                      datetime_kws,
-                                      &y, &m, &d, &hh, &mm, &ss, &us,
-                                      &tzinfo, &fold))
-        return NULL;
-    if (fold != 0 && fold != 1) {
-        PyErr_SetString(PyExc_ValueError,
-                        "fold must be either 0 or 1");
-        return NULL;
-    }
-    tuple = Py_BuildValue("iiiiiiiO", y, m, d, hh, mm, ss, us, tzinfo);
-    if (tuple == NULL)
-        return NULL;
-    clone = datetime_new(Py_TYPE(self), tuple, NULL);
-    if (clone != NULL) {
-        DATE_SET_FOLD(clone, fold);
-    }
-    Py_DECREF(tuple);
-    return clone;
+    year: int(c_default="GET_YEAR(self)") = unchanged
+    month: int(c_default="GET_MONTH(self)") = unchanged
+    day: int(c_default="GET_DAY(self)") = unchanged
+    hour: int(c_default="DATE_GET_HOUR(self)") = unchanged
+    minute: int(c_default="DATE_GET_MINUTE(self)") = unchanged
+    second: int(c_default="DATE_GET_SECOND(self)") = unchanged
+    microsecond: int(c_default="DATE_GET_MICROSECOND(self)") = unchanged
+    tzinfo: object(c_default="HASTZINFO(self) ? self->tzinfo : Py_None") = unchanged
+    *
+    fold: int(c_default="DATE_GET_FOLD(self)") = unchanged
+
+Return datetime with new specified fields.
+[clinic start generated code]*/
+
+static PyObject *
+datetime_datetime_replace_impl(PyDateTime_DateTime *self, int year,
+                               int month, int day, int hour, int minute,
+                               int second, int microsecond, PyObject *tzinfo,
+                               int fold)
+/*[clinic end generated code: output=00bc96536833fddb input=9b38253d56d9bcad]*/
+{
+    return new_datetime_ex2(year, month, day, hour, minute, second,
+                            microsecond, tzinfo, fold, Py_TYPE(self));
 }
 
 static PyObject *
@@ -6597,10 +6578,9 @@ static PyMethodDef datetime_methods[] = {
     {"dst",             (PyCFunction)datetime_dst, METH_NOARGS,
      PyDoc_STR("Return self.tzinfo.dst(self).")},
 
-    {"replace",     _PyCFunction_CAST(datetime_replace),      METH_VARARGS | METH_KEYWORDS,
-     PyDoc_STR("Return datetime with new specified fields.")},
+    DATETIME_DATETIME_REPLACE_METHODDEF
 
-    {"__replace__", _PyCFunction_CAST(datetime_replace),      METH_VARARGS | METH_KEYWORDS},
+    {"__replace__", _PyCFunction_CAST(datetime_datetime_replace), METH_FASTCALL | METH_KEYWORDS},
 
     {"astimezone",  _PyCFunction_CAST(datetime_astimezone), METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("tz -> convert to local time in new timezone tz\n")},
