@@ -535,14 +535,13 @@ Pure paths provide the following methods and properties:
    reserved under Windows, ``False`` otherwise.  With :class:`PurePosixPath`,
    ``False`` is always returned.
 
-      >>> PureWindowsPath('nul').is_reserved()
-      True
-      >>> PurePosixPath('nul').is_reserved()
-      False
+   .. versionchanged:: 3.13
+      Windows path names that contain a colon, or end with a dot or a space,
+      are considered reserved. UNC paths may be reserved.
 
-   File system calls on reserved paths can fail mysteriously or have
-   unintended effects.
-
+   .. deprecated-removed:: 3.13 3.15
+      This method is deprecated; use :func:`os.path.isreserved` to detect
+      reserved paths on Windows.
 
 .. method:: PurePath.joinpath(*pathsegments)
 
@@ -1036,9 +1035,8 @@ call fails (for example because the path doesn't exist).
       The *follow_symlinks* parameter was added.
 
    .. versionchanged:: 3.13
-      Emits :exc:`FutureWarning` if the pattern ends with "``**``". In a
-      future Python release, patterns with this ending will match both files
-      and directories. Add a trailing slash to match only directories.
+      Return files and directories if *pattern* ends with "``**``". In
+      previous versions, only directories were returned.
 
    .. versionchanged:: 3.13
       The *pattern* parameter accepts a :term:`path-like object`.
