@@ -264,7 +264,7 @@ _PyDict_ClearFreeList(_PyFreeListState *freelist_state, int is_finalization)
         PyObject_GC_Del(op);
     }
     while (state->keys_numfree > 0) {
-        PyObject_Free(state->keys_free_list[--state->keys_numfree]);
+        PyMem_Free(state->keys_free_list[--state->keys_numfree]);
     }
     if (is_finalization) {
         state->numfree = -1;
@@ -303,7 +303,7 @@ _PyDict_DebugMallocStats(FILE *out)
 
 #define DK_MASK(dk) (DK_SIZE(dk)-1)
 
-static void free_keys_object(PyInterpreterState *interp, PyDictKeysObject *keys);
+static void free_keys_object(PyDictKeysObject *keys);
 
 /* PyDictKeysObject has refcounts like PyObject does, so we have the
    following two functions to mirror what Py_INCREF() and Py_DECREF() do.
@@ -335,7 +335,23 @@ dictkeys_decref(PyInterpreterState *interp, PyDictKeysObject *dk)
     _Py_DecRefTotal(_PyInterpreterState_GET());
 #endif
     if (--dk->dk_refcnt == 0) {
-        free_keys_object(interp, dk);
+        if (DK_IS_UNICODE(dk)) {
+            PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dk);
+            Py_ssize_t i, n;
+            for (i = 0, n = dk->dk_nentries; i < n; i++) {
+                Py_XDECREF(entries[i].me_key);
+                Py_XDECREF(entries[i].me_value);
+            }
+        }
+        else {
+            PyDictKeyEntry *entries = DK_ENTRIES(dk);
+            Py_ssize_t i, n;
+            for (i = 0, n = dk->dk_nentries; i < n; i++) {
+                Py_XDECREF(entries[i].me_key);
+                Py_XDECREF(entries[i].me_value);
+            }
+        }
+        free_keys_object(dk);
     }
 }
 
@@ -639,9 +655,9 @@ new_keys_object(PyInterpreterState *interp, uint8_t log2_size, bool unicode)
     else
 #endif
     {
-        dk = PyObject_Malloc(sizeof(PyDictKeysObject)
-                             + ((size_t)1 << log2_bytes)
-                             + entry_size * usable);
+        dk = PyMem_Malloc(sizeof(PyDictKeysObject)
+                          + ((size_t)1 << log2_bytes)
+                          + entry_size * usable);
         if (dk == NULL) {
             PyErr_NoMemory();
             return NULL;
@@ -663,25 +679,8 @@ new_keys_object(PyInterpreterState *interp, uint8_t log2_size, bool unicode)
 }
 
 static void
-free_keys_object(PyInterpreterState *interp, PyDictKeysObject *keys)
+free_keys_object(PyDictKeysObject *keys)
 {
-    assert(keys != Py_EMPTY_KEYS);
-    if (DK_IS_UNICODE(keys)) {
-        PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(keys);
-        Py_ssize_t i, n;
-        for (i = 0, n = keys->dk_nentries; i < n; i++) {
-            Py_XDECREF(entries[i].me_key);
-            Py_XDECREF(entries[i].me_value);
-        }
-    }
-    else {
-        PyDictKeyEntry *entries = DK_ENTRIES(keys);
-        Py_ssize_t i, n;
-        for (i = 0, n = keys->dk_nentries; i < n; i++) {
-            Py_XDECREF(entries[i].me_key);
-            Py_XDECREF(entries[i].me_value);
-        }
-    }
 #ifdef WITH_FREELISTS
     struct _Py_dict_freelist *state = get_dict_state();
     if (DK_LOG_SIZE(keys) == PyDict_LOG_MINSIZE
@@ -693,7 +692,7 @@ free_keys_object(PyInterpreterState *interp, PyDictKeysObject *keys)
         return;
     }
 #endif
-    PyObject_Free(keys);
+    PyMem_Free(keys);
 }
 
 static inline PyDictValues*
@@ -790,7 +789,7 @@ clone_combined_dict_keys(PyDictObject *orig)
     assert(orig->ma_keys->dk_refcnt == 1);
 
     size_t keys_size = _PyDict_KeysSize(orig->ma_keys);
-    PyDictKeysObject *keys = PyObject_Malloc(keys_size);
+    PyDictKeysObject *keys = PyMem_Malloc(keys_size);
     if (keys == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -1536,29 +1535,13 @@ dictresize(PyInterpreterState *interp, PyDictObject *mp,
             }
         }
 
-        // We can not use free_keys_object here because key's reference
-        // are moved already.
         if (oldkeys != Py_EMPTY_KEYS) {
 #ifdef Py_REF_DEBUG
             _Py_DecRefTotal(_PyInterpreterState_GET());
 #endif
             assert(oldkeys->dk_kind != DICT_KEYS_SPLIT);
             assert(oldkeys->dk_refcnt == 1);
-#ifdef WITH_FREELISTS
-            struct _Py_dict_freelist *state = get_dict_state();
-            if (DK_LOG_SIZE(oldkeys) == PyDict_LOG_MINSIZE &&
-                    DK_IS_UNICODE(oldkeys) &&
-                    state->keys_numfree < PyDict_MAXFREELIST &&
-                    state->keys_numfree >= 0)
-            {
-                state->keys_free_list[state->keys_numfree++] = oldkeys;
-                OBJECT_STAT_INC(to_freelist);
-            }
-            else
-#endif
-            {
-                PyObject_Free(oldkeys);
-            }
+            free_keys_object(oldkeys);
         }
     }
 

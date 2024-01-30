@@ -326,6 +326,28 @@ the :mod:`glob` module.)
    .. versionadded:: 3.12
 
 
+.. function:: isreserved(path)
+
+   Return ``True`` if *path* is a reserved pathname on the current system.
+
+   On Windows, reserved filenames include those that end with a space or dot;
+   those that contain colons (i.e. file streams such as "name:stream"),
+   wildcard characters (i.e. ``'*?"<>'``), pipe, or ASCII control characters;
+   as well as DOS device names such as "NUL", "CON", "CONIN$", "CONOUT$",
+   "AUX", "PRN", "COM1", and "LPT1".
+
+   .. note::
+
+      This function approximates rules for reserved paths on most Windows
+      systems. These rules change over time in various Windows releases.
+      This function may be updated in future Python releases as changes to
+      the rules become broadly available.
+
+   .. availability:: Windows.
+
+   .. versionadded:: 3.13
+
+
 .. function:: join(path, *paths)
 
    Join one or more path segments intelligently.  The return value is the

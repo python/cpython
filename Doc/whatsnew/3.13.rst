@@ -321,6 +321,9 @@ os
 os.path
 -------
 
+* Add :func:`os.path.isreserved` to check if a path is reserved on the current
+  system. This function is only available on Windows.
+  (Contributed by Barney Gale in :gh:`88569`.)
 * On Windows, :func:`os.path.isabs` no longer considers paths starting with
   exactly one (back)slash to be absolute.
   (Contributed by Barney Gale and Jon Foster in :gh:`44626`.)
@@ -497,6 +500,12 @@ Deprecated
   outdated, unmaintained, and rarely used.  It has a high potential for both
   security and functionality bugs.  This includes removal of the ``--cgi``
   flag to the ``python -m http.server`` command line in 3.15.
+
+* :mod:`pathlib`:
+
+  * :meth:`pathlib.PurePath.is_reserved` is deprecated and scheduled for
+    removal in Python 3.15. Use :func:`os.path.isreserved` to detect reserved
+    paths on Windows.
 
 * :mod:`sys`: :func:`sys._enablelegacywindowsfsencoding` function.
   Replace it with :envvar:`PYTHONLEGACYWINDOWSFSENCODING` environment variable.
@@ -708,6 +717,12 @@ Pending Removal in Python 3.15
   Use :func:`locale.setlocale()`, :func:`locale.getencoding()` and
   :func:`locale.getlocale()` instead.
   (Contributed by Hugo van Kemenade in :gh:`111187`.)
+
+* :mod:`pathlib`:
+
+  * :meth:`pathlib.PurePath.is_reserved` is deprecated and scheduled for
+    removal in Python 3.15. Use :func:`os.path.isreserved` to detect reserved
+    paths on Windows.
 
 * :class:`typing.NamedTuple`:
 

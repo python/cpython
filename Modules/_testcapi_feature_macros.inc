@@ -38,6 +38,15 @@ if (res) {
     Py_DECREF(result); return NULL;
 }
 
+#ifdef Py_TRACE_REFS
+    res = PyDict_SetItemString(result, "Py_TRACE_REFS", Py_True);
+#else
+    res = PyDict_SetItemString(result, "Py_TRACE_REFS", Py_False);
+#endif
+if (res) {
+    Py_DECREF(result); return NULL;
+}
+
 #ifdef USE_STACKCHECK
     res = PyDict_SetItemString(result, "USE_STACKCHECK", Py_True);
 #else
