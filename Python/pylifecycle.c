@@ -32,6 +32,7 @@
 #include "pycore_typevarobject.h" // _Py_clear_generic_types()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
+#include "pycore_obmalloc.h"      // _PyMem_init_obmalloc()
 
 #include "opcode.h"
 
@@ -645,6 +646,13 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
         return status;
     }
 
+    // initialize the interp->obmalloc state.  This must be done after
+    // the settings are loaded (so that feature_flags are set) but before
+    // any calls are made to obmalloc functions.
+    if (_PyMem_init_obmalloc(interp) < 0) {
+        return  _PyStatus_NO_MEMORY();
+    }
+
     PyThreadState *tstate = _PyThreadState_New(interp,
                                                _PyThreadState_WHENCE_INTERP);
     if (tstate == NULL) {
@@ -1232,12 +1240,19 @@ init_interp_main(PyThreadState *tstate)
 
     // Turn on experimental tier 2 (uops-based) optimizer
     if (is_main_interp) {
+#ifndef _Py_JIT
+        // No JIT, maybe use the tier two interpreter:
         char *envvar = Py_GETENV("PYTHON_UOPS");
         int enabled = envvar != NULL && *envvar > '0';
         if (_Py_get_xoption(&config->xoptions, L"uops") != NULL) {
             enabled = 1;
         }
         if (enabled) {
+#else
+        // Always enable tier two for JIT builds (ignoring the environment
+        // variable and command-line option above):
+        if (true) {
+#endif
             PyObject *opt = PyUnstable_Optimizer_NewUOpOptimizer();
             if (opt == NULL) {
                 return _PyStatus_ERR("can't initialize optimizer");
@@ -2141,6 +2156,14 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
     /* This does not require that the GIL be held. */
     status = init_interp_settings(interp, config);
     if (_PyStatus_EXCEPTION(status)) {
+        goto error;
+    }
+
+    // initialize the interp->obmalloc state.  This must be done after
+    // the settings are loaded (so that feature_flags are set) but before
+    // any calls are made to obmalloc functions.
+    if (_PyMem_init_obmalloc(interp) < 0) {
+        status = _PyStatus_NO_MEMORY();
         goto error;
     }
 

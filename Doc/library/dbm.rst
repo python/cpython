@@ -63,41 +63,33 @@ the Oracle Berkeley DB.
 
 .. function:: open(file, flag='r', mode=0o666)
 
-   Open the database file *file* and return a corresponding object.
+   Open a database and return the corresponding database object.
 
-   If the database file already exists, the :func:`whichdb` function is used to
-   determine its type and the appropriate module is used; if it does not exist,
-   the first module listed above that can be imported is used.
+   :param file:
+      The database file to open.
 
-   The optional *flag* argument can be:
+      If the database file already exists, the :func:`whichdb` function is used to
+      determine its type and the appropriate module is used; if it does not exist,
+      the first submodule listed above that can be imported is used.
+   :type file: :term:`path-like object`
 
-   .. csv-table::
-      :header: "Value", "Meaning"
+   :param str flag:
+      * ``'r'`` (default), |flag_r|
+      * ``'w'``, |flag_w|
+      * ``'c'``, |flag_c|
+      * ``'n'``, |flag_n|
 
-      ``'r'`` (default), |flag_r|
-      ``'w'``, |flag_w|
-      ``'c'``, |flag_c|
-      ``'n'``, |flag_n|
-
-   The optional *mode* argument is the Unix mode of the file, used only when the
-   database has to be created.  It defaults to octal ``0o666`` (and will be
-   modified by the prevailing umask).
+   :param int mode:
+      The Unix file access mode of the file (default: octal ``0o666``),
+      used only when the database has to be created.
 
    .. versionchanged:: 3.11
       *file* accepts a :term:`path-like object`.
 
-
-The object returned by :func:`open` supports the same basic functionality as a
+The object returned by :func:`~dbm.open` supports the same basic functionality as a
 :class:`dict`; keys and their corresponding values can be stored, retrieved, and
 deleted, and the :keyword:`in` operator and the :meth:`!keys` method are
-available, as well as :meth:`!get` and :meth:`!setdefault`.
-
-.. versionchanged:: 3.2
-   :meth:`!get` and :meth:`!setdefault` are now available in all database modules.
-
-.. versionchanged:: 3.8
-   Deleting a key from a read-only database raises database module specific error
-   instead of :exc:`KeyError`.
+available, as well as :meth:`!get` and :meth:`!setdefault` methods.
 
 Key and values are always stored as :class:`bytes`. This means that when
 strings are used they are implicitly converted to the default encoding before
@@ -106,9 +98,17 @@ being stored.
 These objects also support being used in a :keyword:`with` statement, which
 will automatically close them when done.
 
+.. versionchanged:: 3.2
+   :meth:`!get` and :meth:`!setdefault` methods are now available for all
+   :mod:`dbm` backends.
+
 .. versionchanged:: 3.4
    Added native support for the context management protocol to the objects
-   returned by :func:`.open`.
+   returned by :func:`~dbm.open`.
+
+.. versionchanged:: 3.8
+   Deleting a key from a read-only database raises a database module specific exception
+   instead of :exc:`KeyError`.
 
 The following example records some hostnames and a corresponding title,  and
 then prints out the contents of the database::
@@ -399,13 +399,14 @@ This module can be used with the "classic" NDBM interface or the
 
 --------------
 
-The :mod:`dbm.dumb` module provides a persistent dictionary-like interface which
-is written entirely in Python.  Unlike other modules such as :mod:`dbm.gnu` no
-external library is required.  As with other persistent mappings, the keys and
-values are always stored as bytes.
+The :mod:`dbm.dumb` module provides a persistent :class:`dict`-like
+interface which is written entirely in Python.
+Unlike other :mod:`dbm` backends, such as :mod:`dbm.gnu`, no
+external library is required.
+As with other :mod:`dbm` backends,
+the keys and values are always stored as :class:`bytes`.
 
-The module defines the following:
-
+The :mod:`!dbm.dumb` module defines the following:
 
 .. exception:: error
 
@@ -413,26 +414,33 @@ The module defines the following:
    raised for general mapping errors like specifying an incorrect key.
 
 
-.. function:: open(filename[, flag[, mode]])
+.. function:: open(filename, flag="c", mode=0o666)
 
-   Open a ``dumbdbm`` database and return a dumbdbm object.  The *filename* argument is
-   the basename of the database file (without any specific extensions).  When a
-   dumbdbm database is created, files with :file:`.dat` and :file:`.dir` extensions
-   are created.
+   Open a :mod:`!dbm.dumb` database.
+   The returned database object behaves similar to a :term:`mapping`,
+   in addition to providing :meth:`~dumbdbm.sync` and :meth:`~dumbdbm.close`
+   methods.
 
-   The optional *flag* argument can be:
+   :param filename:
+      The basename of the database file (without extensions).
+      A new database creates the following files:
 
-   .. csv-table::
-      :header: "Value", "Meaning"
+      - :file:`{filename}.dat`
+      - :file:`{filename}.dir`
+   :type database: :term:`path-like object`
 
-      ``'r'``, |flag_r|
-      ``'w'``, |flag_w|
-      ``'c'`` (default), |flag_c|
-      ``'n'``, |flag_n|
+   :param str flag:
+      .. csv-table::
+         :header: "Value", "Meaning"
 
-   The optional *mode* argument is the Unix mode of the file, used only when the
-   database has to be created.  It defaults to octal ``0o666`` (and will be modified
-   by the prevailing umask).
+         ``'r'``, |flag_r|
+         ``'w'``, |flag_w|
+         ``'c'`` (default), |flag_c|
+         ``'n'``, |flag_n|
+
+   :param int mode:
+      The Unix file access mode of the file (default: ``0o666``),
+      used only when the database has to be created.
 
    .. warning::
       It is possible to crash the Python interpreter when loading a database
@@ -440,20 +448,18 @@ The module defines the following:
       Python's AST compiler.
 
    .. versionchanged:: 3.5
-      :func:`.open` always creates a new database when the flag has the value
-      ``'n'``.
+      :func:`open` always creates a new database when *flag* is ``'n'``.
 
    .. versionchanged:: 3.8
-      A database opened with flags ``'r'`` is now read-only.  Opening with
-      flags ``'r'`` and ``'w'`` no longer creates a database if it does not
-      exist.
+      A database opened read-only if *flag* is ``'r'``.
+      A database is not created if it does not exist if *flag* is ``'r'`` or ``'w'``.
 
    .. versionchanged:: 3.11
-      Accepts :term:`path-like object` for filename.
+      *filename* accepts a :term:`path-like object`.
 
    In addition to the methods provided by the
-   :class:`collections.abc.MutableMapping` class, :class:`dumbdbm` objects
-   provide the following methods:
+   :class:`collections.abc.MutableMapping` class,
+   the following methods are provided:
 
    .. method:: dumbdbm.sync()
 
@@ -462,5 +468,5 @@ The module defines the following:
 
    .. method:: dumbdbm.close()
 
-      Close the ``dumbdbm`` database.
+      Close the database.
 
