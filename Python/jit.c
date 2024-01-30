@@ -303,7 +303,6 @@ calculate_jump_abs_offset(_PyUOpInstruction *trace, _PyUOpInstruction *jump_abso
 {
     assert(jump_absolute->opcode == _JUMP_ABSOLUTE);
     size_t total = 0;
-    bool found = false;
     for (int i = 0; i < jump_absolute->oparg; i++) {
         total += stencil_groups[trace[i].opcode].code.body_size;
     }
