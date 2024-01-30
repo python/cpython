@@ -1828,7 +1828,7 @@ class datetime(date):
         "Construct a UTC datetime from time.time()."
         import warnings
         warnings.warn("datetime.datetime.utcnow() is deprecated and scheduled for "
-                      "removal in a future version. Instead, Use timezone-aware "
+                      "removal in a future version. Use timezone-aware "
                       "objects to represent datetimes in UTC: "
                       "datetime.datetime.now(datetime.UTC).",
                       DeprecationWarning,
