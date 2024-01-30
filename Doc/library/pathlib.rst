@@ -1024,19 +1024,11 @@ call fails (for example because the path doesn't exist).
 
    .. audit-event:: pathlib.Path.glob self,pattern pathlib.Path.glob
 
-   .. versionchanged:: 3.11
-      Return only directories if *pattern* ends with a pathname components
-      separator (:data:`~os.sep` or :data:`~os.altsep`).
-
    .. versionchanged:: 3.12
       The *case_sensitive* parameter was added.
 
    .. versionchanged:: 3.13
       The *follow_symlinks* parameter was added.
-
-   .. versionchanged:: 3.13
-      Return files and directories if *pattern* ends with "``**``". In
-      previous versions, only directories were returned.
 
    .. versionchanged:: 3.13
       The *pattern* parameter accepts a :term:`path-like object`.
@@ -1657,6 +1649,10 @@ Pattern                    Meaning
    Globbing with the "``**``" wildcard visits every directory in the tree.
    Large directory trees may take a long time to search.
 
+.. versionchanged:: 3.13
+   Globbing with a pattern that ends with "``**``" returns both files and
+   directories. In previous versions, only directories were returned.
+
 In :meth:`Path.glob` and :meth:`~Path.rglob`, a trailing slash may be added to
 the pattern to match only directories.
 
@@ -1664,6 +1660,10 @@ the pattern to match only directories.
    This module normally removes trailing slashes. Paths returned from
    :meth:`Path.glob` and :meth:`~Path.rglob` don't include any trailing slash
    given in the pattern. :meth:`PurePath.full_match` ignores trailing slashes.
+
+.. versionchanged:: 3.11
+   Globbing with a pattern that ends with a pathname components separator
+   (:data:`~os.sep` or :data:`~os.altsep`) returns only directories.
 
 
 Correspondence to tools in the :mod:`os` module
