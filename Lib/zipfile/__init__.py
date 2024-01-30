@@ -1332,12 +1332,14 @@ class ZipFile:
                 "metadata_encoding is only supported for reading files")
 
         # Check if we were passed a file-like object
-        if isinstance(file, os.PathLike):
-            file = os.fspath(file)
-        if isinstance(file, str):
+        if hasattr(file, 'read') or hasattr(file, 'write'):
+            self._filePassed = 1
+            self.fp = file
+            self.filename = getattr(file, 'name', None)
+        else:
             # No, it's a filename
             self._filePassed = 0
-            self.filename = file
+            self.filename = os.fspath(file)
             modeDict = {'r' : 'rb', 'w': 'w+b', 'x': 'x+b', 'a' : 'r+b',
                         'r+b': 'w+b', 'w+b': 'wb', 'x+b': 'xb'}
             filemode = modeDict[mode]
@@ -1350,10 +1352,6 @@ class ZipFile:
                         continue
                     raise
                 break
-        else:
-            self._filePassed = 1
-            self.fp = file
-            self.filename = getattr(file, 'name', None)
         self._fileRefCnt = 1
         self._lock = threading.RLock()
         self._seekable = True
