@@ -692,7 +692,7 @@ deque_concat_lock_held(dequeobject *deque, PyObject *other)
 static PyObject *
 deque_concat(dequeobject *deque, PyObject *other)
 {
-    PyObject *result = NULL;
+    PyObject *result;
     Py_BEGIN_CRITICAL_SECTION(deque);
     result = deque_concat_lock_held(deque, other);
     Py_END_CRITICAL_SECTION();
@@ -880,7 +880,7 @@ deque_inplace_repeat_lock_held(dequeobject *deque, Py_ssize_t n)
 static PyObject *
 deque_inplace_repeat(dequeobject *deque, Py_ssize_t n)
 {
-    PyObject *result = NULL;
+    PyObject *result;
     Py_BEGIN_CRITICAL_SECTION(deque);
     result = deque_inplace_repeat_lock_held(deque, n);
     Py_END_CRITICAL_SECTION();
@@ -1205,7 +1205,7 @@ deque_contains_lock_held(dequeobject *deque, PyObject *v)
 static int
 deque_contains(dequeobject *deque, PyObject *v)
 {
-    int result = -1;
+    int result;
     Py_BEGIN_CRITICAL_SECTION(deque);
     result = deque_contains_lock_held(deque, v);
     Py_END_CRITICAL_SECTION();
@@ -1396,7 +1396,7 @@ deque_item_lock_held(dequeobject *deque, Py_ssize_t i)
 static PyObject *
 deque_item(dequeobject *deque, Py_ssize_t i)
 {
-    PyObject *result = NULL;
+    PyObject *result;
     Py_BEGIN_CRITICAL_SECTION(deque);
     result = deque_item_lock_held(deque, i);
     Py_END_CRITICAL_SECTION();
@@ -1507,7 +1507,7 @@ deque_ass_item_lock_held(dequeobject *deque, Py_ssize_t i, PyObject *v)
 static int
 deque_ass_item(dequeobject *deque, Py_ssize_t i, PyObject *v)
 {
-    int result = -1;
+    int result;
     Py_BEGIN_CRITICAL_SECTION(deque);
     result = deque_ass_item_lock_held(deque, i, v);
     Py_END_CRITICAL_SECTION();
@@ -1589,7 +1589,7 @@ deque___reduce___impl(dequeobject *deque)
     }
 
     Py_ssize_t maxlen;
-    PyTypeObject *typ = NULL;
+    PyTypeObject *typ;
     Py_BEGIN_CRITICAL_SECTION(deque);
     maxlen = deque->maxlen;
     typ = Py_TYPE(deque);
@@ -1962,12 +1962,12 @@ dequeiter_next_lock_held(dequeiterobject *it, dequeobject *deque)
 static PyObject *
 dequeiter_next(dequeiterobject *it)
 {
-    dequeobject *deque = NULL;
+    dequeobject *deque;
     Py_BEGIN_CRITICAL_SECTION(it);
     deque = it->deque;
     Py_END_CRITICAL_SECTION();
 
-    PyObject *result = NULL;
+    PyObject *result;
     Py_BEGIN_CRITICAL_SECTION2(it, deque);
     result = dequeiter_next_lock_held(it, deque);
     Py_END_CRITICAL_SECTION2();
@@ -2022,8 +2022,8 @@ PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(
 static PyObject *
 dequeiter_reduce(dequeiterobject *it, PyObject *Py_UNUSED(ignored))
 {
-    PyTypeObject *ty = NULL;
-    dequeobject *deque = NULL;
+    PyTypeObject *ty;
+    dequeobject *deque;
     Py_ssize_t size, counter;
     Py_BEGIN_CRITICAL_SECTION(it);
     ty = Py_TYPE(it);
@@ -2108,7 +2108,7 @@ dequereviter_next_lock_held(dequeiterobject *it, dequeobject *deque)
 static PyObject *
 dequereviter_next(dequeiterobject *it)
 {
-    dequeobject *deque = NULL;
+    dequeobject *deque;
     Py_ssize_t counter;
 
     Py_BEGIN_CRITICAL_SECTION(it);
