@@ -475,25 +475,25 @@ deque_extend_impl(dequeobject *deque, PyObject *iterable)
 {
     PyObject *it, *item;
     PyObject *(*iternext)(PyObject *);
-    PyObject *list = NULL;
-    PyObject *result = NULL;
+    Py_ssize_t maxlen = deque->maxlen;
 
     /* Handle case where id(deque) == id(iterable) */
     if ((PyObject *)deque == iterable) {
-        list = PySequence_List(iterable);
-        if (list == NULL)
+        PyObject *result;
+        PyObject *s = PySequence_List(iterable);
+        if (s == NULL)
             return NULL;
-        iterable = list;
+        result = deque_extend(deque, s);
+        Py_DECREF(s);
+        return result;
     }
 
     it = PyObject_GetIter(iterable);
     if (it == NULL)
-        goto done;
+        return NULL;
 
-    if (deque->maxlen == 0) {
-        result = consume_iterator(it);
-        goto done;
-    }
+    if (maxlen == 0)
+        return consume_iterator(it);
 
     /* Space saving heuristic.  Start filling from the left */
     if (Py_SIZE(deque) == 0) {
@@ -508,14 +508,10 @@ deque_extend_impl(dequeobject *deque, PyObject *iterable)
         if (deque_append_lock_held(deque, item) == -1) {
             Py_DECREF(item);
             Py_DECREF(it);
-            goto done;
+            return NULL;
         }
     }
-    result = finalize_iterator(it);
-
-done:
-    Py_XDECREF(list);
-    return result;
+    return finalize_iterator(it);
 }
 
 /*[clinic input]
@@ -535,25 +531,25 @@ deque_extendleft_impl(dequeobject *deque, PyObject *iterable)
 {
     PyObject *it, *item;
     PyObject *(*iternext)(PyObject *);
-    PyObject *list = NULL;
-    PyObject *result = NULL;
+    Py_ssize_t maxlen = deque->maxlen;
 
     /* Handle case where id(deque) == id(iterable) */
     if ((PyObject *)deque == iterable) {
-        list = PySequence_List(iterable);
-        if (list == NULL)
+        PyObject *result;
+        PyObject *s = PySequence_List(iterable);
+        if (s == NULL)
             return NULL;
-        iterable = list;
+        result = deque_extendleft_impl(deque, s);
+        Py_DECREF(s);
+        return result;
     }
 
     it = PyObject_GetIter(iterable);
     if (it == NULL)
-        goto done;
+        return NULL;
 
-    if (deque->maxlen == 0) {
-        result = consume_iterator(it);
-        goto done;
-    }
+    if (maxlen == 0)
+        return consume_iterator(it);
 
     /* Space saving heuristic.  Start filling from the right */
     if (Py_SIZE(deque) == 0) {
@@ -568,14 +564,10 @@ deque_extendleft_impl(dequeobject *deque, PyObject *iterable)
         if (deque_appendleft_lock_held(deque, item) == -1) {
             Py_DECREF(item);
             Py_DECREF(it);
-            goto done;
+            return NULL;
         }
     }
-    result = finalize_iterator(it);
-
-done:
-    Py_XDECREF(list);
-    return result;
+    return finalize_iterator(it);
 }
 
 static PyObject *
