@@ -347,7 +347,7 @@ This module can be used with the "classic" NDBM interface or the
 
 The :mod:`dbm.dumb` module provides a persistent :class:`dict`-like
 interface which is written entirely in Python.
-Unlike other modules such as :mod:`dbm.gnu`, no
+Unlike other :mod:`dbm` backends, such as :mod:`dbm.gnu`, no
 external library is required.
 
 The module defines the following:
