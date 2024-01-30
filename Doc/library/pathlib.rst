@@ -1659,6 +1659,14 @@ Pattern                    Meaning
    Globbing with the "``**``" wildcard visits every directory in the tree.
    Large directory trees may take a long time to search.
 
+In :meth:`Path.glob` and :meth:`~Path.rglob`, a trailing slash may be added to
+the pattern to match only directories.
+
+.. note::
+   This module normally removes trailing slashes. Paths returned from
+   :meth:`Path.glob` and :meth:`~Path.rglob` don't include any trailing slash
+   given in the pattern. :meth:`PurePath.full_match` ignores trailing slashes.
+
 
 Correspondence to tools in the :mod:`os` module
 -----------------------------------------------
