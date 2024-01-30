@@ -1588,13 +1588,10 @@ deque___reduce___impl(dequeobject *deque)
         return NULL;
     }
 
-    Py_ssize_t maxlen;
-    PyTypeObject *typ;
-    Py_BEGIN_CRITICAL_SECTION(deque);
-    maxlen = deque->maxlen;
-    typ = Py_TYPE(deque);
-    Py_END_CRITICAL_SECTION();
-
+    // It's safe to access deque->maxlen here without holding the per object
+    // lock for deque; deque->maxlen is only assigned during construction.
+    Py_ssize_t maxlen = deque->maxlen;
+    PyTypeObject *typ = Py_TYPE(deque);
     if (maxlen < 0) {
         return Py_BuildValue("O()NN", typ, state, it);
     }
@@ -1937,7 +1934,7 @@ dequeiter_dealloc(dequeiterobject *dio)
 static PyObject *
 dequeiter_next_lock_held(dequeiterobject *it, dequeobject *deque)
 {
-    if (it->deque != deque || it->deque->state != it->state) {
+    if (it->deque->state != it->state) {
         it->counter = 0;
         PyErr_SetString(PyExc_RuntimeError,
                         "deque mutated during iteration");
@@ -1962,12 +1959,10 @@ dequeiter_next_lock_held(dequeiterobject *it, dequeobject *deque)
 static PyObject *
 dequeiter_next(dequeiterobject *it)
 {
-    dequeobject *deque;
-    Py_BEGIN_CRITICAL_SECTION(it);
-    deque = it->deque;
-    Py_END_CRITICAL_SECTION();
-
     PyObject *result;
+    // It's safe to access it->deque without holding the per-object lock for it
+    // here; it->deque is only assigned during construction of it.
+    dequeobject *deque = it->deque;
     Py_BEGIN_CRITICAL_SECTION2(it, deque);
     result = dequeiter_next_lock_held(it, deque);
     Py_END_CRITICAL_SECTION2();
@@ -2085,7 +2080,10 @@ deque_reviter(dequeobject *deque)
 static PyObject *
 dequereviter_next_lock_held(dequeiterobject *it, dequeobject *deque)
 {
-    if (it->deque != deque || it->deque->state != it->state) {
+    if (it->counter == 0)
+        return NULL;
+
+    if (it->deque->state != it->state) {
         it->counter = 0;
         PyErr_SetString(PyExc_RuntimeError,
                         "deque mutated during iteration");
@@ -2108,22 +2106,13 @@ dequereviter_next_lock_held(dequeiterobject *it, dequeobject *deque)
 static PyObject *
 dequereviter_next(dequeiterobject *it)
 {
-    dequeobject *deque;
-    Py_ssize_t counter;
-
-    Py_BEGIN_CRITICAL_SECTION(it);
-    counter = it->counter;
-    deque = it->deque;
-    Py_END_CRITICAL_SECTION();
-
-    if (counter == 0)
-        return NULL;
-
-    PyObject *item = NULL;
+    PyObject *item;
+    // It's safe to access it->deque without holding the per-object lock for it
+    // here; it->deque is only assigned during construction of it.
+    dequeobject *deque = it->deque;
     Py_BEGIN_CRITICAL_SECTION2(it, deque);
     item = dequereviter_next_lock_held(it, deque);
     Py_END_CRITICAL_SECTION2();
-
     return item;
 }
 
