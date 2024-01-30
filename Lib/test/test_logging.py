@@ -4089,6 +4089,7 @@ class QueueHandlerTest(BaseTest):
             self.que_logger.critical(self.next_message())
         finally:
             listener.stop()
+            listener.stop()  # gh-114706 - ensure no crash if called again
         self.assertTrue(handler.matches(levelno=logging.WARNING, message='1'))
         self.assertTrue(handler.matches(levelno=logging.ERROR, message='2'))
         self.assertTrue(handler.matches(levelno=logging.CRITICAL, message='3'))
