@@ -405,6 +405,13 @@ sys
   This function is not guaranteed to exist in all implementations of Python.
   (Contributed by Serhiy Storchaka in :gh:`78573`.)
 
+tempfile
+--------
+
+* :func:`tempfile.NamedTemporaryFile` and :func:`~tempfile.TemporaryDirectory`
+  now return a :term:`path-like object`.
+  (Contributed by Barney Gale in :gh:`87646`.)
+
 tkinter
 -------
 
