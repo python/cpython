@@ -16,6 +16,7 @@ jobs:
           - i686-pc-windows-msvc/msvc
           - x86_64-pc-windows-msvc/msvc
           - x86_64-apple-darwin/clang
+          - aarch64-apple-darwin/clang
           - x86_64-unknown-linux-gnu/gcc
           - x86_64-unknown-linux-gnu/clang
           - aarch64-unknown-linux-gnu/gcc
@@ -36,9 +37,12 @@ jobs:
             compiler: msvc
           - target: x86_64-apple-darwin/clang
             architecture: x86_64
-            runner: macos-latest
+            runner: macos-13
             compiler: clang
-            exclude: test_embed
+          - target: aarch64-apple-darwin/clang
+            architecture: aarch64
+            runner: macos-14
+            compiler: clang
           - target: x86_64-unknown-linux-gnu/gcc
             architecture: x86_64
             runner: ubuntu-latest
@@ -80,7 +84,7 @@ jobs:
           brew install llvm@${{ matrix.llvm }}
           export SDKROOT="$(xcrun --show-sdk-path)"
           ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
-          make all --jobs 3
+          make all --jobs 4
           ./python.exe -m test --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3
 
       - name: Native Linux
@@ -91,6 +95,7 @@ jobs:
           ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
           make all --jobs 4
           ./python -m test --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3
+
       - name: Emulated Linux
         if: runner.os == 'Linux' && matrix.architecture != 'x86_64'
         run: |
