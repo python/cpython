@@ -690,7 +690,7 @@ csv
 
 * Add :const:`csv.QUOTE_NOTNULL` and :const:`csv.QUOTE_STRINGS` flags to
   provide finer grained control of ``None`` and empty strings by
-  :class:`csv.writer` objects.
+  :class:`~csv.reader` and :class:`~csv.writer` objects.
 
 dis
 ---
