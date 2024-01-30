@@ -27,7 +27,6 @@ _ERR_REINIT = "DBM object does not support reinitialization"
 
 
 def _normalize_uri(path):
-    path = os.fsdecode(path)
     path = Path(path)
     uri = path.absolute().as_uri()
     while "//" in uri:
@@ -37,10 +36,11 @@ def _normalize_uri(path):
 
 class _Database(MutableMapping):
 
-    def __init__(self, path, /, flag):
+    def __init__(self, path, /, *, flag, mode):
         if hasattr(self, "_cx"):
             raise error(_ERR_REINIT)
 
+        path = os.fsdecode(path)
         match flag:
             case "r":
                 flag = "ro"
@@ -48,12 +48,11 @@ class _Database(MutableMapping):
                 flag = "rw"
             case "c":
                 flag = "rwc"
+                Path(path).touch(mode=mode, exist_ok=True)
             case "n":
                 flag = "rwc"
-                try:
-                    os.remove(path)
-                except FileNotFoundError:
-                    pass
+                Path(path).unlink(missing_ok=True)
+                Path(path).touch(mode=mode)
             case _:
                 raise ValueError("Flag must be one of 'r', 'w', 'c', or 'n', "
                                  f"not {flag!r}")
@@ -125,7 +124,7 @@ class _Database(MutableMapping):
         self.close()
 
 
-def open(filename, /, flag="r", mode=None):
+def open(filename, /, flag="r", mode=0o666):
     """Open a dbm.sqlite3 database and return the dbm object.
 
     The 'filename' parameter is the name of the database file.
@@ -136,6 +135,7 @@ def open(filename, /, flag="r", mode=None):
         'c': create a database if it does not exist; open for read/write access
         'n': always create a new, empty database; open for read/write access
 
-    The optional 'mode' parameter is ignored.
+    The optional 'mode' parameter is the Unix file access mode of the database;
+    only used when creating a new database. Default: 0o666.
     """
-    return _Database(filename, flag)
+    return _Database(filename, flag=flag, mode=mode)

@@ -164,7 +164,7 @@ SQLite backend for the :mod:`dbm` module.
 The files created by :mod:`dbm.sqlite3` can thus be opened by :mod:`sqlite3`,
 or any other SQLite browser, including the SQLite CLI.
 
-.. function:: open(filename, /, flag="r", mode=None)
+.. function:: open(filename, /, flag="r", mode=0o666)
 
    Open an SQLite database.
    The returned object behaves like a :term:`mapping`,
@@ -180,13 +180,14 @@ or any other SQLite browser, including the SQLite CLI.
 
    :param str flag:
 
-      * ``'r'`` (default), |flag_r|
-      * ``'w'``, |flag_w|
-      * ``'c'``, |flag_c|
-      * ``'n'``, |flag_n|
+      * ``'r'`` (default): |flag_r|
+      * ``'w'``: |flag_w|
+      * ``'c'``: |flag_c|
+      * ``'n'``: |flag_n|
 
    :param mode:
-      This parameter is ignored by the :mod:`!dbm.sqlite3` module.
+      The Unix file access mode of the file (default: octal ``0o666``),
+      used only when the database has to be created.
 
 
 :mod:`dbm.gnu` --- GNU database manager
