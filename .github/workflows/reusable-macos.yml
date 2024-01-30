@@ -12,20 +12,27 @@ on:
 jobs:
   build_macos:
     name: 'build and test'
-    runs-on: macos-latest
     timeout-minutes: 60
     env:
       HOMEBREW_NO_ANALYTICS: 1
       HOMEBREW_NO_AUTO_UPDATE: 1
       HOMEBREW_NO_INSTALL_CLEANUP: 1
       PYTHONSTRICTEXTENSIONBUILD: 1
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [
+          "macos-14",  # M1
+          "macos-13",  # Intel
+        ]
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
     - name: Restore config.cache
       uses: actions/cache@v3
       with:
         path: config.cache
-        key: ${{ github.job }}-${{ runner.os }}-${{ inputs.config_hash }}
+        key: ${{ github.job }}-${{ matrix.os }}-${{ inputs.config_hash }}
     - name: Install Homebrew dependencies
       run: brew install pkg-config openssl@3.0 xz gdbm tcl-tk
     - name: Configure CPython
