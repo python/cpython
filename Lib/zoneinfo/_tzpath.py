@@ -77,16 +77,16 @@ _TEST_PATH = os.path.normpath(os.path.join("_", "_"))[:-1]
 
 
 def _validate_tzfile_path(path, _base=_TEST_PATH):
+    if not path:
+        raise ValueError(
+            "ZoneInfo key must not be an empty string"
+        )
+    
     if os.path.isabs(path):
         raise ValueError(
             f"ZoneInfo keys may not be absolute paths, got: {path}"
         )
-
-    if len(path) == 0:
-        raise ValueError(
-            "ZoneInfo key must not be an empty string"
-        )
-
+    
     # We only care about the kinds of path normalizations that would change the
     # length of the key - e.g. a/../b -> a/b, or a/b/ -> a/b. On Windows,
     # normpath will also change from a/b to a\b, but that would still preserve
