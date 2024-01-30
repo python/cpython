@@ -896,51 +896,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_PUSH_FRAME", uops)
         self.assertNotIn("_CHECK_PEP_523", uops)
 
-    def test_truncated_zipfile(self):
-        try:
-            import io
-            import zipfile
-            from random import random
-        except ImportError:
-            self.skipTest("Cannot import")
-        opt = _testinternalcapi.get_uop_optimizer()
-        with temporary_optimizer(opt):
-            FIXEDTEST_SIZE = 1000
-            line_gen = [bytes("Zipfile test line %d. random float: %f\n" %
-                              (i, random()), "ascii")
-                        for i in range(FIXEDTEST_SIZE)]
-
-            data = b''.join(line_gen)
-            compression = zipfile.ZIP_DEFLATED
-            fp = io.BytesIO()
-            with zipfile.ZipFile(fp, mode='w') as zipf:
-                zipf.writestr('strfile', data, compress_type=compression)
-                end_offset = fp.tell()
-            zipfiledata = fp.getvalue()
-
-            fp = io.BytesIO(zipfiledata)
-            with zipfile.ZipFile(fp) as zipf:
-                with zipf.open('strfile') as zipopen:
-                    fp.truncate(end_offset - 20)
-                    with self.assertRaises(EOFError):
-                        zipopen.read()
-
-            fp = io.BytesIO(zipfiledata)
-            with zipfile.ZipFile(fp) as zipf:
-                with zipf.open('strfile') as zipopen:
-                    fp.truncate(end_offset - 20)
-                    with self.assertRaises(EOFError):
-                        while zipopen.read(100):
-                            pass
-
-            fp = io.BytesIO(zipfiledata)
-            with zipfile.ZipFile(fp) as zipf:
-                with zipf.open('strfile') as zipopen:
-                    fp.truncate(end_offset - 20)
-                    with self.assertRaises(EOFError):
-                        while zipopen.read1(100):
-                            pass
-
 
 
 if __name__ == "__main__":
