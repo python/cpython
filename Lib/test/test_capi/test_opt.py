@@ -897,9 +897,12 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_CHECK_PEP_523", uops)
 
     def test_truncated_zipfile(self):
-        import io
-        import zipfile
-        from random import random
+        try:
+            import io
+            import zipfile
+            from random import random
+        except ImportError:
+            self.skipTest("Cannot import")
         opt = _testinternalcapi.get_uop_optimizer()
         with temporary_optimizer(opt):
             FIXEDTEST_SIZE = 1000
