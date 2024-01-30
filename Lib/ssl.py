@@ -851,6 +851,12 @@ class SSLSocket(socket):
         else:
             raise ValueError("No SSL wrapper around " + str(self))
 
+    def verify_client_post_handshake(self):
+        if self._sslobj:
+            return self._sslobj.verify_client_post_handshake()
+        else:
+            raise ValueError("No SSL wrapper around " + str(self))
+
     def _real_close(self):
         self._sslobj = None
         socket._real_close(self)
@@ -951,7 +957,6 @@ class SSLSocket(socket):
         if self._sslobj is None:
             return None
         return self._sslobj.version()
-
 
 def wrap_socket(sock, keyfile=None, certfile=None,
                 server_side=False, cert_reqs=CERT_NONE,
