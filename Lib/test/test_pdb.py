@@ -2622,15 +2622,15 @@ def bœr():
             def foo(): pass
 
             def bar():
-                pass
+                pass  # line 4
 
             def baz():
                 # comment
-                pass
+                pass  # line 8
 
             def mul():
                 # code on multiple lines
-                code = compile(
+                code = compile(   # line 12
                     'def f()',
                     '<string>',
                     'exec',
