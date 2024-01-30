@@ -429,7 +429,7 @@ static inline void Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size) {
     assert(ob->ob_base.ob_type != &PyLong_Type);
     assert(ob->ob_base.ob_type != &PyBool_Type);
 #ifdef Py_GIL_DISABLED
-    _Py_atomic_store_ssize_relaxed(&(_PyVarObject_CAST(ob)->ob_size), size);
+    _Py_atomic_store_ssize_relaxed(&ob->ob_size, size);
 #else
     ob->ob_size = size;
 #endif

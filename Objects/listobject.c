@@ -30,13 +30,6 @@ get_list_state(void)
 }
 #endif
 
-#ifdef Py_GIL_DISABLED
-  #define _Py_SET_ITEMREF(op, i, v) _Py_atomic_store_ptr_relaxed(&((PyListObject *)(op))->ob_item[i], Py_NewRef(v))
-#else
-  #define _Py_SET_ITEMREF(op, i, v) ((PyListObject *)(op))->ob_item[i] = Py_NewRef(v)
-#endif
-
-
 /* Ensure ob_item has room for at least newsize elements, and set
  * ob_size to newsize.  If newsize > ob_size on entry, the content
  * of the new slots at exit is undefined heap trash; it's the caller's
@@ -252,7 +245,7 @@ PyList_GetItem(PyObject *op, Py_ssize_t i)
         PyErr_BadInternalCall();
         return NULL;
     }
-    if (!valid_index(i, PyList_GET_SIZE(op))) {
+    if (!valid_index(i, Py_SIZE(op))) {
         _Py_DECLARE_STR(list_err, "list index out of range");
         PyErr_SetObject(PyExc_IndexError, &_Py_STR(list_err));
         return NULL;
@@ -348,15 +341,15 @@ _PyList_AppendTakeRefListResize(PyListObject *self, PyObject *newitem)
 int
 PyList_Append(PyObject *op, PyObject *newitem)
 {
-    int ret = -1;
     if (PyList_Check(op) && (newitem != NULL)) {
+        int ret;
         Py_BEGIN_CRITICAL_SECTION(op);
         ret = _PyList_AppendTakeRef((PyListObject *)op, Py_NewRef(newitem));
         Py_END_CRITICAL_SECTION();
         return ret;
     }
     PyErr_BadInternalCall();
-    return ret;
+    return -1;
 }
 
 /* Methods */
@@ -495,7 +488,7 @@ static PyObject *
 list_slice(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
 {
     PyListObject *np;
-    PyObject **src;
+    PyObject **src, **dest;
     Py_ssize_t i, len;
     len = ihigh - ilow;
     if (len <= 0) {
@@ -506,9 +499,10 @@ list_slice(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
         return NULL;
 
     src = a->ob_item + ilow;
+    dest = np->ob_item;
     for (i = 0; i < len; i++) {
         PyObject *v = src[i];
-        _Py_SET_ITEMREF(np, i, v);
+        dest[i] = Py_NewRef(v);
     }
     Py_SET_SIZE(np, len);
     return (PyObject *)np;
