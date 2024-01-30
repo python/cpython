@@ -17872,6 +17872,12 @@ then :
   printf "%s\n" "#define HAVE_PREADV2 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "pthread_cond_timedwait_relative_np" "ac_cv_func_pthread_cond_timedwait_relative_np"
+if test "x$ac_cv_func_pthread_cond_timedwait_relative_np" = xyes
+then :
+  printf "%s\n" "#define HAVE_PTHREAD_COND_TIMEDWAIT_RELATIVE_NP 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "pthread_condattr_setclock" "ac_cv_func_pthread_condattr_setclock"
 if test "x$ac_cv_func_pthread_condattr_setclock" = xyes
 then :
