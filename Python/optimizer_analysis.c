@@ -1200,7 +1200,6 @@ _Py_uop_analyze_and_optimize(
     OPT_STAT_INC(optimizer_attempts);
     _PyUOpInstruction *temp_writebuffer = NULL;
     bool err_occurred = false;
-    bool done = false;
 
     temp_writebuffer = PyMem_New(_PyUOpInstruction, buffer_size);
     if (temp_writebuffer == NULL) {

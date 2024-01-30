@@ -45,6 +45,9 @@ NO_CONST_OR_TYPE_EVALUATE = {
     "_CHECK_STACK_SPACE",
     "_INIT_CALL_PY_EXACT_ARGS",
     "_END_SEND",
+    "_POP_TOP",
+    "_NOP",
+    "_SWAP",
 }
 
 
@@ -206,18 +209,15 @@ def _write_body_abstract_interp_pure_uop(
         mangled_uop.stack.inputs
     )
 
-    if uop.name in {"_NOP", "_SWAP", "_POP_TOP"}:
+    # uop is mandatory - we cannot const evaluate it
+    if uop.name in NO_CONST_OR_TYPE_EVALUATE:
+        for in_ in mangled_uop.stack.inputs:
+            out.emit(f"(void){in_.name};\n")
         return
 
     assert (
         len(uop.stack.outputs) == 1
     ), f"Currently we only support 1 stack output for pure ops: {uop}"
-    # uop is mandatory - we cannot const evaluate it
-    sym = new_sym(None)
-    if uop.name in NO_CONST_OR_TYPE_EVALUATE:
-        out.emit(f"{mangled_uop.stack.outputs[0].name} = {sym}\n")
-        out.emit(f"if ({mangled_uop.stack.outputs[0].name} == NULL) {{ goto error; }}\n")
-        return
 
     # Constant prop only handles one output, and no variadic inputs.
     # Perhaps in the future we can support these.
@@ -246,15 +246,12 @@ def _write_body_abstract_interp_pure_uop(
         out.emit(f" if (emit_const(&ctx->emitter, {const_val}, shrink_stack) < 0) {{ goto error; }}\n")
         out.emit("new_inst.opcode = _NOP;\n")
         out.emit("}\n")
-        out.emit("else {\n")
-        sym = new_sym(None)
-        out.emit(f"{mangled_uop.stack.outputs[0].name} = {sym}\n")
-        out.emit(f"if ({mangled_uop.stack.outputs[0].name} == NULL) {{ goto error; }}\n")
-        out.emit("}\n")
-    else:
-        sym = new_sym(None)
-        out.emit(f"{mangled_uop.stack.outputs[0].name} = {sym}\n")
-        out.emit(f"if ({mangled_uop.stack.outputs[0].name} == NULL) {{ goto error; }}\n")
+        if not mangled_uop.stack.outputs[0].peek:
+            out.emit("else {\n")
+            sym = new_sym(None)
+            out.emit(f"{mangled_uop.stack.outputs[0].name} = {sym}\n")
+            out.emit(f"if ({mangled_uop.stack.outputs[0].name} == NULL) {{ goto error; }}\n")
+            out.emit("}\n")
 
     out.emit(f"if ({mangled_uop.stack.outputs[0].name} == NULL) goto error;\n")
 

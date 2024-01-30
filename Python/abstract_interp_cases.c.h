@@ -21,6 +21,7 @@
         case _POP_TOP: {
             _Py_UOpsSymType *__value_;
             __value_ = stack_pointer[-1];
+            (void)__value_;
             stack_pointer += -1;
             break;
         }
@@ -30,8 +31,8 @@
             _Py_UOpsSymType *__receiver_;
             __value_ = stack_pointer[-1];
             __receiver_ = stack_pointer[-2];
-            __value_ = _Py_UOpsSymType_New(ctx, NULL);
-            if (__value_ == NULL) { goto error; }
+            (void)__receiver_;
+            (void)__value_;
             stack_pointer[-2] = __value_;
             stack_pointer += -1;
             break;
@@ -1948,6 +1949,8 @@
             _Py_UOpsSymType *__bottom_;
             __top_ = stack_pointer[-1];
             __bottom_ = stack_pointer[-2 - (oparg-2)];
+            (void)__bottom_;
+            (void)__top_;
             stack_pointer[-2 - (oparg-2)] = __top_;
             stack_pointer[-1] = __bottom_;
             break;
