@@ -97,17 +97,47 @@ class Restart(Exception):
 __all__ = ["run", "pm", "Pdb", "runeval", "runctx", "runcall", "set_trace",
            "post_mortem", "help"]
 
+
+def find_first_executable_line(code):
+    """ Try to find the first executable line of the code object.
+
+    Equivalently, find the line number of the instruction that's
+    after RESUME
+
+    Return code.co_firstlineno if no executable line is found.
+    """
+    prev = None
+    for instr in dis.get_instructions(code):
+        if prev is not None and prev.opname == 'RESUME':
+            if instr.positions.lineno is not None:
+                return instr.positions.lineno
+            return code.co_firstlineno
+        prev = instr
+    return code.co_firstlineno
+
 def find_function(funcname, filename):
     cre = re.compile(r'def\s+%s\s*[(]' % re.escape(funcname))
     try:
         fp = tokenize.open(filename)
     except OSError:
         return None
+    funcdef = ""
+    funcstart = None
     # consumer of this info expects the first line to be 1
     with fp:
         for lineno, line in enumerate(fp, start=1):
             if cre.match(line):
-                return funcname, filename, lineno
+                funcstart, funcdef = lineno, line
+            elif funcdef:
+                funcdef += line
+
+            if funcdef:
+                try:
+                    funccode = compile(funcdef, filename, 'exec').co_consts[0]
+                except SyntaxError:
+                    continue
+                lineno_offset = find_first_executable_line(funccode)
+                return funcname, filename, funcstart + lineno_offset - 1
     return None
 
 def lasti2lineno(code, lasti):
@@ -975,7 +1005,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                     #use co_name to identify the bkpt (function names
                     #could be aliased, but co_name is invariant)
                     funcname = code.co_name
-                    lineno = self._find_first_executable_line(code)
+                    lineno = find_first_executable_line(code)
                     filename = code.co_filename
                 except:
                     # last thing to try
@@ -1077,23 +1107,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.error('Blank or comment')
             return 0
         return lineno
-
-    def _find_first_executable_line(self, code):
-        """ Try to find the first executable line of the code object.
-
-        Equivalently, find the line number of the instruction that's
-        after RESUME
-
-        Return code.co_firstlineno if no executable line is found.
-        """
-        prev = None
-        for instr in dis.get_instructions(code):
-            if prev is not None and prev.opname == 'RESUME':
-                if instr.positions.lineno is not None:
-                    return instr.positions.lineno
-                return code.co_firstlineno
-            prev = instr
-        return code.co_firstlineno
 
     def do_enable(self, arg):
         """enable bpnumber [bpnumber ...]
