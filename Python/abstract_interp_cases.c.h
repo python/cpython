@@ -1689,10 +1689,6 @@
             break;
         }
 
-        case _CHECK_PEP_523: {
-            break;
-        }
-
         case _CHECK_FUNCTION_EXACT_ARGS: {
             _Py_UOpsSymType *__self_or_null_;
             _Py_UOpsSymType *__callable_;

@@ -652,14 +652,67 @@ emit_i(uops_emitter *emitter,
     return 0;
 }
 
+static inline bool
+op_is_zappable(int opcode)
+{
+    switch(opcode) {
+        case _SET_IP:
+        case _CHECK_VALIDITY:
+        case _LOAD_CONST_INLINE:
+        case _LOAD_CONST:
+        case _LOAD_FAST:
+        case _LOAD_CONST_INLINE_BORROW:
+        case _NOP:
+            return true;
+        default:
+            return false;
+    }
+}
+
+static inline bool
+op_is_load(int opcode)
+{
+    return (opcode == _LOAD_CONST_INLINE ||
+            opcode == _LOAD_CONST ||
+            opcode == LOAD_FAST ||
+            opcode == _LOAD_CONST_INLINE_BORROW);
+}
+
 static inline int
 emit_const(uops_emitter *emitter,
        PyObject *const_val,
        int num_pops)
 {
     _PyUOpInstruction shrink_stack = {_SHRINK_STACK, num_pops, 0, 0};
-    if (emit_i(emitter, shrink_stack) < 0) {
-        return -1;
+    // If all that precedes a _SHRINK_STACK is a bunch of loads,
+    // then we can safely eliminate that without side effects.
+    int load_count = 0;
+    _PyUOpInstruction *back = emitter->writebuffer + emitter->curr_i - 1;
+    while (back >= emitter->writebuffer &&
+           load_count < num_pops &&
+           op_is_zappable(back->opcode)) {
+        load_count += op_is_load(back->opcode);
+        back--;
+    }
+    if (load_count == num_pops) {
+        back = emitter->writebuffer + emitter->curr_i - 1;
+        load_count = 0;
+        // Back up over the previous loads and zap them.
+        while(load_count < num_pops) {
+            load_count += op_is_load(back->opcode);
+            if (back->opcode == _LOAD_CONST_INLINE) {
+                PyObject *old_const_val = (PyObject *)back->operand;
+                Py_DECREF(old_const_val);
+                back->operand = (uintptr_t)NULL;
+            }
+            back->opcode = NOP;
+            back--;
+        }
+    }
+    else {
+        if (emit_i(emitter, shrink_stack) < 0) {
+            return -1;
+        }
     }
     int load_const_opcode = _Py_IsImmortal(const_val)
                             ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
@@ -885,6 +938,13 @@ uop_abstract_interpret_single_inst(
             break;
         }
 
+        case _CHECK_PEP_523:
+            /* Setting the eval frame function invalidates
+             * all executors, so no need to check dynamically */
+            if (_PyInterpreterState_GET()->eval_frame == NULL) {
+                new_inst.opcode = _NOP;
+            }
+            break;
         case _SET_IP:
         case _CHECK_VALIDITY:
         case _SAVE_RETURN_OFFSET:
@@ -1064,67 +1124,13 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
     }
 }
 
-static inline bool
-op_is_zappable(int opcode)
-{
-    switch(opcode) {
-        case _SET_IP:
-        case _CHECK_VALIDITY:
-        case _LOAD_CONST_INLINE:
-        case _LOAD_CONST:
-        case _LOAD_FAST:
-        case _LOAD_CONST_INLINE_BORROW:
-        case _NOP:
-            return true;
-        default:
-            return false;
-    }
-}
-
-static inline bool
-op_is_load(int opcode)
-{
-    return (opcode == _LOAD_CONST_INLINE ||
-        opcode == _LOAD_CONST ||
-        opcode == LOAD_FAST ||
-        opcode == _LOAD_CONST_INLINE_BORROW);
-}
 
 static void
 peephole_optimizations(_PyUOpInstruction *buffer, int buffer_size)
 {
     for (int i = 0; i < buffer_size; i++) {
         _PyUOpInstruction *curr = buffer + i;
-        int oparg = curr->oparg;
         switch(curr->opcode) {
-            case _SHRINK_STACK: {
-                // If all that precedes a _SHRINK_STACK is a bunch of loads,
-                // then we can safely eliminate that without side effects.
-                int load_count = 0;
-                _PyUOpInstruction *back = curr-1;
-                while (back >= buffer &&
-                    load_count < oparg &&
-                    op_is_zappable(back->opcode)) {
-                    load_count += op_is_load(back->opcode);
-                    back--;
-                }
-                if (load_count == oparg) {
-                    curr->opcode = NOP;
-                    back = curr-1;
-                    load_count = 0;
-                    while(load_count < oparg) {
-                        load_count += op_is_load(back->opcode);
-                        if (back->opcode == _LOAD_CONST_INLINE) {
-                            PyObject *const_val = (PyObject *)back->operand;
-                            Py_DECREF(const_val);
-                            back->operand = (uintptr_t)NULL;
-                        }
-                        back->opcode = NOP;
-                        back--;
-                    }
-                }
-                break;
-            }
             case _CHECK_PEP_523:
                 /* Setting the eval frame function invalidates
                  * all executors, so no need to check dynamically */
@@ -1171,8 +1177,6 @@ _Py_uop_analyze_and_optimize(
     if (new_trace_len < 0) {
         goto error;
     }
-
-    infallible_optimizations(temp_writebuffer, new_trace_len);
 
     // Fill in our new trace!
     memcpy(buffer, temp_writebuffer, new_trace_len * sizeof(_PyUOpInstruction));
