@@ -1301,6 +1301,9 @@ def _sanity_check(name, package, level):
 _ERR_MSG_PREFIX = 'No module named '
 _ERR_MSG = _ERR_MSG_PREFIX + '{!r}'
 
+def _get_module_not_found_error(name):
+    return ModuleNotFoundError(f'{_ERR_MSG_PREFIX}{name!r}', name=name)
+
 def _find_and_load_unlocked(name, import_):
     path = None
     parent = name.rpartition('.')[0]
@@ -1321,7 +1324,7 @@ def _find_and_load_unlocked(name, import_):
         child = name.rpartition('.')[2]
     spec = _find_spec(name, path)
     if spec is None:
-        raise ModuleNotFoundError(f'{_ERR_MSG_PREFIX}{name!r}', name=name)
+        raise _get_module_not_found_error(name)
     else:
         if parent_spec:
             # Temporarily add child we are currently importing to parent's
