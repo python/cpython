@@ -3,9 +3,11 @@ on:
   pull_request:
     paths:
       - '**jit**'
+      - 'Python/bytecodes.c'
   push:
     paths:
       - '**jit**'
+      - 'Python/bytecodes.c'
   workflow_dispatch:
 
 concurrency:
