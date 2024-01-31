@@ -1001,12 +1001,13 @@ class TestErrorMessagesSuggestions(unittest.TestCase):
             "foo".split(more_noise=1, maxsplt=1)
 
         # Also test the vgetargskeywords path
+        with self.check_suggestion_includes("name"):
+            ImportError(namez="oops")
+
         self.assertRaisesRegex(
             TypeError, r"ImportError\(\) got an unexpected keyword argument 'blech'$",
             ImportError, blech=1
         )
-        with self.check_suggestion_includes("name"):
-            ImportError(namez="oops")
         with self.check_suggestion_not_present():
             ImportError(blech=1)
         with self.check_suggestion_not_present():
