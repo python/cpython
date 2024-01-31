@@ -27,7 +27,6 @@ Doc/library/asyncio-subprocess.rst
 Doc/library/bdb.rst
 Doc/library/collections.rst
 Doc/library/copy.rst
-Doc/library/csv.rst
 Doc/library/ctypes.rst
 Doc/library/dbm.rst
 Doc/library/decimal.rst
