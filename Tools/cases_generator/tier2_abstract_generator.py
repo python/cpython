@@ -242,8 +242,8 @@ def _write_body_abstract_interp_pure_uop(
         maybe_const_val = new_sym(const_val)
         out.emit(f"{mangled_uop.stack.outputs[0].name} = {maybe_const_val}\n")
         out.emit(f"if({mangled_uop.stack.outputs[0].name} == NULL) {{ goto error; }}\n")
-        out.emit(f"shrink_stack.oparg = {len(uop.stack.inputs)};\n")
-        out.emit(f" if (emit_const(&ctx->emitter, {const_val}, shrink_stack) < 0) {{ goto error; }}\n")
+        out.emit(f" if (emit_const(&ctx->emitter, {const_val}, "
+                 f"{len(uop.stack.inputs)}) < 0) {{ goto error; }}\n")
         out.emit("new_inst.opcode = _NOP;\n")
         out.emit("}\n")
         if not mangled_uop.stack.outputs[0].peek:

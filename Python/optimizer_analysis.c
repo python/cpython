@@ -34,8 +34,6 @@
 
 #define OVERALLOCATE_FACTOR 5
 
-#define PEEPHOLE_MAX_ATTEMPTS 3
-
 // Need extras for root frame and for overflow frame (see TRACE_STACK_PUSH())
 #define MAX_ABSTRACT_FRAME_DEPTH (TRACE_STACK_SIZE + 2)
 
@@ -73,9 +71,8 @@ typedef enum {
     NULL_TYPE = 6,
     PYMETHOD_TYPE = 7,
     GUARD_DORV_VALUES_TYPE = 8,
-    GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_TYPE = 9,
     // Can't statically determine if self or null.
-    SELF_OR_NULL = 10,
+    SELF_OR_NULL = 9,
 
     // Represents something from LOAD_CONST which is truly constant.
     TRUE_CONST = 30,
@@ -105,7 +102,6 @@ typedef struct {
 
 
 typedef struct _Py_UOpsAbstractFrame {
-    // Strong reference.
     struct _Py_UOpsAbstractFrame *prev;
     // Symbolic version of co_consts
     int sym_consts_len;
@@ -497,7 +493,6 @@ sym_copy_immutable_type_info(_Py_UOpsSymType *from_sym, _Py_UOpsSymType *to_sym)
     }
 }
 
-// Steals a reference to obj
 static void
 sym_set_type_from_const(_Py_UOpsSymType *sym, PyObject *obj)
 {
@@ -513,26 +508,6 @@ sym_set_type_from_const(_Py_UOpsSymType *sym, PyObject *obj)
         sym_set_type(sym, PYUNICODE_TYPE, 0);
     }
 
-    if (tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(obj);
-
-        if (_PyDictOrValues_IsValues(*dorv) ||
-            _PyObject_MakeInstanceAttributesFromDict(obj, dorv)) {
-            sym_set_type(sym, GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_TYPE, 0);
-
-            PyTypeObject *owner_cls = tp;
-            PyHeapTypeObject *owner_heap_type = (PyHeapTypeObject *)owner_cls;
-            sym_set_type(
-                sym,
-                GUARD_KEYS_VERSION_TYPE,
-                owner_heap_type->ht_cached_keys->dk_version
-            );
-        }
-
-        if (!_PyDictOrValues_IsValues(*dorv)) {
-            sym_set_type(sym, GUARD_DORV_VALUES_TYPE, 0);
-        }
-    }
 }
 
 
@@ -606,7 +581,8 @@ sym_type_get_refinement(_Py_UOpsSymType *sym, _Py_UOpsSymExprTypeEnum typ)
 static inline bool
 op_is_end(uint32_t opcode)
 {
-    return opcode == _EXIT_TRACE || opcode == _JUMP_TO_TOP;
+    return opcode == _EXIT_TRACE || opcode == _JUMP_TO_TOP ||
+        opcode == _JUMP_ABSOLUTE;
 }
 
 static inline bool
@@ -666,11 +642,6 @@ static inline int
 emit_i(uops_emitter *emitter,
        _PyUOpInstruction inst)
 {
-    if (emitter->curr_i < 0) {
-        OPT_STAT_INC(optimizer_failure_reason_no_writebuffer);
-        DPRINTF(1, "out of emission space\n");
-        return -1;
-    }
     if (emitter->writebuffer + emitter->curr_i >= emitter->writebuffer_end) {
         OPT_STAT_INC(optimizer_failure_reason_no_writebuffer);
         DPRINTF(1, "out of emission space\n");
@@ -681,7 +652,7 @@ emit_i(uops_emitter *emitter,
     }
     DPRINTF(2, "Emitting instruction at [%d] op: %s, oparg: %d, target: %d, operand: %" PRIu64 " \n",
             emitter->curr_i,
-            (inst.opcode >= 300 ? _PyOpcode_uop_name : _PyOpcode_OpName)[inst.opcode],
+            _PyOpcode_uop_name[inst.opcode],
             inst.oparg,
             inst.target,
             inst.operand);
@@ -693,8 +664,9 @@ emit_i(uops_emitter *emitter,
 static inline int
 emit_const(uops_emitter *emitter,
        PyObject *const_val,
-       _PyUOpInstruction shrink_stack)
+       int num_pops)
 {
+    _PyUOpInstruction shrink_stack = {_SHRINK_STACK, num_pops, 0, 0};
     if (emit_i(emitter, shrink_stack) < 0) {
         return -1;
     }
@@ -783,11 +755,9 @@ uop_abstract_interpret_single_inst(
 
     _Py_UOpsSymType **stack_pointer = ctx->frame->stack_pointer;
     _PyUOpInstruction new_inst = *inst;
-    _PyUOpInstruction shrink_stack = {_SHRINK_STACK, 0, 0, 0};
-
 
     DPRINTF(3, "Abstract interpreting %s:%d ",
-            (opcode >= 300 ? _PyOpcode_uop_name : _PyOpcode_OpName)[opcode],
+            _PyOpcode_uop_name[opcode],
             oparg);
     switch (opcode) {
 #include "abstract_interp_cases.c.h"
@@ -974,14 +944,14 @@ uop_abstract_interpret(
     _PyUOpInstruction *curr = NULL;
     _PyUOpInstruction *end = NULL;
     AbstractInterpExitCodes status = ABSTRACT_INTERP_NORMAL;
-    bool first_impure = true;
+    bool needs_clear_locals = true;
     bool has_enough_space_to_duplicate_loop = true;
     int res = 0;
 
 loop_peeling:
     curr = trace;
     end = trace + trace_len;
-    first_impure = true;
+    needs_clear_locals = true;
     ;
     while (curr < end && !op_is_end(curr->opcode)) {
 
@@ -989,16 +959,16 @@ loop_peeling:
             !op_is_specially_handled(curr->opcode) &&
             !op_is_bookkeeping(curr->opcode) &&
             !op_is_guard(curr->opcode)) {
-            DPRINTF(3, "Impure %s\n", (curr->opcode >= 300 ? _PyOpcode_uop_name : _PyOpcode_OpName)[curr->opcode]);
-            if (first_impure) {
+            DPRINTF(3, "Impure %s\n", _PyOpcode_uop_name[curr->opcode]);
+            if (needs_clear_locals) {
                 if (clear_locals_type_info(ctx) < 0) {
                     goto error;
                 }
             }
-            first_impure = false;
+            needs_clear_locals = false;
         }
         else {
-            first_impure = true;
+            needs_clear_locals = true;
         }
 
 
@@ -1111,6 +1081,7 @@ op_is_zappable(int opcode)
         case _LOAD_CONST:
         case _LOAD_FAST:
         case _LOAD_CONST_INLINE_BORROW:
+        case _NOP:
             return true;
         default:
             return false;
@@ -1139,8 +1110,9 @@ peephole_optimizations(_PyUOpInstruction *buffer, int buffer_size)
                 // then we can safely eliminate that without side effects.
                 int load_count = 0;
                 _PyUOpInstruction *back = curr-1;
-                while(op_is_zappable(back->opcode) &&
-                    load_count < oparg) {
+                while (back >= buffer &&
+                    load_count < oparg &&
+                    op_is_zappable(back->opcode)) {
                     load_count += op_is_load(back->opcode);
                     back--;
                 }
@@ -1179,12 +1151,7 @@ peephole_optimizations(_PyUOpInstruction *buffer, int buffer_size)
 static void
 infallible_optimizations(_PyUOpInstruction *buffer, int buffer_size)
 {
-    bool done = false;
-    for (int peephole_attempts = 0; peephole_attempts < PEEPHOLE_MAX_ATTEMPTS &&
-                                    !done;
-         peephole_attempts++) {
-        done = peephole_optimizations(buffer, buffer_size);
-    }
+    peephole_optimizations(buffer, buffer_size);
     remove_unneeded_uops(buffer, buffer_size);
 }
 

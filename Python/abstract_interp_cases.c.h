@@ -59,8 +59,7 @@
                 res = Py_IsFalse(value) ? Py_True : Py_False;
                 __res_ = _Py_UOpsSymType_New(ctx, (PyObject *)res);
                 if(__res_ == NULL) { goto error; }
-                shrink_stack.oparg = 1;
-                 if (emit_const(&ctx->emitter, (PyObject *)res, shrink_stack) < 0) { goto error; }
+                 if (emit_const(&ctx->emitter, (PyObject *)res, 1) < 0) { goto error; }
                 new_inst.opcode = _NOP;
             }
             else {
@@ -195,8 +194,7 @@
 
                 __res_ = _Py_UOpsSymType_New(ctx, (PyObject *)res);
                 if(__res_ == NULL) { goto error; }
-                shrink_stack.oparg = 2;
-                 if (emit_const(&ctx->emitter, (PyObject *)res, shrink_stack) < 0) { goto error; }
+                 if (emit_const(&ctx->emitter, (PyObject *)res, 2) < 0) { goto error; }
                 new_inst.opcode = _NOP;
             }
             else {
@@ -230,8 +228,7 @@
 
                 __res_ = _Py_UOpsSymType_New(ctx, (PyObject *)res);
                 if(__res_ == NULL) { goto error; }
-                shrink_stack.oparg = 2;
-                 if (emit_const(&ctx->emitter, (PyObject *)res, shrink_stack) < 0) { goto error; }
+                 if (emit_const(&ctx->emitter, (PyObject *)res, 2) < 0) { goto error; }
                 new_inst.opcode = _NOP;
             }
             else {
@@ -265,8 +262,7 @@
 
                 __res_ = _Py_UOpsSymType_New(ctx, (PyObject *)res);
                 if(__res_ == NULL) { goto error; }
-                shrink_stack.oparg = 2;
-                 if (emit_const(&ctx->emitter, (PyObject *)res, shrink_stack) < 0) { goto error; }
+                 if (emit_const(&ctx->emitter, (PyObject *)res, 2) < 0) { goto error; }
                 new_inst.opcode = _NOP;
             }
             else {
@@ -333,8 +329,7 @@
                 DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
                 __res_ = _Py_UOpsSymType_New(ctx, (PyObject *)res);
                 if(__res_ == NULL) { goto error; }
-                shrink_stack.oparg = 2;
-                 if (emit_const(&ctx->emitter, (PyObject *)res, shrink_stack) < 0) { goto error; }
+                 if (emit_const(&ctx->emitter, (PyObject *)res, 2) < 0) { goto error; }
                 new_inst.opcode = _NOP;
             }
             else {
@@ -369,8 +364,7 @@
                 DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
                 __res_ = _Py_UOpsSymType_New(ctx, (PyObject *)res);
                 if(__res_ == NULL) { goto error; }
-                shrink_stack.oparg = 2;
-                 if (emit_const(&ctx->emitter, (PyObject *)res, shrink_stack) < 0) { goto error; }
+                 if (emit_const(&ctx->emitter, (PyObject *)res, 2) < 0) { goto error; }
                 new_inst.opcode = _NOP;
             }
             else {
@@ -405,8 +399,7 @@
                 DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
                 __res_ = _Py_UOpsSymType_New(ctx, (PyObject *)res);
                 if(__res_ == NULL) { goto error; }
-                shrink_stack.oparg = 2;
-                 if (emit_const(&ctx->emitter, (PyObject *)res, shrink_stack) < 0) { goto error; }
+                 if (emit_const(&ctx->emitter, (PyObject *)res, 2) < 0) { goto error; }
                 new_inst.opcode = _NOP;
             }
             else {
@@ -472,8 +465,7 @@
 
                 __res_ = _Py_UOpsSymType_New(ctx, (PyObject *)res);
                 if(__res_ == NULL) { goto error; }
-                shrink_stack.oparg = 2;
-                 if (emit_const(&ctx->emitter, (PyObject *)res, shrink_stack) < 0) { goto error; }
+                 if (emit_const(&ctx->emitter, (PyObject *)res, 2) < 0) { goto error; }
                 new_inst.opcode = _NOP;
             }
             else {
@@ -1539,16 +1531,6 @@
                 DPRINTF(3, "const eliminated guard\n");
                 new_inst.opcode = _NOP;
                 break;
-            }
-            // Type guard elimination
-            if (sym_matches_type((_Py_UOpsSymType *)__owner_, GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_TYPE, (uint32_t)0)) {
-                DPRINTF(2, "type propagation eliminated guard\n");
-                new_inst.opcode = _NOP;
-                break;
-            }
-            else {
-                // Type propagation
-                sym_set_type((_Py_UOpsSymType *)__owner_, GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_TYPE, (uint32_t)0);
             }
             break;
         }
