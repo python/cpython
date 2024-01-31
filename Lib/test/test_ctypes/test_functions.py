@@ -46,15 +46,15 @@ class FunctionTestCase(unittest.TestCase):
                 _type_ = "i"
 
         with self.assertRaises(TypeError):
-            class X(object, _Pointer):
+            class X2(object, _Pointer):
                 pass
 
         with self.assertRaises(TypeError):
-            class X(object, _SimpleCData):
+            class X3(object, _SimpleCData):
                 _type_ = "i"
 
         with self.assertRaises(TypeError):
-            class X(object, Structure):
+            class X4(object, Structure):
                 _fields_ = []
 
     def test_c_char_parm(self):

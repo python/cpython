@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(sys_addaudithook__doc__,
 "addaudithook($module, /, hook)\n"
@@ -283,6 +284,40 @@ sys_intern(PyObject *module, PyObject *arg)
     }
     s = arg;
     return_value = sys_intern_impl(module, s);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(sys__is_interned__doc__,
+"_is_interned($module, string, /)\n"
+"--\n"
+"\n"
+"Return True if the given string is \"interned\".");
+
+#define SYS__IS_INTERNED_METHODDEF    \
+    {"_is_interned", (PyCFunction)sys__is_interned, METH_O, sys__is_interned__doc__},
+
+static int
+sys__is_interned_impl(PyObject *module, PyObject *string);
+
+static PyObject *
+sys__is_interned(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *string;
+    int _return_value;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("_is_interned", "argument", "str", arg);
+        goto exit;
+    }
+    string = arg;
+    _return_value = sys__is_interned_impl(module, string);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
 
 exit:
     return return_value;
@@ -1451,4 +1486,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=3a7d3fbbcb281c22 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3dc3b2cb0ce38ebb input=a9049054013a1b77]*/

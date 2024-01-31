@@ -332,22 +332,24 @@ class PluralFormsTests:
         x = gettext(singular)
         self.assertEqual(x, tsingular)
 
+        lineno = self._test_plural_forms.__code__.co_firstlineno + 12
+        with self.assertWarns(DeprecationWarning) as cm:
+            x = ngettext(singular, plural, 1.0)
+        self.assertEqual(cm.filename, __file__)
+        self.assertEqual(cm.lineno, lineno)
+        self.assertEqual(x, tsingular)
+        with self.assertWarns(DeprecationWarning) as cm:
+            x = ngettext(singular, plural, 1.1)
+        self.assertEqual(cm.filename, __file__)
+        self.assertEqual(cm.lineno, lineno + 5)
+        self.assertEqual(x, tplural)
+
         if numbers_only:
-            lineno = self._test_plural_forms.__code__.co_firstlineno + 9
-            with self.assertWarns(DeprecationWarning) as cm:
-                x = ngettext(singular, plural, 1.0)
-            self.assertEqual(cm.filename, __file__)
-            self.assertEqual(cm.lineno, lineno + 4)
-            self.assertEqual(x, tsingular)
-            with self.assertWarns(DeprecationWarning) as cm:
-                x = ngettext(singular, plural, 1.1)
-            self.assertEqual(cm.filename, __file__)
-            self.assertEqual(cm.lineno, lineno + 9)
-            self.assertEqual(x, tplural)
             with self.assertRaises(TypeError):
                 ngettext(singular, plural, None)
         else:
-            x = ngettext(singular, plural, None)
+            with self.assertWarns(DeprecationWarning) as cm:
+                x = ngettext(singular, plural, None)
             self.assertEqual(x, tplural)
 
     def test_plural_forms(self):

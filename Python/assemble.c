@@ -4,7 +4,7 @@
 #include "pycore_code.h"            // write_location_entry_start()
 #include "pycore_compile.h"
 #include "pycore_opcode_utils.h"    // IS_BACKWARDS_JUMP_OPCODE
-#include "pycore_opcode_metadata.h" // IS_PSEUDO_INSTR, _PyOpcode_Caches
+#include "pycore_opcode_metadata.h" // is_pseudo_target, _PyOpcode_Caches
 
 
 #define DEFAULT_CODE_SIZE 128
@@ -710,13 +710,13 @@ resolve_unconditional_jumps(instr_sequence *instrs)
         bool is_forward = (instr->i_oparg > i);
         switch(instr->i_opcode) {
             case JUMP:
-                assert(SAME_OPCODE_METADATA(JUMP, JUMP_FORWARD));
-                assert(SAME_OPCODE_METADATA(JUMP, JUMP_BACKWARD));
+                assert(is_pseudo_target(JUMP, JUMP_FORWARD));
+                assert(is_pseudo_target(JUMP, JUMP_BACKWARD));
                 instr->i_opcode = is_forward ? JUMP_FORWARD : JUMP_BACKWARD;
                 break;
             case JUMP_NO_INTERRUPT:
-                assert(SAME_OPCODE_METADATA(JUMP_NO_INTERRUPT, JUMP_FORWARD));
-                assert(SAME_OPCODE_METADATA(JUMP_NO_INTERRUPT, JUMP_BACKWARD_NO_INTERRUPT));
+                assert(is_pseudo_target(JUMP_NO_INTERRUPT, JUMP_FORWARD));
+                assert(is_pseudo_target(JUMP_NO_INTERRUPT, JUMP_BACKWARD_NO_INTERRUPT));
                 instr->i_opcode = is_forward ?
                     JUMP_FORWARD : JUMP_BACKWARD_NO_INTERRUPT;
                 break;

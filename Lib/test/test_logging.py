@@ -43,11 +43,13 @@ import sys
 import tempfile
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test import support
+from test.support import import_helper
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import threading_helper
 from test.support import warnings_helper
 from test.support import asyncore
+from test.support import smtpd
 from test.support.logging_helper import TestHandler
 import textwrap
 import threading
@@ -61,9 +63,6 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 from socketserver import (ThreadingUDPServer, DatagramRequestHandler,
                           ThreadingTCPServer, StreamRequestHandler)
-
-with warnings.catch_warnings():
-    from . import smtpd
 
 try:
     import win32evtlog, win32evtlogutil, pywintypes
@@ -2998,6 +2997,39 @@ class ConfigDictTest(BaseTest):
         },
     }
 
+    class CustomFormatter(logging.Formatter):
+        custom_property = "."
+
+        def format(self, record):
+            return super().format(record)
+
+    config17 = {
+        'version': 1,
+        'formatters': {
+            "custom": {
+                "()": CustomFormatter,
+                "style": "{",
+                "datefmt": "%Y-%m-%d %H:%M:%S",
+                "format": "{message}", # <-- to force an exception when configuring
+                ".": {
+                    "custom_property": "value"
+                }
+            }
+        },
+        'handlers' : {
+            'hand1' : {
+                'class' : 'logging.StreamHandler',
+                'formatter' : 'custom',
+                'level' : 'NOTSET',
+                'stream'  : 'ext://sys.stdout',
+            },
+        },
+        'root' : {
+            'level' : 'WARNING',
+            'handlers' : ['hand1'],
+        },
+    }
+
     bad_format = {
         "version": 1,
         "formatters": {
@@ -3479,7 +3511,10 @@ class ConfigDictTest(BaseTest):
             {'msg': 'Hello'}))
         self.assertEqual(result, 'Hello ++ defaultvalue')
 
-
+    def test_config17_ok(self):
+        self.apply_config(self.config17)
+        h = logging._handlers['hand1']
+        self.assertEqual(h.formatter.custom_property, 'value')
 
     def setup_via_listener(self, text, verify=None):
         text = text.encode("utf-8")
@@ -3886,6 +3921,26 @@ class ConfigDictTest(BaseTest):
         # Logger should be enabled, since explicitly mentioned
         self.assertFalse(logger.disabled)
 
+    def test_111615(self):
+        # See gh-111615
+        import_helper.import_module('_multiprocessing')  # see gh-113692
+        mp = import_helper.import_module('multiprocessing')
+
+        config = {
+            'version': 1,
+            'handlers': {
+                'sink': {
+                    'class': 'logging.handlers.QueueHandler',
+                    'queue': mp.get_context('spawn').Queue(),
+                },
+            },
+            'root': {
+                'handlers': ['sink'],
+                'level': 'DEBUG',
+            },
+        }
+        logging.config.dictConfig(config)
+
 class ManagerTest(BaseTest):
     def test_manager_loggerclass(self):
         logged = []
@@ -4034,6 +4089,7 @@ class QueueHandlerTest(BaseTest):
             self.que_logger.critical(self.next_message())
         finally:
             listener.stop()
+            listener.stop()  # gh-114706 - ensure no crash if called again
         self.assertTrue(handler.matches(levelno=logging.WARNING, message='1'))
         self.assertTrue(handler.matches(levelno=logging.ERROR, message='2'))
         self.assertTrue(handler.matches(levelno=logging.CRITICAL, message='3'))

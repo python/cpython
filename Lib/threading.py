@@ -3,7 +3,6 @@
 import os as _os
 import sys as _sys
 import _thread
-import functools
 import warnings
 
 from time import monotonic as _time
@@ -33,9 +32,10 @@ __all__ = ['get_ident', 'active_count', 'Condition', 'current_thread',
            'setprofile_all_threads','settrace_all_threads']
 
 # Rename some stuff so "from threading import *" is safe
-_start_new_thread = _thread.start_new_thread
+_start_joinable_thread = _thread.start_joinable_thread
 _daemon_threads_allowed = _thread.daemon_threads_allowed
 _allocate_lock = _thread.allocate_lock
+_LockType = _thread.LockType
 _set_sentinel = _thread._set_sentinel
 get_ident = _thread.get_ident
 _is_main_interpreter = _thread._is_main_interpreter
@@ -53,6 +53,13 @@ except AttributeError:
 TIMEOUT_MAX = _thread.TIMEOUT_MAX
 del _thread
 
+# get thread-local implementation, either from the thread
+# module, or from the python fallback
+
+try:
+    from _thread import _local as local
+except ImportError:
+    from _threading_local import local
 
 # Support for profile and trace hooks
 
@@ -107,7 +114,7 @@ def gettrace():
 
 # Synchronization classes
 
-Lock = _allocate_lock
+Lock = _LockType
 
 def RLock(*args, **kwargs):
     """Factory function that returns a new reentrant lock.
@@ -589,7 +596,7 @@ class Event:
         return f"<{cls.__module__}.{cls.__qualname__} at {id(self):#x}: {status}>"
 
     def _at_fork_reinit(self):
-        # Private method called by Thread._reset_internal_locks()
+        # Private method called by Thread._after_fork()
         self._cond._at_fork_reinit()
 
     def is_set(self):
@@ -924,6 +931,8 @@ class Thread:
         if _HAVE_THREAD_NATIVE_ID:
             self._native_id = None
         self._tstate_lock = None
+        self._join_lock = None
+        self._handle = None
         self._started = Event()
         self._is_stopped = False
         self._initialized = True
@@ -933,22 +942,32 @@ class Thread:
         # For debugging and _after_fork()
         _dangling.add(self)
 
-    def _reset_internal_locks(self, is_alive):
-        # private!  Called by _after_fork() to reset our internal locks as
-        # they may be in an invalid state leading to a deadlock or crash.
+    def _after_fork(self, new_ident=None):
+        # Private!  Called by threading._after_fork().
         self._started._at_fork_reinit()
-        if is_alive:
+        if new_ident is not None:
+            # This thread is alive.
+            self._ident = new_ident
+            if self._handle is not None:
+                self._handle.after_fork_alive()
+                assert self._handle.ident == new_ident
             # bpo-42350: If the fork happens when the thread is already stopped
             # (ex: after threading._shutdown() has been called), _tstate_lock
             # is None. Do nothing in this case.
             if self._tstate_lock is not None:
                 self._tstate_lock._at_fork_reinit()
                 self._tstate_lock.acquire()
+            if self._join_lock is not None:
+                self._join_lock._at_fork_reinit()
         else:
-            # The thread isn't alive after fork: it doesn't have a tstate
+            # This thread isn't alive after fork: it doesn't have a tstate
             # anymore.
             self._is_stopped = True
             self._tstate_lock = None
+            self._join_lock = None
+            if self._handle is not None:
+                self._handle.after_fork_dead()
+                self._handle = None
 
     def __repr__(self):
         assert self._initialized, "Thread.__init__() was not called"
@@ -980,15 +999,18 @@ class Thread:
         if self._started.is_set():
             raise RuntimeError("threads can only be started once")
 
+        self._join_lock = _allocate_lock()
+
         with _active_limbo_lock:
             _limbo[self] = self
         try:
-            _start_new_thread(self._bootstrap, ())
+            # Start joinable thread
+            self._handle = _start_joinable_thread(self._bootstrap)
         except Exception:
             with _active_limbo_lock:
                 del _limbo[self]
             raise
-        self._started.wait()
+        self._started.wait()  # Will set ident and native_id
 
     def run(self):
         """Method representing the thread's activity.
@@ -1144,6 +1166,22 @@ class Thread:
             # historically .join(timeout=x) for x<0 has acted as if timeout=0
             self._wait_for_tstate_lock(timeout=max(timeout, 0))
 
+        if self._is_stopped:
+            self._join_os_thread()
+
+    def _join_os_thread(self):
+        join_lock = self._join_lock
+        if join_lock is None:
+            return
+        with join_lock:
+            # Calling join() multiple times would raise an exception
+            # in one of the callers.
+            if self._handle is not None:
+                self._handle.join()
+                self._handle = None
+                # No need to keep this around
+                self._join_lock = None
+
     def _wait_for_tstate_lock(self, block=True, timeout=-1):
         # Issue #18808: wait for the thread state to be gone.
         # At the end of the thread's life, after all knowledge of the thread
@@ -1223,7 +1261,10 @@ class Thread:
         if self._is_stopped or not self._started.is_set():
             return False
         self._wait_for_tstate_lock(False)
-        return not self._is_stopped
+        if not self._is_stopped:
+            return True
+        self._join_os_thread()
+        return False
 
     @property
     def daemon(self):
@@ -1441,10 +1482,36 @@ class _MainThread(Thread):
             _active[self._ident] = self
 
 
+# Helper thread-local instance to detect when a _DummyThread
+# is collected. Not a part of the public API.
+_thread_local_info = local()
+
+
+class _DeleteDummyThreadOnDel:
+    '''
+    Helper class to remove a dummy thread from threading._active on __del__.
+    '''
+
+    def __init__(self, dummy_thread):
+        self._dummy_thread = dummy_thread
+        self._tident = dummy_thread.ident
+        # Put the thread on a thread local variable so that when
+        # the related thread finishes this instance is collected.
+        #
+        # Note: no other references to this instance may be created.
+        # If any client code creates a reference to this instance,
+        # the related _DummyThread will be kept forever!
+        _thread_local_info._track_dummy_thread_ref = self
+
+    def __del__(self):
+        with _active_limbo_lock:
+            if _active.get(self._tident) is self._dummy_thread:
+                _active.pop(self._tident, None)
+
+
 # Dummy thread class to represent threads not started here.
-# These aren't garbage collected when they die, nor can they be waited for.
-# If they invoke anything in threading.py that calls current_thread(), they
-# leave an entry in the _active dict forever after.
+# These should be added to `_active` and removed automatically
+# when they die, although they can't be waited for.
 # Their purpose is to return *something* from current_thread().
 # They are marked as daemon threads so we won't wait for them
 # when we exit (conform previous semantics).
@@ -1454,13 +1521,13 @@ class _DummyThread(Thread):
     def __init__(self):
         Thread.__init__(self, name=_newname("Dummy-%d"),
                         daemon=_daemon_threads_allowed())
-
         self._started.set()
         self._set_ident()
         if _HAVE_THREAD_NATIVE_ID:
             self._set_native_id()
         with _active_limbo_lock:
             _active[self._ident] = self
+        _DeleteDummyThreadOnDel(self)
 
     def _stop(self):
         pass
@@ -1472,6 +1539,14 @@ class _DummyThread(Thread):
 
     def join(self, timeout=None):
         raise RuntimeError("cannot join a dummy thread")
+
+    def _after_fork(self, new_ident=None):
+        if new_ident is not None:
+            self.__class__ = _MainThread
+            self._name = 'MainThread'
+            self._daemonic = False
+            self._set_tstate_lock()
+        Thread._after_fork(self, new_ident=new_ident)
 
 
 # Global API functions
@@ -1554,8 +1629,7 @@ def _register_atexit(func, *arg, **kwargs):
     if _SHUTTING_DOWN:
         raise RuntimeError("can't register atexit after shutdown")
 
-    call = functools.partial(func, *arg, **kwargs)
-    _threading_atexits.append(call)
+    _threading_atexits.append(lambda: func(*arg, **kwargs))
 
 
 from _thread import stack_size
@@ -1634,14 +1708,6 @@ def main_thread():
     # XXX Figure this out for subinterpreters.  (See gh-75698.)
     return _main_thread
 
-# get thread-local implementation, either from the thread
-# module, or from the python fallback
-
-try:
-    from _thread import _local as local
-except ImportError:
-    from _threading_local import local
-
 
 def _after_fork():
     """
@@ -1679,15 +1745,13 @@ def _after_fork():
             # Any lock/condition variable may be currently locked or in an
             # invalid state, so we reinitialize them.
             if thread is current:
-                # There is only one active thread. We reset the ident to
-                # its new value since it can have changed.
-                thread._reset_internal_locks(True)
+                # This is the one and only active thread.
                 ident = get_ident()
-                thread._ident = ident
+                thread._after_fork(new_ident=ident)
                 new_active[ident] = thread
             else:
                 # All the others are already stopped.
-                thread._reset_internal_locks(False)
+                thread._after_fork()
                 thread._stop()
 
         _limbo.clear()

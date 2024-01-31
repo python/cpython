@@ -147,8 +147,10 @@ def _compile(code, pattern, flags):
                 emit(0) # look ahead
             else:
                 lo, hi = av[1].getwidth()
+                if lo > MAXCODE:
+                    raise error("looks too much behind")
                 if lo != hi:
-                    raise error("look-behind requires fixed-width pattern")
+                    raise PatternError("look-behind requires fixed-width pattern")
                 emit(lo) # look behind
             _compile(code, av[1], flags)
             emit(SUCCESS)
@@ -207,7 +209,7 @@ def _compile(code, pattern, flags):
             else:
                 code[skipyes] = _len(code) - skipyes + 1
         else:
-            raise error("internal: unsupported operand type %r" % (op,))
+            raise PatternError(f"internal: unsupported operand type {op!r}")
 
 def _compile_charset(charset, flags, code):
     # compile charset subprogram
@@ -233,7 +235,7 @@ def _compile_charset(charset, flags, code):
             else:
                 emit(av)
         else:
-            raise error("internal: unsupported set operator %r" % (op,))
+            raise PatternError(f"internal: unsupported set operator {op!r}")
     emit(FAILURE)
 
 def _optimize_charset(charset, iscased=None, fixup=None, fixes=None):
@@ -547,7 +549,7 @@ def _compile_info(code, pattern, flags):
     else:
         emit(MAXCODE)
         prefix = prefix[:MAXCODE]
-    emit(min(hi, MAXCODE))
+    emit(hi)
     # add literal prefix
     if prefix:
         emit(len(prefix)) # length
