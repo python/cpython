@@ -1426,7 +1426,7 @@ error_unexpected_keyword_arg(PyObject *kwargs, PyObject *kwnames, PyObject *kwtu
         if (match <= 0) {
             if (!match) {
                 PyObject *kwlist = PySequence_List(kwtuple);
-                if (kwlist == NULL) {
+                if (!kwlist) {
                     return;
                 }
                 PyObject *suggestion_keyword = _Py_CalculateSuggestions(kwlist, keyword);
@@ -1476,6 +1476,9 @@ PyArg_ValidateKeywordArguments(PyObject *kwargs)
     }
     return 1;
 }
+
+static PyObject *
+new_kwtuple(const char * const *keywords, int total, int pos);
 
 #define IS_END_OF_FORMAT(c) (c == '\0' || c == ';' || c == ':')
 
@@ -1742,12 +1745,35 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
                 }
             }
             if (!match) {
-                PyErr_Format(PyExc_TypeError,
-                             "'%U' is an invalid keyword "
-                             "argument for %.200s%s",
-                             key,
-                             (fname == NULL) ? "this function" : fname,
-                             (fname == NULL) ? "" : "()");
+                PyObject *_pykwtuple = new_kwtuple(kwlist, len, pos);
+                if (!_pykwtuple) {
+                    return cleanreturn(0, &freelist);
+                }
+                PyObject *pykwlist = PySequence_List(_pykwtuple);
+                Py_DECREF(_pykwtuple);
+                if (!pykwlist) {
+                    return cleanreturn(0, &freelist);
+                }
+                PyObject *suggestion_keyword = _Py_CalculateSuggestions(pykwlist, key);
+                Py_DECREF(pykwlist);
+
+                if (suggestion_keyword) {
+                    PyErr_Format(PyExc_TypeError,
+                                "%.200s%s got an unexpected keyword argument '%S'."
+                                " Did you mean '%S'?",
+                                (fname == NULL) ? "this function" : fname,
+                                (fname == NULL) ? "" : "()",
+                                key,
+                                suggestion_keyword);
+                    Py_DECREF(suggestion_keyword);
+                }
+                else {
+                    PyErr_Format(PyExc_TypeError,
+                                "%.200s%s got an unexpected keyword argument '%S'",
+                                (fname == NULL) ? "this function" : fname,
+                                (fname == NULL) ? "" : "()",
+                                key);
+                }
                 return cleanreturn(0, &freelist);
             }
         }

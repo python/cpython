@@ -990,10 +990,27 @@ class TestErrorMessagesSuggestions(unittest.TestCase):
     def test_unexpected_keyword_suggestion_via_getargs(self):
         with self.check_suggestion_includes("maxsplit"):
             "foo".split(maxsplt=1)
+
+        self.assertRaisesRegex(
+            TypeError, r"split\(\) got an unexpected keyword argument 'blech'$",
+            "foo".split, blech=1
+        )
         with self.check_suggestion_not_present():
-            "foo".split(more_noise=1)
+            "foo".split(blech=1)
         with self.check_suggestion_not_present():
             "foo".split(more_noise=1, maxsplt=1)
+
+        # Also test the vgetargskeywords path
+        self.assertRaisesRegex(
+            TypeError, r"ImportError\(\) got an unexpected keyword argument 'blech'$",
+            ImportError, blech=1
+        )
+        with self.check_suggestion_includes("name"):
+            ImportError(namez="oops")
+        with self.check_suggestion_not_present():
+            ImportError(blech=1)
+        with self.check_suggestion_not_present():
+            ImportError(blech=1, namez="oops")
 
 @cpython_only
 class TestRecursion(unittest.TestCase):
