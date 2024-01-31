@@ -3,10 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_long.h"          // _PyLong_Size_t_Converter()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_winapi_Overlapped_GetOverlappedResult__doc__,
 "GetOverlappedResult($self, wait, /)\n"
@@ -161,7 +162,7 @@ PyDoc_STRVAR(_winapi_CreateFile__doc__,
     {"CreateFile", _PyCFunction_CAST(_winapi_CreateFile), METH_FASTCALL, _winapi_CreateFile__doc__},
 
 static HANDLE
-_winapi_CreateFile_impl(PyObject *module, LPCTSTR file_name,
+_winapi_CreateFile_impl(PyObject *module, LPCWSTR file_name,
                         DWORD desired_access, DWORD share_mode,
                         LPSECURITY_ATTRIBUTES security_attributes,
                         DWORD creation_disposition,
@@ -171,7 +172,7 @@ static PyObject *
 _winapi_CreateFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    LPCTSTR file_name;
+    LPCWSTR file_name = NULL;
     DWORD desired_access;
     DWORD share_mode;
     LPSECURITY_ATTRIBUTES security_attributes;
@@ -180,8 +181,8 @@ _winapi_CreateFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     HANDLE template_file;
     HANDLE _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "skk" F_POINTER "kk" F_HANDLE ":CreateFile",
-        &file_name, &desired_access, &share_mode, &security_attributes, &creation_disposition, &flags_and_attributes, &template_file)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&kk" F_POINTER "kk" F_HANDLE ":CreateFile",
+        _PyUnicode_WideCharString_Converter, &file_name, &desired_access, &share_mode, &security_attributes, &creation_disposition, &flags_and_attributes, &template_file)) {
         goto exit;
     }
     _return_value = _winapi_CreateFile_impl(module, file_name, desired_access, share_mode, security_attributes, creation_disposition, flags_and_attributes, template_file);
@@ -194,6 +195,9 @@ _winapi_CreateFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     return_value = HANDLE_TO_PYNUM(_return_value);
 
 exit:
+    /* Cleanup for file_name */
+    PyMem_Free((void *)file_name);
+
     return return_value;
 }
 
@@ -567,7 +571,7 @@ _winapi_GetExitCodeProcess(PyObject *module, PyObject *arg)
     if ((_return_value == PY_DWORD_MAX) && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = Py_BuildValue("k", _return_value);
+    return_value = PyLong_FromUnsignedLong(_return_value);
 
 exit:
     return return_value;
@@ -594,7 +598,7 @@ _winapi_GetLastError(PyObject *module, PyObject *Py_UNUSED(ignored))
     if ((_return_value == PY_DWORD_MAX) && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = Py_BuildValue("k", _return_value);
+    return_value = PyLong_FromUnsignedLong(_return_value);
 
 exit:
     return return_value;
@@ -884,7 +888,7 @@ PyDoc_STRVAR(_winapi_LCMapStringEx__doc__,
 
 static PyObject *
 _winapi_LCMapStringEx_impl(PyObject *module, LPCWSTR locale, DWORD flags,
-                           LPCWSTR src);
+                           PyObject *src);
 
 static PyObject *
 _winapi_LCMapStringEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -911,16 +915,16 @@ _winapi_LCMapStringEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     static const char * const _keywords[] = {"locale", "flags", "src", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .format = "O&kO&:LCMapStringEx",
+        .format = "O&kU:LCMapStringEx",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
     LPCWSTR locale = NULL;
     DWORD flags;
-    LPCWSTR src = NULL;
+    PyObject *src;
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        _PyUnicode_WideCharString_Converter, &locale, &flags, _PyUnicode_WideCharString_Converter, &src)) {
+        _PyUnicode_WideCharString_Converter, &locale, &flags, &src)) {
         goto exit;
     }
     return_value = _winapi_LCMapStringEx_impl(module, locale, flags, src);
@@ -928,8 +932,6 @@ _winapi_LCMapStringEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
 exit:
     /* Cleanup for locale */
     PyMem_Free((void *)locale);
-    /* Cleanup for src */
-    PyMem_Free((void *)src);
 
     return return_value;
 }
@@ -1306,7 +1308,7 @@ _winapi_GetFileType(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     if ((_return_value == PY_DWORD_MAX) && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = Py_BuildValue("k", _return_value);
+    return_value = PyLong_FromUnsignedLong(_return_value);
 
 exit:
     return return_value;
@@ -1480,4 +1482,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=f32fe6ecdbffd74d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2350d4f2275d3a6f input=a9049054013a1b77]*/

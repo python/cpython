@@ -87,6 +87,13 @@ perform some operation on a file. ::
         Py_ExitStatusException(status);
    }
 
+.. note::
+
+   ``#define PY_SSIZE_T_CLEAN`` was used to indicate that ``Py_ssize_t`` should be
+   used in some APIs instead of ``int``.
+   It is not necessary since Python 3.13, but we keep it here for backward compatibility.
+   See :ref:`arg-parsing-string-and-buffers` for a description of this macro.
+
 Setting :c:member:`PyConfig.program_name` should be called before
 :c:func:`Py_InitializeFromConfig` to inform the interpreter about paths to Python run-time
 libraries.  Next, the Python interpreter is initialized with
@@ -262,7 +269,7 @@ following two statements before the call to :c:func:`Py_Initialize`::
    PyImport_AppendInittab("emb", &PyInit_emb);
 
 These two lines initialize the ``numargs`` variable, and make the
-:func:`emb.numargs` function accessible to the embedded Python interpreter.
+:func:`!emb.numargs` function accessible to the embedded Python interpreter.
 With these extensions, the Python script can do things like
 
 .. code-block:: python

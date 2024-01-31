@@ -129,6 +129,32 @@ class CodeTestCase(unittest.TestCase):
         self.assertEqual(co1.co_filename, "f1")
         self.assertEqual(co2.co_filename, "f2")
 
+    def test_no_allow_code(self):
+        data = {'a': [({0},)]}
+        dump = marshal.dumps(data, allow_code=False)
+        self.assertEqual(marshal.loads(dump, allow_code=False), data)
+
+        f = io.BytesIO()
+        marshal.dump(data, f, allow_code=False)
+        f.seek(0)
+        self.assertEqual(marshal.load(f, allow_code=False), data)
+
+        co = ExceptionTestCase.test_exceptions.__code__
+        data = {'a': [({co, 0},)]}
+        dump = marshal.dumps(data, allow_code=True)
+        self.assertEqual(marshal.loads(dump, allow_code=True), data)
+        with self.assertRaises(ValueError):
+            marshal.dumps(data, allow_code=False)
+        with self.assertRaises(ValueError):
+            marshal.loads(dump, allow_code=False)
+
+        marshal.dump(data, io.BytesIO(), allow_code=True)
+        self.assertEqual(marshal.load(io.BytesIO(dump), allow_code=True), data)
+        with self.assertRaises(ValueError):
+            marshal.dump(data, io.BytesIO(), allow_code=False)
+        with self.assertRaises(ValueError):
+            marshal.load(io.BytesIO(dump), allow_code=False)
+
     @requires_debug_ranges()
     def test_minimal_linetable_with_no_debug_ranges(self):
         # Make sure when demarshalling objects with `-X no_debug_ranges`

@@ -226,6 +226,13 @@ class DbfilenameShelf(Shelf):
         import dbm
         Shelf.__init__(self, dbm.open(filename, flag), protocol, writeback)
 
+    def clear(self):
+        """Remove all items from the shelf."""
+        # Call through to the clear method on dbm-backed shelves.
+        # see https://github.com/python/cpython/issues/107089
+        self.cache.clear()
+        self.dict.clear()
+
 
 def open(filename, flag='c', protocol=None, writeback=False):
     """Open a persistent dictionary for reading and writing.

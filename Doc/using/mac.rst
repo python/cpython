@@ -125,13 +125,9 @@ http://www.hashcollision.org/hkn/python/idle_intro/index.html.
 Installing Additional Python Packages
 =====================================
 
-There are several methods to install additional Python packages:
+This section has moved to the `Python Packaging User Guide`_.
 
-* Packages can be installed via the standard Python distutils mode (``python
-  setup.py install``).
-
-* Many packages can also be installed via the :program:`setuptools` extension
-  or :program:`pip` wrapper, see https://pip.pypa.io/.
+.. _Python Packaging User Guide: https://packaging.python.org/en/latest/tutorials/installing-packages/
 
 
 GUI Programming on the Mac

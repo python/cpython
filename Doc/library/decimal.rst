@@ -1396,10 +1396,10 @@ In addition to the three supplied contexts, new contexts can be created with the
       With three arguments, compute ``(x**y) % modulo``.  For the three argument
       form, the following restrictions on the arguments hold:
 
-         - all three arguments must be integral
-         - ``y`` must be nonnegative
-         - at least one of ``x`` or ``y`` must be nonzero
-         - ``modulo`` must be nonzero and have at most 'precision' digits
+      - all three arguments must be integral
+      - ``y`` must be nonnegative
+      - at least one of ``x`` or ``y`` must be nonzero
+      - ``modulo`` must be nonzero and have at most 'precision' digits
 
       The value resulting from ``Context.power(x, y, modulo)`` is
       equal to the value that would be obtained by computing ``(x**y)
