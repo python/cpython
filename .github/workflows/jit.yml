@@ -2,12 +2,10 @@ name: JIT
 on:
   pull_request:
     paths:
-    - '**/*jit*/**'
-    - '**/*jit*.*'
+      - '**jit**'
   push:
     paths:
-    - '**/*jit/**'
-    - '**/*jit*.*'
+      - '**jit**'
   workflow_dispatch:
 
 concurrency:
