@@ -59,12 +59,14 @@ class ClearTest(unittest.TestCase):
         # see gh-113939
         class C:
             pass
+
         wr = None
         def inner():
             nonlocal wr
             c = C()
             wr = weakref.ref(c)
             1/0
+
         try:
             inner()
         except ZeroDivisionError as exc:
