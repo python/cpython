@@ -1278,7 +1278,7 @@ insert_into_dictkeys(PyDictKeysObject *keys, PyObject *name)
 
 
 static inline int
-insert_unsplit_dict(PyInterpreterState *interp, PyDictObject *mp,
+insert_combined_dict(PyInterpreterState *interp, PyDictObject *mp,
                     Py_hash_t hash, PyObject *key, PyObject *value, int unicode)
 {
     if (mp->ma_keys->dk_usable <= 0) {
@@ -1325,7 +1325,7 @@ insert_split_dict(PyInterpreterState *interp, PyDictObject *mp,
         assert(!_PyDict_HasSplitTable(mp));
         assert(DK_IS_UNICODE(keys));
         UNLOCK_KEYS(keys);
-        return insert_unsplit_dict(interp, mp, hash, key, value, 1);
+        return insert_combined_dict(interp, mp, hash, key, value, 1);
     }
 
     Py_ssize_t hashpos = find_empty_slot(keys, hash);
@@ -1406,7 +1406,7 @@ insertdict(PyInterpreterState *interp, PyDictObject *mp,
 
         int unicode = DK_IS_UNICODE(mp->ma_keys);
         if (!unicode || !_PyDict_HasSplitTable(mp)) {
-            if (insert_unsplit_dict(interp, mp, hash, key, value, unicode) < 0) {
+            if (insert_combined_dict(interp, mp, hash, key, value, unicode) < 0) {
                 goto Fail;
             }
         } else {
@@ -3819,7 +3819,7 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
 
         int unicode = DK_IS_UNICODE(mp->ma_keys);
         if (!unicode || !_PyDict_HasSplitTable(mp)) {
-            if (insert_unsplit_dict(interp, mp, hash, Py_NewRef(key), Py_NewRef(value), unicode) < 0) {
+            if (insert_combined_dict(interp, mp, hash, Py_NewRef(key), Py_NewRef(value), unicode) < 0) {
                 Py_DECREF(key);
                 Py_DECREF(value);
                 if (result) {
