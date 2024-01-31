@@ -7296,6 +7296,7 @@ printf "%s\n" "#define Py_ENABLE_SHARED 1" >>confdefs.h
   case $ac_sys_system in
     CYGWIN*)
           LDLIBRARY='libpython$(LDVERSION).dll.a'
+          BLDLIBRARY='-L. -lpython$(LDVERSION)'
           DLLLIBRARY='libpython$(LDVERSION).dll'
           ;;
     SunOS*)
@@ -7312,7 +7313,13 @@ printf "%s\n" "#define Py_ENABLE_SHARED 1" >>confdefs.h
 	  LDLIBRARY='libpython$(LDVERSION).so'
 	  BLDLIBRARY='-L. -lpython$(LDVERSION)'
 	  RUNSHARED=LD_LIBRARY_PATH=`pwd`${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
-	  INSTSONAME="$LDLIBRARY".$SOVERSION
+
+    # The Android Gradle plugin will only package libraries whose names end
+    # with ".so".
+    if [ $ac_sys_system != "Linux-android" ]; then
+        INSTSONAME="$LDLIBRARY".$SOVERSION
+    fi
+
 	  if test "$with_pydebug" != yes
           then
 	      PY3LIBRARY=libpython3.so
@@ -23918,7 +23925,7 @@ printf "%s\n" "$LDVERSION" >&6; }
 # On Android and Cygwin the shared libraries must be linked with libpython.
 
 if test "$PY_ENABLE_SHARED" = "1" && ( test -n "$ANDROID_API_LEVEL" || test "$MACHDEP" = "cygwin"); then
-  LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"
+  LIBPYTHON="$BLDLIBRARY"
 else
   LIBPYTHON=''
 fi
