@@ -78,6 +78,10 @@
 [feature_macro.Py_REF_DEBUG]
     doc = 'when Python is compiled in debug mode (with Py_REF_DEBUG)'
     windows = 'maybe'
+[feature_macro.Py_TRACE_REFS]
+    # nb. This mode is not compatible with Stable ABI/Limited API.
+    doc = 'when Python is compiled with Py_TRACE_REFS'
+    windows = 'maybe'
 
 
 # Mentioned in PEP 384:
@@ -2481,3 +2485,5 @@
 [function._Py_SetRefcnt]
     added = '3.13'
     abi_only = true
+[data.PyExc_IncompleteInputError]
+    added = '3.13'

@@ -1,2 +1,0 @@
-:class:`io.TextIOWrapper` now correctly handles the decoding buffer after
-``read()`` and ``write()``.

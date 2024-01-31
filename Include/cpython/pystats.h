@@ -122,11 +122,25 @@ typedef struct _optimization_stats {
     uint64_t optimized_trace_length_hist[_Py_UOP_HIST_SIZE];
 } OptimizationStats;
 
+typedef struct _rare_event_stats {
+    /* Setting an object's class, obj.__class__ = ... */
+    uint64_t set_class;
+    /* Setting the bases of a class, cls.__bases__ = ... */
+    uint64_t set_bases;
+    /* Setting the PEP 523 frame eval function, _PyInterpreterState_SetFrameEvalFunc() */
+    uint64_t set_eval_frame_func;
+    /* Modifying the builtins,  __builtins__.__dict__[var] = ... */
+    uint64_t builtin_dict;
+    /* Modifying a function, e.g. func.__defaults__ = ..., etc. */
+    uint64_t func_modification;
+} RareEventStats;
+
 typedef struct _stats {
     OpcodeStats opcode_stats[256];
     CallStats call_stats;
     ObjectStats object_stats;
     OptimizationStats optimization_stats;
+    RareEventStats rare_event_stats;
     GCStats *gc_stats;
 } PyStats;
 

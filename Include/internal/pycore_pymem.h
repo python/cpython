@@ -44,6 +44,7 @@ struct _pymem_allocators {
         debug_alloc_api_t mem;
         debug_alloc_api_t obj;
     } debug;
+    int is_debug_enabled;
     PyObjectArenaAllocator obj_arena;
 };
 
@@ -106,6 +107,8 @@ extern int _PyMem_GetAllocatorName(
    PYMEM_ALLOCATOR_NOT_SET does nothing. */
 extern int _PyMem_SetupAllocators(PyMemAllocatorName allocator);
 
+/* Is the debug allocator enabled? */
+extern int _PyMem_DebugEnabled(void);
 
 #ifdef __cplusplus
 }
