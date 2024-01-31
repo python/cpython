@@ -8,6 +8,7 @@
 #include "pycore_modsupport.h"    // export _PyArg_NoKeywords()
 #include "pycore_pylifecycle.h"   // _PyArg_Fini
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_pyerrors.h"      // _Py_CalculateSuggestions()
 
 /* Export Stable ABIs (abi only) */
 PyAPI_FUNC(int) _PyArg_Parse_SizeT(PyObject *, const char *, ...);
@@ -1424,12 +1425,31 @@ error_unexpected_keyword_arg(PyObject *kwargs, PyObject *kwnames, PyObject *kwtu
         int match = PySequence_Contains(kwtuple, keyword);
         if (match <= 0) {
             if (!match) {
-                PyErr_Format(PyExc_TypeError,
-                             "'%S' is an invalid keyword "
-                             "argument for %.200s%s",
-                             keyword,
-                             (fname == NULL) ? "this function" : fname,
-                             (fname == NULL) ? "" : "()");
+                PyObject *kwlist = PySequence_List(kwtuple);
+                if (kwlist == NULL) {
+                    return;
+                }
+                PyObject *suggestion_keyword = _Py_CalculateSuggestions(kwlist, keyword);
+                Py_DECREF(kwlist);
+
+                if (suggestion_keyword) {
+                    PyErr_Format(PyExc_TypeError,
+                                "%.200s%s got an unexpected keyword argument '%S'."
+                                " Did you mean '%S'?",
+                                (fname == NULL) ? "this function" : fname,
+                                (fname == NULL) ? "" : "()",
+                                keyword,
+                                suggestion_keyword);
+                    Py_DECREF(suggestion_keyword);
+                }
+                else {
+                    PyErr_Format(PyExc_TypeError,
+                                "%.200s%s got an unexpected keyword argument '%S'",
+                                (fname == NULL) ? "this function" : fname,
+                                (fname == NULL) ? "" : "()",
+                                keyword);
+                }
+
             }
             return;
         }
