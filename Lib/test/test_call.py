@@ -992,6 +992,8 @@ class TestErrorMessagesSuggestions(unittest.TestCase):
             "foo".split(maxsplt=1)
         with self.check_suggestion_not_present():
             "foo".split(more_noise=1)
+        with self.check_suggestion_not_present():
+            "foo".split(more_noise=1, maxsplt=1)
 
 @cpython_only
 class TestRecursion(unittest.TestCase):
