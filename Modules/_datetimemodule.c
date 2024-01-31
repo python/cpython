@@ -1046,7 +1046,8 @@ new_datetime_ex(int year, int month, int day, int hour, int minute,
                     &PyDateTime_DateTimeType)
 
 static PyObject *
-call_subclass_fold(PyObject *cls, int fold, const char *format, ...) {
+call_subclass_fold(PyObject *cls, int fold, const char *format, ...)
+{
     PyObject *kwargs = NULL, *res = NULL;
     va_list va;
 
@@ -1065,9 +1066,9 @@ call_subclass_fold(PyObject *cls, int fold, const char *format, ...) {
         if (obj == NULL) {
             goto Done;
         }
-        int res = PyDict_SetItemString(kwargs, "fold", obj);
+        int err = PyDict_SetItemString(kwargs, "fold", obj);
         Py_DECREF(obj);
-        if (res < 0) {
+        if (err < 0) {
             goto Done;
         }
     }
@@ -1087,7 +1088,8 @@ new_datetime_subclass_fold_ex(int year, int month, int day, int hour, int minute
         // Use the fast path constructor
         dt = new_datetime(year, month, day, hour, minute, second, usecond,
                           tzinfo, fold);
-    } else {
+    }
+    else {
         // Subclass
         dt = call_subclass_fold(cls, fold, "iiiiiiiO", year, month, day,
                                 hour, minute, second, usecond, tzinfo);
@@ -1154,7 +1156,8 @@ new_time_subclass_fold_ex(int hour, int minute, int second, int usecond,
     if ((PyTypeObject*)cls == &PyDateTime_TimeType) {
         // Use the fast path constructor
         t = new_time(hour, minute, second, usecond, tzinfo, fold);
-    } else {
+    }
+    else {
         // Subclass
         t = call_subclass_fold(cls, fold, "iiiiO", hour, minute, second,
                                usecond, tzinfo);
