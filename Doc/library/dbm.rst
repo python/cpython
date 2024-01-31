@@ -52,6 +52,10 @@ the Oracle Berkeley DB.
 .. |flag_n| replace::
    Always create a new, empty database, open for reading and writing.
 
+.. |mode_param_doc| replace::
+   The Unix file access mode of the file (default: octal ``0o666``),
+   used only when the database has to be created.
+
 .. |incompat_note| replace::
    The file formats created by :mod:`dbm.gnu` and :mod:`dbm.ndbm` are incompatible
    and can not be used interchangeably.
@@ -69,14 +73,13 @@ the Oracle Berkeley DB.
    :type file: :term:`path-like object`
 
    :param str flag:
-      * ``'r'`` (default), |flag_r|
-      * ``'w'``, |flag_w|
-      * ``'c'``, |flag_c|
-      * ``'n'``, |flag_n|
+      * ``'r'`` (default): |flag_r|
+      * ``'w'``: |flag_w|
+      * ``'c'``: |flag_c|
+      * ``'n'``: |flag_n|
 
    :param int mode:
-      The Unix file access mode of the file (default: octal ``0o666``),
-      used only when the database has to be created.
+      |mode_param_doc|
 
    .. versionchanged:: 3.11
       *file* accepts a :term:`path-like object`.
@@ -171,47 +174,45 @@ and the :meth:`!items` and :meth:`!values` methods are not supported.
 
 .. function:: open(filename, flag="r", mode=0o666, /)
 
-   Open a GDBM database and return a :class:`!gdbm` object.  The *filename*
-   argument is the name of the database file.
+   Open a GDBM database and return a :class:`!gdbm` object.
 
-   The optional *flag* argument can be:
+   :param filename:
+      The database file to open.
+   :type filename: :term:`path-like object`
 
-   .. csv-table::
-      :header: "Value", "Meaning"
+   :param str flag:
+      * ``'r'`` (default): |flag_r|
+      * ``'w'``: |flag_w|
+      * ``'c'``: |flag_c|
+      * ``'n'``: |flag_n|
 
-      ``'r'`` (default), |flag_r|
-      ``'w'``, |flag_w|
-      ``'c'``, |flag_c|
-      ``'n'``, |flag_n|
+      The following additional characters may be appended
+      to control how the database is opened:
 
-   The following additional characters may be appended to the flag to control
-   how the database is opened:
+      * ``'f'``: Open the database in fast mode.
+        Writes to the database will not be synchronized.
+      * ``'s'``: Synchronized mode.
+        Changes to the database will be written immediately to the file.
+      * ``'u'``: Do not lock database.
 
-   +---------+--------------------------------------------+
-   | Value   | Meaning                                    |
-   +=========+============================================+
-   | ``'f'`` | Open the database in fast mode.  Writes    |
-   |         | to the database will not be synchronized.  |
-   +---------+--------------------------------------------+
-   | ``'s'`` | Synchronized mode. This will cause changes |
-   |         | to the database to be immediately written  |
-   |         | to the file.                               |
-   +---------+--------------------------------------------+
-   | ``'u'`` | Do not lock database.                      |
-   +---------+--------------------------------------------+
+      Not all flags are valid for all versions of GDBM.
+      See the :data:`open_flags` member for a list of supported flag characters.
 
-   Not all flags are valid for all versions of GDBM.  The module constant
-   :const:`open_flags` is a string of supported flag characters.  The exception
-   :exc:`error` is raised if an invalid flag is specified.
+   :param int mode:
+      |mode_param_doc|
 
-   The optional *mode* argument is the Unix mode of the file, used only when the
-   database has to be created.  It defaults to octal ``0o666``.
-
-   In addition to the dictionary-like methods, :class:`gdbm` objects have the
-   following methods:
+   :raises error:
+      If an invalid *flag* argument is passed.
 
    .. versionchanged:: 3.11
-      Accepts :term:`path-like object` for filename.
+      *filename* accepts a :term:`path-like object`.
+
+   .. data:: open_flags
+
+      A string of characters the *flag* parameter of :meth:`~dbm.gnu.open` supports.
+
+   In addition to the dictionary-like methods, :class:`gdbm` objects have the
+   following methods and attributes:
 
    .. method:: gdbm.firstkey()
 
@@ -292,22 +293,20 @@ This module can be used with the "classic" NDBM interface or the
 .. function:: open(filename, flag="r", mode=0o666, /)
 
    Open an NDBM database and return an :class:`!ndbm` object.
-   The *filename* argument is the name of the database file
-   (without the :file:`.dir` or :file:`.pag` extensions).
 
-   The optional *flag* argument must be one of these values:
+   :param filename:
+      The basename of the database file
+      (without the :file:`.dir` or :file:`.pag` extensions).
+   :type filename: :term:`path-like object`
 
-   .. csv-table::
-      :header: "Value", "Meaning"
+   :param str flag:
+      * ``'r'`` (default): |flag_r|
+      * ``'w'``: |flag_w|
+      * ``'c'``: |flag_c|
+      * ``'n'``: |flag_n|
 
-      ``'r'`` (default), |flag_r|
-      ``'w'``, |flag_w|
-      ``'c'``, |flag_c|
-      ``'n'``, |flag_n|
-
-   The optional *mode* argument is the Unix mode of the file, used only when the
-   database has to be created.  It defaults to octal ``0o666`` (and will be
-   modified by the prevailing umask).
+   :param int mode:
+      |mode_param_doc|
 
    In addition to the dictionary-like methods, :class:`!ndbm` objects
    provide the following method:
@@ -370,17 +369,13 @@ The :mod:`!dbm.dumb` module defines the following:
    :type database: :term:`path-like object`
 
    :param str flag:
-      .. csv-table::
-         :header: "Value", "Meaning"
-
-         ``'r'``, |flag_r|
-         ``'w'``, |flag_w|
-         ``'c'`` (default), |flag_c|
-         ``'n'``, |flag_n|
+      * ``'r'``: |flag_r|
+      * ``'w'``: |flag_w|
+      * ``'c'`` (default): |flag_c|
+      * ``'n'``: |flag_n|
 
    :param int mode:
-      The Unix file access mode of the file (default: ``0o666``),
-      used only when the database has to be created.
+      |mode_param_doc|
 
    .. warning::
       It is possible to crash the Python interpreter when loading a database
@@ -388,7 +383,7 @@ The :mod:`!dbm.dumb` module defines the following:
       Python's AST compiler.
 
    .. versionchanged:: 3.5
-      :func:`open` always creates a new database when *flag* is ``'n'``.
+      :func:`~dbm.dumb.open` always creates a new database when *flag* is ``'n'``.
 
    .. versionchanged:: 3.8
       A database opened read-only if *flag* is ``'r'``.
