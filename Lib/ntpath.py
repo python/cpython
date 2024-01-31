@@ -26,8 +26,8 @@ from genericpath import *
 __all__ = ["normcase","isabs","join","splitdrive","splitroot","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
            "getatime","getctime", "islink","exists","lexists","isdir","isfile",
-           "ismount", "expanduser","expandvars","normpath","abspath",
-           "curdir","pardir","sep","pathsep","defpath","altsep",
+           "ismount","isreserved","expanduser","expandvars","normpath",
+           "abspath","curdir","pardir","sep","pathsep","defpath","altsep",
            "extsep","devnull","realpath","supports_unicode_filenames","relpath",
            "samefile", "sameopenfile", "samestat", "commonpath", "isjunction"]
 
@@ -77,12 +77,6 @@ except ImportError:
         return s.replace('/', '\\').lower()
 
 
-# Return whether a path is absolute.
-# Trivial in Posix, harder on Windows.
-# For Windows it is absolute if it starts with a slash or backslash (current
-# volume), or if a pathname after the volume-letter-and-colon or UNC-resource
-# starts with a slash or backslash.
-
 def isabs(s):
     """Test whether a path is absolute"""
     s = os.fspath(s)
@@ -90,16 +84,15 @@ def isabs(s):
         sep = b'\\'
         altsep = b'/'
         colon_sep = b':\\'
+        double_sep = b'\\\\'
     else:
         sep = '\\'
         altsep = '/'
         colon_sep = ':\\'
+        double_sep = '\\\\'
     s = s[:3].replace(altsep, sep)
     # Absolute: UNC, device, and paths with a drive and root.
-    # LEGACY BUG: isabs("/x") should be false since the path has no drive.
-    if s.startswith(sep) or s.startswith(colon_sep, 1):
-        return True
-    return False
+    return s.startswith(colon_sep, 1) or s.startswith(double_sep)
 
 
 # Join two (or more) paths.
@@ -335,6 +328,42 @@ def ismount(path):
         return x.casefold() == y.casefold()
     else:
         return False
+
+
+_reserved_chars = frozenset(
+    {chr(i) for i in range(32)} |
+    {'"', '*', ':', '<', '>', '?', '|', '/', '\\'}
+)
+
+_reserved_names = frozenset(
+    {'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$'} |
+    {f'COM{c}' for c in '123456789\xb9\xb2\xb3'} |
+    {f'LPT{c}' for c in '123456789\xb9\xb2\xb3'}
+)
+
+def isreserved(path):
+    """Return true if the pathname is reserved by the system."""
+    # Refer to "Naming Files, Paths, and Namespaces":
+    # https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file
+    path = os.fsdecode(splitroot(path)[2]).replace(altsep, sep)
+    return any(_isreservedname(name) for name in reversed(path.split(sep)))
+
+def _isreservedname(name):
+    """Return true if the filename is reserved by the system."""
+    # Trailing dots and spaces are reserved.
+    if name.endswith(('.', ' ')) and name not in ('.', '..'):
+        return True
+    # Wildcards, separators, colon, and pipe (*?"<>/\:|) are reserved.
+    # ASCII control characters (0-31) are reserved.
+    # Colon is reserved for file streams (e.g. "name:stream[:type]").
+    if _reserved_chars.intersection(name):
+        return True
+    # DOS device names are reserved (e.g. "nul" or "nul .txt"). The rules
+    # are complex and vary across Windows versions. On the side of
+    # caution, return True for names that may not be reserved.
+    if name.partition('.')[0].rstrip(' ').upper() in _reserved_names:
+        return True
+    return False
 
 
 # Expand paths beginning with '~' or '~user'.

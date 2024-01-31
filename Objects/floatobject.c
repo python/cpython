@@ -32,7 +32,7 @@ get_float_state(void)
 {
     _PyFreeListState *state = _PyFreeListState_GET();
     assert(state != NULL);
-    return &state->float_state;
+    return &state->floats;
 }
 #endif
 
@@ -132,10 +132,6 @@ PyFloat_FromDouble(double fval)
     struct _Py_float_state *state = get_float_state();
     op = state->free_list;
     if (op != NULL) {
-#ifdef Py_DEBUG
-        // PyFloat_FromDouble() must not be called after _PyFloat_Fini()
-        assert(state->numfree != -1);
-#endif
         state->free_list = (PyFloatObject *) Py_TYPE(op);
         state->numfree--;
         OBJECT_STAT_INC(from_freelist);
@@ -1997,7 +1993,7 @@ void
 _PyFloat_ClearFreeList(_PyFreeListState *freelist_state, int is_finalization)
 {
 #ifdef WITH_FREELISTS
-    struct _Py_float_state *state = &freelist_state->float_state;
+    struct _Py_float_state *state = &freelist_state->floats;
     PyFloatObject *f = state->free_list;
     while (f != NULL) {
         PyFloatObject *next = (PyFloatObject*) Py_TYPE(f);

@@ -29,10 +29,19 @@ typedef struct {
     _PyExecutorLinkListNode links;
 } _PyVMData;
 
+typedef struct {
+    uint16_t opcode;
+    uint16_t oparg;
+    uint32_t target;
+    uint64_t operand;  // A cache entry
+} _PyUOpInstruction;
+
 typedef struct _PyExecutorObject {
     PyObject_VAR_HEAD
     _PyVMData vm_data; /* Used by the VM, but opaque to the optimizer */
-    /* Data needed by the executor goes here, but is opaque to the VM */
+    void *jit_code;
+    size_t jit_size;
+    _PyUOpInstruction trace[1];
 } _PyExecutorObject;
 
 typedef struct _PyOptimizerObject _PyOptimizerObject;
@@ -65,7 +74,7 @@ PyAPI_FUNC(_PyOptimizerObject *) PyUnstable_GetOptimizer(void);
 PyAPI_FUNC(_PyExecutorObject *) PyUnstable_GetExecutor(PyCodeObject *code, int offset);
 
 int
-_PyOptimizer_BackEdge(struct _PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest, PyObject **stack_pointer);
+_PyOptimizer_Optimize(struct _PyInterpreterFrame *frame, _Py_CODEUNIT *start, PyObject **stack_pointer);
 
 extern _PyOptimizerObject _PyOptimizer_Default;
 
