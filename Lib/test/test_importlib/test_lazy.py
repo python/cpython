@@ -2,6 +2,8 @@ import importlib
 from importlib import abc
 from importlib import util
 import sys
+import time
+import threading
 import types
 import unittest
 
@@ -40,6 +42,7 @@ class TestingImporter(abc.MetaPathFinder, abc.Loader):
     module_name = 'lazy_loader_test'
     mutated_name = 'changed'
     loaded = None
+    load_count = 0
     source_code = 'attr = 42; __name__ = {!r}'.format(mutated_name)
 
     def find_spec(self, name, path, target=None):
@@ -48,8 +51,10 @@ class TestingImporter(abc.MetaPathFinder, abc.Loader):
         return util.spec_from_loader(name, util.LazyLoader(self))
 
     def exec_module(self, module):
+        time.sleep(0.01)  # Simulate a slow load.
         exec(self.source_code, module.__dict__)
         self.loaded = module
+        self.load_count += 1
 
 
 class LazyLoaderTests(unittest.TestCase):
@@ -59,8 +64,9 @@ class LazyLoaderTests(unittest.TestCase):
             # Classes that don't define exec_module() trigger TypeError.
             util.LazyLoader(object)
 
-    def new_module(self, source_code=None):
-        loader = TestingImporter()
+    def new_module(self, source_code=None, loader=None):
+        if loader is None:
+            loader = TestingImporter()
         if source_code is not None:
             loader.source_code = source_code
         spec = util.spec_from_loader(TestingImporter.module_name,
@@ -139,6 +145,36 @@ class LazyLoaderTests(unittest.TestCase):
             sys.modules[TestingImporter.module_name] = module
             # Force the load; just care that no exception is raised.
             module.__name__
+
+    def test_module_load_race(self):
+        with test_util.uncache(TestingImporter.module_name):
+            loader = TestingImporter()
+            module = self.new_module(loader=loader)
+            assert loader.load_count == 0
+
+            class RaisingThread(threading.Thread):
+                exc = None
+                def run(self):
+                    try:
+                        super().run()
+                    except Exception as exc:
+                        self.exc = exc
+
+            def access_module():
+                return module.attr
+
+            threads = []
+            for _ in range(2):
+                threads.append(thread := RaisingThread(target=access_module))
+                thread.start()
+
+            # Races could cause errors
+            for thread in threads:
+                thread.join()
+                assert thread.exc is None
+
+            # Or multiple load attempts
+            assert loader.load_count == 1
 
 
 if __name__ == '__main__':
