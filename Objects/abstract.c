@@ -425,6 +425,12 @@ PyObject_AsWriteBuffer(PyObject *obj,
 int
 PyObject_GetBuffer(PyObject *obj, Py_buffer *view, int flags)
 {
+    if (flags != PyBUF_SIMPLE) {  /* fast path */
+        if (flags == PyBUF_READ || flags == PyBUF_WRITE) {
+            PyErr_BadInternalCall();
+            return -1;
+        }
+    }
     PyBufferProcs *pb = Py_TYPE(obj)->tp_as_buffer;
 
     if (pb == NULL || pb->bf_getbuffer == NULL) {

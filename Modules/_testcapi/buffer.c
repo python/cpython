@@ -54,8 +54,10 @@ static int
 testbuf_getbuf(testBufObject *self, Py_buffer *view, int flags)
 {
     int buf = PyObject_GetBuffer(self->obj, view, flags);
-    Py_SETREF(view->obj, Py_NewRef(self));
-    self->references++;
+    if (buf == 0) {
+        Py_SETREF(view->obj, Py_NewRef(self));
+        self->references++;
+    }
     return buf;
 }
 
