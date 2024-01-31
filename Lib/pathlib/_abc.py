@@ -207,6 +207,9 @@ class PurePathBase:
 
     def __init__(self, path, *paths):
         self._raw_path = self.pathmod.join(path, *paths) if paths else path
+        if not isinstance(self._raw_path, str):
+            raise TypeError(
+                f"path should be a str, not {type(self._raw_path).__name__!r}")
         self._resolving = False
 
     def with_segments(self, *pathsegments):
@@ -321,8 +324,6 @@ class PurePathBase:
             other = self.with_segments(other)
         anchor0, parts0 = self._stack
         anchor1, parts1 = other._stack
-        if isinstance(anchor0, str) != isinstance(anchor1, str):
-            raise TypeError(f"{self._raw_path!r} and {other._raw_path!r} have different types")
         if anchor0 != anchor1:
             raise ValueError(f"{self._raw_path!r} and {other._raw_path!r} have different anchors")
         while parts0 and parts1 and parts0[-1] == parts1[-1]:
@@ -346,8 +347,6 @@ class PurePathBase:
             other = self.with_segments(other)
         anchor0, parts0 = self._stack
         anchor1, parts1 = other._stack
-        if isinstance(anchor0, str) != isinstance(anchor1, str):
-            raise TypeError(f"{self._raw_path!r} and {other._raw_path!r} have different types")
         if anchor0 != anchor1:
             return False
         while parts0 and parts1 and parts0[-1] == parts1[-1]:
