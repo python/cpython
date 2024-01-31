@@ -3,7 +3,6 @@
 import os as _os
 import sys as _sys
 import _thread
-import functools
 import warnings
 
 from time import monotonic as _time
@@ -1630,8 +1629,7 @@ def _register_atexit(func, *arg, **kwargs):
     if _SHUTTING_DOWN:
         raise RuntimeError("can't register atexit after shutdown")
 
-    call = functools.partial(func, *arg, **kwargs)
-    _threading_atexits.append(call)
+    _threading_atexits.append(lambda: func(*arg, **kwargs))
 
 
 from _thread import stack_size

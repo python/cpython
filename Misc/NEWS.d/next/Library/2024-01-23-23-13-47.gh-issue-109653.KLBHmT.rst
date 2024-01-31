@@ -1,0 +1,1 @@
+Reduce the import time of :mod:`threading` module by ~50%. Patch by Daniel Hollas.
