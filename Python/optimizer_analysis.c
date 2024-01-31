@@ -1124,9 +1124,9 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
     }
 }
 
-//  0 - optimizer success
+//  0 - failure, no error raised, just fall back to Tier 1
 // -1 - failure, and raise error
-//  1 - failure, no error raised, just fall back to Tier 1
+//  1 - optimizer success
 int
 _Py_uop_analyze_and_optimize(
     PyCodeObject *co,
@@ -1160,11 +1160,11 @@ _Py_uop_analyze_and_optimize(
     PyMem_Free(temp_writebuffer);
 
     OPT_STAT_INC(optimizer_successes);
-    return 0;
+    return 1;
 error:
     // The only valid error we can raise is MemoryError.
     // Other times it's not really errors but things like not being able
     // to fetch a function version because the function got deleted.
     PyMem_Free(temp_writebuffer);
-    return PyErr_Occurred() ? -1 : 1;
+    return PyErr_Occurred() ? -1 : 0;
 }
