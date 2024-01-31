@@ -1052,7 +1052,9 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                 buffer[pc].opcode = NOP;
             }
         }
-        else if (opcode == _JUMP_TO_TOP || opcode == _EXIT_TRACE) {
+        else if (opcode == _JUMP_TO_TOP ||
+            opcode == _EXIT_TRACE ||
+            opcode == _JUMP_ABSOLUTE) {
             break;
         }
         else {
@@ -1097,10 +1099,9 @@ op_is_load(int opcode)
         opcode == _LOAD_CONST_INLINE_BORROW);
 }
 
-static int
+static void
 peephole_optimizations(_PyUOpInstruction *buffer, int buffer_size)
 {
-    bool done = true;
     for (int i = 0; i < buffer_size; i++) {
         _PyUOpInstruction *curr = buffer + i;
         int oparg = curr->oparg;
@@ -1117,7 +1118,6 @@ peephole_optimizations(_PyUOpInstruction *buffer, int buffer_size)
                     back--;
                 }
                 if (load_count == oparg) {
-                    done = false;
                     curr->opcode = NOP;
                     back = curr-1;
                     load_count = 0;
@@ -1145,7 +1145,6 @@ peephole_optimizations(_PyUOpInstruction *buffer, int buffer_size)
                 break;
         }
     }
-    return done;
 }
 
 static void
@@ -1188,15 +1187,6 @@ _Py_uop_analyze_and_optimize(
     memcpy(buffer, temp_writebuffer, new_trace_len * sizeof(_PyUOpInstruction));
 
     PyMem_Free(temp_writebuffer);
-
-    // _NOP out the rest of the buffer.
-
-    // Fill up the rest of the buffer with NOPs
-    _PyUOpInstruction *after = buffer + new_trace_len + 1;
-    while (after < (buffer + buffer_size)) {
-        after->opcode = _NOP;
-        after++;
-    }
 
     OPT_STAT_INC(optimizer_successes);
     return 0;
