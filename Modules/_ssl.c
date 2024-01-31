@@ -821,7 +821,7 @@ PySSL_SetError(PySSLSocket *sslsock, int ret, const char *filename, int lineno)
             } else {
                 if (ERR_GET_LIB(e) == ERR_LIB_SSL &&
                         ERR_GET_REASON(e) == SSL_R_CERTIFICATE_VERIFY_FAILED) {
-                    type = state->PySSLCertVerificationErrorObject;
+                    type = PySSLCertVerificationErrorObject;
                 }
                 p = PY_SSL_ERROR_SYSCALL;
             }
