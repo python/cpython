@@ -536,7 +536,9 @@ class ElementTreeTest(unittest.TestCase):
         iterparse = ET.iterparse
 
         context = iterparse(SIMPLE_XMLFILE)
+        self.assertIsNone(context.root)
         action, elem = next(context)
+        self.assertIsNone(context.root)
         self.assertEqual((action, elem.tag), ('end', 'element'))
         self.assertEqual([(action, elem.tag) for action, elem in context], [
                 ('end', 'element'),
