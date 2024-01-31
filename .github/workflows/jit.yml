@@ -1,10 +1,17 @@
 name: JIT
 on:
   pull_request:
-    paths: '**jit**'
+    paths:
+    - '**/*jit/**'
   push:
-    paths: '**jit**'
+    paths:
+    - '**/*jit/**'
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   jit:
     name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }})
