@@ -3,9 +3,11 @@ on:
   pull_request:
     paths:
     - '**/*jit/**'
+    - '**/*jit.*'
   push:
     paths:
     - '**/*jit/**'
+    - '**/*jit.*'
   workflow_dispatch:
 
 concurrency:
