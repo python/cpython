@@ -149,6 +149,7 @@ expr_ty _PyPegen_name_token(Parser *p);
 expr_ty _PyPegen_number_token(Parser *p);
 void *_PyPegen_string_token(Parser *p);
 Py_ssize_t _PyPegen_byte_offset_to_character_offset(PyObject *line, Py_ssize_t col_offset);
+Py_ssize_t _PyPegen_byte_offset_to_character_offset_raw(const char*, Py_ssize_t col_offset);
 
 // Error handling functions and APIs
 typedef enum {
@@ -166,6 +167,8 @@ void *_PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
                                           Py_ssize_t end_lineno, Py_ssize_t end_col_offset,
                                           const char *errmsg, va_list va);
 void _Pypegen_set_syntax_error(Parser* p, Token* last_token);
+void _Pypegen_stack_overflow(Parser *p);
+
 Py_LOCAL_INLINE(void *)
 RAISE_ERROR_KNOWN_LOCATION(Parser *p, PyObject *errtype,
                            Py_ssize_t lineno, Py_ssize_t col_offset,
@@ -348,7 +351,8 @@ void *_PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args, asdl_comprehensi
 Parser *_PyPegen_Parser_New(struct tok_state *, int, int, int, int *, PyArena *);
 void _PyPegen_Parser_Free(Parser *);
 mod_ty _PyPegen_run_parser_from_file_pointer(FILE *, int, PyObject *, const char *,
-                                    const char *, const char *, PyCompilerFlags *, int *, PyArena *);
+                                    const char *, const char *, PyCompilerFlags *, int *, PyObject **,
+                                    PyArena *);
 void *_PyPegen_run_parser(Parser *);
 mod_ty _PyPegen_run_parser_from_string(const char *, int, PyObject *, PyCompilerFlags *, PyArena *);
 asdl_stmt_seq *_PyPegen_interactive_exit(Parser *);

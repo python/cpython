@@ -424,7 +424,8 @@ PEP 232: Function Attributes
 
 In Python 2.1, functions can now have arbitrary information attached to them.
 People were often using docstrings to hold information about functions and
-methods, because the ``__doc__`` attribute was the only way of attaching any
+methods, because the :attr:`~function.__doc__` attribute was the only way of
+attaching any
 information to a function.  For example, in the Zope web application server,
 functions are marked as safe for public access by having a docstring, and in
 John Aycock's SPARK parsing framework, docstrings hold parts of the BNF grammar

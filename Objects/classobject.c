@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_VectorcallTstate()
+#include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -318,6 +319,13 @@ method_traverse(PyMethodObject *im, visitproc visit, void *arg)
     return 0;
 }
 
+static PyObject *
+method_descr_get(PyObject *meth, PyObject *obj, PyObject *cls)
+{
+    Py_INCREF(meth);
+    return meth;
+}
+
 PyTypeObject PyMethod_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "method",
@@ -338,6 +346,7 @@ PyTypeObject PyMethod_Type = {
     .tp_methods = method_methods,
     .tp_members = method_memberlist,
     .tp_getset = method_getset,
+    .tp_descr_get = method_descr_get,
     .tp_new = method_new,
 };
 
