@@ -11,6 +11,7 @@ permissions:
 jobs:
   label:
     name: DO-NOT-MERGE / unresolved review
+    if: github.repository == 'python/cpython'
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
