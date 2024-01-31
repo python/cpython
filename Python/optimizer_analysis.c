@@ -102,7 +102,6 @@ typedef struct {
 
 
 typedef struct _Py_UOpsAbstractFrame {
-    struct _Py_UOpsAbstractFrame *prev;
     // Symbolic version of co_consts
     int sym_consts_len;
     _Py_UOpsSymType **sym_consts;
@@ -114,16 +113,6 @@ typedef struct _Py_UOpsAbstractFrame {
     _Py_UOpsSymType **stack;
     _Py_UOpsSymType **locals;
 } _Py_UOpsAbstractFrame;
-
-static void
-abstractframe_dealloc(_Py_UOpsAbstractFrame *self)
-{
-    _Py_UOpsAbstractFrame *curr = self;
-    while (curr != NULL) {
-        PyMem_Free(curr->sym_consts);
-        curr = curr->prev;
-    }
-}
 
 
 typedef struct ty_arena {
@@ -168,7 +157,12 @@ abstractinterp_dealloc(_Py_UOpsAbstractInterpContext *self)
     if (self == NULL) {
         return;
     }
-    abstractframe_dealloc(self->frame);
+    int curr = self->curr_frame_depth - 1;
+    while (curr >= 0) {
+        PyMem_Free(self->frames[curr].sym_consts);
+        curr--;
+    }
+     self->curr_frame_depth = 0;
     if (self->t_arena.arena != NULL) {
         int tys = self->t_arena.ty_curr_number;
         for (int i = 0; i < tys; i++) {
@@ -266,7 +260,7 @@ error:
         self->frame = NULL;
     }
     abstractinterp_dealloc(self);
-    abstractframe_dealloc(frame);
+    PyMem_Free(frame->sym_consts);
     return NULL;
 }
 
@@ -371,7 +365,6 @@ frame_new(_Py_UOpsAbstractInterpContext *ctx,
     frame->sym_consts_len = (int)Py_SIZE(co_consts);
     frame->stack_len = stack_len;
     frame->locals_len = locals_len;
-    frame->prev = NULL;
 
     return frame;
 }
@@ -423,7 +416,6 @@ ctx_frame_push(
         return -1;
     }
 
-    frame->prev = ctx->frame;
     ctx->frame = frame;
 
 
@@ -436,13 +428,12 @@ ctx_frame_pop(
 )
 {
     _Py_UOpsAbstractFrame *frame = ctx->frame;
-    ctx->frame = frame->prev;
-    assert(ctx->frame != NULL);
-    frame->prev = NULL;
 
     ctx->water_level = frame->locals;
     PyMem_Free(frame->sym_consts);
     ctx->curr_frame_depth--;
+    assert(ctx->curr_frame_depth >= 1);
+    ctx->frame = &ctx->frames[ctx->curr_frame_depth - 1];
     return 0;
 }
 
