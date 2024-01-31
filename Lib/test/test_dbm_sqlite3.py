@@ -198,7 +198,7 @@ class Misuse(_SQLiteDbmTests):
 
     def test_misuse_reinit(self):
         with self.assertRaises(dbm_sqlite3.error):
-            self.db.__init__("new.db", flag="rw")
+            self.db.__init__("new.db", flag="n", mode=0o666)
 
     def test_misuse_empty_filename(self):
         for flag in "r", "w", "c", "n":
