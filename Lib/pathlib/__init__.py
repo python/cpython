@@ -514,9 +514,8 @@ class Path(_abc.PathBase, PurePath):
     as_uri = PurePath.as_uri
 
     @classmethod
-    def _unsupported(cls, method_name):
-        msg = f"{cls.__name__}.{method_name}() is unsupported on this system"
-        raise UnsupportedOperation(msg)
+    def _unsupported_msg(cls, attribute):
+        return f"{cls.__name__}.{attribute} is unsupported on this system"
 
     def __init__(self, *args, **kwargs):
         if kwargs:
