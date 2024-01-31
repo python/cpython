@@ -537,6 +537,19 @@ class PydocDocTest(unittest.TestCase):
                 " |      ... and \\d+ other subclasses")
         self.assertRegex(text, snip)
 
+    def test_classmethod_property(self):
+        # Issue 45356
+        class A:
+            @classmethod
+            @property
+            def a(self):
+                # BaseException because accessor of attributes in pydoc and in
+                # inspect catches Exception
+                raise BaseException
+        class B(A): pass
+        pydoc.render_doc(A)
+        pydoc.render_doc(B)
+
     def test_builtin_with_child(self):
         """Tests help on builtin object which have only child classes.
 

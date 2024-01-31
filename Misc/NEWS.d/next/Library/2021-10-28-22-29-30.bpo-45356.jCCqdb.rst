@@ -1,0 +1,4 @@
+:mod:`pydoc` ``help`` command, :meth:`~pydoc.HTMLDoc.docclass`,
+:meth:`~pydoc.TextDoc.docclass`, and :func:`~inspect.classify_class_attrs`
+will no longer execute the logic of a class property when examining a class
+object that contains such property.

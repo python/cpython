@@ -918,6 +918,8 @@ class HTMLDoc(Doc):
                 push(msg)
                 for name, kind, homecls, value in ok:
                     try:
+                        if inspect._is_class_property(object, name):
+                            raise Exception("class property")
                         value = getattr(object, name)
                     except Exception:
                         # Some descriptors may meet a failure in their __get__.
@@ -1385,6 +1387,8 @@ location listed above.
                 push(msg)
                 for name, kind, homecls, value in ok:
                     try:
+                        if inspect._is_class_property(object, name):
+                            raise Exception("class property")
                         value = getattr(object, name)
                     except Exception:
                         # Some descriptors may meet a failure in their __get__.
