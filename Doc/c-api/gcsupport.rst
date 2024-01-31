@@ -89,7 +89,7 @@ rules:
    Returns the resized object of type ``TYPE*`` (refers to any C type)
    or ``NULL`` on failure.
 
-   *op* must of type :c:expr:`PyVarObject *`
+   *op* must be of type :c:expr:`PyVarObject *`
    and must not be tracked by the collector yet.
    *newsize* must be of type :c:type:`Py_ssize_t`.
 
