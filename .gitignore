@@ -161,6 +161,3 @@ Python/frozen_modules/MANIFEST
 
 # main branch only: ABI files are not checked/maintained.
 Doc/data/python*.abi
-
-# Temp test files when e.g. /tmp is not available.
-tmp*/
