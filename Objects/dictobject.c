@@ -113,17 +113,18 @@ As a consequence of this, split keys have a maximum size of 16.
 #define PyDict_MINSIZE 8
 
 #include "Python.h"
-#include "pycore_bitutils.h"      // _Py_bit_length
-#include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_ceval.h"         // _PyEval_GetBuiltin()
-#include "pycore_code.h"          // stats
-#include "pycore_dict.h"          // export _PyDict_SizeOf()
-#include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
-#include "pycore_object.h"        // _PyObject_GC_TRACK(), _PyDebugAllocatorStats()
-#include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
-#include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_setobject.h"     // _PySet_NextEntry()
-#include "stringlib/eq.h"         // unicode_eq()
+#include "pycore_bitutils.h"            // _Py_bit_length
+#include "pycore_call.h"                // _PyObject_CallNoArgs()
+#include "pycore_ceval.h"               // _PyEval_GetBuiltin()
+#include "pycore_code.h"                // stats
+#include "pycore_critical_section.h"    // Py_BEGIN_CRITICAL_SECTION, Py_END_CRITICAL_SECTION
+#include "pycore_dict.h"                // export _PyDict_SizeOf()
+#include "pycore_gc.h"                  // _PyObject_GC_IS_TRACKED()
+#include "pycore_object.h"              // _PyObject_GC_TRACK(), _PyDebugAllocatorStats()
+#include "pycore_pyerrors.h"            // _PyErr_GetRaisedException()
+#include "pycore_pystate.h"             // _PyThreadState_GET()
+#include "pycore_setobject.h"           // _PySet_NextEntry()
+#include "stringlib/eq.h"               // unicode_eq()
 
 #include <stdbool.h>
 
