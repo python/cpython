@@ -1,1 +1,0 @@
-``sys.path[0]`` is now set correctly for subinterpreters.

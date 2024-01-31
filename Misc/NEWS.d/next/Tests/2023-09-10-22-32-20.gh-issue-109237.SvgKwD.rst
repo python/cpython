@@ -1,4 +1,0 @@
-Fix ``test_site.test_underpth_basic()`` when the working directory contains
-at least one non-ASCII character: encode the ``._pth`` file to UTF-8 and
-enable the UTF-8 Mode to use UTF-8 for the child process stdout. Patch by
-Victor Stinner.

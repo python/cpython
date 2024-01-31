@@ -665,7 +665,9 @@ struct _obmalloc_global_state {
 struct _obmalloc_state {
     struct _obmalloc_pools pools;
     struct _obmalloc_mgmt mgmt;
+#if WITH_PYMALLOC_RADIX_TREE
     struct _obmalloc_usage usage;
+#endif
 };
 
 
@@ -684,6 +686,8 @@ extern Py_ssize_t _Py_GetGlobalAllocatedBlocks(void);
     _Py_GetGlobalAllocatedBlocks()
 extern Py_ssize_t _PyInterpreterState_GetAllocatedBlocks(PyInterpreterState *);
 extern void _PyInterpreterState_FinalizeAllocatedBlocks(PyInterpreterState *);
+extern int _PyMem_init_obmalloc(PyInterpreterState *interp);
+extern bool _PyMem_obmalloc_state_on_heap(PyInterpreterState *interp);
 
 
 #ifdef WITH_PYMALLOC

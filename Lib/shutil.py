@@ -306,7 +306,12 @@ def copymode(src, dst, *, follow_symlinks=True):
         else:
             return
     else:
-        stat_func, chmod_func = _stat, os.chmod
+        stat_func = _stat
+        if os.name == 'nt' and os.path.islink(dst):
+            def chmod_func(*args):
+                os.chmod(*args, follow_symlinks=True)
+        else:
+            chmod_func = os.chmod
 
     st = stat_func(src)
     chmod_func(dst, stat.S_IMODE(st.st_mode))
@@ -590,23 +595,21 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
                      dirs_exist_ok=dirs_exist_ok)
 
 if hasattr(os.stat_result, 'st_file_attributes'):
-    def _rmtree_islink(path):
-        try:
-            st = os.lstat(path)
-            return (stat.S_ISLNK(st.st_mode) or
-                (st.st_file_attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT
-                 and st.st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT))
-        except OSError:
-            return False
+    def _rmtree_islink(st):
+        return (stat.S_ISLNK(st.st_mode) or
+            (st.st_file_attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT
+                and st.st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT))
 else:
-    def _rmtree_islink(path):
-        return os.path.islink(path)
+    def _rmtree_islink(st):
+        return stat.S_ISLNK(st.st_mode)
 
 # version vulnerable to race conditions
 def _rmtree_unsafe(path, onexc):
     try:
         with os.scandir(path) as scandir_it:
             entries = list(scandir_it)
+    except FileNotFoundError:
+        return
     except OSError as err:
         onexc(os.scandir, path, err)
         entries = []
@@ -614,6 +617,8 @@ def _rmtree_unsafe(path, onexc):
         fullname = entry.path
         try:
             is_dir = entry.is_dir(follow_symlinks=False)
+        except FileNotFoundError:
+            continue
         except OSError:
             is_dir = False
 
@@ -624,6 +629,8 @@ def _rmtree_unsafe(path, onexc):
                     # a directory with a symlink after the call to
                     # os.scandir or entry.is_dir above.
                     raise OSError("Cannot call rmtree on a symbolic link")
+            except FileNotFoundError:
+                continue
             except OSError as err:
                 onexc(os.path.islink, fullname, err)
                 continue
@@ -631,10 +638,14 @@ def _rmtree_unsafe(path, onexc):
         else:
             try:
                 os.unlink(fullname)
+            except FileNotFoundError:
+                continue
             except OSError as err:
                 onexc(os.unlink, fullname, err)
     try:
         os.rmdir(path)
+    except FileNotFoundError:
+        pass
     except OSError as err:
         onexc(os.rmdir, path, err)
 
@@ -643,6 +654,8 @@ def _rmtree_safe_fd(topfd, path, onexc):
     try:
         with os.scandir(topfd) as scandir_it:
             entries = list(scandir_it)
+    except FileNotFoundError:
+        return
     except OSError as err:
         err.filename = path
         onexc(os.scandir, path, err)
@@ -651,6 +664,8 @@ def _rmtree_safe_fd(topfd, path, onexc):
         fullname = os.path.join(path, entry.name)
         try:
             is_dir = entry.is_dir(follow_symlinks=False)
+        except FileNotFoundError:
+            continue
         except OSError:
             is_dir = False
         else:
@@ -658,6 +673,8 @@ def _rmtree_safe_fd(topfd, path, onexc):
                 try:
                     orig_st = entry.stat(follow_symlinks=False)
                     is_dir = stat.S_ISDIR(orig_st.st_mode)
+                except FileNotFoundError:
+                    continue
                 except OSError as err:
                     onexc(os.lstat, fullname, err)
                     continue
@@ -665,6 +682,8 @@ def _rmtree_safe_fd(topfd, path, onexc):
             try:
                 dirfd = os.open(entry.name, os.O_RDONLY, dir_fd=topfd)
                 dirfd_closed = False
+            except FileNotFoundError:
+                continue
             except OSError as err:
                 onexc(os.open, fullname, err)
             else:
@@ -673,8 +692,15 @@ def _rmtree_safe_fd(topfd, path, onexc):
                         _rmtree_safe_fd(dirfd, fullname, onexc)
                         try:
                             os.close(dirfd)
+                        except OSError as err:
+                            # close() should not be retried after an error.
                             dirfd_closed = True
+                            onexc(os.close, fullname, err)
+                        dirfd_closed = True
+                        try:
                             os.rmdir(entry.name, dir_fd=topfd)
+                        except FileNotFoundError:
+                            continue
                         except OSError as err:
                             onexc(os.rmdir, fullname, err)
                     else:
@@ -688,10 +714,15 @@ def _rmtree_safe_fd(topfd, path, onexc):
                             onexc(os.path.islink, fullname, err)
                 finally:
                     if not dirfd_closed:
-                        os.close(dirfd)
+                        try:
+                            os.close(dirfd)
+                        except OSError as err:
+                            onexc(os.close, fullname, err)
         else:
             try:
                 os.unlink(entry.name, dir_fd=topfd)
+            except FileNotFoundError:
+                continue
             except OSError as err:
                 onexc(os.unlink, fullname, err)
 
@@ -720,11 +751,6 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
     onerror is deprecated and only remains for backwards compatibility.
     If both onerror and onexc are set, onerror is ignored and onexc is used.
     """
-
-    if onerror is not None:
-        import warnings
-        warnings.warn("onerror argument is deprecated, use onexc instead",
-                      DeprecationWarning, stacklevel=2)
 
     sys.audit("shutil.rmtree", path, dir_fd)
     if ignore_errors:
@@ -755,13 +781,13 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
         # lstat()/open()/fstat() trick.
         try:
             orig_st = os.lstat(path, dir_fd=dir_fd)
-        except Exception as err:
+        except OSError as err:
             onexc(os.lstat, path, err)
             return
         try:
             fd = os.open(path, os.O_RDONLY, dir_fd=dir_fd)
             fd_closed = False
-        except Exception as err:
+        except OSError as err:
             onexc(os.open, path, err)
             return
         try:
@@ -769,7 +795,12 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
                 _rmtree_safe_fd(fd, path, onexc)
                 try:
                     os.close(fd)
+                except OSError as err:
+                    # close() should not be retried after an error.
                     fd_closed = True
+                    onexc(os.close, path, err)
+                fd_closed = True
+                try:
                     os.rmdir(path, dir_fd=dir_fd)
                 except OSError as err:
                     onexc(os.rmdir, path, err)
@@ -781,12 +812,20 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
                     onexc(os.path.islink, path, err)
         finally:
             if not fd_closed:
-                os.close(fd)
+                try:
+                    os.close(fd)
+                except OSError as err:
+                    onexc(os.close, path, err)
     else:
         if dir_fd is not None:
             raise NotImplementedError("dir_fd unavailable on this platform")
         try:
-            if _rmtree_islink(path):
+            st = os.lstat(path)
+        except OSError as err:
+            onexc(os.lstat, path, err)
+            return
+        try:
+            if _rmtree_islink(st):
                 # symlinks to directories are forbidden, see bug #1669
                 raise OSError("Cannot call rmtree on a symbolic link")
         except OSError as err:
@@ -846,7 +885,7 @@ def move(src, dst, copy_function=copy2):
     sys.audit("shutil.move", src, dst)
     real_dst = dst
     if os.path.isdir(dst):
-        if _samefile(src, dst):
+        if _samefile(src, dst) and not os.path.islink(src):
             # We might be on a case insensitive filesystem,
             # perform the rename anyway.
             os.rename(src, dst)

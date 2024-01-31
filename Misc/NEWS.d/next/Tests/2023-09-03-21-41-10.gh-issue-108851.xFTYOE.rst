@@ -1,3 +1,0 @@
-Fix ``test_tomllib`` recursion tests for WASI buildbots: reduce the recursion
-limit and compute the maximum nested array/dict depending on the current
-available recursion limit. Patch by Victor Stinner.

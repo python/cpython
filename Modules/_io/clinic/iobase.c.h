@@ -3,6 +3,7 @@ preserve
 [clinic start generated code]*/
 
 #include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_io__IOBase_seek__doc__,
 "seek($self, offset, whence=os.SEEK_SET, /)\n"
@@ -437,4 +438,4 @@ _io__RawIOBase_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__RawIOBase_readall_impl(self);
 }
-/*[clinic end generated code: output=95e1633805d10294 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5a22bc5db0ecaacb input=a9049054013a1b77]*/

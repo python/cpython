@@ -1,2 +1,0 @@
-Fix bug where compiler does not adjust labels when removing an empty basic
-block which is a jump target.

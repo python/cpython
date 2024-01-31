@@ -1,1 +1,0 @@
-Fix missing error checks for calls to ``PyList_Append`` in ``_PyEval_MatchClass``.

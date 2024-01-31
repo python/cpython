@@ -1,5 +1,0 @@
-Fix ``test_interprocess_signal()`` of ``test_signal``. Make sure that the
-``subprocess.Popen`` object is deleted before the test raising an exception
-in a signal handler. Otherwise, ``Popen.__del__()`` can get the exception
-which is logged as ``Exception ignored in: ...`` and the test fails. Patch by
-Victor Stinner.

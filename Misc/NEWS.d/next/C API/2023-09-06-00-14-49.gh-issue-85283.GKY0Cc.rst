@@ -1,3 +1,0 @@
-Add :c:func:`PySys_AuditTuple` function: similar to :c:func:`PySys_Audit`,
-but pass event arguments as a Python :class:`tuple` object.  Patch by Victor
-Stinner.

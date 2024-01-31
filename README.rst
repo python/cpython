@@ -1,4 +1,4 @@
-This is Python version 3.13.0 alpha 0
+This is Python version 3.13.0 alpha 3
 =====================================
 
 .. image:: https://github.com/python/cpython/workflows/Tests/badge.svg
@@ -14,7 +14,7 @@ This is Python version 3.13.0 alpha 0
    :target: https://discuss.python.org/
 
 
-Copyright © 2001-2023 Python Software Foundation.  All rights reserved.
+Copyright © 2001-2024 Python Software Foundation.  All rights reserved.
 
 See the end of this file for further copyright and license information.
 
@@ -75,6 +75,9 @@ to macOS framework and universal builds.  Refer to `Mac/README.rst
 
 On Windows, see `PCbuild/readme.txt
 <https://github.com/python/cpython/blob/main/PCbuild/readme.txt>`_.
+
+To build Windows installer, see `Tools/msi/README.txt
+<https://github.com/python/cpython/blob/main/Tools/msi/README.txt>`_.
 
 If you wish, you can create a subdirectory and invoke configure from there.
 For example::
@@ -203,8 +206,8 @@ directories installed using ``make altinstall`` contain the major and minor
 version and can thus live side-by-side.  ``make install`` also creates
 ``${prefix}/bin/python3`` which refers to ``${prefix}/bin/python3.X``.  If you
 intend to install multiple versions using the same prefix you must decide which
-version (if any) is your "primary" version.  Install that version using ``make
-install``.  Install all other versions using ``make altinstall``.
+version (if any) is your "primary" version.  Install that version using
+``make install``.  Install all other versions using ``make altinstall``.
 
 For example, if you want to install Python 2.7, 3.6, and 3.13 with 3.13 being the
 primary version, you would execute ``make install`` in your 3.13 build directory
@@ -221,7 +224,7 @@ Copyright and License Information
 ---------------------------------
 
 
-Copyright © 2001-2023 Python Software Foundation.  All rights reserved.
+Copyright © 2001-2024 Python Software Foundation.  All rights reserved.
 
 Copyright © 2000 BeOpen.com.  All rights reserved.
 
