@@ -84,19 +84,9 @@ struct gni_sockinet {
 #define ENI_FAMILY      5
 #define ENI_SALEN       6
 
-/* forward declaration to make gcc happy */
-int getnameinfo(const struct sockaddr *, size_t, char *, size_t,
-                          char *, size_t, int);
-
 int
-getnameinfo(sa, salen, host, hostlen, serv, servlen, flags)
-    const struct sockaddr *sa;
-    size_t salen;
-    char *host;
-    size_t hostlen;
-    char *serv;
-    size_t servlen;
-    int flags;
+getnameinfo(const struct sockaddr *sa, size_t salen, char *host, size_t hostlen,
+            char *serv, size_t servlen, int flags)
 {
     struct gni_afd *gni_afd;
     struct servent *sp;
