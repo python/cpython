@@ -699,7 +699,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
 /*
  * The value of MAX_STRUCT_SIZE depends on the platform Python is running on.
  */
-#if defined(__aarch64__) || defined(__arm__)
+#if defined(__aarch64__) || defined(__arm__) || defined(_M_ARM64)
 #  define MAX_STRUCT_SIZE 32
 #elif defined(__powerpc64__)
 #  define MAX_STRUCT_SIZE 64
