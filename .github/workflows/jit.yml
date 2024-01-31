@@ -1,10 +1,19 @@
 name: JIT
 on:
   pull_request:
-    paths: '**jit**'
+    paths:
+      - '**jit**'
+      - 'Python/bytecodes.c'
   push:
-    paths: '**jit**'
+    paths:
+      - '**jit**'
+      - 'Python/bytecodes.c'
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   jit:
     name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }})
