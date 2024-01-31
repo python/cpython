@@ -130,7 +130,6 @@ For projects wishing to migrate from Python 2 to Python 3, or for library
 and framework developers wishing to support users on both Python 2 and
 Python 3, there are a variety of tools and guides available to help decide
 on a suitable approach and manage some of the technical details involved.
-The recommended starting point is the :ref:`pyporting-howto` HOWTO guide.
 
 
 Changes to the Handling of Deprecation Warnings
