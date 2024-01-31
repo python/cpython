@@ -1124,34 +1124,9 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
     }
 }
 
-
-static void
-peephole_optimizations(_PyUOpInstruction *buffer, int buffer_size)
-{
-    for (int i = 0; i < buffer_size; i++) {
-        _PyUOpInstruction *curr = buffer + i;
-        switch(curr->opcode) {
-            case _CHECK_PEP_523:
-                /* Setting the eval frame function invalidates
-                 * all executors, so no need to check dynamically */
-                if (_PyInterpreterState_GET()->eval_frame == NULL) {
-                    curr->opcode = _NOP;
-                }
-                break;
-            default:
-                break;
-        }
-    }
-}
-
-static void
-infallible_optimizations(_PyUOpInstruction *buffer, int buffer_size)
-{
-    peephole_optimizations(buffer, buffer_size);
-    remove_unneeded_uops(buffer, buffer_size);
-}
-
-
+//  0 - optimizer success
+// -1 - failure, and raise error
+//  1 - failure, no error raised, just fall back to Tier 1
 int
 _Py_uop_analyze_and_optimize(
     PyCodeObject *co,
@@ -1162,7 +1137,6 @@ _Py_uop_analyze_and_optimize(
 {
     OPT_STAT_INC(optimizer_attempts);
     _PyUOpInstruction *temp_writebuffer = NULL;
-    bool err_occurred = false;
 
     temp_writebuffer = PyMem_New(_PyUOpInstruction, buffer_size);
     if (temp_writebuffer == NULL) {
@@ -1178,6 +1152,8 @@ _Py_uop_analyze_and_optimize(
         goto error;
     }
 
+    remove_unneeded_uops(temp_writebuffer, new_trace_len);
+
     // Fill in our new trace!
     memcpy(buffer, temp_writebuffer, new_trace_len * sizeof(_PyUOpInstruction));
 
@@ -1186,11 +1162,9 @@ _Py_uop_analyze_and_optimize(
     OPT_STAT_INC(optimizer_successes);
     return 0;
 error:
-    infallible_optimizations(buffer, buffer_size);
     // The only valid error we can raise is MemoryError.
     // Other times it's not really errors but things like not being able
     // to fetch a function version because the function got deleted.
-    err_occurred = PyErr_Occurred();
     PyMem_Free(temp_writebuffer);
-    return err_occurred ? -1 : 0;
+    return PyErr_Occurred() ? -1 : 1;
 }

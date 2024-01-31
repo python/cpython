@@ -891,10 +891,8 @@ class TestUopsOptimization(unittest.TestCase):
             testfunc(10)
 
         ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
-        self.assertIn("_PUSH_FRAME", uops)
-        self.assertNotIn("_CHECK_PEP_523", uops)
+        # Optimizer should have just bailed to tier 1.
+        self.assertIsNone(ex)
 
 
 

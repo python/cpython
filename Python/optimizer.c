@@ -857,6 +857,10 @@ uop_optimize(
     if (err < 0) {
         return -1;
     }
+    if (err == 1) {
+        return 0;
+    }
+    assert(err == 0);
     _PyExecutorObject *executor = make_executor_from_uops(buffer, &dependencies);
     if (executor == NULL) {
         return -1;
