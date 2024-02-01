@@ -82,6 +82,14 @@ Important deprecations, removals or restrictions:
     followed by three years of security fixes.
 
 
+Interpreter improvements:
+
+* A basic :ref:`JIT compiler <whatsnew313-jit-compiler>` was added.
+  It is currently disabled by default (though we may turn it on later).
+  Performance improvements are modest -- we expect to be improving this
+  over the next few releases.
+
+
 New Features
 ============
 
@@ -477,6 +485,122 @@ Optimizations
   FreeBSD and Solaris.  See the ``subprocess`` section above for details.
   (Contributed by Jakub Kulik in :gh:`113117`.)
 
+
+.. _whatsnew313-jit-compiler:
+
+Experimental JIT Compiler
+=========================
+
+:Editor: Guido van Rossum, Ken Jin
+
+When CPython is configured using the ``--enable-experimental-jit`` option,
+a just-in-time compiler is added which can speed up some Python programs.
+The internal architecture is roughly as follows.
+
+Intermediate Representation
+---------------------------
+
+We start with specialized *Tier 1 bytecode*.
+See :ref:`What's new in 3.11 <whatsnew311-pep659>` for details.
+
+When the Tier 1 bytecode gets hot enough, the interpreter creates
+straight-line sequences of bytecode known as "traces", and translates that
+to a new, purely internal *Tier 2 IR*, a.k.a. micro-ops ("uops").
+These straight-line sequences can cross function call boundaries,
+allowing more effective optimizations, listed in the next section.
+
+The Tier 2 IR uses the same stack-based VM as Tier 1, but the
+instruction format is better suited to translation to machine code.
+
+(Tier 2 IR contributed by Mark Shannon and Guido van Rossum.)
+
+Optimizations
+-------------
+
+We have several optimization and analysis passes for Tier 2 IR, which
+are applied before Tier 2 IR is interpreted or translated to machine code.
+These optimizations take unoptimized Tier 2 IR and produce optimized Tier 2
+IR:
+
+* Type propagation -- through forward data-flow analysis, we infer
+  and deduce information about types. This allows us to eliminate
+  much of the overhead associated with dynamic typing in the future.
+
+* Constant propagation -- through forward data-flow analysis, we can reduce
+  expressions like ::
+
+    a = 1
+    b = 2
+    c = a + b
+
+ to ::
+
+    a = 1
+    b = 2
+    c = 3
+
+* Guard elimination -- through a combination of constant and type information,
+  we can eliminate type checks and other guards associated with operations.
+  As a proof of concept, we managed to eliminate over 70%
+  of integer type checks in our own benchmarks.
+
+* Loop splitting -- after the first iteration, we gain a lot more type
+  information. Thus, we peel the first iteration of loops to produce
+  an optimized body that exploits this additional type information.
+  This also achieves a similar effect to an optimization called
+  loop-invariant code motion, but only for guards.
+
+* Globals to constant promotion -- global value loads become constant
+  loads, speeding them up and also allowing for more constant propagation.
+
+* This section is non-exhaustive and will be updated with further
+  optimizations, up till CPython 3.13's release.
+
+(Tier 2 optimizer contributed by Ken Jin, with implementation help
+by Guido van Rossum, Mark Shanno, and Jules Poon. Special thanks
+to Manuel Rigger and Martin Henz.)
+
+Execution Engine
+----------------
+
+There are two execution engines for Tier 2 IR.
+
+The first is the Tier 2 interpreter, but it is mostly intended for debugging
+the earlier stages of the optimization pipeline. If the JIT is not
+enabled, the Tier 2 interpreter can be invoked by passing Python the
+``-X uops`` option or by setting the ``PYTHON_UOPS`` environment
+variable to ``1``.
+
+The second is machine code. When the ``--enable-experimental-jit``
+option is used, the optimized Tier 2 IR is translated to machine
+code, which is then executed. This does not require additional
+runtime options.
+
+The machine code translation process uses an architecture called
+*copy-and-patch*. It has no runtime dependencies, but there is a new
+build-time dependency on LLVM.
+
+(Copy-and-patch JIT compiler contributed by Brandt Bucher,
+directly inspired by the paper "Copy-and-Patch Compilation"
+by Haoran Xu and Fredrik Kjolstad).
+
+Results and Future Work
+-----------------------
+
+The final performance results will be updated before CPython 3.13's release.
+
+The JIT compiler is rather unoptimized, and serves as the foundation
+for significant optimizations in future releases. As such, we do not
+expect the first iteration of the JIT compiler to produce a significant
+speedup.
+
+About
+-----
+
+This work was done by the Faster CPython team, and many other external
+contributors. The team consists of engineers from Microsoft, Meta
+Quansight, and Bloomberg, who are either paid in part to do this, or
+volunteer in their free time.
 
 Deprecated
 ==========
