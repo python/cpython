@@ -239,14 +239,15 @@ static int
 append_referrents(PyObject *result, PyObject *args)
 {
     for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(args); i++) {
-        traverseproc traverse;
         PyObject *obj = PyTuple_GET_ITEM(args, i);
+        if (!_PyObject_IS_GC(obj)) {
+            continue;
+        }
 
-        if (!_PyObject_IS_GC(obj))
+        traverseproc traverse = Py_TYPE(obj)->tp_traverse;
+        if (!traverse) {
             continue;
-        traverse = Py_TYPE(obj)->tp_traverse;
-        if (!traverse)
-            continue;
+        }
         if (traverse(obj, referentsvisit, result)) {
             return -1;
         }
