@@ -26,10 +26,9 @@ get_list_state(void)
 {
     _PyFreeListState *state = _PyFreeListState_GET();
     assert(state != NULL);
-    return &state->list_state;
+    return &state->lists;
 }
 #endif
-
 
 /* Ensure ob_item has room for at least newsize elements, and set
  * ob_size to newsize.  If newsize > ob_size on entry, the content
@@ -124,7 +123,7 @@ void
 _PyList_ClearFreeList(_PyFreeListState *freelist_state, int is_finalization)
 {
 #ifdef WITH_FREELISTS
-    struct _Py_list_state *state = &freelist_state->list_state;
+    struct _Py_list_state *state = &freelist_state->lists;
     while (state->numfree > 0) {
         PyListObject *op = state->free_list[--state->numfree];
         assert(PyList_CheckExact(op));
@@ -221,8 +220,9 @@ PyList_Size(PyObject *op)
         PyErr_BadInternalCall();
         return -1;
     }
-    else
-        return Py_SIZE(op);
+    else {
+        return PyList_GET_SIZE(op);
+    }
 }
 
 static inline int
@@ -328,7 +328,7 @@ PyList_Insert(PyObject *op, Py_ssize_t where, PyObject *newitem)
 int
 _PyList_AppendTakeRefListResize(PyListObject *self, PyObject *newitem)
 {
-    Py_ssize_t len = PyList_GET_SIZE(self);
+    Py_ssize_t len = Py_SIZE(self);
     assert(self->allocated == -1 || self->allocated == len);
     if (list_resize(self, len + 1) < 0) {
         Py_DECREF(newitem);
@@ -342,7 +342,11 @@ int
 PyList_Append(PyObject *op, PyObject *newitem)
 {
     if (PyList_Check(op) && (newitem != NULL)) {
-        return _PyList_AppendTakeRef((PyListObject *)op, Py_NewRef(newitem));
+        int ret;
+        Py_BEGIN_CRITICAL_SECTION(op);
+        ret = _PyList_AppendTakeRef((PyListObject *)op, Py_NewRef(newitem));
+        Py_END_CRITICAL_SECTION();
+        return ret;
     }
     PyErr_BadInternalCall();
     return -1;
@@ -383,18 +387,11 @@ list_dealloc(PyObject *self)
 }
 
 static PyObject *
-list_repr(PyObject *self)
+list_repr_impl(PyListObject *v)
 {
-    PyListObject *v = (PyListObject *)self;
-    Py_ssize_t i;
     PyObject *s;
     _PyUnicodeWriter writer;
-
-    if (Py_SIZE(v) == 0) {
-        return PyUnicode_FromString("[]");
-    }
-
-    i = Py_ReprEnter((PyObject*)v);
+    Py_ssize_t i = Py_ReprEnter((PyObject*)v);
     if (i != 0) {
         return i > 0 ? PyUnicode_FromString("[...]") : NULL;
     }
@@ -439,10 +436,24 @@ error:
     return NULL;
 }
 
+static PyObject *
+list_repr(PyObject *self)
+{
+    if (PyList_GET_SIZE(self) == 0) {
+        return PyUnicode_FromString("[]");
+    }
+    PyListObject *v = (PyListObject *)self;
+    PyObject *ret = NULL;
+    Py_BEGIN_CRITICAL_SECTION(v);
+    ret = list_repr_impl(v);
+    Py_END_CRITICAL_SECTION();
+    return ret;
+}
+
 static Py_ssize_t
 list_length(PyObject *a)
 {
-    return Py_SIZE(a);
+    return PyList_GET_SIZE(a);
 }
 
 static int
@@ -466,7 +477,7 @@ static PyObject *
 list_item(PyObject *aa, Py_ssize_t i)
 {
     PyListObject *a = (PyListObject *)aa;
-    if (!valid_index(i, Py_SIZE(a))) {
+    if (!valid_index(i, PyList_GET_SIZE(a))) {
         PyErr_SetObject(PyExc_IndexError, &_Py_STR(list_err));
         return NULL;
     }
@@ -504,6 +515,8 @@ PyList_GetSlice(PyObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
         PyErr_BadInternalCall();
         return NULL;
     }
+    PyObject *ret;
+    Py_BEGIN_CRITICAL_SECTION(a);
     if (ilow < 0) {
         ilow = 0;
     }
@@ -516,7 +529,9 @@ PyList_GetSlice(PyObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
     else if (ihigh > Py_SIZE(a)) {
         ihigh = Py_SIZE(a);
     }
-    return list_slice((PyListObject *)a, ilow, ihigh);
+    ret = list_slice((PyListObject *)a, ilow, ihigh);
+    Py_END_CRITICAL_SECTION();
+    return ret;
 }
 
 static PyObject *

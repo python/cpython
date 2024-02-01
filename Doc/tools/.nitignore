@@ -4,15 +4,12 @@
 
 Doc/c-api/descriptor.rst
 Doc/c-api/exceptions.rst
-Doc/c-api/file.rst
 Doc/c-api/float.rst
 Doc/c-api/gcsupport.rst
 Doc/c-api/init.rst
 Doc/c-api/init_config.rst
 Doc/c-api/intro.rst
-Doc/c-api/memoryview.rst
 Doc/c-api/module.rst
-Doc/c-api/object.rst
 Doc/c-api/stable.rst
 Doc/c-api/sys.rst
 Doc/c-api/type.rst
@@ -28,14 +25,11 @@ Doc/library/asyncio-policy.rst
 Doc/library/asyncio-subprocess.rst
 Doc/library/bdb.rst
 Doc/library/collections.rst
-Doc/library/csv.rst
-Doc/library/datetime.rst
 Doc/library/dbm.rst
 Doc/library/decimal.rst
 Doc/library/email.charset.rst
 Doc/library/email.compat32-message.rst
 Doc/library/email.errors.rst
-Doc/library/email.mime.rst
 Doc/library/email.parser.rst
 Doc/library/email.policy.rst
 Doc/library/enum.rst
@@ -90,12 +84,10 @@ Doc/library/xmlrpc.server.rst
 Doc/library/zlib.rst
 Doc/reference/compound_stmts.rst
 Doc/reference/datamodel.rst
-Doc/reference/import.rst
 Doc/tutorial/datastructures.rst
 Doc/using/windows.rst
 Doc/whatsnew/2.0.rst
 Doc/whatsnew/2.1.rst
-Doc/whatsnew/2.2.rst
 Doc/whatsnew/2.4.rst
 Doc/whatsnew/2.5.rst
 Doc/whatsnew/2.6.rst

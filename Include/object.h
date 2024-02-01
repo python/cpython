@@ -212,7 +212,9 @@ struct _object {
 struct _PyMutex { uint8_t v; };
 
 struct _object {
-    uintptr_t ob_tid;           // thread id (or zero)
+    // ob_tid stores the thread id (or zero). It is also used by the GC to
+    // store linked lists and the computed "gc_refs" refcount.
+    uintptr_t ob_tid;
     uint16_t _padding;
     struct _PyMutex ob_mutex;   // per-object lock
     uint8_t ob_gc_bits;         // gc-related state
@@ -426,7 +428,11 @@ static inline void Py_SET_TYPE(PyObject *ob, PyTypeObject *type) {
 static inline void Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size) {
     assert(ob->ob_base.ob_type != &PyLong_Type);
     assert(ob->ob_base.ob_type != &PyBool_Type);
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_store_ssize_relaxed(&ob->ob_size, size);
+#else
     ob->ob_size = size;
+#endif
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_SET_SIZE(ob, size) Py_SET_SIZE(_PyVarObject_CAST(ob), (size))

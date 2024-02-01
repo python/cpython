@@ -262,7 +262,7 @@ _PyDict_ClearFreeList(PyInterpreterState *interp)
         PyObject_GC_Del(op);
     }
     while (state->keys_numfree) {
-        PyObject_Free(state->keys_free_list[--state->keys_numfree]);
+        PyMem_Free(state->keys_free_list[--state->keys_numfree]);
     }
 #endif
 }
@@ -332,6 +332,22 @@ dictkeys_decref(PyInterpreterState *interp, PyDictKeysObject *dk)
     _Py_DecRefTotal(_PyInterpreterState_GET());
 #endif
     if (--dk->dk_refcnt == 0) {
+        if (DK_IS_UNICODE(dk)) {
+            PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dk);
+            Py_ssize_t i, n;
+            for (i = 0, n = dk->dk_nentries; i < n; i++) {
+                Py_XDECREF(entries[i].me_key);
+                Py_XDECREF(entries[i].me_value);
+            }
+        }
+        else {
+            PyDictKeyEntry *entries = DK_ENTRIES(dk);
+            Py_ssize_t i, n;
+            for (i = 0, n = dk->dk_nentries; i < n; i++) {
+                Py_XDECREF(entries[i].me_key);
+                Py_XDECREF(entries[i].me_value);
+            }
+        }
         free_keys_object(interp, dk);
     }
 }
@@ -640,9 +656,9 @@ new_keys_object(PyInterpreterState *interp, uint8_t log2_size, bool unicode)
     else
 #endif
     {
-        dk = PyObject_Malloc(sizeof(PyDictKeysObject)
-                             + ((size_t)1 << log2_bytes)
-                             + entry_size * usable);
+        dk = PyMem_Malloc(sizeof(PyDictKeysObject)
+                          + ((size_t)1 << log2_bytes)
+                          + entry_size * usable);
         if (dk == NULL) {
             PyErr_NoMemory();
             return NULL;
@@ -666,23 +682,6 @@ new_keys_object(PyInterpreterState *interp, uint8_t log2_size, bool unicode)
 static void
 free_keys_object(PyInterpreterState *interp, PyDictKeysObject *keys)
 {
-    assert(keys != Py_EMPTY_KEYS);
-    if (DK_IS_UNICODE(keys)) {
-        PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(keys);
-        Py_ssize_t i, n;
-        for (i = 0, n = keys->dk_nentries; i < n; i++) {
-            Py_XDECREF(entries[i].me_key);
-            Py_XDECREF(entries[i].me_value);
-        }
-    }
-    else {
-        PyDictKeyEntry *entries = DK_ENTRIES(keys);
-        Py_ssize_t i, n;
-        for (i = 0, n = keys->dk_nentries; i < n; i++) {
-            Py_XDECREF(entries[i].me_key);
-            Py_XDECREF(entries[i].me_value);
-        }
-    }
 #if PyDict_MAXFREELIST > 0
     struct _Py_dict_state *state = get_dict_state(interp);
 #ifdef Py_DEBUG
@@ -697,7 +696,7 @@ free_keys_object(PyInterpreterState *interp, PyDictKeysObject *keys)
         return;
     }
 #endif
-    PyObject_Free(keys);
+    PyMem_Free(keys);
 }
 
 static inline PyDictValues*
@@ -798,7 +797,7 @@ clone_combined_dict_keys(PyDictObject *orig)
     assert(orig->ma_keys->dk_refcnt == 1);
 
     size_t keys_size = _PyDict_KeysSize(orig->ma_keys);
-    PyDictKeysObject *keys = PyObject_Malloc(keys_size);
+    PyDictKeysObject *keys = PyMem_Malloc(keys_size);
     if (keys == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -875,140 +874,138 @@ lookdict_index(PyDictKeysObject *k, Py_hash_t hash, Py_ssize_t index)
     Py_UNREACHABLE();
 }
 
+static inline Py_ALWAYS_INLINE Py_ssize_t
+do_lookup(PyDictObject *mp, PyDictKeysObject *dk, PyObject *key, Py_hash_t hash,
+          Py_ssize_t (*check_lookup)(PyDictObject *, PyDictKeysObject *, void *, Py_ssize_t ix, PyObject *key, Py_hash_t))
+{
+    void *ep0 = _DK_ENTRIES(dk);
+    size_t mask = DK_MASK(dk);
+    size_t perturb = hash;
+    size_t i = (size_t)hash & mask;
+    Py_ssize_t ix;
+    for (;;) {
+        ix = dictkeys_get_index(dk, i);
+        if (ix >= 0) {
+            Py_ssize_t cmp = check_lookup(mp, dk, ep0, ix, key, hash);
+            if (cmp < 0) {
+                return cmp;
+            } else if (cmp) {
+                return ix;
+            }
+        }
+        else if (ix == DKIX_EMPTY) {
+            return DKIX_EMPTY;
+        }
+        perturb >>= PERTURB_SHIFT;
+        i = mask & (i*5 + perturb + 1);
+
+        // Manual loop unrolling
+        ix = dictkeys_get_index(dk, i);
+        if (ix >= 0) {
+            Py_ssize_t cmp = check_lookup(mp, dk, ep0, ix, key, hash);
+            if (cmp < 0) {
+                return cmp;
+            } else if (cmp) {
+                return ix;
+            }
+        }
+        else if (ix == DKIX_EMPTY) {
+            return DKIX_EMPTY;
+        }
+        perturb >>= PERTURB_SHIFT;
+        i = mask & (i*5 + perturb + 1);
+    }
+    Py_UNREACHABLE();
+}
+
+static inline Py_ALWAYS_INLINE Py_ssize_t
+compare_unicode_generic(PyDictObject *mp, PyDictKeysObject *dk,
+                        void *ep0, Py_ssize_t ix, PyObject *key, Py_hash_t hash)
+{
+    PyDictUnicodeEntry *ep = &((PyDictUnicodeEntry *)ep0)[ix];
+    assert(ep->me_key != NULL);
+    assert(PyUnicode_CheckExact(ep->me_key));
+    assert(!PyUnicode_CheckExact(key));
+    // TODO: Thread safety
+
+    if (unicode_get_hash(ep->me_key) == hash) {
+        PyObject *startkey = ep->me_key;
+        Py_INCREF(startkey);
+        int cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
+        Py_DECREF(startkey);
+        if (cmp < 0) {
+            return DKIX_ERROR;
+        }
+        if (dk == mp->ma_keys && ep->me_key == startkey) {
+            return cmp;
+        }
+        else {
+            /* The dict was mutated, restart */
+            return DKIX_KEY_CHANGED;
+        }
+    }
+    return 0;
+}
+
 // Search non-Unicode key from Unicode table
 static Py_ssize_t
 unicodekeys_lookup_generic(PyDictObject *mp, PyDictKeysObject* dk, PyObject *key, Py_hash_t hash)
 {
-    PyDictUnicodeEntry *ep0 = DK_UNICODE_ENTRIES(dk);
-    size_t mask = DK_MASK(dk);
-    size_t perturb = hash;
-    size_t i = (size_t)hash & mask;
-    Py_ssize_t ix;
-    for (;;) {
-        ix = dictkeys_get_index(dk, i);
-        if (ix >= 0) {
-            PyDictUnicodeEntry *ep = &ep0[ix];
-            assert(ep->me_key != NULL);
-            assert(PyUnicode_CheckExact(ep->me_key));
-            if (ep->me_key == key) {
-                return ix;
-            }
-            if (unicode_get_hash(ep->me_key) == hash) {
-                PyObject *startkey = ep->me_key;
-                Py_INCREF(startkey);
-                int cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
-                Py_DECREF(startkey);
-                if (cmp < 0) {
-                    return DKIX_ERROR;
-                }
-                if (dk == mp->ma_keys && ep->me_key == startkey) {
-                    if (cmp > 0) {
-                        return ix;
-                    }
-                }
-                else {
-                    /* The dict was mutated, restart */
-                    return DKIX_KEY_CHANGED;
-                }
-            }
-        }
-        else if (ix == DKIX_EMPTY) {
-            return DKIX_EMPTY;
-        }
-        perturb >>= PERTURB_SHIFT;
-        i = mask & (i*5 + perturb + 1);
-    }
-    Py_UNREACHABLE();
+    return do_lookup(mp, dk, key, hash, compare_unicode_generic);
 }
 
-// Search Unicode key from Unicode table.
+static inline Py_ALWAYS_INLINE Py_ssize_t
+compare_unicode_unicode(PyDictObject *mp, PyDictKeysObject *dk,
+                        void *ep0, Py_ssize_t ix, PyObject *key, Py_hash_t hash)
+{
+    PyDictUnicodeEntry *ep = &((PyDictUnicodeEntry *)ep0)[ix];
+    assert(ep->me_key != NULL);
+    assert(PyUnicode_CheckExact(ep->me_key));
+    if (ep->me_key == key ||
+            (unicode_get_hash(ep->me_key) == hash && unicode_eq(ep->me_key, key))) {
+        return 1;
+    }
+    return 0;
+}
+
 static Py_ssize_t _Py_HOT_FUNCTION
 unicodekeys_lookup_unicode(PyDictKeysObject* dk, PyObject *key, Py_hash_t hash)
 {
-    PyDictUnicodeEntry *ep0 = DK_UNICODE_ENTRIES(dk);
-    size_t mask = DK_MASK(dk);
-    size_t perturb = hash;
-    size_t i = (size_t)hash & mask;
-    Py_ssize_t ix;
-    for (;;) {
-        ix = dictkeys_get_index(dk, i);
-        if (ix >= 0) {
-            PyDictUnicodeEntry *ep = &ep0[ix];
-            assert(ep->me_key != NULL);
-            assert(PyUnicode_CheckExact(ep->me_key));
-            if (ep->me_key == key ||
-                    (unicode_get_hash(ep->me_key) == hash && unicode_eq(ep->me_key, key))) {
-                return ix;
-            }
-        }
-        else if (ix == DKIX_EMPTY) {
-            return DKIX_EMPTY;
-        }
-        perturb >>= PERTURB_SHIFT;
-        i = mask & (i*5 + perturb + 1);
-        // Manual loop unrolling
-        ix = dictkeys_get_index(dk, i);
-        if (ix >= 0) {
-            PyDictUnicodeEntry *ep = &ep0[ix];
-            assert(ep->me_key != NULL);
-            assert(PyUnicode_CheckExact(ep->me_key));
-            if (ep->me_key == key ||
-                    (unicode_get_hash(ep->me_key) == hash && unicode_eq(ep->me_key, key))) {
-                return ix;
-            }
-        }
-        else if (ix == DKIX_EMPTY) {
-            return DKIX_EMPTY;
-        }
-        perturb >>= PERTURB_SHIFT;
-        i = mask & (i*5 + perturb + 1);
-    }
-    Py_UNREACHABLE();
+    return do_lookup(NULL, dk, key, hash, compare_unicode_unicode);
 }
 
-// Search key from Generic table.
+static inline Py_ALWAYS_INLINE Py_ssize_t
+compare_generic(PyDictObject *mp, PyDictKeysObject *dk,
+                void *ep0, Py_ssize_t ix, PyObject *key, Py_hash_t hash)
+{
+    PyDictKeyEntry *ep = &((PyDictKeyEntry *)ep0)[ix];
+    assert(ep->me_key != NULL);
+    if (ep->me_key == key) {
+        return 1;
+    }
+    if (ep->me_hash == hash) {
+        PyObject *startkey = ep->me_key;
+        Py_INCREF(startkey);
+        int cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
+        Py_DECREF(startkey);
+        if (cmp < 0) {
+            return DKIX_ERROR;
+        }
+        if (dk == mp->ma_keys && ep->me_key == startkey) {
+            return cmp;
+        }
+        else {
+            /* The dict was mutated, restart */
+            return DKIX_KEY_CHANGED;
+        }
+    }
+    return 0;
+}
+
 static Py_ssize_t
 dictkeys_generic_lookup(PyDictObject *mp, PyDictKeysObject* dk, PyObject *key, Py_hash_t hash)
 {
-    PyDictKeyEntry *ep0 = DK_ENTRIES(dk);
-    size_t mask = DK_MASK(dk);
-    size_t perturb = hash;
-    size_t i = (size_t)hash & mask;
-    Py_ssize_t ix;
-    for (;;) {
-        ix = dictkeys_get_index(dk, i);
-        if (ix >= 0) {
-            PyDictKeyEntry *ep = &ep0[ix];
-            assert(ep->me_key != NULL);
-            if (ep->me_key == key) {
-                return ix;
-            }
-            if (ep->me_hash == hash) {
-                PyObject *startkey = ep->me_key;
-                Py_INCREF(startkey);
-                int cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
-                Py_DECREF(startkey);
-                if (cmp < 0) {
-                    return DKIX_ERROR;
-                }
-                if (dk == mp->ma_keys && ep->me_key == startkey) {
-                    if (cmp > 0) {
-                        return ix;
-                    }
-                }
-                else {
-                    /* The dict was mutated, restart */
-                    return DKIX_KEY_CHANGED;
-                }
-            }
-        }
-        else if (ix == DKIX_EMPTY) {
-            return DKIX_EMPTY;
-        }
-        perturb >>= PERTURB_SHIFT;
-        i = mask & (i*5 + perturb + 1);
-    }
-    Py_UNREACHABLE();
+    return do_lookup(mp, dk, key, hash, compare_generic);
 }
 
 /* Lookup a string in a (all unicode) dict keys.
@@ -1544,32 +1541,13 @@ dictresize(PyInterpreterState *interp, PyDictObject *mp,
             }
         }
 
-        // We can not use free_keys_object here because key's reference
-        // are moved already.
         if (oldkeys != Py_EMPTY_KEYS) {
 #ifdef Py_REF_DEBUG
             _Py_DecRefTotal(_PyInterpreterState_GET());
 #endif
             assert(oldkeys->dk_kind != DICT_KEYS_SPLIT);
             assert(oldkeys->dk_refcnt == 1);
-#if PyDict_MAXFREELIST > 0
-            struct _Py_dict_state *state = get_dict_state(interp);
-#ifdef Py_DEBUG
-            // dictresize() must not be called after _PyDict_Fini()
-            assert(state->keys_numfree != -1);
-#endif
-            if (DK_LOG_SIZE(oldkeys) == PyDict_LOG_MINSIZE &&
-                    DK_IS_UNICODE(oldkeys) &&
-                    state->keys_numfree < PyDict_MAXFREELIST)
-            {
-                state->keys_free_list[state->keys_numfree++] = oldkeys;
-                OBJECT_STAT_INC(to_freelist);
-            }
-            else
-#endif
-            {
-                PyObject_Free(oldkeys);
-            }
+            free_keys_object(interp, oldkeys);
         }
     }
 

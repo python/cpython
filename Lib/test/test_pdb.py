@@ -2661,7 +2661,7 @@ def quux():
     pass
 """.encode(),
             'bœr',
-            ('bœr', 4),
+            ('bœr', 5),
         )
 
     def test_find_function_found_with_encoding_cookie(self):
@@ -2678,7 +2678,7 @@ def quux():
     pass
 """.encode('iso-8859-15'),
             'bœr',
-            ('bœr', 5),
+            ('bœr', 6),
         )
 
     def test_find_function_found_with_bom(self):
@@ -2688,8 +2688,33 @@ def bœr():
     pass
 """.encode(),
             'bœr',
-            ('bœr', 1),
+            ('bœr', 2),
         )
+
+    def test_find_function_first_executable_line(self):
+        code = textwrap.dedent("""\
+            def foo(): pass
+
+            def bar():
+                pass  # line 4
+
+            def baz():
+                # comment
+                pass  # line 8
+
+            def mul():
+                # code on multiple lines
+                code = compile(   # line 12
+                    'def f()',
+                    '<string>',
+                    'exec',
+                )
+        """).encode()
+
+        self._assert_find_function(code, 'foo', ('foo', 1))
+        self._assert_find_function(code, 'bar', ('bar', 4))
+        self._assert_find_function(code, 'baz', ('baz', 8))
+        self._assert_find_function(code, 'mul', ('mul', 12))
 
     def test_issue7964(self):
         # open the file as binary so we can force \r\n newline
@@ -3055,6 +3080,87 @@ def bœr():
         stdout, stderr = self.run_pdb_module(script, commands)
         self.assertTrue(any("__main__.py(4)<module>()"
                             in l for l in stdout.splitlines()), stdout)
+
+    def test_file_modified_after_execution(self):
+        script = """
+            print("hello")
+        """
+
+        commands = """
+            filename = $_frame.f_code.co_filename
+            f = open(filename, "w")
+            f.write("print('goodbye')")
+            f.close()
+            ll
+        """
+
+        stdout, stderr = self.run_pdb_script(script, commands)
+        self.assertIn("WARNING:", stdout)
+        self.assertIn("was edited", stdout)
+
+    def test_file_modified_after_execution_with_multiple_instances(self):
+        script = """
+            import pdb; pdb.Pdb().set_trace()
+            with open(__file__, "w") as f:
+                f.write("print('goodbye')\\n" * 5)
+            import pdb; pdb.Pdb().set_trace()
+        """
+
+        commands = """
+            continue
+            continue
+        """
+
+        filename = 'main.py'
+        with open(filename, 'w') as f:
+            f.write(textwrap.dedent(script))
+        self.addCleanup(os_helper.unlink, filename)
+        self.addCleanup(os_helper.rmtree, '__pycache__')
+        cmd = [sys.executable, filename]
+        with subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stdin=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                env = {**os.environ, 'PYTHONIOENCODING': 'utf-8'},
+        ) as proc:
+            stdout, _ = proc.communicate(str.encode(commands))
+        stdout = stdout and bytes.decode(stdout)
+
+        self.assertEqual(proc.returncode, 0)
+        self.assertIn("WARNING:", stdout)
+        self.assertIn("was edited", stdout)
+
+    def test_file_modified_after_execution_with_restart(self):
+        script = """
+            import random
+            # Any code with a source to step into so this script is not checked
+            # for changes when it's being changed
+            random.randint(1, 4)
+            print("hello")
+        """
+
+        commands = """
+            ll
+            n
+            s
+            filename = $_frame.f_back.f_code.co_filename
+            def change_file(content, filename):
+                with open(filename, "w") as f:
+                    f.write(f"print({content})")
+
+            change_file('world', filename)
+            restart
+            ll
+        """
+
+        stdout, stderr = self.run_pdb_script(script, commands)
+        # Make sure the code is running correctly and the file is edited
+        self.assertIn("hello", stdout)
+        self.assertIn("world", stdout)
+        # The file was edited, but restart should clear the state and consider
+        # the file as up to date
+        self.assertNotIn("WARNING:", stdout)
 
     def test_relative_imports(self):
         self.module_name = 't_main'
