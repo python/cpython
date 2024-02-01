@@ -123,7 +123,7 @@ Examining Symbol Tables
 
 .. class:: Class
 
-   A namespace of a class.  This class inherits :class:`SymbolTable`.
+   A namespace of a class.  This class inherits from :class:`SymbolTable`.
 
    .. method:: get_methods()
 
