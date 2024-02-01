@@ -235,6 +235,10 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
                 await waiter
             except BaseException:
                 transport.close()
+                # gh-109534: When an exception is raised by the SSLProtocol object the
+                # exception set in this future can keep the protocol object alive and
+                # cause a reference cycle.
+                waiter = None
                 raise
                 # It's now up to the protocol to handle the connection.
 
