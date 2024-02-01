@@ -1,0 +1,3 @@
+No longer specialize calls to classes, if those classes have metaclasses.
+Fixes bug where the ``__call__`` method of the metaclass was not being
+called.
