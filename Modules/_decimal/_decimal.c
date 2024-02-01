@@ -82,6 +82,9 @@ typedef struct {
     /* Convert rationals for comparison */
     PyObject *Rational;
 
+    /* Invariant: NULL or pointer to _pydecimal.Decimal */
+    PyObject *PyDecimal;
+
     PyObject *SignalTuple;
 
     struct DecCondMap *signal_map;
@@ -3361,6 +3364,55 @@ dict_get_item_string(PyObject *dict, const char *key, PyObject **valueobj, const
     return 0;
 }
 
+/*
+ * Fallback _pydecimal formatting for new format specifiers that mpdecimal does
+ * not yet support. As documented, libmpdec follows the PEP-3101 format language:
+ * https://www.bytereef.org/mpdecimal/doc/libmpdec/assign-convert.html#to-string
+ */
+static PyObject *
+pydec_format(PyObject *dec, PyObject *fmt, decimal_state *state)
+{
+    PyObject *result;
+    PyObject *pydec;
+    PyObject *u;
+
+    if (state->PyDecimal == NULL) {
+        PyObject *obj = PyImport_ImportModule("_pydecimal");
+        if (obj == NULL) {
+            return NULL;
+        }
+
+        state->PyDecimal = PyObject_GetAttrString(obj, "Decimal");
+        Py_DECREF(obj);
+
+        if (state->PyDecimal == NULL) {
+            return NULL;
+        }
+    }
+
+    u = dec_str(dec);
+    if (u == NULL) {
+        return NULL;
+    }
+
+    pydec = PyObject_CallFunctionObjArgs(state->PyDecimal, u, NULL);
+    Py_DECREF(u);
+    if (pydec == NULL) {
+        return NULL;
+    }
+
+    result = PyObject_CallMethod(pydec, "__format__", "(O)", fmt);
+    Py_DECREF(pydec);
+
+    if (result == NULL) {
+        /* Do not confuse users with the _pydecimal exception */
+        PyErr_Clear();
+        PyErr_SetString(PyExc_ValueError, "invalid format string");
+    }
+
+    return result;
+}
+
 /* Formatted representation of a PyDecObject. */
 static PyObject *
 dec_format(PyObject *dec, PyObject *args)
@@ -3417,10 +3469,13 @@ dec_format(PyObject *dec, PyObject *args)
     }
 
     if (!mpd_parse_fmt_str(&spec, fmt, CtxCaps(context))) {
-        PyErr_SetString(PyExc_ValueError,
-            "invalid format string");
-        goto finish;
+        if (replace_fillchar) {
+            PyMem_Free(fmt);
+        }
+
+        return pydec_format(dec, fmtarg, state);
     }
+
     if (replace_fillchar) {
         /* In order to avoid clobbering parts of UTF-8 thousands separators or
            decimal points when the substitution is reversed later, the actual
@@ -5875,6 +5930,9 @@ _decimal_exec(PyObject *m)
     Py_CLEAR(collections_abc);
     Py_CLEAR(MutableMapping);
 
+    /* For format specifiers not yet supported by libmpdec */
+    state->PyDecimal = NULL;
+
     /* Add types to the module */
     CHECK_INT(PyModule_AddType(m, state->PyDec_Type));
     CHECK_INT(PyModule_AddType(m, state->PyDecContext_Type));
@@ -6080,6 +6138,7 @@ decimal_clear(PyObject *module)
     Py_CLEAR(state->extended_context_template);
     Py_CLEAR(state->Rational);
     Py_CLEAR(state->SignalTuple);
+    Py_CLEAR(state->PyDecimal);
 
     PyMem_Free(state->signal_map);
     PyMem_Free(state->cond_map);
