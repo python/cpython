@@ -259,8 +259,8 @@ mmap
 ----
 
 * The :class:`mmap.mmap` class now has an :meth:`~mmap.mmap.seekable` method
-  that can be used where it requires a file-like object with seekable and
-  the :meth:`~mmap.mmap.seek` method return the new absolute position.
+  that can be used when a seekable file-like object is required.
+  The :meth:`~mmap.mmap.seek` method now returns the new absolute position.
   (Contributed by Donghee Na and Sylvie Liberman in :gh:`111835`.)
 * :class:`mmap.mmap` now has a *trackfd* parameter on Unix; if it is ``False``,
   the file descriptor specified by *fileno* will not be duplicated.
