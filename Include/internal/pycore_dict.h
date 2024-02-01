@@ -70,7 +70,7 @@ extern PyObject* _PyDictView_Intersect(PyObject* self, PyObject *other);
 
 /* runtime lifecycle */
 
-extern void _PyDict_Fini(_PyFreeListState *state);
+extern void _PyDict_Fini(PyInterpreterState *state);
 
 
 /* other API */
