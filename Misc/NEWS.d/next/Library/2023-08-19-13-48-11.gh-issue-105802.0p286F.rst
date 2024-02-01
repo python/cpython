@@ -1,2 +1,2 @@
-In `:mod:`email` library, avoid another IndexError in Message-Id parsing for
+In :mod:`email` library, avoid another IndexError in Message-Id parsing for
 improper tokens; fixes <[broken@microsoft.com]> case
