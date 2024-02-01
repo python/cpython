@@ -2959,7 +2959,7 @@ class TestWithDirectory(unittest.TestCase):
 
             directory = os.path.join(TESTFN2, "directory2")
             os.mkdir(directory)
-            mode = os.stat(directory).st_mode
+            mode = os.stat(directory).st_mode & 0xFFFF
             zf.write(directory, arcname="directory2/")
             zinfo = zf.filelist[1]
             self.assertEqual(zinfo.filename, "directory2/")
