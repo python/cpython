@@ -1878,7 +1878,15 @@ _PySys_GetSizeOf(PyObject *o)
         return (size_t)-1;
     }
 
-    return (size_t)size + _PyType_PreHeaderSize(Py_TYPE(o));
+    size_t presize = 0;
+    if (!Py_IS_TYPE(o, &PyType_Type) ||
+         PyType_HasFeature((PyTypeObject *)o, Py_TPFLAGS_HEAPTYPE))
+    {
+        /* Add the size of the pre-header if "o" is not a static type */
+        presize = _PyType_PreHeaderSize(Py_TYPE(o));
+    }
+
+    return (size_t)size + presize;
 }
 
 static PyObject *

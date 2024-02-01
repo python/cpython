@@ -1752,8 +1752,18 @@ module_exec(PyObject *module)
         return 1;
     }
 
+    Py_ssize_t sizeof_gc_head = 0;
+#ifndef Py_GIL_DISABLED
+    sizeof_gc_head = sizeof(PyGC_Head);
+#endif
+
     if (PyModule_Add(module, "SIZEOF_PYGC_HEAD",
-                        PyLong_FromSsize_t(sizeof(PyGC_Head))) < 0) {
+                        PyLong_FromSsize_t(sizeof_gc_head)) < 0) {
+        return 1;
+    }
+
+    if (PyModule_Add(module, "SIZEOF_MANAGED_PRE_HEADER",
+                        PyLong_FromSsize_t(2 * sizeof(PyObject*))) < 0) {
         return 1;
     }
 
