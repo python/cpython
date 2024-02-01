@@ -1,3 +1,0 @@
-Passing more than one positional argument to :func:`sqlite3.connect` and the
-:class:`sqlite3.Connection` constructor is deprecated. The remaining parameters
-will become keyword-only in Python 3.15. Patch by Erlend E. Aasland.

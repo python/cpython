@@ -1,3 +1,4 @@
+import errno
 import sys
 import os
 import io
@@ -42,7 +43,7 @@ def sha256sum(data):
 
 TEMPDIR = os.path.abspath(os_helper.TESTFN) + "-tardir"
 tarextdir = TEMPDIR + '-extract-test'
-tarname = support.findfile("testtar.tar")
+tarname = support.findfile("testtar.tar", subdir="archivetestdata")
 gzipname = os.path.join(TEMPDIR, "testtar.tar.gz")
 bz2name = os.path.join(TEMPDIR, "testtar.tar.bz2")
 xzname = os.path.join(TEMPDIR, "testtar.tar.xz")
@@ -322,11 +323,23 @@ class ListTest(ReadTest, unittest.TestCase):
         # accessories if verbose flag is being used
         # ...
         # ?rw-r--r-- tarfile/tarfile     7011 2003-01-06 07:19:43 ustar/conttype
-        # ?rw-r--r-- tarfile/tarfile     7011 2003-01-06 07:19:43 ustar/regtype
+        # -rw-r--r-- tarfile/tarfile     7011 2003-01-06 07:19:43 ustar/regtype
+        # drwxr-xr-x tarfile/tarfile        0 2003-01-05 15:19:43 ustar/dirtype/
         # ...
-        self.assertRegex(out, (br'\?rw-r--r-- tarfile/tarfile\s+7011 '
-                               br'\d{4}-\d\d-\d\d\s+\d\d:\d\d:\d\d '
-                               br'ustar/\w+type ?\r?\n') * 2)
+        #
+        # Array of values to modify the regex below:
+        #  ((file_type, file_permissions, file_length), ...)
+        type_perm_lengths = (
+            (br'\?', b'rw-r--r--', b'7011'), (b'-', b'rw-r--r--', b'7011'),
+            (b'd', b'rwxr-xr-x', b'0'), (b'd', b'rwxr-xr-x', b'255'),
+            (br'\?', b'rw-r--r--', b'0'), (b'l', b'rwxrwxrwx', b'0'),
+            (b'b', b'rw-rw----', b'3,0'), (b'c', b'rw-rw-rw-', b'1,3'),
+            (b'p', b'rw-r--r--', b'0'))
+        self.assertRegex(out, b''.join(
+            [(tp + (br'%s tarfile/tarfile\s+%s ' % (perm, ln) +
+                    br'\d{4}-\d\d-\d\d\s+\d\d:\d\d:\d\d '
+                    br'ustar/\w+type[/>\sa-z-]*\n')) for tp, perm, ln
+             in type_perm_lengths]))
         # Make sure it prints the source of link with verbose flag
         self.assertIn(b'ustar/symtype -> regtype', out)
         self.assertIn(b'./ustar/linktest2/symtype -> ../linktest1/regtype', out)
@@ -490,7 +503,7 @@ class CommonReadTest(ReadTest):
         # bpo-39017 (CVE-2019-20907): reading a zero-length header should fail
         # with an exception
         with self.assertRaisesRegex(tarfile.ReadError, "file could not be opened successfully"):
-            with tarfile.open(support.findfile('recursion.tar')) as tar:
+            with tarfile.open(support.findfile('recursion.tar', subdir='archivetestdata')):
                 pass
 
     def test_extractfile_name(self):
@@ -2564,7 +2577,7 @@ class MiscTest(unittest.TestCase):
         support.check__all__(self, tarfile, not_exported=not_exported)
 
     def test_useful_error_message_when_modules_missing(self):
-        fname = os.path.join(os.path.dirname(__file__), 'testtar.tar.xz')
+        fname = os.path.join(os.path.dirname(__file__), 'archivetestdata', 'testtar.tar.xz')
         with self.assertRaises(tarfile.ReadError) as excinfo:
             error = tarfile.CompressionError('lzma module is not available'),
             with unittest.mock.patch.object(tarfile.TarFile, 'xzopen', side_effect=error):
@@ -2587,16 +2600,17 @@ class CommandLineTest(unittest.TestCase):
         return script_helper.assert_python_failure('-m', 'tarfile', *args)
 
     def make_simple_tarfile(self, tar_name):
-        files = [support.findfile('tokenize_tests.txt'),
+        files = [support.findfile('tokenize_tests.txt',
+                                  subdir='tokenizedata'),
                  support.findfile('tokenize_tests-no-coding-cookie-'
-                                  'and-utf8-bom-sig-only.txt')]
+                                  'and-utf8-bom-sig-only.txt',
+                                  subdir='tokenizedata')]
         self.addCleanup(os_helper.unlink, tar_name)
         with tarfile.open(tar_name, 'w') as tf:
             for tardata in files:
                 tf.add(tardata, arcname=os.path.basename(tardata))
 
     def make_evil_tarfile(self, tar_name):
-        files = [support.findfile('tokenize_tests.txt')]
         self.addCleanup(os_helper.unlink, tar_name)
         with tarfile.open(tar_name, 'w') as tf:
             benign = tarfile.TarInfo('benign')
@@ -2628,7 +2642,7 @@ class CommandLineTest(unittest.TestCase):
                 self.assertIn(b'is a tar archive.\n', out)
 
     def test_test_command_invalid_file(self):
-        zipname = support.findfile('zipdir.zip')
+        zipname = support.findfile('zipdir.zip', subdir='archivetestdata')
         rc, out, err = self.tarfilecmd_failure('-t', zipname)
         self.assertIn(b' is not a tar archive.', err)
         self.assertEqual(out, b'')
@@ -2670,16 +2684,18 @@ class CommandLineTest(unittest.TestCase):
                 self.assertEqual(out, expected)
 
     def test_list_command_invalid_file(self):
-        zipname = support.findfile('zipdir.zip')
+        zipname = support.findfile('zipdir.zip', subdir='archivetestdata')
         rc, out, err = self.tarfilecmd_failure('-l', zipname)
         self.assertIn(b' is not a tar archive.', err)
         self.assertEqual(out, b'')
         self.assertEqual(rc, 1)
 
     def test_create_command(self):
-        files = [support.findfile('tokenize_tests.txt'),
+        files = [support.findfile('tokenize_tests.txt',
+                                  subdir='tokenizedata'),
                  support.findfile('tokenize_tests-no-coding-cookie-'
-                                  'and-utf8-bom-sig-only.txt')]
+                                  'and-utf8-bom-sig-only.txt',
+                                  subdir='tokenizedata')]
         for opt in '-c', '--create':
             try:
                 out = self.tarfilecmd(opt, tmpname, *files)
@@ -2690,9 +2706,11 @@ class CommandLineTest(unittest.TestCase):
                 os_helper.unlink(tmpname)
 
     def test_create_command_verbose(self):
-        files = [support.findfile('tokenize_tests.txt'),
+        files = [support.findfile('tokenize_tests.txt',
+                                  subdir='tokenizedata'),
                  support.findfile('tokenize_tests-no-coding-cookie-'
-                                  'and-utf8-bom-sig-only.txt')]
+                                  'and-utf8-bom-sig-only.txt',
+                                  subdir='tokenizedata')]
         for opt in '-v', '--verbose':
             try:
                 out = self.tarfilecmd(opt, '-c', tmpname, *files,
@@ -2704,7 +2722,7 @@ class CommandLineTest(unittest.TestCase):
                 os_helper.unlink(tmpname)
 
     def test_create_command_dotless_filename(self):
-        files = [support.findfile('tokenize_tests.txt')]
+        files = [support.findfile('tokenize_tests.txt', subdir='tokenizedata')]
         try:
             out = self.tarfilecmd('-c', dotlessname, *files)
             self.assertEqual(out, b'')
@@ -2715,7 +2733,7 @@ class CommandLineTest(unittest.TestCase):
 
     def test_create_command_dot_started_filename(self):
         tar_name = os.path.join(TEMPDIR, ".testtar")
-        files = [support.findfile('tokenize_tests.txt')]
+        files = [support.findfile('tokenize_tests.txt', subdir='tokenizedata')]
         try:
             out = self.tarfilecmd('-c', tar_name, *files)
             self.assertEqual(out, b'')
@@ -2725,9 +2743,11 @@ class CommandLineTest(unittest.TestCase):
             os_helper.unlink(tar_name)
 
     def test_create_command_compressed(self):
-        files = [support.findfile('tokenize_tests.txt'),
+        files = [support.findfile('tokenize_tests.txt',
+                                  subdir='tokenizedata'),
                  support.findfile('tokenize_tests-no-coding-cookie-'
-                                  'and-utf8-bom-sig-only.txt')]
+                                  'and-utf8-bom-sig-only.txt',
+                                  subdir='tokenizedata')]
         for filetype in (GzipTest, Bz2Test, LzmaTest):
             if not filetype.open:
                 continue
@@ -2789,7 +2809,7 @@ class CommandLineTest(unittest.TestCase):
             os_helper.rmtree(tarextdir)
 
     def test_extract_command_invalid_file(self):
-        zipname = support.findfile('zipdir.zip')
+        zipname = support.findfile('zipdir.zip', subdir='archivetestdata')
         with os_helper.temp_cwd(tarextdir):
             rc, out, err = self.tarfilecmd_failure('-e', zipname)
         self.assertIn(b' is not a tar archive.', err)
@@ -3444,7 +3464,7 @@ class TestExtractionFilters(unittest.TestCase):
         path = pathlib.Path(os.path.normpath(self.destdir / name))
         self.assertIn(path, self.expected_paths)
         self.expected_paths.remove(path)
-        if mode is not None and os_helper.can_chmod():
+        if mode is not None and os_helper.can_chmod() and os.name != 'nt':
             got = stat.filemode(stat.S_IMODE(path.stat().st_mode))
             self.assertEqual(got, mode)
         if type is None and isinstance(name, str) and name.endswith('/'):
@@ -3816,14 +3836,26 @@ class TestExtractionFilters(unittest.TestCase):
         tmp_filename = os.path.join(TEMPDIR, "tmp.file")
         with open(tmp_filename, 'w'):
             pass
-        new_mode = (os.stat(tmp_filename).st_mode
-                    | stat.S_ISVTX | stat.S_ISGID | stat.S_ISUID)
-        os.chmod(tmp_filename, new_mode)
-        got_mode = os.stat(tmp_filename).st_mode
-        _t_file = 't' if (got_mode & stat.S_ISVTX) else 'x'
-        _suid_file = 's' if (got_mode & stat.S_ISUID) else 'x'
-        _sgid_file = 's' if (got_mode & stat.S_ISGID) else 'x'
-        os.unlink(tmp_filename)
+        try:
+            new_mode = (os.stat(tmp_filename).st_mode
+                        | stat.S_ISVTX | stat.S_ISGID | stat.S_ISUID)
+            try:
+                os.chmod(tmp_filename, new_mode)
+            except OSError as exc:
+                if exc.errno == getattr(errno, "EFTYPE", 0):
+                    # gh-108948: On FreeBSD, regular users cannot set
+                    # the sticky bit.
+                    self.skipTest("chmod() failed with EFTYPE: "
+                                  "regular users cannot set sticky bit")
+                else:
+                    raise
+
+            got_mode = os.stat(tmp_filename).st_mode
+            _t_file = 't' if (got_mode & stat.S_ISVTX) else 'x'
+            _suid_file = 's' if (got_mode & stat.S_ISUID) else 'x'
+            _sgid_file = 's' if (got_mode & stat.S_ISGID) else 'x'
+        finally:
+            os.unlink(tmp_filename)
 
         os.mkdir(tmp_filename)
         new_mode = (os.stat(tmp_filename).st_mode

@@ -120,4 +120,6 @@ PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalErrorFunc(
     const char *func,
     const char *message);
 
+PyAPI_FUNC(void) PyErr_FormatUnraisable(const char *, ...);
+
 #define Py_FatalError(message) _Py_FatalErrorFunc(__func__, (message))

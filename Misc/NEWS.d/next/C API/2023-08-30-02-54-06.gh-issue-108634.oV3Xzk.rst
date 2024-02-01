@@ -1,3 +1,0 @@
-Python built with :file:`configure` :option:`--with-trace-refs` (tracing
-references) now supports the :ref:`Limited API <limited-c-api>`.  Patch by
-Victor Stinner.

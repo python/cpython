@@ -1,24 +1,22 @@
 
 /* New getargs implementation */
 
+#define PY_CXX_CONST const
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_dict.h"          // _PyDict_HasOnlyStringKeys()
+#include "pycore_modsupport.h"    // export _PyArg_NoKeywords()
 #include "pycore_pylifecycle.h"   // _PyArg_Fini
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /* Export Stable ABIs (abi only) */
 PyAPI_FUNC(int) _PyArg_Parse_SizeT(PyObject *, const char *, ...);
 PyAPI_FUNC(int) _PyArg_ParseTuple_SizeT(PyObject *, const char *, ...);
 PyAPI_FUNC(int) _PyArg_ParseTupleAndKeywords_SizeT(PyObject *, PyObject *,
-                                                  const char *, char **, ...);
+                                                  const char *, const char * const *, ...);
 PyAPI_FUNC(int) _PyArg_VaParse_SizeT(PyObject *, const char *, va_list);
 PyAPI_FUNC(int) _PyArg_VaParseTupleAndKeywords_SizeT(PyObject *, PyObject *,
-                                              const char *, char **, va_list);
+                                              const char *, const char * const *, va_list);
 
 #define FLAG_COMPAT 1
 
@@ -50,14 +48,14 @@ static void seterror(Py_ssize_t, const char *, int *, const char *, const char *
 static const char *convertitem(PyObject *, const char **, va_list *, int, int *,
                                char *, size_t, freelist_t *);
 static const char *converttuple(PyObject *, const char **, va_list *, int,
-                                int *, char *, size_t, int, freelist_t *);
+                                int *, char *, size_t, freelist_t *);
 static const char *convertsimple(PyObject *, const char **, va_list *, int,
                                  char *, size_t, freelist_t *);
 static Py_ssize_t convertbuffer(PyObject *, const void **p, const char **);
 static int getbuffer(PyObject *, Py_buffer *, const char**);
 
 static int vgetargskeywords(PyObject *, PyObject *,
-                            const char *, char **, va_list *, int);
+                            const char *, const char * const *, va_list *, int);
 static int vgetargskeywordsfast(PyObject *, PyObject *,
                             struct _PyArg_Parser *, va_list *, int);
 static int vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
@@ -457,7 +455,7 @@ seterror(Py_ssize_t iarg, const char *msg, int *levels, const char *fname,
 
 static const char *
 converttuple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
-             int *levels, char *msgbuf, size_t bufsize, int toplevel,
+             int *levels, char *msgbuf, size_t bufsize,
              freelist_t *freelist)
 {
     int level = 0;
@@ -480,14 +478,13 @@ converttuple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         }
         else if (c == ':' || c == ';' || c == '\0')
             break;
-        else if (level == 0 && Py_ISALPHA(c))
+        else if (level == 0 && Py_ISALPHA(c) && c != 'e')
             n++;
     }
 
     if (!PySequence_Check(arg) || PyBytes_Check(arg)) {
         levels[0] = 0;
         PyOS_snprintf(msgbuf, bufsize,
-                      toplevel ? "expected %d arguments, not %.50s" :
                       "must be %d-item sequence, not %.50s",
                   n,
                   arg == Py_None ? "None" : Py_TYPE(arg)->tp_name);
@@ -497,18 +494,9 @@ converttuple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     len = PySequence_Size(arg);
     if (len != n) {
         levels[0] = 0;
-        if (toplevel) {
-            PyOS_snprintf(msgbuf, bufsize,
-                          "expected %d argument%s, not %zd",
-                          n,
-                          n == 1 ? "" : "s",
-                          len);
-        }
-        else {
-            PyOS_snprintf(msgbuf, bufsize,
-                          "must be sequence of length %d, not %zd",
-                          n, len);
-        }
+        PyOS_snprintf(msgbuf, bufsize,
+                      "must be sequence of length %d, not %zd",
+                      n, len);
         return msgbuf;
     }
 
@@ -551,7 +539,7 @@ convertitem(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     if (*format == '(' /* ')' */) {
         format++;
         msg = converttuple(arg, &format, p_va, flags, levels, msgbuf,
-                           bufsize, 0, freelist);
+                           bufsize, freelist);
         if (msg == NULL)
             format++;
     }
@@ -1190,17 +1178,15 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                 arg, msgbuf, bufsize);
         format++;
 
-        /* Caller is interested in Py_buffer, and the object
-           supports it directly. */
+        /* Caller is interested in Py_buffer, and the object supports it
+           directly. The request implicitly asks for PyBUF_SIMPLE, so the
+           result is C-contiguous with format 'B'. */
         if (PyObject_GetBuffer(arg, (Py_buffer*)p, PyBUF_WRITABLE) < 0) {
             PyErr_Clear();
             return converterr("read-write bytes-like object",
                               arg, msgbuf, bufsize);
         }
-        if (!PyBuffer_IsContiguous((Py_buffer*)p, 'C')) {
-            PyBuffer_Release((Py_buffer*)p);
-            return converterr("contiguous buffer", arg, msgbuf, bufsize);
-        }
+        assert(PyBuffer_IsContiguous((Py_buffer *)p, 'C'));
         if (addcleanup(p, freelist, cleanup_buffer)) {
             return converterr(
                 "(cleanup problem)",
@@ -1245,15 +1231,12 @@ convertbuffer(PyObject *arg, const void **p, const char **errmsg)
 static int
 getbuffer(PyObject *arg, Py_buffer *view, const char **errmsg)
 {
+    /* PyBUF_SIMPLE implies C-contiguous */
     if (PyObject_GetBuffer(arg, view, PyBUF_SIMPLE) != 0) {
         *errmsg = "bytes-like object";
         return -1;
     }
-    if (!PyBuffer_IsContiguous(view, 'C')) {
-        PyBuffer_Release(view);
-        *errmsg = "contiguous buffer";
-        return -1;
-    }
+    assert(PyBuffer_IsContiguous(view, 'C'));
     return 0;
 }
 
@@ -1265,7 +1248,7 @@ int
 PyArg_ParseTupleAndKeywords(PyObject *args,
                             PyObject *keywords,
                             const char *format,
-                            char **kwlist, ...)
+                            const char * const *kwlist, ...)
 {
     int retval;
     va_list va;
@@ -1289,7 +1272,7 @@ int
 _PyArg_ParseTupleAndKeywords_SizeT(PyObject *args,
                                   PyObject *keywords,
                                   const char *format,
-                                  char **kwlist, ...)
+                                  const char * const *kwlist, ...)
 {
     int retval;
     va_list va;
@@ -1315,7 +1298,7 @@ int
 PyArg_VaParseTupleAndKeywords(PyObject *args,
                               PyObject *keywords,
                               const char *format,
-                              char **kwlist, va_list va)
+                              const char * const *kwlist, va_list va)
 {
     int retval;
     va_list lva;
@@ -1340,7 +1323,7 @@ int
 _PyArg_VaParseTupleAndKeywords_SizeT(PyObject *args,
                                     PyObject *keywords,
                                     const char *format,
-                                    char **kwlist, va_list va)
+                                    const char * const *kwlist, va_list va)
 {
     int retval;
     va_list lva;
@@ -1478,7 +1461,7 @@ PyArg_ValidateKeywordArguments(PyObject *kwargs)
 
 static int
 vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
-                 char **kwlist, va_list *p_va, int flags)
+                 const char * const *kwlist, va_list *p_va, int flags)
 {
     char msgbuf[512];
     int levels[32];
@@ -1733,7 +1716,7 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
                 return cleanreturn(0, &freelist);
             }
             for (i = pos; i < len; i++) {
-                if (_PyUnicode_EqualToASCIIString(key, kwlist[i])) {
+                if (PyUnicode_EqualToUTF8(key, kwlist[i])) {
                     match = 1;
                     break;
                 }
@@ -1885,8 +1868,9 @@ new_kwtuple(const char * const *keywords, int total, int pos)
 }
 
 static int
-_parser_init(struct _PyArg_Parser *parser)
+_parser_init(void *arg)
 {
+    struct _PyArg_Parser *parser = (struct _PyArg_Parser *)arg;
     const char * const *keywords = parser->keywords;
     assert(keywords != NULL);
     assert(parser->pos == 0 &&
@@ -1897,7 +1881,7 @@ _parser_init(struct _PyArg_Parser *parser)
 
     int len, pos;
     if (scan_keywords(keywords, &len, &pos) < 0) {
-        return 0;
+        return -1;
     }
 
     const char *fname, *custommsg = NULL;
@@ -1906,7 +1890,7 @@ _parser_init(struct _PyArg_Parser *parser)
         assert(parser->fname == NULL);
         if (parse_format(parser->format, len, pos,
                          &fname, &custommsg, &min, &max) < 0) {
-            return 0;
+            return -1;
         }
     }
     else {
@@ -1919,7 +1903,7 @@ _parser_init(struct _PyArg_Parser *parser)
     if (kwtuple == NULL) {
         kwtuple = new_kwtuple(keywords, len, pos);
         if (kwtuple == NULL) {
-            return 0;
+            return -1;
         }
         owned = 1;
     }
@@ -1933,40 +1917,27 @@ _parser_init(struct _PyArg_Parser *parser)
     parser->min = min;
     parser->max = max;
     parser->kwtuple = kwtuple;
-    parser->initialized = owned ? 1 : -1;
+    parser->is_kwtuple_owned = owned;
 
     assert(parser->next == NULL);
-    parser->next = _PyRuntime.getargs.static_parsers;
-    _PyRuntime.getargs.static_parsers = parser;
-    return 1;
+    parser->next = _Py_atomic_load_ptr(&_PyRuntime.getargs.static_parsers);
+    do {
+        // compare-exchange updates parser->next on failure
+    } while (_Py_atomic_compare_exchange_ptr(&_PyRuntime.getargs.static_parsers,
+                                             &parser->next, parser));
+    return 0;
 }
 
 static int
 parser_init(struct _PyArg_Parser *parser)
 {
-    // volatile as it can be modified by other threads
-    // and should not be optimized or reordered by compiler
-    if (*((volatile int *)&parser->initialized)) {
-        assert(parser->kwtuple != NULL);
-        return 1;
-    }
-    PyThread_acquire_lock(_PyRuntime.getargs.mutex, WAIT_LOCK);
-    // Check again if another thread initialized the parser
-    // while we were waiting for the lock.
-    if (*((volatile int *)&parser->initialized)) {
-        assert(parser->kwtuple != NULL);
-        PyThread_release_lock(_PyRuntime.getargs.mutex);
-        return 1;
-    }
-    int ret = _parser_init(parser);
-    PyThread_release_lock(_PyRuntime.getargs.mutex);
-    return ret;
+    return _PyOnceFlag_CallOnce(&parser->once, &_parser_init, parser);
 }
 
 static void
 parser_clear(struct _PyArg_Parser *parser)
 {
-    if (parser->initialized == 1) {
+    if (parser->is_kwtuple_owned) {
         Py_CLEAR(parser->kwtuple);
     }
 }
@@ -2033,7 +2004,7 @@ vgetargskeywordsfast_impl(PyObject *const *args, Py_ssize_t nargs,
         return 0;
     }
 
-    if (!parser_init(parser)) {
+    if (parser_init(parser) < 0) {
         return 0;
     }
 
@@ -2266,7 +2237,7 @@ _PyArg_UnpackKeywords(PyObject *const *args, Py_ssize_t nargs,
         args = buf;
     }
 
-    if (!parser_init(parser)) {
+    if (parser_init(parser) < 0) {
         return NULL;
     }
 
@@ -2443,7 +2414,7 @@ _PyArg_UnpackKeywordsWithVararg(PyObject *const *args, Py_ssize_t nargs,
         args = buf;
     }
 
-    if (!parser_init(parser)) {
+    if (parser_init(parser) < 0) {
         return NULL;
     }
 
@@ -2526,7 +2497,7 @@ _PyArg_UnpackKeywordsWithVararg(PyObject *const *args, Py_ssize_t nargs,
          *
          * Otherwise, we leave a place at `buf[vararg]` for vararg tuple
          * so the index is `i + 1`. */
-        if (nargs < vararg) {
+        if (nargs < vararg && i != vararg) {
             buf[i] = current_arg;
         }
         else {
@@ -2867,7 +2838,3 @@ _PyArg_Fini(void)
     }
     _PyRuntime.getargs.static_parsers = NULL;
 }
-
-#ifdef __cplusplus
-};
-#endif

@@ -19,9 +19,6 @@ extern int _PyDict_DelItemIf(PyObject *mp, PyObject *key,
                              int (*predicate)(PyObject *value));
 
 // "KnownHash" variants
-// Export for '_testinternalcapi' shared extension
-PyAPI_FUNC(PyObject *) _PyDict_GetItem_KnownHash(PyObject *mp, PyObject *key,
-                                                 Py_hash_t hash);
 // Export for '_asyncio' shared extension
 PyAPI_FUNC(int) _PyDict_SetItem_KnownHash(PyObject *mp, PyObject *key,
                                           PyObject *item, Py_hash_t hash);
@@ -44,13 +41,8 @@ extern int _PyDict_HasOnlyStringKeys(PyObject *mp);
 
 extern void _PyDict_MaybeUntrack(PyObject *mp);
 
-extern PyObject* _PyDict_NewPresized(Py_ssize_t minused);
-
 // Export for '_ctypes' shared extension
 PyAPI_FUNC(Py_ssize_t) _PyDict_SizeOf(PyDictObject *);
-
-// Export for '_socket' shared extension (Windows remove_unusable_flags())
-PyAPI_FUNC(PyObject*) _PyDict_Pop(PyObject *, PyObject *, PyObject *);
 
 #define _PyDict_HasSplitTable(d) ((d)->ma_values != NULL)
 
@@ -119,7 +111,11 @@ extern PyObject *_PyDict_LoadGlobal(PyDictObject *, PyDictObject *, PyObject *);
 extern int _PyDict_SetItem_Take2(PyDictObject *op, PyObject *key, PyObject *value);
 extern int _PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr, PyObject *name, PyObject *value);
 
-extern PyObject *_PyDict_Pop_KnownHash(PyObject *, PyObject *, Py_hash_t, PyObject *);
+extern int _PyDict_Pop_KnownHash(
+    PyDictObject *dict,
+    PyObject *key,
+    Py_hash_t hash,
+    PyObject **result);
 
 #define DKIX_EMPTY (-1)
 #define DKIX_DUMMY (-2)  /* Used internally */
@@ -213,8 +209,14 @@ static inline PyDictUnicodeEntry* DK_UNICODE_ENTRIES(PyDictKeysObject *dk) {
 #define DICT_VERSION_INCREMENT (1 << DICT_MAX_WATCHERS)
 #define DICT_VERSION_MASK (DICT_VERSION_INCREMENT - 1)
 
+#ifdef Py_GIL_DISABLED
+#define DICT_NEXT_VERSION(INTERP) \
+    (_Py_atomic_add_uint64(&(INTERP)->dict_state.global_version, DICT_VERSION_INCREMENT) + DICT_VERSION_INCREMENT)
+
+#else
 #define DICT_NEXT_VERSION(INTERP) \
     ((INTERP)->dict_state.global_version += DICT_VERSION_INCREMENT)
+#endif
 
 void
 _PyDict_SendEvent(int watcher_bits,
