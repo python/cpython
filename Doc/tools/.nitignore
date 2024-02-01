@@ -18,7 +18,6 @@ Doc/extending/extending.rst
 Doc/glossary.rst
 Doc/howto/descriptor.rst
 Doc/howto/enum.rst
-Doc/howto/logging.rst
 Doc/library/ast.rst
 Doc/library/asyncio-extending.rst
 Doc/library/asyncio-policy.rst
