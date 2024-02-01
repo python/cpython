@@ -174,9 +174,14 @@ class _LazyModule(types.ModuleType):
         __spec__ = object.__getattribute__(self, '__spec__')
         loader_state = __spec__.loader_state
         with loader_state['lock']:
+            # Only the first thread to get the lock should trigger the load
+            # and reset the module's class. The rest can now getattr().
             if object.__getattribute__(self, '__class__') is _LazyModule:
-                # exec_module() will access dunder attributes, so we use a reentrant
-                # lock and an event to prevent infinite recursion.
+                # The first thread comes here multiple times as it descends the
+                # call stack. The first time, it sets is_loading and triggers
+                # exec_module(), which will access module.__dict__, module.__name__,
+                # and/or module.__spec__, reentering this method. These accesses
+                # need to be allowed to proceed without triggering the load again.
                 if loader_state['is_loading'].is_set() and attr[:2] == attr[-2:] == '__':
                     return object.__getattribute__(self, attr)
                 loader_state['is_loading'].set()
