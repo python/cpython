@@ -557,7 +557,7 @@ IR:
   optimizations, up till CPython 3.13's release.
 
 (Tier 2 optimizer contributed by Ken Jin, with implementation help
-by Guido van Rossum, Mark Shanno, and Jules Poon. Special thanks
+by Guido van Rossum, Mark Shannon, and Jules Poon. Special thanks
 to Manuel Rigger and Martin Henz.)
 
 Execution Engine
