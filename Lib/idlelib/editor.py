@@ -432,6 +432,7 @@ class EditorWindow:
             # Insert some padding to avoid obscuring some of the statusbar
             # by the resize widget.
             self.status_bar.set_label('_padding1', '    ', side=RIGHT)
+        self.status_bar.set_label('selected', '', side=RIGHT)
         self.status_bar.set_label('column', 'Col: ?', side=RIGHT)
         self.status_bar.set_label('line', 'Ln: ?', side=RIGHT)
         self.status_bar.pack(side=BOTTOM, fill=X)
@@ -445,6 +446,8 @@ class EditorWindow:
         line, column = self.text.index(INSERT).split('.')
         self.status_bar.set_label('column', 'Col: %s' % column)
         self.status_bar.set_label('line', 'Ln: %s' % line)
+        chars = len(self.text.get(SEL_FIRST, SEL_LAST))
+        self.status_bar.set_label('selected', '%d selected' % chars if chars else '')
 
 
     """ Menu definitions and functions.
