@@ -25,7 +25,7 @@ _Py_DECLARE_STR(list_err, "list index out of range");
     #define STORE_SSIZE_ATOMIC_AS_POSSIBLE(value, new_value) _Py_atomic_store_ssize_relaxed(&value, new_value)
 #else
     #define LOAD_SSIZE_ATOMIC_AS_POSSIBLE(value) value
-    #define LOAD_SSIZE_ATOMIC_AS_POSSIBLE(value, new_value) value = new_value
+    #define STORE_SSIZE_ATOMIC_AS_POSSIBLE(value, new_value) value = new_value
 #endif
 
 #ifdef WITH_FREELISTS
