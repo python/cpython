@@ -493,9 +493,9 @@ Experimental JIT Compiler
 
 :Editor: Guido van Rossum, Ken Jin
 
-When CPython is configured using the ``--enable-experimental-jit`` option,
-a just-in-time compiler is added which can speed up some Python programs.
-The internal architecture is roughly as follows.
+When CPython is configured using the ``--enable-experimental-jit`` build-time
+option, a just-in-time compiler is added which can speed up some Python
+programs. The internal architecture is roughly as follows.
 
 Intermediate Representation
 ---------------------------
@@ -541,8 +541,10 @@ IR:
 
 * Guard elimination -- through a combination of constant and type information,
   we can eliminate type checks and other guards associated with operations.
-  As a proof of concept, we managed to eliminate over 70%
-  of integer type checks in our own benchmarks.
+  These guards validate specialized operations, but add a slight bit of
+  overhead. For example, integer addition needs a type check that checks
+  both operands are integers. As a proof of concept, we managed to eliminate
+  over 70% of integer type checks in our own benchmarks.
 
 * Loop splitting -- after the first iteration, we gain a lot more type
   information. Thus, we peel the first iteration of loops to produce
@@ -572,7 +574,7 @@ enabled, the Tier 2 interpreter can be invoked by passing Python the
 variable to ``1``.
 
 The second is machine code. When the ``--enable-experimental-jit``
-option is used, the optimized Tier 2 IR is translated to machine
+build-time option is used, the optimized Tier 2 IR is translated to machine
 code, which is then executed. This does not require additional
 runtime options.
 
@@ -581,8 +583,10 @@ The machine code translation process uses an architecture called
 build-time dependency on LLVM.
 
 (Copy-and-patch JIT compiler contributed by Brandt Bucher,
-directly inspired by the paper "Copy-and-Patch Compilation"
-by Haoran Xu and Fredrik Kjolstad).
+directly inspired by the paper
+`Copy-and-Patch Compilation <https://fredrikbk.com/publications/copy-and-patch.pdf>`_
+by Haoran Xu and Fredrik Kjolstad. For more information,
+`a talk <https://youtu.be/HxSHIpEQRjs?si=RwC78FcXrThIgFmY>`_ is available.)
 
 Results and Future Work
 -----------------------
