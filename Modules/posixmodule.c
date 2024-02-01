@@ -7280,7 +7280,7 @@ fail:
 static int
 parse_file_actions(PyObject *file_actions,
                    posix_spawn_file_actions_t *file_actionsp,
-                   PyObject *temp_buffer)
+                   PyObject *temp_buffer, PyObject** cwd)
 {
     PyObject *seq;
     PyObject *file_action = NULL;
@@ -7404,7 +7404,8 @@ parse_file_actions(PyObject *file_actions,
                     Py_DECREF(path);
                     goto fail;
                 }
-                Py_DECREF(path);
+                Py_XDECREF(cwd);
+                *cwd = path;
                 break;
             }
 #endif
@@ -7444,6 +7445,7 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
     Py_ssize_t argc, envc;
     PyObject *result = NULL;
     PyObject *temp_buffer = NULL;
+    PyObject *cwd = NULL;
     pid_t pid;
     int err_code;
 
@@ -7509,7 +7511,7 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
         if (!temp_buffer) {
             goto exit;
         }
-        if (parse_file_actions(file_actions, &file_actions_buf, temp_buffer)) {
+        if (parse_file_actions(file_actions, &file_actions_buf, temp_buffer, &cwd)) {
             goto exit;
         }
         file_actionsp = &file_actions_buf;
@@ -7541,6 +7543,17 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
 
     if (err_code) {
         errno = err_code;
+#ifdef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR_NP
+        if (errno == ENOENT && cwd != NULL) {
+            /* ENOENT can occur when either the path of the executable or the
+             * cwd given via file_actions doesn't exist. Since it's not feasible
+             * to determine which of those paths caused the problem, we return
+             * an exception with both. */
+            PyErr_Format(PyExc_FileNotFoundError, "Either '%S' or '%s' doesn't exist.",
+                         path->object, PyBytes_AS_STRING(cwd));
+            goto exit;
+        }
+#endif
         PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, path->object);
         goto exit;
     }
@@ -7562,6 +7575,7 @@ exit:
     if (argvlist) {
         free_string_array(argvlist, argc);
     }
+    Py_XDECREF(cwd);
     Py_XDECREF(temp_buffer);
     return result;
 }
