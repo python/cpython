@@ -138,7 +138,11 @@ _PyList_ClearFreeList(_PyFreeListState *freelist_state, int is_finalization)
 void
 _PyList_Fini(_PyFreeListState *state)
 {
+    // With Py_GIL_DISABLED:
+    // the freelists for the current thread state have already been cleared.
+#ifndef Py_GIL_DISABLED
     _PyList_ClearFreeList(state, 1);
+#endif
 }
 
 /* Print summary info about the state of the optimized allocator */
