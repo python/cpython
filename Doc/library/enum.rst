@@ -340,12 +340,12 @@ Data Types
    .. method:: Enum.__init__(self, \*args, \**kwds)
 
       By default, does nothing.  If multiple values are given in the member
-      assignment, those values become separate arguments to `__init__`; e.g.
+      assignment, those values become separate arguments to ``__init__``; e.g.
 
          >>> class Weekday(Enum):
          ...     MONDAY = 1, 'Mon'
 
-      `Weekday.__init__()` would be called as `Weekday.__init__(self, 1, 'Mon')`
+      ``Weekday.__init__()`` would be called as ``Weekday.__init__(self, 1, 'Mon')``
 
    .. method:: Enum.__init_subclass__(cls, \**kwds)
 
@@ -377,13 +377,13 @@ Data Types
    .. method:: Enum.__new__(cls, \*args, \**kwds)
 
       By default, doesn't exist.  If specified, either in the enum class
-      definition or in a mixin class (such as `int`), all values given
+      definition or in a mixin class (such as ``int``), all values given
       in the member assignment will be passed; e.g.
 
          >>> class MyIntEnum(Enum):
          ...     SEVENTEEN = '1a', 16
 
-      results in the call `int('1a', 16)` and a value of 17 for the member.
+      results in the call ``int('1a', 16)`` and a value of ``17`` for the member.
 
    .. method:: Enum.__repr__(self)
 
