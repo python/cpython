@@ -531,12 +531,12 @@ subclasses. However, the :meth:`!__init__` method in subclasses needs to call
 
       This method should be called from handlers when an exception is encountered
       during an :meth:`emit` call. If the module-level attribute
-      ``raiseExceptions`` is ``False``, exceptions get silently ignored. This is
+      :data:`raiseExceptions` is ``False``, exceptions get silently ignored. This is
       what is mostly wanted for a logging system - most users will not care about
       errors in the logging system, they are more interested in application
       errors. You could, however, replace this with a custom handler if you wish.
       The specified record is the one which was being processed when the exception
-      occurred. (The default value of ``raiseExceptions`` is ``True``, as that is
+      occurred. (The default value of :data:`raiseExceptions` is ``True``, as that is
       more useful during development).
 
 
@@ -1476,6 +1476,18 @@ Module-Level Attributes
    behaviour for some reason, ``lastResort`` can be set to ``None``.
 
    .. versionadded:: 3.2
+
+.. attribute:: raiseExceptions
+
+   Used to see if exceptions during handling should be propagated.
+
+   Default: ``True``.
+
+   If :data:`raiseExceptions` is ``False``,
+   exceptions get silently ignored. This is what is mostly wanted
+   for a logging system - most users will not care about errors in
+   the logging system, they are more interested in application errors.
+
 
 Integration with the warnings module
 ------------------------------------

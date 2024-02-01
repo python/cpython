@@ -21,7 +21,6 @@ Doc/extending/extending.rst
 Doc/glossary.rst
 Doc/howto/descriptor.rst
 Doc/howto/enum.rst
-Doc/howto/logging.rst
 Doc/library/2to3.rst
 Doc/library/aifc.rst
 Doc/library/ast.rst

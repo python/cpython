@@ -521,7 +521,7 @@ custom handlers) are the following configuration methods:
 
 * The :meth:`~Handler.setLevel` method, just as in logger objects, specifies the
   lowest severity that will be dispatched to the appropriate destination.  Why
-  are there two :func:`setLevel` methods?  The level set in the logger
+  are there two :meth:`~Handler.setLevel` methods?  The level set in the logger
   determines which severity of messages it will pass to its handlers.  The level
   set in each handler determines which messages that handler will send on.
 
@@ -775,29 +775,29 @@ What happens if no configuration is provided
 
 If no logging configuration is provided, it is possible to have a situation
 where a logging event needs to be output, but no handlers can be found to
-output the event. The behaviour of the logging package in these
-circumstances is dependent on the Python version.
+output the event.
 
-For versions of Python prior to 3.2, the behaviour is as follows:
+The event is output using a 'handler of last resort', stored in
+:data:`lastResort`. This internal handler is not associated with any
+logger, and acts like a :class:`~logging.StreamHandler` which writes the
+event description message to the current value of ``sys.stderr`` (therefore
+respecting any redirections which may be in effect). No formatting is
+done on the message - just the bare event description message is printed.
+The handler's level is set to ``WARNING``, so all events at this and
+greater severities will be output.
 
-* If *logging.raiseExceptions* is ``False`` (production mode), the event is
-  silently dropped.
+.. versionchanged:: 3.2
 
-* If *logging.raiseExceptions* is ``True`` (development mode), a message
-  'No handlers could be found for logger X.Y.Z' is printed once.
+   For versions of Python prior to 3.2, the behaviour is as follows:
 
-In Python 3.2 and later, the behaviour is as follows:
+   * If :data:`raiseExceptions` is ``False`` (production mode), the event is
+     silently dropped.
 
-* The event is output using a 'handler of last resort', stored in
-  ``logging.lastResort``. This internal handler is not associated with any
-  logger, and acts like a :class:`~logging.StreamHandler` which writes the
-  event description message to the current value of ``sys.stderr`` (therefore
-  respecting any redirections which may be in effect). No formatting is
-  done on the message - just the bare event description message is printed.
-  The handler's level is set to ``WARNING``, so all events at this and
-  greater severities will be output.
+   * If :data:`raiseExceptions` is ``True`` (development mode), a message
+     'No handlers could be found for logger X.Y.Z' is printed once.
 
-To obtain the pre-3.2 behaviour, ``logging.lastResort`` can be set to ``None``.
+   To obtain the pre-3.2 behaviour,
+   :data:`lastResort` can be set to ``None``.
 
 .. _library-config:
 
@@ -999,7 +999,7 @@ Logged messages are formatted for presentation through instances of the
 use with the % operator and a dictionary.
 
 For formatting multiple messages in a batch, instances of
-:class:`~handlers.BufferingFormatter` can be used. In addition to the format
+:class:`BufferingFormatter` can be used. In addition to the format
 string (which is applied to each message in the batch), there is provision for
 header and trailer format strings.
 
@@ -1035,7 +1035,8 @@ checks to see if a module-level variable, :data:`raiseExceptions`, is set. If
 set, a traceback is printed to :data:`sys.stderr`. If not set, the exception is
 swallowed.
 
-.. note:: The default value of :data:`raiseExceptions` is ``True``. This is
+.. note::
+   The default value of :data:`raiseExceptions` is ``True``. This is
    because during development, you typically want to be notified of any
    exceptions that occur. It's advised that you set :data:`raiseExceptions` to
    ``False`` for production usage.
@@ -1073,7 +1074,7 @@ You can write code like this::
                                             expensive_func2())
 
 so that if the logger's threshold is set above ``DEBUG``, the calls to
-:func:`expensive_func1` and :func:`expensive_func2` are never made.
+``expensive_func1`` and ``expensive_func2`` are never made.
 
 .. note:: In some cases, :meth:`~Logger.isEnabledFor` can itself be more
    expensive than you'd like (e.g. for deeply nested loggers where an explicit
