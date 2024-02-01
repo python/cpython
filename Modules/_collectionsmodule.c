@@ -353,8 +353,7 @@ deque_append_lock_held(dequeobject *deque, PyObject *item, Py_ssize_t maxlen)
     if (NEEDS_TRIM(deque, maxlen)) {
         PyObject *olditem = deque_popleft_impl(deque);
         Py_DECREF(olditem);
-    }
-    else {
+    } else {
         deque->state++;
     }
     return 0;
@@ -401,8 +400,7 @@ deque_appendleft_lock_held(dequeobject *deque, PyObject *item,
     if (NEEDS_TRIM(deque, maxlen)) {
         PyObject *olditem = deque_pop_impl(deque);
         Py_DECREF(olditem);
-    }
-    else {
+    } else {
         deque->state++;
     }
     return 0;
@@ -1590,13 +1588,11 @@ deque___reduce___impl(dequeobject *deque)
 
     // It's safe to access deque->maxlen here without holding the per object
     // lock for deque; deque->maxlen is only assigned during construction.
-    Py_ssize_t maxlen = deque->maxlen;
-    PyTypeObject *typ = Py_TYPE(deque);
-    if (maxlen < 0) {
-        return Py_BuildValue("O()NN", typ, state, it);
+    if (deque->maxlen < 0) {
+        return Py_BuildValue("O()NN", Py_TYPE(deque), state, it);
     }
     else {
-        return Py_BuildValue("O(()n)NN", typ, maxlen, state, it);
+        return Py_BuildValue("O(()n)NN", Py_TYPE(deque), deque->maxlen, state, it);
     }
 }
 
@@ -1888,12 +1884,12 @@ typedef struct {
 static PyObject *
 deque_iter(dequeobject *deque)
 {
+    dequeiterobject *it;
+
     collections_state *state = find_module_state_by_def(Py_TYPE(deque));
-    dequeiterobject *it =
-        PyObject_GC_New(dequeiterobject, state->dequeiter_type);
-    if (it == NULL) {
+    it = PyObject_GC_New(dequeiterobject, state->dequeiter_type);
+    if (it == NULL)
         return NULL;
-    }
     Py_BEGIN_CRITICAL_SECTION(deque);
     it->b = deque->leftblock;
     it->index = deque->leftindex;
@@ -1934,6 +1930,8 @@ dequeiter_dealloc(dequeiterobject *dio)
 static PyObject *
 dequeiter_next_lock_held(dequeiterobject *it, dequeobject *deque)
 {
+    PyObject *item;
+
     if (it->deque->state != it->state) {
         it->counter = 0;
         PyErr_SetString(PyExc_RuntimeError,
@@ -1945,7 +1943,7 @@ dequeiter_next_lock_held(dequeiterobject *it, dequeobject *deque)
     assert (!(it->b == it->deque->rightblock &&
               it->index > it->deque->rightindex));
 
-    PyObject *item = it->b->data[it->index];
+    item = it->b->data[it->index];
     it->index++;
     it->counter--;
     if (it->index == BLOCKLEN && it->counter > 0) {
@@ -2060,12 +2058,12 @@ static PyType_Spec dequeiter_spec = {
 static PyObject *
 deque_reviter(dequeobject *deque)
 {
+    dequeiterobject *it;
     collections_state *state = find_module_state_by_def(Py_TYPE(deque));
-    dequeiterobject *it =
-        PyObject_GC_New(dequeiterobject, state->dequereviter_type);
-    if (it == NULL) {
+
+    it = PyObject_GC_New(dequeiterobject, state->dequereviter_type);
+    if (it == NULL)
         return NULL;
-    }
     Py_BEGIN_CRITICAL_SECTION(deque);
     it->b = deque->rightblock;
     it->index = deque->rightindex;
@@ -2080,6 +2078,7 @@ deque_reviter(dequeobject *deque)
 static PyObject *
 dequereviter_next_lock_held(dequeiterobject *it, dequeobject *deque)
 {
+    PyObject *item;
     if (it->counter == 0)
         return NULL;
 
@@ -2092,7 +2091,7 @@ dequereviter_next_lock_held(dequeiterobject *it, dequeobject *deque)
     assert (!(it->b == it->deque->leftblock &&
               it->index < it->deque->leftindex));
 
-    PyObject *item = it->b->data[it->index];
+    item = it->b->data[it->index];
     it->index--;
     it->counter--;
     if (it->index < 0 && it->counter > 0) {
