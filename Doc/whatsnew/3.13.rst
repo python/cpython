@@ -598,7 +598,7 @@ About
 -----
 
 This work was done by the Faster CPython team, and many other external
-contributors. The team consists of engineers from Microsoft, Meta
+contributors. The team consists of engineers from Microsoft, Meta,
 Quansight, and Bloomberg, who are either paid in part to do this, or
 volunteer in their free time.
 
