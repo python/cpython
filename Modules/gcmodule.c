@@ -245,7 +245,7 @@ append_referrents(PyObject *result, PyObject *args)
         if (!_PyObject_IS_GC(obj))
             continue;
         traverse = Py_TYPE(obj)->tp_traverse;
-        if (! traverse)
+        if (!traverse)
             continue;
         if (traverse(obj, referentsvisit, result)) {
             return -1;
