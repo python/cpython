@@ -467,7 +467,7 @@ symbolic links encountered in the path."""
             else:
                 path = newpath
             continue
-        if len(path) == 1:
+        if path == sep:
             newpath = path + name
         else:
             newpath = path + sep + name
