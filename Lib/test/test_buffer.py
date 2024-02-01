@@ -4585,6 +4585,12 @@ class TestPythonBufferProtocol(unittest.TestCase):
             buf.__release_buffer__(mv)
         self.assertEqual(buf.references, 0)
 
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def test_c_buffer_invalid_flags(self):
+        buf = _testcapi.testBuf()
+        self.assertRaises(SystemError, buf.__buffer__, PyBUF_READ)
+        self.assertRaises(SystemError, buf.__buffer__, PyBUF_WRITE)
+
     def test_inheritance(self):
         class A(bytearray):
             def __buffer__(self, flags):

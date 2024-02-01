@@ -21,99 +21,18 @@ from generators_common import (
     DEFAULT_INPUT,
     ROOT,
     write_header,
+    emit_tokens,
 )
 from cwriter import CWriter
 from typing import TextIO, Iterator
 from lexer import Token
-from stack import StackOffset
+from stack import StackOffset, Stack, SizeMismatch
 
 
 DEFAULT_OUTPUT = ROOT / "Python/generated_cases.c.h"
 
 
 FOOTER = "#undef TIER_ONE\n"
-
-
-class SizeMismatch(Exception):
-    pass
-
-
-class Stack:
-    def __init__(self) -> None:
-        self.top_offset = StackOffset()
-        self.base_offset = StackOffset()
-        self.peek_offset = StackOffset()
-        self.variables: list[StackItem] = []
-        self.defined: set[str] = set()
-
-    def pop(self, var: StackItem) -> str:
-        self.top_offset.pop(var)
-        if not var.peek:
-            self.peek_offset.pop(var)
-        indirect = "&" if var.is_array() else ""
-        if self.variables:
-            popped = self.variables.pop()
-            if popped.size != var.size:
-                raise SizeMismatch(
-                    f"Size mismatch when popping '{popped.name}' from stack to assign to {var.name}. "
-                    f"Expected {var.size} got {popped.size}"
-                )
-            if popped.name == var.name:
-                return ""
-            elif popped.name == "unused":
-                self.defined.add(var.name)
-                return (
-                    f"{var.name} = {indirect}stack_pointer[{self.top_offset.to_c()}];\n"
-                )
-            elif var.name == "unused":
-                return ""
-            else:
-                self.defined.add(var.name)
-                return f"{var.name} = {popped.name};\n"
-        self.base_offset.pop(var)
-        if var.name == "unused":
-            return ""
-        else:
-            self.defined.add(var.name)
-        assign = f"{var.name} = {indirect}stack_pointer[{self.base_offset.to_c()}];"
-        if var.condition:
-            return f"if ({var.condition}) {{ {assign} }}\n"
-        return f"{assign}\n"
-
-    def push(self, var: StackItem) -> str:
-        self.variables.append(var)
-        if var.is_array() and var.name not in self.defined and var.name != "unused":
-            c_offset = self.top_offset.to_c()
-            self.top_offset.push(var)
-            self.defined.add(var.name)
-            return f"{var.name} = &stack_pointer[{c_offset}];\n"
-        else:
-            self.top_offset.push(var)
-            return ""
-
-    def flush(self, out: CWriter) -> None:
-        for var in self.variables:
-            if not var.peek:
-                if var.name != "unused" and not var.is_array():
-                    if var.condition:
-                        out.emit(f" if ({var.condition}) ")
-                    out.emit(
-                        f"stack_pointer[{self.base_offset.to_c()}] = {var.name};\n"
-                    )
-            self.base_offset.push(var)
-        if self.base_offset.to_c() != self.top_offset.to_c():
-            print("base", self.base_offset.to_c(), "top", self.top_offset.to_c())
-            assert False
-        number = self.base_offset.to_c()
-        if number != "0":
-            out.emit(f"stack_pointer += {number};\n")
-        self.variables = []
-        self.base_offset.clear()
-        self.top_offset.clear()
-        self.peek_offset.clear()
-
-    def as_comment(self) -> str:
-        return f"/* Variables: {[v.name for v in self.variables]}. Base offset: {self.base_offset.to_c()}. Top offset: {self.top_offset.to_c()} */"
 
 
 def declare_variables(inst: Instruction, out: CWriter) -> None:
@@ -136,145 +55,6 @@ def declare_variables(inst: Instruction, out: CWriter) -> None:
                         out.emit(f"{type}{var.name} = NULL;\n")
                     else:
                         out.emit(f"{type}{var.name};\n")
-
-
-def emit_to(out: CWriter, tkn_iter: Iterator[Token], end: str) -> None:
-    parens = 0
-    for tkn in tkn_iter:
-        if tkn.kind == end and parens == 0:
-            return
-        if tkn.kind == "LPAREN":
-            parens += 1
-        if tkn.kind == "RPAREN":
-            parens -= 1
-        out.emit(tkn)
-
-
-def replace_deopt(
-    out: CWriter,
-    tkn: Token,
-    tkn_iter: Iterator[Token],
-    uop: Uop,
-    unused: Stack,
-    inst: Instruction,
-) -> None:
-    out.emit_at("DEOPT_IF", tkn)
-    out.emit(next(tkn_iter))
-    emit_to(out, tkn_iter, "RPAREN")
-    next(tkn_iter)  # Semi colon
-    out.emit(", ")
-    assert inst.family is not None
-    out.emit(inst.family.name)
-    out.emit(");\n")
-
-
-def replace_error(
-    out: CWriter,
-    tkn: Token,
-    tkn_iter: Iterator[Token],
-    uop: Uop,
-    stack: Stack,
-    inst: Instruction,
-) -> None:
-    out.emit_at("if ", tkn)
-    out.emit(next(tkn_iter))
-    emit_to(out, tkn_iter, "COMMA")
-    label = next(tkn_iter).text
-    next(tkn_iter)  # RPAREN
-    next(tkn_iter)  # Semi colon
-    out.emit(") ")
-    c_offset = stack.peek_offset.to_c()
-    try:
-        offset = -int(c_offset)
-        close = ";\n"
-    except ValueError:
-        offset = None
-        out.emit(f"{{ stack_pointer += {c_offset}; ")
-        close = "; }\n"
-    out.emit("goto ")
-    if offset:
-        out.emit(f"pop_{offset}_")
-    out.emit(label)
-    out.emit(close)
-
-
-def replace_decrefs(
-    out: CWriter,
-    tkn: Token,
-    tkn_iter: Iterator[Token],
-    uop: Uop,
-    stack: Stack,
-    inst: Instruction,
-) -> None:
-    next(tkn_iter)
-    next(tkn_iter)
-    next(tkn_iter)
-    out.emit_at("", tkn)
-    for var in uop.stack.inputs:
-        if var.name == "unused" or var.name == "null" or var.peek:
-            continue
-        if var.size != "1":
-            out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
-            out.emit(f"Py_DECREF({var.name}[_i]);\n")
-            out.emit("}\n")
-        elif var.condition:
-            out.emit(f"Py_XDECREF({var.name});\n")
-        else:
-            out.emit(f"Py_DECREF({var.name});\n")
-
-
-def replace_store_sp(
-    out: CWriter,
-    tkn: Token,
-    tkn_iter: Iterator[Token],
-    uop: Uop,
-    stack: Stack,
-    inst: Instruction,
-) -> None:
-    next(tkn_iter)
-    next(tkn_iter)
-    next(tkn_iter)
-    out.emit_at("", tkn)
-    stack.flush(out)
-    out.emit("_PyFrame_SetStackPointer(frame, stack_pointer);\n")
-
-
-def replace_check_eval_breaker(
-    out: CWriter,
-    tkn: Token,
-    tkn_iter: Iterator[Token],
-    uop: Uop,
-    stack: Stack,
-    inst: Instruction,
-) -> None:
-    next(tkn_iter)
-    next(tkn_iter)
-    next(tkn_iter)
-    if not uop.properties.ends_with_eval_breaker:
-        out.emit_at("CHECK_EVAL_BREAKER();", tkn)
-
-
-REPLACEMENT_FUNCTIONS = {
-    "DEOPT_IF": replace_deopt,
-    "ERROR_IF": replace_error,
-    "DECREF_INPUTS": replace_decrefs,
-    "CHECK_EVAL_BREAKER": replace_check_eval_breaker,
-    "STORE_SP": replace_store_sp,
-}
-
-
-# Move this to formatter
-def emit_tokens(out: CWriter, uop: Uop, stack: Stack, inst: Instruction) -> None:
-    tkns = uop.body[1:-1]
-    if not tkns:
-        return
-    tkn_iter = iter(tkns)
-    out.start_line()
-    for tkn in tkn_iter:
-        if tkn.kind == "IDENTIFIER" and tkn.text in REPLACEMENT_FUNCTIONS:
-            REPLACEMENT_FUNCTIONS[tkn.text](out, tkn, tkn_iter, uop, stack, inst)
-        else:
-            out.emit(tkn)
 
 
 def write_uop(
@@ -334,7 +114,7 @@ def uses_this(inst: Instruction) -> bool:
 
 
 def generate_tier1(
-    filenames: str, analysis: Analysis, outfile: TextIO, lines: bool
+    filenames: list[str], analysis: Analysis, outfile: TextIO, lines: bool
 ) -> None:
     write_header(__file__, filenames, outfile)
     outfile.write(
@@ -371,7 +151,8 @@ def generate_tier1(
         stack = Stack()
         for part in inst.parts:
             # Only emit braces if more than one uop
-            offset = write_uop(part, out, offset, stack, inst, len(inst.parts) > 1)
+            insert_braces = len([p for p in inst.parts if isinstance(p, Uop)]) > 1
+            offset = write_uop(part, out, offset, stack, inst, insert_braces)
         out.start_line()
         if not inst.parts[-1].properties.always_exits:
             stack.flush(out)
@@ -400,6 +181,15 @@ arg_parser.add_argument(
 arg_parser.add_argument(
     "input", nargs=argparse.REMAINDER, help="Instruction definition file(s)"
 )
+
+
+def generate_tier1_from_files(
+    filenames: list[str], outfilename: str, lines: bool
+) -> None:
+    data = analyze_files(filenames)
+    with open(outfilename, "w") as outfile:
+        generate_tier1(filenames, data, outfile, lines)
+
 
 if __name__ == "__main__":
     args = arg_parser.parse_args()

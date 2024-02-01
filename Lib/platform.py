@@ -752,6 +752,8 @@ def architecture(executable=sys.executable, bits='', linkage=''):
     # Linkage
     if 'ELF' in fileout:
         linkage = 'ELF'
+    elif 'Mach-O' in fileout:
+        linkage = "Mach-O"
     elif 'PE' in fileout:
         # E.g. Windows uses this format
         if 'Windows' in fileout:
