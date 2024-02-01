@@ -3,10 +3,12 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
 #endif
-
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_long.h"          // _PyLong_UnsignedShort_Converter()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_runtime.h"       // _Py_ID()
 
 PyDoc_STRVAR(depr_star_new__doc__,
 "DeprStarNew(a=None)\n"
@@ -419,8 +421,7 @@ PyDoc_STRVAR(depr_kwd_new__doc__,
 "The deprecation message should use the class name instead of __new__.\n"
 "\n"
 "Note: Passing keyword argument \'a\' to _testclinic.DeprKwdNew() is\n"
-"deprecated. Corresponding parameter will become positional-only in\n"
-"Python 3.14.\n"
+"deprecated. Parameter \'a\' will become positional-only in Python 3.14.\n"
 "");
 
 static PyObject *
@@ -479,8 +480,8 @@ depr_kwd_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (kwargs && PyDict_GET_SIZE(kwargs) && nargs < 1 && fastargs[0]) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing keyword argument 'a' to _testclinic.DeprKwdNew() is "
-                "deprecated. Corresponding parameter will become positional-only "
-                "in Python 3.14.", 1))
+                "deprecated. Parameter 'a' will become positional-only in Python "
+                "3.14.", 1))
         {
             goto exit;
         }
@@ -503,8 +504,7 @@ PyDoc_STRVAR(depr_kwd_init__doc__,
 "The deprecation message should use the class name instead of __init__.\n"
 "\n"
 "Note: Passing keyword argument \'a\' to _testclinic.DeprKwdInit() is\n"
-"deprecated. Corresponding parameter will become positional-only in\n"
-"Python 3.14.\n"
+"deprecated. Parameter \'a\' will become positional-only in Python 3.14.\n"
 "");
 
 static int
@@ -563,8 +563,8 @@ depr_kwd_init(PyObject *self, PyObject *args, PyObject *kwargs)
     if (kwargs && PyDict_GET_SIZE(kwargs) && nargs < 1 && fastargs[0]) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing keyword argument 'a' to _testclinic.DeprKwdInit() is "
-                "deprecated. Corresponding parameter will become positional-only "
-                "in Python 3.14.", 1))
+                "deprecated. Parameter 'a' will become positional-only in Python "
+                "3.14.", 1))
         {
             goto exit;
         }
@@ -641,8 +641,8 @@ depr_kwd_init_noinline(PyObject *self, PyObject *args, PyObject *kwargs)
         }
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing keyword arguments 'b' and 'c' to "
-                "_testclinic.DeprKwdInitNoInline() is deprecated. Corresponding "
-                "parameters will become positional-only in Python 3.14.", 1))
+                "_testclinic.DeprKwdInitNoInline() is deprecated. Parameters 'b' "
+                "and 'c' will become positional-only in Python 3.14.", 1))
         {
             goto exit;
         }
@@ -1482,13 +1482,110 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(depr_star_multi__doc__,
+"depr_star_multi($module, /, a, b, c, d, e, f, g, *, h)\n"
+"--\n"
+"\n"
+"Note: Passing more than 1 positional argument to depr_star_multi() is\n"
+"deprecated. Parameter \'b\' will become a keyword-only parameter in\n"
+"Python 3.16. Parameters \'c\' and \'d\' will become keyword-only\n"
+"parameters in Python 3.15. Parameters \'e\', \'f\' and \'g\' will become\n"
+"keyword-only parameters in Python 3.14.\n"
+"");
+
+#define DEPR_STAR_MULTI_METHODDEF    \
+    {"depr_star_multi", _PyCFunction_CAST(depr_star_multi), METH_FASTCALL|METH_KEYWORDS, depr_star_multi__doc__},
+
+static PyObject *
+depr_star_multi_impl(PyObject *module, PyObject *a, PyObject *b, PyObject *c,
+                     PyObject *d, PyObject *e, PyObject *f, PyObject *g,
+                     PyObject *h);
+
+// Emit compiler warnings when we get to Python 3.14.
+#if PY_VERSION_HEX >= 0x030e00C0
+#  error "Update the clinic input of 'depr_star_multi'."
+#elif PY_VERSION_HEX >= 0x030e00A0
+#  ifdef _MSC_VER
+#    pragma message ("Update the clinic input of 'depr_star_multi'.")
+#  else
+#    warning "Update the clinic input of 'depr_star_multi'."
+#  endif
+#endif
+
+static PyObject *
+depr_star_multi(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 8
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(c), &_Py_ID(d), &_Py_ID(e), &_Py_ID(f), &_Py_ID(g), &_Py_ID(h), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"a", "b", "c", "d", "e", "f", "g", "h", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "depr_star_multi",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[8];
+    PyObject *a;
+    PyObject *b;
+    PyObject *c;
+    PyObject *d;
+    PyObject *e;
+    PyObject *f;
+    PyObject *g;
+    PyObject *h;
+
+    if (nargs > 1 && nargs <= 7) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing more than 1 positional argument to depr_star_multi() is "
+                "deprecated. Parameter 'b' will become a keyword-only parameter "
+                "in Python 3.16. Parameters 'c' and 'd' will become keyword-only "
+                "parameters in Python 3.15. Parameters 'e', 'f' and 'g' will "
+                "become keyword-only parameters in Python 3.14.", 1))
+        {
+            goto exit;
+        }
+    }
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 7, 7, 1, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    a = args[0];
+    b = args[1];
+    c = args[2];
+    d = args[3];
+    e = args[4];
+    f = args[5];
+    g = args[6];
+    h = args[7];
+    return_value = depr_star_multi_impl(module, a, b, c, d, e, f, g, h);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(depr_kwd_required_1__doc__,
 "depr_kwd_required_1($module, a, /, b)\n"
 "--\n"
 "\n"
 "Note: Passing keyword argument \'b\' to depr_kwd_required_1() is\n"
-"deprecated. Corresponding parameter will become positional-only in\n"
-"Python 3.14.\n"
+"deprecated. Parameter \'b\' will become positional-only in Python 3.14.\n"
 "");
 
 #define DEPR_KWD_REQUIRED_1_METHODDEF    \
@@ -1548,8 +1645,8 @@ depr_kwd_required_1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     if (nargs < 2) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing keyword argument 'b' to depr_kwd_required_1() is "
-                "deprecated. Corresponding parameter will become positional-only "
-                "in Python 3.14.", 1))
+                "deprecated. Parameter 'b' will become positional-only in Python "
+                "3.14.", 1))
         {
             goto exit;
         }
@@ -1567,7 +1664,7 @@ PyDoc_STRVAR(depr_kwd_required_2__doc__,
 "--\n"
 "\n"
 "Note: Passing keyword arguments \'b\' and \'c\' to depr_kwd_required_2()\n"
-"is deprecated. Corresponding parameters will become positional-only in\n"
+"is deprecated. Parameters \'b\' and \'c\' will become positional-only in\n"
 "Python 3.14.\n"
 "");
 
@@ -1630,7 +1727,7 @@ depr_kwd_required_2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     if (nargs < 3) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing keyword arguments 'b' and 'c' to depr_kwd_required_2() "
-                "is deprecated. Corresponding parameters will become "
+                "is deprecated. Parameters 'b' and 'c' will become "
                 "positional-only in Python 3.14.", 1))
         {
             goto exit;
@@ -1650,8 +1747,7 @@ PyDoc_STRVAR(depr_kwd_optional_1__doc__,
 "--\n"
 "\n"
 "Note: Passing keyword argument \'b\' to depr_kwd_optional_1() is\n"
-"deprecated. Corresponding parameter will become positional-only in\n"
-"Python 3.14.\n"
+"deprecated. Parameter \'b\' will become positional-only in Python 3.14.\n"
 "");
 
 #define DEPR_KWD_OPTIONAL_1_METHODDEF    \
@@ -1712,8 +1808,8 @@ depr_kwd_optional_1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     if (kwnames && PyTuple_GET_SIZE(kwnames) && nargs < 2 && args[1]) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing keyword argument 'b' to depr_kwd_optional_1() is "
-                "deprecated. Corresponding parameter will become positional-only "
-                "in Python 3.14.", 1))
+                "deprecated. Parameter 'b' will become positional-only in Python "
+                "3.14.", 1))
         {
             goto exit;
         }
@@ -1735,7 +1831,7 @@ PyDoc_STRVAR(depr_kwd_optional_2__doc__,
 "--\n"
 "\n"
 "Note: Passing keyword arguments \'b\' and \'c\' to depr_kwd_optional_2()\n"
-"is deprecated. Corresponding parameters will become positional-only in\n"
+"is deprecated. Parameters \'b\' and \'c\' will become positional-only in\n"
 "Python 3.14.\n"
 "");
 
@@ -1799,7 +1895,7 @@ depr_kwd_optional_2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     if (kwnames && PyTuple_GET_SIZE(kwnames) && ((nargs < 2 && args[1]) || (nargs < 3 && args[2]))) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing keyword arguments 'b' and 'c' to depr_kwd_optional_2() "
-                "is deprecated. Corresponding parameters will become "
+                "is deprecated. Parameters 'b' and 'c' will become "
                 "positional-only in Python 3.14.", 1))
         {
             goto exit;
@@ -1828,7 +1924,7 @@ PyDoc_STRVAR(depr_kwd_optional_3__doc__,
 "--\n"
 "\n"
 "Note: Passing keyword arguments \'a\', \'b\' and \'c\' to\n"
-"depr_kwd_optional_3() is deprecated. Corresponding parameters will\n"
+"depr_kwd_optional_3() is deprecated. Parameters \'a\', \'b\' and \'c\' will\n"
 "become positional-only in Python 3.14.\n"
 "");
 
@@ -1892,8 +1988,8 @@ depr_kwd_optional_3(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     if (kwnames && PyTuple_GET_SIZE(kwnames) && ((nargs < 1 && args[0]) || (nargs < 2 && args[1]) || (nargs < 3 && args[2]))) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing keyword arguments 'a', 'b' and 'c' to "
-                "depr_kwd_optional_3() is deprecated. Corresponding parameters "
-                "will become positional-only in Python 3.14.", 1))
+                "depr_kwd_optional_3() is deprecated. Parameters 'a', 'b' and 'c'"
+                " will become positional-only in Python 3.14.", 1))
         {
             goto exit;
         }
@@ -1926,7 +2022,7 @@ PyDoc_STRVAR(depr_kwd_required_optional__doc__,
 "--\n"
 "\n"
 "Note: Passing keyword arguments \'b\' and \'c\' to\n"
-"depr_kwd_required_optional() is deprecated. Corresponding parameters\n"
+"depr_kwd_required_optional() is deprecated. Parameters \'b\' and \'c\'\n"
 "will become positional-only in Python 3.14.\n"
 "");
 
@@ -1990,8 +2086,8 @@ depr_kwd_required_optional(PyObject *module, PyObject *const *args, Py_ssize_t n
     if (kwnames && PyTuple_GET_SIZE(kwnames) && ((nargs < 2) || (nargs < 3 && args[2]))) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing keyword arguments 'b' and 'c' to "
-                "depr_kwd_required_optional() is deprecated. Corresponding "
-                "parameters will become positional-only in Python 3.14.", 1))
+                "depr_kwd_required_optional() is deprecated. Parameters 'b' and "
+                "'c' will become positional-only in Python 3.14.", 1))
         {
             goto exit;
         }
@@ -2014,7 +2110,7 @@ PyDoc_STRVAR(depr_kwd_noinline__doc__,
 "--\n"
 "\n"
 "Note: Passing keyword arguments \'b\' and \'c\' to depr_kwd_noinline() is\n"
-"deprecated. Corresponding parameters will become positional-only in\n"
+"deprecated. Parameters \'b\' and \'c\' will become positional-only in\n"
 "Python 3.14.\n"
 "");
 
@@ -2081,8 +2177,8 @@ depr_kwd_noinline(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
         }
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                 "Passing keyword arguments 'b' and 'c' to depr_kwd_noinline() is "
-                "deprecated. Corresponding parameters will become positional-only"
-                " in Python 3.14.", 1))
+                "deprecated. Parameters 'b' and 'c' will become positional-only "
+                "in Python 3.14.", 1))
         {
             goto exit;
         }
@@ -2092,4 +2188,209 @@ depr_kwd_noinline(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=fc558c1efdcab076 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(depr_kwd_multi__doc__,
+"depr_kwd_multi($module, a, /, b, c, d, e, f, g, h)\n"
+"--\n"
+"\n"
+"Note: Passing keyword arguments \'b\', \'c\', \'d\', \'e\', \'f\' and \'g\' to\n"
+"depr_kwd_multi() is deprecated. Parameter \'b\' will become positional-\n"
+"only in Python 3.14. Parameters \'c\' and \'d\' will become positional-\n"
+"only in Python 3.15. Parameters \'e\', \'f\' and \'g\' will become\n"
+"positional-only in Python 3.16.\n"
+"");
+
+#define DEPR_KWD_MULTI_METHODDEF    \
+    {"depr_kwd_multi", _PyCFunction_CAST(depr_kwd_multi), METH_FASTCALL|METH_KEYWORDS, depr_kwd_multi__doc__},
+
+static PyObject *
+depr_kwd_multi_impl(PyObject *module, PyObject *a, PyObject *b, PyObject *c,
+                    PyObject *d, PyObject *e, PyObject *f, PyObject *g,
+                    PyObject *h);
+
+// Emit compiler warnings when we get to Python 3.14.
+#if PY_VERSION_HEX >= 0x030e00C0
+#  error "Update the clinic input of 'depr_kwd_multi'."
+#elif PY_VERSION_HEX >= 0x030e00A0
+#  ifdef _MSC_VER
+#    pragma message ("Update the clinic input of 'depr_kwd_multi'.")
+#  else
+#    warning "Update the clinic input of 'depr_kwd_multi'."
+#  endif
+#endif
+
+static PyObject *
+depr_kwd_multi(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 7
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(b), &_Py_ID(c), &_Py_ID(d), &_Py_ID(e), &_Py_ID(f), &_Py_ID(g), &_Py_ID(h), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "b", "c", "d", "e", "f", "g", "h", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "depr_kwd_multi",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[8];
+    PyObject *a;
+    PyObject *b;
+    PyObject *c;
+    PyObject *d;
+    PyObject *e;
+    PyObject *f;
+    PyObject *g;
+    PyObject *h;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 8, 8, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (nargs < 7) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing keyword arguments 'b', 'c', 'd', 'e', 'f' and 'g' to "
+                "depr_kwd_multi() is deprecated. Parameter 'b' will become "
+                "positional-only in Python 3.14. Parameters 'c' and 'd' will "
+                "become positional-only in Python 3.15. Parameters 'e', 'f' and "
+                "'g' will become positional-only in Python 3.16.", 1))
+        {
+            goto exit;
+        }
+    }
+    a = args[0];
+    b = args[1];
+    c = args[2];
+    d = args[3];
+    e = args[4];
+    f = args[5];
+    g = args[6];
+    h = args[7];
+    return_value = depr_kwd_multi_impl(module, a, b, c, d, e, f, g, h);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(depr_multi__doc__,
+"depr_multi($module, a, /, b, c, d, e, f, *, g)\n"
+"--\n"
+"\n"
+"Note: Passing keyword arguments \'b\' and \'c\' to depr_multi() is\n"
+"deprecated. Parameter \'b\' will become positional-only in Python 3.14.\n"
+"Parameter \'c\' will become positional-only in Python 3.15.\n"
+"\n"
+"\n"
+"Note: Passing more than 4 positional arguments to depr_multi() is\n"
+"deprecated. Parameter \'e\' will become a keyword-only parameter in\n"
+"Python 3.15. Parameter \'f\' will become a keyword-only parameter in\n"
+"Python 3.14.\n"
+"");
+
+#define DEPR_MULTI_METHODDEF    \
+    {"depr_multi", _PyCFunction_CAST(depr_multi), METH_FASTCALL|METH_KEYWORDS, depr_multi__doc__},
+
+static PyObject *
+depr_multi_impl(PyObject *module, PyObject *a, PyObject *b, PyObject *c,
+                PyObject *d, PyObject *e, PyObject *f, PyObject *g);
+
+// Emit compiler warnings when we get to Python 3.14.
+#if PY_VERSION_HEX >= 0x030e00C0
+#  error "Update the clinic input of 'depr_multi'."
+#elif PY_VERSION_HEX >= 0x030e00A0
+#  ifdef _MSC_VER
+#    pragma message ("Update the clinic input of 'depr_multi'.")
+#  else
+#    warning "Update the clinic input of 'depr_multi'."
+#  endif
+#endif
+
+static PyObject *
+depr_multi(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 6
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(b), &_Py_ID(c), &_Py_ID(d), &_Py_ID(e), &_Py_ID(f), &_Py_ID(g), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "b", "c", "d", "e", "f", "g", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "depr_multi",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[7];
+    PyObject *a;
+    PyObject *b;
+    PyObject *c;
+    PyObject *d;
+    PyObject *e;
+    PyObject *f;
+    PyObject *g;
+
+    if (nargs > 4 && nargs <= 6) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing more than 4 positional arguments to depr_multi() is "
+                "deprecated. Parameter 'e' will become a keyword-only parameter "
+                "in Python 3.15. Parameter 'f' will become a keyword-only "
+                "parameter in Python 3.14.", 1))
+        {
+            goto exit;
+        }
+    }
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 6, 6, 1, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing keyword arguments 'b' and 'c' to depr_multi() is "
+                "deprecated. Parameter 'b' will become positional-only in Python "
+                "3.14. Parameter 'c' will become positional-only in Python 3.15.", 1))
+        {
+            goto exit;
+        }
+    }
+    a = args[0];
+    b = args[1];
+    c = args[2];
+    d = args[3];
+    e = args[4];
+    f = args[5];
+    g = args[6];
+    return_value = depr_multi_impl(module, a, b, c, d, e, f, g);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=2c19d1804ba6e53b input=a9049054013a1b77]*/

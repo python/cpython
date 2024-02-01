@@ -2,11 +2,8 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(array_array___copy____doc__,
 "__copy__($self, /)\n"
@@ -445,10 +442,6 @@ array_array_frombytes(arrayobject *self, PyObject *arg)
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("frombytes", "argument", "contiguous buffer", arg);
-        goto exit;
-    }
     return_value = array_array_frombytes_impl(self, &buffer);
 
 exit:
@@ -589,7 +582,7 @@ array__array_reconstructor(PyObject *module, PyObject *const *args, Py_ssize_t n
         goto exit;
     }
     typecode = PyUnicode_READ_CHAR(args[1], 0);
-    mformat_code = _PyLong_AsInt(args[2]);
+    mformat_code = PyLong_AsInt(args[2]);
     if (mformat_code == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -674,4 +667,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=11595e9f38d6d500 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bf086c01e7e482bf input=a9049054013a1b77]*/

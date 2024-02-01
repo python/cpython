@@ -15,7 +15,7 @@
 */
 #ifdef HAVE_DYNAMIC_LOADING
 
-#include "importdl.h"
+#include "pycore_importdl.h"
 
 #ifdef MS_WINDOWS
 extern dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,

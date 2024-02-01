@@ -128,6 +128,30 @@ List Objects
    list is not supported.
 
 
+.. c:function:: int PyList_Extend(PyObject *list, PyObject *iterable)
+
+   Extend *list* with the contents of *iterable*.  This is the same as
+   ``PyList_SetSlice(list, PY_SSIZE_T_MAX, PY_SSIZE_T_MAX, iterable)``
+   and analogous to ``list.extend(iterable)`` or ``list += iterable``.
+
+   Raise an exception and return ``-1`` if *list* is not a :class:`list`
+   object. Return 0 on success.
+
+   .. versionadded:: 3.13
+
+
+.. c:function:: int PyList_Clear(PyObject *list)
+
+   Remove all items from *list*.  This is the same as
+   ``PyList_SetSlice(list, 0, PY_SSIZE_T_MAX, NULL)`` and analogous to
+   ``list.clear()`` or ``del list[:]``.
+
+   Raise an exception and return ``-1`` if *list* is not a :class:`list`
+   object.  Return 0 on success.
+
+   .. versionadded:: 3.13
+
+
 .. c:function:: int PyList_Sort(PyObject *list)
 
    Sort the items of *list* in place.  Return ``0`` on success, ``-1`` on

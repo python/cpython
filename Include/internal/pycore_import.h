@@ -5,12 +5,19 @@
 extern "C" {
 #endif
 
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
+#endif
+
+#include "pycore_lock.h"          // PyMutex
 #include "pycore_hashtable.h"     // _Py_hashtable_t
 #include "pycore_time.h"          // _PyTime_t
 
 extern int _PyImport_IsInitialized(PyInterpreterState *);
 
+// Export for 'pyexpat' shared extension
 PyAPI_FUNC(int) _PyImport_SetModule(PyObject *name, PyObject *module);
+
 extern int _PyImport_SetModuleString(const char *name, PyObject* module);
 
 extern void _PyImport_AcquireLock(PyInterpreterState *interp);
@@ -24,7 +31,10 @@ extern int _PyImport_FixupBuiltin(
 extern int _PyImport_FixupExtensionObject(PyObject*, PyObject *,
                                           PyObject *, PyObject *);
 
+// Export for many shared extensions, like '_json'
 PyAPI_FUNC(PyObject*) _PyImport_GetModuleAttr(PyObject *, PyObject *);
+
+// Export for many shared extensions, like '_datetime'
 PyAPI_FUNC(PyObject*) _PyImport_GetModuleAttrString(const char *, const char *);
 
 
@@ -38,7 +48,7 @@ struct _import_runtime_state {
     Py_ssize_t last_module_index;
     struct {
         /* A lock to guard the cache. */
-        PyThread_type_lock mutex;
+        PyMutex mutex;
         /* The actual cache of (filename, name, PyModuleDef) for modules.
            Only legacy (single-phase init) extension modules are added
            and only if they support multiple initialization (m_size >- 0)
@@ -99,7 +109,7 @@ struct _import_state {
 };
 
 #ifdef HAVE_DLOPEN
-#  include <dlfcn.h>
+#  include <dlfcn.h>              // RTLD_NOW, RTLD_LAZY
 #  if HAVE_DECL_RTLD_NOW
 #    define _Py_DLOPEN_FLAGS RTLD_NOW
 #  else
@@ -183,11 +193,9 @@ struct _module_alias {
     const char *orig;                 /* ASCII encoded string */
 };
 
-// Export for test_ctypes
+// Export these 3 symbols for test_ctypes
 PyAPI_DATA(const struct _frozen*) _PyImport_FrozenBootstrap;
-// Export for test_ctypes
 PyAPI_DATA(const struct _frozen*) _PyImport_FrozenStdlib;
-// Export for test_ctypes
 PyAPI_DATA(const struct _frozen*) _PyImport_FrozenTest;
 
 extern const struct _module_alias * _PyImport_FrozenAliases;

@@ -1128,6 +1128,26 @@ gh_99240_double_free_impl(PyObject *module, char *a, char *b)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+null_or_tuple_for_varargs
+
+    name: object
+    *constraints: object
+    covariant: bool = False
+
+See https://github.com/python/cpython/issues/110864
+[clinic start generated code]*/
+
+static PyObject *
+null_or_tuple_for_varargs_impl(PyObject *module, PyObject *name,
+                               PyObject *constraints, int covariant)
+/*[clinic end generated code: output=a785b35421358983 input=c9bce186637956b3]*/
+{
+    assert(name != NULL);
+    assert(constraints != NULL);
+    PyObject *c = covariant ? Py_True : Py_False;
+    return pack_arguments_newref(3, name, constraints, c);
+}
 
 /*[clinic input]
 _testclinic.clone_f1 as clone_f1
@@ -1581,6 +1601,32 @@ depr_star_noinline_impl(PyObject *module, PyObject *a, PyObject *b,
 
 
 /*[clinic input]
+depr_star_multi
+    a: object
+    * [from 3.16]
+    b: object
+    * [from 3.15]
+    c: object
+    d: object
+    * [from 3.14]
+    e: object
+    f: object
+    g: object
+    *
+    h: object
+[clinic start generated code]*/
+
+static PyObject *
+depr_star_multi_impl(PyObject *module, PyObject *a, PyObject *b, PyObject *c,
+                     PyObject *d, PyObject *e, PyObject *f, PyObject *g,
+                     PyObject *h)
+/*[clinic end generated code: output=77681653f4202068 input=3ebd05d888a957ea]*/
+{
+    Py_RETURN_NONE;
+}
+
+
+/*[clinic input]
 depr_kwd_required_1
     a: object
     /
@@ -1702,6 +1748,59 @@ depr_kwd_noinline_impl(PyObject *module, PyObject *a, PyObject *b,
     Py_RETURN_NONE;
 }
 
+
+/*[clinic input]
+depr_kwd_multi
+    a: object
+    /
+    b: object
+    / [from 3.14]
+    c: object
+    d: object
+    / [from 3.15]
+    e: object
+    f: object
+    g: object
+    / [from 3.16]
+    h: object
+[clinic start generated code]*/
+
+static PyObject *
+depr_kwd_multi_impl(PyObject *module, PyObject *a, PyObject *b, PyObject *c,
+                    PyObject *d, PyObject *e, PyObject *f, PyObject *g,
+                    PyObject *h)
+/*[clinic end generated code: output=ddfbde80fe1942e1 input=7a074e621c79efd7]*/
+{
+    Py_RETURN_NONE;
+}
+
+
+/*[clinic input]
+depr_multi
+    a: object
+    /
+    b: object
+    / [from 3.14]
+    c: object
+    / [from 3.15]
+    d: object
+    * [from 3.15]
+    e: object
+    * [from 3.14]
+    f: object
+    *
+    g: object
+[clinic start generated code]*/
+
+static PyObject *
+depr_multi_impl(PyObject *module, PyObject *a, PyObject *b, PyObject *c,
+                PyObject *d, PyObject *e, PyObject *f, PyObject *g)
+/*[clinic end generated code: output=f81c92852ca2d4ee input=5b847c5e44bedd02]*/
+{
+    Py_RETURN_NONE;
+}
+
+
 // Reset PY_VERSION_HEX
 #undef PY_VERSION_HEX
 #define PY_VERSION_HEX _SAVED_PY_VERSION
@@ -1764,6 +1863,7 @@ static PyMethodDef tester_methods[] = {
     GH_32092_KW_PASS_METHODDEF
     GH_99233_REFCOUNT_METHODDEF
     GH_99240_DOUBLE_FREE_METHODDEF
+    NULL_OR_TUPLE_FOR_VARARGS_METHODDEF
     CLONE_F1_METHODDEF
     CLONE_F2_METHODDEF
     CLONE_WITH_CONV_F1_METHODDEF
@@ -1779,6 +1879,7 @@ static PyMethodDef tester_methods[] = {
     DEPR_STAR_POS2_LEN2_METHODDEF
     DEPR_STAR_POS2_LEN2_WITH_KWD_METHODDEF
     DEPR_STAR_NOINLINE_METHODDEF
+    DEPR_STAR_MULTI_METHODDEF
     DEPR_KWD_REQUIRED_1_METHODDEF
     DEPR_KWD_REQUIRED_2_METHODDEF
     DEPR_KWD_OPTIONAL_1_METHODDEF
@@ -1786,6 +1887,8 @@ static PyMethodDef tester_methods[] = {
     DEPR_KWD_OPTIONAL_3_METHODDEF
     DEPR_KWD_REQUIRED_OPTIONAL_METHODDEF
     DEPR_KWD_NOINLINE_METHODDEF
+    DEPR_KWD_MULTI_METHODDEF
+    DEPR_MULTI_METHODDEF
     {NULL, NULL}
 };
 

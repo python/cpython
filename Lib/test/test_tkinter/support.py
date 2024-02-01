@@ -1,6 +1,5 @@
 import functools
 import tkinter
-import unittest
 
 class AbstractTkTest:
 
