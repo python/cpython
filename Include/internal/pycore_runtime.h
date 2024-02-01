@@ -268,7 +268,7 @@ typedef struct pyruntimestate {
        a pointer type.
        */
 
-    /* PyInterpreterState.interpreters.main */
+    /* _PyRuntimeState.interpreters.main */
     PyInterpreterState _main_interpreter;
 
 #if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
