@@ -81,6 +81,13 @@ Important deprecations, removals or restrictions:
   * Python 3.13 and later have two years of full support,
     followed by three years of security fixes.
 
+Interpreter improvements:
+
+* A basic :ref:`JIT compiler <whatsnew313-jit-compiler>` was added.
+  It is currently disabled by default (though we may turn it on later).
+  Performance improvements are modest -- we expect to be improving this
+  over the next few releases.
+
 
 New Features
 ============
@@ -476,6 +483,46 @@ Optimizations
   should provide a noteworthy performance increase launching processes on
   FreeBSD and Solaris.  See the ``subprocess`` section above for details.
   (Contributed by Jakub Kulik in :gh:`113117`.)
+
+.. _whatsnew313-jit-compiler:
+
+Experimental JIT Compiler
+=========================
+
+When CPython is configured using the ``--enable-experimental-jit`` option,
+a just-in-time compiler is added which can speed up some Python programs.
+
+The internal architecture is roughly as follows.
+
+* We start with specialized *Tier 1 bytecode*.
+  See :ref:`What's new in 3.11 <whatsnew311-pep659>` for details.
+
+* When the Tier 1 bytecode gets hot enough, it gets translated
+  to a new, purely internal *Tier 2 IR*, a.k.a. micro-ops ("uops").
+
+* The Tier 2 IR uses the same stack-based VM as Tier 1, but the
+  instruction format is better suited to translation to machine code.
+
+* We have several optimization passes for Tier 2 IR, which are applied
+  before it is interpreted or translated to machine code.
+
+* There is a Tier 2 interpreter, but it is mostly intended for debugging
+  the earlier stages of the optimization pipeline. If the JIT is not
+  enabled, the Tier 2 interpreter can be invoked by passing Python the
+  ``-X uops`` option or by setting the ``PYTHON_UOPS`` environment
+  variable to ``1``.
+
+* When the ``--enable-experimental-jit`` option is used, the optimized
+  Tier 2 IR is translated to machine code, which is then executed.
+  This does not require additional runtime options.
+
+* The machine code translation process uses an architecture called
+  *copy-and-patch*. It has no runtime dependencies, but there is a new
+  build-time dependency on LLVM.
+
+(JIT by Brandt Bucher, inspired by a paper by Haoran Xu and Fredrik Kjolstad.
+Tier 2 IR by Mark Shannon and Guido van Rossum.
+Tier 2 optimizer by Ken Jin.)
 
 
 Deprecated
