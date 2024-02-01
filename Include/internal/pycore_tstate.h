@@ -20,6 +20,7 @@ typedef struct _PyThreadStateImpl {
     PyThreadState base;
 
 #ifdef Py_GIL_DISABLED
+    struct _gc_thread_state gc;
     struct _mimalloc_thread_state mimalloc;
     struct _Py_freelist_state freelist_state;
 #endif
