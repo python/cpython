@@ -1,0 +1,8 @@
+Fix the issue that::
+
+    parser.add_argument("-p", "--param", type=float)
+    args = parser.parse_args()
+
+fails to correctly deal with `-p -3e12`, thinking that `-3e12` is an option,
+not a parameter to one. That's because the old regex was too restrictive.
+This fixes that with no found downsides.
