@@ -9,6 +9,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_freelist.h"      // _PyFreeListState
 #include "pycore_identifier.h"    // _Py_Identifier
 #include "pycore_object.h"        // PyDictOrValues
 
@@ -69,7 +70,7 @@ extern PyObject* _PyDictView_Intersect(PyObject* self, PyObject *other);
 
 /* runtime lifecycle */
 
-extern void _PyDict_Fini(PyInterpreterState *interp);
+extern void _PyDict_Fini(PyInterpreterState *state);
 
 
 /* other API */
