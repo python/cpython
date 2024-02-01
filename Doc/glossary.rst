@@ -754,7 +754,7 @@ Glossary
 
    loader
       An object that loads a module. It must define a method named
-      :meth:`!load_module`. A loader is typically returned by a
+      :meth:`load_module`. A loader is typically returned by a
       :term:`finder`. See :pep:`302` for details and
       :class:`importlib.abc.Loader` for an :term:`abstract base class`.
 
