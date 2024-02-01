@@ -274,12 +274,13 @@ _PyDict_ClearFreeList(_PyFreeListState *freelist_state, int is_finalization)
 }
 
 void
-_PyDict_Fini(PyInterpreterState *interp)
+_PyDict_Fini(PyInterpreterState *Py_UNUSED(interp))
 {
     // With Py_GIL_DISABLED:
     // the freelists for the current thread state have already been cleared.
 #ifndef Py_GIL_DISABLED
-    _PyDict_ClearFreeList(&interp->freelist_state, 1);
+     struct _Py_dict_freelist *freelist_state = get_dict_state();
+    _PyDict_ClearFreeList(freelist_state, 1);
 #endif
 }
 
