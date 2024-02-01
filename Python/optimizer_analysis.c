@@ -14,16 +14,18 @@
 #include <stddef.h>
 #include "pycore_optimizer.h"
 
-static int get_mutations(PyObject* dict) {
+static int
+get_mutations(PyObject* dict) {
     assert(PyDict_CheckExact(dict));
     PyDictObject *d = (PyDictObject *)dict;
     return (d->ma_version_tag >> DICT_MAX_WATCHERS) & ((1 << DICT_WATCHED_MUTATION_BITS)-1);
 }
 
-static int increment_mutations(PyObject* dict) {
+static void
+increment_mutations(PyObject* dict) {
     assert(PyDict_CheckExact(dict));
     PyDictObject *d = (PyDictObject *)dict;
-    return d->ma_version_tag += (1 << DICT_MAX_WATCHERS);
+    d->ma_version_tag += (1 << DICT_MAX_WATCHERS);
 }
 
 static int
@@ -80,6 +82,14 @@ incorrect_keys(_PyUOpInstruction *inst, PyObject *obj)
     return 0;
 }
 
+/* The first two dict watcher IDs are reserved for CPython,
+ * so we don't need to check that they haven't been used */
+#define BUILTINS_WATCHER_ID 0
+#define GLOBALS_WATCHER_ID  1
+
+/* Returns 1 if successfully optimized
+ *         0 if the trace is not suitable for optimization (yet)
+ *        -1 if there was an error. */
 static int
 remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                int buffer_size, _PyBloomFilter *dependencies)
@@ -101,6 +111,9 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
      * know that the builtins dict is the one we expected, and
      * that it hasn't changed and that the global dictionary's
      * keys have not changed */
+
+    /* These values represent stacks of booleans (one bool per bit).
+     * Pushing a frame shifts left, popping a frame shifts right. */
     uint32_t builtins_checked = 0;
     uint32_t builtins_watched = 0;
     uint32_t globals_checked = 0;
@@ -120,7 +133,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                     continue;
                 }
                 if ((builtins_watched & 1) == 0) {
-                    PyDict_Watch(0, builtins);
+                    PyDict_Watch(BUILTINS_WATCHER_ID, builtins);
                     builtins_watched |= 1;
                 }
                 if (builtins_checked & 1) {
@@ -141,7 +154,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                     continue;
                 }
                 if ((globals_watched & 1) == 0) {
-                    PyDict_Watch(1, globals);
+                    PyDict_Watch(GLOBALS_WATCHER_ID, globals);
                     _Py_BloomFilter_Add(dependencies, globals);
                     globals_watched |= 1;
                 }
@@ -164,9 +177,6 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                     global_to_const(inst, globals);
                 }
                 break;
-            case _JUMP_TO_TOP:
-            case _EXIT_TRACE:
-                return 1;
             case _PUSH_FRAME:
             {
                 globals_checked <<= 1;
@@ -197,6 +207,9 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 builtins = func->func_builtins;
                 break;
             }
+            case _JUMP_TO_TOP:
+            case _EXIT_TRACE:
+                return 1;
         }
     }
     return 0;
@@ -282,7 +295,6 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
         }
     }
 }
-
 
 int
 _Py_uop_analyze_and_optimize(

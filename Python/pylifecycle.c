@@ -1612,6 +1612,7 @@ finalize_modules(PyThreadState *tstate)
 
     // Invalidate all executors and turn off tier 2 optimizer
     _Py_Executors_InvalidateAll(interp);
+    Py_XDECREF(interp->optimizer);
     interp->optimizer = &_PyOptimizer_Default;
 
     // Stop watching __builtin__ modifications

@@ -594,7 +594,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                         ADD_TO_TRACE(uop, oparg, operand, target);
                         if (uop == _POP_FRAME) {
                             TRACE_STACK_POP();
-                            /* Set the operand to the code object returned to,
+                            /* Set the operand to the function object returned to,
                              * to assist optimization passes */
                             trace[trace_length-1].operand = (uintptr_t)func;
                             DPRINTF(2,
