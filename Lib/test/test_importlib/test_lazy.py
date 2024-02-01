@@ -150,7 +150,7 @@ class LazyLoaderTests(unittest.TestCase):
         with test_util.uncache(TestingImporter.module_name):
             loader = TestingImporter()
             module = self.new_module(loader=loader)
-            assert loader.load_count == 0
+            self.assertEqual(loader.load_count, 0)
 
             class RaisingThread(threading.Thread):
                 exc = None
@@ -171,10 +171,10 @@ class LazyLoaderTests(unittest.TestCase):
             # Races could cause errors
             for thread in threads:
                 thread.join()
-                assert thread.exc is None
+                self.assertIsNone(thread.exc)
 
             # Or multiple load attempts
-            assert loader.load_count == 1
+            self.assertEqual(loader.load_count, 1)
 
 
 if __name__ == '__main__':
