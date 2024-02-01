@@ -60,7 +60,7 @@ List Objects
 
    Return the object at position *index* in the list pointed to by *list*.  The
    position must be non-negative; indexing from the end of the list is not
-   supported.  If *index* is out of bounds (<0 or >=len(list)),
+   supported.  If *index* is out of bounds (:code:`<0 or >=len(list)`),
    return ``NULL`` and set an :exc:`IndexError` exception.
 
    .. versionadded:: 3.13
@@ -68,12 +68,7 @@ List Objects
 
 .. c:function:: PyObject* PyList_GetItem(PyObject *list, Py_ssize_t index)
 
-   Return the object at position *index* in the list pointed to by *list*.  The
-   position must be non-negative; indexing from the end of the list is not
-   supported.  If *index* is out of bounds (<0 or >=len(list)),
-   return ``NULL`` and set an :exc:`IndexError` exception.
-
-   This behaves like :c:func:`PyList_GetItemRef`, but returns a
+   Like :c:func:`PyList_GetItemRef`, but returns a
    :term:`borrowed reference` instead of a :term:`strong reference`.
 
 
