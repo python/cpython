@@ -998,7 +998,7 @@ Logged messages are formatted for presentation through instances of the
 use with the % operator and a dictionary.
 
 For formatting multiple messages in a batch, instances of
-:class:`~BufferingFormatter` can be used. In addition to the format
+:class:`BufferingFormatter` can be used. In addition to the format
 string (which is applied to each message in the batch), there is provision for
 header and trailer format strings.
 
