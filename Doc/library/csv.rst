@@ -351,6 +351,8 @@ The :mod:`csv` module defines the following constants:
    Instructs :class:`reader` objects to interpret an empty (unquoted) field as None and
    to otherwise behave as :data:`QUOTE_ALL`.
 
+   .. versionadded:: 3.12
+
 .. data:: QUOTE_STRINGS
 
    Instructs :class:`writer` objects to always place quotes around fields
@@ -359,6 +361,8 @@ The :mod:`csv` module defines the following constants:
 
    Instructs :class:`reader` objects to interpret an empty (unquoted) string as ``None`` and
    to otherwise behave as :data:`QUOTE_NONNUMERIC`.
+
+   .. versionadded:: 3.12
 
 The :mod:`csv` module defines the following exception:
 
