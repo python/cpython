@@ -1275,8 +1275,9 @@ buffer_fill_info(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    if (PyBuffer_FillInfo(&info, NULL, (void *)data, size, readonly, flags) < 0)
+    if (PyBuffer_FillInfo(&info, NULL, (void *)data, size, readonly, flags) < 0) {
         return NULL;
+    }
     return PyMemoryView_FromBuffer(&info);
 }
 
