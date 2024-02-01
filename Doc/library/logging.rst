@@ -1498,6 +1498,8 @@ Module-Level Attributes
 
    Used to see if exceptions during handling should be propagated.
 
+   Default: ``True``.
+
    If :data:`raiseExceptions` is ``False``,
    exceptions get silently ignored. This is what is mostly wanted
    for a logging system - most users will not care about errors in
