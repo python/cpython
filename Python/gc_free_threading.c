@@ -25,7 +25,10 @@ typedef struct _gc_runtime_state GCState;
 // Automatically choose the generation that needs collecting.
 #define GENERATION_AUTO (-1)
 
-// A linked-list of objects using the `ob_tid` field as the next pointer.
+// A linked list of objects using the `ob_tid` field as the next pointer.
+// The linked list pointers are distinct from any real thread ids, because the
+// thread ids returned by _Py_ThreadId() are also pointers to distinct objects.
+// No thread will confuse its own id with a linked list pointer.
 struct worklist {
     uintptr_t head;
 };
@@ -221,7 +224,7 @@ gc_visit_heaps_lock_held(PyInterpreterState *interp, mi_block_visit_fun *visitor
                          struct visitor_args *arg)
 {
     // Offset of PyObject header from start of memory block.
-    Py_ssize_t offset_base = sizeof(PyGC_Head);
+    Py_ssize_t offset_base = 0;
     if (_PyMem_DebugEnabled()) {
         // The debug allocator adds two words at the beginning of each block.
         offset_base += 2 * sizeof(size_t);
@@ -331,8 +334,14 @@ update_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
     Py_ssize_t refcount = Py_REFCNT(op);
     _PyObject_ASSERT(op, refcount >= 0);
 
-    // Add the actual refcount to ob_tid.
+    // We repurpose ob_tid to compute "gc_refs", the number of external
+    // references to the object (i.e., from outside the GC heaps). This means
+    // that ob_tid is no longer a valid thread id until it is restored by
+    // scan_heap_visitor(). Until then, we cannot use the standard reference
+    // counting functions or allow other threads to run Python code.
     gc_maybe_init_refs(op);
+
+    // Add the actual refcount to ob_tid.
     gc_add_refs(op, refcount);
 
     // Subtract internal references from ob_tid. Objects with ob_tid > 0
@@ -1508,8 +1517,10 @@ gc_alloc(PyTypeObject *tp, size_t basicsize, size_t presize)
     if (mem == NULL) {
         return _PyErr_NoMemory(tstate);
     }
-    ((PyObject **)mem)[0] = NULL;
-    ((PyObject **)mem)[1] = NULL;
+    if (presize) {
+        ((PyObject **)mem)[0] = NULL;
+        ((PyObject **)mem)[1] = NULL;
+    }
     PyObject *op = (PyObject *)(mem + presize);
     _PyObject_GC_Link(op);
     return op;
