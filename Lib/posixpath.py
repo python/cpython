@@ -448,16 +448,14 @@ symbolic links encountered in the path."""
     querying = True
     path = sep if filename.startswith(sep) else getcwd()
     for part in reversed(filename.split(sep)):
-        stack.append((False, part))
+        if part and part != curdir:
+            stack.append((False, part))
 
     while stack:
         is_symlink, name = stack.pop()
         if is_symlink:
             # resolved symlink
             seen[name] = path
-            continue
-        if not name or name == curdir:
-            # current dir
             continue
         if name == pardir:
             # parent dir
@@ -509,7 +507,8 @@ symbolic links encountered in the path."""
             path = sep
         stack.append((True, newpath))
         for part in reversed(target.split(sep)):
-            stack.append((False, part))
+            if part and part != curdir:
+                stack.append((False, part))
     return path
 
 
