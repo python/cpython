@@ -1,0 +1,1 @@
+Update Windows builds to use zlib v1.3.1.
