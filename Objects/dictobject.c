@@ -158,6 +158,15 @@ ASSERT_DICT_LOCKED(PyObject *op)
 #define STORE_INDEX(keys, size, idx, value) _Py_atomic_store_int##size##_relaxed(&((int##size##_t*)keys->dk_indices)[idx], (int##size##_t)value);
 #define ASSERT_OWNED_OR_SHARED(mp) \
     assert(_Py_IsOwnedByCurrentThread((PyObject *)mp) || IS_DICT_SHARED(mp));
+#define LOAD_KEYS_NENTRIES(d)
+#define DECREMENT(v) _Py_atomic_add_ssize(&(v), -1)
+
+static inline Py_ssize_t
+load_keys_nentries(PyDictObject *mp)
+{
+    PyDictKeysObject *keys = _Py_atomic_load_ptr(&mp->ma_keys);
+    return _Py_atomic_load_ssize(&keys->dk_nentries);
+}
 
 static inline void
 set_keys(PyDictObject *mp, PyDictKeysObject *keys)
@@ -213,6 +222,7 @@ static inline void split_keys_entry_added(PyDictKeysObject *keys)
 #define SET_DICT_SHARED(mp)
 #define LOAD_INDEX(keys, size, idx) ((const int##size##_t*)(keys->dk_indices))[idx]
 #define STORE_INDEX(keys, size, idx, value) ((int##size##_t*)(keys->dk_indices))[idx] = (int##size##_t)value
+#define DECREMENT(v) ((v)--)
 
 static inline void split_keys_entry_added(PyDictKeysObject *keys)
 {
@@ -231,6 +241,13 @@ set_values(PyDictObject *mp, PyDictValues *values)
 {
     mp->ma_values = values;
 }
+
+static inline Py_ssize_t
+load_keys_nentries(PyDictObject *mp)
+{
+    return mp->ma_keys->dk_nentries;
+}
+
 
 #endif
 
@@ -4858,7 +4875,7 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
             di->di_pos = dict->ma_used - 1;
         }
         else {
-            di->di_pos = dict->ma_keys->dk_nentries - 1;
+            di->di_pos = load_keys_nentries(dict) - 1;
         }
     }
     else {
@@ -4924,6 +4941,16 @@ static PyMethodDef dictiter_methods[] = {
      reduce_doc},
     {NULL,              NULL}           /* sentinel */
 };
+
+#ifdef Py_GIL_DISABLED
+
+static int
+dictiter_iternext_threadsafe(PyDictObject *d, PyObject *self,
+                             PyObject **out_key, PyObject **out_value);
+
+#endif
+
+#ifndef Py_GIL_DISABLED
 
 static PyObject*
 dictiter_iternextkey_lock_held(PyDictObject *d, PyObject *self)
@@ -4992,6 +5019,8 @@ fail:
     return NULL;
 }
 
+#endif
+
 static PyObject*
 dictiter_iternextkey(PyObject *self)
 {
@@ -5002,9 +5031,13 @@ dictiter_iternextkey(PyObject *self)
         return NULL;
 
     PyObject *value;
-    Py_BEGIN_CRITICAL_SECTION(d);
+#ifdef Py_GIL_DISABLED
+    if (!dictiter_iternext_threadsafe(d, self, &value, NULL)) {
+        value = NULL;
+    }
+#else
     value = dictiter_iternextkey_lock_held(d, self);
-    Py_END_CRITICAL_SECTION();
+#endif
 
     return value;
 }
@@ -5041,6 +5074,8 @@ PyTypeObject PyDictIterKey_Type = {
     dictiter_methods,                           /* tp_methods */
     0,
 };
+
+#ifndef Py_GIL_DISABLED
 
 static PyObject *
 dictiter_iternextvalue_lock_held(PyDictObject *d, PyObject *self)
@@ -5107,6 +5142,8 @@ fail:
     return NULL;
 }
 
+#endif
+
 static PyObject *
 dictiter_iternextvalue(PyObject *self)
 {
@@ -5117,9 +5154,13 @@ dictiter_iternextvalue(PyObject *self)
         return NULL;
 
     PyObject *value;
-    Py_BEGIN_CRITICAL_SECTION(d);
+#ifdef Py_GIL_DISABLED
+    if (!dictiter_iternext_threadsafe(d, self, NULL, &value)) {
+        value = NULL;
+    }
+#else
     value = dictiter_iternextvalue_lock_held(d, self);
-    Py_END_CRITICAL_SECTION();
+#endif
 
     return value;
 }
@@ -5157,11 +5198,12 @@ PyTypeObject PyDictIterValue_Type = {
     0,
 };
 
-static PyObject *
-dictiter_iternextitem_lock_held(PyDictObject *d, PyObject *self)
+static int
+dictiter_iternextitem_lock_held(PyDictObject *d, PyObject *self,
+                                PyObject **out_key, PyObject **out_value)
 {
     dictiterobject *di = (dictiterobject *)self;
-    PyObject *key, *value, *result;
+    PyObject *key, *value;
     Py_ssize_t i;
 
     assert (PyDict_Check(d));
@@ -5170,10 +5212,19 @@ dictiter_iternextitem_lock_held(PyDictObject *d, PyObject *self)
         PyErr_SetString(PyExc_RuntimeError,
                         "dictionary changed size during iteration");
         di->di_used = -1; /* Make this state sticky */
-        return NULL;
+        return 0;
     }
 
+#ifdef Py_GIL_DISABLED
+    Py_ssize_t start_pos;
+    // Even though we hold the lock here we may still lose a race against
+    // a lock-free iterator, therefore we may end up retrying our iteration.
+retry:
+    start_pos = i = _Py_atomic_load_ssize_relaxed(&di->di_pos);
+#else
     i = di->di_pos;
+#endif
+
     assert(i >= 0);
     if (_PyDict_HasSplitTable(d)) {
         if (i >= d->ma_used)
@@ -5214,36 +5265,198 @@ dictiter_iternextitem_lock_held(PyDictObject *d, PyObject *self)
                         "dictionary keys changed during iteration");
         goto fail;
     }
+#ifdef Py_GIL_DISABLED
+    if (!_Py_atomic_compare_exchange_ssize(&di->di_pos, &start_pos, i+1)) {
+        // We lost a a race with a lock-free iterator!
+        goto retry;
+    }
+#else
     di->di_pos = i+1;
-    di->len--;
-    result = di->di_result;
-    if (Py_REFCNT(result) == 1) {
-        PyObject *oldkey = PyTuple_GET_ITEM(result, 0);
-        PyObject *oldvalue = PyTuple_GET_ITEM(result, 1);
-        PyTuple_SET_ITEM(result, 0, Py_NewRef(key));
-        PyTuple_SET_ITEM(result, 1, Py_NewRef(value));
-        Py_INCREF(result);
-        Py_DECREF(oldkey);
-        Py_DECREF(oldvalue);
-        // bpo-42536: The GC may have untracked this result tuple. Since we're
-        // recycling it, make sure it's tracked again:
-        if (!_PyObject_GC_IS_TRACKED(result)) {
-            _PyObject_GC_TRACK(result);
-        }
+#endif
+    DECREMENT(di->len);
+    if (out_key != NULL) {
+        *out_key = Py_NewRef(key);
     }
-    else {
-        result = PyTuple_New(2);
-        if (result == NULL)
-            return NULL;
-        PyTuple_SET_ITEM(result, 0, Py_NewRef(key));
-        PyTuple_SET_ITEM(result, 1, Py_NewRef(value));
+    if (out_value != NULL) {
+        *out_value = Py_NewRef(value);
     }
-    return result;
+    return 1;
 
 fail:
     di->di_dict = NULL;
     Py_DECREF(d);
-    return NULL;
+    return 0;
+}
+
+#ifdef Py_GIL_DISABLED
+
+// Grabs the key and/or value from the provided locations and if successful
+// returns them with an increased reference count.  If either one is unsucessful
+// nothing is incref'd and returns 0.
+static int
+acquire_key_value(PyObject **key_loc, PyObject *value, PyObject **value_loc,
+                  PyObject **out_key, PyObject **out_value)
+{
+    if (out_key) {
+        *out_key = _Py_TryXGetRef(key_loc);
+        if (*out_key == NULL) {
+            return 0;
+        }
+    }
+
+    if (out_value) {
+        if (!_Py_TryIncref(value_loc, value)) {
+            if (out_key) {
+                Py_DECREF(*out_key);
+            }
+            return 0;
+        }
+        *out_value = value;
+    }
+
+    return 1;
+}
+
+static Py_ssize_t
+load_values_used_size(PyDictValues *values)
+{
+    return (Py_ssize_t)_Py_atomic_load_uint8(&DICT_VALUES_USED_SIZE(values));
+}
+
+static int
+dictiter_iternext_threadsafe(PyDictObject *d, PyObject *self,
+                             PyObject **out_key, PyObject **out_value)
+{
+    dictiterobject *di = (dictiterobject *)self;
+    Py_ssize_t i;
+    PyDictKeysObject *k;
+
+    assert (PyDict_Check(d));
+
+    if (di->di_used != _Py_atomic_load_ssize_relaxed(&d->ma_used)) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "dictionary changed size during iteration");
+        di->di_used = -1; /* Make this state sticky */
+        return 0;
+    }
+
+    ensure_shared_on_read(d);
+
+    Py_ssize_t start_pos = i = _Py_atomic_load_ssize_relaxed(&di->di_pos);
+    k = _Py_atomic_load_ptr_relaxed(&d->ma_keys);
+    assert(i >= 0);
+    if (_PyDict_HasSplitTable(d)) {
+        PyDictValues *values = _Py_atomic_load_ptr_relaxed(&d->ma_values);
+        if (values == NULL)
+            goto concurrent_modification;
+
+        Py_ssize_t used = load_values_used_size(values);
+        if (i >= used)
+            goto fail;
+
+        // We're racing against writes to the order from delete_index_from_values, but
+        // single threaded can suffer from concurrent modification to those as well and
+        // can have either duplicated or skipped attributes, so we strive to do no better
+        // here.
+        int index = get_index_from_order(d, i);
+        PyObject *value = _Py_atomic_load_ptr(&values->values[index]);
+        if (!acquire_key_value(&DK_UNICODE_ENTRIES(k)[index].me_key, value,
+                               &values->values[index], out_key, out_value)) {
+            goto try_locked;
+        }
+    }
+    else {
+        Py_ssize_t n = _Py_atomic_load_ssize_relaxed(&k->dk_nentries);
+        if (DK_IS_UNICODE(k)) {
+            PyDictUnicodeEntry *entry_ptr = &DK_UNICODE_ENTRIES(k)[i];
+            PyObject *value;
+            while (i < n &&
+                  (value = _Py_atomic_load_ptr(&entry_ptr->me_value)) == NULL) {
+                entry_ptr++;
+                i++;
+            }
+            if (i >= n)
+                goto fail;
+
+            if (!acquire_key_value(&entry_ptr->me_key, value,
+                                   &entry_ptr->me_value, out_key, out_value)) {
+                goto try_locked;
+            }
+        }
+        else {
+            PyDictKeyEntry *entry_ptr = &DK_ENTRIES(k)[i];
+            PyObject *value;
+            while (i < n &&
+                  (value = _Py_atomic_load_ptr(&entry_ptr->me_value)) == NULL) {
+                entry_ptr++;
+                i++;
+            }
+
+            if (i >= n)
+                goto fail;
+
+            if (!acquire_key_value(&entry_ptr->me_key, value,
+                                   &entry_ptr->me_value, out_key, out_value)) {
+                goto try_locked;
+            }
+        }
+    }
+    // We found an element (key), but did not expect it
+    if (_Py_atomic_load_ssize_relaxed(&di->len) == 0) {
+        goto concurrent_modification;
+    }
+    if (!_Py_atomic_compare_exchange_ssize(&di->di_pos, &start_pos, i+1)) {
+        // We lost a race with someone else iterating...
+        if (out_key != NULL) {
+            Py_DECREF(*out_key);
+        }
+        if (out_value != NULL) {
+            Py_DECREF(*out_value);
+        }
+        goto try_locked;
+    }
+    _Py_atomic_add_ssize(&di->len, -1);
+    return 1;
+
+concurrent_modification:
+    PyErr_SetString(PyExc_RuntimeError,
+                    "dictionary keys changed during iteration");
+
+fail:
+    di->di_dict = NULL;
+    Py_DECREF(d);
+    return 0;
+
+    int success;
+try_locked:
+    Py_BEGIN_CRITICAL_SECTION(d);
+    success = dictiter_iternextitem_lock_held(d, self, out_key, out_value);
+    Py_END_CRITICAL_SECTION();
+    return success;
+}
+
+#endif
+
+static bool
+acquire_iter_result(PyObject *result)
+{
+#ifdef Py_GIL_DISABLED
+    if (Py_REFCNT(result) == 1) {
+        Py_INCREF(result);
+        if (Py_REFCNT(result) == 2) {
+            return true;
+        }
+        Py_DECREF(result);
+        return false;
+    }
+    return false;
+#else
+    if (Py_REFCNT(result) == 1) {
+        Py_INCREF(result);
+        return true;
+    }
+    return false;
+#endif
 }
 
 static PyObject *
@@ -5255,11 +5468,37 @@ dictiter_iternextitem(PyObject *self)
     if (d == NULL)
         return NULL;
 
-    PyObject *item;
-    Py_BEGIN_CRITICAL_SECTION(d);
-    item = dictiter_iternextitem_lock_held(d, self);
-    Py_END_CRITICAL_SECTION();
-    return item;
+    PyObject *key, *value;
+#ifdef Py_GIL_DISABLED
+    if (dictiter_iternext_threadsafe(d, self, &key, &value)) {
+#else
+    if (dictiter_iternextitem_lock_held(d, self, &key, &value)) {
+
+#endif
+        PyObject *result = di->di_result;
+        if (acquire_iter_result(result)) {
+            PyObject *oldkey = PyTuple_GET_ITEM(result, 0);
+            PyObject *oldvalue = PyTuple_GET_ITEM(result, 1);
+            PyTuple_SET_ITEM(result, 0, key);
+            PyTuple_SET_ITEM(result, 1, value);
+            Py_DECREF(oldkey);
+            Py_DECREF(oldvalue);
+            // bpo-42536: The GC may have untracked this result tuple. Since we're
+            // recycling it, make sure it's tracked again:
+            if (!_PyObject_GC_IS_TRACKED(result)) {
+                _PyObject_GC_TRACK(result);
+            }
+        }
+        else {
+            result = PyTuple_New(2);
+            if (result == NULL)
+                return NULL;
+            PyTuple_SET_ITEM(result, 0, key);
+            PyTuple_SET_ITEM(result, 1, value);
+        }
+        return result;
+    }
+    return NULL;
 }
 
 PyTypeObject PyDictIterItem_Type = {
