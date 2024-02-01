@@ -272,7 +272,7 @@ The :mod:`pickle` module defines three exceptions:
 
 .. exception:: PickleError
 
-   Common base class for the other pickling exceptions.  It inherits
+   Common base class for the other pickling exceptions.  It inherits from
    :exc:`Exception`.
 
 .. exception:: PicklingError
