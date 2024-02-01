@@ -536,7 +536,15 @@ Other constructors, all class methods:
 .. classmethod:: date.fromisoformat(date_string)
 
    Return a :class:`date` corresponding to a *date_string* given in any valid
-   ISO 8601 format, except ordinal dates (e.g. ``YYYY-DDD``)::
+   ISO 8601 format, with the following exceptions:
+
+   1. Reduced precision dates are not currently supported (``YYYY-MM``,
+      ``YYYY``).
+   2. Extended date representations are not currently supported
+      (``±YYYYYY-MM-DD``).
+   3. Ordinal dates are not currently supported (``YYYY-OOO``).
+
+   Examples::
 
       >>> from datetime import date
       >>> date.fromisoformat('2019-12-04')
@@ -1014,8 +1022,12 @@ Other constructors, all class methods:
 
    1. Time zone offsets may have fractional seconds.
    2. The ``T`` separator may be replaced by any single unicode character.
-   3. Ordinal dates are not currently supported.
-   4. Fractional hours and minutes are not supported.
+   3. Fractional hours and minutes are not supported.
+   4. Reduced precision dates are not currently supported (``YYYY-MM``,
+      ``YYYY``).
+   5. Extended date representations are not currently supported
+      (``±YYYYYY-MM-DD``).
+   6. Ordinal dates are not currently supported (``YYYY-OOO``).
 
    Examples::
 
