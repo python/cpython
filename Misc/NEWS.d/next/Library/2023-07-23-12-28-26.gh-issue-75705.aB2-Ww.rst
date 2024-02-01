@@ -1,1 +1,1 @@
-Set unixfrom envelope in mailbox._mboxMMDF.
+Set unixfrom envelope in :class:`mailbox.mbox` and :class:`mailbox.MMDF`.
