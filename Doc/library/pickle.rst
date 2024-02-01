@@ -272,13 +272,13 @@ The :mod:`pickle` module defines three exceptions:
 
 .. exception:: PickleError
 
-   Common base class for the other pickling exceptions.  It inherits
+   Common base class for the other pickling exceptions.  It inherits from
    :exc:`Exception`.
 
 .. exception:: PicklingError
 
    Error raised when an unpicklable object is encountered by :class:`Pickler`.
-   It inherits :exc:`PickleError`.
+   It inherits from :exc:`PickleError`.
 
    Refer to :ref:`pickle-picklable` to learn what kinds of objects can be
    pickled.
@@ -286,7 +286,7 @@ The :mod:`pickle` module defines three exceptions:
 .. exception:: UnpicklingError
 
    Error raised when there is a problem unpickling an object, such as a data
-   corruption or a security violation.  It inherits :exc:`PickleError`.
+   corruption or a security violation.  It inherits from :exc:`PickleError`.
 
    Note that other exceptions may also be raised during unpickling, including
    (but not necessarily limited to) AttributeError, EOFError, ImportError, and
