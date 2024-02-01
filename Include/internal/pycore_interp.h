@@ -20,6 +20,7 @@ extern "C" {
 #include "pycore_dtoa.h"          // struct _dtoa_state
 #include "pycore_exceptions.h"    // struct _Py_exc_state
 #include "pycore_floatobject.h"   // struct _Py_float_state
+#include "pycore_freelist.h"      // struct _Py_freelist_state
 #include "pycore_function.h"      // FUNC_MAX_WATCHERS
 #include "pycore_gc.h"            // struct _gc_runtime_state
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
@@ -230,7 +231,6 @@ struct _is {
     struct _dtoa_state dtoa;
     struct _py_func_state func_state;
 
-    struct _Py_tuple_state tuple;
     struct _Py_dict_state dict_state;
     struct _Py_exc_state exc_state;
 
