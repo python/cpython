@@ -1029,6 +1029,7 @@ class TestBufferProtocol(unittest.TestCase):
                     ndim=ndim, shape=shape, strides=strides,
                     lst=lst, sliced=sliced)
 
+    @support.requires_resource('cpu')
     def test_ndarray_getbuf(self):
         requests = (
             # distinct flags
@@ -2760,6 +2761,7 @@ class TestBufferProtocol(unittest.TestCase):
             m = memoryview(ex)
             iter_roundtrip(ex, m, items, fmt)
 
+    @support.requires_resource('cpu')
     def test_memoryview_cast_1D_ND(self):
         # Cast between C-contiguous buffers. At least one buffer must
         # be 1D, at least one format must be 'c', 'b' or 'B'.
@@ -4582,6 +4584,12 @@ class TestPythonBufferProtocol(unittest.TestCase):
         with self.assertRaises(ValueError):
             buf.__release_buffer__(mv)
         self.assertEqual(buf.references, 0)
+
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def test_c_buffer_invalid_flags(self):
+        buf = _testcapi.testBuf()
+        self.assertRaises(SystemError, buf.__buffer__, PyBUF_READ)
+        self.assertRaises(SystemError, buf.__buffer__, PyBUF_WRITE)
 
     def test_inheritance(self):
         class A(bytearray):

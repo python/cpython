@@ -1,5 +1,0 @@
-Add a new :opcode:`TO_BOOL` instruction, which performs boolean conversions
-for :opcode:`POP_JUMP_IF_TRUE`, :opcode:`POP_JUMP_IF_FALSE`, and
-:opcode:`UNARY_NOT` (which all expect exact :class:`bool` values now). Also,
-modify the oparg of :opcode:`COMPARE_OP` to include an optional "boolean
-conversion" flag.

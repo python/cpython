@@ -1,3 +1,0 @@
-Ensure that trailing ``DEDENT`` :class:`tokenize.TokenInfo` objects emitted
-by the :mod:`tokenize` module are reported as in Python 3.11. Patch by Pablo
-Galindo

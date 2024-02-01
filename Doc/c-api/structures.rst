@@ -35,7 +35,7 @@ under :ref:`reference counting <countingrefs>`.
 
 .. c:type:: PyVarObject
 
-   This is an extension of :c:type:`PyObject` that adds the :attr:`ob_size`
+   This is an extension of :c:type:`PyObject` that adds the :c:member:`~PyVarObject.ob_size`
    field.  This is only used for objects that have some notion of *length*.
    This type does not often appear in the Python/C API.
    Access to the members must be done by using the macros
@@ -152,7 +152,7 @@ under :ref:`reference counting <countingrefs>`.
 .. c:macro:: PyVarObject_HEAD_INIT(type, size)
 
    This is a macro which expands to initialization values for a new
-   :c:type:`PyVarObject` type, including the :attr:`ob_size` field.
+   :c:type:`PyVarObject` type, including the :c:member:`~PyVarObject.ob_size` field.
    This macro expands to::
 
       _PyObject_EXTRA_INIT
@@ -228,30 +228,32 @@ Implementing functions and methods
    Structure used to describe a method of an extension type.  This structure has
    four fields:
 
-   .. c:member:: const char* ml_name
+   .. c:member:: const char *ml_name
 
-      name of the method
+      Name of the method.
 
    .. c:member:: PyCFunction ml_meth
 
-      pointer to the C implementation
+      Pointer to the C implementation.
 
    .. c:member:: int ml_flags
 
-      flags bits indicating how the call should be constructed
+      Flags bits indicating how the call should be constructed.
 
-   .. c:member:: const char* ml_doc
+   .. c:member:: const char *ml_doc
 
-      points to the contents of the docstring
+      Points to the contents of the docstring.
 
-The :c:member:`ml_meth` is a C function pointer.  The functions may be of different
+The :c:member:`~PyMethodDef.ml_meth` is a C function pointer.
+The functions may be of different
 types, but they always return :c:expr:`PyObject*`.  If the function is not of
 the :c:type:`PyCFunction`, the compiler will require a cast in the method table.
 Even though :c:type:`PyCFunction` defines the first parameter as
 :c:expr:`PyObject*`, it is common that the method implementation uses the
 specific C type of the *self* object.
 
-The :c:member:`ml_flags` field is a bitfield which can include the following flags.
+The :c:member:`~PyMethodDef.ml_flags` field is a bitfield which can include
+the following flags.
 The individual flags indicate either a calling convention or a binding
 convention.
 
@@ -391,11 +393,45 @@ definition with the same method name.
    *METH_COEXIST*, the default is to skip repeated definitions.  Since slot
    wrappers are loaded before the method table, the existence of a
    *sq_contains* slot, for example, would generate a wrapped method named
-   :meth:`__contains__` and preclude the loading of a corresponding
+   :meth:`~object.__contains__` and preclude the loading of a corresponding
    PyCFunction with the same name.  With the flag defined, the PyCFunction
    will be loaded in place of the wrapper object and will co-exist with the
    slot.  This is helpful because calls to PyCFunctions are optimized more
    than wrapper object calls.
+
+.. c:function:: PyObject * PyCMethod_New(PyMethodDef *ml, PyObject *self, PyObject *module, PyTypeObject *cls)
+
+   Turn *ml* into a Python :term:`callable` object.
+   The caller must ensure that *ml* outlives the :term:`callable`.
+   Typically, *ml* is defined as a static variable.
+
+   The *self* parameter will be passed as the *self* argument
+   to the C function in ``ml->ml_meth`` when invoked.
+   *self* can be ``NULL``.
+
+   The :term:`callable` object's ``__module__`` attribute
+   can be set from the given *module* argument.
+   *module* should be a Python string,
+   which will be used as name of the module the function is defined in.
+   If unavailable, it can be set to :const:`None` or ``NULL``.
+
+   .. seealso:: :attr:`function.__module__`
+
+   The *cls* parameter will be passed as the *defining_class*
+   argument to the C function.
+   Must be set if :c:macro:`METH_METHOD` is set on ``ml->ml_flags``.
+
+   .. versionadded:: 3.9
+
+
+.. c:function:: PyObject * PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
+
+   Equivalent to ``PyCMethod_New(ml, self, module, NULL)``.
+
+
+.. c:function:: PyObject * PyCFunction_New(PyMethodDef *ml, PyObject *self)
+
+   Equivalent to ``PyCMethod_New(ml, self, NULL, NULL)``.
 
 
 Accessing attributes of extension types
@@ -404,7 +440,11 @@ Accessing attributes of extension types
 .. c:type:: PyMemberDef
 
    Structure which describes an attribute of a type which corresponds to a C
-   struct member.  Its fields are, in order:
+   struct member.
+   When defining a class, put a NULL-terminated array of these
+   structures in the :c:member:`~PyTypeObject.tp_members` slot.
+
+   Its fields are, in order:
 
    .. c:member:: const char* name
 
@@ -413,14 +453,14 @@ Accessing attributes of extension types
 
          The string should be static, no copy is made of it.
 
-   .. c:member:: Py_ssize_t offset
-
-      The offset in bytes that the member is located on the type’s object struct.
-
    .. c:member:: int type
 
       The type of the member in the C struct.
       See :ref:`PyMemberDef-types` for the possible values.
+
+   .. c:member:: Py_ssize_t offset
+
+      The offset in bytes that the member is located on the type’s object struct.
 
    .. c:member:: int flags
 
@@ -432,7 +472,7 @@ Accessing attributes of extension types
       The string should be static, no copy is made of it.
       Typically, it is defined using :c:macro:`PyDoc_STR`.
 
-   By default (when :c:member:`flags` is ``0``), members allow
+   By default (when :c:member:`~PyMemberDef.flags` is ``0``), members allow
    both read and write access.
    Use the :c:macro:`Py_READONLY` flag for read-only access.
    Certain types, like :c:macro:`Py_T_STRING`, imply :c:macro:`Py_READONLY`.
@@ -511,11 +551,11 @@ The following flags can be used with :c:member:`PyMemberDef.flags`:
    from ``PyObject``.
 
    Can only be used as part of :c:member:`Py_tp_members <PyTypeObject.tp_members>`
-   :c:type:`slot <PyTypeSlot>` when creating a class using negative
-   :c:member:`~PyTypeDef.basicsize`.
+   :c:type:`slot <PyType_Slot>` when creating a class using negative
+   :c:member:`~PyType_Spec.basicsize`.
    It is mandatory in that case.
 
-   This flag is only used in :c:type:`PyTypeSlot`.
+   This flag is only used in :c:type:`PyType_Slot`.
    When setting :c:member:`~PyTypeObject.tp_members` during
    class creation, Python clears it and sets
    :c:member:`PyMemberDef.offset` to the offset from the ``PyObject`` struct.
@@ -586,7 +626,7 @@ Macro name                       C type                        Python type
 
    (*): Zero-terminated, UTF8-encoded C string.
    With :c:macro:`!Py_T_STRING` the C representation is a pointer;
-   with :c:macro:`!Py_T_STRING_INLINE` the string is stored directly
+   with :c:macro:`!Py_T_STRING_INPLACE` the string is stored directly
    in the structure.
 
    (**): String of length 1. Only ASCII is accepted.
@@ -653,7 +693,8 @@ Defining Getters and Setters
 
    .. c:member:: setter set
 
-      Optional C function to set or delete the attribute, if omitted the attribute is readonly.
+      Optional C function to set or delete the attribute.
+      If ``NULL``, the attribute is read-only.
 
    .. c:member:: const char* doc
 
@@ -663,18 +704,18 @@ Defining Getters and Setters
 
       Optional function pointer, providing additional data for getter and setter.
 
-   The ``get`` function takes one :c:expr:`PyObject*` parameter (the
-   instance) and a function pointer (the associated ``closure``)::
+.. c:type:: PyObject *(*getter)(PyObject *, void *)
 
-      typedef PyObject *(*getter)(PyObject *, void *);
+   The ``get`` function takes one :c:expr:`PyObject*` parameter (the
+   instance) and a function pointer (the associated ``closure``):
 
    It should return a new reference on success or ``NULL`` with a set exception
    on failure.
 
-   ``set`` functions take two :c:expr:`PyObject*` parameters (the instance and
-   the value to be set) and a function pointer (the associated ``closure``)::
+.. c:type:: int (*setter)(PyObject *, PyObject *, void *)
 
-      typedef int (*setter)(PyObject *, PyObject *, void *);
+   ``set`` functions take two :c:expr:`PyObject*` parameters (the instance and
+   the value to be set) and a function pointer (the associated ``closure``):
 
    In case the attribute should be deleted the second parameter is ``NULL``.
    Should return ``0`` on success or ``-1`` with a set exception on failure.

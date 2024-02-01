@@ -1,5 +1,6 @@
 import doctest
 import textwrap
+import types
 import unittest
 
 
@@ -92,7 +93,8 @@ Make sure that None is a valid return value
 
 
 class ListComprehensionTest(unittest.TestCase):
-    def _check_in_scopes(self, code, outputs=None, ns=None, scopes=None, raises=()):
+    def _check_in_scopes(self, code, outputs=None, ns=None, scopes=None, raises=(),
+                         exec_func=exec):
         code = textwrap.dedent(code)
         scopes = scopes or ["module", "class", "function"]
         for scope in scopes:
@@ -119,13 +121,13 @@ class ListComprehensionTest(unittest.TestCase):
                         return moddict[name]
                 newns = ns.copy() if ns else {}
                 try:
-                    exec(newcode, newns)
+                    exec_func(newcode, newns)
                 except raises as e:
                     # We care about e.g. NameError vs UnboundLocalError
                     self.assertIs(type(e), raises)
                 else:
                     for k, v in (outputs or {}).items():
-                        self.assertEqual(get_output(newns, k), v)
+                        self.assertEqual(get_output(newns, k), v, k)
 
     def test_lambdas_with_iteration_var_as_default(self):
         code = """
@@ -560,6 +562,97 @@ class ListComprehensionTest(unittest.TestCase):
                 "y": 0
             }
         )
+
+    def test_comp_in_try_except(self):
+        template = """
+            value = ["ab"]
+            result = snapshot = None
+            try:
+                result = [{func}(value) for value in value]
+            except:
+                snapshot = value
+                raise
+        """
+        # No exception.
+        code = template.format(func='len')
+        self._check_in_scopes(code, {"value": ["ab"], "result": [2], "snapshot": None})
+        # Handles exception.
+        code = template.format(func='int')
+        self._check_in_scopes(code, {"value": ["ab"], "result": None, "snapshot": ["ab"]},
+                              raises=ValueError)
+
+    def test_comp_in_try_finally(self):
+        template = """
+            value = ["ab"]
+            result = snapshot = None
+            try:
+                result = [{func}(value) for value in value]
+            finally:
+                snapshot = value
+        """
+        # No exception.
+        code = template.format(func='len')
+        self._check_in_scopes(code, {"value": ["ab"], "result": [2], "snapshot": ["ab"]})
+        # Handles exception.
+        code = template.format(func='int')
+        self._check_in_scopes(code, {"value": ["ab"], "result": None, "snapshot": ["ab"]},
+                              raises=ValueError)
+
+    def test_exception_in_post_comp_call(self):
+        code = """
+            value = [1, None]
+            try:
+                [v for v in value].sort()
+            except:
+                pass
+        """
+        self._check_in_scopes(code, {"value": [1, None]})
+
+    def test_frame_locals(self):
+        code = """
+            val = [sys._getframe().f_locals for a in [0]][0]["a"]
+        """
+        import sys
+        self._check_in_scopes(code, {"val": 0}, ns={"sys": sys})
+
+    def _recursive_replace(self, maybe_code):
+        if not isinstance(maybe_code, types.CodeType):
+            return maybe_code
+        return maybe_code.replace(co_consts=tuple(
+            self._recursive_replace(c) for c in maybe_code.co_consts
+        ))
+
+    def _replacing_exec(self, code_string, ns):
+        co = compile(code_string, "<string>", "exec")
+        co = self._recursive_replace(co)
+        exec(co, ns)
+
+    def test_code_replace(self):
+        code = """
+            x = 3
+            [x for x in (1, 2)]
+            dir()
+            y = [x]
+        """
+        self._check_in_scopes(code, {"y": [3], "x": 3})
+        self._check_in_scopes(code, {"y": [3], "x": 3}, exec_func=self._replacing_exec)
+
+    def test_code_replace_extended_arg(self):
+        num_names = 300
+        assignments = "; ".join(f"x{i} = {i}" for i in range(num_names))
+        name_list = ", ".join(f"x{i}" for i in range(num_names))
+        expected = {
+            "y": list(range(num_names)),
+            **{f"x{i}": i for i in range(num_names)}
+        }
+        code = f"""
+            {assignments}
+            [({name_list}) for {name_list} in (range(300),)]
+            dir()
+            y = [{name_list}]
+        """
+        self._check_in_scopes(code, expected)
+        self._check_in_scopes(code, expected, exec_func=self._replacing_exec)
 
 
 __test__ = {'doctests' : doctests}

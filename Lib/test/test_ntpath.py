@@ -2,6 +2,7 @@ import inspect
 import ntpath
 import os
 import string
+import subprocess
 import sys
 import unittest
 import warnings
@@ -226,10 +227,18 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.split("//conky/mountpoint/")', ('//conky/mountpoint/', ''))
 
     def test_isabs(self):
+        tester('ntpath.isabs("foo\\bar")', 0)
+        tester('ntpath.isabs("foo/bar")', 0)
         tester('ntpath.isabs("c:\\")', 1)
+        tester('ntpath.isabs("c:\\foo\\bar")', 1)
+        tester('ntpath.isabs("c:/foo/bar")', 1)
         tester('ntpath.isabs("\\\\conky\\mountpoint\\")', 1)
-        tester('ntpath.isabs("\\foo")', 1)
-        tester('ntpath.isabs("\\foo\\bar")', 1)
+
+        # gh-44626: paths with only a drive or root are not absolute.
+        tester('ntpath.isabs("\\foo\\bar")', 0)
+        tester('ntpath.isabs("/foo/bar")', 0)
+        tester('ntpath.isabs("c:foo\\bar")', 0)
+        tester('ntpath.isabs("c:foo/bar")', 0)
 
         # gh-96290: normal UNC paths and device paths without trailing backslashes
         tester('ntpath.isabs("\\\\conky\\mountpoint")', 1)
@@ -255,6 +264,7 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.join("a", "b", "c")', 'a\\b\\c')
         tester('ntpath.join("a\\", "b", "c")', 'a\\b\\c')
         tester('ntpath.join("a", "b\\", "c")', 'a\\b\\c')
+        tester('ntpath.join("a", "b", "c\\")', 'a\\b\\c\\')
         tester('ntpath.join("a", "b", "\\c")', '\\c')
         tester('ntpath.join("d:\\", "\\pleep")', 'd:\\pleep')
         tester('ntpath.join("d:\\", "a", "b")', 'd:\\a\\b')
@@ -312,6 +322,16 @@ class TestNtpath(NtpathTestCase):
         tester("ntpath.join('\\\\computer\\', 'share')", '\\\\computer\\share')
         tester("ntpath.join('\\\\computer\\share\\', 'a')", '\\\\computer\\share\\a')
         tester("ntpath.join('\\\\computer\\share\\a\\', 'b')", '\\\\computer\\share\\a\\b')
+        # Second part is anchored, so that the first part is ignored.
+        tester("ntpath.join('a', 'Z:b', 'c')", 'Z:b\\c')
+        tester("ntpath.join('a', 'Z:\\b', 'c')", 'Z:\\b\\c')
+        tester("ntpath.join('a', '\\\\b\\c', 'd')", '\\\\b\\c\\d')
+        # Second part has a root but not drive.
+        tester("ntpath.join('a', '\\b', 'c')", '\\b\\c')
+        tester("ntpath.join('Z:/a', '/b', 'c')", 'Z:\\b\\c')
+        tester("ntpath.join('//?/Z:/a', '/b', 'c')",  '\\\\?\\Z:\\b\\c')
+        tester("ntpath.join('D:a', './c:b')", 'D:a\\.\\c:b')
+        tester("ntpath.join('D:/a', './c:b')", 'D:\\a\\.\\c:b')
 
     def test_normpath(self):
         tester("ntpath.normpath('A//////././//.//B')", r'A\B')
@@ -394,6 +414,10 @@ class TestNtpath(NtpathTestCase):
         d = drives.pop().encode()
         self.assertEqual(ntpath.realpath(d), d)
 
+        # gh-106242: Embedded nulls and non-strict fallback to abspath
+        self.assertEqual(ABSTFN + "\0spam",
+                         ntpath.realpath(os_helper.TESTFN + "\0spam", strict=False))
+
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
     def test_realpath_strict(self):
@@ -404,6 +428,8 @@ class TestNtpath(NtpathTestCase):
         self.addCleanup(os_helper.unlink, ABSTFN)
         self.assertRaises(FileNotFoundError, ntpath.realpath, ABSTFN, strict=True)
         self.assertRaises(FileNotFoundError, ntpath.realpath, ABSTFN + "2", strict=True)
+        # gh-106242: Embedded nulls should raise OSError (not ValueError)
+        self.assertRaises(OSError, ntpath.realpath, ABSTFN + "\0spam", strict=True)
 
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
@@ -630,6 +656,48 @@ class TestNtpath(NtpathTestCase):
             self.assertPathEqual(test_file_long, ntpath.realpath("file.txt"))
         with os_helper.change_cwd(test_dir_short):
             self.assertPathEqual(test_file_long, ntpath.realpath("file.txt"))
+
+    @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
+    def test_realpath_permission(self):
+        # Test whether python can resolve the real filename of a
+        # shortened file name even if it does not have permission to access it.
+        ABSTFN = ntpath.realpath(os_helper.TESTFN)
+
+        os_helper.unlink(ABSTFN)
+        os_helper.rmtree(ABSTFN)
+        os.mkdir(ABSTFN)
+        self.addCleanup(os_helper.rmtree, ABSTFN)
+
+        test_file = ntpath.join(ABSTFN, "LongFileName123.txt")
+        test_file_short = ntpath.join(ABSTFN, "LONGFI~1.TXT")
+
+        with open(test_file, "wb") as f:
+            f.write(b"content")
+        # Automatic generation of short names may be disabled on
+        # NTFS volumes for the sake of performance.
+        # They're not supported at all on ReFS and exFAT.
+        subprocess.run(
+            # Try to set the short name manually.
+            ['fsutil.exe', 'file', 'setShortName', test_file, 'LONGFI~1.TXT'],
+            creationflags=subprocess.DETACHED_PROCESS
+        )
+
+        try:
+            self.assertPathEqual(test_file, ntpath.realpath(test_file_short))
+        except AssertionError:
+            raise unittest.SkipTest('the filesystem seems to lack support for short filenames')
+
+        # Deny the right to [S]YNCHRONIZE on the file to
+        # force nt._getfinalpathname to fail with ERROR_ACCESS_DENIED.
+        p = subprocess.run(
+            ['icacls.exe', test_file, '/deny', '*S-1-5-32-545:(S)'],
+            creationflags=subprocess.DETACHED_PROCESS
+        )
+
+        if p.returncode:
+            raise unittest.SkipTest('failed to deny access to the test file')
+
+        self.assertPathEqual(test_file, ntpath.realpath(test_file_short))
 
     def test_expandvars(self):
         with os_helper.EnvironmentVarGuard() as env:
@@ -913,6 +981,62 @@ class TestNtpath(NtpathTestCase):
             self.assertTrue(ntpath.ismount(b"\\\\localhost\\c$"))
             self.assertTrue(ntpath.ismount(b"\\\\localhost\\c$\\"))
 
+    def test_isreserved(self):
+        self.assertFalse(ntpath.isreserved(''))
+        self.assertFalse(ntpath.isreserved('.'))
+        self.assertFalse(ntpath.isreserved('..'))
+        self.assertFalse(ntpath.isreserved('/'))
+        self.assertFalse(ntpath.isreserved('/foo/bar'))
+        # A name that ends with a space or dot is reserved.
+        self.assertTrue(ntpath.isreserved('foo.'))
+        self.assertTrue(ntpath.isreserved('foo '))
+        # ASCII control characters are reserved.
+        self.assertTrue(ntpath.isreserved('\foo'))
+        # Wildcard characters, colon, and pipe are reserved.
+        self.assertTrue(ntpath.isreserved('foo*bar'))
+        self.assertTrue(ntpath.isreserved('foo?bar'))
+        self.assertTrue(ntpath.isreserved('foo"bar'))
+        self.assertTrue(ntpath.isreserved('foo<bar'))
+        self.assertTrue(ntpath.isreserved('foo>bar'))
+        self.assertTrue(ntpath.isreserved('foo:bar'))
+        self.assertTrue(ntpath.isreserved('foo|bar'))
+        # Case-insensitive DOS-device names are reserved.
+        self.assertTrue(ntpath.isreserved('nul'))
+        self.assertTrue(ntpath.isreserved('aux'))
+        self.assertTrue(ntpath.isreserved('prn'))
+        self.assertTrue(ntpath.isreserved('con'))
+        self.assertTrue(ntpath.isreserved('conin$'))
+        self.assertTrue(ntpath.isreserved('conout$'))
+        # COM/LPT + 1-9 or + superscript 1-3 are reserved.
+        self.assertTrue(ntpath.isreserved('COM1'))
+        self.assertTrue(ntpath.isreserved('LPT9'))
+        self.assertTrue(ntpath.isreserved('com\xb9'))
+        self.assertTrue(ntpath.isreserved('com\xb2'))
+        self.assertTrue(ntpath.isreserved('lpt\xb3'))
+        # DOS-device name matching ignores characters after a dot or
+        # a colon and also ignores trailing spaces.
+        self.assertTrue(ntpath.isreserved('NUL.txt'))
+        self.assertTrue(ntpath.isreserved('PRN  '))
+        self.assertTrue(ntpath.isreserved('AUX  .txt'))
+        self.assertTrue(ntpath.isreserved('COM1:bar'))
+        self.assertTrue(ntpath.isreserved('LPT9   :bar'))
+        # DOS-device names are only matched at the beginning
+        # of a path component.
+        self.assertFalse(ntpath.isreserved('bar.com9'))
+        self.assertFalse(ntpath.isreserved('bar.lpt9'))
+        # The entire path is checked, except for the drive.
+        self.assertTrue(ntpath.isreserved('c:/bar/baz/NUL'))
+        self.assertTrue(ntpath.isreserved('c:/NUL/bar/baz'))
+        self.assertFalse(ntpath.isreserved('//./NUL'))
+        # Bytes are supported.
+        self.assertFalse(ntpath.isreserved(b''))
+        self.assertFalse(ntpath.isreserved(b'.'))
+        self.assertFalse(ntpath.isreserved(b'..'))
+        self.assertFalse(ntpath.isreserved(b'/'))
+        self.assertFalse(ntpath.isreserved(b'/foo/bar'))
+        self.assertTrue(ntpath.isreserved(b'foo.'))
+        self.assertTrue(ntpath.isreserved(b'nul'))
+
     def assertEqualCI(self, s1, s2):
         """Assert that two strings are equal ignoring case differences."""
         self.assertEqual(s1.lower(), s2.lower())
@@ -1036,6 +1160,7 @@ class PathLikeTests(NtpathTestCase):
         self._check_function(self.path.normcase)
         if sys.platform == 'win32':
             self.assertEqual(ntpath.normcase('\u03a9\u2126'), 'ωΩ')
+            self.assertEqual(ntpath.normcase('abc\x00def'), 'abc\x00def')
 
     def test_path_isabs(self):
         self._check_function(self.path.isabs)
