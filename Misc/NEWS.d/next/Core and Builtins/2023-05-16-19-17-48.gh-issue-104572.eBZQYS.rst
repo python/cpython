@@ -1,2 +1,0 @@
-Improve syntax error message for invalid constructs in :pep:`695` contexts
-and in annotations when ``from __future__ import annotations`` is active.

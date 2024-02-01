@@ -1,2 +1,0 @@
-Fix potential :exc:`OverflowError` in :meth:`sqlite3.Connection.blobopen`
-for 32-bit builds. Patch by Erlend E. Aasland.

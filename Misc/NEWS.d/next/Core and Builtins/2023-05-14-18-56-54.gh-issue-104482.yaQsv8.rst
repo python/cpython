@@ -1,1 +1,0 @@
-Fix three error handling bugs in ast.c's validation of pattern matching statements.

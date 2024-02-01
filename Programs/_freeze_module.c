@@ -19,10 +19,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #ifndef MS_WINDOWS
-#include <unistd.h>
+#  include <unistd.h>
 #endif
-
-uint32_t _Py_next_func_version = 1;
 
 /* Empty initializer for deepfrozen modules */
 int _Py_Deepfreeze_Init(void)

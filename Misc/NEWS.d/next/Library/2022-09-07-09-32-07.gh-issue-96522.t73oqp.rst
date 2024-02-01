@@ -1,1 +1,0 @@
-Fix potential deadlock in pty.spawn()

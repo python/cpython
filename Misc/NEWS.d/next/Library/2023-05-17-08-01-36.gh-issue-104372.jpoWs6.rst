@@ -1,1 +1,0 @@
-Refactored the ``_posixsubprocess`` internals to avoid Python C API usage between fork and exec when marking ``pass_fds=`` file descriptors inheritable.

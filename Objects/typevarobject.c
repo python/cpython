@@ -1,9 +1,9 @@
 // TypeVar, TypeVarTuple, and ParamSpec
 #include "Python.h"
-#include "pycore_object.h"  // _PyObject_GC_TRACK/UNTRACK
+#include "pycore_object.h"        // _PyObject_GC_TRACK/UNTRACK
 #include "pycore_typevarobject.h"
 #include "pycore_unionobject.h"   // _Py_union_type_or
-#include "structmember.h"
+
 
 /*[clinic input]
 class typevar "typevarobject *" "&_PyTypeVar_Type"
@@ -107,7 +107,7 @@ make_union(PyObject *self, PyObject *other)
 static PyObject *
 caller(void)
 {
-    _PyInterpreterFrame *f = _PyThreadState_GET()->cframe->current_frame;
+    _PyInterpreterFrame *f = _PyThreadState_GET()->current_frame;
     if (f == NULL) {
         Py_RETURN_NONE;
     }
@@ -144,7 +144,7 @@ static int
 contains_typevartuple(PyTupleObject *params)
 {
     Py_ssize_t n = PyTuple_GET_SIZE(params);
-    PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.typevartuple_type;
+    PyTypeObject *tp = _PyInterpreterState_GET()->cached_objects.typevartuple_type;
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *param = PyTuple_GET_ITEM(params, i);
         if (Py_IS_TYPE(param, tp)) {
@@ -165,7 +165,7 @@ unpack_typevartuples(PyObject *params)
         if (new_params == NULL) {
             return NULL;
         }
-        PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.typevartuple_type;
+        PyTypeObject *tp = _PyInterpreterState_GET()->cached_objects.typevartuple_type;
         for (Py_ssize_t i = 0; i < n; i++) {
             PyObject *param = PyTuple_GET_ITEM(params, i);
             if (Py_IS_TYPE(param, tp)) {
@@ -200,7 +200,8 @@ typevar_dealloc(PyObject *self)
     Py_XDECREF(tv->evaluate_bound);
     Py_XDECREF(tv->constraints);
     Py_XDECREF(tv->evaluate_constraints);
-    _PyObject_ClearManagedDict(self);
+    PyObject_ClearManagedDict(self);
+    PyObject_ClearWeakRefs(self);
 
     Py_TYPE(self)->tp_free(self);
     Py_DECREF(tp);
@@ -215,7 +216,7 @@ typevar_traverse(PyObject *self, visitproc visit, void *arg)
     Py_VISIT(tv->evaluate_bound);
     Py_VISIT(tv->constraints);
     Py_VISIT(tv->evaluate_constraints);
-    _PyObject_VisitManagedDict(self, visit, arg);
+    PyObject_VisitManagedDict(self, visit, arg);
     return 0;
 }
 
@@ -226,7 +227,7 @@ typevar_clear(typevarobject *self)
     Py_CLEAR(self->evaluate_bound);
     Py_CLEAR(self->constraints);
     Py_CLEAR(self->evaluate_constraints);
-    _PyObject_ClearManagedDict((PyObject *)self);
+    PyObject_ClearManagedDict((PyObject *)self);
     return 0;
 }
 
@@ -244,10 +245,10 @@ typevar_repr(PyObject *self)
 }
 
 static PyMemberDef typevar_members[] = {
-    {"__name__", T_OBJECT, offsetof(typevarobject, name), READONLY},
-    {"__covariant__", T_BOOL, offsetof(typevarobject, covariant), READONLY},
-    {"__contravariant__", T_BOOL, offsetof(typevarobject, contravariant), READONLY},
-    {"__infer_variance__", T_BOOL, offsetof(typevarobject, infer_variance), READONLY},
+    {"__name__", _Py_T_OBJECT, offsetof(typevarobject, name), Py_READONLY},
+    {"__covariant__", Py_T_BOOL, offsetof(typevarobject, covariant), Py_READONLY},
+    {"__contravariant__", Py_T_BOOL, offsetof(typevarobject, contravariant), Py_READONLY},
+    {"__infer_variance__", Py_T_BOOL, offsetof(typevarobject, infer_variance), Py_READONLY},
     {0}
 };
 
@@ -291,7 +292,7 @@ typevar_alloc(PyObject *name, PyObject *bound, PyObject *evaluate_bound,
               bool covariant, bool contravariant, bool infer_variance,
               PyObject *module)
 {
-    PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.typevar_type;
+    PyTypeObject *tp = _PyInterpreterState_GET()->cached_objects.typevar_type;
     assert(tp != NULL);
     typevarobject *tv = PyObject_GC_New(typevarobject, tp);
     if (tv == NULL) {
@@ -326,7 +327,6 @@ typevar.__new__ as typevar_new
 
     name: object(subclass_of="&PyUnicode_Type")
     *constraints: object
-    *
     bound: object = None
     covariant: bool = False
     contravariant: bool = False
@@ -339,7 +339,7 @@ static PyObject *
 typevar_new_impl(PyTypeObject *type, PyObject *name, PyObject *constraints,
                  PyObject *bound, int covariant, int contravariant,
                  int infer_variance)
-/*[clinic end generated code: output=1d200450ee99226d input=2c07ab87c94f462b]*/
+/*[clinic end generated code: output=1d200450ee99226d input=41ae33a916bfe76f]*/
 {
     if (covariant && contravariant) {
         PyErr_SetString(PyExc_ValueError,
@@ -363,11 +363,7 @@ typevar_new_impl(PyTypeObject *type, PyObject *name, PyObject *constraints,
         }
     }
 
-    if (!PyTuple_CheckExact(constraints)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "constraints must be a tuple");
-        return NULL;
-    }
+    assert(PyTuple_CheckExact(constraints));
     Py_ssize_t n_constraints = PyTuple_GET_SIZE(constraints);
     if (n_constraints == 1) {
         PyErr_SetString(PyExc_TypeError,
@@ -401,12 +397,13 @@ typevar_new_impl(PyTypeObject *type, PyObject *name, PyObject *constraints,
 typevar.__typing_subst__ as typevar_typing_subst
 
     arg: object
+    /
 
 [clinic start generated code]*/
 
 static PyObject *
-typevar_typing_subst_impl(typevarobject *self, PyObject *arg)
-/*[clinic end generated code: output=c76ced134ed8f4e1 input=6b70a4bb2da838de]*/
+typevar_typing_subst(typevarobject *self, PyObject *arg)
+/*[clinic end generated code: output=0773735e8ce18968 input=9e87b57f0fc59b92]*/
 {
     PyObject *args[2] = {(PyObject *)self, arg};
     PyObject *result = call_typing_func_object("_typevar_subst", args, 2);
@@ -443,45 +440,41 @@ static PyMethodDef typevar_methods[] = {
 PyDoc_STRVAR(typevar_doc,
 "Type variable.\n\
 \n\
-Usage::\n\
+The preferred way to construct a type variable is via the dedicated\n\
+syntax for generic functions, classes, and type aliases::\n\
 \n\
-  T = TypeVar('T')  # Can be anything\n\
-  A = TypeVar('A', str, bytes)  # Must be str or bytes\n\
+    class Sequence[T]:  # T is a TypeVar\n\
+        ...\n\
+\n\
+This syntax can also be used to create bound and constrained type\n\
+variables::\n\
+\n\
+    # S is a TypeVar bound to str\n\
+    class StrSequence[S: str]:\n\
+        ...\n\
+\n\
+    # A is a TypeVar constrained to str or bytes\n\
+    class StrOrBytesSequence[A: (str, bytes)]:\n\
+        ...\n\
+\n\
+However, if desired, reusable type variables can also be constructed\n\
+manually, like so::\n\
+\n\
+   T = TypeVar('T')  # Can be anything\n\
+   S = TypeVar('S', bound=str)  # Can be any subtype of str\n\
+   A = TypeVar('A', str, bytes)  # Must be exactly str or bytes\n\
 \n\
 Type variables exist primarily for the benefit of static type\n\
 checkers.  They serve as the parameters for generic types as well\n\
-as for generic function definitions.  See class Generic for more\n\
-information on generic types.  Generic functions work as follows:\n\
+as for generic function and type alias definitions.\n\
 \n\
-  def repeat(x: T, n: int) -> List[T]:\n\
-      '''Return a list containing n references to x.'''\n\
-      return [x]*n\n\
-\n\
-  def longest(x: A, y: A) -> A:\n\
-      '''Return the longest of two strings.'''\n\
-      return x if len(x) >= len(y) else y\n\
-\n\
-The latter example's signature is essentially the overloading\n\
-of (str, str) -> str and (bytes, bytes) -> bytes.  Also note\n\
-that if the arguments are instances of some subclass of str,\n\
-the return type is still plain str.\n\
-\n\
-At runtime, isinstance(x, T) and issubclass(C, T) will raise TypeError.\n\
-\n\
-Type variables defined with covariant=True or contravariant=True\n\
-can be used to declare covariant or contravariant generic types.\n\
-See PEP 484 for more details. By default generic types are invariant\n\
-in all type variables.\n\
-\n\
-Type variables can be introspected. e.g.:\n\
-\n\
-  T.__name__ == 'T'\n\
-  T.__constraints__ == ()\n\
-  T.__covariant__ == False\n\
-  T.__contravariant__ = False\n\
-  A.__constraints__ == (str, bytes)\n\
-\n\
-Note that only type variables defined in global scope can be pickled.\n\
+The variance of type variables is inferred by type checkers when they\n\
+are created through the type parameter syntax and when\n\
+``infer_variance=True`` is passed. Manually created type variables may\n\
+be explicitly marked covariant or contravariant by passing\n\
+``covariant=True`` or ``contravariant=True``. By default, manually\n\
+created type variables are invariant. See PEP 484 and PEP 695 for more\n\
+details.\n\
 ");
 
 static PyType_Slot typevar_slots[] = {
@@ -504,7 +497,7 @@ PyType_Spec typevar_spec = {
     .name = "typing.TypeVar",
     .basicsize = sizeof(typevarobject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE
-        | Py_TPFLAGS_MANAGED_DICT,
+        | Py_TPFLAGS_MANAGED_DICT | Py_TPFLAGS_MANAGED_WEAKREF,
     .slots = typevar_slots,
 };
 
@@ -559,7 +552,7 @@ paramspecattr_richcompare(PyObject *a, PyObject *b, int op)
 }
 
 static PyMemberDef paramspecattr_members[] = {
-    {"__origin__", T_OBJECT, offsetof(paramspecattrobject, __origin__), READONLY},
+    {"__origin__", _Py_T_OBJECT, offsetof(paramspecattrobject, __origin__), Py_READONLY},
     {0}
 };
 
@@ -580,7 +573,7 @@ paramspecargs_repr(PyObject *self)
 {
     paramspecattrobject *psa = (paramspecattrobject *)self;
 
-    PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.paramspec_type;
+    PyTypeObject *tp = _PyInterpreterState_GET()->cached_objects.paramspec_type;
     if (Py_IS_TYPE(psa->__origin__, tp)) {
         return PyUnicode_FromFormat("%U.args",
             ((paramspecobject *)psa->__origin__)->name);
@@ -623,12 +616,14 @@ PyDoc_STRVAR(paramspecargs_doc,
 \n\
 Given a ParamSpec object P, P.args is an instance of ParamSpecArgs.\n\
 \n\
-ParamSpecArgs objects have a reference back to their ParamSpec:\n\
+ParamSpecArgs objects have a reference back to their ParamSpec::\n\
 \n\
-    P.args.__origin__ is P\n\
+    >>> P = ParamSpec(\"P\")\n\
+    >>> P.args.__origin__ is P\n\
+    True\n\
 \n\
-This type is meant for runtime introspection and has no special meaning to\n\
-static type checkers.\n\
+This type is meant for runtime introspection and has no special meaning\n\
+to static type checkers.\n\
 ");
 
 static PyType_Slot paramspecargs_slots[] = {
@@ -649,7 +644,8 @@ static PyType_Slot paramspecargs_slots[] = {
 PyType_Spec paramspecargs_spec = {
     .name = "typing.ParamSpecArgs",
     .basicsize = sizeof(paramspecattrobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE
+        | Py_TPFLAGS_MANAGED_WEAKREF,
     .slots = paramspecargs_slots,
 };
 
@@ -658,7 +654,7 @@ paramspeckwargs_repr(PyObject *self)
 {
     paramspecattrobject *psk = (paramspecattrobject *)self;
 
-    PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.paramspec_type;
+    PyTypeObject *tp = _PyInterpreterState_GET()->cached_objects.paramspec_type;
     if (Py_IS_TYPE(psk->__origin__, tp)) {
         return PyUnicode_FromFormat("%U.kwargs",
             ((paramspecobject *)psk->__origin__)->name);
@@ -700,12 +696,14 @@ PyDoc_STRVAR(paramspeckwargs_doc,
 \n\
 Given a ParamSpec object P, P.kwargs is an instance of ParamSpecKwargs.\n\
 \n\
-ParamSpecKwargs objects have a reference back to their ParamSpec:\n\
+ParamSpecKwargs objects have a reference back to their ParamSpec::\n\
 \n\
-    P.kwargs.__origin__ is P\n\
+    >>> P = ParamSpec(\"P\")\n\
+    >>> P.kwargs.__origin__ is P\n\
+    True\n\
 \n\
-This type is meant for runtime introspection and has no special meaning to\n\
-static type checkers.\n\
+This type is meant for runtime introspection and has no special meaning\n\
+to static type checkers.\n\
 ");
 
 static PyType_Slot paramspeckwargs_slots[] = {
@@ -726,7 +724,8 @@ static PyType_Slot paramspeckwargs_slots[] = {
 PyType_Spec paramspeckwargs_spec = {
     .name = "typing.ParamSpecKwargs",
     .basicsize = sizeof(paramspecattrobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE
+        | Py_TPFLAGS_MANAGED_WEAKREF,
     .slots = paramspeckwargs_slots,
 };
 
@@ -740,7 +739,8 @@ paramspec_dealloc(PyObject *self)
 
     Py_DECREF(ps->name);
     Py_XDECREF(ps->bound);
-    _PyObject_ClearManagedDict(self);
+    PyObject_ClearManagedDict(self);
+    PyObject_ClearWeakRefs(self);
 
     Py_TYPE(self)->tp_free(self);
     Py_DECREF(tp);
@@ -752,7 +752,7 @@ paramspec_traverse(PyObject *self, visitproc visit, void *arg)
     Py_VISIT(Py_TYPE(self));
     paramspecobject *ps = (paramspecobject *)self;
     Py_VISIT(ps->bound);
-    _PyObject_VisitManagedDict(self, visit, arg);
+    PyObject_VisitManagedDict(self, visit, arg);
     return 0;
 }
 
@@ -760,7 +760,7 @@ static int
 paramspec_clear(paramspecobject *self)
 {
     Py_CLEAR(self->bound);
-    _PyObject_ClearManagedDict((PyObject *)self);
+    PyObject_ClearManagedDict((PyObject *)self);
     return 0;
 }
 
@@ -778,31 +778,31 @@ paramspec_repr(PyObject *self)
 }
 
 static PyMemberDef paramspec_members[] = {
-    {"__name__", T_OBJECT, offsetof(paramspecobject, name), READONLY},
-    {"__bound__", T_OBJECT, offsetof(paramspecobject, bound), READONLY},
-    {"__covariant__", T_BOOL, offsetof(paramspecobject, covariant), READONLY},
-    {"__contravariant__", T_BOOL, offsetof(paramspecobject, contravariant), READONLY},
-    {"__infer_variance__", T_BOOL, offsetof(paramspecobject, infer_variance), READONLY},
+    {"__name__", _Py_T_OBJECT, offsetof(paramspecobject, name), Py_READONLY},
+    {"__bound__", _Py_T_OBJECT, offsetof(paramspecobject, bound), Py_READONLY},
+    {"__covariant__", Py_T_BOOL, offsetof(paramspecobject, covariant), Py_READONLY},
+    {"__contravariant__", Py_T_BOOL, offsetof(paramspecobject, contravariant), Py_READONLY},
+    {"__infer_variance__", Py_T_BOOL, offsetof(paramspecobject, infer_variance), Py_READONLY},
     {0}
 };
 
 static PyObject *
 paramspec_args(PyObject *self, void *unused)
 {
-    PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.paramspecargs_type;
+    PyTypeObject *tp = _PyInterpreterState_GET()->cached_objects.paramspecargs_type;
     return (PyObject *)paramspecattr_new(tp, self);
 }
 
 static PyObject *
 paramspec_kwargs(PyObject *self, void *unused)
 {
-    PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.paramspeckwargs_type;
+    PyTypeObject *tp = _PyInterpreterState_GET()->cached_objects.paramspeckwargs_type;
     return (PyObject *)paramspecattr_new(tp, self);
 }
 
 static PyGetSetDef paramspec_getset[] = {
-    {"args", (getter)paramspec_args, NULL, "Represents positional arguments.", NULL},
-    {"kwargs", (getter)paramspec_kwargs, NULL, "Represents keyword arguments.", NULL},
+    {"args", (getter)paramspec_args, NULL, PyDoc_STR("Represents positional arguments."), NULL},
+    {"kwargs", (getter)paramspec_kwargs, NULL, PyDoc_STR("Represents keyword arguments."), NULL},
     {0},
 };
 
@@ -810,7 +810,7 @@ static paramspecobject *
 paramspec_alloc(PyObject *name, PyObject *bound, bool covariant,
                 bool contravariant, bool infer_variance, PyObject *module)
 {
-    PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.paramspec_type;
+    PyTypeObject *tp = _PyInterpreterState_GET()->cached_objects.paramspec_type;
     paramspecobject *ps = PyObject_GC_New(paramspecobject, tp);
     if (ps == NULL) {
         return NULL;
@@ -880,12 +880,13 @@ paramspec_new_impl(PyTypeObject *type, PyObject *name, PyObject *bound,
 paramspec.__typing_subst__ as paramspec_typing_subst
 
     arg: object
+    /
 
 [clinic start generated code]*/
 
 static PyObject *
-paramspec_typing_subst_impl(paramspecobject *self, PyObject *arg)
-/*[clinic end generated code: output=803e1ade3f13b57d input=4e0005d24023e896]*/
+paramspec_typing_subst(paramspecobject *self, PyObject *arg)
+/*[clinic end generated code: output=4c5b4aaada1c5814 input=2d5b5e3d4a717189]*/
 {
     PyObject *args[2] = {(PyObject *)self, arg};
     PyObject *result = call_typing_func_object("_paramspec_subst", args, 2);
@@ -897,13 +898,14 @@ paramspec.__typing_prepare_subst__ as paramspec_typing_prepare_subst
 
     alias: object
     args: object
+    /
 
 [clinic start generated code]*/
 
 static PyObject *
 paramspec_typing_prepare_subst_impl(paramspecobject *self, PyObject *alias,
                                     PyObject *args)
-/*[clinic end generated code: output=95449d630a2adb9a input=4375e2ffcb2ad635]*/
+/*[clinic end generated code: output=95449d630a2adb9a input=6df6f9fef3e150da]*/
 {
     PyObject *args_array[3] = {(PyObject *)self, alias, args};
     PyObject *result = call_typing_func_object(
@@ -942,22 +944,28 @@ static PyMethodDef paramspec_methods[] = {
 PyDoc_STRVAR(paramspec_doc,
 "Parameter specification variable.\n\
 \n\
-Usage::\n\
+The preferred way to construct a parameter specification is via the\n\
+dedicated syntax for generic functions, classes, and type aliases,\n\
+where the use of '**' creates a parameter specification::\n\
+\n\
+    type IntFunc[**P] = Callable[P, int]\n\
+\n\
+For compatibility with Python 3.11 and earlier, ParamSpec objects\n\
+can also be created as follows::\n\
 \n\
     P = ParamSpec('P')\n\
 \n\
-Parameter specification variables exist primarily for the benefit of static\n\
-type checkers.  They are used to forward the parameter types of one\n\
-callable to another callable, a pattern commonly found in higher order\n\
-functions and decorators.  They are only valid when used in ``Concatenate``,\n\
-or as the first argument to ``Callable``, or as parameters for user-defined\n\
-Generics.  See class Generic for more information on generic types.  An\n\
-example for annotating a decorator::\n\
+Parameter specification variables exist primarily for the benefit of\n\
+static type checkers.  They are used to forward the parameter types of\n\
+one callable to another callable, a pattern commonly found in\n\
+higher-order functions and decorators.  They are only valid when used\n\
+in ``Concatenate``, or as the first argument to ``Callable``, or as\n\
+parameters for user-defined Generics. See class Generic for more\n\
+information on generic types.\n\
 \n\
-    T = TypeVar('T')\n\
-    P = ParamSpec('P')\n\
+An example for annotating a decorator::\n\
 \n\
-    def add_logging(f: Callable[P, T]) -> Callable[P, T]:\n\
+    def add_logging[**P, T](f: Callable[P, T]) -> Callable[P, T]:\n\
         '''A type-safe decorator to add logging to a function.'''\n\
         def inner(*args: P.args, **kwargs: P.kwargs) -> T:\n\
             logging.info(f'{f.__name__} was called')\n\
@@ -969,20 +977,14 @@ example for annotating a decorator::\n\
         '''Add two numbers together.'''\n\
         return x + y\n\
 \n\
-Parameter specification variables defined with covariant=True or\n\
-contravariant=True can be used to declare covariant or contravariant\n\
-generic types.  These keyword arguments are valid, but their actual semantics\n\
-are yet to be decided.  See PEP 612 for details.\n\
+Parameter specification variables can be introspected. e.g.::\n\
 \n\
-Parameter specification variables can be introspected. e.g.:\n\
+    >>> P = ParamSpec(\"P\")\n\
+    >>> P.__name__\n\
+    'P'\n\
 \n\
-    P.__name__ == 'P'\n\
-    P.__bound__ == None\n\
-    P.__covariant__ == False\n\
-    P.__contravariant__ == False\n\
-\n\
-Note that only parameter specification variables defined in global scope can\n\
-be pickled.\n\
+Note that only parameter specification variables defined in the global\n\
+scope can be pickled.\n\
 ");
 
 static PyType_Slot paramspec_slots[] = {
@@ -1007,7 +1009,7 @@ PyType_Spec paramspec_spec = {
     .name = "typing.ParamSpec",
     .basicsize = sizeof(paramspecobject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_IMMUTABLETYPE
-        | Py_TPFLAGS_MANAGED_DICT,
+        | Py_TPFLAGS_MANAGED_DICT | Py_TPFLAGS_MANAGED_WEAKREF,
     .slots = paramspec_slots,
 };
 
@@ -1019,7 +1021,8 @@ typevartuple_dealloc(PyObject *self)
     typevartupleobject *tvt = (typevartupleobject *)self;
 
     Py_DECREF(tvt->name);
-    _PyObject_ClearManagedDict(self);
+    PyObject_ClearManagedDict(self);
+    PyObject_ClearWeakRefs(self);
 
     Py_TYPE(self)->tp_free(self);
     Py_DECREF(tp);
@@ -1052,14 +1055,14 @@ typevartuple_repr(PyObject *self)
 }
 
 static PyMemberDef typevartuple_members[] = {
-    {"__name__", T_OBJECT, offsetof(typevartupleobject, name), READONLY},
+    {"__name__", _Py_T_OBJECT, offsetof(typevartupleobject, name), Py_READONLY},
     {0}
 };
 
 static typevartupleobject *
 typevartuple_alloc(PyObject *name, PyObject *module)
 {
-    PyTypeObject *tp = PyInterpreterState_Get()->cached_objects.typevartuple_type;
+    PyTypeObject *tp = _PyInterpreterState_GET()->cached_objects.typevartuple_type;
     typevartupleobject *tvt = PyObject_GC_New(typevartupleobject, tp);
     if (tvt == NULL) {
         return NULL;
@@ -1101,12 +1104,13 @@ typevartuple_impl(PyTypeObject *type, PyObject *name)
 typevartuple.__typing_subst__ as typevartuple_typing_subst
 
     arg: object
+    /
 
 [clinic start generated code]*/
 
 static PyObject *
-typevartuple_typing_subst_impl(typevartupleobject *self, PyObject *arg)
-/*[clinic end generated code: output=814316519441cd76 input=670c4e0a36e5d8c0]*/
+typevartuple_typing_subst(typevartupleobject *self, PyObject *arg)
+/*[clinic end generated code: output=237054c6d7484eea input=3fcf2dfd9eee7945]*/
 {
     PyErr_SetString(PyExc_TypeError, "Substitution of bare TypeVarTuple is not supported");
     return NULL;
@@ -1117,13 +1121,14 @@ typevartuple.__typing_prepare_subst__ as typevartuple_typing_prepare_subst
 
     alias: object
     args: object
+    /
 
 [clinic start generated code]*/
 
 static PyObject *
 typevartuple_typing_prepare_subst_impl(typevartupleobject *self,
                                        PyObject *alias, PyObject *args)
-/*[clinic end generated code: output=ff999bc5b02036c1 input=a211b05f2eeb4306]*/
+/*[clinic end generated code: output=ff999bc5b02036c1 input=685b149b0fc47556]*/
 {
     PyObject *args_array[3] = {(PyObject *)self, alias, args};
     PyObject *result = call_typing_func_object(
@@ -1155,14 +1160,14 @@ static int
 typevartuple_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
-    _PyObject_VisitManagedDict(self, visit, arg);
+    PyObject_VisitManagedDict(self, visit, arg);
     return 0;
 }
 
 static int
 typevartuple_clear(PyObject *self)
 {
-    _PyObject_ClearManagedDict(self);
+    PyObject_ClearManagedDict(self);
     return 0;
 }
 
@@ -1175,28 +1180,38 @@ static PyMethodDef typevartuple_methods[] = {
 };
 
 PyDoc_STRVAR(typevartuple_doc,
-"Type variable tuple.\n\
+"Type variable tuple. A specialized form of type variable that enables\n\
+variadic generics.\n\
 \n\
-Usage:\n\
+The preferred way to construct a type variable tuple is via the\n\
+dedicated syntax for generic functions, classes, and type aliases,\n\
+where a single '*' indicates a type variable tuple::\n\
 \n\
-  Ts = TypeVarTuple('Ts')  # Can be given any name\n\
+    def move_first_element_to_last[T, *Ts](tup: tuple[T, *Ts]) -> tuple[*Ts, T]:\n\
+        return (*tup[1:], tup[0])\n\
+\n\
+For compatibility with Python 3.11 and earlier, TypeVarTuple objects\n\
+can also be created as follows::\n\
+\n\
+    Ts = TypeVarTuple('Ts')  # Can be given any name\n\
 \n\
 Just as a TypeVar (type variable) is a placeholder for a single type,\n\
 a TypeVarTuple is a placeholder for an *arbitrary* number of types. For\n\
-example, if we define a generic class using a TypeVarTuple:\n\
+example, if we define a generic class using a TypeVarTuple::\n\
 \n\
-  class C(Generic[*Ts]): ...\n\
+    class C[*Ts]: ...\n\
 \n\
 Then we can parameterize that class with an arbitrary number of type\n\
-arguments:\n\
+arguments::\n\
 \n\
-  C[int]       # Fine\n\
-  C[int, str]  # Also fine\n\
-  C[()]        # Even this is fine\n\
+    C[int]       # Fine\n\
+    C[int, str]  # Also fine\n\
+    C[()]        # Even this is fine\n\
 \n\
 For more details, see PEP 646.\n\
 \n\
-Note that only TypeVarTuples defined in global scope can be pickled.\n\
+Note that only TypeVarTuples defined in the global scope can be\n\
+pickled.\n\
 ");
 
 PyType_Slot typevartuple_slots[] = {
@@ -1218,7 +1233,7 @@ PyType_Spec typevartuple_spec = {
     .name = "typing.TypeVarTuple",
     .basicsize = sizeof(typevartupleobject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_MANAGED_DICT
-        | Py_TPFLAGS_HAVE_GC,
+        | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_MANAGED_WEAKREF,
     .slots = typevartuple_slots,
 };
 
@@ -1280,7 +1295,7 @@ typealias_repr(PyObject *self)
 }
 
 static PyMemberDef typealias_members[] = {
-    {"__name__", T_OBJECT, offsetof(typealiasobject, name), READONLY},
+    {"__name__", _Py_T_OBJECT, offsetof(typealiasobject, name), Py_READONLY},
     {0}
 };
 
@@ -1319,8 +1334,13 @@ typealias_module(PyObject *self, void *unused)
         return Py_NewRef(ta->module);
     }
     if (ta->compute_value != NULL) {
-        // PyFunction_GetModule() returns a borrowed reference
-        return Py_NewRef(PyFunction_GetModule(ta->compute_value));
+        PyObject* mod = PyFunction_GetModule(ta->compute_value);
+        if (mod != NULL) {
+            // PyFunction_GetModule() returns a borrowed reference,
+            // and it may return NULL (e.g., for functions defined
+            // in an exec()'ed block).
+            return Py_NewRef(mod);
+        }
     }
     Py_RETURN_NONE;
 }
@@ -1433,9 +1453,26 @@ typealias_new_impl(PyTypeObject *type, PyObject *name, PyObject *value,
 PyDoc_STRVAR(typealias_doc,
 "Type alias.\n\
 \n\
-Type aliases are created through the type statement:\n\
+Type aliases are created through the type statement::\n\
 \n\
-  type Alias = int\n\
+    type Alias = int\n\
+\n\
+In this example, Alias and int will be treated equivalently by static\n\
+type checkers.\n\
+\n\
+At runtime, Alias is an instance of TypeAliasType. The __name__\n\
+attribute holds the name of the type alias. The value of the type alias\n\
+is stored in the __value__ attribute. It is evaluated lazily, so the\n\
+value is computed only if the attribute is accessed.\n\
+\n\
+Type aliases can also be generic::\n\
+\n\
+    type ListOrSet[T] = list[T] | set[T]\n\
+\n\
+In this case, the type parameters of the alias are stored in the\n\
+__type_params__ attribute.\n\
+\n\
+See PEP 695 for more information.\n\
 ");
 
 static PyNumberMethods typealias_as_number = {
@@ -1482,18 +1519,21 @@ _Py_make_typealias(PyThreadState* unused, PyObject *args)
 PyDoc_STRVAR(generic_doc,
 "Abstract base class for generic types.\n\
 \n\
-A generic type is typically declared by inheriting from\n\
-this class parameterized with one or more type variables.\n\
-For example, a generic mapping type might be defined as::\n\
+On Python 3.12 and newer, generic classes implicitly inherit from\n\
+Generic when they declare a parameter list after the class's name::\n\
 \n\
-    class Mapping(Generic[KT, VT]):\n\
+    class Mapping[KT, VT]:\n\
         def __getitem__(self, key: KT) -> VT:\n\
             ...\n\
         # Etc.\n\
 \n\
-This class can then be used as follows::\n\
+On older versions of Python, however, generic classes have to\n\
+explicitly inherit from Generic.\n\
 \n\
-    def lookup_name(mapping: Mapping[KT, VT], key: KT, default: VT) -> VT:\n\
+After a class has been declared to be generic, it can then be used as\n\
+follows::\n\
+\n\
+    def lookup_name[KT, VT](mapping: Mapping[KT, VT], key: KT, default: VT) -> VT:\n\
         try:\n\
             return mapping[key]\n\
         except KeyError:\n\
@@ -1503,12 +1543,12 @@ This class can then be used as follows::\n\
 PyDoc_STRVAR(generic_class_getitem_doc,
 "Parameterizes a generic class.\n\
 \n\
-At least, parameterizing a generic class is the *main* thing this method\n\
-does. For example, for some generic class `Foo`, this is called when we\n\
-do `Foo[int]` - there, with `cls=Foo` and `params=int`.\n\
+At least, parameterizing a generic class is the *main* thing this\n\
+method does. For example, for some generic class `Foo`, this is called\n\
+when we do `Foo[int]` - there, with `cls=Foo` and `params=int`.\n\
 \n\
 However, note that this method is also called when defining generic\n\
-classes in the first place with `class Foo(Generic[T]): ...`.\n\
+classes in the first place with `class Foo[T]: ...`.\n\
 ");
 
 static PyObject *
@@ -1563,7 +1603,7 @@ _Py_subscript_generic(PyThreadState* unused, PyObject *params)
 {
     params = unpack_typevartuples(params);
 
-    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->cached_objects.generic_type == NULL) {
         PyErr_SetString(PyExc_SystemError, "Cannot find Generic type");
         return NULL;

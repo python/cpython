@@ -1,4 +1,0 @@
-Fixed an issue with using :meth:`~asyncio.WriteTransport.writelines` in :mod:`asyncio` to send very
-large payloads that exceed the amount of data that can be written in one
-call to :meth:`socket.socket.send` or :meth:`socket.socket.sendmsg`,
-resulting in the remaining buffer being left unwritten.

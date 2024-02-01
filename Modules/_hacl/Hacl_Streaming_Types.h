@@ -52,6 +52,13 @@ extern "C" {
 
 typedef uint8_t Spec_Hash_Definitions_hash_alg;
 
+#define Hacl_Streaming_Types_Success 0
+#define Hacl_Streaming_Types_InvalidAlgorithm 1
+#define Hacl_Streaming_Types_InvalidLength 2
+#define Hacl_Streaming_Types_MaximumLengthExceeded 3
+
+typedef uint8_t Hacl_Streaming_Types_error_code;
+
 typedef struct Hacl_Streaming_MD_state_32_s
 {
   uint32_t *block_state;

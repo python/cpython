@@ -1,1 +1,0 @@
-Improve import time of :mod:`platform` module.

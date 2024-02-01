@@ -1,2 +1,0 @@
-In :mod:`mmap`, fix several bugs that could lead to access to memory-mapped files after
-they have been invalidated.

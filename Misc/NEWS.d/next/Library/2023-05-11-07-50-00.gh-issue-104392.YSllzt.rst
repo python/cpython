@@ -1,2 +1,0 @@
-Remove undocumented and unused ``_paramspec_tvars`` attribute from some
-classes in :mod:`typing`.

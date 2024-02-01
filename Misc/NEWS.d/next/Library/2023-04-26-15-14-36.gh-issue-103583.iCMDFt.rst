@@ -1,2 +1,0 @@
-Isolate :mod:`!_multibytecodec` and codecs extension modules. Patches by
-Erlend E. Aasland.

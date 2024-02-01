@@ -1,2 +1,0 @@
-Upgrade built-in :mod:`hashlib` SHA3 implementation to a verified implementation
-from the ``HACL*`` project.  Used when OpenSSL is not present or lacks SHA3.

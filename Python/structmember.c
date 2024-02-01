@@ -2,7 +2,7 @@
 /* Map C struct members to Python object attributes */
 
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
+
 
 PyObject *
 PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
@@ -17,62 +17,62 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
 
     const char* addr = obj_addr + l->offset;
     switch (l->type) {
-    case T_BOOL:
+    case Py_T_BOOL:
         v = PyBool_FromLong(*(char*)addr);
         break;
-    case T_BYTE:
+    case Py_T_BYTE:
         v = PyLong_FromLong(*(char*)addr);
         break;
-    case T_UBYTE:
+    case Py_T_UBYTE:
         v = PyLong_FromUnsignedLong(*(unsigned char*)addr);
         break;
-    case T_SHORT:
+    case Py_T_SHORT:
         v = PyLong_FromLong(*(short*)addr);
         break;
-    case T_USHORT:
+    case Py_T_USHORT:
         v = PyLong_FromUnsignedLong(*(unsigned short*)addr);
         break;
-    case T_INT:
+    case Py_T_INT:
         v = PyLong_FromLong(*(int*)addr);
         break;
-    case T_UINT:
+    case Py_T_UINT:
         v = PyLong_FromUnsignedLong(*(unsigned int*)addr);
         break;
-    case T_LONG:
+    case Py_T_LONG:
         v = PyLong_FromLong(*(long*)addr);
         break;
-    case T_ULONG:
+    case Py_T_ULONG:
         v = PyLong_FromUnsignedLong(*(unsigned long*)addr);
         break;
-    case T_PYSSIZET:
+    case Py_T_PYSSIZET:
         v = PyLong_FromSsize_t(*(Py_ssize_t*)addr);
         break;
-    case T_FLOAT:
+    case Py_T_FLOAT:
         v = PyFloat_FromDouble((double)*(float*)addr);
         break;
-    case T_DOUBLE:
+    case Py_T_DOUBLE:
         v = PyFloat_FromDouble(*(double*)addr);
         break;
-    case T_STRING:
+    case Py_T_STRING:
         if (*(char**)addr == NULL) {
             v = Py_NewRef(Py_None);
         }
         else
             v = PyUnicode_FromString(*(char**)addr);
         break;
-    case T_STRING_INPLACE:
+    case Py_T_STRING_INPLACE:
         v = PyUnicode_FromString((char*)addr);
         break;
-    case T_CHAR:
+    case Py_T_CHAR:
         v = PyUnicode_FromStringAndSize((char*)addr, 1);
         break;
-    case T_OBJECT:
+    case _Py_T_OBJECT:
         v = *(PyObject **)addr;
         if (v == NULL)
             v = Py_None;
         Py_INCREF(v);
         break;
-    case T_OBJECT_EX:
+    case Py_T_OBJECT_EX:
         v = *(PyObject **)addr;
         if (v == NULL) {
             PyObject *obj = (PyObject *)obj_addr;
@@ -83,13 +83,13 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         }
         Py_XINCREF(v);
         break;
-    case T_LONGLONG:
+    case Py_T_LONGLONG:
         v = PyLong_FromLongLong(*(long long *)addr);
         break;
-    case T_ULONGLONG:
+    case Py_T_ULONGLONG:
         v = PyLong_FromUnsignedLongLong(*(unsigned long long *)addr);
         break;
-    case T_NONE:
+    case _Py_T_NONE:
         v = Py_NewRef(Py_None);
         break;
     default:
@@ -118,27 +118,27 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
 
     addr += l->offset;
 
-    if ((l->flags & READONLY))
+    if ((l->flags & Py_READONLY))
     {
         PyErr_SetString(PyExc_AttributeError, "readonly attribute");
         return -1;
     }
     if (v == NULL) {
-        if (l->type == T_OBJECT_EX) {
+        if (l->type == Py_T_OBJECT_EX) {
             /* Check if the attribute is set. */
             if (*(PyObject **)addr == NULL) {
                 PyErr_SetString(PyExc_AttributeError, l->name);
                 return -1;
             }
         }
-        else if (l->type != T_OBJECT) {
+        else if (l->type != _Py_T_OBJECT) {
             PyErr_SetString(PyExc_TypeError,
                             "can't delete numeric/char attribute");
             return -1;
         }
     }
     switch (l->type) {
-    case T_BOOL:{
+    case Py_T_BOOL:{
         if (!PyBool_Check(v)) {
             PyErr_SetString(PyExc_TypeError,
                             "attribute value type must be bool");
@@ -150,7 +150,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
             *(char*)addr = (char) 0;
         break;
         }
-    case T_BYTE:{
+    case Py_T_BYTE:{
         long long_val = PyLong_AsLong(v);
         if ((long_val == -1) && PyErr_Occurred())
             return -1;
@@ -161,7 +161,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
             WARN("Truncation of value to char");
         break;
         }
-    case T_UBYTE:{
+    case Py_T_UBYTE:{
         long long_val = PyLong_AsLong(v);
         if ((long_val == -1) && PyErr_Occurred())
             return -1;
@@ -170,7 +170,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
             WARN("Truncation of value to unsigned char");
         break;
         }
-    case T_SHORT:{
+    case Py_T_SHORT:{
         long long_val = PyLong_AsLong(v);
         if ((long_val == -1) && PyErr_Occurred())
             return -1;
@@ -179,7 +179,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
             WARN("Truncation of value to short");
         break;
         }
-    case T_USHORT:{
+    case Py_T_USHORT:{
         long long_val = PyLong_AsLong(v);
         if ((long_val == -1) && PyErr_Occurred())
             return -1;
@@ -188,7 +188,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
             WARN("Truncation of value to unsigned short");
         break;
         }
-    case T_INT:{
+    case Py_T_INT:{
         long long_val = PyLong_AsLong(v);
         if ((long_val == -1) && PyErr_Occurred())
             return -1;
@@ -197,7 +197,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
             WARN("Truncation of value to int");
         break;
         }
-    case T_UINT:{
+    case Py_T_UINT:{
         unsigned long ulong_val = PyLong_AsUnsignedLong(v);
         if ((ulong_val == (unsigned long)-1) && PyErr_Occurred()) {
             /* XXX: For compatibility, accept negative int values
@@ -215,13 +215,13 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
             WARN("Truncation of value to unsigned int");
         break;
         }
-    case T_LONG:{
+    case Py_T_LONG:{
         *(long*)addr = PyLong_AsLong(v);
         if ((*(long*)addr == -1) && PyErr_Occurred())
             return -1;
         break;
         }
-    case T_ULONG:{
+    case Py_T_ULONG:{
         *(unsigned long*)addr = PyLong_AsUnsignedLong(v);
         if ((*(unsigned long*)addr == (unsigned long)-1)
             && PyErr_Occurred()) {
@@ -236,32 +236,32 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         }
         break;
         }
-    case T_PYSSIZET:{
+    case Py_T_PYSSIZET:{
         *(Py_ssize_t*)addr = PyLong_AsSsize_t(v);
         if ((*(Py_ssize_t*)addr == (Py_ssize_t)-1)
             && PyErr_Occurred())
                         return -1;
         break;
         }
-    case T_FLOAT:{
+    case Py_T_FLOAT:{
         double double_val = PyFloat_AsDouble(v);
         if ((double_val == -1) && PyErr_Occurred())
             return -1;
         *(float*)addr = (float)double_val;
         break;
         }
-    case T_DOUBLE:
+    case Py_T_DOUBLE:
         *(double*)addr = PyFloat_AsDouble(v);
         if ((*(double*)addr == -1) && PyErr_Occurred())
             return -1;
         break;
-    case T_OBJECT:
-    case T_OBJECT_EX:
+    case _Py_T_OBJECT:
+    case Py_T_OBJECT_EX:
         oldv = *(PyObject **)addr;
         *(PyObject **)addr = Py_XNewRef(v);
         Py_XDECREF(oldv);
         break;
-    case T_CHAR: {
+    case Py_T_CHAR: {
         const char *string;
         Py_ssize_t len;
 
@@ -273,18 +273,18 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         *(char*)addr = string[0];
         break;
         }
-    case T_STRING:
-    case T_STRING_INPLACE:
+    case Py_T_STRING:
+    case Py_T_STRING_INPLACE:
         PyErr_SetString(PyExc_TypeError, "readonly attribute");
         return -1;
-    case T_LONGLONG:{
+    case Py_T_LONGLONG:{
         long long value;
         *(long long*)addr = value = PyLong_AsLongLong(v);
         if ((value == -1) && PyErr_Occurred())
             return -1;
         break;
         }
-    case T_ULONGLONG:{
+    case Py_T_ULONGLONG:{
         unsigned long long value;
         /* ??? PyLong_AsLongLong accepts an int, but PyLong_AsUnsignedLongLong
             doesn't ??? */
