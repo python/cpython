@@ -582,9 +582,11 @@ build-time option is used, the optimized Tier 2 IR is translated to machine
 code, which is then executed. This does not require additional
 runtime options.
 
-The machine code translation process uses an architecture called
+The machine code translation process uses a technique called
 *copy-and-patch*. It has no runtime dependencies, but there is a new
-build-time dependency on LLVM.
+build-time dependency on LLVM. The main benefit of this technique is
+rapid compilation times, reported as orders of magnitudes faster versus
+traditional compilation techniques in the paper linked below.
 
 (Copy-and-patch JIT compiler contributed by Brandt Bucher,
 directly inspired by the paper
