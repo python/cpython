@@ -7,11 +7,13 @@
     Written by Amaury Forgeot d'Arc and Antoine Pitrou
 */
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_object.h"
-#include "structmember.h"         // PyMemberDef
+#include "pycore_bytesobject.h"         // _PyBytes_Join()
+#include "pycore_call.h"                // _PyObject_CallNoArgs()
+#include "pycore_object.h"              // _PyObject_GC_UNTRACK()
+#include "pycore_pyerrors.h"            // _Py_FatalErrorFormat()
+#include "pycore_pylifecycle.h"         // _Py_IsInterpreterFinalizing()
+
 #include "_iomodule.h"
 
 /*[clinic input]
@@ -80,6 +82,7 @@ _bufferediobase_readinto_generic(PyObject *self, Py_buffer *buffer, char readint
 }
 
 /*[clinic input]
+@critical_section
 _io._BufferedIOBase.readinto
     buffer: Py_buffer(accept={rwbuffer})
     /
@@ -87,12 +90,13 @@ _io._BufferedIOBase.readinto
 
 static PyObject *
 _io__BufferedIOBase_readinto_impl(PyObject *self, Py_buffer *buffer)
-/*[clinic end generated code: output=8c8cda6684af8038 input=00a6b9a38f29830a]*/
+/*[clinic end generated code: output=8c8cda6684af8038 input=5273d20db7f56e1a]*/
 {
     return _bufferediobase_readinto_generic(self, buffer, 0);
 }
 
 /*[clinic input]
+@critical_section
 _io._BufferedIOBase.readinto1
     buffer: Py_buffer(accept={rwbuffer})
     /
@@ -100,7 +104,7 @@ _io._BufferedIOBase.readinto1
 
 static PyObject *
 _io__BufferedIOBase_readinto1_impl(PyObject *self, Py_buffer *buffer)
-/*[clinic end generated code: output=358623e4fd2b69d3 input=ebad75b4aadfb9be]*/
+/*[clinic end generated code: output=358623e4fd2b69d3 input=d6eb723dedcee654]*/
 {
     return _bufferediobase_readinto_generic(self, buffer, 1);
 }
@@ -293,7 +297,7 @@ _enter_buffered_busy(buffered *self)
                      "reentrant call inside %R", self);
         return 0;
     }
-    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     relax_locking = _Py_IsInterpreterFinalizing(interp);
     Py_BEGIN_ALLOW_THREADS
     if (!relax_locking)
@@ -429,12 +433,13 @@ buffered_dealloc(buffered *self)
 }
 
 /*[clinic input]
+@critical_section
 _io._Buffered.__sizeof__
 [clinic start generated code]*/
 
 static PyObject *
 _io__Buffered___sizeof___impl(buffered *self)
-/*[clinic end generated code: output=0231ef7f5053134e input=753c782d808d34df]*/
+/*[clinic end generated code: output=0231ef7f5053134e input=07a32d578073ea64]*/
 {
     size_t res = _PyObject_SIZE(Py_TYPE(self));
     if (self->buffer) {
@@ -486,12 +491,13 @@ _io__Buffered__dealloc_warn(buffered *self, PyObject *source)
 
 /* Flush and close */
 /*[clinic input]
+@critical_section
 _io._Buffered.flush as _io__Buffered_simple_flush
 [clinic start generated code]*/
 
 static PyObject *
 _io__Buffered_simple_flush_impl(buffered *self)
-/*[clinic end generated code: output=29ebb3820db1bdfd input=f33ef045e7250767]*/
+/*[clinic end generated code: output=29ebb3820db1bdfd input=5248cb84a65f80bd]*/
 {
     CHECK_INITIALIZED(self)
     return PyObject_CallMethodNoArgs(self->raw, &_Py_ID(flush));
@@ -511,20 +517,28 @@ buffered_closed(buffered *self)
     return closed;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+_io._Buffered.closed
+[clinic start generated code]*/
+
 static PyObject *
-buffered_closed_get(buffered *self, void *context)
+_io__Buffered_closed_get_impl(buffered *self)
+/*[clinic end generated code: output=f08ce57290703a1a input=18eddefdfe4a3d2f]*/
 {
     CHECK_INITIALIZED(self)
     return PyObject_GetAttr(self->raw, &_Py_ID(closed));
 }
 
 /*[clinic input]
+@critical_section
 _io._Buffered.close
 [clinic start generated code]*/
 
 static PyObject *
 _io__Buffered_close_impl(buffered *self)
-/*[clinic end generated code: output=7280b7b42033be0c input=d20b83d1ddd7d805]*/
+/*[clinic end generated code: output=7280b7b42033be0c input=56d95935b03fd326]*/
 {
     PyObject *res = NULL;
     int r;
@@ -551,16 +565,13 @@ _io__Buffered_close_impl(buffered *self)
     }
     /* flush() will most probably re-take the lock, so drop it first */
     LEAVE_BUFFERED(self)
-    res = PyObject_CallMethodNoArgs((PyObject *)self, &_Py_ID(flush));
+    r = _PyFile_Flush((PyObject *)self);
     if (!ENTER_BUFFERED(self)) {
         return NULL;
     }
     PyObject *exc = NULL;
-    if (res == NULL) {
+    if (r < 0) {
         exc = PyErr_GetRaisedException();
-    }
-    else {
-        Py_DECREF(res);
     }
 
     res = PyObject_CallMethodNoArgs(self->raw, &_Py_ID(close));
@@ -584,19 +595,19 @@ end:
 }
 
 /*[clinic input]
+@critical_section
 _io._Buffered.detach
 [clinic start generated code]*/
 
 static PyObject *
 _io__Buffered_detach_impl(buffered *self)
-/*[clinic end generated code: output=dd0fc057b8b779f7 input=482762a345cc9f44]*/
+/*[clinic end generated code: output=dd0fc057b8b779f7 input=d4ef1828a678be37]*/
 {
-    PyObject *raw, *res;
+    PyObject *raw;
     CHECK_INITIALIZED(self)
-    res = PyObject_CallMethodNoArgs((PyObject *)self, &_Py_ID(flush));
-    if (res == NULL)
+    if (_PyFile_Flush((PyObject *)self) < 0) {
         return NULL;
-    Py_DECREF(res);
+    }
     raw = self->raw;
     self->raw = NULL;
     self->detached = 1;
@@ -607,50 +618,68 @@ _io__Buffered_detach_impl(buffered *self)
 /* Inquiries */
 
 /*[clinic input]
+@critical_section
 _io._Buffered.seekable
 [clinic start generated code]*/
 
 static PyObject *
 _io__Buffered_seekable_impl(buffered *self)
-/*[clinic end generated code: output=90172abb5ceb6e8f input=7d35764f5fb5262b]*/
+/*[clinic end generated code: output=90172abb5ceb6e8f input=e3a4fc1d297b2fd3]*/
 {
     CHECK_INITIALIZED(self)
     return PyObject_CallMethodNoArgs(self->raw, &_Py_ID(seekable));
 }
 
 /*[clinic input]
+@critical_section
 _io._Buffered.readable
 [clinic start generated code]*/
 
 static PyObject *
 _io__Buffered_readable_impl(buffered *self)
-/*[clinic end generated code: output=92afa07661ecb698 input=640619addb513b8b]*/
+/*[clinic end generated code: output=92afa07661ecb698 input=abe54107d59bca9a]*/
 {
     CHECK_INITIALIZED(self)
     return PyObject_CallMethodNoArgs(self->raw, &_Py_ID(readable));
 }
 
 /*[clinic input]
+@critical_section
 _io._Buffered.writable
 [clinic start generated code]*/
 
 static PyObject *
 _io__Buffered_writable_impl(buffered *self)
-/*[clinic end generated code: output=4e3eee8d6f9d8552 input=b35ea396b2201554]*/
+/*[clinic end generated code: output=4e3eee8d6f9d8552 input=45eb76bf6a10e6f7]*/
 {
     CHECK_INITIALIZED(self)
     return PyObject_CallMethodNoArgs(self->raw, &_Py_ID(writable));
 }
 
+
+/*[clinic input]
+@critical_section
+@getter
+_io._Buffered.name
+[clinic start generated code]*/
+
 static PyObject *
-buffered_name_get(buffered *self, void *context)
+_io__Buffered_name_get_impl(buffered *self)
+/*[clinic end generated code: output=d2adf384051d3d10 input=6b84a0e6126f545e]*/
 {
     CHECK_INITIALIZED(self)
     return PyObject_GetAttr(self->raw, &_Py_ID(name));
 }
 
+/*[clinic input]
+@critical_section
+@getter
+_io._Buffered.mode
+[clinic start generated code]*/
+
 static PyObject *
-buffered_mode_get(buffered *self, void *context)
+_io__Buffered_mode_get_impl(buffered *self)
+/*[clinic end generated code: output=0feb205748892fa4 input=0762d5e28542fd8c]*/
 {
     CHECK_INITIALIZED(self)
     return PyObject_GetAttr(self->raw, &_Py_ID(mode));
@@ -659,24 +688,26 @@ buffered_mode_get(buffered *self, void *context)
 /* Lower-level APIs */
 
 /*[clinic input]
+@critical_section
 _io._Buffered.fileno
 [clinic start generated code]*/
 
 static PyObject *
 _io__Buffered_fileno_impl(buffered *self)
-/*[clinic end generated code: output=b717648d58a95ee3 input=768ea30b3f6314a7]*/
+/*[clinic end generated code: output=b717648d58a95ee3 input=1c4fead777bae20a]*/
 {
     CHECK_INITIALIZED(self)
     return PyObject_CallMethodNoArgs(self->raw, &_Py_ID(fileno));
 }
 
 /*[clinic input]
+@critical_section
 _io._Buffered.isatty
 [clinic start generated code]*/
 
 static PyObject *
 _io__Buffered_isatty_impl(buffered *self)
-/*[clinic end generated code: output=c20e55caae67baea input=9ea007b11559bee4]*/
+/*[clinic end generated code: output=c20e55caae67baea input=e53d182d7e490e3a]*/
 {
     CHECK_INITIALIZED(self)
     return PyObject_CallMethodNoArgs(self->raw, &_Py_ID(isatty));
@@ -882,12 +913,13 @@ buffered_flush_and_rewind_unlocked(buffered *self)
 }
 
 /*[clinic input]
+@critical_section
 _io._Buffered.flush
 [clinic start generated code]*/
 
 static PyObject *
 _io__Buffered_flush_impl(buffered *self)
-/*[clinic end generated code: output=da2674ef1ce71f3a input=fda63444697c6bf4]*/
+/*[clinic end generated code: output=da2674ef1ce71f3a input=6b30de9f083419c2]*/
 {
     PyObject *res;
 
@@ -903,6 +935,7 @@ _io__Buffered_flush_impl(buffered *self)
 }
 
 /*[clinic input]
+@critical_section
 _io._Buffered.peek
     size: Py_ssize_t = 0
     /
@@ -911,7 +944,7 @@ _io._Buffered.peek
 
 static PyObject *
 _io__Buffered_peek_impl(buffered *self, Py_ssize_t size)
-/*[clinic end generated code: output=ba7a097ca230102b input=37ffb97d06ff4adb]*/
+/*[clinic end generated code: output=ba7a097ca230102b input=56733376f926d982]*/
 {
     PyObject *res = NULL;
 
@@ -935,6 +968,7 @@ end:
 }
 
 /*[clinic input]
+@critical_section
 _io._Buffered.read
     size as n: Py_ssize_t(accept={int, NoneType}) = -1
     /
@@ -942,7 +976,7 @@ _io._Buffered.read
 
 static PyObject *
 _io__Buffered_read_impl(buffered *self, Py_ssize_t n)
-/*[clinic end generated code: output=f41c78bb15b9bbe9 input=7df81e82e08a68a2]*/
+/*[clinic end generated code: output=f41c78bb15b9bbe9 input=bdb4b0425b295472]*/
 {
     PyObject *res;
 
@@ -976,6 +1010,7 @@ _io__Buffered_read_impl(buffered *self, Py_ssize_t n)
 }
 
 /*[clinic input]
+@critical_section
 _io._Buffered.read1
     size as n: Py_ssize_t = -1
     /
@@ -983,7 +1018,7 @@ _io._Buffered.read1
 
 static PyObject *
 _io__Buffered_read1_impl(buffered *self, Py_ssize_t n)
-/*[clinic end generated code: output=bcc4fb4e54d103a3 input=7d22de9630b61774]*/
+/*[clinic end generated code: output=bcc4fb4e54d103a3 input=3d0ad241aa52b36c]*/
 {
     Py_ssize_t have, r;
     PyObject *res = NULL;
@@ -1112,6 +1147,7 @@ end:
 }
 
 /*[clinic input]
+@critical_section
 _io._Buffered.readinto
     buffer: Py_buffer(accept={rwbuffer})
     /
@@ -1119,12 +1155,13 @@ _io._Buffered.readinto
 
 static PyObject *
 _io__Buffered_readinto_impl(buffered *self, Py_buffer *buffer)
-/*[clinic end generated code: output=bcb376580b1d8170 input=ed6b98b7a20a3008]*/
+/*[clinic end generated code: output=bcb376580b1d8170 input=777c33e7adaa2bcd]*/
 {
     return _buffered_readinto_generic(self, buffer, 0);
 }
 
 /*[clinic input]
+@critical_section
 _io._Buffered.readinto1
     buffer: Py_buffer(accept={rwbuffer})
     /
@@ -1132,7 +1169,7 @@ _io._Buffered.readinto1
 
 static PyObject *
 _io__Buffered_readinto1_impl(buffered *self, Py_buffer *buffer)
-/*[clinic end generated code: output=6e5c6ac5868205d6 input=4455c5d55fdf1687]*/
+/*[clinic end generated code: output=6e5c6ac5868205d6 input=ef03cc5fc92a6895]*/
 {
     return _buffered_readinto_generic(self, buffer, 1);
 }
@@ -1247,6 +1284,7 @@ end_unlocked:
 }
 
 /*[clinic input]
+@critical_section
 _io._Buffered.readline
     size: Py_ssize_t(accept={int, NoneType}) = -1
     /
@@ -1254,7 +1292,7 @@ _io._Buffered.readline
 
 static PyObject *
 _io__Buffered_readline_impl(buffered *self, Py_ssize_t size)
-/*[clinic end generated code: output=24dd2aa6e33be83c input=673b6240e315ef8a]*/
+/*[clinic end generated code: output=24dd2aa6e33be83c input=e81ca5abd4280776]*/
 {
     CHECK_INITIALIZED(self)
     return _buffered_readline(self, size);
@@ -1262,12 +1300,13 @@ _io__Buffered_readline_impl(buffered *self, Py_ssize_t size)
 
 
 /*[clinic input]
+@critical_section
 _io._Buffered.tell
 [clinic start generated code]*/
 
 static PyObject *
 _io__Buffered_tell_impl(buffered *self)
-/*[clinic end generated code: output=386972ae84716c1e input=ad61e04a6b349573]*/
+/*[clinic end generated code: output=386972ae84716c1e input=ab12e67d8abcb42f]*/
 {
     Py_off_t pos;
 
@@ -1281,6 +1320,7 @@ _io__Buffered_tell_impl(buffered *self)
 }
 
 /*[clinic input]
+@critical_section
 _io._Buffered.seek
     target as targetobj: object
     whence: int = 0
@@ -1289,7 +1329,7 @@ _io._Buffered.seek
 
 static PyObject *
 _io__Buffered_seek_impl(buffered *self, PyObject *targetobj, int whence)
-/*[clinic end generated code: output=7ae0e8dc46efdefb input=a9c4920bfcba6163]*/
+/*[clinic end generated code: output=7ae0e8dc46efdefb input=b5a12be70e0ad07b]*/
 {
     Py_off_t target, n;
     PyObject *res = NULL;
@@ -1378,6 +1418,7 @@ end:
 }
 
 /*[clinic input]
+@critical_section
 _io._Buffered.truncate
     cls: defining_class
     pos: object = None
@@ -1386,7 +1427,7 @@ _io._Buffered.truncate
 
 static PyObject *
 _io__Buffered_truncate_impl(buffered *self, PyTypeObject *cls, PyObject *pos)
-/*[clinic end generated code: output=fe3882fbffe79f1a input=f5b737d97d76303f]*/
+/*[clinic end generated code: output=fe3882fbffe79f1a input=e3cbf794575bd794]*/
 {
     PyObject *res = NULL;
 
@@ -1462,7 +1503,7 @@ buffered_repr(buffered *self)
 {
     PyObject *nameobj, *res;
 
-    if (_PyObject_LookupAttr((PyObject *) self, &_Py_ID(name), &nameobj) < 0) {
+    if (PyObject_GetOptionalAttr((PyObject *) self, &_Py_ID(name), &nameobj) < 0) {
         if (!PyErr_ExceptionMatches(PyExc_ValueError)) {
             return NULL;
         }
@@ -1629,7 +1670,7 @@ _bufferedreader_read_all(buffered *self)
     }
     _bufferedreader_reset_buf(self);
 
-    if (_PyObject_LookupAttr(self->raw, &_Py_ID(readall), &readall) < 0) {
+    if (PyObject_GetOptionalAttr(self->raw, &_Py_ID(readall), &readall) < 0) {
         goto cleanup;
     }
     if (readall) {
@@ -2000,6 +2041,7 @@ error:
 }
 
 /*[clinic input]
+@critical_section
 _io.BufferedWriter.write
     buffer: Py_buffer
     /
@@ -2007,7 +2049,7 @@ _io.BufferedWriter.write
 
 static PyObject *
 _io_BufferedWriter_write_impl(buffered *self, Py_buffer *buffer)
-/*[clinic end generated code: output=7f8d1365759bfc6b input=dd87dd85fc7f8850]*/
+/*[clinic end generated code: output=7f8d1365759bfc6b input=6a9c041de0c337be]*/
 {
     PyObject *res = NULL;
     Py_ssize_t written, avail, remaining;
@@ -2476,17 +2518,17 @@ static PyMethodDef bufferedreader_methods[] = {
 };
 
 static PyMemberDef bufferedreader_members[] = {
-    {"raw", T_OBJECT, offsetof(buffered, raw), READONLY},
-    {"_finalizing", T_BOOL, offsetof(buffered, finalizing), 0},
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(buffered, weakreflist), READONLY},
-    {"__dictoffset__", T_PYSSIZET, offsetof(buffered, dict), READONLY},
+    {"raw", _Py_T_OBJECT, offsetof(buffered, raw), Py_READONLY},
+    {"_finalizing", Py_T_BOOL, offsetof(buffered, finalizing), 0},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(buffered, weakreflist), Py_READONLY},
+    {"__dictoffset__", Py_T_PYSSIZET, offsetof(buffered, dict), Py_READONLY},
     {NULL}
 };
 
 static PyGetSetDef bufferedreader_getset[] = {
-    {"closed", (getter)buffered_closed_get, NULL, NULL},
-    {"name", (getter)buffered_name_get, NULL, NULL},
-    {"mode", (getter)buffered_mode_get, NULL, NULL},
+    _IO__BUFFERED_CLOSED_GETSETDEF
+    _IO__BUFFERED_NAME_GETSETDEF
+    _IO__BUFFERED_MODE_GETSETDEF
     {NULL}
 };
 
@@ -2536,17 +2578,17 @@ static PyMethodDef bufferedwriter_methods[] = {
 };
 
 static PyMemberDef bufferedwriter_members[] = {
-    {"raw", T_OBJECT, offsetof(buffered, raw), READONLY},
-    {"_finalizing", T_BOOL, offsetof(buffered, finalizing), 0},
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(buffered, weakreflist), READONLY},
-    {"__dictoffset__", T_PYSSIZET, offsetof(buffered, dict), READONLY},
+    {"raw", _Py_T_OBJECT, offsetof(buffered, raw), Py_READONLY},
+    {"_finalizing", Py_T_BOOL, offsetof(buffered, finalizing), 0},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(buffered, weakreflist), Py_READONLY},
+    {"__dictoffset__", Py_T_PYSSIZET, offsetof(buffered, dict), Py_READONLY},
     {NULL}
 };
 
 static PyGetSetDef bufferedwriter_getset[] = {
-    {"closed", (getter)buffered_closed_get, NULL, NULL},
-    {"name", (getter)buffered_name_get, NULL, NULL},
-    {"mode", (getter)buffered_mode_get, NULL, NULL},
+    _IO__BUFFERED_CLOSED_GETSETDEF
+    _IO__BUFFERED_NAME_GETSETDEF
+    _IO__BUFFERED_MODE_GETSETDEF
     {NULL}
 };
 
@@ -2592,8 +2634,8 @@ static PyMethodDef bufferedrwpair_methods[] = {
 };
 
 static PyMemberDef bufferedrwpair_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(rwpair, weakreflist), READONLY},
-    {"__dictoffset__", T_PYSSIZET, offsetof(rwpair, dict), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(rwpair, weakreflist), Py_READONLY},
+    {"__dictoffset__", Py_T_PYSSIZET, offsetof(rwpair, dict), Py_READONLY},
     {NULL}
 };
 
@@ -2654,17 +2696,17 @@ static PyMethodDef bufferedrandom_methods[] = {
 };
 
 static PyMemberDef bufferedrandom_members[] = {
-    {"raw", T_OBJECT, offsetof(buffered, raw), READONLY},
-    {"_finalizing", T_BOOL, offsetof(buffered, finalizing), 0},
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(buffered, weakreflist), READONLY},
-    {"__dictoffset__", T_PYSSIZET, offsetof(buffered, dict), READONLY},
+    {"raw", _Py_T_OBJECT, offsetof(buffered, raw), Py_READONLY},
+    {"_finalizing", Py_T_BOOL, offsetof(buffered, finalizing), 0},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(buffered, weakreflist), Py_READONLY},
+    {"__dictoffset__", Py_T_PYSSIZET, offsetof(buffered, dict), Py_READONLY},
     {NULL}
 };
 
 static PyGetSetDef bufferedrandom_getset[] = {
-    {"closed", (getter)buffered_closed_get, NULL, NULL},
-    {"name", (getter)buffered_name_get, NULL, NULL},
-    {"mode", (getter)buffered_mode_get, NULL, NULL},
+    _IO__BUFFERED_CLOSED_GETSETDEF
+    _IO__BUFFERED_NAME_GETSETDEF
+    _IO__BUFFERED_MODE_GETSETDEF
     {NULL}
 };
 

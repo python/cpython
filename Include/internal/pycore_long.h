@@ -8,7 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_global_objects.h"  // _PY_NSMALLNEGINTS
+#include "pycore_bytesobject.h"   // _PyBytesWriter
+#include "pycore_global_objects.h"// _PY_NSMALLNEGINTS
 #include "pycore_runtime.h"       // _PyRuntime
 
 /*
@@ -46,6 +47,16 @@ extern "C" {
 # error "_PY_LONG_DEFAULT_MAX_STR_DIGITS smaller than threshold."
 #endif
 
+// _PyLong_NumBits.  Return the number of bits needed to represent the
+// absolute value of a long.  For example, this returns 1 for 1 and -1, 2
+// for 2 and -2, and 2 for 3 and -3.  It returns 0 for 0.
+// v must not be NULL, and must be a normalized long.
+// (size_t)-1 is returned and OverflowError set if the true result doesn't
+// fit in a size_t.
+//
+// Export for 'math' shared extension.
+PyAPI_FUNC(size_t) _PyLong_NumBits(PyObject *v);
+
 
 /* runtime lifecycle */
 
@@ -63,50 +74,98 @@ extern void _PyLong_FiniTypes(PyInterpreterState *interp);
 #  error "_PY_NSMALLPOSINTS must be greater than or equal to 257"
 #endif
 
-// Return a borrowed reference to the zero singleton.
+// Return a reference to the immortal zero singleton.
 // The function cannot return NULL.
 static inline PyObject* _PyLong_GetZero(void)
 { return (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS]; }
 
-// Return a borrowed reference to the one singleton.
+// Return a reference to the immortal one singleton.
 // The function cannot return NULL.
 static inline PyObject* _PyLong_GetOne(void)
 { return (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS+1]; }
 
 static inline PyObject* _PyLong_FromUnsignedChar(unsigned char i)
 {
-    return Py_NewRef((PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS+i]);
+    return (PyObject *)&_PyLong_SMALL_INTS[_PY_NSMALLNEGINTS+i];
 }
 
-PyObject *_PyLong_Add(PyLongObject *left, PyLongObject *right);
-PyObject *_PyLong_Multiply(PyLongObject *left, PyLongObject *right);
-PyObject *_PyLong_Subtract(PyLongObject *left, PyLongObject *right);
+// _PyLong_Frexp returns a double x and an exponent e such that the
+// true value is approximately equal to x * 2**e.  e is >= 0.  x is
+// 0.0 if and only if the input is 0 (in which case, e and x are both
+// zeroes); otherwise, 0.5 <= abs(x) < 1.0.  On overflow, which is
+// possible if the number of bits doesn't fit into a Py_ssize_t, sets
+// OverflowError and returns -1.0 for x, 0 for e.
+//
+// Export for 'math' shared extension
+PyAPI_DATA(double) _PyLong_Frexp(PyLongObject *a, Py_ssize_t *e);
 
-/* Used by Python/mystrtoul.c, _PyBytes_FromHex(),
-   _PyBytes_DecodeEscape(), etc. */
+extern PyObject* _PyLong_FromBytes(const char *, Py_ssize_t, int);
+
+// _PyLong_DivmodNear.  Given integers a and b, compute the nearest
+// integer q to the exact quotient a / b, rounding to the nearest even integer
+// in the case of a tie.  Return (q, r), where r = a - q*b.  The remainder r
+// will satisfy abs(r) <= abs(b)/2, with equality possible only if q is
+// even.
+//
+// Export for '_datetime' shared extension.
+PyAPI_DATA(PyObject*) _PyLong_DivmodNear(PyObject *, PyObject *);
+
+// _PyLong_Format: Convert the long to a string object with given base,
+// appending a base prefix of 0[box] if base is 2, 8 or 16.
+// Export for '_tkinter' shared extension.
+PyAPI_DATA(PyObject*) _PyLong_Format(PyObject *obj, int base);
+
+// Export for 'math' shared extension
+PyAPI_DATA(PyObject*) _PyLong_Rshift(PyObject *, size_t);
+
+// Export for 'math' shared extension
+PyAPI_DATA(PyObject*) _PyLong_Lshift(PyObject *, size_t);
+
+extern PyObject* _PyLong_Add(PyLongObject *left, PyLongObject *right);
+extern PyObject* _PyLong_Multiply(PyLongObject *left, PyLongObject *right);
+extern PyObject* _PyLong_Subtract(PyLongObject *left, PyLongObject *right);
+
+// Export for 'binascii' shared extension.
 PyAPI_DATA(unsigned char) _PyLong_DigitValue[256];
 
 /* Format the object based on the format_spec, as defined in PEP 3101
    (Advanced String Formatting). */
-PyAPI_FUNC(int) _PyLong_FormatAdvancedWriter(
+extern int _PyLong_FormatAdvancedWriter(
     _PyUnicodeWriter *writer,
     PyObject *obj,
     PyObject *format_spec,
     Py_ssize_t start,
     Py_ssize_t end);
 
-PyAPI_FUNC(int) _PyLong_FormatWriter(
+extern int _PyLong_FormatWriter(
     _PyUnicodeWriter *writer,
     PyObject *obj,
     int base,
     int alternate);
 
-PyAPI_FUNC(char*) _PyLong_FormatBytesWriter(
+extern char* _PyLong_FormatBytesWriter(
     _PyBytesWriter *writer,
     char *str,
     PyObject *obj,
     int base,
     int alternate);
+
+// Argument converters used by Argument Clinic
+
+// Export for 'select' shared extension (Argument Clinic code)
+PyAPI_FUNC(int) _PyLong_UnsignedShort_Converter(PyObject *, void *);
+
+// Export for '_testclinic' shared extension (Argument Clinic code)
+PyAPI_FUNC(int) _PyLong_UnsignedInt_Converter(PyObject *, void *);
+
+// Export for '_blake2' shared extension (Argument Clinic code)
+PyAPI_FUNC(int) _PyLong_UnsignedLong_Converter(PyObject *, void *);
+
+// Export for '_blake2' shared extension (Argument Clinic code)
+PyAPI_FUNC(int) _PyLong_UnsignedLongLong_Converter(PyObject *, void *);
+
+// Export for '_testclinic' shared extension (Argument Clinic code)
+PyAPI_FUNC(int) _PyLong_Size_t_Converter(PyObject *, void *);
 
 /* Long value tag bits:
  * 0-1: Sign bits value = (1-sign), ie. negative=2, positive=0, zero=1.
@@ -240,7 +299,7 @@ _PyLong_FlipSign(PyLongObject *op) {
 
 #define _PyLong_DIGIT_INIT(val) \
     { \
-        .ob_base = _PyObject_HEAD_INIT(&PyLong_Type) \
+        .ob_base = _PyObject_HEAD_INIT(&PyLong_Type), \
         .long_value  = { \
             .lv_tag = TAG_FROM_SIGN_AND_SIZE( \
                 (val) == 0 ? 0 : ((val) < 0 ? -1 : 1), \
