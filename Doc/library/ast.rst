@@ -416,15 +416,15 @@ Variables
             type_ignores=[])
 
 
-Note that the execution result of::
+   Note that the execution result of::
 
-    >>> del a, [b, c], (d, [e, f])
+       del a, [b, c], (d, [e, f])
 
-is equivalent to::
+   is equivalent to::
 
-    >>> del a, b, c, d, e, f
+       del a, b, c, d, e, f
 
-But these two delete statements generate different AST.
+   But these two delete statements generate different trees.
 
 
 .. class:: Starred(value, ctx)
