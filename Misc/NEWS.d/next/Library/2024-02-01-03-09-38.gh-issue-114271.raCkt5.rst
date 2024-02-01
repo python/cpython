@@ -1,1 +1,1 @@
-Fix a race in `threading.Thread.join()`.
+Fix a race in ``threading.Thread.join()``.
