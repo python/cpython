@@ -396,7 +396,7 @@ Available Functions
 -------------------
 
 
-.. function:: warn(message, category=None, stacklevel=1, source=None, \*, skip_file_prefixes=None)
+.. function:: warn(message, category=None, stacklevel=1, source=None, *, skip_file_prefixes=None)
 
    Issue a warning, or maybe ignore it or raise an exception.  The *category*
    argument, if given, must be a :ref:`warning category class <warning-categories>`; it
