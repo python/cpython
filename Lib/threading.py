@@ -647,8 +647,8 @@ class Event:
         (or fractions thereof).
 
         This method returns the internal flag on exit, so it will always return
-        True except if a timeout is given and the operation times out, when it
-        will return `False`.
+        ``True`` except if a timeout is given and the operation times out, when
+        it will return ``False``.
 
         """
         with self._cond:
