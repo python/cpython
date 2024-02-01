@@ -432,49 +432,46 @@ def realpath(filename, *, strict=False):
     """Return the canonical path of the specified filename, eliminating any
 symbolic links encountered in the path."""
     filename = os.fspath(filename)
-    path, ok = _joinrealpath(filename[:0], filename, strict, {})
-    return abspath(path)
-
-# Join two paths, normalizing and eliminating any symbolic links
-# encountered in the second path.
-def _joinrealpath(path, rest, strict, seen):
-    if isinstance(path, bytes):
+    if isinstance(filename, bytes):
         sep = b'/'
         curdir = b'.'
         pardir = b'..'
+        getcwd = os.getcwdb
     else:
         sep = '/'
         curdir = '.'
         pardir = '..'
+        getcwd = os.getcwd
 
-    if isabs(rest):
-        rest = rest[1:]
-        path = sep
+    seen = {}
+    stack = []
+    querying = True
+    path = sep if filename.startswith(sep) else getcwd()
+    for part in reversed(filename.split(sep)):
+        stack.append((False, part))
 
-    while rest:
-        name, _, rest = rest.partition(sep)
+    while stack:
+        is_symlink, name = stack.pop()
+        if is_symlink:
+            # resolved symlink
+            seen[name] = path
+            continue
         if not name or name == curdir:
             # current dir
             continue
         if name == pardir:
             # parent dir
-            if path:
-                path, name = split(path)
-                if name == pardir:
-                    path = join(path, pardir, pardir)
+            newpath, name = split(path)
+            if name == pardir:
+                path = path + sep + pardir
             else:
-                path = pardir
+                path = newpath
             continue
-        newpath = join(path, name)
-        try:
-            st = os.lstat(newpath)
-        except OSError:
-            if strict:
-                raise
-            is_link = False
+        if len(path) == 1:
+            newpath = path + name
         else:
-            is_link = stat.S_ISLNK(st.st_mode)
-        if not is_link:
+            newpath = path + sep + name
+        if not querying:
             path = newpath
             continue
         # Resolve the symbolic link
@@ -490,14 +487,30 @@ def _joinrealpath(path, rest, strict, seen):
                 os.stat(newpath)
             else:
                 # Return already resolved part + rest of the path unchanged.
-                return join(newpath, rest), False
-        seen[newpath] = None # not resolved symlink
-        path, ok = _joinrealpath(path, os.readlink(newpath), strict, seen)
-        if not ok:
-            return join(path, rest), False
-        seen[newpath] = path # resolved symlink
+                path = newpath
+                querying = False
+            continue
+        try:
+            st = os.lstat(newpath)
+            if not stat.S_ISLNK(st.st_mode):
+                path = newpath
+                continue
+            target = os.readlink(newpath)
+        except OSError:
+            if strict:
+                raise
+            else:
+                path = newpath
+                querying = False
+                continue
 
-    return path, True
+        seen[newpath] = None # not resolved symlink
+        if target.startswith(sep):
+            path = sep
+        stack.append((True, newpath))
+        for part in reversed(target.split(sep)):
+            stack.append((False, part))
+    return path
 
 
 supports_unicode_filenames = (sys.platform == 'darwin')
