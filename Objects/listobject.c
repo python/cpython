@@ -20,6 +20,14 @@ class list "PyListObject *" "&PyList_Type"
 
 _Py_DECLARE_STR(list_err, "list index out of range");
 
+#ifdef Py_GIL_DISABLED
+    #define LOAD_SSIZE_ATOMIC_AS_POSSBILE(value) _Py_atomic_load_ssize_relaxed(&value)
+    #define STORE_SSIZE_ATOMIC_AS_POSSBILE(value, new_value) _Py_atomic_store_ssize_relaxed(&value, new_value)
+#else
+    #define LOAD_SSIZE_ATOMIC_AS_POSSBILE(value) value
+    #define STORE_SSIZE_ATOMIC_AS_POSSBILE(value, new_value) value = new_value
+#endif
+
 #ifdef WITH_FREELISTS
 static struct _Py_list_state *
 get_list_state(void)
@@ -2948,7 +2956,8 @@ list___sizeof___impl(PyListObject *self)
 /*[clinic end generated code: output=3417541f95f9a53e input=b8030a5d5ce8a187]*/
 {
     size_t res = _PyObject_SIZE(Py_TYPE(self));
-    res += (size_t)self->allocated * sizeof(void*);
+    Py_ssize_t allocated = LOAD_SSIZE_ATOMIC_AS_POSSBILE(self->allocated);
+    res += (size_t)allocated * sizeof(void*);
     return PyLong_FromSize_t(res);
 }
 
@@ -3375,8 +3384,9 @@ listiter_len(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     _PyListIterObject *it = (_PyListIterObject *)self;
     Py_ssize_t len;
+    Py_ssize_t index = LOAD_SSIZE_ATOMIC_AS_POSSBILE(it->it_index);
     if (it->it_seq) {
-        len = PyList_GET_SIZE(it->it_seq) - it->it_index;
+        len = PyList_GET_SIZE(it->it_seq) - index;
         if (len >= 0)
             return PyLong_FromSsize_t(len);
     }
@@ -3514,13 +3524,13 @@ listreviter_next(PyObject *self)
     }
     assert(PyList_Check(seq));
 
-    index = it->it_index;
+    index = LOAD_SSIZE_ATOMIC_AS_POSSBILE(it->it_index);
     if (index>=0 && index < PyList_GET_SIZE(seq)) {
         item = PyList_GET_ITEM(seq, index);
         it->it_index--;
         return Py_NewRef(item);
     }
-    it->it_index = -1;
+    STORE_SSIZE_ATOMIC_AS_POSSBILE(it->it_index, -1);
     it->it_seq = NULL;
     Py_DECREF(seq);
     return NULL;
