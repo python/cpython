@@ -182,9 +182,9 @@ bootstrap(void *call)
     return 0;
 }
 
-unsigned long
-PyThread_start_new_thread(void (*func)(void *), void *arg)
-{
+int
+PyThread_start_joinable_thread(void (*func)(void *), void *arg,
+                               PyThread_ident_t* ident, PyThread_handle_t* handle) {
     HANDLE hThread;
     unsigned threadID;
     callobj *obj;
@@ -194,7 +194,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 
     obj = (callobj*)HeapAlloc(GetProcessHeap(), 0, sizeof(*obj));
     if (!obj)
-        return PYTHREAD_INVALID_THREAD_ID;
+        return -1;
     obj->func = func;
     obj->arg = arg;
     PyThreadState *tstate = _PyThreadState_GET();
@@ -207,28 +207,64 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
         /* I've seen errno == EAGAIN here, which means "there are
          * too many threads".
          */
-        int e = errno;
-        threadID = (unsigned)-1;
         HeapFree(GetProcessHeap(), 0, obj);
+        return -1;
     }
-    else {
-        CloseHandle(hThread);
+    *ident = threadID;
+    // The cast is safe since HANDLE is pointer-sized
+    *handle = (PyThread_handle_t) hThread;
+    return 0;
+}
+
+unsigned long
+PyThread_start_new_thread(void (*func)(void *), void *arg) {
+    PyThread_handle_t handle;
+    PyThread_ident_t ident;
+    if (PyThread_start_joinable_thread(func, arg, &ident, &handle)) {
+        return PYTHREAD_INVALID_THREAD_ID;
     }
-    return threadID;
+    CloseHandle((HANDLE) handle);
+    // The cast is safe since the ident is really an unsigned int
+    return (unsigned long) ident;
+}
+
+int
+PyThread_join_thread(PyThread_handle_t handle) {
+    HANDLE hThread = (HANDLE) handle;
+    int errored = (WaitForSingleObject(hThread, INFINITE) != WAIT_OBJECT_0);
+    CloseHandle(hThread);
+    return errored;
+}
+
+int
+PyThread_detach_thread(PyThread_handle_t handle) {
+    HANDLE hThread = (HANDLE) handle;
+    return (CloseHandle(hThread) == 0);
+}
+
+void
+PyThread_update_thread_after_fork(PyThread_ident_t* ident, PyThread_handle_t* handle) {
 }
 
 /*
  * Return the thread Id instead of a handle. The Id is said to uniquely identify the
  * thread in the system
  */
-unsigned long
-PyThread_get_thread_ident(void)
+PyThread_ident_t
+PyThread_get_thread_ident_ex(void)
 {
     if (!initialized)
         PyThread_init_thread();
 
     return GetCurrentThreadId();
 }
+
+unsigned long
+PyThread_get_thread_ident(void)
+{
+    return (unsigned long) PyThread_get_thread_ident_ex();
+}
+
 
 #ifdef PY_HAVE_THREAD_NATIVE_ID
 /*

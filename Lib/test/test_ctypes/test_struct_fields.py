@@ -1,5 +1,8 @@
 import unittest
-from ctypes import *
+from ctypes import Structure, Union, sizeof, c_char, c_int
+from ._support import (CField, Py_TPFLAGS_DISALLOW_INSTANTIATION,
+                       Py_TPFLAGS_IMMUTABLETYPE)
+
 
 class StructFieldsTestCase(unittest.TestCase):
     # Structure/Union classes must get 'finalized' sooner or
@@ -11,7 +14,6 @@ class StructFieldsTestCase(unittest.TestCase):
     # 4. The type is subclassed
     #
     # When they are finalized, assigning _fields_ is no longer allowed.
-
     def test_1_A(self):
         class X(Structure):
             pass
@@ -55,10 +57,14 @@ class StructFieldsTestCase(unittest.TestCase):
         self.assertEqual(bytes(x), b'a\x00###')
 
     def test_6(self):
-        class X(Structure):
-            _fields_ = [("x", c_int)]
-        CField = type(X.x)
         self.assertRaises(TypeError, CField)
+
+    def test_cfield_type_flags(self):
+        self.assertTrue(CField.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
+        self.assertTrue(CField.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
+
+    def test_cfield_inheritance_hierarchy(self):
+        self.assertEqual(CField.mro(), [CField, object])
 
     def test_gh99275(self):
         class BrokenStructure(Structure):
@@ -92,6 +98,7 @@ class StructFieldsTestCase(unittest.TestCase):
             _fields_ = (("field", c_int),)
         self.assertRaises(TypeError,
                           MyCUnion.field.__get__, 'wrong type self', 42)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,1 +1,0 @@
-Clarifying documentation about the url parameter to urllib.request.urlopen and urllib.request.Requst needing to be encoded properly.

@@ -1,1 +1,0 @@
-:exc:`AttributeError` now retains the ``name`` attribute when pickled and unpickled.
