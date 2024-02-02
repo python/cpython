@@ -564,7 +564,6 @@ class HelpFormatter(object):
             return metavar
 
         else:
-            parts = []
 
             # if the Optional doesn't take a value, format is:
             #    -s, --long
