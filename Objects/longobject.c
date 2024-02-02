@@ -1066,7 +1066,7 @@ _PyLong_AsByteArray(PyLongObject* v,
 static inline int
 _fits_in_n_bits(Py_ssize_t v, Py_ssize_t n, int require_sign_bit)
 {
-    if (n > sizeof(Py_ssize_t) * 8) {
+    if (n > (Py_ssize_t)sizeof(Py_ssize_t) * 8) {
         return 1;
     }
     // If all bits above n are the same, we fit.
@@ -1251,13 +1251,13 @@ error:
     return res;
 }
 
-static int
+int
 PyLong_AsByteArray(PyObject* vv, void* buffer, size_t n)
 {
     return PyLong_AsByteArrayWithOptions(vv, buffer, n, PYLONG_ASBYTEARRAY_SIGNED);
 }
 
-static int
+int
 PyLong_AsUnsignedByteArray(PyObject* vv, void* buffer, size_t n)
 {
     return PyLong_AsByteArrayWithOptions(vv, buffer, n, PYLONG_ASBYTEARRAY_UNSIGNED);
