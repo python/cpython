@@ -474,6 +474,9 @@
 /* Define to 1 if you have the `getgid' function. */
 #undef HAVE_GETGID
 
+/* Define to 1 if you have the `getgrent' function. */
+#undef HAVE_GETGRENT
+
 /* Define to 1 if you have the `getgrgid' function. */
 #undef HAVE_GETGRGID
 
