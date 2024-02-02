@@ -952,7 +952,7 @@ class TestReplace(unittest.TestCase):
                 self.assertEqual(copy.replace(p, x=1), (1, 22))
                 self.assertEqual(copy.replace(p, y=2), (11, 2))
                 self.assertEqual(copy.replace(p, x=1, y=2), (1, 2))
-                with self.assertRaisesRegex(ValueError, 'unexpected field name'):
+                with self.assertRaisesRegex(TypeError, 'unexpected field name'):
                     copy.replace(p, x=1, error=2)
 
     def test_dataclass(self):

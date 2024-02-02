@@ -1,5 +1,6 @@
 import enum
 import errno
+import functools
 import inspect
 import os
 import random
@@ -76,6 +77,9 @@ class PosixTests(unittest.TestCase):
     def trivial_signal_handler(self, *args):
         pass
 
+    def create_handler_with_partial(self, argument):
+        return functools.partial(self.trivial_signal_handler, argument)
+
     def test_out_of_range_signal_number_raises_error(self):
         self.assertRaises(ValueError, signal.getsignal, 4242)
 
@@ -95,6 +99,28 @@ class PosixTests(unittest.TestCase):
                          self.trivial_signal_handler)
         signal.signal(signal.SIGHUP, hup)
         self.assertEqual(signal.getsignal(signal.SIGHUP), hup)
+
+    def test_no_repr_is_called_on_signal_handler(self):
+        # See https://github.com/python/cpython/issues/112559.
+
+        class MyArgument:
+            def __init__(self):
+                self.repr_count = 0
+
+            def __repr__(self):
+                self.repr_count += 1
+                return super().__repr__()
+
+        argument = MyArgument()
+        self.assertEqual(0, argument.repr_count)
+
+        handler = self.create_handler_with_partial(argument)
+        hup = signal.signal(signal.SIGHUP, handler)
+        self.assertIsInstance(hup, signal.Handlers)
+        self.assertEqual(signal.getsignal(signal.SIGHUP), handler)
+        signal.signal(signal.SIGHUP, hup)
+        self.assertEqual(signal.getsignal(signal.SIGHUP), hup)
+        self.assertEqual(0, argument.repr_count)
 
     def test_strsignal(self):
         self.assertIn("Interrupt", signal.strsignal(signal.SIGINT))
@@ -1318,6 +1344,7 @@ class StressTest(unittest.TestCase):
         # Python handler
         self.assertEqual(len(sigs), N, "Some signals were lost")
 
+    @unittest.skipIf(sys.platform == "darwin", "crashes due to system bug (FB13453490)")
     @unittest.skipUnless(hasattr(signal, "SIGUSR1"),
                          "test needs SIGUSR1")
     @threading_helper.requires_working_threading()

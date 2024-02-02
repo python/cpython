@@ -617,6 +617,16 @@ f'__{
     FSTRING_END "'"           (3, 3) (3, 4)
     """)
 
+        self.check_tokenize("""\
+    '''Autorzy, którzy tą jednostkę mają wpisani jako AKTUALNA -- czyli
+    aktualni pracownicy, obecni pracownicy'''
+""", """\
+    INDENT     '    '        (1, 0) (1, 4)
+    STRING     "'''Autorzy, którzy tą jednostkę mają wpisani jako AKTUALNA -- czyli\\n    aktualni pracownicy, obecni pracownicy'''" (1, 4) (2, 45)
+    NEWLINE    '\\n'          (2, 45) (2, 46)
+    DEDENT     ''            (3, 0) (3, 0)
+    """)
+
     def test_function(self):
         self.check_tokenize("def d22(a, b, c=2, d=2, *k): pass", """\
     NAME       'def'         (1, 0) (1, 3)

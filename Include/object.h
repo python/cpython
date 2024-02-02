@@ -212,7 +212,10 @@ struct _object {
 struct _PyMutex { uint8_t v; };
 
 struct _object {
-    uintptr_t ob_tid;           // thread id (or zero)
+    // ob_tid stores the thread id (or zero). It is also used by the GC and the
+    // trashcan mechanism as a linked list pointer and by the GC to store the
+    // computed "gc_refs" refcount.
+    uintptr_t ob_tid;
     uint16_t _padding;
     struct _PyMutex ob_mutex;   // per-object lock
     uint8_t ob_gc_bits;         // gc-related state
@@ -239,6 +242,8 @@ PyAPI_FUNC(int) Py_Is(PyObject *x, PyObject *y);
 #define Py_Is(x, y) ((x) == (y))
 
 #if defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
+PyAPI_FUNC(uintptr_t) _Py_GetThreadLocal_Addr(void);
+
 static inline uintptr_t
 _Py_ThreadId(void)
 {
@@ -261,8 +266,39 @@ _Py_ThreadId(void)
     __asm__ ("mrs %0, tpidrro_el0" : "=r" (tid));
 #elif defined(__aarch64__)
     __asm__ ("mrs %0, tpidr_el0" : "=r" (tid));
+#elif defined(__powerpc64__)
+    #if defined(__clang__) && _Py__has_builtin(__builtin_thread_pointer)
+    tid = (uintptr_t)__builtin_thread_pointer();
+    #else
+    // r13 is reserved for use as system thread ID by the Power 64-bit ABI.
+    register uintptr_t tp __asm__ ("r13");
+    __asm__("" : "=r" (tp));
+    tid = tp;
+    #endif
+#elif defined(__powerpc__)
+    #if defined(__clang__) && _Py__has_builtin(__builtin_thread_pointer)
+    tid = (uintptr_t)__builtin_thread_pointer();
+    #else
+    // r2 is reserved for use as system thread ID by the Power 32-bit ABI.
+    register uintptr_t tp __asm__ ("r2");
+    __asm__ ("" : "=r" (tp));
+    tid = tp;
+    #endif
+#elif defined(__s390__) && defined(__GNUC__)
+    // Both GCC and Clang have supported __builtin_thread_pointer
+    // for s390 from long time ago.
+    tid = (uintptr_t)__builtin_thread_pointer();
+#elif defined(__riscv)
+    #if defined(__clang__) && _Py__has_builtin(__builtin_thread_pointer)
+    tid = (uintptr_t)__builtin_thread_pointer();
+    #else
+    // tp is Thread Pointer provided by the RISC-V ABI.
+    __asm__ ("mv %0, tp" : "=r" (tid));
+    #endif
 #else
-  # error "define _Py_ThreadId for this platform"
+    // Fallback to a portable implementation if we do not have a faster
+    // platform-specific implementation.
+    tid = _Py_GetThreadLocal_Addr();
 #endif
   return tid;
 }
@@ -393,7 +429,11 @@ static inline void Py_SET_TYPE(PyObject *ob, PyTypeObject *type) {
 static inline void Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size) {
     assert(ob->ob_base.ob_type != &PyLong_Type);
     assert(ob->ob_base.ob_type != &PyBool_Type);
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_store_ssize_relaxed(&ob->ob_size, size);
+#else
     ob->ob_size = size;
+#endif
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_SET_SIZE(ob, size) Py_SET_SIZE(_PyVarObject_CAST(ob), (size))

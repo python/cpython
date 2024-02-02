@@ -8,16 +8,6 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-
-#ifndef WITH_FREELISTS
-// without freelists
-#  define PyDict_MAXFREELIST 0
-#endif
-
-#ifndef PyDict_MAXFREELIST
-#  define PyDict_MAXFREELIST 80
-#endif
-
 #define DICT_MAX_WATCHERS 8
 
 struct _Py_dict_state {
@@ -26,15 +16,6 @@ struct _Py_dict_state {
      * time that a dictionary is modified. */
     uint64_t global_version;
     uint32_t next_keys_version;
-
-#if PyDict_MAXFREELIST > 0
-    /* Dictionary reuse scheme to save calls to malloc and free */
-    PyDictObject *free_list[PyDict_MAXFREELIST];
-    PyDictKeysObject *keys_free_list[PyDict_MAXFREELIST];
-    int numfree;
-    int keys_numfree;
-#endif
-
     PyDict_WatchCallback watchers[DICT_MAX_WATCHERS];
 };
 
