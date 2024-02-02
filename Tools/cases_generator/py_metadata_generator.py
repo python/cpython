@@ -1,4 +1,4 @@
-"""Generate opcode metadata.
+"""Generate opcode metadata for Python.
 Reads the instruction definitions from bytecodes.c.
 Writes the metadata to _opcode_metadata.py by default.
 """
