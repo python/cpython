@@ -1340,7 +1340,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                                        allow_broadcast=None, sock=None):
         """Create datagram connection."""
         if sock is not None:
-            if not (sock.type == socket.SOCK_DGRAM or sock.type == socket.SOCK_RAW):
+            if sock.type == socket.SOCK_STREAM:
                 raise ValueError(
                     f'A datagram socket was expected, got {sock!r}')
             if (local_addr or remote_addr or
