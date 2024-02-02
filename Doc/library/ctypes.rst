@@ -2540,7 +2540,7 @@ fields, or any other data types containing pointer type fields.
 
    .. attribute:: _align_
 
-      An optional small interger that allows overriding the alignment of
+      An optional small integer that allows overriding the alignment of
       the structure when being packed or unpacked to/from memory.
       Setting this attribute to 0 is the same as not setting it at all.
 

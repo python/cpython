@@ -245,6 +245,42 @@ class TestAlignedStructures(unittest.TestCase):
             self.assertEqual(main.unsigned, 0xD6)
             self.assertEqual(main.signed, -42)
 
+    def test_aligned_packed_structures(self):
+        for sbase, e in (
+            (LittleEndianStructure, "<"),
+            (BigEndianStructure, ">"),
+        ):
+            data = bytearray(struct.pack(f"{e}B2H4xB", 1, 2, 3, 4))
+
+            class Inner(sbase):
+                _align_ = 8
+                _fields_ = [
+                    ("x", c_uint16),
+                    ("y", c_uint16),
+                ]
+
+            class Main(sbase):
+                _pack_ = 1
+                _fields_ = [
+                    ("a", c_ubyte),
+                    ("b", Inner),
+                    ("c", c_ubyte),
+                ]
+
+            main = Main.from_buffer(data)
+            self.assertEqual(sizeof(main), 10)
+            self.assertEqual(Main.b.offset, 1)
+            # Alignment == 8 because _pack_ wins out.
+            self.assertEqual(alignment(main.b), 8)
+            # Size is still 8 though since inside this Structure, it will have
+            # effect.
+            self.assertEqual(sizeof(main.b), 8)
+            self.assertEqual(Main.c.offset, 9)
+            self.assertEqual(main.a, 1)
+            self.assertEqual(main.b.x, 2)
+            self.assertEqual(main.b.y, 3)
+            self.assertEqual(main.c, 4)
+
 
 if __name__ == '__main__':
     unittest.main()
