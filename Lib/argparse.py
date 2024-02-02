@@ -1355,7 +1355,7 @@ class Namespace(_AttributeHolder):
 
     def __iter__(self):
         for key, value in self.__dict__.items():
-            yield {key: value}
+            yield key, value
 
     def __getitem__(self, item):
         return getattr(self, item)

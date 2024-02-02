@@ -5773,15 +5773,17 @@ class TestIterationOnNS(TestCase):
 
     def test_iteration_ns(self):
         local_ns = self.parser.parse_args('--test_1 --test_2 b --test_3 1'.split())
-        for arg in local_ns:
-            self.assertIn(arg, [{'test_1': True}, {'test_2': 'b'}, {'test_3': 1}])
+        for key, value in local_ns:
+            self.assertIn(key, ["test_1", "test_2", "test_3"])
+            self.assertIn(value, [True, "b", 1])
 
     def test_known_args_iteration_ns(self):
         local_ns = self.parser.parse_known_args('--test_2 b --test_3 1 --test_4'.split())
         # The parse_known_args returns tuple where the Namespace object is placed first
         # then the unknown args in a list.
-        for arg in local_ns[0]:
-            self.assertIn(arg, [{'test_1': False}, {'test_2': 'b'}, {'test_3': 1}])
+        for key, value in local_ns[0]:
+            self.assertIn(key, ['test_1', 'test_2', 'test_3'])
+            self.assertIn(value, [False, 'b', 1])
 
 
 class TestSubscriptableNS(TestCase):
