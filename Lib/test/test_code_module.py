@@ -1,4 +1,5 @@
 "Test InteractiveConsole and InteractiveInterpreter from code module"
+import site
 import sys
 import unittest
 from textwrap import dedent
@@ -160,6 +161,10 @@ class TestInteractiveConsoleLocalExit(unittest.TestCase, MockSys):
         self.console = code.InteractiveConsole(local_exit=True)
         self.mock_sys()
 
+    @unittest.skipif(
+        site.USER_SITE is None,
+        "exit() isn't defined unless there's a site module"
+    )
     def test_exit(self):
         # default exit message
         self.infunc.side_effect = ["exit()"]

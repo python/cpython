@@ -1875,6 +1875,7 @@ class TestFunctional(unittest.TestCase):
 
 
 @unittest.skipUnless(hasattr(os, 'fork'), 'requires os.fork()')
+@support.requires_subprocess()
 class TestFork(unittest.IsolatedAsyncioTestCase):
 
     async def test_fork_not_share_event_loop(self):

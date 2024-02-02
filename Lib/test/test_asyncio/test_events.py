@@ -1799,6 +1799,7 @@ class EventLoopTestsMixin:
             next(it)
 
 
+@support.requires_subprocess()
 class SubprocessTestsMixin:
 
     def check_terminated(self, returncode):
