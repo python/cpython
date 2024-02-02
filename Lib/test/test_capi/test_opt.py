@@ -891,9 +891,50 @@ class TestUopsOptimization(unittest.TestCase):
             testfunc(10)
 
         ex = get_first_executor(testfunc)
-        # Optimizer should have just bailed to tier 1.
-        self.assertIsNone(ex)
+        self.assertIsNotNone(ex)
 
+    def test_call_py_exact_args_disappearing(self):
+        def dummy(x):
+            return x+1
+
+        def testfunc(n):
+            for i in range(n):
+                dummy(i)
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        # Trigger specialization
+        testfunc(8)
+        with temporary_optimizer(opt):
+            del dummy
+            gc.collect()
+
+            def dummy(x):
+                return x + 2
+            testfunc(10)
+
+        # As long as it doesn't crash it's fine.
+        # Whether we get an executor or not is non-deterministic,
+        # because it's decided by when the function is freed.
+
+    def test_promote_globals_to_constants(self):
+        def dummy(x):
+            return x+1
+
+        def testfunc(n):
+            for i in range(n):
+                x = range(i)
+            return x
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            testfunc(20)
+
+        ex = get_first_executor(testfunc)
+        # Bail to tier 1.
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _, _ in ex}
+        self.assertNotIn("_LOAD_GLOBAL_BUILTIN", uops)
+        self.assertIn("_LOAD_CONST_INLINE_BORROW_WITH_NULL", uops)
 
 
 if __name__ == "__main__":

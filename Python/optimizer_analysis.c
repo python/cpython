@@ -268,7 +268,7 @@ error:
 }
 
 static inline _Py_UOpsSymType*
-sym_init_const(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val, int const_idx);
+sym_init_const(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val);
 
 static inline _Py_UOpsSymType **
 create_sym_consts(_Py_UOpsAbstractInterpContext *ctx, PyObject *co_consts)
@@ -279,7 +279,7 @@ create_sym_consts(_Py_UOpsAbstractInterpContext *ctx, PyObject *co_consts)
         return NULL;
     }
     for (Py_ssize_t i = 0; i < co_const_len; i++) {
-        _Py_UOpsSymType *res = sym_init_const(ctx, PyTuple_GET_ITEM(co_consts, i), (int)i);
+        _Py_UOpsSymType *res = sym_init_const(ctx, PyTuple_GET_ITEM(co_consts, i));
         if (res == NULL) {
             goto error;
         }
@@ -513,7 +513,7 @@ sym_init_unknown(_Py_UOpsAbstractInterpContext *ctx)
 
 // Takes a borrowed reference to const_val.
 static inline _Py_UOpsSymType*
-sym_init_const(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val, int const_idx)
+sym_init_const(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val)
 {
     assert(const_val != NULL);
     _Py_UOpsSymType *temp = _Py_UOpsSymType_New(
@@ -662,9 +662,11 @@ op_is_zappable(int opcode)
         case _SET_IP:
         case _CHECK_VALIDITY:
         case _LOAD_CONST_INLINE:
+        case _LOAD_CONST_INLINE_BORROW:
+        case _LOAD_CONST_INLINE_WITH_NULL:
+        case _LOAD_CONST_INLINE_BORROW_WITH_NULL:
         case _LOAD_CONST:
         case _LOAD_FAST:
-        case _LOAD_CONST_INLINE_BORROW:
         case _NOP:
             return true;
         default:
@@ -673,12 +675,20 @@ op_is_zappable(int opcode)
 }
 
 static inline bool
-op_is_load(int opcode)
+op_count_loads(int opcode)
 {
-    return (opcode == _LOAD_CONST_INLINE ||
-            opcode == _LOAD_CONST ||
-            opcode == LOAD_FAST ||
-            opcode == _LOAD_CONST_INLINE_BORROW);
+    switch(opcode) {
+        case _LOAD_CONST_INLINE:
+        case _LOAD_CONST:
+        case _LOAD_FAST:
+        case _LOAD_CONST_INLINE_BORROW:
+            return 1;
+        case _LOAD_CONST_INLINE_WITH_NULL:
+        case _LOAD_CONST_INLINE_BORROW_WITH_NULL:
+            return 2;
+        default:
+            return 0;
+    }
 }
 
 static inline int
@@ -694,7 +704,7 @@ emit_const(uops_emitter *emitter,
     while (back >= emitter->writebuffer &&
            load_count < num_pops &&
            op_is_zappable(back->opcode)) {
-        load_count += op_is_load(back->opcode);
+        load_count += op_count_loads(back->opcode);
         back--;
     }
     if (load_count == num_pops) {
@@ -702,8 +712,9 @@ emit_const(uops_emitter *emitter,
         load_count = 0;
         // Back up over the previous loads and zap them.
         while(load_count < num_pops) {
-            load_count += op_is_load(back->opcode);
-            if (back->opcode == _LOAD_CONST_INLINE) {
+            load_count += op_count_loads(back->opcode);
+            if (back->opcode == _LOAD_CONST_INLINE ||
+                back->opcode == _LOAD_CONST_INLINE_WITH_NULL) {
                 PyObject *old_const_val = (PyObject *)back->operand;
                 Py_DECREF(old_const_val);
                 back->operand = (uintptr_t)NULL;
@@ -850,6 +861,46 @@ uop_abstract_interpret_single_inst(
             new_inst.operand = (uintptr_t)val;
             break;
         }
+        case _LOAD_CONST_INLINE:
+        case _LOAD_CONST_INLINE_BORROW:
+        {
+            _Py_UOpsSymType *sym_const = sym_init_const(ctx, (PyObject *)inst->operand);
+            if (sym_const == NULL) {
+                goto error;
+            }
+            // We need to incref it for it to safely decref in the
+            // executor finalizer.
+            if (opcode == _LOAD_CONST_INLINE) {
+                Py_INCREF(inst->operand);
+            }
+            STACK_GROW(1);
+            PEEK(1) = sym_const;
+            assert(is_const(PEEK(1)));
+            break;
+        }
+        case _LOAD_CONST_INLINE_WITH_NULL:
+        case _LOAD_CONST_INLINE_BORROW_WITH_NULL:
+        {
+            _Py_UOpsSymType *sym_const = sym_init_const(ctx, (PyObject *)inst->operand);
+            if (sym_const == NULL) {
+                goto error;
+            }
+            // We need to incref it for it to safely decref in the
+            // executor finalizer.
+            if (opcode == _LOAD_CONST_INLINE_WITH_NULL) {
+                Py_INCREF(inst->operand);
+            }
+            STACK_GROW(1);
+            PEEK(1) = sym_const;
+            assert(is_const(PEEK(1)));
+            _Py_UOpsSymType *null_sym =  sym_init_push_null(ctx);
+            if (null_sym == NULL) {
+                goto error;
+            }
+            STACK_GROW(1);
+            PEEK(1) = null_sym;
+            break;
+        }
         case STORE_FAST_MAYBE_NULL:
         case STORE_FAST: {
             _Py_UOpsSymType *value = PEEK(1);
@@ -948,6 +999,8 @@ uop_abstract_interpret_single_inst(
                 new_inst.opcode = _NOP;
             }
             break;
+        case _CHECK_GLOBALS:
+        case _CHECK_BUILTINS:
         case _SET_IP:
         case _CHECK_VALIDITY:
         case _SAVE_RETURN_OFFSET:
@@ -1029,6 +1082,7 @@ global_to_const(_PyUOpInstruction *inst, PyObject *obj)
     }
     else {
         inst->opcode = (inst->oparg & 1) ? _LOAD_CONST_INLINE_WITH_NULL : _LOAD_CONST_INLINE;
+        Py_INCREF(res);
     }
     inst->operand = (uint64_t)res;
 }
@@ -1170,9 +1224,11 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 builtins = func->func_builtins;
                 break;
             }
-            case _JUMP_TO_TOP:
-            case _EXIT_TRACE:
-                return 1;
+            default:
+                if (op_is_end(opcode)) {
+                    return 1;
+                }
+                break;
         }
     }
     return 0;
@@ -1242,7 +1298,7 @@ loop_peeling:
     assert(op_is_end(curr->opcode));
 
     // If we end in a loop, and we have a lot of space left, peel the loop for
-    // poor man's loop invariant code motino for guards
+    // poor man's loop invariant code motion for guards
     // https://en.wikipedia.org/wiki/Loop_splitting
     has_enough_space_to_duplicate_loop = ((ctx->emitter.curr_i * 3) <
         (int)(ctx->emitter.writebuffer_end - ctx->emitter.writebuffer));
@@ -1308,9 +1364,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                 buffer[pc].opcode = NOP;
             }
         }
-        else if (opcode == _JUMP_TO_TOP ||
-            opcode == _EXIT_TRACE ||
-            opcode == _JUMP_ABSOLUTE) {
+        else if (op_is_end(opcode)) {
             break;
         }
         else {
@@ -1329,6 +1383,10 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
     }
 }
 
+
+//  0 - failure, no error raised, just fall back to Tier 1
+// -1 - failure, and raise error
+//  1 - optimizer success
 int
 _Py_uop_analyze_and_optimize(
     _PyInterpreterFrame *frame,
@@ -1359,6 +1417,8 @@ _Py_uop_analyze_and_optimize(
     if (new_trace_len < 0) {
         goto error;
     }
+
+    clear_strong_refs_in_uops(buffer, buffer_size);
 
     remove_unneeded_uops(temp_writebuffer, new_trace_len);
 
