@@ -4,6 +4,44 @@
 
 PyAPI_FUNC(PyObject*) PyLong_FromUnicodeObject(PyObject *u, int base);
 
+/* PyLong_AsByteArray: Copy the integer value to a native address.
+   n is the number of bytes available in the buffer.
+   Uses the current build's default endianness.
+   PyLong_AsByteArray ensures the MSB matches the int's sign.
+   PyLong_AsUnsignedByteArray allows the MSB to be set for a
+   positive Python value provided no significant bits are lost
+   (that is, all higher bits are a sign extension of the MSB).
+   Negative values still sign extend to fill the buffer and are
+   guaranteed to have MSB set. Use PyLong_AsByteArray to guarantee
+   that the MSB is set iff the int was negative.
+
+   Returns 0 on success or -1 with an exception set, but if the buffer is
+   not big enough, returns the desired buffer size without setting an
+   exception. Note that the desired size may be larger than strictly
+   necessary to avoid precise calculations. */
+PyAPI_FUNC(int) PyLong_AsByteArray(PyObject* v, void* buffer, size_t n);
+PyAPI_FUNC(int) PyLong_AsUnsignedByteArray(PyObject* v, void* buffer, size_t n);
+PyAPI_FUNC(int) PyLong_AsByteArrayWithOptions(PyObject* v, void* buffer,
+                                              size_t n, int options);
+
+#define PYLONG_ASBYTEARRAY_NATIVE_ENDIAN    0x00
+#define PYLONG_ASBYTEARRAY_LITTLE_ENDIAN    0x01
+#define PYLONG_ASBYTEARRAY_BIG_ENDIAN       0x02
+
+#define PYLONG_ASBYTEARRAY_SIGNED   0x00
+#define PYLONG_ASBYTEARRAY_UNSIGNED 0x04
+
+/* PyLong_FromByteArray: Create an integer value containing the number from
+   a native buffer.
+   n is the number of bytes to read from the buffer.
+   Uses the current build's default endianness, and assumes the value was
+   sign extended to 'n' bytes.
+   PyLong_FromUnsignedByteArray assumes the value was zero extended.
+
+   Returns the int object, or NULL with an exception set. */
+PyAPI_FUNC(PyObject) PyLong_FromByteArray(void* buffer, size_t n);
+PyAPI_FUNC(PyObject) PyLong_FromUnsignedByteArray(void* buffer, size_t n);
+
 PyAPI_FUNC(int) PyUnstable_Long_IsCompact(const PyLongObject* op);
 PyAPI_FUNC(Py_ssize_t) PyUnstable_Long_CompactValue(const PyLongObject* op);
 
@@ -50,7 +88,7 @@ PyAPI_FUNC(PyObject *) _PyLong_FromByteArray(
 */
 PyAPI_FUNC(int) _PyLong_AsByteArray(PyLongObject* v,
     unsigned char* bytes, size_t n,
-    int little_endian, int is_signed);
+    int little_endian, int is_signed, int with_exceptions);
 
 /* For use by the gcd function in mathmodule.c */
 PyAPI_FUNC(PyObject *) _PyLong_GCD(PyObject *, PyObject *);

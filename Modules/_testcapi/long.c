@@ -776,6 +776,78 @@ pylong_asvoidptr(PyObject *module, PyObject *arg)
     return Py_NewRef((PyObject *)value);
 }
 
+static PyObject *
+pylong_asbytearray(PyObject *module, PyObject *args)
+{
+    PyObject *v;
+    Py_buffer buffer;
+    Py_ssize_t n;
+    if (!PyArg_ParseTuple(args, "Ow*n", &v, &buffer, &n)) {
+        return NULL;
+    }
+    if (buffer.readonly) {
+        PyErr_SetString(PyExc_TypeError, "buffer must be writable");
+        PyBuffer_Release(&buffer);
+        return NULL;
+    }
+    if (buffer.len < n) {
+        PyErr_SetString(PyExc_ValueError, "buffer must be at least 'n' bytes");
+        PyBuffer_Release(&buffer);
+        return NULL;
+    }
+    int res = PyLong_AsByteArray(v, buffer.buf, n);
+    PyBuffer_Release(&buffer);
+    return res >= 0 ? PyLong_FromLong(res) : NULL;
+}
+
+static PyObject *
+pylong_asunsignedbytearray(PyObject *module, PyObject *args)
+{
+    PyObject *v;
+    Py_buffer buffer;
+    Py_ssize_t n;
+    if (!PyArg_ParseTuple(args, "Ow*n", &v, &buffer, &n)) {
+        return NULL;
+    }
+    if (buffer.readonly) {
+        PyErr_SetString(PyExc_TypeError, "buffer must be writable");
+        PyBuffer_Release(&buffer);
+        return NULL;
+    }
+    if (buffer.len < n) {
+        PyErr_SetString(PyExc_ValueError, "buffer must be at least 'n' bytes");
+        PyBuffer_Release(&buffer);
+        return NULL;
+    }
+    int res = PyLong_AsUnsignedByteArray(v, buffer.buf, n);
+    PyBuffer_Release(&buffer);
+    return res >= 0 ? PyLong_FromLong(res) : NULL;
+}
+
+static PyObject *
+pylong_asbytearraywithoptions(PyObject *module, PyObject *args)
+{
+    PyObject *v;
+    Py_buffer buffer;
+    Py_ssize_t n, options;
+    if (!PyArg_ParseTuple(args, "Ow*nn", &v, &buffer, &n, &options)) {
+        return NULL;
+    }
+    if (buffer.readonly) {
+        PyErr_SetString(PyExc_TypeError, "buffer must be writable");
+        PyBuffer_Release(&buffer);
+        return NULL;
+    }
+    if (buffer.len < n) {
+        PyErr_SetString(PyExc_ValueError, "buffer must be at least 'n' bytes");
+        PyBuffer_Release(&buffer);
+        return NULL;
+    }
+    int res = PyLong_AsByteArrayWithOptions(v, buffer.buf, n, (int)options);
+    PyBuffer_Release(&buffer);
+    return res >= 0 ? PyLong_FromLong(res) : NULL;
+}
+
 static PyMethodDef test_methods[] = {
     _TESTCAPI_TEST_LONG_AND_OVERFLOW_METHODDEF
     _TESTCAPI_TEST_LONG_API_METHODDEF
@@ -804,6 +876,9 @@ static PyMethodDef test_methods[] = {
     {"pylong_as_size_t",            pylong_as_size_t,           METH_O},
     {"pylong_asdouble",             pylong_asdouble,            METH_O},
     {"pylong_asvoidptr",            pylong_asvoidptr,           METH_O},
+    {"pylong_asbytearray",          pylong_asbytearray,         METH_VARARGS},
+    {"pylong_asunsignedbytearray",  pylong_asunsignedbytearray, METH_VARARGS},
+    {"pylong_asbytearraywithoptions", pylong_asbytearraywithoptions, METH_VARARGS},
     {NULL},
 };
 

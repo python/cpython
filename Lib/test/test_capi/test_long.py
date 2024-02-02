@@ -1,5 +1,6 @@
 import unittest
 import sys
+import test.support as support
 
 from test.support import import_helper
 
@@ -423,6 +424,98 @@ class LongTests(unittest.TestCase):
         self.assertRaises(OverflowError, asvoidptr, -2**1000)
         # CRASHES asvoidptr(NULL)
 
+    def test_long_asbytearray(self):
+        import math
+        from _testcapi import (
+            pylong_asbytearray as asbytearray,
+            pylong_asunsignedbytearray as asunsignedbytearray,
+            pylong_asbytearraywithoptions as asbytearraywithoptions,
+            SIZE_MAX
+        )
+
+        def log2(x):
+            return math.log(x) / math.log(2)
+
+        SIZEOF_SIZE = int(math.ceil(log2(SIZE_MAX + 1)) / 8)
+        MAX_SSIZE = 2 ** (SIZEOF_SIZE * 8 - 1) - 1
+        MAX_USIZE = 2 ** (SIZEOF_SIZE * 8) - 1
+        if support.verbose:
+            print(f"{SIZEOF_SIZE=}\n{MAX_SSIZE=:016X}\n{MAX_USIZE=:016X}")
+
+        for v, expect_u, expect_s in [
+            (0, SIZEOF_SIZE, SIZEOF_SIZE),
+            (512, SIZEOF_SIZE, SIZEOF_SIZE),
+            (-512, SIZEOF_SIZE, SIZEOF_SIZE),
+            (MAX_SSIZE, SIZEOF_SIZE, SIZEOF_SIZE),
+            (MAX_USIZE, SIZEOF_SIZE, SIZEOF_SIZE + 1),
+            (-MAX_SSIZE, SIZEOF_SIZE, SIZEOF_SIZE),
+            (-MAX_USIZE, SIZEOF_SIZE, SIZEOF_SIZE + 1),
+        ]:
+            with self.subTest(f"sizeof-{v:X}"):
+                buffer = bytearray(1)
+                self.assertEqual(expect_u, asunsignedbytearray(v, buffer, 0),
+                    "PyLong_AsUnsignedByteArray(v, NULL, 0)")
+                self.assertEqual(expect_s, asbytearray(v, buffer, 0),
+                    "PyLong_AsByteArray(v, NULL, 0)")
+                self.assertEqual(expect_u, asbytearraywithoptions(v, buffer, 0, 0x05),
+                    "PyLong_AsByteArrayWithOptions(v, NULL, 0, unsigned|little)")
+                self.assertEqual(expect_u, asbytearraywithoptions(v, buffer, 0, 0x06),
+                    "PyLong_AsByteArrayWithOptions(v, NULL, 0, unsigned|big)")
+                self.assertEqual(expect_s, asbytearraywithoptions(v, buffer, 0, 0x01),
+                    "PyLong_AsByteArrayWithOptions(v, NULL, 0, signed|little)")
+                self.assertEqual(expect_s, asbytearraywithoptions(v, buffer, 0, 0x02),
+                    "PyLong_AsByteArrayWithOptions(v, NULL, 0, signed|big)")
+
+        for v, expect_be, signed_fails in [
+            (0, b'\x00', False),
+            (0, b'\x00' * 2, False),
+            (0, b'\x00' * 8, False),
+            (1, b'\x01', False),
+            (1, b'\x00' * 10 + b'\x01', False),
+            (42, b'\x2a', False),
+            (42, b'\x00' * 10 + b'\x2a', False),
+            (-1, b'\xff', False),
+            (-42, b'\xd6', False),
+            (-42, b'\xff' * 10 + b'\xd6', False),
+            # Only unsigned will extract 255 into a single byte
+            (255, b'\xff', True),
+            (255, b'\x00\xff', False),
+            (256, b'\x01\x00', False),
+            (2**63, b'\x80\x00\x00\x00\x00\x00\x00\x00', True),
+            (-2**63, b'\x80\x00\x00\x00\x00\x00\x00\x00', False),
+            (2**63, b'\x00\x80\x00\x00\x00\x00\x00\x00\x00', False),
+            (-2**63, b'\xFF\x80\x00\x00\x00\x00\x00\x00\x00', False),
+        ]:
+            with self.subTest(f"{v:X}-{len(expect_be)}bytes"):
+                n = len(expect_be)
+                buffer = bytearray(n)
+                expect_le = expect_be[::-1]
+
+                self.assertEqual(0, asbytearraywithoptions(v, buffer, n, 0x05),
+                    f"PyLong_AsByteArrayWithOptions(v, buffer, {n}, unsigned+little)")
+                self.assertEqual(expect_le, buffer[:n], "unsigned+little")
+                self.assertEqual(0, asbytearraywithoptions(v, buffer, n, 0x06),
+                    f"PyLong_AsByteArrayWithOptions(v, buffer, {n}, unsigned+big)")
+                self.assertEqual(expect_be, buffer[:n], "unsigned+big")
+
+                if signed_fails:
+                    self.assertEqual(
+                        max(n + 1, SIZEOF_SIZE),
+                        asbytearraywithoptions(v, buffer, n, 0x01),
+                        f"PyLong_AsByteArrayWithOptions(v, buffer, {n}, signed+little)",
+                    )
+                    self.assertEqual(
+                        max(n + 1, SIZEOF_SIZE),
+                        asbytearraywithoptions(v, buffer, n, 0x02),
+                        f"PyLong_AsByteArrayWithOptions(v, buffer, {n}, signed+big)",
+                    )
+                else:
+                    self.assertEqual(0, asbytearraywithoptions(v, buffer, n, 0x01),
+                        f"PyLong_AsByteArrayWithOptions(v, buffer, {n}, signed+little)")
+                    self.assertEqual(expect_le, buffer[:n], "signed+little")
+                    self.assertEqual(0, asbytearraywithoptions(v, buffer, n, 0x02),
+                        f"PyLong_AsByteArrayWithOptions(v, buffer, {n}, signed+big)")
+                    self.assertEqual(expect_be, buffer[:n], "signed+big")
 
 if __name__ == "__main__":
     unittest.main()
