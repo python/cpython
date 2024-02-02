@@ -559,7 +559,7 @@ IR:
   loads, speeding them up and also allowing for more constant propagation.
 
 * This section is non-exhaustive and will be updated with further
-  optimizations, up till CPython 3.13's beta release.
+  optimizations, until CPython 3.13's beta release.
 
 (Tier 2 optimizer contributed by Ken Jin, with implementation help
 by Guido van Rossum, Mark Shannon, and Jules Poon. Special thanks
@@ -569,9 +569,10 @@ to Manuel Rigger and Martin Henz.)
 Execution Engine
 ----------------
 
-There are two execution engines for Tier 2 IR.
+There are two execution engines for Tier 2 IR:
+the Tier 2 interpreter and the Just-in-Time (JIT) compiler.
 
-The first is the Tier 2 interpreter, but it is mostly intended for debugging
+The Tier 2 interpreter is mostly intended for debugging
 the earlier stages of the optimization pipeline. If the JIT is not
 enabled, the Tier 2 interpreter can be invoked by passing Python the
 ``-X uops`` option or by setting the ``PYTHON_UOPS`` environment
@@ -584,7 +585,8 @@ runtime options.
 
 The machine code translation process uses a technique called
 *copy-and-patch*. It has no runtime dependencies, but there is a new
-build-time dependency on LLVM. The main benefit of this technique is
+build-time dependency on `LLVM <https://llvm.org>`_.
+The main benefit of this technique is
 fast compilation, reported as orders of magnitudes faster versus
 traditional compilation techniques in the paper linked below. The code
 produced is slightly less optimized, but suitable for a baseline JIT
