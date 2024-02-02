@@ -97,8 +97,8 @@ PyAPI_FUNC(PyObject *)PyUnstable_Optimizer_NewUOpOptimizer(void);
 /* Minimum of 16 additional executions before retry */
 #define MINIMUM_TIER2_BACKOFF 4
 
-#define _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS 4
-#define _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS 8
+#define _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS 3
+#define _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS 6
 
 #ifdef __cplusplus
 }
