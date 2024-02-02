@@ -585,8 +585,10 @@ runtime options.
 The machine code translation process uses a technique called
 *copy-and-patch*. It has no runtime dependencies, but there is a new
 build-time dependency on LLVM. The main benefit of this technique is
-rapid compilation times, reported as orders of magnitudes faster versus
-traditional compilation techniques in the paper linked below.
+fast compilation, reported as orders of magnitudes faster versus
+traditional compilation techniques in the paper linked below. The code
+produced is slightly less optimized, but suitable for a baseline JIT
+compiler.
 
 (Copy-and-patch JIT compiler contributed by Brandt Bucher,
 directly inspired by the paper
