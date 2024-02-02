@@ -813,7 +813,7 @@ pylong_frombits(PyObject *module, PyObject *args)
         PyBuffer_Release(&buffer);
         return NULL;
     }
-    PyObject *res = signed_ 
+    PyObject *res = signed_
         ? PyLong_FromBits(buffer.buf, n, (int)endianness)
         : PyLong_FromUnsignedBits(buffer.buf, n, (int)endianness);
     PyBuffer_Release(&buffer);
