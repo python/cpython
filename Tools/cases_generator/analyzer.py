@@ -3,11 +3,7 @@ import lexer
 import parser
 from typing import Optional
 
-from tier2_abstract_common import SPECIALLY_HANDLED_ABSTRACT_INSTR
-
-SPECIAL_GUARDS = {
-    "_CHECK_PEP_523",
-}
+from tier2_abstract_common import SPECIALLY_HANDLED_ABSTRACT_INSTR, SPECIAL_GUARDS
 
 @dataclass
 class Properties:
