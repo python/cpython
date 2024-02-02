@@ -1110,7 +1110,7 @@ class date:
 
     def __eq__(self, other):
         if isinstance(other, date) and not isinstance(other, datetime):
-            return self._cmp(other, eq=True) == 0
+            return self._cmp(other) == 0
         return NotImplemented
 
     def __le__(self, other):
@@ -1133,7 +1133,7 @@ class date:
             return self._cmp(other) > 0
         return NotImplemented
 
-    def _cmp(self, other, eq=False):
+    def _cmp(self, other, eq):
         assert isinstance(other, date)
         assert not isinstance(other, datetime)
         y, m, d = self._year, self._month, self._day
