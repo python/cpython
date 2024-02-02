@@ -39,6 +39,8 @@ typedef struct {
 typedef struct _PyExecutorObject {
     PyObject_VAR_HEAD
     _PyVMData vm_data; /* Used by the VM, but opaque to the optimizer */
+    void *jit_code;
+    size_t jit_size;
     _PyUOpInstruction trace[1];
 } _PyExecutorObject;
 

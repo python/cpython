@@ -315,7 +315,7 @@ class AbstractTestsWithSourceFile:
         # Compression level follows the constructor.
         a_info = zipfp.getinfo('a.txt')
         self.assertEqual(a_info.compress_type, self.compression)
-        self.assertEqual(a_info._compresslevel, 1)
+        self.assertEqual(a_info.compress_level, 1)
 
         # Compression level is overridden.
         b_info = zipfp.getinfo('b.txt')
@@ -408,7 +408,7 @@ class AbstractTestsWithSourceFile:
             one_info = zipfp.getinfo('compress_1')
             nine_info = zipfp.getinfo('compress_9')
             self.assertEqual(one_info._compresslevel, 1)
-            self.assertEqual(nine_info._compresslevel, 9)
+            self.assertEqual(nine_info.compress_level, 9)
 
     def test_writing_errors(self):
         class BrokenFile(io.BytesIO):
@@ -2959,7 +2959,7 @@ class TestWithDirectory(unittest.TestCase):
 
             directory = os.path.join(TESTFN2, "directory2")
             os.mkdir(directory)
-            mode = os.stat(directory).st_mode
+            mode = os.stat(directory).st_mode & 0xFFFF
             zf.write(directory, arcname="directory2/")
             zinfo = zf.filelist[1]
             self.assertEqual(zinfo.filename, "directory2/")
@@ -3010,6 +3010,17 @@ class ZipInfoTests(unittest.TestCase):
         self.assertTrue(zi.is_dir())
         self.assertEqual(zi.compress_type, zipfile.ZIP_STORED)
         self.assertEqual(zi.file_size, 0)
+
+    def test_compresslevel_property(self):
+        zinfo = zipfile.ZipInfo("xxx")
+        self.assertFalse(zinfo._compresslevel)
+        self.assertFalse(zinfo.compress_level)
+        zinfo._compresslevel = 99  # test the legacy @property.setter
+        self.assertEqual(zinfo.compress_level, 99)
+        self.assertEqual(zinfo._compresslevel, 99)
+        zinfo.compress_level = 8
+        self.assertEqual(zinfo.compress_level, 8)
+        self.assertEqual(zinfo._compresslevel, 8)
 
 
 class CommandLineTest(unittest.TestCase):

@@ -669,6 +669,9 @@
     <ClInclude Include="..\Include\internal\pycore_intrinsics.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_jit.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_list.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -691,6 +694,9 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_object.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_object_alloc.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_object_state.h">
@@ -1334,6 +1340,9 @@
     <ClCompile Include="..\Python\instrumentation.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\jit.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\legacy_tracing.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -1350,6 +1359,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\mystrtoul.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\object_stack.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\optimizer.c">

@@ -7,6 +7,7 @@
 #include "pycore_optimizer.h"     // _Py_uop_analyze_and_optimize()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_uop_ids.h"
+#include "pycore_jit.h"
 #include "cpython/optimizer.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -227,6 +228,9 @@ static PyMethodDef executor_methods[] = {
 static void
 uop_dealloc(_PyExecutorObject *self) {
     _Py_ExecutorClear(self);
+#ifdef _Py_JIT
+    _PyJIT_Free(self);
+#endif
     PyObject_Free(self);
 }
 
@@ -481,18 +485,19 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                     goto done;
                 }
                 uint32_t uopcode = BRANCH_TO_GUARD[opcode - POP_JUMP_IF_FALSE][jump_likely];
-                _Py_CODEUNIT *next_instr = instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
                 DPRINTF(2, "%s(%d): counter=%x, bitcount=%d, likely=%d, confidence=%d, uopcode=%s\n",
                         _PyOpcode_OpName[opcode], oparg,
                         counter, bitcount, jump_likely, confidence, _PyUOpName(uopcode));
-                ADD_TO_TRACE(uopcode, max_length, 0, target);
+                _Py_CODEUNIT *next_instr = instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
+                _Py_CODEUNIT *target_instr = next_instr + oparg;
                 if (jump_likely) {
-                    _Py_CODEUNIT *target_instr = next_instr + oparg;
                     DPRINTF(2, "Jump likely (%x = %d bits), continue at byte offset %d\n",
                             instr[1].cache, bitcount, 2 * INSTR_IP(target_instr, code));
                     instr = target_instr;
+                    ADD_TO_TRACE(uopcode, max_length, 0, INSTR_IP(next_instr, code));
                     goto top;
                 }
+                ADD_TO_TRACE(uopcode, max_length, 0, INSTR_IP(target_instr, code));
                 break;
             }
 
@@ -571,9 +576,10 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 uop = _PyUOp_Replacements[uop];
                                 assert(uop != 0);
                                 if (uop == _FOR_ITER_TIER_TWO) {
-                                    target += 1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 1 + extended;
-                                    assert(_PyCode_CODE(code)[target-1].op.code == END_FOR ||
-                                            _PyCode_CODE(code)[target-1].op.code == INSTRUMENTED_END_FOR);
+                                    target += 1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg + 2 + extended;
+                                    assert(_PyCode_CODE(code)[target-2].op.code == END_FOR ||
+                                            _PyCode_CODE(code)[target-2].op.code == INSTRUMENTED_END_FOR);
+                                    assert(_PyCode_CODE(code)[target-1].op.code == POP_TOP);
                                 }
                                 break;
                             default:
@@ -587,6 +593,9 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                         ADD_TO_TRACE(uop, oparg, operand, target);
                         if (uop == _POP_FRAME) {
                             TRACE_STACK_POP();
+                            /* Set the operand to the code object returned to,
+                             * to assist optimization passes */
+                            trace[trace_length-1].operand = (uintptr_t)code;
                             DPRINTF(2,
                                 "Returning to %s (%s:%d) at byte offset %d\n",
                                 PyUnicode_AsUTF8(code->co_qualname),
@@ -628,6 +637,9 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 instr += _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] + 1;
                                 TRACE_STACK_PUSH();
                                 _Py_BloomFilter_Add(dependencies, new_code);
+                                /* Set the operand to the callee's code object,
+                                * to assist optimization passes */
+                                trace[trace_length-1].operand = (uintptr_t)new_code;
                                 code = new_code;
                                 instr = _PyCode_CODE(code);
                                 DPRINTF(2,
@@ -780,6 +792,14 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
                    executor->trace[i].target,
                    executor->trace[i].operand);
         }
+    }
+#endif
+#ifdef _Py_JIT
+    executor->jit_code = NULL;
+    executor->jit_size = 0;
+    if (_PyJIT_Compile(executor, executor->trace, Py_SIZE(executor))) {
+        Py_DECREF(executor);
+        return NULL;
     }
 #endif
     return executor;

@@ -28,7 +28,7 @@ repos:
     hooks:
       - id: sphinx-lint
         args: [--enable=default-role]
-        files: ^Doc/|^Misc/NEWS.d/next/
+        files: ^Doc/|^Misc/NEWS.d/
 
   - repo: meta
     hooks:

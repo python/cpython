@@ -117,6 +117,7 @@ typedef struct {
 
 #ifdef UNIX
     int fd;
+    _Bool trackfd;
 #endif
 
     PyObject *weakreflist;
@@ -393,6 +394,13 @@ is_resizeable(mmap_object *self)
             "mmap can't resize with extant buffers exported.");
         return 0;
     }
+#ifdef UNIX
+    if (!self->trackfd) {
+        PyErr_SetString(PyExc_ValueError,
+            "mmap can't resize with trackfd=False.");
+        return 0;
+    }
+#endif
     if ((self->access == ACCESS_WRITE) || (self->access == ACCESS_DEFAULT))
         return 1;
     PyErr_Format(PyExc_TypeError,
@@ -1154,7 +1162,7 @@ is 0, the maximum length of the map is the current size of the file,\n\
 except that if the file is empty Windows raises an exception (you cannot\n\
 create an empty mapping on Windows).\n\
 \n\
-Unix: mmap(fileno, length[, flags[, prot[, access[, offset]]]])\n\
+Unix: mmap(fileno, length[, flags[, prot[, access[, offset[, trackfd]]]]])\n\
 \n\
 Maps length bytes from the file specified by the file descriptor fileno,\n\
 and returns a mmap object.  If length is 0, the maximum length of the map\n\
@@ -1221,15 +1229,17 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     off_t offset = 0;
     int fd, flags = MAP_SHARED, prot = PROT_WRITE | PROT_READ;
     int devzero = -1;
-    int access = (int)ACCESS_DEFAULT;
+    int access = (int)ACCESS_DEFAULT, trackfd = 1;
     static char *keywords[] = {"fileno", "length",
                                "flags", "prot",
-                               "access", "offset", NULL};
+                               "access", "offset", "trackfd", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "in|iii" _Py_PARSE_OFF_T, keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwdict,
+                                     "in|iii" _Py_PARSE_OFF_T "$p", keywords,
                                      &fd, &map_size, &flags, &prot,
-                                     &access, &offset))
+                                     &access, &offset, &trackfd)) {
         return NULL;
+    }
     if (map_size < 0) {
         PyErr_SetString(PyExc_OverflowError,
                         "memory mapped length must be positive");
@@ -1325,6 +1335,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     m_obj->weakreflist = NULL;
     m_obj->exports = 0;
     m_obj->offset = offset;
+    m_obj->trackfd = trackfd;
     if (fd == -1) {
         m_obj->fd = -1;
         /* Assume the caller wants to map anonymous memory.
@@ -1350,12 +1361,15 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
         }
 #endif
     }
-    else {
+    else if (trackfd) {
         m_obj->fd = _Py_dup(fd);
         if (m_obj->fd == -1) {
             Py_DECREF(m_obj);
             return NULL;
         }
+    }
+    else {
+        m_obj->fd = -1;
     }
 
     Py_BEGIN_ALLOW_THREADS
@@ -1653,6 +1667,39 @@ mmap_exec(PyObject *module)
 #endif
 #ifdef MAP_CONCEAL
     ADD_INT_MACRO(module, MAP_CONCEAL);
+#endif
+#ifdef MAP_NORESERVE
+    ADD_INT_MACRO(module, MAP_NORESERVE);
+#endif
+#ifdef MAP_NOEXTEND
+    ADD_INT_MACRO(module, MAP_NOEXTEND);
+#endif
+#ifdef MAP_HASSEMAPHORE
+    ADD_INT_MACRO(module, MAP_HASSEMAPHORE);
+#endif
+#ifdef MAP_NOCACHE
+    ADD_INT_MACRO(module, MAP_NOCACHE);
+#endif
+#ifdef MAP_JIT
+    ADD_INT_MACRO(module, MAP_JIT);
+#endif
+#ifdef MAP_RESILIENT_CODESIGN
+    ADD_INT_MACRO(module, MAP_RESILIENT_CODESIGN);
+#endif
+#ifdef MAP_RESILIENT_MEDIA
+    ADD_INT_MACRO(module, MAP_RESILIENT_MEDIA);
+#endif
+#ifdef MAP_32BIT
+    ADD_INT_MACRO(module, MAP_32BIT);
+#endif
+#ifdef MAP_TRANSLATED_ALLOW_EXECUTE
+    ADD_INT_MACRO(module, MAP_TRANSLATED_ALLOW_EXECUTE);
+#endif
+#ifdef MAP_UNIX03
+    ADD_INT_MACRO(module, MAP_UNIX03);
+#endif
+#ifdef MAP_TPRO
+    ADD_INT_MACRO(module, MAP_TPRO);
 #endif
     if (PyModule_AddIntConstant(module, "PAGESIZE", (long)my_getpagesize()) < 0 ) {
         return -1;

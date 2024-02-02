@@ -103,14 +103,22 @@ PyObject _Py_EllipsisObject = _PyObject_HEAD_INIT(&PyEllipsis_Type);
 
 /* Slice object implementation */
 
-
-void _PySlice_Fini(PyInterpreterState *interp)
+void _PySlice_ClearCache(_PyFreeListState *state)
 {
-    PySliceObject *obj = interp->slice_cache;
+#ifdef WITH_FREELISTS
+    PySliceObject *obj = state->slices.slice_cache;
     if (obj != NULL) {
-        interp->slice_cache = NULL;
+        state->slices.slice_cache = NULL;
         PyObject_GC_Del(obj);
     }
+#endif
+}
+
+void _PySlice_Fini(_PyFreeListState *state)
+{
+#ifdef WITH_FREELISTS
+    _PySlice_ClearCache(state);
+#endif
 }
 
 /* start, stop, and step are python objects with None indicating no
@@ -121,15 +129,17 @@ static PySliceObject *
 _PyBuildSlice_Consume2(PyObject *start, PyObject *stop, PyObject *step)
 {
     assert(start != NULL && stop != NULL && step != NULL);
-
-    PyInterpreterState *interp = _PyInterpreterState_GET();
     PySliceObject *obj;
-    if (interp->slice_cache != NULL) {
-        obj = interp->slice_cache;
-        interp->slice_cache = NULL;
+#ifdef WITH_FREELISTS
+    _PyFreeListState *state = _PyFreeListState_GET();
+    if (state->slices.slice_cache != NULL) {
+        obj = state->slices.slice_cache;
+        state->slices.slice_cache = NULL;
         _Py_NewReference((PyObject *)obj);
     }
-    else {
+    else
+#endif
+    {
         obj = PyObject_GC_New(PySliceObject, &PySlice_Type);
         if (obj == NULL) {
             goto error;
@@ -354,15 +364,18 @@ Create a slice object.  This is used for extended slicing (e.g. a[0:10:2]).");
 static void
 slice_dealloc(PySliceObject *r)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
     _PyObject_GC_UNTRACK(r);
     Py_DECREF(r->step);
     Py_DECREF(r->start);
     Py_DECREF(r->stop);
-    if (interp->slice_cache == NULL) {
-        interp->slice_cache = r;
+#ifdef WITH_FREELISTS
+    _PyFreeListState *state = _PyFreeListState_GET();
+    if (state->slices.slice_cache == NULL) {
+        state->slices.slice_cache = r;
     }
-    else {
+    else
+#endif
+    {
         PyObject_GC_Del(r);
     }
 }
