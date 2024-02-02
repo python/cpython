@@ -1080,7 +1080,7 @@ _fits_in_n_bits(Py_ssize_t v, Py_ssize_t n)
     return v_extended == 0 || v_extended == -1;
 }
 
-static int
+int
 PyLong_CopyBits(PyObject* vv, void* buffer, size_t n, int endianness)
 {
     PyLongObject *v;
