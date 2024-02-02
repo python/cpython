@@ -777,12 +777,12 @@ pylong_asvoidptr(PyObject *module, PyObject *arg)
 }
 
 static PyObject *
-pylong_asbytearray(PyObject *module, PyObject *args)
+pylong_copybits(PyObject *module, PyObject *args)
 {
     PyObject *v;
     Py_buffer buffer;
-    Py_ssize_t n;
-    if (!PyArg_ParseTuple(args, "Ow*n", &v, &buffer, &n)) {
+    Py_ssize_t n, endianness;
+    if (!PyArg_ParseTuple(args, "Ow*nn", &v, &buffer, &n, &endianness)) {
         return NULL;
     }
     if (buffer.readonly) {
@@ -795,55 +795,7 @@ pylong_asbytearray(PyObject *module, PyObject *args)
         PyBuffer_Release(&buffer);
         return NULL;
     }
-    int res = PyLong_AsByteArray(v, buffer.buf, n);
-    PyBuffer_Release(&buffer);
-    return res >= 0 ? PyLong_FromLong(res) : NULL;
-}
-
-static PyObject *
-pylong_asunsignedbytearray(PyObject *module, PyObject *args)
-{
-    PyObject *v;
-    Py_buffer buffer;
-    Py_ssize_t n;
-    if (!PyArg_ParseTuple(args, "Ow*n", &v, &buffer, &n)) {
-        return NULL;
-    }
-    if (buffer.readonly) {
-        PyErr_SetString(PyExc_TypeError, "buffer must be writable");
-        PyBuffer_Release(&buffer);
-        return NULL;
-    }
-    if (buffer.len < n) {
-        PyErr_SetString(PyExc_ValueError, "buffer must be at least 'n' bytes");
-        PyBuffer_Release(&buffer);
-        return NULL;
-    }
-    int res = PyLong_AsUnsignedByteArray(v, buffer.buf, n);
-    PyBuffer_Release(&buffer);
-    return res >= 0 ? PyLong_FromLong(res) : NULL;
-}
-
-static PyObject *
-pylong_asbytearraywithoptions(PyObject *module, PyObject *args)
-{
-    PyObject *v;
-    Py_buffer buffer;
-    Py_ssize_t n, options;
-    if (!PyArg_ParseTuple(args, "Ow*nn", &v, &buffer, &n, &options)) {
-        return NULL;
-    }
-    if (buffer.readonly) {
-        PyErr_SetString(PyExc_TypeError, "buffer must be writable");
-        PyBuffer_Release(&buffer);
-        return NULL;
-    }
-    if (buffer.len < n) {
-        PyErr_SetString(PyExc_ValueError, "buffer must be at least 'n' bytes");
-        PyBuffer_Release(&buffer);
-        return NULL;
-    }
-    int res = PyLong_AsByteArrayWithOptions(v, buffer.buf, n, (int)options);
+    int res = PyLong_CopyBits(v, buffer.buf, n, (int)endianness);
     PyBuffer_Release(&buffer);
     return res >= 0 ? PyLong_FromLong(res) : NULL;
 }
@@ -876,9 +828,7 @@ static PyMethodDef test_methods[] = {
     {"pylong_as_size_t",            pylong_as_size_t,           METH_O},
     {"pylong_asdouble",             pylong_asdouble,            METH_O},
     {"pylong_asvoidptr",            pylong_asvoidptr,           METH_O},
-    {"pylong_asbytearray",          pylong_asbytearray,         METH_VARARGS},
-    {"pylong_asunsignedbytearray",  pylong_asunsignedbytearray, METH_VARARGS},
-    {"pylong_asbytearraywithoptions", pylong_asbytearraywithoptions, METH_VARARGS},
+    {"pylong_copybits",             pylong_copybits,            METH_VARARGS},
     {NULL},
 };
 
@@ -888,10 +838,5 @@ _PyTestCapi_Init_Long(PyObject *mod)
     if (PyModule_AddFunctions(mod, test_methods) < 0) {
         return -1;
     }
-    if (PyModule_AddIntMacro(mod, PYLONG_ASBYTEARRAY_NATIVE_ENDIAN)) return -1;
-    if (PyModule_AddIntMacro(mod, PYLONG_ASBYTEARRAY_LITTLE_ENDIAN)) return -1;
-    if (PyModule_AddIntMacro(mod, PYLONG_ASBYTEARRAY_BIG_ENDIAN)) return -1;
-    if (PyModule_AddIntMacro(mod, PYLONG_ASBYTEARRAY_SIGNED)) return -1;
-    if (PyModule_AddIntMacro(mod, PYLONG_ASBYTEARRAY_UNSIGNED)) return -1;
     return 0;
 }

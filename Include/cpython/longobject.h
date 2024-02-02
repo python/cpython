@@ -4,34 +4,23 @@
 
 PyAPI_FUNC(PyObject*) PyLong_FromUnicodeObject(PyObject *u, int base);
 
-/* PyLong_AsByteArray: Copy the integer value to a native address.
-   n is the number of bytes available in the buffer.
-   Uses the current build's default endianness.
-   PyLong_AsByteArray ensures the MSB matches the int's sign.
-   PyLong_AsUnsignedByteArray allows the MSB to be set for a
-   positive Python value provided no significant bits are lost
-   (that is, all higher bits are a sign extension of the MSB).
-   Negative values still sign extend to fill the buffer and are
-   guaranteed to have MSB set. Use PyLong_AsByteArray to guarantee
-   that the MSB is set iff the int was negative.
+/* PyLong_CopyBits: Copy the integer value to a native buffer.
+   n_bytes is the number of bytes available in the buffer. Pass 0 to request
+   the required size for the value.
+   endianness is -1 for native endian, 0 for big endian or 1 for little.
 
-   Returns 0 on success or -1 with an exception set, but if the buffer is
-   not big enough, returns the desired buffer size without setting an
-   exception. Note that the desired size may be larger than strictly
-   necessary to avoid precise calculations. */
-PyAPI_FUNC(int) PyLong_AsByteArray(PyObject* v, void* buffer, size_t n);
-PyAPI_FUNC(int) PyLong_AsUnsignedByteArray(PyObject* v, void* buffer, size_t n);
-PyAPI_FUNC(int) PyLong_AsByteArrayWithOptions(PyObject* v, void* buffer,
-                                              size_t n, int options);
-
-/* Deliberately avoiding values 0 and 1 to avoid letting people
-   accidentally pass PY_LITTLE_ENDIAN as a constant. */
-#define PYLONG_ASBYTEARRAY_LITTLE_ENDIAN    0x04
-#define PYLONG_ASBYTEARRAY_BIG_ENDIAN       0x08
-#define PYLONG_ASBYTEARRAY_NATIVE_ENDIAN    (0x04|0x08)
-
-#define PYLONG_ASBYTEARRAY_SIGNED   0x10
-#define PYLONG_ASBYTEARRAY_UNSIGNED 0x20
+   If an exception is raised, returns a negative value.
+   Otherwise, returns the number of bytes that are required to store the value.
+   To check that the full value is represented, ensure that the return value is
+   equal or less than n_bytes.
+   All n_bytes are guaranteed to be written (unless an exception occurs), and
+   so ignoring a positive return value is the equivalent of a downcast in C.
+   In cases where the full value could not be represented, the returned value
+   may be larger than necessary - this function is not an accurate way to
+   calculate the bit length of an integer object.
+   */
+PyAPI_FUNC(int) PyLong_CopyBits(PyObject* v, void* buffer, size_t n_bytes,
+    int endianness);
 
 /* PyLong_FromByteArray: Create an integer value containing the number from
    a native buffer.

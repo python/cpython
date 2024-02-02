@@ -424,137 +424,95 @@ class LongTests(unittest.TestCase):
         self.assertRaises(OverflowError, asvoidptr, -2**1000)
         # CRASHES asvoidptr(NULL)
 
-    def test_long_asbytearray(self):
+    def test_long_copybits(self):
         import math
         from _testcapi import (
-            pylong_asbytearray as asbytearray,
-            pylong_asunsignedbytearray as asunsignedbytearray,
-            pylong_asbytearraywithoptions as asbytearraywithoptions,
+            pylong_copybits as copybits,
             SIZE_MAX,
-            PYLONG_ASBYTEARRAY_NATIVE_ENDIAN,
-            PYLONG_ASBYTEARRAY_LITTLE_ENDIAN,
-            PYLONG_ASBYTEARRAY_BIG_ENDIAN,
-            PYLONG_ASBYTEARRAY_SIGNED,
-            PYLONG_ASBYTEARRAY_UNSIGNED,
         )
 
         def log2(x):
             return math.log(x) / math.log(2)
 
-        SIZEOF_SIZE = int(math.ceil(log2(SIZE_MAX + 1)) / 8)
-        MAX_SSIZE = 2 ** (SIZEOF_SIZE * 8 - 1) - 1
-        MAX_USIZE = 2 ** (SIZEOF_SIZE * 8) - 1
+        # Abbreviated sizeof(Py_ssize_t) because we use it a lot
+        SZ = int(math.ceil(log2(SIZE_MAX + 1)) / 8)
+        MAX_SSIZE = 2 ** (SZ * 8 - 1) - 1
+        MAX_USIZE = 2 ** (SZ * 8) - 1
         if support.verbose:
-            print(f"{SIZEOF_SIZE=}\n{MAX_SSIZE=:016X}\n{MAX_USIZE=:016X}")
+            print(f"SIZEOF_SIZE={SZ}\n{MAX_SSIZE=:016X}\n{MAX_USIZE=:016X}")
 
-        U_LE = PYLONG_ASBYTEARRAY_UNSIGNED | PYLONG_ASBYTEARRAY_LITTLE_ENDIAN
-        U_BE = PYLONG_ASBYTEARRAY_UNSIGNED | PYLONG_ASBYTEARRAY_BIG_ENDIAN
-        S_LE = PYLONG_ASBYTEARRAY_SIGNED | PYLONG_ASBYTEARRAY_LITTLE_ENDIAN
-        S_BE = PYLONG_ASBYTEARRAY_SIGNED | PYLONG_ASBYTEARRAY_BIG_ENDIAN
-
-        # Ensure options of 0 and 1 raise
-        with self.assertRaises(SystemError):
-            asbytearraywithoptions(0, bytearray(1), 0, 0)
-        with self.assertRaises(SystemError):
-            asbytearraywithoptions(0, bytearray(1), 0, 1)
-
-        # These tests request the required buffer size for both unsigned and
-        # signed options.
-        for v, expect_u, expect_s in [
-            (0, SIZEOF_SIZE, SIZEOF_SIZE),
-            (512, SIZEOF_SIZE, SIZEOF_SIZE),
-            (-512, SIZEOF_SIZE, SIZEOF_SIZE),
-            (MAX_SSIZE, SIZEOF_SIZE, SIZEOF_SIZE),
-            (MAX_USIZE, SIZEOF_SIZE, SIZEOF_SIZE + 1),
-            (-MAX_SSIZE, SIZEOF_SIZE, SIZEOF_SIZE),
-            (-MAX_USIZE, SIZEOF_SIZE, SIZEOF_SIZE + 1),
-            (2**255-1, 32, 32),
-            (-(2**255-1), 32, 32),
-            (2**256-1, 32, 33),
-            (-(2**256-1), 32, 33),
+        # These tests check that the requested buffer size is correct
+        for v, expect in [
+            (0, SZ),
+            (512, SZ),
+            (-512, SZ),
+            (MAX_SSIZE, SZ),
+            (MAX_USIZE, SZ + 1),
+            (-MAX_SSIZE, SZ),
+            (-MAX_USIZE, SZ + 1),
+            (2**255-1, 32),
+            (-(2**255-1), 32),
+            (2**256-1, 33),
+            (-(2**256-1), 33),
         ]:
             with self.subTest(f"sizeof-{v:X}"):
                 buffer = bytearray(1)
-                self.assertEqual(expect_u, asunsignedbytearray(v, buffer, 0),
-                    "PyLong_AsUnsignedByteArray(v, NULL, 0)")
-                self.assertEqual(expect_s, asbytearray(v, buffer, 0),
-                    "PyLong_AsByteArray(v, NULL, 0)")
-                self.assertEqual(expect_u, asbytearraywithoptions(v, buffer, 0, U_LE),
-                    "PyLong_AsByteArrayWithOptions(v, NULL, 0, unsigned|little)")
-                self.assertEqual(expect_u, asbytearraywithoptions(v, buffer, 0, U_BE),
-                    "PyLong_AsByteArrayWithOptions(v, NULL, 0, unsigned|big)")
-                self.assertEqual(expect_s, asbytearraywithoptions(v, buffer, 0, S_LE),
-                    "PyLong_AsByteArrayWithOptions(v, NULL, 0, signed|little)")
-                self.assertEqual(expect_s, asbytearraywithoptions(v, buffer, 0, S_BE),
-                    "PyLong_AsByteArrayWithOptions(v, NULL, 0, signed|big)")
+                self.assertEqual(expect, copybits(v, buffer, 0, -1),
+                    "PyLong_CopyBits(v, NULL, 0, -1)")
 
-        # We request as many bytes as `expect_be` contains, so tests for the
-        # same value may test different things with a longer expected result.
-        for v, expect_be, signed_fails in [
-            (0, b'\x00', False),
-            (0, b'\x00' * 2, False),
-            (0, b'\x00' * 8, False),
-            (1, b'\x01', False),
-            (1, b'\x00' * 10 + b'\x01', False),
-            (42, b'\x2a', False),
-            (42, b'\x00' * 10 + b'\x2a', False),
-            (-1, b'\xff', False),
-            (-1, b'\xff' * 10, False),
-            (-42, b'\xd6', False),
-            (-42, b'\xff' * 10 + b'\xd6', False),
-            # Only unsigned will extract 255 into a single byte
-            (255, b'\xff', True),
-            (255, b'\x00\xff', False),
-            (256, b'\x01\x00', False),
-            (2**63, b'\x80\x00\x00\x00\x00\x00\x00\x00', True),
-            (-2**63, b'\x80\x00\x00\x00\x00\x00\x00\x00', False),
-            (2**63, b'\x00\x80\x00\x00\x00\x00\x00\x00\x00', False),
-            (-2**63, b'\xff\x80\x00\x00\x00\x00\x00\x00\x00', False),
-            (2**255-1, b'\x7f' + b'\xff' * 31, False),
-            (-(2**255-1), b'\x80' + b'\x00' * 30 + b'\x01', False),
-            (-(2**255-1), b'\xff\x80' + b'\x00' * 30 + b'\x01', False),
-            # Cannot extract 256 bits into 32 bytes as signed ...
-            (2**256-1, b'\xff' * 32, True),
-            # ... but can extract into 33 bytes (zero extended)
-            (2**256-1, b'\x00' + b'\xff' * 32, False),
+        # We request as many bytes as `expect_be` contains, and always check
+        # the result (both big and little endian). We check the return value
+        # independently, since the buffer should always be filled correctly even
+        # if we need more bytes
+        for v, expect_be, expect_n in [
+            (0,         b'\x00',                1),
+            (0,         b'\x00' * 2,            2),
+            (0,         b'\x00' * 8,            8),
+            (1,         b'\x01',                1),
+            (1,         b'\x00' * 10 + b'\x01', min(11, SZ)),
+            (42,        b'\x2a',                1),
+            (42,        b'\x00' * 10 + b'\x2a', min(11, SZ)),
+            (-1,        b'\xff',                1),
+            (-1,        b'\xff' * 10,           min(11, SZ)),
+            (-42,       b'\xd6',                1),
+            (-42,       b'\xff' * 10 + b'\xd6', min(11, SZ)),
+            # Extracts 255 into a single byte, but requests sizeof(Py_ssize_t)
+            (255,       b'\xff',                SZ),
+            (255,       b'\x00\xff',            2),
+            (256,       b'\x01\x00',            2),
+            # Extracts successfully (unsigned), but requests 9 bytes
+            (2**63,     b'\x80' + b'\x00' * 7,  9),
+            # "Extracts", but requests 9 bytes
+            (-2**63,    b'\x80' + b'\x00' * 7,  9),
+            (2**63,     b'\x00\x80' + b'\x00' * 7, 9),
+            (-2**63,    b'\xff\x80' + b'\x00' * 7, 9),
 
-            # Unsigned extract of this negative number to 32 bytes will succeed,
-            # sacrificing the sign bit and overall magnitude, just like a C
-            # cast (int256_t)0x1_0000_..._0001 would. But signed extract fails
-            (-(2**256-1), b'\x00' * 31 + b'\x01', True),
-            # Extract to 33 bytes preserves the top-most bits in all cases.
-            (-(2**256-1), b'\xff' + b'\x00' * 31 + b'\x01', False),
+            (2**255-1,      b'\x7f' + b'\xff' * 31,                 32),
+            (-(2**255-1),   b'\x80' + b'\x00' * 30 + b'\x01',       32),
+            # Request extra bytes, but result says we only needed 32
+            (-(2**255-1),   b'\xff\x80' + b'\x00' * 30 + b'\x01',   32),
+            (-(2**255-1),   b'\xff\xff\x80' + b'\x00' * 30 + b'\x01', 32),
+
+            # Extracting 256 bits of integer will request 33 bytes, but still
+            # copy as many bits as possible into the buffer. So we *can* copy
+            # into a 32-byte buffer, though negative number may be unrecoverable
+            (2**256-1,      b'\xff' * 32,                           33),
+            (2**256-1,      b'\x00' + b'\xff' * 32,                 33),
+            (-(2**256-1),   b'\x00' * 31 + b'\x01',                 33),
+            (-(2**256-1),   b'\xff' + b'\x00' * 31 + b'\x01',       33),
+            (-(2**256-1),   b'\xff\xff' + b'\x00' * 31 + b'\x01',   33),
         ]:
             with self.subTest(f"{v:X}-{len(expect_be)}bytes"):
                 n = len(expect_be)
                 buffer = bytearray(n)
                 expect_le = expect_be[::-1]
 
-                self.assertEqual(0, asbytearraywithoptions(v, buffer, n, U_LE),
-                    f"PyLong_AsByteArrayWithOptions(v, buffer, {n}, unsigned+little)")
-                self.assertEqual(expect_le, buffer[:n], "unsigned+little")
-                self.assertEqual(0, asbytearraywithoptions(v, buffer, n, U_BE),
-                    f"PyLong_AsByteArrayWithOptions(v, buffer, {n}, unsigned+big)")
-                self.assertEqual(expect_be, buffer[:n], "unsigned+big")
-
-                if signed_fails:
-                    self.assertEqual(
-                        max(n + 1, SIZEOF_SIZE),
-                        asbytearraywithoptions(v, buffer, n, S_LE),
-                        f"PyLong_AsByteArrayWithOptions(v, buffer, {n}, signed+little)",
-                    )
-                    self.assertEqual(
-                        max(n + 1, SIZEOF_SIZE),
-                        asbytearraywithoptions(v, buffer, n, S_BE),
-                        f"PyLong_AsByteArrayWithOptions(v, buffer, {n}, signed+big)",
-                    )
-                else:
-                    self.assertEqual(0, asbytearraywithoptions(v, buffer, n, S_LE),
-                        f"PyLong_AsByteArrayWithOptions(v, buffer, {n}, signed+little)")
-                    self.assertEqual(expect_le, buffer[:n], "signed+little")
-                    self.assertEqual(0, asbytearraywithoptions(v, buffer, n, S_BE),
-                        f"PyLong_AsByteArrayWithOptions(v, buffer, {n}, signed+big)")
-                    self.assertEqual(expect_be, buffer[:n], "signed+big")
+                self.assertEqual(expect_n, copybits(v, buffer, n, 0),
+                    f"PyLong_CopyBits(v, buffer, {n}, <big>)")
+                self.assertEqual(expect_be, buffer[:n], "<big>")
+                self.assertEqual(expect_n, copybits(v, buffer, n, 1),
+                    f"PyLong_CopyBits(v, buffer, {n}, <little>)")
+                self.assertEqual(expect_le, buffer[:n], "<little>")
 
 if __name__ == "__main__":
     unittest.main()

@@ -970,7 +970,12 @@ _PyLong_AsByteArray(PyLongObject* v,
     /* Copy over all the Python digits.
        It's crucial that every Python digit except for the MSD contribute
        exactly PyLong_SHIFT bits to the total, so first assert that the int is
-       normalized. */
+       normalized.
+       NOTE: PyLong_CopyBits() assumes that this function will fill in 'n' bytes
+       even if it eventually fails to convert the whole number. Make sure you
+       account for that if you are changing this algorithm to return without
+       doing that.
+       */
     assert(ndigits == 0 || v->long_value.ob_digit[ndigits - 1] != 0);
     j = 0;
     accum = 0;
@@ -1064,22 +1069,19 @@ _PyLong_AsByteArray(PyLongObject* v,
 
 // Refactored out for readability, not reuse
 static inline int
-_fits_in_n_bits(Py_ssize_t v, Py_ssize_t n, int require_sign_bit)
+_fits_in_n_bits(Py_ssize_t v, Py_ssize_t n)
 {
-    if (n > (Py_ssize_t)sizeof(Py_ssize_t) * 8) {
+    if (n >= (Py_ssize_t)sizeof(Py_ssize_t) * 8) {
         return 1;
     }
     // If all bits above n are the same, we fit.
     // (Use n-1 if we require the sign bit to be consistent.)
-    Py_ssize_t v_extended = v >> ((int)n - (require_sign_bit ? 1 : 0));
+    Py_ssize_t v_extended = v >> ((int)n - 1);
     return v_extended == 0 || v_extended == -1;
 }
 
-// Private function means we can add more options safely.
-// The public API parses a flags parameter to extract the requested settings.
 static int
-_PyLong_AsByteArrayWithOptions(PyObject* vv, void* buffer, size_t n,
-    int signed_, int little_endian)
+PyLong_CopyBits(PyObject* vv, void* buffer, size_t n, int endianness)
 {
     PyLongObject *v;
     union {
@@ -1091,6 +1093,20 @@ _PyLong_AsByteArrayWithOptions(PyObject* vv, void* buffer, size_t n,
 
     if (vv == NULL) {
         PyErr_BadInternalCall();
+        return -1;
+    }
+
+    if ((int)n != n || (int)n < 0) {
+        PyErr_SetString(PyExc_SystemError, "n_bytes too big to copy");
+        return -1;
+    }
+
+    int little_endian = endianness;
+    if (endianness < 0) {
+        endianness = PY_LITTLE_ENDIAN;
+    }
+    if (endianness != 0 && endianness != 1) {
+        PyErr_SetString(PyExc_SystemError, "invalid 'endianness' value");
         return -1;
     }
 
@@ -1108,22 +1124,16 @@ _PyLong_AsByteArrayWithOptions(PyObject* vv, void* buffer, size_t n,
     if (_PyLong_IsCompact(v)) {
         res = 0;
         cv.v = _PyLong_CompactValue(v);
+        /* Most paths result in res = sizeof(compact value). Only the case
+         * where 0 < n < sizeof(compact value) do we need to check and adjust
+         * our return value. */
+        res = sizeof(cv.b);
         if (n <= 0) {
-            /* Caller only requested the size, so we'll say we need
-             * Py_ssize_t bytes */
-            res = sizeof(cv.b);
+            // nothing to do!
         }
-        else if (n == sizeof(cv.b)) {
-            memcpy(buffer, cv.b, n);
-        }
-        else if (n < sizeof(cv.b)) {
-            if (!_fits_in_n_bits(cv.v, n * 8, signed_)) {
-                /* Value is too big for 'n' bytes, so we'll say we need
-                 * at least Py_ssize_t bytes */
-                res = sizeof(cv.b);
-            }
+        else if (n <= sizeof(cv.b)) {
 #if PY_LITTLE_ENDIAN
-            else if (little_endian) {
+            if (little_endian) {
                 memcpy(buffer, cv.b, n);
             }
             else {
@@ -1132,7 +1142,7 @@ _PyLong_AsByteArrayWithOptions(PyObject* vv, void* buffer, size_t n,
                 }
             }
 #else
-            else if (little_endian) {
+            if (little_endian) {
                 for (size_t i = 0; i < n; ++i) {
                     ((unsigned char*)buffer)[i] = cv.b[sizeof(cv.b) - i - 1];
                 }
@@ -1141,6 +1151,11 @@ _PyLong_AsByteArrayWithOptions(PyObject* vv, void* buffer, size_t n,
                 memcpy(buffer, &cv.b[sizeof(cv.b) - n], n);
             }
 #endif
+
+            /* If we fit, return the requested number of bytes */
+            if (_fits_in_n_bits(cv.v, n * 8)) {
+                res = (int)n;
+            }
         }
         else {
             unsigned char fill = cv.v < 0 ? 0xFF : 0x00;
@@ -1175,55 +1190,17 @@ _PyLong_AsByteArrayWithOptions(PyObject* vv, void* buffer, size_t n,
 #endif
         }
     }
-    else if (n <= 0) {
-        res = -1;
-    }
-    else if (!signed_ && _PyLong_IsNegative(v)) {
-        /* This case is not supported by _PyLong_AsByteArray, so we extract a
-         * signed value, to a larger buffer first if needed. If we use a larger
-         * buffer, the extra data should be all bits set. If it is, then we can
-         * ignore it and return the number of bytes the caller requested
-         * (that's what the "unsigned" means). Otherwise, we need to return the
-         * actual number of bytes required. */
-        res = _PyLong_AsByteArray(v, buffer, n, little_endian, 1, 0);
-        if (res < 0) {
-            unsigned char *b = (unsigned char *)PyMem_Malloc(n + 1);
-            if (!b) {
-                res = -1;
-                goto error;
-            }
-            res = _PyLong_AsByteArray(v, b, n + 1, little_endian, 1, 0);
-            if (res == 0) {
-                // Ensure the extra byte is 0xFF
-                if (little_endian) {
-                    // (remember, we allocated n+1 bytes)
-                    if (b[n] != 0xFF) {
-                        res = -1;
-                    } else {
-                        memcpy(buffer, b, n);
-                    }
-                } else {
-                    if (b[0] != 0xFF) {
-                        res = -1;
-                    } else {
-                        memcpy(buffer, &b[1], n);
-                    }
-                }
-            }
-            PyMem_Free(b);
-        }
-    }
     else {
-        res = _PyLong_AsByteArray(v, buffer, n, little_endian, signed_, 0);
-    }
+        if (n > 0) {
+            _PyLong_AsByteArray(v, buffer, n, little_endian, 1, 0);
+        }
 
-    /* NOTE: res should only be <0 if a _PyLong_AsByteArray has failed without
-     * setting an exception, or we're requesting the size of a non-compact int.
-     * If you add another reason, you should update this! */
-    if (res < 0) {
         // More efficient calculation for number of bytes required?
-        size_t nb = _PyLong_NumBits((PyObject *)v) + (signed_ ? 1 : 0);
-        size_t n_needed = ((nb - 1) / 8) + 1;
+        size_t nb = _PyLong_NumBits((PyObject *)v);
+        /* Normally this would be((nb - 1) / 8) + 1 to avoid rounding up
+         * multiples of 8 to the next byte, but we add an implied bit for
+         * the sign and it cancels out. */
+        size_t n_needed = (nb / 8) + 1;
         res = (int)n_needed;
         if (res != n_needed) {
             PyErr_SetString(PyExc_OverflowError,
@@ -1232,72 +1209,11 @@ _PyLong_AsByteArrayWithOptions(PyObject* vv, void* buffer, size_t n,
         }
     }
 
-error:
     if (do_decref) {
         Py_DECREF(v);
     }
 
     return res;
-}
-
-int
-PyLong_AsByteArrayWithOptions(PyObject* vv, void* buffer, size_t n, int options)
-{
-    int signed_;
-    int little_endian;
-
-    // option 1 is excluded and always raises
-    if (!options || options & 0x01) {
-        PyErr_SetString(PyExc_SystemError, "invalid 'options' value");
-        return -1;
-    }
-
-    switch (options & (PYLONG_ASBYTEARRAY_SIGNED | PYLONG_ASBYTEARRAY_UNSIGNED)) {
-    case PYLONG_ASBYTEARRAY_SIGNED:
-        signed_ = 1;
-        break;
-    case PYLONG_ASBYTEARRAY_UNSIGNED:
-        signed_ = 0;
-        break;
-    case 0:
-        PyErr_SetString(PyExc_SystemError, "invalid 'options' value - no sign option");
-        return -1;
-    default:
-        PyErr_SetString(PyExc_SystemError, "invalid 'options' value");
-        return -1;
-    }
-
-    switch (options & (PYLONG_ASBYTEARRAY_LITTLE_ENDIAN | PYLONG_ASBYTEARRAY_BIG_ENDIAN
-                       | PYLONG_ASBYTEARRAY_NATIVE_ENDIAN)) {
-    case PYLONG_ASBYTEARRAY_BIG_ENDIAN:
-        little_endian = 0;
-        break;
-    case PYLONG_ASBYTEARRAY_LITTLE_ENDIAN:
-        little_endian = 1;
-        break;
-    case PYLONG_ASBYTEARRAY_NATIVE_ENDIAN:
-        little_endian = PY_LITTLE_ENDIAN;
-        break;
-    case 0:
-        PyErr_SetString(PyExc_SystemError, "invalid 'options' value - no endian option");
-        return -1;
-    default:
-        PyErr_SetString(PyExc_SystemError, "invalid 'options' value");
-        return -1;
-    }
-    return _PyLong_AsByteArrayWithOptions(vv, buffer, n, signed_, little_endian);
-}
-
-int
-PyLong_AsByteArray(PyObject* vv, void* buffer, size_t n)
-{
-    return _PyLong_AsByteArrayWithOptions(vv, buffer, n, 1, PY_LITTLE_ENDIAN);
-}
-
-int
-PyLong_AsUnsignedByteArray(PyObject* vv, void* buffer, size_t n)
-{
-    return _PyLong_AsByteArrayWithOptions(vv, buffer, n, 0, PY_LITTLE_ENDIAN);
 }
 
 
