@@ -1949,14 +1949,10 @@ This dictionary is passed to :func:`~config.dictConfig` to put the configuration
                 '()': 'project.logging.SpecialFilter',
                 'foo': 'bar',
             },
-            'require_debug_true': {
-                '()': 'django.utils.log.RequireDebugTrue',
-            },
         },
         'handlers': {
             'console': {
                 'level': 'INFO',
-                'filters': ['require_debug_true'],
                 'class': 'logging.StreamHandler',
                 'formatter': 'simple',
             },
