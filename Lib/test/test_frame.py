@@ -55,6 +55,28 @@ class ClearTest(unittest.TestCase):
         # The reference was released by .clear()
         self.assertIs(None, wr())
 
+    def test_clear_locals_after_f_locals_access(self):
+        # see gh-113939
+        class C:
+            pass
+
+        wr = None
+        def inner():
+            nonlocal wr
+            c = C()
+            wr = weakref.ref(c)
+            1/0
+
+        try:
+            inner()
+        except ZeroDivisionError as exc:
+            support.gc_collect()
+            self.assertIsNotNone(wr())
+            print(exc.__traceback__.tb_next.tb_frame.f_locals)
+            exc.__traceback__.tb_next.tb_frame.clear()
+            support.gc_collect()
+            self.assertIsNone(wr())
+
     def test_clear_does_not_clear_specials(self):
         class C:
             pass
