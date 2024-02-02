@@ -5166,7 +5166,9 @@ class DSLParser:
         elif name == '__init__':
             self.kind = METHOD_INIT
 
-    def resolve_return_converter(self, full_name: str, forced_converter):
+    def resolve_return_converter(
+        self, full_name: str, forced_converter: str
+    ) -> CReturnConverter:
         if forced_converter:
             if self.kind in {GETTER, SETTER}:
                 fail(f"@{self.kind.name.lower()} method cannot define a return type")
@@ -5273,7 +5275,8 @@ class DSLParser:
         self.function = Function(
             name=function_name,
             full_name=full_name,
-            module=module, cls=cls,
+            module=module,
+            cls=cls,
             c_basename=c_basename,
             return_converter=self.resolve_return_converter(full_name, returns),
             kind=self.kind,
