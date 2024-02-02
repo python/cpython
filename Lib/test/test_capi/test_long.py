@@ -501,6 +501,12 @@ class LongTests(unittest.TestCase):
             (-(2**256-1),   b'\x00' * 31 + b'\x01',                 33),
             (-(2**256-1),   b'\xff' + b'\x00' * 31 + b'\x01',       33),
             (-(2**256-1),   b'\xff\xff' + b'\x00' * 31 + b'\x01',   33),
+
+            # The classic "Windows HRESULT as negative number" case
+            #   HRESULT hr;
+            #   PyLong_CopyBits(<-2147467259>, &hr, sizeof(HRESULT))
+            #   assert(hr == E_FAIL)
+            (-2147467259, b'\x80\x00\x40\x05', 4),
         ]:
             with self.subTest(f"{v:X}-{len(expect_be)}bytes"):
                 n = len(expect_be)
