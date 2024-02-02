@@ -576,9 +576,7 @@ class HelpFormatter(object):
             else:
                 default = self._get_default_metavar_for_optional(action)
                 args_string = self._format_args(action, default)
-                for option_string in action.option_strings:
-                    parts.append('%s' % option_string)
-                return ', '.join(parts) + ' ' + args_string
+                return ', '.join(action.option_strings) + ' ' + args_string
 
     def _metavar_formatter(self, action, default_metavar):
         if action.metavar is not None:
