@@ -1788,7 +1788,7 @@ finalize_interp_types(PyInterpreterState *interp)
     // With Py_GIL_DISABLED:
     // the freelists for the current thread state have already been cleared.
     _PyFreeListState *state = _PyFreeListState_GET();
-    _Py_ClearFreeLists(state, 1);
+    _PyObject_ClearFreeLists(state, 1);
 #endif
 
 #ifdef Py_DEBUG
