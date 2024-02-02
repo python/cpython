@@ -559,7 +559,7 @@ IR:
   loads, speeding them up and also allowing for more constant propagation.
 
 * This section is non-exhaustive and will be updated with further
-  optimizations, up till CPython 3.13's release.
+  optimizations, up till CPython 3.13's beta release.
 
 (Tier 2 optimizer contributed by Ken Jin, with implementation help
 by Guido van Rossum, Mark Shannon, and Jules Poon. Special thanks
@@ -600,7 +600,7 @@ by Haoran Xu and Fredrik Kjolstad. For more information,
 Results and Future Work
 -----------------------
 
-The final performance results will be updated before CPython 3.13's release.
+The final performance results will be updated before CPython 3.13's beta release.
 
 The JIT compiler is rather unoptimized, and serves as the foundation
 for significant optimizations in future releases. As such, we do not
