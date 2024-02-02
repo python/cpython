@@ -13,20 +13,8 @@ Importing Modules
       single: __all__ (package variable)
       single: modules (in module sys)
 
-   This is a simplified interface to :c:func:`PyImport_ImportModuleEx` below,
-   leaving the *globals* and *locals* arguments set to ``NULL`` and *level* set
-   to 0.  When the *name*
-   argument contains a dot (when it specifies a submodule of a package), the
-   *fromlist* argument is set to the list ``['*']`` so that the return value is the
-   named module rather than the top-level package containing it as would otherwise
-   be the case.  (Unfortunately, this has an additional side effect when *name* in
-   fact specifies a subpackage instead of a submodule: the submodules specified in
-   the package's ``__all__`` variable are  loaded.)  Return a new reference to the
-   imported module, or ``NULL`` with an exception set on failure.  A failing
-   import of a module doesn't leave the module in :data:`sys.modules`.
-
-   This function always uses absolute imports.
-
+   This is a wrapper around :c:func:`PyImport_Import()` which takes a
+   :c:expr:`const char *` as an argument instead of a :c:expr:`PyObject *`.
 
 .. c:function:: PyObject* PyImport_ImportModuleNoBlock(const char *name)
 
