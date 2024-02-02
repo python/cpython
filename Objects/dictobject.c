@@ -151,7 +151,7 @@ ASSERT_DICT_LOCKED(PyObject *op)
 }
 #define ASSERT_DICT_LOCKED(op) ASSERT_DICT_LOCKED(_Py_CAST(PyObject*, op))
 
-#define LOCK_KEYS(keys) PyMutex_Lock(&keys->dk_mutex)
+#define LOCK_KEYS(keys) PyMutex_LockFlags(&keys->dk_mutex, _Py_LOCK_DONT_DETACH)
 #define UNLOCK_KEYS(keys) PyMutex_Unlock(&keys->dk_mutex)
 
 #define ASSERT_KEYS_LOCKED(keys) assert(PyMutex_IsLocked(&keys->dk_mutex))
@@ -161,6 +161,15 @@ ASSERT_DICT_LOCKED(PyObject *op)
 #define INCREF_KEYS(dk)  _Py_atomic_add_ssize(&dk->dk_refcnt, 1)
 // Dec refs the keys object, giving the previous value
 #define DECREF_KEYS(dk)  _Py_atomic_add_ssize(&dk->dk_refcnt, -1)
+static inline void split_keys_entry_added(PyDictKeysObject *keys)
+{
+    ASSERT_KEYS_LOCKED(keys);
+
+    // We increase before we decrease so we never get too small of a value
+    // when we're racing with reads
+    _Py_atomic_store_ssize(&keys->dk_nentries, keys->dk_nentries + 1);
+    _Py_atomic_store_ssize(&keys->dk_usable, keys->dk_usable - 1);
+}
 
 #else /* Py_GIL_DISABLED */
 
@@ -172,6 +181,11 @@ ASSERT_DICT_LOCKED(PyObject *op)
 #define STORE_SHARED_KEY(key, value) key = value
 #define INCREF_KEYS(dk)  dk->dk_refcnt++
 #define DECREF_KEYS(dk)  dk->dk_refcnt--
+static inline void split_keys_entry_added(PyDictKeysObject *keys)
+{
+    keys->dk_usable--;
+    keys->dk_nentries++;
+}
 
 #endif
 
@@ -809,15 +823,25 @@ new_dict(PyInterpreterState *interp,
 static inline size_t
 shared_keys_usable_size(PyDictKeysObject *keys)
 {
-    ASSERT_KEYS_LOCKED(keys);
+#ifdef Py_GIL_DISABLED
+    // dk_usable will decrease for each instance that is created and each
+    // value that is added.  dk_entries will increase for each value that
+    // is added.  We want to always return the right value or larger.
+    // We therefore increase dk_entries first and we decrease dk_usable
+    // second, and conversely here we read dk_usable first and dk_entries
+    // second (to avoid the case where we read entries before the increment
+    // and read usable after the decrement)
+    return (size_t)(_Py_atomic_load_ssize_acquire(&keys->dk_usable) +
+                    _Py_atomic_load_ssize_acquire(&keys->dk_nentries));
+#else
     return (size_t)keys->dk_nentries + (size_t)keys->dk_usable;
+#endif
 }
 
 /* Consumes a reference to the keys object */
 static PyObject *
 new_dict_with_shared_keys(PyInterpreterState *interp, PyDictKeysObject *keys)
 {
-    LOCK_KEYS(keys);
     size_t size = shared_keys_usable_size(keys);
     PyDictValues *values = new_values(size);
     if (values == NULL) {
@@ -830,7 +854,6 @@ new_dict_with_shared_keys(PyInterpreterState *interp, PyDictKeysObject *keys)
         values->values[i] = NULL;
     }
     PyObject *res = new_dict(interp, keys, values, 0, 1);
-    UNLOCK_KEYS(keys);
     return res;
 }
 
@@ -1269,8 +1292,7 @@ insert_into_dictkeys(PyDictKeysObject *keys, PyObject *name)
         dictkeys_set_index(keys, hashpos, ix);
         assert(ep->me_key == NULL);
         ep->me_key = Py_NewRef(name);
-        keys->dk_usable--;
-        keys->dk_nentries++;
+        split_keys_entry_added(keys);
     }
     assert (ix < SHARED_KEYS_MAX_SIZE);
     return ix;
@@ -1279,7 +1301,7 @@ insert_into_dictkeys(PyDictKeysObject *keys, PyObject *name)
 
 static inline int
 insert_combined_dict(PyInterpreterState *interp, PyDictObject *mp,
-                    Py_hash_t hash, PyObject *key, PyObject *value, int unicode)
+                     Py_hash_t hash, PyObject *key, PyObject *value, int unicode)
 {
     if (mp->ma_keys->dk_usable <= 0) {
         /* Need to resize. */
@@ -1340,8 +1362,7 @@ insert_split_dict(PyInterpreterState *interp, PyDictObject *mp,
     assert (mp->ma_values->values[index] == NULL);
     mp->ma_values->values[index] = value;
 
-    keys->dk_usable--;
-    keys->dk_nentries++;
+    split_keys_entry_added(keys);
     assert(keys->dk_usable >= 0);
     UNLOCK_KEYS(keys);
     return 0;
@@ -3471,9 +3492,7 @@ copy_lock_held(PyObject *o)
 
     if (_PyDict_HasSplitTable(mp)) {
         PyDictObject *split_copy;
-        LOCK_KEYS(mp->ma_keys);
         size_t size = shared_keys_usable_size(mp->ma_keys);
-        UNLOCK_KEYS(mp->ma_keys);
         PyDictValues *newvalues = new_values(size);
         if (newvalues == NULL)
             return PyErr_NoMemory();
@@ -3608,7 +3627,7 @@ dict_equal_lock_held(PyDictObject *a, PyDictObject *b)
         Py_hash_t hash;
         if (DK_IS_UNICODE(a->ma_keys)) {
             PyDictUnicodeEntry *ep = &DK_UNICODE_ENTRIES(a->ma_keys)[i];
-            key = LOAD_SHARED_KEY(ep->me_key);
+            key = ep->me_key;
             if (key == NULL) {
                 continue;
             }
@@ -3995,8 +4014,8 @@ dict_popitem_impl(PyDictObject *self)
         LOCK_KEYS(keys);
 
         int status = dictresize(interp, self, DK_LOG_SIZE(self->ma_keys), 1);
-        dictkeys_decref(interp, keys);
         UNLOCK_KEYS(keys);
+        dictkeys_decref(interp, keys);
 
         if (status < 0) {
             Py_DECREF(res);
@@ -4103,9 +4122,7 @@ sizeof_lock_held(PyDictObject *mp)
 {
     size_t res = _PyObject_SIZE(Py_TYPE(mp));
     if (_PyDict_HasSplitTable(mp)) {
-        LOCK_KEYS(mp->ma_keys);
         res += shared_keys_usable_size(mp->ma_keys) * sizeof(PyObject*);
-        UNLOCK_KEYS(mp->ma_keys);
     }
     /* If the dictionary is split, the keys portion is accounted-for
        in the type object. */
@@ -6030,12 +6047,19 @@ _PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp)
     assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
     PyDictKeysObject *keys = CACHED_KEYS(tp);
     assert(keys != NULL);
+#ifdef Py_GIL_DISABLED
+    Py_ssize_t usable = keys->dk_usable;
+    while (usable > 1) {
+        if (_Py_atomic_compare_exchange_ssize(&keys->dk_usable, &usable, usable - 1)) {
+            break;
+        }
+    }
+#else
     if (keys->dk_usable > 1) {
         keys->dk_usable--;
     }
-    LOCK_KEYS(keys);
+#endif
     size_t size = shared_keys_usable_size(keys);
-    UNLOCK_KEYS(keys);
     PyDictValues *values = new_values(size);
     if (values == NULL) {
         PyErr_NoMemory();
@@ -6085,9 +6109,7 @@ make_dict_from_instance_attributes(PyInterpreterState *interp,
     dictkeys_incref(keys);
     Py_ssize_t used = 0;
     Py_ssize_t track = 0;
-    LOCK_KEYS(keys);
     size_t size = shared_keys_usable_size(keys);
-    UNLOCK_KEYS(keys);
     for (size_t i = 0; i < size; i++) {
         PyObject *val = values->values[i];
         if (val != NULL) {

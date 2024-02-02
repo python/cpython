@@ -990,6 +990,18 @@ _Py_atomic_load_uint32_acquire(const uint32_t *obj)
 #endif
 }
 
+static inline Py_ssize_t
+_Py_atomic_load_ssize_acquire(const Py_ssize_t *obj)
+{
+#if defined(_M_X64) || defined(_M_IX86)
+    return *(Py_ssize_t volatile *)obj;
+#elif defined(_M_ARM64)
+    return (Py_ssize_t)__ldar64((unsigned __int64 volatile *)obj);
+#else
+#  error "no implementation of _Py_atomic_load_ssize_acquire"
+#endif
+}
+
 // --- _Py_atomic_fence ------------------------------------------------------
 
  static inline void

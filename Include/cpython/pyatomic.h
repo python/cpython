@@ -484,6 +484,9 @@ _Py_atomic_load_uint64_acquire(const uint64_t *obj);
 static inline uint32_t
 _Py_atomic_load_uint32_acquire(const uint32_t *obj);
 
+static inline Py_ssize_t
+_Py_atomic_load_ssize_acquire(const Py_ssize_t *obj);
+
 
 // --- _Py_atomic_fence ------------------------------------------------------
 

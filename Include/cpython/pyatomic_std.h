@@ -908,7 +908,13 @@ _Py_atomic_load_uint32_acquire(const uint32_t *obj)
 {
     _Py_USING_STD;
     return atomic_load_explicit((const _Atomic(uint32_t)*)obj,
-                                memory_order_acquire);
+}
+
+static inline Py_ssize_t
+_Py_atomic_load_ssize_acquire(const Py_ssize_t *obj)
+{
+    _Py_USING_STD;
+    return atomic_load_explicit((const _Atomic(Py_ssize_t)*)obj,
 }
 
 

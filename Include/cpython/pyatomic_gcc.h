@@ -516,6 +516,10 @@ static inline uint32_t
 _Py_atomic_load_uint32_acquire(const uint32_t *obj)
 { return __atomic_load_n(obj, __ATOMIC_ACQUIRE); }
 
+static inline Py_ssize_t
+_Py_atomic_load_ssize_acquire(const Py_ssize_t *obj)
+{ return __atomic_load_n(obj, __ATOMIC_ACQUIRE); }
+
 // --- _Py_atomic_fence ------------------------------------------------------
 
 static inline void
