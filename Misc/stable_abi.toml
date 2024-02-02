@@ -2485,3 +2485,5 @@
 [function._Py_SetRefcnt]
     added = '3.13'
     abi_only = true
+[data.PyExc_IncompleteInputError]
+    added = '3.13'
