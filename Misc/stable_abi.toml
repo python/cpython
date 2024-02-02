@@ -2487,3 +2487,5 @@
     abi_only = true
 [data.PyExc_IncompleteInputError]
     added = '3.13'
+[function.PyList_GetItemRef]
+    added = '3.13'
