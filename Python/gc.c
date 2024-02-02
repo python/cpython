@@ -1391,7 +1391,7 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
         gc_set_old_space(gc, gcstate->visited_space);
         region_size += expand_region_transitively_reachable(&increment, gc, gcstate);
     }
-    assert(region_size = gc_list_size(&increment));
+    assert(region_size == gc_list_size(&increment));
     PyGC_Head survivors;
     gc_list_init(&survivors);
     gc_collect_region(tstate, &increment, &survivors, UNTRACK_TUPLES, stats);
