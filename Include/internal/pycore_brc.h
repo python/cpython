@@ -21,7 +21,7 @@ extern "C" {
 
 // Hash table bucket
 struct _brc_bucket {
-    // Mutex protects both the bucket and thread queues in this bucket.
+    // Mutex protects both the bucket and thread state queues in this bucket.
     PyMutex mutex;
 
     // Linked list of _PyThreadStateImpl objects hashed to this bucket.
@@ -30,8 +30,8 @@ struct _brc_bucket {
 
 // Per-interpreter biased reference counting state
 struct _brc_state {
-    // Hash table of thread states by thread-id. Threads within a bucket are
-    // chained using a doubly-linked list.
+    // Hash table of thread states by thread-id. Thread states within a bucket
+    // are chained using a doubly-linked list.
     struct _brc_bucket table[_Py_BRC_NUM_BUCKETS];
 };
 
