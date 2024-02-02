@@ -803,30 +803,9 @@ _is_module_possibly_shadowing(PyObject *origin)
         return 0;
     }
 
-    PyObject *sys_path = PySys_GetObject("path");
-    if (sys_path == NULL || !PyList_Check(sys_path) || PyList_GET_SIZE(sys_path) == 0) {
-        return 0;
-    }
-    PyObject *py_sys_path_0 = PyList_GET_ITEM(sys_path, 0);
-    if (!PyUnicode_Check(py_sys_path_0)) {
-        return 0;
-    }
-    wchar_t sys_path_0[MAXPATHLEN + 1];
-    Py_ssize_t size = PyUnicode_AsWideChar(py_sys_path_0, sys_path_0, MAXPATHLEN);
-    if (size < 0) {
-        return -1;
-    }
-    assert(size <= MAXPATHLEN);
-    sys_path_0[size] = L'\0';
-    if (size == 0) {
-        // if sys.path[0] == "", treat it as if it were the current directory
-        if (!_Py_wgetcwd(sys_path_0, MAXPATHLEN)) {
-            return -1;
-        }
-    }
-
+    // os.path.dirname(origin)
     wchar_t origin_dirname[MAXPATHLEN + 1];
-    size = PyUnicode_AsWideChar(origin, origin_dirname, MAXPATHLEN);
+    Py_ssize_t size = PyUnicode_AsWideChar(origin, origin_dirname, MAXPATHLEN);
     if (size < 0) {
         return -1;
     }
@@ -838,10 +817,35 @@ _is_module_possibly_shadowing(PyObject *origin)
         return 0;
     }
     *sep = L'\0';
-    if (wcscmp(sys_path_0, origin_dirname) == 0) {
-        return 1;
+
+    // sys.path[0] or os.getcwd()
+    wchar_t *sys_path_0 = config->sys_path_0;
+    if (!sys_path_0) {
+        if (!config->module_search_paths_set || config->module_search_paths.length == 0) {
+            return 0;
+        }
+        sys_path_0 = config->module_search_paths.items[0];
+        assert(sys_path_0 != NULL);
     }
-    return 0;
+    bool sys_path_allocated = false;
+    if (sys_path_0[0] == L'\0') {
+        // if sys.path[0] == "", treat it as if it were the current directory
+        sys_path_0 = PyMem_RawMalloc(MAXPATHLEN * sizeof(wchar_t));
+        if (!sys_path_0) {
+            return -1;
+        }
+        sys_path_allocated = true;
+        if (!_Py_wgetcwd(sys_path_0, MAXPATHLEN)) {
+            PyMem_RawFree(sys_path_0);
+            return -1;
+        }
+    }
+
+    int result = wcscmp(sys_path_0, origin_dirname) == 0;
+    if (sys_path_allocated) {
+        PyMem_RawFree(sys_path_0);
+    }
+    return result;
 }
 
 PyObject*

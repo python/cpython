@@ -792,29 +792,29 @@ class ImportTests(unittest.TestCase):
 
     def test_script_shadowing_stdlib(self):
         with os_helper.temp_dir() as tmp:
-            with open(os.path.join(tmp, "collections.py"), "w", encoding='utf-8') as f:
-                f.write("import collections\ncollections.defaultdict")
+            with open(os.path.join(tmp, "fractions.py"), "w", encoding='utf-8') as f:
+                f.write("import fractions\nfractions.Fraction")
 
             expected_error = (
-                rb"AttributeError: module 'collections' has no attribute 'defaultdict' "
-                rb"\(consider renaming '.*collections.py' since it has the "
-                rb"same name as the standard library module named 'collections'\)"
+                rb"AttributeError: module 'fractions' has no attribute 'Fraction' "
+                rb"\(consider renaming '.*fractions.py' since it has the "
+                rb"same name as the standard library module named 'fractions'\)"
             )
 
-            popen = script_helper.spawn_python(os.path.join(tmp, "collections.py"))
+            popen = script_helper.spawn_python(os.path.join(tmp, "fractions.py"))
             stdout, stderr = popen.communicate()
             self.assertRegex(stdout, expected_error)
 
-            popen = script_helper.spawn_python('-m', 'collections', cwd=tmp)
+            popen = script_helper.spawn_python('-m', 'fractions', cwd=tmp)
             stdout, stderr = popen.communicate()
             self.assertRegex(stdout, expected_error)
 
-            popen = script_helper.spawn_python('-c', 'import collections', cwd=tmp)
+            popen = script_helper.spawn_python('-c', 'import fractions', cwd=tmp)
             stdout, stderr = popen.communicate()
             self.assertRegex(stdout, expected_error)
 
             # and there's no error at all when using -P
-            popen = script_helper.spawn_python('-P', 'collections.py', cwd=tmp)
+            popen = script_helper.spawn_python('-P', 'fractions.py', cwd=tmp)
             stdout, stderr = popen.communicate()
             self.assertEqual(stdout, b'')
 
@@ -856,17 +856,17 @@ class ImportTests(unittest.TestCase):
 
     def test_script_shadowing_stdlib_edge_cases(self):
         with os_helper.temp_dir() as tmp:
-            with open(os.path.join(tmp, "collections.py"), "w", encoding='utf-8') as f:
+            with open(os.path.join(tmp, "fractions.py"), "w", encoding='utf-8') as f:
                 f.write("shadowing_module = True")
             with open(os.path.join(tmp, "main.py"), "w", encoding='utf-8') as f:
                 f.write("""
-import collections
-collections.shadowing_module
+import fractions
+fractions.shadowing_module
 class substr(str):
     __hash__ = None
-collections.__name__ = substr('collections')
+fractions.__name__ = substr('fractions')
 try:
-    collections.defaultdict
+    fractions.Fraction
 except TypeError as e:
     print(str(e))
 """)
@@ -877,25 +877,25 @@ except TypeError as e:
 
             with open(os.path.join(tmp, "main.py"), "w", encoding='utf-8') as f:
                 f.write("""
-import collections
-collections.shadowing_module
+import fractions
+fractions.shadowing_module
 
 import sys
 sys.stdlib_module_names = None
 try:
-    collections.defaultdict
+    fractions.Fraction
 except AttributeError as e:
     print(str(e))
 
 del sys.stdlib_module_names
 try:
-    collections.defaultdict
+    fractions.Fraction
 except AttributeError as e:
     print(str(e))
 
 sys.path = [0]
 try:
-    collections.defaultdict
+    fractions.Fraction
 except AttributeError as e:
     print(str(e))
 """)
@@ -905,11 +905,34 @@ except AttributeError as e:
             self.assertEqual(
                 stdout.splitlines(),
                 [
-                    b"module 'collections' has no attribute 'defaultdict'",
-                    b"module 'collections' has no attribute 'defaultdict'",
-                    b"module 'collections' has no attribute 'defaultdict'",
+                    b"module 'fractions' has no attribute 'Fraction'",
+                    b"module 'fractions' has no attribute 'Fraction'",
+                    b"module 'fractions' has no attribute 'Fraction'",
                 ],
             )
+
+    def test_script_shadowing_stdlib_sys_path_modification(self):
+        with os_helper.temp_dir() as tmp:
+            with open(os.path.join(tmp, "fractions.py"), "w", encoding='utf-8') as f:
+                f.write("shadowing_module = True")
+
+            expected_error = (
+                rb"AttributeError: module 'fractions' has no attribute 'Fraction' "
+                rb"\(consider renaming '.*fractions.py' since it has the "
+                rb"same name as the standard library module named 'fractions'\)"
+            )
+
+            with open(os.path.join(tmp, "main.py"), "w", encoding='utf-8') as f:
+                f.write("""
+import sys
+sys.path.insert(0, "this_folder_does_not_exist")
+import fractions
+fractions.Fraction
+""")
+
+            popen = script_helper.spawn_python("main.py", cwd=tmp)
+            stdout, stderr = popen.communicate()
+            self.assertRegex(stdout, expected_error)
 
 
 @skip_if_dont_write_bytecode
