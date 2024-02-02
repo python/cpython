@@ -5763,6 +5763,30 @@ class TestExitOnError(TestCase):
             self.parser.parse_args('--integers a'.split())
 
 
+class TestIterationOnNS(TestCase):
+
+    def setUp(self):
+        self.parser = argparse.ArgumentParser()
+        self.parser.add_argument('--test_1', action="store_true")
+        self.parser.add_argument('--test_2', type=str, default="a")
+        self.parser.add_argument('--test_3', type=int, default=0)
+        self.local_ns = self.parser.parse_args()
+
+    def test_iteration_ns(self):
+        for arg in self.local_ns:
+            self.assertIn(arg, ['test_1', 'test_2', 'test_3'])
+
+
+class TestSubscriptableNS(TestCase):
+    def setUp(self):
+        self.parser = argparse.ArgumentParser()
+        self.parser.add_argument('--test_1', type=str, default="a")
+        self.local_ns = self.parser.parse_args()
+
+    def test_iteration_ns(self):
+        self.assertEqual(self.local_ns["test_1"], "a")
+
+
 def tearDownModule():
     # Remove global references to avoid looking like we have refleaks.
     RFile.seen = {}
