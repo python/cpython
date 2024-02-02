@@ -1,0 +1,3 @@
+Add :c:func:`PyList_GetItemRef`, which is similar to
+:c:func:`PyList_GetItem` but returns a :term:`strong reference` instead of a
+:term:`borrowed reference`.
