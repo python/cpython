@@ -100,7 +100,7 @@ PSF LICENSE AGREEMENT FOR PYTHON |release|
       analyze, test, perform and/or display publicly, prepare derivative works,
       distribute, and otherwise use Python |release| alone or in any derivative
       version, provided, however, that PSF's License Agreement and PSF's notice of
-      copyright, i.e., "Copyright © 2001-2023 Python Software Foundation; All Rights
+      copyright, i.e., "Copyright © 2001-2024 Python Software Foundation; All Rights
       Reserved" are retained in Python |release| alone or in any derivative version
       prepared by Licensee.
 
@@ -352,8 +352,8 @@ the verbatim comments from the original code::
 Sockets
 -------
 
-The :mod:`socket` module uses the functions, :func:`getaddrinfo`, and
-:func:`getnameinfo`, which are coded in separate source files from the WIDE
+The :mod:`socket` module uses the functions, :c:func:`!getaddrinfo`, and
+:c:func:`!getnameinfo`, which are coded in separate source files from the WIDE
 Project, https://www.wide.ad.jp/. ::
 
    Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
@@ -387,7 +387,7 @@ Project, https://www.wide.ad.jp/. ::
 Asynchronous socket services
 ----------------------------
 
-The :mod:`test.support.asynchat` and :mod:`test.support.asyncore`
+The :mod:`!test.support.asynchat` and :mod:`!test.support.asyncore`
 modules contain the following notice::
 
    Copyright 1996 by Sam Rushing
@@ -539,7 +539,7 @@ The :mod:`xmlrpc.client` module contains the following notice::
 test_epoll
 ----------
 
-The :mod:`test_epoll` module contains the following notice::
+The :mod:`!test.test_epoll` module contains the following notice::
 
   Copyright (c) 2001-2006 Twisted Matrix Laboratories.
 
@@ -844,7 +844,7 @@ and later releases derived from that, the Apache License v2 applies::
 expat
 -----
 
-The :mod:`pyexpat` extension is built using an included copy of the expat
+The :mod:`pyexpat <xml.parsers.expat>` extension is built using an included copy of the expat
 sources unless the build is configured ``--with-system-expat``::
 
   Copyright (c) 1998, 1999, 2000 Thai Open Source Software Center Ltd
@@ -1040,3 +1040,58 @@ https://www.w3.org/TR/xml-c14n2-testcases/ and is distributed under the
    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+mimalloc
+--------
+
+MIT License
+
+Copyright (c) 2018-2021 Microsoft Corporation, Daan Leijen
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+asyncio
+----------
+
+Parts of the :mod:`asyncio` module are incorporated from
+`uvloop 0.16 <https://github.com/MagicStack/uvloop/tree/v0.16.0>`_,
+which is distributed under the MIT license::
+
+  Copyright (c) 2015-2021 MagicStack Inc.  http://magic.io
+
+  Permission is hereby granted, free of charge, to any person obtaining
+  a copy of this software and associated documentation files (the
+  "Software"), to deal in the Software without restriction, including
+  without limitation the rights to use, copy, modify, merge, publish,
+  distribute, sublicense, and/or sell copies of the Software, and to
+  permit persons to whom the Software is furnished to do so, subject to
+  the following conditions:
+
+  The above copyright notice and this permission notice shall be
+  included in all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+  LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
