@@ -1987,7 +1987,7 @@ def get_address_list(value):
         try:
             token, value = get_address(value)
             address_list.append(token)
-        except errors.HeaderParseError as err:
+        except errors.HeaderParseError:
             leader = None
             if value[0] in CFWS_LEADER:
                 leader, value = get_cfws(value)
@@ -2096,7 +2096,7 @@ def get_msg_id(value):
     except errors.HeaderParseError:
         try:
             token, value = get_no_fold_literal(value)
-        except errors.HeaderParseError as e:
+        except errors.HeaderParseError:
             try:
                 token, value = get_domain(value)
                 msg_id.defects.append(errors.ObsoleteHeaderDefect(
@@ -2443,7 +2443,6 @@ def get_parameter(value):
         raise errors.HeaderParseError("Parameter not followed by '='")
     param.append(ValueTerminal('=', 'parameter-separator'))
     value = value[1:]
-    leader = None
     if value and value[0] in CFWS_LEADER:
         token, value = get_cfws(value)
         param.append(token)
@@ -2568,7 +2567,7 @@ def parse_mime_parameters(value):
         try:
             token, value = get_parameter(value)
             mime_parameters.append(token)
-        except errors.HeaderParseError as err:
+        except errors.HeaderParseError:
             leader = None
             if value[0] in CFWS_LEADER:
                 leader, value = get_cfws(value)
@@ -2626,7 +2625,6 @@ def parse_content_type_header(value):
     don't do that.
     """
     ctype = ContentType()
-    recover = False
     if not value:
         ctype.defects.append(errors.HeaderMissingRequiredValue(
             "Missing content type specification"))
@@ -2768,6 +2766,7 @@ def _refold_parse_tree(parse_tree, *, policy):
     encoding = 'utf-8' if policy.utf8 else 'us-ascii'
     lines = ['']
     last_ew = None
+    last_charset = None
     wrap_as_ew_blocked = 0
     want_encoding = False
     end_ew_not_allowed = Terminal('', 'wrap_as_ew_blocked')
@@ -2822,8 +2821,14 @@ def _refold_parse_tree(parse_tree, *, policy):
             else:
                 # It's a terminal, wrap it as an encoded word, possibly
                 # combining it with previously encoded words if allowed.
+                if (last_ew is not None and
+                    charset != last_charset and
+                    (last_charset == 'unknown-8bit' or
+                     last_charset == 'utf-8' and charset != 'us-ascii')):
+                    last_ew = None
                 last_ew = _fold_as_ew(tstr, lines, maxlen, last_ew,
                                       part.ew_combine_allowed, charset)
+                last_charset = charset
             want_encoding = False
             continue
         if len(tstr) <= maxlen - len(lines[-1]):

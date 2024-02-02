@@ -9,6 +9,7 @@
 #endif
 
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_dict.h"          // _PyDict_SizeOf()
 #include <ffi.h>
 #ifdef MS_WIN32
 #  include <malloc.h>
@@ -183,11 +184,14 @@ PyType_stgdict(PyObject *obj)
 {
     PyTypeObject *type;
 
-    if (!PyType_Check(obj))
+    if (!PyType_Check(obj)) {
         return NULL;
+    }
+    ctypes_state *st = GLOBAL_STATE();
     type = (PyTypeObject *)obj;
-    if (!type->tp_dict || !PyCStgDict_CheckExact(type->tp_dict))
+    if (!type->tp_dict || !PyCStgDict_CheckExact(st, type->tp_dict)) {
         return NULL;
+    }
     return (StgDictObject *)type->tp_dict;
 }
 
@@ -200,8 +204,10 @@ StgDictObject *
 PyObject_stgdict(PyObject *self)
 {
     PyTypeObject *type = Py_TYPE(self);
-    if (!type->tp_dict || !PyCStgDict_CheckExact(type->tp_dict))
+    ctypes_state *st = GLOBAL_STATE();
+    if (!type->tp_dict || !PyCStgDict_CheckExact(st, type->tp_dict)) {
         return NULL;
+    }
     return (StgDictObject *)type->tp_dict;
 }
 
@@ -225,6 +231,8 @@ MakeFields(PyObject *type, CFieldObject *descr,
     if (fieldlist == NULL)
         return -1;
 
+    ctypes_state *st = GLOBAL_STATE();
+    PyTypeObject *cfield_tp = st->PyCField_Type;
     for (i = 0; i < PySequence_Fast_GET_SIZE(fieldlist); ++i) {
         PyObject *pair = PySequence_Fast_GET_ITEM(fieldlist, i); /* borrowed */
         PyObject *fname, *ftype, *bits;
@@ -240,7 +248,7 @@ MakeFields(PyObject *type, CFieldObject *descr,
             Py_DECREF(fieldlist);
             return -1;
         }
-        if (!Py_IS_TYPE(fdescr, &PyCField_Type)) {
+        if (!Py_IS_TYPE(fdescr, cfield_tp)) {
             PyErr_SetString(PyExc_TypeError, "unexpected type");
             Py_DECREF(fdescr);
             Py_DECREF(fieldlist);
@@ -257,13 +265,13 @@ MakeFields(PyObject *type, CFieldObject *descr,
             }
             continue;
         }
-        new_descr = (CFieldObject *)PyCField_Type.tp_alloc((PyTypeObject *)&PyCField_Type, 0);
+        new_descr = (CFieldObject *)cfield_tp->tp_alloc(cfield_tp, 0);
         if (new_descr == NULL) {
             Py_DECREF(fdescr);
             Py_DECREF(fieldlist);
             return -1;
         }
-        assert(Py_IS_TYPE(new_descr, &PyCField_Type));
+        assert(Py_IS_TYPE(new_descr, cfield_tp));
         new_descr->size = fdescr->size;
         new_descr->offset = fdescr->offset + offset;
         new_descr->index = fdescr->index + index;
@@ -293,7 +301,7 @@ MakeAnonFields(PyObject *type)
     PyObject *anon_names;
     Py_ssize_t i;
 
-    if (_PyObject_LookupAttr(type, &_Py_ID(_anonymous_), &anon) < 0) {
+    if (PyObject_GetOptionalAttr(type, &_Py_ID(_anonymous_), &anon) < 0) {
         return -1;
     }
     if (anon == NULL) {
@@ -304,6 +312,8 @@ MakeAnonFields(PyObject *type)
     if (anon_names == NULL)
         return -1;
 
+    ctypes_state *st = GLOBAL_STATE();
+    PyTypeObject *cfield_tp = st->PyCField_Type;
     for (i = 0; i < PySequence_Fast_GET_SIZE(anon_names); ++i) {
         PyObject *fname = PySequence_Fast_GET_ITEM(anon_names, i); /* borrowed */
         CFieldObject *descr = (CFieldObject *)PyObject_GetAttr(type, fname);
@@ -311,7 +321,7 @@ MakeAnonFields(PyObject *type)
             Py_DECREF(anon_names);
             return -1;
         }
-        if (!Py_IS_TYPE(descr, &PyCField_Type)) {
+        if (!Py_IS_TYPE(descr, cfield_tp)) {
             PyErr_Format(PyExc_AttributeError,
                          "'%U' is specified in _anonymous_ but not in "
                          "_fields_",
@@ -381,22 +391,22 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     if (fields == NULL)
         return 0;
 
-    if (_PyObject_LookupAttr(type, &_Py_ID(_swappedbytes_), &tmp) < 0) {
+    int rc = PyObject_HasAttrWithError(type, &_Py_ID(_swappedbytes_));
+    if (rc < 0) {
         return -1;
     }
-    if (tmp) {
-        Py_DECREF(tmp);
+    if (rc) {
         big_endian = !PY_BIG_ENDIAN;
     }
     else {
         big_endian = PY_BIG_ENDIAN;
     }
 
-    if (_PyObject_LookupAttr(type, &_Py_ID(_pack_), &tmp) < 0) {
+    if (PyObject_GetOptionalAttr(type, &_Py_ID(_pack_), &tmp) < 0) {
         return -1;
     }
     if (tmp) {
-        pack = _PyLong_AsInt(tmp);
+        pack = PyLong_AsInt(tmp);
         Py_DECREF(tmp);
         if (pack < 0) {
             if (!PyErr_Occurred() ||
@@ -500,6 +510,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     if (stgdict->format == NULL)
         return -1;
 
+    ctypes_state *st = GLOBAL_STATE();
     for (i = 0; i < len; ++i) {
         PyObject *name = NULL, *desc = NULL;
         PyObject *pair = PySequence_GetItem(fields, i);
@@ -513,8 +524,9 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
             Py_XDECREF(pair);
             return -1;
         }
-        if (PyCArrayTypeObject_Check(desc))
+        if (PyCArrayTypeObject_Check(st, desc)) {
             arrays_seen = 1;
+        }
         dict = PyType_stgdict(desc);
         if (dict == NULL) {
             Py_DECREF(pair);
@@ -690,31 +702,49 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
 
     stgdict->size = aligned_size;
     stgdict->align = total_align;
-    stgdict->length = len;      /* ADD ffi_ofs? */
+    stgdict->length = ffi_ofs + len;
 
-#define MAX_STRUCT_SIZE 16
+/*
+ * The value of MAX_STRUCT_SIZE depends on the platform Python is running on.
+ */
+#if defined(__aarch64__) || defined(__arm__) || defined(_M_ARM64)
+#  define MAX_STRUCT_SIZE 32
+#elif defined(__powerpc64__)
+#  define MAX_STRUCT_SIZE 64
+#else
+#  define MAX_STRUCT_SIZE 16
+#endif
 
     if (arrays_seen && (size <= MAX_STRUCT_SIZE)) {
         /*
-         * See bpo-22273. Arrays are normally treated as pointers, which is
-         * fine when an array name is being passed as parameter, but not when
-         * passing structures by value that contain arrays. On 64-bit Linux,
-         * small structures passed by value are passed in registers, and in
+         * See bpo-22273 and gh-110190. Arrays are normally treated as
+         * pointers, which is fine when an array name is being passed as
+         * parameter, but not when passing structures by value that contain
+         * arrays.
+         * Small structures passed by value are passed in registers, and in
          * order to do this, libffi needs to know the true type of the array
          * members of structs. Treating them as pointers breaks things.
          *
-         * By small structures, we mean ones that are 16 bytes or less. In that
-         * case, there can't be more than 16 elements after unrolling arrays,
-         * as we (will) disallow bitfields. So we can collect the true ffi_type
-         * values in a fixed-size local array on the stack and, if any arrays
-         * were seen, replace the ffi_type_pointer.elements with a more
-         * accurate set, to allow libffi to marshal them into registers
-         * correctly. It means one more loop over the fields, but if we got
-         * here, the structure is small, so there aren't too many of those.
+         * Small structures have different sizes depending on the platform
+         * where Python is running on:
          *
-         * Although the passing in registers is specific to 64-bit Linux, the
-         * array-in-struct vs. pointer problem is general. But we restrict the
-         * type transformation to small structs nonetheless.
+         *      * x86-64: 16 bytes or less
+         *      * Arm platforms (both 32 and 64 bit): 32 bytes or less
+         *      * PowerPC 64 Little Endian: 64 bytes or less
+         *
+         * In that case, there can't be more than 16, 32 or 64 elements after
+         * unrolling arrays, as we (will) disallow bitfields.
+         * So we can collect the true ffi_type values in a fixed-size local
+         * array on the stack and, if any arrays were seen, replace the
+         * ffi_type_pointer.elements with a more accurate set, to allow
+         * libffi to marshal them into registers correctly.
+         * It means one more loop over the fields, but if we got here,
+         * the structure is small, so there aren't too many of those.
+         *
+         * Although the passing in registers is specific to the above
+         * platforms, the array-in-struct vs. pointer problem is general.
+         * But we restrict the type transformation to small structs
+         * nonetheless.
          *
          * Note that although a union may be small in terms of memory usage, it
          * could contain many overlapping declarations of arrays, e.g.
@@ -739,6 +769,8 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
          *     struct { int_32 e1; int_32 e2; ... int_32 e_4; } f5;
          *     struct { uint_32 e1; uint_32 e2; ... uint_32 e_4; } f6;
          * }
+         *
+         * The same principle applies for a struct 32 or 64 bytes in size.
          *
          * So the struct/union needs setting up as follows: all non-array
          * elements copied across as is, and all array elements replaced with
@@ -781,7 +813,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
                     i);
                 return -1;
             }
-            if (!PyCArrayTypeObject_Check(desc)) {
+            if (!PyCArrayTypeObject_Check(st, desc)) {
                 /* Not an array. Just need an ffi_type pointer. */
                 num_ffi_type_pointers++;
             }
@@ -881,7 +913,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
                 return -1;
             }
             assert(element_index < (ffi_ofs + len)); /* will be used below */
-            if (!PyCArrayTypeObject_Check(desc)) {
+            if (!PyCArrayTypeObject_Check(st, desc)) {
                 /* Not an array. Just copy over the element ffi_type. */
                 element_types[element_index++] = &dict->ffi_type_pointer;
             }
