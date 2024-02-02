@@ -461,7 +461,7 @@ class LongTests(unittest.TestCase):
         for v, expect_be, expect_n in [
             (0,         b'\x00',                1),
             (0,         b'\x00' * 2,            2),
-            (0,         b'\x00' * 8,            8),
+            (0,         b'\x00' * 8,            min(8, SZ)),
             (1,         b'\x01',                1),
             (1,         b'\x00' * 10 + b'\x01', min(11, SZ)),
             (42,        b'\x2a',                1),

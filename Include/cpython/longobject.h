@@ -29,9 +29,9 @@ PyAPI_FUNC(int) PyLong_CopyBits(PyObject* v, void* buffer, size_t n_bytes,
    endianness is -1 for native endian, 0 for big endian or 1 for little.
 
    Returns the int object, or NULL with an exception set. */
-PyAPI_FUNC(PyObject*) PyLong_FromBits(void* buffer, size_t n_bytes,
+PyAPI_FUNC(PyObject*) PyLong_FromBits(const void* buffer, size_t n_bytes,
     int endianness);
-PyAPI_FUNC(PyObject*) PyLong_FromUnsignedBits(void* buffer, size_t n_bytes,
+PyAPI_FUNC(PyObject*) PyLong_FromUnsignedBits(const void* buffer, size_t n_bytes,
     int endianness);
 
 PyAPI_FUNC(int) PyUnstable_Long_IsCompact(const PyLongObject* op);

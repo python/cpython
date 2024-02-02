@@ -1096,7 +1096,7 @@ PyLong_CopyBits(PyObject* vv, void* buffer, size_t n, int endianness)
         return -1;
     }
 
-    if ((int)n != n || (int)n < 0) {
+    if ((size_t)(int)n != n || (int)n < 0) {
         PyErr_SetString(PyExc_SystemError, "n_bytes too big to copy");
         return -1;
     }
@@ -1202,7 +1202,7 @@ PyLong_CopyBits(PyObject* vv, void* buffer, size_t n, int endianness)
          * the sign and it cancels out. */
         size_t n_needed = (nb / 8) + 1;
         res = (int)n_needed;
-        if (res != n_needed) {
+        if ((size_t)res != n_needed) {
             PyErr_SetString(PyExc_OverflowError,
                 "value too large to convert");
             res = -1;
@@ -1240,7 +1240,7 @@ PyLong_FromBits(const void* buffer, size_t n, int endianness)
 
 
 PyObject *
-PyLong_FromUnsignedBits(void* buffer, size_t n, int endianness)
+PyLong_FromUnsignedBits(const void* buffer, size_t n, int endianness)
 {
     if (!buffer) {
         PyErr_BadInternalCall();
