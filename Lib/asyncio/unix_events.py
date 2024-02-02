@@ -269,7 +269,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             if sock is None:
                 raise ValueError('no path and sock were specified')
             if (sock.family != socket.AF_UNIX or
-                    sock.type != socket.SOCK_STREAM):
+                    not sock.type & socket.SOCK_STREAM):
                 raise ValueError(
                     f'A UNIX Domain Stream Socket was expected, got {sock!r}')
             sock.setblocking(False)
@@ -337,7 +337,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                     'path was not specified, and no sock specified')
 
             if (sock.family != socket.AF_UNIX or
-                    sock.type != socket.SOCK_STREAM):
+                    not sock.type & socket.SOCK_STREAM):
                 raise ValueError(
                     f'A UNIX Domain Stream Socket was expected, got {sock!r}')
 

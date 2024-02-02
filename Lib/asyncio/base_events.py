@@ -107,9 +107,9 @@ def _ipaddr_info(host, port, family, type, proto, flowinfo=0, scopeid=0):
             host is None:
         return None
 
-    if type == socket.SOCK_STREAM:
+    if type & socket.SOCK_STREAM:
         proto = socket.IPPROTO_TCP
-    elif type == socket.SOCK_DGRAM:
+    elif type & socket.SOCK_DGRAM:
         proto = socket.IPPROTO_UDP
     else:
         return None
@@ -1159,7 +1159,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             if sock is None:
                 raise ValueError(
                     'host and port was not specified and no sock specified')
-            if sock.type != socket.SOCK_STREAM:
+            if not sock.type & socket.SOCK_STREAM:
                 # We allow AF_INET, AF_INET6, AF_UNIX as long as they
                 # are SOCK_STREAM.
                 # We support passing AF_UNIX sockets even though we have
@@ -1340,7 +1340,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                                        allow_broadcast=None, sock=None):
         """Create datagram connection."""
         if sock is not None:
-            if sock.type != socket.SOCK_DGRAM:
+            if not sock.type & socket.SOCK_DGRAM:
                 raise ValueError(
                     f'A UDP Socket was expected, got {sock!r}')
             if (local_addr or remote_addr or
@@ -1610,7 +1610,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         else:
             if sock is None:
                 raise ValueError('Neither host/port nor sock were specified')
-            if sock.type != socket.SOCK_STREAM:
+            if not sock.type & socket.SOCK_STREAM:
                 raise ValueError(f'A Stream Socket was expected, got {sock!r}')
             sockets = [sock]
 
@@ -1635,7 +1635,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             *, ssl=None,
             ssl_handshake_timeout=None,
             ssl_shutdown_timeout=None):
-        if sock.type != socket.SOCK_STREAM:
+        if not sock.type & socket.SOCK_STREAM:
             raise ValueError(f'A Stream Socket was expected, got {sock!r}')
 
         if ssl_handshake_timeout is not None and not ssl:
