@@ -157,14 +157,29 @@ _Py_brc_remove_thread(PyThreadState *tstate)
     struct _brc_thread_state *brc = &((_PyThreadStateImpl *)tstate)->brc;
     struct _brc_bucket *bucket = get_bucket(tstate->interp, brc->tid);
 
-    // Remove ourself from the hashtable
-    PyMutex_Lock(&bucket->mutex);
-    llist_remove(&brc->bucket_node);
-    _PyObjectStack_Merge(&brc->local_objects_to_merge, &brc->objects_to_merge);
-    PyMutex_Unlock(&bucket->mutex);
+    // We need to fully process any objects to merge before removing ourself
+    // from the hashtable. It is not safe to perform any refcount operations
+    // after we are removed. After that point, other threads treat our objects
+    // as abandoned and may merge the objects' refcounts directly.
+    bool empty = false;
+    while (!empty) {
+        // Process the local stack until it's empty
+        merge_queued_objects(&brc->local_objects_to_merge);
 
-    // Process "local_queue" until it's empty
-    merge_queued_objects(&brc->local_objects_to_merge);
+        PyMutex_Lock(&bucket->mutex);
+        empty = (brc->objects_to_merge.head == NULL);
+        if (empty) {
+            llist_remove(&brc->bucket_node);
+        }
+        else {
+            _PyObjectStack_Merge(&brc->local_objects_to_merge,
+                                 &brc->objects_to_merge);
+        }
+        PyMutex_Unlock(&bucket->mutex);
+    }
+
+    assert(brc->local_objects_to_merge.head == NULL);
+    assert(brc->objects_to_merge.head == NULL);
 }
 
 void
