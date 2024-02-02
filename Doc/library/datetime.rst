@@ -1214,9 +1214,9 @@ Supported operations:
    attributes, the comparison acts as comparands were first converted to UTC
    datetimes except that the implementation never overflows.
 
-   .. versionchanged:: 3.3
-      Equality comparisons between aware and naive :class:`.datetime`
-      instances don't raise :exc:`TypeError`.
+.. versionchanged:: 3.3
+   Equality comparisons between aware and naive :class:`.datetime`
+   instances don't raise :exc:`TypeError`.
 
 Instance methods:
 
