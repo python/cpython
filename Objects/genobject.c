@@ -1682,18 +1682,6 @@ _PyAsyncGen_ClearFreeLists(_PyFreeListState *freelist_state, int is_finalization
 #endif
 }
 
-void
-_PyAsyncGen_Fini(PyInterpreterState *Py_UNUSED(interp))
-{
-    // With Py_GIL_DISABLED:
-    // the freelists for the current thread state have already been cleared.
-#ifndef Py_GIL_DISABLED
-    _PyFreeListState *state = _PyFreeListState_GET();
-    _PyAsyncGen_ClearFreeLists(state, 1);
-#endif
-}
-
-
 static PyObject *
 async_gen_unwrap_value(PyAsyncGenObject *gen, PyObject *result)
 {

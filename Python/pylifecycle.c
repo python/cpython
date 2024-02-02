@@ -1784,13 +1784,12 @@ finalize_interp_types(PyInterpreterState *interp)
 
     _PyUnicode_Fini(interp);
 
-    _PyTuple_Fini(interp);
-    _PyList_Fini(interp);
-    _PyDict_Fini(interp);
-    _PyFloat_Fini(interp);
-    _PySlice_Fini(interp);
-    _PyContext_Fini(interp);
-    _PyAsyncGen_Fini(interp);
+#ifndef Py_GIL_DISABLED
+    // With Py_GIL_DISABLED:
+    // the freelists for the current thread state have already been cleared.
+    _PyFreeListState *state = _PyFreeListState_GET();
+    _Py_ClearFreeLists(state, 1);
+#endif
 
 #ifdef Py_DEBUG
     _PyStaticObjects_CheckRefcnt(interp);

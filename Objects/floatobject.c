@@ -2011,17 +2011,6 @@ _PyFloat_ClearFreeList(_PyFreeListState *freelist_state, int is_finalization)
 }
 
 void
-_PyFloat_Fini(PyInterpreterState *Py_UNUSED(interp))
-{
-    // With Py_GIL_DISABLED:
-    // the freelists for the current thread state have already been cleared.
-#ifndef Py_GIL_DISABLED
-    _PyFreeListState *state = _PyFreeListState_GET();
-    _PyFloat_ClearFreeList(state, 1);
-#endif
-}
-
-void
 _PyFloat_FiniType(PyInterpreterState *interp)
 {
     _PyStructSequence_FiniBuiltin(interp, &FloatInfoType);
