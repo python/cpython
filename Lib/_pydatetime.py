@@ -1133,7 +1133,7 @@ class date:
             return self._cmp(other) > 0
         return NotImplemented
 
-    def _cmp(self, other, eq):
+    def _cmp(self, other):
         assert isinstance(other, date)
         assert not isinstance(other, datetime)
         y, m, d = self._year, self._month, self._day
