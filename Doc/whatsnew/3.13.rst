@@ -1376,6 +1376,10 @@ New Features
   UTF-8 encoded bytes string, rather than a :c:expr:`PyObject*`.
   (Contributed by Victor Stinner in :gh:`108314`.)
 
+* Added :c:func:`PyList_GetItemRef` function: similar to
+  :c:func:`PyList_GetItem` but returns a :term:`strong reference` instead of
+  a :term:`borrowed reference`.
+
 * Add :c:func:`Py_IsFinalizing` function: check if the main Python interpreter is
   :term:`shutting down <interpreter shutdown>`.
   (Contributed by Victor Stinner in :gh:`108014`.)
