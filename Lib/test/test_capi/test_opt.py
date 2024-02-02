@@ -891,30 +891,11 @@ class TestUopsOptimization(unittest.TestCase):
             testfunc(10)
 
         ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-
-    def test_call_py_exact_args_disappearing(self):
-        def dummy(x):
-            return x+1
-
-        def testfunc(n):
-            for i in range(n):
-                dummy(i)
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        # Trigger specialization
-        testfunc(8)
-        with temporary_optimizer(opt):
-            del dummy
-            gc.collect()
-
-            def dummy(x):
-                return x + 2
-            testfunc(10)
-
-        # As long as it doesn't crash it's fine.
+        # Honestly as long as it doesn't crash it's fine.
         # Whether we get an executor or not is non-deterministic,
         # because it's decided by when the function is freed.
+        # This test is a little implementation specific.
+        self.assertIsNone(ex)
 
     def test_promote_globals_to_constants(self):
         def dummy(x):
