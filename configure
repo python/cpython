@@ -28907,8 +28907,8 @@ then :
 
     if true
 then :
-  if test "$ac_cv_func_getgrent" = yes &&
-   test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes
+  if test "$ac_cv_func_getgrent" = "yes" &&
+   { test "$ac_cv_func_getgrgid" = "yes" || test "$ac_cv_func_getgrgid_r" = "yes"; }
 then :
   py_cv_module_grp=yes
 else $as_nop
