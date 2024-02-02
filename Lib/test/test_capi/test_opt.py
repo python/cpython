@@ -897,9 +897,6 @@ class TestUopsOptimization(unittest.TestCase):
         # This test is a little implementation specific.
 
     def test_promote_globals_to_constants(self):
-        def dummy(x):
-            return x+1
-
         def testfunc(n):
             for i in range(n):
                 x = range(i)
@@ -910,11 +907,31 @@ class TestUopsOptimization(unittest.TestCase):
             testfunc(20)
 
         ex = get_first_executor(testfunc)
-        # Bail to tier 1.
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
         self.assertNotIn("_LOAD_GLOBAL_BUILTIN", uops)
         self.assertIn("_LOAD_CONST_INLINE_BORROW_WITH_NULL", uops)
+
+    def test_promote_globals_to_constants_propagate(self):
+        def testfunc(n):
+            for i in range(n):
+                x = Foo.attr
+            return x
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            res = testfunc(20)
+
+        self.assertEqual(res, Foo.attr)
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _, _ in ex}
+        self.assertNotIn("_CHECK_ATTR_CLASS", uops)
+        self.assertIn("_LOAD_ATTR_CLASS", uops)
+
+
+class Foo:
+    attr = 1
 
 
 if __name__ == "__main__":
