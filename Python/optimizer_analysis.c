@@ -95,15 +95,14 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                int buffer_size, _PyBloomFilter *dependencies)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
-    assert(PyFunction_Check(func));
     PyObject *builtins = frame->f_builtins;
     if (builtins != interp->builtins) {
         return 1;
     }
     PyObject *globals = frame->f_globals;
-    assert(func->func_builtins == builtins);
-    assert(func->func_globals == globals);
+    assert(PyFunction_Check(((PyFunctionObject *)frame->f_funcobj)));
+    assert(((PyFunctionObject *)frame->f_funcobj)->func_builtins == builtins);
+    assert(((PyFunctionObject *)frame->f_funcobj)->func_globals == globals);
     /* In order to treat globals as constants, we need to
      * know that the globals dict is the one we expected, and
      * that it hasn't changed
