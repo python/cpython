@@ -30,7 +30,7 @@ There are also multiple third-party guides that might be useful:
 
 - `Guide by Fedora <https://portingguide.readthedocs.io>`_
 - `PyCon 2020 tutorial <https://www.youtube.com/watch?v=JgIgEjASOlk>`_
-- `Guide by Digital Ocean <https://www.digitalocean.com/community/tutorials/how-to-port-python-2-code-to-python-3>`_
+- `Guide by DigitalOcean <https://www.digitalocean.com/community/tutorials/how-to-port-python-2-code-to-python-3>`_
 - `Guide by ActiveState <https://www.activestate.com/blog/how-to-migrate-python-2-applications-to-python-3>`_
 
 
