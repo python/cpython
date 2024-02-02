@@ -5258,10 +5258,10 @@ class DSLParser:
         # are we cloning?
         before, equals, existing = line.rpartition('=')
         if equals:
-            names = self.parse_function_names(before)
             existing = existing.strip()
             if is_legal_py_identifier(existing):
                 # we're cloning!
+                names = self.parse_function_names(before)
                 return self.parse_cloned_function(names, existing)
 
         line, _, returns = line.partition('->')
