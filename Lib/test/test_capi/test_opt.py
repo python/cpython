@@ -895,7 +895,6 @@ class TestUopsOptimization(unittest.TestCase):
         # Whether we get an executor or not is non-deterministic,
         # because it's decided by when the function is freed.
         # This test is a little implementation specific.
-        self.assertIsNone(ex)
 
     def test_promote_globals_to_constants(self):
         def dummy(x):

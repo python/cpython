@@ -1082,7 +1082,6 @@ global_to_const(_PyUOpInstruction *inst, PyObject *obj)
     }
     else {
         inst->opcode = (inst->oparg & 1) ? _LOAD_CONST_INLINE_WITH_NULL : _LOAD_CONST_INLINE;
-        Py_INCREF(res);
     }
     inst->operand = (uint64_t)res;
 }
@@ -1397,42 +1396,38 @@ _Py_uop_analyze_and_optimize(
 )
 {
     OPT_STAT_INC(optimizer_attempts);
-    _PyUOpInstruction *temp_writebuffer = NULL;
+    _PyUOpInstruction temp_writebuffer[UOP_MAX_TRACE_WORKING_LENGTH];
+    _PyUOpInstruction temp_readbuffer[UOP_MAX_TRACE_WORKING_LENGTH];
 
-    temp_writebuffer = PyMem_New(_PyUOpInstruction, buffer_size);
-    if (temp_writebuffer == NULL) {
-        goto error;
-    }
+    memcpy(temp_readbuffer, buffer, buffer_size * sizeof(_PyUOpInstruction));
 
-    int err = remove_globals(frame, buffer, buffer_size, dependencies);
+    int err = remove_globals(frame, temp_readbuffer, buffer_size, dependencies);
     if (err <= 0) {
-        return err;
+        goto error;
     }
 
     // Pass: Abstract interpretation and symbolic analysis
     int new_trace_len = uop_abstract_interpret(
-        (PyCodeObject *)frame->f_executable, buffer, temp_writebuffer,
+        (PyCodeObject *)frame->f_executable, temp_readbuffer, temp_writebuffer,
         buffer_size, curr_stacklen);
 
     if (new_trace_len < 0) {
         goto error;
     }
 
-    clear_strong_refs_in_uops(buffer, buffer_size);
 
     remove_unneeded_uops(temp_writebuffer, new_trace_len);
 
     // Fill in our new trace!
     memcpy(buffer, temp_writebuffer, new_trace_len * sizeof(_PyUOpInstruction));
 
-    PyMem_Free(temp_writebuffer);
 
     OPT_STAT_INC(optimizer_successes);
     return 1;
 error:
+
     // The only valid error we can raise is MemoryError.
     // Other times it's not really errors but things like not being able
     // to fetch a function version because the function got deleted.
-    PyMem_Free(temp_writebuffer);
     return PyErr_Occurred() ? -1 : 0;
 }

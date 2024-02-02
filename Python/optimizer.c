@@ -17,11 +17,6 @@
 #include "pycore_uop_metadata.h" // Uop tables
 #undef NEED_OPCODE_METADATA
 
-// This is the length of the trace we project initially.
-#define UOP_MAX_TRACE_LENGTH 512
-// This the above + additional working space we need.
-#define UOP_MAX_TRACE_WORKING_LENGTH (UOP_MAX_TRACE_LENGTH * 2)
-
 #define MAX_EXECUTORS_SIZE 256
 
 
@@ -226,6 +221,23 @@ static PyMethodDef executor_methods[] = {
 
 ///////////////////// Experimental UOp Optimizer /////////////////////
 
+
+static void
+clear_strong_refs_in_uops(_PyUOpInstruction *trace, Py_ssize_t uop_len)
+{
+    for (Py_ssize_t i = 0; i < uop_len; i++) {
+        if (trace[i].opcode == _LOAD_CONST_INLINE ||
+            trace[i].opcode == _LOAD_CONST_INLINE_WITH_NULL) {
+            PyObject *c = (PyObject*)trace[i].operand;
+            Py_CLEAR(c);
+        }
+        if (trace[i].opcode == _JUMP_ABSOLUTE ||
+            trace[i].opcode == _JUMP_TO_TOP ||
+            trace[i].opcode == _EXIT_TRACE) {
+            return;
+        }
+    }
+}
 
 static void
 uop_dealloc(_PyExecutorObject *self) {
