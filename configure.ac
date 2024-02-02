@@ -7294,8 +7294,8 @@ PY_STDLIB_MOD([_socket],
 
 dnl platform specific extensions
 PY_STDLIB_MOD([grp], [],
-  [test "$ac_cv_func_getgrent" = yes &&
-   test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes])
+  [test "$ac_cv_func_getgrent" = "yes" &&
+   { test "$ac_cv_func_getgrgid" = "yes" || test "$ac_cv_func_getgrgid_r" = "yes"; }])
 PY_STDLIB_MOD([pwd], [], [test "$ac_cv_func_getpwuid" = yes -o "$ac_cv_func_getpwuid_r" = yes])
 PY_STDLIB_MOD([resource], [], [test "$ac_cv_header_sys_resource_h" = yes])
 PY_STDLIB_MOD([_scproxy],
