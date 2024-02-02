@@ -506,7 +506,7 @@ to use the standard :func:`repr`.
 
 .. note::
 
-   Adding :func:`~dataclasses.dataclass` decorator to :type:`Enum`
+   Adding :func:`~dataclasses.dataclass` decorator to :class:`Enum`
    and its subclasses is not supported. It will not raise any errors,
    but it will produce very strange results at runtime::
 
