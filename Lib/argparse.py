@@ -570,8 +570,7 @@ class HelpFormatter(object):
             # if the Optional doesn't take a value, format is:
             #    -s, --long
             if action.nargs == 0:
-                parts.extend(action.option_strings)
-                return ', '.join(parts)
+                return ', '.join(action.option_strings)
 
             # if the Optional takes a value, format is:
             #    -s, --long ARGS
