@@ -577,7 +577,7 @@ enabled, the Tier 2 interpreter can be invoked by passing Python the
 ``-X uops`` option or by setting the ``PYTHON_UOPS`` environment
 variable to ``1``.
 
-The second is machine code. When the ``--enable-experimental-jit``
+The second is the JIT compiler. When the ``--enable-experimental-jit``
 build-time option is used, the optimized Tier 2 IR is translated to machine
 code, which is then executed. This does not require additional
 runtime options.
