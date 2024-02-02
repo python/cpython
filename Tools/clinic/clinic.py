@@ -5272,7 +5272,7 @@ class DSLParser:
         function_name = fields.pop()
         module, cls = self.clinic._module_and_class(fields)
 
-        self.function = Function(
+        func = Function(
             name=function_name,
             full_name=full_name,
             module=module,
@@ -5284,20 +5284,27 @@ class DSLParser:
             critical_section=self.critical_section,
             target_critical_section=self.target_critical_section
         )
-        self.block.signatures.append(self.function)
+        self.add_function(func)
 
-        # insert a self converter automatically
-        type, name = correct_name_for_self(self.function)
-        kwargs = {}
-        if cls and type == "PyObject *":
-            kwargs['type'] = cls.typedef
-        sc = self.function.self_converter = self_converter(name, name, self.function, **kwargs)
-        p_self = Parameter(name, inspect.Parameter.POSITIONAL_ONLY,
-                           function=self.function, converter=sc)
-        self.function.parameters[name] = p_self
-
-        (cls or module).functions.append(self.function)
         self.next(self.state_parameters_start)
+
+    def add_function(self, func: Function) -> None:
+        # Insert a self converter automatically.
+        tp, name = correct_name_for_self(func)
+        kwargs = {}
+        if func.cls and tp == "PyObject *":
+            kwargs['type'] = func.cls.typedef
+        func.self_converter = self_converter(name, name, func, **kwargs)
+        func.parameters[name] = Parameter(
+            name,
+            inspect.Parameter.POSITIONAL_ONLY,
+            function=func,
+            converter=func.self_converter
+        )
+
+        self.block.signatures.append(func)
+        self.function = func
+        (func.cls or func.module).functions.append(func)
 
     # Now entering the parameters section.  The rules, formally stated:
     #
