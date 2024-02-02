@@ -2488,7 +2488,17 @@ PyGILState_Check(void)
         return 0;
     }
 
-    return (tstate == gilstate_tss_get(runtime));
+#ifdef MS_WINDOWS
+    int err = GetLastError();
+#endif
+
+    PyThreadState *tcur = gilstate_tss_get(runtime);
+
+#ifdef MS_WINDOWS
+    SetLastError(err);
+#endif
+
+    return (tstate == tcur);
 }
 
 PyGILState_STATE

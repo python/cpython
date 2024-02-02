@@ -4787,7 +4787,7 @@ AC_CHECK_FUNCS([ \
   copy_file_range ctermid dup dup3 execv explicit_bzero explicit_memset \
   faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
   fork fork1 fpathconf fstatat ftime ftruncate futimens futimes futimesat \
-  gai_strerror getegid getentropy geteuid getgid getgrgid getgrgid_r \
+  gai_strerror getegid getentropy geteuid getgid getgrent getgrgid getgrgid_r \
   getgrnam_r getgrouplist getgroups gethostname getitimer getloadavg getlogin \
   getpeername getpgid getpid getppid getpriority _getpty \
   getpwent getpwnam_r getpwuid getpwuid_r getresgid getresuid getrusage getsid getspent \
@@ -7313,7 +7313,9 @@ PY_STDLIB_MOD([_socket],
                     -a "$ac_cv_header_netinet_in_h" = "yes"]))
 
 dnl platform specific extensions
-PY_STDLIB_MOD([grp], [], [test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes])
+PY_STDLIB_MOD([grp], [],
+  [test "$ac_cv_func_getgrent" = "yes" &&
+   { test "$ac_cv_func_getgrgid" = "yes" || test "$ac_cv_func_getgrgid_r" = "yes"; }])
 PY_STDLIB_MOD([pwd], [], [test "$ac_cv_func_getpwuid" = yes -o "$ac_cv_func_getpwuid_r" = yes])
 PY_STDLIB_MOD([resource], [], [test "$ac_cv_header_sys_resource_h" = yes])
 PY_STDLIB_MOD([_scproxy],
