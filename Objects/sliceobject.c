@@ -117,14 +117,6 @@ void _PySlice_ClearCache(_PyFreeListState *state, int is_finalization)
 #endif
 }
 
-void _PySlice_Fini(PyInterpreterState *Py_UNUSED(interp))
-{
-#ifdef WITH_FREELISTS
-    _PyFreeListState *state = _PyFreeListState_GET();
-    _PySlice_ClearCache(state, 1);
-#endif
-}
-
 /* start, stop, and step are python objects with None indicating no
    index is present.
 */
