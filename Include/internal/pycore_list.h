@@ -16,7 +16,7 @@ extern void _PyList_DebugMallocStats(FILE *out);
 
 /* runtime lifecycle */
 
-extern void _PyList_Fini(_PyFreeListState *);
+extern void _PyList_Fini(PyInterpreterState *);
 
 
 #define _PyList_ITEMS(op) _Py_RVALUE(_PyList_CAST(op)->ob_item)

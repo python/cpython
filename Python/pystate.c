@@ -1470,6 +1470,7 @@ _Py_ClearFreeLists(_PyFreeListState *state, int is_finalization)
     _PyContext_ClearFreeList(state, is_finalization);
     _PyAsyncGen_ClearFreeLists(state, is_finalization);
     _PyObjectStackChunk_ClearFreeList(state, is_finalization);
+    _PySlice_ClearCache(state, is_finalization);
 }
 
 void
@@ -1558,7 +1559,6 @@ PyThreadState_Clear(PyThreadState *tstate)
     // Each thread should clear own freelists in free-threading builds.
     _PyFreeListState *freelist_state = &((_PyThreadStateImpl*)tstate)->freelist_state;
     _Py_ClearFreeLists(freelist_state, 1);
-    _PySlice_ClearCache(freelist_state);
 #endif
 
     _PyThreadState_ClearMimallocHeaps(tstate);

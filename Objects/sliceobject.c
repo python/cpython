@@ -103,8 +103,11 @@ PyObject _Py_EllipsisObject = _PyObject_HEAD_INIT(&PyEllipsis_Type);
 
 /* Slice object implementation */
 
-void _PySlice_ClearCache(_PyFreeListState *state)
+void _PySlice_ClearCache(_PyFreeListState *state, int is_finalization)
 {
+    if (!is_finalization) {
+        return;
+    }
 #ifdef WITH_FREELISTS
     PySliceObject *obj = state->slices.slice_cache;
     if (obj != NULL) {
@@ -114,10 +117,11 @@ void _PySlice_ClearCache(_PyFreeListState *state)
 #endif
 }
 
-void _PySlice_Fini(_PyFreeListState *state)
+void _PySlice_Fini(PyInterpreterState *Py_UNUSED(interp))
 {
 #ifdef WITH_FREELISTS
-    _PySlice_ClearCache(state);
+    _PyFreeListState *state = _PyFreeListState_GET();
+    _PySlice_ClearCache(state, 1);
 #endif
 }
 

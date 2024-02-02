@@ -1782,16 +1782,15 @@ finalize_interp_types(PyInterpreterState *interp)
     // a dict internally.
     _PyUnicode_ClearInterned(interp);
 
-    _PyDict_Fini(interp);
     _PyUnicode_Fini(interp);
 
-    _PyFreeListState *state = _PyFreeListState_GET();
-    _PyTuple_Fini(state);
-    _PyList_Fini(state);
-    _PyFloat_Fini(state);
-    _PySlice_Fini(state);
-    _PyContext_Fini(state);
-    _PyAsyncGen_Fini(state);
+    _PyTuple_Fini(interp);
+    _PyList_Fini(interp);
+    _PyDict_Fini(interp);
+    _PyFloat_Fini(interp);
+    _PySlice_Fini(interp);
+    _PyContext_Fini(interp);
+    _PyAsyncGen_Fini(interp);
 
 #ifdef Py_DEBUG
     _PyStaticObjects_CheckRefcnt(interp);

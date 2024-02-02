@@ -1285,11 +1285,12 @@ _PyContext_ClearFreeList(_PyFreeListState *freelist_state, int is_finalization)
 
 
 void
-_PyContext_Fini(_PyFreeListState *state)
+_PyContext_Fini(PyInterpreterState *Py_UNUSED(interp))
 {
     // With Py_GIL_DISABLED:
     // the freelists for the current thread state have already been cleared.
 #ifndef Py_GIL_DISABLED
+    _PyFreeListState *state = _PyFreeListState_GET();
     _PyContext_ClearFreeList(state, 1);
 #endif
 }

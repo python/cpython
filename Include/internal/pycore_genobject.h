@@ -28,7 +28,7 @@ extern PyTypeObject _PyAsyncGenAThrow_Type;
 
 /* runtime lifecycle */
 
-extern void _PyAsyncGen_Fini(_PyFreeListState *);
+extern void _PyAsyncGen_Fini(PyInterpreterState *);
 
 #ifdef __cplusplus
 }
