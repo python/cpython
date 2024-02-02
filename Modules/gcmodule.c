@@ -207,7 +207,7 @@ gc_get_count_impl(PyObject *module)
     struct _gc_thread_state *gc = &tstate->gc;
 
     // Flush the local allocation count to the global count
-    _Py_atomic_add_int(&gcstate->generations[0].count, gc->alloc_count);
+    _Py_atomic_add_int(&gcstate->generations[0].count, (int)gc->alloc_count);
     gc->alloc_count = 0;
 #endif
 
