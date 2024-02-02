@@ -951,6 +951,8 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
         PyThread_free_lock(interp->id_mutex);
     }
 
+    _Py_qsbr_fini(interp);
+
     _PyObject_FiniState(interp);
 
     free_interpreter(interp);
@@ -1372,6 +1374,14 @@ new_threadstate(PyInterpreterState *interp, int whence)
     if (new_tstate == NULL) {
         return NULL;
     }
+#ifdef Py_GIL_DISABLED
+    Py_ssize_t qsbr_idx = _Py_qsbr_reserve(interp);
+    if (qsbr_idx < 0) {
+        PyMem_RawFree(new_tstate);
+        return NULL;
+    }
+#endif
+
     /* We serialize concurrent creation to protect global state. */
     HEAD_LOCK(runtime);
 
@@ -1398,6 +1408,9 @@ new_threadstate(PyInterpreterState *interp, int whence)
                sizeof(*tstate));
     }
 
+#ifdef Py_GIL_DISABLED
+    _Py_qsbr_register(tstate, interp, qsbr_idx);
+#endif
     init_threadstate(tstate, interp, id, whence);
     add_threadstate(interp, (PyThreadState *)tstate, old_head);
 
@@ -1609,6 +1622,10 @@ tstate_delete_common(PyThreadState *tstate)
     }
     HEAD_UNLOCK(runtime);
 
+#ifdef Py_GIL_DISABLED
+    _Py_qsbr_unregister((_PyThreadStateImpl *)tstate);
+#endif
+
     // XXX Unbind in PyThreadState_Clear(), or earlier
     // (and assert not-equal here)?
     if (tstate->_status.bound_gilstate) {
@@ -1650,6 +1667,9 @@ void
 _PyThreadState_DeleteCurrent(PyThreadState *tstate)
 {
     _Py_EnsureTstateNotNULL(tstate);
+#ifdef Py_GIL_DISABLED
+    _Py_qsbr_detach(((_PyThreadStateImpl *)tstate)->qsbr);
+#endif
     tstate_set_detached(tstate);
     tstate_delete_common(tstate);
     current_fast_clear(tstate->interp->runtime);
@@ -1871,6 +1891,10 @@ _PyThreadState_Attach(PyThreadState *tstate)
         tstate_wait_attach(tstate);
     }
 
+#ifdef Py_GIL_DISABLED
+    _Py_qsbr_attach(((_PyThreadStateImpl *)tstate)->qsbr);
+#endif
+
     // Resume previous critical section. This acquires the lock(s) from the
     // top-most critical section.
     if (tstate->critical_section != 0) {
@@ -1891,6 +1915,9 @@ detach_thread(PyThreadState *tstate, int detached_state)
     if (tstate->critical_section != 0) {
         _PyCriticalSection_SuspendAll(tstate);
     }
+#ifdef Py_GIL_DISABLED
+    _Py_qsbr_detach(((_PyThreadStateImpl *)tstate)->qsbr);
+#endif
     tstate_deactivate(tstate);
     tstate_set_detached(tstate);
     current_fast_clear(&_PyRuntime);

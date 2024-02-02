@@ -469,6 +469,12 @@ _Py_atomic_store_int_release(int *obj, int value);
 static inline int
 _Py_atomic_load_int_acquire(const int *obj);
 
+static inline void
+_Py_atomic_store_uint64_release(uint64_t *obj, uint64_t value);
+
+static inline uint64_t
+_Py_atomic_load_uint64_acquire(const uint64_t *obj);
+
 
 // --- _Py_atomic_fence ------------------------------------------------------
 

@@ -10,6 +10,7 @@ extern "C" {
 
 #include "pycore_freelist.h"      // struct _Py_freelist_state
 #include "pycore_mimalloc.h"      // struct _mimalloc_thread_state
+#include "pycore_qsbr.h"          // struct qsbr
 
 
 // Every PyThreadState is actually allocated as a _PyThreadStateImpl. The
@@ -20,6 +21,7 @@ typedef struct _PyThreadStateImpl {
     PyThreadState base;
 
 #ifdef Py_GIL_DISABLED
+    struct _qsbr_thread_state *qsbr;
     struct _mimalloc_thread_state mimalloc;
     struct _Py_freelist_state freelist_state;
 #endif

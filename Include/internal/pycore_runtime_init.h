@@ -169,6 +169,10 @@ extern PyTypeObject _PyExc_MemoryError;
                 { .threshold = 10, }, \
             }, \
         }, \
+        .qsbr = { \
+            .wr_seq = 1, \
+            .rd_seq = 1, \
+        }, \
         .object_state = _py_object_state_INIT(INTERP), \
         .dtoa = _dtoa_state_INIT(&(INTERP)), \
         .dict_state = _dict_state_INIT, \
