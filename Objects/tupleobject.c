@@ -964,16 +964,6 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
 
 static void maybe_freelist_clear(_PyFreeListState *, int);
 
-void
-_PyTuple_Fini(PyInterpreterState *Py_UNUSED(interp))
-{
-    // With Py_GIL_DISABLED:
-    // the freelists for the current thread state have already been cleared.
-#ifndef Py_GIL_DISABLED
-    _PyFreeListState *state = _PyFreeListState_GET();
-    maybe_freelist_clear(state, 1);
-#endif
-}
 
 void
 _PyTuple_ClearFreeList(_PyFreeListState *state, int is_finalization)
