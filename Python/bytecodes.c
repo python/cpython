@@ -4071,11 +4071,35 @@ dummy_func(
         }
 
         op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
+            TIER_TWO_ONLY
             value = Py_NewRef(ptr);
         }
 
         op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
+            TIER_TWO_ONLY
             value = ptr;
+        }
+
+        op(_LOAD_CONST_INLINE_WITH_NULL, (ptr/4 -- value, null)) {
+            TIER_TWO_ONLY
+            value = Py_NewRef(ptr);
+            null = NULL;
+        }
+
+        op(_LOAD_CONST_INLINE_BORROW_WITH_NULL, (ptr/4 -- value, null)) {
+            TIER_TWO_ONLY
+            value = ptr;
+            null = NULL;
+        }
+
+        op(_CHECK_GLOBALS, (dict/4 -- )) {
+            TIER_TWO_ONLY
+            DEOPT_IF(GLOBALS() != dict);
+        }
+
+        op(_CHECK_BUILTINS, (dict/4 -- )) {
+            TIER_TWO_ONLY
+            DEOPT_IF(BUILTINS() != dict);
         }
 
         /* Internal -- for testing executors */

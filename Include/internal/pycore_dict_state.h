@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #define DICT_MAX_WATCHERS 8
+#define DICT_WATCHED_MUTATION_BITS 4
 
 struct _Py_dict_state {
     /*Global counter used to set ma_version_tag field of dictionary.
