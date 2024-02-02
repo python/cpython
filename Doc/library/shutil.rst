@@ -580,7 +580,9 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    Create an archive file (such as zip or tar) and return its name.
 
    *base_name* is the name of the file to create, including the path, minus
-   any format-specific extension. *format* is the archive format: one of
+   any format-specific extension.
+
+   *format* is the archive format: one of
    "zip" (if the :mod:`zlib` module is available), "tar", "gztar" (if the
    :mod:`zlib` module is available), "bztar" (if the :mod:`bz2` module is
    available), or "xztar" (if the :mod:`lzma` module is available).
