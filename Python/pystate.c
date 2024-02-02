@@ -1469,6 +1469,7 @@ _PyObject_ClearFreeLists(_PyFreeListState *state, int is_finalization)
     _PyDict_ClearFreeList(state, is_finalization);
     _PyContext_ClearFreeList(state, is_finalization);
     _PyAsyncGen_ClearFreeLists(state, is_finalization);
+    // Only be cleared if is_finalization is true.
     _PyObjectStackChunk_ClearFreeList(state, is_finalization);
     _PySlice_ClearCache(state, is_finalization);
 }
