@@ -215,6 +215,11 @@ The module defines the following type:
       Remove the first occurrence of *x* from the array.
 
 
+   .. method:: clear()
+
+      Remove all elements from the array.
+
+
    .. method:: reverse()
 
       Reverse the order of the items in the array.

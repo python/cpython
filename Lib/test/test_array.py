@@ -1013,6 +1013,22 @@ class BaseTest:
             a,
             array.array(self.typecode, self.example[3:]+self.example[:-1])
         )
+    
+    def test_clear(self):
+        a = array.array(self.typecode, self.example)
+        self.assertRaises(TypeError, a.clear, 42)
+        a.clear()
+        self.assertEqual(a, array.array(self.typecode))
+        
+        a = array.array(self.typecode)
+        a.clear()
+        self.assertEqual(a, array.array(self.typecode))
+        
+        a = array.array(self.typecode, self.example)
+        a.clear()
+        a.append(self.example[2])
+        a.append(self.example[3])
+        self.assertEqual(a, array.array(self.typecode, self.example[2:4]))
 
     def test_reverse(self):
         a = array.array(self.typecode, self.example)
