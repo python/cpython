@@ -426,16 +426,10 @@ class LongTests(unittest.TestCase):
 
     def test_long_copybits(self):
         import math
-        from _testcapi import (
-            pylong_copybits as copybits,
-            SIZE_MAX,
-        )
+        from _testcapi import pylong_copybits as copybits, SIZE_MAX
 
-        def log2(x):
-            return math.log(x) / math.log(2)
-
-        # Abbreviated sizeof(Py_ssize_t) because we use it a lot
-        SZ = int(math.ceil(log2(SIZE_MAX + 1)) / 8)
+        # Abbreviate sizeof(Py_ssize_t) to SZ because we use it a lot
+        SZ = int(math.ceil(math.log(SIZE_MAX + 1) / math.log(2)) / 8)
         MAX_SSIZE = 2 ** (SZ * 8 - 1) - 1
         MAX_USIZE = 2 ** (SZ * 8) - 1
         if support.verbose:
@@ -519,6 +513,35 @@ class LongTests(unittest.TestCase):
                 self.assertEqual(expect_n, copybits(v, buffer, n, 1),
                     f"PyLong_CopyBits(v, buffer, {n}, <little>)")
                 self.assertEqual(expect_le, buffer[:n], "<little>")
+
+    def test_long_frombits(self):
+        import math
+        from _testcapi import pylong_frombits as frombits, SIZE_MAX
+
+        # Abbreviate sizeof(Py_ssize_t) to SZ because we use it a lot
+        SZ = int(math.ceil(math.log(SIZE_MAX + 1) / math.log(2)) / 8)
+        MAX_SSIZE = 2 ** (SZ * 8 - 1) - 1
+        MAX_USIZE = 2 ** (SZ * 8) - 1
+
+        for v_be, expect_s, expect_u in [
+            (b'\x00', 0, 0),
+            (b'\x01', 1, 1),
+            (b'\xff', -1, 255),
+            (b'\x00\xff', 255, 255),
+            (b'\xff\xff', -1, 65535),
+        ]:
+            with self.subTest(f"{expect_s}-{expect_u:X}-{len(v_be)}bytes"):
+                n = len(v_be)
+                v_le = v_be[::-1]
+
+                self.assertEqual(expect_s, frombits(v_be, n, 0, 1),
+                    f"PyLong_FromBits(buffer, {n}, <big>)")
+                self.assertEqual(expect_s, frombits(v_le, n, 1, 1),
+                    f"PyLong_FromBits(buffer, {n}, <little>)")
+                self.assertEqual(expect_u, frombits(v_be, n, 0, 0),
+                    f"PyLong_FromUnsignedBits(buffer, {n}, <big>)")
+                self.assertEqual(expect_u, frombits(v_le, n, 1, 0),
+                    f"PyLong_FromUnsignedBits(buffer, {n}, <little>)")
 
 if __name__ == "__main__":
     unittest.main()

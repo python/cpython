@@ -22,17 +22,17 @@ PyAPI_FUNC(PyObject*) PyLong_FromUnicodeObject(PyObject *u, int base);
 PyAPI_FUNC(int) PyLong_CopyBits(PyObject* v, void* buffer, size_t n_bytes,
     int endianness);
 
-/* PyLong_FromByteArray: Create an integer value containing the number from
-   a native buffer.
-   n is the number of bytes to read from the buffer.
-   Uses the current build's default endianness, and assumes the value was
-   sign extended to 'n' bytes.
-   PyLong_FromUnsignedByteArray assumes the value was zero extended, and
-   even if the MSB is set the resulting int will be positive.
+/* PyLong_FromBits: Create an int value from a native integer
+   n_bytes is the number of bytes to read from the buffer. Passing 0 will
+   always produce the zero int.
+   PyLong_FromUnsignedBits always produces a positive int.
+   endianness is -1 for native endian, 0 for big endian or 1 for little.
 
    Returns the int object, or NULL with an exception set. */
-PyAPI_FUNC(PyObject) PyLong_FromByteArray(void* buffer, size_t n);
-PyAPI_FUNC(PyObject) PyLong_FromUnsignedByteArray(void* buffer, size_t n);
+PyAPI_FUNC(PyObject*) PyLong_FromBits(void* buffer, size_t n_bytes,
+    int endianness);
+PyAPI_FUNC(PyObject*) PyLong_FromUnsignedBits(void* buffer, size_t n_bytes,
+    int endianness);
 
 PyAPI_FUNC(int) PyUnstable_Long_IsCompact(const PyLongObject* op);
 PyAPI_FUNC(Py_ssize_t) PyUnstable_Long_CompactValue(const PyLongObject* op);

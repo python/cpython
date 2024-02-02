@@ -1217,6 +1217,50 @@ PyLong_CopyBits(PyObject* vv, void* buffer, size_t n, int endianness)
 }
 
 
+PyObject *
+PyLong_FromBits(const void* buffer, size_t n, int endianness)
+{
+    if (!buffer) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+
+    int little_endian = endianness;
+    if (endianness < 0) {
+        endianness = PY_LITTLE_ENDIAN;
+    }
+    if (endianness != 0 && endianness != 1) {
+        PyErr_SetString(PyExc_SystemError, "invalid 'endianness' value");
+        return NULL;
+    }
+
+    return _PyLong_FromByteArray((const unsigned char *)buffer, n,
+                                 little_endian, 1);
+}
+
+
+PyObject *
+PyLong_FromUnsignedBits(void* buffer, size_t n, int endianness)
+{
+    if (!buffer) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+
+    int little_endian = endianness;
+    if (endianness < 0) {
+        endianness = PY_LITTLE_ENDIAN;
+    }
+    if (endianness != 0 && endianness != 1) {
+        PyErr_SetString(PyExc_SystemError, "invalid 'endianness' value");
+        return NULL;
+    }
+
+    return _PyLong_FromByteArray((const unsigned char *)buffer, n,
+                                 little_endian, 0);
+}
+
+
 /* Create a new int object from a C pointer */
 
 PyObject *
