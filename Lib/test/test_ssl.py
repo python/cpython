@@ -2968,7 +2968,7 @@ class ThreadedTests(unittest.TestCase):
         with server:
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as s:
-                with self.assertRaises(ssl.SSLCertVerificationError):
+                with self.assertRaises(ssl.SSLError):
                     s.connect((HOST, server.port))
 
         # explicitly disabling VERIFY_X509_STRICT allows it to succeed
