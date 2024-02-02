@@ -24,19 +24,22 @@ PyAPI_FUNC(int) PyLong_AsUnsignedByteArray(PyObject* v, void* buffer, size_t n);
 PyAPI_FUNC(int) PyLong_AsByteArrayWithOptions(PyObject* v, void* buffer,
                                               size_t n, int options);
 
-#define PYLONG_ASBYTEARRAY_NATIVE_ENDIAN    0x00
-#define PYLONG_ASBYTEARRAY_LITTLE_ENDIAN    0x01
-#define PYLONG_ASBYTEARRAY_BIG_ENDIAN       0x02
+/* Deliberately avoiding values 0 and 1 to avoid letting people
+   accidentally pass PY_LITTLE_ENDIAN as a constant. */
+#define PYLONG_ASBYTEARRAY_LITTLE_ENDIAN    0x04
+#define PYLONG_ASBYTEARRAY_BIG_ENDIAN       0x08
+#define PYLONG_ASBYTEARRAY_NATIVE_ENDIAN    (0x04|0x08)
 
-#define PYLONG_ASBYTEARRAY_SIGNED   0x00
-#define PYLONG_ASBYTEARRAY_UNSIGNED 0x04
+#define PYLONG_ASBYTEARRAY_SIGNED   0x10
+#define PYLONG_ASBYTEARRAY_UNSIGNED 0x20
 
 /* PyLong_FromByteArray: Create an integer value containing the number from
    a native buffer.
    n is the number of bytes to read from the buffer.
    Uses the current build's default endianness, and assumes the value was
    sign extended to 'n' bytes.
-   PyLong_FromUnsignedByteArray assumes the value was zero extended.
+   PyLong_FromUnsignedByteArray assumes the value was zero extended, and
+   even if the MSB is set the resulting int will be positive.
 
    Returns the int object, or NULL with an exception set. */
 PyAPI_FUNC(PyObject) PyLong_FromByteArray(void* buffer, size_t n);

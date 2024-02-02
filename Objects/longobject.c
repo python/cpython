@@ -1075,8 +1075,11 @@ _fits_in_n_bits(Py_ssize_t v, Py_ssize_t n, int require_sign_bit)
     return v_extended == 0 || v_extended == -1;
 }
 
-int
-PyLong_AsByteArrayWithOptions(PyObject* vv, void* buffer, size_t n, int options)
+// Private function means we can add more options safely.
+// The public API parses a flags parameter to extract the requested settings.
+static int
+_PyLong_AsByteArrayWithOptions(PyObject* vv, void* buffer, size_t n,
+    int signed_, int little_endian)
 {
     PyLongObject *v;
     union {
@@ -1085,21 +1088,6 @@ PyLong_AsByteArrayWithOptions(PyObject* vv, void* buffer, size_t n, int options)
     } cv;
     int do_decref = 0;
     int res = 0;
-    int signed_ = !(options & PYLONG_ASBYTEARRAY_UNSIGNED);
-    int little_endian = PY_LITTLE_ENDIAN;
-    switch (options & (PYLONG_ASBYTEARRAY_LITTLE_ENDIAN | PYLONG_ASBYTEARRAY_BIG_ENDIAN)) {
-    case 0:
-        break;
-    case PYLONG_ASBYTEARRAY_BIG_ENDIAN:
-        little_endian = 0;
-        break;
-    case PYLONG_ASBYTEARRAY_LITTLE_ENDIAN:
-        little_endian = 1;
-        break;
-    default:
-        PyErr_SetString(PyExc_ValueError, "invalid 'options' value");
-        return -1;
-    }
 
     if (vv == NULL) {
         PyErr_BadInternalCall();
@@ -1191,12 +1179,12 @@ PyLong_AsByteArrayWithOptions(PyObject* vv, void* buffer, size_t n, int options)
         res = -1;
     }
     else if (!signed_ && _PyLong_IsNegative(v)) {
-        // This case is not supported by _PyLong_AsByteArray, so we extract a
-        // signed value, to a larger buffer first if needed. If we use a larger
-        // buffer, the extra data should be all bits set. If it is, then we can
-        // ignore it and return the number of bytes the caller requested
-        // (that's what the "unsigned" means). Otherwise, we need to return the
-        // actual number of bytes required.
+        /* This case is not supported by _PyLong_AsByteArray, so we extract a
+         * signed value, to a larger buffer first if needed. If we use a larger
+         * buffer, the extra data should be all bits set. If it is, then we can
+         * ignore it and return the number of bytes the caller requested
+         * (that's what the "unsigned" means). Otherwise, we need to return the
+         * actual number of bytes required. */
         res = _PyLong_AsByteArray(v, buffer, n, little_endian, 1, 0);
         if (res < 0) {
             unsigned char *b = (unsigned char *)PyMem_Malloc(n + 1);
@@ -1208,7 +1196,8 @@ PyLong_AsByteArrayWithOptions(PyObject* vv, void* buffer, size_t n, int options)
             if (res == 0) {
                 // Ensure the extra byte is 0xFF
                 if (little_endian) {
-                    if (b[n - 1] != 0xFF) {
+                    // (remember, we allocated n+1 bytes)
+                    if (b[n] != 0xFF) {
                         res = -1;
                     } else {
                         memcpy(buffer, b, n);
@@ -1228,9 +1217,9 @@ PyLong_AsByteArrayWithOptions(PyObject* vv, void* buffer, size_t n, int options)
         res = _PyLong_AsByteArray(v, buffer, n, little_endian, signed_, 0);
     }
 
-    // NOTE: res should only be <0 if a _PyLong_AsByteArray has failed without
-    // setting an exception, or we're requesting the size of a non-compact int.
-    // If you add another reason, you should update this!
+    /* NOTE: res should only be <0 if a _PyLong_AsByteArray has failed without
+     * setting an exception, or we're requesting the size of a non-compact int.
+     * If you add another reason, you should update this! */
     if (res < 0) {
         // More efficient calculation for number of bytes required?
         size_t nb = _PyLong_NumBits((PyObject *)v) + (signed_ ? 1 : 0);
@@ -1252,15 +1241,63 @@ error:
 }
 
 int
+PyLong_AsByteArrayWithOptions(PyObject* vv, void* buffer, size_t n, int options)
+{
+    int signed_;
+    int little_endian;
+
+    // option 1 is excluded and always raises
+    if (!options || options & 0x01) {
+        PyErr_SetString(PyExc_SystemError, "invalid 'options' value");
+        return -1;
+    }
+
+    switch (options & (PYLONG_ASBYTEARRAY_SIGNED | PYLONG_ASBYTEARRAY_UNSIGNED)) {
+    case PYLONG_ASBYTEARRAY_SIGNED:
+        signed_ = 1;
+        break;
+    case PYLONG_ASBYTEARRAY_UNSIGNED:
+        signed_ = 0;
+        break;
+    case 0:
+        PyErr_SetString(PyExc_SystemError, "invalid 'options' value - no sign option");
+        return -1;
+    default:
+        PyErr_SetString(PyExc_SystemError, "invalid 'options' value");
+        return -1;
+    }
+
+    switch (options & (PYLONG_ASBYTEARRAY_LITTLE_ENDIAN | PYLONG_ASBYTEARRAY_BIG_ENDIAN
+                       | PYLONG_ASBYTEARRAY_NATIVE_ENDIAN)) {
+    case PYLONG_ASBYTEARRAY_BIG_ENDIAN:
+        little_endian = 0;
+        break;
+    case PYLONG_ASBYTEARRAY_LITTLE_ENDIAN:
+        little_endian = 1;
+        break;
+    case PYLONG_ASBYTEARRAY_NATIVE_ENDIAN:
+        little_endian = PY_LITTLE_ENDIAN;
+        break;
+    case 0:
+        PyErr_SetString(PyExc_SystemError, "invalid 'options' value - no endian option");
+        return -1;
+    default:
+        PyErr_SetString(PyExc_SystemError, "invalid 'options' value");
+        return -1;
+    }
+    return _PyLong_AsByteArrayWithOptions(vv, buffer, n, signed_, little_endian);
+}
+
+int
 PyLong_AsByteArray(PyObject* vv, void* buffer, size_t n)
 {
-    return PyLong_AsByteArrayWithOptions(vv, buffer, n, PYLONG_ASBYTEARRAY_SIGNED);
+    return _PyLong_AsByteArrayWithOptions(vv, buffer, n, 1, PY_LITTLE_ENDIAN);
 }
 
 int
 PyLong_AsUnsignedByteArray(PyObject* vv, void* buffer, size_t n)
 {
-    return PyLong_AsByteArrayWithOptions(vv, buffer, n, PYLONG_ASBYTEARRAY_UNSIGNED);
+    return _PyLong_AsByteArrayWithOptions(vv, buffer, n, 0, PY_LITTLE_ENDIAN);
 }
 
 
