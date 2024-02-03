@@ -39,10 +39,8 @@ class Lock(_ContextManagerMixin, mixins._LoopBoundMixin):
 
     When more than one task is blocked in acquire() waiting for
     the state to turn to unlocked, only one task proceeds when a
-    release() call resets the state to unlocked; first task which
-    is blocked in acquire() is being processed.
-
-    acquire() is a coroutine and should be called with 'await'.
+    release() call resets the state to unlocked; successive release()
+    calls will unblock tasks in FIFO order.
 
     Locks also support the asynchronous context management protocol.
     'async with lock' statement should be used.
