@@ -506,6 +506,14 @@ warnings
   warning may also be emitted when a decorated function or class is used at runtime.
   See :pep:`702`. (Contributed by Jelle Zijlstra in :gh:`104003`.)
 
+xml.etree.ElementTree
+---------------------
+
+* Add the :meth:`!close` method for the iterator returned by
+  :func:`~xml.etree.ElementTree.iterparse` for explicit cleaning up.
+  (Contributed by Serhiy Storchaka in :gh:`69893`.)
+
+
 Optimizations
 =============
 
@@ -1409,6 +1417,10 @@ New Features
   :c:func:`PyDict_Contains`, but *key* is specified as a :c:expr:`const char*`
   UTF-8 encoded bytes string, rather than a :c:expr:`PyObject*`.
   (Contributed by Victor Stinner in :gh:`108314`.)
+
+* Added :c:func:`PyList_GetItemRef` function: similar to
+  :c:func:`PyList_GetItem` but returns a :term:`strong reference` instead of
+  a :term:`borrowed reference`.
 
 * Add :c:func:`Py_IsFinalizing` function: check if the main Python interpreter is
   :term:`shutting down <interpreter shutdown>`.

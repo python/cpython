@@ -108,16 +108,14 @@ PyUnstable_Replace_Executor(PyCodeObject *code, _Py_CODEUNIT *instr, _PyExecutor
 }
 
 static int
-error_optimize(
+never_optimize(
     _PyOptimizerObject* self,
-    PyCodeObject *code,
+    _PyInterpreterFrame *frame,
     _Py_CODEUNIT *instr,
     _PyExecutorObject **exec,
     int Py_UNUSED(stack_entries))
 {
-    assert(0);
-    PyErr_Format(PyExc_SystemError, "Should never call error_optimize");
-    return -1;
+    return 0;
 }
 
 PyTypeObject _PyDefaultOptimizer_Type = {
@@ -130,7 +128,7 @@ PyTypeObject _PyDefaultOptimizer_Type = {
 
 _PyOptimizerObject _PyOptimizer_Default = {
     PyObject_HEAD_INIT(&_PyDefaultOptimizer_Type)
-    .optimize = error_optimize,
+    .optimize = never_optimize,
     .resume_threshold = INT16_MAX,
     .backedge_threshold = INT16_MAX,
 };
@@ -174,7 +172,7 @@ _PyOptimizer_Optimize(_PyInterpreterFrame *frame, _Py_CODEUNIT *start, PyObject 
     }
     _PyOptimizerObject *opt = interp->optimizer;
     _PyExecutorObject *executor = NULL;
-    int err = opt->optimize(opt, code, start, &executor, (int)(stack_pointer - _PyFrame_Stackbase(frame)));
+    int err = opt->optimize(opt, frame, start, &executor, (int)(stack_pointer - _PyFrame_Stackbase(frame)));
     if (err <= 0) {
         assert(executor == NULL);
         return err;
@@ -363,7 +361,8 @@ BRANCH_TO_GUARD[4][2] = {
         ADD_TO_TRACE(_EXIT_TRACE, 0, 0, 0); \
         goto done; \
     } \
-    trace_stack[trace_stack_depth].code = code; \
+    assert(func->func_code == (PyObject *)code); \
+    trace_stack[trace_stack_depth].func = func; \
     trace_stack[trace_stack_depth].instr = instr; \
     trace_stack_depth++;
 #define TRACE_STACK_POP() \
@@ -371,7 +370,8 @@ BRANCH_TO_GUARD[4][2] = {
         Py_FatalError("Trace stack underflow\n"); \
     } \
     trace_stack_depth--; \
-    code = trace_stack[trace_stack_depth].code; \
+    func = trace_stack[trace_stack_depth].func; \
+    code = (PyCodeObject *)trace_stack[trace_stack_depth].func->func_code; \
     instr = trace_stack[trace_stack_depth].instr;
 
 /* Returns 1 on success,
@@ -380,20 +380,23 @@ BRANCH_TO_GUARD[4][2] = {
  */
 static int
 translate_bytecode_to_trace(
-    PyCodeObject *code,
+    _PyInterpreterFrame *frame,
     _Py_CODEUNIT *instr,
     _PyUOpInstruction *trace,
     int buffer_size,
     _PyBloomFilter *dependencies)
 {
     bool progress_needed = true;
+    PyCodeObject *code = (PyCodeObject *)frame->f_executable;
+    PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
+    assert(PyFunction_Check(func));
     PyCodeObject *initial_code = code;
     _Py_BloomFilter_Add(dependencies, initial_code);
     _Py_CODEUNIT *initial_instr = instr;
     int trace_length = 0;
     int max_length = buffer_size;
     struct {
-        PyCodeObject *code;
+        PyFunctionObject *func;
         _Py_CODEUNIT *instr;
     } trace_stack[TRACE_STACK_SIZE];
     int trace_stack_depth = 0;
@@ -593,9 +596,9 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                         ADD_TO_TRACE(uop, oparg, operand, target);
                         if (uop == _POP_FRAME) {
                             TRACE_STACK_POP();
-                            /* Set the operand to the code object returned to,
+                            /* Set the operand to the function object returned to,
                              * to assist optimization passes */
-                            trace[trace_length-1].operand = (uintptr_t)code;
+                            trace[trace_length-1].operand = (uintptr_t)func;
                             DPRINTF(2,
                                 "Returning to %s (%s:%d) at byte offset %d\n",
                                 PyUnicode_AsUTF8(code->co_qualname),
@@ -611,10 +614,10 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 // Add one to account for the actual opcode/oparg pair:
                                 + 1;
                             uint32_t func_version = read_u32(&instr[func_version_offset].cache);
-                            PyFunctionObject *func = _PyFunction_LookupByVersion(func_version);
+                            PyFunctionObject *new_func = _PyFunction_LookupByVersion(func_version);
                             DPRINTF(3, "Function object: %p\n", func);
-                            if (func != NULL) {
-                                PyCodeObject *new_code = (PyCodeObject *)PyFunction_GET_CODE(func);
+                            if (new_func != NULL) {
+                                PyCodeObject *new_code = (PyCodeObject *)PyFunction_GET_CODE(new_func);
                                 if (new_code == code) {
                                     // Recursive call, bail (we could be here forever).
                                     DPRINTF(2, "Bailing on recursive call to %s (%s:%d)\n",
@@ -639,8 +642,9 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 _Py_BloomFilter_Add(dependencies, new_code);
                                 /* Set the operand to the callee's code object,
                                 * to assist optimization passes */
-                                trace[trace_length-1].operand = (uintptr_t)new_code;
+                                trace[trace_length-1].operand = (uintptr_t)new_func;
                                 code = new_code;
+                                func = new_func;
                                 instr = _PyCode_CODE(code);
                                 DPRINTF(2,
                                     "Continuing in %s (%s:%d) at byte offset %d\n",
@@ -808,7 +812,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
 static int
 uop_optimize(
     _PyOptimizerObject *self,
-    PyCodeObject *code,
+    _PyInterpreterFrame *frame,
     _Py_CODEUNIT *instr,
     _PyExecutorObject **exec_ptr,
     int curr_stackentries)
@@ -816,7 +820,7 @@ uop_optimize(
     _PyBloomFilter dependencies;
     _Py_BloomFilter_Init(&dependencies);
     _PyUOpInstruction buffer[UOP_MAX_TRACE_LENGTH];
-    int err = translate_bytecode_to_trace(code, instr, buffer, UOP_MAX_TRACE_LENGTH, &dependencies);
+    int err = translate_bytecode_to_trace(frame, instr, buffer, UOP_MAX_TRACE_LENGTH, &dependencies);
     if (err <= 0) {
         // Error or nothing translated
         return err;
@@ -824,9 +828,10 @@ uop_optimize(
     OPT_STAT_INC(traces_created);
     char *uop_optimize = Py_GETENV("PYTHONUOPSOPTIMIZE");
     if (uop_optimize == NULL || *uop_optimize > '0') {
-        err = _Py_uop_analyze_and_optimize(code, buffer, UOP_MAX_TRACE_LENGTH, curr_stackentries);
-        if (err < 0) {
-            return -1;
+        err = _Py_uop_analyze_and_optimize(frame, buffer,
+                                           UOP_MAX_TRACE_LENGTH, curr_stackentries, &dependencies);
+        if (err <= 0) {
+            return err;
         }
     }
     _PyExecutorObject *executor = make_executor_from_uops(buffer, &dependencies);
@@ -887,12 +892,13 @@ PyTypeObject _PyCounterExecutor_Type = {
 static int
 counter_optimize(
     _PyOptimizerObject* self,
-    PyCodeObject *code,
+    _PyInterpreterFrame *frame,
     _Py_CODEUNIT *instr,
     _PyExecutorObject **exec_ptr,
     int Py_UNUSED(curr_stackentries)
 )
 {
+    PyCodeObject *code = (PyCodeObject *)frame->f_executable;
     int oparg = instr->op.arg;
     while (instr->op.code == EXTENDED_ARG) {
         instr++;

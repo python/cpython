@@ -664,7 +664,8 @@ functions.
 
    If given, *startupinfo* will be a :class:`STARTUPINFO` object, which is
    passed to the underlying ``CreateProcess`` function.
-   *creationflags*, if given, can be one or more of the following flags:
+
+   If given, *creationflags*, can be one or more of the following flags:
 
    * :data:`CREATE_NEW_CONSOLE`
    * :data:`CREATE_NEW_PROCESS_GROUP`
