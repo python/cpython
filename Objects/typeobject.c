@@ -5259,7 +5259,7 @@ static PyMethodDef type_methods[] = {
     TYPE___SUBCLASSES___METHODDEF
     {"__prepare__", _PyCFunction_CAST(type_prepare),
      METH_FASTCALL | METH_KEYWORDS | METH_CLASS,
-     PyDoc_STR("__prepare__($cls, name, bases, /, **kwds)\n"
+     PyDoc_STR("__prepare__($type, name, bases, /, **kwds)\n"
                "--\n"
                "\n"
                "Create the namespace for the class statement")},
