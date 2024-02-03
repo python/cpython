@@ -39,7 +39,7 @@ Executor Objects
              future = executor.submit(pow, 323, 1235)
              print(future.result())
 
-   .. method:: map(fn, *iterables, timeout=None, chunksize=1)
+   .. method:: map(fn, *iterables, timeout=None, chunksize=1, prefetch=None)
 
       Similar to :func:`map(fn, *iterables) <map>` except:
 
@@ -65,8 +65,15 @@ Executor Objects
       performance compared to the default size of 1.  With
       :class:`ThreadPoolExecutor`, *chunksize* has no effect.
 
+      By default, all tasks are queued.  An explicit *prefetch* count may be
+      provided to specify how many extra tasks, beyond the number of workers,
+      should be queued.
+
       .. versionchanged:: 3.5
          Added the *chunksize* argument.
+
+      .. versionchanged:: 3.13
+         Added the *prefetch* argument.
 
    .. method:: shutdown(wait=True, *, cancel_futures=False)
 

@@ -149,7 +149,7 @@ class ThreadPoolExecutor(_base.Executor):
         if initializer is not None and not callable(initializer):
             raise TypeError("initializer must be a callable")
 
-        self._max_workers = max_workers
+        super().__init__(max_workers)
         self._work_queue = queue.SimpleQueue()
         self._idle_semaphore = threading.Semaphore(0)
         self._threads = set()
