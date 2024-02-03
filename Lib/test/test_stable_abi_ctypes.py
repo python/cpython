@@ -9,6 +9,13 @@ from test.support.import_helper import import_module
 from _testcapi import get_feature_macros
 
 feature_macros = get_feature_macros()
+
+# Stable ABI is incompatible with Py_TRACE_REFS builds due to PyObject
+# layout differences.
+# See https://github.com/python/cpython/issues/88299#issuecomment-1113366226
+if feature_macros['Py_TRACE_REFS']:
+    raise unittest.SkipTest("incompatible with Py_TRACE_REFS.")
+
 ctypes_test = import_module('ctypes')
 
 class TestStableABIAvailability(unittest.TestCase):
@@ -254,6 +261,7 @@ SYMBOL_NAMES = (
     "PyExc_IOError",
     "PyExc_ImportError",
     "PyExc_ImportWarning",
+    "PyExc_IncompleteInputError",
     "PyExc_IndentationError",
     "PyExc_IndexError",
     "PyExc_InterruptedError",
@@ -364,6 +372,7 @@ SYMBOL_NAMES = (
     "PyList_Append",
     "PyList_AsTuple",
     "PyList_GetItem",
+    "PyList_GetItemRef",
     "PyList_GetSlice",
     "PyList_Insert",
     "PyList_New",
@@ -405,6 +414,8 @@ SYMBOL_NAMES = (
     "PyMapping_GetOptionalItemString",
     "PyMapping_HasKey",
     "PyMapping_HasKeyString",
+    "PyMapping_HasKeyStringWithError",
+    "PyMapping_HasKeyWithError",
     "PyMapping_Items",
     "PyMapping_Keys",
     "PyMapping_Length",
@@ -416,6 +427,10 @@ SYMBOL_NAMES = (
     "PyMem_Calloc",
     "PyMem_Free",
     "PyMem_Malloc",
+    "PyMem_RawCalloc",
+    "PyMem_RawFree",
+    "PyMem_RawMalloc",
+    "PyMem_RawRealloc",
     "PyMem_Realloc",
     "PyMemberDescr_Type",
     "PyMember_GetOne",
@@ -435,7 +450,9 @@ SYMBOL_NAMES = (
     "PyModule_AddObjectRef",
     "PyModule_AddStringConstant",
     "PyModule_AddType",
+    "PyModule_Create2",
     "PyModule_ExecDef",
+    "PyModule_FromDefAndSpec2",
     "PyModule_GetDef",
     "PyModule_GetDict",
     "PyModule_GetFilename",
@@ -542,6 +559,8 @@ SYMBOL_NAMES = (
     "PyObject_GetTypeData",
     "PyObject_HasAttr",
     "PyObject_HasAttrString",
+    "PyObject_HasAttrStringWithError",
+    "PyObject_HasAttrWithError",
     "PyObject_Hash",
     "PyObject_HashNotImplemented",
     "PyObject_Init",
@@ -618,6 +637,8 @@ SYMBOL_NAMES = (
     "PySys_AddWarnOption",
     "PySys_AddWarnOptionUnicode",
     "PySys_AddXOption",
+    "PySys_Audit",
+    "PySys_AuditTuple",
     "PySys_FormatStderr",
     "PySys_FormatStdout",
     "PySys_GetObject",
@@ -766,6 +787,8 @@ SYMBOL_NAMES = (
     "PyUnicode_DecodeUnicodeEscape",
     "PyUnicode_EncodeFSDefault",
     "PyUnicode_EncodeLocale",
+    "PyUnicode_EqualToUTF8",
+    "PyUnicode_EqualToUTF8AndSize",
     "PyUnicode_FSConverter",
     "PyUnicode_FSDecoder",
     "PyUnicode_Find",
@@ -847,6 +870,7 @@ SYMBOL_NAMES = (
     "Py_InitializeEx",
     "Py_Is",
     "Py_IsFalse",
+    "Py_IsFinalizing",
     "Py_IsInitialized",
     "Py_IsNone",
     "Py_IsTrue",
@@ -893,10 +917,18 @@ SYMBOL_NAMES = (
     "_Py_IncRef",
     "_Py_NoneStruct",
     "_Py_NotImplementedStruct",
+    "_Py_SetRefcnt",
     "_Py_SwappedOp",
     "_Py_TrueStruct",
     "_Py_VaBuildValue_SizeT",
 )
+if feature_macros['HAVE_FORK']:
+    SYMBOL_NAMES += (
+        'PyOS_AfterFork',
+        'PyOS_AfterFork_Child',
+        'PyOS_AfterFork_Parent',
+        'PyOS_BeforeFork',
+    )
 if feature_macros['MS_WINDOWS']:
     SYMBOL_NAMES += (
         'PyErr_SetExcFromWindowsErr',
@@ -912,17 +944,6 @@ if feature_macros['MS_WINDOWS']:
         'PyUnicode_DecodeMBCSStateful',
         'PyUnicode_EncodeCodePage',
     )
-if feature_macros['HAVE_FORK']:
-    SYMBOL_NAMES += (
-        'PyOS_AfterFork',
-        'PyOS_AfterFork_Child',
-        'PyOS_AfterFork_Parent',
-        'PyOS_BeforeFork',
-    )
-if feature_macros['USE_STACKCHECK']:
-    SYMBOL_NAMES += (
-        'PyOS_CheckStack',
-    )
 if feature_macros['PY_HAVE_THREAD_NATIVE_ID']:
     SYMBOL_NAMES += (
         'PyThread_get_thread_native_id',
@@ -932,14 +953,23 @@ if feature_macros['Py_REF_DEBUG']:
         '_Py_NegativeRefcount',
         '_Py_RefTotal',
     )
+if feature_macros['Py_TRACE_REFS']:
+    SYMBOL_NAMES += (
+    )
+if feature_macros['USE_STACKCHECK']:
+    SYMBOL_NAMES += (
+        'PyOS_CheckStack',
+    )
 
 EXPECTED_FEATURE_MACROS = set(['HAVE_FORK',
  'MS_WINDOWS',
  'PY_HAVE_THREAD_NATIVE_ID',
  'Py_REF_DEBUG',
+ 'Py_TRACE_REFS',
  'USE_STACKCHECK'])
 WINDOWS_FEATURE_MACROS = {'HAVE_FORK': False,
  'MS_WINDOWS': True,
  'PY_HAVE_THREAD_NATIVE_ID': True,
  'Py_REF_DEBUG': 'maybe',
+ 'Py_TRACE_REFS': 'maybe',
  'USE_STACKCHECK': 'maybe'}

@@ -340,7 +340,7 @@ not keep objects alive longer than expected.
 .. section: Library
 
 inspect.signature() now supports callables with variable-argument parameters
-wrapped with partialmethod. Patch by Dong-hee Na.
+wrapped with partialmethod. Patch by Donghee Na.
 
 ..
 

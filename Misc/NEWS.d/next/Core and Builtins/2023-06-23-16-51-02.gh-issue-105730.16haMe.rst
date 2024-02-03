@@ -1,2 +1,0 @@
-Allow any callable other than type objects as the condition predicate in
-:meth:`BaseExceptionGroup.split` and :meth:`BaseExceptionGroup.subgroup`.

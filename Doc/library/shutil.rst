@@ -289,8 +289,8 @@ Directory and files operations
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
-   .. versionadded:: 3.8
-      The *dirs_exist_ok* parameter.
+   .. versionchanged:: 3.8
+      Added the *dirs_exist_ok* parameter.
 
 .. function:: rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None)
 
@@ -342,6 +342,12 @@ Directory and files operations
 
    .. versionchanged:: 3.12
       Added the *onexc* parameter, deprecated *onerror*.
+
+   .. versionchanged:: 3.13
+      :func:`!rmtree` now ignores :exc:`FileNotFoundError` exceptions for all
+      but the top-level path.
+      Exceptions other than :exc:`OSError` and subclasses of :exc:`!OSError`
+      are now always propagated to the caller.
 
    .. attribute:: rmtree.avoids_symlink_attacks
 
@@ -476,6 +482,12 @@ Directory and files operations
       or ends with an extension that is in ``PATHEXT``; and filenames that
       have no extension can now be found.
 
+   .. versionchanged:: 3.12.1
+      On Windows, if *mode* includes ``os.X_OK``, executables with an
+      extension in ``PATHEXT`` will be preferred over executables without a
+      matching extension.
+      This brings behavior closer to that of Python 3.11.
+
 .. exception:: Error
 
    This exception collects exceptions that are raised during a multi-file
@@ -574,7 +586,9 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    Create an archive file (such as zip or tar) and return its name.
 
    *base_name* is the name of the file to create, including the path, minus
-   any format-specific extension. *format* is the archive format: one of
+   any format-specific extension.
+
+   *format* is the archive format: one of
    "zip" (if the :mod:`zlib` module is available), "tar", "gztar" (if the
    :mod:`zlib` module is available), "bztar" (if the :mod:`bz2` module is
    available), or "xztar" (if the :mod:`lzma` module is available).

@@ -13,6 +13,9 @@ oss-fuzz will regularly pull from CPython, discover all the tests in
 automatically be run in oss-fuzz, while also being smoke-tested as part of
 CPython's test suite.
 
+In addition, the tests are run on GitHub Actions using CIFuzz for PRs to the
+main branch changing relevant files.
+
 Adding a new fuzz test
 ----------------------
 
