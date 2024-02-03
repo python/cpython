@@ -1,6 +1,6 @@
 """Generate the list of opcode IDs.
 Reads the instruction definitions from bytecodes.c.
-Writes the IDs to opcode._ids.h by default.
+Writes the IDs to opcode_ids.h by default.
 """
 
 import argparse

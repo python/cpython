@@ -1,0 +1,1 @@
+Add warning when creating :class:`type` using a namespace dictionary with non-string keys. Patched by Daniel Urban and Furkan Onder.
