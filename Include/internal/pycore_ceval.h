@@ -124,7 +124,7 @@ _PyEval_Vector(PyThreadState *tstate,
             PyObject *kwnames);
 
 extern int _PyEval_ThreadsInitialized(void);
-extern PyStatus _PyEval_InitGIL(PyThreadState *tstate, int own_gil);
+extern void _PyEval_InitGIL(PyThreadState *tstate, int own_gil);
 extern void _PyEval_FiniGIL(PyInterpreterState *interp);
 
 extern void _PyEval_AcquireLock(PyThreadState *tstate);
@@ -205,6 +205,7 @@ void _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame)
 #define _PY_CALLS_TO_DO_BIT 2
 #define _PY_ASYNC_EXCEPTION_BIT 3
 #define _PY_GC_SCHEDULED_BIT 4
+#define _PY_EVAL_PLEASE_STOP_BIT 5
 
 /* Reserve a few bits for future use */
 #define _PY_EVAL_EVENTS_BITS 8

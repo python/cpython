@@ -601,7 +601,7 @@ Most of these attributes check the type of the assigned value:
        or ``None`` if unavailable.
 
    * - .. attribute:: function.__defaults__
-     - A :class:`tuple` containing default parameter values
+     - A :class:`tuple` containing default :term:`parameter` values
        for those parameters that have defaults,
        or ``None`` if no parameters have a default value.
 
@@ -614,18 +614,21 @@ Most of these attributes check the type of the assigned value:
        See also: :attr:`__dict__ attributes <object.__dict__>`.
 
    * - .. attribute:: function.__annotations__
-     - A :class:`dictionary <dict>` containing annotations of parameters.
+     - A :class:`dictionary <dict>` containing annotations of
+       :term:`parameters <parameter>`.
        The keys of the dictionary are the parameter names,
        and ``'return'`` for the return annotation, if provided.
        See also: :ref:`annotations-howto`.
 
    * - .. attribute:: function.__kwdefaults__
      - A :class:`dictionary <dict>` containing defaults for keyword-only
-       parameters.
+       :term:`parameters <parameter>`.
 
    * - .. attribute:: function.__type_params__
      - A :class:`tuple` containing the :ref:`type parameters <type-params>` of
        a :ref:`generic function <generic-functions>`.
+
+       .. versionadded:: 3.12
 
 Function objects also support getting and setting arbitrary attributes, which
 can be used, for example, to attach metadata to functions.  Regular attribute
@@ -1216,8 +1219,8 @@ If a code object represents a function, the first item in
 :attr:`~codeobject.co_consts` is
 the documentation string of the function, or ``None`` if undefined.
 
-The :meth:`!co_positions` method
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Methods on code objects
+~~~~~~~~~~~~~~~~~~~~~~~
 
 .. method:: codeobject.co_positions()
 
@@ -1251,6 +1254,41 @@ The :meth:`!co_positions` method
       deactivate printing the extra traceback information, the
       :option:`-X` ``no_debug_ranges`` command line flag or the :envvar:`PYTHONNODEBUGRANGES`
       environment variable can be used.
+
+.. method:: codeobject.co_lines()
+
+   Returns an iterator that yields information about successive ranges of
+   :term:`bytecode`\s. Each item yielded is a ``(start, end, lineno)``
+   :class:`tuple`:
+
+   * ``start`` (an :class:`int`) represents the offset (inclusive) of the start
+     of the :term:`bytecode` range
+   * ``end`` (an :class:`int`) represents the offset (exclusive) of the end of
+     the :term:`bytecode` range
+   * ``lineno`` is an :class:`int` representing the line number of the
+     :term:`bytecode` range, or ``None`` if the bytecodes in the given range
+     have no line number
+
+   The items yielded will have the following properties:
+
+   * The first range yielded will have a ``start`` of 0.
+   * The ``(start, end)`` ranges will be non-decreasing and consecutive. That
+     is, for any pair of :class:`tuple`\s, the ``start`` of the second will be
+     equal to the ``end`` of the first.
+   * No range will be backwards: ``end >= start`` for all triples.
+   * The last :class:`tuple` yielded will have ``end`` equal to the size of the
+     :term:`bytecode`.
+
+   Zero-width ranges, where ``start == end``, are allowed. Zero-width ranges
+   are used for lines that are present in the source code, but have been
+   eliminated by the :term:`bytecode` compiler.
+
+   .. versionadded:: 3.10
+
+   .. seealso::
+
+      :pep:`626` - Precise line numbers for debugging and other tools.
+         The PEP that introduced the :meth:`!co_lines` method.
 
 
 .. _frame-objects:
@@ -1387,7 +1425,8 @@ unwinds the execution stack, at each unwound level a traceback object is
 inserted in front of the current traceback.  When an exception handler is
 entered, the stack trace is made available to the program. (See section
 :ref:`try`.) It is accessible as the third item of the
-tuple returned by :func:`sys.exc_info`, and as the ``__traceback__`` attribute
+tuple returned by :func:`sys.exc_info`, and as the
+:attr:`~BaseException.__traceback__` attribute
 of the caught exception.
 
 When the program contains no suitable
@@ -1490,7 +1529,7 @@ Class method objects
 A class method object, like a static method object, is a wrapper around another
 object that alters the way in which that object is retrieved from classes and
 class instances. The behaviour of class method objects upon such retrieval is
-described above, under "User-defined methods". Class method objects are created
+described above, under :ref:`"instance methods" <instance-methods>`. Class method objects are created
 by the built-in :func:`classmethod` constructor.
 
 
@@ -1837,7 +1876,7 @@ Basic customization
 
       This is intended to provide protection against a denial-of-service caused
       by carefully chosen inputs that exploit the worst case performance of a
-      dict insertion, O(n\ :sup:`2`) complexity.  See
+      dict insertion, *O*\ (*n*\ :sup:`2`) complexity.  See
       http://ocert.org/advisories/ocert-2011-003.html for details.
 
       Changing hash values affects the iteration order of sets.
@@ -2269,7 +2308,7 @@ class defining the method.
    this method is implicitly converted to a class method.
 
    Keyword arguments which are given to a new class are passed to
-   the parent's class ``__init_subclass__``. For compatibility with
+   the parent class's ``__init_subclass__``. For compatibility with
    other classes using ``__init_subclass__``, one should take out the
    needed keyword arguments and pass the others over to the base
    class, as in::
@@ -2804,10 +2843,10 @@ through the object's keys; for sequences, it should iterate through the values.
 .. method:: object.__getitem__(self, key)
 
    Called to implement evaluation of ``self[key]``. For :term:`sequence` types,
-   the accepted keys should be integers and slice objects.  Note that the
-   special interpretation of negative indexes (if the class wishes to emulate a
-   :term:`sequence` type) is up to the :meth:`__getitem__` method. If *key* is
-   of an inappropriate type, :exc:`TypeError` may be raised; if of a value
+   the accepted keys should be integers. Optionally, they may support
+   :class:`slice` objects as well.  Negative index support is also optional.
+   If *key* is
+   of an inappropriate type, :exc:`TypeError` may be raised; if *key* is a value
    outside the set of indexes for the sequence (after any special
    interpretation of negative values), :exc:`IndexError` should be raised. For
    :term:`mapping` types, if *key* is missing (not in the container),

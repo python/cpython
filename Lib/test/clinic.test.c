@@ -4956,8 +4956,17 @@ Test_meth_coexist_impl(TestObj *self)
 Test.property
 [clinic start generated code]*/
 
-#define TEST_PROPERTY_GETTERDEF    \
-    {"property", (getter)Test_property_get, NULL, NULL},
+#if defined(Test_property_HAS_DOCSTR)
+#  define Test_property_DOCSTR Test_property__doc__
+#else
+#  define Test_property_DOCSTR NULL
+#endif
+#if defined(TEST_PROPERTY_GETSETDEF)
+#  undef TEST_PROPERTY_GETSETDEF
+#  define TEST_PROPERTY_GETSETDEF {"property", (getter)Test_property_get, (setter)Test_property_set, Test_property_DOCSTR},
+#else
+#  define TEST_PROPERTY_GETSETDEF {"property", (getter)Test_property_get, NULL, Test_property_DOCSTR},
+#endif
 
 static PyObject *
 Test_property_get_impl(TestObj *self);
@@ -4970,8 +4979,37 @@ Test_property_get(TestObj *self, void *Py_UNUSED(context))
 
 static PyObject *
 Test_property_get_impl(TestObj *self)
-/*[clinic end generated code: output=892b6fb351ff85fd input=2d92b3449fbc7d2b]*/
+/*[clinic end generated code: output=27b519719d992e03 input=2d92b3449fbc7d2b]*/
 
+/*[clinic input]
+@setter
+Test.property
+[clinic start generated code]*/
+
+#if defined(TEST_PROPERTY_HAS_DOCSTR)
+#  define Test_property_DOCSTR Test_property__doc__
+#else
+#  define Test_property_DOCSTR NULL
+#endif
+#if defined(TEST_PROPERTY_GETSETDEF)
+#  undef TEST_PROPERTY_GETSETDEF
+#  define TEST_PROPERTY_GETSETDEF {"property", (getter)Test_property_get, (setter)Test_property_set, Test_property_DOCSTR},
+#else
+#  define TEST_PROPERTY_GETSETDEF {"property", NULL, (setter)Test_property_set, NULL},
+#endif
+
+static int
+Test_property_set_impl(TestObj *self, PyObject *value);
+
+static int
+Test_property_set(TestObj *self, PyObject *value, void *Py_UNUSED(context))
+{
+    return Test_property_set_impl(self, value);
+}
+
+static int
+Test_property_set_impl(TestObj *self, PyObject *value)
+/*[clinic end generated code: output=9797cd03c5204ddb input=3bc3f46a23c83a88]*/
 
 /*[clinic input]
 output push

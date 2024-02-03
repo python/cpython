@@ -10,6 +10,7 @@
 #include "pycore_frame.h"
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_object.h"        // _PyType_InitCache()
+#include "pycore_object_stack.h"  // _PyObjectStackChunk_ClearFreeList()
 #include "pycore_parking_lot.h"   // _PyParkingLot_AfterFork()
 #include "pycore_pyerrors.h"      // _PyErr_Clear()
 #include "pycore_pylifecycle.h"   // _PyAST_Fini()
@@ -17,6 +18,7 @@
 #include "pycore_pystate.h"
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_sysmodule.h"     // _PySys_Audit()
+#include "pycore_obmalloc.h"      // _PyMem_obmalloc_state_on_heap()
 
 /* --------------------------------------------------------------------------
 CAUTION
@@ -65,7 +67,7 @@ _Py_thread_local PyThreadState *_Py_tss_tstate = NULL;
 #endif
 
 static inline PyThreadState *
-current_fast_get(_PyRuntimeState *Py_UNUSED(runtime))
+current_fast_get(void)
 {
 #ifdef HAVE_THREAD_LOCAL
     return _Py_tss_tstate;
@@ -99,14 +101,14 @@ current_fast_clear(_PyRuntimeState *Py_UNUSED(runtime))
 }
 
 #define tstate_verify_not_active(tstate) \
-    if (tstate == current_fast_get((tstate)->interp->runtime)) { \
+    if (tstate == current_fast_get()) { \
         _Py_FatalErrorFormat(__func__, "tstate %p is still current", tstate); \
     }
 
 PyThreadState *
 _PyThreadState_GetCurrent(void)
 {
-    return current_fast_get(&_PyRuntime);
+    return current_fast_get();
 }
 
 
@@ -236,6 +238,8 @@ tstate_is_bound(PyThreadState *tstate)
 static void bind_gilstate_tstate(PyThreadState *);
 static void unbind_gilstate_tstate(PyThreadState *);
 
+static void tstate_mimalloc_bind(PyThreadState *);
+
 static void
 bind_tstate(PyThreadState *tstate)
 {
@@ -255,6 +259,9 @@ bind_tstate(PyThreadState *tstate)
 #ifdef PY_HAVE_THREAD_NATIVE_ID
     tstate->native_thread_id = PyThread_get_thread_native_id();
 #endif
+
+    // mimalloc state needs to be initialized from the active thread.
+    tstate_mimalloc_bind(tstate);
 
     tstate->_status.bound = 1;
 }
@@ -353,10 +360,9 @@ holds_gil(PyThreadState *tstate)
     // XXX Fall back to tstate->interp->runtime->ceval.gil.last_holder
     // (and tstate->interp->runtime->ceval.gil.locked).
     assert(tstate != NULL);
-    _PyRuntimeState *runtime = tstate->interp->runtime;
     /* Must be the tstate for this thread */
-    assert(tstate == gilstate_tss_get(runtime));
-    return tstate == current_fast_get(runtime);
+    assert(tstate == gilstate_tss_get(tstate->interp->runtime));
+    return tstate == current_fast_get();
 }
 
 
@@ -547,6 +553,11 @@ free_interpreter(PyInterpreterState *interp)
     // The main interpreter is statically allocated so
     // should not be freed.
     if (interp != &_PyRuntime._main_interpreter) {
+        if (_PyMem_obmalloc_state_on_heap(interp)) {
+            // interpreter has its own obmalloc state, free it
+            PyMem_RawFree(interp->obmalloc);
+            interp->obmalloc = NULL;
+        }
         PyMem_RawFree(interp);
     }
 }
@@ -588,14 +599,6 @@ init_interpreter(PyInterpreterState *interp,
     assert(runtime->interpreters.head == interp);
     assert(next != NULL || (interp == runtime->interpreters.main));
     interp->next = next;
-
-    /* Initialize obmalloc, but only for subinterpreters,
-       since the main interpreter is initialized statically. */
-    if (interp != &runtime->_main_interpreter) {
-        poolp temp[OBMALLOC_USED_POOLS_SIZE] = \
-                _obmalloc_pools_INIT(interp->obmalloc.pools);
-        memcpy(&interp->obmalloc.pools.used, temp, sizeof(temp));
-    }
 
     PyStatus status = _PyObject_InitState(interp);
     if (_PyStatus_EXCEPTION(status)) {
@@ -719,7 +722,7 @@ PyInterpreterState *
 PyInterpreterState_New(void)
 {
     // tstate can be NULL
-    PyThreadState *tstate = current_fast_get(&_PyRuntime);
+    PyThreadState *tstate = current_fast_get();
 
     PyInterpreterState *interp;
     PyStatus status = _PyInterpreterState_New(tstate, &interp);
@@ -878,7 +881,7 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
     // Use the current Python thread state to call audit hooks and to collect
     // garbage. It can be different than the current Python thread state
     // of 'interp'.
-    PyThreadState *current_tstate = current_fast_get(interp->runtime);
+    PyThreadState *current_tstate = current_fast_get();
     _PyImport_ClearCore(interp);
     interpreter_clear(interp, current_tstate);
 }
@@ -904,7 +907,7 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
 
     // XXX Clearing the "current" thread state should happen before
     // we start finalizing the interpreter (or the current thread state).
-    PyThreadState *tcur = current_fast_get(runtime);
+    PyThreadState *tcur = current_fast_get();
     if (tcur != NULL && interp == tcur->interp) {
         /* Unset current thread.  After this, many C API calls become crashy. */
         _PyThreadState_Detach(tcur);
@@ -1006,7 +1009,7 @@ _PyInterpreterState_SetRunningMain(PyInterpreterState *interp)
     if (_PyInterpreterState_FailIfRunningMain(interp) < 0) {
         return -1;
     }
-    PyThreadState *tstate = current_fast_get(&_PyRuntime);
+    PyThreadState *tstate = current_fast_get();
     _Py_EnsureTstateNotNULL(tstate);
     if (tstate->interp != interp) {
         PyErr_SetString(PyExc_RuntimeError,
@@ -1021,7 +1024,7 @@ void
 _PyInterpreterState_SetNotRunningMain(PyInterpreterState *interp)
 {
     PyThreadState *tstate = interp->threads.main;
-    assert(tstate == current_fast_get(&_PyRuntime));
+    assert(tstate == current_fast_get());
 
     if (tstate->on_delete != NULL) {
         // The threading module was imported for the first time in this
@@ -1174,7 +1177,7 @@ PyInterpreterState_GetDict(PyInterpreterState *interp)
 PyInterpreterState*
 PyInterpreterState_Get(void)
 {
-    PyThreadState *tstate = current_fast_get(&_PyRuntime);
+    PyThreadState *tstate = current_fast_get();
     _Py_EnsureTstateNotNULL(tstate);
     PyInterpreterState *interp = tstate->interp;
     if (interp == NULL) {
@@ -1216,7 +1219,7 @@ _PyInterpreterState_LookUpID(int64_t requested_id)
         HEAD_UNLOCK(runtime);
     }
     if (interp == NULL && !PyErr_Occurred()) {
-        PyErr_Format(PyExc_RuntimeError,
+        PyErr_Format(PyExc_InterpreterNotFoundError,
                      "unrecognized interpreter ID %lld", requested_id);
     }
     return interp;
@@ -1330,6 +1333,11 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     tstate->datastack_top = NULL;
     tstate->datastack_limit = NULL;
     tstate->what_event = -1;
+
+    if (interp->stoptheworld.requested || _PyRuntime.stoptheworld.requested) {
+        // Start in the suspended state if there is an ongoing stop-the-world.
+        tstate->state = _Py_THREAD_SUSPENDED;
+    }
 
     tstate->_status.initialized = 1;
 }
@@ -1451,9 +1459,24 @@ clear_datastack(PyThreadState *tstate)
 }
 
 void
+_Py_ClearFreeLists(_PyFreeListState *state, int is_finalization)
+{
+    // In the free-threaded build, freelists are per-PyThreadState and cleared in PyThreadState_Clear()
+    // In the default build, freelists are per-interpreter and cleared in finalize_interp_types()
+    _PyFloat_ClearFreeList(state, is_finalization);
+    _PyTuple_ClearFreeList(state, is_finalization);
+    _PyList_ClearFreeList(state, is_finalization);
+    _PyDict_ClearFreeList(state, is_finalization);
+    _PyContext_ClearFreeList(state, is_finalization);
+    _PyAsyncGen_ClearFreeLists(state, is_finalization);
+    _PyObjectStackChunk_ClearFreeList(state, is_finalization);
+}
+
+void
 PyThreadState_Clear(PyThreadState *tstate)
 {
     assert(tstate->_status.initialized && !tstate->_status.cleared);
+    assert(current_fast_get()->interp == tstate->interp);
     // XXX assert(!tstate->_status.bound || tstate->_status.unbound);
     tstate->_status.finalizing = 1;  // just in case
 
@@ -1531,12 +1554,23 @@ PyThreadState_Clear(PyThreadState *tstate)
         // don't call _PyInterpreterState_SetNotRunningMain() yet.
         tstate->on_delete(tstate->on_delete_data);
     }
+#ifdef Py_GIL_DISABLED
+    // Each thread should clear own freelists in free-threading builds.
+    _PyFreeListState *freelist_state = &((_PyThreadStateImpl*)tstate)->freelist_state;
+    _Py_ClearFreeLists(freelist_state, 1);
+    _PySlice_ClearCache(freelist_state);
+#endif
+
+    _PyThreadState_ClearMimallocHeaps(tstate);
 
     tstate->_status.cleared = 1;
 
     // XXX Call _PyThreadStateSwap(runtime, NULL) here if "current".
     // XXX Do it as early in the function as possible.
 }
+
+static void
+decrement_stoptheworld_countdown(struct _stoptheworld_state *stw);
 
 /* Common code for PyThreadState_Delete() and PyThreadState_DeleteCurrent() */
 static void
@@ -1560,6 +1594,16 @@ tstate_delete_common(PyThreadState *tstate)
     }
     if (tstate->next) {
         tstate->next->prev = tstate->prev;
+    }
+    if (tstate->state != _Py_THREAD_SUSPENDED) {
+        // Any ongoing stop-the-world request should not wait for us because
+        // our thread is getting deleted.
+        if (interp->stoptheworld.requested) {
+            decrement_stoptheworld_countdown(&interp->stoptheworld);
+        }
+        if (runtime->stoptheworld.requested) {
+            decrement_stoptheworld_countdown(&runtime->stoptheworld);
+        }
     }
     HEAD_UNLOCK(runtime);
 
@@ -1614,7 +1658,7 @@ _PyThreadState_DeleteCurrent(PyThreadState *tstate)
 void
 PyThreadState_DeleteCurrent(void)
 {
-    PyThreadState *tstate = current_fast_get(&_PyRuntime);
+    PyThreadState *tstate = current_fast_get();
     _PyThreadState_DeleteCurrent(tstate);
 }
 
@@ -1690,7 +1734,7 @@ _PyThreadState_GetDict(PyThreadState *tstate)
 PyObject *
 PyThreadState_GetDict(void)
 {
-    PyThreadState *tstate = current_fast_get(&_PyRuntime);
+    PyThreadState *tstate = current_fast_get();
     if (tstate == NULL) {
         return NULL;
     }
@@ -1766,13 +1810,9 @@ tstate_try_attach(PyThreadState *tstate)
 {
 #ifdef Py_GIL_DISABLED
     int expected = _Py_THREAD_DETACHED;
-    if (_Py_atomic_compare_exchange_int(
-            &tstate->state,
-            &expected,
-            _Py_THREAD_ATTACHED)) {
-        return 1;
-    }
-    return 0;
+    return _Py_atomic_compare_exchange_int(&tstate->state,
+                                           &expected,
+                                           _Py_THREAD_ATTACHED);
 #else
     assert(tstate->state == _Py_THREAD_DETACHED);
     tstate->state = _Py_THREAD_ATTACHED;
@@ -1791,6 +1831,20 @@ tstate_set_detached(PyThreadState *tstate)
 #endif
 }
 
+static void
+tstate_wait_attach(PyThreadState *tstate)
+{
+    do {
+        int expected = _Py_THREAD_SUSPENDED;
+
+        // Wait until we're switched out of SUSPENDED to DETACHED.
+        _PyParkingLot_Park(&tstate->state, &expected, sizeof(tstate->state),
+                           /*timeout=*/-1, NULL, /*detach=*/0);
+
+        // Once we're back in DETACHED we can re-attach
+    } while (!tstate_try_attach(tstate));
+}
+
 void
 _PyThreadState_Attach(PyThreadState *tstate)
 {
@@ -1801,7 +1855,7 @@ _PyThreadState_Attach(PyThreadState *tstate)
 #endif
 
     _Py_EnsureTstateNotNULL(tstate);
-    if (current_fast_get(&_PyRuntime) != NULL) {
+    if (current_fast_get() != NULL) {
         Py_FatalError("non-NULL old thread state");
     }
 
@@ -1812,10 +1866,7 @@ _PyThreadState_Attach(PyThreadState *tstate)
     tstate_activate(tstate);
 
     if (!tstate_try_attach(tstate)) {
-        // TODO: Once stop-the-world GC is implemented for --disable-gil builds
-        // this will need to wait until the GC completes. For now, this case
-        // should never happen.
-        Py_FatalError("thread attach failed");
+        tstate_wait_attach(tstate);
     }
 
     // Resume previous critical section. This acquires the lock(s) from the
@@ -1829,19 +1880,235 @@ _PyThreadState_Attach(PyThreadState *tstate)
 #endif
 }
 
-void
-_PyThreadState_Detach(PyThreadState *tstate)
+static void
+detach_thread(PyThreadState *tstate, int detached_state)
 {
     // XXX assert(tstate_is_alive(tstate) && tstate_is_bound(tstate));
     assert(tstate->state == _Py_THREAD_ATTACHED);
-    assert(tstate == current_fast_get(&_PyRuntime));
+    assert(tstate == current_fast_get());
     if (tstate->critical_section != 0) {
         _PyCriticalSection_SuspendAll(tstate);
     }
-    tstate_set_detached(tstate);
     tstate_deactivate(tstate);
+    tstate_set_detached(tstate);
     current_fast_clear(&_PyRuntime);
     _PyEval_ReleaseLock(tstate->interp, tstate);
+}
+
+void
+_PyThreadState_Detach(PyThreadState *tstate)
+{
+    detach_thread(tstate, _Py_THREAD_DETACHED);
+}
+
+void
+_PyThreadState_Suspend(PyThreadState *tstate)
+{
+    _PyRuntimeState *runtime = &_PyRuntime;
+
+    assert(tstate->state == _Py_THREAD_ATTACHED);
+
+    struct _stoptheworld_state *stw = NULL;
+    HEAD_LOCK(runtime);
+    if (runtime->stoptheworld.requested) {
+        stw = &runtime->stoptheworld;
+    }
+    else if (tstate->interp->stoptheworld.requested) {
+        stw = &tstate->interp->stoptheworld;
+    }
+    HEAD_UNLOCK(runtime);
+
+    if (stw == NULL) {
+        // Switch directly to "detached" if there is no active stop-the-world
+        // request.
+        detach_thread(tstate, _Py_THREAD_DETACHED);
+        return;
+    }
+
+    // Switch to "suspended" state.
+    detach_thread(tstate, _Py_THREAD_SUSPENDED);
+
+    // Decrease the count of remaining threads needing to park.
+    HEAD_LOCK(runtime);
+    decrement_stoptheworld_countdown(stw);
+    HEAD_UNLOCK(runtime);
+}
+
+// Decrease stop-the-world counter of remaining number of threads that need to
+// pause. If we are the final thread to pause, notify the requesting thread.
+static void
+decrement_stoptheworld_countdown(struct _stoptheworld_state *stw)
+{
+    assert(stw->thread_countdown > 0);
+    if (--stw->thread_countdown == 0) {
+        _PyEvent_Notify(&stw->stop_event);
+    }
+}
+
+#ifdef Py_GIL_DISABLED
+// Interpreter for _Py_FOR_EACH_THREAD(). For global stop-the-world events,
+// we start with the first interpreter and then iterate over all interpreters.
+// For per-interpreter stop-the-world events, we only operate on the one
+// interpreter.
+static PyInterpreterState *
+interp_for_stop_the_world(struct _stoptheworld_state *stw)
+{
+    return (stw->is_global
+        ? PyInterpreterState_Head()
+        : _Py_CONTAINER_OF(stw, PyInterpreterState, stoptheworld));
+}
+
+// Loops over threads for a stop-the-world event.
+// For global: all threads in all interpreters
+// For per-interpreter: all threads in the interpreter
+#define _Py_FOR_EACH_THREAD(stw, i, t)                                      \
+    for (i = interp_for_stop_the_world((stw));                              \
+            i != NULL; i = ((stw->is_global) ? i->next : NULL))             \
+        for (t = i->threads.head; t; t = t->next)
+
+
+// Try to transition threads atomically from the "detached" state to the
+// "gc stopped" state. Returns true if all threads are in the "gc stopped"
+static bool
+park_detached_threads(struct _stoptheworld_state *stw)
+{
+    int num_parked = 0;
+    PyInterpreterState *i;
+    PyThreadState *t;
+    _Py_FOR_EACH_THREAD(stw, i, t) {
+        int state = _Py_atomic_load_int_relaxed(&t->state);
+        if (state == _Py_THREAD_DETACHED) {
+            // Atomically transition to "suspended" if in "detached" state.
+            if (_Py_atomic_compare_exchange_int(&t->state,
+                                                &state, _Py_THREAD_SUSPENDED)) {
+                num_parked++;
+            }
+        }
+        else if (state == _Py_THREAD_ATTACHED && t != stw->requester) {
+            // TODO: set this per-thread, rather than per-interpreter.
+            _Py_set_eval_breaker_bit(t->interp, _PY_EVAL_PLEASE_STOP_BIT, 1);
+        }
+    }
+    stw->thread_countdown -= num_parked;
+    assert(stw->thread_countdown >= 0);
+    return num_parked > 0 && stw->thread_countdown == 0;
+}
+
+static void
+stop_the_world(struct _stoptheworld_state *stw)
+{
+    _PyRuntimeState *runtime = &_PyRuntime;
+
+    PyMutex_Lock(&stw->mutex);
+    if (stw->is_global) {
+        _PyRWMutex_Lock(&runtime->stoptheworld_mutex);
+    }
+    else {
+        _PyRWMutex_RLock(&runtime->stoptheworld_mutex);
+    }
+
+    HEAD_LOCK(runtime);
+    stw->requested = 1;
+    stw->thread_countdown = 0;
+    stw->stop_event = (PyEvent){0};  // zero-initialize (unset)
+    stw->requester = _PyThreadState_GET();  // may be NULL
+
+    PyInterpreterState *i;
+    PyThreadState *t;
+    _Py_FOR_EACH_THREAD(stw, i, t) {
+        if (t != stw->requester) {
+            // Count all the other threads (we don't wait on ourself).
+            stw->thread_countdown++;
+        }
+    }
+
+    if (stw->thread_countdown == 0) {
+        HEAD_UNLOCK(runtime);
+        stw->world_stopped = 1;
+        return;
+    }
+
+    for (;;) {
+        // Switch threads that are detached to the GC stopped state
+        bool stopped_all_threads = park_detached_threads(stw);
+        HEAD_UNLOCK(runtime);
+
+        if (stopped_all_threads) {
+            break;
+        }
+
+        _PyTime_t wait_ns = 1000*1000;  // 1ms (arbitrary, may need tuning)
+        if (PyEvent_WaitTimed(&stw->stop_event, wait_ns)) {
+            assert(stw->thread_countdown == 0);
+            break;
+        }
+
+        HEAD_LOCK(runtime);
+    }
+    stw->world_stopped = 1;
+}
+
+static void
+start_the_world(struct _stoptheworld_state *stw)
+{
+    _PyRuntimeState *runtime = &_PyRuntime;
+    assert(PyMutex_IsLocked(&stw->mutex));
+
+    HEAD_LOCK(runtime);
+    stw->requested = 0;
+    stw->world_stopped = 0;
+    // Switch threads back to the detached state.
+    PyInterpreterState *i;
+    PyThreadState *t;
+    _Py_FOR_EACH_THREAD(stw, i, t) {
+        if (t != stw->requester) {
+            assert(t->state == _Py_THREAD_SUSPENDED);
+            _Py_atomic_store_int(&t->state, _Py_THREAD_DETACHED);
+            _PyParkingLot_UnparkAll(&t->state);
+        }
+    }
+    stw->requester = NULL;
+    HEAD_UNLOCK(runtime);
+    if (stw->is_global) {
+        _PyRWMutex_Unlock(&runtime->stoptheworld_mutex);
+    }
+    else {
+        _PyRWMutex_RUnlock(&runtime->stoptheworld_mutex);
+    }
+    PyMutex_Unlock(&stw->mutex);
+}
+#endif  // Py_GIL_DISABLED
+
+void
+_PyEval_StopTheWorldAll(_PyRuntimeState *runtime)
+{
+#ifdef Py_GIL_DISABLED
+    stop_the_world(&runtime->stoptheworld);
+#endif
+}
+
+void
+_PyEval_StartTheWorldAll(_PyRuntimeState *runtime)
+{
+#ifdef Py_GIL_DISABLED
+    start_the_world(&runtime->stoptheworld);
+#endif
+}
+
+void
+_PyEval_StopTheWorld(PyInterpreterState *interp)
+{
+#ifdef Py_GIL_DISABLED
+    stop_the_world(&interp->stoptheworld);
+#endif
+}
+
+void
+_PyEval_StartTheWorld(PyInterpreterState *interp)
+{
+#ifdef Py_GIL_DISABLED
+    start_the_world(&interp->stoptheworld);
+#endif
 }
 
 //----------
@@ -1903,14 +2170,14 @@ PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
 PyThreadState *
 PyThreadState_GetUnchecked(void)
 {
-    return current_fast_get(&_PyRuntime);
+    return current_fast_get();
 }
 
 
 PyThreadState *
 PyThreadState_Get(void)
 {
-    PyThreadState *tstate = current_fast_get(&_PyRuntime);
+    PyThreadState *tstate = current_fast_get();
     _Py_EnsureTstateNotNULL(tstate);
     return tstate;
 }
@@ -1918,7 +2185,7 @@ PyThreadState_Get(void)
 PyThreadState *
 _PyThreadState_Swap(_PyRuntimeState *runtime, PyThreadState *newts)
 {
-    PyThreadState *oldts = current_fast_get(runtime);
+    PyThreadState *oldts = current_fast_get();
     if (oldts != NULL) {
         _PyThreadState_Detach(oldts);
     }
@@ -1950,6 +2217,20 @@ _PyThreadState_Bind(PyThreadState *tstate)
     }
 }
 
+#if defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
+uintptr_t
+_Py_GetThreadLocal_Addr(void)
+{
+#ifdef HAVE_THREAD_LOCAL
+    // gh-112535: Use the address of the thread-local PyThreadState variable as
+    // a unique identifier for the current thread. Each thread has a unique
+    // _Py_tss_tstate variable with a unique address.
+    return (uintptr_t)&_Py_tss_tstate;
+#else
+#  error "no supported thread-local variable storage classifier"
+#endif
+}
+#endif
 
 /***********************************/
 /* routines for advanced debuggers */
@@ -1999,7 +2280,7 @@ PyObject *
 _PyThread_CurrentFrames(void)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
-    PyThreadState *tstate = current_fast_get(runtime);
+    PyThreadState *tstate = current_fast_get();
     if (_PySys_Audit(tstate, "sys._current_frames", NULL) < 0) {
         return NULL;
     }
@@ -2060,7 +2341,7 @@ PyObject *
 _PyThread_CurrentExceptions(void)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
-    PyThreadState *tstate = current_fast_get(runtime);
+    PyThreadState *tstate = current_fast_get();
 
     _Py_EnsureTstateNotNULL(tstate);
 
@@ -2150,7 +2431,7 @@ _PyGILState_Fini(PyInterpreterState *interp)
 
 
 // XXX Drop this.
-PyStatus
+void
 _PyGILState_SetTstate(PyThreadState *tstate)
 {
     /* must init with valid states */
@@ -2160,7 +2441,7 @@ _PyGILState_SetTstate(PyThreadState *tstate)
     if (!_Py_IsMainInterpreter(tstate->interp)) {
         /* Currently, PyGILState is shared by all interpreters. The main
          * interpreter is responsible to initialize it. */
-        return _PyStatus_OK();
+        return;
     }
 
 #ifndef NDEBUG
@@ -2170,8 +2451,6 @@ _PyGILState_SetTstate(PyThreadState *tstate)
     assert(gilstate_tss_get(runtime) == tstate);
     assert(tstate->gilstate_counter == 1);
 #endif
-
-    return _PyStatus_OK();
 }
 
 PyInterpreterState *
@@ -2204,12 +2483,22 @@ PyGILState_Check(void)
         return 1;
     }
 
-    PyThreadState *tstate = current_fast_get(runtime);
+    PyThreadState *tstate = current_fast_get();
     if (tstate == NULL) {
         return 0;
     }
 
-    return (tstate == gilstate_tss_get(runtime));
+#ifdef MS_WINDOWS
+    int err = GetLastError();
+#endif
+
+    PyThreadState *tcur = gilstate_tss_get(runtime);
+
+#ifdef MS_WINDOWS
+    SetLastError(err);
+#endif
+
+    return (tstate == tcur);
 }
 
 PyGILState_STATE
@@ -2302,7 +2591,7 @@ PyGILState_Release(PyGILState_STATE oldstate)
          * races; see bugs 225673 and 1061968 (that nasty bug has a
          * habit of coming back).
          */
-        assert(current_fast_get(runtime) == tstate);
+        assert(current_fast_get() == tstate);
         _PyThreadState_DeleteCurrent(tstate);
     }
     /* Release the lock if necessary */
@@ -2331,11 +2620,16 @@ _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp,
                                      _PyFrameEvalFunction eval_frame)
 {
     if (eval_frame == _PyEval_EvalFrameDefault) {
-        interp->eval_frame = NULL;
+        eval_frame = NULL;
     }
-    else {
-        interp->eval_frame = eval_frame;
+    if (eval_frame == interp->eval_frame) {
+        return;
     }
+    if (eval_frame != NULL) {
+        _Py_Executors_InvalidateAll(interp);
+    }
+    RARE_EVENT_INC(set_eval_frame_func);
+    interp->eval_frame = eval_frame;
 }
 
 
@@ -2363,9 +2657,8 @@ _PyInterpreterState_GetConfigCopy(PyConfig *config)
 const PyConfig*
 _Py_GetConfig(void)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
     assert(PyGILState_Check());
-    PyThreadState *tstate = current_fast_get(runtime);
+    PyThreadState *tstate = current_fast_get();
     _Py_EnsureTstateNotNULL(tstate);
     return _PyInterpreterState_GetConfig(tstate->interp);
 }
@@ -2495,4 +2788,57 @@ _PyThreadState_MustExit(PyThreadState *tstate)
         return 0;
     }
     return 1;
+}
+
+/********************/
+/* mimalloc support */
+/********************/
+
+static void
+tstate_mimalloc_bind(PyThreadState *tstate)
+{
+#ifdef Py_GIL_DISABLED
+    struct _mimalloc_thread_state *mts = &((_PyThreadStateImpl*)tstate)->mimalloc;
+
+    // Initialize the mimalloc thread state. This must be called from the
+    // same thread that will use the thread state. The "mem" heap doubles as
+    // the "backing" heap.
+    mi_tld_t *tld = &mts->tld;
+    _mi_tld_init(tld, &mts->heaps[_Py_MIMALLOC_HEAP_MEM]);
+
+    // Exiting threads push any remaining in-use segments to the abandoned
+    // pool to be re-claimed later by other threads. We use per-interpreter
+    // pools to keep Python objects from different interpreters separate.
+    tld->segments.abandoned = &tstate->interp->mimalloc.abandoned_pool;
+
+    // Initialize each heap
+    for (uint8_t i = 0; i < _Py_MIMALLOC_HEAP_COUNT; i++) {
+        _mi_heap_init_ex(&mts->heaps[i], tld, _mi_arena_id_none(), false, i);
+    }
+
+    // By default, object allocations use _Py_MIMALLOC_HEAP_OBJECT.
+    // _PyObject_GC_New() and similar functions temporarily override this to
+    // use one of the GC heaps.
+    mts->current_object_heap = &mts->heaps[_Py_MIMALLOC_HEAP_OBJECT];
+#endif
+}
+
+void
+_PyThreadState_ClearMimallocHeaps(PyThreadState *tstate)
+{
+#ifdef Py_GIL_DISABLED
+    if (!tstate->_status.bound) {
+        // The mimalloc heaps are only initialized when the thread is bound.
+        return;
+    }
+
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    for (Py_ssize_t i = 0; i < _Py_MIMALLOC_HEAP_COUNT; i++) {
+        // Abandon all segments in use by this thread. This pushes them to
+        // a shared pool to later be reclaimed by other threads. It's important
+        // to do this before the thread state is destroyed so that objects
+        // remain visible to the GC.
+        _mi_heap_collect_abandon(&tstate_impl->mimalloc.heaps[i]);
+    }
+#endif
 }
