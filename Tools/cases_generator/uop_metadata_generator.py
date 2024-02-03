@@ -1,4 +1,4 @@
-"""Generate uop metedata.
+"""Generate uop metadata.
 Reads the instruction definitions from bytecodes.c.
 Writes the metadata to pycore_uop_metadata.h by default.
 """
