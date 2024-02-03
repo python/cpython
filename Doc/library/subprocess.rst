@@ -57,10 +57,13 @@ underlying :class:`Popen` interface can be used directly.
    and combine both streams into one, use ``stdout=PIPE`` and ``stderr=STDOUT``
    instead of *capture_output*.
 
-   The *timeout* argument is passed to :meth:`Popen.communicate`. If the timeout
-   expires, the child process will be killed and waited for.  The
-   :exc:`TimeoutExpired` exception will be re-raised after the child process
-   has terminated.
+   A *timeout* may be specified in seconds, it is internally passed on to
+   :meth:`Popen.communicate`. If the timeout expires, the child process will be
+   killed and waited for. The :exc:`TimeoutExpired` exception will be
+   re-raised after the child process has terminated. The initial process
+   creation itself cannot be interrupted on many platform APIs so you are not
+   guaranteed to see a timeout exception until at least after however long
+   process creation takes.
 
    The *input* argument is passed to :meth:`Popen.communicate` and thus to the
    subprocess's stdin.  If used it must be a byte sequence, or a string if
@@ -305,10 +308,10 @@ default values. The arguments that are most commonly needed are:
    If text mode is not used, *stdin*, *stdout* and *stderr* will be opened as
    binary streams. No encoding or line ending conversion is performed.
 
-   .. versionadded:: 3.6
-      Added *encoding* and *errors* parameters.
+   .. versionchanged:: 3.6
+      Added the *encoding* and *errors* parameters.
 
-   .. versionadded:: 3.7
+   .. versionchanged:: 3.7
       Added the *text* parameter as an alias for *universal_newlines*.
 
    .. note::
@@ -462,9 +465,9 @@ functions.
    :func:`open` function when creating the stdin/stdout/stderr pipe
    file objects:
 
-   - :const:`0` means unbuffered (read and write are one
+   - ``0`` means unbuffered (read and write are one
      system call and can return short)
-   - :const:`1` means line buffered
+   - ``1`` means line buffered
      (only usable if ``text=True`` or ``universal_newlines=True``)
    - any other positive value means use a buffer of approximately that
      size
@@ -474,7 +477,7 @@ functions.
    .. versionchanged:: 3.3.1
       *bufsize* now defaults to -1 to enable buffering by default to match the
       behavior that most code expects.  In versions prior to Python 3.2.4 and
-      3.3.1 it incorrectly defaulted to :const:`0` which was unbuffered
+      3.3.1 it incorrectly defaulted to ``0`` which was unbuffered
       and allowed short reads.  This was unintentional and did not match the
       behavior of Python 2 as most code expected.
 
@@ -538,8 +541,8 @@ functions.
       :exc:`RuntimeError`. The new restriction may affect applications that
       are deployed in mod_wsgi, uWSGI, and other embedded environments.
 
-   If *close_fds* is true, all file descriptors except :const:`0`, :const:`1` and
-   :const:`2` will be closed before the child process is executed.  Otherwise
+   If *close_fds* is true, all file descriptors except ``0``, ``1`` and
+   ``2`` will be closed before the child process is executed.  Otherwise
    when *close_fds* is false, file descriptors obey their inheritable flag
    as described in :ref:`fd_inheritance`.
 
@@ -661,28 +664,29 @@ functions.
 
    If given, *startupinfo* will be a :class:`STARTUPINFO` object, which is
    passed to the underlying ``CreateProcess`` function.
-   *creationflags*, if given, can be one or more of the following flags:
 
-      * :data:`CREATE_NEW_CONSOLE`
-      * :data:`CREATE_NEW_PROCESS_GROUP`
-      * :data:`ABOVE_NORMAL_PRIORITY_CLASS`
-      * :data:`BELOW_NORMAL_PRIORITY_CLASS`
-      * :data:`HIGH_PRIORITY_CLASS`
-      * :data:`IDLE_PRIORITY_CLASS`
-      * :data:`NORMAL_PRIORITY_CLASS`
-      * :data:`REALTIME_PRIORITY_CLASS`
-      * :data:`CREATE_NO_WINDOW`
-      * :data:`DETACHED_PROCESS`
-      * :data:`CREATE_DEFAULT_ERROR_MODE`
-      * :data:`CREATE_BREAKAWAY_FROM_JOB`
+   If given, *creationflags*, can be one or more of the following flags:
+
+   * :data:`CREATE_NEW_CONSOLE`
+   * :data:`CREATE_NEW_PROCESS_GROUP`
+   * :data:`ABOVE_NORMAL_PRIORITY_CLASS`
+   * :data:`BELOW_NORMAL_PRIORITY_CLASS`
+   * :data:`HIGH_PRIORITY_CLASS`
+   * :data:`IDLE_PRIORITY_CLASS`
+   * :data:`NORMAL_PRIORITY_CLASS`
+   * :data:`REALTIME_PRIORITY_CLASS`
+   * :data:`CREATE_NO_WINDOW`
+   * :data:`DETACHED_PROCESS`
+   * :data:`CREATE_DEFAULT_ERROR_MODE`
+   * :data:`CREATE_BREAKAWAY_FROM_JOB`
 
    *pipesize* can be used to change the size of the pipe when
    :data:`PIPE` is used for *stdin*, *stdout* or *stderr*. The size of the pipe
    is only changed on platforms that support this (only Linux at this time of
    writing). Other platforms will ignore this parameter.
 
-   .. versionadded:: 3.10
-      The ``pipesize`` parameter was added.
+   .. versionchanged:: 3.10
+      Added the *pipesize* parameter.
 
    Popen objects are supported as context managers via the :keyword:`with` statement:
    on exit, standard file descriptors are closed, and the process is waited for.
@@ -734,13 +738,13 @@ arguments.
 code.
 
 All of the functions and methods that accept a *timeout* parameter, such as
-:func:`call` and :meth:`Popen.communicate` will raise :exc:`TimeoutExpired` if
+:func:`run` and :meth:`Popen.communicate` will raise :exc:`TimeoutExpired` if
 the timeout expires before the process exits.
 
 Exceptions defined in this module all inherit from :exc:`SubprocessError`.
 
-   .. versionadded:: 3.3
-      The :exc:`SubprocessError` base class was added.
+.. versionadded:: 3.3
+   The :exc:`SubprocessError` base class was added.
 
 .. _subprocess-security:
 
@@ -788,9 +792,10 @@ Instances of the :class:`Popen` class have the following methods:
 
    .. note::
 
-      The function is implemented using a busy loop (non-blocking call and
-      short sleeps). Use the :mod:`asyncio` module for an asynchronous wait:
-      see :class:`asyncio.create_subprocess_exec`.
+      When the ``timeout`` parameter is not ``None``, then (on POSIX) the
+      function is implemented using a busy loop (non-blocking call and short
+      sleeps). Use the :mod:`asyncio` module for an asynchronous wait: see
+      :class:`asyncio.create_subprocess_exec`.
 
    .. versionchanged:: 3.3
       *timeout* was added.
@@ -919,9 +924,12 @@ Reassigning them to new values is unsupported:
 
 .. attribute:: Popen.returncode
 
-   The child return code, set by :meth:`poll` and :meth:`wait` (and indirectly
-   by :meth:`communicate`).  A ``None`` value indicates that the process
-   hasn't terminated yet.
+   The child return code. Initially ``None``, :attr:`returncode` is set by
+   a call to the :meth:`poll`, :meth:`wait`, or :meth:`communicate` methods
+   if they detect that the process has terminated.
+
+   A ``None`` value indicates that the process hadn't yet terminated at the
+   time of the last method call.
 
    A negative value ``-N`` indicates that the child was terminated by signal
    ``N`` (POSIX only).
@@ -1454,8 +1462,8 @@ Return code handling translates as follows::
        print("There were some errors")
 
 
-Replacing functions from the :mod:`popen2` module
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Replacing functions from the :mod:`!popen2` module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. note::
 
@@ -1531,8 +1539,8 @@ handling consistency are valid for these functions.
       as it did in Python 3.3.3 and earlier.  exitcode has the same value as
       :attr:`~Popen.returncode`.
 
-   .. versionadded:: 3.11
-      Added *encoding* and *errors* arguments.
+   .. versionchanged:: 3.11
+      Added the *encoding* and *errors* parameters.
 
 .. function:: getoutput(cmd, *, encoding=None, errors=None)
 
@@ -1549,8 +1557,8 @@ handling consistency are valid for these functions.
    .. versionchanged:: 3.3.4
       Windows support added
 
-   .. versionadded:: 3.11
-      Added *encoding* and *errors* arguments.
+   .. versionchanged:: 3.11
+      Added the *encoding* and *errors* parameters.
 
 
 Notes
@@ -1604,7 +1612,7 @@ improves performance.
 
 If you ever encounter a presumed highly unusual situation where you need to
 prevent ``vfork()`` from being used by Python, you can set the
-:attr:`subprocess._USE_VFORK` attribute to a false value.
+:const:`subprocess._USE_VFORK` attribute to a false value.
 
 ::
 
@@ -1612,7 +1620,7 @@ prevent ``vfork()`` from being used by Python, you can set the
 
 Setting this has no impact on use of ``posix_spawn()`` which could use
 ``vfork()`` internally within its libc implementation.  There is a similar
-:attr:`subprocess._USE_POSIX_SPAWN` attribute if you need to prevent use of
+:const:`subprocess._USE_POSIX_SPAWN` attribute if you need to prevent use of
 that.
 
 ::

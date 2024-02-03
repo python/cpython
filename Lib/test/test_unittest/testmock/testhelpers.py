@@ -952,6 +952,24 @@ class SpecSignatureTest(unittest.TestCase):
         self.assertFalse(hasattr(autospec, '__name__'))
 
 
+    def test_autospec_signature_staticmethod(self):
+        class Foo:
+            @staticmethod
+            def static_method(a, b=10, *, c): pass
+
+        mock = create_autospec(Foo.__dict__['static_method'])
+        self.assertEqual(inspect.signature(Foo.static_method), inspect.signature(mock))
+
+
+    def test_autospec_signature_classmethod(self):
+        class Foo:
+            @classmethod
+            def class_method(cls, a, b=10, *, c): pass
+
+        mock = create_autospec(Foo.__dict__['class_method'])
+        self.assertEqual(inspect.signature(Foo.class_method), inspect.signature(mock))
+
+
     def test_spec_inspect_signature(self):
 
         def myfunc(x, y): pass
