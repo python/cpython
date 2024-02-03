@@ -2589,7 +2589,7 @@ class TestMove(BaseTest, unittest.TestCase):
                              'dst (%s) is not in src (%s)' % (dst, src))   
         finally:
             os_helper.rmtree(TESTFN)
-    
+
     # Make sure folder doesn't get moved
     # into itself in case of a insensitive OS
     @unittest.skipIf(not pathlib.PurePath("Foo") == pathlib.PurePath("foo"), 'run only on case insensitive OS')
