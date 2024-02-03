@@ -929,7 +929,10 @@ def _destinsrc(src, dst):
         src += os.path.sep
     if not dst.endswith(os.path.sep):
         dst += os.path.sep
-    return os.path.samestat(src, dst)
+    try:
+        return os.lstat(src) == os.lstat(dst[:len(src)])
+    except OSError:
+        return dst.startswith(src)
 
 def _is_immutable(src):
     st = _stat(src)
