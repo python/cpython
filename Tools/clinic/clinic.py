@@ -5267,6 +5267,7 @@ class DSLParser:
         line, _, returns = line.partition('->')
         returns = returns.strip()
         full_name, c_basename = self.parse_function_names(line)
+        return_converter = self.resolve_return_converter(full_name, returns)
 
         fields = [x.strip() for x in full_name.split('.')]
         function_name = fields.pop()
@@ -5278,7 +5279,7 @@ class DSLParser:
             module=module,
             cls=cls,
             c_basename=c_basename,
-            return_converter=self.resolve_return_converter(full_name, returns),
+            return_converter=return_converter,
             kind=self.kind,
             coexist=self.coexist,
             critical_section=self.critical_section,
