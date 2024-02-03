@@ -2751,6 +2751,18 @@ class TestMove(BaseTest, unittest.TestCase):
             if os.path.exists(TESTFN_DST):
                 os.lchflags(TESTFN_DST, stat.UF_OPAQUE)
                 os_helper.rmtree(TESTFN_DST)
+    
+    # Make sure folder doesn't get moved
+    # into itself in case of a insensitive OS
+    @unittest.skipIf(os.name != 'nt', "Windows only")
+    def test_dont_move_directory_to_itself(self):
+        src = os.path.join(self.src_dir, 'Foo')
+        dst = os.path.join(self.src_dir, 'foo/subfolder')
+
+        dst_dir = os.path.join(os.path.basename(dst),'foo')
+        
+        shutil.move(src, dst)
+        self.assertFalse(os.path.isdir(dst_dir))
 
 
 class TestCopyFile(unittest.TestCase):
