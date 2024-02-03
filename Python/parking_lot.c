@@ -356,14 +356,18 @@ _PyParkingLot_Unpark(const void *addr, _Py_unpark_fn_t *fn, void *arg)
 void
 _PyParkingLot_UnparkAll(const void *addr)
 {
+    struct llist_node *node;
     struct llist_node head = LLIST_INIT(head);
     Bucket *bucket = &buckets[((uintptr_t)addr) % NUM_BUCKETS];
 
     _PyRawMutex_Lock(&bucket->mutex);
     dequeue_all(bucket, addr, &head);
+    llist_for_each(node, &head) {
+        struct wait_entry *waiter = llist_data(node, struct wait_entry, node);
+        waiter->is_unparking = true;
+    }
     _PyRawMutex_Unlock(&bucket->mutex);
 
-    struct llist_node *node;
     llist_for_each_safe(node, &head) {
         struct wait_entry *waiter = llist_data(node, struct wait_entry, node);
         llist_remove(node);
