@@ -2074,11 +2074,6 @@ math_trunc(PyObject *module, PyObject *x)
         return PyFloat_Type.tp_as_number->nb_int(x);
     }
 
-    if (!_PyType_IsReady(Py_TYPE(x))) {
-        if (PyType_Ready(Py_TYPE(x)) < 0)
-            return NULL;
-    }
-
     math_module_state *state = get_math_module_state(module);
     trunc = _PyObject_LookupSpecial(x, state->str___trunc__);
     if (trunc == NULL) {
