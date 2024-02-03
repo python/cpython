@@ -2757,7 +2757,7 @@ class TestMove(BaseTest, unittest.TestCase):
     @unittest.skipIf(os.name != 'nt', "Windows only")
     def test_dont_move_directory_to_itself(self):
         src = os.path.join(self.src_dir, 'Foo')
-        dst = os.path.join(self.src_dir, 'foo/subfolder')
+        dst = os.path.join(self.src_dir, 'foo\subfolder')
 
         dst_dir = os.path.join(os.path.basename(dst),'foo')
 
