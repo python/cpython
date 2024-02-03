@@ -448,7 +448,7 @@ already do this.
 
 An alternative approach to reducing the impact of the GIL is
 to make the GIL a per-interpreter-state lock rather than truly global.
-This was `first implemented in Python 3.12 <whatsnew312-pep684>` and is
+This was `first implemented in Python 3.12 <whatsnew312-pep684>`_ and is
 available in the C API. A Python interface to it is expected in Python 3.13.
 The main limitation to it at the moment is likely to be 3rd party extension
 modules, since these must be written with multiple interpreters in mind in
