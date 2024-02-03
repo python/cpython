@@ -510,9 +510,15 @@ to use the standard :func:`repr`.
    and its subclasses is not supported. It will not raise any errors,
    but it will produce very strange results at runtime::
 
-      @dataclass  # don't do this: it does not make any sense
-      class Colors(Enum):
-         red = 'red'
+      >>> @dataclass               # don't do this: it does not make any sense
+      ... class Color(Enum):
+      ...    RED = 1
+      ...    BLUE = 2
+      ...
+      >>> Color.RED is Color.BLUE
+      False
+      >>> Color.RED == Color.BLUE  # problem is here: they should not be equal
+      True
 
 
 Pickling
