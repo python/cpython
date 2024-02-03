@@ -167,6 +167,13 @@ provides three different variants:
       header (using :meth:`send_header`) in all of its responses to clients.
       For backwards compatibility, the setting defaults to ``'HTTP/1.0'``.
 
+   .. attribute:: default_content_type
+
+      Specifies the content-type header value sent when the mime-type cannot
+      be guessed from the file extension of the requested URL.
+      For backwards compatibility, the setting defaults to
+      ``'application/octet-stream'``.
+
    .. attribute:: MessageClass
 
       Specifies an :class:`email.message.Message`\ -like class to parse HTTP
@@ -461,6 +468,16 @@ following command runs an HTTP/1.1 conformant server::
 
 .. versionchanged:: 3.11
    Added the ``--protocol`` option.
+
+By default, the server uses the MIME type ``'application/octet-stream'`` for
+the ``content-type`` header when the content type cannot be guessed from the
+URL's extension (if any). The option ``--default-content-type`` overrides
+this default with one of the user's choosing::
+
+        python -m http.server --default-content-type text/html
+
+.. versionchanged:: 3.13
+   Added the ``--default-content-type`` option.
 
 .. class:: CGIHTTPRequestHandler(request, client_address, server)
 

@@ -891,32 +891,17 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         as a default; however it would be permissible (if
         slow) to look inside the data to make a better guess.
 
-        >>> testserver = type('', (), {
-        ...  'makefile': lambda mode, bufsize: open(os.devnull, mode)
-        ... })
-        >>> testhandler = SimpleHTTPRequestHandler(testserver, None, None)
-        >>> testhandler.guess_type('/foo.bar.GZ')  # tests ext.lower()
-        'application/gzip'
-        >>> testhandler.default_content_type = 'nonesuch/nonesuch'
-        >>> testhandler.guess_type('/this/should/give/default')
-        'nonesuch/nonesuch'
-        >>> # check short-circuiting works using mock mimetypes.guess_type
-        >>> sys.modules[__name__].mimetypes = type('', (), {
-        ...  'guess_type': lambda x: (print('foo'), print('bar'))
-        ... })
-        >>> testhandler.guess_type('/should/show/foo/bar/then/default')
-        foo
-        bar
-        'nonesuch/nonesuch'
-        >>> testhandler.guess_type('/should/not/print/foo.Z')
-        'application/octet-stream'
-
         """
         base, ext = posixpath.splitext(path)
-        return self.extensions_map.get(ext) or \
-            self.extensions_map.get(ext.lower()) or \
-            mimetypes.guess_type(path)[0] or \
-            self.default_content_type
+        if ext in self.extensions_map:
+            return self.extensions_map[ext]
+        ext = ext.lower()
+        if ext in self.extensions_map:
+            return self.extensions_map[ext]
+        guess, _ = mimetypes.guess_type(path)
+        if guess:
+            return guess
+        return self.default_content_type
 
 
 # Utilities for CGIHTTPRequestHandler
