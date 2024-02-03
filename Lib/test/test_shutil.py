@@ -2760,7 +2760,7 @@ class TestMove(BaseTest, unittest.TestCase):
         dst = os.path.join(self.src_dir, 'foo/subfolder')
 
         dst_dir = os.path.join(os.path.basename(dst),'foo')
-        
+
         shutil.move(src, dst)
         self.assertFalse(os.path.isdir(dst_dir))
 
