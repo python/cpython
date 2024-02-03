@@ -1103,11 +1103,13 @@ Glossary
 
       The :class:`collections.abc.Sequence` abstract base class
       defines a much richer interface that goes beyond just
-      :meth:`~object.__getitem__` and :meth:`~object.__len__`.
-      :ref:`Common Sequence Operations <typesseq-common>`
-      provides a list common to most sequence types.
-      Types which implement this expanded interface can be registered explicitly using
-      :func:`~abc.ABCMeta.register`.
+      :meth:`~object.__getitem__` and :meth:`~object.__len__`, adding
+      :meth:`!count`, :meth:`!index`, :meth:`~object.__contains__`, and
+      :meth:`~object.__reversed__`. Types that implement this expanded
+      interface can be registered explicitly using
+      :func:`~abc.ABCMeta.register`. For more documentation on sequence
+      methods generally, see
+      :ref:`Common Sequence Operations <typesseq-common>`.
 
    set comprehension
       A compact way to process all or part of the elements in an iterable and
