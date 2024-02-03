@@ -2585,8 +2585,8 @@ class TestMove(BaseTest, unittest.TestCase):
                 src = os.path.join(TESTFN, src)
                 dst = os.path.join(TESTFN, dst)
                 self.assertTrue(shutil._destinsrc(src, dst),
-                             msg='_destinsrc() wrongly concluded that '
-                             'dst (%s) is not in src (%s)' % (dst, src))   
+                            msg='_destinsrc() wrongly concluded that '
+                            'dst (%s) is not in src (%s)' % (dst, src))
         finally:
             os_helper.rmtree(TESTFN)
 
@@ -2600,8 +2600,8 @@ class TestMove(BaseTest, unittest.TestCase):
                 src = os.path.join(TESTFN, src)
                 dst = os.path.join(TESTFN, dst)
                 self.assertTrue(shutil._destinsrc(src, dst),
-                             msg='_destinsrc() wrongly concluded that '
-                             'dst (%s) is not in src (%s)' % (dst, src))
+                            msg='_destinsrc() wrongly concluded that '
+                            'dst (%s) is not in src (%s)' % (dst, src))
         finally:
             os_helper.rmtree(TESTFN)
 
