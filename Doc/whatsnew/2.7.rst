@@ -1306,11 +1306,11 @@ changes, or look through the Subversion logs for all the details.
   ``('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512')``.
   (Contributed by Carl Chenet; :issue:`7418`.)
 
-* The default :class:`HTTPResponse <http.client.HTTPResponse>` class used by the :mod:`httplib <http>` module now
+* The default :class:`~http.client.HTTPResponse` class used by the :mod:`httplib <http>` module now
   supports buffering, resulting in much faster reading of HTTP responses.
   (Contributed by Kristján Valur Jónsson; :issue:`4879`.)
 
-  The :class:`HTTPConnection <http.client.HTTPConnection>` and :class:`HTTPSConnection <http.client.HTTPSConnection>` classes
+  The :class:`~http.client.HTTPConnection` and :class:`~http.client.HTTPSConnection` classes
   now support a *source_address* parameter, a ``(host, port)`` 2-tuple
   giving the source address that will be used for the connection.
   (Contributed by Eldon Ziegler; :issue:`3972`.)
@@ -1648,7 +1648,7 @@ changes, or look through the Subversion logs for all the details.
   and has been updated to version 5.2.0 (updated by
   Florent Xicluna; :issue:`8024`).
 
-* The :mod:`urlparse <urllib.parse>` module's :func:`urlsplit <urllib.parse.urlsplit>` now handles
+* The :mod:`urlparse <urllib.parse>` module's :func:`~urllib.parse.urlsplit` now handles
   unknown URL schemes in a fashion compliant with :rfc:`3986`: if the
   URL is of the form ``"<something>://..."``, the text before the
   ``://`` is treated as the scheme, even if it's a made-up scheme that
@@ -2335,10 +2335,10 @@ Port-Specific Changes: Windows
   (Contributed by David Cournapeau; :issue:`4365`.)
 
 * The :mod:`_winreg <winreg>` module for accessing the registry now implements
-  the :func:`CreateKeyEx <winreg.CreateKeyEx>` and :func:`DeleteKeyEx <winreg.DeleteKeyEx>`
+  the :func:`~winreg.CreateKeyEx` and :func:`~winreg.DeleteKeyEx`
   functions, extended versions of previously supported functions that
-  take several extra arguments.  The :func:`DisableReflectionKey <winreg.DisableReflectionKey>`,
-  :func:`EnableReflectionKey <winreg.EnableReflectionKey>`, and :func:`QueryReflectionKey <winreg.QueryReflectionKey>`
+  take several extra arguments.  The :func:`~winreg.DisableReflectionKey`,
+  :func:`~winreg.EnableReflectionKey`, and :func:`~winreg.QueryReflectionKey`
   were also tested and documented.
   (Implemented by Brian Curtin: :issue:`7347`.)
 
@@ -2508,7 +2508,7 @@ In the standard library:
   which raises an exception if there's an error.
   (Changed by Lars Gustäbel; :issue:`7357`.)
 
-* The :mod:`urlparse <urllib.parse>` module's :func:`urlsplit <urllib.parse.urlsplit>` now handles
+* The :mod:`urlparse <urllib.parse>` module's :func:`~urllib.parse.urlsplit` now handles
   unknown URL schemes in a fashion compliant with :rfc:`3986`: if the
   URL is of the form ``"<something>://..."``, the text before the
   ``://`` is treated as the scheme, even if it's a made-up scheme that

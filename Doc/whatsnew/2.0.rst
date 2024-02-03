@@ -1044,7 +1044,7 @@ were also changed to support ``https://`` URLs, though no one has implemented
 FTP or SMTP over SSL.
 
 The :mod:`httplib <http>` module has been rewritten by Greg Stein to support HTTP/1.1.
-Backward compatibility with the 1.5 version of :mod:`httplib <http>` is provided,
+Backward compatibility with the 1.5 version of :mod:`!httplib` is provided,
 though using HTTP/1.1 features such as pipelining will require rewriting code to
 use a different set of interfaces.
 
@@ -1129,10 +1129,10 @@ module.
   :file:`Tools/idle/BrowserControl.py`, and adapted for the standard library by
   Fred.)
 
-* :mod:`_winreg <winreg>`: An interface to the Windows registry.  :mod:`_winreg <winreg>` is an
+* :mod:`_winreg <winreg>`: An interface to the Windows registry.  :mod:`!_winreg` is an
   adaptation of functions that have been part of PythonWin since 1995, but has now
   been added to the core  distribution, and enhanced to support Unicode.
-  :mod:`_winreg <winreg>` was written by Bill Tutt and Mark Hammond.
+  :mod:`!_winreg` was written by Bill Tutt and Mark Hammond.
 
 * :mod:`zipfile`: A module for reading and writing ZIP-format archives.  These
   are archives produced by :program:`PKZIP` on DOS/Windows or :program:`zip` on

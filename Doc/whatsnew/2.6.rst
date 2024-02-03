@@ -2625,7 +2625,7 @@ changes, or look through the Subversion logs for all the details.
   :class:`datetime.date` and :class:`datetime.time` to the
   :class:`xmlrpclib.DateTime <xmlrpc.client.DateTime>` type; the conversion semantics were
   not necessarily correct for all applications.  Code using
-  :mod:`xmlrpclib <xmlrpc.client>` should convert :class:`date` and :class:`~datetime.time`
+  :mod:`!xmlrpclib` should convert :class:`date` and :class:`~datetime.time`
   instances. (:issue:`1330538`)  The code can also handle
   dates before 1900 (contributed by Ralf Schmitt; :issue:`2014`)
   and 64-bit integers represented by using ``<i8>`` in XML-RPC responses
@@ -3278,7 +3278,7 @@ that may require changes to your code:
   :class:`datetime.date` and :class:`datetime.time` to the
   :class:`xmlrpclib.DateTime <xmlrpc.client.DateTime>` type; the conversion semantics were
   not necessarily correct for all applications.  Code using
-  :mod:`xmlrpclib <xmlrpc.client>` should convert :class:`date` and :class:`~datetime.time`
+  :mod:`!xmlrpclib` should convert :class:`date` and :class:`~datetime.time`
   instances. (:issue:`1330538`)
 
 * (3.0-warning mode) The :class:`Exception` class now warns
