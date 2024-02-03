@@ -929,7 +929,7 @@ def _destinsrc(src, dst):
         src += os.path.sep
     if not dst.endswith(os.path.sep):
         dst += os.path.sep
-    return os.path.realpath(src) == os.path.realpath(dst[:len(src)])
+    return os.path.normcase(src) == os.path.normcase(dst[:len(src)])
 
 def _is_immutable(src):
     st = _stat(src)

@@ -2593,7 +2593,7 @@ class TestMove(BaseTest, unittest.TestCase):
     # Make sure folder doesn't get moved
     # into itself in case of a insensitive OS
     @unittest.skipIf(not pathlib.PurePath("Foo") == pathlib.PurePath("foo"), 'run only on case insensitive OS')
-    def test_destinsrc_false_negative_(self):
+    def test_destinsrc_false_negative_case_insensitive(self):
         os.mkdir(TESTFN)
         try:
             for src, dst in [('Srcdir', 'srcdir/dest')]:
