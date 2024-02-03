@@ -136,8 +136,8 @@ ABC                            Inherits from          Abstract Methods        Mi
                                :class:`Collection`    ``__len__``             ``index``, and ``count``
 
 :class:`MutableSequence`       :class:`Sequence`      ``__getitem__``,        Inherited :class:`Sequence` methods and
-                                                      ``__setitem__``,        ``append``, ``reverse``, ``extend``, ``pop``,
-                                                      ``__delitem__``,        ``remove``, and ``__iadd__``
+                                                      ``__setitem__``,        ``append``, ``clear``, ``reverse``, ``extend``,
+                                                      ``__delitem__``,        ``pop``, ``remove``, and ``__iadd__``
                                                       ``__len__``,
                                                       ``insert``
 
