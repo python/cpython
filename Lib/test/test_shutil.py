@@ -2586,6 +2586,21 @@ class TestMove(BaseTest, unittest.TestCase):
                 dst = os.path.join(TESTFN, dst)
                 self.assertTrue(shutil._destinsrc(src, dst),
                              msg='_destinsrc() wrongly concluded that '
+                             'dst (%s) is not in src (%s)' % (dst, src))   
+        finally:
+            os_helper.rmtree(TESTFN)
+    
+    # Make sure folder doesn't get moved
+    # into itself in case of a insensitive OS
+    @unittest.skipIf(not pathlib.PurePath("Foo") == pathlib.PurePath("foo"), 'run only on case insensitive OS')
+    def test_destinsrc_false_negative_(self):
+        os.mkdir(TESTFN)
+        try:
+            for src, dst in [('Srcdir', 'srcdir/dest')]:
+                src = os.path.join(TESTFN, src)
+                dst = os.path.join(TESTFN, dst)
+                self.assertTrue(shutil._destinsrc(src, dst),
+                             msg='_destinsrc() wrongly concluded that '
                              'dst (%s) is not in src (%s)' % (dst, src))
         finally:
             os_helper.rmtree(TESTFN)
@@ -2751,21 +2766,6 @@ class TestMove(BaseTest, unittest.TestCase):
             if os.path.exists(TESTFN_DST):
                 os.lchflags(TESTFN_DST, stat.UF_OPAQUE)
                 os_helper.rmtree(TESTFN_DST)
-
-    # Make sure folder doesn't get moved
-    # into itself in case of a insensitive OS
-    @unittest.skipIf(os.name != 'nt', "Windows only")
-    def test_dont_move_directory_to_itself(self):
-        src = os.path.join(self.src_dir, 'Foo')
-        dst = os.path.join(self.src_dir, 'foo/subfolder')
-
-        os.mkdir(src)
-        os.mkdir(dst)
-
-        dst_dir = os.path.join(os.path.basename(dst),'foo')
-
-        shutil.move(src, dst)
-        self.assertFalse(os.path.exists(dst_dir))
 
 
 class TestCopyFile(unittest.TestCase):
