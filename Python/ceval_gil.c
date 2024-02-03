@@ -610,8 +610,16 @@ PyEval_SaveThread(void)
 void
 PyEval_RestoreThread(PyThreadState *tstate)
 {
+#ifdef MS_WINDOWS
+    int err = GetLastError();
+#endif
+
     _Py_EnsureTstateNotNULL(tstate);
     _PyThreadState_Attach(tstate);
+
+#ifdef MS_WINDOWS
+    SetLastError(err);
+#endif
 }
 
 

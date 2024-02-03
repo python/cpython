@@ -138,7 +138,11 @@ _PyList_ClearFreeList(_PyFreeListState *freelist_state, int is_finalization)
 void
 _PyList_Fini(_PyFreeListState *state)
 {
+    // With Py_GIL_DISABLED:
+    // the freelists for the current thread state have already been cleared.
+#ifndef Py_GIL_DISABLED
     _PyList_ClearFreeList(state, 1);
+#endif
 }
 
 /* Print summary info about the state of the optimized allocator */
@@ -251,6 +255,21 @@ PyList_GetItem(PyObject *op, Py_ssize_t i)
         return NULL;
     }
     return ((PyListObject *)op) -> ob_item[i];
+}
+
+PyObject *
+PyList_GetItemRef(PyObject *op, Py_ssize_t i)
+{
+    if (!PyList_Check(op)) {
+        PyErr_SetString(PyExc_TypeError, "expected a list");
+        return NULL;
+    }
+    if (!valid_index(i, Py_SIZE(op))) {
+        _Py_DECLARE_STR(list_err, "list index out of range");
+        PyErr_SetObject(PyExc_IndexError, &_Py_STR(list_err));
+        return NULL;
+    }
+    return Py_NewRef(PyList_GET_ITEM(op, i));
 }
 
 int
