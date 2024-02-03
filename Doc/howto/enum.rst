@@ -506,9 +506,10 @@ to use the standard :func:`repr`.
 
 .. note::
 
-   Adding :func:`~dataclasses.dataclass` decorator to :type:`Enum`
+   Adding :func:`~dataclasses.dataclass` decorator to :class:`Enum`
    and its subclasses is not supported. It will not raise any errors,
-   but it will produce very strange results at runtime::
+   but it will produce very strange results at runtime, such as members
+   being equal to each other::
 
       >>> @dataclass               # don't do this: it does not make any sense
       ... class Color(Enum):
