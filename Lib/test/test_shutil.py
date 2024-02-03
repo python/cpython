@@ -2751,7 +2751,7 @@ class TestMove(BaseTest, unittest.TestCase):
             if os.path.exists(TESTFN_DST):
                 os.lchflags(TESTFN_DST, stat.UF_OPAQUE)
                 os_helper.rmtree(TESTFN_DST)
-    
+
     # Make sure folder doesn't get moved
     # into itself in case of a insensitive OS
     @unittest.skipIf(os.name != 'nt', "Windows only")
