@@ -21,11 +21,11 @@ class list "PyListObject *" "&PyList_Type"
 _Py_DECLARE_STR(list_err, "list index out of range");
 
 #ifdef Py_GIL_DISABLED
-    #define LOAD_SSIZE_ATOMIC_AS_POSSIBLE(value) _Py_atomic_load_ssize_relaxed(&value)
-    #define STORE_SSIZE_ATOMIC_AS_POSSIBLE(value, new_value) _Py_atomic_store_ssize_relaxed(&value, new_value)
+    #define LOAD_SSIZE(value) _Py_atomic_load_ssize_relaxed(&value)
+    #define STORE_SSIZE(value, new_value) _Py_atomic_store_ssize_relaxed(&value, new_value)
 #else
-    #define LOAD_SSIZE_ATOMIC_AS_POSSIBLE(value) value
-    #define STORE_SSIZE_ATOMIC_AS_POSSIBLE(value, new_value) value = new_value
+    #define LOAD_SSIZE(value) value
+    #define STORE_SSIZE(value, new_value) value = new_value
 #endif
 
 #ifdef WITH_FREELISTS
@@ -2956,7 +2956,7 @@ list___sizeof___impl(PyListObject *self)
 /*[clinic end generated code: output=3417541f95f9a53e input=b8030a5d5ce8a187]*/
 {
     size_t res = _PyObject_SIZE(Py_TYPE(self));
-    Py_ssize_t allocated = LOAD_SSIZE_ATOMIC_AS_POSSIBLE(self->allocated);
+    Py_ssize_t allocated = LOAD_SSIZE(self->allocated);
     res += (size_t)allocated * sizeof(void*);
     return PyLong_FromSize_t(res);
 }
@@ -3384,7 +3384,7 @@ listiter_len(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     _PyListIterObject *it = (_PyListIterObject *)self;
     Py_ssize_t len;
-    Py_ssize_t index = LOAD_SSIZE_ATOMIC_AS_POSSIBLE(it->it_index);
+    Py_ssize_t index = LOAD_SSIZE(it->it_index);
     if (it->it_seq) {
         len = PyList_GET_SIZE(it->it_seq) - index;
         if (len >= 0)
@@ -3524,13 +3524,13 @@ listreviter_next(PyObject *self)
     }
     assert(PyList_Check(seq));
 
-    index = LOAD_SSIZE_ATOMIC_AS_POSSIBLE(it->it_index);
+    index = LOAD_SSIZE(it->it_index);
     if (index>=0 && index < PyList_GET_SIZE(seq)) {
         item = PyList_GET_ITEM(seq, index);
         it->it_index--;
         return Py_NewRef(item);
     }
-    STORE_SSIZE_ATOMIC_AS_POSSIBLE(it->it_index, -1);
+    STORE_SSIZE(it->it_index, -1);
     it->it_seq = NULL;
     Py_DECREF(seq);
     return NULL;
