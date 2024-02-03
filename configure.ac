@@ -1592,11 +1592,13 @@ AS_VAR_IF([enable_experimental_jit],
           [AS_VAR_APPEND([CFLAGS_NODIST], [" -D_Py_JIT"])
            AS_VAR_SET([REGEN_JIT_COMMAND],
                       ["\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py $host"])
+           AS_VAR_SET([JIT_STENCILS_H], ["jit_stencils.h"])
            AS_VAR_IF([Py_DEBUG],
                      [true],
                      [AS_VAR_APPEND([REGEN_JIT_COMMAND], [" --debug"])],
                      [])])
 AC_SUBST([REGEN_JIT_COMMAND])
+AC_SUBST([JIT_STENCILS_H])
 AC_MSG_RESULT([$enable_experimental_jit])
 
 # Enable optimization flags
