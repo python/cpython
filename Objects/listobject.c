@@ -272,6 +272,15 @@ PyList_GetItemRef(PyObject *op, Py_ssize_t i)
     return Py_NewRef(PyList_GET_ITEM(op, i));
 }
 
+static inline PyObject*
+_PyList_GetItemRef(PyListObject *op, Py_ssize_t i)
+{
+    if (!valid_index(i, Py_SIZE(op))) {
+        return NULL;
+    }
+    return Py_NewRef(PyList_GET_ITEM(op, i));
+}
+
 int
 PyList_SetItem(PyObject *op, Py_ssize_t i,
                PyObject *newitem)
@@ -480,10 +489,9 @@ list_contains(PyObject *aa, PyObject *el)
 {
 
     for (Py_ssize_t i = 0; ; i++) {
-        PyObject *item = PyList_GetItemRef(aa, i);
-        if (item == NULL && PyErr_ExceptionMatches(PyExc_IndexError)) {
+        PyObject *item = _PyList_GetItemRef((PyListObject *)aa, i);
+        if (item == NULL) {
             // out-of-bounds
-            PyErr_Clear();
             return 0;
         }
         int cmp = PyObject_RichCompareBool(item, el, Py_EQ);
@@ -2740,9 +2748,9 @@ list_index_impl(PyListObject *self, PyObject *value, Py_ssize_t start,
             stop = 0;
     }
     for (i = start; i < stop && i < Py_SIZE(self); i++) {
-        PyObject *obj = PyList_GetItemRef((PyObject *)self, i);
-        if (obj == NULL && PyErr_ExceptionMatches(PyExc_IndexError)) {
-            PyErr_Clear();
+        PyObject *obj = _PyList_GetItemRef(self, i);
+        if (obj == NULL) {
+            // out-of-bounds
             break;
         }
         int cmp = PyObject_RichCompareBool(obj, value, Py_EQ);
@@ -2771,9 +2779,9 @@ list_count(PyListObject *self, PyObject *value)
 {
     Py_ssize_t count = 0;
     for (Py_ssize_t i = 0; ; i++) {
-        PyObject *obj = PyList_GetItemRef((PyObject *)self, i);
-        if (obj == NULL && PyErr_ExceptionMatches(PyExc_IndexError)) {
-            PyErr_Clear();
+        PyObject *obj = _PyList_GetItemRef(self, i);
+        if (obj == NULL) {
+            // out-of-bounds
             break;
         }
         if (obj == value) {
