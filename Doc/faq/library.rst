@@ -425,11 +425,14 @@ by Sam Gross.
 Prior to that,
 in the days of Python 1.5, Greg Stein actually implemented a comprehensive
 patch set (the "free threading" patches) that removed the GIL and replaced it
-with fine-grained locking.  Adam Olsen recently did a similar experiment
+with fine-grained locking.  Adam Olsen did a similar experiment
 in his `python-safethread <https://code.google.com/archive/p/python-safethread>`_
-project.  Unfortunately, both experiments exhibited a sharp drop in single-thread
+project.  Unfortunately, both of these earlier experiments exhibited a sharp
+drop in single-thread
 performance (at least 30% slower), due to the amount of fine-grained locking
-necessary to compensate for the removal of the GIL.
+necessary to compensate for the removal of the GIL.  The Python 3.9 fork
+is the first attempt at removing the GIL with an acceptable performance
+impact.
 
 The presence of the GIL in current Python releases
 doesn't mean that you can't make good use of Python on multi-CPU machines!
