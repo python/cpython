@@ -413,7 +413,7 @@ Python program effectively only uses one CPU, due to the insistence that
 With the approval of :pep:`703` work is now underway to remove the GIL from the
 CPython implementation of Python.  Initially it will be implemented as an
 optional compiler flag when building the interpreter, and so separate
-builds will be available with an without the GIL.  Long-term the hope is
+builds will be available with and without the GIL.  Long-term, the hope is
 to settle on a single build, once the performance implications of removing the
 GIL are fully understood.  Python 3.13 is likely to be the first release
 containing this work, although it may not be completely functional in this
