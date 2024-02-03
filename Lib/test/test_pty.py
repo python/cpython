@@ -6,7 +6,7 @@ from test.support import (
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
 
-# Skip these tests if termios or fcntl are not available
+# Skip these tests if termios is not available
 import_module('termios')
 
 # Skip tests on WASM platforms, plus iOS/tvOS/watchOS

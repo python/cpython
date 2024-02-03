@@ -1874,8 +1874,7 @@ class TestFunctional(unittest.TestCase):
             wsock.close()
 
 
-@unittest.skipUnless(hasattr(os, 'fork'), 'requires os.fork()')
-@support.requires_subprocess()
+@support.requires_fork()
 class TestFork(unittest.IsolatedAsyncioTestCase):
 
     async def test_fork_not_share_event_loop(self):

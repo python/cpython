@@ -39,10 +39,10 @@ requireVenvCreate = unittest.skipUnless(
     or sys._base_executable != sys.executable,
     'cannot run venv.create from within a venv on this platform')
 
-if is_emscripten or is_wasi:
-    raise unittest.SkipTest("venv is not available on Emscripten/WASI.")
-if is_apple_mobile:
-    raise unittest.SkipTest("venv is not available on mobile Apple platforms.")
+# Skip tests on WASM platforms, plus iOS/tvOS/watchOS
+if is_apple_mobile or is_emscripten or is_wasi:
+    raise unittest.SkipTest(f"venv tests not required on {sys.platform}")
+
 
 @requires_subprocess()
 def check_output(cmd, encoding=None):
