@@ -130,8 +130,8 @@ Available Types
 .. class:: timedelta
    :noindex:
 
-   A duration expressing the difference between two :class:`date`, :class:`.time`,
-   or :class:`.datetime` instances to microsecond resolution.
+   A duration expressing the difference between two :class:`.datetime`
+   or :class:`date` instances to microsecond resolution.
 
 
 .. class:: tzinfo
@@ -203,7 +203,7 @@ objects.
 --------------------------
 
 A :class:`timedelta` object represents a duration, the difference between two
-dates or times.
+:class:`.datetime` or :class:`date` instances.
 
 .. class:: timedelta(days=0, seconds=0, microseconds=0, milliseconds=0, minutes=0, hours=0, weeks=0)
 
@@ -1214,9 +1214,9 @@ Supported operations:
    attributes, the comparison acts as comparands were first converted to UTC
    datetimes except that the implementation never overflows.
 
-   .. versionchanged:: 3.3
-      Equality comparisons between aware and naive :class:`.datetime`
-      instances don't raise :exc:`TypeError`.
+.. versionchanged:: 3.3
+   Equality comparisons between aware and naive :class:`.datetime`
+   instances don't raise :exc:`TypeError`.
 
 Instance methods:
 
