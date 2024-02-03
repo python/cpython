@@ -56,7 +56,7 @@ will print to standard output ::
 
 
 The :class:`Process` class
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In :mod:`multiprocessing`, processes are spawned by creating a :class:`Process`
 object and then calling its :meth:`~Process.start` method.  :class:`Process`
@@ -100,7 +100,7 @@ necessary, see :ref:`multiprocessing-programming`.
 
 
 Contexts and start methods
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. _multiprocessing-start-methods:
 
@@ -218,7 +218,7 @@ library user.
 
 
 Exchanging objects between processes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 :mod:`multiprocessing` supports two types of communication channel between
 processes:
@@ -270,7 +270,7 @@ processes:
 
 
 Synchronization between processes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 :mod:`multiprocessing` contains equivalents of all the synchronization
 primitives from :mod:`threading`.  For instance one can use a lock to ensure
@@ -296,7 +296,7 @@ mixed up.
 
 
 Sharing state between processes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 As mentioned above, when doing concurrent programming it is usually best to
 avoid using shared state as far as possible.  This is particularly true when
@@ -386,7 +386,7 @@ However, if you really do need to use some shared data then
 
 
 Using a pool of workers
-~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^
 
 The :class:`~multiprocessing.pool.Pool` class represents a pool of worker
 processes.  It has methods which allows tasks to be offloaded to the worker
@@ -477,7 +477,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 
 
 :class:`Process` and exceptions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. class:: Process(group=None, target=None, name=None, args=(), kwargs={}, \
                    *, daemon=None)
@@ -710,7 +710,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    Raised by methods with a timeout when the timeout expires.
 
 Pipes and Queues
-~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^
 
 When using multiple processes, one generally uses message passing for
 communication between processes and avoids having to use any synchronization
@@ -967,7 +967,7 @@ For an example of the usage of queues for interprocess communication see
 
 
 Miscellaneous
-~~~~~~~~~~~~~
+^^^^^^^^^^^^^
 
 .. function:: active_children()
 
@@ -1113,7 +1113,7 @@ Miscellaneous
 
 
 Connection Objects
-~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^
 
 .. currentmodule:: multiprocessing.connection
 
@@ -1255,7 +1255,7 @@ For example:
 
 
 Synchronization primitives
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. currentmodule:: multiprocessing
 
@@ -1444,7 +1444,7 @@ object -- see :ref:`multiprocessing-managers`.
 
 
 Shared :mod:`ctypes` Objects
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 It is possible to create shared objects using shared memory which can be
 inherited by child processes.
@@ -1506,7 +1506,7 @@ inherited by child processes.
 
 
 The :mod:`multiprocessing.sharedctypes` module
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+""""""""""""""""""""""""""""""""""""""""""""""
 
 .. module:: multiprocessing.sharedctypes
    :synopsis: Allocate ctypes objects from shared memory.
@@ -1672,7 +1672,7 @@ The results printed are ::
 .. _multiprocessing-managers:
 
 Managers
-~~~~~~~~
+^^^^^^^^
 
 Managers provide a way to create data which can be shared between different
 processes, including sharing over a network between processes running on
@@ -1916,7 +1916,7 @@ their parent process exits.  The manager classes are defined in the
 
 
 Customized managers
->>>>>>>>>>>>>>>>>>>
+"""""""""""""""""""
 
 To create one's own manager, one creates a subclass of :class:`BaseManager` and
 uses the :meth:`~BaseManager.register` classmethod to register new types or
@@ -1943,7 +1943,7 @@ callables with the manager class.  For example::
 
 
 Using a remote manager
->>>>>>>>>>>>>>>>>>>>>>
+""""""""""""""""""""""
 
 It is possible to run a manager server on one machine and have clients use it
 from other machines (assuming that the firewalls involved allow it).
@@ -2006,7 +2006,7 @@ client to access it remotely::
 .. _multiprocessing-proxy_objects:
 
 Proxy Objects
-~~~~~~~~~~~~~
+^^^^^^^^^^^^^
 
 A proxy is an object which *refers* to a shared object which lives (presumably)
 in a different process.  The shared object is said to be the *referent* of the
@@ -2158,7 +2158,7 @@ demonstrates a level of control over the synchronization.
 
 
 Cleanup
->>>>>>>
+"""""""
 
 A proxy object uses a weakref callback so that when it gets garbage collected it
 deregisters itself from the manager which owns its referent.
@@ -2168,7 +2168,7 @@ any proxies referring to it.
 
 
 Process Pools
-~~~~~~~~~~~~~
+^^^^^^^^^^^^^
 
 .. module:: multiprocessing.pool
    :synopsis: Create pools of processes.
@@ -2400,7 +2400,7 @@ The following example demonstrates the use of a pool::
 .. _multiprocessing-listeners-clients:
 
 Listeners and Clients
-~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^
 
 .. module:: multiprocessing.connection
    :synopsis: API for dealing with sockets.
@@ -2624,7 +2624,7 @@ wait for messages from multiple processes at once::
 .. _multiprocessing-address-formats:
 
 Address Formats
->>>>>>>>>>>>>>>
+"""""""""""""""
 
 * An ``'AF_INET'`` address is a tuple of the form ``(hostname, port)`` where
   *hostname* is a string and *port* is an integer.
@@ -2644,7 +2644,7 @@ an ``'AF_PIPE'`` address rather than an ``'AF_UNIX'`` address.
 .. _multiprocessing-auth-keys:
 
 Authentication keys
-~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^
 
 When one uses :meth:`Connection.recv <Connection.recv>`, the
 data received is automatically
@@ -2670,7 +2670,7 @@ Suitable authentication keys can also be generated by using :func:`os.urandom`.
 
 
 Logging
-~~~~~~~
+^^^^^^^
 
 Some support for logging is available.  Note, however, that the :mod:`logging`
 package does not use process shared locks so it is possible (depending on the
@@ -2718,7 +2718,7 @@ For a full table of logging levels, see the :mod:`logging` module.
 
 
 The :mod:`multiprocessing.dummy` module
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. module:: multiprocessing.dummy
    :synopsis: Dumb wrapper around threading.
@@ -2777,7 +2777,7 @@ There are certain guidelines and idioms which should be adhered to when using
 
 
 All start methods
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^
 
 The following applies to all start methods.
 
@@ -2936,7 +2936,7 @@ Beware of replacing :data:`sys.stdin` with a "file like object"
     For more information, see :issue:`5155`, :issue:`5313` and :issue:`5331`
 
 The *spawn* and *forkserver* start methods
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 There are a few extra restriction which don't apply to the *fork*
 start method.
