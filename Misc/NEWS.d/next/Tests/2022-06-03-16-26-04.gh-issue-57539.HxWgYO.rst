@@ -1,1 +1,0 @@
-Increase calendar test coverage for :meth:`calendar.LocaleTextCalendar.formatweekday`.

@@ -1,2 +1,0 @@
-Fix the column offsets for some expressions in multi-line f-strings
-:mod:`ast` nodes. Patch by Pablo Galindo.

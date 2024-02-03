@@ -90,7 +90,7 @@ Comparison with ``json``
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 There are fundamental differences between the pickle protocols and
-`JSON (JavaScript Object Notation) <http://json.org>`_:
+`JSON (JavaScript Object Notation) <https://json.org>`_:
 
 * JSON is a text serialization format (it outputs unicode text, although
   most of the time it is then encoded to ``utf-8``), while pickle is
@@ -125,7 +125,7 @@ Data stream format
 
 The data format used by :mod:`pickle` is Python-specific.  This has the
 advantage that there are no restrictions imposed by external standards such as
-JSON or XDR (which can't represent pointer sharing); however it means that
+JSON (which can't represent pointer sharing); however it means that
 non-Python programs may not be able to reconstruct pickled Python objects.
 
 By default, the :mod:`pickle` data format uses a relatively compact binary
@@ -272,13 +272,13 @@ The :mod:`pickle` module defines three exceptions:
 
 .. exception:: PickleError
 
-   Common base class for the other pickling exceptions.  It inherits
+   Common base class for the other pickling exceptions.  It inherits from
    :exc:`Exception`.
 
 .. exception:: PicklingError
 
    Error raised when an unpicklable object is encountered by :class:`Pickler`.
-   It inherits :exc:`PickleError`.
+   It inherits from :exc:`PickleError`.
 
    Refer to :ref:`pickle-picklable` to learn what kinds of objects can be
    pickled.
@@ -286,7 +286,7 @@ The :mod:`pickle` module defines three exceptions:
 .. exception:: UnpicklingError
 
    Error raised when there is a problem unpickling an object, such as a data
-   corruption or a security violation.  It inherits :exc:`PickleError`.
+   corruption or a security violation.  It inherits from :exc:`PickleError`.
 
    Note that other exceptions may also be raised during unpickling, including
    (but not necessarily limited to) AttributeError, EOFError, ImportError, and
@@ -344,6 +344,10 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
       returned by :meth:`persistent_id` cannot itself have a persistent ID.
 
       See :ref:`pickle-persistent` for details and examples of uses.
+
+      .. versionchanged:: 3.13
+         Add the default implementation of this method in the C implementation
+         of :class:`!Pickler`.
 
    .. attribute:: dispatch_table
 
@@ -446,6 +450,10 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
 
       See :ref:`pickle-persistent` for details and examples of uses.
 
+      .. versionchanged:: 3.13
+         Add the default implementation of this method in the C implementation
+         of :class:`!Unpickler`.
+
    .. method:: find_class(module, name)
 
       Import *module* if necessary and return the object called *name* from it,
@@ -494,7 +502,8 @@ What can be pickled and unpickled?
 
 The following types can be pickled:
 
-* ``None``, ``True``, and ``False``;
+* built-in constants (``None``, ``True``, ``False``, ``Ellipsis``, and
+  ``NotImplemented``);
 
 * integers, floating-point numbers, complex numbers;
 

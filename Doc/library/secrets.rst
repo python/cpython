@@ -128,7 +128,9 @@ Other functions
 
 .. function:: compare_digest(a, b)
 
-   Return ``True`` if strings *a* and *b* are equal, otherwise ``False``,
+   Return ``True`` if strings or
+   :term:`bytes-like objects <bytes-like object>`
+   *a* and *b* are equal, otherwise ``False``,
    using a "constant-time compare" to reduce the risk of
    `timing attacks <https://codahale.com/a-lesson-in-timing-attacks/>`_.
    See :func:`hmac.compare_digest` for additional details.
@@ -153,7 +155,7 @@ Generate an eight-character alphanumeric password:
 .. note::
 
    Applications should not
-   `store passwords in a recoverable format <http://cwe.mitre.org/data/definitions/257.html>`_,
+   `store passwords in a recoverable format <https://cwe.mitre.org/data/definitions/257.html>`_,
    whether plain text or encrypted.  They should be salted and hashed
    using a cryptographically strong one-way (irreversible) hash function.
 

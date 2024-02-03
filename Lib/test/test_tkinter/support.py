@@ -1,6 +1,5 @@
 import functools
 import tkinter
-import unittest
 
 class AbstractTkTest:
 
@@ -79,28 +78,28 @@ def simulate_mouse_click(widget, x, y):
 
 import _tkinter
 tcl_version = tuple(map(int, _tkinter.TCL_VERSION.split('.')))
+tk_version = tuple(map(int, _tkinter.TK_VERSION.split('.')))
 
-def requires_tcl(*version):
-    if len(version) <= 2:
-        return unittest.skipUnless(tcl_version >= version,
-            'requires Tcl version >= ' + '.'.join(map(str, version)))
+def requires_tk(*version):
+    if len(version) <= 2 and tk_version >= version:
+        return lambda test: test
 
     def deco(test):
         @functools.wraps(test)
         def newtest(self):
-            if get_tk_patchlevel() < version:
-                self.skipTest('requires Tcl version >= ' +
+            root = getattr(self, 'root', None)
+            if get_tk_patchlevel(root) < version:
+                self.skipTest('requires Tk version >= ' +
                                 '.'.join(map(str, version)))
             test(self)
         return newtest
     return deco
 
 _tk_patchlevel = None
-def get_tk_patchlevel():
+def get_tk_patchlevel(root):
     global _tk_patchlevel
     if _tk_patchlevel is None:
-        tcl = tkinter.Tcl()
-        _tk_patchlevel = tcl.info_patchlevel()
+        _tk_patchlevel = tkinter._parse_version(root.tk.globalgetvar('tk_patchLevel'))
     return _tk_patchlevel
 
 units = {

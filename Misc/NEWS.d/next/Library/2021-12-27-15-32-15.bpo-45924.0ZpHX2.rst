@@ -1,1 +1,0 @@
-Fix :mod:`asyncio` incorrect traceback when future's exception is raised multiple times. Patch by Kumar Aditya.

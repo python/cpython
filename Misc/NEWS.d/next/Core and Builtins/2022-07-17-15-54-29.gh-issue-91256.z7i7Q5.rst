@@ -1,1 +1,0 @@
-Ensures the program name is known for help text during interpreter startup.

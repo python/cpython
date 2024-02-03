@@ -28,7 +28,7 @@
 
     <Variable Name="InstallAllUsers" Value="0" bal:Overridable="yes" />
     <?if "$(var.PyTestExt)"="" ?>
-    <Variable Name="InstallLauncherAllUsers" Value="1" bal:Overridable="yes" />
+    <Variable Name="InstallLauncherAllUsers" Value="0" bal:Overridable="yes" />
     <?else ?>
     <Variable Name="InstallLauncherAllUsers" Value="0" />
     <?endif ?>
@@ -71,7 +71,7 @@
     <Variable Name="Include_lib" Value="1" bal:Overridable="yes" />
     <Variable Name="Include_test" Value="1" bal:Overridable="yes" />
     <Variable Name="Include_doc" Value="1" bal:Overridable="yes" />
-    <Variable Name="Include_tools" Value="1" bal:Overridable="yes" />
+    <Variable Name="Include_tools" Value="0" bal:Overridable="yes" />
     <Variable Name="Include_tcltk" Value="1" bal:Overridable="yes" />
     <Variable Name="Include_pip" Value="1" bal:Overridable="yes" />
     <Variable Name="Include_launcher" Value="-1" bal:Overridable="yes" />
@@ -82,6 +82,13 @@
     <?endif ?>
     <Variable Name="Include_symbols" Value="0" bal:Overridable="yes" />
     <Variable Name="Include_debug" Value="0" bal:Overridable="yes" />
+    <?if $(var.IncludeFreethreaded)~="true" ?>
+    <Variable Name="Include_freethreaded" Value="0" bal:Overridable="yes" />
+    <Variable Name="Include_freethreadedState" Value="enabled" />
+    <?else ?>
+    <Variable Name="Include_freethreaded" Value="0" />
+    <Variable Name="Include_freethreadedState" Value="disable" />
+    <?endif ?>
 
     <Variable Name="LauncherOnly" Value="0" bal:Overridable="yes" />
     <Variable Name="DetectedLauncher" Value="0" />
@@ -104,9 +111,11 @@
       <PackageGroupRef Id="exe" />
       <PackageGroupRef Id="dev" />
       <PackageGroupRef Id="lib" />
+      <?if $(var.IncludeFreethreaded)~="true" ?>
+      <PackageGroupRef Id="freethreaded" />
+      <?endif ?>
       <PackageGroupRef Id="test" />
       <PackageGroupRef Id="doc" />
-      <PackageGroupRef Id="tools" />
       <PackageGroupRef Id="tcltk" />
       <PackageGroupRef Id="launcher" />
       <PackageGroupRef Id="pip" />
