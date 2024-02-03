@@ -5463,6 +5463,7 @@ _PyDict_NewKeysForClass(void)
 int
 _PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp)
 {
+    assert(!(tp->tp_flags & Py_TPFLAGS_INLINE_VALUES));
     assert(tp->tp_flags & Py_TPFLAGS_HEAPTYPE);
     assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
     PyDictKeysObject *keys = CACHED_KEYS(tp);
