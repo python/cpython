@@ -69,7 +69,7 @@ A brief summary:
 
 * It's also possible to automatically call methods on accessing or setting an
   instance attribute by using a new mechanism called :dfn:`properties`.  Many uses
-  of :meth:`!__getattr__` can be rewritten to use properties instead, making the
+  of :meth:`~object.__getattr__` can be rewritten to use properties instead, making the
   resulting code simpler and faster.  As a small side benefit, attributes can now
   have docstrings, too.
 
