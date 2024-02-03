@@ -62,6 +62,8 @@ When the debug mode is enabled:
   minimum execution duration in seconds that is considered "slow".
 
 
+.. audit-event:: asyncio.stalled time,handle,formatted_handle,loop
+
 .. _asyncio-multithreading:
 
 Concurrency and Multithreading

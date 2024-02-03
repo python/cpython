@@ -556,6 +556,25 @@ def test_sys_monitoring_register_callback():
     sys.monitoring.register_callback(1, 1, None)
 
 
+def test_asyncio():
+    import asyncio
+
+    def hook(event, args):
+        if event == "asyncio.stalled":
+            print(event, *args[1:])
+
+    sys.addaudithook(hook)
+
+    ev = asyncio.new_event_loop()
+    ev.slow_callback_duration = 0.0
+
+    def stop_loop(loop):
+        loop.stop()
+
+    ev.call_soon(stop_loop, ev)
+    ev.run_forever()
+
+
 if __name__ == "__main__":
     from test.support import suppress_msvcrt_asserts
 
