@@ -419,7 +419,7 @@ GIL are fully understood.  Python 3.13 is likely to be the first release
 containing this work, although it may not be completely functional in this
 release.
 
-The current work to remove the GIL is based on a 
+The current work to remove the GIL is based on a
 `fork of Python 3.9 with the GIL removed <https://github.com/colesbury/nogil>`_
 by Sam Gross.
 Prior to that,
