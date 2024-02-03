@@ -159,7 +159,7 @@ the :mod:`glob` module.)
    On Unix and Windows, return the argument with an initial component of ``~`` or
    ``~user`` replaced by that *user*'s home directory.
 
-   .. index:: module: pwd
+   .. index:: pair: module; pwd
 
    On Unix, an initial ``~`` is replaced by the environment variable :envvar:`HOME`
    if it is set; otherwise the current user's home directory is looked up in the
@@ -239,11 +239,15 @@ the :mod:`glob` module.)
 .. function:: isabs(path)
 
    Return ``True`` if *path* is an absolute pathname.  On Unix, that means it
-   begins with a slash, on Windows that it begins with a (back)slash after chopping
-   off a potential drive letter.
+   begins with a slash, on Windows that it begins with two (back)slashes, or a
+   drive letter, colon, and (back)slash together.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.13
+      On Windows, returns ``False`` if the given path starts with exactly one
+      (back)slash.
 
 
 .. function:: isfile(path)
@@ -304,6 +308,46 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
+.. function:: isdevdrive(path)
+
+   Return ``True`` if pathname *path* is located on a Windows Dev Drive.
+   A Dev Drive is optimized for developer scenarios, and offers faster
+   performance for reading and writing files. It is recommended for use for
+   source code, temporary build directories, package caches, and other
+   IO-intensive operations.
+
+   May raise an error for an invalid path, for example, one without a
+   recognizable drive, but returns ``False`` on platforms that do not support
+   Dev Drives. See `the Windows documentation <https://learn.microsoft.com/windows/dev-drive/>`_
+   for information on enabling and creating Dev Drives.
+
+   .. availability:: Windows.
+
+   .. versionadded:: 3.12
+
+
+.. function:: isreserved(path)
+
+   Return ``True`` if *path* is a reserved pathname on the current system.
+
+   On Windows, reserved filenames include those that end with a space or dot;
+   those that contain colons (i.e. file streams such as "name:stream"),
+   wildcard characters (i.e. ``'*?"<>'``), pipe, or ASCII control characters;
+   as well as DOS device names such as "NUL", "CON", "CONIN$", "CONOUT$",
+   "AUX", "PRN", "COM1", and "LPT1".
+
+   .. note::
+
+      This function approximates rules for reserved paths on most Windows
+      systems. These rules change over time in various Windows releases.
+      This function may be updated in future Python releases as changes to
+      the rules become broadly available.
+
+   .. availability:: Windows.
+
+   .. versionadded:: 3.13
+
+
 .. function:: join(path, *paths)
 
    Join one or more path segments intelligently.  The return value is the
@@ -359,7 +403,8 @@ the :mod:`glob` module.)
 
    Return the canonical path of the specified filename, eliminating any symbolic
    links encountered in the path (if they are supported by the operating
-   system).
+   system). On Windows, this function will also resolve MS-DOS (also called 8.3)
+   style names such as ``C:\\PROGRA~1`` to ``C:\\Program Files``.
 
    If a path doesn't exist or a symlink loop is encountered, and *strict* is
    ``True``, :exc:`OSError` is raised. If *strict* is ``False``, the path is
@@ -392,7 +437,7 @@ the :mod:`glob` module.)
    *start*.  On Windows, :exc:`ValueError` is raised when *path* and *start*
    are on different drives.
 
-   *start* defaults to :attr:`os.curdir`.
+   *start* defaults to :data:`os.curdir`.
 
    .. availability:: Unix, Windows.
 
