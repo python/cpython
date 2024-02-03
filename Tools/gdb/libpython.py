@@ -1755,7 +1755,7 @@ class Frame(object):
     def is_gc_collect(self):
         '''Is this frame a collector within the garbage-collector?'''
         return self._gdbframe.name() in (
-            'collect', 'gc_collect_full',
+            'collect', 'gc_collect_full', 'gc_collect_main',
             'gc_collect_young', 'gc_collect_increment'
         )
 
