@@ -410,7 +410,7 @@ deployment on high-end multiprocessor server machines, because a multi-threaded
 Python program effectively only uses one CPU, due to the insistence that
 (almost) all Python code can only run while the GIL is held.
 
-With the approval of :pep:`703` work is now underway to remove the from the
+With the approval of :pep:`703` work is now underway to remove the GIL from the
 CPython implementation of Python.  Initially it will be implemented as an
 optional compiler flag when building the interpreter, and so separate
 builds will be available with an without the GIL.  Long-term the hope is
