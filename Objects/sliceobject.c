@@ -103,7 +103,7 @@ PyObject _Py_EllipsisObject = _PyObject_HEAD_INIT(&PyEllipsis_Type);
 
 /* Slice object implementation */
 
-void _PySlice_ClearCache(_PyFreeListState *state, int is_finalization)
+void _PySlice_ClearFreeList(_PyFreeListState *state, int is_finalization)
 {
     if (!is_finalization) {
         return;
