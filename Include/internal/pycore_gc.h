@@ -71,13 +71,16 @@ static inline int _PyObject_GC_MAY_BE_TRACKED(PyObject *obj) {
 
 #ifdef Py_GIL_DISABLED
 
+/* True if an object is shared between multiple threads and
+ * needs special purpose when freeing to do the possibility
+ * of in-flight lock-free reads occuring */
 static inline int _PyObject_GC_IS_SHARED(PyObject *op) {
     return (op->ob_gc_bits & _PyGC_BITS_SHARED) != 0;
 }
 #define _PyObject_GC_IS_SHARED(op) _PyObject_GC_IS_SHARED(_Py_CAST(PyObject*, op))
 
-static inline int _PyObject_GC_SET_SHARED(PyObject *op) {
-    return op->ob_gc_bits |= _PyGC_BITS_SHARED;
+static inline void _PyObject_GC_SET_SHARED(PyObject *op) {
+    op->ob_gc_bits |= _PyGC_BITS_SHARED;
 }
 #define _PyObject_GC_SET_SHARED(op) _PyObject_GC_SET_SHARED(_Py_CAST(PyObject*, op))
 
