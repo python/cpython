@@ -150,4 +150,3 @@ class OverwriteTests:
                 self.extractall(ar)
         self.assertTrue(os.path.islink(target))
         self.assertFalse(os.path.exists(target2))
-
