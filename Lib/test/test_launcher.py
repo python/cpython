@@ -90,6 +90,12 @@ TEST_PY_COMMANDS = "\n".join([
     "test-command=TEST_EXE.exe",
 ])
 
+
+def quote(s):
+    s = str(s)
+    return f'"{s}"' if " " in s else s
+
+
 def create_registry_data(root, data):
     def _create_registry_data(root, key, value):
         if isinstance(value, dict):
@@ -542,10 +548,10 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
             data1 = self.run_py([], env={**env, "PY_PYTHON": "PythonTestSuite/3"})
             data2 = self.run_py(["-V:PythonTestSuite/3"], env={**env, "PY_PYTHON": "PythonTestSuite/3"})
         # Compare stdout, because stderr goes via ascii
-        self.assertEqual(data1["stdout"].strip(), str(venv_exe))
+        self.assertEqual(data1["stdout"].strip(), quote(venv_exe))
         self.assertEqual(data1["SearchInfo.lowPriorityTag"], "True")
         # Ensure passing the argument doesn't trigger the same behaviour
-        self.assertNotEqual(data2["stdout"].strip(), str(venv_exe))
+        self.assertNotEqual(data2["stdout"].strip(), quote(venv_exe))
         self.assertNotEqual(data2["SearchInfo.lowPriorityTag"], "True")
 
     def test_py_shebang(self):
@@ -554,7 +560,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
                 data = self.run_py([script, "-postarg"])
         self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
         self.assertEqual("3.100", data["SearchInfo.tag"])
-        self.assertEqual(f"X.Y.exe -prearg {script} -postarg", data["stdout"].strip())
+        self.assertEqual(f"X.Y.exe -prearg {quote(script)} -postarg", data["stdout"].strip())
 
     def test_python_shebang(self):
         with self.py_ini(TEST_PY_DEFAULTS):
@@ -562,7 +568,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
                 data = self.run_py([script, "-postarg"])
         self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
         self.assertEqual("3.100", data["SearchInfo.tag"])
-        self.assertEqual(f"X.Y.exe -prearg {script} -postarg", data["stdout"].strip())
+        self.assertEqual(f"X.Y.exe -prearg {quote(script)} -postarg", data["stdout"].strip())
 
     def test_py2_shebang(self):
         with self.py_ini(TEST_PY_DEFAULTS):
@@ -570,7 +576,8 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
                 data = self.run_py([script, "-postarg"])
         self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
         self.assertEqual("3.100-32", data["SearchInfo.tag"])
-        self.assertEqual(f"X.Y-32.exe -prearg {script} -postarg", data["stdout"].strip())
+        self.assertEqual(f"X.Y-32.exe -prearg {quote(script)} -postarg",
+                         data["stdout"].strip())
 
     def test_py3_shebang(self):
         with self.py_ini(TEST_PY_DEFAULTS):
@@ -578,7 +585,8 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
                 data = self.run_py([script, "-postarg"])
         self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
         self.assertEqual("3.100-arm64", data["SearchInfo.tag"])
-        self.assertEqual(f"X.Y-arm64.exe -X fake_arg_for_test -prearg {script} -postarg", data["stdout"].strip())
+        self.assertEqual(f"X.Y-arm64.exe -X fake_arg_for_test -prearg {quote(script)} -postarg",
+                         data["stdout"].strip())
 
     def test_py_shebang_nl(self):
         with self.py_ini(TEST_PY_DEFAULTS):
@@ -586,7 +594,8 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
                 data = self.run_py([script, "-postarg"])
         self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
         self.assertEqual("3.100", data["SearchInfo.tag"])
-        self.assertEqual(f"X.Y.exe -prearg {script} -postarg", data["stdout"].strip())
+        self.assertEqual(f"X.Y.exe -prearg {quote(script)} -postarg",
+                         data["stdout"].strip())
 
     def test_py2_shebang_nl(self):
         with self.py_ini(TEST_PY_DEFAULTS):
@@ -594,7 +603,8 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
                 data = self.run_py([script, "-postarg"])
         self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
         self.assertEqual("3.100-32", data["SearchInfo.tag"])
-        self.assertEqual(f"X.Y-32.exe -prearg {script} -postarg", data["stdout"].strip())
+        self.assertEqual(f"X.Y-32.exe -prearg {quote(script)} -postarg",
+                         data["stdout"].strip())
 
     def test_py3_shebang_nl(self):
         with self.py_ini(TEST_PY_DEFAULTS):
@@ -602,7 +612,8 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
                 data = self.run_py([script, "-postarg"])
         self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
         self.assertEqual("3.100-arm64", data["SearchInfo.tag"])
-        self.assertEqual(f"X.Y-arm64.exe -X fake_arg_for_test -prearg {script} -postarg", data["stdout"].strip())
+        self.assertEqual(f"X.Y-arm64.exe -X fake_arg_for_test -prearg {quote(script)} -postarg",
+                         data["stdout"].strip())
 
     def test_py_shebang_short_argv0(self):
         with self.py_ini(TEST_PY_DEFAULTS):
@@ -630,7 +641,8 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
                     [script, "-postarg"],
                     env={"PATH": f"{exe.parent};{os.getenv('PATH')}"},
                 )
-        self.assertEqual(f"{exe} -prearg {script} -postarg", data["stdout"].strip())
+        self.assertEqual(f"{quote(exe)} -prearg {quote(script)} -postarg",
+                         data["stdout"].strip())
 
     def test_search_path_exe(self):
         # Leave the .exe on the name to ensure we don't add it a second time
@@ -643,7 +655,8 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
                     [script, "-postarg"],
                     env={"PATH": f"{exe.parent};{os.getenv('PATH')}"},
                 )
-        self.assertEqual(f"{exe} -prearg {script} -postarg", data["stdout"].strip())
+        self.assertEqual(f"{quote(exe)} -prearg {quote(script)} -postarg",
+                         data["stdout"].strip())
 
     def test_recursive_search_path(self):
         stem = self.get_py_exe().stem
@@ -654,7 +667,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
                     env={"PATH": f"{self.get_py_exe().parent};{os.getenv('PATH')}"},
                 )
         # The recursive search is ignored and we get normal "py" behavior
-        self.assertEqual(f"X.Y.exe {script}", data["stdout"].strip())
+        self.assertEqual(f"X.Y.exe {quote(script)}", data["stdout"].strip())
 
     def test_install(self):
         data = self.run_py(["-V:3.10"], env={"PYLAUNCHER_ALWAYS_INSTALL": "1"}, expect_returncode=111)
@@ -674,7 +687,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         with self.script("#! C:/some_random_app -witharg") as script:
             data = self.run_py([script])
         self.assertEqual(
-            f"C:\\some_random_app -witharg {script}",
+            f"C:\\some_random_app -witharg {quote(script)}",
             data["stdout"].strip(),
         )
 
@@ -682,7 +695,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         with self.script("#! ..\\some_random_app -witharg") as script:
             data = self.run_py([script])
         self.assertEqual(
-            f"{script.parent.parent}\\some_random_app -witharg {script}",
+            f"{quote(script.parent.parent / 'some_random_app')} -witharg {quote(script)}",
             data["stdout"].strip(),
         )
 
@@ -690,14 +703,14 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         with self.script('#! "some random app" -witharg') as script:
             data = self.run_py([script])
         self.assertEqual(
-            f'"{script.parent}\\some random app" -witharg {script}',
+            f"{quote(script.parent / 'some random app')} -witharg {quote(script)}",
             data["stdout"].strip(),
         )
 
         with self.script('#! some" random "app -witharg') as script:
             data = self.run_py([script])
         self.assertEqual(
-            f'"{script.parent}\\some random app" -witharg {script}',
+            f"{quote(script.parent / 'some random app')} -witharg {quote(script)}",
             data["stdout"].strip(),
         )
 
@@ -705,7 +718,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         with self.script('#! some\\" random "app -witharg') as script:
             data = self.run_py([script])
         self.assertEqual(
-            f'"{script.parent}\\some\\ random app" -witharg {script}',
+            f"{quote(script.parent / 'some/ random app')} -witharg {quote(script)}",
             data["stdout"].strip(),
         )
 
@@ -714,7 +727,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
             with self.script('#! test-command arg1') as script:
                 data = self.run_py([script])
         self.assertEqual(
-            f"TEST_EXE.exe arg1 {script}",
+            f"TEST_EXE.exe arg1 {quote(script)}",
             data["stdout"].strip(),
         )
 
@@ -723,7 +736,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
             data = self.run_py([script])
         expect = script.parent / "/usr/bin/not-python"
         self.assertEqual(
-            f"{expect} arg1 {script}",
+            f"{quote(expect)} arg1 {quote(script)}",
             data["stdout"].strip(),
         )
 
@@ -746,8 +759,8 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
 
             with self.script(f'#! /usr/bin/env {stem} arg1') as script:
                 data = self.run_py([script], env=env)
-            self.assertEqual(data["stdout"].strip(), f"{venv_exe} arg1 {script}")
+            self.assertEqual(data["stdout"].strip(), f"{quote(venv_exe)} arg1 {quote(script)}")
 
             with self.script(f'#! /usr/bin/env {exe.stem} arg1') as script:
                 data = self.run_py([script], env=env)
-            self.assertEqual(data["stdout"].strip(), f"{exe} arg1 {script}")
+            self.assertEqual(data["stdout"].strip(), f"{quote(exe)} arg1 {quote(script)}")

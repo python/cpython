@@ -33,15 +33,6 @@ __all__ = [
     ]
 
 
-# Reference for Windows paths can be found at
-# https://learn.microsoft.com/en-gb/windows/win32/fileio/naming-a-file .
-_WIN_RESERVED_NAMES = frozenset(
-    {'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$'} |
-    {f'COM{c}' for c in '123456789\xb9\xb2\xb3'} |
-    {f'LPT{c}' for c in '123456789\xb9\xb2\xb3'}
-)
-
-
 class _PathParents(Sequence):
     """This object provides sequence-like access to the logical ancestors
     of a path.  Don't try to construct it yourself."""
@@ -433,18 +424,13 @@ class PurePath(_abc.PurePathBase):
     def is_reserved(self):
         """Return True if the path contains one of the special names reserved
         by the system, if any."""
-        if self.pathmod is not ntpath or not self.name:
-            return False
-
-        # NOTE: the rules for reserved names seem somewhat complicated
-        # (e.g. r"..\NUL" is reserved but not r"foo\NUL" if "foo" does not
-        # exist). We err on the side of caution and return True for paths
-        # which are not considered reserved by Windows.
-        if self.drive.startswith('\\\\'):
-            # UNC paths are never reserved.
-            return False
-        name = self.name.partition('.')[0].partition(':')[0].rstrip(' ')
-        return name.upper() in _WIN_RESERVED_NAMES
+        msg = ("pathlib.PurePath.is_reserved() is deprecated and scheduled "
+               "for removal in Python 3.15. Use os.path.isreserved() to "
+               "detect reserved paths on Windows.")
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
+        if self.pathmod is ntpath:
+            return self.pathmod.isreserved(self)
+        return False
 
     def as_uri(self):
         """Return the path as a URI."""
@@ -479,17 +465,16 @@ class PurePath(_abc.PurePathBase):
         elif pattern[-1] in (self.pathmod.sep, self.pathmod.altsep):
             # GH-65238: pathlib doesn't preserve trailing slash. Add it back.
             parts.append('')
-        elif parts[-1] == '**':
-            # GH-70303: '**' only matches directories. Add trailing slash.
-            warnings.warn(
-                "Pattern ending '**' will match files and directories in a "
-                "future Python release. Add a trailing slash to match only "
-                "directories and remove this warning.",
-                FutureWarning, 4)
-            parts.append('')
         parts.reverse()
         return parts
 
+    @property
+    def _pattern_str(self):
+        """The path expressed as a string, for use in pattern-matching."""
+        # The string representation of an empty path is a single dot ('.'). Empty
+        # paths shouldn't match wildcards, so we change it to the empty string.
+        path_str = str(self)
+        return '' if path_str == '.' else path_str
 
 # Subclassing os.PathLike makes isinstance() checks slower,
 # which in turn makes Path construction slower. Register instead!
@@ -529,9 +514,8 @@ class Path(_abc.PathBase, PurePath):
     as_uri = PurePath.as_uri
 
     @classmethod
-    def _unsupported(cls, method_name):
-        msg = f"{cls.__name__}.{method_name}() is unsupported on this system"
-        raise UnsupportedOperation(msg)
+    def _unsupported_msg(cls, attribute):
+        return f"{cls.__name__}.{attribute} is unsupported on this system"
 
     def __init__(self, *args, **kwargs):
         if kwargs:
