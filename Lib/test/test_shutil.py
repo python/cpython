@@ -2762,7 +2762,7 @@ class TestMove(BaseTest, unittest.TestCase):
         dst_dir = os.path.join(os.path.basename(dst),'foo')
 
         shutil.move(src, dst)
-        self.assertFalse(os.path.isdir(dst_dir))
+        self.assertFalse(os.path.exists(dst_dir))
 
 
 class TestCopyFile(unittest.TestCase):
