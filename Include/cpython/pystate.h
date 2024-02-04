@@ -259,7 +259,7 @@ struct _ts {
 #  endif
 #else
 #  if defined(__wasi__)
-#    define C_RECURSION_LIMIT 150
+#    define C_RECURSION_LIMIT 500
 #  elif defined(__s390x__)
 #    define C_RECURSION_LIMIT 800
 #  elif defined(_WIN32)
