@@ -172,14 +172,12 @@ create_sym_consts(_Py_UOpsAbstractInterpContext *ctx, PyObject *co_consts)
     for (Py_ssize_t i = 0; i < co_const_len; i++) {
         _Py_UOpsSymType *res = sym_init_const(ctx, PyTuple_GET_ITEM(co_consts, i));
         if (res == NULL) {
-            goto error;
+            return NULL;
         }
         sym_consts[i] = res;
     }
 
     return sym_consts;
-    error:
-    return NULL;
 }
 
 static inline _Py_UOpsSymType* sym_init_unknown(_Py_UOpsAbstractInterpContext *ctx);
@@ -210,7 +208,7 @@ ctx_frame_push(
     frame->stack = frame->locals + co->co_nlocalsplus;
     frame->stack_pointer = frame->stack + curr_stackentries;
     ctx->water_level = localsplus_start + (co->co_nlocalsplus + co->co_stacksize);
-    if (ctx->water_level > ctx->limit) {
+    if (ctx->water_level >= ctx->limit) {
         return -1;
     }
 
@@ -262,9 +260,11 @@ abstractinterp_init(
 {
     self->limit = self->locals_and_stack + MAX_ABSTRACT_INTERP_SIZE;
     self->water_level = self->locals_and_stack;
+#if Py_DEBUG // Aids debugging a little. There should never be NULL in the abstract interpreter.
     for (int i = 0 ; i < MAX_ABSTRACT_INTERP_SIZE; i++) {
         self->locals_and_stack[i] = NULL;
     }
+#endif
 
     // Setup the arena for sym expressions.
     self->t_arena.ty_curr_number = 0;
@@ -272,7 +272,9 @@ abstractinterp_init(
 
     // Frame setup
     self->curr_frame_depth = 0;
-    ctx_frame_push(self, co, self->water_level, curr_stacklen);
+    if (ctx_frame_push(self, co, self->water_level, curr_stacklen) < 0) {
+        return -1;
+    }
 
     // IR and sym setup
     self->frequent_syms.push_nulL_sym = NULL;
