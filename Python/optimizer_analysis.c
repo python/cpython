@@ -260,7 +260,7 @@ abstractinterp_init(
 {
     self->limit = self->locals_and_stack + MAX_ABSTRACT_INTERP_SIZE;
     self->water_level = self->locals_and_stack;
-#if Py_DEBUG // Aids debugging a little. There should never be NULL in the abstract interpreter.
+#ifdef Py_DEBUG // Aids debugging a little. There should never be NULL in the abstract interpreter.
     for (int i = 0 ; i < MAX_ABSTRACT_INTERP_SIZE; i++) {
         self->locals_and_stack[i] = NULL;
     }
