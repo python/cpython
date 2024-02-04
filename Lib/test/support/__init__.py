@@ -2362,7 +2362,20 @@ def adjust_int_max_str_digits(max_digits):
 EXCEEDS_RECURSION_LIMIT = 5000
 
 # The default C recursion limit (from Include/cpython/pystate.h).
-C_RECURSION_LIMIT = 1500
+if Py_DEBUG:
+    if is_wasi:
+        C_RECURSION_LIMIT = 150
+    else:
+        C_RECURSION_LIMIT = 500
+else:
+    if is_wasi:
+        C_RECURSION_LIMIT = 500
+    elif hasattr(os, 'uname') and os.uname().machine == 's390x':
+        C_RECURSION_LIMIT = 800
+    elif sys.platform.startswith('win'):
+        C_RECURSION_LIMIT = 3000
+    else:
+        C_RECURSION_LIMIT = 10000
 
 #Windows doesn't have os.uname() but it doesn't support s390x.
 skip_on_s390x = unittest.skipIf(hasattr(os, 'uname') and os.uname().machine == 's390x',
