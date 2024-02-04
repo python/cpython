@@ -79,13 +79,16 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
             # submit work to saturate the pool
             fut = pool.submit(log_n_wait, ident="first")
             try:
-                iterator = pool.map(log_n_wait, ["second"], timeout=0)
-                with self.assertRaises(TimeoutError):
-                    next(iterator)
+                with contextlib.closing(
+                    pool.map(log_n_wait, ["second", "third"], timeout=1)
+                ) as gen:
+                    with self.assertRaises(TimeoutError):
+                        next(gen)
             finally:
                 stop_event.set()
             fut.result()
         # ident='second' is cancelled as a result of raising a TimeoutError
+        # ident='third' is cancelled because it remained in the collection of futures
         self.assertListEqual(log, ["ident='first' started", "ident='first' stopped"])
 
 

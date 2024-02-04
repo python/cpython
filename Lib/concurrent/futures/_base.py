@@ -668,6 +668,9 @@ class _MapResultIterator:
             raise exc
         return value
 
+    def close(self):
+        self.gen.close()
+
 
 class BrokenExecutor(RuntimeError):
     """
