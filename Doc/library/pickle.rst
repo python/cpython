@@ -681,7 +681,7 @@ Although powerful, implementing :meth:`~object.__reduce__` directly in your clas
 error prone.  For this reason, class designers should use the high-level
 interface (i.e., :meth:`~object.__getnewargs_ex__`, :meth:`~object.__getstate__` and
 :meth:`~object.__setstate__`) whenever possible.  We will show, however, cases where
-using :meth:`~object.__reduce__` is the only option or leads to more efficient pickling
+using :meth:`!__reduce__` is the only option or leads to more efficient pickling
 or both.
 
 .. method:: object.__reduce__()
@@ -716,7 +716,8 @@ or both.
      These items will be appended to the object either using
      ``obj.append(item)`` or, in batch, using ``obj.extend(list_of_items)``.
      This is primarily used for list subclasses, but may be used by other
-     classes as long as they have :meth:`!append` and :meth:`!extend` methods with
+     classes as long as they have
+     :ref:`append and extend methods <typesseq-common>` with
      the appropriate signature.  (Whether :meth:`!append` or :meth:`!extend` is
      used depends on which pickle protocol version is used as well as the number
      of items to append, so both must be supported.)
