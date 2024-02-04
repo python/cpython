@@ -1003,10 +1003,11 @@ handle_legacy_finalizers(PyThreadState *tstate,
     assert(!_PyErr_Occurred(tstate));
     assert(gcstate->garbage != NULL);
 
+    int old_space = gc_old_space(old);
     PyGC_Head *gc = GC_NEXT(finalizers);
     for (; gc != finalizers; gc = GC_NEXT(gc)) {
+        gc_set_old_space(gc, old_space);
         PyObject *op = FROM_GC(gc);
-
         if ((gcstate->debug & _PyGC_DEBUG_SAVEALL) || has_legacy_finalizer(op)) {
             if (PyList_Append(gcstate->garbage, op) < 0) {
                 _PyErr_Clear(tstate);
