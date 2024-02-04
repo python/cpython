@@ -197,6 +197,7 @@ Objects/exceptions.c	-	_PyExc_AttributeError	-
 Objects/exceptions.c	-	_PyExc_SyntaxError	-
 Objects/exceptions.c	-	_PyExc_IndentationError	-
 Objects/exceptions.c	-	_PyExc_TabError	-
+Objects/exceptions.c	-	_PyExc_IncompleteInputError	-
 Objects/exceptions.c	-	_PyExc_LookupError	-
 Objects/exceptions.c	-	_PyExc_IndexError	-
 Objects/exceptions.c	-	_PyExc_KeyError	-
@@ -261,6 +262,7 @@ Objects/exceptions.c	-	PyExc_AttributeError	-
 Objects/exceptions.c	-	PyExc_SyntaxError	-
 Objects/exceptions.c	-	PyExc_IndentationError	-
 Objects/exceptions.c	-	PyExc_TabError	-
+Objects/exceptions.c	-	PyExc_IncompleteInputError	-
 Objects/exceptions.c	-	PyExc_LookupError	-
 Objects/exceptions.c	-	PyExc_IndexError	-
 Objects/exceptions.c	-	PyExc_KeyError	-

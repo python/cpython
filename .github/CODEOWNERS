@@ -230,8 +230,8 @@ Doc/c-api/stable.rst          @encukou
 **/*zipfile/_path/*           @jaraco
 
 # Argument Clinic
-/Tools/clinic/**              @erlend-aasland @AlexWaygood
-/Lib/test/test_clinic.py      @erlend-aasland @AlexWaygood
+/Tools/clinic/**              @erlend-aasland
+/Lib/test/test_clinic.py      @erlend-aasland
 Doc/howto/clinic.rst          @erlend-aasland
 
 # Subinterpreters

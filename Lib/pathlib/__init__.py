@@ -465,14 +465,6 @@ class PurePath(_abc.PurePathBase):
         elif pattern[-1] in (self.pathmod.sep, self.pathmod.altsep):
             # GH-65238: pathlib doesn't preserve trailing slash. Add it back.
             parts.append('')
-        elif parts[-1] == '**':
-            # GH-70303: '**' only matches directories. Add trailing slash.
-            warnings.warn(
-                "Pattern ending '**' will match files and directories in a "
-                "future Python release. Add a trailing slash to match only "
-                "directories and remove this warning.",
-                FutureWarning, 4)
-            parts.append('')
         parts.reverse()
         return parts
 
@@ -522,9 +514,8 @@ class Path(_abc.PathBase, PurePath):
     as_uri = PurePath.as_uri
 
     @classmethod
-    def _unsupported(cls, method_name):
-        msg = f"{cls.__name__}.{method_name}() is unsupported on this system"
-        raise UnsupportedOperation(msg)
+    def _unsupported_msg(cls, attribute):
+        return f"{cls.__name__}.{attribute} is unsupported on this system"
 
     def __init__(self, *args, **kwargs):
         if kwargs:
