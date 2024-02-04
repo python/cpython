@@ -131,8 +131,10 @@ This section has moved to the `Python Packaging User Guide`_.
 .. _Python Packaging User Guide: https://packaging.python.org/en/latest/tutorials/installing-packages/
 
 
-GUI Programming on the Mac
-==========================
+.. _gui-programming-on-the-mac:
+
+GUI Programming
+===============
 
 There are several options for building GUI applications on the Mac with Python.
 
@@ -153,8 +155,10 @@ macOS. More information can be found at
 https://riverbankcomputing.com/software/pyqt/intro.
 
 
-Distributing Python Applications on the Mac
-===========================================
+.. _distributing-python-applications-on-the-mac:
+
+Distributing Python Applications
+================================
 
 The standard tool for deploying standalone Python applications on the Mac is
 :program:`py2app`. More information on installing and using py2app can be found
