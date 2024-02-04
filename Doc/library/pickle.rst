@@ -352,7 +352,7 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
       :func:`copyreg.pickle`.  It is a mapping whose keys are classes
       and whose values are reduction functions.  A reduction function
       takes a single argument of the associated class and should
-      conform to the same interface as a :meth:`__reduce__`
+      conform to the same interface as a :meth:`~object.__reduce__`
       method.
 
       By default, a pickler object will not have a
@@ -372,7 +372,7 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
 
       Special reducer that can be defined in :class:`Pickler` subclasses. This
       method has priority over any reducer in the :attr:`dispatch_table`.  It
-      should conform to the same interface as a :meth:`__reduce__` method, and
+      should conform to the same interface as a :meth:`~object.__reduce__` method, and
       can optionally return ``NotImplemented`` to fallback on
       :attr:`dispatch_table`-registered reducers to pickle ``obj``.
 
@@ -508,7 +508,7 @@ The following types can be pickled:
 
 * classes accessible from the top level of a module;
 
-* instances of such classes whose the result of calling :meth:`__getstate__`
+* instances of such classes whose the result of calling :meth:`~object.__getstate__`
   is picklable  (see section :ref:`pickle-inst` for details).
 
 Attempts to pickle unpicklable objects will raise the :exc:`PicklingError`
@@ -544,7 +544,7 @@ purpose, so you can fix bugs in a class or add methods to the class and still
 load objects that were created with an earlier version of the class.  If you
 plan to have long-lived objects that will see many versions of a class, it may
 be worthwhile to put a version number in the objects so that suitable
-conversions can be made by the class's :meth:`__setstate__` method.
+conversions can be made by the class's :meth:`~object.__setstate__` method.
 
 
 .. _pickle-inst:
@@ -559,7 +559,7 @@ customize, and control how class instances are pickled and unpickled.
 
 In most cases, no additional code is needed to make instances picklable.  By
 default, pickle will retrieve the class and the attributes of an instance via
-introspection. When a class instance is unpickled, its :meth:`__init__` method
+introspection. When a class instance is unpickled, its :meth:`~object.__init__` method
 is usually *not* invoked.  The default behaviour first creates an uninitialized
 instance and then restores the saved attributes.  The following code shows an
 implementation of this behaviour::
@@ -650,30 +650,30 @@ methods:
 
 
 Refer to the section :ref:`pickle-state` for more information about how to use
-the methods :meth:`__getstate__` and :meth:`__setstate__`.
+the methods :meth:`~object.__getstate__` and :meth:`~object.__setstate__`.
 
 .. note::
 
-   At unpickling time, some methods like :meth:`__getattr__`,
-   :meth:`__getattribute__`, or :meth:`__setattr__` may be called upon the
+   At unpickling time, some methods like :meth:`~object.__getattr__`,
+   :meth:`~object.__getattribute__`, or :meth:`~object.__setattr__` may be called upon the
    instance.  In case those methods rely on some internal invariant being
-   true, the type should implement :meth:`__new__` to establish such an
-   invariant, as :meth:`__init__` is not called when unpickling an
+   true, the type should implement :meth:`~object.__new__` to establish such an
+   invariant, as :meth:`~object.__init__` is not called when unpickling an
    instance.
 
 .. index:: pair: copy; protocol
 
 As we shall see, pickle does not use directly the methods described above.  In
 fact, these methods are part of the copy protocol which implements the
-:meth:`__reduce__` special method.  The copy protocol provides a unified
+:meth:`~object.__reduce__` special method.  The copy protocol provides a unified
 interface for retrieving the data necessary for pickling and copying
 objects. [#]_
 
-Although powerful, implementing :meth:`__reduce__` directly in your classes is
+Although powerful, implementing :meth:`~object.__reduce__` directly in your classes is
 error prone.  For this reason, class designers should use the high-level
-interface (i.e., :meth:`__getnewargs_ex__`, :meth:`__getstate__` and
-:meth:`__setstate__`) whenever possible.  We will show, however, cases where
-using :meth:`__reduce__` is the only option or leads to more efficient pickling
+interface (i.e., :meth:`~object.__getnewargs_ex__`, :meth:`~object.__getstate__` and
+:meth:`~object.__setstate__`) whenever possible.  We will show, however, cases where
+using :meth:`!__reduce__` is the only option or leads to more efficient pickling
 or both.
 
 .. method:: object.__reduce__()
@@ -708,8 +708,9 @@ or both.
      These items will be appended to the object either using
      ``obj.append(item)`` or, in batch, using ``obj.extend(list_of_items)``.
      This is primarily used for list subclasses, but may be used by other
-     classes as long as they have :meth:`append` and :meth:`extend` methods with
-     the appropriate signature.  (Whether :meth:`append` or :meth:`extend` is
+     classes as long as they have
+     :ref:`append and extend methods <typesseq-common>` with
+     the appropriate signature.  (Whether :meth:`!append` or :meth:`!extend` is
      used depends on which pickle protocol version is used as well as the number
      of items to append, so both must be supported.)
 
@@ -785,8 +786,8 @@ any other code which depends on pickling, then one can create a
 pickler with a private dispatch table.
 
 The global dispatch table managed by the :mod:`copyreg` module is
-available as :data:`copyreg.dispatch_table`.  Therefore, one may
-choose to use a modified copy of :data:`copyreg.dispatch_table` as a
+available as :data:`!copyreg.dispatch_table`.  Therefore, one may
+choose to use a modified copy of :data:`!copyreg.dispatch_table` as a
 private dispatch table.
 
 For example ::
@@ -825,12 +826,12 @@ Handling Stateful Objects
    single: __setstate__() (copy protocol)
 
 Here's an example that shows how to modify pickling behavior for a class.
-The :class:`TextReader` class opens a text file, and returns the line number and
+The :class:`!TextReader` class below opens a text file, and returns the line number and
 line contents each time its :meth:`!readline` method is called. If a
-:class:`TextReader` instance is pickled, all attributes *except* the file object
+:class:`!TextReader` instance is pickled, all attributes *except* the file object
 member are saved. When the instance is unpickled, the file is reopened, and
-reading resumes from the last location. The :meth:`__setstate__` and
-:meth:`__getstate__` methods are used to implement this behavior. ::
+reading resumes from the last location. The :meth:`!__setstate__` and
+:meth:`!__getstate__` methods are used to implement this behavior. ::
 
    class TextReader:
        """Print and number lines in a text file."""
@@ -895,7 +896,7 @@ functions and classes.
 
 For those cases, it is possible to subclass from the :class:`Pickler` class and
 implement a :meth:`~Pickler.reducer_override` method. This method can return an
-arbitrary reduction tuple (see :meth:`__reduce__`). It can alternatively return
+arbitrary reduction tuple (see :meth:`~object.__reduce__`). It can alternatively return
 ``NotImplemented`` to fallback to the traditional behavior.
 
 If both the :attr:`~Pickler.dispatch_table` and
@@ -963,7 +964,7 @@ provided by pickle protocol 5 and higher.
 Provider API
 ^^^^^^^^^^^^
 
-The large data objects to be pickled must implement a :meth:`__reduce_ex__`
+The large data objects to be pickled must implement a :meth:`~object.__reduce_ex__`
 method specialized for protocol 5 and higher, which returns a
 :class:`PickleBuffer` instance (instead of e.g. a :class:`bytes` object)
 for any large data.
