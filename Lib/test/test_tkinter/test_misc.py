@@ -652,6 +652,101 @@ class BindTest(AbstractTkTest, unittest.TestCase):
         self.assertCommandExist(funcid2)
         self.assertCommandExist(funcid3)
 
+    def _test_tag_bind(self, w):
+        tag = 'sel'
+        event = '<Control-Alt-Key-a>'
+        w.pack()
+        self.assertRaises(TypeError, w.tag_bind)
+        tag_bind = w._tag_bind if isinstance(w, tkinter.Text) else w.tag_bind
+        if isinstance(w, tkinter.Text):
+            self.assertRaises(TypeError, w.tag_bind, tag)
+            self.assertRaises(TypeError, w.tag_bind, tag, event)
+        self.assertEqual(tag_bind(tag), ())
+        self.assertEqual(tag_bind(tag, event), '')
+        def test1(e): pass
+        def test2(e): pass
+
+        funcid = w.tag_bind(tag, event, test1)
+        self.assertEqual(tag_bind(tag), (event,))
+        script = tag_bind(tag, event)
+        self.assertIn(funcid, script)
+        self.assertCommandExist(funcid)
+
+        funcid2 = w.tag_bind(tag, event, test2, add=True)
+        script = tag_bind(tag, event)
+        self.assertIn(funcid, script)
+        self.assertIn(funcid2, script)
+        self.assertCommandExist(funcid)
+        self.assertCommandExist(funcid2)
+
+    def _test_tag_unbind(self, w):
+        tag = 'sel'
+        event = '<Control-Alt-Key-b>'
+        w.pack()
+        tag_bind = w._tag_bind if isinstance(w, tkinter.Text) else w.tag_bind
+        self.assertEqual(tag_bind(tag), ())
+        self.assertEqual(tag_bind(tag, event), '')
+        def test1(e): pass
+        def test2(e): pass
+
+        funcid = w.tag_bind(tag, event, test1)
+        funcid2 = w.tag_bind(tag, event, test2, add=True)
+
+        self.assertRaises(TypeError, w.tag_unbind, tag)
+        w.tag_unbind(tag, event)
+        self.assertEqual(tag_bind(tag, event), '')
+        self.assertEqual(tag_bind(tag), ())
+
+    def _test_tag_bind_rebind(self, w):
+        tag = 'sel'
+        event = '<Control-Alt-Key-d>'
+        w.pack()
+        tag_bind = w._tag_bind if isinstance(w, tkinter.Text) else w.tag_bind
+        self.assertEqual(tag_bind(tag), ())
+        self.assertEqual(tag_bind(tag, event), '')
+        def test1(e): pass
+        def test2(e): pass
+        def test3(e): pass
+
+        funcid = w.tag_bind(tag, event, test1)
+        funcid2 = w.tag_bind(tag, event, test2, add=True)
+        script = tag_bind(tag, event)
+        self.assertIn(funcid2, script)
+        self.assertIn(funcid, script)
+        self.assertCommandExist(funcid)
+        self.assertCommandExist(funcid2)
+
+        funcid3 = w.tag_bind(tag, event, test3)
+        script = tag_bind(tag, event)
+        self.assertNotIn(funcid, script)
+        self.assertNotIn(funcid2, script)
+        self.assertIn(funcid3, script)
+        self.assertCommandExist(funcid3)
+
+    def test_canvas_tag_bind(self):
+        c = tkinter.Canvas(self.frame)
+        self._test_tag_bind(c)
+
+    def test_canvas_tag_unbind(self):
+        c = tkinter.Canvas(self.frame)
+        self._test_tag_unbind(c)
+
+    def test_canvas_tag_bind_rebind(self):
+        c = tkinter.Canvas(self.frame)
+        self._test_tag_bind_rebind(c)
+
+    def test_text_tag_bind(self):
+        t = tkinter.Text(self.frame)
+        self._test_tag_bind(t)
+
+    def test_text_tag_unbind(self):
+        t = tkinter.Text(self.frame)
+        self._test_tag_unbind(t)
+
+    def test_text_tag_bind_rebind(self):
+        t = tkinter.Text(self.frame)
+        self._test_tag_bind_rebind(t)
+
     def test_bindtags(self):
         f = self.frame
         self.assertEqual(self.root.bindtags(), ('.', 'Tk', 'all'))
