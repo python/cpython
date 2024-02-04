@@ -324,7 +324,7 @@ The :mod:`test.support` module defines the following constants:
 
 .. data:: Py_DEBUG
 
-   True if Python is built with the :c:macro:`Py_DEBUG` macro defined: if
+   True if Python is built with the :c:macro:`!Py_DEBUG` macro defined: if
    Python is :ref:`built in debug mode <debug-build>`
    (:option:`./configure --with-pydebug <--with-pydebug>`).
 
