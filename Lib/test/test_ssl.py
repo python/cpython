@@ -2206,14 +2206,15 @@ def _test_get_server_certificate(test, host, port, cert=None):
         sys.stdout.write("\nVerified certificate for %s:%s is\n%s\n" % (host, port ,pem))
 
 def _test_get_server_certificate_fail(test, host, port):
-    try:
-        pem = ssl.get_server_certificate((host, port), ca_certs=CERTFILE)
-    except ssl.SSLError as x:
-        #should fail
-        if support.verbose:
-            sys.stdout.write("%s\n" % x)
-    else:
-        test.fail("Got server certificate %s for %s:%s!" % (pem, host, port))
+    with warnings_helper.check_no_resource_warning(test):
+        try:
+            pem = ssl.get_server_certificate((host, port), ca_certs=CERTFILE)
+        except ssl.SSLError as x:
+            #should fail
+            if support.verbose:
+                sys.stdout.write("%s\n" % x)
+        else:
+            test.fail("Got server certificate %s for %s:%s!" % (pem, host, port))
 
 
 from test.ssl_servers import make_https_server
