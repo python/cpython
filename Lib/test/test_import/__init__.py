@@ -801,7 +801,7 @@ class ImportTests(unittest.TestCase):
                 rb"same name as the standard library module named 'fractions'\)"
             )
 
-            popen = script_helper.spawn_python(os.path.join(tmp, "fractions.py"))
+            popen = script_helper.spawn_python(os.path.join(tmp, "fractions.py"), cwd=tmp)
             stdout, stderr = popen.communicate()
             self.assertRegex(stdout, expected_error)
 
@@ -817,6 +817,22 @@ class ImportTests(unittest.TestCase):
             popen = script_helper.spawn_python('-P', 'fractions.py', cwd=tmp)
             stdout, stderr = popen.communicate()
             self.assertEqual(stdout, b'')
+
+            tmp_child = os.path.join(tmp, "child")
+            os.mkdir(tmp_child)
+
+            # test the logic in with different cwd
+            popen = script_helper.spawn_python(os.path.join(tmp, "fractions.py"), cwd=tmp_child)
+            stdout, stderr = popen.communicate()
+            self.assertRegex(stdout, expected_error)
+
+            popen = script_helper.spawn_python('-m', 'fractions', cwd=tmp_child)
+            stdout, stderr = popen.communicate()
+            self.assertEqual(stdout, b'')  # no error
+
+            popen = script_helper.spawn_python('-c', 'import fractions', cwd=tmp_child)
+            stdout, stderr = popen.communicate()
+            self.assertEqual(stdout, b'')  # no error
 
     def test_script_shadowing_third_party(self):
         with os_helper.temp_dir() as tmp:
