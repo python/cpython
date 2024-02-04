@@ -537,20 +537,19 @@ is_wasi = sys.platform == "wasi"
 is_apple_mobile = sys.platform in {"ios", "tvos", "watchos"}
 is_apple = is_apple_mobile or sys.platform == "darwin"
 
-has_fork_support = (
-    hasattr(os, "fork")
-    and not is_emscripten
-    and not is_wasi
-    and not is_apple_mobile
+has_fork_support = hasattr(os, "fork") and not (
+    is_emscripten
+    or is_wasi
+    or is_apple_mobile
 )
 
 def requires_fork():
     return unittest.skipUnless(has_fork_support, "requires working os.fork()")
 
-has_subprocess_support = (
-    not is_emscripten
-    and not is_wasi
-    and not is_apple_mobile
+has_subprocess_support = not (
+    is_emscripten
+    or is_wasi
+    or is_apple_mobile
 )
 
 def requires_subprocess():
@@ -558,7 +557,10 @@ def requires_subprocess():
     return unittest.skipUnless(has_subprocess_support, "requires subprocess support")
 
 # Emscripten's socket emulation and WASI sockets have limitations.
-has_socket_support = not is_emscripten and not is_wasi
+has_socket_support = not (
+    is_emscripten
+    or is_wasi
+)
 
 def requires_working_socket(*, module=False):
     """Skip tests or modules that require working sockets
