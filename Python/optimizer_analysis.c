@@ -157,88 +157,6 @@ typedef struct _Py_UOpsAbstractInterpContext {
     _Py_UOpsSymType *locals_and_stack[MAX_ABSTRACT_INTERP_SIZE];
 } _Py_UOpsAbstractInterpContext;
 
-static void
-abstractinterp_fini(_Py_UOpsAbstractInterpContext *self)
-{
-    if (self == NULL) {
-        return;
-    }
-     self->curr_frame_depth = 0;
-    int tys = self->t_arena.ty_curr_number;
-    for (int i = 0; i < tys; i++) {
-        Py_CLEAR(self->t_arena.arena[i].const_val);
-    }
-}
-
-
-static inline _Py_UOpsAbstractFrame *
-frame_new(_Py_UOpsAbstractInterpContext *ctx,
-                          PyObject *co_consts, int stack_len, int locals_len,
-                          int curr_stacklen);
-static inline int
-frame_push(_Py_UOpsAbstractInterpContext *ctx,
-           _Py_UOpsAbstractFrame *frame,
-           _Py_UOpsSymType **localsplus_start,
-           int locals_len,
-           int curr_stacklen,
-           int total_len);
-
-static inline int
-frame_initalize(_Py_UOpsAbstractInterpContext *ctx, _Py_UOpsAbstractFrame *frame,
-                int locals_len, int curr_stacklen);
-
-static int
-abstractinterp_init(
-    _Py_UOpsAbstractInterpContext *self,
-    PyCodeObject *co,
-    int curr_stacklen,
-    int ir_entries,
-    _PyUOpInstruction *new_writebuffer
-)
-{
-    int locals_len = co->co_nlocalsplus;
-    int stack_len = co->co_stacksize;
-    _Py_UOpsAbstractFrame *frame = NULL;
-
-
-    self->limit = self->locals_and_stack + MAX_ABSTRACT_INTERP_SIZE;
-    self->water_level = self->locals_and_stack;
-    for (int i = 0 ; i < MAX_ABSTRACT_INTERP_SIZE; i++) {
-        self->locals_and_stack[i] = NULL;
-    }
-
-
-    // Setup the arena for sym expressions.
-    self->t_arena.ty_curr_number = 0;
-    self->t_arena.ty_max_number = TY_ARENA_SIZE;
-
-    // Frame setup
-
-    self->curr_frame_depth = 0;
-    frame = frame_new(self, co->co_consts, stack_len, locals_len, curr_stacklen);
-    if (frame == NULL) {
-        return -1;
-    }
-    if (frame_push(self, frame, self->water_level, locals_len, curr_stacklen,
-               stack_len + locals_len) < 0) {
-        return -1;
-    }
-    if (frame_initalize(self, frame, locals_len, curr_stacklen) < 0) {
-        return -1;
-    }
-    self->frame = frame;
-    assert(frame != NULL);
-
-    // IR and sym setup
-    self->frequent_syms.push_nulL_sym = NULL;
-
-    // Emitter setup
-    self->emitter.writebuffer = new_writebuffer;
-    self->emitter.curr_i = 0;
-    self->emitter.writebuffer_end = new_writebuffer + ir_entries;
-    return 0;
-}
-
 static inline _Py_UOpsSymType*
 sym_init_const(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val);
 
@@ -260,89 +178,116 @@ create_sym_consts(_Py_UOpsAbstractInterpContext *ctx, PyObject *co_consts)
     }
 
     return sym_consts;
-error:
+    error:
     return NULL;
 }
 
+static inline _Py_UOpsSymType* sym_init_unknown(_Py_UOpsAbstractInterpContext *ctx);
 
-static inline _Py_UOpsSymType*
-sym_init_unknown(_Py_UOpsAbstractInterpContext *ctx);
-
-static void
-sym_copy_immutable_type_info(_Py_UOpsSymType *from_sym, _Py_UOpsSymType *to_sym);
-
-/*
- * The reason why we have a separate frame_push and frame_initialize is to mimic
- * what CPython's frame push does. This also prepares for inlining.
- * */
-static inline int
-frame_push(_Py_UOpsAbstractInterpContext *ctx,
-           _Py_UOpsAbstractFrame *frame,
-           _Py_UOpsSymType **localsplus_start,
-           int locals_len,
-           int curr_stacklen,
-           int total_len)
+// 0 on success, anything else is error.
+static int
+ctx_frame_push(
+    _Py_UOpsAbstractInterpContext *ctx,
+    PyCodeObject *co,
+    _Py_UOpsSymType **localsplus_start,
+    int curr_stackentries
+)
 {
+    _Py_UOpsSymType **sym_consts = create_sym_consts(ctx, co->co_consts);
+    if (sym_consts == NULL) {
+        return -1;
+    }
+    assert(ctx->curr_frame_depth < MAX_ABSTRACT_FRAME_DEPTH);
+    _Py_UOpsAbstractFrame *frame = &ctx->frames[ctx->curr_frame_depth];
+    ctx->curr_frame_depth++;
+
+    frame->sym_consts = sym_consts;
+    frame->sym_consts_len = (int)Py_SIZE(co->co_consts);
+    frame->stack_len = co->co_stacksize;
+    frame->locals_len = co->co_nlocalsplus;
+
     frame->locals = localsplus_start;
-    frame->stack = frame->locals + locals_len;
-    frame->stack_pointer = frame->stack + curr_stacklen;
-    ctx->water_level = localsplus_start + total_len;
+    frame->stack = frame->locals + co->co_nlocalsplus;
+    frame->stack_pointer = frame->stack + curr_stackentries;
+    ctx->water_level = localsplus_start + (co->co_nlocalsplus + co->co_stacksize);
     if (ctx->water_level > ctx->limit) {
         return -1;
     }
-    return 0;
-}
 
-static inline int
-frame_initalize(_Py_UOpsAbstractInterpContext *ctx, _Py_UOpsAbstractFrame *frame,
-                int locals_len, int curr_stacklen)
-{
+
     // Initialize with the initial state of all local variables
-    for (int i = 0; i < locals_len; i++) {
+    for (int i = 0; i < co->co_nlocalsplus; i++) {
         _Py_UOpsSymType *local = sym_init_unknown(ctx);
         if (local == NULL) {
-            goto error;
+            return -1;
         }
         frame->locals[i] = local;
     }
 
 
     // Initialize the stack as well
-    for (int i = 0; i < curr_stacklen; i++) {
+    for (int i = 0; i < curr_stackentries; i++) {
         _Py_UOpsSymType *stackvar = sym_init_unknown(ctx);
         if (stackvar == NULL) {
-            goto error;
+            return -1;
         }
         frame->stack[i] = stackvar;
     }
 
+    ctx->frame = frame;
     return 0;
-
-error:
-    return -1;
 }
 
-static inline _Py_UOpsAbstractFrame *
-frame_new(_Py_UOpsAbstractInterpContext *ctx,
-                          PyObject *co_consts, int stack_len, int locals_len,
-                          int curr_stacklen)
+static void
+abstractinterp_fini(_Py_UOpsAbstractInterpContext *self)
 {
-    _Py_UOpsSymType **sym_consts = create_sym_consts(ctx, co_consts);
-    if (sym_consts == NULL) {
-        return NULL;
+    if (self == NULL) {
+        return;
     }
-    assert(ctx->curr_frame_depth < MAX_ABSTRACT_FRAME_DEPTH);
-    _Py_UOpsAbstractFrame *frame = &ctx->frames[ctx->curr_frame_depth];
-    ctx->curr_frame_depth++;
-
-
-    frame->sym_consts = sym_consts;
-    frame->sym_consts_len = (int)Py_SIZE(co_consts);
-    frame->stack_len = stack_len;
-    frame->locals_len = locals_len;
-
-    return frame;
+     self->curr_frame_depth = 0;
+    int tys = self->t_arena.ty_curr_number;
+    for (int i = 0; i < tys; i++) {
+        Py_CLEAR(self->t_arena.arena[i].const_val);
+    }
 }
+
+static int
+abstractinterp_init(
+    _Py_UOpsAbstractInterpContext *self,
+    PyCodeObject *co,
+    int curr_stacklen,
+    int ir_entries,
+    _PyUOpInstruction *new_writebuffer
+)
+{
+
+
+    self->limit = self->locals_and_stack + MAX_ABSTRACT_INTERP_SIZE;
+    self->water_level = self->locals_and_stack;
+    for (int i = 0 ; i < MAX_ABSTRACT_INTERP_SIZE; i++) {
+        self->locals_and_stack[i] = NULL;
+    }
+
+
+    // Setup the arena for sym expressions.
+    self->t_arena.ty_curr_number = 0;
+    self->t_arena.ty_max_number = TY_ARENA_SIZE;
+
+    // Frame setup
+
+    self->curr_frame_depth = 0;
+    ctx_frame_push(self, co, self->water_level, curr_stacklen);
+
+    // IR and sym setup
+    self->frequent_syms.push_nulL_sym = NULL;
+
+    // Emitter setup
+    self->emitter.writebuffer = new_writebuffer;
+    self->emitter.curr_i = 0;
+    self->emitter.writebuffer_end = new_writebuffer + ir_entries;
+    return 0;
+}
+
 
 static inline bool
 sym_is_type(_Py_UOpsSymType *sym, _Py_UOpsSymExprTypeEnum typ);
@@ -367,35 +312,6 @@ extract_func_from_sym(_Py_UOpsSymType *callable_sym)
     return func;
 }
 
-
-// 0 on success, anything else is error.
-static int
-ctx_frame_push(
-    _Py_UOpsAbstractInterpContext *ctx,
-    PyCodeObject *co,
-    _Py_UOpsSymType **localsplus_start
-)
-{
-    _Py_UOpsAbstractFrame *frame = frame_new(ctx,
-        co->co_consts, co->co_stacksize,
-        co->co_nlocalsplus,
-        0);
-    if (frame == NULL) {
-        return -1;
-    }
-    if (frame_push(ctx, frame, localsplus_start, co->co_nlocalsplus, 0,
-               co->co_nlocalsplus + co->co_stacksize) < 0) {
-        return -1;
-    }
-    if (frame_initalize(ctx, frame, co->co_nlocalsplus, 0) < 0) {
-        return -1;
-    }
-
-    ctx->frame = frame;
-
-
-    return 0;
-}
 
 static int
 ctx_frame_pop(
@@ -928,7 +844,7 @@ uop_abstract_interpret_single_inst(
             // This is _PUSH_FRAME's stack effect
             STACK_SHRINK(1);
             ctx->frame->stack_pointer = stack_pointer;
-            if (ctx_frame_push(ctx, co, ctx->water_level) != 0){
+            if (ctx_frame_push(ctx, co, ctx->water_level, 0) != 0){
                 goto error;
             }
             stack_pointer = ctx->frame->stack_pointer;
