@@ -812,12 +812,12 @@ available that support tracing of reference counts, debugging the memory
 allocator, or low-level profiling of the main interpreter loop.  Only the most
 frequently used builds will be described in the remainder of this section.
 
-Compiling the interpreter with the :c:macro:`Py_DEBUG` macro defined produces
+Compiling the interpreter with the :c:macro:`!Py_DEBUG` macro defined produces
 what is generally meant by :ref:`a debug build of Python <debug-build>`.
-:c:macro:`Py_DEBUG` is enabled in the Unix build by adding
+:c:macro:`!Py_DEBUG` is enabled in the Unix build by adding
 :option:`--with-pydebug` to the :file:`./configure` command.
 It is also implied by the presence of the
-not-Python-specific :c:macro:`_DEBUG` macro.  When :c:macro:`Py_DEBUG` is enabled
+not-Python-specific :c:macro:`_DEBUG` macro.  When :c:macro:`!Py_DEBUG` is enabled
 in the Unix build, compiler optimization is disabled.
 
 In addition to the reference count debugging described below, extra checks are
@@ -832,4 +832,3 @@ after every statement run by the interpreter.)
 
 Please refer to :file:`Misc/SpecialBuilds.txt` in the Python source distribution
 for more detailed information.
-
