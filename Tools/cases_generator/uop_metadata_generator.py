@@ -40,6 +40,16 @@ def generate_names_and_flags(analysis: Analysis, out: CWriter) -> None:
     out.emit("#endif // NEED_OPCODE_METADATA\n\n")
 
 
+def generate_net_stack_effect(analysis: Analysis, out: CWriter) -> None:
+    out.emit("extern const int _PyUop_NetStackEffect[MAX_UOP_ID+1];\n")
+    out.emit("#ifdef NEED_OPCODE_METADATA\n")
+    out.emit("const int _PyUop_NetStackEffect[MAX_UOP_ID+1] = {\n")
+    for uop in analysis.uops.values():
+        if uop.is_viable() and not uop.properties.tier_one_only:
+            out.emit(f"[{uop.name}] = {len(uop.stack.outputs) - len(uop.stack.inputs)},\n")
+    out.emit("};\n\n")
+    out.emit("#endif // NEED_OPCODE_METADATA\n\n")
+
 def generate_uop_metadata(
     filenames: list[str], analysis: Analysis, outfile: TextIO
 ) -> None:
@@ -49,6 +59,7 @@ def generate_uop_metadata(
         out.emit("#include <stdint.h>\n")
         out.emit('#include "pycore_uop_ids.h"\n')
         generate_names_and_flags(analysis, out)
+        generate_net_stack_effect(analysis, out)
 
 
 arg_parser = argparse.ArgumentParser(

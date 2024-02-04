@@ -4078,23 +4078,23 @@ dummy_func(
             DEOPT_IF(!current_executor->vm_data.valid);
         }
 
-        op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
+        pure op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
             TIER_TWO_ONLY
             value = Py_NewRef(ptr);
         }
 
-        op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
+        pure op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
             TIER_TWO_ONLY
             value = ptr;
         }
 
-        op(_LOAD_CONST_INLINE_WITH_NULL, (ptr/4 -- value, null)) {
+        pure op(_LOAD_CONST_INLINE_WITH_NULL, (ptr/4 -- value, null)) {
             TIER_TWO_ONLY
             value = Py_NewRef(ptr);
             null = NULL;
         }
 
-        op(_LOAD_CONST_INLINE_BORROW_WITH_NULL, (ptr/4 -- value, null)) {
+        pure op(_LOAD_CONST_INLINE_BORROW_WITH_NULL, (ptr/4 -- value, null)) {
             TIER_TWO_ONLY
             value = ptr;
             null = NULL;

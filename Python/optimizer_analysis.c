@@ -556,22 +556,6 @@ op_is_zappable(int opcode)
     }
 }
 
-static inline bool
-op_count_loads(int opcode)
-{
-    switch(opcode) {
-        case _LOAD_CONST_INLINE:
-        case _LOAD_CONST:
-        case _LOAD_FAST:
-        case _LOAD_CONST_INLINE_BORROW:
-            return 1;
-        case _LOAD_CONST_INLINE_WITH_NULL:
-        case _LOAD_CONST_INLINE_BORROW_WITH_NULL:
-            return 2;
-        default:
-            return 0;
-    }
-}
 
 static inline int
 emit_const(uops_emitter *emitter,
@@ -579,22 +563,24 @@ emit_const(uops_emitter *emitter,
        int num_pops)
 {
     _PyUOpInstruction shrink_stack = {_SHRINK_STACK, num_pops, 0, 0};
-    // If all that precedes a _SHRINK_STACK is a bunch of loads,
-    // then we can safely eliminate that without side effects.
-    int load_count = 0;
+    // If all that precedes a _SHRINK_STACK is a bunch of pure instructions,
+    // then we can safely eliminate that without side effects
+    int net_stack_effect = -num_pops;
     _PyUOpInstruction *back = emitter->writebuffer + emitter->curr_i - 1;
     while (back >= emitter->writebuffer &&
-           load_count < num_pops &&
            op_is_zappable(back->opcode)) {
-        load_count += op_count_loads(back->opcode);
+        net_stack_effect += _PyUop_NetStackEffect[back->opcode];
         back--;
+        if (net_stack_effect == 0) {
+            break;
+        }
     }
-    if (load_count == num_pops) {
+    if (net_stack_effect == 0) {
         back = emitter->writebuffer + emitter->curr_i - 1;
-        load_count = 0;
+        net_stack_effect = -num_pops;
         // Back up over the previous loads and zap them.
-        while(load_count < num_pops) {
-            load_count += op_count_loads(back->opcode);
+        while(net_stack_effect != 0) {
+            net_stack_effect += _PyUop_NetStackEffect[back->opcode];
             if (back->opcode == _LOAD_CONST_INLINE ||
                 back->opcode == _LOAD_CONST_INLINE_WITH_NULL) {
                 PyObject *old_const_val = (PyObject *)back->operand;
