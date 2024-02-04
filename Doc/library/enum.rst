@@ -342,6 +342,7 @@ Data Types
       By default, does nothing.  If multiple values are given in the member
       assignment, those values become separate arguments to ``__init__``; e.g.
 
+         >>> from enum import Enum
          >>> class Weekday(Enum):
          ...     MONDAY = 1, 'Mon'
 
@@ -380,6 +381,7 @@ Data Types
       definition or in a mixin class (such as ``int``), all values given
       in the member assignment will be passed; e.g.
 
+         >>> from enum import Enum
          >>> class MyIntEnum(Enum):
          ...     SEVENTEEN = '1a', 16
 
