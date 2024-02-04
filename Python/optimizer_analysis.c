@@ -33,7 +33,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#define MAX_ABSTRACT_INTERP_SIZE 2048
+// Holds locals, stack, locals, stack ... co_consts (in that order)
+#define MAX_ABSTRACT_INTERP_SIZE 4096
 
 #define OVERALLOCATE_FACTOR 5
 
@@ -235,7 +236,7 @@ abstractinterp_init(
     self->emitter.writebuffer = new_writebuffer;
     self->emitter.curr_i = 0;
     self->emitter.writebuffer_end = new_writebuffer + ir_entries;
-
+    return 0;
 }
 
 static inline _Py_UOpsSymType*
