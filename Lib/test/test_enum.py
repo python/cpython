@@ -2308,6 +2308,40 @@ class TestSpecial(unittest.TestCase):
         globals()['SomeTuple'] = SomeTuple
         test_pickle_dump_load(self.assertIs, SomeTuple.first)
 
+    def test_tuple_subclass_with_auto_1(self):
+        from collections import namedtuple
+        T = namedtuple('T', 'index desc')
+        class SomeEnum(T, Enum):
+            __qualname__ = 'SomeEnum'      # needed for pickle protocol 4
+            first = auto(), 'for the money'
+            second = auto(), 'for the show'
+            third = auto(), 'for the music'
+        self.assertIs(type(SomeEnum.first), SomeEnum)
+        self.assertEqual(SomeEnum.third.value, (3, 'for the music'))
+        self.assertIsInstance(SomeEnum.third.value, T)
+        self.assertEqual(SomeEnum.first.index, 1)
+        self.assertEqual(SomeEnum.second.desc, 'for the show')
+        globals()['SomeEnum'] = SomeEnum
+        globals()['T'] = T
+        test_pickle_dump_load(self.assertIs, SomeEnum.first)
+
+    def test_tuple_subclass_with_auto_2(self):
+        from collections import namedtuple
+        T = namedtuple('T', 'index desc')
+        class SomeEnum(Enum):
+            __qualname__ = 'SomeEnum'      # needed for pickle protocol 4
+            first = T(auto(), 'for the money')
+            second = T(auto(), 'for the show')
+            third = T(auto(), 'for the music')
+        self.assertIs(type(SomeEnum.first), SomeEnum)
+        self.assertEqual(SomeEnum.third.value, (3, 'for the music'))
+        self.assertIsInstance(SomeEnum.third.value, T)
+        self.assertEqual(SomeEnum.first.value.index, 1)
+        self.assertEqual(SomeEnum.second.value.desc, 'for the show')
+        globals()['SomeEnum'] = SomeEnum
+        globals()['T'] = T
+        test_pickle_dump_load(self.assertIs, SomeEnum.first)
+
     def test_duplicate_values_give_unique_enum_items(self):
         class AutoNumber(Enum):
             first = ()
