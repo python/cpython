@@ -39,15 +39,17 @@ What you get after installing is a number of things:
   path. To uninstall Python, you can remove these three things. A
   symlink to the Python executable is placed in :file:`/usr/local/bin/`.
 
-The Apple-provided build of Python is installed in
-:file:`/System/Library/Frameworks/Python.framework` and :file:`/usr/bin/python`,
-respectively. You should never modify or delete these, as they are
-Apple-controlled and are used by Apple- or third-party software.  Remember that
-if you choose to install a newer Python version from python.org, you will have
-two different but functional Python installations on your computer, so it will
-be important that your paths and usages are consistent with what you want to do.
+.. note::
 
-IDLE includes a help menu that allows you to access Python documentation. If you
+   On macOS 10.8-12.3, the Apple-provided build of Python is installed in
+   :file:`/System/Library/Frameworks/Python.framework` and :file:`/usr/bin/python`,
+   respectively. You should never modify or delete these, as they are
+   Apple-controlled and are used by Apple- or third-party software.  Remember that
+   if you choose to install a newer Python version from python.org, you will have
+   two different but functional Python installations on your computer, so it will
+   be important that your paths and usages are consistent with what you want to do.
+
+IDLE includes a Help menu that allows you to access Python documentation. If you
 are completely new to Python you should start reading the tutorial introduction
 in that document.
 
