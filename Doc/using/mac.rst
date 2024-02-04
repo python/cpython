@@ -13,10 +13,12 @@ any other Unix platform, but there are a number of additional features such as
 the integrated development environment (IDE) and the Package Manager that are
 worth pointing out.
 
-.. _getting-osx:
 
-Getting and Installing MacPython
-================================
+.. _getting-osx:
+.. _getting-and-installing-macpython:
+
+Getting and Installing Python
+=============================
 
 macOS used to come with Python 2.7 pre-installed between versions
 10.8 and `12.3 <https://developer.apple.com/documentation/macos-release-notes/macos-12_3-release-notes#Python>`_.
@@ -34,8 +36,8 @@ What you get after installing is a number of things:
 
 * A framework :file:`/Library/Frameworks/Python.framework`, which includes the
   Python executable and libraries. The installer adds this location to your shell
-  path. To uninstall MacPython, you can simply remove these three things. A
-  symlink to the Python executable is placed in /usr/local/bin/.
+  path. To uninstall Python, you can remove these three things. A
+  symlink to the Python executable is placed in :file:`/usr/local/bin/`.
 
 The Apple-provided build of Python is installed in
 :file:`/System/Library/Frameworks/Python.framework` and :file:`/usr/bin/python`,
@@ -107,7 +109,7 @@ Finder is non-standard as the Finder does not read your :file:`.profile` or
 :file:`~/.MacOSX/environment.plist`. See Apple's Technical Document QA1067 for
 details.
 
-For more information on installation Python packages in MacPython, see section
+For more information on installation Python packages, see section
 :ref:`mac-package-manager`.
 
 
@@ -116,7 +118,7 @@ For more information on installation Python packages in MacPython, see section
 The IDE
 =======
 
-MacPython ships with the standard IDLE development environment. A good
+Python ships with the standard IDLE development environment. A good
 introduction to using IDLE can be found at
 http://www.hashcollision.org/hkn/python/idle_intro/index.html.
 
@@ -168,8 +170,8 @@ at https://pypi.org/project/py2app/.
 Other Resources
 ===============
 
-The MacPython mailing list is an excellent support resource for Python users and
-developers on the Mac:
+The Pythonmac-SIG mailing list is an excellent support resource for Python users
+and developers on the Mac:
 
 https://www.python.org/community/sigs/current/pythonmac-sig/
 
