@@ -315,6 +315,8 @@ def _result_or_cancel(fut, timeout=None):
     try:
         try:
             return (fut.result(timeout), None)
+        except TimeoutError:
+            raise
         except BaseException as exc:
             return (None, exc)
         finally:

@@ -51,11 +51,18 @@ Executor Objects
       The returned iterator raises a :exc:`TimeoutError`
       if :meth:`~iterator.__next__` is called and the result isn't available
       after *timeout* seconds from the original call to :meth:`Executor.map`.
-      *timeout* can be an int or a float.  If *timeout* is not specified or
+      *timeout* can be an int or a float.
+      It cancels all future calls of *fn* and closes the iterator.
+      If *timeout* is not specified or
       ``None``, there is no limit to the wait time.
 
       If a *fn* call raises an exception, then that exception will be
       raised when its value is retrieved from the iterator.
+      It does not cancel future calls of *fn*.
+
+      The returned iterator has method :meth:`!close` which cancels all
+      future calls of *fn* and discards the results of already finished calls
+      if they are available.
 
       When using :class:`ProcessPoolExecutor`, this method chops *iterables*
       into a number of chunks which it submits to the pool as separate
@@ -67,6 +74,10 @@ Executor Objects
 
       .. versionchanged:: 3.5
          Added the *chunksize* argument.
+
+      .. versionchanged:: 3.13
+         The returned iterator no longer automatically closed if a *fn* call
+         raises an exception.
 
    .. method:: shutdown(wait=True, *, cancel_futures=False)
 
