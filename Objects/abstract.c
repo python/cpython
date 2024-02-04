@@ -767,11 +767,17 @@ PyBuffer_FillInfo(Py_buffer *view, PyObject *obj, void *buf, Py_ssize_t len,
         return -1;
     }
 
-    if (((flags & PyBUF_WRITABLE) == PyBUF_WRITABLE) &&
-        (readonly == 1)) {
-        PyErr_SetString(PyExc_BufferError,
-                        "Object is not writable.");
-        return -1;
+    if (flags != PyBUF_SIMPLE) {  /* fast path */
+        if (flags == PyBUF_READ || flags == PyBUF_WRITE) {
+            PyErr_BadInternalCall();
+            return -1;
+        }
+        if (((flags & PyBUF_WRITABLE) == PyBUF_WRITABLE) &&
+            (readonly == 1)) {
+            PyErr_SetString(PyExc_BufferError,
+                            "Object is not writable.");
+            return -1;
+        }
     }
 
     view->obj = Py_XNewRef(obj);
