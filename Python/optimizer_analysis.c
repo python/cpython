@@ -569,7 +569,7 @@ emit_const(uops_emitter *emitter,
     _PyUOpInstruction *back = emitter->writebuffer + emitter->curr_i - 1;
     while (back >= emitter->writebuffer &&
            op_is_zappable(back->opcode)) {
-        net_stack_effect += _PyUop_NetStackEffect[back->opcode];
+        net_stack_effect += _PyUop_NetStackEffect(back->opcode, back->oparg);
         back--;
         if (net_stack_effect == 0) {
             break;
@@ -580,7 +580,7 @@ emit_const(uops_emitter *emitter,
         net_stack_effect = -num_pops;
         // Back up over the previous loads and zap them.
         while(net_stack_effect != 0) {
-            net_stack_effect += _PyUop_NetStackEffect[back->opcode];
+            net_stack_effect += _PyUop_NetStackEffect(back->opcode, back->oparg);
             if (back->opcode == _LOAD_CONST_INLINE ||
                 back->opcode == _LOAD_CONST_INLINE_WITH_NULL) {
                 PyObject *old_const_val = (PyObject *)back->operand;
