@@ -260,21 +260,17 @@ abstractinterp_init(
     _PyUOpInstruction *new_writebuffer
 )
 {
-
-
     self->limit = self->locals_and_stack + MAX_ABSTRACT_INTERP_SIZE;
     self->water_level = self->locals_and_stack;
     for (int i = 0 ; i < MAX_ABSTRACT_INTERP_SIZE; i++) {
         self->locals_and_stack[i] = NULL;
     }
 
-
     // Setup the arena for sym expressions.
     self->t_arena.ty_curr_number = 0;
     self->t_arena.ty_max_number = TY_ARENA_SIZE;
 
     // Frame setup
-
     self->curr_frame_depth = 0;
     ctx_frame_push(self, co, self->water_level, curr_stacklen);
 
@@ -402,7 +398,6 @@ sym_set_type_from_const(_Py_UOpsSymType *sym, PyObject *obj)
         sym_set_type(sym, PYFUNCTION_TYPE_VERSION_TYPE,
                      ((PyFunctionObject *)(obj))->func_version);
     }
-
 
 }
 
@@ -1162,7 +1157,6 @@ loop_peeling:
         else {
             needs_clear_locals = true;
         }
-
 
         status = uop_abstract_interpret_single_inst(
             curr, end, &ctx
