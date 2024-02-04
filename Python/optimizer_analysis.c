@@ -157,7 +157,7 @@ typedef struct _Py_UOpsAbstractInterpContext {
 } _Py_UOpsAbstractInterpContext;
 
 static void
-abstractinterp_dealloc(_Py_UOpsAbstractInterpContext *self)
+abstractinterp_fini(_Py_UOpsAbstractInterpContext *self)
 {
     if (self == NULL) {
         return;
@@ -167,7 +167,6 @@ abstractinterp_dealloc(_Py_UOpsAbstractInterpContext *self)
     for (int i = 0; i < tys; i++) {
         Py_CLEAR(self->t_arena.arena[i].const_val);
     }
-    PyMem_Free(self);
 }
 
 
@@ -187,22 +186,19 @@ static inline int
 frame_initalize(_Py_UOpsAbstractInterpContext *ctx, _Py_UOpsAbstractFrame *frame,
                 int locals_len, int curr_stacklen);
 
-static _Py_UOpsAbstractInterpContext *
-abstractinterp_context_new(PyCodeObject *co,
-                                  int curr_stacklen,
-                                  int ir_entries,
-                                  _PyUOpInstruction *new_writebuffer)
+static int
+abstractinterp_init(
+    _Py_UOpsAbstractInterpContext *self,
+    PyCodeObject *co,
+    int curr_stacklen,
+    int ir_entries,
+    _PyUOpInstruction *new_writebuffer
+)
 {
     int locals_len = co->co_nlocalsplus;
     int stack_len = co->co_stacksize;
     _Py_UOpsAbstractFrame *frame = NULL;
-    _Py_UOpsAbstractInterpContext *self = NULL;
 
-
-    self = PyMem_New(_Py_UOpsAbstractInterpContext, 1);
-    if (self == NULL) {
-        goto error;
-    }
 
     self->limit = self->locals_and_stack + MAX_ABSTRACT_INTERP_SIZE;
     self->water_level = self->locals_and_stack;
@@ -220,14 +216,14 @@ abstractinterp_context_new(PyCodeObject *co,
     self->curr_frame_depth = 0;
     frame = frame_new(self, co->co_consts, stack_len, locals_len, curr_stacklen);
     if (frame == NULL) {
-        goto error;
+        return -1;
     }
     if (frame_push(self, frame, self->water_level, locals_len, curr_stacklen,
                stack_len + locals_len) < 0) {
-        goto error;
+        return -1;
     }
     if (frame_initalize(self, frame, locals_len, curr_stacklen) < 0) {
-        goto error;
+        return -1;
     }
     self->frame = frame;
     assert(frame != NULL);
@@ -240,15 +236,6 @@ abstractinterp_context_new(PyCodeObject *co,
     self->emitter.curr_i = 0;
     self->emitter.writebuffer_end = new_writebuffer + ir_entries;
 
-    return self;
-
-error:
-    if (self != NULL) {
-        // Important so we don't double free them.
-        self->frame = NULL;
-    }
-    abstractinterp_dealloc(self);
-    return NULL;
 }
 
 static inline _Py_UOpsSymType*
@@ -722,11 +709,6 @@ emit_const(uops_emitter *emitter,
     return 0;
 }
 
-typedef enum {
-    ABSTRACT_INTERP_ERROR,
-    ABSTRACT_INTERP_NORMAL,
-} AbstractInterpExitCodes;
-
 
 #define DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dval, result) \
 do { \
@@ -997,17 +979,17 @@ uop_abstract_interpret_single_inst(
     assert(STACK_LEVEL() >= 0);
 
     if (emit_i(&ctx->emitter, new_inst) < 0) {
-        return ABSTRACT_INTERP_ERROR;
+        return -1;
     }
 
-    return ABSTRACT_INTERP_NORMAL;
+    return 0;
 
 pop_2_error_tier_two:
     STACK_SHRINK(1);
     STACK_SHRINK(1);
 error:
     DPRINTF(1, "Encountered error in abstract interpreter\n");
-    return ABSTRACT_INTERP_ERROR;
+    return -1;
 
 }
 
@@ -1226,17 +1208,17 @@ uop_abstract_interpret(
 {
     bool did_loop_peel = false;
 
-    _Py_UOpsAbstractInterpContext *ctx = NULL;
+    _Py_UOpsAbstractInterpContext ctx;
 
-    ctx = abstractinterp_context_new(
+    if (abstractinterp_init(
+        &ctx,
         co, curr_stacklen,
-        trace_len, new_trace);
-    if (ctx == NULL) {
+        trace_len, new_trace) < 0) {
         goto error;
     }
     _PyUOpInstruction *curr = NULL;
     _PyUOpInstruction *end = NULL;
-    AbstractInterpExitCodes status = ABSTRACT_INTERP_NORMAL;
+    int status = 0;
     bool needs_clear_locals = true;
     bool has_enough_space_to_duplicate_loop = true;
     int res = 0;
@@ -1254,7 +1236,7 @@ loop_peeling:
             !(_PyUop_Flags[curr->opcode] & HAS_GUARD_FLAG)) {
             DPRINTF(3, "Impure %s\n", _PyOpcode_uop_name[curr->opcode]);
             if (needs_clear_locals) {
-                if (clear_locals_type_info(ctx) < 0) {
+                if (clear_locals_type_info(&ctx) < 0) {
                     goto error;
                 }
             }
@@ -1266,9 +1248,9 @@ loop_peeling:
 
 
         status = uop_abstract_interpret_single_inst(
-            curr, end, ctx
+            curr, end, &ctx
         );
-        if (status == ABSTRACT_INTERP_ERROR) {
+        if (status == -1) {
             goto error;
         }
 
@@ -1281,13 +1263,13 @@ loop_peeling:
     // If we end in a loop, and we have a lot of space left, peel the loop for
     // poor man's loop invariant code motion for guards
     // https://en.wikipedia.org/wiki/Loop_splitting
-    has_enough_space_to_duplicate_loop = ((ctx->emitter.curr_i * 3) <
-        (int)(ctx->emitter.writebuffer_end - ctx->emitter.writebuffer));
+    has_enough_space_to_duplicate_loop = ((ctx.emitter.curr_i * 3) <
+        (int)(ctx.emitter.writebuffer_end - ctx.emitter.writebuffer));
     if (!did_loop_peel && curr->opcode == _JUMP_TO_TOP && has_enough_space_to_duplicate_loop) {
         OPT_STAT_INC(loop_body_duplication_attempts);
         did_loop_peel = true;
-        _PyUOpInstruction jump_header = {_JUMP_ABSOLUTE_HEADER, (ctx->emitter.curr_i), 0, 0};
-        if (emit_i(&ctx->emitter, jump_header) < 0) {
+        _PyUOpInstruction jump_header = {_JUMP_ABSOLUTE_HEADER, (ctx.emitter.curr_i), 0, 0};
+        if (emit_i(&ctx.emitter, jump_header) < 0) {
             goto error;
         }
         DPRINTF(1, "loop_peeling!\n");
@@ -1303,25 +1285,25 @@ loop_peeling:
         if (did_loop_peel) {
             OPT_STAT_INC(loop_body_duplication_successes);
             assert(curr->opcode == _JUMP_TO_TOP);
-            _PyUOpInstruction jump_abs = {_JUMP_ABSOLUTE, (ctx->emitter.curr_i), 0, 0};
-            if (emit_i(&ctx->emitter, jump_abs) < 0) {
+            _PyUOpInstruction jump_abs = {_JUMP_ABSOLUTE, (ctx.emitter.curr_i), 0, 0};
+            if (emit_i(&ctx.emitter, jump_abs) < 0) {
                 goto error;
             }
         } else {
-            if (emit_i(&ctx->emitter, *curr) < 0) {
+            if (emit_i(&ctx.emitter, *curr) < 0) {
                 goto error;
             }
         }
     }
 
 
-    res = ctx->emitter.curr_i;
-    abstractinterp_dealloc(ctx);
+    res = ctx.emitter.curr_i;
+    abstractinterp_fini(&ctx);
 
     return res;
 
 error:
-    abstractinterp_dealloc(ctx);
+    abstractinterp_fini(&ctx);
     return -1;
 }
 
