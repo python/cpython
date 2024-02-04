@@ -10,7 +10,8 @@ Using Python on a Mac
 
 Python on a Mac running macOS is in principle very similar to Python on
 any other Unix platform, but there are a number of additional features such as
-the IDE and the Package Manager that are worth pointing out.
+the integrated development environment (IDE) and the Package Manager that are
+worth pointing out.
 
 .. _getting-osx:
 
