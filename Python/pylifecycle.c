@@ -32,6 +32,7 @@
 #include "pycore_typevarobject.h" // _Py_clear_generic_types()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
+#include "cpython/optimizer.h"    // _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS
 #include "pycore_obmalloc.h"      // _PyMem_init_obmalloc()
 
 #include "opcode.h"
@@ -609,7 +610,11 @@ init_interp_create_gil(PyThreadState *tstate, int gil)
 static int
 builtins_dict_watcher(PyDict_WatchEvent event, PyObject *dict, PyObject *key, PyObject *new_value)
 {
-    RARE_EVENT_INC(builtin_dict);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (event != PyDict_EVENT_CLONED && interp->rare_events.builtin_dict < _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS) {
+        _Py_Executors_InvalidateAll(interp);
+    }
+    RARE_EVENT_INTERP_INC(interp, builtin_dict);
     return 0;
 }
 
@@ -1287,11 +1292,9 @@ init_interp_main(PyThreadState *tstate)
         }
     }
 
-    if ((interp->rare_events.builtins_dict_watcher_id = PyDict_AddWatcher(&builtins_dict_watcher)) == -1) {
-        return _PyStatus_ERR("failed to add builtin dict watcher");
-    }
 
-    if (PyDict_Watch(interp->rare_events.builtins_dict_watcher_id, interp->builtins) != 0) {
+    interp->dict_state.watchers[0] = &builtins_dict_watcher;
+    if (PyDict_Watch(0, interp->builtins) != 0) {
         return _PyStatus_ERR("failed to set builtin dict watcher");
     }
 
@@ -1622,8 +1625,13 @@ finalize_modules(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
 
-    // Stop collecting stats on __builtin__ modifications during teardown
-    PyDict_Unwatch(interp->rare_events.builtins_dict_watcher_id, interp->builtins);
+    // Invalidate all executors and turn off tier 2 optimizer
+    _Py_Executors_InvalidateAll(interp);
+    Py_XDECREF(interp->optimizer);
+    interp->optimizer = &_PyOptimizer_Default;
+
+    // Stop watching __builtin__ modifications
+    PyDict_Unwatch(0, interp->builtins);
 
     PyObject *modules = _PyImport_GetModules(interp);
     if (modules == NULL) {
