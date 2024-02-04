@@ -148,6 +148,19 @@
             _Py_UOpsSymType *__left_;
             __right_ = stack_pointer[-1];
             __left_ = stack_pointer[-2];
+            // Constant evaluation
+            if (is_const(__left_) && is_const(__right_)) {
+                PyObject *right;
+                PyObject *left;
+                left = get_const(__left_);
+                right = get_const(__right_);
+                if (!PyLong_CheckExact(left)) goto error;
+                if (!PyLong_CheckExact(right)) goto error;
+
+                DPRINTF(3, "const eliminated guard\n");
+                new_inst.opcode = _NOP;
+                break;
+            }
             // Type guard elimination
             if (sym_matches_type((_Py_UOpsSymType *)__left_, PYLONG_TYPE, (uint32_t)0) && sym_matches_type((_Py_UOpsSymType *)__right_, PYLONG_TYPE, (uint32_t)0)) {
                 DPRINTF(2, "type propagation eliminated guard\n");
@@ -269,6 +282,19 @@
             _Py_UOpsSymType *__left_;
             __right_ = stack_pointer[-1];
             __left_ = stack_pointer[-2];
+            // Constant evaluation
+            if (is_const(__left_) && is_const(__right_)) {
+                PyObject *right;
+                PyObject *left;
+                left = get_const(__left_);
+                right = get_const(__right_);
+                if (!PyFloat_CheckExact(left)) goto error;
+                if (!PyFloat_CheckExact(right)) goto error;
+
+                DPRINTF(3, "const eliminated guard\n");
+                new_inst.opcode = _NOP;
+                break;
+            }
             // Type guard elimination
             if (sym_matches_type((_Py_UOpsSymType *)__left_, PYFLOAT_TYPE, (uint32_t)0) && sym_matches_type((_Py_UOpsSymType *)__right_, PYFLOAT_TYPE, (uint32_t)0)) {
                 DPRINTF(2, "type propagation eliminated guard\n");
@@ -393,6 +419,19 @@
             _Py_UOpsSymType *__left_;
             __right_ = stack_pointer[-1];
             __left_ = stack_pointer[-2];
+            // Constant evaluation
+            if (is_const(__left_) && is_const(__right_)) {
+                PyObject *right;
+                PyObject *left;
+                left = get_const(__left_);
+                right = get_const(__right_);
+                if (!PyUnicode_CheckExact(left)) goto error;
+                if (!PyUnicode_CheckExact(right)) goto error;
+
+                DPRINTF(3, "const eliminated guard\n");
+                new_inst.opcode = _NOP;
+                break;
+            }
             // Type guard elimination
             if (sym_matches_type((_Py_UOpsSymType *)__left_, PYUNICODE_TYPE, (uint32_t)0) && sym_matches_type((_Py_UOpsSymType *)__right_, PYUNICODE_TYPE, (uint32_t)0)) {
                 DPRINTF(2, "type propagation eliminated guard\n");
@@ -923,6 +962,18 @@
             _Py_UOpsSymType *__owner_;
             __owner_ = stack_pointer[-1];
             uint32_t type_version = (uint32_t)CURRENT_OPERAND();
+            // Constant evaluation
+            if (is_const(__owner_)) {
+                PyObject *owner;
+                owner = get_const(__owner_);
+                PyTypeObject *tp = Py_TYPE(owner);
+                assert(type_version != 0);
+                if (tp->tp_version_tag != type_version) goto error;
+
+                DPRINTF(3, "const eliminated guard\n");
+                new_inst.opcode = _NOP;
+                break;
+            }
             // Type guard elimination
             if (sym_matches_type((_Py_UOpsSymType *)__owner_, GUARD_TYPE_VERSION_TYPE, (uint32_t)type_version)) {
                 DPRINTF(2, "type propagation eliminated guard\n");
@@ -1076,6 +1127,18 @@
         case _GUARD_DORV_VALUES: {
             _Py_UOpsSymType *__owner_;
             __owner_ = stack_pointer[-1];
+            // Constant evaluation
+            if (is_const(__owner_)) {
+                PyObject *owner;
+                owner = get_const(__owner_);
+                assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+                PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
+                if (!_PyDictOrValues_IsValues(dorv)) goto error;
+
+                DPRINTF(3, "const eliminated guard\n");
+                new_inst.opcode = _NOP;
+                break;
+            }
             // Type guard elimination
             if (sym_matches_type((_Py_UOpsSymType *)__owner_, GUARD_DORV_VALUES_TYPE, (uint32_t)0)) {
                 DPRINTF(2, "type propagation eliminated guard\n");
@@ -1476,6 +1539,18 @@
             _Py_UOpsSymType *__owner_;
             __owner_ = stack_pointer[-1];
             uint32_t keys_version = (uint32_t)CURRENT_OPERAND();
+            // Constant evaluation
+            if (is_const(__owner_)) {
+                PyObject *owner;
+                owner = get_const(__owner_);
+                PyTypeObject *owner_cls = Py_TYPE(owner);
+                PyHeapTypeObject *owner_heap_type = (PyHeapTypeObject *)owner_cls;
+                if (owner_heap_type->ht_cached_keys->dk_version != keys_version) goto error;
+
+                DPRINTF(3, "const eliminated guard\n");
+                new_inst.opcode = _NOP;
+                break;
+            }
             // Type guard elimination
             if (sym_matches_type((_Py_UOpsSymType *)__owner_, GUARD_KEYS_VERSION_TYPE, (uint32_t)keys_version)) {
                 DPRINTF(2, "type propagation eliminated guard\n");
@@ -1575,6 +1650,19 @@
             _Py_UOpsSymType *__callable_;
             __null_ = stack_pointer[-1 - oparg];
             __callable_ = stack_pointer[-2 - oparg];
+            // Constant evaluation
+            if (is_const(__callable_) && is_const(__null_)) {
+                PyObject *null;
+                PyObject *callable;
+                callable = get_const(__callable_);
+                null = get_const(__null_);
+                if (null != NULL) goto error;
+                if (Py_TYPE(callable) != &PyMethod_Type) goto error;
+
+                DPRINTF(3, "const eliminated guard\n");
+                new_inst.opcode = _NOP;
+                break;
+            }
             // Type guard elimination
             if (sym_matches_type((_Py_UOpsSymType *)__callable_, PYMETHOD_TYPE, (uint32_t)0) && sym_matches_type((_Py_UOpsSymType *)__null_, NULL_TYPE, (uint32_t)0)) {
                 DPRINTF(2, "type propagation eliminated guard\n");
@@ -1607,6 +1695,22 @@
             __self_or_null_ = stack_pointer[-1 - oparg];
             __callable_ = stack_pointer[-2 - oparg];
             uint32_t func_version = (uint32_t)CURRENT_OPERAND();
+            // Constant evaluation
+            if (is_const(__callable_) && is_const(__self_or_null_)) {
+                PyObject *self_or_null;
+                PyObject *callable;
+                callable = get_const(__callable_);
+                self_or_null = get_const(__self_or_null_);
+                if (!PyFunction_Check(callable)) goto error;
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                if (func->func_version != func_version) goto error;
+                PyCodeObject *code = (PyCodeObject *)func->func_code;
+                if (code->co_argcount != oparg + (self_or_null != NULL)) goto error;
+
+                DPRINTF(3, "const eliminated guard\n");
+                new_inst.opcode = _NOP;
+                break;
+            }
             // Type guard elimination
             if (sym_matches_type((_Py_UOpsSymType *)__callable_, PYFUNCTION_TYPE_VERSION_TYPE, (uint32_t)func_version)) {
                 DPRINTF(2, "type propagation eliminated guard\n");
