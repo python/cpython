@@ -817,7 +817,7 @@ what is generally meant by :ref:`a debug build of Python <debug-build>`.
 :c:macro:`!Py_DEBUG` is enabled in the Unix build by adding
 :option:`--with-pydebug` to the :file:`./configure` command.
 It is also implied by the presence of the
-not-Python-specific :c:macro:`_DEBUG` macro.  When :c:macro:`!Py_DEBUG` is enabled
+not-Python-specific :c:macro:`!_DEBUG` macro.  When :c:macro:`!Py_DEBUG` is enabled
 in the Unix build, compiler optimization is disabled.
 
 In addition to the reference count debugging described below, extra checks are
