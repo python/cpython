@@ -4601,10 +4601,12 @@ class TestPythonBufferProtocol(unittest.TestCase):
 
     @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_c_fill_buffer_readonly_and_writable(self):
-        self.assertEqual(
-            str(_testcapi.buffer_fill_info("abc", 1, PyBUF_SIMPLE), "utf8"),
-            "abc",
-        )
+        with _testcapi.buffer_fill_info(b"abc", 1, PyBUF_SIMPLE) as m:
+            self.assertEqual(bytes(m), b"abc")
+            self.assertTrue(m.readonly)
+        with _testcapi.buffer_fill_info(b"abc", 0, PyBUF_WRITABLE) as m:
+            self.assertEqual(bytes(m), b"abc")
+            self.assertFalse(m.readonly)
         self.assertRaises(BufferError, _testcapi.buffer_fill_info,
                           "abc", 1, PyBUF_WRITABLE)
 
