@@ -2374,6 +2374,8 @@ else:
         C_RECURSION_LIMIT = 800
     elif sys.platform.startswith('win'):
         C_RECURSION_LIMIT = 3000
+    elif check_sanitizer(address=True):
+        C_RECURSION_LIMIT = 4000
     else:
         C_RECURSION_LIMIT = 10000
 
