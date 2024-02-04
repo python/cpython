@@ -1039,12 +1039,12 @@ is an implementation of the Secure Socket Layer, which encrypts the data being
 sent over a socket.  When compiling Python, you can edit :file:`Modules/Setup`
 to include SSL support, which adds an additional function to the :mod:`socket`
 module: ``socket.ssl(socket, keyfile, certfile)``, which takes a socket
-object and returns an SSL socket.  The :mod:`httplib` and :mod:`urllib` modules
+object and returns an SSL socket.  The :mod:`httplib <http>` and :mod:`urllib` modules
 were also changed to support ``https://`` URLs, though no one has implemented
 FTP or SMTP over SSL.
 
-The :mod:`httplib` module has been rewritten by Greg Stein to support HTTP/1.1.
-Backward compatibility with the 1.5 version of :mod:`httplib` is provided,
+The :mod:`httplib <http>` module has been rewritten by Greg Stein to support HTTP/1.1.
+Backward compatibility with the 1.5 version of :mod:`!httplib` is provided,
 though using HTTP/1.1 features such as pipelining will require rewriting code to
 use a different set of interfaces.
 
@@ -1108,7 +1108,7 @@ module.
 * :mod:`pyexpat`: An interface to the Expat XML parser. (Contributed by Paul
   Prescod.)
 
-* :mod:`robotparser`: Parse a :file:`robots.txt` file, which is used for writing
+* :mod:`robotparser <urllib.robotparser>`: Parse a :file:`robots.txt` file, which is used for writing
   web spiders that politely avoid certain areas of a web site.  The parser accepts
   the contents of a :file:`robots.txt` file, builds a set of rules from it, and
   can then answer questions about the fetchability of a given URL.  (Contributed
@@ -1129,10 +1129,10 @@ module.
   :file:`Tools/idle/BrowserControl.py`, and adapted for the standard library by
   Fred.)
 
-* :mod:`_winreg`: An interface to the Windows registry.  :mod:`_winreg` is an
+* :mod:`_winreg <winreg>`: An interface to the Windows registry.  :mod:`!_winreg` is an
   adaptation of functions that have been part of PythonWin since 1995, but has now
   been added to the core  distribution, and enhanced to support Unicode.
-  :mod:`_winreg` was written by Bill Tutt and Mark Hammond.
+  :mod:`!_winreg` was written by Bill Tutt and Mark Hammond.
 
 * :mod:`zipfile`: A module for reading and writing ZIP-format archives.  These
   are archives produced by :program:`PKZIP` on DOS/Windows or :program:`zip` on

@@ -915,7 +915,7 @@ used with the :option:`-W` switch, separated by commas.
 (Contributed by Brian Curtin; :issue:`7301`.)
 
 For example, the following setting will print warnings every time
-they occur, but turn warnings from the :mod:`Cookie` module into an
+they occur, but turn warnings from the :mod:`Cookie <http.cookies>` module into an
 error.  (The exact syntax for setting an environment variable varies
 across operating systems and shells.)
 
@@ -1012,12 +1012,12 @@ Several performance enhancements have been added:
   scan.  This is sometimes faster by a factor of 10.  (Added by
   Florent Xicluna; :issue:`7462` and :issue:`7622`.)
 
-* The :mod:`pickle` and :mod:`cPickle` modules now automatically
+* The :mod:`pickle` and :mod:`!cPickle` modules now automatically
   intern the strings used for attribute names, reducing memory usage
   of the objects resulting from unpickling.  (Contributed by Jake
   McGuire; :issue:`5084`.)
 
-* The :mod:`cPickle` module now special-cases dictionaries,
+* The :mod:`!cPickle` module now special-cases dictionaries,
   nearly halving the time required to pickle them.
   (Contributed by Collin Winter; :issue:`5670`.)
 
@@ -1163,7 +1163,7 @@ changes, or look through the Subversion logs for all the details.
   statement, has been deprecated, because the :keyword:`!with` statement
   now supports multiple context managers.
 
-* The :mod:`cookielib` module now ignores cookies that have an invalid
+* The :mod:`cookielib <http.cookiejar>` module now ignores cookies that have an invalid
   version field, one that doesn't contain an integer value.  (Fixed by
   John J. Lee; :issue:`3924`.)
 
@@ -1306,11 +1306,11 @@ changes, or look through the Subversion logs for all the details.
   ``('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512')``.
   (Contributed by Carl Chenet; :issue:`7418`.)
 
-* The default :class:`~httplib.HTTPResponse` class used by the :mod:`httplib` module now
+* The default :class:`~http.client.HTTPResponse` class used by the :mod:`httplib <http>` module now
   supports buffering, resulting in much faster reading of HTTP responses.
   (Contributed by Kristján Valur Jónsson; :issue:`4879`.)
 
-  The :class:`~httplib.HTTPConnection` and :class:`~httplib.HTTPSConnection` classes
+  The :class:`~http.client.HTTPConnection` and :class:`~http.client.HTTPSConnection` classes
   now support a *source_address* parameter, a ``(host, port)`` 2-tuple
   giving the source address that will be used for the connection.
   (Contributed by Eldon Ziegler; :issue:`3972`.)
@@ -1518,16 +1518,16 @@ changes, or look through the Subversion logs for all the details.
   the :class:`bytearray` and :class:`memoryview` objects.  (Implemented by
   Antoine Pitrou; :issue:`8104`.)
 
-* The :mod:`SocketServer` module's :class:`~SocketServer.TCPServer` class now
+* The :mod:`SocketServer <socketserver>` module's :class:`~socketserver.TCPServer` class now
   supports socket timeouts and disabling the Nagle algorithm.
-  The :attr:`~SocketServer.TCPServer.disable_nagle_algorithm` class attribute
+  The :attr:`!disable_nagle_algorithm` class attribute
   defaults to ``False``; if overridden to be true,
   new request connections will have the TCP_NODELAY option set to
   prevent buffering many small sends into a single TCP packet.
-  The :attr:`~SocketServer.BaseServer.timeout` class attribute can hold
+  The :attr:`~socketserver.BaseServer.timeout` class attribute can hold
   a timeout in seconds that will be applied to the request socket; if
-  no request is received within that time, :meth:`~SocketServer.BaseServer.handle_timeout`
-  will be called and :meth:`~SocketServer.BaseServer.handle_request` will return.
+  no request is received within that time, :meth:`~socketserver.BaseServer.handle_timeout`
+  will be called and :meth:`~socketserver.BaseServer.handle_request` will return.
   (Contributed by Kristján Valur Jónsson; :issue:`6192` and :issue:`6267`.)
 
 * Updated module: the :mod:`sqlite3` module has been updated to
@@ -1648,7 +1648,7 @@ changes, or look through the Subversion logs for all the details.
   and has been updated to version 5.2.0 (updated by
   Florent Xicluna; :issue:`8024`).
 
-* The :mod:`urlparse` module's :func:`~urlparse.urlsplit` now handles
+* The :mod:`urlparse <urllib.parse>` module's :func:`~urllib.parse.urlsplit` now handles
   unknown URL schemes in a fashion compliant with :rfc:`3986`: if the
   URL is of the form ``"<something>://..."``, the text before the
   ``://`` is treated as the scheme, even if it's a made-up scheme that
@@ -1675,7 +1675,7 @@ changes, or look through the Subversion logs for all the details.
   (Python 2.7 actually produces slightly different output, since it
   returns a named tuple instead of a standard tuple.)
 
-  The :mod:`urlparse` module also supports IPv6 literal addresses as defined by
+  The :mod:`urlparse <urllib.parse>` module also supports IPv6 literal addresses as defined by
   :rfc:`2732` (contributed by Senthil Kumaran; :issue:`2987`).
 
   .. doctest::
@@ -1697,8 +1697,8 @@ changes, or look through the Subversion logs for all the details.
   or comment (which looks like ``<!-- comment -->``).
   (Patch by Neil Muller; :issue:`2746`.)
 
-* The XML-RPC client and server, provided by the :mod:`xmlrpclib` and
-  :mod:`SimpleXMLRPCServer` modules, have improved performance by
+* The XML-RPC client and server, provided by the :mod:`xmlrpclib <xmlrpc.client>` and
+  :mod:`SimpleXMLRPCServer <xmlrpc.server>` modules, have improved performance by
   supporting HTTP/1.1 keep-alive and by optionally using gzip encoding
   to compress the XML being exchanged.  The gzip compression is
   controlled by the :attr:`encode_threshold` attribute of
@@ -2334,11 +2334,11 @@ Port-Specific Changes: Windows
   and :data:`LIBRARIES_ASSEMBLY_NAME_PREFIX`.
   (Contributed by David Cournapeau; :issue:`4365`.)
 
-* The :mod:`_winreg` module for accessing the registry now implements
-  the :func:`~_winreg.CreateKeyEx` and :func:`~_winreg.DeleteKeyEx`
+* The :mod:`_winreg <winreg>` module for accessing the registry now implements
+  the :func:`~winreg.CreateKeyEx` and :func:`~winreg.DeleteKeyEx`
   functions, extended versions of previously supported functions that
-  take several extra arguments.  The :func:`~_winreg.DisableReflectionKey`,
-  :func:`~_winreg.EnableReflectionKey`, and :func:`~_winreg.QueryReflectionKey`
+  take several extra arguments.  The :func:`~winreg.DisableReflectionKey`,
+  :func:`~winreg.EnableReflectionKey`, and :func:`~winreg.QueryReflectionKey`
   were also tested and documented.
   (Implemented by Brian Curtin: :issue:`7347`.)
 
@@ -2508,7 +2508,7 @@ In the standard library:
   which raises an exception if there's an error.
   (Changed by Lars Gustäbel; :issue:`7357`.)
 
-* The :mod:`urlparse` module's :func:`~urlparse.urlsplit` now handles
+* The :mod:`urlparse <urllib.parse>` module's :func:`~urllib.parse.urlsplit` now handles
   unknown URL schemes in a fashion compliant with :rfc:`3986`: if the
   URL is of the form ``"<something>://..."``, the text before the
   ``://`` is treated as the scheme, even if it's a made-up scheme that
@@ -2711,8 +2711,8 @@ and :ref:`setuptools-index`.
 PEP 476: Enabling certificate verification by default for stdlib http clients
 -----------------------------------------------------------------------------
 
-:pep:`476` updated :mod:`httplib` and modules which use it, such as
-:mod:`urllib2` and :mod:`xmlrpclib`, to now verify that the server
+:pep:`476` updated :mod:`httplib <http>` and modules which use it, such as
+:mod:`urllib2 <urllib.request>` and :mod:`xmlrpclib`, to now verify that the server
 presents a certificate which is signed by a Certificate Authority in the
 platform trust store and whose hostname matches the hostname being requested
 by default, significantly improving security for many applications. This
