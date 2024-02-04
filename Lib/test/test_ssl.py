@@ -3026,6 +3026,16 @@ class ThreadedTests(unittest.TestCase):
                                      server_hostname="python.example.org") as s:
                 with self.assertRaises(ssl.CertificateError):
                     s.connect((HOST, server.port))
+        with ThreadedEchoServer(context=server_context, chatty=True) as server:
+            with warnings_helper.check_no_resource_warning(self):
+                with self.assertRaises(UnicodeError):
+                    context.wrap_socket(socket.socket(),
+                            server_hostname='.pythontest.net')
+        with ThreadedEchoServer(context=server_context, chatty=True) as server:
+            with warnings_helper.check_no_resource_warning(self):
+                with self.assertRaises(UnicodeDecodeError):
+                    context.wrap_socket(socket.socket(),
+                            server_hostname=b'k\xf6nig.idn.pythontest.net')
 
     def test_wrong_cert_tls12(self):
         """Connecting when the server rejects the client's certificate
@@ -4983,7 +4993,8 @@ class TestPreHandshakeClose(unittest.TestCase):
             self.assertIsNone(wrap_error.library, msg="attr must exist")
         finally:
             # gh-108342: Explicitly break the reference cycle
-            wrap_error = None
+            with warnings_helper.check_no_resource_warning(self):
+                wrap_error = None
             server = None
 
     def test_https_client_non_tls_response_ignored(self):
@@ -5032,7 +5043,8 @@ class TestPreHandshakeClose(unittest.TestCase):
         # socket; that fails if the connection is broken. It may seem pointless
         # to test this. It serves as an illustration of something that we never
         # want to happen... properly not happening.
-        with self.assertRaises(OSError):
+        with warnings_helper.check_no_resource_warning(self), \
+                self.assertRaises(OSError):
             connection.request("HEAD", "/test", headers={"Host": "localhost"})
             response = connection.getresponse()
 
