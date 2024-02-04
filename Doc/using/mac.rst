@@ -108,8 +108,9 @@ Python on macOS honors all standard Unix environment variables such as
 :envvar:`PYTHONPATH`, but setting these variables for programs started from the
 Finder is non-standard as the Finder does not read your :file:`.profile` or
 :file:`.cshrc` at startup. You need to create a file
-:file:`~/.MacOSX/environment.plist`. See Apple's Technical Document QA1067 for
-details.
+:file:`~/.MacOSX/environment.plist`. See Apple's
+`Technical Q&A QA1067 <https://developer.apple.com/library/archive/qa/qa1067/_index.html>`__
+for details.
 
 For more information on installation Python packages, see section
 :ref:`mac-package-manager`.
@@ -122,7 +123,7 @@ The IDE
 
 Python ships with the standard IDLE development environment. A good
 introduction to using IDLE can be found at
-http://www.hashcollision.org/hkn/python/idle_intro/index.html.
+https://www.hashcollision.org/hkn/python/idle_intro/index.html.
 
 
 .. _mac-package-manager:
@@ -157,6 +158,9 @@ macOS. Packages and documentation are available from https://www.wxpython.org.
 *PyQt* is another popular cross-platform GUI toolkit that runs natively on
 macOS. More information can be found at
 https://riverbankcomputing.com/software/pyqt/intro.
+
+*PySide* is another cross-platform Qt-based toolkit. More information at
+https://www.qt.io/qt-for-python.
 
 
 .. _distributing-python-applications-on-the-mac:
