@@ -14,6 +14,7 @@ from _testcapi import (_test_structmembersType_OldAPI,
     PY_SSIZE_T_MAX, PY_SSIZE_T_MIN,
     )
 
+
 class Index:
     def __init__(self, value):
         self.value = value

@@ -17,6 +17,9 @@ typedef struct {
     /* Dictionary version: globally unique, value change each time
        the dictionary is modified */
 #ifdef Py_BUILD_CORE
+    /* Bits 0-7 are for dict watchers.
+     * Bits 8-11 are for the watched mutation counter (used by tier2 optimization)
+     * The remaining bits (12-63) are the actual version tag. */
     uint64_t ma_version_tag;
 #else
     Py_DEPRECATED(3.12) uint64_t ma_version_tag;
