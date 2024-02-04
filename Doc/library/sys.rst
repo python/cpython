@@ -1644,7 +1644,7 @@ always available.
    .. versionchanged:: 3.12
       ``'opcode'`` event will only be emitted if :attr:`~frame.f_trace_opcodes`
       of at least one frame has been set to :const:`True` before :func:`settrace`
-      is called. This behavior is changed back in 3.13 to be consistent with
+      is called. This behavior will be changed back in 3.13 to be consistent with
       previous versions.
 
 .. function:: set_asyncgen_hooks([firstiter] [, finalizer])
