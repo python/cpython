@@ -187,7 +187,7 @@ def new_sym(
     )
 
 
-def declare_caches(uop: Uop, out: CWriter):
+def declare_caches(uop: Uop, out: CWriter) -> None:
     for cache in uop.caches:
         if cache.name not in UNUSED:
             if cache.size == 4:
