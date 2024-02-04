@@ -492,6 +492,15 @@ sym_set_type_from_const(_Py_UOpsSymType *sym, PyObject *obj)
 {
     PyTypeObject *tp = Py_TYPE(obj);
 
+    if (tp->tp_version_tag != 0) {
+        sym_set_type(sym, GUARD_TYPE_VERSION_TYPE, tp->tp_version_tag);
+    }
+    if (tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
+        PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(obj);
+        if(_PyDictOrValues_IsValues(dorv)) {
+            sym_set_type(sym, GUARD_DORV_VALUES_TYPE, 0);
+        }
+    }
     if (tp == &PyLong_Type) {
         sym_set_type(sym, PYLONG_TYPE, 0);
     }
@@ -501,6 +510,11 @@ sym_set_type_from_const(_Py_UOpsSymType *sym, PyObject *obj)
     else if (tp == &PyUnicode_Type) {
         sym_set_type(sym, PYUNICODE_TYPE, 0);
     }
+    else if (tp == &PyFunction_Type) {
+        sym_set_type(sym, PYFUNCTION_TYPE_VERSION_TYPE,
+                     ((PyFunctionObject *)(obj))->func_version);
+    }
+
 
 }
 

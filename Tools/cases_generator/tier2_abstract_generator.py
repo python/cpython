@@ -242,7 +242,7 @@ def _write_body_abstract_interp_pure_uop(
         maybe_const_val = new_sym(const_val)
         out.emit(f"{mangled_uop.stack.outputs[0].name} = {maybe_const_val}\n")
         out.emit(f"if({mangled_uop.stack.outputs[0].name} == NULL) {{ goto error; }}\n")
-        out.emit(f" if (emit_const(&ctx->emitter, {const_val}, "
+        out.emit(f"if (emit_const(&ctx->emitter, {const_val}, "
                  f"{len(uop.stack.inputs)}) < 0) {{ goto error; }}\n")
         out.emit("new_inst.opcode = _NOP;\n")
         out.emit("}\n")
@@ -282,71 +282,74 @@ def _write_body_abstract_interp_guard_uop(
                 cast = f"uint{cache.size*16}_t"
             out.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND();\n")
 
-    out.emit("// Constant evaluation\n")
-    predicates_str = " && ".join(
-        [
-            f"is_const({var.name})"
-            for var in mangled_uop.stack.inputs
-            if var.name not in UNUSED
-        ]
-    )
-    if predicates_str:
-        out.emit(f"if ({predicates_str}) {{\n")
-        declare_variables(uop, out, default_type="PyObject *")
-        for var, mangled_var in zip(uop.stack.inputs, mangled_uop.stack.inputs):
-            if var.name in UNUSED:
+    # Does any of the output specify types? If so, we can eliminate the guard based on types.
+    can_type_eliminate = any(output_var.type_prop for output_var in mangled_uop.stack.outputs)
+
+    # Cannot type eliminate -- try constant evaluation instead.
+    # We don't need to try
+    if not can_type_eliminate:
+        out.emit("// Constant evaluation\n")
+        predicates_str = " && ".join(
+            [
+                f"is_const({var.name})"
+                for var in mangled_uop.stack.inputs
+                if var.name not in UNUSED
+            ]
+        )
+        if predicates_str:
+            out.emit(f"if ({predicates_str}) {{\n")
+            declare_variables(uop, out, default_type="PyObject *")
+            for var, mangled_var in zip(uop.stack.inputs, mangled_uop.stack.inputs):
+                if var.name in UNUSED:
+                    continue
+                out.emit(f"{var.name} = get_const({mangled_var.name});\n")
+            emit_tokens(out, uop, stack, None, TIER2_REPLACEMENT_FUNCTIONS)
+            out.emit("\n")
+            # Guard elimination
+            out.emit('DPRINTF(3, "const eliminated guard\\n");\n')
+            out.emit("new_inst.opcode = _NOP;\n")
+            out.emit("break;\n")
+            out.emit("}\n")
+    else:
+        # If the input types already match, eliminate the guard
+        # Read the cache information to check the auxiliary type information
+        predicates = []
+        propagates = []
+
+        assert len(mangled_uop.stack.outputs) == len(
+            mangled_uop.stack.inputs
+        ), "guards must have same number of args"
+        assert [
+            output == input_
+            for output, input_ in zip(mangled_uop.stack.outputs, mangled_uop.stack.inputs)
+        ], "guards must forward their stack values"
+        for output_var in mangled_uop.stack.outputs:
+            if output_var.name in UNUSED:
                 continue
-            out.emit(f"{var.name} = get_const({mangled_var.name});\n")
-        emit_tokens(out, uop, stack, None, TIER2_REPLACEMENT_FUNCTIONS)
-        out.emit("\n")
-        # Guard elimination
-        out.emit('DPRINTF(3, "const eliminated guard\\n");\n')
+            if (typ := output_var.type_prop) is not None:
+                typname, aux = typ
+                aux = "0" if aux is None else aux
+                # Check that the input type information match (including auxiliary info)
+                predicates.append(
+                    f"sym_matches_type((_Py_UOpsSymType *){output_var.name}, {typname}, (uint32_t){aux})"
+                )
+                # Propagate mode - set the types
+                propagates.append(
+                    f"sym_set_type((_Py_UOpsSymType *){output_var.name}, {typname}, (uint32_t){aux})"
+                )
+
+        out.emit("// Type guard elimination\n")
+        out.emit(f"if ({' && '.join(predicates)}) {{\n")
+        out.emit('DPRINTF(2, "type propagation eliminated guard\\n");\n')
         out.emit("new_inst.opcode = _NOP;\n")
         out.emit("break;\n")
         out.emit("}\n")
-
-    # Does the input specify typed inputs?
-    if not any(output_var.type_prop for output_var in mangled_uop.stack.outputs):
-        return
-    # If the input types already match, eliminate the guard
-    # Read the cache information to check the auxiliary type information
-    predicates = []
-    propagates = []
-
-    assert len(mangled_uop.stack.outputs) == len(
-        mangled_uop.stack.inputs
-    ), "guards must have same number of args"
-    assert [
-        output == input_
-        for output, input_ in zip(mangled_uop.stack.outputs, mangled_uop.stack.inputs)
-    ], "guards must forward their stack values"
-    for output_var in mangled_uop.stack.outputs:
-        if output_var.name in UNUSED:
-            continue
-        if (typ := output_var.type_prop) is not None:
-            typname, aux = typ
-            aux = "0" if aux is None else aux
-            # Check that the input type information match (including auxiliary info)
-            predicates.append(
-                f"sym_matches_type((_Py_UOpsSymType *){output_var.name}, {typname}, (uint32_t){aux})"
-            )
-            # Propagate mode - set the types
-            propagates.append(
-                f"sym_set_type((_Py_UOpsSymType *){output_var.name}, {typname}, (uint32_t){aux})"
-            )
-
-    out.emit("// Type guard elimination\n")
-    out.emit(f"if ({' && '.join(predicates)}) {{\n")
-    out.emit('DPRINTF(2, "type propagation eliminated guard\\n");\n')
-    out.emit("new_inst.opcode = _NOP;\n")
-    out.emit("break;\n")
-    out.emit("}\n")
-    # Else we need the guard
-    out.emit("else {\n")
-    out.emit("// Type propagation\n")
-    for prop in propagates:
-        out.emit(f"{prop};\n")
-    out.emit("}\n")
+        # Else we need the guard
+        out.emit("else {\n")
+        out.emit("// Type propagation\n")
+        for prop in propagates:
+            out.emit(f"{prop};\n")
+        out.emit("}\n")
 
 
 def write_abstract_uop(mangled_uop: Uop, uop: Uop, out: CWriter, stack: Stack) -> None:
