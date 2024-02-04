@@ -31,7 +31,7 @@ What you get after installing is a number of things:
 
 * A :file:`Python 3.12` folder in your :file:`Applications` folder. In here
   you find IDLE, the development environment that is a standard part of official
-  Python distributions; and PythonLauncher, which handles double-clicking Python
+  Python distributions; and :program:`Python Launcher`, which handles double-clicking Python
   scripts from the Finder.
 
 * A framework :file:`/Library/Frameworks/Python.framework`, which includes the
@@ -61,7 +61,7 @@ How to run a Python script
 --------------------------
 
 Your best way to get started with Python on macOS is through the IDLE
-integrated development environment, see section :ref:`ide` and use the Help menu
+integrated development environment; see section :ref:`ide` and use the Help menu
 when the IDE is running.
 
 If you want to run Python scripts from the Terminal window command line or from
@@ -79,11 +79,11 @@ To run your script from the Terminal window you must make sure that
 
 To run your script from the Finder you have two options:
 
-* Drag it to :program:`PythonLauncher`
+* Drag it to :program:`Python Launcher`.
 
-* Select :program:`PythonLauncher` as the default application to open your
-  script (or any .py script) through the finder Info window and double-click it.
-  :program:`PythonLauncher` has various preferences to control how your script is
+* Select :program:`Python Launcher` as the default application to open your
+  script (or any ``.py`` script) through the finder Info window and double-click it.
+  :program:`Python Launcher` has various preferences to control how your script is
   launched. Option-dragging allows you to change these for one invocation, or use
   its Preferences menu to change things globally.
 
@@ -165,8 +165,8 @@ Distributing Python Applications
 ================================
 
 The standard tool for deploying standalone Python applications on the Mac is
-:program:`py2app`. More information on installing and using py2app can be found
-at https://pypi.org/project/py2app/.
+:program:`py2app`. More information on installing and using :program:`py2app`
+can be found at https://pypi.org/project/py2app/.
 
 
 Other Resources
