@@ -145,6 +145,11 @@ Other Language Changes
   is rejected when the global is used in the :keyword:`else` block.
   (Contributed by Irit Katriel in :gh:`111123`.)
 
+* Many functions now emit a warning if a boolean value is passed as
+  a file descriptor argument.
+  This can help catch some errors earlier.
+  (Contributed by Serhiy Storchaka in :gh:`82626`.)
+
 * Added a new environment variable :envvar:`PYTHON_FROZEN_MODULES`. It
   determines whether or not frozen modules are ignored by the import machinery,
   equivalent of the :option:`-X frozen_modules <-X>` command-line option.
@@ -163,6 +168,15 @@ New Modules
 
 Improved Modules
 ================
+
+argparse
+--------
+
+* Add parameter *deprecated* in methods
+  :meth:`~argparse.ArgumentParser.add_argument` and :meth:`!add_parser`
+  which allows to deprecate command-line options, positional arguments and
+  subcommands.
+  (Contributed by Serhiy Storchaka in :gh:`83648`).
 
 array
 -----
@@ -377,7 +391,7 @@ pathlib
   (Contributed by Barney Gale in :gh:`89812`.)
 
 * Add :meth:`pathlib.Path.from_uri`, a new constructor to create a :class:`pathlib.Path`
-  object from a 'file' URI (``file:/``).
+  object from a 'file' URI (``file://``).
   (Contributed by Barney Gale in :gh:`107465`.)
 
 * Add :meth:`pathlib.PurePath.full_match` for matching paths with
@@ -424,6 +438,10 @@ sqlite3
   object is not :meth:`closed <sqlite3.Connection.close>` explicitly.
   (Contributed by Erlend E. Aasland in :gh:`105539`.)
 
+* Add *filter* keyword-only parameter to :meth:`sqlite3.Connection.iterdump`
+  for filtering database objects to dump.
+  (Contributed by Mariusz Felisiak in :gh:`91602`.)
+
 subprocess
 ----------
 
@@ -454,6 +472,15 @@ tkinter
   :meth:`!tk_busy_cget`, :meth:`!tk_busy_forget`,
   :meth:`!tk_busy_current`, and :meth:`!tk_busy_status`.
   (Contributed by Miguel, klappnase and Serhiy Storchaka in :gh:`72684`.)
+
+* The :mod:`tkinter` widget method :meth:`!wm_attributes` now accepts
+  the attribute name without the minus prefix to get window attributes,
+  e.g. ``w.wm_attributes('alpha')`` and allows to specify attributes and
+  values to set as keyword arguments, e.g. ``w.wm_attributes(alpha=0.5)``.
+  Add new optional keyword-only parameter *return_python_dict*: calling
+  ``w.wm_attributes(return_python_dict=True)`` returns the attributes as
+  a dict instead of a tuple.
+  (Contributed by Serhiy Storchaka in :gh:`43457`.)
 
 * Add support of the "vsapi" element type in
   the :meth:`~tkinter.ttk.Style.element_create` method of
@@ -1412,6 +1439,12 @@ New Features
   these functions return -1 on error and so checking ``PyErr_Occurred()`` is
   not needed.
   (Contributed by Victor Stinner in :gh:`106004`.)
+
+* Added :c:func:`PyDict_SetDefaultRef`, which is similar to
+  :c:func:`PyDict_SetDefault` but returns a :term:`strong reference` instead of
+  a :term:`borrowed reference`. This function returns ``-1`` on error, ``0`` on
+  insertion, and ``1`` if the key was already present in the dictionary.
+  (Contributed by Sam Gross in :gh:`112066`.)
 
 * Add :c:func:`PyDict_ContainsString` function: same as
   :c:func:`PyDict_Contains`, but *key* is specified as a :c:expr:`const char*`
