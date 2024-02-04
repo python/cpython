@@ -1,5 +1,4 @@
 "Test InteractiveConsole and InteractiveInterpreter from code module"
-import site
 import sys
 import unittest
 from textwrap import dedent
