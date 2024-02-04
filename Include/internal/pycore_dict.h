@@ -181,6 +181,9 @@ struct _dictkeysobject {
  * [-1] = prefix size. [-2] = used size. size[-2-n...] = insertion order.
  */
 struct _dictvalues {
+    uint8_t capacity;
+    uint8_t size;
+    uint8_t refcount;
     PyObject *values[1];
 };
 
@@ -249,16 +252,21 @@ extern PyObject *_PyDict_FromItems(
         PyObject *const *values, Py_ssize_t values_offset,
         Py_ssize_t length);
 
+static inline uint8_t *
+get_insertion_order_array(PyDictValues *values)
+{
+    return (uint8_t *)&values->values[values->capacity];
+}
+
 static inline void
 _PyDictValues_AddToInsertionOrder(PyDictValues *values, Py_ssize_t ix)
 {
     assert(ix < SHARED_KEYS_MAX_SIZE);
-    uint8_t *size_ptr = ((uint8_t *)values)-2;
-    int size = *size_ptr;
-    assert(size+2 < ((uint8_t *)values)[-1]);
-    size++;
-    size_ptr[-size] = (uint8_t)ix;
-    *size_ptr = size;
+    int size = values->size;
+    uint8_t *array = get_insertion_order_array(values);
+    assert(size < values->capacity);
+    array[size] = (uint8_t)ix;
+    values->size = size+1;
 }
 
 #ifdef __cplusplus

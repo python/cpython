@@ -508,8 +508,9 @@ static inline int
 get_index_from_order(PyDictObject *mp, Py_ssize_t i)
 {
     assert(mp->ma_used <= SHARED_KEYS_MAX_SIZE);
-    assert(i < (((char *)mp->ma_values)[-2]));
-    return ((char *)mp->ma_values)[-3-i];
+    assert(i < mp->ma_values->size);
+    uint8_t *array = get_insertion_order_array(mp->ma_values);
+    return array[i];
 }
 
 #ifdef DEBUG_PYDICT
@@ -700,23 +701,23 @@ static inline PyDictValues*
 new_values(size_t size)
 {
     assert(size >= 1);
-    size_t prefix_size = _Py_SIZE_ROUND_UP(size+2, sizeof(PyObject *));
-    assert(prefix_size < 256);
-    size_t n = prefix_size + size * sizeof(PyObject *);
-    uint8_t *mem = PyMem_Malloc(n);
-    if (mem == NULL) {
+    size_t suffix_size = _Py_SIZE_ROUND_UP(size, sizeof(PyObject *));
+    assert(suffix_size < 128);
+    assert(suffix_size % sizeof(PyObject *) == 0);
+    size_t n = (size + 1) * sizeof(PyObject *) + suffix_size;
+    PyDictValues *res = (PyDictValues *)PyMem_Malloc(n);
+    if (res == NULL) {
         return NULL;
     }
-    assert(prefix_size % sizeof(PyObject *) == 0);
-    mem[prefix_size-1] = (uint8_t)prefix_size;
-    return (PyDictValues*)(mem + prefix_size);
+    res->size = 0;
+    res->capacity = size;
+    return res;
 }
 
 static inline void
 free_values(PyDictValues *values)
 {
-    int prefix_size = ((uint8_t *)values)[-1];
-    PyMem_Free(((char *)values)-prefix_size);
+    PyMem_Free(values);
 }
 
 /* Consumes a reference to the keys object */
@@ -772,7 +773,6 @@ new_dict_with_shared_keys(PyInterpreterState *interp, PyDictKeysObject *keys)
         dictkeys_decref(interp, keys);
         return PyErr_NoMemory();
     }
-    ((char *)values)[-2] = 0;
     for (size_t i = 0; i < size; i++) {
         values->values[i] = NULL;
     }
@@ -1932,17 +1932,17 @@ _PyDict_SetItem_KnownHash(PyObject *op, PyObject *key, PyObject *value,
 static void
 delete_index_from_values(PyDictValues *values, Py_ssize_t ix)
 {
-    uint8_t *size_ptr = ((uint8_t *)values)-2;
-    int size = *size_ptr;
+    uint8_t *array = get_insertion_order_array(values);
+    int size = values->size;
     int i;
-    for (i = 1; size_ptr[-i] != ix; i++) {
-        assert(i <= size);
+    for (i = 0; array[i] != ix; i++) {
+        assert(i < size);
     }
-    assert(i <= size);
+    assert(i < size);
     for (; i < size; i++) {
-        size_ptr[-i] = size_ptr[-i-1];
+        array[i] = array[i+1];
     }
-    *size_ptr = size -1;
+    values->size = size-1;
 }
 
 static int
@@ -3133,8 +3133,10 @@ PyDict_Copy(PyObject *o)
             free_values(newvalues);
             return NULL;
         }
-        size_t prefix_size = ((uint8_t *)newvalues)[-1];
-        memcpy(((char *)newvalues)-prefix_size, ((char *)mp->ma_values)-prefix_size, prefix_size-1);
+        newvalues->size = mp->ma_values->size;
+        uint8_t *values_order = get_insertion_order_array(mp->ma_values);
+        uint8_t *new_values_order = get_insertion_order_array(newvalues);
+        memcpy(new_values_order, values_order, size);
         split_copy->ma_values = newvalues;
         split_copy->ma_keys = mp->ma_keys;
         split_copy->ma_used = mp->ma_used;
@@ -5472,13 +5474,16 @@ _PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp)
         keys->dk_usable--;
     }
     size_t size = shared_keys_usable_size(keys);
-    PyDictValues *values = new_values(size);
-    if (values == NULL) {
-        PyErr_NoMemory();
-        return -1;
+    PyDictValues *values;
+    if (tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+        values = (PyDictValues *)(((char *)obj) + tp->tp_basicsize);
+    } else {
+        values = new_values(size);
+        if (values == NULL) {
+            PyErr_NoMemory();
+            return -1;
+        }
     }
-    assert(((uint8_t *)values)[-1] >= (size + 2));
-    ((uint8_t *)values)[-2] = 0;
     for (size_t i = 0; i < size; i++) {
         values->values[i] = NULL;
     }
