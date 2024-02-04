@@ -20,6 +20,7 @@ extern "C" {
 #include "pycore_dtoa.h"          // struct _dtoa_state
 #include "pycore_exceptions.h"    // struct _Py_exc_state
 #include "pycore_floatobject.h"   // struct _Py_float_state
+#include "pycore_freelist.h"      // struct _Py_freelist_state
 #include "pycore_function.h"      // FUNC_MAX_WATCHERS
 #include "pycore_gc.h"            // struct _gc_runtime_state
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
@@ -71,7 +72,6 @@ typedef struct _rare_events {
     uint8_t set_eval_frame_func;
     /* Modifying the builtins,  __builtins__.__dict__[var] = ... */
     uint8_t builtin_dict;
-    int builtins_dict_watcher_id;
     /* Modifying a function, e.g. func.__defaults__ = ..., etc. */
     uint8_t func_modification;
 } _rare_events;
@@ -230,7 +230,6 @@ struct _is {
     struct _dtoa_state dtoa;
     struct _py_func_state func_state;
 
-    struct _Py_tuple_state tuple;
     struct _Py_dict_state dict_state;
     struct _Py_exc_state exc_state;
 
@@ -243,6 +242,7 @@ struct _is {
     uint16_t optimizer_backedge_threshold;
     uint32_t next_func_version;
     _rare_events rare_events;
+    PyDict_WatchCallback builtins_dict_watcher;
 
     _Py_GlobalMonitors monitors;
     bool sys_profile_initialized;
