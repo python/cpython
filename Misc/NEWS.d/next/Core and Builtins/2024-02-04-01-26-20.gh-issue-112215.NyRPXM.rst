@@ -1,0 +1,2 @@
+Change the C recursion limits to more closely reflect the underlying
+platform limits.
