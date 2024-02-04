@@ -13,6 +13,7 @@ Doc/c-api/intro.rst
 Doc/c-api/memoryview.rst
 Doc/c-api/module.rst
 Doc/c-api/stable.rst
+Doc/c-api/object.rst
 Doc/c-api/sys.rst
 Doc/c-api/type.rst
 Doc/c-api/typeobj.rst
