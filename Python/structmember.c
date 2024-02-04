@@ -197,45 +197,74 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
             WARN("Truncation of value to int");
         break;
         }
-    case T_UINT:{
-        unsigned long ulong_val = PyLong_AsUnsignedLong(v);
-        if ((ulong_val == (unsigned long)-1) && PyErr_Occurred()) {
-            /* XXX: For compatibility, accept negative int values
-               as well. */
-            PyErr_Clear();
-            ulong_val = PyLong_AsLong(v);
-            if ((ulong_val == (unsigned long)-1) &&
-                PyErr_Occurred())
-                return -1;
-            *(unsigned int *)addr = (unsigned int)ulong_val;
-            WARN("Writing negative value into unsigned field");
-        } else
-            *(unsigned int *)addr = (unsigned int)ulong_val;
-        if (ulong_val > UINT_MAX)
-            WARN("Truncation of value to unsigned int");
-        break;
+    case T_UINT: {
+        /* XXX: For compatibility, accept negative int values
+           as well. */
+        int overflow;
+        long long_val = PyLong_AsLongAndOverflow(v, &overflow);
+        if (long_val == -1 && PyErr_Occurred()) {
+            return -1;
         }
+        if (overflow < 0) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "Python int too large to convert to C long");
+            return -1;
+        }
+        else if (!overflow) {
+            *(unsigned int *)addr = (unsigned int)(unsigned long)long_val;
+            if (long_val < 0) {
+                WARN("Writing negative value into unsigned field");
+            }
+            else if ((unsigned long)long_val > UINT_MAX) {
+                WARN("Truncation of value to unsigned short");
+            }
+        }
+        else {
+            unsigned long ulong_val = PyLong_AsUnsignedLong(v);
+            if (ulong_val == (unsigned long)-1 && PyErr_Occurred()) {
+                return -1;
+            }
+            *(unsigned int*)addr = (unsigned int)ulong_val;
+            if (ulong_val > UINT_MAX) {
+                WARN("Truncation of value to unsigned int");
+            }
+        }
+        break;
+    }
     case T_LONG:{
         *(long*)addr = PyLong_AsLong(v);
         if ((*(long*)addr == -1) && PyErr_Occurred())
             return -1;
         break;
         }
-    case T_ULONG:{
-        *(unsigned long*)addr = PyLong_AsUnsignedLong(v);
-        if ((*(unsigned long*)addr == (unsigned long)-1)
-            && PyErr_Occurred()) {
-            /* XXX: For compatibility, accept negative int values
-               as well. */
-            PyErr_Clear();
-            *(unsigned long*)addr = PyLong_AsLong(v);
-            if ((*(unsigned long*)addr == (unsigned long)-1)
-                && PyErr_Occurred())
+    case T_ULONG: {
+        /* XXX: For compatibility, accept negative int values
+           as well. */
+        int overflow;
+        long long_val = PyLong_AsLongAndOverflow(v, &overflow);
+        if (long_val == -1 && PyErr_Occurred()) {
+            return -1;
+        }
+        if (overflow < 0) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "Python int too large to convert to C long");
+            return -1;
+        }
+        else if (!overflow) {
+            *(unsigned long *)addr = (unsigned long)long_val;
+            if (long_val < 0) {
+                WARN("Writing negative value into unsigned field");
+            }
+        }
+        else {
+            unsigned long ulong_val = PyLong_AsUnsignedLong(v);
+            if (ulong_val == (unsigned long)-1 && PyErr_Occurred()) {
                 return -1;
-            WARN("Writing negative value into unsigned field");
+            }
+            *(unsigned long*)addr = ulong_val;
         }
         break;
-        }
+    }
     case T_PYSSIZET:{
         *(Py_ssize_t*)addr = PyLong_AsSsize_t(v);
         if ((*(Py_ssize_t*)addr == (Py_ssize_t)-1)
