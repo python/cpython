@@ -472,6 +472,14 @@ warnings
   warning may also be emitted when a decorated function or class is used at runtime.
   See :pep:`702`. (Contributed by Jelle Zijlstra in :gh:`104003`.)
 
+xml.etree.ElementTree
+---------------------
+
+* Add the :meth:`!close` method for the iterator returned by
+  :func:`~xml.etree.ElementTree.iterparse` for explicit cleaning up.
+  (Contributed by Serhiy Storchaka in :gh:`69893`.)
+
+
 Optimizations
 =============
 
