@@ -148,7 +148,7 @@ The :mod:`bdb` module also defines two classes:
 
    .. method:: reset()
 
-      `Set the :attr:`botframe`, :attr:`!stopframe`, :attr:`!returnframe` and
+      Set the :attr:`botframe`, :attr:`!stopframe`, :attr:`!returnframe` and
       :attr:`quitting <Bdb.set_quit>` attributes with values ready to start debugging.
 
    .. method:: trace_dispatch(frame, event, arg)
