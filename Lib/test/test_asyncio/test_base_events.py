@@ -1195,7 +1195,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         with sock:
             coro = self.loop.create_datagram_endpoint(MyProto, sock=sock)
             with self.assertRaisesRegex(ValueError,
-                                        'A UDP Socket was expected'):
+                                        'A datagram socket was expected'):
                 self.loop.run_until_complete(coro)
 
     def test_create_connection_no_host_port_sock(self):
