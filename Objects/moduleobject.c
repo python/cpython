@@ -821,30 +821,19 @@ _is_module_possibly_shadowing(PyObject *origin)
     // sys.path[0] or os.getcwd()
     wchar_t *sys_path_0 = config->sys_path_0;
     if (!sys_path_0) {
-        if (!config->module_search_paths_set || config->module_search_paths.length == 0) {
-            return 0;
-        }
-        sys_path_0 = config->module_search_paths.items[0];
-        assert(sys_path_0 != NULL);
+        return 0;
     }
-    bool sys_path_allocated = false;
+
+    wchar_t sys_path_0_buf[MAXPATHLEN];
     if (sys_path_0[0] == L'\0') {
         // if sys.path[0] == "", treat it as if it were the current directory
-        sys_path_0 = PyMem_RawMalloc(MAXPATHLEN * sizeof(wchar_t));
-        if (!sys_path_0) {
+        if (!_Py_wgetcwd(sys_path_0_buf, MAXPATHLEN)) {
             return -1;
         }
-        sys_path_allocated = true;
-        if (!_Py_wgetcwd(sys_path_0, MAXPATHLEN)) {
-            PyMem_RawFree(sys_path_0);
-            return -1;
-        }
+        sys_path_0 = sys_path_0_buf;
     }
 
     int result = wcscmp(sys_path_0, origin_dirname) == 0;
-    if (sys_path_allocated) {
-        PyMem_RawFree(sys_path_0);
-    }
     return result;
 }
 
