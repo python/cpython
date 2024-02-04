@@ -1,5 +1,5 @@
 import unittest
-from test.support import cpython_only, requires_limited_api, skip_on_s390x
+from test.support import cpython_only, requires_limited_api, skip_on_s390x, is_wasi
 try:
     import _testcapi
 except ImportError:
