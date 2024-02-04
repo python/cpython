@@ -66,13 +66,13 @@ when the IDE is running.
 
 If you want to run Python scripts from the Terminal window command line or from
 the Finder you first need an editor to create your script. macOS comes with a
-number of standard Unix command line editors, :program:`vim` and
-:program:`emacs` among them. If you want a more Mac-like editor,
-:program:`BBEdit` or :program:`TextWrangler` from Bare Bones Software (see
-http://www.barebones.com/products/bbedit/index.html) are good choices, as is
-:program:`TextMate` (see https://macromates.com/). Other editors include
-:program:`Gvim` (https://macvim.org/macvim/) and :program:`Aquamacs`
-(http://aquamacs.org/).
+number of standard Unix command line editors, :program:`vim`
+:program:`nano` among them. If you want a more Mac-like editor,
+:program:`BBEdit` from Bare Bones Software (see
+https://www.barebones.com/products/bbedit/index.html) are good choices, as is
+:program:`TextMate` (see https://macromates.com). Other editors include
+:program:`MacVim` (https://macvim.org) and :program:`Aquamacs`
+(https://aquamacs.org).
 
 To run your script from the Terminal window you must make sure that
 :file:`/usr/local/bin` is in your shell search path.
