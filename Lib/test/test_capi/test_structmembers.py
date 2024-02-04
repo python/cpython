@@ -88,25 +88,22 @@ class ReadWriteTests:
             self.assertRaises(TypeError, setattr, ts, name, Index(maxval))
         else:
             hardminindexval, hardmaxindexval = indexlimit
-            if name in ('T_UINT', 'T_ULONG'):  # BUG gh-114388
-                self._test_warn(name, Index(minval), minval)
-            else:
-                self._test_write(name, Index(minval), minval)
+            self._test_write(name, Index(minval), minval)
             if minval < hardminindexval:
                 self._test_write(name, Index(hardminindexval), hardminindexval)
             if maxval < hardmaxindexval:
-                if name == 'T_UINT':  # BUG gh-114388
-                    self._test_warn(name, Index(maxval), maxval)
-                else:
-                    self._test_write(name, Index(maxval), maxval)
+                self._test_write(name, Index(maxval), maxval)
             else:
-                if name in ('T_UINT', 'T_ULONG'):  # BUG gh-114388
-                    self._test_warn(name, Index(hardmaxindexval), hardmaxindexval)
-                else:
-                    self._test_write(name, Index(hardmaxindexval), hardmaxindexval)
+                self._test_write(name, Index(hardmaxindexval), hardmaxindexval)
             self._test_overflow(name, Index(hardminindexval-1))
-            self._test_overflow(name, Index(hardmaxindexval+1))
-            self._test_overflow(name, Index(2**1000))
+            if name in ('T_UINT', 'T_ULONG'):
+                self.assertRaises(TypeError, setattr, self.ts, name,
+                                  Index(hardmaxindexval+1))
+                self.assertRaises(TypeError, setattr, self.ts, name,
+                                  Index(2**1000))
+            else:
+                self._test_overflow(name, Index(hardmaxindexval+1))
+                self._test_overflow(name, Index(2**1000))
             self._test_overflow(name, Index(-2**1000))
             if hardminindexval < minval and name != 'T_ULONGLONG':
                 self._test_warn(name, Index(hardminindexval))
