@@ -80,7 +80,7 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
             fut = pool.submit(log_n_wait, ident="first")
             try:
                 with contextlib.closing(
-                    pool.map(log_n_wait, ["second", "third"], timeout=1)
+                    pool.map(log_n_wait, ["second", "third"], timeout=0)
                 ) as gen:
                     with self.assertRaises(TimeoutError):
                         next(gen)

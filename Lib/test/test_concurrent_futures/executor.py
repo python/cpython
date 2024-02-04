@@ -48,11 +48,19 @@ class ExecutorTest:
                 list(map(pow, range(10), range(10))))
 
     def test_map_exception(self):
-        i = self.executor.map(divmod, [1, 1, 1, 1], [2, 3, 0, 5])
-        self.assertEqual(i.__next__(), (0, 1))
-        self.assertEqual(i.__next__(), (0, 1))
+        i = self.executor.map(divmod, [5, 5, 5, 5], [2, 3, 0, 5])
+        self.assertEqual(i.__next__(), (2, 1))
+        self.assertEqual(i.__next__(), (1, 2))
         self.assertRaises(ZeroDivisionError, i.__next__)
-        self.assertEqual(i.__next__(), (0, 1))
+        self.assertEqual(i.__next__(), (1, 0))
+        self.assertRaises(StopIteration, i.__next__)
+        self.assertRaises(StopIteration, i.__next__)
+
+        i = self.executor.map(divmod, [5, 5, 5, 5], [2, 0, 3, 5], chunksize=3)
+        self.assertEqual(i.__next__(), (2, 1))
+        self.assertRaises(ZeroDivisionError, i.__next__)
+        self.assertEqual(i.__next__(), (1, 2))
+        self.assertEqual(i.__next__(), (1, 0))
         self.assertRaises(StopIteration, i.__next__)
         self.assertRaises(StopIteration, i.__next__)
 
@@ -70,6 +78,19 @@ class ExecutorTest:
             self.fail('expected TimeoutError')
 
         self.assertEqual([None, None], results)
+
+    def test_map_close(self):
+        i = self.executor.map(divmod, [5, 5, 5, 5], [2, 0, 3, 5])
+        self.assertEqual(i.__next__(), (2, 1))
+        i.close()
+        self.assertRaises(StopIteration, i.__next__)
+        self.assertRaises(StopIteration, i.__next__)
+
+        i = self.executor.map(divmod, [5, 5, 5, 5], [2, 0, 3, 5], chunksize=3)
+        self.assertEqual(i.__next__(), (2, 1))
+        i.close()
+        self.assertRaises(StopIteration, i.__next__)
+        self.assertRaises(StopIteration, i.__next__)
 
     def test_shutdown_race_issue12456(self):
         # Issue #12456: race condition at shutdown where trying to post a
