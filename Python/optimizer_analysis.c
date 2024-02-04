@@ -37,6 +37,8 @@
 
 #define OVERALLOCATE_FACTOR 5
 
+#define ARENA_SIZE (UOP_MAX_TRACE_WORKING_LENGTH * OVERALLOCATE_FACTOR)
+
 // Need extras for root frame and for overflow frame (see TRACE_STACK_PUSH())
 #define MAX_ABSTRACT_FRAME_DEPTH (TRACE_STACK_SIZE + 2)
 
@@ -121,7 +123,7 @@ typedef struct _Py_UOpsAbstractFrame {
 typedef struct ty_arena {
     int ty_curr_number;
     int ty_max_number;
-    _Py_UOpsSymType *arena;
+    _Py_UOpsSymType arena[ARENA_SIZE];
 } ty_arena;
 
 typedef struct frequent_syms {
@@ -166,13 +168,10 @@ abstractinterp_dealloc(_Py_UOpsAbstractInterpContext *self)
         curr--;
     }
      self->curr_frame_depth = 0;
-    if (self->t_arena.arena != NULL) {
-        int tys = self->t_arena.ty_curr_number;
-        for (int i = 0; i < tys; i++) {
-            Py_CLEAR(self->t_arena.arena[i].const_val);
-        }
+    int tys = self->t_arena.ty_curr_number;
+    for (int i = 0; i < tys; i++) {
+        Py_CLEAR(self->t_arena.arena[i].const_val);
     }
-    PyMem_Free(self->t_arena.arena);
     PyMem_Free(self);
 }
 
@@ -203,13 +202,7 @@ abstractinterp_context_new(PyCodeObject *co,
     int stack_len = co->co_stacksize;
     _Py_UOpsAbstractFrame *frame = NULL;
     _Py_UOpsAbstractInterpContext *self = NULL;
-    _Py_UOpsSymType *t_arena = NULL;
-    int ty_arena_size = ir_entries * OVERALLOCATE_FACTOR;
 
-    t_arena = (_Py_UOpsSymType *)PyMem_New(_Py_UOpsSymType, ty_arena_size);
-    if (t_arena == NULL) {
-        goto error;
-    }
 
     self = PyMem_New(_Py_UOpsAbstractInterpContext, 1);
     if (self == NULL) {
@@ -225,8 +218,7 @@ abstractinterp_context_new(PyCodeObject *co,
 
     // Setup the arena for sym expressions.
     self->t_arena.ty_curr_number = 0;
-    self->t_arena.arena = t_arena;
-    self->t_arena.ty_max_number = ty_arena_size;
+    self->t_arena.ty_max_number = ARENA_SIZE;
 
     // Frame setup
 
@@ -256,10 +248,8 @@ abstractinterp_context_new(PyCodeObject *co,
     return self;
 
 error:
-    PyMem_Free(t_arena);
     if (self != NULL) {
         // Important so we don't double free them.
-        self->t_arena.arena = NULL;
         self->frame = NULL;
     }
     abstractinterp_dealloc(self);
@@ -477,7 +467,6 @@ sym_set_type(_Py_UOpsSymType *sym, _Py_UOpsSymExprTypeEnum typ, uint64_t refinem
     }
 }
 
-// Note: for this, to_sym MUST point to brand new sym.
 static void
 sym_copy_immutable_type_info(_Py_UOpsSymType *from_sym, _Py_UOpsSymType *to_sym)
 {
@@ -593,17 +582,6 @@ op_is_end(uint32_t opcode)
         opcode == _JUMP_ABSOLUTE;
 }
 
-static inline bool
-op_is_guard(uint32_t opcode)
-{
-    return _PyUop_Flags[opcode] & HAS_GUARD_FLAG;
-}
-
-static inline bool
-op_is_pure(uint32_t opcode)
-{
-    return _PyUop_Flags[opcode] & HAS_PURE_FLAG;
-}
 
 static inline bool
 op_is_bookkeeping(uint32_t opcode) {
@@ -613,11 +591,6 @@ op_is_bookkeeping(uint32_t opcode) {
             opcode == _RESUME_CHECK);
 }
 
-static inline bool
-op_is_specially_handled(uint32_t opcode)
-{
-    return _PyUop_Flags[opcode] & HAS_SPECIAL_OPT_FLAG;
-}
 
 static inline bool
 is_const(_Py_UOpsSymType *expr)
@@ -1280,10 +1253,10 @@ loop_peeling:
     ;
     while (curr < end && !op_is_end(curr->opcode)) {
 
-        if (!op_is_pure(curr->opcode) &&
-            !op_is_specially_handled(curr->opcode) &&
+        if (!(_PyUop_Flags[curr->opcode] & HAS_PURE_FLAG) &&
+            !(_PyUop_Flags[curr->opcode] & HAS_SPECIAL_OPT_FLAG) &&
             !op_is_bookkeeping(curr->opcode) &&
-            !op_is_guard(curr->opcode)) {
+            !(_PyUop_Flags[curr->opcode] & HAS_GUARD_FLAG)) {
             DPRINTF(3, "Impure %s\n", _PyOpcode_uop_name[curr->opcode]);
             if (needs_clear_locals) {
                 if (clear_locals_type_info(ctx) < 0) {
@@ -1411,18 +1384,15 @@ _Py_uop_analyze_and_optimize(
 {
     OPT_STAT_INC(optimizer_attempts);
     _PyUOpInstruction temp_writebuffer[UOP_MAX_TRACE_WORKING_LENGTH];
-    _PyUOpInstruction temp_readbuffer[UOP_MAX_TRACE_WORKING_LENGTH];
 
-    memcpy(temp_readbuffer, buffer, buffer_size * sizeof(_PyUOpInstruction));
-
-    int err = remove_globals(frame, temp_readbuffer, buffer_size, dependencies);
+    int err = remove_globals(frame, buffer, buffer_size, dependencies);
     if (err <= 0) {
         goto error;
     }
 
     // Pass: Abstract interpretation and symbolic analysis
     int new_trace_len = uop_abstract_interpret(
-        (PyCodeObject *)frame->f_executable, temp_readbuffer, temp_writebuffer,
+        (PyCodeObject *)frame->f_executable, buffer, temp_writebuffer,
         buffer_size, curr_stacklen);
 
     if (new_trace_len < 0) {
