@@ -202,9 +202,9 @@ def _process_chunk(fn, chunk):
     results = []
     for args in chunk:
         try:
-            result = _base._FutureResult.from_value(fn(*args))
-        except Exception as e:
-            result = _base._FutureResult.from_exception(e)
+            result = (fn(*args), None)
+        except BaseException as exc:
+            result = (None, exc)
         results.append(result)
     return results
 
@@ -846,8 +846,7 @@ class ProcessPoolExecutor(_base.Executor):
         results = super().map(partial(_process_chunk, fn),
                               itertools.batched(zip(*iterables), chunksize),
                               timeout=timeout)
-        return _base._MapResultIterator.from_generator(
-            _chain_from_iterable_of_lists(results))
+        return _base._MapResultIterator(_chain_from_iterable_of_lists(results))
 
     def shutdown(self, wait=True, *, cancel_futures=False):
         with self._shutdown_lock:
