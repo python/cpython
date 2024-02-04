@@ -643,8 +643,8 @@ Some other changes to standard library modules, not covered by
   :func:`sequenceIncludes` and :func:`isCallable`.
 
 * Cleanup of the :mod:`!thread` module: :func:`!acquire_lock` and
-  :func:`!release_lock` are gone; use :func:`!acquire` and
-  :func:`!release` instead.
+  :func:`!release_lock` are gone; use :meth:`~threading.Lock.acquire` and
+  :meth:`~threading.Lock.release` instead.
 
 * Cleanup of the :mod:`random` module: removed the :func:`jumpahead` API.
 
