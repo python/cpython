@@ -495,9 +495,15 @@ is_const(_Py_UOpsSymType *expr)
 }
 
 static inline PyObject *
-get_const(_Py_UOpsSymType *expr)
+get_const_borrow(_Py_UOpsSymType *expr)
 {
     return expr->const_val;
+}
+
+static inline PyObject *
+get_const(_Py_UOpsSymType *expr)
+{
+    return Py_NewRef(expr->const_val);
 }
 
 
@@ -544,16 +550,9 @@ op_is_zappable(int opcode)
     switch(opcode) {
         case _SET_IP:
         case _CHECK_VALIDITY:
-        case _LOAD_CONST_INLINE:
-        case _LOAD_CONST_INLINE_BORROW:
-        case _LOAD_CONST_INLINE_WITH_NULL:
-        case _LOAD_CONST_INLINE_BORROW_WITH_NULL:
-        case _LOAD_CONST:
-        case _LOAD_FAST:
-        case _NOP:
             return true;
         default:
-            return false;
+            return _PyUop_Flags[opcode] & HAS_PURE_FLAG;
     }
 }
 
@@ -731,7 +730,7 @@ uop_abstract_interpret_single_inst(
                 ctx, oparg);
             assert(is_const(PEEK(1)));
             // Peephole: inline constants.
-            PyObject *val = get_const(PEEK(1));
+            PyObject *val = get_const_borrow(PEEK(1));
             new_inst.opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
             if (new_inst.opcode == _LOAD_CONST_INLINE) {
                 Py_INCREF(val);

@@ -190,6 +190,8 @@
                 right = get_const(__right_);
                 STAT_INC(BINARY_OP, hit);
                 res = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
+                _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
+                _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
                 if (res == NULL) goto pop_2_error_tier_two;
 
                 __res_ = _Py_UOpsSymType_New(ctx, (PyObject *)res);
@@ -224,6 +226,8 @@
                 right = get_const(__right_);
                 STAT_INC(BINARY_OP, hit);
                 res = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
+                _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
+                _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
                 if (res == NULL) goto pop_2_error_tier_two;
 
                 __res_ = _Py_UOpsSymType_New(ctx, (PyObject *)res);
@@ -258,6 +262,8 @@
                 right = get_const(__right_);
                 STAT_INC(BINARY_OP, hit);
                 res = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
+                _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
+                _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
                 if (res == NULL) goto pop_2_error_tier_two;
 
                 __res_ = _Py_UOpsSymType_New(ctx, (PyObject *)res);
@@ -461,6 +467,8 @@
                 right = get_const(__right_);
                 STAT_INC(BINARY_OP, hit);
                 res = PyUnicode_Concat(left, right);
+                _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
+                _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
                 if (res == NULL) goto pop_2_error_tier_two;
 
                 __res_ = _Py_UOpsSymType_New(ctx, (PyObject *)res);
@@ -752,11 +760,10 @@
         case _LOAD_GLOBAL: {
             _Py_UOpsSymType *__res_;
             _Py_UOpsSymType *__null_ = NULL;
+            __null_ = sym_init_push_null(ctx);
+            if (__null_ == NULL) { goto error; }
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
-            __null_ = sym_init_unknown(ctx);
-            if(__null_ == NULL) goto error;
-            sym_set_type(__null_, NULL_TYPE, 0);
             stack_pointer[0] = __res_;
             if (oparg & 1) stack_pointer[1] = __null_;
             stack_pointer += 1 + (oparg & 1);
@@ -774,11 +781,10 @@
         case _LOAD_GLOBAL_MODULE: {
             _Py_UOpsSymType *__res_;
             _Py_UOpsSymType *__null_ = NULL;
+            __null_ = sym_init_push_null(ctx);
+            if (__null_ == NULL) { goto error; }
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
-            __null_ = sym_init_unknown(ctx);
-            if(__null_ == NULL) goto error;
-            sym_set_type(__null_, NULL_TYPE, 0);
             stack_pointer[0] = __res_;
             if (oparg & 1) stack_pointer[1] = __null_;
             stack_pointer += 1 + (oparg & 1);
@@ -788,11 +794,10 @@
         case _LOAD_GLOBAL_BUILTINS: {
             _Py_UOpsSymType *__res_;
             _Py_UOpsSymType *__null_ = NULL;
+            __null_ = sym_init_push_null(ctx);
+            if (__null_ == NULL) { goto error; }
             __res_ = sym_init_unknown(ctx);
             if(__res_ == NULL) goto error;
-            __null_ = sym_init_unknown(ctx);
-            if(__null_ == NULL) goto error;
-            sym_set_type(__null_, NULL_TYPE, 0);
             stack_pointer[0] = __res_;
             if (oparg & 1) stack_pointer[1] = __null_;
             stack_pointer += 1 + (oparg & 1);
@@ -961,8 +966,8 @@
         case _GUARD_TYPE_VERSION: {
             _Py_UOpsSymType *__owner_;
             __owner_ = stack_pointer[-1];
-            uint32_t type_version = (uint32_t)CURRENT_OPERAND();
             // Constant evaluation
+            uint32_t type_version = (uint32_t)CURRENT_OPERAND();
             if (is_const(__owner_)) {
                 PyObject *owner;
                 owner = get_const(__owner_);
@@ -994,11 +999,10 @@
         case _LOAD_ATTR_INSTANCE_VALUE: {
             _Py_UOpsSymType *__attr_;
             _Py_UOpsSymType *__null_ = NULL;
+            __null_ = sym_init_push_null(ctx);
+            if (__null_ == NULL) { goto error; }
             __attr_ = sym_init_unknown(ctx);
             if(__attr_ == NULL) goto error;
-            __null_ = sym_init_unknown(ctx);
-            if(__null_ == NULL) goto error;
-            sym_set_type(__null_, NULL_TYPE, 0);
             stack_pointer[-1] = __attr_;
             if (oparg & 1) stack_pointer[0] = __null_;
             stack_pointer += (oparg & 1);
@@ -1008,8 +1012,8 @@
         case _CHECK_ATTR_MODULE: {
             _Py_UOpsSymType *__owner_;
             __owner_ = stack_pointer[-1];
-            uint32_t type_version = (uint32_t)CURRENT_OPERAND();
             // Constant evaluation
+            uint32_t type_version = (uint32_t)CURRENT_OPERAND();
             if (is_const(__owner_)) {
                 PyObject *owner;
                 owner = get_const(__owner_);
@@ -1028,11 +1032,10 @@
         case _LOAD_ATTR_MODULE: {
             _Py_UOpsSymType *__attr_;
             _Py_UOpsSymType *__null_ = NULL;
+            __null_ = sym_init_push_null(ctx);
+            if (__null_ == NULL) { goto error; }
             __attr_ = sym_init_unknown(ctx);
             if(__attr_ == NULL) goto error;
-            __null_ = sym_init_unknown(ctx);
-            if(__null_ == NULL) goto error;
-            sym_set_type(__null_, NULL_TYPE, 0);
             stack_pointer[-1] = __attr_;
             if (oparg & 1) stack_pointer[0] = __null_;
             stack_pointer += (oparg & 1);
@@ -1062,11 +1065,10 @@
         case _LOAD_ATTR_WITH_HINT: {
             _Py_UOpsSymType *__attr_;
             _Py_UOpsSymType *__null_ = NULL;
+            __null_ = sym_init_push_null(ctx);
+            if (__null_ == NULL) { goto error; }
             __attr_ = sym_init_unknown(ctx);
             if(__attr_ == NULL) goto error;
-            __null_ = sym_init_unknown(ctx);
-            if(__null_ == NULL) goto error;
-            sym_set_type(__null_, NULL_TYPE, 0);
             stack_pointer[-1] = __attr_;
             if (oparg & 1) stack_pointer[0] = __null_;
             stack_pointer += (oparg & 1);
@@ -1076,11 +1078,10 @@
         case _LOAD_ATTR_SLOT: {
             _Py_UOpsSymType *__attr_;
             _Py_UOpsSymType *__null_ = NULL;
+            __null_ = sym_init_push_null(ctx);
+            if (__null_ == NULL) { goto error; }
             __attr_ = sym_init_unknown(ctx);
             if(__attr_ == NULL) goto error;
-            __null_ = sym_init_unknown(ctx);
-            if(__null_ == NULL) goto error;
-            sym_set_type(__null_, NULL_TYPE, 0);
             stack_pointer[-1] = __attr_;
             if (oparg & 1) stack_pointer[0] = __null_;
             stack_pointer += (oparg & 1);
@@ -1090,8 +1091,8 @@
         case _CHECK_ATTR_CLASS: {
             _Py_UOpsSymType *__owner_;
             __owner_ = stack_pointer[-1];
-            uint32_t type_version = (uint32_t)CURRENT_OPERAND();
             // Constant evaluation
+            uint32_t type_version = (uint32_t)CURRENT_OPERAND();
             if (is_const(__owner_)) {
                 PyObject *owner;
                 owner = get_const(__owner_);
@@ -1109,11 +1110,10 @@
         case _LOAD_ATTR_CLASS: {
             _Py_UOpsSymType *__attr_;
             _Py_UOpsSymType *__null_ = NULL;
+            __null_ = sym_init_push_null(ctx);
+            if (__null_ == NULL) { goto error; }
             __attr_ = sym_init_unknown(ctx);
             if(__attr_ == NULL) goto error;
-            __null_ = sym_init_unknown(ctx);
-            if(__null_ == NULL) goto error;
-            sym_set_type(__null_, NULL_TYPE, 0);
             stack_pointer[-1] = __attr_;
             if (oparg & 1) stack_pointer[0] = __null_;
             stack_pointer += (oparg & 1);
@@ -1538,8 +1538,8 @@
         case _GUARD_KEYS_VERSION: {
             _Py_UOpsSymType *__owner_;
             __owner_ = stack_pointer[-1];
-            uint32_t keys_version = (uint32_t)CURRENT_OPERAND();
             // Constant evaluation
+            uint32_t keys_version = (uint32_t)CURRENT_OPERAND();
             if (is_const(__owner_)) {
                 PyObject *owner;
                 owner = get_const(__owner_);
@@ -1694,8 +1694,8 @@
             _Py_UOpsSymType *__callable_;
             __self_or_null_ = stack_pointer[-1 - oparg];
             __callable_ = stack_pointer[-2 - oparg];
-            uint32_t func_version = (uint32_t)CURRENT_OPERAND();
             // Constant evaluation
+            uint32_t func_version = (uint32_t)CURRENT_OPERAND();
             if (is_const(__callable_) && is_const(__self_or_null_)) {
                 PyObject *self_or_null;
                 PyObject *callable;

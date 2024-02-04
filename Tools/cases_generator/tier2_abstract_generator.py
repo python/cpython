@@ -51,6 +51,8 @@ NO_CONST_OR_TYPE_EVALUATE = {
 }
 
 
+MANGLED_NULL = "__null_"
+
 def declare_variables(
     uop: Uop,
     out: CWriter,
@@ -75,6 +77,9 @@ def declare_variables(
                     out.emit(f"{type}{var.name} = NULL;\n")
                 else:
                     out.emit(f"{type}{var.name};\n")
+                if var.name == MANGLED_NULL and not var.peek:
+                    out.emit(f"{var.name} = sym_init_push_null(ctx);\n")
+                    out.emit(f"if ({var.name} == NULL) {{ goto error; }}\n")
     for var in uop.stack.outputs:
         if skip_peeks and var.peek:
             continue
@@ -89,6 +94,9 @@ def declare_variables(
                 out.emit(f"{type}{var.name} = NULL;\n")
             else:
                 out.emit(f"{type}{var.name};\n")
+            if var.name == MANGLED_NULL and not var.peek:
+                out.emit(f"{var.name} = sym_init_push_null(ctx);\n")
+                out.emit(f"if ({var.name} == NULL) {{ goto error; }}\n")
 
 
 def tier2_replace_deopt(
@@ -106,31 +114,9 @@ def tier2_replace_deopt(
     out.emit(") goto error;\n")
 
 
-def tier2_replace_decref_specialized(
-    out: CWriter,
-    tkn: Token,
-    tkn_iter: Iterator[Token],
-    uop: Uop,
-    unused: Stack,
-    inst: Instruction | None,
-) -> None:
-    parens = 1
-    next(tkn_iter)  # LPAREN
-    for tkn in tkn_iter:
-        if tkn.kind == "LPAREN":
-            parens += 1
-        if tkn.kind == "RPAREN":
-            parens -= 1
-            if parens == 0:
-                break
-    next(tkn_iter)  # SEMICOLON
-
-
 TIER2_REPLACEMENT_FUNCTIONS = REPLACEMENT_FUNCTIONS.copy()
 TIER2_REPLACEMENT_FUNCTIONS["ERROR_IF"] = tier2_replace_error
 TIER2_REPLACEMENT_FUNCTIONS["DEOPT_IF"] = tier2_replace_deopt
-TIER2_REPLACEMENT_FUNCTIONS["_Py_DECREF_SPECIALIZED"] = tier2_replace_decref_specialized
-
 
 def _write_body_abstract_interp_impure_uop(
     mangled_uop: Uop, uop: Uop, out: CWriter, stack: Stack
@@ -142,12 +128,11 @@ def _write_body_abstract_interp_impure_uop(
             continue
 
         if var.size == "1":
-            out.emit(f"{var.name} = sym_init_unknown(ctx);\n")
-            out.emit(f"if({var.name} == NULL) goto error;\n")
-            if var.name in ("null", "__null_"):
-                out.emit(f"sym_set_type({var.name}, NULL_TYPE, 0);\n")
-            elif var.type_prop:
-                out.emit(f"sym_set_type({var.name}, {var.type_prop[0]}, 0);\n")
+            if var.name != MANGLED_NULL:
+                out.emit(f"{var.name} = sym_init_unknown(ctx);\n")
+                out.emit(f"if({var.name} == NULL) goto error;\n")
+                if var.type_prop:
+                    out.emit(f"sym_set_type({var.name}, {var.type_prop[0]}, 0);\n")
         else:
             # See UNPACK_SEQUENCE for when we need this.
             out.emit(
@@ -202,6 +187,17 @@ def new_sym(
     )
 
 
+def declare_caches(uop: Uop, out: CWriter):
+    for cache in uop.caches:
+        if cache.name not in UNUSED:
+            if cache.size == 4:
+                type = cast = "PyObject *"
+            else:
+                type = f"uint{cache.size*16}_t "
+                cast = f"uint{cache.size*16}_t"
+            out.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND();\n")
+
+
 def _write_body_abstract_interp_pure_uop(
     mangled_uop: Uop, uop: Uop, out: CWriter, stack: Stack
 ) -> None:
@@ -209,17 +205,13 @@ def _write_body_abstract_interp_pure_uop(
         mangled_uop.stack.inputs
     )
 
-    # uop is mandatory - we cannot const evaluate it
+    # uop is non-trivial - we cannot const evaluate it
     if uop.name in NO_CONST_OR_TYPE_EVALUATE:
         for in_ in mangled_uop.stack.inputs:
             out.emit(f"(void){in_.name};\n")
         return
 
-    assert (
-        len(uop.stack.outputs) == 1
-    ), f"Currently we only support 1 stack output for pure ops: {uop}"
-
-    # Constant prop only handles one output, and no variadic inputs.
+    # Constant prop handled no variadic inputs.
     # Perhaps in the future we can support these.
     if all(input.size == "1" for input in uop.stack.inputs):
         # We can try a constant evaluation
@@ -231,6 +223,9 @@ def _write_body_abstract_interp_pure_uop(
                 if var.name not in UNUSED
             ]
         )
+
+        if predicates:
+            declare_caches(uop, out)
 
         out.emit(f"if ({predicates or 0}) {{\n")
         declare_variables(uop, out, default_type="PyObject *")
@@ -273,15 +268,6 @@ def _write_body_abstract_interp_guard_uop(
     if uop.name in NO_CONST_OR_TYPE_EVALUATE:
         return
 
-    for cache in uop.caches:
-        if cache.name not in UNUSED:
-            if cache.size == 4:
-                type = cast = "PyObject *"
-            else:
-                type = f"uint{cache.size*16}_t "
-                cast = f"uint{cache.size*16}_t"
-            out.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND();\n")
-
     out.emit("// Constant evaluation\n")
     predicates_str = " && ".join(
         [
@@ -291,6 +277,7 @@ def _write_body_abstract_interp_guard_uop(
         ]
     )
     if predicates_str:
+        declare_caches(uop, out)
         out.emit(f"if ({predicates_str}) {{\n")
         declare_variables(uop, out, default_type="PyObject *")
         for var, mangled_var in zip(uop.stack.inputs, mangled_uop.stack.inputs):
