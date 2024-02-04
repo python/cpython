@@ -3,6 +3,7 @@
 # Keep lines sorted lexicographically to help avoid merge conflicts.
 
 Doc/c-api/descriptor.rst
+Doc/c-api/exceptions.rst
 Doc/c-api/float.rst
 Doc/c-api/gcsupport.rst
 Doc/c-api/init.rst
