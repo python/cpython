@@ -1,0 +1,4 @@
+The :func:`tty.setcbreak` and new :func:`tty.cfmakecbreak` no longer clears
+the terminal input ICRLF flag. This fixes a regression introduced in 3.12
+that no longer matched how OSes define cbreak mode in their ``stty(1)``
+manual pages.
