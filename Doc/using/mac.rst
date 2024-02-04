@@ -20,10 +20,10 @@ Getting and Installing MacPython
 
 macOS used to come with Python 2.7 pre-installed between versions
 10.8 and `12.3 <https://developer.apple.com/documentation/macos-release-notes/macos-12_3-release-notes#Python>`_.
-You are invited to install the most recent version of Python 3 from the Python
-website (https://www.python.org).  A current "universal binary" build of Python,
-which runs natively on the Mac's new Intel and legacy PPC CPU's, is available
-there.
+You are invited to install the most recent version of Python 3 from the `Python
+website <https://www.python.org/downloads/macos/>`__.
+A current "universal2 binary" build of Python, which runs natively on the Mac's
+new Apple Silicon and legacy Intel processors, is available there.
 
 What you get after installing is a number of things:
 
