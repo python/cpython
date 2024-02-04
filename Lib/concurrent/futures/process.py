@@ -627,9 +627,6 @@ def _chain_from_iterable_of_lists(iterable):
     careful not to keep references to yielded objects.
     """
     for element in iterable:
-        if element.is_exception:
-            raise element.exception
-        element = element.value
         element.reverse()
         while element:
             yield element.pop()
