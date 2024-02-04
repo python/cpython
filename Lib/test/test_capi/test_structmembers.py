@@ -12,6 +12,14 @@ from _testcapi import _test_structmembersType, \
     LLONG_MAX, LLONG_MIN, ULLONG_MAX, \
     PY_SSIZE_T_MAX, PY_SSIZE_T_MIN
 
+
+class Index:
+    def __init__(self, value):
+        self.value = value
+    def __index__(self):
+        return self.value
+
+
 ts=_test_structmembersType(False,  # T_BOOL
                           1,      # T_BYTE
                           2,      # T_UBYTE
@@ -59,6 +67,10 @@ class ReadWriteTests(unittest.TestCase):
         self.assertEqual(ts.T_INT, INT_MIN)
         ts.T_UINT = UINT_MAX
         self.assertEqual(ts.T_UINT, UINT_MAX)
+        ts.T_UINT = Index(0)
+        self.assertEqual(ts.T_UINT, 0)
+        ts.T_UINT = Index(INT_MAX)
+        self.assertEqual(ts.T_UINT, INT_MAX)
 
     def test_long(self):
         ts.T_LONG = LONG_MAX
@@ -67,6 +79,10 @@ class ReadWriteTests(unittest.TestCase):
         self.assertEqual(ts.T_LONG, LONG_MIN)
         ts.T_ULONG = ULONG_MAX
         self.assertEqual(ts.T_ULONG, ULONG_MAX)
+        ts.T_ULONG = Index(0)
+        self.assertEqual(ts.T_ULONG, 0)
+        ts.T_ULONG = Index(LONG_MAX)
+        self.assertEqual(ts.T_ULONG, LONG_MAX)
 
     def test_py_ssize_t(self):
         ts.T_PYSSIZET = PY_SSIZE_T_MAX
@@ -139,6 +155,25 @@ class TestWarnings(unittest.TestCase):
     def test_ushort_max(self):
         with warnings_helper.check_warnings(('', RuntimeWarning)):
             ts.T_USHORT = USHRT_MAX+1
+
+    def test_int(self):
+        if LONG_MIN < INT_MIN:
+            with self.assertWarns(RuntimeWarning):
+                ts.T_INT = INT_MIN-1
+        if LONG_MAX > INT_MAX:
+            with self.assertWarns(RuntimeWarning):
+                ts.T_INT = INT_MAX+1
+
+    def test_uint(self):
+        with self.assertWarns(RuntimeWarning):
+            ts.T_UINT = -1
+        if ULONG_MAX > UINT_MAX:
+            with self.assertWarns(RuntimeWarning):
+                ts.T_UINT = UINT_MAX+1
+
+    def test_ulong(self):
+        with self.assertWarns(RuntimeWarning):
+            ts.T_ULONG = -1
 
 
 if __name__ == "__main__":
