@@ -1082,7 +1082,7 @@ the :mod:`io` module:
 
   (In Python 2.6, :class:`io.StringIO` is implemented in
   pure Python, so it's pretty slow.   You should therefore stick with the
-  existing :mod:`StringIO` module or :mod:`cStringIO` for now.  At some
+  existing :mod:`!StringIO` module or :mod:`!cStringIO` for now.  At some
   point Python 3.0's :mod:`io` module will be rewritten into C for speed,
   and perhaps the C implementation will be  backported to the 2.x releases.)
 
@@ -1807,8 +1807,8 @@ changes, or look through the Subversion logs for all the details.
   Nubis; :issue:`1817`.)
 
   The :func:`parse_qs` and :func:`parse_qsl` functions have been
-  relocated from the :mod:`cgi` module to the :mod:`urlparse` module.
-  The versions still available in the :mod:`cgi` module will
+  relocated from the :mod:`cgi` module to the :mod:`urlparse <urllib.parse>` module.
+  The versions still available in the :mod:`!cgi` module will
   trigger :exc:`PendingDeprecationWarning` messages in 2.6
   (:issue:`600362`).
 
@@ -1895,8 +1895,8 @@ changes, or look through the Subversion logs for all the details.
 
   (Contributed by Raymond Hettinger.)
 
-* The :mod:`Cookie` module's :class:`Morsel` objects now support an
-  :attr:`httponly` attribute.  In some browsers. cookies with this attribute
+* The :mod:`Cookie <http.cookies>` module's :class:`~http.cookies.Morsel` objects now support an
+  :attr:`~http.cookies.Morsel.httponly` attribute.  In some browsers. cookies with this attribute
   set cannot be accessed or manipulated by JavaScript code.
   (Contributed by Arvin Schnell; :issue:`1638033`.)
 
@@ -1987,8 +1987,8 @@ changes, or look through the Subversion logs for all the details.
   (Contributed by Raymond Hettinger.)
 
 * An optional ``timeout`` parameter, specifying a timeout measured in
-  seconds, was added to the :class:`httplib.HTTPConnection` and
-  :class:`HTTPSConnection` class constructors.  (Added by Facundo
+  seconds, was added to the :class:`httplib.HTTPConnection <http.client.HTTPConnection>` and
+  :class:`HTTPSConnection <http.client.HTTPSConnection>` class constructors.  (Added by Facundo
   Batista.)
 
 * Most of the :mod:`inspect` module's functions, such as
@@ -2371,10 +2371,10 @@ changes, or look through the Subversion logs for all the details.
   ``socket(socket.AF_INET, ...)`` may be all that's required to make
   your code work with IPv6.
 
-* The base classes in the :mod:`SocketServer` module now support
-  calling a :meth:`handle_timeout` method after a span of inactivity
-  specified by the server's :attr:`timeout` attribute.  (Contributed
-  by Michael Pomraning.)  The :meth:`serve_forever` method
+* The base classes in the :mod:`SocketServer <socketserver>` module now support
+  calling a :meth:`~socketserver.BaseServer.handle_timeout` method after a span of inactivity
+  specified by the server's :attr:`~socketserver.BaseServer.timeout` attribute.  (Contributed
+  by Michael Pomraning.)  The :meth:`~socketserver.BaseServer.serve_forever` method
   now takes an optional poll interval measured in seconds,
   controlling how often the server will check for a shutdown request.
   (Contributed by Pedro Werneck and Jeffrey Yasskin;
@@ -2478,9 +2478,9 @@ changes, or look through the Subversion logs for all the details.
   ``with tempfile.NamedTemporaryFile() as tmp: ...``.
   (Contributed by Alexander Belopolsky; :issue:`2021`.)
 
-* The :mod:`test.test_support` module gained a number
+* The :mod:`test.test_support <test.support>` module gained a number
   of context managers useful for writing tests.
-  :func:`EnvironmentVarGuard` is a
+  :func:`~test.support.os_helper.EnvironmentVarGuard` is a
   context manager that temporarily changes environment variables and
   automatically restores them to their old values.
 
@@ -2577,9 +2577,9 @@ changes, or look through the Subversion logs for all the details.
   (:issue:`1513695`)
 
 * An optional ``timeout`` parameter was added to the
-  :func:`urllib.urlopen` function and the
+  :func:`urllib.urlopen <urllib.request.urlopen>` function and the
   :class:`urllib.ftpwrapper` class constructor, as well as the
-  :func:`urllib2.urlopen` function.  The parameter specifies a timeout
+  :func:`urllib2.urlopen <urllib.request.urlopen>` function.  The parameter specifies a timeout
   measured in seconds.   For example::
 
      >>> u = urllib2.urlopen("http://slow.example.com",
@@ -2604,7 +2604,7 @@ changes, or look through the Subversion logs for all the details.
   intended for testing purposes that lets you temporarily modify the
   warning filters and then restore their original values (:issue:`3781`).
 
-* The XML-RPC :class:`SimpleXMLRPCServer` and :class:`DocXMLRPCServer`
+* The XML-RPC :class:`SimpleXMLRPCServer <xmlrpc.server>` and :class:`DocXMLRPCServer <xmlrpc.server>`
   classes can now be prevented from immediately opening and binding to
   their socket by passing ``False`` as the *bind_and_activate*
   constructor parameter.  This can be used to modify the instance's
@@ -2621,11 +2621,11 @@ changes, or look through the Subversion logs for all the details.
   information.  (Contributed by Alan McIntyre as part of his
   project for Google's Summer of Code 2007.)
 
-* The :mod:`xmlrpclib` module no longer automatically converts
+* The :mod:`xmlrpclib <xmlrpc.client>` module no longer automatically converts
   :class:`datetime.date` and :class:`datetime.time` to the
-  :class:`xmlrpclib.DateTime` type; the conversion semantics were
+  :class:`xmlrpclib.DateTime <xmlrpc.client.DateTime>` type; the conversion semantics were
   not necessarily correct for all applications.  Code using
-  :mod:`xmlrpclib` should convert :class:`date` and :class:`~datetime.time`
+  :mod:`!xmlrpclib` should convert :class:`date` and :class:`~datetime.time`
   instances. (:issue:`1330538`)  The code can also handle
   dates before 1900 (contributed by Ralf Schmitt; :issue:`2014`)
   and 64-bit integers represented by using ``<i8>`` in XML-RPC responses
@@ -3274,11 +3274,11 @@ that may require changes to your code:
   :exc:`StandardError` but now it is, through :exc:`IOError`.
   (Implemented by Gregory P. Smith; :issue:`1706815`.)
 
-* The :mod:`xmlrpclib` module no longer automatically converts
+* The :mod:`xmlrpclib <xmlrpc.client>` module no longer automatically converts
   :class:`datetime.date` and :class:`datetime.time` to the
-  :class:`xmlrpclib.DateTime` type; the conversion semantics were
+  :class:`xmlrpclib.DateTime <xmlrpc.client.DateTime>` type; the conversion semantics were
   not necessarily correct for all applications.  Code using
-  :mod:`xmlrpclib` should convert :class:`date` and :class:`~datetime.time`
+  :mod:`!xmlrpclib` should convert :class:`date` and :class:`~datetime.time`
   instances. (:issue:`1330538`)
 
 * (3.0-warning mode) The :class:`Exception` class now warns
