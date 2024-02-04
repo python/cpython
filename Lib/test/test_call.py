@@ -932,6 +932,7 @@ class TestErrorMessagesUseQualifiedName(unittest.TestCase):
 class TestRecursion(unittest.TestCase):
 
     @skip_on_s390x
+    @unittest.skipIf(is_wasi and Py_DEBUG, "requires deep stack")
     def test_super_deep(self):
 
         def recurse(n):
