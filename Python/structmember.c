@@ -208,6 +208,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         if (overflow < 0) {
             PyErr_SetString(PyExc_OverflowError,
                             "Python int too large to convert to C long");
+            return -1;
         }
         else if (!overflow) {
             *(unsigned int *)addr = (unsigned int)(unsigned long)long_val;
@@ -247,6 +248,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         if (overflow < 0) {
             PyErr_SetString(PyExc_OverflowError,
                             "Python int too large to convert to C long");
+            return -1;
         }
         else if (!overflow) {
             *(unsigned long *)addr = (unsigned long)long_val;
