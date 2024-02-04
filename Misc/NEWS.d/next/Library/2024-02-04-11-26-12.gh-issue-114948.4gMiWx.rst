@@ -1,0 +1,1 @@
+Introduce a ``prefetch`` parameter to ``Executor.map``, so that large and even unbounded iterators can be handled.
