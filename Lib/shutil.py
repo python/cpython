@@ -846,12 +846,12 @@ def move(src, dst, copy_function=copy2):
     similar to the Unix "mv" command. Return the file or directory's
     destination.
 
-    If the destination is a directory or a symlink to a directory, the source
-    is moved inside the directory. The destination path must not already
-    exist.
+    If dst is an existing directory or a symlink to a directory, then src is
+    moved inside that directory. The destination path in that directory must
+    not already exist.
 
-    If the destination already exists but is not a directory, it may be
-    overwritten depending on os.rename() semantics.
+    If dst already exists but is not a directory, it may be overwritten
+    depending on os.rename() semantics.
 
     If the destination is on our current filesystem, then rename() is used.
     Otherwise, src is copied to the destination and then removed. Symlinks are

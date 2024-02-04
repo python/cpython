@@ -354,21 +354,24 @@ Directory and files operations
 
 .. function:: move(src, dst, copy_function=copy2)
 
-   Recursively move a file or directory (*src*) to another location (*dst*)
-   and return the destination.
+   Recursively move a file or directory (*src*) to another location and return
+   the destination.
 
-   If the destination is an existing directory, then *src* is moved inside that
-   directory. If the destination already exists but is not a directory, it may
-   be overwritten depending on :func:`os.rename` semantics.
+   If *dst* is an existing directory or a symlink to a directory, then *src*
+   is moved inside that directory. The destination path in that directory must
+   not already exist.
+
+   If *dst* already exists but is not a directory, it may be overwritten
+   depending on :func:`os.rename` semantics.
 
    If the destination is on the current filesystem, then :func:`os.rename` is
-   used. Otherwise, *src* is copied to *dst* using *copy_function* and then
-   removed.  In case of symlinks, a new symlink pointing to the target of *src*
-   will be created in or as *dst* and *src* will be removed.
+   used. Otherwise, *src* is copied to the destination using *copy_function*
+   and then removed.  In case of symlinks, a new symlink pointing to the target
+   of *src* will be created as the destination and *src* will be removed.
 
-   If *copy_function* is given, it must be a callable that takes two arguments
-   *src* and *dst*, and will be used to copy *src* to *dst* if
-   :func:`os.rename` cannot be used.  If the source is a directory,
+   If *copy_function* is given, it must be a callable that takes two arguments,
+   *src* and the destination, and will be used to copy *src* to the destination
+   if :func:`os.rename` cannot be used.  If the source is a directory,
    :func:`copytree` is called, passing it the *copy_function*. The
    default *copy_function* is :func:`copy2`.  Using :func:`~shutil.copy` as the
    *copy_function* allows the move to succeed when it is not possible to also
