@@ -37,7 +37,7 @@
 
 #define OVERALLOCATE_FACTOR 5
 
-#define ARENA_SIZE (UOP_MAX_TRACE_WORKING_LENGTH * OVERALLOCATE_FACTOR)
+#define TY_ARENA_SIZE (UOP_MAX_TRACE_WORKING_LENGTH * OVERALLOCATE_FACTOR)
 
 // Need extras for root frame and for overflow frame (see TRACE_STACK_PUSH())
 #define MAX_ABSTRACT_FRAME_DEPTH (TRACE_STACK_SIZE + 2)
@@ -123,7 +123,7 @@ typedef struct _Py_UOpsAbstractFrame {
 typedef struct ty_arena {
     int ty_curr_number;
     int ty_max_number;
-    _Py_UOpsSymType arena[ARENA_SIZE];
+    _Py_UOpsSymType arena[TY_ARENA_SIZE];
 } ty_arena;
 
 typedef struct frequent_syms {
@@ -161,11 +161,6 @@ abstractinterp_dealloc(_Py_UOpsAbstractInterpContext *self)
 {
     if (self == NULL) {
         return;
-    }
-    int curr = self->curr_frame_depth - 1;
-    while (curr >= 0) {
-        PyMem_Free(self->frames[curr].sym_consts);
-        curr--;
     }
      self->curr_frame_depth = 0;
     int tys = self->t_arena.ty_curr_number;
@@ -218,7 +213,7 @@ abstractinterp_context_new(PyCodeObject *co,
 
     // Setup the arena for sym expressions.
     self->t_arena.ty_curr_number = 0;
-    self->t_arena.ty_max_number = ARENA_SIZE;
+    self->t_arena.ty_max_number = TY_ARENA_SIZE;
 
     // Frame setup
 
@@ -253,7 +248,6 @@ error:
         self->frame = NULL;
     }
     abstractinterp_dealloc(self);
-    PyMem_Free(frame->sym_consts);
     return NULL;
 }
 
@@ -264,8 +258,9 @@ static inline _Py_UOpsSymType **
 create_sym_consts(_Py_UOpsAbstractInterpContext *ctx, PyObject *co_consts)
 {
     Py_ssize_t co_const_len = PyTuple_GET_SIZE(co_consts);
-    _Py_UOpsSymType **sym_consts = PyMem_New(_Py_UOpsSymType *, co_const_len);
-    if (sym_consts == NULL) {
+    _Py_UOpsSymType **sym_consts = ctx->limit - co_const_len;
+    ctx->limit -= co_const_len;
+    if (ctx->limit <= ctx->water_level) {
         return NULL;
     }
     for (Py_ssize_t i = 0; i < co_const_len; i++) {
@@ -278,7 +273,6 @@ create_sym_consts(_Py_UOpsAbstractInterpContext *ctx, PyObject *co_consts)
 
     return sym_consts;
 error:
-    PyMem_Free(sym_consts);
     return NULL;
 }
 
@@ -423,10 +417,11 @@ ctx_frame_pop(
     _Py_UOpsAbstractFrame *frame = ctx->frame;
 
     ctx->water_level = frame->locals;
-    PyMem_Free(frame->sym_consts);
     ctx->curr_frame_depth--;
     assert(ctx->curr_frame_depth >= 1);
     ctx->frame = &ctx->frames[ctx->curr_frame_depth - 1];
+
+    ctx->limit += frame->sym_consts_len;
     return 0;
 }
 
