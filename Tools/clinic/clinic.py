@@ -5294,10 +5294,11 @@ class DSLParser:
     def add_function(self, func: Function) -> None:
         # Insert a self converter automatically.
         tp, name = correct_name_for_self(func)
-        kwargs: dict[str, Any] = {}
         if func.cls and tp == "PyObject *":
-            kwargs['type'] = func.cls.typedef
-        func.self_converter = self_converter(name, name, func, **kwargs)
+            func.self_converter = self_converter(name, name, func,
+                                                 type=func.cls.typedef)
+        else:
+            func.self_converter = self_converter(name, name, func)
         func.parameters[name] = Parameter(
             name,
             inspect.Parameter.POSITIONAL_ONLY,
