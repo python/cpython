@@ -625,6 +625,8 @@ Functions
    target. Returns an :term:`iterator` providing ``(event, elem)`` pairs;
    it has a ``root`` attribute that references the root element of the
    resulting XML tree once *source* is fully read.
+   The iterator has the :meth:`!close` method that closes the internal
+   file object if *source* is a filename.
 
    Note that while :func:`iterparse` builds the tree incrementally, it issues
    blocking reads on *source* (or the file it names).  As such, it's unsuitable
@@ -646,6 +648,9 @@ Functions
 
    .. versionchanged:: 3.8
       The ``comment`` and ``pi`` events were added.
+
+   .. versionchanged:: 3.13
+      Added the :meth:`!close` method.
 
 
 .. function:: parse(source, parser=None)
