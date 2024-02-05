@@ -421,6 +421,15 @@ tkinter
   :meth:`!tk_busy_current`, and :meth:`!tk_busy_status`.
   (Contributed by Miguel, klappnase and Serhiy Storchaka in :gh:`72684`.)
 
+* The :mod:`tkinter` widget method :meth:`!wm_attributes` now accepts
+  the attribute name without the minus prefix to get window attributes,
+  e.g. ``w.wm_attributes('alpha')`` and allows to specify attributes and
+  values to set as keyword arguments, e.g. ``w.wm_attributes(alpha=0.5)``.
+  Add new optional keyword-only parameter *return_python_dict*: calling
+  ``w.wm_attributes(return_python_dict=True)`` returns the attributes as
+  a dict instead of a tuple.
+  (Contributed by Serhiy Storchaka in :gh:`43457`.)
+
 * Add support of the "vsapi" element type in
   the :meth:`~tkinter.ttk.Style.element_create` method of
   :class:`tkinter.ttk.Style`.
@@ -471,6 +480,14 @@ warnings
   to warn on usage of deprecated classes and functions. A runtime deprecation
   warning may also be emitted when a decorated function or class is used at runtime.
   See :pep:`702`. (Contributed by Jelle Zijlstra in :gh:`104003`.)
+
+xml.etree.ElementTree
+---------------------
+
+* Add the :meth:`!close` method for the iterator returned by
+  :func:`~xml.etree.ElementTree.iterparse` for explicit cleaning up.
+  (Contributed by Serhiy Storchaka in :gh:`69893`.)
+
 
 Optimizations
 =============

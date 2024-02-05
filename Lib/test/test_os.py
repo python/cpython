@@ -3848,6 +3848,7 @@ class TermsizeTests(unittest.TestCase):
         self.assertGreaterEqual(size.columns, 0)
         self.assertGreaterEqual(size.lines, 0)
 
+    @support.requires_subprocess()
     def test_stty_match(self):
         """Check if stty returns the same results
 
@@ -4577,7 +4578,8 @@ class PseudoterminalTests(unittest.TestCase):
         self.addCleanup(os.close, son_fd)
         self.assertEqual(os.ptsname(mother_fd), os.ttyname(son_fd))
 
-    @unittest.skipUnless(hasattr(os, 'spawnl'), "need os.openpty()")
+    @unittest.skipUnless(hasattr(os, 'spawnl'), "need os.spawnl()")
+    @support.requires_subprocess()
     def test_pipe_spawnl(self):
         # gh-77046: On Windows, os.pipe() file descriptors must be created with
         # _O_NOINHERIT to make them non-inheritable. UCRT has no public API to
