@@ -1,0 +1,1 @@
+Fixes a race between ``PyParkingLot_Park`` and ``_PyParkingLot_UnparkAll``.
