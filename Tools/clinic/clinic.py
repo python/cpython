@@ -4368,7 +4368,9 @@ class Py_buffer_converter(CConverter):
                     if (ptr == NULL) {{{{
                         goto exit;
                     }}}}
-                    PyBuffer_FillInfo(&{paramname}, {argname}, (void *)ptr, len, 1, 0);
+                    if (PyBuffer_FillInfo(&{paramname}, {argname}, (void *)ptr, len, 1, PyBUF_SIMPLE) < 0) {{{{
+                        goto exit;
+                    }}}}
                 }}}}
                 else {{{{ /* any bytes-like object */
                     if (PyObject_GetBuffer({argname}, &{paramname}, PyBUF_SIMPLE) != 0) {{{{
