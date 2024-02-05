@@ -334,6 +334,7 @@ Modules/_testclinic.c	-	DeprStarNew	-
 Modules/_testclinic.c	-	DeprKwdInit	-
 Modules/_testclinic.c	-	DeprKwdInitNoInline	-
 Modules/_testclinic.c	-	DeprKwdNew	-
+Modules/_testclinic.c	-	TestClass	-
 
 
 ##################################

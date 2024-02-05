@@ -262,7 +262,7 @@ _io__IOBase_fileno_impl(PyObject *self, PyTypeObject *cls);
 static PyObject *
 _io__IOBase_fileno(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "fileno() takes no arguments");
         return NULL;
     }
@@ -438,4 +438,4 @@ _io__RawIOBase_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__RawIOBase_readall_impl(self);
 }
-/*[clinic end generated code: output=5a22bc5db0ecaacb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e7326fbefc52bfba input=a9049054013a1b77]*/

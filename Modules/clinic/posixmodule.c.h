@@ -11212,7 +11212,7 @@ os_DirEntry_is_symlink(DirEntry *self, PyTypeObject *defining_class, PyObject *c
     PyObject *return_value = NULL;
     int _return_value;
 
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "is_symlink() takes no arguments");
         goto exit;
     }
@@ -12588,4 +12588,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=43e4e557c771358a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=268af5cbc8baa9d4 input=a9049054013a1b77]*/
