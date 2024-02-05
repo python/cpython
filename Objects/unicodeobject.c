@@ -996,7 +996,7 @@ resize_compact(PyObject *unicode, Py_ssize_t length)
     new_size = (struct_size + (length + 1) * char_size);
 
     if (_PyUnicode_HAS_UTF8_MEMORY(unicode)) {
-        PyObject_Free(_PyUnicode_UTF8(unicode));
+        PyMem_Free(_PyUnicode_UTF8(unicode));
         _PyUnicode_UTF8(unicode) = NULL;
         _PyUnicode_UTF8_LENGTH(unicode) = 0;
     }
@@ -1049,7 +1049,7 @@ resize_inplace(PyObject *unicode, Py_ssize_t length)
 
     if (!share_utf8 && _PyUnicode_HAS_UTF8_MEMORY(unicode))
     {
-        PyObject_Free(_PyUnicode_UTF8(unicode));
+        PyMem_Free(_PyUnicode_UTF8(unicode));
         _PyUnicode_UTF8(unicode) = NULL;
         _PyUnicode_UTF8_LENGTH(unicode) = 0;
     }
@@ -1590,10 +1590,10 @@ unicode_dealloc(PyObject *unicode)
         return;
     }
     if (_PyUnicode_HAS_UTF8_MEMORY(unicode)) {
-        PyObject_Free(_PyUnicode_UTF8(unicode));
+        PyMem_Free(_PyUnicode_UTF8(unicode));
     }
     if (!PyUnicode_IS_COMPACT(unicode) && _PyUnicode_DATA_ANY(unicode)) {
-        PyObject_Free(_PyUnicode_DATA_ANY(unicode));
+        PyMem_Free(_PyUnicode_DATA_ANY(unicode));
     }
 
     Py_TYPE(unicode)->tp_free(unicode);
@@ -1897,6 +1897,7 @@ PyUnicode_FromString(const char *u)
 PyObject *
 _PyUnicode_FromId(_Py_Identifier *id)
 {
+    PyMutex_Lock((PyMutex *)&id->mutex);
     PyInterpreterState *interp = _PyInterpreterState_GET();
     struct _Py_unicode_ids *ids = &interp->unicode.ids;
 
@@ -1904,7 +1905,7 @@ _PyUnicode_FromId(_Py_Identifier *id)
     if (index < 0) {
         struct _Py_unicode_runtime_ids *rt_ids = &interp->runtime->unicode_state.ids;
 
-        PyThread_acquire_lock(rt_ids->lock, WAIT_LOCK);
+        PyMutex_Lock(&rt_ids->mutex);
         // Check again to detect concurrent access. Another thread can have
         // initialized the index while this thread waited for the lock.
         index = _Py_atomic_load_ssize(&id->index);
@@ -1914,7 +1915,7 @@ _PyUnicode_FromId(_Py_Identifier *id)
             rt_ids->next_index++;
             _Py_atomic_store_ssize(&id->index, index);
         }
-        PyThread_release_lock(rt_ids->lock);
+        PyMutex_Unlock(&rt_ids->mutex);
     }
     assert(index >= 0);
 
@@ -1923,14 +1924,14 @@ _PyUnicode_FromId(_Py_Identifier *id)
         obj = ids->array[index];
         if (obj) {
             // Return a borrowed reference
-            return obj;
+            goto end;
         }
     }
 
     obj = PyUnicode_DecodeUTF8Stateful(id->string, strlen(id->string),
                                        NULL, NULL);
     if (!obj) {
-        return NULL;
+        goto end;
     }
     PyUnicode_InternInPlace(&obj);
 
@@ -1941,7 +1942,8 @@ _PyUnicode_FromId(_Py_Identifier *id)
         PyObject **new_array = PyMem_Realloc(ids->array, new_size * item_size);
         if (new_array == NULL) {
             PyErr_NoMemory();
-            return NULL;
+            obj = NULL;
+            goto end;
         }
         memset(&new_array[ids->size], 0, (new_size - ids->size) * item_size);
         ids->array = new_array;
@@ -1951,6 +1953,8 @@ _PyUnicode_FromId(_Py_Identifier *id)
     // The array stores a strong reference
     ids->array[index] = obj;
 
+end:
+    PyMutex_Unlock((PyMutex *)&id->mutex);
     // Return a borrowed reference
     return obj;
 }
@@ -5199,7 +5203,7 @@ unicode_fill_utf8(PyObject *unicode)
                     PyBytes_AS_STRING(writer.buffer);
     Py_ssize_t len = end - start;
 
-    char *cache = PyObject_Malloc(len + 1);
+    char *cache = PyMem_Malloc(len + 1);
     if (cache == NULL) {
         _PyBytesWriter_Dealloc(&writer);
         PyErr_NoMemory();
@@ -12504,10 +12508,12 @@ str.split as unicode_split
         character (including \n \r \t \f and spaces) and will discard
         empty strings from the result.
     maxsplit: Py_ssize_t = -1
-        Maximum number of splits (starting from the left).
+        Maximum number of splits.
         -1 (the default value) means no limit.
 
 Return a list of the substrings in the string, using sep as the separator string.
+
+Splitting starts at the front of the string and works to the end.
 
 Note, str.split() is mainly useful for data that has been intentionally
 delimited.  With natural text that includes punctuation, consider using
@@ -12517,7 +12523,7 @@ the regular expression module.
 
 static PyObject *
 unicode_split_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit)
-/*[clinic end generated code: output=3a65b1db356948dc input=07b9040d98c5fe8d]*/
+/*[clinic end generated code: output=3a65b1db356948dc input=a29bcc0c7a5af0eb]*/
 {
     if (sep == Py_None)
         return split(self, NULL, maxsplit);
@@ -14668,7 +14674,7 @@ unicode_subtype_new(PyTypeObject *type, PyObject *unicode)
         PyErr_NoMemory();
         goto onError;
     }
-    data = PyObject_Malloc((length + 1) * char_size);
+    data = PyMem_Malloc((length + 1) * char_size);
     if (data == NULL) {
         PyErr_NoMemory();
         goto onError;

@@ -8,8 +8,6 @@ module instead.
 
 */
 
-#define MODULE_VERSION "1.0"
-
 // clinic/_csv.c.h uses internal pycore_modsupport.h API
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
@@ -133,7 +131,7 @@ typedef struct {
     Py_UCS4 *field;             /* temporary buffer */
     Py_ssize_t field_size;      /* size of allocated buffer */
     Py_ssize_t field_len;       /* length of current field */
-    int numeric_field;          /* treat field as numeric */
+    bool unquoted_field;        /* true if no quotes around the current field */
     unsigned long line_num;     /* Source-file line number */
 } ReaderObj;
 
@@ -333,6 +331,33 @@ dialect_check_quoting(int quoting)
     return -1;
 }
 
+static int
+dialect_check_char(const char *name, Py_UCS4 c, DialectObj *dialect)
+{
+    if (c == '\r' || c == '\n' || (dialect->skipinitialspace && c == ' ')) {
+        PyErr_Format(PyExc_ValueError, "bad %s value", name);
+        return -1;
+    }
+    if (PyUnicode_FindChar(
+        dialect->lineterminator, c, 0,
+        PyUnicode_GET_LENGTH(dialect->lineterminator), 1) >= 0)
+    {
+        PyErr_Format(PyExc_ValueError, "bad %s or lineterminator value", name);
+        return -1;
+    }
+    return 0;
+}
+
+ static int
+dialect_check_chars(const char *name1, const char *name2, Py_UCS4 c1, Py_UCS4 c2)
+{
+    if (c1 == c2 && c1 != NOT_SET) {
+        PyErr_Format(PyExc_ValueError, "bad %s or %s value", name1, name2);
+        return -1;
+    }
+    return 0;
+}
+
 #define D_OFF(x) offsetof(DialectObj, x)
 
 static struct PyMemberDef Dialect_memberlist[] = {
@@ -510,6 +535,18 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         PyErr_SetString(PyExc_TypeError, "lineterminator must be set");
         goto err;
     }
+    if (dialect_check_char("delimiter", self->delimiter, self) ||
+        dialect_check_char("escapechar", self->escapechar, self) ||
+        dialect_check_char("quotechar", self->quotechar, self) ||
+        dialect_check_chars("delimiter", "escapechar",
+                            self->delimiter, self->escapechar) ||
+        dialect_check_chars("delimiter", "quotechar",
+                            self->delimiter, self->quotechar) ||
+        dialect_check_chars("escapechar", "quotechar",
+                            self->escapechar, self->quotechar))
+    {
+        goto err;
+    }
 
     ret = Py_NewRef(self);
 err:
@@ -607,22 +644,33 @@ _call_dialect(_csvstate *module_state, PyObject *dialect_inst, PyObject *kwargs)
 static int
 parse_save_field(ReaderObj *self)
 {
+    int quoting = self->dialect->quoting;
     PyObject *field;
 
-    field = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
-                                      (void *) self->field, self->field_len);
-    if (field == NULL)
-        return -1;
-    self->field_len = 0;
-    if (self->numeric_field) {
-        PyObject *tmp;
-
-        self->numeric_field = 0;
-        tmp = PyNumber_Float(field);
-        Py_DECREF(field);
-        if (tmp == NULL)
+    if (self->unquoted_field &&
+        self->field_len == 0 &&
+        (quoting == QUOTE_NOTNULL || quoting == QUOTE_STRINGS))
+    {
+        field = Py_NewRef(Py_None);
+    }
+    else {
+        field = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
+                                        (void *) self->field, self->field_len);
+        if (field == NULL) {
             return -1;
-        field = tmp;
+        }
+        if (self->unquoted_field &&
+            self->field_len != 0 &&
+            (quoting == QUOTE_NONNUMERIC || quoting == QUOTE_STRINGS))
+        {
+            PyObject *tmp = PyNumber_Float(field);
+            Py_DECREF(field);
+            if (tmp == NULL) {
+                return -1;
+            }
+            field = tmp;
+        }
+        self->field_len = 0;
     }
     if (PyList_Append(self->fields, field) < 0) {
         Py_DECREF(field);
@@ -684,6 +732,7 @@ parse_process_char(ReaderObj *self, _csvstate *module_state, Py_UCS4 c)
         /* fallthru */
     case START_FIELD:
         /* expecting field */
+        self->unquoted_field = true;
         if (c == '\n' || c == '\r' || c == EOL) {
             /* save empty field - return [fields] */
             if (parse_save_field(self) < 0)
@@ -693,10 +742,12 @@ parse_process_char(ReaderObj *self, _csvstate *module_state, Py_UCS4 c)
         else if (c == dialect->quotechar &&
                  dialect->quoting != QUOTE_NONE) {
             /* start quoted field */
+            self->unquoted_field = false;
             self->state = IN_QUOTED_FIELD;
         }
         else if (c == dialect->escapechar) {
             /* possible escaped character */
+            self->unquoted_field = false;
             self->state = ESCAPED_CHAR;
         }
         else if (c == ' ' && dialect->skipinitialspace)
@@ -709,8 +760,6 @@ parse_process_char(ReaderObj *self, _csvstate *module_state, Py_UCS4 c)
         }
         else {
             /* begin new unquoted field */
-            if (dialect->quoting == QUOTE_NONNUMERIC)
-                self->numeric_field = 1;
             if (parse_add_char(self, module_state, c) < 0)
                 return -1;
             self->state = IN_FIELD;
@@ -837,7 +886,8 @@ parse_process_char(ReaderObj *self, _csvstate *module_state, Py_UCS4 c)
             self->state = START_RECORD;
         else {
             PyErr_Format(module_state->error_obj,
-                         "new-line character seen in unquoted field - do you need to open the file in universal-newline mode?");
+                         "new-line character seen in unquoted field - "
+                         "do you need to open the file with newline=''?");
             return -1;
         }
         break;
@@ -854,7 +904,7 @@ parse_reset(ReaderObj *self)
         return -1;
     self->field_len = 0;
     self->state = START_RECORD;
-    self->numeric_field = 0;
+    self->unquoted_field = false;
     return 0;
 }
 
@@ -1606,68 +1656,7 @@ PyType_Spec error_spec = {
  * MODULE
  */
 
-PyDoc_STRVAR(csv_module_doc,
-"CSV parsing and writing.\n"
-"\n"
-"This module provides classes that assist in the reading and writing\n"
-"of Comma Separated Value (CSV) files, and implements the interface\n"
-"described by PEP 305.  Although many CSV files are simple to parse,\n"
-"the format is not formally defined by a stable specification and\n"
-"is subtle enough that parsing lines of a CSV file with something\n"
-"like line.split(\",\") is bound to fail.  The module supports three\n"
-"basic APIs: reading, writing, and registration of dialects.\n"
-"\n"
-"\n"
-"DIALECT REGISTRATION:\n"
-"\n"
-"Readers and writers support a dialect argument, which is a convenient\n"
-"handle on a group of settings.  When the dialect argument is a string,\n"
-"it identifies one of the dialects previously registered with the module.\n"
-"If it is a class or instance, the attributes of the argument are used as\n"
-"the settings for the reader or writer:\n"
-"\n"
-"    class excel:\n"
-"        delimiter = ','\n"
-"        quotechar = '\"'\n"
-"        escapechar = None\n"
-"        doublequote = True\n"
-"        skipinitialspace = False\n"
-"        lineterminator = '\\r\\n'\n"
-"        quoting = QUOTE_MINIMAL\n"
-"\n"
-"SETTINGS:\n"
-"\n"
-"    * quotechar - specifies a one-character string to use as the\n"
-"        quoting character.  It defaults to '\"'.\n"
-"    * delimiter - specifies a one-character string to use as the\n"
-"        field separator.  It defaults to ','.\n"
-"    * skipinitialspace - specifies how to interpret spaces which\n"
-"        immediately follow a delimiter.  It defaults to False, which\n"
-"        means that spaces immediately following a delimiter is part\n"
-"        of the following field.\n"
-"    * lineterminator -  specifies the character sequence which should\n"
-"        terminate rows.\n"
-"    * quoting - controls when quotes should be generated by the writer.\n"
-"        It can take on any of the following module constants:\n"
-"\n"
-"        csv.QUOTE_MINIMAL means only when required, for example, when a\n"
-"            field contains either the quotechar or the delimiter\n"
-"        csv.QUOTE_ALL means that quotes are always placed around fields.\n"
-"        csv.QUOTE_NONNUMERIC means that quotes are always placed around\n"
-"            fields which do not parse as integers or floating point\n"
-"            numbers.\n"
-"        csv.QUOTE_STRINGS means that quotes are always placed around\n"
-"            fields which are strings.  Note that the Python value None\n"
-"            is not a string.\n"
-"        csv.QUOTE_NOTNULL means that quotes are only placed around fields\n"
-"            that are not the Python value None.\n"
-"        csv.QUOTE_NONE means that quotes are never placed around fields.\n"
-"    * escapechar - specifies a one-character string used to escape\n"
-"        the delimiter when quoting is set to QUOTE_NONE.\n"
-"    * doublequote - controls the handling of quotes inside fields.  When\n"
-"        True, two consecutive quotes are interpreted as one during read,\n"
-"        and when writing, each quote character embedded in the data is\n"
-"        written as two quotes\n");
+PyDoc_STRVAR(csv_module_doc, "CSV parsing and writing.\n");
 
 PyDoc_STRVAR(csv_reader_doc,
 "    csv_reader = reader(iterable [, dialect='excel']\n"
@@ -1737,12 +1726,6 @@ csv_exec(PyObject *module) {
     temp = PyType_FromModuleAndSpec(module, &Writer_Type_spec, NULL);
     module_state->writer_type = (PyTypeObject *)temp;
     if (PyModule_AddObjectRef(module, "Writer", temp) < 0) {
-        return -1;
-    }
-
-    /* Add version to the module. */
-    if (PyModule_AddStringConstant(module, "__version__",
-                                   MODULE_VERSION) == -1) {
         return -1;
     }
 
