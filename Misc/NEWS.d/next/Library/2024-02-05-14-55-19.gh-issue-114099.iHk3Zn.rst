@@ -1,0 +1,2 @@
+Preprocessor directives to support compilation on iOS/tvOS/watchOS were
+added.

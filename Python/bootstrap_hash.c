@@ -40,6 +40,16 @@
 #endif
 
 
+#ifdef __APPLE__
+#  include "TargetConditionals.h"
+#endif /* __APPLE__ */
+
+// iOS/tvOS/watchOS *define* some POSIX methods,
+// but raise a compiler error if they are used.
+#if TARGET_OS_IPHONE
+#  undef HAVE_GETENTROPY
+#endif
+
 #ifdef Py_DEBUG
 int _Py_HashSecret_Initialized = 0;
 #else

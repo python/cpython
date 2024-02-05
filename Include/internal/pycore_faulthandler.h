@@ -12,6 +12,14 @@ extern "C" {
 #  include <signal.h>             // sigaction
 #endif
 
+#ifdef __APPLE__
+#  include "TargetConditionals.h"
+#endif /* __APPLE__ */
+
+// tvOS and watchOS don't provide a number of important POSIX functions.
+#if TARGET_OS_TV || TARGET_OS_WATCH
+#  undef HAVE_SIGALTSTACK
+#endif /* TVOS || WATCHOS */
 
 #ifndef MS_WINDOWS
    /* register() is useless on Windows, because only SIGSEGV, SIGABRT and

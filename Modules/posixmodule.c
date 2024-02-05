@@ -92,6 +92,8 @@
 
 #include <mach/mach.h>
 
+#include "TargetConditionals.h"
+
 #if defined(__has_builtin)
 #if __has_builtin(__builtin_available)
 #define HAVE_BUILTIN_AVAILABLE 1
@@ -375,6 +377,13 @@ corresponding Unix manual entries for more information on calls.");
 #  define HAVE_FSYNC      1
 #  define fsync _commit
 #endif  /* ! __WATCOMC__ || __QNX__ */
+
+// iOS/tvOS/watchOS *define* some POSIX methods,
+// but raise a compiler error if they are used.
+#if TARGET_OS_IPHONE
+#  undef HAVE_GETGROUPS
+#  undef HAVE_SYSTEM
+#endif
 
 /*[clinic input]
 # one of the few times we lie about this name!

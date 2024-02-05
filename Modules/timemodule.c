@@ -6,6 +6,10 @@
 #include "pycore_namespace.h"     // _PyNamespace_New()
 #include "pycore_runtime.h"       // _Py_ID()
 
+#ifdef __APPLE__
+#  include "TargetConditionals.h"
+#endif /* __APPLE__ */
+
 #include <time.h>                 // clock()
 #ifdef HAVE_SYS_TIMES_H
 #  include <sys/times.h>          // times()
@@ -59,6 +63,10 @@
 #  define HAVE_CLOCK_GETTIME_RUNTIME 1
 #endif
 
+// iOS/tvOS/watchOS *define* clock_settime, but it can't be used
+#if TARGET_OS_IPHONE
+#   undef HAVE_CLOCK_SETTIME
+#endif
 
 #define SEC_TO_NS (1000 * 1000 * 1000)
 
