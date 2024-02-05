@@ -1172,7 +1172,7 @@ Exceptions
 
    .. list-table::
       :header-rows: 1
-      
+
       * - Attribute
         - Meaning
 
