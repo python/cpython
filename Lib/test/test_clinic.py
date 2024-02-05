@@ -3294,7 +3294,15 @@ class ClinicFunctionalTest(unittest.TestCase):
         check = partial(self.assertRaisesRegex, TypeError, "no arguments")
         check(meth, 1)
         check(meth, a=1)
-        obj.test_meth_method_no_params_empty_kw_tuple()
+
+        from _testcapi import pyobject_vectorcall
+        pyobject_vectorcall(meth, None, None)
+        pyobject_vectorcall(meth, (), None)
+        pyobject_vectorcall(meth, (), ())
+        pyobject_vectorcall(meth, None, ())
+
+        check(pyobject_vectorcall, meth, (1,), None)
+        check(pyobject_vectorcall, meth, (1,), ("a",))
 
     def test_depr_star_new(self):
         cls = ac_tester.DeprStarNew

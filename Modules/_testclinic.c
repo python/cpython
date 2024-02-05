@@ -1232,32 +1232,8 @@ _testclinic_TestClass_meth_method_no_params_impl(PyObject *self,
     Py_RETURN_NONE;
 }
 
-/*[clinic input]
-_testclinic.TestClass.test_meth_method_no_params_empty_kw_tuple
-[clinic start generated code]*/
-
-static PyObject *
-_testclinic_TestClass_test_meth_method_no_params_empty_kw_tuple_impl(PyObject *self)
-/*[clinic end generated code: output=53c0e2b2a8ca899e input=d2c4d51d46301b57]*/
-{
-    PyObject *meth = PyObject_GetAttrString(self, "meth_method_no_params");
-    if (meth == NULL) {
-        return NULL;
-    }
-    PyObject *kwds = PyTuple_New(0);
-    if (kwds == NULL) {
-        Py_DECREF(meth);
-        return NULL;
-    }
-    PyObject *ret = PyObject_Vectorcall(meth, NULL, 0, kwds);
-    Py_DECREF(kwds);
-    Py_DECREF(meth);
-    return ret;
-}
-
 static struct PyMethodDef test_class_methods[] = {
     _TESTCLINIC_TESTCLASS_METH_METHOD_NO_PARAMS_METHODDEF
-    _TESTCLINIC_TESTCLASS_TEST_METH_METHOD_NO_PARAMS_EMPTY_KW_TUPLE_METHODDEF
     {NULL, NULL}
 };
 
