@@ -625,6 +625,8 @@ Functions
    target. Returns an :term:`iterator` providing ``(event, elem)`` pairs;
    it has a ``root`` attribute that references the root element of the
    resulting XML tree once *source* is fully read.
+   The iterator has the :meth:`!close` method that closes the internal
+   file object if *source* is a filename.
 
    Note that while :func:`iterparse` builds the tree incrementally, it issues
    blocking reads on *source* (or the file it names).  As such, it's unsuitable
@@ -647,6 +649,9 @@ Functions
    .. versionchanged:: 3.8
       The ``comment`` and ``pi`` events were added.
 
+   .. versionchanged:: 3.13
+      Added the :meth:`!close` method.
+
 
 .. function:: parse(source, parser=None)
 
@@ -664,7 +669,7 @@ Functions
    given.  Returns an element instance, representing a processing instruction.
 
    Note that :class:`XMLParser` skips over processing instructions
-   in the input instead of creating comment objects for them. An
+   in the input instead of creating PI objects for them. An
    :class:`ElementTree` will only contain processing instruction nodes if
    they have been inserted into to the tree using one of the
    :class:`Element` methods.
@@ -1302,8 +1307,8 @@ TreeBuilder Objects
 
    .. method:: pi(target, text)
 
-      Creates a comment with the given *target* name and *text*.  If
-      ``insert_pis`` is true, this will also add it to the tree.
+      Creates a process instruction with the given *target* name and *text*.
+      If ``insert_pis`` is true, this will also add it to the tree.
 
       .. versionadded:: 3.8
 

@@ -3922,7 +3922,7 @@ class TestHelpUsageWithParentheses(HelpTestCase):
 
         options:
           -h, --help            show this help message and exit
-          -p {1 (option A), 2 (option B)}, --optional {1 (option A), 2 (option B)}
+          -p, --optional {1 (option A), 2 (option B)}
         '''
     version = ''
 
@@ -4405,8 +4405,8 @@ class TestHelpAlternatePrefixChars(HelpTestCase):
     help = usage + '''\
 
         options:
-          ^^foo              foo help
-          ;b BAR, ;;bar BAR  bar help
+          ^^foo          foo help
+          ;b, ;;bar BAR  bar help
         '''
     version = ''
 
@@ -5404,6 +5404,22 @@ class TestParseKnownArgs(TestCase):
         parser.add_argument('x', nargs='*', choices=('x', 'y'))
         args = parser.parse_args([])
         self.assertEqual(NS(x=[]), args)
+
+    def test_double_dash(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-f', '--foo', nargs='*')
+        parser.add_argument('bar', nargs='*')
+
+        args = parser.parse_args(['--foo=--'])
+        self.assertEqual(NS(foo=['--'], bar=[]), args)
+        args = parser.parse_args(['--foo', '--'])
+        self.assertEqual(NS(foo=[], bar=[]), args)
+        args = parser.parse_args(['-f--'])
+        self.assertEqual(NS(foo=['--'], bar=[]), args)
+        args = parser.parse_args(['-f', '--'])
+        self.assertEqual(NS(foo=[], bar=[]), args)
+        args = parser.parse_args(['--foo', 'a', 'b', '--', 'c', 'd'])
+        self.assertEqual(NS(foo=['a', 'b'], bar=['c', 'd']), args)
 
 
 # ===========================
