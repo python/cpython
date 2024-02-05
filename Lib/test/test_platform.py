@@ -472,7 +472,8 @@ class PlatformTest(unittest.TestCase):
                   'root:xnu-4570.71.2~1/RELEASE_X86_64'),
                  'x86_64', 'i386')
         arch = ('64bit', '')
-        with mock.patch.object(platform, 'uname', return_value=uname), \
+        with mock.patch.object(sys, "platform", "darwin"), \
+             mock.patch.object(platform, 'uname', return_value=uname), \
              mock.patch.object(platform, 'architecture', return_value=arch):
             for mac_ver, expected_terse, expected in [
                 # darwin: mac_ver() returns empty strings

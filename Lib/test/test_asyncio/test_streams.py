@@ -10,7 +10,6 @@ import threading
 import unittest
 from unittest import mock
 import warnings
-from test.support import socket_helper
 try:
     import ssl
 except ImportError:
@@ -18,6 +17,7 @@ except ImportError:
 
 import asyncio
 from test.test_asyncio import utils as test_utils
+from test.support import requires_subprocess, socket_helper
 
 
 def tearDownModule():
@@ -770,6 +770,7 @@ class StreamTests(test_utils.TestCase):
         self.assertEqual(msg2, b"hello world 2!\n")
 
     @unittest.skipIf(sys.platform == 'win32', "Don't have pipes")
+    @requires_subprocess()
     def test_read_all_from_pipe_reader(self):
         # See asyncio issue 168.  This test is derived from the example
         # subprocess_attach_read_pipe.py, but we configure the
