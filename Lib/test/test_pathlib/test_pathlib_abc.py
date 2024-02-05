@@ -155,6 +155,31 @@ class DummyPurePathTest(unittest.TestCase):
         P('a/b/c')
         P('/a/b/c')
 
+    def test_bytes(self):
+        P = self.cls
+        with self.assertRaises(TypeError):
+            P(b'a')
+        with self.assertRaises(TypeError):
+            P(b'a', 'b')
+        with self.assertRaises(TypeError):
+            P('a', b'b')
+        with self.assertRaises(TypeError):
+            P('a').joinpath(b'b')
+        with self.assertRaises(TypeError):
+            P('a') / b'b'
+        with self.assertRaises(TypeError):
+            b'a' / P('b')
+        with self.assertRaises(TypeError):
+            P('a').match(b'b')
+        with self.assertRaises(TypeError):
+            P('a').relative_to(b'b')
+        with self.assertRaises(TypeError):
+            P('a').with_name(b'b')
+        with self.assertRaises(TypeError):
+            P('a').with_stem(b'b')
+        with self.assertRaises(TypeError):
+            P('a').with_suffix(b'b')
+
     def _check_str_subclass(self, *args):
         # Issue #21127: it should be possible to construct a PurePath object
         # from a str subclass instance, and it then gets converted to
@@ -977,9 +1002,8 @@ class DummyPurePathTest(unittest.TestCase):
     def test_with_suffix_empty(self):
         P = self.cls
         # Path doesn't have a "filename" component.
-        self.assertEqual(P('').with_suffix('.gz'), P('.gz'))
-        self.assertEqual(P('.').with_suffix('.gz'), P('..gz'))
-        self.assertEqual(P('/').with_suffix('.gz'), P('/.gz'))
+        self.assertRaises(ValueError, P('').with_suffix, '.gz')
+        self.assertRaises(ValueError, P('/').with_suffix, '.gz')
 
     def test_with_suffix_seps(self):
         P = self.cls
@@ -1766,16 +1790,26 @@ class DummyPathTest(DummyPurePathTest):
         _check(p, "*/fileB", ["dirB/fileB", "linkB/fileB"])
         _check(p, "*/", ["dirA/", "dirB/", "dirC/", "dirE/", "linkB/"])
         _check(p, "dir*/*/..", ["dirC/dirD/..", "dirA/linkC/..", "dirB/linkD/.."])
+        _check(p, "dir*/**", [
+            "dirA", "dirA/linkC", "dirA/linkC/fileB", "dirA/linkC/linkD", "dirA/linkC/linkD/fileB",
+            "dirB", "dirB/fileB", "dirB/linkD", "dirB/linkD/fileB",
+            "dirC", "dirC/fileC", "dirC/dirD",  "dirC/dirD/fileD", "dirC/novel.txt",
+            "dirE"])
         _check(p, "dir*/**/", ["dirA/", "dirA/linkC/", "dirA/linkC/linkD/", "dirB/", "dirB/linkD/",
                                "dirC/", "dirC/dirD/", "dirE/"])
         _check(p, "dir*/**/..", ["dirA/..", "dirA/linkC/..", "dirB/..",
                                  "dirB/linkD/..", "dirA/linkC/linkD/..",
                                  "dirC/..", "dirC/dirD/..", "dirE/.."])
+        _check(p, "dir*/*/**", [
+            "dirA/linkC", "dirA/linkC/linkD", "dirA/linkC/fileB", "dirA/linkC/linkD/fileB",
+            "dirB/linkD", "dirB/linkD/fileB",
+            "dirC/dirD", "dirC/dirD/fileD"])
         _check(p, "dir*/*/**/", ["dirA/linkC/", "dirA/linkC/linkD/", "dirB/linkD/", "dirC/dirD/"])
         _check(p, "dir*/*/**/..", ["dirA/linkC/..", "dirA/linkC/linkD/..",
                                    "dirB/linkD/..", "dirC/dirD/.."])
         _check(p, "dir*/**/fileC", ["dirC/fileC"])
         _check(p, "dir*/*/../dirD/**/", ["dirC/dirD/../dirD/"])
+        _check(p, "*/dirD/**", ["dirC/dirD", "dirC/dirD/fileD"])
         _check(p, "*/dirD/**/", ["dirC/dirD/"])
 
     @needs_symlinks
@@ -1792,12 +1826,20 @@ class DummyPathTest(DummyPurePathTest):
         _check(p, "*/fileB", ["dirB/fileB"])
         _check(p, "*/", ["dirA/", "dirB/", "dirC/", "dirE/"])
         _check(p, "dir*/*/..", ["dirC/dirD/.."])
+        _check(p, "dir*/**", [
+            "dirA", "dirA/linkC",
+            "dirB", "dirB/fileB", "dirB/linkD",
+            "dirC", "dirC/fileC", "dirC/dirD", "dirC/dirD/fileD", "dirC/novel.txt",
+            "dirE"])
         _check(p, "dir*/**/", ["dirA/", "dirB/", "dirC/", "dirC/dirD/", "dirE/"])
         _check(p, "dir*/**/..", ["dirA/..", "dirB/..", "dirC/..", "dirC/dirD/..", "dirE/.."])
+        _check(p, "dir*/*/**", ["dirC/dirD", "dirC/dirD/fileD"])
         _check(p, "dir*/*/**/", ["dirC/dirD/"])
         _check(p, "dir*/*/**/..", ["dirC/dirD/.."])
         _check(p, "dir*/**/fileC", ["dirC/fileC"])
+        _check(p, "dir*/*/../dirD/**", ["dirC/dirD/../dirD", "dirC/dirD/../dirD/fileD"])
         _check(p, "dir*/*/../dirD/**/", ["dirC/dirD/../dirD/"])
+        _check(p, "*/dirD/**", ["dirC/dirD", "dirC/dirD/fileD"])
         _check(p, "*/dirD/**/", ["dirC/dirD/"])
 
     def test_rglob_common(self):
@@ -1834,10 +1876,13 @@ class DummyPathTest(DummyPurePathTest):
                               "dirC/dirD", "dirC/dirD/fileD"])
         _check(p.rglob("file*"), ["dirC/fileC", "dirC/dirD/fileD"])
         _check(p.rglob("**/file*"), ["dirC/fileC", "dirC/dirD/fileD"])
+        _check(p.rglob("dir*/**"), ["dirC/dirD", "dirC/dirD/fileD"])
         _check(p.rglob("dir*/**/"), ["dirC/dirD/"])
         _check(p.rglob("*/*"), ["dirC/dirD/fileD"])
         _check(p.rglob("*/"), ["dirC/dirD/"])
         _check(p.rglob(""), ["dirC/", "dirC/dirD/"])
+        _check(p.rglob("**"), [
+            "dirC", "dirC/fileC", "dirC/dirD", "dirC/dirD/fileD", "dirC/novel.txt"])
         _check(p.rglob("**/"), ["dirC/", "dirC/dirD/"])
         # gh-91616, a re module regression
         _check(p.rglob("*.txt"), ["dirC/novel.txt"])
