@@ -55,7 +55,7 @@ implemented in C.  In particular, it's not possible to subclass built-in types,
 so you can't just subclass, say, lists in order to add a single useful method to
 them. The :mod:`!UserList` module provides a class that supports all of the
 methods of lists and that can be subclassed further, but there's lots of C code
-that expects a regular Python list and won't accept a :class:`!UserList`
+that expects a regular Python list and won't accept a :class:`~collections.UserList`
 instance.
 
 Python 2.2 fixes this, and in the process adds some exciting new capabilities.
@@ -69,7 +69,7 @@ A brief summary:
 
 * It's also possible to automatically call methods on accessing or setting an
   instance attribute by using a new mechanism called :dfn:`properties`.  Many uses
-  of :meth:`!__getattr__` can be rewritten to use properties instead, making the
+  of :meth:`~object.__getattr__` can be rewritten to use properties instead, making the
   resulting code simpler and faster.  As a small side benefit, attributes can now
   have docstrings, too.
 
@@ -933,7 +933,7 @@ anyway).
 New and Improved Modules
 ========================
 
-* The :mod:`!xmlrpclib` module was contributed to the standard library by Fredrik
+* The :mod:`xmlrpclib <xmlrpc.client>` module was contributed to the standard library by Fredrik
   Lundh, providing support for writing XML-RPC clients.  XML-RPC is a simple
   remote procedure call protocol built on top of HTTP and XML. For example, the
   following snippet retrieves a list of RSS channels from the O'Reilly Network,
@@ -956,7 +956,7 @@ New and Improved Modules
      #   'description': 'A utility which converts HTML to XSL FO.',
      #   'title': 'html2fo 0.3 (Default)'}, ... ]
 
-  The :mod:`!SimpleXMLRPCServer` module makes it easy to create straightforward
+  The :mod:`SimpleXMLRPCServer <xmlrpc.server>` module makes it easy to create straightforward
   XML-RPC servers.  See http://xmlrpc.scripting.com/ for more information about XML-RPC.
 
 * The new :mod:`hmac` module implements the HMAC algorithm described by
@@ -964,7 +964,7 @@ New and Improved Modules
 
 * Several functions that originally returned lengthy tuples now return
   pseudo-sequences that still behave like tuples but also have mnemonic attributes such
-  as :attr:`!memberst_mtime` or :attr:`!tm_year`. The enhanced functions include
+  as :attr:`!memberst_mtime` or :attr:`~time.struct_time.tm_year`. The enhanced functions include
   :func:`~os.stat`, :func:`~os.fstat`, :func:`~os.statvfs`, and :func:`~os.fstatvfs` in the
   :mod:`os` module, and :func:`~time.localtime`, :func:`~time.gmtime`, and :func:`~time.strptime` in
   the :mod:`time` module.
