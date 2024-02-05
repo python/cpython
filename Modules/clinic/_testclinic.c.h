@@ -3157,10 +3157,27 @@ _testclinic_TestClass_meth_method_no_params_impl(PyObject *self,
 static PyObject *
 _testclinic_TestClass_meth_method_no_params(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs || kwnames) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "meth_method_no_params() takes no arguments");
         return NULL;
     }
     return _testclinic_TestClass_meth_method_no_params_impl(self, cls);
 }
-/*[clinic end generated code: output=8342b3bdd730144a input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_testclinic_TestClass_test_meth_method_no_params_misuse__doc__,
+"test_meth_method_no_params_misuse($self, /)\n"
+"--\n"
+"\n");
+
+#define _TESTCLINIC_TESTCLASS_TEST_METH_METHOD_NO_PARAMS_MISUSE_METHODDEF    \
+    {"test_meth_method_no_params_misuse", (PyCFunction)_testclinic_TestClass_test_meth_method_no_params_misuse, METH_NOARGS, _testclinic_TestClass_test_meth_method_no_params_misuse__doc__},
+
+static PyObject *
+_testclinic_TestClass_test_meth_method_no_params_misuse_impl(PyObject *self);
+
+static PyObject *
+_testclinic_TestClass_test_meth_method_no_params_misuse(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _testclinic_TestClass_test_meth_method_no_params_misuse_impl(self);
+}
+/*[clinic end generated code: output=70bb70de53e883f0 input=a9049054013a1b77]*/

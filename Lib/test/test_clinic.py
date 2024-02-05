@@ -3294,6 +3294,7 @@ class ClinicFunctionalTest(unittest.TestCase):
         check = partial(self.assertRaisesRegex, TypeError, "no arguments")
         check(meth, 1)
         check(meth, a=1)
+        obj.test_meth_method_no_params_misuse()
 
     def test_depr_star_new(self):
         cls = ac_tester.DeprStarNew
