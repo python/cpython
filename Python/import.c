@@ -1030,7 +1030,7 @@ _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
     if (!already_set) {
         /* We assume that all module defs are statically allocated
            and will never be freed.  Otherwise, we would incref here. */
-        _Py_SetImmortal(def);
+        _Py_SetImmortal((PyObject *)def);
     }
     res = 0;
 
@@ -3544,7 +3544,7 @@ _imp_get_frozen_object_impl(PyObject *module, PyObject *name,
     struct frozen_info info = {0};
     Py_buffer buf = {0};
     if (PyObject_CheckBuffer(dataobj)) {
-        if (PyObject_GetBuffer(dataobj, &buf, PyBUF_READ) != 0) {
+        if (PyObject_GetBuffer(dataobj, &buf, PyBUF_SIMPLE) != 0) {
             return NULL;
         }
         info.data = (const char *)buf.buf;

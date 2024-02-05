@@ -1,8 +1,8 @@
 import unittest
 from test import support
-from test.support import os_helper
-from test.support import socket_helper
-from test.support import threading_helper
+from test.support import (
+    is_apple, os_helper, refleak_helper, socket_helper, threading_helper
+)
 
 import _thread as thread
 import array
@@ -51,6 +51,35 @@ try:
     import _socket
 except ImportError:
     _socket = None
+
+def skipForRefleakHuntinIf(condition, issueref):
+    if not condition:
+        def decorator(f):
+            f.client_skip = lambda f: f
+            return f
+
+    else:
+        def decorator(f):
+            @contextlib.wraps(f)
+            def wrapper(*args, **kwds):
+                if refleak_helper.hunting_for_refleaks():
+                    raise unittest.SkipTest(f"ignore while hunting for refleaks, see {issueref}")
+
+                return f(*args, **kwds)
+
+            def client_skip(f):
+                @contextlib.wraps(f)
+                def wrapper(*args, **kwds):
+                    if refleak_helper.hunting_for_refleaks():
+                        return
+
+                    return f(*args, **kwds)
+
+                return wrapper
+            wrapper.client_skip = client_skip
+            return wrapper
+
+    return decorator
 
 def get_cid():
     if fcntl is None:
@@ -1166,8 +1195,11 @@ class GeneralModuleTests(unittest.TestCase):
         # Find one service that exists, then check all the related interfaces.
         # I've ordered this by protocols that have both a tcp and udp
         # protocol, at least for modern Linuxes.
-        if (sys.platform.startswith(('freebsd', 'netbsd', 'gnukfreebsd'))
-            or sys.platform in ('linux', 'darwin')):
+        if (
+            sys.platform.startswith(('freebsd', 'netbsd', 'gnukfreebsd'))
+            or sys.platform == 'linux'
+            or is_apple
+        ):
             # avoid the 'echo' service on this platform, as there is an
             # assumption breaking non-standard port/protocol entry
             services = ('daytime', 'qotd', 'domain')
@@ -3678,7 +3710,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
     def _testFDPassCMSG_LEN(self):
         self.createAndSendFDs(1)
 
-    @unittest.skipIf(sys.platform == "darwin", "skipping, see issue #12958")
+    @unittest.skipIf(is_apple, "skipping, see issue #12958")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
     @requireAttrs(socket, "CMSG_SPACE")
     def testFDPassSeparate(self):
@@ -3689,7 +3721,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
                              maxcmsgs=2)
 
     @testFDPassSeparate.client_skip
-    @unittest.skipIf(sys.platform == "darwin", "skipping, see issue #12958")
+    @unittest.skipIf(is_apple, "skipping, see issue #12958")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
     def _testFDPassSeparate(self):
         fd0, fd1 = self.newFDs(2)
@@ -3702,7 +3734,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
                                           array.array("i", [fd1]))]),
             len(MSG))
 
-    @unittest.skipIf(sys.platform == "darwin", "skipping, see issue #12958")
+    @unittest.skipIf(is_apple, "skipping, see issue #12958")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
     @requireAttrs(socket, "CMSG_SPACE")
     def testFDPassSeparateMinSpace(self):
@@ -3716,7 +3748,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
                              maxcmsgs=2, ignoreflags=socket.MSG_CTRUNC)
 
     @testFDPassSeparateMinSpace.client_skip
-    @unittest.skipIf(sys.platform == "darwin", "skipping, see issue #12958")
+    @unittest.skipIf(is_apple, "skipping, see issue #12958")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
     def _testFDPassSeparateMinSpace(self):
         fd0, fd1 = self.newFDs(2)
@@ -3740,7 +3772,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
             nbytes = self.sendmsgToServer([msg])
         self.assertEqual(nbytes, len(msg))
 
-    @unittest.skipIf(sys.platform == "darwin", "see issue #24725")
+    @unittest.skipIf(is_apple, "skipping, see issue #12958")
     def testFDPassEmpty(self):
         # Try to pass an empty FD array.  Can receive either no array
         # or an empty array.
@@ -3814,6 +3846,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
         self.checkFlags(flags, eor=True, checkset=socket.MSG_CTRUNC,
                         ignore=ignoreflags)
 
+    @skipForRefleakHuntinIf(sys.platform == "darwin", "#80931")
     def testCmsgTruncNoBufSize(self):
         # Check that no ancillary data is received when no buffer size
         # is specified.
@@ -3823,26 +3856,32 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
                                   # received.
                                   ignoreflags=socket.MSG_CTRUNC)
 
+    @testCmsgTruncNoBufSize.client_skip
     def _testCmsgTruncNoBufSize(self):
         self.createAndSendFDs(1)
 
+    @skipForRefleakHuntinIf(sys.platform == "darwin", "#80931")
     def testCmsgTrunc0(self):
         # Check that no ancillary data is received when buffer size is 0.
         self.checkTruncatedHeader(self.doRecvmsg(self.serv_sock, len(MSG), 0),
                                   ignoreflags=socket.MSG_CTRUNC)
 
+    @testCmsgTrunc0.client_skip
     def _testCmsgTrunc0(self):
         self.createAndSendFDs(1)
 
     # Check that no ancillary data is returned for various non-zero
     # (but still too small) buffer sizes.
 
+    @skipForRefleakHuntinIf(sys.platform == "darwin", "#80931")
     def testCmsgTrunc1(self):
         self.checkTruncatedHeader(self.doRecvmsg(self.serv_sock, len(MSG), 1))
 
+    @testCmsgTrunc1.client_skip
     def _testCmsgTrunc1(self):
         self.createAndSendFDs(1)
 
+    @skipForRefleakHuntinIf(sys.platform == "darwin", "#80931")
     def testCmsgTrunc2Int(self):
         # The cmsghdr structure has at least three members, two of
         # which are ints, so we still shouldn't see any ancillary
@@ -3850,13 +3889,16 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
         self.checkTruncatedHeader(self.doRecvmsg(self.serv_sock, len(MSG),
                                                  SIZEOF_INT * 2))
 
+    @testCmsgTrunc2Int.client_skip
     def _testCmsgTrunc2Int(self):
         self.createAndSendFDs(1)
 
+    @skipForRefleakHuntinIf(sys.platform == "darwin", "#80931")
     def testCmsgTruncLen0Minus1(self):
         self.checkTruncatedHeader(self.doRecvmsg(self.serv_sock, len(MSG),
                                                  socket.CMSG_LEN(0) - 1))
 
+    @testCmsgTruncLen0Minus1.client_skip
     def _testCmsgTruncLen0Minus1(self):
         self.createAndSendFDs(1)
 
@@ -3887,29 +3929,38 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
                 len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
         self.checkFDs(fds)
 
+    @skipForRefleakHuntinIf(sys.platform == "darwin", "#80931")
     def testCmsgTruncLen0(self):
         self.checkTruncatedArray(ancbuf=socket.CMSG_LEN(0), maxdata=0)
 
+    @testCmsgTruncLen0.client_skip
     def _testCmsgTruncLen0(self):
         self.createAndSendFDs(1)
 
+    @skipForRefleakHuntinIf(sys.platform == "darwin", "#80931")
     def testCmsgTruncLen0Plus1(self):
         self.checkTruncatedArray(ancbuf=socket.CMSG_LEN(0) + 1, maxdata=1)
 
+    @testCmsgTruncLen0Plus1.client_skip
     def _testCmsgTruncLen0Plus1(self):
         self.createAndSendFDs(2)
 
+    @skipForRefleakHuntinIf(sys.platform == "darwin", "#80931")
     def testCmsgTruncLen1(self):
         self.checkTruncatedArray(ancbuf=socket.CMSG_LEN(SIZEOF_INT),
                                  maxdata=SIZEOF_INT)
 
+    @testCmsgTruncLen1.client_skip
     def _testCmsgTruncLen1(self):
         self.createAndSendFDs(2)
 
+
+    @skipForRefleakHuntinIf(sys.platform == "darwin", "#80931")
     def testCmsgTruncLen2Minus1(self):
         self.checkTruncatedArray(ancbuf=socket.CMSG_LEN(2 * SIZEOF_INT) - 1,
                                  maxdata=(2 * SIZEOF_INT) - 1)
 
+    @testCmsgTruncLen2Minus1.client_skip
     def _testCmsgTruncLen2Minus1(self):
         self.createAndSendFDs(2)
 

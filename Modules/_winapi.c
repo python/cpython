@@ -441,7 +441,7 @@ _winapi_ConnectNamedPipe_impl(PyObject *module, HANDLE handle,
 /*[clinic input]
 _winapi.CreateFile -> HANDLE
 
-    file_name: LPCTSTR
+    file_name: LPCWSTR
     desired_access: DWORD
     share_mode: DWORD
     security_attributes: LPSECURITY_ATTRIBUTES
@@ -452,12 +452,12 @@ _winapi.CreateFile -> HANDLE
 [clinic start generated code]*/
 
 static HANDLE
-_winapi_CreateFile_impl(PyObject *module, LPCTSTR file_name,
+_winapi_CreateFile_impl(PyObject *module, LPCWSTR file_name,
                         DWORD desired_access, DWORD share_mode,
                         LPSECURITY_ATTRIBUTES security_attributes,
                         DWORD creation_disposition,
                         DWORD flags_and_attributes, HANDLE template_file)
-/*[clinic end generated code: output=417ddcebfc5a3d53 input=6423c3e40372dbd5]*/
+/*[clinic end generated code: output=818c811e5e04d550 input=1fa870ed1c2e3d69]*/
 {
     HANDLE handle;
 
@@ -468,14 +468,15 @@ _winapi_CreateFile_impl(PyObject *module, LPCTSTR file_name,
     }
 
     Py_BEGIN_ALLOW_THREADS
-    handle = CreateFile(file_name, desired_access,
-                        share_mode, security_attributes,
-                        creation_disposition,
-                        flags_and_attributes, template_file);
+    handle = CreateFileW(file_name, desired_access,
+                         share_mode, security_attributes,
+                         creation_disposition,
+                         flags_and_attributes, template_file);
     Py_END_ALLOW_THREADS
 
-    if (handle == INVALID_HANDLE_VALUE)
+    if (handle == INVALID_HANDLE_VALUE) {
         PyErr_SetFromWindowsErr(0);
+    }
 
     return handle;
 }
@@ -532,7 +533,12 @@ _winapi_CreateJunction_impl(PyObject *module, LPCWSTR src_path,
 {
     /* Privilege adjustment */
     HANDLE token = NULL;
-    TOKEN_PRIVILEGES tp;
+    struct {
+        TOKEN_PRIVILEGES base;
+        /* overallocate by a few array elements */
+        LUID_AND_ATTRIBUTES privs[4];
+    } tp, previousTp;
+    int previousTpSize = 0;
 
     /* Reparse data buffer */
     const USHORT prefix_len = 4;
@@ -556,17 +562,21 @@ _winapi_CreateJunction_impl(PyObject *module, LPCWSTR src_path,
 
     /* Adjust privileges to allow rewriting directory entry as a
        junction point. */
-    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES, &token))
+    if (!OpenProcessToken(GetCurrentProcess(),
+                          TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &token)) {
         goto cleanup;
+    }
 
-    if (!LookupPrivilegeValue(NULL, SE_RESTORE_NAME, &tp.Privileges[0].Luid))
+    if (!LookupPrivilegeValue(NULL, SE_RESTORE_NAME, &tp.base.Privileges[0].Luid)) {
         goto cleanup;
+    }
 
-    tp.PrivilegeCount = 1;
-    tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-    if (!AdjustTokenPrivileges(token, FALSE, &tp, sizeof(TOKEN_PRIVILEGES),
-                               NULL, NULL))
+    tp.base.PrivilegeCount = 1;
+    tp.base.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+    if (!AdjustTokenPrivileges(token, FALSE, &tp.base, sizeof(previousTp),
+                               &previousTp.base, &previousTpSize)) {
         goto cleanup;
+    }
 
     if (GetFileAttributesW(src_path) == INVALID_FILE_ATTRIBUTES)
         goto cleanup;
@@ -646,6 +656,11 @@ _winapi_CreateJunction_impl(PyObject *module, LPCWSTR src_path,
 
 cleanup:
     ret = GetLastError();
+
+    if (previousTpSize) {
+        AdjustTokenPrivileges(token, FALSE, &previousTp.base, previousTpSize,
+                              NULL, NULL);
+    }
 
     if (token != NULL)
         CloseHandle(token);

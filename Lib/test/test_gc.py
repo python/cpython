@@ -1,7 +1,7 @@
 import unittest
 import unittest.mock
 from test.support import (verbose, refcount_test,
-                          cpython_only, requires_subprocess)
+                          cpython_only, requires_subprocess, Py_GIL_DISABLED)
 from test.support.import_helper import import_module
 from test.support.os_helper import temp_dir, TESTFN, unlink
 from test.support.script_helper import assert_python_ok, make_script
@@ -383,19 +383,11 @@ class GCTests(unittest.TestCase):
         # each call to collect(N)
         x = []
         gc.collect(0)
-        # x is now in gen 1
+        # x is now in the old gen
         a, b, c = gc.get_count()
-        gc.collect(1)
-        # x is now in gen 2
-        d, e, f = gc.get_count()
-        gc.collect(2)
-        # x is now in gen 3
-        g, h, i = gc.get_count()
-        # We don't check a, d, g since their exact values depends on
+        # We don't check a since its exact values depends on
         # internal implementation details of the interpreter.
         self.assertEqual((b, c), (1, 0))
-        self.assertEqual((e, f), (0, 1))
-        self.assertEqual((h, i), (0, 0))
 
     def test_trashcan(self):
         class Ouch:
@@ -819,6 +811,15 @@ class GCTests(unittest.TestCase):
         l = []
         l.append(l)
         self.assertTrue(
+                any(l is element for element in gc.get_objects())
+        )
+
+    @unittest.skipIf(Py_GIL_DISABLED, 'need generational GC')
+    def test_get_objects_generations(self):
+        gc.collect()
+        l = []
+        l.append(l)
+        self.assertTrue(
                 any(l is element for element in gc.get_objects(generation=0))
         )
         self.assertFalse(
@@ -835,16 +836,6 @@ class GCTests(unittest.TestCase):
                 any(l is element for element in  gc.get_objects(generation=1))
         )
         self.assertFalse(
-                any(l is element for element in gc.get_objects(generation=2))
-        )
-        gc.collect(generation=1)
-        self.assertFalse(
-                any(l is element for element in gc.get_objects(generation=0))
-        )
-        self.assertFalse(
-                any(l is element for element in  gc.get_objects(generation=1))
-        )
-        self.assertTrue(
                 any(l is element for element in gc.get_objects(generation=2))
         )
         gc.collect(generation=2)
@@ -1225,7 +1216,7 @@ class GCCallbackTests(unittest.TestCase):
         p.stderr.close()
         # Verify that stderr has a useful error message:
         self.assertRegex(stderr,
-            br'gc\.c:[0-9]+: gc_decref: Assertion "gc_get_refs\(g\) > 0" failed.')
+            br'gc.*\.c:[0-9]+: .*: Assertion "gc_get_refs\(.+\) .*" failed.')
         self.assertRegex(stderr,
             br'refcount is too small')
         # "address : 0x7fb5062efc18"

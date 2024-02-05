@@ -2388,6 +2388,21 @@ _Py_NewReferenceNoTotal(PyObject *op)
 }
 
 void
+_Py_SetImmortal(PyObject *op)
+{
+    if (PyObject_IS_GC(op) && _PyObject_GC_IS_TRACKED(op)) {
+        _PyObject_GC_UNTRACK(op);
+    }
+#ifdef Py_GIL_DISABLED
+    op->ob_tid = _Py_UNOWNED_TID;
+    op->ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL;
+    op->ob_ref_shared = 0;
+#else
+    op->ob_refcnt = _Py_IMMORTAL_REFCNT;
+#endif
+}
+
+void
 _Py_ResurrectReference(PyObject *op)
 {
     if (_PyRuntime.tracemalloc.config.tracing) {
@@ -2671,7 +2686,12 @@ _PyTrash_thread_deposit_object(struct _py_trashcan *trash, PyObject *op)
     _PyObject_ASSERT(op, _PyObject_IS_GC(op));
     _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
     _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
+#ifdef Py_GIL_DISABLED
+    _PyObject_ASSERT(op, op->ob_tid == 0);
+    op->ob_tid = (uintptr_t)trash->delete_later;
+#else
     _PyGCHead_SET_PREV(_Py_AS_GC(op), (PyGC_Head*)trash->delete_later);
+#endif
     trash->delete_later = op;
 }
 
@@ -2697,8 +2717,12 @@ _PyTrash_thread_destroy_chain(struct _py_trashcan *trash)
         PyObject *op = trash->delete_later;
         destructor dealloc = Py_TYPE(op)->tp_dealloc;
 
-        trash->delete_later =
-            (PyObject*) _PyGCHead_PREV(_Py_AS_GC(op));
+#ifdef Py_GIL_DISABLED
+        trash->delete_later = (PyObject*) op->ob_tid;
+        op->ob_tid = 0;
+#else
+        trash->delete_later = (PyObject*) _PyGCHead_PREV(_Py_AS_GC(op));
+#endif
 
         /* Call the deallocator directly.  This used to try to
          * fool Py_DECREF into calling it indirectly, but
