@@ -1729,20 +1729,14 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
                         "InvalidTZPathWarning",
                     )
                     # It should represent the current file:
-                    self.assertTrue(
-                        wlog[0].filename.endswith("test_zoneinfo.py"),
-                        msg=wlog[0].filename,
-                    )
+                    self.assertEqual(wlog[0].filename, __file__)
 
                 with self.subTest("warning", path_var=path_var):
                     # Note: Per PEP 615 the warning is implementation-defined
                     # behavior, other implementations need not warn.
                     with self.assertWarns(self.module.InvalidTZPathWarning) as w:
                         self.module.reset_tzpath()
-                    self.assertTrue(
-                        w.warnings[0].filename.endswith("test_zoneinfo.py"),
-                        msg=w.warnings[0].filename,
-                    )
+                    self.assertEqual(w.warnings[0].filename, __file__)
 
                 tzpath = self.module.TZPATH
                 with self.subTest("filtered", path_var=path_var):
