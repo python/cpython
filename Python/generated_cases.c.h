@@ -3130,7 +3130,7 @@
             INSTRUCTION_STATS(INSTRUMENTED_RESUME);
             uintptr_t global_version = _Py_atomic_load_uintptr_relaxed(&tstate->interp->ceval.eval_breaker) & ~_PY_EVAL_EVENTS_MASK;
             uintptr_t code_version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
-            if (code_version != global_version) {
+            if (code_version != global_version && tstate->tracing == 0) {
                 if (_Py_Instrument(_PyFrame_GetCode(frame), tstate->interp)) {
                     GOTO_ERROR(error);
                 }
@@ -4799,16 +4799,19 @@
             ~_PY_EVAL_EVENTS_MASK;
             uintptr_t code_version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
             assert((code_version & 255) == 0);
-            if (code_version != global_version) {
-                int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
-                if (err) goto error;
-                next_instr = this_instr;
+            if (tstate->tracing == 0) {
+                if (code_version != global_version) {
+                    int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
+                    if (err) goto error;
+                    next_instr = this_instr;
+                } else {
+                    this_instr->op.code = RESUME_CHECK;
+                }
             }
-            else {
+            if (next_instr != this_instr) {
                 if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
                     CHECK_EVAL_BREAKER();
                 }
-                this_instr->op.code = RESUME_CHECK;
             }
             DISPATCH();
         }
