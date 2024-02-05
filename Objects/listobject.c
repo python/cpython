@@ -273,7 +273,7 @@ PyList_GetItemRef(PyObject *op, Py_ssize_t i)
 }
 
 static inline PyObject*
-_PyList_GetItemRef(PyListObject *op, Py_ssize_t i)
+list_get_item_ref(PyListObject *op, Py_ssize_t i)
 {
     if (!valid_index(i, Py_SIZE(op))) {
         return NULL;
@@ -489,7 +489,7 @@ list_contains(PyObject *aa, PyObject *el)
 {
 
     for (Py_ssize_t i = 0; ; i++) {
-        PyObject *item = _PyList_GetItemRef((PyListObject *)aa, i);
+        PyObject *item = list_get_item_ref((PyListObject *)aa, i);
         if (item == NULL) {
             // out-of-bounds
             return 0;
@@ -2748,7 +2748,7 @@ list_index_impl(PyListObject *self, PyObject *value, Py_ssize_t start,
             stop = 0;
     }
     for (i = start; i < stop && i < Py_SIZE(self); i++) {
-        PyObject *obj = _PyList_GetItemRef(self, i);
+        PyObject *obj = list_get_item_ref(self, i);
         if (obj == NULL) {
             // out-of-bounds
             break;
@@ -2779,7 +2779,7 @@ list_count(PyListObject *self, PyObject *value)
 {
     Py_ssize_t count = 0;
     for (Py_ssize_t i = 0; ; i++) {
-        PyObject *obj = _PyList_GetItemRef(self, i);
+        PyObject *obj = list_get_item_ref(self, i);
         if (obj == NULL) {
             // out-of-bounds
             break;
