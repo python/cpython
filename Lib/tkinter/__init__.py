@@ -2111,11 +2111,11 @@ class Wm:
     def wm_attributes(self, *args, return_python_dict=False, **kwargs):
         """Return or sets platform specific attributes.
 
-        When called without arguments and return_python_dict is true,
+        When called with a single argument return_python_dict=True,
         return a dict of the platform specific attributes and their values.
-        If return_python_dict is false (default), return a tuple
-        containing intermixed atrribute names with the minus prefix and
-        their values.
+        When called without arguments or with a single argument
+        return_python_dict=False, return a tuple containing intermixed
+        attribute names with the minus prefix and their values.
 
         When called with a single string value, return the value for the
         specific option.  When called with keyword arguments, set the
