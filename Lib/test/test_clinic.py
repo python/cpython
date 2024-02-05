@@ -3287,6 +3287,12 @@ class ClinicFunctionalTest(unittest.TestCase):
             with self.subTest(name=name):
                 func = getattr(ac_tester, name)
                 self.assertEqual(func(), name)
+    def test_meth_method_no_params(self):
+        obj = ac_tester.TestClass()
+        meth = obj.meth_method_no_params
+        check = partial(self.assertRaisesRegex, TypeError, "no arguments")
+        check(meth, 1)
+        check(meth, a=1)
 
     def test_depr_star_new(self):
         cls = ac_tester.DeprStarNew
