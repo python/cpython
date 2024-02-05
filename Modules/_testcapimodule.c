@@ -5926,17 +5926,6 @@ type_assign_specific_version_unsafe(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-static PyObject *
-type_assign_version(PyObject *self, PyObject *type)
-{
-    if (!PyType_Check(type)) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a type");
-        return NULL;
-    }
-    int res = PyUnstable_Type_AssignVersionTag((PyTypeObject *)type);
-    return PyLong_FromLong(res);
-}
-
 // Test PyThreadState C API
 static PyObject *
 test_tstate_capi(PyObject *self, PyObject *Py_UNUSED(args))
@@ -6822,7 +6811,6 @@ static PyMethodDef TestMethods[] = {
     {"type_modified", type_modified, METH_O, PyDoc_STR("PyType_Modified")},
     {"type_assign_specific_version_unsafe", type_assign_specific_version_unsafe, METH_VARARGS,
      PyDoc_STR("forcefully assign type->tp_version_tag")},
-    {"type_assign_version", type_assign_version, METH_O, PyDoc_STR("PyUnstable_Type_AssignVersionTag")},
     {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
     {"float_pack", test_float_pack, METH_VARARGS, NULL},
     {"float_unpack", test_float_unpack, METH_VARARGS, NULL},

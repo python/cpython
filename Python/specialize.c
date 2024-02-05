@@ -896,7 +896,7 @@ specialize_class_load_method(PyObject *owner, _Py_CODEUNIT *instr,
     PyObject *descr = NULL;
     DescriptorClassification kind = 0;
     kind = analyze_descriptor((PyTypeObject *)owner, name, &descr, 0);
-    if (type_get_version((PyTypeObject *)owner, LOAD_ATTR) == 0) {
+    if (type_get_version((PyTypeObject *)owner, LOAD_METHOD) == 0) {
         return -1;
     }
     switch (kind) {
@@ -960,6 +960,9 @@ _Py_Specialize_LoadMethod(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
     PyObject *descr = NULL;
     DescriptorClassification kind = 0;
     kind = analyze_descriptor(owner_cls, name, &descr, 0);
+    if (type_get_version(owner_cls, LOAD_METHOD) == 0) {
+        goto fail;
+    }
     assert(descr != NULL || kind == ABSENT || kind == GETSET_OVERRIDDEN);
     if (kind != METHOD) {
         SPECIALIZATION_FAIL(LOAD_METHOD, load_method_fail_kind(kind));
@@ -1251,6 +1254,9 @@ _Py_Specialize_BinarySubscr(
         }
         if (fcode->co_argcount != 2) {
             SPECIALIZATION_FAIL(BINARY_SUBSCR, SPEC_FAIL_WRONG_NUMBER_ARGUMENTS);
+            goto fail;
+        }
+        if (type_get_version(cls, BINARY_SUBSCR) == 0) {
             goto fail;
         }
         assert(cls->tp_version_tag != 0);
