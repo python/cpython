@@ -165,6 +165,12 @@ class GenericTest:
             os.close(w)
         self.assertFalse(self.pathmodule.exists(r))
 
+    def test_exists_bool(self):
+        for fd in False, True:
+            with self.assertWarnsRegex(RuntimeWarning,
+                    'bool is used as a file descriptor'):
+                self.pathmodule.exists(fd)
+
     def test_isdir(self):
         filename = os_helper.TESTFN
         bfilename = os.fsencode(filename)
