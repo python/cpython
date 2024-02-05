@@ -686,6 +686,8 @@ Modules/signalmodule.c	-	Handlers	-
 ##################################
 # global non-objects to fix in builtin modules
 
+Modules/_testclinic.c	-	TestClass	-
+
 #-----------------------
 # initialized once
 

@@ -17,7 +17,7 @@ SHA1Type_copy_impl(SHA1object *self, PyTypeObject *cls);
 static PyObject *
 SHA1Type_copy(SHA1object *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
         return NULL;
     }
@@ -119,4 +119,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=322d77ba0a4282fc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2a6c1586342dd24c input=a9049054013a1b77]*/
