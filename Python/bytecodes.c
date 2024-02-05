@@ -143,21 +143,23 @@ dummy_func(
         inst(RESUME, (--)) {
             TIER_ONE_ONLY
             assert(frame == tstate->current_frame);
-            uintptr_t global_version =
-                _Py_atomic_load_uintptr_relaxed(&tstate->interp->ceval.eval_breaker) &
-                ~_PY_EVAL_EVENTS_MASK;
-            uintptr_t code_version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
-            assert((code_version & 255) == 0);
             if (tstate->tracing == 0) {
+                uintptr_t global_version =
+                    _Py_atomic_load_uintptr_relaxed(&tstate->interp->ceval.eval_breaker) &
+                    ~_PY_EVAL_EVENTS_MASK;
+                uintptr_t code_version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
+                assert((code_version & 255) == 0);
                 if (code_version != global_version) {
                     int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
                     ERROR_IF(err, error);
                     next_instr = this_instr;
                 } else {
+                    if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
+                        CHECK_EVAL_BREAKER();
+                    }
                     this_instr->op.code = RESUME_CHECK;
                 }
-            }
-            if (next_instr != this_instr) {
+            } else {
                 if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
                     CHECK_EVAL_BREAKER();
                 }
