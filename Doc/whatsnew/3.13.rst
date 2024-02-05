@@ -431,7 +431,7 @@ tkinter
   (Contributed by Serhiy Storchaka in :gh:`43457`.)
 
 * Add new optional keyword parameter *return_ints* in
-  the :meth:`Text.count <tkinter.Text.count>` method.
+  the :meth:`!Text.count` method.
   Passing ``return_ints=True`` makes it always returning the single count
   as an integer instead of a 1-tuple or ``None``.
   (Contributed by Serhiy Storchaka in :gh:`97928`.)
