@@ -5609,8 +5609,9 @@ class TestResourceTracker(unittest.TestCase):
         '''
         for rtype in resource_tracker._CLEANUP_FUNCS:
             with self.subTest(rtype=rtype):
-                if rtype == "noop":
+                if rtype in ("noop", "dummy"):
                     # Artefact resource type used by the resource_tracker
+                    # or tests
                     continue
                 r, w = os.pipe()
                 p = subprocess.Popen([sys.executable,
@@ -5730,47 +5731,38 @@ class TestResourceTracker(unittest.TestCase):
         with self.assertRaises(ValueError):
             resource_tracker.register(too_long_name_resource, rtype)
 
-    def _test_resource_tracker_leak_resources(self, context, delete_queue):
-        from multiprocessing.resource_tracker import _resource_tracker
-        _resource_tracker.ensure_running()
-        self.assertTrue(_resource_tracker._check_alive())
+    def _test_resource_tracker_leak_resources(self, cleanup):
+        # We use a separate instance for testing, since the main global
+        # _resource_tracker may be used to watch test infrastructure.
+        from multiprocessing.resource_tracker import ResourceTracker
+        tracker = ResourceTracker()
+        tracker.ensure_running()
+        self.assertTrue(tracker._check_alive())
 
-        # Reset exit code value
-        _resource_tracker._exitcode = None
-
-        mp_context = multiprocessing.get_context(context)
-
-        # Keep it on variable, so it won't be cleared yet
-        q = mp_context.Queue()
-        if delete_queue:
-            # Clearing the queue resource to be sure explicitly with deleting
-            # and gc.collect
-            q.close()
-            del q
-            gc.collect()
+        self.assertIsNone(tracker._exitcode)
+        tracker.register('somename', 'dummy')
+        if cleanup:
+            tracker.unregister('somename', 'dummy')
             expected_exit_code = 0
         else:
             expected_exit_code = 1
 
-        self.assertIsNone(_resource_tracker._exitcode)
-        _resource_tracker._stop()
-
-        self.assertEqual(_resource_tracker._exitcode, expected_exit_code)
+        self.assertTrue(tracker._check_alive())
+        self.assertIsNone(tracker._exitcode)
+        tracker._stop()
+        self.assertEqual(tracker._exitcode, expected_exit_code)
 
     def test_resource_tracker_exit_code(self):
         """
-        Test the exit code of the resource tracker based on if there were left
-        leaked resources when we stop the process. If not leaked resources were
-        found, exit code should be 0, otherwise 1
-        """
-        for context in ["spawn", "forkserver"]:
-            for delete_queue in [True, False]:
-                with self.subTest(context=context, delete_queue=delete_queue):
-                    self._test_resource_tracker_leak_resources(
-                        context=context,
-                        delete_queue=delete_queue,
-                    )
+        Test the exit code of the resource tracker.
 
+        If no leaked resources were found, exit code should be 0, otherwise 1
+        """
+        for cleanup in [True, False]:
+            with self.subTest(cleanup=cleanup):
+                self._test_resource_tracker_leak_resources(
+                    cleanup=cleanup,
+                )
 
 class TestSimpleQueue(unittest.TestCase):
 
