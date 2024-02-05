@@ -2388,6 +2388,21 @@ _Py_NewReferenceNoTotal(PyObject *op)
 }
 
 void
+_Py_SetImmortal(PyObject *op)
+{
+    if (PyObject_IS_GC(op) && _PyObject_GC_IS_TRACKED(op)) {
+        _PyObject_GC_UNTRACK(op);
+    }
+#ifdef Py_GIL_DISABLED
+    op->ob_tid = _Py_UNOWNED_TID;
+    op->ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL;
+    op->ob_ref_shared = 0;
+#else
+    op->ob_refcnt = _Py_IMMORTAL_REFCNT;
+#endif
+}
+
+void
 _Py_ResurrectReference(PyObject *op)
 {
     if (_PyRuntime.tracemalloc.config.tracing) {
