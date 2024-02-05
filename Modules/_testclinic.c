@@ -1233,12 +1233,12 @@ _testclinic_TestClass_meth_method_no_params_impl(PyObject *self,
 }
 
 /*[clinic input]
-_testclinic.TestClass.test_meth_method_no_params_misuse
+_testclinic.TestClass.test_meth_method_no_params_empty_kw_tuple
 [clinic start generated code]*/
 
 static PyObject *
-_testclinic_TestClass_test_meth_method_no_params_misuse_impl(PyObject *self)
-/*[clinic end generated code: output=3625a70754b4e183 input=4a9bb70a0237dd13]*/
+_testclinic_TestClass_test_meth_method_no_params_empty_kw_tuple_impl(PyObject *self)
+/*[clinic end generated code: output=53c0e2b2a8ca899e input=d2c4d51d46301b57]*/
 {
     PyObject *meth = PyObject_GetAttrString(self, "meth_method_no_params");
     if (meth == NULL) {
@@ -1257,7 +1257,7 @@ _testclinic_TestClass_test_meth_method_no_params_misuse_impl(PyObject *self)
 
 static struct PyMethodDef test_class_methods[] = {
     _TESTCLINIC_TESTCLASS_METH_METHOD_NO_PARAMS_METHODDEF
-    _TESTCLINIC_TESTCLASS_TEST_METH_METHOD_NO_PARAMS_MISUSE_METHODDEF
+    _TESTCLINIC_TESTCLASS_TEST_METH_METHOD_NO_PARAMS_EMPTY_KW_TUPLE_METHODDEF
     {NULL, NULL}
 };
 

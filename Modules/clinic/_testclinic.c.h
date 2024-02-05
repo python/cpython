@@ -3164,20 +3164,20 @@ _testclinic_TestClass_meth_method_no_params(PyObject *self, PyTypeObject *cls, P
     return _testclinic_TestClass_meth_method_no_params_impl(self, cls);
 }
 
-PyDoc_STRVAR(_testclinic_TestClass_test_meth_method_no_params_misuse__doc__,
-"test_meth_method_no_params_misuse($self, /)\n"
+PyDoc_STRVAR(_testclinic_TestClass_test_meth_method_no_params_empty_kw_tuple__doc__,
+"test_meth_method_no_params_empty_kw_tuple($self, /)\n"
 "--\n"
 "\n");
 
-#define _TESTCLINIC_TESTCLASS_TEST_METH_METHOD_NO_PARAMS_MISUSE_METHODDEF    \
-    {"test_meth_method_no_params_misuse", (PyCFunction)_testclinic_TestClass_test_meth_method_no_params_misuse, METH_NOARGS, _testclinic_TestClass_test_meth_method_no_params_misuse__doc__},
+#define _TESTCLINIC_TESTCLASS_TEST_METH_METHOD_NO_PARAMS_EMPTY_KW_TUPLE_METHODDEF    \
+    {"test_meth_method_no_params_empty_kw_tuple", (PyCFunction)_testclinic_TestClass_test_meth_method_no_params_empty_kw_tuple, METH_NOARGS, _testclinic_TestClass_test_meth_method_no_params_empty_kw_tuple__doc__},
 
 static PyObject *
-_testclinic_TestClass_test_meth_method_no_params_misuse_impl(PyObject *self);
+_testclinic_TestClass_test_meth_method_no_params_empty_kw_tuple_impl(PyObject *self);
 
 static PyObject *
-_testclinic_TestClass_test_meth_method_no_params_misuse(PyObject *self, PyObject *Py_UNUSED(ignored))
+_testclinic_TestClass_test_meth_method_no_params_empty_kw_tuple(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _testclinic_TestClass_test_meth_method_no_params_misuse_impl(self);
+    return _testclinic_TestClass_test_meth_method_no_params_empty_kw_tuple_impl(self);
 }
-/*[clinic end generated code: output=70bb70de53e883f0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b55c94ceb6e79e45 input=a9049054013a1b77]*/
