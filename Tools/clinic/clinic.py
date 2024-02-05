@@ -960,7 +960,7 @@ class CLanguage(Language):
                 return_error = ('return NULL;' if simple_return
                                 else 'goto exit;')
                 parser_code = [libclinic.normalize_snippet("""
-                    if (nargs) {{
+                    if (nargs || kwnames) {{
                         PyErr_SetString(PyExc_TypeError, "{name}() takes no arguments");
                         %s
                     }}

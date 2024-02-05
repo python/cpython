@@ -1434,7 +1434,7 @@ _sre_SRE_Scanner_match_impl(ScannerObject *self, PyTypeObject *cls);
 static PyObject *
 _sre_SRE_Scanner_match(ScannerObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || kwnames) {
         PyErr_SetString(PyExc_TypeError, "match() takes no arguments");
         return NULL;
     }
@@ -1455,10 +1455,10 @@ _sre_SRE_Scanner_search_impl(ScannerObject *self, PyTypeObject *cls);
 static PyObject *
 _sre_SRE_Scanner_search(ScannerObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || kwnames) {
         PyErr_SetString(PyExc_TypeError, "search() takes no arguments");
         return NULL;
     }
     return _sre_SRE_Scanner_search_impl(self, cls);
 }
-/*[clinic end generated code: output=ad513f31b99505fa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f043f757c2dc6291 input=a9049054013a1b77]*/
