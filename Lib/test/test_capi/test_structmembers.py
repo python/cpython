@@ -37,74 +37,111 @@ ts=_test_structmembersType(False,  # T_BOOL
 
 class ReadWriteTests(unittest.TestCase):
 
+    def _test_write(self, name, value, expected=None):
+        if expected is None:
+            expected = value
+        setattr(ts, name, value)
+        self.assertEqual(getattr(ts, name), expected)
+
+    def _test_warn(self, name, value, expected=None):
+        self.assertWarns(RuntimeWarning, setattr, ts, name, value)
+        if expected is not None:
+            self.assertEqual(getattr(ts, name), expected)
+
+    def _test_overflow(self, name, value):
+        self.assertRaises(OverflowError, setattr, ts, name, value)
+
+    def _test_int_range(self, name, minval, maxval, *, hardlimit=None,
+                        indexlimit=None):
+        if hardlimit is None:
+            hardlimit = (minval, maxval)
+        self._test_write(name, minval)
+        self._test_write(name, maxval)
+        hardminval, hardmaxval = hardlimit
+        self._test_overflow(name, hardminval-1)
+        self._test_overflow(name, hardmaxval+1)
+        self._test_overflow(name, 2**1000)
+        self._test_overflow(name, -2**1000)
+        if hardminval < minval:
+            self._test_warn(name, hardminval)
+            self._test_warn(name, minval-1, maxval)
+        if maxval < hardmaxval:
+            self._test_warn(name, maxval+1, minval)
+            self._test_warn(name, hardmaxval)
+
+        if indexlimit is None:
+            indexlimit = hardlimit
+        if not indexlimit:
+            self.assertRaises(TypeError, setattr, ts, name, Index(minval))
+            self.assertRaises(TypeError, setattr, ts, name, Index(maxval))
+        else:
+            hardminindexval, hardmaxindexval = indexlimit
+            self._test_write(name, Index(minval), minval)
+            if minval < hardminindexval:
+                self._test_write(name, Index(hardminindexval), hardminindexval)
+            if maxval < hardmaxindexval:
+                self._test_write(name, Index(maxval), maxval)
+            else:
+                self._test_write(name, Index(hardmaxindexval), hardmaxindexval)
+            self._test_overflow(name, Index(hardminindexval-1))
+            if name in ('T_UINT', 'T_ULONG'):
+                self.assertRaises(TypeError, setattr, ts, name,
+                                  Index(hardmaxindexval+1))
+                self.assertRaises(TypeError, setattr, ts, name,
+                                  Index(2**1000))
+            else:
+                self._test_overflow(name, Index(hardmaxindexval+1))
+                self._test_overflow(name, Index(2**1000))
+            self._test_overflow(name, Index(-2**1000))
+            if hardminindexval < minval and name != 'T_ULONGLONG':
+                self._test_warn(name, Index(hardminindexval))
+                self._test_warn(name, Index(minval-1))
+            if maxval < hardmaxindexval:
+                self._test_warn(name, Index(maxval+1))
+                self._test_warn(name, Index(hardmaxindexval))
+
     def test_bool(self):
         ts.T_BOOL = True
-        self.assertEqual(ts.T_BOOL, True)
+        self.assertIs(ts.T_BOOL, True)
         ts.T_BOOL = False
-        self.assertEqual(ts.T_BOOL, False)
+        self.assertIs(ts.T_BOOL, False)
         self.assertRaises(TypeError, setattr, ts, 'T_BOOL', 1)
+        self.assertRaises(TypeError, setattr, ts, 'T_BOOL', 0)
+        self.assertRaises(TypeError, setattr, ts, 'T_BOOL', None)
 
     def test_byte(self):
-        ts.T_BYTE = CHAR_MAX
-        self.assertEqual(ts.T_BYTE, CHAR_MAX)
-        ts.T_BYTE = CHAR_MIN
-        self.assertEqual(ts.T_BYTE, CHAR_MIN)
-        ts.T_UBYTE = UCHAR_MAX
-        self.assertEqual(ts.T_UBYTE, UCHAR_MAX)
+        self._test_int_range('T_BYTE', CHAR_MIN, CHAR_MAX,
+                             hardlimit=(LONG_MIN, LONG_MAX))
+        self._test_int_range('T_UBYTE', 0, UCHAR_MAX,
+                             hardlimit=(LONG_MIN, LONG_MAX))
 
     def test_short(self):
-        ts.T_SHORT = SHRT_MAX
-        self.assertEqual(ts.T_SHORT, SHRT_MAX)
-        ts.T_SHORT = SHRT_MIN
-        self.assertEqual(ts.T_SHORT, SHRT_MIN)
-        ts.T_USHORT = USHRT_MAX
-        self.assertEqual(ts.T_USHORT, USHRT_MAX)
+        self._test_int_range('T_SHORT', SHRT_MIN, SHRT_MAX,
+                             hardlimit=(LONG_MIN, LONG_MAX))
+        self._test_int_range('T_USHORT', 0, USHRT_MAX,
+                             hardlimit=(LONG_MIN, LONG_MAX))
 
     def test_int(self):
-        ts.T_INT = INT_MAX
-        self.assertEqual(ts.T_INT, INT_MAX)
-        ts.T_INT = INT_MIN
-        self.assertEqual(ts.T_INT, INT_MIN)
-        ts.T_UINT = UINT_MAX
-        self.assertEqual(ts.T_UINT, UINT_MAX)
-        ts.T_UINT = Index(0)
-        self.assertEqual(ts.T_UINT, 0)
-        ts.T_UINT = Index(INT_MAX)
-        self.assertEqual(ts.T_UINT, INT_MAX)
+        self._test_int_range('T_INT', INT_MIN, INT_MAX,
+                             hardlimit=(LONG_MIN, LONG_MAX))
+        self._test_int_range('T_UINT', 0, UINT_MAX,
+                             hardlimit=(LONG_MIN, ULONG_MAX),
+                             indexlimit=(LONG_MIN, LONG_MAX))
 
     def test_long(self):
-        ts.T_LONG = LONG_MAX
-        self.assertEqual(ts.T_LONG, LONG_MAX)
-        ts.T_LONG = LONG_MIN
-        self.assertEqual(ts.T_LONG, LONG_MIN)
-        ts.T_ULONG = ULONG_MAX
-        self.assertEqual(ts.T_ULONG, ULONG_MAX)
-        ts.T_ULONG = Index(0)
-        self.assertEqual(ts.T_ULONG, 0)
-        ts.T_ULONG = Index(LONG_MAX)
-        self.assertEqual(ts.T_ULONG, LONG_MAX)
+        self._test_int_range('T_LONG', LONG_MIN, LONG_MAX)
+        self._test_int_range('T_ULONG', 0, ULONG_MAX,
+                             hardlimit=(LONG_MIN, ULONG_MAX),
+                             indexlimit=(LONG_MIN, LONG_MAX))
 
     def test_py_ssize_t(self):
-        ts.T_PYSSIZET = PY_SSIZE_T_MAX
-        self.assertEqual(ts.T_PYSSIZET, PY_SSIZE_T_MAX)
-        ts.T_PYSSIZET = PY_SSIZE_T_MIN
-        self.assertEqual(ts.T_PYSSIZET, PY_SSIZE_T_MIN)
+        self._test_int_range('T_PYSSIZET', PY_SSIZE_T_MIN, PY_SSIZE_T_MAX, indexlimit=False)
 
     @unittest.skipUnless(hasattr(ts, "T_LONGLONG"), "long long not present")
     def test_longlong(self):
-        ts.T_LONGLONG = LLONG_MAX
-        self.assertEqual(ts.T_LONGLONG, LLONG_MAX)
-        ts.T_LONGLONG = LLONG_MIN
-        self.assertEqual(ts.T_LONGLONG, LLONG_MIN)
-
-        ts.T_ULONGLONG = ULLONG_MAX
-        self.assertEqual(ts.T_ULONGLONG, ULLONG_MAX)
-
-        ## make sure these will accept a plain int as well as a long
-        ts.T_LONGLONG = 3
-        self.assertEqual(ts.T_LONGLONG, 3)
-        ts.T_ULONGLONG = 4
-        self.assertEqual(ts.T_ULONGLONG, 4)
+        self._test_int_range('T_LONGLONG', LLONG_MIN, LLONG_MAX)
+        self._test_int_range('T_ULONGLONG', 0, ULLONG_MAX,
+                             indexlimit=(LONG_MIN, LONG_MAX))
 
     def test_bad_assignments(self):
         integer_attributes = [
@@ -113,10 +150,9 @@ class ReadWriteTests(unittest.TestCase):
             'T_SHORT', 'T_USHORT',
             'T_INT', 'T_UINT',
             'T_LONG', 'T_ULONG',
+            'T_LONGLONG', 'T_ULONGLONG',
             'T_PYSSIZET'
             ]
-        if hasattr(ts, 'T_LONGLONG'):
-            integer_attributes.extend(['T_LONGLONG', 'T_ULONGLONG'])
 
         # issue8014: this produced 'bad argument to internal function'
         # internal error
@@ -128,52 +164,6 @@ class ReadWriteTests(unittest.TestCase):
         self.assertEqual(ts.T_STRING_INPLACE, "hi")
         self.assertRaises(TypeError, setattr, ts, "T_STRING_INPLACE", "s")
         self.assertRaises(TypeError, delattr, ts, "T_STRING_INPLACE")
-
-
-class TestWarnings(unittest.TestCase):
-
-    def test_byte_max(self):
-        with warnings_helper.check_warnings(('', RuntimeWarning)):
-            ts.T_BYTE = CHAR_MAX+1
-
-    def test_byte_min(self):
-        with warnings_helper.check_warnings(('', RuntimeWarning)):
-            ts.T_BYTE = CHAR_MIN-1
-
-    def test_ubyte_max(self):
-        with warnings_helper.check_warnings(('', RuntimeWarning)):
-            ts.T_UBYTE = UCHAR_MAX+1
-
-    def test_short_max(self):
-        with warnings_helper.check_warnings(('', RuntimeWarning)):
-            ts.T_SHORT = SHRT_MAX+1
-
-    def test_short_min(self):
-        with warnings_helper.check_warnings(('', RuntimeWarning)):
-            ts.T_SHORT = SHRT_MIN-1
-
-    def test_ushort_max(self):
-        with warnings_helper.check_warnings(('', RuntimeWarning)):
-            ts.T_USHORT = USHRT_MAX+1
-
-    def test_int(self):
-        if LONG_MIN < INT_MIN:
-            with self.assertWarns(RuntimeWarning):
-                ts.T_INT = INT_MIN-1
-        if LONG_MAX > INT_MAX:
-            with self.assertWarns(RuntimeWarning):
-                ts.T_INT = INT_MAX+1
-
-    def test_uint(self):
-        with self.assertWarns(RuntimeWarning):
-            ts.T_UINT = -1
-        if ULONG_MAX > UINT_MAX:
-            with self.assertWarns(RuntimeWarning):
-                ts.T_UINT = UINT_MAX+1
-
-    def test_ulong(self):
-        with self.assertWarns(RuntimeWarning):
-            ts.T_ULONG = -1
 
 
 if __name__ == "__main__":
