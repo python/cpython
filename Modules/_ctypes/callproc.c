@@ -168,16 +168,18 @@ _ctypes_get_errobj(int **pspace)
         if (error_object_name == NULL)
             return NULL;
     }
-    errobj = PyDict_GetItemWithError(dict, error_object_name);
+    if (PyDict_GetItemRef(dict, error_object_name, &errobj) < 0) {
+        return NULL;
+    }
     if (errobj) {
         if (!PyCapsule_IsValid(errobj, CTYPES_CAPSULE_NAME_PYMEM)) {
             PyErr_SetString(PyExc_RuntimeError,
                 "ctypes.error_object is an invalid capsule");
+            Py_DECREF(errobj);
             return NULL;
         }
-        Py_INCREF(errobj);
     }
-    else if (!PyErr_Occurred()) {
+    else {
         void *space = PyMem_Calloc(2, sizeof(int));
         if (space == NULL)
             return NULL;
@@ -191,9 +193,6 @@ _ctypes_get_errobj(int **pspace)
             Py_DECREF(errobj);
             return NULL;
         }
-    }
-    else {
-        return NULL;
     }
     *pspace = (int *)PyCapsule_GetPointer(errobj, CTYPES_CAPSULE_NAME_PYMEM);
     return errobj;
@@ -1405,7 +1404,7 @@ static PyObject *load_library(PyObject *self, PyObject *args)
 #ifdef _WIN64
     return PyLong_FromVoidPtr(hMod);
 #else
-    return Py_BuildValue("i", hMod);
+    return PyLong_FromLong((int)hMod);
 #endif
 }
 
@@ -1687,11 +1686,13 @@ sizeof_func(PyObject *self, PyObject *obj)
     StgDictObject *dict;
 
     dict = PyType_stgdict(obj);
-    if (dict)
+    if (dict) {
         return PyLong_FromSsize_t(dict->size);
-
-    if (CDataObject_Check(obj))
+    }
+    ctypes_state *st = GLOBAL_STATE();
+    if (CDataObject_Check(st, obj)) {
         return PyLong_FromSsize_t(((CDataObject *)obj)->b_size);
+    }
     PyErr_SetString(PyExc_TypeError,
                     "this type has no size");
     return NULL;
@@ -1745,7 +1746,8 @@ byref(PyObject *self, PyObject *args)
         if (offset == -1 && PyErr_Occurred())
             return NULL;
     }
-    if (!CDataObject_Check(obj)) {
+    ctypes_state *st = GLOBAL_STATE();
+    if (!CDataObject_Check(st, obj)) {
         PyErr_Format(PyExc_TypeError,
                      "byref() argument must be a ctypes instance, not '%s'",
                      Py_TYPE(obj)->tp_name);
@@ -1770,7 +1772,8 @@ PyDoc_STRVAR(addressof_doc,
 static PyObject *
 addressof(PyObject *self, PyObject *obj)
 {
-    if (!CDataObject_Check(obj)) {
+    ctypes_state *st = GLOBAL_STATE();
+    if (!CDataObject_Check(st, obj)) {
         PyErr_SetString(PyExc_TypeError,
                         "invalid type");
         return NULL;
@@ -1922,19 +1925,18 @@ create_pointer_type(PyObject *module, PyObject *cls)
     PyTypeObject *typ;
     PyObject *key;
 
-    result = PyDict_GetItemWithError(_ctypes_ptrtype_cache, cls);
-    if (result) {
-        return Py_NewRef(result);
+    if (PyDict_GetItemRef(_ctypes_ptrtype_cache, cls, &result) != 0) {
+        // found or error
+        return result;
     }
-    else if (PyErr_Occurred()) {
-        return NULL;
-    }
+    ctypes_state *st = GLOBAL_STATE();
+    // not found
     if (PyUnicode_CheckExact(cls)) {
         PyObject *name = PyUnicode_FromFormat("LP_%U", cls);
-        result = PyObject_CallFunction((PyObject *)Py_TYPE(&PyCPointer_Type),
+        result = PyObject_CallFunction((PyObject *)Py_TYPE(st->PyCPointer_Type),
                                        "N(O){}",
                                        name,
-                                       &PyCPointer_Type);
+                                       st->PyCPointer_Type);
         if (result == NULL)
             return result;
         key = PyLong_FromVoidPtr(result);
@@ -1945,10 +1947,10 @@ create_pointer_type(PyObject *module, PyObject *cls)
     } else if (PyType_Check(cls)) {
         typ = (PyTypeObject *)cls;
         PyObject *name = PyUnicode_FromFormat("LP_%s", typ->tp_name);
-        result = PyObject_CallFunction((PyObject *)Py_TYPE(&PyCPointer_Type),
+        result = PyObject_CallFunction((PyObject *)Py_TYPE(st->PyCPointer_Type),
                                        "N(O){sO}",
                                        name,
-                                       &PyCPointer_Type,
+                                       st->PyCPointer_Type,
                                        "_type_", cls);
         if (result == NULL)
             return result;
@@ -1986,16 +1988,14 @@ create_pointer_inst(PyObject *module, PyObject *arg)
     PyObject *result;
     PyObject *typ;
 
-    typ = PyDict_GetItemWithError(_ctypes_ptrtype_cache, (PyObject *)Py_TYPE(arg));
-    if (typ) {
-        return PyObject_CallOneArg(typ, arg);
-    }
-    else if (PyErr_Occurred()) {
+    if (PyDict_GetItemRef(_ctypes_ptrtype_cache, (PyObject *)Py_TYPE(arg), &typ) < 0) {
         return NULL;
     }
-    typ = create_pointer_type(NULL, (PyObject *)Py_TYPE(arg));
-    if (typ == NULL)
-        return NULL;
+    if (typ == NULL) {
+        typ = create_pointer_type(NULL, (PyObject *)Py_TYPE(arg));
+        if (typ == NULL)
+            return NULL;
+    }
     result = PyObject_CallOneArg(typ, arg);
     Py_DECREF(typ);
     return result;

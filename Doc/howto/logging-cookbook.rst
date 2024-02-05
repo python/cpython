@@ -332,10 +332,10 @@ Suppose you configure logging with the following JSON:
         }
     }
 
-This configuration does *almost* what we want, except that ``sys.stdout`` would
-show messages of severity ``ERROR`` and above as well as ``INFO`` and
-``WARNING`` messages. To prevent this, we can set up a filter which excludes
-those messages and add it to the relevant handler. This can be configured by
+This configuration does *almost* what we want, except that ``sys.stdout`` would show messages
+of severity ``ERROR`` and only events of this severity and higher will be tracked
+as well as ``INFO`` and ``WARNING`` messages. To prevent this, we can set up a filter which
+excludes those messages and add it to the relevant handler. This can be configured by
 adding a ``filters`` section parallel to ``formatters`` and ``handlers``:
 
 .. code-block:: json
@@ -1728,7 +1728,7 @@ when (and if) the logged message is actually about to be output to a log by a
 handler. So the only slightly unusual thing which might trip you up is that the
 parentheses go around the format string and the arguments, not just the format
 string. That's because the __ notation is just syntax sugar for a constructor
-call to one of the XXXMessage classes.
+call to one of the :samp:`{XXX}Message` classes.
 
 If you prefer, you can use a :class:`LoggerAdapter` to achieve a similar effect
 to the above, as in the following example::
@@ -1933,30 +1933,28 @@ This dictionary is passed to :func:`~config.dictConfig` to put the configuration
 
     LOGGING = {
         'version': 1,
-        'disable_existing_loggers': True,
+        'disable_existing_loggers': False,
         'formatters': {
             'verbose': {
-                'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
+                'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+                'style': '{',
             },
             'simple': {
-                'format': '%(levelname)s %(message)s'
+                'format': '{levelname} {message}',
+                'style': '{',
             },
         },
         'filters': {
             'special': {
                 '()': 'project.logging.SpecialFilter',
                 'foo': 'bar',
-            }
+            },
         },
         'handlers': {
-            'null': {
-                'level':'DEBUG',
-                'class':'django.utils.log.NullHandler',
-            },
-            'console':{
-                'level':'DEBUG',
-                'class':'logging.StreamHandler',
-                'formatter': 'simple'
+            'console': {
+                'level': 'INFO',
+                'class': 'logging.StreamHandler',
+                'formatter': 'simple',
             },
             'mail_admins': {
                 'level': 'ERROR',
@@ -1966,9 +1964,8 @@ This dictionary is passed to :func:`~config.dictConfig` to put the configuration
         },
         'loggers': {
             'django': {
-                'handlers':['null'],
+                'handlers': ['console'],
                 'propagate': True,
-                'level':'INFO',
             },
             'django.request': {
                 'handlers': ['mail_admins'],
@@ -2644,7 +2641,7 @@ when (and if) the logged message is actually about to be output to a log by a
 handler. So the only slightly unusual thing which might trip you up is that the
 parentheses go around the format string and the arguments, not just the format
 string. That’s because the __ notation is just syntax sugar for a constructor
-call to one of the ``XXXMessage`` classes shown above.
+call to one of the :samp:`{XXX}Message` classes shown above.
 
 
 .. _filters-dictconfig:

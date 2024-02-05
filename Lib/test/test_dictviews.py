@@ -1,7 +1,6 @@
 import collections.abc
 import copy
 import pickle
-import sys
 import unittest
 from test.support import Py_C_RECURSION_LIMIT
 

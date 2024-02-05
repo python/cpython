@@ -1,2 +1,0 @@
-Define ``tp_dealloc`` for ``CounterOptimizer_Type``. This fixes a segfault
-on deallocation.

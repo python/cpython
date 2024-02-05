@@ -6,8 +6,10 @@
 #include "pycore_sysmodule.h"     // _PySys_GetAttr()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads
 
-#include <object.h>
-#include <signal.h>
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // _exit()
+#endif
+#include <signal.h>               // sigaction()
 #include <stdlib.h>               // abort()
 #if defined(HAVE_PTHREAD_SIGMASK) && !defined(HAVE_BROKEN_PTHREAD_SIGMASK) && defined(HAVE_PTHREAD_H)
 #  include <pthread.h>
@@ -16,13 +18,14 @@
 #  include <windows.h>
 #endif
 #ifdef HAVE_SYS_RESOURCE_H
-#  include <sys/resource.h>
+#  include <sys/resource.h>       // setrlimit()
 #endif
 
 #if defined(FAULTHANDLER_USE_ALT_STACK) && defined(HAVE_LINUX_AUXVEC_H) && defined(HAVE_SYS_AUXV_H)
 #  include <linux/auxvec.h>       // AT_MINSIGSTKSZ
 #  include <sys/auxv.h>           // getauxval()
 #endif
+
 
 /* Allocate at maximum 100 MiB of the stack to raise the stack overflow */
 #define STACK_OVERFLOW_MAX_SIZE (100 * 1024 * 1024)
@@ -146,10 +149,7 @@ faulthandler_get_fileno(PyObject **file_ptr)
         return -1;
     }
 
-    result = PyObject_CallMethodNoArgs(file, &_Py_ID(flush));
-    if (result != NULL)
-        Py_DECREF(result);
-    else {
+    if (_PyFile_Flush(file) < 0) {
         /* ignore flush() error */
         PyErr_Clear();
     }
@@ -177,7 +177,6 @@ faulthandler_dump_traceback(int fd, int all_threads,
                             PyInterpreterState *interp)
 {
     static volatile int reentrant = 0;
-    PyThreadState *tstate;
 
     if (reentrant)
         return;
@@ -192,7 +191,7 @@ faulthandler_dump_traceback(int fd, int all_threads,
        fault if the thread released the GIL, and so this function cannot be
        used. Read the thread specific storage (TSS) instead: call
        PyGILState_GetThisThreadState(). */
-    tstate = PyGILState_GetThisThreadState();
+    PyThreadState *tstate = PyGILState_GetThisThreadState();
 
     if (all_threads) {
         (void)_Py_DumpTracebackThreads(fd, NULL, tstate);

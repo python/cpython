@@ -1223,6 +1223,30 @@ class FormatTest:
         self.assertEqual(get_fmt(Decimal('-1.5'), dotsep_wide, '020n'),
                          '-0\u00b4000\u00b4000\u00b4000\u00b4001\u00bf5')
 
+    def test_deprecated_N_format(self):
+        Decimal = self.decimal.Decimal
+        h = Decimal('6.62607015e-34')
+        if self.decimal == C:
+            with self.assertWarns(DeprecationWarning) as cm:
+                r = format(h, 'N')
+            self.assertEqual(cm.filename, __file__)
+            self.assertEqual(r, format(h, 'n').upper())
+            with self.assertWarns(DeprecationWarning) as cm:
+                r = format(h, '010.3N')
+            self.assertEqual(cm.filename, __file__)
+            self.assertEqual(r, format(h, '010.3n').upper())
+        else:
+            self.assertRaises(ValueError, format, h, 'N')
+            self.assertRaises(ValueError, format, h, '010.3N')
+        with warnings_helper.check_no_warnings(self):
+            self.assertEqual(format(h, 'N>10.3'), 'NN6.63E-34')
+            self.assertEqual(format(h, 'N>10.3n'), 'NN6.63e-34')
+            self.assertEqual(format(h, 'N>10.3e'), 'N6.626e-34')
+            self.assertEqual(format(h, 'N>10.3f'), 'NNNNN0.000')
+            self.assertRaises(ValueError, format, h, '>Nf')
+            self.assertRaises(ValueError, format, h, '10Nf')
+            self.assertRaises(ValueError, format, h, 'Nx')
+
     @run_with_locale('LC_ALL', 'ps_AF')
     def test_wide_char_separator_decimal_point(self):
         # locale with wide char separator and decimal point

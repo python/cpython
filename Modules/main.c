@@ -26,10 +26,6 @@
     "Type \"help\", \"copyright\", \"credits\" or \"license\" " \
     "for more information."
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* --- pymain_init() ---------------------------------------------- */
 
 static PyStatus
@@ -253,7 +249,7 @@ pymain_run_command(wchar_t *command)
 
     PyCompilerFlags cf = _PyCompilerFlags_INIT;
     cf.cf_flags |= PyCF_IGNORE_COOKIE;
-    ret = PyRun_SimpleStringFlags(PyBytes_AsString(bytes), &cf);
+    ret = _PyRun_SimpleStringFlagsWithName(PyBytes_AsString(bytes), "<string>", &cf);
     Py_DECREF(bytes);
     return (ret != 0);
 
@@ -560,6 +556,11 @@ pymain_run_python(int *exitcode)
         goto error;
     }
 
+    // XXX Calculate config->sys_path_0 in getpath.py.
+    // The tricky part is that we can't check the path importers yet
+    // at that point.
+    assert(config->sys_path_0 == NULL);
+
     if (config->run_filename != NULL) {
         /* If filename is a package (ex: directory or ZIP file) which contains
            __main__.py, main_importer_path is set to filename and will be
@@ -575,28 +576,44 @@ pymain_run_python(int *exitcode)
     // import readline and rlcompleter before script dir is added to sys.path
     pymain_import_readline(config);
 
+    PyObject *path0 = NULL;
     if (main_importer_path != NULL) {
-        if (pymain_sys_path_add_path0(interp, main_importer_path) < 0) {
-            goto error;
-        }
+        path0 = Py_NewRef(main_importer_path);
     }
     else if (!config->safe_path) {
-        PyObject *path0 = NULL;
         int res = _PyPathConfig_ComputeSysPath0(&config->argv, &path0);
         if (res < 0) {
             goto error;
         }
-
-        if (res > 0) {
-            if (pymain_sys_path_add_path0(interp, path0) < 0) {
-                Py_DECREF(path0);
-                goto error;
-            }
+        else if (res == 0) {
+            Py_CLEAR(path0);
+        }
+    }
+    // XXX Apply config->sys_path_0 in init_interp_main().  We have
+    // to be sure to get readline/rlcompleter imported at the correct time.
+    if (path0 != NULL) {
+        wchar_t *wstr = PyUnicode_AsWideCharString(path0, NULL);
+        if (wstr == NULL) {
             Py_DECREF(path0);
+            goto error;
+        }
+        config->sys_path_0 = _PyMem_RawWcsdup(wstr);
+        PyMem_Free(wstr);
+        if (config->sys_path_0 == NULL) {
+            Py_DECREF(path0);
+            goto error;
+        }
+        int res = pymain_sys_path_add_path0(interp, path0);
+        Py_DECREF(path0);
+        if (res < 0) {
+            goto error;
         }
     }
 
     pymain_header(config);
+
+    _PyInterpreterState_SetRunningMain(interp);
+    assert(!PyErr_Occurred());
 
     if (config->run_command) {
         *exitcode = pymain_run_command(config->run_command);
@@ -621,6 +638,7 @@ error:
     *exitcode = pymain_exit_err_print();
 
 done:
+    _PyInterpreterState_SetNotRunningMain(interp);
     Py_XDECREF(main_importer_path);
 }
 
@@ -742,7 +760,3 @@ Py_BytesMain(int argc, char **argv)
         .wchar_argv = NULL};
     return pymain_main(&args);
 }
-
-#ifdef __cplusplus
-}
-#endif

@@ -599,8 +599,7 @@ _overlapped_FormatMessage_impl(PyObject *module, DWORD code)
     if (n) {
         while (iswspace(lpMsgBuf[n-1]))
             --n;
-        lpMsgBuf[n] = L'\0';
-        res = Py_BuildValue("u", lpMsgBuf);
+        res = PyUnicode_FromWideChar(lpMsgBuf, n);
     } else {
         res = PyUnicode_FromFormat("unknown error code %u", code);
     }

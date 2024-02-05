@@ -295,7 +295,7 @@ actual dictionary.  This created problems for introspection tools.
 .. section: Library
 
 Added :const:`~os.O_EVTONLY`, :const:`~os.O_FSYNC`, :const:`~os.O_SYMLINK` and
-:const:`~os.O_NOFOLLOW_ANY` for macOS. Patch by Dong-hee Na.
+:const:`~os.O_NOFOLLOW_ANY` for macOS. Patch by Donghee Na.
 
 ..
 

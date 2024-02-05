@@ -708,6 +708,9 @@ factories passed to the :meth:`loop.subprocess_exec` and
 
    Called when the child process has exited.
 
+   It can be called before :meth:`~SubprocessProtocol.pipe_data_received` and
+   :meth:`~SubprocessProtocol.pipe_connection_lost` methods.
+
 
 Examples
 ========
@@ -1003,12 +1006,26 @@ The subprocess is created by the :meth:`loop.subprocess_exec` method::
         def __init__(self, exit_future):
             self.exit_future = exit_future
             self.output = bytearray()
+            self.pipe_closed = False
+            self.exited = False
+
+        def pipe_connection_lost(self, fd, exc):
+            self.pipe_closed = True
+            self.check_for_exit()
 
         def pipe_data_received(self, fd, data):
             self.output.extend(data)
 
         def process_exited(self):
-            self.exit_future.set_result(True)
+            self.exited = True
+            # process_exited() method can be called before
+            # pipe_connection_lost() method: wait until both methods are
+            # called.
+            self.check_for_exit()
+
+        def check_for_exit(self):
+            if self.pipe_closed and self.exited:
+                self.exit_future.set_result(True)
 
     async def get_date():
         # Get a reference to the event loop as we plan to use

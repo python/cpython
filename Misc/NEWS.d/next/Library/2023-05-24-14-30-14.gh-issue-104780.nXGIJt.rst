@@ -1,2 +1,0 @@
-:pep:`594`: Remove the :mod:`!ossaudiodev` module, deprecated in Python 3.11.
-Patch Victor Stinner.
