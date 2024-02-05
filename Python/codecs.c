@@ -14,7 +14,6 @@ Copyright (c) Corporation for National Research Initiatives.
 #include "pycore_pyerrors.h"      // _PyErr_FormatNote()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
-#include <ctype.h>
 
 const char *Py_hexdigits = "0123456789abcdef";
 
@@ -147,14 +146,13 @@ PyObject *_PyCodec_Lookup(const char *encoding)
     PyUnicode_InternInPlace(&v);
 
     /* First, try to lookup the name in the registry dictionary */
-    PyObject *result = PyDict_GetItemWithError(interp->codec_search_cache, v);
+    PyObject *result;
+    if (PyDict_GetItemRef(interp->codec_search_cache, v, &result) < 0) {
+        goto onError;
+    }
     if (result != NULL) {
-        Py_INCREF(result);
         Py_DECREF(v);
         return result;
-    }
-    else if (PyErr_Occurred()) {
-        goto onError;
     }
 
     /* Next, scan the search functions in order of registration */
@@ -933,8 +931,6 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
     return Py_BuildValue("(Nn)", res, end);
 }
 
-static _PyUnicode_Name_CAPI *ucnhash_capi = NULL;
-
 PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
 {
     if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)) {
@@ -955,13 +951,9 @@ PyObject *PyCodec_NameReplaceErrors(PyObject *exc)
             return NULL;
         if (!(object = PyUnicodeEncodeError_GetObject(exc)))
             return NULL;
-        if (!ucnhash_capi) {
-            /* load the unicode data module */
-            ucnhash_capi = (_PyUnicode_Name_CAPI *)PyCapsule_Import(
-                                            PyUnicodeData_CAPSULE_NAME, 1);
-            if (!ucnhash_capi) {
-                return NULL;
-            }
+        _PyUnicode_Name_CAPI *ucnhash_capi = _PyUnicode_GetNameCAPI();
+        if (ucnhash_capi == NULL) {
+            return NULL;
         }
         for (i = start, ressize = 0; i < end; ++i) {
             /* object is guaranteed to be "ready" */

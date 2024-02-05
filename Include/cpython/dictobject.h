@@ -17,6 +17,9 @@ typedef struct {
     /* Dictionary version: globally unique, value change each time
        the dictionary is modified */
 #ifdef Py_BUILD_CORE
+    /* Bits 0-7 are for dict watchers.
+     * Bits 8-11 are for the watched mutation counter (used by tier2 optimization)
+     * The remaining bits (12-63) are the actual version tag. */
     uint64_t ma_version_tag;
 #else
     Py_DEPRECATED(3.12) uint64_t ma_version_tag;
@@ -32,6 +35,9 @@ typedef struct {
     PyDictValues *ma_values;
 } PyDictObject;
 
+PyAPI_FUNC(PyObject *) _PyDict_GetItem_KnownHash(PyObject *mp, PyObject *key,
+                                                 Py_hash_t hash);
+PyAPI_FUNC(PyObject *) _PyDict_GetItemStringWithError(PyObject *, const char *);
 PyAPI_FUNC(PyObject *) PyDict_SetDefault(
     PyObject *mp, PyObject *key, PyObject *defaultobj);
 
@@ -46,6 +52,11 @@ static inline Py_ssize_t PyDict_GET_SIZE(PyObject *op) {
 
 PyAPI_FUNC(int) PyDict_ContainsString(PyObject *mp, const char *key);
 
+PyAPI_FUNC(PyObject *) _PyDict_NewPresized(Py_ssize_t minused);
+
+PyAPI_FUNC(int) PyDict_Pop(PyObject *dict, PyObject *key, PyObject **result);
+PyAPI_FUNC(int) PyDict_PopString(PyObject *dict, const char *key, PyObject **result);
+PyAPI_FUNC(PyObject *) _PyDict_Pop(PyObject *dict, PyObject *key, PyObject *default_value);
 
 /* Dictionary watchers */
 

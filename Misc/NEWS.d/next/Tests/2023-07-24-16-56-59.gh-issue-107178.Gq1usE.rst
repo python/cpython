@@ -1,2 +1,0 @@
-Add the C API test for functions in the Mapping Protocol, the Sequence
-Protocol and some functions in the Object Protocol.

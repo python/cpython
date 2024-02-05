@@ -1,8 +1,9 @@
 """Unit tests for zero-argument super() & related machinery."""
 
+import textwrap
 import unittest
 from unittest.mock import patch
-from test import shadowed_super
+from test.support import import_helper
 
 
 ADAPTIVE_WARMUP_DELAY = 2
@@ -342,7 +343,20 @@ class TestSuper(unittest.TestCase):
             super(1, int)
 
     def test_shadowed_global(self):
+        source = textwrap.dedent(
+            """
+            class super:
+                msg = "truly super"
+
+            class C:
+                def method(self):
+                    return super().msg
+            """,
+        )
+        with import_helper.ready_to_import(name="shadowed_super", source=source):
+            import shadowed_super
         self.assertEqual(shadowed_super.C().method(), "truly super")
+        import_helper.unload("shadowed_super")
 
     def test_shadowed_local(self):
         class super:
@@ -395,6 +409,33 @@ class TestSuper(unittest.TestCase):
 
         with self.assertRaisesRegex(TypeError, "argument 1 must be a type"):
             C().method()
+
+    def test_supercheck_fail(self):
+        class C:
+            def method(self, type_, obj):
+                return super(type_, obj).method()
+
+        c = C()
+        err_msg = (
+            r"super\(type, obj\): obj \({} {}\) is not "
+            r"an instance or subtype of type \({}\)."
+        )
+
+        cases = (
+            (int, c, int.__name__, C.__name__, "instance of"),
+            # obj is instance of type
+            (C, list(), C.__name__, list.__name__, "instance of"),
+            # obj is type itself
+            (C, list, C.__name__, list.__name__, "type"),
+        )
+
+        for case in cases:
+            with self.subTest(case=case):
+                type_, obj, type_str, obj_str, instance_or_type = case
+                regex = err_msg.format(instance_or_type, obj_str, type_str)
+
+                with self.assertRaisesRegex(TypeError, regex):
+                    c.method(type_, obj)
 
     def test_super___class__(self):
         class C:

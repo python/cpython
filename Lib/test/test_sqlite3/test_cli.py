@@ -87,42 +87,68 @@ class InteractiveSession(unittest.TestCase):
     def test_interact(self):
         out, err = self.run_cli()
         self.assertIn(self.MEMORY_DB_MSG, err)
-        self.assertIn(self.PS1, out)
+        self.assertIn(self.MEMORY_DB_MSG, err)
+        self.assertTrue(out.endswith(self.PS1))
+        self.assertEqual(out.count(self.PS1), 1)
+        self.assertEqual(out.count(self.PS2), 0)
 
     def test_interact_quit(self):
         out, err = self.run_cli(commands=(".quit",))
-        self.assertIn(self.PS1, out)
+        self.assertIn(self.MEMORY_DB_MSG, err)
+        self.assertTrue(out.endswith(self.PS1))
+        self.assertEqual(out.count(self.PS1), 1)
+        self.assertEqual(out.count(self.PS2), 0)
 
     def test_interact_version(self):
         out, err = self.run_cli(commands=(".version",))
         self.assertIn(self.MEMORY_DB_MSG, err)
+        self.assertIn(sqlite3.sqlite_version + "\n", out)
+        self.assertTrue(out.endswith(self.PS1))
+        self.assertEqual(out.count(self.PS1), 2)
+        self.assertEqual(out.count(self.PS2), 0)
         self.assertIn(sqlite3.sqlite_version, out)
 
     def test_interact_valid_sql(self):
         out, err = self.run_cli(commands=("SELECT 1;",))
         self.assertIn(self.MEMORY_DB_MSG, err)
-        self.assertIn("(1,)", out)
+        self.assertIn("(1,)\n", out)
+        self.assertTrue(out.endswith(self.PS1))
+        self.assertEqual(out.count(self.PS1), 2)
+        self.assertEqual(out.count(self.PS2), 0)
+
+    def test_interact_incomplete_multiline_sql(self):
+        out, err = self.run_cli(commands=("SELECT 1",))
+        self.assertIn(self.MEMORY_DB_MSG, err)
+        self.assertTrue(out.endswith(self.PS2))
+        self.assertEqual(out.count(self.PS1), 1)
+        self.assertEqual(out.count(self.PS2), 1)
 
     def test_interact_valid_multiline_sql(self):
         out, err = self.run_cli(commands=("SELECT 1\n;",))
         self.assertIn(self.MEMORY_DB_MSG, err)
         self.assertIn(self.PS2, out)
-        self.assertIn("(1,)", out)
+        self.assertIn("(1,)\n", out)
+        self.assertTrue(out.endswith(self.PS1))
+        self.assertEqual(out.count(self.PS1), 2)
+        self.assertEqual(out.count(self.PS2), 1)
 
     def test_interact_invalid_sql(self):
         out, err = self.run_cli(commands=("sel;",))
         self.assertIn(self.MEMORY_DB_MSG, err)
         self.assertIn("OperationalError (SQLITE_ERROR)", err)
+        self.assertTrue(out.endswith(self.PS1))
+        self.assertEqual(out.count(self.PS1), 2)
+        self.assertEqual(out.count(self.PS2), 0)
 
     def test_interact_on_disk_file(self):
         self.addCleanup(unlink, TESTFN)
 
         out, err = self.run_cli(TESTFN, commands=("CREATE TABLE t(t);",))
         self.assertIn(TESTFN, err)
-        self.assertIn(self.PS1, out)
+        self.assertTrue(out.endswith(self.PS1))
 
         out, _ = self.run_cli(TESTFN, commands=("SELECT count(t) FROM t;",))
-        self.assertIn("(0,)", out)
+        self.assertIn("(0,)\n", out)
 
 
 if __name__ == "__main__":

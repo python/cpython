@@ -10,6 +10,19 @@ body:
         You'll need to demonstrate widespread support for your idea among the community.
 
         Major feature proposals should generally be discussed on [Discourse](https://discuss.python.org/c/ideas/6) before opening a GitHub issue. Wait until it's clear that most people support your idea before filling in this form.
+  - type: textarea
+    attributes:
+      label: "Proposal:"
+      description: >
+        Explain your proposal, why it should be implemented, and how it would be used.
+        Add examples, if applicable.
+        Put any code blocks inside triple backticks.
+      value: |
+        ```python
+        # Add a code block here, if required
+        ```
+    validations:
+      required: true
   - type: dropdown
     attributes:
       label: Has this already been discussed elsewhere?
@@ -25,16 +38,3 @@ body:
       label: "Links to previous discussion of this feature:"
     validations:
       required: false
-  - type: textarea
-    attributes:
-      label: "Proposal:"
-      description: >
-        Explain your proposal, why it should be implemented, and how it would be used.
-        Add examples, if applicable.
-        Put any code blocks inside triple backticks.
-      value: |
-        ```python
-        # Add a code block here, if required
-        ```
-    validations:
-      required: true

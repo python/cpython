@@ -1,7 +1,10 @@
+// clinic/exceptions.c.h uses internal pycore_modsupport.h API
+#define PYTESTCAPI_NEED_INTERNAL_API
+
 #include "parts.h"
+#include "util.h"
 #include "clinic/exceptions.c.h"
 
-#define NULLABLE(x) do { if (x == Py_None) x = NULL; } while (0);
 
 /*[clinic input]
 module _testcapi
@@ -120,12 +123,15 @@ _testcapi_exc_set_object_fetch_impl(PyObject *module, PyObject *exc,
                                     PyObject *obj)
 /*[clinic end generated code: output=7a5ff5f6d3cf687f input=77ec686f1f95fa38]*/
 {
-    PyObject *type;
-    PyObject *value;
-    PyObject *tb;
+    PyObject *type = UNINITIALIZED_PTR;
+    PyObject *value = UNINITIALIZED_PTR;
+    PyObject *tb = UNINITIALIZED_PTR;
 
     PyErr_SetObject(exc, obj);
     PyErr_Fetch(&type, &value, &tb);
+    assert(type != UNINITIALIZED_PTR);
+    assert(value != UNINITIALIZED_PTR);
+    assert(tb != UNINITIALIZED_PTR);
     Py_XDECREF(type);
     Py_XDECREF(tb);
     return value;
@@ -244,7 +250,7 @@ _testcapi_set_exc_info_impl(PyObject *module, PyObject *new_type,
                             PyObject *new_value, PyObject *new_tb)
 /*[clinic end generated code: output=b55fa35dec31300e input=ea9f19e0f55fe5b3]*/
 {
-    PyObject *type, *value, *tb;
+    PyObject *type = UNINITIALIZED_PTR, *value = UNINITIALIZED_PTR, *tb = UNINITIALIZED_PTR;
     PyErr_GetExcInfo(&type, &value, &tb);
 
     Py_INCREF(new_type);
@@ -279,36 +285,6 @@ _testcapi_set_exception(PyObject *module, PyObject *new_exc)
 }
 
 /*[clinic input]
-_testcapi.write_unraisable_exc
-    exception as exc: object
-    err_msg: object
-    obj: object
-    /
-[clinic start generated code]*/
-
-static PyObject *
-_testcapi_write_unraisable_exc_impl(PyObject *module, PyObject *exc,
-                                    PyObject *err_msg, PyObject *obj)
-/*[clinic end generated code: output=39827c5e0a8c2092 input=582498da5b2ee6cf]*/
-{
-
-    const char *err_msg_utf8;
-    if (err_msg != Py_None) {
-        err_msg_utf8 = PyUnicode_AsUTF8(err_msg);
-        if (err_msg_utf8 == NULL) {
-            return NULL;
-        }
-    }
-    else {
-        err_msg_utf8 = NULL;
-    }
-
-    PyErr_SetObject((PyObject *)Py_TYPE(exc), exc);
-    _PyErr_WriteUnraisableMsg(err_msg_utf8, obj);
-    Py_RETURN_NONE;
-}
-
-/*[clinic input]
 _testcapi.traceback_print
     traceback: object
     file: object
@@ -324,6 +300,46 @@ _testcapi_traceback_print_impl(PyObject *module, PyObject *traceback,
     if (PyTraceBack_Print(traceback, file) < 0) {
         return NULL;
     }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+err_writeunraisable(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *exc, *obj;
+    if (!PyArg_ParseTuple(args, "OO", &exc, &obj)) {
+        return NULL;
+    }
+    NULLABLE(exc);
+    NULLABLE(obj);
+    if (exc) {
+        PyErr_SetRaisedException(Py_NewRef(exc));
+    }
+    PyErr_WriteUnraisable(obj);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+err_formatunraisable(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *exc;
+    const char *fmt;
+    Py_ssize_t fmtlen;
+    PyObject *objs[10] = {NULL};
+
+    if (!PyArg_ParseTuple(args, "Oz#|OOOOOOOOOO", &exc, &fmt, &fmtlen,
+            &objs[0], &objs[1], &objs[2], &objs[3], &objs[4],
+            &objs[5], &objs[6], &objs[7], &objs[8], &objs[9]))
+    {
+        return NULL;
+    }
+    NULLABLE(exc);
+    if (exc) {
+        PyErr_SetRaisedException(Py_NewRef(exc));
+    }
+    PyErr_FormatUnraisable(fmt,
+            objs[0], objs[1], objs[2], objs[3], objs[4],
+            objs[5], objs[6], objs[7], objs[8], objs[9]);
     Py_RETURN_NONE;
 }
 
@@ -371,6 +387,8 @@ static PyTypeObject PyRecursingInfinitelyError_Type = {
 
 static PyMethodDef test_methods[] = {
     {"err_restore",             err_restore,                     METH_VARARGS},
+    {"err_writeunraisable",     err_writeunraisable,             METH_VARARGS},
+    {"err_formatunraisable",    err_formatunraisable,            METH_VARARGS},
     _TESTCAPI_ERR_SET_RAISED_METHODDEF
     _TESTCAPI_EXCEPTION_PRINT_METHODDEF
     _TESTCAPI_FATAL_ERROR_METHODDEF
@@ -384,7 +402,6 @@ static PyMethodDef test_methods[] = {
     _TESTCAPI_SET_EXC_INFO_METHODDEF
     _TESTCAPI_SET_EXCEPTION_METHODDEF
     _TESTCAPI_TRACEBACK_PRINT_METHODDEF
-    _TESTCAPI_WRITE_UNRAISABLE_EXC_METHODDEF
     _TESTCAPI_UNSTABLE_EXC_PREP_RERAISE_STAR_METHODDEF
     {NULL},
 };

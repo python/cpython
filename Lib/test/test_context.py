@@ -6,6 +6,7 @@ import random
 import time
 import unittest
 import weakref
+from test import support
 from test.support import threading_helper
 
 try:
@@ -570,6 +571,7 @@ class HamtTest(unittest.TestCase):
 
         self.assertEqual({k.name for k in h.keys()}, {'C', 'D', 'E'})
 
+    @support.requires_resource('cpu')
     def test_hamt_stress(self):
         COLLECTION_SIZE = 7000
         TEST_ITERS_EVERY = 647

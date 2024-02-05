@@ -116,6 +116,10 @@ def main(*args):
         else:
             # No SQL provided; start the REPL.
             console = SqliteInteractiveConsole(con)
+            try:
+                import readline
+            except ImportError:
+                pass
             console.interact(banner, exitmsg="")
     finally:
         con.close()
@@ -124,4 +128,4 @@ def main(*args):
 
 
 if __name__ == "__main__":
-    main(sys.argv)
+    main(sys.argv[1:])

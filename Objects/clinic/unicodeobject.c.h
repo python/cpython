@@ -3,11 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
-#include "pycore_abstract.h"       // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(EncodingMap_size__doc__,
 "size($self, /)\n"
@@ -951,11 +951,13 @@ PyDoc_STRVAR(unicode_split__doc__,
 "    The separator used to split the string.\n"
 "\n"
 "    When set to None (the default value), will split on any whitespace\n"
-"    character (including \\\\n \\\\r \\\\t \\\\f and spaces) and will discard\n"
+"    character (including \\n \\r \\t \\f and spaces) and will discard\n"
 "    empty strings from the result.\n"
 "  maxsplit\n"
-"    Maximum number of splits (starting from the left).\n"
+"    Maximum number of splits.\n"
 "    -1 (the default value) means no limit.\n"
+"\n"
+"Splitting starts at the front of the string and works to the end.\n"
 "\n"
 "Note, str.split() is mainly useful for data that has been intentionally\n"
 "delimited.  With natural text that includes punctuation, consider using\n"
@@ -1075,10 +1077,10 @@ PyDoc_STRVAR(unicode_rsplit__doc__,
 "    The separator used to split the string.\n"
 "\n"
 "    When set to None (the default value), will split on any whitespace\n"
-"    character (including \\\\n \\\\r \\\\t \\\\f and spaces) and will discard\n"
+"    character (including \\n \\r \\t \\f and spaces) and will discard\n"
 "    empty strings from the result.\n"
 "  maxsplit\n"
-"    Maximum number of splits (starting from the left).\n"
+"    Maximum number of splits.\n"
 "    -1 (the default value) means no limit.\n"
 "\n"
 "Splitting starts at the end of the string and works to the front.");
@@ -1505,4 +1507,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a64776a3ea1c970c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1aab29bab5201c78 input=a9049054013a1b77]*/

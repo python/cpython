@@ -402,6 +402,21 @@ PyContextVar_Reset:int:::
 PyContextVar_Reset:PyObject*:var:0:
 PyContextVar_Reset:PyObject*:token:-1:
 
+PyCFunction_New:PyObject*::+1:
+PyCFunction_New:PyMethodDef*:ml::
+PyCFunction_New:PyObject*:self:+1:
+
+PyCFunction_NewEx:PyObject*::+1:
+PyCFunction_NewEx:PyMethodDef*:ml::
+PyCFunction_NewEx:PyObject*:self:+1:
+PyCFunction_NewEx:PyObject*:module:+1:
+
+PyCMethod_New:PyObject*::+1:
+PyCMethod_New:PyMethodDef*:ml::
+PyCMethod_New:PyObject*:self:+1:
+PyCMethod_New:PyObject*:module:+1:
+PyCMethod_New:PyObject*:cls:+1:
+
 PyDate_Check:int:::
 PyDate_Check:PyObject*:ob:0:
 
@@ -1118,6 +1133,10 @@ PyList_GetItem:PyObject*::0:
 PyList_GetItem:PyObject*:list:0:
 PyList_GetItem:Py_ssize_t:index::
 
+PyList_GetItemRef:PyObject*::+1:
+PyList_GetItemRef:PyObject*:list:0:
+PyList_GetItemRef:Py_ssize_t:index::
+
 PyList_GetSlice:PyObject*::+1:
 PyList_GetSlice:PyObject*:list:0:
 PyList_GetSlice:Py_ssize_t:low::
@@ -1588,6 +1607,13 @@ PyObject_Call:PyObject*::+1:
 PyObject_Call:PyObject*:callable_object:0:
 PyObject_Call:PyObject*:args:0:
 PyObject_Call:PyObject*:kw:0:
+
+PyObject_CallNoArgs:PyObject*::+1:
+PyObject_CallNoArgs:PyObject*:callable_object:0:
+
+PyObject_CallOneArg:PyObject*::+1:
+PyObject_CallOneArg:PyObject*:callable_object:0:
+PyObject_CallOneArg:PyObject*:arg:0:
 
 PyObject_CallFunction:PyObject*::+1:
 PyObject_CallFunction:PyObject*:callable_object:0:

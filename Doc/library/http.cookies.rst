@@ -18,16 +18,17 @@ cookie value.
 
 The module formerly strictly applied the parsing rules described in the
 :rfc:`2109` and :rfc:`2068` specifications.  It has since been discovered that
-MSIE 3.0x doesn't follow the character rules outlined in those specs and also
-many current day browsers and servers have relaxed parsing rules when comes to
-Cookie handling.  As a result, the parsing rules used are a bit less strict.
+MSIE 3.0x didn't follow the character rules outlined in those specs; many
+current-day browsers and servers have also relaxed parsing rules when it comes
+to cookie handling.  As a result, this module now uses parsing rules that are a
+bit less strict than they once were.
 
 The character set, :data:`string.ascii_letters`, :data:`string.digits` and
 ``!#$%&'*+-.^_`|~:`` denote the set of valid characters allowed by this module
-in Cookie name (as :attr:`~Morsel.key`).
+in a cookie name (as :attr:`~Morsel.key`).
 
 .. versionchanged:: 3.3
-   Allowed ':' as a valid Cookie name character.
+   Allowed ':' as a valid cookie name character.
 
 
 .. note::
@@ -54,9 +55,10 @@ in Cookie name (as :attr:`~Morsel.key`).
 
 .. class:: SimpleCookie([input])
 
-   This class derives from :class:`BaseCookie` and overrides :meth:`value_decode`
-   and :meth:`value_encode`. SimpleCookie supports strings as cookie values.
-   When setting the value, SimpleCookie calls the builtin :func:`str()` to convert
+   This class derives from :class:`BaseCookie` and overrides :meth:`~BaseCookie.value_decode`
+   and :meth:`~BaseCookie.value_encode`. :class:`!SimpleCookie` supports
+   strings as cookie values. When setting the value, :class:`!SimpleCookie`
+   calls the builtin :func:`str` to convert
    the value to a string. Values received from HTTP are kept as strings.
 
 .. seealso::
@@ -129,17 +131,17 @@ Morsel Objects
    Abstract a key/value pair, which has some :rfc:`2109` attributes.
 
    Morsels are dictionary-like objects, whose set of keys is constant --- the valid
-   :rfc:`2109` attributes, which are
+   :rfc:`2109` attributes, which are:
 
-   * ``expires``
-   * ``path``
-   * ``comment``
-   * ``domain``
-   * ``max-age``
-   * ``secure``
-   * ``version``
-   * ``httponly``
-   * ``samesite``
+     .. attribute:: expires
+                    path
+                    comment
+                    domain
+                    max-age
+                    secure
+                    version
+                    httponly
+                    samesite
 
    The attribute :attr:`httponly` specifies that the cookie is only transferred
    in HTTP requests, and is not accessible through JavaScript. This is intended
@@ -152,7 +154,7 @@ Morsel Objects
    The keys are case-insensitive and their default value is ``''``.
 
    .. versionchanged:: 3.5
-      :meth:`~Morsel.__eq__` now takes :attr:`~Morsel.key` and :attr:`~Morsel.value`
+      :meth:`!__eq__` now takes :attr:`~Morsel.key` and :attr:`~Morsel.value`
       into account.
 
    .. versionchanged:: 3.7

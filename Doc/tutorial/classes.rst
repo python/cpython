@@ -276,7 +276,7 @@ definition looked like this::
 then ``MyClass.i`` and ``MyClass.f`` are valid attribute references, returning
 an integer and a function object, respectively. Class attributes can also be
 assigned to, so you can change the value of ``MyClass.i`` by assignment.
-:attr:`__doc__` is also a valid attribute, returning the docstring belonging to
+:attr:`!__doc__` is also a valid attribute, returning the docstring belonging to
 the class: ``"A simple example class"``.
 
 Class *instantiation* uses function notation.  Just pretend that the class
@@ -386,12 +386,11 @@ general, calling a method with a list of *n* arguments is equivalent to calling
 the corresponding function with an argument list that is created by inserting
 the method's instance object before the first argument.
 
-If you still don't understand how methods work, a look at the implementation can
-perhaps clarify matters.  When a non-data attribute of an instance is
-referenced, the instance's class is searched.  If the name denotes a valid class
-attribute that is a function object, a method object is created by packing
-(pointers to) the instance object and the function object just found together in
-an abstract object: this is the method object.  When the method object is called
+In general, methods work as follows.  When a non-data attribute
+of an instance is referenced, the instance's class is searched.
+If the name denotes a valid class attribute that is a function object,
+references to both the instance object and the function object
+are packed into a method object.  When the method object is called
 with an argument list, a new argument list is constructed from the instance
 object and the argument list, and the function object is called with this new
 argument list.
@@ -769,8 +768,10 @@ data from a string buffer instead, and pass it as an argument.
    or arithmetic operators, and assigning such a "pseudo-file" to sys.stdin will
    not cause the interpreter to read further input from it.)
 
-Instance method objects have attributes, too: ``m.__self__`` is the instance
-object with the method :meth:`!m`, and ``m.__func__`` is the function object
+:ref:`Instance method objects <instance-methods>` have attributes, too:
+:attr:`m.__self__ <method.__self__>` is the instance
+object with the method :meth:`!m`, and :attr:`m.__func__ <method.__func__>` is
+the :ref:`function object <user-defined-funcs>`
 corresponding to the method.
 
 
