@@ -10681,7 +10681,7 @@ os_DirEntry_is_symlink(DirEntry *self, PyTypeObject *defining_class, PyObject *c
     PyObject *return_value = NULL;
     int _return_value;
 
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "is_symlink() takes no arguments");
         goto exit;
     }
@@ -10713,7 +10713,7 @@ os_DirEntry_is_junction(DirEntry *self, PyTypeObject *defining_class, PyObject *
     PyObject *return_value = NULL;
     int _return_value;
 
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "is_junction() takes no arguments");
         goto exit;
     }
@@ -11999,4 +11999,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=fa29739d72cfc07e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=56e83d6b7cac0d58 input=a9049054013a1b77]*/

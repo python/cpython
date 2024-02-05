@@ -4629,7 +4629,7 @@ Test_cls_no_params_impl(TestObj *self, PyTypeObject *cls);
 static PyObject *
 Test_cls_no_params(TestObj *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "cls_no_params() takes no arguments");
         return NULL;
     }
@@ -4638,7 +4638,7 @@ Test_cls_no_params(TestObj *self, PyTypeObject *cls, PyObject *const *args, Py_s
 
 static PyObject *
 Test_cls_no_params_impl(TestObj *self, PyTypeObject *cls)
-/*[clinic end generated code: output=cc8845f22cff3dcb input=e7e2e4e344e96a11]*/
+/*[clinic end generated code: output=4d68b4652c144af3 input=e7e2e4e344e96a11]*/
 
 
 /*[clinic input]

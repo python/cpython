@@ -120,7 +120,7 @@ _asyncio_Future_exception_impl(FutureObj *self, PyTypeObject *cls);
 static PyObject *
 _asyncio_Future_exception(FutureObj *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "exception() takes no arguments");
         return NULL;
     }
@@ -453,7 +453,7 @@ _asyncio_Future_get_loop_impl(FutureObj *self, PyTypeObject *cls);
 static PyObject *
 _asyncio_Future_get_loop(FutureObj *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "get_loop() takes no arguments");
         return NULL;
     }
@@ -1487,4 +1487,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6b0e283177b07639 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=127ba6153250d769 input=a9049054013a1b77]*/

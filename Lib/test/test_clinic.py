@@ -2,6 +2,7 @@
 # Copyright 2012-2013 by Larry Hastings.
 # Licensed to the PSF under a contributor agreement.
 
+from functools import partial
 from test import support, test_tools
 from test.support import os_helper
 from test.support.os_helper import TESTFN, unlink
@@ -2095,6 +2096,26 @@ class ClinicFunctionalTest(unittest.TestCase):
             with self.subTest(name=name):
                 func = getattr(ac_tester, name)
                 self.assertEqual(func(), name)
+
+    def test_meth_method_no_params(self):
+        obj = ac_tester.TestClass()
+        meth = obj.meth_method_no_params
+        check = partial(self.assertRaisesRegex, TypeError, "no arguments")
+        check(meth, 1)
+        check(meth, a=1)
+
+    def test_meth_method_no_params_capi(self):
+        from _testcapi import pyobject_vectorcall
+        obj = ac_tester.TestClass()
+        meth = obj.meth_method_no_params
+        pyobject_vectorcall(meth, None, None)
+        pyobject_vectorcall(meth, (), None)
+        pyobject_vectorcall(meth, (), ())
+        pyobject_vectorcall(meth, None, ())
+
+        check = partial(self.assertRaisesRegex, TypeError, "no arguments")
+        check(pyobject_vectorcall, meth, (1,), None)
+        check(pyobject_vectorcall, meth, (1,), ("a",))
 
 
 class PermutationTests(unittest.TestCase):

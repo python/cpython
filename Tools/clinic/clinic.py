@@ -904,7 +904,7 @@ class CLanguage(Language):
                 return_error = ('return NULL;' if default_return_converter
                                 else 'goto exit;')
                 parser_code = [normalize_snippet("""
-                    if (nargs) {{
+                    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {{
                         PyErr_SetString(PyExc_TypeError, "{name}() takes no arguments");
                         %s
                     }}
