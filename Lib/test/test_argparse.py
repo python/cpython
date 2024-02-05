@@ -5272,6 +5272,23 @@ class TestParseKnownArgs(TestCase):
         self.assertEqual(NS(v=3, spam=True, badger="B"), args)
         self.assertEqual(["C", "--foo", "4"], extras)
 
+    def test_double_dash(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-f', '--foo', nargs='*')
+        parser.add_argument('bar', nargs='*')
+
+        args = parser.parse_args(['--foo=--'])
+        self.assertEqual(NS(foo=['--'], bar=[]), args)
+        args = parser.parse_args(['--foo', '--'])
+        self.assertEqual(NS(foo=[], bar=[]), args)
+        args = parser.parse_args(['-f--'])
+        self.assertEqual(NS(foo=['--'], bar=[]), args)
+        args = parser.parse_args(['-f', '--'])
+        self.assertEqual(NS(foo=[], bar=[]), args)
+        args = parser.parse_args(['--foo', 'a', 'b', '--', 'c', 'd'])
+        self.assertEqual(NS(foo=['a', 'b'], bar=['c', 'd']), args)
+
+
 # ===========================
 # parse_intermixed_args tests
 # ===========================
