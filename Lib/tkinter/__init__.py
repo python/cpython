@@ -2108,26 +2108,39 @@ class Wm:
 
     aspect = wm_aspect
 
-    def wm_attributes(self, *args):
-        """This subcommand returns or sets platform specific attributes
+    def wm_attributes(self, *args, return_python_dict=False, **kwargs):
+        """Return or sets platform specific attributes.
 
-        The first form returns a list of the platform specific flags and
-        their values. The second form returns the value for the specific
-        option. The third form sets one or more of the values. The values
-        are as follows:
+        When called with a single argument return_python_dict=True,
+        return a dict of the platform specific attributes and their values.
+        When called without arguments or with a single argument
+        return_python_dict=False, return a tuple containing intermixed
+        attribute names with the minus prefix and their values.
 
-        On Windows, -disabled gets or sets whether the window is in a
-        disabled state. -toolwindow gets or sets the style of the window
-        to toolwindow (as defined in the MSDN). -topmost gets or sets
-        whether this is a topmost window (displays above all other
-        windows).
-
-        On Macintosh, XXXXX
-
-        On Unix, there are currently no special attribute values.
+        When called with a single string value, return the value for the
+        specific option.  When called with keyword arguments, set the
+        corresponding attributes.
         """
-        args = ('wm', 'attributes', self._w) + args
-        return self.tk.call(args)
+        if not kwargs:
+            if not args:
+                res = self.tk.call('wm', 'attributes', self._w)
+                if return_python_dict:
+                    return _splitdict(self.tk, res)
+                else:
+                    return self.tk.splitlist(res)
+            if len(args) == 1 and args[0] is not None:
+                option = args[0]
+                if option[0] == '-':
+                    # TODO: deprecate
+                    option = option[1:]
+                return self.tk.call('wm', 'attributes', self._w, '-' + option)
+            # TODO: deprecate
+            return self.tk.call('wm', 'attributes', self._w, *args)
+        elif args:
+            raise TypeError('wm_attribute() options have been specified as '
+                            'positional and keyword arguments')
+        else:
+            self.tk.call('wm', 'attributes', self._w, *self._options(kwargs))
 
     attributes = wm_attributes
 
