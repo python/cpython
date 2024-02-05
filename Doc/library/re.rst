@@ -1176,19 +1176,19 @@ Exceptions
       * - Attribute
         - Meaning
 
-      * - .. attribute:: msg1
+      * - .. attribute:: msg
         - The unformatted error message.
 
-      * - .. attribute:: pattern1
+      * - .. attribute:: pattern
         - The regular expression pattern.
 
-      * - .. attribute:: pos1
+      * - .. attribute:: pos
         - The index in *pattern* where compilation failed (may be ``None``).
 
-      * - .. attribute:: lineno1
+      * - .. attribute:: lineno
         - The line corresponding to *pos* (may be ``None``).
 
-      * - .. attribute:: colno1
+      * - .. attribute:: colno
         - The column corresponding to *pos* (may be ``None``).
 
    .. versionchanged:: 3.5
