@@ -5199,7 +5199,7 @@ class DSLParser:
         fields = [x.strip() for x in existing.split('.')]
         function_name = fields.pop()
         module, cls = self.clinic._module_and_class(fields)
-        parent = module or cls
+        parent = cls or module
 
         for existing_function in parent.functions:
             if existing_function.name == function_name:
