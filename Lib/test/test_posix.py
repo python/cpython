@@ -1,7 +1,7 @@
 "Test posix functions"
 
 from test import support
-from test.support import import_helper
+from test.support import is_apple
 from test.support import os_helper
 from test.support import warnings_helper
 from test.support.script_helper import assert_python_ok
@@ -781,9 +781,10 @@ class PosixTester(unittest.TestCase):
             check_stat(uid, gid)
             self.assertRaises(OSError, chown_func, first_param, 0, -1)
             check_stat(uid, gid)
-            if 0 not in os.getgroups():
-                self.assertRaises(OSError, chown_func, first_param, -1, 0)
-                check_stat(uid, gid)
+            if hasattr(os, 'getgroups'):
+                if 0 not in os.getgroups():
+                    self.assertRaises(OSError, chown_func, first_param, -1, 0)
+                    check_stat(uid, gid)
         # test illegal types
         for t in str, float:
             self.assertRaises(TypeError, chown_func, first_param, t(uid), gid)
@@ -1256,8 +1257,8 @@ class PosixTester(unittest.TestCase):
         self.assertIsInstance(lo, int)
         self.assertIsInstance(hi, int)
         self.assertGreaterEqual(hi, lo)
-        # OSX evidently just returns 15 without checking the argument.
-        if sys.platform != "darwin":
+        # Apple plaforms return 15 without checking the argument.
+        if not is_apple:
             self.assertRaises(OSError, posix.sched_get_priority_min, -23)
             self.assertRaises(OSError, posix.sched_get_priority_max, -23)
 
@@ -2028,11 +2029,13 @@ class _PosixSpawnMixin:
 
 
 @unittest.skipUnless(hasattr(os, 'posix_spawn'), "test needs os.posix_spawn")
+@support.requires_subprocess()
 class TestPosixSpawn(unittest.TestCase, _PosixSpawnMixin):
     spawn_func = getattr(posix, 'posix_spawn', None)
 
 
 @unittest.skipUnless(hasattr(os, 'posix_spawnp'), "test needs os.posix_spawnp")
+@support.requires_subprocess()
 class TestPosixSpawnP(unittest.TestCase, _PosixSpawnMixin):
     spawn_func = getattr(posix, 'posix_spawnp', None)
 
