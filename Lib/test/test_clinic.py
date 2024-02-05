@@ -3287,6 +3287,7 @@ class ClinicFunctionalTest(unittest.TestCase):
             with self.subTest(name=name):
                 func = getattr(ac_tester, name)
                 self.assertEqual(func(), name)
+
     def test_meth_method_no_params(self):
         obj = ac_tester.TestClass()
         meth = obj.meth_method_no_params
