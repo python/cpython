@@ -5158,9 +5158,8 @@ class DSLParser:
             fail(f"{name!r} must be a normal method; got '{self.kind}'!")
         if name == '__new__' and (self.kind is not CLASS_METHOD or not cls):
             fail("'__new__' must be a class method!")
-        if self.kind in {GETTER, SETTER}:
-            if not cls:
-                fail("@getter and @setter must be methods")
+        if self.kind in {GETTER, SETTER} and not cls:
+            fail("@getter and @setter must be methods")
 
         # Normalise self.kind.
         if name == '__new__':
@@ -5200,8 +5199,9 @@ class DSLParser:
         fields = [x.strip() for x in existing.split('.')]
         function_name = fields.pop()
         module, cls = self.clinic._module_and_class(fields)
+        parent = module or cls
 
-        for existing_function in (cls or module).functions:
+        for existing_function in parent.functions:
             if existing_function.name == function_name:
                 break
         else:
