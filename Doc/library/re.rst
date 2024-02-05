@@ -1170,25 +1170,26 @@ Exceptions
    error if a string contains no match for a pattern.  The ``PatternError`` instance has
    the following additional attributes:
 
-   .. attribute:: msg
+   .. list-table::
+      :header-rows: 1
+      
+      * - Attribute
+        - Meaning
 
-      The unformatted error message.
+      * - .. attribute:: msg1
+        - The unformatted error message.
 
-   .. attribute:: pattern
+      * - .. attribute:: pattern1
+        - The regular expression pattern.
 
-      The regular expression pattern.
+      * - .. attribute:: pos1
+        - The index in *pattern* where compilation failed (may be ``None``).
 
-   .. attribute:: pos
+      * - .. attribute:: lineno1
+        - The line corresponding to *pos* (may be ``None``).
 
-      The index in *pattern* where compilation failed (may be ``None``).
-
-   .. attribute:: lineno
-
-      The line corresponding to *pos* (may be ``None``).
-
-   .. attribute:: colno
-
-      The column corresponding to *pos* (may be ``None``).
+      * - .. attribute:: colno1
+        - The column corresponding to *pos* (may be ``None``).
 
    .. versionchanged:: 3.5
       Added additional attributes.
