@@ -1,2 +1,0 @@
-Do not escape with backslashes f-string format specifiers. Patch by Pablo
-Galindo

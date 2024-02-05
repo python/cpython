@@ -1,2 +1,0 @@
-Eliminate redundant :opcode:`STORE_FAST` instructions in the compiler. Patch
-by Dong-hee Na and Carl Meyer.

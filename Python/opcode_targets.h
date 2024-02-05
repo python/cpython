@@ -254,4 +254,5 @@ static void *opcode_targets[256] = {
     &&TARGET_INSTRUMENTED_POP_JUMP_IF_NONE,
     &&TARGET_INSTRUMENTED_POP_JUMP_IF_NOT_NONE,
     &&TARGET_INSTRUMENTED_LINE,
-    &&_unknown_opcode};
+    &&_unknown_opcode,
+};

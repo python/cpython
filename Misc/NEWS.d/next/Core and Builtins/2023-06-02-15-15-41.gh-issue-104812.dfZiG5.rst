@@ -1,9 +1,0 @@
-The "pending call" machinery now works for all interpreters, not just the
-main interpreter, and runs in all threads, not just the main thread. Some
-calls are still only done in the main thread, ergo in the main interpreter.
-This change does not affect signal handling nor the existing public C-API
-(``Py_AddPendingCall()``), which both still only target the main thread.
-The new functionality is meant strictly for internal use for now, since
-consequences of its use are not well understood yet outside some very
-restricted cases.  This change brings the capability in line with the
-intention when the state was made per-interpreter several years ago.

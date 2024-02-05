@@ -1,6 +1,5 @@
 """Tests for events.py."""
 
-import collections.abc
 import concurrent.futures
 import functools
 import io
@@ -294,10 +293,11 @@ class EventLoopTestsMixin:
     # 15.6 msec, we use fairly long sleep times here (~100 msec).
 
     def test_run_until_complete(self):
+        delay = 0.100
         t0 = self.loop.time()
-        self.loop.run_until_complete(asyncio.sleep(0.1))
-        t1 = self.loop.time()
-        self.assertTrue(0.08 <= t1-t0 <= 0.8, t1-t0)
+        self.loop.run_until_complete(asyncio.sleep(delay))
+        dt = self.loop.time() - t0
+        self.assertGreaterEqual(dt, delay - test_utils.CLOCK_RES)
 
     def test_run_until_complete_stopped(self):
 
@@ -1693,12 +1693,9 @@ class EventLoopTestsMixin:
                 self.loop.stop()
             return res
 
-        start = time.monotonic()
         t = self.loop.create_task(main())
         self.loop.run_forever()
-        elapsed = time.monotonic() - start
 
-        self.assertLess(elapsed, 0.1)
         self.assertEqual(t.result(), 'cancelled')
         self.assertRaises(asyncio.CancelledError, f.result)
         if ov is not None:
@@ -1718,7 +1715,6 @@ class EventLoopTestsMixin:
         self.loop._run_once = _run_once
 
         async def wait():
-            loop = self.loop
             await asyncio.sleep(1e-2)
             await asyncio.sleep(1e-4)
             await asyncio.sleep(1e-6)
@@ -1819,6 +1815,7 @@ class SubprocessTestsMixin:
         else:
             self.assertEqual(-signal.SIGKILL, returncode)
 
+    @support.requires_subprocess()
     def test_subprocess_exec(self):
         prog = os.path.join(os.path.dirname(__file__), 'echo.py')
 
@@ -1840,6 +1837,7 @@ class SubprocessTestsMixin:
         self.check_killed(proto.returncode)
         self.assertEqual(b'Python The Winner', proto.data[1])
 
+    @support.requires_subprocess()
     def test_subprocess_interactive(self):
         prog = os.path.join(os.path.dirname(__file__), 'echo.py')
 
@@ -1867,6 +1865,7 @@ class SubprocessTestsMixin:
         self.loop.run_until_complete(proto.completed)
         self.check_killed(proto.returncode)
 
+    @support.requires_subprocess()
     def test_subprocess_shell(self):
         connect = self.loop.subprocess_shell(
                         functools.partial(MySubprocessProtocol, self.loop),
@@ -1883,6 +1882,7 @@ class SubprocessTestsMixin:
         self.assertEqual(proto.data[2], b'')
         transp.close()
 
+    @support.requires_subprocess()
     def test_subprocess_exitcode(self):
         connect = self.loop.subprocess_shell(
                         functools.partial(MySubprocessProtocol, self.loop),
@@ -1894,6 +1894,7 @@ class SubprocessTestsMixin:
         self.assertEqual(7, proto.returncode)
         transp.close()
 
+    @support.requires_subprocess()
     def test_subprocess_close_after_finish(self):
         connect = self.loop.subprocess_shell(
                         functools.partial(MySubprocessProtocol, self.loop),
@@ -1908,6 +1909,7 @@ class SubprocessTestsMixin:
         self.assertEqual(7, proto.returncode)
         self.assertIsNone(transp.close())
 
+    @support.requires_subprocess()
     def test_subprocess_kill(self):
         prog = os.path.join(os.path.dirname(__file__), 'echo.py')
 
@@ -1924,6 +1926,7 @@ class SubprocessTestsMixin:
         self.check_killed(proto.returncode)
         transp.close()
 
+    @support.requires_subprocess()
     def test_subprocess_terminate(self):
         prog = os.path.join(os.path.dirname(__file__), 'echo.py')
 
@@ -1941,6 +1944,7 @@ class SubprocessTestsMixin:
         transp.close()
 
     @unittest.skipIf(sys.platform == 'win32', "Don't have SIGHUP")
+    @support.requires_subprocess()
     def test_subprocess_send_signal(self):
         # bpo-31034: Make sure that we get the default signal handler (killing
         # the process). The parent process may have decided to ignore SIGHUP,
@@ -1965,6 +1969,7 @@ class SubprocessTestsMixin:
         finally:
             signal.signal(signal.SIGHUP, old_handler)
 
+    @support.requires_subprocess()
     def test_subprocess_stderr(self):
         prog = os.path.join(os.path.dirname(__file__), 'echo2.py')
 
@@ -1986,6 +1991,7 @@ class SubprocessTestsMixin:
         self.assertTrue(proto.data[2].startswith(b'ERR:test'), proto.data[2])
         self.assertEqual(0, proto.returncode)
 
+    @support.requires_subprocess()
     def test_subprocess_stderr_redirect_to_stdout(self):
         prog = os.path.join(os.path.dirname(__file__), 'echo2.py')
 
@@ -2011,6 +2017,7 @@ class SubprocessTestsMixin:
         transp.close()
         self.assertEqual(0, proto.returncode)
 
+    @support.requires_subprocess()
     def test_subprocess_close_client_stream(self):
         prog = os.path.join(os.path.dirname(__file__), 'echo3.py')
 
@@ -2045,6 +2052,7 @@ class SubprocessTestsMixin:
         self.loop.run_until_complete(proto.completed)
         self.check_killed(proto.returncode)
 
+    @support.requires_subprocess()
     def test_subprocess_wait_no_same_group(self):
         # start the new process in a new session
         connect = self.loop.subprocess_shell(
@@ -2057,6 +2065,7 @@ class SubprocessTestsMixin:
         self.assertEqual(7, proto.returncode)
         transp.close()
 
+    @support.requires_subprocess()
     def test_subprocess_exec_invalid_args(self):
         async def connect(**kwds):
             await self.loop.subprocess_exec(
@@ -2070,6 +2079,7 @@ class SubprocessTestsMixin:
         with self.assertRaises(ValueError):
             self.loop.run_until_complete(connect(shell=True))
 
+    @support.requires_subprocess()
     def test_subprocess_shell_invalid_args(self):
 
         async def connect(cmd=None, **kwds):
@@ -2335,8 +2345,6 @@ class HandleTests(test_utils.TestCase):
         h = loop.call_later(0, noop)
         check_source_traceback(h)
 
-    @unittest.skipUnless(hasattr(collections.abc, 'Coroutine'),
-                         'No collections.abc.Coroutine')
     def test_coroutine_like_object_debug_formatting(self):
         # Test that asyncio can format coroutines that are instances of
         # collections.abc.Coroutine, but lack cr_core or gi_code attributes

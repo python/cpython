@@ -1,1 +1,0 @@
-Fix bugs in :mod:`errno` where exceptions could be overwritten.

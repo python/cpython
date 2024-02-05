@@ -1,3 +1,0 @@
-:func:`unittest.mock.mock_open` will call the :func:`close` method of the file
-handle mock when it is exiting from the context manager.
-Patch by Samet Yaslan.

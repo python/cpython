@@ -52,16 +52,6 @@ extern "C" {
 #endif
 
 
-struct _time_runtime_state {
-#ifdef HAVE_TIMES
-    int ticks_per_second_initialized;
-    long ticks_per_second;
-#else
-    int _not_used;
-#endif
-};
-
-
 #ifdef __clang__
 struct timeval;
 #endif
@@ -142,6 +132,10 @@ PyAPI_FUNC(int) _PyTime_ObjectToTimespec(
 // Create a timestamp from a number of seconds.
 // Export for '_socket' shared extension.
 PyAPI_FUNC(_PyTime_t) _PyTime_FromSeconds(int seconds);
+
+// Create a timestamp from a number of seconds in double.
+// Export for '_socket' shared extension.
+PyAPI_FUNC(_PyTime_t) _PyTime_FromSecondsDouble(double seconds, _PyTime_round_t round);
 
 // Macro to create a timestamp from a number of seconds, no integer overflow.
 // Only use the macro for small values, prefer _PyTime_FromSeconds().
@@ -241,7 +235,7 @@ PyAPI_FUNC(int) _PyTime_AsTimevalTime_t(
 #if defined(HAVE_CLOCK_GETTIME) || defined(HAVE_KQUEUE)
 // Create a timestamp from a timespec structure.
 // Raise an exception and return -1 on overflow, return 0 on success.
-extern int _PyTime_FromTimespec(_PyTime_t *tp, struct timespec *ts);
+extern int _PyTime_FromTimespec(_PyTime_t *tp, const struct timespec *ts);
 
 // Convert a timestamp to a timespec structure (nanosecond resolution).
 // tv_nsec is always positive.
@@ -258,13 +252,6 @@ PyAPI_FUNC(void) _PyTime_AsTimespec_clamp(_PyTime_t t, struct timespec *ts);
 
 // Compute t1 + t2. Clamp to [_PyTime_MIN; _PyTime_MAX] on overflow.
 extern _PyTime_t _PyTime_Add(_PyTime_t t1, _PyTime_t t2);
-
-// Compute ticks * mul / div.
-// Clamp to [_PyTime_MIN; _PyTime_MAX] on overflow.
-// The caller must ensure that ((div - 1) * mul) cannot overflow.
-extern _PyTime_t _PyTime_MulDiv(_PyTime_t ticks,
-    _PyTime_t mul,
-    _PyTime_t div);
 
 // Structure used by time.get_clock_info()
 typedef struct {
@@ -359,6 +346,32 @@ PyAPI_FUNC(_PyTime_t) _PyDeadline_Init(_PyTime_t timeout);
 // Pseudo code: deadline - _PyTime_GetMonotonicClock().
 // Export for '_ssl' shared extension.
 PyAPI_FUNC(_PyTime_t) _PyDeadline_Get(_PyTime_t deadline);
+
+
+// --- _PyTimeFraction -------------------------------------------------------
+
+typedef struct {
+    _PyTime_t numer;
+    _PyTime_t denom;
+} _PyTimeFraction;
+
+// Set a fraction.
+// Return 0 on success.
+// Return -1 if the fraction is invalid.
+extern int _PyTimeFraction_Set(
+    _PyTimeFraction *frac,
+    _PyTime_t numer,
+    _PyTime_t denom);
+
+// Compute ticks * frac.numer / frac.denom.
+// Clamp to [_PyTime_MIN; _PyTime_MAX] on overflow.
+extern _PyTime_t _PyTimeFraction_Mul(
+    _PyTime_t ticks,
+    const _PyTimeFraction *frac);
+
+// Compute a clock resolution: frac.numer / frac.denom / 1e9.
+extern double _PyTimeFraction_Resolution(
+    const _PyTimeFraction *frac);
 
 
 #ifdef __cplusplus
