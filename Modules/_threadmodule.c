@@ -5,6 +5,7 @@
 #include "Python.h"
 #include "pycore_interp.h"        // _PyInterpreterState.threads.count
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"       // _PyThreadState_SetCurrent()
 #include "pycore_sysmodule.h"     // _PySys_GetAttr()
@@ -349,6 +350,27 @@ lock__at_fork_reinit(lockobject *self, PyObject *Py_UNUSED(args))
 }
 #endif  /* HAVE_FORK */
 
+static lockobject *newlockobject(PyObject *module);
+
+static PyObject *
+lock_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    // convert to AC?
+    if (!_PyArg_NoKeywords("lock", kwargs)) {
+        goto error;
+    }
+    if (!_PyArg_CheckPositional("lock", PyTuple_GET_SIZE(args), 0, 0)) {
+        goto error;
+    }
+
+    PyObject *module = PyType_GetModuleByDef(type, &thread_module);
+    assert(module != NULL);
+    return (PyObject *)newlockobject(module);
+
+error:
+    return NULL;
+}
+
 
 static PyMethodDef lock_methods[] = {
     {"acquire_lock", _PyCFunction_CAST(lock_PyThread_acquire_lock),
@@ -398,6 +420,7 @@ static PyType_Slot lock_type_slots[] = {
     {Py_tp_methods, lock_methods},
     {Py_tp_traverse, lock_traverse},
     {Py_tp_members, lock_type_members},
+    {Py_tp_new, lock_new},
     {0, 0}
 };
 
@@ -405,7 +428,7 @@ static PyType_Spec lock_type_spec = {
     .name = "_thread.lock",
     .basicsize = sizeof(lockobject),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-              Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE),
+              Py_TPFLAGS_IMMUTABLETYPE),
     .slots = lock_type_slots,
 };
 
@@ -901,6 +924,7 @@ local_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     }
 
     PyObject *module = PyType_GetModuleByDef(type, &thread_module);
+    assert(module != NULL);
     thread_module_state *state = get_thread_state(module);
 
     localobject *self = (localobject *)type->tp_alloc(type, 0);
@@ -967,11 +991,8 @@ local_clear(localobject *self)
         HEAD_UNLOCK(runtime);
         while (tstate) {
             if (tstate->dict) {
-                PyObject *v = _PyDict_Pop(tstate->dict, self->key, Py_None);
-                if (v != NULL) {
-                    Py_DECREF(v);
-                }
-                else {
+                if (PyDict_Pop(tstate->dict, self->key, NULL) < 0) {
+                    // Silently ignore error
                     PyErr_Clear();
                 }
             }
@@ -1045,6 +1066,7 @@ static int
 local_setattro(localobject *self, PyObject *name, PyObject *v)
 {
     PyObject *module = PyType_GetModuleByDef(Py_TYPE(self), &thread_module);
+    assert(module != NULL);
     thread_module_state *state = get_thread_state(module);
 
     PyObject *ldict = _ldict(self, state);
@@ -1097,6 +1119,7 @@ static PyObject *
 local_getattro(localobject *self, PyObject *name)
 {
     PyObject *module = PyType_GetModuleByDef(Py_TYPE(self), &thread_module);
+    assert(module != NULL);
     thread_module_state *state = get_thread_state(module);
 
     PyObject *ldict = _ldict(self, state);
@@ -1118,12 +1141,10 @@ local_getattro(localobject *self, PyObject *name)
     }
 
     /* Optimization: just look in dict ourselves */
-    PyObject *value = PyDict_GetItemWithError(ldict, name);
-    if (value != NULL) {
-        return Py_NewRef(value);
-    }
-    if (PyErr_Occurred()) {
-        return NULL;
+    PyObject *value;
+    if (PyDict_GetItemRef(ldict, name, &value) != 0) {
+        // found or error
+        return value;
     }
 
     /* Fall back on generic to get __class__ and __dict__ */
@@ -1443,8 +1464,6 @@ A subthread can use this function to interrupt the main thread.\n\
 \n\
 Note: the default signal handler for SIGINT raises ``KeyboardInterrupt``."
 );
-
-static lockobject *newlockobject(PyObject *module);
 
 static PyObject *
 thread_PyThread_allocate_lock(PyObject *module, PyObject *Py_UNUSED(ignored))
@@ -1843,10 +1862,14 @@ thread_module_exec(PyObject *module)
     }
 
     // Lock
-    state->lock_type = (PyTypeObject *)PyType_FromSpec(&lock_type_spec);
+    state->lock_type = (PyTypeObject *)PyType_FromModuleAndSpec(module, &lock_type_spec, NULL);
     if (state->lock_type == NULL) {
         return -1;
     }
+    if (PyModule_AddType(module, state->lock_type) < 0) {
+        return -1;
+    }
+    // Old alias: lock -> LockType
     if (PyDict_SetItemString(d, "LockType", (PyObject *)state->lock_type) < 0) {
         return -1;
     }

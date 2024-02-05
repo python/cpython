@@ -38,36 +38,48 @@ information on defining exceptions is available in the Python Tutorial under
 Exception context
 -----------------
 
-When raising a new exception while another exception
-is already being handled, the new exception's
-:attr:`__context__` attribute is automatically set to the handled
-exception.  An exception may be handled when an :keyword:`except` or
-:keyword:`finally` clause, or a :keyword:`with` statement, is used.
+.. index:: pair: exception; chaining
+           __cause__ (exception attribute)
+           __context__ (exception attribute)
+           __suppress_context__ (exception attribute)
 
-This implicit exception context can be
-supplemented with an explicit cause by using :keyword:`!from` with
-:keyword:`raise`::
+Three attributes on exception objects provide information about the context in
+which the exception was raised:
 
-   raise new_exc from original_exc
+.. attribute:: BaseException.__context__
+               BaseException.__cause__
+               BaseException.__suppress_context__
 
-The expression following :keyword:`from<raise>` must be an exception or ``None``. It
-will be set as :attr:`__cause__` on the raised exception. Setting
-:attr:`__cause__` also implicitly sets the :attr:`__suppress_context__`
-attribute to ``True``, so that using ``raise new_exc from None``
-effectively replaces the old exception with the new one for display
-purposes (e.g. converting :exc:`KeyError` to :exc:`AttributeError`), while
-leaving the old exception available in :attr:`__context__` for introspection
-when debugging.
+   When raising a new exception while another exception
+   is already being handled, the new exception's
+   :attr:`!__context__` attribute is automatically set to the handled
+   exception.  An exception may be handled when an :keyword:`except` or
+   :keyword:`finally` clause, or a :keyword:`with` statement, is used.
 
-The default traceback display code shows these chained exceptions in
-addition to the traceback for the exception itself. An explicitly chained
-exception in :attr:`__cause__` is always shown when present. An implicitly
-chained exception in :attr:`__context__` is shown only if :attr:`__cause__`
-is :const:`None` and :attr:`__suppress_context__` is false.
+   This implicit exception context can be
+   supplemented with an explicit cause by using :keyword:`!from` with
+   :keyword:`raise`::
 
-In either case, the exception itself is always shown after any chained
-exceptions so that the final line of the traceback always shows the last
-exception that was raised.
+      raise new_exc from original_exc
+
+   The expression following :keyword:`from<raise>` must be an exception or ``None``. It
+   will be set as :attr:`!__cause__` on the raised exception. Setting
+   :attr:`!__cause__` also implicitly sets the :attr:`!__suppress_context__`
+   attribute to ``True``, so that using ``raise new_exc from None``
+   effectively replaces the old exception with the new one for display
+   purposes (e.g. converting :exc:`KeyError` to :exc:`AttributeError`), while
+   leaving the old exception available in :attr:`!__context__` for introspection
+   when debugging.
+
+   The default traceback display code shows these chained exceptions in
+   addition to the traceback for the exception itself. An explicitly chained
+   exception in :attr:`!__cause__` is always shown when present. An implicitly
+   chained exception in :attr:`!__context__` is shown only if :attr:`!__cause__`
+   is :const:`None` and :attr:`!__suppress_context__` is false.
+
+   In either case, the exception itself is always shown after any chained
+   exceptions so that the final line of the traceback always shows the last
+   exception that was raised.
 
 
 Inheriting from built-in exceptions
@@ -125,6 +137,12 @@ The following exceptions are used mostly as base classes for other exceptions.
          except SomeException:
              tb = sys.exception().__traceback__
              raise OtherException(...).with_traceback(tb)
+
+   .. attribute:: __traceback__
+
+      A writable field that holds the
+      :ref:`traceback object <traceback-objects>` associated with this
+      exception. See also: :ref:`raise`.
 
    .. method:: add_note(note)
 
@@ -429,9 +447,11 @@ The following exceptions are the exceptions that are usually raised.
    :meth:`~iterator.__next__` method to signal that there are no further
    items produced by the iterator.
 
-   The exception object has a single attribute :attr:`value`, which is
-   given as an argument when constructing the exception, and defaults
-   to :const:`None`.
+   .. attribute:: StopIteration.value
+
+      The exception object has a single attribute :attr:`!value`, which is
+      given as an argument when constructing the exception, and defaults
+      to :const:`None`.
 
    When a :term:`generator` or :term:`coroutine` function
    returns, a new :exc:`StopIteration` instance is
@@ -927,8 +947,10 @@ their subgroups based on the types of the contained exceptions.
       true for the exceptions that should be in the subgroup.
 
       The nesting structure of the current exception is preserved in the result,
-      as are the values of its :attr:`message`, :attr:`__traceback__`,
-      :attr:`__cause__`, :attr:`__context__` and :attr:`__notes__` fields.
+      as are the values of its :attr:`message`,
+      :attr:`~BaseException.__traceback__`, :attr:`~BaseException.__cause__`,
+      :attr:`~BaseException.__context__` and
+      :attr:`~BaseException.__notes__` fields.
       Empty nested groups are omitted from the result.
 
       The condition is checked for all exceptions in the nested exception group,
@@ -954,10 +976,14 @@ their subgroups based on the types of the contained exceptions.
       and :meth:`split` return instances of the subclass rather
       than :exc:`ExceptionGroup`.
 
-      :meth:`subgroup` and :meth:`split` copy the :attr:`__traceback__`,
-      :attr:`__cause__`, :attr:`__context__` and :attr:`__notes__` fields from
+      :meth:`subgroup` and :meth:`split` copy the
+      :attr:`~BaseException.__traceback__`,
+      :attr:`~BaseException.__cause__`, :attr:`~BaseException.__context__` and
+      :attr:`~BaseException.__notes__` fields from
       the original exception group to the one returned by :meth:`derive`, so
-      these fields do not need to be updated by :meth:`derive`. ::
+      these fields do not need to be updated by :meth:`derive`.
+
+      .. doctest::
 
          >>> class MyGroup(ExceptionGroup):
          ...     def derive(self, excs):
@@ -983,9 +1009,9 @@ their subgroups based on the types of the contained exceptions.
          True
 
 
-   Note that :exc:`BaseExceptionGroup` defines :meth:`__new__`, so
+   Note that :exc:`BaseExceptionGroup` defines :meth:`~object.__new__`, so
    subclasses that need a different constructor signature need to
-   override that rather than :meth:`__init__`. For example, the following
+   override that rather than :meth:`~object.__init__`. For example, the following
    defines an exception group subclass which accepts an exit_code and
    and constructs the group's message from it. ::
 

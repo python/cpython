@@ -26,6 +26,10 @@ def _iterdump(connection):
 
     writeable_schema = False
     cu = connection.cursor()
+    # Disable foreign key constraints, if there is any foreign key violation.
+    violations = cu.execute("PRAGMA foreign_key_check").fetchall()
+    if violations:
+        yield('PRAGMA foreign_keys=OFF;')
     yield('BEGIN TRANSACTION;')
 
     # sqlite_master table contains the SQL CREATE statements for the database.

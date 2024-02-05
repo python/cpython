@@ -880,7 +880,7 @@ Update the ``repr`` of :class:`typing.Unpack` according to :pep:`692`.
 .. section: Library
 
 Make :mod:`dis` display the names of the args for
-:opcode:`CALL_INTRINSIC_*`.
+:opcode:`!CALL_INTRINSIC_*`.
 
 ..
 
@@ -1008,7 +1008,7 @@ Update the bundled copy of pip to version 23.1.2.
 .. nonce: pst8iT
 .. section: Library
 
-Make :mod:`dis` display the value of oparg of :opcode:`KW_NAMES`.
+Make :mod:`dis` display the value of oparg of :opcode:`!KW_NAMES`.
 
 ..
 

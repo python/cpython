@@ -2384,6 +2384,10 @@ class TestGetGeneratorState(unittest.TestCase):
             self.generator.throw(RuntimeError)
         self.assertEqual(self._generatorstate(), inspect.GEN_CLOSED)
 
+    def test_closed_after_close(self):
+        self.generator.close()
+        self.assertEqual(self._generatorstate(), inspect.GEN_CLOSED)
+
     def test_running(self):
         # As mentioned on issue #10220, checking for the RUNNING state only
         # makes sense inside the generator itself.
@@ -2491,6 +2495,10 @@ class TestGetCoroutineState(unittest.TestCase):
     def test_closed_after_immediate_exception(self):
         with self.assertRaises(RuntimeError):
             self.coroutine.throw(RuntimeError)
+        self.assertEqual(self._coroutinestate(), inspect.CORO_CLOSED)
+
+    def test_closed_after_close(self):
+        self.coroutine.close()
         self.assertEqual(self._coroutinestate(), inspect.CORO_CLOSED)
 
     def test_easy_debugging(self):
@@ -3788,26 +3796,36 @@ class TestSignatureObject(unittest.TestCase):
             pass
         self.assertEqual(str(inspect.signature(foo)),
                          '(a: int = 1, *, b, c=None, **kwargs) -> 42')
+        self.assertEqual(str(inspect.signature(foo)),
+                         inspect.signature(foo).format())
 
         def foo(a:int=1, *args, b, c=None, **kwargs) -> 42:
             pass
         self.assertEqual(str(inspect.signature(foo)),
                          '(a: int = 1, *args, b, c=None, **kwargs) -> 42')
+        self.assertEqual(str(inspect.signature(foo)),
+                         inspect.signature(foo).format())
 
         def foo():
             pass
         self.assertEqual(str(inspect.signature(foo)), '()')
+        self.assertEqual(str(inspect.signature(foo)),
+                         inspect.signature(foo).format())
 
         def foo(a: list[str]) -> tuple[str, float]:
             pass
         self.assertEqual(str(inspect.signature(foo)),
                          '(a: list[str]) -> tuple[str, float]')
+        self.assertEqual(str(inspect.signature(foo)),
+                         inspect.signature(foo).format())
 
         from typing import Tuple
         def foo(a: list[str]) -> Tuple[str, float]:
             pass
         self.assertEqual(str(inspect.signature(foo)),
                          '(a: list[str]) -> Tuple[str, float]')
+        self.assertEqual(str(inspect.signature(foo)),
+                         inspect.signature(foo).format())
 
     def test_signature_str_positional_only(self):
         P = inspect.Parameter
@@ -3818,19 +3836,85 @@ class TestSignatureObject(unittest.TestCase):
 
         self.assertEqual(str(inspect.signature(test)),
                          '(a_po, /, *, b, **kwargs)')
+        self.assertEqual(str(inspect.signature(test)),
+                         inspect.signature(test).format())
 
-        self.assertEqual(str(S(parameters=[P('foo', P.POSITIONAL_ONLY)])),
-                         '(foo, /)')
+        test = S(parameters=[P('foo', P.POSITIONAL_ONLY)])
+        self.assertEqual(str(test), '(foo, /)')
+        self.assertEqual(str(test), test.format())
 
-        self.assertEqual(str(S(parameters=[
-                                P('foo', P.POSITIONAL_ONLY),
-                                P('bar', P.VAR_KEYWORD)])),
-                         '(foo, /, **bar)')
+        test = S(parameters=[P('foo', P.POSITIONAL_ONLY),
+                             P('bar', P.VAR_KEYWORD)])
+        self.assertEqual(str(test), '(foo, /, **bar)')
+        self.assertEqual(str(test), test.format())
 
-        self.assertEqual(str(S(parameters=[
-                                P('foo', P.POSITIONAL_ONLY),
-                                P('bar', P.VAR_POSITIONAL)])),
-                         '(foo, /, *bar)')
+        test = S(parameters=[P('foo', P.POSITIONAL_ONLY),
+                             P('bar', P.VAR_POSITIONAL)])
+        self.assertEqual(str(test), '(foo, /, *bar)')
+        self.assertEqual(str(test), test.format())
+
+    def test_signature_format(self):
+        from typing import Annotated, Literal
+
+        def func(x: Annotated[int, 'meta'], y: Literal['a', 'b'], z: 'LiteralString'):
+            pass
+
+        expected_singleline = "(x: Annotated[int, 'meta'], y: Literal['a', 'b'], z: 'LiteralString')"
+        expected_multiline = """(
+    x: Annotated[int, 'meta'],
+    y: Literal['a', 'b'],
+    z: 'LiteralString'
+)"""
+        self.assertEqual(
+            inspect.signature(func).format(),
+            expected_singleline,
+        )
+        self.assertEqual(
+            inspect.signature(func).format(max_width=None),
+            expected_singleline,
+        )
+        self.assertEqual(
+            inspect.signature(func).format(max_width=len(expected_singleline)),
+            expected_singleline,
+        )
+        self.assertEqual(
+            inspect.signature(func).format(max_width=len(expected_singleline) - 1),
+            expected_multiline,
+        )
+        self.assertEqual(
+            inspect.signature(func).format(max_width=0),
+            expected_multiline,
+        )
+        self.assertEqual(
+            inspect.signature(func).format(max_width=-1),
+            expected_multiline,
+        )
+
+    def test_signature_format_all_arg_types(self):
+        from typing import Annotated, Literal
+
+        def func(
+            x: Annotated[int, 'meta'],
+            /,
+            y: Literal['a', 'b'],
+            *,
+            z: 'LiteralString',
+            **kwargs: object,
+        ) -> None:
+            pass
+
+        expected_multiline = """(
+    x: Annotated[int, 'meta'],
+    /,
+    y: Literal['a', 'b'],
+    *,
+    z: 'LiteralString',
+    **kwargs: object
+) -> None"""
+        self.assertEqual(
+            inspect.signature(func).format(max_width=-1),
+            expected_multiline,
+        )
 
     def test_signature_replace_parameters(self):
         def test(a, b) -> 42:
@@ -3906,6 +3990,8 @@ class TestSignatureObject(unittest.TestCase):
         foo_sig = MySignature.from_callable(foo)
         self.assertIsInstance(foo_sig, MySignature)
 
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
     def test_signature_from_callable_class(self):
         # A regression test for a class inheriting its signature from `object`.
         class MySignature(inspect.Signature): pass
@@ -3996,7 +4082,8 @@ class TestSignatureObject(unittest.TestCase):
                             par('c', PORK, annotation="'MyClass'"),
                         )))
 
-                self.assertEqual(signature_func(isa.UnannotatedClass), sig())
+                if not MISSING_C_DOCSTRINGS:
+                    self.assertEqual(signature_func(isa.UnannotatedClass), sig())
                 self.assertEqual(signature_func(isa.unannotated_function),
                     sig(
                         parameters=(
