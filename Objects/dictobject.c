@@ -147,9 +147,7 @@ it's USABLE_FRACTION (currently two-thirds) full.
 static inline void
 ASSERT_DICT_LOCKED(PyObject *op)
 {
-    if (Py_REFCNT(op) != 1) {
-        _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
-    }
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
 }
 #define ASSERT_DICT_LOCKED(op) ASSERT_DICT_LOCKED(_Py_CAST(PyObject*, op))
 
@@ -1988,7 +1986,8 @@ _PyDict_SetItem_KnownHash(PyObject *op, PyObject *key, PyObject *value,
 
     if (mp->ma_keys == Py_EMPTY_KEYS) {
         res = insert_to_emptydict(interp, mp, Py_NewRef(key), hash, Py_NewRef(value));
-    } else {
+    }
+    else {
         /* insertdict() handles any resizing that might be necessary */
         res = insertdict(interp, mp, Py_NewRef(key), hash, Py_NewRef(value));
     }
@@ -2522,7 +2521,8 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
             d = (PyObject *)dict_dict_fromkeys(interp, mp, iterable, value);
             Py_END_CRITICAL_SECTION2();
             return d;
-        } else if (PyAnySet_CheckExact(iterable)) {
+        }
+        else if (PyAnySet_CheckExact(iterable)) {
             PyDictObject *mp = (PyDictObject *)d;
 
             Py_BEGIN_CRITICAL_SECTION2(d, iterable);
@@ -2875,7 +2875,6 @@ PyDict_Values(PyObject *dict)
     Py_BEGIN_CRITICAL_SECTION(dict);
     res = values_lock_held(dict);
     Py_END_CRITICAL_SECTION();
-
     return res;
 }
 
@@ -4135,7 +4134,6 @@ PyDict_Contains(PyObject *op, PyObject *key)
     Py_BEGIN_CRITICAL_SECTION(op);
     res = contains_lock_held((PyDictObject *)op, key);
     Py_END_CRITICAL_SECTION();
-
     return res;
 }
 

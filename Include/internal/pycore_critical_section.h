@@ -114,10 +114,18 @@ extern "C" {
 // Asserts that the mutex for the given object is locked. The mutex must
 // be held by the top-most critical section otherwise there's the
 // possibility that the mutex would be swalled out in some code paths.
-#define  _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op) \
-    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&_PyObject_CAST(op)->ob_mutex)
+#ifdef Py_DEBUG
 
+#define  _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op)                           \
+    if (Py_REFCNT(op) != 1) {                                                    \
+        _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&_PyObject_CAST(op)->ob_mutex); \
+    }
 
+#else   /* Py_DEBUG */
+
+#define  _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op)
+
+#endif  /* Py_DEBUG */
 
 #else  /* !Py_GIL_DISABLED */
 // The critical section APIs are no-ops with the GIL.
@@ -263,7 +271,8 @@ _PyCriticalSection_AssertHeld(PyMutex *mutex) {
     if (prev & _Py_CRITICAL_SECTION_TWO_MUTEXES) {
         _PyCriticalSection2 *cs = (_PyCriticalSection2 *)(prev & ~_Py_CRITICAL_SECTION_MASK);
         assert(cs != NULL && (cs->base.mutex == mutex || cs->mutex2 == mutex));
-    } else {
+    }
+    else {
         _PyCriticalSection *cs = (_PyCriticalSection *)(tstate->critical_section & ~_Py_CRITICAL_SECTION_MASK);
         assert(cs != NULL && cs->mutex == mutex);
     }
