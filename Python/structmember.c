@@ -325,7 +325,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         else {
             unsigned long long ulonglong_val = PyLong_AsUnsignedLongLong(v);
             Py_DECREF(v);
-            if (ulonglong_val == (unsigned long)-1 && PyErr_Occurred()) {
+            if (ulonglong_val == (unsigned long long)-1 && PyErr_Occurred()) {
                 return -1;
             }
             *(unsigned long long*)addr = ulonglong_val;
