@@ -2113,11 +2113,9 @@ class Wm:
 
         When called without arguments and return_python_dict is true,
         return a dict of the platform specific attributes and their values.
-        If return_python_dict is false (default) and wantobjects is true,
-        return a tuple containing intermixed atrribute names with the minus
-        prefix and their values.  If return_python_dict is false and
-        wantobjects is false, return a string representing the
-        corresponding Tcl list.
+        If return_python_dict is false (default), return a tuple
+        containing intermixed atrribute names with the minus prefix and
+        their values.
 
         When called with a single string value, return the value for the
         specific option.  When called with keyword arguments, set the
@@ -2127,8 +2125,9 @@ class Wm:
             if not args:
                 res = self.tk.call('wm', 'attributes', self._w)
                 if return_python_dict:
-                    res = _splitdict(self.tk, res)
-                return res
+                    return _splitdict(self.tk, res)
+                else:
+                    return self.tk.splitlist(res)
             if len(args) == 1 and args[0] is not None:
                 option = args[0]
                 if option[0] == '-':

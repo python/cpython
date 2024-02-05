@@ -444,15 +444,16 @@ class WmTest(AbstractTkTest, unittest.TestCase):
         attributes = w.wm_attributes(return_python_dict=True)
         self.assertIsInstance(attributes, dict)
         attributes2 = w.wm_attributes()
-        self.assertIsInstance(attributes2, tuple if self.wantobjects else str)
+        self.assertIsInstance(attributes2, tuple)
+        self.assertEqual(attributes2[::2],
+                         tuple('-' + k for k in attributes))
+        self.assertEqual(attributes2[1::2], tuple(attributes.values()))
         # silently deprecated
         attributes3 = w.wm_attributes(None)
-        self.assertIsInstance(attributes2, tuple if self.wantobjects else str)
-        self.assertEqual(attributes3, attributes2)
         if self.wantobjects:
-            self.assertEqual(attributes2[::2],
-                             tuple('-' + k for k in attributes))
-            self.assertEqual(attributes2[1::2], tuple(attributes.values()))
+            self.assertEqual(attributes3, attributes2)
+        else:
+            self.assertIsInstance(attributes3, str)
 
         for name in attributes:
             self.assertEqual(w.wm_attributes(name), attributes[name])
