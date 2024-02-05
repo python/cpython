@@ -61,8 +61,6 @@ struct _py_trashcan {
     PyObject *delete_later;
 };
 
-typedef struct _PyEventRc _PyEventRc;
-
 struct _ts {
     /* See Python/ceval.c for comments explaining most fields */
 
@@ -164,7 +162,7 @@ struct _ts {
     int is_daemon;
 
     /* Set when the thread has finished execution and is about to be freed. */
-    _PyEventRc *done_event;
+    struct _PyEventRc *done_event;
 
     int coroutine_origin_tracking_depth;
 
