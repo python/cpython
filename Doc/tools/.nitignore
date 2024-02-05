@@ -46,7 +46,6 @@ Doc/library/mmap.rst
 Doc/library/multiprocessing.rst
 Doc/library/optparse.rst
 Doc/library/os.rst
-Doc/library/pickle.rst
 Doc/library/pickletools.rst
 Doc/library/platform.rst
 Doc/library/plistlib.rst

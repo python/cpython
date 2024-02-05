@@ -1478,8 +1478,8 @@ complete list of changes, or look through the SVN logs for all the details.
 
   .. Patch 790710
 
-* The :mod:`pickle` and :mod:`cPickle` modules no longer accept a return value
-  of ``None`` from the :meth:`__reduce__` method; the method must return a tuple
+* The :mod:`pickle` and :mod:`!cPickle` modules no longer accept a return value
+  of ``None`` from the :meth:`~object.__reduce__` method; the method must return a tuple
   of arguments instead.  The ability to return ``None`` was deprecated in Python
   2.4, so this completes the removal of the feature.
 
@@ -1519,7 +1519,7 @@ complete list of changes, or look through the SVN logs for all the details.
 
   .. Patch #1472854
 
-* The :mod:`SimpleXMLRPCServer` and :mod:`DocXMLRPCServer`  classes now have a
+* The :mod:`SimpleXMLRPCServer <xmlrpc.server>` and :mod:`DocXMLRPCServer <xmlrpc.server>`  classes now have a
   :attr:`rpc_paths` attribute that constrains XML-RPC operations to a limited set
   of URL paths; the default is to allow only ``'/'`` and ``'/RPC2'``.  Setting
   :attr:`rpc_paths` to ``None`` or an empty tuple disables  this path checking.
@@ -1650,9 +1650,9 @@ complete list of changes, or look through the SVN logs for all the details.
 
   .. Patch #754022
 
-* The :mod:`xmlrpclib` module now supports returning  :class:`~datetime.datetime` objects
-  for the XML-RPC date type.  Supply  ``use_datetime=True`` to the :func:`loads`
-  function or the :class:`Unmarshaller` class to enable this feature. (Contributed
+* The :mod:`xmlrpclib <xmlrpc.client>` module now supports returning  :class:`~datetime.datetime` objects
+  for the XML-RPC date type.  Supply  ``use_datetime=True`` to the :func:`~xmlrpc.client.loads`
+  function or the :class:`!Unmarshaller` class to enable this feature. (Contributed
   by Skip Montanaro.)
 
   .. Patch 1120353
@@ -2253,12 +2253,12 @@ code:
   appeared.  In Python 2.5, the argument must be exactly one %char specifier with
   no surrounding text.
 
-* Library: The :mod:`pickle` and :mod:`cPickle` modules no longer accept a
-  return value of ``None`` from the :meth:`__reduce__` method; the method must
+* Library: The :mod:`pickle` and :mod:`!cPickle` modules no longer accept a
+  return value of ``None`` from the :meth:`~object.__reduce__` method; the method must
   return a tuple of arguments instead.  The modules also no longer accept the
   deprecated *bin* keyword parameter.
 
-* Library: The :mod:`SimpleXMLRPCServer` and :mod:`DocXMLRPCServer`  classes now
+* Library: The :mod:`SimpleXMLRPCServer <xmlrpc.server>` and :mod:`DocXMLRPCServer <xmlrpc.server>`  classes now
   have a :attr:`rpc_paths` attribute that constrains XML-RPC operations to a
   limited set of URL paths; the default is to allow only ``'/'`` and ``'/RPC2'``.
   Setting  :attr:`rpc_paths` to ``None`` or an empty tuple disables  this path
