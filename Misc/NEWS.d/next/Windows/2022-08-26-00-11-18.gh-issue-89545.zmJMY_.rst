@@ -1,1 +1,0 @@
-Updates :mod:`platform` code getting the Windows version to use native Windows Management Instrumentation (WMI) queries to determine OS version, type, and architecture.

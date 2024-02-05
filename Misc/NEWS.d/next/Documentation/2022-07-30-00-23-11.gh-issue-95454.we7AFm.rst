@@ -1,2 +1,0 @@
-Replaced incorrectly written true/false values
-in documentiation. Patch by Robert O'Shea

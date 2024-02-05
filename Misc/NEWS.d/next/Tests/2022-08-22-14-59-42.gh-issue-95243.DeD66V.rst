@@ -1,3 +1,0 @@
-Mitigate the inherent race condition from using find_unused_port() in
-testSockName() by trying to find an unused port a few times before failing.
-Patch by Ross Burton.

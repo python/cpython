@@ -1,5 +1,0 @@
-:mod:`xml.etree`: Remove the ``ElementTree.Element.copy()`` method of the
-pure Python implementation, deprecated in Python 3.10, use the
-:func:`copy.copy` function instead. The C implementation of :mod:`xml.etree`
-has no ``copy()`` method, only a ``__copy__()`` method. Patch by Victor
-Stinner.

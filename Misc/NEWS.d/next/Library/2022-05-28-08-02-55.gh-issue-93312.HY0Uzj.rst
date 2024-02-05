@@ -1,3 +1,0 @@
-Add :data:`os.PIDFD_NONBLOCK` flag to open a file descriptor
-for a process with :func:`os.pidfd_open` in non-blocking mode.
-Patch by Kumar Aditya.

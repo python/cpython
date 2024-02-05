@@ -1,2 +1,0 @@
-C extension modules are now built by ``configure`` and ``make``
-instead of ``distutils`` and ``setup.py``.

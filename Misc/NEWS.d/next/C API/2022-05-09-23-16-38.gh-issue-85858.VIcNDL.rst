@@ -1,2 +1,0 @@
-Remove the ``PyUnicode_InternImmortal()`` function and the
-``SSTATE_INTERNED_IMMORTAL`` macro. Patch by Victor Stinner.

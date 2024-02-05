@@ -46,8 +46,9 @@ OPENSSL_OLD_VERSIONS = [
 ]
 
 OPENSSL_RECENT_VERSIONS = [
-    "1.1.1q",
-    "3.0.5"
+    "1.1.1w",
+    "3.0.11",
+    "3.1.3",
 ]
 
 LIBRESSL_OLD_VERSIONS = [
@@ -150,7 +151,10 @@ class AbstractBuilder(object):
     build_template = None
     depend_target = None
     install_target = 'install'
-    jobs = os.cpu_count()
+    if hasattr(os, 'process_cpu_count'):
+        jobs = os.process_cpu_count()
+    else:
+        jobs = os.cpu_count()
 
     module_files = (
         os.path.join(PYTHONROOT, "Modules/_ssl.c"),
@@ -402,15 +406,15 @@ class BuildOpenSSL(AbstractBuilder):
     depend_target = 'depend'
 
     def _post_install(self):
-        if self.version.startswith("3.0"):
-            self._post_install_300()
+        if self.version.startswith("3."):
+            self._post_install_3xx()
 
     def _build_src(self, config_args=()):
-        if self.version.startswith("3.0"):
+        if self.version.startswith("3."):
             config_args += ("enable-fips",)
         super()._build_src(config_args)
 
-    def _post_install_300(self):
+    def _post_install_3xx(self):
         # create ssl/ subdir with example configs
         # Install FIPS module
         self._subprocess_call(

@@ -1,0 +1,4 @@
+The free-threaded build no longer allocates space for the ``PyGC_Head``
+structure in objects that support cyclic garbage collection.  A number of
+other fields and data structures are used as replacements, including
+``ob_gc_bits``, ``ob_tid``, and mimalloc internal data structures.

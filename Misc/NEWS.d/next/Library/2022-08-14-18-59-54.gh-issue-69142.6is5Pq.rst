@@ -1,1 +1,0 @@
-Add ``%:z`` strftime format code (generates tzoffset with colons as separator), see :ref:`strftime-strptime-behavior`.
