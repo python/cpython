@@ -43,6 +43,7 @@ static inline PyObject* _Py_FROM_GC(PyGC_Head *gc) {
 #  define _PyGC_BITS_FINALIZED      (2)
 #  define _PyGC_BITS_UNREACHABLE    (4)
 #  define _PyGC_BITS_FROZEN         (8)
+#  define _PyGC_BITS_SHARED         (16)
 #endif
 
 /* True if the object is currently tracked by the GC. */
@@ -68,6 +69,22 @@ static inline int _PyObject_GC_MAY_BE_TRACKED(PyObject *obj) {
     return 1;
 }
 
+#ifdef Py_GIL_DISABLED
+
+/* True if an object is shared between multiple threads and
+ * needs special purpose when freeing to do the possibility
+ * of in-flight lock-free reads occuring */
+static inline int _PyObject_GC_IS_SHARED(PyObject *op) {
+    return (op->ob_gc_bits & _PyGC_BITS_SHARED) != 0;
+}
+#define _PyObject_GC_IS_SHARED(op) _PyObject_GC_IS_SHARED(_Py_CAST(PyObject*, op))
+
+static inline void _PyObject_GC_SET_SHARED(PyObject *op) {
+    op->ob_gc_bits |= _PyGC_BITS_SHARED;
+}
+#define _PyObject_GC_SET_SHARED(op) _PyObject_GC_SET_SHARED(_Py_CAST(PyObject*, op))
+
+#endif
 
 /* Bit flags for _gc_prev */
 /* Bit 0 is set when tp_finalize is called */
