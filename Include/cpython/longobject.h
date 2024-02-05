@@ -25,7 +25,7 @@ PyAPI_FUNC(int) PyLong_CopyBits(PyObject* v, void* buffer, size_t n_bytes,
 /* PyLong_FromBits: Create an int value from a native integer
    n_bytes is the number of bytes to read from the buffer. Passing 0 will
    always produce the zero int.
-   PyLong_FromUnsignedBits always produces a positive int.
+   PyLong_FromUnsignedBits always produces a non-negative int.
    endianness is -1 for native endian, 0 for big endian or 1 for little.
 
    Returns the int object, or NULL with an exception set. */

@@ -1,0 +1,2 @@
+Adds :c:func:`PyLong_CopyBits`, :c:func:`PyLong_FromBits` and
+:c:func:`PyLong_FromUnsignedBits` functions.

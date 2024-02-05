@@ -1466,6 +1466,11 @@ New Features
 * Add :c:func:`Py_HashPointer` function to hash a pointer.
   (Contributed by Victor Stinner in :gh:`111545`.)
 
+* Add :c:func:`PyLong_CopyBits`, :c:func:`PyLong_FromBits` and
+  :c:func:`PyLong_FromUnsignedBits` functions to simplify converting between
+  native integer types and Python ``int`` objects.
+  (Contributed by Steve Dower in :gh:`111140`.)
+
 
 Porting to Python 3.13
 ----------------------
@@ -1524,7 +1529,6 @@ Porting to Python 3.13
   Including ``<stddef.h>`` explicitly was already needed by all other
   platforms, the ``HAVE_STDDEF_H`` macro is only defined on Windows.
   (Contributed by Victor Stinner in :gh:`108765`.)
-
 
 Deprecated
 ----------
