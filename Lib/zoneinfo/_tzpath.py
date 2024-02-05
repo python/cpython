@@ -18,13 +18,9 @@ def _reset_tzpath(to=None, stacklevel=4):
         base_tzpath = tzpaths
     else:
         env_var = os.environ.get("PYTHONTZPATH", None)
-        if env_var is not None:
-            base_tzpath = _parse_python_tzpath(env_var, stacklevel)
-        else:
-            base_tzpath = _parse_python_tzpath(
-                sysconfig.get_config_var("TZPATH"),
-                stacklevel,
-            )
+        if env_var is None:
+            env_var = sysconfig.get_config_var("TZPATH")
+        base_tzpath = _parse_python_tzpath(env_var, stacklevel)
 
     TZPATH = tuple(base_tzpath)
 

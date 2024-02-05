@@ -14,13 +14,14 @@ import shutil
 import struct
 import tempfile
 import unittest
+import warnings
 from datetime import date, datetime, time, timedelta, timezone
 from functools import cached_property
 
 from test.support import MISSING_C_DOCSTRINGS
 from test.test_zoneinfo import _support as test_support
 from test.test_zoneinfo._support import OS_ENV_LOCK, TZPATH_TEST_LOCK, ZoneInfoTestBase
-from test.support.import_helper import import_module
+from test.support.import_helper import import_module, CleanImport
 
 lzma = import_module('lzma')
 py_zoneinfo, c_zoneinfo = test_support.get_modules()
@@ -1717,11 +1718,31 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
         for input_paths, expected_paths in test_cases:
             path_var = os.pathsep.join(input_paths)
             with self.python_tzpath_context(path_var):
+                with self.subTest("module-level warning", path_var=path_var):
+                    with CleanImport("zoneinfo", "zoneinfo._tzpath"):
+                        with warnings.catch_warnings(record=True) as wlog:
+                            import zoneinfo
+                    self.assertEqual(len(wlog), 1)
+                    # Since we use import hacks, we cannot just use `isinstance`
+                    self.assertEqual(
+                        type(wlog[0].message).__qualname__,
+                        "InvalidTZPathWarning",
+                    )
+                    # It should represent the current file:
+                    self.assertTrue(
+                        wlog[0].filename.endswith("test_zoneinfo.py"),
+                        msg=wlog[0].filename,
+                    )
+
                 with self.subTest("warning", path_var=path_var):
                     # Note: Per PEP 615 the warning is implementation-defined
                     # behavior, other implementations need not warn.
-                    with self.assertWarns(self.module.InvalidTZPathWarning):
+                    with self.assertWarns(self.module.InvalidTZPathWarning) as w:
                         self.module.reset_tzpath()
+                    self.assertTrue(
+                        w.warnings[0].filename.endswith("test_zoneinfo.py"),
+                        msg=w.warnings[0].filename,
+                    )
 
                 tzpath = self.module.TZPATH
                 with self.subTest("filtered", path_var=path_var):
