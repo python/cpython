@@ -411,12 +411,12 @@ dummy_func(
             // BINARY_OP_INPLACE_ADD_UNICODE,  // See comments at that opcode.
         };
 
-        op(_GUARD_BOTH_INT, (left, right -- left:  &PYLONG_TYPE, right:  &PYLONG_TYPE)) {
+        op(_GUARD_BOTH_INT, (left, right -- left, right)) {
             DEOPT_IF(!PyLong_CheckExact(left));
             DEOPT_IF(!PyLong_CheckExact(right));
         }
 
-        pure op(_BINARY_OP_MULTIPLY_INT, (left, right -- res: &PYLONG_TYPE)) {
+        pure op(_BINARY_OP_MULTIPLY_INT, (left, right -- res)) {
             STAT_INC(BINARY_OP, hit);
             res = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
@@ -424,7 +424,7 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        pure op(_BINARY_OP_ADD_INT, (left, right -- res: &PYLONG_TYPE)) {
+        pure op(_BINARY_OP_ADD_INT, (left, right -- res)) {
             STAT_INC(BINARY_OP, hit);
             res = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
@@ -432,7 +432,7 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        pure op(_BINARY_OP_SUBTRACT_INT, (left, right -- res: &PYLONG_TYPE)) {
+        pure op(_BINARY_OP_SUBTRACT_INT, (left, right -- res)) {
             STAT_INC(BINARY_OP, hit);
             res = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
@@ -447,7 +447,7 @@ dummy_func(
         macro(BINARY_OP_SUBTRACT_INT) =
             _GUARD_BOTH_INT + unused/1 + _BINARY_OP_SUBTRACT_INT;
 
-        op(_GUARD_BOTH_FLOAT, (left, right -- left: &PYFLOAT_TYPE, right: &PYFLOAT_TYPE)) {
+        op(_GUARD_BOTH_FLOAT, (left, right -- left, right)) {
             DEOPT_IF(!PyFloat_CheckExact(left));
             DEOPT_IF(!PyFloat_CheckExact(right));
         }
@@ -4114,10 +4114,6 @@ dummy_func(
         op(_INTERNAL_INCREMENT_OPT_COUNTER, (opt --)) {
             _PyCounterOptimizerObject *exe = (_PyCounterOptimizerObject *)opt;
             exe->count++;
-        }
-
-        op(_SHRINK_STACK, (args[oparg] --)) {
-            DECREF_INPUTS();
         }
 
 

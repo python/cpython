@@ -183,8 +183,8 @@ create_sym_consts(_Py_UOpsAbstractInterpContext *ctx, PyObject *co_consts)
 static inline _Py_UOpsSymType* sym_init_unknown(_Py_UOpsAbstractInterpContext *ctx);
 
 // 0 on success, -1 on error.
-static int
-ctx_frame_push(
+static _Py_UOpsAbstractFrame *
+ctx_frame_new(
     _Py_UOpsAbstractInterpContext *ctx,
     PyCodeObject *co,
     _Py_UOpsSymType **localsplus_start,
@@ -194,11 +194,10 @@ ctx_frame_push(
 {
     _Py_UOpsSymType **sym_consts = create_sym_consts(ctx, co->co_consts);
     if (sym_consts == NULL) {
-        return -1;
+        return NULL;
     }
     assert(ctx->curr_frame_depth < MAX_ABSTRACT_FRAME_DEPTH);
     _Py_UOpsAbstractFrame *frame = &ctx->frames[ctx->curr_frame_depth];
-    ctx->curr_frame_depth++;
 
     frame->sym_consts = sym_consts;
     frame->sym_consts_len = (int)Py_SIZE(co->co_consts);
@@ -210,7 +209,7 @@ ctx_frame_push(
     frame->stack_pointer = frame->stack + curr_stackentries;
     ctx->n_consumed = localsplus_start + (co->co_nlocalsplus + co->co_stacksize);
     if (ctx->n_consumed >= ctx->limit) {
-        return -1;
+        return NULL;
     }
 
 
@@ -218,7 +217,7 @@ ctx_frame_push(
     for (int i = n_locals_already_filled; i < co->co_nlocalsplus; i++) {
         _Py_UOpsSymType *local = sym_init_unknown(ctx);
         if (local == NULL) {
-            return -1;
+            return NULL;
         }
         frame->locals[i] = local;
     }
@@ -228,13 +227,12 @@ ctx_frame_push(
     for (int i = 0; i < curr_stackentries; i++) {
         _Py_UOpsSymType *stackvar = sym_init_unknown(ctx);
         if (stackvar == NULL) {
-            return -1;
+            return NULL;
         }
         frame->stack[i] = stackvar;
     }
 
-    ctx->frame = frame;
-    return 0;
+    return frame;
 }
 
 static void
@@ -273,9 +271,12 @@ abstractcontext_init(
 
     // Frame setup
     ctx->curr_frame_depth = 0;
-    if (ctx_frame_push(ctx, co, ctx->n_consumed, 0, curr_stacklen) < 0) {
+    _Py_UOpsAbstractFrame *frame = ctx_frame_new(ctx, co, ctx->n_consumed, 0, curr_stacklen);
+    if (frame == NULL) {
         return -1;
     }
+    ctx->curr_frame_depth++;
+    ctx->frame = frame;
 
     // IR and sym setup
     ctx->frequent_syms.push_nulL_sym = NULL;
@@ -437,7 +438,7 @@ sym_init_const(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val)
 }
 
 static _Py_UOpsSymType*
-sym_init_push_null(_Py_UOpsAbstractInterpContext *ctx)
+sym_init_null(_Py_UOpsAbstractInterpContext *ctx)
 {
     if (ctx->frequent_syms.push_nulL_sym != NULL) {
         return ctx->frequent_syms.push_nulL_sym;
@@ -554,84 +555,7 @@ emit_i(uops_emitter *emitter,
     return 0;
 }
 
-static inline bool
-op_is_zappable(int opcode)
-{
-    switch(opcode) {
-        case _SET_IP:
-        case _CHECK_VALIDITY:
-            return true;
-        default:
-            return (_PyUop_Flags[opcode] & HAS_PURE_FLAG) && !((_PyUop_Flags[opcode] & HAS_DEOPT_FLAG));
-    }
-}
 
-
-static inline int
-emit_const(uops_emitter *emitter,
-       PyObject *const_val,
-       int num_pops)
-{
-    _PyUOpInstruction shrink_stack = {_SHRINK_STACK, num_pops, 0, 0};
-    // If all that precedes a _SHRINK_STACK is a bunch of pure instructions,
-    // then we can safely eliminate that without side effects
-    int net_stack_effect = -num_pops;
-    _PyUOpInstruction *back = emitter->writebuffer + emitter->curr_i - 1;
-    while (back >= emitter->writebuffer &&
-           op_is_zappable(back->opcode)) {
-        net_stack_effect += _PyUop_NetStackEffect(back->opcode, back->oparg);
-        back--;
-        if (net_stack_effect == 0) {
-            break;
-        }
-    }
-    if (net_stack_effect == 0) {
-        back = emitter->writebuffer + emitter->curr_i - 1;
-        net_stack_effect = -num_pops;
-        // Back up over the previous loads and zap them.
-        while(net_stack_effect != 0) {
-            net_stack_effect += _PyUop_NetStackEffect(back->opcode, back->oparg);
-            if (back->opcode == _LOAD_CONST_INLINE ||
-                back->opcode == _LOAD_CONST_INLINE_WITH_NULL) {
-                PyObject *old_const_val = (PyObject *)back->operand;
-                Py_DECREF(old_const_val);
-                back->operand = (uintptr_t)NULL;
-            }
-            back->opcode = NOP;
-            back--;
-        }
-    }
-    else {
-        if (emit_i(emitter, shrink_stack) < 0) {
-            return -1;
-        }
-    }
-    int load_const_opcode = _Py_IsImmortal(const_val)
-                            ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
-    if (load_const_opcode == _LOAD_CONST_INLINE) {
-        Py_INCREF(const_val);
-    }
-    _PyUOpInstruction load_const = {load_const_opcode, 0, 0, (uintptr_t)const_val};
-    if (emit_i(emitter, load_const) < 0) {
-        return -1;
-    }
-
-    return 0;
-}
-
-
-#define DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dval, result) \
-do { \
-    { \
-        result = PyFloat_FromDouble(dval); \
-        if ((result) == NULL) goto error; \
-    } \
-} while (0)
-
-#define DEOPT_IF(COND, INSTNAME) \
-    if ((COND)) {                \
-        goto guard_required;         \
-    }
 
 #ifndef Py_DEBUG
 #define GETITEM(ctx, i) (ctx->frame->sym_consts[(i)])
@@ -680,6 +604,11 @@ uop_abstract_interpret_single_inst(
 #define CURRENT_OPERAND() (operand)
 
 #define TIER_TWO_ONLY ((void)0)
+#define REPLACE_OP(op, arg, oper) \
+    new_inst.opcode = op;            \
+    new_inst.oparg = arg;            \
+    new_inst.operand = oper;
+
 
     int oparg = inst->oparg;
     uint32_t opcode = inst->opcode;
@@ -693,195 +622,6 @@ uop_abstract_interpret_single_inst(
             oparg);
     switch (opcode) {
 #include "abstract_interp_cases.c.h"
-        // Note: LOAD_FAST_CHECK is not pure!!!
-        case LOAD_FAST_CHECK: {
-            STACK_GROW(1);
-            _Py_UOpsSymType *local = GETLOCAL(oparg);
-            // We guarantee this will error - just bail and don't optimize it.
-            if (sym_is_type(local, NULL_TYPE)) {
-                goto error;
-            }
-            PEEK(1) = local;
-            break;
-        }
-        case LOAD_FAST: {
-            STACK_GROW(1);
-            _Py_UOpsSymType * local = GETLOCAL(oparg);
-            if (sym_is_type(local, NULL_TYPE)) {
-                Py_UNREACHABLE();
-            }
-            // Guaranteed by the CPython bytecode compiler to not be uninitialized.
-            PEEK(1) = GETLOCAL(oparg);
-            assert(PEEK(1));
-
-            break;
-        }
-        case LOAD_FAST_AND_CLEAR: {
-            STACK_GROW(1);
-            PEEK(1) = GETLOCAL(oparg);
-            break;
-        }
-        case LOAD_CONST: {
-            STACK_GROW(1);
-            PEEK(1) = (_Py_UOpsSymType *)GETITEM(
-                ctx, oparg);
-            assert(is_const(PEEK(1)));
-            // Peephole: inline constants.
-            PyObject *val = get_const_borrow(PEEK(1));
-            new_inst.opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
-            if (new_inst.opcode == _LOAD_CONST_INLINE) {
-                Py_INCREF(val);
-            }
-            new_inst.operand = (uintptr_t)val;
-            break;
-        }
-        case _LOAD_CONST_INLINE:
-        case _LOAD_CONST_INLINE_BORROW:
-        {
-            _Py_UOpsSymType *sym_const = sym_init_const(ctx, (PyObject *)inst->operand);
-            if (sym_const == NULL) {
-                goto error;
-            }
-            // We need to incref it for it to safely decref in the
-            // executor finalizer.
-            if (opcode == _LOAD_CONST_INLINE) {
-                Py_INCREF(inst->operand);
-            }
-            STACK_GROW(1);
-            PEEK(1) = sym_const;
-            assert(is_const(PEEK(1)));
-            break;
-        }
-        case _LOAD_CONST_INLINE_WITH_NULL:
-        case _LOAD_CONST_INLINE_BORROW_WITH_NULL:
-        {
-            _Py_UOpsSymType *sym_const = sym_init_const(ctx, (PyObject *)inst->operand);
-            if (sym_const == NULL) {
-                goto error;
-            }
-            // We need to incref it for it to safely decref in the
-            // executor finalizer.
-            if (opcode == _LOAD_CONST_INLINE_WITH_NULL) {
-                Py_INCREF(inst->operand);
-            }
-            STACK_GROW(1);
-            PEEK(1) = sym_const;
-            assert(is_const(PEEK(1)));
-            _Py_UOpsSymType *null_sym =  sym_init_push_null(ctx);
-            if (null_sym == NULL) {
-                goto error;
-            }
-            STACK_GROW(1);
-            PEEK(1) = null_sym;
-            break;
-        }
-        case STORE_FAST_MAYBE_NULL:
-        case STORE_FAST: {
-            _Py_UOpsSymType *value = PEEK(1);
-            GETLOCAL(oparg) = value;
-            STACK_SHRINK(1);
-            break;
-        }
-        case COPY: {
-            _Py_UOpsSymType *bottom = PEEK(1 + (oparg - 1));
-            STACK_GROW(1);
-            PEEK(1) = bottom;
-            break;
-        }
-
-        case PUSH_NULL: {
-            STACK_GROW(1);
-            _Py_UOpsSymType *null_sym =  sym_init_push_null(ctx);
-            if (null_sym == NULL) {
-                goto error;
-            }
-            PEEK(1) = null_sym;
-            break;
-        }
-
-        case _INIT_CALL_PY_EXACT_ARGS: {
-            // Don't put in the new frame. Leave it be so that _PUSH_FRAME
-            // can extract callable, self_or_null and args later.
-            // This also means our stack pointer diverges from the real VM.
-
-            // IMPORTANT: make sure there is no interference
-            // between this and _PUSH_FRAME. That is a required invariant.
-            break;
-        }
-
-        case _PUSH_FRAME: {
-            // From _INIT_CALL_PY_EXACT_ARGS
-
-            int argcount = oparg;
-            // _INIT_CALL_PY_EXACT_ARGS's real stack effect in the VM.
-            stack_pointer += -1 - oparg;
-            // TOS is the new callable, above it self_or_null and args
-
-            PyFunctionObject *func = extract_func_from_sym(PEEK(1));
-            if (func == NULL) {
-                goto error;
-            }
-            PyCodeObject *co = (PyCodeObject *)func->func_code;
-
-            _Py_UOpsSymType *self_or_null = PEEK(0);
-            assert(self_or_null != NULL);
-            _Py_UOpsSymType **args = &PEEK(-1);
-            assert(args != NULL);
-            if (!sym_is_type(self_or_null, NULL_TYPE) &&
-                !sym_is_type(self_or_null, SELF_OR_NULL)) {
-                // Bound method fiddling, same as _INIT_CALL_PY_EXACT_ARGS in
-                // VM
-                args--;
-                argcount++;
-            }
-            // This is _PUSH_FRAME's stack effect
-            STACK_SHRINK(1);
-            ctx->frame->stack_pointer = stack_pointer;
-            _Py_UOpsSymType **localsplus_start = ctx->n_consumed;
-            int n_locals_already_filled = 0;
-            // Can determine statically, so we interleave the new locals
-            // and make the current stack the new locals.
-            // This also sets up for true call inlining.
-            if (!sym_is_type(self_or_null, SELF_OR_NULL)) {
-                localsplus_start = args;
-                n_locals_already_filled = argcount;
-            }
-            if (ctx_frame_push(ctx, co, localsplus_start, n_locals_already_filled, 0) != 0){
-                goto error;
-            }
-            stack_pointer = ctx->frame->stack_pointer;
-            break;
-        }
-
-        case _POP_FRAME: {
-            assert(STACK_LEVEL() == 1);
-            _Py_UOpsSymType *retval = PEEK(1);
-            STACK_SHRINK(1);
-            ctx->frame->stack_pointer = stack_pointer;
-
-            if (ctx_frame_pop(ctx) != 0){
-                goto error;
-            }
-            stack_pointer = ctx->frame->stack_pointer;
-            // Push retval into new frame.
-            STACK_GROW(1);
-            PEEK(1) = retval;
-            break;
-        }
-
-        case _CHECK_PEP_523:
-            /* Setting the eval frame function invalidates
-             * all executors, so no need to check dynamically */
-            if (_PyInterpreterState_GET()->eval_frame == NULL) {
-                new_inst.opcode = _NOP;
-            }
-            break;
-        case _CHECK_GLOBALS:
-        case _CHECK_BUILTINS:
-        case _SET_IP:
-        case _CHECK_VALIDITY:
-        case _SAVE_RETURN_OFFSET:
-            break;
         default:
             DPRINTF(1, "Unknown opcode in abstract interpreter\n");
             Py_UNREACHABLE();

@@ -3,8 +3,6 @@ import lexer
 import parser
 from typing import Optional
 
-from tier2_abstract_common import SPECIALLY_HANDLED_ABSTRACT_INSTR, SPECIAL_GUARDS
-
 @dataclass
 class Properties:
     escapes: bool
@@ -25,8 +23,6 @@ class Properties:
 
     pure: bool
     passthrough: bool
-    guard: bool
-    specially_handled_in_optimizer: bool
 
     def dump(self, indent: str) -> None:
         print(indent, end="")
@@ -53,8 +49,6 @@ class Properties:
             has_free=any(p.has_free for p in properties),
             pure=all(p.pure for p in properties),
             passthrough=all(p.passthrough for p in properties),
-            guard=all(p.guard for p in properties),
-            specially_handled_in_optimizer=False,
         )
 
 
@@ -76,8 +70,6 @@ SKIP_PROPERTIES = Properties(
     has_free=False,
     pure=False,
     passthrough=False,
-    guard=False,
-    specially_handled_in_optimizer=False,
 )
 
 
@@ -477,8 +469,6 @@ def compute_properties(op: parser.InstDef) -> Properties:
         has_free=has_free,
         pure="pure" in op.annotations,
         passthrough=passthrough,
-        guard=op.name in SPECIAL_GUARDS or (passthrough and deopts and infallible),
-        specially_handled_in_optimizer=op.name in SPECIALLY_HANDLED_ABSTRACT_INSTR,
     )
 
 

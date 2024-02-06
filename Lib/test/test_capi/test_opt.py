@@ -545,49 +545,6 @@ class TestUops(unittest.TestCase):
 
 class TestUopsOptimization(unittest.TestCase):
 
-    def test_int_constant_propagation(self):
-        def testfunc(loops):
-            num = 0
-            for _ in range(loops):
-                x = 0
-                y = 1
-                a = x + y
-            return 1
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        res = None
-        with temporary_optimizer(opt):
-            res = testfunc(64)
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        self.assertEqual(res, 1)
-        binop_count = [opname for opname, _, _ in ex if opname == "_BINARY_OP_ADD_INT"]
-        self.assertEqual(len(binop_count), 0)
-        uops = {opname for opname, _, _ in ex}
-        self.assertNotIn("_SHRINK_STACK", uops)
-
-    def test_int_constant_propagation_many(self):
-        def testfunc(loops):
-            num = 0
-            for _ in range(loops):
-                x = 0
-                y = 1
-                a = x + y + x + y + x + y + x + y
-            return a
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        res = None
-        with temporary_optimizer(opt):
-            res = testfunc(64)
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        self.assertEqual(res, 4)
-        binop_count = [opname for opname, _, _ in ex if opname == "_BINARY_OP_ADD_INT"]
-        self.assertEqual(len(binop_count), 0)
-        uops = {opname for opname, _, _ in ex}
-        self.assertNotIn("_SHRINK_STACK", uops)
 
     def test_int_type_propagation(self):
         def testfunc(loops):
@@ -632,68 +589,6 @@ class TestUopsOptimization(unittest.TestCase):
         binop_count = [opname for opname, _, _ in ex if opname == "_BINARY_OP_ADD_INT"]
         self.assertGreaterEqual(len(binop_count), 3)
 
-    def test_int_impure_region_attr(self):
-        class A:
-            foo = 1
-        def testfunc(loops):
-            num = 0
-            while num < loops:
-                x = A.foo + A.foo
-                y = 1
-                A.foo
-                a = x + y
-                num += 1
-            return a
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        res = None
-        with temporary_optimizer(opt):
-            res = testfunc(64)
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        binop_count = [opname for opname, _, _ in ex if opname == "_BINARY_OP_ADD_INT"]
-        self.assertGreaterEqual(len(binop_count), 3)
-
-    def test_call_constant_propagate_past_impure(self):
-        def testfunc(n):
-            for i in range(n):
-                x = 1
-                y = 1
-                x // y
-                z = x + y
-            return z
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        with temporary_optimizer(opt):
-            res = testfunc(20)
-
-        ex = get_first_executor(testfunc)
-        self.assertEqual(res, 2)
-        self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
-        self.assertNotIn("_BINARY_OP_ADD_INT", uops)
-
-    def test_int_large_pure_region(self):
-        def testfunc(loops):
-            num = 0
-            while num < loops:
-                x = num + num + num - num + num - num + num + num + num - num + num - num
-                y = 1
-                a = x + num + num + num
-                num += 1
-            return a
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        res = None
-        with temporary_optimizer(opt):
-            res = testfunc(64)
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        binop_count = [opname for opname, _, _ in ex if opname == "_BINARY_OP_ADD_INT"]
-        self.assertGreaterEqual(len(binop_count), 11)
-
     def test_call_py_exact_args(self):
         def testfunc(n):
             def dummy(x):
@@ -712,86 +607,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_BINARY_OP_ADD_INT", uops)
         self.assertNotIn("_CHECK_PEP_523", uops)
 
-    def test_frame_instance_method(self):
-        class A:
-            def __init__(self):
-                self.a = 1
-            def foo(self):
-                return self.a
-
-        a = A()
-        def testfunc(n):
-            for i in range(n):
-                a.foo()
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        with temporary_optimizer(opt):
-            testfunc(32)
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
-        self.assertIn("_LOAD_ATTR_METHOD_WITH_VALUES", uops)
-
-    def test_frame_class_method(self):
-        class A:
-            def __init__(self):
-                self.a = 1
-            def foo(self):
-                return self.a
-
-        def testfunc(n):
-            a = A()
-            for i in range(n):
-                A.foo(a)
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        with temporary_optimizer(opt):
-            testfunc(32)
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
-        self.assertIn("_LOAD_ATTR_CLASS", uops)
-
-    def test_call_constant_propagate_in_frame(self):
-        def testfunc(n):
-            def dummy():
-                x = 1
-                y = 1
-                return x+y
-            for i in range(n):
-                x = dummy()
-            return x
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        with temporary_optimizer(opt):
-            res = testfunc(20)
-
-        ex = get_first_executor(testfunc)
-        self.assertEqual(res, 2)
-        self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
-        self.assertIn("_PUSH_FRAME", uops)
-        self.assertNotIn("_BINARY_OP_ADD_INT", uops)
-
-    def test_call_constant_propagate_through_frame(self):
-        def testfunc(n):
-            def dummy(x):
-                return x+1
-            for i in range(n):
-                x = dummy(3)
-            return x
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        with temporary_optimizer(opt):
-            res = testfunc(20)
-
-        ex = get_first_executor(testfunc)
-        self.assertEqual(res, 4)
-        self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
-        self.assertIn("_PUSH_FRAME", uops)
-        self.assertNotIn("_BINARY_OP_ADD_INT", uops)
-
     def test_int_type_propagate_through_range(self):
         def testfunc(n):
 
@@ -809,7 +624,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = {opname for opname, _, _ in ex}
         self.assertNotIn("_GUARD_BOTH_INT", uops)
 
-    def test_int_value_nubmering(self):
+    def test_int_value_numbering(self):
         def testfunc(n):
 
             y = 1
@@ -912,22 +727,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_LOAD_GLOBAL_BUILTIN", uops)
         self.assertIn("_LOAD_CONST_INLINE_BORROW_WITH_NULL", uops)
 
-    def test_promote_globals_to_constants_propagate(self):
-        def testfunc(n):
-            for i in range(n):
-                x = Foo.attr
-            return x
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        with temporary_optimizer(opt):
-            res = testfunc(20)
-
-        self.assertEqual(res, Foo.attr)
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
-        self.assertNotIn("_CHECK_ATTR_CLASS", uops)
-        self.assertIn("_LOAD_ATTR_CLASS", uops)
 
 
 class Foo:

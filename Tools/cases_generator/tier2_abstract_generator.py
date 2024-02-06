@@ -1,12 +1,11 @@
-"""Generate the cases for the tier 2 abstract interpreter.
-Reads the instruction definitions from bytecodes.c.
-Writes the cases to abstract_interp_cases.c.h, which is #included in optimizer_analysis.c
+"""Generate the cases for the tier 2 redundancy eliminator/abstract interpreter.
+Reads the instruction definitions from bytecodes.c. and tier2_redundancy_eliminator.bytecodes.c
+Writes the cases to tier2_abstract_cases.c.h, which is #included in ceval.c.
 """
 
 import argparse
 import os.path
 import sys
-import dataclasses
 
 from analyzer import (
     Analysis,
@@ -24,342 +23,130 @@ from generators_common import (
     write_header,
     emit_tokens,
     emit_to,
-    REPLACEMENT_FUNCTIONS,
+    replace_sync_sp,
 )
-from tier2_abstract_common import SPECIALLY_HANDLED_ABSTRACT_INSTR
-from tier2_generator import tier2_replace_error
 from cwriter import CWriter
 from typing import TextIO, Iterator
 from lexer import Token
-from stack import StackOffset, Stack, SizeMismatch, UNUSED
+from stack import StackOffset, Stack, SizeMismatch
 
 DEFAULT_OUTPUT = ROOT / "Python/abstract_interp_cases.c.h"
+DEFAULT_ABSTRACT_INUPT = ROOT / "Python/tier2_redundancy_eliminator_bytecodes.c"
+
+def validate_uop(override: Uop, uop: Uop) -> None:
+    # To do
+    pass
+
+def type_name(var: StackItem) -> str:
+    if var.is_array():
+        return f"_Py_UOpsSymType **"
+    if var.type:
+        return var.type
+    return f"_Py_UOpsSymType *"
 
 
-NO_CONST_OR_TYPE_EVALUATE = {
-    "_RESUME_CHECK",
-    "_GUARD_GLOBALS_VERSION",
-    "_GUARD_BUILTINS_VERSION",
-    "_CHECK_MANAGED_OBJECT_HAS_VALUES",
-    "_CHECK_PEP_523",
-    "_CHECK_STACK_SPACE",
-    "_INIT_CALL_PY_EXACT_ARGS",
-    "_END_SEND",
-    "_POP_TOP",
-    "_NOP",
-    "_SWAP",
-}
-
-
-MANGLED_NULL = "__null_"
-
-def declare_variables(
-    uop: Uop,
-    out: CWriter,
-    default_type: str = "_Py_UOpsSymType *",
-    skip_inputs: bool = False,
-    skip_peeks: bool = False,
-) -> None:
-    # Don't declare anything for these guards, they will always be evaluated.
-    if uop.properties.guard and uop.name in NO_CONST_OR_TYPE_EVALUATE:
-        return
-    variables = set(UNUSED)
-    if not skip_inputs:
-        for var in reversed(uop.stack.inputs):
-            if skip_peeks and var.peek:
-                continue
-            if var.name not in variables:
-                type = default_type
-                if var.size != "1" and var.type == "PyObject **":
-                    type = "_Py_UOpsSymType **"
-                variables.add(var.name)
-                if var.condition:
-                    out.emit(f"{type}{var.name} = NULL;\n")
-                else:
-                    out.emit(f"{type}{var.name};\n")
-                if var.name == MANGLED_NULL and not var.peek:
-                    out.emit(f"{var.name} = sym_init_push_null(ctx);\n")
-                    out.emit(f"if ({var.name} == NULL) {{ goto error; }}\n")
-    for var in uop.stack.outputs:
-        if skip_peeks and var.peek:
-            continue
-        if var.size != "1":
+def declare_variables(uop: Uop, out: CWriter, peeks: bool) -> None:
+    variables = {"unused"}
+    for var in reversed(uop.stack.inputs):
+        if var.peek and not peeks:
             continue
         if var.name not in variables:
             variables.add(var.name)
-            type = default_type
-            if var.size != "1" and var.type == "PyObject **":
-                type = "_Py_UOpsSymType **"
             if var.condition:
-                out.emit(f"{type}{var.name} = NULL;\n")
+                out.emit(f"{type_name(var)}{var.name} = sym_init_null(ctx);\n")
+                out.emit(f"if({var.name}) {{goto error;}}\n")
             else:
-                out.emit(f"{type}{var.name};\n")
-            if var.name == MANGLED_NULL and not var.peek:
-                out.emit(f"{var.name} = sym_init_push_null(ctx);\n")
-                out.emit(f"if ({var.name} == NULL) {{ goto error; }}\n")
-
-
-def tier2_replace_deopt(
-    out: CWriter,
-    tkn: Token,
-    tkn_iter: Iterator[Token],
-    uop: Uop,
-    unused: Stack,
-    inst: Instruction | None,
-) -> None:
-    out.emit_at("if ", tkn)
-    out.emit(next(tkn_iter))
-    emit_to(out, tkn_iter, "RPAREN")
-    next(tkn_iter)  # Semi colon
-    out.emit(") goto error;\n")
-
-
-TIER2_REPLACEMENT_FUNCTIONS = REPLACEMENT_FUNCTIONS.copy()
-TIER2_REPLACEMENT_FUNCTIONS["ERROR_IF"] = tier2_replace_error
-TIER2_REPLACEMENT_FUNCTIONS["DEOPT_IF"] = tier2_replace_deopt
-
-def _write_body_abstract_interp_impure_uop(
-    mangled_uop: Uop, uop: Uop, out: CWriter, stack: Stack
-) -> None:
-    # Simply make all outputs effects unknown
-
-    for var in mangled_uop.stack.outputs:
-        if (var.name in UNUSED and var.size == "1") or var.peek:
+                out.emit(f"{type_name(var)}{var.name};\n")
+    for var in uop.stack.outputs:
+        if var.peek and not peeks:
             continue
+        if var.name not in variables:
+            variables.add(var.name)
+            if var.condition:
+                out.emit(f"{type_name(var)}{var.name} = sym_init_null(ctx);\n")
+                out.emit(f"if({var.name}) {{goto error;}}\n")
+            else:
+                out.emit(f"{type_name(var)}{var.name};\n")
 
-        if var.size == "1":
-            if var.name != MANGLED_NULL:
+def decref_inputs(
+        out: CWriter,
+        tkn: Token,
+        tkn_iter: Iterator[Token],
+        uop: Uop,
+        stack: Stack,
+        inst: Instruction | None,
+) -> None:
+    next(tkn_iter)
+    next(tkn_iter)
+    next(tkn_iter)
+    out.emit_at("", tkn)
+
+def emit_default(out: CWriter, uop: Uop) -> None:
+    for i, var in enumerate(uop.stack.outputs):
+        if var.name != "unused" and not var.peek:
+            if var.is_array():
+                out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
+                out.emit(f"{var.name}[_i] = sym_init_unknown(ctx);\n")
+                out.emit(f"if ({var.name}[_i] == NULL) goto error;\n")
+                out.emit("}\n")
+            elif var.name == "null":
                 out.emit(f"{var.name} = sym_init_unknown(ctx);\n")
-                out.emit(f"if({var.name} == NULL) goto error;\n")
-                if var.type_prop:
-                    out.emit(f"sym_set_type({var.name}, {var.type_prop[0]}, 0);\n")
-        else:
-            # See UNPACK_SEQUENCE for when we need this.
-            out.emit(
-                f"for (int case_gen_i = 0; case_gen_i < ({var.size}); case_gen_i++) {{\n"
-            )
-            out.emit(f"*(stack_pointer + case_gen_i) = sym_init_unknown(ctx);\n")
-            out.emit(f"if(*(stack_pointer + case_gen_i) == NULL) goto error;\n")
-            if var.type_prop:
-                out.emit(
-                    f"sym_set_type(*(stack_pointer + case_gen_i), {var.type_prop[0]}, 0);\n"
-                )
-            out.emit("}\n")
-
-
-def mangle_uop_names(uop: Uop) -> Uop:
-    uop = dataclasses.replace(uop)
-    new_stack = dataclasses.replace(uop.stack)
-    new_stack.inputs = [
-        dataclasses.replace(var, name=f"__{var.name}_") for var in uop.stack.inputs
-    ]
-    new_stack.outputs = [
-        dataclasses.replace(var, name=f"__{var.name}_") for var in uop.stack.outputs
-    ]
-    uop.stack = new_stack
-    return uop
-
-
-# Returns a tuple of a pointer to an array of subexpressions, the length of said array
-# and a string containing the join of all other subexpressions obtained from stack input.
-# This grabs variadic inputs that depend on things like oparg or cache
-def get_subexpressions(
-    input_vars: list[StackItem],
-) -> tuple[str | None, int | str, str]:
-    arr_var = [(var.name, var) for var in input_vars if var.size > "1"]
-    assert len(arr_var) <= 1, "Can have at most one array input from oparg/cache"
-    arr_var_name = arr_var[0][0] if len(arr_var) == 1 else None
-    arr_var_size = (arr_var[0][1].size or 0) if arr_var_name is not None else 0
-    if arr_var_name is not None:
-        input_vars.remove(arr_var[0][1])
-    var = ", ".join([v.name for v in input_vars])
-    if var:
-        var = ", " + var
-    return arr_var_name, arr_var_size, var
-
-
-def new_sym(
-    constant: str | None,
-) -> str:
-    return (
-        f"_Py_UOpsSymType_New("
-        f"ctx, {constant or 'NULL'});"
-    )
-
-
-def declare_caches(uop: Uop, out: CWriter) -> None:
-    for cache in uop.caches:
-        if cache.name not in UNUSED:
-            if cache.size == 4:
-                type = cast = "PyObject *"
+                out.emit(f"if ({var.name} == NULL) goto error;\n")
             else:
-                type = f"uint{cache.size*16}_t "
-                cast = f"uint{cache.size*16}_t"
-            out.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND();\n")
+                out.emit(f"{var.name} = sym_init_unknown(ctx);\n")
+                out.emit(f"if ({var.name} == NULL) goto error;\n")
 
-
-def _write_body_abstract_interp_pure_uop(
-    mangled_uop: Uop, uop: Uop, out: CWriter, stack: Stack
+def write_uop(
+        override: Uop | None, uop: Uop, out: CWriter, stack: Stack, debug: bool
 ) -> None:
-    arr_var_name, arr_var_size, subexpressions = get_subexpressions(
-        mangled_uop.stack.inputs
-    )
-
-    # uop is non-trivial - we cannot const evaluate it
-    if uop.name in NO_CONST_OR_TYPE_EVALUATE:
-        for in_ in mangled_uop.stack.inputs:
-            out.emit(f"(void){in_.name};\n")
-        return
-
-    # Constant prop handled no variadic inputs.
-    # Perhaps in the future we can support these.
-    if all(input.size == "1" for input in uop.stack.inputs):
-        # We can try a constant evaluation
-        out.emit("// Constant evaluation\n")
-        predicates = " && ".join(
-            [
-                f"is_const({var.name})"
-                for var in mangled_uop.stack.inputs
-                if var.name not in UNUSED
-            ]
-        )
-
-        if predicates:
-            declare_caches(uop, out)
-
-        out.emit(f"if ({predicates or 0}) {{\n")
-        declare_variables(uop, out, default_type="PyObject *")
-        for var, mangled_var in zip(uop.stack.inputs, mangled_uop.stack.inputs):
-            out.emit(f"{var.name} = get_const({mangled_var.name});\n")
-        emit_tokens(out, uop, stack, None, TIER2_REPLACEMENT_FUNCTIONS)
-        out.emit("\n")
-        const_val = f"(PyObject *){uop.stack.outputs[0].name}"
-        maybe_const_val = new_sym(const_val)
-        out.emit(f"{mangled_uop.stack.outputs[0].name} = {maybe_const_val}\n")
-        out.emit(f"if({mangled_uop.stack.outputs[0].name} == NULL) {{ goto error; }}\n")
-        out.emit(f"if (emit_const(&ctx->emitter, {const_val}, "
-                 f"{len(uop.stack.inputs)}) < 0) {{ goto error; }}\n")
-        out.emit("new_inst.opcode = _NOP;\n")
-        out.emit("}\n")
-        if not mangled_uop.stack.outputs[0].peek:
-            out.emit("else {\n")
-            sym = new_sym(None)
-            out.emit(f"{mangled_uop.stack.outputs[0].name} = {sym}\n")
-            out.emit(f"if ({mangled_uop.stack.outputs[0].name} == NULL) {{ goto error; }}\n")
-            out.emit("}\n")
-
-    out.emit(f"if ({mangled_uop.stack.outputs[0].name} == NULL) goto error;\n")
-
-    # Perform type propagation
-    if (typ := uop.stack.outputs[0].type_prop) is not None:
-        typname, aux = typ
-        aux = "0" if aux is None else aux
-        out.emit("// Type propagation\n")
-        out.emit(
-            f"sym_set_type({mangled_uop.stack.outputs[0].name}, {typname}, (uint32_t){aux});"
-        )
-
-
-def _write_body_abstract_interp_guard_uop(
-    mangled_uop: Uop, uop: Uop, out: CWriter, stack: Stack
-) -> None:
-    # 1. Attempt to perform guard elimination
-    # 2. Type propagate for guard success
-    if uop.name in NO_CONST_OR_TYPE_EVALUATE:
-        return
-
-    out.emit("// Constant evaluation\n")
-    predicates_str = " && ".join(
-        [
-            f"is_const({var.name})"
-            for var in mangled_uop.stack.inputs
-            if var.name not in UNUSED
-        ]
-    )
-    if predicates_str:
-        declare_caches(uop, out)
-        out.emit(f"if ({predicates_str}) {{\n")
-        declare_variables(uop, out, default_type="PyObject *")
-        for var, mangled_var in zip(uop.stack.inputs, mangled_uop.stack.inputs):
-            if var.name in UNUSED:
-                continue
-            out.emit(f"{var.name} = get_const({mangled_var.name});\n")
-        emit_tokens(out, uop, stack, None, TIER2_REPLACEMENT_FUNCTIONS)
-        out.emit("\n")
-        # Guard elimination
-        out.emit('DPRINTF(3, "const eliminated guard\\n");\n')
-        out.emit("new_inst.opcode = _NOP;\n")
-        out.emit("break;\n")
-        out.emit("}\n")
-
-    # Does the input specify typed inputs?
-    if not any(output_var.type_prop for output_var in mangled_uop.stack.outputs):
-        return
-    # If the input types already match, eliminate the guard
-    # Read the cache information to check the auxiliary type information
-    predicates = []
-    propagates = []
-
-    assert len(mangled_uop.stack.outputs) == len(
-        mangled_uop.stack.inputs
-    ), "guards must have same number of args"
-    assert [
-        output == input_
-        for output, input_ in zip(mangled_uop.stack.outputs, mangled_uop.stack.inputs)
-    ], "guards must forward their stack values"
-    for output_var in mangled_uop.stack.outputs:
-        if output_var.name in UNUSED:
-            continue
-        if (typ := output_var.type_prop) is not None:
-            typname, aux = typ
-            aux = "0" if aux is None else aux
-            # Check that the input type information match (including auxiliary info)
-            predicates.append(
-                f"sym_matches_type((_Py_UOpsSymType *){output_var.name}, {typname}, (uint32_t){aux})"
-            )
-            # Propagate mode - set the types
-            propagates.append(
-                f"sym_set_type((_Py_UOpsSymType *){output_var.name}, {typname}, (uint32_t){aux})"
-            )
-
-    out.emit("// Type guard elimination\n")
-    out.emit(f"if ({' && '.join(predicates)}) {{\n")
-    out.emit('DPRINTF(2, "type propagation eliminated guard\\n");\n')
-    out.emit("new_inst.opcode = _NOP;\n")
-    out.emit("break;\n")
-    out.emit("}\n")
-    # Else we need the guard
-    out.emit("else {\n")
-    out.emit("// Type propagation\n")
-    for prop in propagates:
-        out.emit(f"{prop};\n")
-    out.emit("}\n")
-
-
-def write_abstract_uop(mangled_uop: Uop, uop: Uop, out: CWriter, stack: Stack) -> None:
     try:
+        prototype = override if override else uop
+        has_type_prop = any(output.type_prop is not None for output in  uop.stack.outputs)
+        peeks = override is not None or has_type_prop
         out.start_line()
-        is_impure = not mangled_uop.properties.pure and not mangled_uop.properties.guard
-        # These types of guards do not need the stack at all.
-        if not (
-            mangled_uop.properties.guard
-            and mangled_uop.name in NO_CONST_OR_TYPE_EVALUATE
-        ):
-            for var in reversed(mangled_uop.stack.inputs):
-                definition = stack.pop(var)
-                if not is_impure:
-                    out.emit(definition)
-        if not mangled_uop.properties.stores_sp:
-            for i, var in enumerate(mangled_uop.stack.outputs):
-                definition = stack.push(var)
-                if not (is_impure and var.size != "1"):
-                    out.emit(definition)
-        if uop.properties.pure:
-            _write_body_abstract_interp_pure_uop(mangled_uop, uop, out, stack)
-        elif uop.properties.guard:
-            _write_body_abstract_interp_guard_uop(mangled_uop, uop, out, stack)
+        for var in reversed(prototype.stack.inputs):
+            if not var.peek or peeks:
+                out.emit(stack.pop(var))
+        if not prototype.properties.stores_sp:
+            for i, var in enumerate(prototype.stack.outputs):
+                if not var.peek or peeks:
+                    out.emit(stack.push(var))
+        if debug:
+            args = []
+            for var in prototype.stack.inputs:
+                if not var.peek or peeks:
+                    args.append(var.name)
+            out.emit(f'DEBUG_PRINTF({", ".join(args)});\n')
+        if override or has_type_prop:
+            for cache in uop.caches:
+                if cache.name != "unused":
+                    if cache.size == 4:
+                        type = cast = "PyObject *"
+                    else:
+                        type = f"uint{cache.size*16}_t "
+                        cast = f"uint{cache.size*16}_t"
+                    out.emit(f"{type}{cache.name} = ({cast})inst->operand;\n")
+        if override:
+            replacement_funcs = {
+                "DECREF_INPUTS": decref_inputs,
+                "SYNC_SP": replace_sync_sp
+            }
+            emit_tokens(out, override, stack, None, replacement_funcs)
         else:
-            _write_body_abstract_interp_impure_uop(mangled_uop, uop, out, stack)
+            emit_default(out, uop)
+        # Type propagation
+        for output in uop.stack.outputs:
+            if (typ := output.type_prop):
+                typname, refinement = typ
+                refinement = refinement or "0"
+                out.emit(f"sym_set_type({output.name}, {typname}, {refinement});\n")
+
+        if prototype.properties.stores_sp:
+            for i, var in enumerate(prototype.stack.outputs):
+                if not var.peek or peeks:
+                    out.emit(stack.push(var))
+        out.start_line()
+        stack.flush(out)
     except SizeMismatch as ex:
         raise analysis_error(ex.args[0], uop.body[0])
 
@@ -367,23 +154,17 @@ def write_abstract_uop(mangled_uop: Uop, uop: Uop, out: CWriter, stack: Stack) -
 SKIPS = ("_EXTENDED_ARG",)
 
 
-def generate_tier2_abstract(
-    filenames: list[str], analysis: Analysis, outfile: TextIO, lines: bool
+def generate_abstract_interpreter(
+        filenames: list[str], abstract: Analysis, base: Analysis, outfile: TextIO, debug: bool
 ) -> None:
     write_header(__file__, filenames, outfile)
-    outfile.write(
-        """
-#ifdef TIER_ONE
-    #error "This file is for Tier 2 only"
-#endif
-#define TIER_TWO 2
-"""
-    )
-    out = CWriter(outfile, 2, lines)
+    out = CWriter(outfile, 2, False)
     out.emit("\n")
-    for name, uop in analysis.uops.items():
-        if name in SPECIALLY_HANDLED_ABSTRACT_INSTR:
-            continue
+    for uop in base.uops.values():
+        override: Uop | None = None
+        if uop.name in abstract.uops:
+            override = abstract.uops[uop.name]
+            validate_uop(override, uop)
         if uop.properties.tier_one_only:
             continue
         if uop.is_super():
@@ -392,21 +173,17 @@ def generate_tier2_abstract(
             out.emit(f"/* {uop.name} is not a viable micro-op for tier 2 */\n\n")
             continue
         out.emit(f"case {uop.name}: {{\n")
-        mangled_uop = mangle_uop_names(uop)
-        is_impure = not (mangled_uop.properties.pure or mangled_uop.properties.guard)
-        declare_variables(mangled_uop, out, skip_inputs=is_impure, skip_peeks=is_impure)
+        if override:
+            declare_variables(override, out, True)
+        else:
+            has_type_prop = any(output.type_prop is not None for output in  uop.stack.outputs)
+            declare_variables(uop, out, has_type_prop)
         stack = Stack()
-        write_abstract_uop(mangled_uop, uop, out, stack)
+        write_uop(override, uop, out, stack, debug)
         out.start_line()
-        if not uop.properties.always_exits:
-            # Guards strictly only peek
-            if not uop.properties.guard:
-                stack.flush(out, cast_type="_Py_UOpsSymType *")
-            out.emit("break;\n")
-        out.start_line()
+        out.emit("break;\n")
         out.emit("}")
         out.emit("\n\n")
-    outfile.write("#undef TIER_TWO\n")
 
 
 arg_parser = argparse.ArgumentParser(
@@ -418,18 +195,25 @@ arg_parser.add_argument(
     "-o", "--output", type=str, help="Generated code", default=DEFAULT_OUTPUT
 )
 
+
 arg_parser.add_argument(
-    "-l", "--emit-line-directives", help="Emit #line directives", action="store_true"
+    "input", nargs=1, help="Abstract interpreter definition file"
 )
 
 arg_parser.add_argument(
-    "input", nargs=argparse.REMAINDER, help="Instruction definition file(s)"
+    "base", nargs=argparse.REMAINDER, help="The base instruction definition file(s)"
+)
+
+arg_parser.add_argument(
+    "-d", "--debug", help="Insert debug calls", action="store_true"
 )
 
 if __name__ == "__main__":
     args = arg_parser.parse_args()
-    if len(args.input) == 0:
+    if len(args.base) == 0:
         args.input.append(DEFAULT_INPUT)
-    data = analyze_files(args.input)
+        args.input.append(DEFAULT_ABSTRACT_INUPT)
+    abstract = analyze_files(args.input)
+    base = analyze_files(args.base)
     with open(args.output, "w") as outfile:
-        generate_tier2_abstract(args.input, data, outfile, args.emit_line_directives)
+        generate_abstract_interpreter(args.input, abstract, base, outfile, args.debug)
