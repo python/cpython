@@ -2735,8 +2735,6 @@ list_index_impl(PyListObject *self, PyObject *value, Py_ssize_t start,
                 Py_ssize_t stop)
 /*[clinic end generated code: output=ec51b88787e4e481 input=40ec5826303a0eb1]*/
 {
-    Py_ssize_t i;
-
     if (start < 0) {
         start += Py_SIZE(self);
         if (start < 0)
@@ -2747,7 +2745,7 @@ list_index_impl(PyListObject *self, PyObject *value, Py_ssize_t start,
         if (stop < 0)
             stop = 0;
     }
-    for (i = start; i < stop && i < Py_SIZE(self); i++) {
+    for (Py_ssize_t i = start; i < stop; i++) {
         PyObject *obj = list_get_item_ref(self, i);
         if (obj == NULL) {
             // out-of-bounds
