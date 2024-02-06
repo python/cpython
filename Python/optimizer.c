@@ -17,8 +17,6 @@
 #include "pycore_uop_metadata.h" // Uop tables
 #undef NEED_OPCODE_METADATA
 
-#define UOP_MAX_TRACE_LENGTH 512
-
 #define MAX_EXECUTORS_SIZE 256
 
 
@@ -223,8 +221,27 @@ static PyMethodDef executor_methods[] = {
 
 ///////////////////// Experimental UOp Optimizer /////////////////////
 
+
+static void
+clear_strong_refs_in_uops(_PyUOpInstruction *trace, Py_ssize_t uop_len)
+{
+    for (Py_ssize_t i = 0; i < uop_len; i++) {
+        if (trace[i].opcode == _LOAD_CONST_INLINE ||
+            trace[i].opcode == _LOAD_CONST_INLINE_WITH_NULL) {
+            PyObject *c = (PyObject*)trace[i].operand;
+            Py_CLEAR(c);
+        }
+        if (trace[i].opcode == _JUMP_ABSOLUTE ||
+            trace[i].opcode == _JUMP_TO_TOP ||
+            trace[i].opcode == _EXIT_TRACE) {
+            return;
+        }
+    }
+}
+
 static void
 uop_dealloc(_PyExecutorObject *self) {
+    clear_strong_refs_in_uops(&self->trace[0], Py_SIZE(self));
     _Py_ExecutorClear(self);
 #ifdef _Py_JIT
     _PyJIT_Free(self);
@@ -312,8 +329,6 @@ BRANCH_TO_GUARD[4][2] = {
     [POP_JUMP_IF_NOT_NONE - POP_JUMP_IF_FALSE][1] = _GUARD_IS_NOT_NONE_POP,
 };
 
-#define TRACE_STACK_SIZE 5
-
 #define CONFIDENCE_RANGE 1000
 #define CONFIDENCE_CUTOFF 333
 
@@ -327,10 +342,11 @@ BRANCH_TO_GUARD[4][2] = {
 
 #define ADD_TO_TRACE(OPCODE, OPARG, OPERAND, TARGET) \
     DPRINTF(2, \
-            "  ADD_TO_TRACE(%s, %d, %" PRIu64 ")\n", \
+            "  ADD_TO_TRACE(%s, %d, %" PRIu64 ", %d)\n", \
             _PyUOpName(OPCODE), \
             (OPARG), \
-            (uint64_t)(OPERAND)); \
+            (uint64_t)(OPERAND), \
+            TARGET); \
     assert(trace_length < max_length); \
     trace[trace_length].opcode = (OPCODE); \
     trace[trace_length].oparg = (OPARG); \
@@ -720,13 +736,13 @@ compute_used(_PyUOpInstruction *buffer, uint32_t *used)
 {
     int count = 0;
     SET_BIT(used, 0);
-    for (int i = 0; i < UOP_MAX_TRACE_LENGTH; i++) {
+    for (int i = 0; i < UOP_MAX_TRACE_WORKING_LENGTH; i++) {
         if (!BIT_IS_SET(used, i)) {
             continue;
         }
         count++;
         int opcode = buffer[i].opcode;
-        if (opcode == _JUMP_TO_TOP || opcode == _EXIT_TRACE) {
+        if (opcode == _JUMP_TO_TOP || opcode == _EXIT_TRACE || opcode == _JUMP_ABSOLUTE) {
             continue;
         }
         /* All other micro-ops fall through, so i+1 is reachable */
@@ -752,7 +768,7 @@ compute_used(_PyUOpInstruction *buffer, uint32_t *used)
 static _PyExecutorObject *
 make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
 {
-    uint32_t used[(UOP_MAX_TRACE_LENGTH + 31)/32] = { 0 };
+    uint32_t used[(UOP_MAX_TRACE_WORKING_LENGTH + 31)/32] = { 0 };
     int length = compute_used(buffer, used);
     _PyExecutorObject *executor = PyObject_NewVar(_PyExecutorObject, &_PyUOpExecutor_Type, length);
     if (executor == NULL) {
@@ -760,14 +776,15 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
     }
     int dest = length - 1;
     /* Scan backwards, so that we see the destinations of jumps before the jumps themselves. */
-    for (int i = UOP_MAX_TRACE_LENGTH-1; i >= 0; i--) {
+    for (int i = UOP_MAX_TRACE_WORKING_LENGTH-1; i >= 0; i--) {
         if (!BIT_IS_SET(used, i)) {
             continue;
         }
         executor->trace[dest] = buffer[i];
         int opcode = buffer[i].opcode;
         if (opcode == _POP_JUMP_IF_FALSE ||
-            opcode == _POP_JUMP_IF_TRUE)
+            opcode == _POP_JUMP_IF_TRUE ||
+            opcode == _JUMP_ABSOLUTE)
         {
             /* The oparg of the target will already have been set to its new offset */
             int oparg = executor->trace[dest].oparg;
@@ -779,6 +796,19 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
         dest--;
     }
     assert(dest == -1);
+    // Rewrite backward jumps
+    if (executor->trace[length-1].opcode == _JUMP_ABSOLUTE) {
+        bool found = false;
+        for (int end = length - 1; end >= 0; end--) {
+            if (executor->trace[end].opcode == _JUMP_ABSOLUTE_HEADER) {
+                executor->trace[length-1].oparg = end + 1;
+                found = true;
+                break;
+            }
+        }
+        assert(found);
+        (void)found;
+    }
     _Py_ExecutorInit(executor, dependencies);
 #ifdef Py_DEBUG
     char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
@@ -819,21 +849,19 @@ uop_optimize(
 {
     _PyBloomFilter dependencies;
     _Py_BloomFilter_Init(&dependencies);
-    _PyUOpInstruction buffer[UOP_MAX_TRACE_LENGTH];
+    _PyUOpInstruction buffer[UOP_MAX_TRACE_WORKING_LENGTH];
     int err = translate_bytecode_to_trace(frame, instr, buffer, UOP_MAX_TRACE_LENGTH, &dependencies);
     if (err <= 0) {
         // Error or nothing translated
         return err;
     }
     OPT_STAT_INC(traces_created);
-    char *uop_optimize = Py_GETENV("PYTHONUOPSOPTIMIZE");
-    if (uop_optimize == NULL || *uop_optimize > '0') {
-        err = _Py_uop_analyze_and_optimize(frame, buffer,
-                                           UOP_MAX_TRACE_LENGTH, curr_stackentries, &dependencies);
-        if (err <= 0) {
-            return err;
-        }
+    err = _Py_uop_analyze_and_optimize(frame, buffer,
+                                        UOP_MAX_TRACE_WORKING_LENGTH, curr_stackentries, &dependencies);
+    if (err <= 0) {
+        return err;
     }
+    assert(err == 1);
     _PyExecutorObject *executor = make_executor_from_uops(buffer, &dependencies);
     if (executor == NULL) {
         return -1;

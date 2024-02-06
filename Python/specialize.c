@@ -240,6 +240,21 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
     print_histogram(out, "Trace run length", stats->trace_run_length_hist);
     print_histogram(out, "Optimized trace length", stats->optimized_trace_length_hist);
 
+    fprintf(out, "Optimization optimizer attempts: %" PRIu64 "\n", stats->optimizer_attempts);
+    fprintf(out, "Optimization optimizer successes: %" PRIu64 "\n", stats->optimizer_successes);
+    fprintf(out, "Optimization optimizer failure null function: %" PRIu64 "\n",
+            stats->optimizer_failure_reason_null_function);
+    fprintf(out, "Optimization optimizer failure no memory: %" PRIu64 "\n",
+            stats->optimizer_failure_reason_no_memory);
+    fprintf(out, "Optimization optimizer failure no writebuffer left: %" PRIu64 "\n",
+            stats->optimizer_failure_reason_no_writebuffer);
+    fprintf(out, "Optimization optimizer loop duplication attempts: %" PRIu64 "\n",
+            stats->loop_body_duplication_attempts);
+    fprintf(out, "Optimization optimizer loop duplication successes: %" PRIu64 "\n",
+            stats->loop_body_duplication_successes);
+    fprintf(out, "Optimization optimizer loop duplication no memory: %" PRIu64 "\n",
+            stats->loop_body_duplication_no_mem);
+
     const char* const* names;
     for (int i = 0; i < 512; i++) {
         if (i < 256) {

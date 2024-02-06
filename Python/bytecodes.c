@@ -133,7 +133,7 @@ dummy_func(
     switch (opcode) {
 
 // BEGIN BYTECODES //
-        inst(NOP, (--)) {
+        pure inst(NOP, (--)) {
         }
 
         family(RESUME, 0) = {
@@ -1859,7 +1859,7 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
-        op(_LOAD_ATTR, (owner -- attr, self_or_null if (oparg & 1))) {
+        op(_LOAD_ATTR, (owner -- attr, self_or_null: &SELF_OR_NULL if (oparg & 1))) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
             if (oparg & 1) {
                 /* Designed to work in tandem with CALL, pushes two values. */
@@ -1877,7 +1877,7 @@ dummy_func(
                        something was returned by a descriptor protocol).  Set
                        the second element of the stack to NULL, to signal
                        CALL that it's not a method call.
-                       NULL | meth | arg1 | ... | argN
+                       meth | NULL | arg1 | ... | argN
                     */
                     DECREF_INPUTS();
                     ERROR_IF(attr == NULL, error);
@@ -2880,7 +2880,7 @@ dummy_func(
             exc_info->exc_value = Py_NewRef(new_exc);
         }
 
-        op(_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT, (owner -- owner: &GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_TYPE)) {
+        op(_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT, (owner -- owner)) {
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
             DEOPT_IF(!_PyDictOrValues_IsValues(*dorv) && !_PyObject_MakeInstanceAttributesFromDict(owner, dorv));
@@ -4065,28 +4065,36 @@ dummy_func(
             DEOPT_IF(1);
         }
 
+        op(_JUMP_ABSOLUTE, (--)) {
+            next_uop = current_executor->trace + oparg;
+            CHECK_EVAL_BREAKER();
+        }
+
+        op(_JUMP_ABSOLUTE_HEADER, (--)) {
+        }
+
         op(_CHECK_VALIDITY, (--)) {
             TIER_TWO_ONLY
             DEOPT_IF(!current_executor->vm_data.valid);
         }
 
-        op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
+        pure op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
             TIER_TWO_ONLY
             value = Py_NewRef(ptr);
         }
 
-        op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
+        pure op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
             TIER_TWO_ONLY
             value = ptr;
         }
 
-        op(_LOAD_CONST_INLINE_WITH_NULL, (ptr/4 -- value, null)) {
+        pure op(_LOAD_CONST_INLINE_WITH_NULL, (ptr/4 -- value, null)) {
             TIER_TWO_ONLY
             value = Py_NewRef(ptr);
             null = NULL;
         }
 
-        op(_LOAD_CONST_INLINE_BORROW_WITH_NULL, (ptr/4 -- value, null)) {
+        pure op(_LOAD_CONST_INLINE_BORROW_WITH_NULL, (ptr/4 -- value, null)) {
             TIER_TWO_ONLY
             value = ptr;
             null = NULL;
@@ -4106,6 +4114,10 @@ dummy_func(
         op(_INTERNAL_INCREMENT_OPT_COUNTER, (opt --)) {
             _PyCounterOptimizerObject *exe = (_PyCounterOptimizerObject *)opt;
             exe->count++;
+        }
+
+        op(_SHRINK_STACK, (args[oparg] --)) {
+            DECREF_INPUTS();
         }
 
 

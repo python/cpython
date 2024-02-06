@@ -15,6 +15,7 @@ from generators_common import (
     write_header,
     cflags,
 )
+from stack import Stack
 from cwriter import CWriter
 from typing import TextIO
 
@@ -40,6 +41,25 @@ def generate_names_and_flags(analysis: Analysis, out: CWriter) -> None:
     out.emit("#endif // NEED_OPCODE_METADATA\n\n")
 
 
+def generate_net_stack_effect(analysis: Analysis, out: CWriter) -> None:
+    out.emit("extern int _PyUop_NetStackEffect(int opcode, int oparg);\n")
+    out.emit("#ifdef NEED_OPCODE_METADATA\n")
+    out.emit("int _PyUop_NetStackEffect(int opcode, int oparg) {\n")
+    out.emit("switch (opcode) {\n")
+    for uop in analysis.uops.values():
+        if uop.is_viable() and not uop.properties.tier_one_only:
+            out.emit(f"case {uop.name}:\n")
+            stack = Stack()
+            for inputs in uop.stack.inputs:
+                stack.pop(inputs)
+            for outputs in uop.stack.outputs:
+                stack.push(outputs)
+            out.emit(f"return ({stack.top_offset.to_c()});\n")
+    out.emit("default: Py_UNREACHABLE();\n")
+    out.emit("};\n")
+    out.emit("};\n\n")
+    out.emit("#endif // NEED_OPCODE_METADATA\n\n")
+
 def generate_uop_metadata(
     filenames: list[str], analysis: Analysis, outfile: TextIO
 ) -> None:
@@ -49,6 +69,7 @@ def generate_uop_metadata(
         out.emit("#include <stdint.h>\n")
         out.emit('#include "pycore_uop_ids.h"\n')
         generate_names_and_flags(analysis, out)
+        generate_net_stack_effect(analysis, out)
 
 
 arg_parser = argparse.ArgumentParser(

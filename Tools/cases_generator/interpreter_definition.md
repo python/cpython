@@ -156,12 +156,11 @@ and their refinements are below. They obey the following predicates:
 * `NULL_TYPE`: `val == NULL`
 * `GUARD_TYPE_VERSION_TYPE`: `type->tp_version_tag == auxillary`
 * `GUARD_DORV_VALUES_TYPE`: `_PyDictOrValues_IsValues(obj)`
-* `GUARD_DORV_VALUES_INST_ATTR_FROM_DICT_TYPE`:
-  `_PyDictOrValues_IsValues(obj) || _PyObject_MakeInstanceAttributesFromDict(obj, dorv)`
 * `GUARD_KEYS_VERSION_TYPE`: `owner_heap_type->ht_cached_keys->dk_version == auxillary`
 * `PYMETHOD_TYPE`: `Py_TYPE(val) == &PyMethod_Type`
 * `PYFUNCTION_TYPE_VERSION_TYPE`:
   `PyFunction_Check(callable) && func->func_version == auxillary && code->co_argcount == oparg + (self_or_null != NULL)`
+* `SELF_OR_NULL`: `val == NULL || val != NULL`
 
 
 An `inst` without `stack_effect` is a transitional form to allow the original C code

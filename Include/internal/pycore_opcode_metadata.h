@@ -910,7 +910,8 @@ enum InstructionFormat {
 #define HAS_ERROR_FLAG (256)
 #define HAS_ESCAPES_FLAG (512)
 #define HAS_PURE_FLAG (1024)
-#define HAS_PASSTHROUGH_FLAG (2048)
+#define HAS_GUARD_FLAG (2048)
+#define HAS_SPECIAL_OPT_FLAG (4096)
 #define OPCODE_HAS_ARG(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_ARG_FLAG))
 #define OPCODE_HAS_CONST(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_CONST_FLAG))
 #define OPCODE_HAS_NAME(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_NAME_FLAG))
@@ -922,7 +923,8 @@ enum InstructionFormat {
 #define OPCODE_HAS_ERROR(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_ERROR_FLAG))
 #define OPCODE_HAS_ESCAPES(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_ESCAPES_FLAG))
 #define OPCODE_HAS_PURE(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_PURE_FLAG))
-#define OPCODE_HAS_PASSTHROUGH(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_PASSTHROUGH_FLAG))
+#define OPCODE_HAS_GUARD(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_GUARD_FLAG))
+#define OPCODE_HAS_SPECIAL_OPT(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_SPECIAL_OPT_FLAG))
 
 #define OPARG_FULL 0
 #define OPARG_CACHE_1 1
@@ -1094,7 +1096,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[268] = {
     [MATCH_KEYS] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [MATCH_MAPPING] = { true, INSTR_FMT_IX, 0 },
     [MATCH_SEQUENCE] = { true, INSTR_FMT_IX, 0 },
-    [NOP] = { true, INSTR_FMT_IX, 0 },
+    [NOP] = { true, INSTR_FMT_IX, HAS_PURE_FLAG },
     [POP_EXCEPT] = { true, INSTR_FMT_IX, HAS_ESCAPES_FLAG },
     [POP_JUMP_IF_FALSE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [POP_JUMP_IF_NONE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG },
@@ -1156,10 +1158,10 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[268] = {
     [LOAD_SUPER_METHOD] = { true, -1, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [LOAD_ZERO_SUPER_ATTR] = { true, -1, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [LOAD_ZERO_SUPER_METHOD] = { true, -1, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
-    [POP_BLOCK] = { true, -1, 0 },
-    [SETUP_CLEANUP] = { true, -1, HAS_ARG_FLAG },
-    [SETUP_FINALLY] = { true, -1, HAS_ARG_FLAG },
-    [SETUP_WITH] = { true, -1, HAS_ARG_FLAG },
+    [POP_BLOCK] = { true, -1, HAS_PURE_FLAG },
+    [SETUP_CLEANUP] = { true, -1, HAS_PURE_FLAG | HAS_ARG_FLAG },
+    [SETUP_FINALLY] = { true, -1, HAS_PURE_FLAG | HAS_ARG_FLAG },
+    [SETUP_WITH] = { true, -1, HAS_PURE_FLAG | HAS_ARG_FLAG },
     [STORE_FAST_MAYBE_NULL] = { true, -1, HAS_ARG_FLAG | HAS_LOCAL_FLAG },
 };
 #endif

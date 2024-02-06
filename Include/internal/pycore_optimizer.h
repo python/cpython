@@ -8,9 +8,20 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_uop_ids.h"
+
+// This is the length of the trace we project initially.
+#define UOP_MAX_TRACE_LENGTH 512
+// This the above + additional working space we need.
+#define UOP_MAX_TRACE_WORKING_LENGTH (UOP_MAX_TRACE_LENGTH * 2)
+
+#define TRACE_STACK_SIZE 5
+
 int _Py_uop_analyze_and_optimize(_PyInterpreterFrame *frame,
     _PyUOpInstruction *trace, int trace_len, int curr_stackentries,
     _PyBloomFilter *dependencies);
+
+
 
 extern PyTypeObject _PyCounterExecutor_Type;
 extern PyTypeObject _PyCounterOptimizer_Type;

@@ -1252,6 +1252,7 @@ init_interp_main(PyThreadState *tstate)
         if (_Py_get_xoption(&config->xoptions, L"uops") != NULL) {
             enabled = 1;
         }
+        enabled = 1; // TEMPORARY: always enable
         if (enabled) {
 #else
         // Always enable tier two for JIT builds (ignoring the environment

@@ -1598,7 +1598,7 @@
                        something was returned by a descriptor protocol).  Set
                        the second element of the stack to NULL, to signal
                        CALL that it's not a method call.
-                       NULL | meth | arg1 | ... | argN
+                       meth | NULL | arg1 | ... | argN
                      */
                     Py_DECREF(owner);
                     if (attr == NULL) goto pop_1_error_tier_two;
@@ -3384,6 +3384,17 @@
             break;
         }
 
+        case _JUMP_ABSOLUTE: {
+            oparg = CURRENT_OPARG();
+            next_uop = current_executor->trace + oparg;
+            CHECK_EVAL_BREAKER();
+            break;
+        }
+
+        case _JUMP_ABSOLUTE_HEADER: {
+            break;
+        }
+
         case _CHECK_VALIDITY: {
             TIER_TWO_ONLY
             if (!current_executor->vm_data.valid) goto deoptimize;
@@ -3456,6 +3467,17 @@
             _PyCounterOptimizerObject *exe = (_PyCounterOptimizerObject *)opt;
             exe->count++;
             stack_pointer += -1;
+            break;
+        }
+
+        case _SHRINK_STACK: {
+            PyObject **args;
+            oparg = CURRENT_OPARG();
+            args = &stack_pointer[-oparg];
+            for (int _i = oparg; --_i >= 0;) {
+                Py_DECREF(args[_i]);
+            }
+            stack_pointer += -oparg;
             break;
         }
 

@@ -16,7 +16,7 @@ extern PyObject* _PyFunction_Vectorcall(
 
 #define FUNC_MAX_WATCHERS 8
 
-#define FUNC_VERSION_CACHE_SIZE (1<<12)  /* Must be a power of 2 */
+#define FUNC_VERSION_CACHE_SIZE (1<<14)  /* Must be a power of 2 */
 struct _py_func_state {
     uint32_t next_version;
     // Borrowed references to function objects whose
