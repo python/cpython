@@ -753,8 +753,7 @@ class PathBase(PurePathBase):
         from contextlib import nullcontext
         return nullcontext(self.iterdir())
 
-    @classmethod
-    def _entry_str(cls, entry):
+    def _entry_str(self, entry):
         # Transform an entry yielded from _scandir() into a path string.
         return str(entry)
 
