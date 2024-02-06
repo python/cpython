@@ -884,9 +884,8 @@ loop_peeling:
     while (curr < end && !op_is_end(curr->opcode)) {
 
         if (!(_PyUop_Flags[curr->opcode] & HAS_PURE_FLAG) &&
-            !(_PyUop_Flags[curr->opcode] & HAS_SPECIAL_OPT_FLAG) &&
             !op_is_bookkeeping(curr->opcode) &&
-            !(_PyUop_Flags[curr->opcode] & HAS_GUARD_FLAG)) {
+            !(_PyUop_Flags[curr->opcode] & HAS_PASSTHROUGH_FLAG)) {
             DPRINTF(3, "Impure %s\n", _PyOpcode_uop_name[curr->opcode]);
             if (needs_clear_locals) {
                 if (clear_locals_type_info(&ctx) < 0) {

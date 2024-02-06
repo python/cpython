@@ -39,6 +39,7 @@ def generate_names_and_flags(analysis: Analysis, out: CWriter) -> None:
     out.emit("};\n")
     out.emit("#endif // NEED_OPCODE_METADATA\n\n")
 
+
 def generate_uop_metadata(
     filenames: list[str], analysis: Analysis, outfile: TextIO
 ) -> None:

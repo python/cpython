@@ -8,30 +8,6 @@ typedef struct _Py_UOpsSymType _Py_UOpsSymType;
 typedef struct _Py_UOpsAbstractInterpContext _Py_UOpsAbstractInterpContext;
 typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 
-extern _Py_UOpsSymType *get_local(_Py_UOpsAbstractFrame *frame, int index);
-extern void set_local(_Py_UOpsAbstractFrame *frame, int index, _Py_UOpsSymType *value);
-
-extern _Py_UOpsSymType *new_constant(PyObject *k, _Py_UOpsAbstractInterpContext *ctx);
-extern _Py_UOpsSymType *new_null(_Py_UOpsAbstractInterpContext *ctx);
-extern PyObject *get_constant(_Py_UOpsSymType *o);
-extern PyTypeObject *get_type(_Py_UOpsSymType *o);
-
-extern int is_constant(_Py_UOpsSymType *o);
-extern int is_int(_Py_UOpsSymType *o);
-extern int is_bool(_Py_UOpsSymType *o);
-extern int is_float(_Py_UOpsSymType *o);
-
-extern int is_not_none(_Py_UOpsSymType *o);
-extern int is_none(_Py_UOpsSymType *o);
-
-extern _Py_UOpsSymType *new_unknown(_Py_UOpsAbstractInterpContext *ctx);
-
-extern void promote_to_const(_Py_UOpsSymType *o, PyObject *k);
-extern void promote_to_type(_Py_UOpsSymType *o, PyTypeObject *t);
-
-extern SpecializerSpace *initialize_space(void *memory, int size);
-
-
 static int
 dummy_func(void) {
 
@@ -46,8 +22,8 @@ dummy_func(void) {
     _Py_UOpsSymType *top;
     _Py_UOpsSymType *bottom;
     _Py_UOpsAbstractFrame *frame;
-    SpecializerSpace *space;
-    _PyUOpInstruction *this_instr;
+    _Py_UOpsAbstractInterpContext *ctx;
+    _PyUOpInstruction *inst;
     _PyBloomFilter *dependencies;
     int modified;
 

@@ -51,8 +51,7 @@ FLAGS = [
     "ERROR",
     "ESCAPES",
     "PURE",
-    "GUARD",
-    "SPECIAL_OPT",
+    "PASSTHROUGH",
 ]
 
 
