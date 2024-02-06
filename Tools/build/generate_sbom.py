@@ -338,7 +338,7 @@ def discover_pip_sbom_package(sbom_data: dict[str, typing.Any]) -> None:
             "name": "pip",
             "versionInfo": pip_version,
             "originator": "Organization: Python Packaging Authority",
-            "licenseConcluded": "MIT",
+            "licenseConcluded": "NOASSERTION",
             "downloadLocation": pip_download_url,
             "checksums": [
                 {"algorithm": "SHA256", "checksumValue": pip_checksum_sha256}
@@ -383,9 +383,11 @@ def main() -> None:
     discover_pip_sbom_package(sbom_data)
 
     # Ensure all packages in this tool are represented also in the SBOM file.
+    actual_names = {package["name"] for package in sbom_data["packages"]}
+    expected_names = set(PACKAGE_TO_FILES)
     error_if(
-        {package["name"] for package in sbom_data["packages"]} != set(PACKAGE_TO_FILES),
-        "Packages defined in SBOM tool don't match those defined in SBOM file.",
+        actual_names != expected_names,
+        f"Packages defined in SBOM tool don't match those defined in SBOM file: {actual_names}, {expected_names}",
     )
 
     # Make a bunch of assertions about the SBOM data to ensure it's consistent.
@@ -422,8 +424,8 @@ def main() -> None:
         # License must be on the approved list for SPDX.
         license_concluded = package["licenseConcluded"]
         error_if(
-            license_concluded not in ALLOWED_LICENSE_EXPRESSIONS,
-            f"License identifier '{license_concluded}' not in SBOM tool allowlist"
+            license_concluded != "NOASSERTION",
+            f"License identifier must be 'NOASSERTION'"
         )
 
     # We call 'sorted()' here a lot to avoid filesystem scan order issues.
