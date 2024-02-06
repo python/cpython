@@ -161,7 +161,7 @@ typedef typeof union unsigned void volatile while
 def ensure_legal_c_identifier(s: str) -> str:
     # for now, just complain if what we're given isn't legal
     if not is_legal_c_identifier(s):
-        fail("Illegal C identifier:", s)
+        fail(f"Expected a legal C identifier; got {s!r}")
     # but if we picked a C keyword, pick something else
     if s in c_keywords:
         return s + "_value"
@@ -834,7 +834,8 @@ class CLanguage(Language):
                     min_kw_only = i - max_pos
             elif p.is_vararg():
                 if vararg != self.NO_VARARG:
-                    fail("Too many var args")
+                    fail("Cannot specify multiple varargs; "
+                         f"'*{parameters[vararg].name}' was already provided as parameter {vararg+1}")
                 pseudo_args += 1
                 vararg = i - 1
             else:
@@ -5019,7 +5020,8 @@ class DSLParser:
 
     def at_critical_section(self, *args: str) -> None:
         if len(args) > 2:
-            fail("Up to 2 critical section variables are supported")
+            fail("Only 2 critical section variables are supported; "
+                 f"{len(args)} was given")
         self.target_critical_section.extend(args)
         self.critical_section = True
 
@@ -5225,8 +5227,8 @@ class DSLParser:
                         # Future enhancement: allow custom return converters
                         overrides["return_converter"] = CReturnConverter()
                     else:
-                        fail("'kind' of function and cloned function don't match! "
-                             "(@classmethod/@staticmethod/@coexist)")
+                        fail("'kind' of function and cloned function don't match: "
+                             f"{self.kind.name} != {existing_function.kind.name}")
                 function = existing_function.copy(**overrides)
                 self.function = function
                 self.block.signatures.append(function)
@@ -5265,7 +5267,7 @@ class DSLParser:
 
         if self.kind in {GETTER, SETTER}:
             if not cls:
-                fail("@getter and @setter must be methods")
+                fail("@getter and @setter must be methods, not functions")
 
         self.update_function_kind(full_name)
         if self.kind is METHOD_INIT and not return_converter:

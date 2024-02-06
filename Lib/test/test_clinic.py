@@ -265,7 +265,8 @@ class ClinicWholeFileTest(TestCase):
         self.expect_failure(raw, err)
 
     def test_clone_mismatch(self):
-        err = "'kind' of function and cloned function don't match!"
+        err = ("'kind' of function and cloned function don't match: "
+               "STATIC_METHOD != CLASS_METHOD")
         block = """
             /*[clinic input]
             module m
@@ -1893,7 +1894,8 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err)
 
     def test_parameters_no_more_than_one_vararg(self):
-        err = "Too many var args"
+        err = ("Cannot specify multiple varargs; "
+               "'*vararg1' was already provided as parameter 1")
         block = """
             module foo
             foo.bar
@@ -2296,7 +2298,7 @@ class ClinicParserTest(TestCase):
         self.assertEqual(stdout.getvalue(), expected)
 
     def test_illegal_c_identifier(self):
-        err = "Illegal C identifier: 17a"
+        err = "Expected a legal C identifier; got '17a'"
         block = """
             module test
             test.fn
