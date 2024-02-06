@@ -509,9 +509,7 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
 
     /* tp_finalize resurrected it!  Make it look like the original Py_DECREF
      * never happened. */
-    Py_ssize_t refcnt = Py_REFCNT(self);
-    _Py_NewReferenceNoTotal(self);
-    Py_SET_REFCNT(self, refcnt);
+    _Py_ResurrectReference(self);
 
     _PyObject_ASSERT(self,
                      (!_PyType_IS_GC(Py_TYPE(self))
@@ -1196,7 +1194,7 @@ PyObject_GetOptionalAttr(PyObject *v, PyObject *name, PyObject **result)
         }
         return 0;
     }
-    if (tp->tp_getattro == (getattrofunc)_Py_type_getattro) {
+    if (tp->tp_getattro == _Py_type_getattro) {
         int supress_missing_attribute_exception = 0;
         *result = _Py_type_getattro_impl((PyTypeObject*)v, name, &supress_missing_attribute_exception);
         if (supress_missing_attribute_exception) {
@@ -2026,7 +2024,7 @@ PyTypeObject _PyNone_Type = {
     0,                  /*tp_doc */
     0,                  /*tp_traverse */
     0,                  /*tp_clear */
-    0,                  /*tp_richcompare */
+    _Py_BaseObject_RichCompare, /*tp_richcompare */
     0,                  /*tp_weaklistoffset */
     0,                  /*tp_iter */
     0,                  /*tp_iternext */
@@ -2389,6 +2387,32 @@ _Py_NewReferenceNoTotal(PyObject *op)
     new_reference(op);
 }
 
+void
+_Py_SetImmortal(PyObject *op)
+{
+    if (PyObject_IS_GC(op) && _PyObject_GC_IS_TRACKED(op)) {
+        _PyObject_GC_UNTRACK(op);
+    }
+#ifdef Py_GIL_DISABLED
+    op->ob_tid = _Py_UNOWNED_TID;
+    op->ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL;
+    op->ob_ref_shared = 0;
+#else
+    op->ob_refcnt = _Py_IMMORTAL_REFCNT;
+#endif
+}
+
+void
+_Py_ResurrectReference(PyObject *op)
+{
+    if (_PyRuntime.tracemalloc.config.tracing) {
+        _PyTraceMalloc_NewReference(op);
+    }
+#ifdef Py_TRACE_REFS
+    _Py_AddToAllObjects(op);
+#endif
+}
+
 
 #ifdef Py_TRACE_REFS
 void
@@ -2662,7 +2686,12 @@ _PyTrash_thread_deposit_object(struct _py_trashcan *trash, PyObject *op)
     _PyObject_ASSERT(op, _PyObject_IS_GC(op));
     _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
     _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
+#ifdef Py_GIL_DISABLED
+    _PyObject_ASSERT(op, op->ob_tid == 0);
+    op->ob_tid = (uintptr_t)trash->delete_later;
+#else
     _PyGCHead_SET_PREV(_Py_AS_GC(op), (PyGC_Head*)trash->delete_later);
+#endif
     trash->delete_later = op;
 }
 
@@ -2688,8 +2717,12 @@ _PyTrash_thread_destroy_chain(struct _py_trashcan *trash)
         PyObject *op = trash->delete_later;
         destructor dealloc = Py_TYPE(op)->tp_dealloc;
 
-        trash->delete_later =
-            (PyObject*) _PyGCHead_PREV(_Py_AS_GC(op));
+#ifdef Py_GIL_DISABLED
+        trash->delete_later = (PyObject*) op->ob_tid;
+        op->ob_tid = 0;
+#else
+        trash->delete_later = (PyObject*) _PyGCHead_PREV(_Py_AS_GC(op));
+#endif
 
         /* Call the deallocator directly.  This used to try to
          * fool Py_DECREF into calling it indirectly, but

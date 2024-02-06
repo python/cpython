@@ -1495,6 +1495,11 @@ class FileIO(RawIOBase):
         if isinstance(file, float):
             raise TypeError('integer argument expected, got float')
         if isinstance(file, int):
+            if isinstance(file, bool):
+                import warnings
+                warnings.warn("bool is used as a file descriptor",
+                              RuntimeWarning, stacklevel=2)
+                file = int(file)
             fd = file
             if fd < 0:
                 raise ValueError('negative file descriptor')
@@ -2198,8 +2203,9 @@ class TextIOWrapper(TextIOBase):
         self.buffer.write(b)
         if self._line_buffering and (haslf or "\r" in s):
             self.flush()
-        self._set_decoded_chars('')
-        self._snapshot = None
+        if self._snapshot is not None:
+            self._set_decoded_chars('')
+            self._snapshot = None
         if self._decoder:
             self._decoder.reset()
         return length
@@ -2513,8 +2519,9 @@ class TextIOWrapper(TextIOBase):
             # Read everything.
             result = (self._get_decoded_chars() +
                       decoder.decode(self.buffer.read(), final=True))
-            self._set_decoded_chars('')
-            self._snapshot = None
+            if self._snapshot is not None:
+                self._set_decoded_chars('')
+                self._snapshot = None
             return result
         else:
             # Keep reading chunks until we have size characters to return.
