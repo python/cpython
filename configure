@@ -920,6 +920,7 @@ LLVM_AR
 PROFILE_TASK
 DEF_MAKE_RULE
 DEF_MAKE_ALL_RULE
+JIT_STENCILS_H
 REGEN_JIT_COMMAND
 ABIFLAGS
 LN
@@ -8019,11 +8020,13 @@ then :
 else $as_nop
   as_fn_append CFLAGS_NODIST " -D_Py_JIT"
            REGEN_JIT_COMMAND="\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py $host"
+           JIT_STENCILS_H="jit_stencils.h"
            if test "x$Py_DEBUG" = xtrue
 then :
   as_fn_append REGEN_JIT_COMMAND " --debug"
 fi
 fi
+
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $enable_experimental_jit" >&5
 printf "%s\n" "$enable_experimental_jit" >&6; }
@@ -17474,6 +17477,12 @@ ac_fn_c_check_func "$LINENO" "getgid" "ac_cv_func_getgid"
 if test "x$ac_cv_func_getgid" = xyes
 then :
   printf "%s\n" "#define HAVE_GETGID 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "getgrent" "ac_cv_func_getgrent"
+if test "x$ac_cv_func_getgrent" = xyes
+then :
+  printf "%s\n" "#define HAVE_GETGRENT 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "getgrgid" "ac_cv_func_getgrgid"
@@ -28968,7 +28977,8 @@ then :
 
     if true
 then :
-  if test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes
+  if test "$ac_cv_func_getgrent" = "yes" &&
+   { test "$ac_cv_func_getgrgid" = "yes" || test "$ac_cv_func_getgrgid_r" = "yes"; }
 then :
   py_cv_module_grp=yes
 else $as_nop
