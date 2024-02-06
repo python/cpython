@@ -882,7 +882,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
             eggs();
             stack_pointer[-1] = out;
             break;
-        }        
+        }
         """
         self.run_cases_test(input, input2, output)
 
