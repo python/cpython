@@ -1,5 +1,0 @@
-Fix a :exc:`RuntimeWarning` emitted when assign an integer-like value that
-is not an instance of :class:`int` to an attribute that corresponds to a C
-struct member of type T_UINT and T_ULONG. Fix a
-double :exc:`RuntimeWarning` emitted when assign a negative integer value to
-an attribute that corresponds to a C struct member of type T_UINT.

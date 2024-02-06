@@ -1,2 +1,0 @@
-Fix a 3.11-specific crash when the ``repr`` of a :class:`~asyncio.Future` is
-requested after the module has already been garbage-collected.

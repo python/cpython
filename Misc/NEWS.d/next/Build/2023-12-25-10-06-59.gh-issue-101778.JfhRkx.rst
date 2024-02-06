@@ -1,2 +1,0 @@
-Fix build error when there's a dangling symlink in the directory containing
-``ffi.h``.
