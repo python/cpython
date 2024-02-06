@@ -5022,7 +5022,7 @@ class DSLParser:
     def at_critical_section(self, *args: str) -> None:
         if len(args) > 2:
             fail("Only 2 critical section variables are supported; "
-                 f"{len(args)} was given")
+                 f"{len(args)} were given")
         self.target_critical_section.extend(args)
         self.critical_section = True
 
