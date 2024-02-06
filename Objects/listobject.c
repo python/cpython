@@ -272,6 +272,15 @@ PyList_GetItemRef(PyObject *op, Py_ssize_t i)
     return Py_NewRef(PyList_GET_ITEM(op, i));
 }
 
+static inline PyObject*
+list_get_item_ref(PyListObject *op, Py_ssize_t i)
+{
+    if (!valid_index(i, Py_SIZE(op))) {
+        return NULL;
+    }
+    return Py_NewRef(PyList_GET_ITEM(op, i));
+}
+
 int
 PyList_SetItem(PyObject *op, Py_ssize_t i,
                PyObject *newitem)
@@ -478,18 +487,20 @@ list_length(PyObject *a)
 static int
 list_contains(PyObject *aa, PyObject *el)
 {
-    PyListObject *a = (PyListObject *)aa;
-    PyObject *item;
-    Py_ssize_t i;
-    int cmp;
 
-    for (i = 0, cmp = 0 ; cmp == 0 && i < Py_SIZE(a); ++i) {
-        item = PyList_GET_ITEM(a, i);
-        Py_INCREF(item);
-        cmp = PyObject_RichCompareBool(item, el, Py_EQ);
+    for (Py_ssize_t i = 0; ; i++) {
+        PyObject *item = list_get_item_ref((PyListObject *)aa, i);
+        if (item == NULL) {
+            // out-of-bounds
+            return 0;
+        }
+        int cmp = PyObject_RichCompareBool(item, el, Py_EQ);
         Py_DECREF(item);
+        if (cmp != 0) {
+            return cmp;
+        }
     }
-    return cmp;
+    return 0;
 }
 
 static PyObject *
@@ -2724,8 +2735,6 @@ list_index_impl(PyListObject *self, PyObject *value, Py_ssize_t start,
                 Py_ssize_t stop)
 /*[clinic end generated code: output=ec51b88787e4e481 input=40ec5826303a0eb1]*/
 {
-    Py_ssize_t i;
-
     if (start < 0) {
         start += Py_SIZE(self);
         if (start < 0)
@@ -2736,9 +2745,12 @@ list_index_impl(PyListObject *self, PyObject *value, Py_ssize_t start,
         if (stop < 0)
             stop = 0;
     }
-    for (i = start; i < stop && i < Py_SIZE(self); i++) {
-        PyObject *obj = self->ob_item[i];
-        Py_INCREF(obj);
+    for (Py_ssize_t i = start; i < stop; i++) {
+        PyObject *obj = list_get_item_ref(self, i);
+        if (obj == NULL) {
+            // out-of-bounds
+            break;
+        }
         int cmp = PyObject_RichCompareBool(obj, value, Py_EQ);
         Py_DECREF(obj);
         if (cmp > 0)
@@ -2764,15 +2776,17 @@ list_count(PyListObject *self, PyObject *value)
 /*[clinic end generated code: output=b1f5d284205ae714 input=3bdc3a5e6f749565]*/
 {
     Py_ssize_t count = 0;
-    Py_ssize_t i;
-
-    for (i = 0; i < Py_SIZE(self); i++) {
-        PyObject *obj = self->ob_item[i];
+    for (Py_ssize_t i = 0; ; i++) {
+        PyObject *obj = list_get_item_ref(self, i);
+        if (obj == NULL) {
+            // out-of-bounds
+            break;
+        }
         if (obj == value) {
            count++;
+           Py_DECREF(obj);
            continue;
         }
-        Py_INCREF(obj);
         int cmp = PyObject_RichCompareBool(obj, value, Py_EQ);
         Py_DECREF(obj);
         if (cmp > 0)
