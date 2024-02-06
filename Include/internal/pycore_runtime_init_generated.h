@@ -938,6 +938,7 @@ extern "C" {
     INIT_ID(fileno), \
     INIT_ID(filepath), \
     INIT_ID(fillvalue), \
+    INIT_ID(filter), \
     INIT_ID(filters), \
     INIT_ID(final), \
     INIT_ID(find_class), \

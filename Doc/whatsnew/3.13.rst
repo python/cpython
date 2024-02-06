@@ -438,6 +438,10 @@ sqlite3
   object is not :meth:`closed <sqlite3.Connection.close>` explicitly.
   (Contributed by Erlend E. Aasland in :gh:`105539`.)
 
+* Add *filter* keyword-only parameter to :meth:`sqlite3.Connection.iterdump`
+  for filtering database objects to dump.
+  (Contributed by Mariusz Felisiak in :gh:`91602`.)
+
 subprocess
 ----------
 
