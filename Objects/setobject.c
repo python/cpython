@@ -1998,6 +1998,7 @@ set_contains(PySetObject *so, PyObject *key)
 }
 
 /*[clinic input]
+@coexist
 set.__contains__
 
     object: object
@@ -2008,7 +2009,7 @@ x.__contains__(y) <==> y in x.
 
 static PyObject *
 set___contains__(PySetObject *self, PyObject *object)
-/*[clinic end generated code: output=ab16b6b74faa51d0 input=1cced4c72f2d7665]*/
+/*[clinic end generated code: output=ab16b6b74faa51d0 input=767c2b14e150304f]*/
 {
     long result;
 

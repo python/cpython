@@ -351,7 +351,7 @@ PyDoc_STRVAR(set___contains____doc__,
 "x.__contains__(y) <==> y in x.");
 
 #define SET___CONTAINS___METHODDEF    \
-    {"__contains__", (PyCFunction)set___contains__, METH_O, set___contains____doc__},
+    {"__contains__", (PyCFunction)set___contains__, METH_O|METH_COEXIST, set___contains____doc__},
 
 PyDoc_STRVAR(set_remove__doc__,
 "remove($self, key, /)\n"
@@ -410,4 +410,4 @@ set___sizeof__(PySetObject *self, PyObject *Py_UNUSED(ignored))
 {
     return set___sizeof___impl(self);
 }
-/*[clinic end generated code: output=37d87f4add269f73 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=65d5a0a49654e8ee input=a9049054013a1b77]*/
