@@ -21,13 +21,11 @@ extern "C" {
 #include "pycore_pymem.h"           // struct _pymem_allocators
 #include "pycore_pythread.h"        // struct _pythread_runtime_state
 #include "pycore_signal.h"          // struct _signals_runtime_state
-#include "pycore_time.h"            // struct _time_runtime_state
 #include "pycore_tracemalloc.h"     // struct _tracemalloc_runtime_state
 #include "pycore_typeobject.h"      // struct _types_runtime_state
 #include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_state
 
 struct _getargs_runtime_state {
-    PyThread_type_lock mutex;
     struct _PyArg_Parser *static_parsers;
 };
 
@@ -175,7 +173,7 @@ typedef struct pyruntimestate {
     unsigned long _finalizing_id;
 
     struct pyinterpreters {
-        PyThread_type_lock mutex;
+        PyMutex mutex;
         /* The linked list of interpreters, newest first. */
         PyInterpreterState *head;
         /* The runtime's initial interpreter, which has a special role
@@ -206,7 +204,6 @@ typedef struct pyruntimestate {
     struct _pymem_allocators allocators;
     struct _obmalloc_global_state obmalloc;
     struct pyhash_runtime_state pyhash_state;
-    struct _time_runtime_state time;
     struct _pythread_runtime_state threads;
     struct _signals_runtime_state signals;
 
@@ -230,6 +227,13 @@ typedef struct pyruntimestate {
     struct _faulthandler_runtime_state faulthandler;
     struct _tracemalloc_runtime_state tracemalloc;
 
+    // The rwmutex is used to prevent overlapping global and per-interpreter
+    // stop-the-world events. Global stop-the-world events lock the mutex
+    // exclusively (as a "writer"), while per-interpreter stop-the-world events
+    // lock it non-exclusively (as "readers").
+    _PyRWMutex stoptheworld_mutex;
+    struct _stoptheworld_state stoptheworld;
+
     PyPreConfig preconfig;
 
     // Audit values must be preserved when Py_Initialize()/Py_Finalize()
@@ -237,7 +241,7 @@ typedef struct pyruntimestate {
     Py_OpenCodeHookFunction open_code_hook;
     void *open_code_userdata;
     struct {
-        PyThread_type_lock mutex;
+        PyMutex mutex;
         _Py_AuditHookEntry *head;
     } audit_hooks;
 
@@ -264,7 +268,7 @@ typedef struct pyruntimestate {
        a pointer type.
        */
 
-    /* PyInterpreterState.interpreters.main */
+    /* _PyRuntimeState.interpreters.main */
     PyInterpreterState _main_interpreter;
 
 #if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)

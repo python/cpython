@@ -7,6 +7,11 @@ PyAPI_FUNC(PyObject*) PyLong_FromUnicodeObject(PyObject *u, int base);
 PyAPI_FUNC(int) PyUnstable_Long_IsCompact(const PyLongObject* op);
 PyAPI_FUNC(Py_ssize_t) PyUnstable_Long_CompactValue(const PyLongObject* op);
 
+// _PyLong_Sign.  Return 0 if v is 0, -1 if v < 0, +1 if v > 0.
+// v must not be NULL, and must be a normalized long.
+// There are no error cases.
+PyAPI_FUNC(int) _PyLong_Sign(PyObject *v);
+
 /* _PyLong_FromByteArray:  View the n unsigned bytes as a binary integer in
    base 256, and return a Python int with the same numeric value.
    If n is 0, the integer is 0.  Else:

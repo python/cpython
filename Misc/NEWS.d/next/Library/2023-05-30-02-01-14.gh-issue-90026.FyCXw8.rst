@@ -1,1 +1,0 @@
-Define ``USE_XATTRS`` on Cygwin so that XATTR-related functions in the :mod:`os` module become available.

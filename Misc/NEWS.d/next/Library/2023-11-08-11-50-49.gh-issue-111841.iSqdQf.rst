@@ -1,2 +1,0 @@
-Fix truncating arguments on an embedded null character in :meth:`os.putenv`
-and :meth:`os.unsetenv` on Windows.
