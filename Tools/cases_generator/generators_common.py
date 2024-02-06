@@ -211,7 +211,7 @@ def cflags(p: Properties) -> str:
         flags.append("HAS_ESCAPES_FLAG")
     if p.pure:
         flags.append("HAS_PURE_FLAG")
-    if p.pure:
+    if p.passthrough:
         flags.append("HAS_PASSTHROUGH_FLAG")
     if flags:
         return " | ".join(flags)
