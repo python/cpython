@@ -964,6 +964,7 @@ extern "C" {
                 INIT_ID(stdin), \
                 INIT_ID(stdout), \
                 INIT_ID(strict), \
+                INIT_ID(string), \
                 INIT_ID(symmetric_difference_update), \
                 INIT_ID(tell), \
                 INIT_ID(text), \

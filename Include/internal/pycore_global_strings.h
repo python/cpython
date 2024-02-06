@@ -341,6 +341,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(stdin)
         STRUCT_FOR_ID(stdout)
         STRUCT_FOR_ID(strict)
+        STRUCT_FOR_ID(string)
         STRUCT_FOR_ID(symmetric_difference_update)
         STRUCT_FOR_ID(tell)
         STRUCT_FOR_ID(text)
