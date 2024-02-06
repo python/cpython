@@ -295,6 +295,24 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
             _Py_stats->optimization_stats.name[bucket]++; \
         } \
     } while (0)
+#define UOP_CHAIN_UPDATE(op) \
+    for (uint64_t i = _Py_stats->optimization_stats.max_uop_chain_depth - 1; i > 0; i--){ \
+        _Py_stats->optimization_stats.last_opcodes[i] = _Py_stats->optimization_stats.last_opcodes[i-1]; \
+    } \
+    _Py_stats->optimization_stats.last_opcodes[0] = op; \
+    do { \
+        UOpStats *head = _Py_stats->optimization_stats.opcode[op]; \
+        for (uint64_t i = 0; i < _Py_stats->optimization_stats.max_uop_chain_depth - 1; i++){ \
+            if (!_Py_stats->optimization_stats.last_opcodes[i+1]){ break; } \
+            if (head->next_stats[_Py_stats->optimization_stats.last_opcodes[i+1]]){ \
+                head->next_stats[_Py_stats->optimization_stats.last_opcodes[i+1]]->execution_count++; }\
+            else { \
+                head->next_stats[_Py_stats->optimization_stats.last_opcodes[i+1]] = calloc(1, sizeof(UOpStats)); \
+                head->next_stats[_Py_stats->optimization_stats.last_opcodes[i+1]]->execution_count = 1; \
+            } \
+            head = head->next_stats[_Py_stats->optimization_stats.last_opcodes[i+1]]; \
+        } \
+    } while (0)
 #define RARE_EVENT_STAT_INC(name) do { if (_Py_stats) _Py_stats->rare_event_stats.name++; } while (0)
 
 // Export for '_opcode' shared extension
@@ -317,6 +335,7 @@ void _init_pystats(PyStats *stats);
 #define UOP_STAT_INC(opname, name) ((void)0)
 #define OPT_UNSUPPORTED_OPCODE(opname) ((void)0)
 #define OPT_HIST(length, name) ((void)0)
+#define UOP_CHAIN_UPDATE(op) (void(0))
 #define RARE_EVENT_STAT_INC(name) ((void)0)
 #endif  // !Py_STATS
 
