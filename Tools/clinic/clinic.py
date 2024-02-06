@@ -5016,7 +5016,8 @@ class DSLParser:
 
     def at_classmethod(self) -> None:
         if self.kind is not CALLABLE:
-            fail("Can't set @classmethod, function is not a normal callable")
+            fail("Can't set @classmethod, "
+                 f"function is not a normal callable; got: {self.kind!r}")
         self.kind = CLASS_METHOD
 
     def at_critical_section(self, *args: str) -> None:
@@ -5046,7 +5047,8 @@ class DSLParser:
 
     def at_staticmethod(self) -> None:
         if self.kind is not CALLABLE:
-            fail("Can't set @staticmethod, function is not a normal callable")
+            fail("Can't set @staticmethod, "
+                 f"function is not a normal callable; got: {self.kind!r}")
         self.kind = STATIC_METHOD
 
     def at_coexist(self) -> None:
