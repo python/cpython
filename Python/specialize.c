@@ -251,11 +251,11 @@ print_uop_sequence(FILE *out, UOpStats *uop_stats, const char* prefix){
                 } else {
                     names = _PyOpcode_uop_name;
                 }
-                fprintf(out, "UOp Sequence Count:%s->%s: %ld\n", prefix, names[i], uop_stats->next_stats[i]->execution_count);
+                fprintf(out, "UOp Sequence Count[%s,%s]: %ld\n", prefix, names[i], uop_stats->next_stats[i]->execution_count);
                 char pre[strlen(prefix) + 256]; // TODO why is this constant so large?
                 pre[0] = '\0';
                 strcat(pre, prefix);
-                strcat(pre, "->");
+                strcat(pre, ",");
                 strcat(pre, names[i]);
                 print_uop_sequence(out, uop_stats->next_stats[i], pre);
             }
