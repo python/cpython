@@ -152,12 +152,6 @@ PyAPI_FUNC(int) PyThread_join_thread(PyThread_handle_t);
  */
 PyAPI_FUNC(int) PyThread_detach_thread(PyThread_handle_t);
 
-/*
- * Obtain the new thread ident and handle in a forked child process.
- */
-PyAPI_FUNC(void) PyThread_update_thread_after_fork(PyThread_ident_t* ident,
-                                                   PyThread_handle_t* handle);
-
 #ifdef __cplusplus
 }
 #endif

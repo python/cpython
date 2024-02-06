@@ -94,6 +94,10 @@ ThreadHandle_dealloc(ThreadHandleObject *self)
 void
 _PyThread_AfterFork(struct _pythread_runtime_state *state)
 {
+    // gh-115035: We mark ThreadHandles as not joinable early in the child's
+    // after-fork handler. We do this before calling any Python code to ensure
+    // that it happens before any ThreadHandles are deallocated, such as by a
+    // GC cycle.
     PyThread_ident_t current = PyThread_get_thread_ident_ex();
 
     struct llist_node *node;
