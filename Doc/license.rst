@@ -1045,29 +1045,32 @@ https://www.w3.org/TR/xml-c14n2-testcases/ and is distributed under the
 Audioop
 -------
 
-The audioop module uses the code base in g771.c file of the SoX project::
+The audioop module uses the code base in g771.c file of the SoX project.
+https://sourceforge.net/projects/sox/files/sox/12.17.7/sox-12.17.7.tar.gz
 
-    Programming the AdLib/Sound Blaster
-    FM Music Chips
-    Version 2.0 (24 Feb 1992)
-    Copyright (c) 1991, 1992 by Jeffrey S. Lee
-    jlee@smylex.uucp
-    Warranty and Copyright Policy
-    This document is provided on an "as-is" basis, and its author makes
-    no warranty or representation, express or implied, with respect to
-    its quality performance or fitness for a particular purpose.  In no
-    event will the author of this document be liable for direct, indirect,
-    special, incidental, or consequential damages arising out of the use
-    or inability to use the information contained within.  Use of this
-    document is at your own risk.
-    This file may be used and copied freely so long as the applicable
-    copyright notices are retained, and no modifications are made to the
-    text of the document.  No money shall be charged for its distribution
-    beyond reasonable shipping, handling and duplication costs, nor shall
-    proprietary changes be made to this document so that it cannot be
-    distributed freely.  This document may not be included in published
-    material or commercial packages without the written consent of its
-    author.
+   This source code is a product of Sun Microsystems, Inc. and is provided
+   for unrestricted use.  Users may copy or modify this source code without
+   charge.
+
+   SUN SOURCE CODE IS PROVIDED AS IS WITH NO WARRANTIES OF ANY KIND INCLUDING
+   THE WARRANTIES OF DESIGN, MERCHANTIBILITY AND FITNESS FOR A PARTICULAR
+   PURPOSE, OR ARISING FROM A COURSE OF DEALING, USAGE OR TRADE PRACTICE.
+
+   Sun source code is provided with no support and without any obligation on
+   the part of Sun Microsystems, Inc. to assist in its use, correction,
+   modification or enhancement.
+
+   SUN MICROSYSTEMS, INC. SHALL HAVE NO LIABILITY WITH RESPECT TO THE
+   INFRINGEMENT OF COPYRIGHTS, TRADE SECRETS OR ANY PATENTS BY THIS SOFTWARE
+   OR ANY PART THEREOF.
+
+   In no event will Sun Microsystems, Inc. be liable for any lost revenue
+   or profits or other special, indirect and consequential damages, even if
+   Sun has been advised of the possibility of such damages.
+
+   Sun Microsystems, Inc.
+   2550 Garcia Avenue
+   Mountain View, California  94043
 
 
 asyncio
