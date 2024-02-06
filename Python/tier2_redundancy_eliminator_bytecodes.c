@@ -95,7 +95,7 @@ dummy_func(void) {
     }
 
     op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
-        _Py_UOpsSymType *sym_const = sym_init_const(ctx, (PyObject *)inst->operand);
+        _Py_UOpsSymType *sym_const = sym_init_const(ctx, ptr);
         if (sym_const == NULL) {
             goto error;
         }
@@ -104,7 +104,7 @@ dummy_func(void) {
     }
 
     op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
-        _Py_UOpsSymType *sym_const = sym_init_const(ctx, (PyObject *)inst->operand);
+        _Py_UOpsSymType *sym_const = sym_init_const(ctx, ptr);
         if (sym_const == NULL) {
             goto error;
         }
@@ -113,7 +113,7 @@ dummy_func(void) {
     }
 
     op(_LOAD_CONST_INLINE_WITH_NULL, (ptr/4 -- value, null)) {
-        _Py_UOpsSymType *sym_const = sym_init_const(ctx, (PyObject *)inst->operand);
+        _Py_UOpsSymType *sym_const = sym_init_const(ctx, ptr);
         if (sym_const == NULL) {
             goto error;
         }
@@ -127,7 +127,7 @@ dummy_func(void) {
     }
 
     op(_LOAD_CONST_INLINE_BORROW_WITH_NULL, (ptr/4 -- value, null)) {
-        _Py_UOpsSymType *sym_const = sym_init_const(ctx, (PyObject *)inst->operand);
+        _Py_UOpsSymType *sym_const = sym_init_const(ctx, ptr);
         if (sym_const == NULL) {
             goto error;
         }
@@ -200,8 +200,20 @@ dummy_func(void) {
         stack_pointer = new_frame->stack_pointer;
     }
 
+    op(_UNPACK_SEQUENCE, (seq -- values[oparg])) {
+        /* This has to be done manually */
+        (void)seq;
+        for (int i = 0; i < oparg; i++) {
+            values[i] = sym_init_unknown(ctx);
+            if (values[i] == NULL) {
+                goto error;
+            }
+        }
+    }
+
     op(_UNPACK_EX, (seq -- values[oparg & 0xFF], unused, unused[oparg >> 8])) {
         /* This has to be done manually */
+        (void)seq;
         int totalargs = (oparg & 0xFF) + (oparg >> 8) + 1;
         for (int i = 0; i < totalargs; i++) {
             values[i] = sym_init_unknown(ctx);

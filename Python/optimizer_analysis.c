@@ -498,6 +498,11 @@ op_is_bookkeeping(uint32_t opcode) {
             opcode == _RESUME_CHECK);
 }
 
+static inline bool
+op_is_data_movement_only(uint32_t opcode) {
+    return (opcode == _STORE_FAST || opcode == STORE_FAST_MAYBE_NULL);
+}
+
 
 static inline bool
 is_const(_Py_UOpsSymType *expr)
@@ -575,35 +580,9 @@ uop_abstract_interpret_single_inst(
 )
 {
 #define STACK_LEVEL()     ((int)(stack_pointer - ctx->frame->stack))
-#define STACK_SIZE()      (ctx->frame->stack_len)
-#define BASIC_STACKADJ(n) (stack_pointer += n)
 
-#ifdef Py_DEBUG
-    #define STACK_GROW(n)   do { \
-                                assert(n >= 0); \
-                                BASIC_STACKADJ(n); \
-                                if (STACK_LEVEL() > STACK_SIZE()) { \
-                                    DPRINTF(2, "err: %d, %d\n", STACK_SIZE(), STACK_LEVEL())\
-                                } \
-                                assert(STACK_LEVEL() <= STACK_SIZE()); \
-                            } while (0)
-    #define STACK_SHRINK(n) do { \
-                                assert(n >= 0); \
-                                assert(STACK_LEVEL() >= n); \
-                                BASIC_STACKADJ(-(n)); \
-                            } while (0)
-#else
-    #define STACK_GROW(n)          BASIC_STACKADJ(n)
-    #define STACK_SHRINK(n)        BASIC_STACKADJ(-(n))
-#endif
-#define PEEK(idx)              (((stack_pointer)[-(idx)]))
 #define GETLOCAL(idx)          ((ctx->frame->locals[idx]))
 
-#define CURRENT_OPARG() (oparg)
-
-#define CURRENT_OPERAND() (operand)
-
-#define TIER_TWO_ONLY ((void)0)
 #define REPLACE_OP(op, arg, oper) \
     new_inst.opcode = op;            \
     new_inst.oparg = arg;            \
@@ -612,7 +591,6 @@ uop_abstract_interpret_single_inst(
 
     int oparg = inst->oparg;
     uint32_t opcode = inst->opcode;
-    uint64_t operand = inst->operand;
 
     _Py_UOpsSymType **stack_pointer = ctx->frame->stack_pointer;
     _PyUOpInstruction new_inst = *inst;
@@ -637,9 +615,6 @@ uop_abstract_interpret_single_inst(
 
     return 0;
 
-pop_2_error_tier_two:
-    STACK_SHRINK(1);
-    STACK_SHRINK(1);
 error:
     DPRINTF(1, "Encountered error in abstract interpreter\n");
     return -1;
@@ -885,6 +860,7 @@ loop_peeling:
 
         if (!(_PyUop_Flags[curr->opcode] & HAS_PURE_FLAG) &&
             !op_is_bookkeeping(curr->opcode) &&
+            !op_is_data_movement_only(curr->opcode) &&
             !(_PyUop_Flags[curr->opcode] & HAS_PASSTHROUGH_FLAG)) {
             DPRINTF(3, "Impure %s\n", _PyOpcode_uop_name[curr->opcode]);
             if (needs_clear_locals) {

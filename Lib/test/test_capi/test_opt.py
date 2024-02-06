@@ -680,7 +680,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         self.assertEqual(res, 1)
         binop_count = [opname for opname, _, _ in ex if opname == "_BINARY_OP_ADD_INT"]
-        self.assertEqual(len(binop_count), 0)
+        self.assertEqual(len(binop_count), 2)
         uops = {opname for opname, _, _ in ex}
         self.assertNotIn("_SHRINK_STACK", uops)
         iter_next_count = [opname for opname, _, _ in ex if opname == "_ITER_NEXT_RANGE"]

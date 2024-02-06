@@ -28,14 +28,16 @@ from generators_common import (
 from cwriter import CWriter
 from typing import TextIO, Iterator
 from lexer import Token
-from stack import StackOffset, Stack, SizeMismatch
+from stack import StackOffset, Stack, SizeMismatch, UNUSED
 
 DEFAULT_OUTPUT = ROOT / "Python/abstract_interp_cases.c.h"
 DEFAULT_ABSTRACT_INUPT = ROOT / "Python/tier2_redundancy_eliminator_bytecodes.c"
 
+
 def validate_uop(override: Uop, uop: Uop) -> None:
     # To do
     pass
+
 
 def type_name(var: StackItem) -> str:
     if var.is_array():
@@ -45,20 +47,20 @@ def type_name(var: StackItem) -> str:
     return f"_Py_UOpsSymType *"
 
 
-def declare_variables(uop: Uop, out: CWriter, peeks: bool) -> None:
+def declare_variables(uop: Uop, out: CWriter, skip_inputs) -> None:
     variables = {"unused"}
-    for var in reversed(uop.stack.inputs):
-        if var.peek and not peeks:
-            continue
-        if var.name not in variables:
-            variables.add(var.name)
-            if var.condition:
-                out.emit(f"{type_name(var)}{var.name} = sym_init_null(ctx);\n")
-                out.emit(f"if({var.name}) {{goto error;}}\n")
-            else:
-                out.emit(f"{type_name(var)}{var.name};\n")
+    if not skip_inputs:
+        for var in reversed(uop.stack.inputs):
+            if var.name not in variables:
+                variables.add(var.name)
+                if var.condition:
+                    out.emit(f"{type_name(var)}{var.name} = sym_init_null(ctx);\n")
+                    out.emit(f"if({var.name}) {{goto error;}}\n")
+                else:
+                    out.emit(f"{type_name(var)}{var.name};\n")
+    has_type_prop = any(output.type_prop is not None for output in uop.stack.outputs)
     for var in uop.stack.outputs:
-        if var.peek and not peeks:
+        if var.peek and not has_type_prop:
             continue
         if var.name not in variables:
             variables.add(var.name)
@@ -68,18 +70,20 @@ def declare_variables(uop: Uop, out: CWriter, peeks: bool) -> None:
             else:
                 out.emit(f"{type_name(var)}{var.name};\n")
 
+
 def decref_inputs(
-        out: CWriter,
-        tkn: Token,
-        tkn_iter: Iterator[Token],
-        uop: Uop,
-        stack: Stack,
-        inst: Instruction | None,
+    out: CWriter,
+    tkn: Token,
+    tkn_iter: Iterator[Token],
+    uop: Uop,
+    stack: Stack,
+    inst: Instruction | None,
 ) -> None:
     next(tkn_iter)
     next(tkn_iter)
     next(tkn_iter)
     out.emit_at("", tkn)
+
 
 def emit_default(out: CWriter, uop: Uop) -> None:
     for i, var in enumerate(uop.stack.outputs):
@@ -96,25 +100,33 @@ def emit_default(out: CWriter, uop: Uop) -> None:
                 out.emit(f"{var.name} = sym_init_unknown(ctx);\n")
                 out.emit(f"if ({var.name} == NULL) goto error;\n")
 
+
 def write_uop(
-        override: Uop | None, uop: Uop, out: CWriter, stack: Stack, debug: bool
+    override: Uop | None,
+    uop: Uop,
+    out: CWriter,
+    stack: Stack,
+    debug: bool,
+    skip_inputs: bool,
 ) -> None:
     try:
+        has_type_prop = any(
+            output.type_prop is not None for output in (override or uop).stack.outputs
+        )
         prototype = override if override else uop
-        has_type_prop = any(output.type_prop is not None for output in  uop.stack.outputs)
-        peeks = override is not None or has_type_prop
+        is_override = override is not None
         out.start_line()
         for var in reversed(prototype.stack.inputs):
-            if not var.peek or peeks:
+            if not skip_inputs or (has_type_prop and var.peek):
                 out.emit(stack.pop(var))
         if not prototype.properties.stores_sp:
             for i, var in enumerate(prototype.stack.outputs):
-                if not var.peek or peeks:
+                if not var.peek or is_override or has_type_prop:
                     out.emit(stack.push(var))
         if debug:
             args = []
             for var in prototype.stack.inputs:
-                if not var.peek or peeks:
+                if not var.peek or is_override:
                     args.append(var.name)
             out.emit(f'DEBUG_PRINTF({", ".join(args)});\n')
         if override or has_type_prop:
@@ -129,24 +141,29 @@ def write_uop(
         if override:
             replacement_funcs = {
                 "DECREF_INPUTS": decref_inputs,
-                "SYNC_SP": replace_sync_sp
+                "SYNC_SP": replace_sync_sp,
             }
             emit_tokens(out, override, stack, None, replacement_funcs)
         else:
             emit_default(out, uop)
         # Type propagation
-        for output in uop.stack.outputs:
-            if (typ := output.type_prop):
+        out.emit("\n")
+        for output in (override or uop).stack.outputs:
+            if typ := output.type_prop:
                 typname, refinement = typ
                 refinement = refinement or "0"
                 out.emit(f"sym_set_type({output.name}, {typname}, {refinement});\n")
+            else:
+                # Silence compiler unused variable warnings.
+                if has_type_prop and output.name not in UNUSED:
+                    out.emit(f"(void){output.name};\n")
 
         if prototype.properties.stores_sp:
             for i, var in enumerate(prototype.stack.outputs):
-                if not var.peek or peeks:
+                if not var.peek or is_override:
                     out.emit(stack.push(var))
         out.start_line()
-        stack.flush(out)
+        stack.flush(out, cast_type="_Py_UOpsSymType *")
     except SizeMismatch as ex:
         raise analysis_error(ex.args[0], uop.body[0])
 
@@ -155,7 +172,11 @@ SKIPS = ("_EXTENDED_ARG",)
 
 
 def generate_abstract_interpreter(
-        filenames: list[str], abstract: Analysis, base: Analysis, outfile: TextIO, debug: bool
+    filenames: list[str],
+    abstract: Analysis,
+    base: Analysis,
+    outfile: TextIO,
+    debug: bool,
 ) -> None:
     write_header(__file__, filenames, outfile)
     out = CWriter(outfile, 2, False)
@@ -174,12 +195,11 @@ def generate_abstract_interpreter(
             continue
         out.emit(f"case {uop.name}: {{\n")
         if override:
-            declare_variables(override, out, True)
+            declare_variables(override or uop, out, skip_inputs=False)
         else:
-            has_type_prop = any(output.type_prop is not None for output in  uop.stack.outputs)
-            declare_variables(uop, out, has_type_prop)
+            declare_variables(override or uop, out, skip_inputs=True)
         stack = Stack()
-        write_uop(override, uop, out, stack, debug)
+        write_uop(override, uop, out, stack, debug, skip_inputs=(override is None))
         out.start_line()
         out.emit("break;\n")
         out.emit("}")
@@ -196,17 +216,13 @@ arg_parser.add_argument(
 )
 
 
-arg_parser.add_argument(
-    "input", nargs=1, help="Abstract interpreter definition file"
-)
+arg_parser.add_argument("input", nargs=1, help="Abstract interpreter definition file")
 
 arg_parser.add_argument(
     "base", nargs=argparse.REMAINDER, help="The base instruction definition file(s)"
 )
 
-arg_parser.add_argument(
-    "-d", "--debug", help="Insert debug calls", action="store_true"
-)
+arg_parser.add_argument("-d", "--debug", help="Insert debug calls", action="store_true")
 
 if __name__ == "__main__":
     args = arg_parser.parse_args()
