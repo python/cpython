@@ -152,7 +152,7 @@ typedef struct _Py_UOpsAbstractInterpContext {
 
     uops_emitter emitter;
 
-    _Py_UOpsSymType **water_level;
+    _Py_UOpsSymType **n_consumed;
     _Py_UOpsSymType **limit;
     _Py_UOpsSymType *locals_and_stack[MAX_ABSTRACT_INTERP_SIZE];
 } _Py_UOpsAbstractInterpContext;
@@ -166,7 +166,7 @@ create_sym_consts(_Py_UOpsAbstractInterpContext *ctx, PyObject *co_consts)
     Py_ssize_t co_const_len = PyTuple_GET_SIZE(co_consts);
     _Py_UOpsSymType **sym_consts = ctx->limit - co_const_len;
     ctx->limit -= co_const_len;
-    if (ctx->limit <= ctx->water_level) {
+    if (ctx->limit <= ctx->n_consumed) {
         return NULL;
     }
     for (Py_ssize_t i = 0; i < co_const_len; i++) {
@@ -182,12 +182,13 @@ create_sym_consts(_Py_UOpsAbstractInterpContext *ctx, PyObject *co_consts)
 
 static inline _Py_UOpsSymType* sym_init_unknown(_Py_UOpsAbstractInterpContext *ctx);
 
-// 0 on success, anything else is error.
+// 0 on success, -1 on error.
 static int
 ctx_frame_push(
     _Py_UOpsAbstractInterpContext *ctx,
     PyCodeObject *co,
     _Py_UOpsSymType **localsplus_start,
+    int n_locals_already_filled,
     int curr_stackentries
 )
 {
@@ -207,14 +208,14 @@ ctx_frame_push(
     frame->locals = localsplus_start;
     frame->stack = frame->locals + co->co_nlocalsplus;
     frame->stack_pointer = frame->stack + curr_stackentries;
-    ctx->water_level = localsplus_start + (co->co_nlocalsplus + co->co_stacksize);
-    if (ctx->water_level >= ctx->limit) {
+    ctx->n_consumed = localsplus_start + (co->co_nlocalsplus + co->co_stacksize);
+    if (ctx->n_consumed >= ctx->limit) {
         return -1;
     }
 
 
     // Initialize with the initial state of all local variables
-    for (int i = 0; i < co->co_nlocalsplus; i++) {
+    for (int i = n_locals_already_filled; i < co->co_nlocalsplus; i++) {
         _Py_UOpsSymType *local = sym_init_unknown(ctx);
         if (local == NULL) {
             return -1;
@@ -237,52 +238,52 @@ ctx_frame_push(
 }
 
 static void
-abstractinterp_fini(_Py_UOpsAbstractInterpContext *self)
+abstractcontext_fini(_Py_UOpsAbstractInterpContext *ctx)
 {
-    if (self == NULL) {
+    if (ctx == NULL) {
         return;
     }
-     self->curr_frame_depth = 0;
-    int tys = self->t_arena.ty_curr_number;
+    ctx->curr_frame_depth = 0;
+    int tys = ctx->t_arena.ty_curr_number;
     for (int i = 0; i < tys; i++) {
-        Py_CLEAR(self->t_arena.arena[i].const_val);
+        Py_CLEAR(ctx->t_arena.arena[i].const_val);
     }
 }
 
 static int
-abstractinterp_init(
-    _Py_UOpsAbstractInterpContext *self,
+abstractcontext_init(
+    _Py_UOpsAbstractInterpContext *ctx,
     PyCodeObject *co,
     int curr_stacklen,
     int ir_entries,
     _PyUOpInstruction *new_writebuffer
 )
 {
-    self->limit = self->locals_and_stack + MAX_ABSTRACT_INTERP_SIZE;
-    self->water_level = self->locals_and_stack;
+    ctx->limit = ctx->locals_and_stack + MAX_ABSTRACT_INTERP_SIZE;
+    ctx->n_consumed = ctx->locals_and_stack;
 #ifdef Py_DEBUG // Aids debugging a little. There should never be NULL in the abstract interpreter.
     for (int i = 0 ; i < MAX_ABSTRACT_INTERP_SIZE; i++) {
-        self->locals_and_stack[i] = NULL;
+        ctx->locals_and_stack[i] = NULL;
     }
 #endif
 
     // Setup the arena for sym expressions.
-    self->t_arena.ty_curr_number = 0;
-    self->t_arena.ty_max_number = TY_ARENA_SIZE;
+    ctx->t_arena.ty_curr_number = 0;
+    ctx->t_arena.ty_max_number = TY_ARENA_SIZE;
 
     // Frame setup
-    self->curr_frame_depth = 0;
-    if (ctx_frame_push(self, co, self->water_level, curr_stacklen) < 0) {
+    ctx->curr_frame_depth = 0;
+    if (ctx_frame_push(ctx, co, ctx->n_consumed, 0, curr_stacklen) < 0) {
         return -1;
     }
 
     // IR and sym setup
-    self->frequent_syms.push_nulL_sym = NULL;
+    ctx->frequent_syms.push_nulL_sym = NULL;
 
     // Emitter setup
-    self->emitter.writebuffer = new_writebuffer;
-    self->emitter.curr_i = 0;
-    self->emitter.writebuffer_end = new_writebuffer + ir_entries;
+    ctx->emitter.writebuffer = new_writebuffer;
+    ctx->emitter.curr_i = 0;
+    ctx->emitter.writebuffer_end = new_writebuffer + ir_entries;
     return 0;
 }
 
@@ -318,7 +319,7 @@ ctx_frame_pop(
 {
     _Py_UOpsAbstractFrame *frame = ctx->frame;
 
-    ctx->water_level = frame->locals;
+    ctx->n_consumed = frame->locals;
     ctx->curr_frame_depth--;
     assert(ctx->curr_frame_depth >= 1);
     ctx->frame = &ctx->frames[ctx->curr_frame_depth - 1];
@@ -346,9 +347,7 @@ _Py_UOpsSymType_New(_Py_UOpsAbstractInterpContext *ctx,
     self->types = 0;
 
     if (const_val != NULL) {
-        Py_INCREF(const_val);
-        sym_set_type_from_const(self, const_val);
-        self->const_val = const_val;
+        self->const_val = Py_NewRef(const_val);
     }
 
     return self;
@@ -364,6 +363,16 @@ sym_set_type(_Py_UOpsSymType *sym, _Py_UOpsSymExprTypeEnum typ, uint64_t refinem
     }
 }
 
+// We need to clear the type information on every escaping/impure instruction.
+// Consider the following code
+/*
+foo.attr
+bar() # opaque call
+foo.attr
+*/
+// We can't propagate the type information of foo.attr over across bar
+// (at least, not without re-installing guards). `bar()` may call random code
+// that invalidates foo's type version tag.
 static void
 sym_copy_immutable_type_info(_Py_UOpsSymType *from_sym, _Py_UOpsSymType *to_sym)
 {
@@ -422,6 +431,7 @@ sym_init_const(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val)
     if (temp == NULL) {
         return NULL;
     }
+    sym_set_type_from_const(temp, const_val);
     sym_set_type(temp, TRUE_CONST, 0);
     return temp;
 }
@@ -552,7 +562,7 @@ op_is_zappable(int opcode)
         case _CHECK_VALIDITY:
             return true;
         default:
-            return _PyUop_Flags[opcode] & HAS_PURE_FLAG;
+            return (_PyUop_Flags[opcode] & HAS_PURE_FLAG) && !((_PyUop_Flags[opcode] & HAS_DEOPT_FLAG));
     }
 }
 
@@ -605,6 +615,7 @@ emit_const(uops_emitter *emitter,
     if (emit_i(emitter, load_const) < 0) {
         return -1;
     }
+
     return 0;
 }
 
@@ -826,16 +837,19 @@ uop_abstract_interpret_single_inst(
             // This is _PUSH_FRAME's stack effect
             STACK_SHRINK(1);
             ctx->frame->stack_pointer = stack_pointer;
-            if (ctx_frame_push(ctx, co, ctx->water_level, 0) != 0){
+            _Py_UOpsSymType **localsplus_start = ctx->n_consumed;
+            int n_locals_already_filled = 0;
+            // Can determine statically, so we interleave the new locals
+            // and make the current stack the new locals.
+            // This also sets up for true call inlining.
+            if (!sym_is_type(self_or_null, SELF_OR_NULL)) {
+                localsplus_start = args;
+                n_locals_already_filled = argcount;
+            }
+            if (ctx_frame_push(ctx, co, localsplus_start, n_locals_already_filled, 0) != 0){
                 goto error;
             }
             stack_pointer = ctx->frame->stack_pointer;
-            // Cannot determine statically, so we can't propagate types.
-            if (!sym_is_type(self_or_null, SELF_OR_NULL)) {
-                for (int i = 0; i < argcount; i++) {
-                    ctx->frame->locals[i] = args[i];
-                }
-            }
             break;
         }
 
@@ -1109,7 +1123,7 @@ uop_abstract_interpret(
 
     _Py_UOpsAbstractInterpContext ctx;
 
-    if (abstractinterp_init(
+    if (abstractcontext_init(
         &ctx,
         co, curr_stacklen,
         trace_len, new_trace) < 0) {
@@ -1196,12 +1210,12 @@ loop_peeling:
 
 
     res = ctx.emitter.curr_i;
-    abstractinterp_fini(&ctx);
+    abstractcontext_fini(&ctx);
 
     return res;
 
 error:
-    abstractinterp_fini(&ctx);
+    abstractcontext_fini(&ctx);
     return -1;
 }
 

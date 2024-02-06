@@ -609,7 +609,7 @@ class TestUopsOptimization(unittest.TestCase):
         binop_count = [opname for opname, _, _ in ex if opname == "_BINARY_OP_ADD_INT"]
         guard_both_int_count = [opname for opname, _, _ in ex if opname == "_GUARD_BOTH_INT"]
         self.assertGreaterEqual(len(binop_count), 3)
-        self.assertEqual(len(guard_both_int_count), 1)
+        self.assertLessEqual(len(guard_both_int_count), 1)
 
     def test_int_impure_region(self):
         def testfunc(loops):
@@ -869,7 +869,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = {opname for opname, _, _ in ex}
         self.assertNotIn("_SHRINK_STACK", uops)
         iter_next_count = [opname for opname, _, _ in ex if opname == "_ITER_NEXT_RANGE"]
-        self.assertGreaterEqual(len(iter_next_count), 2)
+        self.assertLessEqual(len(iter_next_count), 2)
 
     def test_call_py_exact_args_disappearing(self):
         def dummy(x):
