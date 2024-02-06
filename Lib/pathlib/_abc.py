@@ -86,19 +86,21 @@ def _select_children(parent_paths, dir_only, follow_symlinks, match):
                             continue
                     except OSError:
                         continue
-                if match(entry.name):
+                if match is None or match(entry.name):
                     yield parent_path._make_child_entry(entry)
 
 
-def _select_recursive(parent_paths, dir_only, follow_symlinks):
+def _select_recursive(parent_paths, dir_only, follow_symlinks, match):
     """Yield given paths and all their subdirectories, recursively."""
     if follow_symlinks is None:
         follow_symlinks = False
     for parent_path in parent_paths:
+        prefix_len = len(str(parent_path._make_child_relpath('_'))) - 1
         paths = [parent_path._make_child_relpath('')]
         while paths:
             path = paths.pop()
-            yield path
+            if match is None or match(str(path), prefix_len):
+                yield path
             try:
                 # We must close the scandir() object before proceeding to
                 # avoid exhausting file descriptors when globbing deep trees.
@@ -115,7 +117,9 @@ def _select_recursive(parent_paths, dir_only, follow_symlinks):
                     except OSError:
                         pass
                     if not dir_only:
-                        yield path._make_child_entry(entry)
+                        file_path = path._make_child_entry(entry)
+                        if match is None or match(str(file_path), prefix_len):
+                            yield file_path
 
 
 def _select_unique(paths):
@@ -769,7 +773,6 @@ class PathBase(PurePathBase):
 
         stack = pattern._pattern_stack
         specials = ('', '.', '..')
-        filter_paths = False
         deduplicate_paths = False
         sep = self.pathmod.sep
         paths = iter([self] if self.is_dir() else [])
@@ -786,11 +789,11 @@ class PathBase(PurePathBase):
                 # regex filtering, provided we're treating symlinks consistently.
                 if follow_symlinks is not None:
                     while stack and stack[-1] not in specials:
-                        filter_paths = True
-                        stack.pop()
+                        part += sep + stack.pop()
 
                 dir_only = bool(stack)
-                paths = _select_recursive(paths, dir_only, follow_symlinks)
+                match = _compile_pattern(part, sep, case_sensitive) if part != '**' else None
+                paths = _select_recursive(paths, dir_only, follow_symlinks, match)
                 if deduplicate_paths:
                     # De-duplicate if we've already seen a '**' component.
                     paths = _select_unique(paths)
@@ -799,13 +802,8 @@ class PathBase(PurePathBase):
                 raise ValueError("Invalid pattern: '**' can only be an entire path component")
             else:
                 dir_only = bool(stack)
-                match = _compile_pattern(part, sep, case_sensitive)
+                match = _compile_pattern(part, sep, case_sensitive) if part != '*' else None
                 paths = _select_children(paths, dir_only, follow_symlinks, match)
-        if filter_paths:
-            # Filter out paths that don't match pattern.
-            prefix_len = len(str(self._make_child_relpath('_'))) - 1
-            match = _compile_pattern(pattern._pattern_str, sep, case_sensitive)
-            paths = (path for path in paths if match(path._pattern_str, prefix_len))
         return paths
 
     def rglob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
