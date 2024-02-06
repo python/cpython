@@ -14,7 +14,6 @@ import shutil
 import struct
 import tempfile
 import unittest
-import warnings
 from datetime import date, datetime, time, timedelta, timezone
 from functools import cached_property
 
@@ -1718,19 +1717,6 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
         for input_paths, expected_paths in test_cases:
             path_var = os.pathsep.join(input_paths)
             with self.python_tzpath_context(path_var):
-                with self.subTest("module-level warning", path_var=path_var):
-                    with CleanImport("zoneinfo", "zoneinfo._tzpath"):
-                        with warnings.catch_warnings(record=True) as wlog:
-                            import zoneinfo
-                    self.assertEqual(len(wlog), 1)
-                    # Since we use import hacks, we cannot just use `isinstance`
-                    self.assertEqual(
-                        type(wlog[0].message).__qualname__,
-                        "InvalidTZPathWarning",
-                    )
-                    # It should represent the current file:
-                    self.assertEqual(wlog[0].filename, __file__)
-
                 with self.subTest("warning", path_var=path_var):
                     # Note: Per PEP 615 the warning is implementation-defined
                     # behavior, other implementations need not warn.
@@ -1741,6 +1727,27 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
                 tzpath = self.module.TZPATH
                 with self.subTest("filtered", path_var=path_var):
                     self.assertSequenceEqual(tzpath, expected_paths)
+
+    def test_env_variable_relative_paths_warning_location(self):
+        path_var = "path/to/somewhere"
+
+        with self.python_tzpath_context(path_var):
+            with self.subTest("module-level warning"):
+                with CleanImport("zoneinfo", "zoneinfo._tzpath"):
+                    with self.assertWarns(RuntimeWarning) as w:
+                        import zoneinfo
+                # Since we use import hacks, we cannot just use `isinstance`
+                self.assertEqual(
+                    type(w.warnings[0].message).__qualname__,
+                    "InvalidTZPathWarning",
+                )
+                # It should represent the current file:
+                self.assertEqual(w.warnings[0].filename, __file__)
+
+            with self.subTest("warning"):
+                with self.assertWarns(self.module.InvalidTZPathWarning) as w:
+                    self.module.reset_tzpath()
+                self.assertEqual(w.warnings[0].filename, __file__)
 
     def test_reset_tzpath_kwarg(self):
         self.module.reset_tzpath(to=[f"{DRIVE}/a/b/c"])
