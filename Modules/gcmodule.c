@@ -230,6 +230,26 @@ referentsvisit(PyObject *obj, void *arg)
     return PyList_Append(list, obj) < 0;
 }
 
+static int
+append_referrents(PyObject *result, PyObject *args)
+{
+    for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(args); i++) {
+        PyObject *obj = PyTuple_GET_ITEM(args, i);
+        if (!_PyObject_IS_GC(obj)) {
+            continue;
+        }
+
+        traverseproc traverse = Py_TYPE(obj)->tp_traverse;
+        if (!traverse) {
+            continue;
+        }
+        if (traverse(obj, referentsvisit, result)) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
 /*[clinic input]
 gc.get_referents
 
@@ -242,29 +262,24 @@ static PyObject *
 gc_get_referents_impl(PyObject *module, PyObject *args)
 /*[clinic end generated code: output=d47dc02cefd06fe8 input=b3ceab0c34038cbf]*/
 {
-    Py_ssize_t i;
     if (PySys_Audit("gc.get_referents", "(O)", args) < 0) {
         return NULL;
     }
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     PyObject *result = PyList_New(0);
 
     if (result == NULL)
         return NULL;
 
-    for (i = 0; i < PyTuple_GET_SIZE(args); i++) {
-        traverseproc traverse;
-        PyObject *obj = PyTuple_GET_ITEM(args, i);
+    // NOTE: stop the world is a no-op in default build
+    _PyEval_StopTheWorld(interp);
+    int err = append_referrents(result, args);
+    _PyEval_StartTheWorld(interp);
 
-        if (!_PyObject_IS_GC(obj))
-            continue;
-        traverse = Py_TYPE(obj)->tp_traverse;
-        if (! traverse)
-            continue;
-        if (traverse(obj, referentsvisit, result)) {
-            Py_DECREF(result);
-            return NULL;
-        }
+    if (err < 0) {
+        Py_CLEAR(result);
     }
+
     return result;
 }
 
