@@ -117,9 +117,8 @@ def _select_recursive(parent_paths, dir_only, follow_symlinks, match):
                     except OSError:
                         pass
                     if not dir_only:
-                        file_path = path._make_child_entry(entry)
-                        if match is None or match(str(file_path), prefix_len):
-                            yield file_path
+                        if match is None or match(path._entry_str(entry), prefix_len):
+                            yield path._make_child_entry(entry)
 
 
 def _select_unique(paths):
@@ -753,6 +752,10 @@ class PathBase(PurePathBase):
         # context manager. This method is called by walk() and glob().
         from contextlib import nullcontext
         return nullcontext(self.iterdir())
+
+    def _entry_str(self, entry):
+        # Transform an entry yielded from _scandir() into a path string.
+        return str(entry)
 
     def _make_child_entry(self, entry):
         # Transform an entry yielded from _scandir() into a path object.
