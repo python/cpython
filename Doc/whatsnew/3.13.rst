@@ -186,7 +186,7 @@ array
   (Contributed by Inada Naoki in :gh:`80480`.)
 
 * Add ``clear()`` method in order to implement ``MutableSequence``.
-  (Contributed by Mike Zimin (and reviewers?) in :gh:`114919`.)
+  (Contributed by Mike Zimin (and reviewers?) in :gh:`114894`.)
 
 ast
 ---
