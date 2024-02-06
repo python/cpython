@@ -1320,7 +1320,7 @@ regen-limited-abi: all
 regen-all: regen-cases regen-opcode regen-opcode-targets regen-typeslots \
 	regen-token regen-ast regen-keyword regen-sre regen-frozen \
 	regen-pegen-metaparser regen-pegen regen-test-frozenmain \
-	regen-test-levenshtein regen-global-objects
+	regen-test-levenshtein regen-global-objects regen-sbom
 	@echo
 	@echo "Note: make regen-stdlib-module-names and make regen-configure should be run manually"
 
@@ -2604,6 +2604,10 @@ autoconf:
 .PHONY: regen-configure
 regen-configure:
 	$(srcdir)/Tools/build/regen-configure.sh
+
+.PHONY: regen-sbom
+regen-sbom:
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_sbom.py
 
 # Create a tags file for vi
 tags::
