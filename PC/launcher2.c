@@ -132,7 +132,7 @@ typedef BOOL (*PIsWow64Process2)(HANDLE, USHORT*, USHORT*);
 
 
 USHORT
-_getNativeMachine()
+_getNativeMachine(void)
 {
     static USHORT _nativeMachine = IMAGE_FILE_MACHINE_UNKNOWN;
     if (_nativeMachine == IMAGE_FILE_MACHINE_UNKNOWN) {
@@ -163,14 +163,14 @@ _getNativeMachine()
 
 
 bool
-isAMD64Host()
+isAMD64Host(void)
 {
     return _getNativeMachine() == IMAGE_FILE_MACHINE_AMD64;
 }
 
 
 bool
-isARM64Host()
+isARM64Host(void)
 {
     return _getNativeMachine() == IMAGE_FILE_MACHINE_ARM64;
 }
@@ -192,6 +192,13 @@ join(wchar_t *buffer, size_t bufferLength, const wchar_t *fragment)
         return true;
     }
     return false;
+}
+
+
+bool
+split_parent(wchar_t *buffer, size_t bufferLength)
+{
+    return SUCCEEDED(PathCchRemoveFileSpec(buffer, bufferLength));
 }
 
 
@@ -414,8 +421,8 @@ typedef struct {
     // if true, treats 'tag' as a non-PEP 514 filter
     bool oldStyleTag;
     // if true, ignores 'tag' when a high priority environment is found
-    // gh-92817: This is currently set when a tag is read from configuration or
-    // the environment, rather than the command line or a shebang line, and the
+    // gh-92817: This is currently set when a tag is read from configuration,
+    // the environment, or a shebang, rather than the command line, and the
     // only currently possible high priority environment is an active virtual
     // environment
     bool lowPriorityTag;
@@ -431,7 +438,7 @@ typedef struct {
     bool list;
     // if true, only list detected runtimes with paths without launching
     bool listPaths;
-    // if true, display help message before contiuning
+    // if true, display help message before continuing
     bool help;
     // if set, limits search to registry keys with the specified Company
     // This is intended for debugging and testing only
@@ -564,6 +571,21 @@ findArgv0End(const wchar_t *buffer, int bufferLength)
 /******************************************************************************\
  ***                          COMMAND-LINE PARSING                          ***
 \******************************************************************************/
+
+// Adapted from https://stackoverflow.com/a/65583702
+typedef struct AppExecLinkFile { // For tag IO_REPARSE_TAG_APPEXECLINK
+    DWORD reparseTag;
+    WORD reparseDataLength;
+    WORD reserved;
+    ULONG version;
+    wchar_t stringList[MAX_PATH * 4];  // Multistring (Consecutive UTF-16 strings each ending with a NUL)
+    /* There are normally 4 strings here. Ex:
+        Package ID:  L"Microsoft.DesktopAppInstaller_8wekyb3d8bbwe"
+        Entry Point: L"Microsoft.DesktopAppInstaller_8wekyb3d8bbwe!PythonRedirector"
+        Executable:  L"C:\Program Files\WindowsApps\Microsoft.DesktopAppInstaller_1.17.106910_x64__8wekyb3d8bbwe\AppInstallerPythonRedirector.exe"
+        Applic. Type: L"0"   // Integer as ASCII. "0" = Desktop bridge application; Else sandboxed UWP application
+    */
+} AppExecLinkFile;
 
 
 int
@@ -757,6 +779,55 @@ _shebangStartsWith(const wchar_t *buffer, int bufferLength, const wchar_t *prefi
 
 
 int
+ensure_no_redirector_stub(wchar_t* filename, wchar_t* buffer)
+{
+    // Make sure we didn't find a reparse point that will open the Microsoft Store
+    // If we did, pretend there was no shebang and let normal handling take over
+    WIN32_FIND_DATAW findData;
+    HANDLE hFind = FindFirstFileW(buffer, &findData);
+    if (!hFind) {
+        // Let normal handling take over
+        debug(L"# Did not find %s on PATH\n", filename);
+        return RC_NO_SHEBANG;
+    }
+
+    FindClose(hFind);
+
+    if (!(findData.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT &&
+        findData.dwReserved0 & IO_REPARSE_TAG_APPEXECLINK)) {
+        return 0;
+    }
+
+    HANDLE hReparsePoint = CreateFileW(buffer, 0, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT, NULL);
+    if (!hReparsePoint) {
+        // Let normal handling take over
+        debug(L"# Did not find %s on PATH\n", filename);
+        return RC_NO_SHEBANG;
+    }
+
+    AppExecLinkFile appExecLink;
+
+    if (!DeviceIoControl(hReparsePoint, FSCTL_GET_REPARSE_POINT, NULL, 0, &appExecLink, sizeof(appExecLink), NULL, NULL)) {
+        // Let normal handling take over
+        debug(L"# Did not find %s on PATH\n", filename);
+        CloseHandle(hReparsePoint);
+        return RC_NO_SHEBANG;
+    }
+
+    CloseHandle(hReparsePoint);
+
+    const wchar_t* redirectorPackageId = L"Microsoft.DesktopAppInstaller_8wekyb3d8bbwe";
+
+    if (0 == wcscmp(appExecLink.stringList, redirectorPackageId)) {
+        debug(L"# ignoring redirector that would launch store\n");
+        return RC_NO_SHEBANG;
+    }
+
+    return 0;
+}
+
+
+int
 searchPath(SearchInfo *search, const wchar_t *shebang, int shebangLength)
 {
     if (isEnvVarSet(L"PYLAUNCHER_NO_SEARCH_PATH")) {
@@ -794,6 +865,8 @@ searchPath(SearchInfo *search, const wchar_t *shebang, int shebangLength)
         }
     }
 
+    debug(L"# Search PATH for %s\n", filename);
+
     wchar_t pathVariable[MAXLEN];
     int n = GetEnvironmentVariableW(L"PATH", pathVariable, MAXLEN);
     if (!n) {
@@ -815,6 +888,11 @@ searchPath(SearchInfo *search, const wchar_t *shebang, int shebangLength)
         // Other errors should cause us to break
         winerror(0, L"Failed to find %s on PATH\n", filename);
         return RC_BAD_VIRTUAL_PATH;
+    }
+
+    int result = ensure_no_redirector_stub(filename, buffer);
+    if (result) {
+        return result;
     }
 
     // Check that we aren't going to call ourselves again
@@ -1031,8 +1109,11 @@ checkShebang(SearchInfo *search)
     debug(L"Shebang: %s\n", shebang);
 
     // Handle shebangs that we should search PATH for
+    int executablePathWasSetByUsrBinEnv = 0;
     exitCode = searchPath(search, shebang, shebangLength);
-    if (exitCode != RC_NO_SHEBANG) {
+    if (exitCode == 0) {
+        executablePathWasSetByUsrBinEnv = 1;
+    } else if (exitCode != RC_NO_SHEBANG) {
         return exitCode;
     }
 
@@ -1067,7 +1148,7 @@ checkShebang(SearchInfo *search)
             search->tagLength = commandLength;
             // If we had 'python3.12.exe' then we want to strip the suffix
             // off of the tag
-            if (search->tagLength > 4) {
+            if (search->tagLength >= 4) {
                 const wchar_t *suffix = &search->tag[search->tagLength - 4];
                 if (0 == _comparePath(suffix, 4, L".exe", -1)) {
                     search->tagLength -= 4;
@@ -1075,13 +1156,14 @@ checkShebang(SearchInfo *search)
             }
             // If we had 'python3_d' then we want to strip the '_d' (any
             // '.exe' is already gone)
-            if (search->tagLength > 2) {
+            if (search->tagLength >= 2) {
                 const wchar_t *suffix = &search->tag[search->tagLength - 2];
                 if (0 == _comparePath(suffix, 2, L"_d", -1)) {
                     search->tagLength -= 2;
                 }
             }
             search->oldStyleTag = true;
+            search->lowPriorityTag = true;
             search->executableArgs = &command[commandLength];
             search->executableArgsLength = shebangLength - commandLength;
             if (search->tag && search->tagLength) {
@@ -1093,6 +1175,11 @@ checkShebang(SearchInfo *search)
             }
             return 0;
         }
+    }
+
+    // Didn't match a template, but we found it on PATH
+    if (executablePathWasSetByUsrBinEnv) {
+        return 0;
     }
 
     // Unrecognised executables are first tried as command aliases
@@ -1765,7 +1852,15 @@ virtualenvSearch(const SearchInfo *search, EnvironmentInfo **result)
         return 0;
     }
 
-    if (INVALID_FILE_ATTRIBUTES == GetFileAttributesW(buffer)) {
+    DWORD attr = GetFileAttributesW(buffer);
+    if (INVALID_FILE_ATTRIBUTES == attr && search->lowPriorityTag) {
+        if (!split_parent(buffer, MAXLEN) || !join(buffer, MAXLEN, L"python.exe")) {
+            return 0;
+        }
+        attr = GetFileAttributesW(buffer);
+    }
+
+    if (INVALID_FILE_ATTRIBUTES == attr) {
         debug(L"Python executable %s missing from virtual env\n", buffer);
         return 0;
     }
