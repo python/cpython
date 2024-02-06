@@ -17,6 +17,7 @@ extern "C" {
 #  define PyTuple_NFREELISTS PyTuple_MAXSAVESIZE
 #  define PyTuple_MAXFREELIST 2000
 #  define PyList_MAXFREELIST 80
+#  define PyDict_MAXFREELIST 80
 #  define PyFloat_MAXFREELIST 100
 #  define PyContext_MAXFREELIST 255
 # define _PyAsyncGen_MAXFREELIST 80
@@ -25,6 +26,7 @@ extern "C" {
 #  define PyTuple_NFREELISTS 0
 #  define PyTuple_MAXFREELIST 0
 #  define PyList_MAXFREELIST 0
+#  define PyDict_MAXFREELIST 0
 #  define PyFloat_MAXFREELIST 0
 #  define PyContext_MAXFREELIST 0
 #  define _PyAsyncGen_MAXFREELIST 0
@@ -62,6 +64,16 @@ struct _Py_float_state {
        linked via abuse of their ob_type members. */
     int numfree;
     PyFloatObject *free_list;
+#endif
+};
+
+struct _Py_dict_freelist {
+#ifdef WITH_FREELISTS
+    /* Dictionary reuse scheme to save calls to malloc and free */
+    PyDictObject *free_list[PyDict_MAXFREELIST];
+    PyDictKeysObject *keys_free_list[PyDict_MAXFREELIST];
+    int numfree;
+    int keys_numfree;
 #endif
 };
 
@@ -103,13 +115,14 @@ struct _Py_object_stack_state {
 };
 
 typedef struct _Py_freelist_state {
-    struct _Py_float_state float_state;
-    struct _Py_tuple_state tuple_state;
-    struct _Py_list_state list_state;
-    struct _Py_slice_state slice_state;
-    struct _Py_context_state context_state;
-    struct _Py_async_gen_state async_gen_state;
-    struct _Py_object_stack_state object_stack_state;
+    struct _Py_float_state floats;
+    struct _Py_tuple_state tuples;
+    struct _Py_list_state lists;
+    struct _Py_dict_freelist dicts;
+    struct _Py_slice_state slices;
+    struct _Py_context_state contexts;
+    struct _Py_async_gen_state async_gens;
+    struct _Py_object_stack_state object_stacks;
 } _PyFreeListState;
 
 #ifdef __cplusplus

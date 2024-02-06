@@ -1642,11 +1642,11 @@ get_rare_event_counters(PyObject *self, PyObject *type)
 
     return Py_BuildValue(
         "{sksksksksk}",
-        "set_class", interp->rare_events.set_class,
-        "set_bases", interp->rare_events.set_bases,
-        "set_eval_frame_func", interp->rare_events.set_eval_frame_func,
-        "builtin_dict", interp->rare_events.builtin_dict,
-        "func_modification", interp->rare_events.func_modification
+        "set_class", (unsigned long)interp->rare_events.set_class,
+        "set_bases", (unsigned long)interp->rare_events.set_bases,
+        "set_eval_frame_func", (unsigned long)interp->rare_events.set_eval_frame_func,
+        "builtin_dict", (unsigned long)interp->rare_events.builtin_dict,
+        "func_modification", (unsigned long)interp->rare_events.func_modification
     );
 }
 
@@ -1752,8 +1752,18 @@ module_exec(PyObject *module)
         return 1;
     }
 
+    Py_ssize_t sizeof_gc_head = 0;
+#ifndef Py_GIL_DISABLED
+    sizeof_gc_head = sizeof(PyGC_Head);
+#endif
+
     if (PyModule_Add(module, "SIZEOF_PYGC_HEAD",
-                        PyLong_FromSsize_t(sizeof(PyGC_Head))) < 0) {
+                        PyLong_FromSsize_t(sizeof_gc_head)) < 0) {
+        return 1;
+    }
+
+    if (PyModule_Add(module, "SIZEOF_MANAGED_PRE_HEADER",
+                        PyLong_FromSsize_t(2 * sizeof(PyObject*))) < 0) {
         return 1;
     }
 
