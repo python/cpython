@@ -47,7 +47,7 @@ def type_name(var: StackItem) -> str:
     return f"_Py_UOpsSymType *"
 
 
-def declare_variables(uop: Uop, out: CWriter, skip_inputs) -> None:
+def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
     variables = {"unused"}
     if not skip_inputs:
         for var in reversed(uop.stack.inputs):
@@ -195,9 +195,9 @@ def generate_abstract_interpreter(
             continue
         out.emit(f"case {uop.name}: {{\n")
         if override:
-            declare_variables(override or uop, out, skip_inputs=False)
+            declare_variables(override, out, skip_inputs=False)
         else:
-            declare_variables(override or uop, out, skip_inputs=True)
+            declare_variables(uop, out, skip_inputs=True)
         stack = Stack()
         write_uop(override, uop, out, stack, debug, skip_inputs=(override is None))
         out.start_line()

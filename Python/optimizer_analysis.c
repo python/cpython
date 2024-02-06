@@ -583,7 +583,7 @@ uop_abstract_interpret_single_inst(
 
 #define GETLOCAL(idx)          ((ctx->frame->locals[idx]))
 
-#define REPLACE_OP(op, arg, oper) \
+#define REPLACE_OP(op, arg, oper)    \
     new_inst.opcode = op;            \
     new_inst.oparg = arg;            \
     new_inst.operand = oper;
