@@ -64,7 +64,7 @@ copyright = f"2001-{time.strftime('%Y')}, Python Software Foundation"
 import patchlevel
 version, release = patchlevel.get_version_info()
 
-rst_prolog = f"""
+rst_epilog = f"""
 .. |python_version_literal| replace:: ``Python {version}``
 """
 
