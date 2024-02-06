@@ -1722,6 +1722,7 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
                     # behavior, other implementations need not warn.
                     with self.assertWarns(self.module.InvalidTZPathWarning) as w:
                         self.module.reset_tzpath()
+                    self.assertEqual(w.warnings[0].filename, __file__)
 
                 tzpath = self.module.TZPATH
                 with self.subTest("filtered", path_var=path_var):
@@ -1738,11 +1739,6 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
                     InvalidTZPathWarning = zoneinfo.InvalidTZPathWarning
                 self.assertIsInstance(w.warnings[0].message, InvalidTZPathWarning)
                 # It should represent the current file:
-                self.assertEqual(w.warnings[0].filename, __file__)
-
-            with self.subTest("warning"):
-                with self.assertWarns(self.module.InvalidTZPathWarning) as w:
-                    self.module.reset_tzpath()
                 self.assertEqual(w.warnings[0].filename, __file__)
 
     def test_reset_tzpath_kwarg(self):
