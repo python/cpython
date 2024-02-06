@@ -233,6 +233,27 @@ print_histogram(FILE *out, const char *name, uint64_t hist[_Py_UOP_HIST_SIZE])
     }
 }
 
+// Print all recorded sequences of UOps, starting with the
+// UOp with the given index
+static void
+print_uop_sequence(FILE *out, UOpStats *uop_stats, const char* prefix){
+    for (int i = 1; i < 512; i++){
+        if (uop_stats->next_stats[i]){
+            if (uop_stats->next_stats[i]->execution_count){
+                fprintf(out, "%s->%d : %d\n", prefix, i, uop_stats->next_stats[i]->execution_count);
+                char pre[strlen(prefix) + 256]; // TODO why is this constant so large?
+                pre[0] = '\0';
+                strcat(pre, prefix);
+                strcat(pre, "->");
+                char digits[3];
+                sprintf(digits, "%d", i);
+                strcat(pre, digits);
+                print_uop_sequence(out, uop_stats->next_stats[i], pre);
+            }
+        }
+    }  
+}
+
 static void
 print_optimization_stats(FILE *out, OptimizationStats *stats)
 {
@@ -277,6 +298,11 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
             );
         }
     }
+
+    for (int i = 0; i < 512; i++){
+        print_uop_sequence(out, stats->opcode[i], "");
+    }
+
 }
 
 static void
