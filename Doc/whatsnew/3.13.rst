@@ -1440,6 +1440,12 @@ New Features
   not needed.
   (Contributed by Victor Stinner in :gh:`106004`.)
 
+* Added :c:func:`PyDict_SetDefaultRef`, which is similar to
+  :c:func:`PyDict_SetDefault` but returns a :term:`strong reference` instead of
+  a :term:`borrowed reference`. This function returns ``-1`` on error, ``0`` on
+  insertion, and ``1`` if the key was already present in the dictionary.
+  (Contributed by Sam Gross in :gh:`112066`.)
+
 * Add :c:func:`PyDict_ContainsString` function: same as
   :c:func:`PyDict_Contains`, but *key* is specified as a :c:expr:`const char*`
   UTF-8 encoded bytes string, rather than a :c:expr:`PyObject*`.

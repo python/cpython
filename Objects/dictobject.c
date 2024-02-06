@@ -3355,8 +3355,9 @@ dict_get_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
     return Py_NewRef(val);
 }
 
-PyObject *
-PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
+static int
+dict_setdefault_ref(PyObject *d, PyObject *key, PyObject *default_value,
+                    PyObject **result, int incref_result)
 {
     PyDictObject *mp = (PyDictObject *)d;
     PyObject *value;
@@ -3365,41 +3366,64 @@ PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
 
     if (!PyDict_Check(d)) {
         PyErr_BadInternalCall();
-        return NULL;
+        if (result) {
+            *result = NULL;
+        }
+        return -1;
     }
 
     if (!PyUnicode_CheckExact(key) || (hash = unicode_get_hash(key)) == -1) {
         hash = PyObject_Hash(key);
-        if (hash == -1)
-            return NULL;
+        if (hash == -1) {
+            if (result) {
+                *result = NULL;
+            }
+            return -1;
+        }
     }
 
     if (mp->ma_keys == Py_EMPTY_KEYS) {
         if (insert_to_emptydict(interp, mp, Py_NewRef(key), hash,
-                                Py_NewRef(defaultobj)) < 0) {
-            return NULL;
+                                Py_NewRef(default_value)) < 0) {
+            if (result) {
+                *result = NULL;
+            }
+            return -1;
         }
-        return defaultobj;
+        if (result) {
+            *result = incref_result ? Py_NewRef(default_value) : default_value;
+        }
+        return 0;
     }
 
     if (!PyUnicode_CheckExact(key) && DK_IS_UNICODE(mp->ma_keys)) {
         if (insertion_resize(interp, mp, 0) < 0) {
-            return NULL;
+            if (result) {
+                *result = NULL;
+            }
+            return -1;
         }
     }
 
     Py_ssize_t ix = _Py_dict_lookup(mp, key, hash, &value);
-    if (ix == DKIX_ERROR)
-        return NULL;
+    if (ix == DKIX_ERROR) {
+        if (result) {
+            *result = NULL;
+        }
+        return -1;
+    }
 
     if (ix == DKIX_EMPTY) {
         uint64_t new_version = _PyDict_NotifyEvent(
-                interp, PyDict_EVENT_ADDED, mp, key, defaultobj);
+                interp, PyDict_EVENT_ADDED, mp, key, default_value);
         mp->ma_keys->dk_version = 0;
-        value = defaultobj;
+        value = default_value;
         if (mp->ma_keys->dk_usable <= 0) {
             if (insertion_resize(interp, mp, 1) < 0) {
-                return NULL;
+                if (result) {
+                    *result = NULL;
+                }
+                return -1;
             }
         }
         Py_ssize_t hashpos = find_empty_slot(mp->ma_keys, hash);
@@ -3431,11 +3455,16 @@ PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
         mp->ma_keys->dk_usable--;
         mp->ma_keys->dk_nentries++;
         assert(mp->ma_keys->dk_usable >= 0);
+        ASSERT_CONSISTENT(mp);
+        if (result) {
+            *result = incref_result ? Py_NewRef(value) : value;
+        }
+        return 0;
     }
     else if (value == NULL) {
         uint64_t new_version = _PyDict_NotifyEvent(
-                interp, PyDict_EVENT_ADDED, mp, key, defaultobj);
-        value = defaultobj;
+                interp, PyDict_EVENT_ADDED, mp, key, default_value);
+        value = default_value;
         assert(_PyDict_HasSplitTable(mp));
         assert(mp->ma_values->values[ix] == NULL);
         MAINTAIN_TRACKING(mp, key, value);
@@ -3443,10 +3472,33 @@ PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
         _PyDictValues_AddToInsertionOrder(mp->ma_values, ix);
         mp->ma_used++;
         mp->ma_version_tag = new_version;
+        ASSERT_CONSISTENT(mp);
+        if (result) {
+            *result = incref_result ? Py_NewRef(value) : value;
+        }
+        return 0;
     }
 
     ASSERT_CONSISTENT(mp);
-    return value;
+    if (result) {
+        *result = incref_result ? Py_NewRef(value) : value;
+    }
+    return 1;
+}
+
+int
+PyDict_SetDefaultRef(PyObject *d, PyObject *key, PyObject *default_value,
+                     PyObject **result)
+{
+    return dict_setdefault_ref(d, key, default_value, result, 1);
+}
+
+PyObject *
+PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
+{
+    PyObject *result;
+    dict_setdefault_ref(d, key, defaultobj, &result, 0);
+    return result;
 }
 
 /*[clinic input]
@@ -3467,9 +3519,8 @@ dict_setdefault_impl(PyDictObject *self, PyObject *key,
 /*[clinic end generated code: output=f8c1101ebf69e220 input=0f063756e815fd9d]*/
 {
     PyObject *val;
-
-    val = PyDict_SetDefault((PyObject *)self, key, default_value);
-    return Py_XNewRef(val);
+    PyDict_SetDefaultRef((PyObject *)self, key, default_value, &val);
+    return val;
 }
 
 
