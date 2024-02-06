@@ -1,1 +1,1 @@
-Add array.clear() method
+Add :meth:`array.array.clear`.
