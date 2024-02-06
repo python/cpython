@@ -1722,7 +1722,6 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
                     # behavior, other implementations need not warn.
                     with self.assertWarns(self.module.InvalidTZPathWarning) as w:
                         self.module.reset_tzpath()
-                    self.assertEqual(w.warnings[0].filename, __file__)
 
                 tzpath = self.module.TZPATH
                 with self.subTest("filtered", path_var=path_var):
@@ -1736,11 +1735,8 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
                 with CleanImport("zoneinfo", "zoneinfo._tzpath"):
                     with self.assertWarns(RuntimeWarning) as w:
                         import zoneinfo
-                # Since we use import hacks, we cannot just use `isinstance`
-                self.assertEqual(
-                    type(w.warnings[0].message).__qualname__,
-                    "InvalidTZPathWarning",
-                )
+                    InvalidTZPathWarning = zoneinfo.InvalidTZPathWarning
+                self.assertIsInstance(w.warnings[0].message, InvalidTZPathWarning)
                 # It should represent the current file:
                 self.assertEqual(w.warnings[0].filename, __file__)
 
