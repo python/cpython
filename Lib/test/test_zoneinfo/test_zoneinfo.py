@@ -1732,14 +1732,13 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
         path_var = "path/to/somewhere"
 
         with self.python_tzpath_context(path_var):
-            with self.subTest("module-level warning"):
-                with CleanImport("zoneinfo", "zoneinfo._tzpath"):
-                    with self.assertWarns(RuntimeWarning) as w:
-                        import zoneinfo
-                    InvalidTZPathWarning = zoneinfo.InvalidTZPathWarning
-                self.assertIsInstance(w.warnings[0].message, InvalidTZPathWarning)
-                # It should represent the current file:
-                self.assertEqual(w.warnings[0].filename, __file__)
+            with CleanImport("zoneinfo", "zoneinfo._tzpath"):
+                with self.assertWarns(RuntimeWarning) as w:
+                    import zoneinfo
+                InvalidTZPathWarning = zoneinfo.InvalidTZPathWarning
+            self.assertIsInstance(w.warnings[0].message, InvalidTZPathWarning)
+            # It should represent the current file:
+            self.assertEqual(w.warnings[0].filename, __file__)
 
     def test_reset_tzpath_kwarg(self):
         self.module.reset_tzpath(to=[f"{DRIVE}/a/b/c"])
