@@ -816,6 +816,98 @@ class ConditionTests(unittest.IsolatedAsyncioTestCase):
         # originally raised.
         self.assertIs(err.exception, raised)
 
+    async def test_cancelled_wakeup(self):
+        # Test that a task cancelled at the "same" time as it is woken
+        # up as part of a Condition.notify() does not result in a lost wakeup.
+        # This test simulates a cancel while the target task is awaiting initial
+        # wakeup on the wakeup queue.
+        condition = asyncio.Condition()
+        state = 0
+        async def consumer():
+            nonlocal state
+            async with condition:
+                while True:
+                    await condition.wait_for(lambda: state != 0)
+                    if state < 0:
+                        return
+                    state -= 1
+
+        # create two consumers
+        c = [asyncio.create_task(consumer()) for _ in range(2)]
+        # wait for them to settle
+        await asyncio.sleep(0)
+        async with condition:
+            # produce one item and wake up one
+            state += 1
+            condition.notify(1)
+
+            # Cancel it while it is awaiting to be run.
+            # This cancellation could come from the outside
+            c[0].cancel()
+
+            # now wait for the item to be consumed
+            # if it doesn't means that our "notify" didn"t take hold.
+            # because it raced with a cancel()
+            try:
+                async with asyncio.timeout(0.01):
+                    await condition.wait_for(lambda: state == 0)
+            except TimeoutError:
+                pass
+            self.assertEqual(state, 0)
+
+            # clean up
+            state = -1
+            condition.notify_all()
+        await c[1]
+
+    async def test_cancelled_wakeup_relock(self):
+        # Test that a task cancelled at the "same" time as it is woken
+        # up as part of a Condition.notify() does not result in a lost wakeup.
+        # This test simulates a cancel while the target task is acquiring the lock
+        # again.
+        condition = asyncio.Condition()
+        state = 0
+        async def consumer():
+            nonlocal state
+            async with condition:
+                while True:
+                    await condition.wait_for(lambda: state != 0)
+                    if state < 0:
+                        return
+                    state -= 1
+
+        # create two consumers
+        c = [asyncio.create_task(consumer()) for _ in range(2)]
+        # wait for them to settle
+        await asyncio.sleep(0)
+        async with condition:
+            # produce one item and wake up one
+            state += 1
+            condition.notify(1)
+
+            # now we sleep for a bit.  This allows the target task to wake up and
+            # settle on re-aquiring the lock
+            await asyncio.sleep(0)
+
+            # Cancel it while awaiting the lock
+            # This cancel could come the outside.
+            c[0].cancel()
+
+            # now wait for the item to be consumed
+            # if it doesn't means that our "notify" didn"t take hold.
+            # because it raced with a cancel()
+            try:
+                async with asyncio.timeout(0.01):
+                    await condition.wait_for(lambda: state == 0)
+            except TimeoutError:
+                pass
+            self.assertEqual(state, 0)
+
+            # clean up
+            state = -1
+            condition.notify_all()
+        await c[1]
+
 class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
 
     def test_initial_value_zero(self):

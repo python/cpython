@@ -95,7 +95,7 @@ def _select_recursive(parent_paths, dir_only, follow_symlinks):
     if follow_symlinks is None:
         follow_symlinks = False
     for parent_path in parent_paths:
-        paths = [parent_path]
+        paths = [parent_path._make_child_relpath('')]
         while paths:
             path = paths.pop()
             yield path

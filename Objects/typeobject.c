@@ -908,6 +908,8 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
     }
 }
 
+#define MAX_VERSIONS_PER_CLASS 1000
+
 static int
 assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
 {
@@ -922,7 +924,10 @@ assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
     if (!_PyType_HasFeature(type, Py_TPFLAGS_READY)) {
         return 0;
     }
-
+    if (type->tp_versions_used >= MAX_VERSIONS_PER_CLASS) {
+        return 0;
+    }
+    type->tp_versions_used++;
     if (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) {
         /* static types */
         if (NEXT_GLOBAL_VERSION_TAG > _Py_MAX_GLOBAL_TYPE_VERSION_TAG) {

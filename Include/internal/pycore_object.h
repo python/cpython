@@ -125,19 +125,7 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
 }
 #define _Py_RefcntAdd(op, n) _Py_RefcntAdd(_PyObject_CAST(op), n)
 
-static inline void _Py_SetImmortal(PyObject *op)
-{
-    if (op) {
-#ifdef Py_GIL_DISABLED
-        op->ob_tid = _Py_UNOWNED_TID;
-        op->ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL;
-        op->ob_ref_shared = 0;
-#else
-        op->ob_refcnt = _Py_IMMORTAL_REFCNT;
-#endif
-    }
-}
-#define _Py_SetImmortal(op) _Py_SetImmortal(_PyObject_CAST(op))
+extern void _Py_SetImmortal(PyObject *op);
 
 // Makes an immortal object mortal again with the specified refcnt. Should only
 // be used during runtime finalization.
@@ -315,22 +303,22 @@ static inline void _PyObject_GC_TRACK(
     _PyObject_ASSERT_FROM(op, !_PyObject_GC_IS_TRACKED(op),
                           "object already tracked by the garbage collector",
                           filename, lineno, __func__);
-
+#ifdef Py_GIL_DISABLED
+    op->ob_gc_bits |= _PyGC_BITS_TRACKED;
+#else
     PyGC_Head *gc = _Py_AS_GC(op);
     _PyObject_ASSERT_FROM(op,
                           (gc->_gc_prev & _PyGC_PREV_MASK_COLLECTING) == 0,
                           "object is in generation which is garbage collected",
                           filename, lineno, __func__);
 
-#ifdef Py_GIL_DISABLED
-    op->ob_gc_bits |= _PyGC_BITS_TRACKED;
-#else
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyGC_Head *generation0 = interp->gc.generation0;
+    PyGC_Head *generation0 = &interp->gc.young.head;
     PyGC_Head *last = (PyGC_Head*)(generation0->_gc_prev);
     _PyGCHead_SET_NEXT(last, gc);
     _PyGCHead_SET_PREV(gc, last);
     _PyGCHead_SET_NEXT(gc, generation0);
+    assert((gc->_gc_next & _PyGC_NEXT_MASK_OLD_SPACE_1) == 0);
     generation0->_gc_prev = (uintptr_t)gc;
 #endif
 }
@@ -594,8 +582,12 @@ _PyObject_IS_GC(PyObject *obj)
 static inline size_t
 _PyType_PreHeaderSize(PyTypeObject *tp)
 {
-    return _PyType_IS_GC(tp) * sizeof(PyGC_Head) +
-        _PyType_HasFeature(tp, Py_TPFLAGS_PREHEADER) * 2 * sizeof(PyObject *);
+    return (
+#ifndef Py_GIL_DISABLED
+        _PyType_IS_GC(tp) * sizeof(PyGC_Head) +
+#endif
+        _PyType_HasFeature(tp, Py_TPFLAGS_PREHEADER) * 2 * sizeof(PyObject *)
+    );
 }
 
 void _PyObject_GC_Link(PyObject *op);
@@ -625,6 +617,14 @@ extern int _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
 PyObject * _PyObject_GetInstanceAttribute(PyObject *obj, PyDictValues *values,
                                         PyObject *name);
 
+#ifdef Py_GIL_DISABLED
+#  define MANAGED_DICT_OFFSET    (((Py_ssize_t)sizeof(PyObject *))*-1)
+#  define MANAGED_WEAKREF_OFFSET (((Py_ssize_t)sizeof(PyObject *))*-2)
+#else
+#  define MANAGED_DICT_OFFSET    (((Py_ssize_t)sizeof(PyObject *))*-3)
+#  define MANAGED_WEAKREF_OFFSET (((Py_ssize_t)sizeof(PyObject *))*-4)
+#endif
+
 typedef union {
     PyObject *dict;
     /* Use a char* to generate a warning if directly assigning a PyDictValues */
@@ -635,7 +635,7 @@ static inline PyDictOrValues *
 _PyObject_DictOrValuesPointer(PyObject *obj)
 {
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-    return ((PyDictOrValues *)obj)-3;
+    return (PyDictOrValues *)((char *)obj + MANAGED_DICT_OFFSET);
 }
 
 static inline int
@@ -663,8 +663,6 @@ _PyDictOrValues_SetValues(PyDictOrValues *ptr, PyDictValues *values)
 {
     ptr->values = ((char *)values) - 1;
 }
-
-#define MANAGED_WEAKREF_OFFSET (((Py_ssize_t)sizeof(PyObject *))*-4)
 
 extern PyObject ** _PyObject_ComputedDictPointer(PyObject *);
 extern void _PyObject_FreeInstanceAttributes(PyObject *obj);
