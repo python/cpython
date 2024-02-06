@@ -1137,11 +1137,18 @@ Connection objects
 
    .. _Loading an Extension: https://www.sqlite.org/loadext.html#loading_an_extension_
 
-   .. method:: iterdump
+   .. method:: iterdump(*, filter=None)
 
       Return an :term:`iterator` to dump the database as SQL source code.
       Useful when saving an in-memory database for later restoration.
       Similar to the ``.dump`` command in the :program:`sqlite3` shell.
+
+      :param filter:
+
+        An optional ``LIKE`` pattern for database objects to dump, e.g. ``prefix_%``.
+        If ``None`` (the default), all database objects will be included.
+
+      :type filter: str | None
 
       Example:
 
@@ -1158,6 +1165,8 @@ Connection objects
 
          :ref:`sqlite3-howto-encoding`
 
+      .. versionchanged:: 3.13
+         Added the *filter* parameter.
 
    .. method:: backup(target, *, pages=-1, progress=None, name="main", sleep=0.250)
 

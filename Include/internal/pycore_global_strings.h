@@ -429,6 +429,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(fileno)
         STRUCT_FOR_ID(filepath)
         STRUCT_FOR_ID(fillvalue)
+        STRUCT_FOR_ID(filter)
         STRUCT_FOR_ID(filters)
         STRUCT_FOR_ID(final)
         STRUCT_FOR_ID(find_class)
