@@ -1,0 +1,2 @@
+#!/bin/bash
+xcrun --sdk appletvos clang -target arm64-apple-tvos -E $@

@@ -1,0 +1,1 @@
+Added configuration changes to support building iOS/tvOS/watchOS frameworks.

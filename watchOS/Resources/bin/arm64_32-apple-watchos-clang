@@ -1,0 +1,2 @@
+#!/bin/bash
+xcrun --sdk watchos clang -target arm64_32-apple-watchos $@

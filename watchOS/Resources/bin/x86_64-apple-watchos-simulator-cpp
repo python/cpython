@@ -1,0 +1,2 @@
+#!/bin/bash
+xcrun --sdk watchsimulator clang -target x86_64-apple-watchos-simulator -E $@

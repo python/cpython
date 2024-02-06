@@ -233,7 +233,42 @@ PLATFORM_TRIPLET=i386-gnu
 #   error unknown platform triplet
 # endif
 #elif defined(__APPLE__)
+#  include "TargetConditionals.h"
+#  if TARGET_OS_IOS
+#    if TARGET_OS_SIMULATOR
+#      if __x86_64__
+PLATFORM_TRIPLET=iphonesimulator-x86_64
+#      else
+PLATFORM_TRIPLET=iphonesimulator-arm64
+#      endif
+#    else
+PLATFORM_TRIPLET=iphoneos-arm64
+#    endif
+#  elif TARGET_OS_TV
+#    if TARGET_OS_SIMULATOR
+#      if __x86_64__
+PLATFORM_TRIPLET=appletvsimulator-x86_64
+#      else
+PLATFORM_TRIPLET=appletvsimulator-arm64
+#      endif
+#    else
+PLATFORM_TRIPLET=appletvos-arm64
+#    endif
+#  elif TARGET_OS_WATCH
+#    if TARGET_OS_SIMULATOR
+#      if __x86_64__
+PLATFORM_TRIPLET=watchsimulator-x86_64
+#      else
+PLATFORM_TRIPLET=watchsimulator-arm64
+#      endif
+#    else
+PLATFORM_TRIPLET=watchos-arm64_32
+#    endif
+#  elif TARGET_OS_OSX
 PLATFORM_TRIPLET=darwin
+#  else
+#    error unknown Apple platform
+#  endif
 #elif defined(__VXWORKS__)
 PLATFORM_TRIPLET=vxworks
 #elif defined(__wasm32__)

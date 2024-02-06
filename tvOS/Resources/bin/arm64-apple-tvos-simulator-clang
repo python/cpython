@@ -1,0 +1,2 @@
+#!/bin/bash
+xcrun --sdk appletvsimulator clang -target arm64-apple-tvos-simulator $@
