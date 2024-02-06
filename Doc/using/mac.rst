@@ -29,7 +29,7 @@ new Apple Silicon and legacy Intel processors, is available there.
 
 What you get after installing is a number of things:
 
-* A :file:`Python 3.13` folder in your :file:`Applications` folder. In here
+* A |python_version_literal| folder in your :file:`Applications` folder. In here
   you find IDLE, the development environment that is a standard part of official
   Python distributions; and :program:`Python Launcher`, which handles double-clicking Python
   scripts from the Finder.
