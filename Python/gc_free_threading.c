@@ -616,7 +616,7 @@ void
 _PyGC_InitState(GCState *gcstate)
 {
     // TODO: move to pycore_runtime_init.h once the incremental GC lands.
-    gcstate->generations[0].threshold = 2000;
+    gcstate->young.threshold = 2000;
 }
 
 
@@ -911,8 +911,8 @@ cleanup_worklist(struct worklist *worklist)
 static bool
 gc_should_collect(GCState *gcstate)
 {
-    int count = _Py_atomic_load_int_relaxed(&gcstate->generations[0].count);
-    int threshold = gcstate->generations[0].threshold;
+    int count = _Py_atomic_load_int_relaxed(&gcstate->young.count);
+    int threshold = gcstate->young.threshold;
     if (count <= threshold || threshold == 0 || !gcstate->enabled) {
         return false;
     }
@@ -920,7 +920,7 @@ gc_should_collect(GCState *gcstate)
     // objects. A few tests rely on immediate scheduling of the GC so we ignore
     // the scaled threshold if generations[1].threshold is set to zero.
     return (count > gcstate->long_lived_total / 4 ||
-            gcstate->generations[1].threshold == 0);
+            gcstate->old[0].threshold == 0);
 }
 
 static void
@@ -1031,10 +1031,15 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 
     /* update collection and allocation counters */
     if (generation+1 < NUM_GENERATIONS) {
-        gcstate->generations[generation+1].count += 1;
+        gcstate->old[generation].count += 1;
     }
     for (i = 0; i <= generation; i++) {
-        gcstate->generations[i].count = 0;
+        if (i == 0) {
+            gcstate->young.count = 0;
+        }
+        else {
+            gcstate->old[i-1].count = 0;
+        }
     }
 
     PyInterpreterState *interp = tstate->interp;
@@ -1357,7 +1362,7 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     return gc_collect_main(tstate, generation, reason);
 }
 
-Py_ssize_t
+void
 _PyGC_CollectNoFail(PyThreadState *tstate)
 {
     /* Ideally, this function is only called on interpreter shutdown,
@@ -1366,7 +1371,7 @@ _PyGC_CollectNoFail(PyThreadState *tstate)
        during interpreter shutdown (and then never finish it).
        See http://bugs.python.org/issue8713#msg195178 for an example.
        */
-    return gc_collect_main(tstate, NUM_GENERATIONS - 1, _Py_GC_REASON_SHUTDOWN);
+    gc_collect_main(tstate, NUM_GENERATIONS - 1, _Py_GC_REASON_SHUTDOWN);
 }
 
 void
@@ -1490,7 +1495,7 @@ _PyObject_GC_Link(PyObject *op)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     GCState *gcstate = &tstate->interp->gc;
-    gcstate->generations[0].count++;
+    gcstate->young.count++;
 
     if (gc_should_collect(gcstate) &&
         !_Py_atomic_load_int_relaxed(&gcstate->collecting))
@@ -1605,8 +1610,8 @@ PyObject_GC_Del(void *op)
 #endif
     }
     GCState *gcstate = get_gc_state();
-    if (gcstate->generations[0].count > 0) {
-        gcstate->generations[0].count--;
+    if (gcstate->young.count > 0) {
+        gcstate->young.count--;
     }
     PyObject_Free(((char *)op)-presize);
 }
