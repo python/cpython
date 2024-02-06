@@ -834,6 +834,7 @@ class CLanguage(Language):
                     min_kw_only = i - max_pos
             elif p.is_vararg():
                 if vararg != self.NO_VARARG:
+                    assert isinstance(vararg, int)
                     fail("Cannot specify multiple varargs; "
                          f"'*{parameters[vararg].name}' was already provided as parameter {vararg+1}")
                 pseudo_args += 1
