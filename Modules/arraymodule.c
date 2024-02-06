@@ -878,8 +878,9 @@ static PyObject *
 array_array_clear_impl(arrayobject *self)
 /*[clinic end generated code: output=5efe0417062210a9 input=5dffa30e94e717a4]*/
 {
-    if (array_resize(self, 0) == -1)
+    if (array_resize(self, 0) == -1) {
         return NULL;
+    }
     Py_RETURN_NONE;
 }
 
