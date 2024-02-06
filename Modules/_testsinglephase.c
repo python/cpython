@@ -8,7 +8,6 @@
 //#include <time.h>
 #include "Python.h"
 #include "pycore_namespace.h"     // _PyNamespace_New()
-#include "pycore_time.h"          // _PyTime_t
 
 
 typedef struct {

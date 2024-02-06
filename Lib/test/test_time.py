@@ -765,7 +765,7 @@ class TestPytime(unittest.TestCase):
         self.assertIs(lt.tm_zone, None)
 
 
-@unittest.skipIf(_testcapi is None, 'need the _testinternalcapi module')
+@unittest.skipIf(_testcapi is None, 'need the _testcapi module')
 @unittest.skipIf(_testinternalcapi is None, 'need the _testinternalcapi module')
 class CPyTimeTestCase:
     """

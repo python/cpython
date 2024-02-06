@@ -536,7 +536,7 @@ pytime_fromtimespec(_PyTime_t *tp, const struct timespec *ts, int raise_exc)
 }
 
 int
-_PyTime_FromTimespec(_PyTime_t *tp, const struct timespec *ts)
+_PyTime_FromTimespec(_PyTime_t *tp, struct timespec *ts)
 {
     return pytime_fromtimespec(tp, ts, 1);
 }

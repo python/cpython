@@ -1739,9 +1739,6 @@ Removed
   (:pep:`590`).
   (Contributed by Victor Stinner in :gh:`106023`.)
 
-* Remove ``cpython/pytime.h`` header file: it only contained private functions.
-  (Contributed by Victor Stinner in :gh:`106316`.)
-
 * Remove ``_PyInterpreterState_Get()`` alias to
   :c:func:`PyInterpreterState_Get()` which was kept for backward compatibility
   with Python 3.8. The `pythoncapi-compat project

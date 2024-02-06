@@ -1,0 +1,3 @@
+``_PyTime`` C API is exposed in public headers again. Note that there are no
+guarantees about stability of API with a leading underscore in the name:
+this API may be removed again at any time.

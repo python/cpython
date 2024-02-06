@@ -127,6 +127,7 @@ Lib/test/test_time.py         @pganssle @abalkin
 Modules/timemodule.c          @pganssle @abalkin
 Python/pytime.c               @pganssle @abalkin
 Include/internal/pycore_time.h  @pganssle @abalkin
+Include/pytime.h              @pganssle @abalkin
 
 # Email and related
 **/*mail*                     @python/email-team
