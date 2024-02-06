@@ -5899,6 +5899,32 @@ type_get_version(PyObject *self, PyObject *type)
     return res;
 }
 
+static PyObject *
+type_modified(PyObject *self, PyObject *type)
+{
+    if (!PyType_Check(type)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a type");
+        return NULL;
+    }
+    PyType_Modified((PyTypeObject *)type);
+    Py_RETURN_NONE;
+}
+
+// Circumvents standard version assignment machinery - use with caution and only on
+// short-lived heap types
+static PyObject *
+type_assign_specific_version_unsafe(PyObject *self, PyObject *args)
+{
+    PyTypeObject *type;
+    unsigned int version;
+    if (!PyArg_ParseTuple(args, "Oi:type_assign_specific_version_unsafe", &type, &version)) {
+        return NULL;
+    }
+    assert(!PyType_HasFeature(type, Py_TPFLAGS_IMMUTABLETYPE));
+    type->tp_version_tag = version;
+    type->tp_flags |= Py_TPFLAGS_VALID_VERSION_TAG;
+    Py_RETURN_NONE;
+}
 
 // Test PyThreadState C API
 static PyObject *
@@ -6782,6 +6808,9 @@ static PyMethodDef TestMethods[] = {
     {"fatal_error", test_fatal_error, METH_VARARGS,
      PyDoc_STR("fatal_error(message, release_gil=False): call Py_FatalError(message)")},
     {"type_get_version", type_get_version, METH_O, PyDoc_STR("type->tp_version_tag")},
+    {"type_modified", type_modified, METH_O, PyDoc_STR("PyType_Modified")},
+    {"type_assign_specific_version_unsafe", type_assign_specific_version_unsafe, METH_VARARGS,
+     PyDoc_STR("forcefully assign type->tp_version_tag")},
     {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
     {"float_pack", test_float_pack, METH_VARARGS, NULL},
     {"float_unpack", test_float_unpack, METH_VARARGS, NULL},
