@@ -87,6 +87,7 @@ Python/abstract_interp_cases.c.h
 
 # not actually source
 Python/bytecodes.c
+Python/tier2_redundancy_eliminator_bytecodes.c
 
 # mimalloc
 Objects/mimalloc/*.c

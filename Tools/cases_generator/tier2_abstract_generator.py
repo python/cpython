@@ -1,6 +1,6 @@
 """Generate the cases for the tier 2 redundancy eliminator/abstract interpreter.
 Reads the instruction definitions from bytecodes.c. and tier2_redundancy_eliminator.bytecodes.c
-Writes the cases to tier2_abstract_cases.c.h, which is #included in ceval.c.
+Writes the cases to abstract_interp_cases.c.h, which is #included in Python/optimizer_analysis.c.
 """
 
 import argparse
@@ -31,7 +31,7 @@ from lexer import Token
 from stack import StackOffset, Stack, SizeMismatch, UNUSED
 
 DEFAULT_OUTPUT = ROOT / "Python/abstract_interp_cases.c.h"
-DEFAULT_ABSTRACT_INUPT = ROOT / "Python/tier2_redundancy_eliminator_bytecodes.c"
+DEFAULT_ABSTRACT_INPUT = ROOT / "Python/tier2_redundancy_eliminator_bytecodes.c"
 
 
 def validate_uop(override: Uop, uop: Uop) -> None:
@@ -228,7 +228,7 @@ if __name__ == "__main__":
     args = arg_parser.parse_args()
     if len(args.base) == 0:
         args.input.append(DEFAULT_INPUT)
-        args.input.append(DEFAULT_ABSTRACT_INUPT)
+        args.input.append(DEFAULT_ABSTRACT_INPUT)
     abstract = analyze_files(args.input)
     base = analyze_files(args.base)
     with open(args.output, "w") as outfile:
