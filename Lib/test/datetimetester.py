@@ -5461,12 +5461,12 @@ class Oddballs(unittest.TestCase):
                      (date_sc, as_date),
                      (as_datetime, datetime_sc),
                      (datetime_sc, as_datetime)):
-                self.assertTrue(x == y)
-                self.assertFalse(x != y)
-                self.assertFalse(x < y)
-                self.assertFalse(x > y)
-                self.assertTrue(x <= y)
-                self.assertTrue(x >= y)
+            self.assertTrue(x == y)
+            self.assertFalse(x != y)
+            self.assertFalse(x < y)
+            self.assertFalse(x > y)
+            self.assertTrue(x <= y)
+            self.assertTrue(x >= y)
 
         # Nevertheless, comparison should work if other object is an instance
         # of date or datetime class with overridden comparison operators.
