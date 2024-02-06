@@ -147,7 +147,8 @@ def write_uop(
         else:
             emit_default(out, uop)
         # Type propagation
-        out.emit("\n")
+        if has_type_prop:
+            out.emit("\n")
         for output in (override or uop).stack.outputs:
             if typ := output.type_prop:
                 typname, refinement = typ
@@ -204,6 +205,16 @@ def generate_abstract_interpreter(
         out.emit("break;\n")
         out.emit("}")
         out.emit("\n\n")
+
+
+def generate_tier2_abstract_from_files(
+    filenames: list[str], outfilename: str, debug: bool=False
+) -> None:
+    assert len(filenames) == 2, "Need a base file and an abstract cases file."
+    base = analyze_files([filenames[0]])
+    abstract = analyze_files([filenames[1]])
+    with open(outfilename, "w") as outfile:
+        generate_abstract_interpreter(filenames, abstract, base, outfile, debug)
 
 
 arg_parser = argparse.ArgumentParser(
