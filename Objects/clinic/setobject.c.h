@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(set_pop__doc__,
 "pop($self, /)\n"
 "--\n"
@@ -20,6 +22,41 @@ static PyObject *
 set_pop(PySetObject *self, PyObject *Py_UNUSED(ignored))
 {
     return set_pop_impl(self);
+}
+
+PyDoc_STRVAR(set_update__doc__,
+"update($self, /, *args)\n"
+"--\n"
+"\n"
+"Update the set, adding elements from all others.");
+
+#define SET_UPDATE_METHODDEF    \
+    {"update", _PyCFunction_CAST(set_update), METH_FASTCALL, set_update__doc__},
+
+static PyObject *
+set_update_impl(PySetObject *self, PyObject *args);
+
+static PyObject *
+set_update(PySetObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *__clinic_args = NULL;
+
+    if (!_PyArg_CheckPositional("update", nargs, 0, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    __clinic_args = PyTuple_New(nargs - 0);
+    if (!__clinic_args) {
+        goto exit;
+    }
+    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
+        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
+    }
+    return_value = set_update_impl(self, __clinic_args);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
 }
 
 PyDoc_STRVAR(set_copy__doc__,
@@ -76,6 +113,111 @@ set_clear(PySetObject *self, PyObject *Py_UNUSED(ignored))
     return set_clear_impl(self);
 }
 
+PyDoc_STRVAR(set_union__doc__,
+"union($self, /, *args)\n"
+"--\n"
+"\n"
+"Return a new set with elements from the set and all others.");
+
+#define SET_UNION_METHODDEF    \
+    {"union", _PyCFunction_CAST(set_union), METH_FASTCALL, set_union__doc__},
+
+static PyObject *
+set_union_impl(PySetObject *self, PyObject *args);
+
+static PyObject *
+set_union(PySetObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *__clinic_args = NULL;
+
+    if (!_PyArg_CheckPositional("union", nargs, 0, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    __clinic_args = PyTuple_New(nargs - 0);
+    if (!__clinic_args) {
+        goto exit;
+    }
+    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
+        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
+    }
+    return_value = set_union_impl(self, __clinic_args);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
+
+PyDoc_STRVAR(set_intersection_multi__doc__,
+"intersection($self, /, *args)\n"
+"--\n"
+"\n"
+"Return a new set with elements common to the set and all others.");
+
+#define SET_INTERSECTION_MULTI_METHODDEF    \
+    {"intersection", _PyCFunction_CAST(set_intersection_multi), METH_FASTCALL, set_intersection_multi__doc__},
+
+static PyObject *
+set_intersection_multi_impl(PySetObject *self, PyObject *args);
+
+static PyObject *
+set_intersection_multi(PySetObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *__clinic_args = NULL;
+
+    if (!_PyArg_CheckPositional("intersection", nargs, 0, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    __clinic_args = PyTuple_New(nargs - 0);
+    if (!__clinic_args) {
+        goto exit;
+    }
+    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
+        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
+    }
+    return_value = set_intersection_multi_impl(self, __clinic_args);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
+
+PyDoc_STRVAR(set_intersection_update_multi__doc__,
+"intersection_update($self, /, *args)\n"
+"--\n"
+"\n"
+"Update the set, keeping only elements found in it and all others.");
+
+#define SET_INTERSECTION_UPDATE_MULTI_METHODDEF    \
+    {"intersection_update", _PyCFunction_CAST(set_intersection_update_multi), METH_FASTCALL, set_intersection_update_multi__doc__},
+
+static PyObject *
+set_intersection_update_multi_impl(PySetObject *self, PyObject *args);
+
+static PyObject *
+set_intersection_update_multi(PySetObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *__clinic_args = NULL;
+
+    if (!_PyArg_CheckPositional("intersection_update", nargs, 0, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    __clinic_args = PyTuple_New(nargs - 0);
+    if (!__clinic_args) {
+        goto exit;
+    }
+    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
+        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
+    }
+    return_value = set_intersection_update_multi_impl(self, __clinic_args);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
+
 PyDoc_STRVAR(set_isdisjoint__doc__,
 "isdisjoint($self, other, /)\n"
 "--\n"
@@ -84,6 +226,76 @@ PyDoc_STRVAR(set_isdisjoint__doc__,
 
 #define SET_ISDISJOINT_METHODDEF    \
     {"isdisjoint", (PyCFunction)set_isdisjoint, METH_O, set_isdisjoint__doc__},
+
+PyDoc_STRVAR(set_difference_update__doc__,
+"difference_update($self, /, *args)\n"
+"--\n"
+"\n"
+"Update the set, removing elements found in others.");
+
+#define SET_DIFFERENCE_UPDATE_METHODDEF    \
+    {"difference_update", _PyCFunction_CAST(set_difference_update), METH_FASTCALL, set_difference_update__doc__},
+
+static PyObject *
+set_difference_update_impl(PySetObject *self, PyObject *args);
+
+static PyObject *
+set_difference_update(PySetObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *__clinic_args = NULL;
+
+    if (!_PyArg_CheckPositional("difference_update", nargs, 0, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    __clinic_args = PyTuple_New(nargs - 0);
+    if (!__clinic_args) {
+        goto exit;
+    }
+    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
+        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
+    }
+    return_value = set_difference_update_impl(self, __clinic_args);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
+
+PyDoc_STRVAR(set_difference_multi__doc__,
+"difference($self, /, *args)\n"
+"--\n"
+"\n"
+"Return a new set with elements in the set that are not in the others.");
+
+#define SET_DIFFERENCE_MULTI_METHODDEF    \
+    {"difference", _PyCFunction_CAST(set_difference_multi), METH_FASTCALL, set_difference_multi__doc__},
+
+static PyObject *
+set_difference_multi_impl(PySetObject *self, PyObject *args);
+
+static PyObject *
+set_difference_multi(PySetObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *__clinic_args = NULL;
+
+    if (!_PyArg_CheckPositional("difference", nargs, 0, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    __clinic_args = PyTuple_New(nargs - 0);
+    if (!__clinic_args) {
+        goto exit;
+    }
+    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
+        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
+    }
+    return_value = set_difference_multi_impl(self, __clinic_args);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
 
 PyDoc_STRVAR(set_symmetric_difference_update__doc__,
 "symmetric_difference_update($self, other, /)\n"
@@ -198,4 +410,4 @@ set___sizeof__(PySetObject *self, PyObject *Py_UNUSED(ignored))
 {
     return set___sizeof___impl(self);
 }
-/*[clinic end generated code: output=37e660dbf15cd755 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=37d87f4add269f73 input=a9049054013a1b77]*/
