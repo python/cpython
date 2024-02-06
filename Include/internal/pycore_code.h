@@ -285,7 +285,7 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
     do { if (_Py_stats && PyFunction_Check(callable)) _Py_stats->call_stats.eval_calls[name]++; } while (0)
 #define GC_STAT_ADD(gen, name, n) do { if (_Py_stats) _Py_stats->gc_stats[(gen)].name += (n); } while (0)
 #define OPT_STAT_INC(name) do { if (_Py_stats) _Py_stats->optimization_stats.name++; } while (0)
-#define UOP_STAT_INC(opname, name) do { if (_Py_stats) { assert(opname < 512); _Py_stats->optimization_stats.opcode[opname].name++; } } while (0)
+#define UOP_STAT_INC(opname, name) do { if (_Py_stats) { assert(opname < 512); _Py_stats->optimization_stats.opcode[opname]->name++; } } while (0)
 #define OPT_UNSUPPORTED_OPCODE(opname) do { if (_Py_stats) _Py_stats->optimization_stats.unsupported_opcode[opname]++; } while (0)
 #define OPT_HIST(length, name) \
     do { \
@@ -299,6 +299,9 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
 
 // Export for '_opcode' shared extension
 PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
+
+// Method to initialize sub-structs of Py_Stats
+void _init_pystats(PyStats *stats);
 
 #else
 #define STAT_INC(opname, name) ((void)0)

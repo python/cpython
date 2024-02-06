@@ -23,6 +23,7 @@
  */
 
 #ifdef Py_STATS
+
 GCStats _py_gc_stats[NUM_GENERATIONS] = { 0 };
 static PyStats _Py_stats_struct = { .gc_stats = _py_gc_stats };
 PyStats *_Py_stats = NULL;
@@ -41,6 +42,17 @@ PyStats *_Py_stats = NULL;
         } \
         Py_DECREF(val); \
     } while(0);
+
+void 
+_init_pystats(PyStats *stats){
+    //Make UOpstats structs for all initial opcodes, with null pointers
+    for (int i = 0; i < 512; i++){
+        stats->optimization_stats.opcode[i] = PyMem_RawCalloc(1, sizeof(UOpStats));
+        for (int j = 0; j < 512; j++){
+            stats->optimization_stats.opcode[i]->next_stats[j] = NULL;
+        }
+    }
+}
 
 static PyObject*
 stats_to_dict(SpecializationStats *stats)
@@ -247,11 +259,11 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
         } else {
             names = _PyOpcode_uop_name;
         }
-        if (stats->opcode[i].execution_count) {
-            fprintf(out, "uops[%s].execution_count : %" PRIu64 "\n", names[i], stats->opcode[i].execution_count);
+        if (stats->opcode[i]->execution_count) {
+            fprintf(out, "uops[%s].execution_count : %" PRIu64 "\n", names[i], stats->opcode[i]->execution_count);
         }
-        if (stats->opcode[i].miss) {
-            fprintf(out, "uops[%s].specialization.miss : %" PRIu64 "\n", names[i], stats->opcode[i].miss);
+        if (stats->opcode[i]->miss) {
+            fprintf(out, "uops[%s].specialization.miss : %" PRIu64 "\n", names[i], stats->opcode[i]->miss);
         }
     }
 

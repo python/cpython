@@ -2349,6 +2349,7 @@ _PyConfig_Write(const PyConfig *config, _PyRuntimeState *runtime)
 #ifdef Py_STATS
     if (config->_pystats) {
         _Py_StatsOn();
+        _init_pystats(_Py_stats);
     }
 #endif
 
