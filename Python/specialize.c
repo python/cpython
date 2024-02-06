@@ -245,14 +245,18 @@ print_uop_sequence(FILE *out, UOpStats *uop_stats, const char* prefix){
     for (int i = 1; i < 512; i++){
         if (uop_stats->next_stats[i]){
             if (uop_stats->next_stats[i]->execution_count){
-                fprintf(out, "%s->%d : %ld\n", prefix, i, uop_stats->next_stats[i]->execution_count);
+                const char* const* names;
+                if (i < 256) {
+                    names = _PyOpcode_OpName;
+                } else {
+                    names = _PyOpcode_uop_name;
+                }
+                fprintf(out, "UOp Sequence Count:%s->%s: %ld\n", prefix, names[i], uop_stats->next_stats[i]->execution_count);
                 char pre[strlen(prefix) + 256]; // TODO why is this constant so large?
                 pre[0] = '\0';
                 strcat(pre, prefix);
                 strcat(pre, "->");
-                char digits[6];
-                sprintf(digits, "%d", i); // TODO fix buffer overflow??
-                strcat(pre, digits);
+                strcat(pre, names[i]);
                 print_uop_sequence(out, uop_stats->next_stats[i], pre);
             }
         }
@@ -305,9 +309,12 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
     }
 
     for (int i = 0; i < 512; i++){
-        char uop_chars[6];
-        sprintf(uop_chars, "%d", i);
-        print_uop_sequence(out, stats->opcode[i], uop_chars);
+        if (i < 256) {
+            names = _PyOpcode_OpName;
+        } else {
+            names = _PyOpcode_uop_name;
+        }
+        print_uop_sequence(out, stats->opcode[i], names[i]);
     }
 
 }
