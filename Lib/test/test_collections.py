@@ -1,5 +1,6 @@
 """Unit tests for collections.py."""
 
+import array
 import collections
 import copy
 import doctest
@@ -9,7 +10,6 @@ import pickle
 from random import choice, randrange
 from itertools import product, chain, combinations
 import string
-import array
 import sys
 from test import support
 import types
