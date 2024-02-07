@@ -132,8 +132,8 @@ The :mod:`bdb` module also defines two classes:
    frame is considered to originate in a certain module is determined
    by the ``__name__`` in the frame globals.
 
-   .. versionadded:: 3.1
-      The *skip* argument.
+   .. versionchanged:: 3.1
+      Added the *skip* parameter.
 
    The following methods of :class:`Bdb` normally don't need to be overridden.
 
@@ -294,7 +294,7 @@ The :mod:`bdb` module also defines two classes:
    .. method:: set_quit()
 
       Set the :attr:`quitting` attribute to ``True``.  This raises :exc:`BdbQuit` in
-      the next call to one of the :meth:`dispatch_\*` methods.
+      the next call to one of the :meth:`!dispatch_\*` methods.
 
 
    Derived classes and clients can call the following methods to manipulate

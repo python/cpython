@@ -1,2 +1,0 @@
-Ensure that :func:`select.kqueue` objects correctly appear as closed in
-forked children, to prevent operations on an invalid file descriptor.

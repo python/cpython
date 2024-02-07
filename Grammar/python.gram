@@ -124,6 +124,7 @@ simple_stmt[stmt_ty] (memo):
     | &'nonlocal' nonlocal_stmt
 
 compound_stmt[stmt_ty]:
+    | invalid_compound_stmt
     | &('def' | '@' | 'async') function_def
     | &'if' if_stmt
     | &('class' | '@') class_def
@@ -967,6 +968,8 @@ for_if_clause[comprehension_ty]:
         CHECK_VERSION(comprehension_ty, 6, "Async comprehensions are", _PyAST_comprehension(a, b, c, 1, p->arena)) }
     | 'for' a=star_targets 'in' ~ b=disjunction c[asdl_expr_seq*]=('if' z=disjunction { z })* {
         _PyAST_comprehension(a, b, c, 0, p->arena) }
+    | 'async'? 'for' (bitwise_or (',' bitwise_or)* [',']) !'in' {
+        RAISE_SYNTAX_ERROR("'in' expected after for-loop variables") }
     | invalid_for_target
 
 listcomp[expr_ty]:
@@ -1297,6 +1300,10 @@ invalid_import:
 invalid_import_from_targets:
     | import_from_as_names ',' NEWLINE {
         RAISE_SYNTAX_ERROR("trailing comma not allowed without surrounding parentheses") }
+
+invalid_compound_stmt:
+    | a='elif' named_expression ':' { RAISE_SYNTAX_ERROR_STARTING_FROM(a, "'elif' must match an if-statement here") }
+    | a='else' ':' { RAISE_SYNTAX_ERROR_STARTING_FROM(a, "'else' must match a valid statement here") }
 
 invalid_with_stmt:
     | ['async'] 'with' ','.(expression ['as' star_target])+ NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }

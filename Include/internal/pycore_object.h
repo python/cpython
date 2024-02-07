@@ -54,7 +54,7 @@ PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
    Furthermore, we can't use designated initializers in Extensions since these
    are not supported pre-C++20. Thus, keeping an internal copy here is the most
    backwards compatible solution */
-#if defined(Py_NOGIL)
+#if defined(Py_GIL_DISABLED)
 #define _PyObject_HEAD_INIT(type)                   \
     {                                               \
         .ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL,  \
@@ -103,7 +103,7 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
 #ifdef Py_REF_DEBUG
     _Py_AddRefTotal(_PyInterpreterState_GET(), n);
 #endif
-#if !defined(Py_NOGIL)
+#if !defined(Py_GIL_DISABLED)
     op->ob_refcnt += n;
 #else
     if (_Py_IsOwnedByCurrentThread(op)) {
@@ -125,19 +125,7 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
 }
 #define _Py_RefcntAdd(op, n) _Py_RefcntAdd(_PyObject_CAST(op), n)
 
-static inline void _Py_SetImmortal(PyObject *op)
-{
-    if (op) {
-#ifdef Py_NOGIL
-        op->ob_tid = _Py_UNOWNED_TID;
-        op->ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL;
-        op->ob_ref_shared = 0;
-#else
-        op->ob_refcnt = _Py_IMMORTAL_REFCNT;
-#endif
-    }
-}
-#define _Py_SetImmortal(op) _Py_SetImmortal(_PyObject_CAST(op))
+extern void _Py_SetImmortal(PyObject *op);
 
 // Makes an immortal object mortal again with the specified refcnt. Should only
 // be used during runtime finalization.
@@ -145,7 +133,7 @@ static inline void _Py_SetMortal(PyObject *op, Py_ssize_t refcnt)
 {
     if (op) {
         assert(_Py_IsImmortal(op));
-#ifdef Py_NOGIL
+#ifdef Py_GIL_DISABLED
         op->ob_tid = _Py_UNOWNED_TID;
         op->ob_ref_local = 0;
         op->ob_ref_shared = _Py_REF_SHARED(refcnt, _Py_REF_MERGED);
@@ -169,7 +157,7 @@ static inline void _Py_ClearImmortal(PyObject *op)
         op = NULL; \
     } while (0)
 
-#if !defined(Py_NOGIL)
+#if !defined(Py_GIL_DISABLED)
 static inline void
 _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 {
@@ -178,7 +166,7 @@ _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
     }
     _Py_DECREF_STAT_INC();
 #ifdef Py_REF_DEBUG
-    _Py_DEC_REFTOTAL(_PyInterpreterState_GET());
+    _Py_DEC_REFTOTAL(PyInterpreterState_Get());
 #endif
     if (--op->ob_refcnt != 0) {
         assert(op->ob_refcnt > 0);
@@ -199,7 +187,7 @@ _Py_DECREF_NO_DEALLOC(PyObject *op)
     }
     _Py_DECREF_STAT_INC();
 #ifdef Py_REF_DEBUG
-    _Py_DEC_REFTOTAL(_PyInterpreterState_GET());
+    _Py_DEC_REFTOTAL(PyInterpreterState_Get());
 #endif
     op->ob_refcnt--;
 #ifdef Py_DEBUG
@@ -210,7 +198,7 @@ _Py_DECREF_NO_DEALLOC(PyObject *op)
 }
 
 #else
-// TODO: implement Py_DECREF specializations for Py_NOGIL build
+// TODO: implement Py_DECREF specializations for Py_GIL_DISABLED build
 static inline void
 _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 {
@@ -238,7 +226,7 @@ _Py_REF_IS_QUEUED(Py_ssize_t ob_ref_shared)
 // Merge the local and shared reference count fields and add `extra` to the
 // refcount when merging.
 Py_ssize_t _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra);
-#endif // !defined(Py_NOGIL)
+#endif // !defined(Py_GIL_DISABLED)
 
 #ifdef Py_REF_DEBUG
 #  undef _Py_DEC_REFTOTAL
@@ -315,7 +303,9 @@ static inline void _PyObject_GC_TRACK(
     _PyObject_ASSERT_FROM(op, !_PyObject_GC_IS_TRACKED(op),
                           "object already tracked by the garbage collector",
                           filename, lineno, __func__);
-
+#ifdef Py_GIL_DISABLED
+    op->ob_gc_bits |= _PyGC_BITS_TRACKED;
+#else
     PyGC_Head *gc = _Py_AS_GC(op);
     _PyObject_ASSERT_FROM(op,
                           (gc->_gc_prev & _PyGC_PREV_MASK_COLLECTING) == 0,
@@ -323,12 +313,14 @@ static inline void _PyObject_GC_TRACK(
                           filename, lineno, __func__);
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyGC_Head *generation0 = interp->gc.generation0;
+    PyGC_Head *generation0 = &interp->gc.young.head;
     PyGC_Head *last = (PyGC_Head*)(generation0->_gc_prev);
     _PyGCHead_SET_NEXT(last, gc);
     _PyGCHead_SET_PREV(gc, last);
     _PyGCHead_SET_NEXT(gc, generation0);
+    assert((gc->_gc_next & _PyGC_NEXT_MASK_OLD_SPACE_1) == 0);
     generation0->_gc_prev = (uintptr_t)gc;
+#endif
 }
 
 /* Tell the GC to stop tracking this object.
@@ -352,6 +344,9 @@ static inline void _PyObject_GC_UNTRACK(
                           "object not tracked by the garbage collector",
                           filename, lineno, __func__);
 
+#ifdef Py_GIL_DISABLED
+    op->ob_gc_bits &= ~_PyGC_BITS_TRACKED;
+#else
     PyGC_Head *gc = _Py_AS_GC(op);
     PyGC_Head *prev = _PyGCHead_PREV(gc);
     PyGC_Head *next = _PyGCHead_NEXT(gc);
@@ -359,6 +354,7 @@ static inline void _PyObject_GC_UNTRACK(
     _PyGCHead_SET_PREV(next, prev);
     gc->_gc_next = 0;
     gc->_gc_prev &= _PyGC_PREV_MASK_FINALIZED;
+#endif
 }
 
 // Macros to accept any type for the parameter, and to automatically pass
@@ -374,6 +370,142 @@ static inline void _PyObject_GC_UNTRACK(
         _PyObject_GC_TRACK(__FILE__, __LINE__, _PyObject_CAST(op))
 #  define _PyObject_GC_UNTRACK(op) \
         _PyObject_GC_UNTRACK(__FILE__, __LINE__, _PyObject_CAST(op))
+#endif
+
+#ifdef Py_GIL_DISABLED
+
+/* Tries to increment an object's reference count
+ *
+ * This is a specialized version of _Py_TryIncref that only succeeds if the
+ * object is immortal or local to this thread. It does not handle the case
+ * where the  reference count modification requires an atomic operation. This
+ * allows call sites to specialize for the immortal/local case.
+ */
+static inline int
+_Py_TryIncrefFast(PyObject *op) {
+    uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
+    local += 1;
+    if (local == 0) {
+        // immortal
+        return 1;
+    }
+    if (_Py_IsOwnedByCurrentThread(op)) {
+        _Py_INCREF_STAT_INC();
+        _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, local);
+#ifdef Py_REF_DEBUG
+        _Py_IncRefTotal(_PyInterpreterState_GET());
+#endif
+        return 1;
+    }
+    return 0;
+}
+
+static inline int
+_Py_TryIncRefShared(PyObject *op)
+{
+    Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared);
+    for (;;) {
+        // If the shared refcount is zero and the object is either merged
+        // or may not have weak references, then we cannot incref it.
+        if (shared == 0 || shared == _Py_REF_MERGED) {
+            return 0;
+        }
+
+        if (_Py_atomic_compare_exchange_ssize(
+                &op->ob_ref_shared,
+                &shared,
+                shared + (1 << _Py_REF_SHARED_SHIFT))) {
+#ifdef Py_REF_DEBUG
+            _Py_IncRefTotal(_PyInterpreterState_GET());
+#endif
+            _Py_INCREF_STAT_INC();
+            return 1;
+        }
+    }
+}
+
+/* Tries to incref the object op and ensures that *src still points to it. */
+static inline int
+_Py_TryIncref(PyObject **src, PyObject *op)
+{
+    if (_Py_TryIncrefFast(op)) {
+        return 1;
+    }
+    if (!_Py_TryIncRefShared(op)) {
+        return 0;
+    }
+    if (op != _Py_atomic_load_ptr(src)) {
+        Py_DECREF(op);
+        return 0;
+    }
+    return 1;
+}
+
+/* Loads and increfs an object from ptr, which may contain a NULL value.
+   Safe with concurrent (atomic) updates to ptr.
+   NOTE: The writer must set maybe-weakref on the stored object! */
+static inline PyObject *
+_Py_XGetRef(PyObject **ptr)
+{
+    for (;;) {
+        PyObject *value = _Py_atomic_load_ptr(ptr);
+        if (value == NULL) {
+            return value;
+        }
+        if (_Py_TryIncref(ptr, value)) {
+            return value;
+        }
+    }
+}
+
+/* Attempts to loads and increfs an object from ptr. Returns NULL
+   on failure, which may be due to a NULL value or a concurrent update. */
+static inline PyObject *
+_Py_TryXGetRef(PyObject **ptr)
+{
+    PyObject *value = _Py_atomic_load_ptr(ptr);
+    if (value == NULL) {
+        return value;
+    }
+    if (_Py_TryIncref(ptr, value)) {
+        return value;
+    }
+    return NULL;
+}
+
+/* Like Py_NewRef but also optimistically sets _Py_REF_MAYBE_WEAKREF
+   on objects owned by a different thread. */
+static inline PyObject *
+_Py_NewRefWithLock(PyObject *op)
+{
+    if (_Py_TryIncrefFast(op)) {
+        return op;
+    }
+    _Py_INCREF_STAT_INC();
+    for (;;) {
+        Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared);
+        Py_ssize_t new_shared = shared + (1 << _Py_REF_SHARED_SHIFT);
+        if ((shared & _Py_REF_SHARED_FLAG_MASK) == 0) {
+            new_shared |= _Py_REF_MAYBE_WEAKREF;
+        }
+        if (_Py_atomic_compare_exchange_ssize(
+                &op->ob_ref_shared,
+                &shared,
+                new_shared)) {
+            return op;
+        }
+    }
+}
+
+static inline PyObject *
+_Py_XNewRefWithLock(PyObject *obj)
+{
+    if (obj == NULL) {
+        return NULL;
+    }
+    return _Py_NewRefWithLock(obj);
+}
+
 #endif
 
 #ifdef Py_REF_DEBUG
@@ -450,8 +582,12 @@ _PyObject_IS_GC(PyObject *obj)
 static inline size_t
 _PyType_PreHeaderSize(PyTypeObject *tp)
 {
-    return _PyType_IS_GC(tp) * sizeof(PyGC_Head) +
-        _PyType_HasFeature(tp, Py_TPFLAGS_PREHEADER) * 2 * sizeof(PyObject *);
+    return (
+#ifndef Py_GIL_DISABLED
+        _PyType_IS_GC(tp) * sizeof(PyGC_Head) +
+#endif
+        _PyType_HasFeature(tp, Py_TPFLAGS_PREHEADER) * 2 * sizeof(PyObject *)
+    );
 }
 
 void _PyObject_GC_Link(PyObject *op);
@@ -481,6 +617,14 @@ extern int _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
 PyObject * _PyObject_GetInstanceAttribute(PyObject *obj, PyDictValues *values,
                                         PyObject *name);
 
+#ifdef Py_GIL_DISABLED
+#  define MANAGED_DICT_OFFSET    (((Py_ssize_t)sizeof(PyObject *))*-1)
+#  define MANAGED_WEAKREF_OFFSET (((Py_ssize_t)sizeof(PyObject *))*-2)
+#else
+#  define MANAGED_DICT_OFFSET    (((Py_ssize_t)sizeof(PyObject *))*-3)
+#  define MANAGED_WEAKREF_OFFSET (((Py_ssize_t)sizeof(PyObject *))*-4)
+#endif
+
 typedef union {
     PyObject *dict;
     /* Use a char* to generate a warning if directly assigning a PyDictValues */
@@ -491,7 +635,7 @@ static inline PyDictOrValues *
 _PyObject_DictOrValuesPointer(PyObject *obj)
 {
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-    return ((PyDictOrValues *)obj)-3;
+    return (PyDictOrValues *)((char *)obj + MANAGED_DICT_OFFSET);
 }
 
 static inline int
@@ -519,8 +663,6 @@ _PyDictOrValues_SetValues(PyDictOrValues *ptr, PyDictValues *values)
 {
     ptr->values = ((char *)values) - 1;
 }
-
-#define MANAGED_WEAKREF_OFFSET (((Py_ssize_t)sizeof(PyObject *))*-4)
 
 extern PyObject ** _PyObject_ComputedDictPointer(PyObject *);
 extern void _PyObject_FreeInstanceAttributes(PyObject *obj);
