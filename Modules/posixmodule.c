@@ -969,6 +969,13 @@ _fd_converter(PyObject *o, int *p)
     int overflow;
     long long_value;
 
+    if (PyBool_Check(o)) {
+        if (PyErr_WarnEx(PyExc_RuntimeWarning,
+                "bool is used as a file descriptor", 1))
+        {
+            return 0;
+        }
+    }
     PyObject *index = _PyNumber_Index(o);
     if (index == NULL) {
         return 0;
@@ -1620,7 +1627,7 @@ convertenviron(void)
             Py_DECREF(d);
             return NULL;
         }
-        if (PyDict_SetDefault(d, k, v) == NULL) {
+        if (PyDict_SetDefaultRef(d, k, v, NULL) < 0) {
             Py_DECREF(v);
             Py_DECREF(k);
             Py_DECREF(d);
