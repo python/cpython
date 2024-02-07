@@ -58,9 +58,8 @@ def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
                     out.emit(f"if({var.name}) {{goto error;}}\n")
                 else:
                     out.emit(f"{type_name(var)}{var.name};\n")
-    has_type_prop = any(output.type_prop is not None for output in uop.stack.outputs)
     for var in uop.stack.outputs:
-        if var.peek and not has_type_prop:
+        if var.peek:
             continue
         if var.name not in variables:
             variables.add(var.name)
@@ -110,18 +109,15 @@ def write_uop(
     skip_inputs: bool,
 ) -> None:
     try:
-        has_type_prop = any(
-            output.type_prop is not None for output in (override or uop).stack.outputs
-        )
         prototype = override if override else uop
         is_override = override is not None
         out.start_line()
         for var in reversed(prototype.stack.inputs):
-            if not skip_inputs or (has_type_prop and var.peek):
+            if not skip_inputs:
                 out.emit(stack.pop(var))
         if not prototype.properties.stores_sp:
             for i, var in enumerate(prototype.stack.outputs):
-                if not var.peek or is_override or has_type_prop:
+                if not var.peek or is_override:
                     out.emit(stack.push(var))
         if debug:
             args = []
@@ -129,7 +125,7 @@ def write_uop(
                 if not var.peek or is_override:
                     args.append(var.name)
             out.emit(f'DEBUG_PRINTF({", ".join(args)});\n')
-        if override or has_type_prop:
+        if override:
             for cache in uop.caches:
                 if cache.name != "unused":
                     if cache.size == 4:
@@ -146,24 +142,6 @@ def write_uop(
             emit_tokens(out, override, stack, None, replacement_funcs)
         else:
             emit_default(out, uop)
-        # Type propagation
-        if has_type_prop:
-            out.emit("\n")
-        for output in (override or uop).stack.outputs:
-            if typ := output.type_prop:
-                typname, refinement = typ
-                refinement = refinement or "0"
-                # Special enum types, not corresponding to a specific PyTypeObject
-                if typname.isupper() and typname != "NULL":
-                    print(typname)
-                    out.emit(f"sym_set_type({output.name}, {typname}, {refinement});\n")
-                else:
-                    out.emit(f"sym_set_pytype({output.name}, "
-                             f"{'&' if typname != 'NULL' else ''}{typname}, {refinement});\n")
-            else:
-                # Silence compiler unused variable warnings.
-                if has_type_prop and output.name not in UNUSED:
-                    out.emit(f"(void){output.name};\n")
 
         if prototype.properties.stores_sp:
             for i, var in enumerate(prototype.stack.outputs):

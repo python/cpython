@@ -205,11 +205,10 @@
             // TODO constant propagation
             (void)left;
             (void)right;
-            res = sym_init_unknown(ctx);
+            res = sym_init_known_pytype(ctx, &PyLong_Type, 0);
             if (res == NULL) {
                 goto error;
             }
-            sym_set_pytype(res, &PyLong_Type, 0);
             stack_pointer[-2] = res;
             stack_pointer += -1;
             break;
@@ -242,8 +241,6 @@
             _Py_UOpsSymType *res;
             res = sym_init_unknown(ctx);
             if (res == NULL) goto error;
-
-            sym_set_pytype(res, &PyFloat_Type, 0);
             stack_pointer[0] = res;
             stack_pointer += 1;
             break;
@@ -253,8 +250,6 @@
             _Py_UOpsSymType *res;
             res = sym_init_unknown(ctx);
             if (res == NULL) goto error;
-
-            sym_set_pytype(res, &PyFloat_Type, 0);
             stack_pointer[0] = res;
             stack_pointer += 1;
             break;
@@ -264,21 +259,12 @@
             _Py_UOpsSymType *res;
             res = sym_init_unknown(ctx);
             if (res == NULL) goto error;
-
-            sym_set_pytype(res, &PyFloat_Type, 0);
             stack_pointer[0] = res;
             stack_pointer += 1;
             break;
         }
 
         case _GUARD_BOTH_UNICODE: {
-            _Py_UOpsSymType *left;
-            _Py_UOpsSymType *right;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-
-            sym_set_pytype(left, &PyUnicode_Type, 0);
-            sym_set_pytype(right, &PyUnicode_Type, 0);
             break;
         }
 
@@ -286,8 +272,6 @@
             _Py_UOpsSymType *res;
             res = sym_init_unknown(ctx);
             if (res == NULL) goto error;
-
-            sym_set_pytype(res, &PyUnicode_Type, 0);
             stack_pointer[0] = res;
             stack_pointer += 1;
             break;
@@ -785,9 +769,6 @@
             if (attr == NULL) goto error;
             self_or_null = sym_init_unknown(ctx);
             if (self_or_null == NULL) goto error;
-
-            (void)attr;
-            sym_set_type(self_or_null, SELF_OR_NULL, 0);
             stack_pointer[0] = attr;
             if (oparg & 1) stack_pointer[1] = self_or_null;
             stack_pointer += 1 + (oparg & 1);
@@ -795,11 +776,6 @@
         }
 
         case _GUARD_TYPE_VERSION: {
-            _Py_UOpsSymType *owner;
-            owner = stack_pointer[-1];
-            uint32_t type_version = (uint32_t)inst->operand;
-
-            sym_set_type(owner, GUARD_TYPE_VERSION_TYPE, type_version);
             break;
         }
 
@@ -894,10 +870,6 @@
         /* _LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN is not a viable micro-op for tier 2 */
 
         case _GUARD_DORV_VALUES: {
-            _Py_UOpsSymType *owner;
-            owner = stack_pointer[-1];
-
-            sym_set_type(owner, GUARD_DORV_VALUES_TYPE, 0);
             break;
         }
 
@@ -1130,11 +1102,11 @@
             _Py_UOpsSymType *iter;
             _Py_UOpsSymType *next;
             iter = stack_pointer[-1];
-            next = sym_init_unknown(ctx);
-            if (next == NULL) goto error;
-
+            next = sym_init_known_pytype(ctx, &PyLong_Type, 0);
+            if (next == NULL) {
+                goto error;
+            }
             (void)iter;
-            sym_set_pytype(next, &PyLong_Type, 0);
             stack_pointer[0] = next;
             stack_pointer += 1;
             break;
@@ -1195,11 +1167,6 @@
         }
 
         case _GUARD_KEYS_VERSION: {
-            _Py_UOpsSymType *owner;
-            owner = stack_pointer[-1];
-            uint32_t keys_version = (uint32_t)inst->operand;
-
-            sym_set_type(owner, GUARD_KEYS_VERSION_TYPE, keys_version);
             break;
         }
 
@@ -1272,13 +1239,12 @@
         /* _CALL is not a viable micro-op for tier 2 */
 
         case _CHECK_CALL_BOUND_METHOD_EXACT_ARGS: {
-            _Py_UOpsSymType *callable;
             _Py_UOpsSymType *null;
+            _Py_UOpsSymType *callable;
             null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-
-            sym_set_pytype(callable, &PyMethod_Type, 0);
             sym_set_pytype(null, NULL, 0);
+            sym_set_pytype(callable, &PyMethod_Type, 0);
             break;
         }
 
@@ -1300,12 +1266,11 @@
         }
 
         case _CHECK_FUNCTION_EXACT_ARGS: {
-            _Py_UOpsSymType *callable;
             _Py_UOpsSymType *self_or_null;
+            _Py_UOpsSymType *callable;
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             uint32_t func_version = (uint32_t)inst->operand;
-
             sym_set_pytype(callable, &PyFunction_Type, func_version);
             (void)self_or_null;
             break;
@@ -1331,8 +1296,8 @@
             PyCodeObject *co = (PyCodeObject *)func->func_code;
             assert(self_or_null != NULL);
             assert(args != NULL);
-            if (!sym_is_type(self_or_null, NULL_TYPE) &&
-                !sym_is_type(self_or_null, SELF_OR_NULL)) {
+            if (!sym_matches_pytype(self_or_null, NULL, 0) &&
+                !sym_is_unknown_type(self_or_null)) {
                 // Bound method fiddling, same as _INIT_CALL_PY_EXACT_ARGS in
                 // VM
                 args--;
@@ -1343,7 +1308,7 @@
             // Can determine statically, so we interleave the new locals
             // and make the current stack the new locals.
             // This also sets up for true call inlining.
-            if (!sym_is_type(self_or_null, SELF_OR_NULL)) {
+            if (!sym_is_unknown_type(self_or_null)) {
                 localsplus_start = args;
                 n_locals_already_filled = argcount;
             }

@@ -59,7 +59,18 @@
     #define DPRINTF(level, ...)
 #endif
 
-// See the interpreter DSL in ./Tools/cases_generator/interpreter_definition.md for what these correspond to.
+/**
+* `PYLONG_TYPE`: `Py_TYPE(val) == &PyLong_Type`
+* `PYFLOAT_TYPE`: `Py_TYPE(val) == &PyFloat_Type`
+* `PYUNICODE_TYPE`: `Py_TYPE(val) == &PYUNICODE_TYPE`
+* `NULL_TYPE`: `val == NULL`
+* `GUARD_TYPE_VERSION_TYPE`: `type->tp_version_tag == auxillary`
+* `GUARD_DORV_VALUES_TYPE`: `_PyDictOrValues_IsValues(obj)`
+* `GUARD_KEYS_VERSION_TYPE`: `owner_heap_type->ht_cached_keys->dk_version == auxillary`
+* `PYMETHOD_TYPE`: `Py_TYPE(val) == &PyMethod_Type`
+* `PYFUNCTION_TYPE_VERSION_TYPE`:
+  `PyFunction_Check(callable) && func->func_version == auxillary && code->co_argcount == oparg + (self_or_null != NULL)`
+ */
 typedef enum {
     // Types with refinement info
     GUARD_KEYS_VERSION_TYPE = 0,
@@ -77,9 +88,6 @@ typedef enum {
     NULL_TYPE = 6,
     PYMETHOD_TYPE = 7,
     GUARD_DORV_VALUES_TYPE = 8,
-    // Can't statically determine if self or null.
-    // We use this over default unknown to catch more errors.
-    SELF_OR_NULL = 9,
 
     // Represents something from LOAD_CONST which is truly constant.
     TRUE_CONST = 30,
@@ -94,7 +102,6 @@ static const uint32_t IMMUTABLES =
         1 << PYLONG_TYPE |
         1 << PYFLOAT_TYPE |
         1 << PYUNICODE_TYPE |
-        1 << SELF_OR_NULL |
         1 << TRUE_CONST
     );
 
@@ -406,12 +413,22 @@ sym_set_type_from_const(_Py_UOpsSymType *sym, PyObject *obj)
 
 }
 
-
-
 static inline _Py_UOpsSymType*
 sym_init_unknown(_Py_UOpsAbstractInterpContext *ctx)
 {
     return _Py_UOpsSymType_New(ctx,NULL);
+}
+
+static inline _Py_UOpsSymType*
+sym_init_known_pytype(_Py_UOpsAbstractInterpContext *ctx,
+                      PyTypeObject *typ, uint64_t refinement)
+{
+    _Py_UOpsSymType *res = _Py_UOpsSymType_New(ctx,NULL);
+    if (res == NULL) {
+        return NULL;
+    }
+    sym_set_pytype(res, typ, refinement);
+    return res;
 }
 
 // Takes a borrowed reference to const_val.
@@ -472,6 +489,12 @@ sym_matches_pytype(_Py_UOpsSymType *sym, PyTypeObject *typ, uint64_t refinement)
 {
     assert(typ == NULL || PyType_Check(typ));
     return sym_matches_type(sym, pytype_to_type(typ), refinement);
+}
+
+static inline bool
+sym_is_unknown_type(_Py_UOpsSymType *sym)
+{
+    return sym->types == 0 || (sym->types == 1U << INVALID_TYPE);
 }
 
 static uint64_t
@@ -969,7 +992,6 @@ _Py_uop_analyze_and_optimize(
 
     peephole_opt(frame, buffer, buffer_size);
 
-    // Pass: Abstract interpretation and symbolic analysis
     int new_trace_len = uop_redundancy_eliminator(
         (PyCodeObject *)frame->f_executable, buffer, temp_writebuffer,
         buffer_size, curr_stacklen);

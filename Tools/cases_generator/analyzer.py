@@ -270,7 +270,7 @@ def override_error(
 
 def convert_stack_item(item: parser.StackEffect) -> StackItem:
     return StackItem(
-        item.name, item.type, item.cond, (item.size or "1"), type_prop=item.type_prop
+        item.name, item.type, item.cond, (item.size or "1")
     )
 
 
