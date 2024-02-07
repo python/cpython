@@ -419,6 +419,7 @@ class ParseArgsTestCase(unittest.TestCase):
         self.assertTrue(regrtest.print_slowest)
         self.assertTrue(regrtest.output_on_failure)
         self.assertEqual(sorted(regrtest.use_resources), sorted(use_resources))
+        self.assertTrue(regrtest.want_bisect)
         return regrtest
 
     def test_fast_ci(self):
@@ -1191,6 +1192,47 @@ class ArgsTestCase(BaseTestCase):
 
     def test_huntrleaks_mp(self):
         self.check_huntrleaks(run_workers=True)
+
+    @unittest.skipUnless(support.Py_DEBUG, 'need a debug build')
+    def test_huntrleaks_bisect(self):
+        # test --huntrleaks --bisect
+        code = textwrap.dedent("""
+            import unittest
+
+            GLOBAL_LIST = []
+
+            class RefLeakTest(unittest.TestCase):
+                def test1(self):
+                    pass
+
+                def test2(self):
+                    pass
+
+                def test3(self):
+                    GLOBAL_LIST.append(object())
+
+                def test4(self):
+                    pass
+        """)
+
+        test = self.create_test('huntrleaks', code=code)
+
+        filename = 'reflog.txt'
+        self.addCleanup(os_helper.unlink, filename)
+        cmd = ['--huntrleaks', '3:3:', '--bisect', test]
+        output = self.run_tests(*cmd,
+                                exitcode=EXITCODE_BAD_TEST,
+                                stderr=subprocess.STDOUT)
+
+        self.assertIn(f"Bisect {test}", output)
+        self.assertIn(f"Bisect {test}: exit code 0", output)
+
+        # test3 is the one which leaks
+        self.assertIn("Bisection completed in", output)
+        self.assertIn(
+            "Tests (1):\n"
+            f"* {test}.RefLeakTest.test3\n",
+            output)
 
     @unittest.skipUnless(support.Py_DEBUG, 'need a debug build')
     def test_huntrleaks_fd_leak(self):
