@@ -1615,7 +1615,8 @@ static int init_handler_descrs(pyexpat_state *state)
         if (descr == NULL)
             return -1;
 
-        if (PyDict_SetDefault(state->xml_parse_type->tp_dict, PyDescr_NAME(descr), descr) == NULL) {
+        if (PyDict_SetDefaultRef(state->xml_parse_type->tp_dict,
+                                 PyDescr_NAME(descr), descr, NULL) < 0) {
             Py_DECREF(descr);
             return -1;
         }

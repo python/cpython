@@ -14894,16 +14894,18 @@ _PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p)
     PyObject *interned = get_interned_dict(interp);
     assert(interned != NULL);
 
-    PyObject *t = PyDict_SetDefault(interned, s, s);
-    if (t == NULL) {
+    PyObject *t;
+    int res = PyDict_SetDefaultRef(interned, s, s, &t);
+    if (res < 0) {
         PyErr_Clear();
         return;
     }
-
-    if (t != s) {
-        Py_SETREF(*p, Py_NewRef(t));
+    else if (res == 1) {
+        // value was already present (not inserted)
+        Py_SETREF(*p, t);
         return;
     }
+    Py_DECREF(t);
 
     if (_Py_IsImmortal(s)) {
         // XXX Restrict this to the main interpreter?
