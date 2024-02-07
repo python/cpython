@@ -162,12 +162,12 @@ extern PyTypeObject _PyExc_MemoryError;
         }, \
         .gc = { \
             .enabled = 1, \
-            .young = { .threshold = 2000, }, \
-            .old = { \
+            .generations = { \
+                /* .head is set in _PyGC_InitState(). */ \
+                { .threshold = 700, }, \
                 { .threshold = 10, }, \
-                { .threshold = 0, }, \
+                { .threshold = 10, }, \
             }, \
-            .work_to_do = -5000, \
         }, \
         .object_state = _py_object_state_INIT(INTERP), \
         .dtoa = _dtoa_state_INIT(&(INTERP)), \

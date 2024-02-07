@@ -1030,7 +1030,7 @@ _extensions_cache_set(PyObject *filename, PyObject *name, PyModuleDef *def)
     if (!already_set) {
         /* We assume that all module defs are statically allocated
            and will never be freed.  Otherwise, we would incref here. */
-        _Py_SetImmortal((PyObject *)def);
+        _Py_SetImmortal(def);
     }
     res = 0;
 
