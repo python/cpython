@@ -4043,14 +4043,27 @@ class buffer: pass
 class rwbuffer: pass
 class robuffer: pass
 
-StrConverterKeyType = tuple[frozenset[type[object]], bool, bool]
+@dc.dataclass
+class StrConverterKey:
+    accept: frozenset[type[object]]
+    encoding: bool
+    zeroes: bool
+
+    def __hash__(self) -> int:
+        return hash((self.accept, self.encoding, self.zeroes))
+
+    def __str__(self) -> str:
+        accept = "{" + ", ".join([tp.__name__ for tp in self.accept]) + "}"
+        encoding = 'encodingname' if self.encoding else None
+        zeroes = self.zeroes
+        return f"{accept=!r}, {encoding=!r}, {zeroes=!r}"
 
 def str_converter_key(
     types: TypeSet, encoding: bool | str | None, zeroes: bool
-) -> StrConverterKeyType:
-    return (frozenset(types), bool(encoding), bool(zeroes))
+) -> StrConverterKey:
+    return StrConverterKey(frozenset(types), bool(encoding), bool(zeroes))
 
-str_converter_argument_map: dict[StrConverterKeyType, str] = {}
+str_converter_argument_map: dict[StrConverterKey, str] = {}
 
 class str_converter(CConverter):
     type = 'const char *'
@@ -4068,7 +4081,10 @@ class str_converter(CConverter):
         key = str_converter_key(accept, encoding, zeroes)
         format_unit = str_converter_argument_map.get(key)
         if not format_unit:
-            fail("str_converter: illegal combination of arguments", key)
+            fail("unsupported combination of str converter arguments: "
+                 f"{accept=!r}, {encoding=!r}, {zeroes=!r}; "
+                 "allowed combinations are:\n\n"
+                 f"{'\n'.join([str(k) for k in str_converter_argument_map.keys()])}")
 
         self.format_unit = format_unit
         self.length = bool(zeroes)

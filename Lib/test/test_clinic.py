@@ -2028,6 +2028,15 @@ class ClinicParserTest(TestCase):
             with self.subTest(block=block):
                 self.expect_failure(block, err, lineno=2)
 
+    def test_str_converter_invalid_format_unit(self):
+        block = """
+            module foo
+            foo.bar
+              a: str(encoding='foo', zeroes=True, accept={})
+        """
+        err = "unsupported combination of str converter arguments"
+        self.expect_failure(block, err, lineno=2)
+
     def test_other_bizarre_things_in_annotations_fail(self):
         err = "Annotations must be either a name, a function call, or a string"
         dataset = (
