@@ -1185,7 +1185,7 @@ PyLong_AsNativeBytes(PyObject* vv, void* buffer, size_t n, int endianness)
             }
             else {
                 memset(buffer, fill, n - sizeof(cv.b));
-                memcpy((char *)buffer + n - sizeof(cv.b), cv.b, n);
+                memcpy((char *)buffer + n - sizeof(cv.b), cv.b, sizeof(cv.b));
             }
 #endif
         }
