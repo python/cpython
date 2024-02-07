@@ -153,7 +153,13 @@ def write_uop(
             if typ := output.type_prop:
                 typname, refinement = typ
                 refinement = refinement or "0"
-                out.emit(f"sym_set_type({output.name}, {typname}, {refinement});\n")
+                # Special enum types, not corresponding to a specific PyTypeObject
+                if typname.isupper() and typname != "NULL":
+                    print(typname)
+                    out.emit(f"sym_set_type({output.name}, {typname}, {refinement});\n")
+                else:
+                    out.emit(f"sym_set_pytype({output.name}, "
+                             f"{'&' if typname != 'NULL' else ''}{typname}, {refinement});\n")
             else:
                 # Silence compiler unused variable warnings.
                 if has_type_prop and output.name not in UNUSED:

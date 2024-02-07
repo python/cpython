@@ -176,12 +176,12 @@
             _Py_UOpsSymType *left;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (sym_matches_type(left, PYLONG_TYPE, 0) &&
-                sym_matches_type(right, PYLONG_TYPE, 0)) {
+            if (sym_matches_pytype(left, &PyLong_Type, 0) &&
+                sym_matches_pytype(right, &PyLong_Type, 0)) {
                 REPLACE_OP(_NOP, 0, 0);
             }
-            sym_set_type(left, PYLONG_TYPE, 0);
-            sym_set_type(right, PYLONG_TYPE, 0);
+            sym_set_pytype(left, &PyLong_Type, 0);
+            sym_set_pytype(right, &PyLong_Type, 0);
             break;
         }
 
@@ -207,7 +207,7 @@
             if (res == NULL) {
                 goto error;
             }
-            sym_set_type(res, PYLONG_TYPE, 0);
+            sym_set_pytype(res, &PyLong_Type, 0);
             stack_pointer[-2] = res;
             stack_pointer += -1;
             break;
@@ -227,12 +227,12 @@
             _Py_UOpsSymType *left;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (sym_matches_type(left, PYFLOAT_TYPE, 0) &&
-                sym_matches_type(right, PYFLOAT_TYPE, 0)) {
+            if (sym_matches_pytype(left, &PyFloat_Type, 0) &&
+                sym_matches_pytype(right, &PyFloat_Type, 0)) {
                 REPLACE_OP(_NOP, 0 ,0);
             }
-            sym_set_type(left, PYFLOAT_TYPE, 0);
-            sym_set_type(right, PYFLOAT_TYPE, 0);
+            sym_set_pytype(left, &PyFloat_Type, 0);
+            sym_set_pytype(right, &PyFloat_Type, 0);
             break;
         }
 
@@ -241,7 +241,7 @@
             res = sym_init_unknown(ctx);
             if (res == NULL) goto error;
 
-            sym_set_type(res, PYFLOAT_TYPE, 0);
+            sym_set_pytype(res, &PyFloat_Type, 0);
             stack_pointer[0] = res;
             stack_pointer += 1;
             break;
@@ -252,7 +252,7 @@
             res = sym_init_unknown(ctx);
             if (res == NULL) goto error;
 
-            sym_set_type(res, PYFLOAT_TYPE, 0);
+            sym_set_pytype(res, &PyFloat_Type, 0);
             stack_pointer[0] = res;
             stack_pointer += 1;
             break;
@@ -263,7 +263,7 @@
             res = sym_init_unknown(ctx);
             if (res == NULL) goto error;
 
-            sym_set_type(res, PYFLOAT_TYPE, 0);
+            sym_set_pytype(res, &PyFloat_Type, 0);
             stack_pointer[0] = res;
             stack_pointer += 1;
             break;
@@ -275,8 +275,8 @@
             right = stack_pointer[-1];
             left = stack_pointer[-2];
 
-            sym_set_type(left, PYUNICODE_TYPE, 0);
-            sym_set_type(right, PYUNICODE_TYPE, 0);
+            sym_set_pytype(left, &PyUnicode_Type, 0);
+            sym_set_pytype(right, &PyUnicode_Type, 0);
             break;
         }
 
@@ -285,7 +285,7 @@
             res = sym_init_unknown(ctx);
             if (res == NULL) goto error;
 
-            sym_set_type(res, PYUNICODE_TYPE, 0);
+            sym_set_pytype(res, &PyUnicode_Type, 0);
             stack_pointer[0] = res;
             stack_pointer += 1;
             break;
@@ -1132,7 +1132,7 @@
             if (next == NULL) goto error;
 
             (void)iter;
-            sym_set_type(next, PYLONG_TYPE, 0);
+            sym_set_pytype(next, &PyLong_Type, 0);
             stack_pointer[0] = next;
             stack_pointer += 1;
             break;
@@ -1275,8 +1275,8 @@
             null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
 
-            sym_set_type(callable, PYMETHOD_TYPE, 0);
-            sym_set_type(null, NULL_TYPE, 0);
+            sym_set_pytype(callable, &PyMethod_Type, 0);
+            sym_set_pytype(null, NULL, 0);
             break;
         }
 
@@ -1294,11 +1294,6 @@
         }
 
         case _CHECK_PEP_523: {
-            /* Setting the eval frame function invalidates
-             * all executors, so no need to check dynamically */
-            if (_PyInterpreterState_GET()->eval_frame == NULL) {
-                REPLACE_OP(_NOP, 0, 0);
-            }
             break;
         }
 
@@ -1309,7 +1304,7 @@
             callable = stack_pointer[-2 - oparg];
             uint32_t func_version = (uint32_t)inst->operand;
 
-            sym_set_type(callable, PYFUNCTION_TYPE_VERSION_TYPE, func_version);
+            sym_set_pytype(callable, &PyFunction_Type, func_version);
             (void)self_or_null;
             break;
         }
@@ -1631,14 +1626,6 @@
         }
 
         case _EXIT_TRACE: {
-            break;
-        }
-
-        case _JUMP_ABSOLUTE: {
-            break;
-        }
-
-        case _JUMP_ABSOLUTE_HEADER: {
             break;
         }
 

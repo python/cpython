@@ -345,7 +345,7 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
-        self.assertIn("_JUMP_ABSOLUTE", uops)
+        self.assertIn("_JUMP_TO_TOP", uops)
 
     def test_jump_forward(self):
         def testfunc(n):
@@ -661,30 +661,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
         self.assertNotIn("_BINARY_OP_ADD_INT", uops)
-
-    def test_loop_peeling(self):
-        def testfunc(loops):
-            num = 0
-            for _ in range(loops):
-                x = 0
-                y = 1
-                a = x + y
-            return 1
-
-        opt = _testinternalcapi.get_uop_optimizer()
-        res = None
-        with temporary_optimizer(opt):
-            res = testfunc(64)
-
-        ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
-        self.assertEqual(res, 1)
-        binop_count = [opname for opname, _, _ in ex if opname == "_BINARY_OP_ADD_INT"]
-        self.assertEqual(len(binop_count), 2)
-        uops = {opname for opname, _, _ in ex}
-        self.assertNotIn("_SHRINK_STACK", uops)
-        iter_next_count = [opname for opname, _, _ in ex if opname == "_ITER_NEXT_RANGE"]
-        self.assertLessEqual(len(iter_next_count), 2)
 
     def test_call_py_exact_args_disappearing(self):
         def dummy(x):

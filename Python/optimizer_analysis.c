@@ -78,6 +78,7 @@ typedef enum {
     PYMETHOD_TYPE = 7,
     GUARD_DORV_VALUES_TYPE = 8,
     // Can't statically determine if self or null.
+    // We use this over default unknown to catch more errors.
     SELF_OR_NULL = 9,
 
     // Represents something from LOAD_CONST which is truly constant.
@@ -108,9 +109,6 @@ typedef struct {
 
 
 typedef struct _Py_UOpsAbstractFrame {
-    // Symbolic version of co_consts
-    int sym_consts_len;
-    _Py_UOpsSymType **sym_consts;
     // Max stacklen
     int stack_len;
     int locals_len;
@@ -160,25 +158,6 @@ typedef struct _Py_UOpsAbstractInterpContext {
 static inline _Py_UOpsSymType*
 sym_init_const(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val);
 
-static inline _Py_UOpsSymType **
-create_sym_consts(_Py_UOpsAbstractInterpContext *ctx, PyObject *co_consts)
-{
-    Py_ssize_t co_const_len = PyTuple_GET_SIZE(co_consts);
-    _Py_UOpsSymType **sym_consts = ctx->limit - co_const_len;
-    ctx->limit -= co_const_len;
-    if (ctx->limit <= ctx->n_consumed) {
-        return NULL;
-    }
-    for (Py_ssize_t i = 0; i < co_const_len; i++) {
-        _Py_UOpsSymType *res = sym_init_const(ctx, PyTuple_GET_ITEM(co_consts, i));
-        if (res == NULL) {
-            return NULL;
-        }
-        sym_consts[i] = res;
-    }
-
-    return sym_consts;
-}
 
 static inline _Py_UOpsSymType* sym_init_unknown(_Py_UOpsAbstractInterpContext *ctx);
 
@@ -192,15 +171,9 @@ ctx_frame_new(
     int curr_stackentries
 )
 {
-    _Py_UOpsSymType **sym_consts = create_sym_consts(ctx, co->co_consts);
-    if (sym_consts == NULL) {
-        return NULL;
-    }
     assert(ctx->curr_frame_depth < MAX_ABSTRACT_FRAME_DEPTH);
     _Py_UOpsAbstractFrame *frame = &ctx->frames[ctx->curr_frame_depth];
 
-    frame->sym_consts = sym_consts;
-    frame->sym_consts_len = (int)Py_SIZE(co->co_consts);
     frame->stack_len = co->co_stacksize;
     frame->locals_len = co->co_nlocalsplus;
 
@@ -325,7 +298,6 @@ ctx_frame_pop(
     assert(ctx->curr_frame_depth >= 1);
     ctx->frame = &ctx->frames[ctx->curr_frame_depth - 1];
 
-    ctx->limit += frame->sym_consts_len;
     return 0;
 }
 
@@ -383,6 +355,39 @@ sym_copy_immutable_type_info(_Py_UOpsSymType *from_sym, _Py_UOpsSymType *to_sym)
     }
 }
 
+
+static _Py_UOpsSymExprTypeEnum
+pytype_to_type(PyTypeObject *tp)
+{
+    _Py_UOpsSymExprTypeEnum typ = INVALID_TYPE;
+    if (tp == NULL) {
+        typ = NULL_TYPE;
+    }
+    else if (tp == &PyLong_Type) {
+        typ = PYLONG_TYPE;
+    }
+    else if (tp == &PyFloat_Type) {
+        typ = PYFLOAT_TYPE;
+    }
+    else if (tp == &PyUnicode_Type) {
+        typ = PYUNICODE_TYPE;
+    }
+    else if (tp == &PyFunction_Type) {
+        typ = PYFUNCTION_TYPE_VERSION_TYPE;
+    }
+    else if (tp == &PyMethod_Type) {
+        typ = PYMETHOD_TYPE;
+    }
+    return typ;
+}
+
+static void
+sym_set_pytype(_Py_UOpsSymType *sym, PyTypeObject *tp, uint64_t refinement)
+{
+    assert(tp == NULL || PyType_Check(tp));
+    sym_set_type(sym, pytype_to_type(tp), refinement);
+}
+
 static void
 sym_set_type_from_const(_Py_UOpsSymType *sym, PyObject *obj)
 {
@@ -391,27 +396,16 @@ sym_set_type_from_const(_Py_UOpsSymType *sym, PyObject *obj)
     if (tp->tp_version_tag != 0) {
         sym_set_type(sym, GUARD_TYPE_VERSION_TYPE, tp->tp_version_tag);
     }
-    if (tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(obj);
-        if(_PyDictOrValues_IsValues(dorv)) {
-            sym_set_type(sym, GUARD_DORV_VALUES_TYPE, 0);
-        }
-    }
-    if (tp == &PyLong_Type) {
-        sym_set_type(sym, PYLONG_TYPE, 0);
-    }
-    else if (tp == &PyFloat_Type) {
-        sym_set_type(sym, PYFLOAT_TYPE, 0);
-    }
-    else if (tp == &PyUnicode_Type) {
-        sym_set_type(sym, PYUNICODE_TYPE, 0);
-    }
-    else if (tp == &PyFunction_Type) {
+    if (tp == &PyFunction_Type) {
         sym_set_type(sym, PYFUNCTION_TYPE_VERSION_TYPE,
                      ((PyFunctionObject *)(obj))->func_version);
     }
+    else {
+        sym_set_pytype(sym, tp, 0);
+    }
 
 }
+
 
 
 static inline _Py_UOpsSymType*
@@ -473,6 +467,13 @@ sym_matches_type(_Py_UOpsSymType *sym, _Py_UOpsSymExprTypeEnum typ, uint64_t ref
     return true;
 }
 
+static inline bool
+sym_matches_pytype(_Py_UOpsSymType *sym, PyTypeObject *typ, uint64_t refinement)
+{
+    assert(typ == NULL || PyType_Check(typ));
+    return sym_matches_type(sym, pytype_to_type(typ), refinement);
+}
+
 static uint64_t
 sym_type_get_refinement(_Py_UOpsSymType *sym, _Py_UOpsSymExprTypeEnum typ)
 {
@@ -485,8 +486,7 @@ sym_type_get_refinement(_Py_UOpsSymType *sym, _Py_UOpsSymExprTypeEnum typ)
 static inline bool
 op_is_end(uint32_t opcode)
 {
-    return opcode == _EXIT_TRACE || opcode == _JUMP_TO_TOP ||
-        opcode == _JUMP_ABSOLUTE;
+    return opcode == _EXIT_TRACE || opcode == _JUMP_TO_TOP;
 }
 
 
@@ -503,25 +503,13 @@ op_is_data_movement_only(uint32_t opcode) {
     return (opcode == _STORE_FAST || opcode == STORE_FAST_MAYBE_NULL);
 }
 
-
+#ifdef Py_DEBUG
 static inline bool
 is_const(_Py_UOpsSymType *expr)
 {
     return expr->const_val != NULL;
 }
-
-static inline PyObject *
-get_const_borrow(_Py_UOpsSymType *expr)
-{
-    return expr->const_val;
-}
-
-static inline PyObject *
-get_const(_Py_UOpsSymType *expr)
-{
-    return Py_NewRef(expr->const_val);
-}
-
+#endif
 
 static int
 clear_locals_type_info(_Py_UOpsAbstractInterpContext *ctx) {
@@ -563,12 +551,13 @@ emit_i(uops_emitter *emitter,
 
 
 #ifndef Py_DEBUG
-#define GETITEM(ctx, i) (ctx->frame->sym_consts[(i)])
+#define GETITEM(ctx, i) Py_UNREACHABLE();
 #else
 static inline _Py_UOpsSymType *
 GETITEM(_Py_UOpsAbstractInterpContext *ctx, Py_ssize_t i) {
-    assert(i < ctx->frame->sym_consts_len);
-    return ctx->frame->sym_consts[i];
+    // There should be no LOAD_CONST. It should be all
+    // replaced by peephole_opt.
+    Py_UNREACHABLE();
 }
 #endif
 
@@ -826,7 +815,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 }
 
 static int
-uop_abstract_interpret(
+uop_redundancy_eliminator(
     PyCodeObject *co,
     _PyUOpInstruction *trace,
     _PyUOpInstruction *new_trace,
@@ -834,7 +823,6 @@ uop_abstract_interpret(
     int curr_stacklen
 )
 {
-    bool did_loop_peel = false;
 
     _Py_UOpsAbstractInterpContext ctx;
 
@@ -848,10 +836,8 @@ uop_abstract_interpret(
     _PyUOpInstruction *end = NULL;
     int status = 0;
     bool needs_clear_locals = true;
-    bool has_enough_space_to_duplicate_loop = true;
     int res = 0;
 
-loop_peeling:
     curr = trace;
     end = trace + trace_len;
     needs_clear_locals = true;
@@ -887,42 +873,9 @@ loop_peeling:
 
     assert(op_is_end(curr->opcode));
 
-    // If we end in a loop, and we have a lot of space left, peel the loop for
-    // poor man's loop invariant code motion for guards
-    // https://en.wikipedia.org/wiki/Loop_splitting
-    has_enough_space_to_duplicate_loop = ((ctx.emitter.curr_i * 3) <
-        (int)(ctx.emitter.writebuffer_end - ctx.emitter.writebuffer));
-    if (!did_loop_peel && curr->opcode == _JUMP_TO_TOP && has_enough_space_to_duplicate_loop) {
-        OPT_STAT_INC(loop_body_duplication_attempts);
-        did_loop_peel = true;
-        _PyUOpInstruction jump_header = {_JUMP_ABSOLUTE_HEADER, (ctx.emitter.curr_i), 0, 0};
-        if (emit_i(&ctx.emitter, jump_header) < 0) {
-            goto error;
-        }
-        DPRINTF(1, "loop_peeling!\n");
-        goto loop_peeling;
+    if (emit_i(&ctx.emitter, *curr) < 0) {
+        goto error;
     }
-    else {
-#if  defined(Py_STATS) || defined(Py_DEBUG)
-        if(!did_loop_peel && curr->opcode == _JUMP_TO_TOP && !has_enough_space_to_duplicate_loop)  {
-            OPT_STAT_INC(loop_body_duplication_no_mem);
-            DPRINTF(1, "no space for loop peeling\n");
-        }
-#endif
-        if (did_loop_peel) {
-            OPT_STAT_INC(loop_body_duplication_successes);
-            assert(curr->opcode == _JUMP_TO_TOP);
-            _PyUOpInstruction jump_abs = {_JUMP_ABSOLUTE, (ctx.emitter.curr_i), 0, 0};
-            if (emit_i(&ctx.emitter, jump_abs) < 0) {
-                goto error;
-            }
-        } else {
-            if (emit_i(&ctx.emitter, *curr) < 0) {
-                goto error;
-            }
-        }
-    }
-
 
     res = ctx.emitter.curr_i;
     abstractcontext_fini(&ctx);
@@ -973,6 +926,48 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
     }
 }
 
+static void
+peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_size)
+{
+    PyCodeObject *co = (PyCodeObject *)frame->f_executable;
+    for (int pc = 0; pc < buffer_size; pc++) {
+        int opcode = buffer[pc].opcode;
+        switch(opcode) {
+            case _LOAD_CONST: {
+                assert(co != NULL);
+                PyObject *val = PyTuple_GET_ITEM(co->co_consts, buffer[pc].oparg);
+                buffer[pc].opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
+                buffer[pc].operand = (uintptr_t)val;
+                break;
+            }
+            case _CHECK_PEP_523:
+            {
+                /* Setting the eval frame function invalidates
+                 * all executors, so no need to check dynamically */
+                if (_PyInterpreterState_GET()->eval_frame == NULL) {
+                    buffer[pc].opcode = _NOP;
+                }
+                break;
+            }
+            case _PUSH_FRAME:
+            case _POP_FRAME:
+            {
+                PyFunctionObject *func = (PyFunctionObject *)buffer[pc].operand;
+                if (func == NULL) {
+                    co = NULL;
+                }
+                else {
+                    assert(PyFunction_Check(func));
+                    co = (PyCodeObject *)func->func_code;
+                }
+                break;
+            }
+            case _JUMP_TO_TOP:
+            case _EXIT_TRACE:
+                return;
+        }
+    }
+}
 
 //  0 - failure, no error raised, just fall back to Tier 1
 // -1 - failure, and raise error
@@ -994,14 +989,17 @@ _Py_uop_analyze_and_optimize(
         goto error;
     }
 
+    peephole_opt(frame, buffer, buffer_size);
+
     // Pass: Abstract interpretation and symbolic analysis
-    int new_trace_len = uop_abstract_interpret(
+    int new_trace_len = uop_redundancy_eliminator(
         (PyCodeObject *)frame->f_executable, buffer, temp_writebuffer,
         buffer_size, curr_stacklen);
 
     if (new_trace_len < 0) {
         goto error;
     }
+
 
 
     remove_unneeded_uops(temp_writebuffer, new_trace_len);

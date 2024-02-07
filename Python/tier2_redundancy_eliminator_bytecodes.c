@@ -65,22 +65,22 @@ dummy_func(void) {
         };
     }
 
-    op(_GUARD_BOTH_INT, (left, right -- left:  &PYLONG_TYPE, right:  &PYLONG_TYPE)) {
-        if (sym_matches_type(left, PYLONG_TYPE, 0) &&
-            sym_matches_type(right, PYLONG_TYPE, 0)) {
+    op(_GUARD_BOTH_INT, (left, right -- left:  &PyLong_Type, right:  &PyLong_Type)) {
+        if (sym_matches_pytype(left, &PyLong_Type, 0) &&
+            sym_matches_pytype(right, &PyLong_Type, 0)) {
             REPLACE_OP(_NOP, 0, 0);
         }
     }
 
-    op(_GUARD_BOTH_FLOAT, (left, right -- left: &PYFLOAT_TYPE, right: &PYFLOAT_TYPE)) {
-        if (sym_matches_type(left, PYFLOAT_TYPE, 0) &&
-            sym_matches_type(right, PYFLOAT_TYPE, 0)) {
+    op(_GUARD_BOTH_FLOAT, (left, right -- left: &PyFloat_Type, right: &PyFloat_Type)) {
+        if (sym_matches_pytype(left, &PyFloat_Type, 0) &&
+            sym_matches_pytype(right, &PyFloat_Type, 0)) {
             REPLACE_OP(_NOP, 0 ,0);
         }
     }
 
 
-    op(_BINARY_OP_ADD_INT, (left, right -- res: &PYLONG_TYPE)) {
+    op(_BINARY_OP_ADD_INT, (left, right -- res: &PyLong_Type)) {
         // TODO constant propagation
         (void)left;
         (void)right;
@@ -220,14 +220,6 @@ dummy_func(void) {
             if (values[i] == NULL) {
                 goto error;
             }
-        }
-    }
-
-    op(_CHECK_PEP_523, (--)) {
-        /* Setting the eval frame function invalidates
-         * all executors, so no need to check dynamically */
-        if (_PyInterpreterState_GET()->eval_frame == NULL) {
-            REPLACE_OP(_NOP, 0, 0);
         }
     }
 

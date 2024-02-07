@@ -452,7 +452,7 @@ dummy_func(
             DEOPT_IF(!PyFloat_CheckExact(right));
         }
 
-        pure op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res: &PYFLOAT_TYPE)) {
+        pure op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res: &PyFloat_Type)) {
             STAT_INC(BINARY_OP, hit);
             double dres =
                 ((PyFloatObject *)left)->ob_fval *
@@ -460,7 +460,7 @@ dummy_func(
             DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
         }
 
-        pure op(_BINARY_OP_ADD_FLOAT, (left, right -- res: &PYFLOAT_TYPE)) {
+        pure op(_BINARY_OP_ADD_FLOAT, (left, right -- res: &PyFloat_Type)) {
             STAT_INC(BINARY_OP, hit);
             double dres =
                 ((PyFloatObject *)left)->ob_fval +
@@ -468,7 +468,7 @@ dummy_func(
             DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
         }
 
-        pure op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res: &PYFLOAT_TYPE)) {
+        pure op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res: &PyFloat_Type)) {
             STAT_INC(BINARY_OP, hit);
             double dres =
                 ((PyFloatObject *)left)->ob_fval -
@@ -483,12 +483,12 @@ dummy_func(
         macro(BINARY_OP_SUBTRACT_FLOAT) =
             _GUARD_BOTH_FLOAT + unused/1 + _BINARY_OP_SUBTRACT_FLOAT;
 
-        op(_GUARD_BOTH_UNICODE, (left, right -- left: &PYUNICODE_TYPE, right: &PYUNICODE_TYPE)) {
+        op(_GUARD_BOTH_UNICODE, (left, right -- left: &PyUnicode_Type, right: &PyUnicode_Type)) {
             DEOPT_IF(!PyUnicode_CheckExact(left));
             DEOPT_IF(!PyUnicode_CheckExact(right));
         }
 
-        pure op(_BINARY_OP_ADD_UNICODE, (left, right -- res: &PYUNICODE_TYPE)) {
+        pure op(_BINARY_OP_ADD_UNICODE, (left, right -- res: &PyUnicode_Type)) {
             STAT_INC(BINARY_OP, hit);
             res = PyUnicode_Concat(left, right);
             _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
@@ -2722,7 +2722,7 @@ dummy_func(
             DEOPT_IF(r->len <= 0);
         }
 
-        op(_ITER_NEXT_RANGE, (iter -- iter, next: &PYLONG_TYPE)) {
+        op(_ITER_NEXT_RANGE, (iter -- iter, next: &PyLong_Type)) {
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
             assert(Py_TYPE(r) == &PyRangeIter_Type);
             assert(r->len > 0);
@@ -3101,7 +3101,7 @@ dummy_func(
 
         macro(CALL) = _SPECIALIZE_CALL + unused/2 + _CALL;
 
-        op(_CHECK_CALL_BOUND_METHOD_EXACT_ARGS, (callable, null, unused[oparg] -- callable: &PYMETHOD_TYPE, null: &NULL_TYPE, unused[oparg])) {
+        op(_CHECK_CALL_BOUND_METHOD_EXACT_ARGS, (callable, null, unused[oparg] -- callable: &PyMethod_Type, null: &NULL, unused[oparg])) {
             DEOPT_IF(null != NULL);
             DEOPT_IF(Py_TYPE(callable) != &PyMethod_Type);
         }
@@ -3119,7 +3119,7 @@ dummy_func(
             DEOPT_IF(tstate->interp->eval_frame);
         }
 
-        op(_CHECK_FUNCTION_EXACT_ARGS, (func_version/2, callable, self_or_null, unused[oparg] -- callable: &(PYFUNCTION_TYPE_VERSION_TYPE + func_version), self_or_null, unused[oparg])) {
+        op(_CHECK_FUNCTION_EXACT_ARGS, (func_version/2, callable, self_or_null, unused[oparg] -- callable: &(PyFunction_Type + func_version), self_or_null, unused[oparg])) {
             DEOPT_IF(!PyFunction_Check(callable));
             PyFunctionObject *func = (PyFunctionObject *)callable;
             DEOPT_IF(func->func_version != func_version);
@@ -4063,14 +4063,6 @@ dummy_func(
         op(_EXIT_TRACE, (--)) {
             TIER_TWO_ONLY
             DEOPT_IF(1);
-        }
-
-        op(_JUMP_ABSOLUTE, (--)) {
-            next_uop = current_executor->trace + oparg;
-            CHECK_EVAL_BREAKER();
-        }
-
-        op(_JUMP_ABSOLUTE_HEADER, (--)) {
         }
 
         op(_CHECK_VALIDITY, (--)) {

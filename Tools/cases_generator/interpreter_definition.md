@@ -160,7 +160,7 @@ and their refinements are below. They obey the following predicates:
 * `PYMETHOD_TYPE`: `Py_TYPE(val) == &PyMethod_Type`
 * `PYFUNCTION_TYPE_VERSION_TYPE`:
   `PyFunction_Check(callable) && func->func_version == auxillary && code->co_argcount == oparg + (self_or_null != NULL)`
-* `SELF_OR_NULL`: `val == NULL || val != NULL`
+* `SELF_OR_NULL`: `val == undetermistic`
 
 
 An `inst` without `stack_effect` is a transitional form to allow the original C code
