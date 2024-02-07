@@ -1,1 +1,1 @@
-Check return value of PyMem_Malloc() before passing to memset()
+Check return value of :c:func:`PyMem_Malloc` before passing to :c:func:`memset`.
