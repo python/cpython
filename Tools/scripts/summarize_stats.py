@@ -21,7 +21,7 @@ import os
 from pathlib import Path
 import re
 import sys
-from typing import Any, Callable, TextIO, TypeAlias
+from typing import Any, Callable, Generator, TextIO, TypeAlias
 
 
 RawData: TypeAlias = dict[str, Any]
@@ -314,6 +314,10 @@ class Stats:
     
     def get_uop_sequence_stats(self, length) -> dict[str, int]:
         return {k: v for k, v in self._data.items() if k.startswith("UOp Sequence Count") and k.count(',') == length - 1}
+    
+    def get_max_uop_sequence_length(self) -> int:
+        uop_sequence_lengths = [k.count(',')+1 for k in self._data.keys() if k.startswith("UOp Sequence Count")]
+        return max(uop_sequence_lengths) if uop_sequence_lengths else 0
 
     def get_call_stats(self) -> dict[str, int]:
         defines = self._data["_stats_defines"]
@@ -668,10 +672,12 @@ def pair_count_section() -> Section:
         comparative=False,
     )
 
-def uop_sequence_section(sequence_length: int = 2) -> Section:
-    def calc_uop_sequence(stats: Stats) -> Rows:
-        uop_sequences = stats.get_uop_sequence_stats(sequence_length)
-        total = stats.get_optimization_stats()["Uops executed"][0]
+def uop_sequence_section(base_stats: Stats, head_stats: Stats) -> Generator[Section]:
+    if not (longest := base_stats.get_max_uop_sequence_length()): return
+
+    def calc_uop_sequence(base_stats: Stats ,sequence_length: int) -> Rows:
+        uop_sequences = base_stats.get_uop_sequence_stats(sequence_length)
+        total = base_stats.get_optimization_stats()["Uops executed"][0]
 
         cumulative = 0
         rows: Rows = []
@@ -688,18 +694,19 @@ def uop_sequence_section(sequence_length: int = 2) -> Section:
                 )
             )
         return rows
-
-    return Section(
-        "Pair counts",
-        f"Pair counts for top 100 UOp Sequences of Length {sequence_length}",
-        [
-            Table(
-                ("Pair", "Count:", "Self:", "Cumulative:"),
-                calc_uop_sequence,
-            )
-        ],
-        comparative=False,
-    )
+    
+    for l in range(2, longest+1):
+        yield Section(
+            "Pair counts",
+            f"Counts for top 100 UOp Sequences of Length {l}",
+            [
+                Table(
+                    ("Pair", "Count:", "Self:", "Cumulative:"),
+                    functools.partial(calc_uop_sequence, sequence_length=l),
+                )
+            ],
+            comparative=False,
+        )
 
 
 def pre_succ_pairs_section() -> Section:
@@ -1089,7 +1096,11 @@ def optimization_section() -> Section:
                 )
             ],
         )
-        yield uop_sequence_section()
+        yield Section(
+            "UOp Sequences",
+            "",
+            uop_sequence_section,
+        )
         yield Section(
             "Unsupported opcodes",
             "",
