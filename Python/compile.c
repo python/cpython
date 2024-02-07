@@ -7540,7 +7540,8 @@ _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj)
     }
 
     if (PyTuple_CheckExact(t)) {
-        Py_SETREF(*obj, Py_NewRef(PyTuple_GET_ITEM(t, 1)));
+        PyObject *item = PyTuple_GET_ITEM(t, 1);
+        Py_SETREF(*obj, Py_NewRef(item));
         Py_DECREF(t);
     }
     else {
