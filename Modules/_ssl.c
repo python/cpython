@@ -324,6 +324,9 @@ typedef struct {
     PyObject *set_hostname;
 #endif
     int check_hostname;
+#ifdef TLS1_3_VERSION
+    int post_handshake_auth;
+#endif
 } PySSLContext;
 
 typedef struct {
@@ -605,6 +608,28 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     mode |= SSL_MODE_AUTO_RETRY;
 #endif
     SSL_set_mode(self->ssl, mode);
+
+   /* bpo-37428: newPySSLSocket() sets SSL_VERIFY_POST_HANDSHAKE flag for
+     * server sockets and SSL_set_post_handshake_auth() for client. */
+// #ifdef TLS1_3_VERSION
+//     if (sslctx->post_handshake_auth == 1) {
+//         if (socket_type == PY_SSL_SERVER) {
+//             /* bpo-37428: OpenSSL does not ignore SSL_VERIFY_POST_HANDSHAKE.
+//              * Set SSL_VERIFY_POST_HANDSHAKE flag only for server sockets and
+//              * only in combination with SSL_VERIFY_PEER flag. */
+//             int mode = SSL_get_verify_mode(self->ssl);
+//             if (mode & SSL_VERIFY_PEER) {
+//                 int (*verify_cb)(int, X509_STORE_CTX *) = NULL;
+//                 verify_cb = SSL_get_verify_callback(self->ssl);
+//                 mode |= SSL_VERIFY_POST_HANDSHAKE;
+//                 SSL_set_verify(self->ssl, mode, verify_cb);
+//             }
+//         } else {
+//             /* client socket */
+//             SSL_set_post_handshake_auth(self->ssl, 1);
+//         }
+//     }
+// #endif
 
 #if HAVE_SNI
     if (server_hostname != NULL) {
@@ -2100,6 +2125,36 @@ If the TLS handshake is not yet complete, None is returned");
 
 #endif /* HAVE_OPENSSL_FINISHED */
 
+/*[clinic input]
+_ssl._SSLSocket.verify_client_post_handshake
+
+Initiate TLS 1.3 post-handshake authentication
+[clinic start generated code]*/
+
+PyDoc_STRVAR(_ssl__SSLSocket_verify_client_post_handshake__doc__,
+"verify_client_post_handshake($self, /)\n"
+"--\n"
+"\n"
+"Initiate TLS 1.3 post-handshake authentication");
+
+static PyObject *
+_ssl__SSLSocket_verify_client_post_handshake_impl(PySSLSocket *self)
+/*[clinic end generated code: output=532147f3b1341425 input=6bfa874810a3d889]*/
+{
+#ifdef TLS1_3_VERSION
+    int err = SSL_verify_client_post_handshake(self->ssl);
+    if (err == 0)
+        return _setSSLError(NULL, 0, __FILE__, __LINE__);
+    else
+        Py_RETURN_NONE;
+#else
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "Post-handshake auth is not supported by your "
+                    "OpenSSL version.");
+    return NULL;
+#endif
+}
+
 static PyGetSetDef ssl_getsetlist[] = {
     {"context", (getter) PySSL_get_context,
                 (setter) PySSL_set_context, PySSL_set_context_doc},
@@ -2131,6 +2186,7 @@ static PyMethodDef PySSLMethods[] = {
     {"tls_unique_cb", (PyCFunction)PySSL_tls_unique_cb, METH_NOARGS,
      PySSL_tls_unique_cb_doc},
 #endif
+    {"verify_client_post_handshake", (PyCFunction)_ssl__SSLSocket_verify_client_post_handshake_impl, METH_NOARGS, _ssl__SSLSocket_verify_client_post_handshake__doc__},
     {NULL, NULL}
 };
 
@@ -2305,6 +2361,13 @@ context_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
            certificates are present. See https://bugs.python.org/issue23476. */
         X509_STORE *store = SSL_CTX_get_cert_store(self->ctx);
         X509_STORE_set_flags(store, X509_V_FLAG_TRUSTED_FIRST);
+    }
+#endif
+
+#ifdef TLS1_3_VERSION
+    {
+        self->post_handshake_auth = 0;
+        SSL_CTX_set_post_handshake_auth(self->ctx, self->post_handshake_auth);
     }
 #endif
 
@@ -2527,6 +2590,8 @@ static int
 set_verify_mode(PySSLContext *self, PyObject *arg, void *c)
 {
     int n, mode;
+    int (*verify_cb)(int, X509_STORE_CTX *) = NULL;
+
     if (!PyArg_Parse(arg, "i", &n))
         return -1;
     if (n == PY_SSL_CERT_NONE)
@@ -2540,13 +2605,20 @@ set_verify_mode(PySSLContext *self, PyObject *arg, void *c)
                         "invalid value for verify_mode");
         return -1;
     }
+
     if (mode == SSL_VERIFY_NONE && self->check_hostname) {
         PyErr_SetString(PyExc_ValueError,
                         "Cannot set verify_mode to CERT_NONE when "
                         "check_hostname is enabled.");
         return -1;
     }
-    SSL_CTX_set_verify(self->ctx, mode, NULL);
+
+  /* bpo-37428: newPySSLSocket() sets SSL_VERIFY_POST_HANDSHAKE flag for
+     * server sockets and SSL_set_post_handshake_auth() for client. */
+
+    /* keep current verify cb */
+    verify_cb = SSL_CTX_get_verify_callback(self->ctx);
+    SSL_CTX_set_verify(self->ctx, mode, verify_cb);
     return 0;
 }
 
@@ -2650,6 +2722,36 @@ set_check_hostname(PySSLContext *self, PyObject *arg, void *c)
     self->check_hostname = check_hostname;
     return 0;
 }
+
+static PyObject *
+get_post_handshake_auth(PySSLContext *self, void *c) {
+#if TLS1_3_VERSION
+    return PyBool_FromLong(self->post_handshake_auth);
+#else
+    Py_RETURN_NONE;
+#endif
+}
+
+#if TLS1_3_VERSION
+static int
+set_post_handshake_auth(PySSLContext *self, PyObject *arg, void *c) {
+    if (arg == NULL) {
+        PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
+        return -1;
+    }
+    int pha = PyObject_IsTrue(arg);
+
+    if (pha == -1) {
+        return -1;
+    }
+    self->post_handshake_auth = pha;
+
+    /* bpo-37428: newPySSLSocket() sets SSL_VERIFY_POST_HANDSHAKE flag for
+     * server sockets and SSL_set_post_handshake_auth() for client. */
+
+    return 0;
+}
+#endif
 
 
 typedef struct {
@@ -3506,6 +3608,13 @@ static PyGetSetDef context_getsetlist[] = {
 #endif
     {"verify_mode", (getter) get_verify_mode,
                     (setter) set_verify_mode, NULL},
+    {"post_handshake_auth", (getter) get_post_handshake_auth,
+#ifdef TLS1_3_VERSION
+                            (setter) set_post_handshake_auth,
+#else
+                            NULL,
+#endif
+    },
     {NULL},            /* sentinel */
 };
 
@@ -4532,3 +4641,4 @@ init_ssl(void)
     if (r == NULL || PyModule_AddObject(m, "_OPENSSL_API_VERSION", r))
         return;
 }
+

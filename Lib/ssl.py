@@ -94,6 +94,10 @@ import sys
 import os
 from collections import namedtuple
 from contextlib import closing
+import socket
+
+# import logging
+
 
 import _ssl             # if we can't import it, let the error propagate
 
@@ -523,6 +527,7 @@ class SSLSocket(socket):
                  server_hostname=None,
                  _context=None):
 
+        self._sslobj = None
         self._makefile_refs = 0
         if _context:
             self._context = _context
@@ -568,6 +573,7 @@ class SSLSocket(socket):
                              "in client mode")
         if self._context.check_hostname and not server_hostname:
             raise ValueError("check_hostname requires server_hostname")
+        sock_timeout = sock.gettimeout()
         self.server_side = server_side
         self.server_hostname = server_hostname
         self.do_handshake_on_connect = do_handshake_on_connect
@@ -580,11 +586,42 @@ class SSLSocket(socket):
             if e.errno != errno.ENOTCONN:
                 raise
             connected = False
+            blocking = self.getblocking()
+            self.setblocking(False)
+            try:
+                # We are not connected so this is not supposed to block, but
+                # testing revealed otherwise on macOS and Windows so we do
+                # the non-blocking dance regardless. Our raise when any data
+                # is found means consuming the data is harmless.
+                notconn_pre_handshake_data = self.recv(1)
+            except (OSError, socket_error) as e:
+
+                # EINVAL occurs for recv(1) on non-connected on unix sockets.
+                if e.errno not in (errno.ENOTCONN, errno.EINVAL):
+                    raise
+
+                notconn_pre_handshake_data = b''
+            self.setblocking(blocking)
+            if notconn_pre_handshake_data:
+                # This prevents pending data sent to the socket before it was
+                # closed from escaping to the caller who could otherwise
+                # presume it came through a successful TLS connection.
+                reason = "Closed before TLS handshake with data in recv buffer."
+                notconn_pre_handshake_data_error = SSLError(e.errno, reason)
+                # Add the SSLError attributes that _ssl.c always adds.
+                notconn_pre_handshake_data_error.reason = reason
+                notconn_pre_handshake_data_error.library = None
+                try:
+                    self.close()
+                except (OSError, socket_error):
+                    pass
+                raise notconn_pre_handshake_data_error
         else:
             connected = True
 
         self._closed = False
         self._sslobj = None
+        self.settimeout(sock_timeout)  # Must come after setblocking() calls.
         self._connected = connected
         if connected:
             # create the SSL object
@@ -598,7 +635,7 @@ class SSLSocket(socket):
                         raise ValueError("do_handshake_on_connect should not be specified for non-blocking sockets")
                     self.do_handshake()
 
-            except (OSError, ValueError):
+            except (OSError, ValueError, socket_error):
                 self.close()
                 raise
 
@@ -814,6 +851,12 @@ class SSLSocket(socket):
         else:
             raise ValueError("No SSL wrapper around " + str(self))
 
+    def verify_client_post_handshake(self):
+        if self._sslobj:
+            return self._sslobj.verify_client_post_handshake()
+        else:
+            raise ValueError("No SSL wrapper around " + str(self))
+
     def _real_close(self):
         self._sslobj = None
         socket._real_close(self)
@@ -914,7 +957,6 @@ class SSLSocket(socket):
         if self._sslobj is None:
             return None
         return self._sslobj.version()
-
 
 def wrap_socket(sock, keyfile=None, certfile=None,
                 server_side=False, cert_reqs=CERT_NONE,
