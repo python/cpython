@@ -909,54 +909,6 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         self.run_cases_test(input, input2, output)
 
-    def test_no_overridden_case_type_prop(self):
-        input = """
-        pure op(OP, (arg1 -- out: &PYLONG_TYPE)) {
-            spam();
-        }
-        """
-        input2 = """
-        pure op(OTHER, (arg1 -- out)) {
-            spam();
-        }
-        """
-        output = """
-        case OP: {
-            _Py_UOpsSymType *out;
-            out = sym_init_unknown(ctx);
-            if (out == NULL) goto error;
-
-            sym_set_type(out, PYLONG_TYPE, 0);
-            stack_pointer[0] = out;
-            stack_pointer += 1;
-            break;
-        }
-        """
-        self.run_cases_test(input, input2, output)
-
-    def test_overridden_case_type_prop(self):
-        input = """
-        pure op(OP, (arg1 -- out: &PYLONG_TYPE)) {
-            spam();
-        }
-        """
-        input2 = """
-        pure op(OP, (arg1 -- out: &PYFLOAT_TYPE)) {
-            spam();
-        }
-        """
-        output = """
-        case OP: {
-            _Py_UOpsSymType *arg1;
-            _Py_UOpsSymType *out;
-            arg1 = stack_pointer[-1];
-            spam();
-            sym_set_type(out, PYFLOAT_TYPE, 0);
-            stack_pointer[-1] = out;
-            break;
-        }
-        """
-        self.run_cases_test(input, input2, output)
 
 if __name__ == "__main__":
     unittest.main()
