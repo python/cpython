@@ -502,7 +502,6 @@ static int fuzz_elementtree_parsewhole(const char* data, size_t size) {
 }
 
 #define MAX_PYCOMPILE_TEST_SIZE 16384
-static char pycompile_scratch[MAX_PYCOMPILE_TEST_SIZE];
 
 static const int start_vals[] = {Py_eval_input, Py_single_input, Py_file_input};
 const size_t NUM_START_VALS = sizeof(start_vals) / sizeof(start_vals[0]);
@@ -531,6 +530,8 @@ static int fuzz_pycompile(const char* data, size_t size) {
     unsigned char optimize_idx = (unsigned char) data[1];
     int optimize = optimize_vals[optimize_idx % NUM_OPTIMIZE_VALS];
 
+    char pycompile_scratch[MAX_PYCOMPILE_TEST_SIZE];
+
     // Create a NUL-terminated C string from the remaining input
     memcpy(pycompile_scratch, data + 2, size - 2);
     // Put a NUL terminator just after the copied data. (Space was reserved already.)
@@ -549,7 +550,13 @@ static int fuzz_pycompile(const char* data, size_t size) {
 
     PyObject *result = Py_CompileStringExFlags(pycompile_scratch, "<fuzz input>", start, flags, optimize);
     if (result == NULL) {
-        /* compilation failed, most likely from a syntax error */
+        /* Compilation failed, most likely from a syntax error. If it was a
+           SystemError we abort. There's no non-bug reason to raise a
+           SystemError. */
+        if (PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_SystemError)) {
+            PyErr_Print();
+            abort();
+        }
         PyErr_Clear();
     } else {
         Py_DECREF(result);
