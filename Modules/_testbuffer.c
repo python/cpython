@@ -2822,38 +2822,38 @@ _testbuffer_exec(PyObject *m)
     Py_SET_TYPE(&NDArray_Type, &PyType_Type);
     Py_INCREF(&NDArray_Type);
     if (PyModule_Add(m, "ndarray", (PyObject *)&NDArray_Type) < 0) {
-        return -1;
+        goto error;
     }
 
     Py_SET_TYPE(&StaticArray_Type, &PyType_Type);
     Py_INCREF(&StaticArray_Type);
     if (PyModule_Add(m, "staticarray", (PyObject *)&StaticArray_Type) < 0) {
-        return -1;
+        goto error;
     }
 
     structmodule = PyImport_ImportModule("struct");
     if (structmodule == NULL) {
-        return -1;
+        goto error;
     }
 
     Struct = PyObject_GetAttrString(structmodule, "Struct");
     if (Struct == NULL) {
-        return -1;
+        goto error;
     }
     calcsize = PyObject_GetAttrString(structmodule, "calcsize");
     if (calcsize == NULL) {
-        return -1;
+        goto error;
     }
 
     simple_format = PyUnicode_FromString(simple_fmt);
     if (simple_format == NULL) {
-        return -1;
+        goto error;
     }
 
 #define ADD_INT_MACRO(m, macro)                                             \
     do {                                                                    \
         if (PyModule_AddIntConstant(m, #macro, macro) < 0) {                \
-            return -1;                                                      \
+            goto error;                                                     \
         }                                                                   \
     } while (0)
 
@@ -2891,6 +2891,11 @@ _testbuffer_exec(PyObject *m)
 #undef ADD_INT_MACRO
 
     return 0;
+
+error:
+    Py_XDECREF(structmodule);
+    Py_XDECREF(simple_format);
+    return -1;
 }
 
 PyMODINIT_FUNC
