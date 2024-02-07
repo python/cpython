@@ -61,6 +61,7 @@ typedef struct _PyInterpreterFrame {
     PyObject *f_globals; /* Borrowed reference. Only valid if not on C stack */
     PyObject *f_builtins; /* Borrowed reference. Only valid if not on C stack */
     PyObject *f_locals; /* Strong reference, may be NULL. Only valid if not on C stack */
+    PyObject *f_extra_locals; /* Strong reference, may be NULL. Only valid if not on C stack */
     PyFrameObject *frame_obj; /* Strong reference, may be NULL. Only valid if not on C stack */
     _Py_CODEUNIT *instr_ptr; /* Instruction currently executing (or about to begin) */
     int stacktop;  /* Offset of TOS from localsplus  */
@@ -126,6 +127,7 @@ _PyFrame_Initialize(
     frame->f_builtins = func->func_builtins;
     frame->f_globals = func->func_globals;
     frame->f_locals = locals;
+    frame->f_extra_locals = PyDict_New();
     frame->stacktop = code->co_nlocalsplus;
     frame->frame_obj = NULL;
     frame->instr_ptr = _PyCode_CODE(code);
@@ -289,6 +291,7 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     frame->f_globals = NULL;
 #endif
     frame->f_locals = NULL;
+    frame->f_extra_locals = NULL;
     frame->stacktop = code->co_nlocalsplus + stackdepth;
     frame->frame_obj = NULL;
     frame->instr_ptr = _PyCode_CODE(code);
