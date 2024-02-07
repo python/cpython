@@ -4081,10 +4081,10 @@ class str_converter(CConverter):
         key = str_converter_key(accept, encoding, zeroes)
         format_unit = str_converter_argument_map.get(key)
         if not format_unit:
+            allowed = "\n".join([str(k) for k in str_converter_argument_map.keys()])
             fail("unsupported combination of str converter arguments: "
                  f"{accept=!r}, {encoding=!r}, {zeroes=!r}; "
-                 "allowed combinations are:\n\n"
-                 f"{'\n'.join([str(k) for k in str_converter_argument_map.keys()])}")
+                 f"allowed combinations are:\n\n{allowed}")
 
         self.format_unit = format_unit
         self.length = bool(zeroes)
