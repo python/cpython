@@ -158,12 +158,17 @@ gc_set_threshold_impl(PyObject *module, int threshold0, int group_right_1,
 {
     GCState *gcstate = get_gc_state();
 
-    gcstate->young.threshold = threshold0;
+    gcstate->generations[0].threshold = threshold0;
     if (group_right_1) {
-        gcstate->old[0].threshold = threshold1;
+        gcstate->generations[1].threshold = threshold1;
     }
     if (group_right_2) {
-        gcstate->old[1].threshold = threshold2;
+        gcstate->generations[2].threshold = threshold2;
+
+        /* generations higher than 2 get the same threshold */
+        for (int i = 3; i < NUM_GENERATIONS; i++) {
+            gcstate->generations[i].threshold = gcstate->generations[2].threshold;
+        }
     }
     Py_RETURN_NONE;
 }
@@ -180,9 +185,9 @@ gc_get_threshold_impl(PyObject *module)
 {
     GCState *gcstate = get_gc_state();
     return Py_BuildValue("(iii)",
-                         gcstate->young.threshold,
-                         gcstate->old[0].threshold,
-                         0);
+                         gcstate->generations[0].threshold,
+                         gcstate->generations[1].threshold,
+                         gcstate->generations[2].threshold);
 }
 
 /*[clinic input]
@@ -197,9 +202,9 @@ gc_get_count_impl(PyObject *module)
 {
     GCState *gcstate = get_gc_state();
     return Py_BuildValue("(iii)",
-                         gcstate->young.count,
-                         gcstate->old[gcstate->visited_space].count,
-                         gcstate->old[gcstate->visited_space^1].count);
+                         gcstate->generations[0].count,
+                         gcstate->generations[1].count,
+                         gcstate->generations[2].count);
 }
 
 /*[clinic input]
