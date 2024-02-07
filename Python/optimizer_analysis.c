@@ -500,7 +500,10 @@ op_is_bookkeeping(uint32_t opcode) {
 
 static inline bool
 op_is_data_movement_only(uint32_t opcode) {
-    return (opcode == _STORE_FAST || opcode == STORE_FAST_MAYBE_NULL);
+    return (opcode == _STORE_FAST ||
+        opcode == STORE_FAST_MAYBE_NULL ||
+        opcode == _PUSH_FRAME ||
+        opcode == _POP_FRAME);
 }
 
 #ifdef Py_DEBUG
@@ -515,12 +518,7 @@ static int
 clear_locals_type_info(_Py_UOpsAbstractInterpContext *ctx) {
     int locals_entries = ctx->frame->locals_len;
     for (int i = 0; i < locals_entries; i++) {
-        _Py_UOpsSymType *new_local = sym_init_unknown(ctx);
-        if (new_local == NULL) {
-            return -1;
-        }
-        sym_copy_immutable_type_info(ctx->frame->locals[i], new_local);
-        ctx->frame->locals[i] = new_local;
+        sym_copy_immutable_type_info(ctx->frame->locals[i], ctx->frame->locals[i]);
     }
     return 0;
 }

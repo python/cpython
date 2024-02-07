@@ -298,7 +298,6 @@ emit(const StencilGroup *group, uint64_t patches[])
     copy_and_patch((char *)patches[HoleValue_DATA], &group->data, patches);
 }
 
-
 // Compiles executor in-place. Don't forget to call _PyJIT_Free later!
 int
 _PyJIT_Compile(_PyExecutorObject *executor, _PyUOpInstruction *trace, size_t length)
