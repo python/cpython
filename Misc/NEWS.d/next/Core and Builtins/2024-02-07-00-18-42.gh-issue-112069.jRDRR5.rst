@@ -1,1 +1,1 @@
-Convert set and frozenset methods to Argument Clinic
+Convert :class:`set` and :class:`frozenset` methods to Argument Clinic.
