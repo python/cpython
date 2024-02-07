@@ -21,7 +21,13 @@ struct rotating_node_s {
     rotating_node_t *right;
 };
 
+typedef struct {
+    unsigned int random_value;
+    unsigned int random_stream;
+} random_state_t;
+
 void RotatingTree_Add(rotating_node_t **root, rotating_node_t *node);
-rotating_node_t* RotatingTree_Get(rotating_node_t **root, void *key);
+rotating_node_t* RotatingTree_Get(random_state_t *st, rotating_node_t **root,
+                                  void *key);
 int RotatingTree_Enum(rotating_node_t *root, rotating_tree_enum_fn enumfn,
                       void *arg);

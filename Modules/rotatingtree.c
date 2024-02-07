@@ -7,20 +7,16 @@
  * I think that ones are slightly more probable than zeroes.  It's not
  * important here, though.
  */
-
-static unsigned int random_value = 1;
-static unsigned int random_stream = 0;
-
 static int
-randombits(int bits)
+randombits(random_state_t *st, int bits)
 {
     int result;
-    if (random_stream < (1U << bits)) {
-        random_value *= 1082527;
-        random_stream = random_value;
+    if (st->random_stream < (1U << bits)) {
+        st->random_value *= 1082527;
+        st->random_stream = st->random_value;
     }
-    result = random_stream & ((1<<bits)-1);
-    random_stream >>= bits;
+    result = st->random_stream & ((1<<bits)-1);
+    st->random_stream >>= bits;
     return result;
 }
 
@@ -45,9 +41,9 @@ RotatingTree_Add(rotating_node_t **root, rotating_node_t *node)
    function because it occasionally rebalances the tree to move the
    resulting node closer to the root. */
 rotating_node_t *
-RotatingTree_Get(rotating_node_t **root, void *key)
+RotatingTree_Get(random_state_t *st, rotating_node_t **root, void *key)
 {
-    if (randombits(3) != 4) {
+    if (randombits(st, 3) != 4) {
         /* Fast path, no rebalancing */
         rotating_node_t *node = *root;
         while (node != NULL) {
@@ -70,7 +66,7 @@ RotatingTree_Get(rotating_node_t **root, void *key)
         while (1) {
             if (node->key == key)
                 return node;
-            rotate = !randombits(1);
+            rotate = !randombits(st, 1);
             if (KEY_LOWER_THAN(key, node->key)) {
                 next = node->left;
                 if (next == NULL)

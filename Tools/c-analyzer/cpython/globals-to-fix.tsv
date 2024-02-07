@@ -478,5 +478,3 @@ Modules/readline.c	-	should_auto_add_history	-
 Modules/readline.c	-	sigwinch_received	-
 Modules/readline.c	-	sigwinch_ohandler	-
 Modules/readline.c	-	completed_input_string	-
-Modules/rotatingtree.c	-	random_stream	-
-Modules/rotatingtree.c	-	random_value	-
