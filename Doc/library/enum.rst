@@ -497,9 +497,7 @@ Data Types
          >>> list(purple)
          [<Color.RED: 1>, <Color.BLUE: 4>]
 
-      .. versionchanged:: 3.11
-
-         Aliases are no longer returned during iteration.
+      .. versionadded:: 3.11
 
    .. method:: __len__(self):
 
