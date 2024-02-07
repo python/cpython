@@ -2067,6 +2067,11 @@ pyexpat_exec(PyObject *mod)
 #else
     capi->SetHashSalt = NULL;
 #endif
+#if XML_COMBINED_VERSION >= 20600
+    capi->SetReparseDeferralEnabled = XML_SetReparseDeferralEnabled;
+#else
+    capi->SetReparseDeferralEnabled = NULL;
+#endif
 
     /* export using capsule */
     PyObject *capi_object = PyCapsule_New(capi, PyExpat_CAPSULE_NAME,
