@@ -658,6 +658,8 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
 {
     PyObject *k, *v;
     Py_ssize_t pos = 0;
+    int remove_dunder_class = 0;
+
     while (PyDict_Next(comp->ste_symbols, &pos, &k, &v)) {
         // skip comprehension parameter
         long comp_flags = PyLong_AS_LONG(v);
@@ -679,6 +681,19 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
         if (!existing) {
             // name does not exist in scope, copy from comprehension
             assert(scope != FREE || PySet_Contains(comp_free, k) == 1);
+            if (scope == FREE && ste->ste_type == ClassBlock &&
+                _PyUnicode_EqualToASCIIString(k, "__class__")) {
+                // if __class__ is unbound in the enclosing class scope and free
+                // in the comprehension scope, it needs special handling; just
+                // letting it be marked as free in class scope will break due to
+                // drop_class_free
+                scope = GLOBAL_IMPLICIT;
+                only_flags &= ~DEF_FREE;
+                if (PySet_Discard(comp_free, k) < 0) {
+                    return 0;
+                }
+                remove_dunder_class = 1;
+            }
             PyObject *v_flags = PyLong_FromLong(only_flags);
             if (v_flags == NULL) {
                 return 0;
@@ -702,6 +717,10 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
                 }
             }
         }
+    }
+    comp->ste_free = PySet_Size(comp_free) > 0;
+    if (remove_dunder_class && PyDict_DelItemString(comp->ste_symbols, "__class__") < 0) {
+        return 0;
     }
     return 1;
 }
