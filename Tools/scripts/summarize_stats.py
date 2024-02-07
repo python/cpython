@@ -311,6 +311,9 @@ class Stats:
             self._data["_defines"],
             self._data["_specialized_instructions"],
         )
+    
+    def get_uop_sequence_stats(self, length=2) -> dict[str, int]:
+        return {k: v for k, v in self._data.items() if k.startswith("UOp Sequence Count") and k.count(',') == length - 1}
 
     def get_call_stats(self) -> dict[str, int]:
         defines = self._data["_stats_defines"]
@@ -660,6 +663,39 @@ def pair_count_section() -> Section:
             Table(
                 ("Pair", "Count:", "Self:", "Cumulative:"),
                 calc_pair_count_table,
+            )
+        ],
+        comparative=False,
+    )
+
+def uop_sequence_section(sequence_length: int) -> Section:
+    def calc_uop_sequence(stats: Stats) -> Rows:
+        uop_sequences = stats.get_uop_sequence_stats()
+        total = stats.get_optimization_stats()["Uops executed"][0]
+
+        cumulative = 0
+        rows: Rows = []
+        for sequence, count in itertools.islice(
+            sorted(uop_sequences.items(), key=itemgetter(1), reverse=True), 100
+        ):
+            cumulative += count
+            rows.append(
+                (
+                    sequence,
+                    Count(count),
+                    Ratio(count, total),
+                    Ratio(cumulative, total),
+                )
+            )
+        return rows
+
+    return Section(
+        "Pair counts",
+        "Pair counts for top 100 UOp pairs",
+        [
+            Table(
+                ("Pair", "Count:", "Self:", "Cumulative:"),
+                calc_uop_sequence,
             )
         ],
         comparative=False,
@@ -1053,6 +1089,7 @@ def optimization_section() -> Section:
                 )
             ],
         )
+        yield uop_sequence_section(2)
         yield Section(
             "Unsupported opcodes",
             "",
@@ -1181,6 +1218,7 @@ def output_stats(inputs: list[Path], json_output=str | None):
     match len(inputs):
         case 1:
             data = load_raw_data(Path(inputs[0]))
+            #print(data)
             if json_output is not None:
                 with open(json_output, "w", encoding="utf-8") as f:
                     save_raw_data(data, f)  # type: ignore
