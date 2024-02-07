@@ -424,9 +424,9 @@ class LongTests(unittest.TestCase):
         self.assertRaises(OverflowError, asvoidptr, -2**1000)
         # CRASHES asvoidptr(NULL)
 
-    def test_long_copybits(self):
+    def test_long_asnativebytes(self):
         import math
-        from _testcapi import pylong_copybits as copybits, SIZE_MAX
+        from _testcapi import pylong_asnativebytes as asnativebytes, SIZE_MAX
 
         # Abbreviate sizeof(Py_ssize_t) to SZ because we use it a lot
         SZ = int(math.ceil(math.log(SIZE_MAX + 1) / math.log(2)) / 8)
@@ -451,8 +451,8 @@ class LongTests(unittest.TestCase):
         ]:
             with self.subTest(f"sizeof-{v:X}"):
                 buffer = bytearray(1)
-                self.assertEqual(expect, copybits(v, buffer, 0, -1),
-                    "PyLong_CopyBits(v, NULL, 0, -1)")
+                self.assertEqual(expect, asnativebytes(v, buffer, 0, -1),
+                    "PyLong_AsNativeBytes(v, NULL, 0, -1)")
 
         # We request as many bytes as `expect_be` contains, and always check
         # the result (both big and little endian). We check the return value
@@ -507,16 +507,19 @@ class LongTests(unittest.TestCase):
                 buffer = bytearray(n)
                 expect_le = expect_be[::-1]
 
-                self.assertEqual(expect_n, copybits(v, buffer, n, 0),
-                    f"PyLong_CopyBits(v, buffer, {n}, <big>)")
+                self.assertEqual(expect_n, asnativebytes(v, buffer, n, 0),
+                    f"PyLong_AsNativeBytes(v, buffer, {n}, <big>)")
                 self.assertEqual(expect_be, buffer[:n], "<big>")
-                self.assertEqual(expect_n, copybits(v, buffer, n, 1),
-                    f"PyLong_CopyBits(v, buffer, {n}, <little>)")
+                self.assertEqual(expect_n, asnativebytes(v, buffer, n, 1),
+                    f"PyLong_AsNativeBytes(v, buffer, {n}, <little>)")
                 self.assertEqual(expect_le, buffer[:n], "<little>")
 
-    def test_long_frombits(self):
+    def test_long_fromnativebytes(self):
         import math
-        from _testcapi import pylong_frombits as frombits, SIZE_MAX
+        from _testcapi import (
+            pylong_fromnativebytes as fromnativebytes,
+            SIZE_MAX,
+        )
 
         # Abbreviate sizeof(Py_ssize_t) to SZ because we use it a lot
         SZ = int(math.ceil(math.log(SIZE_MAX + 1) / math.log(2)) / 8)
@@ -534,14 +537,14 @@ class LongTests(unittest.TestCase):
                 n = len(v_be)
                 v_le = v_be[::-1]
 
-                self.assertEqual(expect_s, frombits(v_be, n, 0, 1),
-                    f"PyLong_FromBits(buffer, {n}, <big>)")
-                self.assertEqual(expect_s, frombits(v_le, n, 1, 1),
-                    f"PyLong_FromBits(buffer, {n}, <little>)")
-                self.assertEqual(expect_u, frombits(v_be, n, 0, 0),
-                    f"PyLong_FromUnsignedBits(buffer, {n}, <big>)")
-                self.assertEqual(expect_u, frombits(v_le, n, 1, 0),
-                    f"PyLong_FromUnsignedBits(buffer, {n}, <little>)")
+                self.assertEqual(expect_s, fromnativebytes(v_be, n, 0, 1),
+                    f"PyLong_FromNativeBytes(buffer, {n}, <big>)")
+                self.assertEqual(expect_s, fromnativebytes(v_le, n, 1, 1),
+                    f"PyLong_FromNativeBytes(buffer, {n}, <little>)")
+                self.assertEqual(expect_u, fromnativebytes(v_be, n, 0, 0),
+                    f"PyLong_FromUnsignedNativeBytes(buffer, {n}, <big>)")
+                self.assertEqual(expect_u, fromnativebytes(v_le, n, 1, 0),
+                    f"PyLong_FromUnsignedNativeBytes(buffer, {n}, <little>)")
 
 if __name__ == "__main__":
     unittest.main()

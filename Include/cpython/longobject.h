@@ -4,10 +4,14 @@
 
 PyAPI_FUNC(PyObject*) PyLong_FromUnicodeObject(PyObject *u, int base);
 
-/* PyLong_CopyBits: Copy the integer value to a native buffer.
+/* PyLong_AsNativeBytes: Copy the integer value to a native variable.
+   buffer points to the first byte of the variable.
    n_bytes is the number of bytes available in the buffer. Pass 0 to request
    the required size for the value.
    endianness is -1 for native endian, 0 for big endian or 1 for little.
+   Big endian mode will write the most significant byte into the address
+   directly referenced by buffer; little endian will write the least significant
+   byte into that address.
 
    If an exception is raised, returns a negative value.
    Otherwise, returns the number of bytes that are required to store the value.
@@ -19,20 +23,20 @@ PyAPI_FUNC(PyObject*) PyLong_FromUnicodeObject(PyObject *u, int base);
    may be larger than necessary - this function is not an accurate way to
    calculate the bit length of an integer object.
    */
-PyAPI_FUNC(int) PyLong_CopyBits(PyObject* v, void* buffer, size_t n_bytes,
+PyAPI_FUNC(int) PyLong_AsNativeBytes(PyObject* v, void* buffer, size_t n_bytes,
     int endianness);
 
-/* PyLong_FromBits: Create an int value from a native integer
+/* PyLong_FromNativeBytes: Create an int value from a native integer
    n_bytes is the number of bytes to read from the buffer. Passing 0 will
    always produce the zero int.
-   PyLong_FromUnsignedBits always produces a non-negative int.
+   PyLong_FromUnsignedNativeBytes always produces a non-negative int.
    endianness is -1 for native endian, 0 for big endian or 1 for little.
 
    Returns the int object, or NULL with an exception set. */
-PyAPI_FUNC(PyObject*) PyLong_FromBits(const void* buffer, size_t n_bytes,
+PyAPI_FUNC(PyObject*) PyLong_FromNativeBytes(const void* buffer, size_t n_bytes,
     int endianness);
-PyAPI_FUNC(PyObject*) PyLong_FromUnsignedBits(const void* buffer, size_t n_bytes,
-    int endianness);
+PyAPI_FUNC(PyObject*) PyLong_FromUnsignedNativeBytes(const void* buffer,
+    size_t n_bytes, int endianness);
 
 PyAPI_FUNC(int) PyUnstable_Long_IsCompact(const PyLongObject* op);
 PyAPI_FUNC(Py_ssize_t) PyUnstable_Long_CompactValue(const PyLongObject* op);

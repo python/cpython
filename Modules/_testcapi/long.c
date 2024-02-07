@@ -777,7 +777,7 @@ pylong_asvoidptr(PyObject *module, PyObject *arg)
 }
 
 static PyObject *
-pylong_copybits(PyObject *module, PyObject *args)
+pylong_asnativebytes(PyObject *module, PyObject *args)
 {
     PyObject *v;
     Py_buffer buffer;
@@ -795,13 +795,13 @@ pylong_copybits(PyObject *module, PyObject *args)
         PyBuffer_Release(&buffer);
         return NULL;
     }
-    int res = PyLong_CopyBits(v, buffer.buf, n, (int)endianness);
+    int res = PyLong_AsNativeBytes(v, buffer.buf, n, (int)endianness);
     PyBuffer_Release(&buffer);
     return res >= 0 ? PyLong_FromLong(res) : NULL;
 }
 
 static PyObject *
-pylong_frombits(PyObject *module, PyObject *args)
+pylong_fromnativebytes(PyObject *module, PyObject *args)
 {
     Py_buffer buffer;
     Py_ssize_t n, endianness, signed_;
@@ -814,8 +814,8 @@ pylong_frombits(PyObject *module, PyObject *args)
         return NULL;
     }
     PyObject *res = signed_
-        ? PyLong_FromBits(buffer.buf, n, (int)endianness)
-        : PyLong_FromUnsignedBits(buffer.buf, n, (int)endianness);
+        ? PyLong_FromNativeBytes(buffer.buf, n, (int)endianness)
+        : PyLong_FromUnsignedNativeBytes(buffer.buf, n, (int)endianness);
     PyBuffer_Release(&buffer);
     return res;
 }
@@ -849,8 +849,8 @@ static PyMethodDef test_methods[] = {
     {"pylong_as_size_t",            pylong_as_size_t,           METH_O},
     {"pylong_asdouble",             pylong_asdouble,            METH_O},
     {"pylong_asvoidptr",            pylong_asvoidptr,           METH_O},
-    {"pylong_copybits",             pylong_copybits,            METH_VARARGS},
-    {"pylong_frombits",             pylong_frombits,            METH_VARARGS},
+    {"pylong_asnativebytes",        pylong_asnativebytes,       METH_VARARGS},
+    {"pylong_fromnativebytes",      pylong_fromnativebytes,     METH_VARARGS},
     {NULL},
 };
 

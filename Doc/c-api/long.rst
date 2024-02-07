@@ -113,10 +113,10 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    retrieved from the resulting value using :c:func:`PyLong_AsVoidPtr`.
 
 
-.. c:function:: PyObject* PyLong_FromBits(const void* buffer, size_t n_bytes, int endianness)
+.. c:function:: PyObject* PyLong_FromNativeBytes(const void* buffer, size_t n_bytes, int endianness)
 
    Create a Python integer from the value contained in the first *n_bytes* of
-   *buffer*, interpreted as twos-complement.
+   *buffer*, interpreted as a two's-complement signed number.
 
    *endianness* may be passed ``-1`` for the native endian that CPython was
    compiled with, or ``0`` for big endian and ``1`` for little.
@@ -124,7 +124,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    .. versionadded:: 3.13
 
 
-.. c:function:: PyObject* PyLong_FromUnsignedBits(const void* buffer, size_t n_bytes, int endianness)
+.. c:function:: PyObject* PyLong_FromUnsignedNativeBytes(const void* buffer, size_t n_bytes, int endianness)
 
    Create a Python integer from the value contained in the first *n_bytes* of
    *buffer*, interpreted as an unsigned number.
@@ -354,7 +354,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Returns ``NULL`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
 
-.. c:function:: int PyLong_CopyBits(PyObject *pylong, void* buffer, size_t n_bytes, int endianness)
+.. c:function:: int PyLong_AsNativeBytes(PyObject *pylong, void* buffer, size_t n_bytes, int endianness)
 
    Copy the Python integer value to a native *buffer* of size *n_bytes*::
 

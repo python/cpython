@@ -971,9 +971,9 @@ _PyLong_AsByteArray(PyLongObject* v,
        It's crucial that every Python digit except for the MSD contribute
        exactly PyLong_SHIFT bits to the total, so first assert that the int is
        normalized.
-       NOTE: PyLong_CopyBits() assumes that this function will fill in 'n' bytes
-       even if it eventually fails to convert the whole number. Make sure you
-       account for that if you are changing this algorithm to return without
+       NOTE: PyLong_AsNativeBytes() assumes that this function will fill in 'n'
+       bytes even if it eventually fails to convert the whole number. Make sure
+       you account for that if you are changing this algorithm to return without
        doing that.
        */
     assert(ndigits == 0 || v->long_value.ob_digit[ndigits - 1] != 0);
@@ -1081,7 +1081,7 @@ _fits_in_n_bits(Py_ssize_t v, Py_ssize_t n)
 }
 
 int
-PyLong_CopyBits(PyObject* vv, void* buffer, size_t n, int endianness)
+PyLong_AsNativeBytes(PyObject* vv, void* buffer, size_t n, int endianness)
 {
     PyLongObject *v;
     union {
@@ -1097,7 +1097,7 @@ PyLong_CopyBits(PyObject* vv, void* buffer, size_t n, int endianness)
     }
 
     if ((size_t)(int)n != n || (int)n < 0) {
-        PyErr_SetString(PyExc_SystemError, "n_bytes too big to copy");
+        PyErr_SetString(PyExc_SystemError, "n_bytes too big to convert");
         return -1;
     }
 
@@ -1218,7 +1218,7 @@ PyLong_CopyBits(PyObject* vv, void* buffer, size_t n, int endianness)
 
 
 PyObject *
-PyLong_FromBits(const void* buffer, size_t n, int endianness)
+PyLong_FromNativeBytes(const void* buffer, size_t n, int endianness)
 {
     if (!buffer) {
         PyErr_BadInternalCall();
@@ -1240,7 +1240,7 @@ PyLong_FromBits(const void* buffer, size_t n, int endianness)
 
 
 PyObject *
-PyLong_FromUnsignedBits(const void* buffer, size_t n, int endianness)
+PyLong_FromUnsignedNativeBytes(const void* buffer, size_t n, int endianness)
 {
     if (!buffer) {
         PyErr_BadInternalCall();

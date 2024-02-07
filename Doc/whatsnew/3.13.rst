@@ -560,6 +560,7 @@ Tier 2 IR by Mark Shannon and Guido van Rossum.
 Tier 2 optimizer by Ken Jin.)
 
 
+
 Deprecated
 ==========
 
@@ -1490,9 +1491,9 @@ New Features
 * Add :c:func:`Py_HashPointer` function to hash a pointer.
   (Contributed by Victor Stinner in :gh:`111545`.)
 
-* Add :c:func:`PyLong_CopyBits`, :c:func:`PyLong_FromBits` and
-  :c:func:`PyLong_FromUnsignedBits` functions to simplify converting between
-  native integer types and Python ``int`` objects.
+* Add :c:func:`PyLong_AsNativeBytes`, :c:func:`PyLong_FromNativeBytes` and
+  :c:func:`PyLong_FromUnsignedNativeBytes` functions to simplify converting
+  between native integer types and Python ``int`` objects.
   (Contributed by Steve Dower in :gh:`111140`.)
 
 
