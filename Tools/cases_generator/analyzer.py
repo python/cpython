@@ -3,6 +3,7 @@ import lexer
 import parser
 from typing import Optional
 
+
 @dataclass
 class Properties:
     escapes: bool

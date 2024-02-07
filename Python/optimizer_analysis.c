@@ -551,7 +551,7 @@ emit_i(uops_emitter *emitter,
 
 
 #ifndef Py_DEBUG
-#define GETITEM(ctx, i) Py_UNREACHABLE();
+#define GETITEM(ctx, i) (_Py_UOpsSymType *)Py_UNREACHABLE();
 #else
 static inline _Py_UOpsSymType *
 GETITEM(_Py_UOpsAbstractInterpContext *ctx, Py_ssize_t i) {

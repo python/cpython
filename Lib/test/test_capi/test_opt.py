@@ -568,6 +568,30 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertGreaterEqual(len(binop_count), 3)
         self.assertLessEqual(len(guard_both_int_count), 1)
 
+    def test_int_type_propagation_through_frame(self):
+        def double(x):
+            return x + x
+        def testfunc(loops):
+            num = 0
+            while num < loops:
+                x = num + num
+                a = double(x)
+                num += 1
+            return a
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        res = None
+        with temporary_optimizer(opt):
+            res = testfunc(32)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        self.assertEqual(res, 124)
+        binop_count = [opname for opname, _, _ in ex if opname == "_BINARY_OP_ADD_INT"]
+        guard_both_int_count = [opname for opname, _, _ in ex if opname == "_GUARD_BOTH_INT"]
+        self.assertGreaterEqual(len(binop_count), 3)
+        self.assertLessEqual(len(guard_both_int_count), 1)
+
     def test_int_impure_region(self):
         def testfunc(loops):
             num = 0
@@ -703,10 +727,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_LOAD_GLOBAL_BUILTIN", uops)
         self.assertIn("_LOAD_CONST_INLINE_BORROW_WITH_NULL", uops)
 
-
-
-class Foo:
-    attr = 1
 
 
 if __name__ == "__main__":
