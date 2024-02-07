@@ -88,6 +88,12 @@ typedef enum {
     NULL_TYPE = 6,
     PYMETHOD_TYPE = 7,
     GUARD_DORV_VALUES_TYPE = 8,
+    // This is a non-ideal fix. Once all _LOAD_ATTR is properly annotated
+    // with proper type information (at least, that `self` is present), this
+    // can be removed. Otherwise, for now, this is used to distinguish
+    // _LOAD_ATTR (self/null unknown) and
+    // _LOAD_ATTR (unknown, but type cannot be captured in our current type system).
+    SELF_OR_NULL = 9,
 
     // Represents something from LOAD_CONST which is truly constant.
     TRUE_CONST = 30,
@@ -491,11 +497,6 @@ sym_matches_pytype(_Py_UOpsSymType *sym, PyTypeObject *typ, uint64_t refinement)
     return sym_matches_type(sym, pytype_to_type(typ), refinement);
 }
 
-static inline bool
-sym_is_unknown_type(_Py_UOpsSymType *sym)
-{
-    return sym->types == 0 || (sym->types == 1U << INVALID_TYPE);
-}
 
 static uint64_t
 sym_type_get_refinement(_Py_UOpsSymType *sym, _Py_UOpsSymExprTypeEnum typ)

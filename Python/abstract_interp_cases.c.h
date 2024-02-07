@@ -762,16 +762,24 @@
         }
 
         case _LOAD_ATTR: {
+            _Py_UOpsSymType *owner;
             _Py_UOpsSymType *attr;
             _Py_UOpsSymType *self_or_null = sym_init_null(ctx);
             if(self_or_null) {goto error;}
-            attr = sym_init_unknown(ctx);
-            if (attr == NULL) goto error;
+            owner = stack_pointer[-1];
             self_or_null = sym_init_unknown(ctx);
-            if (self_or_null == NULL) goto error;
-            stack_pointer[0] = attr;
-            if (oparg & 1) stack_pointer[1] = self_or_null;
-            stack_pointer += 1 + (oparg & 1);
+            if (self_or_null == NULL) {
+                goto error;
+            }
+            sym_set_type(self_or_null, SELF_OR_NULL, 0);
+            (void)owner;
+            attr = sym_init_unknown(ctx);
+            if (attr == NULL) {
+                goto error;
+            }
+            stack_pointer[-1] = attr;
+            if (oparg & 1) stack_pointer[0] = self_or_null;
+            stack_pointer += (oparg & 1);
             break;
         }
 
@@ -1297,7 +1305,7 @@
             assert(self_or_null != NULL);
             assert(args != NULL);
             if (!sym_matches_pytype(self_or_null, NULL, 0) &&
-                !sym_is_unknown_type(self_or_null)) {
+                !sym_matches_type(self_or_null, SELF_OR_NULL, 0)) {
                 // Bound method fiddling, same as _INIT_CALL_PY_EXACT_ARGS in
                 // VM
                 args--;
@@ -1308,7 +1316,7 @@
             // Can determine statically, so we interleave the new locals
             // and make the current stack the new locals.
             // This also sets up for true call inlining.
-            if (!sym_is_unknown_type(self_or_null)) {
+            if (!sym_matches_type(self_or_null, SELF_OR_NULL, 0)) {
                 localsplus_start = args;
                 n_locals_already_filled = argcount;
             }

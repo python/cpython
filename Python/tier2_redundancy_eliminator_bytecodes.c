@@ -152,6 +152,19 @@ dummy_func(void) {
         top, unused[oparg-2], bottom)) {
     }
 
+    op(_LOAD_ATTR, (owner -- attr, self_or_null if (oparg & 1))) {
+        self_or_null = sym_init_unknown(ctx);
+        if (self_or_null == NULL) {
+            goto error;
+        }
+        sym_set_type(self_or_null, SELF_OR_NULL, 0);
+        (void)owner;
+        attr = sym_init_unknown(ctx);
+        if (attr == NULL) {
+            goto error;
+        }
+    }
+
     op(_CHECK_FUNCTION_EXACT_ARGS, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
         sym_set_pytype(callable, &PyFunction_Type, func_version);
         (void)self_or_null;
@@ -174,7 +187,7 @@ dummy_func(void) {
         assert(self_or_null != NULL);
         assert(args != NULL);
         if (!sym_matches_pytype(self_or_null, NULL, 0) &&
-            !sym_is_unknown_type(self_or_null)) {
+            !sym_matches_type(self_or_null, SELF_OR_NULL, 0)) {
             // Bound method fiddling, same as _INIT_CALL_PY_EXACT_ARGS in
             // VM
             args--;
@@ -186,7 +199,7 @@ dummy_func(void) {
         // Can determine statically, so we interleave the new locals
         // and make the current stack the new locals.
         // This also sets up for true call inlining.
-        if (!sym_is_unknown_type(self_or_null)) {
+        if (!sym_matches_type(self_or_null, SELF_OR_NULL, 0)) {
             localsplus_start = args;
             n_locals_already_filled = argcount;
         }
