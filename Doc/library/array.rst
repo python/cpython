@@ -219,6 +219,8 @@ The module defines the following type:
 
       Remove all elements from the array.
 
+      .. versionadded:: 3.13
+
 
    .. method:: reverse()
 
