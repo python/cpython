@@ -2154,9 +2154,6 @@ _PyUnicode_InitStaticStrings(PyInterpreterState *interp) {
     string = &_Py_ID(zdict);
     assert(_PyUnicode_CheckConsistency(string, 1));
     _PyUnicode_InternInPlace(interp, &string);
-    string = &_Py_ID(zipimporter);
-    assert(_PyUnicode_CheckConsistency(string, 1));
-    _PyUnicode_InternInPlace(interp, &string);
 }
 /* End auto-generated code */
 #ifdef __cplusplus
