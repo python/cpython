@@ -1,0 +1,1 @@
+Fix etree XMLPullParser tests for Expat >=2.6.0 with reparse deferral

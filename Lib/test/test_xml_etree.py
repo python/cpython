@@ -1483,6 +1483,7 @@ class XMLPullParserTest(unittest.TestCase):
     def test_simple_xml(self):
         for chunk_size in (None, 1, 5):
             with self.subTest(chunk_size=chunk_size):
+                expected_events = []
                 parser = ET.XMLPullParser()
                 self.assert_event_tags(parser, [])
                 self._feed(parser, "<!-- comment -->\n", chunk_size)
@@ -1492,16 +1493,17 @@ class XMLPullParserTest(unittest.TestCase):
                            chunk_size)
                 self.assert_event_tags(parser, [])
                 self._feed(parser, ">\n", chunk_size)
-                self.assert_event_tags(parser, [('end', 'element')])
+                expected_events += [('end', 'element')]
                 self._feed(parser, "<element>text</element>tail\n", chunk_size)
                 self._feed(parser, "<empty-element/>\n", chunk_size)
-                self.assert_event_tags(parser, [
+                expected_events += [
                     ('end', 'element'),
                     ('end', 'empty-element'),
-                    ])
+                    ]
                 self._feed(parser, "</root>\n", chunk_size)
-                self.assert_event_tags(parser, [('end', 'root')])
+                expected_events += [('end', 'root')]
                 self.assertIsNone(parser.close())
+                self.assert_event_tags(parser, expected_events)
 
     def test_feed_while_iterating(self):
         parser = ET.XMLPullParser()
