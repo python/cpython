@@ -819,7 +819,7 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
         }
     }
     comp->ste_free = PySet_Size(comp_free) > 0;
-    if (remove_dunder_class && PyDict_DelItem(comp->ste_symbols, k) < 0) {
+    if (remove_dunder_class && PyDict_DelItemString(comp->ste_symbols, "__class__") < 0) {
         return 0;
     }
     return 1;
