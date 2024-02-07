@@ -158,12 +158,17 @@ gc_set_threshold_impl(PyObject *module, int threshold0, int group_right_1,
 {
     GCState *gcstate = get_gc_state();
 
-    gcstate->young.threshold = threshold0;
+    gcstate->generations[0].threshold = threshold0;
     if (group_right_1) {
-        gcstate->old[0].threshold = threshold1;
+        gcstate->generations[1].threshold = threshold1;
     }
     if (group_right_2) {
-        gcstate->old[1].threshold = threshold2;
+        gcstate->generations[2].threshold = threshold2;
+
+        /* generations higher than 2 get the same threshold */
+        for (int i = 3; i < NUM_GENERATIONS; i++) {
+            gcstate->generations[i].threshold = gcstate->generations[2].threshold;
+        }
     }
     Py_RETURN_NONE;
 }
@@ -180,9 +185,9 @@ gc_get_threshold_impl(PyObject *module)
 {
     GCState *gcstate = get_gc_state();
     return Py_BuildValue("(iii)",
-                         gcstate->young.threshold,
-                         gcstate->old[0].threshold,
-                         0);
+                         gcstate->generations[0].threshold,
+                         gcstate->generations[1].threshold,
+                         gcstate->generations[2].threshold);
 }
 
 /*[clinic input]
@@ -197,9 +202,9 @@ gc_get_count_impl(PyObject *module)
 {
     GCState *gcstate = get_gc_state();
     return Py_BuildValue("(iii)",
-                         gcstate->young.count,
-                         gcstate->old[gcstate->visited_space].count,
-                         gcstate->old[gcstate->visited_space^1].count);
+                         gcstate->generations[0].count,
+                         gcstate->generations[1].count,
+                         gcstate->generations[2].count);
 }
 
 /*[clinic input]
@@ -230,6 +235,26 @@ referentsvisit(PyObject *obj, void *arg)
     return PyList_Append(list, obj) < 0;
 }
 
+static int
+append_referrents(PyObject *result, PyObject *args)
+{
+    for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(args); i++) {
+        PyObject *obj = PyTuple_GET_ITEM(args, i);
+        if (!_PyObject_IS_GC(obj)) {
+            continue;
+        }
+
+        traverseproc traverse = Py_TYPE(obj)->tp_traverse;
+        if (!traverse) {
+            continue;
+        }
+        if (traverse(obj, referentsvisit, result)) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
 /*[clinic input]
 gc.get_referents
 
@@ -242,29 +267,24 @@ static PyObject *
 gc_get_referents_impl(PyObject *module, PyObject *args)
 /*[clinic end generated code: output=d47dc02cefd06fe8 input=b3ceab0c34038cbf]*/
 {
-    Py_ssize_t i;
     if (PySys_Audit("gc.get_referents", "(O)", args) < 0) {
         return NULL;
     }
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     PyObject *result = PyList_New(0);
 
     if (result == NULL)
         return NULL;
 
-    for (i = 0; i < PyTuple_GET_SIZE(args); i++) {
-        traverseproc traverse;
-        PyObject *obj = PyTuple_GET_ITEM(args, i);
+    // NOTE: stop the world is a no-op in default build
+    _PyEval_StopTheWorld(interp);
+    int err = append_referrents(result, args);
+    _PyEval_StartTheWorld(interp);
 
-        if (!_PyObject_IS_GC(obj))
-            continue;
-        traverse = Py_TYPE(obj)->tp_traverse;
-        if (! traverse)
-            continue;
-        if (traverse(obj, referentsvisit, result)) {
-            Py_DECREF(result);
-            return NULL;
-        }
+    if (err < 0) {
+        Py_CLEAR(result);
     }
+
     return result;
 }
 

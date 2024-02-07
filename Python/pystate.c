@@ -517,6 +517,8 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
         return _PyStatus_NO_MEMORY();
     }
 
+    _PyThread_AfterFork(&runtime->threads);
+
     return _PyStatus_OK();
 }
 #endif

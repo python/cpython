@@ -931,7 +931,6 @@ class Thread:
             # This thread is alive.
             self._ident = new_ident
             if self._handle is not None:
-                self._handle.after_fork_alive()
                 assert self._handle.ident == new_ident
             if self._join_lock is not None:
                 self._join_lock._at_fork_reinit()
@@ -940,9 +939,7 @@ class Thread:
             # anymore.
             self._done_event.set()
             self._join_lock = None
-            if self._handle is not None:
-                self._handle.after_fork_dead()
-                self._handle = None
+            self._handle = None
 
     def __repr__(self):
         assert self._initialized, "Thread.__init__() was not called"
