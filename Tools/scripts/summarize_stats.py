@@ -312,7 +312,7 @@ class Stats:
             self._data["_specialized_instructions"],
         )
     
-    def get_uop_sequence_stats(self, length=2) -> dict[str, int]:
+    def get_uop_sequence_stats(self, length) -> dict[str, int]:
         return {k: v for k, v in self._data.items() if k.startswith("UOp Sequence Count") and k.count(',') == length - 1}
 
     def get_call_stats(self) -> dict[str, int]:
@@ -668,9 +668,9 @@ def pair_count_section() -> Section:
         comparative=False,
     )
 
-def uop_sequence_section(sequence_length: int) -> Section:
+def uop_sequence_section(sequence_length: int = 2) -> Section:
     def calc_uop_sequence(stats: Stats) -> Rows:
-        uop_sequences = stats.get_uop_sequence_stats()
+        uop_sequences = stats.get_uop_sequence_stats(sequence_length)
         total = stats.get_optimization_stats()["Uops executed"][0]
 
         cumulative = 0
@@ -691,7 +691,7 @@ def uop_sequence_section(sequence_length: int) -> Section:
 
     return Section(
         "Pair counts",
-        "Pair counts for top 100 UOp pairs",
+        f"Pair counts for top 100 UOp Sequences of Length {sequence_length}",
         [
             Table(
                 ("Pair", "Count:", "Self:", "Cumulative:"),
@@ -1089,7 +1089,7 @@ def optimization_section() -> Section:
                 )
             ],
         )
-        yield uop_sequence_section(2)
+        yield uop_sequence_section()
         yield Section(
             "Unsupported opcodes",
             "",
