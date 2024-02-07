@@ -506,13 +506,6 @@ op_is_data_movement_only(uint32_t opcode) {
         opcode == _POP_FRAME);
 }
 
-#ifdef Py_DEBUG
-static inline bool
-is_const(_Py_UOpsSymType *expr)
-{
-    return expr->const_val != NULL;
-}
-#endif
 
 static int
 clear_locals_type_info(_Py_UOpsAbstractInterpContext *ctx) {

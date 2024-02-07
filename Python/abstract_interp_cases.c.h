@@ -1643,7 +1643,6 @@
                 goto error;
             }
             value = sym_const;
-            assert(is_const(value));
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;
@@ -1657,7 +1656,6 @@
                 goto error;
             }
             value = sym_const;
-            assert(is_const(value));
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;
@@ -1672,7 +1670,6 @@
                 goto error;
             }
             value = sym_const;
-            assert(is_const(value));
             _Py_UOpsSymType *null_sym =  sym_init_null(ctx);
             if (null_sym == NULL) {
                 goto error;
@@ -1693,7 +1690,6 @@
                 goto error;
             }
             value = sym_const;
-            assert(is_const(value));
             _Py_UOpsSymType *null_sym =  sym_init_null(ctx);
             if (null_sym == NULL) {
                 goto error;

@@ -102,7 +102,6 @@ dummy_func(void) {
             goto error;
         }
         value = sym_const;
-        assert(is_const(value));
     }
 
     op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
@@ -111,7 +110,6 @@ dummy_func(void) {
             goto error;
         }
         value = sym_const;
-        assert(is_const(value));
     }
 
     op(_LOAD_CONST_INLINE_WITH_NULL, (ptr/4 -- value, null)) {
@@ -120,7 +118,6 @@ dummy_func(void) {
             goto error;
         }
         value = sym_const;
-        assert(is_const(value));
         _Py_UOpsSymType *null_sym =  sym_init_null(ctx);
         if (null_sym == NULL) {
             goto error;
@@ -134,7 +131,6 @@ dummy_func(void) {
             goto error;
         }
         value = sym_const;
-        assert(is_const(value));
         _Py_UOpsSymType *null_sym =  sym_init_null(ctx);
         if (null_sym == NULL) {
             goto error;
