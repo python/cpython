@@ -91,7 +91,9 @@ dummy_func(void) {
     }
 
     op(_LOAD_CONST, (-- value)) {
-        value = GETITEM(ctx, oparg);
+        // There should be no LOAD_CONST. It should be all
+        // replaced by peephole_opt.
+        Py_UNREACHABLE();
     }
 
     op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {

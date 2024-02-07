@@ -48,7 +48,9 @@
 
         case _LOAD_CONST: {
             _Py_UOpsSymType *value;
-            value = GETITEM(ctx, oparg);
+            // There should be no LOAD_CONST. It should be all
+            // replaced by peephole_opt.
+            Py_UNREACHABLE();
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;

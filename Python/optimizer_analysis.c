@@ -548,19 +548,6 @@ emit_i(uops_emitter *emitter,
     return 0;
 }
 
-
-
-#ifndef Py_DEBUG
-#define GETITEM(ctx, i) (_Py_UOpsSymType *)Py_UNREACHABLE();
-#else
-static inline _Py_UOpsSymType *
-GETITEM(_Py_UOpsAbstractInterpContext *ctx, Py_ssize_t i) {
-    // There should be no LOAD_CONST. It should be all
-    // replaced by peephole_opt.
-    Py_UNREACHABLE();
-}
-#endif
-
 static int
 uop_abstract_interpret_single_inst(
     _PyUOpInstruction *inst,
