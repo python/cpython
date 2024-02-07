@@ -65,15 +65,15 @@ struct _stoptheworld_state {
    specific optimizations. */
 typedef struct _rare_events {
     /* Setting an object's class, obj.__class__ = ... */
-    uint8_t set_class;
+    uint16_t set_class;
     /* Setting the bases of a class, cls.__bases__ = ... */
-    uint8_t set_bases;
+    uint16_t set_bases;
     /* Setting the PEP 523 frame eval function, _PyInterpreterState_SetFrameEvalFunc() */
-    uint8_t set_eval_frame_func;
+    uint16_t set_eval_frame_func;
     /* Modifying the builtins,  __builtins__.__dict__[var] = ... */
-    uint8_t builtin_dict;
+    uint16_t builtin_dict;
     /* Modifying a function, e.g. func.__defaults__ = ..., etc. */
-    uint8_t func_modification;
+    uint16_t func_modification;
 } _rare_events;
 
 /* interpreter state */
@@ -376,7 +376,7 @@ PyAPI_FUNC(PyStatus) _PyInterpreterState_New(
 #define RARE_EVENT_INTERP_INC(interp, name) \
     do { \
         /* saturating add */ \
-        if (interp->rare_events.name < UINT8_MAX) interp->rare_events.name++; \
+        if (interp->rare_events.name < UINT16_MAX) interp->rare_events.name++; \
         RARE_EVENT_STAT_INC(name); \
     } while (0); \
 
