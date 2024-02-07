@@ -54,7 +54,7 @@ _init_pystats(PyStats *stats){
     }
 
     // TODO get this from an environment variable?
-    int MAX_DEPTH = 4;
+    int MAX_DEPTH = 2;
     stats->optimization_stats.max_uop_chain_depth = MAX_DEPTH;
     stats->optimization_stats.last_opcodes = PyMem_RawCalloc(MAX_DEPTH, sizeof(uint64_t));
 }
@@ -344,6 +344,7 @@ void
 _Py_StatsOn(void)
 {
     _Py_stats = &_Py_stats_struct;
+    if (!_Py_stats->optimization_stats.opcode[0]) _init_pystats(_Py_stats);
 }
 
 void
