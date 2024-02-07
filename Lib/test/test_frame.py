@@ -72,7 +72,6 @@ class ClearTest(unittest.TestCase):
         except ZeroDivisionError as exc:
             support.gc_collect()
             self.assertIsNotNone(wr())
-            print(exc.__traceback__.tb_next.tb_frame.f_locals)
             exc.__traceback__.tb_next.tb_frame.clear()
             support.gc_collect()
             self.assertIsNone(wr())

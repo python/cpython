@@ -2195,12 +2195,15 @@ class Win32ErrorTests(unittest.TestCase):
 class TestInvalidFD(unittest.TestCase):
     singles = ["fchdir", "dup", "fdatasync", "fstat",
                "fstatvfs", "fsync", "tcgetpgrp", "ttyname"]
+    singles_fildes = {"fchdir", "fdatasync", "fsync"}
     #singles.append("close")
     #We omit close because it doesn't raise an exception on some platforms
     def get_single(f):
         def helper(self):
             if  hasattr(os, f):
                 self.check(getattr(os, f))
+                if f in self.singles_fildes:
+                    self.check_bool(getattr(os, f))
         return helper
     for f in singles:
         locals()["test_"+f] = get_single(f)
@@ -2214,8 +2217,16 @@ class TestInvalidFD(unittest.TestCase):
             self.fail("%r didn't raise an OSError with a bad file descriptor"
                       % f)
 
+    def check_bool(self, f, *args, **kwargs):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", RuntimeWarning)
+            for fd in False, True:
+                with self.assertRaises(RuntimeWarning):
+                    f(fd, *args, **kwargs)
+
     def test_fdopen(self):
         self.check(os.fdopen, encoding="utf-8")
+        self.check_bool(os.fdopen, encoding="utf-8")
 
     @unittest.skipUnless(hasattr(os, 'isatty'), 'test needs os.isatty()')
     def test_isatty(self):
@@ -2277,11 +2288,14 @@ class TestInvalidFD(unittest.TestCase):
     def test_fpathconf(self):
         self.check(os.pathconf, "PC_NAME_MAX")
         self.check(os.fpathconf, "PC_NAME_MAX")
+        self.check_bool(os.pathconf, "PC_NAME_MAX")
+        self.check_bool(os.fpathconf, "PC_NAME_MAX")
 
     @unittest.skipUnless(hasattr(os, 'ftruncate'), 'test needs os.ftruncate()')
     def test_ftruncate(self):
         self.check(os.truncate, 0)
         self.check(os.ftruncate, 0)
+        self.check_bool(os.truncate, 0)
 
     @unittest.skipUnless(hasattr(os, 'lseek'), 'test needs os.lseek()')
     def test_lseek(self):
@@ -3848,6 +3862,7 @@ class TermsizeTests(unittest.TestCase):
         self.assertGreaterEqual(size.columns, 0)
         self.assertGreaterEqual(size.lines, 0)
 
+    @support.requires_subprocess()
     def test_stty_match(self):
         """Check if stty returns the same results
 
@@ -4577,7 +4592,8 @@ class PseudoterminalTests(unittest.TestCase):
         self.addCleanup(os.close, son_fd)
         self.assertEqual(os.ptsname(mother_fd), os.ttyname(son_fd))
 
-    @unittest.skipUnless(hasattr(os, 'spawnl'), "need os.openpty()")
+    @unittest.skipUnless(hasattr(os, 'spawnl'), "need os.spawnl()")
+    @support.requires_subprocess()
     def test_pipe_spawnl(self):
         # gh-77046: On Windows, os.pipe() file descriptors must be created with
         # _O_NOINHERIT to make them non-inheritable. UCRT has no public API to
