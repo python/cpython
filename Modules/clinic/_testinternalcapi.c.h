@@ -266,38 +266,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_testinternalcapi_invalidate_executors__doc__,
-"invalidate_executors($module, dependency=<unrepresentable>, /)\n"
-"--\n"
-"\n");
-
-#define _TESTINTERNALCAPI_INVALIDATE_EXECUTORS_METHODDEF    \
-    {"invalidate_executors", _PyCFunction_CAST(_testinternalcapi_invalidate_executors), METH_FASTCALL, _testinternalcapi_invalidate_executors__doc__},
-
-static PyObject *
-_testinternalcapi_invalidate_executors_impl(PyObject *module,
-                                            PyObject *dependency);
-
-static PyObject *
-_testinternalcapi_invalidate_executors(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    PyObject *dependency = NULL;
-
-    if (!_PyArg_CheckPositional("invalidate_executors", nargs, 0, 1)) {
-        goto exit;
-    }
-    if (nargs < 1) {
-        goto skip_optional;
-    }
-    dependency = args[0];
-skip_optional:
-    return_value = _testinternalcapi_invalidate_executors_impl(module, dependency);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(_testinternalcapi_test_long_numbits__doc__,
 "test_long_numbits($module, /)\n"
 "--\n"
@@ -314,4 +282,4 @@ _testinternalcapi_test_long_numbits(PyObject *module, PyObject *Py_UNUSED(ignore
 {
     return _testinternalcapi_test_long_numbits_impl(module);
 }
-/*[clinic end generated code: output=c4949d6611a6c3a2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=679bf53bbae20085 input=a9049054013a1b77]*/

@@ -88,7 +88,7 @@ void _Py_BloomFilter_Init(_PyBloomFilter *);
 void _Py_BloomFilter_Add(_PyBloomFilter *bloom, void *obj);
 PyAPI_FUNC(void) _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj);
 PyAPI_FUNC(void) _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj);
-PyAPI_FUNC(void) _Py_Executors_InvalidateAll(PyInterpreterState *interp);
+extern void _Py_Executors_InvalidateAll(PyInterpreterState *interp);
 
 /* For testing */
 PyAPI_FUNC(PyObject *)PyUnstable_Optimizer_NewCounter(void);

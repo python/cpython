@@ -2137,14 +2137,7 @@ static PyObject *
 sys__clear_executors_impl(PyObject *module)
 /*[clinic end generated code: output=edab315b685eb29b input=073c8664b9ae8106]*/
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    for (PyCodeObject *code = interp->code_list_head; code; code = code->_co_list_next) {
-        if (code->co_executors != NULL) {
-            _PyCode_Clear_Executors(code);
-        }
-    }
-    // Anything left is currently running, and should exit quickly to tier one:
-    _Py_Executors_InvalidateAll(interp);
+    _Py_Executors_InvalidateAll(_PyInterpreterState_GET());
     Py_RETURN_NONE;
 }
 
