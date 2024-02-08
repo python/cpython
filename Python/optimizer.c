@@ -221,7 +221,6 @@ static PyMethodDef executor_methods[] = {
 
 ///////////////////// Experimental UOp Optimizer /////////////////////
 
-
 static void
 uop_dealloc(_PyExecutorObject *self) {
     _Py_ExecutorClear(self);
