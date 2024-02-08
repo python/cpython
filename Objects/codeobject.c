@@ -1486,17 +1486,23 @@ PyCode_GetFreevars(PyCodeObject *code)
     return _PyCode_GetFreevars(code);
 }
 
+static void
+clear_executors(PyCodeObject *co)
+{
+    assert(co->co_executors);
+    for (int i = 0; i < co->co_executors->size; i++) {
+        if (co->co_executors->executors[i]) {
+            _Py_ExecutorClear(co->co_executors->executors[i]);
+        }
+    }
+    PyMem_Free(co->co_executors);
+    co->co_executors = NULL;
+}
+
 void
 _PyCode_Clear_Executors(PyCodeObject *code)
 {
-    assert(code->co_executors);
-    for (int i = 0; i < code->co_executors->size; i++) {
-        if (code->co_executors->executors[i]) {
-            _Py_ExecutorClear(code->co_executors->executors[i]);
-        }
-    }
-    PyMem_Free(code->co_executors);
-    code->co_executors = NULL;
+    clear_executors(code);
 }
 
 static void
@@ -1719,7 +1725,7 @@ code_dealloc(PyCodeObject *co)
         PyMem_Free(co_extra);
     }
     if (co->co_executors != NULL) {
-        _PyCode_Clear_Executors(co);
+        clear_executors(co);
     }
 
     Py_XDECREF(co->co_consts);
@@ -2347,7 +2353,7 @@ void
 _PyStaticCode_Fini(PyCodeObject *co)
 {
     if (co->co_executors != NULL) {
-        _PyCode_Clear_Executors(co);
+        clear_executors(co);
     }
     deopt_code(co, _PyCode_CODE(co));
     PyMem_Free(co->co_extra);
