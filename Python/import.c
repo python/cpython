@@ -619,9 +619,9 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
 
     (6). first time  (not found in _PyRuntime.imports.extensions):
        1.  _imp_create_dynamic_impl() -> import_find_extension()
-       2.  _imp_create_dynamic_impl() -> _PyImport_LoadDynamicModuleWithSpec()
-       3.    _PyImport_LoadDynamicModuleWithSpec():  load <module init func>
-       4.    _PyImport_LoadDynamicModuleWithSpec():  call <module init func>
+       2.  _imp_create_dynamic_impl() -> _PyImport_RunDynamicModule()
+       3.    _PyImport_RunDynamicModule():  load <module init func>
+       4.    _PyImport_RunDynamicModule():  call <module init func>
        5.      <module init func> -> PyModule_Create() -> PyModule_Create2() -> PyModule_CreateInitialized()
        6.        PyModule_CreateInitialized() -> PyModule_New()
        7.        PyModule_CreateInitialized():  allocate mod->md_state
@@ -629,13 +629,13 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
        9.        PyModule_CreateInitialized() -> PyModule_SetDocString()
        10.       PyModule_CreateInitialized():  set mod->md_def
        11.     <module init func>:  initialize the module
-       12.   _PyImport_LoadDynamicModuleWithSpec() -> _PyImport_CheckSubinterpIncompatibleExtensionAllowed()
-       13.   _PyImport_LoadDynamicModuleWithSpec():  set def->m_base.m_init
-       14.   _PyImport_LoadDynamicModuleWithSpec():  set __file__
-       15.   _PyImport_LoadDynamicModuleWithSpec() -> _PyImport_FixupExtensionObject()
-       16.     _PyImport_FixupExtensionObject():  add it to interp->imports.modules_by_index
-       17.     _PyImport_FixupExtensionObject():  copy __dict__ into def->m_base.m_copy
-       18.     _PyImport_FixupExtensionObject():  add it to _PyRuntime.imports.extensions
+       12.   _PyImport_RunDynamicModule():  set def->m_base.m_init
+       13.   _PyImport_RunDynamicModule():  set __file__
+       14. _imp_create_dynamic_impl() -> _PyImport_CheckSubinterpIncompatibleExtensionAllowed()
+       15. _imp_create_dynamic_impl() -> _PyImport_FixupExtensionObject()
+       16.   _PyImport_FixupExtensionObject():  add it to interp->imports.modules_by_index
+       17.   _PyImport_FixupExtensionObject():  copy __dict__ into def->m_base.m_copy
+       18.   _PyImport_FixupExtensionObject():  add it to _PyRuntime.imports.extensions
 
     (6). subsequent times  (found in _PyRuntime.imports.extensions):
        1. _imp_create_dynamic_impl() -> import_find_extension()
@@ -658,7 +658,7 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
 
     (6). main interpreter - first time  (not found in _PyRuntime.imports.extensions):
        1-16. (same as for m_size == -1)
-       17.     _PyImport_FixupExtensionObject():  add it to _PyRuntime.imports.extensions
+       17.   _PyImport_FixupExtensionObject():  add it to _PyRuntime.imports.extensions
 
     (6). previously loaded in main interpreter  (found in _PyRuntime.imports.extensions):
        1. _imp_create_dynamic_impl() -> import_find_extension()
@@ -673,18 +673,18 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
 
     (6). every time:
        1.  _imp_create_dynamic_impl() -> import_find_extension()  (not found)
-       2.  _imp_create_dynamic_impl() -> _PyImport_LoadDynamicModuleWithSpec()
-       3.    _PyImport_LoadDynamicModuleWithSpec():  load module init func
-       4.    _PyImport_LoadDynamicModuleWithSpec():  call module init func
-       5.    _PyImport_LoadDynamicModuleWithSpec() -> PyModule_FromDefAndSpec()
-       6.      PyModule_FromDefAndSpec(): gather/check moduledef slots
-       7.      if there's a Py_mod_create slot:
-                 1. PyModule_FromDefAndSpec():  call its function
-       8.      else:
-                 1. PyModule_FromDefAndSpec() -> PyModule_NewObject()
-       9:      PyModule_FromDefAndSpec():  set mod->md_def
-       10.     PyModule_FromDefAndSpec() -> _add_methods_to_object()
-       11.     PyModule_FromDefAndSpec() -> PyModule_SetDocString()
+       2.  _imp_create_dynamic_impl() -> _PyImport_RunDynamicModule()
+       3.    _PyImport_RunDynamicModule():  load module init func
+       4.    _PyImport_RunDynamicModule():  call module init func
+       5.  _imp_create_dynamic_impl() -> PyModule_FromDefAndSpec()
+       6.    PyModule_FromDefAndSpec(): gather/check moduledef slots
+       7.    if there's a Py_mod_create slot:
+               1. PyModule_FromDefAndSpec():  call its function
+       8.    else:
+               1. PyModule_FromDefAndSpec() -> PyModule_NewObject()
+       9:    PyModule_FromDefAndSpec():  set mod->md_def
+       10.   PyModule_FromDefAndSpec() -> _add_methods_to_object()
+       11.   PyModule_FromDefAndSpec() -> PyModule_SetDocString()
 
     (10). every time:
        1. _imp_exec_dynamic_impl() -> exec_builtin_or_dynamic()
@@ -3717,44 +3717,66 @@ static PyObject *
 _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
 /*[clinic end generated code: output=83249b827a4fde77 input=c31b954f4cf4e09d]*/
 {
-    PyObject *mod, *name, *path;
+    PyObject *mod = NULL;
     FILE *fp;
+    struct _Py_ext_module_loader_info info;
+    struct _Py_ext_module_loader_result res;
 
-    name = PyObject_GetAttrString(spec, "name");
-    if (name == NULL) {
-        return NULL;
-    }
-
-    path = PyObject_GetAttrString(spec, "origin");
-    if (path == NULL) {
-        Py_DECREF(name);
+    if (_Py_ext_module_loader_info_from_spec(spec, &info) < 0) {
         return NULL;
     }
 
     PyThreadState *tstate = _PyThreadState_GET();
-    mod = import_find_extension(tstate, name, path);
+    mod = import_find_extension(tstate, info.name, info.path);
     if (mod != NULL || _PyErr_Occurred(tstate)) {
         assert(mod == NULL || !_PyErr_Occurred(tstate));
         goto finally;
     }
 
+    /* Is multi-phase init or this is the first time being loaded. */
+
     if (file != NULL) {
-        fp = _Py_fopen_obj(path, "r");
+        fp = _Py_fopen_obj(info.path, "r");
         if (fp == NULL) {
             goto finally;
         }
     }
-    else
+    else {
         fp = NULL;
+    }
 
-    mod = _PyImport_LoadDynamicModuleWithSpec(spec, fp);
+    if (_PyImport_RunDynamicModule(&info, fp, &res) < 0) {
+        goto finally;
+    }
+    mod = res.module;
 
-    if (fp)
+    if (mod == NULL) {
+        /* multi-phase init */
+
+        mod = PyModule_FromDefAndSpec(res.def, spec);
+    }
+    else {
+        /* Fall back to single-phase init mechanism */
+
+        const char *name_buf = PyBytes_AS_STRING(info.name_encoded);
+        if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
+            Py_CLEAR(mod);
+            goto finally;
+        }
+
+        PyObject *modules = PyImport_GetModuleDict();
+        if (_PyImport_FixupExtensionObject(mod, info.name, info.path, modules) < 0) {
+            Py_CLEAR(mod);
+            goto finally;
+        }
+    }
+
+    if (fp) {
         fclose(fp);
+    }
 
 finally:
-    Py_DECREF(name);
-    Py_DECREF(path);
+    _Py_ext_module_loader_info_clear(&info);
     return mod;
 }
 
