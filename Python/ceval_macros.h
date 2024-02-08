@@ -382,15 +382,17 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
 
 /* There's no STORE_IP(), it's inlined by the code generator. */
 
-#define STORE_SP() \
-_PyFrame_SetStackPointer(frame, stack_pointer)
-
 #define LOAD_SP() \
 stack_pointer = _PyFrame_GetStackPointer(frame);
 
 /* Tier-switching macros. */
 
-#define GOTO_TIER_TWO(EXECUTOR) next_uop = (EXECUTOR)->trace; goto enter_tier_two;
+#define GOTO_TIER_TWO(EXECUTOR) \
+do { \
+    next_uop = (EXECUTOR)->trace; \
+    assert(next_uop->opcode == _START_EXECUTOR || next_uop->opcode == _COLD_EXIT); \
+    goto enter_tier_two; \
+} while (0)
 
 #define CURRENT_OPARG() (next_uop[-1].oparg)
 
