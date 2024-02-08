@@ -2337,10 +2337,9 @@ dummy_func(
                 int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer, &executor);
                 ERROR_IF(optimized < 0, error);
                 if (optimized) {
-                    assert(current_executor == NULL);
-                    current_executor = (_PyExecutorObject *)&Py_NeverExecutedExecutor;
-                    next_uop = executor->trace;
-                    GOTO_TIER_TWO();
+                    assert(tstate->previous_executor == NULL);
+                    tstate->previous_executor = Py_None;
+                    GOTO_TIER_TWO(executor);
                 }
                 else {
                     int backoff = this_instr[1].cache & ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
@@ -2373,11 +2372,10 @@ dummy_func(
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
             if (executor->vm_data.valid) {
-                assert(current_executor == NULL);
-                current_executor = (_PyExecutorObject *)&Py_NeverExecutedExecutor;
+                assert(tstate->previous_executor == NULL);
+                tstate->previous_executor = Py_None;
                 Py_INCREF(executor);
-                next_uop = executor->trace;
-                GOTO_TIER_TWO();
+                GOTO_TIER_TWO(executor);
             }
             else {
                 /* ENTER_EXECUTOR will be the first code unit of the instruction */
@@ -4085,16 +4083,17 @@ dummy_func(
 
         op(_COLD_EXIT, (--)) {
             TIER_TWO_ONLY
-            assert(current_executor->trace[0].opcode != _COLD_EXIT);
-            _PyExitData *exit = &current_executor->exits[oparg];
+            _PyExecutorObject *previous = (_PyExecutorObject *)tstate->previous_executor;
+            assert(previous->trace[0].opcode != _COLD_EXIT);
+            _PyExitData *exit = &previous->exits[oparg];
             exit->temperature++;
             assert(exit->executor->trace[0].opcode == _COLD_EXIT);
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
             if (exit->temperature < 0) {
                 next_instr = target;
-                Py_DECREF(current_executor);
-                current_executor = NULL;
+                Py_DECREF(previous);
+                tstate->previous_executor = NULL;
                 DISPATCH();
             }
             _PyExecutorObject *executor;
@@ -4105,8 +4104,8 @@ dummy_func(
                 int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor);
                 if (optimized <= 0) {
                     exit->temperature = -10000; /* Choose a better number */
-                    Py_DECREF(current_executor);
-                    current_executor = NULL;
+                    Py_DECREF(previous);
+                    tstate->previous_executor = NULL;
                     next_instr = target;
                     ERROR_IF(optimized < 0, error);
                     DISPATCH();
@@ -4114,15 +4113,16 @@ dummy_func(
             }
             Py_INCREF(executor);
             exit->executor = executor;
-            next_uop = executor->trace;
-            GOTO_TIER_TWO();
+            GOTO_TIER_TWO(executor);
         }
 
         op(_START_EXECUTOR, (executor/4 --)) {
             TIER_TWO_ONLY
-            _PyExecutorObject *old = current_executor;
+            Py_DECREF(tstate->previous_executor);
+            tstate->previous_executor = NULL;
+#ifndef JIT
             current_executor = (_PyExecutorObject*)executor;
-            Py_DECREF(old);
+#endif
         }
 
         op(_FATAL_ERROR, (--)) {

@@ -2380,11 +2380,10 @@
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
             if (executor->vm_data.valid) {
-                assert(current_executor == NULL);
-                current_executor = (_PyExecutorObject *)&Py_NeverExecutedExecutor;
+                assert(tstate->previous_executor == NULL);
+                tstate->previous_executor = Py_None;
                 Py_INCREF(executor);
-                next_uop = executor->trace;
-                GOTO_TIER_TWO();
+                GOTO_TIER_TWO(executor);
             }
             else {
                 /* ENTER_EXECUTOR will be the first code unit of the instruction */
@@ -3305,10 +3304,9 @@
                 int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer, &executor);
                 if (optimized < 0) goto error;
                 if (optimized) {
-                    assert(current_executor == NULL);
-                    current_executor = (_PyExecutorObject *)&Py_NeverExecutedExecutor;
-                    next_uop = executor->trace;
-                    GOTO_TIER_TWO();
+                    assert(tstate->previous_executor == NULL);
+                    tstate->previous_executor = Py_None;
+                    GOTO_TIER_TWO(executor);
                 }
                 else {
                     int backoff = this_instr[1].cache & ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);

@@ -3409,16 +3409,17 @@
         case _COLD_EXIT: {
             oparg = CURRENT_OPARG();
             TIER_TWO_ONLY
-            assert(current_executor->trace[0].opcode != _COLD_EXIT);
-            _PyExitData *exit = &current_executor->exits[oparg];
+            _PyExecutorObject *previous = (_PyExecutorObject *)tstate->previous_executor;
+            assert(previous->trace[0].opcode != _COLD_EXIT);
+            _PyExitData *exit = &previous->exits[oparg];
             exit->temperature++;
             assert(exit->executor->trace[0].opcode == _COLD_EXIT);
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
             if (exit->temperature < 0) {
                 next_instr = target;
-                Py_DECREF(current_executor);
-                current_executor = NULL;
+                Py_DECREF(previous);
+                tstate->previous_executor = NULL;
                 DISPATCH();
             }
             _PyExecutorObject *executor;
@@ -3429,8 +3430,8 @@
                 int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor);
                 if (optimized <= 0) {
                     exit->temperature = -10000; /* Choose a better number */
-                    Py_DECREF(current_executor);
-                    current_executor = NULL;
+                    Py_DECREF(previous);
+                    tstate->previous_executor = NULL;
                     next_instr = target;
                     if (optimized < 0) goto error_tier_two;
                     DISPATCH();
@@ -3438,17 +3439,18 @@
             }
             Py_INCREF(executor);
             exit->executor = executor;
-            next_uop = executor->trace;
-            GOTO_TIER_TWO();
+            GOTO_TIER_TWO(executor);
             break;
         }
 
         case _START_EXECUTOR: {
             PyObject *executor = (PyObject *)CURRENT_OPERAND();
             TIER_TWO_ONLY
-            _PyExecutorObject *old = current_executor;
+            Py_DECREF(tstate->previous_executor);
+            tstate->previous_executor = NULL;
+            #ifndef JIT
             current_executor = (_PyExecutorObject*)executor;
-            Py_DECREF(old);
+            #endif
             break;
         }
 

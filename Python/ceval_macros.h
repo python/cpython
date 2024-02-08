@@ -390,7 +390,7 @@ stack_pointer = _PyFrame_GetStackPointer(frame);
 
 /* Tier-switching macros. */
 
-#define GOTO_TIER_TWO() goto enter_tier_two;
+#define GOTO_TIER_TWO(EXECUTOR) next_uop = (EXECUTOR)->trace; goto enter_tier_two;
 
 #define CURRENT_OPARG() (next_uop[-1].oparg)
 

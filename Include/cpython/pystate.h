@@ -212,6 +212,8 @@ struct _ts {
     /* The thread's exception stack entry.  (Always the last entry.) */
     _PyErr_StackItem exc_state;
 
+    PyObject *previous_executor;
+
 };
 
 #ifdef Py_DEBUG

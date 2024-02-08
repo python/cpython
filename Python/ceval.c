@@ -15,6 +15,7 @@
 #include "pycore_moduleobject.h"  // PyModuleObject
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_opcode_metadata.h" // EXTRA_CASES
+#include "pycore_optimizer.h"     // _PyUOpExecutor_Type
 #include "pycore_opcode_utils.h"  // MAKE_FUNCTION_*
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
@@ -1060,7 +1061,7 @@ error_tier_two:
     frame->return_offset = 0;  // Don't leave this random
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(current_executor);
-    current_executor = NULL;
+    tstate->previous_executor = NULL;
     goto resume_with_error;
 
 // Jump here from DEOPT_IF()
@@ -1072,7 +1073,7 @@ deoptimize:
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     UOP_STAT_INC(uopcode, miss);
     Py_DECREF(current_executor);
-    current_executor = NULL;
+    tstate->previous_executor = NULL;
     DISPATCH();
 
 // Jump here from EXIT_IF()
@@ -1085,8 +1086,8 @@ side_exit:
             uopcode, _PyUOpName(uopcode), next_uop[-1].oparg, next_uop[-1].operand, exit_index, exit->temperature, exit->target,
             _PyOpcode_OpName[_PyCode_CODE(_PyFrame_GetCode(frame))[exit->target].op.code]);
     Py_INCREF(exit->executor);
-    next_uop = exit->executor->trace;
-    GOTO_TIER_TWO();
+    tstate->previous_executor = (PyObject *)current_executor;
+    GOTO_TIER_TWO(exit->executor);
 
 }
 
