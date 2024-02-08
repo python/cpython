@@ -5,15 +5,6 @@
 Operating System Utilities
 ==========================
 
-.. c:type::  PyOS_sighandler_t
-
-   ``PyOS_sighandler_t`` is a typedef alias for :c:expr:`void (\*)(int)`.
-
-
-.. c:type::  Py_AuditHookFunction
-
-   ``Py_AuditHookFunction`` is a typedef alias for :c:expr:`int(\*) (const char \*, PyObject \*, void \*)`.
-
 
 .. c:function:: PyObject* PyOS_FSPath(PyObject *path)
 
@@ -114,6 +105,9 @@ Operating System Utilities
    on certain versions of Windows using the Microsoft Visual C++ compiler).
    :c:macro:`!USE_STACKCHECK` will be defined automatically; you should never
    change the definition in your own code.
+
+
+.. c:type::  void (*PyOS_sighandler_t)(int)
 
 
 .. c:function:: PyOS_sighandler_t PyOS_getsig(int i)
@@ -361,6 +355,8 @@ accessible to C code.  They all work with the current interpreter thread's
    runtime and standard library that raise events are listed in the
    :ref:`audit events table <audit-events>`.
    Details are in each function's documentation.
+
+   .. c:type:: int (*Py_AuditHookFunction) (const char *, PyObject *, void *)
 
    .. audit-event:: sys.addaudithook "" c.PySys_AddAuditHook
 
