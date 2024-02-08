@@ -5,6 +5,16 @@
 Operating System Utilities
 ==========================
 
+.. c:type::  PyOS_sighandler_t
+
+   ``PyOS_sighandler_t`` is a typedef alias for :c:expr:`void (\*)(int)`.
+
+
+.. c:type::  Py_AuditHookFunction
+
+   ``Py_AuditHookFunction`` is a typedef alias for :c:expr:`int(\*) (const char \*, PyObject \*, void \*)`.
+
+
 .. c:function:: PyObject* PyOS_FSPath(PyObject *path)
 
    Return the file system representation for *path*. If the object is a
@@ -97,6 +107,8 @@ Operating System Utilities
 
 .. c:function:: int PyOS_CheckStack()
 
+   .. index:: single: USE_STACKCHECK (C macro)
+
    Return true when the interpreter runs out of stack space.  This is a reliable
    check, but is only available when :c:macro:`!USE_STACKCHECK` is defined (currently
    on certain versions of Windows using the Microsoft Visual C++ compiler).
@@ -108,16 +120,14 @@ Operating System Utilities
 
    Return the current signal handler for signal *i*.  This is a thin wrapper around
    either :c:func:`!sigaction` or :c:func:`!signal`.  Do not call those functions
-   directly! :c:type:`PyOS_sighandler_t` is a typedef alias for :c:expr:`void
-   (\*)(int)`.
+   directly!
 
 
 .. c:function:: PyOS_sighandler_t PyOS_setsig(int i, PyOS_sighandler_t h)
 
    Set the signal handler for signal *i* to be *h*; return the old signal handler.
    This is a thin wrapper around either :c:func:`!sigaction` or :c:func:`!signal`.  Do
-   not call those functions directly!  :c:type:`PyOS_sighandler_t` is a typedef
-   alias for :c:expr:`void (\*)(int)`.
+   not call those functions directly!
 
 .. c:function:: wchar_t* Py_DecodeLocale(const char* arg, size_t *size)
 
