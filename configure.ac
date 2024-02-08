@@ -634,15 +634,6 @@ if test "$cross_compiling" = yes; then
 	*-*-cygwin*)
 		_host_ident=
 		;;
-	*-apple-darwin*)
-		case "$host_cpu" in
-		arm*)
-			_host_ident=arm
-			;;
-		*)
-			_host_ident=$host_cpu
-		esac
-		;;
 	*-*-vxworks*)
 		_host_ident=$host_cpu
 		;;
