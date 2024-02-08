@@ -2485,10 +2485,21 @@ _PyEval_GetFrameLocals(void)
         if (hidden == NULL) {
             return NULL;
         }
-        if (PyDict_Update(locals, hidden)) {
-            Py_DECREF(locals);
+        assert(PyDict_Check(hidden));
+        if (PyDict_Size(hidden) > 0) {
+            PyObject* ret = PyDict_New();
+            if (PyDict_Update(ret, locals)) {
+                Py_DECREF(ret);
+                Py_DECREF(hidden);
+                return NULL;
+            }
+            if (PyDict_Update(ret, hidden)) {
+                Py_DECREF(ret);
+                Py_DECREF(hidden);
+                return NULL;
+            }
             Py_DECREF(hidden);
-            return NULL;
+            return ret;
         }
         return locals;
     }
