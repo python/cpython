@@ -1081,7 +1081,7 @@ _fits_in_n_bits(Py_ssize_t v, Py_ssize_t n)
 }
 
 static inline int
-resolve_endianness(int *endianness)
+_resolve_endianness(int *endianness)
 {
     if (*endianness < 0) {
         *endianness = PY_LITTLE_ENDIAN;
@@ -1115,7 +1115,7 @@ PyLong_AsNativeBytes(PyObject* vv, void* buffer, size_t n, int endianness)
     }
 
     int little_endian = endianness;
-    if (resolve_endianness(&little_endian) < 0) {
+    if (_resolve_endianness(&little_endian) < 0) {
         return -1;
     }
 
@@ -1235,7 +1235,7 @@ PyLong_FromNativeBytes(const void* buffer, size_t n, int endianness)
     }
 
     int little_endian = endianness;
-    if (resolve_endianness(&little_endian) < 0) {
+    if (_resolve_endianness(&little_endian) < 0) {
         return NULL;
     }
 
@@ -1253,7 +1253,7 @@ PyLong_FromUnsignedNativeBytes(const void* buffer, size_t n, int endianness)
     }
 
     int little_endian = endianness;
-    if (resolve_endianness(&little_endian) < 0) {
+    if (_resolve_endianness(&little_endian) < 0) {
         return NULL;
     }
 
