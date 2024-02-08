@@ -1492,7 +1492,7 @@ _PyCode_Clear_Executors(PyCodeObject *code)
     assert(code->co_executors);
     for (int i = 0; i < code->co_executors->size; i++) {
         if (code->co_executors->executors[i]) {
-            _PyExecutor_Remove(code->co_executors->executors[i]);
+            _Py_ExecutorClear(code->co_executors->executors[i]);
         }
     }
     PyMem_Free(code->co_executors);
