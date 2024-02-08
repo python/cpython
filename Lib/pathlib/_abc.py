@@ -96,11 +96,11 @@ def _select_recursive(parent_paths, dir_only, follow_symlinks, match):
         follow_symlinks = False
     for parent_path in parent_paths:
         if match is not None:
-            prefix_len = len(str(parent_path._make_child_relpath('_'))) - 1
+            parent_len = len(str(parent_path._make_child_relpath('_'))) - 1
         paths = [parent_path._make_child_relpath('')]
         while paths:
             path = paths.pop()
-            if match is None or match(str(path), prefix_len):
+            if match is None or match(str(path), parent_len):
                 yield path
             try:
                 # We must close the scandir() object before proceeding to
@@ -118,7 +118,7 @@ def _select_recursive(parent_paths, dir_only, follow_symlinks, match):
                     except OSError:
                         pass
                     if not dir_only:
-                        if match is None or match(path._entry_str(entry), prefix_len):
+                        if match is None or match(path._entry_str(entry), parent_len):
                             yield path._make_child_entry(entry)
 
 
