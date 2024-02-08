@@ -334,7 +334,7 @@ PyDoc_STRVAR(set_issuperset__doc__,
     {"issuperset", (PyCFunction)set_issuperset, METH_O, set_issuperset__doc__},
 
 PyDoc_STRVAR(set_add__doc__,
-"add($self, key, /)\n"
+"add($self, object, /)\n"
 "--\n"
 "\n"
 "Add an element to a set.\n"
@@ -345,7 +345,7 @@ PyDoc_STRVAR(set_add__doc__,
     {"add", (PyCFunction)set_add, METH_O, set_add__doc__},
 
 PyDoc_STRVAR(set___contains____doc__,
-"__contains__($self, key, /)\n"
+"__contains__($self, object, /)\n"
 "--\n"
 "\n"
 "x.__contains__(y) <==> y in x.");
@@ -354,7 +354,7 @@ PyDoc_STRVAR(set___contains____doc__,
     {"__contains__", (PyCFunction)set___contains__, METH_O|METH_COEXIST, set___contains____doc__},
 
 PyDoc_STRVAR(set_remove__doc__,
-"remove($self, key, /)\n"
+"remove($self, object, /)\n"
 "--\n"
 "\n"
 "Remove an element from a set; it must be a member.\n"
@@ -365,7 +365,7 @@ PyDoc_STRVAR(set_remove__doc__,
     {"remove", (PyCFunction)set_remove, METH_O, set_remove__doc__},
 
 PyDoc_STRVAR(set_discard__doc__,
-"discard($self, key, /)\n"
+"discard($self, object, /)\n"
 "--\n"
 "\n"
 "Remove an element from a set if it is a member.\n"
@@ -410,4 +410,4 @@ set___sizeof__(PySetObject *so, PyObject *Py_UNUSED(ignored))
 {
     return set___sizeof___impl(so);
 }
-/*[clinic end generated code: output=596eac0cb2d68c8b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=be9624a2053d5a76 input=a9049054013a1b77]*/

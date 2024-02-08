@@ -1970,7 +1970,7 @@ set_richcompare(PySetObject *v, PyObject *w, int op)
 /*[clinic input]
 set.add
     so: setobject
-    key: object
+    object as key: object
     /
 
 Add an element to a set.
@@ -1980,7 +1980,7 @@ This has no effect if the element is already present.
 
 static PyObject *
 set_add(PySetObject *so, PyObject *key)
-/*[clinic end generated code: output=cd9c2d5c2069c2ba input=fc19e5024a02a819]*/
+/*[clinic end generated code: output=cd9c2d5c2069c2ba input=96f1efe029e47972]*/
 {
     if (set_add_key(so, key))
         return NULL;
@@ -2011,7 +2011,7 @@ set_contains(PySetObject *so, PyObject *key)
 @coexist
 set.__contains__
     so: setobject
-    key: object
+    object as key: object
     /
 
 x.__contains__(y) <==> y in x.
@@ -2019,7 +2019,7 @@ x.__contains__(y) <==> y in x.
 
 static PyObject *
 set___contains__(PySetObject *so, PyObject *key)
-/*[clinic end generated code: output=b5948bc5c590d3ca input=95c79b822b6e6823]*/
+/*[clinic end generated code: output=b5948bc5c590d3ca input=cf4c72db704e4cf0]*/
 {
     long result;
 
@@ -2032,7 +2032,7 @@ set___contains__(PySetObject *so, PyObject *key)
 /*[clinic input]
 set.remove
     so: setobject
-    key: object
+    object as key: object
     /
 
 Remove an element from a set; it must be a member.
@@ -2042,7 +2042,7 @@ If the element is not a member, raise a KeyError.
 
 static PyObject *
 set_remove(PySetObject *so, PyObject *key)
-/*[clinic end generated code: output=08ae496d0cd2b8c1 input=a792bc2b76d2d98d]*/
+/*[clinic end generated code: output=08ae496d0cd2b8c1 input=10132515dfe8ebd7]*/
 {
     PyObject *tmpkey;
     int rv;
@@ -2071,7 +2071,7 @@ set_remove(PySetObject *so, PyObject *key)
 /*[clinic input]
 set.discard
     so: setobject
-    key: object
+    object as key: object
     /
 
 Remove an element from a set if it is a member.
@@ -2082,7 +2082,7 @@ an exception when an element is missing from the set.
 
 static PyObject *
 set_discard(PySetObject *so, PyObject *key)
-/*[clinic end generated code: output=9181b60d7bb7d480 input=e05529cea3b4b295]*/
+/*[clinic end generated code: output=9181b60d7bb7d480 input=82a689eba94d5ad9]*/
 {
     PyObject *tmpkey;
     int rv;
