@@ -2553,10 +2553,7 @@
                 STAT_INC(FOR_ITER, hit);
                 PyListObject *seq = it->it_seq;
                 if (seq == NULL || it->it_index >= PyList_GET_SIZE(seq)) {
-                    if (seq != NULL) {
-                        it->it_seq = NULL;
-                        Py_DECREF(seq);
-                    }
+                    it->it_index = -1;
                     Py_DECREF(iter);
                     STACK_SHRINK(1);
                     /* Jump forward oparg, then skip following END_FOR and POP_TOP instructions */
