@@ -2112,7 +2112,7 @@ Return state information for pickling.
 
 static PyObject *
 set___reduce___impl(PySetObject *so)
-/*[clinic end generated code: output=9af7d0e029df87ee input=afaa92e0850f63f9]*/
+/*[clinic end generated code: output=9af7d0e029df87ee input=531375e87a24a449]*/
 {
     PyObject *keys=NULL, *args=NULL, *result=NULL, *state=NULL;
 

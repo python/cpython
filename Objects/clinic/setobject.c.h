@@ -379,7 +379,8 @@ PyDoc_STRVAR(set_discard__doc__,
 PyDoc_STRVAR(set___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
-"\n");
+"\n"
+"Return state information for pickling.");
 
 #define SET___REDUCE___METHODDEF    \
     {"__reduce__", (PyCFunction)set___reduce__, METH_NOARGS, set___reduce____doc__},
@@ -410,4 +411,4 @@ set___sizeof__(PySetObject *so, PyObject *Py_UNUSED(ignored))
 {
     return set___sizeof___impl(so);
 }
-/*[clinic end generated code: output=be9624a2053d5a76 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=34a30591148da884 input=a9049054013a1b77]*/
