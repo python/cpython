@@ -43,7 +43,7 @@ PyStats *_Py_stats = NULL;
         Py_DECREF(val); \
     } while(0);
 
-void 
+void
 _init_pystats(){
     //Make UOpstats structs for all initial opcodes, with null pointers to deeper opcodes
     for (int i = 0; i < 512; i++){
@@ -56,16 +56,16 @@ _init_pystats(){
 
     int previous_depth = _Py_stats_struct.optimization_stats.max_uop_chain_depth;
     int depth =  previous_depth ? previous_depth : 2;
-    
+
     if (_Py_stats_struct.optimization_stats.last_opcodes){
         uint64_t *tmp;
         tmp = PyMem_RawRealloc(depth, sizeof(uint64_t));
         if (tmp != NULL) _Py_stats_struct.optimization_stats.last_opcodes = tmp;
-        else return PyErr_NoMemory(); 
-    } 
+        else return PyErr_NoMemory();
+    }
     else {
         _Py_stats_struct.optimization_stats.last_opcodes = PyMem_RawCalloc(depth, sizeof(uint64_t));
-    }    
+    }
 }
 
 static PyObject*
@@ -266,7 +266,7 @@ print_uop_sequence(FILE *out, UOpStats *uop_stats, const char* prefix){
                 print_uop_sequence(out, uop_stats->next_stats[i], new_prefix);
             }
         }
-    }  
+    }
 }
 
 static void
@@ -353,7 +353,7 @@ _Py_StatsOn(void)
     if (!_Py_stats->optimization_stats.opcode[0]) _init_pystats();
 }
 
-void 
+void
 _Py_Stats_Set_Depth(int depth){
      _Py_stats_struct.optimization_stats.max_uop_chain_depth = depth;
      if (_Py_stats){

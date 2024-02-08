@@ -2216,14 +2216,14 @@ config_read(PyConfig *config, int compute_path_config)
         int uop_depth = atoi(config_get_env(config, "PYTHONSTATS_UOPDEPTH"));
         config->_pystats_depth = uop_depth;
         if (config->_pystats_depth < 2){
-            printf("Setting default stats depth to 2"); config->_pystats_depth = 2; 
+            printf("Setting default stats depth to 2"); config->_pystats_depth = 2;
         }
     }
     else {
         config->_pystats_depth = 2;
     }
 
-    
+
 #endif
 
     status = config_read_complex_options(config);
@@ -2366,8 +2366,8 @@ _PyConfig_Write(const PyConfig *config, _PyRuntimeState *runtime)
         if (config->_pystats_depth){
             _Py_Stats_Set_Depth(config->_pystats_depth);
         }
-        _Py_StatsOn();        
-        
+        _Py_StatsOn();
+
     }
 #endif
 
