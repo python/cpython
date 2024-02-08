@@ -868,7 +868,6 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         pure op(OP, (arg1 -- out)) {
             spam();
         }
-        
         op(OP2, (arg1 -- out)) {
             eggs();
         }
@@ -903,14 +902,13 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         pure op(OP, (arg1 -- out)) {
             spam();
         }
-        
+
         pure op(OP2, (arg1 -- out)) {
         }
-        
+
         """
         input2 = """
         pure op(OP2, (arg1 -- out)) {
-        
         }
         """
         output = """
@@ -928,7 +926,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
             arg1 = stack_pointer[-1];
             stack_pointer[-1] = out;
             break;
-        }        
+        }
         """
         self.run_cases_test(input, input2, output)
 
