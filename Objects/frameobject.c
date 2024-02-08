@@ -13,9 +13,6 @@
 #include "pycore_frame.h"
 #include "opcode.h"               // EXTENDED_ARG
 
-static int
-_PyFrame_OpAlreadyRan(_PyInterpreterFrame *frame, int opcode, int oparg);
-
 #define OFF(x) offsetof(PyFrameObject, x)
 
 
@@ -71,7 +68,7 @@ PyObject* framelocalsproxy_keys(PyObject* self, PyObject* __unused)
     Py_ssize_t i = 0;
     PyObject* key = NULL;
     PyObject* value = NULL;
-    
+
     if (frame->f_extra_locals) {
         assert(PyDict_Check(frame->f_extra_locals));
         while (PyDict_Next(frame->f_extra_locals, &i, &key, &value)) {
@@ -225,13 +222,9 @@ int framelocalsproxy_setitem(PyObject* self, PyObject* key, PyObject* value)
                 cell = oldvalue;
             } else if (kind & CO_FAST_CELL && oldvalue != NULL) {
                 /* Same test as in PyFrame_FastToLocals() above. */
-                if (PyCell_Check(oldvalue) &&
-                        _PyFrame_OpAlreadyRan(frame, MAKE_CELL, i)) {
-                    // (likely) MAKE_CELL must have executed already.
+                if (PyCell_Check(oldvalue)) {
                     cell = oldvalue;
                 }
-                // (unlikely) Otherwise, it must have been set to some
-                // initial value by an earlier call to PyFrame_LocalsToFast().
             }
             if (cell != NULL) {
                 oldvalue = PyCell_GET(cell);
@@ -303,36 +296,36 @@ PyTypeObject PyFrameLocalsProxy_Type = {
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    0,                       /* tp_repr */
+    0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
-    &framelocalsproxy_as_mapping,                                          /* tp_as_mapping */
+    &framelocalsproxy_as_mapping,               /* tp_as_mapping */
     0,                                          /* tp_hash */
     0,                                          /* tp_call */
     0,                                          /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
     PyObject_GenericSetAttr,                    /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,    /* tp_flags */
+    Py_TPFLAGS_DEFAULT,                         /* tp_flags */
     0,                                          /* tp_doc */
-    0,               /* tp_traverse */
-    0,                    /* tp_clear */
-    framelocalsproxy_richcompare,                                          /* tp_richcompare */
+    0,                                          /* tp_traverse */
+    0,                                          /* tp_clear */
+    framelocalsproxy_richcompare,               /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
-    framelocalsproxy_iter,                                          /* tp_iter */
+    framelocalsproxy_iter,                      /* tp_iter */
     0,                                          /* tp_iternext */
-    framelocalsproxy_methods,                              /* tp_methods */
-    0,                           /* tp_members */
-    0,                           /* tp_getset */
+    framelocalsproxy_methods,                   /* tp_methods */
+    0,                                          /* tp_members */
+    0,                                          /* tp_getset */
     0,                                          /* tp_base */
     0,                                          /* tp_dict */
     0,                                          /* tp_descr_get */
     0,                                          /* tp_descr_set */
     0,                                          /* tp_dictoffset */
-    framelocalsproxy_init,                                  /* tp_init */
+    framelocalsproxy_init,                      /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
     PyType_GenericNew,                          /* tp_new */
-    PyObject_Del,                            /* tp_free */
+    PyObject_Del,                               /* tp_free */
 };
 
 static PyMemberDef frame_memberlist[] = {
