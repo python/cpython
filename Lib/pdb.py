@@ -354,6 +354,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # cache it here to ensure that modifications are not overwritten.
         self.curframe_locals = self.curframe.f_locals
         self.set_convenience_variable(self.curframe, '_frame', self.curframe)
+
         if self._chained_exceptions:
             self.set_convenience_variable(
                 self.curframe,
