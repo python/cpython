@@ -56,7 +56,7 @@
 #define QSBR_DEFERRED_LIMIT 10
 
 // Allocate a QSBR thread state from the freelist
-struct _qsbr_thread_state *
+static struct _qsbr_thread_state *
 qsbr_allocate(struct _qsbr_shared *shared)
 {
     struct _qsbr_thread_state *qsbr = shared->freelist;
