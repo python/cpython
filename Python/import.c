@@ -1202,6 +1202,7 @@ fix_up_extension(PyObject *mod, PyObject *name, PyObject *filename)
 
     // XXX Why special-case the main interpreter?
     if (_Py_IsMainInterpreter(tstate->interp) || def->m_size == -1) {
+        assert(_extensions_cache_get(filename, name) == NULL);
         if (_extensions_cache_set(filename, name, def) < 0) {
             return -1;
         }
