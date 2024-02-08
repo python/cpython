@@ -799,7 +799,7 @@ class PathBase(PurePathBase):
         while stack:
             part = stack.pop()
             if part in specials:
-                # Join special segment (e.g. '..') onto paths.
+                # Join special component (e.g. '..') onto paths.
                 paths = _select_special(paths, part)
 
             elif part == '**':
@@ -814,8 +814,8 @@ class PathBase(PurePathBase):
                     while stack and stack[-1] not in specials:
                         part += sep + stack.pop()
 
-                # If the previous loop consumed pattern segments, compile an
-                # re.Pattern object based on those segments.
+                # If the previous loop consumed pattern components, compile an
+                # re.Pattern object based on those components.
                 match = _compile_pattern(part, sep, case_sensitive) if part != '**' else None
 
                 # Recursively walk directories, filtering by type and regex.
@@ -830,8 +830,8 @@ class PathBase(PurePathBase):
                 raise ValueError("Invalid pattern: '**' can only be an entire path component")
 
             else:
-                # If the pattern segment isn't '*', compile an re.Pattern
-                # object based on the segment.
+                # If the pattern component isn't '*', compile an re.Pattern
+                # object based on the component.
                 match = _compile_pattern(part, sep, case_sensitive) if part != '*' else None
 
                 # Iterate over directories' children filtering by type and regex.
