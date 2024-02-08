@@ -3900,7 +3900,6 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
 /*[clinic end generated code: output=83249b827a4fde77 input=c31b954f4cf4e09d]*/
 {
     PyObject *mod = NULL;
-    FILE *fp;
 
     struct _Py_ext_module_loader_info info;
     if (_Py_ext_module_loader_info_init_from_spec(&info, spec) < 0) {
@@ -3914,17 +3913,18 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
         goto finally;
     }
 
+    /* Is multi-phase init or this is the first time being loaded. */
+
     if (PySys_Audit("import", "OOOOO", info.name, info.filename,
                     Py_None, Py_None, Py_None) < 0)
     {
         goto finally;
     }
 
-    /* Is multi-phase init or this is the first time being loaded. */
-
     /* We would move this (and the fclose() below) into
      * _PyImport_GetModInitFunc(), but it isn't clear if the intervening
      * code relies on fp still being open. */
+    FILE *fp;
     if (file != NULL) {
         fp = _Py_fopen_obj(info.filename, "r");
         if (fp == NULL) {
@@ -3935,7 +3935,39 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
         fp = NULL;
     }
 
-    mod = _PyImport_LoadDynamicModuleWithSpec(&info, spec, fp);
+    struct _Py_ext_module_loader_result res;
+    if (_PyImport_RunDynamicModule(&info, fp, &res) < 0) {
+        goto finally;
+    }
+    mod = res.module;
+
+    if (mod == NULL) {
+        /* multi-phase init */
+
+        mod = PyModule_FromDefAndSpec(res.def, spec);
+    }
+    else {
+        /* Fall back to single-phase init mechanism */
+
+        const char *name_buf = PyBytes_AS_STRING(info.name_encoded);
+        if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
+            Py_CLEAR(mod);
+            goto finally;
+        }
+
+        /* Remember the filename as the __file__ attribute */
+        if (PyModule_AddObjectRef(mod, "__file__", info.filename) < 0) {
+            PyErr_Clear(); /* Not important enough to report */
+        }
+
+        PyObject *modules = get_modules_dict(tstate, true);
+        if (_PyImport_FixupExtensionObject(
+                mod, info.name, info.filename, modules) < 0)
+        {
+            Py_CLEAR(mod);
+            goto finally;
+        }
+    }
 
     // XXX Shouldn't this happen in the error cases too.
     if (fp) {

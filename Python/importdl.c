@@ -293,48 +293,4 @@ _PyImport_RunDynamicModule(struct _Py_ext_module_loader_info *info,
     return 0;
 }
 
-PyObject *
-_PyImport_LoadDynamicModuleWithSpec(struct _Py_ext_module_loader_info *info,
-                                    PyObject *spec, FILE *fp)
-{
-    PyObject *m = NULL;
-    const char *name_buf = PyBytes_AS_STRING(info->name_encoded);
-    PyModuleDef *def;
-    struct _Py_ext_module_loader_result res;
-
-    if (_PyImport_RunDynamicModule(info, fp, &res) < 0) {
-        return NULL;
-    }
-    m = res.module;
-    def = res.def;
-
-    if (m == NULL) {
-        return PyModule_FromDefAndSpec(def, spec);
-    }
-
-    /* Fall back to single-phase init mechanism */
-
-    if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
-        goto error;
-    }
-
-    /* Remember the filename as the __file__ attribute */
-    if (PyModule_AddObjectRef(m, "__file__", info->filename) < 0) {
-        PyErr_Clear(); /* Not important enough to report */
-    }
-
-    PyObject *modules = PyImport_GetModuleDict();
-    if (_PyImport_FixupExtensionObject(
-                m, info->name, info->filename, modules) < 0)
-    {
-        goto error;
-    }
-
-    return m;
-
-error:
-    Py_XDECREF(m);
-    return NULL;
-}
-
 #endif /* HAVE_DYNAMIC_LOADING */
