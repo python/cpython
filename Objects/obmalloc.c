@@ -1073,7 +1073,12 @@ get_mimalloc_allocated_blocks(PyInterpreterState *interp)
             mi_heap_visit_blocks(heap, false, &count_blocks, &allocated_blocks);
         }
     }
-    // TODO(sgross): count blocks in abandoned segments.
+
+    mi_abandoned_pool_t *pool = &interp->mimalloc.abandoned_pool;
+    for (uint8_t tag = 0; tag < _Py_MIMALLOC_HEAP_COUNT; tag++) {
+        _mi_abandoned_pool_visit_blocks(pool, tag, false, &count_blocks,
+                                        &allocated_blocks);
+    }
 #else
     // TODO(sgross): this only counts the current thread's blocks.
     mi_heap_t *heap = mi_heap_get_default();

@@ -345,6 +345,9 @@ _Py_DecRefSharedDebug(PyObject *o, const char *filename, int lineno)
                                                 &shared, new_shared));
 
     if (should_queue) {
+#ifdef Py_REF_DEBUG
+        _Py_IncRefTotal(_PyInterpreterState_GET());
+#endif
         _Py_brc_queue_object(o);
     }
     else if (new_shared == _Py_REF_MERGED) {
@@ -395,12 +398,12 @@ _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra)
     Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared);
     do {
         refcnt = Py_ARITHMETIC_RIGHT_SHIFT(Py_ssize_t, shared, _Py_REF_SHARED_SHIFT);
-        if (_Py_REF_IS_MERGED(shared)) {
-            return refcnt;
-        }
-
         refcnt += (Py_ssize_t)op->ob_ref_local;
         refcnt += extra;
+
+#ifdef Py_REF_DEBUG
+        _Py_AddRefTotal(_PyInterpreterState_GET(), extra);
+#endif
 
         new_shared = _Py_REF_SHARED(refcnt, _Py_REF_MERGED);
     } while (!_Py_atomic_compare_exchange_ssize(&op->ob_ref_shared,
