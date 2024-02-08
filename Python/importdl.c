@@ -175,16 +175,22 @@ _Py_ext_module_loader_info_init_from_spec(
 }
 
 
-PyObject *
-_PyImport_LoadDynamicModuleWithSpec(struct _Py_ext_module_loader_info *info,
-                                    PyObject *spec, FILE *fp)
+int
+_PyImport_RunDynamicModule(struct _Py_ext_module_loader_info *info,
+                           FILE *fp,
+                           struct _Py_ext_module_loader_result *res)
 {
     PyObject *m = NULL;
     const char *name_buf = PyBytes_AS_STRING(info->name_encoded);
-    const char *oldcontext;
+    const char *oldcontext, *newcontext;
     dl_funcptr exportfunc;
     PyModInitFunction p0;
     PyModuleDef *def;
+
+    newcontext = PyUnicode_AsUTF8(info->name);
+    if (newcontext == NULL) {
+        return -1;
+    }
 
 #ifdef MS_WINDOWS
     exportfunc = _PyImport_FindSharedFuncptrWindows(
@@ -209,7 +215,7 @@ _PyImport_LoadDynamicModuleWithSpec(struct _Py_ext_module_loader_info *info,
                 Py_DECREF(msg);
             }
         }
-        goto error;
+        return -1;
     }
 
     p0 = (PyModInitFunction)exportfunc;
@@ -226,14 +232,14 @@ _PyImport_LoadDynamicModuleWithSpec(struct _Py_ext_module_loader_info *info,
                 "initialization of %s failed without raising an exception",
                 name_buf);
         }
-        goto error;
+        return -1;
     } else if (PyErr_Occurred()) {
         _PyErr_FormatFromCause(
             PyExc_SystemError,
             "initialization of %s raised unreported exception",
             name_buf);
         m = NULL;
-        goto error;
+        return -1;
     }
     if (Py_IS_TYPE(m, NULL)) {
         /* This can happen when a PyModuleDef is returned without calling
@@ -243,10 +249,67 @@ _PyImport_LoadDynamicModuleWithSpec(struct _Py_ext_module_loader_info *info,
                      "init function of %s returned uninitialized object",
                      name_buf);
         m = NULL; /* prevent segfault in DECREF */
-        goto error;
+        return -1;
     }
+
     if (PyObject_TypeCheck(m, &PyModuleDef_Type)) {
-        return PyModule_FromDefAndSpec((PyModuleDef*)m, spec);
+        /* multi-phase init */
+        def = (PyModuleDef *)m;
+        m = NULL;
+        /* Run PyModule_FromDefAndSpec() to finish loading the module. */
+    }
+    else if (info->hook_prefix == nonascii_prefix) {
+        /* It should have been multi-phase init? */
+        /* Don't allow legacy init for non-ASCII module names. */
+        PyErr_Format(
+            PyExc_SystemError,
+            "initialization of %s did not return PyModuleDef",
+            name_buf);
+        Py_DECREF(m);
+        return -1;
+    }
+    else {
+        /* single-phase init (legacy) */
+
+        def = PyModule_GetDef(m);
+        if (def == NULL) {
+            PyErr_Format(PyExc_SystemError,
+                         "initialization of %s did not return an extension "
+                         "module", name_buf);
+            Py_DECREF(m);
+            return -1;
+        }
+
+        /* Remember pointer to module init function. */
+        def->m_base.m_init = p0;
+
+        /* Run _PyImport_FixupExtensionObject() to finish loading the module. */
+    }
+
+    *res = (struct _Py_ext_module_loader_result){
+        .def=def,
+        .module=m,
+    };
+    return 0;
+}
+
+PyObject *
+_PyImport_LoadDynamicModuleWithSpec(struct _Py_ext_module_loader_info *info,
+                                    PyObject *spec, FILE *fp)
+{
+    PyObject *m = NULL;
+    const char *name_buf = PyBytes_AS_STRING(info->name_encoded);
+    PyModuleDef *def;
+    struct _Py_ext_module_loader_result res;
+
+    if (_PyImport_RunDynamicModule(info, fp, &res) < 0) {
+        return NULL;
+    }
+    m = res.module;
+    def = res.def;
+
+    if (m == NULL) {
+        return PyModule_FromDefAndSpec(def, spec);
     }
 
     /* Fall back to single-phase init mechanism */
@@ -254,25 +317,6 @@ _PyImport_LoadDynamicModuleWithSpec(struct _Py_ext_module_loader_info *info,
     if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
         goto error;
     }
-
-    if (info->hook_prefix == nonascii_prefix) {
-        /* don't allow legacy init for non-ASCII module names */
-        PyErr_Format(
-            PyExc_SystemError,
-            "initialization of %s did not return PyModuleDef",
-            name_buf);
-        goto error;
-    }
-
-    /* Remember pointer to module init function. */
-    def = PyModule_GetDef(m);
-    if (def == NULL) {
-        PyErr_Format(PyExc_SystemError,
-                     "initialization of %s did not return an extension "
-                     "module", name_buf);
-        goto error;
-    }
-    def->m_base.m_init = p0;
 
     /* Remember the filename as the __file__ attribute */
     if (PyModule_AddObjectRef(m, "__file__", info->filename) < 0) {

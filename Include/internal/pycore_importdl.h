@@ -40,6 +40,15 @@ extern int _Py_ext_module_loader_info_init_from_spec(
     struct _Py_ext_module_loader_info *info,
     PyObject *spec);
 
+struct _Py_ext_module_loader_result {
+    PyModuleDef *def;
+    PyObject *module;
+};
+extern int _PyImport_RunDynamicModule(
+    struct _Py_ext_module_loader_info *info,
+    FILE *fp,
+    struct _Py_ext_module_loader_result *res);
+
 extern PyObject *_PyImport_LoadDynamicModuleWithSpec(
     struct _Py_ext_module_loader_info *info,
     PyObject *spec,
