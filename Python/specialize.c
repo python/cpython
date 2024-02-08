@@ -47,22 +47,24 @@ void
 _init_pystats(){
     //Make UOpstats structs for all initial opcodes, with null pointers to deeper opcodes
     for (int i = 0; i < 512; i++){
-        _Py_stats_struct.optimization_stats.opcode[i] = PyMem_RawCalloc(1, sizeof(UOpStats));
+        UOpStats *opcode_stat = _Py_stats_struct.optimization_stats.opcode[i];
+        opcode_stat = PyMem_RawCalloc(1, sizeof(UOpStats));
         for (int j = 0; j < 512; j++){
-            _Py_stats_struct.optimization_stats.opcode[i]->next_stats[j] = NULL;
+            opcode_stat->next_stats[j] = NULL;
         }
     }
 
-    int DEPTH = _Py_stats_struct.optimization_stats.max_uop_chain_depth ? _Py_stats_struct.optimization_stats.max_uop_chain_depth : 2;    
+    int previous_depth = _Py_stats_struct.optimization_stats.max_uop_chain_depth;
+    int depth =  previous_depth ? previous_depth : 2;
     
     if (_Py_stats_struct.optimization_stats.last_opcodes){
         uint64_t *tmp;
-        tmp = PyMem_RawRealloc(DEPTH, sizeof(uint64_t));
+        tmp = PyMem_RawRealloc(depth, sizeof(uint64_t));
         if (tmp != NULL) _Py_stats_struct.optimization_stats.last_opcodes = tmp;
         else return PyErr_NoMemory(); 
     } 
     else {
-        _Py_stats_struct.optimization_stats.last_opcodes = PyMem_RawCalloc(DEPTH, sizeof(uint64_t));
+        _Py_stats_struct.optimization_stats.last_opcodes = PyMem_RawCalloc(depth, sizeof(uint64_t));
     }    
 }
 
