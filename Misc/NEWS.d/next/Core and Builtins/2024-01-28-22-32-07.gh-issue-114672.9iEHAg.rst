@@ -1,1 +1,1 @@
-Fix ``_testbuffer`` module initialization.
+Fix reference leaks during ``_testbuffer`` module initialization.

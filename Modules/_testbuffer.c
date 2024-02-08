@@ -2820,14 +2820,12 @@ static int
 _testbuffer_exec(PyObject *m)
 {
     Py_SET_TYPE(&NDArray_Type, &PyType_Type);
-    Py_INCREF(&NDArray_Type);
-    if (PyModule_Add(m, "ndarray", (PyObject *)&NDArray_Type) < 0) {
+    if (PyModule_AddObjectRef(m, "ndarray", (PyObject *)&NDArray_Type) < 0) {
         return -1;
     }
 
     Py_SET_TYPE(&StaticArray_Type, &PyType_Type);
-    Py_INCREF(&StaticArray_Type);
-    if (PyModule_Add(m, "staticarray", (PyObject *)&StaticArray_Type) < 0) {
+    if (PyModule_AddObjectRef(m, "staticarray", (PyObject *)&StaticArray_Type) < 0) {
         return -1;
     }
 
