@@ -346,6 +346,9 @@ accessible to C code.  They all work with the current interpreter thread's
    silently abort the operation by raising an error subclassed from
    :class:`Exception` (other errors will not be silenced).
 
+   .. c:namespace:: NULL
+   .. c:type:: int (*Py_AuditHookFunction) (const char *, PyObject *, void *)
+
    The hook function is of type :c:expr:`int (*)(const char *event, PyObject
    *args, void *userData)`, where *args* is guaranteed to be a
    :c:type:`PyTupleObject`. The hook function is always called with the GIL
@@ -355,8 +358,6 @@ accessible to C code.  They all work with the current interpreter thread's
    runtime and standard library that raise events are listed in the
    :ref:`audit events table <audit-events>`.
    Details are in each function's documentation.
-
-   .. c:type:: int (*Py_AuditHookFunction) (const char *, PyObject *, void *)
 
    .. audit-event:: sys.addaudithook "" c.PySys_AddAuditHook
 
