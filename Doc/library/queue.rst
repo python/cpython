@@ -239,13 +239,15 @@ them down.
 
 .. method:: Queue.shutdown(immediate=False)
 
-   Shut-down the queue, making queue gets and puts raise :exc:`ShutDown`.
+   Shut down the queue, making :meth:`~Queue.get` and :meth:`~Queue.put` raise
+   :exc:`ShutDown`.
 
-   By default, gets will only raise once the queue is empty. Set
-   *immediate* to true to make gets raise immediately instead.
+   By default, :meth:`~Queue.get` on a shut down queue will only raise once the
+   queue is empty. Set *immediate* to true to make :meth:`~Queue.get` raise
+   immediately instead.
 
-   All blocked callers of put() will be unblocked, and also get()
-   and join() if *immediate* is true.
+   All blocked callers of :meth:`~Queue.put` will be unblocked. If *immediate*
+   is true, also unblock callers of :meth:`~Queue.get` and :meth:`~Queue.join`.
 
    .. versionadded:: 3.13
 
