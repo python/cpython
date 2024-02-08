@@ -95,8 +95,6 @@ typedef enum {
     INVALID_TYPE = 31,
 } _Py_UOpsSymExprTypeEnum;
 
-#define MAX_TYPE_WITH_REFINEMENT PYFUNCTION_TYPE_VERSION_TYPE
-
 typedef struct {
     // bitmask of types
     uint32_t types;
