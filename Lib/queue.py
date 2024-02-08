@@ -241,7 +241,7 @@ class Queue:
                 n_items = self._qsize()
                 while self._qsize():
                     self._get()
-                self.unfinished_tasks -= n_items
+                self.unfinished_tasks = max(self.unfinished_tasks - n_items, 0)
                 self.not_empty.notify_all()
                 # release all blocked threads in `join()`
                 self.all_tasks_done.notify_all()

@@ -575,14 +575,13 @@ class BaseQueueTestMixin(BlockingTestMixin):
         for func, params in thrds:
             threads.append(threading.Thread(target=func, args=params))
             threads[-1].start()
-        if not immediate or immediate:  # TODO: dedent (minimising Git diff)
-            self.assertEqual(q.unfinished_tasks, nb)
-            for i in range(nb):
-                t = threading.Thread(target=q.task_done)
-                t.start()
-                threads.append(t)
-        go.set()
+        self.assertEqual(q.unfinished_tasks, nb)
+        for i in range(nb):
+            t = threading.Thread(target=q.task_done)
+            t.start()
+            threads.append(t)
         q.shutdown(immediate)
+        go.set()
         for t in threads:
             t.join()
 
