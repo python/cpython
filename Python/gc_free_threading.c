@@ -300,6 +300,9 @@ merge_queued_objects(_PyThreadStateImpl *tstate, struct collection_state *state)
             // non-GC objects here. Add one to the refcount so that we can
             // decref and deallocate the object once we start the world again.
             op->ob_ref_shared += (1 << _Py_REF_SHARED_SHIFT);
+#ifdef Py_REF_DEBUG
+            _Py_IncRefTotal(_PyInterpreterState_GET());
+#endif
             worklist_push(&state->objs_to_decref, op);
         }
     }
