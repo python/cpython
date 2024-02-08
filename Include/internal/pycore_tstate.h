@@ -20,8 +20,9 @@ typedef struct _PyThreadStateImpl {
     // semi-public fields are in PyThreadState.
     PyThreadState base;
 
+    struct _qsbr_thread_state *qsbr;  // only used by free-threaded build
+
 #ifdef Py_GIL_DISABLED
-    struct _qsbr_thread_state *qsbr;
     struct _mimalloc_thread_state mimalloc;
     struct _Py_freelist_state freelist_state;
 #endif
