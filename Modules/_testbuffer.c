@@ -2817,15 +2817,15 @@ static struct PyModuleDef _testbuffermodule = {
 };
 
 static int
-_testbuffer_exec(PyObject *m)
+_testbuffer_exec(PyObject *mod)
 {
     Py_SET_TYPE(&NDArray_Type, &PyType_Type);
-    if (PyModule_AddObjectRef(m, "ndarray", (PyObject *)&NDArray_Type) < 0) {
+    if (PyModule_AddType(mod, &NDArray_Type) < 0) {
         return -1;
     }
 
     Py_SET_TYPE(&StaticArray_Type, &PyType_Type);
-    if (PyModule_AddObjectRef(m, "staticarray", (PyObject *)&StaticArray_Type) < 0) {
+    if (PyModule_AddType(mod, &StaticArray_Type) < 0) {
         return -1;
     }
 
@@ -2848,43 +2848,43 @@ _testbuffer_exec(PyObject *m)
         return -1;
     }
 
-#define ADD_INT_MACRO(m, macro)                                             \
+#define ADD_INT_MACRO(mod, macro)                                             \
     do {                                                                    \
-        if (PyModule_AddIntConstant(m, #macro, macro) < 0) {                \
+        if (PyModule_AddIntConstant(mod, #macro, macro) < 0) {                \
             return -1;                                                      \
         }                                                                   \
     } while (0)
 
-    ADD_INT_MACRO(m, ND_MAX_NDIM);
-    ADD_INT_MACRO(m, ND_VAREXPORT);
-    ADD_INT_MACRO(m, ND_WRITABLE);
-    ADD_INT_MACRO(m, ND_FORTRAN);
-    ADD_INT_MACRO(m, ND_SCALAR);
-    ADD_INT_MACRO(m, ND_PIL);
-    ADD_INT_MACRO(m, ND_GETBUF_FAIL);
-    ADD_INT_MACRO(m, ND_GETBUF_UNDEFINED);
-    ADD_INT_MACRO(m, ND_REDIRECT);
+    ADD_INT_MACRO(mod, ND_MAX_NDIM);
+    ADD_INT_MACRO(mod, ND_VAREXPORT);
+    ADD_INT_MACRO(mod, ND_WRITABLE);
+    ADD_INT_MACRO(mod, ND_FORTRAN);
+    ADD_INT_MACRO(mod, ND_SCALAR);
+    ADD_INT_MACRO(mod, ND_PIL);
+    ADD_INT_MACRO(mod, ND_GETBUF_FAIL);
+    ADD_INT_MACRO(mod, ND_GETBUF_UNDEFINED);
+    ADD_INT_MACRO(mod, ND_REDIRECT);
 
-    ADD_INT_MACRO(m, PyBUF_SIMPLE);
-    ADD_INT_MACRO(m, PyBUF_WRITABLE);
-    ADD_INT_MACRO(m, PyBUF_FORMAT);
-    ADD_INT_MACRO(m, PyBUF_ND);
-    ADD_INT_MACRO(m, PyBUF_STRIDES);
-    ADD_INT_MACRO(m, PyBUF_INDIRECT);
-    ADD_INT_MACRO(m, PyBUF_C_CONTIGUOUS);
-    ADD_INT_MACRO(m, PyBUF_F_CONTIGUOUS);
-    ADD_INT_MACRO(m, PyBUF_ANY_CONTIGUOUS);
-    ADD_INT_MACRO(m, PyBUF_FULL);
-    ADD_INT_MACRO(m, PyBUF_FULL_RO);
-    ADD_INT_MACRO(m, PyBUF_RECORDS);
-    ADD_INT_MACRO(m, PyBUF_RECORDS_RO);
-    ADD_INT_MACRO(m, PyBUF_STRIDED);
-    ADD_INT_MACRO(m, PyBUF_STRIDED_RO);
-    ADD_INT_MACRO(m, PyBUF_CONTIG);
-    ADD_INT_MACRO(m, PyBUF_CONTIG_RO);
+    ADD_INT_MACRO(mod, PyBUF_SIMPLE);
+    ADD_INT_MACRO(mod, PyBUF_WRITABLE);
+    ADD_INT_MACRO(mod, PyBUF_FORMAT);
+    ADD_INT_MACRO(mod, PyBUF_ND);
+    ADD_INT_MACRO(mod, PyBUF_STRIDES);
+    ADD_INT_MACRO(mod, PyBUF_INDIRECT);
+    ADD_INT_MACRO(mod, PyBUF_C_CONTIGUOUS);
+    ADD_INT_MACRO(mod, PyBUF_F_CONTIGUOUS);
+    ADD_INT_MACRO(mod, PyBUF_ANY_CONTIGUOUS);
+    ADD_INT_MACRO(mod, PyBUF_FULL);
+    ADD_INT_MACRO(mod, PyBUF_FULL_RO);
+    ADD_INT_MACRO(mod, PyBUF_RECORDS);
+    ADD_INT_MACRO(mod, PyBUF_RECORDS_RO);
+    ADD_INT_MACRO(mod, PyBUF_STRIDED);
+    ADD_INT_MACRO(mod, PyBUF_STRIDED_RO);
+    ADD_INT_MACRO(mod, PyBUF_CONTIG);
+    ADD_INT_MACRO(mod, PyBUF_CONTIG_RO);
 
-    ADD_INT_MACRO(m, PyBUF_READ);
-    ADD_INT_MACRO(m, PyBUF_WRITE);
+    ADD_INT_MACRO(mod, PyBUF_READ);
+    ADD_INT_MACRO(mod, PyBUF_WRITE);
 
 #undef ADD_INT_MACRO
 
@@ -2894,15 +2894,13 @@ _testbuffer_exec(PyObject *m)
 PyMODINIT_FUNC
 PyInit__testbuffer(void)
 {
-    PyObject *m;
-
-    m = PyModule_Create(&_testbuffermodule);
-    if (m == NULL) {
+    PyObject *mod = PyModule_Create(&_testbuffermodule);
+    if (mod == NULL) {
         return NULL;
     }
-    if (_testbuffer_exec(m) < 0) {
-        Py_DECREF(m);
+    if (_testbuffer_exec(mod) < 0) {
+        Py_DECREF(mod);
         return NULL;
     }
-    return m;
+    return mod;
 }
