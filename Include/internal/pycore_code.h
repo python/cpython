@@ -321,7 +321,7 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
 PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 
 // Method to initialize sub-structs of Py_Stats
-void _init_pystats(PyStats *stats);
+void _init_pystats(void);
 
 #else
 #define STAT_INC(opname, name) ((void)0)

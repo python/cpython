@@ -313,10 +313,10 @@ class Stats:
         )
     
     def get_uop_sequence_stats(self, length) -> dict[str, int]:
-        return {k: v for k, v in self._data.items() if k.startswith("UOp Sequence Count") and k.count(',') == length - 1}
+        return {k: v for k, v in self._data.items() if k.startswith("UOp sequence count") and k.count(',') == length - 1}
     
     def get_max_uop_sequence_length(self) -> int:
-        uop_sequence_lengths = [k.count(',')+1 for k in self._data.keys() if k.startswith("UOp Sequence Count")]
+        uop_sequence_lengths = [k.count(',')+1 for k in self._data.keys() if k.startswith("UOp sequence count")]
         return max(uop_sequence_lengths) if uop_sequence_lengths else 0
 
     def get_call_stats(self) -> dict[str, int]:

@@ -12,6 +12,7 @@ extern "C" {
 extern void _Py_StatsOn(void);
 extern void _Py_StatsOff(void);
 extern void _Py_StatsClear(void);
+extern void _Py_Stats_Set_Depth(int depth);
 extern int _Py_PrintSpecializationStats(int to_file);
 #endif
 

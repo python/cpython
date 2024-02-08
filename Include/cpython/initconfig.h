@@ -224,6 +224,8 @@ typedef struct PyConfig {
 #ifdef Py_STATS
     // If non-zero, turns on statistics gathering.
     int _pystats;
+    // The maximum depth of uop-sequence to record.
+    int _pystats_depth;
 #endif
 
 #ifdef Py_DEBUG
