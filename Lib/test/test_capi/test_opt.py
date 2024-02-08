@@ -6,8 +6,6 @@ import gc
 
 import _testinternalcapi
 
-from test.support.script_helper import assert_python_ok
-from test import support
 
 @contextlib.contextmanager
 def temporary_optimizer(opt):
