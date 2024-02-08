@@ -10,16 +10,6 @@ from test.support import gc_collect
 from test.support import import_helper
 from test.support import threading_helper
 
-import typing as t
-
-if t.TYPE_CHECKING:
-    import queue
-
-    parent_class = unittest.TestCase
-
-else:
-    parent_class = object
-
 # queue module depends on threading primitives
 threading_helper.requires_working_threading(module=True)
 
@@ -65,10 +55,7 @@ class _TriggerThread(threading.Thread):
 # is supposed to raise an exception, call do_exceptional_blocking_test()
 # instead.
 
-class BlockingTestMixin(parent_class):
-    if t.TYPE_CHECKING:
-        queue = queue
-        type2test: t.Type[queue.Queue]
+class BlockingTestMixin:
 
     def do_blocking_test(self, block_func, block_args, trigger_func, trigger_args):
         thread = _TriggerThread(trigger_func, trigger_args)
@@ -810,10 +797,7 @@ class CFailingQueueTest(FailingQueueTest, unittest.TestCase):
     queue = c_queue
 
 
-class BaseSimpleQueueTest(parent_class):
-    if t.TYPE_CHECKING:
-        queue = queue
-        type2test: t.Type[queue.Queue]
+class BaseSimpleQueueTest:
 
     def setUp(self):
         self.q = self.type2test()
