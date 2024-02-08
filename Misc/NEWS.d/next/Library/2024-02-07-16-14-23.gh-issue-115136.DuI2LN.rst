@@ -1,2 +1,0 @@
-Check return value of :c:func:`PyMem_Malloc` before passing to :c:func:`memset`
-in ``Modules/getpath.c``.
