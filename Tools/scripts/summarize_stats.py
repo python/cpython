@@ -678,7 +678,7 @@ def pair_count_section() -> Section:
 def uop_sequence_section(base_stats: Stats, head_stats: Stats) -> Generator[Section]:
     if not (longest := base_stats.get_max_uop_sequence_length()): return
 
-    def calc_uop_sequence(base_stats: Stats ,sequence_length: int) -> Rows:
+    def calc_uop_sequence(base_stats: Stats, sequence_length: int) -> Rows:
         uop_sequences = base_stats.get_uop_sequence_stats(sequence_length)
         total = base_stats.get_optimization_stats()["Uops executed"][0]
 
@@ -700,11 +700,11 @@ def uop_sequence_section(base_stats: Stats, head_stats: Stats) -> Generator[Sect
 
     for l in range(2, longest+1):
         yield Section(
-            "Pair counts",
+            f"Uop {l}-Sequence Counts",
             f"Counts for top 100 UOp Sequences of Length {l}",
             [
                 Table(
-                    ("Pair", "Count:", "Self:", "Cumulative:"),
+                    ("Sequence", "Count:", "Self:", "Cumulative:"),
                     functools.partial(calc_uop_sequence, sequence_length=l),
                 )
             ],
