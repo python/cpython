@@ -879,6 +879,14 @@ _Py_atomic_store_int_release(int *obj, int value)
                           memory_order_release);
 }
 
+static inline void
+_Py_atomic_store_ssize_release(Py_ssize_t *obj, Py_ssize_t value)
+{
+    _Py_USING_STD;
+    atomic_store_explicit((_Atomic(Py_ssize_t)*)obj, value,
+                          memory_order_release);
+}
+
 static inline int
 _Py_atomic_load_int_acquire(const int *obj)
 {

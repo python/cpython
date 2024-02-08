@@ -470,6 +470,9 @@ static inline void
 _Py_atomic_store_ptr_release(void *obj, void *value);
 
 static inline void
+_Py_atomic_store_ssize_release(Py_ssize_t *obj, Py_ssize_t value);
+
+static inline void
 _Py_atomic_store_int_release(int *obj, int value);
 
 static inline int

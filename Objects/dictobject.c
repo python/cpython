@@ -161,14 +161,16 @@ ASSERT_DICT_LOCKED(PyObject *op)
 #define INCREF_KEYS(dk)  _Py_atomic_add_ssize(&dk->dk_refcnt, 1)
 // Dec refs the keys object, giving the previous value
 #define DECREF_KEYS(dk)  _Py_atomic_add_ssize(&dk->dk_refcnt, -1)
+#define LOAD_KEYS_NENTIRES(keys) _Py_atomic_load_ssize_relaxed(&keys->dk_nentries)
+
 static inline void split_keys_entry_added(PyDictKeysObject *keys)
 {
     ASSERT_KEYS_LOCKED(keys);
 
     // We increase before we decrease so we never get too small of a value
     // when we're racing with reads
-    _Py_atomic_store_ssize(&keys->dk_nentries, keys->dk_nentries + 1);
-    _Py_atomic_store_ssize(&keys->dk_usable, keys->dk_usable - 1);
+    _Py_atomic_store_ssize_relaxed(&keys->dk_nentries, keys->dk_nentries + 1);
+    _Py_atomic_store_ssize_release(&keys->dk_usable, keys->dk_usable - 1);
 }
 
 #else /* Py_GIL_DISABLED */
@@ -181,6 +183,8 @@ static inline void split_keys_entry_added(PyDictKeysObject *keys)
 #define STORE_SHARED_KEY(key, value) key = value
 #define INCREF_KEYS(dk)  dk->dk_refcnt++
 #define DECREF_KEYS(dk)  dk->dk_refcnt--
+#define LOAD_KEYS_NENTIRES(keys) keys->dk_nentries
+
 static inline void split_keys_entry_added(PyDictKeysObject *keys)
 {
     keys->dk_usable--;
@@ -545,7 +549,7 @@ static PyDictKeysObject empty_keys_struct = {
         0, /* dk_log2_index_bytes */
         DICT_KEYS_UNICODE, /* dk_kind */
 #ifdef Py_GIL_DISABLED
-        {0}, /* dk_lock */
+        {0}, /* dk_mutex */
 #endif
         1, /* dk_version */
         0, /* dk_usable (immutable) */
@@ -825,9 +829,9 @@ shared_keys_usable_size(PyDictKeysObject *keys)
 {
 #ifdef Py_GIL_DISABLED
     // dk_usable will decrease for each instance that is created and each
-    // value that is added.  dk_entries will increase for each value that
+    // value that is added.  dk_nentries will increase for each value that
     // is added.  We want to always return the right value or larger.
-    // We therefore increase dk_entries first and we decrease dk_usable
+    // We therefore increase dk_nentries first and we decrease dk_usable
     // second, and conversely here we read dk_usable first and dk_entries
     // second (to avoid the case where we read entries before the increment
     // and read usable after the decrement)
@@ -846,15 +850,13 @@ new_dict_with_shared_keys(PyInterpreterState *interp, PyDictKeysObject *keys)
     PyDictValues *values = new_values(size);
     if (values == NULL) {
         dictkeys_decref(interp, keys);
-        UNLOCK_KEYS(keys);
         return PyErr_NoMemory();
     }
     ((char *)values)[-2] = 0;
     for (size_t i = 0; i < size; i++) {
         values->values[i] = NULL;
     }
-    PyObject *res = new_dict(interp, keys, values, 0, 1);
-    return res;
+    return new_dict(interp, keys, values, 0, 1);
 }
 
 
@@ -1266,7 +1268,7 @@ insertion_resize(PyInterpreterState *interp, PyDictObject *mp, int unicode)
 }
 
 static Py_ssize_t
-insert_into_dictkeys(PyDictKeysObject *keys, PyObject *name)
+insert_into_splitdictkeys(PyDictKeysObject *keys, PyObject *name)
 {
     assert(PyUnicode_CheckExact(name));
     ASSERT_KEYS_LOCKED(keys);
@@ -1301,7 +1303,7 @@ insert_into_dictkeys(PyDictKeysObject *keys, PyObject *name)
 
 static inline int
 insert_combined_dict(PyInterpreterState *interp, PyDictObject *mp,
-                     Py_hash_t hash, PyObject *key, PyObject *value, int unicode)
+                     Py_hash_t hash, PyObject *key, PyObject *value)
 {
     if (mp->ma_keys->dk_usable <= 0) {
         /* Need to resize. */
@@ -1313,7 +1315,7 @@ insert_combined_dict(PyInterpreterState *interp, PyDictObject *mp,
     Py_ssize_t hashpos = find_empty_slot(mp->ma_keys, hash);
     dictkeys_set_index(mp->ma_keys, hashpos, mp->ma_keys->dk_nentries);
 
-    if (unicode) {
+    if (DK_IS_UNICODE(mp->ma_keys)) {
         PyDictUnicodeEntry *ep;
         ep = &DK_UNICODE_ENTRIES(mp->ma_keys)[mp->ma_keys->dk_nentries];
         ep->me_key = key;
@@ -1340,14 +1342,16 @@ insert_split_dict(PyInterpreterState *interp, PyDictObject *mp,
     LOCK_KEYS(keys);
     if (keys->dk_usable <= 0) {
         /* Need to resize. */
-        if (insertion_resize(interp, mp, 1) < 0) {
-            UNLOCK_KEYS(keys);
+        dictkeys_incref(keys);
+        int ins = insertion_resize(interp, mp, 1);
+        dictkeys_decref(interp, keys);
+        UNLOCK_KEYS(keys);
+        if (ins < 0) {
             return -1;
         }
         assert(!_PyDict_HasSplitTable(mp));
         assert(DK_IS_UNICODE(keys));
-        UNLOCK_KEYS(keys);
-        return insert_combined_dict(interp, mp, hash, key, value, 1);
+        return insert_combined_dict(interp, mp, hash, key, value);
     }
 
     Py_ssize_t hashpos = find_empty_slot(keys, hash);
@@ -1425,9 +1429,8 @@ insertdict(PyInterpreterState *interp, PyDictObject *mp,
         mp->ma_keys->dk_version = 0;
         assert(old_value == NULL);
 
-        int unicode = DK_IS_UNICODE(mp->ma_keys);
-        if (!unicode || !_PyDict_HasSplitTable(mp)) {
-            if (insert_combined_dict(interp, mp, hash, key, value, unicode) < 0) {
+        if (!_PyDict_HasSplitTable(mp)) {
+            if (insert_combined_dict(interp, mp, hash, key, value) < 0) {
                 goto Fail;
             }
         } else {
@@ -3608,21 +3611,7 @@ dict_equal_lock_held(PyDictObject *a, PyDictObject *b)
         /* can't be equal if # of entries differ */
         return 0;
     /* Same # of entries -- check all of 'em.  Exit early on any diff. */
-    Py_ssize_t n_entries;
-#ifdef Py_GIL_DISABLED
-    if (_PyDict_HasSplitTable(a)) {
-        // New entries can be appended, but existing ones won't change, and
-        // our keys won't change because the dict is locked.  So capture
-        // the current number of keys at entry.
-        LOCK_KEYS(a->ma_keys);
-        n_entries = a->ma_keys->dk_nentries;
-        UNLOCK_KEYS(a->ma_keys);
-    } else
-#endif
-    {
-        n_entries = a->ma_keys->dk_nentries;
-    }
-    for (i = 0; i < n_entries; i++) {
+    for (i = 0; i < LOAD_KEYS_NENTIRES(a->ma_keys); i++) {
         PyObject *key, *aval;
         Py_hash_t hash;
         if (DK_IS_UNICODE(a->ma_keys)) {
@@ -3836,9 +3825,8 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
         mp->ma_keys->dk_version = 0;
         value = default_value;
 
-        int unicode = DK_IS_UNICODE(mp->ma_keys);
-        if (!unicode || !_PyDict_HasSplitTable(mp)) {
-            if (insert_combined_dict(interp, mp, hash, Py_NewRef(key), Py_NewRef(value), unicode) < 0) {
+        if (!_PyDict_HasSplitTable(mp)) {
+            if (insert_combined_dict(interp, mp, hash, Py_NewRef(key), Py_NewRef(value)) < 0) {
                 Py_DECREF(key);
                 Py_DECREF(value);
                 if (result) {
@@ -6048,11 +6036,13 @@ _PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp)
     PyDictKeysObject *keys = CACHED_KEYS(tp);
     assert(keys != NULL);
 #ifdef Py_GIL_DISABLED
-    Py_ssize_t usable = keys->dk_usable;
-    while (usable > 1) {
-        if (_Py_atomic_compare_exchange_ssize(&keys->dk_usable, &usable, usable - 1)) {
-            break;
+    Py_ssize_t usable = _Py_atomic_load_ssize_relaxed(&keys->dk_usable);
+    if (usable > 1) {
+        LOCK_KEYS(keys);
+        if (keys->dk_usable > 1) {
+            _Py_atomic_store_ssize(&keys->dk_usable, keys->dk_usable - 1);
         }
+        UNLOCK_KEYS(keys);
     }
 #else
     if (keys->dk_usable > 1) {
@@ -6190,7 +6180,7 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
     Py_ssize_t ix = DKIX_EMPTY;
     if (PyUnicode_CheckExact(name)) {
         LOCK_KEYS(keys);
-        ix = insert_into_dictkeys(keys, name);
+        ix = insert_into_splitdictkeys(keys, name);
 #ifdef Py_STATS
         if (ix == DKIX_EMPTY) {
             if (PyUnicode_CheckExact(name)) {
