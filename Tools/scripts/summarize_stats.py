@@ -416,7 +416,7 @@ class Stats:
         prefix = "Rare event "
         return [
             (key[len(prefix) + 1:-1], val)
-            for key, val in self._data.items()
+            for key.replace("_", " "), val in self._data.items()
             if key.startswith(prefix)
         ]
 
