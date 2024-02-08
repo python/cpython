@@ -587,13 +587,13 @@ class Path(_abc.PathBase, PurePath):
     def _scandir(self):
         return os.scandir(self)
 
-    def _entry_str(self, entry):
+    def _direntry_str(self, entry):
         # Transform an entry yielded from _scandir() into a path string.
         return entry.name if str(self) == '.' else entry.path
 
-    def _make_child_entry(self, entry):
+    def _make_child_direntry(self, entry):
         # Transform an entry yielded from _scandir() into a path object.
-        path_str = self._entry_str(entry)
+        path_str = self._direntry_str(entry)
         path = self.with_segments(path_str)
         path._str = path_str
         path._drv = self.drive
