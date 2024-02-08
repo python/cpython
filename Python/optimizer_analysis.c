@@ -38,7 +38,7 @@
 
 #define OVERALLOCATE_FACTOR 5
 
-#define TY_ARENA_SIZE (UOP_MAX_TRACE_WORKING_LENGTH * OVERALLOCATE_FACTOR)
+#define TY_ARENA_SIZE (UOP_MAX_TRACE_LENGTH * OVERALLOCATE_FACTOR)
 
 // Need extras for root frame and for overflow frame (see TRACE_STACK_PUSH())
 #define MAX_ABSTRACT_FRAME_DEPTH (TRACE_STACK_SIZE + 2)
@@ -102,20 +102,9 @@ typedef enum {
 
 #define MAX_TYPE_WITH_REFINEMENT PYFUNCTION_TYPE_VERSION_TYPE
 
-static const uint32_t IMMUTABLES =
-    (
-        1 << NULL_TYPE |
-        1 << PYLONG_TYPE |
-        1 << PYFLOAT_TYPE |
-        1 << PYUNICODE_TYPE |
-        1 << TRUE_CONST
-    );
-
 typedef struct {
     // bitmask of types
     uint32_t types;
-    // refinement data for the types
-    uint64_t refinement[MAX_TYPE_WITH_REFINEMENT + 1];
     // constant propagated value (might be NULL)
     PyObject *const_val;
 } _Py_UOpsSymType;
@@ -275,30 +264,6 @@ abstractcontext_init(
 }
 
 
-static inline bool
-sym_is_type(_Py_UOpsSymType *sym, _Py_UOpsSymExprTypeEnum typ);
-static inline uint64_t
-sym_type_get_refinement(_Py_UOpsSymType *sym, _Py_UOpsSymExprTypeEnum typ);
-
-static inline PyFunctionObject *
-extract_func_from_sym(_Py_UOpsSymType *callable_sym)
-{
-    assert(callable_sym != NULL);
-    if (!sym_is_type(callable_sym, PYFUNCTION_TYPE_VERSION_TYPE)) {
-        DPRINTF(1, "error: _PUSH_FRAME not function type\n");
-        return NULL;
-    }
-    uint64_t func_version = sym_type_get_refinement(callable_sym, PYFUNCTION_TYPE_VERSION_TYPE);
-    PyFunctionObject *func = _PyFunction_LookupByVersion((uint32_t)func_version);
-    if (func == NULL) {
-        OPT_STAT_INC(optimizer_failure_reason_null_function);
-        DPRINTF(1, "error: _PUSH_FRAME cannot find func version\n");
-        return NULL;
-    }
-    return func;
-}
-
-
 static int
 ctx_frame_pop(
     _Py_UOpsAbstractInterpContext *ctx
@@ -341,31 +306,9 @@ _Py_UOpsSymType_New(_Py_UOpsAbstractInterpContext *ctx,
 
 
 static void
-sym_set_type(_Py_UOpsSymType *sym, _Py_UOpsSymExprTypeEnum typ, uint64_t refinement)
+sym_set_type(_Py_UOpsSymType *sym, _Py_UOpsSymExprTypeEnum typ)
 {
     sym->types |= 1 << typ;
-    if (typ <= MAX_TYPE_WITH_REFINEMENT) {
-        sym->refinement[typ] = refinement;
-    }
-}
-
-// We need to clear the type information on every escaping/impure instruction.
-// Consider the following code
-/*
-foo.attr
-bar() # opaque call
-foo.attr
-*/
-// We can't propagate the type information of foo.attr over across bar
-// (at least, not without re-installing guards). `bar()` may call random code
-// that invalidates foo's type version tag.
-static void
-sym_copy_immutable_type_info(_Py_UOpsSymType *from_sym, _Py_UOpsSymType *to_sym)
-{
-    to_sym->types = (from_sym->types & IMMUTABLES);
-    if (to_sym->types) {
-        Py_XSETREF(to_sym->const_val, Py_XNewRef(from_sym->const_val));
-    }
 }
 
 
@@ -395,10 +338,10 @@ pytype_to_type(PyTypeObject *tp)
 }
 
 static void
-sym_set_pytype(_Py_UOpsSymType *sym, PyTypeObject *tp, uint64_t refinement)
+sym_set_pytype(_Py_UOpsSymType *sym, PyTypeObject *tp)
 {
     assert(tp == NULL || PyType_Check(tp));
-    sym_set_type(sym, pytype_to_type(tp), refinement);
+    sym_set_type(sym, pytype_to_type(tp));
 }
 
 static void
@@ -407,14 +350,13 @@ sym_set_type_from_const(_Py_UOpsSymType *sym, PyObject *obj)
     PyTypeObject *tp = Py_TYPE(obj);
 
     if (tp->tp_version_tag != 0) {
-        sym_set_type(sym, GUARD_TYPE_VERSION_TYPE, tp->tp_version_tag);
+        sym_set_type(sym, GUARD_TYPE_VERSION_TYPE);
     }
     if (tp == &PyFunction_Type) {
-        sym_set_type(sym, PYFUNCTION_TYPE_VERSION_TYPE,
-                     ((PyFunctionObject *)(obj))->func_version);
+        sym_set_type(sym, PYFUNCTION_TYPE_VERSION_TYPE);
     }
     else {
-        sym_set_pytype(sym, tp, 0);
+        sym_set_pytype(sym, tp);
     }
 
 }
@@ -427,13 +369,13 @@ sym_init_unknown(_Py_UOpsAbstractInterpContext *ctx)
 
 static inline _Py_UOpsSymType*
 sym_init_known_pytype(_Py_UOpsAbstractInterpContext *ctx,
-                      PyTypeObject *typ, uint64_t refinement)
+                      PyTypeObject *typ)
 {
     _Py_UOpsSymType *res = _Py_UOpsSymType_New(ctx,NULL);
     if (res == NULL) {
         return NULL;
     }
-    sym_set_pytype(res, typ, refinement);
+    sym_set_pytype(res, typ);
     return res;
 }
 
@@ -450,7 +392,7 @@ sym_init_const(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val)
         return NULL;
     }
     sym_set_type_from_const(temp, const_val);
-    sym_set_type(temp, TRUE_CONST, 0);
+    sym_set_type(temp, TRUE_CONST);
     return temp;
 }
 
@@ -464,7 +406,7 @@ sym_init_null(_Py_UOpsAbstractInterpContext *ctx)
     if (null_sym == NULL) {
         return NULL;
     }
-    sym_set_type(null_sym, NULL_TYPE, 0);
+    sym_set_type(null_sym, NULL_TYPE);
     ctx->frequent_syms.push_nulL_sym = null_sym;
     return null_sym;
 }
@@ -479,31 +421,19 @@ sym_is_type(_Py_UOpsSymType *sym, _Py_UOpsSymExprTypeEnum typ)
 }
 
 static inline bool
-sym_matches_type(_Py_UOpsSymType *sym, _Py_UOpsSymExprTypeEnum typ, uint64_t refinement)
+sym_matches_type(_Py_UOpsSymType *sym, _Py_UOpsSymExprTypeEnum typ)
 {
     if (!sym_is_type(sym, typ)) {
         return false;
-    }
-    if (typ <= MAX_TYPE_WITH_REFINEMENT) {
-        return sym->refinement[typ] == refinement;
     }
     return true;
 }
 
 static inline bool
-sym_matches_pytype(_Py_UOpsSymType *sym, PyTypeObject *typ, uint64_t refinement)
+sym_matches_pytype(_Py_UOpsSymType *sym, PyTypeObject *typ)
 {
     assert(typ == NULL || PyType_Check(typ));
-    return sym_matches_type(sym, pytype_to_type(typ), refinement);
-}
-
-
-static uint64_t
-sym_type_get_refinement(_Py_UOpsSymType *sym, _Py_UOpsSymExprTypeEnum typ)
-{
-    assert(sym_is_type(sym, typ));
-    assert(typ <= MAX_TYPE_WITH_REFINEMENT);
-    return sym->refinement[typ];
+    return sym_matches_type(sym, pytype_to_type(typ));
 }
 
 
@@ -530,15 +460,6 @@ op_is_data_movement_only(uint32_t opcode) {
         opcode == _POP_FRAME);
 }
 
-
-static int
-clear_locals_type_info(_Py_UOpsAbstractInterpContext *ctx) {
-    int locals_entries = ctx->frame->locals_len;
-    for (int i = 0; i < locals_entries; i++) {
-        sym_copy_immutable_type_info(ctx->frame->locals[i], ctx->frame->locals[i]);
-    }
-    return 0;
-}
 
 static inline int
 emit_i(uops_emitter *emitter,
@@ -837,30 +758,12 @@ uop_redundancy_eliminator(
     _PyUOpInstruction *curr = NULL;
     _PyUOpInstruction *end = NULL;
     int status = 0;
-    bool needs_clear_locals = true;
     int res = 0;
 
     curr = trace;
     end = trace + trace_len;
-    needs_clear_locals = true;
     ;
     while (curr < end && !op_is_end(curr->opcode)) {
-
-        if (!(_PyUop_Flags[curr->opcode] & HAS_PURE_FLAG) &&
-            !op_is_bookkeeping(curr->opcode) &&
-            !op_is_data_movement_only(curr->opcode) &&
-            !(_PyUop_Flags[curr->opcode] & HAS_PASSTHROUGH_FLAG)) {
-            DPRINTF(3, "Impure %s\n", _PyOpcode_uop_name[curr->opcode]);
-            if (needs_clear_locals) {
-                if (clear_locals_type_info(&ctx) < 0) {
-                    goto error;
-                }
-            }
-            needs_clear_locals = false;
-        }
-        else {
-            needs_clear_locals = true;
-        }
 
         status = uop_abstract_interpret_single_inst(
             curr, end, &ctx
@@ -984,7 +887,7 @@ _Py_uop_analyze_and_optimize(
 )
 {
     OPT_STAT_INC(optimizer_attempts);
-    _PyUOpInstruction temp_writebuffer[UOP_MAX_TRACE_WORKING_LENGTH];
+    _PyUOpInstruction temp_writebuffer[UOP_MAX_TRACE_LENGTH];
 
     int err = remove_globals(frame, buffer, buffer_size, dependencies);
     if (err <= 0) {

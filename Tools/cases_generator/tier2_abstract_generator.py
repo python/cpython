@@ -54,7 +54,7 @@ def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
             if var.name not in variables:
                 variables.add(var.name)
                 if var.condition:
-                    out.emit(f"{type_name(var)}{var.name} = sym_init_null(ctx);\n")
+                    out.emit(f"{type_name(var)}{var.name} = NULL;\n")
                     out.emit(f"if({var.name}) {{goto error;}}\n")
                 else:
                     out.emit(f"{type_name(var)}{var.name};\n")
@@ -64,7 +64,7 @@ def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
         if var.name not in variables:
             variables.add(var.name)
             if var.condition:
-                out.emit(f"{type_name(var)}{var.name} = sym_init_null(ctx);\n")
+                out.emit(f"{type_name(var)}{var.name} = NULL;\n")
                 out.emit(f"if({var.name}) {{goto error;}}\n")
             else:
                 out.emit(f"{type_name(var)}{var.name};\n")
@@ -93,7 +93,7 @@ def emit_default(out: CWriter, uop: Uop) -> None:
                 out.emit(f"if ({var.name}[_i] == NULL) goto error;\n")
                 out.emit("}\n")
             elif var.name == "null":
-                out.emit(f"{var.name} = sym_init_unknown(ctx);\n")
+                out.emit(f"{var.name} = sym_init_null(ctx);\n")
                 out.emit(f"if ({var.name} == NULL) goto error;\n")
             else:
                 out.emit(f"{var.name} = sym_init_unknown(ctx);\n")

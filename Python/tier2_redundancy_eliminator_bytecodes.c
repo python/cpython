@@ -66,21 +66,21 @@ dummy_func(void) {
     }
 
     op(_GUARD_BOTH_INT, (left, right -- left, right)) {
-        if (sym_matches_pytype(left, &PyLong_Type, 0) &&
-            sym_matches_pytype(right, &PyLong_Type, 0)) {
+        if (sym_matches_pytype(left, &PyLong_Type) &&
+            sym_matches_pytype(right, &PyLong_Type)) {
             REPLACE_OP(_NOP, 0, 0);
         }
-        sym_set_pytype(left, &PyLong_Type, 0);
-        sym_set_pytype(right, &PyLong_Type, 0);
+        sym_set_pytype(left, &PyLong_Type);
+        sym_set_pytype(right, &PyLong_Type);
     }
 
     op(_GUARD_BOTH_FLOAT, (left, right -- left, right)) {
-        if (sym_matches_pytype(left, &PyFloat_Type, 0) &&
-            sym_matches_pytype(right, &PyFloat_Type, 0)) {
+        if (sym_matches_pytype(left, &PyFloat_Type) &&
+            sym_matches_pytype(right, &PyFloat_Type)) {
             REPLACE_OP(_NOP, 0 ,0);
         }
-        sym_set_pytype(left, &PyFloat_Type, 0);
-        sym_set_pytype(right, &PyFloat_Type, 0);
+        sym_set_pytype(left, &PyFloat_Type);
+        sym_set_pytype(right, &PyFloat_Type);
     }
 
 
@@ -88,7 +88,7 @@ dummy_func(void) {
         // TODO constant propagation
         (void)left;
         (void)right;
-        res = sym_init_known_pytype(ctx, &PyLong_Type, 0);
+        res = sym_init_known_pytype(ctx, &PyLong_Type);
         if (res == NULL) {
             goto error;
         }
@@ -157,7 +157,7 @@ dummy_func(void) {
         if (self_or_null == NULL) {
             goto error;
         }
-        sym_set_type(self_or_null, SELF_OR_NULL, 0);
+        sym_set_type(self_or_null, SELF_OR_NULL);
         (void)owner;
         attr = sym_init_unknown(ctx);
         if (attr == NULL) {
@@ -166,19 +166,23 @@ dummy_func(void) {
     }
 
     op(_CHECK_FUNCTION_EXACT_ARGS, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
-        sym_set_pytype(callable, &PyFunction_Type, func_version);
+        sym_set_pytype(callable, &PyFunction_Type);
         (void)self_or_null;
+        (void)func_version;
     }
 
     op(_CHECK_CALL_BOUND_METHOD_EXACT_ARGS, (callable, null, unused[oparg] -- callable, null, unused[oparg])) {
-        sym_set_pytype(null, NULL, 0);
-        sym_set_pytype(callable, &PyMethod_Type, 0);
+        sym_set_pytype(null, NULL);
+        sym_set_pytype(callable, &PyMethod_Type);
     }
 
     op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame: _Py_UOpsAbstractFrame *)) {
         int argcount = oparg;
 
-        PyFunctionObject *func = extract_func_from_sym(callable);
+        (void)callable;
+
+        assert((inst + 2)->opcode == _PUSH_FRAME);
+        PyFunctionObject *func = (PyFunctionObject *)(inst + 2)->operand;
         if (func == NULL) {
             goto error;
         }
@@ -186,8 +190,8 @@ dummy_func(void) {
 
         assert(self_or_null != NULL);
         assert(args != NULL);
-        if (!sym_matches_pytype(self_or_null, NULL, 0) &&
-            !sym_matches_type(self_or_null, SELF_OR_NULL, 0)) {
+        if (!sym_matches_pytype(self_or_null, NULL) &&
+            !sym_matches_type(self_or_null, SELF_OR_NULL)) {
             // Bound method fiddling, same as _INIT_CALL_PY_EXACT_ARGS in
             // VM
             args--;
@@ -199,7 +203,7 @@ dummy_func(void) {
         // Can determine statically, so we interleave the new locals
         // and make the current stack the new locals.
         // This also sets up for true call inlining.
-        if (!sym_matches_type(self_or_null, SELF_OR_NULL, 0)) {
+        if (!sym_matches_type(self_or_null, SELF_OR_NULL)) {
             localsplus_start = args;
             n_locals_already_filled = argcount;
         }
@@ -249,7 +253,7 @@ dummy_func(void) {
     }
 
     op(_ITER_NEXT_RANGE, (iter -- iter, next)) {
-       next = sym_init_known_pytype(ctx, &PyLong_Type, 0);
+       next = sym_init_known_pytype(ctx, &PyLong_Type);
        if (next == NULL) {
            goto error;
        }
