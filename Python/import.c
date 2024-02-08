@@ -1132,6 +1132,48 @@ _PyImport_CheckSubinterpIncompatibleExtensionAllowed(const char *name)
     return 0;
 }
 
+static PyThreadState *
+maybe_switch_to_main_interpreter(PyThreadState *tstate)
+{
+    PyThreadState *main_tstate = tstate;
+    if (check_multi_interp_extensions(tstate->interp)) {
+        /*
+        If the module is single-phase init then the import
+        will fail.  However, the module's init function will still
+        get run.  That means it may still store state in the
+        shared-object/DLL address space (which never gets
+        closed/cleared), including objects (e.g. static types).
+
+        This is a problem for isolated subinterpreters since each
+        has its own object allocator.  If the loaded shared-object
+        still holds a reference to an object after the corresponding
+        interpreter has finalized then either we must let it leak
+        or else any later use of that object by another interpreter
+        (or across multiple init-fini cycles) will crash the process.
+
+        We avoid the problem by first loading the module in the main
+        interpreter.
+
+        Here's another complication: the module's init function might
+        register callbacks, whether in Python (e.g. sys.stdin, atexit)
+        or in linked libraries.  Thus we cannot just dlclose() the
+        module in this error case.
+        */
+        main_tstate = PyThreadState_New(_PyInterpreterState_Main());
+        if (main_tstate == NULL) {
+            return NULL;
+        }
+        main_tstate->_whence = _PyThreadState_WHENCE_EXEC;
+#ifndef NDEBUG
+        PyThreadState *old_tstate = PyThreadState_Swap(main_tstate);
+        assert(old_tstate == tstate);
+#else
+        (void)PyThreadState_Swap(main_tstate);
+#endif
+    }
+    return main_tstate;
+}
+
 static PyObject *
 get_core_module_dict(PyInterpreterState *interp,
                      PyObject *name, PyObject *filename)
@@ -3757,13 +3799,14 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
 /*[clinic end generated code: output=83249b827a4fde77 input=c31b954f4cf4e09d]*/
 {
     PyObject *mod = NULL;
-    FILE *fp;
+    FILE *fp = NULL;
     struct _Py_ext_module_loader_info info;
     struct _Py_ext_module_loader_result res;
 
     if (_Py_ext_module_loader_info_from_spec(spec, &info) < 0) {
         return NULL;
     }
+    const char *name_buf = PyBytes_AS_STRING(info.name_encoded);
 
     PyThreadState *tstate = _PyThreadState_GET();
     mod = import_find_extension(tstate, info.name, info.path);
@@ -3784,10 +3827,34 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
         fp = NULL;
     }
 
+    PyThreadState *main_tstate = maybe_switch_to_main_interpreter(tstate);
+
     if (_PyImport_RunDynamicModule(&info, fp, &res) < 0) {
         goto finally;
     }
     mod = res.module;
+
+    if (main_tstate != tstate) {
+        /* The init func ran under the main interpreter.
+           Now we must switch back and run it again under
+           the original interpreter.  Only then should we
+           finish loading the module. */
+        int is_singlephase = (mod != NULL);
+        Py_CLEAR(mod);
+        (void)PyThreadState_Swap(tstate);
+        if (is_singlephase) {
+            /* maybe_switch_to_main_interpreter() switched interpreters
+               only if it was an isolated interpreter.  Thus we know
+               that a single-phase init module is incompatible. */
+            (void)_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf);
+            assert(PyErr_Occurred());
+            goto finally;
+        }
+        if (_PyImport_RunDynamicModule(&info, fp, &res) < 0) {
+            goto finally;
+        }
+        mod = res.module;
+    }
 
     if (mod == NULL) {
         /* multi-phase init */
@@ -3809,11 +3876,11 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
         }
     }
 
-    if (fp) {
+finally:
+    if (fp != NULL) {
         fclose(fp);
     }
 
-finally:
     _Py_ext_module_loader_info_clear(&info);
     return mod;
 }
