@@ -1318,6 +1318,7 @@ if test $enable_shared = "yes"; then
   case $ac_sys_system in
     CYGWIN*)
           LDLIBRARY='libpython$(LDVERSION).dll.a'
+          BLDLIBRARY='-L. -lpython$(LDVERSION)'
           DLLLIBRARY='libpython$(LDVERSION).dll'
           ;;
     SunOS*)
@@ -1334,7 +1335,13 @@ if test $enable_shared = "yes"; then
 	  LDLIBRARY='libpython$(LDVERSION).so'
 	  BLDLIBRARY='-L. -lpython$(LDVERSION)'
 	  RUNSHARED=LD_LIBRARY_PATH=`pwd`${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
-	  INSTSONAME="$LDLIBRARY".$SOVERSION
+
+    # The Android Gradle plugin will only package libraries whose names end
+    # with ".so".
+    if test "$ac_sys_system" != "Linux-android"; then
+        INSTSONAME="$LDLIBRARY".$SOVERSION
+    fi
+
 	  if test "$with_pydebug" != yes
           then
 	      PY3LIBRARY=libpython3.so
@@ -3291,7 +3298,6 @@ then
 		 then CCSHARED="-fPIC";
 		 else CCSHARED="+z";
 		 fi;;
-	Linux-android*) ;;
 	Linux*|GNU*) CCSHARED="-fPIC";;
 	Emscripten*|WASI*)
 		AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
@@ -5845,10 +5851,14 @@ AC_MSG_CHECKING([LDVERSION])
 LDVERSION='$(VERSION)$(ABIFLAGS)'
 AC_MSG_RESULT([$LDVERSION])
 
+AC_SUBST([MODULE_DEPS_SHARED])
+MODULE_DEPS_SHARED='$(MODULE_DEPS_STATIC) $(EXPORTSYMS)'
+
 # On Android and Cygwin the shared libraries must be linked with libpython.
 AC_SUBST([LIBPYTHON])
 if test "$PY_ENABLE_SHARED" = "1" && ( test -n "$ANDROID_API_LEVEL" || test "$MACHDEP" = "cygwin"); then
-  LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"
+  LIBPYTHON="$BLDLIBRARY"
+  MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(LDLIBRARY)"
 else
   LIBPYTHON=''
 fi

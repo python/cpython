@@ -835,6 +835,7 @@ PY_ENABLE_SHARED
 PLATLIBDIR
 BINLIBDEST
 LIBPYTHON
+MODULE_DEPS_SHARED
 EXT_SUFFIX
 ALT_SOABI
 SOABI
@@ -7317,7 +7318,7 @@ printf "%s\n" "#define Py_ENABLE_SHARED 1" >>confdefs.h
 
     # The Android Gradle plugin will only package libraries whose names end
     # with ".so".
-    if [ $ac_sys_system != "Linux-android" ]; then
+    if test "$ac_sys_system" != "Linux-android"; then
         INSTSONAME="$LDLIBRARY".$SOVERSION
     fi
 
@@ -12763,7 +12764,6 @@ then
 		 then CCSHARED="-fPIC";
 		 else CCSHARED="+z";
 		 fi;;
-	Linux-android*) ;;
 	Linux*|GNU*) CCSHARED="-fPIC";;
 	Emscripten*|WASI*)
 		if test "x$enable_wasm_dynamic_linking" = xyes
@@ -23931,10 +23931,14 @@ LDVERSION='$(VERSION)$(ABIFLAGS)'
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $LDVERSION" >&5
 printf "%s\n" "$LDVERSION" >&6; }
 
+
+MODULE_DEPS_SHARED='$(MODULE_DEPS_STATIC) $(EXPORTSYMS)'
+
 # On Android and Cygwin the shared libraries must be linked with libpython.
 
 if test "$PY_ENABLE_SHARED" = "1" && ( test -n "$ANDROID_API_LEVEL" || test "$MACHDEP" = "cygwin"); then
   LIBPYTHON="$BLDLIBRARY"
+  MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(LDLIBRARY)"
 else
   LIBPYTHON=''
 fi
