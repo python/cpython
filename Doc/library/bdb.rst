@@ -148,7 +148,7 @@ The :mod:`bdb` module also defines two classes:
 
    .. method:: reset()
 
-      Set the :attr:`botframe`, :attr:`!stopframe`, :attr:`!returnframe` and
+      Set the :attr:`!botframe`, :attr:`!stopframe`, :attr:`!returnframe` and
       :attr:`quitting <Bdb.set_quit>` attributes with values ready to start debugging.
 
    .. method:: trace_dispatch(frame, event, arg)
@@ -292,6 +292,8 @@ The :mod:`bdb` module also defines two classes:
       set the system trace function to ``None``.
 
    .. method:: set_quit()
+
+      .. index:: single: quitting (bdb.Bdb attribute)
 
       Set the :attr:`!quitting` attribute to ``True``.  This raises :exc:`BdbQuit` in
       the next call to one of the :meth:`!dispatch_\*` methods.
