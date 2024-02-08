@@ -1526,6 +1526,48 @@ _PyImport_CheckSubinterpIncompatibleExtensionAllowed(const char *name)
     return 0;
 }
 
+static PyThreadState *
+maybe_switch_to_main_interpreter(PyThreadState *tstate)
+{
+    PyThreadState *main_tstate = tstate;
+    if (check_multi_interp_extensions(tstate->interp)) {
+        /*
+        If the module is single-phase init then the import
+        will fail.  However, the module's init function will still
+        get run.  That means it may still store state in the
+        shared-object/DLL address space (which never gets
+        closed/cleared), including objects (e.g. static types).
+
+        This is a problem for isolated subinterpreters since each
+        has its own object allocator.  If the loaded shared-object
+        still holds a reference to an object after the corresponding
+        interpreter has finalized then either we must let it leak
+        or else any later use of that object by another interpreter
+        (or across multiple init-fini cycles) will crash the process.
+
+        We avoid the problem by first loading the module in the main
+        interpreter.
+
+        Here's another complication: the module's init function might
+        register callbacks, whether in Python (e.g. sys.stdin, atexit)
+        or in linked libraries.  Thus we cannot just dlclose() the
+        module in this error case.
+        */
+        main_tstate = PyThreadState_New(_PyInterpreterState_Main());
+        if (main_tstate == NULL) {
+            return NULL;
+        }
+        main_tstate->_whence = _PyThreadState_WHENCE_EXEC;
+#ifndef NDEBUG
+        PyThreadState *old_tstate = PyThreadState_Swap(main_tstate);
+        assert(old_tstate == tstate);
+#else
+        (void)PyThreadState_Swap(main_tstate);
+#endif
+    }
+    return main_tstate;
+}
+
 static PyObject *
 get_core_module_dict(PyInterpreterState *interp,
                      PyObject *name, PyObject *path)
@@ -1874,20 +1916,66 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
     struct extensions_cache_value *cached = NULL;
     const char *name_buf = PyBytes_AS_STRING(info->name_encoded);
 
+    /* We cannot know if the module is single-phase init or
+     * multi-phase init until after we call its init function. Even
+     * in isolated interpreters (that do not support single-phase init),
+     * the init function will run without restriction.  For multi-phase
+     * init modules that isn't a problem because the init function runs
+     * PyModuleDef_Init() on the module's def and then returns it.
+     *
+     * However, for single-phase init the module's init function will
+     * create the module, create other objects (and allocate other
+     * memory), populate it and its module state, and initialze static
+     * types.  Some modules store other objects and data in global C
+     * variables and register callbacks with the runtime/stdlib or
+     * event external libraries.  That's a problem for isolated
+     * interpreters since all of that happens and only then will
+     * the import fail.  Memory will leak, callbacks will still
+     * get used, and sometimes there will be memory access
+     * violations and use-after-free crashes.
+     *
+     * To avoid that, we make sure the module's init function is always
+     * run first with the main interpreter active.  If it was already
+     * the main interpreter then we can continue loading the module
+     * like normal.  Otherwise, right after the init function, we switch
+     * back to the subinterpreter, check for single-phase init, and
+     * then continue loading like normal. */
+    PyThreadState *main_tstate = maybe_switch_to_main_interpreter(tstate);
+
     struct _Py_ext_module_loader_result res;
-    if (_PyImport_RunModInitFunc(p0, info, &res) < 0) {
+    int rc = _PyImport_RunModInitFunc(p0, info, &res);
+    if (rc < 0) {
         /* We discard res.def. */
         assert(res.module == NULL);
-        _Py_ext_module_loader_result_apply_error(&res, name_buf);
-        return NULL;
     }
-    assert(!PyErr_Occurred());
-    assert(res.err == NULL);
+    else {
+        assert(!PyErr_Occurred());
+        assert(res.err == NULL);
 
-    mod = res.module;
-    res.module = NULL;
-    def = res.def;
-    assert(def != NULL);
+        mod = res.module;
+        res.module = NULL;
+        def = res.def;
+        assert(def != NULL);
+    }
+
+    /* Switch back to the subinterpreter. */
+    if (main_tstate != tstate) {
+        /* Any module we got from the init function will have to be
+         * reloaded in the subinterpreter. */
+        Py_CLEAR(mod);
+
+        (void)PyThreadState_Swap(tstate);
+    }
+
+    /*****************************************************************/
+    /* At this point we are back to the interpreter we started with. */
+    /*****************************************************************/
+
+    /* Finally we handle the error return from _PyImport_RunModInitFunc(). */
+    if (rc < 0) {
+        _Py_ext_module_loader_result_apply_error(&res, name_buf);
+        goto error;
+    }
 
     if (res.kind == _Py_ext_module_kind_MULTIPHASE) {
         assert_multiphase_def(def);
@@ -1900,11 +1988,12 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
     else {
         assert(res.kind == _Py_ext_module_kind_SINGLEPHASE);
         assert_singlephase_def(def);
-        assert(PyModule_Check(mod));
 
         if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
             goto error;
         }
+        assert(mod != NULL);
+        assert(PyModule_Check(mod));
 
         /* Remember the filename as the __file__ attribute */
         if (info->filename != NULL) {
@@ -1941,6 +2030,18 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
         if (cached == NULL) {
             goto error;
         }
+
+        if (main_tstate != tstate) {
+            /* We switched to the main interpreter to run the init
+             * function, so now we will "reload" the module from the
+             * cached data using the original subinterpreter. */
+            Py_CLEAR(mod);
+            mod = reload_singlephase_extension(tstate, cached, info);
+            if (mod == NULL) {
+                goto error;
+            }
+        }
+        assert(!PyErr_Occurred());
 
         /* Update per-interpreter import state. */
         PyObject *modules = get_modules_dict(tstate, true);
