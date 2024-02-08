@@ -2107,6 +2107,7 @@ set_discard(PySetObject *so, PyObject *key)
 set.__reduce__
     so: setobject
 
+Return state information for pickling.
 [clinic start generated code]*/
 
 static PyObject *
