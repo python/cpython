@@ -2371,7 +2371,9 @@ dummy_func(
 
             PyCodeObject *code = _PyFrame_GetCode(frame);
             current_executor = code->co_executors->executors[oparg & 255];
+            assert(current_executor->vm_data.index == INSTR_OFFSET() - 1);
             assert(current_executor->vm_data.code == code);
+            assert(current_executor->vm_data.valid);
             Py_INCREF(current_executor);
             GOTO_TIER_TWO();
         }
