@@ -38,13 +38,14 @@ class HANDLE_converter(CConverter):
     type = 'void *'
     format_unit = '"_Py_PARSE_UINTPTR"'
 
-    def parse_arg(self, argname, displayname):
-        return """
+    def parse_arg(self, argname, displayname, *, limited_capi):
+        return self.format_code("""
             {paramname} = PyLong_AsVoidPtr({argname});
             if (!{paramname} && PyErr_Occurred()) {{{{
                 goto exit;
             }}}}
-            """.format(argname=argname, paramname=self.parser_name)
+            """,
+            argname=argname)
 
 class HANDLE_return_converter(CReturnConverter):
     type = 'void *'
@@ -74,7 +75,7 @@ class wchar_t_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = PyUnicode_FromOrdinal(_return_value);\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=1e8e9fa3538ec08f]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=ff031be44ab3250d]*/
 
 /*[clinic input]
 module msvcrt
@@ -219,12 +220,12 @@ msvcrt_get_osfhandle_impl(PyObject *module, int fd)
 /*[clinic input]
 msvcrt.kbhit -> long
 
-Return true if a keypress is waiting to be read.
+Returns a nonzero value if a keypress is waiting to be read. Otherwise, return 0.
 [clinic start generated code]*/
 
 static long
 msvcrt_kbhit_impl(PyObject *module)
-/*[clinic end generated code: output=940dfce6587c1890 input=e70d678a5c2f6acc]*/
+/*[clinic end generated code: output=940dfce6587c1890 input=d0f4cb3289ff51e2]*/
 {
     return _kbhit();
 }
@@ -565,15 +566,9 @@ static struct PyMethodDef msvcrt_functions[] = {
 };
 
 static int
-insertptr(PyObject *mod, char *name, void *value)
+insertptr(PyObject *mod, const char *name, void *value)
 {
-    PyObject *v = PyLong_FromVoidPtr(value);
-    if (v == NULL) {
-        return -1;
-    }
-    int rc = PyModule_AddObjectRef(mod, name, v);
-    Py_DECREF(v);
-    return rc;
+    return PyModule_Add(mod, name, PyLong_FromVoidPtr(value));
 }
 
 #define INSERTINT(MOD, NAME, VAL) do {                  \
@@ -620,6 +615,10 @@ exec_module(PyObject* m)
     INSERTPTR(m, "CRTDBG_FILE_STDERR", _CRTDBG_FILE_STDERR);
     INSERTPTR(m, "CRTDBG_FILE_STDOUT", _CRTDBG_FILE_STDOUT);
     INSERTPTR(m, "CRTDBG_REPORT_FILE", _CRTDBG_REPORT_FILE);
+    INSERTINT(m, "OUT_TO_DEFAULT", _OUT_TO_DEFAULT);
+    INSERTINT(m, "OUT_TO_STDERR", _OUT_TO_STDERR);
+    INSERTINT(m, "OUT_TO_MSGBOX", _OUT_TO_MSGBOX);
+    INSERTINT(m, "REPORT_ERRMODE", _REPORT_ERRMODE);
 #endif
 
 #undef INSERTINT
@@ -646,12 +645,7 @@ exec_module(PyObject* m)
                                              _VC_CRT_MINOR_VERSION,
                                              _VC_CRT_BUILD_VERSION,
                                              _VC_CRT_RBUILD_VERSION);
-    if (version == NULL) {
-        return -1;
-    }
-    int st = PyModule_AddObjectRef(m, "CRT_ASSEMBLY_VERSION", version);
-    Py_DECREF(version);
-    if (st < 0) {
+    if (PyModule_Add(m, "CRT_ASSEMBLY_VERSION", version) < 0) {
         return -1;
     }
 #endif
