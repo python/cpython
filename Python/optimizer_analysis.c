@@ -523,7 +523,8 @@ uop_abstract_interpret_single_inst(
             _PyOpcode_uop_name[opcode],
             oparg);
     switch (opcode) {
-#include "abstract_interp_cases.c.h"
+#include "tier2_redundancy_eliminator_cases.c.h"
+
         default:
             DPRINTF(1, "Unknown opcode in abstract interpreter\n");
             Py_UNREACHABLE();

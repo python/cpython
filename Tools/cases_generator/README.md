@@ -15,7 +15,7 @@ What's currently here:
   write `Python/generated_cases.c.h` (and several other files)
 - `tier2_abstract_generator.py`: reads `Python/bytecodes.c` and
   `Python/tier2_redundancy_eliminator_bytecodes.c` and writes
-  `Python/abstract_interp_cases.c.h`
+  `Python/tier2_redundancy_eliminator_cases.c.h`
 - `stack.py`: code to handle generalized stack effects
 - `cwriter.py`: code which understands tokens and how to format C code;
   main class: `CWriter`

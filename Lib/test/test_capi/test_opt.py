@@ -543,7 +543,6 @@ class TestUops(unittest.TestCase):
 
 class TestUopsOptimization(unittest.TestCase):
 
-
     def test_int_type_propagation(self):
         def testfunc(loops):
             num = 0

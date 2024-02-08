@@ -1,6 +1,6 @@
 """Generate the cases for the tier 2 redundancy eliminator/abstract interpreter.
 Reads the instruction definitions from bytecodes.c. and tier2_redundancy_eliminator.bytecodes.c
-Writes the cases to abstract_interp_cases.c.h, which is #included in Python/optimizer_analysis.c.
+Writes the cases to tier2_redundancy_eliminator_cases.c.h, which is #included in Python/optimizer_analysis.c.
 """
 
 import argparse
@@ -30,7 +30,7 @@ from typing import TextIO, Iterator
 from lexer import Token
 from stack import StackOffset, Stack, SizeMismatch, UNUSED
 
-DEFAULT_OUTPUT = ROOT / "Python/abstract_interp_cases.c.h"
+DEFAULT_OUTPUT = ROOT / "Python/tier2_redundancy_eliminator_cases.c.h"
 DEFAULT_ABSTRACT_INPUT = ROOT / "Python/tier2_redundancy_eliminator_bytecodes.c"
 
 

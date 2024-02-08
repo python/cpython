@@ -101,45 +101,39 @@ dummy_func(void) {
     }
 
     op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
-        _Py_UOpsSymType *sym_const = sym_init_const(ctx, ptr);
-        if (sym_const == NULL) {
+        value = sym_init_const(ctx, ptr);
+        if (value == NULL) {
             goto error;
         }
-        value = sym_const;
     }
 
     op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
-        _Py_UOpsSymType *sym_const = sym_init_const(ctx, ptr);
-        if (sym_const == NULL) {
+        value = sym_init_const(ctx, ptr);
+        if (value == NULL) {
             goto error;
         }
-        value = sym_const;
     }
 
     op(_LOAD_CONST_INLINE_WITH_NULL, (ptr/4 -- value, null)) {
-        _Py_UOpsSymType *sym_const = sym_init_const(ctx, ptr);
-        if (sym_const == NULL) {
+        value = sym_init_const(ctx, ptr);
+        if (value == NULL) {
             goto error;
         }
-        value = sym_const;
-        _Py_UOpsSymType *null_sym =  sym_init_null(ctx);
-        if (null_sym == NULL) {
+        null = sym_init_null(ctx);
+        if (null == NULL) {
             goto error;
         }
-        null = null_sym;
     }
 
     op(_LOAD_CONST_INLINE_BORROW_WITH_NULL, (ptr/4 -- value, null)) {
-        _Py_UOpsSymType *sym_const = sym_init_const(ctx, ptr);
-        if (sym_const == NULL) {
+        value = sym_init_const(ctx, ptr);
+        if (value == NULL) {
             goto error;
         }
-        value = sym_const;
-        _Py_UOpsSymType *null_sym =  sym_init_null(ctx);
-        if (null_sym == NULL) {
+        null = sym_init_null(ctx);
+        if (null == NULL) {
             goto error;
         }
-        null = null_sym;
     }
 
 
@@ -208,8 +202,7 @@ dummy_func(void) {
         assert(self_or_null != NULL);
         assert(args != NULL);
         if (sym_matches_type(self_or_null, NOT_NULL)) {
-            // Bound method fiddling, same as _INIT_CALL_PY_EXACT_ARGS in
-            // VM
+            // Bound method fiddling, same as _INIT_CALL_PY_EXACT_ARGS in VM
             args--;
             argcount++;
         }

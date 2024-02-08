@@ -1298,8 +1298,7 @@
             assert(self_or_null != NULL);
             assert(args != NULL);
             if (sym_matches_type(self_or_null, NOT_NULL)) {
-                // Bound method fiddling, same as _INIT_CALL_PY_EXACT_ARGS in
-                // VM
+                // Bound method fiddling, same as _INIT_CALL_PY_EXACT_ARGS in VM
                 args--;
                 argcount++;
             }
@@ -1603,11 +1602,10 @@
         case _LOAD_CONST_INLINE: {
             _Py_UOpsSymType *value;
             PyObject *ptr = (PyObject *)inst->operand;
-            _Py_UOpsSymType *sym_const = sym_init_const(ctx, ptr);
-            if (sym_const == NULL) {
+            value = sym_init_const(ctx, ptr);
+            if (value == NULL) {
                 goto error;
             }
-            value = sym_const;
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;
@@ -1616,11 +1614,10 @@
         case _LOAD_CONST_INLINE_BORROW: {
             _Py_UOpsSymType *value;
             PyObject *ptr = (PyObject *)inst->operand;
-            _Py_UOpsSymType *sym_const = sym_init_const(ctx, ptr);
-            if (sym_const == NULL) {
+            value = sym_init_const(ctx, ptr);
+            if (value == NULL) {
                 goto error;
             }
-            value = sym_const;
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;
@@ -1630,16 +1627,14 @@
             _Py_UOpsSymType *value;
             _Py_UOpsSymType *null;
             PyObject *ptr = (PyObject *)inst->operand;
-            _Py_UOpsSymType *sym_const = sym_init_const(ctx, ptr);
-            if (sym_const == NULL) {
+            value = sym_init_const(ctx, ptr);
+            if (value == NULL) {
                 goto error;
             }
-            value = sym_const;
-            _Py_UOpsSymType *null_sym =  sym_init_null(ctx);
-            if (null_sym == NULL) {
+            null = sym_init_null(ctx);
+            if (null == NULL) {
                 goto error;
             }
-            null = null_sym;
             stack_pointer[0] = value;
             stack_pointer[1] = null;
             stack_pointer += 2;
@@ -1650,16 +1645,14 @@
             _Py_UOpsSymType *value;
             _Py_UOpsSymType *null;
             PyObject *ptr = (PyObject *)inst->operand;
-            _Py_UOpsSymType *sym_const = sym_init_const(ctx, ptr);
-            if (sym_const == NULL) {
+            value = sym_init_const(ctx, ptr);
+            if (value == NULL) {
                 goto error;
             }
-            value = sym_const;
-            _Py_UOpsSymType *null_sym =  sym_init_null(ctx);
-            if (null_sym == NULL) {
+            null = sym_init_null(ctx);
+            if (null == NULL) {
                 goto error;
             }
-            null = null_sym;
             stack_pointer[0] = value;
             stack_pointer[1] = null;
             stack_pointer += 2;
