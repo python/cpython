@@ -1,2 +1,0 @@
-Fix reference leaks during ``_testbuffer`` module initialization
-in error handling.
