@@ -236,7 +236,7 @@ _PyDict_NotifyEvent(PyInterpreterState *interp,
     assert(Py_REFCNT((PyObject*)mp) > 0);
     int watcher_bits = mp->ma_version_tag & DICT_WATCHER_MASK;
     if (watcher_bits) {
-        RARE_EVENT_INC(watched_dict_modification);
+        RARE_EVENT_STAT_INC(watched_dict_modification);
         _PyDict_SendEvent(watcher_bits, event, mp, key, value);
         return DICT_NEXT_VERSION(interp) | watcher_bits;
     }
