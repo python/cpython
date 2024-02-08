@@ -890,7 +890,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         case OP2: {
             _Py_UOpsSymType *out;
             out = sym_new_unknown(ctx);
-            if (out == NULL) goto error;
+            if (out == NULL) goto out_of_space;
             stack_pointer[-1] = out;
             break;
         }
@@ -915,7 +915,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         case OP: {
             _Py_UOpsSymType *out;
             out = sym_new_unknown(ctx);
-            if (out == NULL) goto error;
+            if (out == NULL) goto out_of_space;
             stack_pointer[-1] = out;
             break;
         }
