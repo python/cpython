@@ -64,17 +64,11 @@
 * `PYFLOAT_TYPE`: `Py_TYPE(val) == &PyFloat_Type`
 * `PYUNICODE_TYPE`: `Py_TYPE(val) == &PYUNICODE_TYPE`
 * `NULL_TYPE`: `val == NULL`
-* `GUARD_TYPE_VERSION_TYPE`: `type->tp_version_tag == auxillary`
-* `GUARD_DORV_VALUES_TYPE`: `_PyDictOrValues_IsValues(obj)`
-* `GUARD_KEYS_VERSION_TYPE`: `owner_heap_type->ht_cached_keys->dk_version == auxillary`
 * `PYMETHOD_TYPE`: `Py_TYPE(val) == &PyMethod_Type`
 * `PYFUNCTION_TYPE_VERSION_TYPE`:
-  `PyFunction_Check(callable) && func->func_version == auxillary && code->co_argcount == oparg + (self_or_null != NULL)`
+  `PyFunction_Check(callable) && code->co_argcount == oparg + (self_or_null != NULL)`
  */
 typedef enum {
-    // Types with refinement info
-    GUARD_KEYS_VERSION_TYPE = 0,
-    GUARD_TYPE_VERSION_TYPE = 1,
     // You might think this actually needs to encode oparg
     // info as well, see _CHECK_FUNCTION_EXACT_ARGS.
     // However, since oparg is tied to code object is tied to function version,
@@ -87,7 +81,6 @@ typedef enum {
     PYUNICODE_TYPE = 5,
     NULL_TYPE = 6,
     PYMETHOD_TYPE = 7,
-    GUARD_DORV_VALUES_TYPE = 8,
     NOT_NULL = 9,
 
     // Represents something from LOAD_CONST which is truly constant.
@@ -342,9 +335,6 @@ sym_set_type_from_const(_Py_UOpsSymType *sym, PyObject *obj)
 {
     PyTypeObject *tp = Py_TYPE(obj);
 
-    if (tp->tp_version_tag != 0) {
-        sym_set_type(sym, GUARD_TYPE_VERSION_TYPE);
-    }
     if (tp == &PyFunction_Type) {
         sym_set_type(sym, PYFUNCTION_TYPE_VERSION_TYPE);
     }
