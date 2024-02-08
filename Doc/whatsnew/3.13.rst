@@ -101,6 +101,17 @@ Improved Error Messages
   variables. See also :ref:`using-on-controlling-color`.
   (Contributed by Pablo Galindo Salgado in :gh:`112730`.)
 
+* When an incorrect keyword argument is passed to a function, the error message
+  now potentially suggests the correct keyword argument.
+  (Contributed by Pablo Galindo Salgado and Shantanu Jain in :gh:`107944`.)
+
+    >>> "better error messages!".split(max_split=1)
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+        "better error messages!".split(max_split=1)
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+    TypeError: split() got an unexpected keyword argument 'max_split'. Did you mean 'maxsplit'?
+
 Other Language Changes
 ======================
 

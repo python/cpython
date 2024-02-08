@@ -1917,7 +1917,7 @@ class ImportErrorTests(unittest.TestCase):
         self.assertEqual(exc.name, 'somename')
         self.assertEqual(exc.path, 'somepath')
 
-        msg = "'invalid' is an invalid keyword argument for ImportError"
+        msg = r"ImportError\(\) got an unexpected keyword argument 'invalid'"
         with self.assertRaisesRegex(TypeError, msg):
             ImportError('test', invalid='keyword')
 
