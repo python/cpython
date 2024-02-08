@@ -426,7 +426,11 @@ class LongTests(unittest.TestCase):
 
     def test_long_asnativebytes(self):
         import math
-        from _testcapi import pylong_asnativebytes as asnativebytes, SIZE_MAX
+        from _testcapi import (
+            pylong_asnativebytes as asnativebytes,
+            INT_MAX,
+            SIZE_MAX,
+        )
 
         # Abbreviate sizeof(Py_ssize_t) to SZ because we use it a lot
         SZ = int(math.ceil(math.log(SIZE_MAX + 1) / math.log(2)) / 8)
@@ -453,6 +457,9 @@ class LongTests(unittest.TestCase):
                 buffer = bytearray(1)
                 self.assertEqual(expect, asnativebytes(v, buffer, 0, -1),
                     "PyLong_AsNativeBytes(v, NULL, 0, -1)")
+                # Also check via the __index__ path
+                self.assertEqual(expect, asnativebytes(Index(v), buffer, 0, -1),
+                    "PyLong_AsNativeBytes(Index(v), NULL, 0, -1)")
 
         # We request as many bytes as `expect_be` contains, and always check
         # the result (both big and little endian). We check the return value
@@ -514,6 +521,19 @@ class LongTests(unittest.TestCase):
                     f"PyLong_AsNativeBytes(v, buffer, {n}, <little>)")
                 self.assertEqual(expect_le, buffer[:n], "<little>")
 
+        # Check a few error conditions. These are validated in code, but are
+        # unspecified in docs, so if we make changes to the implementation, it's
+        # fine to just update these tests rather than preserve the behaviour.
+        with self.assertRaises(SystemError):
+            asnativebytes(1, buffer, 0, 2)
+        with self.assertRaises(TypeError):
+            asnativebytes('not a number', buffer, 0, -1)
+        with self.assertRaises(SystemError):
+            # n_bytes is taken as size_t and clamped to 'int'. With the sign
+            # change, we should always be able to pass INT_MAX+1 and see this
+            # failure.
+            asnativebytes(1, buffer, INT_MAX + 1, -1)
+
     def test_long_fromnativebytes(self):
         import math
         from _testcapi import (
@@ -545,6 +565,15 @@ class LongTests(unittest.TestCase):
                     f"PyLong_FromUnsignedNativeBytes(buffer, {n}, <big>)")
                 self.assertEqual(expect_u, fromnativebytes(v_le, n, 1, 0),
                     f"PyLong_FromUnsignedNativeBytes(buffer, {n}, <little>)")
+
+                # Check native endian when the result would be the same either
+                # way and we can test it.
+                if v_be == v_le:
+                    self.assertEqual(expect_s, fromnativebytes(v_be, n, -1, 1),
+                        f"PyLong_FromNativeBytes(buffer, {n}, <native>)")
+                    self.assertEqual(expect_u, fromnativebytes(v_be, n, -1, 0),
+                        f"PyLong_FromUnsignedNativeBytes(buffer, {n}, <native>)")
+
 
 if __name__ == "__main__":
     unittest.main()

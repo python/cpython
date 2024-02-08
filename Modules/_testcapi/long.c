@@ -790,7 +790,9 @@ pylong_asnativebytes(PyObject *module, PyObject *args)
         PyBuffer_Release(&buffer);
         return NULL;
     }
-    if (buffer.len < n) {
+    // Allow n > INT_MAX for tests - it will error out without writing to the
+    // buffer, so no overrun issues.
+    if (buffer.len < n && n <= INT_MAX) {
         PyErr_SetString(PyExc_ValueError, "buffer must be at least 'n' bytes");
         PyBuffer_Release(&buffer);
         return NULL;

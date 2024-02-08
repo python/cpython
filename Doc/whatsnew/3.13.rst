@@ -1493,7 +1493,7 @@ New Features
 
 * Add :c:func:`PyLong_AsNativeBytes`, :c:func:`PyLong_FromNativeBytes` and
   :c:func:`PyLong_FromUnsignedNativeBytes` functions to simplify converting
-  between native integer types and Python ``int`` objects.
+  between native integer types and Python :class:`int` objects.
   (Contributed by Steve Dower in :gh:`111140`.)
 
 
