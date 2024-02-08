@@ -38,6 +38,7 @@ globals_watcher_callback(PyDict_WatchEvent event, PyObject* dict,
                          PyObject* key, PyObject* new_value)
 {
     uint64_t watched_mutations = get_mutations(dict);
+    RARE_EVENT_STAT_INC(watched_globals_modification);
     if (watched_mutations < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
         _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), dict);
         increment_mutations(dict);
