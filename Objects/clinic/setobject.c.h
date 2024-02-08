@@ -16,12 +16,12 @@ PyDoc_STRVAR(set_pop__doc__,
     {"pop", (PyCFunction)set_pop, METH_NOARGS, set_pop__doc__},
 
 static PyObject *
-set_pop_impl(PySetObject *self);
+set_pop_impl(PySetObject *so);
 
 static PyObject *
-set_pop(PySetObject *self, PyObject *Py_UNUSED(ignored))
+set_pop(PySetObject *so, PyObject *Py_UNUSED(ignored))
 {
-    return set_pop_impl(self);
+    return set_pop_impl(so);
 }
 
 PyDoc_STRVAR(set_update__doc__,
@@ -34,10 +34,10 @@ PyDoc_STRVAR(set_update__doc__,
     {"update", _PyCFunction_CAST(set_update), METH_FASTCALL, set_update__doc__},
 
 static PyObject *
-set_update_impl(PySetObject *self, PyObject *args);
+set_update_impl(PySetObject *so, PyObject *args);
 
 static PyObject *
-set_update(PySetObject *self, PyObject *const *args, Py_ssize_t nargs)
+set_update(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *__clinic_args = NULL;
@@ -52,7 +52,7 @@ set_update(PySetObject *self, PyObject *const *args, Py_ssize_t nargs)
     for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
         PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
     }
-    return_value = set_update_impl(self, __clinic_args);
+    return_value = set_update_impl(so, __clinic_args);
 
 exit:
     Py_XDECREF(__clinic_args);
@@ -69,12 +69,12 @@ PyDoc_STRVAR(set_copy__doc__,
     {"copy", (PyCFunction)set_copy, METH_NOARGS, set_copy__doc__},
 
 static PyObject *
-set_copy_impl(PySetObject *self);
+set_copy_impl(PySetObject *so);
 
 static PyObject *
-set_copy(PySetObject *self, PyObject *Py_UNUSED(ignored))
+set_copy(PySetObject *so, PyObject *Py_UNUSED(ignored))
 {
-    return set_copy_impl(self);
+    return set_copy_impl(so);
 }
 
 PyDoc_STRVAR(frozenset_copy__doc__,
@@ -87,12 +87,12 @@ PyDoc_STRVAR(frozenset_copy__doc__,
     {"copy", (PyCFunction)frozenset_copy, METH_NOARGS, frozenset_copy__doc__},
 
 static PyObject *
-frozenset_copy_impl(PySetObject *self);
+frozenset_copy_impl(PySetObject *so);
 
 static PyObject *
-frozenset_copy(PySetObject *self, PyObject *Py_UNUSED(ignored))
+frozenset_copy(PySetObject *so, PyObject *Py_UNUSED(ignored))
 {
-    return frozenset_copy_impl(self);
+    return frozenset_copy_impl(so);
 }
 
 PyDoc_STRVAR(set_clear__doc__,
@@ -105,12 +105,12 @@ PyDoc_STRVAR(set_clear__doc__,
     {"clear", (PyCFunction)set_clear, METH_NOARGS, set_clear__doc__},
 
 static PyObject *
-set_clear_impl(PySetObject *self);
+set_clear_impl(PySetObject *so);
 
 static PyObject *
-set_clear(PySetObject *self, PyObject *Py_UNUSED(ignored))
+set_clear(PySetObject *so, PyObject *Py_UNUSED(ignored))
 {
-    return set_clear_impl(self);
+    return set_clear_impl(so);
 }
 
 PyDoc_STRVAR(set_union__doc__,
@@ -123,10 +123,10 @@ PyDoc_STRVAR(set_union__doc__,
     {"union", _PyCFunction_CAST(set_union), METH_FASTCALL, set_union__doc__},
 
 static PyObject *
-set_union_impl(PySetObject *self, PyObject *args);
+set_union_impl(PySetObject *so, PyObject *args);
 
 static PyObject *
-set_union(PySetObject *self, PyObject *const *args, Py_ssize_t nargs)
+set_union(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *__clinic_args = NULL;
@@ -141,7 +141,7 @@ set_union(PySetObject *self, PyObject *const *args, Py_ssize_t nargs)
     for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
         PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
     }
-    return_value = set_union_impl(self, __clinic_args);
+    return_value = set_union_impl(so, __clinic_args);
 
 exit:
     Py_XDECREF(__clinic_args);
@@ -158,10 +158,10 @@ PyDoc_STRVAR(set_intersection_multi__doc__,
     {"intersection", _PyCFunction_CAST(set_intersection_multi), METH_FASTCALL, set_intersection_multi__doc__},
 
 static PyObject *
-set_intersection_multi_impl(PySetObject *self, PyObject *args);
+set_intersection_multi_impl(PySetObject *so, PyObject *args);
 
 static PyObject *
-set_intersection_multi(PySetObject *self, PyObject *const *args, Py_ssize_t nargs)
+set_intersection_multi(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *__clinic_args = NULL;
@@ -176,7 +176,7 @@ set_intersection_multi(PySetObject *self, PyObject *const *args, Py_ssize_t narg
     for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
         PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
     }
-    return_value = set_intersection_multi_impl(self, __clinic_args);
+    return_value = set_intersection_multi_impl(so, __clinic_args);
 
 exit:
     Py_XDECREF(__clinic_args);
@@ -193,10 +193,10 @@ PyDoc_STRVAR(set_intersection_update_multi__doc__,
     {"intersection_update", _PyCFunction_CAST(set_intersection_update_multi), METH_FASTCALL, set_intersection_update_multi__doc__},
 
 static PyObject *
-set_intersection_update_multi_impl(PySetObject *self, PyObject *args);
+set_intersection_update_multi_impl(PySetObject *so, PyObject *args);
 
 static PyObject *
-set_intersection_update_multi(PySetObject *self, PyObject *const *args, Py_ssize_t nargs)
+set_intersection_update_multi(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *__clinic_args = NULL;
@@ -211,7 +211,7 @@ set_intersection_update_multi(PySetObject *self, PyObject *const *args, Py_ssize
     for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
         PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
     }
-    return_value = set_intersection_update_multi_impl(self, __clinic_args);
+    return_value = set_intersection_update_multi_impl(so, __clinic_args);
 
 exit:
     Py_XDECREF(__clinic_args);
@@ -237,10 +237,10 @@ PyDoc_STRVAR(set_difference_update__doc__,
     {"difference_update", _PyCFunction_CAST(set_difference_update), METH_FASTCALL, set_difference_update__doc__},
 
 static PyObject *
-set_difference_update_impl(PySetObject *self, PyObject *args);
+set_difference_update_impl(PySetObject *so, PyObject *args);
 
 static PyObject *
-set_difference_update(PySetObject *self, PyObject *const *args, Py_ssize_t nargs)
+set_difference_update(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *__clinic_args = NULL;
@@ -255,7 +255,7 @@ set_difference_update(PySetObject *self, PyObject *const *args, Py_ssize_t nargs
     for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
         PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
     }
-    return_value = set_difference_update_impl(self, __clinic_args);
+    return_value = set_difference_update_impl(so, __clinic_args);
 
 exit:
     Py_XDECREF(__clinic_args);
@@ -272,10 +272,10 @@ PyDoc_STRVAR(set_difference_multi__doc__,
     {"difference", _PyCFunction_CAST(set_difference_multi), METH_FASTCALL, set_difference_multi__doc__},
 
 static PyObject *
-set_difference_multi_impl(PySetObject *self, PyObject *args);
+set_difference_multi_impl(PySetObject *so, PyObject *args);
 
 static PyObject *
-set_difference_multi(PySetObject *self, PyObject *const *args, Py_ssize_t nargs)
+set_difference_multi(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *__clinic_args = NULL;
@@ -290,7 +290,7 @@ set_difference_multi(PySetObject *self, PyObject *const *args, Py_ssize_t nargs)
     for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
         PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
     }
-    return_value = set_difference_multi_impl(self, __clinic_args);
+    return_value = set_difference_multi_impl(so, __clinic_args);
 
 exit:
     Py_XDECREF(__clinic_args);
@@ -385,12 +385,12 @@ PyDoc_STRVAR(set___reduce____doc__,
     {"__reduce__", (PyCFunction)set___reduce__, METH_NOARGS, set___reduce____doc__},
 
 static PyObject *
-set___reduce___impl(PySetObject *self);
+set___reduce___impl(PySetObject *so);
 
 static PyObject *
-set___reduce__(PySetObject *self, PyObject *Py_UNUSED(ignored))
+set___reduce__(PySetObject *so, PyObject *Py_UNUSED(ignored))
 {
-    return set___reduce___impl(self);
+    return set___reduce___impl(so);
 }
 
 PyDoc_STRVAR(set___sizeof____doc__,
@@ -403,11 +403,11 @@ PyDoc_STRVAR(set___sizeof____doc__,
     {"__sizeof__", (PyCFunction)set___sizeof__, METH_NOARGS, set___sizeof____doc__},
 
 static PyObject *
-set___sizeof___impl(PySetObject *self);
+set___sizeof___impl(PySetObject *so);
 
 static PyObject *
-set___sizeof__(PySetObject *self, PyObject *Py_UNUSED(ignored))
+set___sizeof__(PySetObject *so, PyObject *Py_UNUSED(ignored))
 {
-    return set___sizeof___impl(self);
+    return set___sizeof___impl(so);
 }
-/*[clinic end generated code: output=65d5a0a49654e8ee input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ff816e6e7e27b60e input=a9049054013a1b77]*/

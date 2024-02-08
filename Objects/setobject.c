@@ -48,6 +48,12 @@ class frozenset "PySetObject *" "&PyFrozenSet_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=97ad1d3e9f117079]*/
 
+/*[python input]
+class setobject_converter(self_converter):
+    type = "PySetObject *"
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=33a44506d4d57793]*/
+
 /* Object used as dummy key to fill deleted entries */
 static PyObject _dummy_struct;
 
@@ -641,34 +647,36 @@ set_merge(PySetObject *so, PyObject *otherset)
 /*[clinic input]
 set.pop
 
+    so: setobject
+
 Remove and return an arbitrary set element.
 
 Raises KeyError if the set is empty.
 [clinic start generated code]*/
 
 static PyObject *
-set_pop_impl(PySetObject *self)
-/*[clinic end generated code: output=bf7ef01d2a364703 input=4a02ec3ab60c88fb]*/
+set_pop_impl(PySetObject *so)
+/*[clinic end generated code: output=4d65180f1271871b input=a48194117ea1e63a]*/
 {
     /* Make sure the search finger is in bounds */
-    setentry *entry = self->table + (self->finger & self->mask);
-    setentry *limit = self->table + self->mask;
+    setentry *entry = so->table + (so->finger & so->mask);
+    setentry *limit = so->table + so->mask;
     PyObject *key;
 
-    if (self->used == 0) {
+    if (so->used == 0) {
         PyErr_SetString(PyExc_KeyError, "pop from an empty set");
         return NULL;
     }
     while (entry->key == NULL || entry->key==dummy) {
         entry++;
         if (entry > limit)
-            entry = self->table;
+            entry = so->table;
     }
     key = entry->key;
     entry->key = dummy;
     entry->hash = -1;
-    self->used--;
-    self->finger = entry - self->table + 1;   /* next place to start */
+    so->used--;
+    so->finger = entry - so->table + 1;   /* next place to start */
     return key;
 }
 
@@ -951,6 +959,7 @@ exit:
 /*[clinic input]
 set.update
 
+    so: setobject
     *args: object
     /
 
@@ -958,14 +967,14 @@ Update the set, adding elements from all others.
 [clinic start generated code]*/
 
 static PyObject *
-set_update_impl(PySetObject *self, PyObject *args)
-/*[clinic end generated code: output=efaf3d49e9611bda input=71713e1a28691fcd]*/
+set_update_impl(PySetObject *so, PyObject *args)
+/*[clinic end generated code: output=34f6371704974c8a input=a4dc6ead0d0dd452]*/
 {
     Py_ssize_t i;
 
     for (i=0 ; i<PyTuple_GET_SIZE(args) ; i++) {
         PyObject *other = PyTuple_GET_ITEM(args, i);
-        if (set_update_internal(self, other))
+        if (set_update_internal(so, other))
             return NULL;
     }
     Py_RETURN_NONE;
@@ -1121,49 +1130,56 @@ set_swap_bodies(PySetObject *a, PySetObject *b)
 /*[clinic input]
 set.copy
 
+    so: setobject
+
 Return a shallow copy of a set.
 [clinic start generated code]*/
 
 static PyObject *
-set_copy_impl(PySetObject *self)
-/*[clinic end generated code: output=db3ef842e70a8bda input=506bf38397e748ab]*/
+set_copy_impl(PySetObject *so)
+/*[clinic end generated code: output=c9223a1e1cc6b041 input=9bb66f7d227269a5]*/
 {
-    return make_new_set_basetype(Py_TYPE(self), (PyObject *)self);
+    return make_new_set_basetype(Py_TYPE(so), (PyObject *)so);
 }
 
 /*[clinic input]
 frozenset.copy
 
+    so: setobject
+
 Return a shallow copy of a set.
 [clinic start generated code]*/
 
 static PyObject *
-frozenset_copy_impl(PySetObject *self)
-/*[clinic end generated code: output=3ff78c0546ebeafd input=b10118ca804b0780]*/
+frozenset_copy_impl(PySetObject *so)
+/*[clinic end generated code: output=b356263526af9e70 input=ed001ffd5277ddd3]*/
 {
-    if (PyFrozenSet_CheckExact(self)) {
-        return Py_NewRef(self);
+    if (PyFrozenSet_CheckExact(so)) {
+        return Py_NewRef(so);
     }
-    return set_copy(self, NULL);
+    return set_copy(so, NULL);
 }
 
 /*[clinic input]
 set.clear
 
+    so: setobject
+
 Remove all elements from this set.
 [clinic start generated code]*/
 
 static PyObject *
-set_clear_impl(PySetObject *self)
-/*[clinic end generated code: output=13dbb9952f84dbcf input=ac9375b8119b6561]*/
+set_clear_impl(PySetObject *so)
+/*[clinic end generated code: output=4e71d5a83904161a input=3c560e2f9ae62e5c]*/
 {
-    set_clear_internal(self);
+    set_clear_internal(so);
     Py_RETURN_NONE;
 }
 
 /*[clinic input]
 set.union
 
+    so: setobject
     *args: object
     /
 
@@ -1171,20 +1187,20 @@ Return a new set with elements from the set and all others.
 [clinic start generated code]*/
 
 static PyObject *
-set_union_impl(PySetObject *self, PyObject *args)
-/*[clinic end generated code: output=5e33934d81d0a329 input=106fa6f2c3972f37]*/
+set_union_impl(PySetObject *so, PyObject *args)
+/*[clinic end generated code: output=2c83d05a446a1477 input=24ed124df9b6221c]*/
 {
     PySetObject *result;
     PyObject *other;
     Py_ssize_t i;
 
-    result = (PySetObject *)set_copy(self, NULL);
+    result = (PySetObject *)set_copy(so, NULL);
     if (result == NULL)
         return NULL;
 
     for (i=0 ; i<PyTuple_GET_SIZE(args) ; i++) {
         other = PyTuple_GET_ITEM(args, i);
-        if ((PyObject *)self == other)
+        if ((PyObject *)so == other)
             continue;
         if (set_update_internal(result, other)) {
             Py_DECREF(result);
@@ -1311,6 +1327,7 @@ set_intersection(PySetObject *so, PyObject *other)
 /*[clinic input]
 set.intersection as set_intersection_multi
 
+    so: setobject
     *args: object
     /
 
@@ -1318,15 +1335,15 @@ Return a new set with elements common to the set and all others.
 [clinic start generated code]*/
 
 static PyObject *
-set_intersection_multi_impl(PySetObject *self, PyObject *args)
-/*[clinic end generated code: output=dbdd037cc40eb5d8 input=a14c68f7f2435f4c]*/
+set_intersection_multi_impl(PySetObject *so, PyObject *args)
+/*[clinic end generated code: output=2406ef3387adbe2f input=7f9106301a661635]*/
 {
     Py_ssize_t i;
 
     if (PyTuple_GET_SIZE(args) == 0)
-        return set_copy(self, NULL);
+        return set_copy(so, NULL);
 
-    PyObject *result = Py_NewRef(self);
+    PyObject *result = Py_NewRef(so);
     for (i=0 ; i<PyTuple_GET_SIZE(args) ; i++) {
         PyObject *other = PyTuple_GET_ITEM(args, i);
         PyObject *newresult = set_intersection((PySetObject *)result, other);
@@ -1355,6 +1372,7 @@ set_intersection_update(PySetObject *so, PyObject *other)
 /*[clinic input]
 set.intersection_update as set_intersection_update_multi
 
+    so: setobject
     *args: object
     /
 
@@ -1362,15 +1380,15 @@ Update the set, keeping only elements found in it and all others.
 [clinic start generated code]*/
 
 static PyObject *
-set_intersection_update_multi_impl(PySetObject *self, PyObject *args)
-/*[clinic end generated code: output=526c2a852b0b14b5 input=0ae6a0e699ecc583]*/
+set_intersection_update_multi_impl(PySetObject *so, PyObject *args)
+/*[clinic end generated code: output=251c1f729063609d input=a0ea42761174e112]*/
 {
     PyObject *tmp;
 
-    tmp = set_intersection_multi_impl(self, args);
+    tmp = set_intersection_multi_impl(so, args);
     if (tmp == NULL)
         return NULL;
-    set_swap_bodies(self, (PySetObject *)tmp);
+    set_swap_bodies(so, (PySetObject *)tmp);
     Py_DECREF(tmp);
     Py_RETURN_NONE;
 }
@@ -1527,6 +1545,7 @@ set_difference_update_internal(PySetObject *so, PyObject *other)
 /*[clinic input]
 set.difference_update
 
+    so: setobject
     *args: object
     /
 
@@ -1534,14 +1553,14 @@ Update the set, removing elements found in others.
 [clinic start generated code]*/
 
 static PyObject *
-set_difference_update_impl(PySetObject *self, PyObject *args)
-/*[clinic end generated code: output=eda858511229d686 input=b45087cd5539c982]*/
+set_difference_update_impl(PySetObject *so, PyObject *args)
+/*[clinic end generated code: output=28685b2fc63e41c4 input=baadad04cef724f4]*/
 {
     Py_ssize_t i;
 
     for (i=0 ; i<PyTuple_GET_SIZE(args) ; i++) {
         PyObject *other = PyTuple_GET_ITEM(args, i);
-        if (set_difference_update_internal(self, other))
+        if (set_difference_update_internal(so, other))
             return NULL;
     }
     Py_RETURN_NONE;
@@ -1640,6 +1659,7 @@ set_difference(PySetObject *so, PyObject *other)
 /*[clinic input]
 set.difference as set_difference_multi
 
+    so: setobject
     *args: object
     /
 
@@ -1647,17 +1667,17 @@ Return a new set with elements in the set that are not in the others.
 [clinic start generated code]*/
 
 static PyObject *
-set_difference_multi_impl(PySetObject *self, PyObject *args)
-/*[clinic end generated code: output=073e94724f240a6d input=95b48a72f1c103ac]*/
+set_difference_multi_impl(PySetObject *so, PyObject *args)
+/*[clinic end generated code: output=3130c3bb3cac873d input=ec08ed06cc3db726]*/
 {
     Py_ssize_t i;
     PyObject *result, *other;
 
     if (PyTuple_GET_SIZE(args) == 0)
-        return set_copy(self, NULL);
+        return set_copy(so, NULL);
 
     other = PyTuple_GET_ITEM(args, 0);
-    result = set_difference(self, other);
+    result = set_difference(so, other);
     if (result == NULL)
         return NULL;
 
@@ -2096,24 +2116,26 @@ set_discard(PySetObject *self, PyObject *key)
 /*[clinic input]
 set.__reduce__
 
+    so: setobject
+
 [clinic start generated code]*/
 
 static PyObject *
-set___reduce___impl(PySetObject *self)
-/*[clinic end generated code: output=aa78615d54922c94 input=ed41fd7020072eb5]*/
+set___reduce___impl(PySetObject *so)
+/*[clinic end generated code: output=9af7d0e029df87ee input=4706de8175a7ba2e]*/
 {
     PyObject *keys=NULL, *args=NULL, *result=NULL, *state=NULL;
 
-    keys = PySequence_List((PyObject *)self);
+    keys = PySequence_List((PyObject *)so);
     if (keys == NULL)
         goto done;
     args = PyTuple_Pack(1, keys);
     if (args == NULL)
         goto done;
-    state = _PyObject_GetState((PyObject *)self);
+    state = _PyObject_GetState((PyObject *)so);
     if (state == NULL)
         goto done;
-    result = PyTuple_Pack(3, Py_TYPE(self), args, state);
+    result = PyTuple_Pack(3, Py_TYPE(so), args, state);
 done:
     Py_XDECREF(args);
     Py_XDECREF(keys);
@@ -2124,16 +2146,18 @@ done:
 /*[clinic input]
 set.__sizeof__
 
+    so: setobject
+
 S.__sizeof__() -> size of S in memory, in bytes.
 [clinic start generated code]*/
 
 static PyObject *
-set___sizeof___impl(PySetObject *self)
-/*[clinic end generated code: output=4678b5337e64f0d2 input=ddc9a6cd98b26850]*/
+set___sizeof___impl(PySetObject *so)
+/*[clinic end generated code: output=4bfa3df7bd38ed88 input=9e20ae73953cacf2]*/
 {
-    size_t res = _PyObject_SIZE(Py_TYPE(self));
-    if (self->table != self->smalltable) {
-        res += ((size_t)self->mask + 1) * sizeof(setentry);
+    size_t res = _PyObject_SIZE(Py_TYPE(so));
+    if (so->table != so->smalltable) {
+        res += ((size_t)so->mask + 1) * sizeof(setentry);
     }
     return PyLong_FromSize_t(res);
 }
