@@ -28,6 +28,11 @@ increment_mutations(PyObject* dict) {
     d->ma_version_tag += (1 << DICT_MAX_WATCHERS);
 }
 
+/* The first two dict watcher IDs are reserved for CPython,
+ * so we don't need to check that they haven't been used */
+#define BUILTINS_WATCHER_ID 0
+#define GLOBALS_WATCHER_ID  1
+
 static int
 globals_watcher_callback(PyDict_WatchEvent event, PyObject* dict,
                          PyObject* key, PyObject* new_value)
@@ -40,12 +45,9 @@ globals_watcher_callback(PyDict_WatchEvent event, PyObject* dict,
         _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), dict);
         increment_mutations(dict);
     }
-    else {
-        PyDict_Unwatch(1, dict);
-    }
+    PyDict_Unwatch(GLOBALS_WATCHER_ID, dict);
     return 0;
 }
-
 
 static void
 global_to_const(_PyUOpInstruction *inst, PyObject *obj)
@@ -81,11 +83,6 @@ incorrect_keys(_PyUOpInstruction *inst, PyObject *obj)
     }
     return 0;
 }
-
-/* The first two dict watcher IDs are reserved for CPython,
- * so we don't need to check that they haven't been used */
-#define BUILTINS_WATCHER_ID 0
-#define GLOBALS_WATCHER_ID  1
 
 /* Returns 1 if successfully optimized
  *         0 if the trace is not suitable for optimization (yet)
