@@ -37,8 +37,6 @@ extern int _PyImport_RunDynamicModule(
     FILE *fp,
     struct _Py_ext_module_loader_result *res);
 
-extern PyObject *_PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *);
-
 /* Max length of module suffix searched for -- accommodates "module.slb" */
 #define MAXSUFFIXSIZE 12
 
