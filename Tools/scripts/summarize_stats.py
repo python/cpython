@@ -387,6 +387,7 @@ class Stats:
         inner_loop = self._data["Optimization inner loop"]
         recursive_call = self._data["Optimization recursive call"]
         low_confidence = self._data["Optimization low confidence"]
+        executors_invalidated = self._data["Executors invalidated"]
 
         return {
             "Optimization attempts": (attempts, None),
@@ -398,6 +399,7 @@ class Stats:
             "Inner loop found": (inner_loop, attempts),
             "Recursive call": (recursive_call, attempts),
             "Low confidence": (low_confidence, attempts),
+            "Executors invalidated": (executors_invalidated, created),
             "Traces executed": (executed, None),
             "Uops executed": (uops, executed),
         }
