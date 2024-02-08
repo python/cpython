@@ -2563,6 +2563,7 @@ def _proxy_bypass_macosx_sysconf(host, proxy_settings):
     }
     """
     from fnmatch import fnmatch
+    from ipaddress import AddressValueError, IPv4Address
 
     hostonly, port = _splitport(host)
 
@@ -2579,20 +2580,17 @@ def _proxy_bypass_macosx_sysconf(host, proxy_settings):
             return True
 
     hostIP = None
+    try:
+        hostIP = int(IPv4Address(hostonly))
+    except AddressValueError:
+        pass
 
     for value in proxy_settings.get('exceptions', ()):
         # Items in the list are strings like these: *.local, 169.254/16
         if not value: continue
 
         m = re.match(r"(\d+(?:\.\d+)*)(/\d+)?", value)
-        if m is not None:
-            if hostIP is None:
-                try:
-                    hostIP = socket.gethostbyname(hostonly)
-                    hostIP = ip2num(hostIP)
-                except OSError:
-                    continue
-
+        if m is not None and hostIP is not None:
             base = ip2num(m.group(1))
             mask = m.group(2)
             if mask is None:
@@ -2727,20 +2725,7 @@ elif os.name == 'nt':
         if not proxyEnable or not proxyOverride:
             return 0
         # try to make a host list from name and IP address.
-        rawHost, port = _splitport(host)
-        host = [rawHost]
-        try:
-            addr = socket.gethostbyname(rawHost)
-            if addr != rawHost:
-                host.append(addr)
-        except OSError:
-            pass
-        try:
-            fqdn = socket.getfqdn(rawHost)
-            if fqdn != rawHost:
-                host.append(fqdn)
-        except OSError:
-            pass
+        host, _ = _splitport(host)
         # make a check value list from the registry entry: replace the
         # '<local>' string by the localhost entry and the corresponding
         # canonical entry.
@@ -2748,14 +2733,13 @@ elif os.name == 'nt':
         # now check if we match one of the registry values.
         for test in proxyOverride:
             if test == '<local>':
-                if '.' not in rawHost:
+                if '.' not in host:
                     return 1
             test = test.replace(".", r"\.")     # mask dots
             test = test.replace("*", r".*")     # change glob sequence
             test = test.replace("?", r".")      # change glob char
-            for val in host:
-                if re.match(test, val, re.I):
-                    return 1
+            if re.match(test, host, re.I):
+                return 1
         return 0
 
     def proxy_bypass(host):
