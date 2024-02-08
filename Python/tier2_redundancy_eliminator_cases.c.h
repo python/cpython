@@ -1293,7 +1293,7 @@
             assert((inst + 2)->opcode == _PUSH_FRAME);
             PyFunctionObject *func = (PyFunctionObject *)(inst + 2)->operand;
             if (func == NULL) {
-                goto out_of_space;
+                goto error;
             }
             PyCodeObject *co = (PyCodeObject *)func->func_code;
             assert(self_or_null != NULL);
