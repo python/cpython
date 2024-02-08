@@ -1253,7 +1253,7 @@ opcodes = [
       stack_before=[],
       stack_after=[pyint],
       proto=2,
-      doc="""Long integer using found-byte length.
+      doc="""Long integer using four-byte length.
 
       A more efficient encoding of a Python long; the long4 encoding
       says it all."""),
