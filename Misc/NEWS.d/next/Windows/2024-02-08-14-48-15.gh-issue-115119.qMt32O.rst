@@ -1,0 +1,3 @@
+Switched from vendored ``libmpdecimal`` code to a separately-hosted external
+package in the ``cpython-source-deps`` repository when building the
+``_decimal`` module.
