@@ -868,6 +868,10 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         pure op(OP, (arg1 -- out)) {
             spam();
         }
+        
+        op(OP2, (arg1 -- out)) {
+            eggs();
+        }
         """
         input2 = """
         op(OP, (arg1 -- out)) {
@@ -883,7 +887,15 @@ class TestGeneratedAbstractCases(unittest.TestCase):
             stack_pointer[-1] = out;
             break;
         }
-        """
+
+        case OP2: {
+            _Py_UOpsSymType *out;
+            out = sym_new_unknown(ctx);
+            if (out == NULL) goto error;
+            stack_pointer[-1] = out;
+            break;
+        }
+       """
         self.run_cases_test(input, input2, output)
 
     def test_no_overridden_case(self):
@@ -891,10 +903,14 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         pure op(OP, (arg1 -- out)) {
             spam();
         }
+        
+        pure op(OP2, (arg1 -- out)) {
+        }
+        
         """
         input2 = """
-        pure op(OTHER, (arg1 -- out)) {
-            spam();
+        pure op(OP2, (arg1 -- out)) {
+        
         }
         """
         output = """
@@ -902,10 +918,17 @@ class TestGeneratedAbstractCases(unittest.TestCase):
             _Py_UOpsSymType *out;
             out = sym_new_unknown(ctx);
             if (out == NULL) goto error;
-            stack_pointer[0] = out;
-            stack_pointer += 1;
+            stack_pointer[-1] = out;
             break;
         }
+
+        case OP2: {
+            _Py_UOpsSymType *arg1;
+            _Py_UOpsSymType *out;
+            arg1 = stack_pointer[-1];
+            stack_pointer[-1] = out;
+            break;
+        }        
         """
         self.run_cases_test(input, input2, output)
 

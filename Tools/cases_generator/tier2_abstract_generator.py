@@ -111,12 +111,14 @@ def write_uop(
         is_override = override is not None
         out.start_line()
         for var in reversed(prototype.stack.inputs):
+            res = stack.pop(var)
             if not skip_inputs:
-                out.emit(stack.pop(var))
+                out.emit(res)
         if not prototype.properties.stores_sp:
             for i, var in enumerate(prototype.stack.outputs):
+                res = stack.push(var)
                 if not var.peek or is_override:
-                    out.emit(stack.push(var))
+                    out.emit(res)
         if debug:
             args = []
             for var in prototype.stack.inputs:

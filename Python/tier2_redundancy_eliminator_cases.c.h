@@ -65,6 +65,7 @@
         }
 
         case _POP_TOP: {
+            stack_pointer += -1;
             break;
         }
 
@@ -83,8 +84,8 @@
             _Py_UOpsSymType *value;
             value = sym_new_unknown(ctx);
             if (value == NULL) goto error;
-            stack_pointer[0] = value;
-            stack_pointer += 1;
+            stack_pointer[-2] = value;
+            stack_pointer += -1;
             break;
         }
 
@@ -92,8 +93,7 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -101,8 +101,7 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -110,8 +109,7 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -123,8 +121,7 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -132,8 +129,7 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -141,8 +137,7 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -150,8 +145,7 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -159,8 +153,7 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -168,8 +161,7 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -191,8 +183,8 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
             break;
         }
 
@@ -218,8 +210,8 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
             break;
         }
 
@@ -241,8 +233,8 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
             break;
         }
 
@@ -250,8 +242,8 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
             break;
         }
 
@@ -259,8 +251,8 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
             break;
         }
 
@@ -272,8 +264,8 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
             break;
         }
 
@@ -281,8 +273,8 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
             break;
         }
 
@@ -290,12 +282,13 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-3] = res;
+            stack_pointer += -2;
             break;
         }
 
         case _STORE_SLICE: {
+            stack_pointer += -4;
             break;
         }
 
@@ -303,8 +296,8 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
             break;
         }
 
@@ -312,8 +305,8 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
             break;
         }
 
@@ -321,8 +314,8 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
             break;
         }
 
@@ -330,34 +323,40 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
             break;
         }
 
         /* _BINARY_SUBSCR_GETITEM is not a viable micro-op for tier 2 */
 
         case _LIST_APPEND: {
+            stack_pointer += -1;
             break;
         }
 
         case _SET_ADD: {
+            stack_pointer += -1;
             break;
         }
 
         case _STORE_SUBSCR: {
+            stack_pointer += -3;
             break;
         }
 
         case _STORE_SUBSCR_LIST_INT: {
+            stack_pointer += -3;
             break;
         }
 
         case _STORE_SUBSCR_DICT: {
+            stack_pointer += -3;
             break;
         }
 
         case _DELETE_SUBSCR: {
+            stack_pointer += -2;
             break;
         }
 
@@ -365,8 +364,7 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -374,8 +372,8 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
             break;
         }
 
@@ -401,8 +399,7 @@
             _Py_UOpsSymType *iter;
             iter = sym_new_unknown(ctx);
             if (iter == NULL) goto error;
-            stack_pointer[0] = iter;
-            stack_pointer += 1;
+            stack_pointer[-1] = iter;
             break;
         }
 
@@ -419,8 +416,7 @@
             _Py_UOpsSymType *iter;
             iter = sym_new_unknown(ctx);
             if (iter == NULL) goto error;
-            stack_pointer[0] = iter;
-            stack_pointer += 1;
+            stack_pointer[-1] = iter;
             break;
         }
 
@@ -431,6 +427,7 @@
         /* _INSTRUMENTED_YIELD_VALUE is not a viable micro-op for tier 2 */
 
         case _POP_EXCEPT: {
+            stack_pointer += -1;
             break;
         }
 
@@ -453,6 +450,7 @@
         }
 
         case _STORE_NAME: {
+            stack_pointer += -1;
             break;
         }
 
@@ -479,34 +477,34 @@
 
         case _UNPACK_SEQUENCE_TWO_TUPLE: {
             _Py_UOpsSymType **values;
-            values = &stack_pointer[0];
+            values = &stack_pointer[-1];
             for (int _i = oparg; --_i >= 0;) {
                 values[_i] = sym_new_unknown(ctx);
                 if (values[_i] == NULL) goto error;
             }
-            stack_pointer += oparg;
+            stack_pointer += -1 + oparg;
             break;
         }
 
         case _UNPACK_SEQUENCE_TUPLE: {
             _Py_UOpsSymType **values;
-            values = &stack_pointer[0];
+            values = &stack_pointer[-1];
             for (int _i = oparg; --_i >= 0;) {
                 values[_i] = sym_new_unknown(ctx);
                 if (values[_i] == NULL) goto error;
             }
-            stack_pointer += oparg;
+            stack_pointer += -1 + oparg;
             break;
         }
 
         case _UNPACK_SEQUENCE_LIST: {
             _Py_UOpsSymType **values;
-            values = &stack_pointer[0];
+            values = &stack_pointer[-1];
             for (int _i = oparg; --_i >= 0;) {
                 values[_i] = sym_new_unknown(ctx);
                 if (values[_i] == NULL) goto error;
             }
-            stack_pointer += oparg;
+            stack_pointer += -1 + oparg;
             break;
         }
 
@@ -529,14 +527,17 @@
         }
 
         case _STORE_ATTR: {
+            stack_pointer += -2;
             break;
         }
 
         case _DELETE_ATTR: {
+            stack_pointer += -1;
             break;
         }
 
         case _STORE_GLOBAL: {
+            stack_pointer += -1;
             break;
         }
 
@@ -557,8 +558,7 @@
             _Py_UOpsSymType *v;
             v = sym_new_unknown(ctx);
             if (v == NULL) goto error;
-            stack_pointer[0] = v;
-            stack_pointer += 1;
+            stack_pointer[-1] = v;
             break;
         }
 
@@ -634,8 +634,7 @@
             _Py_UOpsSymType *value;
             value = sym_new_unknown(ctx);
             if (value == NULL) goto error;
-            stack_pointer[0] = value;
-            stack_pointer += 1;
+            stack_pointer[-1] = value;
             break;
         }
 
@@ -649,6 +648,7 @@
         }
 
         case _STORE_DEREF: {
+            stack_pointer += -1;
             break;
         }
 
@@ -660,8 +660,8 @@
             _Py_UOpsSymType *str;
             str = sym_new_unknown(ctx);
             if (str == NULL) goto error;
-            stack_pointer[0] = str;
-            stack_pointer += 1;
+            stack_pointer[-oparg] = str;
+            stack_pointer += 1 - oparg;
             break;
         }
 
@@ -669,8 +669,8 @@
             _Py_UOpsSymType *tup;
             tup = sym_new_unknown(ctx);
             if (tup == NULL) goto error;
-            stack_pointer[0] = tup;
-            stack_pointer += 1;
+            stack_pointer[-oparg] = tup;
+            stack_pointer += 1 - oparg;
             break;
         }
 
@@ -678,16 +678,18 @@
             _Py_UOpsSymType *list;
             list = sym_new_unknown(ctx);
             if (list == NULL) goto error;
-            stack_pointer[0] = list;
-            stack_pointer += 1;
+            stack_pointer[-oparg] = list;
+            stack_pointer += 1 - oparg;
             break;
         }
 
         case _LIST_EXTEND: {
+            stack_pointer += -1;
             break;
         }
 
         case _SET_UPDATE: {
+            stack_pointer += -1;
             break;
         }
 
@@ -695,8 +697,8 @@
             _Py_UOpsSymType *set;
             set = sym_new_unknown(ctx);
             if (set == NULL) goto error;
-            stack_pointer[0] = set;
-            stack_pointer += 1;
+            stack_pointer[-oparg] = set;
+            stack_pointer += 1 - oparg;
             break;
         }
 
@@ -704,8 +706,8 @@
             _Py_UOpsSymType *map;
             map = sym_new_unknown(ctx);
             if (map == NULL) goto error;
-            stack_pointer[0] = map;
-            stack_pointer += 1;
+            stack_pointer[-oparg*2] = map;
+            stack_pointer += 1 - oparg*2;
             break;
         }
 
@@ -717,20 +719,23 @@
             _Py_UOpsSymType *map;
             map = sym_new_unknown(ctx);
             if (map == NULL) goto error;
-            stack_pointer[0] = map;
-            stack_pointer += 1;
+            stack_pointer[-1 - oparg] = map;
+            stack_pointer += -oparg;
             break;
         }
 
         case _DICT_UPDATE: {
+            stack_pointer += -1;
             break;
         }
 
         case _DICT_MERGE: {
+            stack_pointer += -1;
             break;
         }
 
         case _MAP_ADD: {
+            stack_pointer += -2;
             break;
         }
 
@@ -740,8 +745,8 @@
             _Py_UOpsSymType *attr;
             attr = sym_new_unknown(ctx);
             if (attr == NULL) goto error;
-            stack_pointer[0] = attr;
-            stack_pointer += 1 + ((0) ? 1 : 0);
+            stack_pointer[-3] = attr;
+            stack_pointer += -2 + ((0) ? 1 : 0);
             break;
         }
 
@@ -752,9 +757,9 @@
             if (attr == NULL) goto error;
             self_or_null = sym_new_unknown(ctx);
             if (self_or_null == NULL) goto error;
-            stack_pointer[0] = attr;
-            stack_pointer[1] = self_or_null;
-            stack_pointer += 2;
+            stack_pointer[-3] = attr;
+            stack_pointer[-2] = self_or_null;
+            stack_pointer += -1;
             break;
         }
 
@@ -765,9 +770,9 @@
             if (attr == NULL) goto error;
             self_or_null = sym_new_unknown(ctx);
             if (self_or_null == NULL) goto error;
-            stack_pointer[0] = attr;
-            if (oparg & 1) stack_pointer[1] = self_or_null;
-            stack_pointer += 1 + (oparg & 1);
+            stack_pointer[-1] = attr;
+            if (oparg & 1) stack_pointer[0] = self_or_null;
+            stack_pointer += (oparg & 1);
             break;
         }
 
@@ -875,12 +880,14 @@
         }
 
         case _STORE_ATTR_INSTANCE_VALUE: {
+            stack_pointer += -2;
             break;
         }
 
         /* _STORE_ATTR_WITH_HINT is not a viable micro-op for tier 2 */
 
         case _STORE_ATTR_SLOT: {
+            stack_pointer += -2;
             break;
         }
 
@@ -888,8 +895,8 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
             break;
         }
 
@@ -897,8 +904,8 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
             break;
         }
 
@@ -906,8 +913,8 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
             break;
         }
 
@@ -915,8 +922,8 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
             break;
         }
 
@@ -924,8 +931,8 @@
             _Py_UOpsSymType *b;
             b = sym_new_unknown(ctx);
             if (b == NULL) goto error;
-            stack_pointer[0] = b;
-            stack_pointer += 1;
+            stack_pointer[-2] = b;
+            stack_pointer += -1;
             break;
         }
 
@@ -933,8 +940,8 @@
             _Py_UOpsSymType *b;
             b = sym_new_unknown(ctx);
             if (b == NULL) goto error;
-            stack_pointer[0] = b;
-            stack_pointer += 1;
+            stack_pointer[-2] = b;
+            stack_pointer += -1;
             break;
         }
 
@@ -945,9 +952,8 @@
             if (rest == NULL) goto error;
             match = sym_new_unknown(ctx);
             if (match == NULL) goto error;
-            stack_pointer[0] = rest;
-            stack_pointer[1] = match;
-            stack_pointer += 2;
+            stack_pointer[-2] = rest;
+            stack_pointer[-1] = match;
             break;
         }
 
@@ -955,8 +961,7 @@
             _Py_UOpsSymType *b;
             b = sym_new_unknown(ctx);
             if (b == NULL) goto error;
-            stack_pointer[0] = b;
-            stack_pointer += 1;
+            stack_pointer[-1] = b;
             break;
         }
 
@@ -970,8 +975,7 @@
             _Py_UOpsSymType *b;
             b = sym_new_unknown(ctx);
             if (b == NULL) goto error;
-            stack_pointer[0] = b;
-            stack_pointer += 1;
+            stack_pointer[-1] = b;
             break;
         }
 
@@ -988,8 +992,8 @@
             _Py_UOpsSymType *attrs;
             attrs = sym_new_unknown(ctx);
             if (attrs == NULL) goto error;
-            stack_pointer[0] = attrs;
-            stack_pointer += 1;
+            stack_pointer[-3] = attrs;
+            stack_pointer += -2;
             break;
         }
 
@@ -1024,8 +1028,7 @@
             _Py_UOpsSymType *iter;
             iter = sym_new_unknown(ctx);
             if (iter == NULL) goto error;
-            stack_pointer[0] = iter;
-            stack_pointer += 1;
+            stack_pointer[-1] = iter;
             break;
         }
 
@@ -1033,8 +1036,7 @@
             _Py_UOpsSymType *iter;
             iter = sym_new_unknown(ctx);
             if (iter == NULL) goto error;
-            stack_pointer[0] = iter;
-            stack_pointer += 1;
+            stack_pointer[-1] = iter;
             break;
         }
 
@@ -1122,9 +1124,9 @@
             if (exit == NULL) goto error;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = exit;
-            stack_pointer[1] = res;
-            stack_pointer += 2;
+            stack_pointer[-1] = exit;
+            stack_pointer[0] = res;
+            stack_pointer += 1;
             break;
         }
 
@@ -1135,9 +1137,9 @@
             if (exit == NULL) goto error;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = exit;
-            stack_pointer[1] = res;
-            stack_pointer += 2;
+            stack_pointer[-1] = exit;
+            stack_pointer[0] = res;
+            stack_pointer += 1;
             break;
         }
 
@@ -1157,9 +1159,9 @@
             if (prev_exc == NULL) goto error;
             new_exc = sym_new_unknown(ctx);
             if (new_exc == NULL) goto error;
-            stack_pointer[0] = prev_exc;
-            stack_pointer[1] = new_exc;
-            stack_pointer += 2;
+            stack_pointer[-1] = prev_exc;
+            stack_pointer[0] = new_exc;
+            stack_pointer += 1;
             break;
         }
 
@@ -1178,9 +1180,9 @@
             if (attr == NULL) goto error;
             self = sym_new_unknown(ctx);
             if (self == NULL) goto error;
-            stack_pointer[0] = attr;
-            if (1) stack_pointer[1] = self;
-            stack_pointer += 1 + ((1) ? 1 : 0);
+            stack_pointer[-1] = attr;
+            if (1) stack_pointer[0] = self;
+            stack_pointer += ((1) ? 1 : 0);
             break;
         }
 
@@ -1191,9 +1193,9 @@
             if (attr == NULL) goto error;
             self = sym_new_unknown(ctx);
             if (self == NULL) goto error;
-            stack_pointer[0] = attr;
-            if (1) stack_pointer[1] = self;
-            stack_pointer += 1 + ((1) ? 1 : 0);
+            stack_pointer[-1] = attr;
+            if (1) stack_pointer[0] = self;
+            stack_pointer += ((1) ? 1 : 0);
             break;
         }
 
@@ -1201,8 +1203,8 @@
             _Py_UOpsSymType *attr;
             attr = sym_new_unknown(ctx);
             if (attr == NULL) goto error;
-            stack_pointer[0] = attr;
-            stack_pointer += 1 + ((0) ? 1 : 0);
+            stack_pointer[-1] = attr;
+            stack_pointer += ((0) ? 1 : 0);
             break;
         }
 
@@ -1210,8 +1212,8 @@
             _Py_UOpsSymType *attr;
             attr = sym_new_unknown(ctx);
             if (attr == NULL) goto error;
-            stack_pointer[0] = attr;
-            stack_pointer += 1 + ((0) ? 1 : 0);
+            stack_pointer[-1] = attr;
+            stack_pointer += ((0) ? 1 : 0);
             break;
         }
 
@@ -1226,9 +1228,9 @@
             if (attr == NULL) goto error;
             self = sym_new_unknown(ctx);
             if (self == NULL) goto error;
-            stack_pointer[0] = attr;
-            if (1) stack_pointer[1] = self;
-            stack_pointer += 1 + ((1) ? 1 : 0);
+            stack_pointer[-1] = attr;
+            if (1) stack_pointer[0] = self;
+            stack_pointer += ((1) ? 1 : 0);
             break;
         }
 
@@ -1253,9 +1255,8 @@
             if (func == NULL) goto error;
             self = sym_new_unknown(ctx);
             if (self == NULL) goto error;
-            stack_pointer[0] = func;
-            stack_pointer[1] = self;
-            stack_pointer += 2;
+            stack_pointer[-2 - oparg] = func;
+            stack_pointer[-1 - oparg] = self;
             break;
         }
 
@@ -1338,8 +1339,8 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
             break;
         }
 
@@ -1347,8 +1348,8 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
             break;
         }
 
@@ -1356,14 +1357,15 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
             break;
         }
 
         /* _CALL_ALLOC_AND_ENTER_INIT is not a viable micro-op for tier 2 */
 
         case _EXIT_INIT_CHECK: {
+            stack_pointer += -1;
             break;
         }
 
@@ -1371,8 +1373,8 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
             break;
         }
 
@@ -1380,8 +1382,8 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
             break;
         }
 
@@ -1389,8 +1391,8 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
             break;
         }
 
@@ -1398,8 +1400,8 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
             break;
         }
 
@@ -1407,8 +1409,8 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
             break;
         }
 
@@ -1416,8 +1418,8 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
             break;
         }
 
@@ -1425,8 +1427,8 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
             break;
         }
 
@@ -1434,8 +1436,8 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
             break;
         }
 
@@ -1443,8 +1445,8 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
             break;
         }
 
@@ -1452,8 +1454,8 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
             break;
         }
 
@@ -1469,8 +1471,7 @@
             _Py_UOpsSymType *func;
             func = sym_new_unknown(ctx);
             if (func == NULL) goto error;
-            stack_pointer[0] = func;
-            stack_pointer += 1;
+            stack_pointer[-1] = func;
             break;
         }
 
@@ -1478,8 +1479,8 @@
             _Py_UOpsSymType *func;
             func = sym_new_unknown(ctx);
             if (func == NULL) goto error;
-            stack_pointer[0] = func;
-            stack_pointer += 1;
+            stack_pointer[-2] = func;
+            stack_pointer += -1;
             break;
         }
 
@@ -1487,8 +1488,8 @@
             _Py_UOpsSymType *slice;
             slice = sym_new_unknown(ctx);
             if (slice == NULL) goto error;
-            stack_pointer[0] = slice;
-            stack_pointer += 1;
+            stack_pointer[-2 - ((oparg == 3) ? 1 : 0)] = slice;
+            stack_pointer += -1 - ((oparg == 3) ? 1 : 0);
             break;
         }
 
@@ -1496,8 +1497,7 @@
             _Py_UOpsSymType *result;
             result = sym_new_unknown(ctx);
             if (result == NULL) goto error;
-            stack_pointer[0] = result;
-            stack_pointer += 1;
+            stack_pointer[-1] = result;
             break;
         }
 
@@ -1505,8 +1505,7 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -1514,8 +1513,8 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
             break;
         }
 
@@ -1534,8 +1533,8 @@
             _Py_UOpsSymType *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto error;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
             break;
         }
 
@@ -1564,18 +1563,22 @@
         /* _INSTRUMENTED_POP_JUMP_IF_NOT_NONE is not a viable micro-op for tier 2 */
 
         case _GUARD_IS_TRUE_POP: {
+            stack_pointer += -1;
             break;
         }
 
         case _GUARD_IS_FALSE_POP: {
+            stack_pointer += -1;
             break;
         }
 
         case _GUARD_IS_NONE_POP: {
+            stack_pointer += -1;
             break;
         }
 
         case _GUARD_IS_NOT_NONE_POP: {
+            stack_pointer += -1;
             break;
         }
 
@@ -1668,6 +1671,7 @@
         }
 
         case _INTERNAL_INCREMENT_OPT_COUNTER: {
+            stack_pointer += -1;
             break;
         }
 
