@@ -1034,13 +1034,14 @@ add_executor_dependency(PyObject *self, PyObject *args)
 _testinternalcapi.invalidate_executors -> object
 
   dependency: object = NULL
+  /
 
 [clinic start generated code]*/
 
 static PyObject *
 _testinternalcapi_invalidate_executors_impl(PyObject *module,
                                             PyObject *dependency)
-/*[clinic end generated code: output=79497cfcf0826eaa input=8c3282b374a51e1f]*/
+/*[clinic end generated code: output=79497cfcf0826eaa input=ffbb09a1f7848473]*/
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
     if (dependency) {

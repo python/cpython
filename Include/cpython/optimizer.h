@@ -23,11 +23,11 @@ typedef struct _bloom_filter {
 typedef struct {
     uint8_t opcode;
     uint8_t oparg;
-    uint8_t linked;
+    uint8_t valid;
     _PyBloomFilter bloom;
     _PyExecutorLinkListNode links;
-    PyCodeObject *code;  // Weak (NULL if invalidated).
-    int index;           // Index of the instruction in the code object.
+    PyCodeObject *code;  // Weak (NULL if no corresponding ENTER_EXECUTOR).
+    int index;           // Index of ENTER_EXECUTOR in the above code object.
 } _PyVMData;
 
 typedef struct {

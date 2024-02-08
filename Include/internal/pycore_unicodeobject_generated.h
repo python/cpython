@@ -954,9 +954,6 @@ _PyUnicode_InitStaticStrings(PyInterpreterState *interp) {
     string = &_Py_ID(delete);
     assert(_PyUnicode_CheckConsistency(string, 1));
     _PyUnicode_InternInPlace(interp, &string);
-    string = &_Py_ID(dependency);
-    assert(_PyUnicode_CheckConsistency(string, 1));
-    _PyUnicode_InternInPlace(interp, &string);
     string = &_Py_ID(depth);
     assert(_PyUnicode_CheckConsistency(string, 1));
     _PyUnicode_InternInPlace(interp, &string);

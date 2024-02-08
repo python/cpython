@@ -67,9 +67,12 @@ get_index_for_executor(PyCodeObject *code, _Py_CODEUNIT *instr)
     return size;
 }
 
+static void unlink_executor(_PyExecutorObject *executor);
+
 void
 _PyExecutor_Remove(_PyExecutorObject *executor)
 {
+    unlink_executor(executor);
     PyCodeObject *code = executor->vm_data.code;
     if (code == NULL) {
         return;
@@ -82,6 +85,7 @@ _PyExecutor_Remove(_PyExecutorObject *executor)
     instruction->op.arg = executor->vm_data.oparg;
     executor->vm_data.code = NULL;
     Py_CLEAR(code->co_executors->executors[index]);
+
 }
 
 static void
@@ -90,8 +94,7 @@ insert_executor(PyCodeObject *code, _Py_CODEUNIT *instr, int index, _PyExecutorO
     Py_INCREF(executor);
     if (instr->op.code == ENTER_EXECUTOR) {
         assert(index == instr->op.arg);
-        _PyExecutorObject *old = code->co_executors->executors[index];
-        _PyExecutor_Remove(old);
+        _PyExecutor_Remove(code->co_executors->executors[index]);
     }
     else {
         assert(code->co_executors->size == index);
@@ -227,7 +230,7 @@ PyUnstable_GetExecutor(PyCodeObject *code, int offset)
 static PyObject *
 is_valid(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return PyBool_FromLong(((_PyExecutorObject *)self)->vm_data.code != NULL);
+    return PyBool_FromLong(((_PyExecutorObject *)self)->vm_data.valid);
 }
 
 static PyMethodDef executor_methods[] = {
@@ -1085,7 +1088,7 @@ link_executor(_PyExecutorObject *executor)
         }
         head->vm_data.links.next = executor;
     }
-    executor->vm_data.linked = true;
+    executor->vm_data.valid = true;
     /* executor_list_head must be first in list */
     assert(interp->executor_list_head->vm_data.links.previous == NULL);
 }
@@ -1093,7 +1096,7 @@ link_executor(_PyExecutorObject *executor)
 static void
 unlink_executor(_PyExecutorObject *executor)
 {
-    if (!executor->vm_data.linked) {
+    if (!executor->vm_data.valid) {
         return;
     }
     _PyExecutorLinkListNode *links = &executor->vm_data.links;
@@ -1111,13 +1114,14 @@ unlink_executor(_PyExecutorObject *executor)
         assert(interp->executor_list_head == executor);
         interp->executor_list_head = next;
     }
-    executor->vm_data.linked = false;
+    executor->vm_data.valid = false;
 }
 
 /* This must be called by optimizers before using the executor */
 void
 _Py_ExecutorInit(_PyExecutorObject *executor, _PyBloomFilter *dependency_set)
 {
+    executor->vm_data.valid = true;
     for (int i = 0; i < BLOOM_FILTER_WORDS; i++) {
         executor->vm_data.bloom.bits[i] = dependency_set->bits[i];
     }
@@ -1128,13 +1132,13 @@ _Py_ExecutorInit(_PyExecutorObject *executor, _PyBloomFilter *dependency_set)
 void
 _Py_ExecutorClear(_PyExecutorObject *executor)
 {
-    unlink_executor(executor);
+    _PyExecutor_Remove(executor);
 }
 
 void
 _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj)
 {
-    assert(executor->vm_data.code != NULL);
+    assert(executor->vm_data.valid);
     _Py_BloomFilter_Add(&executor->vm_data.bloom, obj);
 }
 
@@ -1150,10 +1154,9 @@ _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj)
     /* Walk the list of executors */
     /* TO DO -- Use a tree to avoid traversing as many objects */
     for (_PyExecutorObject *exec = interp->executor_list_head; exec != NULL;) {
-        assert(exec->vm_data.code != NULL);
+        assert(exec->vm_data.valid);
         _PyExecutorObject *next = exec->vm_data.links.next;
         if (bloom_filter_may_contain(&exec->vm_data.bloom, &obj_filter)) {
-            unlink_executor(exec);
             _PyExecutor_Remove(exec);
         }
         exec = next;
@@ -1164,13 +1167,15 @@ _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj)
 void
 _Py_Executors_InvalidateAll(PyInterpreterState *interp)
 {
-    /* Walk the list of executors */
-    while (interp->executor_list_head) {
-        if (interp->executor_list_head->vm_data.code) {
-            _PyCode_Clear_Executors(interp->executor_list_head->vm_data.code);
+    _PyExecutorObject *executor;
+    while ((executor = interp->executor_list_head)) {
+        PyCodeObject *code = executor->vm_data.code;
+        if (code) {
+            // Clear the entire code object so its co_executors array be freed:
+            _PyCode_Clear_Executors(code);
         }
         else {
-            unlink_executor(interp->executor_list_head);
+            _PyExecutor_Remove(executor);
         }
     }
 }
