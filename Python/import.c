@@ -639,11 +639,11 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
        13.   _PyImport_RunDynamicModule():  set __file__
        14. _imp_create_dynamic_impl() -> _PyImport_CheckSubinterpIncompatibleExtensionAllowed()
        15. _imp_create_dynamic_impl() -> fix_up_extension()
-       16.   fix_up_extension() -> fix_up_extension_for_interpreter()
-       17.     fix_up_extension_for_interpreter():  set it on sys.modules
-       18.     fix_up_extension_for_interpreter():  add it to interp->imports.modules_by_index
-       19.     fix_up_extension_for_interpreter():  copy __dict__ into def->m_base.m_copy
-       20.   fix_up_extension():  add it to _PyRuntime.imports.extensions
+       16.   fix_up_extension():  add it to _PyRuntime.imports.extensions
+       17.   fix_up_extension() -> fix_up_extension_for_interpreter()
+       18.     fix_up_extension_for_interpreter():  set it on sys.modules
+       19.     fix_up_extension_for_interpreter():  add it to interp->imports.modules_by_index
+       20.     fix_up_extension_for_interpreter():  copy __dict__ into def->m_base.m_copy
 
     (6). subsequent times  (found in _PyRuntime.imports.extensions):
        1. _imp_create_dynamic_impl() -> import_find_extension()
@@ -662,11 +662,12 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
     ...for single-phase init modules, where m_size >= 0:
 
     (6). not main interpreter and never loaded there - every time  (not found in _PyRuntime.imports.extensions):
-       1-16. (same as for m_size == -1)
+       1-20. (same as for m_size == -1)
 
     (6). main interpreter - first time  (not found in _PyRuntime.imports.extensions):
-       1-19. (same as for m_size == -1)
-       20. fix_up_extension():  add it to _PyRuntime.imports.extensions
+       1-15. (same as for m_size == -1)
+       16. fix_up_extension():  add it to _PyRuntime.imports.extensions
+       17-20. (same as for m_size == -1)
 
     (6). previously loaded in main interpreter  (found in _PyRuntime.imports.extensions):
        1. _imp_create_dynamic_impl() -> import_find_extension()
@@ -1231,12 +1232,6 @@ fix_up_extension(PyObject *mod, PyModuleDef *def,
         }
     }
 
-    if (fix_up_extension_for_interpreter(
-                interp, mod, def, name, filename, modules) < 0)
-    {
-        return -1;
-    }
-
     // XXX Why special-case the main interpreter?
     if (_Py_IsMainInterpreter(interp) || def->m_size == -1) {
 #ifndef NDEBUG
@@ -1246,6 +1241,12 @@ fix_up_extension(PyObject *mod, PyModuleDef *def,
         if (_extensions_cache_set(filename, name, def) < 0) {
             return -1;
         }
+    }
+
+    if (fix_up_extension_for_interpreter(
+                interp, mod, def, name, filename, modules) < 0)
+    {
+        return -1;
     }
 
     return 0;
