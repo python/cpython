@@ -4054,7 +4054,7 @@ dummy_func(
 
         op(_CHECK_VALIDITY, (--)) {
             TIER_TWO_ONLY
-            DEOPT_IF(current_executor->vm_data.valid);
+            DEOPT_IF(!current_executor->vm_data.valid);
         }
 
         op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
