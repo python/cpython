@@ -27,6 +27,7 @@ extern int _PyImport_FixupBuiltin(
     const char *name,            /* UTF-8 encoded string */
     PyObject *modules
     );
+// We could probably drop this:
 extern int _PyImport_FixupExtensionObject(PyObject*, PyObject *,
                                           PyObject *, PyObject *);
 
