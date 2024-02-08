@@ -1,0 +1,2 @@
+:mod:`tarfile` no longer ignores errors when trying to extract a directory on
+top of a file.

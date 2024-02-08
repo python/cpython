@@ -1,6 +1,5 @@
 
 #include "Python.h"
-#include "pycore_atomic.h"        // _Py_atomic_int
 #include "pycore_ceval.h"         // _PyEval_SignalReceived()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // _Py_RunGC()
@@ -76,7 +75,7 @@ update_eval_breaker_from_thread(PyInterpreterState *interp, PyThreadState *tstat
             _Py_set_eval_breaker_bit(interp, _PY_CALLS_TO_DO_BIT, 1);
         }
         if (_Py_ThreadCanHandleSignals(interp)) {
-            if (_Py_atomic_load(&_PyRuntime.signals.is_tripped)) {
+            if (_Py_atomic_load_int(&_PyRuntime.signals.is_tripped)) {
                 _Py_set_eval_breaker_bit(interp, _PY_SIGNALS_PENDING_BIT, 1);
             }
         }
@@ -119,9 +118,6 @@ UNSIGNAL_PENDING_CALLS(PyInterpreterState *interp)
 
 #include <stdlib.h>
 #include <errno.h>
-
-#include "pycore_atomic.h"
-
 
 #include "condvar.h"
 
@@ -166,8 +162,7 @@ UNSIGNAL_PENDING_CALLS(PyInterpreterState *interp)
 
 static void _gil_initialize(struct _gil_runtime_state *gil)
 {
-    _Py_atomic_int uninitialized = {-1};
-    gil->locked = uninitialized;
+    gil->locked = -1;
     gil->interval = DEFAULT_INTERVAL;
 }
 
@@ -176,7 +171,7 @@ static int gil_created(struct _gil_runtime_state *gil)
     if (gil == NULL) {
         return 0;
     }
-    return (_Py_atomic_load_explicit(&gil->locked, _Py_memory_order_acquire) >= 0);
+    return (_Py_atomic_load_int_acquire(&gil->locked) >= 0);
 }
 
 static void create_gil(struct _gil_runtime_state *gil)
@@ -189,9 +184,9 @@ static void create_gil(struct _gil_runtime_state *gil)
 #ifdef FORCE_SWITCHING
     COND_INIT(gil->switch_cond);
 #endif
-    _Py_atomic_store_relaxed(&gil->last_holder, 0);
+    _Py_atomic_store_ptr_relaxed(&gil->last_holder, 0);
     _Py_ANNOTATE_RWLOCK_CREATE(&gil->locked);
-    _Py_atomic_store_explicit(&gil->locked, 0, _Py_memory_order_release);
+    _Py_atomic_store_int_release(&gil->locked, 0);
 }
 
 static void destroy_gil(struct _gil_runtime_state *gil)
@@ -205,8 +200,7 @@ static void destroy_gil(struct _gil_runtime_state *gil)
     COND_FINI(gil->switch_cond);
     MUTEX_FINI(gil->switch_mutex);
 #endif
-    _Py_atomic_store_explicit(&gil->locked, -1,
-                              _Py_memory_order_release);
+    _Py_atomic_store_int_release(&gil->locked, -1);
     _Py_ANNOTATE_RWLOCK_DESTROY(&gil->locked);
 }
 
@@ -233,7 +227,7 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate)
     // XXX assert(tstate == NULL || !tstate->_status.cleared);
 
     struct _gil_runtime_state *gil = ceval->gil;
-    if (!_Py_atomic_load_relaxed(&gil->locked)) {
+    if (!_Py_atomic_load_ptr_relaxed(&gil->locked)) {
         Py_FatalError("drop_gil: GIL is not locked");
     }
 
@@ -242,12 +236,12 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate)
         /* Sub-interpreter support: threads might have been switched
            under our feet using PyThreadState_Swap(). Fix the GIL last
            holder variable so that our heuristics work. */
-        _Py_atomic_store_relaxed(&gil->last_holder, (uintptr_t)tstate);
+        _Py_atomic_store_ptr_relaxed(&gil->last_holder, tstate);
     }
 
     MUTEX_LOCK(gil->mutex);
     _Py_ANNOTATE_RWLOCK_RELEASED(&gil->locked, /*is_write=*/1);
-    _Py_atomic_store_relaxed(&gil->locked, 0);
+    _Py_atomic_store_int_relaxed(&gil->locked, 0);
     COND_SIGNAL(gil->cond);
     MUTEX_UNLOCK(gil->mutex);
 
@@ -263,7 +257,7 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate)
     if (tstate != NULL && _Py_eval_breaker_bit_is_set(interp, _PY_GIL_DROP_REQUEST_BIT)) {
         MUTEX_LOCK(gil->switch_mutex);
         /* Not switched yet => wait */
-        if (((PyThreadState*)_Py_atomic_load_relaxed(&gil->last_holder)) == tstate)
+        if (((PyThreadState*)_Py_atomic_load_ptr_relaxed(&gil->last_holder)) == tstate)
         {
             assert(_PyThreadState_CheckConsistency(tstate));
             RESET_GIL_DROP_REQUEST(tstate->interp);
@@ -313,12 +307,8 @@ take_gil(PyThreadState *tstate)
 
     MUTEX_LOCK(gil->mutex);
 
-    if (!_Py_atomic_load_relaxed(&gil->locked)) {
-        goto _ready;
-    }
-
     int drop_requested = 0;
-    while (_Py_atomic_load_relaxed(&gil->locked)) {
+    while (_Py_atomic_load_int_relaxed(&gil->locked)) {
         unsigned long saved_switchnum = gil->switch_number;
 
         unsigned long interval = (gil->interval >= 1 ? gil->interval : 1);
@@ -328,7 +318,7 @@ take_gil(PyThreadState *tstate)
         /* If we timed out and no switch occurred in the meantime, it is time
            to ask the GIL-holding thread to drop it. */
         if (timed_out &&
-            _Py_atomic_load_relaxed(&gil->locked) &&
+            _Py_atomic_load_int_relaxed(&gil->locked) &&
             gil->switch_number == saved_switchnum)
         {
             if (_PyThreadState_MustExit(tstate)) {
@@ -351,18 +341,17 @@ take_gil(PyThreadState *tstate)
         }
     }
 
-_ready:
 #ifdef FORCE_SWITCHING
     /* This mutex must be taken before modifying gil->last_holder:
        see drop_gil(). */
     MUTEX_LOCK(gil->switch_mutex);
 #endif
     /* We now hold the GIL */
-    _Py_atomic_store_relaxed(&gil->locked, 1);
+    _Py_atomic_store_int_relaxed(&gil->locked, 1);
     _Py_ANNOTATE_RWLOCK_ACQUIRED(&gil->locked, /*is_write=*/1);
 
-    if (tstate != (PyThreadState*)_Py_atomic_load_relaxed(&gil->last_holder)) {
-        _Py_atomic_store_relaxed(&gil->last_holder, (uintptr_t)tstate);
+    if (tstate != (PyThreadState*)_Py_atomic_load_ptr_relaxed(&gil->last_holder)) {
+        _Py_atomic_store_ptr_relaxed(&gil->last_holder, tstate);
         ++gil->switch_number;
     }
 
@@ -434,10 +423,10 @@ PyEval_ThreadsInitialized(void)
 static inline int
 current_thread_holds_gil(struct _gil_runtime_state *gil, PyThreadState *tstate)
 {
-    if (((PyThreadState*)_Py_atomic_load_relaxed(&gil->last_holder)) != tstate) {
+    if (((PyThreadState*)_Py_atomic_load_ptr_relaxed(&gil->last_holder)) != tstate) {
         return 0;
     }
-    return _Py_atomic_load_relaxed(&gil->locked);
+    return _Py_atomic_load_int_relaxed(&gil->locked);
 }
 
 static void
@@ -458,7 +447,7 @@ init_own_gil(PyInterpreterState *interp, struct _gil_runtime_state *gil)
     interp->ceval.own_gil = 1;
 }
 
-PyStatus
+void
 _PyEval_InitGIL(PyThreadState *tstate, int own_gil)
 {
     assert(tstate->interp->ceval.gil == NULL);
@@ -477,8 +466,6 @@ _PyEval_InitGIL(PyThreadState *tstate, int own_gil)
 
     // Lock the GIL and mark the current thread as attached.
     _PyThreadState_Attach(tstate);
-
-    return _PyStatus_OK();
 }
 
 void
@@ -595,9 +582,7 @@ _PyEval_ReInitThreads(PyThreadState *tstate)
     take_gil(tstate);
 
     struct _pending_calls *pending = &tstate->interp->ceval.pending;
-    if (_PyThread_at_fork_reinit(&pending->lock) < 0) {
-        return _PyStatus_ERR("Can't reinitialize pending calls lock");
-    }
+    _PyMutex_at_fork_reinit(&pending->mutex);
 
     /* Destroy all threads except the current one */
     _PyThreadState_DeleteExcept(tstate);
@@ -625,8 +610,16 @@ PyEval_SaveThread(void)
 void
 PyEval_RestoreThread(PyThreadState *tstate)
 {
+#ifdef MS_WINDOWS
+    int err = GetLastError();
+#endif
+
     _Py_EnsureTstateNotNULL(tstate);
     _PyThreadState_Attach(tstate);
+
+#ifdef MS_WINDOWS
+    SetLastError(err);
+#endif
 }
 
 
@@ -726,13 +719,10 @@ _PyEval_AddPendingCall(PyInterpreterState *interp,
         assert(_Py_IsMainInterpreter(interp));
         pending = &_PyRuntime.ceval.pending_mainthread;
     }
-    /* Ensure that _PyEval_InitState() was called
-       and that _PyEval_FiniState() is not called yet. */
-    assert(pending->lock != NULL);
 
-    PyThread_acquire_lock(pending->lock, WAIT_LOCK);
+    PyMutex_Lock(&pending->mutex);
     int result = _push_pending_call(pending, func, arg, flags);
-    PyThread_release_lock(pending->lock);
+    PyMutex_Unlock(&pending->mutex);
 
     /* signal main loop */
     SIGNAL_PENDING_CALLS(interp);
@@ -774,9 +764,9 @@ _make_pending_calls(struct _pending_calls *pending)
         int flags = 0;
 
         /* pop one item off the queue while holding the lock */
-        PyThread_acquire_lock(pending->lock, WAIT_LOCK);
+        PyMutex_Lock(&pending->mutex);
         _pop_pending_call(pending, &func, &arg, &flags);
-        PyThread_release_lock(pending->lock);
+        PyMutex_Unlock(&pending->mutex);
 
         /* having released the lock, perform the callback */
         if (func == NULL) {
@@ -801,7 +791,7 @@ make_pending_calls(PyInterpreterState *interp)
 
     /* Only one thread (per interpreter) may run the pending calls
        at once.  In the same way, we don't do recursive pending calls. */
-    PyThread_acquire_lock(pending->lock, WAIT_LOCK);
+    PyMutex_Lock(&pending->mutex);
     if (pending->busy) {
         /* A pending call was added after another thread was already
            handling the pending calls (and had already "unsignaled").
@@ -813,11 +803,11 @@ make_pending_calls(PyInterpreterState *interp)
            care of any remaining pending calls.  Until then, though,
            all the interpreter's threads will be tripping the eval
            breaker every time it's checked. */
-        PyThread_release_lock(pending->lock);
+        PyMutex_Unlock(&pending->mutex);
         return 0;
     }
     pending->busy = 1;
-    PyThread_release_lock(pending->lock);
+    PyMutex_Unlock(&pending->mutex);
 
     /* unsignal before starting to call callbacks, so that any callback
        added in-between re-signals */
@@ -898,23 +888,9 @@ Py_MakePendingCalls(void)
 }
 
 void
-_PyEval_InitState(PyInterpreterState *interp, PyThread_type_lock pending_lock)
+_PyEval_InitState(PyInterpreterState *interp)
 {
     _gil_initialize(&interp->_gil);
-
-    struct _pending_calls *pending = &interp->ceval.pending;
-    assert(pending->lock == NULL);
-    pending->lock = pending_lock;
-}
-
-void
-_PyEval_FiniState(struct _ceval_state *ceval)
-{
-    struct _pending_calls *pending = &ceval->pending;
-    if (pending->lock != NULL) {
-        PyThread_free_lock(pending->lock);
-        pending->lock = NULL;
-    }
 }
 
 
@@ -980,6 +956,15 @@ int
 _Py_HandlePending(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
+
+    /* Stop-the-world */
+    if (_Py_eval_breaker_bit_is_set(interp, _PY_EVAL_PLEASE_STOP_BIT)) {
+        _Py_set_eval_breaker_bit(interp, _PY_EVAL_PLEASE_STOP_BIT, 0);
+        _PyThreadState_Suspend(tstate);
+
+        /* The attach blocks until the stop-the-world event is complete. */
+        _PyThreadState_Attach(tstate);
+    }
 
     /* Pending signals */
     if (_Py_eval_breaker_bit_is_set(interp, _PY_SIGNALS_PENDING_BIT)) {

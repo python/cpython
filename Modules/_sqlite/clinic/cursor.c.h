@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 static int
 pysqlite_cursor_init_impl(pysqlite_Cursor *self,
@@ -312,4 +313,4 @@ pysqlite_cursor_close(pysqlite_Cursor *self, PyObject *Py_UNUSED(ignored))
 {
     return pysqlite_cursor_close_impl(self);
 }
-/*[clinic end generated code: output=0c52a9cf54d00543 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a8ce095c3c80cf65 input=a9049054013a1b77]*/

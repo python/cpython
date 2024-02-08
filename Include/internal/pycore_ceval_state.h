@@ -8,6 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_lock.h"            // PyMutex
 #include "pycore_gil.h"             // struct _gil_runtime_state
 
 
@@ -15,7 +16,7 @@ typedef int (*_Py_pending_call_func)(void *);
 
 struct _pending_calls {
     int busy;
-    PyThread_type_lock lock;
+    PyMutex mutex;
     /* Request for running pending calls. */
     int32_t calls_to_do;
 #define NPENDINGCALLS 32
@@ -55,6 +56,7 @@ struct _ceval_runtime_state {
         struct code_arena_st *code_arena;
         struct trampoline_api_st trampoline_api;
         FILE *map_file;
+        Py_ssize_t persist_after_fork;
 #else
         int _not_used;
 #endif
@@ -68,6 +70,7 @@ struct _ceval_runtime_state {
     { \
         .status = PERF_STATUS_NO_INIT, \
         .extra_code_index = -1, \
+        .persist_after_fork = 0, \
     }
 #else
 # define _PyEval_RUNTIME_PERF_INIT {0}

@@ -576,7 +576,11 @@ static int test_init_from_config(void)
     _PyPreConfig_InitCompatConfig(&preconfig);
 
     putenv("PYTHONMALLOC=malloc_debug");
+#ifndef Py_GIL_DISABLED
     preconfig.allocator = PYMEM_ALLOCATOR_MALLOC;
+#else
+    preconfig.allocator = PYMEM_ALLOCATOR_MIMALLOC;
+#endif
 
     putenv("PYTHONUTF8=0");
     Py_UTF8Mode = 0;
@@ -715,6 +719,7 @@ static int test_init_from_config(void)
 
     putenv("PYTHONINTMAXSTRDIGITS=6666");
     config.int_max_str_digits = 31337;
+    config.cpu_count = 4321;
 
     init_from_config_clear(&config);
 
@@ -764,7 +769,11 @@ static int test_init_dont_parse_argv(void)
 static void set_most_env_vars(void)
 {
     putenv("PYTHONHASHSEED=42");
+#ifndef Py_GIL_DISABLED
     putenv("PYTHONMALLOC=malloc");
+#else
+    putenv("PYTHONMALLOC=mimalloc");
+#endif
     putenv("PYTHONTRACEMALLOC=2");
     putenv("PYTHONPROFILEIMPORTTIME=1");
     putenv("PYTHONNODEBUGRANGES=1");
@@ -850,7 +859,11 @@ static int test_init_env_dev_mode_alloc(void)
     /* Test initialization from environment variables */
     Py_IgnoreEnvironmentFlag = 0;
     set_all_env_vars_dev_mode();
+#ifndef Py_GIL_DISABLED
     putenv("PYTHONMALLOC=malloc");
+#else
+    putenv("PYTHONMALLOC=mimalloc");
+#endif
     _testembed_Py_InitializeFromConfig();
     dump_config();
     Py_Finalize();

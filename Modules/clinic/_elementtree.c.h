@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_elementtree_Element_append__doc__,
 "append($self, subelement, /)\n"
@@ -86,7 +87,7 @@ _elementtree_Element___copy___impl(ElementObject *self, PyTypeObject *cls);
 static PyObject *
 _elementtree_Element___copy__(ElementObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "__copy__() takes no arguments");
         return NULL;
     }
@@ -643,7 +644,7 @@ _elementtree_Element_itertext_impl(ElementObject *self, PyTypeObject *cls);
 static PyObject *
 _elementtree_Element_itertext(ElementObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "itertext() takes no arguments");
         return NULL;
     }
@@ -1218,4 +1219,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=20d1869da79a43d7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=218ec9e6a889f796 input=a9049054013a1b77]*/

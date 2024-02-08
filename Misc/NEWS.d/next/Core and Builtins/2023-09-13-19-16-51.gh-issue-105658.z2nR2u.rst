@@ -1,2 +1,0 @@
-Fix bug where the line trace of an except block ending with a conditional
-includes an excess event with the line of the conditional expression.

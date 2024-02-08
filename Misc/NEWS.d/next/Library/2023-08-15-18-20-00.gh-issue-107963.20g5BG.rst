@@ -1,2 +1,0 @@
-Fix :func:`multiprocessing.set_forkserver_preload` to check the given list
-of modules names. Patch by Donghee Na.
