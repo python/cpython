@@ -2458,13 +2458,42 @@ PyObject *
 _PyEval_GetFrameLocals(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
+    PyObject* locals = NULL;
      _PyInterpreterFrame *current_frame = _PyThreadState_GetFrame(tstate);
     if (current_frame == NULL) {
         _PyErr_SetString(tstate, PyExc_SystemError, "frame does not exist");
         return NULL;
     }
 
-    return _PyFrame_GetLocals(current_frame, 1);
+    locals = _PyFrame_GetLocals(current_frame, 1);
+    if (locals == NULL) {
+        return NULL;
+    }
+
+    if (PyFrameLocalsProxy_Check(locals)) {
+        PyObject* ret = PyDict_New();
+        if (PyDict_Update(ret, locals)) {
+            Py_DECREF(ret);
+            return NULL;
+        }
+        Py_DECREF(locals);
+        return ret;
+    }
+
+    if (PyMapping_Check(locals)) {
+        PyObject* hidden = _PyFrame_GetHiddenLocals(current_frame);
+        if (hidden == NULL) {
+            return NULL;
+        }
+        if (PyDict_Update(locals, hidden)) {
+            Py_DECREF(locals);
+            Py_DECREF(hidden);
+            return NULL;
+        }
+        return locals;
+    }
+
+    return NULL;
 }
 
 PyObject *

@@ -30,6 +30,7 @@ PyObject* framelocalproxy_getval(_PyInterpreterFrame* frame, PyCodeObject* co, i
     if (value == NULL) {
         return NULL;
     }
+
     if (kind == CO_FAST_FREE || kind & CO_FAST_CELL) {
         // The cell was set when the frame was created from
         // the function's closure.
@@ -180,11 +181,9 @@ PyObject* framelocalsproxy_getitem(PyObject* self, PyObject* key)
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         if (_PyUnicode_EQ(PyTuple_GET_ITEM(co->co_localsplusnames, i), key)) {
             PyObject* value = framelocalproxy_getval(frame, co, i);
-            if (value == NULL) {
-                PyErr_Format(PyExc_UnboundLocalError, "local variable '%R' referenced before assignment", key);
-                return NULL;
+            if (value != NULL) {
+                return Py_NewRef(value);
             }
-            return Py_NewRef(value);
         }
     }
 
@@ -1528,88 +1527,56 @@ frame_get_var(_PyInterpreterFrame *frame, PyCodeObject *co, int i,
 PyObject *
 _PyFrame_GetLocals(_PyInterpreterFrame *frame, int include_hidden)
 {
-    /* Merge fast locals into f->f_locals */
-    PyObject *locals = frame->f_locals;
-    if (locals == NULL) {
-        locals = frame->f_locals = PyDict_New();
-        if (locals == NULL) {
-            return NULL;
-        }
-    }
-    PyObject *hidden = NULL;
+    PyCodeObject* co = _PyFrame_GetCode(frame);
+    PyFrameObject* f = _PyFrame_GetFrameObject(frame);
 
-    /* If include_hidden, "hidden" fast locals (from inlined comprehensions in
-       module/class scopes) will be included in the returned dict, but not in
-       frame->f_locals; the returned dict will be a modified copy. Non-hidden
-       locals will still be updated in frame->f_locals. */
-    if (include_hidden) {
-        hidden = PyDict_New();
-        if (hidden == NULL) {
-            return NULL;
-        }
+    if (!(co->co_flags & CO_OPTIMIZED)) {
+        return Py_NewRef(frame->f_locals);
     }
 
-    frame_init_get_vars(frame);
+    PyFrameLocalsProxyObject* proxy = PyObject_New(PyFrameLocalsProxyObject, &PyFrameLocalsProxy_Type);
 
-    PyCodeObject *co = _PyFrame_GetCode(frame);
+    if (proxy == NULL) {
+        return NULL;
+    }
+
+    proxy->frame = (PyFrameObject*)Py_NewRef(f);
+    return (PyObject*)proxy;
+}
+
+
+PyObject*
+_PyFrame_GetHiddenLocals(_PyInterpreterFrame *frame)
+{
+    PyObject* hidden = PyDict_New();
+
+    if (hidden == NULL) {
+        return NULL;
+    }
+
+    PyCodeObject* co = _PyFrame_GetCode(frame);
+
     for (int i = 0; i < co->co_nlocalsplus; i++) {
-        PyObject *value;  // borrowed reference
-        if (!frame_get_var(frame, co, i, &value)) {
-            continue;
-        }
-
-        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
-        if (kind & CO_FAST_HIDDEN) {
-            if (include_hidden && value != NULL) {
-                if (PyObject_SetItem(hidden, name, value) != 0) {
-                    goto error;
-                }
-            }
+
+        if (!(kind & CO_FAST_HIDDEN)) {
             continue;
         }
+
+        PyObject* name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
+        PyObject* value = framelocalproxy_getval(frame, co, i);
+
         if (value == NULL) {
-            if (PyObject_DelItem(locals, name) != 0) {
-                if (PyErr_ExceptionMatches(PyExc_KeyError)) {
-                    PyErr_Clear();
-                }
-                else {
-                    goto error;
-                }
-            }
+            continue;
         }
-        else {
-            if (PyObject_SetItem(locals, name, value) != 0) {
-                goto error;
-            }
+
+        if (PyDict_SetItem(hidden, name, value) < 0) {
+            Py_DECREF(hidden);
+            return NULL;
         }
     }
 
-    if (include_hidden && PyDict_Size(hidden)) {
-        PyObject *innerlocals = PyDict_New();
-        if (innerlocals == NULL) {
-            goto error;
-        }
-        if (PyDict_Merge(innerlocals, locals, 1) != 0) {
-            Py_DECREF(innerlocals);
-            goto error;
-        }
-        if (PyDict_Merge(innerlocals, hidden, 1) != 0) {
-            Py_DECREF(innerlocals);
-            goto error;
-        }
-        locals = innerlocals;
-    }
-    else {
-        Py_INCREF(locals);
-    }
-    Py_CLEAR(hidden);
-
-    return locals;
-
-  error:
-    Py_XDECREF(hidden);
-    return NULL;
+    return hidden;
 }
 
 
