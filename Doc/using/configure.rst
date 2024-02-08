@@ -235,6 +235,7 @@ General Options
 
    * Add :option:`-X pystats <-X>` command line option.
    * Add :envvar:`!PYTHONSTATS` environment variable.
+   * Add :envvar:`!PYTHONSTATS_UOPDEPTH` environment variable
    * Define the ``Py_STATS`` macro.
    * Add functions to the :mod:`sys` module:
 
@@ -246,6 +247,11 @@ General Options
    The statistics will be dumped to a arbitrary (probably unique) file in
    ``/tmp/py_stats/`` (Unix) or ``C:\temp\py_stats\`` (Windows). If that
    directory does not exist, results will be printed on stderr.
+
+   If the :envvar:`!PYTHONSTATS_UOPDEPTH` environment variable is set to an
+   integer, that number will be used as the maximum length UOP chain to
+   record an execution count for. If it is unset, the default maximum length is
+   2.
 
    Use ``Tools/scripts/summarize_stats.py`` to read the stats.
 
