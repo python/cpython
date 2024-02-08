@@ -55,7 +55,6 @@ def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
                 variables.add(var.name)
                 if var.condition:
                     out.emit(f"{type_name(var)}{var.name} = NULL;\n")
-                    out.emit(f"if({var.name}) {{goto error;}}\n")
                 else:
                     out.emit(f"{type_name(var)}{var.name};\n")
     for var in uop.stack.outputs:
@@ -65,7 +64,6 @@ def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
             variables.add(var.name)
             if var.condition:
                 out.emit(f"{type_name(var)}{var.name} = NULL;\n")
-                out.emit(f"if({var.name}) {{goto error;}}\n")
             else:
                 out.emit(f"{type_name(var)}{var.name};\n")
 

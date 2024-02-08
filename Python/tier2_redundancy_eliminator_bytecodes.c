@@ -152,17 +152,34 @@ dummy_func(void) {
         top, unused[oparg-2], bottom)) {
     }
 
-    op(_LOAD_ATTR, (owner -- attr, self_or_null if (oparg & 1))) {
-        self_or_null = sym_init_unknown(ctx);
-        if (self_or_null == NULL) {
-            goto error;
-        }
-        sym_set_type(self_or_null, SELF_OR_NULL);
+    op(_LOAD_ATTR_INSTANCE_VALUE, (index/1, owner -- attr, null if (oparg & 1))) {
+        _LOAD_ATTR_NOT_NULL
+        (void)index;
         (void)owner;
-        attr = sym_init_unknown(ctx);
-        if (attr == NULL) {
-            goto error;
-        }
+    }
+
+    op(_LOAD_ATTR_MODULE, (index/1, owner -- attr, null if (oparg & 1))) {
+        _LOAD_ATTR_NOT_NULL
+        (void)index;
+        (void)owner;
+    }
+
+    op(_LOAD_ATTR_WITH_HINT, (hint/1, owner -- attr, null if (oparg & 1))) {
+        _LOAD_ATTR_NOT_NULL
+        (void)hint;
+        (void)owner;
+    }
+
+    op(_LOAD_ATTR_SLOT, (index/1, owner -- attr, null if (oparg & 1))) {
+        _LOAD_ATTR_NOT_NULL
+        (void)index;
+        (void)owner;
+    }
+
+    op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr, null if (oparg & 1))) {
+        _LOAD_ATTR_NOT_NULL
+        (void)descr;
+        (void)owner;
     }
 
     op(_CHECK_FUNCTION_EXACT_ARGS, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
@@ -190,8 +207,7 @@ dummy_func(void) {
 
         assert(self_or_null != NULL);
         assert(args != NULL);
-        if (!sym_matches_pytype(self_or_null, NULL) &&
-            !sym_matches_type(self_or_null, SELF_OR_NULL)) {
+        if (sym_matches_type(self_or_null, NOT_NULL)) {
             // Bound method fiddling, same as _INIT_CALL_PY_EXACT_ARGS in
             // VM
             args--;
@@ -203,7 +219,7 @@ dummy_func(void) {
         // Can determine statically, so we interleave the new locals
         // and make the current stack the new locals.
         // This also sets up for true call inlining.
-        if (!sym_matches_type(self_or_null, SELF_OR_NULL)) {
+        if (!sym_is_unknown_type(self_or_null)) {
             localsplus_start = args;
             n_locals_already_filled = argcount;
         }

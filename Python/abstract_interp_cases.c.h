@@ -574,7 +574,6 @@
         case _LOAD_GLOBAL: {
             _Py_UOpsSymType *res;
             _Py_UOpsSymType *null = NULL;
-            if(null) {goto error;}
             res = sym_init_unknown(ctx);
             if (res == NULL) goto error;
             null = sym_init_null(ctx);
@@ -596,7 +595,6 @@
         case _LOAD_GLOBAL_MODULE: {
             _Py_UOpsSymType *res;
             _Py_UOpsSymType *null = NULL;
-            if(null) {goto error;}
             res = sym_init_unknown(ctx);
             if (res == NULL) goto error;
             null = sym_init_null(ctx);
@@ -610,7 +608,6 @@
         case _LOAD_GLOBAL_BUILTINS: {
             _Py_UOpsSymType *res;
             _Py_UOpsSymType *null = NULL;
-            if(null) {goto error;}
             res = sym_init_unknown(ctx);
             if (res == NULL) goto error;
             null = sym_init_null(ctx);
@@ -762,24 +759,15 @@
         }
 
         case _LOAD_ATTR: {
-            _Py_UOpsSymType *owner;
             _Py_UOpsSymType *attr;
             _Py_UOpsSymType *self_or_null = NULL;
-            if(self_or_null) {goto error;}
-            owner = stack_pointer[-1];
-            self_or_null = sym_init_unknown(ctx);
-            if (self_or_null == NULL) {
-                goto error;
-            }
-            sym_set_type(self_or_null, SELF_OR_NULL);
-            (void)owner;
             attr = sym_init_unknown(ctx);
-            if (attr == NULL) {
-                goto error;
-            }
-            stack_pointer[-1] = attr;
-            if (oparg & 1) stack_pointer[0] = self_or_null;
-            stack_pointer += (oparg & 1);
+            if (attr == NULL) goto error;
+            self_or_null = sym_init_unknown(ctx);
+            if (self_or_null == NULL) goto error;
+            stack_pointer[0] = attr;
+            if (oparg & 1) stack_pointer[1] = self_or_null;
+            stack_pointer += 1 + (oparg & 1);
             break;
         }
 
@@ -792,16 +780,17 @@
         }
 
         case _LOAD_ATTR_INSTANCE_VALUE: {
+            _Py_UOpsSymType *owner;
             _Py_UOpsSymType *attr;
             _Py_UOpsSymType *null = NULL;
-            if(null) {goto error;}
-            attr = sym_init_unknown(ctx);
-            if (attr == NULL) goto error;
-            null = sym_init_null(ctx);
-            if (null == NULL) goto error;
-            stack_pointer[0] = attr;
-            if (oparg & 1) stack_pointer[1] = null;
-            stack_pointer += 1 + (oparg & 1);
+            owner = stack_pointer[-1];
+            uint16_t index = (uint16_t)inst->operand;
+            _LOAD_ATTR_NOT_NULL
+            (void)index;
+            (void)owner;
+            stack_pointer[-1] = attr;
+            if (oparg & 1) stack_pointer[0] = null;
+            stack_pointer += (oparg & 1);
             break;
         }
 
@@ -810,16 +799,17 @@
         }
 
         case _LOAD_ATTR_MODULE: {
+            _Py_UOpsSymType *owner;
             _Py_UOpsSymType *attr;
             _Py_UOpsSymType *null = NULL;
-            if(null) {goto error;}
-            attr = sym_init_unknown(ctx);
-            if (attr == NULL) goto error;
-            null = sym_init_null(ctx);
-            if (null == NULL) goto error;
-            stack_pointer[0] = attr;
-            if (oparg & 1) stack_pointer[1] = null;
-            stack_pointer += 1 + (oparg & 1);
+            owner = stack_pointer[-1];
+            uint16_t index = (uint16_t)inst->operand;
+            _LOAD_ATTR_NOT_NULL
+            (void)index;
+            (void)owner;
+            stack_pointer[-1] = attr;
+            if (oparg & 1) stack_pointer[0] = null;
+            stack_pointer += (oparg & 1);
             break;
         }
 
@@ -828,30 +818,32 @@
         }
 
         case _LOAD_ATTR_WITH_HINT: {
+            _Py_UOpsSymType *owner;
             _Py_UOpsSymType *attr;
             _Py_UOpsSymType *null = NULL;
-            if(null) {goto error;}
-            attr = sym_init_unknown(ctx);
-            if (attr == NULL) goto error;
-            null = sym_init_null(ctx);
-            if (null == NULL) goto error;
-            stack_pointer[0] = attr;
-            if (oparg & 1) stack_pointer[1] = null;
-            stack_pointer += 1 + (oparg & 1);
+            owner = stack_pointer[-1];
+            uint16_t hint = (uint16_t)inst->operand;
+            _LOAD_ATTR_NOT_NULL
+            (void)hint;
+            (void)owner;
+            stack_pointer[-1] = attr;
+            if (oparg & 1) stack_pointer[0] = null;
+            stack_pointer += (oparg & 1);
             break;
         }
 
         case _LOAD_ATTR_SLOT: {
+            _Py_UOpsSymType *owner;
             _Py_UOpsSymType *attr;
             _Py_UOpsSymType *null = NULL;
-            if(null) {goto error;}
-            attr = sym_init_unknown(ctx);
-            if (attr == NULL) goto error;
-            null = sym_init_null(ctx);
-            if (null == NULL) goto error;
-            stack_pointer[0] = attr;
-            if (oparg & 1) stack_pointer[1] = null;
-            stack_pointer += 1 + (oparg & 1);
+            owner = stack_pointer[-1];
+            uint16_t index = (uint16_t)inst->operand;
+            _LOAD_ATTR_NOT_NULL
+            (void)index;
+            (void)owner;
+            stack_pointer[-1] = attr;
+            if (oparg & 1) stack_pointer[0] = null;
+            stack_pointer += (oparg & 1);
             break;
         }
 
@@ -860,16 +852,17 @@
         }
 
         case _LOAD_ATTR_CLASS: {
+            _Py_UOpsSymType *owner;
             _Py_UOpsSymType *attr;
             _Py_UOpsSymType *null = NULL;
-            if(null) {goto error;}
-            attr = sym_init_unknown(ctx);
-            if (attr == NULL) goto error;
-            null = sym_init_null(ctx);
-            if (null == NULL) goto error;
-            stack_pointer[0] = attr;
-            if (oparg & 1) stack_pointer[1] = null;
-            stack_pointer += 1 + (oparg & 1);
+            owner = stack_pointer[-1];
+            PyObject *descr = (PyObject *)inst->operand;
+            _LOAD_ATTR_NOT_NULL
+            (void)descr;
+            (void)owner;
+            stack_pointer[-1] = attr;
+            if (oparg & 1) stack_pointer[0] = null;
+            stack_pointer += (oparg & 1);
             break;
         }
 
@@ -1181,7 +1174,6 @@
         case _LOAD_ATTR_METHOD_WITH_VALUES: {
             _Py_UOpsSymType *attr;
             _Py_UOpsSymType *self = NULL;
-            if(self) {goto error;}
             attr = sym_init_unknown(ctx);
             if (attr == NULL) goto error;
             self = sym_init_unknown(ctx);
@@ -1195,7 +1187,6 @@
         case _LOAD_ATTR_METHOD_NO_DICT: {
             _Py_UOpsSymType *attr;
             _Py_UOpsSymType *self = NULL;
-            if(self) {goto error;}
             attr = sym_init_unknown(ctx);
             if (attr == NULL) goto error;
             self = sym_init_unknown(ctx);
@@ -1231,7 +1222,6 @@
         case _LOAD_ATTR_METHOD_LAZY_DICT: {
             _Py_UOpsSymType *attr;
             _Py_UOpsSymType *self = NULL;
-            if(self) {goto error;}
             attr = sym_init_unknown(ctx);
             if (attr == NULL) goto error;
             self = sym_init_unknown(ctx);
@@ -1307,8 +1297,7 @@
             PyCodeObject *co = (PyCodeObject *)func->func_code;
             assert(self_or_null != NULL);
             assert(args != NULL);
-            if (!sym_matches_pytype(self_or_null, NULL) &&
-                !sym_matches_type(self_or_null, SELF_OR_NULL)) {
+            if (sym_matches_type(self_or_null, NOT_NULL)) {
                 // Bound method fiddling, same as _INIT_CALL_PY_EXACT_ARGS in
                 // VM
                 args--;
@@ -1319,7 +1308,7 @@
             // Can determine statically, so we interleave the new locals
             // and make the current stack the new locals.
             // This also sets up for true call inlining.
-            if (!sym_matches_type(self_or_null, SELF_OR_NULL)) {
+            if (!sym_is_unknown_type(self_or_null)) {
                 localsplus_start = args;
                 n_locals_already_filled = argcount;
             }

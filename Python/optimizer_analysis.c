@@ -88,12 +88,7 @@ typedef enum {
     NULL_TYPE = 6,
     PYMETHOD_TYPE = 7,
     GUARD_DORV_VALUES_TYPE = 8,
-    // This is a non-ideal fix. Once all _LOAD_ATTR is properly annotated
-    // with proper type information (at least, that `self` is present), this
-    // can be removed. Otherwise, for now, this is used to distinguish
-    // _LOAD_ATTR (self/null unknown) and
-    // _LOAD_ATTR (unknown, but type cannot be captured in our current type system).
-    SELF_OR_NULL = 9,
+    NOT_NULL = 9,
 
     // Represents something from LOAD_CONST which is truly constant.
     TRUE_CONST = 30,
@@ -367,6 +362,24 @@ sym_init_unknown(_Py_UOpsAbstractInterpContext *ctx)
     return _Py_UOpsSymType_New(ctx,NULL);
 }
 
+static inline bool
+sym_is_unknown_type(_Py_UOpsSymType *typ)
+{
+    return (typ->types == 0) || (typ->types == (1U << INVALID_TYPE));
+}
+
+static inline _Py_UOpsSymType*
+sym_init_known_type(_Py_UOpsAbstractInterpContext *ctx,
+                    _Py_UOpsSymExprTypeEnum typ)
+{
+    _Py_UOpsSymType *res = sym_init_unknown(ctx);
+    if (res == NULL) {
+        return NULL;
+    }
+    sym_set_type(res, typ);
+    return res;
+}
+
 static inline _Py_UOpsSymType*
 sym_init_known_pytype(_Py_UOpsAbstractInterpContext *ctx,
                       PyTypeObject *typ)
@@ -500,6 +513,17 @@ uop_abstract_interpret_single_inst(
     new_inst.oparg = arg;            \
     new_inst.operand = oper;
 
+#define _LOAD_ATTR_NOT_NULL \
+    do {                    \
+    attr = sym_init_known_type(ctx, NOT_NULL); \
+    if (attr == NULL) { \
+        goto error; \
+    } \
+    null = sym_init_null(ctx); \
+    if (null == NULL) { \
+        goto error; \
+    } \
+    } while (0);
 
     int oparg = inst->oparg;
     uint32_t opcode = inst->opcode;
