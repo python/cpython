@@ -126,7 +126,7 @@ _Py_qsbr_advance(struct _qsbr_shared *shared)
 uint64_t
 _Py_qsbr_deferred_advance(struct _qsbr_thread_state *qsbr)
 {
-	if (++qsbr->deferrals < QSBR_DEFERRED_LIMIT) {
+    if (++qsbr->deferrals < QSBR_DEFERRED_LIMIT) {
         return _Py_qsbr_shared_current(qsbr->shared) + QSBR_INCR;
     }
     qsbr->deferrals = 0;
