@@ -614,9 +614,6 @@ builtins_dict_watcher(PyDict_WatchEvent event, PyObject *dict, PyObject *key, Py
     if (interp->rare_events.builtin_dict < _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS) {
         _Py_Executors_InvalidateAll(interp);
     }
-    else {
-        PyDict_Unwatch(0, interp->builtins);
-    }
     RARE_EVENT_INTERP_INC(interp, builtin_dict);
     return 0;
 }

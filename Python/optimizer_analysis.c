@@ -37,9 +37,6 @@ static int
 globals_watcher_callback(PyDict_WatchEvent event, PyObject* dict,
                          PyObject* key, PyObject* new_value)
 {
-    if (event == PyDict_EVENT_CLONED) {
-        return 0;
-    }
     uint64_t watched_mutations = get_mutations(dict);
     if (watched_mutations < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
         _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), dict);
