@@ -92,10 +92,6 @@ Interpreter improvements:
 New Features
 ============
 
-* The cyclic garbage collector is now incremental.
-  This means that maximum pause times are reduced,
-  by an order of magnitude or more for larger heaps.
-
 Improved Error Messages
 -----------------------
 
@@ -104,13 +100,6 @@ Improved Error Messages
   variable as well as the canonical ``NO_COLOR`` and ``FORCE_COLOR`` environment
   variables. See also :ref:`using-on-controlling-color`.
   (Contributed by Pablo Galindo Salgado in :gh:`112730`.)
-
-Incremental Garbage Collection
-------------------------------
-
-* The cycle garbage collector is now incremental.
-  This means that maximum pause times are reduced
-  by an order of magnitude or more for larger heaps.
 
 Other Language Changes
 ======================
@@ -257,29 +246,6 @@ fractions
   sign handling, minimum width and grouping. (Contributed by Mark Dickinson
   in :gh:`111320`.)
 
-gc
---
-* The cyclic garbage collector is now incremental, which changes the meanings
-  of the results of :meth:`gc.get_threshold` and :meth:`gc.get_threshold` as
-  well as :meth:`gc.get_count` and :meth:`gc.get_stats`.
-* :meth:`gc.get_threshold` returns a three-tuple for backwards compatibility,
-  the first value is the threshold for young collections, as before, the second
-  value determines the rate at which the old collection is scanned; the
-  default is 10 and higher values mean that the old collection is scanned more slowly.
-  The third value is meangless and is always zero.
-* :meth:`gc.set_threshold` ignores any items after the second.
-* :meth:`gc.get_count` and :meth:`gc.get_stats`.
-  These functions return the same format of results as before.
-  The only difference is that instead of the results refering to
-  the young, aging and old generations, the results refer to the
-  young generation and the aging and collecting spaces of the old generation.
-
-In summary, code that attempted to manipulate the behavior of the cycle GC may
-not work as well as intended, but it is very unlikely to harmful.
-All other code will work just fine.
-Uses should avoid calling :meth:`gc.collect` unless their workload is episodic,
-but that has always been the case to some extent.
-
 glob
 ----
 
@@ -391,7 +357,7 @@ pathlib
   (Contributed by Barney Gale in :gh:`89812`.)
 
 * Add :meth:`pathlib.Path.from_uri`, a new constructor to create a :class:`pathlib.Path`
-  object from a 'file' URI (``file:/``).
+  object from a 'file' URI (``file://``).
   (Contributed by Barney Gale in :gh:`107465`.)
 
 * Add :meth:`pathlib.PurePath.full_match` for matching paths with
@@ -437,6 +403,10 @@ sqlite3
 * A :exc:`ResourceWarning` is now emitted if a :class:`sqlite3.Connection`
   object is not :meth:`closed <sqlite3.Connection.close>` explicitly.
   (Contributed by Erlend E. Aasland in :gh:`105539`.)
+
+* Add *filter* keyword-only parameter to :meth:`sqlite3.Connection.iterdump`
+  for filtering database objects to dump.
+  (Contributed by Mariusz Felisiak in :gh:`91602`.)
 
 subprocess
 ----------
@@ -1435,6 +1405,12 @@ New Features
   these functions return -1 on error and so checking ``PyErr_Occurred()`` is
   not needed.
   (Contributed by Victor Stinner in :gh:`106004`.)
+
+* Added :c:func:`PyDict_SetDefaultRef`, which is similar to
+  :c:func:`PyDict_SetDefault` but returns a :term:`strong reference` instead of
+  a :term:`borrowed reference`. This function returns ``-1`` on error, ``0`` on
+  insertion, and ``1`` if the key was already present in the dictionary.
+  (Contributed by Sam Gross in :gh:`112066`.)
 
 * Add :c:func:`PyDict_ContainsString` function: same as
   :c:func:`PyDict_Contains`, but *key* is specified as a :c:expr:`const char*`

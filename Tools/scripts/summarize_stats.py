@@ -311,10 +311,10 @@ class Stats:
             self._data["_defines"],
             self._data["_specialized_instructions"],
         )
-    
+
     def get_uop_sequence_stats(self, length) -> dict[str, int]:
         return {k: v for k, v in self._data.items() if k.startswith("UOp sequence count") and k.count(',') == length - 1}
-    
+
     def get_max_uop_sequence_length(self) -> int:
         uop_sequence_lengths = [k.count(',')+1 for k in self._data.keys() if k.startswith("UOp sequence count")]
         return max(uop_sequence_lengths) if uop_sequence_lengths else 0
@@ -694,7 +694,7 @@ def uop_sequence_section(base_stats: Stats, head_stats: Stats) -> Generator[Sect
                 )
             )
         return rows
-    
+
     for l in range(2, longest+1):
         yield Section(
             "Pair counts",
