@@ -5,11 +5,10 @@ PyTime C API
 
 .. versionadded:: 3.13
 
-PyTime API
-----------
-
-The PyTime API provides access to system clocks and time conversion functions.
+The clock C API provides access to system clocks and time conversion functions.
 It is similar to the Python :mod:`time` module.
+
+For C API related to the :mod:`datetime` module, see :ref:`datetimeobjects`.
 
 
 Types
@@ -26,65 +25,55 @@ Types
    The supported range is around [-292.3 years; +292.3 years]. Using the Unix
    epoch (January 1st, 1970) as reference, the supported date range is around
    [1677-09-21; 2262-04-11].
+   The exact limits are exposed as constants:
+
+   .. c:var:: PyTime_t PyTime_MIN
+
+      Minimum value of :c:type:`PyTime_t`.
+
+   .. c:var:: PyTime_t PyTime_MAX
+
+      Maximum value of :c:type:`PyTime_t`.
 
 
-Constants
----------
+Clock Functions
+---------------
 
-.. c:var:: PyTime_t PyTime_MIN
+The following functions take a pointer to a :c:expr:`PyTime_t` that they
+set to the value of a particular clock.
+Details of each clock are given in the documentation of the corresponding
+Python function.
 
-   Minimum value of the :c:type:`PyTime_t` type.
+The functions return 0 on success, or -1 (with an exception set) on failure.
 
-   :c:var:`PyTime_MIN` nanoseconds is around -292.3 years.
+On integer overflow, they set the :c:data:`PyExc_OverflowError` exception and
+set :c:expr:`*result` to the value clamped to the ``[PyTime_MIN; PyTime_MAX]``
+range.
+(On current systems, integer overflows are likely caused by misconfigured
+system time.)
 
-.. c:var:: PyTime_t PyTime_MAX
+.. c:function:: int PyTime_Monotonic(PyTime_t *result)
 
-   Maximum value of the :c:type:`PyTime_t` type.
+   Read the monotonic clock.
+   See :func:`time.monotonic` for important details on this clock.
 
-   :c:var:`PyTime_MAX` nanoseconds is around +292.3 years.
+.. c:function:: int PyTime_PerfCounter(PyTime_t *result)
+
+   Read the performance counter.
+   See :func:`time.perf_counter` for important details on this clock.
+
+.. c:function:: int PyTime_Time(PyTime_t *result)
+
+   Read the “wall clock” time.
+   See :func:`time.time` for details important on this clock.
 
 
-Functions
----------
+Other functions
+---------------
 
 .. c:function:: double PyTime_AsSecondsDouble(PyTime_t t)
 
    Convert a timestamp to a number of seconds as a C :c:expr:`double`.
 
-   The function cannot fail.
-
-
-.. c:function:: PyTime_t PyTime_Monotonic(void)
-
-   Return the value in nanoseconds of a monotonic clock, i.e. a clock
-   that cannot go backwards. Similar to :func:`time.monotonic_ns`; see
-   :func:`time.monotonic` for details.
-
-   If reading the clock fails, silently ignore the error and return ``0``.
-
-   On integer overflow, silently ignore the overflow and clamp the clock to
-   the ``[PyTime_MIN; PyTime_MAX]`` range.
-
-
-.. c:function:: PyTime_t PyTime_PerfCounter(void)
-
-   Return the value in nanoseconds of a performance counter, i.e. a
-   clock with the highest available resolution to measure a short duration.
-   Similar to :func:`time.perf_counter_ns`; see :func:`time.perf_counter` for
-   details.
-
-   If reading the clock fails, silently ignore the error and return ``0``.
-
-   On integer overflow, silently ignore the overflow and clamp the clock to
-   the ``[PyTime_MIN; PyTime_MAX]`` range.
-
-
-.. c:function:: PyTime_t PyTime_Time(void)
-
-   Return the time in nanoseconds since January 1, 1970, 00:00:00 (UTC).
-   Similar to :func:`time.time_ns`; see :func:`time.time` for details.
-
-   If reading the clock fails, silently ignore the error and return ``0``.
-
-   On integer overflow, silently ignore the overflow and clamp the clock to
-   the ``[PyTime_MIN; PyTime_MAX]`` range.
+   The function cannot fail, but note that :c:expr:`double` has limited
+   accuracy for large values.

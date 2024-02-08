@@ -1501,7 +1501,7 @@ New Features
 * Add :c:func:`Py_HashPointer` function to hash a pointer.
   (Contributed by Victor Stinner in :gh:`111545`.)
 
-* Add PyTime C API:
+* Add clock C API:
 
   * :c:type:`PyTime_t` type.
   * :c:var:`PyTime_MIN` and :c:var:`PyTime_MAX` constants.
