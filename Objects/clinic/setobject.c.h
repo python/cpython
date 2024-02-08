@@ -345,7 +345,7 @@ PyDoc_STRVAR(set_add__doc__,
     {"add", (PyCFunction)set_add, METH_O, set_add__doc__},
 
 PyDoc_STRVAR(set___contains____doc__,
-"__contains__($self, object, /)\n"
+"__contains__($self, key, /)\n"
 "--\n"
 "\n"
 "x.__contains__(y) <==> y in x.");
@@ -410,4 +410,4 @@ set___sizeof__(PySetObject *so, PyObject *Py_UNUSED(ignored))
 {
     return set___sizeof___impl(so);
 }
-/*[clinic end generated code: output=fe260176c78a966f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2f8fb6e5ecc61832 input=a9049054013a1b77]*/

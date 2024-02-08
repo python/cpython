@@ -2028,19 +2028,19 @@ set_contains(PySetObject *so, PyObject *key)
 set.__contains__
 
     so: setobject
-    object: object
+    key: object
     /
 
 x.__contains__(y) <==> y in x.
 [clinic start generated code]*/
 
 static PyObject *
-set___contains__(PySetObject *so, PyObject *object)
-/*[clinic end generated code: output=6d8f64ba8d2916b8 input=17757c9340b19260]*/
+set___contains__(PySetObject *so, PyObject *key)
+/*[clinic end generated code: output=b5948bc5c590d3ca input=f21c9825df8663e2]*/
 {
     long result;
 
-    result = set_contains(so, object);
+    result = set_contains(so, key);
     if (result < 0)
         return NULL;
     return PyBool_FromLong(result);
