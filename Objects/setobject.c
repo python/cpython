@@ -960,7 +960,7 @@ exit:
 set.update
 
     so: setobject
-    *args: object
+    *others as args: object
     /
 
 Update the set, adding elements from all others.
@@ -968,7 +968,7 @@ Update the set, adding elements from all others.
 
 static PyObject *
 set_update_impl(PySetObject *so, PyObject *args)
-/*[clinic end generated code: output=34f6371704974c8a input=a4dc6ead0d0dd452]*/
+/*[clinic end generated code: output=34f6371704974c8a input=168d9ce3461b7d8d]*/
 {
     Py_ssize_t i;
 
@@ -1180,7 +1180,7 @@ set_clear_impl(PySetObject *so)
 set.union
 
     so: setobject
-    *args: object
+    *others as args: object
     /
 
 Return a new set with elements from the set and all others.
@@ -1188,7 +1188,7 @@ Return a new set with elements from the set and all others.
 
 static PyObject *
 set_union_impl(PySetObject *so, PyObject *args)
-/*[clinic end generated code: output=2c83d05a446a1477 input=24ed124df9b6221c]*/
+/*[clinic end generated code: output=2c83d05a446a1477 input=8a088a2719769c81]*/
 {
     PySetObject *result;
     PyObject *other;
@@ -1328,7 +1328,7 @@ set_intersection(PySetObject *so, PyObject *other)
 set.intersection as set_intersection_multi
 
     so: setobject
-    *args: object
+    *others as args: object
     /
 
 Return a new set with elements common to the set and all others.
@@ -1336,7 +1336,7 @@ Return a new set with elements common to the set and all others.
 
 static PyObject *
 set_intersection_multi_impl(PySetObject *so, PyObject *args)
-/*[clinic end generated code: output=2406ef3387adbe2f input=7f9106301a661635]*/
+/*[clinic end generated code: output=2406ef3387adbe2f input=c0c49c1ebe63df11]*/
 {
     Py_ssize_t i;
 
@@ -1373,7 +1373,7 @@ set_intersection_update(PySetObject *so, PyObject *other)
 set.intersection_update as set_intersection_update_multi
 
     so: setobject
-    *args: object
+    *others as args: object
     /
 
 Update the set, keeping only elements found in it and all others.
@@ -1381,7 +1381,7 @@ Update the set, keeping only elements found in it and all others.
 
 static PyObject *
 set_intersection_update_multi_impl(PySetObject *so, PyObject *args)
-/*[clinic end generated code: output=251c1f729063609d input=a0ea42761174e112]*/
+/*[clinic end generated code: output=251c1f729063609d input=e502454eef02d349]*/
 {
     PyObject *tmp;
 
@@ -1547,7 +1547,7 @@ set_difference_update_internal(PySetObject *so, PyObject *other)
 set.difference_update
 
     so: setobject
-    *args: object
+    *others as args: object
     /
 
 Update the set, removing elements found in others.
@@ -1555,7 +1555,7 @@ Update the set, removing elements found in others.
 
 static PyObject *
 set_difference_update_impl(PySetObject *so, PyObject *args)
-/*[clinic end generated code: output=28685b2fc63e41c4 input=baadad04cef724f4]*/
+/*[clinic end generated code: output=28685b2fc63e41c4 input=7b7380a788c4bb7c]*/
 {
     Py_ssize_t i;
 
@@ -1661,7 +1661,7 @@ set_difference(PySetObject *so, PyObject *other)
 set.difference as set_difference_multi
 
     so: setobject
-    *args: object
+    *others as args: object
     /
 
 Return a new set with elements in the set that are not in the others.
@@ -1669,7 +1669,7 @@ Return a new set with elements in the set that are not in the others.
 
 static PyObject *
 set_difference_multi_impl(PySetObject *so, PyObject *args)
-/*[clinic end generated code: output=3130c3bb3cac873d input=ec08ed06cc3db726]*/
+/*[clinic end generated code: output=3130c3bb3cac873d input=03248e240ee359a2]*/
 {
     Py_ssize_t i;
     PyObject *result, *other;

@@ -25,7 +25,7 @@ set_pop(PySetObject *so, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(set_update__doc__,
-"update($self, /, *args)\n"
+"update($self, /, *others)\n"
 "--\n"
 "\n"
 "Update the set, adding elements from all others.");
@@ -114,7 +114,7 @@ set_clear(PySetObject *so, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(set_union__doc__,
-"union($self, /, *args)\n"
+"union($self, /, *others)\n"
 "--\n"
 "\n"
 "Return a new set with elements from the set and all others.");
@@ -149,7 +149,7 @@ exit:
 }
 
 PyDoc_STRVAR(set_intersection_multi__doc__,
-"intersection($self, /, *args)\n"
+"intersection($self, /, *others)\n"
 "--\n"
 "\n"
 "Return a new set with elements common to the set and all others.");
@@ -184,7 +184,7 @@ exit:
 }
 
 PyDoc_STRVAR(set_intersection_update_multi__doc__,
-"intersection_update($self, /, *args)\n"
+"intersection_update($self, /, *others)\n"
 "--\n"
 "\n"
 "Update the set, keeping only elements found in it and all others.");
@@ -228,7 +228,7 @@ PyDoc_STRVAR(set_isdisjoint__doc__,
     {"isdisjoint", (PyCFunction)set_isdisjoint, METH_O, set_isdisjoint__doc__},
 
 PyDoc_STRVAR(set_difference_update__doc__,
-"difference_update($self, /, *args)\n"
+"difference_update($self, /, *others)\n"
 "--\n"
 "\n"
 "Update the set, removing elements found in others.");
@@ -263,7 +263,7 @@ exit:
 }
 
 PyDoc_STRVAR(set_difference_multi__doc__,
-"difference($self, /, *args)\n"
+"difference($self, /, *others)\n"
 "--\n"
 "\n"
 "Return a new set with elements in the set that are not in the others.");
@@ -410,4 +410,4 @@ set___sizeof__(PySetObject *so, PyObject *Py_UNUSED(ignored))
 {
     return set___sizeof___impl(so);
 }
-/*[clinic end generated code: output=2f8fb6e5ecc61832 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=596eac0cb2d68c8b input=a9049054013a1b77]*/
