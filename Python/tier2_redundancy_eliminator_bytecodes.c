@@ -33,7 +33,7 @@ dummy_func(void) {
         value = GETLOCAL(oparg);
         // We guarantee this will error - just bail and don't optimize it.
         if (sym_matches_pytype(value, NULL)) {
-            goto error;
+            goto out_of_space;
         }
     }
 
@@ -45,7 +45,7 @@ dummy_func(void) {
         value = GETLOCAL(oparg);
         _Py_UOpsSymType *temp = sym_new_null(ctx);
         if (temp == NULL) {
-            goto error;
+            goto out_of_space;
         }
         GETLOCAL(oparg) = temp;
     }
@@ -57,7 +57,7 @@ dummy_func(void) {
     op(_PUSH_NULL, (-- res)) {
         res = sym_new_null(ctx);
         if (res == NULL) {
-            goto error;
+            goto out_of_space;
         };
     }
 
@@ -86,7 +86,7 @@ dummy_func(void) {
         (void)right;
         res = sym_new_known_pytype(ctx, &PyLong_Type);
         if (res == NULL) {
-            goto error;
+            goto out_of_space;
         }
     }
 
@@ -99,36 +99,36 @@ dummy_func(void) {
     op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
         value = sym_new_const(ctx, ptr);
         if (value == NULL) {
-            goto error;
+            goto out_of_space;
         }
     }
 
     op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
         value = sym_new_const(ctx, ptr);
         if (value == NULL) {
-            goto error;
+            goto out_of_space;
         }
     }
 
     op(_LOAD_CONST_INLINE_WITH_NULL, (ptr/4 -- value, null)) {
         value = sym_new_const(ctx, ptr);
         if (value == NULL) {
-            goto error;
+            goto out_of_space;
         }
         null = sym_new_null(ctx);
         if (null == NULL) {
-            goto error;
+            goto out_of_space;
         }
     }
 
     op(_LOAD_CONST_INLINE_BORROW_WITH_NULL, (ptr/4 -- value, null)) {
         value = sym_new_const(ctx, ptr);
         if (value == NULL) {
-            goto error;
+            goto out_of_space;
         }
         null = sym_new_null(ctx);
         if (null == NULL) {
-            goto error;
+            goto out_of_space;
         }
     }
 
@@ -191,7 +191,7 @@ dummy_func(void) {
         assert((inst + 2)->opcode == _PUSH_FRAME);
         PyFunctionObject *func = (PyFunctionObject *)(inst + 2)->operand;
         if (func == NULL) {
-            goto error;
+            goto out_of_space;
         }
         PyCodeObject *co = (PyCodeObject *)func->func_code;
 
@@ -214,7 +214,7 @@ dummy_func(void) {
         }
         new_frame = ctx_frame_new(ctx, co, localsplus_start, n_locals_already_filled, 0);
         if (new_frame == NULL){
-            goto error;
+            goto out_of_space;
         }
     }
 
@@ -240,7 +240,7 @@ dummy_func(void) {
         for (int i = 0; i < oparg; i++) {
             values[i] = sym_new_unknown(ctx);
             if (values[i] == NULL) {
-                goto error;
+                goto out_of_space;
             }
         }
     }
@@ -252,7 +252,7 @@ dummy_func(void) {
         for (int i = 0; i < totalargs; i++) {
             values[i] = sym_new_unknown(ctx);
             if (values[i] == NULL) {
-                goto error;
+                goto out_of_space;
             }
         }
     }
@@ -260,7 +260,7 @@ dummy_func(void) {
     op(_ITER_NEXT_RANGE, (iter -- iter, next)) {
        next = sym_new_known_pytype(ctx, &PyLong_Type);
        if (next == NULL) {
-           goto error;
+           goto out_of_space;
        }
        (void)iter;
     }

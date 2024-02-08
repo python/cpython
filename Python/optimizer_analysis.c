@@ -453,11 +453,17 @@ uop_abstract_interpret_single_inst(
     assert(STACK_LEVEL() >= 0);
 
     if (emit_i(&ctx->emitter, new_inst) < 0) {
-        return -1;
+        goto error;
     }
 
     return 0;
 
+out_of_space:
+    DPRINTF(1, "Out of space in abstract interpreter\n");
+    if (emit_i(&ctx->emitter, new_inst) < 0) {
+        goto error;
+    }
+    return 0;
 error:
     DPRINTF(1, "Encountered error in abstract interpreter\n");
     return -1;
