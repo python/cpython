@@ -900,7 +900,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         output = """
         case OP: {
             _Py_UOpsSymType *out;
-            out = sym_init_unknown(ctx);
+            out = sym_new_unknown(ctx);
             if (out == NULL) goto error;
             stack_pointer[0] = out;
             stack_pointer += 1;

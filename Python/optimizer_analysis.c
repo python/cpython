@@ -59,38 +59,15 @@
     #define DPRINTF(level, ...)
 #endif
 
-/**
-* `PYLONG_TYPE`: `Py_TYPE(val) == &PyLong_Type`
-* `PYFLOAT_TYPE`: `Py_TYPE(val) == &PyFloat_Type`
-* `PYUNICODE_TYPE`: `Py_TYPE(val) == &PYUNICODE_TYPE`
-* `NULL_TYPE`: `val == NULL`
-* `PYMETHOD_TYPE`: `Py_TYPE(val) == &PyMethod_Type`
-* `PYFUNCTION_TYPE_VERSION_TYPE`:
-  `PyFunction_Check(callable) && code->co_argcount == oparg + (self_or_null != NULL)`
- */
-typedef enum {
-    // You might think this actually needs to encode oparg
-    // info as well, see _CHECK_FUNCTION_EXACT_ARGS.
-    // However, since oparg is tied to code object is tied to function version,
-    // it should be safe if function version matches.
-    PYFUNCTION_TYPE_VERSION_TYPE = 2,
 
-    // Types without refinement info
-    PYLONG_TYPE = 3,
-    PYFLOAT_TYPE = 4,
-    PYUNICODE_TYPE = 5,
-    NULL_TYPE = 6,
-    PYMETHOD_TYPE = 7,
-    NOT_NULL = 9,
-
-    // Represents something from LOAD_CONST which is truly constant.
-    TRUE_CONST = 30,
-    INVALID_TYPE = 31,
-} _Py_UOpsSymExprTypeEnum;
+// Flags for below.
+#define KNOWN_TYPE 1 << 0  // Just to differentiate NULL in typ
+#define TRUE_CONST 1 << 1
+#define NOT_NULL 1 << 2
 
 typedef struct {
-    // bitmask of types
-    uint32_t types;
+    int flags;
+    PyTypeObject *typ;
     // constant propagated value (might be NULL)
     PyObject *const_val;
 } _Py_UOpsSymType;
@@ -143,11 +120,7 @@ typedef struct _Py_UOpsAbstractInterpContext {
     _Py_UOpsSymType *locals_and_stack[MAX_ABSTRACT_INTERP_SIZE];
 } _Py_UOpsAbstractInterpContext;
 
-static inline _Py_UOpsSymType*
-sym_init_const(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val);
-
-
-static inline _Py_UOpsSymType* sym_init_unknown(_Py_UOpsAbstractInterpContext *ctx);
+static inline _Py_UOpsSymType* sym_new_unknown(_Py_UOpsAbstractInterpContext *ctx);
 
 // 0 on success, -1 on error.
 static _Py_UOpsAbstractFrame *
@@ -176,7 +149,7 @@ ctx_frame_new(
 
     // Initialize with the initial state of all local variables
     for (int i = n_locals_already_filled; i < co->co_nlocalsplus; i++) {
-        _Py_UOpsSymType *local = sym_init_unknown(ctx);
+        _Py_UOpsSymType *local = sym_new_unknown(ctx);
         if (local == NULL) {
             return NULL;
         }
@@ -186,7 +159,7 @@ ctx_frame_new(
 
     // Initialize the stack as well
     for (int i = 0; i < curr_stackentries; i++) {
-        _Py_UOpsSymType *stackvar = sym_init_unknown(ctx);
+        _Py_UOpsSymType *stackvar = sym_new_unknown(ctx);
         if (stackvar == NULL) {
             return NULL;
         }
@@ -265,8 +238,6 @@ ctx_frame_pop(
     return 0;
 }
 
-static void
-sym_set_type_from_const(_Py_UOpsSymType *sym, PyObject *obj);
 
 // Steals a reference to const_val
 static _Py_UOpsSymType*
@@ -281,7 +252,8 @@ _Py_UOpsSymType_New(_Py_UOpsAbstractInterpContext *ctx,
     }
     ctx->t_arena.ty_curr_number++;
     self->const_val = NULL;
-    self->types = 0;
+    self->typ = NULL;
+    self->flags = 0;
 
     if (const_val != NULL) {
         self->const_val = Py_NewRef(const_val);
@@ -290,86 +262,46 @@ _Py_UOpsSymType_New(_Py_UOpsAbstractInterpContext *ctx,
     return self;
 }
 
-
-static void
-sym_set_type(_Py_UOpsSymType *sym, _Py_UOpsSymExprTypeEnum typ)
+static inline void
+sym_set_flag(_Py_UOpsSymType *sym, int flag)
 {
-    sym->types |= 1 << typ;
+    sym->flags |= flag;
 }
 
-
-static _Py_UOpsSymExprTypeEnum
-pytype_to_type(PyTypeObject *tp)
+static inline bool
+sym_has_flag(_Py_UOpsSymType *sym, int flag)
 {
-    _Py_UOpsSymExprTypeEnum typ = INVALID_TYPE;
-    if (tp == NULL) {
-        typ = NULL_TYPE;
-    }
-    else if (tp == &PyLong_Type) {
-        typ = PYLONG_TYPE;
-    }
-    else if (tp == &PyFloat_Type) {
-        typ = PYFLOAT_TYPE;
-    }
-    else if (tp == &PyUnicode_Type) {
-        typ = PYUNICODE_TYPE;
-    }
-    else if (tp == &PyFunction_Type) {
-        typ = PYFUNCTION_TYPE_VERSION_TYPE;
-    }
-    else if (tp == &PyMethod_Type) {
-        typ = PYMETHOD_TYPE;
-    }
-    return typ;
+    return (sym->flags & flag) != 0;
 }
 
-static void
+static inline void
 sym_set_pytype(_Py_UOpsSymType *sym, PyTypeObject *tp)
 {
     assert(tp == NULL || PyType_Check(tp));
-    sym_set_type(sym, pytype_to_type(tp));
+    sym->typ = tp;
+    sym_set_flag(sym, KNOWN_TYPE);
 }
 
-static void
-sym_set_type_from_const(_Py_UOpsSymType *sym, PyObject *obj)
-{
-    PyTypeObject *tp = Py_TYPE(obj);
-
-    if (tp == &PyFunction_Type) {
-        sym_set_type(sym, PYFUNCTION_TYPE_VERSION_TYPE);
-    }
-    else {
-        sym_set_pytype(sym, tp);
-    }
-
-}
 
 static inline _Py_UOpsSymType*
-sym_init_unknown(_Py_UOpsAbstractInterpContext *ctx)
+sym_new_unknown(_Py_UOpsAbstractInterpContext *ctx)
 {
     return _Py_UOpsSymType_New(ctx,NULL);
 }
 
-static inline bool
-sym_is_unknown_type(_Py_UOpsSymType *typ)
-{
-    return (typ->types == 0) || (typ->types == (1U << INVALID_TYPE));
-}
-
 static inline _Py_UOpsSymType*
-sym_init_known_type(_Py_UOpsAbstractInterpContext *ctx,
-                    _Py_UOpsSymExprTypeEnum typ)
+sym_new_known_notnull(_Py_UOpsAbstractInterpContext *ctx)
 {
-    _Py_UOpsSymType *res = sym_init_unknown(ctx);
+    _Py_UOpsSymType *res = sym_new_unknown(ctx);
     if (res == NULL) {
         return NULL;
     }
-    sym_set_type(res, typ);
+    sym_set_flag(res, NOT_NULL);
     return res;
 }
 
 static inline _Py_UOpsSymType*
-sym_init_known_pytype(_Py_UOpsAbstractInterpContext *ctx,
+sym_new_known_pytype(_Py_UOpsAbstractInterpContext *ctx,
                       PyTypeObject *typ)
 {
     _Py_UOpsSymType *res = _Py_UOpsSymType_New(ctx,NULL);
@@ -382,7 +314,7 @@ sym_init_known_pytype(_Py_UOpsAbstractInterpContext *ctx,
 
 // Takes a borrowed reference to const_val.
 static inline _Py_UOpsSymType*
-sym_init_const(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val)
+sym_new_const(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val)
 {
     assert(const_val != NULL);
     _Py_UOpsSymType *temp = _Py_UOpsSymType_New(
@@ -392,49 +324,35 @@ sym_init_const(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val)
     if (temp == NULL) {
         return NULL;
     }
-    sym_set_type_from_const(temp, const_val);
-    sym_set_type(temp, TRUE_CONST);
+    sym_set_pytype(temp, Py_TYPE(const_val));
+    sym_set_flag(temp, TRUE_CONST);
     return temp;
 }
 
 static _Py_UOpsSymType*
-sym_init_null(_Py_UOpsAbstractInterpContext *ctx)
+sym_new_null(_Py_UOpsAbstractInterpContext *ctx)
 {
     if (ctx->frequent_syms.push_nulL_sym != NULL) {
         return ctx->frequent_syms.push_nulL_sym;
     }
-    _Py_UOpsSymType *null_sym = sym_init_unknown(ctx);
+    _Py_UOpsSymType *null_sym = sym_new_unknown(ctx);
     if (null_sym == NULL) {
         return NULL;
     }
-    sym_set_type(null_sym, NULL_TYPE);
+    sym_set_pytype(null_sym, NULL);
     ctx->frequent_syms.push_nulL_sym = null_sym;
     return null_sym;
 }
 
-static inline bool
-sym_is_type(_Py_UOpsSymType *sym, _Py_UOpsSymExprTypeEnum typ)
-{
-    if ((sym->types & (1 << typ)) == 0) {
-        return false;
-    }
-    return true;
-}
-
-static inline bool
-sym_matches_type(_Py_UOpsSymType *sym, _Py_UOpsSymExprTypeEnum typ)
-{
-    if (!sym_is_type(sym, typ)) {
-        return false;
-    }
-    return true;
-}
 
 static inline bool
 sym_matches_pytype(_Py_UOpsSymType *sym, PyTypeObject *typ)
 {
     assert(typ == NULL || PyType_Check(typ));
-    return sym_matches_type(sym, pytype_to_type(typ));
+    if (!sym_has_flag(sym, KNOWN_TYPE)) {
+        return false;
+    }
+    return sym->typ == typ;
 }
 
 
@@ -503,11 +421,11 @@ uop_abstract_interpret_single_inst(
 
 #define _LOAD_ATTR_NOT_NULL \
     do {                    \
-    attr = sym_init_known_type(ctx, NOT_NULL); \
+    attr = sym_new_known_notnull(ctx); \
     if (attr == NULL) { \
         goto error; \
     } \
-    null = sym_init_null(ctx); \
+    null = sym_new_null(ctx); \
     if (null == NULL) { \
         goto error; \
     } \

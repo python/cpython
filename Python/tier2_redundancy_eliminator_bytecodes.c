@@ -32,7 +32,7 @@ dummy_func(void) {
     op(_LOAD_FAST_CHECK, (-- value)) {
         value = GETLOCAL(oparg);
         // We guarantee this will error - just bail and don't optimize it.
-        if (sym_is_type(value, NULL_TYPE)) {
+        if (sym_matches_pytype(value, NULL)) {
             goto error;
         }
     }
@@ -43,7 +43,7 @@ dummy_func(void) {
 
     op(_LOAD_FAST_AND_CLEAR, (-- value)) {
         value = GETLOCAL(oparg);
-        _Py_UOpsSymType *temp = sym_init_null(ctx);
+        _Py_UOpsSymType *temp = sym_new_null(ctx);
         if (temp == NULL) {
             goto error;
         }
@@ -59,7 +59,7 @@ dummy_func(void) {
     }
 
     op(_PUSH_NULL, (-- res)) {
-        res = sym_init_null(ctx);
+        res = sym_new_null(ctx);
         if (res == NULL) {
             goto error;
         };
@@ -88,7 +88,7 @@ dummy_func(void) {
         // TODO constant propagation
         (void)left;
         (void)right;
-        res = sym_init_known_pytype(ctx, &PyLong_Type);
+        res = sym_new_known_pytype(ctx, &PyLong_Type);
         if (res == NULL) {
             goto error;
         }
@@ -101,36 +101,36 @@ dummy_func(void) {
     }
 
     op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
-        value = sym_init_const(ctx, ptr);
+        value = sym_new_const(ctx, ptr);
         if (value == NULL) {
             goto error;
         }
     }
 
     op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
-        value = sym_init_const(ctx, ptr);
+        value = sym_new_const(ctx, ptr);
         if (value == NULL) {
             goto error;
         }
     }
 
     op(_LOAD_CONST_INLINE_WITH_NULL, (ptr/4 -- value, null)) {
-        value = sym_init_const(ctx, ptr);
+        value = sym_new_const(ctx, ptr);
         if (value == NULL) {
             goto error;
         }
-        null = sym_init_null(ctx);
+        null = sym_new_null(ctx);
         if (null == NULL) {
             goto error;
         }
     }
 
     op(_LOAD_CONST_INLINE_BORROW_WITH_NULL, (ptr/4 -- value, null)) {
-        value = sym_init_const(ctx, ptr);
+        value = sym_new_const(ctx, ptr);
         if (value == NULL) {
             goto error;
         }
-        null = sym_init_null(ctx);
+        null = sym_new_null(ctx);
         if (null == NULL) {
             goto error;
         }
@@ -201,7 +201,7 @@ dummy_func(void) {
 
         assert(self_or_null != NULL);
         assert(args != NULL);
-        if (sym_matches_type(self_or_null, NOT_NULL)) {
+        if (sym_has_flag(self_or_null, NOT_NULL)) {
             // Bound method fiddling, same as _INIT_CALL_PY_EXACT_ARGS in VM
             args--;
             argcount++;
@@ -212,7 +212,7 @@ dummy_func(void) {
         // Can determine statically, so we interleave the new locals
         // and make the current stack the new locals.
         // This also sets up for true call inlining.
-        if (!sym_is_unknown_type(self_or_null)) {
+        if (sym_has_flag(self_or_null, KNOWN_TYPE)) {
             localsplus_start = args;
             n_locals_already_filled = argcount;
         }
@@ -242,7 +242,7 @@ dummy_func(void) {
         /* This has to be done manually */
         (void)seq;
         for (int i = 0; i < oparg; i++) {
-            values[i] = sym_init_unknown(ctx);
+            values[i] = sym_new_unknown(ctx);
             if (values[i] == NULL) {
                 goto error;
             }
@@ -254,7 +254,7 @@ dummy_func(void) {
         (void)seq;
         int totalargs = (oparg & 0xFF) + (oparg >> 8) + 1;
         for (int i = 0; i < totalargs; i++) {
-            values[i] = sym_init_unknown(ctx);
+            values[i] = sym_new_unknown(ctx);
             if (values[i] == NULL) {
                 goto error;
             }
@@ -262,7 +262,7 @@ dummy_func(void) {
     }
 
     op(_ITER_NEXT_RANGE, (iter -- iter, next)) {
-       next = sym_init_known_pytype(ctx, &PyLong_Type);
+       next = sym_new_known_pytype(ctx, &PyLong_Type);
        if (next == NULL) {
            goto error;
        }
