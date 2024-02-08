@@ -32,14 +32,14 @@
 */
 
 #include "Python.h"
-#include "pycore_ceval.h"            // _PyEval_GetBuiltin()
-#include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION, Py_END_CRITICAL_SECTION
-#include "pycore_dict.h"             // _PyDict_Contains_KnownHash()
-#include "pycore_modsupport.h"       // _PyArg_NoKwnames()
-#include "pycore_object.h"           // _PyObject_GC_UNTRACK()
-#include "pycore_pyerrors.h"         // _PyErr_SetKeyError()
-#include "pycore_setobject.h"        // _PySet_NextEntry() definition
-#include <stddef.h>                  // offsetof()
+#include "pycore_ceval.h"               // _PyEval_GetBuiltin()
+#include "pycore_critical_section.h"    // Py_BEGIN_CRITICAL_SECTION, Py_END_CRITICAL_SECTION
+#include "pycore_dict.h"                // _PyDict_Contains_KnownHash()
+#include "pycore_modsupport.h"          // _PyArg_NoKwnames()
+#include "pycore_object.h"              // _PyObject_GC_UNTRACK()
+#include "pycore_pyerrors.h"            // _PyErr_SetKeyError()
+#include "pycore_setobject.h"           // _PySet_NextEntry() definition
+#include <stddef.h>                     // offsetof()
 #include "clinic/setobject.c.h"
 
 /*[clinic input]
