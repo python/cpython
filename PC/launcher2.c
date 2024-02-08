@@ -1594,7 +1594,7 @@ _registryReadLegacyEnvironment(const SearchInfo *search, HKEY root, EnvironmentI
 
             int count = swprintf_s(realTag, tagLength + 4, L"%s-32", env->tag);
             if (count == -1) {
-                debug("# Failed to generate 32bit tag\n");
+                debug(L"# Failed to generate 32bit tag\n");
                 free(realTag);
                 return RC_INTERNAL_ERROR;
             }
