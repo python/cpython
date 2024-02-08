@@ -98,7 +98,7 @@
       <PreprocessorDefinitions Condition="'$(Platform)'=='ARM'">CONFIG_32;ANSI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Platform)'=='ARM64'">CONFIG_64;ANSI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Platform)' == 'x64'">CONFIG_64;MASM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\Modules\_decimal;$(mpdecimalDir)\libmpdec;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Modules\_decimal;..\Modules\_decimal\windows;$(mpdecimalDir)\libmpdec;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -111,7 +111,11 @@
     <ClInclude Include="..\Modules\_decimal\docstrings.h" />
     <ClInclude Include="$(mpdecimalDir)\libmpdec\fnt.h" />
     <ClInclude Include="$(mpdecimalDir)\libmpdec\fourstep.h" />
-    <ClInclude Include="$(mpdecimalDir)\libmpdec\mpdecimal.h" />
+    <ClInclude Include="..\Modules\_decimal\windows\mpdecimal.h" />
+    <ClInclude Condition="'$(Platform)' == 'Win32'" Include="$(mpdecimalDir)\libmpdec\mpdecimal32vc.h" />
+    <ClInclude Condition="'$(Platform)' == 'ARM'" Include="$(mpdecimalDir)\libmpdec\mpdecimal32vc.h" />
+    <ClInclude Condition="'$(Platform)' == 'ARM64'" Include="$(mpdecimalDir)\libmpdec\mpdecimal64vc.h" />
+    <ClInclude Condition="'$(Platform)' == 'x64'" Include="$(mpdecimalDir)\libmpdec\mpdecimal64vc.h" />
     <ClInclude Include="$(mpdecimalDir)\libmpdec\numbertheory.h" />
     <ClInclude Include="$(mpdecimalDir)\libmpdec\sixstep.h" />
     <ClInclude Include="$(mpdecimalDir)\libmpdec\transpose.h" />

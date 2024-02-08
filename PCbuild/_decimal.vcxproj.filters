@@ -45,7 +45,13 @@
     <ClInclude Include="$(mpdecimalDir)\libmpdec\fourstep.h">
       <Filter>Header Files\libmpdec</Filter>
     </ClInclude>
-    <ClInclude Include="$(mpdecimalDir)\libmpdec\mpdecimal.h">
+    <ClInclude Include="..\Modules\_decimal\windows\mpdecimal.h">
+      <Filter>Header Files\libmpdec</Filter>
+    </ClInclude>
+    <ClInclude Include="$(mpdecimalDir)\libmpdec\mpdecimal32vc.h">
+      <Filter>Header Files\libmpdec</Filter>
+    </ClInclude>
+    <ClInclude Include="$(mpdecimalDir)\libmpdec\mpdecimal64vc.h">
       <Filter>Header Files\libmpdec</Filter>
     </ClInclude>
     <ClInclude Include="$(mpdecimalDir)\libmpdec\numbertheory.h">
