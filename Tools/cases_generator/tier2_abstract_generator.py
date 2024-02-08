@@ -166,6 +166,11 @@ def generate_abstract_interpreter(
     write_header(__file__, filenames, outfile)
     out = CWriter(outfile, 2, False)
     out.emit("\n")
+    base_uop_names = set([uop.name for uop in base.uops.values()])
+    for abstract_uop_name in abstract.uops:
+        assert abstract_uop_name in base_uop_names,\
+            f"All abstract uops should override base uops, but {abstract_uop_name} is not."
+
     for uop in base.uops.values():
         override: Uop | None = None
         if uop.name in abstract.uops:

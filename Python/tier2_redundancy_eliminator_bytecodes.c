@@ -54,10 +54,6 @@ dummy_func(void) {
         GETLOCAL(oparg) = value;
     }
 
-    op(_STORE_FAST_MAYBE_NULL, (value --)) {
-        GETLOCAL(oparg) = value;
-    }
-
     op(_PUSH_NULL, (-- res)) {
         res = sym_new_null(ctx);
         if (res == NULL) {

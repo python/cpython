@@ -930,6 +930,21 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         self.run_cases_test(input, input2, output)
 
+    def test_missing_override_failure(self):
+        input = """
+        pure op(OP, (arg1 -- out)) {
+            spam();
+        }
+        """
+        input2 = """
+        pure op(OTHER, (arg1 -- out)) {
+        }
+        """
+        output = """
+        """
+        with self.assertRaisesRegex(AssertionError, "All abstract uops"):
+            self.run_cases_test(input, input2, output)
+
 
 if __name__ == "__main__":
     unittest.main()
