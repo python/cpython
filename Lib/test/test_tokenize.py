@@ -1877,6 +1877,8 @@ class TestRoundtrip(TestCase):
                              "    print('Can not import' # comment2\n)"
                              "else:   print('Loaded')\n")
 
+        self.check_roundtrip("f'\\N{EXCLAMATION MARK}'")
+
     def test_continuation(self):
         # Balancing continuation
         self.check_roundtrip("a = (3,4, \n"
