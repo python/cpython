@@ -47,10 +47,10 @@ void
 _init_pystats(){
     //Make UOpstats structs for all initial opcodes, with null pointers to deeper opcodes
     for (int i = 0; i < 512; i++){
-        UOpStats *opcode_stat = _Py_stats_struct.optimization_stats.opcode[i];
-        opcode_stat = PyMem_RawCalloc(1, sizeof(UOpStats));
+        _Py_stats_struct.optimization_stats.opcode[i] = PyMem_RawCalloc(1, sizeof(UOpStats));
         for (int j = 0; j < 512; j++){
-            opcode_stat->next_stats[j] = NULL;
+            _Py_stats_struct.optimization_stats.opcode[i]->next_stats[j] = NULL;
+
         }
     }
 
