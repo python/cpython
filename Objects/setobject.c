@@ -1418,6 +1418,7 @@ set_iand(PySetObject *so, PyObject *other)
 /*[clinic input]
 set.isdisjoint
 
+    so: setobject
     other: object
     /
 
@@ -1425,14 +1426,14 @@ Return True if two sets have a null intersection.
 [clinic start generated code]*/
 
 static PyObject *
-set_isdisjoint(PySetObject *self, PyObject *other)
-/*[clinic end generated code: output=8b185ae5ab9b8e44 input=640023e29f94cb40]*/
+set_isdisjoint(PySetObject *so, PyObject *other)
+/*[clinic end generated code: output=a92bbf9a2db6a3da input=370c62423287239a]*/
 {
     PyObject *key, *it, *tmp;
     int rv;
 
-    if ((PyObject *)self == other) {
-        if (PySet_GET_SIZE(self) == 0)
+    if ((PyObject *)so == other) {
+        if (PySet_GET_SIZE(so) == 0)
             Py_RETURN_TRUE;
         else
             Py_RETURN_FALSE;
@@ -1442,15 +1443,15 @@ set_isdisjoint(PySetObject *self, PyObject *other)
         Py_ssize_t pos = 0;
         setentry *entry;
 
-        if (PySet_GET_SIZE(other) > PySet_GET_SIZE(self)) {
-            tmp = (PyObject *)self;
-            self = (PySetObject *)other;
+        if (PySet_GET_SIZE(other) > PySet_GET_SIZE(so)) {
+            tmp = (PyObject *)so;
+            so = (PySetObject *)other;
             other = tmp;
         }
         while (set_next((PySetObject *)other, &pos, &entry)) {
             PyObject *key = entry->key;
             Py_INCREF(key);
-            rv = set_contains_entry(self, key, entry->hash);
+            rv = set_contains_entry(so, key, entry->hash);
             Py_DECREF(key);
             if (rv < 0) {
                 return NULL;
@@ -1467,7 +1468,7 @@ set_isdisjoint(PySetObject *self, PyObject *other)
         return NULL;
 
     while ((key = PyIter_Next(it)) != NULL) {
-        rv = set_contains_key(self, key);
+        rv = set_contains_key(so, key);
         Py_DECREF(key);
         if (rv < 0) {
             Py_DECREF(it);
@@ -1739,6 +1740,7 @@ set_symmetric_difference_update_dict(PySetObject *so, PyObject *other)
 /*[clinic input]
 set.symmetric_difference_update
 
+    so: setobject
     other: object
     /
 
@@ -1746,8 +1748,8 @@ Update the set, keeping only elements found in either set, but not in both.
 [clinic start generated code]*/
 
 static PyObject *
-set_symmetric_difference_update(PySetObject *self, PyObject *other)
-/*[clinic end generated code: output=3cf078be0891c22a input=231837ddd88b8781]*/
+set_symmetric_difference_update(PySetObject *so, PyObject *other)
+/*[clinic end generated code: output=fbb049c0806028de input=70e02c8b48a9a59e]*/
 {
     PySetObject *otherset;
     PyObject *key;
@@ -1756,14 +1758,14 @@ set_symmetric_difference_update(PySetObject *self, PyObject *other)
     setentry *entry;
     int rv;
 
-    if ((PyObject *)self == other)
-        return set_clear(self, NULL);
+    if ((PyObject *)so == other)
+        return set_clear(so, NULL);
 
     if (PyDict_CheckExact(other)) {
         PyObject *res;
 
         Py_BEGIN_CRITICAL_SECTION(other);
-        res = set_symmetric_difference_update_dict(self, other);
+        res = set_symmetric_difference_update_dict(so, other);
         Py_END_CRITICAL_SECTION();
 
         return res;
@@ -1772,7 +1774,7 @@ set_symmetric_difference_update(PySetObject *self, PyObject *other)
     if (PyAnySet_Check(other)) {
         otherset = (PySetObject *)Py_NewRef(other);
     } else {
-        otherset = (PySetObject *)make_new_set_basetype(Py_TYPE(self), other);
+        otherset = (PySetObject *)make_new_set_basetype(Py_TYPE(so), other);
         if (otherset == NULL)
             return NULL;
     }
@@ -1781,14 +1783,14 @@ set_symmetric_difference_update(PySetObject *self, PyObject *other)
         key = entry->key;
         hash = entry->hash;
         Py_INCREF(key);
-        rv = set_discard_entry(self, key, hash);
+        rv = set_discard_entry(so, key, hash);
         if (rv < 0) {
             Py_DECREF(otherset);
             Py_DECREF(key);
             return NULL;
         }
         if (rv == DISCARD_NOTFOUND) {
-            if (set_add_entry(self, key, hash)) {
+            if (set_add_entry(so, key, hash)) {
                 Py_DECREF(otherset);
                 Py_DECREF(key);
                 return NULL;
@@ -1803,6 +1805,7 @@ set_symmetric_difference_update(PySetObject *self, PyObject *other)
 /*[clinic input]
 set.symmetric_difference
 
+    so: setobject
     other: object
     /
 
@@ -1810,16 +1813,16 @@ Return a new set with elements in either the set or other but not both.
 [clinic start generated code]*/
 
 static PyObject *
-set_symmetric_difference(PySetObject *self, PyObject *other)
-/*[clinic end generated code: output=03941c1b5dfcff31 input=48971a6ed58e4919]*/
+set_symmetric_difference(PySetObject *so, PyObject *other)
+/*[clinic end generated code: output=f95364211b88775a input=f43dc971880c8685]*/
 {
     PyObject *rv;
     PySetObject *otherset;
 
-    otherset = (PySetObject *)make_new_set_basetype(Py_TYPE(self), other);
+    otherset = (PySetObject *)make_new_set_basetype(Py_TYPE(so), other);
     if (otherset == NULL)
         return NULL;
-    rv = set_symmetric_difference_update(otherset, (PyObject *)self);
+    rv = set_symmetric_difference_update(otherset, (PyObject *)so);
     if (rv == NULL) {
         Py_DECREF(otherset);
         return NULL;
@@ -1853,6 +1856,7 @@ set_ixor(PySetObject *so, PyObject *other)
 /*[clinic input]
 set.issubset
 
+    so: setobject
     other: object
     /
 
@@ -1860,26 +1864,26 @@ Report whether another set contains this set.
 [clinic start generated code]*/
 
 static PyObject *
-set_issubset(PySetObject *self, PyObject *other)
-/*[clinic end generated code: output=22e2a0324b4da0fa input=e1de2fc15128eb1f]*/
+set_issubset(PySetObject *so, PyObject *other)
+/*[clinic end generated code: output=78aef1f377aedef1 input=e141f29d1ac23b11]*/
 {
     setentry *entry;
     Py_ssize_t pos = 0;
     int rv;
 
     if (!PyAnySet_Check(other)) {
-        PyObject *tmp = set_intersection(self, other);
+        PyObject *tmp = set_intersection(so, other);
         if (tmp == NULL) {
             return NULL;
         }
-        int result = (PySet_GET_SIZE(tmp) == PySet_GET_SIZE(self));
+        int result = (PySet_GET_SIZE(tmp) == PySet_GET_SIZE(so));
         Py_DECREF(tmp);
         return PyBool_FromLong(result);
     }
-    if (PySet_GET_SIZE(self) > PySet_GET_SIZE(other))
+    if (PySet_GET_SIZE(so) > PySet_GET_SIZE(other))
         Py_RETURN_FALSE;
 
-    while (set_next(self, &pos, &entry)) {
+    while (set_next(so, &pos, &entry)) {
         PyObject *key = entry->key;
         Py_INCREF(key);
         rv = set_contains_entry((PySetObject *)other, key, entry->hash);
@@ -1897,6 +1901,7 @@ set_issubset(PySetObject *self, PyObject *other)
 /*[clinic input]
 set.issuperset
 
+    so: setobject
     other: object
     /
 
@@ -1904,11 +1909,11 @@ Report whether this set contains another set.
 [clinic start generated code]*/
 
 static PyObject *
-set_issuperset(PySetObject *self, PyObject *other)
-/*[clinic end generated code: output=76a4fd9cd31b6068 input=e6e12cc6d8a5c0ec]*/
+set_issuperset(PySetObject *so, PyObject *other)
+/*[clinic end generated code: output=7d2b71dd714a7ec7 input=d5ba4e35213dcbc6]*/
 {
     if (PyAnySet_Check(other)) {
-        return set_issubset((PySetObject *)other, (PyObject *)self);
+        return set_issubset((PySetObject *)other, (PyObject *)so);
     }
 
     PyObject *key, *it = PyObject_GetIter(other);
@@ -1916,7 +1921,7 @@ set_issuperset(PySetObject *self, PyObject *other)
         return NULL;
     }
     while ((key = PyIter_Next(it)) != NULL) {
-        int rv = set_contains_key(self, key);
+        int rv = set_contains_key(so, key);
         Py_DECREF(key);
         if (rv < 0) {
             Py_DECREF(it);
@@ -1980,7 +1985,8 @@ set_richcompare(PySetObject *v, PyObject *w, int op)
 /*[clinic input]
 set.add
 
-    object: object
+    so: setobject
+    key: object
     /
 
 Add an element to a set.
@@ -1989,10 +1995,10 @@ This has no effect if the element is already present.
 [clinic start generated code]*/
 
 static PyObject *
-set_add(PySetObject *self, PyObject *object)
-/*[clinic end generated code: output=49e7b9e48e514776 input=45fe4bb3fd4ac15a]*/
+set_add(PySetObject *so, PyObject *key)
+/*[clinic end generated code: output=cd9c2d5c2069c2ba input=ba32da84433b0020]*/
 {
-    if (set_add_key(self, object))
+    if (set_add_key(so, key))
         return NULL;
     Py_RETURN_NONE;
 }
@@ -2021,6 +2027,7 @@ set_contains(PySetObject *so, PyObject *key)
 @coexist
 set.__contains__
 
+    so: setobject
     object: object
     /
 
@@ -2028,12 +2035,12 @@ x.__contains__(y) <==> y in x.
 [clinic start generated code]*/
 
 static PyObject *
-set___contains__(PySetObject *self, PyObject *object)
-/*[clinic end generated code: output=ab16b6b74faa51d0 input=767c2b14e150304f]*/
+set___contains__(PySetObject *so, PyObject *object)
+/*[clinic end generated code: output=6d8f64ba8d2916b8 input=17757c9340b19260]*/
 {
     long result;
 
-    result = set_contains(self, object);
+    result = set_contains(so, object);
     if (result < 0)
         return NULL;
     return PyBool_FromLong(result);
@@ -2042,6 +2049,7 @@ set___contains__(PySetObject *self, PyObject *object)
 /*[clinic input]
 set.remove
 
+    so: setobject
     key: object
     /
 
@@ -2051,13 +2059,13 @@ If the element is not a member, raise a KeyError.
 [clinic start generated code]*/
 
 static PyObject *
-set_remove(PySetObject *self, PyObject *key)
-/*[clinic end generated code: output=7445fdb79bdd7d1e input=a8496bae9b5516b9]*/
+set_remove(PySetObject *so, PyObject *key)
+/*[clinic end generated code: output=08ae496d0cd2b8c1 input=9f46b172495667d3]*/
 {
     PyObject *tmpkey;
     int rv;
 
-    rv = set_discard_key(self, key);
+    rv = set_discard_key(so, key);
     if (rv < 0) {
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
             return NULL;
@@ -2065,7 +2073,7 @@ set_remove(PySetObject *self, PyObject *key)
         tmpkey = make_new_set(&PyFrozenSet_Type, key);
         if (tmpkey == NULL)
             return NULL;
-        rv = set_discard_key(self, tmpkey);
+        rv = set_discard_key(so, tmpkey);
         Py_DECREF(tmpkey);
         if (rv < 0)
             return NULL;
@@ -2081,6 +2089,7 @@ set_remove(PySetObject *self, PyObject *key)
 /*[clinic input]
 set.discard
 
+    so: setobject
     key: object
     /
 
@@ -2091,13 +2100,13 @@ an exception when an element is missing from the set.
 [clinic start generated code]*/
 
 static PyObject *
-set_discard(PySetObject *self, PyObject *key)
-/*[clinic end generated code: output=c5936b1b65b6c38d input=ef84e3850d614d47]*/
+set_discard(PySetObject *so, PyObject *key)
+/*[clinic end generated code: output=9181b60d7bb7d480 input=02d39a71285ea0ba]*/
 {
     PyObject *tmpkey;
     int rv;
 
-    rv = set_discard_key(self, key);
+    rv = set_discard_key(so, key);
     if (rv < 0) {
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
             return NULL;
@@ -2105,7 +2114,7 @@ set_discard(PySetObject *self, PyObject *key)
         tmpkey = make_new_set(&PyFrozenSet_Type, key);
         if (tmpkey == NULL)
             return NULL;
-        rv = set_discard_key(self, tmpkey);
+        rv = set_discard_key(so, tmpkey);
         Py_DECREF(tmpkey);
         if (rv < 0)
             return NULL;

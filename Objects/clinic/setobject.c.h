@@ -334,7 +334,7 @@ PyDoc_STRVAR(set_issuperset__doc__,
     {"issuperset", (PyCFunction)set_issuperset, METH_O, set_issuperset__doc__},
 
 PyDoc_STRVAR(set_add__doc__,
-"add($self, object, /)\n"
+"add($self, key, /)\n"
 "--\n"
 "\n"
 "Add an element to a set.\n"
@@ -410,4 +410,4 @@ set___sizeof__(PySetObject *so, PyObject *Py_UNUSED(ignored))
 {
     return set___sizeof___impl(so);
 }
-/*[clinic end generated code: output=ff816e6e7e27b60e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fe260176c78a966f input=a9049054013a1b77]*/
