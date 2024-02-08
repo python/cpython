@@ -1125,7 +1125,7 @@ tuple_iter(PyObject *seq)
  * freelists *
  *************/
 
-#define STATE (state->tuple_state)
+#define STATE (state->tuples)
 #define FREELIST_FINALIZED (STATE.numfree[0] < 0)
 
 static inline PyTupleObject *

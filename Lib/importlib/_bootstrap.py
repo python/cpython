@@ -53,7 +53,7 @@ def _new_module(name):
 
 # For a list that can have a weakref to it.
 class _List(list):
-    pass
+    __slots__ = ("__weakref__",)
 
 
 # Copied from weakref.py with some simplifications and modifications unique to

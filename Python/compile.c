@@ -160,7 +160,7 @@ _PyCompile_EnsureArrayLargeEnough(int idx, void **array, int *alloc,
         if (idx >= new_alloc) {
             new_alloc = idx + default_alloc;
         }
-        arr = PyObject_Calloc(new_alloc, item_size);
+        arr = PyMem_Calloc(new_alloc, item_size);
         if (arr == NULL) {
             PyErr_NoMemory();
             return ERROR;
@@ -181,7 +181,7 @@ _PyCompile_EnsureArrayLargeEnough(int idx, void **array, int *alloc,
         }
 
         assert(newsize > 0);
-        void *tmp = PyObject_Realloc(arr, newsize);
+        void *tmp = PyMem_Realloc(arr, newsize);
         if (tmp == NULL) {
             PyErr_NoMemory();
             return ERROR;
@@ -282,10 +282,10 @@ instr_sequence_insert_instruction(instr_sequence *seq, int pos,
 
 static void
 instr_sequence_fini(instr_sequence *seq) {
-    PyObject_Free(seq->s_labelmap);
+    PyMem_Free(seq->s_labelmap);
     seq->s_labelmap = NULL;
 
-    PyObject_Free(seq->s_instrs);
+    PyMem_Free(seq->s_instrs);
     seq->s_instrs = NULL;
 }
 
@@ -690,7 +690,7 @@ compiler_unit_free(struct compiler_unit *u)
     Py_CLEAR(u->u_metadata.u_cellvars);
     Py_CLEAR(u->u_metadata.u_fasthidden);
     Py_CLEAR(u->u_private);
-    PyObject_Free(u);
+    PyMem_Free(u);
 }
 
 static int
@@ -958,14 +958,15 @@ merge_consts_recursive(PyObject *const_cache, PyObject *o)
         return NULL;
     }
 
-    // t is borrowed reference
-    PyObject *t = PyDict_SetDefault(const_cache, key, key);
-    if (t != key) {
-        // o is registered in const_cache.  Just use it.
-        Py_XINCREF(t);
+    PyObject *t;
+    int res = PyDict_SetDefaultRef(const_cache, key, key, &t);
+    if (res != 0) {
+        // o was not inserted into const_cache. t is either the existing value
+        // or NULL (on error).
         Py_DECREF(key);
         return t;
     }
+    Py_DECREF(t);
 
     // We registered o in const_cache.
     // When o is a tuple or frozenset, we want to merge its
@@ -1262,8 +1263,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
 
     struct compiler_unit *u;
 
-    u = (struct compiler_unit *)PyObject_Calloc(1, sizeof(
-                                            struct compiler_unit));
+    u = (struct compiler_unit *)PyMem_Calloc(1, sizeof(struct compiler_unit));
     if (!u) {
         PyErr_NoMemory();
         return ERROR;
@@ -3075,7 +3075,12 @@ compiler_for(struct compiler *c, stmt_ty s)
     ADDOP_JUMP(c, NO_LOCATION, JUMP, start);
 
     USE_LABEL(c, cleanup);
+    /* It is important for instrumentation that the `END_FOR` comes first.
+    * Iteration over a generator will jump to the first of these instructions,
+    * but a non-generator will jump to a later instruction.
+    */
     ADDOP(c, NO_LOCATION, END_FOR);
+    ADDOP(c, NO_LOCATION, POP_TOP);
 
     compiler_pop_fblock(c, FOR_LOOP, start);
 
@@ -5390,7 +5395,12 @@ compiler_sync_comprehension_generator(struct compiler *c, location loc,
         ADDOP_JUMP(c, elt_loc, JUMP, start);
 
         USE_LABEL(c, anchor);
+        /* It is important for instrumentation that the `END_FOR` comes first.
+        * Iteration over a generator will jump to the first of these instructions,
+        * but a non-generator will jump to a later instruction.
+        */
         ADDOP(c, NO_LOCATION, END_FOR);
+        ADDOP(c, NO_LOCATION, POP_TOP);
     }
 
     return SUCCESS;
@@ -6647,7 +6657,7 @@ ensure_fail_pop(struct compiler *c, pattern_context *pc, Py_ssize_t n)
         return SUCCESS;
     }
     Py_ssize_t needed = sizeof(jump_target_label) * size;
-    jump_target_label *resized = PyObject_Realloc(pc->fail_pop, needed);
+    jump_target_label *resized = PyMem_Realloc(pc->fail_pop, needed);
     if (resized == NULL) {
         PyErr_NoMemory();
         return ERROR;
@@ -6686,13 +6696,13 @@ emit_and_reset_fail_pop(struct compiler *c, location loc,
         USE_LABEL(c, pc->fail_pop[pc->fail_pop_size]);
         if (codegen_addop_noarg(INSTR_SEQUENCE(c), POP_TOP, loc) < 0) {
             pc->fail_pop_size = 0;
-            PyObject_Free(pc->fail_pop);
+            PyMem_Free(pc->fail_pop);
             pc->fail_pop = NULL;
             return ERROR;
         }
     }
     USE_LABEL(c, pc->fail_pop[0]);
-    PyObject_Free(pc->fail_pop);
+    PyMem_Free(pc->fail_pop);
     pc->fail_pop = NULL;
     return SUCCESS;
 }
@@ -7196,7 +7206,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
     Py_DECREF(pc->stores);
     *pc = old_pc;
     Py_INCREF(pc->stores);
-    // Need to NULL this for the PyObject_Free call in the error block.
+    // Need to NULL this for the PyMem_Free call in the error block.
     old_pc.fail_pop = NULL;
     // No match. Pop the remaining copy of the subject and fail:
     if (codegen_addop_noarg(INSTR_SEQUENCE(c), POP_TOP, LOC(p)) < 0 ||
@@ -7242,7 +7252,7 @@ compiler_pattern_or(struct compiler *c, pattern_ty p, pattern_context *pc)
 diff:
     compiler_error(c, LOC(p), "alternative patterns bind different names");
 error:
-    PyObject_Free(old_pc.fail_pop);
+    PyMem_Free(old_pc.fail_pop);
     Py_DECREF(old_pc.stores);
     Py_XDECREF(control);
     return ERROR;
@@ -7443,7 +7453,7 @@ compiler_match(struct compiler *c, stmt_ty s)
     pattern_context pc;
     pc.fail_pop = NULL;
     int result = compiler_match_inner(c, s, &pc);
-    PyObject_Free(pc.fail_pop);
+    PyMem_Free(pc.fail_pop);
     return result;
 }
 
@@ -7518,22 +7528,26 @@ _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj)
         return ERROR;
     }
 
-    // t is borrowed reference
-    PyObject *t = PyDict_SetDefault(const_cache, key, key);
+    PyObject *t;
+    int res = PyDict_SetDefaultRef(const_cache, key, key, &t);
     Py_DECREF(key);
-    if (t == NULL) {
+    if (res < 0) {
         return ERROR;
     }
-    if (t == key) {  // obj is new constant.
+    if (res == 0) {  // inserted: obj is new constant.
+        Py_DECREF(t);
         return SUCCESS;
     }
 
     if (PyTuple_CheckExact(t)) {
-        // t is still borrowed reference
-        t = PyTuple_GET_ITEM(t, 1);
+        PyObject *item = PyTuple_GET_ITEM(t, 1);
+        Py_SETREF(*obj, Py_NewRef(item));
+        Py_DECREF(t);
+    }
+    else {
+        Py_SETREF(*obj, t);
     }
 
-    Py_SETREF(*obj, Py_NewRef(t));
     return SUCCESS;
 }
 
