@@ -12916,14 +12916,15 @@ _pystatvfs_fromstructstatfs(PyObject *module, struct statfs st) {
 
     _Static_assert(sizeof(st.f_blocks) == sizeof(long long), "assuming large file");
 
-#define SET_ITEM(v, index, item)                   \
-    do {                                           \
-        if (item == NULL) {                        \
-            Py_DECREF(v);                          \
-            return NULL;                           \
-        }                                          \
-        PyStructSequence_SET_ITEM(v, index, item); \
-    } while (0)                                    \
+#define SET_ITEM(SEQ, INDEX, EXPR)                       \
+    do {                                                 \
+        PyObject *obj = (EXPR);                          \
+        if (obj == NULL) {                               \
+            Py_DECREF((SEQ));                            \
+            return NULL;                                 \
+        }                                                \
+        PyStructSequence_SET_ITEM((SEQ), (INDEX), obj);  \
+    } while (0)
 
     SET_ITEM(v, 0, PyLong_FromLong((long) st.f_iosize));
     SET_ITEM(v, 1, PyLong_FromLong((long) st.f_bsize));

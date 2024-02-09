@@ -1046,6 +1046,40 @@ new_datetime_ex(int year, int month, int day, int hour, int minute,
                     &PyDateTime_DateTimeType)
 
 static PyObject *
+call_subclass_fold(PyObject *cls, int fold, const char *format, ...)
+{
+    PyObject *kwargs = NULL, *res = NULL;
+    va_list va;
+
+    va_start(va, format);
+    PyObject *args = Py_VaBuildValue(format, va);
+    va_end(va);
+    if (args == NULL) {
+        return NULL;
+    }
+    if (fold) {
+        kwargs = PyDict_New();
+        if (kwargs == NULL) {
+            goto Done;
+        }
+        PyObject *obj = PyLong_FromLong(fold);
+        if (obj == NULL) {
+            goto Done;
+        }
+        int err = PyDict_SetItemString(kwargs, "fold", obj);
+        Py_DECREF(obj);
+        if (err < 0) {
+            goto Done;
+        }
+    }
+    res = PyObject_Call(cls, args, kwargs);
+Done:
+    Py_DECREF(args);
+    Py_XDECREF(kwargs);
+    return res;
+}
+
+static PyObject *
 new_datetime_subclass_fold_ex(int year, int month, int day, int hour, int minute,
                               int second, int usecond, PyObject *tzinfo,
                               int fold, PyObject *cls) {
@@ -1054,17 +1088,11 @@ new_datetime_subclass_fold_ex(int year, int month, int day, int hour, int minute
         // Use the fast path constructor
         dt = new_datetime(year, month, day, hour, minute, second, usecond,
                           tzinfo, fold);
-    } else {
+    }
+    else {
         // Subclass
-        dt = PyObject_CallFunction(cls, "iiiiiiiO",
-                                   year,
-                                   month,
-                                   day,
-                                   hour,
-                                   minute,
-                                   second,
-                                   usecond,
-                                   tzinfo);
+        dt = call_subclass_fold(cls, fold, "iiiiiiiO", year, month, day,
+                                hour, minute, second, usecond, tzinfo);
     }
 
     return dt;
@@ -1119,6 +1147,24 @@ new_time_ex(int hour, int minute, int second, int usecond,
 
 #define new_time(hh, mm, ss, us, tzinfo, fold)                       \
     new_time_ex2(hh, mm, ss, us, tzinfo, fold, &PyDateTime_TimeType)
+
+static PyObject *
+new_time_subclass_fold_ex(int hour, int minute, int second, int usecond,
+                          PyObject *tzinfo, int fold, PyObject *cls)
+{
+    PyObject *t;
+    if ((PyTypeObject*)cls == &PyDateTime_TimeType) {
+        // Use the fast path constructor
+        t = new_time(hour, minute, second, usecond, tzinfo, fold);
+    }
+    else {
+        // Subclass
+        t = call_subclass_fold(cls, fold, "iiiiO", hour, minute, second,
+                               usecond, tzinfo);
+    }
+
+    return t;
+}
 
 /* Create a timedelta instance.  Normalize the members iff normalize is
  * true.  Passing false is a speed optimization, if you know for sure
@@ -3480,7 +3526,7 @@ datetime_date_replace_impl(PyDateTime_Date *self, int year, int month,
                            int day)
 /*[clinic end generated code: output=2a9430d1e6318aeb input=0d1f02685b3e90f6]*/
 {
-    return new_date_ex(year, month, day, Py_TYPE(self));
+    return new_date_subclass_ex(year, month, day, (PyObject *)Py_TYPE(self));
 }
 
 static Py_hash_t
@@ -4589,8 +4635,8 @@ datetime_time_replace_impl(PyDateTime_Time *self, int hour, int minute,
                            int fold)
 /*[clinic end generated code: output=0b89a44c299e4f80 input=9b6a35b1e704b0ca]*/
 {
-    return new_time_ex2(hour, minute, second, microsecond, tzinfo, fold,
-                        Py_TYPE(self));
+    return new_time_subclass_fold_ex(hour, minute, second, microsecond, tzinfo,
+                                     fold, (PyObject *)Py_TYPE(self));
 }
 
 static PyObject *
@@ -6039,8 +6085,9 @@ datetime_datetime_replace_impl(PyDateTime_DateTime *self, int year,
                                int fold)
 /*[clinic end generated code: output=00bc96536833fddb input=9b38253d56d9bcad]*/
 {
-    return new_datetime_ex2(year, month, day, hour, minute, second,
-                            microsecond, tzinfo, fold, Py_TYPE(self));
+    return new_datetime_subclass_fold_ex(year, month, day, hour, minute,
+                                         second, microsecond, tzinfo, fold,
+                                         (PyObject *)Py_TYPE(self));
 }
 
 static PyObject *
