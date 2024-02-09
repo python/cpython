@@ -956,6 +956,14 @@ else
 fi
 rm -f conftest.out
 
+dnl On some platforms, using a true "triplet" for MULTIARCH would be redundant.
+dnl For example, `arm64-apple-darwin` is redundant, because there isn't a
+dnl non-Apple Darwin. Including the CPU architecture can also be potentially
+dnl redundant - on macOS, for example, it's possible to do a single compile
+dnl pass that includes multiple architectures, so it would be misleading for
+dnl MULTIARCH (and thus the sysconfigdata module name) to include a single CPU
+dnl architecture. PLATFORM_TRIPLET will be a pair or single value for these
+dnl platforms.
 AC_MSG_CHECKING([for multiarch])
 AS_CASE([$ac_sys_system],
   [Darwin*], [MULTIARCH=""],
@@ -974,8 +982,11 @@ fi
 AC_SUBST([PLATFORM_TRIPLET])
 AC_MSG_RESULT([$MULTIARCH])
 
-dnl SOBAI_PLATFORM is the identifying suffix used in binary modules.
-dnl PLATFORM_TRIPLET is the identifier used for sysconfig.
+dnl Even if we *do* include the CPU architecture in the MULTIARCH value, some
+dnl platforms don't need the CPU architecture in the SOABI tag. These platforms
+dnl will have multiple sysconfig modules (one for each CPU architecture), but
+dnl use a single "fat" binary at runtime. SOABI_PLATFORM is the component of
+dnl the PLATFORM_TRIPLET that will be used in binary module extensions.
 AS_CASE([$ac_sys_system],
   [SOABI_PLATFORM=$PLATFORM_TRIPLET]
 )
