@@ -405,6 +405,7 @@ PYTHON_OBJS=	\
 		Python/ast_opt.o \
 		Python/ast_unparse.o \
 		Python/bltinmodule.o \
+		Python/brc.o \
 		Python/ceval.o \
 		Python/codecs.o \
 		Python/compile.o \
@@ -1081,6 +1082,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_atexit.h \
 		$(srcdir)/Include/internal/pycore_bitutils.h \
 		$(srcdir)/Include/internal/pycore_blocks_output_buffer.h \
+		$(srcdir)/Include/internal/pycore_brc.h \
 		$(srcdir)/Include/internal/pycore_bytes_methods.h \
 		$(srcdir)/Include/internal/pycore_bytesobject.h \
 		$(srcdir)/Include/internal/pycore_call.h \

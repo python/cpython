@@ -1067,6 +1067,14 @@ _Py_HandlePending(PyThreadState *tstate)
         }
     }
 
+#ifdef Py_GIL_DISABLED
+    /* Objects with refcounts to merge */
+    if ((breaker & _PY_EVAL_EXPLICIT_MERGE_BIT) != 0) {
+        _Py_unset_eval_breaker_bit(tstate, _PY_EVAL_EXPLICIT_MERGE_BIT);
+        _Py_brc_merge_refcounts(tstate);
+    }
+#endif
+
     /* GC scheduled to run */
     if ((breaker & _PY_GC_SCHEDULED_BIT) != 0) {
         _Py_unset_eval_breaker_bit(tstate, _PY_GC_SCHEDULED_BIT);

@@ -1,6 +1,8 @@
 #ifndef Py_INTERNAL_OBJECT_STACK_H
 #define Py_INTERNAL_OBJECT_STACK_H
 
+#include "pycore_freelist.h"        // _PyFreeListState
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -73,6 +75,10 @@ _PyObjectStack_Pop(_PyObjectStack *stack)
     }
     return obj;
 }
+
+// Merge src into dst, leaving src empty
+extern void
+_PyObjectStack_Merge(_PyObjectStack *dst, _PyObjectStack *src);
 
 // Remove all items from the stack
 extern void
