@@ -94,12 +94,6 @@ typedef struct frequent_syms {
     _Py_UOpsSymType *push_nulL_sym;
 } frequent_syms;
 
-typedef struct uops_emitter {
-    _PyUOpInstruction *writebuffer;
-    _PyUOpInstruction *writebuffer_end;
-    int curr_i;
-} uops_emitter;
-
 // Tier 2 types meta interpreter
 typedef struct _Py_UOpsAbstractInterpContext {
     PyObject_HEAD
@@ -112,8 +106,6 @@ typedef struct _Py_UOpsAbstractInterpContext {
     ty_arena t_arena;
 
     frequent_syms frequent_syms;
-
-    uops_emitter emitter;
 
     _Py_UOpsSymType **n_consumed;
     _Py_UOpsSymType **limit;
@@ -187,8 +179,7 @@ abstractcontext_init(
     _Py_UOpsAbstractInterpContext *ctx,
     PyCodeObject *co,
     int curr_stacklen,
-    int ir_entries,
-    _PyUOpInstruction *new_writebuffer
+    int ir_entries
 )
 {
     ctx->limit = ctx->locals_and_stack + MAX_ABSTRACT_INTERP_SIZE;
@@ -215,10 +206,6 @@ abstractcontext_init(
     // IR and sym setup
     ctx->frequent_syms.push_nulL_sym = NULL;
 
-    // Emitter setup
-    ctx->emitter.writebuffer = new_writebuffer;
-    ctx->emitter.curr_i = 0;
-    ctx->emitter.writebuffer_end = new_writebuffer + ir_entries;
     return 0;
 }
 
@@ -379,45 +366,14 @@ op_is_data_movement_only(uint32_t opcode) {
         opcode == _POP_FRAME);
 }
 
-
-static inline int
-emit_i(uops_emitter *emitter,
-       _PyUOpInstruction inst)
-{
-    if (emitter->writebuffer + emitter->curr_i >= emitter->writebuffer_end) {
-        OPT_STAT_INC(optimizer_failure_reason_no_writebuffer);
-        DPRINTF(1, "out of emission space\n");
-        return -1;
-    }
-    if (inst.opcode == _NOP) {
-        return 0;
-    }
-    DPRINTF(2, "Emitting instruction at [%d] op: %s, oparg: %d, target: %d, operand: %" PRIu64 " \n",
-            emitter->curr_i,
-            _PyOpcode_uop_name[inst.opcode],
-            inst.oparg,
-            inst.target,
-            inst.operand);
-    emitter->writebuffer[emitter->curr_i] = inst;
-    emitter->curr_i++;
-    return 0;
-}
-
-static int
-uop_abstract_interpret_single_inst(
-    _PyUOpInstruction *inst,
-    _PyUOpInstruction *end,
-    _Py_UOpsAbstractInterpContext *ctx
-)
-{
 #define STACK_LEVEL()     ((int)(stack_pointer - ctx->frame->stack))
 
 #define GETLOCAL(idx)          ((ctx->frame->locals[idx]))
 
 #define REPLACE_OP(op, arg, oper)    \
-    new_inst.opcode = op;            \
-    new_inst.oparg = arg;            \
-    new_inst.operand = oper;
+    inst->opcode = op;            \
+    inst->oparg = arg;            \
+    inst->operand = oper;
 
 #define _LOAD_ATTR_NOT_NULL \
     do {                    \
@@ -431,11 +387,18 @@ uop_abstract_interpret_single_inst(
     } \
     } while (0);
 
+static int
+uop_abstract_interpret_single_inst(
+    _PyUOpInstruction *inst,
+    _PyUOpInstruction *end,
+    _Py_UOpsAbstractInterpContext *ctx
+)
+{
+
     int oparg = inst->oparg;
     uint32_t opcode = inst->opcode;
 
     _Py_UOpsSymType **stack_pointer = ctx->frame->stack_pointer;
-    _PyUOpInstruction new_inst = *inst;
 
     DPRINTF(3, "Abstract interpreting %s:%d ",
             _PyOpcode_uop_name[opcode],
@@ -452,17 +415,11 @@ uop_abstract_interpret_single_inst(
     ctx->frame->stack_pointer = stack_pointer;
     assert(STACK_LEVEL() >= 0);
 
-    if (emit_i(&ctx->emitter, new_inst) < 0) {
-        goto error;
-    }
 
     return 0;
 
 out_of_space:
     DPRINTF(1, "Out of space in abstract interpreter\n");
-    if (emit_i(&ctx->emitter, new_inst) < 0) {
-        goto error;
-    }
     return 0;
 error:
     DPRINTF(1, "Encountered error in abstract interpreter\n");
@@ -678,7 +635,6 @@ static int
 uop_redundancy_eliminator(
     PyCodeObject *co,
     _PyUOpInstruction *trace,
-    _PyUOpInstruction *new_trace,
     int trace_len,
     int curr_stacklen
 )
@@ -689,13 +645,12 @@ uop_redundancy_eliminator(
     if (abstractcontext_init(
         &ctx,
         co, curr_stacklen,
-        trace_len, new_trace) < 0) {
+        trace_len) < 0) {
         goto error;
     }
     _PyUOpInstruction *curr = NULL;
     _PyUOpInstruction *end = NULL;
     int status = 0;
-    int res = 0;
 
     curr = trace;
     end = trace + trace_len;
@@ -715,14 +670,9 @@ uop_redundancy_eliminator(
 
     assert(op_is_end(curr->opcode));
 
-    if (emit_i(&ctx.emitter, *curr) < 0) {
-        goto error;
-    }
-
-    res = ctx.emitter.curr_i;
     abstractcontext_fini(&ctx);
 
-    return res;
+    return 0;
 
 error:
     abstractcontext_fini(&ctx);
@@ -824,7 +774,6 @@ _Py_uop_analyze_and_optimize(
 )
 {
     OPT_STAT_INC(optimizer_attempts);
-    _PyUOpInstruction temp_writebuffer[UOP_MAX_TRACE_LENGTH];
 
     int err = remove_globals(frame, buffer, buffer_size, dependencies);
     if (err <= 0) {
@@ -833,21 +782,17 @@ _Py_uop_analyze_and_optimize(
 
     peephole_opt(frame, buffer, buffer_size);
 
-    int new_trace_len = uop_redundancy_eliminator(
-        (PyCodeObject *)frame->f_executable, buffer, temp_writebuffer,
+    err = uop_redundancy_eliminator(
+        (PyCodeObject *)frame->f_executable, buffer,
         buffer_size, curr_stacklen);
 
-    if (new_trace_len < 0) {
+    if (err < 0) {
         goto error;
     }
 
 
 
-    remove_unneeded_uops(temp_writebuffer, new_trace_len);
-
-    // Fill in our new trace!
-    memcpy(buffer, temp_writebuffer, new_trace_len * sizeof(_PyUOpInstruction));
-
+    remove_unneeded_uops(buffer, buffer_size);
 
     OPT_STAT_INC(optimizer_successes);
     return 1;
