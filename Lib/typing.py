@@ -1135,17 +1135,28 @@ class _BaseGenericAlias(_Final, _root=True):
         res = []
         if self.__origin__ not in bases:
             res.append(self.__origin__)
+
+        # Check if any base that occurs after us in the bases list is either
+        # itself a subclass of Generic, or something which will add a subclass
+        # of Generic via its __mro_entries__ (which includes another
+        # _BaseGenericAlias). If not, add Generic ourselves. The goal is to
+        # ensure that Generic (or a subclass) will appear exactly once in the
+        # final bases list. If we let it appear multiple times, we risk "can't
+        # form a consistent MRO" errors.
         i = bases.index(self)
-        # The goal here is to only add Generic to the MRO if nothing else in the
-        # MRO is already a subclass of Generic; otherwise we risk failure to
-        # linearize a consistent MRO.
         for b in bases[i+1:]:
             if isinstance(b, _BaseGenericAlias):
                 break
             if not isinstance(b, type):
                 meth = getattr(b, "__mro_entries__", None)
-                nb = meth(bases) if meth else None
-                if isinstance(nb, tuple) and any(issubclass(b2, Generic) for b2 in nb):
+                new_bases = meth(bases) if meth else None
+                if (
+                    isinstance(new_bases, tuple) and
+                    any(
+                        isinstance(b2, type) and issubclass(b2, Generic)
+                        for b2 in new_bases
+                    )
+                ):
                     break
             elif issubclass(b, Generic):
                 break
