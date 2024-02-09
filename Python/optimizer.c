@@ -83,7 +83,7 @@ insert_executor(PyCodeObject *code, _Py_CODEUNIT *instr, int index, _PyExecutorO
     executor->vm_data.opcode = instr->op.code;
     executor->vm_data.oparg = instr->op.arg;
     executor->vm_data.code = code;
-    executor->vm_data.index = instr - _PyCode_CODE(code);
+    executor->vm_data.index = (int)(instr - _PyCode_CODE(code));
     code->co_executors->executors[index] = executor;
     assert(index < MAX_EXECUTORS_SIZE);
     instr->op.code = ENTER_EXECUTOR;
@@ -1158,8 +1158,8 @@ _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj)
 void
 _Py_Executors_InvalidateAll(PyInterpreterState *interp)
 {
-    _PyExecutorObject *executor;
-    while ((executor = interp->executor_list_head)) {
+    while (interp->executor_list_head) {
+        _PyExecutorObject *executor = interp->executor_list_head;
         if (executor->vm_data.code) {
             // Clear the entire code object so its co_executors array be freed:
             _PyCode_Clear_Executors(executor->vm_data.code);
