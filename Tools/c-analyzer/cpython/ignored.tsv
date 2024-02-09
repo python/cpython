@@ -385,6 +385,8 @@ Python/optimizer.c	-	_PyOptimizer_Default	-
 Python/optimizer.c	-	_ColdExit_Type	-
 Python/optimizer.c	-	COLD_EXITS	-
 Python/optimizer.c	-	Py_FatalErrorExecutor	-
+Python/optimizer.c	-	EMPTY	-
+Python/optimizer.c	-	cold_exits_initialized	-
 
 ##-----------------------
 ## test code

@@ -132,7 +132,7 @@ static _PyOptimizerObject _PyOptimizer_Default = {
 };
 
 static uint32_t
-shift_and_offset_threshold(uint16_t threshold)
+shift_and_offset_threshold(uint32_t threshold)
 {
     return (threshold << OPTIMIZER_BITS_IN_COUNTER) + (1 << 15);
 }
