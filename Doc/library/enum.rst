@@ -235,6 +235,10 @@ Data Types
         >>> len(Color)
         3
 
+   .. attribute:: EnumType.__members__
+
+      Returns a mapping of every enum name to its member, including aliases
+
    .. method:: EnumType.__reversed__(cls)
 
       Returns each member in *cls* in reverse definition order::
