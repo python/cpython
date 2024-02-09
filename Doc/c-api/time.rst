@@ -16,16 +16,24 @@ Types
 
 .. c:type:: PyTime_t
 
-   A timestamp or duration in nanoseconds represented as a 64-bit signed
-   integer.
+   A timestamp or duration.
 
    The reference point for timestamps depends on the clock used. For example,
    :c:func:`PyTime_Time` returns timestamps relative to the UNIX epoch.
 
-   The supported range is around [-292.3 years; +292.3 years]. Using the Unix
-   epoch (January 1st, 1970) as reference, the supported date range is around
-   [1677-09-21; 2262-04-11].
-   The exact limits are exposed as constants:
+   ``PyTime_t`` is a signed integral type. It is possible to add and
+   subtract such values directly.
+   Keep in mind that C overflow rules do apply.
+
+   ``PyTime_t`` can represent time with nanosecond or better resolution.
+   The unit used is an internal implementation detail; use
+   :c:func:`PyTime_AsNanoseconds` or :c:func:`PyTime_AsSecondsDouble`
+   to convert to a given unit.
+
+   The supported range is at least around [-292.3 years; +292.3 years].
+   Using the Unix epoch (January 1st, 1970) as reference, the supported date
+   range is at least around [1677-09-21; 2262-04-11].
+   The exact limits are exposed as constants.
 
    .. c:var:: PyTime_t PyTime_MIN
 
@@ -68,8 +76,8 @@ system time.)
    See :func:`time.time` for details important on this clock.
 
 
-Other functions
----------------
+Conversion functions
+--------------------
 
 .. c:function:: double PyTime_AsSecondsDouble(PyTime_t t)
 
@@ -77,3 +85,9 @@ Other functions
 
    The function cannot fail, but note that :c:expr:`double` has limited
    accuracy for large values.
+
+.. c:function:: int PyTime_AsNanoseconds(PyTime_t t, int64_t *result)
+
+   Convert a timestamp to a number of nanoseconds as a 64-bit signed integer.
+
+   Returns 0 on success, or -1 (with an exception set) on failure.
