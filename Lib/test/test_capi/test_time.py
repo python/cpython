@@ -23,6 +23,11 @@ class CAPITest(unittest.TestCase):
         t2 = py_func()
         self.assertAlmostEqual(t1, t2, delta=CLOCK_RES)
 
+    def check_clock_ns(self, c_func, py_func):
+        t1 = c_func()
+        t2 = py_func()+2_000_000_000
+        self.assertAlmostEqual(t1, t2, delta=CLOCK_RES * SEC_TO_NS)
+
     def test_assecondsdouble(self):
         # Test PyTime_AsSecondsDouble()
         def ns_to_sec(ns):
@@ -61,11 +66,14 @@ class CAPITest(unittest.TestCase):
     def test_monotonic(self):
         # Test PyTime_Monotonic()
         self.check_clock(_testcapi.PyTime_Monotonic, time.monotonic)
+        self.check_clock_ns(_testcapi.PyTime_Monotonic_ns, time.monotonic_ns)
 
     def test_perf_counter(self):
         # Test PyTime_PerfCounter()
         self.check_clock(_testcapi.PyTime_PerfCounter, time.perf_counter)
+        self.check_clock_ns(_testcapi.PyTime_PerfCounter_ns, time.perf_counter_ns)
 
     def test_time(self):
         # Test PyTime_time()
         self.check_clock(_testcapi.PyTime_Time, time.time)
+        self.check_clock_ns(_testcapi.PyTime_PerfCounter_ns, time.perf_counter_ns)

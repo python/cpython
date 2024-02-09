@@ -79,12 +79,61 @@ test_pytime_time(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
     return pytime_as_float(t);
 }
 
+static PyObject*
+pytime_as_ns(PyTime_t t)
+{
+    assert(sizeof(long long) >= sizeof(PyTime_t));
+    long long result;
+    if (PyTime_AsNanoseconds(t, &result) < 0) {
+        return NULL;
+    }
+    return PyLong_FromLongLong(result);
+}
+
+
+static PyObject*
+test_pytime_monotonic_ns(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
+{
+    PyTime_t t;
+    if (PyTime_Monotonic(&t) < 0) {
+        return NULL;
+    }
+    return pytime_as_ns(t);
+}
+
+
+static PyObject*
+test_pytime_perf_counter_ns(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
+{
+    PyTime_t t;
+    if (PyTime_PerfCounter(&t) < 0) {
+        return NULL;
+    }
+    return pytime_as_ns(t);
+}
+
+
+static PyObject*
+test_pytime_time_ns(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
+{
+    PyTime_t t;
+    if (PyTime_Time(&t) < 0) {
+        printf("ERR! %d\n", (int)t);
+        return NULL;
+    }
+    printf("... %d\n", (int)t);
+    return pytime_as_ns(t);
+}
+
 
 static PyMethodDef test_methods[] = {
     {"PyTime_AsSecondsDouble", test_pytime_assecondsdouble, METH_VARARGS},
     {"PyTime_Monotonic", test_pytime_monotonic, METH_NOARGS},
     {"PyTime_PerfCounter", test_pytime_perf_counter, METH_NOARGS},
     {"PyTime_Time", test_pytime_time, METH_NOARGS},
+    {"PyTime_Monotonic_ns", test_pytime_monotonic_ns, METH_NOARGS},
+    {"PyTime_PerfCounter_ns", test_pytime_perf_counter_ns, METH_NOARGS},
+    {"PyTime_Time_ns", test_pytime_time_ns, METH_NOARGS},
     {NULL},
 };
 
