@@ -329,6 +329,15 @@ accessible to C code.  They all work with the current interpreter thread's
    .. versionadded:: 3.13
 
 
+.. c:namespace:: NULL
+.. c:type:: int (*Py_AuditHookFunction) (const char *event, PyObject *args, void *userData)
+
+The type of the hook function.
+*event* is the C string event argument passed to :c:func:`PySys_Audit` or
+:c:func:`PySys_AuditTuple`.
+*args* is guaranteed to be a :c:type:`PyTupleObject`.
+*userData* is the argument passed to PySys_AddAuditHook().
+
 .. c:function:: int PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
 
    Append the callable *hook* to the list of active auditing hooks.
@@ -346,15 +355,8 @@ accessible to C code.  They all work with the current interpreter thread's
    silently abort the operation by raising an error subclassed from
    :class:`Exception` (other errors will not be silenced).
 
-   .. c:namespace:: NULL
-   .. c:type:: int (*Py_AuditHookFunction) (const char *event, PyObject *args, void *userData)
-
-      The type of the hook function.
-      *event* is (the event argument passed to PySys_Audit() or PySys_AuditTuple()),
-      *args* is guaranteed to be a :c:type:`PyTupleObject`. The hook
-      function is always called with the GIL held by the Python
-      interpreter that raised the event.
-      *userData* is the argument passed to PySys_AddAuditHook().
+   The hook function is always called with the GIL held by the Python
+   interpreter that raised the event.
 
    See :pep:`578` for a detailed description of auditing.  Functions in the
    runtime and standard library that raise events are listed in the
