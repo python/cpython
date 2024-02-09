@@ -119,7 +119,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    *buffer*, interpreted as a two's-complement signed number.
 
    *endianness* may be passed ``-1`` for the native endian that CPython was
-   compiled with, or ``0`` for big endian and ``1`` for little.
+   compiled with, or else ``0`` for big endian and ``1`` for little.
 
    .. versionadded:: 3.13
 
@@ -130,7 +130,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    *buffer*, interpreted as an unsigned number.
 
    *endianness* may be passed ``-1`` for the native endian that CPython was
-   compiled with, or ``0`` for big endian and ``1`` for little.
+   compiled with, or else ``0`` for big endian and ``1`` for little.
 
    .. versionadded:: 3.13
 
@@ -371,20 +371,21 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    *endianness* may be passed ``-1`` for the native endian that CPython was
    compiled with, or ``0`` for big endian and ``1`` for little.
 
-   Returns ``-1`` with an exception raised if *pylong* cannot be interpreted as
-   an integer. Otherwise, returns the size of the buffer required to store the
+   Return ``-1`` with an exception raised if *pylong* cannot be interpreted as
+   an integer. Otherwise, return the size of the buffer required to store the
    value. If this is equal to or less than *n_bytes*, the entire value was
    copied.
 
    Unless an exception is raised, all *n_bytes* of the buffer will be written
    with as much of the value as can fit. This allows the caller to ignore all
-   non-negative results, if the intent is to match the typical behavior of a
+   non-negative results if the intent is to match the typical behavior of a
    C-style downcast.
 
    Values are always copied as twos-complement, and sufficient size will be
    requested for a sign bit. For example, this may cause an value that fits into
-   8-bytes when treated as unsigned to request 9 bytes, even though all eight
-   bytes were copied into the buffer.
+   8 bytes when treated as unsigned to request 9 bytes, even though all eight
+   bytes were copied into the buffer. What has been omitted is the zero sign
+   bit, which is redundant when the intention is to treat the value as unsigned.
 
    Passing *n_bytes* of zero will always return the requested buffer size.
 
