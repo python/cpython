@@ -347,12 +347,14 @@ accessible to C code.  They all work with the current interpreter thread's
    :class:`Exception` (other errors will not be silenced).
 
    .. c:namespace:: NULL
-   .. c:type:: int (*Py_AuditHookFunction) (const char *, PyObject *, void *)
+   .. c:type:: int (*Py_AuditHookFunction) (const char *event, PyObject *args, void *userData)
 
-   The hook function is of type :c:expr:`int (*)(const char *event, PyObject
-   *args, void *userData)`, where *args* is guaranteed to be a
-   :c:type:`PyTupleObject`. The hook function is always called with the GIL
-   held by the Python interpreter that raised the event.
+      The type of the hook function.
+      *event* is (the event argument passed to PySys_Audit() or PySys_AuditTuple()),
+      *args* is guaranteed to be a :c:type:`PyTupleObject`. The hook
+      function is always called with the GIL held by the Python
+      interpreter that raised the event.
+      *userData* is the argument passed to PySys_AddAuditHook().
 
    See :pep:`578` for a detailed description of auditing.  Functions in the
    runtime and standard library that raise events are listed in the
