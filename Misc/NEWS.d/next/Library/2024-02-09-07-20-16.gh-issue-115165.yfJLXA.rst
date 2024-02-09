@@ -1,3 +1,3 @@
-``typing.Annotated`` ignores exceptions when setting the ``__orig_class__``
-attribute on objects returned from a callable. Previously only ``TypeError``
-was ignored.
+``typing.Annotated`` now ignores most exceptions when attempting to set the
+``__orig_class__`` attribute on objects returned when calling a generic alias.
+Previously only :exc:`AttributeError`` was ignored. Patch by Dave Shawley.
