@@ -261,7 +261,7 @@ def _setup_func(funcopy, mock, sig):
     funcopy.method_calls = _CallList()
     funcopy.mock_calls = _CallList()
 
-    funcopy.return_value = mock.return_value
+    funcopy.return_value = mock._mock_return_value
     funcopy.side_effect = mock.side_effect
     funcopy._mock_children = mock._mock_children
 
@@ -1231,7 +1231,7 @@ class CallableMixin(Base):
             if result is not DEFAULT:
                 return result
 
-        if self._mock_return_value is not DEFAULT and self._mock_delegate is None:
+        if self._mock_return_value is not DEFAULT:
             return self.return_value
 
         if self._mock_wraps is not None:
