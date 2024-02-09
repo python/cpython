@@ -1092,8 +1092,6 @@ deoptimize:
     tstate->previous_executor = NULL;
     DISPATCH();
 
-#endif  // _Py_JIT
-
 // Jump here from EXIT_IF()
 side_exit:
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
@@ -1106,6 +1104,8 @@ side_exit:
     Py_INCREF(exit->executor);
     tstate->previous_executor = (PyObject *)current_executor;
     GOTO_TIER_TWO(exit->executor);
+
+#endif  // _Py_JIT
 
 }
 

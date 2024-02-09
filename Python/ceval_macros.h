@@ -394,6 +394,10 @@ do { \
     goto enter_tier_two; \
 } while (0)
 
+#define GOTO_TIER_ONE(TARGET) \
+    next_instr = target; \
+    DISPATCH();
+
 #define CURRENT_OPARG() (next_uop[-1].oparg)
 
 #define CURRENT_OPERAND() (next_uop[-1].operand)

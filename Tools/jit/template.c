@@ -38,6 +38,16 @@
         goto LABEL ## _tier_two; \
     } while (0)
 
+#undef GOTO_TIER_TWO
+#define GOTO_TIER_TWO(EXECUTOR) \
+    __attribute__((musttail))                                \
+    return ((jit_func)((EXECUTOR)->jit_code))(frame, stack_pointer, tstate);
+
+#undef GOTO_TIER_ONE
+#define GOTO_TIER_ONE(TARGET) \
+    _PyFrame_SetStackPointer(frame, stack_pointer); \
+    return TARGET;
+
 #undef LOAD_IP
 #define LOAD_IP(UNUSED) \
     do {                \
@@ -52,6 +62,8 @@
     __attribute__((musttail))                                \
     return ((jit_func)&ALIAS)(frame, stack_pointer, tstate);
 
+#define Py_JIT 1
+
 _Py_CODEUNIT *
 _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *tstate)
 {
@@ -59,7 +71,6 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
     PATCH_VALUE(_PyExecutorObject *, current_executor, _JIT_EXECUTOR)
     int oparg;
     int opcode = _JIT_OPCODE;
-    _PyUOpInstruction *next_uop;
     // Other stuff we need handy:
     PATCH_VALUE(uint16_t, _oparg, _JIT_OPARG)
     PATCH_VALUE(uint64_t, _operand, _JIT_OPERAND)
@@ -95,4 +106,12 @@ error_tier_two:
 deoptimize:
     _PyFrame_SetStackPointer(frame, stack_pointer);
     return _PyCode_CODE(_PyFrame_GetCode(frame)) + _target;
+side_exit:
+    {
+        _PyExitData *exit = &current_executor->exits[_target];
+        Py_INCREF(exit->executor);
+        tstate->previous_executor = (PyObject *)current_executor;
+        __attribute__((musttail))
+        return ((jit_func)exit->executor->jit_code)(frame, stack_pointer, tstate);
+    }
 }

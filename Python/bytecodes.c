@@ -4042,7 +4042,9 @@ dummy_func(
         }
 
         op(_JUMP_TO_TOP, (--)) {
+#ifndef Py_JIT
             next_uop = &current_executor->trace[1];
+#endif
             CHECK_EVAL_BREAKER();
         }
 
@@ -4119,10 +4121,9 @@ dummy_func(
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
             if (exit->temperature < 0) {
-                next_instr = target;
                 Py_DECREF(previous);
                 tstate->previous_executor = NULL;
-                DISPATCH();
+                GOTO_TIER_ONE(target);
             }
             _PyExecutorObject *executor;
             if (target->op.code == ENTER_EXECUTOR) {
@@ -4134,9 +4135,8 @@ dummy_func(
                     exit->temperature = -10000; /* Choose a better number */
                     Py_DECREF(previous);
                     tstate->previous_executor = NULL;
-                    next_instr = target;
                     ERROR_IF(optimized < 0, error);
-                    DISPATCH();
+                    GOTO_TIER_ONE(target);
                 }
             }
             Py_INCREF(executor);
@@ -4148,7 +4148,7 @@ dummy_func(
             TIER_TWO_ONLY
             Py_DECREF(tstate->previous_executor);
             tstate->previous_executor = NULL;
-#ifndef JIT
+#ifndef Py_JIT
             current_executor = (_PyExecutorObject*)executor;
 #endif
         }
