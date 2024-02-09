@@ -235,6 +235,10 @@ Data Types
         >>> len(Color)
         3
 
+   .. attribute:: EnumType.__members__
+
+      Returns a mapping of every enum name to its member, including aliases
+
    .. method:: EnumType.__reversed__(cls)
 
       Returns each member in *cls* in reverse definition order::
@@ -271,6 +275,19 @@ Data Types
          the exact value is unimportant you may use :class:`auto` instances and an
          appropriate value will be chosen for you.  See :class:`auto` for the
          details.
+
+   .. attribute:: Enum._name_
+
+      Name of the member.
+
+   .. attribute:: Enum._value_
+
+      Value of the member, can be set in :meth:`~object.__new__`.
+
+   .. attribute:: Enum._order_
+
+      No longer used, kept for backward compatibility.
+      (class attribute, removed during class creation).
 
    .. attribute:: Enum._ignore_
 
@@ -798,18 +815,17 @@ all the members are created it is no longer used.
 Supported ``_sunder_`` names
 """"""""""""""""""""""""""""
 
-- ``_name_`` -- name of the member
-- ``_value_`` -- value of the member; can be set / modified in ``__new__``
-
-- ``_missing_`` -- a lookup function used when a value is not found; may be
-  overridden
-- ``_ignore_`` -- a list of names, either as a :class:`list` or a :class:`str`,
-  that will not be transformed into members, and will be removed from the final
-  class
-- ``_order_`` -- used in Python 2/3 code to ensure member order is consistent
-  (class attribute, removed during class creation)
-- ``_generate_next_value_`` -- used to get an appropriate value for an enum
-  member; may be overridden
+- :attr:`~Enum._name_` -- name of the member
+- :attr:`~Enum._value_` -- value of the member; can be set in ``__new__``
+- :meth:`~Enum._missing_` -- a lookup function used when a value is not found;
+  may be overridden
+- :attr:`~Enum._ignore_` -- a list of names, either as a :class:`list` or a
+  :class:`str`, that will not be transformed into members, and will be removed
+  from the final class
+- :attr:`~Enum._order_` -- no longer used, kept for backward
+  compatibility (class attribute, removed during class creation)
+- :meth:`~Enum._generate_next_value_` -- used to get an appropriate value for
+  an enum member; may be overridden
 
   .. note::
 

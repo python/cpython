@@ -39,7 +39,6 @@ Doc/library/email.compat32-message.rst
 Doc/library/email.errors.rst
 Doc/library/email.parser.rst
 Doc/library/email.policy.rst
-Doc/library/enum.rst
 Doc/library/exceptions.rst
 Doc/library/faulthandler.rst
 Doc/library/fcntl.rst
