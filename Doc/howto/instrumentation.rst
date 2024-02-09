@@ -13,9 +13,9 @@ DTrace and SystemTap are monitoring tools, each providing a way to inspect
 what the processes on a computer system are doing.  They both use
 domain-specific languages allowing a user to write scripts which:
 
-  - filter which processes are to be observed
-  - gather data from the processes of interest
-  - generate reports on the data
+- filter which processes are to be observed
+- gather data from the processes of interest
+- generate reports on the data
 
 As of Python 3.6, CPython can be built with embedded "markers", also
 known as "probes", that can be observed by a DTrace or SystemTap script,
@@ -123,7 +123,7 @@ Sufficiently modern readelf can print the metadata::
             Arguments: 8@%rbp 8@%r12 -4@%eax
 
 The above metadata contains information for SystemTap describing how it
-can patch strategically-placed machine code instructions to enable the
+can patch strategically placed machine code instructions to enable the
 tracing hooks used by a SystemTap script.
 
 
@@ -246,11 +246,9 @@ The output looks like this:
 
 where the columns are:
 
-  - time in microseconds since start of script
-
-  - name of executable
-
-  - PID of process
+- time in microseconds since start of script
+- name of executable
+- PID of process
 
 and the remainder indicates the call/return hierarchy as the script executes.
 
@@ -292,11 +290,11 @@ Available static markers
 
 .. object:: function__return(str filename, str funcname, int lineno)
 
-   This marker is the converse of :c:func:`function__entry`, and indicates that
+   This marker is the converse of :c:func:`!function__entry`, and indicates that
    execution of a Python function has ended (either via ``return``, or via an
    exception).  It is only triggered for pure-Python (bytecode) functions.
 
-   The arguments are the same as for :c:func:`function__entry`
+   The arguments are the same as for :c:func:`!function__entry`
 
 .. object:: line(str filename, str funcname, int lineno)
 
@@ -304,7 +302,7 @@ Available static markers
    the equivalent of line-by-line tracing with a Python profiler.  It is
    not triggered within C functions.
 
-   The arguments are the same as for :c:func:`function__entry`.
+   The arguments are the same as for :c:func:`!function__entry`.
 
 .. object:: gc__start(int generation)
 
@@ -410,7 +408,7 @@ needing to directly name the static markers:
 
 
 The following script uses the tapset above to provide a top-like view of all
-running CPython code, showing the top 20 most frequently-entered bytecode
+running CPython code, showing the top 20 most frequently entered bytecode
 frames, each second, across the whole system:
 
 .. code-block:: none

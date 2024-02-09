@@ -15,14 +15,27 @@ typedef struct {
 
 PyAPI_DATA(PyTypeObject) PyCell_Type;
 
-#define PyCell_Check(op) Py_IS_TYPE(op, &PyCell_Type)
+#define PyCell_Check(op) Py_IS_TYPE((op), &PyCell_Type)
 
 PyAPI_FUNC(PyObject *) PyCell_New(PyObject *);
 PyAPI_FUNC(PyObject *) PyCell_Get(PyObject *);
 PyAPI_FUNC(int) PyCell_Set(PyObject *, PyObject *);
 
-#define PyCell_GET(op) (((PyCellObject *)(op))->ob_ref)
-#define PyCell_SET(op, v) _Py_RVALUE(((PyCellObject *)(op))->ob_ref = (v))
+static inline PyObject* PyCell_GET(PyObject *op) {
+    PyCellObject *cell;
+    assert(PyCell_Check(op));
+    cell = _Py_CAST(PyCellObject*, op);
+    return cell->ob_ref;
+}
+#define PyCell_GET(op) PyCell_GET(_PyObject_CAST(op))
+
+static inline void PyCell_SET(PyObject *op, PyObject *value) {
+    PyCellObject *cell;
+    assert(PyCell_Check(op));
+    cell = _Py_CAST(PyCellObject*, op);
+    cell->ob_ref = value;
+}
+#define PyCell_SET(op, value) PyCell_SET(_PyObject_CAST(op), (value))
 
 #ifdef __cplusplus
 }

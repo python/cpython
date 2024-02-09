@@ -25,6 +25,12 @@ from test import support
 from test.support import os_helper
 from test.support import socket_helper
 
+
+# gh-109592: Tolerate a difference of 20 ms when comparing timings
+# (clock resolution)
+CLOCK_RES = 0.020
+
+
 @contextlib.contextmanager
 def kill_on_error(proc):
     """Context manager killing the subprocess if a Python exception is raised."""
@@ -74,6 +80,9 @@ class EINTRBaseTest(unittest.TestCase):
     def subprocess(self, *args, **kw):
         cmd_args = (sys.executable, '-c') + args
         return subprocess.Popen(cmd_args, **kw)
+
+    def check_elapsed_time(self, elapsed):
+        self.assertGreaterEqual(elapsed, self.sleep_time - CLOCK_RES)
 
 
 @unittest.skipUnless(hasattr(signal, "setitimer"), "requires setitimer()")
@@ -373,7 +382,7 @@ class TimeEINTRTest(EINTRBaseTest):
         time.sleep(self.sleep_time)
         self.stop_alarm()
         dt = time.monotonic() - t0
-        self.assertGreaterEqual(dt, self.sleep_time)
+        self.check_elapsed_time(dt)
 
 
 @unittest.skipUnless(hasattr(signal, "setitimer"), "requires setitimer()")
@@ -403,11 +412,9 @@ class SignalEINTRTest(EINTRBaseTest):
         old_mask = signal.pthread_sigmask(signal.SIG_BLOCK, [signum])
         self.addCleanup(signal.pthread_sigmask, signal.SIG_UNBLOCK, [signum])
 
-        t0 = time.monotonic()
         proc = self.subprocess(code)
         with kill_on_error(proc):
             wait_func(signum)
-            dt = time.monotonic() - t0
 
         self.assertEqual(proc.wait(), 0)
 
@@ -437,7 +444,7 @@ class SelectEINTRTest(EINTRBaseTest):
         select.select([], [], [], self.sleep_time)
         dt = time.monotonic() - t0
         self.stop_alarm()
-        self.assertGreaterEqual(dt, self.sleep_time)
+        self.check_elapsed_time(dt)
 
     @unittest.skipIf(sys.platform == "darwin",
                      "poll may fail on macOS; see issue #28087")
@@ -449,7 +456,7 @@ class SelectEINTRTest(EINTRBaseTest):
         poller.poll(self.sleep_time * 1e3)
         dt = time.monotonic() - t0
         self.stop_alarm()
-        self.assertGreaterEqual(dt, self.sleep_time)
+        self.check_elapsed_time(dt)
 
     @unittest.skipUnless(hasattr(select, 'epoll'), 'need select.epoll')
     def test_epoll(self):
@@ -460,7 +467,7 @@ class SelectEINTRTest(EINTRBaseTest):
         poller.poll(self.sleep_time)
         dt = time.monotonic() - t0
         self.stop_alarm()
-        self.assertGreaterEqual(dt, self.sleep_time)
+        self.check_elapsed_time(dt)
 
     @unittest.skipUnless(hasattr(select, 'kqueue'), 'need select.kqueue')
     def test_kqueue(self):
@@ -471,7 +478,7 @@ class SelectEINTRTest(EINTRBaseTest):
         kqueue.control(None, 1, self.sleep_time)
         dt = time.monotonic() - t0
         self.stop_alarm()
-        self.assertGreaterEqual(dt, self.sleep_time)
+        self.check_elapsed_time(dt)
 
     @unittest.skipUnless(hasattr(select, 'devpoll'), 'need select.devpoll')
     def test_devpoll(self):
@@ -482,7 +489,7 @@ class SelectEINTRTest(EINTRBaseTest):
         poller.poll(self.sleep_time * 1e3)
         dt = time.monotonic() - t0
         self.stop_alarm()
-        self.assertGreaterEqual(dt, self.sleep_time)
+        self.check_elapsed_time(dt)
 
 
 class FNTLEINTRTest(EINTRBaseTest):
@@ -497,23 +504,25 @@ class FNTLEINTRTest(EINTRBaseTest):
         proc = self.subprocess(code)
         with kill_on_error(proc):
             with open(os_helper.TESTFN, 'wb') as f:
-                while True:  # synchronize the subprocess
-                    dt = time.monotonic() - start_time
-                    if dt > 60.0:
-                        raise Exception("failed to sync child in %.1f sec" % dt)
+                # synchronize the subprocess
+                start_time = time.monotonic()
+                for _ in support.sleeping_retry(support.LONG_TIMEOUT, error=False):
                     try:
                         lock_func(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
                         lock_func(f, fcntl.LOCK_UN)
-                        time.sleep(0.01)
                     except BlockingIOError:
                         break
+                else:
+                    dt = time.monotonic() - start_time
+                    raise Exception("failed to sync child in %.1f sec" % dt)
+
                 # the child locked the file just a moment ago for 'sleep_time' seconds
                 # that means that the lock below will block for 'sleep_time' minus some
                 # potential context switch delay
                 lock_func(f, fcntl.LOCK_EX)
                 dt = time.monotonic() - start_time
-                self.assertGreaterEqual(dt, self.sleep_time)
                 self.stop_alarm()
+                self.check_elapsed_time(dt)
             proc.wait()
 
     # Issue 35633: See https://bugs.python.org/issue35633#msg333662

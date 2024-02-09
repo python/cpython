@@ -42,10 +42,7 @@ The available exception and functions in this module are:
    for use as a general hash algorithm.
 
    .. versionchanged:: 3.0
-      Always returns an unsigned value.
-      To generate the same numeric value across all Python versions and
-      platforms, use ``adler32(data) & 0xffffffff``.
-
+      The result is always unsigned.
 
 .. function:: compress(data, /, level=-1, wbits=MAX_WBITS)
 
@@ -137,10 +134,7 @@ The available exception and functions in this module are:
    for use as a general hash algorithm.
 
    .. versionchanged:: 3.0
-      Always returns an unsigned value.
-      To generate the same numeric value across all Python versions and
-      platforms, use ``crc32(data) & 0xffffffff``.
-
+      The result is always unsigned.
 
 .. function:: decompress(data, /, wbits=MAX_WBITS, bufsize=DEF_BUF_SIZE)
 
@@ -271,7 +265,7 @@ Decompression objects support the following methods and attributes:
    A boolean indicating whether the end of the compressed data stream has been
    reached.
 
-   This makes it possible to distinguish between a properly-formed compressed
+   This makes it possible to distinguish between a properly formed compressed
    stream, and an incomplete or truncated one.
 
    .. versionadded:: 3.3

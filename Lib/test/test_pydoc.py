@@ -1,3 +1,4 @@
+import datetime
 import os
 import sys
 import contextlib
@@ -12,6 +13,7 @@ import re
 import stat
 import tempfile
 import test.support
+import time
 import types
 import typing
 import unittest
@@ -22,12 +24,15 @@ import textwrap
 from io import StringIO
 from collections import namedtuple
 from urllib.request import urlopen, urlcleanup
+from test import support
 from test.support import import_helper
 from test.support import os_helper
-from test.support.script_helper import assert_python_ok, assert_python_failure
+from test.support.script_helper import (assert_python_ok,
+                                        assert_python_failure, spawn_python)
 from test.support import threading_helper
 from test.support import (reap_children, captured_output, captured_stdout,
-                          captured_stderr, requires_docstrings)
+                          captured_stderr, is_emscripten, is_wasi,
+                          requires_docstrings, MISSING_C_DOCSTRINGS)
 from test.support.os_helper import (TESTFN, rmtree, unlink)
 from test import pydoc_mod
 
@@ -38,8 +43,8 @@ class nonascii:
 
 if test.support.HAVE_DOCSTRINGS:
     expected_data_docstrings = (
-        'dictionary for instance variables (if defined)',
-        'list of weak references to the object (if defined)',
+        'dictionary for instance variables',
+        'list of weak references to the object',
         ) * 2
 else:
     expected_data_docstrings = ('', '', '', '')
@@ -53,55 +58,60 @@ CLASSES
         A
         B
         C
-\x20\x20\x20\x20
+
     class A(builtins.object)
      |  Hello and goodbye
-     |\x20\x20
+     |
      |  Methods defined here:
-     |\x20\x20
+     |
      |  __init__()
      |      Wow, I have no function!
-     |\x20\x20
+     |
      |  ----------------------------------------------------------------------
      |  Data descriptors defined here:
-     |\x20\x20
+     |
      |  __dict__%s
-     |\x20\x20
+     |
      |  __weakref__%s
-\x20\x20\x20\x20
+
     class B(builtins.object)
      |  Data descriptors defined here:
-     |\x20\x20
+     |
      |  __dict__%s
-     |\x20\x20
+     |
      |  __weakref__%s
-     |\x20\x20
+     |
      |  ----------------------------------------------------------------------
      |  Data and other attributes defined here:
-     |\x20\x20
+     |
      |  NO_MEANING = 'eggs'
-     |\x20\x20
+     |
      |  __annotations__ = {'NO_MEANING': <class 'str'>}
-\x20\x20\x20\x20
+
     class C(builtins.object)
      |  Methods defined here:
-     |\x20\x20
+     |
      |  get_answer(self)
      |      Return say_no()
-     |\x20\x20
+     |
      |  is_it_true(self)
      |      Return self.get_answer()
-     |\x20\x20
+     |
      |  say_no(self)
-     |\x20\x20
+     |
+     |  ----------------------------------------------------------------------
+     |  Class methods defined here:
+     |
+     |  __class_getitem__(item) from builtins.type
+     |
      |  ----------------------------------------------------------------------
      |  Data descriptors defined here:
-     |\x20\x20
+     |
      |  __dict__
-     |      dictionary for instance variables (if defined)
-     |\x20\x20
+     |      dictionary for instance variables
+     |
      |  __weakref__
-     |      list of weak references to the object (if defined)
+     |      list of weak references to the object
 
 FUNCTIONS
     doc_func()
@@ -109,11 +119,16 @@ FUNCTIONS
         hunger
         lack of Python
         war
-\x20\x20\x20\x20
+
     nodoc_func()
 
 DATA
     __xyz__ = 'X, Y and Z'
+    c_alias = test.pydoc_mod.C[int]
+    list_alias1 = typing.List[int]
+    list_alias2 = list[int]
+    type_union1 = typing.Union[int, str]
+    type_union2 = int | str
 
 VERSION
     1.2.3.4
@@ -135,6 +150,10 @@ html2text_of_expected = """
 test.pydoc_mod (version 1.2.3.4)
 This is a test module for test_pydoc
 
+Modules
+    types
+    typing
+
 Classes
     builtins.object
     A
@@ -150,16 +169,16 @@ class A(builtins.object)
 
     Data descriptors defined here:
         __dict__
-            dictionary for instance variables (if defined)
+            dictionary for instance variables
         __weakref__
-            list of weak references to the object (if defined)
+            list of weak references to the object
 
 class B(builtins.object)
     Data descriptors defined here:
         __dict__
-            dictionary for instance variables (if defined)
+            dictionary for instance variables
         __weakref__
-            list of weak references to the object (if defined)
+            list of weak references to the object
     Data and other attributes defined here:
         NO_MEANING = 'eggs'
         __annotations__ = {'NO_MEANING': <class 'str'>}
@@ -172,11 +191,13 @@ class C(builtins.object)
         is_it_true(self)
             Return self.get_answer()
         say_no(self)
+    Class methods defined here:
+        __class_getitem__(item) from builtins.type
     Data descriptors defined here:
         __dict__
-            dictionary for instance variables (if defined)
+            dictionary for instance variables
         __weakref__
-             list of weak references to the object (if defined)
+             list of weak references to the object
 
 Functions
     doc_func()
@@ -188,6 +209,11 @@ Functions
 
 Data
     __xyz__ = 'X, Y and Z'
+    c_alias = test.pydoc_mod.C[int]
+    list_alias1 = typing.List[int]
+    list_alias2 = list[int]
+    type_union1 = typing.Union[int, str]
+    type_union2 = int | str
 
 Author
     Benjamin Peterson
@@ -213,16 +239,16 @@ Help on class DA in module %s:
 
 class DA(builtins.object)
  |  Data descriptors defined here:
- |\x20\x20
+ |
  |  __dict__%s
- |\x20\x20
+ |
  |  __weakref__%s
- |\x20\x20
+ |
  |  ham
- |\x20\x20
+ |
  |  ----------------------------------------------------------------------
  |  Data and other attributes inherited from Meta:
- |\x20\x20
+ |
  |  ham = 'spam'
 """.strip()
 
@@ -231,7 +257,7 @@ Help on class Class in module %s:
 
 class Class(builtins.object)
  |  Data and other attributes inherited from Meta:
- |\x20\x20
+ |
  |  LIFE = 42
 """.strip()
 
@@ -240,7 +266,7 @@ Help on class Class1 in module %s:
 
 class Class1(builtins.object)
  |  Data and other attributes inherited from Meta1:
- |\x20\x20
+ |
  |  one = 1
 """.strip()
 
@@ -252,19 +278,19 @@ class Class2(Class1)
  |      Class2
  |      Class1
  |      builtins.object
- |\x20\x20
+ |
  |  Data and other attributes inherited from Meta1:
- |\x20\x20
+ |
  |  one = 1
- |\x20\x20
+ |
  |  ----------------------------------------------------------------------
  |  Data and other attributes inherited from Meta3:
- |\x20\x20
+ |
  |  three = 3
- |\x20\x20
+ |
  |  ----------------------------------------------------------------------
  |  Data and other attributes inherited from Meta2:
- |\x20\x20
+ |
  |  two = 2
 """.strip()
 
@@ -273,7 +299,7 @@ Help on class C in module %s:
 
 class C(builtins.object)
  |  Data and other attributes defined here:
- |\x20\x20
+ |
  |  here = 'present!'
 """.strip()
 
@@ -340,9 +366,10 @@ def html2text(html):
 
     Tailored for pydoc tests only.
     """
-    return pydoc.replace(
-        re.sub("<.*?>", "", html),
-        "&nbsp;", " ", "&gt;", ">", "&lt;", "<")
+    html = html.replace("<dd>", "\n")
+    html = re.sub("<.*?>", "", html)
+    html = pydoc.replace(html, "&nbsp;", " ", "&gt;", ">", "&lt;", "<")
+    return html
 
 
 class PydocBaseTest(unittest.TestCase):
@@ -384,9 +411,12 @@ class PydocDocTest(unittest.TestCase):
     def test_html_doc(self):
         result, doc_loc = get_pydoc_html(pydoc_mod)
         text_result = html2text(result)
-        expected_lines = [line.strip() for line in html2text_of_expected if line]
-        for line in expected_lines:
-            self.assertIn(line, text_result)
+        text_lines = [line.strip() for line in text_result.splitlines()]
+        text_lines = [line for line in text_lines if line]
+        del text_lines[1]
+        expected_lines = html2text_of_expected.splitlines()
+        expected_lines = [line.strip() for line in expected_lines if line]
+        self.assertEqual(text_lines, expected_lines)
         mod_file = inspect.getabsfile(pydoc_mod)
         mod_url = urllib.parse.quote(mod_file)
         self.assertIn(mod_url, result)
@@ -605,6 +635,21 @@ class PydocDocTest(unittest.TestCase):
         # Testing that the subclasses section does not appear
         self.assertNotIn('Built-in subclasses', text)
 
+    def test_fail_help_cli(self):
+        elines = (missing_pattern % 'abd').splitlines()
+        with spawn_python("-c" "help()") as proc:
+            out, _ = proc.communicate(b"abd")
+            olines = out.decode().splitlines()[-9:-6]
+            olines[0] = olines[0].removeprefix('help> ')
+            self.assertEqual(elines, olines)
+
+    def test_fail_help_output_redirect(self):
+        with StringIO() as buf:
+            helper = pydoc.Helper(output=buf)
+            helper.help("abd")
+            expected = missing_pattern % "abd"
+            self.assertEqual(expected, buf.getvalue().strip().replace('\n', os.linesep))
+
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
     @requires_docstrings
@@ -676,7 +721,7 @@ class PydocDocTest(unittest.TestCase):
     def test_synopsis_sourceless(self):
         os = import_helper.import_fresh_module('os')
         expected = os.__doc__.splitlines()[0]
-        filename = os.__cached__
+        filename = os.__spec__.cached
         synopsis = pydoc.synopsis(filename)
 
         self.assertEqual(synopsis, expected)
@@ -700,14 +745,18 @@ class PydocDocTest(unittest.TestCase):
 
     def test_is_package_when_not_package(self):
         with os_helper.temp_cwd() as test_dir:
-            self.assertFalse(pydoc.ispackage(test_dir))
+            with self.assertWarns(DeprecationWarning) as cm:
+                self.assertFalse(pydoc.ispackage(test_dir))
+            self.assertEqual(cm.filename, __file__)
 
     def test_is_package_when_is_package(self):
         with os_helper.temp_cwd() as test_dir:
             init_path = os.path.join(test_dir, '__init__.py')
             open(init_path, 'w').close()
-            self.assertTrue(pydoc.ispackage(test_dir))
+            with self.assertWarns(DeprecationWarning) as cm:
+                self.assertTrue(pydoc.ispackage(test_dir))
             os.remove(init_path)
+            self.assertEqual(cm.filename, __file__)
 
     def test_allmethods(self):
         # issue 17476: allmethods was no longer returning unbound methods.
@@ -759,35 +808,35 @@ class B(A)
  |      B
  |      A
  |      builtins.object
- |\x20\x20
+ |
  |  Methods defined here:
- |\x20\x20
+ |
  |  b_size = a_size(self)
- |\x20\x20
+ |
  |  itemconfig = itemconfigure(self, tagOrId, cnf=None, **kw)
- |\x20\x20
+ |
  |  itemconfigure(self, tagOrId, cnf=None, **kw)
  |      Configure resources of an item TAGORID.
- |\x20\x20
+ |
  |  ----------------------------------------------------------------------
  |  Methods inherited from A:
- |\x20\x20
+ |
  |  a_size(self)
  |      Return size
- |\x20\x20
+ |
  |  lift = tkraise(self, aboveThis=None)
- |\x20\x20
+ |
  |  tkraise(self, aboveThis=None)
  |      Raise this widget in the stacking order.
- |\x20\x20
+ |
  |  ----------------------------------------------------------------------
  |  Data descriptors inherited from A:
- |\x20\x20
+ |
  |  __dict__
- |      dictionary for instance variables (if defined)
- |\x20\x20
+ |      dictionary for instance variables
+ |
  |  __weakref__
- |      list of weak references to the object (if defined)
+ |      list of weak references to the object
 ''' % __name__)
 
         doc = pydoc.render_doc(B, renderer=pydoc.HTMLDoc())
@@ -816,14 +865,121 @@ class B(A)
 
     Data descriptors inherited from A:
         __dict__
-            dictionary for instance variables (if defined)
+            dictionary for instance variables
         __weakref__
-            list of weak references to the object (if defined)
+            list of weak references to the object
 """
         as_text = html2text(doc)
         expected_lines = [line.strip() for line in expected_text.split("\n") if line]
         for expected_line in expected_lines:
             self.assertIn(expected_line, as_text)
+
+    def test_long_signatures(self):
+        from collections.abc import Callable
+        from typing import Literal, Annotated
+
+        class A:
+            def __init__(self,
+                         arg1: Callable[[int, int, int], str],
+                         arg2: Literal['some value', 'other value'],
+                         arg3: Annotated[int, 'some docs about this type'],
+                         ) -> None:
+                ...
+
+        doc = pydoc.render_doc(A)
+        # clean up the extra text formatting that pydoc performs
+        doc = re.sub('\b.', '', doc)
+        self.assertEqual(doc, '''Python Library Documentation: class A in module %s
+
+class A(builtins.object)
+ |  A(
+ |      arg1: collections.abc.Callable[[int, int, int], str],
+ |      arg2: Literal['some value', 'other value'],
+ |      arg3: Annotated[int, 'some docs about this type']
+ |  ) -> None
+ |
+ |  Methods defined here:
+ |
+ |  __init__(
+ |      self,
+ |      arg1: collections.abc.Callable[[int, int, int], str],
+ |      arg2: Literal['some value', 'other value'],
+ |      arg3: Annotated[int, 'some docs about this type']
+ |  ) -> None
+ |
+ |  ----------------------------------------------------------------------
+ |  Data descriptors defined here:
+ |
+ |  __dict__%s
+ |
+ |  __weakref__%s
+''' % (__name__,
+       '' if MISSING_C_DOCSTRINGS else '\n |      dictionary for instance variables',
+       '' if MISSING_C_DOCSTRINGS else '\n |      list of weak references to the object',
+      ))
+
+        def func(
+            arg1: Callable[[Annotated[int, 'Some doc']], str],
+            arg2: Literal[1, 2, 3, 4, 5, 6, 7, 8],
+        ) -> Annotated[int, 'Some other']:
+            ...
+
+        doc = pydoc.render_doc(func)
+        # clean up the extra text formatting that pydoc performs
+        doc = re.sub('\b.', '', doc)
+        self.assertEqual(doc, '''Python Library Documentation: function func in module %s
+
+func(
+    arg1: collections.abc.Callable[[typing.Annotated[int, 'Some doc']], str],
+    arg2: Literal[1, 2, 3, 4, 5, 6, 7, 8]
+) -> Annotated[int, 'Some other']
+''' % __name__)
+
+        def function_with_really_long_name_so_annotations_can_be_rather_small(
+            arg1: int,
+            arg2: str,
+        ):
+            ...
+
+        doc = pydoc.render_doc(function_with_really_long_name_so_annotations_can_be_rather_small)
+        # clean up the extra text formatting that pydoc performs
+        doc = re.sub('\b.', '', doc)
+        self.assertEqual(doc, '''Python Library Documentation: function function_with_really_long_name_so_annotations_can_be_rather_small in module %s
+
+function_with_really_long_name_so_annotations_can_be_rather_small(
+    arg1: int,
+    arg2: str
+)
+''' % __name__)
+
+        does_not_have_name = lambda \
+            very_long_parameter_name_that_should_not_fit_into_a_single_line, \
+            second_very_long_parameter_name: ...
+
+        doc = pydoc.render_doc(does_not_have_name)
+        # clean up the extra text formatting that pydoc performs
+        doc = re.sub('\b.', '', doc)
+        self.assertEqual(doc, '''Python Library Documentation: function <lambda> in module %s
+
+<lambda> lambda very_long_parameter_name_that_should_not_fit_into_a_single_line, second_very_long_parameter_name
+''' % __name__)
+
+    def test__future__imports(self):
+        # __future__ features are excluded from module help,
+        # except when it's the __future__ module itself
+        import __future__
+        future_text, _ = get_pydoc_text(__future__)
+        future_html, _ = get_pydoc_html(__future__)
+        pydoc_mod_text, _ = get_pydoc_text(pydoc_mod)
+        pydoc_mod_html, _ = get_pydoc_html(pydoc_mod)
+
+        for feature in __future__.all_feature_names:
+            txt = f"{feature} = _Feature"
+            html = f"<strong>{feature}</strong> = _Feature"
+            self.assertIn(txt, future_text)
+            self.assertIn(html, future_html)
+            self.assertNotIn(txt, pydoc_mod_text)
+            self.assertNotIn(html, pydoc_mod_html)
 
 
 class PydocImportTest(PydocBaseTest):
@@ -890,6 +1046,8 @@ class PydocImportTest(PydocBaseTest):
         self.assertEqual(out.getvalue(), '')
         self.assertEqual(err.getvalue(), '')
 
+    @os_helper.skip_unless_working_chmod
+    @unittest.skipIf(is_emscripten, "cannot remove x bit")
     def test_apropos_empty_doc(self):
         pkgdir = os.path.join(TESTFN, 'walkpkg')
         os.mkdir(pkgdir)
@@ -996,6 +1154,46 @@ class TestDescriptions(unittest.TestCase):
         expected = 'C in module %s object' % __name__
         self.assertIn(expected, pydoc.render_doc(c))
 
+    def test_generic_alias(self):
+        self.assertEqual(pydoc.describe(typing.List[int]), '_GenericAlias')
+        doc = pydoc.render_doc(typing.List[int], renderer=pydoc.plaintext)
+        self.assertIn('_GenericAlias in module typing', doc)
+        self.assertIn('List = class list(object)', doc)
+        if not MISSING_C_DOCSTRINGS:
+            self.assertIn(list.__doc__.strip().splitlines()[0], doc)
+
+        self.assertEqual(pydoc.describe(list[int]), 'GenericAlias')
+        doc = pydoc.render_doc(list[int], renderer=pydoc.plaintext)
+        self.assertIn('GenericAlias in module builtins', doc)
+        self.assertIn('\nclass list(object)', doc)
+        if not MISSING_C_DOCSTRINGS:
+            self.assertIn(list.__doc__.strip().splitlines()[0], doc)
+
+    def test_union_type(self):
+        self.assertEqual(pydoc.describe(typing.Union[int, str]), '_UnionGenericAlias')
+        doc = pydoc.render_doc(typing.Union[int, str], renderer=pydoc.plaintext)
+        self.assertIn('_UnionGenericAlias in module typing', doc)
+        self.assertIn('Union = typing.Union', doc)
+        if typing.Union.__doc__:
+            self.assertIn(typing.Union.__doc__.strip().splitlines()[0], doc)
+
+        self.assertEqual(pydoc.describe(int | str), 'UnionType')
+        doc = pydoc.render_doc(int | str, renderer=pydoc.plaintext)
+        self.assertIn('UnionType in module types object', doc)
+        self.assertIn('\nclass UnionType(builtins.object)', doc)
+        if not MISSING_C_DOCSTRINGS:
+            self.assertIn(types.UnionType.__doc__.strip().splitlines()[0], doc)
+
+    def test_special_form(self):
+        self.assertEqual(pydoc.describe(typing.NoReturn), '_SpecialForm')
+        doc = pydoc.render_doc(typing.NoReturn, renderer=pydoc.plaintext)
+        self.assertIn('_SpecialForm in module typing', doc)
+        if typing.NoReturn.__doc__:
+            self.assertIn('NoReturn = typing.NoReturn', doc)
+            self.assertIn(typing.NoReturn.__doc__.strip().splitlines()[0], doc)
+        else:
+            self.assertIn('NoReturn = class _SpecialForm(_Final)', doc)
+
     def test_typing_pydoc(self):
         def foo(data: typing.List[typing.Any],
                 x: int) -> typing.Iterator[typing.Tuple[int, typing.Any]]:
@@ -1082,6 +1280,154 @@ class TestDescriptions(unittest.TestCase):
         self.assertEqual(self._get_summary_line(os.stat),
             "stat(path, *, dir_fd=None, follow_symlinks=True)")
 
+    def test_module_level_callable_noargs(self):
+        self.assertEqual(self._get_summary_line(time.time),
+            "time()")
+
+    def test_module_level_callable_o(self):
+        try:
+            import _stat
+        except ImportError:
+            # stat.S_IMODE() and _stat.S_IMODE() have a different signature
+            self.skipTest('_stat extension is missing')
+
+        self.assertEqual(self._get_summary_line(_stat.S_IMODE),
+            "S_IMODE(object, /)")
+
+    def test_unbound_builtin_method_noargs(self):
+        self.assertEqual(self._get_summary_line(str.lower),
+            "lower(self, /)")
+
+    def test_bound_builtin_method_noargs(self):
+        self.assertEqual(self._get_summary_line(''.lower),
+            "lower() method of builtins.str instance")
+
+    def test_unbound_builtin_method_o(self):
+        self.assertEqual(self._get_summary_line(set.add),
+            "add(self, object, /)")
+
+    def test_bound_builtin_method_o(self):
+        self.assertEqual(self._get_summary_line(set().add),
+            "add(object, /) method of builtins.set instance")
+
+    def test_unbound_builtin_method_coexist_o(self):
+        self.assertEqual(self._get_summary_line(set.__contains__),
+            "__contains__(self, object, /)")
+
+    def test_bound_builtin_method_coexist_o(self):
+        self.assertEqual(self._get_summary_line(set().__contains__),
+            "__contains__(object, /) method of builtins.set instance")
+
+    def test_unbound_builtin_classmethod_noargs(self):
+        self.assertEqual(self._get_summary_line(datetime.datetime.__dict__['utcnow']),
+            "utcnow(type, /)")
+
+    def test_bound_builtin_classmethod_noargs(self):
+        self.assertEqual(self._get_summary_line(datetime.datetime.utcnow),
+            "utcnow() method of builtins.type instance")
+
+    def test_unbound_builtin_classmethod_o(self):
+        self.assertEqual(self._get_summary_line(dict.__dict__['__class_getitem__']),
+            "__class_getitem__(type, object, /)")
+
+    def test_bound_builtin_classmethod_o(self):
+        self.assertEqual(self._get_summary_line(dict.__class_getitem__),
+            "__class_getitem__(object, /) method of builtins.type instance")
+
+    @support.cpython_only
+    @requires_docstrings
+    def test_module_level_callable_unrepresentable_default(self):
+        import _testcapi
+        builtin = _testcapi.func_with_unrepresentable_signature
+        self.assertEqual(self._get_summary_line(builtin),
+            "func_with_unrepresentable_signature(a, b=<x>)")
+
+    @support.cpython_only
+    @requires_docstrings
+    def test_builtin_staticmethod_unrepresentable_default(self):
+        self.assertEqual(self._get_summary_line(str.maketrans),
+            "maketrans(x, y=<unrepresentable>, z=<unrepresentable>, /)")
+        import _testcapi
+        cls = _testcapi.DocStringUnrepresentableSignatureTest
+        self.assertEqual(self._get_summary_line(cls.staticmeth),
+            "staticmeth(a, b=<x>)")
+
+    @support.cpython_only
+    @requires_docstrings
+    def test_unbound_builtin_method_unrepresentable_default(self):
+        self.assertEqual(self._get_summary_line(dict.pop),
+            "pop(self, key, default=<unrepresentable>, /)")
+        import _testcapi
+        cls = _testcapi.DocStringUnrepresentableSignatureTest
+        self.assertEqual(self._get_summary_line(cls.meth),
+            "meth(self, /, a, b=<x>)")
+
+    @support.cpython_only
+    @requires_docstrings
+    def test_bound_builtin_method_unrepresentable_default(self):
+        self.assertEqual(self._get_summary_line({}.pop),
+            "pop(key, default=<unrepresentable>, /) "
+            "method of builtins.dict instance")
+        import _testcapi
+        obj = _testcapi.DocStringUnrepresentableSignatureTest()
+        self.assertEqual(self._get_summary_line(obj.meth),
+            "meth(a, b=<x>) "
+            "method of _testcapi.DocStringUnrepresentableSignatureTest instance")
+
+    @support.cpython_only
+    @requires_docstrings
+    def test_unbound_builtin_classmethod_unrepresentable_default(self):
+        import _testcapi
+        cls = _testcapi.DocStringUnrepresentableSignatureTest
+        descr = cls.__dict__['classmeth']
+        self.assertEqual(self._get_summary_line(descr),
+            "classmeth(type, /, a, b=<x>)")
+
+    @support.cpython_only
+    @requires_docstrings
+    def test_bound_builtin_classmethod_unrepresentable_default(self):
+        import _testcapi
+        cls = _testcapi.DocStringUnrepresentableSignatureTest
+        self.assertEqual(self._get_summary_line(cls.classmeth),
+            "classmeth(a, b=<x>) method of builtins.type instance")
+
+    def test_overridden_text_signature(self):
+        class C:
+            def meth(*args, **kwargs):
+                pass
+            @classmethod
+            def cmeth(*args, **kwargs):
+                pass
+            @staticmethod
+            def smeth(*args, **kwargs):
+                pass
+        for text_signature, unbound, bound in [
+            ("($slf)", "(slf, /)", "()"),
+            ("($slf, /)", "(slf, /)", "()"),
+            ("($slf, /, arg)", "(slf, /, arg)", "(arg)"),
+            ("($slf, /, arg=<x>)", "(slf, /, arg=<x>)", "(arg=<x>)"),
+            ("($slf, arg, /)", "(slf, arg, /)", "(arg, /)"),
+            ("($slf, arg=<x>, /)", "(slf, arg=<x>, /)", "(arg=<x>, /)"),
+            ("(/, slf, arg)", "(/, slf, arg)", "(/, slf, arg)"),
+            ("(/, slf, arg=<x>)", "(/, slf, arg=<x>)", "(/, slf, arg=<x>)"),
+            ("(slf, /, arg)", "(slf, /, arg)", "(arg)"),
+            ("(slf, /, arg=<x>)", "(slf, /, arg=<x>)", "(arg=<x>)"),
+            ("(slf, arg, /)", "(slf, arg, /)", "(arg, /)"),
+            ("(slf, arg=<x>, /)", "(slf, arg=<x>, /)", "(arg=<x>, /)"),
+        ]:
+            with self.subTest(text_signature):
+                C.meth.__text_signature__ = text_signature
+                self.assertEqual(self._get_summary_line(C.meth),
+                        "meth" + unbound)
+                self.assertEqual(self._get_summary_line(C().meth),
+                        "meth" + bound + " method of test.test_pydoc.C instance")
+                C.cmeth.__func__.__text_signature__ = text_signature
+                self.assertEqual(self._get_summary_line(C.cmeth),
+                        "cmeth" + bound + " method of builtins.type instance")
+                C.smeth.__text_signature__ = text_signature
+                self.assertEqual(self._get_summary_line(C.smeth),
+                        "smeth" + unbound)
+
     @requires_docstrings
     def test_staticmethod(self):
         class X:
@@ -1098,7 +1444,7 @@ sm(x, y)
 """)
         self.assertIn("""
  |  Static methods defined here:
- |\x20\x20
+ |
  |  sm(x, y)
  |      A static method
 """, pydoc.plain(pydoc.render_doc(X)))
@@ -1119,7 +1465,7 @@ cm(x) method of builtins.type instance
 """)
         self.assertIn("""
  |  Class methods defined here:
- |\x20\x20
+ |
  |  cm(x) from builtins.type
  |      A class method
 """, pydoc.plain(pydoc.render_doc(X)))
@@ -1277,6 +1623,10 @@ foo
         )
 
 
+@unittest.skipIf(
+    is_emscripten or is_wasi,
+    "Socket server not available on Emscripten/WASI."
+)
 class PydocServerTest(unittest.TestCase):
     """Tests for pydoc._start_server"""
 

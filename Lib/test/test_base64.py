@@ -31,6 +31,8 @@ class LegacyBase64TestCase(unittest.TestCase):
            b"YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXpBQkNE"
            b"RUZHSElKS0xNTk9QUVJTVFVWV1hZWjAxMjM0\nNT"
            b"Y3ODkhQCMwXiYqKCk7Ojw+LC4gW117fQ==\n")
+        eq(base64.encodebytes(b"Aladdin:open sesame"),
+                              b"QWxhZGRpbjpvcGVuIHNlc2FtZQ==\n")
         # Non-bytes
         eq(base64.encodebytes(bytearray(b'abc')), b'YWJj\n')
         eq(base64.encodebytes(memoryview(b'abc')), b'YWJj\n')
@@ -50,6 +52,8 @@ class LegacyBase64TestCase(unittest.TestCase):
            b"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
            b"0123456789!@#0^&*();:<>,. []{}")
         eq(base64.decodebytes(b''), b'')
+        eq(base64.decodebytes(b"QWxhZGRpbjpvcGVuIHNlc2FtZQ==\n"),
+                              b"Aladdin:open sesame")
         # Non-bytes
         eq(base64.decodebytes(bytearray(b'YWJj\n')), b'abc')
         eq(base64.decodebytes(memoryview(b'YWJj\n')), b'abc')
@@ -582,6 +586,7 @@ class BaseXYTestCase(unittest.TestCase):
         eq(base64.a85decode(b'y+<Vd', foldspaces=True, adobe=False), b' '*7)
         eq(base64.a85decode(b'y+<U', foldspaces=True, adobe=False), b' '*6)
         eq(base64.a85decode(b'y+9', foldspaces=True, adobe=False), b' '*5)
+        eq(base64.a85decode(b'aaaaay', foldspaces=True), b'\xc9\x80\x0b@    ')
 
         self.check_other_types(base64.a85decode, b'GB\\6`E-ZP=Df.1GEb>',
                                b"www.python.org")
@@ -685,6 +690,8 @@ class BaseXYTestCase(unittest.TestCase):
         self.assertRaises(ValueError, base64.a85decode, b's8W', adobe=False)
         self.assertRaises(ValueError, base64.a85decode, b's8W-', adobe=False)
         self.assertRaises(ValueError, base64.a85decode, b's8W-"', adobe=False)
+        self.assertRaises(ValueError, base64.a85decode, b'aaaay',
+                          foldspaces=True)
 
     def test_b85decode_errors(self):
         illegal = list(range(33)) + \
@@ -761,14 +768,6 @@ class TestMain(unittest.TestCase):
 
     def get_output(self, *args):
         return script_helper.assert_python_ok('-m', 'base64', *args).out
-
-    def test_encode_decode(self):
-        output = self.get_output('-t')
-        self.assertSequenceEqual(output.splitlines(), (
-            b"b'Aladdin:open sesame'",
-            br"b'QWxhZGRpbjpvcGVuIHNlc2FtZQ==\n'",
-            b"b'Aladdin:open sesame'",
-        ))
 
     def test_encode_file(self):
         with open(os_helper.TESTFN, 'wb') as fp:

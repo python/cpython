@@ -1,4 +1,4 @@
-from .. import util
+from test.test_importlib import util
 
 machinery = util.import_importlib('importlib.machinery')
 

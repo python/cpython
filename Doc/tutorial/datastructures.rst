@@ -48,10 +48,9 @@ objects:
    :noindex:
 
    Remove the item at the given position in the list, and return it.  If no index
-   is specified, ``a.pop()`` removes and returns the last item in the list.  (The
-   square brackets around the *i* in the method signature denote that the parameter
-   is optional, not that you should type square brackets at that position.  You
-   will see this notation frequently in the Python Library Reference.)
+   is specified, ``a.pop()`` removes and returns the last item in the list.
+   It raises an :exc:`IndexError` if the list is empty or the index is
+   outside the list range.
 
 
 .. method:: list.clear()
@@ -106,7 +105,7 @@ An example that uses most of the list methods::
     0
     >>> fruits.index('banana')
     3
-    >>> fruits.index('banana', 4)  # Find next banana starting a position 4
+    >>> fruits.index('banana', 4)  # Find next banana starting at position 4
     6
     >>> fruits.reverse()
     >>> fruits
@@ -122,7 +121,7 @@ An example that uses most of the list methods::
 
 You might have noticed that methods like ``insert``, ``remove`` or ``sort`` that
 only modify the list have no return value printed -- they return the default
-``None``. [1]_  This is a design principle for all mutable data structures in
+``None``. [#]_  This is a design principle for all mutable data structures in
 Python.
 
 Another thing you might notice is that not all data can be sorted or
@@ -143,8 +142,8 @@ Using Lists as Stacks
 
 The list methods make it very easy to use a list as a stack, where the last
 element added is the first element retrieved ("last-in, first-out").  To add an
-item to the top of the stack, use :meth:`append`.  To retrieve an item from the
-top of the stack, use :meth:`pop` without an explicit index.  For example::
+item to the top of the stack, use :meth:`~list.append`.  To retrieve an item from the
+top of the stack, use :meth:`~list.pop` without an explicit index.  For example::
 
    >>> stack = [3, 4, 5]
    >>> stack.append(6)
@@ -268,10 +267,10 @@ it must be parenthesized. ::
    [(0, 0), (1, 1), (2, 4), (3, 9), (4, 16), (5, 25)]
    >>> # the tuple must be parenthesized, otherwise an error is raised
    >>> [x, x**2 for x in range(6)]
-     File "<stdin>", line 1, in <module>
+     File "<stdin>", line 1
        [x, x**2 for x in range(6)]
-                  ^
-   SyntaxError: invalid syntax
+        ^^^^^^^
+   SyntaxError: did you forget parentheses around the comprehension target?
    >>> # flatten a list using a listcomp with two 'for'
    >>> vec = [[1,2,3], [4,5,6], [7,8,9]]
    >>> [num for elem in vec for num in elem]
@@ -303,7 +302,7 @@ The following list comprehension will transpose rows and columns::
    >>> [[row[i] for row in matrix] for i in range(4)]
    [[1, 5, 9], [2, 6, 10], [3, 7, 11], [4, 8, 12]]
 
-As we saw in the previous section, the nested listcomp is evaluated in
+As we saw in the previous section, the inner list comprehension is evaluated in
 the context of the :keyword:`for` that follows it, so this example is
 equivalent to::
 
@@ -341,7 +340,7 @@ The :keyword:`!del` statement
 =============================
 
 There is a way to remove an item from a list given its index instead of its
-value: the :keyword:`del` statement.  This differs from the :meth:`pop` method
+value: the :keyword:`del` statement.  This differs from the :meth:`~list.pop` method
 which returns a value.  The :keyword:`!del` statement can also be used to remove
 slices from a list or clear the entire list (which we did earlier by assignment
 of an empty list to the slice).  For example::
@@ -501,8 +500,8 @@ any immutable type; strings and numbers can always be keys.  Tuples can be used
 as keys if they contain only strings, numbers, or tuples; if a tuple contains
 any mutable object either directly or indirectly, it cannot be used as a key.
 You can't use lists as keys, since lists can be modified in place using index
-assignments, slice assignments, or methods like :meth:`append` and
-:meth:`extend`.
+assignments, slice assignments, or methods like :meth:`~list.append` and
+:meth:`~list.extend`.
 
 It is best to think of a dictionary as a set of *key: value* pairs,
 with the requirement that the keys are unique (within one dictionary). A pair of
@@ -567,7 +566,7 @@ Looping Techniques
 ==================
 
 When looping through dictionaries, the key and corresponding value can be
-retrieved at the same time using the :meth:`items` method. ::
+retrieved at the same time using the :meth:`~dict.items` method. ::
 
    >>> knights = {'gallahad': 'the pure', 'robin': 'the brave'}
    >>> for k, v in knights.items():
@@ -659,10 +658,12 @@ More on Conditions
 The conditions used in ``while`` and ``if`` statements can contain any
 operators, not just comparisons.
 
-The comparison operators ``in`` and ``not in`` check whether a value occurs
-(does not occur) in a sequence.  The operators ``is`` and ``is not`` compare
-whether two objects are really the same object.  All comparison operators have
-the same priority, which is lower than that of all numerical operators.
+
+The comparison operators ``in`` and ``not in`` are membership tests that
+determine whether a value is in (or not in) a container.  The operators ``is``
+and ``is not`` compare whether two objects are really the same object.  All
+comparison operators have the same priority, which is lower than that of all
+numerical operators.
 
 Comparisons can be chained.  For example, ``a < b == c`` tests whether ``a`` is
 less than ``b`` and moreover ``b`` equals ``c``.
@@ -729,5 +730,5 @@ interpreter will raise a :exc:`TypeError` exception.
 
 .. rubric:: Footnotes
 
-.. [1] Other languages may return the mutated object, which allows method
+.. [#] Other languages may return the mutated object, which allows method
        chaining, such as ``d->insert("a")->remove("b")->sort();``.

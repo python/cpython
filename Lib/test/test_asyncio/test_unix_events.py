@@ -3,18 +3,25 @@
 import contextlib
 import errno
 import io
+import multiprocessing
+from multiprocessing.util import _cleanup_tests as multiprocessing_cleanup_tests
 import os
 import pathlib
 import signal
 import socket
 import stat
 import sys
-import tempfile
 import threading
+import time
 import unittest
 from unittest import mock
+import warnings
+
+from test import support
 from test.support import os_helper
 from test.support import socket_helper
+from test.support import wait_process
+from test.support import hashlib_helper
 
 if sys.platform == 'win32':
     raise unittest.SkipTest('UNIX only')
@@ -26,6 +33,10 @@ from asyncio import unix_events
 from test.test_asyncio import utils as test_utils
 
 
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 MOCK_ANY = mock.ANY
 
 
@@ -34,12 +45,9 @@ def EXITCODE(exitcode):
 
 
 def SIGNAL(signum):
-    assert 1 <= signum <= 68
+    if not 1 <= signum <= 68:
+        raise AssertionError(f'invalid signum {signum}')
     return 32768 - signum
-
-
-def tearDownModule():
-    asyncio.set_event_loop_policy(None)
 
 
 def close_pipe_transport(transport):
@@ -314,11 +322,15 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
                 self.loop.run_until_complete(coro)
 
     def test_create_unix_server_existing_path_nonsock(self):
-        with tempfile.NamedTemporaryFile() as file:
-            coro = self.loop.create_unix_server(lambda: None, file.name)
-            with self.assertRaisesRegex(OSError,
-                                        'Address.*is already in use'):
-                self.loop.run_until_complete(coro)
+        path = test_utils.gen_unix_socket_path()
+        self.addCleanup(os_helper.unlink, path)
+        # create the file
+        open(path, "wb").close()
+
+        coro = self.loop.create_unix_server(lambda: None, path)
+        with self.assertRaisesRegex(OSError,
+                                    'Address.*is already in use'):
+            self.loop.run_until_complete(coro)
 
     def test_create_unix_server_ssl_bool(self):
         coro = self.loop.create_unix_server(lambda: None, path='spam',
@@ -355,20 +367,18 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
                          'no socket.SOCK_NONBLOCK (linux only)')
     @socket_helper.skip_unless_bind_unix_socket
     def test_create_unix_server_path_stream_bittype(self):
-        sock = socket.socket(
-            socket.AF_UNIX, socket.SOCK_STREAM | socket.SOCK_NONBLOCK)
-        with tempfile.NamedTemporaryFile() as file:
-            fn = file.name
-        try:
-            with sock:
-                sock.bind(fn)
-                coro = self.loop.create_unix_server(lambda: None, path=None,
-                                                    sock=sock)
-                srv = self.loop.run_until_complete(coro)
-                srv.close()
-                self.loop.run_until_complete(srv.wait_closed())
-        finally:
-            os.unlink(fn)
+        fn = test_utils.gen_unix_socket_path()
+        self.addCleanup(os_helper.unlink, fn)
+
+        sock = socket.socket(socket.AF_UNIX,
+                             socket.SOCK_STREAM | socket.SOCK_NONBLOCK)
+        with sock:
+            sock.bind(fn)
+            coro = self.loop.create_unix_server(lambda: None, path=None,
+                                                sock=sock)
+            srv = self.loop.run_until_complete(coro)
+            srv.close()
+            self.loop.run_until_complete(srv.wait_closed())
 
     def test_create_unix_server_ssl_timeout_with_plain_sock(self):
         coro = self.loop.create_unix_server(lambda: None, path='spam',
@@ -1105,6 +1115,11 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
 
 class AbstractChildWatcherTests(unittest.TestCase):
 
+    def test_warns_on_subclassing(self):
+        with self.assertWarns(DeprecationWarning):
+            class MyWatcher(asyncio.AbstractChildWatcher):
+                pass
+
     def test_not_implemented(self):
         f = mock.Mock()
         watcher = asyncio.AbstractChildWatcher()
@@ -1529,7 +1544,7 @@ class ChildWatcherTestsMixin:
             self.watcher._sig_chld()
 
         if isinstance(self.watcher, asyncio.FastChildWatcher):
-            # here the FastChildWatche enters a deadlock
+            # here the FastChildWatcher enters a deadlock
             # (there is no way to prevent it)
             self.assertFalse(callback.called)
         else:
@@ -1684,12 +1699,16 @@ class ChildWatcherTestsMixin:
 
 class SafeChildWatcherTests (ChildWatcherTestsMixin, test_utils.TestCase):
     def create_watcher(self):
-        return asyncio.SafeChildWatcher()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            return asyncio.SafeChildWatcher()
 
 
 class FastChildWatcherTests (ChildWatcherTestsMixin, test_utils.TestCase):
     def create_watcher(self):
-        return asyncio.FastChildWatcher()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            return asyncio.FastChildWatcher()
 
 
 class PolicyTests(unittest.TestCase):
@@ -1697,24 +1716,40 @@ class PolicyTests(unittest.TestCase):
     def create_policy(self):
         return asyncio.DefaultEventLoopPolicy()
 
-    def test_get_default_child_watcher(self):
+    @mock.patch('asyncio.unix_events.can_use_pidfd')
+    def test_get_default_child_watcher(self, m_can_use_pidfd):
+        m_can_use_pidfd.return_value = False
         policy = self.create_policy()
         self.assertIsNone(policy._watcher)
-
-        watcher = policy.get_child_watcher()
+        with self.assertWarns(DeprecationWarning):
+            watcher = policy.get_child_watcher()
         self.assertIsInstance(watcher, asyncio.ThreadedChildWatcher)
 
         self.assertIs(policy._watcher, watcher)
+        with self.assertWarns(DeprecationWarning):
+            self.assertIs(watcher, policy.get_child_watcher())
 
-        self.assertIs(watcher, policy.get_child_watcher())
+        m_can_use_pidfd.return_value = True
+        policy = self.create_policy()
+        self.assertIsNone(policy._watcher)
+        with self.assertWarns(DeprecationWarning):
+            watcher = policy.get_child_watcher()
+        self.assertIsInstance(watcher, asyncio.PidfdChildWatcher)
+
+        self.assertIs(policy._watcher, watcher)
+        with self.assertWarns(DeprecationWarning):
+            self.assertIs(watcher, policy.get_child_watcher())
 
     def test_get_child_watcher_after_set(self):
         policy = self.create_policy()
-        watcher = asyncio.FastChildWatcher()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            watcher = asyncio.FastChildWatcher()
+            policy.set_child_watcher(watcher)
 
-        policy.set_child_watcher(watcher)
         self.assertIs(policy._watcher, watcher)
-        self.assertIs(watcher, policy.get_child_watcher())
+        with self.assertWarns(DeprecationWarning):
+            self.assertIs(watcher, policy.get_child_watcher())
 
     def test_get_child_watcher_thread(self):
 
@@ -1723,7 +1758,9 @@ class PolicyTests(unittest.TestCase):
 
             self.assertIsInstance(policy.get_event_loop(),
                                   asyncio.AbstractEventLoop)
-            watcher = policy.get_child_watcher()
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                watcher = policy.get_child_watcher()
 
             self.assertIsInstance(watcher, asyncio.SafeChildWatcher)
             self.assertIsNone(watcher._loop)
@@ -1731,7 +1768,9 @@ class PolicyTests(unittest.TestCase):
             policy.get_event_loop().close()
 
         policy = self.create_policy()
-        policy.set_child_watcher(asyncio.SafeChildWatcher())
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            policy.set_child_watcher(asyncio.SafeChildWatcher())
 
         th = threading.Thread(target=f)
         th.start()
@@ -1739,12 +1778,15 @@ class PolicyTests(unittest.TestCase):
 
     def test_child_watcher_replace_mainloop_existing(self):
         policy = self.create_policy()
-        loop = policy.get_event_loop()
+        loop = policy.new_event_loop()
+        policy.set_event_loop(loop)
 
         # Explicitly setup SafeChildWatcher,
         # default ThreadedChildWatcher has no _loop property
-        watcher = asyncio.SafeChildWatcher()
-        policy.set_child_watcher(watcher)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            watcher = asyncio.SafeChildWatcher()
+            policy.set_child_watcher(watcher)
         watcher.attach_loop(loop)
 
         self.assertIs(watcher._loop, loop)
@@ -1831,6 +1873,119 @@ class TestFunctional(unittest.TestCase):
             rsock.close()
             wsock.close()
 
+
+@support.requires_fork()
+class TestFork(unittest.IsolatedAsyncioTestCase):
+
+    async def test_fork_not_share_event_loop(self):
+        # The forked process should not share the event loop with the parent
+        loop = asyncio.get_running_loop()
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        self.addCleanup(os.close, w)
+        pid = os.fork()
+        if pid == 0:
+            # child
+            try:
+                with self.assertWarns(DeprecationWarning):
+                    loop = asyncio.get_event_loop_policy().get_event_loop()
+                os.write(w, b'LOOP:' + str(id(loop)).encode())
+            except RuntimeError:
+                os.write(w, b'NO LOOP')
+            except BaseException as e:
+                os.write(w, b'ERROR:' + ascii(e).encode())
+            finally:
+                os._exit(0)
+        else:
+            # parent
+            result = os.read(r, 100)
+            self.assertEqual(result[:5], b'LOOP:', result)
+            self.assertNotEqual(int(result[5:]), id(loop))
+            wait_process(pid, exitcode=0)
+
+    @hashlib_helper.requires_hashdigest('md5')
+    def test_fork_signal_handling(self):
+        self.addCleanup(multiprocessing_cleanup_tests)
+
+        # Sending signal to the forked process should not affect the parent
+        # process
+        ctx = multiprocessing.get_context('fork')
+        manager = ctx.Manager()
+        self.addCleanup(manager.shutdown)
+        child_started = manager.Event()
+        child_handled = manager.Event()
+        parent_handled = manager.Event()
+
+        def child_main():
+            def on_sigterm(*args):
+                child_handled.set()
+                sys.exit()
+
+            signal.signal(signal.SIGTERM, on_sigterm)
+            child_started.set()
+            while True:
+                time.sleep(1)
+
+        async def main():
+            loop = asyncio.get_running_loop()
+            loop.add_signal_handler(signal.SIGTERM, lambda *args: parent_handled.set())
+
+            process = ctx.Process(target=child_main)
+            process.start()
+            child_started.wait()
+            os.kill(process.pid, signal.SIGTERM)
+            process.join(timeout=support.SHORT_TIMEOUT)
+
+            async def func():
+                await asyncio.sleep(0.1)
+                return 42
+
+            # Test parent's loop is still functional
+            self.assertEqual(await asyncio.create_task(func()), 42)
+
+        asyncio.run(main())
+
+        child_handled.wait(timeout=support.SHORT_TIMEOUT)
+        self.assertFalse(parent_handled.is_set())
+        self.assertTrue(child_handled.is_set())
+
+    @hashlib_helper.requires_hashdigest('md5')
+    def test_fork_asyncio_run(self):
+        self.addCleanup(multiprocessing_cleanup_tests)
+
+        ctx = multiprocessing.get_context('fork')
+        manager = ctx.Manager()
+        self.addCleanup(manager.shutdown)
+        result = manager.Value('i', 0)
+
+        async def child_main():
+            await asyncio.sleep(0.1)
+            result.value = 42
+
+        process = ctx.Process(target=lambda: asyncio.run(child_main()))
+        process.start()
+        process.join()
+
+        self.assertEqual(result.value, 42)
+
+    @hashlib_helper.requires_hashdigest('md5')
+    def test_fork_asyncio_subprocess(self):
+        self.addCleanup(multiprocessing_cleanup_tests)
+
+        ctx = multiprocessing.get_context('fork')
+        manager = ctx.Manager()
+        self.addCleanup(manager.shutdown)
+        result = manager.Value('i', 1)
+
+        async def child_main():
+            proc = await asyncio.create_subprocess_exec(sys.executable, '-c', 'pass')
+            result.value = await proc.wait()
+
+        process = ctx.Process(target=lambda: asyncio.run(child_main()))
+        process.start()
+        process.join()
+
+        self.assertEqual(result.value, 0)
 
 if __name__ == '__main__':
     unittest.main()

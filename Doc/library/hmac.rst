@@ -14,7 +14,7 @@
 This module implements the HMAC algorithm as described by :rfc:`2104`.
 
 
-.. function:: new(key, msg=None, digestmod='')
+.. function:: new(key, msg=None, digestmod)
 
    Return a new hmac object.  *key* is a bytes or bytearray object giving the
    secret key.  If *msg* is present, the method call ``update(msg)`` is made.
@@ -27,10 +27,9 @@ This module implements the HMAC algorithm as described by :rfc:`2104`.
       Parameter *msg* can be of any type supported by :mod:`hashlib`.
       Parameter *digestmod* can be the name of a hash algorithm.
 
-   .. deprecated-removed:: 3.4 3.8
-      MD5 as implicit default digest for *digestmod* is deprecated.
-      The digestmod parameter is now required.  Pass it as a keyword
-      argument to avoid awkwardness when you do not have an initial msg.
+   .. versionchanged:: 3.8
+      The *digestmod* argument is now required.  Pass it as a keyword
+      argument to avoid awkwardness when you do not have an initial *msg*.
 
 
 .. function:: digest(key, msg, digest)
@@ -69,7 +68,7 @@ An HMAC object has the following methods:
 
    .. warning::
 
-      When comparing the output of :meth:`digest` to an externally-supplied
+      When comparing the output of :meth:`digest` to an externally supplied
       digest during a verification routine, it is recommended to use the
       :func:`compare_digest` function instead of the ``==`` operator
       to reduce the vulnerability to timing attacks.
@@ -83,7 +82,7 @@ An HMAC object has the following methods:
 
    .. warning::
 
-      When comparing the output of :meth:`hexdigest` to an externally-supplied
+      When comparing the output of :meth:`hexdigest` to an externally supplied
       digest during a verification routine, it is recommended to use the
       :func:`compare_digest` function instead of the ``==`` operator
       to reduce the vulnerability to timing attacks.
@@ -114,11 +113,9 @@ A hash object has the following attributes:
    .. versionadded:: 3.4
 
 
-.. deprecated:: 3.9
-
-   The undocumented attributes ``HMAC.digest_cons``, ``HMAC.inner``, and
-   ``HMAC.outer`` are internal implementation details and will be removed in
-   Python 3.10.
+.. versionchanged:: 3.10
+   Removed the undocumented attributes ``HMAC.digest_cons``, ``HMAC.inner``,
+   and ``HMAC.outer``.
 
 This module also provides the following helper function:
 

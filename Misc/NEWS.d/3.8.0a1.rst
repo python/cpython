@@ -17,7 +17,7 @@ malicious or buggy certificate can result into segfault. Vulnerability
 .. section: Security
 
 The :option:`-I` command line option (run Python in isolated mode) is now
-also copied by the :mod:`multiprocessing` and :mod:`distutils` modules when
+also copied by the :mod:`multiprocessing` and ``distutils`` modules when
 spawning child processes. Previously, only :option:`-E` and :option:`-s`
 options (enabled by :option:`-I`) were copied.
 
@@ -361,7 +361,7 @@ the "n" formatter.
 .. nonce: gjm1LO
 .. section: Core and Builtins
 
-Fix a possible segfault involving a newly-created coroutine.  Patch by
+Fix a possible segfault involving a newly created coroutine.  Patch by
 Zackery Spytz.
 
 ..
@@ -380,7 +380,7 @@ Implement :pep:`572` (assignment expressions). Patch by Emily Morehouse.
 .. nonce: voIdcp
 .. section: Core and Builtins
 
-Speed up :class:`namedtuple` attribute access by 1.6x using a C fast-path
+Speed up :func:`namedtuple` attribute access by 1.6x using a C fast-path
 for the name descriptors. Patch by Pablo Galindo.
 
 ..
@@ -882,7 +882,7 @@ Update valgrind suppression list to use
 .. nonce: GIOm_8
 .. section: Core and Builtins
 
-Added the "socket" option in the `stat.filemode()` Python implementation to
+Added the "socket" option in the ``stat.filemode()`` Python implementation to
 match the C implementation.
 
 ..
@@ -1271,8 +1271,8 @@ parentheses in the string representation.
 .. nonce: tDBciE
 .. section: Core and Builtins
 
-Added support for the `setpgroup`, `resetids`, `setsigmask`, `setsigdef` and
-`scheduler` parameters of `posix_spawn`. Patch by Pablo Galindo.
+Added support for the ``setpgroup``, ``resetids``, ``setsigmask``, ``setsigdef`` and
+``scheduler`` parameters of ``posix_spawn``. Patch by Pablo Galindo.
 
 ..
 
@@ -1735,7 +1735,7 @@ Patch by Zackery Spytz.
 .. nonce: UoC319
 .. section: Core and Builtins
 
-Fix a crash in `ctypes.cast()` in case the type argument is a ctypes
+Fix a crash in ``ctypes.cast()`` in case the type argument is a ctypes
 structured data type. Patch by Eryk Sun and Oren Milman.
 
 ..
@@ -1745,7 +1745,7 @@ structured data type. Patch by Eryk Sun and Oren Milman.
 .. nonce: jgYsSA
 .. section: Core and Builtins
 
-Fix a crash in `os.utime()` in case of a bad ns argument. Patch by Oren
+Fix a crash in ``os.utime()`` in case of a bad ns argument. Patch by Oren
 Milman.
 
 ..
@@ -1934,7 +1934,7 @@ failure.
 .. nonce: _ct_0H
 .. section: Library
 
-The :data:`time.CLOCK_UPTIME_RAW` constant is now available for macOS 10.12.
+The :const:`time.CLOCK_UPTIME_RAW` constant is now available for macOS 10.12.
 
 ..
 
@@ -1965,7 +1965,7 @@ result of an internal future if it's already done.
 .. section: Library
 
 Add a deprecated warning for the :meth:`threading.Thread.isAlive` method.
-Patch by Dong-hee Na.
+Patch by Donghee Na.
 
 ..
 
@@ -2006,8 +2006,8 @@ Improved support of custom data descriptors in :func:`help` and
 .. nonce: V4kNN3
 .. section: Library
 
-The `crypt` module now internally uses the `crypt_r()` library function
-instead of `crypt()` when available.
+The ``crypt`` module now internally uses the ``crypt_r()`` library function
+instead of ``crypt()`` when available.
 
 ..
 
@@ -2025,7 +2025,7 @@ Fixed help() on metaclasses. Patch by Sanyam Khurana.
 .. nonce: PutiOC
 .. section: Library
 
-Expose ``raise(signum)`` as `raise_signal`
+Expose ``raise(signum)`` as ``raise_signal``
 
 ..
 
@@ -2248,7 +2248,7 @@ the pool is still running.
 .. nonce: abB4BN
 .. section: Library
 
-When a :class:`Mock` instance was used to wrap an object, if `side_effect`
+When a :class:`Mock` instance was used to wrap an object, if ``side_effect``
 is used in one of the mocks of it methods, don't call the original
 implementation and return the result of using the side effect the same way
 that it is done with return_value.
@@ -2270,7 +2270,7 @@ last release was in 2000. Mac OS 9 last release was in 2001.
 .. nonce: laV_IE
 .. section: Library
 
-:func:`~distutils.utils.check_environ` of :mod:`distutils.utils` now catches
+:func:`~distutils.utils.check_environ` of ``distutils.utils`` now catches
 :exc:`KeyError` on calling :func:`pwd.getpwuid`: don't create the ``HOME``
 environment variable in this case.
 
@@ -2377,7 +2377,7 @@ compliant, and will not throw an exception on a trailing '%'.
 .. nonce: vepCSJ
 .. section: Library
 
-The function `platform.popen` has been removed, it was deprecated since
+The function ``platform.popen`` has been removed, it was deprecated since
 Python 3.3: use :func:`os.popen` instead.
 
 ..
@@ -2529,9 +2529,9 @@ Fix incorrect parsing of :class:`_io.IncrementalNewlineDecoder`'s
 .. nonce: CulMN8
 .. section: Library
 
-Remove `StreamReaderProtocol._untrack_reader`. The call to `_untrack_reader`
+Remove ``StreamReaderProtocol._untrack_reader``. The call to ``_untrack_reader``
 is currently performed too soon, causing the protocol to forget about the
-reader before `connection_lost` can run and feed the EOF to the reader.
+reader before ``connection_lost`` can run and feed the EOF to the reader.
 
 ..
 
@@ -2583,8 +2583,8 @@ polling for new events.
 .. nonce: ltSrtr
 .. section: Library
 
-`importlib` no longer logs `wrote <bytecode path>` redundantly after
-`(created|could not create) <bytecode path>` is already logged. Patch by
+``importlib`` no longer logs ``wrote <bytecode path>`` redundantly after
+``(created|could not create) <bytecode path>`` is already logged. Patch by
 Quentin Agren.
 
 ..
@@ -2717,7 +2717,7 @@ Use :func:`socket.CMSG_SPACE` to calculate ancillary data size instead of
 .. nonce: rWBb43
 .. section: Library
 
-The `mailbox.mbox.get_string` function *from_* parameter can now
+The ``mailbox.mbox.get_string`` function *from_* parameter can now
 successfully be set to a non-default value.
 
 ..
@@ -2747,7 +2747,7 @@ smaller file). Also, change the default compression level to 6 (tradeoff).
 .. nonce: xo5LAr
 .. section: Library
 
-The :term:`2to3` :2to3fixer:`execfile` fixer now opens the file with mode
+The 2to3 ``execfile`` fixer now opens the file with mode
 ``'rb'``.  Patch by Zackery Spytz.
 
 ..
@@ -2799,7 +2799,7 @@ children which are instances of ``Element`` subclasses.
 .. nonce: z2FbOp
 .. section: Library
 
-:class:`smtplib.SMTP` objects now always have a `sock` attribute present
+:class:`smtplib.SMTP` objects now always have a ``sock`` attribute present
 
 ..
 
@@ -2914,7 +2914,7 @@ Fix inspect module polluted ``sys.modules`` when parsing
 .. nonce: Wo2PoJ
 .. section: Library
 
-Add `mtime` argument to `gzip.compress` for reproducible output. Patch by
+Add ``mtime`` argument to ``gzip.compress`` for reproducible output. Patch by
 Guo Ci Teo.
 
 ..
@@ -3019,7 +3019,7 @@ argument.  Patch by Andrés Delfino.
 .. nonce: rSPBW9
 .. section: Library
 
-In :class:`QueueHandler`, clear `exc_text` from :class:`LogRecord` to
+In :class:`QueueHandler`, clear ``exc_text`` from :class:`LogRecord` to
 prevent traceback from being written twice.
 
 ..
@@ -3060,8 +3060,8 @@ and will be removed in future Python versions.
 .. nonce: CUE8LU
 .. section: Library
 
-Add deprecation warning when `loop` is used in methods: `asyncio.sleep`,
-`asyncio.wait` and `asyncio.wait_for`.
+Add deprecation warning when ``loop`` is used in methods: ``asyncio.sleep``,
+``asyncio.wait`` and ``asyncio.wait_for``.
 
 ..
 
@@ -3070,7 +3070,7 @@ Add deprecation warning when `loop` is used in methods: `asyncio.sleep`,
 .. nonce: Pr3-iG
 .. section: Library
 
-ZIP files created by :mod:`distutils` will now include entries for
+ZIP files created by ``distutils`` will now include entries for
 directories.
 
 ..
@@ -3191,7 +3191,7 @@ the stream is deleted (garbage collected) without ``close()`` call.
 .. nonce: 3IPIH5
 .. section: Library
 
-`Enum._missing_`:  raise `ValueError` if None returned and `TypeError` if
+``Enum._missing_``:  raise ``ValueError`` if None returned and ``TypeError`` if
 non-member is returned.
 
 ..
@@ -3302,8 +3302,8 @@ issues on Windows.
 .. nonce: xL7-kG
 .. section: Library
 
-Fix possible mojibake in the error message of `pwd.getpwnam` and
-`grp.getgrnam` using string representation because of invisible characters
+Fix possible mojibake in the error message of ``pwd.getpwnam`` and
+``grp.getgrnam`` using string representation because of invisible characters
 or trailing whitespaces. Patch by William Grzybowski.
 
 ..
@@ -3395,8 +3395,8 @@ Zackery Spytz.
 .. nonce: S0Irst
 .. section: Library
 
-Fix parsing non-ASCII identifiers in :mod:`lib2to3.pgen2.tokenize` (PEP
-3131).
+Fix parsing non-ASCII identifiers in :mod:`!lib2to3.pgen2.tokenize`
+(:pep:`3131`).
 
 ..
 
@@ -3592,7 +3592,7 @@ Python 3.5.
 .. nonce: V8Ou3K
 .. section: Library
 
-Deprecate :meth:`__getitem__` methods of
+Deprecate :meth:`~object.__getitem__` methods of
 :class:`xml.dom.pulldom.DOMEventStream`, :class:`wsgiref.util.FileWrapper`
 and :class:`fileinput.FileInput`.
 
@@ -3720,7 +3720,7 @@ Deprecate passing non-ThreadPoolExecutor instances to
 .. section: Library
 
 Restore ``msilib.Win64`` to preserve backwards compatibility since it's
-already used by :mod:`distutils`' ``bdist_msi`` command.
+already used by ``distutils``' ``bdist_msi`` command.
 
 ..
 
@@ -3817,8 +3817,8 @@ user.
 .. nonce: w6g7tn
 .. section: Library
 
-The :2to3fixer:`reload` fixer now uses :func:`importlib.reload` instead of
-deprecated :func:`imp.reload`.
+The ``reload`` fixer now uses :func:`importlib.reload` instead of
+deprecated :func:`!imp.reload`.
 
 ..
 
@@ -4575,8 +4575,8 @@ OpenSSL 1.1.1
 .. nonce: nzQgD8
 .. section: Library
 
-Release GIL on `grp.getgrnam`, `grp.getgrgid`, `pwd.getpwnam` and
-`pwd.getpwuid` if reentrant variants of these functions are available. Patch
+Release GIL on ``grp.getgrnam``, ``grp.getgrgid``, ``pwd.getpwnam`` and
+``pwd.getpwuid`` if reentrant variants of these functions are available. Patch
 by William Grzybowski.
 
 ..
@@ -4617,7 +4617,7 @@ Based on patch by c-fos.
 .. section: Library
 
 Remove HMAC default to md5 marked for removal in 3.8 (removal originally
-planned in 3.6, bump to 3.8 in gh-7062).
+planned in 3.6, bump to 3.8 in PR 7062).
 
 ..
 
@@ -4656,8 +4656,8 @@ default.
 .. nonce: C6Hnd1
 .. section: Library
 
-Do not simplify arguments to `typing.Union`. Now `Union[Manager, Employee]`
-is not simplified to `Employee` at runtime. Such simplification previously
+Do not simplify arguments to ``typing.Union``. Now ``Union[Manager, Employee]``
+is not simplified to ``Employee`` at runtime. Such simplification previously
 caused several bugs and limited possibilities for introspection.
 
 ..
@@ -4736,7 +4736,7 @@ Patch by Zvi Effron
 .. nonce: taxbVT
 .. section: Library
 
-Fix race condition with `ReadTransport.resume_reading` in Windows proactor
+Fix race condition with ``ReadTransport.resume_reading`` in Windows proactor
 event loop.
 
 ..
@@ -4746,7 +4746,7 @@ event loop.
 .. nonce: pj2Mbb
 .. section: Library
 
-Fix failure in `typing.get_type_hints()` when ClassVar was provided as a
+Fix failure in ``typing.get_type_hints()`` when ClassVar was provided as a
 string forward reference.
 
 ..
@@ -4974,7 +4974,7 @@ Enum members.
 .. section: Library
 
 Update error message when constructing invalid inspect.Parameters Patch by
-Dong-hee Na.
+Donghee Na.
 
 ..
 
@@ -5044,8 +5044,8 @@ functionality.
 .. nonce: C_K-J9
 .. section: Library
 
-`ConfigParser.items()` was fixed so that key-value pairs passed in via
-`vars` are not included in the resulting output.
+``ConfigParser.items()`` was fixed so that key-value pairs passed in via
+:func:`vars` are not included in the resulting output.
 
 ..
 
@@ -5150,7 +5150,7 @@ instead of a wrapper function for exit callbacks.
 .. nonce: B56Hc1
 .. section: Library
 
-Fix FD leak in `_SelectorSocketTransport`  Patch by Vlad Starostin.
+Fix FD leak in ``_SelectorSocketTransport``  Patch by Vlad Starostin.
 
 ..
 
@@ -5576,8 +5576,8 @@ documentation.
 .. section: Library
 
 Improved exceptions raised for invalid number of channels and sample width
-when read an audio file in modules :mod:`aifc`, :mod:`wave` and
-:mod:`sunau`.
+when read an audio file in modules :mod:`!aifc`, :mod:`wave` and
+:mod:`!sunau`.
 
 ..
 
@@ -5777,7 +5777,7 @@ helper methods that can be used instead ``_dump_registry``,
 .. nonce: bvHDOc
 .. section: Library
 
-Fixed `asyncio.Condition` issue which silently ignored cancellation after
+Fixed ``asyncio.Condition`` issue which silently ignored cancellation after
 notifying and cancelling a conditional lock. Patch by Bar Harel.
 
 ..
@@ -5951,7 +5951,7 @@ Wirtel
 
 Add TLSVersion constants and SSLContext.maximum_version / minimum_version
 attributes. The new API wraps OpenSSL 1.1
-https://www.openssl.org/docs/man1.1.0/ssl/SSL_CTX_set_min_proto_version.html
+https://web.archive.org/web/20180309043602/https://www.openssl.org/docs/man1.1.0/ssl/SSL_CTX_set_min_proto_version.html
 feature.
 
 ..
@@ -5992,7 +5992,7 @@ Add Ttk spinbox widget to :mod:`tkinter.ttk`.  Patch by Alan D Moore.
 .. nonce: flC-dE
 .. section: Library
 
-:mod:`profile` CLI accepts `-m module_name` as an alternative to script
+:mod:`profile` CLI accepts ``-m module_name`` as an alternative to script
 path.
 
 ..
@@ -6147,8 +6147,8 @@ Support arrays >=2GiB in :mod:`ctypes`.  Patch by Segev Finer.
 .. nonce: pDsFJl
 .. section: Library
 
-Removed support of arguments in `tkinter.ttk.Treeview.selection`. It was
-deprecated in 3.6.  Use specialized methods like `selection_set` for
+Removed support of arguments in ``tkinter.ttk.Treeview.selection``. It was
+deprecated in 3.6.  Use specialized methods like ``selection_set`` for
 changing the selection.
 
 ..
@@ -6224,7 +6224,7 @@ imported from ``typing`` directly.
 .. nonce: 2eVOYS
 .. section: Documentation
 
-Fix the documentation about an unexisting `f_restricted` attribute in the
+Fix the documentation about an unexisting ``f_restricted`` attribute in the
 frame object. Patch by Stéphane Wirtel
 
 ..
@@ -6311,7 +6311,7 @@ Document how passing coroutines to asyncio.wait() can be confusing.
 .. nonce: p9PoYv
 .. section: Documentation
 
-Make clear that ``==`` operator sometimes is equivalent to `is`. The ``<``,
+Make clear that ``==`` operator sometimes is equivalent to ``is``. The ``<``,
 ``<=``, ``>`` and ``>=`` operators are only defined where they make sense.
 
 ..
@@ -6409,7 +6409,7 @@ Improve the documentation of :func:`asyncio.open_connection`,
 .. nonce: E5gba1
 .. section: Documentation
 
-Document that `asyncio.wait()` does not cancel its futures on timeout.
+Document that ``asyncio.wait()`` does not cancel its futures on timeout.
 
 ..
 
@@ -6660,7 +6660,7 @@ Stéphane Wirtel
 .. nonce: w1m_8r
 .. section: Documentation
 
-Improve docstrings for `pathlib.PurePath` subclasses.
+Improve docstrings for ``pathlib.PurePath`` subclasses.
 
 ..
 
@@ -6997,7 +6997,7 @@ Use 3072 RSA keys and SHA-256 signature for test certs and keys.
 .. nonce: H8fCGa
 .. section: Tests
 
-Remove special condition for AIX in `test_subprocess.test_undecodable_env`
+Remove special condition for AIX in ``test_subprocess.test_undecodable_env``
 
 ..
 
@@ -7006,7 +7006,7 @@ Remove special condition for AIX in `test_subprocess.test_undecodable_env`
 .. nonce: IsRDPB
 .. section: Tests
 
-Fix `test_utf8_mode.test_cmd_line` for AIX
+Fix ``test_utf8_mode.test_cmd_line`` for AIX
 
 ..
 
@@ -7034,9 +7034,9 @@ Fix ftplib test for TLS 1.3 by reading from data socket.
 .. nonce: g7TwYm
 .. section: Tests
 
-Fix `test_socket` on AIX 6.1 and later IPv6 zone id supports only
-supported by inet_pton6_zone() Switch to runtime-based platform.system() to
-establish current platform  rather than build-time based sys.platform()
+Fix ``test_socket`` on AIX 6.1 and later IPv6 zone id supports only
+supported by ``inet_pton6_zone()``. Switch to runtime-based ``platform.system()`` to
+establish current platform rather than build-time based ``sys.platform()``
 
 ..
 
@@ -7172,8 +7172,8 @@ Fix failing ``test_asyncio`` on macOS 10.12.2+ due to transport of
 .. nonce: IKDsqu
 .. section: Tests
 
-Making sure the `SMTPUTF8SimTests` class of tests gets run in
-test_smtplib.py.
+Making sure the ``SMTPUTF8SimTests`` class of tests gets run in
+``test_smtplib.py``.
 
 ..
 
@@ -7282,7 +7282,7 @@ CFLAGS to build third-party C extensions through distutils.
 .. nonce: XZTttb
 .. section: Build
 
-Fix a compiler error when statically linking `pyexpat` in `Modules/Setup`.
+Fix a compiler error when statically linking ``pyexpat`` in ``Modules/Setup``.
 
 ..
 
@@ -7520,8 +7520,8 @@ suffixes).
 .. nonce: o7G_UO
 .. section: Build
 
-By default, modules configured in `Modules/Setup` are no longer built with
-`-DPy_BUILD_CORE`. Instead, modules that specifically need that preprocessor
+By default, modules configured in ``Modules/Setup`` are no longer built with
+``-DPy_BUILD_CORE``. Instead, modules that specifically need that preprocessor
 definition include it in their individual entries.
 
 ..
@@ -8090,7 +8090,7 @@ Fix imports in idlelib.window.
 .. nonce: QEaANl
 .. section: IDLE
 
-Proper format `calltip` when the function has no docstring.
+Proper format ``calltip`` when the function has no docstring.
 
 ..
 
@@ -8253,7 +8253,7 @@ Explain how IDLE's Shell displays output.
 
 Improve the doc about IDLE running user code.   The section is renamed from
 "IDLE -- console differences" is renamed "Running user code". It mostly
-covers the implications of using custom sys.stdxxx objects.
+covers the implications of using custom :samp:`sys.std{xxx}` objects.
 
 ..
 
@@ -8765,7 +8765,7 @@ for relative path to files in current directory.
 .. nonce: fmehdG
 .. section: C API
 
-The :c:func:`PyByteArray_Init` and :c:func:`PyByteArray_Fini` functions have
+The :c:func:`!PyByteArray_Init` and :c:func:`!PyByteArray_Fini` functions have
 been removed. They did nothing since Python 2.7.4 and Python 3.2.0, were
 excluded from the limited API (stable ABI), and were not documented.
 
@@ -8836,7 +8836,7 @@ Py_LIMITED_API. Patch by Arthur Neufeld.
 .. nonce: gFd85N
 .. section: C API
 
-The :c:func:`_PyObject_GC_TRACK` and :c:func:`_PyObject_GC_UNTRACK` macros
+The :c:func:`!_PyObject_GC_TRACK` and :c:func:`!_PyObject_GC_UNTRACK` macros
 have been removed from the public C API.
 
 ..

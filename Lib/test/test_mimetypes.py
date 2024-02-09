@@ -1,5 +1,4 @@
 import io
-import locale
 import mimetypes
 import pathlib
 import sys
@@ -33,6 +32,13 @@ def tearDownModule():
 class MimeTypesTestCase(unittest.TestCase):
     def setUp(self):
         self.db = mimetypes.MimeTypes()
+
+    def test_case_sensitivity(self):
+        eq = self.assertEqual
+        eq(self.db.guess_type("foobar.HTML"), self.db.guess_type("foobar.html"))
+        eq(self.db.guess_type("foobar.TGZ"), self.db.guess_type("foobar.tgz"))
+        eq(self.db.guess_type("foobar.tar.Z"), ("application/x-tar", "compress"))
+        eq(self.db.guess_type("foobar.tar.z"), (None, None))
 
     def test_default_data(self):
         eq = self.assertEqual
@@ -138,11 +144,6 @@ class MimeTypesTestCase(unittest.TestCase):
         self.assertNotIn('.no-such-ext', all)
 
     def test_encoding(self):
-        getpreferredencoding = locale.getpreferredencoding
-        self.addCleanup(setattr, locale, 'getpreferredencoding',
-                                 getpreferredencoding)
-        locale.getpreferredencoding = lambda: 'ascii'
-
         filename = support.findfile("mime.types")
         mimes = mimetypes.MimeTypes([filename])
         exts = mimes.guess_all_extensions('application/vnd.geocube+xml',
@@ -159,6 +160,15 @@ class MimeTypesTestCase(unittest.TestCase):
         # Poison should be gone.
         self.assertEqual(mimetypes.guess_extension('foo/bar'), None)
 
+    @unittest.skipIf(sys.platform.startswith("win"), "Non-Windows only")
+    def test_guess_known_extensions(self):
+        # Issue 37529
+        # The test fails on Windows because Windows adds mime types from the Registry
+        # and that creates some duplicates.
+        from mimetypes import types_map
+        for v in types_map.values():
+            self.assertIsNotNone(mimetypes.guess_extension(v))
+
     def test_preferred_extension(self):
         def check_extensions():
             self.assertEqual(mimetypes.guess_extension('application/octet-stream'), '.bin')
@@ -170,6 +180,8 @@ class MimeTypesTestCase(unittest.TestCase):
             self.assertEqual(mimetypes.guess_extension('application/x-troff'), '.roff')
             self.assertEqual(mimetypes.guess_extension('application/xml'), '.xsl')
             self.assertEqual(mimetypes.guess_extension('audio/mpeg'), '.mp3')
+            self.assertEqual(mimetypes.guess_extension('image/avif'), '.avif')
+            self.assertEqual(mimetypes.guess_extension('image/webp'), '.webp')
             self.assertEqual(mimetypes.guess_extension('image/jpeg'), '.jpg')
             self.assertEqual(mimetypes.guess_extension('image/tiff'), '.tiff')
             self.assertEqual(mimetypes.guess_extension('message/rfc822'), '.eml')

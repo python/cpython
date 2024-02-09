@@ -30,15 +30,9 @@ The :mod:`shlex` module defines the following functions:
    in POSIX mode by default, but uses non-POSIX mode if the *posix* argument is
    false.
 
-   .. note::
-
-      Since the :func:`split` function instantiates a :class:`~shlex.shlex`
-      instance, passing ``None`` for *s* will read the string to split from
-      standard input.
-
-   .. deprecated:: 3.9
-      Passing ``None`` for *s* will raise an exception in future Python
-      versions.
+   .. versionchanged:: 3.12
+      Passing ``None`` for *s* argument now raises an exception, rather than
+      reading :data:`sys.stdin`.
 
 .. function:: join(split_command)
 

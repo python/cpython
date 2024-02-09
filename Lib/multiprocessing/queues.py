@@ -139,13 +139,10 @@ class Queue(object):
 
     def close(self):
         self._closed = True
-        try:
-            self._reader.close()
-        finally:
-            close = self._close
-            if close:
-                self._close = None
-                close()
+        close = self._close
+        if close:
+            self._close = None
+            close()
 
     def join_thread(self):
         debug('Queue.join_thread()')
@@ -161,6 +158,20 @@ class Queue(object):
         except AttributeError:
             pass
 
+    def _terminate_broken(self):
+        # Close a Queue on error.
+
+        # gh-94777: Prevent queue writing to a pipe which is no longer read.
+        self._reader.close()
+
+        # gh-107219: Close the connection writer which can unblock
+        # Queue._feed() if it was stuck in send_bytes().
+        if sys.platform == 'win32':
+            self._writer.close()
+
+        self.close()
+        self.join_thread()
+
     def _start_thread(self):
         debug('Queue._start_thread()')
 
@@ -169,15 +180,22 @@ class Queue(object):
         self._thread = threading.Thread(
             target=Queue._feed,
             args=(self._buffer, self._notempty, self._send_bytes,
-                  self._wlock, self._writer.close, self._ignore_epipe,
-                  self._on_queue_feeder_error, self._sem),
-            name='QueueFeederThread'
+                  self._wlock, self._reader.close, self._writer.close,
+                  self._ignore_epipe, self._on_queue_feeder_error,
+                  self._sem),
+            name='QueueFeederThread',
+            daemon=True,
         )
-        self._thread.daemon = True
 
-        debug('doing self._thread.start()')
-        self._thread.start()
-        debug('... done self._thread.start()')
+        try:
+            debug('doing self._thread.start()')
+            self._thread.start()
+            debug('... done self._thread.start()')
+        except:
+            # gh-109047: During Python finalization, creating a thread
+            # can fail with RuntimeError.
+            self._thread = None
+            raise
 
         if not self._joincancelled:
             self._jointhread = Finalize(
@@ -211,8 +229,8 @@ class Queue(object):
             notempty.notify()
 
     @staticmethod
-    def _feed(buffer, notempty, send_bytes, writelock, close, ignore_epipe,
-              onerror, queue_sem):
+    def _feed(buffer, notempty, send_bytes, writelock, reader_close,
+              writer_close, ignore_epipe, onerror, queue_sem):
         debug('starting thread to feed data to pipe')
         nacquire = notempty.acquire
         nrelease = notempty.release
@@ -238,7 +256,8 @@ class Queue(object):
                         obj = bpopleft()
                         if obj is sentinel:
                             debug('feeder thread got sentinel -- exiting')
-                            close()
+                            reader_close()
+                            writer_close()
                             return
 
                         # serialize the data before acquiring the lock
@@ -280,6 +299,8 @@ class Queue(object):
         """
         import traceback
         traceback.print_exc()
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
 
 _sentinel = object()

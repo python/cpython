@@ -11,6 +11,7 @@ from _ctypes import CFuncPtr as _CFuncPtr
 from _ctypes import __version__ as _ctypes_version
 from _ctypes import RTLD_LOCAL, RTLD_GLOBAL
 from _ctypes import ArgumentError
+from _ctypes import SIZEOF_TIME_T
 
 from struct import calcsize as _calcsize
 
@@ -92,15 +93,18 @@ def CFUNCTYPE(restype, *argtypes, **kw):
         flags |= _FUNCFLAG_USE_LASTERROR
     if kw:
         raise ValueError("unexpected keyword argument(s) %s" % kw.keys())
+
     try:
         return _c_functype_cache[(restype, argtypes, flags)]
     except KeyError:
-        class CFunctionType(_CFuncPtr):
-            _argtypes_ = argtypes
-            _restype_ = restype
-            _flags_ = flags
-        _c_functype_cache[(restype, argtypes, flags)] = CFunctionType
-        return CFunctionType
+        pass
+
+    class CFunctionType(_CFuncPtr):
+        _argtypes_ = argtypes
+        _restype_ = restype
+        _flags_ = flags
+    _c_functype_cache[(restype, argtypes, flags)] = CFunctionType
+    return CFunctionType
 
 if _os.name == "nt":
     from _ctypes import LoadLibrary as _dlopen
@@ -116,15 +120,18 @@ if _os.name == "nt":
             flags |= _FUNCFLAG_USE_LASTERROR
         if kw:
             raise ValueError("unexpected keyword argument(s) %s" % kw.keys())
+
         try:
             return _win_functype_cache[(restype, argtypes, flags)]
         except KeyError:
-            class WinFunctionType(_CFuncPtr):
-                _argtypes_ = argtypes
-                _restype_ = restype
-                _flags_ = flags
-            _win_functype_cache[(restype, argtypes, flags)] = WinFunctionType
-            return WinFunctionType
+            pass
+
+        class WinFunctionType(_CFuncPtr):
+            _argtypes_ = argtypes
+            _restype_ = restype
+            _flags_ = flags
+        _win_functype_cache[(restype, argtypes, flags)] = WinFunctionType
+        return WinFunctionType
     if WINFUNCTYPE.__doc__:
         WINFUNCTYPE.__doc__ = CFUNCTYPE.__doc__.replace("CFUNCTYPE", "WINFUNCTYPE")
 
@@ -295,8 +302,9 @@ def create_unicode_buffer(init, size=None):
     raise TypeError(init)
 
 
-# XXX Deprecated
 def SetPointerType(pointer, cls):
+    import warnings
+    warnings._deprecated("ctypes.SetPointerType", remove=(3, 15))
     if _pointer_type_cache.get(cls, None) is not None:
         raise RuntimeError("This type already exists in the cache")
     if id(pointer) not in _pointer_type_cache:
@@ -305,8 +313,9 @@ def SetPointerType(pointer, cls):
     _pointer_type_cache[cls] = pointer
     del _pointer_type_cache[id(pointer)]
 
-# XXX Deprecated
 def ARRAY(typ, len):
+    import warnings
+    warnings._deprecated("ctypes.ARRAY", remove=(3, 15))
     return typ * len
 
 ################################################################
@@ -337,6 +346,8 @@ class CDLL(object):
                  use_errno=False,
                  use_last_error=False,
                  winmode=None):
+        if name:
+            name = _os.fspath(name)
         self._name = name
         flags = self._func_flags_
         if use_errno:
@@ -437,7 +448,10 @@ class LibraryLoader(object):
     def __getattr__(self, name):
         if name[0] == '_':
             raise AttributeError(name)
-        dll = self._dlltype(name)
+        try:
+            dll = self._dlltype(name)
+        except OSError:
+            raise AttributeError(name)
         setattr(self, name, dll)
         return dll
 
@@ -542,6 +556,7 @@ if _os.name == "nt": # COM stuff
         return ccom.DllCanUnloadNow()
 
 from ctypes._endian import BigEndianStructure, LittleEndianStructure
+from ctypes._endian import BigEndianUnion, LittleEndianUnion
 
 # Fill in specifically-sized types
 c_int8 = c_byte
@@ -555,5 +570,12 @@ for kind in [c_ushort, c_uint, c_ulong, c_ulonglong]:
     elif sizeof(kind) == 4: c_uint32 = kind
     elif sizeof(kind) == 8: c_uint64 = kind
 del(kind)
+
+if SIZEOF_TIME_T == 8:
+    c_time_t = c_int64
+elif SIZEOF_TIME_T == 4:
+    c_time_t = c_int32
+else:
+    raise SystemError(f"Unexpected sizeof(time_t): {SIZEOF_TIME_T=}")
 
 _reset_cache()

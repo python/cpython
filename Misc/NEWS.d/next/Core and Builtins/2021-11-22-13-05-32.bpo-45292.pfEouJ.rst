@@ -1,1 +1,0 @@
-Complete the :pep:`654` implementation: add ``except*``.
