@@ -1137,7 +1137,14 @@ class _BaseGenericAlias(_Final, _root=True):
             res.append(self.__origin__)
         i = bases.index(self)
         for b in bases[i+1:]:
-            if isinstance(b, _BaseGenericAlias) or issubclass(b, Generic):
+            if isinstance(b, _BaseGenericAlias):
+                break
+            if not isinstance(b, type):
+                meth = getattr(b, "__mro_entries__", None)
+                nb = meth(bases) if meth else None
+                if isinstance(nb, tuple) and any(issubclass(b2, Generic) for b2 in nb):
+                    break
+            elif issubclass(b, Generic):
                 break
         else:
             res.append(Generic)

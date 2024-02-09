@@ -4920,6 +4920,40 @@ class GenericTests(BaseTestCase):
         class C(List[int], B): ...
         self.assertEqual(C.__mro__, (C, list, B, Generic, object))
 
+    def test_multiple_inheritance_with_non_type_implementing___mro_entries__(self):
+        class O:
+            def __mro_entries__(self, bases):
+                return (object,)
+
+        class A(List[int], O()): ...
+
+        self.assertEqual(A.__mro__, (A, list, Generic, object))
+
+    def test_multiple_inheritance_with_non_type_without___mro_entries__(self):
+        class O: pass
+
+        # We should get an error here, but from the type machinery, not from typing.py
+        with self.assertRaisesRegex(TypeError, r"^metaclass conflict:"):
+            class A(List[int], O()): ...
+
+    def test_multiple_inheritance_with_non_type_with_bad___mro_entries__(self):
+        class O:
+            def __mro_entries__(self, bases):
+                return None
+
+        # We should get an error here, but from the type machinery, not from typing.py
+        with self.assertRaisesRegex(TypeError, r"^__mro_entries__ must return a tuple"):
+            class A(List[int], O()): ...
+
+    def test_multiple_inheritance_with_genericalias(self):
+        T = TypeVar("T")
+
+        class BaseSeq(typing.Sequence[T]): ...
+        class MySeq(List[T], BaseSeq[T]): ...
+
+        self.assertEqual(MySeq.__mro__[:4], (MySeq, list, BaseSeq, collections.abc.Sequence))
+        self.assertEqual(MySeq.__mro__[-2:], (Generic, object))
+
     def test_init_subclass_super_called(self):
         class FinalException(Exception):
             pass
