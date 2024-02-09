@@ -4323,6 +4323,13 @@ class GenericTests(BaseTestCase):
         c.bar = 'abc'
         self.assertEqual(c.__dict__, {'bar': 'abc'})
 
+    def test_getattr_exceptions(self):
+        class Immutable[T]:
+            def __setattr__(self, key, value):
+                raise RuntimeError("immutable")
+
+        Immutable[int]()
+
     def test_subscripted_generics_as_proxies(self):
         T = TypeVar('T')
         class C(Generic[T]):
