@@ -1131,22 +1131,22 @@ sys__clear_type_cache(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys__clear_type_cache_impl(module);
 }
 
-PyDoc_STRVAR(sys__clear_executors__doc__,
-"_clear_executors($module, /)\n"
+PyDoc_STRVAR(sys__clear_internal_caches__doc__,
+"_clear_internal_caches($module, /)\n"
 "--\n"
 "\n"
-"Clear and invalidate all tier two executors.");
+"Clear all internal performance-related caches.");
 
-#define SYS__CLEAR_EXECUTORS_METHODDEF    \
-    {"_clear_executors", (PyCFunction)sys__clear_executors, METH_NOARGS, sys__clear_executors__doc__},
-
-static PyObject *
-sys__clear_executors_impl(PyObject *module);
+#define SYS__CLEAR_INTERNAL_CACHES_METHODDEF    \
+    {"_clear_internal_caches", (PyCFunction)sys__clear_internal_caches, METH_NOARGS, sys__clear_internal_caches__doc__},
 
 static PyObject *
-sys__clear_executors(PyObject *module, PyObject *Py_UNUSED(ignored))
+sys__clear_internal_caches_impl(PyObject *module);
+
+static PyObject *
+sys__clear_internal_caches(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    return sys__clear_executors_impl(module);
+    return sys__clear_internal_caches_impl(module);
 }
 
 PyDoc_STRVAR(sys_is_finalizing__doc__,
@@ -1504,4 +1504,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=cc7c8baa106132e5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b8b1c53e04c3b20c input=a9049054013a1b77]*/

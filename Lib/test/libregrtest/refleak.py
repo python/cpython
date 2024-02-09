@@ -200,10 +200,8 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
 
     # Clear caches
     clear_caches()
-    # Clear executors and type cache at the end (previous function calls can
-    # create new executors and modify types):
-    sys._clear_executors()
-    sys._clear_type_cache()
+    # Clear other caches last (previous function calls can re-populate them):
+    sys._clear_internal_caches()
 
 
 def warm_caches():

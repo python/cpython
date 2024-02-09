@@ -182,7 +182,7 @@ class TestExecutorInvalidation(unittest.TestCase):
         _testinternalcapi.invalidate_executors(f.__code__)
         self.assertFalse(exe.is_valid())
 
-    def test_sys__clear_executors(self):
+    def test_sys__clear_internal_caches(self):
         def f():
             for _ in range(1000):
                 pass
@@ -192,7 +192,7 @@ class TestExecutorInvalidation(unittest.TestCase):
         exe = get_first_executor(f)
         self.assertIsNotNone(exe)
         self.assertTrue(exe.is_valid())
-        sys._clear_executors()
+        sys._clear_internal_caches()
         self.assertFalse(exe.is_valid())
         exe = get_first_executor(f)
         self.assertIsNone(exe)
