@@ -130,7 +130,7 @@ Guidelines":
 Read the rest of :pep:`1` for the details of the PEP editorial process, style, and
 format.  PEPs are kept in the Python CVS tree on SourceForge, though they're not
 part of the Python 2.0 distribution, and are also available in HTML form from
-https://peps.python.org/.  As of September 2000, there are 25 PEPS, ranging
+https://peps.python.org/.  As of September 2000, there are 25 PEPs, ranging
 from :pep:`201`, "Lockstep Iteration", to PEP 225, "Elementwise/Objectwise
 Operators".
 
@@ -1039,12 +1039,12 @@ is an implementation of the Secure Socket Layer, which encrypts the data being
 sent over a socket.  When compiling Python, you can edit :file:`Modules/Setup`
 to include SSL support, which adds an additional function to the :mod:`socket`
 module: ``socket.ssl(socket, keyfile, certfile)``, which takes a socket
-object and returns an SSL socket.  The :mod:`httplib` and :mod:`urllib` modules
+object and returns an SSL socket.  The :mod:`httplib <http>` and :mod:`urllib` modules
 were also changed to support ``https://`` URLs, though no one has implemented
 FTP or SMTP over SSL.
 
-The :mod:`httplib` module has been rewritten by Greg Stein to support HTTP/1.1.
-Backward compatibility with the 1.5 version of :mod:`httplib` is provided,
+The :mod:`httplib <http>` module has been rewritten by Greg Stein to support HTTP/1.1.
+Backward compatibility with the 1.5 version of :mod:`!httplib` is provided,
 though using HTTP/1.1 features such as pipelining will require rewriting code to
 use a different set of interfaces.
 
@@ -1095,8 +1095,8 @@ module.
   GNU gettext message catalog library. (Integrated by Barry Warsaw, from separate
   contributions by Martin  von Löwis, Peter Funk, and James Henstridge.)
 
-* :mod:`linuxaudiodev`: Support for the :file:`/dev/audio` device on Linux, a
-  twin to the existing :mod:`sunaudiodev` module. (Contributed by Peter Bosch,
+* :mod:`!linuxaudiodev`: Support for the :file:`/dev/audio` device on Linux, a
+  twin to the existing :mod:`!sunaudiodev` module. (Contributed by Peter Bosch,
   with fixes by Jeremy Hylton.)
 
 * :mod:`mmap`: An interface to memory-mapped files on both Windows and Unix.  A
@@ -1108,7 +1108,7 @@ module.
 * :mod:`pyexpat`: An interface to the Expat XML parser. (Contributed by Paul
   Prescod.)
 
-* :mod:`robotparser`: Parse a :file:`robots.txt` file, which is used for writing
+* :mod:`robotparser <urllib.robotparser>`: Parse a :file:`robots.txt` file, which is used for writing
   web spiders that politely avoid certain areas of a web site.  The parser accepts
   the contents of a :file:`robots.txt` file, builds a set of rules from it, and
   can then answer questions about the fetchability of a given URL.  (Contributed
@@ -1129,18 +1129,18 @@ module.
   :file:`Tools/idle/BrowserControl.py`, and adapted for the standard library by
   Fred.)
 
-* :mod:`_winreg`: An interface to the Windows registry.  :mod:`_winreg` is an
+* :mod:`_winreg <winreg>`: An interface to the Windows registry.  :mod:`!_winreg` is an
   adaptation of functions that have been part of PythonWin since 1995, but has now
   been added to the core  distribution, and enhanced to support Unicode.
-  :mod:`_winreg` was written by Bill Tutt and Mark Hammond.
+  :mod:`!_winreg` was written by Bill Tutt and Mark Hammond.
 
 * :mod:`zipfile`: A module for reading and writing ZIP-format archives.  These
   are archives produced by :program:`PKZIP` on DOS/Windows or :program:`zip` on
   Unix, not to be confused with :program:`gzip`\ -format files (which are
   supported by the :mod:`gzip` module) (Contributed by James C. Ahlstrom.)
 
-* :mod:`imputil`: A module that provides a simpler way for writing customized
-  import hooks, in comparison to the existing :mod:`ihooks` module.  (Implemented
+* :mod:`!imputil`: A module that provides a simpler way for writing customized
+  import hooks, in comparison to the existing :mod:`!ihooks` module.  (Implemented
   by Greg Stein, with much discussion on python-dev along the way.)
 
 .. ======================================================================

@@ -710,9 +710,9 @@ Fixed the comparison of plistlib.Data with other types.
 .. nonce: RMRMtM
 .. section: Library
 
-Fix an uninitialized variable in `ctypes.util`.
+Fix an uninitialized variable in ``ctypes.util``.
 The bug only occurs on SunOS when the ctypes implementation searches for the
-`crle` program.  Patch by Xiang Zhang.  Tested on SunOS by Kees Bos.
+``crle`` program.  Patch by Xiang Zhang.  Tested on SunOS by Kees Bos.
 
 ..
 

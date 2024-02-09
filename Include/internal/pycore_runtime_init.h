@@ -16,6 +16,7 @@ extern "C" {
 #include "pycore_parser.h"        // _parser_runtime_state_INIT
 #include "pycore_pyhash.h"        // pyhash_state_INIT
 #include "pycore_pymem_init.h"    // _pymem_allocators_standard_INIT
+#include "pycore_pythread.h"      // _pythread_RUNTIME_INIT
 #include "pycore_runtime_init_generated.h"  // _Py_bytes_characters_INIT
 #include "pycore_signal.h"        // _signals_RUNTIME_INIT
 #include "pycore_tracemalloc.h"   // _tracemalloc_runtime_state_INIT
@@ -86,9 +87,11 @@ extern PyTypeObject _PyExc_MemoryError;
             .standard = _pymem_allocators_standard_INIT(runtime), \
             .debug = _pymem_allocators_debug_INIT, \
             .obj_arena = _pymem_allocators_obj_arena_INIT, \
+            .is_debug_enabled = _pymem_is_debug_enabled_INIT, \
         }, \
         .obmalloc = _obmalloc_global_state_INIT, \
         .pyhash_state = pyhash_state_INIT, \
+        .threads = _pythread_RUNTIME_INIT(runtime.threads), \
         .signals = _signals_RUNTIME_INIT, \
         .interpreters = { \
             /* This prevents interpreters from getting created \
@@ -115,6 +118,9 @@ extern PyTypeObject _PyExc_MemoryError;
         }, \
         .faulthandler = _faulthandler_runtime_state_INIT, \
         .tracemalloc = _tracemalloc_runtime_state_INIT, \
+        .stoptheworld = { \
+            .is_global = 1, \
+        }, \
         .float_state = { \
             .float_format = _py_float_format_unknown, \
             .double_format = _py_float_format_unknown, \
@@ -151,7 +157,6 @@ extern PyTypeObject _PyExc_MemoryError;
     { \
         .id_refcount = -1, \
         .imports = IMPORTS_INIT, \
-        .obmalloc = _obmalloc_state_INIT(INTERP.obmalloc), \
         .ceval = { \
             .recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
         }, \
