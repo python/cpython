@@ -1136,6 +1136,9 @@ class _BaseGenericAlias(_Final, _root=True):
         if self.__origin__ not in bases:
             res.append(self.__origin__)
         i = bases.index(self)
+        # The goal here is to only add Generic to the MRO if nothing else in the
+        # MRO is already a subclass of Generic; otherwise we risk failure to
+        # linearize a consistent MRO.
         for b in bases[i+1:]:
             if isinstance(b, _BaseGenericAlias):
                 break
