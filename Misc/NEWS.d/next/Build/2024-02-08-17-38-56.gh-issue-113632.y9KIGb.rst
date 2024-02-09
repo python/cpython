@@ -1,0 +1,2 @@
+Promote WASI to a tier 2 platform and drop Emscripten from tier 3 in
+configure.ac.

@@ -1339,6 +1339,12 @@ Build Changes
   :ref:`limited C API <limited-c-api>`.
   (Contributed by Victor Stinner in :gh:`85283`.)
 
+* ``wasm32-wasi`` is now a tier 2 platform.
+  (Contributed by Brett Cannon in :gh:`115192`.)
+
+* ``wasm32-emscripten`` is no longer a supported platform.
+  (Contributed by Brett Cannon in :gh:`115192`.)
+
 
 C API Changes
 =============
