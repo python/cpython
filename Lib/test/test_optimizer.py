@@ -4,6 +4,9 @@ import types
 
 
 class TestRareEventCounters(unittest.TestCase):
+    def setUp(self):
+        _testinternalcapi.reset_rare_event_counters()
+
     def test_set_class(self):
         class A:
             pass
