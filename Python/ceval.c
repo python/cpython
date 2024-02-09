@@ -739,16 +739,16 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         goto resume_with_error;
     }
 
-    /* State shared between Tier 1 and Tier 2 interpreter */
-    _PyExecutorObject *current_executor = NULL;
-
     /* Local "register" variables.
      * These are cached values from the frame and code object.  */
-
     _Py_CODEUNIT *next_instr;
     PyObject **stack_pointer;
-    const _PyUOpInstruction *next_uop = NULL;
 
+#ifndef Py_JIT
+    /* State shared between Tier 1 and Tier 2 interpreter */
+    _PyExecutorObject *current_executor = NULL;
+    const _PyUOpInstruction *next_uop = NULL;
+#endif
 
 start_frame:
     if (_Py_EnterRecursivePy(tstate)) {
@@ -962,18 +962,7 @@ resume_with_error:
 enter_tier_two:
 
 #ifdef _Py_JIT
-
-    ;  // ;)
-    jit_func jitted = current_executor->jit_code;
-    next_instr = jitted(frame, stack_pointer, tstate);
-    frame = tstate->current_frame;
-    Py_DECREF(current_executor);
-    if (next_instr == NULL) {
-        goto resume_with_error;
-    }
-    stack_pointer = _PyFrame_GetStackPointer(frame);
-    DISPATCH();
-
+    assert(0);
 #else
 
 #undef LOAD_IP
@@ -1094,6 +1083,9 @@ deoptimize:
 
 // Jump here from EXIT_IF()
 side_exit:
+#ifdef _Py_JIT
+    assert(0);
+#endif
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     UOP_STAT_INC(uopcode, miss);
     uint16_t exit_index = next_uop[-1].exit_index;

@@ -915,7 +915,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, const _PyBloomFilter *depende
 #ifdef _Py_JIT
     executor->jit_code = NULL;
     executor->code_size = 0;
-    if (_PyJIT_Compile(executor, executor->trace, Py_SIZE(executor))) {
+    if (_PyJIT_Compile(executor, executor->trace, length+1)) {
         Py_DECREF(executor);
         return NULL;
     }
@@ -941,7 +941,7 @@ make_cold_exit_executor(int oparg)
 #ifdef _Py_JIT
     executor->jit_code = NULL;
     executor->code_size = 0;
-    if (_PyJIT_Compile(executor, executor->trace, Py_SIZE(executor))) {
+    if (_PyJIT_Compile(executor, executor->trace, 1)) {
         Py_DECREF(executor);
         return NULL;
     }
