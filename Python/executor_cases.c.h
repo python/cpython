@@ -3462,7 +3462,7 @@
             PyObject *instr_ptr = (PyObject *)CURRENT_OPERAND();
             TIER_TWO_ONLY
             if (!current_executor->vm_data.valid) goto deoptimize;
-            frame->instr_ptr = instr_ptr;
+            frame->instr_ptr = (_Py_CODEUNIT *)instr_ptr;
             break;
         }
 

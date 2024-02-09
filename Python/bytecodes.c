@@ -4099,7 +4099,7 @@ dummy_func(
         op(_CHECK_VALIDITY_AND_SET_IP, (instr_ptr/4 --)) {
             TIER_TWO_ONLY
             DEOPT_IF(!current_executor->vm_data.valid);
-            frame->instr_ptr = instr_ptr;
+            frame->instr_ptr = (_Py_CODEUNIT *)instr_ptr;
         }
 
 // END BYTECODES //
