@@ -43,7 +43,6 @@ get_thread_state(PyObject *module)
 // _ThreadHandle type
 
 typedef enum {
-    THREAD_HANDLE_INVALID,
     THREAD_HANDLE_JOINED,
     THREAD_HANDLE_DETACHED,
 } ThreadHandleState;
@@ -64,6 +63,10 @@ typedef struct {
     PyThread_ident_t ident;
     PyThread_handle_t handle;
 
+    // Set before a handle is accessible to any threads other than its creator
+    // and cleared post-fork. Does not need to be accessed atomically.
+    bool is_valid;
+
     // State is set once by the first successful `join` or `detach` operation
     // (or if the handle is invalidated).
     ThreadHandleState state;
@@ -79,6 +82,7 @@ new_thread_handle(thread_module_state* state)
     }
     self->ident = 0;
     self->handle = 0;
+    self->is_valid = false;
     self->once = (_PyOnceFlag){0};
 
     HEAD_LOCK(&_PyRuntime);
@@ -112,30 +116,13 @@ ThreadHandle_dealloc(ThreadHandleObject *self)
     }
     HEAD_UNLOCK(&_PyRuntime);
 
-    if (_PyOnceFlag_CallOnce(&self->once, (_Py_once_fn_t *)detach_thread,
+    if (self->is_valid &&
+        _PyOnceFlag_CallOnce(&self->once, (_Py_once_fn_t *)detach_thread,
                              self) == -1) {
         PyErr_WriteUnraisable(tp);
     }
     PyObject_Free(self);
     Py_DECREF(tp);
-}
-
-static int
-do_invalidate_thread_handle(ThreadHandleObject *handle)
-{
-    handle->state = THREAD_HANDLE_INVALID;
-    return 0;
-}
-
-static void
-invalidate_thread_handle(ThreadHandleObject *handle)
-{
-    if (_PyOnceFlag_CallOnce(&handle->once,
-                             (_Py_once_fn_t *)do_invalidate_thread_handle,
-                             handle) == -1) {
-        Py_FatalError("failed invalidating thread handle");
-        Py_UNREACHABLE();
-    }
 }
 
 void
@@ -154,11 +141,8 @@ _PyThread_AfterFork(struct _pythread_runtime_state *state)
             continue;
         }
 
-        // Disallow calls to detach() and join() on handles who were not
-        // previously joined or detached as they could crash. Calls to detach()
-        // or join() on handles that were successfully joined or detached are
-        // allowed as they do not perform any unsafe operations.
-        invalidate_thread_handle(hobj);
+        // Disallow calls to detach() and join() as they could crash.
+        hobj->is_valid = false;
         llist_remove(node);
     }
 }
@@ -187,6 +171,10 @@ invalid_handle_error(void)
 static PyObject *
 ThreadHandle_detach(ThreadHandleObject *self, void* ignored)
 {
+    if (!self->is_valid) {
+        return invalid_handle_error();
+    }
+
     if (_PyOnceFlag_CallOnce(&self->once, (_Py_once_fn_t *)detach_thread,
                              self) == -1) {
         return NULL;
@@ -195,9 +183,6 @@ ThreadHandle_detach(ThreadHandleObject *self, void* ignored)
     switch (self->state) {
         case THREAD_HANDLE_DETACHED: {
             Py_RETURN_NONE;
-        }
-        case THREAD_HANDLE_INVALID: {
-            return invalid_handle_error();
         }
         case THREAD_HANDLE_JOINED: {
             PyErr_SetString(
@@ -235,6 +220,10 @@ join_thread(ThreadHandleObject *handle)
 static PyObject *
 ThreadHandle_join(ThreadHandleObject *self, void* ignored)
 {
+    if (!self->is_valid) {
+        return invalid_handle_error();
+    }
+
     if (_PyOnceFlag_CallOnce(&self->once, (_Py_once_fn_t *)join_thread,
                              self) == -1) {
         return NULL;
@@ -246,9 +235,6 @@ ThreadHandle_join(ThreadHandleObject *self, void* ignored)
                 PyExc_ValueError,
                 "the thread is detached and thus cannot be joined");
             return NULL;
-        }
-        case THREAD_HANDLE_INVALID: {
-            return invalid_handle_error();
         }
         case THREAD_HANDLE_JOINED: {
             Py_RETURN_NONE;
@@ -1512,12 +1498,12 @@ thread_PyThread_start_joinable_thread(PyObject *module, PyObject *func)
     }
     if (do_start_new_thread(state, func, args, /*kwargs=*/ NULL, /*joinable=*/ 1,
                             &hobj->ident, &hobj->handle)) {
-        invalidate_thread_handle(hobj);
         Py_DECREF(args);
         Py_DECREF(hobj);
         return NULL;
     }
     Py_DECREF(args);
+    hobj->is_valid = true;
     return (PyObject*) hobj;
 }
 
