@@ -37,16 +37,11 @@ static int
 globals_watcher_callback(PyDict_WatchEvent event, PyObject* dict,
                          PyObject* key, PyObject* new_value)
 {
-    assert(((PyDictObject *)dict)->ma_version_tag & 2);
-    int watched_mutations = get_mutations(dict);
-    printf("globals_watcher_callback called. dict %p, %d\n", dict, watched_mutations);
     RARE_EVENT_STAT_INC(watched_globals_modification);
-    assert(watched_mutations < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS);
+    assert(get_mutations(dict) < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS);
     _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), dict);
-    PyDict_Unwatch(GLOBALS_WATCHER_ID, dict);
-    assert((((PyDictObject *)dict)->ma_version_tag & DICT_WATCHER_MASK) == 0);
     increment_mutations(dict);
-    assert(get_mutations(dict) == watched_mutations + 1);
+    PyDict_Unwatch(GLOBALS_WATCHER_ID, dict);
     return 0;
 }
 
