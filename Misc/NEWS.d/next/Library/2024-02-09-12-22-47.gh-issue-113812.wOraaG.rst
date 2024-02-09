@@ -1,0 +1,2 @@
+:meth:`DatagramTransport.sendto` will now send zero-length datagrams if
+called with an empty bytes object.

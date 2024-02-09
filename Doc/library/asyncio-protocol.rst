@@ -362,6 +362,10 @@ Datagram Transports
    This method does not block; it buffers the data and arranges
    for it to be sent out asynchronously.
 
+   .. versionchanged:: 3.13
+      This method can be called with an empty bytes object to send a
+      zero-length datagram.
+
 .. method:: DatagramTransport.abort()
 
    Close the transport immediately, without waiting for pending

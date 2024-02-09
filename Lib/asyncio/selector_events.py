@@ -1241,8 +1241,6 @@ class _SelectorDatagramTransport(_SelectorTransport, transports.DatagramTranspor
         if not isinstance(data, (bytes, bytearray, memoryview)):
             raise TypeError(f'data argument must be a bytes-like object, '
                             f'not {type(data).__name__!r}')
-        if not data:
-            return
 
         if self._address:
             if addr not in (None, self._address):

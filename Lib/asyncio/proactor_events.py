@@ -487,9 +487,6 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
             raise TypeError('data argument must be bytes-like object (%r)',
                             type(data))
 
-        if not data:
-            return
-
         if self._address is not None and addr not in (None, self._address):
             raise ValueError(
                 f'Invalid address: must be None or {self._address}')
