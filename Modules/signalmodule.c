@@ -1767,8 +1767,8 @@ PyErr_CheckSignals(void)
        Python code to ensure signals are handled. Checking for the GC here
        allows long running native code to clean cycles created using the C-API
        even if it doesn't run the evaluation loop */
-    if (_PyThreadState_IsSignalled(tstate, _PY_GC_SCHEDULED_BIT)) {
-        _PyThreadState_Unsignal(tstate, _PY_GC_SCHEDULED_BIT);
+    if (_Py_eval_breaker_bit_is_set(tstate, _PY_GC_SCHEDULED_BIT)) {
+        _Py_unset_eval_breaker_bit(tstate, _PY_GC_SCHEDULED_BIT);
         _Py_RunGC(tstate);
     }
 

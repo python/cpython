@@ -199,6 +199,43 @@ int _PyEval_UnpackIterable(PyThreadState *tstate, PyObject *v, int argcnt, int a
 void _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
 
 
+/* Bits that can be set in PyThreadState.eval_breaker */
+#define _PY_GIL_DROP_REQUEST_BIT (1U << 0)
+#define _PY_SIGNALS_PENDING_BIT (1U << 1)
+#define _PY_CALLS_TO_DO_BIT (1U << 2)
+#define _PY_ASYNC_EXCEPTION_BIT (1U << 3)
+#define _PY_GC_SCHEDULED_BIT (1U << 4)
+#define _PY_EVAL_PLEASE_STOP_BIT (1U << 5)
+
+/* Reserve a few bits for future use */
+#define _PY_EVAL_EVENTS_BITS 8
+#define _PY_EVAL_EVENTS_MASK ((1U << _PY_EVAL_EVENTS_BITS)-1)
+
+static inline void
+_Py_set_eval_breaker_bit(PyThreadState *tstate, uintptr_t bit)
+{
+    _Py_atomic_or_uintptr(&tstate->eval_breaker, bit);
+}
+
+static inline void
+_Py_unset_eval_breaker_bit(PyThreadState *tstate, uintptr_t bit)
+{
+    _Py_atomic_and_uintptr(&tstate->eval_breaker, ~bit);
+}
+
+static inline int
+_Py_eval_breaker_bit_is_set(PyThreadState *tstate, uintptr_t bit)
+{
+    uintptr_t b = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
+    return (b & bit) != 0;
+}
+
+// Free-threaded builds use these functions to set or unset a bit on all
+// threads in the given interpreter.
+void _Py_set_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit);
+void _Py_unset_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit);
+
+
 #ifdef __cplusplus
 }
 #endif

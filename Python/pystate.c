@@ -1989,7 +1989,7 @@ park_detached_threads(struct _stoptheworld_state *stw)
             }
         }
         else if (state == _Py_THREAD_ATTACHED && t != stw->requester) {
-            _PyThreadState_Signal(t, _PY_EVAL_PLEASE_STOP_BIT);
+            _Py_set_eval_breaker_bit(t, _PY_EVAL_PLEASE_STOP_BIT);
         }
     }
     stw->thread_countdown -= num_parked;
@@ -2158,35 +2158,11 @@ PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
         HEAD_UNLOCK(runtime);
 
         Py_XDECREF(old_exc);
-        _PyThreadState_Signal(tstate, _PY_ASYNC_EXCEPTION_BIT);
+        _Py_set_eval_breaker_bit(tstate, _PY_ASYNC_EXCEPTION_BIT);
         return 1;
     }
     HEAD_UNLOCK(runtime);
     return 0;
-}
-
-void
-_PyInterpreterState_SignalAll(PyInterpreterState *interp, uintptr_t bit)
-{
-    _PyRuntimeState *runtime = &_PyRuntime;
-
-    HEAD_LOCK(runtime);
-    for (PyThreadState *tstate = interp->threads.head; tstate != NULL; tstate = tstate->next) {
-        _PyThreadState_Signal(tstate, bit);
-    }
-    HEAD_UNLOCK(runtime);
-}
-
-void
-_PyInterpreterState_UnsignalAll(PyInterpreterState *interp, uintptr_t bit)
-{
-    _PyRuntimeState *runtime = &_PyRuntime;
-
-    HEAD_LOCK(runtime);
-    for (PyThreadState *tstate = interp->threads.head; tstate != NULL; tstate = tstate->next) {
-        _PyThreadState_Unsignal(tstate, bit);
-    }
-    HEAD_UNLOCK(runtime);
 }
 
 //---------------------------------

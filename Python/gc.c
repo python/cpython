@@ -3,6 +3,7 @@
 //  See https://devguide.python.org/internals/garbage-collector/
 
 #include "Python.h"
+#include "pycore_ceval.h"         // _Py_set_eval_breaker_bit()
 #include "pycore_context.h"
 #include "pycore_dict.h"          // _PyDict_MaybeUntrack()
 #include "pycore_initconfig.h"
@@ -1766,9 +1767,9 @@ PyObject_IS_GC(PyObject *obj)
 void
 _Py_ScheduleGC(PyThreadState *tstate)
 {
-    if (!_PyThreadState_IsSignalled(tstate, _PY_GC_SCHEDULED_BIT))
+    if (!_Py_eval_breaker_bit_is_set(tstate, _PY_GC_SCHEDULED_BIT))
     {
-        _PyThreadState_Signal(tstate, _PY_GC_SCHEDULED_BIT);
+        _Py_set_eval_breaker_bit(tstate, _PY_GC_SCHEDULED_BIT);
     }
 }
 

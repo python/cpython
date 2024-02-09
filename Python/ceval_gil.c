@@ -92,13 +92,13 @@ update_thread_eval_breaker(PyInterpreterState *interp, PyThreadState *tstate)
     int32_t calls_to_do = _Py_atomic_load_int32_relaxed(
         &interp->ceval.pending.calls_to_do);
     if (calls_to_do) {
-        _PyThreadState_Signal(tstate, _PY_CALLS_TO_DO_BIT);
+        _Py_set_eval_breaker_bit(tstate, _PY_CALLS_TO_DO_BIT);
     }
     else if (_Py_IsMainThread()) {
         calls_to_do = _Py_atomic_load_int32_relaxed(
             &_PyRuntime.ceval.pending_mainthread.calls_to_do);
         if (calls_to_do) {
-            _PyThreadState_Signal(tstate, _PY_CALLS_TO_DO_BIT);
+            _Py_set_eval_breaker_bit(tstate, _PY_CALLS_TO_DO_BIT);
         }
     }
 
@@ -275,13 +275,13 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate)
        interpreter, so checking tstate first prevents the crash.
        See https://github.com/python/cpython/issues/104341. */
     if (tstate != NULL &&
-        _PyThreadState_IsSignalled(tstate, _PY_GIL_DROP_REQUEST_BIT)) {
+        _Py_eval_breaker_bit_is_set(tstate, _PY_GIL_DROP_REQUEST_BIT)) {
         MUTEX_LOCK(gil->switch_mutex);
         /* Not switched yet => wait */
         if (((PyThreadState*)_Py_atomic_load_ptr_relaxed(&gil->last_holder)) == tstate)
         {
             assert(_PyThreadState_CheckConsistency(tstate));
-            _PyThreadState_Unsignal(tstate, _PY_GIL_DROP_REQUEST_BIT);
+            _Py_unset_eval_breaker_bit(tstate, _PY_GIL_DROP_REQUEST_BIT);
             /* NOTE: if COND_WAIT does not atomically start waiting when
                releasing the mutex, another thread can run through, take
                the GIL and drop it again, and reset the condition
@@ -353,13 +353,13 @@ take_gil(PyThreadState *tstate)
                 // may have to request again a drop request (iterate one more
                 // time).
                 if (drop_requested) {
-                    _PyThreadState_Unsignal(holder_tstate, _PY_GIL_DROP_REQUEST_BIT);
+                    _Py_unset_eval_breaker_bit(holder_tstate, _PY_GIL_DROP_REQUEST_BIT);
                 }
                 PyThread_exit_thread();
             }
             assert(_PyThreadState_CheckConsistency(tstate));
 
-            _PyThreadState_Signal(holder_tstate, _PY_GIL_DROP_REQUEST_BIT);
+            _Py_set_eval_breaker_bit(holder_tstate, _PY_GIL_DROP_REQUEST_BIT);
             drop_requested = 1;
         }
     }
@@ -399,7 +399,7 @@ take_gil(PyThreadState *tstate)
     }
     assert(_PyThreadState_CheckConsistency(tstate));
 
-    _PyThreadState_Unsignal(tstate, _PY_GIL_DROP_REQUEST_BIT);
+    _Py_unset_eval_breaker_bit(tstate, _PY_GIL_DROP_REQUEST_BIT);
     update_thread_eval_breaker(interp, tstate);
 
     MUTEX_UNLOCK(gil->mutex);
@@ -664,7 +664,7 @@ PyEval_RestoreThread(PyThreadState *tstate)
 void
 _PyEval_SignalReceived(void)
 {
-    _PyThreadState_Signal(_PyRuntime.main_tstate, _PY_SIGNALS_PENDING_BIT);
+    _Py_set_eval_breaker_bit(_PyRuntime.main_tstate, _PY_SIGNALS_PENDING_BIT);
 }
 
 /* Push one item onto the queue while holding the lock. */
@@ -729,7 +729,7 @@ signal_active_thread(PyInterpreterState *interp, uintptr_t bit)
     if (_Py_atomic_load_int_relaxed(&gil->locked)) {
         PyThreadState *holder = (PyThreadState*)_Py_atomic_load_ptr_relaxed(&gil->last_holder);
         if (holder->interp == interp) {
-            _PyThreadState_Signal(holder, bit);
+            _Py_set_eval_breaker_bit(holder, bit);
         }
     }
     MUTEX_UNLOCK(gil->mutex);
@@ -758,11 +758,11 @@ _PyEval_AddPendingCall(PyInterpreterState *interp,
     PyMutex_Unlock(&pending->mutex);
 
     if (main_only) {
-        _PyThreadState_Signal(_PyRuntime.main_tstate, _PY_CALLS_TO_DO_BIT);
+        _Py_set_eval_breaker_bit(_PyRuntime.main_tstate, _PY_CALLS_TO_DO_BIT);
     }
     else {
 #ifdef Py_GIL_DISABLED
-        _PyInterpreterState_SignalAll(interp, _PY_CALLS_TO_DO_BIT);
+        _Py_set_eval_breaker_bit_all(interp, _PY_CALLS_TO_DO_BIT);
 #else
         signal_active_thread(interp, _PY_CALLS_TO_DO_BIT);
 #endif
@@ -784,13 +784,13 @@ static int
 handle_signals(PyThreadState *tstate)
 {
     assert(_PyThreadState_CheckConsistency(tstate));
-    _PyThreadState_Unsignal(tstate, _PY_SIGNALS_PENDING_BIT);
+    _Py_unset_eval_breaker_bit(tstate, _PY_SIGNALS_PENDING_BIT);
     if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
         return 0;
     }
     if (_PyErr_CheckSignalsTstate(tstate) < 0) {
         /* On failure, re-schedule a call to handle_signals(). */
-        _PyThreadState_Signal(tstate, _PY_SIGNALS_PENDING_BIT);
+        _Py_set_eval_breaker_bit(tstate, _PY_SIGNALS_PENDING_BIT);
         return -1;
     }
     return 0;
@@ -829,9 +829,9 @@ static void
 signal_pending_calls(PyThreadState *tstate, PyInterpreterState *interp)
 {
 #ifdef Py_GIL_DISABLED
-    _PyInterpreterState_SignalAll(interp, _PY_CALLS_TO_DO_BIT);
+    _Py_set_eval_breaker_bit_all(interp, _PY_CALLS_TO_DO_BIT);
 #else
-    _PyThreadState_Signal(tstate, _PY_CALLS_TO_DO_BIT);
+    _Py_set_eval_breaker_bit(tstate, _PY_CALLS_TO_DO_BIT);
 #endif
 }
 
@@ -839,9 +839,9 @@ static void
 unsignal_pending_calls(PyThreadState *tstate, PyInterpreterState *interp)
 {
 #ifdef Py_GIL_DISABLED
-    _PyInterpreterState_UnsignalAll(interp, _PY_CALLS_TO_DO_BIT);
+    _Py_unset_eval_breaker_bit_all(interp, _PY_CALLS_TO_DO_BIT);
 #else
-    _PyThreadState_Unsignal(tstate, _PY_CALLS_TO_DO_BIT);
+    _Py_unset_eval_breaker_bit(tstate, _PY_CALLS_TO_DO_BIT);
 #endif
 }
 
@@ -894,6 +894,30 @@ make_pending_calls(PyThreadState *tstate)
 
     pending->busy = 0;
     return 0;
+}
+
+void
+_Py_set_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit)
+{
+    _PyRuntimeState *runtime = &_PyRuntime;
+
+    HEAD_LOCK(runtime);
+    for (PyThreadState *tstate = interp->threads.head; tstate != NULL; tstate = tstate->next) {
+        _Py_set_eval_breaker_bit(tstate, bit);
+    }
+    HEAD_UNLOCK(runtime);
+}
+
+void
+_Py_unset_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit)
+{
+    _PyRuntimeState *runtime = &_PyRuntime;
+
+    HEAD_LOCK(runtime);
+    for (PyThreadState *tstate = interp->threads.head; tstate != NULL; tstate = tstate->next) {
+        _Py_unset_eval_breaker_bit(tstate, bit);
+    }
+    HEAD_UNLOCK(runtime);
 }
 
 void
@@ -1022,7 +1046,7 @@ _Py_HandlePending(PyThreadState *tstate)
 
     /* Stop-the-world */
     if ((breaker & _PY_EVAL_PLEASE_STOP_BIT) != 0) {
-        _PyThreadState_Unsignal(tstate, _PY_EVAL_PLEASE_STOP_BIT);
+        _Py_unset_eval_breaker_bit(tstate, _PY_EVAL_PLEASE_STOP_BIT);
         _PyThreadState_Suspend(tstate);
 
         /* The attach blocks until the stop-the-world event is complete. */
@@ -1045,7 +1069,7 @@ _Py_HandlePending(PyThreadState *tstate)
 
     /* GC scheduled to run */
     if ((breaker & _PY_GC_SCHEDULED_BIT) != 0) {
-        _PyThreadState_Unsignal(tstate, _PY_GC_SCHEDULED_BIT);
+        _Py_unset_eval_breaker_bit(tstate, _PY_GC_SCHEDULED_BIT);
         _Py_RunGC(tstate);
     }
 
@@ -1061,7 +1085,7 @@ _Py_HandlePending(PyThreadState *tstate)
 
     /* Check for asynchronous exception. */
     if ((breaker & _PY_ASYNC_EXCEPTION_BIT) != 0) {
-        _PyThreadState_Unsignal(tstate, _PY_ASYNC_EXCEPTION_BIT);
+        _Py_unset_eval_breaker_bit(tstate, _PY_ASYNC_EXCEPTION_BIT);
         PyObject *exc = _Py_atomic_exchange_ptr(&tstate->async_exc, NULL);
         if (exc != NULL) {
             _PyErr_SetNone(tstate, exc);
