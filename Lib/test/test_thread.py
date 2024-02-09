@@ -296,6 +296,61 @@ class ThreadRunningTests(BasicThreadTest):
             # Subsequent calls to detach() should succeed
             handle.detach()
 
+    def test_join_then_self_join(self):
+        # make sure we can't deadlock in the following scenario with
+        # threads t0 and t1:
+        #
+        # - t0 joins t1
+        # - t1 self joins
+        def make_lock():
+            lock = thread.allocate_lock()
+            lock.acquire()
+            return lock
+
+        error = None
+        self_joiner_handle = None
+        self_joiner_started = make_lock()
+        self_joiner_barrier = make_lock()
+        def self_joiner():
+            nonlocal error
+
+            self_joiner_started.release()
+            self_joiner_barrier.acquire()
+
+            try:
+                self_joiner_handle.join()
+            except Exception as e:
+                error = e
+
+        joiner_started = make_lock()
+        def joiner():
+            joiner_started.release()
+            self_joiner_handle.join()
+
+        with threading_helper.wait_threads_exit():
+            self_joiner_handle = thread.start_joinable_thread(self_joiner)
+            # Wait for the self-joining thread to start
+            self_joiner_started.acquire()
+
+            # Start the thread that joins the self-joiner
+            joiner_handle = thread.start_joinable_thread(joiner)
+
+            # Wait for the joiner to start
+            joiner_started.acquire()
+
+            # Not great, but I don't think there's a deterministic way to do
+            # make sure that the self-joining thread has been joined.
+            time.sleep(0.1)
+
+            # Unblock the self-joiner
+            self_joiner_barrier.release()
+
+            self_joiner_handle.join()
+            joiner_handle.join()
+
+            with self.assertRaisesRegex(RuntimeError, "Cannot join current thread"):
+                raise error
+
 
 class Barrier:
     def __init__(self, num_threads):

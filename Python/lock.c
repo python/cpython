@@ -248,6 +248,13 @@ _PyRawMutex_UnlockSlow(_PyRawMutex *m)
     }
 }
 
+int
+_PyEvent_IsSet(PyEvent *evt)
+{
+    uint8_t v = _Py_atomic_load_uint8(&evt->v);
+    return v == _Py_LOCKED;
+}
+
 void
 _PyEvent_Notify(PyEvent *evt)
 {

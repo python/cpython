@@ -67,6 +67,10 @@ typedef struct {
     // and cleared post-fork. Does not need to be accessed atomically.
     bool is_valid;
 
+    // Set immediately before `thread_run` returns to indicate that the OS
+    // thread is about to exit.
+    _PyEventRc *thread_is_exiting;
+
     // State is set once by the first successful `join` or `detach` operation
     // (or if the handle is invalidated).
     ThreadHandleState state;
@@ -76,13 +80,22 @@ typedef struct {
 static ThreadHandleObject*
 new_thread_handle(thread_module_state* state)
 {
-    ThreadHandleObject* self = PyObject_New(ThreadHandleObject, state->thread_handle_type);
-    if (self == NULL) {
+    _PyEventRc *event = _PyEventRc_New();
+    if (event == NULL) {
+        PyErr_NoMemory();
         return NULL;
     }
+
+    ThreadHandleObject* self = PyObject_New(ThreadHandleObject, state->thread_handle_type);
+    if (self == NULL) {
+        _PyEventRc_Decref(event);
+        return NULL;
+    }
+
     self->ident = 0;
     self->handle = 0;
     self->is_valid = false;
+    self->thread_is_exiting = event;
     self->once = (_PyOnceFlag){0};
 
     HEAD_LOCK(&_PyRuntime);
@@ -121,6 +134,7 @@ ThreadHandle_dealloc(ThreadHandleObject *self)
                              self) == -1) {
         PyErr_WriteUnraisable(tp);
     }
+    _PyEventRc_Decref(self->thread_is_exiting);
     PyObject_Free(self);
     Py_DECREF(tp);
 }
@@ -199,12 +213,6 @@ ThreadHandle_detach(ThreadHandleObject *self, void* ignored)
 static int
 join_thread(ThreadHandleObject *handle)
 {
-    if (handle->ident == PyThread_get_thread_ident_ex()) {
-        // PyThread_join_thread() would deadlock or error out.
-        PyErr_SetString(ThreadError, "Cannot join current thread");
-        return -1;
-    }
-
     int err;
     Py_BEGIN_ALLOW_THREADS
     err = PyThread_join_thread(handle->handle);
@@ -222,6 +230,23 @@ ThreadHandle_join(ThreadHandleObject *self, void* ignored)
 {
     if (!self->is_valid) {
         return invalid_handle_error();
+    }
+
+    // We want to perform this check outside of the `_PyOnceFlag` to prevent
+    // deadlock in the scenario where another thread joins us and we then
+    // attempt to join ourselves. However, it's not safe to check thread
+    // identity once the handle's os thread has finished. We may end up with
+    // the identity stored in the handle and erroneously think we are
+    // attempting to join ourselves.
+    //
+    // To work around this, we set `thread_is_exiting` immediately before
+    // `thread_run` returns.  We can be sure that we are not attempting to join
+    // ourselves if the handle's thread is about to exit.
+    if (!_PyEvent_IsSet(&self->thread_is_exiting->event) &&
+        self->ident == PyThread_get_thread_ident_ex()) {
+        // PyThread_join_thread() would deadlock or error out.
+        PyErr_SetString(ThreadError, "Cannot join current thread");
+        return NULL;
     }
 
     if (_PyOnceFlag_CallOnce(&self->once, (_Py_once_fn_t *)join_thread,
@@ -1276,6 +1301,7 @@ struct bootstate {
     PyObject *func;
     PyObject *args;
     PyObject *kwargs;
+    _PyEventRc *thread_is_exiting;
 };
 
 
@@ -1287,6 +1313,9 @@ thread_bootstate_free(struct bootstate *boot, int decref)
         Py_DECREF(boot->args);
         Py_XDECREF(boot->kwargs);
     }
+    if (boot->thread_is_exiting != NULL) {
+        _PyEventRc_Decref(boot->thread_is_exiting);
+    }
     PyMem_RawFree(boot);
 }
 
@@ -1296,6 +1325,10 @@ thread_run(void *boot_raw)
 {
     struct bootstate *boot = (struct bootstate *) boot_raw;
     PyThreadState *tstate = boot->tstate;
+
+    // `thread_is_exiting` needs to be set after bootstate has been freed
+    _PyEventRc *thread_is_exiting = boot->thread_is_exiting;
+    boot->thread_is_exiting = NULL;
 
     // gh-108987: If _thread.start_new_thread() is called before or while
     // Python is being finalized, thread_run() can called *after*.
@@ -1341,6 +1374,11 @@ thread_run(void *boot_raw)
     _PyThreadState_DeleteCurrent(tstate);
 
 exit:
+    if (thread_is_exiting != NULL) {
+        _PyEvent_Notify(&thread_is_exiting->event);
+        _PyEventRc_Decref(thread_is_exiting);
+    }
+
     // bpo-44434: Don't call explicitly PyThread_exit_thread(). On Linux with
     // the glibc, pthread_exit() can abort the whole process if dlopen() fails
     // to open the libgcc_s.so library (ex: EMFILE error).
@@ -1369,7 +1407,8 @@ static int
 do_start_new_thread(thread_module_state* state,
                     PyObject *func, PyObject* args, PyObject* kwargs,
                     int joinable,
-                    PyThread_ident_t* ident, PyThread_handle_t* handle)
+                    PyThread_ident_t* ident, PyThread_handle_t* handle,
+                    _PyEventRc *thread_is_exiting)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (!_PyInterpreterState_HasFeature(interp, Py_RTFLAGS_THREADS)) {
@@ -1402,6 +1441,10 @@ do_start_new_thread(thread_module_state* state,
     boot->func = Py_NewRef(func);
     boot->args = Py_NewRef(args);
     boot->kwargs = Py_XNewRef(kwargs);
+    boot->thread_is_exiting = thread_is_exiting;
+    if (thread_is_exiting != NULL) {
+        _PyEventRc_Incref(thread_is_exiting);
+    }
 
     int err;
     if (joinable) {
@@ -1453,7 +1496,7 @@ thread_PyThread_start_new_thread(PyObject *module, PyObject *fargs)
     PyThread_ident_t ident = 0;
     PyThread_handle_t handle;
     if (do_start_new_thread(state, func, args, kwargs, /*joinable=*/ 0,
-                            &ident, &handle)) {
+                            &ident, &handle, NULL)) {
         return NULL;
     }
     return PyLong_FromUnsignedLongLong(ident);
@@ -1497,7 +1540,7 @@ thread_PyThread_start_joinable_thread(PyObject *module, PyObject *func)
         return NULL;
     }
     if (do_start_new_thread(state, func, args, /*kwargs=*/ NULL, /*joinable=*/ 1,
-                            &hobj->ident, &hobj->handle)) {
+                            &hobj->ident, &hobj->handle, hobj->thread_is_exiting)) {
         Py_DECREF(args);
         Py_DECREF(hobj);
         return NULL;
