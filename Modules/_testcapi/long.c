@@ -803,6 +803,13 @@ pylong_asnativebytes(PyObject *module, PyObject *args)
 }
 
 static PyObject *
+pylong_asnativebytes_too_big_n(PyObject *module, PyObject *v)
+{
+    int res = PyLong_AsNativeBytes(v, NULL, (size_t)INT_MAX + 1, -1);
+    return res >= 0 ? PyLong_FromLong(res) : NULL;
+}
+
+static PyObject *
 pylong_fromnativebytes(PyObject *module, PyObject *args)
 {
     Py_buffer buffer;
@@ -852,6 +859,7 @@ static PyMethodDef test_methods[] = {
     {"pylong_asdouble",             pylong_asdouble,            METH_O},
     {"pylong_asvoidptr",            pylong_asvoidptr,           METH_O},
     {"pylong_asnativebytes",        pylong_asnativebytes,       METH_VARARGS},
+    {"pylong_asnativebytes_too_big_n", pylong_asnativebytes_too_big_n, METH_O},
     {"pylong_fromnativebytes",      pylong_fromnativebytes,     METH_VARARGS},
     {NULL},
 };
