@@ -3863,6 +3863,22 @@ _PyUnicode_AsUTF8NoNUL(PyObject *unicode)
     return s;
 }
 
+void* PyUnicode_Data(PyObject *unicode) {
+    if (!PyUnicode_Check(unicode)) {
+        PyErr_BadArgument();
+        return NULL;
+    }
+    return PyUnicode_DATA(unicode);
+}
+
+int PyUnicode_GetKind(PyObject *unicode) {
+    if (!PyUnicode_Check(unicode)) {
+        PyErr_BadArgument();
+        return -1;
+    }
+    return PyUnicode_KIND(unicode);
+}
+
 /*
 PyUnicode_GetSize() has been deprecated since Python 3.3
 because it returned length of Py_UNICODE.

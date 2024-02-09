@@ -266,6 +266,12 @@ static inline void* PyUnicode_DATA(PyObject *op) {
 }
 #define PyUnicode_DATA(op) PyUnicode_DATA(_PyObject_CAST(op))
 
+/* Symbol to reexport PyUnicode_DATA without needing to read the contents
+   of the structure directly.
+*/
+PyAPI_FUNC(void *) PyUnicode_Data(PyObject *op);
+PyAPI_FUNC(int) PyUnicode_GetKind(PyObject *op);
+
 /* Return pointers to the canonical representation cast to unsigned char,
    Py_UCS2, or Py_UCS4 for direct character access.
    No checks are performed, use PyUnicode_KIND() before to ensure
