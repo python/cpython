@@ -265,7 +265,7 @@ random_seed_time_pid(RandomObject *self)
     PyTime_t now;
     uint32_t key[5];
 
-    now = PyTime_Time();
+    now = _PyTime_GetSystemClock();
     key[0] = (uint32_t)(now & 0xffffffffU);
     key[1] = (uint32_t)(now >> 32);
 
@@ -277,7 +277,7 @@ random_seed_time_pid(RandomObject *self)
     key[2] = 0;
 #endif
 
-    now = PyTime_Monotonic();
+    now = _PyTime_GetMonotonicClock();
     key[3] = (uint32_t)(now & 0xffffffffU);
     key[4] = (uint32_t)(now >> 32);
 
