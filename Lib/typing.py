@@ -1128,7 +1128,7 @@ class _BaseGenericAlias(_Final, _root=True):
         try:
             result.__orig_class__ = self
         # Some objects raise TypeError (or something even more exotic)
-        # if you try to set attributes on them; guarding against that here
+        # if you try to set attributes on them; we guard against that here
         except Exception:
             pass
         return result

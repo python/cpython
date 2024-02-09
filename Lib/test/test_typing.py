@@ -4323,12 +4323,15 @@ class GenericTests(BaseTestCase):
         c.bar = 'abc'
         self.assertEqual(c.__dict__, {'bar': 'abc'})
 
-    def test_getattr_exceptions(self):
+    def test_setattr_exceptions(self):
         class Immutable[T]:
             def __setattr__(self, key, value):
                 raise RuntimeError("immutable")
 
-        Immutable[int]()
+        # gh-115165: This used to cause RuntimeError to be raised
+        # when we tried to set `__orig_class__` on the `Immutable` instance
+        # returned by the `Immutable[int]()` call
+        self.assertIsInstance(Immutable[int](), Immutable)
 
     def test_subscripted_generics_as_proxies(self):
         T = TypeVar('T')
@@ -8505,6 +8508,9 @@ class AnnotatedTests(BaseTestCase):
                 raise Exception("should be ignored")
 
         A = Annotated[C, "a decoration"]
+        # gh-115165: This used to cause RuntimeError to be raised
+        # when we tried to set `__orig_class__` on the `C` instance
+        # returned by the `A()` call
         self.assertIsInstance(A(), C)
 
     def test_cannot_instantiate_forward(self):
