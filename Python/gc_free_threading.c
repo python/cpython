@@ -1482,7 +1482,10 @@ PyObject_IS_GC(PyObject *obj)
 void
 _Py_ScheduleGC(PyThreadState *tstate)
 {
-    _PyThreadState_Signal(tstate, _PY_GC_SCHEDULED_BIT);
+    if (!_PyThreadState_IsSignalled(tstate, _PY_GC_SCHEDULED_BIT))
+    {
+        _PyThreadState_Signal(tstate, _PY_GC_SCHEDULED_BIT);
+    }
 }
 
 void
