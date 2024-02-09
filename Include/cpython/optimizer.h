@@ -42,7 +42,7 @@ typedef struct {
 typedef struct _exit_data {
     uint32_t target;
     int16_t temperature;
-    struct _PyExecutorObject *executor;
+    const struct _PyExecutorObject *executor;
 } _PyExitData;
 
 typedef struct _PyExecutorObject {
@@ -51,7 +51,7 @@ typedef struct _PyExecutorObject {
     _PyVMData vm_data; /* Used by the VM, but opaque to the optimizer */
     uint32_t exit_count;
     uint32_t code_size;
-    void *jit_code;    
+    void *jit_code;
     _PyExitData exits[1];
 } _PyExecutorObject;
 
@@ -60,8 +60,6 @@ typedef struct _cold_exit {
     _PyUOpInstruction uop;
 } _PyColdExitObject;
 
-
-extern _PyColdExitObject Py_NeverExecutedExecutor;
 
 typedef struct _PyOptimizerObject _PyOptimizerObject;
 
@@ -100,7 +98,7 @@ _PyOptimizer_Optimize(struct _PyInterpreterFrame *frame, _Py_CODEUNIT *start, Py
 
 extern _PyOptimizerObject _PyOptimizer_Default;
 
-void _Py_ExecutorInit(_PyExecutorObject *, _PyBloomFilter *);
+void _Py_ExecutorInit(_PyExecutorObject *, const _PyBloomFilter *);
 void _Py_ExecutorClear(_PyExecutorObject *);
 void _Py_BloomFilter_Init(_PyBloomFilter *);
 void _Py_BloomFilter_Add(_PyBloomFilter *bloom, void *obj);
