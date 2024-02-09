@@ -1083,9 +1083,6 @@ deoptimize:
 
 // Jump here from EXIT_IF()
 side_exit:
-#ifdef _Py_JIT
-    assert(0);
-#endif
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     UOP_STAT_INC(uopcode, miss);
     uint16_t exit_index = next_uop[-1].exit_index;
