@@ -245,6 +245,29 @@ class MockTest(unittest.TestCase):
             with mock.patch('builtins.open', mock.mock_open()):
                 mock.mock_open()  # should still be valid with open() mocked
 
+    def test_create_autospec_class_with_wraps(self):
+        """Autospec a class with wraps & test if the call is passed to the
+        wrapped object."""
+        value = 'my_func is called'
+
+        class MyClass:
+            def my_func(self):
+                return value
+        class_mock = create_autospec(spec=MyClass, wraps=MyClass)
+        class_mock.return_value = mock.DEFAULT
+        self.assertEqual(class_mock().my_func(), value)
+
+    def test_create_autospec_function_with_wraps(self):
+        """Autospec a function or a method with wraps & test if the call is
+        passed to the wrapped object."""
+        value = 'my_func is called'
+
+        class MyClass:
+            def my_func(self):
+                return value
+        func_mock = create_autospec(spec=MyClass.my_func, wraps=MyClass.my_func)
+        self.assertEqual(func_mock(MyClass()), value)
+
     def test_explicit_parent(self):
         parent = Mock()
         mock1 = Mock(parent=parent, return_value=None)

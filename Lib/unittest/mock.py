@@ -1231,7 +1231,7 @@ class CallableMixin(Base):
             if result is not DEFAULT:
                 return result
 
-        if self._mock_return_value is not DEFAULT:
+        if self._mock_return_value is not DEFAULT and self._mock_delegate is None:
             return self.return_value
 
         if self._mock_wraps is not None:
@@ -2787,7 +2787,8 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
 
     if is_type and not instance and 'return_value' not in kwargs:
         mock.return_value = create_autospec(spec, spec_set, instance=True,
-                                            _name='()', _parent=mock)
+                                            _name='()', _parent=mock,
+                                            wraps=kwargs.get('wraps'))
 
     for entry in dir(spec):
         if _is_magic(entry):
@@ -2809,6 +2810,9 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
             continue
 
         kwargs = {'spec': original}
+        # Wrap child attributes also.
+        if _kwargs.get('wraps'):
+            kwargs.update(wraps=original)
         if spec_set:
             kwargs = {'spec_set': original}
 
