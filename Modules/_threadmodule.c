@@ -71,8 +71,7 @@ typedef struct {
     // thread is about to exit.
     _PyEventRc *thread_is_exiting;
 
-    // State is set once by the first successful `join` or `detach` operation
-    // (or if the handle is invalidated).
+    // State is set once by the first successful `join` or `detach` operation.
     ThreadHandleState state;
     _PyOnceFlag once;
 } ThreadHandleObject;
