@@ -3357,8 +3357,9 @@
         }
 
         case _SET_IP: {
+            PyObject *instr_ptr = (PyObject *)CURRENT_OPERAND();
             TIER_TWO_ONLY
-            frame->instr_ptr = (_Py_CODEUNIT *)CURRENT_OPERAND();
+            frame->instr_ptr = (_Py_CODEUNIT *)instr_ptr;
             break;
         }
 
@@ -3396,9 +3397,10 @@
         }
 
         case _CHECK_VALIDITY_AND_SET_IP: {
+            PyObject *instr_ptr = (PyObject *)CURRENT_OPERAND();
             TIER_TWO_ONLY
             if (!current_executor->base.vm_data.valid) goto deoptimize;
-            frame->instr_ptr = (_Py_CODEUNIT *)CURRENT_OPERAND();
+            frame->instr_ptr = instr_ptr;
             break;
         }
 

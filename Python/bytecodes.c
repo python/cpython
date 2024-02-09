@@ -4036,9 +4036,9 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        op(_SET_IP, (--)) {
+        op(_SET_IP, (instr_ptr/4 --)) {
             TIER_TWO_ONLY
-            frame->instr_ptr = (_Py_CODEUNIT *)CURRENT_OPERAND();
+            frame->instr_ptr = (_Py_CODEUNIT *)instr_ptr;
         }
 
         op(_SAVE_RETURN_OFFSET, (--)) {
@@ -4065,12 +4065,10 @@ dummy_func(
             DEOPT_IF(!current_executor->base.vm_data.valid);
         }
 
-        // TO DO -- Support "super micro ops", so we can write
-        // op(_CHECK_VALIDITY_AND_SET_IP) = _CHECK_VALIDITY + _SET_IP;
-        op(_CHECK_VALIDITY_AND_SET_IP, (--)) {
+        op(_CHECK_VALIDITY_AND_SET_IP, (instr_ptr/4 --)) {
             TIER_TWO_ONLY
             DEOPT_IF(!current_executor->base.vm_data.valid);
-            frame->instr_ptr = (_Py_CODEUNIT *)CURRENT_OPERAND();
+            frame->instr_ptr = instr_ptr;
         }
 
 // END BYTECODES //
