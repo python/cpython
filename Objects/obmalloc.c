@@ -1194,6 +1194,7 @@ get_num_global_allocated_blocks(_PyRuntimeState *runtime)
         }
     }
     else {
+        _PyEval_StopTheWorldAll(&_PyRuntime);
         HEAD_LOCK(runtime);
         PyInterpreterState *interp = PyInterpreterState_Head();
         assert(interp != NULL);
@@ -1213,6 +1214,7 @@ get_num_global_allocated_blocks(_PyRuntimeState *runtime)
             }
         }
         HEAD_UNLOCK(runtime);
+        _PyEval_StartTheWorldAll(&_PyRuntime);
 #ifdef Py_DEBUG
         assert(got_main);
 #endif
