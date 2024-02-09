@@ -1,0 +1,1 @@
+Add ``PyUnicode_Data`` and ``PyUnicode_GetKind`` as alternatives to ``PyUnicode_DATA`` and ``PyUnicode_KIND`` which don't rely on the internal structure of unicode objects.
