@@ -527,7 +527,7 @@ are always available.  They are listed here in alphabetical order.
 .. function:: eval(expression, globals=None, locals=None)
 
    :param expression:
-      A Python expression as a string or a compiled code object.
+      A Python expression.
    :type expression: :class:`str` | :ref:`code object <code-objects>`
 
    :param globals:
