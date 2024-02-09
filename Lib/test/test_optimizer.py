@@ -43,6 +43,7 @@ class TestRareEventCounters(unittest.TestCase):
         _testinternalcapi.set_eval_frame_default()
 
     def test_builtin_dict(self):
+        _testinternalcapi.reset_rare_event_counter()
         orig_counter = _testinternalcapi.get_rare_event_counters()["builtin_dict"]
         if isinstance(__builtins__, types.ModuleType):
             builtins = __builtins__.__dict__
