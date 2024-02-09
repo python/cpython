@@ -8492,6 +8492,14 @@ class AnnotatedTests(BaseTestCase):
         self.assertEqual(MyCount([4, 4, 5]), {4: 2, 5: 1})
         self.assertEqual(MyCount[int]([4, 4, 5]), {4: 2, 5: 1})
 
+    def test_instantiate_immutable(self):
+        class C:
+            def __setattr__(self, key, value):
+                raise Exception("should be ignored")
+
+        A = Annotated[C, "a decoration"]
+        self.assertIsInstance(A(), C)
+
     def test_cannot_instantiate_forward(self):
         A = Annotated["int", (5, 6)]
         with self.assertRaises(TypeError):
@@ -8755,16 +8763,6 @@ class AnnotatedTests(BaseTestCase):
         self.assertIs(type(field_c1.__metadata__[0]), int)
         self.assertIs(type(field_c2.__metadata__[0]), float)
         self.assertIs(type(field_c3.__metadata__[0]), bool)
-
-    def test_annotated_callable_returning_immutable(self):
-        class C:
-            def __setattr__(self, name, value):
-                raise Exception('should be ignored')
-
-        class A(str): ...
-
-        annotated = Annotated[C, A("A")]
-        self.assertIsInstance(annotated(), C)
 
 
 class TypeAliasTests(BaseTestCase):
