@@ -3666,7 +3666,8 @@ class GenericTests(BaseTestCase):
         self.assertEqual(c.__dict__, {'bar': 'abc'})
 
     def test_setattr_exceptions(self):
-        class Immutable[T]:
+        T = TypeVar("T")
+        class Immutable(Generic[T]):
             def __setattr__(self, key, value):
                 raise RuntimeError("immutable")
 
