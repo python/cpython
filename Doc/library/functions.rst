@@ -526,9 +526,17 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: eval(expression, globals=None, locals=None)
 
-   The arguments are a string and optional globals and locals.  If provided,
-   *globals* must be a dictionary.  If provided, *locals* can be any mapping
-   object.
+   :param expression:
+      A Python expression as a string or a compiled code object.
+   :type expression: :class:`str` | :ref:`code object <code-objects>`
+
+   :param globals:
+      The global namespace (default: ``None``).
+   :type globals: :class:`dict` | ``None``
+
+   :param locals:
+      The local namespace (default: ``None``).
+   :type locals: :term:`mapping` | ``None``
 
    The *expression* argument is parsed and evaluated as a Python expression
    (technically speaking, a condition list) using the *globals* and *locals*
