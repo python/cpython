@@ -1015,6 +1015,16 @@ _io__Buffered_read1_impl(buffered *self, Py_ssize_t n)
         Py_DECREF(res);
         return NULL;
     }
+    /* Flush the write buffer if necessary */
+    if (self->writable) {
+        PyObject *r = buffered_flush_and_rewind_unlocked(self);
+        if (r == NULL) {
+            LEAVE_BUFFERED(self)
+            Py_DECREF(res);
+            return NULL;
+        }
+        Py_DECREF(r);
+    }
     _bufferedreader_reset_buf(self);
     r = _bufferedreader_raw_read(self, PyBytes_AS_STRING(res), n);
     LEAVE_BUFFERED(self)

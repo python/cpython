@@ -2506,6 +2506,28 @@ class BufferedRandomTest(BufferedReaderTest, BufferedWriterTest):
                 f.flush()
                 self.assertEqual(raw.getvalue(), b'a2c')
 
+    def test_read1_after_write(self):
+        with self.BytesIO(b'abcdef') as raw:
+            with self.tp(raw, 3) as f:
+                f.write(b"1")
+                self.assertEqual(f.read1(1), b'b')
+                f.flush()
+                self.assertEqual(raw.getvalue(), b'1bcdef')
+        with self.BytesIO(b'abcdef') as raw:
+            with self.tp(raw, 3) as f:
+                f.write(b"1")
+                self.assertEqual(f.read1(), b'bcd')
+                f.flush()
+                self.assertEqual(raw.getvalue(), b'1bcdef')
+        with self.BytesIO(b'abcdef') as raw:
+            with self.tp(raw, 3) as f:
+                f.write(b"1")
+                # XXX: read(100) returns different numbers of bytes
+                # in Python and C implementations.
+                self.assertEqual(f.read1(100)[:3], b'bcd')
+                f.flush()
+                self.assertEqual(raw.getvalue(), b'1bcdef')
+
     def test_interleaved_readline_write(self):
         with self.BytesIO(b'ab\ncdef\ng\n') as raw:
             with self.tp(raw) as f:
@@ -2517,6 +2539,36 @@ class BufferedRandomTest(BufferedReaderTest, BufferedWriterTest):
                 self.assertEqual(f.readline(), b'\n')
                 f.flush()
                 self.assertEqual(raw.getvalue(), b'1b\n2def\n3\n')
+
+    def test_xxx(self):
+        with self.BytesIO(b'abcdefgh') as raw:
+            with self.tp(raw) as f:
+                f.write(b'123')
+                self.assertEqual(f.read(), b'defgh')
+                f.write(b'456')
+                f.flush()
+                self.assertEqual(raw.getvalue(), b'123defgh456')
+        with self.BytesIO(b'abcdefgh') as raw:
+            with self.tp(raw) as f:
+                f.write(b'123')
+                self.assertEqual(f.read(3), b'def')
+                f.write(b'456')
+                f.flush()
+                self.assertEqual(raw.getvalue(), b'123def456')
+        with self.BytesIO(b'abcdefgh') as raw:
+            with self.tp(raw) as f:
+                f.write(b'123')
+                self.assertEqual(f.read1(), b'defgh')
+                f.write(b'456')
+                f.flush()
+                self.assertEqual(raw.getvalue(), b'123defgh456')
+        with self.BytesIO(b'abcdefgh') as raw:
+            with self.tp(raw) as f:
+                f.write(b'123')
+                self.assertEqual(f.read1(3), b'def')
+                f.write(b'456')
+                f.flush()
+                self.assertEqual(raw.getvalue(), b'123def456')
 
     # You can't construct a BufferedRandom over a non-seekable stream.
     test_unseekable = None
