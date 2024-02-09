@@ -1,0 +1,1 @@
+Fix support of Docutils >= 0.19 in :mod:`distutils`.
