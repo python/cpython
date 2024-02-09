@@ -3574,7 +3574,7 @@ listreviter_len(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_ssize_t index = LOAD_SSIZE(it->it_index);
     Py_ssize_t len;
     STORE_SSIZE(len, index + 1);
-    if (PyList_GET_SIZE(it->it_seq) < len)
+    if (it->it_seq == NULL || PyList_GET_SIZE(it->it_seq) < len)
         len = 0;
     return PyLong_FromSsize_t(len);
 }
