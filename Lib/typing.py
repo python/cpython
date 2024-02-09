@@ -1391,7 +1391,11 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
                 return ()
             i = bases.index(self)
             for b in bases[i+1:]:
-                if isinstance(b, _BaseGenericAlias) and b is not self:
+                if b is self:
+                    continue
+                if isinstance(b, _BaseGenericAlias):
+                    return ()
+                if Generic in getattr(b, '__mro__', ()):
                     return ()
         return (self.__origin__,)
 

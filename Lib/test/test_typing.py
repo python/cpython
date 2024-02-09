@@ -4914,11 +4914,98 @@ class GenericTests(BaseTestCase):
 
         self.assertEqual(C.__parameters__, (VT, T, KT))
 
+    def test_multiple_inheritance_multiple_layers(self):
+        S = TypeVar('S')
+        class GenericMixin(Generic[S]): ...
+        class GenericBase(Generic[S]): ...
+        class FromGenericAlias(GenericBase[S]): ...
+        class FromConcreteGenericAlias(GenericBase[int]): ...
+
+        # Generic is second:
+        class A1(FromGenericAlias, Generic[S]): ...
+        self.assertEqual(A1.__mro__,
+                         (A1, FromGenericAlias, GenericBase, Generic, object))
+
+        class A2(FromGenericAlias[S], Generic[S]): ...
+        self.assertEqual(A2.__mro__,
+                         (A2, FromGenericAlias, GenericBase, Generic, object))
+
+        class A3(FromGenericAlias[int], Generic[S]): ...
+        self.assertEqual(A3.__mro__,
+                         (A3, FromGenericAlias, GenericBase, Generic, object))
+
+        class A4(FromConcreteGenericAlias, Generic[S]): ...
+        self.assertEqual(A4.__mro__,
+                         (A4, FromConcreteGenericAlias, GenericBase, Generic, object))
+
+        class A5(FromGenericAlias[S], GenericMixin[S], Generic[S]): ...
+        self.assertEqual(A5.__mro__,
+                         (A5, FromGenericAlias, GenericBase, GenericMixin, Generic, object))
+
+        # Generic is first:
+        class B1(Generic[S], FromGenericAlias): ...
+        self.assertEqual(B1.__mro__,
+                         (B1, FromGenericAlias, GenericBase, Generic, object))
+
+        class B2(Generic[S], FromGenericAlias[S]): ...
+        self.assertEqual(B2.__mro__,
+                         (B2, FromGenericAlias, GenericBase, Generic, object))
+
+        class B3(Generic[S], FromGenericAlias[int]): ...
+        self.assertEqual(B3.__mro__,
+                         (B3, FromGenericAlias, GenericBase, Generic, object))
+
+        class B4(Generic[S], FromConcreteGenericAlias): ...
+        self.assertEqual(B4.__mro__,
+                         (B4, FromConcreteGenericAlias, GenericBase, Generic, object))
+
+        class B5(FromGenericAlias[S], GenericMixin[S], Generic[S]): ...
+        self.assertEqual(B5.__mro__,
+                         (B5, FromGenericAlias, GenericBase, GenericMixin, Generic, object))
+
     def test_multiple_inheritance_special(self):
         S = TypeVar('S')
         class B(Generic[S]): ...
         class C(List[int], B): ...
         self.assertEqual(C.__mro__, (C, list, B, Generic, object))
+
+    def test_multiple_inheritance_special_multiple_layers(self):
+        S = TypeVar('S')
+        class L(List[S]): ...
+        class G(list[S]): ...
+        class M(Generic[S]): ...
+
+        # Direct subclasses:
+        class D1(List[S], Generic[S]): ...
+        self.assertEqual(D1.__mro__, (D1, list, Generic, object))
+
+        class D2(Generic[S], List[S]): ...
+        self.assertEqual(D2.__mro__, (D2, list, Generic, object))
+
+        # Nested subclasses:
+        class L1(L[S], Generic[S]): ...
+        self.assertEqual(L1.__mro__, (L1, L, list, Generic, object))
+
+        class L2(Generic[S], L[S]): ...
+        self.assertEqual(L2.__mro__, (L2, L, list, Generic, object))
+
+        class L3(L[S], M[S], Generic[S]): ...
+        self.assertEqual(L3.__mro__, (L3, L, list, M, Generic, object))
+
+        class L4(Generic[S], L[S], M[S]): ...
+        self.assertEqual(L4.__mro__, (L4, L, list, M, Generic, object))
+
+        class G1(G[S], Generic[S]): ...
+        self.assertEqual(G1.__mro__, (G1, G, list, Generic, object))
+
+        class G2(Generic[S], G[S]): ...
+        self.assertEqual(G2.__mro__, (G2, Generic, G, list, object))
+
+        class G3(G[S], M[S], Generic[S]): ...
+        self.assertEqual(G3.__mro__, (G3, G, list, M, Generic, object))
+
+        class G4(Generic[S], G[S], M[S]): ...
+        self.assertEqual(G4.__mro__, (G4, G, list, M, Generic, object))
 
     def test_init_subclass_super_called(self):
         class FinalException(Exception):
