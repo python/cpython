@@ -1,0 +1,2 @@
+Fix "issubclass() arg 1 must be a class" errors in certain cases of multiple
+inheritance with generic aliases (regression in early 3.13 alpha releases).
