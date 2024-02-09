@@ -631,21 +631,21 @@ are always available.  They are listed here in alphabetical order.
       Added the *closure* parameter.
 
 
-.. function:: filter(function, iterable)
+.. function:: filter(predicate, iterable)
 
-   Construct an iterator from those elements of *iterable* for which *function*
+   Construct an iterator from those elements of *iterable* for which *predicate*
    is true.  *iterable* may be either a sequence, a container which
-   supports iteration, or an iterator.  If *function* is ``None``, the identity
+   supports iteration, or an iterator.  If *predicate* is ``None``, the identity
    function is assumed, that is, all elements of *iterable* that are false are
    removed.
 
-   Note that ``filter(function, iterable)`` is equivalent to the generator
-   expression ``(item for item in iterable if function(item))`` if function is
-   not ``None`` and ``(item for item in iterable if item)`` if function is
+   Note that ``filter(predicate, iterable)`` is equivalent to the generator
+   expression ``(item for item in iterable if predicate(item))`` if predicate is
+   not ``None`` and ``(item for item in iterable if item)`` if predicate is
    ``None``.
 
    See :func:`itertools.filterfalse` for the complementary function that returns
-   elements of *iterable* for which *function* is false.
+   elements of *iterable* for which *predicate* is false.
 
 
 .. class:: float(x=0.0)
