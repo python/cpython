@@ -1182,9 +1182,6 @@ link_executor(_PyExecutorObject *executor)
 static void
 unlink_executor(_PyExecutorObject *executor)
 {
-    if (!executor->vm_data.valid) {
-        return;
-    }
     _PyExecutorLinkListNode *links = &executor->vm_data.links;
     _PyExecutorObject *next = links->next;
     _PyExecutorObject *prev = links->previous;
@@ -1218,10 +1215,18 @@ _Py_ExecutorInit(_PyExecutorObject *executor, const _PyBloomFilter *dependency_s
 void
 _Py_ExecutorClear(_PyExecutorObject *executor)
 {
+    if (!executor->vm_data.valid) {
+        return;
+    }
     unlink_executor(executor);
     PyCodeObject *code = executor->vm_data.code;
     if (code == NULL) {
         return;
+    }
+    for (uint32_t i = 0; i < executor->exit_count; i++) {
+        Py_DECREF(executor->exits[i].executor);
+        executor->exits[i].executor = COLD_EXITS[i];
+        executor->exits[i].temperature = INT16_MIN;
     }
     _Py_CODEUNIT *instruction = &_PyCode_CODE(code)[executor->vm_data.index];
     assert(instruction->op.code == ENTER_EXECUTOR);

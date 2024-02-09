@@ -328,6 +328,7 @@ class TestIncompleteFrameAreInvisible(unittest.TestCase):
             next(g)
             # Move all objects to the oldest generation, and tell the GC to run
             # on the *very next* allocation:
+            sys._clear_internal_caches()
             gc.collect()
             gc.set_threshold(1, 0, 0)
             # Okay, so here's the nightmare scenario:
