@@ -1796,7 +1796,6 @@ _PyObject_GC_Link(PyObject *op)
 void
 _Py_RunGC(PyThreadState *tstate)
 {
-    _PyThreadState_Unsignal(tstate, _PY_GC_SCHEDULED_BIT);
     gc_collect_main(tstate, GENERATION_AUTO, _Py_GC_REASON_HEAP);
 }
 

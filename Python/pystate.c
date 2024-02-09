@@ -1306,7 +1306,8 @@ init_threadstate(_PyThreadStateImpl *_tstate,
 
     assert(interp != NULL);
     tstate->interp = interp;
-    tstate->eval_breaker = interp->ceval.interp_eval_breaker;
+    tstate->eval_breaker =
+        _Py_atomic_load_uintptr_relaxed(&interp->ceval.interp_eval_breaker);
 
     // next/prev are set in add_threadstate().
     assert(tstate->next == NULL);

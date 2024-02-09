@@ -114,7 +114,8 @@ update_thread_eval_breaker(PyInterpreterState *interp, PyThreadState *tstate)
 // When detaching a thread, transfer _PY_GC_SCHEDULED_BIT to its interpreter,
 // in case a GC was scheduled but not processed yet.
 static inline void
-update_interp_eval_breaker(PyThreadState *tstate, PyInterpreterState *interp) {
+update_interp_eval_breaker(PyThreadState *tstate, PyInterpreterState *interp)
+{
 #ifdef Py_GIL_DISABLED
     // Free-threaded builds eagerly update the eval_breaker on *all* threads as
     // needed, so this function doesn't apply.
@@ -661,7 +662,7 @@ PyEval_RestoreThread(PyThreadState *tstate)
 */
 
 void
-_PyEval_SignalReceived()
+_PyEval_SignalReceived(void)
 {
     _PyThreadState_Signal(_PyRuntime.main_tstate, _PY_SIGNALS_PENDING_BIT);
 }
@@ -715,6 +716,7 @@ _pop_pending_call(struct _pending_calls *pending,
     }
 }
 
+#ifndef Py_GIL_DISABLED
 static void
 signal_active_thread(PyInterpreterState *interp, uintptr_t bit)
 {
@@ -732,6 +734,7 @@ signal_active_thread(PyInterpreterState *interp, uintptr_t bit)
     }
     MUTEX_UNLOCK(gil->mutex);
 }
+#endif
 
 /* This implementation is thread-safe.  It allows
    scheduling to be made from any thread, and even from an executing
@@ -756,7 +759,8 @@ _PyEval_AddPendingCall(PyInterpreterState *interp,
 
     if (main_only) {
         _PyThreadState_Signal(_PyRuntime.main_tstate, _PY_CALLS_TO_DO_BIT);
-    } else {
+    }
+    else {
 #ifdef Py_GIL_DISABLED
         _PyInterpreterState_SignalAll(interp, _PY_CALLS_TO_DO_BIT);
 #else
@@ -1014,7 +1018,6 @@ _PyEval_InitState(PyInterpreterState *interp)
 int
 _Py_HandlePending(PyThreadState *tstate)
 {
-    PyInterpreterState *interp = tstate->interp;
     uintptr_t breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
 
     /* Stop-the-world */
@@ -1042,6 +1045,7 @@ _Py_HandlePending(PyThreadState *tstate)
 
     /* GC scheduled to run */
     if ((breaker & _PY_GC_SCHEDULED_BIT) != 0) {
+        _PyThreadState_Unsignal(tstate, _PY_GC_SCHEDULED_BIT);
         _Py_RunGC(tstate);
     }
 

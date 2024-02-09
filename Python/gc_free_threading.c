@@ -1482,7 +1482,7 @@ PyObject_IS_GC(PyObject *obj)
 void
 _Py_ScheduleGC(PyThreadState *tstate)
 {
-    _PyInterpreterState_SignalAll(tstate->interp, _PY_GC_SCHEDULED_BIT);
+    _PyThreadState_Signal(tstate, _PY_GC_SCHEDULED_BIT);
 }
 
 void
@@ -1502,7 +1502,6 @@ _PyObject_GC_Link(PyObject *op)
 void
 _Py_RunGC(PyThreadState *tstate)
 {
-    _PyInterpreterState_UnsignalAll(tstate->interp, _PY_GC_SCHEDULED_BIT);
     gc_collect_main(tstate, 0, _Py_GC_REASON_HEAP);
 }
 

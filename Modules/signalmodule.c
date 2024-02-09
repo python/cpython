@@ -1768,6 +1768,7 @@ PyErr_CheckSignals(void)
        allows long running native code to clean cycles created using the C-API
        even if it doesn't run the evaluation loop */
     if (_PyThreadState_IsSignalled(tstate, _PY_GC_SCHEDULED_BIT)) {
+        _PyThreadState_Unsignal(tstate, _PY_GC_SCHEDULED_BIT);
         _Py_RunGC(tstate);
     }
 

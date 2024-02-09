@@ -81,13 +81,8 @@ struct _ceval_state {
     /* This single variable holds the global instrumentation version and some
      * interpreter-global requests to break out of the fast path in the eval
      * loop. PyThreadState also contains an eval_breaker, which is the source
-     * of truth when a thread is running.
-     *
-     * It is by far the hottest field in this struct and should be placed at
-     * the beginning. */
+     * of truth when a thread is running. */
     uintptr_t interp_eval_breaker;
-    /* Avoid false sharing */
-    int64_t padding[7];
     int recursion_limit;
     struct _gil_runtime_state *gil;
     int own_gil;

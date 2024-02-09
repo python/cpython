@@ -898,7 +898,7 @@ static void
 set_version_raw(uintptr_t *breaker, uint32_t version)
 {
     uintptr_t old = _Py_atomic_load_uintptr(breaker);
-    intptr_t new;
+    uintptr_t new;
     do {
         new = (old & _PY_EVAL_EVENTS_MASK) | version;
     } while (!_Py_atomic_compare_exchange_uintptr(breaker, &old, new));
@@ -909,13 +909,14 @@ set_global_version(PyThreadState *tstate, uint32_t version)
 {
     assert((version & _PY_EVAL_EVENTS_MASK) == 0);
     PyInterpreterState *interp = tstate->interp;
-    set_version_raw(&tstate->interp->ceval.interp_eval_breaker, version);
+    set_version_raw(&interp->ceval.interp_eval_breaker, version);
 
 #ifdef Py_GIL_DISABLED
     // Set the version on all threads in free-threaded builds.
     _PyRuntimeState *runtime = &_PyRuntime;
     HEAD_LOCK(runtime);
-    for (; tstate; tstate = PyThreadState_Next(tstate)) {
+    for (tstate = interp->threads.head; tstate;
+         tstate = PyThreadState_Next(tstate)) {
         set_version_raw(&tstate->eval_breaker, version);
     };
     HEAD_UNLOCK(runtime);
