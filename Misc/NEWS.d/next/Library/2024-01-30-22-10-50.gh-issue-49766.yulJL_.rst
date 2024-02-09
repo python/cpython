@@ -1,0 +1,8 @@
+Fix :class:`~datetime.date`-:class:`~datetime.datetime` comparison. Now the
+special comparison methods like ``__eq__`` and ``__lt__`` return
+:data:`NotImplemented` if one of comparands is :class:`!date` and other is
+:class:`!datetime` instead of ignoring the time part and the time zone or
+forcefully return "not equal" or raise :exc:`TypeError`. It makes comparison
+of :class:`!date` and :class:`!datetime` subclasses more symmetric and
+allows to change the default behavior by overriding the special comparison
+methods in subclasses.

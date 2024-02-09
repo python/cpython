@@ -40,7 +40,8 @@
 
 #undef GOTO_TIER_TWO
 #define GOTO_TIER_TWO(EXECUTOR) \
-    __attribute__((musttail))                                \
+    tstate->previous_executor = (PyObject *)current_executor; \
+    __attribute__((musttail))                     \
     return ((jit_func)((EXECUTOR)->jit_code))(frame, stack_pointer, tstate);
 
 #undef GOTO_TIER_ONE
