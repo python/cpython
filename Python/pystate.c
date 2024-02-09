@@ -622,7 +622,7 @@ init_interpreter(PyInterpreterState *interp,
     }
     interp->sys_profile_initialized = false;
     interp->sys_trace_initialized = false;
-    _Py_SetOptimizer(interp, NULL);
+    (void)_Py_SetOptimizer(interp, NULL);
     interp->next_func_version = 1;
     interp->executor_list_head = NULL;
     if (interp != &runtime->_main_interpreter) {
