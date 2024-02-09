@@ -5989,6 +5989,18 @@ _PyObject_MakeDictFromInstanceAttributes(PyObject *obj, PyDictValues *values)
     return make_dict_from_instance_attributes(interp, keys, values);
 }
 
+static bool
+has_unique_reference(PyObject *op)
+{
+#ifdef Py_GIL_DISABLED
+    return (_Py_IsOwnedByCurrentThread(op) &&
+            op->ob_ref_local == 1 &&
+            _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared) == 0);
+#else
+    return Py_REFCNT(op) == 1;
+#endif
+}
+
 // Return true if the dict was dematerialized, false otherwise.
 bool
 _PyObject_MakeInstanceAttributesFromDict(PyObject *obj, PyDictOrValues *dorv)
@@ -6005,7 +6017,9 @@ _PyObject_MakeInstanceAttributesFromDict(PyObject *obj, PyDictOrValues *dorv)
         return false;
     }
     assert(_PyType_HasFeature(Py_TYPE(obj), Py_TPFLAGS_HEAPTYPE));
-    if (dict->ma_keys != CACHED_KEYS(Py_TYPE(obj)) || Py_REFCNT(dict) != 1) {
+    if (dict->ma_keys != CACHED_KEYS(Py_TYPE(obj)) ||
+        !has_unique_reference((PyObject *)dict))
+    {
         return false;
     }
     assert(dict->ma_values);
