@@ -361,7 +361,7 @@ void
 _PyJIT_Free(_PyExecutorObject *executor)
 {
     char *memory = (char *)executor->jit_code;
-    size_t size = executor->code_size;
+    size_t size = executor->jit_size;
     if (memory) {
         executor->jit_code = NULL;
         executor->jit_size = 0;
