@@ -401,10 +401,6 @@ _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra)
         refcnt += (Py_ssize_t)op->ob_ref_local;
         refcnt += extra;
 
-#ifdef Py_REF_DEBUG
-        _Py_AddRefTotal(_PyInterpreterState_GET(), extra);
-#endif
-
         new_shared = _Py_REF_SHARED(refcnt, _Py_REF_MERGED);
     } while (!_Py_atomic_compare_exchange_ssize(&op->ob_ref_shared,
                                                 &shared, new_shared));
