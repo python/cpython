@@ -323,6 +323,11 @@ _PyJIT_Compile(_PyExecutorObject *executor, _PyUOpInstruction *trace, size_t len
     // Loop again to emit the code:
     char *code = memory;
     char *data = memory + code_size;
+    char *top = code;
+    if (trace[0].opcode == _START_EXECUTOR) {
+        // Don't want to execute this more than once:
+        top += stencil_groups[_START_EXECUTOR].code.body_size;
+    }
     for (size_t i = 0; i < length; i++) {
         _PyUOpInstruction *instruction = &trace[i];
         const StencilGroup *group = &stencil_groups[instruction->opcode];
@@ -335,7 +340,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, _PyUOpInstruction *trace, size_t len
         patches[HoleValue_OPARG] = instruction->oparg;
         patches[HoleValue_OPERAND] = instruction->operand;
         patches[HoleValue_TARGET] = instruction->target;
-        patches[HoleValue_TOP] = (uint64_t)memory;
+        patches[HoleValue_TOP] = (uint64_t)top;
         patches[HoleValue_ZERO] = 0;
         emit(group, patches);
         code += group->code.body_size;
@@ -348,7 +353,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, _PyUOpInstruction *trace, size_t len
         return -1;
     }
     executor->jit_code = memory;
-    executor->code_size = code_size + data_size;
+    executor->jit_size = code_size + data_size;
     return 0;
 }
 
@@ -359,7 +364,7 @@ _PyJIT_Free(_PyExecutorObject *executor)
     size_t size = executor->code_size;
     if (memory) {
         executor->jit_code = NULL;
-        executor->code_size = 0;
+        executor->jit_size = 0;
         if (jit_free(memory, size)) {
             PyErr_WriteUnraisable(NULL);
         }
