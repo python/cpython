@@ -6806,6 +6806,8 @@ case $host/$ac_cv_cc_name in #(
     PY_SUPPORT_TIER=2 ;; #(
   powerpc64le-*-linux-gnu/gcc) :
     PY_SUPPORT_TIER=2 ;; #(
+    wasm32-unknown-wasi/clang) :
+    PY_SUPPORT_TIER=2 ;; #(
     x86_64-*-linux-gnu/clang) :
     PY_SUPPORT_TIER=2 ;; #(
 
@@ -6816,10 +6818,6 @@ case $host/$ac_cv_cc_name in #(
     powerpc64le-*-linux-gnu/clang) :
     PY_SUPPORT_TIER=3 ;; #(
     s390x-*-linux-gnu/gcc) :
-    PY_SUPPORT_TIER=3 ;; #(
-    wasm32-unknown-emscripten/clang) :
-    PY_SUPPORT_TIER=3 ;; #(
-    wasm32-unknown-wasi/clang) :
     PY_SUPPORT_TIER=3 ;; #(
     x86_64-*-freebsd*/clang) :
     PY_SUPPORT_TIER=3 ;; #(
