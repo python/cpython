@@ -37,13 +37,16 @@ static int
 globals_watcher_callback(PyDict_WatchEvent event, PyObject* dict,
                          PyObject* key, PyObject* new_value)
 {
-    uint64_t watched_mutations = get_mutations(dict);
+    assert(((PyDictObject *)dict)->ma_version_tag & 2);
+    int watched_mutations = get_mutations(dict);
+    printf("globals_watcher_callback called. dict %p, %d\n", dict, watched_mutations);
     RARE_EVENT_STAT_INC(watched_globals_modification);
-    if (watched_mutations < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
-        _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), dict);
-        increment_mutations(dict);
-    }
+    assert(watched_mutations < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS);
+    _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), dict);
     PyDict_Unwatch(GLOBALS_WATCHER_ID, dict);
+    assert((((PyDictObject *)dict)->ma_version_tag & DICT_WATCHER_MASK) == 0);
+    increment_mutations(dict);
+    assert(get_mutations(dict) == watched_mutations + 1);
     return 0;
 }
 
@@ -112,8 +115,8 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
     uint32_t builtins_watched = 0;
     uint32_t globals_checked = 0;
     uint32_t globals_watched = 0;
-    if (interp->dict_state.watchers[1] == NULL) {
-        interp->dict_state.watchers[1] = globals_watcher_callback;
+    if (interp->dict_state.watchers[GLOBALS_WATCHER_ID] == NULL) {
+        interp->dict_state.watchers[GLOBALS_WATCHER_ID] = globals_watcher_callback;
     }
     for (int pc = 0; pc < buffer_size; pc++) {
         _PyUOpInstruction *inst = &buffer[pc];
