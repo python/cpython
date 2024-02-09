@@ -338,8 +338,8 @@ class ThreadRunningTests(BasicThreadTest):
             # Wait for the joiner to start
             joiner_started.acquire()
 
-            # Not great, but I don't think there's a deterministic way to do
-            # make sure that the self-joining thread has been joined.
+            # Not great, but I don't think there's a deterministic way to make
+            # sure that the self-joining thread has been joined.
             time.sleep(0.1)
 
             # Unblock the self-joiner

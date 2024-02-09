@@ -85,13 +85,11 @@ new_thread_handle(thread_module_state* state)
         PyErr_NoMemory();
         return NULL;
     }
-
     ThreadHandleObject* self = PyObject_New(ThreadHandleObject, state->thread_handle_type);
     if (self == NULL) {
         _PyEventRc_Decref(event);
         return NULL;
     }
-
     self->ident = 0;
     self->handle = 0;
     self->is_valid = false;
