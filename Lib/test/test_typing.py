@@ -8756,6 +8756,16 @@ class AnnotatedTests(BaseTestCase):
         self.assertIs(type(field_c2.__metadata__[0]), float)
         self.assertIs(type(field_c3.__metadata__[0]), bool)
 
+    def test_annotated_callable_returning_immutable(self):
+        class C:
+            def __setattr__(self, name, value):
+                raise Exception('should be ignored')
+
+        class A(str): ...
+
+        annotated = Annotated[C, A("A")]
+        self.assertIsInstance(annotated(), C)
+
 
 class TypeAliasTests(BaseTestCase):
     def test_canonical_usage_with_variable_annotation(self):
