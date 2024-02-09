@@ -101,6 +101,17 @@ Improved Error Messages
   variables. See also :ref:`using-on-controlling-color`.
   (Contributed by Pablo Galindo Salgado in :gh:`112730`.)
 
+* When an incorrect keyword argument is passed to a function, the error message
+  now potentially suggests the correct keyword argument.
+  (Contributed by Pablo Galindo Salgado and Shantanu Jain in :gh:`107944`.)
+
+    >>> "better error messages!".split(max_split=1)
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+        "better error messages!".split(max_split=1)
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+    TypeError: split() got an unexpected keyword argument 'max_split'. Did you mean 'maxsplit'?
+
 Other Language Changes
 ======================
 
@@ -1327,6 +1338,12 @@ Build Changes
   ``_testimportmultiple`` and ``_uuid`` C extensions are now built with the
   :ref:`limited C API <limited-c-api>`.
   (Contributed by Victor Stinner in :gh:`85283`.)
+
+* ``wasm32-wasi`` is now a tier 2 platform.
+  (Contributed by Brett Cannon in :gh:`115192`.)
+
+* ``wasm32-emscripten`` is no longer a supported platform.
+  (Contributed by Brett Cannon in :gh:`115192`.)
 
 
 C API Changes
