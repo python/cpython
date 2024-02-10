@@ -103,7 +103,7 @@ class TopologicalSorter:
         # nodes as possible before cycles block more progress
         cycle = self._find_cycle()
         if cycle:
-            raise CycleError(f"nodes are in a cycle", cycle)
+            raise CycleError("nodes are in a cycle", cycle)
 
     def get_ready(self):
         """Return a tuple of all the nodes that are ready.
