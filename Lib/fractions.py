@@ -579,7 +579,8 @@ class Fraction(numbers.Rational):
             f"for object of type {type(self).__name__!r}"
         )
 
-    def _operator_fallbacks(monomorphic_operator, fallback_operator, handle_complex=False):
+    def _operator_fallbacks(monomorphic_operator, fallback_operator,
+                            handle_complex=False):
         """Generates forward and reverse operators given a purely-rational
         operator and a function from the operator module.
 

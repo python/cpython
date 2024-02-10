@@ -1295,26 +1295,26 @@ class FractionTest(unittest.TestCase):
 
         a = F(1, 2)
         b = 1j
-        message = "unsupported operand type(s) for %s: %s and %s"
+        message = "unsupported operand type(s) for %s: '%s' and '%s'"
         # test forward
         self.assertRaisesMessage(TypeError,
-                                 message % ("%", "'Fraction'", "'complex'"),
+                                 message % ("%", "Fraction", "complex"),
                                  operator.mod, a, b)
         self.assertRaisesMessage(TypeError,
-                                 message % ("//", "'Fraction'", "'complex'"),
+                                 message % ("//", "Fraction", "complex"),
                                  operator.floordiv, a, b)
         self.assertRaisesMessage(TypeError,
-                                 message % ("divmod()", "'Fraction'", "'complex'"),
+                                 message % ("divmod()", "Fraction", "complex"),
                                  divmod, a, b)
         # test reverse
         self.assertRaisesMessage(TypeError,
-                                 message % ("%", "'complex'", "'Fraction'"),
+                                 message % ("%", "complex", "Fraction"),
                                  operator.mod, b, a)
         self.assertRaisesMessage(TypeError,
-                                 message % ("//", "'complex'", "'Fraction'"),
+                                 message % ("//", "complex", "Fraction"),
                                  operator.floordiv, b, a)
         self.assertRaisesMessage(TypeError,
-                                 message % ("divmod()", "'complex'", "'Fraction'"),
+                                 message % ("divmod()", "complex", "Fraction"),
                                  divmod, b, a)
 
 
