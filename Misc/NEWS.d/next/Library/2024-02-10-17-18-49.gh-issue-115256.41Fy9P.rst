@@ -1,0 +1,1 @@
+Removed unnecessary reference cycle when writing tarfiles.
