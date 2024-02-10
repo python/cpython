@@ -2030,7 +2030,6 @@ class TarFile(object):
         # Now, fill the TarInfo object with
         # information specific for the file.
         tarinfo = self.tarinfo()
-        tarinfo.tarfile = self  # Not needed
 
         # Use os.stat or os.lstat, depending on if symlinks shall be resolved.
         if fileobj is None:
