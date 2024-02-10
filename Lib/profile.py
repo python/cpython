@@ -387,7 +387,7 @@ class Profile:
 
     def print_stats(self, sort=-1):
         import pstats
-        if not hasattr(sort, "__iter__") or isinstance(sort, str):
+        if not isinstance(sort, tuple):
             sort = (sort,)
         pstats.Stats(self).strip_dirs().sort_stats(*sort).print_stats()
 
