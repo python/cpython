@@ -582,7 +582,7 @@ class CustomLevelsAndFiltersTest(BaseTest):
         finally:
             if specific_filter:
                 self.root_logger.removeFilter(specific_filter)
-            handler.removeFilter(garr) 
+            handler.removeFilter(garr)
 
 
 def make_temp_file(*args, **kwargs):
