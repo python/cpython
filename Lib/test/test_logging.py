@@ -585,7 +585,6 @@ class CustomLevelsAndFiltersTest(BaseTest):
             handler.removeFilter(garr) 
 
 
-
 def make_temp_file(*args, **kwargs):
     fd, fn = tempfile.mkstemp(*args, **kwargs)
     os.close(fd)
