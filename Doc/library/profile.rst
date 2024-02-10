@@ -54,7 +54,7 @@ This section is provided for users that "don't want to read the manual." It
 provides a very brief overview, and allows a user to rapidly perform profiling
 on an existing application.
 
-To profile a statement with the namespace of :mod:`__main__`, you can do::
+To profile a single statement, you can do::
 
    import cProfile
    import re
@@ -585,7 +585,7 @@ Limitations
 ===========
 
 To avoid infinite recursion, :mod:`profile` and :mod:`cProfile` do not work
-inside the trace function set by :func:`sys.settrace` or :func:`sys.setprofile`.
+inside trace functions set using :func:`sys.settrace` or :func:`sys.setprofile`.
 
 It "takes a while" from when an event is dispatched
 until the profiler's call to get the time actually *gets* the state of the
