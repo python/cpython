@@ -1250,6 +1250,19 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertEqual(expect, set(p.glob(P(pattern))))
         self.assertEqual(expect, set(p.glob(FakePath(pattern))))
 
+    @needs_symlinks
+    def test_glob_dot(self):
+        P = self.cls
+        with os_helper.change_cwd(P(self.base, "dirC")):
+            self.assertEqual(
+                set(P('.').glob('*')), {P("fileC"), P("novel.txt"), P("dirD")})
+            self.assertEqual(
+                set(P('.').glob('**')), {P("fileC"), P("novel.txt"), P("dirD"), P("dirD/fileD"), P(".")})
+            self.assertEqual(
+                set(P('.').glob('**/*')), {P("fileC"), P("novel.txt"), P("dirD"), P("dirD/fileD")})
+            self.assertEqual(
+                set(P('.').glob('**/*/*')), {P("dirD/fileD")})
+
     def test_rglob_pathlike(self):
         P = self.cls
         p = P(self.base, "dirC")
