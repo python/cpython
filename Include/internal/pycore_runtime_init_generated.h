@@ -827,6 +827,7 @@ extern "C" {
     INIT_ID(call), \
     INIT_ID(call_exception_handler), \
     INIT_ID(call_soon), \
+    INIT_ID(callable), \
     INIT_ID(callback), \
     INIT_ID(cancel), \
     INIT_ID(capath), \
@@ -997,6 +998,7 @@ extern "C" {
     INIT_ID(input), \
     INIT_ID(insert_comments), \
     INIT_ID(insert_pis), \
+    INIT_ID(instruction_offset), \
     INIT_ID(instructions), \
     INIT_ID(intern), \
     INIT_ID(intersection), \
@@ -1167,6 +1169,7 @@ extern "C" {
     INIT_ID(reset), \
     INIT_ID(resetids), \
     INIT_ID(return), \
+    INIT_ID(retval), \
     INIT_ID(reverse), \
     INIT_ID(reversed), \
     INIT_ID(s), \
@@ -1178,6 +1181,7 @@ extern "C" {
     INIT_ID(seekable), \
     INIT_ID(selectors), \
     INIT_ID(self), \
+    INIT_ID(self_arg), \
     INIT_ID(send), \
     INIT_ID(sep), \
     INIT_ID(sequence), \
@@ -1219,6 +1223,7 @@ extern "C" {
     INIT_ID(strict_mode), \
     INIT_ID(string), \
     INIT_ID(sub_key), \
+    INIT_ID(subclass), \
     INIT_ID(symmetric_difference_update), \
     INIT_ID(tabsize), \
     INIT_ID(tag), \
