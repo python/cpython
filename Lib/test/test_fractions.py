@@ -1290,28 +1290,32 @@ class FractionTest(unittest.TestCase):
                     self.assertEqual(float(format(f, fmt2)), float(rhs))
                     self.assertEqual(float(format(-f, fmt2)), float('-' + rhs))
 
-    def test_traceback_in_mod_and_floordiv_with_complex_objects(self):
+    def test_complex_handling(self):
         # See issue gh-102840 for more details.
 
         a = F(1, 2)
         b = 1j
-        mod = lambda x, y: x % y
-        floordiv = lambda x, y: x // y
         message = "unsupported operand type(s) for %s: %s and %s"
         # test forward
         self.assertRaisesMessage(TypeError,
                                  message % ("%", "'Fraction'", "'complex'"),
-                                 mod, a, b)
+                                 operator.mod, a, b)
         self.assertRaisesMessage(TypeError,
                                  message % ("//", "'Fraction'", "'complex'"),
-                                 floordiv, a, b)
+                                 operator.floordiv, a, b)
+        self.assertRaisesMessage(TypeError,
+                                 message % ("divmod()", "'Fraction'", "'complex'"),
+                                 divmod, a, b)
         # test reverse
         self.assertRaisesMessage(TypeError,
                                  message % ("%", "'complex'", "'Fraction'"),
-                                 mod, b, a)
+                                 operator.mod, b, a)
         self.assertRaisesMessage(TypeError,
                                  message % ("//", "'complex'", "'Fraction'"),
-                                 floordiv, b, a)
+                                 operator.floordiv, b, a)
+        self.assertRaisesMessage(TypeError,
+                                 message % ("divmod()", "'complex'", "'Fraction'"),
+                                 divmod, b, a)
 
 
 if __name__ == '__main__':

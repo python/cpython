@@ -579,7 +579,7 @@ class Fraction(numbers.Rational):
             f"for object of type {type(self).__name__!r}"
         )
 
-    def _operator_fallbacks(monomorphic_operator, fallback_operator):
+    def _operator_fallbacks(monomorphic_operator, fallback_operator, handle_complex=False):
         """Generates forward and reverse operators given a purely-rational
         operator and a function from the operator module.
 
@@ -660,33 +660,29 @@ class Fraction(numbers.Rational):
 
         """
         def forward(a, b):
-            try:
-                if isinstance(b, Fraction):
-                    return monomorphic_operator(a, b)
-                elif isinstance(b, int):
-                    return monomorphic_operator(a, Fraction(b))
-                elif isinstance(b, float):
-                    return fallback_operator(float(a), b)
-                elif isinstance(b, complex):
-                    return fallback_operator(complex(a), b)
-            except TypeError:
-                pass
-            return NotImplemented
+            if isinstance(b, Fraction):
+                return monomorphic_operator(a, b)
+            elif isinstance(b, int):
+                return monomorphic_operator(a, Fraction(b))
+            elif isinstance(b, float):
+                return fallback_operator(float(a), b)
+            elif handle_complex and isinstance(b, complex):
+                return fallback_operator(complex(a), b)
+            else:
+                return NotImplemented
         forward.__name__ = '__' + fallback_operator.__name__ + '__'
         forward.__doc__ = monomorphic_operator.__doc__
 
         def reverse(b, a):
-            try:
-                if isinstance(a, numbers.Rational):
-                    # Includes ints.
-                    return monomorphic_operator(Fraction(a), b)
-                elif isinstance(a, numbers.Real):
-                    return fallback_operator(float(a), float(b))
-                elif isinstance(a, numbers.Complex):
-                    return fallback_operator(complex(a), complex(b))
-            except TypeError:
-                pass
-            return NotImplemented
+            if isinstance(a, numbers.Rational):
+                # Includes ints.
+                return monomorphic_operator(Fraction(a), b)
+            elif isinstance(a, numbers.Real):
+                return fallback_operator(float(a), float(b))
+            elif handle_complex and isinstance(a, numbers.Complex):
+                return fallback_operator(complex(a), complex(b))
+            else:
+                return NotImplemented
         reverse.__name__ = '__r' + fallback_operator.__name__ + '__'
         reverse.__doc__ = monomorphic_operator.__doc__
 
@@ -774,7 +770,7 @@ class Fraction(numbers.Rational):
             return Fraction._from_coprime_ints(t, s * db)
         return Fraction._from_coprime_ints(t // g2, s * (db // g2))
 
-    __add__, __radd__ = _operator_fallbacks(_add, operator.add)
+    __add__, __radd__ = _operator_fallbacks(_add, operator.add, True)
 
     def _sub(a, b):
         """a - b"""
@@ -790,7 +786,7 @@ class Fraction(numbers.Rational):
             return Fraction._from_coprime_ints(t, s * db)
         return Fraction._from_coprime_ints(t // g2, s * (db // g2))
 
-    __sub__, __rsub__ = _operator_fallbacks(_sub, operator.sub)
+    __sub__, __rsub__ = _operator_fallbacks(_sub, operator.sub, True)
 
     def _mul(a, b):
         """a * b"""
@@ -806,7 +802,7 @@ class Fraction(numbers.Rational):
             da //= g2
         return Fraction._from_coprime_ints(na * nb, db * da)
 
-    __mul__, __rmul__ = _operator_fallbacks(_mul, operator.mul)
+    __mul__, __rmul__ = _operator_fallbacks(_mul, operator.mul, True)
 
     def _div(a, b):
         """a / b"""
@@ -828,7 +824,7 @@ class Fraction(numbers.Rational):
             n, d = -n, -d
         return Fraction._from_coprime_ints(n, d)
 
-    __truediv__, __rtruediv__ = _operator_fallbacks(_div, operator.truediv)
+    __truediv__, __rtruediv__ = _operator_fallbacks(_div, operator.truediv, True)
 
     def _floordiv(a, b):
         """a // b"""
