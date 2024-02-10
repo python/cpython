@@ -31,7 +31,6 @@ Doc/library/email.compat32-message.rst
 Doc/library/email.errors.rst
 Doc/library/email.parser.rst
 Doc/library/email.policy.rst
-Doc/library/enum.rst
 Doc/library/exceptions.rst
 Doc/library/faulthandler.rst
 Doc/library/fcntl.rst
@@ -46,7 +45,6 @@ Doc/library/mmap.rst
 Doc/library/multiprocessing.rst
 Doc/library/optparse.rst
 Doc/library/os.rst
-Doc/library/pickle.rst
 Doc/library/pickletools.rst
 Doc/library/platform.rst
 Doc/library/plistlib.rst

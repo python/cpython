@@ -72,7 +72,6 @@ typedef struct _rare_events {
     uint8_t set_eval_frame_func;
     /* Modifying the builtins,  __builtins__.__dict__[var] = ... */
     uint8_t builtin_dict;
-    int builtins_dict_watcher_id;
     /* Modifying a function, e.g. func.__defaults__ = ..., etc. */
     uint8_t func_modification;
 } _rare_events;
@@ -202,6 +201,7 @@ struct _is {
 
 #if defined(Py_GIL_DISABLED)
     struct _mimalloc_interp_state mimalloc;
+    struct _brc_state brc;  // biased reference counting state
 #endif
 
     // Per-interpreter state for the obmalloc allocator.  For the main
@@ -243,6 +243,7 @@ struct _is {
     uint16_t optimizer_backedge_threshold;
     uint32_t next_func_version;
     _rare_events rare_events;
+    PyDict_WatchCallback builtins_dict_watcher;
 
     _Py_GlobalMonitors monitors;
     bool sys_profile_initialized;

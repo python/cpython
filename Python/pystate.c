@@ -517,6 +517,8 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
         return _PyStatus_NO_MEMORY();
     }
 
+    _PyThread_AfterFork(&runtime->threads);
+
     return _PyStatus_OK();
 }
 #endif
@@ -609,6 +611,9 @@ init_interpreter(PyInterpreterState *interp,
     _PyGC_InitState(&interp->gc);
     PyConfig_InitPythonConfig(&interp->config);
     _PyType_InitCache(interp);
+#ifdef Py_GIL_DISABLED
+    _Py_brc_init_state(interp);
+#endif
     for (int i = 0; i < _PY_MONITORING_UNGROUPED_EVENTS; i++) {
         interp->monitors.tools[i] = 0;
     }
@@ -1334,6 +1339,11 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     tstate->datastack_limit = NULL;
     tstate->what_event = -1;
 
+#ifdef Py_GIL_DISABLED
+    // Initialize biased reference counting inter-thread queue
+    _Py_brc_init_thread(tstate);
+#endif
+
     if (interp->stoptheworld.requested || _PyRuntime.stoptheworld.requested) {
         // Start in the suspended state if there is an ongoing stop-the-world.
         tstate->state = _Py_THREAD_SUSPENDED;
@@ -1544,6 +1554,9 @@ PyThreadState_Clear(PyThreadState *tstate)
     // Each thread should clear own freelists in free-threading builds.
     _PyFreeListState *freelist_state = _PyFreeListState_GET();
     _PyObject_ClearFreeLists(freelist_state, 1);
+
+    // Remove ourself from the biased reference counting table of threads.
+    _Py_brc_remove_thread(tstate);
 #endif
 
     _PyThreadState_ClearMimallocHeaps(tstate);
@@ -2473,7 +2486,17 @@ PyGILState_Check(void)
         return 0;
     }
 
-    return (tstate == gilstate_tss_get(runtime));
+#ifdef MS_WINDOWS
+    int err = GetLastError();
+#endif
+
+    PyThreadState *tcur = gilstate_tss_get(runtime);
+
+#ifdef MS_WINDOWS
+    SetLastError(err);
+#endif
+
+    return (tstate == tcur);
 }
 
 PyGILState_STATE

@@ -130,8 +130,8 @@ Available Types
 .. class:: timedelta
    :noindex:
 
-   A duration expressing the difference between two :class:`date`, :class:`.time`,
-   or :class:`.datetime` instances to microsecond resolution.
+   A duration expressing the difference between two :class:`.datetime`
+   or :class:`date` instances to microsecond resolution.
 
 
 .. class:: tzinfo
@@ -203,7 +203,7 @@ objects.
 --------------------------
 
 A :class:`timedelta` object represents a duration, the difference between two
-dates or times.
+:class:`.datetime` or :class:`date` instances.
 
 .. class:: timedelta(days=0, seconds=0, microseconds=0, milliseconds=0, minutes=0, hours=0, weeks=0)
 
@@ -400,30 +400,7 @@ objects (see below).
    the :func:`divmod` function. True division and multiplication of a
    :class:`timedelta` object by a :class:`float` object are now supported.
 
-
-Comparisons of :class:`timedelta` objects are supported, with some caveats.
-
-The comparisons ``==`` or ``!=`` *always* return a :class:`bool`, no matter
-the type of the compared object::
-
-    >>> from datetime import timedelta
-    >>> delta1 = timedelta(seconds=57)
-    >>> delta2 = timedelta(hours=25, seconds=2)
-    >>> delta2 != delta1
-    True
-    >>> delta2 == 5
-    False
-
-For all other comparisons (such as ``<`` and ``>``), when a :class:`timedelta`
-object is compared to an object of a different type, :exc:`TypeError`
-is raised::
-
-    >>> delta2 > delta1
-    True
-    >>> delta2 > 5
-    Traceback (most recent call last):
-      File "<stdin>", line 1, in <module>
-    TypeError: '>' not supported between instances of 'datetime.timedelta' and 'int'
+:class:`timedelta` objects support equality and order comparisons.
 
 In Boolean contexts, a :class:`timedelta` object is
 considered to be true if and only if it isn't equal to ``timedelta(0)``.
@@ -614,8 +591,13 @@ Supported operations:
 +-------------------------------+----------------------------------------------+
 | ``timedelta = date1 - date2`` | \(3)                                         |
 +-------------------------------+----------------------------------------------+
-| ``date1 < date2``             | *date1* is considered less than *date2* when |
-|                               | *date1* precedes *date2* in time. (4)        |
+| | ``date1 == date2``          | Equality comparison. (4)                     |
+| | ``date1 != date2``          |                                              |
++-------------------------------+----------------------------------------------+
+| | ``date1 < date2``           | Order comparison. (5)                        |
+| | ``date1 > date2``           |                                              |
+| | ``date1 <= date2``          |                                              |
+| | ``date1 >= date2``          |                                              |
 +-------------------------------+----------------------------------------------+
 
 Notes:
@@ -635,15 +617,12 @@ Notes:
    timedelta.microseconds are 0, and date2 + timedelta == date1 after.
 
 (4)
+   :class:`date` objects are equal if they represent the same date.
+
+(5)
+   *date1* is considered less than *date2* when *date1* precedes *date2* in time.
    In other words, ``date1 < date2`` if and only if ``date1.toordinal() <
-   date2.toordinal()``. Date comparison raises :exc:`TypeError` if
-   the other comparand isn't also a :class:`date` object. However,
-   ``NotImplemented`` is returned instead if the other comparand has a
-   :attr:`~date.timetuple` attribute. This hook gives other kinds of date objects a
-   chance at implementing mixed-type comparison. If not, when a :class:`date`
-   object is compared to an object of a different type, :exc:`TypeError` is raised
-   unless the comparison is ``==`` or ``!=``. The latter cases return
-   :const:`False` or :const:`True`, respectively.
+   date2.toordinal()``.
 
 In Boolean contexts, all :class:`date` objects are considered to be true.
 
@@ -1170,8 +1149,13 @@ Supported operations:
 +---------------------------------------+--------------------------------+
 | ``timedelta = datetime1 - datetime2`` | \(3)                           |
 +---------------------------------------+--------------------------------+
-| ``datetime1 < datetime2``             | Compares :class:`.datetime` to |
-|                                       | :class:`.datetime`. (4)        |
+| | ``datetime1 == datetime2``          | Equality comparison. (4)       |
+| | ``datetime1 != datetime2``          |                                |
++---------------------------------------+--------------------------------+
+| | ``datetime1 < datetime2``           | Order comparison. (5)          |
+| | ``datetime1 > datetime2``           |                                |
+| | ``datetime1 <= datetime2``          |                                |
+| | ``datetime1 >= datetime2``          |                                |
 +---------------------------------------+--------------------------------+
 
 (1)
@@ -1199,39 +1183,40 @@ Supported operations:
    are done in this case.
 
    If both are aware and have different :attr:`~.datetime.tzinfo` attributes, ``a-b`` acts
-   as if *a* and *b* were first converted to naive UTC datetimes first. The
+   as if *a* and *b* were first converted to naive UTC datetimes. The
    result is ``(a.replace(tzinfo=None) - a.utcoffset()) - (b.replace(tzinfo=None)
    - b.utcoffset())`` except that the implementation never overflows.
 
 (4)
+   :class:`.datetime` objects are equal if they represent the same date
+   and time, taking into account the time zone.
+
+   Naive and aware :class:`!datetime` objects are never equal.
+   :class:`!datetime` objects are never equal to :class:`date` objects
+   that are not also :class:`!datetime` instances, even if they represent
+   the same date.
+
+   If both comparands are aware and have different :attr:`~.datetime.tzinfo`
+   attributes, the comparison acts as comparands were first converted to UTC
+   datetimes except that the implementation never overflows.
+   :class:`!datetime` instances in a repeated interval are never equal to
+   :class:`!datetime` instances in other time zone.
+
+(5)
    *datetime1* is considered less than *datetime2* when *datetime1* precedes
-   *datetime2* in time.
+   *datetime2* in time, taking into account the time zone.
 
-   If one comparand is naive and the other is aware, :exc:`TypeError`
-   is raised if an order comparison is attempted. For equality
-   comparisons, naive instances are never equal to aware instances.
+   Order comparison between naive and aware :class:`.datetime` objects,
+   as well as a :class:`!datetime` object and a :class:`!date` object
+   that is not also a :class:`!datetime` instance, raises :exc:`TypeError`.
 
-   If both comparands are aware, and have the same :attr:`~.datetime.tzinfo` attribute, the
-   common :attr:`~.datetime.tzinfo` attribute is ignored and the base datetimes are
-   compared. If both comparands are aware and have different :attr:`~.datetime.tzinfo`
-   attributes, the comparands are first adjusted by subtracting their UTC
-   offsets (obtained from ``self.utcoffset()``).
+   If both comparands are aware and have different :attr:`~.datetime.tzinfo`
+   attributes, the comparison acts as comparands were first converted to UTC
+   datetimes except that the implementation never overflows.
 
-   .. versionchanged:: 3.3
-      Equality comparisons between aware and naive :class:`.datetime`
-      instances don't raise :exc:`TypeError`.
-
-   .. note::
-
-      In order to stop comparison from falling back to the default scheme of comparing
-      object addresses, datetime comparison normally raises :exc:`TypeError` if the
-      other comparand isn't also a :class:`.datetime` object. However,
-      ``NotImplemented`` is returned instead if the other comparand has a
-      :attr:`~.datetime.timetuple` attribute. This hook gives other kinds of date objects a
-      chance at implementing mixed-type comparison. If not, when a :class:`.datetime`
-      object is compared to an object of a different type, :exc:`TypeError` is raised
-      unless the comparison is ``==`` or ``!=``. The latter cases return
-      :const:`False` or :const:`True`, respectively.
+.. versionchanged:: 3.3
+   Equality comparisons between aware and naive :class:`.datetime`
+   instances don't raise :exc:`TypeError`.
 
 Instance methods:
 
@@ -1766,21 +1751,18 @@ Instance attributes (read-only):
 
    .. versionadded:: 3.6
 
-:class:`.time` objects support comparison of :class:`.time` to :class:`.time`,
-where *a* is considered less
-than *b* when *a* precedes *b* in time. If one comparand is naive and the other
-is aware, :exc:`TypeError` is raised if an order comparison is attempted. For equality
-comparisons, naive instances are never equal to aware instances.
+:class:`.time` objects support equality and order comparisons,
+where *a* is considered less than *b* when *a* precedes *b* in time.
+
+Naive and aware :class:`!time` objects are never equal.
+Order comparison between naive and aware :class:`!time` objects raises
+:exc:`TypeError`.
 
 If both comparands are aware, and have
 the same :attr:`~.time.tzinfo` attribute, the common :attr:`!tzinfo` attribute is
 ignored and the base times are compared. If both comparands are aware and
 have different :attr:`!tzinfo` attributes, the comparands are first adjusted by
-subtracting their UTC offsets (obtained from ``self.utcoffset()``). In order
-to stop mixed-type comparisons from falling back to the default comparison by
-object address, when a :class:`.time` object is compared to an object of a
-different type, :exc:`TypeError` is raised unless the comparison is ``==`` or
-``!=``. The latter cases return :const:`False` or :const:`True`, respectively.
+subtracting their UTC offsets (obtained from ``self.utcoffset()``).
 
 .. versionchanged:: 3.3
   Equality comparisons between aware and naive :class:`.time` instances
