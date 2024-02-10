@@ -179,9 +179,8 @@ class TestBasic(unittest.TestCase):
             _ = d.count(3)
 
         d = deque([A()])
-        with self.assertRaises(RuntimeError ):
+        with self.assertRaises(RuntimeError):
             d.index(0)
-
 
     def test_extend(self):
         d = deque('a')
