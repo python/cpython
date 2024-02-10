@@ -158,6 +158,32 @@ class GeneralTests:
                               re.MULTILINE)
         self.assertRegex(stderr.getvalue(), expected)
 
+    def test_host_port_host(self):
+        mock_socket.reply_with(b"220 Hello world")
+        # create instance without arguments
+        smtp = smtplib.SMTP(f"{HOST}:{self.port}")
+        # .connect must set ._host since it is used by .starttls
+        self.assertEqual(smtp._host, HOST)
+        smtp.close()
+
+    def test_explicit_connect(self):
+        mock_socket.reply_with(b"220 Hello world")
+        # create instance without arguments
+        smtp = smtplib.SMTP()
+        # .connect must set ._host since it is used by .starttls
+        smtp.connect(HOST, self.port)
+        self.assertEqual(smtp._host, HOST)
+        smtp.close()
+
+    def test_explicit_connect_host_port(self):
+        mock_socket.reply_with(b"220 Hello world")
+        # create instance without arguments
+        smtp = smtplib.SMTP()
+        # .connect must set ._host since it is used by .starttls
+        smtp.connect(f"{HOST}:{self.port}")
+        self.assertEqual(smtp._host, HOST)
+        smtp.close()
+
 
 class SMTPGeneralTests(GeneralTests, unittest.TestCase):
 
