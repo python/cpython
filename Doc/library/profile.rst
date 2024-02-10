@@ -297,6 +297,13 @@ functions:
       Create a :class:`~pstats.Stats` object based on the current
       profile and print the results to stdout.
 
+      The *sort* parameter specifies the sorting order of the displayed
+      statistics. It accepts a single sort key or a tuple of sort keys
+      to enable multi-level sorting.
+
+      .. versionadded:: 3.13
+         :meth:`~Profile.print_stats` can now accept multiple sort arguments.
+
    .. method:: dump_stats(filename)
 
       Write the results of the current profile to *filename*.
