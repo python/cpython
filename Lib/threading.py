@@ -1162,7 +1162,9 @@ class Thread:
             self._join_os_thread()
 
     def _join_os_thread(self):
-        self._handle.join()
+        # self._handle may be cleared post-fork
+        if self._handle is not None:
+            self._handle.join()
 
     def _wait_for_tstate_lock(self, block=True, timeout=-1):
         # Issue #18808: wait for the thread state to be gone.
