@@ -565,8 +565,11 @@ async def _cancel_and_wait(fut):
 
 
 class _AsCompletedIterator:
-    """Doubles as an async iterator of as-completed tasks and futures
-    from a supplied set of awaitables and a plain iterator of
+    """Iterator of awaitables representing tasks of asyncio.as_completed
+
+    Doubles as an async iterator and plain iterator of as-completed results.
+    Original tasks and futures from the supplied set of awaitables are yielded
+    during asynchronous iteration. plain iterator of
     coroutines that resolve to results from the supplied awaitables as
     their underlying tasks or futures complete.
     """
@@ -621,9 +624,9 @@ class _AsCompletedIterator:
             self._timeout_handle.cancel()
 
     async def _wait_for_one(self, resolve=False):
-        """Waits for the next future to be done and returns it unless resolve
-        is set, in which case it returns either the result of the future or
-        raises an exception."""
+        # Wait for the next future to be done and return it unless resolve is
+        # set, in which case return either the result of the future or raise
+        # an exception.
         f = await self._done.get()
         if f is None:
             # Dummy value from _handle_timeout().
@@ -632,31 +635,46 @@ class _AsCompletedIterator:
 
 
 def as_completed(fs, *, timeout=None):
-    """Return an async iterator that yields tasks from the given awaitables
-    in the order they finish as they finish.
+    """Create an iterator of awaitables or their results in completion order.
 
-        async for completed_task in as_completed(fs):
-            result = await completed_task
-            # Use result.
+    Run the supplied awaitables concurrently. The returned object can be
+    iterated to obtain earliest next results of the awaitables as they finish.
 
-    Supplied Tasks and Futures are yielded as-is once they've completed.
-    Coroutines will be scheduled and their implicitly created tasks will be
-    yielded instead.
+    The object returned can be iterated as an asynchronous iterator or a plain
+    iterator. When asynchronous iteration is used, the originally-supplied
+    awaitables are yielded if they are tasks or futures. This makes it easy to
+    correlate previously-scheduled tasks with their results:
 
-    A TimeoutError is raised by the async for statement if the supplied
-    timeout is reached before the iterator is exhausted.
+        ipv4_connect = create_task(
+           open_connection("127.0.0.1", 80)
+       )
+       ipv6_connect = create_task(
+           open_connection("::1", 80)
+       )
+       tasks = [ipv4_connect, ipv6_connect]
 
-    For backwards compatibility, the returned object can also be used as a
-    plain iterator that yields new coroutines representing each next awaitable
-    to be completed:
+       async for earliest_connect in as_completed(tasks):
+           reader, writer = await earliest_connect
+           if earliest_connect is ipv6_connect:
+               print('IPv6 connection established.')
+           else:
+               print('IPv4 connection established.')
+           # ...
 
-        for next_completed in as_completed(fs):
-            result = await next_completed
-            # Use result.
+    During asynchronous iteration, implicitly-created tasks will be yielded for
+    supplied awaitables that aren't tasks or futures.
 
-    The coroutines yielded by the plain iterator are not the original
-    awaitables passed in and are the source of TimeoutErrors instead of the
-    for loop.
+    When used as a plain iterator, each iteration yields a new coroutine that
+    returns the result or raises the exception of the next completed awaitable.
+    This pattern is compatible with Python versions older than 3.13:
+
+        for coro in as_completed(aws):
+            earliest_result = await coro
+            # ...
+
+    A TimeoutError is raised if the timeout occurs before all awaitables
+    are done. This is raised by the async for loop during asynchronous
+    iteration or by the coroutines yielded during plain iteration.
     """
     if inspect.isawaitable(fs):
         raise TypeError(

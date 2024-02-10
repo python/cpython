@@ -862,28 +862,45 @@ Waiting Primitives
 .. function:: as_completed(aws, *, timeout=None)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws* iterable
-   concurrently. Returns an :term:`asynchronous iterator` of the next-completed
-   Tasks or Futures. If Tasks or Futures are supplied, those same objects are
-   yielded on completion. Other awaitables are scheduled and their implicitly
-   created Tasks are yielded instead.
+   concurrently. The returned object can be iterated to obtain earliest next
+   results of the awaitables as they finish.
 
-   Raises :exc:`TimeoutError` if the timeout occurs before
-   all Futures are done.
+   The object returned by ``as_completed()`` can be iterated as an
+   :term:`asynchronous iterator` or a plain :term:`iterator`. When asynchronous
+   iteration is used, the originally-supplied awaitables are yielded if they
+   are tasks or futures. This makes it easy to correlate previously-scheduled
+   tasks with their results. Example::
 
-   Example::
+       ipv4_connect = create_task(
+           open_connection("127.0.0.1", 80)
+       )
+       ipv6_connect = create_task(
+           open_connection("::1", 80)
+       )
+       tasks = [ipv4_connect, ipv6_connect]
 
-       async for task in as_completed(aws):
-           earliest_result = await task
+       async for earliest_connect in as_completed(tasks):
+           reader, writer = await earliest_connect
+           if earliest_connect is ipv6_connect:
+               print('IPv6 connection established.')
+           else:
+               print('IPv4 connection established.')
            # ...
 
-   For backwards compatibility, the object returned by ``as_completed()``
-   can be iterated as a plain iterator, yielding new coroutines that return
-   the results or raise the errors of the passed in awaitables as their tasks
-   finish.::
+   During asynchronous iteration, implicitly-created tasks will be yielded for
+   supplied awaitables that aren't tasks or futures.
 
-      for aw in as_completed(aws):
-          earliest_result = await aw
-          # ...
+   When used as a plain iterator, each iteration yields a new coroutine that
+   returns the result or raises the exception of the next completed awaitable.
+   This pattern is compatible with Python versions older than 3.13::
+
+        for coro in as_completed(aws):
+            earliest_result = await coro
+            # ...
+
+   A :exc:`TimeoutError` is raised if the timeout occurs before all awaitables
+   are done. This is raised by the ``async for`` loop during asynchronous
+   iteration or by the coroutines yielded during plain iteration.
 
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
