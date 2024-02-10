@@ -185,6 +185,9 @@ array
   It can be used instead of ``'u'`` type code, which is deprecated.
   (Contributed by Inada Naoki in :gh:`80480`.)
 
+* Add ``clear()`` method in order to implement ``MutableSequence``.
+  (Contributed by Mike Zimin in :gh:`114894`.)
+
 ast
 ---
 

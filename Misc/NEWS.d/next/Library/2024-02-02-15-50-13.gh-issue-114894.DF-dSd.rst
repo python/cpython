@@ -1,0 +1,1 @@
+Add :meth:`array.array.clear`.
