@@ -745,6 +745,7 @@ class BasicTest(BaseTest):
             self.get_text_file_contents('.gitignore')
 
     @requires_subprocess()
+    @unittest.skipIf(os.name == 'nt', 'not relevant on Windows')
     @unittest.skipUnless(can_symlink(), 'Needs symlinks')
     def test_executable_symlink(self):
         """
