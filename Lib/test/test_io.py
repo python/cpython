@@ -39,11 +39,9 @@ from itertools import cycle, count
 from test import support
 from test.support.script_helper import (
     assert_python_ok, assert_python_failure, run_python_until_end)
-from test.support import import_helper
-from test.support import os_helper
-from test.support import threading_helper
-from test.support import warnings_helper
-from test.support import skip_if_sanitizer
+from test.support import (
+    import_helper, is_apple, os_helper, skip_if_sanitizer, threading_helper, warnings_helper
+)
 from test.support.os_helper import FakePath
 
 import codecs
@@ -606,10 +604,10 @@ class IOTest(unittest.TestCase):
         self.read_ops(f, True)
 
     def test_large_file_ops(self):
-        # On Windows and Mac OSX this test consumes large resources; It takes
-        # a long time to build the >2 GiB file and takes >2 GiB of disk space
-        # therefore the resource must be enabled to run this test.
-        if sys.platform[:3] == 'win' or sys.platform == 'darwin':
+        # On Windows and Apple platforms this test consumes large resources; It
+        # takes a long time to build the >2 GiB file and takes >2 GiB of disk
+        # space therefore the resource must be enabled to run this test.
+        if sys.platform[:3] == 'win' or is_apple:
             support.requires(
                 'largefile',
                 'test requires %s bytes and a long time to run' % self.LARGE)
@@ -1654,7 +1652,8 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
 class CBufferedReaderTest(BufferedReaderTest, SizeofTest):
     tp = io.BufferedReader
 
-    @skip_if_sanitizer(memory=True, address=True, reason= "sanitizer defaults to crashing "
+    @skip_if_sanitizer(memory=True, address=True, thread=True,
+                       reason="sanitizer defaults to crashing "
                        "instead of returning NULL for malloc failure.")
     def test_constructor(self):
         BufferedReaderTest.test_constructor(self)
@@ -2021,7 +2020,8 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
 class CBufferedWriterTest(BufferedWriterTest, SizeofTest):
     tp = io.BufferedWriter
 
-    @skip_if_sanitizer(memory=True, address=True, reason= "sanitizer defaults to crashing "
+    @skip_if_sanitizer(memory=True, address=True, thread=True,
+                       reason="sanitizer defaults to crashing "
                        "instead of returning NULL for malloc failure.")
     def test_constructor(self):
         BufferedWriterTest.test_constructor(self)
@@ -2497,6 +2497,28 @@ class BufferedRandomTest(BufferedReaderTest, BufferedWriterTest):
                 f.flush()
                 self.assertEqual(raw.getvalue(), b'a2c')
 
+    def test_read1_after_write(self):
+        with self.BytesIO(b'abcdef') as raw:
+            with self.tp(raw, 3) as f:
+                f.write(b"1")
+                self.assertEqual(f.read1(1), b'b')
+                f.flush()
+                self.assertEqual(raw.getvalue(), b'1bcdef')
+        with self.BytesIO(b'abcdef') as raw:
+            with self.tp(raw, 3) as f:
+                f.write(b"1")
+                self.assertEqual(f.read1(), b'bcd')
+                f.flush()
+                self.assertEqual(raw.getvalue(), b'1bcdef')
+        with self.BytesIO(b'abcdef') as raw:
+            with self.tp(raw, 3) as f:
+                f.write(b"1")
+                # XXX: read(100) returns different numbers of bytes
+                # in Python and C implementations.
+                self.assertEqual(f.read1(100)[:3], b'bcd')
+                f.flush()
+                self.assertEqual(raw.getvalue(), b'1bcdef')
+
     def test_interleaved_readline_write(self):
         with self.BytesIO(b'ab\ncdef\ng\n') as raw:
             with self.tp(raw) as f:
@@ -2509,6 +2531,36 @@ class BufferedRandomTest(BufferedReaderTest, BufferedWriterTest):
                 f.flush()
                 self.assertEqual(raw.getvalue(), b'1b\n2def\n3\n')
 
+    def test_xxx(self):
+        with self.BytesIO(b'abcdefgh') as raw:
+            with self.tp(raw) as f:
+                f.write(b'123')
+                self.assertEqual(f.read(), b'defgh')
+                f.write(b'456')
+                f.flush()
+                self.assertEqual(raw.getvalue(), b'123defgh456')
+        with self.BytesIO(b'abcdefgh') as raw:
+            with self.tp(raw) as f:
+                f.write(b'123')
+                self.assertEqual(f.read(3), b'def')
+                f.write(b'456')
+                f.flush()
+                self.assertEqual(raw.getvalue(), b'123def456')
+        with self.BytesIO(b'abcdefgh') as raw:
+            with self.tp(raw) as f:
+                f.write(b'123')
+                self.assertEqual(f.read1(), b'defgh')
+                f.write(b'456')
+                f.flush()
+                self.assertEqual(raw.getvalue(), b'123defgh456')
+        with self.BytesIO(b'abcdefgh') as raw:
+            with self.tp(raw) as f:
+                f.write(b'123')
+                self.assertEqual(f.read1(3), b'def')
+                f.write(b'456')
+                f.flush()
+                self.assertEqual(raw.getvalue(), b'123def456')
+
     # You can't construct a BufferedRandom over a non-seekable stream.
     test_unseekable = None
 
@@ -2520,7 +2572,8 @@ class BufferedRandomTest(BufferedReaderTest, BufferedWriterTest):
 class CBufferedRandomTest(BufferedRandomTest, SizeofTest):
     tp = io.BufferedRandom
 
-    @skip_if_sanitizer(memory=True, address=True, reason= "sanitizer defaults to crashing "
+    @skip_if_sanitizer(memory=True, address=True, thread=True,
+                       reason="sanitizer defaults to crashing "
                        "instead of returning NULL for malloc failure.")
     def test_constructor(self):
         BufferedRandomTest.test_constructor(self)
@@ -2802,6 +2855,13 @@ class TextIOWrapperTest(unittest.TestCase):
         with support.swap_attr(raw, 'name', t), support.infinite_recursion(25):
             with self.assertRaises(RuntimeError):
                 repr(t)  # Should not crash
+
+    def test_subclass_repr(self):
+        class TestSubclass(self.TextIOWrapper):
+            pass
+
+        f = TestSubclass(self.StringIO())
+        self.assertIn(TestSubclass.__name__, repr(f))
 
     def test_line_buffering(self):
         r = self.BytesIO()
@@ -3642,10 +3702,8 @@ class TextIOWrapperTest(unittest.TestCase):
             codecs.lookup('utf-8')
 
             class C:
-                def __init__(self):
-                    self.buf = io.BytesIO()
                 def __del__(self):
-                    io.TextIOWrapper(self.buf, **{kwargs})
+                    io.TextIOWrapper(io.BytesIO(), **{kwargs})
                     print("ok")
             c = C()
             """.format(iomod=iomod, kwargs=kwargs)
@@ -3876,6 +3934,14 @@ class TextIOWrapperTest(unittest.TestCase):
         t.read(1)
         t.write('x')
         t.tell()
+
+    def test_issue35928(self):
+        p = self.BufferedRWPair(self.BytesIO(b'foo\nbar\n'), self.BytesIO())
+        f = self.TextIOWrapper(p)
+        res = f.readline()
+        self.assertEqual(res, 'foo\n')
+        f.write(res)
+        self.assertEqual(res + f.readline(), 'foo\nbar\n')
 
 
 class MemviewBytesIO(io.BytesIO):

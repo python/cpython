@@ -920,6 +920,8 @@ LLVM_AR
 PROFILE_TASK
 DEF_MAKE_RULE
 DEF_MAKE_ALL_RULE
+JIT_STENCILS_H
+REGEN_JIT_COMMAND
 ABIFLAGS
 LN
 MKDIR_P
@@ -1074,6 +1076,7 @@ with_pydebug
 with_trace_refs
 enable_pystats
 with_assertions
+enable_experimental_jit
 enable_optimizations
 with_lto
 enable_bolt
@@ -1082,6 +1085,7 @@ with_dsymutil
 with_address_sanitizer
 with_memory_sanitizer
 with_undefined_behavior_sanitizer
+with_thread_sanitizer
 with_hash_algorithm
 with_tzpath
 with_libs
@@ -1800,6 +1804,9 @@ Optional Features:
   --disable-gil           enable experimental support for running without the
                           GIL (default is no)
   --enable-pystats        enable internal statistics gathering (default is no)
+  --enable-experimental-jit
+                          build the experimental just-in-time compiler
+                          (default is no)
   --enable-optimizations  enable expensive, stable optimizations (PGO, etc.)
                           (default is no)
   --enable-bolt           enable usage of the llvm-bolt post-link optimizer
@@ -1860,6 +1867,8 @@ Optional Packages:
   --with-undefined-behavior-sanitizer
                           enable UndefinedBehaviorSanitizer undefined
                           behaviour detector, 'ubsan' (default is no)
+  --with-thread-sanitizer enable ThreadSanitizer data race detector, 'tsan'
+                          (default is no)
   --with-hash-algorithm=[fnv|siphash13|siphash24]
                           select hash algorithm for use in Python/pyhash.c
                           (default is SipHash13)
@@ -6797,6 +6806,8 @@ case $host/$ac_cv_cc_name in #(
     PY_SUPPORT_TIER=2 ;; #(
   powerpc64le-*-linux-gnu/gcc) :
     PY_SUPPORT_TIER=2 ;; #(
+    wasm32-unknown-wasi/clang) :
+    PY_SUPPORT_TIER=2 ;; #(
     x86_64-*-linux-gnu/clang) :
     PY_SUPPORT_TIER=2 ;; #(
 
@@ -6807,10 +6818,6 @@ case $host/$ac_cv_cc_name in #(
     powerpc64le-*-linux-gnu/clang) :
     PY_SUPPORT_TIER=3 ;; #(
     s390x-*-linux-gnu/gcc) :
-    PY_SUPPORT_TIER=3 ;; #(
-    wasm32-unknown-emscripten/clang) :
-    PY_SUPPORT_TIER=3 ;; #(
-    wasm32-unknown-wasi/clang) :
     PY_SUPPORT_TIER=3 ;; #(
     x86_64-*-freebsd*/clang) :
     PY_SUPPORT_TIER=3 ;; #(
@@ -7993,6 +8000,34 @@ else
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 fi
+
+# Check for --enable-experimental-jit:
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-experimental-jit" >&5
+printf %s "checking for --enable-experimental-jit... " >&6; }
+# Check whether --enable-experimental-jit was given.
+if test ${enable_experimental_jit+y}
+then :
+  enableval=$enable_experimental_jit;
+else $as_nop
+  enable_experimental_jit=no
+fi
+
+if test "x$enable_experimental_jit" = xno
+then :
+
+else $as_nop
+  as_fn_append CFLAGS_NODIST " -D_Py_JIT"
+           REGEN_JIT_COMMAND="\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py $host"
+           JIT_STENCILS_H="jit_stencils.h"
+           if test "x$Py_DEBUG" = xtrue
+then :
+  as_fn_append REGEN_JIT_COMMAND " --debug"
+fi
+fi
+
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $enable_experimental_jit" >&5
+printf "%s\n" "$enable_experimental_jit" >&6; }
 
 # Enable optimization flags
 
@@ -12506,6 +12541,28 @@ with_ubsan="no"
 fi
 
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-thread-sanitizer" >&5
+printf %s "checking for --with-thread-sanitizer... " >&6; }
+
+# Check whether --with-thread_sanitizer was given.
+if test ${with_thread_sanitizer+y}
+then :
+  withval=$with_thread_sanitizer;
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
+printf "%s\n" "$withval" >&6; }
+BASECFLAGS="-fsanitize=thread $BASECFLAGS"
+LDFLAGS="-fsanitize=thread $LDFLAGS"
+with_tsan="yes"
+
+else $as_nop
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+with_tsan="no"
+
+fi
+
+
 # Set info about shared libraries.
 
 
@@ -16513,7 +16570,7 @@ ipv6type=unknown
 ipv6lib=none
 ipv6trylibc=no
 
-if test "$ipv6" = "yes"; then
+if test "$ipv6" = yes -a "$cross_compiling" = no; then
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking ipv6 stack type" >&5
 printf %s "checking ipv6 stack type... " >&6; }
 	for i in inria kame linux-glibc linux-inet6 solaris toshiba v6d zeta;
@@ -17420,6 +17477,12 @@ then :
   printf "%s\n" "#define HAVE_GETGID 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "getgrent" "ac_cv_func_getgrent"
+if test "x$ac_cv_func_getgrent" = xyes
+then :
+  printf "%s\n" "#define HAVE_GETGRENT 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "getgrgid" "ac_cv_func_getgrgid"
 if test "x$ac_cv_func_getgrgid" = xyes
 then :
@@ -17580,6 +17643,12 @@ ac_fn_c_check_func "$LINENO" "getwd" "ac_cv_func_getwd"
 if test "x$ac_cv_func_getwd" = xyes
 then :
   printf "%s\n" "#define HAVE_GETWD 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "grantpt" "ac_cv_func_grantpt"
+if test "x$ac_cv_func_grantpt" = xyes
+then :
+  printf "%s\n" "#define HAVE_GRANTPT 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "if_nameindex" "ac_cv_func_if_nameindex"
@@ -17768,6 +17837,12 @@ then :
   printf "%s\n" "#define HAVE_POSIX_FALLOCATE 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "posix_openpt" "ac_cv_func_posix_openpt"
+if test "x$ac_cv_func_posix_openpt" = xyes
+then :
+  printf "%s\n" "#define HAVE_POSIX_OPENPT 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "posix_spawn" "ac_cv_func_posix_spawn"
 if test "x$ac_cv_func_posix_spawn" = xyes
 then :
@@ -17804,6 +17879,12 @@ then :
   printf "%s\n" "#define HAVE_PREADV2 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "pthread_cond_timedwait_relative_np" "ac_cv_func_pthread_cond_timedwait_relative_np"
+if test "x$ac_cv_func_pthread_cond_timedwait_relative_np" = xyes
+then :
+  printf "%s\n" "#define HAVE_PTHREAD_COND_TIMEDWAIT_RELATIVE_NP 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "pthread_condattr_setclock" "ac_cv_func_pthread_condattr_setclock"
 if test "x$ac_cv_func_pthread_condattr_setclock" = xyes
 then :
@@ -17820,6 +17901,18 @@ ac_fn_c_check_func "$LINENO" "pthread_kill" "ac_cv_func_pthread_kill"
 if test "x$ac_cv_func_pthread_kill" = xyes
 then :
   printf "%s\n" "#define HAVE_PTHREAD_KILL 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "ptsname" "ac_cv_func_ptsname"
+if test "x$ac_cv_func_ptsname" = xyes
+then :
+  printf "%s\n" "#define HAVE_PTSNAME 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "ptsname_r" "ac_cv_func_ptsname_r"
+if test "x$ac_cv_func_ptsname_r" = xyes
+then :
+  printf "%s\n" "#define HAVE_PTSNAME_R 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "pwrite" "ac_cv_func_pwrite"
@@ -18228,6 +18321,12 @@ ac_fn_c_check_func "$LINENO" "unlinkat" "ac_cv_func_unlinkat"
 if test "x$ac_cv_func_unlinkat" = xyes
 then :
   printf "%s\n" "#define HAVE_UNLINKAT 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "unlockpt" "ac_cv_func_unlockpt"
+if test "x$ac_cv_func_unlockpt" = xyes
+then :
+  printf "%s\n" "#define HAVE_UNLOCKPT 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "utimensat" "ac_cv_func_utimensat"
@@ -21805,6 +21904,7 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #if defined(MAJOR_IN_MKDEV)
 #include <sys/mkdev.h>
 #elif defined(MAJOR_IN_SYSMACROS)
+#include <sys/types.h>
 #include <sys/sysmacros.h>
 #else
 #include <sys/types.h>
@@ -27478,7 +27578,12 @@ then :
 
 else $as_nop
 
-  rpath_arg="-Wl,-rpath="
+  if test "$ac_sys_system" = "Darwin"
+  then
+     rpath_arg="-Wl,-rpath,"
+  else
+     rpath_arg="-Wl,-rpath="
+  fi
 
 fi
 
@@ -28870,7 +28975,8 @@ then :
 
     if true
 then :
-  if test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes
+  if test "$ac_cv_func_getgrent" = "yes" &&
+   { test "$ac_cv_func_getgrgid" = "yes" || test "$ac_cv_func_getgrgid_r" = "yes"; }
 then :
   py_cv_module_grp=yes
 else $as_nop

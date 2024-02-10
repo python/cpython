@@ -184,11 +184,14 @@ PyType_stgdict(PyObject *obj)
 {
     PyTypeObject *type;
 
-    if (!PyType_Check(obj))
+    if (!PyType_Check(obj)) {
         return NULL;
+    }
+    ctypes_state *st = GLOBAL_STATE();
     type = (PyTypeObject *)obj;
-    if (!type->tp_dict || !PyCStgDict_CheckExact(type->tp_dict))
+    if (!type->tp_dict || !PyCStgDict_CheckExact(st, type->tp_dict)) {
         return NULL;
+    }
     return (StgDictObject *)type->tp_dict;
 }
 
@@ -201,8 +204,10 @@ StgDictObject *
 PyObject_stgdict(PyObject *self)
 {
     PyTypeObject *type = Py_TYPE(self);
-    if (!type->tp_dict || !PyCStgDict_CheckExact(type->tp_dict))
+    ctypes_state *st = GLOBAL_STATE();
+    if (!type->tp_dict || !PyCStgDict_CheckExact(st, type->tp_dict)) {
         return NULL;
+    }
     return (StgDictObject *)type->tp_dict;
 }
 
@@ -505,6 +510,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     if (stgdict->format == NULL)
         return -1;
 
+    ctypes_state *st = GLOBAL_STATE();
     for (i = 0; i < len; ++i) {
         PyObject *name = NULL, *desc = NULL;
         PyObject *pair = PySequence_GetItem(fields, i);
@@ -518,8 +524,9 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
             Py_XDECREF(pair);
             return -1;
         }
-        if (PyCArrayTypeObject_Check(desc))
+        if (PyCArrayTypeObject_Check(st, desc)) {
             arrays_seen = 1;
+        }
         dict = PyType_stgdict(desc);
         if (dict == NULL) {
             Py_DECREF(pair);
@@ -695,12 +702,12 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
 
     stgdict->size = aligned_size;
     stgdict->align = total_align;
-    stgdict->length = len;      /* ADD ffi_ofs? */
+    stgdict->length = ffi_ofs + len;
 
 /*
  * The value of MAX_STRUCT_SIZE depends on the platform Python is running on.
  */
-#if defined(__aarch64__) || defined(__arm__)
+#if defined(__aarch64__) || defined(__arm__) || defined(_M_ARM64)
 #  define MAX_STRUCT_SIZE 32
 #elif defined(__powerpc64__)
 #  define MAX_STRUCT_SIZE 64
@@ -806,7 +813,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
                     i);
                 return -1;
             }
-            if (!PyCArrayTypeObject_Check(desc)) {
+            if (!PyCArrayTypeObject_Check(st, desc)) {
                 /* Not an array. Just need an ffi_type pointer. */
                 num_ffi_type_pointers++;
             }
@@ -906,7 +913,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
                 return -1;
             }
             assert(element_index < (ffi_ofs + len)); /* will be used below */
-            if (!PyCArrayTypeObject_Check(desc)) {
+            if (!PyCArrayTypeObject_Check(st, desc)) {
                 /* Not an array. Just copy over the element ffi_type. */
                 element_types[element_index++] = &dict->ffi_type_pointer;
             }

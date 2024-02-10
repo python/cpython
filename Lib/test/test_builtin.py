@@ -611,6 +611,14 @@ class BuiltinTest(unittest.TestCase):
         self.assertIsInstance(res, list)
         self.assertTrue(res == ["a", "b", "c"])
 
+        # dir(obj__dir__iterable)
+        class Foo(object):
+            def __dir__(self):
+                return {"b", "c", "a"}
+        res = dir(Foo())
+        self.assertIsInstance(res, list)
+        self.assertEqual(sorted(res), ["a", "b", "c"])
+
         # dir(obj__dir__not_sequence)
         class Foo(object):
             def __dir__(self):
@@ -629,8 +637,8 @@ class BuiltinTest(unittest.TestCase):
 
     def test___ne__(self):
         self.assertFalse(None.__ne__(None))
-        self.assertTrue(None.__ne__(0))
-        self.assertTrue(None.__ne__("abc"))
+        self.assertIs(None.__ne__(0), NotImplemented)
+        self.assertIs(None.__ne__("abc"), NotImplemented)
 
     def test_divmod(self):
         self.assertEqual(divmod(12, 7), (1, 5))

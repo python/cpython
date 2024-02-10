@@ -43,11 +43,13 @@ import sys
 import tempfile
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test import support
+from test.support import import_helper
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import threading_helper
 from test.support import warnings_helper
 from test.support import asyncore
+from test.support import smtpd
 from test.support.logging_helper import TestHandler
 import textwrap
 import threading
@@ -61,9 +63,6 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 from socketserver import (ThreadingUDPServer, DatagramRequestHandler,
                           ThreadingTCPServer, StreamRequestHandler)
-
-with warnings.catch_warnings():
-    from . import smtpd
 
 try:
     import win32evtlog, win32evtlogutil, pywintypes
@@ -3922,6 +3921,26 @@ class ConfigDictTest(BaseTest):
         # Logger should be enabled, since explicitly mentioned
         self.assertFalse(logger.disabled)
 
+    def test_111615(self):
+        # See gh-111615
+        import_helper.import_module('_multiprocessing')  # see gh-113692
+        mp = import_helper.import_module('multiprocessing')
+
+        config = {
+            'version': 1,
+            'handlers': {
+                'sink': {
+                    'class': 'logging.handlers.QueueHandler',
+                    'queue': mp.get_context('spawn').Queue(),
+                },
+            },
+            'root': {
+                'handlers': ['sink'],
+                'level': 'DEBUG',
+            },
+        }
+        logging.config.dictConfig(config)
+
 class ManagerTest(BaseTest):
     def test_manager_loggerclass(self):
         logged = []
@@ -4070,6 +4089,7 @@ class QueueHandlerTest(BaseTest):
             self.que_logger.critical(self.next_message())
         finally:
             listener.stop()
+            listener.stop()  # gh-114706 - ensure no crash if called again
         self.assertTrue(handler.matches(levelno=logging.WARNING, message='1'))
         self.assertTrue(handler.matches(levelno=logging.ERROR, message='2'))
         self.assertTrue(handler.matches(levelno=logging.CRITICAL, message='3'))

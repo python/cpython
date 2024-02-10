@@ -996,7 +996,7 @@ resize_compact(PyObject *unicode, Py_ssize_t length)
     new_size = (struct_size + (length + 1) * char_size);
 
     if (_PyUnicode_HAS_UTF8_MEMORY(unicode)) {
-        PyObject_Free(_PyUnicode_UTF8(unicode));
+        PyMem_Free(_PyUnicode_UTF8(unicode));
         _PyUnicode_UTF8(unicode) = NULL;
         _PyUnicode_UTF8_LENGTH(unicode) = 0;
     }
@@ -1049,7 +1049,7 @@ resize_inplace(PyObject *unicode, Py_ssize_t length)
 
     if (!share_utf8 && _PyUnicode_HAS_UTF8_MEMORY(unicode))
     {
-        PyObject_Free(_PyUnicode_UTF8(unicode));
+        PyMem_Free(_PyUnicode_UTF8(unicode));
         _PyUnicode_UTF8(unicode) = NULL;
         _PyUnicode_UTF8_LENGTH(unicode) = 0;
     }
@@ -1590,10 +1590,10 @@ unicode_dealloc(PyObject *unicode)
         return;
     }
     if (_PyUnicode_HAS_UTF8_MEMORY(unicode)) {
-        PyObject_Free(_PyUnicode_UTF8(unicode));
+        PyMem_Free(_PyUnicode_UTF8(unicode));
     }
     if (!PyUnicode_IS_COMPACT(unicode) && _PyUnicode_DATA_ANY(unicode)) {
-        PyObject_Free(_PyUnicode_DATA_ANY(unicode));
+        PyMem_Free(_PyUnicode_DATA_ANY(unicode));
     }
 
     Py_TYPE(unicode)->tp_free(unicode);
@@ -1897,6 +1897,7 @@ PyUnicode_FromString(const char *u)
 PyObject *
 _PyUnicode_FromId(_Py_Identifier *id)
 {
+    PyMutex_Lock((PyMutex *)&id->mutex);
     PyInterpreterState *interp = _PyInterpreterState_GET();
     struct _Py_unicode_ids *ids = &interp->unicode.ids;
 
@@ -1923,14 +1924,14 @@ _PyUnicode_FromId(_Py_Identifier *id)
         obj = ids->array[index];
         if (obj) {
             // Return a borrowed reference
-            return obj;
+            goto end;
         }
     }
 
     obj = PyUnicode_DecodeUTF8Stateful(id->string, strlen(id->string),
                                        NULL, NULL);
     if (!obj) {
-        return NULL;
+        goto end;
     }
     PyUnicode_InternInPlace(&obj);
 
@@ -1941,7 +1942,8 @@ _PyUnicode_FromId(_Py_Identifier *id)
         PyObject **new_array = PyMem_Realloc(ids->array, new_size * item_size);
         if (new_array == NULL) {
             PyErr_NoMemory();
-            return NULL;
+            obj = NULL;
+            goto end;
         }
         memset(&new_array[ids->size], 0, (new_size - ids->size) * item_size);
         ids->array = new_array;
@@ -1951,6 +1953,8 @@ _PyUnicode_FromId(_Py_Identifier *id)
     // The array stores a strong reference
     ids->array[index] = obj;
 
+end:
+    PyMutex_Unlock((PyMutex *)&id->mutex);
     // Return a borrowed reference
     return obj;
 }
@@ -5199,7 +5203,7 @@ unicode_fill_utf8(PyObject *unicode)
                     PyBytes_AS_STRING(writer.buffer);
     Py_ssize_t len = end - start;
 
-    char *cache = PyObject_Malloc(len + 1);
+    char *cache = PyMem_Malloc(len + 1);
     if (cache == NULL) {
         _PyBytesWriter_Dealloc(&writer);
         PyErr_NoMemory();
@@ -14670,7 +14674,7 @@ unicode_subtype_new(PyTypeObject *type, PyObject *unicode)
         PyErr_NoMemory();
         goto onError;
     }
-    data = PyObject_Malloc((length + 1) * char_size);
+    data = PyMem_Malloc((length + 1) * char_size);
     if (data == NULL) {
         PyErr_NoMemory();
         goto onError;
@@ -14890,16 +14894,18 @@ _PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p)
     PyObject *interned = get_interned_dict(interp);
     assert(interned != NULL);
 
-    PyObject *t = PyDict_SetDefault(interned, s, s);
-    if (t == NULL) {
+    PyObject *t;
+    int res = PyDict_SetDefaultRef(interned, s, s, &t);
+    if (res < 0) {
         PyErr_Clear();
         return;
     }
-
-    if (t != s) {
-        Py_SETREF(*p, Py_NewRef(t));
+    else if (res == 1) {
+        // value was already present (not inserted)
+        Py_SETREF(*p, t);
         return;
     }
+    Py_DECREF(t);
 
     if (_Py_IsImmortal(s)) {
         // XXX Restrict this to the main interpreter?

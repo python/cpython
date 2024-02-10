@@ -1420,7 +1420,7 @@ sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
 }
 
 PyDoc_STRVAR(set_asyncgen_hooks_doc,
-"set_asyncgen_hooks(* [, firstiter] [, finalizer])\n\
+"set_asyncgen_hooks([firstiter] [, finalizer])\n\
 \n\
 Set a finalizer for async generators objects."
 );
@@ -1715,6 +1715,13 @@ static PyObject *
 sys__enablelegacywindowsfsencoding_impl(PyObject *module)
 /*[clinic end generated code: output=f5c3855b45e24fe9 input=2bfa931a20704492]*/
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+        "sys._enablelegacywindowsfsencoding() is deprecated and will be "
+        "removed in Python 3.16. Use PYTHONLEGACYWINDOWSFSENCODING "
+        "instead.", 1))
+    {
+        return NULL;
+    }
     if (_PyUnicode_EnableLegacyWindowsFSEncoding() < 0) {
         return NULL;
     }
@@ -1871,7 +1878,15 @@ _PySys_GetSizeOf(PyObject *o)
         return (size_t)-1;
     }
 
-    return (size_t)size + _PyType_PreHeaderSize(Py_TYPE(o));
+    size_t presize = 0;
+    if (!Py_IS_TYPE(o, &PyType_Type) ||
+         PyType_HasFeature((PyTypeObject *)o, Py_TPFLAGS_HEAPTYPE))
+    {
+        /* Add the size of the pre-header if "o" is not a static type */
+        presize = _PyType_PreHeaderSize(Py_TYPE(o));
+    }
+
+    return (size_t)size + presize;
 }
 
 static PyObject *

@@ -2382,11 +2382,6 @@ builtin_round_impl(PyObject *module, PyObject *number, PyObject *ndigits)
 {
     PyObject *round, *result;
 
-    if (!_PyType_IsReady(Py_TYPE(number))) {
-        if (PyType_Ready(Py_TYPE(number)) < 0)
-            return NULL;
-    }
-
     round = _PyObject_LookupSpecial(number, &_Py_ID(__round__));
     if (round == NULL) {
         if (!PyErr_Occurred())
