@@ -879,16 +879,17 @@ _lsprof_Profiler_disable_impl(ProfilerObject *self, PyTypeObject *cls)
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(clear_doc, "\
-clear()\n\
-\n\
-Clear all profiling information collected so far.\n\
-");
+/*[clinic input]
+_lsprof.Profiler.clear
 
-static PyObject*
-profiler_clear(ProfilerObject *pObj, PyObject* noarg)
+Clear all profiling information collected so far.
+[clinic start generated code]*/
+
+static PyObject *
+_lsprof_Profiler_clear_impl(ProfilerObject *self)
+/*[clinic end generated code: output=dd1c668fb84b1335 input=fbe1f88c28be4f98]*/
 {
-    clearEntries(pObj);
+    clearEntries(self);
     Py_RETURN_NONE;
 }
 
@@ -955,12 +956,12 @@ profiler_init(ProfilerObject *pObj, PyObject *args, PyObject *kw)
 static PyMethodDef profiler_methods[] = {
     _LSPROF_PROFILER_GETSTATS_METHODDEF
     _LSPROF_PROFILER_ENABLE_METHODDEF
+    _LSPROF_PROFILER_CLEAR_METHODDEF
     _LSPROF_PROFILER_DISABLE_METHODDEF
     _LSPROF_PROFILER__PYSTART_CALLBACK_METHODDEF
     _LSPROF_PROFILER__PYRETURN_CALLBACK_METHODDEF
     _LSPROF_PROFILER__CCALL_CALLBACK_METHODDEF
     _LSPROF_PROFILER__CRETURN_CALLBACK_METHODDEF
-    {"clear", (PyCFunction)profiler_clear, METH_NOARGS, clear_doc},
     {NULL, NULL}
 };
 

@@ -411,4 +411,22 @@ _lsprof_Profiler_disable(ProfilerObject *self, PyTypeObject *cls, PyObject *cons
     }
     return _lsprof_Profiler_disable_impl(self, cls);
 }
-/*[clinic end generated code: output=2ac943b3f8180cdb input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_lsprof_Profiler_clear__doc__,
+"clear($self, /)\n"
+"--\n"
+"\n"
+"Clear all profiling information collected so far.");
+
+#define _LSPROF_PROFILER_CLEAR_METHODDEF    \
+    {"clear", (PyCFunction)_lsprof_Profiler_clear, METH_NOARGS, _lsprof_Profiler_clear__doc__},
+
+static PyObject *
+_lsprof_Profiler_clear_impl(ProfilerObject *self);
+
+static PyObject *
+_lsprof_Profiler_clear(ProfilerObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _lsprof_Profiler_clear_impl(self);
+}
+/*[clinic end generated code: output=93734254d71b6773 input=a9049054013a1b77]*/
