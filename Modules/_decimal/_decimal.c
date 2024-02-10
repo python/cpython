@@ -3397,7 +3397,7 @@ pydec_format(PyObject *dec, PyObject *fmt, decimal_state *state)
     result = PyObject_Format(pydec, fmt);
     Py_DECREF(pydec);
 
-    if (result == NULL) {
+    if (result == NULL && PyErr_ExceptionMatches(PyExc_ValueError)) {
         /* Do not confuse users with the _pydecimal exception */
         PyErr_Clear();
         PyErr_SetString(PyExc_ValueError, "invalid format string");
