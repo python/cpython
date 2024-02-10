@@ -746,7 +746,7 @@ signaldict_richcompare(PyObject *v, PyObject *w, int op)
 {
     PyObject *res = Py_NotImplemented;
 
-    decimal_state *state = find_state_left_or_right(v, w);
+    decimal_state *state = get_module_state_by_def(Py_TYPE(v));
     assert(PyDecSignalDict_Check(state, v));
 
     if ((SdFlagAddr(v) == NULL) || (SdFlagAddr(w) == NULL)) {
@@ -1795,7 +1795,7 @@ PyDec_SetCurrentContext(PyObject *self, PyObject *v)
     if (v == state->default_context_template ||
         v == state->basic_context_template ||
         v == state->extended_context_template) {
-        v = context_copy(v, NULL);
+        v = context_copy_impl(v, NULL);
         if (v == NULL) {
             return NULL;
         }
@@ -2891,12 +2891,11 @@ ctx_from_float_impl(PyObject *context, PyTypeObject *cls, PyObject *v)
 
 /* Apply the context to the input operand. Return a new PyDecObject. */
 static PyObject *
-dec_apply(PyObject *v, PyObject *context)
+dec_apply(decimal_state *state, PyObject *v, PyObject *context)
 {
     PyObject *result;
     uint32_t status = 0;
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     result = dec_alloc(state);
     if (result == NULL) {
         return NULL;
@@ -2956,9 +2955,8 @@ PyDecType_FromObjectExact(PyTypeObject *type, PyObject *v, PyObject *context)
 /* The context is used during conversion. This function is the
    equivalent of context.create_decimal(). */
 static PyObject *
-PyDec_FromObject(PyObject *v, PyObject *context)
+PyDec_FromObject(decimal_state *state, PyObject *v, PyObject *context)
 {
-    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     if (v == NULL) {
         return PyDec_FromSsize(state, 0, context);
     }
@@ -2978,7 +2976,7 @@ PyDec_FromObject(PyObject *v, PyObject *context)
             mpd_setspecial(MPD(result), MPD_POS, MPD_NAN);
             return result;
         }
-        return dec_apply(v, context);
+        return dec_apply(state, v, context);
     }
     else if (PyUnicode_Check(v)) {
         return PyDec_FromUnicode(state, v, context);
@@ -3035,7 +3033,8 @@ static PyObject *
 ctx_create_decimal_impl(PyObject *context, PyTypeObject *cls, PyObject *v)
 /*[clinic end generated code: output=5262576aa905884a input=a7e733ffbccbfeca]*/
 {
-    return PyDec_FromObject(v, context);
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
+    return PyDec_FromObject(state, v, context);
 }
 
 
@@ -3049,9 +3048,11 @@ ctx_create_decimal_impl(PyObject *context, PyTypeObject *cls, PyObject *v)
 #define NOT_IMPL 0
 #define TYPE_ERR 1
 Py_LOCAL_INLINE(int)
-convert_op(int type_err, PyObject **conv, PyObject *v, PyObject *context)
+convert_op(decimal_state *state, int type_err, PyObject **conv, PyObject *v, PyObject *context)
 {
-    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
+    if (state == NULL) {
+        state = get_module_state_by_def(Py_TYPE(context));
+    }
     if (PyDec_Check(state, v)) {
         *conv = Py_NewRef(v);
         return 1;
@@ -3077,28 +3078,28 @@ convert_op(int type_err, PyObject **conv, PyObject *v, PyObject *context)
 
 /* Return NotImplemented for unsupported types. */
 #define CONVERT_OP(a, v, context) \
-    if (!convert_op(NOT_IMPL, a, v, context)) { \
+    if (!convert_op(state, NOT_IMPL, a, v, context)) { \
         return *(a);                            \
     }
 
 #define CONVERT_BINOP(a, b, v, w, context) \
-    if (!convert_op(NOT_IMPL, a, v, context)) { \
+    if (!convert_op(state, NOT_IMPL, a, v, context)) { \
         return *(a);                            \
     }                                           \
-    if (!convert_op(NOT_IMPL, b, w, context)) { \
+    if (!convert_op(state, NOT_IMPL, b, w, context)) { \
         Py_DECREF(*(a));                        \
         return *(b);                            \
     }
 
 #define CONVERT_TERNOP(a, b, c, v, w, x, context) \
-    if (!convert_op(NOT_IMPL, a, v, context)) {   \
+    if (!convert_op(state, NOT_IMPL, a, v, context)) {   \
         return *(a);                              \
     }                                             \
-    if (!convert_op(NOT_IMPL, b, w, context)) {   \
+    if (!convert_op(state, NOT_IMPL, b, w, context)) {   \
         Py_DECREF(*(a));                          \
         return *(b);                              \
     }                                             \
-    if (!convert_op(NOT_IMPL, c, x, context)) {   \
+    if (!convert_op(state, NOT_IMPL, c, x, context)) {   \
         Py_DECREF(*(a));                          \
         Py_DECREF(*(b));                          \
         return *(c);                              \
@@ -3106,28 +3107,28 @@ convert_op(int type_err, PyObject **conv, PyObject *v, PyObject *context)
 
 /* Raise TypeError for unsupported types. */
 #define CONVERT_OP_RAISE(a, v, context) \
-    if (!convert_op(TYPE_ERR, a, v, context)) { \
+    if (!convert_op(state, TYPE_ERR, a, v, context)) { \
         return NULL;                            \
     }
 
 #define CONVERT_BINOP_RAISE(a, b, v, w, context) \
-    if (!convert_op(TYPE_ERR, a, v, context)) {  \
+    if (!convert_op(state, TYPE_ERR, a, v, context)) {  \
         return NULL;                             \
     }                                            \
-    if (!convert_op(TYPE_ERR, b, w, context)) {  \
+    if (!convert_op(state, TYPE_ERR, b, w, context)) {  \
         Py_DECREF(*(a));                         \
         return NULL;                             \
     }
 
 #define CONVERT_TERNOP_RAISE(a, b, c, v, w, x, context) \
-    if (!convert_op(TYPE_ERR, a, v, context)) {         \
+    if (!convert_op(state, TYPE_ERR, a, v, context)) {         \
         return NULL;                                    \
     }                                                   \
-    if (!convert_op(TYPE_ERR, b, w, context)) {         \
+    if (!convert_op(state, TYPE_ERR, b, w, context)) {         \
         Py_DECREF(*(a));                                \
         return NULL;                                    \
     }                                                   \
-    if (!convert_op(TYPE_ERR, c, x, context)) {         \
+    if (!convert_op(state, TYPE_ERR, c, x, context)) {         \
         Py_DECREF(*(a));                                \
         Py_DECREF(*(b));                                \
         return NULL;                                    \
@@ -4258,7 +4259,6 @@ dec_##MPDFUNC(PyObject *self, PyObject *dummy UNUSED)       \
 /* Boolean function with an optional context arg. */
 #define Dec_BoolFuncVA(MPDFUNC) \
 do {                                                                      \
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));        \
     CONTEXT_CHECK_VA(state, context);                                     \
                                                                           \
     return MPDFUNC(MPD(self), CTX(context)) ? incr_true() : incr_false(); \
@@ -4270,8 +4270,6 @@ do {                                                           \
     PyObject *result;                                          \
     uint32_t status = 0;                                       \
                                                                \
-    decimal_state *state =                                     \
-        get_module_state_by_def(Py_TYPE(self));                \
     CONTEXT_CHECK_VA(state, context);                          \
                                                                \
     if ((result = dec_alloc(state)) == NULL) {                 \
@@ -4294,8 +4292,6 @@ do {                                                             \
     PyObject *result;                                            \
     uint32_t status = 0;                                         \
                                                                  \
-    decimal_state *state =                                       \
-        get_module_state_by_def(Py_TYPE(self));                  \
     CONTEXT_CHECK_VA(state, context);                            \
     CONVERT_BINOP_RAISE(&a, &b, self, other, context);           \
                                                                  \
@@ -4324,8 +4320,6 @@ do {                                                            \
     PyObject *a, *b;                                            \
     PyObject *result;                                           \
                                                                 \
-    decimal_state *state =                                      \
-        get_module_state_by_def(Py_TYPE(self));                 \
     CONTEXT_CHECK_VA(state, context);                           \
     CONVERT_BINOP_RAISE(&a, &b, self, other, context);          \
                                                                 \
@@ -4349,7 +4343,6 @@ do {                                                                     \
     PyObject *result;                                                    \
     uint32_t status = 0;                                                 \
                                                                          \
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));       \
     CONTEXT_CHECK_VA(state, context);                                    \
     CONVERT_TERNOP_RAISE(&a, &b, &c, self, other, third, context);       \
                                                                          \
@@ -4458,7 +4451,7 @@ nm_mpd_qpow(PyObject *base, PyObject *exp, PyObject *mod)
     CONVERT_BINOP(&a, &b, base, exp, context);
 
     if (mod != Py_None) {
-        if (!convert_op(NOT_IMPL, &c, mod, context)) {
+        if (!convert_op(state, NOT_IMPL, &c, mod, context)) {
             Py_DECREF(a);
             Py_DECREF(b);
             return c;
@@ -4511,6 +4504,7 @@ static PyObject *
 dec_mpd_qexp_impl(PyObject *self, PyTypeObject *cls, PyObject *context)
 /*[clinic end generated code: output=ef805323c240d79a input=8bdc496f61d9adfe]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));       \
     Dec_UnaryFuncVA(mpd_qexp);
 }
 
@@ -4527,6 +4521,7 @@ static PyObject *
 dec_mpd_qln_impl(PyObject *self, PyTypeObject *cls, PyObject *context)
 /*[clinic end generated code: output=e4a2551aee3b4a50 input=be163dec6e49b156]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));       \
     Dec_UnaryFuncVA(mpd_qln);
 }
 
@@ -4543,6 +4538,7 @@ static PyObject *
 dec_mpd_qlog10_impl(PyObject *self, PyTypeObject *cls, PyObject *context)
 /*[clinic end generated code: output=b2ed6266a9892adc input=99bb593c43635546]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));       \
     Dec_UnaryFuncVA(mpd_qlog10);
 }
 
@@ -4560,6 +4556,7 @@ dec_mpd_qnext_minus_impl(PyObject *self, PyTypeObject *cls,
                          PyObject *context)
 /*[clinic end generated code: output=17bdc3cb37a7de9a input=13969e1bc5c36013]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));       \
     Dec_UnaryFuncVA(mpd_qnext_minus);
 }
 
@@ -4576,6 +4573,7 @@ static PyObject *
 dec_mpd_qnext_plus_impl(PyObject *self, PyTypeObject *cls, PyObject *context)
 /*[clinic end generated code: output=6f2cd02525299897 input=d5cf646a090871de]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));       \
     Dec_UnaryFuncVA(mpd_qnext_plus);
 }
 
@@ -4592,6 +4590,7 @@ static PyObject *
 dec_mpd_qreduce_impl(PyObject *self, PyTypeObject *cls, PyObject *context)
 /*[clinic end generated code: output=0f8089dfa003dbd2 input=9e5a0a7cb034a9da]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));       \
     Dec_UnaryFuncVA(mpd_qreduce);
 }
 
@@ -4608,6 +4607,7 @@ static PyObject *
 dec_mpd_qsqrt_impl(PyObject *self, PyTypeObject *cls, PyObject *context)
 /*[clinic end generated code: output=14e7ea4782ffa4d2 input=f228dd75e9fac500]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));       \
     Dec_UnaryFuncVA(mpd_qsqrt);
 }
 
@@ -4628,6 +4628,7 @@ dec_mpd_qcompare_impl(PyObject *self, PyTypeObject *cls, PyObject *other,
                       PyObject *context)
 /*[clinic end generated code: output=e2cdc9ec0806bd12 input=a1a3bbafd7e0a6c0]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));       \
     Dec_BinaryFuncVA(mpd_qcompare);
 }
 
@@ -4646,6 +4647,7 @@ dec_mpd_qcompare_signal_impl(PyObject *self, PyTypeObject *cls,
                              PyObject *other, PyObject *context)
 /*[clinic end generated code: output=4bf21ede311dee67 input=89ae170c42a33015]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));       \
     Dec_BinaryFuncVA(mpd_qcompare_signal);
 }
 
@@ -4664,6 +4666,7 @@ dec_mpd_qmax_impl(PyObject *self, PyTypeObject *cls, PyObject *other,
                   PyObject *context)
 /*[clinic end generated code: output=57f32547ce440edd input=77d1f5af67021361]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));       \
     Dec_BinaryFuncVA(mpd_qmax);
 }
 
@@ -4682,6 +4685,7 @@ dec_mpd_qmax_mag_impl(PyObject *self, PyTypeObject *cls, PyObject *other,
                       PyObject *context)
 /*[clinic end generated code: output=a8f0c868222415a6 input=ffc5c82cf9f5f724]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));       \
     Dec_BinaryFuncVA(mpd_qmax_mag);
 }
 
@@ -4700,6 +4704,7 @@ dec_mpd_qmin_impl(PyObject *self, PyTypeObject *cls, PyObject *other,
                   PyObject *context)
 /*[clinic end generated code: output=4d41d32db5ff818c input=2a452e27299f8d99]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));       \
     Dec_BinaryFuncVA(mpd_qmin);
 }
 
@@ -4718,6 +4723,7 @@ dec_mpd_qmin_mag_impl(PyObject *self, PyTypeObject *cls, PyObject *other,
                       PyObject *context)
 /*[clinic end generated code: output=fc8b982b69376d78 input=32ede4d162dd790d]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));       \
     Dec_BinaryFuncVA(mpd_qmin_mag);
 }
 
@@ -4736,6 +4742,7 @@ dec_mpd_qnext_toward_impl(PyObject *self, PyTypeObject *cls, PyObject *other,
                           PyObject *context)
 /*[clinic end generated code: output=114b0aaa7ee5c873 input=b61bb3a92261e31e]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));       \
     Dec_BinaryFuncVA(mpd_qnext_toward);
 }
 
@@ -4754,6 +4761,7 @@ dec_mpd_qrem_near_impl(PyObject *self, PyTypeObject *cls, PyObject *other,
                        PyObject *context)
 /*[clinic end generated code: output=06254f630ca1ad7a input=8d6293cca097a3ef]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));       \
     Dec_BinaryFuncVA(mpd_qrem_near);
 }
 
@@ -4775,6 +4783,7 @@ dec_mpd_qfma_impl(PyObject *self, PyTypeObject *cls, PyObject *other,
                   PyObject *third, PyObject *context)
 /*[clinic end generated code: output=5fb9cf2d1f7cc99c input=379f55cd2d538dc3]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));       \
     Dec_TernaryFuncVA(mpd_qfma);
 }
 
@@ -4803,6 +4812,7 @@ static PyObject *
 dec_mpd_isnormal_impl(PyObject *self, PyTypeObject *cls, PyObject *context)
 /*[clinic end generated code: output=4cbd6799660ab206 input=b8f49c14954af1e3]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));       \
     Dec_BoolFuncVA(mpd_isnormal);
 }
 
@@ -4820,6 +4830,7 @@ dec_mpd_issubnormal_impl(PyObject *self, PyTypeObject *cls,
                          PyObject *context)
 /*[clinic end generated code: output=b1d0ef18411b1573 input=4f11b6a210055c01]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));       \
     Dec_BoolFuncVA(mpd_issubnormal);
 }
 
@@ -4953,6 +4964,7 @@ static PyObject *
 dec_mpd_qinvert_impl(PyObject *self, PyTypeObject *cls, PyObject *context)
 /*[clinic end generated code: output=fb64fb577218891b input=4f00101bb2d15ba7]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));       \
     Dec_UnaryFuncVA(mpd_qinvert);
 }
 
@@ -4969,6 +4981,7 @@ static PyObject *
 dec_mpd_qlogb_impl(PyObject *self, PyTypeObject *cls, PyObject *context)
 /*[clinic end generated code: output=549c852eda219061 input=566e4dc229f69864]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));       \
     Dec_UnaryFuncVA(mpd_qlogb);
 }
 
@@ -5043,6 +5056,7 @@ dec_mpd_compare_total_impl(PyObject *self, PyTypeObject *cls,
                            PyObject *other, PyObject *context)
 /*[clinic end generated code: output=810717b830fd28f2 input=87e216047756fcdb]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));       \
     Dec_BinaryFuncVA_NO_CTX(mpd_compare_total);
 }
 
@@ -5061,6 +5075,7 @@ dec_mpd_compare_total_mag_impl(PyObject *self, PyTypeObject *cls,
                                PyObject *other, PyObject *context)
 /*[clinic end generated code: output=48b08a300af29ee7 input=0f907ae2d46d78e7]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));       \
     Dec_BinaryFuncVA_NO_CTX(mpd_compare_total_mag);
 }
 
@@ -5151,6 +5166,7 @@ dec_mpd_qand_impl(PyObject *self, PyTypeObject *cls, PyObject *other,
                   PyObject *context)
 /*[clinic end generated code: output=e86fd5ac363b6ee6 input=1cbd93d99862a59c]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));       \
     Dec_BinaryFuncVA(mpd_qand);
 }
 
@@ -5169,6 +5185,7 @@ dec_mpd_qor_impl(PyObject *self, PyTypeObject *cls, PyObject *other,
                  PyObject *context)
 /*[clinic end generated code: output=947da98480b0b800 input=cb7c9aabc0f67d71]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));       \
     Dec_BinaryFuncVA(mpd_qor);
 }
 
@@ -5187,6 +5204,7 @@ dec_mpd_qxor_impl(PyObject *self, PyTypeObject *cls, PyObject *other,
                   PyObject *context)
 /*[clinic end generated code: output=18750ccc61425d0b input=d466d4e4344b4f5f]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));       \
     Dec_BinaryFuncVA(mpd_qxor);
 }
 
@@ -5205,6 +5223,7 @@ dec_mpd_qrotate_impl(PyObject *self, PyTypeObject *cls, PyObject *other,
                      PyObject *context)
 /*[clinic end generated code: output=81ec584f40c00aa4 input=5fc59a66a3a921a5]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));       \
     Dec_BinaryFuncVA(mpd_qrotate);
 }
 
@@ -5223,6 +5242,7 @@ dec_mpd_qscaleb_impl(PyObject *self, PyTypeObject *cls, PyObject *other,
                      PyObject *context)
 /*[clinic end generated code: output=8dda4fb1d1372980 input=30d23485510d8ea0]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));       \
     Dec_BinaryFuncVA(mpd_qscaleb);
 }
 
@@ -5241,6 +5261,7 @@ dec_mpd_qshift_impl(PyObject *self, PyTypeObject *cls, PyObject *other,
                     PyObject *context)
 /*[clinic end generated code: output=49f81eca4f7aed98 input=7817cfb6605a2d89]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));       \
     Dec_BinaryFuncVA(mpd_qshift);
 }
 
@@ -5310,7 +5331,7 @@ dec_richcompare(PyObject *v, PyObject *w, int op)
     uint32_t status = 0;
     int a_issnan, b_issnan;
     int r;
-    decimal_state *state = find_state_left_or_right(v, w);
+    decimal_state *state = get_module_state_by_def(Py_TYPE(v));
 
 #ifdef Py_DEBUG
     assert(PyDec_Check(state, v));
@@ -5810,8 +5831,6 @@ do {                                                     \
     uint32_t status = 0;                                 \
                                                          \
     CONVERT_OP_RAISE(&a, v, context);                    \
-    decimal_state *state =                               \
-        get_module_state_by_def(Py_TYPE(context));       \
     if ((result = dec_alloc(state)) == NULL) {           \
         Py_DECREF(a);                                    \
         return NULL;                                     \
@@ -5835,8 +5854,6 @@ do {                                                             \
     uint32_t status = 0;                                         \
                                                                  \
     CONVERT_BINOP_RAISE(&a, &b, v, w, context);                  \
-    decimal_state *state =                                       \
-        get_module_state_by_def(Py_TYPE(context));               \
     if ((result = dec_alloc(state)) == NULL) {                   \
         Py_DECREF(a);                                            \
         Py_DECREF(b);                                            \
@@ -5864,8 +5881,6 @@ do {                                             \
     PyObject *result;                            \
                                                  \
     CONVERT_BINOP_RAISE(&a, &b, v, w, context);  \
-    decimal_state *state =                       \
-        get_module_state_by_def(Py_TYPE(context)); \
     if ((result = dec_alloc(state)) == NULL) {   \
         Py_DECREF(a);                            \
         Py_DECREF(b);                            \
@@ -5887,7 +5902,6 @@ do {                                                                     \
     uint32_t status = 0;                                                 \
                                                                          \
     CONVERT_TERNOP_RAISE(&a, &b, &c, v, w, x, context);                  \
-    decimal_state *state = get_module_state_by_def(Py_TYPE(context));    \
     if ((result = dec_alloc(state)) == NULL) {                           \
         Py_DECREF(a);                                                    \
         Py_DECREF(b);                                                    \
@@ -5925,6 +5939,7 @@ static PyObject *
 ctx_mpd_qabs_impl(PyObject *context, PyTypeObject *cls, PyObject *v)
 /*[clinic end generated code: output=5238e598fcd6f280 input=6284bb72498cf974]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_UnaryFunc(mpd_qabs);
 }
 
@@ -5943,6 +5958,7 @@ static PyObject *
 ctx_mpd_qexp_impl(PyObject *context, PyTypeObject *cls, PyObject *v)
 /*[clinic end generated code: output=aa3f6afad485057b input=cdee03bc5f12f56f]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_UnaryFunc(mpd_qexp);
 }
 
@@ -5961,6 +5977,7 @@ static PyObject *
 ctx_mpd_qln_impl(PyObject *context, PyTypeObject *cls, PyObject *v)
 /*[clinic end generated code: output=b0ebc1d1119767bf input=bc13a1f4bbb49468]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_UnaryFunc(mpd_qln);
 }
 
@@ -5979,6 +5996,7 @@ static PyObject *
 ctx_mpd_qlog10_impl(PyObject *context, PyTypeObject *cls, PyObject *v)
 /*[clinic end generated code: output=f2ef77d92f0828ca input=6d0484a3287abebd]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_UnaryFunc(mpd_qlog10);
 }
 
@@ -5997,6 +6015,7 @@ static PyObject *
 ctx_mpd_qminus_impl(PyObject *context, PyTypeObject *cls, PyObject *v)
 /*[clinic end generated code: output=db8fcc8d770cdafa input=2f86cc04892c90c7]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_UnaryFunc(mpd_qminus);
 }
 
@@ -6015,6 +6034,7 @@ static PyObject *
 ctx_mpd_qnext_minus_impl(PyObject *context, PyTypeObject *cls, PyObject *v)
 /*[clinic end generated code: output=046c58b7f2ec0c27 input=0e8df722d2368b6a]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_UnaryFunc(mpd_qnext_minus);
 }
 
@@ -6033,6 +6053,7 @@ static PyObject *
 ctx_mpd_qnext_plus_impl(PyObject *context, PyTypeObject *cls, PyObject *v)
 /*[clinic end generated code: output=cbc1f267dd497b8e input=28ed99f698a04905]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_UnaryFunc(mpd_qnext_plus);
 }
 
@@ -6051,6 +6072,7 @@ static PyObject *
 ctx_mpd_qplus_impl(PyObject *context, PyTypeObject *cls, PyObject *v)
 /*[clinic end generated code: output=1212f764028c9994 input=aadd085e86d1fe22]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_UnaryFunc(mpd_qplus);
 }
 
@@ -6069,6 +6091,7 @@ static PyObject *
 ctx_mpd_qreduce_impl(PyObject *context, PyTypeObject *cls, PyObject *v)
 /*[clinic end generated code: output=3336a6e12134a731 input=38f1f1e35fa5e4a1]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_UnaryFunc(mpd_qreduce);
 }
 
@@ -6087,6 +6110,7 @@ static PyObject *
 ctx_mpd_qround_to_int_impl(PyObject *context, PyTypeObject *cls, PyObject *v)
 /*[clinic end generated code: output=9e1cbb6f33b928bb input=9a5042a60c6d6c3d]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_UnaryFunc(mpd_qround_to_int);
 }
 
@@ -6106,6 +6130,7 @@ ctx_mpd_qround_to_int__impl(PyObject *context, PyTypeObject *cls,
                             PyObject *v)
 /*[clinic end generated code: output=0601a3e6e8059e81 input=8283ee713411ecef]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_UnaryFunc(mpd_qround_to_int);
 }
 
@@ -6125,6 +6150,7 @@ ctx_mpd_qround_to_intx_impl(PyObject *context, PyTypeObject *cls,
                             PyObject *v)
 /*[clinic end generated code: output=e9047ca8cc6da2b6 input=5f2ed576521e0874]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_UnaryFunc(mpd_qround_to_intx);
 }
 
@@ -6143,6 +6169,7 @@ static PyObject *
 ctx_mpd_qsqrt_impl(PyObject *context, PyTypeObject *cls, PyObject *v)
 /*[clinic end generated code: output=31bb916bf34e40d2 input=cf416f68f41eea41]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_UnaryFunc(mpd_qsqrt);
 }
 
@@ -6165,6 +6192,7 @@ ctx_mpd_qadd_impl(PyObject *context, PyTypeObject *cls, PyObject *v,
                   PyObject *w)
 /*[clinic end generated code: output=e51bd4f813d3ec32 input=cc6a83e6c37945a3]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_BinaryFunc(mpd_qadd);
 }
 
@@ -6185,6 +6213,7 @@ ctx_mpd_qcompare_impl(PyObject *context, PyTypeObject *cls, PyObject *v,
                       PyObject *w)
 /*[clinic end generated code: output=4fe130ffcb910734 input=2df1015f43cfb25d]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_BinaryFunc(mpd_qcompare);
 }
 
@@ -6205,6 +6234,7 @@ ctx_mpd_qcompare_signal_impl(PyObject *context, PyTypeObject *cls,
                              PyObject *v, PyObject *w)
 /*[clinic end generated code: output=5f4dfc284e332a9f input=24c9c76ba3d89c56]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_BinaryFunc(mpd_qcompare_signal);
 }
 
@@ -6225,6 +6255,7 @@ ctx_mpd_qdiv_impl(PyObject *context, PyTypeObject *cls, PyObject *v,
                   PyObject *w)
 /*[clinic end generated code: output=0e486ae61fa1b8a2 input=bdab270359a687c8]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_BinaryFunc(mpd_qdiv);
 }
 
@@ -6245,6 +6276,7 @@ ctx_mpd_qdivint_impl(PyObject *context, PyTypeObject *cls, PyObject *v,
                      PyObject *w)
 /*[clinic end generated code: output=19c861a222a5a072 input=6e62cd243ae37934]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_BinaryFunc(mpd_qdivint);
 }
 
@@ -6265,6 +6297,7 @@ ctx_mpd_qmax_impl(PyObject *context, PyTypeObject *cls, PyObject *v,
                   PyObject *w)
 /*[clinic end generated code: output=fca335edf7205a8e input=e56e786915a913cc]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_BinaryFunc(mpd_qmax);
 }
 
@@ -6285,6 +6318,7 @@ ctx_mpd_qmax_mag_impl(PyObject *context, PyTypeObject *cls, PyObject *v,
                       PyObject *w)
 /*[clinic end generated code: output=aa8566a48de5ffd0 input=c41db4ea2c7a43e0]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_BinaryFunc(mpd_qmax_mag);
 }
 
@@ -6305,6 +6339,7 @@ ctx_mpd_qmin_impl(PyObject *context, PyTypeObject *cls, PyObject *v,
                   PyObject *w)
 /*[clinic end generated code: output=19f1ab95fb091a71 input=c6a1242634b3c8ea]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_BinaryFunc(mpd_qmin);
 }
 
@@ -6325,6 +6360,7 @@ ctx_mpd_qmin_mag_impl(PyObject *context, PyTypeObject *cls, PyObject *v,
                       PyObject *w)
 /*[clinic end generated code: output=a76a457e93e23dcd input=2f6fdc202edcc74b]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_BinaryFunc(mpd_qmin_mag);
 }
 
@@ -6345,6 +6381,7 @@ ctx_mpd_qmul_impl(PyObject *context, PyTypeObject *cls, PyObject *v,
                   PyObject *w)
 /*[clinic end generated code: output=ddf17cc4c8d3f9c0 input=d3ad21bebdafe92e]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_BinaryFunc(mpd_qmul);
 }
 
@@ -6365,6 +6402,7 @@ ctx_mpd_qnext_toward_impl(PyObject *context, PyTypeObject *cls, PyObject *v,
                           PyObject *w)
 /*[clinic end generated code: output=710c9876ba887f0c input=fa49bc8afd6bc928]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_BinaryFunc(mpd_qnext_toward);
 }
 
@@ -6385,6 +6423,7 @@ ctx_mpd_qquantize_impl(PyObject *context, PyTypeObject *cls, PyObject *v,
                        PyObject *w)
 /*[clinic end generated code: output=766e0f888553dca2 input=e3e7de18666cadd6]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_BinaryFunc(mpd_qquantize);
 }
 
@@ -6405,6 +6444,7 @@ ctx_mpd_qrem_impl(PyObject *context, PyTypeObject *cls, PyObject *v,
                   PyObject *w)
 /*[clinic end generated code: output=6601cf91e5ccd476 input=2bbbdef51fe8c9b4]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_BinaryFunc(mpd_qrem);
 }
 
@@ -6425,6 +6465,7 @@ ctx_mpd_qrem_near_impl(PyObject *context, PyTypeObject *cls, PyObject *v,
                        PyObject *w)
 /*[clinic end generated code: output=922d9c2fc7efadc6 input=1e53bba8266a5612]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_BinaryFunc(mpd_qrem_near);
 }
 
@@ -6445,6 +6486,7 @@ ctx_mpd_qsub_impl(PyObject *context, PyTypeObject *cls, PyObject *v,
                   PyObject *w)
 /*[clinic end generated code: output=285b2ae2f45a474d input=f2e088de72827506]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_BinaryFunc(mpd_qsub);
 }
 
@@ -6470,8 +6512,8 @@ ctx_mpd_qdivmod_impl(PyObject *context, PyTypeObject *cls, PyObject *v,
     uint32_t status = 0;
     PyObject *ret;
 
-    CONVERT_BINOP_RAISE(&a, &b, v, w, context);
     decimal_state *state = get_module_state_by_def(Py_TYPE(context));
+    CONVERT_BINOP_RAISE(&a, &b, v, w, context);
     q = dec_alloc(state);
     if (q == NULL) {
         Py_DECREF(a);
@@ -6524,17 +6566,17 @@ ctx_mpd_qpow_impl(PyObject *context, PyTypeObject *cls, PyObject *base,
     PyObject *result;
     uint32_t status = 0;
 
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     CONVERT_BINOP_RAISE(&a, &b, base, exp, context);
 
     if (mod != Py_None) {
-        if (!convert_op(TYPE_ERR, &c, mod, context)) {
+        if (!convert_op(state, TYPE_ERR, &c, mod, context)) {
             Py_DECREF(a);
             Py_DECREF(b);
             return c;
         }
     }
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     result = dec_alloc(state);
     if (result == NULL) {
         Py_DECREF(a);
@@ -6582,6 +6624,7 @@ ctx_mpd_qfma_impl(PyObject *context, PyTypeObject *cls, PyObject *v,
                   PyObject *w, PyObject *x)
 /*[clinic end generated code: output=8393cd9eec625cd8 input=5333025d6a155f35]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_TernaryFunc(mpd_qfma);
 }
 
@@ -6601,6 +6644,7 @@ static PyObject *
 ctx_mpd_radix_impl(PyObject *context, PyTypeObject *cls)
 /*[clinic end generated code: output=b90f273c9c61fd80 input=29fec3f5b1808b1e]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     return dec_mpd_radix_impl(context, cls);
 }
 
@@ -6621,6 +6665,7 @@ static PyObject *
 ctx_mpd_isnormal_impl(PyObject *context, PyTypeObject *cls, PyObject *v)
 /*[clinic end generated code: output=3a47bdc6caf3d668 input=c3fc28a5aa2cd3e3]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_BoolFunc(mpd_isnormal);
 }
 
@@ -6639,6 +6684,7 @@ static PyObject *
 ctx_mpd_issubnormal_impl(PyObject *context, PyTypeObject *cls, PyObject *v)
 /*[clinic end generated code: output=0b7ec9af01b60b32 input=3fa09e31464867f8]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_BoolFunc(mpd_issubnormal);
 }
 
@@ -6657,6 +6703,7 @@ static PyObject *
 ctx_mpd_isfinite_impl(PyObject *context, PyTypeObject *cls, PyObject *v)
 /*[clinic end generated code: output=0a53cc9b0a084341 input=6698dd74c2900d39]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_BoolFunc_NO_CTX(mpd_isfinite);
 }
 
@@ -6675,6 +6722,7 @@ static PyObject *
 ctx_mpd_isinfinite_impl(PyObject *context, PyTypeObject *cls, PyObject *v)
 /*[clinic end generated code: output=f144efda3b44c1d7 input=1c89054c6c4725ba]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_BoolFunc_NO_CTX(mpd_isinfinite);
 }
 
@@ -6693,6 +6741,7 @@ static PyObject *
 ctx_mpd_isnan_impl(PyObject *context, PyTypeObject *cls, PyObject *v)
 /*[clinic end generated code: output=379aa218f02a2302 input=613ab170eda62872]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_BoolFunc_NO_CTX(mpd_isnan);
 }
 
@@ -6711,6 +6760,7 @@ static PyObject *
 ctx_mpd_isqnan_impl(PyObject *context, PyTypeObject *cls, PyObject *v)
 /*[clinic end generated code: output=a9befa2f6ecd648c input=2867106cfe9c4fe8]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_BoolFunc_NO_CTX(mpd_isqnan);
 }
 
@@ -6729,6 +6779,7 @@ static PyObject *
 ctx_mpd_issigned_impl(PyObject *context, PyTypeObject *cls, PyObject *v)
 /*[clinic end generated code: output=6fa8b69362a92b11 input=324dca8b462b8951]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_BoolFunc_NO_CTX(mpd_issigned);
 }
 
@@ -6747,6 +6798,7 @@ static PyObject *
 ctx_mpd_issnan_impl(PyObject *context, PyTypeObject *cls, PyObject *v)
 /*[clinic end generated code: output=49d23e1b997ee958 input=57f84b3413429c74]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_BoolFunc_NO_CTX(mpd_issnan);
 }
 
@@ -6765,6 +6817,7 @@ static PyObject *
 ctx_mpd_iszero_impl(PyObject *context, PyTypeObject *cls, PyObject *v)
 /*[clinic end generated code: output=accd60e37951f10d input=8685b9982b9437c6]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_BoolFunc_NO_CTX(mpd_iszero);
 }
 
@@ -6812,9 +6865,10 @@ PyDecContext_Apply_impl(PyObject *context, PyTypeObject *cls, PyObject *v)
 {
     PyObject *result, *a;
 
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     CONVERT_OP_RAISE(&a, v, context);
 
-    result = dec_apply(a, context);
+    result = dec_apply(state, a, context);
     Py_DECREF(a);
     return result;
 }
@@ -6879,8 +6933,8 @@ ctx_mpd_qcopy_abs_impl(PyObject *context, PyTypeObject *cls, PyObject *v)
     PyObject *result, *a;
     uint32_t status = 0;
 
-    CONVERT_OP_RAISE(&a, v, context);
     decimal_state *state = get_module_state_by_def(Py_TYPE(context));
+    CONVERT_OP_RAISE(&a, v, context);
     result = dec_alloc(state);
     if (result == NULL) {
         Py_DECREF(a);
@@ -6914,6 +6968,7 @@ ctx_copy_decimal_impl(PyObject *context, PyTypeObject *cls, PyObject *v)
 {
     PyObject *result;
 
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     CONVERT_OP_RAISE(&result, v, context);
     return result;
 }
@@ -6936,8 +6991,8 @@ ctx_mpd_qcopy_negate_impl(PyObject *context, PyTypeObject *cls, PyObject *v)
     PyObject *result, *a;
     uint32_t status = 0;
 
-    CONVERT_OP_RAISE(&a, v, context);
     decimal_state *state = get_module_state_by_def(Py_TYPE(context));
+    CONVERT_OP_RAISE(&a, v, context);
     result = dec_alloc(state);
     if (result == NULL) {
         Py_DECREF(a);
@@ -6969,6 +7024,7 @@ static PyObject *
 ctx_mpd_qlogb_impl(PyObject *context, PyTypeObject *cls, PyObject *v)
 /*[clinic end generated code: output=ce0e36be01e0bb8b input=b867f0e1fda94ac4]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_UnaryFunc(mpd_qlogb);
 }
 
@@ -6987,6 +7043,7 @@ static PyObject *
 ctx_mpd_qinvert_impl(PyObject *context, PyTypeObject *cls, PyObject *v)
 /*[clinic end generated code: output=5b2f8dc82e9b57df input=c1965a54baf3d302]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_UnaryFunc(mpd_qinvert);
 }
 
@@ -7008,6 +7065,7 @@ ctx_mpd_class_impl(PyObject *context, PyTypeObject *cls, PyObject *v)
     PyObject *a;
     const char *cp;
 
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     CONVERT_OP_RAISE(&a, v, context);
 
     cp = mpd_class(MPD(a), CTX(context));
@@ -7036,6 +7094,7 @@ ctx_mpd_to_sci_impl(PyObject *context, PyTypeObject *cls, PyObject *v)
     mpd_ssize_t size;
     char *s;
 
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     CONVERT_OP_RAISE(&a, v, context);
 
     size = mpd_to_sci_size(&s, MPD(a), CtxCaps(context));
@@ -7071,6 +7130,7 @@ ctx_mpd_to_eng_impl(PyObject *context, PyTypeObject *cls, PyObject *v)
     mpd_ssize_t size;
     char *s;
 
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     CONVERT_OP_RAISE(&a, v, context);
 
     size = mpd_to_eng_size(&s, MPD(a), CtxCaps(context));
@@ -7105,6 +7165,7 @@ ctx_mpd_compare_total_impl(PyObject *context, PyTypeObject *cls, PyObject *v,
                            PyObject *w)
 /*[clinic end generated code: output=c4f38d0fac4ab2a4 input=1e722b4a8f21e9be]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_BinaryFunc_NO_CTX(mpd_compare_total);
 }
 
@@ -7125,6 +7186,7 @@ ctx_mpd_compare_total_mag_impl(PyObject *context, PyTypeObject *cls,
                                PyObject *v, PyObject *w)
 /*[clinic end generated code: output=7288737350031caf input=86bac9625d0e1f5e]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_BinaryFunc_NO_CTX(mpd_compare_total_mag);
 }
 
@@ -7149,8 +7211,8 @@ ctx_mpd_qcopy_sign_impl(PyObject *context, PyTypeObject *cls, PyObject *v,
     PyObject *result;
     uint32_t status = 0;
 
-    CONVERT_BINOP_RAISE(&a, &b, v, w, context);
     decimal_state *state = get_module_state_by_def(Py_TYPE(context));
+    CONVERT_BINOP_RAISE(&a, &b, v, w, context);
     result = dec_alloc(state);
     if (result == NULL) {
         Py_DECREF(a);
@@ -7186,6 +7248,7 @@ ctx_mpd_qand_impl(PyObject *context, PyTypeObject *cls, PyObject *v,
                   PyObject *w)
 /*[clinic end generated code: output=bf57548e219c783d input=e3a5d4e85483dd9d]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_BinaryFunc(mpd_qand);
 }
 
@@ -7206,6 +7269,7 @@ ctx_mpd_qor_impl(PyObject *context, PyTypeObject *cls, PyObject *v,
                  PyObject *w)
 /*[clinic end generated code: output=b716865827f9ccad input=089cf278902ebfde]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_BinaryFunc(mpd_qor);
 }
 
@@ -7226,6 +7290,7 @@ ctx_mpd_qxor_impl(PyObject *context, PyTypeObject *cls, PyObject *v,
                   PyObject *w)
 /*[clinic end generated code: output=a9ac9afb4b8c1cb9 input=3e0f5e4a184aaefc]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_BinaryFunc(mpd_qxor);
 }
 
@@ -7246,6 +7311,7 @@ ctx_mpd_qrotate_impl(PyObject *context, PyTypeObject *cls, PyObject *v,
                      PyObject *w)
 /*[clinic end generated code: output=7055b61abbc1613d input=b059047cd2faf3c3]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_BinaryFunc(mpd_qrotate);
 }
 
@@ -7266,6 +7332,7 @@ ctx_mpd_qscaleb_impl(PyObject *context, PyTypeObject *cls, PyObject *v,
                      PyObject *w)
 /*[clinic end generated code: output=55d533e437d8dd23 input=5c73918e750f3a85]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_BinaryFunc(mpd_qscaleb);
 }
 
@@ -7286,6 +7353,7 @@ ctx_mpd_qshift_impl(PyObject *context, PyTypeObject *cls, PyObject *v,
                     PyObject *w)
 /*[clinic end generated code: output=bb48d32d7bff5c96 input=2776c32c3937bc30]*/
 {
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     DecCtx_BinaryFunc(mpd_qshift);
 }
 
@@ -7309,6 +7377,7 @@ ctx_mpd_same_quantum_impl(PyObject *context, PyTypeObject *cls, PyObject *v,
     PyObject *a, *b;
     PyObject *result;
 
+    decimal_state *state = get_module_state_by_def(Py_TYPE(context));
     CONVERT_BINOP_RAISE(&a, &b, v, w, context);
 
     result = mpd_same_quantum(MPD(a), MPD(b)) ? incr_true() : incr_false();
