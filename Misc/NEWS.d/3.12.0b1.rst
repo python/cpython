@@ -2371,7 +2371,7 @@ Add a new C-API function to eagerly assign a version tag to a PyTypeObject:
 .. nonce: _paFIF
 .. section: C API
 
-:c:func:`PyObject_GC_Resize` should calculate preheader size if needed.
+:c:macro:`PyObject_GC_Resize` should calculate preheader size if needed.
 Patch by Donghee Na.
 
 ..
