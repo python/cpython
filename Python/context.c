@@ -1284,13 +1284,6 @@ _PyContext_ClearFreeList(_PyFreeListState *freelist_state, int is_finalization)
 }
 
 
-void
-_PyContext_Fini(_PyFreeListState *state)
-{
-    _PyContext_ClearFreeList(state, 1);
-}
-
-
 PyStatus
 _PyContext_Init(PyInterpreterState *interp)
 {

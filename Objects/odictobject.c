@@ -465,12 +465,13 @@ later:
 */
 
 #include "Python.h"
-#include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_ceval.h"         // _PyEval_GetBuiltin()
-#include "pycore_dict.h"          // _Py_dict_lookup()
-#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
-#include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
-#include <stddef.h>               // offsetof()
+#include "pycore_call.h"             // _PyObject_CallNoArgs()
+#include "pycore_ceval.h"            // _PyEval_GetBuiltin()
+#include "pycore_critical_section.h" //_Py_BEGIN_CRITICAL_SECTION
+#include "pycore_dict.h"             // _Py_dict_lookup()
+#include "pycore_object.h"           // _PyObject_GC_UNTRACK()
+#include "pycore_pyerrors.h"         // _PyErr_ChainExceptions1()
+#include <stddef.h>                  // offsetof()
 
 #include "clinic/odictobject.c.h"
 
@@ -1039,6 +1040,8 @@ _odict_popkey_hash(PyObject *od, PyObject *key, PyObject *failobj,
 {
     PyObject *value = NULL;
 
+    Py_BEGIN_CRITICAL_SECTION(od);
+
     _ODictNode *node = _odict_find_node_hash((PyODictObject *)od, key, hash);
     if (node != NULL) {
         /* Pop the node first to avoid a possible dict resize (due to
@@ -1046,7 +1049,7 @@ _odict_popkey_hash(PyObject *od, PyObject *key, PyObject *failobj,
            resolution. */
         int res = _odict_clear_node((PyODictObject *)od, node, key, hash);
         if (res < 0) {
-            return NULL;
+            goto done;
         }
         /* Now delete the value from the dict. */
         if (_PyDict_Pop_KnownHash((PyDictObject *)od, key, hash,
@@ -1063,6 +1066,8 @@ _odict_popkey_hash(PyObject *od, PyObject *key, PyObject *failobj,
             PyErr_SetObject(PyExc_KeyError, key);
         }
     }
+    Py_END_CRITICAL_SECTION();
+done:
 
     return value;
 }

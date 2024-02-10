@@ -1537,16 +1537,19 @@ class Misc:
         Otherwise destroy the current binding for SEQUENCE, leaving SEQUENCE
         unbound.
         """
+        self._unbind(('bind', self._w, sequence), funcid)
+
+    def _unbind(self, what, funcid=None):
         if funcid is None:
-            self.tk.call('bind', self._w, sequence, '')
+            self.tk.call(*what, '')
         else:
-            lines = self.tk.call('bind', self._w, sequence).split('\n')
+            lines = self.tk.call(what).split('\n')
             prefix = f'if {{"[{funcid} '
             keep = '\n'.join(line for line in lines
                              if not line.startswith(prefix))
             if not keep.strip():
                 keep = ''
-            self.tk.call('bind', self._w, sequence, keep)
+            self.tk.call(*what, keep)
             self.deletecommand(funcid)
 
     def bind_all(self, sequence=None, func=None, add=None):
@@ -1558,7 +1561,7 @@ class Misc:
 
     def unbind_all(self, sequence):
         """Unbind for all widgets for event SEQUENCE all functions."""
-        self.tk.call('bind', 'all' , sequence, '')
+        self._root()._unbind(('bind', 'all', sequence))
 
     def bind_class(self, className, sequence=None, func=None, add=None):
         """Bind to widgets with bindtag CLASSNAME at event
@@ -1573,7 +1576,7 @@ class Misc:
     def unbind_class(self, className, sequence):
         """Unbind for all widgets with bindtag CLASSNAME for event SEQUENCE
         all functions."""
-        self.tk.call('bind', className , sequence, '')
+        self._root()._unbind(('bind', className, sequence))
 
     def mainloop(self, n=0):
         """Call the mainloop of Tk."""
@@ -2105,26 +2108,39 @@ class Wm:
 
     aspect = wm_aspect
 
-    def wm_attributes(self, *args):
-        """This subcommand returns or sets platform specific attributes
+    def wm_attributes(self, *args, return_python_dict=False, **kwargs):
+        """Return or sets platform specific attributes.
 
-        The first form returns a list of the platform specific flags and
-        their values. The second form returns the value for the specific
-        option. The third form sets one or more of the values. The values
-        are as follows:
+        When called with a single argument return_python_dict=True,
+        return a dict of the platform specific attributes and their values.
+        When called without arguments or with a single argument
+        return_python_dict=False, return a tuple containing intermixed
+        attribute names with the minus prefix and their values.
 
-        On Windows, -disabled gets or sets whether the window is in a
-        disabled state. -toolwindow gets or sets the style of the window
-        to toolwindow (as defined in the MSDN). -topmost gets or sets
-        whether this is a topmost window (displays above all other
-        windows).
-
-        On Macintosh, XXXXX
-
-        On Unix, there are currently no special attribute values.
+        When called with a single string value, return the value for the
+        specific option.  When called with keyword arguments, set the
+        corresponding attributes.
         """
-        args = ('wm', 'attributes', self._w) + args
-        return self.tk.call(args)
+        if not kwargs:
+            if not args:
+                res = self.tk.call('wm', 'attributes', self._w)
+                if return_python_dict:
+                    return _splitdict(self.tk, res)
+                else:
+                    return self.tk.splitlist(res)
+            if len(args) == 1 and args[0] is not None:
+                option = args[0]
+                if option[0] == '-':
+                    # TODO: deprecate
+                    option = option[1:]
+                return self.tk.call('wm', 'attributes', self._w, '-' + option)
+            # TODO: deprecate
+            return self.tk.call('wm', 'attributes', self._w, *args)
+        elif args:
+            raise TypeError('wm_attribute() options have been specified as '
+                            'positional and keyword arguments')
+        else:
+            self.tk.call('wm', 'attributes', self._w, *self._options(kwargs))
 
     attributes = wm_attributes
 
@@ -2885,9 +2901,7 @@ class Canvas(Widget, XView, YView):
     def tag_unbind(self, tagOrId, sequence, funcid=None):
         """Unbind for all items with TAGORID for event SEQUENCE  the
         function identified with FUNCID."""
-        self.tk.call(self._w, 'bind', tagOrId, sequence, '')
-        if funcid:
-            self.deletecommand(funcid)
+        self._unbind((self._w, 'bind', tagOrId, sequence), funcid)
 
     def tag_bind(self, tagOrId, sequence=None, func=None, add=None):
         """Bind to all items with TAGORID at event SEQUENCE a call to function FUNC.
@@ -3997,9 +4011,7 @@ class Text(Widget, XView, YView):
     def tag_unbind(self, tagName, sequence, funcid=None):
         """Unbind for all characters with TAGNAME for event SEQUENCE  the
         function identified with FUNCID."""
-        self.tk.call(self._w, 'tag', 'bind', tagName, sequence, '')
-        if funcid:
-            self.deletecommand(funcid)
+        return self._unbind((self._w, 'tag', 'bind', tagName, sequence), funcid)
 
     def tag_bind(self, tagName, sequence, func, add=None):
         """Bind to all characters with TAGNAME at event SEQUENCE a call to function FUNC.
@@ -4007,6 +4019,11 @@ class Text(Widget, XView, YView):
         An additional boolean parameter ADD specifies whether FUNC will be
         called additionally to the other bound function or whether it will
         replace the previous function. See bind for the return value."""
+        return self._bind((self._w, 'tag', 'bind', tagName),
+                  sequence, func, add)
+
+    def _tag_bind(self, tagName, sequence=None, func=None, add=None):
+        # For tests only
         return self._bind((self._w, 'tag', 'bind', tagName),
                   sequence, func, add)
 

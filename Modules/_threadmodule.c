@@ -44,6 +44,7 @@ get_thread_state(PyObject *module)
 
 typedef struct {
     PyObject_HEAD
+    struct llist_node node;  // linked list node (see _pythread_runtime_state)
     PyThread_ident_t ident;
     PyThread_handle_t handle;
     char joinable;
@@ -59,6 +60,11 @@ new_thread_handle(thread_module_state* state)
     self->ident = 0;
     self->handle = 0;
     self->joinable = 0;
+
+    HEAD_LOCK(&_PyRuntime);
+    llist_insert_tail(&_PyRuntime.threads.handles, &self->node);
+    HEAD_UNLOCK(&_PyRuntime);
+
     return self;
 }
 
@@ -66,6 +72,14 @@ static void
 ThreadHandle_dealloc(ThreadHandleObject *self)
 {
     PyObject *tp = (PyObject *) Py_TYPE(self);
+
+    // Remove ourself from the global list of handles
+    HEAD_LOCK(&_PyRuntime);
+    if (self->node.next != NULL) {
+        llist_remove(&self->node);
+    }
+    HEAD_UNLOCK(&_PyRuntime);
+
     if (self->joinable) {
         int ret = PyThread_detach_thread(self->handle);
         if (ret) {
@@ -75,6 +89,28 @@ ThreadHandle_dealloc(ThreadHandleObject *self)
     }
     PyObject_Free(self);
     Py_DECREF(tp);
+}
+
+void
+_PyThread_AfterFork(struct _pythread_runtime_state *state)
+{
+    // gh-115035: We mark ThreadHandles as not joinable early in the child's
+    // after-fork handler. We do this before calling any Python code to ensure
+    // that it happens before any ThreadHandles are deallocated, such as by a
+    // GC cycle.
+    PyThread_ident_t current = PyThread_get_thread_ident_ex();
+
+    struct llist_node *node;
+    llist_for_each_safe(node, &state->handles) {
+        ThreadHandleObject *hobj = llist_data(node, ThreadHandleObject, node);
+        if (hobj->ident == current) {
+            continue;
+        }
+
+        // Disallow calls to detach() and join() as they could crash.
+        hobj->joinable = 0;
+        llist_remove(node);
+    }
 }
 
 static PyObject *
@@ -90,21 +126,6 @@ ThreadHandle_get_ident(ThreadHandleObject *self, void *ignored)
     return PyLong_FromUnsignedLongLong(self->ident);
 }
 
-
-static PyObject *
-ThreadHandle_after_fork_alive(ThreadHandleObject *self, void* ignored)
-{
-    PyThread_update_thread_after_fork(&self->ident, &self->handle);
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-ThreadHandle_after_fork_dead(ThreadHandleObject *self, void* ignored)
-{
-    // Disallow calls to detach() and join() as they could crash.
-    self->joinable = 0;
-    Py_RETURN_NONE;
-}
 
 static PyObject *
 ThreadHandle_detach(ThreadHandleObject *self, void* ignored)
@@ -157,8 +178,6 @@ static PyGetSetDef ThreadHandle_getsetlist[] = {
 
 static PyMethodDef ThreadHandle_methods[] =
 {
-    {"after_fork_alive", (PyCFunction)ThreadHandle_after_fork_alive, METH_NOARGS},
-    {"after_fork_dead", (PyCFunction)ThreadHandle_after_fork_dead, METH_NOARGS},
     {"detach", (PyCFunction)ThreadHandle_detach, METH_NOARGS},
     {"join", (PyCFunction)ThreadHandle_join, METH_NOARGS},
     {0, 0}
