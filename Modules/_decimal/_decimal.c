@@ -3377,14 +3377,7 @@ pydec_format(PyObject *dec, PyObject *fmt, decimal_state *state)
     PyObject *u;
 
     if (state->PyDecimal == NULL) {
-        PyObject *obj = PyImport_ImportModule("_pydecimal");
-        if (obj == NULL) {
-            return NULL;
-        }
-
-        state->PyDecimal = PyObject_GetAttrString(obj, "Decimal");
-        Py_DECREF(obj);
-
+        state->PyDecimal = _PyImport_GetModuleAttrString("_pydecimal", "Decimal");
         if (state->PyDecimal == NULL) {
             return NULL;
         }
@@ -3395,13 +3388,13 @@ pydec_format(PyObject *dec, PyObject *fmt, decimal_state *state)
         return NULL;
     }
 
-    pydec = PyObject_CallFunctionObjArgs(state->PyDecimal, u, NULL);
+    pydec = PyObject_CallOneArg(state->PyDecimal, u);
     Py_DECREF(u);
     if (pydec == NULL) {
         return NULL;
     }
 
-    result = PyObject_CallMethod(pydec, "__format__", "(O)", fmt);
+    result = PyObject_Format(pydec, fmt);
     Py_DECREF(pydec);
 
     if (result == NULL) {
