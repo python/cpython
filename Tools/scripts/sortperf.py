@@ -1,169 +1,194 @@
-"""Sort performance test.
+"""
+List sort performance test.
 
-See main() for command line syntax.
-See tabulate() for output format.
+To install `pyperf` you would need to:
 
+    python3 -m pip install pyperf
+
+To run:
+
+    python3 Tools/scripts/sortperf
+
+Options:
+
+    * `benchmark` name to run
+    * `--rnd-seed` to set random seed
+    * `--size` to set the sorted list size
+
+Based on https://github.com/python/cpython/blob/963904335e579bfe39101adf3fd6a0cf705975ff/Lib/test/sortperf.py
 """
 
-import sys
+from __future__ import annotations
+
+import argparse
 import time
 import random
-import marshal
-import tempfile
-import os
 
-td = tempfile.gettempdir()
+# This needs `pyperf` 3rd party library:
+import pyperf
 
-def randfloats(n):
-    """Return a list of n random floats in [0, 1)."""
-    # Generating floats is expensive, so this writes them out to a file in
-    # a temp directory.  If the file already exists, it just reads them
-    # back in and shuffles them a bit.
-    fn = os.path.join(td, "rr%06d" % n)
-    try:
-        fp = open(fn, "rb")
-    except OSError:
-        r = random.random
-        result = [r() for i in range(n)]
-        try:
-            try:
-                fp = open(fn, "wb")
-                marshal.dump(result, fp)
-                fp.close()
-                fp = None
-            finally:
-                if fp:
-                    try:
-                        os.unlink(fn)
-                    except OSError:
-                        pass
-        except OSError as msg:
-            print("can't write", fn, ":", msg)
-    else:
-        result = marshal.load(fp)
-        fp.close()
-        # Shuffle it a bit...
-        for i in range(10):
-            i = random.randrange(n)
-            temp = result[:i]
-            del result[:i]
-            temp.reverse()
-            result.extend(temp)
-            del temp
-    assert len(result) == n
+
+# ===============
+# Data generation
+# ===============
+
+def _random_data(size: int, rand: random.Random) -> list[float]:
+    result = [rand.random() for _ in range(size)]
+    # Shuffle it a bit...
+    for i in range(10):
+        i = rand.randrange(size)
+        temp = result[:i]
+        del result[:i]
+        temp.reverse()
+        result.extend(temp)
+        del temp
+    assert len(result) == size
     return result
 
-def flush():
-    sys.stdout.flush()
 
-def doit(L):
-    t0 = time.perf_counter()
-    L.sort()
-    t1 = time.perf_counter()
-    print("%6.2f" % (t1-t0), end=' ')
-    flush()
+def list_sort(size: int, rand: random.Random) -> list[float]:
+    return _random_data(size, rand)
 
-def tabulate(r):
-    r"""Tabulate sort speed for lists of various sizes.
 
-    The sizes are 2**i for i in r (the argument, a list).
+def list_sort_descending(size: int, rand: random.Random) -> list[float]:
+    return list(reversed(list_sort_ascending(size, rand)))
 
-    The output displays i, 2**i, and the time to sort arrays of 2**i
-    floating point numbers with the following properties:
 
-    *sort: random data
-    \sort: descending data
-    /sort: ascending data
-    3sort: ascending, then 3 random exchanges
-    +sort: ascending, then 10 random at the end
-    %sort: ascending, then randomly replace 1% of the elements w/ random values
-    ~sort: many duplicates
-    =sort: all equal
-    !sort: worst case scenario
+def list_sort_ascending(size: int, rand: random.Random) -> list[float]:
+    return sorted(_random_data(size, rand))
 
-    """
-    cases = tuple([ch + "sort" for ch in r"*\/3+%~=!"])
-    fmt = ("%2s %7s" + " %6s"*len(cases))
-    print(fmt % (("i", "2**i") + cases))
-    for i in r:
-        n = 1 << i
-        L = randfloats(n)
-        print("%2d %7d" % (i, n), end=' ')
-        flush()
-        doit(L) # *sort
-        L.reverse()
-        doit(L) # \sort
-        doit(L) # /sort
 
-        # Do 3 random exchanges.
-        for dummy in range(3):
-            i1 = random.randrange(n)
-            i2 = random.randrange(n)
-            L[i1], L[i2] = L[i2], L[i1]
-        doit(L) # 3sort
+def list_sort_ascending_exchanged(size: int, rand: random.Random) -> list[float]:
+    result = list_sort_ascending(size, rand)
+    # Do 3 random exchanges.
+    for _ in range(3):
+        i1 = rand.randrange(size)
+        i2 = rand.randrange(size)
+        result[i1], result[i2] = result[i2], result[i1]
+    return result
 
-        # Replace the last 10 with random floats.
-        if n >= 10:
-            L[-10:] = [random.random() for dummy in range(10)]
-        doit(L) # +sort
 
-        # Replace 1% of the elements at random.
-        for dummy in range(n // 100):
-            L[random.randrange(n)] = random.random()
-        doit(L) # %sort
+def list_sort_ascending_random(size: int, rand: random.Random) -> list[float]:
+    assert size >= 10, "This benchmark requires size to be >= 10"
+    result = list_sort_ascending(size, rand)
+    # Replace the last 10 with random floats.
+    result[-10:] = [rand.random() for _ in range(10)]
+    return result
 
-        # Arrange for lots of duplicates.
-        if n > 4:
-            del L[4:]
-            L = L * (n // 4)
-            # Force the elements to be distinct objects, else timings can be
-            # artificially low.
-            L = list(map(lambda x: --x, L))
-        doit(L) # ~sort
-        del L
 
-        # All equal.  Again, force the elements to be distinct objects.
-        L = list(map(abs, [-0.5] * n))
-        doit(L) # =sort
-        del L
+def list_sort_ascending_one_percent(size: int, rand: random.Random) -> list[float]:
+    result = list_sort_ascending(size, rand)
+    # Replace 1% of the elements at random.
+    for _ in range(size // 100):
+        result[rand.randrange(size)] = rand.random()
+    return result
 
-        # This one looks like [3, 2, 1, 0, 0, 1, 2, 3].  It was a bad case
-        # for an older implementation of quicksort, which used the median
-        # of the first, last and middle elements as the pivot.
-        half = n // 2
-        L = list(range(half - 1, -1, -1))
-        L.extend(range(half))
-        # Force to float, so that the timings are comparable.  This is
-        # significantly faster if we leave them as ints.
-        L = list(map(float, L))
-        doit(L) # !sort
-        print()
 
-def main():
-    """Main program when invoked as a script.
+def list_sort_duplicates(size: int, rand: random.Random) -> list[float]:
+    assert size >= 4
+    result = list_sort_ascending(4, rand)
+    # Arrange for lots of duplicates.
+    result = result * (size // 4)
+    # Force the elements to be distinct objects, else timings can be
+    # artificially low.
+    return list(map(abs, result))
 
-    One argument: tabulate a single row.
-    Two arguments: tabulate a range (inclusive).
-    Extra arguments are used to seed the random generator.
 
-    """
-    # default range (inclusive)
-    k1 = 15
-    k2 = 20
-    if sys.argv[1:]:
-        # one argument: single point
-        k1 = k2 = int(sys.argv[1])
-        if sys.argv[2:]:
-            # two arguments: specify range
-            k2 = int(sys.argv[2])
-            if sys.argv[3:]:
-                # derive random seed from remaining arguments
-                x = 1
-                for a in sys.argv[3:]:
-                    x = 69069 * x + hash(a)
-                random.seed(x)
-    r = range(k1, k2+1)                 # include the end point
-    tabulate(r)
+def list_sort_equal(size: int, rand: random.Random) -> list[float]:
+    # All equal.  Again, force the elements to be distinct objects.
+    return list(map(abs, [-0.519012] * size))
 
-if __name__ == '__main__':
-    main()
+
+def list_sort_worst_case(size: int, rand: random.Random) -> list[float]:
+    # This one looks like [3, 2, 1, 0, 0, 1, 2, 3].  It was a bad case
+    # for an older implementation of quicksort, which used the median
+    # of the first, last and middle elements as the pivot.
+    half = size // 2
+    result = list(range(half - 1, -1, -1))
+    result.extend(range(half))
+    # Force to float, so that the timings are comparable.  This is
+    # significantly faster if we leave them as ints.
+    return list(map(float, result))
+
+
+# =========
+# Benchmark
+# =========
+
+class Benchmark:
+    def __init__(self, name: str, size: int, seed: int) -> None:
+        self._name = name
+        self._size = size
+        self._seed = seed
+        self._random = random.Random(self._seed)
+
+    def run(self, loops: int) -> float:
+        all_data = self._prepare_data(loops)
+        start = time.perf_counter()
+
+        for data in all_data:
+            data.sort()  # Benching this method!
+
+        return time.perf_counter() - start
+
+    def _prepare_data(self, loops: int) -> list[float]:
+        bench = BENCHMARKS[self._name]
+        return [
+            bench(self._size, self._random)
+            for _ in range(loops)
+        ]
+
+
+def add_cmdline_args(cmd: list[str], args) -> None:
+    cmd.append(args.benchmark)
+    cmd.append(f"--size={args.size}")
+    cmd.append(f"--rng-seed={args.rng_seed}")
+
+
+def add_parser_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "benchmark",
+        choices=BENCHMARKS,
+        nargs="?",
+        default="list_sort",
+        help="Can be any of: {0}".format(", ".join(BENCHMARKS)),
+    )
+    parser.add_argument(
+        "--size",
+        type=int,
+        default=DEFAULT_SIZE,
+        help=f"Size of the lists to sort (default: {DEFAULT_SIZE})",
+    )
+    parser.add_argument(
+        "--rng-seed",
+        type=int,
+        default=DEFAULT_RANDOM_SEED,
+        help=f"Random number generator seed (default: {DEFAULT_RANDOM_SEED})",
+    )
+
+
+DEFAULT_SIZE = 262144  # 1 << 18
+DEFAULT_RANDOM_SEED = 0
+BENCHMARKS = {
+    "list_sort": list_sort,
+    "list_sort_descending": list_sort_descending,
+    "list_sort_ascending": list_sort_ascending,
+    "list_sort_ascending_exchanged": list_sort_ascending_exchanged,
+    "list_sort_ascending_random": list_sort_ascending_random,
+    "list_sort_ascending_one_percent": list_sort_ascending_one_percent,
+    "list_sort_duplicates": list_sort_duplicates,
+    "list_sort_equal": list_sort_equal,
+    "list_sort_worst_case": list_sort_worst_case,
+}
+
+if __name__ == "__main__":
+    runner = pyperf.Runner(add_cmdline_args=add_cmdline_args)
+    add_parser_args(runner.argparser)
+    args = runner.parse_args()
+
+    runner.metadata["description"] = "Test `list.sort()` with different data"
+    runner.metadata["list_sort_size"] = args.size
+    runner.metadata["list_sort_random_seed"] = args.rng_seed
+
+    benchmark = Benchmark(args.benchmark, args.size, args.rng_seed)
+    runner.bench_time_func(args.benchmark, benchmark.run)
