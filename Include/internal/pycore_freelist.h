@@ -125,6 +125,16 @@ typedef struct _Py_freelist_state {
     struct _Py_object_stack_state object_stacks;
 } _PyFreeListState;
 
+extern void _PyObject_ClearFreeLists(_PyFreeListState *state, int is_finalization);
+extern void _PyTuple_ClearFreeList(_PyFreeListState *state, int is_finalization);
+extern void _PyFloat_ClearFreeList(_PyFreeListState *state, int is_finalization);
+extern void _PyList_ClearFreeList(_PyFreeListState *state, int is_finalization);
+extern void _PySlice_ClearFreeList(_PyFreeListState *state, int is_finalization);
+extern void _PyDict_ClearFreeList(_PyFreeListState *state, int is_finalization);
+extern void _PyAsyncGen_ClearFreeLists(_PyFreeListState *state, int is_finalization);
+extern void _PyContext_ClearFreeList(_PyFreeListState *state, int is_finalization);
+extern void _PyObjectStackChunk_ClearFreeList(_PyFreeListState *state, int is_finalization);
+
 #ifdef __cplusplus
 }
 #endif
