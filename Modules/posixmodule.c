@@ -52,6 +52,12 @@
 #  define EX_OK EXIT_SUCCESS
 #endif
 
+#ifdef __APPLE__
+ /* Needed for the implementation of os.statvfs */
+#  include <sys/param.h>
+#  include <sys/mount.h>
+#endif
+
 /* On android API level 21, 'AT_EACCESS' is not declared although
  * HAVE_FACCESSAT is defined. */
 #ifdef __ANDROID__
@@ -12886,6 +12892,59 @@ os_WSTOPSIG_impl(PyObject *module, int status)
 #endif
 #include <sys/statvfs.h>
 
+#ifdef __APPLE__
+/* On macOS struct statvfs uses 32-bit integers for block counts,
+ * resulting in overflow when filesystems are larger tan 4TB. Therefore
+ * os.statvfs is implemented in terms of statfs(2).
+ */
+
+static PyObject*
+_pystatvfs_fromstructstatfs(PyObject *module, struct statfs st) {
+    PyObject *StatVFSResultType = get_posix_state(module)->StatVFSResultType;
+    PyObject *v = PyStructSequence_New((PyTypeObject *)StatVFSResultType);
+    if (v == NULL)
+        return NULL;
+
+   long flags = 0;
+   if (st.f_flags & MNT_RDONLY) {
+       flags |= ST_RDONLY;
+   }
+   if (st.f_flags & MNT_NOSUID) {
+       flags |= ST_NOSUID;
+   }
+
+   _Static_assert(sizeof(st.f_blocks) == sizeof(long long), "assuming large file");
+
+    PyStructSequence_SET_ITEM(v, 0, PyLong_FromLong((long) st.f_iosize));
+    PyStructSequence_SET_ITEM(v, 1, PyLong_FromLong((long) st.f_bsize));
+    PyStructSequence_SET_ITEM(v, 2,
+                              PyLong_FromLongLong((long long) st.f_blocks));
+    PyStructSequence_SET_ITEM(v, 3,
+                              PyLong_FromLongLong((long long) st.f_bfree));
+    PyStructSequence_SET_ITEM(v, 4,
+                              PyLong_FromLongLong((long long) st.f_bavail));
+    PyStructSequence_SET_ITEM(v, 5,
+                              PyLong_FromLongLong((long long) st.f_files));
+    PyStructSequence_SET_ITEM(v, 6,
+                              PyLong_FromLongLong((long long) st.f_ffree));
+    PyStructSequence_SET_ITEM(v, 7,
+                              PyLong_FromLongLong((long long) st.f_ffree));
+    PyStructSequence_SET_ITEM(v, 8, PyLong_FromLong((long) flags));
+
+    PyStructSequence_SET_ITEM(v, 9, PyLong_FromLong((long) NAME_MAX));
+    PyStructSequence_SET_ITEM(v, 10, PyLong_FromUnsignedLong(st.f_fsid.val[0]));
+    if (PyErr_Occurred()) {
+        Py_DECREF(v);
+        return NULL;
+    }
+
+    return v;
+}
+
+#else
+
+
+
 static PyObject*
 _pystatvfs_fromstructstatvfs(PyObject *module, struct statvfs st) {
     PyObject *StatVFSResultType = get_posix_state(module)->StatVFSResultType;
@@ -12937,6 +12996,8 @@ _pystatvfs_fromstructstatvfs(PyObject *module, struct statvfs st) {
     return v;
 }
 
+#endif
+
 
 /*[clinic input]
 os.fstatvfs
@@ -12954,6 +13015,22 @@ os_fstatvfs_impl(PyObject *module, int fd)
 {
     int result;
     int async_err = 0;
+#ifdef __APPLE__
+    struct statfs st;
+    /* On macOS os.fstatvfs is implemented using fstatfs(2) because
+     * the former uses 32-bit values for block counts.
+     */
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        result = fstatfs(fd, &st);
+        Py_END_ALLOW_THREADS
+    } while (result != 0 && errno == EINTR &&
+             !(async_err = PyErr_CheckSignals()));
+    if (result != 0)
+        return (!async_err) ? posix_error() : NULL;
+
+    return _pystatvfs_fromstructstatfs(module, st);
+#else
     struct statvfs st;
 
     do {
@@ -12966,6 +13043,7 @@ os_fstatvfs_impl(PyObject *module, int fd)
         return (!async_err) ? posix_error() : NULL;
 
     return _pystatvfs_fromstructstatvfs(module, st);
+#endif
 }
 #endif /* defined(HAVE_FSTATVFS) && defined(HAVE_SYS_STATVFS_H) */
 
@@ -12989,6 +13067,28 @@ os_statvfs_impl(PyObject *module, path_t *path)
 /*[clinic end generated code: output=87106dd1beb8556e input=3f5c35791c669bd9]*/
 {
     int result;
+
+#ifdef __APPLE__
+    /* On macOS os.statvfs is implemented using statfs(2)/fstatfs(2) because
+     * the former uses 32-bit values for block counts.
+     */
+    struct statfs st;
+
+    Py_BEGIN_ALLOW_THREADS
+    if (path->fd != -1) {
+        result = fstatfs(path->fd, &st);
+    }
+    else
+        result = statfs(path->narrow, &st);
+    Py_END_ALLOW_THREADS
+
+    if (result) {
+        return path_error(path);
+    }
+
+    return _pystatvfs_fromstructstatfs(module, st);
+
+#else
     struct statvfs st;
 
     Py_BEGIN_ALLOW_THREADS
@@ -13006,6 +13106,7 @@ os_statvfs_impl(PyObject *module, path_t *path)
     }
 
     return _pystatvfs_fromstructstatvfs(module, st);
+#endif
 }
 #endif /* defined(HAVE_STATVFS) && defined(HAVE_SYS_STATVFS_H) */
 
