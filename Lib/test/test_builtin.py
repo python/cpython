@@ -586,6 +586,14 @@ class BuiltinTest(unittest.TestCase):
         self.assertIsInstance(res, list)
         self.assertTrue(res == ["a", "b", "c"])
 
+        # dir(obj__dir__iterable)
+        class Foo(object):
+            def __dir__(self):
+                return {"b", "c", "a"}
+        res = dir(Foo())
+        self.assertIsInstance(res, list)
+        self.assertEqual(sorted(res), ["a", "b", "c"])
+
         # dir(obj__dir__not_sequence)
         class Foo(object):
             def __dir__(self):
