@@ -1651,7 +1651,7 @@ get_rare_event_counters(PyObject *self, PyObject *type)
 }
 
 static PyObject *
-reset_rare_event_counters(PyObject *self, PyObject *type)
+reset_rare_event_counters(PyObject *self, PyObject *Py_UNUSED(type))
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
 
