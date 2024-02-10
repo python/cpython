@@ -24,9 +24,6 @@ import argparse
 import time
 import random
 
-# This needs `pyperf` 3rd party library:
-import pyperf
-
 
 # ===============
 # Data generation
@@ -182,6 +179,9 @@ BENCHMARKS = {
 }
 
 if __name__ == "__main__":
+    # This needs `pyperf` 3rd party library:
+    import pyperf
+
     runner = pyperf.Runner(add_cmdline_args=add_cmdline_args)
     add_parser_args(runner.argparser)
     args = runner.parse_args()
