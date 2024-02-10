@@ -1611,7 +1611,6 @@ def main():
     from idlelib.run import fix_scaling
     fix_scaling(root)
 
-    # start editor and/or shell windows:
     fixwordbreaks(root)
     fix_x11_paste(root)
     flist = PyShellFileList(root)
@@ -1636,6 +1635,7 @@ def main():
         root.wm_iconphoto(True, *icons)
 
 
+    # start editor and/or shell windows:
     if enable_edit:
         if not (cmd or script):
             for filename in args[:]:

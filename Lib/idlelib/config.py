@@ -667,7 +667,7 @@ class IdleConf:
             # to the key bindings an rely the default binding.
             #
             # Without this IDLE will prompt twice about closing a file with
-            # unsaved # changes when the user quits IDLE using the keyboard
+            # unsaved changes when the user quits IDLE using the keyboard
             # shortcutand then chooses "Cancel" the first time the dialog
             # appears.
             del keyBindings['<<close-all-windows>>']
