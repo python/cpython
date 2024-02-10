@@ -1514,8 +1514,8 @@ class XMLPullParserTest(unittest.TestCase):
     def test_simple_xml_chunk_5(self):
         self.test_simple_xml(chunk_size=5)
 
-    def test_simple_xml_chunk_8(self):
-        self.test_simple_xml(chunk_size=8)
+    def test_simple_xml_chunk_22(self):
+        self.test_simple_xml(chunk_size=22)
 
     def test_feed_while_iterating(self):
         parser = ET.XMLPullParser()
