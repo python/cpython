@@ -378,11 +378,8 @@ Standard names are defined for the following types:
 
 .. data:: FrameType
 
-   The type of frame objects such as found in ``tb.tb_frame`` if ``tb`` is a
-   traceback object.
-
-   See :ref:`the language reference <frame-objects>` for details of the
-   available attributes and operations.
+   The type of :ref:`frame objects <frame-objects>` such as found in
+   :attr:`tb.tb_frame <traceback.tb_frame>` if ``tb`` is a traceback object.
 
 
 .. data:: GetSetDescriptorType
@@ -400,6 +397,10 @@ Standard names are defined for the following types:
    as ``datetime.timedelta.days``.  This type is used as descriptor for simple C
    data members which use standard conversion functions; it has the same purpose
    as the :class:`property` type, but for classes defined in extension modules.
+
+   In addition, when a class is defined with a :attr:`~object.__slots__` attribute, then for
+   each slot, an instance of :class:`!MemberDescriptorType` will be added as an attribute
+   on the class. This allows the slot to appear in the class's :attr:`~object.__dict__`.
 
    .. impl-detail::
 

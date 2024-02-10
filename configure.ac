@@ -973,14 +973,13 @@ AS_CASE([$host/$ac_cv_cc_name],
   [aarch64-*-linux-gnu/gcc],         [PY_SUPPORT_TIER=2], dnl Linux ARM64, glibc, gcc+clang
   [aarch64-*-linux-gnu/clang],       [PY_SUPPORT_TIER=2],
   [powerpc64le-*-linux-gnu/gcc],     [PY_SUPPORT_TIER=2], dnl Linux on PPC64 little endian, glibc, gcc
+  [wasm32-unknown-wasi/clang],       [PY_SUPPORT_TIER=2], dnl WebAssembly System Interface, clang
   [x86_64-*-linux-gnu/clang],        [PY_SUPPORT_TIER=2], dnl Linux on AMD64, any vendor, glibc, clang
 
   [aarch64-pc-windows-msvc/msvc],    [PY_SUPPORT_TIER=3], dnl Windows ARM64, MSVC
   [armv7l-*-linux-gnueabihf/gcc],    [PY_SUPPORT_TIER=3], dnl ARMv7 LE with hardware floats, any vendor, glibc, gcc
   [powerpc64le-*-linux-gnu/clang],   [PY_SUPPORT_TIER=3], dnl Linux on PPC64 little endian, glibc, clang
   [s390x-*-linux-gnu/gcc],           [PY_SUPPORT_TIER=3], dnl Linux on 64bit s390x (big endian), glibc, gcc
-  [wasm32-unknown-emscripten/clang], [PY_SUPPORT_TIER=3], dnl WebAssembly Emscripten
-  [wasm32-unknown-wasi/clang],       [PY_SUPPORT_TIER=3], dnl WebAssembly System Interface
   [x86_64-*-freebsd*/clang],         [PY_SUPPORT_TIER=3], dnl FreeBSD on AMD64
   [PY_SUPPORT_TIER=0]
 )
@@ -1578,6 +1577,28 @@ elif test "$Py_DEBUG" = 'true'; then
 else
   AC_MSG_RESULT([no])
 fi
+
+# Check for --enable-experimental-jit:
+AC_MSG_CHECKING([for --enable-experimental-jit])
+AC_ARG_ENABLE([experimental-jit],
+              [AS_HELP_STRING([--enable-experimental-jit],
+                              [build the experimental just-in-time compiler (default is no)])],
+              [],
+              [enable_experimental_jit=no])
+AS_VAR_IF([enable_experimental_jit],
+          [no],
+          [],
+          [AS_VAR_APPEND([CFLAGS_NODIST], [" -D_Py_JIT"])
+           AS_VAR_SET([REGEN_JIT_COMMAND],
+                      ["\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py $host"])
+           AS_VAR_SET([JIT_STENCILS_H], ["jit_stencils.h"])
+           AS_VAR_IF([Py_DEBUG],
+                     [true],
+                     [AS_VAR_APPEND([REGEN_JIT_COMMAND], [" --debug"])],
+                     [])])
+AC_SUBST([REGEN_JIT_COMMAND])
+AC_SUBST([JIT_STENCILS_H])
+AC_MSG_RESULT([$enable_experimental_jit])
 
 # Enable optimization flags
 AC_SUBST([DEF_MAKE_ALL_RULE])
@@ -3067,6 +3088,24 @@ AC_MSG_RESULT([no])
 with_ubsan="no"
 ])
 
+AC_MSG_CHECKING([for --with-thread-sanitizer])
+AC_ARG_WITH(
+  [thread_sanitizer],
+  [AS_HELP_STRING(
+    [--with-thread-sanitizer],
+    [enable ThreadSanitizer data race detector, 'tsan' (default is no)]
+  )],
+[
+AC_MSG_RESULT([$withval])
+BASECFLAGS="-fsanitize=thread $BASECFLAGS"
+LDFLAGS="-fsanitize=thread $LDFLAGS"
+with_tsan="yes"
+],
+[
+AC_MSG_RESULT([no])
+with_tsan="no"
+])
+
 # Set info about shared libraries.
 AC_SUBST([SHLIB_SUFFIX])
 AC_SUBST([LDSHARED])
@@ -4349,7 +4388,7 @@ ipv6type=unknown
 ipv6lib=none
 ipv6trylibc=no
 
-if test "$ipv6" = "yes"; then
+if test "$ipv6" = yes -a "$cross_compiling" = no; then
 	AC_MSG_CHECKING([ipv6 stack type])
 	for i in inria kame linux-glibc linux-inet6 solaris toshiba v6d zeta;
 	do
@@ -4558,6 +4597,8 @@ if test "$with_mimalloc" != no; then
   with_mimalloc=yes
   AC_DEFINE([WITH_MIMALLOC], [1], [Define if you want to compile in mimalloc memory allocator.])
   AC_SUBST([MIMALLOC_HEADERS], ['$(MIMALLOC_HEADERS)'])
+elif test "$disable_gil" = "yes"; then
+  AC_MSG_ERROR([--disable-gil requires mimalloc memory allocator (--with-mimalloc).])
 fi
 
 AC_MSG_RESULT([$with_mimalloc])
@@ -4743,20 +4784,21 @@ fi
 
 # checks for library functions
 AC_CHECK_FUNCS([ \
-  accept4 alarm bind_textdomain_codeset chmod chown clock close_range confstr \
+  accept4 alarm bind_textdomain_codeset chmod chown clock closefrom close_range confstr \
   copy_file_range ctermid dup dup3 execv explicit_bzero explicit_memset \
   faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
   fork fork1 fpathconf fstatat ftime ftruncate futimens futimes futimesat \
-  gai_strerror getegid getentropy geteuid getgid getgrgid getgrgid_r \
+  gai_strerror getegid getentropy geteuid getgid getgrent getgrgid getgrgid_r \
   getgrnam_r getgrouplist getgroups gethostname getitimer getloadavg getlogin \
   getpeername getpgid getpid getppid getpriority _getpty \
   getpwent getpwnam_r getpwuid getpwuid_r getresgid getresuid getrusage getsid getspent \
-  getspnam getuid getwd if_nameindex initgroups kill killpg lchown linkat \
+  getspnam getuid getwd grantpt if_nameindex initgroups kill killpg lchown linkat \
   lockf lstat lutimes madvise mbrtowc memrchr mkdirat mkfifo mkfifoat \
   mknod mknodat mktime mmap mremap nice openat opendir pathconf pause pipe \
-  pipe2 plock poll posix_fadvise posix_fallocate posix_spawn posix_spawnp \
-  pread preadv preadv2 pthread_condattr_setclock pthread_init pthread_kill \
-  pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
+  pipe2 plock poll posix_fadvise posix_fallocate posix_openpt posix_spawn posix_spawnp \
+  posix_spawn_file_actions_addclosefrom_np \
+  pread preadv preadv2 pthread_cond_timedwait_relative_np pthread_condattr_setclock pthread_init \
+  pthread_kill ptsname ptsname_r pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
   rtpSpawn sched_get_priority_max sched_rr_get_interval sched_setaffinity \
   sched_setparam sched_setscheduler sem_clockwait sem_getvalue sem_open \
   sem_timedwait sem_unlink sendfile setegid seteuid setgid sethostname \
@@ -4765,7 +4807,7 @@ AC_CHECK_FUNCS([ \
   sigfillset siginterrupt sigpending sigrelse sigtimedwait sigwait \
   sigwaitinfo snprintf splice strftime strlcpy strsignal symlinkat sync \
   sysconf system tcgetpgrp tcsetpgrp tempnam timegm times tmpfile \
-  tmpnam tmpnam_r truncate ttyname umask uname unlinkat utimensat utimes vfork \
+  tmpnam tmpnam_r truncate ttyname umask uname unlinkat unlockpt utimensat utimes vfork \
   wait wait3 wait4 waitid waitpid wcscoll wcsftime wcsxfrm wmemcmp writev \
 ])
 
@@ -5099,6 +5141,7 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #if defined(MAJOR_IN_MKDEV)
 #include <sys/mkdev.h>
 #elif defined(MAJOR_IN_SYSMACROS)
+#include <sys/types.h>
 #include <sys/sysmacros.h>
 #else
 #include <sys/types.h>
@@ -6805,7 +6848,12 @@ AX_CHECK_OPENSSL([have_openssl=yes],[have_openssl=no])
 AS_VAR_IF([GNULD], [yes], [
   rpath_arg="-Wl,--enable-new-dtags,-rpath="
 ], [
-  rpath_arg="-Wl,-rpath="
+  if test "$ac_sys_system" = "Darwin"
+  then
+     rpath_arg="-Wl,-rpath,"
+  else
+     rpath_arg="-Wl,-rpath="
+  fi
 ])
 
 AC_MSG_CHECKING([for --with-openssl-rpath])
@@ -7023,6 +7071,9 @@ AC_SUBST([TEST_MODULES])
 # libatomic __atomic_fetch_or_8(), or not, depending on the C compiler and the
 # compiler flags.
 #
+# gh-112779: On RISC-V, GCC 12 and earlier require libatomic support for 1-byte
+# and 2-byte operations, but not for 8-byte operations.
+#
 # Avoid #include <Python.h> or #include <pyport.h>. The <Python.h> header
 # requires <pyconfig.h> header which is only written below by AC_OUTPUT below.
 # If the check is done after AC_OUTPUT, modifying LIBS has no effect
@@ -7052,12 +7103,19 @@ typedef intptr_t Py_ssize_t;
 
 int main()
 {
-    uint64_t byte;
-    _Py_atomic_store_uint64(&byte, 2);
-    if (_Py_atomic_or_uint64(&byte, 8) != 2) {
+    uint64_t value;
+    _Py_atomic_store_uint64(&value, 2);
+    if (_Py_atomic_or_uint64(&value, 8) != 2) {
         return 1; // error
     }
-    if (_Py_atomic_load_uint64(&byte) != 10) {
+    if (_Py_atomic_load_uint64(&value) != 10) {
+        return 1; // error
+    }
+    uint8_t byte = 0xb8;
+    if (_Py_atomic_or_uint8(&byte, 0x2d) != 0xb8) {
+        return 1; // error
+    }
+    if (_Py_atomic_load_uint8(&byte) != 0xbd) {
         return 1; // error
     }
     return 0; // all good
@@ -7108,6 +7166,7 @@ AS_CASE([$ac_sys_system],
       [_tkinter],
       [_xxsubinterpreters],
       [_xxinterpchannels],
+      [_xxinterpqueues],
       [grp],
       [pwd],
       [resource],
@@ -7224,6 +7283,7 @@ PY_STDLIB_MOD_SIMPLE([_struct])
 PY_STDLIB_MOD_SIMPLE([_typing])
 PY_STDLIB_MOD_SIMPLE([_xxsubinterpreters])
 PY_STDLIB_MOD_SIMPLE([_xxinterpchannels])
+PY_STDLIB_MOD_SIMPLE([_xxinterpqueues])
 PY_STDLIB_MOD_SIMPLE([_zoneinfo])
 
 dnl multiprocessing modules
@@ -7254,7 +7314,9 @@ PY_STDLIB_MOD([_socket],
                     -a "$ac_cv_header_netinet_in_h" = "yes"]))
 
 dnl platform specific extensions
-PY_STDLIB_MOD([grp], [], [test "$ac_cv_func_getgrgid" = yes -o "$ac_cv_func_getgrgid_r" = yes])
+PY_STDLIB_MOD([grp], [],
+  [test "$ac_cv_func_getgrent" = "yes" &&
+   { test "$ac_cv_func_getgrgid" = "yes" || test "$ac_cv_func_getgrgid_r" = "yes"; }])
 PY_STDLIB_MOD([pwd], [], [test "$ac_cv_func_getpwuid" = yes -o "$ac_cv_func_getpwuid_r" = yes])
 PY_STDLIB_MOD([resource], [], [test "$ac_cv_header_sys_resource_h" = yes])
 PY_STDLIB_MOD([_scproxy],

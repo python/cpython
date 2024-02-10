@@ -2344,6 +2344,40 @@ class TestSpecial(unittest.TestCase):
         globals()['SomeTuple'] = SomeTuple
         test_pickle_dump_load(self.assertIs, SomeTuple.first)
 
+    def test_tuple_subclass_with_auto_1(self):
+        from collections import namedtuple
+        T = namedtuple('T', 'index desc')
+        class SomeEnum(T, Enum):
+            __qualname__ = 'SomeEnum'      # needed for pickle protocol 4
+            first = auto(), 'for the money'
+            second = auto(), 'for the show'
+            third = auto(), 'for the music'
+        self.assertIs(type(SomeEnum.first), SomeEnum)
+        self.assertEqual(SomeEnum.third.value, (3, 'for the music'))
+        self.assertIsInstance(SomeEnum.third.value, T)
+        self.assertEqual(SomeEnum.first.index, 1)
+        self.assertEqual(SomeEnum.second.desc, 'for the show')
+        globals()['SomeEnum'] = SomeEnum
+        globals()['T'] = T
+        test_pickle_dump_load(self.assertIs, SomeEnum.first)
+
+    def test_tuple_subclass_with_auto_2(self):
+        from collections import namedtuple
+        T = namedtuple('T', 'index desc')
+        class SomeEnum(Enum):
+            __qualname__ = 'SomeEnum'      # needed for pickle protocol 4
+            first = T(auto(), 'for the money')
+            second = T(auto(), 'for the show')
+            third = T(auto(), 'for the music')
+        self.assertIs(type(SomeEnum.first), SomeEnum)
+        self.assertEqual(SomeEnum.third.value, (3, 'for the music'))
+        self.assertIsInstance(SomeEnum.third.value, T)
+        self.assertEqual(SomeEnum.first.value.index, 1)
+        self.assertEqual(SomeEnum.second.value.desc, 'for the show')
+        globals()['SomeEnum'] = SomeEnum
+        globals()['T'] = T
+        test_pickle_dump_load(self.assertIs, SomeEnum.first)
+
     def test_duplicate_values_give_unique_enum_items(self):
         class AutoNumber(Enum):
             first = ()
@@ -3201,6 +3235,37 @@ class TestSpecial(unittest.TestCase):
                 [x.value for x in NTEnum],
                 [TTuple(id=0, a=0, blist=[]), TTuple(id=1, a=2, blist=[4]), TTuple(id=2, a=4, blist=[0, 1, 2])],
                 )
+
+        self.assertRaises(AttributeError, getattr, NTEnum.NONE, 'id')
+        #
+        class NTCEnum(TTuple, Enum):
+            NONE = 0, 0, []
+            A = 1, 2, [4]
+            B = 2, 4, [0, 1, 2]
+        self.assertEqual(repr(NTCEnum.NONE), "<NTCEnum.NONE: TTuple(id=0, a=0, blist=[])>")
+        self.assertEqual(NTCEnum.NONE.value, TTuple(id=0, a=0, blist=[]))
+        self.assertEqual(NTCEnum.NONE.id, 0)
+        self.assertEqual(NTCEnum.A.a, 2)
+        self.assertEqual(NTCEnum.B.blist, [0, 1 ,2])
+        self.assertEqual(
+                [x.value for x in NTCEnum],
+                [TTuple(id=0, a=0, blist=[]), TTuple(id=1, a=2, blist=[4]), TTuple(id=2, a=4, blist=[0, 1, 2])],
+                )
+        #
+        class NTDEnum(Enum):
+            def __new__(cls, id, a, blist):
+                member = object.__new__(cls)
+                member.id = id
+                member.a = a
+                member.blist = blist
+                return member
+            NONE = TTuple(0, 0, [])
+            A = TTuple(1, 2, [4])
+            B = TTuple(2, 4, [0, 1, 2])
+        self.assertEqual(repr(NTDEnum.NONE), "<NTDEnum.NONE: TTuple(id=0, a=0, blist=[])>")
+        self.assertEqual(NTDEnum.NONE.id, 0)
+        self.assertEqual(NTDEnum.A.a, 2)
+        self.assertEqual(NTDEnum.B.blist, [0, 1 ,2])
 
     def test_flag_with_custom_new(self):
         class FlagFromChar(IntFlag):

@@ -1,0 +1,2 @@
+Return both files and directories from :meth:`pathlib.Path.glob` if a
+pattern ends with "``**``". Previously only directories were returned.

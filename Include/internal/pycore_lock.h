@@ -213,6 +213,45 @@ _PyOnceFlag_CallOnce(_PyOnceFlag *flag, _Py_once_fn_t *fn, void *arg)
     return _PyOnceFlag_CallOnceSlow(flag, fn, arg);
 }
 
+// A readers-writer (RW) lock. The lock supports multiple concurrent readers or
+// a single writer. The lock is write-preferring: if a writer is waiting while
+// the lock is read-locked then, new readers will be blocked. This avoids
+// starvation of writers.
+//
+// In C++, the equivalent synchronization primitive is std::shared_mutex
+// with shared ("read") and exclusive ("write") locking.
+//
+// The two least significant bits are used to indicate if the lock is
+// write-locked and if there are parked threads (either readers or writers)
+// waiting to acquire the lock. The remaining bits are used to indicate the
+// number of readers holding the lock.
+//
+// 0b000..00000: unlocked
+// 0bnnn..nnn00: nnn..nnn readers holding the lock
+// 0bnnn..nnn10: nnn..nnn readers holding the lock and a writer is waiting
+// 0b00000..010: unlocked with awoken writer about to acquire lock
+// 0b00000..001: write-locked
+// 0b00000..011: write-locked and readers or other writers are waiting
+//
+// Note that reader_count must be zero if the lock is held by a writer, and
+// vice versa. The lock can only be held by readers or a writer, but not both.
+//
+// The design is optimized for simplicity of the implementation. The lock is
+// not fair: if fairness is desired, use an additional PyMutex to serialize
+// writers. The lock is also not reentrant.
+typedef struct {
+    uintptr_t bits;
+} _PyRWMutex;
+
+// Read lock (i.e., shared lock)
+PyAPI_FUNC(void) _PyRWMutex_RLock(_PyRWMutex *rwmutex);
+PyAPI_FUNC(void) _PyRWMutex_RUnlock(_PyRWMutex *rwmutex);
+
+// Write lock (i.e., exclusive lock)
+PyAPI_FUNC(void) _PyRWMutex_Lock(_PyRWMutex *rwmutex);
+PyAPI_FUNC(void) _PyRWMutex_Unlock(_PyRWMutex *rwmutex);
+
+
 #ifdef __cplusplus
 }
 #endif
