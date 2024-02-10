@@ -2785,10 +2785,12 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
     if _parent is not None and not instance:
         _parent._mock_children[_name] = mock
 
+    wrapped = kwargs.get('wraps')
+
     if is_type and not instance and 'return_value' not in kwargs:
         mock.return_value = create_autospec(spec, spec_set, instance=True,
                                             _name='()', _parent=mock,
-                                            wraps=kwargs.get('wraps'))
+                                            wraps=wrapped)
 
     for entry in dir(spec):
         if _is_magic(entry):
@@ -2811,7 +2813,7 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
 
         kwargs = {'spec': original}
         # Wrap child attributes also.
-        if _kwargs.get('wraps'):
+        if wrapped and hasattr(wrapped, entry):
             kwargs.update(wraps=original)
         if spec_set:
             kwargs = {'spec_set': original}
