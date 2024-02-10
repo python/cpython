@@ -611,6 +611,9 @@ init_interpreter(PyInterpreterState *interp,
     _PyGC_InitState(&interp->gc);
     PyConfig_InitPythonConfig(&interp->config);
     _PyType_InitCache(interp);
+#ifdef Py_GIL_DISABLED
+    _Py_brc_init_state(interp);
+#endif
     for (int i = 0; i < _PY_MONITORING_UNGROUPED_EVENTS; i++) {
         interp->monitors.tools[i] = 0;
     }
@@ -1336,6 +1339,11 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     tstate->datastack_limit = NULL;
     tstate->what_event = -1;
 
+#ifdef Py_GIL_DISABLED
+    // Initialize biased reference counting inter-thread queue
+    _Py_brc_init_thread(tstate);
+#endif
+
     if (interp->stoptheworld.requested || _PyRuntime.stoptheworld.requested) {
         // Start in the suspended state if there is an ongoing stop-the-world.
         tstate->state = _Py_THREAD_SUSPENDED;
@@ -1461,20 +1469,6 @@ clear_datastack(PyThreadState *tstate)
 }
 
 void
-_Py_ClearFreeLists(_PyFreeListState *state, int is_finalization)
-{
-    // In the free-threaded build, freelists are per-PyThreadState and cleared in PyThreadState_Clear()
-    // In the default build, freelists are per-interpreter and cleared in finalize_interp_types()
-    _PyFloat_ClearFreeList(state, is_finalization);
-    _PyTuple_ClearFreeList(state, is_finalization);
-    _PyList_ClearFreeList(state, is_finalization);
-    _PyDict_ClearFreeList(state, is_finalization);
-    _PyContext_ClearFreeList(state, is_finalization);
-    _PyAsyncGen_ClearFreeLists(state, is_finalization);
-    _PyObjectStackChunk_ClearFreeList(state, is_finalization);
-}
-
-void
 PyThreadState_Clear(PyThreadState *tstate)
 {
     assert(tstate->_status.initialized && !tstate->_status.cleared);
@@ -1558,9 +1552,11 @@ PyThreadState_Clear(PyThreadState *tstate)
     }
 #ifdef Py_GIL_DISABLED
     // Each thread should clear own freelists in free-threading builds.
-    _PyFreeListState *freelist_state = &((_PyThreadStateImpl*)tstate)->freelist_state;
-    _Py_ClearFreeLists(freelist_state, 1);
-    _PySlice_ClearCache(freelist_state);
+    _PyFreeListState *freelist_state = _PyFreeListState_GET();
+    _PyObject_ClearFreeLists(freelist_state, 1);
+
+    // Remove ourself from the biased reference counting table of threads.
+    _Py_brc_remove_thread(tstate);
 #endif
 
     _PyThreadState_ClearMimallocHeaps(tstate);
