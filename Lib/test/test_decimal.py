@@ -1110,9 +1110,7 @@ class FormatTest:
             ('z>z6.1f', '-0.', 'zzz0.0'),
             ('x>z6.1f', '-0.', 'xxx0.0'),
             ('🖤>z6.1f', '-0.', '🖤🖤🖤0.0'),  # multi-byte fill char
-            # TODO: fix this null fill char case (and confirm mpdecimal impl.)
-            #   output is ".0", expected is "0.0"
-            #('\0>z6.1f', '-0.', '\0\0\00.0'),  # null fill char
+            ('\x00>z6.1f', '-0.', '\x00\x00\x000.0'),  # null fill char
 
             # issue 114563 ('z' format on F type in cdecimal)
             ('z3,.10F', '-6.24E-323', '0.0000000000'),
