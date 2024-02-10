@@ -584,9 +584,6 @@ implementations.
 Limitations
 ===========
 
-To avoid infinite recursion, :mod:`profile` and :mod:`cProfile` do not work
-inside trace functions set using :func:`sys.settrace` or :func:`sys.setprofile`.
-
 It "takes a while" from when an event is dispatched
 until the profiler's call to get the time actually *gets* the state of the
 clock.  Similarly, there is a certain lag when exiting the profiler event
@@ -608,6 +605,9 @@ negative numbers (when call counts are exceptionally low, and the gods of
 probability work against you :-). )  Do *not* be alarmed by negative numbers in
 the profile.  They should *only* appear if you have calibrated your profiler,
 and the results are actually better than without calibration.
+
+To avoid infinite recursion, :mod:`profile` and :mod:`cProfile` do not work
+inside trace functions set using :func:`sys.settrace` or :func:`sys.setprofile`.
 
 
 .. _profile-calibration:
