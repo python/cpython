@@ -1620,16 +1620,18 @@ Pattern language
 The following wildcards are supported in patterns for
 :meth:`~PurePath.full_match`, :meth:`~Path.glob` and :meth:`~Path.rglob`:
 
-=========================  ===========================================
-Wildcard                   Matches
-=========================  ===========================================
-"``**``" (full segment)    Any number of file or directory segments.
-"``*``" (full segment)     One file or directory segment.
-"``*``" (otherwise)        Any number of non-separator characters.
-"``?``"                    One non-separator character.
-"``[seq]``"                One character in *seq*.
-"``[!seq]``"               One character not in *seq*.
-=========================  ===========================================
+``**`` (full segment)
+  Matches any number of file or directory segments.
+``*`` (full segment)
+  Matches one file or directory segment.
+``*`` (otherwise)
+  Matches any number of non-separator characters.
+``?``
+  Matches one non-separator character.
+``[seq]``
+  Matches one character in *seq*.
+``[!seq]``
+  Matches one character not in *seq*.
 
 For a literal match, wrap the meta-characters in brackets.
 For example, ``"[?]"`` matches the character ``"?"``.
