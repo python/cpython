@@ -300,8 +300,10 @@ functions:
       profile and print the results to stdout.
 
       The *sort* parameter specifies the sorting order of the displayed
-      statistics. It accepts tuple of SortKey or accepts a tuple of SortKeys
-      to enable multi-level sorting.
+      statistics. It accepts a single key or a tuple of keys to enable
+      multi-level sorting. A key can be either an integer, a string, or a
+      SortKey enum identifying the basis of a sort (for example: -1,
+      'time', 'name', SortKey.TIME, or SortKey.NAME).
 
       .. versionadded:: 3.13
          :meth:`~Profile.print_stats` now accepts a single key or a tuple of keys.
