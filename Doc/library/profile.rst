@@ -298,11 +298,11 @@ functions:
       profile and print the results to stdout.
 
       The *sort* parameter specifies the sorting order of the displayed
-      statistics. It accepts a single sort key or a tuple of sort keys
+      statistics. It accepts tuple of SortKey or accepts a tuple of SortKeys
       to enable multi-level sorting.
 
       .. versionadded:: 3.13
-         :meth:`~Profile.print_stats` can now accept multiple sort arguments.
+         :meth:`~Profile.print_stats` now also accepts a tuple of SortKeys.
 
    .. method:: dump_stats(filename)
 
@@ -464,8 +464,6 @@ Analysis of the profiler data is done using the :class:`~pstats.Stats` class.
       .. versionadded:: 3.7
          Added the SortKey enum.
 
-      .. versionadded:: 3.13
-         meth:`Profile.print_stats` can now accept multiple sort arguments.
 
    .. method:: reverse_order()
 
