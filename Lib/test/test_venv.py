@@ -753,7 +753,8 @@ class BasicTest(BaseTest):
         rmtree(self.env_dir)
         with tempfile.TemporaryDirectory() as symlink_dir:
             executable_symlink = os.path.join(
-                symlink_dir, os.path.basename(sys.executable))
+                os.path.realpath(symlink_dir),
+                os.path.basename(sys.executable))
             os.symlink(os.path.abspath(sys.executable), executable_symlink)
             cmd = [executable_symlink, "-m", "venv", "--without-pip",
                    self.env_dir]
