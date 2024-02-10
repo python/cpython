@@ -304,7 +304,7 @@ functions:
       to enable multi-level sorting.
 
       .. versionadded:: 3.13
-         :meth:`~Profile.print_stats` now also accepts a tuple of SortKeys.
+         :meth:`~Profile.print_stats` now accepts a single key or a tuple of keys.
 
    .. method:: dump_stats(filename)
 
