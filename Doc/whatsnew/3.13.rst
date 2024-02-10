@@ -403,6 +403,13 @@ pdb
   command line option or :envvar:`PYTHONSAFEPATH` environment variable).
   (Contributed by Tian Gao and Christian Walther in :gh:`111762`.)
 
+queue
+-----
+
+* Add :meth:`queue.Queue.shutdown` (along with :exc:`queue.ShutDown`) for queue
+  termination.
+  (Contributed by Laurie Opperman and Yves Duprat in :gh:`104750`.)
+
 re
 --
 * Rename :exc:`!re.error` to :exc:`re.PatternError` for improved clarity.
