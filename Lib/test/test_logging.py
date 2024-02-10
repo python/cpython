@@ -582,7 +582,8 @@ class CustomLevelsAndFiltersTest(BaseTest):
         finally:
             if specific_filter:
                 self.root_logger.removeFilter(specific_filter)
-            handler.removeFilter(garr)
+            handler.removeFilter(garr) 
+
 
 
 def make_temp_file(*args, **kwargs):
@@ -5568,6 +5569,51 @@ class LoggerAdapterTest(unittest.TestCase):
         self.assertTrue(hasattr(record, 'foo'))
         self.assertEqual(record.foo, '2')
 
+
+class Message:
+    def __init__(self, fmt, args):
+        self.fmt = fmt
+        self.args = args
+
+    def __str__(self):
+        return self.fmt.format(*self.args)
+
+
+class StyleAdapter(logging.LoggerAdapter):
+    def __init__(self, logger, extra=None):
+        super().__init__(logger, extra or {})
+
+    def log(self, level, msg, /, *args, **kwargs):
+        if self.isEnabledFor(level):
+            msg, kwargs = self.process(msg, kwargs)
+            self.logger._log(level, Message(msg, args), (), **kwargs)
+
+
+class TestIssue115233(unittest.TestCase):
+    _logger = StyleAdapter(logging.getLogger(__name__))
+
+    def main(self):
+        self.logger.info('Logger initialized.')
+        self._logger.info('test')
+
+    def setUp(self):
+        self.logger = logging.getLogger(__name__)
+        self.stream = io.StringIO()
+        formatter = logging.Formatter(
+            '%(asctime)s %(name)s %(funcName)s %(levelname)s %(message)s')
+        self.handler = logging.StreamHandler(self.stream)
+        self.logger.addHandler(self.handler)
+        self.handler.setFormatter(formatter)
+        self.logger.setLevel(logging.INFO)
+
+    def tearDown(self):
+        self.logger.removeHandler(self.handler)
+
+    def test_main_function_logs_info_message(self):
+        self.main()
+        self.handler.flush()
+        log_output = self.stream.getvalue()
+        assert 'main' in log_output
 
 class LoggerTest(BaseTest, AssertErrorMessage):
 

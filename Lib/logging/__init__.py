@@ -164,7 +164,7 @@ def addLevelName(level, levelName):
         _nameToLevel[levelName] = level
 
 if hasattr(sys, "_getframe"):
-    currentframe = lambda: sys._getframe(1)
+    currentframe = lambda: sys._getframe(3)
 else: #pragma: no cover
     def currentframe():
         """Return the frame object for the caller's stack frame."""
