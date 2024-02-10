@@ -464,7 +464,6 @@ Analysis of the profiler data is done using the :class:`~pstats.Stats` class.
       .. versionadded:: 3.7
          Added the SortKey enum.
 
-
    .. method:: reverse_order()
 
       This method for the :class:`Stats` class reverses the ordering of the
