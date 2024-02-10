@@ -10,7 +10,10 @@ else:
     hypothesis.settings.register_profile(
         "slow-is-ok",
         deadline=None,
-        suppress_health_check=[hypothesis.HealthCheck.too_slow],
+        suppress_health_check=[
+            hypothesis.HealthCheck.too_slow,
+            hypothesis.HealthCheck.differing_executors,
+        ],
     )
     hypothesis.settings.load_profile("slow-is-ok")
 

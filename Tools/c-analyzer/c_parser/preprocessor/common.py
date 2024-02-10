@@ -1,6 +1,7 @@
 import contextlib
 import distutils.ccompiler
 import logging
+import os
 import shlex
 import subprocess
 import sys
@@ -40,7 +41,12 @@ def run_cmd(argv, *,
     kw.pop('kwargs')
     kwargs.update(kw)
 
-    proc = subprocess.run(argv, **kwargs)
+    # Remove LANG environment variable: the C parser doesn't support GCC
+    # localized messages
+    env = dict(os.environ)
+    env.pop('LANG', None)
+
+    proc = subprocess.run(argv, env=env, **kwargs)
     return proc.stdout
 
 

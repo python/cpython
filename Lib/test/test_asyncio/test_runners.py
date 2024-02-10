@@ -3,6 +3,7 @@ import asyncio
 import contextvars
 import re
 import signal
+import sys
 import threading
 import unittest
 from test.test_asyncio import utils as test_utils
@@ -101,11 +102,14 @@ class RunTests(BaseTest):
             loop = asyncio.get_event_loop()
             self.assertIs(loop.get_debug(), expected)
 
-        asyncio.run(main(False))
+        asyncio.run(main(False), debug=False)
         asyncio.run(main(True), debug=True)
         with mock.patch('asyncio.coroutines._is_debug_mode', lambda: True):
             asyncio.run(main(True))
             asyncio.run(main(False), debug=False)
+        with mock.patch('asyncio.coroutines._is_debug_mode', lambda: False):
+            asyncio.run(main(True), debug=True)
+            asyncio.run(main(False))
 
     def test_asyncio_run_from_running_loop(self):
         async def main():
@@ -243,6 +247,8 @@ class RunTests(BaseTest):
             def get_loop(self, *args, **kwargs):
                 return self._task.get_loop(*args, **kwargs)
 
+            def set_name(self, *args, **kwargs):
+                return self._task.set_name(*args, **kwargs)
 
         async def main():
             interrupt_self()
@@ -266,6 +272,16 @@ class RunTests(BaseTest):
 
         asyncio.run(main(), loop_factory=factory)
         factory.assert_called_once_with()
+
+    def test_loop_factory_default_event_loop(self):
+        async def main():
+            if sys.platform == "win32":
+                self.assertIsInstance(asyncio.get_running_loop(), asyncio.ProactorEventLoop)
+            else:
+                self.assertIsInstance(asyncio.get_running_loop(), asyncio.SelectorEventLoop)
+
+
+        asyncio.run(main(), loop_factory=asyncio.EventLoop)
 
 
 class RunnerTests(BaseTest):
@@ -478,6 +494,24 @@ class RunnerTests(BaseTest):
 
         self.assertEqual(1, policy.set_event_loop.call_count)
         runner.close()
+
+    def test_no_repr_is_call_on_the_task_result(self):
+        # See https://github.com/python/cpython/issues/112559.
+        class MyResult:
+            def __init__(self):
+                self.repr_count = 0
+            def __repr__(self):
+                self.repr_count += 1
+                return super().__repr__()
+
+        async def coro():
+            return MyResult()
+
+
+        with asyncio.Runner() as runner:
+            result = runner.run(coro())
+
+        self.assertEqual(0, result.repr_count)
 
 
 if __name__ == '__main__':

@@ -30,8 +30,9 @@ from io import BytesIO, StringIO
 
 import unittest
 from test import support
-from test.support import os_helper
-from test.support import threading_helper
+from test.support import (
+    is_apple, os_helper, requires_subprocess, threading_helper
+)
 
 support.requires_working_socket(module=True)
 
@@ -410,8 +411,8 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         reader.close()
         return body
 
-    @unittest.skipIf(sys.platform == 'darwin',
-                     'undecodable name cannot always be decoded on macOS')
+    @unittest.skipIf(is_apple,
+                     'undecodable name cannot always be decoded on Apple platforms')
     @unittest.skipIf(sys.platform == 'win32',
                      'undecodable name cannot be decoded on win32')
     @unittest.skipUnless(os_helper.TESTFN_UNDECODABLE,
@@ -422,11 +423,11 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         with open(os.path.join(self.tempdir, filename), 'wb') as f:
             f.write(os_helper.TESTFN_UNDECODABLE)
         response = self.request(self.base_url + '/')
-        if sys.platform == 'darwin':
-            # On Mac OS the HFS+ filesystem replaces bytes that aren't valid
-            # UTF-8 into a percent-encoded value.
+        if is_apple:
+            # On Apple platforms the HFS+ filesystem replaces bytes that
+            # aren't valid UTF-8 into a percent-encoded value.
             for name in os.listdir(self.tempdir):
-                if name != 'test': # Ignore a filename created in setUp().
+                if name != 'test':  # Ignore a filename created in setUp().
                     filename = name
                     break
         body = self.check_status_and_reason(response, HTTPStatus.OK)
@@ -442,10 +443,10 @@ class SimpleHTTPServerTestCase(BaseTestCase):
     def test_undecodable_parameter(self):
         # sanity check using a valid parameter
         response = self.request(self.base_url + '/?x=123').read()
-        self.assertRegex(response, f'listing for {self.base_url}/\?x=123'.encode('latin1'))
+        self.assertRegex(response, rf'listing for {self.base_url}/\?x=123'.encode('latin1'))
         # now the bogus encoding
         response = self.request(self.base_url + '/?x=%bb').read()
-        self.assertRegex(response, f'listing for {self.base_url}/\?x=\xef\xbf\xbd'.encode('latin1'))
+        self.assertRegex(response, rf'listing for {self.base_url}/\?x=\xef\xbf\xbd'.encode('latin1'))
 
     def test_get_dir_redirect_location_domain_injection_bug(self):
         """Ensure //evil.co/..%2f../../X does not put //evil.co/ in Location.
@@ -697,13 +698,23 @@ print("</pre>")
 
 @unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
         "This test can't be run reliably as root (issue #13308).")
+@requires_subprocess()
 class CGIHTTPServerTestCase(BaseTestCase):
     class request_handler(NoLogRequestHandler, CGIHTTPRequestHandler):
-        pass
+        _test_case_self = None  # populated by each setUp() method call.
+
+        def __init__(self, *args, **kwargs):
+            with self._test_case_self.assertWarnsRegex(
+                    DeprecationWarning,
+                    r'http\.server\.CGIHTTPRequestHandler'):
+                # This context also happens to catch and silence the
+                # threading DeprecationWarning from os.fork().
+                super().__init__(*args, **kwargs)
 
     linesep = os.linesep.encode('ascii')
 
     def setUp(self):
+        self.request_handler._test_case_self = self  # practical, but yuck.
         BaseTestCase.setUp(self)
         self.cwd = os.getcwd()
         self.parent_dir = tempfile.mkdtemp()
@@ -780,6 +791,7 @@ class CGIHTTPServerTestCase(BaseTestCase):
         os.chdir(self.parent_dir)
 
     def tearDown(self):
+        self.request_handler._test_case_self = None
         try:
             os.chdir(self.cwd)
             if self._pythonexe_symlink:
