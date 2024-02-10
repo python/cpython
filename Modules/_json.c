@@ -1209,13 +1209,13 @@ encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     PyEncoderObject *s;
     PyObject *markers, *defaultfn, *encoder, *indent, *key_separator;
-    PyObject *item_separator;
+    PyObject *item_separator, *allow_nan_obj;
     int sort_keys, skipkeys, allow_nan;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "OOOOUUppp:make_encoder", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "OOOOUUppO:make_encoder", kwlist,
         &markers, &defaultfn, &encoder, &indent,
         &key_separator, &item_separator,
-        &sort_keys, &skipkeys, &allow_nan))
+        &sort_keys, &skipkeys, &allow_nan_obj))
         return NULL;
 
     if (markers != Py_None && !PyDict_Check(markers)) {
@@ -1223,6 +1223,19 @@ encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                      "make_encoder() argument 1 must be dict or None, "
                      "not %.200s", Py_TYPE(markers)->tp_name);
         return NULL;
+    }
+
+    // allow_nan =
+    //   0 to disallow nans and infinities
+    //   1 to convert nans and infinities into corresponding JSON strings
+    //   2 to convert nans and infinities to a JSON null
+    if (PyUnicode_Check(allow_nan_obj) && _PyUnicode_Equal(allow_nan_obj, &_Py_ID(null))) {
+        allow_nan = 2;
+    } else {
+        allow_nan = PyObject_IsTrue(allow_nan_obj);
+        if (allow_nan < 0) {
+            return NULL;
+        }
     }
 
     s = (PyEncoderObject *)type->tp_alloc(type, 0);
@@ -1314,7 +1327,10 @@ encoder_encode_float(PyEncoderObject *s, PyObject *obj)
                     );
             return NULL;
         }
-        if (i > 0) {
+        else if (s->allow_nan == 2) {
+            return PyUnicode_FromString("null");
+        }
+        else if (i > 0) {
             return PyUnicode_FromString("Infinity");
         }
         else if (i < 0) {

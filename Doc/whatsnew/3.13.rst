@@ -279,6 +279,14 @@ ipaddress
 * Add the :attr:`ipaddress.IPv4Address.ipv6_mapped` property, which returns the IPv4-mapped IPv6 address.
   (Contributed by Charles Machalow in :gh:`109466`.)
 
+json
+----
+
+* Add support for ``allow_nan='null'`` when encoding to JSON. This converts
+  floating-point infinities and NaNs to a JSON ``null``, for compatibility
+  with ECMAScript's ``JSON.stringify``.
+  (Contributed by Mark Dickinson in :gh:`XXXXXX`.)
+
 marshal
 -------
 
