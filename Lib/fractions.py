@@ -580,7 +580,7 @@ class Fraction(numbers.Rational):
         )
 
     def _operator_fallbacks(monomorphic_operator, fallback_operator,
-                            handle_complex=False):
+                            handle_complex=True):
         """Generates forward and reverse operators given a purely-rational
         operator and a function from the operator module.
 
@@ -771,7 +771,7 @@ class Fraction(numbers.Rational):
             return Fraction._from_coprime_ints(t, s * db)
         return Fraction._from_coprime_ints(t // g2, s * (db // g2))
 
-    __add__, __radd__ = _operator_fallbacks(_add, operator.add, True)
+    __add__, __radd__ = _operator_fallbacks(_add, operator.add)
 
     def _sub(a, b):
         """a - b"""
@@ -787,7 +787,7 @@ class Fraction(numbers.Rational):
             return Fraction._from_coprime_ints(t, s * db)
         return Fraction._from_coprime_ints(t // g2, s * (db // g2))
 
-    __sub__, __rsub__ = _operator_fallbacks(_sub, operator.sub, True)
+    __sub__, __rsub__ = _operator_fallbacks(_sub, operator.sub)
 
     def _mul(a, b):
         """a * b"""
@@ -803,7 +803,7 @@ class Fraction(numbers.Rational):
             da //= g2
         return Fraction._from_coprime_ints(na * nb, db * da)
 
-    __mul__, __rmul__ = _operator_fallbacks(_mul, operator.mul, True)
+    __mul__, __rmul__ = _operator_fallbacks(_mul, operator.mul)
 
     def _div(a, b):
         """a / b"""
@@ -825,13 +825,13 @@ class Fraction(numbers.Rational):
             n, d = -n, -d
         return Fraction._from_coprime_ints(n, d)
 
-    __truediv__, __rtruediv__ = _operator_fallbacks(_div, operator.truediv, True)
+    __truediv__, __rtruediv__ = _operator_fallbacks(_div, operator.truediv)
 
     def _floordiv(a, b):
         """a // b"""
         return (a.numerator * b.denominator) // (a.denominator * b.numerator)
 
-    __floordiv__, __rfloordiv__ = _operator_fallbacks(_floordiv, operator.floordiv)
+    __floordiv__, __rfloordiv__ = _operator_fallbacks(_floordiv, operator.floordiv, False)
 
     def _divmod(a, b):
         """(a // b, a % b)"""
@@ -839,14 +839,14 @@ class Fraction(numbers.Rational):
         div, n_mod = divmod(a.numerator * db, da * b.numerator)
         return div, Fraction(n_mod, da * db)
 
-    __divmod__, __rdivmod__ = _operator_fallbacks(_divmod, divmod)
+    __divmod__, __rdivmod__ = _operator_fallbacks(_divmod, divmod, False)
 
     def _mod(a, b):
         """a % b"""
         da, db = a.denominator, b.denominator
         return Fraction((a.numerator * db) % (b.numerator * da), da * db)
 
-    __mod__, __rmod__ = _operator_fallbacks(_mod, operator.mod)
+    __mod__, __rmod__ = _operator_fallbacks(_mod, operator.mod, False)
 
     def __pow__(a, b):
         """a ** b
