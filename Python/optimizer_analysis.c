@@ -226,7 +226,7 @@ ctx_frame_pop(
 }
 
 
-// Steals a reference to const_val
+// Takes a borrowed reference to const_val, turns that into a strong reference.
 static _Py_UOpsSymType*
 _Py_UOpsSymType_New(_Py_UOpsAbstractInterpContext *ctx,
                                PyObject *const_val)
