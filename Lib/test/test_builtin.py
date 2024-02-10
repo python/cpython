@@ -308,14 +308,13 @@ class BuiltinTest(unittest.TestCase):
         self.assertTrue(callable(c3))
 
     def test_chr(self):
+        self.assertEqual(chr(0), '\0')
         self.assertEqual(chr(32), ' ')
         self.assertEqual(chr(65), 'A')
         self.assertEqual(chr(97), 'a')
         self.assertEqual(chr(0xff), '\xff')
-        self.assertRaises(ValueError, chr, 1<<24)
-        self.assertEqual(chr(sys.maxunicode),
-                         str('\\U0010ffff'.encode("ascii"), 'unicode-escape'))
         self.assertRaises(TypeError, chr)
+        self.assertRaises(TypeError, chr, 65.0)
         self.assertEqual(chr(0x0000FFFF), "\U0000FFFF")
         self.assertEqual(chr(0x00010000), "\U00010000")
         self.assertEqual(chr(0x00010001), "\U00010001")
@@ -327,7 +326,11 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(chr(0x0010FFFF), "\U0010FFFF")
         self.assertRaises(ValueError, chr, -1)
         self.assertRaises(ValueError, chr, 0x00110000)
-        self.assertRaises((OverflowError, ValueError), chr, 2**32)
+        self.assertRaises(ValueError, chr, 1<<24)
+        self.assertRaises(ValueError, chr, 2**32-1)
+        self.assertRaises(ValueError, chr, -2**32)
+        self.assertRaises(ValueError, chr, 2**1000)
+        self.assertRaises(ValueError, chr, -2**1000)
 
     def test_cmp(self):
         self.assertTrue(not hasattr(builtins, "cmp"))
