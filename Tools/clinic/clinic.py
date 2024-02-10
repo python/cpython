@@ -5176,14 +5176,13 @@ class DSLParser:
             if (self.kind is CLASS_METHOD) and cls:
                 self.kind = METHOD_NEW
             else:
-                fail("'__new__' must be a class method!")
+                fail(f"'__new__' must be a class method; got {self.kind!r}")
         elif name == '__init__':
             if (self.kind is CALLABLE) and cls:
                 self.kind = METHOD_INIT
             else:
                 fail(
-                    "'__init__' must be a normal method; "
-                    f"got '{self.kind}'!"
+                    f"'__init__' must be an instance method; got {self.kind!r}"
                 )
 
     def state_modulename_name(self, line: str) -> None:
