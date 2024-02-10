@@ -245,6 +245,7 @@ class PropertySubSlots(property):
 
 class PropertySubclassTests(unittest.TestCase):
 
+    @support.requires_docstrings
     def test_slots_docstring_copy_exception(self):
         # A special case error that we preserve despite the GH-98963 behavior
         # that would otherwise silently ignore this error.
