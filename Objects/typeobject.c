@@ -6653,7 +6653,8 @@ type_add_method(PyTypeObject *type, PyMethodDef *meth)
         descr = PyDescr_NewClassMethod(type, meth);
     }
     else if (meth->ml_flags & METH_STATIC) {
-        PyObject *mod = PyObject_GetAttr((PyObject*)type, &_Py_ID(__module__));
+        PyObject *mod;
+        PyObject_GetOptionalAttr((PyObject*)type, &_Py_ID(__module__), &mod);
         PyObject *cfunc = PyCFunction_NewEx(meth, (PyObject*)type, mod);
         Py_XDECREF(mod);
         if (cfunc == NULL) {
