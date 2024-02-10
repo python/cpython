@@ -68,8 +68,6 @@ class _lsprof.Profiler "ProfilerObject *" "&ProfilerType"
 
 #include "clinic/_lsprof.c.h"
 
-static struct PyModuleDef _lsprofmodule;
-
 typedef struct {
     PyTypeObject *profiler_type;
     PyTypeObject *stats_entry_type;
