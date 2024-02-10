@@ -1575,7 +1575,7 @@ context_copy_impl(PyObject *self, PyTypeObject *cls)
 {
     PyObject *copy;
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    decimal_state *state = _PyType_GetModuleState(cls);
     copy = PyObject_CallObject((PyObject *)state->PyDecContext_Type, NULL);
     if (copy == NULL) {
         return NULL;
