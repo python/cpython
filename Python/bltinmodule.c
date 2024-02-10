@@ -703,17 +703,34 @@ builtin_format_impl(PyObject *module, PyObject *value, PyObject *format_spec)
 /*[clinic input]
 chr as builtin_chr
 
-    i: int
+    i: object
     /
 
 Return a Unicode string of one character with ordinal i; 0 <= i <= 0x10ffff.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_chr_impl(PyObject *module, int i)
-/*[clinic end generated code: output=c733afcd200afcb7 input=3f604ef45a70750d]*/
+builtin_chr(PyObject *module, PyObject *i)
+/*[clinic end generated code: output=d34f25b8035a9b10 input=f919867f0ba2f496]*/
 {
-    return PyUnicode_FromOrdinal(i);
+    int overflow;
+    long v = PyLong_AsLongAndOverflow(i, &overflow);
+    if (v == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    if (overflow) {
+        v = overflow < 0 ? INT_MIN : INT_MAX;
+        /* Allow PyUnicode_FromOrdinal() to raise an exception */
+    }
+#if SIZEOF_INT < SIZEOF_LONG
+    else if (v < INT_MIN) {
+        v = INT_MIN;
+    }
+    else if (v > INT_MAX) {
+        v = INT_MAX;
+    }
+#endif
+    return PyUnicode_FromOrdinal(v);
 }
 
 
