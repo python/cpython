@@ -173,9 +173,9 @@ Basic Usage
    If *allow_nan* is false (default: ``True``), then it will be a
    :exc:`ValueError` to serialize out of range :class:`float` values (``nan``,
    ``inf``, ``-inf``) in strict compliance with the JSON specification. If
-   *allow_nan* is the string ``"null"``, NaNs and infinities will be converted
+   *allow_nan* is the string ``'null'``, NaNs and infinities will be converted
    to a JSON ``null``, matching the behavior of JavaScript's
-   ``JSON.stringify``. If *allow_nan* is true but not equal to ``"null"`` then
+   ``JSON.stringify``. If *allow_nan* is true but not equal to ``'null'`` then
    NaNs and infinities are converted to non-quote-delimited strings ``NaN``,
    ``Infinity`` and ``-Infinity`` in the JSON output. Note that this represents
    an extension of the JSON specification, and is not compliant with standard
@@ -458,9 +458,9 @@ Encoders and Decoders
    prevent an infinite recursion (which would cause a :exc:`RecursionError`).
    Otherwise, no such check takes place.
 
-   If *allow_nan* is the string ``"null"``, then NaNs and infinities are
+   If *allow_nan* is the string ``'null'``, then NaNs and infinities are
    encoded as JSON ``null`` values. This matches the behavior of JavaScript's
-   ``JSON.stringify``. If *allow_nan* is true but not equal to ``"null"``, then
+   ``JSON.stringify``. If *allow_nan* is true but not equal to ``'null'``, then
    ``NaN``, ``Infinity``, and ``-Infinity`` will be encoded as corresponding
    non-quote-delimited strings in the JSON output. This is the default
    behavior. This behavior represents an extension of the JSON specification,
