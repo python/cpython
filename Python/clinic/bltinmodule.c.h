@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(builtin___import____doc__,
 "__import__($module, /, name, globals=None, locals=None, fromlist=(),\n"
@@ -99,7 +99,7 @@ builtin___import__(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
             goto skip_optional_pos;
         }
     }
-    level = _PyLong_AsInt(args[4]);
+    level = PyLong_AsInt(args[4]);
     if (level == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -216,9 +216,6 @@ builtin_format(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         _PyArg_BadArgument("format", "argument 2", "str", args[1]);
         goto exit;
     }
-    if (PyUnicode_READY(args[1]) == -1) {
-        goto exit;
-    }
     format_spec = args[1];
 skip_optional:
     return_value = builtin_format_impl(module, value, format_spec);
@@ -245,7 +242,7 @@ builtin_chr(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int i;
 
-    i = _PyLong_AsInt(arg);
+    i = PyLong_AsInt(arg);
     if (i == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -345,7 +342,7 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         goto skip_optional_pos;
     }
     if (args[3]) {
-        flags = _PyLong_AsInt(args[3]);
+        flags = PyLong_AsInt(args[3]);
         if (flags == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -363,7 +360,7 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         }
     }
     if (args[5]) {
-        optimize = _PyLong_AsInt(args[5]);
+        optimize = PyLong_AsInt(args[5]);
         if (optimize == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -375,55 +372,12 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    feature_version = _PyLong_AsInt(args[6]);
+    feature_version = PyLong_AsInt(args[6]);
     if (feature_version == -1 && PyErr_Occurred()) {
         goto exit;
     }
 skip_optional_kwonly:
     return_value = builtin_compile_impl(module, source, filename, mode, flags, dont_inherit, optimize, feature_version);
-
-exit:
-    return return_value;
-}
-
-PyDoc_STRVAR(builtin_dir__doc__,
-"dir($module, arg=<unrepresentable>, /)\n"
-"--\n"
-"\n"
-"Show attributes of an object.\n"
-"\n"
-"If called without an argument, return the names in the current scope.\n"
-"Else, return an alphabetized list of names comprising (some of) the attributes\n"
-"of the given object, and of attributes reachable from it.\n"
-"If the object supplies a method named __dir__, it will be used; otherwise\n"
-"the default dir() logic is used and returns:\n"
-"  for a module object: the module\'s attributes.\n"
-"  for a class object:  its attributes, and recursively the attributes\n"
-"    of its bases.\n"
-"  for any other object: its attributes, its class\'s attributes, and\n"
-"    recursively the attributes of its class\'s base classes.");
-
-#define BUILTIN_DIR_METHODDEF    \
-    {"dir", _PyCFunction_CAST(builtin_dir), METH_FASTCALL, builtin_dir__doc__},
-
-static PyObject *
-builtin_dir_impl(PyObject *module, PyObject *arg);
-
-static PyObject *
-builtin_dir(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    PyObject *arg = NULL;
-
-    if (!_PyArg_CheckPositional("dir", nargs, 0, 1)) {
-        goto exit;
-    }
-    if (nargs < 1) {
-        goto skip_optional;
-    }
-    arg = args[0];
-skip_optional:
-    return_value = builtin_dir_impl(module, arg);
 
 exit:
     return return_value;
@@ -589,47 +543,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(builtin_getattr__doc__,
-"getattr($module, object, name, default=<unrepresentable>, /)\n"
-"--\n"
-"\n"
-"Get a named attribute from an object.\n"
-"\n"
-"getattr(x, \'y\') is equivalent to x.y\n"
-"When a default argument is given, it is returned when the attribute doesn\'t\n"
-"exist; without it, an exception is raised in that case.");
-
-#define BUILTIN_GETATTR_METHODDEF    \
-    {"getattr", _PyCFunction_CAST(builtin_getattr), METH_FASTCALL, builtin_getattr__doc__},
-
-static PyObject *
-builtin_getattr_impl(PyObject *module, PyObject *object, PyObject *name,
-                     PyObject *default_value);
-
-static PyObject *
-builtin_getattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    PyObject *object;
-    PyObject *name;
-    PyObject *default_value = NULL;
-
-    if (!_PyArg_CheckPositional("getattr", nargs, 2, 3)) {
-        goto exit;
-    }
-    object = args[0];
-    name = args[1];
-    if (nargs < 3) {
-        goto skip_optional;
-    }
-    default_value = args[2];
-skip_optional:
-    return_value = builtin_getattr_impl(module, object, name, default_value);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(builtin_globals__doc__,
 "globals($module, /)\n"
 "--\n"
@@ -694,44 +607,6 @@ PyDoc_STRVAR(builtin_id__doc__,
 
 #define BUILTIN_ID_METHODDEF    \
     {"id", (PyCFunction)builtin_id, METH_O, builtin_id__doc__},
-
-PyDoc_STRVAR(builtin_next__doc__,
-"next($module, iterator, default=<unrepresentable>, /)\n"
-"--\n"
-"\n"
-"Return the next item from the iterator.\n"
-"\n"
-"If default is given and the iterator is exhausted,\n"
-"it is returned instead of raising StopIteration.");
-
-#define BUILTIN_NEXT_METHODDEF    \
-    {"next", _PyCFunction_CAST(builtin_next), METH_FASTCALL, builtin_next__doc__},
-
-static PyObject *
-builtin_next_impl(PyObject *module, PyObject *iterator,
-                  PyObject *default_value);
-
-static PyObject *
-builtin_next(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    PyObject *iterator;
-    PyObject *default_value = NULL;
-
-    if (!_PyArg_CheckPositional("next", nargs, 1, 2)) {
-        goto exit;
-    }
-    iterator = args[0];
-    if (nargs < 2) {
-        goto skip_optional;
-    }
-    default_value = args[1];
-skip_optional:
-    return_value = builtin_next_impl(module, iterator, default_value);
-
-exit:
-    return return_value;
-}
 
 PyDoc_STRVAR(builtin_setattr__doc__,
 "setattr($module, obj, name, value, /)\n"
@@ -823,43 +698,6 @@ PyDoc_STRVAR(builtin_hex__doc__,
 
 #define BUILTIN_HEX_METHODDEF    \
     {"hex", (PyCFunction)builtin_hex, METH_O, builtin_hex__doc__},
-
-PyDoc_STRVAR(builtin_iter__doc__,
-"iter($module, object, sentinel=<unrepresentable>, /)\n"
-"--\n"
-"\n"
-"Get an iterator from an object.\n"
-"\n"
-"In the first form, the argument must supply its own iterator, or be a sequence.\n"
-"In the second form, the callable is called until it returns the sentinel.");
-
-#define BUILTIN_ITER_METHODDEF    \
-    {"iter", _PyCFunction_CAST(builtin_iter), METH_FASTCALL, builtin_iter__doc__},
-
-static PyObject *
-builtin_iter_impl(PyObject *module, PyObject *object, PyObject *sentinel);
-
-static PyObject *
-builtin_iter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    PyObject *object;
-    PyObject *sentinel = NULL;
-
-    if (!_PyArg_CheckPositional("iter", nargs, 1, 2)) {
-        goto exit;
-    }
-    object = args[0];
-    if (nargs < 2) {
-        goto skip_optional;
-    }
-    sentinel = args[1];
-skip_optional:
-    return_value = builtin_iter_impl(module, object, sentinel);
-
-exit:
-    return return_value;
-}
 
 PyDoc_STRVAR(builtin_aiter__doc__,
 "aiter($module, async_iterable, /)\n"
@@ -1239,41 +1077,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(builtin_vars__doc__,
-"vars($module, object=<unrepresentable>, /)\n"
-"--\n"
-"\n"
-"Show vars.\n"
-"\n"
-"Without arguments, equivalent to locals().\n"
-"With an argument, equivalent to object.__dict__.");
-
-#define BUILTIN_VARS_METHODDEF    \
-    {"vars", _PyCFunction_CAST(builtin_vars), METH_FASTCALL, builtin_vars__doc__},
-
-static PyObject *
-builtin_vars_impl(PyObject *module, PyObject *object);
-
-static PyObject *
-builtin_vars(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    PyObject *object = NULL;
-
-    if (!_PyArg_CheckPositional("vars", nargs, 0, 1)) {
-        goto exit;
-    }
-    if (nargs < 1) {
-        goto skip_optional;
-    }
-    object = args[0];
-skip_optional:
-    return_value = builtin_vars_impl(module, object);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(builtin_sum__doc__,
 "sum($module, iterable, /, start=0)\n"
 "--\n"
@@ -1409,4 +1212,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=84a04e7446debf58 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=31bded5d08647a57 input=a9049054013a1b77]*/

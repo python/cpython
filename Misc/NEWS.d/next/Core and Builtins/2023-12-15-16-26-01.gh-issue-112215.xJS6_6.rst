@@ -1,0 +1,3 @@
+Increase the C recursion limit by a factor of 3 for non-debug builds, except
+for webassembly and s390 platforms which are unchanged. This mitigates some
+regressions in 3.12 with deep recursion mixing builtin (C) and Python code.

@@ -1,0 +1,2 @@
+Make sure that ``webbrowser.MacOSXOSAScript`` sends ``webbrowser.open``
+audit event.

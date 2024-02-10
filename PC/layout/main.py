@@ -49,8 +49,6 @@ EXCLUDE_FROM_CATALOG = FileSuffixSet(".exe", ".pyd", ".dll")
 
 REQUIRED_DLLS = FileStemSet("libcrypto*", "libssl*", "libffi*")
 
-LIB2TO3_GRAMMAR_FILES = FileNameSet("Grammar.txt", "PatternGrammar.txt")
-
 PY_FILES = FileSuffixSet(".py")
 PYC_FILES = FileSuffixSet(".pyc")
 CAT_FILES = FileSuffixSet(".cat")
@@ -75,7 +73,10 @@ def copy_if_modified(src, dest):
         )
 
     if do_copy:
-        shutil.copy2(src, dest)
+        try:
+            shutil.copy2(src, dest)
+        except FileNotFoundError:
+            raise FileNotFoundError(src) from None
 
 
 def get_lib_layout(ns):
@@ -210,8 +211,7 @@ def get_layout(ns):
 
         for dest, src in rglob(ns.source / "Include", "**/*.h"):
             yield "include/{}".format(dest), src
-        src = ns.source / "PC" / "pyconfig.h"
-        yield "include/pyconfig.h", src
+        yield "include/pyconfig.h", ns.build / "pyconfig.h"
 
     for dest, src in get_tcltk_lib(ns):
         yield dest, src
@@ -297,27 +297,6 @@ def _write_to_zip(zf, dest, src, ns, checked=True):
             except:
                 log_exception("Failed to delete {}", pyc)
         return
-
-    if src in LIB2TO3_GRAMMAR_FILES:
-        from lib2to3.pgen2.driver import load_grammar
-
-        tmp = ns.temp / src.name
-        try:
-            shutil.copy(src, tmp)
-            load_grammar(str(tmp))
-            for f in ns.temp.glob(src.stem + "*.pickle"):
-                zf.write(str(f), str(dest.parent / f.name))
-                try:
-                    f.unlink()
-                except:
-                    log_exception("Failed to delete {}", f)
-        except:
-            log_exception("Failed to compile {}", src)
-        finally:
-            try:
-                tmp.unlink()
-            except:
-                log_exception("Failed to delete {}", tmp)
 
     zf.write(str(src), str(dest))
 

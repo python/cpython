@@ -1,0 +1,2 @@
+Revert change to :class:`struct.Struct` initialization that broke some cases
+of subclassing.

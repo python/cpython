@@ -94,6 +94,10 @@
   </PropertyGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_testinternalcapi.c" />
+    <ClCompile Include="..\Modules\_testinternalcapi\pytime.c" />
+    <ClCompile Include="..\Modules\_testinternalcapi\test_critical_sections.c" />
+    <ClCompile Include="..\Modules\_testinternalcapi\test_lock.c" />
+    <ClCompile Include="..\Modules\_testinternalcapi\set.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />

@@ -113,7 +113,7 @@ in f-strings. Patch by Pablo Galindo.
 .. section: Core and Builtins
 
 Speed up calls to ``map()`` by using the :pep:`590` ``vectorcall`` calling
-convention. Patch by Dong-hee Na.
+convention. Patch by Donghee Na.
 
 ..
 
@@ -215,8 +215,8 @@ a non-Python signal handler.
 .. nonce: VouZjn
 .. section: Core and Builtins
 
-Add ``__match_args__`` to :c:type:`structsequence` based classes. Patch by
-Pablo Galindo.
+Add ``__match_args__`` to :ref:`struct sequence objects <struct-sequence-objects>`.
+Patch by Pablo Galindo.
 
 ..
 
@@ -240,7 +240,7 @@ of processes that don't use sigaltstack.
 .. section: Core and Builtins
 
 Speed up calls to ``filter()`` by using the :pep:`590` ``vectorcall``
-calling convention. Patch by Dong-hee Na.
+calling convention. Patch by Donghee Na.
 
 ..
 
@@ -274,7 +274,7 @@ Co-authored-by: Tim Peters <tim.peters@gmail.com>
 
 Only handle asynchronous exceptions and requests to drop the GIL when
 returning from a call or on the back edges of loops. Makes sure that
-:meth:`__exit__` is always called in with statements, even for interrupts.
+:meth:`~object.__exit__` is always called in with statements, even for interrupts.
 
 ..
 
@@ -713,7 +713,7 @@ this situation.  Also ensures that the :func:`tempfile.gettempdir()` and
 .. section: Library
 
 Expose ``X509_V_FLAG_ALLOW_PROXY_CERTS`` as
-:data:`~ssl.VERIFY_ALLOW_PROXY_CERTS` to allow proxy certificate validation
+:const:`~ssl.VERIFY_ALLOW_PROXY_CERTS` to allow proxy certificate validation
 as explained in
 https://www.openssl.org/docs/man1.1.1/man7/proxy-certificates.html.
 

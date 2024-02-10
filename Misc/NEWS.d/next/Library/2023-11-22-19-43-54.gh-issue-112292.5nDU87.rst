@@ -1,0 +1,2 @@
+Fix a crash in :mod:`readline` when imported from a sub interpreter. Patch
+by Anthony Shaw

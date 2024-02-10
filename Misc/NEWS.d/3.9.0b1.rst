@@ -489,8 +489,8 @@ The first argument of :func:`pickle.loads` is now positional-only.
 .. nonce: Cuwu_H
 .. section: Library
 
-Update :mod:`nntplib` to merge :class:`nntplib.NNTP` and
-:class:`nntplib._NNTPBase`. Patch by Dong-hee Na.
+Update :mod:`!nntplib` to merge :class:`!nntplib.NNTP` and
+:class:`!nntplib._NNTPBase`. Patch by Donghee Na.
 
 ..
 
@@ -500,7 +500,7 @@ Update :mod:`nntplib` to merge :class:`nntplib.NNTP` and
 .. section: Library
 
 Update :mod:`dbm.gnu` to use gdbm_count if possible when calling
-:func:`len`. Patch by Dong-hee Na.
+:func:`len`. Patch by Donghee Na.
 
 ..
 
@@ -592,7 +592,7 @@ subdirectories in package data, matching backport in importlib_resources
 .. nonce: 5GuK2A
 .. section: Library
 
-:meth:`imaplib.IMAP4.unselect` is added. Patch by Dong-hee Na.
+:meth:`imaplib.IMAP4.unselect` is added. Patch by Donghee Na.
 
 ..
 

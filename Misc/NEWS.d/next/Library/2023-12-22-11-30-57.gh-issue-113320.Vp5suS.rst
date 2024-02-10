@@ -1,0 +1,4 @@
+Fix regression in Python 3.12 where :class:`~typing.Protocol` classes that
+were not marked as :func:`runtime-checkable <typing.runtime_checkable>`
+would be unnecessarily introspected, potentially causing exceptions to be
+raised if the protocol had problematic members. Patch by Alex Waygood.

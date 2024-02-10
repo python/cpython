@@ -396,6 +396,8 @@ def decode_long(data):
     return int.from_bytes(data, byteorder='little', signed=True)
 
 
+_NoValue = object()
+
 # Pickling machinery
 
 class _Pickler:
@@ -542,8 +544,8 @@ class _Pickler:
             return
 
         rv = NotImplemented
-        reduce = getattr(self, "reducer_override", None)
-        if reduce is not None:
+        reduce = getattr(self, "reducer_override", _NoValue)
+        if reduce is not _NoValue:
             rv = reduce(obj)
 
         if rv is NotImplemented:
@@ -556,8 +558,8 @@ class _Pickler:
 
             # Check private dispatch table if any, or else
             # copyreg.dispatch_table
-            reduce = getattr(self, 'dispatch_table', dispatch_table).get(t)
-            if reduce is not None:
+            reduce = getattr(self, 'dispatch_table', dispatch_table).get(t, _NoValue)
+            if reduce is not _NoValue:
                 rv = reduce(obj)
             else:
                 # Check for a class with a custom metaclass; treat as regular
@@ -567,12 +569,12 @@ class _Pickler:
                     return
 
                 # Check for a __reduce_ex__ method, fall back to __reduce__
-                reduce = getattr(obj, "__reduce_ex__", None)
-                if reduce is not None:
+                reduce = getattr(obj, "__reduce_ex__", _NoValue)
+                if reduce is not _NoValue:
                     rv = reduce(self.proto)
                 else:
-                    reduce = getattr(obj, "__reduce__", None)
-                    if reduce is not None:
+                    reduce = getattr(obj, "__reduce__", _NoValue)
+                    if reduce is not _NoValue:
                         rv = reduce()
                     else:
                         raise PicklingError("Can't pickle %r object: %r" %
@@ -855,13 +857,13 @@ class _Pickler:
             else:
                 self.write(BINUNICODE + pack("<I", n) + encoded)
         else:
-            obj = obj.replace("\\", "\\u005c")
-            obj = obj.replace("\0", "\\u0000")
-            obj = obj.replace("\n", "\\u000a")
-            obj = obj.replace("\r", "\\u000d")
-            obj = obj.replace("\x1a", "\\u001a")  # EOF on DOS
-            self.write(UNICODE + obj.encode('raw-unicode-escape') +
-                       b'\n')
+            # Escape what raw-unicode-escape doesn't, but memoize the original.
+            tmp = obj.replace("\\", "\\u005c")
+            tmp = tmp.replace("\0", "\\u0000")
+            tmp = tmp.replace("\n", "\\u000a")
+            tmp = tmp.replace("\r", "\\u000d")
+            tmp = tmp.replace("\x1a", "\\u001a")  # EOF on DOS
+            self.write(UNICODE + tmp.encode('raw-unicode-escape') + b'\n')
         self.memoize(obj)
     dispatch[str] = save_str
 
@@ -1705,8 +1707,8 @@ class _Unpickler:
         stack = self.stack
         state = stack.pop()
         inst = stack[-1]
-        setstate = getattr(inst, "__setstate__", None)
-        if setstate is not None:
+        setstate = getattr(inst, "__setstate__", _NoValue)
+        if setstate is not _NoValue:
             setstate(state)
             return
         slotstate = None
@@ -1791,7 +1793,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='display contents of the pickle files')
     parser.add_argument(
-        'pickle_file', type=argparse.FileType('br'),
+        'pickle_file',
         nargs='*', help='the pickle file')
     parser.add_argument(
         '-t', '--test', action='store_true',
@@ -1807,6 +1809,10 @@ if __name__ == "__main__":
             parser.print_help()
         else:
             import pprint
-            for f in args.pickle_file:
-                obj = load(f)
+            for fn in args.pickle_file:
+                if fn == '-':
+                    obj = load(sys.stdin.buffer)
+                else:
+                    with open(fn, 'rb') as f:
+                        obj = load(f)
                 pprint.pprint(obj)

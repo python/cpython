@@ -1,3 +1,0 @@
-Exceptions raised in a typeobject's ``__set_name__`` method are no longer
-wrapped by a :exc:`RuntimeError`. Context information is added to the
-exception as a :pep:`678` note.

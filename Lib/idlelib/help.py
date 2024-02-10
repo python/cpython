@@ -241,12 +241,13 @@ class HelpWindow(Toplevel):
         Toplevel.__init__(self, parent)
         self.wm_title(title)
         self.protocol("WM_DELETE_WINDOW", self.destroy)
-        HelpFrame(self, filename).grid(column=0, row=0, sticky='nsew')
+        self.frame = HelpFrame(self, filename)
+        self.frame.grid(column=0, row=0, sticky='nsew')
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
 
 
-def copy_strip():
+def copy_strip():  # pragma: no cover
     """Copy idle.html to idlelib/help.html, stripping trailing whitespace.
 
     Files with trailing whitespace cannot be pushed to the git cpython
@@ -278,13 +279,15 @@ def copy_strip():
             out.write(line.rstrip() + b'\n')
     print(f'{src} copied to {dst}')
 
+
 def show_idlehelp(parent):
     "Create HelpWindow; called from Idle Help event handler."
     filename = join(abspath(dirname(__file__)), 'help.html')
-    if not isfile(filename):
+    if not isfile(filename):  # pragma: no cover
         # Try copy_strip, present message.
         return
-    HelpWindow(parent, filename, 'IDLE Help (%s)' % python_version())
+    return HelpWindow(parent, filename, 'IDLE Doc (%s)' % python_version())
+
 
 if __name__ == '__main__':
     from unittest import main

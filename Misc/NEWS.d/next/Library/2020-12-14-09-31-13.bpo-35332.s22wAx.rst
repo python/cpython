@@ -1,0 +1,3 @@
+The :func:`shutil.rmtree` function now ignores errors when calling
+:func:`os.close` when *ignore_errors* is ``True``, and
+:func:`os.close` no longer retried after error.

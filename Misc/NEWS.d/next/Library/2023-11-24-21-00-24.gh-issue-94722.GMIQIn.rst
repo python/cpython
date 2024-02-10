@@ -1,0 +1,2 @@
+Fix bug where comparison between instances of :class:`~doctest.DocTest` fails if
+one of them has ``None`` as its lineno.

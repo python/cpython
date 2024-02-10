@@ -1,11 +1,22 @@
 /* termios.c -- POSIX terminal I/O module implementation.  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 
-/* Apparently, on SGI, termios.h won't define CTRL if _XOPEN_SOURCE
-   is defined, so we define it here. */
+// On QNX 6, struct termio must be declared by including sys/termio.h
+// if TCGETA, TCSETA, TCSETAW, or TCSETAF are used. sys/termio.h must
+// be included before termios.h or it will generate an error.
+#if defined(HAVE_SYS_TERMIO_H) && !defined(__hpux)
+#  include <sys/termio.h>
+#endif
+
+// Apparently, on SGI, termios.h won't define CTRL if _XOPEN_SOURCE
+// is defined, so we define it here.
 #if defined(__sgi)
-#define CTRL(c) ((c)&037)
+#  define CTRL(c) ((c)&037)
 #endif
 
 #if defined(__sun)
@@ -16,6 +27,9 @@
 
 #include <termios.h>
 #include <sys/ioctl.h>
+#if defined(__sun) && defined(__SVR4)
+#  include <unistd.h>             // ioctl()
+#endif
 
 /* HP-UX requires that this be included to pick up MDCD, MCTS, MDSR,
  * MDTR, MRI, and MRTS (apparently used internally by some things
@@ -85,7 +99,7 @@ termios_tcgetattr_impl(PyObject *module, int fd)
     int r;
 
     Py_BEGIN_ALLOW_THREADS
-    r = tcgetattr(fd, &mode); 
+    r = tcgetattr(fd, &mode);
     Py_END_ALLOW_THREADS
     if (r == -1) {
         return PyErr_SetFromErrno(state->TermiosError);
@@ -106,7 +120,7 @@ termios_tcgetattr_impl(PyObject *module, int fd)
         v = PyBytes_FromStringAndSize(&ch, 1);
         if (v == NULL)
             goto err;
-        PyList_SetItem(cc, i, v);
+        PyList_SET_ITEM(cc, i, v);
     }
 
     /* Convert the MIN and TIME slots to integer.  On some systems, the
@@ -114,29 +128,44 @@ termios_tcgetattr_impl(PyObject *module, int fd)
        only do this in noncanonical input mode.  */
     if ((mode.c_lflag & ICANON) == 0) {
         v = PyLong_FromLong((long)mode.c_cc[VMIN]);
-        if (v == NULL)
+        if (v == NULL) {
             goto err;
-        PyList_SetItem(cc, VMIN, v);
+        }
+        if (PyList_SetItem(cc, VMIN, v) < 0) {
+            goto err;
+        }
         v = PyLong_FromLong((long)mode.c_cc[VTIME]);
-        if (v == NULL)
+        if (v == NULL) {
             goto err;
-        PyList_SetItem(cc, VTIME, v);
+        }
+        if (PyList_SetItem(cc, VTIME, v) < 0) {
+            goto err;
+        }
     }
 
-    if (!(v = PyList_New(7)))
-        goto err;
-
-    PyList_SetItem(v, 0, PyLong_FromLong((long)mode.c_iflag));
-    PyList_SetItem(v, 1, PyLong_FromLong((long)mode.c_oflag));
-    PyList_SetItem(v, 2, PyLong_FromLong((long)mode.c_cflag));
-    PyList_SetItem(v, 3, PyLong_FromLong((long)mode.c_lflag));
-    PyList_SetItem(v, 4, PyLong_FromLong((long)ispeed));
-    PyList_SetItem(v, 5, PyLong_FromLong((long)ospeed));
-    if (PyErr_Occurred()) {
-        Py_DECREF(v);
+    if (!(v = PyList_New(7))) {
         goto err;
     }
-    PyList_SetItem(v, 6, cc);
+
+#define ADD_LONG_ITEM(index, val) \
+    do { \
+        PyObject *l = PyLong_FromLong((long)val); \
+        if (l == NULL) { \
+            Py_DECREF(v); \
+            goto err; \
+        } \
+        PyList_SET_ITEM(v, index, l); \
+    } while (0)
+
+    ADD_LONG_ITEM(0, mode.c_iflag);
+    ADD_LONG_ITEM(1, mode.c_oflag);
+    ADD_LONG_ITEM(2, mode.c_cflag);
+    ADD_LONG_ITEM(3, mode.c_lflag);
+    ADD_LONG_ITEM(4, ispeed);
+    ADD_LONG_ITEM(5, ospeed);
+#undef ADD_LONG_ITEM
+
+    PyList_SET_ITEM(v, 6, cc);
     return v;
   err:
     Py_DECREF(cc);
@@ -183,17 +212,25 @@ termios_tcsetattr_impl(PyObject *module, int fd, int when, PyObject *term)
         return PyErr_SetFromErrno(state->TermiosError);
     }
 
-    mode.c_iflag = (tcflag_t) PyLong_AsLong(PyList_GetItem(term, 0));
-    mode.c_oflag = (tcflag_t) PyLong_AsLong(PyList_GetItem(term, 1));
-    mode.c_cflag = (tcflag_t) PyLong_AsLong(PyList_GetItem(term, 2));
-    mode.c_lflag = (tcflag_t) PyLong_AsLong(PyList_GetItem(term, 3));
-    speed_t ispeed = (speed_t) PyLong_AsLong(PyList_GetItem(term, 4));
-    speed_t ospeed = (speed_t) PyLong_AsLong(PyList_GetItem(term, 5));
-    PyObject *cc = PyList_GetItem(term, 6);
-    if (PyErr_Occurred()) {
-        return NULL;
-    }
+    speed_t ispeed, ospeed;
+#define SET_FROM_LIST(TYPE, VAR, LIST, N) do {  \
+    PyObject *item = PyList_GET_ITEM(LIST, N);  \
+    long num = PyLong_AsLong(item);             \
+    if (num == -1 && PyErr_Occurred()) {        \
+        return NULL;                            \
+    }                                           \
+    VAR = (TYPE)num;                            \
+} while (0)
 
+    SET_FROM_LIST(tcflag_t, mode.c_iflag, term, 0);
+    SET_FROM_LIST(tcflag_t, mode.c_oflag, term, 1);
+    SET_FROM_LIST(tcflag_t, mode.c_cflag, term, 2);
+    SET_FROM_LIST(tcflag_t, mode.c_lflag, term, 3);
+    SET_FROM_LIST(speed_t, ispeed, term, 4);
+    SET_FROM_LIST(speed_t, ospeed, term, 5);
+#undef SET_FROM_LIST
+
+    PyObject *cc = PyList_GET_ITEM(term, 6);
     if (!PyList_Check(cc) || PyList_Size(cc) != NCCS) {
         PyErr_Format(PyExc_TypeError,
             "tcsetattr: attributes[6] must be %d element list",
@@ -208,8 +245,13 @@ termios_tcsetattr_impl(PyObject *module, int fd, int when, PyObject *term)
 
         if (PyBytes_Check(v) && PyBytes_Size(v) == 1)
             mode.c_cc[i] = (cc_t) * PyBytes_AsString(v);
-        else if (PyLong_Check(v))
-            mode.c_cc[i] = (cc_t) PyLong_AsLong(v);
+        else if (PyLong_Check(v)) {
+            long num = PyLong_AsLong(v);
+            if (num == -1 && PyErr_Occurred()) {
+                return NULL;
+            }
+            mode.c_cc[i] = (cc_t)num;
+        }
         else {
             PyErr_SetString(PyExc_TypeError,
      "tcsetattr: elements of attributes must be characters or integers");
@@ -372,7 +414,7 @@ termios_tcgetwinsize_impl(PyObject *module, int fd)
 #if defined(TIOCGWINSZ)
     termiosmodulestate *state = PyModule_GetState(module);
     struct winsize w;
-    int r; 
+    int r;
 
     Py_BEGIN_ALLOW_THREADS
     r = ioctl(fd, TIOCGWINSZ, &w);
@@ -660,6 +702,9 @@ static struct constant {
 #ifdef IMAXBEL
     {"IMAXBEL", IMAXBEL},
 #endif
+#ifdef IUTF8
+    {"IUTF8", IUTF8},
+#endif
 
     /* struct termios.c_oflag constants */
     {"OPOST", OPOST},
@@ -683,6 +728,12 @@ static struct constant {
 #endif
 #ifdef OFDEL
     {"OFDEL", OFDEL},
+#endif
+#ifdef OXTABS
+    {"OXTABS", OXTABS},
+#endif
+#ifdef ONOEOT
+    {"ONOEOT", ONOEOT},
 #endif
 #ifdef NLDLY
     {"NLDLY", NLDLY},
@@ -709,6 +760,12 @@ static struct constant {
 #endif
 #ifdef NL1
     {"NL1", NL1},
+#endif
+#ifdef NL2
+    {"NL2", NL2},
+#endif
+#ifdef NL3
+    {"NL3", NL3},
 #endif
 #ifdef CR0
     {"CR0", CR0},
@@ -757,6 +814,9 @@ static struct constant {
 #endif
 
     /* struct termios.c_cflag constants */
+#ifdef CIGNORE
+    {"CIGNORE", CIGNORE},
+#endif
     {"CSIZE", CSIZE},
     {"CSTOPB", CSTOPB},
     {"CREAD", CREAD},
@@ -771,6 +831,25 @@ static struct constant {
     {"CRTSCTS", (long)CRTSCTS},
 #endif
 
+#ifdef CRTS_IFLOW
+    {"CRTS_IFLOW", CRTS_IFLOW},
+#endif
+#ifdef CDTR_IFLOW
+    {"CDTR_IFLOW", CDTR_IFLOW},
+#endif
+#ifdef CDSR_OFLOW
+    {"CDSR_OFLOW", CDSR_OFLOW},
+#endif
+#ifdef CCTS_OFLOW
+    {"CCTS_OFLOW", CCTS_OFLOW},
+#endif
+#ifdef CCAR_OFLOW
+    {"CCAR_OFLOW", CCAR_OFLOW},
+#endif
+#ifdef MDMBUF
+    {"MDMBUF", MDMBUF},
+#endif
+
     /* struct termios.c_cflag-related values (character size) */
     {"CS5", CS5},
     {"CS6", CS6},
@@ -778,6 +857,9 @@ static struct constant {
     {"CS8", CS8},
 
     /* struct termios.c_lflag constants */
+#ifdef ALTWERASE
+    {"ALTWERASE", ALTWERASE},
+#endif
     {"ISIG", ISIG},
     {"ICANON", ICANON},
 #ifdef XCASE
@@ -799,12 +881,18 @@ static struct constant {
 #ifdef FLUSHO
     {"FLUSHO", FLUSHO},
 #endif
+#ifdef NOKERNINFO
+    {"NOKERNINFO", NOKERNINFO},
+#endif
     {"NOFLSH", NOFLSH},
     {"TOSTOP", TOSTOP},
 #ifdef PENDIN
     {"PENDIN", PENDIN},
 #endif
     {"IEXTEN", IEXTEN},
+#ifdef EXTPROC
+    {"EXTPROC", EXTPROC},
+#endif
 
     /* indexes into the control chars array returned by tcgetattr() */
     {"VINTR", VINTR},
@@ -813,6 +901,9 @@ static struct constant {
     {"VKILL", VKILL},
     {"VEOF", VEOF},
     {"VTIME", VTIME},
+#ifdef VSTATUS
+    {"VSTATUS", VSTATUS},
+#endif
     {"VMIN", VMIN},
 #ifdef VSWTC
     /* The #defines above ensure that if either is defined, both are,
@@ -823,6 +914,9 @@ static struct constant {
     {"VSTART", VSTART},
     {"VSTOP", VSTOP},
     {"VSUSP", VSUSP},
+#ifdef VDSUSP
+    {"VDSUSP", VDSUSP},
+#endif
     {"VEOL", VEOL},
 #ifdef VREPRINT
     {"VREPRINT", VREPRINT},
@@ -841,6 +935,18 @@ static struct constant {
 #endif
 
 
+#ifdef B7200
+    {"B7200", B7200},
+#endif
+#ifdef B14400
+    {"B14400", B14400},
+#endif
+#ifdef B28800
+    {"B28800", B28800},
+#endif
+#ifdef B76800
+    {"B76800", B76800},
+#endif
 #ifdef B460800
     {"B460800", B460800},
 #endif
@@ -1232,12 +1338,7 @@ termios_exec(PyObject *mod)
     struct constant *constant = termios_constants;
     termiosmodulestate *state = get_termios_state(mod);
     state->TermiosError = PyErr_NewException("termios.error", NULL, NULL);
-    if (state->TermiosError == NULL) {
-        return -1;
-    }
-    Py_INCREF(state->TermiosError);
-    if (PyModule_AddObject(mod, "error", state->TermiosError) < 0) {
-        Py_DECREF(state->TermiosError);
+    if (PyModule_AddObjectRef(mod, "error", state->TermiosError) < 0) {
         return -1;
     }
 
@@ -1253,6 +1354,7 @@ termios_exec(PyObject *mod)
 
 static PyModuleDef_Slot termios_slots[] = {
     {Py_mod_exec, termios_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

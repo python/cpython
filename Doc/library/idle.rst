@@ -439,24 +439,24 @@ the :kbd:`Command` key on macOS.
 
 * Some useful Emacs bindings are inherited from Tcl/Tk:
 
-   * :kbd:`C-a` beginning of line
+  * :kbd:`C-a` beginning of line
 
-   * :kbd:`C-e` end of line
+  * :kbd:`C-e` end of line
 
-   * :kbd:`C-k` kill line (but doesn't put it in clipboard)
+  * :kbd:`C-k` kill line (but doesn't put it in clipboard)
 
-   * :kbd:`C-l` center window around the insertion point
+  * :kbd:`C-l` center window around the insertion point
 
-   * :kbd:`C-b` go backward one character without deleting (usually you can
-     also use the cursor key for this)
+  * :kbd:`C-b` go backward one character without deleting (usually you can
+    also use the cursor key for this)
 
-   * :kbd:`C-f` go forward one character without deleting (usually you can
-     also use the cursor key for this)
+  * :kbd:`C-f` go forward one character without deleting (usually you can
+    also use the cursor key for this)
 
-   * :kbd:`C-p` go up one line (usually you can also use the cursor key for
-     this)
+  * :kbd:`C-p` go up one line (usually you can also use the cursor key for
+    this)
 
-   * :kbd:`C-d` delete next character
+  * :kbd:`C-d` delete next character
 
 Standard keybindings (like :kbd:`C-c` to copy and :kbd:`C-v` to paste)
 may work.  Keybindings are selected in the Configure IDLE dialog.
@@ -479,7 +479,7 @@ Search and Replace
 
 Any selection becomes a search target.  However, only selections within
 a line work because searches are only performed within lines with the
-terminal newline removed.  If ``[x] Regular expresion`` is checked, the
+terminal newline removed.  If ``[x] Regular expression`` is checked, the
 target is interpreted according to the Python re module.
 
 .. _completions:

@@ -1,0 +1,2 @@
+Add a new :envvar:`PYTHON_HISTORY` environment variable to set the location
+of a ``.python_history`` file.

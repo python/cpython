@@ -1,0 +1,1 @@
+Test modes that file can get with chmod() on Windows.

@@ -1,0 +1,2 @@
+Fix an error that was causing the parser to try to overwrite existing errors
+and crashing in the process. Patch by Pablo Galindo

@@ -10,7 +10,8 @@ from weakref import proxy
 from functools import wraps
 
 from test.support import (
-    cpython_only, swap_attr, gc_collect, is_emscripten, is_wasi
+    cpython_only, swap_attr, gc_collect, is_emscripten, is_wasi,
+    infinite_recursion,
 )
 from test.support.os_helper import (
     TESTFN, TESTFN_ASCII, TESTFN_UNICODE, make_bad_fd,
@@ -183,6 +184,7 @@ class AutoFileTests:
         finally:
             os.close(fd)
 
+    @infinite_recursion(25)
     def testRecursiveRepr(self):
         # Issue #25455
         with swap_attr(self.f, 'name', self.f):

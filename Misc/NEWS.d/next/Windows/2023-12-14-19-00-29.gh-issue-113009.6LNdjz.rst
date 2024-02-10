@@ -1,0 +1,5 @@
+:mod:`multiprocessing`: On Windows, fix a race condition in
+``Process.terminate()``: no longer set the ``returncode`` attribute to
+always call ``WaitForSingleObject()`` in ``Process.wait()``.  Previously,
+sometimes the process was still running after ``TerminateProcess()`` even if
+``GetExitCodeProcess()`` is not ``STILL_ACTIVE``. Patch by Victor Stinner.

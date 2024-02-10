@@ -1,0 +1,2 @@
+Fixed memory leaks of :class:`pickle.Pickler` and :class:`pickle.Unpickler` involving cyclic references via the
+internal memo mapping.

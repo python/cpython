@@ -68,7 +68,7 @@ getting the ``__bases__`` attribute leads to infinite recursion.
 .. section: Core and Builtins
 
 Speed up calls to ``reversed()`` by using the :pep:`590` ``vectorcall``
-calling convention. Patch by Dong-hee Na.
+calling convention. Patch by Donghee Na.
 
 ..
 
@@ -88,7 +88,7 @@ convention. Patch by Dennis Sweeney.
 .. section: Core and Builtins
 
 Speed up calls to ``bool()`` by using the :pep:`590` ``vectorcall`` calling
-convention. Patch by Dong-hee Na.
+convention. Patch by Donghee Na.
 
 ..
 
@@ -228,8 +228,8 @@ format string in f-string and :meth:`str.format`.
 .. section: Core and Builtins
 
 The implementation of :func:`signal.siginterrupt` now uses
-:c:func:`sigaction` (if it is available in the system) instead of the
-deprecated :c:func:`siginterrupt`. Patch by Pablo Galindo.
+:c:func:`!sigaction` (if it is available in the system) instead of the
+deprecated :c:func:`!siginterrupt`. Patch by Pablo Galindo.
 
 ..
 
@@ -605,8 +605,8 @@ Opt out serialization/deserialization for _random.Random
 .. nonce: jxJ4yn
 .. section: Core and Builtins
 
-Rename `PyPegen*` functions to `PyParser*`, so that we can remove the old
-set of `PyParser*` functions that were using the old parser, but keep
+Rename ``PyPegen*`` functions to ``PyParser*``, so that we can remove the old
+set of ``PyParser*`` functions that were using the old parser, but keep
 everything backwards-compatible.
 
 ..
@@ -714,8 +714,8 @@ Fix refleak in _Py_fopen_obj() when PySys_Audit() fails
 .. nonce: tzMy7m
 .. section: Core and Builtins
 
-Add a state to the :mod:`nis` module (:pep:`3121`) and apply the multiphase
-initialization. Patch by Dong-hee Na.
+Add a state to the :mod:`!nis` module (:pep:`3121`) and apply the multiphase
+initialization. Patch by Donghee Na.
 
 ..
 
@@ -936,7 +936,7 @@ class. Patch by Pablo Galindo.
 .. section: Core and Builtins
 
 :c:func:`Py_TYPE()` is changed to the inline static function. Patch by
-Dong-hee Na.
+Donghee Na.
 
 ..
 
@@ -2176,7 +2176,7 @@ None.
 .. nonce: YoYoYo
 .. section: Library
 
-Add a new :data:`os.RWF_APPEND` flag for :func:`os.pwritev`.
+Add a new :const:`os.RWF_APPEND` flag for :func:`os.pwritev`.
 
 ..
 
@@ -2304,7 +2304,7 @@ Restored the deprecated :mod:`xml.etree.cElementTree` module.
 .. nonce: ZCk0_c
 .. section: Library
 
-:data:`~mmap.MAP_POPULATE` constant has now been added to the list of
+:const:`~mmap.MAP_POPULATE` constant has now been added to the list of
 exported :mod:`mmap` module flags.
 
 ..
@@ -2527,7 +2527,7 @@ in Python 3.4 and removed in Python 3.5.
 .. nonce: BE7zbu
 .. section: Library
 
-Fix `cgi.parse_multipart` without content_length. Patch by Roger Duran
+Fix ``cgi.parse_multipart`` without content_length. Patch by Roger Duran
 
 ..
 
@@ -2596,7 +2596,7 @@ remove multiple items from a list".
 .. section: Documentation
 
 Fix RemovedInSphinx40Warning when building the documentation. Patch by
-Dong-hee Na.
+Donghee Na.
 
 ..
 
@@ -2862,7 +2862,7 @@ Make test_gdb properly run on HP-UX. Patch by Michael Osipov.
 .. section: Build
 
 Update :c:macro:`Py_UNREACHABLE` to use __builtin_unreachable() if only the
-compiler is able to use it. Patch by Dong-hee Na.
+compiler is able to use it. Patch by Donghee Na.
 
 ..
 
@@ -2986,7 +2986,7 @@ Update Windows release to include SQLite 3.32.3.
 .. nonce: jpZzzh
 .. section: Windows
 
-:mod:`msilib` now supports creating CAB files with non-ASCII file path and
+:mod:`!msilib` now supports creating CAB files with non-ASCII file path and
 adding files with non-ASCII file path to them.
 
 ..
@@ -2996,9 +2996,9 @@ adding files with non-ASCII file path to them.
 .. nonce: gaQc3C
 .. section: Windows
 
-Fixed support of non-ASCII names in functions :func:`msilib.OpenDatabase`
-and :func:`msilib.init_database` and non-ASCII SQL in method
-:meth:`msilib.Database.OpenView`.
+Fixed support of non-ASCII names in functions :func:`!msilib.OpenDatabase`
+and :func:`!msilib.init_database` and non-ASCII SQL in method
+:meth:`!msilib.Database.OpenView`.
 
 ..
 

@@ -143,13 +143,13 @@ Simple Usage: Checking Examples in Docstrings
 ---------------------------------------------
 
 The simplest way to start using doctest (but not necessarily the way you'll
-continue to do it) is to end each module :mod:`M` with::
+continue to do it) is to end each module :mod:`!M` with::
 
    if __name__ == "__main__":
        import doctest
        doctest.testmod()
 
-:mod:`doctest` then examines docstrings in module :mod:`M`.
+:mod:`!doctest` then examines docstrings in module :mod:`!M`.
 
 Running the module as a script causes the examples in the docstrings to get
 executed and verified::
@@ -277,13 +277,34 @@ Which Docstrings Are Examined?
 The module docstring, and all function, class and method docstrings are
 searched.  Objects imported into the module are not searched.
 
-In addition, if ``M.__test__`` exists and "is true", it must be a dict, and each
+In addition, there are cases when you want tests to be part of a module but not part
+of the help text, which requires that the tests not be included in the docstring.
+Doctest looks for a module-level variable called ``__test__`` and uses it to locate other
+tests. If ``M.__test__`` exists, it must be a dict, and each
 entry maps a (string) name to a function object, class object, or string.
 Function and class object docstrings found from ``M.__test__`` are searched, and
 strings are treated as if they were docstrings.  In output, a key ``K`` in
-``M.__test__`` appears with name ::
+``M.__test__`` appears with name ``M.__test__.K``.
 
-   <name of M>.__test__.K
+For example, place this block of code at the top of :file:`example.py`:
+
+.. code-block:: python
+
+   __test__ = {
+       'numbers': """
+   >>> factorial(6)
+   720
+
+   >>> [factorial(n) for n in range(6)]
+   [1, 1, 2, 6, 24, 120]
+   """
+   }
+
+The value of ``example.__test__["numbers"]`` will be treated as a
+docstring and all the tests inside it will be run. It is
+important to note that the value can be mapped to a function,
+class object, or module; if so, :mod:`!doctest`
+searches them recursively for docstrings, which are then scanned for tests.
 
 Any classes found are recursively searched similarly, to test docstrings in
 their contained methods and nested classes.
@@ -382,10 +403,10 @@ What's the Execution Context?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 By default, each time :mod:`doctest` finds a docstring to test, it uses a
-*shallow copy* of :mod:`M`'s globals, so that running tests doesn't change the
-module's real globals, and so that one test in :mod:`M` can't leave behind
+*shallow copy* of :mod:`!M`'s globals, so that running tests doesn't change the
+module's real globals, and so that one test in :mod:`!M` can't leave behind
 crumbs that accidentally allow another test to work.  This means examples can
-freely use any names defined at top-level in :mod:`M`, and names defined earlier
+freely use any names defined at top-level in :mod:`!M`, and names defined earlier
 in the docstring being run. Examples cannot see names defined in other
 docstrings.
 
@@ -409,10 +430,10 @@ Simple example::
    >>> [1, 2, 3].remove(42)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   ValueError: list.remove(x): x not in list
+   ValueError: 42 is not in list
 
-That doctest succeeds if :exc:`ValueError` is raised, with the ``list.remove(x):
-x not in list`` detail as shown.
+That doctest succeeds if :exc:`ValueError` is raised, with the ``42 is not in list``
+detail as shown.
 
 The expected output for an exception must start with a traceback header, which
 may be either of the following two lines, indented the same as the first line of
@@ -923,8 +944,8 @@ and :ref:`doctest-simple-testfile`.
    (or module :mod:`__main__` if *m* is not supplied or is ``None``), starting with
    ``m.__doc__``.
 
-   Also test examples reachable from dict ``m.__test__``, if it exists and is not
-   ``None``.  ``m.__test__`` maps names (strings) to functions, classes and
+   Also test examples reachable from dict ``m.__test__``, if it exists.
+   ``m.__test__`` maps names (strings) to functions, classes and
    strings; function and class docstrings are searched for examples; strings are
    searched directly, as if they were docstrings.
 
@@ -937,7 +958,8 @@ and :ref:`doctest-simple-testfile`.
 
    Optional argument *exclude_empty* defaults to false.  If true, objects for which
    no doctests are found are excluded from consideration. The default is a backward
-   compatibility hack, so that code still using :meth:`doctest.master.summarize` in
+   compatibility hack, so that code still using
+   :meth:`doctest.master.summarize <DocTestRunner.summarize>` in
    conjunction with :func:`testmod` continues to get output for objects with no
    tests. The *exclude_empty* argument to the newer :class:`DocTestFinder`
    constructor defaults to true.
@@ -976,7 +998,7 @@ As your collection of doctest'ed modules grows, you'll want a way to run all
 their doctests systematically.  :mod:`doctest` provides two functions that can
 be used to create :mod:`unittest` test suites from modules and text files
 containing doctests.  To integrate with :mod:`unittest` test discovery, include
-a :func:`load_tests` function in your test module::
+a :ref:`load_tests <load_tests-protocol>` function in your test module::
 
    import unittest
    import doctest
@@ -1090,19 +1112,24 @@ from text files and modules with doctests:
       :func:`DocTestSuite` returns an empty :class:`unittest.TestSuite` if *module*
       contains no docstrings instead of raising :exc:`ValueError`.
 
+.. exception:: failureException
+
+   When doctests which have been converted to unit tests by :func:`DocFileSuite`
+   or :func:`DocTestSuite` fail, this exception is raised showing the name of
+   the file containing the test and a (sometimes approximate) line number.
 
 Under the covers, :func:`DocTestSuite` creates a :class:`unittest.TestSuite` out
-of :class:`doctest.DocTestCase` instances, and :class:`DocTestCase` is a
-subclass of :class:`unittest.TestCase`. :class:`DocTestCase` isn't documented
+of :class:`!doctest.DocTestCase` instances, and :class:`!DocTestCase` is a
+subclass of :class:`unittest.TestCase`. :class:`!DocTestCase` isn't documented
 here (it's an internal detail), but studying its code can answer questions about
 the exact details of :mod:`unittest` integration.
 
 Similarly, :func:`DocFileSuite` creates a :class:`unittest.TestSuite` out of
-:class:`doctest.DocFileCase` instances, and :class:`DocFileCase` is a subclass
-of :class:`DocTestCase`.
+:class:`!doctest.DocFileCase` instances, and :class:`!DocFileCase` is a subclass
+of :class:`!DocTestCase`.
 
 So both ways of creating a :class:`unittest.TestSuite` run instances of
-:class:`DocTestCase`.  This is important for a subtle reason: when you run
+:class:`!DocTestCase`.  This is important for a subtle reason: when you run
 :mod:`doctest` functions yourself, you can control the :mod:`doctest` options in
 use directly, by passing option flags to :mod:`doctest` functions.  However, if
 you're writing a :mod:`unittest` framework, :mod:`unittest` ultimately controls
@@ -1123,14 +1150,14 @@ reporting flags specific to :mod:`unittest` support, via this function:
    section :ref:`doctest-options`.  Only "reporting flags" can be used.
 
    This is a module-global setting, and affects all future doctests run by module
-   :mod:`unittest`:  the :meth:`runTest` method of :class:`DocTestCase` looks at
-   the option flags specified for the test case when the :class:`DocTestCase`
+   :mod:`unittest`:  the :meth:`!runTest` method of :class:`!DocTestCase` looks at
+   the option flags specified for the test case when the :class:`!DocTestCase`
    instance was constructed.  If no reporting flags were specified (which is the
-   typical and expected case), :mod:`doctest`'s :mod:`unittest` reporting flags are
+   typical and expected case), :mod:`!doctest`'s :mod:`unittest` reporting flags are
    :ref:`bitwise ORed <bitwise>` into the option flags, and the option flags
    so augmented are passed to the :class:`DocTestRunner` instance created to
    run the doctest.  If any reporting flags were specified when the
-   :class:`DocTestCase` instance was constructed, :mod:`doctest`'s
+   :class:`!DocTestCase` instance was constructed, :mod:`!doctest`'s
    :mod:`unittest` reporting flags are ignored.
 
    The value of the :mod:`unittest` reporting flags in effect before the function
@@ -1300,7 +1327,8 @@ Example Objects
       A dictionary mapping from option flags to ``True`` or ``False``, which is used
       to override default options for this example.  Any option flags not contained
       in this dictionary are left at their default value (as specified by the
-      :class:`DocTestRunner`'s :attr:`optionflags`). By default, no options are set.
+      :class:`DocTestRunner`'s :ref:`optionflags <doctest-options>`).
+      By default, no options are set.
 
 
 .. _doctest-doctestfinder:
@@ -1409,6 +1437,27 @@ DocTestParser objects
       identifying this string, and is only used for error messages.
 
 
+TestResults objects
+^^^^^^^^^^^^^^^^^^^
+
+
+.. class:: TestResults(failed, attempted)
+
+   .. attribute:: failed
+
+      Number of failed tests.
+
+   .. attribute:: attempted
+
+      Number of attempted tests.
+
+   .. attribute:: skipped
+
+      Number of skipped tests.
+
+      .. versionadded:: 3.13
+
+
 .. _doctest-doctestrunner:
 
 DocTestRunner objects
@@ -1427,7 +1476,7 @@ DocTestRunner objects
    passing a subclass of :class:`OutputChecker` to the constructor.
 
    The test runner's display output can be controlled in two ways. First, an output
-   function can be passed to :meth:`TestRunner.run`; this function will be called
+   function can be passed to :meth:`run`; this function will be called
    with strings that should be displayed.  It defaults to ``sys.stdout.write``.  If
    capturing the output is not sufficient, then the display output can be also
    customized by subclassing DocTestRunner, and overriding the methods
@@ -1448,8 +1497,12 @@ DocTestRunner objects
    runner compares expected output to actual output, and how it displays failures.
    For more information, see section :ref:`doctest-options`.
 
+   The test runner accumulates statistics. The aggregated number of attempted,
+   failed and skipped examples is also available via the :attr:`tries`,
+   :attr:`failures` and :attr:`skips` attributes. The :meth:`run` and
+   :meth:`summarize` methods return a :class:`TestResults` instance.
 
-   :class:`DocTestParser` defines the following methods:
+   :class:`DocTestRunner` defines the following methods:
 
 
    .. method:: report_start(out, test, example)
@@ -1500,7 +1553,8 @@ DocTestRunner objects
    .. method:: run(test, compileflags=None, out=None, clear_globs=True)
 
       Run the examples in *test* (a :class:`DocTest` object), and display the
-      results using the writer function *out*.
+      results using the writer function *out*. Return a :class:`TestResults`
+      instance.
 
       The examples are run in the namespace ``test.globs``.  If *clear_globs* is
       true (the default), then this namespace will be cleared after the test runs,
@@ -1513,17 +1567,34 @@ DocTestRunner objects
 
       The output of each example is checked using the :class:`DocTestRunner`'s
       output checker, and the results are formatted by the
-      :meth:`DocTestRunner.report_\*` methods.
+      :meth:`!DocTestRunner.report_\*` methods.
 
 
    .. method:: summarize(verbose=None)
 
       Print a summary of all the test cases that have been run by this DocTestRunner,
-      and return a :term:`named tuple` ``TestResults(failed, attempted)``.
+      and return a :class:`TestResults` instance.
 
       The optional *verbose* argument controls how detailed the summary is.  If the
       verbosity is not specified, then the :class:`DocTestRunner`'s verbosity is
       used.
+
+   :class:`DocTestParser` has the following attributes:
+
+   .. attribute:: tries
+
+      Number of attempted examples.
+
+   .. attribute:: failures
+
+      Number of failed examples.
+
+   .. attribute:: skips
+
+      Number of skipped examples.
+
+      .. versionadded:: 3.13
+
 
 .. _doctest-outputchecker:
 
@@ -1671,12 +1742,12 @@ code under the debugger:
    module) of the object with the doctests of interest.  The result is a string,
    containing the object's docstring converted to a Python script, as described for
    :func:`script_from_examples` above.  For example, if module :file:`a.py`
-   contains a top-level function :func:`f`, then ::
+   contains a top-level function :func:`!f`, then ::
 
       import a, doctest
       print(doctest.testsource(a, "a.f"))
 
-   prints a script version of function :func:`f`'s docstring, with doctests
+   prints a script version of function :func:`!f`'s docstring, with doctests
    converted to code, and the rest placed in comments.
 
 

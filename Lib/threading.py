@@ -4,6 +4,8 @@ import os as _os
 import sys as _sys
 import _thread
 import functools
+import warnings
+import _weakref
 
 from time import monotonic as _time
 from _weakrefset import WeakSet
@@ -32,11 +34,12 @@ __all__ = ['get_ident', 'active_count', 'Condition', 'current_thread',
            'setprofile_all_threads','settrace_all_threads']
 
 # Rename some stuff so "from threading import *" is safe
-_start_new_thread = _thread.start_new_thread
+_start_joinable_thread = _thread.start_joinable_thread
 _daemon_threads_allowed = _thread.daemon_threads_allowed
 _allocate_lock = _thread.allocate_lock
 _set_sentinel = _thread._set_sentinel
 get_ident = _thread.get_ident
+_is_main_interpreter = _thread._is_main_interpreter
 try:
     get_native_id = _thread.get_native_id
     _HAVE_THREAD_NATIVE_ID = True
@@ -116,6 +119,12 @@ def RLock(*args, **kwargs):
     acquired it.
 
     """
+    if args or kwargs:
+        warnings.warn(
+            'Passing arguments to RLock is deprecated and will be removed in 3.15',
+            DeprecationWarning,
+            stacklevel=2,
+        )
     if _CRLock is None:
         return _PyRLock(*args, **kwargs)
     return _CRLock(*args, **kwargs)
@@ -237,6 +246,13 @@ class _RLock:
 
     def _is_owned(self):
         return self._owner == get_ident()
+
+    # Internal method used for reentrancy checks
+
+    def _recursion_count(self):
+        if self._owner != get_ident():
+            return 0
+        return self._count
 
 _PyRLock = _RLock
 
@@ -574,7 +590,7 @@ class Event:
         return f"<{cls.__module__}.{cls.__qualname__} at {id(self):#x}: {status}>"
 
     def _at_fork_reinit(self):
-        # Private method called by Thread._reset_internal_locks()
+        # Private method called by Thread._after_fork()
         self._cond._at_fork_reinit()
 
     def is_set(self):
@@ -909,6 +925,8 @@ class Thread:
         if _HAVE_THREAD_NATIVE_ID:
             self._native_id = None
         self._tstate_lock = None
+        self._join_lock = None
+        self._handle = None
         self._started = Event()
         self._is_stopped = False
         self._initialized = True
@@ -918,22 +936,32 @@ class Thread:
         # For debugging and _after_fork()
         _dangling.add(self)
 
-    def _reset_internal_locks(self, is_alive):
-        # private!  Called by _after_fork() to reset our internal locks as
-        # they may be in an invalid state leading to a deadlock or crash.
+    def _after_fork(self, new_ident=None):
+        # Private!  Called by threading._after_fork().
         self._started._at_fork_reinit()
-        if is_alive:
+        if new_ident is not None:
+            # This thread is alive.
+            self._ident = new_ident
+            if self._handle is not None:
+                self._handle.after_fork_alive()
+                assert self._handle.ident == new_ident
             # bpo-42350: If the fork happens when the thread is already stopped
             # (ex: after threading._shutdown() has been called), _tstate_lock
             # is None. Do nothing in this case.
             if self._tstate_lock is not None:
                 self._tstate_lock._at_fork_reinit()
                 self._tstate_lock.acquire()
+            if self._join_lock is not None:
+                self._join_lock._at_fork_reinit()
         else:
-            # The thread isn't alive after fork: it doesn't have a tstate
+            # This thread isn't alive after fork: it doesn't have a tstate
             # anymore.
             self._is_stopped = True
             self._tstate_lock = None
+            self._join_lock = None
+            if self._handle is not None:
+                self._handle.after_fork_dead()
+                self._handle = None
 
     def __repr__(self):
         assert self._initialized, "Thread.__init__() was not called"
@@ -965,15 +993,18 @@ class Thread:
         if self._started.is_set():
             raise RuntimeError("threads can only be started once")
 
+        self._join_lock = _allocate_lock()
+
         with _active_limbo_lock:
             _limbo[self] = self
         try:
-            _start_new_thread(self._bootstrap, ())
+            # Start joinable thread
+            self._handle = _start_joinable_thread(self._bootstrap)
         except Exception:
             with _active_limbo_lock:
                 del _limbo[self]
             raise
-        self._started.wait()
+        self._started.wait()  # Will set ident and native_id
 
     def run(self):
         """Method representing the thread's activity.
@@ -1129,6 +1160,22 @@ class Thread:
             # historically .join(timeout=x) for x<0 has acted as if timeout=0
             self._wait_for_tstate_lock(timeout=max(timeout, 0))
 
+        if self._is_stopped:
+            self._join_os_thread()
+
+    def _join_os_thread(self):
+        join_lock = self._join_lock
+        if join_lock is None:
+            return
+        with join_lock:
+            # Calling join() multiple times would raise an exception
+            # in one of the callers.
+            if self._handle is not None:
+                self._handle.join()
+                self._handle = None
+                # No need to keep this around
+                self._join_lock = None
+
     def _wait_for_tstate_lock(self, block=True, timeout=-1):
         # Issue #18808: wait for the thread state to be gone.
         # At the end of the thread's life, after all knowledge of the thread
@@ -1208,7 +1255,10 @@ class Thread:
         if self._is_stopped or not self._started.is_set():
             return False
         self._wait_for_tstate_lock(False)
-        return not self._is_stopped
+        if not self._is_stopped:
+            return True
+        self._join_os_thread()
+        return False
 
     @property
     def daemon(self):
@@ -1451,11 +1501,12 @@ class _DummyThread(Thread):
         pass
 
     def is_alive(self):
-        assert not self._is_stopped and self._started.is_set()
-        return True
+        if not self._is_stopped and self._started.is_set():
+            return True
+        raise RuntimeError("thread is not alive")
 
     def join(self, timeout=None):
-        assert False, "cannot join a dummy thread"
+        raise RuntimeError("cannot join a dummy thread")
 
 
 # Global API functions
@@ -1559,7 +1610,7 @@ def _shutdown():
     # the main thread's tstate_lock - that won't happen until the interpreter
     # is nearly dead.  So we release it here.  Note that just calling _stop()
     # isn't enough:  other threads may already be waiting on _tstate_lock.
-    if _main_thread._is_stopped:
+    if _main_thread._is_stopped and _is_main_interpreter():
         # _shutdown() was already called
         return
 
@@ -1577,8 +1628,11 @@ def _shutdown():
         # The main thread isn't finished yet, so its thread state lock can't
         # have been released.
         assert tlock is not None
-        assert tlock.locked()
-        tlock.release()
+        if tlock.locked():
+            # It should have been released already by
+            # _PyInterpreterState_SetNotRunningMain(), but there may be
+            # embedders that aren't calling that yet.
+            tlock.release()
         _main_thread._stop()
     else:
         # bpo-1596321: _shutdown() must be called in the main thread.
@@ -1612,6 +1666,7 @@ def main_thread():
     In normal conditions, the main thread is the thread from which the
     Python interpreter was started.
     """
+    # XXX Figure this out for subinterpreters.  (See gh-75698.)
     return _main_thread
 
 # get thread-local implementation, either from the thread
@@ -1659,15 +1714,13 @@ def _after_fork():
             # Any lock/condition variable may be currently locked or in an
             # invalid state, so we reinitialize them.
             if thread is current:
-                # There is only one active thread. We reset the ident to
-                # its new value since it can have changed.
-                thread._reset_internal_locks(True)
+                # This is the one and only active thread.
                 ident = get_ident()
-                thread._ident = ident
+                thread._after_fork(new_ident=ident)
                 new_active[ident] = thread
             else:
                 # All the others are already stopped.
-                thread._reset_internal_locks(False)
+                thread._after_fork()
                 thread._stop()
 
         _limbo.clear()

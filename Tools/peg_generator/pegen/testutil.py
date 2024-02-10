@@ -37,7 +37,7 @@ def generate_parser(grammar: Grammar) -> Type[Parser]:
 
 def run_parser(file: IO[bytes], parser_class: Type[Parser], *, verbose: bool = False) -> Any:
     # Run a parser on a file (stream).
-    tokenizer = Tokenizer(tokenize.generate_tokens(file.readline))  # type: ignore # typeshed issue #3515
+    tokenizer = Tokenizer(tokenize.generate_tokens(file.readline))  # type: ignore[arg-type] # typeshed issue #3515
     parser = parser_class(tokenizer, verbose=verbose)
     result = parser.start()
     if result is None:
@@ -52,7 +52,7 @@ def parse_string(
     if dedent:
         source = textwrap.dedent(source)
     file = io.StringIO(source)
-    return run_parser(file, parser_class, verbose=verbose)  # type: ignore # typeshed issue #3515
+    return run_parser(file, parser_class, verbose=verbose)  # type: ignore[arg-type] # typeshed issue #3515
 
 
 def make_parser(source: str) -> Type[Parser]:
@@ -83,7 +83,9 @@ def generate_c_parser_source(grammar: Grammar) -> str:
 
 
 def generate_parser_c_extension(
-    grammar: Grammar, path: pathlib.PurePath, debug: bool = False,
+    grammar: Grammar,
+    path: pathlib.PurePath,
+    debug: bool = False,
     library_dir: Optional[str] = None,
 ) -> Any:
     """Generate a parser c extension for the given grammar in the given path
@@ -112,9 +114,9 @@ def generate_parser_c_extension(
 
 
 def print_memstats() -> bool:
-    MiB: Final = 2 ** 20
+    MiB: Final = 2**20
     try:
-        import psutil  # type: ignore
+        import psutil
     except ImportError:
         return False
     print("Memory stats:")

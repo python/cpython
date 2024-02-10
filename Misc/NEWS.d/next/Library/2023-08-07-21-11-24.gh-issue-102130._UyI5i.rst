@@ -1,0 +1,1 @@
+Support tab completion in :mod:`cmd` for ``editline``.

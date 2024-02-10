@@ -529,7 +529,7 @@ name are now supported.
 .. section: Core and Builtins
 
 sys.getsizeof() on a code object now returns the sizes which includes the
-code struct and sizes of objects which it references. Patch by Dong-hee Na.
+code struct and sizes of objects which it references. Patch by Donghee Na.
 
 ..
 
@@ -2260,7 +2260,7 @@ Update zlib to 1.2.11.
 .. section: Library
 
 ftplib.FTP.putline() now throws ValueError on commands that contains CR or
-LF. Patch by Dong-hee Na.
+LF. Patch by Donghee Na.
 
 ..
 
@@ -2329,7 +2329,7 @@ always return bytes.
 .. nonce: I2mDTz
 .. section: Library
 
-Functional API of enum allows to create empty enums. Patched by Dong-hee Na
+Functional API of enum allows to create empty enums. Patched by Donghee Na
 
 ..
 
@@ -2612,7 +2612,7 @@ Fix handling escape characters in HZ codec.  Based on patch by Ma Lin.
 .. section: Library
 
 inspect.signature() now supports callables with variable-argument parameters
-wrapped with partialmethod. Patch by Dong-hee Na.
+wrapped with partialmethod. Patch by Donghee Na.
 
 ..
 
@@ -3274,7 +3274,7 @@ Added support for bytes paths in os.fwalk().
 .. nonce: 37jMwb
 .. section: Library
 
-Add new :data:`socket.TCP_NOTSENT_LOWAT` (Linux 3.12) constant. Patch by
+Add new :const:`socket.TCP_NOTSENT_LOWAT` (Linux 3.12) constant. Patch by
 Nathaniel J. Smith.
 
 ..
@@ -3871,8 +3871,8 @@ as an integer. Function only available on Android.
 .. nonce: ilNIWN
 .. section: Library
 
-Add new :data:`socket.TCP_CONGESTION` (Linux 2.6.13) and
-:data:`socket.TCP_USER_TIMEOUT` (Linux 2.6.37) constants. Patch written by
+Add new :const:`socket.TCP_CONGESTION` (Linux 2.6.13) and
+:const:`socket.TCP_USER_TIMEOUT` (Linux 2.6.37) constants. Patch written by
 Omar Sandoval.
 
 ..
@@ -6255,7 +6255,7 @@ Fix python-gdb.py didn't support new dict implementation.
 .. section: Tools/Demos
 
 The pybench and pystone microbenchmark have been removed from Tools. Please
-use the new Python benchmark suite https://github.com/python/performance
+use the new Python benchmark suite https://github.com/python/pyperformance
 which is more reliable and includes a portable version of pybench working on
 Python 2 and Python 3.
 

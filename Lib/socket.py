@@ -702,16 +702,15 @@ class SocketIO(io.RawIOBase):
         self._checkReadable()
         if self._timeout_occurred:
             raise OSError("cannot read from timed out object")
-        while True:
-            try:
-                return self._sock.recv_into(b)
-            except timeout:
-                self._timeout_occurred = True
-                raise
-            except error as e:
-                if e.errno in _blocking_errnos:
-                    return None
-                raise
+        try:
+            return self._sock.recv_into(b)
+        except timeout:
+            self._timeout_occurred = True
+            raise
+        except error as e:
+            if e.errno in _blocking_errnos:
+                return None
+            raise
 
     def write(self, b):
         """Write the given bytes or bytearray object *b* to the socket

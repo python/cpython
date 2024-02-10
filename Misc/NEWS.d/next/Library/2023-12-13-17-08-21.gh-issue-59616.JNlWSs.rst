@@ -1,0 +1,3 @@
+Add support of :func:`os.lchmod` and the *follow_symlinks* argument in
+:func:`os.chmod` on Windows. Note that the default value of *follow_symlinks*
+in :func:`!os.lchmod` is ``False`` on Windows.

@@ -1,0 +1,3 @@
+Change the declaration of the *keywords* parameter of
+:c:func:`PyArg_ParseTupleAndKeywords` and
+:c:func:`PyArg_VaParseTupleAndKeywords` for better compatibility with C++.

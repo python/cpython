@@ -1,0 +1,1 @@
+Improved markup for valid options/values for methods ttk.treeview.column and ttk.treeview.heading, and for Layouts.

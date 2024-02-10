@@ -1,0 +1,8 @@
+:func:`email.utils.getaddresses` and :func:`email.utils.parseaddr` now
+return ``('', '')`` 2-tuples in more situations where invalid email
+addresses are encountered instead of potentially inaccurate values. Add
+optional *strict* parameter to these two functions: use ``strict=False`` to
+get the old behavior, accept malformed inputs.
+``getattr(email.utils, 'supports_strict_parsing', False)`` can be use to check
+if the *strict* paramater is available. Patch by Thomas Dwyer and Victor
+Stinner to improve the CVE-2023-27043 fix.

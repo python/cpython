@@ -1,0 +1,2 @@
+:meth:`cmd.Cmd.do_help` now cleans docstrings with :func:`inspect.cleandoc`
+before writing them. Patch by Filip Łapkiewicz.

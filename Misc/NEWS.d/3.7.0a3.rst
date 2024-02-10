@@ -350,7 +350,7 @@ the left most segment of hostname in second argument of
 .. nonce: Nj3A0x
 .. section: Library
 
-Make :meth:`msilib.SummaryInformation.GetProperty` return ``None`` when the
+Make :meth:`!msilib.SummaryInformation.GetProperty` return ``None`` when the
 value of property is ``VT_EMPTY``.  Initial patch by Mark Mc Mahon.
 
 ..
@@ -396,7 +396,7 @@ Initial patch by Robin Wellner.
 .. nonce: xWT9k0
 .. section: Library
 
-:func:`msilib.OpenDatabase` now raises a better exception message when it
+:func:`!msilib.OpenDatabase` now raises a better exception message when it
 couldn't open or create an MSI file.  Initial patch by William Tisäter.
 
 ..
@@ -539,7 +539,7 @@ optional
 .. section: Library
 
 Updates 2to3 to convert from operator.isCallable(obj) to callable(obj).
-Patch by Dong-hee Na.
+Patch by Donghee Na.
 
 ..
 
@@ -549,7 +549,7 @@ Patch by Dong-hee Na.
 .. section: Library
 
 inspect.signature should follow :pep:`8`, if the parameter has an annotation
-and a default value. Patch by Dong-hee Na.
+and a default value. Patch by Donghee Na.
 
 ..
 
@@ -754,8 +754,8 @@ now accepts characters as arguments.  Based on patch by Steve Fink.
 .. nonce: DYQL0g
 .. section: Library
 
-Add 3 new clock identifiers: :data:`time.CLOCK_BOOTTIME`,
-:data:`time.CLOCK_PROF` and :data:`time.CLOCK_UPTIME`.
+Add 3 new clock identifiers: :const:`time.CLOCK_BOOTTIME`,
+:const:`time.CLOCK_PROF` and :const:`time.CLOCK_UPTIME`.
 
 ..
 

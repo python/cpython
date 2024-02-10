@@ -1,0 +1,2 @@
+Fix an infinite recursion error in :func:`tempfile.TemporaryDirectory`
+cleanup on Windows.

@@ -1,0 +1,3 @@
+Make ``http.client.HTTPResponse.read1`` and
+``http.client.HTTPResponse.readline`` close IO after reading all data when
+content length is known. Patch by Illia Volochii.

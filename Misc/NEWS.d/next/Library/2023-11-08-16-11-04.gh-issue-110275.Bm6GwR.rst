@@ -1,0 +1,2 @@
+Named tuple's methods ``_replace()`` and ``__replace__()`` now raise
+TypeError instead of ValueError for invalid keyword arguments.

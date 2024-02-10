@@ -1,0 +1,1 @@
+Optimize :meth:`pathlib.PurePath.relative_to`. Patch by Alex Waygood.

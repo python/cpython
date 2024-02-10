@@ -20,8 +20,8 @@ supports post-mortem debugging and can be called under program control.
 
 .. index::
    single: Pdb (class in pdb)
-   module: bdb
-   module: cmd
+   pair: module; bdb
+   pair: module; cmd
 
 The debugger is extensible -- it is actually defined as the class :class:`Pdb`.
 This is currently undocumented but easily understood by reading the source.  The
@@ -175,8 +175,8 @@ slightly different way:
 
 .. function:: pm()
 
-   Enter post-mortem debugging of the traceback found in
-   :data:`sys.last_traceback`.
+   Enter post-mortem debugging of the exception found in
+   :data:`sys.last_exc`.
 
 
 The ``run*`` functions and :func:`set_trace` are aliases for instantiating the
@@ -252,6 +252,10 @@ change a variable or call a function.  When an exception occurs in such a
 statement, the exception name is printed but the debugger's state is not
 changed.
 
+.. versionchanged:: 3.13
+   Expressions/Statements whose prefix is a pdb command are now correctly
+   identified and executed.
+
 The debugger supports :ref:`aliases <debugger-aliases>`.  Aliases can have
 parameters which allows one a certain level of adaptability to the context under
 examination.
@@ -262,6 +266,21 @@ that is passed to the Python parser.)  No intelligence is applied to separating
 the commands; the input is split at the first ``;;`` pair, even if it is in the
 middle of a quoted string. A workaround for strings with double semicolons
 is to use implicit string concatenation ``';'';'`` or ``";"";"``.
+
+To set a temporary global variable, use a *convenience variable*. A *convenience
+variable* is a variable whose name starts with ``$``.  For example, ``$foo = 1``
+sets a global variable ``$foo`` which you can use in the debugger session.  The
+*convenience variables* are cleared when the program resumes execution so it's
+less likely to interfere with your program compared to using normal variables
+like ``foo = 1``.
+
+There are three preset *convenience variables*:
+
+* ``$_frame``: the current frame you are debugging
+* ``$_retval``: the return value if the frame is returning
+* ``$_exception``: the exception if the frame is raising an exception
+
+.. versionadded:: 3.12
 
 .. index::
    pair: .pdbrc; file
@@ -551,9 +570,26 @@ can be overridden by the local file.
 
    Start an interactive interpreter (using the :mod:`code` module) whose global
    namespace contains all the (global and local) names found in the current
-   scope.
+   scope. Use ``exit()`` or ``quit()`` to exit the interpreter and return to
+   the debugger.
+
+   .. note::
+
+      Because interact creates a new global namespace with the current global
+      and local namespace for execution, assignment to variables will not
+      affect the original namespaces.
+      However, modification to the mutable objects will be reflected in the
+      original namespaces.
 
    .. versionadded:: 3.2
+
+   .. versionadded:: 3.13
+      ``exit()`` and ``quit()`` can be used to exit :pdbcmd:`interact`
+      command.
+
+   .. versionchanged:: 3.13
+      :pdbcmd:`interact` directs its output to the debugger's
+      output channel rather than :data:`sys.stderr`.
 
 .. _debugger-aliases:
 
@@ -561,7 +597,7 @@ can be overridden by the local file.
 
    Create an alias called *name* that executes *command*.  The *command* must
    *not* be enclosed in quotes.  Replaceable parameters can be indicated by
-   ``%1``, ``%2``, and so on, while ``%*`` is replaced by all the parameters.
+   ``%1``, ``%2``, ... and ``%9``, while ``%*`` is replaced by all the parameters.
    If *command* is omitted, the current alias for *name* is shown. If no
    arguments are given, all aliases are listed.
 
@@ -587,9 +623,17 @@ can be overridden by the local file.
 
    Execute the (one-line) *statement* in the context of the current stack frame.
    The exclamation point can be omitted unless the first word of the statement
-   resembles a debugger command.  To set a global variable, you can prefix the
-   assignment command with a :keyword:`global` statement on the same line,
-   e.g.::
+   resembles a debugger command, e.g.:
+
+   .. code-block:: none
+
+      (Pdb) ! n=42
+      (Pdb)
+
+   To set a global variable, you can prefix the assignment command with a
+   :keyword:`global` statement on the same line, e.g.:
+
+   .. code-block:: none
 
       (Pdb) global list_options; list_options = ['-l']
       (Pdb)
@@ -615,6 +659,55 @@ can be overridden by the local file.
 .. pdbcommand:: retval
 
    Print the return value for the last return of the current function.
+
+.. pdbcommand:: exceptions [excnumber]
+
+   List or jump between chained exceptions.
+
+   When using ``pdb.pm()``  or ``Pdb.post_mortem(...)`` with a chained exception
+   instead of a traceback, it allows the user to move between the
+   chained exceptions using ``exceptions`` command to list exceptions, and
+   ``exception <number>`` to switch to that exception.
+
+
+   Example::
+
+        def out():
+            try:
+                middle()
+            except Exception as e:
+                raise ValueError("reraise middle() error") from e
+
+        def middle():
+            try:
+                return inner(0)
+            except Exception as e:
+                raise ValueError("Middle fail")
+
+        def inner(x):
+            1 / x
+
+         out()
+
+   calling ``pdb.pm()`` will allow to move between exceptions::
+
+    > example.py(5)out()
+    -> raise ValueError("reraise middle() error") from e
+
+    (Pdb) exceptions
+      0 ZeroDivisionError('division by zero')
+      1 ValueError('Middle fail')
+    > 2 ValueError('reraise middle() error')
+
+    (Pdb) exceptions 0
+    > example.py(16)inner()
+    -> 1 / x
+
+    (Pdb) up
+    > example.py(10)middle()
+    -> return inner(0)
+
+   .. versionadded:: 3.13
 
 .. rubric:: Footnotes
 
