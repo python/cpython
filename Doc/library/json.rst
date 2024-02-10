@@ -459,11 +459,11 @@ Encoders and Decoders
    Otherwise, no such check takes place.
 
    If *allow_nan* is the string ``"null"``, then NaNs and infinities are
-   encoded as JSON ``null`` values. This matches the behaviour of JavaScript's
+   encoded as JSON ``null`` values. This matches the behavior of JavaScript's
    ``JSON.stringify``. If *allow_nan* is true but not equal to ``"null"``, then
    ``NaN``, ``Infinity``, and ``-Infinity`` will be encoded as corresponding
    non-quote-delimited strings in the JSON output. This is the default
-   behaviour. This behavior represents an extension of the JSON specification,
+   behavior. This behavior represents an extension of the JSON specification,
    but is consistent with some JavaScript based encoders and decoders (as well
    as Python's own decoder).  If *allow_nan* is false, it will be a
    :exc:`ValueError` to encode such floats.
