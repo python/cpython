@@ -356,22 +356,22 @@ accessible to C code.  They all work with the current interpreter thread's
 
    .. audit-event:: sys.addaudithook "" c.PySys_AddAuditHook
 
-   If the interpreter is initialized, this function raises an auditing event
-   ``sys.addaudithook`` with no arguments. If any existing hooks raise an
-   exception derived from :class:`Exception`, the new hook will not be
-   added and the exception is cleared. As a result, callers cannot assume
-   that their hook has been added unless they control all existing hooks.
+      If the interpreter is initialized, this function raises an auditing event
+      ``sys.addaudithook`` with no arguments. If any existing hooks raise an
+      exception derived from :class:`Exception`, the new hook will not be
+      added and the exception is cleared. As a result, callers cannot assume
+      that their hook has been added unless they control all existing hooks.
+
+   .. c:namespace:: NULL
+   .. c:type:: int (*Py_AuditHookFunction) (const char *event, PyObject *args, void *userData)
+
+      The type of the hook function.
+      *event* is the C string event argument passed to :c:func:`PySys_Audit` or
+      :c:func:`PySys_AuditTuple`.
+      *args* is guaranteed to be a :c:type:`PyTupleObject`.
+      *userData* is the argument passed to PySys_AddAuditHook().
 
    .. versionadded:: 3.8
-
-.. c:namespace:: NULL
-.. c:type:: int (*Py_AuditHookFunction) (const char *event, PyObject *args, void *userData)
-
-The type of the hook function.
-*event* is the C string event argument passed to :c:func:`PySys_Audit` or
-:c:func:`PySys_AuditTuple`.
-*args* is guaranteed to be a :c:type:`PyTupleObject`.
-*userData* is the argument passed to PySys_AddAuditHook().
 
 
 .. _processcontrol:
