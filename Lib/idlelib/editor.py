@@ -1054,7 +1054,7 @@ class EditorWindow:
         else:
             title = "untitled"
         icon = short or long or title
-        if not self.get_saved() and not macosx.isCocoaTk():
+        if not self.get_saved():
             title = "*%s*" % title
             icon = "*%s" % icon
         self.top.wm_title(title)
