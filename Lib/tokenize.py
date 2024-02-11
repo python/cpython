@@ -183,14 +183,14 @@ class Untokenizer:
         col_offset = col - self.prev_col
         if col_offset:
             self.tokens.append(" " * col_offset)
-    
+
     def escape_brackets(self, token):
         characters = []
         consume_until_next_bracket = False
         for character in token:
             if character == "}":
                 if consume_until_next_bracket:
-                    consume_until_next_bracket = False  
+                    consume_until_next_bracket = False
                 else:
                     characters.append(character)
             if character == "{":
@@ -272,7 +272,7 @@ class Untokenizer:
                 prevstring = True
             else:
                 prevstring = False
-            
+
             if toknum == FSTRING_START:
                 in_fstring += 1
             elif toknum == FSTRING_END:

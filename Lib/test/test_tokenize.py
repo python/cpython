@@ -1878,8 +1878,8 @@ class TestRoundtrip(TestCase):
                              "else:   print('Loaded')\n")
 
         self.check_roundtrip("f'\\N{EXCLAMATION MARK}'")
-        self.check_roundtrip(r"f'\\N{EXCLAMATION MARK}'")  
-        self.check_roundtrip(r"f'\\N{SNAKE}'")  
+        self.check_roundtrip(r"f'\\N{EXCLAMATION MARK}'")
+        self.check_roundtrip(r"f'\\N{SNAKE}'")
 
 
     def test_continuation(self):
