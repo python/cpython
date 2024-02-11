@@ -4443,22 +4443,22 @@ class Color(enum.Enum)
  |      The value of the Enum member.
  |\x20\x20
  |  ----------------------------------------------------------------------
- |  Methods inherited from enum.EnumType:
+ |  Static methods inherited from enum.EnumType:
  |\x20\x20
- |  __contains__(member) from enum.EnumType
+ |  __contains__(member)
  |      Return True if member is a member of this enum
  |      raises TypeError if member is not an enum member
  |\x20\x20\x20\x20\x20\x20
  |      note: in 3.12 TypeError will no longer be raised, and True will also be
  |      returned if member is the value of a member in this enum
  |\x20\x20
- |  __getitem__(name) from enum.EnumType
+ |  __getitem__(name)
  |      Return the member matching `name`.
  |\x20\x20
- |  __iter__() from enum.EnumType
+ |  __iter__()
  |      Return members in definition order.
  |\x20\x20
- |  __len__() from enum.EnumType
+ |  __len__()
  |      Return the number of members (no aliases)
  |\x20\x20
  |  ----------------------------------------------------------------------
