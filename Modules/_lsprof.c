@@ -549,7 +549,7 @@ profiler_subentry objects:
 
 static PyObject *
 _lsprof_Profiler_getstats_impl(ProfilerObject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=1806ef720019ee03 input=a66d05fbc92b6861]*/
+/*[clinic end generated code: output=1806ef720019ee03 input=6c8c9c28626af2da]*/
 {
     statscollector_t collect;
     collect.state = _PyType_GetModuleState(cls);
