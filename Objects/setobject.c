@@ -2425,13 +2425,23 @@ PyTypeObject PyFrozenSet_Type = {
 PyObject *
 PySet_New(PyObject *iterable)
 {
-    return make_new_set(&PySet_Type, iterable);
+    PyObject *rv;
+
+    Py_BEGIN_CRITICAL_SECTION(iterable);
+    rv = make_new_set(&PySet_Type, iterable);
+    Py_END_CRITICAL_SECTION();
+    return rv;
 }
 
 PyObject *
 PyFrozenSet_New(PyObject *iterable)
 {
-    return make_new_set(&PyFrozenSet_Type, iterable);
+    PyObject *rv;
+
+    Py_BEGIN_CRITICAL_SECTION(iterable);
+    rv = make_new_set(&PyFrozenSet_Type, iterable);
+    Py_END_CRITICAL_SECTION();
+    return rv;
 }
 
 Py_ssize_t
@@ -2441,48 +2451,72 @@ PySet_Size(PyObject *anyset)
         PyErr_BadInternalCall();
         return -1;
     }
-    return PySet_GET_SIZE(anyset);
+    return set_len((PySetObject *)anyset);
 }
 
 int
 PySet_Clear(PyObject *set)
 {
+    int rv;
+
     if (!PySet_Check(set)) {
         PyErr_BadInternalCall();
         return -1;
     }
-    return set_clear_internal((PySetObject *)set);
+
+    Py_BEGIN_CRITICAL_SECTION(set);
+    rv = set_clear_internal((PySetObject *)set);
+    Py_END_CRITICAL_SECTION();
+    return rv;
 }
 
 int
 PySet_Contains(PyObject *anyset, PyObject *key)
 {
+    int rv;
+
     if (!PyAnySet_Check(anyset)) {
         PyErr_BadInternalCall();
         return -1;
     }
-    return set_contains_key((PySetObject *)anyset, key);
+
+    Py_BEGIN_CRITICAL_SECTION(anyset);
+    rv = set_contains_key((PySetObject *)anyset, key);
+    Py_END_CRITICAL_SECTION();
+    return rv;
 }
 
 int
 PySet_Discard(PyObject *set, PyObject *key)
 {
+    int rv;
+
     if (!PySet_Check(set)) {
         PyErr_BadInternalCall();
         return -1;
     }
-    return set_discard_key((PySetObject *)set, key);
+
+    Py_BEGIN_CRITICAL_SECTION(set);
+    rv = set_discard_key((PySetObject *)set, key);
+    Py_END_CRITICAL_SECTION();
+    return rv;
 }
 
 int
 PySet_Add(PyObject *anyset, PyObject *key)
 {
+    int rv;
+
     if (!PySet_Check(anyset) &&
         (!PyFrozenSet_Check(anyset) || Py_REFCNT(anyset) != 1)) {
         PyErr_BadInternalCall();
         return -1;
     }
-    return set_add_key((PySetObject *)anyset, key);
+
+    Py_BEGIN_CRITICAL_SECTION(anyset);
+    rv = set_add_key((PySetObject *)anyset, key);
+    Py_END_CRITICAL_SECTION();
+    return rv;
 }
 
 // TODO: Make thread-safe in free-threaded builds
@@ -2509,17 +2543,24 @@ PySet_Pop(PyObject *set)
         PyErr_BadInternalCall();
         return NULL;
     }
+    // set_pop is guarded by @critical_section
     return set_pop((PySetObject *)set, NULL);
 }
 
 int
 _PySet_Update(PyObject *set, PyObject *iterable)
 {
+    int rv;
+
     if (!PySet_Check(set)) {
         PyErr_BadInternalCall();
         return -1;
     }
-    return set_update_internal((PySetObject *)set, iterable);
+
+    Py_BEGIN_CRITICAL_SECTION2(set, iterable);
+    rv = set_update_internal((PySetObject *)set, iterable);
+    Py_END_CRITICAL_SECTION2();
+    return rv;
 }
 
 /* Exported for the gdb plugin's benefit. */
