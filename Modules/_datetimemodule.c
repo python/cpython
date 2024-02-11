@@ -831,9 +831,11 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
     int *vals[3] = {hour, minute, second};
     // This is initialized to satisfy an erroneous compiler warning.
     unsigned char has_separator = 1;
+    unsigned char has_decimal = 0;
 
     // Parse [HH[:?MM[:?SS]]]
-    for (size_t i = 0; i < 3; ++i) {
+    size_t i = 0;
+    for (; i < 3; ++i) {
         p = parse_digits(p, vals[i], 2);
         if (NULL == p) {
             return -3;
@@ -844,21 +846,26 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
             has_separator = (c == ':');
         }
 
-        if (p >= p_end) {
+        if (p >= p_end) { // reached timezone info
             return c != '\0';
         }
         else if (has_separator && (c == ':')) {
             continue;
         }
         else if (c == '.' || c == ',') {
+            has_decimal = 1;
             break;
-        } else if (!has_separator) {
+        } 
+        else if (!has_separator) {
             --p;
         } else {
             return -4;  // Malformed time separator
         }
     }
 
+    // expecting to get exhausted unless
+    if (!has_decimal)
+        return -3;
     // Parse fractional components
     size_t len_remains = p_end - p;
     size_t to_parse = len_remains;
@@ -866,20 +873,30 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
         to_parse = 6;
     }
 
-    p = parse_digits(p, microsecond, to_parse);
+    int extra_time_digits = 0;
+    p = parse_digits(p, &extra_time_digits, to_parse);
     if (NULL == p) {
         return -3;
     }
 
-    static int correction[] = {
-        100000, 10000, 1000, 100, 10
+    static int dividing_factor[] = {
+        10, 100, 1000, 10000, 100000, 1000000
+    };
+    int *pointers[] = {
+        minute, second, microsecond
     };
 
-    if (to_parse < 6) {
-        *microsecond *= correction[to_parse-1];
+    float extra_time = extra_time_digits / (dividing_factor[to_parse - 1] * 1.);
+    while (i < 2) {
+        *pointers[i] = (extra_time * 60);
+        extra_time = (extra_time * 60) - *pointers[i];
+        i++;
+    }
+    if (i == 2) {
+        *pointers[i] = (extra_time * dividing_factor[5]);
     }
 
-    while (is_digit(*p)){
+    while (is_digit(*p) && p < p_end) {
         ++p; // skip truncated digits
     }
 

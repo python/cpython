@@ -372,11 +372,15 @@ _FRACTION_CORRECTION = [100000, 10000, 1000, 100, 10]
 
 
 def _parse_hh_mm_ss_ff(tstr):
-    # Parses things of the form HH[:?MM[:?SS[{.,}fff[fff]]]]
+    # Parses things of the forms
+    # HH[{.,}fff[fff]]
+    # HH[:?MM[{.,}fff[fff]]]
+    # HH[:?MM[:?SS[{.,}fff[fff]]]]
     len_str = len(tstr)
 
     time_comps = [0, 0, 0, 0]
     pos = 0
+    comp = None
     for comp in range(0, 3):
         if (len_str - pos) < 2:
             raise ValueError("Incomplete time component")
@@ -390,6 +394,9 @@ def _parse_hh_mm_ss_ff(tstr):
             has_sep = next_char == ':'
 
         if not next_char or comp >= 2:
+            break
+
+        if next_char == '.' or next_char == ',':
             break
 
         if has_sep and next_char != ':':
@@ -410,9 +417,15 @@ def _parse_hh_mm_ss_ff(tstr):
             else:
                 to_parse = len_remainder
 
-            time_comps[3] = int(tstr[pos:(pos+to_parse)])
-            if to_parse < 6:
-                time_comps[3] *= _FRACTION_CORRECTION[to_parse-1]
+            extra_time = float("." + tstr[pos:(pos+to_parse)])
+            while comp < 2:
+                time_comps[comp + 1] = int(extra_time * 60)
+                extra_time = extra_time * 60 - time_comps[comp + 1]
+                comp += 1
+            if comp == 2:
+                time_comps[comp + 1] = int(extra_time * 1e6)
+
+            # parse the rest of characters
             if (len_remainder > to_parse
                     and not all(map(_is_ascii_digit, tstr[(pos+to_parse):]))):
                 raise ValueError("Non-digit values in unparsed fraction")
