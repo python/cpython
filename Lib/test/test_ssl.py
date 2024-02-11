@@ -3097,7 +3097,7 @@ class ThreadedTests(unittest.TestCase):
             s.connect((HOST, server.port))
             with self.assertRaisesRegex(
                 (ssl.SSLError, OSError),
-                '(alert unknown ca|EOF occurred|ConnectionResetError)'
+                '(alert unknown ca|EOF occurred|closed by the remote host)'
             ):
                 # TLS 1.3 perform client cert exchange after handshake
                 s.write(b'data')
@@ -4450,7 +4450,7 @@ class TestPostHandshakeAuth(unittest.TestCase):
                 # server aborts connection with an error.
                 with self.assertRaisesRegex(
                     (ssl.SSLError, OSError),
-                    '(certificate required|EOF occurred|ConnectionResetError)'
+                    '(certificate required|EOF occurred|closed by the remote host)'
                 ):
                     # receive CertificateRequest
                     data = s.recv(1024)
