@@ -1270,7 +1270,7 @@ class TextDoc(Doc):
                     entry, modname, c, prefix + '    ')
         return result
 
-    def docmodule(self, object, name=None, mod=None):
+    def docmodule(self, object, name=None, mod=None, *ignored):
         """Produce text documentation for a given module object."""
         name = object.__name__ # ignore the passed-in name
         synop, desc = splitdoc(getdoc(object))
