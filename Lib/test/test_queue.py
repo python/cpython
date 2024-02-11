@@ -409,6 +409,8 @@ class BaseQueueTestMixin(BlockingTestMixin):
     def test_shutdown_all_methods_in_many_threads(self):
         return self._shutdown_all_methods_in_many_threads(False)
 
+    @unittest.skipIf(sys.platform == 'win32' and Py_GIL_DISABLED,
+                     "test times out (gh-115258)")
     def test_shutdown_immediate_all_methods_in_many_threads(self):
         return self._shutdown_all_methods_in_many_threads(True)
 
