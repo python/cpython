@@ -1899,7 +1899,7 @@ class LoggerAdapter(object):
         """
         self.log(WARNING, msg, *args, **kwargs)
 
-    def error(self, msg, *args, stacklevel=1, **kwargs):
+    def error(self, msg, *args, **kwargs):
         """
         Delegate an error call to the underlying logger.
         """
