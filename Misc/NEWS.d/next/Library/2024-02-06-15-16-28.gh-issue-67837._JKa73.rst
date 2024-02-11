@@ -1,0 +1,2 @@
+Avoid race conditions in the creation of directories during concurrent
+extraction in :mod:`tarfile` and :mod:`zipfile`.
