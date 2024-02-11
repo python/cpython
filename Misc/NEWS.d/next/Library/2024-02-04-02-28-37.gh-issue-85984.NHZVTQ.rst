@@ -1,0 +1,1 @@
+Added ``_POSIX_VDISABLE`` from C's ``<unistd.h>`` to :mod:`termios`.
