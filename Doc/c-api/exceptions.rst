@@ -148,7 +148,7 @@ For convenience, some of these functions will always return a
 
 .. c:function:: PyObject* PyErr_SetFromErrno(PyObject *type)
 
-   .. index:: single: strerror()
+   .. index:: single: strerror (C function)
 
    This is a convenience function to raise an exception when a C library function
    has returned an error and set the C variable :c:data:`errno`.  It constructs a
@@ -550,7 +550,7 @@ Signal Handling
 
    .. index::
       pair: module; signal
-      single: SIGINT
+      single: SIGINT (C macro)
       single: KeyboardInterrupt (built-in exception)
 
    This function interacts with Python's signal handling.
@@ -581,7 +581,7 @@ Signal Handling
 
    .. index::
       pair: module; signal
-      single: SIGINT
+      single: SIGINT (C macro)
       single: KeyboardInterrupt (built-in exception)
 
    Simulate the effect of a :c:macro:`!SIGINT` signal arriving.
@@ -861,59 +861,59 @@ All standard Python exceptions are available as global variables whose names are
 the variables:
 
 .. index::
-   single: PyExc_BaseException
-   single: PyExc_Exception
-   single: PyExc_ArithmeticError
-   single: PyExc_AssertionError
-   single: PyExc_AttributeError
-   single: PyExc_BlockingIOError
-   single: PyExc_BrokenPipeError
-   single: PyExc_BufferError
-   single: PyExc_ChildProcessError
-   single: PyExc_ConnectionAbortedError
-   single: PyExc_ConnectionError
-   single: PyExc_ConnectionRefusedError
-   single: PyExc_ConnectionResetError
-   single: PyExc_EOFError
-   single: PyExc_FileExistsError
-   single: PyExc_FileNotFoundError
-   single: PyExc_FloatingPointError
-   single: PyExc_GeneratorExit
-   single: PyExc_ImportError
-   single: PyExc_IndentationError
-   single: PyExc_IndexError
-   single: PyExc_InterruptedError
-   single: PyExc_IsADirectoryError
-   single: PyExc_KeyError
-   single: PyExc_KeyboardInterrupt
-   single: PyExc_LookupError
-   single: PyExc_MemoryError
-   single: PyExc_ModuleNotFoundError
-   single: PyExc_NameError
-   single: PyExc_NotADirectoryError
-   single: PyExc_NotImplementedError
-   single: PyExc_OSError
-   single: PyExc_OverflowError
-   single: PyExc_PermissionError
-   single: PyExc_ProcessLookupError
-   single: PyExc_RecursionError
-   single: PyExc_ReferenceError
-   single: PyExc_RuntimeError
-   single: PyExc_StopAsyncIteration
-   single: PyExc_StopIteration
-   single: PyExc_SyntaxError
-   single: PyExc_SystemError
-   single: PyExc_SystemExit
-   single: PyExc_TabError
-   single: PyExc_TimeoutError
-   single: PyExc_TypeError
-   single: PyExc_UnboundLocalError
-   single: PyExc_UnicodeDecodeError
-   single: PyExc_UnicodeEncodeError
-   single: PyExc_UnicodeError
-   single: PyExc_UnicodeTranslateError
-   single: PyExc_ValueError
-   single: PyExc_ZeroDivisionError
+   single: PyExc_BaseException (C var)
+   single: PyExc_Exception (C var)
+   single: PyExc_ArithmeticError (C var)
+   single: PyExc_AssertionError (C var)
+   single: PyExc_AttributeError (C var)
+   single: PyExc_BlockingIOError (C var)
+   single: PyExc_BrokenPipeError (C var)
+   single: PyExc_BufferError (C var)
+   single: PyExc_ChildProcessError (C var)
+   single: PyExc_ConnectionAbortedError (C var)
+   single: PyExc_ConnectionError (C var)
+   single: PyExc_ConnectionRefusedError (C var)
+   single: PyExc_ConnectionResetError (C var)
+   single: PyExc_EOFError (C var)
+   single: PyExc_FileExistsError (C var)
+   single: PyExc_FileNotFoundError (C var)
+   single: PyExc_FloatingPointError (C var)
+   single: PyExc_GeneratorExit (C var)
+   single: PyExc_ImportError (C var)
+   single: PyExc_IndentationError (C var)
+   single: PyExc_IndexError (C var)
+   single: PyExc_InterruptedError (C var)
+   single: PyExc_IsADirectoryError (C var)
+   single: PyExc_KeyError (C var)
+   single: PyExc_KeyboardInterrupt (C var)
+   single: PyExc_LookupError (C var)
+   single: PyExc_MemoryError (C var)
+   single: PyExc_ModuleNotFoundError (C var)
+   single: PyExc_NameError (C var)
+   single: PyExc_NotADirectoryError (C var)
+   single: PyExc_NotImplementedError (C var)
+   single: PyExc_OSError (C var)
+   single: PyExc_OverflowError (C var)
+   single: PyExc_PermissionError (C var)
+   single: PyExc_ProcessLookupError (C var)
+   single: PyExc_RecursionError (C var)
+   single: PyExc_ReferenceError (C var)
+   single: PyExc_RuntimeError (C var)
+   single: PyExc_StopAsyncIteration (C var)
+   single: PyExc_StopIteration (C var)
+   single: PyExc_SyntaxError (C var)
+   single: PyExc_SystemError (C var)
+   single: PyExc_SystemExit (C var)
+   single: PyExc_TabError (C var)
+   single: PyExc_TimeoutError (C var)
+   single: PyExc_TypeError (C var)
+   single: PyExc_UnboundLocalError (C var)
+   single: PyExc_UnicodeDecodeError (C var)
+   single: PyExc_UnicodeEncodeError (C var)
+   single: PyExc_UnicodeError (C var)
+   single: PyExc_UnicodeTranslateError (C var)
+   single: PyExc_ValueError (C var)
+   single: PyExc_ZeroDivisionError (C var)
 
 +-----------------------------------------+---------------------------------+----------+
 | C Name                                  | Python Name                     | Notes    |
@@ -1044,9 +1044,9 @@ the variables:
 These are compatibility aliases to :c:data:`PyExc_OSError`:
 
 .. index::
-   single: PyExc_EnvironmentError
-   single: PyExc_IOError
-   single: PyExc_WindowsError
+   single: PyExc_EnvironmentError (C var)
+   single: PyExc_IOError (C var)
+   single: PyExc_WindowsError (C var)
 
 +-------------------------------------+----------+
 | C Name                              | Notes    |
@@ -1081,17 +1081,17 @@ names are ``PyExc_`` followed by the Python exception name. These have the type
 the variables:
 
 .. index::
-   single: PyExc_Warning
-   single: PyExc_BytesWarning
-   single: PyExc_DeprecationWarning
-   single: PyExc_FutureWarning
-   single: PyExc_ImportWarning
-   single: PyExc_PendingDeprecationWarning
-   single: PyExc_ResourceWarning
-   single: PyExc_RuntimeWarning
-   single: PyExc_SyntaxWarning
-   single: PyExc_UnicodeWarning
-   single: PyExc_UserWarning
+   single: PyExc_Warning (C var)
+   single: PyExc_BytesWarning (C var)
+   single: PyExc_DeprecationWarning (C var)
+   single: PyExc_FutureWarning (C var)
+   single: PyExc_ImportWarning (C var)
+   single: PyExc_PendingDeprecationWarning (C var)
+   single: PyExc_ResourceWarning (C var)
+   single: PyExc_RuntimeWarning (C var)
+   single: PyExc_SyntaxWarning (C var)
+   single: PyExc_UnicodeWarning (C var)
+   single: PyExc_UserWarning (C var)
 
 +------------------------------------------+---------------------------------+----------+
 | C Name                                   | Python Name                     | Notes    |
