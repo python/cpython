@@ -81,6 +81,8 @@ class B(A):
     A_method_ref = A().A_method
     A_method_alias = A.A_method
     B_method_alias = B_method
+    count = list.count  # same name
+    list_count = list.count
     __repr__ = object.__repr__  # same name
     object_repr = object.__repr__
     get = {}.get  # same name
@@ -180,5 +182,7 @@ B_method = B.B_method  # same name
 B_method2 = B.B_method
 count = list.count  # same name
 list_count = list.count
+__repr__ = object.__repr__  # same name
+object_repr = object.__repr__
 get = {}.get  # same name
 dict_get = {}.get
