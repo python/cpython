@@ -1205,12 +1205,27 @@ set_union_impl(PySetObject *so, PyObject *args)
 }
 
 static PyObject *
+set_ior(PySetObject *so, PyObject *other)
+{
+    if (!PyAnySet_Check(other))
+        Py_RETURN_NOTIMPLEMENTED;
+
+    if (set_update_internal(so, other))
+        return NULL;
+    return Py_NewRef(so);
+}
+
+static PyObject *
 set_or(PySetObject *so, PyObject *other)
 {
     PySetObject *result;
 
     if (!PyAnySet_Check(so) || !PyAnySet_Check(other))
         Py_RETURN_NOTIMPLEMENTED;
+
+    if (Py_REFCNT(so) == 1) {
+        return set_ior(so, other);
+    }
 
     result = (PySetObject *)set_copy(so, NULL);
     if (result == NULL)
@@ -1222,17 +1237,6 @@ set_or(PySetObject *so, PyObject *other)
         return NULL;
     }
     return (PyObject *)result;
-}
-
-static PyObject *
-set_ior(PySetObject *so, PyObject *other)
-{
-    if (!PyAnySet_Check(other))
-        Py_RETURN_NOTIMPLEMENTED;
-
-    if (set_update_internal(so, other))
-        return NULL;
-    return Py_NewRef(so);
 }
 
 static PyObject *
@@ -1386,14 +1390,6 @@ set_intersection_update_multi_impl(PySetObject *so, PyObject *args)
 }
 
 static PyObject *
-set_and(PySetObject *so, PyObject *other)
-{
-    if (!PyAnySet_Check(so) || !PyAnySet_Check(other))
-        Py_RETURN_NOTIMPLEMENTED;
-    return set_intersection(so, other);
-}
-
-static PyObject *
 set_iand(PySetObject *so, PyObject *other)
 {
     PyObject *result;
@@ -1405,6 +1401,16 @@ set_iand(PySetObject *so, PyObject *other)
         return NULL;
     Py_DECREF(result);
     return Py_NewRef(so);
+}
+
+static PyObject *
+set_and(PySetObject *so, PyObject *other)
+{
+    if (!PyAnySet_Check(so) || !PyAnySet_Check(other))
+        Py_RETURN_NOTIMPLEMENTED;
+    if (Py_REFCNT(so) == 1)
+        return set_iand(so, other);
+    return set_intersection(so, other);
 }
 
 /*[clinic input]
@@ -1682,14 +1688,6 @@ set_difference_multi_impl(PySetObject *so, PyObject *args)
 }
 
 static PyObject *
-set_sub(PySetObject *so, PyObject *other)
-{
-    if (!PyAnySet_Check(so) || !PyAnySet_Check(other))
-        Py_RETURN_NOTIMPLEMENTED;
-    return set_difference(so, other);
-}
-
-static PyObject *
 set_isub(PySetObject *so, PyObject *other)
 {
     if (!PyAnySet_Check(other))
@@ -1697,6 +1695,16 @@ set_isub(PySetObject *so, PyObject *other)
     if (set_difference_update_internal(so, other))
         return NULL;
     return Py_NewRef(so);
+}
+
+static PyObject *
+set_sub(PySetObject *so, PyObject *other)
+{
+    if (!PyAnySet_Check(so) || !PyAnySet_Check(other))
+        Py_RETURN_NOTIMPLEMENTED;
+    if (Py_REFCNT(so) == 1)
+        return set_isub(so, other);
+    return set_difference(so, other);
 }
 
 static PyObject *
@@ -1819,14 +1827,6 @@ set_symmetric_difference(PySetObject *so, PyObject *other)
 }
 
 static PyObject *
-set_xor(PySetObject *so, PyObject *other)
-{
-    if (!PyAnySet_Check(so) || !PyAnySet_Check(other))
-        Py_RETURN_NOTIMPLEMENTED;
-    return set_symmetric_difference(so, other);
-}
-
-static PyObject *
 set_ixor(PySetObject *so, PyObject *other)
 {
     PyObject *result;
@@ -1838,6 +1838,16 @@ set_ixor(PySetObject *so, PyObject *other)
         return NULL;
     Py_DECREF(result);
     return Py_NewRef(so);
+}
+
+static PyObject *
+set_xor(PySetObject *so, PyObject *other)
+{
+    if (!PyAnySet_Check(so) || !PyAnySet_Check(other))
+        Py_RETURN_NOTIMPLEMENTED;
+    if (Py_REFCNT(so) == 1)
+        return set_ixor(so, other);
+    return set_symmetric_difference(so, other);
 }
 
 /*[clinic input]
