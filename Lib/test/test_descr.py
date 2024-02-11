@@ -1594,7 +1594,11 @@ order (MRO) for bases """
 
         cm = classmethod(f)
         cm_dict = {'__annotations__': {},
-                   '__doc__': "f docstring",
+                   '__doc__': (
+                       "f docstring"
+                       if support.HAVE_DOCSTRINGS
+                       else None
+                    ),
                    '__module__': __name__,
                    '__name__': 'f',
                    '__qualname__': f.__qualname__}
