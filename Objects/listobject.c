@@ -555,6 +555,9 @@ PyList_GetSlice(PyObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
 }
 
 static PyObject *
+list_inplace_concat(PyObject *_self, PyObject *other);
+
+static PyObject *
 list_concat(PyObject *aa, PyObject *bb)
 {
     PyListObject *a = (PyListObject *)aa;
@@ -574,6 +577,8 @@ list_concat(PyObject *aa, PyObject *bb)
     if (size == 0) {
         return PyList_New(0);
     }
+    if (Py_REFCNT(aa) == 1)
+        return list_inplace_concat(aa, bb);
     np = (PyListObject *) list_new_prealloc(size);
     if (np == NULL) {
         return NULL;
@@ -596,12 +601,17 @@ list_concat(PyObject *aa, PyObject *bb)
 }
 
 static PyObject *
+list_inplace_repeat(PyObject *aa, Py_ssize_t n);
+
+static PyObject *
 list_repeat(PyObject *aa, Py_ssize_t n)
 {
     PyListObject *a = (PyListObject *)aa;
     const Py_ssize_t input_size = Py_SIZE(a);
     if (input_size == 0 || n <= 0)
         return PyList_New(0);
+    if (Py_REFCNT(aa) == 1)
+        return list_inplace_repeat(aa, n);
     assert(n > 0);
 
     if (input_size > PY_SSIZE_T_MAX / n)
