@@ -22,6 +22,8 @@ from functools import total_ordering
 import typing       # Needed for the string "typing.ClassVar[int]" to work as an annotation.
 import dataclasses  # Needed for the string "dataclasses.InitVar[int]" to work as an annotation.
 
+from test import support
+
 # Just any custom exception we can catch.
 class CustomError(Exception): pass
 
@@ -2222,7 +2224,10 @@ class TestDocString(unittest.TestCase):
             """Lorem ipsum"""
             x: int
 
-        self.assertEqual(C.__doc__, "Lorem ipsum")
+        if support.HAVE_DOCSTRINGS:
+            self.assertEqual(C.__doc__, "Lorem ipsum")
+        else:
+            self.assertEqual(C.__doc__, "C(x: int)")
 
     def test_docstring_no_fields(self):
         @dataclass
