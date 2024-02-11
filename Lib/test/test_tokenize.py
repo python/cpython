@@ -1878,6 +1878,9 @@ class TestRoundtrip(TestCase):
                              "else:   print('Loaded')\n")
 
         self.check_roundtrip("f'\\N{EXCLAMATION MARK}'")
+        self.check_roundtrip(r"f'\\N{EXCLAMATION MARK}'")  
+        self.check_roundtrip(r"f'\\N{SNAKE}'")  
+
 
     def test_continuation(self):
         # Balancing continuation
@@ -1912,9 +1915,6 @@ class TestRoundtrip(TestCase):
         import glob, random
         tempdir = os.path.dirname(__file__) or os.curdir
         testfiles = glob.glob(os.path.join(glob.escape(tempdir), "test*.py"))
-
-        # TODO: Remove this once we can untokenize PEP 701 syntax
-        testfiles.remove(os.path.join(tempdir, "test_fstring.py"))
 
         if not support.is_resource_enabled("cpu"):
             testfiles = random.sample(testfiles, 10)
