@@ -81,36 +81,22 @@ class ReadWriteTests:
             self._test_warn(name, maxval+1, minval)
             self._test_warn(name, hardmaxval)
 
-        if indexlimit is None:
-            indexlimit = hardlimit
-        if not indexlimit:
+        if indexlimit is False:
             self.assertRaises(TypeError, setattr, ts, name, Index(minval))
             self.assertRaises(TypeError, setattr, ts, name, Index(maxval))
         else:
-            hardminindexval, hardmaxindexval = indexlimit
             self._test_write(name, Index(minval), minval)
-            if minval < hardminindexval:
-                self._test_write(name, Index(hardminindexval), hardminindexval)
-            if maxval < hardmaxindexval:
-                self._test_write(name, Index(maxval), maxval)
-            else:
-                self._test_write(name, Index(hardmaxindexval), hardmaxindexval)
-            self._test_overflow(name, Index(hardminindexval-1))
-            if name in ('T_UINT', 'T_ULONG'):
-                self.assertRaises(TypeError, setattr, self.ts, name,
-                                  Index(hardmaxindexval+1))
-                self.assertRaises(TypeError, setattr, self.ts, name,
-                                  Index(2**1000))
-            else:
-                self._test_overflow(name, Index(hardmaxindexval+1))
-                self._test_overflow(name, Index(2**1000))
+            self._test_write(name, Index(maxval), maxval)
+            self._test_overflow(name, Index(hardminval-1))
+            self._test_overflow(name, Index(hardmaxval+1))
+            self._test_overflow(name, Index(2**1000))
             self._test_overflow(name, Index(-2**1000))
-            if hardminindexval < minval and name != 'T_ULONGLONG':
-                self._test_warn(name, Index(hardminindexval))
-                self._test_warn(name, Index(minval-1))
-            if maxval < hardmaxindexval:
-                self._test_warn(name, Index(maxval+1))
-                self._test_warn(name, Index(hardmaxindexval))
+            if hardminval < minval:
+                self._test_warn(name, Index(hardminval))
+                self._test_warn(name, Index(minval-1), maxval)
+            if maxval < hardmaxval:
+                self._test_warn(name, Index(maxval+1), minval)
+                self._test_warn(name, Index(hardmaxval))
 
     def test_bool(self):
         ts = self.ts
@@ -138,14 +124,12 @@ class ReadWriteTests:
         self._test_int_range('T_INT', INT_MIN, INT_MAX,
                              hardlimit=(LONG_MIN, LONG_MAX))
         self._test_int_range('T_UINT', 0, UINT_MAX,
-                             hardlimit=(LONG_MIN, ULONG_MAX),
-                             indexlimit=(LONG_MIN, LONG_MAX))
+                             hardlimit=(LONG_MIN, ULONG_MAX))
 
     def test_long(self):
         self._test_int_range('T_LONG', LONG_MIN, LONG_MAX)
         self._test_int_range('T_ULONG', 0, ULONG_MAX,
-                             hardlimit=(LONG_MIN, ULONG_MAX),
-                             indexlimit=(LONG_MIN, LONG_MAX))
+                             hardlimit=(LONG_MIN, ULONG_MAX))
 
     def test_py_ssize_t(self):
         self._test_int_range('T_PYSSIZET', PY_SSIZE_T_MIN, PY_SSIZE_T_MAX, indexlimit=False)
@@ -153,7 +137,7 @@ class ReadWriteTests:
     def test_longlong(self):
         self._test_int_range('T_LONGLONG', LLONG_MIN, LLONG_MAX)
         self._test_int_range('T_ULONGLONG', 0, ULLONG_MAX,
-                             indexlimit=(LONG_MIN, LONG_MAX))
+                             hardlimit=(LONG_MIN, ULLONG_MAX))
 
     def test_bad_assignments(self):
         ts = self.ts
