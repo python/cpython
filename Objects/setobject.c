@@ -979,7 +979,11 @@ set_update_impl(PySetObject *so, PyObject *args)
 
     for (i=0 ; i<PyTuple_GET_SIZE(args) ; i++) {
         PyObject *other = PyTuple_GET_ITEM(args, i);
-        if (set_update_internal(so, other))
+        int rv;
+        Py_BEGIN_CRITICAL_SECTION2(so, other);
+        rv = set_update_internal(so, other);
+        Py_END_CRITICAL_SECTION2();
+        if (rv)
             return NULL;
     }
     Py_RETURN_NONE;
@@ -1198,15 +1202,21 @@ set_union_impl(PySetObject *so, PyObject *args)
     PyObject *other;
     Py_ssize_t i;
 
+    Py_BEGIN_CRITICAL_SECTION(so);
     result = (PySetObject *)set_copy(so, NULL);
+    Py_END_CRITICAL_SECTION();
     if (result == NULL)
         return NULL;
 
     for (i=0 ; i<PyTuple_GET_SIZE(args) ; i++) {
+        int rv;
         other = PyTuple_GET_ITEM(args, i);
         if ((PyObject *)so == other)
             continue;
-        if (set_update_internal(result, other)) {
+        Py_BEGIN_CRITICAL_SECTION(other);
+        rv = set_update_internal(result, other);
+        Py_END_CRITICAL_SECTION();
+        if (rv) {
             Py_DECREF(result);
             return NULL;
         }
@@ -1355,13 +1365,21 @@ set_intersection_multi_impl(PySetObject *so, PyObject *args)
 {
     Py_ssize_t i;
 
-    if (PyTuple_GET_SIZE(args) == 0)
-        return set_copy(so, NULL);
+    if (PyTuple_GET_SIZE(args) == 0) {
+        PyObject *result;
+        Py_BEGIN_CRITICAL_SECTION(so);
+        result = set_copy(so, NULL);
+        Py_END_CRITICAL_SECTION();
+        return result;
+    }
 
     PyObject *result = Py_NewRef(so);
     for (i=0 ; i<PyTuple_GET_SIZE(args) ; i++) {
         PyObject *other = PyTuple_GET_ITEM(args, i);
-        PyObject *newresult = set_intersection((PySetObject *)result, other);
+        PyObject *newresult;
+        Py_BEGIN_CRITICAL_SECTION2(result, other);
+        newresult = set_intersection((PySetObject *)result, other);
+        Py_END_CRITICAL_SECTION2();
         if (newresult == NULL) {
             Py_DECREF(result);
             return NULL;
@@ -1402,7 +1420,9 @@ set_intersection_update_multi_impl(PySetObject *so, PyObject *args)
     tmp = set_intersection_multi_impl(so, args);
     if (tmp == NULL)
         return NULL;
+    Py_BEGIN_CRITICAL_SECTION(so);
     set_swap_bodies(so, (PySetObject *)tmp);
+    Py_END_CRITICAL_SECTION();
     Py_DECREF(tmp);
     Py_RETURN_NONE;
 }
@@ -1585,8 +1605,13 @@ set_difference_update_impl(PySetObject *so, PyObject *args)
 
     for (i=0 ; i<PyTuple_GET_SIZE(args) ; i++) {
         PyObject *other = PyTuple_GET_ITEM(args, i);
-        if (set_difference_update_internal(so, other))
+        int rv;
+        Py_BEGIN_CRITICAL_SECTION2(so, other);
+        rv = set_difference_update_internal(so, other);
+        Py_END_CRITICAL_SECTION2();
+        if (rv) {
             return NULL;
+        }
     }
     Py_RETURN_NONE;
 }
@@ -1697,17 +1722,27 @@ set_difference_multi_impl(PySetObject *so, PyObject *args)
     Py_ssize_t i;
     PyObject *result, *other;
 
-    if (PyTuple_GET_SIZE(args) == 0)
-        return set_copy(so, NULL);
+    if (PyTuple_GET_SIZE(args) == 0) {
+        Py_BEGIN_CRITICAL_SECTION(so);
+        result = set_copy(so, NULL);
+        Py_END_CRITICAL_SECTION();
+        return result;
+    }
 
     other = PyTuple_GET_ITEM(args, 0);
+    Py_BEGIN_CRITICAL_SECTION2(so, other);
     result = set_difference(so, other);
+    Py_END_CRITICAL_SECTION2();
     if (result == NULL)
         return NULL;
 
     for (i=1 ; i<PyTuple_GET_SIZE(args) ; i++) {
         other = PyTuple_GET_ITEM(args, i);
-        if (set_difference_update_internal((PySetObject *)result, other)) {
+        int rv;
+        Py_BEGIN_CRITICAL_SECTION(other);
+        rv = set_difference_update_internal((PySetObject *)result, other);
+        Py_END_CRITICAL_SECTION();
+        if (rv) {
             Py_DECREF(result);
             return NULL;
         }
