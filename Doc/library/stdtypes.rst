@@ -2509,28 +2509,50 @@ True
 
    If the string starts with the *prefix* string, return
    ``string[len(prefix):]``. Otherwise, return a copy of the original
-   string. For example::
-
-      >>> 'TestHook'.removeprefix('Test')
-      'Hook'
-      >>> 'BaseTestCase'.removeprefix('Test')
-      'BaseTestCase'
+   string.
 
    .. versionadded:: 3.9
+
+   .. raw:: html
+
+      <dd>
+      <details>
+      <summary><a style="cursor:pointer;">See example</a></summary>
+
+   >>> 'TestHook'.removeprefix('Test')
+   'Hook'
+   >>> 'BaseTestCase'.removeprefix('Test')
+   'BaseTestCase'
+
+   .. raw:: html
+
+      </details>
+      </dd>
 
 
 .. method:: str.removesuffix(suffix, /)
 
    If the string ends with the *suffix* string and that *suffix* is not empty,
    return ``string[:-len(suffix)]``. Otherwise, return a copy of the
-   original string. For example::
-
-      >>> 'MiscTests'.removesuffix('Tests')
-      'Misc'
-      >>> 'TmpDirMixin'.removesuffix('Tests')
-      'TmpDirMixin'
+   original string.
 
    .. versionadded:: 3.9
+
+   .. raw:: html
+
+      <dd>
+      <details>
+      <summary><a style="cursor:pointer;">See example</a></summary>
+
+   >>> 'MiscTests'.removesuffix('Tests')
+   'Misc'
+   >>> 'TmpDirMixin'.removesuffix('Tests')
+   'TmpDirMixin'
+
+   .. raw:: html
+
+      </details>
+      </dd>
 
 
 .. method:: str.replace(old, new, count=-1)
@@ -2542,12 +2564,21 @@ True
    .. versionchanged:: 3.13
       *count* is now supported as a keyword argument.
 
-   For example::
+   .. raw:: html
 
-      >>> 'spam, spam, spam'.replace('spam', 'eggs')
-      'eggs, eggs, eggs'
-      >>> 'spam, spam, spam'.replace('spam', 'eggs', 1)
-      'eggs, spam, spam'
+      <dd>
+      <details>
+      <summary><a style="cursor:pointer;">See example</a></summary>
+
+   >>> 'spam, spam, spam'.replace('spam', 'eggs')
+   'eggs, eggs, eggs'
+   >>> 'spam, spam, spam'.replace('spam', 'eggs', 1)
+   'eggs, spam, spam'
+
+   .. raw:: html
+
+      </details>
+      </dd>
 
 
 .. method:: str.rfind(sub[, start[, end]])
@@ -2555,27 +2586,48 @@ True
    Return the highest index in the string where substring *sub* is found, such
    that *sub* is contained within ``s[start:end]``.  Optional arguments *start*
    and *end* are interpreted as in slice notation.  Return ``-1`` on failure.
-   For example::
-
-      >>> 'spam, spam, spam'.rfind('sp')
-      12
-      >>> 'spam, spam, spam'.rfind('sp', 0, 10)
-      6
 
    See also :meth:`find`.
+
+   .. raw:: html
+
+      <dd>
+      <details>
+      <summary><a style="cursor:pointer;">See example</a></summary>
+
+   >>> 'spam, spam, spam'.rfind('sp')
+   12
+   >>> 'spam, spam, spam'.rfind('sp', 0, 10)
+   6
+
+   .. raw:: html
+
+      </details>
+      </dd>
 
 
 .. method:: str.rindex(sub[, start[, end]])
 
    Like :meth:`rfind` but raises :exc:`ValueError` when the substring *sub* is not
-   found. For example::
-
-      >>> 'spam, spam, spam'.rindex('eggs')
-      Traceback (most recent call last):
-        File "<stdin>", line 1, in <module>
-      ValueError: substring not found
+   found.
 
    See also :meth:`index`.
+
+   .. raw:: html
+
+      <dd>
+      <details>
+      <summary><a style="cursor:pointer;">See example</a></summary>
+
+   >>> 'spam, spam, spam'.rindex('eggs')
+   Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+   ValueError: substring not found
+
+   .. raw:: html
+
+      </details>
+      </dd>
 
 
 .. method:: str.rjust(width[, fillchar])
@@ -2583,14 +2635,24 @@ True
    Return the string right justified in a string of length *width*. Padding is
    done using the specified *fillchar* (default is an ASCII space). The
    original string is returned if *width* is less than or equal to ``len(s)``.
-   For example::
-
-      >>> 'Python'.rjust(10)
-      '    Python'
-      >>> 'Python'.rjust(10, '.')
-      '....Python'
 
    See also :meth:`ljust`.
+
+   .. raw:: html
+
+      <dd>
+      <details>
+      <summary><a style="cursor:pointer;">See example</a></summary>
+
+   >>> 'Python'.rjust(10)
+   '    Python'
+   >>> 'Python'.rjust(10, '.')
+   '....Python'
+
+   .. raw:: html
+
+      </details>
+      </dd>
 
 
 .. method:: str.rpartition(sep)
@@ -2598,12 +2660,23 @@ True
    Split the string at the last occurrence of *sep*, and return a 3-tuple
    containing the part before the separator, the separator itself, and the part
    after the separator.  If the separator is not found, return a 3-tuple containing
-   two empty strings, followed by the string itself. For example::
-
-      >>> "Monty Python's Flying Circus".rpartition(' ')
-      ("Monty Python's Flying", ' ', 'Circus')
+   two empty strings, followed by the string itself.
 
    See also :meth:`partition`.
+
+   .. raw:: html
+
+      <dd>
+      <details>
+      <summary><a style="cursor:pointer;">See example</a></summary>
+
+   >>> "Monty Python's Flying Circus".rpartition(' ')
+   ("Monty Python's Flying", ' ', 'Circus')
+
+   .. raw:: html
+
+      </details>
+      </dd>
 
 
 .. method:: str.rsplit(sep=None, maxsplit=-1)
@@ -2612,10 +2685,21 @@ True
    If *maxsplit* is given, at most *maxsplit* splits are done, the *rightmost*
    ones.  If *sep* is not specified or ``None``, any whitespace string is a
    separator.  Except for splitting from the right, :meth:`rsplit` behaves like
-   :meth:`split` which is described in detail below. For example::
+   :meth:`split` which is described in detail below.
 
-      >>> '1,2,3'.rsplit(',', maxsplit=1)
-      ['1,2', '3']
+   .. raw:: html
+
+      <dd>
+      <details>
+      <summary><a style="cursor:pointer;">See example</a></summary>
+
+   >>> '1,2,3'.rsplit(',', maxsplit=1)
+   ['1,2', '3']
+
+   .. raw:: html
+
+      </details>
+      </dd>
 
 
 .. method:: str.rstrip([chars])
@@ -2624,22 +2708,25 @@ True
    argument is a string specifying the set of characters to be removed.  If omitted
    or ``None``, the *chars* argument defaults to removing whitespace.  The *chars*
    argument is not a suffix; rather, all combinations of its values are stripped.
-   For example::
 
-      >>> '   spacious   '.rstrip()
-      '   spacious'
-      >>> 'mississippi'.rstrip('ipz')
-      'mississ'
+   See also :meth:`lstrip` and see :meth:`str.removesuffix` for a method that will
+   remove a single suffix string rather than all of a set of characters.
 
-   See :meth:`str.removesuffix` for a method that will remove a single suffix
-   string rather than all of a set of characters. For example::
+   .. raw:: html
 
-      >>> 'Monty Python'.rstrip(' Python')
-      'M'
-      >>> 'Monty Python'.removesuffix(' Python')
-      'Monty'
+      <dd>
+      <details>
+      <summary><a style="cursor:pointer;">See example</a></summary>
 
-   See also :meth:`lstrip`.
+   >>> '   spacious   '.rstrip()
+   '   spacious'
+   >>> 'mississippi'.rstrip('ipz')
+   'mississ'
+
+   .. raw:: html
+
+      </details>
+      </dd>
 
 
 .. method:: str.split(sep=None, maxsplit=-1)
