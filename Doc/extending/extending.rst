@@ -536,7 +536,7 @@ reference count of an object and are safe in the presence of ``NULL`` pointers
 (but note that *temp* will not be  ``NULL`` in this context).  More info on them
 in section :ref:`refcounts`.
 
-.. index:: single: PyObject_CallObject()
+.. index:: single: PyObject_CallObject (C function)
 
 Later, when it is time to call the function, you call the C function
 :c:func:`PyObject_CallObject`.  This function has two arguments, both pointers to
@@ -627,7 +627,7 @@ the above example, we use :c:func:`Py_BuildValue` to construct the dictionary. :
 Extracting Parameters in Extension Functions
 ============================================
 
-.. index:: single: PyArg_ParseTuple()
+.. index:: single: PyArg_ParseTuple (C function)
 
 The :c:func:`PyArg_ParseTuple` function is declared as follows::
 
@@ -719,7 +719,7 @@ Some example calls::
 Keyword Parameters for Extension Functions
 ==========================================
 
-.. index:: single: PyArg_ParseTupleAndKeywords()
+.. index:: single: PyArg_ParseTupleAndKeywords (C function)
 
 The :c:func:`PyArg_ParseTupleAndKeywords` function is declared as follows::
 
