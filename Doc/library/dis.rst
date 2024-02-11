@@ -567,7 +567,7 @@ operations on it as if it was a Python list. The top of the stack corresponds to
    location::
 
       assert i > 0
-      STACK.append(STACK[-i])
+      STACK.push(STACK[-i])
 
    .. versionadded:: 3.11
 
@@ -660,7 +660,7 @@ not have to be) the original ``STACK[-2]``.
 
       rhs = STACK.pop()
       lhs = STACK.pop()
-      STACK.append(lhs op rhs)
+      STACK.push(lhs op rhs)
 
    .. versionadded:: 3.11
 
@@ -671,7 +671,7 @@ not have to be) the original ``STACK[-2]``.
 
       key = STACK.pop()
       container = STACK.pop()
-      STACK.append(container[key])
+      STACK.push(container[key])
 
 
 .. opcode:: STORE_SUBSCR
@@ -699,7 +699,7 @@ not have to be) the original ``STACK[-2]``.
       end = STACK.pop()
       start = STACK.pop()
       container = STACK.pop()
-      STACK.append(container[start:end])
+      STACK.push(container[start:end])
 
    .. versionadded:: 3.12
 
@@ -750,7 +750,7 @@ not have to be) the original ``STACK[-2]``.
 
 .. opcode:: GET_ANEXT
 
-   Implement ``STACK.append(get_awaitable(STACK[-1].__anext__()))`` to the stack.
+   Implement ``STACK.push(get_awaitable(STACK[-1].__anext__()))`` to the stack.
    See ``GET_AWAITABLE`` for details about ``get_awaitable``.
 
    .. versionadded:: 3.5
@@ -956,7 +956,7 @@ iterations of the loop.
 
 .. opcode:: GET_LEN
 
-   Perform ``STACK.append(len(STACK[-1]))``.
+   Perform ``STACK.push(len(STACK[-1]))``.
 
    .. versionadded:: 3.10
 
@@ -1105,7 +1105,7 @@ iterations of the loop.
 
       assert count > 0
       STACK, values = STACK[:-count], STACK[-count:]
-      STACK.append(tuple(values))
+      STACK.push(tuple(values))
 
 
 .. opcode:: BUILD_LIST (count)
@@ -1580,14 +1580,14 @@ iterations of the loop.
 
       end = STACK.pop()
       start = STACK.pop()
-      STACK.append(slice(start, stop))
+      STACK.push(slice(start, stop))
 
    if it is 3, implements::
 
       step = STACK.pop()
       end = STACK.pop()
       start = STACK.pop()
-      STACK.append(slice(start, end, step))
+      STACK.push(slice(start, end, step))
 
    See the :func:`slice` built-in function for more information.
 
@@ -1960,4 +1960,3 @@ instructions:
 
    .. deprecated:: 3.13
       All jumps are now relative. This list is empty.
-
