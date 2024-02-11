@@ -189,7 +189,7 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
         self._check_str(p.__fspath__(), ('a/b',))
         self._check_str(os.fspath(p), ('a/b',))
 
-    def test_bytes(self):
+    def test_bytes_exc_message(self):
         P = self.cls
         message = (r"argument should be a str or an os\.PathLike object "
                    r"where __fspath__ returns a str, not 'bytes'")
@@ -199,22 +199,6 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
             P(b'a', 'b')
         with self.assertRaisesRegex(TypeError, message):
             P('a', b'b')
-        with self.assertRaises(TypeError):
-            P('a').joinpath(b'b')
-        with self.assertRaises(TypeError):
-            P('a') / b'b'
-        with self.assertRaises(TypeError):
-            b'a' / P('b')
-        with self.assertRaises(TypeError):
-            P('a').match(b'b')
-        with self.assertRaises(TypeError):
-            P('a').relative_to(b'b')
-        with self.assertRaises(TypeError):
-            P('a').with_name(b'b')
-        with self.assertRaises(TypeError):
-            P('a').with_stem(b'b')
-        with self.assertRaises(TypeError):
-            P('a').with_suffix(b'b')
 
     def test_as_bytes_common(self):
         sep = os.fsencode(self.sep)
@@ -326,13 +310,6 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
         self.assertRaises(ValueError, P('/').with_stem, 'd')
         self.assertRaises(ValueError, P('a/b').with_stem, '')
         self.assertRaises(ValueError, P('a/b').with_stem, '.')
-
-    def test_with_suffix_empty(self):
-        # Path doesn't have a "filename" component.
-        P = self.cls
-        self.assertRaises(ValueError, P('').with_suffix, '.gz')
-        self.assertRaises(ValueError, P('.').with_suffix, '.gz')
-        self.assertRaises(ValueError, P('/').with_suffix, '.gz')
 
     def test_relative_to_several_args(self):
         P = self.cls
@@ -1232,6 +1209,8 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
             list(p.glob(''))
         with self.assertRaisesRegex(ValueError, 'Unacceptable pattern'):
             list(p.glob('.'))
+        with self.assertRaisesRegex(ValueError, 'Unacceptable pattern'):
+            list(p.glob('./'))
 
     def test_glob_many_open_files(self):
         depth = 30
@@ -1263,18 +1242,6 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         with set_recursion_limit(recursion_limit):
             list(base.glob('**/'))
 
-    def test_glob_recursive_no_trailing_slash(self):
-        P = self.cls
-        p = P(self.base)
-        with self.assertWarns(FutureWarning):
-            p.glob('**')
-        with self.assertWarns(FutureWarning):
-            p.glob('*/**')
-        with self.assertWarns(FutureWarning):
-            p.rglob('**')
-        with self.assertWarns(FutureWarning):
-            p.rglob('*/**')
-
     def test_glob_pathlike(self):
         P = self.cls
         p = P(self.base)
@@ -1282,6 +1249,19 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         expect = {p / "dirB/fileB", p / "dirC/fileC"}
         self.assertEqual(expect, set(p.glob(P(pattern))))
         self.assertEqual(expect, set(p.glob(FakePath(pattern))))
+
+    @needs_symlinks
+    def test_glob_dot(self):
+        P = self.cls
+        with os_helper.change_cwd(P(self.base, "dirC")):
+            self.assertEqual(
+                set(P('.').glob('*')), {P("fileC"), P("novel.txt"), P("dirD")})
+            self.assertEqual(
+                set(P('.').glob('**')), {P("fileC"), P("novel.txt"), P("dirD"), P("dirD/fileD"), P(".")})
+            self.assertEqual(
+                set(P('.').glob('**/*')), {P("fileC"), P("novel.txt"), P("dirD"), P("dirD/fileD")})
+            self.assertEqual(
+                set(P('.').glob('**/*/*')), {P("dirD/fileD")})
 
     def test_rglob_pathlike(self):
         P = self.cls

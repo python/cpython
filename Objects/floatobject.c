@@ -2011,12 +2011,6 @@ _PyFloat_ClearFreeList(_PyFreeListState *freelist_state, int is_finalization)
 }
 
 void
-_PyFloat_Fini(_PyFreeListState *state)
-{
-    _PyFloat_ClearFreeList(state, 1);
-}
-
-void
 _PyFloat_FiniType(PyInterpreterState *interp)
 {
     _PyStructSequence_FiniBuiltin(interp, &FloatInfoType);
