@@ -130,7 +130,12 @@ classmethod_get(PyObject *self, PyObject *obj, PyObject *type)
     if (descr->d_method->ml_flags & METH_METHOD) {
         cls = descr->d_common.d_type;
     }
-    return PyCMethod_New(descr->d_method, type, NULL, cls);
+    PyObject *mod;
+    PyObject_GetOptionalAttr((PyObject*)type, &_Py_ID(__module__), &mod);
+    PyErr_Clear();
+    PyObject *result = PyCMethod_New(descr->d_method, type, mod, cls);
+    Py_XDECREF(mod);
+    return result;
 }
 
 static PyObject *
