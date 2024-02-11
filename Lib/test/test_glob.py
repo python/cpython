@@ -332,6 +332,17 @@ class GlobTests(unittest.TestCase):
             eq(glob.glob('**', recursive=True, include_hidden=True),
                [join(*i) for i in full+rec])
 
+    def test_glob_non_directory(self):
+        eq = self.assertSequencesEqual_noorder
+        eq(self.rglob('EF'), self.joins(('EF',)))
+        eq(self.rglob('EF', ''), [])
+        eq(self.rglob('EF', '*'), [])
+        eq(self.rglob('EF', '**'), [])
+        eq(self.rglob('nonexistent'), [])
+        eq(self.rglob('nonexistent', ''), [])
+        eq(self.rglob('nonexistent', '*'), [])
+        eq(self.rglob('nonexistent', '**'), [])
+
     def test_glob_many_open_files(self):
         depth = 30
         base = os.path.join(self.tempdir, 'deep')
