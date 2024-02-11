@@ -2447,6 +2447,7 @@ True
       </details>
       </dd>
 
+
 .. staticmethod:: str.maketrans(x[, y[, z]])
 
    This static method returns a translation table usable for :meth:`str.translate`.
@@ -2454,19 +2455,28 @@ True
    If there is only one argument, it must be a dictionary mapping Unicode
    ordinals (integers) or characters (strings of length 1) to Unicode ordinals,
    strings (of arbitrary lengths) or ``None``.  Character keys will then be
-   converted to ordinals. For example::
-
-      >>> str.maketrans({'a': 'A', 'b': 'Boo', 'c': None})
-      {97: 'A', 98: 'Boo', 99: None}
+   converted to ordinals.
 
    If there are two arguments, they must be strings of equal length, and in the
    resulting dictionary, each character in *x* will be mapped to the character
    at the same position in *y*.  If there is a third argument, it must be a
-   string, whose characters will be mapped to ``None`` in the result. For
-   example::
+   string, whose characters will be mapped to ``None`` in the result.
 
-      >>> str.maketrans('ab', 'AB', 'c')
-      {97: 65, 98: 66, 99: None}
+   .. raw:: html
+
+      <dd>
+      <details>
+      <summary><a style="cursor:pointer;">See example</a></summary>
+
+   >>> str.maketrans({'a': 'A', 'b': 'Boo', 'c': None})
+   {97: 'A', 98: 'Boo', 99: None}
+   >>> str.maketrans('ab', 'AB', 'c')
+   {97: 65, 98: 66, 99: None}
+
+   .. raw:: html
+
+      </details>
+      </dd>
 
 
 .. method:: str.partition(sep)
@@ -2474,14 +2484,25 @@ True
    Split the string at the first occurrence of *sep*, and return a 3-tuple
    containing the part before the separator, the separator itself, and the part
    after the separator.  If the separator is not found, return a 3-tuple containing
-   the string itself, followed by two empty strings. For example::
-
-      >>> 'Monty Python'.partition(' ')
-      ('Monty', ' ', 'Python')
-      >>> 'Monty Python'.partition('-')
-      ('Monty Python', '', '')
+   the string itself, followed by two empty strings.
 
    See also :meth:`rpartition`.
+
+   .. raw:: html
+
+      <dd>
+      <details>
+      <summary><a style="cursor:pointer;">See example</a></summary>
+
+   >>> 'Monty Python'.partition(' ')
+   ('Monty', ' ', 'Python')
+   >>> 'Monty Python'.partition('-')
+   ('Monty Python', '', '')
+
+   .. raw:: html
+
+      </details>
+      </dd>
 
 
 .. method:: str.removeprefix(prefix, /)
