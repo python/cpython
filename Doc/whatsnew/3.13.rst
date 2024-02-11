@@ -185,6 +185,9 @@ array
   It can be used instead of ``'u'`` type code, which is deprecated.
   (Contributed by Inada Naoki in :gh:`80480`.)
 
+* Add ``clear()`` method in order to implement ``MutableSequence``.
+  (Contributed by Mike Zimin in :gh:`114894`.)
+
 ast
 ---
 
@@ -402,6 +405,13 @@ pdb
   being debugged when ``sys.flags.safe_path`` is set (via the :option:`-P`
   command line option or :envvar:`PYTHONSAFEPATH` environment variable).
   (Contributed by Tian Gao and Christian Walther in :gh:`111762`.)
+
+queue
+-----
+
+* Add :meth:`queue.Queue.shutdown` (along with :exc:`queue.ShutDown`) for queue
+  termination.
+  (Contributed by Laurie Opperman and Yves Duprat in :gh:`104750`.)
 
 re
 --
