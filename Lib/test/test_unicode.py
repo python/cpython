@@ -2443,12 +2443,7 @@ class UnicodeTest(string_tests.CommonTest,
             def __repr__(self):
                 return '\\n'
 
-        class s2:
-            def __repr__(self):
-                return '\\n'
-
         self.assertEqual(repr(s1()), '\\n')
-        self.assertEqual(repr(s2()), '\\n')
 
     def test_printable_repr(self):
         self.assertEqual(repr('\U00010000'), "'%c'" % (0x10000,)) # printable
