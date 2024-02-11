@@ -1217,31 +1217,43 @@ set_union_impl(PySetObject *so, PyObject *args)
 static PyObject *
 set_or(PySetObject *so, PyObject *other)
 {
-    PySetObject *result;
+    PySetObject *result = NULL;
 
     if (!PyAnySet_Check(so) || !PyAnySet_Check(other))
         Py_RETURN_NOTIMPLEMENTED;
 
+    Py_BEGIN_CRITICAL_SECTION2(so, other);
     result = (PySetObject *)set_copy(so, NULL);
-    if (result == NULL)
-        return NULL;
-    if ((PyObject *)so == other)
-        return (PyObject *)result;
+    if (result == NULL) {
+        goto done;
+    }
+    if ((PyObject *)so == other) {
+        goto done;
+    }
     if (set_update_internal(result, other)) {
         Py_DECREF(result);
-        return NULL;
+        result = NULL;
     }
+done:
+    Py_END_CRITICAL_SECTION2();
     return (PyObject *)result;
 }
 
 static PyObject *
 set_ior(PySetObject *so, PyObject *other)
 {
+    int rv;
+
     if (!PyAnySet_Check(other))
         Py_RETURN_NOTIMPLEMENTED;
 
-    if (set_update_internal(so, other))
+    Py_BEGIN_CRITICAL_SECTION2(so, other);
+    rv = set_update_internal(so, other);
+    Py_END_CRITICAL_SECTION2();
+
+    if(rv) {
         return NULL;
+    }
     return Py_NewRef(so);
 }
 
@@ -1398,9 +1410,16 @@ set_intersection_update_multi_impl(PySetObject *so, PyObject *args)
 static PyObject *
 set_and(PySetObject *so, PyObject *other)
 {
+    PyObject *rv;
+
     if (!PyAnySet_Check(so) || !PyAnySet_Check(other))
         Py_RETURN_NOTIMPLEMENTED;
-    return set_intersection(so, other);
+
+    Py_BEGIN_CRITICAL_SECTION2(so, other);
+    rv = set_intersection(so, other);
+    Py_END_CRITICAL_SECTION2();
+
+    return rv;
 }
 
 static PyObject *
@@ -1410,7 +1429,11 @@ set_iand(PySetObject *so, PyObject *other)
 
     if (!PyAnySet_Check(other))
         Py_RETURN_NOTIMPLEMENTED;
+
+    Py_BEGIN_CRITICAL_SECTION2(so, other);
     result = set_intersection_update(so, other);
+    Py_END_CRITICAL_SECTION2();
+
     if (result == NULL)
         return NULL;
     Py_DECREF(result);
@@ -1695,18 +1718,33 @@ set_difference_multi_impl(PySetObject *so, PyObject *args)
 static PyObject *
 set_sub(PySetObject *so, PyObject *other)
 {
+    PyObject *rv;
+
     if (!PyAnySet_Check(so) || !PyAnySet_Check(other))
         Py_RETURN_NOTIMPLEMENTED;
-    return set_difference(so, other);
+
+    Py_BEGIN_CRITICAL_SECTION2(so, other);
+    rv = set_difference(so, other);
+    Py_END_CRITICAL_SECTION2();
+
+    return rv;
 }
 
 static PyObject *
 set_isub(PySetObject *so, PyObject *other)
 {
+    int rv;
+
     if (!PyAnySet_Check(other))
         Py_RETURN_NOTIMPLEMENTED;
-    if (set_difference_update_internal(so, other))
+
+    Py_BEGIN_CRITICAL_SECTION2(so, other);
+    rv = set_difference_update_internal(so, other);
+    Py_END_CRITICAL_SECTION2();
+
+    if(rv) {
         return NULL;
+    }
     return Py_NewRef(so);
 }
 
@@ -1834,9 +1872,16 @@ set_symmetric_difference_impl(PySetObject *so, PyObject *other)
 static PyObject *
 set_xor(PySetObject *so, PyObject *other)
 {
+    PyObject *rv;
+
     if (!PyAnySet_Check(so) || !PyAnySet_Check(other))
         Py_RETURN_NOTIMPLEMENTED;
-    return set_symmetric_difference(so, other);
+
+    Py_BEGIN_CRITICAL_SECTION2(so, other);
+    rv = set_symmetric_difference(so, other);
+    Py_END_CRITICAL_SECTION2();
+
+    return rv;
 }
 
 static PyObject *
@@ -1846,7 +1891,11 @@ set_ixor(PySetObject *so, PyObject *other)
 
     if (!PyAnySet_Check(other))
         Py_RETURN_NOTIMPLEMENTED;
+
+    Py_BEGIN_CRITICAL_SECTION2(so, other);
     result = set_symmetric_difference_update(so, other);
+    Py_END_CRITICAL_SECTION2();
+
     if (result == NULL)
         return NULL;
     Py_DECREF(result);
