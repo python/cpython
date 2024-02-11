@@ -148,8 +148,8 @@ The :mod:`bdb` module also defines two classes:
 
    .. method:: reset()
 
-      Set the :attr:`botframe`, :attr:`stopframe`, :attr:`returnframe` and
-      :attr:`quitting` attributes with values ready to start debugging.
+      Set the :attr:`!botframe`, :attr:`!stopframe`, :attr:`!returnframe` and
+      :attr:`quitting <Bdb.set_quit>` attributes with values ready to start debugging.
 
    .. method:: trace_dispatch(frame, event, arg)
 
@@ -182,7 +182,7 @@ The :mod:`bdb` module also defines two classes:
 
       If the debugger should stop on the current line, invoke the
       :meth:`user_line` method (which should be overridden in subclasses).
-      Raise a :exc:`BdbQuit` exception if the :attr:`Bdb.quitting` flag is set
+      Raise a :exc:`BdbQuit` exception if the :attr:`quitting  <Bdb.set_quit>` flag is set
       (which can be set from :meth:`user_line`).  Return a reference to the
       :meth:`trace_dispatch` method for further tracing in that scope.
 
@@ -190,7 +190,7 @@ The :mod:`bdb` module also defines two classes:
 
       If the debugger should stop on this function call, invoke the
       :meth:`user_call` method (which should be overridden in subclasses).
-      Raise a :exc:`BdbQuit` exception if the :attr:`Bdb.quitting` flag is set
+      Raise a :exc:`BdbQuit` exception if the :attr:`quitting  <Bdb.set_quit>` flag is set
       (which can be set from :meth:`user_call`).  Return a reference to the
       :meth:`trace_dispatch` method for further tracing in that scope.
 
@@ -198,7 +198,7 @@ The :mod:`bdb` module also defines two classes:
 
       If the debugger should stop on this function return, invoke the
       :meth:`user_return` method (which should be overridden in subclasses).
-      Raise a :exc:`BdbQuit` exception if the :attr:`Bdb.quitting` flag is set
+      Raise a :exc:`BdbQuit` exception if the :attr:`quitting  <Bdb.set_quit>` flag is set
       (which can be set from :meth:`user_return`).  Return a reference to the
       :meth:`trace_dispatch` method for further tracing in that scope.
 
@@ -206,7 +206,7 @@ The :mod:`bdb` module also defines two classes:
 
       If the debugger should stop at this exception, invokes the
       :meth:`user_exception` method (which should be overridden in subclasses).
-      Raise a :exc:`BdbQuit` exception if the :attr:`Bdb.quitting` flag is set
+      Raise a :exc:`BdbQuit` exception if the :attr:`quitting  <Bdb.set_quit>` flag is set
       (which can be set from :meth:`user_exception`).  Return a reference to the
       :meth:`trace_dispatch` method for further tracing in that scope.
 
@@ -293,7 +293,9 @@ The :mod:`bdb` module also defines two classes:
 
    .. method:: set_quit()
 
-      Set the :attr:`quitting` attribute to ``True``.  This raises :exc:`BdbQuit` in
+      .. index:: single: quitting (bdb.Bdb attribute)
+
+      Set the :attr:`!quitting` attribute to ``True``.  This raises :exc:`BdbQuit` in
       the next call to one of the :meth:`!dispatch_\*` methods.
 
 
@@ -383,7 +385,7 @@ The :mod:`bdb` module also defines two classes:
    .. method:: run(cmd, globals=None, locals=None)
 
       Debug a statement executed via the :func:`exec` function.  *globals*
-      defaults to :attr:`__main__.__dict__`, *locals* defaults to *globals*.
+      defaults to :attr:`!__main__.__dict__`, *locals* defaults to *globals*.
 
    .. method:: runeval(expr, globals=None, locals=None)
 
