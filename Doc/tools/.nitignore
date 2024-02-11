@@ -5,7 +5,6 @@
 Doc/c-api/descriptor.rst
 Doc/c-api/exceptions.rst
 Doc/c-api/float.rst
-Doc/c-api/gcsupport.rst
 Doc/c-api/init.rst
 Doc/c-api/init_config.rst
 Doc/c-api/intro.rst
@@ -22,7 +21,6 @@ Doc/library/ast.rst
 Doc/library/asyncio-extending.rst
 Doc/library/asyncio-policy.rst
 Doc/library/asyncio-subprocess.rst
-Doc/library/bdb.rst
 Doc/library/collections.rst
 Doc/library/dbm.rst
 Doc/library/decimal.rst

@@ -2,6 +2,7 @@
 # to ensure the Queue locks remain stable.
 import itertools
 import random
+import sys
 import threading
 import time
 import unittest
@@ -402,9 +403,11 @@ class BaseQueueTestMixin(BlockingTestMixin):
         for thread in ps[1:]:
             thread.join()
 
+    @unittest.skipIf(sys.platform == "win32", "test times out (gh-115258)")
     def test_shutdown_all_methods_in_many_threads(self):
         return self._shutdown_all_methods_in_many_threads(False)
 
+    @unittest.skipIf(sys.platform == "win32", "test times out (gh-115258)")
     def test_shutdown_immediate_all_methods_in_many_threads(self):
         return self._shutdown_all_methods_in_many_threads(True)
 
