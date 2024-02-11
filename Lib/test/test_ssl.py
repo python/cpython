@@ -2405,6 +2405,10 @@ class ThreadedEchoServer(threading.Thread):
                             print(
                                 f" Connection reset by peer: {self.addr}"
                             )
+
+                            self.close()
+                            self.running = False
+                            return
                         else:
                             handle_error("Test server failure:\n")
                     try:
