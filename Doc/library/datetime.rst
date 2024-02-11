@@ -619,10 +619,26 @@ Notes:
 (4)
    :class:`date` objects are equal if they represent the same date.
 
+   :class:`!date` objects that are not also :class:`.datetime` instances
+   are never equal to :class:`!datetime` objects, even if they represent
+   the same date.
+
 (5)
    *date1* is considered less than *date2* when *date1* precedes *date2* in time.
    In other words, ``date1 < date2`` if and only if ``date1.toordinal() <
    date2.toordinal()``.
+
+   Order comparison between a :class:`!date` object that is not also a
+   :class:`.datetime` instance and a :class:`!datetime` object raises
+   :exc:`TypeError`.
+
+.. versionchanged:: 3.13
+   Comparison between :class:`.datetime` object and an instance of
+   the :class:`date` subclass that is not a :class:`!datetime` subclass
+   no longer coverts the latter to :class:`!date`, ignoring the time part
+   and the time zone.
+   The default behavior can be changed by overriding the special comparison
+   methods in subclasses.
 
 In Boolean contexts, all :class:`date` objects are considered to be true.
 
@@ -1192,9 +1208,6 @@ Supported operations:
    and time, taking into account the time zone.
 
    Naive and aware :class:`!datetime` objects are never equal.
-   :class:`!datetime` objects are never equal to :class:`date` objects
-   that are not also :class:`!datetime` instances, even if they represent
-   the same date.
 
    If both comparands are aware and have different :attr:`~.datetime.tzinfo`
    attributes, the comparison acts as comparands were first converted to UTC
@@ -1206,9 +1219,8 @@ Supported operations:
    *datetime1* is considered less than *datetime2* when *datetime1* precedes
    *datetime2* in time, taking into account the time zone.
 
-   Order comparison between naive and aware :class:`.datetime` objects,
-   as well as a :class:`!datetime` object and a :class:`!date` object
-   that is not also a :class:`!datetime` instance, raises :exc:`TypeError`.
+   Order comparison between naive and aware :class:`.datetime` objects
+   raises :exc:`TypeError`.
 
    If both comparands are aware and have different :attr:`~.datetime.tzinfo`
    attributes, the comparison acts as comparands were first converted to UTC
@@ -1217,6 +1229,14 @@ Supported operations:
 .. versionchanged:: 3.3
    Equality comparisons between aware and naive :class:`.datetime`
    instances don't raise :exc:`TypeError`.
+
+.. versionchanged:: 3.13
+   Comparison between :class:`.datetime` object and an instance of
+   the :class:`date` subclass that is not a :class:`!datetime` subclass
+   no longer coverts the latter to :class:`!date`, ignoring the time part
+   and the time zone.
+   The default behavior can be changed by overriding the special comparison
+   methods in subclasses.
 
 Instance methods:
 

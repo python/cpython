@@ -1,5 +1,6 @@
 """Unit tests for collections.py."""
 
+import array
 import collections
 import copy
 import doctest
@@ -1972,6 +1973,7 @@ class TestCollectionABCs(ABCTestCase):
         for sample in [list, bytearray, deque]:
             self.assertIsInstance(sample(), MutableSequence)
             self.assertTrue(issubclass(sample, MutableSequence))
+        self.assertTrue(issubclass(array.array, MutableSequence))
         self.assertFalse(issubclass(str, MutableSequence))
         self.validate_abstract_methods(MutableSequence, '__contains__', '__iter__',
             '__len__', '__getitem__', '__setitem__', '__delitem__', 'insert')
