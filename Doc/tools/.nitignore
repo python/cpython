@@ -27,7 +27,6 @@ Doc/library/asyncio-extending.rst
 Doc/library/asyncio-policy.rst
 Doc/library/asyncio-subprocess.rst
 Doc/library/audioop.rst
-Doc/library/bdb.rst
 Doc/library/cgi.rst
 Doc/library/chunk.rst
 Doc/library/collections.rst
