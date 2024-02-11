@@ -855,7 +855,7 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
         else if (c == '.' || c == ',') {
             has_decimal = 1;
             break;
-        } 
+        }
         else if (!has_separator) {
             --p;
         } else {
