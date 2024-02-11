@@ -469,6 +469,12 @@ tkinter
   a dict instead of a tuple.
   (Contributed by Serhiy Storchaka in :gh:`43457`.)
 
+* Add new optional keyword-only parameter *return_ints* in
+  the :meth:`!Text.count` method.
+  Passing ``return_ints=True`` makes it always returning the single count
+  as an integer instead of a 1-tuple or ``None``.
+  (Contributed by Serhiy Storchaka in :gh:`97928`.)
+
 * Add support of the "vsapi" element type in
   the :meth:`~tkinter.ttk.Style.element_create` method of
   :class:`tkinter.ttk.Style`.
@@ -1285,13 +1291,6 @@ that may require changes to your code.
 
 Changes in the Python API
 -------------------------
-
-* :meth:`!tkinter.Text.count` now always returns an integer if one or less
-  counting options are specified.
-  Previously it could return a single count as a 1-tuple, an integer (only if
-  option ``"update"`` was specified) or ``None`` if no items found.
-  The result is now the same if ``wantobjects`` is set to ``0``.
-  (Contributed by Serhiy Storchaka in :gh:`97928`.)
 
 * Functions :c:func:`PyDict_GetItem`, :c:func:`PyDict_GetItemString`,
   :c:func:`PyMapping_HasKey`, :c:func:`PyMapping_HasKeyString`,
