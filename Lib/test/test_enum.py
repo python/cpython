@@ -4474,7 +4474,7 @@ expected_help_output_without_docs = """\
 Help on class Color in module %s:
 
 class Color(enum.Enum)
- |  Color(value, names=None, *, module=None, qualname=None, type=None, start=1)
+ |  Color(value, names=None, *, module=None, qualname=None, type=None, start=1, boundary=None)
  |\x20\x20
  |  Method resolution order:
  |      Color
@@ -4483,11 +4483,11 @@ class Color(enum.Enum)
  |\x20\x20
  |  Data and other attributes defined here:
  |\x20\x20
- |  YELLOW = <Color.YELLOW: 3>
+ |  CYAN = <Color.CYAN: 1>
  |\x20\x20
  |  MAGENTA = <Color.MAGENTA: 2>
  |\x20\x20
- |  CYAN = <Color.CYAN: 1>
+ |  YELLOW = <Color.YELLOW: 3>
  |\x20\x20
  |  ----------------------------------------------------------------------
  |  Data descriptors inherited from enum.Enum:
@@ -4497,7 +4497,18 @@ class Color(enum.Enum)
  |  value
  |\x20\x20
  |  ----------------------------------------------------------------------
- |  Data descriptors inherited from enum.EnumType:
+ |  Methods inherited from enum.EnumType:
+ |\x20\x20
+ |  __contains__(member) from enum.EnumType
+ |\x20\x20
+ |  __getitem__(name) from enum.EnumType
+ |\x20\x20
+ |  __iter__() from enum.EnumType
+ |\x20\x20
+ |  __len__() from enum.EnumType
+ |\x20\x20
+ |  ----------------------------------------------------------------------
+ |  Readonly properties inherited from enum.EnumType:
  |\x20\x20
  |  __members__"""
 
