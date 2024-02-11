@@ -3374,8 +3374,6 @@ pydec_format(PyObject *dec, PyObject *context, PyObject *fmt, decimal_state *sta
 {
     PyObject *result;
     PyObject *pydec;
-    PyObject *rounding;
-    PyObject *caps;
     PyObject *u;
 
     if (state->PyDecimal == NULL) {
@@ -3396,11 +3394,7 @@ pydec_format(PyObject *dec, PyObject *context, PyObject *fmt, decimal_state *sta
         return NULL;
     }
 
-    rounding = context_getround(context, NULL);
-    caps = context_getcapitals(context, NULL);
-    result = PyObject_CallMethod(pydec, "_fallback_format", "(OOO)", fmt, rounding, caps);
-    Py_DECREF(rounding);
-    Py_DECREF(caps);
+    result = PyObject_CallMethod(pydec, "__format__", "(OO)", fmt, context);
     Py_DECREF(pydec);
 
     if (result == NULL && PyErr_ExceptionMatches(PyExc_ValueError)) {

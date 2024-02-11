@@ -3841,12 +3841,6 @@ class Decimal(object):
         # of the formatting to the _format_number function
         return _format_number(adjusted_sign, intpart, fracpart, exp, spec)
 
-    def _fallback_format(self, specifier, rounding, caps):
-        """returns `__format__(specifier)` using a temporary context"""
-        c = Context(rounding=rounding, capitals=caps)
-        return self.__format__(specifier, c)
-
-
 def _dec_from_triple(sign, coefficient, exponent, special=False):
     """Create a decimal instance directly, without any validation,
     normalization (e.g. removal of leading zeros) or argument
