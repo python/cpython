@@ -1682,13 +1682,6 @@ _PyAsyncGen_ClearFreeLists(_PyFreeListState *freelist_state, int is_finalization
 #endif
 }
 
-void
-_PyAsyncGen_Fini(_PyFreeListState *state)
-{
-    _PyAsyncGen_ClearFreeLists(state, 1);
-}
-
-
 static PyObject *
 async_gen_unwrap_value(PyAsyncGenObject *gen, PyObject *result)
 {

@@ -940,6 +940,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fileno));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(filepath));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fillvalue));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(filter));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(filters));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(final));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(find_class));

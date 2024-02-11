@@ -691,11 +691,10 @@ _parse_object_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ss
             key = scanstring_unicode(pystr, idx + 1, s->strict, &next_idx);
             if (key == NULL)
                 goto bail;
-            memokey = PyDict_SetDefault(memo, key, key);
-            if (memokey == NULL) {
+            if (PyDict_SetDefaultRef(memo, key, key, &memokey) < 0) {
                 goto bail;
             }
-            Py_SETREF(key, Py_NewRef(memokey));
+            Py_SETREF(key, memokey);
             idx = next_idx;
 
             /* skip whitespace between key and : delimiter, read :, skip whitespace */
