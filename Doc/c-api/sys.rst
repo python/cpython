@@ -404,8 +404,7 @@ accessible to C code.  They all work with the current interpreter thread's
    .. c:type:: int (*Py_AuditHookFunction) (const char *event, PyObject *args, void *userData)
 
       The type of the hook function.
-      *event* is the C string event argument passed to :c:func:`PySys_Audit` or
-      :c:func:`PySys_AuditTuple`.
+      *event* is the C string event argument passed to :c:func:`PySys_Audit`.
       *args* is guaranteed to be a :c:type:`PyTupleObject`.
       *userData* is the argument passed to PySys_AddAuditHook().
 
