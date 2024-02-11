@@ -164,7 +164,7 @@ def addLevelName(level, levelName):
         _nameToLevel[levelName] = level
 
 if hasattr(sys, "_getframe"):
-    currentframe = lambda: sys._getframe(3)
+    currentframe = lambda: sys._getframe(1)
 else: #pragma: no cover
     def currentframe():
         """Return the frame object for the caller's stack frame."""
@@ -1830,6 +1830,7 @@ class RootLogger(Logger):
 
 _loggerClass = Logger
 
+
 class LoggerAdapter(object):
     """
     An adapter for loggers which makes it easier to specify contextual
@@ -1880,50 +1881,56 @@ class LoggerAdapter(object):
     #
     # Boilerplate convenience methods
     #
-    def debug(self, msg, *args, **kwargs):
+    def debug(self, msg, *args, stacklevel=1, **kwargs):
         """
         Delegate a debug call to the underlying logger.
         """
-        self.log(DEBUG, msg, *args, **kwargs)
+        self._log(DEBUG, msg, *args, stacklevel=stacklevel + 1, **kwargs)
 
-    def info(self, msg, *args, **kwargs):
+    def info(self, msg, *args, stacklevel=1, **kwargs):
         """
         Delegate an info call to the underlying logger.
         """
-        self.log(INFO, msg, *args, **kwargs)
+        self._log(INFO, msg, *args, stacklevel=stacklevel + 1, **kwargs)
 
-    def warning(self, msg, *args, **kwargs):
+    def warning(self, msg, *args, stacklevel=1, **kwargs):
         """
         Delegate a warning call to the underlying logger.
         """
-        self.log(WARNING, msg, *args, **kwargs)
+        self._log(WARNING, msg, *args, stacklevel=stacklevel + 1, **kwargs)
 
-    def error(self, msg, *args, **kwargs):
+    def error(self, msg, *args, stacklevel=1, **kwargs):
         """
         Delegate an error call to the underlying logger.
         """
-        self.log(ERROR, msg, *args, **kwargs)
+        self._log(ERROR, msg, *args, stacklevel=stacklevel + 1, **kwargs)
 
-    def exception(self, msg, *args, exc_info=True, **kwargs):
+    def exception(self, msg, *args, stacklevel=1, exc_info=True, **kwargs):
         """
         Delegate an exception call to the underlying logger.
         """
-        self.log(ERROR, msg, *args, exc_info=exc_info, **kwargs)
+        self._log(ERROR, msg, *args, stacklevel=stacklevel + 1, exc_info=exc_info, **kwargs)
 
-    def critical(self, msg, *args, **kwargs):
+    def critical(self, msg, *args, stacklevel=1, **kwargs):
         """
         Delegate a critical call to the underlying logger.
         """
-        self.log(CRITICAL, msg, *args, **kwargs)
+        self._log(CRITICAL, msg, *args, stacklevel=stacklevel + 1, **kwargs)
 
-    def log(self, level, msg, *args, **kwargs):
+    def log(self, level, msg, *args, stacklevel=1, **kwargs):
         """
         Delegate a log call to the underlying logger, after adding
         contextual information from this adapter instance.
         """
+        self._log(level, msg, *args, stacklevel=stacklevel + 1, **kwargs)
+
+    def _log(self, level, msg, *args, stacklevel=1, **kwargs):
+        """
+        Low-level log implementation, proxied to allow nested logger adapters.
+        """
         if self.isEnabledFor(level):
             msg, kwargs = self.process(msg, kwargs)
-            self.logger.log(level, msg, *args, **kwargs)
+            self.logger._log(level, msg, args, **kwargs, stacklevel=stacklevel + 1)
 
     def isEnabledFor(self, level):
         """
@@ -1949,19 +1956,6 @@ class LoggerAdapter(object):
         """
         return self.logger.hasHandlers()
 
-    def _log(self, level, msg, args, exc_info=None, extra=None, stack_info=False):
-        """
-        Low-level log implementation, proxied to allow nested logger adapters.
-        """
-        return self.logger._log(
-            level,
-            msg,
-            args,
-            exc_info=exc_info,
-            extra=extra,
-            stack_info=stack_info,
-        )
-
     @property
     def manager(self):
         return self.logger.manager
@@ -1980,6 +1974,7 @@ class LoggerAdapter(object):
         return '<%s %s (%s)>' % (self.__class__.__name__, logger.name, level)
 
     __class_getitem__ = classmethod(GenericAlias)
+
 
 root = RootLogger(WARNING)
 Logger.root = root
