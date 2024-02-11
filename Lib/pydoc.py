@@ -204,6 +204,19 @@ def classname(object, modname):
         name = object.__module__ + '.' + name
     return name
 
+def parentname(object, modname):
+    """Get a name of the enclosing class (qualified it with a module name
+    if necessary) or module."""
+    if '.' in object.__qualname__:
+        name = object.__qualname__.rpartition('.')[0]
+        if object.__module__ != modname:
+            return object.__module__ + '.' + name
+        else:
+            return name
+    else:
+        if object.__module__ != modname:
+            return object.__module__
+
 def isdata(object):
     """Check if an object is of a type that probably means it's data."""
     return not (inspect.ismodule(object) or inspect.isclass(object) or
@@ -298,13 +311,15 @@ def visiblename(name, all=None, obj=None):
         return not name.startswith('_')
 
 def classify_class_attrs(object):
-    """Wrap inspect.classify_class_attrs, with fixup for data descriptors."""
+    """Wrap inspect.classify_class_attrs, with fixup for data descriptors and bound methods."""
     results = []
     for (name, kind, cls, value) in inspect.classify_class_attrs(object):
         if inspect.isdatadescriptor(value):
             kind = 'data descriptor'
             if isinstance(value, property) and value.fset is None:
                 kind = 'readonly property'
+        elif kind == 'method' and _is_bound_method(value):
+            kind = 'static method'
         results.append((name, kind, cls, value))
     return results
 
@@ -658,6 +673,25 @@ class HTMLDoc(Doc):
                 module.__name__, name, classname(object, modname))
         return classname(object, modname)
 
+    def parentlink(self, object, modname):
+        """Make a link for the enclosing class or module."""
+        link = None
+        name, module = object.__name__, sys.modules.get(object.__module__)
+        if hasattr(module, name) and getattr(module, name) is object:
+            if '.' in object.__qualname__:
+                name = object.__qualname__.rpartition('.')[0]
+                if object.__module__ != modname:
+                    link = '%s.html#%s' % (module.__name__, name)
+                else:
+                    link = '#%s' % name
+            else:
+                if object.__module__ != modname:
+                    link = '%s.html' % module.__name__
+        if link:
+            return '<a href="%s">%s</a>' % (link, parentname(object, modname))
+        else:
+            return parentname(object, modname)
+
     def modulelink(self, object):
         """Make a link for a module."""
         return '<a href="%s.html">%s</a>' % (object.__name__, object.__name__)
@@ -902,7 +936,7 @@ class HTMLDoc(Doc):
                         push(self.docdata(value, name, mod))
                     else:
                         push(self.document(value, name, mod,
-                                        funcs, classes, mdict, object))
+                                        funcs, classes, mdict, object, homecls))
                     push('\n')
             return attrs
 
@@ -1025,24 +1059,44 @@ class HTMLDoc(Doc):
         return self.grey('=' + self.repr(object))
 
     def docroutine(self, object, name=None, mod=None,
-                   funcs={}, classes={}, methods={}, cl=None):
+                   funcs={}, classes={}, methods={}, cl=None, homecls=None):
         """Produce HTML documentation for a function or method object."""
         realname = object.__name__
         name = name or realname
-        anchor = (cl and cl.__name__ or '') + '-' + name
+        if homecls is None:
+            homecls = cl
+        anchor = ('' if cl is None else cl.__name__) + '-' + name
         note = ''
-        skipdocs = 0
+        skipdocs = False
+        imfunc = None
         if _is_bound_method(object):
-            imclass = object.__self__.__class__
-            if cl:
-                if imclass is not cl:
-                    note = ' from ' + self.classlink(imclass, mod)
+            imself = object.__self__
+            if imself is cl:
+                imfunc = getattr(object, '__func__', None)
+            elif inspect.isclass(imself):
+                note = ' class method of %s' % self.classlink(imself, mod)
             else:
-                if object.__self__ is not None:
-                    note = ' method of %s instance' % self.classlink(
-                        object.__self__.__class__, mod)
-                else:
-                    note = ' unbound %s method' % self.classlink(imclass,mod)
+                note = ' method of %s instance' % self.classlink(
+                    imself.__class__, mod)
+        elif (inspect.ismethoddescriptor(object) or
+              inspect.ismethodwrapper(object)):
+            try:
+                objclass = object.__objclass__
+            except AttributeError:
+                pass
+            else:
+                if cl is None:
+                    note = ' unbound %s method' % self.classlink(objclass, mod)
+                elif objclass is not homecls:
+                    note = ' from ' + self.classlink(objclass, mod)
+        else:
+            imfunc = object
+        if inspect.isfunction(imfunc) and homecls is not None and (
+            imfunc.__module__ != homecls.__module__ or
+            imfunc.__qualname__ != homecls.__qualname__ + '.' + realname):
+            pname = self.parentlink(imfunc, mod)
+            if pname:
+                note = ' from %s' % pname
 
         if (inspect.iscoroutinefunction(object) or
                 inspect.isasyncgenfunction(object)):
@@ -1053,10 +1107,13 @@ class HTMLDoc(Doc):
         if name == realname:
             title = '<a name="%s"><strong>%s</strong></a>' % (anchor, realname)
         else:
-            if cl and inspect.getattr_static(cl, realname, []) is object:
+            if (cl is not None and
+                inspect.getattr_static(cl, realname, []) is object):
                 reallink = '<a href="#%s">%s</a>' % (
                     cl.__name__ + '-' + realname, realname)
-                skipdocs = 1
+                skipdocs = True
+                if note.startswith(' from '):
+                    note = ''
             else:
                 reallink = realname
             title = '<a name="%s"><strong>%s</strong></a> = %s' % (
@@ -1089,7 +1146,7 @@ class HTMLDoc(Doc):
             doc = doc and '<dd><span class="code">%s</span></dd>' % doc
             return '<dl><dt>%s</dt>%s</dl>\n' % (decl, doc)
 
-    def docdata(self, object, name=None, mod=None, cl=None):
+    def docdata(self, object, name=None, mod=None, cl=None, *ignored):
         """Produce html documentation for a data descriptor."""
         results = []
         push = results.append
@@ -1200,7 +1257,7 @@ class TextDoc(Doc):
                     entry, modname, c, prefix + '    ')
         return result
 
-    def docmodule(self, object, name=None, mod=None):
+    def docmodule(self, object, name=None, mod=None, *ignored):
         """Produce text documentation for a given module object."""
         name = object.__name__ # ignore the passed-in name
         synop, desc = splitdoc(getdoc(object))
@@ -1384,7 +1441,7 @@ location listed above.
                         push(self.docdata(value, name, mod))
                     else:
                         push(self.document(value,
-                                        name, mod, object))
+                                        name, mod, object, homecls))
             return attrs
 
         def spilldescriptors(msg, attrs, predicate):
@@ -1459,23 +1516,43 @@ location listed above.
         """Format an argument default value as text."""
         return '=' + self.repr(object)
 
-    def docroutine(self, object, name=None, mod=None, cl=None):
+    def docroutine(self, object, name=None, mod=None, cl=None, homecls=None):
         """Produce text documentation for a function or method object."""
         realname = object.__name__
         name = name or realname
+        if homecls is None:
+            homecls = cl
         note = ''
-        skipdocs = 0
+        skipdocs = False
+        imfunc = None
         if _is_bound_method(object):
-            imclass = object.__self__.__class__
-            if cl:
-                if imclass is not cl:
-                    note = ' from ' + classname(imclass, mod)
+            imself = object.__self__
+            if imself is cl:
+                imfunc = getattr(object, '__func__', None)
+            elif inspect.isclass(imself):
+                note = ' class method of %s' % classname(imself, mod)
             else:
-                if object.__self__ is not None:
-                    note = ' method of %s instance' % classname(
-                        object.__self__.__class__, mod)
-                else:
-                    note = ' unbound %s method' % classname(imclass,mod)
+                note = ' method of %s instance' % classname(
+                    imself.__class__, mod)
+        elif (inspect.ismethoddescriptor(object) or
+              inspect.ismethodwrapper(object)):
+            try:
+                objclass = object.__objclass__
+            except AttributeError:
+                pass
+            else:
+                if cl is None:
+                    note = ' unbound %s method' % classname(objclass, mod)
+                elif objclass is not homecls:
+                    note = ' from ' + classname(objclass, mod)
+        else:
+            imfunc = object
+        if inspect.isfunction(imfunc) and homecls is not None and (
+            imfunc.__module__ != homecls.__module__ or
+            imfunc.__qualname__ != homecls.__qualname__ + '.' + realname):
+            pname = parentname(imfunc, mod)
+            if pname:
+                note = ' from %s' % pname
 
         if (inspect.iscoroutinefunction(object) or
                 inspect.isasyncgenfunction(object)):
@@ -1486,8 +1563,11 @@ location listed above.
         if name == realname:
             title = self.bold(realname)
         else:
-            if cl and inspect.getattr_static(cl, realname, []) is object:
-                skipdocs = 1
+            if (cl is not None and
+                inspect.getattr_static(cl, realname, []) is object):
+                skipdocs = True
+                if note.startswith(' from '):
+                    note = ''
             title = self.bold(name) + ' = ' + realname
         argspec = None
 
@@ -1514,7 +1594,7 @@ location listed above.
             doc = getdoc(object) or ''
             return decl + '\n' + (doc and self.indent(doc).rstrip() + '\n')
 
-    def docdata(self, object, name=None, mod=None, cl=None):
+    def docdata(self, object, name=None, mod=None, cl=None, *ignored):
         """Produce text documentation for a data descriptor."""
         results = []
         push = results.append
@@ -1530,7 +1610,8 @@ location listed above.
 
     docproperty = docdata
 
-    def docother(self, object, name=None, mod=None, parent=None, maxlen=None, doc=None):
+    def docother(self, object, name=None, mod=None, parent=None, *ignored,
+                 maxlen=None, doc=None):
         """Produce text documentation for a data object."""
         repr = self.repr(object)
         if maxlen:
