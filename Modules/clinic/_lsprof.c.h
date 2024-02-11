@@ -71,7 +71,7 @@ _lsprof_Profiler__pystart_callback(ProfilerObject *self, PyTypeObject *cls, PyOb
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 3
+    #define NUM_KEYWORDS 2
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -133,7 +133,7 @@ _lsprof_Profiler__pyreturn_callback(ProfilerObject *self, PyTypeObject *cls, PyO
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 4
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -197,7 +197,7 @@ _lsprof_Profiler__ccall_callback(ProfilerObject *self, PyTypeObject *cls, PyObje
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 5
+    #define NUM_KEYWORDS 4
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -265,7 +265,7 @@ _lsprof_Profiler__creturn_callback(ProfilerObject *self, PyTypeObject *cls, PyOb
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 5
+    #define NUM_KEYWORDS 4
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -335,7 +335,7 @@ _lsprof_Profiler_enable(ProfilerObject *self, PyTypeObject *cls, PyObject *const
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 3
+    #define NUM_KEYWORDS 2
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -429,4 +429,4 @@ _lsprof_Profiler_clear(ProfilerObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _lsprof_Profiler_clear_impl(self);
 }
-/*[clinic end generated code: output=93734254d71b6773 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fe970481919361bf input=a9049054013a1b77]*/

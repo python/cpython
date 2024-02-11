@@ -521,6 +521,7 @@ static int statsForEntry(rotating_node_t *node, void *arg)
 _lsprof.Profiler.getstats
 
     cls: defining_class
+    /
 
 list of profiler_entry objects.
 
@@ -598,18 +599,17 @@ setBuiltins(ProfilerObject *pObj, int nvalue)
 
 /*[clinic input]
 _lsprof.Profiler._pystart_callback
-
     cls: defining_class
+    /
     code: object
     instruction_offset: int
-
 [clinic start generated code]*/
 
 static PyObject *
 _lsprof_Profiler__pystart_callback_impl(ProfilerObject *self,
                                         PyTypeObject *cls, PyObject *code,
                                         int instruction_offset)
-/*[clinic end generated code: output=18c97a9f41e8dd68 input=9a52e348d39c8b79]*/
+/*[clinic end generated code: output=18c97a9f41e8dd68 input=ab8b4e94ed02f782]*/
 {
     ptrace_enter_call((PyObject*)self, (void *)code, (PyObject *)code);
 
@@ -618,12 +618,11 @@ _lsprof_Profiler__pystart_callback_impl(ProfilerObject *self,
 
 /*[clinic input]
 _lsprof.Profiler._pyreturn_callback
-
     cls: defining_class
+    /
     code: object
     instruction_offset: int
     retval: object
-
 [clinic start generated code]*/
 
 static PyObject *
@@ -631,7 +630,7 @@ _lsprof_Profiler__pyreturn_callback_impl(ProfilerObject *self,
                                          PyTypeObject *cls, PyObject *code,
                                          int instruction_offset,
                                          PyObject *retval)
-/*[clinic end generated code: output=6d798ecfcd20ca7d input=3b5f03997ea10d90]*/
+/*[clinic end generated code: output=6d798ecfcd20ca7d input=560dd9213f4d9b17]*/
 {
     ptrace_leave_call((PyObject*)self, (void *)code);
 
@@ -667,13 +666,12 @@ PyObject* get_cfunc_from_callable(PyObject* callable, PyObject* self_arg, PyObje
 
 /*[clinic input]
 _lsprof.Profiler._ccall_callback
-
     cls: defining_class
+    /
     code: object
     instruction_offset: int
     callable: object
     self_arg: object
-
 [clinic start generated code]*/
 
 static PyObject *
@@ -681,7 +679,7 @@ _lsprof_Profiler__ccall_callback_impl(ProfilerObject *self,
                                       PyTypeObject *cls, PyObject *code,
                                       int instruction_offset,
                                       PyObject *callable, PyObject *self_arg)
-/*[clinic end generated code: output=b505501f78e9b4b6 input=722128bc0faa9ca2]*/
+/*[clinic end generated code: output=b505501f78e9b4b6 input=60eb261659ed4b81]*/
 {
     if (self->flags & POF_BUILTINS) {
 
@@ -699,13 +697,12 @@ _lsprof_Profiler__ccall_callback_impl(ProfilerObject *self,
 
 /*[clinic input]
 _lsprof.Profiler._creturn_callback
-
     cls: defining_class
+    /
     code: object
     instruction_offset: int
     callable: object
     self_arg: object
-
 [clinic start generated code]*/
 
 static PyObject *
@@ -714,7 +711,7 @@ _lsprof_Profiler__creturn_callback_impl(ProfilerObject *self,
                                         int instruction_offset,
                                         PyObject *callable,
                                         PyObject *self_arg)
-/*[clinic end generated code: output=4647808fadffcfdb input=fc695ffb36ce0e4a]*/
+/*[clinic end generated code: output=4647808fadffcfdb input=d50d45d197c9218f]*/
 {
     if (self->flags & POF_BUILTINS) {
 
@@ -749,8 +746,8 @@ static const struct {
 
 /*[clinic input]
 _lsprof.Profiler.enable
-
     cls: defining_class
+    /
     subclass: bool = True
     builtins: bool = True
 
@@ -765,7 +762,7 @@ built-in functions separately from their caller.
 static PyObject *
 _lsprof_Profiler_enable_impl(ProfilerObject *self, PyTypeObject *cls,
                              int subclass, int builtins)
-/*[clinic end generated code: output=fd728a3f2aebd1ab input=83411b9d1486d8d6]*/
+/*[clinic end generated code: output=fd728a3f2aebd1ab input=740c799bccb56181]*/
 {
     int all_events = 0;
 
@@ -823,15 +820,15 @@ flush_unmatched(ProfilerObject *pObj)
 
 /*[clinic input]
 _lsprof.Profiler.disable
-
     cls: defining_class
+    /
 
 Stop collecting profiling information.
 [clinic start generated code]*/
 
 static PyObject *
 _lsprof_Profiler_disable_impl(ProfilerObject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=5e8e1b3df7fc0923 input=e14fc1835664fe9c]*/
+/*[clinic end generated code: output=5e8e1b3df7fc0923 input=e53b58786d88e721]*/
 {
     if (self->flags & POF_ENABLED) {
         PyObject* result = NULL;
