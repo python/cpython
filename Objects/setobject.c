@@ -645,6 +645,7 @@ set_merge(PySetObject *so, PyObject *otherset)
 }
 
 /*[clinic input]
+@critical_section
 set.pop
     so: setobject
 
@@ -655,7 +656,7 @@ Raises KeyError if the set is empty.
 
 static PyObject *
 set_pop_impl(PySetObject *so)
-/*[clinic end generated code: output=4d65180f1271871b input=4a3f5552e660a260]*/
+/*[clinic end generated code: output=4d65180f1271871b input=9296c84921125060]*/
 {
     /* Make sure the search finger is in bounds */
     setentry *entry = so->table + (so->finger & so->mask);
@@ -1126,6 +1127,7 @@ set_swap_bodies(PySetObject *a, PySetObject *b)
 }
 
 /*[clinic input]
+@critical_section
 set.copy
     so: setobject
 
@@ -1134,12 +1136,13 @@ Return a shallow copy of a set.
 
 static PyObject *
 set_copy_impl(PySetObject *so)
-/*[clinic end generated code: output=c9223a1e1cc6b041 input=2b80b288d47b8cf1]*/
+/*[clinic end generated code: output=c9223a1e1cc6b041 input=c169a4fbb8209257]*/
 {
     return make_new_set_basetype(Py_TYPE(so), (PyObject *)so);
 }
 
 /*[clinic input]
+@critical_section
 frozenset.copy
     so: setobject
 
@@ -1148,7 +1151,7 @@ Return a shallow copy of a set.
 
 static PyObject *
 frozenset_copy_impl(PySetObject *so)
-/*[clinic end generated code: output=b356263526af9e70 input=3dc65577d344eff7]*/
+/*[clinic end generated code: output=b356263526af9e70 input=fbf5bef131268dd7]*/
 {
     if (PyFrozenSet_CheckExact(so)) {
         return Py_NewRef(so);
@@ -1157,6 +1160,7 @@ frozenset_copy_impl(PySetObject *so)
 }
 
 /*[clinic input]
+@critical_section
 set.clear
     so: setobject
 
@@ -1165,7 +1169,7 @@ Remove all elements from this set.
 
 static PyObject *
 set_clear_impl(PySetObject *so)
-/*[clinic end generated code: output=4e71d5a83904161a input=74ac19794da81a39]*/
+/*[clinic end generated code: output=4e71d5a83904161a input=c6f831b366111950]*/
 {
     set_clear_internal(so);
     Py_RETURN_NONE;
@@ -1408,6 +1412,7 @@ set_iand(PySetObject *so, PyObject *other)
 }
 
 /*[clinic input]
+@critical_section so other
 set.isdisjoint
     so: setobject
     other: object
@@ -1417,8 +1422,8 @@ Return True if two sets have a null intersection.
 [clinic start generated code]*/
 
 static PyObject *
-set_isdisjoint(PySetObject *so, PyObject *other)
-/*[clinic end generated code: output=a92bbf9a2db6a3da input=c254ddec8a2326e3]*/
+set_isdisjoint_impl(PySetObject *so, PyObject *other)
+/*[clinic end generated code: output=273493f2d57c565e input=32f8dcab5e0fc7d6]*/
 {
     PyObject *key, *it, *tmp;
     int rv;
@@ -1727,6 +1732,7 @@ set_symmetric_difference_update_dict(PySetObject *so, PyObject *other)
 }
 
 /*[clinic input]
+@critical_section so other
 set.symmetric_difference_update
     so: setobject
     other: object
@@ -1736,8 +1742,8 @@ Update the set, keeping only elements found in either set, but not in both.
 [clinic start generated code]*/
 
 static PyObject *
-set_symmetric_difference_update(PySetObject *so, PyObject *other)
-/*[clinic end generated code: output=fbb049c0806028de input=a50acf0365e1f0a5]*/
+set_symmetric_difference_update_impl(PySetObject *so, PyObject *other)
+/*[clinic end generated code: output=79f80b4ee5da66c1 input=34c143ee8c2ba08b]*/
 {
     PySetObject *otherset;
     PyObject *key;
@@ -1791,6 +1797,7 @@ set_symmetric_difference_update(PySetObject *so, PyObject *other)
 }
 
 /*[clinic input]
+@critical_section so other
 set.symmetric_difference
     so: setobject
     other: object
@@ -1800,8 +1807,8 @@ Return a new set with elements in either the set or other but not both.
 [clinic start generated code]*/
 
 static PyObject *
-set_symmetric_difference(PySetObject *so, PyObject *other)
-/*[clinic end generated code: output=f95364211b88775a input=f18af370ad72ebac]*/
+set_symmetric_difference_impl(PySetObject *so, PyObject *other)
+/*[clinic end generated code: output=270ee0b5d42b0797 input=624f6e7bbdf70db1]*/
 {
     PyObject *rv;
     PySetObject *otherset;
@@ -1841,6 +1848,7 @@ set_ixor(PySetObject *so, PyObject *other)
 }
 
 /*[clinic input]
+@critical_section so other
 set.issubset
     so: setobject
     other: object
@@ -1850,8 +1858,8 @@ Report whether another set contains this set.
 [clinic start generated code]*/
 
 static PyObject *
-set_issubset(PySetObject *so, PyObject *other)
-/*[clinic end generated code: output=78aef1f377aedef1 input=37fbc579b609db0c]*/
+set_issubset_impl(PySetObject *so, PyObject *other)
+/*[clinic end generated code: output=b2b59d5f314555ce input=f2a4fd0f2537758b]*/
 {
     setentry *entry;
     Py_ssize_t pos = 0;
@@ -1885,6 +1893,7 @@ set_issubset(PySetObject *so, PyObject *other)
 }
 
 /*[clinic input]
+@critical_section so other
 set.issuperset
     so: setobject
     other: object
@@ -1894,8 +1903,8 @@ Report whether this set contains another set.
 [clinic start generated code]*/
 
 static PyObject *
-set_issuperset(PySetObject *so, PyObject *other)
-/*[clinic end generated code: output=7d2b71dd714a7ec7 input=fd5dab052f2e9bb3]*/
+set_issuperset_impl(PySetObject *so, PyObject *other)
+/*[clinic end generated code: output=ecf00ce552c09461 input=5f2e1f262e6e4ccc]*/
 {
     if (PyAnySet_Check(other)) {
         return set_issubset((PySetObject *)other, (PyObject *)so);
@@ -1968,6 +1977,7 @@ set_richcompare(PySetObject *v, PyObject *w, int op)
 }
 
 /*[clinic input]
+@critical_section
 set.add
     so: setobject
     object as key: object
@@ -1979,8 +1989,8 @@ This has no effect if the element is already present.
 [clinic start generated code]*/
 
 static PyObject *
-set_add(PySetObject *so, PyObject *key)
-/*[clinic end generated code: output=cd9c2d5c2069c2ba input=96f1efe029e47972]*/
+set_add_impl(PySetObject *so, PyObject *key)
+/*[clinic end generated code: output=4cc4a937f1425c96 input=03baf62cb0e66514]*/
 {
     if (set_add_key(so, key))
         return NULL;
@@ -2008,6 +2018,7 @@ set_contains(PySetObject *so, PyObject *key)
 }
 
 /*[clinic input]
+@critical_section
 @coexist
 set.__contains__
     so: setobject
@@ -2018,8 +2029,8 @@ x.__contains__(y) <==> y in x.
 [clinic start generated code]*/
 
 static PyObject *
-set___contains__(PySetObject *so, PyObject *key)
-/*[clinic end generated code: output=b5948bc5c590d3ca input=cf4c72db704e4cf0]*/
+set___contains___impl(PySetObject *so, PyObject *key)
+/*[clinic end generated code: output=b44863d034b3c70e input=4a7d568459617f24]*/
 {
     long result;
 
@@ -2030,6 +2041,7 @@ set___contains__(PySetObject *so, PyObject *key)
 }
 
 /*[clinic input]
+@critical_section
 set.remove
     so: setobject
     object as key: object
@@ -2041,8 +2053,8 @@ If the element is not a member, raise a KeyError.
 [clinic start generated code]*/
 
 static PyObject *
-set_remove(PySetObject *so, PyObject *key)
-/*[clinic end generated code: output=08ae496d0cd2b8c1 input=10132515dfe8ebd7]*/
+set_remove_impl(PySetObject *so, PyObject *key)
+/*[clinic end generated code: output=0b9134a2a2200363 input=893e1cb1df98227a]*/
 {
     PyObject *tmpkey;
     int rv;
@@ -2069,6 +2081,7 @@ set_remove(PySetObject *so, PyObject *key)
 }
 
 /*[clinic input]
+@critical_section
 set.discard
     so: setobject
     object as key: object
@@ -2081,8 +2094,8 @@ an exception when an element is missing from the set.
 [clinic start generated code]*/
 
 static PyObject *
-set_discard(PySetObject *so, PyObject *key)
-/*[clinic end generated code: output=9181b60d7bb7d480 input=82a689eba94d5ad9]*/
+set_discard_impl(PySetObject *so, PyObject *key)
+/*[clinic end generated code: output=eec3b687bf32759e input=861cb7fb69b4def0]*/
 {
     PyObject *tmpkey;
     int rv;
@@ -2104,6 +2117,7 @@ set_discard(PySetObject *so, PyObject *key)
 }
 
 /*[clinic input]
+@critical_section
 set.__reduce__
     so: setobject
 
@@ -2112,7 +2126,7 @@ Return state information for pickling.
 
 static PyObject *
 set___reduce___impl(PySetObject *so)
-/*[clinic end generated code: output=9af7d0e029df87ee input=531375e87a24a449]*/
+/*[clinic end generated code: output=9af7d0e029df87ee input=59405a4249e82f71]*/
 {
     PyObject *keys=NULL, *args=NULL, *result=NULL, *state=NULL;
 
@@ -2134,6 +2148,7 @@ done:
 }
 
 /*[clinic input]
+@critical_section
 set.__sizeof__
     so: setobject
 
@@ -2142,7 +2157,7 @@ S.__sizeof__() -> size of S in memory, in bytes.
 
 static PyObject *
 set___sizeof___impl(PySetObject *so)
-/*[clinic end generated code: output=4bfa3df7bd38ed88 input=0f214fc2225319fc]*/
+/*[clinic end generated code: output=4bfa3df7bd38ed88 input=09e1a09f168eaa23]*/
 {
     size_t res = _PyObject_SIZE(Py_TYPE(so));
     if (so->table != so->smalltable) {
