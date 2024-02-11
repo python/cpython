@@ -519,7 +519,6 @@ static int statsForEntry(rotating_node_t *node, void *arg)
 
 /*[clinic input]
 _lsprof.Profiler.getstats
-
     cls: defining_class
     /
 
@@ -550,7 +549,7 @@ profiler_subentry objects:
 
 static PyObject *
 _lsprof_Profiler_getstats_impl(ProfilerObject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=1806ef720019ee03 input=445e193ef4522902]*/
+/*[clinic end generated code: output=1806ef720019ee03 input=a66d05fbc92b6861]*/
 {
     statscollector_t collect;
     collect.state = _PyType_GetModuleState(cls);
@@ -630,7 +629,7 @@ _lsprof_Profiler__pyreturn_callback_impl(ProfilerObject *self,
                                          PyTypeObject *cls, PyObject *code,
                                          int instruction_offset,
                                          PyObject *retval)
-/*[clinic end generated code: output=6d798ecfcd20ca7d input=560dd9213f4d9b17]*/
+/*[clinic end generated code: output=6d798ecfcd20ca7d input=0950f661a3ff4304]*/
 {
     ptrace_leave_call((PyObject*)self, (void *)code);
 
@@ -679,7 +678,7 @@ _lsprof_Profiler__ccall_callback_impl(ProfilerObject *self,
                                       PyTypeObject *cls, PyObject *code,
                                       int instruction_offset,
                                       PyObject *callable, PyObject *self_arg)
-/*[clinic end generated code: output=b505501f78e9b4b6 input=60eb261659ed4b81]*/
+/*[clinic end generated code: output=b505501f78e9b4b6 input=72b4c825f0162b76]*/
 {
     if (self->flags & POF_BUILTINS) {
 
@@ -696,13 +695,7 @@ _lsprof_Profiler__ccall_callback_impl(ProfilerObject *self,
 }
 
 /*[clinic input]
-_lsprof.Profiler._creturn_callback
-    cls: defining_class
-    /
-    code: object
-    instruction_offset: int
-    callable: object
-    self_arg: object
+_lsprof.Profiler._creturn_callback = _lsprof.Profiler._ccall_callback
 [clinic start generated code]*/
 
 static PyObject *
@@ -711,7 +704,7 @@ _lsprof_Profiler__creturn_callback_impl(ProfilerObject *self,
                                         int instruction_offset,
                                         PyObject *callable,
                                         PyObject *self_arg)
-/*[clinic end generated code: output=4647808fadffcfdb input=d50d45d197c9218f]*/
+/*[clinic end generated code: output=4647808fadffcfdb input=7b5a200798ba4798]*/
 {
     if (self->flags & POF_BUILTINS) {
 
@@ -762,7 +755,7 @@ built-in functions separately from their caller.
 static PyObject *
 _lsprof_Profiler_enable_impl(ProfilerObject *self, PyTypeObject *cls,
                              int subclass, int builtins)
-/*[clinic end generated code: output=fd728a3f2aebd1ab input=740c799bccb56181]*/
+/*[clinic end generated code: output=fd728a3f2aebd1ab input=754c80dbfb9ea99d]*/
 {
     int all_events = 0;
 
