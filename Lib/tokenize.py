@@ -215,8 +215,9 @@ class Untokenizer:
             elif tok_type == FSTRING_MIDDLE:
                 if '{' in token or '}' in token:
                     end_line, end_col = end
-                    token = re.sub(r'(?<!\\N){([^{}]*)}', r'{{\1}}', token)
-                    end = (end_line, end_col + token.count('{') + token.count('}') - 2)
+                    end = (end_line, end_col + token.count('{') + token.count('}'))
+                    token = re.sub('{', '{{', token)
+                    token = re.sub('}', '}}', token)
 
 
             self.add_whitespace(start)
@@ -263,7 +264,8 @@ class Untokenizer:
                 startline = False
             elif toknum == FSTRING_MIDDLE:
                 if '{' in tokval or '}' in tokval:
-                    tokval = re.sub(r'(?<!\\N){([^{}]*)}', r'{{\1}}', tokval)
+                    tokval = re.sub('{', '{{', tokval)
+                    tokval = re.sub('}', '}}', tokval)
 
             toks_append(tokval)
 
