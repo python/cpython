@@ -2397,20 +2397,19 @@ class ThreadedEchoServer(threading.Thread):
                         self.write(msg.lower())
                 except OSError as e:
                     # handles SSLError and socket errors
-                    if self.server.chatty and support.verbose:
-                        if isinstance(e, ConnectionError):
-                            # OpenSSL 1.1.1 sometimes raises
-                            # ConnectionResetError when connection is not
-                            # shut down gracefully.
-                            print(
-                                f" Connection reset by peer: {self.addr}"
-                            )
+                    if isinstance(e, ConnectionError):
+                        # OpenSSL 1.1.1 sometimes raises
+                        # ConnectionResetError when connection is not
+                        # shut down gracefully.
+                        print(
+                            f" Connection reset by peer: {self.addr}"
+                        )
 
-                            self.close()
-                            self.running = False
-                            return
-                        else:
-                            handle_error("Test server failure:\n")
+                        self.close()
+                        self.running = False
+                        return
+                    if self.server.chatty and support.verbose:
+                        handle_error("Test server failure:\n")
                     try:
                         self.write(b"ERROR\n")
                     except OSError:
