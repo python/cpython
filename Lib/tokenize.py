@@ -291,7 +291,7 @@ class Untokenizer:
             elif toknum == FSTRING_MIDDLE:
                 tokval = self.escape_brackets(tokval)
 
-            # Insert a space between two consecutive brackets if e are in an f-string
+            # Insert a space between two consecutive brackets if we are in an f-string
             if tokval in {"{", "}"} and self.tokens and self.tokens[-1] == tokval and in_fstring:
                 tokval = ' ' + tokval
 
