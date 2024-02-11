@@ -18,6 +18,7 @@ except ImportError:
 
 from unittest import TestCase, skipUnless
 from test import support
+from test.support import requires_subprocess
 from test.support import threading_helper
 from test.support import socket_helper
 from test.support import warnings_helper
@@ -900,6 +901,7 @@ class TestIPv6Environment(TestCase):
 
 
 @skipUnless(ssl, "SSL not available")
+@requires_subprocess()
 class TestTLS_FTPClassMixin(TestFTPClass):
     """Repeat TestFTPClass tests starting the TLS layer for both control
     and data connections first.
@@ -916,6 +918,7 @@ class TestTLS_FTPClassMixin(TestFTPClass):
 
 
 @skipUnless(ssl, "SSL not available")
+@requires_subprocess()
 class TestTLS_FTPClass(TestCase):
     """Specific TLS_FTP class tests."""
 

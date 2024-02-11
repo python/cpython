@@ -412,6 +412,14 @@ class Stats:
         rows.sort()
         return rows
 
+    def get_rare_events(self) -> list[tuple[str, int]]:
+        prefix = "Rare event "
+        return [
+            (key[len(prefix) + 1:-1], val)
+            for key, val in self._data.items()
+            if key.startswith(prefix)
+        ]
+
 
 class Count(int):
     def markdown(self) -> str:
@@ -460,8 +468,11 @@ class JoinMode(enum.Enum):
     # second column of each input table as a new column
     CHANGE = 1
     # Join using the first column as a key, indicating the change in the second
-    # column of each input table as a ne column, and omit all other columns
+    # column of each input table as a new column, and omit all other columns
     CHANGE_ONE_COLUMN = 2
+    # Join using the first column as a key, and indicate the change as a new
+    # column, but don't sort by the amount of change.
+    CHANGE_NO_SORT = 3
 
 
 class Table:
@@ -484,7 +495,7 @@ class Table:
         match self.join_mode:
             case JoinMode.SIMPLE:
                 return (key, *row_a, *row_b)
-            case JoinMode.CHANGE:
+            case JoinMode.CHANGE | JoinMode.CHANGE_NO_SORT:
                 return (key, *row_a, *row_b, DiffRatio(row_a[0], row_b[0]))
             case JoinMode.CHANGE_ONE_COLUMN:
                 return (key, row_a[0], row_b[0], DiffRatio(row_a[0], row_b[0]))
@@ -497,7 +508,7 @@ class Table:
                     *("Base " + x for x in columns[1:]),
                     *("Head " + x for x in columns[1:]),
                 )
-            case JoinMode.CHANGE:
+            case JoinMode.CHANGE | JoinMode.CHANGE_NO_SORT:
                 return (
                     columns[0],
                     *("Base " + x for x in columns[1:]),
@@ -1027,7 +1038,7 @@ def optimization_section() -> Section:
                     Table(
                         ("Range", "Count:", "Ratio:"),
                         calc_histogram_table(name, den),
-                        JoinMode.CHANGE,
+                        JoinMode.CHANGE_NO_SORT,
                     )
                 ],
             )
@@ -1061,6 +1072,17 @@ def optimization_section() -> Section:
     )
 
 
+def rare_event_section() -> Section:
+    def calc_rare_event_table(stats: Stats) -> Table:
+        return [(x, Count(y)) for x, y in stats.get_rare_events()]
+
+    return Section(
+        "Rare events",
+        "Counts of rare/unlikely events",
+        [Table(("Event", "Count:"), calc_rare_event_table, JoinMode.CHANGE)],
+    )
+
+
 def meta_stats_section() -> Section:
     def calc_rows(stats: Stats) -> Rows:
         return [("Number of data files", Count(stats.get("__nfiles__")))]
@@ -1082,6 +1104,7 @@ LAYOUT = [
     object_stats_section(),
     gc_stats_section(),
     optimization_section(),
+    rare_event_section(),
     meta_stats_section(),
 ]
 
@@ -1159,7 +1182,7 @@ def output_stats(inputs: list[Path], json_output=str | None):
         case 1:
             data = load_raw_data(Path(inputs[0]))
             if json_output is not None:
-                with open(json_output, 'w', encoding='utf-8') as f:
+                with open(json_output, "w", encoding="utf-8") as f:
                     save_raw_data(data, f)  # type: ignore
             stats = Stats(data)
             output_markdown(sys.stdout, LAYOUT, stats)
