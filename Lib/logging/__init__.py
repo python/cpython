@@ -1930,7 +1930,7 @@ class LoggerAdapter(object):
         """
         if self.isEnabledFor(level):
             msg, kwargs = self.process(msg, kwargs)
-            self.logger._log(level, msg, args, **kwargs, stacklevel=stacklevel + 1)
+            self.logger.log(level, msg, *args, **kwargs, stacklevel=stacklevel + 3)
 
     def isEnabledFor(self, level):
         """
