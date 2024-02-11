@@ -371,7 +371,7 @@ Process Control
 
 .. c:function:: void Py_FatalError(const char *message)
 
-   .. index:: single: abort()
+   .. index:: single: abort (C function)
 
    Print a fatal error message and kill the process.  No cleanup is performed.
    This function should only be invoked when a condition is detected that would
@@ -391,8 +391,8 @@ Process Control
 .. c:function:: void Py_Exit(int status)
 
    .. index::
-      single: Py_FinalizeEx()
-      single: exit()
+      single: Py_FinalizeEx (C function)
+      single: exit (C function)
 
    Exit the current process.  This calls :c:func:`Py_FinalizeEx` and then calls the
    standard C library function ``exit(status)``.  If :c:func:`Py_FinalizeEx`
@@ -405,7 +405,7 @@ Process Control
 .. c:function:: int Py_AtExit(void (*func) ())
 
    .. index::
-      single: Py_FinalizeEx()
+      single: Py_FinalizeEx (C function)
       single: cleanup functions
 
    Register a cleanup function to be called by :c:func:`Py_FinalizeEx`.  The cleanup

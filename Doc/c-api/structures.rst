@@ -561,9 +561,9 @@ The following flags can be used with :c:member:`PyMemberDef.flags`:
    :c:member:`PyMemberDef.offset` to the offset from the ``PyObject`` struct.
 
 .. index::
-   single: READ_RESTRICTED
-   single: WRITE_RESTRICTED
-   single: RESTRICTED
+   single: READ_RESTRICTED (C macro)
+   single: WRITE_RESTRICTED (C macro)
+   single: RESTRICTED (C macro)
 
 .. versionchanged:: 3.10
 
@@ -574,7 +574,7 @@ The following flags can be used with :c:member:`PyMemberDef.flags`:
    :c:macro:`Py_AUDIT_READ`; :c:macro:`!WRITE_RESTRICTED` does nothing.
 
 .. index::
-   single: READONLY
+   single: READONLY (C macro)
 
 .. versionchanged:: 3.12
 
@@ -637,24 +637,24 @@ Macro name                       C type                        Python type
    Reading a ``NULL`` pointer raises :py:exc:`AttributeError`.
 
 .. index::
-   single: T_BYTE
-   single: T_SHORT
-   single: T_INT
-   single: T_LONG
-   single: T_LONGLONG
-   single: T_UBYTE
-   single: T_USHORT
-   single: T_UINT
-   single: T_ULONG
-   single: T_ULONGULONG
-   single: T_PYSSIZET
-   single: T_FLOAT
-   single: T_DOUBLE
-   single: T_BOOL
-   single: T_CHAR
-   single: T_STRING
-   single: T_STRING_INPLACE
-   single: T_OBJECT_EX
+   single: T_BYTE (C macro)
+   single: T_SHORT (C macro)
+   single: T_INT (C macro)
+   single: T_LONG (C macro)
+   single: T_LONGLONG (C macro)
+   single: T_UBYTE (C macro)
+   single: T_USHORT (C macro)
+   single: T_UINT (C macro)
+   single: T_ULONG (C macro)
+   single: T_ULONGULONG (C macro)
+   single: T_PYSSIZET (C macro)
+   single: T_FLOAT (C macro)
+   single: T_DOUBLE (C macro)
+   single: T_BOOL (C macro)
+   single: T_CHAR (C macro)
+   single: T_STRING (C macro)
+   single: T_STRING_INPLACE (C macro)
+   single: T_OBJECT_EX (C macro)
    single: structmember.h
 
 .. versionadded:: 3.12

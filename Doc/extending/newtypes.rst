@@ -89,8 +89,8 @@ If your type supports garbage collection, the destructor should call
    }
 
 .. index::
-   single: PyErr_Fetch()
-   single: PyErr_Restore()
+   single: PyErr_Fetch (C function)
+   single: PyErr_Restore (C function)
 
 One important requirement of the deallocator function is that it leaves any
 pending exceptions alone.  This is important since deallocators are frequently
