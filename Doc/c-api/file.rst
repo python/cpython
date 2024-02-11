@@ -95,7 +95,7 @@ the :mod:`io` APIs instead.
 
 .. c:function:: int PyFile_WriteObject(PyObject *obj, PyObject *p, int flags)
 
-   .. index:: single: Py_PRINT_RAW
+   .. index:: single: Py_PRINT_RAW (C macro)
 
    Write object *obj* to file object *p*.  The only supported flag for *flags* is
    :c:macro:`Py_PRINT_RAW`; if given, the :func:`str` of the object is written

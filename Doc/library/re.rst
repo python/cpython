@@ -1591,7 +1591,7 @@ To find out what card the pair consists of, one could use the
 Simulating scanf()
 ^^^^^^^^^^^^^^^^^^
 
-.. index:: single: scanf()
+.. index:: single: scanf (C function)
 
 Python does not currently have an equivalent to :c:func:`!scanf`.  Regular
 expressions are generally more powerful, though also more verbose, than
