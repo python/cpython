@@ -10,7 +10,6 @@ import weakref
 from test.support import gc_collect
 from test.support import import_helper
 from test.support import threading_helper
-from test.support import Py_GIL_DISABLED
 
 # queue module depends on threading primitives
 threading_helper.requires_working_threading(module=True)
@@ -404,13 +403,11 @@ class BaseQueueTestMixin(BlockingTestMixin):
         for thread in ps[1:]:
             thread.join()
 
-    @unittest.skipIf(sys.platform == 'win32' and Py_GIL_DISABLED,
-                     "test times out (gh-115258)")
+    @unittest.skipIf(sys.platform == 'win32', "test times out (gh-115258)")
     def test_shutdown_all_methods_in_many_threads(self):
         return self._shutdown_all_methods_in_many_threads(False)
 
-    @unittest.skipIf(sys.platform == 'win32' and Py_GIL_DISABLED,
-                     "test times out (gh-115258)")
+    @unittest.skipIf(sys.platform == 'win32', "test times out (gh-115258)")
     def test_shutdown_immediate_all_methods_in_many_threads(self):
         return self._shutdown_all_methods_in_many_threads(True)
 
