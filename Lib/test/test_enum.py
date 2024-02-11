@@ -4792,11 +4792,11 @@ class Color(enum.Enum)
  |
  |  Data and other attributes defined here:
  |
- |  YELLOW = <Color.YELLOW: 3>
+ |  CYAN = <Color.CYAN: 1>
  |
  |  MAGENTA = <Color.MAGENTA: 2>
  |
- |  CYAN = <Color.CYAN: 1>
+ |  YELLOW = <Color.YELLOW: 3>
  |
  |  ----------------------------------------------------------------------
  |  Data descriptors inherited from enum.Enum:
@@ -4806,7 +4806,18 @@ class Color(enum.Enum)
  |  value
  |
  |  ----------------------------------------------------------------------
- |  Data descriptors inherited from enum.EnumType:
+ |  Methods inherited from enum.EnumType:
+ |
+ |  __contains__(value) from enum.EnumType
+ |
+ |  __getitem__(name) from enum.EnumType
+ |
+ |  __iter__() from enum.EnumType
+ |
+ |  __len__() from enum.EnumType
+ |
+ |  ----------------------------------------------------------------------
+ |  Readonly properties inherited from enum.EnumType:
  |
  |  __members__"""
 
