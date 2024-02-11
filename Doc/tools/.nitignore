@@ -3,14 +3,12 @@
 # Keep lines sorted lexicographically to help avoid merge conflicts.
 
 Doc/c-api/descriptor.rst
-Doc/c-api/exceptions.rst
 Doc/c-api/float.rst
 Doc/c-api/init.rst
 Doc/c-api/init_config.rst
 Doc/c-api/intro.rst
 Doc/c-api/module.rst
 Doc/c-api/stable.rst
-Doc/c-api/sys.rst
 Doc/c-api/type.rst
 Doc/c-api/typeobj.rst
 Doc/extending/extending.rst
@@ -21,7 +19,6 @@ Doc/library/ast.rst
 Doc/library/asyncio-extending.rst
 Doc/library/asyncio-policy.rst
 Doc/library/asyncio-subprocess.rst
-Doc/library/bdb.rst
 Doc/library/collections.rst
 Doc/library/dbm.rst
 Doc/library/decimal.rst

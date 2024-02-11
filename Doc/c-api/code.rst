@@ -49,7 +49,7 @@ bound into a function.
    .. versionchanged:: 3.11
       Added ``qualname`` and ``exceptiontable`` parameters.
 
-   .. index:: single: PyCode_New
+   .. index:: single: PyCode_New (C function)
 
    .. versionchanged:: 3.12
 
@@ -62,7 +62,7 @@ bound into a function.
    Similar to :c:func:`PyUnstable_Code_New`, but with an extra "posonlyargcount" for positional-only arguments.
    The same caveats that apply to ``PyUnstable_Code_New`` also apply to this function.
 
-   .. index:: single: PyCode_NewWithPosOnlyArgs
+   .. index:: single: PyCode_NewWithPosOnlyArgs (C function)
 
    .. versionadded:: 3.8 as ``PyCode_NewWithPosOnlyArgs``
 
@@ -221,7 +221,7 @@ may change without deprecation warnings.
    *free* will be called on non-``NULL`` data stored under the new index.
    Use :c:func:`Py_DecRef` when storing :c:type:`PyObject`.
 
-   .. index:: single: _PyEval_RequestCodeExtraIndex
+   .. index:: single: _PyEval_RequestCodeExtraIndex (C function)
 
    .. versionadded:: 3.6 as ``_PyEval_RequestCodeExtraIndex``
 
@@ -239,7 +239,7 @@ may change without deprecation warnings.
    If no data was set under the index, set *extra* to ``NULL`` and return
    0 without setting an exception.
 
-   .. index:: single: _PyCode_GetExtra
+   .. index:: single: _PyCode_GetExtra (C function)
 
    .. versionadded:: 3.6 as ``_PyCode_GetExtra``
 
@@ -254,7 +254,7 @@ may change without deprecation warnings.
    Set the extra data stored under the given index to *extra*.
    Return 0 on success. Set an exception and return -1 on failure.
 
-   .. index:: single: _PyCode_SetExtra
+   .. index:: single: _PyCode_SetExtra (C function)
 
    .. versionadded:: 3.6 as ``_PyCode_SetExtra``
 
