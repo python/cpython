@@ -882,18 +882,13 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
     static int dividing_factor[] = {
         10, 100, 1000, 10000, 100000, 1000000
     };
-    int *pointers[] = {
-        minute, second, microsecond
-    };
 
     float extra_time = extra_time_digits / (dividing_factor[to_parse - 1] * 1.);
     while (i < 2) {
-        *pointers[i] = (extra_time * 60);
-        extra_time = (extra_time * 60) - *pointers[i];
-        i++;
+        return -3;
     }
     if (i == 2) {
-        *pointers[i] = (extra_time * dividing_factor[5]);
+        *microsecond = (extra_time * dividing_factor[5]);
     }
 
     while (is_digit(*p) && p < p_end) {
