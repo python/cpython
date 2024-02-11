@@ -526,18 +526,22 @@ static PyObject *
 set_repr(PySetObject *so)
 {
     PyObject *result=NULL, *keys, *listrepr, *tmp;
+
+    Py_BEGIN_CRITICAL_SECTION(so);
     int status = Py_ReprEnter((PyObject*)so);
 
     if (status != 0) {
-        if (status < 0)
-            return NULL;
-        return PyUnicode_FromFormat("%s(...)", Py_TYPE(so)->tp_name);
+        if (status < 0) {
+            goto done;
+        }
+        result = PyUnicode_FromFormat("%s(...)", Py_TYPE(so)->tp_name);
+        goto done;
     }
 
     /* shortcut for the empty set */
     if (!so->used) {
-        Py_ReprLeave((PyObject*)so);
-        return PyUnicode_FromFormat("%s()", Py_TYPE(so)->tp_name);
+        result = PyUnicode_FromFormat("%s()", Py_TYPE(so)->tp_name);
+        goto done;
     }
 
     keys = PySequence_List((PyObject *)so);
@@ -564,6 +568,7 @@ set_repr(PySetObject *so)
     Py_DECREF(listrepr);
 done:
     Py_ReprLeave((PyObject*)so);
+    Py_END_CRITICAL_SECTION();
     return result;
 }
 
@@ -2019,6 +2024,17 @@ set_contains(PySetObject *so, PyObject *key)
     return rv;
 }
 
+static int
+set_sq_contains(PySetObject *so, PyObject *key)
+{
+    int rv;
+
+    Py_BEGIN_CRITICAL_SECTION(so);
+    rv = set_contains(so, key);
+    Py_END_CRITICAL_SECTION();
+    return rv;
+}
+
 /*[clinic input]
 @critical_section
 @coexist
@@ -2172,17 +2188,26 @@ static int
 set_init(PySetObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *iterable = NULL;
+    int rv;
 
      if (!_PyArg_NoKeywords("set", kwds))
         return -1;
     if (!PyArg_UnpackTuple(args, Py_TYPE(self)->tp_name, 0, 1, &iterable))
         return -1;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
     if (self->fill)
         set_clear_internal(self);
     self->hash = -1;
+    Py_END_CRITICAL_SECTION();
+
     if (iterable == NULL)
         return 0;
-    return set_update_internal(self, iterable);
+
+    Py_BEGIN_CRITICAL_SECTION2(self, iterable);
+    rv = set_update_internal(self, iterable);
+    Py_END_CRITICAL_SECTION2();
+    return rv;
 }
 
 static PyObject*
@@ -2201,7 +2226,11 @@ set_vectorcall(PyObject *type, PyObject * const*args,
     }
 
     if (nargs) {
-        return make_new_set(_PyType_CAST(type), args[0]);
+        PyObject *rv;
+        Py_BEGIN_CRITICAL_SECTION(args[0]);
+        rv = make_new_set(_PyType_CAST(type), args[0]);
+        Py_END_CRITICAL_SECTION();
+        return rv;
     }
 
     return make_new_set(_PyType_CAST(type), NULL);
@@ -2215,7 +2244,7 @@ static PySequenceMethods set_as_sequence = {
     0,                                  /* sq_slice */
     0,                                  /* sq_ass_item */
     0,                                  /* sq_ass_slice */
-    (objobjproc)set_contains,           /* sq_contains */
+    (objobjproc)set_sq_contains,           /* sq_contains */
 };
 
 /* set object ********************************************************/
