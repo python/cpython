@@ -3370,10 +3370,12 @@ dict_get_item_string(PyObject *dict, const char *key, PyObject **valueobj, const
  * https://www.bytereef.org/mpdecimal/doc/libmpdec/assign-convert.html#to-string
  */
 static PyObject *
-pydec_format(PyObject *dec, PyObject *fmt, decimal_state *state)
+pydec_format(PyObject *dec, PyObject *context, PyObject *fmt, decimal_state *state)
 {
     PyObject *result;
     PyObject *pydec;
+    PyObject *rounding;
+    PyObject *caps;
     PyObject *u;
 
     if (state->PyDecimal == NULL) {
@@ -3394,7 +3396,11 @@ pydec_format(PyObject *dec, PyObject *fmt, decimal_state *state)
         return NULL;
     }
 
-    result = PyObject_Format(pydec, fmt);
+    rounding = context_getround(context, NULL);
+    caps = context_getcapitals(context, NULL);
+    result = PyObject_CallMethod(pydec, "_fallback_format", "(OOO)", fmt, rounding, caps);
+    Py_DECREF(rounding);
+    Py_DECREF(caps);
     Py_DECREF(pydec);
 
     if (result == NULL && PyErr_ExceptionMatches(PyExc_ValueError)) {
@@ -3466,7 +3472,7 @@ dec_format(PyObject *dec, PyObject *args)
             PyMem_Free(fmt);
         }
 
-        return pydec_format(dec, fmtarg, state);
+        return pydec_format(dec, context, fmtarg, state);
     }
 
     if (replace_fillchar) {
