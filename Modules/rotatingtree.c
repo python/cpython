@@ -16,7 +16,9 @@
 
 static unsigned int random_value = 1;
 static unsigned int random_stream = 0;
-static PyMutex random_mutex = (PyMutex){0};
+#define _zero 0
+static PyMutex random_mutex = {0};
+#undef _zero
 
 static int
 randombits(int bits)
