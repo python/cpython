@@ -1924,7 +1924,7 @@ class LoggerAdapter(object):
         """
         self._log(level, msg, *args, stacklevel=stacklevel + 1, **kwargs)
 
-    def _log(self, level, msg, *args, stacklevel=1, **kwargs):
+    def _log(self, level, msg, args, stacklevel=1, **kwargs):
         """
         Low-level log implementation, proxied to allow nested logger adapters.
         """
