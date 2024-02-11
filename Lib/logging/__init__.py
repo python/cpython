@@ -1881,56 +1881,57 @@ class LoggerAdapter(object):
     #
     # Boilerplate convenience methods
     #
-    def debug(self, msg, *args, stacklevel=1, **kwargs):
+    def debug(self, msg, *args, **kwargs):
         """
         Delegate a debug call to the underlying logger.
         """
-        self._log(DEBUG, msg, *args, stacklevel=stacklevel + 1, **kwargs)
+        self.log(DEBUG, msg, *args, **kwargs)
 
-    def info(self, msg, *args, stacklevel=1, **kwargs):
+    def info(self, msg, *args, **kwargs):
         """
         Delegate an info call to the underlying logger.
         """
-        self._log(INFO, msg, *args, stacklevel=stacklevel + 1, **kwargs)
+        self.log(INFO, msg, *args, **kwargs)
 
-    def warning(self, msg, *args, stacklevel=1, **kwargs):
+    def warning(self, msg, *args, **kwargs):
         """
         Delegate a warning call to the underlying logger.
         """
-        self._log(WARNING, msg, *args, stacklevel=stacklevel + 1, **kwargs)
+        self.log(WARNING, msg, *args, **kwargs)
 
     def error(self, msg, *args, stacklevel=1, **kwargs):
         """
         Delegate an error call to the underlying logger.
         """
-        self._log(ERROR, msg, *args, stacklevel=stacklevel + 1, **kwargs)
+        self.log(ERROR, msg, *args, **kwargs)
 
-    def exception(self, msg, *args, stacklevel=1, exc_info=True, **kwargs):
+    def exception(self, msg, *args,exc_info=True, **kwargs):
         """
         Delegate an exception call to the underlying logger.
         """
-        self._log(ERROR, msg, *args, stacklevel=stacklevel + 1, exc_info=exc_info, **kwargs)
+        self.log(ERROR, msg, *args, exc_info=exc_info, **kwargs)
 
-    def critical(self, msg, *args, stacklevel=1, **kwargs):
+    def critical(self, msg, *args, **kwargs):
         """
         Delegate a critical call to the underlying logger.
         """
-        self._log(CRITICAL, msg, *args, stacklevel=stacklevel + 1, **kwargs)
+        self.log(CRITICAL, msg, *args, **kwargs)
 
-    def log(self, level, msg, *args, stacklevel=1, **kwargs):
+    def log(self, level, msg, *args, **kwargs):
         """
         Delegate a log call to the underlying logger, after adding
         contextual information from this adapter instance.
         """
-        self._log(level, msg, *args, stacklevel=stacklevel + 1, **kwargs)
+        self._log(level, msg, *args, **kwargs)
 
-    def _log(self, level, msg, args, stacklevel=1, **kwargs):
+    def _log(self, level, msg, *args, **kwargs):
         """
         Low-level log implementation, proxied to allow nested logger adapters.
         """
+        stacklevel = kwargs.pop('stacklevel', 1)
         if self.isEnabledFor(level):
             msg, kwargs = self.process(msg, kwargs)
-            self.logger.log(level, msg, *args, **kwargs, stacklevel=stacklevel + 3)
+            self.logger._log(level, msg, args, **kwargs, stacklevel=stacklevel + 3)
 
     def isEnabledFor(self, level):
         """
