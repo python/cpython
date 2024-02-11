@@ -5512,7 +5512,7 @@ class LoggerAdapterTest(unittest.TestCase):
         record = self.recording.records[0]
         self.assertEqual(record.levelno, logging.CRITICAL)
         self.assertEqual(record.msg, f"Adapter AdapterAdapter {msg}")
-        self.assertEqual(record.args, (self.recording,))
+        self.assertEqual(record.args, ((self.recording,),))
         orig_manager = adapter_adapter.manager
         self.assertIs(adapter.manager, orig_manager)
         self.assertIs(self.logger.manager, orig_manager)
@@ -5527,6 +5527,41 @@ class LoggerAdapterTest(unittest.TestCase):
         self.assertIs(adapter_adapter.manager, orig_manager)
         self.assertIs(adapter.manager, orig_manager)
         self.assertIs(self.logger.manager, orig_manager)
+
+    def test_find_caller_with_stacklevel(self):
+        the_level = 1
+        trigger = self.logger.warning
+
+        def innermost():
+            trigger('test', stacklevel=the_level)
+
+        def inner():
+            innermost()
+
+        def outer():
+            inner()
+
+        records = self.recording.records
+        outer()
+        self.assertEqual(records[-1].funcName, 'innermost')
+        lineno = records[-1].lineno
+        the_level += 1
+        outer()
+        self.assertEqual(records[-1].funcName, 'inner')
+        self.assertGreater(records[-1].lineno, lineno)
+        lineno = records[-1].lineno
+        the_level += 1
+        outer()
+        self.assertEqual(records[-1].funcName, 'outer')
+        self.assertGreater(records[-1].lineno, lineno)
+        lineno = records[-1].lineno
+        root_logger = logging.getLogger()
+        root_logger.addHandler(self.recording)
+        trigger = logging.warning
+        outer()
+        self.assertEqual(records[-1].funcName, 'outer')
+        root_logger.removeHandler(self.recording)
+
 
     def test_extra_in_records(self):
         self.adapter = logging.LoggerAdapter(logger=self.logger,
