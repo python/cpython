@@ -5733,6 +5733,21 @@ class CWhitebox(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, err_msg):
             sd.copy()
 
+    def test_format_fallback_capitals(self):
+        # Fallback to _pydecimal formatting (triggered by `#` format which
+        # is unsupported by mpdecimal) should honor the current context.
+        x = C.Decimal('6.09e+23')
+        self.assertEqual(format(x, '#'), '6.09E+23')
+        with C.localcontext(capitals=0):
+            self.assertEqual(format(x, '#'), '6.09e+23')
+
+    def test_format_fallback_rounding(self):
+        y = C.Decimal('6.09')
+        self.assertEqual(format(y, '#.1f'), '6.1')
+        with C.localcontext(rounding=C.ROUND_DOWN):
+            self.assertEqual(format(y, '#.1f'), '6.0')
+
+
 @requires_docstrings
 @requires_cdecimal
 class SignatureTest(unittest.TestCase):
