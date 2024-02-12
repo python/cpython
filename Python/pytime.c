@@ -1031,6 +1031,19 @@ py_get_system_clock(_PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
 }
 
 
+_PyTime_t
+_PyTime_GetSystemClock(void)
+{
+    _PyTime_t t;
+    if (py_get_system_clock(&t, NULL, 0) < 0) {
+        // If clock_gettime(CLOCK_REALTIME) or gettimeofday() fails:
+        // silently ignore the failure and return 0.
+        t = 0;
+    }
+    return t;
+}
+
+
 int
 PyTime_Time(PyTime_t *result)
 {
@@ -1047,18 +1060,6 @@ int
 _PyTime_GetSystemClockWithInfo(_PyTime_t *t, _Py_clock_info_t *info)
 {
     return py_get_system_clock(t, info, 1);
-}
-
-_PyTime_t
-_PyTime_GetSystemClock(void)
-{
-    _PyTime_t t;
-    if (py_get_system_clock(&t, NULL, 0) < 0) {
-        // If clock_gettime(CLOCK_REALTIME) or gettimeofday() fails:
-        // silently ignore the failure and return 0.
-        t = 0;
-    }
-    return t;
 }
 
 
@@ -1222,6 +1223,19 @@ py_get_monotonic_clock(_PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
 }
 
 
+_PyTime_t
+_PyTime_GetMonotonicClock(void)
+{
+    _PyTime_t t;
+    if (py_get_monotonic_clock(&t, NULL, 0) < 0) {
+        // If mach_timebase_info(), clock_gettime() or gethrtime() fails:
+        // silently ignore the failure and return 0.
+        t = 0;
+    }
+    return t;
+}
+
+
 int
 PyTime_Monotonic(PyTime_t *result)
 {
@@ -1237,19 +1251,6 @@ int
 _PyTime_GetMonotonicClockWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 {
     return py_get_monotonic_clock(tp, info, 1);
-}
-
-
-_PyTime_t
-_PyTime_GetMonotonicClock(void)
-{
-    _PyTime_t t;
-    if (py_get_monotonic_clock(&t, NULL, 0) < 0) {
-        // If mach_timebase_info(), clock_gettime() or gethrtime() fails:
-        // silently ignore the failure and return 0.
-        t = 0;
-    }
-    return t;
 }
 
 
@@ -1334,25 +1335,6 @@ _PyTime_GetPerfCounterWithInfo(_PyTime_t *t, _Py_clock_info_t *info)
 }
 
 
-int
-PyTime_PerfCounter(PyTime_t *result)
-{
-    int res;
-#ifdef MS_WINDOWS
-    res = py_get_win_perf_counter(result, NULL, 1);
-#else
-    res = py_get_monotonic_clock(result, NULL, 1);
-#endif
-    if (res  < 0) {
-        // If py_win_perf_counter_frequency() or py_get_monotonic_clock()
-        // fails: silently ignore the failure and return 0.
-        *result = 0;
-        return -1;
-    }
-    return 0;
-}
-
-
 _PyTime_t
 _PyTime_GetPerfCounter(void)
 {
@@ -1369,6 +1351,25 @@ _PyTime_GetPerfCounter(void)
         t = 0;
     }
     return t;
+}
+
+
+int
+PyTime_PerfCounter(PyTime_t *result)
+{
+    int res;
+#ifdef MS_WINDOWS
+    res = py_get_win_perf_counter(result, NULL, 1);
+#else
+    res = py_get_monotonic_clock(result, NULL, 1);
+#endif
+    if (res  < 0) {
+        // If py_win_perf_counter_frequency() or py_get_monotonic_clock()
+        // fails: silently ignore the failure and return 0.
+        *result = 0;
+        return -1;
+    }
+    return 0;
 }
 
 
