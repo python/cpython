@@ -278,7 +278,7 @@ static inline _PyFreeListState* _PyFreeListState_GET(void)
 #ifdef Py_GIL_DISABLED
     return &((_PyThreadStateImpl*)tstate)->freelist_state;
 #else
-    return &tstate->interp->freelist_state;
+    return &tstate->interp->object_state.freelists;
 #endif
 }
 

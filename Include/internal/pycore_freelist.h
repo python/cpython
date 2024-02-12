@@ -114,7 +114,7 @@ struct _Py_object_stack_state {
     Py_ssize_t numfree;
 };
 
-typedef struct _Py_freelist_state {
+typedef struct _PyObject_freelists {
     struct _Py_float_state floats;
     struct _Py_tuple_state tuples;
     struct _Py_list_state lists;
