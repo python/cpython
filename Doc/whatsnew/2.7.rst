@@ -1691,7 +1691,7 @@ changes, or look through the Subversion logs for all the details.
   (Originally implemented in Python 3.x by Raymond Hettinger, and backported
   to 2.7 by Michael Foord.)
 
-* The ElementTree library, :mod:`!xml.etree`, no longer escapes
+* The :mod:`xml.etree.ElementTree` library, no longer escapes
   ampersands and angle brackets when outputting an XML processing
   instruction (which looks like ``<?xml-stylesheet href="#style1"?>``)
   or comment (which looks like ``<!-- comment -->``).
@@ -1814,7 +1814,7 @@ https://www.tcl.tk/man/tcl8.5/TkCmd/ttk_intro.html. Some
 screenshots of the Python/Ttk code in use are at
 https://code.google.com/archive/p/python-ttk/wikis/Screenshots.wiki.
 
-The :mod:`!ttk` module was written by Guilherme Polo and added in
+The :mod:`tkinter.ttk` module was written by Guilherme Polo and added in
 :issue:`2983`.  An alternate version called ``Tile.py``, written by
 Martin Franklin and maintained by Kevin Walzer, was proposed for
 inclusion in :issue:`2618`, but the authors argued that Guilherme
@@ -2034,7 +2034,7 @@ version 1.3.  Some of the new features are:
   "xml" (the default), "html", or "text".  HTML mode will output empty
   elements as ``<empty></empty>`` instead of ``<empty/>``, and text
   mode will skip over elements and only output the text chunks.  If
-  you set the :attr:`!tag` attribute of an element to ``None`` but
+  you set the :attr:`~xml.etree.ElementTree.Element.tag` attribute of an element to ``None`` but
   leave its children in place, the element will be omitted when the
   tree is written out, so you don't need to do more extensive rearrangement
   to remove a single element.
@@ -2042,7 +2042,7 @@ version 1.3.  Some of the new features are:
   Namespace handling has also been improved.  All ``xmlns:<whatever>``
   declarations are now output on the root element, not scattered throughout
   the resulting XML.  You can set the default namespace for a tree
-  by setting the :attr:`!default_namespace` attribute and can
+  by setting the :attr:`default_namespace` attribute and can
   register new prefixes with :meth:`~xml.etree.ElementTree.register_namespace`.  In XML mode,
   you can use the true/false *xml_declaration* parameter to suppress the
   XML declaration.
@@ -2064,14 +2064,14 @@ version 1.3.  Some of the new features are:
     # Outputs <root><item>1</item>...</root>
     print ET.tostring(new)
 
-* New :class:`!Element` method:
+* New :class:`~xml.etree.ElementTree.Element` method:
   :meth:`~xml.etree.ElementTree.Element.iter` yields the children of the
   element as a generator.  It's also possible to write ``for child in
   elem:`` to loop over an element's children.  The existing method
   :meth:`!getiterator` is now deprecated, as is :meth:`!getchildren`
   which constructs and returns a list of children.
 
-* New :class:`!Element` method:
+* New :class:`~xml.etree.ElementTree.Element` method:
   :meth:`~xml.etree.ElementTree.Element.itertext` yields all chunks of
   text that are descendants of the element.  For example::
 
@@ -2486,7 +2486,7 @@ In the standard library:
   (or ``NaN``) are now hashable.  (Fixed by Mark Dickinson;
   :issue:`7279`.)
 
-* The ElementTree library, :mod:`!xml.etree`, no longer escapes
+* The :mod:`xml.etree.ElementTree` library no longer escapes
   ampersands and angle brackets when outputting an XML processing
   instruction (which looks like ``<?xml-stylesheet href="#style1"?>``)
   or comment (which looks like ``<!-- comment -->``).
