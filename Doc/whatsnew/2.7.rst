@@ -2441,7 +2441,7 @@ This section lists previously described changes and other bugfixes
 that may require changes to your code:
 
 * The :func:`range` function processes its arguments more
-  consistently; it will now call :meth:`!__int__` on non-float,
+  consistently; it will now call :meth:`~object.__int__` on non-float,
   non-integer arguments that are supplied to it.  (Fixed by Alexander
   Belopolsky; :issue:`1533`.)
 
