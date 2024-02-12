@@ -456,9 +456,13 @@ class LongTests(unittest.TestCase):
                 buffer = bytearray(b"\x5a")
                 self.assertEqual(expect, asnativebytes(v, buffer, 0, -1),
                     "PyLong_AsNativeBytes(v, <unknown>, 0, -1)")
+                self.assertEqual(buffer, b"\x5a",
+                    "buffer overwritten when it should not have been")
                 # Also check via the __index__ path
                 self.assertEqual(expect, asnativebytes(Index(v), buffer, 0, -1),
                     "PyLong_AsNativeBytes(Index(v), <unknown>, 0, -1)")
+                self.assertEqual(buffer, b"\x5a",
+                    "buffer overwritten when it should not have been")
 
         # Test that we populate n=2 bytes but do not overwrite more.
         buffer = bytearray(b"\x99"*3)
