@@ -1505,7 +1505,7 @@ get_hash_info(PyThreadState *tstate)
 
 #define SET_HASH_INFO_ITEM(item)                             \
     do {                                                     \
-        if (item == NULL) {                                  \
+        if (_PyErr_Occurred(tstate)) {                       \
             Py_CLEAR(hash_info);                             \
             return NULL;                                     \
         }                                                    \
