@@ -514,11 +514,11 @@ Functions
       timestamps representing `leap seconds`_ and value ``61`` is supported
       for historical reasons.
 
-   (3) 
-       The ``%f` format directive only applies to :func:`strptime`,
+   (3)
+       The ``%f`` format directive only applies to :func:`strptime`,
        not to :func:`strftime`.
-       However, see also :meth:`datetime.strptime` and
-       :meth:`datetime.strftime`.
+       However, see also :meth:`datetime.datetime.strptime` and
+       :meth:`datetime.datetime.strftime`.
 
    (4)
       When used with the :func:`strptime` function, ``%U`` and ``%W`` are only used in
