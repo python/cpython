@@ -125,6 +125,7 @@ consts: ('None',)
 
 """
 
+import copy
 import inspect
 import sys
 import threading
@@ -143,6 +144,8 @@ from test.support import (cpython_only,
                           gc_collect)
 from test.support.script_helper import assert_python_ok
 from test.support import threading_helper
+from test.support.bytecode_helper import (BytecodeTestCase,
+                                          instructions_with_positions)
 from opcode import opmap, opname
 COPY_FREE_VARS = opmap['COPY_FREE_VARS']
 
@@ -264,7 +267,7 @@ class CodeTest(unittest.TestCase):
             ("co_posonlyargcount", 0),
             ("co_kwonlyargcount", 0),
             ("co_nlocals", 1),
-            ("co_stacksize", 0),
+            ("co_stacksize", 1),
             ("co_flags", code.co_flags | inspect.CO_COROUTINE),
             ("co_firstlineno", 100),
             ("co_code", code2.co_code),
@@ -280,8 +283,14 @@ class CodeTest(unittest.TestCase):
             with self.subTest(attr=attr, value=value):
                 new_code = code.replace(**{attr: value})
                 self.assertEqual(getattr(new_code, attr), value)
+                new_code = copy.replace(code, **{attr: value})
+                self.assertEqual(getattr(new_code, attr), value)
 
         new_code = code.replace(co_varnames=code2.co_varnames,
+                                co_nlocals=code2.co_nlocals)
+        self.assertEqual(new_code.co_varnames, code2.co_varnames)
+        self.assertEqual(new_code.co_nlocals, code2.co_nlocals)
+        new_code = copy.replace(code, co_varnames=code2.co_varnames,
                                 co_nlocals=code2.co_nlocals)
         self.assertEqual(new_code.co_varnames, code2.co_varnames)
         self.assertEqual(new_code.co_nlocals, code2.co_nlocals)
@@ -377,10 +386,8 @@ class CodeTest(unittest.TestCase):
         code = traceback.tb_frame.f_code
 
         artificial_instructions = []
-        for instr, positions in zip(
-            dis.get_instructions(code, show_caches=True),
-            code.co_positions(),
-            strict=True
+        for instr, positions in instructions_with_positions(
+            dis.get_instructions(code), code.co_positions()
         ):
             # If any of the positions is None, then all have to
             # be None as well for the case above. There are still
@@ -497,6 +504,25 @@ class CodeTest(unittest.TestCase):
         c1 = c.replace(co_code=d.co_code)
         self.assertNotEqual(c, c1)
         self.assertNotEqual(hash(c), hash(c1))
+
+    @cpython_only
+    def test_code_equal_with_instrumentation(self):
+        """ GH-109052
+
+        Make sure the instrumentation doesn't affect the code equality
+        The validity of this test relies on the fact that "x is x" and
+        "x in x" have only one different instruction and the instructions
+        have the same argument.
+
+        """
+        code1 = compile("x is x", "example.py", "eval")
+        code2 = compile("x in x", "example.py", "eval")
+        sys._getframe().f_trace_opcodes = True
+        sys.settrace(lambda *args: None)
+        exec(code1, {'x': []})
+        exec(code2, {'x': []})
+        self.assertNotEqual(code1, code2)
+        sys.settrace(None)
 
 
 def isinterned(s):
@@ -839,6 +865,7 @@ if check_impl_detail(cpython=True) and ctypes is not None:
                     self.test = test
                 def run(self):
                     del self.f
+                    gc_collect()
                     self.test.assertEqual(LAST_FREED, 500)
 
             SetExtra(f.__code__, FREE_INDEX, ctypes.c_voidp(500))
