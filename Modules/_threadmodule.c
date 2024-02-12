@@ -1244,7 +1244,7 @@ thread_run(void *boot_raw)
 
     _PyThreadState_Bind(tstate);
     PyEval_AcquireThread(tstate);
-    tstate->interp->threads.count++;
+    _Py_atomic_add_ssize(&tstate->interp->threads.count, 1);
 
     PyObject *res = PyObject_Call(boot->func, boot->args, boot->kwargs);
     if (res == NULL) {
@@ -1262,7 +1262,7 @@ thread_run(void *boot_raw)
 
     thread_bootstate_free(boot, 1);
 
-    tstate->interp->threads.count--;
+    _Py_atomic_add_ssize(&tstate->interp->threads.count, -1);
     PyThreadState_Clear(tstate);
     _PyThreadState_DeleteCurrent(tstate);
 
@@ -1539,7 +1539,7 @@ static PyObject *
 thread__count(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return PyLong_FromLong(interp->threads.count);
+    return PyLong_FromSsize_t(_Py_atomic_load_ssize(&interp->threads.count));
 }
 
 PyDoc_STRVAR(_count_doc,
