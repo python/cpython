@@ -25,15 +25,15 @@ Types
    The supported range is around [-292.3 years; +292.3 years].
    Using the Unix epoch (January 1st, 1970) as reference, the supported date
    range is around [1677-09-21; 2262-04-11].
-   The exact limits are exposed as constants.
+   The exact limits are exposed as constants:
 
-   .. c:var:: PyTime_t PyTime_MIN
+.. c:var:: PyTime_t PyTime_MIN
 
-      Minimum value of :c:type:`PyTime_t`.
+   Minimum value of :c:type:`PyTime_t`.
 
-   .. c:var:: PyTime_t PyTime_MAX
+.. c:var:: PyTime_t PyTime_MAX
 
-      Maximum value of :c:type:`PyTime_t`.
+   Maximum value of :c:type:`PyTime_t`.
 
 
 Clock Functions
