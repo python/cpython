@@ -417,8 +417,8 @@ Subprocess Transports
 
    Stop the subprocess.
 
-   On POSIX systems, this method sends SIGTERM to the subprocess.
-   On Windows, the Windows API function TerminateProcess() is called to
+   On POSIX systems, this method sends :py:const:`~signal.SIGTERM` to the subprocess.
+   On Windows, the Windows API function :c:func:`!TerminateProcess` is called to
    stop the subprocess.
 
    See also :meth:`subprocess.Popen.terminate`.
