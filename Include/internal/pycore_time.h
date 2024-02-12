@@ -14,6 +14,11 @@
 // * timeval structure, 1 microsecond (10^-6 seconds).
 // * timespec structure, 1 nanosecond (10^-9 seconds).
 //
+// Note that PyTime_t is now specified as int64_t, in nanoseconds.
+// (If we need to change this, we'll need new public API with new names.)
+// Previously, PyTime_t was configurable (in theory); some comments and code
+// might still allude to that.
+//
 // Integer overflows are detected and raise OverflowError. Conversion to a
 // resolution larger than 1 nanosecond is rounded correctly with the requested
 // rounding mode. Available rounding modes:

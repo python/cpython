@@ -44,7 +44,8 @@ set to the value of a particular clock.
 Details of each clock are given in the documentation of the corresponding
 Python function.
 
-The functions return 0 on success, or -1 (with an exception set) on failure.
+The functions return ``0`` on success, or ``-1`` (with an exception set)
+on failure.
 
 On integer overflow, they set the :c:data:`PyExc_OverflowError` exception and
 set :c:expr:`*result` to the value clamped to the ``[PyTime_MIN; PyTime_MAX]``
