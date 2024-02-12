@@ -21,6 +21,7 @@ import os
 from pathlib import Path
 import re
 import sys
+import textwrap
 from typing import Any, Callable, TextIO, TypeAlias
 
 
@@ -389,17 +390,58 @@ class Stats:
         low_confidence = self._data["Optimization low confidence"]
 
         return {
-            "Optimization attempts": (attempts, None),
-            "Traces created": (created, attempts),
-            "Trace stack overflow": (trace_stack_overflow, attempts),
-            "Trace stack underflow": (trace_stack_underflow, attempts),
-            "Trace too long": (trace_too_long, attempts),
-            "Trace too short": (trace_too_short, attempts),
-            "Inner loop found": (inner_loop, attempts),
-            "Recursive call": (recursive_call, attempts),
-            "Low confidence": (low_confidence, attempts),
-            "Traces executed": (executed, None),
-            "Uops executed": (uops, executed),
+            Doc(
+                "Optimization attempts",
+                """
+                The number of times a potential trace is identified.  Specifically,
+                this occurs in the JUMP BACKWARD instruction when the counter reaches
+                a threshold.
+                """,
+            ): (
+                attempts,
+                None,
+            ),
+            Doc(
+                "Traces created", "The number of traces that were successfully created."
+            ): (created, attempts),
+            Doc(
+                "Trace stack overflow",
+                "A trace is truncated because it would require more than 5 stack frames.",
+            ): (trace_stack_overflow, attempts),
+            Doc(
+                "Trace stack underflow",
+                "A potential trace is abandoned because it pops more frames than it pushes.",
+            ): (trace_stack_underflow, attempts),
+            Doc(
+                "Trace too long",
+                "A trace is truncated because it is longer than the instruction buffer.",
+            ): (trace_too_long, attempts),
+            Doc(
+                "Trace too short",
+                "A potential trace is abandoced because it it too short.",
+            ): (trace_too_short, attempts),
+            Doc(
+                "Inner loop found", "A trace is truncated because it has an inner loop"
+            ): (inner_loop, attempts),
+            Doc(
+                "Recursive call",
+                "A trace is truncated because it has a recursive call.",
+            ): (recursive_call, attempts),
+            Doc(
+                "Low confidence",
+                """
+                A trace is abandoned because the likelihood of the jump to top being
+                taken is too low.
+                """,
+            ): (low_confidence, attempts),
+            Doc("Traces executed", "The number of traces that were executed"): (
+                executed,
+                None,
+            ),
+            Doc("Uops executed", "The total number of uops that were executed"): (
+                uops,
+                executed,
+            ),
         }
 
     def get_histogram(self, prefix: str) -> list[tuple[int, int]]:
@@ -415,10 +457,19 @@ class Stats:
     def get_rare_events(self) -> list[tuple[str, int]]:
         prefix = "Rare event "
         return [
-            (key[len(prefix) + 1:-1].replace("_", " "), val)
+            (key[len(prefix) + 1 : -1].replace("_", " "), val)
             for key, val in self._data.items()
             if key.startswith(prefix)
         ]
+
+
+class Doc:
+    def __init__(self, text: str, doc: str):
+        self.text = text
+        self.doc = textwrap.dedent(doc).strip()
+
+    def markdown(self) -> str:
+        return f'{self.text} [ⓘ](## "{self.doc}")'
 
 
 class Count(int):
@@ -568,13 +619,16 @@ class Section:
         title: str = "",
         summary: str = "",
         part_iter=None,
+        *,
         comparative: bool = True,
+        doc: str = "",
     ):
         self.title = title
         if not summary:
             self.summary = title.lower()
         else:
             self.summary = summary
+        self.doc = textwrap.dedent(doc)
         if part_iter is None:
             part_iter = []
         if isinstance(part_iter, list):
@@ -628,6 +682,10 @@ def execution_count_section() -> Section:
                 join_mode=JoinMode.CHANGE_ONE_COLUMN,
             )
         ],
+        doc="""
+        The "miss ratio" column shows the percentage of times the instruction
+        executed that it deoptimized.
+        """,
     )
 
 
@@ -655,7 +713,7 @@ def pair_count_section() -> Section:
 
     return Section(
         "Pair counts",
-        "Pair counts for top 100 pairs",
+        "Pair counts for top 100 Tier 1 instructions",
         [
             Table(
                 ("Pair", "Count:", "Self:", "Cumulative:"),
@@ -705,7 +763,7 @@ def pre_succ_pairs_section() -> Section:
 
     return Section(
         "Predecessor/Successor Pairs",
-        "Top 5 predecessors and successors of each opcode",
+        "Top 5 predecessors and successors of each Tier 1 opcode",
         iter_pre_succ_pairs_tables,
         comparative=False,
     )
@@ -1073,8 +1131,19 @@ def optimization_section() -> Section:
 
 
 def rare_event_section() -> Section:
+    RARE_DOCS = {
+        "set class": "Setting an object's class, `obj.__class__ = ...`",
+        "set bases": "Setting the bases of a class, `cls.__bases__ = ...`",
+        "set eval frame func": (
+            "Setting the PEP 523 frame eval function "
+            "`_PyInterpreterState_SetFrameEvalFunc()`"
+        ),
+        "builtin dict": "Modifying the builtins, `__builtins__.__dict__[var] = ...`",
+        "func modification": "Modifying a function, e.g. `func.__defaults__ = ...`, etc.",
+    }
+
     def calc_rare_event_table(stats: Stats) -> Table:
-        return [(x, Count(y)) for x, y in stats.get_rare_events()]
+        return [(Doc(x, RARE_DOCS[x]), Count(y)) for x, y in stats.get_rare_events()]
 
     return Section(
         "Rare events",
@@ -1134,6 +1203,9 @@ def output_markdown(
                 print("<details>", file=out)
                 print("<summary>", obj.summary, "</summary>", file=out)
                 print(file=out)
+            if obj.doc:
+                print(obj.doc, file=out)
+
             if head_stats is not None and obj.comparative is False:
                 print("Not included in comparative output.\n")
             else:
