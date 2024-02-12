@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", function () {
       ].join("\n"),
     );
 
-  function dofilter() {
+  function doFilter() {
     let query;
     try {
       query = new RegExp(document.querySelector("#searchbox").value, "i");
@@ -52,8 +52,8 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
   }
-  document.querySelector("#searchbox").addEventListener("keyup", dofilter);
+  document.querySelector("#searchbox").addEventListener("keyup", doFilter);
   document
     .querySelector("#searchbox-submit")
-    .addEventListener("click", dofilter);
+    .addEventListener("click", doFilter);
 });
