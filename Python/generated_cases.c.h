@@ -2363,29 +2363,18 @@
         }
 
         TARGET(ENTER_EXECUTOR) {
-            _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(ENTER_EXECUTOR);
             TIER_ONE_ONLY
             CHECK_EVAL_BREAKER();
             PyCodeObject *code = _PyFrame_GetCode(frame);
-            _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
-            if (executor->vm_data.valid) {
-                Py_INCREF(executor);
-                current_executor = executor;
-                GOTO_TIER_TWO();
-            }
-            else {
-                /* ENTER_EXECUTOR will be the first code unit of the instruction */
-                assert(oparg < 256);
-                code->co_executors->executors[oparg] = NULL;
-                opcode = this_instr->op.code = executor->vm_data.opcode;
-                this_instr->op.arg = executor->vm_data.oparg;
-                oparg = executor->vm_data.oparg;
-                Py_DECREF(executor);
-                next_instr = this_instr;
-                DISPATCH_GOTO();
-            }
+            current_executor = code->co_executors->executors[oparg & 255];
+            assert(current_executor->vm_data.index == INSTR_OFFSET() - 1);
+            assert(current_executor->vm_data.code == code);
+            assert(current_executor->vm_data.valid);
+            Py_INCREF(current_executor);
+            GOTO_TIER_TWO();
             DISPATCH();
         }
 
