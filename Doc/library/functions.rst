@@ -538,6 +538,9 @@ are always available.  They are listed here in alphabetical order.
       The local namespace (default: ``None``).
    :type locals: :term:`mapping` | ``None``
 
+   :returns: The result of the evaluated expression.
+   :raises: Syntax errors are reported as exceptions.
+
    The *expression* argument is parsed and evaluated as a Python expression
    (technically speaking, a condition list) using the *globals* and *locals*
    dictionaries as global and local namespace.  If the *globals* dictionary is
@@ -553,8 +556,7 @@ are always available.  They are listed here in alphabetical order.
    :term:`nested scopes <nested scope>` (non-locals) in the enclosing
    environment.
 
-   The return value is the result of
-   the evaluated expression. Syntax errors are reported as exceptions.  Example:
+   Example:
 
       >>> x = 1
       >>> eval('x+1')
