@@ -1135,7 +1135,7 @@ PyLong_AsNativeBytes(PyObject* vv, void* buffer, Py_ssize_t n, int endianness)
         if (n <= 0) {
             // nothing to do!
         }
-        else if (n <= sizeof(cv.b)) {
+        else if (n <= (Py_ssize_t)sizeof(cv.b)) {
 #if PY_LITTLE_ENDIAN
             if (little_endian) {
                 memcpy(buffer, cv.b, n);
@@ -1335,7 +1335,7 @@ PyLong_FromLongLong(long long ival)
     /* Count digits (at least two - smaller cases were handled above). */
     abs_ival = ival < 0 ? 0U-(unsigned long long)ival : (unsigned long long)ival;
     /* Do shift in two steps to avoid possible undefined behavior. */
-    t = (Py_ssize_t)(abs_ival >> PyLong_SHIFT >> PyLong_SHIFT);
+    t = abs_ival >> PyLong_SHIFT >> PyLong_SHIFT;
     ndigits = 2;
     while (t) {
         ++ndigits;
