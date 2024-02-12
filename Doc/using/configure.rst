@@ -1010,9 +1010,12 @@ Main Makefile targets
 * ``make regen-all``: Regenerate (almost) all generated files;
   ``make regen-stdlib-module-names`` and ``autoconf`` must be run separately
   for the remaining generated files.
+
 * ``make clean``: Remove built files.
-* ``make distclean``: Same than ``make clean``, but remove also files created
-  by the configure script.
+* ``make distclean``: In addition to the the work done by ``make clean``,
+  remove files created by the configure script.
+  (Related: ``git clean -fdx`` removes all files not known to
+  `git`. Use with care.)
 
 C extensions
 ------------
