@@ -1855,7 +1855,8 @@ class BlockParser:
             input: str,
             language: Language,
             *,
-            verify: bool = True
+            filename: str | None,
+            verify: bool = True,
     ) -> None:
         """
         "input" should be a str object
@@ -1875,10 +1876,16 @@ class BlockParser:
                                                     whole_line=False)
         self.start_re = libclinic.create_regex(before, after)
         self.verify = verify
+        self.filename = filename
         self.last_checksum_re: re.Pattern[str] | None = None
         self.last_dsl_name: str | None = None
         self.dsl_name: str | None = None
         self.first_block = True
+
+    def fail(self, *args: object) -> NoReturn:
+        warn_or_fail(*args,
+                     filename=self.filename, line_number=self.line_number,
+                     fail=True)
 
     def __iter__(self) -> BlockParser:
         return self
@@ -1937,12 +1944,12 @@ class BlockParser:
             if line.startswith(stop_line):
                 remainder = line.removeprefix(stop_line)
                 if remainder and not remainder.isspace():
-                    fail(f"Garbage after stop line: {remainder!r}")
+                    self.fail(f"Garbage after stop line: {remainder!r}")
                 return True
             else:
                 # gh-92256: don't allow incorrectly formatted stop lines
                 if line.lstrip().startswith(stop_line):
-                    fail(f"Whitespace is not allowed before the stop line: {line!r}")
+                    self.fail(f"Whitespace is not allowed before the stop line: {line!r}")
                 return False
 
         # consume body of program
@@ -1987,7 +1994,7 @@ class BlockParser:
             for field in shlex.split(arguments):
                 name, equals, value = field.partition('=')
                 if not equals:
-                    fail(f"Mangled Argument Clinic marker line: {line!r}")
+                    self.fail(f"Mangled Argument Clinic marker line: {line!r}")
                 d[name.strip()] = value.strip()
 
             if self.verify:
@@ -1998,10 +2005,10 @@ class BlockParser:
 
                 computed = libclinic.compute_checksum(output, len(checksum))
                 if checksum != computed:
-                    fail("Checksum mismatch! "
-                         f"Expected {checksum!r}, computed {computed!r}. "
-                         "Suggested fix: remove all generated code including "
-                         "the end marker, or use the '-f' option.")
+                    self.fail("Checksum mismatch! "
+                              f"Expected {checksum!r}, computed {computed!r}. "
+                              "Suggested fix: remove all generated code including "
+                              "the end marker, or use the '-f' option.")
         else:
             # put back output
             output_lines = output.splitlines(keepends=True)
@@ -2394,7 +2401,9 @@ impl_definition block
 
     def parse(self, input: str) -> str:
         printer = self.printer
-        self.block_parser = BlockParser(input, self.language, verify=self.verify)
+        self.block_parser = BlockParser(input, self.language,
+                                        verify=self.verify,
+                                        filename=self.filename)
         for block in self.block_parser:
             dsl_name = block.dsl_name
             if dsl_name:
@@ -2437,7 +2446,10 @@ impl_definition block
                                      f"can't make directory {dirname!r}!")
                         if self.verify:
                             with open(destination.filename) as f:
-                                parser_2 = BlockParser(f.read(), language=self.language)
+                                content = f.read()
+                                parser_2 = BlockParser(content,
+                                                       language=self.language,
+                                                       filename=destination.filename)
                                 blocks = list(parser_2)
                                 if (len(blocks) != 1) or (blocks[0].input != 'preserve\n'):
                                     fail(f"Modified destination file "
@@ -2511,7 +2523,7 @@ def parse_file(
         raw = f.read()
 
     # exit quickly if there are no clinic markers in the file
-    find_start_re = BlockParser("", language).find_start_re
+    find_start_re = BlockParser("", language, filename=None).find_start_re
     if not find_start_re.search(raw):
         return
 

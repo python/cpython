@@ -24,7 +24,7 @@ with test_tools.imports_under_tool('clinic'):
 def _make_clinic(*, filename='clinic_tests'):
     clang = clinic.CLanguage(filename)
     c = clinic.Clinic(clang, filename=filename, limited_capi=False)
-    c.block_parser = clinic.BlockParser('', clang)
+    c.block_parser = clinic.BlockParser('', clang, filename=filename)
     return c
 
 
@@ -780,7 +780,7 @@ class ClinicBlockParserTest(TestCase):
     def _test(self, input, output):
         language = clinic.CLanguage(None)
 
-        blocks = list(clinic.BlockParser(input, language))
+        blocks = list(clinic.BlockParser(input, language, filename=None))
         writer = clinic.BlockPrinter(language)
         c = _make_clinic()
         for block in blocks:
