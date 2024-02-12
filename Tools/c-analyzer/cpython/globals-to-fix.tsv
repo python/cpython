@@ -436,6 +436,7 @@ Modules/_decimal/_decimal.c	-	basic_context_template	-
 Modules/_decimal/_decimal.c	-	current_context_var	-
 Modules/_decimal/_decimal.c	-	default_context_template	-
 Modules/_decimal/_decimal.c	-	extended_context_template	-
+Modules/_decimal/_decimal.c	-	PyDecimal	-
 Modules/_decimal/_decimal.c	-	round_map	-
 Modules/_decimal/_decimal.c	-	Rational	-
 Modules/_decimal/_decimal.c	-	SignalTuple	-
