@@ -12924,7 +12924,7 @@ _pystatvfs_fromstructstatfs(PyObject *module, struct statfs st) {
             return NULL;                            \
         }                                           \
         PyStructSequence_SET_ITEM(v, (index), obj); \
-    } while (0)                                     \
+    } while (0)
 
     SET_ITEM(v, 0, PyLong_FromLong((long) st.f_iosize));
     SET_ITEM(v, 1, PyLong_FromLong((long) st.f_bsize));
