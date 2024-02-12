@@ -1695,6 +1695,13 @@ bytearray_extend(PyByteArrayObject *self, PyObject *iterable_of_ints)
     int value;
     char *buf;
 
+    if (PyUnicode_Check(iterable_of_ints)) {
+        PyErr_Format(PyExc_TypeError,
+                     "'%.100s' object should be encoded",
+                     Py_TYPE(iterable_of_ints)->tp_name);
+        return NULL;
+    }
+
     /* bytearray_setslice code only accepts something supporting PEP 3118. */
     if (PyObject_CheckBuffer(iterable_of_ints)) {
         if (bytearray_setslice(self, Py_SIZE(self), Py_SIZE(self), iterable_of_ints) == -1)
