@@ -23,8 +23,8 @@ PyAPI_FUNC(PyObject*) PyLong_FromUnicodeObject(PyObject *u, int base);
    may be larger than necessary - this function is not an accurate way to
    calculate the bit length of an integer object.
    */
-PyAPI_FUNC(int) PyLong_AsNativeBytes(PyObject* v, void* buffer, size_t n_bytes,
-    int endianness);
+PyAPI_FUNC(Py_ssize_t) PyLong_AsNativeBytes(PyObject* v, void* buffer,
+    Py_ssize_t n_bytes, int endianness);
 
 /* PyLong_FromNativeBytes: Create an int value from a native integer
    n_bytes is the number of bytes to read from the buffer. Passing 0 will

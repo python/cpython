@@ -428,8 +428,7 @@ class LongTests(unittest.TestCase):
         import math
         from _testcapi import (
             pylong_asnativebytes as asnativebytes,
-            pylong_asnativebytes_too_big_n,
-            SIZE_MAX
+            SIZE_MAX,
         )
 
         # Abbreviate sizeof(Py_ssize_t) to SZ because we use it a lot
@@ -528,11 +527,6 @@ class LongTests(unittest.TestCase):
             asnativebytes(1, buffer, 0, 2)
         with self.assertRaises(TypeError):
             asnativebytes('not a number', buffer, 0, -1)
-
-        # We pass any number we like, but the function will pass an n_bytes
-        # that is too big to make sure we fail
-        with self.assertRaises(SystemError):
-            pylong_asnativebytes_too_big_n(100)
 
     def test_long_fromnativebytes(self):
         import math

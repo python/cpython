@@ -354,12 +354,12 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Returns ``NULL`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
 
-.. c:function:: int PyLong_AsNativeBytes(PyObject *pylong, void* buffer, size_t n_bytes, int endianness)
+.. c:function:: Py_ssize_t PyLong_AsNativeBytes(PyObject *pylong, void* buffer, Py_ssize_t n_bytes, int endianness)
 
    Copy the Python integer value to a native *buffer* of size *n_bytes*::
 
       int value;
-      int bytes = PyLong_CopyBits(v, &value, sizeof(value), -1);
+      Py_ssize_t bytes = PyLong_CopyBits(v, &value, sizeof(value), -1);
       if (bytes < 0) {
           // Error occurred
           return NULL;

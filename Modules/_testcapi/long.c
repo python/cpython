@@ -790,23 +790,14 @@ pylong_asnativebytes(PyObject *module, PyObject *args)
         PyBuffer_Release(&buffer);
         return NULL;
     }
-    // Allow n > INT_MAX for tests - it will error out without writing to the
-    // buffer, so no overrun issues.
-    if (buffer.len < n && n <= INT_MAX) {
+    if (buffer.len < n) {
         PyErr_SetString(PyExc_ValueError, "buffer must be at least 'n' bytes");
         PyBuffer_Release(&buffer);
         return NULL;
     }
-    int res = PyLong_AsNativeBytes(v, buffer.buf, n, (int)endianness);
+    Py_ssize_t res = PyLong_AsNativeBytes(v, buffer.buf, n, (int)endianness);
     PyBuffer_Release(&buffer);
-    return res >= 0 ? PyLong_FromLong(res) : NULL;
-}
-
-static PyObject *
-pylong_asnativebytes_too_big_n(PyObject *module, PyObject *v)
-{
-    int res = PyLong_AsNativeBytes(v, NULL, (size_t)INT_MAX + 1, -1);
-    return res >= 0 ? PyLong_FromLong(res) : NULL;
+    return res >= 0 ? PyLong_FromSsize_t(res) : NULL;
 }
 
 static PyObject *
@@ -859,7 +850,6 @@ static PyMethodDef test_methods[] = {
     {"pylong_asdouble",             pylong_asdouble,            METH_O},
     {"pylong_asvoidptr",            pylong_asvoidptr,           METH_O},
     {"pylong_asnativebytes",        pylong_asnativebytes,       METH_VARARGS},
-    {"pylong_asnativebytes_too_big_n", pylong_asnativebytes_too_big_n, METH_O},
     {"pylong_fromnativebytes",      pylong_fromnativebytes,     METH_VARARGS},
     {NULL},
 };

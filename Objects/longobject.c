@@ -1093,8 +1093,8 @@ _resolve_endianness(int *endianness)
     return 0;
 }
 
-int
-PyLong_AsNativeBytes(PyObject* vv, void* buffer, size_t n, int endianness)
+Py_ssize_t
+PyLong_AsNativeBytes(PyObject* vv, void* buffer, Py_ssize_t n, int endianness)
 {
     PyLongObject *v;
     union {
@@ -1102,15 +1102,10 @@ PyLong_AsNativeBytes(PyObject* vv, void* buffer, size_t n, int endianness)
         unsigned char b[sizeof(Py_ssize_t)];
     } cv;
     int do_decref = 0;
-    int res = 0;
+    Py_ssize_t res = 0;
 
-    if (vv == NULL) {
+    if (vv == NULL || n < 0) {
         PyErr_BadInternalCall();
-        return -1;
-    }
-
-    if ((size_t)(int)n != n || (int)n < 0) {
-        PyErr_SetString(PyExc_SystemError, "n_bytes too big to convert");
         return -1;
     }
 
@@ -1146,13 +1141,13 @@ PyLong_AsNativeBytes(PyObject* vv, void* buffer, size_t n, int endianness)
                 memcpy(buffer, cv.b, n);
             }
             else {
-                for (size_t i = 0; i < n; ++i) {
+                for (Py_ssize_t i = 0; i < n; ++i) {
                     ((unsigned char*)buffer)[n - i - 1] = cv.b[i];
                 }
             }
 #else
             if (little_endian) {
-                for (size_t i = 0; i < n; ++i) {
+                for (Py_ssize_t i = 0; i < n; ++i) {
                     ((unsigned char*)buffer)[i] = cv.b[sizeof(cv.b) - i - 1];
                 }
             }
@@ -1163,7 +1158,7 @@ PyLong_AsNativeBytes(PyObject* vv, void* buffer, size_t n, int endianness)
 
             /* If we fit, return the requested number of bytes */
             if (_fits_in_n_bits(cv.v, n * 8)) {
-                res = (int)n;
+                res = n;
             }
         }
         else {
@@ -1175,20 +1170,20 @@ PyLong_AsNativeBytes(PyObject* vv, void* buffer, size_t n, int endianness)
             }
             else {
                 unsigned char *b = (unsigned char *)buffer;
-                for (size_t i = 0; i < n - sizeof(cv.b); ++i) {
+                for (Py_ssize_t i = 0; i < n - (int)sizeof(cv.b); ++i) {
                     *b++ = fill;
                 }
-                for (size_t i = sizeof(cv.b); i > 0; --i) {
+                for (Py_ssize_t i = sizeof(cv.b); i > 0; --i) {
                     *b++ = cv.b[i - 1];
                 }
             }
 #else
             if (little_endian) {
                 unsigned char *b = (unsigned char *)buffer;
-                for (size_t i = sizeof(cv.b); i > 0; --i) {
+                for (Py_ssize_t i = sizeof(cv.b); i > 0; --i) {
                     *b++ = cv.b[i - 1];
                 }
-                for (size_t i = 0; i < n - sizeof(cv.b); ++i) {
+                for (Py_ssize_t i = 0; i < n - sizeof(cv.b); ++i) {
                     *b++ = fill;
                 }
             }
@@ -1201,7 +1196,7 @@ PyLong_AsNativeBytes(PyObject* vv, void* buffer, size_t n, int endianness)
     }
     else {
         if (n > 0) {
-            _PyLong_AsByteArray(v, buffer, n, little_endian, 1, 0);
+            _PyLong_AsByteArray(v, buffer, (size_t)n, little_endian, 1, 0);
         }
 
         // More efficient calculation for number of bytes required?
@@ -1210,7 +1205,7 @@ PyLong_AsNativeBytes(PyObject* vv, void* buffer, size_t n, int endianness)
          * multiples of 8 to the next byte, but we add an implied bit for
          * the sign and it cancels out. */
         size_t n_needed = (nb / 8) + 1;
-        res = (int)n_needed;
+        res = (Py_ssize_t)n_needed;
         if ((size_t)res != n_needed) {
             PyErr_SetString(PyExc_OverflowError,
                 "value too large to convert");
