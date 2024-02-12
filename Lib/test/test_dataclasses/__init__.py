@@ -2218,16 +2218,14 @@ class TestDocString(unittest.TestCase):
         #  whitespace stripped.
         self.assertEqual(a.replace(' ', ''), b.replace(' ', ''))
 
+    @support.requires_docstrings
     def test_existing_docstring_not_overridden(self):
         @dataclass
         class C:
             """Lorem ipsum"""
             x: int
 
-        if support.HAVE_DOCSTRINGS:
-            self.assertEqual(C.__doc__, "Lorem ipsum")
-        else:
-            self.assertEqual(C.__doc__, "C(x: int)")
+        self.assertEqual(C.__doc__, "Lorem ipsum")
 
     def test_docstring_no_fields(self):
         @dataclass
