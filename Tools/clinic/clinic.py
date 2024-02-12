@@ -282,7 +282,7 @@ class Language(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def render(
             self,
-            clinic: Clinic | None,
+            clinic: Clinic,
             signatures: Iterable[Module | Class | Function]
     ) -> str:
         ...
@@ -635,14 +635,16 @@ class CLanguage(Language):
 
     def render(
             self,
-            clinic: Clinic | None,
+            clinic: Clinic,
             signatures: Iterable[Module | Class | Function]
     ) -> str:
         function = None
         for o in signatures:
             if isinstance(o, Function):
-                if function:
-                    fail("You may specify at most one function per block.\nFound a block containing at least two:\n\t" + repr(function) + " and " + repr(o))
+                if function is not None:
+                    clinic.fail("You may specify at most one function per block.\n"
+                                "Found a block containing at least two:\n"
+                                "\t" + repr(function) + " and " + repr(o))
                 function = o
         return self.render_function(clinic, function)
 
@@ -834,7 +836,7 @@ class CLanguage(Language):
                     min_kw_only = i - max_pos
             elif p.is_vararg():
                 if vararg != self.NO_VARARG:
-                    fail("Too many var args")
+                    clinic.fail("Too many var args")
                 pseudo_args += 1
                 vararg = i - 1
             else:
@@ -877,7 +879,7 @@ class CLanguage(Language):
                 docstring_prototype = docstring_definition = ''
         elif f.kind is SETTER:
             if f.docstring:
-                fail("docstrings are only supported for @getter, not @setter")
+                clinic.fail("docstrings are only supported for @getter, not @setter")
             return_value_declaration = "int {return_value};"
             methoddef_define = self.SETTERDEF_PROTOTYPE_DEFINE
             docstring_prototype = docstring_definition = ''
@@ -930,12 +932,12 @@ class CLanguage(Language):
                 (any(p.is_optional() for p in parameters) and
                  any(p.is_keyword_only() and not p.is_optional() for p in parameters)) or
                 any(c.broken_limited_capi for c in converters)):
-            warn(f"Function {f.full_name} cannot use limited C API")
+            clinic.warn(f"Function {f.full_name} cannot use limited C API")
             limited_capi = False
 
         parsearg: str | None
         if f.kind in {GETTER, SETTER} and parameters:
-            fail(f"@{f.kind.name.lower()} method cannot define parameters")
+            clinic.fail(f"@{f.kind.name.lower()} method cannot define parameters")
 
         if not parameters:
             parser_code: list[str] | None
@@ -1652,8 +1654,8 @@ class CLanguage(Language):
             c.render(p, data)
 
         if has_option_groups and (not positional):
-            fail("You cannot use optional groups ('[' and ']') "
-                 "unless all parameters are positional-only ('/').")
+            clinic.fail("You cannot use optional groups ('[' and ']') "
+                        "unless all parameters are positional-only ('/').")
 
         # HACK
         # when we're METH_O, but have a custom return converter,
@@ -2350,6 +2352,19 @@ impl_definition block
         global clinic
         clinic = self
 
+    def warn(self, *args: object) -> None:
+        warn_or_fail(*args,
+                     filename=self.filename,
+                     line_number=self.block_parser.line_number,
+                     fail=False)
+
+    def fail(self, *args: object, line_number: int | None = None) -> NoReturn:
+        if line_number is None:
+            line_number = self.block_parser.line_number
+        warn_or_fail(*args,
+                     filename=self.filename, line_number=line_number,
+                     fail=True)
+
     def add_include(self, name: str, reason: str,
                     *, condition: str | None = None) -> None:
         try:
@@ -2418,7 +2433,7 @@ impl_definition block
 
                 if destination.type == 'buffer':
                     block.input = "dump " + name + "\n"
-                    warn("Destination buffer " + repr(name) + " not empty at end of file, emptying.")
+                    self.warn("Destination buffer " + repr(name) + " not empty at end of file, emptying.")
                     printer.write("\n")
                     printer.print_block(block,
                                         limited_capi=self.limited_capi,
