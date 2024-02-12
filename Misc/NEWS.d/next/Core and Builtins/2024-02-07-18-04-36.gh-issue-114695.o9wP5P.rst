@@ -1,0 +1,3 @@
+Add :func:`sys._clear_internal_caches`, which clears all internal
+performance-related caches (and deprecate the less-general
+:func:`sys._clear_type_cache` function).

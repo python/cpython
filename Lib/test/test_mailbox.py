@@ -10,6 +10,7 @@ import io
 import tempfile
 from test import support
 from test.support import os_helper
+from test.support import refleak_helper
 from test.support import socket_helper
 import unittest
 import textwrap
@@ -2443,6 +2444,9 @@ class MiscTestCase(unittest.TestCase):
 
 def tearDownModule():
     support.reap_children()
+    # reap_children may have re-populated caches:
+    if refleak_helper.hunting_for_refleaks():
+        sys._clear_internal_caches()
 
 
 if __name__ == '__main__':
