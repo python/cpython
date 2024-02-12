@@ -157,4 +157,18 @@ Other Functions
 .. function:: heapmin()
 
    Force the :c:func:`malloc` heap to clean itself up and return unused blocks to
-   the operating system.  On failure, this raises :exc:`OSError`.
+   the operating system. On failure, this raises :exc:`OSError`.
+
+.. data:: CRT_ASSEMBLY_VERSION
+
+   The CRT Assembly version, from the :file:`crtassem.h` header file.
+
+
+.. data:: VC_ASSEMBLY_PUBLICKEYTOKEN
+
+   The VC Assembly public key token, from the :file:`crtassem.h` header file.
+
+
+.. data:: LIBRARIES_ASSEMBLY_NAME_PREFIX
+
+   The Libraries Assembly name prefix, from the :file:`crtassem.h` header file.
