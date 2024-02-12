@@ -416,6 +416,24 @@ The following exceptions are the exceptions that are usually raised.
    handling in C, most floating point operations are not checked.
 
 
+.. exception:: PythonFinalizationError
+
+   This exception is derived from :exc:`RuntimeError`.  It is raised when
+   an operations is blocked during the :term:`Python finalization <interpreter
+   shutdown>`.
+
+   Examples of operations which can be blocked with a
+   :exc:`PythonFinalizationError` during the Python finalization:
+
+   * create a new Python thread;
+   * :func:`os.fork`.
+
+   See also the :func:`sys.is_finalizing` function.
+
+   .. versionadded:: 3.13
+      Previously, a plain :exc:`RuntimeError` was raised.
+
+
 .. exception:: RecursionError
 
    This exception is derived from :exc:`RuntimeError`.  It is raised when the
