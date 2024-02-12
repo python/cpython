@@ -454,11 +454,11 @@ Functions
    | ``%S``    | Second as a decimal number [00,61].            | \(2)  |
    |           |                                                |       |
    +-----------+------------------------------------------------+-------+
-   | ``%f``    | Microseconds as a decimal number               |       |
+   | ``%f``    | Microseconds as a decimal number               | \(3)  |
    |           |    [000000,999999].                            |       |
    |           |                                                |       |
    +-----------+------------------------------------------------+-------+
-   | ``%U``    | Week number of the year (Sunday as the first   | \(3)  |
+   | ``%U``    | Week number of the year (Sunday as the first   | \(4)  |
    |           | day of the week) as a decimal number [00,53].  |       |
    |           | All days in a new year preceding the first     |       |
    |           | Sunday are considered to be in week 0.         |       |
@@ -469,7 +469,7 @@ Functions
    | ``%w``    | Weekday as a decimal number [0(Sunday),6].     |       |
    |           |                                                |       |
    +-----------+------------------------------------------------+-------+
-   | ``%W``    | Week number of the year (Monday as the first   | \(3)  |
+   | ``%W``    | Week number of the year (Monday as the first   | \(4)  |
    |           | day of the week) as a decimal number [00,53].  |       |
    |           | All days in a new year preceding the first     |       |
    |           | Monday are considered to be in week 0.         |       |
@@ -514,7 +514,11 @@ Functions
       timestamps representing `leap seconds`_ and value ``61`` is supported
       for historical reasons.
 
-   (3)
+   (3) 
+       The %f format directive only applies to time.strptime, not to time.strftime. 
+       However, see also datetime.strptime and datetime.strftime.
+
+   (4)
       When used with the :func:`strptime` function, ``%U`` and ``%W`` are only used in
       calculations when the day of the week and the year are specified.
 
