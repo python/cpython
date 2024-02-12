@@ -466,7 +466,7 @@ class Stats:
 class Doc:
     def __init__(self, text: str, doc: str):
         self.text = text
-        self.doc = textwrap.dedent(doc).strip()
+        self.doc = textwrap.dedent(doc).strip().replace("\n", " ")
 
     def markdown(self) -> str:
         return f'{self.text} [ⓘ](## "{self.doc}")'
