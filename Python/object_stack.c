@@ -68,6 +68,27 @@ _PyObjectStack_Clear(_PyObjectStack *queue)
 }
 
 void
+_PyObjectStack_Merge(_PyObjectStack *dst, _PyObjectStack *src)
+{
+    if (src->head == NULL) {
+        return;
+    }
+
+    if (dst->head != NULL) {
+        // First, append dst to the bottom of src
+        _PyObjectStackChunk *last = src->head;
+        while (last->prev != NULL) {
+            last = last->prev;
+        }
+        last->prev = dst->head;
+    }
+
+    // Now that src has all the chunks, set dst to src
+    dst->head = src->head;
+    src->head = NULL;
+}
+
+void
 _PyObjectStackChunk_ClearFreeList(_PyFreeListState *free_lists, int is_finalization)
 {
     if (!is_finalization) {
