@@ -1042,11 +1042,22 @@ PyTime_Time(PyTime_t *result)
     return 1;
 }
 
-
 int
 _PyTime_GetSystemClockWithInfo(_PyTime_t *t, _Py_clock_info_t *info)
 {
     return py_get_system_clock(t, info, 1);
+}
+
+_PyTime_t
+_PyTime_GetSystemClock(void)
+{
+    _PyTime_t t;
+    if (py_get_system_clock(&t, NULL, 0) < 0) {
+        // If clock_gettime(CLOCK_REALTIME) or gettimeofday() fails:
+        // silently ignore the failure and return 0.
+        t = 0;
+    }
+    return t;
 }
 
 
@@ -1227,6 +1238,19 @@ _PyTime_GetMonotonicClockWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 }
 
 
+_PyTime_t
+_PyTime_GetMonotonicClock(void)
+{
+    _PyTime_t t;
+    if (py_get_monotonic_clock(&t, NULL, 0) < 0) {
+        // If mach_timebase_info(), clock_gettime() or gethrtime() fails:
+        // silently ignore the failure and return 0.
+        t = 0;
+    }
+    return t;
+}
+
+
 #ifdef MS_WINDOWS
 static int
 py_win_perf_counter_frequency(_PyTimeFraction *base, int raise)
@@ -1326,6 +1350,25 @@ PyTime_PerfCounter(PyTime_t *result)
 }
 
 
+_PyTime_t
+_PyTime_GetPerfCounter(void)
+{
+    _PyTime_t t;
+    int res;
+#ifdef MS_WINDOWS
+    res = py_get_win_perf_counter(&t, NULL, 0);
+#else
+    res = py_get_monotonic_clock(&t, NULL, 0);
+#endif
+    if (res  < 0) {
+        // If py_win_perf_counter_frequency() or py_get_monotonic_clock()
+        // fails: silently ignore the failure and return 0.
+        t = 0;
+    }
+    return t;
+}
+
+
 int
 _PyTime_localtime(time_t t, struct tm *tm)
 {
@@ -1396,11 +1439,7 @@ _PyTime_gmtime(time_t t, struct tm *tm)
 _PyTime_t
 _PyDeadline_Init(_PyTime_t timeout)
 {
-    _PyTime_t now;
-    if (PyTime_Monotonic(&now) < 0) {
-        PyErr_Clear();
-        now = 0;
-    }
+    _PyTime_t now = _PyTime_GetMonotonicClock();
     return _PyTime_Add(now, timeout);
 }
 
@@ -1408,28 +1447,6 @@ _PyDeadline_Init(_PyTime_t timeout)
 _PyTime_t
 _PyDeadline_Get(_PyTime_t deadline)
 {
-    _PyTime_t now;
-    if (PyTime_Monotonic(&now) < 0) {
-        PyErr_Clear();
-        now = 0;
-    }
+    _PyTime_t now = _PyTime_GetMonotonicClock();
     return deadline - now;
 }
-
-// Internal wrappers that ignore all excetpions.
-// (The exceptions are rare events; we don't care about performance
-// if they're raised.)
-#define NOEXC_WRAPPER(NAME, FUNC)                   \
-    PyTime_t                                        \
-    NAME(void) {                                    \
-        PyTime_t result;                            \
-        if (FUNC(&result) < 0) {                    \
-            PyErr_Clear();                          \
-            return 0;                               \
-        }                                           \
-        return result;                              \
-    }
-
-NOEXC_WRAPPER(_PyTime_GetPerfCounter, PyTime_PerfCounter)
-NOEXC_WRAPPER(_PyTime_GetMonotonicClock, PyTime_Monotonic)
-NOEXC_WRAPPER(_PyTime_GetSystemClock, PyTime_Time)
