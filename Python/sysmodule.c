@@ -1503,10 +1503,10 @@ get_hash_info(PyThreadState *tstate)
     }
     hashfunc = PyHash_GetFuncDef();
 
-#define SET_HASH_INFO_ITEM(call)                             \
+#define SET_HASH_INFO_ITEM(CALL)                             \
     do {                                                     \
-        PyObject *item = call;                               \
-        if (_PyErr_Occurred(tstate)) {                       \
+        PyObject *item = (CALL);                             \
+        if (item == NULL) {                                  \
             Py_CLEAR(hash_info);                             \
             return NULL;                                     \
         }                                                    \
