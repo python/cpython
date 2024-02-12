@@ -515,8 +515,10 @@ Functions
       for historical reasons.
 
    (3) 
-       The %f format directive only applies to time.strptime, not to time.strftime. 
-       However, see also datetime.strptime and datetime.strftime.
+       The ``%f` format directive only applies to :func:`strptime`,
+       not to :func:`strftime`.
+       However, see also :meth:`datetime.strptime` and
+       :meth:`datetime.strftime`.
 
    (4)
       When used with the :func:`strptime` function, ``%U`` and ``%W`` are only used in
