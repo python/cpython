@@ -1523,7 +1523,7 @@ get_hash_info(PyThreadState *tstate)
     SET_HASH_INFO_ITEM(PyLong_FromLong(hashfunc->seed_bits));
     SET_HASH_INFO_ITEM(PyLong_FromLong(Py_HASH_CUTOFF));
 
-#undef SET_ITEM
+#undef SET_HASH_INFO_ITEM
 
     return hash_info;
 }
