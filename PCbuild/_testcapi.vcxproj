@@ -103,7 +103,6 @@
     <ClCompile Include="..\Modules\_testcapi\bytearray.c" />
     <ClCompile Include="..\Modules\_testcapi\bytes.c" />
     <ClCompile Include="..\Modules\_testcapi\unicode.c" />
-    <ClCompile Include="..\Modules\_testcapi\pytime.c" />
     <ClCompile Include="..\Modules\_testcapi\dict.c" />
     <ClCompile Include="..\Modules\_testcapi\set.c" />
     <ClCompile Include="..\Modules\_testcapi\list.c" />
