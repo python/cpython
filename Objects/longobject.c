@@ -928,7 +928,8 @@ _PyLong_FromByteArray(const unsigned char* bytes, size_t n,
 int
 _PyLong_AsByteArray(PyLongObject* v,
                     unsigned char* bytes, size_t n,
-                    int little_endian, int is_signed)
+                    int little_endian, int is_signed,
+                    int with_exceptions)
 {
     Py_ssize_t i;               /* index into v->long_value.ob_digit */
     Py_ssize_t ndigits;         /* number of digits */
@@ -945,8 +946,10 @@ _PyLong_AsByteArray(PyLongObject* v,
     ndigits = _PyLong_DigitCount(v);
     if (_PyLong_IsNegative(v)) {
         if (!is_signed) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "can't convert negative int to unsigned");
+            if (with_exceptions) {
+                PyErr_SetString(PyExc_OverflowError,
+                                "can't convert negative int to unsigned");
+            }
             return -1;
         }
         do_twos_comp = 1;
@@ -967,7 +970,12 @@ _PyLong_AsByteArray(PyLongObject* v,
     /* Copy over all the Python digits.
        It's crucial that every Python digit except for the MSD contribute
        exactly PyLong_SHIFT bits to the total, so first assert that the int is
-       normalized. */
+       normalized.
+       NOTE: PyLong_AsNativeBytes() assumes that this function will fill in 'n'
+       bytes even if it eventually fails to convert the whole number. Make sure
+       you account for that if you are changing this algorithm to return without
+       doing that.
+       */
     assert(ndigits == 0 || v->long_value.ob_digit[ndigits - 1] != 0);
     j = 0;
     accum = 0;
@@ -1052,10 +1060,202 @@ _PyLong_AsByteArray(PyLongObject* v,
     return 0;
 
   Overflow:
-    PyErr_SetString(PyExc_OverflowError, "int too big to convert");
+    if (with_exceptions) {
+        PyErr_SetString(PyExc_OverflowError, "int too big to convert");
+    }
     return -1;
 
 }
+
+// Refactored out for readability, not reuse
+static inline int
+_fits_in_n_bits(Py_ssize_t v, Py_ssize_t n)
+{
+    if (n >= (Py_ssize_t)sizeof(Py_ssize_t) * 8) {
+        return 1;
+    }
+    // If all bits above n are the same, we fit.
+    // (Use n-1 if we require the sign bit to be consistent.)
+    Py_ssize_t v_extended = v >> ((int)n - 1);
+    return v_extended == 0 || v_extended == -1;
+}
+
+static inline int
+_resolve_endianness(int *endianness)
+{
+    if (*endianness < 0) {
+        *endianness = PY_LITTLE_ENDIAN;
+    }
+    if (*endianness != 0 && *endianness != 1) {
+        PyErr_SetString(PyExc_SystemError, "invalid 'endianness' value");
+        return -1;
+    }
+    return 0;
+}
+
+Py_ssize_t
+PyLong_AsNativeBytes(PyObject* vv, void* buffer, Py_ssize_t n, int endianness)
+{
+    PyLongObject *v;
+    union {
+        Py_ssize_t v;
+        unsigned char b[sizeof(Py_ssize_t)];
+    } cv;
+    int do_decref = 0;
+    Py_ssize_t res = 0;
+
+    if (vv == NULL || n < 0) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+
+    int little_endian = endianness;
+    if (_resolve_endianness(&little_endian) < 0) {
+        return -1;
+    }
+
+    if (PyLong_Check(vv)) {
+        v = (PyLongObject *)vv;
+    }
+    else {
+        v = (PyLongObject *)_PyNumber_Index(vv);
+        if (v == NULL) {
+            return -1;
+        }
+        do_decref = 1;
+    }
+
+    if (_PyLong_IsCompact(v)) {
+        res = 0;
+        cv.v = _PyLong_CompactValue(v);
+        /* Most paths result in res = sizeof(compact value). Only the case
+         * where 0 < n < sizeof(compact value) do we need to check and adjust
+         * our return value. */
+        res = sizeof(cv.b);
+        if (n <= 0) {
+            // nothing to do!
+        }
+        else if (n <= sizeof(cv.b)) {
+#if PY_LITTLE_ENDIAN
+            if (little_endian) {
+                memcpy(buffer, cv.b, n);
+            }
+            else {
+                for (Py_ssize_t i = 0; i < n; ++i) {
+                    ((unsigned char*)buffer)[n - i - 1] = cv.b[i];
+                }
+            }
+#else
+            if (little_endian) {
+                for (Py_ssize_t i = 0; i < n; ++i) {
+                    ((unsigned char*)buffer)[i] = cv.b[sizeof(cv.b) - i - 1];
+                }
+            }
+            else {
+                memcpy(buffer, &cv.b[sizeof(cv.b) - n], n);
+            }
+#endif
+
+            /* If we fit, return the requested number of bytes */
+            if (_fits_in_n_bits(cv.v, n * 8)) {
+                res = n;
+            }
+        }
+        else {
+            unsigned char fill = cv.v < 0 ? 0xFF : 0x00;
+#if PY_LITTLE_ENDIAN
+            if (little_endian) {
+                memcpy(buffer, cv.b, sizeof(cv.b));
+                memset((char *)buffer + sizeof(cv.b), fill, n - sizeof(cv.b));
+            }
+            else {
+                unsigned char *b = (unsigned char *)buffer;
+                for (Py_ssize_t i = 0; i < n - (int)sizeof(cv.b); ++i) {
+                    *b++ = fill;
+                }
+                for (Py_ssize_t i = sizeof(cv.b); i > 0; --i) {
+                    *b++ = cv.b[i - 1];
+                }
+            }
+#else
+            if (little_endian) {
+                unsigned char *b = (unsigned char *)buffer;
+                for (Py_ssize_t i = sizeof(cv.b); i > 0; --i) {
+                    *b++ = cv.b[i - 1];
+                }
+                for (Py_ssize_t i = 0; i < n - sizeof(cv.b); ++i) {
+                    *b++ = fill;
+                }
+            }
+            else {
+                memset(buffer, fill, n - sizeof(cv.b));
+                memcpy((char *)buffer + n - sizeof(cv.b), cv.b, sizeof(cv.b));
+            }
+#endif
+        }
+    }
+    else {
+        if (n > 0) {
+            _PyLong_AsByteArray(v, buffer, (size_t)n, little_endian, 1, 0);
+        }
+
+        // More efficient calculation for number of bytes required?
+        size_t nb = _PyLong_NumBits((PyObject *)v);
+        /* Normally this would be((nb - 1) / 8) + 1 to avoid rounding up
+         * multiples of 8 to the next byte, but we add an implied bit for
+         * the sign and it cancels out. */
+        size_t n_needed = (nb / 8) + 1;
+        res = (Py_ssize_t)n_needed;
+        if ((size_t)res != n_needed) {
+            PyErr_SetString(PyExc_OverflowError,
+                "value too large to convert");
+            res = -1;
+        }
+    }
+
+    if (do_decref) {
+        Py_DECREF(v);
+    }
+
+    return res;
+}
+
+
+PyObject *
+PyLong_FromNativeBytes(const void* buffer, size_t n, int endianness)
+{
+    if (!buffer) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+
+    int little_endian = endianness;
+    if (_resolve_endianness(&little_endian) < 0) {
+        return NULL;
+    }
+
+    return _PyLong_FromByteArray((const unsigned char *)buffer, n,
+                                 little_endian, 1);
+}
+
+
+PyObject *
+PyLong_FromUnsignedNativeBytes(const void* buffer, size_t n, int endianness)
+{
+    if (!buffer) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+
+    int little_endian = endianness;
+    if (_resolve_endianness(&little_endian) < 0) {
+        return NULL;
+    }
+
+    return _PyLong_FromByteArray((const unsigned char *)buffer, n,
+                                 little_endian, 0);
+}
+
 
 /* Create a new int object from a C pointer */
 
@@ -1231,7 +1431,7 @@ PyLong_AsLongLong(PyObject *vv)
     }
     else {
         res = _PyLong_AsByteArray((PyLongObject *)v, (unsigned char *)&bytes,
-                                  SIZEOF_LONG_LONG, PY_LITTLE_ENDIAN, 1);
+                                  SIZEOF_LONG_LONG, PY_LITTLE_ENDIAN, 1, 1);
     }
     if (do_decref) {
         Py_DECREF(v);
@@ -1270,7 +1470,7 @@ PyLong_AsUnsignedLongLong(PyObject *vv)
     }
     else {
         res = _PyLong_AsByteArray((PyLongObject *)vv, (unsigned char *)&bytes,
-                              SIZEOF_LONG_LONG, PY_LITTLE_ENDIAN, 0);
+                              SIZEOF_LONG_LONG, PY_LITTLE_ENDIAN, 0, 1);
     }
 
     /* Plan 9 can't handle long long in ? : expressions */
@@ -6068,7 +6268,7 @@ int_to_bytes_impl(PyObject *self, Py_ssize_t length, PyObject *byteorder,
 
     if (_PyLong_AsByteArray((PyLongObject *)self,
                             (unsigned char *)PyBytes_AS_STRING(bytes),
-                            length, little_endian, is_signed) < 0) {
+                            length, little_endian, is_signed, 1) < 0) {
         Py_DECREF(bytes);
         return NULL;
     }

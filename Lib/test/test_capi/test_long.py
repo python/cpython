@@ -1,5 +1,6 @@
 import unittest
 import sys
+import test.support as support
 
 from test.support import import_helper
 
@@ -422,6 +423,150 @@ class LongTests(unittest.TestCase):
         self.assertRaises(OverflowError, asvoidptr, 2**1000)
         self.assertRaises(OverflowError, asvoidptr, -2**1000)
         # CRASHES asvoidptr(NULL)
+
+    def test_long_asnativebytes(self):
+        import math
+        from _testcapi import (
+            pylong_asnativebytes as asnativebytes,
+            SIZE_MAX,
+        )
+
+        # Abbreviate sizeof(Py_ssize_t) to SZ because we use it a lot
+        SZ = int(math.ceil(math.log(SIZE_MAX + 1) / math.log(2)) / 8)
+        MAX_SSIZE = 2 ** (SZ * 8 - 1) - 1
+        MAX_USIZE = 2 ** (SZ * 8) - 1
+        if support.verbose:
+            print(f"SIZEOF_SIZE={SZ}\n{MAX_SSIZE=:016X}\n{MAX_USIZE=:016X}")
+
+        # These tests check that the requested buffer size is correct
+        for v, expect in [
+            (0, SZ),
+            (512, SZ),
+            (-512, SZ),
+            (MAX_SSIZE, SZ),
+            (MAX_USIZE, SZ + 1),
+            (-MAX_SSIZE, SZ),
+            (-MAX_USIZE, SZ + 1),
+            (2**255-1, 32),
+            (-(2**255-1), 32),
+            (2**256-1, 33),
+            (-(2**256-1), 33),
+        ]:
+            with self.subTest(f"sizeof-{v:X}"):
+                buffer = bytearray(1)
+                self.assertEqual(expect, asnativebytes(v, buffer, 0, -1),
+                    "PyLong_AsNativeBytes(v, NULL, 0, -1)")
+                # Also check via the __index__ path
+                self.assertEqual(expect, asnativebytes(Index(v), buffer, 0, -1),
+                    "PyLong_AsNativeBytes(Index(v), NULL, 0, -1)")
+
+        # We request as many bytes as `expect_be` contains, and always check
+        # the result (both big and little endian). We check the return value
+        # independently, since the buffer should always be filled correctly even
+        # if we need more bytes
+        for v, expect_be, expect_n in [
+            (0,         b'\x00',                1),
+            (0,         b'\x00' * 2,            2),
+            (0,         b'\x00' * 8,            min(8, SZ)),
+            (1,         b'\x01',                1),
+            (1,         b'\x00' * 10 + b'\x01', min(11, SZ)),
+            (42,        b'\x2a',                1),
+            (42,        b'\x00' * 10 + b'\x2a', min(11, SZ)),
+            (-1,        b'\xff',                1),
+            (-1,        b'\xff' * 10,           min(11, SZ)),
+            (-42,       b'\xd6',                1),
+            (-42,       b'\xff' * 10 + b'\xd6', min(11, SZ)),
+            # Extracts 255 into a single byte, but requests sizeof(Py_ssize_t)
+            (255,       b'\xff',                SZ),
+            (255,       b'\x00\xff',            2),
+            (256,       b'\x01\x00',            2),
+            # Extracts successfully (unsigned), but requests 9 bytes
+            (2**63,     b'\x80' + b'\x00' * 7,  9),
+            # "Extracts", but requests 9 bytes
+            (-2**63,    b'\x80' + b'\x00' * 7,  9),
+            (2**63,     b'\x00\x80' + b'\x00' * 7, 9),
+            (-2**63,    b'\xff\x80' + b'\x00' * 7, 9),
+
+            (2**255-1,      b'\x7f' + b'\xff' * 31,                 32),
+            (-(2**255-1),   b'\x80' + b'\x00' * 30 + b'\x01',       32),
+            # Request extra bytes, but result says we only needed 32
+            (-(2**255-1),   b'\xff\x80' + b'\x00' * 30 + b'\x01',   32),
+            (-(2**255-1),   b'\xff\xff\x80' + b'\x00' * 30 + b'\x01', 32),
+
+            # Extracting 256 bits of integer will request 33 bytes, but still
+            # copy as many bits as possible into the buffer. So we *can* copy
+            # into a 32-byte buffer, though negative number may be unrecoverable
+            (2**256-1,      b'\xff' * 32,                           33),
+            (2**256-1,      b'\x00' + b'\xff' * 32,                 33),
+            (-(2**256-1),   b'\x00' * 31 + b'\x01',                 33),
+            (-(2**256-1),   b'\xff' + b'\x00' * 31 + b'\x01',       33),
+            (-(2**256-1),   b'\xff\xff' + b'\x00' * 31 + b'\x01',   33),
+
+            # The classic "Windows HRESULT as negative number" case
+            #   HRESULT hr;
+            #   PyLong_CopyBits(<-2147467259>, &hr, sizeof(HRESULT))
+            #   assert(hr == E_FAIL)
+            (-2147467259, b'\x80\x00\x40\x05', 4),
+        ]:
+            with self.subTest(f"{v:X}-{len(expect_be)}bytes"):
+                n = len(expect_be)
+                buffer = bytearray(n)
+                expect_le = expect_be[::-1]
+
+                self.assertEqual(expect_n, asnativebytes(v, buffer, n, 0),
+                    f"PyLong_AsNativeBytes(v, buffer, {n}, <big>)")
+                self.assertEqual(expect_be, buffer[:n], "<big>")
+                self.assertEqual(expect_n, asnativebytes(v, buffer, n, 1),
+                    f"PyLong_AsNativeBytes(v, buffer, {n}, <little>)")
+                self.assertEqual(expect_le, buffer[:n], "<little>")
+
+        # Check a few error conditions. These are validated in code, but are
+        # unspecified in docs, so if we make changes to the implementation, it's
+        # fine to just update these tests rather than preserve the behaviour.
+        with self.assertRaises(SystemError):
+            asnativebytes(1, buffer, 0, 2)
+        with self.assertRaises(TypeError):
+            asnativebytes('not a number', buffer, 0, -1)
+
+    def test_long_fromnativebytes(self):
+        import math
+        from _testcapi import (
+            pylong_fromnativebytes as fromnativebytes,
+            SIZE_MAX,
+        )
+
+        # Abbreviate sizeof(Py_ssize_t) to SZ because we use it a lot
+        SZ = int(math.ceil(math.log(SIZE_MAX + 1) / math.log(2)) / 8)
+        MAX_SSIZE = 2 ** (SZ * 8 - 1) - 1
+        MAX_USIZE = 2 ** (SZ * 8) - 1
+
+        for v_be, expect_s, expect_u in [
+            (b'\x00', 0, 0),
+            (b'\x01', 1, 1),
+            (b'\xff', -1, 255),
+            (b'\x00\xff', 255, 255),
+            (b'\xff\xff', -1, 65535),
+        ]:
+            with self.subTest(f"{expect_s}-{expect_u:X}-{len(v_be)}bytes"):
+                n = len(v_be)
+                v_le = v_be[::-1]
+
+                self.assertEqual(expect_s, fromnativebytes(v_be, n, 0, 1),
+                    f"PyLong_FromNativeBytes(buffer, {n}, <big>)")
+                self.assertEqual(expect_s, fromnativebytes(v_le, n, 1, 1),
+                    f"PyLong_FromNativeBytes(buffer, {n}, <little>)")
+                self.assertEqual(expect_u, fromnativebytes(v_be, n, 0, 0),
+                    f"PyLong_FromUnsignedNativeBytes(buffer, {n}, <big>)")
+                self.assertEqual(expect_u, fromnativebytes(v_le, n, 1, 0),
+                    f"PyLong_FromUnsignedNativeBytes(buffer, {n}, <little>)")
+
+                # Check native endian when the result would be the same either
+                # way and we can test it.
+                if v_be == v_le:
+                    self.assertEqual(expect_s, fromnativebytes(v_be, n, -1, 1),
+                        f"PyLong_FromNativeBytes(buffer, {n}, <native>)")
+                    self.assertEqual(expect_u, fromnativebytes(v_be, n, -1, 0),
+                        f"PyLong_FromUnsignedNativeBytes(buffer, {n}, <native>)")
 
 
 if __name__ == "__main__":

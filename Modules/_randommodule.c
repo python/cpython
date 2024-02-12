@@ -342,7 +342,8 @@ random_seed(RandomObject *self, PyObject *arg)
     res = _PyLong_AsByteArray((PyLongObject *)n,
                               (unsigned char *)key, keyused * 4,
                               PY_LITTLE_ENDIAN,
-                              0); /* unsigned */
+                              0, /* unsigned */
+                              1); /* with exceptions */
     if (res == -1) {
         goto Done;
     }
