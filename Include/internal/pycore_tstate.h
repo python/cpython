@@ -8,6 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_brc.h"           // struct _brc_thread_state
 #include "pycore_freelist.h"      // struct _Py_freelist_state
 #include "pycore_mimalloc.h"      // struct _mimalloc_thread_state
 #include "pycore_qsbr.h"          // struct qsbr
@@ -25,6 +26,7 @@ typedef struct _PyThreadStateImpl {
 #ifdef Py_GIL_DISABLED
     struct _mimalloc_thread_state mimalloc;
     struct _Py_freelist_state freelist_state;
+    struct _brc_thread_state brc;
 #endif
 
 } _PyThreadStateImpl;
