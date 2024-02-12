@@ -210,7 +210,7 @@ void _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame)
 
 /* Reserve a few bits for future use */
 #define _PY_EVAL_EVENTS_BITS 8
-#define _PY_EVAL_EVENTS_MASK ((1U << _PY_EVAL_EVENTS_BITS)-1)
+#define _PY_EVAL_EVENTS_MASK ((1 << _PY_EVAL_EVENTS_BITS)-1)
 
 static inline void
 _Py_set_eval_breaker_bit(PyThreadState *tstate, uintptr_t bit)
