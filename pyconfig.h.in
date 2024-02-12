@@ -1647,6 +1647,126 @@
    SipHash13: 3, externally defined: 0 */
 #undef Py_HASH_ALGORITHM
 
+/* Define if you have the 'accept' function. */
+#undef Py_HAVE_ACCEPT
+
+/* Define if you have the 'bind' function. */
+#undef Py_HAVE_BIND
+
+/* Define if you have the 'chroot' function. */
+#undef Py_HAVE_CHROOT
+
+/* Define if you have the 'connect' function. */
+#undef Py_HAVE_CONNECT
+
+/* Define if you have the 'ctermid_r' function. */
+#undef Py_HAVE_CTERMID_R
+
+/* Define if you have the '_dyld_shared_cache_contains_path' function. */
+#undef Py_HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH
+
+/* Define if you have the 'epoll_create' function. */
+#undef Py_HAVE_EPOLL
+
+/* Define if you have the 'epoll_create1' function. */
+#undef Py_HAVE_EPOLL_CREATE1
+
+/* Define if you have the 'eventfd' function. */
+#undef Py_HAVE_EVENTFD
+
+/* Define if you have the 'fchdir' function. */
+#undef Py_HAVE_FCHDIR
+
+/* Define if you have the 'fdatasync' function. */
+#undef Py_HAVE_FDATASYNC
+
+/* Define if you have the 'ffi_closure_alloc' function. */
+#undef Py_HAVE_FFI_CLOSURE_ALLOC
+
+/* Define if you have the 'ffi_prep_cif_var' function. */
+#undef Py_HAVE_FFI_PREP_CIF_VAR
+
+/* Define if you have the 'ffi_prep_closure_loc' function. */
+#undef Py_HAVE_FFI_PREP_CLOSURE_LOC
+
+/* Define if you have the 'fsync' function. */
+#undef Py_HAVE_FSYNC
+
+/* Define if you have the 'gethostbyaddr' function. */
+#undef Py_HAVE_GETHOSTBYADDR
+
+/* Define if you have the 'gethostbyname' function. */
+#undef Py_HAVE_GETHOSTBYNAME
+
+/* Define if you have the 'getpagesize' function. */
+#undef Py_HAVE_GETPAGESIZE
+
+/* Define if you have the 'getpeername' function. */
+#undef Py_HAVE_GETPEERNAME
+
+/* Define if you have the 'getprotobyname' function. */
+#undef Py_HAVE_GETPROTOBYNAME
+
+/* Define if you have the 'getservbyname' function. */
+#undef Py_HAVE_GETSERVBYNAME
+
+/* Define if you have the 'getservbyport' function. */
+#undef Py_HAVE_GETSERVBYPORT
+
+/* Define if you have the 'getsockname' function. */
+#undef Py_HAVE_GETSOCKNAME
+
+/* Define if you have the 'hstrerror' function. */
+#undef Py_HAVE_HSTRERROR
+
+/* Define if you have the 'inet_aton' function. */
+#undef Py_HAVE_INET_ATON
+
+/* Define if you have the 'inet_ntoa' function. */
+#undef Py_HAVE_INET_NTOA
+
+/* Define if you have the 'inet_pton' function. */
+#undef Py_HAVE_INET_PTON
+
+/* Define if you have the 'kqueue' function. */
+#undef Py_HAVE_KQUEUE
+
+/* Define if you have the 'link' function. */
+#undef Py_HAVE_LINK
+
+/* Define if you have the 'listen' function. */
+#undef Py_HAVE_LISTEN
+
+/* Define if you have the 'memfd_create' function. */
+#undef Py_HAVE_MEMFD_CREATE
+
+/* Define if you have the 'prlimit' function. */
+#undef Py_HAVE_PRLIMIT
+
+/* Define if you have the 'recvfrom' function. */
+#undef Py_HAVE_RECVFROM
+
+/* Define if you have the 'sendto' function. */
+#undef Py_HAVE_SENDTO
+
+/* Define if you have the 'setgroups' function. */
+#undef Py_HAVE_SETGROUPS
+
+/* Define if you have the 'setsockopt' function. */
+#undef Py_HAVE_SETSOCKOPT
+
+/* Define if you have the 'socket' function. */
+#undef Py_HAVE_SOCKET
+
+/* Define if you have the 'socketpair' function. */
+#undef Py_HAVE_SOCKETPAIR
+
+/* Define if you have the 'symlink' function. */
+#undef Py_HAVE_SYMLINK
+
+/* Define if you have the 'timerfd_create' function. */
+#undef Py_HAVE_TIMERFD_CREATE
+
 /* Define if you want to enable internal statistics gathering. */
 #undef Py_STATS
 

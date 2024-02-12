@@ -3490,6 +3490,9 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+
+
+
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # If we're building out-of-tree, we need to make sure the following
     # resources get picked up before their $srcdir counterparts.
@@ -3823,6 +3826,9 @@ SOVERSION=1.0
 printf "%s\n" "#define _NETBSD_SOURCE 1" >>confdefs.h
 
 
+printf "%s\n" "#define Py__NETBSD_SOURCE 1" >>confdefs.h
+
+
 # The later definition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
 # certain features on FreeBSD, so we need __BSD_VISIBLE to re-enable
 # them.
@@ -3830,11 +3836,17 @@ printf "%s\n" "#define _NETBSD_SOURCE 1" >>confdefs.h
 printf "%s\n" "#define __BSD_VISIBLE 1" >>confdefs.h
 
 
+printf "%s\n" "#define Py___BSD_VISIBLE 1" >>confdefs.h
+
+
 # The later definition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
 # certain features on Mac OS X, so we need _DARWIN_C_SOURCE to re-enable
 # them.
 
 printf "%s\n" "#define _DARWIN_C_SOURCE 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py__DARWIN_C_SOURCE 1" >>confdefs.h
 
 
 
@@ -4072,6 +4084,9 @@ then
 	SUNOS_VERSION=`echo $ac_sys_release | sed -e 's!\.\(0-9\)$!.0\1!g' | tr -d '.'`
 
 printf "%s\n" "#define Py_SUNOS_VERSION $SUNOS_VERSION" >>confdefs.h
+
+
+printf "%s\n" "#define Py_Py_SUNOS_VERSION $SUNOS_VERSION" >>confdefs.h
 
     fi
 fi
@@ -4337,6 +4352,9 @@ fi
 printf "%s\n" "#define _PYTHONFRAMEWORK \"${PYTHONFRAMEWORK}\"" >>confdefs.h
 
 
+printf "%s\n" "#define Py__PYTHONFRAMEWORK \"${PYTHONFRAMEWORK}\"" >>confdefs.h
+
+
 
 if test "$cross_compiling" = yes; then
 	case "$host" in
@@ -4389,6 +4407,9 @@ case $ac_sys_system/$ac_sys_release in
 
 printf "%s\n" "#define _BSD_SOURCE 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py__BSD_SOURCE 1" >>confdefs.h
+
     ;;
   OpenBSD/*)
     # OpenBSD undoes our definition of __BSD_VISIBLE if _XOPEN_SOURCE is
@@ -4396,6 +4417,9 @@ printf "%s\n" "#define _BSD_SOURCE 1" >>confdefs.h
     # As this has a different meaning on Linux, only define it on OpenBSD
 
 printf "%s\n" "#define _BSD_SOURCE 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py__BSD_SOURCE 1" >>confdefs.h
 
     ;;
   # Defining _XOPEN_SOURCE on NetBSD version prior to the introduction of
@@ -4456,6 +4480,9 @@ then
 printf "%s\n" "#define _XOPEN_SOURCE 700" >>confdefs.h
 
 
+printf "%s\n" "#define Py__XOPEN_SOURCE 700" >>confdefs.h
+
+
   # On Tru64 Unix 4.0F, defining _XOPEN_SOURCE also requires
   # definition of _XOPEN_SOURCE_EXTENDED and _POSIX_C_SOURCE, or else
   # several APIs are not declared. Since this is also needed in some
@@ -4464,8 +4491,14 @@ printf "%s\n" "#define _XOPEN_SOURCE 700" >>confdefs.h
 printf "%s\n" "#define _XOPEN_SOURCE_EXTENDED 1" >>confdefs.h
 
 
+printf "%s\n" "#define Py__XOPEN_SOURCE_EXTENDED 1" >>confdefs.h
+
+
 
 printf "%s\n" "#define _POSIX_C_SOURCE 200809L" >>confdefs.h
+
+
+printf "%s\n" "#define Py__POSIX_C_SOURCE 200809L" >>confdefs.h
 
 fi
 
@@ -4481,6 +4514,9 @@ if test $define_stdc_a1 = yes
 then
 
 printf "%s\n" "#define _INCLUDE__STDC_A1_SOURCE 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py__INCLUDE__STDC_A1_SOURCE 1" >>confdefs.h
 
 fi
 
@@ -6876,6 +6912,9 @@ esac
 printf "%s\n" "#define PY_SUPPORT_TIER $PY_SUPPORT_TIER" >>confdefs.h
 
 
+printf "%s\n" "#define Py_PY_SUPPORT_TIER $PY_SUPPORT_TIER" >>confdefs.h
+
+
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for -Wl,--no-as-needed" >&5
 printf %s "checking for -Wl,--no-as-needed... " >&6; }
 if test ${ac_cv_wl_no_as_needed+y}
@@ -6934,6 +6973,9 @@ printf "%s\n" "$ANDROID_API_LEVEL" >&6; }
   fi
 
 printf "%s\n" "#define ANDROID_API_LEVEL $ANDROID_API_LEVEL" >>confdefs.h
+
+
+printf "%s\n" "#define Py_ANDROID_API_LEVEL $ANDROID_API_LEVEL" >>confdefs.h
 
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for the Android arm ABI" >&5
@@ -7326,6 +7368,9 @@ if test $enable_shared = "yes"; then
   PY_ENABLE_SHARED=1
 
 printf "%s\n" "#define Py_ENABLE_SHARED 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_Py_ENABLE_SHARED 1" >>confdefs.h
 
   case $ac_sys_system in
     CYGWIN*)
@@ -7929,6 +7974,9 @@ then
 
 printf "%s\n" "#define Py_GIL_DISABLED 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_Py_GIL_DISABLED 1" >>confdefs.h
+
   # Add "t" for "threaded"
   ABIFLAGS="${ABIFLAGS}t"
 fi
@@ -7945,6 +7993,9 @@ if test "$withval" != no
 then
 
 printf "%s\n" "#define Py_DEBUG 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_Py_DEBUG 1" >>confdefs.h
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; };
@@ -7981,6 +8032,9 @@ then
 
 printf "%s\n" "#define Py_TRACE_REFS 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_Py_TRACE_REFS 1" >>confdefs.h
+
 fi
 
 
@@ -8004,6 +8058,9 @@ then :
 
 
 printf "%s\n" "#define Py_STATS 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_Py_STATS 1" >>confdefs.h
 
 
 fi
@@ -9330,10 +9387,19 @@ fi
 printf "%s\n" "#define _WASI_EMULATED_SIGNAL 1" >>confdefs.h
 
 
+printf "%s\n" "#define Py__WASI_EMULATED_SIGNAL 1" >>confdefs.h
+
+
 printf "%s\n" "#define _WASI_EMULATED_GETPID 1" >>confdefs.h
 
 
+printf "%s\n" "#define Py__WASI_EMULATED_GETPID 1" >>confdefs.h
+
+
 printf "%s\n" "#define _WASI_EMULATED_PROCESS_CLOCKS 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py__WASI_EMULATED_PROCESS_CLOCKS 1" >>confdefs.h
 
     LIBS="$LIBS -lwasi-emulated-signal -lwasi-emulated-getpid -lwasi-emulated-process-clocks"
     echo "#define _WASI_EMULATED_SIGNAL 1" >> confdefs.h
@@ -10386,6 +10452,9 @@ fi
 printf "%s\n" "#define STDC_HEADERS 1" >>confdefs.h
 
 
+printf "%s\n" "#define Py_STDC_HEADERS 1" >>confdefs.h
+
+
 # checks for header files
 ac_fn_c_check_header_compile "$LINENO" "alloca.h" "ac_cv_header_alloca_h" "$ac_includes_default"
 if test "x$ac_cv_header_alloca_h" = xyes
@@ -11252,6 +11321,9 @@ then :
 printf "%s\n" "#define clock_t long" >>confdefs.h
 
 
+printf "%s\n" "#define Py_clock_t long" >>confdefs.h
+
+
 fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for makedev" >&5
@@ -11300,6 +11372,9 @@ then :
 
 
 printf "%s\n" "#define HAVE_MAKEDEV 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_MAKEDEV 1" >>confdefs.h
 
 
 fi
@@ -11351,6 +11426,9 @@ then :
 printf "%s\n" "#define HAVE_HTOLE64 1" >>confdefs.h
 
 
+printf "%s\n" "#define Py_HAVE_HTOLE64 1" >>confdefs.h
+
+
 fi
 
 use_lfs=yes
@@ -11367,13 +11445,22 @@ AIX*)
 
 printf "%s\n" "#define _LARGE_FILES 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py__LARGE_FILES 1" >>confdefs.h
+
     ;;
 esac
 
 printf "%s\n" "#define _LARGEFILE_SOURCE 1" >>confdefs.h
 
 
+printf "%s\n" "#define Py__LARGEFILE_SOURCE 1" >>confdefs.h
+
+
 printf "%s\n" "#define _FILE_OFFSET_BITS 64" >>confdefs.h
+
+
+printf "%s\n" "#define Py__FILE_OFFSET_BITS 64" >>confdefs.h
 
 fi
 
@@ -11445,6 +11532,9 @@ fi
 
 printf "%s\n" "#define RETSIGTYPE void" >>confdefs.h
 
+
+printf "%s\n" "#define Py_RETSIGTYPE void" >>confdefs.h
+
 ac_fn_c_check_type "$LINENO" "size_t" "ac_cv_type_size_t" "$ac_includes_default"
 if test "x$ac_cv_type_size_t" = xyes
 then :
@@ -11494,6 +11584,9 @@ then :
 
 printf "%s\n" "#define HAVE_SSIZE_T 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_SSIZE_T 1" >>confdefs.h
+
 fi
 
 ac_fn_c_check_type "$LINENO" "__uint128_t" "ac_cv_type___uint128_t" "$ac_includes_default"
@@ -11501,6 +11594,9 @@ if test "x$ac_cv_type___uint128_t" = xyes
 then :
 
 printf "%s\n" "#define HAVE_GCC_UINT128_T 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_GCC_UINT128_T 1" >>confdefs.h
 
 fi
 
@@ -12139,6 +12235,9 @@ then :
 
 printf "%s\n" "#define HAVE_LARGEFILE_SUPPORT 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_LARGEFILE_SUPPORT 1" >>confdefs.h
+
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
 
@@ -12353,6 +12452,9 @@ then :
 printf "%s\n" "#define PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT 1" >>confdefs.h
 
 
+printf "%s\n" "#define Py_PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT 1" >>confdefs.h
+
+
 fi
 
 CC="$ac_save_cc"
@@ -12366,6 +12468,9 @@ then
 	# in the build location.
 
 printf "%s\n" "#define WITH_NEXT_FRAMEWORK 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_WITH_NEXT_FRAMEWORK 1" >>confdefs.h
 
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
@@ -12465,6 +12570,9 @@ case $ac_sys_system/$ac_sys_release in
   Darwin/*)
 
 printf "%s\n" "#define WITH_DYLD 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_WITH_DYLD 1" >>confdefs.h
 
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: always on for Darwin" >&5
 printf "%s\n" "always on for Darwin" >&6; }
@@ -12849,6 +12957,9 @@ then
 printf "%s\n" "#define THREAD_STACK_SIZE 0x$stack_size" >>confdefs.h
 
 
+printf "%s\n" "#define Py_THREAD_STACK_SIZE 0x$stack_size" >>confdefs.h
+
+
 		if test "$enable_framework"
 		then
 			LINKFORSHARED="$LINKFORSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
@@ -12951,6 +13062,9 @@ then :
 
 
 printf "%s\n" "#define PY_HAVE_PERF_TRAMPOLINE 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_PY_HAVE_PERF_TRAMPOLINE 1" >>confdefs.h
 
   PERF_TRAMPOLINE_OBJ=Python/asm_trampoline.o
 
@@ -13291,6 +13405,8 @@ then :
   have_uuid=yes
             printf "%s\n" "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
 
+          printf "%s\n" "#define Py_HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
+
 fi
 
 LIBS=$py_check_lib_save_LIBS
@@ -13417,6 +13533,8 @@ then :
   have_uuid=yes
             printf "%s\n" "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
 
+          printf "%s\n" "#define Py_HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
+
 fi
 
 LIBS=$py_check_lib_save_LIBS
@@ -13448,7 +13566,11 @@ printf "%s\n" "yes" >&6; }
 	            have_uuid=yes
       printf "%s\n" "#define HAVE_UUID_H 1" >>confdefs.h
 
+          printf "%s\n" "#define Py_HAVE_UUID_H 1" >>confdefs.h
+
       printf "%s\n" "#define HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
+
+          printf "%s\n" "#define Py_HAVE_UUID_GENERATE_TIME_SAFE 1" >>confdefs.h
 
 
 fi
@@ -13591,6 +13713,9 @@ then :
 
 printf "%s\n" "#define WITH_LIBINTL 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_WITH_LIBINTL 1" >>confdefs.h
+
         LIBS="-lintl $LIBS"
 fi
 
@@ -13618,6 +13743,9 @@ then :
 
 printf "%s\n" "#define AIX_GENUINE_CPLUSPLUS 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_AIX_GENUINE_CPLUSPLUS 1" >>confdefs.h
+
 		  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
 
@@ -13637,6 +13765,9 @@ printf %s "checking for the system builddate... " >&6; }
                AIX_BUILDDATE=$(lslpp -Lcq bos.mp64 | awk -F:  '{ print $NF }')
 
 printf "%s\n" "#define AIX_BUILDDATE $AIX_BUILDDATE" >>confdefs.h
+
+
+printf "%s\n" "#define Py_AIX_BUILDDATE $AIX_BUILDDATE" >>confdefs.h
 
                { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $AIX_BUILDDATE" >&5
 printf "%s\n" "$AIX_BUILDDATE" >&6; }
@@ -13689,6 +13820,9 @@ if test "$ac_cv_aligned_required" = yes ; then
 
 printf "%s\n" "#define HAVE_ALIGNED_REQUIRED 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_ALIGNED_REQUIRED 1" >>confdefs.h
+
 fi
 
 # str, bytes and memoryview hash algorithm
@@ -13707,13 +13841,19 @@ case "$withval" in
     siphash13)
         printf "%s\n" "#define Py_HASH_ALGORITHM 3" >>confdefs.h
 
+          printf "%s\n" "#define Py_Py_HASH_ALGORITHM 3" >>confdefs.h
+
         ;;
     siphash24)
         printf "%s\n" "#define Py_HASH_ALGORITHM 1" >>confdefs.h
 
+          printf "%s\n" "#define Py_Py_HASH_ALGORITHM 1" >>confdefs.h
+
         ;;
     fnv)
         printf "%s\n" "#define Py_HASH_ALGORITHM 2" >>confdefs.h
+
+          printf "%s\n" "#define Py_Py_HASH_ALGORITHM 2" >>confdefs.h
 
         ;;
     *)
@@ -14306,6 +14446,9 @@ then :
 
 printf "%s\n" "#define HAVE_FFI_PREP_CIF_VAR 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_FFI_PREP_CIF_VAR 1" >>confdefs.h
+
 fi
 
 
@@ -14345,6 +14488,9 @@ then :
 
 printf "%s\n" "#define HAVE_FFI_PREP_CLOSURE_LOC 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_FFI_PREP_CLOSURE_LOC 1" >>confdefs.h
+
 fi
 
 
@@ -14383,6 +14529,9 @@ printf "%s\n" "$ac_cv_func_ffi_closure_alloc" >&6; }
 then :
 
 printf "%s\n" "#define HAVE_FFI_CLOSURE_ALLOC 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_FFI_CLOSURE_ALLOC 1" >>confdefs.h
 
 fi
 
@@ -14455,6 +14604,9 @@ if test "$with_decimal_contextvar" != "no"
 then
 
 printf "%s\n" "#define WITH_DECIMAL_CONTEXTVAR 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_WITH_DECIMAL_CONTEXTVAR 1" >>confdefs.h
 
 fi
 
@@ -15249,6 +15401,9 @@ then :
 printf "%s\n" "#define PY_SQLITE_HAVE_SERIALIZE 1" >>confdefs.h
 
 
+printf "%s\n" "#define Py_PY_SQLITE_HAVE_SERIALIZE 1" >>confdefs.h
+
+
 fi
 
 
@@ -15289,6 +15444,9 @@ else $as_nop
 printf "%s\n" "yes" >&6; }
 
 printf "%s\n" "#define PY_SQLITE_ENABLE_LOAD_EXTENSION 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_PY_SQLITE_ENABLE_LOAD_EXTENSION 1" >>confdefs.h
 
 
 fi
@@ -15787,6 +15945,9 @@ then :
 printf "%s\n" "#define HAVE_GDBM_NDBM_H 1" >>confdefs.h
 
 
+printf "%s\n" "#define Py_HAVE_GDBM_NDBM_H 1" >>confdefs.h
+
+
 fi
 
 { ac_cv_header_gdbm_ndbm_h=; unset ac_cv_header_gdbm_ndbm_h;}
@@ -15812,6 +15973,9 @@ then :
 
 
 printf "%s\n" "#define HAVE_GDBM_DASH_NDBM_H 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_GDBM_DASH_NDBM_H 1" >>confdefs.h
 
 
 fi
@@ -15962,6 +16126,9 @@ then :
 printf "%s\n" "#define HAVE_LIBDB 1" >>confdefs.h
 
 
+printf "%s\n" "#define Py_HAVE_LIBDB 1" >>confdefs.h
+
+
 fi
 
 fi
@@ -16044,14 +16211,16 @@ IFS=$as_save_IFS
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $DBM_CFLAGS $DBM_LIBS" >&5
 printf "%s\n" "$DBM_CFLAGS $DBM_LIBS" >&6; }
 
-# Templates for things AC_DEFINEd more than once.
-# For a single AC_DEFINE, no template is needed.
+# Templates for things PY_DEFINEd more than once.
+# For a single PY_DEFINE, no template is needed.
 
 
 if test "$ac_cv_pthread_is_default" = yes
 then
     # Defining _REENTRANT on system with POSIX threads should not hurt.
-    printf "%s\n" "#define _REENTRANT 1" >>confdefs.h
+    printf "%s\n" "#define _REENTRANT /**/" >>confdefs.h
+
+          printf "%s\n" "#define Py__REENTRANT /**/" >>confdefs.h
 
     posix_threads=yes
     if test "$ac_sys_system" = "SunOS"; then
@@ -16109,7 +16278,9 @@ rm -rf conftest*
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $unistd_defines_pthreads" >&5
 printf "%s\n" "$unistd_defines_pthreads" >&6; }
 
-    printf "%s\n" "#define _REENTRANT 1" >>confdefs.h
+    printf "%s\n" "#define _REENTRANT /**/" >>confdefs.h
+
+          printf "%s\n" "#define Py__REENTRANT /**/" >>confdefs.h
 
     # Just looking for pthread_create in libpthread is not enough:
     # on HP/UX, pthread.h renames pthread_create to a different symbol name.
@@ -16397,6 +16568,9 @@ if test "$posix_threads" = "yes"; then
 
 printf "%s\n" "#define _POSIX_THREADS 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py__POSIX_THREADS 1" >>confdefs.h
+
       fi
 
       # Bug 662787: Using semaphores causes unexplicable hangs on Solaris 8.
@@ -16404,17 +16578,29 @@ printf "%s\n" "#define _POSIX_THREADS 1" >>confdefs.h
       SunOS/5.6)
 printf "%s\n" "#define HAVE_PTHREAD_DESTRUCTOR 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_PTHREAD_DESTRUCTOR 1" >>confdefs.h
+
 		       ;;
       SunOS/5.8)
 printf "%s\n" "#define HAVE_BROKEN_POSIX_SEMAPHORES 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_BROKEN_POSIX_SEMAPHORES 1" >>confdefs.h
 
 		       ;;
       AIX/*)
 printf "%s\n" "#define HAVE_BROKEN_POSIX_SEMAPHORES 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_BROKEN_POSIX_SEMAPHORES 1" >>confdefs.h
+
 		       ;;
       NetBSD/*)
 printf "%s\n" "#define HAVE_BROKEN_POSIX_SEMAPHORES 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_BROKEN_POSIX_SEMAPHORES 1" >>confdefs.h
 
 		       ;;
       esac
@@ -16464,6 +16650,9 @@ printf "%s\n" "$ac_cv_pthread_system_supported" >&6; }
 
 printf "%s\n" "#define PTHREAD_SYSTEM_SCHED_SUPPORTED 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_PTHREAD_SYSTEM_SCHED_SUPPORTED 1" >>confdefs.h
+
       fi
 
   for ac_func in pthread_sigmask
@@ -16476,6 +16665,9 @@ then :
         CYGWIN*)
 
 printf "%s\n" "#define HAVE_BROKEN_PTHREAD_SIGMASK 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_BROKEN_PTHREAD_SIGMASK 1" >>confdefs.h
 
             ;;
         esac
@@ -16498,6 +16690,9 @@ then :
 printf "%s\n" "#define HAVE_PTHREAD_STUBS 1" >>confdefs.h
 
 
+printf "%s\n" "#define Py_HAVE_PTHREAD_STUBS 1" >>confdefs.h
+
+
 fi
 
 # Check for enable-ipv6
@@ -16515,7 +16710,9 @@ printf "%s\n" "no" >&6; }
        ;;
   *)   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
-       printf "%s\n" "#define ENABLE_IPV6 1" >>confdefs.h
+       printf "%s\n" "#define ENABLE_IPV6 /**/" >>confdefs.h
+
+          printf "%s\n" "#define Py_ENABLE_IPV6 /**/" >>confdefs.h
 
        ipv6=yes
        ;;
@@ -16594,7 +16791,9 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
 if test "$ipv6" = "yes"; then
-	printf "%s\n" "#define ENABLE_IPV6 1" >>confdefs.h
+	printf "%s\n" "#define ENABLE_IPV6 /**/" >>confdefs.h
+
+          printf "%s\n" "#define Py_ENABLE_IPV6 /**/" >>confdefs.h
 
 fi
 
@@ -16807,6 +17006,9 @@ then :
 printf "%s\n" "#define HAVE_LINUX_CAN_RAW_FD_FRAMES 1" >>confdefs.h
 
 
+printf "%s\n" "#define Py_HAVE_LINUX_CAN_RAW_FD_FRAMES 1" >>confdefs.h
+
+
 fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for CAN_RAW_JOIN_FILTERS" >&5
@@ -16846,6 +17048,9 @@ then :
 printf "%s\n" "#define HAVE_LINUX_CAN_RAW_JOIN_FILTERS 1" >>confdefs.h
 
 
+printf "%s\n" "#define Py_HAVE_LINUX_CAN_RAW_JOIN_FILTERS 1" >>confdefs.h
+
+
 fi
 
 # Check for --with-doc-strings
@@ -16866,6 +17071,9 @@ if test "$with_doc_strings" != "no"
 then
 
 printf "%s\n" "#define WITH_DOC_STRINGS 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_WITH_DOC_STRINGS 1" >>confdefs.h
 
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_doc_strings" >&5
@@ -16915,6 +17123,9 @@ then :
 printf "%s\n" "#define HAVE_STD_ATOMIC 1" >>confdefs.h
 
 
+printf "%s\n" "#define Py_HAVE_STD_ATOMIC 1" >>confdefs.h
+
+
 fi
 
 # Check for GCC >= 4.7 and clang __atomic builtin functions
@@ -16958,6 +17169,9 @@ then :
 printf "%s\n" "#define HAVE_BUILTIN_ATOMIC 1" >>confdefs.h
 
 
+printf "%s\n" "#define Py_HAVE_BUILTIN_ATOMIC 1" >>confdefs.h
+
+
 fi
 
 # --with-mimalloc
@@ -16982,6 +17196,9 @@ if test "$with_mimalloc" != no; then
   with_mimalloc=yes
 
 printf "%s\n" "#define WITH_MIMALLOC 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_WITH_MIMALLOC 1" >>confdefs.h
 
   MIMALLOC_HEADERS='$(MIMALLOC_HEADERS)'
 
@@ -17022,6 +17239,9 @@ then
 
 printf "%s\n" "#define WITH_PYMALLOC 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_WITH_PYMALLOC 1" >>confdefs.h
+
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_pymalloc" >&5
 printf "%s\n" "$with_pymalloc" >&6; }
@@ -17047,6 +17267,9 @@ then
 
 printf "%s\n" "#define WITH_FREELISTS 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_WITH_FREELISTS 1" >>confdefs.h
+
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_freelists" >&5
 printf "%s\n" "$with_freelists" >&6; }
@@ -17070,6 +17293,9 @@ if test "$with_c_locale_coercion" != "no"
 then
 
 printf "%s\n" "#define PY_COERCE_C_LOCALE 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_PY_COERCE_C_LOCALE 1" >>confdefs.h
 
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_c_locale_coercion" >&5
@@ -17096,6 +17322,9 @@ if test "x$ac_cv_header_valgrind_valgrind_h" = xyes
 then :
 
 printf "%s\n" "#define WITH_VALGRIND 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_WITH_VALGRIND 1" >>confdefs.h
 
 else $as_nop
   as_fn_error $? "Valgrind support requested but headers not available" "$LINENO" 5
@@ -17182,6 +17411,9 @@ fi
 
 printf "%s\n" "#define WITH_DTRACE 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_WITH_DTRACE 1" >>confdefs.h
+
     DTRACE_HEADERS="Include/pydtrace_probes.h"
 
     # On OS X, DTrace providers do not need to be explicitly compiled and
@@ -17261,6 +17493,9 @@ if test "$DYNLOADFILE" != "dynload_stub.o"
 then
 
 printf "%s\n" "#define HAVE_DYNAMIC_LOADING 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_DYNAMIC_LOADING 1" >>confdefs.h
 
 fi
 
@@ -18545,6 +18780,9 @@ then :
 
 printf "%s\n" "#define HAVE_DIRFD 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_DIRFD 1" >>confdefs.h
+
 fi
 
 # For some functions, having a definition is not sufficient, since
@@ -18583,6 +18821,9 @@ printf "%s\n" "$ac_cv_func_chroot" >&6; }
 then :
 
 printf "%s\n" "#define HAVE_CHROOT 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_CHROOT 1" >>confdefs.h
 
 fi
 
@@ -18623,6 +18864,9 @@ then :
 
 printf "%s\n" "#define HAVE_LINK 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_LINK 1" >>confdefs.h
+
 fi
 
 
@@ -18661,6 +18905,9 @@ printf "%s\n" "$ac_cv_func_symlink" >&6; }
 then :
 
 printf "%s\n" "#define HAVE_SYMLINK 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_SYMLINK 1" >>confdefs.h
 
 fi
 
@@ -18701,6 +18948,9 @@ then :
 
 printf "%s\n" "#define HAVE_FCHDIR 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_FCHDIR 1" >>confdefs.h
+
 fi
 
 
@@ -18739,6 +18989,9 @@ printf "%s\n" "$ac_cv_func_fsync" >&6; }
 then :
 
 printf "%s\n" "#define HAVE_FSYNC 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_FSYNC 1" >>confdefs.h
 
 fi
 
@@ -18779,6 +19032,9 @@ then :
 
 printf "%s\n" "#define HAVE_FDATASYNC 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_FDATASYNC 1" >>confdefs.h
+
 fi
 
 
@@ -18818,6 +19074,9 @@ then :
 
 printf "%s\n" "#define HAVE_EPOLL 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_EPOLL 1" >>confdefs.h
+
 fi
 
 
@@ -18856,6 +19115,9 @@ printf "%s\n" "$ac_cv_func_epoll_create1" >&6; }
 then :
 
 printf "%s\n" "#define HAVE_EPOLL_CREATE1 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_EPOLL_CREATE1 1" >>confdefs.h
 
 fi
 
@@ -18899,6 +19161,9 @@ then :
 
 printf "%s\n" "#define HAVE_KQUEUE 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_KQUEUE 1" >>confdefs.h
+
 fi
 
 
@@ -18941,6 +19206,9 @@ then :
 
 printf "%s\n" "#define HAVE_PRLIMIT 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_PRLIMIT 1" >>confdefs.h
+
 fi
 
 
@@ -18980,6 +19248,9 @@ printf "%s\n" "$ac_cv_func__dyld_shared_cache_contains_path" >&6; }
 then :
 
 printf "%s\n" "#define HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH 1" >>confdefs.h
 
 fi
 
@@ -19028,6 +19299,9 @@ then :
 
 printf "%s\n" "#define HAVE_MEMFD_CREATE 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_MEMFD_CREATE 1" >>confdefs.h
+
 fi
 
 
@@ -19072,6 +19346,9 @@ then :
 
 printf "%s\n" "#define HAVE_EVENTFD 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_EVENTFD 1" >>confdefs.h
+
 fi
 
 
@@ -19115,6 +19392,9 @@ printf "%s\n" "$ac_cv_func_timerfd_create" >&6; }
 then :
 
 printf "%s\n" "#define HAVE_TIMERFD_CREATE 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_TIMERFD_CREATE 1" >>confdefs.h
 
 fi
 
@@ -19161,6 +19441,9 @@ printf "%s\n" "$ac_cv_func_ctermid_r" >&6; }
 then :
 
 printf "%s\n" "#define HAVE_CTERMID_R 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_CTERMID_R 1" >>confdefs.h
 
 fi
 
@@ -19288,6 +19571,9 @@ then :
 
 printf "%s\n" "#define HAVE_GETPAGESIZE 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_GETPAGESIZE 1" >>confdefs.h
+
 fi
 
 
@@ -19327,6 +19613,9 @@ then :
 
 
 printf "%s\n" "#define HAVE_BROKEN_UNSETENV 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_BROKEN_UNSETENV 1" >>confdefs.h
 
 
 fi
@@ -19519,6 +19808,9 @@ if test "$ac_cv_have_chflags" = yes ; then
 
 printf "%s\n" "#define HAVE_CHFLAGS 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_CHFLAGS 1" >>confdefs.h
+
 fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lchflags" >&5
@@ -19571,6 +19863,9 @@ fi
 if test "$ac_cv_have_lchflags" = yes ; then
 
 printf "%s\n" "#define HAVE_LCHFLAGS 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_LCHFLAGS 1" >>confdefs.h
 
 fi
 
@@ -19761,6 +20056,8 @@ if test "x$ac_cv_lib_z_inflateCopy" = xyes
 then :
   printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
 
+          printf "%s\n" "#define Py_HAVE_ZLIB_COPY 1" >>confdefs.h
+
 fi
 
 LIBS=$py_check_lib_save_LIBS
@@ -19890,6 +20187,8 @@ if test "x$ac_cv_lib_z_inflateCopy" = xyes
 then :
   printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
 
+          printf "%s\n" "#define Py_HAVE_ZLIB_COPY 1" >>confdefs.h
+
 fi
 
 LIBS=$py_check_lib_save_LIBS
@@ -19912,6 +20211,8 @@ printf "%s\n" "yes" >&6; }
 
   have_zlib=yes
     printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
+
+          printf "%s\n" "#define Py_HAVE_ZLIB_COPY 1" >>confdefs.h
 
 
 fi
@@ -20431,6 +20732,9 @@ then :
 
 printf "%s\n" "#define HAVE_HSTRERROR 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_HSTRERROR 1" >>confdefs.h
+
 fi
 
 
@@ -20469,6 +20773,9 @@ printf "%s\n" "$ac_cv_func_getservbyname" >&6; }
 then :
 
 printf "%s\n" "#define HAVE_GETSERVBYNAME 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_GETSERVBYNAME 1" >>confdefs.h
 
 fi
 
@@ -20509,6 +20816,9 @@ then :
 
 printf "%s\n" "#define HAVE_GETSERVBYPORT 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_GETSERVBYPORT 1" >>confdefs.h
+
 fi
 
 
@@ -20547,6 +20857,9 @@ printf "%s\n" "$ac_cv_func_gethostbyname" >&6; }
 then :
 
 printf "%s\n" "#define HAVE_GETHOSTBYNAME 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_GETHOSTBYNAME 1" >>confdefs.h
 
 fi
 
@@ -20587,6 +20900,9 @@ then :
 
 printf "%s\n" "#define HAVE_GETHOSTBYADDR 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_GETHOSTBYADDR 1" >>confdefs.h
+
 fi
 
 
@@ -20625,6 +20941,9 @@ printf "%s\n" "$ac_cv_func_getprotobyname" >&6; }
 then :
 
 printf "%s\n" "#define HAVE_GETPROTOBYNAME 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_GETPROTOBYNAME 1" >>confdefs.h
 
 fi
 
@@ -20673,6 +20992,9 @@ then :
 
 printf "%s\n" "#define HAVE_INET_ATON 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_INET_ATON 1" >>confdefs.h
+
 fi
 
 
@@ -20716,6 +21038,9 @@ printf "%s\n" "$ac_cv_func_inet_ntoa" >&6; }
 then :
 
 printf "%s\n" "#define HAVE_INET_NTOA 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_INET_NTOA 1" >>confdefs.h
 
 fi
 
@@ -20761,6 +21086,9 @@ then :
 
 printf "%s\n" "#define HAVE_INET_PTON 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_INET_PTON 1" >>confdefs.h
+
 fi
 
 
@@ -20804,6 +21132,9 @@ printf "%s\n" "$ac_cv_func_getpeername" >&6; }
 then :
 
 printf "%s\n" "#define HAVE_GETPEERNAME 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_GETPEERNAME 1" >>confdefs.h
 
 fi
 
@@ -20849,6 +21180,9 @@ then :
 
 printf "%s\n" "#define HAVE_GETSOCKNAME 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_GETSOCKNAME 1" >>confdefs.h
+
 fi
 
 
@@ -20892,6 +21226,9 @@ printf "%s\n" "$ac_cv_func_accept" >&6; }
 then :
 
 printf "%s\n" "#define HAVE_ACCEPT 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_ACCEPT 1" >>confdefs.h
 
 fi
 
@@ -20937,6 +21274,9 @@ then :
 
 printf "%s\n" "#define HAVE_BIND 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_BIND 1" >>confdefs.h
+
 fi
 
 
@@ -20980,6 +21320,9 @@ printf "%s\n" "$ac_cv_func_connect" >&6; }
 then :
 
 printf "%s\n" "#define HAVE_CONNECT 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_CONNECT 1" >>confdefs.h
 
 fi
 
@@ -21025,6 +21368,9 @@ then :
 
 printf "%s\n" "#define HAVE_LISTEN 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_LISTEN 1" >>confdefs.h
+
 fi
 
 
@@ -21068,6 +21414,9 @@ printf "%s\n" "$ac_cv_func_recvfrom" >&6; }
 then :
 
 printf "%s\n" "#define HAVE_RECVFROM 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_RECVFROM 1" >>confdefs.h
 
 fi
 
@@ -21113,6 +21462,9 @@ then :
 
 printf "%s\n" "#define HAVE_SENDTO 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_SENDTO 1" >>confdefs.h
+
 fi
 
 
@@ -21157,6 +21509,9 @@ then :
 
 printf "%s\n" "#define HAVE_SETSOCKOPT 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_SETSOCKOPT 1" >>confdefs.h
+
 fi
 
 
@@ -21200,6 +21555,9 @@ printf "%s\n" "$ac_cv_func_socket" >&6; }
 then :
 
 printf "%s\n" "#define HAVE_SOCKET 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_SOCKET 1" >>confdefs.h
 
 fi
 
@@ -21246,6 +21604,9 @@ printf "%s\n" "$ac_cv_func_setgroups" >&6; }
 then :
 
 printf "%s\n" "#define HAVE_SETGROUPS 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_SETGROUPS 1" >>confdefs.h
 
 fi
 
@@ -21300,7 +21661,9 @@ fi
 printf "%s\n" "$ac_cv_lib_util_openpty" >&6; }
 if test "x$ac_cv_lib_util_openpty" = xyes
 then :
-  printf "%s\n" "#define HAVE_OPENPTY 1" >>confdefs.h
+  printf "%s\n" "#define HAVE_OPENPTY /**/" >>confdefs.h
+
+          printf "%s\n" "#define Py_HAVE_OPENPTY /**/" >>confdefs.h
  LIBS="$LIBS -lutil"
 else $as_nop
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for openpty in -lbsd" >&5
@@ -21340,7 +21703,9 @@ fi
 printf "%s\n" "$ac_cv_lib_bsd_openpty" >&6; }
 if test "x$ac_cv_lib_bsd_openpty" = xyes
 then :
-  printf "%s\n" "#define HAVE_OPENPTY 1" >>confdefs.h
+  printf "%s\n" "#define HAVE_OPENPTY /**/" >>confdefs.h
+
+          printf "%s\n" "#define Py_HAVE_OPENPTY /**/" >>confdefs.h
  LIBS="$LIBS -lbsd"
 fi
 
@@ -21409,6 +21774,9 @@ then :
 printf "%s\n" "#define HAVE_LOGIN_TTY 1" >>confdefs.h
 
 
+printf "%s\n" "#define Py_HAVE_LOGIN_TTY 1" >>confdefs.h
+
+
 fi
 
 
@@ -21457,7 +21825,9 @@ fi
 printf "%s\n" "$ac_cv_lib_util_forkpty" >&6; }
 if test "x$ac_cv_lib_util_forkpty" = xyes
 then :
-  printf "%s\n" "#define HAVE_FORKPTY 1" >>confdefs.h
+  printf "%s\n" "#define HAVE_FORKPTY /**/" >>confdefs.h
+
+          printf "%s\n" "#define Py_HAVE_FORKPTY /**/" >>confdefs.h
  LIBS="$LIBS -lutil"
 else $as_nop
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for forkpty in -lbsd" >&5
@@ -21497,7 +21867,9 @@ fi
 printf "%s\n" "$ac_cv_lib_bsd_forkpty" >&6; }
 if test "x$ac_cv_lib_bsd_forkpty" = xyes
 then :
-  printf "%s\n" "#define HAVE_FORKPTY 1" >>confdefs.h
+  printf "%s\n" "#define HAVE_FORKPTY /**/" >>confdefs.h
+
+          printf "%s\n" "#define Py_HAVE_FORKPTY /**/" >>confdefs.h
  LIBS="$LIBS -lbsd"
 fi
 
@@ -21583,6 +21955,9 @@ then :
 
 printf "%s\n" "#define GETPGRP_HAVE_ARG 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_GETPGRP_HAVE_ARG 1" >>confdefs.h
+
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
@@ -21610,6 +21985,9 @@ if ac_fn_c_try_compile "$LINENO"
 then :
 
 printf "%s\n" "#define SETPGRP_HAVE_ARG 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_SETPGRP_HAVE_ARG 1" >>confdefs.h
 
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
@@ -21683,8 +22061,13 @@ then :
         LIBS="$LIBS -lrt"
         printf "%s\n" "#define HAVE_CLOCK_GETTIME 1" >>confdefs.h
 
+          printf "%s\n" "#define Py_HAVE_CLOCK_GETTIME 1" >>confdefs.h
+
 
 printf "%s\n" "#define TIMEMODULE_LIB rt" >>confdefs.h
+
+
+printf "%s\n" "#define Py_TIMEMODULE_LIB rt" >>confdefs.h
 
 
 fi
@@ -21744,6 +22127,8 @@ then :
 
         printf "%s\n" "#define HAVE_CLOCK_GETRES 1" >>confdefs.h
 
+          printf "%s\n" "#define Py_HAVE_CLOCK_GETRES 1" >>confdefs.h
+
 
 fi
 
@@ -21801,6 +22186,8 @@ if test "x$ac_cv_lib_rt_clock_settime" = xyes
 then :
 
         printf "%s\n" "#define HAVE_CLOCK_SETTIME 1" >>confdefs.h
+
+          printf "%s\n" "#define Py_HAVE_CLOCK_SETTIME 1" >>confdefs.h
 
 
 fi
@@ -21860,6 +22247,8 @@ then :
 
         printf "%s\n" "#define HAVE_CLOCK_NANOSLEEP 1" >>confdefs.h
 
+          printf "%s\n" "#define Py_HAVE_CLOCK_NANOSLEEP 1" >>confdefs.h
+
 
 fi
 
@@ -21918,6 +22307,8 @@ then :
 
         printf "%s\n" "#define HAVE_NANOSLEEP 1" >>confdefs.h
 
+          printf "%s\n" "#define Py_HAVE_NANOSLEEP 1" >>confdefs.h
+
 
 fi
 
@@ -21974,10 +22365,16 @@ then :
 printf "%s\n" "#define HAVE_DEVICE_MACROS 1" >>confdefs.h
 
 
+printf "%s\n" "#define Py_HAVE_DEVICE_MACROS 1" >>confdefs.h
+
+
 fi
 
 
 printf "%s\n" "#define SYS_SELECT_WITH_SYS_TIME 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_SYS_SELECT_WITH_SYS_TIME 1" >>confdefs.h
 
 
 # On OSF/1 V5.1, getaddrinfo is available, but a define
@@ -22157,6 +22554,9 @@ fi
 else
 
 printf "%s\n" "#define HAVE_GETADDRINFO 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_GETADDRINFO 1" >>confdefs.h
 
 fi
 
@@ -22396,6 +22796,9 @@ if test $ac_cv_header_time_altzone = yes; then
 
 printf "%s\n" "#define HAVE_ALTZONE 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_ALTZONE 1" >>confdefs.h
+
 fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for addrinfo" >&5
@@ -22428,6 +22831,9 @@ printf "%s\n" "$ac_cv_struct_addrinfo" >&6; }
 if test $ac_cv_struct_addrinfo = yes; then
 
 printf "%s\n" "#define HAVE_ADDRINFO 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_ADDRINFO 1" >>confdefs.h
 
 fi
 
@@ -22464,6 +22870,9 @@ if test $ac_cv_struct_sockaddr_storage = yes; then
 
 printf "%s\n" "#define HAVE_SOCKADDR_STORAGE 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_SOCKADDR_STORAGE 1" >>confdefs.h
+
 fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for sockaddr_alg" >&5
@@ -22499,6 +22908,9 @@ printf "%s\n" "$ac_cv_struct_sockaddr_alg" >&6; }
 if test $ac_cv_struct_sockaddr_alg = yes; then
 
 printf "%s\n" "#define HAVE_SOCKADDR_ALG 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_SOCKADDR_ALG 1" >>confdefs.h
 
 fi
 
@@ -22624,6 +23036,9 @@ then :
 printf "%s\n" "#define signed /**/" >>confdefs.h
 
 
+printf "%s\n" "#define Py_signed /**/" >>confdefs.h
+
+
 fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for prototypes" >&5
@@ -22660,6 +23075,9 @@ then :
 
 
 printf "%s\n" "#define HAVE_PROTOTYPES 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_PROTOTYPES 1" >>confdefs.h
 
 
 fi
@@ -22703,6 +23121,9 @@ printf "%s\n" "$ac_cv_func_socketpair" >&6; }
 then :
 
 printf "%s\n" "#define HAVE_SOCKETPAIR 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_SOCKETPAIR 1" >>confdefs.h
 
 fi
 
@@ -22748,6 +23169,9 @@ then :
 printf "%s\n" "#define HAVE_SOCKADDR_SA_LEN 1" >>confdefs.h
 
 
+printf "%s\n" "#define Py_HAVE_SOCKADDR_SA_LEN 1" >>confdefs.h
+
+
 fi
 
 # sigh -- gethostbyname_r is a mess; it can have 3, 5 or 6 arguments :-(
@@ -22756,7 +23180,9 @@ fi
 ac_fn_c_check_func "$LINENO" "gethostbyname_r" "ac_cv_func_gethostbyname_r"
 if test "x$ac_cv_func_gethostbyname_r" = xyes
 then :
-  printf "%s\n" "#define HAVE_GETHOSTBYNAME_R 1" >>confdefs.h
+  printf "%s\n" "#define HAVE_GETHOSTBYNAME_R /**/" >>confdefs.h
+
+          printf "%s\n" "#define Py_HAVE_GETHOSTBYNAME_R /**/" >>confdefs.h
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking gethostbyname_r with 6 args" >&5
 printf %s "checking gethostbyname_r with 6 args... " >&6; }
@@ -22786,10 +23212,15 @@ _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
 
-    printf "%s\n" "#define HAVE_GETHOSTBYNAME_R 1" >>confdefs.h
+    printf "%s\n" "#define HAVE_GETHOSTBYNAME_R /**/" >>confdefs.h
+
+          printf "%s\n" "#define Py_HAVE_GETHOSTBYNAME_R /**/" >>confdefs.h
 
 
 printf "%s\n" "#define HAVE_GETHOSTBYNAME_R_6_ARG 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_GETHOSTBYNAME_R_6_ARG 1" >>confdefs.h
 
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
@@ -22824,10 +23255,15 @@ _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
 
-        printf "%s\n" "#define HAVE_GETHOSTBYNAME_R 1" >>confdefs.h
+        printf "%s\n" "#define HAVE_GETHOSTBYNAME_R /**/" >>confdefs.h
+
+          printf "%s\n" "#define Py_HAVE_GETHOSTBYNAME_R /**/" >>confdefs.h
 
 
 printf "%s\n" "#define HAVE_GETHOSTBYNAME_R_5_ARG 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_GETHOSTBYNAME_R_5_ARG 1" >>confdefs.h
 
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
@@ -22860,10 +23296,15 @@ _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
 
-            printf "%s\n" "#define HAVE_GETHOSTBYNAME_R 1" >>confdefs.h
+            printf "%s\n" "#define HAVE_GETHOSTBYNAME_R /**/" >>confdefs.h
+
+          printf "%s\n" "#define Py_HAVE_GETHOSTBYNAME_R /**/" >>confdefs.h
 
 
 printf "%s\n" "#define HAVE_GETHOSTBYNAME_R_3_ARG 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_GETHOSTBYNAME_R_3_ARG 1" >>confdefs.h
 
             { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
@@ -23056,6 +23497,9 @@ then :
 printf "%s\n" "#define HAVE_GCC_ASM_FOR_X64 1" >>confdefs.h
 
 
+printf "%s\n" "#define Py_HAVE_GCC_ASM_FOR_X64 1" >>confdefs.h
+
+
 fi
 
 # **************************************************
@@ -23123,10 +23567,16 @@ then
 
 printf "%s\n" "#define DOUBLE_IS_BIG_ENDIAN_IEEE754 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_DOUBLE_IS_BIG_ENDIAN_IEEE754 1" >>confdefs.h
+
 elif test "$ax_cv_c_float_words_bigendian" = "no"
 then
 
 printf "%s\n" "#define DOUBLE_IS_LITTLE_ENDIAN_IEEE754 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_DOUBLE_IS_LITTLE_ENDIAN_IEEE754 1" >>confdefs.h
 
 else
   # Some ARM platforms use a mixed-endian representation for doubles.
@@ -23137,6 +23587,9 @@ else
   # or little, then it must be this?
 
 printf "%s\n" "#define DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754 1" >>confdefs.h
 
 fi
 
@@ -23191,6 +23644,9 @@ then :
 printf "%s\n" "#define HAVE_GCC_ASM_FOR_X87 1" >>confdefs.h
 
 
+printf "%s\n" "#define Py_HAVE_GCC_ASM_FOR_X87 1" >>confdefs.h
+
+
 fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether we can use gcc inline assembler to get and set mc68881 fpcr" >&5
@@ -23232,6 +23688,9 @@ then :
 
 
 printf "%s\n" "#define HAVE_GCC_ASM_FOR_MC68881 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_GCC_ASM_FOR_MC68881 1" >>confdefs.h
 
 
 fi
@@ -23299,6 +23758,9 @@ then :
 
 
 printf "%s\n" "#define X87_DOUBLE_ROUNDING 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_X87_DOUBLE_ROUNDING 1" >>confdefs.h
 
 
 fi
@@ -23383,6 +23845,9 @@ then :
 printf "%s\n" "#define POSIX_SEMAPHORES_NOT_ENABLED 1" >>confdefs.h
 
 
+printf "%s\n" "#define Py_POSIX_SEMAPHORES_NOT_ENABLED 1" >>confdefs.h
+
+
 fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for broken sem_getvalue" >&5
@@ -23441,6 +23906,9 @@ then :
 
 
 printf "%s\n" "#define HAVE_BROKEN_SEM_GETVALUE 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_BROKEN_SEM_GETVALUE 1" >>confdefs.h
 
 
 fi
@@ -23541,6 +24009,9 @@ printf "%s\n" "$enable_big_digits" >&6; }
 printf "%s\n" "#define PYLONG_BITS_IN_DIGIT $enable_big_digits" >>confdefs.h
 
 
+printf "%s\n" "#define Py_PYLONG_BITS_IN_DIGIT $enable_big_digits" >>confdefs.h
+
+
 else $as_nop
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no value specified" >&5
 printf "%s\n" "no value specified" >&6; }
@@ -23554,6 +24025,9 @@ then :
 
 
 printf "%s\n" "#define HAVE_WCHAR_H 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_WCHAR_H 1" >>confdefs.h
 
   wchar_h="yes"
 
@@ -23652,6 +24126,9 @@ then
 
 printf "%s\n" "#define HAVE_USABLE_WCHAR_T 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_USABLE_WCHAR_T 1" >>confdefs.h
+
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
 else
@@ -23669,6 +24146,9 @@ SunOS/*)
       # https://docs.oracle.com/cd/E37838_01/html/E61053/gmwke.html
 
 printf "%s\n" "#define HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION 1" >>confdefs.h
 
     fi
   fi
@@ -23946,6 +24426,9 @@ if test "$Py_DEBUG" = 'true'; then
 
 printf "%s\n" "#define ALT_SOABI \"${ALT_SOABI}\"" >>confdefs.h
 
+
+printf "%s\n" "#define Py_ALT_SOABI \"${ALT_SOABI}\"" >>confdefs.h
+
 fi
 
 
@@ -24074,6 +24557,9 @@ then
 
 printf "%s\n" "#define SIGNED_RIGHT_SHIFT_ZERO_FILLS 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_SIGNED_RIGHT_SHIFT_ZERO_FILLS 1" >>confdefs.h
+
 fi
 
 # check for getc_unlocked and related locking functions
@@ -24115,6 +24601,9 @@ if test "$ac_cv_have_getc_unlocked" = yes
 then
 
 printf "%s\n" "#define HAVE_GETC_UNLOCKED 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_GETC_UNLOCKED 1" >>confdefs.h
 
 fi
 
@@ -24494,6 +24983,8 @@ then :
           LIBREADLINE=edit
           printf "%s\n" "#define WITH_EDITLINE 1" >>confdefs.h
 
+          printf "%s\n" "#define Py_WITH_EDITLINE 1" >>confdefs.h
+
           READLINE_CFLAGS=${LIBEDIT_CFLAGS-""}
           READLINE_LIBS=${LIBEDIT_LIBS-"-ledit"}
 
@@ -24575,6 +25066,8 @@ then :
           LIBREADLINE=edit
           printf "%s\n" "#define WITH_EDITLINE 1" >>confdefs.h
 
+          printf "%s\n" "#define Py_WITH_EDITLINE 1" >>confdefs.h
+
           READLINE_CFLAGS=${LIBEDIT_CFLAGS-""}
           READLINE_LIBS=${LIBEDIT_LIBS-"-ledit"}
 
@@ -24603,6 +25096,8 @@ else
 printf "%s\n" "yes" >&6; }
 
     printf "%s\n" "#define WITH_EDITLINE 1" >>confdefs.h
+
+          printf "%s\n" "#define Py_WITH_EDITLINE 1" >>confdefs.h
 
     LIBREADLINE=edit
     READLINE_CFLAGS=$LIBEDIT_CFLAGS
@@ -24657,6 +25152,9 @@ then :
 printf "%s\n" "#define HAVE_RL_COMPLETION_APPEND_CHARACTER 1" >>confdefs.h
 
 
+printf "%s\n" "#define Py_HAVE_RL_COMPLETION_APPEND_CHARACTER 1" >>confdefs.h
+
+
 fi
 
     ac_fn_check_decl "$LINENO" "rl_completion_suppress_append" "ac_cv_have_decl_rl_completion_suppress_append" "
@@ -24674,6 +25172,9 @@ then :
 
 
 printf "%s\n" "#define HAVE_RL_COMPLETION_SUPPRESS_APPEND 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_RL_COMPLETION_SUPPRESS_APPEND 1" >>confdefs.h
 
 
 fi
@@ -24725,6 +25226,9 @@ then :
 printf "%s\n" "#define HAVE_RL_PRE_INPUT_HOOK 1" >>confdefs.h
 
 
+printf "%s\n" "#define Py_HAVE_RL_PRE_INPUT_HOOK 1" >>confdefs.h
+
+
 fi
 
     # also in 4.0
@@ -24772,6 +25276,9 @@ then :
 
 
 printf "%s\n" "#define HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK 1" >>confdefs.h
 
 
 fi
@@ -24823,6 +25330,9 @@ then :
 printf "%s\n" "#define HAVE_RL_RESIZE_TERMINAL 1" >>confdefs.h
 
 
+printf "%s\n" "#define Py_HAVE_RL_RESIZE_TERMINAL 1" >>confdefs.h
+
+
 fi
 
     # check for readline 4.2
@@ -24872,6 +25382,9 @@ then :
 printf "%s\n" "#define HAVE_RL_COMPLETION_MATCHES 1" >>confdefs.h
 
 
+printf "%s\n" "#define Py_HAVE_RL_COMPLETION_MATCHES 1" >>confdefs.h
+
+
 fi
 
     # also in readline 4.2
@@ -24890,6 +25403,9 @@ then :
 
 
 printf "%s\n" "#define HAVE_RL_CATCH_SIGNAL 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_RL_CATCH_SIGNAL 1" >>confdefs.h
 
 
 fi
@@ -24940,6 +25456,9 @@ then :
 printf "%s\n" "#define HAVE_RL_APPEND_HISTORY 1" >>confdefs.h
 
 
+printf "%s\n" "#define Py_HAVE_RL_APPEND_HISTORY 1" >>confdefs.h
+
+
 fi
 
     # in readline as well as newer editline (April 2023)
@@ -24957,6 +25476,9 @@ if test "x$ac_cv_type_rl_compdisp_func_t" = xyes
 then :
 
 printf "%s\n" "#define HAVE_RL_COMPDISP_FUNC_T 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_RL_COMPDISP_FUNC_T 1" >>confdefs.h
 
 fi
 
@@ -25014,6 +25536,9 @@ then
 
 printf "%s\n" "#define HAVE_BROKEN_NICE 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_BROKEN_NICE 1" >>confdefs.h
+
 fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for broken poll()" >&5
@@ -25066,6 +25591,9 @@ if test "$ac_cv_broken_poll" = yes
 then
 
 printf "%s\n" "#define HAVE_BROKEN_POLL 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_BROKEN_POLL 1" >>confdefs.h
 
 fi
 
@@ -25166,6 +25694,9 @@ then
 
 printf "%s\n" "#define HAVE_WORKING_TZSET 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_WORKING_TZSET 1" >>confdefs.h
+
 fi
 
 # Look for subsecond timestamps in struct stat
@@ -25204,6 +25735,9 @@ then
 
 printf "%s\n" "#define HAVE_STAT_TV_NSEC 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_STAT_TV_NSEC 1" >>confdefs.h
+
 fi
 
 # Look for BSD style subsecond timestamps in struct stat
@@ -25241,6 +25775,9 @@ if test "$ac_cv_stat_tv_nsec2" = yes
 then
 
 printf "%s\n" "#define HAVE_STAT_TV_NSEC2 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_STAT_TV_NSEC2 1" >>confdefs.h
 
 fi
 
@@ -25372,6 +25909,8 @@ then :
 
           printf "%s\n" "#define HAVE_NCURSESW 1" >>confdefs.h
 
+          printf "%s\n" "#define Py_HAVE_NCURSESW 1" >>confdefs.h
+
           have_curses=ncursesw
           CURSES_CFLAGS=${CURSES_CFLAGS-""}
           CURSES_LIBS=${CURSES_LIBS-"-lncursesw"}
@@ -25436,6 +25975,8 @@ then :
 
           printf "%s\n" "#define HAVE_NCURSESW 1" >>confdefs.h
 
+          printf "%s\n" "#define Py_HAVE_NCURSESW 1" >>confdefs.h
+
           have_curses=ncursesw
           CURSES_CFLAGS=${CURSES_CFLAGS-""}
           CURSES_LIBS=${CURSES_LIBS-"-lncursesw"}
@@ -25457,6 +25998,8 @@ else
 printf "%s\n" "yes" >&6; }
 
       printf "%s\n" "#define HAVE_NCURSESW 1" >>confdefs.h
+
+          printf "%s\n" "#define Py_HAVE_NCURSESW 1" >>confdefs.h
 
       have_curses=ncursesw
 
@@ -25666,6 +26209,8 @@ if test "$have_curses" != no -a "$ac_sys_system" = "Darwin"; then
 
   as_fn_append CURSES_CFLAGS " -D_XOPEN_SOURCE_EXTENDED=1"
   printf "%s\n" "#define HAVE_NCURSESW 1" >>confdefs.h
+
+          printf "%s\n" "#define Py_HAVE_NCURSESW 1" >>confdefs.h
 
 fi
 
@@ -26165,6 +26710,9 @@ then
 
 printf "%s\n" "#define MVWDELCH_IS_EXPRESSION 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_MVWDELCH_IS_EXPRESSION 1" >>confdefs.h
+
 fi
 
 # Issue #25720: ncurses has introduced the NCURSES_OPAQUE symbol making opaque
@@ -26211,6 +26759,9 @@ then
 
 printf "%s\n" "#define WINDOW_HAS_FLAGS 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_WINDOW_HAS_FLAGS 1" >>confdefs.h
+
 fi
 
 
@@ -26253,6 +26804,9 @@ printf "%s\n" "$ac_cv_lib_curses_is_pad" >&6; }
 then :
 
 printf "%s\n" "#define HAVE_CURSES_IS_PAD 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_CURSES_IS_PAD 1" >>confdefs.h
 
 fi
 
@@ -26297,6 +26851,9 @@ then :
 
 printf "%s\n" "#define HAVE_CURSES_IS_TERM_RESIZED 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_CURSES_IS_TERM_RESIZED 1" >>confdefs.h
+
 fi
 
 
@@ -26339,6 +26896,9 @@ printf "%s\n" "$ac_cv_lib_curses_resize_term" >&6; }
 then :
 
 printf "%s\n" "#define HAVE_CURSES_RESIZE_TERM 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_CURSES_RESIZE_TERM 1" >>confdefs.h
 
 fi
 
@@ -26383,6 +26943,9 @@ then :
 
 printf "%s\n" "#define HAVE_CURSES_RESIZETERM 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_CURSES_RESIZETERM 1" >>confdefs.h
+
 fi
 
 
@@ -26425,6 +26988,9 @@ printf "%s\n" "$ac_cv_lib_curses_immedok" >&6; }
 then :
 
 printf "%s\n" "#define HAVE_CURSES_IMMEDOK 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_CURSES_IMMEDOK 1" >>confdefs.h
 
 fi
 
@@ -26469,6 +27035,9 @@ then :
 
 printf "%s\n" "#define HAVE_CURSES_SYNCOK 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_CURSES_SYNCOK 1" >>confdefs.h
+
 fi
 
 
@@ -26511,6 +27080,9 @@ printf "%s\n" "$ac_cv_lib_curses_wchgat" >&6; }
 then :
 
 printf "%s\n" "#define HAVE_CURSES_WCHGAT 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_CURSES_WCHGAT 1" >>confdefs.h
 
 fi
 
@@ -26555,6 +27127,9 @@ then :
 
 printf "%s\n" "#define HAVE_CURSES_FILTER 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_CURSES_FILTER 1" >>confdefs.h
+
 fi
 
 
@@ -26597,6 +27172,9 @@ printf "%s\n" "$ac_cv_lib_curses_has_key" >&6; }
 then :
 
 printf "%s\n" "#define HAVE_CURSES_HAS_KEY 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_CURSES_HAS_KEY 1" >>confdefs.h
 
 fi
 
@@ -26641,6 +27219,9 @@ then :
 
 printf "%s\n" "#define HAVE_CURSES_TYPEAHEAD 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_CURSES_TYPEAHEAD 1" >>confdefs.h
+
 fi
 
 
@@ -26683,6 +27264,9 @@ printf "%s\n" "$ac_cv_lib_curses_use_env" >&6; }
 then :
 
 printf "%s\n" "#define HAVE_CURSES_USE_ENV 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_CURSES_USE_ENV 1" >>confdefs.h
 
 fi
 
@@ -26735,6 +27319,9 @@ if test "x$ac_cv_file__dev_ptmx" = xyes; then
 
 printf "%s\n" "#define HAVE_DEV_PTMX 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_DEV_PTMX 1" >>confdefs.h
+
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for /dev/ptc" >&5
 printf %s "checking for /dev/ptc... " >&6; }
@@ -26761,6 +27348,9 @@ if test "x$ac_cv_file__dev_ptc" = xyes; then
 
 printf "%s\n" "#define HAVE_DEV_PTC 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_DEV_PTC 1" >>confdefs.h
+
 fi
 
 if test $ac_sys_system = Darwin
@@ -26783,6 +27373,9 @@ then :
 else $as_nop
 
 printf "%s\n" "#define socklen_t int" >>confdefs.h
+
+
+printf "%s\n" "#define Py_socklen_t int" >>confdefs.h
 
 fi
 
@@ -26829,6 +27422,9 @@ then
 
 printf "%s\n" "#define HAVE_BROKEN_MBSTOWCS 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_BROKEN_MBSTOWCS 1" >>confdefs.h
+
 fi
 
 # Check for --with-computed-gotos
@@ -26844,6 +27440,9 @@ then
 
 printf "%s\n" "#define USE_COMPUTED_GOTOS 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_USE_COMPUTED_GOTOS 1" >>confdefs.h
+
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
 fi
@@ -26851,6 +27450,9 @@ if test "$withval" = no
 then
 
 printf "%s\n" "#define USE_COMPUTED_GOTOS 0" >>confdefs.h
+
+
+printf "%s\n" "#define Py_USE_COMPUTED_GOTOS 0" >>confdefs.h
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
@@ -26908,12 +27510,18 @@ case "$ac_cv_computed_gotos" in yes*)
 
 printf "%s\n" "#define HAVE_COMPUTED_GOTOS 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_COMPUTED_GOTOS 1" >>confdefs.h
+
 esac
 
 case $ac_sys_system in
 AIX*)
 
 printf "%s\n" "#define HAVE_BROKEN_PIPE_BUF 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_BROKEN_PIPE_BUF 1" >>confdefs.h
  ;;
 esac
 
@@ -27045,6 +27653,9 @@ if test "$have_glibc_memmove_bug" = yes; then
 
 printf "%s\n" "#define HAVE_GLIBC_MEMMOVE_BUG 1" >>confdefs.h
 
+
+printf "%s\n" "#define Py_HAVE_GLIBC_MEMMOVE_BUG 1" >>confdefs.h
+
 fi
 
 if test "$ac_cv_gcc_asm_for_x87" = yes; then
@@ -27097,6 +27708,9 @@ printf "%s\n" "$have_ipa_pure_const_bug" >&6; }
             if test "$have_ipa_pure_const_bug" = yes; then
 
 printf "%s\n" "#define HAVE_IPA_PURE_CONST_BUG 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_IPA_PURE_CONST_BUG 1" >>confdefs.h
 
             fi
         ;;
@@ -27180,6 +27794,9 @@ then :
 printf "%s\n" "#define HAVE_DIRENT_D_TYPE 1" >>confdefs.h
 
 
+printf "%s\n" "#define Py_HAVE_DIRENT_D_TYPE 1" >>confdefs.h
+
+
 fi
 
 # check if the Linux getrandom() syscall is available
@@ -27230,6 +27847,9 @@ then :
 printf "%s\n" "#define HAVE_GETRANDOM_SYSCALL 1" >>confdefs.h
 
 
+printf "%s\n" "#define Py_HAVE_GETRANDOM_SYSCALL 1" >>confdefs.h
+
+
 fi
 
 # check if the getrandom() function is available
@@ -27277,6 +27897,9 @@ then :
 
 
 printf "%s\n" "#define HAVE_GETRANDOM 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_GETRANDOM 1" >>confdefs.h
 
 
 fi
@@ -27846,15 +28469,23 @@ case "$withval" in
     python)
         printf "%s\n" "#define PY_SSL_DEFAULT_CIPHERS 1" >>confdefs.h
 
+          printf "%s\n" "#define Py_PY_SSL_DEFAULT_CIPHERS 1" >>confdefs.h
+
         ;;
     openssl)
         printf "%s\n" "#define PY_SSL_DEFAULT_CIPHERS 2" >>confdefs.h
+
+          printf "%s\n" "#define Py_PY_SSL_DEFAULT_CIPHERS 2" >>confdefs.h
 
         ;;
     *)
         printf "%s\n" "#define PY_SSL_DEFAULT_CIPHERS 0" >>confdefs.h
 
+          printf "%s\n" "#define Py_PY_SSL_DEFAULT_CIPHERS 0" >>confdefs.h
+
         printf "%s\n" "#define PY_SSL_DEFAULT_CIPHER_STRING \"$withval\"" >>confdefs.h
+
+          printf "%s\n" "#define Py_PY_SSL_DEFAULT_CIPHER_STRING \"$withval\"" >>confdefs.h
 
         ;;
 esac
@@ -27865,6 +28496,8 @@ else $as_nop
 printf "%s\n" "python" >&6; }
 printf "%s\n" "#define PY_SSL_DEFAULT_CIPHERS 1" >>confdefs.h
 
+          printf "%s\n" "#define Py_PY_SSL_DEFAULT_CIPHERS 1" >>confdefs.h
+
 
 fi
 
@@ -27873,6 +28506,9 @@ fi
 default_hashlib_hashes="md5,sha1,sha2,sha3,blake2"
 
 printf "%s\n" "#define PY_BUILTIN_HASHLIB_HASHES /**/" >>confdefs.h
+
+
+printf "%s\n" "#define Py_PY_BUILTIN_HASHLIB_HASHES /**/" >>confdefs.h
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-builtin-hashlib-hashes" >&5
 printf %s "checking for --with-builtin-hashlib-hashes... " >&6; }
@@ -27899,6 +28535,8 @@ fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_builtin_hashlib_hashes" >&5
 printf "%s\n" "$with_builtin_hashlib_hashes" >&6; }
 printf "%s\n" "#define PY_BUILTIN_HASHLIB_HASHES \"$with_builtin_hashlib_hashes\"" >>confdefs.h
+
+          printf "%s\n" "#define Py_PY_BUILTIN_HASHLIB_HASHES \"$with_builtin_hashlib_hashes\"" >>confdefs.h
 
 
 as_save_IFS=$IFS
@@ -27998,6 +28636,9 @@ printf "%s\n" "yes" >&6; }
     have_libb2=yes
 
 printf "%s\n" "#define HAVE_LIBB2 1" >>confdefs.h
+
+
+printf "%s\n" "#define Py_HAVE_LIBB2 1" >>confdefs.h
 
 
 fi
