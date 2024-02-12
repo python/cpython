@@ -48,7 +48,7 @@ The functions return ``0`` on success, or ``-1`` (with an exception set)
 on failure.
 
 On integer overflow, they set the :c:data:`PyExc_OverflowError` exception and
-set :c:expr:`*result` to the value clamped to the ``[PyTime_MIN; PyTime_MAX]``
+set ``*result`` to the value clamped to the ``[PyTime_MIN; PyTime_MAX]``
 range.
 (On current systems, integer overflows are likely caused by misconfigured
 system time.)
