@@ -4323,6 +4323,16 @@ class GenericTests(BaseTestCase):
         c.bar = 'abc'
         self.assertEqual(c.__dict__, {'bar': 'abc'})
 
+    def test_setattr_exceptions(self):
+        class Immutable[T]:
+            def __setattr__(self, key, value):
+                raise RuntimeError("immutable")
+
+        # gh-115165: This used to cause RuntimeError to be raised
+        # when we tried to set `__orig_class__` on the `Immutable` instance
+        # returned by the `Immutable[int]()` call
+        self.assertIsInstance(Immutable[int](), Immutable)
+
     def test_subscripted_generics_as_proxies(self):
         T = TypeVar('T')
         class C(Generic[T]):
@@ -4919,6 +4929,75 @@ class GenericTests(BaseTestCase):
         class B(Generic[S]): ...
         class C(List[int], B): ...
         self.assertEqual(C.__mro__, (C, list, B, Generic, object))
+
+    def test_multiple_inheritance_non_type_with___mro_entries__(self):
+        class GoodEntries:
+            def __mro_entries__(self, bases):
+                return (object,)
+
+        class A(List[int], GoodEntries()): ...
+
+        self.assertEqual(A.__mro__, (A, list, Generic, object))
+
+    def test_multiple_inheritance_non_type_without___mro_entries__(self):
+        # Error should be from the type machinery, not from typing.py
+        with self.assertRaisesRegex(TypeError, r"^bases must be types"):
+            class A(List[int], object()): ...
+
+    def test_multiple_inheritance_non_type_bad___mro_entries__(self):
+        class BadEntries:
+            def __mro_entries__(self, bases):
+                return None
+
+        # Error should be from the type machinery, not from typing.py
+        with self.assertRaisesRegex(
+            TypeError,
+            r"^__mro_entries__ must return a tuple",
+        ):
+            class A(List[int], BadEntries()): ...
+
+    def test_multiple_inheritance___mro_entries___returns_non_type(self):
+        class BadEntries:
+            def __mro_entries__(self, bases):
+                return (object(),)
+
+        # Error should be from the type machinery, not from typing.py
+        with self.assertRaisesRegex(
+            TypeError,
+            r"^bases must be types",
+        ):
+            class A(List[int], BadEntries()): ...
+
+    def test_multiple_inheritance_with_genericalias(self):
+        class A(typing.Sized, list[int]): ...
+
+        self.assertEqual(
+            A.__mro__,
+            (A, collections.abc.Sized, Generic, list, object),
+        )
+
+    def test_multiple_inheritance_with_genericalias_2(self):
+        T = TypeVar("T")
+
+        class BaseSeq(typing.Sequence[T]): ...
+        class MySeq(List[T], BaseSeq[T]): ...
+
+        self.assertEqual(
+            MySeq.__mro__,
+            (
+                MySeq,
+                list,
+                BaseSeq,
+                collections.abc.Sequence,
+                collections.abc.Reversible,
+                collections.abc.Collection,
+                collections.abc.Sized,
+                collections.abc.Iterable,
+                collections.abc.Container,
+                Generic,
+                object,
+            ),
+        )
 
     def test_init_subclass_super_called(self):
         class FinalException(Exception):
@@ -8491,6 +8570,17 @@ class AnnotatedTests(BaseTestCase):
         MyCount = Annotated[typing.Counter[T], "my decoration"]
         self.assertEqual(MyCount([4, 4, 5]), {4: 2, 5: 1})
         self.assertEqual(MyCount[int]([4, 4, 5]), {4: 2, 5: 1})
+
+    def test_instantiate_immutable(self):
+        class C:
+            def __setattr__(self, key, value):
+                raise Exception("should be ignored")
+
+        A = Annotated[C, "a decoration"]
+        # gh-115165: This used to cause RuntimeError to be raised
+        # when we tried to set `__orig_class__` on the `C` instance
+        # returned by the `A()` call
+        self.assertIsInstance(A(), C)
 
     def test_cannot_instantiate_forward(self):
         A = Annotated["int", (5, 6)]

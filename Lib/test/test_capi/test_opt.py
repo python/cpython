@@ -1,5 +1,6 @@
 import contextlib
 import opcode
+import sys
 import textwrap
 import unittest
 
@@ -180,6 +181,21 @@ class TestExecutorInvalidation(unittest.TestCase):
         self.assertTrue(exe.is_valid())
         _testinternalcapi.invalidate_executors(f.__code__)
         self.assertFalse(exe.is_valid())
+
+    def test_sys__clear_internal_caches(self):
+        def f():
+            for _ in range(1000):
+                pass
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            f()
+        exe = get_first_executor(f)
+        self.assertIsNotNone(exe)
+        self.assertTrue(exe.is_valid())
+        sys._clear_internal_caches()
+        self.assertFalse(exe.is_valid())
+        exe = get_first_executor(f)
+        self.assertIsNone(exe)
 
 class TestUops(unittest.TestCase):
 
