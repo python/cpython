@@ -1713,8 +1713,8 @@ changes, or look through the Subversion logs for all the details.
   :mod:`zipfile` now also supports archiving empty directories and
   extracts them correctly.  (Fixed by Kuba Wieczorek; :issue:`4710`.)
   Reading files out of an archive is faster, and interleaving
- :meth:`read() <io.BufferedIOBase.read>` and
- :meth:`readline() <io.IOBase.readline>` now works correctly.
+  :meth:`read() <io.BufferedIOBase.read>` and
+  :meth:`readline() <io.IOBase.readline>` now works correctly.
   (Contributed by Nir Aides; :issue:`7610`.)
 
   The :func:`~zipfile.is_zipfile` function now
