@@ -1433,11 +1433,3 @@ _PyDeadline_Get(_PyTime_t deadline)
 NOEXC_WRAPPER(_PyTime_GetPerfCounter, PyTime_PerfCounter)
 NOEXC_WRAPPER(_PyTime_GetMonotonicClock, PyTime_Monotonic)
 NOEXC_WRAPPER(_PyTime_GetSystemClock, PyTime_Time)
-
-// Export PyTime_AsNanoseconds from libpython
-#undef PyTime_AsNanoseconds
-int
-PyTime_AsNanoseconds(PyTime_t t, int64_t *result)
-{
-    return _PyTime_AsNanoseconds_impl(t, result);
-}

@@ -10,7 +10,6 @@ SEC_TO_NS = 10 ** 9
 DAY_TO_SEC = (24 * 60 * 60)
 # Worst clock resolution: maximum delta between two clock reads.
 CLOCK_RES = 0.050
-CLOCK_RES_NS = int(CLOCK_RES * SEC_TO_NS)
 
 
 class CAPITest(unittest.TestCase):
@@ -19,15 +18,10 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(PyTime_MIN, -2**63)
         self.assertEqual(PyTime_MAX, 2**63 - 1)
 
-    def check_clock(self, c_func, py_func, c_func_ns, py_func_ns):
-        t_c = c_func()
-        t_py = py_func()
-        t_c_ns = c_func_ns()
-        t_py_ns = py_func_ns()
-        self.assertAlmostEqual(t_c, t_py, delta=CLOCK_RES)
-        self.assertAlmostEqual(t_c_ns, t_py_ns, delta=CLOCK_RES_NS)
-        self.assertAlmostEqual(t_c * SEC_TO_NS, t_c_ns, delta=CLOCK_RES_NS)
-        self.assertAlmostEqual(t_py * SEC_TO_NS, t_py_ns, delta=CLOCK_RES_NS)
+    def check_clock(self, c_func, py_func):
+        t1 = c_func()
+        t2 = py_func()
+        self.assertAlmostEqual(t1, t2, delta=CLOCK_RES)
 
     def test_assecondsdouble(self):
         # Test PyTime_AsSecondsDouble()
@@ -66,18 +60,12 @@ class CAPITest(unittest.TestCase):
 
     def test_monotonic(self):
         # Test PyTime_Monotonic()
-        self.check_clock(
-            _testcapi.PyTime_Monotonic, time.monotonic,
-            _testcapi.PyTime_Monotonic_ns, time.monotonic_ns)
+        self.check_clock(_testcapi.PyTime_Monotonic, time.monotonic)
 
     def test_perf_counter(self):
         # Test PyTime_PerfCounter()
-        self.check_clock(
-            _testcapi.PyTime_PerfCounter, time.perf_counter,
-            _testcapi.PyTime_PerfCounter_ns, time.perf_counter_ns)
+        self.check_clock(_testcapi.PyTime_PerfCounter, time.perf_counter)
 
     def test_time(self):
         # Test PyTime_time()
-        self.check_clock(
-            _testcapi.PyTime_Time, time.time,
-            _testcapi.PyTime_Time_ns, time.time_ns)
+        self.check_clock(_testcapi.PyTime_Time, time.time)
