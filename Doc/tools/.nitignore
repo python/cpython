@@ -63,7 +63,6 @@ Doc/library/ssl.rst
 Doc/library/stdtypes.rst
 Doc/library/subprocess.rst
 Doc/library/termios.rst
-Doc/library/test.rst
 Doc/library/tkinter.rst
 Doc/library/tkinter.scrolledtext.rst
 Doc/library/tkinter.ttk.rst
