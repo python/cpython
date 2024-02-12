@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-typedef PY_INT64_T PyTime_t;
+typedef int64_t PyTime_t;
 #define PyTime_MIN INT64_MIN
 #define PyTime_MAX INT64_MAX
 
