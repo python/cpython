@@ -42,9 +42,13 @@ get_thread_state(PyObject *module)
 
 // _ThreadHandle type
 
+// Handles transition from RUNNING to one of JOINED, DETACHED, or INVALID (post
+// fork).
 typedef enum {
+    THREAD_HANDLE_RUNNING,
     THREAD_HANDLE_JOINED,
     THREAD_HANDLE_DETACHED,
+    THREAD_HANDLE_INVALID,
 } ThreadHandleState;
 
 // A handle to join or detach an OS thread.
@@ -63,18 +67,28 @@ typedef struct {
     PyThread_ident_t ident;
     PyThread_handle_t handle;
 
-    // Set before a handle is accessible to any threads other than its creator
-    // and cleared post-fork. Does not need to be accessed atomically.
-    bool is_valid;
+    // Holds a value from the `ThreadHandleState` enum.
+    int state;
 
     // Set immediately before `thread_run` returns to indicate that the OS
     // thread is about to exit.
     _PyEventRc *thread_is_exiting;
 
-    // State is set once by the first successful `join` or `detach` operation.
-    ThreadHandleState state;
+    // Serializes calls to `join` and `detach`.
     _PyOnceFlag once;
 } ThreadHandleObject;
+
+static inline int
+get_thread_handle_state(ThreadHandleObject *handle)
+{
+    return _Py_atomic_load_int_relaxed(&handle->state);
+}
+
+static inline void
+set_thread_handle_state(ThreadHandleObject *handle, ThreadHandleState state)
+{
+    _Py_atomic_store_int_relaxed(&handle->state, state);
+}
 
 static ThreadHandleObject*
 new_thread_handle(thread_module_state* state)
@@ -91,9 +105,10 @@ new_thread_handle(thread_module_state* state)
     }
     self->ident = 0;
     self->handle = 0;
-    self->is_valid = false;
     self->thread_is_exiting = event;
     self->once = (_PyOnceFlag){0};
+
+    set_thread_handle_state(self, THREAD_HANDLE_INVALID);
 
     HEAD_LOCK(&_PyRuntime);
     llist_insert_tail(&_PyRuntime.threads.handles, &self->node);
@@ -105,12 +120,14 @@ new_thread_handle(thread_module_state* state)
 static int
 detach_thread(ThreadHandleObject *handle)
 {
+    assert(get_thread_handle_state(handle) == THREAD_HANDLE_RUNNING);
+
     // This is typically short so no need to release the GIL
     if (PyThread_detach_thread(handle->handle)) {
         PyErr_SetString(ThreadError, "Failed detaching thread");
         return -1;
     }
-    handle->state = THREAD_HANDLE_DETACHED;
+    set_thread_handle_state(handle, THREAD_HANDLE_DETACHED);
     return 0;
 }
 
@@ -126,7 +143,7 @@ ThreadHandle_dealloc(ThreadHandleObject *self)
     }
     HEAD_UNLOCK(&_PyRuntime);
 
-    if (self->is_valid &&
+    if (get_thread_handle_state(self) != THREAD_HANDLE_INVALID &&
         _PyOnceFlag_CallOnce(&self->once, (_Py_once_fn_t *)detach_thread,
                              self) == -1) {
         PyErr_WriteUnraisable(tp);
@@ -152,8 +169,9 @@ _PyThread_AfterFork(struct _pythread_runtime_state *state)
             continue;
         }
 
-        // Disallow calls to detach() and join() as they could crash.
-        hobj->is_valid = false;
+        // Disallow calls to detach() and join() as they could crash. We are
+        // the only thread; its safe to do this without an atomic.
+        hobj->state = THREAD_HANDLE_INVALID;
         llist_remove(node);
     }
 }
@@ -171,19 +189,22 @@ ThreadHandle_get_ident(ThreadHandleObject *self, void *ignored)
     return PyLong_FromUnsignedLongLong(self->ident);
 }
 
-static PyObject *
-invalid_handle_error(void)
+static bool
+check_handle_valid(ThreadHandleObject *handle)
 {
-    PyErr_SetString(PyExc_ValueError,
-                    "the handle is invalid and thus cannot be detached");
-    return NULL;
+    if (get_thread_handle_state(handle) == THREAD_HANDLE_INVALID) {
+        PyErr_SetString(PyExc_ValueError,
+                        "the handle is invalid and thus cannot be detached");
+        return false;
+    }
+    return true;
 }
 
 static PyObject *
 ThreadHandle_detach(ThreadHandleObject *self, void* ignored)
 {
-    if (!self->is_valid) {
-        return invalid_handle_error();
+    if (!check_handle_valid(self)) {
+        return NULL;
     }
 
     if (_PyOnceFlag_CallOnce(&self->once, (_Py_once_fn_t *)detach_thread,
@@ -191,7 +212,7 @@ ThreadHandle_detach(ThreadHandleObject *self, void* ignored)
         return NULL;
     }
 
-    switch (self->state) {
+    switch (get_thread_handle_state(self)) {
         case THREAD_HANDLE_DETACHED: {
             Py_RETURN_NONE;
         }
@@ -210,6 +231,8 @@ ThreadHandle_detach(ThreadHandleObject *self, void* ignored)
 static int
 join_thread(ThreadHandleObject *handle)
 {
+    assert(get_thread_handle_state(handle) == THREAD_HANDLE_RUNNING);
+
     int err;
     Py_BEGIN_ALLOW_THREADS
     err = PyThread_join_thread(handle->handle);
@@ -218,15 +241,15 @@ join_thread(ThreadHandleObject *handle)
         PyErr_SetString(ThreadError, "Failed joining thread");
         return -1;
     }
-    handle->state = THREAD_HANDLE_JOINED;
+    set_thread_handle_state(handle, THREAD_HANDLE_JOINED);
     return 0;
 }
 
 static PyObject *
 ThreadHandle_join(ThreadHandleObject *self, void* ignored)
 {
-    if (!self->is_valid) {
-        return invalid_handle_error();
+    if (!check_handle_valid(self)) {
+        return NULL;
     }
 
     // We want to perform this check outside of the `_PyOnceFlag` to prevent
@@ -251,7 +274,7 @@ ThreadHandle_join(ThreadHandleObject *self, void* ignored)
         return NULL;
     }
 
-    switch (self->state) {
+    switch (get_thread_handle_state(self)) {
         case THREAD_HANDLE_DETACHED: {
             PyErr_SetString(
                 PyExc_ValueError,
@@ -1543,7 +1566,7 @@ thread_PyThread_start_joinable_thread(PyObject *module, PyObject *func)
         return NULL;
     }
     Py_DECREF(args);
-    hobj->is_valid = true;
+    set_thread_handle_state(hobj, THREAD_HANDLE_RUNNING);
     return (PyObject*) hobj;
 }
 
