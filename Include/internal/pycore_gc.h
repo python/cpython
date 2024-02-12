@@ -37,10 +37,23 @@ static inline PyObject* _Py_FROM_GC(PyGC_Head *gc) {
 }
 
 
+/* Bit flags for ob_gc_bits (in Py_GIL_DISABLED builds) */
+#ifdef Py_GIL_DISABLED
+#  define _PyGC_BITS_TRACKED        (1)
+#  define _PyGC_BITS_FINALIZED      (2)
+#  define _PyGC_BITS_UNREACHABLE    (4)
+#  define _PyGC_BITS_FROZEN         (8)
+#  define _PyGC_BITS_SHARED         (16)
+#endif
+
 /* True if the object is currently tracked by the GC. */
 static inline int _PyObject_GC_IS_TRACKED(PyObject *op) {
+#ifdef Py_GIL_DISABLED
+    return (op->ob_gc_bits & _PyGC_BITS_TRACKED) != 0;
+#else
     PyGC_Head *gc = _Py_AS_GC(op);
     return (gc->_gc_next != 0);
+#endif
 }
 #define _PyObject_GC_IS_TRACKED(op) _PyObject_GC_IS_TRACKED(_Py_CAST(PyObject*, op))
 
@@ -56,6 +69,22 @@ static inline int _PyObject_GC_MAY_BE_TRACKED(PyObject *obj) {
     return 1;
 }
 
+#ifdef Py_GIL_DISABLED
+
+/* True if an object is shared between multiple threads and
+ * needs special purpose when freeing to do the possibility
+ * of in-flight lock-free reads occuring */
+static inline int _PyObject_GC_IS_SHARED(PyObject *op) {
+    return (op->ob_gc_bits & _PyGC_BITS_SHARED) != 0;
+}
+#define _PyObject_GC_IS_SHARED(op) _PyObject_GC_IS_SHARED(_Py_CAST(PyObject*, op))
+
+static inline void _PyObject_GC_SET_SHARED(PyObject *op) {
+    op->ob_gc_bits |= _PyGC_BITS_SHARED;
+}
+#define _PyObject_GC_SET_SHARED(op) _PyObject_GC_SET_SHARED(_Py_CAST(PyObject*, op))
+
+#endif
 
 /* Bit flags for _gc_prev */
 /* Bit 0 is set when tp_finalize is called */
@@ -107,24 +136,29 @@ static inline void _PyGCHead_SET_PREV(PyGC_Head *gc, PyGC_Head *prev) {
     gc->_gc_prev = ((gc->_gc_prev & ~_PyGC_PREV_MASK) | uprev);
 }
 
-static inline int _PyGCHead_FINALIZED(PyGC_Head *gc) {
-    return ((gc->_gc_prev & _PyGC_PREV_MASK_FINALIZED) != 0);
-}
-static inline void _PyGCHead_SET_FINALIZED(PyGC_Head *gc) {
-    gc->_gc_prev |= _PyGC_PREV_MASK_FINALIZED;
-}
-
 static inline int _PyGC_FINALIZED(PyObject *op) {
+#ifdef Py_GIL_DISABLED
+    return (op->ob_gc_bits & _PyGC_BITS_FINALIZED) != 0;
+#else
     PyGC_Head *gc = _Py_AS_GC(op);
-    return _PyGCHead_FINALIZED(gc);
+    return ((gc->_gc_prev & _PyGC_PREV_MASK_FINALIZED) != 0);
+#endif
 }
 static inline void _PyGC_SET_FINALIZED(PyObject *op) {
+#ifdef Py_GIL_DISABLED
+    op->ob_gc_bits |= _PyGC_BITS_FINALIZED;
+#else
     PyGC_Head *gc = _Py_AS_GC(op);
-    _PyGCHead_SET_FINALIZED(gc);
+    gc->_gc_prev |= _PyGC_PREV_MASK_FINALIZED;
+#endif
 }
 static inline void _PyGC_CLEAR_FINALIZED(PyObject *op) {
+#ifdef Py_GIL_DISABLED
+    op->ob_gc_bits &= ~_PyGC_BITS_FINALIZED;
+#else
     PyGC_Head *gc = _Py_AS_GC(op);
     gc->_gc_prev &= ~_PyGC_PREV_MASK_FINALIZED;
+#endif
 }
 
 
@@ -245,14 +279,6 @@ extern PyObject *_PyGC_GetReferrers(PyInterpreterState *interp, PyObject *objs);
 
 // Functions to clear types free lists
 extern void _PyGC_ClearAllFreeLists(PyInterpreterState *interp);
-extern void _Py_ClearFreeLists(_PyFreeListState *state, int is_finalization);
-extern void _PyTuple_ClearFreeList(_PyFreeListState *state, int is_finalization);
-extern void _PyFloat_ClearFreeList(_PyFreeListState *state, int is_finalization);
-extern void _PyList_ClearFreeList(_PyFreeListState *state, int is_finalization);
-extern void _PySlice_ClearCache(_PyFreeListState *state);
-extern void _PyDict_ClearFreeList(PyInterpreterState *interp);
-extern void _PyAsyncGen_ClearFreeLists(PyInterpreterState *interp);
-extern void _PyContext_ClearFreeList(_PyFreeListState *state, int is_finalization);
 extern void _Py_ScheduleGC(PyInterpreterState *interp);
 extern void _Py_RunGC(PyThreadState *tstate);
 

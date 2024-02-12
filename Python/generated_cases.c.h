@@ -2342,17 +2342,9 @@
             next_instr += 1;
             INSTRUCTION_STATS(END_FOR);
             PyObject *value;
-            // _POP_TOP
             value = stack_pointer[-1];
-            {
-                Py_DECREF(value);
-            }
-            // _POP_TOP
-            value = stack_pointer[-2];
-            {
-                Py_DECREF(value);
-            }
-            stack_pointer += -2;
+            Py_DECREF(value);
+            stack_pointer += -1;
             DISPATCH();
         }
 
@@ -2371,29 +2363,18 @@
         }
 
         TARGET(ENTER_EXECUTOR) {
-            _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(ENTER_EXECUTOR);
             TIER_ONE_ONLY
             CHECK_EVAL_BREAKER();
             PyCodeObject *code = _PyFrame_GetCode(frame);
-            _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
-            if (executor->vm_data.valid) {
-                Py_INCREF(executor);
-                current_executor = executor;
-                GOTO_TIER_TWO();
-            }
-            else {
-                /* ENTER_EXECUTOR will be the first code unit of the instruction */
-                assert(oparg < 256);
-                code->co_executors->executors[oparg] = NULL;
-                opcode = this_instr->op.code = executor->vm_data.opcode;
-                this_instr->op.arg = executor->vm_data.oparg;
-                oparg = executor->vm_data.oparg;
-                Py_DECREF(executor);
-                next_instr = this_instr;
-                DISPATCH_GOTO();
-            }
+            current_executor = code->co_executors->executors[oparg & 255];
+            assert(current_executor->vm_data.index == INSTR_OFFSET() - 1);
+            assert(current_executor->vm_data.code == code);
+            assert(current_executor->vm_data.valid);
+            Py_INCREF(current_executor);
+            GOTO_TIER_TWO();
             DISPATCH();
         }
 
@@ -2505,8 +2486,8 @@
                        next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
                     Py_DECREF(iter);
                     STACK_SHRINK(1);
-                    /* Jump forward oparg, then skip following END_FOR instruction */
-                    JUMPBY(oparg + 1);
+                    /* Jump forward oparg, then skip following END_FOR and POP_TOP instruction */
+                    JUMPBY(oparg + 2);
                     DISPATCH();
                 }
                 // Common case: no jump, leave it to the code generator
@@ -2567,8 +2548,8 @@
                     }
                     Py_DECREF(iter);
                     STACK_SHRINK(1);
-                    /* Jump forward oparg, then skip following END_FOR instruction */
-                    JUMPBY(oparg + 1);
+                    /* Jump forward oparg, then skip following END_FOR and POP_TOP instructions */
+                    JUMPBY(oparg + 2);
                     DISPATCH();
                 }
             }
@@ -2608,8 +2589,8 @@
                 if (r->len <= 0) {
                     STACK_SHRINK(1);
                     Py_DECREF(r);
-                    // Jump over END_FOR instruction.
-                    JUMPBY(oparg + 1);
+                    // Jump over END_FOR and POP_TOP instructions.
+                    JUMPBY(oparg + 2);
                     DISPATCH();
                 }
             }
@@ -2655,8 +2636,8 @@
                     }
                     Py_DECREF(iter);
                     STACK_SHRINK(1);
-                    /* Jump forward oparg, then skip following END_FOR instruction */
-                    JUMPBY(oparg + 1);
+                    /* Jump forward oparg, then skip following END_FOR and POP_TOP instructions */
+                    JUMPBY(oparg + 2);
                     DISPATCH();
                 }
             }
@@ -2952,9 +2933,8 @@
                 }
                 PyErr_SetRaisedException(NULL);
             }
-            Py_DECREF(receiver);
             Py_DECREF(value);
-            stack_pointer += -2;
+            stack_pointer += -1;
             DISPATCH();
         }
 
@@ -3005,8 +2985,8 @@
                        next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
                 STACK_SHRINK(1);
                 Py_DECREF(iter);
-                /* Skip END_FOR */
-                target = next_instr + oparg + 1;
+                /* Skip END_FOR and POP_TOP */
+                target = next_instr + oparg + 2;
             }
             INSTRUMENTED_JUMP(this_instr, target, PY_MONITORING_EVENT_BRANCH);
             DISPATCH();
@@ -3156,7 +3136,7 @@
                 if (err) goto error;
                 if (frame->instr_ptr != this_instr) {
                     /* Instrumentation has jumped */
-                    next_instr = this_instr;
+                    next_instr = frame->instr_ptr;
                     DISPATCH();
                 }
             }

@@ -19,7 +19,6 @@ import time
 import tempfile
 import itertools
 
-import _multiprocessing
 
 from . import util
 
@@ -28,6 +27,7 @@ from .context import reduction
 _ForkingPickler = reduction.ForkingPickler
 
 try:
+    import _multiprocessing
     import _winapi
     from _winapi import WAIT_OBJECT_0, WAIT_ABANDONED_0, WAIT_TIMEOUT, INFINITE
 except ImportError:

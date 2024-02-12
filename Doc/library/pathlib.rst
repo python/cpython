@@ -515,6 +515,13 @@ Pure paths provide the following methods and properties:
       >>> p.is_relative_to('/usr')
       False
 
+   This method is string-based; it neither accesses the filesystem nor treats
+   "``..``" segments specially. The following code is equivalent:
+
+      >>> u = PurePath('/usr')
+      >>> u == p or u in p.parents
+      False
+
    .. versionadded:: 3.9
 
    .. deprecated-removed:: 3.12 3.14
@@ -528,14 +535,13 @@ Pure paths provide the following methods and properties:
    reserved under Windows, ``False`` otherwise.  With :class:`PurePosixPath`,
    ``False`` is always returned.
 
-      >>> PureWindowsPath('nul').is_reserved()
-      True
-      >>> PurePosixPath('nul').is_reserved()
-      False
+   .. versionchanged:: 3.13
+      Windows path names that contain a colon, or end with a dot or a space,
+      are considered reserved. UNC paths may be reserved.
 
-   File system calls on reserved paths can fail mysteriously or have
-   unintended effects.
-
+   .. deprecated-removed:: 3.13 3.15
+      This method is deprecated; use :func:`os.path.isreserved` to detect
+      reserved paths on Windows.
 
 .. method:: PurePath.joinpath(*pathsegments)
 
@@ -552,13 +558,41 @@ Pure paths provide the following methods and properties:
       PureWindowsPath('c:/Program Files')
 
 
-.. method:: PurePath.match(pattern, *, case_sensitive=None)
+.. method:: PurePath.full_match(pattern, *, case_sensitive=None)
 
    Match this path against the provided glob-style pattern.  Return ``True``
-   if matching is successful, ``False`` otherwise.
+   if matching is successful, ``False`` otherwise.  For example::
 
-   If *pattern* is relative, the path can be either relative or absolute,
-   and matching is done from the right::
+      >>> PurePath('a/b.py').full_match('a/*.py')
+      True
+      >>> PurePath('a/b.py').full_match('*.py')
+      False
+      >>> PurePath('/a/b/c.py').full_match('/a/**')
+      True
+      >>> PurePath('/a/b/c.py').full_match('**/*.py')
+      True
+
+   As with other methods, case-sensitivity follows platform defaults::
+
+      >>> PurePosixPath('b.py').full_match('*.PY')
+      False
+      >>> PureWindowsPath('b.py').full_match('*.PY')
+      True
+
+   Set *case_sensitive* to ``True`` or ``False`` to override this behaviour.
+
+   .. versionadded:: 3.13
+
+
+.. method:: PurePath.match(pattern, *, case_sensitive=None)
+
+   Match this path against the provided non-recursive glob-style pattern.
+   Return ``True`` if matching is successful, ``False`` otherwise.
+
+   This method is similar to :meth:`~PurePath.full_match`, but empty patterns
+   aren't allowed (:exc:`ValueError` is raised), the recursive wildcard
+   "``**``" isn't supported (it acts like non-recursive "``*``"), and if a
+   relative pattern is provided, then matching is done from the right::
 
       >>> PurePath('a/b.py').match('*.py')
       True
@@ -567,39 +601,11 @@ Pure paths provide the following methods and properties:
       >>> PurePath('/a/b/c.py').match('a/*.py')
       False
 
-   If *pattern* is absolute, the path must be absolute, and the whole path
-   must match::
-
-      >>> PurePath('/a.py').match('/*.py')
-      True
-      >>> PurePath('a/b.py').match('/*.py')
-      False
-
-   The *pattern* may be another path object; this speeds up matching the same
-   pattern against multiple files::
-
-      >>> pattern = PurePath('*.py')
-      >>> PurePath('a/b.py').match(pattern)
-      True
-
    .. versionchanged:: 3.12
-      Accepts an object implementing the :class:`os.PathLike` interface.
-
-   As with other methods, case-sensitivity follows platform defaults::
-
-      >>> PurePosixPath('b.py').match('*.PY')
-      False
-      >>> PureWindowsPath('b.py').match('*.PY')
-      True
-
-   Set *case_sensitive* to ``True`` or ``False`` to override this behaviour.
+      The *pattern* parameter accepts a :term:`path-like object`.
 
    .. versionchanged:: 3.12
       The *case_sensitive* parameter was added.
-
-   .. versionchanged:: 3.13
-      Support for the recursive wildcard "``**``" was added. In previous
-      versions, it acted like the non-recursive wildcard "``*``".
 
 
 .. method:: PurePath.relative_to(other, walk_up=False)
@@ -1032,9 +1038,11 @@ call fails (for example because the path doesn't exist).
       The *follow_symlinks* parameter was added.
 
    .. versionchanged:: 3.13
-      Emits :exc:`FutureWarning` if the pattern ends with "``**``". In a
-      future Python release, patterns with this ending will match both files
-      and directories. Add a trailing slash to match only directories.
+      Return files and directories if *pattern* ends with "``**``". In
+      previous versions, only directories were returned.
+
+   .. versionchanged:: 3.13
+      The *pattern* parameter accepts a :term:`path-like object`.
 
 .. method:: Path.group(*, follow_symlinks=True)
 
@@ -1296,9 +1304,9 @@ call fails (for example because the path doesn't exist).
    If *exist_ok* is false (the default), :exc:`FileExistsError` is
    raised if the target directory already exists.
 
-   If *exist_ok* is true, :exc:`FileExistsError` exceptions will be
-   ignored (same behavior as the POSIX ``mkdir -p`` command), but only if the
-   last path component is not an existing non-directory file.
+   If *exist_ok* is true, :exc:`FileExistsError` will not be raised unless the given
+   path already exists in the file system and is not a directory (same
+   behavior as the POSIX ``mkdir -p`` command).
 
    .. versionchanged:: 3.5
       The *exist_ok* parameter was added.
@@ -1498,6 +1506,9 @@ call fails (for example because the path doesn't exist).
    .. versionchanged:: 3.13
       The *follow_symlinks* parameter was added.
 
+   .. versionchanged:: 3.13
+      The *pattern* parameter accepts a :term:`path-like object`.
+
 .. method:: Path.rmdir()
 
    Remove this directory.  The directory must be empty.
@@ -1526,9 +1537,13 @@ call fails (for example because the path doesn't exist).
 
 .. method:: Path.symlink_to(target, target_is_directory=False)
 
-   Make this path a symbolic link to *target*.  Under Windows,
-   *target_is_directory* must be true (default ``False``) if the link's target
-   is a directory.  Under POSIX, *target_is_directory*'s value is ignored.
+   Make this path a symbolic link pointing to *target*.
+
+   On Windows, a symlink represents either a file or a directory, and does not
+   morph to the target dynamically.  If the target is present, the type of the
+   symlink will be created to match. Otherwise, the symlink will be created
+   as a directory if *target_is_directory* is ``True`` or a file symlink (the
+   default) otherwise.  On non-Windows platforms, *target_is_directory* is ignored.
 
    ::
 

@@ -170,7 +170,7 @@ all as not all platform C libraries generate an error.
 .. section: Core and Builtins
 
 Add :opcode:`CALL_INTRINSIC_2` and use it instead of
-:opcode:`PREP_RERAISE_STAR`.
+:opcode:`!PREP_RERAISE_STAR`.
 
 ..
 

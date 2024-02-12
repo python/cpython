@@ -19,8 +19,8 @@ import sysconfig
 import tempfile
 from test.support import (captured_stdout, captured_stderr,
                           skip_if_broken_multiprocessing_synchronize, verbose,
-                          requires_subprocess, is_emscripten, is_wasi,
-                          requires_venv_with_pip, TEST_HOME_DIR,
+                          requires_subprocess, is_apple_mobile, is_emscripten,
+                          is_wasi, requires_venv_with_pip, TEST_HOME_DIR,
                           requires_resource, copy_python_src_ignore)
 from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree)
 import unittest
@@ -39,8 +39,10 @@ requireVenvCreate = unittest.skipUnless(
     or sys._base_executable != sys.executable,
     'cannot run venv.create from within a venv on this platform')
 
-if is_emscripten or is_wasi:
-    raise unittest.SkipTest("venv is not available on Emscripten/WASI.")
+# Skip tests on WASM platforms, plus iOS/tvOS/watchOS
+if is_apple_mobile or is_emscripten or is_wasi:
+    raise unittest.SkipTest(f"venv tests not required on {sys.platform}")
+
 
 @requires_subprocess()
 def check_output(cmd, encoding=None):
@@ -169,7 +171,7 @@ class BasicTest(BaseTest):
             ('--clear', 'clear', True),
             ('--upgrade', 'upgrade', True),
             ('--upgrade-deps', 'upgrade_deps', True),
-            ('--prompt', 'prompt', True),
+            ('--prompt="foobar"', 'prompt', 'foobar'),
             ('--without-scm-ignore-files', 'scm_ignore_files', frozenset()),
         ]
         for opt, attr, value in options:
@@ -201,7 +203,7 @@ class BasicTest(BaseTest):
         self.run_with_capture(builder.create, self.env_dir)
         context = builder.ensure_directories(self.env_dir)
         data = self.get_text_file_contents('pyvenv.cfg')
-        self.assertEqual(context.prompt, '(%s) ' % env_name)
+        self.assertEqual(context.prompt, env_name)
         self.assertNotIn("prompt = ", data)
 
         rmtree(self.env_dir)
@@ -209,7 +211,7 @@ class BasicTest(BaseTest):
         self.run_with_capture(builder.create, self.env_dir)
         context = builder.ensure_directories(self.env_dir)
         data = self.get_text_file_contents('pyvenv.cfg')
-        self.assertEqual(context.prompt, '(My prompt) ')
+        self.assertEqual(context.prompt, 'My prompt')
         self.assertIn("prompt = 'My prompt'\n", data)
 
         rmtree(self.env_dir)
@@ -218,13 +220,19 @@ class BasicTest(BaseTest):
         self.run_with_capture(builder.create, self.env_dir)
         context = builder.ensure_directories(self.env_dir)
         data = self.get_text_file_contents('pyvenv.cfg')
-        self.assertEqual(context.prompt, '(%s) ' % cwd)
+        self.assertEqual(context.prompt, cwd)
         self.assertIn("prompt = '%s'\n" % cwd, data)
 
     def test_upgrade_dependencies(self):
         builder = venv.EnvBuilder()
-        bin_path = 'Scripts' if sys.platform == 'win32' else 'bin'
+        bin_path = 'bin'
         python_exe = os.path.split(sys.executable)[1]
+        if sys.platform == 'win32':
+            bin_path = 'Scripts'
+            if os.path.normcase(os.path.splitext(python_exe)[0]).endswith('_d'):
+                python_exe = 'python_d.exe'
+            else:
+                python_exe = 'python.exe'
         with tempfile.TemporaryDirectory() as fake_env_dir:
             expect_exe = os.path.normcase(
                 os.path.join(fake_env_dir, bin_path, python_exe)
@@ -283,7 +291,9 @@ class BasicTest(BaseTest):
             # build environment
             ('is_python_build()', str(sysconfig.is_python_build())),
             ('get_makefile_filename()', sysconfig.get_makefile_filename()),
-            ('get_config_h_filename()', sysconfig.get_config_h_filename())):
+            ('get_config_h_filename()', sysconfig.get_config_h_filename()),
+            ('get_config_var("Py_GIL_DISABLED")',
+             str(sysconfig.get_config_var("Py_GIL_DISABLED")))):
             with self.subTest(call):
                 cmd[2] = 'import sysconfig; print(sysconfig.%s)' % call
                 out, err = check_output(cmd, encoding='utf-8')
@@ -315,7 +325,9 @@ class BasicTest(BaseTest):
             # build environment
             ('is_python_build()', str(sysconfig.is_python_build())),
             ('get_makefile_filename()', sysconfig.get_makefile_filename()),
-            ('get_config_h_filename()', sysconfig.get_config_h_filename())):
+            ('get_config_h_filename()', sysconfig.get_config_h_filename()),
+            ('get_config_var("Py_GIL_DISABLED")',
+             str(sysconfig.get_config_var("Py_GIL_DISABLED")))):
             with self.subTest(call):
                 cmd[2] = 'import sysconfig; print(sysconfig.%s)' % call
                 out, err = check_output(cmd, encoding='utf-8')

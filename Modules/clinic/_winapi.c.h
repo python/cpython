@@ -232,7 +232,7 @@ PyDoc_STRVAR(_winapi_CreateFile__doc__,
     {"CreateFile", _PyCFunction_CAST(_winapi_CreateFile), METH_FASTCALL, _winapi_CreateFile__doc__},
 
 static HANDLE
-_winapi_CreateFile_impl(PyObject *module, LPCTSTR file_name,
+_winapi_CreateFile_impl(PyObject *module, LPCWSTR file_name,
                         DWORD desired_access, DWORD share_mode,
                         LPSECURITY_ATTRIBUTES security_attributes,
                         DWORD creation_disposition,
@@ -242,7 +242,7 @@ static PyObject *
 _winapi_CreateFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    LPCTSTR file_name;
+    LPCWSTR file_name = NULL;
     DWORD desired_access;
     DWORD share_mode;
     LPSECURITY_ATTRIBUTES security_attributes;
@@ -251,8 +251,8 @@ _winapi_CreateFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     HANDLE template_file;
     HANDLE _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "skk" F_POINTER "kk" F_HANDLE ":CreateFile",
-        &file_name, &desired_access, &share_mode, &security_attributes, &creation_disposition, &flags_and_attributes, &template_file)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&kk" F_POINTER "kk" F_HANDLE ":CreateFile",
+        _PyUnicode_WideCharString_Converter, &file_name, &desired_access, &share_mode, &security_attributes, &creation_disposition, &flags_and_attributes, &template_file)) {
         goto exit;
     }
     _return_value = _winapi_CreateFile_impl(module, file_name, desired_access, share_mode, security_attributes, creation_disposition, flags_and_attributes, template_file);
@@ -265,6 +265,9 @@ _winapi_CreateFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     return_value = HANDLE_TO_PYNUM(_return_value);
 
 exit:
+    /* Cleanup for file_name */
+    PyMem_Free((void *)file_name);
+
     return return_value;
 }
 
@@ -1545,12 +1548,16 @@ PyDoc_STRVAR(_winapi_BatchedWaitForMultipleObjects__doc__,
 "\n"
 "Note that the handles may be waited on other threads, which could cause\n"
 "issues for objects like mutexes that become associated with the thread\n"
-"that was waiting for them.\n"
+"that was waiting for them. Objects may also be left signalled, even if\n"
+"the wait fails.\n"
 "\n"
-"It is generally recommended to use WaitForMultipleObjects whenever\n"
-"possible, and only switch to BatchedWaitForMultipleObjects for scenarios\n"
-"where you control all the handles involved, such as your own thread pool\n"
-"or files.");
+"It is recommended to use WaitForMultipleObjects whenever possible, and\n"
+"only switch to BatchedWaitForMultipleObjects for scenarios where you\n"
+"control all the handles involved, such as your own thread pool or\n"
+"files, and all wait objects are left unmodified by a wait (for example,\n"
+"manual reset events, threads, and files/pipes).\n"
+"\n"
+"Overlapped handles returned from this module use manual reset events.");
 
 #define _WINAPI_BATCHEDWAITFORMULTIPLEOBJECTS_METHODDEF    \
     {"BatchedWaitForMultipleObjects", _PyCFunction_CAST(_winapi_BatchedWaitForMultipleObjects), METH_FASTCALL|METH_KEYWORDS, _winapi_BatchedWaitForMultipleObjects__doc__},
@@ -1971,4 +1978,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=3084c671239bbed4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1f5bbcfa8d1847c5 input=a9049054013a1b77]*/

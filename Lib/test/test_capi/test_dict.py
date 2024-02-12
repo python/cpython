@@ -339,6 +339,28 @@ class CAPITest(unittest.TestCase):
         # CRASHES setdefault({}, 'a', NULL)
         # CRASHES setdefault(NULL, 'a', 5)
 
+    def test_dict_setdefaultref(self):
+        setdefault = _testcapi.dict_setdefaultref
+        dct = {}
+        self.assertEqual(setdefault(dct, 'a', 5), 5)
+        self.assertEqual(dct, {'a': 5})
+        self.assertEqual(setdefault(dct, 'a', 8), 5)
+        self.assertEqual(dct, {'a': 5})
+
+        dct2 = DictSubclass()
+        self.assertEqual(setdefault(dct2, 'a', 5), 5)
+        self.assertEqual(dct2, {'a': 5})
+        self.assertEqual(setdefault(dct2, 'a', 8), 5)
+        self.assertEqual(dct2, {'a': 5})
+
+        self.assertRaises(TypeError, setdefault, {}, [], 5)  # unhashable
+        self.assertRaises(SystemError, setdefault, UserDict(), 'a', 5)
+        self.assertRaises(SystemError, setdefault, [1], 0, 5)
+        self.assertRaises(SystemError, setdefault, 42, 'a', 5)
+        # CRASHES setdefault({}, NULL, 5)
+        # CRASHES setdefault({}, 'a', NULL)
+        # CRASHES setdefault(NULL, 'a', 5)
+
     def test_mapping_keys_valuesitems(self):
         class BadMapping(dict):
             def keys(self):

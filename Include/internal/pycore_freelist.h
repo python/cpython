@@ -17,14 +17,20 @@ extern "C" {
 #  define PyTuple_NFREELISTS PyTuple_MAXSAVESIZE
 #  define PyTuple_MAXFREELIST 2000
 #  define PyList_MAXFREELIST 80
+#  define PyDict_MAXFREELIST 80
 #  define PyFloat_MAXFREELIST 100
 #  define PyContext_MAXFREELIST 255
+# define _PyAsyncGen_MAXFREELIST 80
+#  define _PyObjectStackChunk_MAXFREELIST 4
 #else
 #  define PyTuple_NFREELISTS 0
 #  define PyTuple_MAXFREELIST 0
 #  define PyList_MAXFREELIST 0
+#  define PyDict_MAXFREELIST 0
 #  define PyFloat_MAXFREELIST 0
 #  define PyContext_MAXFREELIST 0
+#  define _PyAsyncGen_MAXFREELIST 0
+#  define _PyObjectStackChunk_MAXFREELIST 0
 #endif
 
 struct _Py_list_state {
@@ -61,6 +67,16 @@ struct _Py_float_state {
 #endif
 };
 
+struct _Py_dict_freelist {
+#ifdef WITH_FREELISTS
+    /* Dictionary reuse scheme to save calls to malloc and free */
+    PyDictObject *free_list[PyDict_MAXFREELIST];
+    PyDictKeysObject *keys_free_list[PyDict_MAXFREELIST];
+    int numfree;
+    int keys_numfree;
+#endif
+};
+
 struct _Py_slice_state {
 #ifdef WITH_FREELISTS
     /* Using a cache is very effective since typically only a single slice is
@@ -77,13 +93,47 @@ struct _Py_context_state {
 #endif
 };
 
+struct _Py_async_gen_state {
+#ifdef WITH_FREELISTS
+    /* Freelists boost performance 6-10%; they also reduce memory
+       fragmentation, as _PyAsyncGenWrappedValue and PyAsyncGenASend
+       are short-living objects that are instantiated for every
+       __anext__() call. */
+    struct _PyAsyncGenWrappedValue* value_freelist[_PyAsyncGen_MAXFREELIST];
+    int value_numfree;
+
+    struct PyAsyncGenASend* asend_freelist[_PyAsyncGen_MAXFREELIST];
+    int asend_numfree;
+#endif
+};
+
+struct _PyObjectStackChunk;
+
+struct _Py_object_stack_state {
+    struct _PyObjectStackChunk *free_list;
+    Py_ssize_t numfree;
+};
+
 typedef struct _Py_freelist_state {
-    struct _Py_float_state float_state;
-    struct _Py_tuple_state tuple_state;
-    struct _Py_list_state list_state;
-    struct _Py_slice_state slice_state;
-    struct _Py_context_state context_state;
+    struct _Py_float_state floats;
+    struct _Py_tuple_state tuples;
+    struct _Py_list_state lists;
+    struct _Py_dict_freelist dicts;
+    struct _Py_slice_state slices;
+    struct _Py_context_state contexts;
+    struct _Py_async_gen_state async_gens;
+    struct _Py_object_stack_state object_stacks;
 } _PyFreeListState;
+
+extern void _PyObject_ClearFreeLists(_PyFreeListState *state, int is_finalization);
+extern void _PyTuple_ClearFreeList(_PyFreeListState *state, int is_finalization);
+extern void _PyFloat_ClearFreeList(_PyFreeListState *state, int is_finalization);
+extern void _PyList_ClearFreeList(_PyFreeListState *state, int is_finalization);
+extern void _PySlice_ClearFreeList(_PyFreeListState *state, int is_finalization);
+extern void _PyDict_ClearFreeList(_PyFreeListState *state, int is_finalization);
+extern void _PyAsyncGen_ClearFreeLists(_PyFreeListState *state, int is_finalization);
+extern void _PyContext_ClearFreeList(_PyFreeListState *state, int is_finalization);
+extern void _PyObjectStackChunk_ClearFreeList(_PyFreeListState *state, int is_finalization);
 
 #ifdef __cplusplus
 }
