@@ -91,10 +91,6 @@ typedef struct ty_arena {
     _Py_UOpsSymType arena[TY_ARENA_SIZE];
 } ty_arena;
 
-typedef struct frequent_syms {
-    _Py_UOpsSymType *push_nulL_sym;
-} frequent_syms;
-
 // Tier 2 types meta interpreter
 typedef struct _Py_UOpsAbstractInterpContext {
     PyObject_HEAD
@@ -105,8 +101,6 @@ typedef struct _Py_UOpsAbstractInterpContext {
 
     // Arena for the symbolic types.
     ty_arena t_arena;
-
-    frequent_syms frequent_syms;
 
     _Py_UOpsSymType **n_consumed;
     _Py_UOpsSymType **limit;
@@ -203,10 +197,6 @@ abstractcontext_init(
     }
     ctx->curr_frame_depth++;
     ctx->frame = frame;
-
-    // IR and sym setup
-    ctx->frequent_syms.push_nulL_sym = NULL;
-
     return 0;
 }
 
@@ -352,15 +342,11 @@ sym_new_const(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val)
 static _Py_UOpsSymType*
 sym_new_null(_Py_UOpsAbstractInterpContext *ctx)
 {
-    if (ctx->frequent_syms.push_nulL_sym != NULL) {
-        return ctx->frequent_syms.push_nulL_sym;
-    }
     _Py_UOpsSymType *null_sym = sym_new_unknown(ctx);
     if (null_sym == NULL) {
         return NULL;
     }
     sym_set_null(null_sym);
-    ctx->frequent_syms.push_nulL_sym = null_sym;
     return null_sym;
 }
 
