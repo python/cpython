@@ -303,6 +303,30 @@ PyEvent_WaitTimed(PyEvent *evt, _PyTime_t timeout_ns)
     }
 }
 
+_PyEventRc *
+_PyEventRc_New(void)
+{
+    _PyEventRc *erc = (_PyEventRc *)PyMem_RawCalloc(1, sizeof(_PyEventRc));
+    if (erc != NULL) {
+        erc->refcount = 1;
+    }
+    return erc;
+}
+
+void
+_PyEventRc_Incref(_PyEventRc *erc)
+{
+    _Py_atomic_add_ssize(&erc->refcount, 1);
+}
+
+void
+_PyEventRc_Decref(_PyEventRc *erc)
+{
+    if (_Py_atomic_add_ssize(&erc->refcount, -1) == 1) {
+        PyMem_RawFree(erc);
+    }
+}
+
 static int
 unlock_once(_PyOnceFlag *o, int res)
 {
