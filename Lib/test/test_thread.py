@@ -233,69 +233,6 @@ class ThreadRunningTests(BasicThreadTest):
         with self.assertRaisesRegex(RuntimeError, "Cannot join current thread"):
             raise errors[0]
 
-    def test_detach_from_self(self):
-        errors = []
-        handles = []
-        start_joinable_thread_returned = thread.allocate_lock()
-        start_joinable_thread_returned.acquire()
-        thread_detached = thread.allocate_lock()
-        thread_detached.acquire()
-
-        def task():
-            start_joinable_thread_returned.acquire()
-            try:
-                handles[0].detach()
-            except Exception as e:
-                errors.append(e)
-            finally:
-                thread_detached.release()
-
-        with threading_helper.wait_threads_exit():
-            handle = thread.start_joinable_thread(task)
-            handles.append(handle)
-            start_joinable_thread_returned.release()
-            thread_detached.acquire()
-            with self.assertRaisesRegex(ValueError, "detached and thus cannot be joined"):
-                handle.join()
-
-        assert len(errors) == 0
-
-    def test_detach_then_join(self):
-        lock = thread.allocate_lock()
-        lock.acquire()
-
-        def task():
-            lock.acquire()
-
-        with threading_helper.wait_threads_exit():
-            handle = thread.start_joinable_thread(task)
-            # detach() returns even though the thread is blocked on lock
-            handle.detach()
-            # join() then cannot be called anymore
-            with self.assertRaisesRegex(ValueError, "detached and thus cannot be joined"):
-                handle.join()
-            lock.release()
-
-    def test_join_then_detach(self):
-        def task():
-            pass
-
-        with threading_helper.wait_threads_exit():
-            handle = thread.start_joinable_thread(task)
-            handle.join()
-            with self.assertRaisesRegex(ValueError, "joined and thus cannot be detached"):
-                handle.detach()
-
-    def test_detach_then_detach(self):
-        def task():
-            pass
-
-        with threading_helper.wait_threads_exit():
-            handle = thread.start_joinable_thread(task)
-            handle.detach()
-            # Subsequent calls to detach() should succeed
-            handle.detach()
-
     def test_join_then_self_join(self):
         # make sure we can't deadlock in the following scenario with
         # threads t0 and t1:

@@ -51,12 +51,14 @@ typedef enum {
     THREAD_HANDLE_INVALID,
 } ThreadHandleState;
 
-// A handle to join or detach an OS thread.
+// A handle around an OS thread.
 //
-// Joining or detaching the handle is idempotent; the underlying OS thread is
-// joined or detached only once. Concurrent operations block until it is their
-// turn to execute or an operation completes successfully. Once an operation
-// has completed successfully all future operations complete immediately.
+// The OS thread is either joined or detached after the handle is destroyed.
+//
+// Joining the handle is idempotent; the underlying OS thread is joined or
+// detached only once. Concurrent join operations are serialized until it is
+// their turn to execute or an earlier operation completes successfully. Once a
+// join has completed successfully all future joins complete immediately.
 typedef struct {
     PyObject_HEAD
     struct llist_node node;  // linked list node (see _pythread_runtime_state)
@@ -74,7 +76,7 @@ typedef struct {
     // thread is about to exit.
     _PyEventRc *thread_is_exiting;
 
-    // Serializes calls to `join` and `detach`.
+    // Serializes calls to `join`.
     _PyOnceFlag once;
 } ThreadHandleObject;
 
@@ -169,8 +171,8 @@ _PyThread_AfterFork(struct _pythread_runtime_state *state)
             continue;
         }
 
-        // Disallow calls to detach() and join() as they could crash. We are
-        // the only thread; its safe to do this without an atomic.
+        // Disallow calls to join() as they could crash. We are the only
+        // thread; it's safe to set this without an atomic.
         hobj->state = THREAD_HANDLE_INVALID;
         llist_remove(node);
     }
@@ -200,34 +202,6 @@ check_handle_valid(ThreadHandleObject *handle)
     return true;
 }
 
-static PyObject *
-ThreadHandle_detach(ThreadHandleObject *self, void* ignored)
-{
-    if (!check_handle_valid(self)) {
-        return NULL;
-    }
-
-    if (_PyOnceFlag_CallOnce(&self->once, (_Py_once_fn_t *)detach_thread,
-                             self) == -1) {
-        return NULL;
-    }
-
-    switch (get_thread_handle_state(self)) {
-        case THREAD_HANDLE_DETACHED: {
-            Py_RETURN_NONE;
-        }
-        case THREAD_HANDLE_JOINED: {
-            PyErr_SetString(
-                PyExc_ValueError,
-                "the thread has been joined and thus cannot be detached");
-            return NULL;
-        }
-        default: {
-            Py_UNREACHABLE();
-        }
-    }
-}
-
 static int
 join_thread(ThreadHandleObject *handle)
 {
@@ -255,7 +229,7 @@ ThreadHandle_join(ThreadHandleObject *self, void* ignored)
     // We want to perform this check outside of the `_PyOnceFlag` to prevent
     // deadlock in the scenario where another thread joins us and we then
     // attempt to join ourselves. However, it's not safe to check thread
-    // identity once the handle's os thread has finished. We may end up with
+    // identity once the handle's os thread has finished. We may end up reusing
     // the identity stored in the handle and erroneously think we are
     // attempting to join ourselves.
     //
@@ -273,21 +247,8 @@ ThreadHandle_join(ThreadHandleObject *self, void* ignored)
                              self) == -1) {
         return NULL;
     }
-
-    switch (get_thread_handle_state(self)) {
-        case THREAD_HANDLE_DETACHED: {
-            PyErr_SetString(
-                PyExc_ValueError,
-                "the thread is detached and thus cannot be joined");
-            return NULL;
-        }
-        case THREAD_HANDLE_JOINED: {
-            Py_RETURN_NONE;
-        }
-        default: {
-            Py_UNREACHABLE();
-        }
-    }
+    assert(get_thread_handle_state(self) == THREAD_HANDLE_JOINED);
+    Py_RETURN_NONE;
 }
 
 static PyGetSetDef ThreadHandle_getsetlist[] = {
@@ -297,7 +258,6 @@ static PyGetSetDef ThreadHandle_getsetlist[] = {
 
 static PyMethodDef ThreadHandle_methods[] =
 {
-    {"detach", (PyCFunction)ThreadHandle_detach, METH_NOARGS},
     {"join", (PyCFunction)ThreadHandle_join, METH_NOARGS},
     {0, 0}
 };
