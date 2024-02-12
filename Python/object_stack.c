@@ -8,7 +8,7 @@
 extern _PyObjectStackChunk *_PyObjectStackChunk_New(void);
 extern void _PyObjectStackChunk_Free(_PyObjectStackChunk *);
 
-static struct _Py_object_stack_state *
+static struct _Py_object_stack_freelist *
 get_state(void)
 {
     _PyFreeListState *state = _PyFreeListState_GET();
@@ -19,7 +19,7 @@ _PyObjectStackChunk *
 _PyObjectStackChunk_New(void)
 {
     _PyObjectStackChunk *buf;
-    struct _Py_object_stack_state *state = get_state();
+    struct _Py_object_stack_freelist *state = get_state();
     if (state->numfree > 0) {
         buf = state->free_list;
         state->free_list = buf->prev;
@@ -43,7 +43,7 @@ void
 _PyObjectStackChunk_Free(_PyObjectStackChunk *buf)
 {
     assert(buf->n == 0);
-    struct _Py_object_stack_state *state = get_state();
+    struct _Py_object_stack_freelist *state = get_state();
     if (state->numfree >= 0 &&
         state->numfree < _PyObjectStackChunk_MAXFREELIST)
     {
@@ -97,7 +97,7 @@ _PyObjectStackChunk_ClearFreeList(_PyFreeListState *free_lists, int is_finalizat
         return;
     }
 
-    struct _Py_object_stack_state *state = &free_lists->object_stacks;
+    struct _Py_object_stack_freelist *state = &free_lists->object_stacks;
     while (state->numfree > 0) {
         _PyObjectStackChunk *buf = state->free_list;
         state->free_list = buf->prev;

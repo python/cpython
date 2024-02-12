@@ -8,7 +8,7 @@
 #include "pycore_dtoa.h"          // _Py_dg_dtoa()
 #include "pycore_floatobject.h"   // _PyFloat_FormatAdvancedWriter()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
-#include "pycore_interp.h"        // _PyInterpreterState.float_state
+#include "pycore_interp.h"        // _Py_float_freelist
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_Init(), _PyDebugAllocatorStats()
@@ -27,7 +27,7 @@ class float "PyObject *" "&PyFloat_Type"
 #include "clinic/floatobject.c.h"
 
 #ifdef WITH_FREELISTS
-static struct _Py_float_state *
+static struct _Py_float_freelist *
 get_float_state(void)
 {
     _PyFreeListState *state = _PyFreeListState_GET();
@@ -129,7 +129,7 @@ PyFloat_FromDouble(double fval)
 {
     PyFloatObject *op;
 #ifdef WITH_FREELISTS
-    struct _Py_float_state *state = get_float_state();
+    struct _Py_float_freelist *state = get_float_state();
     op = state->free_list;
     if (op != NULL) {
         state->free_list = (PyFloatObject *) Py_TYPE(op);
@@ -245,7 +245,7 @@ _PyFloat_ExactDealloc(PyObject *obj)
     assert(PyFloat_CheckExact(obj));
     PyFloatObject *op = (PyFloatObject *)obj;
 #ifdef WITH_FREELISTS
-    struct _Py_float_state *state = get_float_state();
+    struct _Py_float_freelist *state = get_float_state();
     if (state->numfree >= PyFloat_MAXFREELIST || state->numfree < 0) {
         PyObject_Free(op);
         return;
@@ -1993,7 +1993,7 @@ void
 _PyFloat_ClearFreeList(_PyFreeListState *freelist_state, int is_finalization)
 {
 #ifdef WITH_FREELISTS
-    struct _Py_float_state *state = &freelist_state->floats;
+    struct _Py_float_freelist *state = &freelist_state->floats;
     PyFloatObject *f = state->free_list;
     while (f != NULL) {
         PyFloatObject *next = (PyFloatObject*) Py_TYPE(f);
@@ -2021,7 +2021,7 @@ void
 _PyFloat_DebugMallocStats(FILE *out)
 {
 #ifdef WITH_FREELISTS
-    struct _Py_float_state *state = get_float_state();
+    struct _Py_float_freelist *state = get_float_state();
     _PyDebugAllocatorStats(out,
                            "free PyFloatObject",
                            state->numfree, sizeof(PyFloatObject));

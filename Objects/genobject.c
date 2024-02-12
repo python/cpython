@@ -7,7 +7,7 @@
 #include "pycore_ceval.h"         // _PyEval_EvalFrame()
 #include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_gc.h"            // _PyGC_CLEAR_FINALIZED()
-#include "pycore_genobject.h"     // struct _Py_async_gen_state
+#include "pycore_genobject.h"     // struct _Py_async_gen_freelist
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_opcode_utils.h"  // RESUME_AFTER_YIELD_FROM
@@ -1629,7 +1629,7 @@ PyTypeObject PyAsyncGen_Type = {
 
 
 #ifdef WITH_FREELISTS
-static struct _Py_async_gen_state *
+static struct _Py_async_gen_freelist *
 get_async_gen_state(void)
 {
     _PyFreeListState *state = _PyFreeListState_GET();
@@ -1659,7 +1659,7 @@ void
 _PyAsyncGen_ClearFreeLists(_PyFreeListState *freelist_state, int is_finalization)
 {
 #ifdef WITH_FREELISTS
-    struct _Py_async_gen_state *state = &freelist_state->async_gens;
+    struct _Py_async_gen_freelist *state = &freelist_state->async_gens;
 
     while (state->value_numfree > 0) {
         _PyAsyncGenWrappedValue *o;
@@ -1726,7 +1726,7 @@ async_gen_asend_dealloc(PyAsyncGenASend *o)
     Py_CLEAR(o->ags_gen);
     Py_CLEAR(o->ags_sendval);
 #ifdef WITH_FREELISTS
-    struct _Py_async_gen_state *state = get_async_gen_state();
+    struct _Py_async_gen_freelist *state = get_async_gen_state();
     if (state->asend_numfree >= 0 && state->asend_numfree < _PyAsyncGen_MAXFREELIST) {
         assert(PyAsyncGenASend_CheckExact(o));
         _PyGC_CLEAR_FINALIZED((PyObject *)o);
@@ -1896,7 +1896,7 @@ async_gen_asend_new(PyAsyncGenObject *gen, PyObject *sendval)
 {
     PyAsyncGenASend *o;
 #ifdef WITH_FREELISTS
-    struct _Py_async_gen_state *state = get_async_gen_state();
+    struct _Py_async_gen_freelist *state = get_async_gen_state();
     if (state->asend_numfree > 0) {
         state->asend_numfree--;
         o = state->asend_freelist[state->asend_numfree];
@@ -1931,7 +1931,7 @@ async_gen_wrapped_val_dealloc(_PyAsyncGenWrappedValue *o)
     _PyObject_GC_UNTRACK((PyObject *)o);
     Py_CLEAR(o->agw_val);
 #ifdef WITH_FREELISTS
-    struct _Py_async_gen_state *state = get_async_gen_state();
+    struct _Py_async_gen_freelist *state = get_async_gen_state();
     if (state->value_numfree >= 0 && state->value_numfree < _PyAsyncGen_MAXFREELIST) {
         assert(_PyAsyncGenWrappedValue_CheckExact(o));
         state->value_freelist[state->value_numfree++] = o;
@@ -2004,7 +2004,7 @@ _PyAsyncGenValueWrapperNew(PyThreadState *tstate, PyObject *val)
     assert(val);
 
 #ifdef WITH_FREELISTS
-    struct _Py_async_gen_state *state = get_async_gen_state();
+    struct _Py_async_gen_freelist *state = get_async_gen_state();
     if (state->value_numfree > 0) {
         state->value_numfree--;
         o = state->value_freelist[state->value_numfree];
