@@ -1,0 +1,1 @@
+Fix possible crashes when operating with the functions in the :func:`deque.index`and custom comparison operators.
