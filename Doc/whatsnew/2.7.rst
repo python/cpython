@@ -1544,7 +1544,7 @@ changes, or look through the Subversion logs for all the details.
   code being returned from :meth:`recv` operations that trigger an SSL
   renegotiation (fix by Antoine Pitrou; :issue:`8222`).
 
-  The :func:`!ssl.SSLContext.wrap_socket` constructor function now takes a
+  The :func:`~ssl.SSLContext.wrap_socket` constructor function now takes a
   *ciphers* argument that's a string listing the encryption algorithms
   to be allowed; the format of the string is described
   `in the OpenSSL documentation
