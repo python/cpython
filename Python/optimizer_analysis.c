@@ -279,9 +279,10 @@ sym_is_null(_Py_UOpsSymType *sym)
 static inline void
 sym_set_type(_Py_UOpsSymType *sym, PyTypeObject *tp)
 {
-    assert(tp == NULL || PyType_Check(tp));
+    assert(PyType_Check(tp));
     sym->typ = tp;
     sym_set_flag(sym, KNOWN);
+    sym_set_flag(sym, NOT_NULL);
 }
 
 static inline void
@@ -335,6 +336,8 @@ sym_new_const(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val)
     }
     sym_set_type(temp, Py_TYPE(const_val));
     sym_set_flag(temp, TRUE_CONST);
+    sym_set_flag(temp, KNOWN);
+    sym_set_flag(temp, NOT_NULL);
     return temp;
 }
 
