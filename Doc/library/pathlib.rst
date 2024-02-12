@@ -1656,8 +1656,7 @@ Pattern                    Meaning
    directories. In previous versions, only directories were returned.
 
 In :meth:`Path.glob` and :meth:`~Path.rglob`, a trailing slash may be added to
-the pattern to match only directories. Like all :class:`Path` objects, the
-returned directories do not have a trailing slash.
+the pattern to match only directories.
 
 .. versionchanged:: 3.11
    Globbing with a pattern that ends with a pathname components separator
