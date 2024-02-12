@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
         catch (e) {
             return; // not a valid regex (yet)
         }
+        // find headers for the versions (What's new in Python X.Y.Z?)
         const h2s = document.querySelectorAll('#changelog h2');
         for(let h2 of h2s) {
             let sections_found = 0;
@@ -21,6 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const h3s = h2.parentNode.querySelectorAll('h3');
             for(let h3 of h3s) {
                 let entries_found = 0;
+                // find all the entries
                 const lis = h3.parentNode.querySelectorAll('li');
                 for(let li of lis) {
                     // check if the query matches the entry
