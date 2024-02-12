@@ -280,6 +280,7 @@ static inline void
 sym_set_null(_Py_UOpsSymType *sym)
 {
     sym_set_flag(sym, IS_NULL);
+    sym_set_flag(sym, KNOWN_TYPE);
     sym_clear_flag(sym, NOT_NULL);
 }
 
