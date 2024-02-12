@@ -169,7 +169,7 @@ Some smaller changes made to the core Python language are:
     ...         if '<critical>' in line:
     ...             outfile.write(line)
 
-  With the new syntax, the :func:`contextlib.nested` function is no longer
+  With the new syntax, the :func:`!contextlib.nested` function is no longer
   needed and is now deprecated.
 
   (Contributed by Georg Brandl and Mattias Brändström;

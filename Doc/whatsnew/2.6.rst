@@ -2388,11 +2388,11 @@ changes, or look through the Subversion logs for all the details.
   using the format character ``'?'``.
   (Contributed by David Remahl.)
 
-* The :class:`Popen` objects provided by the :mod:`subprocess` module
-  now have :meth:`terminate`, :meth:`kill`, and :meth:`send_signal` methods.
-  On Windows, :meth:`send_signal` only supports the :const:`SIGTERM`
+* The :class:`~subprocess.Popen` objects provided by the :mod:`subprocess` module
+  now have :meth:`~subprocess.Popen.terminate`, :meth:`~subprocess.Popen.kill`, and :meth:`~subprocess.Popen.send_signal` methods.
+  On Windows, :meth:`!send_signal` only supports the :py:const:`~signal.SIGTERM`
   signal, and all these methods are aliases for the Win32 API function
-  :c:func:`TerminateProcess`.
+  :c:func:`!TerminateProcess`.
   (Contributed by Christian Heimes.)
 
 * A new variable in the :mod:`sys` module, :attr:`float_info`, is an

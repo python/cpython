@@ -252,3 +252,18 @@ Other Functions
 .. data:: CRTDBG_REPORT_MODE
 
    Returns current *mode* for the specified *type*.
+
+
+.. data:: CRT_ASSEMBLY_VERSION
+
+   The CRT Assembly version, from the :file:`crtassem.h` header file.
+
+
+.. data:: VC_ASSEMBLY_PUBLICKEYTOKEN
+
+   The VC Assembly public key token, from the :file:`crtassem.h` header file.
+
+
+.. data:: LIBRARIES_ASSEMBLY_NAME_PREFIX
+
+   The Libraries Assembly name prefix, from the :file:`crtassem.h` header file.
