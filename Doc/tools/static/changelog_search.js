@@ -1,53 +1,52 @@
-$(document).ready(function() {
+document.addEventListener('DOMContentLoaded', function() {
     // add the search form and bind the events
-    $('h1').after([
+    document.querySelector('h1').insertAdjacentHTML('afterend', [
       '<p>Filter entries by content:',
       '<input type="text" value="" id="searchbox" style="width: 50%">',
       '<input type="submit" id="searchbox-submit" value="Filter"></p>'
     ].join('\n'));
 
     function dofilter() {
+        let query;
         try {
-            var query = new RegExp($('#searchbox').val(), 'i');
+            query = new RegExp(document.querySelector('#searchbox').value, 'i');
         }
         catch (e) {
             return; // not a valid regex (yet)
         }
-        // find headers for the versions (What's new in Python X.Y.Z?)
-        $('#changelog h2').each(function(index1, h2) {
-            var h2_parent = $(h2).parent();
-            var sections_found = 0;
+        const h2s = document.querySelectorAll('#changelog h2');
+        for(let h2 of h2s) {
+            let sections_found = 0;
             // find headers for the sections (Core, Library, etc.)
-            h2_parent.find('h3').each(function(index2, h3) {
-                var h3_parent = $(h3).parent();
-                var entries_found = 0;
-                // find all the entries
-                h3_parent.find('li').each(function(index3, li) {
-                    var li = $(li);
+            const h3s = h2.parentNode.querySelectorAll('h3');
+            for(let h3 of h3s) {
+                let entries_found = 0;
+                const lis = h3.parentNode.querySelectorAll('li');
+                for(let li of lis) {
                     // check if the query matches the entry
-                    if (query.test(li.text())) {
-                        li.show();
+                    if (query.test(li.textContent)) {
+                        li.style.display = 'block';
                         entries_found++;
                     }
                     else {
-                        li.hide();
+                        li.style.display = 'none';
                     }
-                });
+                }
                 // if there are entries, show the section, otherwise hide it
                 if (entries_found > 0) {
-                    h3_parent.show();
+                    h3.parentNode.style.display = 'block';
                     sections_found++;
                 }
                 else {
-                    h3_parent.hide();
+                    h3.parentNode.style.display = 'none';
                 }
-            });
+            }
             if (sections_found > 0)
-                h2_parent.show();
+                h2.parentNode.style.display = 'block';
             else
-                h2_parent.hide();
-        });
+                h2.parentNode.style.display = 'none';
+        }
     }
-    $('#searchbox').keyup(dofilter);
-    $('#searchbox-submit').click(dofilter);
+    document.querySelector('#searchbox').addEventListener('keyup', dofilter);
+    document.querySelector('#searchbox-submit').addEventListener('click', dofilter);
 });
