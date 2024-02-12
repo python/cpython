@@ -879,7 +879,7 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
         return -3;
     }
 
-    static int dividing_factor[] = {
+    int dividing_factor[] = {
         10, 100, 1000, 10000, 100000, 1000000
     };
 
