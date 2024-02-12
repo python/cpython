@@ -208,7 +208,7 @@ dummy_func(void) {
         // Can determine statically, so we interleave the new locals
         // and make the current stack the new locals.
         // This also sets up for true call inlining.
-        if (sym_is_known_type(self_or_null)) {
+        if (sym_is_known(self_or_null)) {
             localsplus_start = args;
             n_locals_already_filled = argcount;
         }

@@ -61,7 +61,7 @@
 
 
 // Flags for below.
-#define KNOWN_TYPE 1 << 0  // Just to differentiate NULL in typ
+#define KNOWN      1 << 0
 #define TRUE_CONST 1 << 1
 #define IS_NULL    1 << 2
 #define NOT_NULL   1 << 3
@@ -259,21 +259,21 @@ sym_has_flag(_Py_UOpsSymType *sym, int flag)
 }
 
 static inline bool
-sym_is_known_type(_Py_UOpsSymType *sym)
+sym_is_known(_Py_UOpsSymType *sym)
 {
-    return sym_has_flag(sym, KNOWN_TYPE);
+    return sym_has_flag(sym, KNOWN);
 }
 
 static inline bool
 sym_is_not_null(_Py_UOpsSymType *sym)
 {
-    return sym_has_flag(sym, NOT_NULL);
+    return (sym->flags & (IS_NULL | NOT_NULL)) == NOT_NULL;
 }
 
 static inline bool
 sym_is_null(_Py_UOpsSymType *sym)
 {
-    return sym_has_flag(sym, IS_NULL);
+    return (sym->flags & (IS_NULL | NOT_NULL)) == IS_NULL;
 }
 
 static inline void
@@ -281,15 +281,14 @@ sym_set_type(_Py_UOpsSymType *sym, PyTypeObject *tp)
 {
     assert(tp == NULL || PyType_Check(tp));
     sym->typ = tp;
-    sym_set_flag(sym, KNOWN_TYPE);
+    sym_set_flag(sym, KNOWN);
 }
 
 static inline void
 sym_set_null(_Py_UOpsSymType *sym)
 {
     sym_set_flag(sym, IS_NULL);
-    sym_set_flag(sym, KNOWN_TYPE);
-    sym_clear_flag(sym, NOT_NULL);
+    sym_set_flag(sym, KNOWN);
 }
 
 
@@ -355,7 +354,7 @@ static inline bool
 sym_matches_type(_Py_UOpsSymType *sym, PyTypeObject *typ)
 {
     assert(typ == NULL || PyType_Check(typ));
-    if (!sym_has_flag(sym, KNOWN_TYPE)) {
+    if (!sym_has_flag(sym, KNOWN)) {
         return false;
     }
     return sym->typ == typ;
