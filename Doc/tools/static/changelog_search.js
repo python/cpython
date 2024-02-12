@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         // find headers for the versions (What's new in Python X.Y.Z?)
         const h2s = document.querySelectorAll('#changelog h2');
-        for(let h2 of h2s) {
+        for(const h2 of h2s) {
             let sections_found = 0;
             // find headers for the sections (Core, Library, etc.)
             const h3s = h2.parentNode.querySelectorAll('h3');
