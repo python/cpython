@@ -1,1 +1,2 @@
-Fix possible crashes when operating with the functions in the :func:`deque.index`and custom comparison operators.
+Fix possible crashes in :func:`deque.index` when calling
+:c:func:`PyObject_RichCompareBool`.
