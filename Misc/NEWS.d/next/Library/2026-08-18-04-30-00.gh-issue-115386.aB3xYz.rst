@@ -1,0 +1,5 @@
+Set ``__module__`` to ``concurrent.futures`` on the public classes
+``Future``, ``Executor``, ``CancelledError``, ``InvalidStateError`` and
+``BrokenExecutor``, so their ``repr`` and exception tracebacks reference the
+documented public location rather than the private ``concurrent.futures._base``
+module.
