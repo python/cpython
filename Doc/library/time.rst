@@ -454,6 +454,10 @@ Functions
    | ``%S``    | Second as a decimal number [00,61].            | \(2)  |
    |           |                                                |       |
    +-----------+------------------------------------------------+-------+
+   | ``%f`     | Microseconds as a decimal number               |       | 
+   |           |    [000000,999999].                            |       |
+   |           |                                                |       |
+   +-----------+------------------------------------------------+-------+
    | ``%U``    | Week number of the year (Sunday as the first   | \(3)  |
    |           | day of the week) as a decimal number [00,53].  |       |
    |           | All days in a new year preceding the first     |       |
