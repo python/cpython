@@ -17,7 +17,7 @@
             _Py_UOpsSymType *value;
             value = GETLOCAL(oparg);
             // We guarantee this will error - just bail and don't optimize it.
-            if (sym_has_flag(value, IS_NULL)) {
+            if (sym_is_null(value)) {
                 goto out_of_space;
             }
             stack_pointer[0] = value;
@@ -1298,7 +1298,7 @@
             PyCodeObject *co = (PyCodeObject *)func->func_code;
             assert(self_or_null != NULL);
             assert(args != NULL);
-            if (sym_has_flag(self_or_null, NOT_NULL)) {
+            if (sym_is_not_null(self_or_null)) {
                 // Bound method fiddling, same as _INIT_CALL_PY_EXACT_ARGS in VM
                 args--;
                 argcount++;
@@ -1308,7 +1308,7 @@
             // Can determine statically, so we interleave the new locals
             // and make the current stack the new locals.
             // This also sets up for true call inlining.
-            if (sym_has_flag(self_or_null, KNOWN_TYPE)) {
+            if (sym_is_known_type(self_or_null)) {
                 localsplus_start = args;
                 n_locals_already_filled = argcount;
             }

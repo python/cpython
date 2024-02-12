@@ -268,6 +268,24 @@ sym_has_flag(_Py_UOpsSymType *sym, int flag)
     return (sym->flags & flag) != 0;
 }
 
+static inline bool
+sym_is_known_type(_Py_UOpsSymType *sym)
+{
+    return sym_has_flag(sym, KNOWN_TYPE);
+}
+
+static inline bool
+sym_is_not_null(_Py_UOpsSymType *sym)
+{
+    return sym_has_flag(sym, NOT_NULL);
+}
+
+static inline bool
+sym_is_null(_Py_UOpsSymType *sym)
+{
+    return sym_has_flag(sym, IS_NULL);
+}
+
 static inline void
 sym_set_type(_Py_UOpsSymType *sym, PyTypeObject *tp)
 {
@@ -362,23 +380,6 @@ static inline bool
 op_is_end(uint32_t opcode)
 {
     return opcode == _EXIT_TRACE || opcode == _JUMP_TO_TOP;
-}
-
-
-static inline bool
-op_is_bookkeeping(uint32_t opcode) {
-    return (opcode == _SET_IP ||
-            opcode == _CHECK_VALIDITY ||
-            opcode == _SAVE_RETURN_OFFSET ||
-            opcode == _RESUME_CHECK);
-}
-
-static inline bool
-op_is_data_movement_only(uint32_t opcode) {
-    return (opcode == _STORE_FAST ||
-        opcode == STORE_FAST_MAYBE_NULL ||
-        opcode == _PUSH_FRAME ||
-        opcode == _POP_FRAME);
 }
 
 #define STACK_LEVEL()     ((int)(stack_pointer - ctx->frame->stack))
