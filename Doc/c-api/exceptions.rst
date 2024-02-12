@@ -364,7 +364,7 @@ an error value).
 .. c:function:: int PyErr_ResourceWarning(PyObject *source, Py_ssize_t stack_level, const char *format, ...)
 
    Function similar to :c:func:`PyErr_WarnFormat`, but *category* is
-   :exc:`ResourceWarning` and it passes *source* to :func:`warnings.WarningMessage`.
+   :exc:`ResourceWarning` and it passes *source* to :class:`!warnings.WarningMessage`.
 
    .. versionadded:: 3.6
 
@@ -647,7 +647,7 @@ Exception Classes
    This creates a class object derived from :exc:`Exception` (accessible in C as
    :c:data:`PyExc_Exception`).
 
-   The :attr:`__module__` attribute of the new class is set to the first part (up
+   The :attr:`!__module__` attribute of the new class is set to the first part (up
    to the last dot) of the *name* argument, and the class name is set to the last
    part (after the last dot).  The *base* argument can be used to specify alternate
    base classes; it can either be only one class or a tuple of classes. The *dict*
@@ -797,8 +797,8 @@ because the :ref:`call protocol <call>` takes care of recursion handling.
 
    Marks a point where a recursive C-level call is about to be performed.
 
-   If :c:macro:`USE_STACKCHECK` is defined, this function checks if the OS
-   stack overflowed using :c:func:`PyOS_CheckStack`.  In this is the case, it
+   If :c:macro:`!USE_STACKCHECK` is defined, this function checks if the OS
+   stack overflowed using :c:func:`PyOS_CheckStack`.  If this is the case, it
    sets a :exc:`MemoryError` and returns a nonzero value.
 
    The function then checks if the recursion limit is reached.  If this is the
@@ -1051,11 +1051,11 @@ These are compatibility aliases to :c:data:`PyExc_OSError`:
 +-------------------------------------+----------+
 | C Name                              | Notes    |
 +=====================================+==========+
-| :c:data:`PyExc_EnvironmentError`    |          |
+| :c:data:`!PyExc_EnvironmentError`   |          |
 +-------------------------------------+----------+
-| :c:data:`PyExc_IOError`             |          |
+| :c:data:`!PyExc_IOError`            |          |
 +-------------------------------------+----------+
-| :c:data:`PyExc_WindowsError`        | [2]_     |
+| :c:data:`!PyExc_WindowsError`       | [2]_     |
 +-------------------------------------+----------+
 
 .. versionchanged:: 3.3
