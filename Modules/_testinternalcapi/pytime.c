@@ -53,21 +53,6 @@ test_pytime_fromsecondsobject(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-test_pytime_assecondsdouble(PyObject *self, PyObject *args)
-{
-    PyObject *obj;
-    if (!PyArg_ParseTuple(args, "O", &obj)) {
-        return NULL;
-    }
-    _PyTime_t ts;
-    if (_PyTime_FromNanosecondsObject(&ts, obj) < 0) {
-        return NULL;
-    }
-    double d = _PyTime_AsSecondsDouble(ts);
-    return PyFloat_FromDouble(d);
-}
-
-static PyObject *
 test_PyTime_AsTimeval(PyObject *self, PyObject *args)
 {
     PyObject *obj;
@@ -254,7 +239,6 @@ test_pytime_object_to_timespec(PyObject *self, PyObject *args)
 static PyMethodDef TestMethods[] = {
     {"_PyTime_AsMicroseconds",    test_PyTime_AsMicroseconds,     METH_VARARGS},
     {"_PyTime_AsMilliseconds",    test_PyTime_AsMilliseconds,     METH_VARARGS},
-    {"_PyTime_AsSecondsDouble",   test_pytime_assecondsdouble,    METH_VARARGS},
 #ifdef HAVE_CLOCK_GETTIME
     {"_PyTime_AsTimespec",        test_PyTime_AsTimespec,         METH_VARARGS},
     {"_PyTime_AsTimespec_clamp",  test_PyTime_AsTimespec_clamp,   METH_VARARGS},

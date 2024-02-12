@@ -97,6 +97,7 @@
 #include "weakrefobject.h"
 #include "structseq.h"
 #include "cpython/picklebufobject.h"
+#include "cpython/pytime.h"
 #include "codecs.h"
 #include "pyerrors.h"
 #include "pythread.h"
