@@ -28,24 +28,22 @@ increment_mutations(PyObject* dict) {
     d->ma_version_tag += (1 << DICT_MAX_WATCHERS);
 }
 
+/* The first two dict watcher IDs are reserved for CPython,
+ * so we don't need to check that they haven't been used */
+#define BUILTINS_WATCHER_ID 0
+#define GLOBALS_WATCHER_ID  1
+
 static int
 globals_watcher_callback(PyDict_WatchEvent event, PyObject* dict,
                          PyObject* key, PyObject* new_value)
 {
-    if (event == PyDict_EVENT_CLONED) {
-        return 0;
-    }
-    uint64_t watched_mutations = get_mutations(dict);
-    if (watched_mutations < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
-        _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), dict);
-        increment_mutations(dict);
-    }
-    else {
-        PyDict_Unwatch(1, dict);
-    }
+    RARE_EVENT_STAT_INC(watched_globals_modification);
+    assert(get_mutations(dict) < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS);
+    _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), dict);
+    increment_mutations(dict);
+    PyDict_Unwatch(GLOBALS_WATCHER_ID, dict);
     return 0;
 }
-
 
 static void
 global_to_const(_PyUOpInstruction *inst, PyObject *obj)
@@ -82,11 +80,6 @@ incorrect_keys(_PyUOpInstruction *inst, PyObject *obj)
     return 0;
 }
 
-/* The first two dict watcher IDs are reserved for CPython,
- * so we don't need to check that they haven't been used */
-#define BUILTINS_WATCHER_ID 0
-#define GLOBALS_WATCHER_ID  1
-
 /* Returns 1 if successfully optimized
  *         0 if the trace is not suitable for optimization (yet)
  *        -1 if there was an error. */
@@ -117,8 +110,8 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
     uint32_t builtins_watched = 0;
     uint32_t globals_checked = 0;
     uint32_t globals_watched = 0;
-    if (interp->dict_state.watchers[1] == NULL) {
-        interp->dict_state.watchers[1] = globals_watcher_callback;
+    if (interp->dict_state.watchers[GLOBALS_WATCHER_ID] == NULL) {
+        interp->dict_state.watchers[GLOBALS_WATCHER_ID] = globals_watcher_callback;
     }
     for (int pc = 0; pc < buffer_size; pc++) {
         _PyUOpInstruction *inst = &buffer[pc];

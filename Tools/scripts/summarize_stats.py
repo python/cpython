@@ -415,7 +415,7 @@ class Stats:
     def get_rare_events(self) -> list[tuple[str, int]]:
         prefix = "Rare event "
         return [
-            (key[len(prefix) + 1:-1], val)
+            (key[len(prefix) + 1:-1].replace("_", " "), val)
             for key, val in self._data.items()
             if key.startswith(prefix)
         ]

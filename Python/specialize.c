@@ -275,6 +275,8 @@ print_rare_event_stats(FILE *out, RareEventStats *stats)
     fprintf(out, "Rare event (set_eval_frame_func): %" PRIu64 "\n", stats->set_eval_frame_func);
     fprintf(out, "Rare event (builtin_dict): %" PRIu64 "\n", stats->builtin_dict);
     fprintf(out, "Rare event (func_modification): %" PRIu64 "\n", stats->func_modification);
+    fprintf(out, "Rare event (watched_dict_modification): %" PRIu64 "\n", stats->watched_dict_modification);
+    fprintf(out, "Rare event (watched_globals_modification): %" PRIu64 "\n", stats->watched_globals_modification);
 }
 
 static void

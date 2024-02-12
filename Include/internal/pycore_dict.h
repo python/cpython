@@ -209,6 +209,7 @@ static inline PyDictUnicodeEntry* DK_UNICODE_ENTRIES(PyDictKeysObject *dk) {
 
 #define DICT_VERSION_INCREMENT (1 << (DICT_MAX_WATCHERS + DICT_WATCHED_MUTATION_BITS))
 #define DICT_WATCHER_MASK ((1 << DICT_MAX_WATCHERS) - 1)
+#define DICT_WATCHER_AND_MODIFICATION_MASK ((1 << (DICT_MAX_WATCHERS + DICT_WATCHED_MUTATION_BITS)) - 1)
 
 #ifdef Py_GIL_DISABLED
 #define DICT_NEXT_VERSION(INTERP) \
@@ -236,10 +237,10 @@ _PyDict_NotifyEvent(PyInterpreterState *interp,
     assert(Py_REFCNT((PyObject*)mp) > 0);
     int watcher_bits = mp->ma_version_tag & DICT_WATCHER_MASK;
     if (watcher_bits) {
+        RARE_EVENT_STAT_INC(watched_dict_modification);
         _PyDict_SendEvent(watcher_bits, event, mp, key, value);
-        return DICT_NEXT_VERSION(interp) | watcher_bits;
     }
-    return DICT_NEXT_VERSION(interp);
+    return DICT_NEXT_VERSION(interp) | (mp->ma_version_tag & DICT_WATCHER_AND_MODIFICATION_MASK);
 }
 
 extern PyObject *_PyObject_MakeDictFromInstanceAttributes(PyObject *obj, PyDictValues *values);

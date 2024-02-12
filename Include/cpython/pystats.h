@@ -133,6 +133,9 @@ typedef struct _rare_event_stats {
     uint64_t builtin_dict;
     /* Modifying a function, e.g. func.__defaults__ = ..., etc. */
     uint64_t func_modification;
+    /* Modifying a dict that is being watched */
+    uint64_t watched_dict_modification;
+    uint64_t watched_globals_modification;
 } RareEventStats;
 
 typedef struct _stats {
