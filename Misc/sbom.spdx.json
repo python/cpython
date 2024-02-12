@@ -1601,7 +1601,7 @@
           "referenceType": "cpe23Type"
         }
       ],
-      "licenseConcluded": "MIT",
+      "licenseConcluded": "NOASSERTION",
       "name": "expat",
       "originator": "Organization: Expat development team",
       "primaryPackagePurpose": "SOURCE",
@@ -1623,7 +1623,7 @@
           "referenceType": "cpe23Type"
         }
       ],
-      "licenseConcluded": "Apache-2.0",
+      "licenseConcluded": "NOASSERTION",
       "name": "hacl-star",
       "originator": "Organization: HACL* Developers",
       "primaryPackagePurpose": "SOURCE",
@@ -1645,7 +1645,7 @@
           "referenceType": "cpe23Type"
         }
       ],
-      "licenseConcluded": "CC0-1.0",
+      "licenseConcluded": "NOASSERTION",
       "name": "libb2",
       "originator": "Organization: BLAKE2 - fast secure hashing",
       "primaryPackagePurpose": "SOURCE",
@@ -1667,7 +1667,7 @@
           "referenceType": "purl"
         }
       ],
-      "licenseConcluded": "MIT",
+      "licenseConcluded": "NOASSERTION",
       "name": "macholib",
       "originator": "Person: Ronald Oussoren (ronaldoussoren@mac.com)",
       "primaryPackagePurpose": "SOURCE",
@@ -1689,7 +1689,7 @@
           "referenceType": "cpe23Type"
         }
       ],
-      "licenseConcluded": "BSD-2-Clause",
+      "licenseConcluded": "NOASSERTION",
       "name": "mpdecimal",
       "originator": "Organization: bytereef.org",
       "primaryPackagePurpose": "SOURCE",
@@ -1711,7 +1711,7 @@
           "referenceType": "purl"
         }
       ],
-      "licenseConcluded": "MIT",
+      "licenseConcluded": "NOASSERTION",
       "name": "cachecontrol",
       "primaryPackagePurpose": "SOURCE",
       "versionInfo": "0.13.1"
@@ -1732,7 +1732,7 @@
           "referenceType": "purl"
         }
       ],
-      "licenseConcluded": "MIT",
+      "licenseConcluded": "NOASSERTION",
       "name": "colorama",
       "primaryPackagePurpose": "SOURCE",
       "versionInfo": "0.4.6"
@@ -1753,7 +1753,7 @@
           "referenceType": "purl"
         }
       ],
-      "licenseConcluded": "MIT",
+      "licenseConcluded": "NOASSERTION",
       "name": "distlib",
       "primaryPackagePurpose": "SOURCE",
       "versionInfo": "0.3.8"
@@ -1774,7 +1774,7 @@
           "referenceType": "purl"
         }
       ],
-      "licenseConcluded": "MIT",
+      "licenseConcluded": "NOASSERTION",
       "name": "distro",
       "primaryPackagePurpose": "SOURCE",
       "versionInfo": "1.8.0"
@@ -1795,7 +1795,7 @@
           "referenceType": "purl"
         }
       ],
-      "licenseConcluded": "MIT",
+      "licenseConcluded": "NOASSERTION",
       "name": "msgpack",
       "primaryPackagePurpose": "SOURCE",
       "versionInfo": "1.0.5"
@@ -1816,7 +1816,7 @@
           "referenceType": "purl"
         }
       ],
-      "licenseConcluded": "MIT",
+      "licenseConcluded": "NOASSERTION",
       "name": "packaging",
       "primaryPackagePurpose": "SOURCE",
       "versionInfo": "21.3"
@@ -1837,7 +1837,7 @@
           "referenceType": "purl"
         }
       ],
-      "licenseConcluded": "MIT",
+      "licenseConcluded": "NOASSERTION",
       "name": "platformdirs",
       "primaryPackagePurpose": "SOURCE",
       "versionInfo": "3.8.1"
@@ -1858,7 +1858,7 @@
           "referenceType": "purl"
         }
       ],
-      "licenseConcluded": "MIT",
+      "licenseConcluded": "NOASSERTION",
       "name": "pyparsing",
       "primaryPackagePurpose": "SOURCE",
       "versionInfo": "3.1.0"
@@ -1879,7 +1879,7 @@
           "referenceType": "purl"
         }
       ],
-      "licenseConcluded": "MIT",
+      "licenseConcluded": "NOASSERTION",
       "name": "pyproject-hooks",
       "primaryPackagePurpose": "SOURCE",
       "versionInfo": "1.0.0"
@@ -1900,7 +1900,7 @@
           "referenceType": "purl"
         }
       ],
-      "licenseConcluded": "MIT",
+      "licenseConcluded": "NOASSERTION",
       "name": "requests",
       "primaryPackagePurpose": "SOURCE",
       "versionInfo": "2.31.0"
@@ -1921,7 +1921,7 @@
           "referenceType": "purl"
         }
       ],
-      "licenseConcluded": "MIT",
+      "licenseConcluded": "NOASSERTION",
       "name": "certifi",
       "primaryPackagePurpose": "SOURCE",
       "versionInfo": "2023.7.22"
@@ -1942,7 +1942,7 @@
           "referenceType": "purl"
         }
       ],
-      "licenseConcluded": "MIT",
+      "licenseConcluded": "NOASSERTION",
       "name": "chardet",
       "primaryPackagePurpose": "SOURCE",
       "versionInfo": "5.1.0"
@@ -1963,7 +1963,7 @@
           "referenceType": "purl"
         }
       ],
-      "licenseConcluded": "MIT",
+      "licenseConcluded": "NOASSERTION",
       "name": "idna",
       "primaryPackagePurpose": "SOURCE",
       "versionInfo": "3.4"
@@ -1984,7 +1984,7 @@
           "referenceType": "purl"
         }
       ],
-      "licenseConcluded": "MIT",
+      "licenseConcluded": "NOASSERTION",
       "name": "rich",
       "primaryPackagePurpose": "SOURCE",
       "versionInfo": "13.4.2"
@@ -2005,7 +2005,7 @@
           "referenceType": "purl"
         }
       ],
-      "licenseConcluded": "MIT",
+      "licenseConcluded": "NOASSERTION",
       "name": "pygments",
       "primaryPackagePurpose": "SOURCE",
       "versionInfo": "2.15.1"
@@ -2026,7 +2026,7 @@
           "referenceType": "purl"
         }
       ],
-      "licenseConcluded": "MIT",
+      "licenseConcluded": "NOASSERTION",
       "name": "typing_extensions",
       "primaryPackagePurpose": "SOURCE",
       "versionInfo": "4.7.1"
@@ -2047,7 +2047,7 @@
           "referenceType": "purl"
         }
       ],
-      "licenseConcluded": "MIT",
+      "licenseConcluded": "NOASSERTION",
       "name": "resolvelib",
       "primaryPackagePurpose": "SOURCE",
       "versionInfo": "1.0.1"
@@ -2068,7 +2068,7 @@
           "referenceType": "purl"
         }
       ],
-      "licenseConcluded": "MIT",
+      "licenseConcluded": "NOASSERTION",
       "name": "setuptools",
       "primaryPackagePurpose": "SOURCE",
       "versionInfo": "68.0.0"
@@ -2089,7 +2089,7 @@
           "referenceType": "purl"
         }
       ],
-      "licenseConcluded": "MIT",
+      "licenseConcluded": "NOASSERTION",
       "name": "six",
       "primaryPackagePurpose": "SOURCE",
       "versionInfo": "1.16.0"
@@ -2110,7 +2110,7 @@
           "referenceType": "purl"
         }
       ],
-      "licenseConcluded": "MIT",
+      "licenseConcluded": "NOASSERTION",
       "name": "tenacity",
       "primaryPackagePurpose": "SOURCE",
       "versionInfo": "8.2.2"
@@ -2131,7 +2131,7 @@
           "referenceType": "purl"
         }
       ],
-      "licenseConcluded": "MIT",
+      "licenseConcluded": "NOASSERTION",
       "name": "tomli",
       "primaryPackagePurpose": "SOURCE",
       "versionInfo": "2.0.1"
@@ -2152,7 +2152,7 @@
           "referenceType": "purl"
         }
       ],
-      "licenseConcluded": "MIT",
+      "licenseConcluded": "NOASSERTION",
       "name": "truststore",
       "primaryPackagePurpose": "SOURCE",
       "versionInfo": "0.8.0"
@@ -2173,7 +2173,7 @@
           "referenceType": "purl"
         }
       ],
-      "licenseConcluded": "MIT",
+      "licenseConcluded": "NOASSERTION",
       "name": "webencodings",
       "primaryPackagePurpose": "SOURCE",
       "versionInfo": "0.5.1"
@@ -2194,7 +2194,7 @@
           "referenceType": "purl"
         }
       ],
-      "licenseConcluded": "MIT",
+      "licenseConcluded": "NOASSERTION",
       "name": "urllib3",
       "primaryPackagePurpose": "SOURCE",
       "versionInfo": "1.26.17"
@@ -2220,7 +2220,7 @@
           "referenceType": "purl"
         }
       ],
-      "licenseConcluded": "MIT",
+      "licenseConcluded": "NOASSERTION",
       "name": "pip",
       "originator": "Organization: Python Packaging Authority",
       "primaryPackagePurpose": "SOURCE",
