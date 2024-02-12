@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", function () {
       let sections_found = 0;
       // find headers for the sections (Core, Library, etc.)
       const h3s = h2.parentNode.querySelectorAll("h3");
-      for (let h3 of h3s) {
+      for (const h3 of h3s) {
         let entries_found = 0;
         // find all the entries
         const lis = h3.parentNode.querySelectorAll("li");
