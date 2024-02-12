@@ -12920,10 +12920,10 @@ _pystatvfs_fromstructstatfs(PyObject *module, struct statfs st) {
     do {                                            \
         PyObject *obj = (EXPR);                     \
         if (obj == NULL || PyErr_Occurred()) {      \
-            Py_DECREF(V);                           \
+            Py_DECREF((V));                           \
             return NULL;                            \
         }                                           \
-        PyStructSequence_SET_ITEM(V, (INDEX), obj); \
+        PyStructSequence_SET_ITEM((V), (INDEX), obj); \
     } while (0)
 
     SET_ITEM(v, 0, PyLong_FromLong((long) st.f_iosize));
