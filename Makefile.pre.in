@@ -651,8 +651,8 @@ all:		@DEF_MAKE_ALL_RULE@
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
 	@echo "  clean      to remove build files"
+	@echo "  distclean  'clean' + remove other generated files (patch, exe, etc)"
 	@echo "  clinic     run Argument Clinic over source files"
-	@echo "  distclean  to remove other generated files (patch, exe, etc)"
 	@echo "  install    install built files"
 	@echo "  recheck    rerun configure with last cmdline options"
 	@echo "  regen-all  regenerate a number of generated source files"
