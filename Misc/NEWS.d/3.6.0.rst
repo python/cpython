@@ -3,5 +3,6 @@
 .. no changes: True
 .. nonce: F9ENBV
 .. release date: 2016-12-23
+.. section: Library
 
 No changes since release candidate 2
