@@ -382,6 +382,7 @@ Python/optimizer.c	-	_PyCounterOptimizer_Type	-
 Python/optimizer.c	-	_PyUOpExecutor_Type	-
 Python/optimizer.c	-	_PyUOpOptimizer_Type	-
 Python/optimizer.c	-	_PyOptimizer_Default	-
+Python/lock.c	-	TIME_TO_BE_FAIR_NS	-
 
 ##-----------------------
 ## test code
