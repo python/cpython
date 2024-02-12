@@ -1880,6 +1880,7 @@ class TestRoundtrip(TestCase):
         self.check_roundtrip("f'\\N{EXCLAMATION MARK}'")
         self.check_roundtrip(r"f'\\N{EXCLAMATION MARK}'")
         self.check_roundtrip(r"f'\\N{SNAKE}'")
+        self.check_roundtrip(r"f'\\N{{SNAKE}}'")
         cases = [
     """
 if 1:

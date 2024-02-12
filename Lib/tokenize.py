@@ -194,7 +194,7 @@ class Untokenizer:
                 else:
                     characters.append(character)
             if character == "{":
-                if characters[-2:] != ["\\", "N"]:
+                if characters[-2:] != ["\\", "N"] or characters[-3:] == ["\\", "\\", "N"]:
                     characters.append(character)
                 else:
                     consume_until_next_bracket = True
