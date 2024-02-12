@@ -1010,6 +1010,7 @@ enter_tier_two:
     _PyUOpInstruction *next_uop = current_executor->trace;
     uint16_t uopcode;
 #ifdef Py_STATS
+    int lastuop = 0;
     uint64_t trace_uop_execution_counter = 0;
 #endif
 
@@ -1026,7 +1027,7 @@ enter_tier_two:
         next_uop++;
         OPT_STAT_INC(uops_executed);
         UOP_STAT_INC(uopcode, execution_count);
-        UOP_CHAIN_UPDATE(uopcode);
+        UOP_PAIR_INC(uopcode, lastuop);
 #ifdef Py_STATS
         trace_uop_execution_counter++;
 #endif

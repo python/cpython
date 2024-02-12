@@ -10,7 +10,6 @@
 #include "pycore_moduleobject.h"
 #include "pycore_object.h"
 #include "pycore_opcode_metadata.h" // _PyOpcode_Caches
-#include "pycore_pystats.h"         // _Py_Stats_Set_Depth
 #include "pycore_uop_metadata.h"    // _PyOpcode_uop_name
 #include "pycore_opcode_utils.h"  // RESUME_AT_FUNC_START
 #include "pycore_pylifecycle.h"   // _PyOS_URandomNonblock()
@@ -42,31 +41,6 @@ PyStats *_Py_stats = NULL;
         } \
         Py_DECREF(val); \
     } while(0);
-
-void
-_init_pystats(){
-    //Make UOpstats structs for all initial opcodes, with null pointers to deeper opcodes
-    for (int i = 0; i < 512; i++){
-        _Py_stats_struct.optimization_stats.opcode[i] = PyMem_RawCalloc(1, sizeof(UOpStats));
-        for (int j = 0; j < 512; j++){
-            _Py_stats_struct.optimization_stats.opcode[i]->next_stats[j] = NULL;
-
-        }
-    }
-
-    int previous_depth = _Py_stats_struct.optimization_stats.max_uop_chain_depth;
-    int depth =  previous_depth ? previous_depth : 2;
-
-    if (_Py_stats_struct.optimization_stats.last_opcodes){
-        uint64_t *tmp;
-        tmp = PyMem_RawRealloc(depth, sizeof(uint64_t));
-        if (tmp != NULL) _Py_stats_struct.optimization_stats.last_opcodes = tmp;
-        else return PyErr_NoMemory();
-    }
-    else {
-        _Py_stats_struct.optimization_stats.last_opcodes = PyMem_RawCalloc(depth, sizeof(uint64_t));
-    }
-}
 
 static PyObject*
 stats_to_dict(SpecializationStats *stats)
@@ -247,28 +221,6 @@ print_histogram(FILE *out, const char *name, uint64_t hist[_Py_UOP_HIST_SIZE])
     }
 }
 
-// Print all recorded sequences of UOps, starting with the
-// UOp with the given index
-static void
-print_uop_sequence(FILE *out, UOpStats *uop_stats, const char* prefix){
-    for (int i = 1; i < 512; i++){
-        if (uop_stats->next_stats[i]){
-            if (uop_stats->next_stats[i]->execution_count){
-                const char* const* names;
-                if (i < 256) {
-                    names = _PyOpcode_OpName;
-                } else {
-                    names = _PyOpcode_uop_name;
-                }
-                fprintf(out, "UOp sequence count[%s,%s]: %ld\n", prefix, names[i], uop_stats->next_stats[i]->execution_count);
-                char new_prefix[strlen(prefix) + 64];
-                sprintf(new_prefix, "%s,%s", prefix, names[i]);
-                print_uop_sequence(out, uop_stats->next_stats[i], new_prefix);
-            }
-        }
-    }
-}
-
 static void
 print_optimization_stats(FILE *out, OptimizationStats *stats)
 {
@@ -295,11 +247,11 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
         } else {
             names = _PyOpcode_uop_name;
         }
-        if (stats->opcode[i]->execution_count) {
-            fprintf(out, "uops[%s].execution_count : %" PRIu64 "\n", names[i], stats->opcode[i]->execution_count);
+        if (stats->opcode[i].execution_count) {
+            fprintf(out, "uops[%s].execution_count : %" PRIu64 "\n", names[i], stats->opcode[i].execution_count);
         }
-        if (stats->opcode[i]->miss) {
-            fprintf(out, "uops[%s].specialization.miss : %" PRIu64 "\n", names[i], stats->opcode[i]->miss);
+        if (stats->opcode[i].miss) {
+            fprintf(out, "uops[%s].specialization.miss : %" PRIu64 "\n", names[i], stats->opcode[i].miss);
         }
     }
 
@@ -315,14 +267,13 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
     }
 
     for (int i = 0; i < 512; i++){
-        if (i < 256) {
-            names = _PyOpcode_OpName;
-        } else {
-            names = _PyOpcode_uop_name;
+        for (int j = 0; j < 512; j++) {
+            if (stats->opcode[i].pair_count[j]) {
+                fprintf(out, "uop[%s].pair_count[%s] : %" PRIu64 "\n",
+                        _PyOpcode_uop_name[i], _PyOpcode_uop_name[j], stats->opcode[i].pair_count[j]);
+            }
         }
-        print_uop_sequence(out, stats->opcode[i], names[i]);
     }
-
 }
 
 static void
@@ -352,15 +303,6 @@ void
 _Py_StatsOn(void)
 {
     _Py_stats = &_Py_stats_struct;
-    if (!_Py_stats->optimization_stats.opcode[0]) _init_pystats();
-}
-
-void
-_Py_Stats_Set_Depth(int depth){
-     _Py_stats_struct.optimization_stats.max_uop_chain_depth = depth;
-     if (_Py_stats){
-        _Py_stats->optimization_stats.last_opcodes = PyMem_RawRealloc(_Py_stats->optimization_stats.last_opcodes, depth * sizeof(uint64_t));
-     }
 }
 
 void

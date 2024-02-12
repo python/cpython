@@ -99,7 +99,7 @@ typedef struct _gc_stats {
 typedef struct _uop_stats {
     uint64_t execution_count;
     uint64_t miss;
-    struct _uop_stats *next_stats[512];
+    uint64_t pair_count[512];
 } UOpStats;
 
 #define _Py_UOP_HIST_SIZE 32
@@ -116,9 +116,7 @@ typedef struct _optimization_stats {
     uint64_t inner_loop;
     uint64_t recursive_call;
     uint64_t low_confidence;
-    uint64_t max_uop_chain_depth;
-    uint64_t *last_opcodes;
-    UOpStats *opcode[512];
+    UOpStats opcode[512];
     uint64_t unsupported_opcode[256];
     uint64_t trace_length_hist[_Py_UOP_HIST_SIZE];
     uint64_t trace_run_length_hist[_Py_UOP_HIST_SIZE];

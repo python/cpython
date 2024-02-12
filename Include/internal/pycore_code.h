@@ -285,7 +285,10 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
     do { if (_Py_stats && PyFunction_Check(callable)) _Py_stats->call_stats.eval_calls[name]++; } while (0)
 #define GC_STAT_ADD(gen, name, n) do { if (_Py_stats) _Py_stats->gc_stats[(gen)].name += (n); } while (0)
 #define OPT_STAT_INC(name) do { if (_Py_stats) _Py_stats->optimization_stats.name++; } while (0)
-#define UOP_STAT_INC(opname, name) do { if (_Py_stats) { assert(opname < 512); _Py_stats->optimization_stats.opcode[opname]->name++; } } while (0)
+#define UOP_STAT_INC(opname, name) do { if (_Py_stats) { assert(opname < 512); _Py_stats->optimization_stats.opcode[opname].name++; } } while (0)
+#define UOP_PAIR_INC(uopcode, lastuop) do { if (lastuop && _Py_stats) { \
+    _Py_stats->optimization_stats.opcode[uopcode].pair_count[lastuop]++; } \
+    lastuop = uopcode; } while (0)
 #define OPT_UNSUPPORTED_OPCODE(opname) do { if (_Py_stats) _Py_stats->optimization_stats.unsupported_opcode[opname]++; } while (0)
 #define OPT_HIST(length, name) \
     do { \
@@ -295,33 +298,10 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
             _Py_stats->optimization_stats.name[bucket]++; \
         } \
     } while (0)
-#define UOP_CHAIN_UPDATE(op) \
-    if (_Py_stats){ \
-        for (uint64_t i = _Py_stats->optimization_stats.max_uop_chain_depth - 1; i > 0; i--){ \
-            _Py_stats->optimization_stats.last_opcodes[i] = _Py_stats->optimization_stats.last_opcodes[i-1]; \
-        } \
-        _Py_stats->optimization_stats.last_opcodes[0] = op; \
-        do { \
-            UOpStats *head = _Py_stats->optimization_stats.opcode[op]; \
-            for (uint64_t i = 0; i < _Py_stats->optimization_stats.max_uop_chain_depth - 1; i++){ \
-                if (!_Py_stats->optimization_stats.last_opcodes[i+1]){ break; } \
-                if (head->next_stats[_Py_stats->optimization_stats.last_opcodes[i+1]]){ \
-                    head->next_stats[_Py_stats->optimization_stats.last_opcodes[i+1]]->execution_count++; } \
-                else { \
-                    head->next_stats[_Py_stats->optimization_stats.last_opcodes[i+1]] = calloc(1, sizeof(UOpStats)); \
-                    head->next_stats[_Py_stats->optimization_stats.last_opcodes[i+1]]->execution_count = 1; \
-                } \
-                head = head->next_stats[_Py_stats->optimization_stats.last_opcodes[i+1]]; \
-            } \
-        } while (0); \
-    }
 #define RARE_EVENT_STAT_INC(name) do { if (_Py_stats) _Py_stats->rare_event_stats.name++; } while (0)
 
 // Export for '_opcode' shared extension
 PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
-
-// Method to initialize sub-structs of Py_Stats
-void _init_pystats(void);
 
 #else
 #define STAT_INC(opname, name) ((void)0)
@@ -335,9 +315,9 @@ void _init_pystats(void);
 #define GC_STAT_ADD(gen, name, n) ((void)0)
 #define OPT_STAT_INC(name) ((void)0)
 #define UOP_STAT_INC(opname, name) ((void)0)
+#define UOP_PAIR_INC(uopcode, lastuop) ((void)0)
 #define OPT_UNSUPPORTED_OPCODE(opname) ((void)0)
 #define OPT_HIST(length, name) ((void)0)
-#define UOP_CHAIN_UPDATE(op) printf("UOP CHAINER NOT RUNNING\n");
 #define RARE_EVENT_STAT_INC(name) ((void)0)
 #endif  // !Py_STATS
 

@@ -21,7 +21,7 @@ import os
 from pathlib import Path
 import re
 import sys
-from typing import Any, Callable, Generator, TextIO, TypeAlias
+from typing import Any, Callable, TextIO, TypeAlias
 
 
 RawData: TypeAlias = dict[str, Any]
@@ -312,16 +312,6 @@ class Stats:
             self._data["_specialized_instructions"],
         )
 
-    def get_uop_sequence_stats(self, length) -> dict[str, int]:
-        return {k: v for k, v in self._data.items()
-                 if k.startswith("UOp sequence count") and
-                 k.count(',') == length - 1}
-
-    def get_max_uop_sequence_length(self) -> int:
-        uop_sequence_lengths = [k.count(',')+1 for k in self._data.keys()
-                                if k.startswith("UOp sequence count")]
-        return max(uop_sequence_lengths) if uop_sequence_lengths else 0
-
     def get_call_stats(self) -> dict[str, int]:
         defines = self._data["_stats_defines"]
         result = {}
@@ -425,7 +415,7 @@ class Stats:
     def get_rare_events(self) -> list[tuple[str, int]]:
         prefix = "Rare event "
         return [
-            (key[len(prefix) + 1:-1].replace("_", " "), val)
+            (key[len(prefix) + 1: -1].replace("_", " "), val)
             for key, val in self._data.items()
             if key.startswith(prefix)
         ]
@@ -641,9 +631,9 @@ def execution_count_section() -> Section:
     )
 
 
-def pair_count_section() -> Section:
+def pair_count_section(prefix: str) -> Section:
     def calc_pair_count_table(stats: Stats) -> Rows:
-        opcode_stats = stats.get_opcode_stats("opcode")
+        opcode_stats = stats.get_opcode_stats(prefix)
         pair_counts = opcode_stats.get_pair_counts()
         total = opcode_stats.get_total_execution_count()
 
@@ -665,7 +655,7 @@ def pair_count_section() -> Section:
 
     return Section(
         "Pair counts",
-        "Pair counts for top 100 pairs",
+        f"Pair counts for top 100 {prefix} pairs",
         [
             Table(
                 ("Pair", "Count:", "Self:", "Cumulative:"),
@@ -674,42 +664,6 @@ def pair_count_section() -> Section:
         ],
         comparative=False,
     )
-
-def uop_sequence_section(base_stats: Stats, head_stats: Stats) -> Generator[Section]:
-    if not (longest := base_stats.get_max_uop_sequence_length()): return
-
-    def calc_uop_sequence(base_stats: Stats, sequence_length: int) -> Rows:
-        uop_sequences = base_stats.get_uop_sequence_stats(sequence_length)
-        total = base_stats.get_optimization_stats()["Uops executed"][0]
-
-        cumulative = 0
-        rows: Rows = []
-        for sequence, count in itertools.islice(
-            sorted(uop_sequences.items(), key=itemgetter(1), reverse=True), 100
-        ):
-            cumulative += count
-            rows.append(
-                (
-                    sequence,
-                    Count(count),
-                    Ratio(count, total),
-                    Ratio(cumulative, total),
-                )
-            )
-        return rows
-
-    for l in range(2, longest+1):
-        yield Section(
-            f"Uop {l}-Sequence Counts",
-            f"Counts for top 100 UOp Sequences of Length {l}",
-            [
-                Table(
-                    ("Sequence", "Count:", "Self:", "Cumulative:"),
-                    functools.partial(calc_uop_sequence, sequence_length=l),
-                )
-            ],
-            comparative=False,
-        )
 
 
 def pre_succ_pairs_section() -> Section:
@@ -1099,11 +1053,7 @@ def optimization_section() -> Section:
                 )
             ],
         )
-        yield Section(
-            "UOp Sequences",
-            "",
-            uop_sequence_section,
-        )
+        yield pair_count_section("uop")
         yield Section(
             "Unsupported opcodes",
             "",
@@ -1147,7 +1097,7 @@ def meta_stats_section() -> Section:
 
 LAYOUT = [
     execution_count_section(),
-    pair_count_section(),
+    pair_count_section("opcode"),
     pre_succ_pairs_section(),
     specialization_section(),
     specialization_effectiveness_section(),
@@ -1232,7 +1182,6 @@ def output_stats(inputs: list[Path], json_output=str | None):
     match len(inputs):
         case 1:
             data = load_raw_data(Path(inputs[0]))
-            #print(data)
             if json_output is not None:
                 with open(json_output, "w", encoding="utf-8") as f:
                     save_raw_data(data, f)  # type: ignore

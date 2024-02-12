@@ -521,7 +521,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     }
     if Py_STATS:
         CONFIG_COMPAT['_pystats'] = 0
-        CONFIG_COMPAT['_pystats_depth'] = 2
     if support.Py_DEBUG:
         CONFIG_COMPAT['run_presite'] = None
     if MS_WINDOWS:
@@ -910,7 +909,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         }
         if Py_STATS:
             config['_pystats'] = 1
-            config['_pystats_depth'] = 2
         self.check_all_configs("test_init_from_config", config, preconfig,
                                api=API_COMPAT)
 
@@ -945,7 +943,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         }
         if Py_STATS:
             config['_pystats'] = 1
-            config['_pystats_depth'] = 2
         self.check_all_configs("test_init_compat_env", config, preconfig,
                                api=API_COMPAT)
 
@@ -981,7 +978,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         }
         if Py_STATS:
             config['_pystats'] = 1
-            config['_pystats_depth'] = 2
         self.check_all_configs("test_init_python_env", config, preconfig,
                                api=API_PYTHON)
 
