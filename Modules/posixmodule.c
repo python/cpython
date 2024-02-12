@@ -12894,7 +12894,7 @@ os_WSTOPSIG_impl(PyObject *module, int status)
 
 #ifdef __APPLE__
 /* On macOS struct statvfs uses 32-bit integers for block counts,
- * resulting in overflow when filesystems are larger tan 4TB. Therefore
+ * resulting in overflow when filesystems are larger than 4TB. Therefore
  * os.statvfs is implemented in terms of statfs(2).
  */
 
@@ -12902,41 +12902,43 @@ static PyObject*
 _pystatvfs_fromstructstatfs(PyObject *module, struct statfs st) {
     PyObject *StatVFSResultType = get_posix_state(module)->StatVFSResultType;
     PyObject *v = PyStructSequence_New((PyTypeObject *)StatVFSResultType);
-    if (v == NULL)
-        return NULL;
-
-   long flags = 0;
-   if (st.f_flags & MNT_RDONLY) {
-       flags |= ST_RDONLY;
-   }
-   if (st.f_flags & MNT_NOSUID) {
-       flags |= ST_NOSUID;
-   }
-
-   _Static_assert(sizeof(st.f_blocks) == sizeof(long long), "assuming large file");
-
-    PyStructSequence_SET_ITEM(v, 0, PyLong_FromLong((long) st.f_iosize));
-    PyStructSequence_SET_ITEM(v, 1, PyLong_FromLong((long) st.f_bsize));
-    PyStructSequence_SET_ITEM(v, 2,
-                              PyLong_FromLongLong((long long) st.f_blocks));
-    PyStructSequence_SET_ITEM(v, 3,
-                              PyLong_FromLongLong((long long) st.f_bfree));
-    PyStructSequence_SET_ITEM(v, 4,
-                              PyLong_FromLongLong((long long) st.f_bavail));
-    PyStructSequence_SET_ITEM(v, 5,
-                              PyLong_FromLongLong((long long) st.f_files));
-    PyStructSequence_SET_ITEM(v, 6,
-                              PyLong_FromLongLong((long long) st.f_ffree));
-    PyStructSequence_SET_ITEM(v, 7,
-                              PyLong_FromLongLong((long long) st.f_ffree));
-    PyStructSequence_SET_ITEM(v, 8, PyLong_FromLong((long) flags));
-
-    PyStructSequence_SET_ITEM(v, 9, PyLong_FromLong((long) NAME_MAX));
-    PyStructSequence_SET_ITEM(v, 10, PyLong_FromUnsignedLong(st.f_fsid.val[0]));
-    if (PyErr_Occurred()) {
-        Py_DECREF(v);
+    if (v == NULL) {
         return NULL;
     }
+
+    long flags = 0;
+    if (st.f_flags & MNT_RDONLY) {
+        flags |= ST_RDONLY;
+    }
+    if (st.f_flags & MNT_NOSUID) {
+        flags |= ST_NOSUID;
+    }
+
+    _Static_assert(sizeof(st.f_blocks) == sizeof(long long), "assuming large file");
+
+#define SET_ITEM(v, index, item)                   \
+    do {                                           \
+        if (item == NULL) {                        \
+            Py_DECREF(v);                          \
+            return NULL;                           \
+        }                                          \
+        PyStructSequence_SET_ITEM(v, index, item); \
+    } while (0)                                    \
+
+    SET_ITEM(v, 0, PyLong_FromLong((long) st.f_iosize));
+    SET_ITEM(v, 1, PyLong_FromLong((long) st.f_bsize));
+    SET_ITEM(v, 2, PyLong_FromLongLong((long long) st.f_blocks));
+    SET_ITEM(v, 3, PyLong_FromLongLong((long long) st.f_bfree));
+    SET_ITEM(v, 4, PyLong_FromLongLong((long long) st.f_bavail));
+    SET_ITEM(v, 5, PyLong_FromLongLong((long long) st.f_files));
+    SET_ITEM(v, 6, PyLong_FromLongLong((long long) st.f_ffree));
+    SET_ITEM(v, 7, PyLong_FromLongLong((long long) st.f_ffree));
+    SET_ITEM(v, 8, PyLong_FromLong((long) flags));
+
+    SET_ITEM(v, 9, PyLong_FromLong((long) NAME_MAX));
+    SET_ITEM(v, 10, PyLong_FromUnsignedLong(st.f_fsid.val[0]));
+
+#undef SET_ITEM
 
     return v;
 }
