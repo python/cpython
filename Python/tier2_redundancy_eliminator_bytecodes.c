@@ -32,7 +32,7 @@ dummy_func(void) {
     op(_LOAD_FAST_CHECK, (-- value)) {
         value = GETLOCAL(oparg);
         // We guarantee this will error - just bail and don't optimize it.
-        if (sym_matches_pytype(value, NULL)) {
+        if (sym_matches_type(value, NULL)) {
             goto out_of_space;
         }
     }
@@ -62,21 +62,21 @@ dummy_func(void) {
     }
 
     op(_GUARD_BOTH_INT, (left, right -- left, right)) {
-        if (sym_matches_pytype(left, &PyLong_Type) &&
-            sym_matches_pytype(right, &PyLong_Type)) {
+        if (sym_matches_type(left, &PyLong_Type) &&
+            sym_matches_type(right, &PyLong_Type)) {
             REPLACE_OP(_NOP, 0, 0);
         }
-        sym_set_pytype(left, &PyLong_Type);
-        sym_set_pytype(right, &PyLong_Type);
+        sym_set_type(left, &PyLong_Type);
+        sym_set_type(right, &PyLong_Type);
     }
 
     op(_GUARD_BOTH_FLOAT, (left, right -- left, right)) {
-        if (sym_matches_pytype(left, &PyFloat_Type) &&
-            sym_matches_pytype(right, &PyFloat_Type)) {
+        if (sym_matches_type(left, &PyFloat_Type) &&
+            sym_matches_type(right, &PyFloat_Type)) {
             REPLACE_OP(_NOP, 0 ,0);
         }
-        sym_set_pytype(left, &PyFloat_Type);
-        sym_set_pytype(right, &PyFloat_Type);
+        sym_set_type(left, &PyFloat_Type);
+        sym_set_type(right, &PyFloat_Type);
     }
 
 
@@ -84,7 +84,7 @@ dummy_func(void) {
         // TODO constant propagation
         (void)left;
         (void)right;
-        res = sym_new_known_pytype(ctx, &PyLong_Type);
+        res = sym_new_known_type(ctx, &PyLong_Type);
         if (res == NULL) {
             goto out_of_space;
         }
@@ -173,14 +173,14 @@ dummy_func(void) {
     }
 
     op(_CHECK_FUNCTION_EXACT_ARGS, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
-        sym_set_pytype(callable, &PyFunction_Type);
+        sym_set_type(callable, &PyFunction_Type);
         (void)self_or_null;
         (void)func_version;
     }
 
     op(_CHECK_CALL_BOUND_METHOD_EXACT_ARGS, (callable, null, unused[oparg] -- callable, null, unused[oparg])) {
-        sym_set_pytype(null, NULL);
-        sym_set_pytype(callable, &PyMethod_Type);
+        sym_set_type(null, NULL);
+        sym_set_type(callable, &PyMethod_Type);
     }
 
     op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame: _Py_UOpsAbstractFrame *)) {
@@ -258,7 +258,7 @@ dummy_func(void) {
     }
 
     op(_ITER_NEXT_RANGE, (iter -- iter, next)) {
-       next = sym_new_known_pytype(ctx, &PyLong_Type);
+       next = sym_new_known_type(ctx, &PyLong_Type);
        if (next == NULL) {
            goto out_of_space;
        }

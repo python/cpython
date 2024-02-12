@@ -1,12 +1,12 @@
 /*
- * This file contains the optimizer for CPython uops.
+ * This file contains the support code for CPython's uops redundancy eliminator.
+ * It also performs some simple optimizations.
  * It performs a traditional data-flow analysis[1] over the trace of uops.
  * Using the information gained, it chooses to emit, or skip certain instructions
  * if possible.
  *
- * [1] For information on data-flow analysis, please see page 27 onwards in
- * https://ilyasergey.net/CS4212/_static/lectures/PLDI-Week-12-dataflow.pdf
- * Credits to the courses UPenn Compilers (CIS 341) and NUS Compiler Design (CS4212).
+ * [1] For information on data-flow analysis, please see
+ * https://clang.llvm.org/docs/DataFlowAnalysisIntro.html
  *
  * */
 #include "Python.h"
@@ -228,7 +228,7 @@ ctx_frame_pop(
 
 // Takes a borrowed reference to const_val, turns that into a strong reference.
 static _Py_UOpsSymType*
-_Py_UOpsSymType_New(_Py_UOpsAbstractInterpContext *ctx,
+sym_new(_Py_UOpsAbstractInterpContext *ctx,
                                PyObject *const_val)
 {
     _Py_UOpsSymType *self = &ctx->t_arena.arena[ctx->t_arena.ty_curr_number];
@@ -262,7 +262,7 @@ sym_has_flag(_Py_UOpsSymType *sym, int flag)
 }
 
 static inline void
-sym_set_pytype(_Py_UOpsSymType *sym, PyTypeObject *tp)
+sym_set_type(_Py_UOpsSymType *sym, PyTypeObject *tp)
 {
     assert(tp == NULL || PyType_Check(tp));
     sym->typ = tp;
@@ -273,7 +273,7 @@ sym_set_pytype(_Py_UOpsSymType *sym, PyTypeObject *tp)
 static inline _Py_UOpsSymType*
 sym_new_unknown(_Py_UOpsAbstractInterpContext *ctx)
 {
-    return _Py_UOpsSymType_New(ctx,NULL);
+    return sym_new(ctx,NULL);
 }
 
 static inline _Py_UOpsSymType*
@@ -288,14 +288,14 @@ sym_new_known_notnull(_Py_UOpsAbstractInterpContext *ctx)
 }
 
 static inline _Py_UOpsSymType*
-sym_new_known_pytype(_Py_UOpsAbstractInterpContext *ctx,
+sym_new_known_type(_Py_UOpsAbstractInterpContext *ctx,
                       PyTypeObject *typ)
 {
-    _Py_UOpsSymType *res = _Py_UOpsSymType_New(ctx,NULL);
+    _Py_UOpsSymType *res = sym_new(ctx,NULL);
     if (res == NULL) {
         return NULL;
     }
-    sym_set_pytype(res, typ);
+    sym_set_type(res, typ);
     return res;
 }
 
@@ -304,14 +304,14 @@ static inline _Py_UOpsSymType*
 sym_new_const(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val)
 {
     assert(const_val != NULL);
-    _Py_UOpsSymType *temp = _Py_UOpsSymType_New(
+    _Py_UOpsSymType *temp = sym_new(
         ctx,
         const_val
     );
     if (temp == NULL) {
         return NULL;
     }
-    sym_set_pytype(temp, Py_TYPE(const_val));
+    sym_set_type(temp, Py_TYPE(const_val));
     sym_set_flag(temp, TRUE_CONST);
     return temp;
 }
@@ -326,14 +326,14 @@ sym_new_null(_Py_UOpsAbstractInterpContext *ctx)
     if (null_sym == NULL) {
         return NULL;
     }
-    sym_set_pytype(null_sym, NULL);
+    sym_set_type(null_sym, NULL);
     ctx->frequent_syms.push_nulL_sym = null_sym;
     return null_sym;
 }
 
 
 static inline bool
-sym_matches_pytype(_Py_UOpsSymType *sym, PyTypeObject *typ)
+sym_matches_type(_Py_UOpsSymType *sym, PyTypeObject *typ)
 {
     assert(typ == NULL || PyType_Check(typ));
     if (!sym_has_flag(sym, KNOWN_TYPE)) {

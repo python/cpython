@@ -17,7 +17,7 @@
             _Py_UOpsSymType *value;
             value = GETLOCAL(oparg);
             // We guarantee this will error - just bail and don't optimize it.
-            if (sym_matches_pytype(value, NULL)) {
+            if (sym_matches_type(value, NULL)) {
                 goto out_of_space;
             }
             stack_pointer[0] = value;
@@ -170,12 +170,12 @@
             _Py_UOpsSymType *left;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (sym_matches_pytype(left, &PyLong_Type) &&
-                sym_matches_pytype(right, &PyLong_Type)) {
+            if (sym_matches_type(left, &PyLong_Type) &&
+                sym_matches_type(right, &PyLong_Type)) {
                 REPLACE_OP(_NOP, 0, 0);
             }
-            sym_set_pytype(left, &PyLong_Type);
-            sym_set_pytype(right, &PyLong_Type);
+            sym_set_type(left, &PyLong_Type);
+            sym_set_type(right, &PyLong_Type);
             break;
         }
 
@@ -197,7 +197,7 @@
             // TODO constant propagation
             (void)left;
             (void)right;
-            res = sym_new_known_pytype(ctx, &PyLong_Type);
+            res = sym_new_known_type(ctx, &PyLong_Type);
             if (res == NULL) {
                 goto out_of_space;
             }
@@ -220,12 +220,12 @@
             _Py_UOpsSymType *left;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (sym_matches_pytype(left, &PyFloat_Type) &&
-                sym_matches_pytype(right, &PyFloat_Type)) {
+            if (sym_matches_type(left, &PyFloat_Type) &&
+                sym_matches_type(right, &PyFloat_Type)) {
                 REPLACE_OP(_NOP, 0 ,0);
             }
-            sym_set_pytype(left, &PyFloat_Type);
-            sym_set_pytype(right, &PyFloat_Type);
+            sym_set_type(left, &PyFloat_Type);
+            sym_set_type(right, &PyFloat_Type);
             break;
         }
 
@@ -1105,7 +1105,7 @@
             _Py_UOpsSymType *iter;
             _Py_UOpsSymType *next;
             iter = stack_pointer[-1];
-            next = sym_new_known_pytype(ctx, &PyLong_Type);
+            next = sym_new_known_type(ctx, &PyLong_Type);
             if (next == NULL) {
                 goto out_of_space;
             }
@@ -1243,8 +1243,8 @@
             _Py_UOpsSymType *callable;
             null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            sym_set_pytype(null, NULL);
-            sym_set_pytype(callable, &PyMethod_Type);
+            sym_set_type(null, NULL);
+            sym_set_type(callable, &PyMethod_Type);
             break;
         }
 
@@ -1270,7 +1270,7 @@
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             uint32_t func_version = (uint32_t)inst->operand;
-            sym_set_pytype(callable, &PyFunction_Type);
+            sym_set_type(callable, &PyFunction_Type);
             (void)self_or_null;
             (void)func_version;
             break;
