@@ -43,10 +43,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     h3.parentNode.style.display = 'none';
                 }
             }
-            if (sections_found > 0)
+            if (sections_found > 0) {
                 h2.parentNode.style.display = 'block';
-            else
+            }
+            else {
                 h2.parentNode.style.display = 'none';
+            }
         }
     }
     document.querySelector('#searchbox').addEventListener('keyup', dofilter);
