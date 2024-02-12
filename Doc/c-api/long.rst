@@ -364,8 +364,11 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
           // A Python exception was set with the reason.
           return NULL;
       }
-      else if (bytes > sizeof(bignum)) {
-          // Overflow occurred, but 'bignum' contains as much as could fit.
+      else if (bytes <= (Py_ssize_t)sizeof(value)) {
+          // Success!
+      }
+      else {
+          // Overflow occurred, but 'bignum' contains a truncated value.
       }
 
    *endianness* may be passed ``-1`` for the native endian that CPython was
@@ -379,15 +382,16 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Unless an exception is raised, all *n_bytes* of the buffer will be written
    with as much of the value as can fit. This allows the caller to ignore all
    non-negative results if the intent is to match the typical behavior of a
-   C-style downcast.
+   C-style downcast. No exception is set for this case.
 
-   Values are always copied as twos-complement, and sufficient size will be
-   requested for a sign bit. For example, this may cause an value that fits into
-   8 bytes when treated as unsigned to request 9 bytes, even though all eight
-   bytes were copied into the buffer. What has been omitted is the zero sign
-   bit, which is redundant when the intention is to treat the value as unsigned.
+   Values are always copied as two's-complement, and sufficient buffer will be
+   requested to include a sign bit. For example, this may cause an value that
+   fits into 8 bytes when treated as unsigned to request 9 bytes, even though
+   all eight bytes were copied into the buffer. What has been omitted is the
+   zero sign bit, which is redundant when the intention is to treat the value as
+   unsigned.
 
-   Passing *n_bytes* of zero will always return the requested buffer size.
+   Passing zero to *n_bytes* will return the requested buffer size.
 
    .. note::
 
