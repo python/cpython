@@ -358,14 +358,14 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
    Copy the Python integer value to a native *buffer* of size *n_bytes*::
 
-      int value;
-      Py_ssize_t bytes = PyLong_CopyBits(v, &value, sizeof(value), -1);
+      unsigned bignum[4];  // Example size chosen by random die roll.
+      Py_ssize_t bytes = PyLong_AsNativeBits(v, &bignum, sizeof(bignum), -1);
       if (bytes < 0) {
-          // Error occurred
+          // A Python exception was set with the reason.
           return NULL;
       }
-      else if (bytes > sizeof(value)) {
-          // Overflow occurred, but 'value' contains as much as could fit
+      else if (bytes > sizeof(bignum)) {
+          // Overflow occurred, but 'bignum' contains as much as could fit.
       }
 
    *endianness* may be passed ``-1`` for the native endian that CPython was

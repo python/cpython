@@ -510,7 +510,9 @@ class LongTests(unittest.TestCase):
         ]:
             with self.subTest(f"{v:X}-{len(expect_be)}bytes"):
                 n = len(expect_be)
-                buffer = bytearray(n)
+                # Fill the buffer with dummy data to ensure all bytes
+                # are overwritten.
+                buffer = bytearray(b'\xa5'*n)
                 expect_le = expect_be[::-1]
 
                 self.assertEqual(expect_n, asnativebytes(v, buffer, n, 0),
