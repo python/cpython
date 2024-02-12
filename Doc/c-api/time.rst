@@ -52,6 +52,9 @@ range.
 (On current systems, integer overflows are likely caused by misconfigured
 system time.)
 
+As any other C API (unless otherwise specified), the functions must be called
+with the :term:`GIL` held.
+
 .. c:function:: int PyTime_Monotonic(PyTime_t *result)
 
    Read the monotonic clock.

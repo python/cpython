@@ -919,6 +919,7 @@ _PyTime_AsTimespec(_PyTime_t t, struct timespec *ts)
 #endif
 
 
+// N.B. If raise_exc=0, this may be called without the GIL.
 static int
 py_get_system_clock(_PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
 {
@@ -1096,6 +1097,7 @@ py_mach_timebase_info(_PyTimeFraction *base, int raise)
 #endif
 
 
+// N.B. If raise_exc=0, this may be called without the GIL.
 static int
 py_get_monotonic_clock(_PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
 {
@@ -1283,6 +1285,7 @@ py_win_perf_counter_frequency(_PyTimeFraction *base, int raise)
 }
 
 
+// N.B. If raise_exc=0, this may be called without the GIL.
 static int
 py_get_win_perf_counter(_PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
 {
