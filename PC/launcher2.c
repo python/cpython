@@ -1576,6 +1576,7 @@ _registryReadLegacyEnvironment(const SearchInfo *search, HKEY root, EnvironmentI
 
             int count = swprintf_s(realTag, tagLength + 4, L"%s-32", env->tag);
             if (count == -1) {
+                debug(L"# Failed to generate 32bit tag\n");
                 free(realTag);
                 return RC_INTERNAL_ERROR;
             }
@@ -1731,10 +1732,18 @@ appxSearch(const SearchInfo *search, EnvironmentInfo **result, const wchar_t *pa
         exeName = search->windowed ? L"pythonw.exe" : L"python.exe";
     }
 
-    if (FAILED(SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, buffer)) ||
-        !join(buffer, MAXLEN, L"Microsoft\\WindowsApps") ||
+    // Failure to get LocalAppData may just mean we're running as a user who
+    // doesn't have a profile directory.
+    // In this case, return "not found", but don't fail.
+    // Chances are they can't launch Store installs anyway.
+    if (FAILED(SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, buffer))) {
+        return RC_NO_PYTHON;
+    }
+
+    if (!join(buffer, MAXLEN, L"Microsoft\\WindowsApps") ||
         !join(buffer, MAXLEN, packageFamilyName) ||
         !join(buffer, MAXLEN, exeName)) {
+        debug(L"# Failed to construct App Execution Alias path\n");
         return RC_INTERNAL_ERROR;
     }
 
@@ -1956,6 +1965,7 @@ collectEnvironments(const SearchInfo *search, EnvironmentInfo **result)
     EnvironmentInfo *env = NULL;
 
     if (!result) {
+        debug(L"# collectEnvironments() was passed a NULL result\n");
         return RC_INTERNAL_ERROR;
     }
     *result = NULL;
@@ -2250,6 +2260,7 @@ int
 selectEnvironment(const SearchInfo *search, EnvironmentInfo *root, EnvironmentInfo **best)
 {
     if (!best) {
+        debug(L"# selectEnvironment() was passed a NULL best\n");
         return RC_INTERNAL_ERROR;
     }
     if (!root) {
