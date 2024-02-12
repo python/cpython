@@ -1713,7 +1713,8 @@ changes, or look through the Subversion logs for all the details.
   :mod:`zipfile` now also supports archiving empty directories and
   extracts them correctly.  (Fixed by Kuba Wieczorek; :issue:`4710`.)
   Reading files out of an archive is faster, and interleaving
-  :meth:`read() <io.BufferedIOBase.read>` and :meth:`readline() <io.IOBase.readline>` now works correctly.
+ :meth:`read() <io.BufferedIOBase.read>` and
+ :meth:`readline() <io.IOBase.readline>` now works correctly.
   (Contributed by Nir Aides; :issue:`7610`.)
 
   The :func:`~zipfile.is_zipfile` function now
@@ -1943,7 +1944,8 @@ GvR worked on merging them into Python's version of :mod:`unittest`.
   first argument is a string matching or not matching the regular
   expression provided as the second argument (:issue:`8038`).
 
-* :meth:`assertRaisesRegexp() <unittest.TestCase.assertRaisesRegex>` checks whether a particular exception
+* :meth:`assertRaisesRegexp() <unittest.TestCase.assertRaisesRegex>` checks
+  whether a particular exception
   is raised, and then also checks that the string representation of
   the exception matches the provided regular expression.
 
@@ -2034,7 +2036,8 @@ version 1.3.  Some of the new features are:
   "xml" (the default), "html", or "text".  HTML mode will output empty
   elements as ``<empty></empty>`` instead of ``<empty/>``, and text
   mode will skip over elements and only output the text chunks.  If
-  you set the :attr:`~xml.etree.ElementTree.Element.tag` attribute of an element to ``None`` but
+  you set the :attr:`~xml.etree.ElementTree.Element.tag` attribute of an
+  element to ``None`` but
   leave its children in place, the element will be omitted when the
   tree is written out, so you don't need to do more extensive rearrangement
   to remove a single element.
@@ -2712,7 +2715,8 @@ PEP 476: Enabling certificate verification by default for stdlib http clients
 -----------------------------------------------------------------------------
 
 :pep:`476` updated :mod:`httplib <http>` and modules which use it, such as
-:mod:`urllib2 <urllib.request>` and :mod:`xmlrpclib <xmlrpc.client>`, to now verify that the server
+:mod:`urllib2 <urllib.request>` and :mod:`xmlrpclib <xmlrpc.client>`, to now
+verify that the server
 presents a certificate which is signed by a Certificate Authority in the
 platform trust store and whose hostname matches the hostname being requested
 by default, significantly improving security for many applications. This
