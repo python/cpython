@@ -2523,7 +2523,7 @@ def parse_file(
         raw = f.read()
 
     # exit quickly if there are no clinic markers in the file
-    find_start_re = BlockParser("", language, filename=None).find_start_re
+    find_start_re = BlockParser("", language, filename=filename).find_start_re
     if not find_start_re.search(raw):
         return
 
