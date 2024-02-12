@@ -17,7 +17,7 @@
             _Py_UOpsSymType *value;
             value = GETLOCAL(oparg);
             // We guarantee this will error - just bail and don't optimize it.
-            if (sym_matches_type(value, NULL)) {
+            if (sym_has_flag(value, IS_NULL)) {
                 goto out_of_space;
             }
             stack_pointer[0] = value;
@@ -1243,7 +1243,7 @@
             _Py_UOpsSymType *callable;
             null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            sym_set_type(null, NULL);
+            sym_set_null(null);
             sym_set_type(callable, &PyMethod_Type);
             break;
         }

@@ -32,7 +32,7 @@ dummy_func(void) {
     op(_LOAD_FAST_CHECK, (-- value)) {
         value = GETLOCAL(oparg);
         // We guarantee this will error - just bail and don't optimize it.
-        if (sym_matches_type(value, NULL)) {
+        if (sym_has_flag(value, IS_NULL)) {
             goto out_of_space;
         }
     }
@@ -179,7 +179,7 @@ dummy_func(void) {
     }
 
     op(_CHECK_CALL_BOUND_METHOD_EXACT_ARGS, (callable, null, unused[oparg] -- callable, null, unused[oparg])) {
-        sym_set_type(null, NULL);
+        sym_set_null(null);
         sym_set_type(callable, &PyMethod_Type);
     }
 

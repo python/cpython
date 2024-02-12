@@ -63,7 +63,8 @@
 // Flags for below.
 #define KNOWN_TYPE 1 << 0  // Just to differentiate NULL in typ
 #define TRUE_CONST 1 << 1
-#define NOT_NULL 1 << 2
+#define IS_NULL    1 << 2
+#define NOT_NULL   1 << 3
 
 typedef struct {
     int flags;
@@ -255,6 +256,12 @@ sym_set_flag(_Py_UOpsSymType *sym, int flag)
     sym->flags |= flag;
 }
 
+static inline void
+sym_clear_flag(_Py_UOpsSymType *sym, int flag)
+{
+    sym->flags &= (~flag);
+}
+
 static inline bool
 sym_has_flag(_Py_UOpsSymType *sym, int flag)
 {
@@ -267,6 +274,13 @@ sym_set_type(_Py_UOpsSymType *sym, PyTypeObject *tp)
     assert(tp == NULL || PyType_Check(tp));
     sym->typ = tp;
     sym_set_flag(sym, KNOWN_TYPE);
+}
+
+static inline void
+sym_set_null(_Py_UOpsSymType *sym)
+{
+    sym_set_flag(sym, IS_NULL);
+    sym_clear_flag(sym, NOT_NULL);
 }
 
 
@@ -326,7 +340,7 @@ sym_new_null(_Py_UOpsAbstractInterpContext *ctx)
     if (null_sym == NULL) {
         return NULL;
     }
-    sym_set_type(null_sym, NULL);
+    sym_set_null(null_sym);
     ctx->frequent_syms.push_nulL_sym = null_sym;
     return null_sym;
 }
