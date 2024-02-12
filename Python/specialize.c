@@ -265,6 +265,15 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
             );
         }
     }
+
+    for (int i = 0; i < 512; i++){
+        for (int j = 0; j < 512; j++) {
+            if (stats->opcode[i].pair_count[j]) {
+                fprintf(out, "uop[%s].pair_count[%s] : %" PRIu64 "\n",
+                        _PyOpcode_uop_name[i], _PyOpcode_uop_name[j], stats->opcode[i].pair_count[j]);
+            }
+        }
+    }
 }
 
 static void
