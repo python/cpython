@@ -7,6 +7,7 @@ from test.support import warnings_helper, captured_stdout
 import traceback
 import unittest
 from unittest.util import strclass
+from test.test_unittest.support import BufferedWriter
 
 
 class MockTraceback(object):
@@ -31,22 +32,6 @@ def bad_cleanup1():
 def bad_cleanup2():
     print('do cleanup2')
     raise ValueError('bad cleanup2')
-
-
-class BufferedWriter:
-    def __init__(self):
-        self.result = ''
-        self.buffer = ''
-
-    def write(self, arg):
-        self.buffer += arg
-
-    def flush(self):
-        self.result += self.buffer
-        self.buffer = ''
-
-    def getvalue(self):
-        return self.result
 
 
 class Test_TestResult(unittest.TestCase):
@@ -465,6 +450,7 @@ class Test_TestResult(unittest.TestCase):
         stream = BufferedWriter()
         runner = unittest.TextTestRunner(stream=stream, failfast=True)
         def test(result):
+            result.testsRun += 1
             self.assertTrue(result.failfast)
         result = runner.run(test)
         stream.flush()
