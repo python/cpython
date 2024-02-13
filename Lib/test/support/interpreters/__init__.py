@@ -158,7 +158,7 @@ class Interpreter:
         ns = dict(ns, **kwargs) if ns is not None else kwargs
         _interpreters.set___main___attrs(self._id, ns)
 
-    def exec_sync(self, code, /):
+    def exec(self, code, /):
         """Run the given source code in the interpreter.
 
         This is essentially the same as calling the builtin "exec"
@@ -182,7 +182,7 @@ class Interpreter:
 
     def run(self, code, /):
         def task():
-            self.exec_sync(code)
+            self.exec(code)
         t = threading.Thread(target=task)
         t.start()
         return t

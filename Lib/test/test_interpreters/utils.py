@@ -41,7 +41,7 @@ def _run_output(interp, request, init=None):
     with rpipe:
         if init:
             interp.prepare_main(init)
-        interp.exec_sync(script)
+        interp.exec(script)
         return rpipe.read()
 
 
@@ -49,7 +49,7 @@ def _run_output(interp, request, init=None):
 def _running(interp):
     r, w = os.pipe()
     def run():
-        interp.exec_sync(dedent(f"""
+        interp.exec(dedent(f"""
             # wait for "signal"
             with open({r}) as rpipe:
                 rpipe.read()

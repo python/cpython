@@ -280,7 +280,7 @@ class TestInterpreterIsRunning(TestBase):
     def test_finished(self):
         r, w = self.pipe()
         interp = interpreters.create()
-        interp.exec_sync(f"""if True:
+        interp.exec(f"""if True:
             import os
             os.write({w}, b'x')
             """)
@@ -312,7 +312,7 @@ class TestInterpreterIsRunning(TestBase):
         FINISHED = b'F'
 
         interp = interpreters.create()
-        interp.exec_sync(f"""if True:
+        interp.exec(f"""if True:
             import os
             import threading
 
@@ -326,7 +326,7 @@ class TestInterpreterIsRunning(TestBase):
         self.assertFalse(interp.is_running())
 
         os.write(w_thread, DONE)
-        interp.exec_sync('t.join()')
+        interp.exec('t.join()')
         self.assertEqual(os.read(r_interp, 1), FINISHED)
 
 
@@ -393,7 +393,7 @@ class TestInterpreterClose(TestBase):
         interp2 = interpreters.create()
         self.assertEqual(set(interpreters.list_all()),
                          {main, interp1, interp2})
-        interp1.exec_sync(dedent(f"""
+        interp1.exec(dedent(f"""
             from test.support import interpreters
             interp2 = interpreters.Interpreter({interp2.id})
             interp2.close()
@@ -427,7 +427,7 @@ class TestInterpreterClose(TestBase):
         FINISHED = b'F'
 
         interp = interpreters.create()
-        interp.exec_sync(f"""if True:
+        interp.exec(f"""if True:
             import os
             import threading
             import time
@@ -504,9 +504,9 @@ class TestInterpreterPrepareMain(TestBase):
 
         # Make sure neither was actually bound.
         with self.assertRaises(interpreters.ExecFailure):
-            interp.exec_sync('print(foo)')
+            interp.exec('print(foo)')
         with self.assertRaises(interpreters.ExecFailure):
-            interp.exec_sync('print(spam)')
+            interp.exec('print(spam)')
 
 
 class TestInterpreterExecSync(TestBase):
@@ -515,7 +515,7 @@ class TestInterpreterExecSync(TestBase):
         interp = interpreters.create()
         script, file = _captured_script('print("it worked!", end="")')
         with file:
-            interp.exec_sync(script)
+            interp.exec(script)
             out = file.read()
 
         self.assertEqual(out, 'it worked!')
@@ -523,7 +523,7 @@ class TestInterpreterExecSync(TestBase):
     def test_failure(self):
         interp = interpreters.create()
         with self.assertRaises(interpreters.ExecFailure):
-            interp.exec_sync('raise Exception')
+            interp.exec('raise Exception')
 
     def test_display_preserved_exception(self):
         tempdir = self.temp_dir()
@@ -542,18 +542,18 @@ class TestInterpreterExecSync(TestBase):
                 spam.eggs()
 
             interp = interpreters.create()
-            interp.exec_sync(script)
+            interp.exec(script)
             """)
 
         stdout, stderr = self.assert_python_failure(scriptfile)
         self.maxDiff = None
-        interpmod_line, = (l for l in stderr.splitlines() if ' exec_sync' in l)
-        #      File "{interpreters.__file__}", line 179, in exec_sync
+        interpmod_line, = (l for l in stderr.splitlines() if ' exec' in l)
+        #      File "{interpreters.__file__}", line 179, in exec
         self.assertEqual(stderr, dedent(f"""\
             Traceback (most recent call last):
               File "{scriptfile}", line 9, in <module>
-                interp.exec_sync(script)
-                ~~~~~~~~~~~~~~~~^^^^^^^^
+                interp.exec(script)
+                ~~~~~~~~~~~^^^^^^^^
               {interpmod_line.strip()}
                 raise ExecFailure(excinfo)
             test.support.interpreters.ExecFailure: RuntimeError: uh-oh!
@@ -578,7 +578,7 @@ class TestInterpreterExecSync(TestBase):
         script, file = _captured_script('print("it worked!", end="")')
         with file:
             def f():
-                interp.exec_sync(script)
+                interp.exec(script)
 
             t = threading.Thread(target=f)
             t.start()
@@ -604,7 +604,7 @@ class TestInterpreterExecSync(TestBase):
                     with open('{file.name}', 'w', encoding='utf-8') as out:
                         out.write('{expected}')
                 """)
-            interp.exec_sync(script)
+            interp.exec(script)
 
             file.seek(0)
             content = file.read()
@@ -615,17 +615,17 @@ class TestInterpreterExecSync(TestBase):
         interp = interpreters.create()
         with _running(interp):
             with self.assertRaises(RuntimeError):
-                interp.exec_sync('print("spam")')
+                interp.exec('print("spam")')
 
     def test_bad_script(self):
         interp = interpreters.create()
         with self.assertRaises(TypeError):
-            interp.exec_sync(10)
+            interp.exec(10)
 
     def test_bytes_for_script(self):
         interp = interpreters.create()
         with self.assertRaises(TypeError):
-            interp.exec_sync(b'print("spam")')
+            interp.exec(b'print("spam")')
 
     def test_with_background_threads_still_running(self):
         r_interp, w_interp = self.pipe()
@@ -636,7 +636,7 @@ class TestInterpreterExecSync(TestBase):
         FINISHED = b'F'
 
         interp = interpreters.create()
-        interp.exec_sync(f"""if True:
+        interp.exec(f"""if True:
             import os
             import threading
 
@@ -648,18 +648,18 @@ class TestInterpreterExecSync(TestBase):
             t.start()
             os.write({w_interp}, {RAN!r})
             """)
-        interp.exec_sync(f"""if True:
+        interp.exec(f"""if True:
             os.write({w_interp}, {RAN!r})
             """)
 
         os.write(w_thread, DONE)
-        interp.exec_sync('t.join()')
+        interp.exec('t.join()')
         self.assertEqual(os.read(r_interp, 1), RAN)
         self.assertEqual(os.read(r_interp, 1), RAN)
         self.assertEqual(os.read(r_interp, 1), FINISHED)
 
     # test_xxsubinterpreters covers the remaining
-    # Interpreter.exec_sync() behavior.
+    # Interpreter.exec() behavior.
 
 
 class TestInterpreterRun(TestBase):

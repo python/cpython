@@ -51,7 +51,7 @@ class QueueTests(TestBase):
         queue1 = queues.create()
 
         interp = interpreters.create()
-        interp.exec_sync(dedent(f"""
+        interp.exec(dedent(f"""
             from test.support.interpreters import queues
             queue1 = queues.Queue({queue1.id})
             """));
@@ -281,7 +281,7 @@ class TestQueueOps(TestBase):
 
     def test_put_get_same_interpreter(self):
         interp = interpreters.create()
-        interp.exec_sync(dedent("""
+        interp.exec(dedent("""
             from test.support.interpreters import queues
             queue = queues.create()
             orig = b'spam'
