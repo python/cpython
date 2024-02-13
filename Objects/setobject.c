@@ -2561,17 +2561,12 @@ PySet_Size(PyObject *anyset)
 int
 PySet_Clear(PyObject *set)
 {
-    int rv;
-
     if (!PySet_Check(set)) {
         PyErr_BadInternalCall();
         return -1;
     }
-
-    Py_BEGIN_CRITICAL_SECTION(set);
-    rv = set_clear_internal((PySetObject *)set);
-    Py_END_CRITICAL_SECTION();
-    return rv;
+    set_clear((PySetObject *)set, NULL);
+    return 0;
 }
 
 int
