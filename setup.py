@@ -1744,9 +1744,13 @@ class PyBuildExt(build_ext):
         # The _tkinter module, using frameworks. Since frameworks are quite
         # different the UNIX search logic is not sharable.
         from os.path import join, exists
+
+        # gh-115436: We no longer fall back to searching for the
+        #   Apple-supplied Tcl and Tk 8.5 in /System/Library/Frameworks
+        #   as their use causes too many problems for users. It seems
+        #   better to just skip building _tkinter at all in that case.
         framework_dirs = [
             '/Library/Frameworks',
-            '/System/Library/Frameworks/',
             join(os.getenv('HOME'), '/Library/Frameworks')
         ]
 

@@ -1,0 +1,7 @@
+Avoid falling back to the deprecated Apple-supplied system Tcl/Tk 8.5 on
+macOS builds as this version is known to have many critical problems and
+causes Python test suite failures. This last-ditch fallback behavior was
+removed in Python 3.11 but is still causing problems for users and Python
+release testing for older security-fix-only branches like this one. With
+this change, building of `_tkinter` on macOS will be skipped if no other
+versions of Tcl/Tk can be found.
