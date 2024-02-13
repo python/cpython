@@ -94,6 +94,9 @@ WIN32 is still required for the locale module.
 #endif
 #endif /* Py_BUILD_CORE || Py_BUILD_CORE_BUILTIN || Py_BUILD_CORE_MODULE */
 
+/* Define to 1 if you want to disable the GIL */
+#undef Py_GIL_DISABLED
+
 /* Compiler specific defines */
 
 /* ------------------------------------------------------------------------*/
@@ -305,8 +308,16 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
                 /* not building the core - must be an ext */
 #               if defined(_MSC_VER)
                         /* So MSVC users need not specify the .lib
-                        file in their Makefile (other compilers are
-                        generally taken care of by distutils.) */
+                        file in their Makefile */
+#                       if defined(Py_GIL_DISABLED)
+#                       if defined(_DEBUG)
+#                               pragma comment(lib,"python313t_d.lib")
+#                       elif defined(Py_LIMITED_API)
+#                               pragma comment(lib,"python3t.lib")
+#                       else
+#                               pragma comment(lib,"python313t.lib")
+#                       endif /* _DEBUG */
+#                       else /* Py_GIL_DISABLED */
 #                       if defined(_DEBUG)
 #                               pragma comment(lib,"python313_d.lib")
 #                       elif defined(Py_LIMITED_API)
@@ -314,6 +325,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #                       else
 #                               pragma comment(lib,"python313.lib")
 #                       endif /* _DEBUG */
+#                       endif /* Py_GIL_DISABLED */
 #               endif /* _MSC_VER */
 #       endif /* Py_BUILD_CORE */
 #endif /* MS_COREDLL */
@@ -738,8 +750,5 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 /* Define if libssl has X509_VERIFY_PARAM_set1_host and related function */
 #define HAVE_X509_VERIFY_PARAM_SET1_HOST 1
-
-/* Define if you want to disable the GIL */
-#undef Py_GIL_DISABLED
 
 #endif /* !Py_CONFIG_H */

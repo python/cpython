@@ -399,6 +399,40 @@ definition with the same method name.
    slot.  This is helpful because calls to PyCFunctions are optimized more
    than wrapper object calls.
 
+.. c:function:: PyObject * PyCMethod_New(PyMethodDef *ml, PyObject *self, PyObject *module, PyTypeObject *cls)
+
+   Turn *ml* into a Python :term:`callable` object.
+   The caller must ensure that *ml* outlives the :term:`callable`.
+   Typically, *ml* is defined as a static variable.
+
+   The *self* parameter will be passed as the *self* argument
+   to the C function in ``ml->ml_meth`` when invoked.
+   *self* can be ``NULL``.
+
+   The :term:`callable` object's ``__module__`` attribute
+   can be set from the given *module* argument.
+   *module* should be a Python string,
+   which will be used as name of the module the function is defined in.
+   If unavailable, it can be set to :const:`None` or ``NULL``.
+
+   .. seealso:: :attr:`function.__module__`
+
+   The *cls* parameter will be passed as the *defining_class*
+   argument to the C function.
+   Must be set if :c:macro:`METH_METHOD` is set on ``ml->ml_flags``.
+
+   .. versionadded:: 3.9
+
+
+.. c:function:: PyObject * PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
+
+   Equivalent to ``PyCMethod_New(ml, self, module, NULL)``.
+
+
+.. c:function:: PyObject * PyCFunction_New(PyMethodDef *ml, PyObject *self)
+
+   Equivalent to ``PyCMethod_New(ml, self, NULL, NULL)``.
+
 
 Accessing attributes of extension types
 ---------------------------------------
@@ -517,19 +551,19 @@ The following flags can be used with :c:member:`PyMemberDef.flags`:
    from ``PyObject``.
 
    Can only be used as part of :c:member:`Py_tp_members <PyTypeObject.tp_members>`
-   :c:type:`slot <PyTypeSlot>` when creating a class using negative
+   :c:type:`slot <PyType_Slot>` when creating a class using negative
    :c:member:`~PyType_Spec.basicsize`.
    It is mandatory in that case.
 
-   This flag is only used in :c:type:`PyTypeSlot`.
+   This flag is only used in :c:type:`PyType_Slot`.
    When setting :c:member:`~PyTypeObject.tp_members` during
    class creation, Python clears it and sets
    :c:member:`PyMemberDef.offset` to the offset from the ``PyObject`` struct.
 
 .. index::
-   single: READ_RESTRICTED
-   single: WRITE_RESTRICTED
-   single: RESTRICTED
+   single: READ_RESTRICTED (C macro)
+   single: WRITE_RESTRICTED (C macro)
+   single: RESTRICTED (C macro)
 
 .. versionchanged:: 3.10
 
@@ -540,7 +574,7 @@ The following flags can be used with :c:member:`PyMemberDef.flags`:
    :c:macro:`Py_AUDIT_READ`; :c:macro:`!WRITE_RESTRICTED` does nothing.
 
 .. index::
-   single: READONLY
+   single: READONLY (C macro)
 
 .. versionchanged:: 3.12
 
@@ -603,24 +637,24 @@ Macro name                       C type                        Python type
    Reading a ``NULL`` pointer raises :py:exc:`AttributeError`.
 
 .. index::
-   single: T_BYTE
-   single: T_SHORT
-   single: T_INT
-   single: T_LONG
-   single: T_LONGLONG
-   single: T_UBYTE
-   single: T_USHORT
-   single: T_UINT
-   single: T_ULONG
-   single: T_ULONGULONG
-   single: T_PYSSIZET
-   single: T_FLOAT
-   single: T_DOUBLE
-   single: T_BOOL
-   single: T_CHAR
-   single: T_STRING
-   single: T_STRING_INPLACE
-   single: T_OBJECT_EX
+   single: T_BYTE (C macro)
+   single: T_SHORT (C macro)
+   single: T_INT (C macro)
+   single: T_LONG (C macro)
+   single: T_LONGLONG (C macro)
+   single: T_UBYTE (C macro)
+   single: T_USHORT (C macro)
+   single: T_UINT (C macro)
+   single: T_ULONG (C macro)
+   single: T_ULONGULONG (C macro)
+   single: T_PYSSIZET (C macro)
+   single: T_FLOAT (C macro)
+   single: T_DOUBLE (C macro)
+   single: T_BOOL (C macro)
+   single: T_CHAR (C macro)
+   single: T_STRING (C macro)
+   single: T_STRING_INPLACE (C macro)
+   single: T_OBJECT_EX (C macro)
    single: structmember.h
 
 .. versionadded:: 3.12
@@ -659,7 +693,8 @@ Defining Getters and Setters
 
    .. c:member:: setter set
 
-      Optional C function to set or delete the attribute, if omitted the attribute is readonly.
+      Optional C function to set or delete the attribute.
+      If ``NULL``, the attribute is read-only.
 
    .. c:member:: const char* doc
 
@@ -669,18 +704,18 @@ Defining Getters and Setters
 
       Optional function pointer, providing additional data for getter and setter.
 
-   The ``get`` function takes one :c:expr:`PyObject*` parameter (the
-   instance) and a function pointer (the associated ``closure``)::
+.. c:type:: PyObject *(*getter)(PyObject *, void *)
 
-      typedef PyObject *(*getter)(PyObject *, void *);
+   The ``get`` function takes one :c:expr:`PyObject*` parameter (the
+   instance) and a function pointer (the associated ``closure``):
 
    It should return a new reference on success or ``NULL`` with a set exception
    on failure.
 
-   ``set`` functions take two :c:expr:`PyObject*` parameters (the instance and
-   the value to be set) and a function pointer (the associated ``closure``)::
+.. c:type:: int (*setter)(PyObject *, PyObject *, void *)
 
-      typedef int (*setter)(PyObject *, PyObject *, void *);
+   ``set`` functions take two :c:expr:`PyObject*` parameters (the instance and
+   the value to be set) and a function pointer (the associated ``closure``):
 
    In case the attribute should be deleted the second parameter is ``NULL``.
    Should return ``0`` on success or ``-1`` with a set exception on failure.

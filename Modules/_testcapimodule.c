@@ -112,12 +112,12 @@ test_sizeof_c_types(PyObject *self, PyObject *Py_UNUSED(ignored))
         return (PyObject*)NULL;              \
     }
 #define IS_SIGNED(TYPE) (((TYPE)-1) < (TYPE)0)
-#define CHECK_SIGNNESS(TYPE, SIGNED)         \
-    if (IS_SIGNED(TYPE) != SIGNED) {         \
-        PyErr_Format(get_testerror(self),    \
-            "%s signness is, instead of %i",  \
-            #TYPE, IS_SIGNED(TYPE), SIGNED); \
-        return (PyObject*)NULL;              \
+#define CHECK_SIGNNESS(TYPE, SIGNED)            \
+    if (IS_SIGNED(TYPE) != SIGNED) {            \
+        PyErr_Format(get_testerror(self),       \
+            "%s signness is %i, instead of %i", \
+            #TYPE, IS_SIGNED(TYPE), SIGNED);    \
+        return (PyObject*)NULL;                 \
     }
 
     /* integer types */
@@ -1258,6 +1258,26 @@ make_memoryview_from_NULL_pointer(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_buffer info;
     if (PyBuffer_FillInfo(&info, NULL, NULL, 1, 1, PyBUF_FULL_RO) < 0)
         return NULL;
+    return PyMemoryView_FromBuffer(&info);
+}
+
+static PyObject *
+buffer_fill_info(PyObject *self, PyObject *args)
+{
+    Py_buffer info;
+    const char *data;
+    Py_ssize_t size;
+    int readonly;
+    int flags;
+
+    if (!PyArg_ParseTuple(args, "s#ii:buffer_fill_info",
+                          &data, &size, &readonly, &flags)) {
+        return NULL;
+    }
+
+    if (PyBuffer_FillInfo(&info, NULL, (void *)data, size, readonly, flags) < 0) {
+        return NULL;
+    }
     return PyMemoryView_FromBuffer(&info);
 }
 
@@ -3314,6 +3334,7 @@ static PyMethodDef TestMethods[] = {
     {"eval_code_ex",            eval_eval_code_ex,               METH_VARARGS},
     {"make_memoryview_from_NULL_pointer", make_memoryview_from_NULL_pointer,
      METH_NOARGS},
+    {"buffer_fill_info",        buffer_fill_info,                METH_VARARGS},
     {"crash_no_current_thread", crash_no_current_thread,         METH_NOARGS},
     {"test_current_tstate_matches", test_current_tstate_matches, METH_NOARGS},
     {"run_in_subinterp",        run_in_subinterp,                METH_VARARGS},
@@ -4084,6 +4105,9 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_Hash(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Time(m) < 0) {
         return NULL;
     }
 
