@@ -294,6 +294,8 @@ handle_queue_error(int err, PyObject *mod, int64_t qid)
     case ERR_QUEUES_ALLOC:
         PyErr_NoMemory();
         break;
+    case -1:
+        return -1;
     default:
         state = get_module_state(mod);
         assert(state->QueueError != NULL);
