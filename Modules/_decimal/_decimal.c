@@ -1509,7 +1509,7 @@ init_extended_context(PyObject *v)
 #ifdef EXTRA_FUNCTIONALITY
 /* Factory function for creating IEEE interchange format contexts */
 static PyObject *
-ieee_context(PyObject *dummy UNUSED, PyObject *v)
+ieee_context(PyObject *module, PyObject *v)
 {
     PyObject *context;
     mpd_ssize_t bits;
@@ -1525,8 +1525,7 @@ ieee_context(PyObject *dummy UNUSED, PyObject *v)
     if (mpd_ieee_context(&ctx, (int)bits) < 0) {
         goto error;
     }
-
-    decimal_state *state = get_module_state_by_def(Py_TYPE(v));
+    decimal_state *state = get_module_state(module);
     context = PyObject_CallObject((PyObject *)state->PyDecContext_Type, NULL);
     if (context == NULL) {
         return NULL;
