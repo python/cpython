@@ -4497,15 +4497,15 @@ class Color(enum.Enum)
  |  value
  |\x20\x20
  |  ----------------------------------------------------------------------
- |  Methods inherited from enum.EnumType:
+ |  Static methods inherited from enum.EnumType:
  |\x20\x20
- |  __contains__(member) from enum.EnumType
+ |  __contains__(member)
  |\x20\x20
- |  __getitem__(name) from enum.EnumType
+ |  __getitem__(name)
  |\x20\x20
- |  __iter__() from enum.EnumType
+ |  __iter__()
  |\x20\x20
- |  __len__() from enum.EnumType
+ |  __len__()
  |\x20\x20
  |  ----------------------------------------------------------------------
  |  Readonly properties inherited from enum.EnumType:
