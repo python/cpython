@@ -931,17 +931,12 @@ set_update_internal(PySetObject *so, PyObject *other)
             if (set_table_resize(so, (so->used + dictsize)*2) != 0)
                 return -1;
         }
-        int err = 0;
-        Py_BEGIN_CRITICAL_SECTION(other);
         while (_PyDict_Next(other, &pos, &key, &value, &hash)) {
             if (set_add_entry(so, key, hash)) {
-                err = -1;
-                goto exit;
+                return -1;
             }
         }
-exit:
-        Py_END_CRITICAL_SECTION();
-        return err;
+        return 0;
     }
 
     it = PyObject_GetIter(other);
@@ -1830,13 +1825,7 @@ set_symmetric_difference_update_impl(PySetObject *so, PyObject *other)
         return set_clear(so, NULL);
 
     if (PyDict_CheckExact(other)) {
-        PyObject *res;
-
-        Py_BEGIN_CRITICAL_SECTION(other);
-        res = set_symmetric_difference_update_dict(so, other);
-        Py_END_CRITICAL_SECTION();
-
-        return res;
+        return set_symmetric_difference_update_dict(so, other);
     }
 
     if (PyAnySet_Check(other)) {
