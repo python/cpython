@@ -8,8 +8,12 @@
 #include "Python.h"
 #include "pycore_crossinterp.h"   // struct _xid
 
+#include "_interpreters_common.h"
 
-#define MODULE_NAME "_xxinterpqueues"
+
+#define MODULE_NAME _xxinterpqueues
+#define MODULE_NAME_STR Py_STRINGIFY(MODULE_NAME)
+#define MODINIT_FUNC_NAME RESOLVE_MODINIT_FUNC_NAME(MODULE_NAME)
 
 
 #define GLOBAL_MALLOC(TYPE) \
@@ -64,7 +68,7 @@ _get_current_interp(void)
 static PyObject *
 _get_current_module(void)
 {
-    PyObject *name = PyUnicode_FromString(MODULE_NAME);
+    PyObject *name = PyUnicode_FromString(MODULE_NAME_STR);
     if (name == NULL) {
         return NULL;
     }
@@ -602,7 +606,7 @@ _queue_clear_interpreter(_queue *queue, int64_t interpid)
     while (next != NULL) {
         _queueitem *item = next;
         next = item->next;
-        if (item->data->interpid == interpid) {
+        if (_PyCrossInterpreterData_INTERPID(item->data) == interpid) {
             if (prev == NULL) {
                 queue->items.first = item->next;
             }
@@ -1062,7 +1066,7 @@ set_external_queue_type(PyObject *module, PyTypeObject *queue_type)
     }
     state->queue_type = (PyTypeObject *)Py_NewRef(queue_type);
 
-    if (_PyCrossInterpreterData_RegisterClass(queue_type, _queueobj_shared) < 0) {
+    if (ensure_xid_class(queue_type, _queueobj_shared) < 0) {
         return -1;
     }
 
@@ -1130,7 +1134,7 @@ _queueid_xid_free(void *data)
 static PyObject *
 _queueobj_from_xid(_PyCrossInterpreterData *data)
 {
-    int64_t qid = *(int64_t *)data->data;
+    int64_t qid = *(int64_t *)_PyCrossInterpreterData_DATA(data);
     PyObject *qidobj = PyLong_FromLongLong(qid);
     if (qidobj == NULL) {
         return NULL;
@@ -1140,7 +1144,7 @@ _queueobj_from_xid(_PyCrossInterpreterData *data)
     if (mod == NULL) {
         // XXX import it?
         PyErr_SetString(PyExc_RuntimeError,
-                        MODULE_NAME " module not imported yet");
+                        MODULE_NAME_STR " module not imported yet");
         return NULL;
     }
 
@@ -1181,7 +1185,7 @@ _queueobj_shared(PyThreadState *tstate, PyObject *queueobj,
     _PyCrossInterpreterData_Init(data, tstate->interp, raw, NULL,
                                  _queueobj_from_xid);
     Py_DECREF(qidobj);
-    data->free = _queueid_xid_free;
+    _PyCrossInterpreterData_SET_FREE(data, _queueid_xid_free);
     return 0;
 }
 
@@ -1670,7 +1674,7 @@ module_free(void *mod)
 
 static struct PyModuleDef moduledef = {
     .m_base = PyModuleDef_HEAD_INIT,
-    .m_name = MODULE_NAME,
+    .m_name = MODULE_NAME_STR,
     .m_doc = module_doc,
     .m_size = sizeof(module_state),
     .m_methods = module_functions,
@@ -1681,7 +1685,7 @@ static struct PyModuleDef moduledef = {
 };
 
 PyMODINIT_FUNC
-PyInit__xxinterpqueues(void)
+MODINIT_FUNC_NAME(void)
 {
     return PyModuleDef_Init(&moduledef);
 }
