@@ -1113,6 +1113,7 @@ The 'interpreters' module provides a more convenient interface.");
 static int
 module_exec(PyObject *mod)
 {
+    PyInterpreterState *interp = PyInterpreterState_Get();
     module_state *state = get_module_state(mod);
 
     // exceptions
@@ -1120,6 +1121,11 @@ module_exec(PyObject *mod)
         goto error;
     }
     if (PyModule_AddType(mod, (PyTypeObject *)PyExc_InterpreterNotFoundError) < 0) {
+        goto error;
+    }
+    PyObject *PyExc_NotShareableError = \
+                _PyInterpreterState_GetXIState(interp)->PyExc_NotShareableError;
+    if (PyModule_AddType(mod, (PyTypeObject *)PyExc_NotShareableError) < 0) {
         goto error;
     }
 

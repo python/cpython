@@ -6,7 +6,7 @@ import _xxsubinterpreters as _interpreters
 
 # aliases:
 from _xxsubinterpreters import (
-    InterpreterError, InterpreterNotFoundError,
+    InterpreterError, InterpreterNotFoundError, NotShareableError,
     is_shareable,
 )
 
@@ -15,6 +15,7 @@ __all__ = [
     'get_current', 'get_main', 'create', 'list_all', 'is_shareable',
     'Interpreter',
     'InterpreterError', 'InterpreterNotFoundError', 'ExecFailure',
+    'NotShareableError',
     'create_queue', 'Queue', 'QueueEmpty', 'QueueFull',
 ]
 
