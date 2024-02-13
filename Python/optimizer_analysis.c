@@ -631,14 +631,14 @@ uop_redundancy_eliminator(
         DPRINTF(3, " stack_level %d\n", STACK_LEVEL());
         ctx->frame->stack_pointer = stack_pointer;
         assert(STACK_LEVEL() >= 0);
-        continue;
-
-    out_of_space:
-        DPRINTF(1, "Out of space in abstract interpreter\n");
     }
 
     abstractcontext_fini(ctx);
+    return 0;
 
+out_of_space:
+    DPRINTF(1, "Out of space in abstract interpreter\n");
+    abstractcontext_fini(ctx);
     return 0;
 
 error:
@@ -744,7 +744,10 @@ _Py_uop_analyze_and_optimize(
     OPT_STAT_INC(optimizer_attempts);
 
     int err = remove_globals(frame, buffer, buffer_size, dependencies);
-    if (err <= 0) {
+    if (err == 0) {
+        goto not_ready;
+    }
+    if (err < 0) {
         goto error;
     }
 
@@ -757,17 +760,13 @@ _Py_uop_analyze_and_optimize(
     if (err < 0) {
         goto error;
     }
-
-
-
+    
     remove_unneeded_uops(buffer, buffer_size);
 
     OPT_STAT_INC(optimizer_successes);
     return 1;
+not_ready:
+    return 0;
 error:
-
-    // The only valid error we can raise is MemoryError.
-    // Other times it's not really errors but things like not being able
-    // to fetch a function version because the function got deleted.
-    return PyErr_Occurred() ? -1 : 0;
+    return -1;
 }
