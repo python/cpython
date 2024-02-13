@@ -675,7 +675,7 @@ class IntStrDigitLimitsTests(unittest.TestCase):
         # Ensuring that we chose a slow enough conversion to measure.
         # It takes 0.1 seconds on a Zen based cloud VM in an opt build.
         # Some OSes have a low res 1/64s timer, skip if hard to measure.
-        if sw_convert.seconds < 1/64:
+        if sw_convert.seconds < sw_convert.clock_info.resolution * 2:
             raise unittest.SkipTest('"slow" conversion took only '
                                     f'{sw_convert.seconds} seconds.')
 
@@ -714,7 +714,7 @@ class IntStrDigitLimitsTests(unittest.TestCase):
         # Ensuring that we chose a slow enough conversion to measure.
         # It takes 0.1 seconds on a Zen based cloud VM in an opt build.
         # Some OSes have a low res 1/64s timer, skip if hard to measure.
-        if sw_convert.seconds < 1/64:
+        if sw_convert.seconds < sw_convert.clock_info.resolution * 2:
             raise unittest.SkipTest('"slow" conversion took only '
                                     f'{sw_convert.seconds} seconds.')
 

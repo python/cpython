@@ -2370,21 +2370,26 @@ class CPUStopwatch:
 
     N.B.:
     - This *includes* time spent in other threads.
-    - Some systems only have a coarse 1/64 second resolution.
+    - Some systems only have a coarse resolution; check
+      stopwatch.clock_info.rseolution if.
 
     Usage:
 
     with ProcessStopwatch() as stopwatch:
         ...
     elapsed = stopwatch.seconds
+    resolution = stopwatch.clock_info.resolution
     """
     def __enter__(self):
         get_time = time.process_time
+        clock_info = time.get_clock_info('process_time')
         if get_time() <= 0:  # some platforms like WASM lack process_time()
             get_time = time.monotonic
+            clock_info = time.get_clock_info('monotonic')
         self.context = disable_gc()
         self.context.__enter__()
         self.get_time = get_time
+        self.clock_info = clock_info
         self.start_time = get_time()
         return self
 
