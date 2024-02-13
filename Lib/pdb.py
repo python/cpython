@@ -76,6 +76,7 @@ import bdb
 import dis
 import code
 import glob
+import token
 import codeop
 import pprint
 import signal
@@ -96,17 +97,47 @@ class Restart(Exception):
 __all__ = ["run", "pm", "Pdb", "runeval", "runctx", "runcall", "set_trace",
            "post_mortem", "help"]
 
+
+def find_first_executable_line(code):
+    """ Try to find the first executable line of the code object.
+
+    Equivalently, find the line number of the instruction that's
+    after RESUME
+
+    Return code.co_firstlineno if no executable line is found.
+    """
+    prev = None
+    for instr in dis.get_instructions(code):
+        if prev is not None and prev.opname == 'RESUME':
+            if instr.positions.lineno is not None:
+                return instr.positions.lineno
+            return code.co_firstlineno
+        prev = instr
+    return code.co_firstlineno
+
 def find_function(funcname, filename):
     cre = re.compile(r'def\s+%s\s*[(]' % re.escape(funcname))
     try:
         fp = tokenize.open(filename)
     except OSError:
         return None
+    funcdef = ""
+    funcstart = None
     # consumer of this info expects the first line to be 1
     with fp:
         for lineno, line in enumerate(fp, start=1):
             if cre.match(line):
-                return funcname, filename, lineno
+                funcstart, funcdef = lineno, line
+            elif funcdef:
+                funcdef += line
+
+            if funcdef:
+                try:
+                    funccode = compile(funcdef, filename, 'exec').co_consts[0]
+                except SyntaxError:
+                    continue
+                lineno_offset = find_first_executable_line(funccode)
+                return funcname, filename, funcstart + lineno_offset - 1
     return None
 
 def lasti2lineno(code, lasti):
@@ -142,8 +173,10 @@ class _ScriptTarget(str):
             print('Error:', self.orig, 'is a directory')
             sys.exit(1)
 
-        # Replace pdb's dir with script's dir in front of module search path.
-        sys.path[0] = os.path.dirname(self)
+        # If safe_path(-P) is not set, sys.path[0] is the directory
+        # of pdb, and we should replace it with the directory of the script
+        if not sys.flags.safe_path:
+            sys.path[0] = os.path.dirname(self)
 
     @property
     def filename(self):
@@ -205,6 +238,15 @@ class _ModuleTarget(str):
         )
 
 
+class _PdbInteractiveConsole(code.InteractiveConsole):
+    def __init__(self, ns, message):
+        self._message = message
+        super().__init__(locals=ns, local_exit=True)
+
+    def write(self, data):
+        self._message(data, end='')
+
+
 # Interaction prompt line will separate file and call info from code
 # text using value of line_prefix string.  A newline and arrow may
 # be to your liking.  You can set it once pdb is imported using the
@@ -220,6 +262,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     # Limit the maximum depth of chained exceptions, we should be handling cycles,
     # but in case there are recursions, we stop at 999.
     MAX_CHAINED_EXCEPTION_DEPTH = 999
+
+    _file_mtime_table = {}
 
     def __init__(self, completekey='tab', stdin=None, stdout=None, skip=None,
                  nosigint=False, readrc=True):
@@ -238,7 +282,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         try:
             import readline
             # remove some common file name delimiters
-            readline.set_completer_delims(' \t\n`@#$%^&*()=+[{]}\\|;:\'",<>?')
+            readline.set_completer_delims(' \t\n`@#%^&*()=+[{]}\\|;:\'",<>?')
         except ImportError:
             pass
         self.allow_kbdint = False
@@ -425,6 +469,20 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             except KeyboardInterrupt:
                 self.message('--KeyboardInterrupt--')
 
+    def _validate_file_mtime(self):
+        """Check if the source file of the current frame has been modified since
+        the last time we saw it. If so, give a warning."""
+        try:
+            filename = self.curframe.f_code.co_filename
+            mtime = os.path.getmtime(filename)
+        except Exception:
+            return
+        if (filename in self._file_mtime_table and
+            mtime != self._file_mtime_table[filename]):
+            self.message(f"*** WARNING: file '{filename}' was edited, "
+                         "running stale code until the program is rerun")
+        self._file_mtime_table[filename] = mtime
+
     # Called before loop, handles display expressions
     # Set up convenience variable containers
     def preloop(self):
@@ -590,6 +648,39 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except:
             self._error_exc()
 
+    def _replace_convenience_variables(self, line):
+        """Replace the convenience variables in 'line' with their values.
+           e.g. $foo is replaced by __pdb_convenience_variables["foo"].
+           Note: such pattern in string literals will be skipped"""
+
+        if "$" not in line:
+            return line
+
+        dollar_start = dollar_end = -1
+        replace_variables = []
+        try:
+            for t in tokenize.generate_tokens(io.StringIO(line).readline):
+                token_type, token_string, start, end, _ = t
+                if token_type == token.OP and token_string == '$':
+                    dollar_start, dollar_end = start, end
+                elif start == dollar_end and token_type == token.NAME:
+                    # line is a one-line command so we only care about column
+                    replace_variables.append((dollar_start[1], end[1], token_string))
+        except tokenize.TokenError:
+            return line
+
+        if not replace_variables:
+            return line
+
+        last_end = 0
+        line_pieces = []
+        for start, end, name in replace_variables:
+            line_pieces.append(line[last_end:start] + f'__pdb_convenience_variables["{name}"]')
+            last_end = end
+        line_pieces.append(line[last_end:])
+
+        return ''.join(line_pieces)
+
     def precmd(self, line):
         """Handle alias expansion and ';;' separator."""
         if not line.strip():
@@ -597,11 +688,20 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         args = line.split()
         while args[0] in self.aliases:
             line = self.aliases[args[0]]
-            ii = 1
-            for tmpArg in args[1:]:
-                line = line.replace("%" + str(ii),
-                                      tmpArg)
-                ii += 1
+            for idx in range(1, 10):
+                if f'%{idx}' in line:
+                    if idx >= len(args):
+                        self.error(f"Not enough arguments for alias '{args[0]}'")
+                        # This is a no-op
+                        return "!"
+                    line = line.replace(f'%{idx}', args[idx])
+                elif '%*' not in line:
+                    if idx < len(args):
+                        self.error(f"Too many arguments for alias '{args[0]}'")
+                        # This is a no-op
+                        return "!"
+                    break
+
             line = line.replace("%*", ' '.join(args[1:]))
             args = line.split()
         # split into ';;' separated commands
@@ -615,7 +715,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 line = line[:marker].rstrip()
 
         # Replace all the convenience variables
-        line = re.sub(r'\$([a-zA-Z_][a-zA-Z0-9_]*)', r'__pdb_convenience_variables["\1"]', line)
+        line = self._replace_convenience_variables(line)
+
         return line
 
     def onecmd(self, line):
@@ -626,6 +727,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         a breakpoint command list definition.
         """
         if not self.commands_defining:
+            self._validate_file_mtime()
             return cmd.Cmd.onecmd(self, line)
         else:
             return self.handle_command_def(line)
@@ -660,8 +762,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     # interface abstraction functions
 
-    def message(self, msg):
-        print(msg, file=self.stdout)
+    def message(self, msg, end='\n'):
+        print(msg, end=end, file=self.stdout)
 
     def error(self, msg):
         print('***', msg, file=self.stdout)
@@ -675,6 +777,18 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     # Generic completion functions.  Individual complete_foo methods can be
     # assigned below to one of these functions.
+
+    def completenames(self, text, line, begidx, endidx):
+        # Overwrite completenames() of cmd so for the command completion,
+        # if no current command matches, check for expressions as well
+        commands = super().completenames(text, line, begidx, endidx)
+        for alias in self.aliases:
+            if alias.startswith(text):
+                commands.append(alias)
+        if commands:
+            return commands
+        else:
+            return self._complete_expression(text, line, begidx, endidx)
 
     def _complete_location(self, text, line, begidx, endidx):
         # Complete a file/module/function location for break/tbreak/clear.
@@ -710,6 +824,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # complete builtins, and they clutter the namespace quite heavily, so we
         # leave them out.
         ns = {**self.curframe.f_globals, **self.curframe_locals}
+        if text.startswith("$"):
+            # Complete convenience variables
+            conv_vars = self.curframe.f_globals.get('__pdb_convenience_variables', {})
+            return [f"${name}" for name in conv_vars if name.startswith(text[1:])]
         if '.' in text:
             # Walk an attribute chain up to the last part, similar to what
             # rlcompleter does.  This will bail if any of the parts are not
@@ -887,7 +1005,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                     #use co_name to identify the bkpt (function names
                     #could be aliased, but co_name is invariant)
                     funcname = code.co_name
-                    lineno = code.co_firstlineno
+                    lineno = find_first_executable_line(code)
                     filename = code.co_filename
                 except:
                     # last thing to try
@@ -1741,7 +1859,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         contains all the (global and local) names found in the current scope.
         """
         ns = {**self.curframe.f_globals, **self.curframe_locals}
-        code.interact("*interactive*", local=ns, local_exit=True)
+        console = _PdbInteractiveConsole(ns, message=self.message)
+        console.interact(banner="*pdb interact start*",
+                         exitmsg="*exit from pdb interact command*")
 
     def do_alias(self, arg):
         """alias [name [command]]
@@ -1780,7 +1900,18 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             else:
                 self.error(f"Unknown alias '{args[0]}'")
         else:
-            self.aliases[args[0]] = ' '.join(args[1:])
+            # Do a validation check to make sure no replaceable parameters
+            # are skipped if %* is not used.
+            alias = ' '.join(args[1:])
+            if '%*' not in alias:
+                consecutive = True
+                for idx in range(1, 10):
+                    if f'%{idx}' not in alias:
+                        consecutive = False
+                    if f'%{idx}' in alias and not consecutive:
+                        self.error("Replaceable parameters must be consecutive")
+                        return
+            self.aliases[args[0]] = alias
 
     def do_unalias(self, arg):
         """unalias name
@@ -1919,6 +2050,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         import __main__
         __main__.__dict__.clear()
         __main__.__dict__.update(target.namespace)
+
+        # Clear the mtime table for program reruns, assume all the files
+        # are up to date.
+        self._file_mtime_table.clear()
 
         self.run(target.code)
 

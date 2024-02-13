@@ -251,7 +251,8 @@ class OpcodeStats:
 
     def get_specialized_total_counts(self) -> tuple[int, int, int]:
         basic = 0
-        specialized = 0
+        specialized_hits = 0
+        specialized_misses = 0
         not_specialized = 0
         for opcode, opcode_stat in self._data.items():
             if "execution_count" not in opcode_stat:
@@ -261,16 +262,17 @@ class OpcodeStats:
                 not_specialized += count
             elif opcode in self._specialized_instructions:
                 miss = opcode_stat.get("specialization.miss", 0)
-                not_specialized += miss
-                specialized += count - miss
+                specialized_hits += count - miss
+                specialized_misses += miss
             else:
                 basic += count
-        return basic, specialized, not_specialized
+        return basic, specialized_hits, specialized_misses, not_specialized
 
     def get_deferred_counts(self) -> dict[str, int]:
         return {
             opcode: opcode_stat.get("specialization.deferred", 0)
             for opcode, opcode_stat in self._data.items()
+            if opcode != "RESUME"
         }
 
     def get_misses_counts(self) -> dict[str, int]:
@@ -384,6 +386,7 @@ class Stats:
         trace_too_short = self._data["Optimization trace too short"]
         inner_loop = self._data["Optimization inner loop"]
         recursive_call = self._data["Optimization recursive call"]
+        low_confidence = self._data["Optimization low confidence"]
 
         return {
             "Optimization attempts": (attempts, None),
@@ -394,6 +397,7 @@ class Stats:
             "Trace too short": (trace_too_short, attempts),
             "Inner loop found": (inner_loop, attempts),
             "Recursive call": (recursive_call, attempts),
+            "Low confidence": (low_confidence, attempts),
             "Traces executed": (executed, None),
             "Uops executed": (uops, executed),
         }
@@ -408,6 +412,14 @@ class Stats:
         rows.sort()
         return rows
 
+    def get_rare_events(self) -> list[tuple[str, int]]:
+        prefix = "Rare event "
+        return [
+            (key[len(prefix) + 1:-1].replace("_", " "), val)
+            for key, val in self._data.items()
+            if key.startswith(prefix)
+        ]
+
 
 class Count(int):
     def markdown(self) -> str:
@@ -419,8 +431,6 @@ class Ratio:
         self.num = num
         self.den = den
         self.percentage = percentage
-        if den == 0 and num != 0:
-            raise ValueError("Invalid denominator")
 
     def __float__(self):
         if self.den == 0:
@@ -431,7 +441,11 @@ class Ratio:
             return self.num / self.den
 
     def markdown(self) -> str:
-        if self.den == 0 or self.den is None:
+        if self.den is None:
+            return ""
+        elif self.den == 0:
+            if self.num != 0:
+                return f"{self.num:,} / 0 !!"
             return ""
         elif self.percentage:
             return f"{self.num / self.den:,.01%}"
@@ -454,8 +468,11 @@ class JoinMode(enum.Enum):
     # second column of each input table as a new column
     CHANGE = 1
     # Join using the first column as a key, indicating the change in the second
-    # column of each input table as a ne column, and omit all other columns
+    # column of each input table as a new column, and omit all other columns
     CHANGE_ONE_COLUMN = 2
+    # Join using the first column as a key, and indicate the change as a new
+    # column, but don't sort by the amount of change.
+    CHANGE_NO_SORT = 3
 
 
 class Table:
@@ -478,7 +495,7 @@ class Table:
         match self.join_mode:
             case JoinMode.SIMPLE:
                 return (key, *row_a, *row_b)
-            case JoinMode.CHANGE:
+            case JoinMode.CHANGE | JoinMode.CHANGE_NO_SORT:
                 return (key, *row_a, *row_b, DiffRatio(row_a[0], row_b[0]))
             case JoinMode.CHANGE_ONE_COLUMN:
                 return (key, row_a[0], row_b[0], DiffRatio(row_a[0], row_b[0]))
@@ -491,7 +508,7 @@ class Table:
                     *("Base " + x for x in columns[1:]),
                     *("Head " + x for x in columns[1:]),
                 )
-            case JoinMode.CHANGE:
+            case JoinMode.CHANGE | JoinMode.CHANGE_NO_SORT:
                 return (
                     columns[0],
                     *("Base " + x for x in columns[1:]),
@@ -799,7 +816,8 @@ def specialization_effectiveness_section() -> Section:
 
         (
             basic,
-            specialized,
+            specialized_hits,
+            specialized_misses,
             not_specialized,
         ) = opcode_stats.get_specialized_total_counts()
 
@@ -810,7 +828,16 @@ def specialization_effectiveness_section() -> Section:
                 Count(not_specialized),
                 Ratio(not_specialized, total),
             ),
-            ("Specialized", Count(specialized), Ratio(specialized, total)),
+            (
+                "Specialized hits",
+                Count(specialized_hits),
+                Ratio(specialized_hits, total),
+            ),
+            (
+                "Specialized misses",
+                Count(specialized_misses),
+                Ratio(specialized_misses, total),
+            ),
         ]
 
     def calc_deferred_by_table(stats: Stats) -> Rows:
@@ -1011,12 +1038,12 @@ def optimization_section() -> Section:
                     Table(
                         ("Range", "Count:", "Ratio:"),
                         calc_histogram_table(name, den),
-                        JoinMode.CHANGE,
+                        JoinMode.CHANGE_NO_SORT,
                     )
                 ],
             )
         yield Section(
-            "Uop stats",
+            "Uop execution stats",
             "",
             [
                 Table(
@@ -1045,6 +1072,17 @@ def optimization_section() -> Section:
     )
 
 
+def rare_event_section() -> Section:
+    def calc_rare_event_table(stats: Stats) -> Table:
+        return [(x, Count(y)) for x, y in stats.get_rare_events()]
+
+    return Section(
+        "Rare events",
+        "Counts of rare/unlikely events",
+        [Table(("Event", "Count:"), calc_rare_event_table, JoinMode.CHANGE)],
+    )
+
+
 def meta_stats_section() -> Section:
     def calc_rows(stats: Stats) -> Rows:
         return [("Number of data files", Count(stats.get("__nfiles__")))]
@@ -1066,6 +1104,7 @@ LAYOUT = [
     object_stats_section(),
     gc_stats_section(),
     optimization_section(),
+    rare_event_section(),
     meta_stats_section(),
 ]
 
@@ -1138,12 +1177,13 @@ def output_markdown(
             print("Stats gathered on:", date.today(), file=out)
 
 
-def output_stats(inputs: list[Path], json_output=TextIO | None):
+def output_stats(inputs: list[Path], json_output=str | None):
     match len(inputs):
         case 1:
             data = load_raw_data(Path(inputs[0]))
             if json_output is not None:
-                save_raw_data(data, json_output)  # type: ignore
+                with open(json_output, "w", encoding="utf-8") as f:
+                    save_raw_data(data, f)  # type: ignore
             stats = Stats(data)
             output_markdown(sys.stdout, LAYOUT, stats)
         case 2:
@@ -1179,7 +1219,6 @@ def main():
     parser.add_argument(
         "--json-output",
         nargs="?",
-        type=argparse.FileType("w"),
         help="Output complete raw results to the given JSON file.",
     )
 

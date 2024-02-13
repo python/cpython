@@ -876,13 +876,9 @@ BaseExceptionGroup_str(PyBaseExceptionGroupObject *self)
 }
 
 static PyObject *
-BaseExceptionGroup_derive(PyObject *self_, PyObject *args)
+BaseExceptionGroup_derive(PyObject *self_, PyObject *excs)
 {
     PyBaseExceptionGroupObject *self = _PyBaseExceptionGroupObject_cast(self_);
-    PyObject *excs = NULL;
-    if (!PyArg_ParseTuple(args, "O", &excs)) {
-        return NULL;
-    }
     PyObject *init_args = PyTuple_Pack(2, self->msg, excs);
     if (!init_args) {
         return NULL;
@@ -1176,13 +1172,8 @@ done:
 }
 
 static PyObject *
-BaseExceptionGroup_split(PyObject *self, PyObject *args)
+BaseExceptionGroup_split(PyObject *self, PyObject *matcher_value)
 {
-    PyObject *matcher_value = NULL;
-    if (!PyArg_UnpackTuple(args, "split", 1, 1, &matcher_value)) {
-        return NULL;
-    }
-
     _exceptiongroup_split_matcher_type matcher_type;
     if (get_matcher_type(matcher_value, &matcher_type) < 0) {
         return NULL;
@@ -1207,13 +1198,8 @@ BaseExceptionGroup_split(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-BaseExceptionGroup_subgroup(PyObject *self, PyObject *args)
+BaseExceptionGroup_subgroup(PyObject *self, PyObject *matcher_value)
 {
-    PyObject *matcher_value = NULL;
-    if (!PyArg_UnpackTuple(args, "subgroup", 1, 1, &matcher_value)) {
-        return NULL;
-    }
-
     _exceptiongroup_split_matcher_type matcher_type;
     if (get_matcher_type(matcher_value, &matcher_type) < 0) {
         return NULL;
@@ -1488,9 +1474,9 @@ static PyMemberDef BaseExceptionGroup_members[] = {
 static PyMethodDef BaseExceptionGroup_methods[] = {
     {"__class_getitem__", (PyCFunction)Py_GenericAlias,
       METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
-    {"derive", (PyCFunction)BaseExceptionGroup_derive, METH_VARARGS},
-    {"split", (PyCFunction)BaseExceptionGroup_split, METH_VARARGS},
-    {"subgroup", (PyCFunction)BaseExceptionGroup_subgroup, METH_VARARGS},
+    {"derive", (PyCFunction)BaseExceptionGroup_derive, METH_O},
+    {"split", (PyCFunction)BaseExceptionGroup_split, METH_O},
+    {"subgroup", (PyCFunction)BaseExceptionGroup_subgroup, METH_O},
     {NULL}
 };
 
@@ -2580,6 +2566,11 @@ MiddlingExtendsException(PyExc_SyntaxError, IndentationError, SyntaxError,
 MiddlingExtendsException(PyExc_IndentationError, TabError, SyntaxError,
                          "Improper mixture of spaces and tabs.");
 
+/*
+ *    IncompleteInputError extends SyntaxError
+ */
+MiddlingExtendsException(PyExc_SyntaxError, IncompleteInputError, SyntaxError,
+                         "incomplete input.");
 
 /*
  *    LookupError extends Exception
@@ -3548,7 +3539,6 @@ SimpleExtendsException(PyExc_Warning, ResourceWarning,
 #undef EOPNOTSUPP
 #undef EPROTONOSUPPORT
 #undef EPROTOTYPE
-#undef ETIMEDOUT
 #undef EWOULDBLOCK
 
 #if defined(WSAEALREADY) && !defined(EALREADY)
@@ -3568,9 +3558,6 @@ SimpleExtendsException(PyExc_Warning, ResourceWarning,
 #endif
 #if defined(WSAESHUTDOWN) && !defined(ESHUTDOWN)
 #define ESHUTDOWN WSAESHUTDOWN
-#endif
-#if defined(WSAETIMEDOUT) && !defined(ETIMEDOUT)
-#define ETIMEDOUT WSAETIMEDOUT
 #endif
 #if defined(WSAEWOULDBLOCK) && !defined(EWOULDBLOCK)
 #define EWOULDBLOCK WSAEWOULDBLOCK
@@ -3649,6 +3636,7 @@ static struct static_exception static_exceptions[] = {
 
     // Level 4: Other subclasses
     ITEM(IndentationError), // base: SyntaxError(Exception)
+    ITEM(IncompleteInputError), // base: SyntaxError(Exception)
     ITEM(IndexError),  // base: LookupError(Exception)
     ITEM(KeyError),  // base: LookupError(Exception)
     ITEM(ModuleNotFoundError), // base: ImportError(Exception)
@@ -3755,6 +3743,9 @@ _PyExc_InitState(PyInterpreterState *interp)
 #endif
     ADD_ERRNO(ProcessLookupError, ESRCH);
     ADD_ERRNO(TimeoutError, ETIMEDOUT);
+#ifdef WSAETIMEDOUT
+    ADD_ERRNO(TimeoutError, WSAETIMEDOUT);
+#endif
 
     return _PyStatus_OK();
 

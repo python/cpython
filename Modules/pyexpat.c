@@ -21,7 +21,7 @@ module pyexpat
 #define XML_COMBINED_VERSION (10000*XML_MAJOR_VERSION+100*XML_MINOR_VERSION+XML_MICRO_VERSION)
 
 static XML_Memory_Handling_Suite ExpatMemoryHandler = {
-    PyObject_Malloc, PyObject_Realloc, PyObject_Free};
+    PyMem_Malloc, PyMem_Realloc, PyMem_Free};
 
 enum HandlerTypes {
     StartElement,
@@ -240,19 +240,12 @@ string_intern(xmlparseobject *self, const char* str)
         return result;
     if (!self->intern)
         return result;
-    value = PyDict_GetItemWithError(self->intern, result);
-    if (!value) {
-        if (!PyErr_Occurred() &&
-            PyDict_SetItem(self->intern, result, result) == 0)
-        {
-            return result;
-        }
-        else {
-            Py_DECREF(result);
-            return NULL;
-        }
+    if (PyDict_GetItemRef(self->intern, result, &value) == 0 &&
+        PyDict_SetItem(self->intern, result, result) == 0)
+    {
+        return result;
     }
-    Py_INCREF(value);
+    assert((value != NULL) == !PyErr_Occurred());
     Py_DECREF(result);
     return value;
 }
@@ -1622,7 +1615,8 @@ static int init_handler_descrs(pyexpat_state *state)
         if (descr == NULL)
             return -1;
 
-        if (PyDict_SetDefault(state->xml_parse_type->tp_dict, PyDescr_NAME(descr), descr) == NULL) {
+        if (PyDict_SetDefaultRef(state->xml_parse_type->tp_dict,
+                                 PyDescr_NAME(descr), descr, NULL) < 0) {
             Py_DECREF(descr);
             return -1;
         }
@@ -2069,9 +2063,7 @@ pyexpat_free(void *module)
 
 static PyModuleDef_Slot pyexpat_slots[] = {
     {Py_mod_exec, pyexpat_exec},
-    // XXX gh-103092: fix isolation.
-    {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
-    //{Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

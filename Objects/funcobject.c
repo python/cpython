@@ -8,8 +8,6 @@
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 
 
-static PyObject* func_repr(PyFunctionObject *op);
-
 static const char *
 func_event_name(PyFunction_WatchEvent event) {
     switch (event) {
@@ -35,21 +33,9 @@ notify_func_watchers(PyInterpreterState *interp, PyFunction_WatchEvent event,
             // callback must be non-null if the watcher bit is set
             assert(cb != NULL);
             if (cb(event, func, new_value) < 0) {
-                // Don't risk resurrecting the func if an unraisablehook keeps a
-                // reference; pass a string as context.
-                PyObject *context = NULL;
-                PyObject *repr = func_repr(func);
-                if (repr != NULL) {
-                    context = PyUnicode_FromFormat(
-                        "%s watcher callback for %U",
-                        func_event_name(event), repr);
-                    Py_DECREF(repr);
-                }
-                if (context == NULL) {
-                    context = Py_NewRef(Py_None);
-                }
-                PyErr_WriteUnraisable(context);
-                Py_DECREF(context);
+                PyErr_FormatUnraisable(
+                    "Exception ignored in %s watcher callback for function %U at %p",
+                    func_event_name(event), func->func_qualname, func);
             }
         }
         i++;
@@ -66,6 +52,15 @@ handle_func_event(PyFunction_WatchEvent event, PyFunctionObject *func,
     assert(interp->_initialized);
     if (interp->active_func_watchers) {
         notify_func_watchers(interp, event, func, new_value);
+    }
+    switch (event) {
+        case PyFunction_EVENT_MODIFY_CODE:
+        case PyFunction_EVENT_MODIFY_DEFAULTS:
+        case PyFunction_EVENT_MODIFY_KWDEFAULTS:
+            RARE_EVENT_INTERP_INC(interp, func_modification);
+            break;
+        default:
+            break;
     }
 }
 
@@ -106,8 +101,8 @@ PyFunction_ClearWatcher(int watcher_id)
 PyFunctionObject *
 _PyFunction_FromConstructor(PyFrameConstructor *constr)
 {
-    PyObject *module = Py_XNewRef(PyDict_GetItemWithError(constr->fc_globals, &_Py_ID(__name__)));
-    if (!module && PyErr_Occurred()) {
+    PyObject *module;
+    if (PyDict_GetItemRef(constr->fc_globals, &_Py_ID(__name__), &module) < 0) {
         return NULL;
     }
 
@@ -172,12 +167,11 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     Py_INCREF(doc);
 
     // __module__: Use globals['__name__'] if it exists, or NULL.
-    PyObject *module = PyDict_GetItemWithError(globals, &_Py_ID(__name__));
+    PyObject *module;
     PyObject *builtins = NULL;
-    if (module == NULL && _PyErr_Occurred(tstate)) {
+    if (PyDict_GetItemRef(globals, &_Py_ID(__name__), &module) < 0) {
         goto error;
     }
-    Py_XINCREF(module);
 
     builtins = _PyEval_BuiltinsFromGlobals(tstate, globals); // borrowed ref
     if (builtins == NULL) {
@@ -571,6 +565,20 @@ func_set_code(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
                      nclosure, nfree);
         return -1;
     }
+
+    PyObject *func_code = PyFunction_GET_CODE(op);
+    int old_flags = ((PyCodeObject *)func_code)->co_flags;
+    int new_flags = ((PyCodeObject *)value)->co_flags;
+    int mask = CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR;
+    if ((old_flags & mask) != (new_flags & mask)) {
+        if (PyErr_Warn(PyExc_DeprecationWarning,
+            "Assigning a code object of non-matching type is deprecated "
+            "(e.g., from a generator to a plain function)") < 0)
+        {
+            return -1;
+        }
+    }
+
     handle_func_event(PyFunction_EVENT_MODIFY_CODE, op, value);
     _PyFunction_SetVersion(op, 0);
     Py_XSETREF(op->func_code, Py_NewRef(value));
@@ -810,14 +818,17 @@ function.__new__ as func_new
         a tuple that specifies the default argument values
     closure: object = None
         a tuple that supplies the bindings for free variables
+    kwdefaults: object = None
+        a dictionary that specifies the default keyword argument values
 
 Create a function object.
 [clinic start generated code]*/
 
 static PyObject *
 func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
-              PyObject *name, PyObject *defaults, PyObject *closure)
-/*[clinic end generated code: output=99c6d9da3a24e3be input=93611752fc2daf11]*/
+              PyObject *name, PyObject *defaults, PyObject *closure,
+              PyObject *kwdefaults)
+/*[clinic end generated code: output=de72f4c22ac57144 input=20c9c9f04ad2d3f2]*/
 {
     PyFunctionObject *newfunc;
     Py_ssize_t nclosure;
@@ -843,6 +854,11 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
                 "arg 5 (closure) must be None or tuple");
             return NULL;
         }
+    }
+    if (kwdefaults != Py_None && !PyDict_Check(kwdefaults)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "arg 6 (kwdefaults) must be None or dict");
+        return NULL;
     }
 
     /* check that the closure is well-formed */
@@ -879,6 +895,9 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
     }
     if (closure != Py_None) {
         newfunc->func_closure = Py_NewRef(closure);
+    }
+    if (kwdefaults != Py_None) {
+        newfunc->func_kwdefaults = Py_NewRef(kwdefaults);
     }
 
     return (PyObject *)newfunc;
@@ -1110,10 +1129,6 @@ cm_descr_get(PyObject *self, PyObject *obj, PyObject *type)
     }
     if (type == NULL)
         type = (PyObject *)(Py_TYPE(obj));
-    if (Py_TYPE(cm->cm_callable)->tp_descr_get != NULL) {
-        return Py_TYPE(cm->cm_callable)->tp_descr_get(cm->cm_callable, type,
-                                                      type);
-    }
     return PyMethod_New(cm->cm_callable, type);
 }
 
@@ -1168,7 +1183,8 @@ cm_repr(classmethod *cm)
 }
 
 PyDoc_STRVAR(classmethod_doc,
-"classmethod(function) -> method\n\
+"classmethod(function, /)\n\
+--\n\
 \n\
 Convert a function to be a class method.\n\
 \n\
@@ -1363,7 +1379,8 @@ sm_repr(staticmethod *sm)
 }
 
 PyDoc_STRVAR(staticmethod_doc,
-"staticmethod(function) -> method\n\
+"staticmethod(function, /)\n\
+--\n\
 \n\
 Convert a function to be a static method.\n\
 \n\

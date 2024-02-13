@@ -289,6 +289,40 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(sys__is_interned__doc__,
+"_is_interned($module, string, /)\n"
+"--\n"
+"\n"
+"Return True if the given string is \"interned\".");
+
+#define SYS__IS_INTERNED_METHODDEF    \
+    {"_is_interned", (PyCFunction)sys__is_interned, METH_O, sys__is_interned__doc__},
+
+static int
+sys__is_interned_impl(PyObject *module, PyObject *string);
+
+static PyObject *
+sys__is_interned(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *string;
+    int _return_value;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("_is_interned", "argument", "str", arg);
+        goto exit;
+    }
+    string = arg;
+    _return_value = sys__is_interned_impl(module, string);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(sys__settraceallthreads__doc__,
 "_settraceallthreads($module, arg, /)\n"
 "--\n"
@@ -1097,6 +1131,24 @@ sys__clear_type_cache(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys__clear_type_cache_impl(module);
 }
 
+PyDoc_STRVAR(sys__clear_internal_caches__doc__,
+"_clear_internal_caches($module, /)\n"
+"--\n"
+"\n"
+"Clear all internal performance-related caches.");
+
+#define SYS__CLEAR_INTERNAL_CACHES_METHODDEF    \
+    {"_clear_internal_caches", (PyCFunction)sys__clear_internal_caches, METH_NOARGS, sys__clear_internal_caches__doc__},
+
+static PyObject *
+sys__clear_internal_caches_impl(PyObject *module);
+
+static PyObject *
+sys__clear_internal_caches(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__clear_internal_caches_impl(module);
+}
+
 PyDoc_STRVAR(sys_is_finalizing__doc__,
 "is_finalizing($module, /)\n"
 "--\n"
@@ -1452,4 +1504,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=f36d45c829250775 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b8b1c53e04c3b20c input=a9049054013a1b77]*/

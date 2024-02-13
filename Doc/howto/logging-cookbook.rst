@@ -332,10 +332,10 @@ Suppose you configure logging with the following JSON:
         }
     }
 
-This configuration does *almost* what we want, except that ``sys.stdout`` would
-show messages of severity ``ERROR`` and above as well as ``INFO`` and
-``WARNING`` messages. To prevent this, we can set up a filter which excludes
-those messages and add it to the relevant handler. This can be configured by
+This configuration does *almost* what we want, except that ``sys.stdout`` would show messages
+of severity ``ERROR`` and only events of this severity and higher will be tracked
+as well as ``INFO`` and ``WARNING`` messages. To prevent this, we can set up a filter which
+excludes those messages and add it to the relevant handler. This can be configured by
 adding a ``filters`` section parallel to ``formatters`` and ``handlers``:
 
 .. code-block:: json
@@ -1744,13 +1744,11 @@ to the above, as in the following example::
             return self.fmt.format(*self.args)
 
     class StyleAdapter(logging.LoggerAdapter):
-        def __init__(self, logger, extra=None):
-            super().__init__(logger, extra or {})
-
-        def log(self, level, msg, /, *args, **kwargs):
+        def log(self, level, msg, /, *args, stacklevel=1, **kwargs):
             if self.isEnabledFor(level):
                 msg, kwargs = self.process(msg, kwargs)
-                self.logger._log(level, Message(msg, args), (), **kwargs)
+                self.logger.log(level, Message(msg, args), **kwargs,
+                                stacklevel=stacklevel+1)
 
     logger = StyleAdapter(logging.getLogger(__name__))
 
@@ -1762,7 +1760,7 @@ to the above, as in the following example::
         main()
 
 The above script should log the message ``Hello, world!`` when run with
-Python 3.2 or later.
+Python 3.8 or later.
 
 
 .. currentmodule:: logging
@@ -1933,30 +1931,28 @@ This dictionary is passed to :func:`~config.dictConfig` to put the configuration
 
     LOGGING = {
         'version': 1,
-        'disable_existing_loggers': True,
+        'disable_existing_loggers': False,
         'formatters': {
             'verbose': {
-                'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
+                'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+                'style': '{',
             },
             'simple': {
-                'format': '%(levelname)s %(message)s'
+                'format': '{levelname} {message}',
+                'style': '{',
             },
         },
         'filters': {
             'special': {
                 '()': 'project.logging.SpecialFilter',
                 'foo': 'bar',
-            }
+            },
         },
         'handlers': {
-            'null': {
-                'level':'DEBUG',
-                'class':'django.utils.log.NullHandler',
-            },
-            'console':{
-                'level':'DEBUG',
-                'class':'logging.StreamHandler',
-                'formatter': 'simple'
+            'console': {
+                'level': 'INFO',
+                'class': 'logging.StreamHandler',
+                'formatter': 'simple',
             },
             'mail_admins': {
                 'level': 'ERROR',
@@ -1966,9 +1962,8 @@ This dictionary is passed to :func:`~config.dictConfig` to put the configuration
         },
         'loggers': {
             'django': {
-                'handlers':['null'],
+                'handlers': ['console'],
                 'propagate': True,
-                'level':'INFO',
             },
             'django.request': {
                 'handlers': ['mail_admins'],

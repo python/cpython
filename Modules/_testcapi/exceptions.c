@@ -303,6 +303,46 @@ _testcapi_traceback_print_impl(PyObject *module, PyObject *traceback,
     Py_RETURN_NONE;
 }
 
+static PyObject *
+err_writeunraisable(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *exc, *obj;
+    if (!PyArg_ParseTuple(args, "OO", &exc, &obj)) {
+        return NULL;
+    }
+    NULLABLE(exc);
+    NULLABLE(obj);
+    if (exc) {
+        PyErr_SetRaisedException(Py_NewRef(exc));
+    }
+    PyErr_WriteUnraisable(obj);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+err_formatunraisable(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    PyObject *exc;
+    const char *fmt;
+    Py_ssize_t fmtlen;
+    PyObject *objs[10] = {NULL};
+
+    if (!PyArg_ParseTuple(args, "Oz#|OOOOOOOOOO", &exc, &fmt, &fmtlen,
+            &objs[0], &objs[1], &objs[2], &objs[3], &objs[4],
+            &objs[5], &objs[6], &objs[7], &objs[8], &objs[9]))
+    {
+        return NULL;
+    }
+    NULLABLE(exc);
+    if (exc) {
+        PyErr_SetRaisedException(Py_NewRef(exc));
+    }
+    PyErr_FormatUnraisable(fmt,
+            objs[0], objs[1], objs[2], objs[3], objs[4],
+            objs[5], objs[6], objs[7], objs[8], objs[9]);
+    Py_RETURN_NONE;
+}
+
 /*[clinic input]
 _testcapi.unstable_exc_prep_reraise_star
     orig: object
@@ -347,6 +387,8 @@ static PyTypeObject PyRecursingInfinitelyError_Type = {
 
 static PyMethodDef test_methods[] = {
     {"err_restore",             err_restore,                     METH_VARARGS},
+    {"err_writeunraisable",     err_writeunraisable,             METH_VARARGS},
+    {"err_formatunraisable",    err_formatunraisable,            METH_VARARGS},
     _TESTCAPI_ERR_SET_RAISED_METHODDEF
     _TESTCAPI_EXCEPTION_PRINT_METHODDEF
     _TESTCAPI_FATAL_ERROR_METHODDEF
