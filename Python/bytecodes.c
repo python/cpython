@@ -2318,13 +2318,16 @@ dummy_func(
             assert(oparg <= INSTR_OFFSET());
             JUMPBY(-oparg);
             #if ENABLE_SPECIALIZATION
-            this_instr[1].cache += (1 << OPTIMIZER_BITS_IN_COUNTER);
+            uint16_t counter = this_instr[1].cache;
+            this_instr[1].cache = counter + (1 << OPTIMIZER_BITS_IN_COUNTER);
             /* We are using unsigned values, but we really want signed values, so
-             * do the 2s complement comparison manually */
-            uint16_t ucounter = this_instr[1].cache + (1 << 15);
-            uint16_t threshold = tstate->interp->optimizer_backedge_threshold + (1 << 15);
+             * do the 2s complement adjustment manually */
+            uint32_t offset_counter = counter ^ (1 << 15);
+            uint32_t threshold = tstate->interp->optimizer_backedge_threshold;
+            assert((threshold & OPTIMIZER_BITS_MASK) == 0);
+            // Use '>=' not '>' so that the optimizer/backoff bits do not effect the result.
             // Double-check that the opcode isn't instrumented or something:
-            if (ucounter > threshold && this_instr->op.code == JUMP_BACKWARD) {
+            if (offset_counter >= threshold && this_instr->op.code == JUMP_BACKWARD) {
                 OPT_STAT_INC(attempts);
                 _Py_CODEUNIT *start = this_instr;
                 /* Back up over EXTENDED_ARGs so optimizer sees the whole instruction */
@@ -2338,18 +2341,18 @@ dummy_func(
                     // Rewind and enter the executor:
                     assert(start->op.code == ENTER_EXECUTOR);
                     next_instr = start;
-                    this_instr[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
+                    this_instr[1].cache &= OPTIMIZER_BITS_MASK;
                 }
                 else {
-                    int backoff = this_instr[1].cache & ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
-                    if (backoff < MINIMUM_TIER2_BACKOFF) {
-                        backoff = MINIMUM_TIER2_BACKOFF;
+                    int backoff = this_instr[1].cache & OPTIMIZER_BITS_MASK;
+                    backoff++;
+                    if (backoff < MIN_TIER2_BACKOFF) {
+                        backoff = MIN_TIER2_BACKOFF;
                     }
-                    else if (backoff < 15 - OPTIMIZER_BITS_IN_COUNTER) {
-                        backoff++;
+                    else if (backoff > MAX_TIER2_BACKOFF) {
+                        backoff = MAX_TIER2_BACKOFF;
                     }
-                    assert(backoff <= 15 - OPTIMIZER_BITS_IN_COUNTER);
-                    this_instr[1].cache = ((1 << 16) - ((1 << OPTIMIZER_BITS_IN_COUNTER) << backoff)) | backoff;
+                    this_instr[1].cache = ((UINT16_MAX << OPTIMIZER_BITS_IN_COUNTER) << backoff) | backoff;
                 }
             }
             #endif  /* ENABLE_SPECIALIZATION */
