@@ -11,8 +11,8 @@ from _xxinterpqueues import (
 )
 
 __all__ = [
-    'create_shared', 'list_all',
-    'SharedQueue',
+    'create_shared', 'create', 'list_all',
+    'SharedQueue', 'Queue',
     'QueueError', 'QueueNotFoundError', 'QueueEmpty', 'QueueFull',
 ]
 
@@ -35,15 +35,29 @@ def create_shared(maxsize=0):
     """Return a new cross-interpreter queue.
 
     The queue may be used to pass data safely between interpreters.
+    Only "shareable" objects put into the queue.  The data is handled
+    with maximum efficiency.
     """
-    qid = _queues.create(maxsize)
+    qid = _queues.create(maxsize, sharedonly=True)
     return SharedQueue(qid)
+
+
+def create(maxsize=0):
+    """Return a new cross-interpreter queue.
+
+    The queue may be used to pass data safely between interpreters.
+    Any object may be put into the queue.  Each is serialized, and thus
+    copied.  This approach is not as efficient as queues made with
+    create_shared().
+    """
+    qid = _queues.create(maxsize, sharedonly=False)
+    return Queue(qid)
 
 
 def list_all():
     """Return a list of all open queues."""
-    return [SharedQueue(qid)
-            for qid in _queues.list_all()]
+    return [SharedQueue(qid) if sharedonly else Queue(qid)
+            for qid, sharedonly in _queues.list_all()]
 
 
 
@@ -109,6 +123,8 @@ class SharedQueue:
             ):
         """Add the object to the queue.
 
+        The object must be "shareable".
+
         This blocks while the queue is full.
         """
         if timeout is not None:
@@ -169,4 +185,18 @@ class SharedQueue:
             raise  # re-raise
 
 
+class Queue(SharedQueue):
+    """A cross-interpreter queue."""
+
+    def put(self, obj, timeout=None):
+        """Add the object to the queue.
+
+        All objects are supported.
+
+        This blocks while the queue is full.
+        """
+        super().put(obj, timeout)
+
+
 _queues._register_queue_type(SharedQueue)
+_queues._register_queue_type(Queue)
