@@ -55,8 +55,7 @@ test_critical_sections(PyObject *self, PyObject *Py_UNUSED(args))
     Py_END_CRITICAL_SECTION_OPT();
 
     // No-op
-    PyObject *null_object = NULL;
-    Py_BEGIN_CRITICAL_SECTION_OPT(null_object);
+    Py_BEGIN_CRITICAL_SECTION_OPT(NULL);
     Py_END_CRITICAL_SECTION_OPT();
 
     Py_DECREF(d2);
