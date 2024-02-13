@@ -755,7 +755,7 @@ class TestUopsOptimization(unittest.TestCase):
         result = script_helper.run_python_until_end('-c', textwrap.dedent("""
         import _testinternalcapi
         import opcode
-        
+
         def get_first_executor(func):
             code = func.__code__
             co_code = code.co_code
@@ -766,17 +766,17 @@ class TestUopsOptimization(unittest.TestCase):
                         return _testinternalcapi.get_executor(code, i)
                     except ValueError:
                         pass
-            return None        
-        
+            return None
+
         def testfunc(n):
             for i in range(n):
                 x = range(i)
             return x
-        
+
         opt = _testinternalcapi.get_uop_optimizer()
         _testinternalcapi.set_optimizer(opt)
         testfunc(64)
-        
+
         ex = get_first_executor(testfunc)
         assert ex is not None
         uops = {opname for opname, _, _ in ex}
