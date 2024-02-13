@@ -1,5 +1,6 @@
 """Cross-interpreter Queues High Level Module."""
 
+import pickle
 import queue
 import time
 import weakref
@@ -47,6 +48,7 @@ def list_all():
 
 
 _SHARED_ONLY = 0
+_PICKLED = 1
 
 _known_queues = weakref.WeakValueDictionary()
 
@@ -106,18 +108,25 @@ class Queue:
         return _queues.get_count(self._id)
 
     def put(self, obj, timeout=None, *,
+            sharedonly=False,
             _delay=10 / 1000,  # 10 milliseconds
             ):
         """Add the object to the queue.
 
         This blocks while the queue is full.
+
+        If "sharedonly" is true then the object must be "shareable".
+        It will be passed through the queue efficiently.  Otherwise
+        all objects are supported, at the expense of worse performance.
         """
-        fmt = _SHARED_ONLY
+        fmt = _SHARED_ONLY if sharedonly else _PICKLED
         if timeout is not None:
             timeout = int(timeout)
             if timeout < 0:
                 raise ValueError(f'timeout value must be non-negative')
             end = time.time() + timeout
+        if fmt is _PICKLED:
+            obj = pickle.dumps(obj)
         while True:
             try:
                 _queues.put(self._id, obj, fmt)
@@ -129,10 +138,12 @@ class Queue:
             else:
                 break
 
-    def put_nowait(self, obj):
-        fmt = _SHARED_ONLY
+    def put_nowait(self, obj, *, sharedonly=False):
+        fmt = _SHARED_ONLY if sharedonly else _PICKLED
+        if fmt is _PICKLED:
+            obj = pickle.dumps(obj)
         try:
-            return _queues.put(self._id, obj, fmt)
+            _queues.put(self._id, obj, fmt)
         except _queues.QueueFull as exc:
             exc.__class__ = QueueFull
             raise  # re-raise
@@ -159,7 +170,10 @@ class Queue:
                 time.sleep(_delay)
             else:
                 break
-        assert fmt == _SHARED_ONLY
+        if fmt == _PICKLED:
+            obj = pickle.loads(obj)
+        else:
+            assert fmt == _SHARED_ONLY
         return obj
 
     def get_nowait(self):
