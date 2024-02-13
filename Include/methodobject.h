@@ -28,6 +28,8 @@ typedef PyObject *(*PyCMethod)(PyObject *, PyTypeObject *, PyObject *const *,
 
 // For backwards compatibility. `METH_FASTCALL` was added to the stable API in
 // 3.10 alongside `_PyCFunctionFastWithKeywords` and `_PyCFunctionFast`.
+// Note that the underscore-prefixed names were documented in public docs;
+// people may be using them.
 typedef PyCFunctionFast _PyCFunctionFast;
 typedef PyCFunctionWithKeywords _PyCFunctionWithKeywords;
 
