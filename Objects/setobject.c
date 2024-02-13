@@ -2315,11 +2315,7 @@ set_vectorcall(PyObject *type, PyObject * const*args,
     }
 
     if (nargs) {
-        PyObject *rv;
-        Py_BEGIN_CRITICAL_SECTION(args[0]);
-        rv = make_new_set(_PyType_CAST(type), args[0]);
-        Py_END_CRITICAL_SECTION();
-        return rv;
+        return make_new_set(_PyType_CAST(type), args[0]);
     }
 
     return make_new_set(_PyType_CAST(type), NULL);
