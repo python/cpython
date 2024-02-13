@@ -1134,6 +1134,8 @@ Special read-only attributes
    * - .. attribute:: codeobject.co_qualname
      - The fully qualified function name
 
+       .. versionadded:: 3.11
+
    * - .. attribute:: codeobject.co_argcount
      - The total number of positional :term:`parameters <parameter>`
        (including positional-only parameters and parameters with default values)
