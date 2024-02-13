@@ -1135,7 +1135,7 @@ PyLong_AsNativeBytes(PyObject* vv, void* buffer, Py_ssize_t n, int endianness)
         if (n <= 0) {
             // nothing to do!
         }
-        else if (n <= sizeof(cv.b)) {
+        else if (n <= (Py_ssize_t)sizeof(cv.b)) {
 #if PY_LITTLE_ENDIAN
             if (little_endian) {
                 memcpy(buffer, cv.b, n);
