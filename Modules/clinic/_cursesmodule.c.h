@@ -1274,6 +1274,8 @@ exit:
     return return_value;
 }
 
+#if defined(py_is_pad)
+
 PyDoc_STRVAR(_curses_window_noutrefresh__doc__,
 "noutrefresh([pminrow, pmincol, sminrow, smincol, smaxrow, smaxcol])\n"
 "Mark for refresh but wait.\n"
@@ -1321,6 +1323,34 @@ _curses_window_noutrefresh(PyCursesWindowObject *self, PyObject *args)
 exit:
     return return_value;
 }
+
+#endif /* defined(py_is_pad) */
+
+#if !defined(py_is_pad)
+
+PyDoc_STRVAR(_curses_window_noutrefresh__doc__,
+"noutrefresh($self, /)\n"
+"--\n"
+"\n"
+"Mark for refresh but wait.\n"
+"\n"
+"This function updates the data structure representing the desired state of the\n"
+"window, but does not force an update of the physical screen.  To accomplish\n"
+"that, call doupdate().");
+
+#define _CURSES_WINDOW_NOUTREFRESH_METHODDEF    \
+    {"noutrefresh", (PyCFunction)_curses_window_noutrefresh, METH_NOARGS, _curses_window_noutrefresh__doc__},
+
+static PyObject *
+_curses_window_noutrefresh_impl(PyCursesWindowObject *self);
+
+static PyObject *
+_curses_window_noutrefresh(PyCursesWindowObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _curses_window_noutrefresh_impl(self);
+}
+
+#endif /* !defined(py_is_pad) */
 
 PyDoc_STRVAR(_curses_window_overlay__doc__,
 "overlay(destwin, [sminrow, smincol, dminrow, dmincol, dmaxrow, dmaxcol])\n"
@@ -4205,6 +4235,10 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
     #define _CURSES_WINDOW_GET_WCH_METHODDEF
 #endif /* !defined(_CURSES_WINDOW_GET_WCH_METHODDEF) */
 
+#ifndef _CURSES_WINDOW_NOUTREFRESH_METHODDEF
+    #define _CURSES_WINDOW_NOUTREFRESH_METHODDEF
+#endif /* !defined(_CURSES_WINDOW_NOUTREFRESH_METHODDEF) */
+
 #ifndef _CURSES_FILTER_METHODDEF
     #define _CURSES_FILTER_METHODDEF
 #endif /* !defined(_CURSES_FILTER_METHODDEF) */
@@ -4284,4 +4318,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=2ac38c77c97552ad input=a9049054013a1b77]*/
+/*[clinic end generated code: output=96887782374f070a input=a9049054013a1b77]*/

@@ -1155,19 +1155,13 @@ int py_mvwdelch(WINDOW *w, int y, int x)
 }
 #endif
 
-static inline bool
-py_is_pad(const WINDOW *win) {
 #if defined(HAVE_CURSES_IS_PAD)
-    // is_pad is defined, either as a macro or as a function
-    return is_pad(win);
-#elif WINDOW_HAS_FLAGS
-    // is_pad is not defined, but we can inspect struct internals
-    return (win ? (win->_flags & _ISPAD) != 0 : FALSE);
-#else
-    // probably not ncurses
-    return FALSE;
+// is_pad() is defined, either as a macro or as a function
+#define py_is_pad(win)      is_pad(win)
+#elif defined(WINDOW_HAS_FLAGS)
+// is_pad() is not defined, but we can inspect WINDOW structure members
+#define py_is_pad(win)      ((win) ? ((win)->_flags & _ISPAD) != 0 : FALSE)
 #endif
-}
 
 /* chgat, added by Fabian Kreutz <fabian.kreutz at gmx.net> */
 #ifdef HAVE_CURSES_WCHGAT
@@ -1340,13 +1334,15 @@ _curses_window_echochar_impl(PyCursesWindowObject *self, PyObject *ch,
     if (!PyCurses_ConvertToChtype(self, ch, &ch_))
         return NULL;
 
+#ifdef py_is_pad
     if (py_is_pad(self->win)) {
         return PyCursesCheckERR(pechochar(self->win, ch_ | (attr_t)attr),
                                 "echochar");
-    } else {
+    }
+    else
+#endif
         return PyCursesCheckERR(wechochar(self->win, ch_ | (attr_t)attr),
                                 "echochar");
-    }
 }
 
 #ifdef NCURSES_MOUSE_VERSION
@@ -1981,6 +1977,7 @@ _curses_window_is_linetouched_impl(PyCursesWindowObject *self, int line)
     return PyBool_FromLong(erg);
 }
 
+#ifdef py_is_pad
 /*[clinic input]
 _curses.window.noutrefresh
 
@@ -2007,9 +2004,25 @@ _curses_window_noutrefresh_impl(PyCursesWindowObject *self,
                                 int sminrow, int smincol, int smaxrow,
                                 int smaxcol)
 /*[clinic end generated code: output=809a1f3c6a03e23e input=3e56898388cd739e]*/
+#else
+/*[clinic input]
+_curses.window.noutrefresh
+
+Mark for refresh but wait.
+
+This function updates the data structure representing the desired state of the
+window, but does not force an update of the physical screen.  To accomplish
+that, call doupdate().
+[clinic start generated code]*/
+
+static PyObject *
+_curses_window_noutrefresh_impl(PyCursesWindowObject *self)
+/*[clinic end generated code: output=6ef6dec666643fee input=876902e3fa431dbd]*/
+#endif
 {
     int rtn;
 
+#ifdef py_is_pad
     if (py_is_pad(self->win)) {
         if (!group_right_1) {
             PyErr_SetString(PyCursesError,
@@ -2028,6 +2041,7 @@ _curses_window_noutrefresh_impl(PyCursesWindowObject *self,
                         "noutrefresh() takes no arguments (6 given)");
         return NULL;
     }
+#endif
     Py_BEGIN_ALLOW_THREADS
     rtn = wnoutrefresh(self->win);
     Py_END_ALLOW_THREADS
@@ -2232,6 +2246,7 @@ _curses_window_refresh_impl(PyCursesWindowObject *self, int group_right_1,
 {
     int rtn;
 
+#ifdef py_is_pad
     if (py_is_pad(self->win)) {
         if (!group_right_1) {
             PyErr_SetString(PyCursesError,
@@ -2244,6 +2259,7 @@ _curses_window_refresh_impl(PyCursesWindowObject *self, int group_right_1,
         Py_END_ALLOW_THREADS
         return PyCursesCheckERR(rtn, "prefresh");
     }
+#endif
     if (group_right_1) {
         PyErr_SetString(PyExc_TypeError,
                         "refresh() takes no arguments (6 given)");
@@ -2306,11 +2322,13 @@ _curses_window_subwin_impl(PyCursesWindowObject *self, int group_left_1,
     WINDOW *win;
 
     /* printf("Subwin: %i %i %i %i   \n", nlines, ncols, begin_y, begin_x); */
+#ifdef py_is_pad
     if (py_is_pad(self->win)) {
         win = subpad(self->win, nlines, ncols, begin_y, begin_x);
-    } else {
-        win = subwin(self->win, nlines, ncols, begin_y, begin_x);
     }
+    else
+#endif
+        win = subwin(self->win, nlines, ncols, begin_y, begin_x);
 
     if (win == NULL) {
         PyErr_SetString(PyCursesError, catchall_NULL);
