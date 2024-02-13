@@ -2326,14 +2326,14 @@ set_vectorcall(PyObject *type, PyObject * const*args,
 }
 
 static PySequenceMethods set_as_sequence = {
-    (lenfunc)set_len,                            /* sq_length */
+    (lenfunc)set_len,                   /* sq_length */
     0,                                  /* sq_concat */
     0,                                  /* sq_repeat */
     0,                                  /* sq_item */
     0,                                  /* sq_slice */
     0,                                  /* sq_ass_item */
     0,                                  /* sq_ass_slice */
-    (objobjproc)set_sq_contains,           /* sq_contains */
+    (objobjproc)set_sq_contains,        /* sq_contains */
 };
 
 /* set object ********************************************************/
