@@ -1014,7 +1014,12 @@ make_new_set(PyTypeObject *type, PyObject *iterable)
     so->weakreflist = NULL;
 
     if (iterable != NULL) {
-        if (set_update_internal(so, iterable)) {
+        int rv;
+
+        Py_BEGIN_CRITICAL_SECTION(iterable);
+        rv = set_update_internal(so, iterable);
+        Py_END_CRITICAL_SECTION();
+        if (rv) {
             Py_DECREF(so);
             return NULL;
         }
@@ -2538,23 +2543,13 @@ PyTypeObject PyFrozenSet_Type = {
 PyObject *
 PySet_New(PyObject *iterable)
 {
-    PyObject *rv;
-
-    Py_BEGIN_CRITICAL_SECTION(iterable);
-    rv = make_new_set(&PySet_Type, iterable);
-    Py_END_CRITICAL_SECTION();
-    return rv;
+    return make_new_set(&PySet_Type, iterable);
 }
 
 PyObject *
 PyFrozenSet_New(PyObject *iterable)
 {
-    PyObject *rv;
-
-    Py_BEGIN_CRITICAL_SECTION(iterable);
-    rv = make_new_set(&PyFrozenSet_Type, iterable);
-    Py_END_CRITICAL_SECTION();
-    return rv;
+    return make_new_set(&PyFrozenSet_Type, iterable);
 }
 
 Py_ssize_t
