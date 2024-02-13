@@ -21,8 +21,8 @@ typedef PyObject *(*PyCFunctionFast) (PyObject *, PyObject *const *, Py_ssize_t)
 typedef PyObject *(*PyCFunctionWithKeywords)(PyObject *, PyObject *,
                                              PyObject *);
 typedef PyObject *(*PyCFunctionFastWithKeywords) (PyObject *,
-                                                   PyObject *const *, Py_ssize_t,
-                                                   PyObject *);
+                                                  PyObject *const *, Py_ssize_t,
+                                                  PyObject *);
 typedef PyObject *(*PyCMethod)(PyObject *, PyTypeObject *, PyObject *const *,
                                size_t, PyObject *);
 

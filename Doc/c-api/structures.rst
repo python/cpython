@@ -194,8 +194,8 @@ Implementing functions and methods
    The function signature is::
 
       PyObject *PyCFunctionFast(PyObject *self,
-                                 PyObject *const *args,
-                                 Py_ssize_t nargs);
+                                PyObject *const *args,
+                                Py_ssize_t nargs);
 
 .. c:type:: PyCFunctionFastWithKeywords
 
@@ -204,9 +204,9 @@ Implementing functions and methods
    The function signature is::
 
       PyObject *PyCFunctionFastWithKeywords(PyObject *self,
-                                             PyObject *const *args,
-                                             Py_ssize_t nargs,
-                                             PyObject *kwnames);
+                                            PyObject *const *args,
+                                            Py_ssize_t nargs,
+                                            PyObject *kwnames);
 
 .. c:type:: PyCMethod
 
