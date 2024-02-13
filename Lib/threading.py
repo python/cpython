@@ -3,9 +3,7 @@
 import os as _os
 import sys as _sys
 import _thread
-import functools
 import warnings
-import _weakref
 
 from time import monotonic as _time
 from _weakrefset import WeakSet
@@ -37,6 +35,7 @@ __all__ = ['get_ident', 'active_count', 'Condition', 'current_thread',
 _start_joinable_thread = _thread.start_joinable_thread
 _daemon_threads_allowed = _thread.daemon_threads_allowed
 _allocate_lock = _thread.allocate_lock
+_LockType = _thread.LockType
 _set_sentinel = _thread._set_sentinel
 get_ident = _thread.get_ident
 _is_main_interpreter = _thread._is_main_interpreter
@@ -115,7 +114,7 @@ def gettrace():
 
 # Synchronization classes
 
-Lock = _allocate_lock
+Lock = _LockType
 
 def RLock(*args, **kwargs):
     """Factory function that returns a new reentrant lock.
@@ -950,7 +949,6 @@ class Thread:
             # This thread is alive.
             self._ident = new_ident
             if self._handle is not None:
-                self._handle.after_fork_alive()
                 assert self._handle.ident == new_ident
             # bpo-42350: If the fork happens when the thread is already stopped
             # (ex: after threading._shutdown() has been called), _tstate_lock
@@ -966,9 +964,7 @@ class Thread:
             self._is_stopped = True
             self._tstate_lock = None
             self._join_lock = None
-            if self._handle is not None:
-                self._handle.after_fork_dead()
-                self._handle = None
+            self._handle = None
 
     def __repr__(self):
         assert self._initialized, "Thread.__init__() was not called"
@@ -1630,8 +1626,7 @@ def _register_atexit(func, *arg, **kwargs):
     if _SHUTTING_DOWN:
         raise RuntimeError("can't register atexit after shutdown")
 
-    call = functools.partial(func, *arg, **kwargs)
-    _threading_atexits.append(call)
+    _threading_atexits.append(lambda: func(*arg, **kwargs))
 
 
 from _thread import stack_size

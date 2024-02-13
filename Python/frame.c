@@ -139,7 +139,6 @@ _PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
     for (int i = 0; i < frame->stacktop; i++) {
         Py_XDECREF(frame->localsplus[i]);
     }
-    Py_XDECREF(frame->frame_obj);
     Py_XDECREF(frame->f_locals);
     Py_DECREF(frame->f_funcobj);
 }

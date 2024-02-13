@@ -2705,6 +2705,7 @@ class _TestPool(BaseTestCase):
         p = self.Pool(3)
         args = [sleep_time for i in range(10_000)]
         result = p.map_async(time.sleep, args, chunksize=1)
+        time.sleep(0.2)  # give some tasks a chance to start
         p.terminate()
         p.join()
 
@@ -6110,6 +6111,24 @@ class MiscTestCase(unittest.TestCase):
             import multiprocessing.spawn  # This should not fail\n""",
         )
         self.assertEqual(rc, 0)
+        self.assertFalse(err, msg=err.decode('utf-8'))
+
+    def test_large_pool(self):
+        #
+        # gh-89240: Check that large pools are always okay
+        #
+        testfn = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, testfn)
+        with open(testfn, 'w', encoding='utf-8') as f:
+            f.write(textwrap.dedent('''\
+                import multiprocessing
+                def f(x): return x*x
+                if __name__ == '__main__':
+                    with multiprocessing.Pool(200) as p:
+                        print(sum(p.map(f, range(1000))))
+            '''))
+        rc, out, err = script_helper.assert_python_ok(testfn)
+        self.assertEqual("332833500", out.decode('utf-8').strip())
         self.assertFalse(err, msg=err.decode('utf-8'))
 
 

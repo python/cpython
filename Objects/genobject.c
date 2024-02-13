@@ -1633,7 +1633,7 @@ static struct _Py_async_gen_state *
 get_async_gen_state(void)
 {
     _PyFreeListState *state = _PyFreeListState_GET();
-    return &state->async_gen_state;
+    return &state->async_gens;
 }
 #endif
 
@@ -1659,7 +1659,7 @@ void
 _PyAsyncGen_ClearFreeLists(_PyFreeListState *freelist_state, int is_finalization)
 {
 #ifdef WITH_FREELISTS
-    struct _Py_async_gen_state *state = &freelist_state->async_gen_state;
+    struct _Py_async_gen_state *state = &freelist_state->async_gens;
 
     while (state->value_numfree > 0) {
         _PyAsyncGenWrappedValue *o;
@@ -1681,13 +1681,6 @@ _PyAsyncGen_ClearFreeLists(_PyFreeListState *freelist_state, int is_finalization
     }
 #endif
 }
-
-void
-_PyAsyncGen_Fini(_PyFreeListState *state)
-{
-    _PyAsyncGen_ClearFreeLists(state, 1);
-}
-
 
 static PyObject *
 async_gen_unwrap_value(PyAsyncGenObject *gen, PyObject *result)
