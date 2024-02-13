@@ -605,7 +605,7 @@ uop_redundancy_eliminator(
         ctx,
         co, curr_stacklen,
         trace_len) < 0) {
-        goto error;
+        goto out_of_space;
     }
 
     for (_PyUOpInstruction *this_instr = trace;
@@ -644,7 +644,7 @@ out_of_space:
 error:
     DPRINTF(1, "Encountered error in abstract interpreter\n");
     abstractcontext_fini(ctx);
-    return -1;
+    return 0;
 }
 
 
