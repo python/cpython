@@ -529,7 +529,7 @@ class Doc:
                                  '_thread', 'zipimport') or
              (file.startswith(basedir) and
               not file.startswith(os.path.join(basedir, 'site-packages')))) and
-            object.__name__ not in ('xml.etree', 'test.pydoc_mod')):
+            object.__name__ not in ('xml.etree', 'test.test_pydoc.pydoc_mod')):
             if docloc.startswith(("http://", "https://")):
                 docloc = "{}/{}.html".format(docloc.rstrip("/"), object.__name__.lower())
             else:
