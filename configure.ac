@@ -5279,10 +5279,9 @@ AC_CHECK_PROGS([TRUE], [true], [/bin/true])
 
 dnl On some systems (e.g. Solaris), hstrerror and inet_aton are in -lresolv
 dnl On others, they are in the C library, so we to take no action
-AC_SEARCH_LIBS([inet_aton], [resolv], [
-  AS_VAR_IF([ac_cv_search_inet_aton], ["none required"], [
-    AC_SEARCH_LIBS([hstrerror], [resolv])
-  ])
+AC_SEARCH_LIBS([inet_aton], [resolv])
+AS_VAR_IF([ac_cv_search_inet_aton], ["-lresolv"], [], [
+  AC_SEARCH_LIBS([hstrerror], [resolv])
 ])
 
 # On Tru64, chflags seems to be present, but calling it will

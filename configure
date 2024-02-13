@@ -20261,10 +20261,14 @@ if test "$ac_res" != no
 then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
-  if test "x$ac_cv_search_inet_aton" = x"none required"
+fi
+
+if test "x$ac_cv_search_inet_aton" = x"-lresolv"
 then :
 
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing hstrerror" >&5
+else $as_nop
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing hstrerror" >&5
 printf %s "checking for library containing hstrerror... " >&6; }
 if test ${ac_cv_search_hstrerror+y}
 then :
@@ -20325,9 +20329,6 @@ fi
 
 
 fi
-
-fi
-
 
 # On Tru64, chflags seems to be present, but calling it will
 # exit Python
