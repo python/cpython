@@ -11,8 +11,8 @@ extern void _PyObjectStackChunk_Free(_PyObjectStackChunk *);
 static struct _Py_object_stack_freelist *
 get_state(void)
 {
-    struct _Py_object_freelists *state = _Py_object_freelists_GET();
-    return &state->object_stacks;
+    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
+    return &freelists->object_stacks;
 }
 
 _PyObjectStackChunk *
@@ -89,7 +89,7 @@ _PyObjectStack_Merge(_PyObjectStack *dst, _PyObjectStack *src)
 }
 
 void
-_PyObjectStackChunk_ClearFreeList(struct _Py_object_freelists *free_lists, int is_finalization)
+_PyObjectStackChunk_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization)
 {
     if (!is_finalization) {
         // Ignore requests to clear the free list during GC. We use object
@@ -97,7 +97,7 @@ _PyObjectStackChunk_ClearFreeList(struct _Py_object_freelists *free_lists, int i
         return;
     }
 
-    struct _Py_object_stack_freelist *state = &free_lists->object_stacks;
+    struct _Py_object_stack_freelist *state = &freelists->object_stacks;
     while (state->numfree > 0) {
         _PyObjectStackChunk *buf = state->free_list;
         state->free_list = buf->prev;

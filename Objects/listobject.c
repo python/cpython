@@ -24,9 +24,9 @@ _Py_DECLARE_STR(list_err, "list index out of range");
 static struct _Py_list_freelist *
 get_list_state(void)
 {
-    struct _Py_object_freelists *state = _Py_object_freelists_GET();
-    assert(state != NULL);
-    return &state->lists;
+    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
+    assert(freelists != NULL);
+    return &freelists->lists;
 }
 #endif
 
@@ -120,10 +120,10 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
 }
 
 void
-_PyList_ClearFreeList(struct _Py_object_freelists *freelist_state, int is_finalization)
+_PyList_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization)
 {
 #ifdef WITH_FREELISTS
-    struct _Py_list_freelist *state = &freelist_state->lists;
+    struct _Py_list_freelist *state = &freelists->lists;
     while (state->numfree > 0) {
         PyListObject *op = state->free_list[--state->numfree];
         assert(PyList_CheckExact(op));

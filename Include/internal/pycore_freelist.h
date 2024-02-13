@@ -125,15 +125,15 @@ struct _Py_object_freelists {
     struct _Py_object_stack_freelist object_stacks;
 };
 
-extern void _PyObject_ClearFreeLists(struct _Py_object_freelists *state, int is_finalization);
-extern void _PyTuple_ClearFreeList(struct _Py_object_freelists *state, int is_finalization);
-extern void _PyFloat_ClearFreeList(struct _Py_object_freelists *state, int is_finalization);
-extern void _PyList_ClearFreeList(struct _Py_object_freelists *state, int is_finalization);
-extern void _PySlice_ClearFreeList(struct _Py_object_freelists *state, int is_finalization);
-extern void _PyDict_ClearFreeList(struct _Py_object_freelists *state, int is_finalization);
-extern void _PyAsyncGen_ClearFreeLists(struct _Py_object_freelists *state, int is_finalization);
-extern void _PyContext_ClearFreeList(struct _Py_object_freelists *state, int is_finalization);
-extern void _PyObjectStackChunk_ClearFreeList(struct _Py_object_freelists *state, int is_finalization);
+extern void _PyObject_ClearFreeLists(struct _Py_object_freelists *freelists, int is_finalization);
+extern void _PyTuple_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization);
+extern void _PyFloat_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization);
+extern void _PyList_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization);
+extern void _PySlice_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization);
+extern void _PyDict_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization);
+extern void _PyAsyncGen_ClearFreeLists(struct _Py_object_freelists *freelists, int is_finalization);
+extern void _PyContext_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization);
+extern void _PyObjectStackChunk_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization);
 
 #ifdef __cplusplus
 }

@@ -966,9 +966,9 @@ static void maybe_freelist_clear(struct _Py_object_freelists *, int);
 
 
 void
-_PyTuple_ClearFreeList(struct _Py_object_freelists *state, int is_finalization)
+_PyTuple_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization)
 {
-    maybe_freelist_clear(state, is_finalization);
+    maybe_freelist_clear(freelists, is_finalization);
 }
 
 /*********************** Tuple Iterator **************************/
@@ -1120,14 +1120,14 @@ tuple_iter(PyObject *seq)
  * freelists *
  *************/
 
-#define STATE (state->tuples)
+#define STATE (freelists->tuples)
 #define FREELIST_FINALIZED (STATE.numfree[0] < 0)
 
 static inline PyTupleObject *
 maybe_freelist_pop(Py_ssize_t size)
 {
 #ifdef WITH_FREELISTS
-    struct _Py_object_freelists *state = _Py_object_freelists_GET();
+    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
     if (size == 0) {
         return NULL;
     }
@@ -1161,7 +1161,7 @@ static inline int
 maybe_freelist_push(PyTupleObject *op)
 {
 #ifdef WITH_FREELISTS
-    struct _Py_object_freelists *state = _Py_object_freelists_GET();
+    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
     if (Py_SIZE(op) == 0) {
         return 0;
     }
@@ -1184,7 +1184,7 @@ maybe_freelist_push(PyTupleObject *op)
 }
 
 static void
-maybe_freelist_clear(struct _Py_object_freelists *state, int fini)
+maybe_freelist_clear(struct _Py_object_freelists *freelists, int fini)
 {
 #ifdef WITH_FREELISTS
     for (Py_ssize_t i = 0; i < PyTuple_NFREELISTS; i++) {
@@ -1205,7 +1205,7 @@ void
 _PyTuple_DebugMallocStats(FILE *out)
 {
 #ifdef WITH_FREELISTS
-    struct _Py_object_freelists *state = _Py_object_freelists_GET();
+    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
     for (int i = 0; i < PyTuple_NFREELISTS; i++) {
         int len = i + 1;
         char buf[128];
