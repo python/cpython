@@ -119,6 +119,13 @@ faulthandler_get_fileno(PyObject **file_ptr)
         }
     }
     else if (PyLong_Check(file)) {
+        if (PyBool_Check(file)) {
+            if (PyErr_WarnEx(PyExc_RuntimeWarning,
+                    "bool is used as a file descriptor", 1))
+            {
+                return -1;
+            }
+        }
         fd = PyLong_AsInt(file);
         if (fd == -1 && PyErr_Occurred())
             return -1;

@@ -94,6 +94,7 @@ Programs/test_frozenmain.h                          generated
 Python/Python-ast.c                                 generated
 Python/executor_cases.c.h                           generated
 Python/generated_cases.c.h                          generated
+Python/tier2_redundancy_eliminator_bytecodes.c.h    generated
 Python/opcode_targets.h                             generated
 Python/stdlib_module_names.h                        generated
 Tools/peg_generator/pegen/grammar_parser.py         generated

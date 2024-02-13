@@ -2108,26 +2108,39 @@ class Wm:
 
     aspect = wm_aspect
 
-    def wm_attributes(self, *args):
-        """This subcommand returns or sets platform specific attributes
+    def wm_attributes(self, *args, return_python_dict=False, **kwargs):
+        """Return or sets platform specific attributes.
 
-        The first form returns a list of the platform specific flags and
-        their values. The second form returns the value for the specific
-        option. The third form sets one or more of the values. The values
-        are as follows:
+        When called with a single argument return_python_dict=True,
+        return a dict of the platform specific attributes and their values.
+        When called without arguments or with a single argument
+        return_python_dict=False, return a tuple containing intermixed
+        attribute names with the minus prefix and their values.
 
-        On Windows, -disabled gets or sets whether the window is in a
-        disabled state. -toolwindow gets or sets the style of the window
-        to toolwindow (as defined in the MSDN). -topmost gets or sets
-        whether this is a topmost window (displays above all other
-        windows).
-
-        On Macintosh, XXXXX
-
-        On Unix, there are currently no special attribute values.
+        When called with a single string value, return the value for the
+        specific option.  When called with keyword arguments, set the
+        corresponding attributes.
         """
-        args = ('wm', 'attributes', self._w) + args
-        return self.tk.call(args)
+        if not kwargs:
+            if not args:
+                res = self.tk.call('wm', 'attributes', self._w)
+                if return_python_dict:
+                    return _splitdict(self.tk, res)
+                else:
+                    return self.tk.splitlist(res)
+            if len(args) == 1 and args[0] is not None:
+                option = args[0]
+                if option[0] == '-':
+                    # TODO: deprecate
+                    option = option[1:]
+                return self.tk.call('wm', 'attributes', self._w, '-' + option)
+            # TODO: deprecate
+            return self.tk.call('wm', 'attributes', self._w, *args)
+        elif args:
+            raise TypeError('wm_attribute() options have been specified as '
+                            'positional and keyword arguments')
+        else:
+            self.tk.call('wm', 'attributes', self._w, *self._options(kwargs))
 
     attributes = wm_attributes
 
@@ -3732,7 +3745,7 @@ class Text(Widget, XView, YView):
         return self.tk.getboolean(self.tk.call(
             self._w, 'compare', index1, op, index2))
 
-    def count(self, index1, index2, *options): # new in Tk 8.5
+    def count(self, index1, index2, *options, return_ints=False): # new in Tk 8.5
         """Counts the number of relevant things between the two indices.
 
         If INDEX1 is after INDEX2, the result will be a negative number
@@ -3740,19 +3753,26 @@ class Text(Widget, XView, YView):
 
         The actual items which are counted depends on the options given.
         The result is a tuple of integers, one for the result of each
-        counting option given, if more than one option is specified,
-        otherwise it is an integer. Valid counting options are "chars",
-        "displaychars", "displayindices", "displaylines", "indices",
-        "lines", "xpixels" and "ypixels". The default value, if no
-        option is specified, is "indices". There is an additional possible
-        option "update", which if given then all subsequent options ensure
-        that any possible out of date information is recalculated."""
+        counting option given, if more than one option is specified or
+        return_ints is false (default), otherwise it is an integer.
+        Valid counting options are "chars", "displaychars",
+        "displayindices", "displaylines", "indices", "lines", "xpixels"
+        and "ypixels". The default value, if no option is specified, is
+        "indices". There is an additional possible option "update",
+        which if given then all subsequent options ensure that any
+        possible out of date information is recalculated.
+        """
         options = ['-%s' % arg for arg in options]
         res = self.tk.call(self._w, 'count', *options, index1, index2)
         if not isinstance(res, int):
             res = self._getints(res)
             if len(res) == 1:
                 res, = res
+        if not return_ints:
+            if not res:
+                res = None
+            elif len(options) <= 1:
+                res = (res,)
         return res
 
     def debug(self, boolean=None):
