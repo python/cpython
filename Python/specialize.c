@@ -242,8 +242,6 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
 
     fprintf(out, "Optimization optimizer attempts: %" PRIu64 "\n", stats->optimizer_attempts);
     fprintf(out, "Optimization optimizer successes: %" PRIu64 "\n", stats->optimizer_successes);
-    fprintf(out, "Optimization optimizer failure null function: %" PRIu64 "\n",
-            stats->optimizer_failure_reason_null_function);
     fprintf(out, "Optimization optimizer failure no memory: %" PRIu64 "\n",
             stats->optimizer_failure_reason_no_memory);
 

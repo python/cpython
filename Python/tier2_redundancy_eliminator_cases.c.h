@@ -172,7 +172,7 @@
             left = stack_pointer[-2];
             if (sym_matches_type(left, &PyLong_Type) &&
                 sym_matches_type(right, &PyLong_Type)) {
-                REPLACE_OP(_NOP, 0, 0);
+                REPLACE_OP(inst, _NOP, 0, 0);
             }
             sym_set_type(left, &PyLong_Type);
             sym_set_type(right, &PyLong_Type);
@@ -222,7 +222,7 @@
             left = stack_pointer[-2];
             if (sym_matches_type(left, &PyFloat_Type) &&
                 sym_matches_type(right, &PyFloat_Type)) {
-                REPLACE_OP(_NOP, 0 ,0);
+                REPLACE_OP(inst, _NOP, 0 ,0);
             }
             sym_set_type(left, &PyFloat_Type);
             sym_set_type(right, &PyFloat_Type);

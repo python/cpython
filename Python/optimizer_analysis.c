@@ -370,69 +370,6 @@ op_is_end(uint32_t opcode)
     return opcode == _EXIT_TRACE || opcode == _JUMP_TO_TOP;
 }
 
-#define STACK_LEVEL()     ((int)(stack_pointer - ctx->frame->stack))
-
-#define GETLOCAL(idx)          ((ctx->frame->locals[idx]))
-
-#define REPLACE_OP(op, arg, oper)    \
-    inst->opcode = op;            \
-    inst->oparg = arg;            \
-    inst->operand = oper;
-
-#define _LOAD_ATTR_NOT_NULL \
-    do {                    \
-    attr = sym_new_known_notnull(ctx); \
-    if (attr == NULL) { \
-        goto error; \
-    } \
-    null = sym_new_null(ctx); \
-    if (null == NULL) { \
-        goto error; \
-    } \
-    } while (0);
-
-static int
-uop_abstract_interpret_single_inst(
-    _PyUOpInstruction *inst,
-    _PyUOpInstruction *end,
-    _Py_UOpsAbstractInterpContext *ctx
-)
-{
-
-    int oparg = inst->oparg;
-    uint32_t opcode = inst->opcode;
-
-    _Py_UOpsSymType **stack_pointer = ctx->frame->stack_pointer;
-
-    DPRINTF(3, "Abstract interpreting %s:%d ",
-            _PyOpcode_uop_name[opcode],
-            oparg);
-    switch (opcode) {
-#include "tier2_redundancy_eliminator_cases.c.h"
-
-        default:
-            DPRINTF(1, "Unknown opcode in abstract interpreter\n");
-            Py_UNREACHABLE();
-    }
-    assert(ctx->frame != NULL);
-    DPRINTF(3, " stack_level %d\n", STACK_LEVEL());
-    ctx->frame->stack_pointer = stack_pointer;
-    assert(STACK_LEVEL() >= 0);
-
-
-    return 0;
-
-out_of_space:
-    DPRINTF(1, "Out of space in abstract interpreter\n");
-    return 0;
-error:
-    DPRINTF(1, "Encountered error in abstract interpreter\n");
-    return -1;
-
-}
-
-
-
 static int
 get_mutations(PyObject* dict) {
     assert(PyDict_CheckExact(dict));
@@ -635,6 +572,30 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
     return 0;
 }
 
+
+
+#define STACK_LEVEL()     ((int)(stack_pointer - ctx->frame->stack))
+
+#define GETLOCAL(idx)          ((ctx->frame->locals[idx]))
+
+#define REPLACE_OP(INST, OP, ARG, OPERAND)    \
+    INST->opcode = OP;            \
+    INST->oparg = ARG;            \
+    INST->operand = OPERAND;
+
+#define _LOAD_ATTR_NOT_NULL \
+    do {                    \
+    attr = sym_new_known_notnull(ctx); \
+    if (attr == NULL) { \
+        goto error; \
+    } \
+    null = sym_new_null(ctx); \
+    if (null == NULL) { \
+        goto error; \
+    } \
+    } while (0);
+
+
 static int
 uop_redundancy_eliminator(
     PyCodeObject *co,
@@ -644,42 +605,52 @@ uop_redundancy_eliminator(
 )
 {
 
-    _Py_UOpsAbstractInterpContext ctx;
+    _Py_UOpsAbstractInterpContext context;
+    _Py_UOpsAbstractInterpContext *ctx = &context;
 
     if (abstractcontext_init(
-        &ctx,
+        ctx,
         co, curr_stacklen,
         trace_len) < 0) {
         goto error;
     }
-    _PyUOpInstruction *curr = NULL;
-    _PyUOpInstruction *end = NULL;
-    int status = 0;
 
-    curr = trace;
-    end = trace + trace_len;
-    ;
-    while (curr < end && !op_is_end(curr->opcode)) {
+    for (_PyUOpInstruction *inst = trace;
+        inst < trace + trace_len && !op_is_end(inst->opcode);
+        inst++) {
 
-        status = uop_abstract_interpret_single_inst(
-            curr, end, &ctx
-        );
-        if (status == -1) {
-            goto error;
+        int oparg = inst->oparg;
+        uint32_t opcode = inst->opcode;
+
+        _Py_UOpsSymType **stack_pointer = ctx->frame->stack_pointer;
+
+        DPRINTF(3, "Abstract interpreting %s:%d ",
+                _PyOpcode_uop_name[opcode],
+                oparg);
+        switch (opcode) {
+#include "tier2_redundancy_eliminator_cases.c.h"
+
+            default:
+                DPRINTF(1, "Unknown opcode in abstract interpreter\n");
+                Py_UNREACHABLE();
         }
+        assert(ctx->frame != NULL);
+        DPRINTF(3, " stack_level %d\n", STACK_LEVEL());
+        ctx->frame->stack_pointer = stack_pointer;
+        assert(STACK_LEVEL() >= 0);
+        continue;
 
-        curr++;
-
+    out_of_space:
+        DPRINTF(1, "Out of space in abstract interpreter\n");
     }
 
-    assert(op_is_end(curr->opcode));
-
-    abstractcontext_fini(&ctx);
+    abstractcontext_fini(ctx);
 
     return 0;
 
 error:
-    abstractcontext_fini(&ctx);
+    DPRINTF(1, "Encountered error in abstract interpreter\n");
+    abstractcontext_fini(ctx);
     return -1;
 }
 
