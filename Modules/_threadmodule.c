@@ -118,20 +118,6 @@ new_thread_handle(thread_module_state* state)
     return self;
 }
 
-static int
-detach_thread(ThreadHandleObject *handle)
-{
-    assert(get_thread_handle_state(handle) == THREAD_HANDLE_RUNNING);
-
-    // This is typically short so no need to release the GIL
-    if (PyThread_detach_thread(handle->handle)) {
-        PyErr_SetString(ThreadError, "Failed detaching thread");
-        return -1;
-    }
-    set_thread_handle_state(handle, THREAD_HANDLE_DETACHED);
-    return 0;
-}
-
 static void
 ThreadHandle_dealloc(ThreadHandleObject *self)
 {
@@ -144,10 +130,15 @@ ThreadHandle_dealloc(ThreadHandleObject *self)
     }
     HEAD_UNLOCK(&_PyRuntime);
 
-    if (get_thread_handle_state(self) != THREAD_HANDLE_INVALID &&
-        _PyOnceFlag_CallOnce(&self->once, (_Py_once_fn_t *)detach_thread,
-                             self) == -1) {
-        PyErr_WriteUnraisable(tp);
+    if (self->state == THREAD_HANDLE_RUNNING) {
+        // This is typically short so no need to release the GIL
+        if (PyThread_detach_thread(self->handle)) {
+            PyErr_SetString(ThreadError, "Failed detaching thread");
+            PyErr_WriteUnraisable(tp);
+        }
+        else {
+            self->state = THREAD_HANDLE_DETACHED;
+        }
     }
     _PyEventRc_Decref(self->thread_is_exiting);
     PyObject_Free(self);
