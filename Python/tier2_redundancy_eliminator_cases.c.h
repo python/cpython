@@ -1290,7 +1290,6 @@
             callable = stack_pointer[-2 - oparg];
             int argcount = oparg;
             (void)callable;
-            assert((this_instr + 2)->opcode == _PUSH_FRAME);
             PyFunctionObject *func = (PyFunctionObject *)(this_instr + 2)->operand;
             if (func == NULL) {
                 goto error;
