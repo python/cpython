@@ -1094,7 +1094,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[268] = {
     [MATCH_KEYS] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [MATCH_MAPPING] = { true, INSTR_FMT_IX, 0 },
     [MATCH_SEQUENCE] = { true, INSTR_FMT_IX, 0 },
-    [NOP] = { true, INSTR_FMT_IX, 0 },
+    [NOP] = { true, INSTR_FMT_IX, HAS_PURE_FLAG },
     [POP_EXCEPT] = { true, INSTR_FMT_IX, HAS_ESCAPES_FLAG },
     [POP_JUMP_IF_FALSE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [POP_JUMP_IF_NONE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG },
@@ -1156,10 +1156,10 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[268] = {
     [LOAD_SUPER_METHOD] = { true, -1, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [LOAD_ZERO_SUPER_ATTR] = { true, -1, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [LOAD_ZERO_SUPER_METHOD] = { true, -1, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
-    [POP_BLOCK] = { true, -1, 0 },
-    [SETUP_CLEANUP] = { true, -1, HAS_ARG_FLAG },
-    [SETUP_FINALLY] = { true, -1, HAS_ARG_FLAG },
-    [SETUP_WITH] = { true, -1, HAS_ARG_FLAG },
+    [POP_BLOCK] = { true, -1, HAS_PURE_FLAG },
+    [SETUP_CLEANUP] = { true, -1, HAS_PURE_FLAG | HAS_ARG_FLAG },
+    [SETUP_FINALLY] = { true, -1, HAS_PURE_FLAG | HAS_ARG_FLAG },
+    [SETUP_WITH] = { true, -1, HAS_PURE_FLAG | HAS_ARG_FLAG },
     [STORE_FAST_MAYBE_NULL] = { true, -1, HAS_ARG_FLAG | HAS_LOCAL_FLAG },
 };
 #endif
