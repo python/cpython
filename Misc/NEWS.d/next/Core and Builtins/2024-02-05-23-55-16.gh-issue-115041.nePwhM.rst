@@ -1,1 +1,0 @@
-Add helpers that perform atomic operations in free-threaded builds and decay to equivalent non-atomic operations in default builds.
