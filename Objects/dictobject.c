@@ -280,10 +280,10 @@ get_dict_state(void)
 
 
 void
-_PyDict_ClearFreeList(struct _Py_object_freelists *freelist_state, int is_finalization)
+_PyDict_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization)
 {
 #ifdef WITH_FREELISTS
-    struct _Py_dict_freelist *state = &freelist_state->dicts;
+    struct _Py_dict_freelist *state = &freelists->dicts;
     while (state->numfree > 0) {
         PyDictObject *op = state->free_list[--state->numfree];
         assert(PyDict_CheckExact(op));
