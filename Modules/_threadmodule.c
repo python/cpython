@@ -109,8 +109,7 @@ new_thread_handle(thread_module_state* state)
     self->handle = 0;
     self->thread_is_exiting = event;
     self->once = (_PyOnceFlag){0};
-
-    set_thread_handle_state(self, THREAD_HANDLE_INVALID);
+    self->state = THREAD_HANDLE_INVALID;
 
     HEAD_LOCK(&_PyRuntime);
     llist_insert_tail(&_PyRuntime.threads.handles, &self->node);
