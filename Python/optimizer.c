@@ -109,6 +109,9 @@ never_optimize(
     _PyExecutorObject **exec,
     int Py_UNUSED(stack_entries))
 {
+    /* Although it should be benign for this to be called,
+     * it shouldn't happen, so fail in debug builds. */
+    assert(0 && "never optimize should never be called");
     return 0;
 }
 
@@ -120,12 +123,18 @@ PyTypeObject _PyDefaultOptimizer_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
 };
 
-_PyOptimizerObject _PyOptimizer_Default = {
+static _PyOptimizerObject _PyOptimizer_Default = {
     PyObject_HEAD_INIT(&_PyDefaultOptimizer_Type)
     .optimize = never_optimize,
-    .resume_threshold = INT16_MAX,
-    .backedge_threshold = INT16_MAX,
+    .resume_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD,
+    .backedge_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD,
 };
+
+static uint32_t
+shift_and_offset_threshold(uint16_t threshold)
+{
+    return (threshold << OPTIMIZER_BITS_IN_COUNTER) + (1 << 15);
+}
 
 _PyOptimizerObject *
 PyUnstable_GetOptimizer(void)
@@ -134,24 +143,33 @@ PyUnstable_GetOptimizer(void)
     if (interp->optimizer == &_PyOptimizer_Default) {
         return NULL;
     }
-    assert(interp->optimizer_backedge_threshold == interp->optimizer->backedge_threshold);
-    assert(interp->optimizer_resume_threshold == interp->optimizer->resume_threshold);
+    assert(interp->optimizer_backedge_threshold ==
+           shift_and_offset_threshold(interp->optimizer->backedge_threshold));
+    assert(interp->optimizer_resume_threshold ==
+           shift_and_offset_threshold(interp->optimizer->resume_threshold));
     Py_INCREF(interp->optimizer);
     return interp->optimizer;
 }
 
-void
-PyUnstable_SetOptimizer(_PyOptimizerObject *optimizer)
+_PyOptimizerObject *
+_Py_SetOptimizer(PyInterpreterState *interp, _PyOptimizerObject *optimizer)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (optimizer == NULL) {
         optimizer = &_PyOptimizer_Default;
     }
     _PyOptimizerObject *old = interp->optimizer;
     Py_INCREF(optimizer);
     interp->optimizer = optimizer;
-    interp->optimizer_backedge_threshold = optimizer->backedge_threshold;
-    interp->optimizer_resume_threshold = optimizer->resume_threshold;
+    interp->optimizer_backedge_threshold = shift_and_offset_threshold(optimizer->backedge_threshold);
+    interp->optimizer_resume_threshold = shift_and_offset_threshold(optimizer->resume_threshold);
+    return old;
+}
+
+void
+PyUnstable_SetOptimizer(_PyOptimizerObject *optimizer)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyOptimizerObject *old = _Py_SetOptimizer(interp, optimizer);
     Py_DECREF(old);
 }
 
@@ -860,10 +878,10 @@ PyUnstable_Optimizer_NewUOpOptimizer(void)
         return NULL;
     }
     opt->optimize = uop_optimize;
-    opt->resume_threshold = INT16_MAX;
-    // Need at least 3 iterations to settle specializations.
-    // A few lower bits of the counter are reserved for other flags.
-    opt->backedge_threshold = 16 << OPTIMIZER_BITS_IN_COUNTER;
+    opt->resume_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD;
+    // Need a few iterations to settle specializations,
+    // and to ammortize the cost of optimization.
+    opt->backedge_threshold = 16;
     return (PyObject *)opt;
 }
 
@@ -950,7 +968,7 @@ PyUnstable_Optimizer_NewCounter(void)
         return NULL;
     }
     opt->base.optimize = counter_optimize;
-    opt->base.resume_threshold = INT16_MAX;
+    opt->base.resume_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD;
     opt->base.backedge_threshold = 0;
     opt->count = 0;
     return (PyObject *)opt;
