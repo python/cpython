@@ -316,52 +316,19 @@ handle_queue_error(int err, PyObject *mod, int64_t qid)
 }
 
 
-/* queue item formats *******************************************************/
-
-enum item_format {
-    ITEM_FORMAT_SHARED,
-};
-
-static PyObject *
-convert_object(PyObject *obj, enum item_format fmt)
-{
-    if (fmt == ITEM_FORMAT_SHARED) {
-        return Py_NewRef(obj);
-    }
-    else {
-        assert(0 && "format not implemented");
-        Py_FatalError("format not implemented");
-        return NULL;
-    }
-}
-
-static PyObject *
-unconvert_object(PyObject *obj, enum item_format fmt)
-{
-    if (fmt == ITEM_FORMAT_SHARED) {
-        return obj;
-    }
-    else {
-        assert(0 && "format not implemented");
-        Py_FatalError("format not implemented");
-        return NULL;
-    }
-}
-
-
 /* the basic queue **********************************************************/
 
 struct _queueitem;
 
 typedef struct _queueitem {
     _PyCrossInterpreterData *data;
-    enum item_format fmt;
+    int fmt;
     struct _queueitem *next;
 } _queueitem;
 
 static void
 _queueitem_init(_queueitem *item,
-                _PyCrossInterpreterData *data, enum item_format fmt)
+                _PyCrossInterpreterData *data, int fmt)
 {
     *item = (_queueitem){
         .data = data,
@@ -382,7 +349,7 @@ _queueitem_clear(_queueitem *item)
 }
 
 static _queueitem *
-_queueitem_new(_PyCrossInterpreterData *data, enum item_format fmt)
+_queueitem_new(_PyCrossInterpreterData *data, int fmt)
 {
     _queueitem *item = GLOBAL_MALLOC(_queueitem);
     if (item == NULL) {
@@ -412,7 +379,7 @@ _queueitem_free_all(_queueitem *item)
 
 static void
 _queueitem_popped(_queueitem *item,
-                  _PyCrossInterpreterData **p_data, enum item_format *p_fmt)
+                  _PyCrossInterpreterData **p_data, int *p_fmt)
 {
     *p_data = item->data;
     *p_fmt = item->fmt;
@@ -526,7 +493,7 @@ _queue_unlock(_queue *queue)
 }
 
 static int
-_queue_add(_queue *queue, _PyCrossInterpreterData *data, enum item_format fmt)
+_queue_add(_queue *queue, _PyCrossInterpreterData *data, int fmt)
 {
     int err = _queue_lock(queue);
     if (err < 0) {
@@ -563,7 +530,7 @@ _queue_add(_queue *queue, _PyCrossInterpreterData *data, enum item_format fmt)
 
 static int
 _queue_next(_queue *queue,
-            _PyCrossInterpreterData **p_data, enum item_format *p_fmt)
+            _PyCrossInterpreterData **p_data, int *p_fmt)
 {
     int err = _queue_lock(queue);
     if (err < 0) {
@@ -966,7 +933,7 @@ queue_destroy(_queues *queues, int64_t qid)
 
 // Push an object onto the queue.
 static int
-queue_put(_queues *queues, int64_t qid, PyObject *obj, enum item_format fmt)
+queue_put(_queues *queues, int64_t qid, PyObject *obj, int fmt)
 {
     // Look up the queue.
     _queue *queue = NULL;
@@ -975,11 +942,6 @@ queue_put(_queues *queues, int64_t qid, PyObject *obj, enum item_format fmt)
         return err;
     }
     assert(queue != NULL);
-
-    obj = convert_object(obj, fmt);
-    if (obj == NULL) {
-        return -1;
-    }
 
     // Convert the object to cross-interpreter data.
     _PyCrossInterpreterData *data = GLOBAL_MALLOC(_PyCrossInterpreterData);
@@ -992,7 +954,6 @@ queue_put(_queues *queues, int64_t qid, PyObject *obj, enum item_format fmt)
         GLOBAL_FREE(data);
         return -1;
     }
-    Py_DECREF(obj);
 
     // Add the data to the queue.
     int res = _queue_add(queue, data, fmt);
@@ -1010,7 +971,7 @@ queue_put(_queues *queues, int64_t qid, PyObject *obj, enum item_format fmt)
 // Pop the next object off the queue.  Fail if empty.
 // XXX Support a "wait" mutex?
 static int
-queue_get(_queues *queues, int64_t qid, PyObject **res)
+queue_get(_queues *queues, int64_t qid, PyObject **res, int *p_fmt)
 {
     int err;
     *res = NULL;
@@ -1026,8 +987,7 @@ queue_get(_queues *queues, int64_t qid, PyObject **res)
 
     // Pop off the next item from the queue.
     _PyCrossInterpreterData *data = NULL;
-    enum item_format fmt;
-    err = _queue_next(queue, &data, &fmt);
+    err = _queue_next(queue, &data, p_fmt);
     _queue_unmark_waiter(queue, queues->mutex);
     if (err != 0) {
         return err;
@@ -1053,13 +1013,6 @@ queue_get(_queues *queues, int64_t qid, PyObject **res)
         Py_DECREF(obj);
         return -1;
     }
-
-    PyObject *actual = unconvert_object(obj, fmt);
-    if (actual == NULL) {
-        Py_DECREF(obj);
-        return -1;
-    }
-    obj = actual;
 
     *res = obj;
     return 0;
@@ -1418,27 +1371,15 @@ Return the list of IDs for all queues.");
 static PyObject *
 queuesmod_put(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"qid", "obj", "sharedonly", NULL};
+    static char *kwlist[] = {"qid", "obj", "fmt", NULL};
     qidarg_converter_data qidarg;
     PyObject *obj;
-    int sharedonly = -1;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&O|p:put", kwlist,
-                                     qidarg_converter, &qidarg, &obj,
-                                     &sharedonly)) {
+    int fmt;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&Oi:put", kwlist,
+                                     qidarg_converter, &qidarg, &obj, &fmt)) {
         return NULL;
     }
     int64_t qid = qidarg.id;
-    enum item_format fmt;
-    if (sharedonly == -1) {
-        sharedonly = 1;
-    }
-    if (sharedonly) {
-        fmt = ITEM_FORMAT_SHARED;
-    }
-    else {
-        PyErr_SetNone(PyExc_NotImplementedError);
-        return NULL;
-    }
 
     /* Queue up the object. */
     int err = queue_put(&_globals.queues, qid, obj, fmt);
@@ -1467,7 +1408,8 @@ queuesmod_get(PyObject *self, PyObject *args, PyObject *kwds)
     int64_t qid = qidarg.id;
 
     PyObject *obj = NULL;
-    int err = queue_get(&_globals.queues, qid, &obj);
+    int fmt;
+    int err = queue_get(&_globals.queues, qid, &obj, &fmt);
     if (err == ERR_QUEUE_EMPTY && dflt != NULL) {
         assert(obj == NULL);
         obj = Py_NewRef(dflt);
@@ -1475,7 +1417,10 @@ queuesmod_get(PyObject *self, PyObject *args, PyObject *kwds)
     else if (handle_queue_error(err, self, qid)) {
         return NULL;
     }
-    return obj;
+
+    PyObject *res = Py_BuildValue("Oi", obj, fmt);
+    Py_DECREF(obj);
+    return res;
 }
 
 PyDoc_STRVAR(queuesmod_get_doc,

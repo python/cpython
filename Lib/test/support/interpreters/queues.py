@@ -46,6 +46,7 @@ def list_all():
             for qid in _queues.list_all()]
 
 
+_SHARED_ONLY = 0
 
 _known_queues = weakref.WeakValueDictionary()
 
@@ -111,6 +112,7 @@ class Queue:
 
         This blocks while the queue is full.
         """
+        fmt = _SHARED_ONLY
         if timeout is not None:
             timeout = int(timeout)
             if timeout < 0:
@@ -118,7 +120,7 @@ class Queue:
             end = time.time() + timeout
         while True:
             try:
-                _queues.put(self._id, obj)
+                _queues.put(self._id, obj, fmt)
             except _queues.QueueFull as exc:
                 if timeout is not None and time.time() >= end:
                     exc.__class__ = QueueFull
@@ -128,8 +130,9 @@ class Queue:
                 break
 
     def put_nowait(self, obj):
+        fmt = _SHARED_ONLY
         try:
-            return _queues.put(self._id, obj)
+            return _queues.put(self._id, obj, fmt)
         except _queues.QueueFull as exc:
             exc.__class__ = QueueFull
             raise  # re-raise
@@ -148,12 +151,15 @@ class Queue:
             end = time.time() + timeout
         while True:
             try:
-                return _queues.get(self._id)
+                obj, fmt = _queues.get(self._id)
             except _queues.QueueEmpty as exc:
                 if timeout is not None and time.time() >= end:
                     exc.__class__ = QueueEmpty
                     raise  # re-raise
                 time.sleep(_delay)
+            else:
+                break
+        assert fmt == _SHARED_ONLY
         return obj
 
     def get_nowait(self):
