@@ -5,7 +5,6 @@
 Doc/c-api/arg.rst
 Doc/c-api/descriptor.rst
 Doc/c-api/float.rst
-Doc/c-api/gcsupport.rst
 Doc/c-api/init.rst
 Doc/c-api/init_config.rst
 Doc/c-api/intro.rst
