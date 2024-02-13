@@ -16,14 +16,14 @@ class ModuleTests(TestBase):
 
     def test_queue_aliases(self):
         first = [
-            interpreters.create_queue,
-            interpreters.Queue,
+            interpreters.create_shared_queue,
+            interpreters.SharedQueue,
             interpreters.QueueEmpty,
             interpreters.QueueFull,
         ]
         second = [
-            interpreters.create_queue,
-            interpreters.Queue,
+            interpreters.create_shared_queue,
+            interpreters.SharedQueue,
             interpreters.QueueEmpty,
             interpreters.QueueFull,
         ]

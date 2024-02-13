@@ -11,8 +11,8 @@ from _xxinterpqueues import (
 )
 
 __all__ = [
-    'create', 'list_all',
-    'Queue',
+    'create_shared', 'list_all',
+    'SharedQueue',
     'QueueError', 'QueueNotFoundError', 'QueueEmpty', 'QueueFull',
 ]
 
@@ -31,25 +31,25 @@ class QueueFull(_queues.QueueFull, queue.Full):
     """
 
 
-def create(maxsize=0):
+def create_shared(maxsize=0):
     """Return a new cross-interpreter queue.
 
     The queue may be used to pass data safely between interpreters.
     """
     qid = _queues.create(maxsize)
-    return Queue(qid)
+    return SharedQueue(qid)
 
 
 def list_all():
     """Return a list of all open queues."""
-    return [Queue(qid)
+    return [SharedQueue(qid)
             for qid in _queues.list_all()]
 
 
 
 _known_queues = weakref.WeakValueDictionary()
 
-class Queue:
+class SharedQueue:
     """A cross-interpreter queue."""
 
     def __new__(cls, id, /):
@@ -169,4 +169,4 @@ class Queue:
             raise  # re-raise
 
 
-_queues._register_queue_type(Queue)
+_queues._register_queue_type(SharedQueue)

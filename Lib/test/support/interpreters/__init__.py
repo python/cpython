@@ -16,19 +16,22 @@ __all__ = [
     'Interpreter',
     'InterpreterError', 'InterpreterNotFoundError', 'ExecFailure',
     'NotShareableError',
-    'create_queue', 'Queue', 'QueueEmpty', 'QueueFull',
+    'create_shared_queue', 'SharedQueue', 'QueueEmpty', 'QueueFull',
 ]
 
 
 _queuemod = None
 
 def __getattr__(name):
-    if name in ('Queue', 'QueueEmpty', 'QueueFull', 'create_queue'):
-        global create_queue, Queue, QueueEmpty, QueueFull
+    if name in ('QueueEmpty', 'QueueFull',
+                'SharedQueue', 'create_shared_queue'):
+        global QueueEmpty, QueueFull
+        global create_shared_queue, SharedQueue
         ns = globals()
         from .queues import (
-            create as create_queue,
-            Queue, QueueEmpty, QueueFull,
+            QueueEmpty, QueueFull,
+            create_shared as create_shared_queue,
+            SharedQueue,
         )
         return ns[name]
     else:
