@@ -1934,7 +1934,6 @@ regen-typeslots:
 		$(srcdir)/Objects/typeslots.inc.new
 	$(UPDATE_FILE) $(srcdir)/Objects/typeslots.inc $(srcdir)/Objects/typeslots.inc.new
 
-
 $(LIBRARY_OBJS) $(MODOBJS) Programs/python.o: $(PYTHON_HEADERS)
 
 
