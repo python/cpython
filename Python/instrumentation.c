@@ -891,17 +891,19 @@ static inline int most_significant_bit(uint8_t bits) {
 static uint32_t
 global_version(PyInterpreterState *interp)
 {
-    return interp->ceval.interp_eval_breaker & ~_PY_EVAL_EVENTS_MASK;
+    return _Py_atomic_load_uintptr_relaxed(&interp->ceval.instrumentation_version);
 }
 
+/* Atomically set the given version in the given location, without touching
+   anything in _PY_EVAL_EVENTS_MASK. */
 static void
-set_version_raw(uintptr_t *breaker, uint32_t version)
+set_version_raw(uintptr_t *ptr, uint32_t version)
 {
-    uintptr_t old = _Py_atomic_load_uintptr(breaker);
+    uintptr_t old = _Py_atomic_load_uintptr_relaxed(ptr);
     uintptr_t new;
     do {
         new = (old & _PY_EVAL_EVENTS_MASK) | version;
-    } while (!_Py_atomic_compare_exchange_uintptr(breaker, &old, new));
+    } while (!_Py_atomic_compare_exchange_uintptr(ptr, &old, new));
 }
 
 static void
@@ -909,7 +911,7 @@ set_global_version(PyThreadState *tstate, uint32_t version)
 {
     assert((version & _PY_EVAL_EVENTS_MASK) == 0);
     PyInterpreterState *interp = tstate->interp;
-    set_version_raw(&interp->ceval.interp_eval_breaker, version);
+    set_version_raw(&interp->ceval.instrumentation_version, version);
 
 #ifdef Py_GIL_DISABLED
     // Set the version on all threads in free-threaded builds.
@@ -921,7 +923,7 @@ set_global_version(PyThreadState *tstate, uint32_t version)
     };
     HEAD_UNLOCK(runtime);
 #else
-    // Normal builds take the current version from interp_eval_breaker when
+    // Normal builds take the current version from instrumentation_version when
     // attaching a thread, so we only have to set the current thread's version.
     set_version_raw(&tstate->eval_breaker, version);
 #endif
@@ -1588,7 +1590,7 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
 {
     if (is_version_up_to_date(code, interp)) {
         assert(
-            (interp->ceval.interp_eval_breaker & ~_PY_EVAL_EVENTS_MASK) == 0 ||
+            interp->ceval.instrumentation_version == 0 ||
             instrumentation_cross_checks(interp, code)
         );
         return 0;

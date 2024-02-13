@@ -78,11 +78,10 @@ struct _ceval_runtime_state {
 
 
 struct _ceval_state {
-    /* This single variable holds the global instrumentation version and some
-     * interpreter-global requests to break out of the fast path in the eval
-     * loop. PyThreadState also contains an eval_breaker, which is the source
-     * of truth when a thread is running. */
-    uintptr_t interp_eval_breaker;
+    /* This variable holds the global instrumentation version. When a thread is
+       running, this value is overlaid onto PyThreadState.eval_breaker so that
+       changes in the instrumentation version will trigger the eval breaker. */
+    uintptr_t instrumentation_version;
     int recursion_limit;
     struct _gil_runtime_state *gil;
     int own_gil;

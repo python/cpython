@@ -56,7 +56,7 @@
 #define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) _Py_atomic_load_relaxed(ATOMIC_VAL)
 #endif
 
-// Atomically copy the bits indicated by mask between two eval breakers.
+// Atomically copy the bits indicated by mask between two values.
 static inline void
 copy_eval_breaker_bits(uintptr_t *from, uintptr_t *to, uintptr_t mask)
 {
@@ -73,11 +73,10 @@ copy_eval_breaker_bits(uintptr_t *from, uintptr_t *to, uintptr_t mask)
     } while (!_Py_atomic_compare_exchange_uintptr(to, &old_value, new_value));
 }
 
-// When attaching a thread, set the global instrumentation version,
-// _PY_CALLS_TO_DO_BIT, and _PY_GC_SCHEDULED_BIT to match the current state of
-// the interpreter.
+// When attaching a thread, set the global instrumentation version and
+// _PY_CALLS_TO_DO_BIT from the current state of the interpreter.
 static inline void
-update_thread_eval_breaker(PyInterpreterState *interp, PyThreadState *tstate)
+update_eval_breaker_for_thread(PyInterpreterState *interp, PyThreadState *tstate)
 {
 #ifdef Py_GIL_DISABLED
     // Free-threaded builds eagerly update the eval_breaker on *all* threads as
@@ -103,32 +102,10 @@ update_thread_eval_breaker(PyInterpreterState *interp, PyThreadState *tstate)
     }
 
     // _PY_CALLS_TO_DO_BIT was derived from other state above, so the only bits
-    // we copy from our interpreter's eval_breaker are the instrumentation
-    // version number and GC bit.
-    const uintptr_t mask = ~_PY_EVAL_EVENTS_MASK | _PY_GC_SCHEDULED_BIT;
-    copy_eval_breaker_bits(&interp->ceval.interp_eval_breaker,
+    // we copy from our interpreter's state are the instrumentation version.
+    copy_eval_breaker_bits(&interp->ceval.instrumentation_version,
                            &tstate->eval_breaker,
-                           mask);
-}
-
-// When detaching a thread, transfer _PY_GC_SCHEDULED_BIT to its interpreter,
-// in case a GC was scheduled but not processed yet.
-static inline void
-update_interp_eval_breaker(PyThreadState *tstate, PyInterpreterState *interp)
-{
-#ifdef Py_GIL_DISABLED
-    // Free-threaded builds eagerly update the eval_breaker on *all* threads as
-    // needed, so this function doesn't apply.
-    return;
-#endif
-
-    if (tstate == NULL) {
-        return;
-    }
-
-    copy_eval_breaker_bits(&tstate->eval_breaker,
-                           &interp->ceval.interp_eval_breaker,
-                           _PY_GC_SCHEDULED_BIT);
+                           ~_PY_EVAL_EVENTS_MASK);
 }
 
 /*
@@ -259,7 +236,6 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate)
     }
 
     MUTEX_LOCK(gil->mutex);
-    update_interp_eval_breaker(tstate, interp);
     _Py_ANNOTATE_RWLOCK_RELEASED(&gil->locked, /*is_write=*/1);
     _Py_atomic_store_int_relaxed(&gil->locked, 0);
     COND_SIGNAL(gil->cond);
@@ -400,7 +376,7 @@ take_gil(PyThreadState *tstate)
     assert(_PyThreadState_CheckConsistency(tstate));
 
     _Py_unset_eval_breaker_bit(tstate, _PY_GIL_DROP_REQUEST_BIT);
-    update_thread_eval_breaker(interp, tstate);
+    update_eval_breaker_for_thread(interp, tstate);
 
     MUTEX_UNLOCK(gil->mutex);
 

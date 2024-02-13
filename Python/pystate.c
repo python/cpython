@@ -794,9 +794,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     Py_CLEAR(interp->audit_hooks);
 
-    // At this time, all the threads should be cleared so we don't need
-    // atomic operations for eval_breaker
-    interp->ceval.interp_eval_breaker = 0;
+    interp->ceval.instrumentation_version = 0;
 
     for (int i = 0; i < _PY_MONITORING_UNGROUPED_EVENTS; i++) {
         interp->monitors.tools[i] = 0;
@@ -1310,7 +1308,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     assert(interp != NULL);
     tstate->interp = interp;
     tstate->eval_breaker =
-        _Py_atomic_load_uintptr_relaxed(&interp->ceval.interp_eval_breaker);
+        _Py_atomic_load_uintptr_relaxed(&interp->ceval.instrumentation_version);
 
     // next/prev are set in add_threadstate().
     assert(tstate->next == NULL);
