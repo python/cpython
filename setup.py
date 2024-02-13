@@ -1867,8 +1867,7 @@ class PyBuildExt(build_ext):
         #    Tcl and Tk frameworks installed in /Library/Frameworks.
         # 2. Build and link using a user-specified macOS SDK so that the
         #    built Python can be exported to other systems.  In this case,
-        #    search only the SDK's /Library/Frameworks (normally empty)
-        #    and /System/Library/Frameworks.
+        #    search only the SDK's /Library/Frameworks (normally empty).
         #
         # Any other use case should be able to be handled explicitly by
         # using the options described above in detect_tkinter_explicitly().
@@ -1888,6 +1887,10 @@ class PyBuildExt(build_ext):
         # all possible by installing a newer version of Tcl and Tk in
         # /Library/Frameworks before building Python without
         # an explicit SDK or by configuring build arguments explicitly.
+        # CHANGED: we no longer fall back to searching for the
+        #   Apple-supplied Tcl and Tk 8.5 in /System/Library/Frameworks
+        #   as their use causes too many problems for users. It seems
+        #   better to just skip building _tkinter at all in that case.
 
         from os.path import join, exists
 
@@ -1898,17 +1901,13 @@ class PyBuildExt(build_ext):
             # Only search there.
             framework_dirs = [
                 join(sysroot, 'Library', 'Frameworks'),
-                join(sysroot, 'System', 'Library', 'Frameworks'),
             ]
         else:
             # Use case #1: no explicit SDK selected.
             # Search the local system-wide /Library/Frameworks,
-            # not the one in the default SDK, otherwise fall back to
-            # /System/Library/Frameworks whose header files may be in
-            # the default SDK or, on older systems, actually installed.
+            # not the one in the default SDK.
             framework_dirs = [
                 join('/', 'Library', 'Frameworks'),
-                join(sysroot, 'System', 'Library', 'Frameworks'),
             ]
 
         # Find the directory that contains the Tcl.framework and
