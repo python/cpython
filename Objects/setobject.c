@@ -54,6 +54,21 @@ class setobject_converter(self_converter):
 [python start generated code]*/
 /*[python end generated code: output=da39a3ee5e6b4b0d input=33a44506d4d57793]*/
 
+#ifdef Py_GIL_DISABLED
+
+static inline void
+ASSERT_SET_LOCKED(PyObject *op)
+{
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
+}
+#define ASSERT_SET_LOCKED(op) ASSERT_SET_LOCKED(_Py_CAST(PyObject*, op))
+
+#else
+
+#define ASSERT_SET_LOCKED(op)
+
+#endif
+
 /* Object used as dummy key to fill deleted entries */
 static PyObject _dummy_struct;
 
@@ -911,6 +926,9 @@ static int
 set_update_internal(PySetObject *so, PyObject *other)
 {
     PyObject *key, *it;
+
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(so);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(other);
 
     if (PyAnySet_Check(other))
         return set_merge(so, other);
