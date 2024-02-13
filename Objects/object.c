@@ -794,7 +794,7 @@ PyObject_Bytes(PyObject *v)
 }
 
 void
-_PyObject_ClearFreeLists(_PyFreeListState *state, int is_finalization)
+_PyObject_ClearFreeLists(struct _Py_object_freelists *state, int is_finalization)
 {
     // In the free-threaded build, freelists are per-PyThreadState and cleared in PyThreadState_Clear()
     // In the default build, freelists are per-interpreter and cleared in finalize_interp_types()

@@ -268,7 +268,7 @@ PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
 // See also PyInterpreterState_Get() and _PyInterpreterState_GET().
 extern PyInterpreterState* _PyGILState_GetInterpreterStateUnsafe(void);
 
-static inline _PyFreeListState* _PyFreeListState_GET(void)
+static inline struct _Py_object_freelists* _PyFreeListState_GET(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
 #ifdef Py_DEBUG
@@ -276,7 +276,7 @@ static inline _PyFreeListState* _PyFreeListState_GET(void)
 #endif
 
 #ifdef Py_GIL_DISABLED
-    return &((_PyThreadStateImpl*)tstate)->freelist_state;
+    return &((_PyThreadStateImpl*)tstate)->freelists;
 #else
     return &tstate->interp->object_state.freelists;
 #endif

@@ -962,11 +962,11 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
 }
 
 
-static void maybe_freelist_clear(_PyFreeListState *, int);
+static void maybe_freelist_clear(struct _Py_object_freelists *, int);
 
 
 void
-_PyTuple_ClearFreeList(_PyFreeListState *state, int is_finalization)
+_PyTuple_ClearFreeList(struct _Py_object_freelists *state, int is_finalization)
 {
     maybe_freelist_clear(state, is_finalization);
 }
@@ -1127,7 +1127,7 @@ static inline PyTupleObject *
 maybe_freelist_pop(Py_ssize_t size)
 {
 #ifdef WITH_FREELISTS
-    _PyFreeListState *state = _PyFreeListState_GET();
+    struct _Py_object_freelists *state = _PyFreeListState_GET();
     if (size == 0) {
         return NULL;
     }
@@ -1161,7 +1161,7 @@ static inline int
 maybe_freelist_push(PyTupleObject *op)
 {
 #ifdef WITH_FREELISTS
-    _PyFreeListState *state = _PyFreeListState_GET();
+    struct _Py_object_freelists *state = _PyFreeListState_GET();
     if (Py_SIZE(op) == 0) {
         return 0;
     }
@@ -1184,7 +1184,7 @@ maybe_freelist_push(PyTupleObject *op)
 }
 
 static void
-maybe_freelist_clear(_PyFreeListState *state, int fini)
+maybe_freelist_clear(struct _Py_object_freelists *state, int fini)
 {
 #ifdef WITH_FREELISTS
     for (Py_ssize_t i = 0; i < PyTuple_NFREELISTS; i++) {
@@ -1205,7 +1205,7 @@ void
 _PyTuple_DebugMallocStats(FILE *out)
 {
 #ifdef WITH_FREELISTS
-    _PyFreeListState *state = _PyFreeListState_GET();
+    struct _Py_object_freelists *state = _PyFreeListState_GET();
     for (int i = 0; i < PyTuple_NFREELISTS; i++) {
         int len = i + 1;
         char buf[128];

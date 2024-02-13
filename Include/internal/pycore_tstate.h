@@ -22,7 +22,7 @@ typedef struct _PyThreadStateImpl {
 
 #ifdef Py_GIL_DISABLED
     struct _mimalloc_thread_state mimalloc;
-    struct _PyObject_freelists freelist_state;
+    struct _Py_object_freelists freelists;
     struct _brc_thread_state brc;
 #endif
 

@@ -30,7 +30,7 @@ class float "PyObject *" "&PyFloat_Type"
 static struct _Py_float_freelist *
 get_float_state(void)
 {
-    _PyFreeListState *state = _PyFreeListState_GET();
+    struct _Py_object_freelists *state = _PyFreeListState_GET();
     assert(state != NULL);
     return &state->floats;
 }
@@ -1990,7 +1990,7 @@ _PyFloat_InitTypes(PyInterpreterState *interp)
 }
 
 void
-_PyFloat_ClearFreeList(_PyFreeListState *freelist_state, int is_finalization)
+_PyFloat_ClearFreeList(struct _Py_object_freelists *freelist_state, int is_finalization)
 {
 #ifdef WITH_FREELISTS
     struct _Py_float_freelist *state = &freelist_state->floats;

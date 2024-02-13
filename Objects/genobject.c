@@ -1632,7 +1632,7 @@ PyTypeObject PyAsyncGen_Type = {
 static struct _Py_async_gen_freelist *
 get_async_gen_state(void)
 {
-    _PyFreeListState *state = _PyFreeListState_GET();
+    struct _Py_object_freelists *state = _PyFreeListState_GET();
     return &state->async_gens;
 }
 #endif
@@ -1656,7 +1656,7 @@ PyAsyncGen_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
 
 
 void
-_PyAsyncGen_ClearFreeLists(_PyFreeListState *freelist_state, int is_finalization)
+_PyAsyncGen_ClearFreeLists(struct _Py_object_freelists *freelist_state, int is_finalization)
 {
 #ifdef WITH_FREELISTS
     struct _Py_async_gen_freelist *state = &freelist_state->async_gens;

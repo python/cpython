@@ -114,7 +114,7 @@ struct _Py_object_stack_freelist {
     Py_ssize_t numfree;
 };
 
-typedef struct _PyObject_freelists {
+struct _Py_object_freelists {
     struct _Py_float_freelist floats;
     struct _Py_tuple_freelist tuples;
     struct _Py_list_freelist lists;
@@ -123,17 +123,17 @@ typedef struct _PyObject_freelists {
     struct _Py_context_freelist contexts;
     struct _Py_async_gen_freelist async_gens;
     struct _Py_object_stack_freelist object_stacks;
-} _PyFreeListState;
+};
 
-extern void _PyObject_ClearFreeLists(_PyFreeListState *state, int is_finalization);
-extern void _PyTuple_ClearFreeList(_PyFreeListState *state, int is_finalization);
-extern void _PyFloat_ClearFreeList(_PyFreeListState *state, int is_finalization);
-extern void _PyList_ClearFreeList(_PyFreeListState *state, int is_finalization);
-extern void _PySlice_ClearFreeList(_PyFreeListState *state, int is_finalization);
-extern void _PyDict_ClearFreeList(_PyFreeListState *state, int is_finalization);
-extern void _PyAsyncGen_ClearFreeLists(_PyFreeListState *state, int is_finalization);
-extern void _PyContext_ClearFreeList(_PyFreeListState *state, int is_finalization);
-extern void _PyObjectStackChunk_ClearFreeList(_PyFreeListState *state, int is_finalization);
+extern void _PyObject_ClearFreeLists(struct _Py_object_freelists *state, int is_finalization);
+extern void _PyTuple_ClearFreeList(struct _Py_object_freelists *state, int is_finalization);
+extern void _PyFloat_ClearFreeList(struct _Py_object_freelists *state, int is_finalization);
+extern void _PyList_ClearFreeList(struct _Py_object_freelists *state, int is_finalization);
+extern void _PySlice_ClearFreeList(struct _Py_object_freelists *state, int is_finalization);
+extern void _PyDict_ClearFreeList(struct _Py_object_freelists *state, int is_finalization);
+extern void _PyAsyncGen_ClearFreeLists(struct _Py_object_freelists *state, int is_finalization);
+extern void _PyContext_ClearFreeList(struct _Py_object_freelists *state, int is_finalization);
+extern void _PyObjectStackChunk_ClearFreeList(struct _Py_object_freelists *state, int is_finalization);
 
 #ifdef __cplusplus
 }

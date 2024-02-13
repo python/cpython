@@ -273,14 +273,14 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
 static struct _Py_dict_freelist *
 get_dict_state(void)
 {
-    _PyFreeListState *state = _PyFreeListState_GET();
+    struct _Py_object_freelists *state = _PyFreeListState_GET();
     return &state->dicts;
 }
 #endif
 
 
 void
-_PyDict_ClearFreeList(_PyFreeListState *freelist_state, int is_finalization)
+_PyDict_ClearFreeList(struct _Py_object_freelists *freelist_state, int is_finalization)
 {
 #ifdef WITH_FREELISTS
     struct _Py_dict_freelist *state = &freelist_state->dicts;
@@ -296,17 +296,6 @@ _PyDict_ClearFreeList(_PyFreeListState *freelist_state, int is_finalization)
         state->numfree = -1;
         state->keys_numfree = -1;
     }
-#endif
-}
-
-void
-_PyDict_Fini(PyInterpreterState *Py_UNUSED(interp))
-{
-    // With Py_GIL_DISABLED:
-    // the freelists for the current thread state have already been cleared.
-#ifndef Py_GIL_DISABLED
-     _PyFreeListState *state = _PyFreeListState_GET();
-    _PyDict_ClearFreeList(state, 1);
 #endif
 }
 

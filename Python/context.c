@@ -68,7 +68,7 @@ contextvar_del(PyContextVar *var);
 static struct _Py_context_freelist *
 get_context_state(void)
 {
-    _PyFreeListState *state = _PyFreeListState_GET();
+    struct _Py_object_freelists *state = _PyFreeListState_GET();
     return &state->contexts;
 }
 #endif
@@ -1267,7 +1267,7 @@ get_token_missing(void)
 
 
 void
-_PyContext_ClearFreeList(_PyFreeListState *freelist_state, int is_finalization)
+_PyContext_ClearFreeList(struct _Py_object_freelists *freelist_state, int is_finalization)
 {
 #ifdef WITH_FREELISTS
     struct _Py_context_freelist *state = &freelist_state->contexts;
