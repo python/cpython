@@ -516,9 +516,9 @@ Functions
 
    (3)
        The ``%f`` format directive only applies to :func:`strptime`,
-       not to :func:`strftime`.
-       However, see also :meth:`datetime.datetime.strptime` and
-       :meth:`datetime.datetime.strftime`.
+       not to :func:`strftime`. However, see also :meth:`datetime.datetime.strptime` and
+       :meth:`datetime.datetime.strftime` where the ``%f`` format directive
+       :ref:`applies to microseconds <format-codes>`.
 
    (4)
       When used with the :func:`strptime` function, ``%U`` and ``%W`` are only used in
