@@ -130,7 +130,27 @@ idarg_int64_converter(PyObject *arg, void *ptr)
 
 /* module state *************************************************************/
 
+struct cached_deps {
+    PyObject *picklemod;
+};
+
+static PyObject *
+get_picklemod(struct cached_deps *cached)
+{
+    PyObject *picklemod = cached->picklemod;
+    if (picklemod == NULL) {
+        picklemod = PyImport_ImportModule("pickle");
+        if (picklemod == NULL) {
+            return NULL;
+        }
+        cached->picklemod = picklemod;
+    }
+    return picklemod;
+}
+
 typedef struct {
+    struct cached_deps cached;
+
     /* external types (added at runtime by interpreters module) */
     PyTypeObject *queue_type;
 
@@ -153,6 +173,8 @@ get_module_state(PyObject *mod)
 static int
 traverse_module_state(module_state *state, visitproc visit, void *arg)
 {
+    Py_VISIT(state->cached.picklemod);
+
     /* external types */
     Py_VISIT(state->queue_type);
 
@@ -168,6 +190,8 @@ traverse_module_state(module_state *state, visitproc visit, void *arg)
 static int
 clear_module_state(module_state *state)
 {
+    Py_CLEAR(state->cached.picklemod);
+
     /* external types */
     Py_CLEAR(state->queue_type);
 
@@ -320,13 +344,21 @@ handle_queue_error(int err, PyObject *mod, int64_t qid)
 
 enum item_format {
     ITEM_FORMAT_SHARED,
+    ITEM_FORMAT_PICKLED,
 };
 
 static PyObject *
-convert_object(PyObject *obj, enum item_format fmt)
+convert_object(PyObject *obj, enum item_format fmt, struct cached_deps *cached)
 {
     if (fmt == ITEM_FORMAT_SHARED) {
         return Py_NewRef(obj);
+    }
+    else if (fmt == ITEM_FORMAT_PICKLED) {
+        PyObject *picklemod = get_picklemod(cached);
+        if (picklemod == NULL) {
+            return NULL;
+        }
+        return PyObject_CallMethod(picklemod, "dumps", "O", obj);
     }
     else {
         assert(0 && "format not implemented");
@@ -336,10 +368,17 @@ convert_object(PyObject *obj, enum item_format fmt)
 }
 
 static PyObject *
-unconvert_object(PyObject *obj, enum item_format fmt)
+unconvert_object(PyObject *obj, enum item_format fmt, struct cached_deps *cached)
 {
     if (fmt == ITEM_FORMAT_SHARED) {
         return obj;
+    }
+    else if (fmt == ITEM_FORMAT_PICKLED) {
+        PyObject *picklemod = get_picklemod(cached);
+        if (picklemod == NULL) {
+            return NULL;
+        }
+        return PyObject_CallMethod(picklemod, "loads", "O", obj);
     }
     else {
         assert(0 && "format not implemented");
@@ -966,7 +1005,8 @@ queue_destroy(_queues *queues, int64_t qid)
 
 // Push an object onto the queue.
 static int
-queue_put(_queues *queues, int64_t qid, PyObject *obj, enum item_format fmt)
+queue_put(_queues *queues, int64_t qid, PyObject *obj, enum item_format fmt,
+          struct cached_deps *cached)
 {
     // Look up the queue.
     _queue *queue = NULL;
@@ -976,7 +1016,7 @@ queue_put(_queues *queues, int64_t qid, PyObject *obj, enum item_format fmt)
     }
     assert(queue != NULL);
 
-    obj = convert_object(obj, fmt);
+    obj = convert_object(obj, fmt, cached);
     if (obj == NULL) {
         return -1;
     }
@@ -1010,7 +1050,8 @@ queue_put(_queues *queues, int64_t qid, PyObject *obj, enum item_format fmt)
 // Pop the next object off the queue.  Fail if empty.
 // XXX Support a "wait" mutex?
 static int
-queue_get(_queues *queues, int64_t qid, PyObject **res)
+queue_get(_queues *queues, int64_t qid, PyObject **res,
+          struct cached_deps *cached)
 {
     int err;
     *res = NULL;
@@ -1054,7 +1095,7 @@ queue_get(_queues *queues, int64_t qid, PyObject **res)
         return -1;
     }
 
-    PyObject *actual = unconvert_object(obj, fmt);
+    PyObject *actual = unconvert_object(obj, fmt, cached);
     if (actual == NULL) {
         Py_DECREF(obj);
         return -1;
@@ -1440,8 +1481,10 @@ queuesmod_put(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
+    module_state *state = get_module_state(self);
+
     /* Queue up the object. */
-    int err = queue_put(&_globals.queues, qid, obj, fmt);
+    int err = queue_put(&_globals.queues, qid, obj, fmt, &state->cached);
     if (handle_queue_error(err, self, qid)) {
         return NULL;
     }
@@ -1466,8 +1509,10 @@ queuesmod_get(PyObject *self, PyObject *args, PyObject *kwds)
     }
     int64_t qid = qidarg.id;
 
+    module_state *state = get_module_state(self);
+
     PyObject *obj = NULL;
-    int err = queue_get(&_globals.queues, qid, &obj);
+    int err = queue_get(&_globals.queues, qid, &obj, &state->cached);
     if (err == ERR_QUEUE_EMPTY && dflt != NULL) {
         assert(obj == NULL);
         obj = Py_NewRef(dflt);
