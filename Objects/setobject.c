@@ -1902,16 +1902,9 @@ set_symmetric_difference_impl(PySetObject *so, PyObject *other)
 static PyObject *
 set_xor(PySetObject *so, PyObject *other)
 {
-    PyObject *rv;
-
     if (!PyAnySet_Check(so) || !PyAnySet_Check(other))
         Py_RETURN_NOTIMPLEMENTED;
-
-    Py_BEGIN_CRITICAL_SECTION2(so, other);
-    rv = set_symmetric_difference(so, other);
-    Py_END_CRITICAL_SECTION2();
-
-    return rv;
+    return set_symmetric_difference(so, other);
 }
 
 static PyObject *
@@ -1921,11 +1914,7 @@ set_ixor(PySetObject *so, PyObject *other)
 
     if (!PyAnySet_Check(other))
         Py_RETURN_NOTIMPLEMENTED;
-
-    Py_BEGIN_CRITICAL_SECTION2(so, other);
     result = set_symmetric_difference_update(so, other);
-    Py_END_CRITICAL_SECTION2();
-
     if (result == NULL)
         return NULL;
     Py_DECREF(result);
@@ -2632,7 +2621,6 @@ PySet_Pop(PyObject *set)
         PyErr_BadInternalCall();
         return NULL;
     }
-    // set_pop is guarded by @critical_section
     return set_pop((PySetObject *)set, NULL);
 }
 
