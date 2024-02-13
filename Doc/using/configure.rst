@@ -387,8 +387,8 @@ Options for third-party dependencies
    C compiler and linker flags for ``libffi``, used by :mod:`ctypes` module,
    overriding ``pkg-config``.
 
-.. envvar:: LIBMPDEC_CFLAGS
-.. envvar:: LIBMPDEC_LIBS
+.. option:: LIBMPDEC_CFLAGS
+.. option:: LIBMPDEC_LIBS
 
    C compiler and linker flags for ``libmpdec``, used by :mod:`decimal` module,
    overriding ``pkg-config``.
@@ -798,7 +798,7 @@ Libraries options
 
    .. versionadded:: 3.3
 
-   .. seealso:: :envvar:`LIBMPDEC_CFLAGS` and :envvar:`LIBMPDEC_LIBS`.
+   .. seealso:: :option:`LIBMPDEC_CFLAGS` and :option:`LIBMPDEC_LIBS`.
 
 .. option:: --with-readline=readline|editline
 
