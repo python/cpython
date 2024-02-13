@@ -9,7 +9,7 @@ extern _PyObjectStackChunk *_PyObjectStackChunk_New(void);
 extern void _PyObjectStackChunk_Free(_PyObjectStackChunk *);
 
 static struct _Py_object_stack_freelist *
-get_state(void)
+get_object_stack_freelist(void)
 {
     struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
     return &freelists->object_stacks;
@@ -19,11 +19,11 @@ _PyObjectStackChunk *
 _PyObjectStackChunk_New(void)
 {
     _PyObjectStackChunk *buf;
-    struct _Py_object_stack_freelist *state = get_state();
-    if (state->numfree > 0) {
-        buf = state->free_list;
-        state->free_list = buf->prev;
-        state->numfree--;
+    struct _Py_object_stack_freelist *obj_stack_freelist = get_object_stack_freelist();
+    if (obj_stack_freelist->numfree > 0) {
+        buf = obj_stack_freelist->free_list;
+        obj_stack_freelist->free_list = buf->prev;
+        obj_stack_freelist->numfree--;
     }
     else {
         // NOTE: we use PyMem_RawMalloc() here because this is used by the GC
@@ -43,13 +43,13 @@ void
 _PyObjectStackChunk_Free(_PyObjectStackChunk *buf)
 {
     assert(buf->n == 0);
-    struct _Py_object_stack_freelist *state = get_state();
-    if (state->numfree >= 0 &&
-        state->numfree < _PyObjectStackChunk_MAXFREELIST)
+    struct _Py_object_stack_freelist *obj_stack_freelist = get_object_stack_freelist();
+    if (obj_stack_freelist->numfree >= 0 &&
+        obj_stack_freelist->numfree < _PyObjectStackChunk_MAXFREELIST)
     {
-        buf->prev = state->free_list;
-        state->free_list = buf;
-        state->numfree++;
+        buf->prev = obj_stack_freelist->free_list;
+        obj_stack_freelist->free_list = buf;
+        obj_stack_freelist->numfree++;
     }
     else {
         PyMem_RawFree(buf);

@@ -28,7 +28,7 @@ class float "PyObject *" "&PyFloat_Type"
 
 #ifdef WITH_FREELISTS
 static struct _Py_float_freelist *
-get_float_state(void)
+get_float_freelist(void)
 {
     struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
     assert(freelists != NULL);
@@ -129,11 +129,11 @@ PyFloat_FromDouble(double fval)
 {
     PyFloatObject *op;
 #ifdef WITH_FREELISTS
-    struct _Py_float_freelist *state = get_float_state();
-    op = state->free_list;
+    struct _Py_float_freelist *float_freelist = get_float_freelist();
+    op = float_freelist->free_list;
     if (op != NULL) {
-        state->free_list = (PyFloatObject *) Py_TYPE(op);
-        state->numfree--;
+        float_freelist->free_list = (PyFloatObject *) Py_TYPE(op);
+        float_freelist->numfree--;
         OBJECT_STAT_INC(from_freelist);
     }
     else
@@ -245,14 +245,14 @@ _PyFloat_ExactDealloc(PyObject *obj)
     assert(PyFloat_CheckExact(obj));
     PyFloatObject *op = (PyFloatObject *)obj;
 #ifdef WITH_FREELISTS
-    struct _Py_float_freelist *state = get_float_state();
-    if (state->numfree >= PyFloat_MAXFREELIST || state->numfree < 0) {
+    struct _Py_float_freelist *float_freelist = get_float_freelist();
+    if (float_freelist->numfree >= PyFloat_MAXFREELIST || float_freelist->numfree < 0) {
         PyObject_Free(op);
         return;
     }
-    state->numfree++;
-    Py_SET_TYPE(op, (PyTypeObject *)state->free_list);
-    state->free_list = op;
+    float_freelist->numfree++;
+    Py_SET_TYPE(op, (PyTypeObject *)float_freelist->free_list);
+    float_freelist->free_list = op;
     OBJECT_STAT_INC(to_freelist);
 #else
     PyObject_Free(op);
@@ -2021,10 +2021,10 @@ void
 _PyFloat_DebugMallocStats(FILE *out)
 {
 #ifdef WITH_FREELISTS
-    struct _Py_float_freelist *state = get_float_state();
+    struct _Py_float_freelist *float_freelist = get_float_freelist();
     _PyDebugAllocatorStats(out,
                            "free PyFloatObject",
-                           state->numfree, sizeof(PyFloatObject));
+                           float_freelist->numfree, sizeof(PyFloatObject));
 #endif
 }
 
