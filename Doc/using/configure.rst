@@ -987,35 +987,88 @@ Main build steps
 Main Makefile targets
 ---------------------
 
-* ``make``: Build Python with the standard library.
-* ``make platform:``: build the ``python`` program, but don't build the
-  standard library extension modules.
-* ``make profile-opt``: build Python using Profile Guided Optimization (PGO).
-  You can use the configure :option:`--enable-optimizations` option to make
-  this the default target of the ``make`` command (``make all`` or just
-  ``make``).
+make
+^^^^
 
-* ``make test``: Build Python and run the Python test suite with ``--fast-ci``
-  option. Variables:
+For the most part, when rebuilding after editing some code or
+refreshing your checkout from upstream, all you need to do is execute
+``make``, which (per Make's semantics) builds the default target, the
+first one defined in the Makefile.  This is the ``all`` target, but
+what it depends on is defined during execution of the ``configure``
+script. Common configured targets include ``profile-opt`` (with
+``--enable-optimizations``) and ``build_wasm`` (with the
+``--with-emscripten-target``).
 
-  * ``TESTOPTS``: additional regrtest command line options.
-  * ``TESTPYTHONOPTS``: additional Python command line options.
-  * ``TESTTIMEOUT``: timeout in seconds (default: 20 minutes).
+Make will usually rebuild any targets (object files and executables)
+or situations where ``configure`` needs to be re-run, depending on the
+most recent source file changes.  Source/target dependencies are many
+and maintained manually though, so make sometimes doesn't correctly
+detect all targets which need to be rebuilt.  Depending on which
+targets aren't rebuilt, you might experience a number of problems. If
+you have build or test problems which you can't otherwise explain,
+``make clean && make`` should work around most dependency problems, at
+the expense of longer build times.
 
-* ``make buildbottest``: Similar to ``make test``, but use ``--slow-ci``
-  option and default timeout of 20 minutes, instead of ``--fast-ci`` option
-  and a default timeout of 10 minutes.
+make platform
+^^^^^^^^^^^^^
 
-* ``make install``: Build and install Python.
-* ``make regen-all``: Regenerate (almost) all generated files;
-  ``make regen-stdlib-module-names`` and ``autoconf`` must be run separately
-  for the remaining generated files.
+Build the ``python`` program, but don't build the standard library
+extension modules. This generates a file named ``platform`` which
+contains a single line describing the details of the build platform,
+e.g., ``macosx-14.3-arm64-3.12`` or ``linux-x86_64-3.13``
 
-* ``make clean``: Remove built files.
-* ``make distclean``: In addition to the the work done by ``make clean``,
-  remove files created by the configure script.
-  (Related: ``git clean -fdx`` removes all files not known to
-  `git`. Use with care.)
+make profile-opt
+^^^^^^^^^^^^^^^^
+
+Build Python using Profile Guided Optimization (PGO).  You can use the
+configure :option:`--enable-optimizations` option to make this the
+default target of the ``make`` command (``make all`` or just
+``make``).
+
+
+make clean
+^^^^^^^^^^
+
+Remove built files.
+
+make distclean
+^^^^^^^^^^^^^^
+
+In addition to the the work done by ``make clean``, remove files
+created by the configure script.  (Related: ``git clean -fdx`` removes
+all files not known to `git`. Use with care.)
+
+make install
+^^^^^^^^^^^^
+
+Build and install Python.
+
+make test
+^^^^^^^^^
+
+Build Python and run the Python test suite with ``--fast-ci``
+option. Variables:
+
+* ``TESTOPTS``: additional regrtest command line options.
+* ``TESTPYTHONOPTS``: additional Python command line options.
+* ``TESTTIMEOUT``: timeout in seconds (default: 10 minutes).
+
+make buildbottest
+^^^^^^^^^^^^^^^^^
+
+This is similar to ``make test``, but uses the ``--slow-ci``
+option and default timeout of 20 minutes, instead of ``--fast-ci`` option
+and a default timeout of 10 minutes.
+
+
+make regen-all
+^^^^^^^^^^^^^^
+
+Regenerate (almost) all generated files. These include (but are not
+limited to) bytecode cases, parser generator files, and SBOM file.
+``make regen-stdlib-module-names`` and ``autoconf`` must be run
+separately for the remaining generated files.
+
 
 C extensions
 ------------
