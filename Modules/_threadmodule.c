@@ -190,17 +190,6 @@ ThreadHandle_get_ident(ThreadHandleObject *self, void *ignored)
     return PyLong_FromUnsignedLongLong(self->ident);
 }
 
-static bool
-check_handle_valid(ThreadHandleObject *handle)
-{
-    if (get_thread_handle_state(handle) == THREAD_HANDLE_INVALID) {
-        PyErr_SetString(PyExc_ValueError,
-                        "the handle is invalid and thus cannot be detached");
-        return false;
-    }
-    return true;
-}
-
 static int
 join_thread(ThreadHandleObject *handle)
 {
@@ -221,7 +210,9 @@ join_thread(ThreadHandleObject *handle)
 static PyObject *
 ThreadHandle_join(ThreadHandleObject *self, void* ignored)
 {
-    if (!check_handle_valid(self)) {
+    if (get_thread_handle_state(self) == THREAD_HANDLE_INVALID) {
+        PyErr_SetString(PyExc_ValueError,
+                        "the handle is invalid and thus cannot be joined");
         return NULL;
     }
 
