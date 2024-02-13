@@ -2234,13 +2234,13 @@ LIBSUBDIRS=	asyncio \
 		__phello__
 TESTSUBDIRS=	idlelib/idle_test \
 		test \
-		test/audiodata \
 		test/archivetestdata \
+		test/audiodata \
 		test/certdata \
 		test/certdata/capath \
 		test/cjkencodings \
-		test/crashers \
 		test/configdata \
+		test/crashers \
 		test/data \
 		test/decimaltestdata \
 		test/dtracedata \
@@ -2254,8 +2254,10 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/subprocessdata \
 		test/support \
 		test/support/_hypothesis_stubs \
+		test/support/interpreters \
 		test/test_asyncio \
 		test/test_capi \
+		test/test_concurrent_futures \
 		test/test_cppext \
 		test/test_ctypes \
 		test/test_dataclasses \
@@ -2264,7 +2266,6 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_email/data \
 		test/test_future_stmt \
 		test/test_gdb \
-		test/test_inspect \
 		test/test_import \
 		test/test_import/data \
 		test/test_import/data/circular_imports \
@@ -2317,8 +2318,13 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_importlib/resources/zipdata01 \
 		test/test_importlib/resources/zipdata02 \
 		test/test_importlib/source \
+		test/test_inspect \
+		test/test_interpreters \
 		test/test_json \
 		test/test_module \
+		test/test_multiprocessing_fork \
+		test/test_multiprocessing_forkserver \
+		test/test_multiprocessing_spawn \
 		test/test_pathlib \
 		test/test_peg_generator \
 		test/test_pydoc \
