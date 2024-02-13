@@ -419,13 +419,13 @@ The following exceptions are the exceptions that are usually raised.
 .. exception:: PythonFinalizationError
 
    This exception is derived from :exc:`RuntimeError`.  It is raised when
-   an operations is blocked during the :term:`Python finalization <interpreter
-   shutdown>`.
+   an operation is blocked during interpreter shutdown also known as
+   :term:`Python finalization <interpreter shutdown>`.
 
    Examples of operations which can be blocked with a
    :exc:`PythonFinalizationError` during the Python finalization:
 
-   * create a new Python thread;
+   * Creating a new Python thread.
    * :func:`os.fork`.
 
    See also the :func:`sys.is_finalizing` function.
