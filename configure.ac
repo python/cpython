@@ -327,6 +327,9 @@ then
 	*-*-cygwin*)
 		ac_sys_system=Cygwin
 		;;
+	*-apple-ios*)
+		ac_sys_system=iOS
+		;;
 	*-*-vxworks*)
 	    ac_sys_system=VxWorks
 	    ;;
@@ -511,11 +514,11 @@ AC_ARG_ENABLE([framework],
 	*)
 		PYTHONFRAMEWORKPREFIX="${enableval}"
 		PYTHONFRAMEWORKINSTALLDIR=$PYTHONFRAMEWORKPREFIX/$PYTHONFRAMEWORKDIR
-		FRAMEWORKINSTALLFIRST="frameworkinstallstructure"
-		FRAMEWORKALTINSTALLFIRST="frameworkinstallstructure "
 
 		case $ac_sys_system in #(
 			Darwin) :
+				FRAMEWORKINSTALLFIRST="frameworkinstallversionedstructure"
+				FRAMEWORKALTINSTALLFIRST="frameworkinstallversionedstructure "
 				FRAMEWORKINSTALLLAST="frameworkinstallmaclib frameworkinstallapps frameworkinstallunixtools"
 				FRAMEWORKALTINSTALLLAST="frameworkinstallmaclib frameworkinstallapps frameworkaltinstallunixtools"
 				FRAMEWORKPYTHONW="frameworkpythonw"
@@ -573,6 +576,20 @@ AC_ARG_ENABLE([framework],
 				AC_CONFIG_FILES([Mac/PythonLauncher/Makefile])
 				AC_CONFIG_FILES([Mac/Resources/framework/Info.plist])
 				AC_CONFIG_FILES([Mac/Resources/app/Info.plist])
+				;;
+			iOS) :
+				FRAMEWORKINSTALLFIRST="frameworkinstallunversionedstructure"
+				FRAMEWORKALTINSTALLFIRST="frameworkinstallunversionedstructure "
+				FRAMEWORKINSTALLLAST="frameworkinstallmobileheaders"
+				FRAMEWORKALTINSTALLLAST="frameworkinstallmobileheaders"
+				FRAMEWORKPYTHONW=
+				INSTALLTARGETS="libinstall inclinstall sharedinstall"
+
+				prefix=$PYTHONFRAMEWORKPREFIX
+				PYTHONFRAMEWORKINSTALLNAMEPREFIX="@rpath/$PYTHONFRAMEWORKDIR"
+				RESSRCDIR=iOS/Resources
+
+				AC_CONFIG_FILES([iOS/Resources/Info.plist])
 				;;
 			*)
 				AC_MSG_ERROR([Unknown platform for framework build])
@@ -633,6 +650,28 @@ if test "$cross_compiling" = yes; then
 		;;
 	*-*-cygwin*)
 		_host_ident=
+		;;
+	*-apple-ios*-simulator)
+		_host_os=`echo $host | cut -d '-' -f3`
+		IOS_DEPLOYMENT_TARGET=${_host_os:3}
+		case "$host_cpu" in
+		aarch64)
+			_host_ident=${IOS_DEPLOYMENT_TARGET}-iphonesimulator-arm64
+			;;
+		*)
+			_host_ident=${IOS_DEPLOYMENT_TARGET}-iphonesimulator-$host_cpu
+		esac
+		;;
+	*-apple-ios*)
+		_host_os=`echo $host | cut -d '-' -f3`
+		IOS_DEPLOYMENT_TARGET=${_host_os:3}
+		case "$host_cpu" in
+		aarch64)
+			_host_ident=${IOS_DEPLOYMENT_TARGET}-iphoneos-arm64
+			;;
+		*)
+			_host_ident=${IOS_DEPLOYMENT_TARGET}-iphoneos-$host_cpu
+		esac
 		;;
 	*-*-vxworks*)
 		_host_ident=$host_cpu
@@ -710,6 +749,9 @@ case $ac_sys_system/$ac_sys_release in
   Darwin/@<:@6789@:>@.*)
     define_xopen_source=no;;
   Darwin/@<:@[12]@:>@@<:@0-9@:>@.*)
+    define_xopen_source=no;;
+  # On iOS, defining _POSIX_C_SOURCE also disables platform specific features.
+  iOS/*)
     define_xopen_source=no;;
   # On QNX 6.3.2, defining _XOPEN_SOURCE prevents netdb.h from
   # defining NI_NUMERICHOST.
@@ -798,6 +840,18 @@ AS_CASE([$host],
   [wasm64-*-emscripten], [
     AS_VAR_APPEND([CFLAGS], [" -sMEMORY64=1"])
     AS_VAR_APPEND([LDFLAGS], [" -sMEMORY64=1"])
+  ],
+)
+
+dnl iOS needs to enforce the deployment target; if the version hasn't
+dnl been provided as part of the --host configuration, fall back to
+dnl a default value (12.0 for iOS).
+AS_CASE([$ac_sys_system],
+  [iOS], [
+    IOS_DEPLOYMENT_TARGET=${IOS_DEPLOYMENT_TARGET:=12.0}
+    AS_VAR_APPEND([CFLAGS], [" -mios-version-min=${IOS_DEPLOYMENT_TARGET}"])
+    AS_VAR_APPEND([LDFLAGS], [" -mios-version-min=${IOS_DEPLOYMENT_TARGET}"])
+    AC_SUBST([IOS_DEPLOYMENT_TARGET])
   ],
 )
 
@@ -967,6 +1021,7 @@ dnl platforms.
 AC_MSG_CHECKING([for multiarch])
 AS_CASE([$ac_sys_system],
   [Darwin*], [MULTIARCH=""],
+  [iOS], [MULTIARCH=""],
   [FreeBSD*], [MULTIARCH=""],
   [MULTIARCH=$($CC --print-multiarch 2>/dev/null)]
 )
@@ -988,6 +1043,7 @@ dnl will have multiple sysconfig modules (one for each CPU architecture), but
 dnl use a single "fat" binary at runtime. SOABI_PLATFORM is the component of
 dnl the PLATFORM_TRIPLET that will be used in binary module extensions.
 AS_CASE([$ac_sys_system],
+  [iOS], [SOABI_PLATFORM=`echo "$PLATFORM_TRIPLET" | cut -d '-' -f2`],
   [SOABI_PLATFORM=$PLATFORM_TRIPLET]
 )
 
@@ -1019,6 +1075,8 @@ AS_CASE([$host/$ac_cv_cc_name],
   [powerpc64le-*-linux-gnu/clang],   [PY_SUPPORT_TIER=3], dnl Linux on PPC64 little endian, glibc, clang
   [s390x-*-linux-gnu/gcc],           [PY_SUPPORT_TIER=3], dnl Linux on 64bit s390x (big endian), glibc, gcc
   [x86_64-*-freebsd*/clang],         [PY_SUPPORT_TIER=3], dnl FreeBSD on AMD64
+  [aarch64-apple-ios*-simulator/clang],   [PY_SUPPORT_TIER=3], dnl iOS Simulator on arm64
+  [aarch64-apple-ios*/clang],             [PY_SUPPORT_TIER=3], dnl iOS on ARM64
   [PY_SUPPORT_TIER=0]
 )
 
@@ -1337,12 +1395,15 @@ AC_MSG_CHECKING([LDLIBRARY])
 # will find it with a -framework option). For this reason there is an
 # extra variable BLDLIBRARY against which Python and the extension
 # modules are linked, BLDLIBRARY. This is normally the same as
-# LDLIBRARY, but empty for MacOSX framework builds.
+# LDLIBRARY, but empty for MacOSX framework builds. iOS does the same,
+# but uses a non-versioned framework layout.
 if test "$enable_framework"
 then
   case $ac_sys_system in
     Darwin)
       LDLIBRARY='$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)';;
+    iOS)
+      LDLIBRARY='$(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK)';;
     *)
       AC_MSG_ERROR([Unknown platform for framework build]);;
   esac
@@ -1398,6 +1459,9 @@ if test $enable_shared = "yes"; then
       LDLIBRARY='libpython$(LDVERSION).dylib'
       BLDLIBRARY='-L. -lpython$(LDVERSION)'
       RUNSHARED=DYLD_LIBRARY_PATH=`pwd`${DYLD_LIBRARY_PATH:+:${DYLD_LIBRARY_PATH}}
+      ;;
+    iOS)
+      LDLIBRARY='libpython$(LDVERSION).dylib'
       ;;
     AIX*)
       LDLIBRARY='libpython$(LDVERSION).so'
@@ -3169,6 +3233,7 @@ if test -z "$SHLIB_SUFFIX"; then
 		esac
 		;;
 	CYGWIN*)   SHLIB_SUFFIX=.dll;;
+	iOS)   SHLIB_SUFFIX=.dylib;;
 	*)	   SHLIB_SUFFIX=.so;;
 	esac
 fi
@@ -3248,6 +3313,11 @@ then
 			LDCXXSHARED='$(CXX) -bundle -undefined dynamic_lookup'
 			BLDSHARED="$LDSHARED"
 		fi
+		;;
+	iOS/*)
+		LDSHARED='$(CC) -dynamiclib -F . -framework Python'
+		LDCXXSHARED='$(CXX) -dynamiclib -F . -framework Python'
+		BLDSHARED="$LDSHARED"
 		;;
 	Emscripten|WASI)
 		LDSHARED='$(CC) -shared'
@@ -3375,24 +3445,42 @@ then
 		# Issue #18075: the default maximum stack size (8MBytes) is too
 		# small for the default recursion limit. Increase the stack size
 		# to ensure that tests don't crash
-    stack_size="1000000"  # 16 MB
-    if test "$with_ubsan" = "yes"
-    then
-        # Undefined behavior sanitizer requires an even deeper stack
-        stack_size="4000000"  # 64 MB
-    fi
+		stack_size="1000000"  # 16 MB
+		if test "$with_ubsan" = "yes"
+		then
+			# Undefined behavior sanitizer requires an even deeper stack
+			stack_size="4000000"  # 64 MB
+		fi
 
-    LINKFORSHARED="-Wl,-stack_size,$stack_size $LINKFORSHARED"
+		LINKFORSHARED="-Wl,-stack_size,$stack_size $LINKFORSHARED"
 
-    AC_DEFINE_UNQUOTED([THREAD_STACK_SIZE],
-        [0x$stack_size],
-        [Custom thread stack size depending on chosen sanitizer runtimes.])
+		AC_DEFINE_UNQUOTED([THREAD_STACK_SIZE],
+				[0x$stack_size],
+				[Custom thread stack size depending on chosen sanitizer runtimes.])
 
 		if test "$enable_framework"
 		then
 			LINKFORSHARED="$LINKFORSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
 		fi
 		LINKFORSHARED="$LINKFORSHARED";;
+	iOS/*)
+		LINKFORSHARED="$extra_undefs -framework CoreFoundation"
+
+		# Issue #18075: the default maximum stack size (8MBytes) is too
+		# small for the default recursion limit. Increase the stack size
+		# to ensure that tests don't crash
+		stack_size="1000000"  # 16 MB
+		if test "$with_ubsan" = "yes"
+		then
+			# Undefined behavior sanitizer requires an even deeper stack
+			stack_size="4000000"  # 64 MB
+		fi
+
+		AC_DEFINE_UNQUOTED([THREAD_STACK_SIZE],
+			[0x$stack_size],
+			[Custom thread stack size depending on chosen sanitizer runtimes.])
+
+		LINKFORSHARED="-Wl,-stack_size,$stack_size $LINKFORSHARED "'$(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK)';;
 	OpenUNIX*|UnixWare*) LINKFORSHARED="-Wl,-Bexport";;
 	SCO_SV*) LINKFORSHARED="-Wl,-Bexport";;
 	ReliantUNIX*) LINKFORSHARED="-W1 -Blargedynsym";;
@@ -3764,6 +3852,9 @@ AS_VAR_IF([have_libffi], [yes], [
   AS_CASE([$ac_sys_system],
     [Darwin], [
       dnl when do we need USING_APPLE_OS_LIBFFI?
+      ctypes_malloc_closure=yes
+    ],
+    [iOS], [
       ctypes_malloc_closure=yes
     ],
     [sunos5], [AS_VAR_APPEND([LIBFFI_LIBS], [" -mimpure-text"])]
@@ -4831,8 +4922,8 @@ AC_CHECK_FUNCS([ \
   copy_file_range ctermid dup dup3 execv explicit_bzero explicit_memset \
   faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
   fork fork1 fpathconf fstatat ftime ftruncate futimens futimes futimesat \
-  gai_strerror getegid getentropy geteuid getgid getgrent getgrgid getgrgid_r \
-  getgrnam_r getgrouplist getgroups gethostname getitimer getloadavg getlogin \
+  gai_strerror getegid geteuid getgid getgrent getgrgid getgrgid_r \
+  getgrnam_r getgrouplist gethostname getitimer getloadavg getlogin \
   getpeername getpgid getpid getppid getpriority _getpty \
   getpwent getpwnam_r getpwuid getpwuid_r getresgid getresuid getrusage getsid getspent \
   getspnam getuid getwd grantpt if_nameindex initgroups kill killpg lchown linkat \
@@ -4849,7 +4940,7 @@ AC_CHECK_FUNCS([ \
   setresuid setreuid setsid setuid setvbuf shutdown sigaction sigaltstack \
   sigfillset siginterrupt sigpending sigrelse sigtimedwait sigwait \
   sigwaitinfo snprintf splice strftime strlcpy strsignal symlinkat sync \
-  sysconf system tcgetpgrp tcsetpgrp tempnam timegm times tmpfile \
+  sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile \
   tmpnam tmpnam_r truncate ttyname umask uname unlinkat unlockpt utimensat utimes vfork \
   wait wait3 wait4 waitid waitpid wcscoll wcsftime wcsxfrm wmemcmp writev \
 ])
@@ -4859,6 +4950,14 @@ AC_CHECK_FUNCS([ \
 # returns an error.
 if test "$MACHDEP" != linux; then
   AC_CHECK_FUNCS([lchmod])
+fi
+
+# iOS defines some system methods that can be linked (so they are
+# found by configure), but either raise a compilation error (because the
+# header definition prevents usage - autoconf doesn't use the headers), or
+# raise an error if used at runtime. Force these symbols off.
+if test "$ac_sys_system" != "iOS" ; then
+  AC_CHECK_FUNCS([getentropy getgroups system])
 fi
 
 AC_CHECK_DECL([dirfd],
@@ -5161,11 +5260,16 @@ AC_CHECK_FUNCS([clock_getres], [], [
     ])
 ])
 
-AC_CHECK_FUNCS([clock_settime], [], [
-    AC_CHECK_LIB([rt], [clock_settime], [
-        AC_DEFINE([HAVE_CLOCK_SETTIME], [1])
-    ])
-])
+# On iOS, clock_settime can be linked (so it is found by
+# configure), but it raises a runtime error if used because apps can't change
+# the clock. Force the symbol off.
+if test "$ac_sys_system" != "iOS" ; then
+  AC_CHECK_FUNCS([clock_settime], [], [
+      AC_CHECK_LIB([rt], [clock_settime], [
+          AC_DEFINE([HAVE_CLOCK_SETTIME], [1])
+      ])
+  ])
+fi
 
 AC_CHECK_FUNCS([clock_nanosleep], [], [
     AC_CHECK_LIB([rt], [clock_nanosleep], [
@@ -6524,28 +6628,32 @@ CPPFLAGS=$ac_save_cppflags
 AC_MSG_NOTICE([checking for device files])
 
 dnl NOTE: Inform user how to proceed with files when cross compiling.
-if test "x$cross_compiling" = xyes; then
-  if test "${ac_cv_file__dev_ptmx+set}" != set; then
-    AC_MSG_CHECKING([for /dev/ptmx])
-    AC_MSG_RESULT([not set])
-    AC_MSG_ERROR([set ac_cv_file__dev_ptmx to yes/no in your CONFIG_SITE file when cross compiling])
+dnl iOS cross-compile builds are predictable; they won't ever
+dnl have /dev/ptmx or /dev/ptc, so we can set them explicitly
+if test "$ac_sys_system" != "iOS" ; then
+  if test "x$cross_compiling" = xyes; then
+    if test "${ac_cv_file__dev_ptmx+set}" != set; then
+      AC_MSG_CHECKING([for /dev/ptmx])
+      AC_MSG_RESULT([not set])
+      AC_MSG_ERROR([set ac_cv_file__dev_ptmx to yes/no in your CONFIG_SITE file when cross compiling])
+    fi
+    if test "${ac_cv_file__dev_ptc+set}" != set; then
+      AC_MSG_CHECKING([for /dev/ptc])
+      AC_MSG_RESULT([not set])
+      AC_MSG_ERROR([set ac_cv_file__dev_ptc to yes/no in your CONFIG_SITE file when cross compiling])
+    fi
   fi
-  if test "${ac_cv_file__dev_ptc+set}" != set; then
-    AC_MSG_CHECKING([for /dev/ptc])
-    AC_MSG_RESULT([not set])
-    AC_MSG_ERROR([set ac_cv_file__dev_ptc to yes/no in your CONFIG_SITE file when cross compiling])
-  fi
-fi
 
-AC_CHECK_FILE([/dev/ptmx], [], [])
-if test "x$ac_cv_file__dev_ptmx" = xyes; then
-  AC_DEFINE([HAVE_DEV_PTMX], [1],
-  [Define to 1 if you have the /dev/ptmx device file.])
-fi
-AC_CHECK_FILE([/dev/ptc], [], [])
-if test "x$ac_cv_file__dev_ptc" = xyes; then
-  AC_DEFINE([HAVE_DEV_PTC], [1],
-  [Define to 1 if you have the /dev/ptc device file.])
+  AC_CHECK_FILE([/dev/ptmx], [], [])
+  if test "x$ac_cv_file__dev_ptmx" = xyes; then
+    AC_DEFINE([HAVE_DEV_PTMX], [1],
+    [Define to 1 if you have the /dev/ptmx device file.])
+  fi
+  AC_CHECK_FILE([/dev/ptc], [], [])
+  if test "x$ac_cv_file__dev_ptc" = xyes; then
+    AC_DEFINE([HAVE_DEV_PTC], [1],
+    [Define to 1 if you have the /dev/ptc device file.])
+  fi
 fi
 
 if test $ac_sys_system = Darwin
@@ -7188,6 +7296,29 @@ AS_CASE([$ac_sys_system],
   [VxWorks*], [PY_STDLIB_MOD_SET_NA([_scproxy], [termios], [grp])],
   dnl The _scproxy module is available on macOS
   [Darwin], [],
+  [iOS], [
+    dnl subprocess and multiprocessing are not supported (no fork syscall).
+    dnl curses and tkinter user interface are not available.
+    dnl gdbm and nis aren't available
+    dnl Stub implementations are provided for pwd, grp etc APIs
+    PY_STDLIB_MOD_SET_NA(
+      [_curses],
+      [_curses_panel],
+      [_gdbm],
+      [_multiprocessing],
+      [_posixshmem],
+      [_posixsubprocess],
+      [_scproxy],
+      [_tkinter],
+      [_xxsubinterpreters],
+      [grp],
+      [nis],
+      [readline],
+      [pwd],
+      [spwd],
+      [syslog],
+    )
+  ],
   [CYGWIN*], [PY_STDLIB_MOD_SET_NA([_scproxy])],
   [QNX*], [PY_STDLIB_MOD_SET_NA([_scproxy])],
   [FreeBSD*], [PY_STDLIB_MOD_SET_NA([_scproxy])],

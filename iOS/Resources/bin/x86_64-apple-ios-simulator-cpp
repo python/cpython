@@ -1,0 +1,2 @@
+#!/bin/bash
+xcrun --sdk iphonesimulator clang -target x86_64-apple-ios-simulator -E $@
