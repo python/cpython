@@ -525,29 +525,22 @@ are applied before Tier 2 IR is interpreted or translated to machine code.
 These optimizations take unoptimized Tier 2 IR and produce optimized Tier 2
 IR:
 
-* Type propagation -- through forward data-flow analysis, we infer
-  and deduce information about types. This allows us to eliminate
-  much of the overhead associated with dynamic typing in the future.
+* This section is non-exhaustive and will be updated with further
+  optimizations, until CPython 3.13's beta release.
 
-* Constant propagation -- through forward data-flow analysis, we can reduce
-  expressions like ::
+* Type propagation -- through forward
+  `data-flow analysis <https://clang.llvm.org/docs/DataFlowAnalysisIntro.html>`_,
+  we infer and deduce information about types.
 
-    a = 1
-    b = 2
-    c = a + b
-
- to ::
-
-    a = 1
-    b = 2
-    c = 3
+* Constant propagation -- through forward data-flow analysis, we can
+  evaluate in advance bytecode which we know operate on constants.
 
 * Guard elimination -- through a combination of constant and type information,
   we can eliminate type checks and other guards associated with operations.
   These guards validate specialized operations, but add a slight bit of
   overhead. For example, integer addition needs a type check that checks
-  both operands are integers. As a proof of concept, we managed to eliminate
-  over 70% of integer type checks in our own benchmarks.
+  both operands are integers. If we know that a integer guards' operands
+  are guaranteed to be integers, we can safely eliminate it.
 
 * Loop splitting -- after the first iteration, we gain a lot more type
   information. Thus, we peel the first iteration of loops to produce
@@ -557,13 +550,12 @@ IR:
 
 * Globals to constant promotion -- global value loads become constant
   loads, speeding them up and also allowing for more constant propagation.
+  This work relies on dictionary watchers, implemented in 3.12.
+  (Contributed by Mark Shannon in :gh:`113710`.)
 
-* This section is non-exhaustive and will be updated with further
-  optimizations, until CPython 3.13's beta release.
-
-(Tier 2 optimizer contributed by Ken Jin, with implementation help
-by Guido van Rossum, Mark Shannon, and Jules Poon. Special thanks
-to Manuel Rigger and Martin Henz.)
+(Tier 2 optimizer contributed by Ken Jin and Mark Shannon,
+with implementation help by Guido van Rossum. Special thanks
+to Manuel Rigger.)
 
 
 Execution Engine
@@ -590,33 +582,25 @@ The main benefit of this technique is
 fast compilation, reported as orders of magnitudes faster versus
 traditional compilation techniques in the paper linked below. The code
 produced is slightly less optimized, but suitable for a baseline JIT
-compiler.
+compiler. Fast compilation is critical to reduce the runtime overhead
+of the JIT compiler.
 
 (Copy-and-patch JIT compiler contributed by Brandt Bucher,
 directly inspired by the paper
 `Copy-and-Patch Compilation <https://fredrikbk.com/publications/copy-and-patch.pdf>`_
 by Haoran Xu and Fredrik Kjolstad. For more information,
-`a talk <https://youtu.be/HxSHIpEQRjs?si=RwC78FcXrThIgFmY>`_ is available.)
+`a talk <https://youtu.be/HxSHIpEQRjs?si=RwC78FcXrThIgFmY>`_ by Brandt Bucher
+is available.)
 
 
 Results and Future Work
 -----------------------
 
-The final performance results will be updated before CPython 3.13's beta release.
+The final performance results will be published here before
+CPython 3.13's beta release.
 
 The JIT compiler is rather unoptimized, and serves as the foundation
-for significant optimizations in future releases. As such, we do not
-expect the first iteration of the JIT compiler to produce a significant
-speedup.
-
-
-About
------
-
-This work was done by the Faster CPython team, and many other external
-contributors. The team consists of engineers from Microsoft, Meta,
-Quansight, and Bloomberg, who are either paid in part to do this, or
-volunteer in their free time.
+for significant optimizations in future releases.
 
 
 Deprecated
