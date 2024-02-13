@@ -73,7 +73,9 @@ typedef struct {
     int state;
 
     // Set immediately before `thread_run` returns to indicate that the OS
-    // thread is about to exit.
+    // thread is about to exit. This is used to avoid false positives when
+    // detecting self-join attempts. See the comment in `ThreadHandle_join()`
+    // for a more detailed explanation.
     _PyEventRc *thread_is_exiting;
 
     // Serializes calls to `join`.
