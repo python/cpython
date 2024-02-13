@@ -116,9 +116,9 @@ framelocalsproxy_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static int
-framelocalsproxy_tp_clear(PyFrameLocalsProxyObject *proxy)
+framelocalsproxy_tp_clear(PyObject *self)
 {
-    Py_CLEAR(proxy->frame);
+    Py_CLEAR(((PyFrameLocalsProxyObject*)self)->frame);
     return 0;
 }
 
@@ -329,44 +329,21 @@ static PyMethodDef framelocalsproxy_methods[] = {
 
 PyTypeObject PyFrameLocalsProxy_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "FrameLocalsProxy",
-    sizeof(PyFrameLocalsProxyObject),
-    0,
-    (destructor)framelocalsproxy_dealloc,       /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    &framelocalsproxy_as_mapping,               /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    PyObject_GenericGetAttr,                    /* tp_getattro */
-    PyObject_GenericSetAttr,                    /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
-    0,                                          /* tp_doc */
-    framelocalsproxy_visit,                     /* tp_traverse */
-    (inquiry)framelocalsproxy_tp_clear,         /* tp_clear */
-    framelocalsproxy_richcompare,               /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    framelocalsproxy_iter,                      /* tp_iter */
-    0,                                          /* tp_iternext */
-    framelocalsproxy_methods,                   /* tp_methods */
-    0,                                          /* tp_members */
-    0,                                          /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    PyType_GenericAlloc,                        /* tp_alloc */
-    framelocalsproxy_new,                       /* tp_new */
-    PyObject_GC_Del,                               /* tp_free */
+    .tp_name = "FrameLocalsProxy",
+    .tp_basicsize = sizeof(PyFrameLocalsProxyObject),
+    .tp_dealloc = (destructor)framelocalsproxy_dealloc,
+    .tp_as_mapping = &framelocalsproxy_as_mapping,
+    .tp_getattro = PyObject_GenericGetAttr,
+    .tp_setattro = PyObject_GenericSetAttr,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_traverse = framelocalsproxy_visit,
+    .tp_clear = framelocalsproxy_tp_clear,
+    .tp_richcompare = framelocalsproxy_richcompare,
+    .tp_iter = framelocalsproxy_iter,
+    .tp_methods = framelocalsproxy_methods,
+    .tp_alloc = PyType_GenericAlloc,
+    .tp_new = framelocalsproxy_new,
+    .tp_free = PyObject_GC_Del,
 };
 
 PyObject *
