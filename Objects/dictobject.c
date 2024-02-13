@@ -273,7 +273,7 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
 static struct _Py_dict_freelist *
 get_dict_state(void)
 {
-    struct _Py_object_freelists *state = _PyFreeListState_GET();
+    struct _Py_object_freelists *state = _Py_object_freelists_GET();
     return &state->dicts;
 }
 #endif

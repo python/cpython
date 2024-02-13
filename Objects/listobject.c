@@ -24,7 +24,7 @@ _Py_DECLARE_STR(list_err, "list index out of range");
 static struct _Py_list_freelist *
 get_list_state(void)
 {
-    struct _Py_object_freelists *state = _PyFreeListState_GET();
+    struct _Py_object_freelists *state = _Py_object_freelists_GET();
     assert(state != NULL);
     return &state->lists;
 }

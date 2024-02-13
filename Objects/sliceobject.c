@@ -127,7 +127,7 @@ _PyBuildSlice_Consume2(PyObject *start, PyObject *stop, PyObject *step)
     assert(start != NULL && stop != NULL && step != NULL);
     PySliceObject *obj;
 #ifdef WITH_FREELISTS
-    struct _Py_object_freelists *state = _PyFreeListState_GET();
+    struct _Py_object_freelists *state = _Py_object_freelists_GET();
     if (state->slices.slice_cache != NULL) {
         obj = state->slices.slice_cache;
         state->slices.slice_cache = NULL;
@@ -365,7 +365,7 @@ slice_dealloc(PySliceObject *r)
     Py_DECREF(r->start);
     Py_DECREF(r->stop);
 #ifdef WITH_FREELISTS
-    struct _Py_object_freelists *state = _PyFreeListState_GET();
+    struct _Py_object_freelists *state = _Py_object_freelists_GET();
     if (state->slices.slice_cache == NULL) {
         state->slices.slice_cache = r;
     }

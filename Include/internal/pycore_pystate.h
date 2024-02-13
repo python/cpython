@@ -268,7 +268,7 @@ PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
 // See also PyInterpreterState_Get() and _PyInterpreterState_GET().
 extern PyInterpreterState* _PyGILState_GetInterpreterStateUnsafe(void);
 
-static inline struct _Py_object_freelists* _PyFreeListState_GET(void)
+static inline struct _Py_object_freelists* _Py_object_freelists_GET(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
 #ifdef Py_DEBUG

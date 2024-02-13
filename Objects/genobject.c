@@ -1632,7 +1632,7 @@ PyTypeObject PyAsyncGen_Type = {
 static struct _Py_async_gen_freelist *
 get_async_gen_state(void)
 {
-    struct _Py_object_freelists *state = _PyFreeListState_GET();
+    struct _Py_object_freelists *state = _Py_object_freelists_GET();
     return &state->async_gens;
 }
 #endif

@@ -68,7 +68,7 @@ contextvar_del(PyContextVar *var);
 static struct _Py_context_freelist *
 get_context_state(void)
 {
-    struct _Py_object_freelists *state = _PyFreeListState_GET();
+    struct _Py_object_freelists *state = _Py_object_freelists_GET();
     return &state->contexts;
 }
 #endif

@@ -11,7 +11,7 @@ extern void _PyObjectStackChunk_Free(_PyObjectStackChunk *);
 static struct _Py_object_stack_freelist *
 get_state(void)
 {
-    struct _Py_object_freelists *state = _PyFreeListState_GET();
+    struct _Py_object_freelists *state = _Py_object_freelists_GET();
     return &state->object_stacks;
 }
 

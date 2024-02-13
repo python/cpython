@@ -30,7 +30,7 @@ class float "PyObject *" "&PyFloat_Type"
 static struct _Py_float_freelist *
 get_float_state(void)
 {
-    struct _Py_object_freelists *state = _PyFreeListState_GET();
+    struct _Py_object_freelists *state = _Py_object_freelists_GET();
     assert(state != NULL);
     return &state->floats;
 }
