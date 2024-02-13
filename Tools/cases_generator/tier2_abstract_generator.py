@@ -133,7 +133,7 @@ def write_uop(
                     else:
                         type = f"uint{cache.size*16}_t "
                         cast = f"uint{cache.size*16}_t"
-                    out.emit(f"{type}{cache.name} = ({cast})inst->operand;\n")
+                    out.emit(f"{type}{cache.name} = ({cast})this_instr->operand;\n")
         if override:
             replacement_funcs = {
                 "DECREF_INPUTS": decref_inputs,

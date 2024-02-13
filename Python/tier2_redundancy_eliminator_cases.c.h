@@ -172,7 +172,7 @@
             left = stack_pointer[-2];
             if (sym_matches_type(left, &PyLong_Type) &&
                 sym_matches_type(right, &PyLong_Type)) {
-                REPLACE_OP(inst, _NOP, 0, 0);
+                REPLACE_OP(this_instr, _NOP, 0, 0);
             }
             sym_set_type(left, &PyLong_Type);
             sym_set_type(right, &PyLong_Type);
@@ -222,7 +222,7 @@
             left = stack_pointer[-2];
             if (sym_matches_type(left, &PyFloat_Type) &&
                 sym_matches_type(right, &PyFloat_Type)) {
-                REPLACE_OP(inst, _NOP, 0 ,0);
+                REPLACE_OP(this_instr, _NOP, 0 ,0);
             }
             sym_set_type(left, &PyFloat_Type);
             sym_set_type(right, &PyFloat_Type);
@@ -789,7 +789,7 @@
             _Py_UOpsSymType *attr;
             _Py_UOpsSymType *null = NULL;
             owner = stack_pointer[-1];
-            uint16_t index = (uint16_t)inst->operand;
+            uint16_t index = (uint16_t)this_instr->operand;
             _LOAD_ATTR_NOT_NULL
             (void)index;
             (void)owner;
@@ -808,7 +808,7 @@
             _Py_UOpsSymType *attr;
             _Py_UOpsSymType *null = NULL;
             owner = stack_pointer[-1];
-            uint16_t index = (uint16_t)inst->operand;
+            uint16_t index = (uint16_t)this_instr->operand;
             _LOAD_ATTR_NOT_NULL
             (void)index;
             (void)owner;
@@ -827,7 +827,7 @@
             _Py_UOpsSymType *attr;
             _Py_UOpsSymType *null = NULL;
             owner = stack_pointer[-1];
-            uint16_t hint = (uint16_t)inst->operand;
+            uint16_t hint = (uint16_t)this_instr->operand;
             _LOAD_ATTR_NOT_NULL
             (void)hint;
             (void)owner;
@@ -842,7 +842,7 @@
             _Py_UOpsSymType *attr;
             _Py_UOpsSymType *null = NULL;
             owner = stack_pointer[-1];
-            uint16_t index = (uint16_t)inst->operand;
+            uint16_t index = (uint16_t)this_instr->operand;
             _LOAD_ATTR_NOT_NULL
             (void)index;
             (void)owner;
@@ -861,7 +861,7 @@
             _Py_UOpsSymType *attr;
             _Py_UOpsSymType *null = NULL;
             owner = stack_pointer[-1];
-            PyObject *descr = (PyObject *)inst->operand;
+            PyObject *descr = (PyObject *)this_instr->operand;
             _LOAD_ATTR_NOT_NULL
             (void)descr;
             (void)owner;
@@ -1269,7 +1269,7 @@
             _Py_UOpsSymType *callable;
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            uint32_t func_version = (uint32_t)inst->operand;
+            uint32_t func_version = (uint32_t)this_instr->operand;
             sym_set_type(callable, &PyFunction_Type);
             (void)self_or_null;
             (void)func_version;
@@ -1290,8 +1290,8 @@
             callable = stack_pointer[-2 - oparg];
             int argcount = oparg;
             (void)callable;
-            assert((inst + 2)->opcode == _PUSH_FRAME);
-            PyFunctionObject *func = (PyFunctionObject *)(inst + 2)->operand;
+            assert((this_instr + 2)->opcode == _PUSH_FRAME);
+            PyFunctionObject *func = (PyFunctionObject *)(this_instr + 2)->operand;
             if (func == NULL) {
                 goto error;
             }
@@ -1604,7 +1604,7 @@
 
         case _LOAD_CONST_INLINE: {
             _Py_UOpsSymType *value;
-            PyObject *ptr = (PyObject *)inst->operand;
+            PyObject *ptr = (PyObject *)this_instr->operand;
             value = sym_new_const(ctx, ptr);
             if (value == NULL) {
                 goto out_of_space;
@@ -1616,7 +1616,7 @@
 
         case _LOAD_CONST_INLINE_BORROW: {
             _Py_UOpsSymType *value;
-            PyObject *ptr = (PyObject *)inst->operand;
+            PyObject *ptr = (PyObject *)this_instr->operand;
             value = sym_new_const(ctx, ptr);
             if (value == NULL) {
                 goto out_of_space;
@@ -1629,7 +1629,7 @@
         case _LOAD_CONST_INLINE_WITH_NULL: {
             _Py_UOpsSymType *value;
             _Py_UOpsSymType *null;
-            PyObject *ptr = (PyObject *)inst->operand;
+            PyObject *ptr = (PyObject *)this_instr->operand;
             value = sym_new_const(ctx, ptr);
             if (value == NULL) {
                 goto out_of_space;
@@ -1647,7 +1647,7 @@
         case _LOAD_CONST_INLINE_BORROW_WITH_NULL: {
             _Py_UOpsSymType *value;
             _Py_UOpsSymType *null;
-            PyObject *ptr = (PyObject *)inst->operand;
+            PyObject *ptr = (PyObject *)this_instr->operand;
             value = sym_new_const(ctx, ptr);
             if (value == NULL) {
                 goto out_of_space;

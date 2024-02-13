@@ -608,12 +608,12 @@ uop_redundancy_eliminator(
         goto error;
     }
 
-    for (_PyUOpInstruction *inst = trace;
-        inst < trace + trace_len && !op_is_end(inst->opcode);
-        inst++) {
+    for (_PyUOpInstruction *this_instr = trace;
+         this_instr < trace + trace_len && !op_is_end(this_instr->opcode);
+         this_instr++) {
 
-        int oparg = inst->oparg;
-        uint32_t opcode = inst->opcode;
+        int oparg = this_instr->oparg;
+        uint32_t opcode = this_instr->opcode;
 
         _Py_UOpsSymType **stack_pointer = ctx->frame->stack_pointer;
 
