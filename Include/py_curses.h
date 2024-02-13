@@ -41,6 +41,8 @@
    use <ncurses.h>, which has some or all these features. */
 #if !defined(WINDOW_HAS_FLAGS) && \
     (NCURSES_VERSION_PATCH+0 < 20070303 || !(NCURSES_OPAQUE+0))
+/* the WINDOW flags field was always accessible in ncurses prior to 20070303;
+   after that, it depends on the value of NCURSES_OPAQUE. */
 #define WINDOW_HAS_FLAGS 1
 #endif
 #if !defined(HAVE_CURSES_IS_PAD) && NCURSES_VERSION_PATCH+0 >= 20090906
