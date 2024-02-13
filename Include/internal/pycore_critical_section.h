@@ -104,12 +104,37 @@ extern "C" {
 # define Py_END_CRITICAL_SECTION2()                                     \
         _PyCriticalSection2_End(&_cs2);                                 \
     }
+
+// Asserts that the mutex is locked.  The mutex must be held by the
+// top-most critical section otherwise there's the possibility
+// that the mutex would be swalled out in some code paths.
+#define  _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(mutex) \
+    _PyCriticalSection_AssertHeld(mutex)
+
+// Asserts that the mutex for the given object is locked. The mutex must
+// be held by the top-most critical section otherwise there's the
+// possibility that the mutex would be swalled out in some code paths.
+#ifdef Py_DEBUG
+
+#define  _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op)                           \
+    if (Py_REFCNT(op) != 1) {                                                    \
+        _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&_PyObject_CAST(op)->ob_mutex); \
+    }
+
+#else   /* Py_DEBUG */
+
+#define  _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op)
+
+#endif  /* Py_DEBUG */
+
 #else  /* !Py_GIL_DISABLED */
 // The critical section APIs are no-ops with the GIL.
 # define Py_BEGIN_CRITICAL_SECTION(op)
 # define Py_END_CRITICAL_SECTION()
 # define Py_BEGIN_CRITICAL_SECTION2(a, b)
 # define Py_END_CRITICAL_SECTION2()
+# define _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(mutex)
+# define _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op)
 #endif  /* !Py_GIL_DISABLED */
 
 typedef struct {
@@ -235,6 +260,27 @@ _PyCriticalSection2_End(_PyCriticalSection2 *c)
 
 PyAPI_FUNC(void)
 _PyCriticalSection_SuspendAll(PyThreadState *tstate);
+
+#ifdef Py_GIL_DISABLED
+
+static inline void
+_PyCriticalSection_AssertHeld(PyMutex *mutex) {
+#ifdef Py_DEBUG
+    PyThreadState *tstate = _PyThreadState_GET();
+    uintptr_t prev = tstate->critical_section;
+    if (prev & _Py_CRITICAL_SECTION_TWO_MUTEXES) {
+        _PyCriticalSection2 *cs = (_PyCriticalSection2 *)(prev & ~_Py_CRITICAL_SECTION_MASK);
+        assert(cs != NULL && (cs->base.mutex == mutex || cs->mutex2 == mutex));
+    }
+    else {
+        _PyCriticalSection *cs = (_PyCriticalSection *)(tstate->critical_section & ~_Py_CRITICAL_SECTION_MASK);
+        assert(cs != NULL && cs->mutex == mutex);
+    }
+
+#endif
+}
+
+#endif
 
 #ifdef __cplusplus
 }
