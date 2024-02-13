@@ -365,9 +365,9 @@ slice_dealloc(PySliceObject *r)
     Py_DECREF(r->start);
     Py_DECREF(r->stop);
 #ifdef WITH_FREELISTS
-    struct _Py_object_freelists *state = _Py_object_freelists_GET();
-    if (state->slices.slice_cache == NULL) {
-        state->slices.slice_cache = r;
+    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
+    if (freelists->slices.slice_cache == NULL) {
+        freelists->slices.slice_cache = r;
     }
     else
 #endif
