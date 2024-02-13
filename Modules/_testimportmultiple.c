@@ -4,7 +4,11 @@
  * foo, bar), only the first one is called the same as the compiled file.
  */
 
+#include "pyconfig.h"   // Py_GIL_DISABLED
+
+#ifndef Py_GIL_DISABLED
 #define Py_LIMITED_API 0x03020000
+#endif
 
 #include <Python.h>
 

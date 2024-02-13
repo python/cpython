@@ -525,8 +525,8 @@ Other Language Changes
 
 * In order to better support dynamic creation of stack traces,
   :class:`types.TracebackType` can now be instantiated from Python code, and
-  the ``tb_next`` attribute on :ref:`tracebacks <traceback-objects>` is now
-  writable.
+  the :attr:`~traceback.tb_next` attribute on
+  :ref:`tracebacks <traceback-objects>` is now writable.
   (Contributed by Nathaniel J. Smith in :issue:`30579`.)
 
 * When using the :option:`-m` switch, ``sys.path[0]`` is now eagerly expanded
@@ -851,7 +851,7 @@ crypt
 The :mod:`!crypt` module now supports the Blowfish hashing method.
 (Contributed by Serhiy Storchaka in :issue:`31664`.)
 
-The :func:`~!crypt.mksalt` function now allows specifying the number of rounds
+The :func:`!mksalt` function now allows specifying the number of rounds
 for hashing.  (Contributed by Serhiy Storchaka in :issue:`31702`.)
 
 
@@ -1891,7 +1891,7 @@ Other CPython Implementation Changes
 
 * Trace hooks may now opt out of receiving the ``line`` and opt into receiving
   the ``opcode`` events from the interpreter by setting the corresponding new
-  ``f_trace_lines`` and ``f_trace_opcodes`` attributes on the
+  :attr:`~frame.f_trace_lines` and :attr:`~frame.f_trace_opcodes` attributes on the
   frame being traced. (Contributed by Nick Coghlan in :issue:`31344`.)
 
 * Fixed some consistency problems with namespace package module attributes.
@@ -2004,15 +2004,15 @@ importlib
 ---------
 
 Methods
-:meth:`MetaPathFinder.find_module() <!importlib.abc.MetaPathFinder.find_module>`
+:meth:`!MetaPathFinder.find_module()`
 (replaced by
 :meth:`MetaPathFinder.find_spec() <importlib.abc.MetaPathFinder.find_spec>`)
 and
-:meth:`PathEntryFinder.find_loader() <!importlib.abc.PathEntryFinder.find_loader>`
+:meth:`!PathEntryFinder.find_loader()`
 (replaced by
 :meth:`PathEntryFinder.find_spec() <importlib.abc.PathEntryFinder.find_spec>`)
 both deprecated in Python 3.4 now emit :exc:`DeprecationWarning`.
-(Contributed by Matthias Bussonnier in :issue:`29576`)
+(Contributed by Matthias Bussonnier in :issue:`29576`.)
 
 The :class:`importlib.abc.ResourceLoader` ABC has been deprecated in
 favour of :class:`importlib.abc.ResourceReader`.
@@ -2144,9 +2144,9 @@ The following features and APIs have been removed from Python 3.7:
 * Removed support of the *exclude* argument in :meth:`tarfile.TarFile.add`.
   It was deprecated in Python 2.7 and 3.2.  Use the *filter* argument instead.
 
-* The ``splitunc()`` function in the :mod:`ntpath` module was deprecated in
-  Python 3.1, and has now been removed.  Use the :func:`~os.path.splitdrive`
-  function instead.
+* The :func:`!ntpath.splitunc` function was deprecated in
+  Python 3.1, and has now been removed.  Use :func:`~os.path.splitdrive`
+  instead.
 
 * :func:`collections.namedtuple` no longer supports the *verbose* parameter
   or ``_source`` attribute which showed the generated source code for the
@@ -2304,9 +2304,9 @@ Changes in the Python API
 * The :attr:`struct.Struct.format` type is now :class:`str` instead of
   :class:`bytes`. (Contributed by Victor Stinner in :issue:`21071`.)
 
-* :func:`~cgi.parse_multipart` now accepts the *encoding* and *errors*
+* :func:`!cgi.parse_multipart` now accepts the *encoding* and *errors*
   arguments and returns the same results as
-  :class:`~FieldStorage`: for non-file fields, the value associated to a key
+  :class:`!FieldStorage`: for non-file fields, the value associated to a key
   is a list of strings, not bytes.
   (Contributed by Pierre Quentel in :issue:`29979`.)
 

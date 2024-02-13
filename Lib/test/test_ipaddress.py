@@ -303,6 +303,14 @@ class AddressTestCase_v4(BaseTestCase, CommonTestMixin_v4):
     def test_weakref(self):
         weakref.ref(self.factory('192.0.2.1'))
 
+    def test_ipv6_mapped(self):
+        self.assertEqual(ipaddress.IPv4Address('192.168.1.1').ipv6_mapped,
+                         ipaddress.IPv6Address('::ffff:192.168.1.1'))
+        self.assertEqual(ipaddress.IPv4Address('192.168.1.1').ipv6_mapped,
+                         ipaddress.IPv6Address('::ffff:c0a8:101'))
+        self.assertEqual(ipaddress.IPv4Address('192.168.1.1').ipv6_mapped.ipv4_mapped,
+                         ipaddress.IPv4Address('192.168.1.1'))
+
 
 class AddressTestCase_v6(BaseTestCase, CommonTestMixin_v6):
     factory = ipaddress.IPv6Address

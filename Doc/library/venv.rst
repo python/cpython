@@ -201,13 +201,13 @@ creation according to their needs, the :class:`EnvBuilder` class.
     .. versionchanged:: 3.4
        Added the ``with_pip`` parameter
 
-    .. versionadded:: 3.6
+    .. versionchanged:: 3.6
        Added the ``prompt`` parameter
 
-    .. versionadded:: 3.9
+    .. versionchanged:: 3.9
        Added the ``upgrade_deps`` parameter
 
-    .. versionadded:: 3.13
+    .. versionchanged:: 3.13
        Added the ``scm_ignore_files`` parameter
 
     Creators of third-party virtual environment tools will be free to use the

@@ -327,14 +327,15 @@ modules, and one that knows how to import modules from an :term:`import path`
    finders replaced :meth:`!find_module`, which
    is now deprecated.  While it will continue to work without change, the
    import machinery will try it only if the finder does not implement
-   ``find_spec()``.
+   :meth:`~importlib.abc.MetaPathFinder.find_spec`.
 
 .. versionchanged:: 3.10
    Use of :meth:`!find_module` by the import system
    now raises :exc:`ImportWarning`.
 
 .. versionchanged:: 3.12
-   ``find_module()`` has been removed.  Use :meth:`find_spec` instead.
+   :meth:`!find_module` has been removed.
+   Use :meth:`~importlib.abc.MetaPathFinder.find_spec` instead.
 
 
 Loading
@@ -559,7 +560,7 @@ listed below.
    functionality, for example getting data associated with a loader.
 
    It is **strongly** recommended that you rely on :attr:`__spec__`
-   instead instead of this attribute.
+   instead of this attribute.
 
    .. versionchanged:: 3.12
       The value of ``__loader__`` is expected to be the same as
@@ -580,7 +581,7 @@ listed below.
    relative imports for main modules, as defined in :pep:`366`.
 
    It is **strongly** recommended that you rely on :attr:`__spec__`
-   instead instead of this attribute.
+   instead of this attribute.
 
    .. versionchanged:: 3.6
       The value of ``__package__`` is expected to be the same as
@@ -650,7 +651,7 @@ listed below.
    from a file, that atypical scenario may be appropriate.
 
    It is **strongly** recommended that you rely on :attr:`__spec__`
-   instead instead of ``__cached__``.
+   instead of ``__cached__``.
 
 .. _package-path-rules:
 
@@ -812,7 +813,7 @@ attributes on package objects are also used.  These provide additional ways
 that the import machinery can be customized.
 
 :data:`sys.path` contains a list of strings providing search locations for
-modules and packages.  It is initialized from the :data:`PYTHONPATH`
+modules and packages.  It is initialized from the :envvar:`PYTHONPATH`
 environment variable and various other installation- and
 implementation-specific defaults.  Entries in :data:`sys.path` can name
 directories on the file system, zip files, and potentially other "locations"

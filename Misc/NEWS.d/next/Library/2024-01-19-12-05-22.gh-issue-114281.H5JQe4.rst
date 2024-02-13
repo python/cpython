@@ -1,0 +1,3 @@
+Remove type hints from ``Lib/asyncio/staggered.py``.
+The annotations in the `typeshed <https://github.com/python/typeshed>`__
+project should be used instead.

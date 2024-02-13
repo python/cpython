@@ -17,6 +17,10 @@ _testcapi = import_helper.import_module('_testcapi')
 
 NULL = None
 
+class CustomError(Exception):
+    pass
+
+
 class Test_Exceptions(unittest.TestCase):
 
     def test_exception(self):
@@ -269,6 +273,104 @@ class Test_ErrSetAndRestore(unittest.TestCase):
         self.assertEqual(e.exception.args,
                          (ENOENT, 'No such file or directory', 'file'))
         # CRASHES setfromerrnowithfilename(ENOENT, NULL, b'error')
+
+    def test_err_writeunraisable(self):
+        # Test PyErr_WriteUnraisable()
+        writeunraisable = _testcapi.err_writeunraisable
+        firstline = self.test_err_writeunraisable.__code__.co_firstlineno
+
+        with support.catch_unraisable_exception() as cm:
+            writeunraisable(CustomError('oops!'), hex)
+            self.assertEqual(cm.unraisable.exc_type, CustomError)
+            self.assertEqual(str(cm.unraisable.exc_value), 'oops!')
+            self.assertEqual(cm.unraisable.exc_traceback.tb_lineno,
+                             firstline + 6)
+            self.assertIsNone(cm.unraisable.err_msg)
+            self.assertEqual(cm.unraisable.object, hex)
+
+        with support.catch_unraisable_exception() as cm:
+            writeunraisable(CustomError('oops!'), NULL)
+            self.assertEqual(cm.unraisable.exc_type, CustomError)
+            self.assertEqual(str(cm.unraisable.exc_value), 'oops!')
+            self.assertEqual(cm.unraisable.exc_traceback.tb_lineno,
+                             firstline + 15)
+            self.assertIsNone(cm.unraisable.err_msg)
+            self.assertIsNone(cm.unraisable.object)
+
+        with (support.swap_attr(sys, 'unraisablehook', None),
+              support.captured_stderr() as stderr):
+            writeunraisable(CustomError('oops!'), hex)
+        lines = stderr.getvalue().splitlines()
+        self.assertEqual(lines[0], f'Exception ignored in: {hex!r}')
+        self.assertEqual(lines[1], 'Traceback (most recent call last):')
+        self.assertEqual(lines[-1], f'{__name__}.CustomError: oops!')
+
+        with (support.swap_attr(sys, 'unraisablehook', None),
+              support.captured_stderr() as stderr):
+            writeunraisable(CustomError('oops!'), NULL)
+        lines = stderr.getvalue().splitlines()
+        self.assertEqual(lines[0], 'Traceback (most recent call last):')
+        self.assertEqual(lines[-1], f'{__name__}.CustomError: oops!')
+
+        # CRASHES writeunraisable(NULL, hex)
+        # CRASHES writeunraisable(NULL, NULL)
+
+    def test_err_formatunraisable(self):
+        # Test PyErr_FormatUnraisable()
+        formatunraisable = _testcapi.err_formatunraisable
+        firstline = self.test_err_formatunraisable.__code__.co_firstlineno
+
+        with support.catch_unraisable_exception() as cm:
+            formatunraisable(CustomError('oops!'), b'Error in %R', [])
+            self.assertEqual(cm.unraisable.exc_type, CustomError)
+            self.assertEqual(str(cm.unraisable.exc_value), 'oops!')
+            self.assertEqual(cm.unraisable.exc_traceback.tb_lineno,
+                             firstline + 6)
+            self.assertEqual(cm.unraisable.err_msg, 'Error in []')
+            self.assertIsNone(cm.unraisable.object)
+
+        with support.catch_unraisable_exception() as cm:
+            formatunraisable(CustomError('oops!'), b'undecodable \xff')
+            self.assertEqual(cm.unraisable.exc_type, CustomError)
+            self.assertEqual(str(cm.unraisable.exc_value), 'oops!')
+            self.assertEqual(cm.unraisable.exc_traceback.tb_lineno,
+                             firstline + 15)
+            self.assertIsNone(cm.unraisable.err_msg)
+            self.assertIsNone(cm.unraisable.object)
+
+        with support.catch_unraisable_exception() as cm:
+            formatunraisable(CustomError('oops!'), NULL)
+            self.assertEqual(cm.unraisable.exc_type, CustomError)
+            self.assertEqual(str(cm.unraisable.exc_value), 'oops!')
+            self.assertEqual(cm.unraisable.exc_traceback.tb_lineno,
+                             firstline + 24)
+            self.assertIsNone(cm.unraisable.err_msg)
+            self.assertIsNone(cm.unraisable.object)
+
+        with (support.swap_attr(sys, 'unraisablehook', None),
+              support.captured_stderr() as stderr):
+            formatunraisable(CustomError('oops!'), b'Error in %R', [])
+        lines = stderr.getvalue().splitlines()
+        self.assertEqual(lines[0], f'Error in []:')
+        self.assertEqual(lines[1], 'Traceback (most recent call last):')
+        self.assertEqual(lines[-1], f'{__name__}.CustomError: oops!')
+
+        with (support.swap_attr(sys, 'unraisablehook', None),
+              support.captured_stderr() as stderr):
+            formatunraisable(CustomError('oops!'), b'undecodable \xff')
+        lines = stderr.getvalue().splitlines()
+        self.assertEqual(lines[0], 'Traceback (most recent call last):')
+        self.assertEqual(lines[-1], f'{__name__}.CustomError: oops!')
+
+        with (support.swap_attr(sys, 'unraisablehook', None),
+              support.captured_stderr() as stderr):
+            formatunraisable(CustomError('oops!'), NULL)
+        lines = stderr.getvalue().splitlines()
+        self.assertEqual(lines[0], 'Traceback (most recent call last):')
+        self.assertEqual(lines[-1], f'{__name__}.CustomError: oops!')
+
+        # CRASHES formatunraisable(NULL, b'Error in %R', [])
+        # CRASHES formatunraisable(NULL, NULL)
 
 
 class Test_PyUnstable_Exc_PrepReraiseStar(ExceptionIsLikeMixin, unittest.TestCase):

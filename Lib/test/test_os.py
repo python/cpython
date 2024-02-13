@@ -1150,9 +1150,12 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
     def test_putenv_unsetenv_error(self):
         # Empty variable name is invalid.
         # "=" and null character are not allowed in a variable name.
-        for name in ('', '=name', 'na=me', 'name=', 'name\0', 'na\0me'):
+        for name in ('', '=name', 'na=me', 'name='):
             self.assertRaises((OSError, ValueError), os.putenv, name, "value")
             self.assertRaises((OSError, ValueError), os.unsetenv, name)
+        for name in ('name\0', 'na\0me'):
+            self.assertRaises(ValueError, os.putenv, name, "value")
+            self.assertRaises(ValueError, os.unsetenv, name)
 
         if sys.platform == "win32":
             # On Windows, an environment variable string ("name=value" string)
@@ -1740,7 +1743,7 @@ class MakedirTests(unittest.TestCase):
         os.removedirs(path)
 
 
-@os_helper.skip_unless_working_chmod
+@unittest.skipUnless(hasattr(os, "chown"), "requires os.chown()")
 class ChownFileTests(unittest.TestCase):
 
     @classmethod
@@ -2192,12 +2195,15 @@ class Win32ErrorTests(unittest.TestCase):
 class TestInvalidFD(unittest.TestCase):
     singles = ["fchdir", "dup", "fdatasync", "fstat",
                "fstatvfs", "fsync", "tcgetpgrp", "ttyname"]
+    singles_fildes = {"fchdir", "fdatasync", "fsync"}
     #singles.append("close")
     #We omit close because it doesn't raise an exception on some platforms
     def get_single(f):
         def helper(self):
             if  hasattr(os, f):
                 self.check(getattr(os, f))
+                if f in self.singles_fildes:
+                    self.check_bool(getattr(os, f))
         return helper
     for f in singles:
         locals()["test_"+f] = get_single(f)
@@ -2211,8 +2217,16 @@ class TestInvalidFD(unittest.TestCase):
             self.fail("%r didn't raise an OSError with a bad file descriptor"
                       % f)
 
+    def check_bool(self, f, *args, **kwargs):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", RuntimeWarning)
+            for fd in False, True:
+                with self.assertRaises(RuntimeWarning):
+                    f(fd, *args, **kwargs)
+
     def test_fdopen(self):
         self.check(os.fdopen, encoding="utf-8")
+        self.check_bool(os.fdopen, encoding="utf-8")
 
     @unittest.skipUnless(hasattr(os, 'isatty'), 'test needs os.isatty()')
     def test_isatty(self):
@@ -2274,11 +2288,14 @@ class TestInvalidFD(unittest.TestCase):
     def test_fpathconf(self):
         self.check(os.pathconf, "PC_NAME_MAX")
         self.check(os.fpathconf, "PC_NAME_MAX")
+        self.check_bool(os.pathconf, "PC_NAME_MAX")
+        self.check_bool(os.fpathconf, "PC_NAME_MAX")
 
     @unittest.skipUnless(hasattr(os, 'ftruncate'), 'test needs os.ftruncate()')
     def test_ftruncate(self):
         self.check(os.truncate, 0)
         self.check(os.ftruncate, 0)
+        self.check_bool(os.truncate, 0)
 
     @unittest.skipUnless(hasattr(os, 'lseek'), 'test needs os.lseek()')
     def test_lseek(self):
@@ -3082,6 +3099,65 @@ class Win32NtTests(unittest.TestCase):
             except subprocess.TimeoutExpired:
                 proc.terminate()
 
+    @support.requires_subprocess()
+    def test_stat_inaccessible_file(self):
+        filename = os_helper.TESTFN
+        ICACLS = os.path.expandvars(r"%SystemRoot%\System32\icacls.exe")
+
+        with open(filename, "wb") as f:
+            f.write(b'Test data')
+
+        stat1 = os.stat(filename)
+
+        try:
+            # Remove all permissions from the file
+            subprocess.check_output([ICACLS, filename, "/inheritance:r"],
+                                    stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as ex:
+            if support.verbose:
+                print(ICACLS, filename, "/inheritance:r", "failed.")
+                print(ex.stdout.decode("oem", "replace").rstrip())
+            try:
+                os.unlink(filename)
+            except OSError:
+                pass
+            self.skipTest("Unable to create inaccessible file")
+
+        def cleanup():
+            # Give delete permission. We are the file owner, so we can do this
+            # even though we removed all permissions earlier.
+            subprocess.check_output([ICACLS, filename, "/grant", "Everyone:(D)"],
+                                    stderr=subprocess.STDOUT)
+            os.unlink(filename)
+
+        self.addCleanup(cleanup)
+
+        if support.verbose:
+            print("File:", filename)
+            print("stat with access:", stat1)
+
+        # First test - we shouldn't raise here, because we still have access to
+        # the directory and can extract enough information from its metadata.
+        stat2 = os.stat(filename)
+
+        if support.verbose:
+            print(" without access:", stat2)
+
+        # We may not get st_dev/st_ino, so ensure those are 0 or match
+        self.assertIn(stat2.st_dev, (0, stat1.st_dev))
+        self.assertIn(stat2.st_ino, (0, stat1.st_ino))
+
+        # st_mode and st_size should match (for a normal file, at least)
+        self.assertEqual(stat1.st_mode, stat2.st_mode)
+        self.assertEqual(stat1.st_size, stat2.st_size)
+
+        # st_ctime and st_mtime should be the same
+        self.assertEqual(stat1.st_ctime, stat2.st_ctime)
+        self.assertEqual(stat1.st_mtime, stat2.st_mtime)
+
+        # st_atime should be the same or later
+        self.assertGreaterEqual(stat1.st_atime, stat2.st_atime)
+
 
 @os_helper.skip_unless_symlink
 class NonLocalSymlinkTests(unittest.TestCase):
@@ -3786,6 +3862,7 @@ class TermsizeTests(unittest.TestCase):
         self.assertGreaterEqual(size.columns, 0)
         self.assertGreaterEqual(size.lines, 0)
 
+    @support.requires_subprocess()
     def test_stty_match(self):
         """Check if stty returns the same results
 
@@ -4029,7 +4106,7 @@ class TimerfdTests(unittest.TestCase):
         t = time.perf_counter() - t
 
         total_time = initial_expiration + interval * (count - 1)
-        self.assertGreater(t, total_time)
+        self.assertGreater(t, total_time - self.CLOCK_RES)
 
         # wait 3.5 time of interval
         time.sleep( (count+0.5) * interval)
@@ -4083,7 +4160,7 @@ class TimerfdTests(unittest.TestCase):
         t = time.perf_counter() - t
 
         total_time = initial_expiration + interval * (count - 1)
-        self.assertGreater(t, total_time)
+        self.assertGreater(t, total_time - self.CLOCK_RES)
 
     def check_timerfd_poll(self, nanoseconds):
         fd = self.timerfd_create(time.CLOCK_REALTIME, flags=os.TFD_NONBLOCK)
@@ -4129,10 +4206,10 @@ class TimerfdTests(unittest.TestCase):
         total_time = initial_expiration_ns + interval_ns * (count - 1)
         if nanoseconds:
             dt = time.perf_counter_ns() - t
-            self.assertGreater(dt, total_time)
+            self.assertGreater(dt, total_time - self.CLOCK_RES_NS)
         else:
             dt = time.perf_counter() - t
-            self.assertGreater(dt, total_time / sec_to_nsec)
+            self.assertGreater(dt, total_time / sec_to_nsec - self.CLOCK_RES)
         selector.unregister(fd)
 
     def test_timerfd_poll(self):
@@ -4189,7 +4266,7 @@ class TimerfdTests(unittest.TestCase):
         t = time.perf_counter_ns() - t
 
         total_time_ns = initial_expiration_ns + interval_ns * (count - 1)
-        self.assertGreater(t, total_time_ns)
+        self.assertGreater(t, total_time_ns - self.CLOCK_RES_NS)
 
         # wait 3.5 time of interval
         time.sleep( (count+0.5) * interval_ns / one_sec_in_nsec)
@@ -4248,7 +4325,7 @@ class TimerfdTests(unittest.TestCase):
         t = time.perf_counter_ns() - t
 
         total_time_ns = initial_expiration_ns + interval_ns * (count - 1)
-        self.assertGreater(t, total_time_ns)
+        self.assertGreater(t, total_time_ns - self.CLOCK_RES_NS)
 
 class OSErrorTests(unittest.TestCase):
     def setUp(self):
@@ -4342,8 +4419,8 @@ class CPUCountTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, 'sched_setaffinity'),
                          "don't have sched affinity support")
     def test_process_cpu_count_affinity(self):
-        ncpu = os.cpu_count()
-        if ncpu is None:
+        affinity1 = os.process_cpu_count()
+        if affinity1 is None:
             self.skipTest("Could not determine the number of CPUs")
 
         # Disable one CPU
@@ -4356,8 +4433,8 @@ class CPUCountTests(unittest.TestCase):
         os.sched_setaffinity(0, mask)
 
         # test process_cpu_count()
-        affinity = os.process_cpu_count()
-        self.assertEqual(affinity, ncpu - 1)
+        affinity2 = os.process_cpu_count()
+        self.assertEqual(affinity2, affinity1 - 1)
 
 
 # FD inheritance check is only useful for systems with process support.
@@ -4474,13 +4551,105 @@ class FDInheritanceTests(unittest.TestCase):
         self.assertEqual(os.dup2(fd, fd3, inheritable=False), fd3)
         self.assertFalse(os.get_inheritable(fd3))
 
-    @unittest.skipUnless(hasattr(os, 'openpty'), "need os.openpty()")
+@unittest.skipUnless(hasattr(os, 'openpty'), "need os.openpty()")
+class PseudoterminalTests(unittest.TestCase):
+    def open_pty(self):
+        """Open a pty fd-pair, and schedule cleanup for it"""
+        main_fd, second_fd = os.openpty()
+        self.addCleanup(os.close, main_fd)
+        self.addCleanup(os.close, second_fd)
+        return main_fd, second_fd
+
     def test_openpty(self):
-        master_fd, slave_fd = os.openpty()
-        self.addCleanup(os.close, master_fd)
-        self.addCleanup(os.close, slave_fd)
-        self.assertEqual(os.get_inheritable(master_fd), False)
-        self.assertEqual(os.get_inheritable(slave_fd), False)
+        main_fd, second_fd = self.open_pty()
+        self.assertEqual(os.get_inheritable(main_fd), False)
+        self.assertEqual(os.get_inheritable(second_fd), False)
+
+    @unittest.skipUnless(hasattr(os, 'ptsname'), "need os.ptsname()")
+    @unittest.skipUnless(hasattr(os, 'O_RDWR'), "need os.O_RDWR")
+    @unittest.skipUnless(hasattr(os, 'O_NOCTTY'), "need os.O_NOCTTY")
+    def test_open_via_ptsname(self):
+        main_fd, second_fd = self.open_pty()
+        second_path = os.ptsname(main_fd)
+        reopened_second_fd = os.open(second_path, os.O_RDWR|os.O_NOCTTY)
+        self.addCleanup(os.close, reopened_second_fd)
+        os.write(reopened_second_fd, b'foo')
+        self.assertEqual(os.read(main_fd, 3), b'foo')
+
+    @unittest.skipUnless(hasattr(os, 'posix_openpt'), "need os.posix_openpt()")
+    @unittest.skipUnless(hasattr(os, 'grantpt'), "need os.grantpt()")
+    @unittest.skipUnless(hasattr(os, 'unlockpt'), "need os.unlockpt()")
+    @unittest.skipUnless(hasattr(os, 'ptsname'), "need os.ptsname()")
+    @unittest.skipUnless(hasattr(os, 'O_RDWR'), "need os.O_RDWR")
+    @unittest.skipUnless(hasattr(os, 'O_NOCTTY'), "need os.O_NOCTTY")
+    def test_posix_pty_functions(self):
+        mother_fd = os.posix_openpt(os.O_RDWR|os.O_NOCTTY)
+        self.addCleanup(os.close, mother_fd)
+        os.grantpt(mother_fd)
+        os.unlockpt(mother_fd)
+        son_path = os.ptsname(mother_fd)
+        son_fd = os.open(son_path, os.O_RDWR|os.O_NOCTTY)
+        self.addCleanup(os.close, son_fd)
+        self.assertEqual(os.ptsname(mother_fd), os.ttyname(son_fd))
+
+    @unittest.skipUnless(hasattr(os, 'spawnl'), "need os.spawnl()")
+    @support.requires_subprocess()
+    def test_pipe_spawnl(self):
+        # gh-77046: On Windows, os.pipe() file descriptors must be created with
+        # _O_NOINHERIT to make them non-inheritable. UCRT has no public API to
+        # get (_osfile(fd) & _O_NOINHERIT), so use a functional test.
+        #
+        # Make sure that fd is not inherited by a child process created by
+        # os.spawnl(): get_osfhandle() and dup() must fail with EBADF.
+
+        fd, fd2 = os.pipe()
+        self.addCleanup(os.close, fd)
+        self.addCleanup(os.close, fd2)
+
+        code = textwrap.dedent(f"""
+            import errno
+            import os
+            import test.support
+            try:
+                import msvcrt
+            except ImportError:
+                msvcrt = None
+
+            fd = {fd}
+
+            with test.support.SuppressCrashReport():
+                if msvcrt is not None:
+                    try:
+                        handle = msvcrt.get_osfhandle(fd)
+                    except OSError as exc:
+                        if exc.errno != errno.EBADF:
+                            raise
+                        # get_osfhandle(fd) failed with EBADF as expected
+                    else:
+                        raise Exception("get_osfhandle() must fail")
+
+                try:
+                    fd3 = os.dup(fd)
+                except OSError as exc:
+                    if exc.errno != errno.EBADF:
+                        raise
+                    # os.dup(fd) failed with EBADF as expected
+                else:
+                    os.close(fd3)
+                    raise Exception("dup must fail")
+        """)
+
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        with open(filename, "w") as fp:
+            print(code, file=fp, end="")
+
+        executable = sys.executable
+        cmd = [executable, filename]
+        if os.name == "nt" and " " in cmd[0]:
+            cmd[0] = f'"{cmd[0]}"'
+        exitcode = os.spawnl(os.P_WAIT, executable, *cmd)
+        self.assertEqual(exitcode, 0)
 
 
 class PathTConverterTests(unittest.TestCase):
@@ -5077,7 +5246,10 @@ class ForkTests(unittest.TestCase):
                 support.wait_process(pid, exitcode=0)
         """
         assert_python_ok("-c", code)
-        assert_python_ok("-c", code, PYTHONMALLOC="malloc_debug")
+        if support.Py_GIL_DISABLED:
+            assert_python_ok("-c", code, PYTHONMALLOC="mimalloc_debug")
+        else:
+            assert_python_ok("-c", code, PYTHONMALLOC="malloc_debug")
 
     @unittest.skipUnless(sys.platform in ("linux", "darwin"),
                          "Only Linux and macOS detect this today.")
