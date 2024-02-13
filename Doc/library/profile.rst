@@ -301,12 +301,7 @@ functions:
 
       The *sort* parameter specifies the sorting order of the displayed
       statistics. It accepts a single key or a tuple of keys to enable
-      multi-level sorting. When passing a tuple of keys, each key must be
-      either a string or a SortKey enum, excluding integers. However,
-      if only a single key is provided, it can be an integer, a string, or a
-      SortKey enum. These keys serve to identify the basis of the sort,
-      such as ``'time'``, ``'name'``, ``SortKey.TIME``, or ``SortKey.NAME``,
-      among others."
+      multi-level sorting, as in :func:`Stats.sort_stats <pstats.Stats.sort_stats>.
 
       .. versionadded:: 3.13
          :meth:`~Profile.print_stats` now accepts a single key or a tuple of keys.
