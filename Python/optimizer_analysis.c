@@ -589,6 +589,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
     } while (0);
 
 
+/* 1 for success, 0 for not ready, cannot error at the moment. */
 static int
 uop_redundancy_eliminator(
     PyCodeObject *co,
@@ -634,7 +635,7 @@ uop_redundancy_eliminator(
     }
 
     abstractcontext_fini(ctx);
-    return 0;
+    return 1;
 
 out_of_space:
     DPRINTF(1, "Out of space in abstract interpreter\n");
@@ -757,9 +758,10 @@ _Py_uop_analyze_and_optimize(
         (PyCodeObject *)frame->f_executable, buffer,
         buffer_size, curr_stacklen);
 
-    if (err < 0) {
-        goto error;
+    if (err == 0) {
+        goto not_ready;
     }
+    assert(err == 1);
 
     remove_unneeded_uops(buffer, buffer_size);
 
