@@ -964,11 +964,6 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
 
 static void maybe_freelist_clear(_PyFreeListState *, int);
 
-void
-_PyTuple_Fini(_PyFreeListState *state)
-{
-    maybe_freelist_clear(state, 1);
-}
 
 void
 _PyTuple_ClearFreeList(_PyFreeListState *state, int is_finalization)

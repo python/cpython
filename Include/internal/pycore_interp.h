@@ -112,7 +112,7 @@ struct _is {
         /* The thread currently executing in the __main__ module, if any. */
         PyThreadState *main;
         /* Used in Modules/_threadmodule.c. */
-        long count;
+        Py_ssize_t count;
         /* Support for runtime thread stack size tuning.
            A value of 0 means using the platform's default stack size
            or the size specified by the THREAD_STACK_SIZE macro. */
@@ -239,8 +239,10 @@ struct _is {
     struct callable_cache callable_cache;
     _PyOptimizerObject *optimizer;
     _PyExecutorObject *executor_list_head;
-    uint16_t optimizer_resume_threshold;
-    uint16_t optimizer_backedge_threshold;
+    /* These values are shifted and offset to speed up check in JUMP_BACKWARD */
+    uint32_t optimizer_resume_threshold;
+    uint32_t optimizer_backedge_threshold;
+
     uint32_t next_func_version;
     _rare_events rare_events;
     PyDict_WatchCallback builtins_dict_watcher;
