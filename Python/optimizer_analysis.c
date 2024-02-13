@@ -760,7 +760,7 @@ _Py_uop_analyze_and_optimize(
     if (err < 0) {
         goto error;
     }
-    
+
     remove_unneeded_uops(buffer, buffer_size);
 
     OPT_STAT_INC(optimizer_successes);
