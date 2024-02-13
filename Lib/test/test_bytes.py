@@ -1600,7 +1600,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         a.extend([Indexable(ord('a'))])
         self.assertEqual(a, b'a')
         a = bytearray(b'abc')
-        self.assertRaises(TypeError, a.extend, 'def', msg="'str' object should be encoded")
+        self.assertRaises(TypeError, a.extend, 'def', msg="'str' object should be 'bytes'")
 
     def test_remove(self):
         b = bytearray(b'hello')
