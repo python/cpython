@@ -2112,13 +2112,13 @@ def set_recursion_limit(limit):
     finally:
         sys.setrecursionlimit(original_limit)
 
-def infinite_recursion(max_depth=100):
-    """Set a lower limit for tests that interact with infinite recursions
-    (e.g test_ast.ASTHelpers_Test.test_recursion_direct) since on some
-    debug windows builds, due to not enough functions being inlined the
-    stack size might not handle the default recursion limit (1000). See
-    bpo-11105 for details."""
-    if max_depth < 3:
+def infinite_recursion(max_depth=None):
+    if max_depth is None:
+        # Pick a number large enough to cause problems
+        # but not take too long for code that can handle
+        # very deep recursion.
+        max_depth = 20_000
+    elif max_depth < 3:
         raise ValueError("max_depth must be at least 3, got {max_depth}")
     depth = get_recursion_depth()
     depth = max(depth - 1, 1)  # Ignore infinite_recursion() frame.
@@ -2362,7 +2362,22 @@ def adjust_int_max_str_digits(max_digits):
 EXCEEDS_RECURSION_LIMIT = 5000
 
 # The default C recursion limit (from Include/cpython/pystate.h).
-C_RECURSION_LIMIT = 1500
+if Py_DEBUG:
+    if is_wasi:
+        C_RECURSION_LIMIT = 150
+    else:
+        C_RECURSION_LIMIT = 500
+else:
+    if is_wasi:
+        C_RECURSION_LIMIT = 500
+    elif hasattr(os, 'uname') and os.uname().machine == 's390x':
+        C_RECURSION_LIMIT = 800
+    elif sys.platform.startswith('win'):
+        C_RECURSION_LIMIT = 3000
+    elif check_sanitizer(address=True):
+        C_RECURSION_LIMIT = 4000
+    else:
+        C_RECURSION_LIMIT = 10000
 
 #Windows doesn't have os.uname() but it doesn't support s390x.
 skip_on_s390x = unittest.skipIf(hasattr(os, 'uname') and os.uname().machine == 's390x',

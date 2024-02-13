@@ -1087,9 +1087,9 @@ class AST_Tests(unittest.TestCase):
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     @support.cpython_only
     def test_ast_recursion_limit(self):
-        fail_depth = support.EXCEEDS_RECURSION_LIMIT
+        fail_depth = support.C_RECURSION_LIMIT + 1
         crash_depth = 100_000
-        success_depth = 1200
+        success_depth = int(support.C_RECURSION_LIMIT * 0.9)
 
         def check_limit(prefix, repeated):
             expect_ok = prefix + repeated * success_depth

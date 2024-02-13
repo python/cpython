@@ -607,9 +607,9 @@ class TestSpecifics(unittest.TestCase):
         # Expected limit is C_RECURSION_LIMIT * 2
         # Duplicating the limit here is a little ugly.
         # Perhaps it should be exposed somewhere...
-        fail_depth = C_RECURSION_LIMIT * 2 + 1
+        fail_depth = C_RECURSION_LIMIT + 1
         crash_depth = C_RECURSION_LIMIT * 100
-        success_depth = int(C_RECURSION_LIMIT * 1.8)
+        success_depth = int(C_RECURSION_LIMIT * 0.9)
 
         def check_limit(prefix, repeated, mode="single"):
             expect_ok = prefix + repeated * success_depth
