@@ -75,11 +75,6 @@ class StackEffect(Node):
     size: str = ""  # Optional `[size]`
     # Note: size cannot be combined with type or cond
 
-    # Optional `(type, refinement)`
-    type_prop: None | tuple[str, None | str] = field(
-        default_factory=lambda: None, init=True, compare=False, hash=False
-    )
-
     def __repr__(self) -> str:
         items = [self.name, self.type, self.cond, self.size]
         while items and items[-1] == "":
@@ -260,25 +255,14 @@ class Parser(PLexer):
 
     @contextual
     def stack_effect(self) -> StackEffect | None:
-        #   IDENTIFIER [':' [IDENTIFIER [TIMES]] ['&' '(' IDENTIFIER ['+' IDENTIFIER] ')']] ['if' '(' expression ')']
+        # IDENTIFIER [':' IDENTIFIER [TIMES]] ['if' '(' expression ')']
         # | IDENTIFIER '[' expression ']'
         if tkn := self.expect(lx.IDENTIFIER):
             type_text = ""
-            type_prop = None
             if self.expect(lx.COLON):
-                if i := self.expect(lx.IDENTIFIER):
-                    type_text = i.text.strip()
-                    if self.expect(lx.TIMES):
-                        type_text += " *"
-                if self.expect(lx.AND):
-                    consumed_bracket = self.expect(lx.LPAREN) is not None
-                    type_prop_text = self.require(lx.IDENTIFIER).text.strip()
-                    refinement = None
-                    if self.expect(lx.PLUS):
-                        refinement = self.require(lx.IDENTIFIER).text.strip()
-                    type_prop = (type_prop_text, refinement)
-                    if consumed_bracket:
-                        self.require(lx.RPAREN)
+                type_text = self.require(lx.IDENTIFIER).text.strip()
+                if self.expect(lx.TIMES):
+                    type_text += " *"
             cond_text = ""
             if self.expect(lx.IF):
                 self.require(lx.LPAREN)
@@ -295,7 +279,7 @@ class Parser(PLexer):
                 self.require(lx.RBRACKET)
                 type_text = "PyObject **"
                 size_text = size.text.strip()
-            return StackEffect(tkn.text, type_text, cond_text, size_text, type_prop)
+            return StackEffect(tkn.text, type_text, cond_text, size_text)
         return None
 
     @contextual

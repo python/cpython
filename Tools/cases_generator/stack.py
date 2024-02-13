@@ -168,11 +168,11 @@ class Stack:
             self.top_offset.push(var)
             return ""
 
-    def flush(self, out: CWriter) -> None:
+    def flush(self, out: CWriter, cast_type: str = "PyObject *") -> None:
         out.start_line()
         for var in self.variables:
             if not var.peek:
-                cast = "(PyObject *)" if var.type else ""
+                cast = f"({cast_type})" if var.type else ""
                 if var.name not in UNUSED and not var.is_array():
                     if var.condition:
                         out.emit(f"if ({var.condition}) ")

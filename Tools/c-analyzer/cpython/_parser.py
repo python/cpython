@@ -83,9 +83,11 @@ Python/deepfreeze/*.c
 Python/frozen_modules/*.h
 Python/generated_cases.c.h
 Python/executor_cases.c.h
+Python/tier2_redundancy_eliminator_cases.c.h
 
 # not actually source
 Python/bytecodes.c
+Python/tier2_redundancy_eliminator_bytecodes.c
 
 # mimalloc
 Objects/mimalloc/*.c
