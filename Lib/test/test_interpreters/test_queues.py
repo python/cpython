@@ -20,50 +20,50 @@ class TestBase(TestBase):
                 pass
 
 
-class SharedQueueTests(TestBase):
+class QueueTests(TestBase):
 
     def test_create(self):
         with self.subTest('vanilla'):
-            queue = queues.create_shared()
+            queue = queues.create()
             self.assertEqual(queue.maxsize, 0)
 
         with self.subTest('small maxsize'):
-            queue = queues.create_shared(3)
+            queue = queues.create(3)
             self.assertEqual(queue.maxsize, 3)
 
         with self.subTest('big maxsize'):
-            queue = queues.create_shared(100)
+            queue = queues.create(100)
             self.assertEqual(queue.maxsize, 100)
 
         with self.subTest('no maxsize'):
-            queue = queues.create_shared(0)
+            queue = queues.create(0)
             self.assertEqual(queue.maxsize, 0)
 
         with self.subTest('negative maxsize'):
-            queue = queues.create_shared(-10)
+            queue = queues.create(-10)
             self.assertEqual(queue.maxsize, -10)
 
         with self.subTest('bad maxsize'):
             with self.assertRaises(TypeError):
-                queues.create_shared('1')
+                queues.create('1')
 
     def test_shareable(self):
-        queue1 = queues.create_shared()
+        queue1 = queues.create()
 
         interp = interpreters.create()
         interp.exec_sync(dedent(f"""
             from test.support.interpreters import queues
-            queue1 = queues.SharedQueue({queue1.id})
+            queue1 = queues.Queue({queue1.id})
             """));
 
         with self.subTest('same interpreter'):
-            queue2 = queues.create_shared()
+            queue2 = queues.create()
             queue1.put(queue2)
             queue3 = queue1.get()
             self.assertIs(queue3, queue2)
 
         with self.subTest('from current interpreter'):
-            queue4 = queues.create_shared()
+            queue4 = queues.create()
             queue1.put(queue4)
             out = _run_output(interp, dedent("""
                 queue4 = queue1.get()
@@ -74,7 +74,7 @@ class SharedQueueTests(TestBase):
 
         with self.subTest('from subinterpreter'):
             out = _run_output(interp, dedent("""
-                queue5 = queues.create_shared()
+                queue5 = queues.create()
                 queue1.put(queue5)
                 print(queue5.id)
                 """))
@@ -83,40 +83,40 @@ class SharedQueueTests(TestBase):
             self.assertEqual(queue5.id, qid)
 
     def test_id_type(self):
-        queue = queues.create_shared()
+        queue = queues.create()
         self.assertIsInstance(queue.id, int)
 
     def test_custom_id(self):
         with self.assertRaises(queues.QueueNotFoundError):
-            queues.SharedQueue(1_000_000)
+            queues.Queue(1_000_000)
 
     def test_id_readonly(self):
-        queue = queues.create_shared()
+        queue = queues.create()
         with self.assertRaises(AttributeError):
             queue.id = 1_000_000
 
     def test_maxsize_readonly(self):
-        queue = queues.create_shared(10)
+        queue = queues.create(10)
         with self.assertRaises(AttributeError):
             queue.maxsize = 1_000_000
 
     def test_hashable(self):
-        queue = queues.create_shared()
+        queue = queues.create()
         expected = hash(queue.id)
         actual = hash(queue)
         self.assertEqual(actual, expected)
 
     def test_equality(self):
-        queue1 = queues.create_shared()
-        queue2 = queues.create_shared()
+        queue1 = queues.create()
+        queue2 = queues.create()
         self.assertEqual(queue1, queue1)
         self.assertNotEqual(queue1, queue2)
 
 
-class TestSharedQueueOps(TestBase):
+class TestQueueOps(TestBase):
 
     def test_empty(self):
-        queue = queues.create_shared()
+        queue = queues.create()
         before = queue.empty()
         queue.put(None)
         during = queue.empty()
@@ -130,7 +130,7 @@ class TestSharedQueueOps(TestBase):
     def test_full(self):
         expected = [False, False, False, True, False, False, False]
         actual = []
-        queue = queues.create_shared(3)
+        queue = queues.create(3)
         for _ in range(3):
             actual.append(queue.full())
             queue.put(None)
@@ -144,7 +144,7 @@ class TestSharedQueueOps(TestBase):
     def test_qsize(self):
         expected = [0, 1, 2, 3, 2, 3, 2, 1, 0, 1, 0]
         actual = []
-        queue = queues.create_shared()
+        queue = queues.create()
         for _ in range(3):
             actual.append(queue.qsize())
             queue.put(None)
@@ -165,7 +165,7 @@ class TestSharedQueueOps(TestBase):
 
     def test_put_get_main(self):
         expected = list(range(20))
-        queue = queues.create_shared()
+        queue = queues.create()
         for i in range(20):
             queue.put(i)
         actual = [queue.get() for _ in range(20)]
@@ -173,7 +173,7 @@ class TestSharedQueueOps(TestBase):
         self.assertEqual(actual, expected)
 
     def test_put_timeout(self):
-        queue = queues.create_shared(2)
+        queue = queues.create(2)
         queue.put(None)
         queue.put(None)
         with self.assertRaises(queues.QueueFull):
@@ -182,7 +182,7 @@ class TestSharedQueueOps(TestBase):
         queue.put(None)
 
     def test_put_nowait(self):
-        queue = queues.create_shared(2)
+        queue = queues.create(2)
         queue.put_nowait(None)
         queue.put_nowait(None)
         with self.assertRaises(queues.QueueFull):
@@ -191,12 +191,12 @@ class TestSharedQueueOps(TestBase):
         queue.put_nowait(None)
 
     def test_get_timeout(self):
-        queue = queues.create_shared()
+        queue = queues.create()
         with self.assertRaises(queues.QueueEmpty):
             queue.get(timeout=0.1)
 
     def test_get_nowait(self):
-        queue = queues.create_shared()
+        queue = queues.create()
         with self.assertRaises(queues.QueueEmpty):
             queue.get_nowait()
 
@@ -204,7 +204,7 @@ class TestSharedQueueOps(TestBase):
         interp = interpreters.create()
         interp.exec_sync(dedent("""
             from test.support.interpreters import queues
-            queue = queues.create_shared()
+            queue = queues.create()
             orig = b'spam'
             queue.put(orig)
             obj = queue.get()
@@ -214,8 +214,8 @@ class TestSharedQueueOps(TestBase):
 
     def test_put_get_different_interpreters(self):
         interp = interpreters.create()
-        queue1 = queues.create_shared()
-        queue2 = queues.create_shared()
+        queue1 = queues.create()
+        queue2 = queues.create()
         self.assertEqual(len(queues.list_all()), 2)
 
         obj1 = b'spam'
@@ -225,8 +225,8 @@ class TestSharedQueueOps(TestBase):
             interp,
             dedent(f"""
                 from test.support.interpreters import queues
-                queue1 = queues.SharedQueue({queue1.id})
-                queue2 = queues.SharedQueue({queue2.id})
+                queue1 = queues.Queue({queue1.id})
+                queue2 = queues.Queue({queue2.id})
                 assert queue1.qsize() == 1, 'expected: queue1.qsize() == 1'
                 obj = queue1.get()
                 assert queue1.qsize() == 0, 'expected: queue1.qsize() == 0'
@@ -249,13 +249,13 @@ class TestSharedQueueOps(TestBase):
 
     def test_put_cleared_with_subinterpreter(self):
         interp = interpreters.create()
-        queue = queues.create_shared()
+        queue = queues.create()
 
         out = _run_output(
             interp,
             dedent(f"""
                 from test.support.interpreters import queues
-                queue = queues.SharedQueue({queue.id})
+                queue = queues.Queue({queue.id})
                 obj1 = b'spam'
                 obj2 = b'eggs'
                 queue.put(obj1)
@@ -271,8 +271,8 @@ class TestSharedQueueOps(TestBase):
         self.assertEqual(queue.qsize(), 0)
 
     def test_put_get_different_threads(self):
-        queue1 = queues.create_shared()
-        queue2 = queues.create_shared()
+        queue1 = queues.create()
+        queue2 = queues.create()
 
         def f():
             while True:
