@@ -68,6 +68,7 @@ quadratic blowup           **Vulnerable** (1)  **Vulnerable** (1)  **Vulnerable*
 external entity expansion  Safe (5)            Safe (2)            Safe (3)            Safe (5)            Safe (4)
 `DTD`_ retrieval           Safe (5)            Safe                Safe                Safe (5)            Safe
 decompression bomb         Safe                Safe                Safe                Safe                **Vulnerable**
+large tokens               **Vulnerable** (6)  **Vulnerable** (6)  **Vulnerable** (6)  **Vulnerable** (6)  **Vulnerable** (6)
 =========================  ==================  ==================  ==================  ==================  ==================
 
 1. Expat 2.4.1 and newer is not vulnerable to the "billion laughs" and
@@ -81,6 +82,11 @@ decompression bomb         Safe                Safe                Safe         
 4. :mod:`xmlrpc.client` doesn't expand external entities and omits them.
 5. Since Python 3.7.1, external general entities are no longer processed by
    default.
+6. Expat 2.6.0 and newer is not vulnerable to denial of service
+   through quadratic runtime caused by parsing large tokens.
+   Items still listed as vulnerable due to
+   potential reliance on system-provided libraries. Check
+   :const:`!pyexpat.EXPAT_VERSION`.
 
 
 billion laughs / exponential entity expansion
@@ -113,6 +119,13 @@ decompression bomb
   LZMA-compressed
   files. For an attacker it can reduce the amount of transmitted data by three
   magnitudes or more.
+
+large tokens
+  Expat needs to re-parse unfinished tokens; without the protection
+  introduced in Expat 2.6.0, this can lead to quadratic runtime that can
+  be used to cause denial of service in the application parsing XML.
+  The issue is known as
+  `CVE-2023-52425 <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-52425>`_.
 
 The documentation for `defusedxml`_ on PyPI has further information about
 all known attack vectors with examples and references.
