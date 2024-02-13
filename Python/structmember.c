@@ -2,6 +2,8 @@
 /* Map C struct members to Python object attributes */
 
 #include "Python.h"
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_long.h"          // _PyLong_IsNegative()
 
 
 PyObject *
@@ -197,45 +199,67 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
             WARN("Truncation of value to int");
         break;
         }
-    case Py_T_UINT:{
-        unsigned long ulong_val = PyLong_AsUnsignedLong(v);
-        if ((ulong_val == (unsigned long)-1) && PyErr_Occurred()) {
-            /* XXX: For compatibility, accept negative int values
-               as well. */
-            PyErr_Clear();
-            ulong_val = PyLong_AsLong(v);
-            if ((ulong_val == (unsigned long)-1) &&
-                PyErr_Occurred())
-                return -1;
-            *(unsigned int *)addr = (unsigned int)ulong_val;
-            WARN("Writing negative value into unsigned field");
-        } else
-            *(unsigned int *)addr = (unsigned int)ulong_val;
-        if (ulong_val > UINT_MAX)
-            WARN("Truncation of value to unsigned int");
-        break;
+    case Py_T_UINT: {
+        /* XXX: For compatibility, accept negative int values
+           as well. */
+        v = _PyNumber_Index(v);
+        if (v == NULL) {
+            return -1;
         }
+        if (_PyLong_IsNegative((PyLongObject *)v)) {
+            long long_val = PyLong_AsLong(v);
+            Py_DECREF(v);
+            if (long_val == -1 && PyErr_Occurred()) {
+                return -1;
+            }
+            *(unsigned int *)addr = (unsigned int)(unsigned long)long_val;
+            WARN("Writing negative value into unsigned field");
+        }
+        else {
+            unsigned long ulong_val = PyLong_AsUnsignedLong(v);
+            Py_DECREF(v);
+            if (ulong_val == (unsigned long)-1 && PyErr_Occurred()) {
+                return -1;
+            }
+            *(unsigned int*)addr = (unsigned int)ulong_val;
+            if (ulong_val > UINT_MAX) {
+                WARN("Truncation of value to unsigned int");
+            }
+        }
+        break;
+    }
     case Py_T_LONG:{
         *(long*)addr = PyLong_AsLong(v);
         if ((*(long*)addr == -1) && PyErr_Occurred())
             return -1;
         break;
         }
-    case Py_T_ULONG:{
-        *(unsigned long*)addr = PyLong_AsUnsignedLong(v);
-        if ((*(unsigned long*)addr == (unsigned long)-1)
-            && PyErr_Occurred()) {
-            /* XXX: For compatibility, accept negative int values
-               as well. */
-            PyErr_Clear();
-            *(unsigned long*)addr = PyLong_AsLong(v);
-            if ((*(unsigned long*)addr == (unsigned long)-1)
-                && PyErr_Occurred())
+    case Py_T_ULONG: {
+        /* XXX: For compatibility, accept negative int values
+           as well. */
+        v = _PyNumber_Index(v);
+        if (v == NULL) {
+            return -1;
+        }
+        if (_PyLong_IsNegative((PyLongObject *)v)) {
+            long long_val = PyLong_AsLong(v);
+            Py_DECREF(v);
+            if (long_val == -1 && PyErr_Occurred()) {
                 return -1;
+            }
+            *(unsigned long *)addr = (unsigned long)long_val;
             WARN("Writing negative value into unsigned field");
         }
-        break;
+        else {
+            unsigned long ulong_val = PyLong_AsUnsignedLong(v);
+            Py_DECREF(v);
+            if (ulong_val == (unsigned long)-1 && PyErr_Occurred()) {
+                return -1;
+            }
+            *(unsigned long*)addr = ulong_val;
         }
+        break;
+    }
     case Py_T_PYSSIZET:{
         *(Py_ssize_t*)addr = PyLong_AsSsize_t(v);
         if ((*(Py_ssize_t*)addr == (Py_ssize_t)-1)
@@ -284,18 +308,30 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
             return -1;
         break;
         }
-    case Py_T_ULONGLONG:{
-        unsigned long long value;
-        /* ??? PyLong_AsLongLong accepts an int, but PyLong_AsUnsignedLongLong
-            doesn't ??? */
-        if (PyLong_Check(v))
-            *(unsigned long long*)addr = value = PyLong_AsUnsignedLongLong(v);
-        else
-            *(unsigned long long*)addr = value = PyLong_AsLong(v);
-        if ((value == (unsigned long long)-1) && PyErr_Occurred())
+    case Py_T_ULONGLONG: {
+        v = _PyNumber_Index(v);
+        if (v == NULL) {
             return -1;
-        break;
         }
+        if (_PyLong_IsNegative((PyLongObject *)v)) {
+            long long_val = PyLong_AsLong(v);
+            Py_DECREF(v);
+            if (long_val == -1 && PyErr_Occurred()) {
+                return -1;
+            }
+            *(unsigned long long *)addr = (unsigned long long)(long long)long_val;
+            WARN("Writing negative value into unsigned field");
+        }
+        else {
+            unsigned long long ulonglong_val = PyLong_AsUnsignedLongLong(v);
+            Py_DECREF(v);
+            if (ulonglong_val == (unsigned long long)-1 && PyErr_Occurred()) {
+                return -1;
+            }
+            *(unsigned long long*)addr = ulonglong_val;
+        }
+        break;
+    }
     default:
         PyErr_Format(PyExc_SystemError,
                      "bad memberdescr type for %s", l->name);

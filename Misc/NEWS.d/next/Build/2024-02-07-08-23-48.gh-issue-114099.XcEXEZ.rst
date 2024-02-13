@@ -1,0 +1,2 @@
+configure and Makefile were refactored to accomodate framework builds on
+Apple platforms other than macOS.

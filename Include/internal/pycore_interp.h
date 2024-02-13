@@ -20,6 +20,7 @@ extern "C" {
 #include "pycore_dtoa.h"          // struct _dtoa_state
 #include "pycore_exceptions.h"    // struct _Py_exc_state
 #include "pycore_floatobject.h"   // struct _Py_float_state
+#include "pycore_freelist.h"      // struct _Py_freelist_state
 #include "pycore_function.h"      // FUNC_MAX_WATCHERS
 #include "pycore_gc.h"            // struct _gc_runtime_state
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
@@ -71,7 +72,6 @@ typedef struct _rare_events {
     uint8_t set_eval_frame_func;
     /* Modifying the builtins,  __builtins__.__dict__[var] = ... */
     uint8_t builtin_dict;
-    int builtins_dict_watcher_id;
     /* Modifying a function, e.g. func.__defaults__ = ..., etc. */
     uint8_t func_modification;
 } _rare_events;
@@ -112,7 +112,7 @@ struct _is {
         /* The thread currently executing in the __main__ module, if any. */
         PyThreadState *main;
         /* Used in Modules/_threadmodule.c. */
-        long count;
+        Py_ssize_t count;
         /* Support for runtime thread stack size tuning.
            A value of 0 means using the platform's default stack size
            or the size specified by the THREAD_STACK_SIZE macro. */
@@ -201,9 +201,20 @@ struct _is {
 
 #if defined(Py_GIL_DISABLED)
     struct _mimalloc_interp_state mimalloc;
+    struct _brc_state brc;  // biased reference counting state
 #endif
 
-    struct _obmalloc_state obmalloc;
+    // Per-interpreter state for the obmalloc allocator.  For the main
+    // interpreter and for all interpreters that don't have their
+    // own obmalloc state, this points to the static structure in
+    // obmalloc.c obmalloc_state_main.  For other interpreters, it is
+    // heap allocated by _PyMem_init_obmalloc() and freed when the
+    // interpreter structure is freed.  In the case of a heap allocated
+    // obmalloc state, it is not safe to hold on to or use memory after
+    // the interpreter is freed. The obmalloc state corresponding to
+    // that allocated memory is gone.  See free_obmalloc_arenas() for
+    // more comments.
+    struct _obmalloc_state *obmalloc;
 
     PyObject *audit_hooks;
     PyType_WatchCallback type_watchers[TYPE_MAX_WATCHERS];
@@ -220,7 +231,6 @@ struct _is {
     struct _dtoa_state dtoa;
     struct _py_func_state func_state;
 
-    struct _Py_tuple_state tuple;
     struct _Py_dict_state dict_state;
     struct _Py_exc_state exc_state;
 
@@ -233,6 +243,7 @@ struct _is {
     uint16_t optimizer_backedge_threshold;
     uint32_t next_func_version;
     _rare_events rare_events;
+    PyDict_WatchCallback builtins_dict_watcher;
 
     _Py_GlobalMonitors monitors;
     bool sys_profile_initialized;
