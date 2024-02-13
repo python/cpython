@@ -251,6 +251,34 @@ class TestQueueOps(TestBase):
         with self.assertRaises(queues.QueueEmpty):
             queue.get_nowait()
 
+    def test_put_get_default_sharedonly(self):
+        expected = list(range(20))
+        queue = queues.create(sharedonly=True)
+        for i in range(20):
+            queue.put(i)
+        actual = [queue.get() for _ in range(20)]
+
+        self.assertEqual(actual, expected)
+
+        obj = [1, 2, 3]  # lists are not shareable
+        with self.assertRaises(interpreters.NotShareableError):
+            queue.put(obj)
+
+    def test_put_get_default_not_sharedonly(self):
+        expected = list(range(20))
+        queue = queues.create(sharedonly=False)
+        for i in range(20):
+            queue.put(i)
+        actual = [queue.get() for _ in range(20)]
+
+        self.assertEqual(actual, expected)
+
+        obj = [1, 2, 3]  # lists are not shareable
+        queue.put(obj)
+        obj2 = queue.get()
+        self.assertEqual(obj, obj2)
+        self.assertIsNot(obj, obj2)
+
     def test_put_get_same_interpreter(self):
         interp = interpreters.create()
         interp.exec_sync(dedent("""

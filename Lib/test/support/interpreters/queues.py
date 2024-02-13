@@ -32,40 +32,46 @@ class QueueFull(_queues.QueueFull, queue.Full):
     """
 
 
-def create(maxsize=0):
+_SHARED_ONLY = 0
+_PICKLED = 1
+
+def create(maxsize=0, *, sharedonly=False):
     """Return a new cross-interpreter queue.
 
     The queue may be used to pass data safely between interpreters.
+
+    "sharedonly" sets the default for Queue.put() and Queue.put_nowait().
     """
-    qid = _queues.create(maxsize)
-    return Queue(qid)
+    fmt = _SHARED_ONLY if sharedonly else _PICKLED
+    qid = _queues.create(maxsize, fmt)
+    return Queue(qid, _fmt=fmt)
 
 
 def list_all():
     """Return a list of all open queues."""
-    return [Queue(qid)
-            for qid in _queues.list_all()]
+    return [Queue(qid, _fmt=fmt)
+            for qid, fmt in _queues.list_all()]
 
-
-_SHARED_ONLY = 0
-_PICKLED = 1
 
 _known_queues = weakref.WeakValueDictionary()
 
 class Queue:
     """A cross-interpreter queue."""
 
-    def __new__(cls, id, /):
+    def __new__(cls, id, /, *, _fmt=None):
         # There is only one instance for any given ID.
         if isinstance(id, int):
             id = int(id)
         else:
             raise TypeError(f'id must be an int, got {id!r}')
+        if _fmt is None:
+            _fmt = _queues.get_default_fmt(id)
         try:
             self = _known_queues[id]
         except KeyError:
             self = super().__new__(cls)
             self._id = id
+            self._fmt = _fmt
             _known_queues[id] = self
             _queues.bind(id)
         return self
@@ -108,7 +114,7 @@ class Queue:
         return _queues.get_count(self._id)
 
     def put(self, obj, timeout=None, *,
-            sharedonly=False,
+            sharedonly=None,
             _delay=10 / 1000,  # 10 milliseconds
             ):
         """Add the object to the queue.
@@ -116,10 +122,14 @@ class Queue:
         This blocks while the queue is full.
 
         If "sharedonly" is true then the object must be "shareable".
-        It will be passed through the queue efficiently.  Otherwise
+        It will be passed through the queue efficiently.  If false then
         all objects are supported, at the expense of worse performance.
+        If None (the default) then it uses the queue's default.
         """
-        fmt = _SHARED_ONLY if sharedonly else _PICKLED
+        if sharedonly is None:
+            fmt = self._fmt
+        else:
+            fmt = _SHARED_ONLY if sharedonly else _PICKLED
         if timeout is not None:
             timeout = int(timeout)
             if timeout < 0:
@@ -138,7 +148,11 @@ class Queue:
             else:
                 break
 
-    def put_nowait(self, obj, *, sharedonly=False):
+    def put_nowait(self, obj, *, sharedonly=None):
+        if sharedonly is None:
+            fmt = self._fmt
+        else:
+            fmt = _SHARED_ONLY if sharedonly else _PICKLED
         fmt = _SHARED_ONLY if sharedonly else _PICKLED
         if fmt is _PICKLED:
             obj = pickle.dumps(obj)
