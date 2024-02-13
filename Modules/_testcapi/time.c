@@ -75,7 +75,6 @@ test_pytime_time(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
         printf("ERR! %d\n", (int)t);
         return NULL;
     }
-    printf("... %d\n", (int)t);
     return pytime_as_float(t);
 }
 
