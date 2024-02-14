@@ -559,6 +559,9 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                     for (int i = 0; i < nuops; i++) {
                         oparg = orig_oparg;
                         uint32_t uop = expansion->uops[i].uop;
+                        if (_PyUop_Flags[uop] & HAS_OPARG_AND_1_FLAG) {
+                            uop += 1 + (oparg & 1);
+                        }
                         uint64_t operand = 0;
                         // Add one to account for the actual opcode/oparg pair:
                         int offset = expansion->uops[i].offset + 1;

@@ -98,9 +98,30 @@ def tier2_replace_deopt(
     out.emit(") goto deoptimize;\n")
 
 
+def tier2_replace_oparg(
+    out: CWriter,
+    tkn: Token,
+    tkn_iter: Iterator[Token],
+    uop: Uop,
+    unused: Stack,
+    inst: Instruction | None,
+) -> None:
+    if not uop.name.endswith("_0") and not uop.name.endswith("_1"):
+        out.emit(tkn)
+        return
+    amp = next(tkn_iter)
+    if amp.text != "&":
+        out.emit(tkn)
+        out.emit(amp)
+        return
+    one = next(tkn_iter)
+    assert(one.text == "1")
+    out.emit_at(uop.name[-1], tkn)
+
 TIER2_REPLACEMENT_FUNCTIONS = REPLACEMENT_FUNCTIONS.copy()
 TIER2_REPLACEMENT_FUNCTIONS["ERROR_IF"] = tier2_replace_error
 TIER2_REPLACEMENT_FUNCTIONS["DEOPT_IF"] = tier2_replace_deopt
+TIER2_REPLACEMENT_FUNCTIONS["oparg"] = tier2_replace_oparg
 
 
 def write_uop(uop: Uop, out: CWriter, stack: Stack) -> None:

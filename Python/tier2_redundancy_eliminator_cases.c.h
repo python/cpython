@@ -619,6 +619,31 @@
             break;
         }
 
+        case _LOAD_GLOBAL_0: {
+            _Py_UOpsSymType *res;
+            _Py_UOpsSymType *null = NULL;
+            res = sym_new_unknown(ctx);
+            if (res == NULL) goto out_of_space;
+            null = sym_new_null(ctx);
+            if (null == NULL) goto out_of_space;
+            stack_pointer[0] = res;
+            stack_pointer += 1;
+            break;
+        }
+
+        case _LOAD_GLOBAL_1: {
+            _Py_UOpsSymType *res;
+            _Py_UOpsSymType *null = NULL;
+            res = sym_new_unknown(ctx);
+            if (res == NULL) goto out_of_space;
+            null = sym_new_null(ctx);
+            if (null == NULL) goto out_of_space;
+            stack_pointer[0] = res;
+            stack_pointer[1] = null;
+            stack_pointer += 2;
+            break;
+        }
+
         case _LOAD_GLOBAL: {
             _Py_UOpsSymType *res;
             _Py_UOpsSymType *null = NULL;
@@ -640,6 +665,31 @@
             break;
         }
 
+        case _LOAD_GLOBAL_MODULE_0: {
+            _Py_UOpsSymType *res;
+            _Py_UOpsSymType *null = NULL;
+            res = sym_new_unknown(ctx);
+            if (res == NULL) goto out_of_space;
+            null = sym_new_null(ctx);
+            if (null == NULL) goto out_of_space;
+            stack_pointer[0] = res;
+            stack_pointer += 1;
+            break;
+        }
+
+        case _LOAD_GLOBAL_MODULE_1: {
+            _Py_UOpsSymType *res;
+            _Py_UOpsSymType *null = NULL;
+            res = sym_new_unknown(ctx);
+            if (res == NULL) goto out_of_space;
+            null = sym_new_null(ctx);
+            if (null == NULL) goto out_of_space;
+            stack_pointer[0] = res;
+            stack_pointer[1] = null;
+            stack_pointer += 2;
+            break;
+        }
+
         case _LOAD_GLOBAL_MODULE: {
             _Py_UOpsSymType *res;
             _Py_UOpsSymType *null = NULL;
@@ -650,6 +700,31 @@
             stack_pointer[0] = res;
             if (oparg & 1) stack_pointer[1] = null;
             stack_pointer += 1 + (oparg & 1);
+            break;
+        }
+
+        case _LOAD_GLOBAL_BUILTINS_0: {
+            _Py_UOpsSymType *res;
+            _Py_UOpsSymType *null = NULL;
+            res = sym_new_unknown(ctx);
+            if (res == NULL) goto out_of_space;
+            null = sym_new_null(ctx);
+            if (null == NULL) goto out_of_space;
+            stack_pointer[0] = res;
+            stack_pointer += 1;
+            break;
+        }
+
+        case _LOAD_GLOBAL_BUILTINS_1: {
+            _Py_UOpsSymType *res;
+            _Py_UOpsSymType *null = NULL;
+            res = sym_new_unknown(ctx);
+            if (res == NULL) goto out_of_space;
+            null = sym_new_null(ctx);
+            if (null == NULL) goto out_of_space;
+            stack_pointer[0] = res;
+            stack_pointer[1] = null;
+            stack_pointer += 2;
             break;
         }
 
@@ -787,6 +862,10 @@
             break;
         }
 
+        /* _INSTRUMENTED_LOAD_SUPER_ATTR_0 is not a viable micro-op for tier 2 */
+
+        /* _INSTRUMENTED_LOAD_SUPER_ATTR_1 is not a viable micro-op for tier 2 */
+
         /* _INSTRUMENTED_LOAD_SUPER_ATTR is not a viable micro-op for tier 2 */
 
         case _LOAD_SUPER_ATTR_ATTR: {
@@ -794,7 +873,7 @@
             attr = sym_new_unknown(ctx);
             if (attr == NULL) goto out_of_space;
             stack_pointer[-3] = attr;
-            stack_pointer += -2 + ((0) ? 1 : 0);
+            stack_pointer += -2;
             break;
         }
 
@@ -808,6 +887,30 @@
             stack_pointer[-3] = attr;
             stack_pointer[-2] = self_or_null;
             stack_pointer += -1;
+            break;
+        }
+
+        case _LOAD_ATTR_0: {
+            _Py_UOpsSymType *attr;
+            _Py_UOpsSymType *self_or_null = NULL;
+            attr = sym_new_unknown(ctx);
+            if (attr == NULL) goto out_of_space;
+            self_or_null = sym_new_unknown(ctx);
+            if (self_or_null == NULL) goto out_of_space;
+            stack_pointer[-1] = attr;
+            break;
+        }
+
+        case _LOAD_ATTR_1: {
+            _Py_UOpsSymType *attr;
+            _Py_UOpsSymType *self_or_null = NULL;
+            attr = sym_new_unknown(ctx);
+            if (attr == NULL) goto out_of_space;
+            self_or_null = sym_new_unknown(ctx);
+            if (self_or_null == NULL) goto out_of_space;
+            stack_pointer[-1] = attr;
+            stack_pointer[0] = self_or_null;
+            stack_pointer += 1;
             break;
         }
 
@@ -832,6 +935,34 @@
             break;
         }
 
+        case _LOAD_ATTR_INSTANCE_VALUE_0: {
+            _Py_UOpsSymType *owner;
+            _Py_UOpsSymType *attr;
+            _Py_UOpsSymType *null = NULL;
+            owner = stack_pointer[-1];
+            uint16_t index = (uint16_t)this_instr->operand;
+            _LOAD_ATTR_NOT_NULL
+            (void)index;
+            (void)owner;
+            stack_pointer[-1] = attr;
+            break;
+        }
+
+        case _LOAD_ATTR_INSTANCE_VALUE_1: {
+            _Py_UOpsSymType *owner;
+            _Py_UOpsSymType *attr;
+            _Py_UOpsSymType *null = NULL;
+            owner = stack_pointer[-1];
+            uint16_t index = (uint16_t)this_instr->operand;
+            _LOAD_ATTR_NOT_NULL
+            (void)index;
+            (void)owner;
+            stack_pointer[-1] = attr;
+            stack_pointer[0] = null;
+            stack_pointer += 1;
+            break;
+        }
+
         case _LOAD_ATTR_INSTANCE_VALUE: {
             _Py_UOpsSymType *owner;
             _Py_UOpsSymType *attr;
@@ -848,6 +979,34 @@
         }
 
         case _CHECK_ATTR_MODULE: {
+            break;
+        }
+
+        case _LOAD_ATTR_MODULE_0: {
+            _Py_UOpsSymType *owner;
+            _Py_UOpsSymType *attr;
+            _Py_UOpsSymType *null = NULL;
+            owner = stack_pointer[-1];
+            uint16_t index = (uint16_t)this_instr->operand;
+            _LOAD_ATTR_NOT_NULL
+            (void)index;
+            (void)owner;
+            stack_pointer[-1] = attr;
+            break;
+        }
+
+        case _LOAD_ATTR_MODULE_1: {
+            _Py_UOpsSymType *owner;
+            _Py_UOpsSymType *attr;
+            _Py_UOpsSymType *null = NULL;
+            owner = stack_pointer[-1];
+            uint16_t index = (uint16_t)this_instr->operand;
+            _LOAD_ATTR_NOT_NULL
+            (void)index;
+            (void)owner;
+            stack_pointer[-1] = attr;
+            stack_pointer[0] = null;
+            stack_pointer += 1;
             break;
         }
 
@@ -870,6 +1029,34 @@
             break;
         }
 
+        case _LOAD_ATTR_WITH_HINT_0: {
+            _Py_UOpsSymType *owner;
+            _Py_UOpsSymType *attr;
+            _Py_UOpsSymType *null = NULL;
+            owner = stack_pointer[-1];
+            uint16_t hint = (uint16_t)this_instr->operand;
+            _LOAD_ATTR_NOT_NULL
+            (void)hint;
+            (void)owner;
+            stack_pointer[-1] = attr;
+            break;
+        }
+
+        case _LOAD_ATTR_WITH_HINT_1: {
+            _Py_UOpsSymType *owner;
+            _Py_UOpsSymType *attr;
+            _Py_UOpsSymType *null = NULL;
+            owner = stack_pointer[-1];
+            uint16_t hint = (uint16_t)this_instr->operand;
+            _LOAD_ATTR_NOT_NULL
+            (void)hint;
+            (void)owner;
+            stack_pointer[-1] = attr;
+            stack_pointer[0] = null;
+            stack_pointer += 1;
+            break;
+        }
+
         case _LOAD_ATTR_WITH_HINT: {
             _Py_UOpsSymType *owner;
             _Py_UOpsSymType *attr;
@@ -882,6 +1069,34 @@
             stack_pointer[-1] = attr;
             if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += (oparg & 1);
+            break;
+        }
+
+        case _LOAD_ATTR_SLOT_0: {
+            _Py_UOpsSymType *owner;
+            _Py_UOpsSymType *attr;
+            _Py_UOpsSymType *null = NULL;
+            owner = stack_pointer[-1];
+            uint16_t index = (uint16_t)this_instr->operand;
+            _LOAD_ATTR_NOT_NULL
+            (void)index;
+            (void)owner;
+            stack_pointer[-1] = attr;
+            break;
+        }
+
+        case _LOAD_ATTR_SLOT_1: {
+            _Py_UOpsSymType *owner;
+            _Py_UOpsSymType *attr;
+            _Py_UOpsSymType *null = NULL;
+            owner = stack_pointer[-1];
+            uint16_t index = (uint16_t)this_instr->operand;
+            _LOAD_ATTR_NOT_NULL
+            (void)index;
+            (void)owner;
+            stack_pointer[-1] = attr;
+            stack_pointer[0] = null;
+            stack_pointer += 1;
             break;
         }
 
@@ -901,6 +1116,34 @@
         }
 
         case _CHECK_ATTR_CLASS: {
+            break;
+        }
+
+        case _LOAD_ATTR_CLASS_0: {
+            _Py_UOpsSymType *owner;
+            _Py_UOpsSymType *attr;
+            _Py_UOpsSymType *null = NULL;
+            owner = stack_pointer[-1];
+            PyObject *descr = (PyObject *)this_instr->operand;
+            _LOAD_ATTR_NOT_NULL
+            (void)descr;
+            (void)owner;
+            stack_pointer[-1] = attr;
+            break;
+        }
+
+        case _LOAD_ATTR_CLASS_1: {
+            _Py_UOpsSymType *owner;
+            _Py_UOpsSymType *attr;
+            _Py_UOpsSymType *null = NULL;
+            owner = stack_pointer[-1];
+            PyObject *descr = (PyObject *)this_instr->operand;
+            _LOAD_ATTR_NOT_NULL
+            (void)descr;
+            (void)owner;
+            stack_pointer[-1] = attr;
+            stack_pointer[0] = null;
+            stack_pointer += 1;
             break;
         }
 
@@ -1229,8 +1472,8 @@
             self = sym_new_unknown(ctx);
             if (self == NULL) goto out_of_space;
             stack_pointer[-1] = attr;
-            if (1) stack_pointer[0] = self;
-            stack_pointer += ((1) ? 1 : 0);
+            stack_pointer[0] = self;
+            stack_pointer += 1;
             break;
         }
 
@@ -1242,8 +1485,8 @@
             self = sym_new_unknown(ctx);
             if (self == NULL) goto out_of_space;
             stack_pointer[-1] = attr;
-            if (1) stack_pointer[0] = self;
-            stack_pointer += ((1) ? 1 : 0);
+            stack_pointer[0] = self;
+            stack_pointer += 1;
             break;
         }
 
@@ -1252,7 +1495,6 @@
             attr = sym_new_unknown(ctx);
             if (attr == NULL) goto out_of_space;
             stack_pointer[-1] = attr;
-            stack_pointer += ((0) ? 1 : 0);
             break;
         }
 
@@ -1261,7 +1503,6 @@
             attr = sym_new_unknown(ctx);
             if (attr == NULL) goto out_of_space;
             stack_pointer[-1] = attr;
-            stack_pointer += ((0) ? 1 : 0);
             break;
         }
 
@@ -1277,8 +1518,8 @@
             self = sym_new_unknown(ctx);
             if (self == NULL) goto out_of_space;
             stack_pointer[-1] = attr;
-            if (1) stack_pointer[0] = self;
-            stack_pointer += ((1) ? 1 : 0);
+            stack_pointer[0] = self;
+            stack_pointer += 1;
             break;
         }
 
@@ -1376,7 +1617,6 @@
             ctx->frame = new_frame;
             ctx->curr_frame_depth++;
             stack_pointer = new_frame->stack_pointer;
-            stack_pointer += ((0) ? 1 : 0);
             break;
         }
 
@@ -1511,6 +1751,10 @@
         /* _CALL_KW is not a viable micro-op for tier 2 */
 
         /* _INSTRUMENTED_CALL_FUNCTION_EX is not a viable micro-op for tier 2 */
+
+        /* _CALL_FUNCTION_EX_0 is not a viable micro-op for tier 2 */
+
+        /* _CALL_FUNCTION_EX_1 is not a viable micro-op for tier 2 */
 
         /* _CALL_FUNCTION_EX is not a viable micro-op for tier 2 */
 

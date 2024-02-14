@@ -1004,7 +1004,6 @@
                 }
                 #endif
             }
-            stack_pointer += ((0) ? 1 : 0);
             DISPATCH();
         }
 
@@ -1754,7 +1753,6 @@
                 }
                 #endif
             }
-            stack_pointer += ((0) ? 1 : 0);
             DISPATCH();
         }
 
@@ -3593,8 +3591,8 @@
                 self = owner;
             }
             stack_pointer[-1] = attr;
-            if (1) stack_pointer[0] = self;
-            stack_pointer += ((1) ? 1 : 0);
+            stack_pointer[0] = self;
+            stack_pointer += 1;
             DISPATCH();
         }
 
@@ -3628,8 +3626,8 @@
                 self = owner;
             }
             stack_pointer[-1] = attr;
-            if (1) stack_pointer[0] = self;
-            stack_pointer += ((1) ? 1 : 0);
+            stack_pointer[0] = self;
+            stack_pointer += 1;
             DISPATCH();
         }
 
@@ -3675,8 +3673,8 @@
                 self = owner;
             }
             stack_pointer[-1] = attr;
-            if (1) stack_pointer[0] = self;
-            stack_pointer += ((1) ? 1 : 0);
+            stack_pointer[0] = self;
+            stack_pointer += 1;
             DISPATCH();
         }
 
@@ -3747,7 +3745,6 @@
                 attr = Py_NewRef(descr);
             }
             stack_pointer[-1] = attr;
-            stack_pointer += ((0) ? 1 : 0);
             DISPATCH();
         }
 
@@ -3790,7 +3787,6 @@
                 attr = Py_NewRef(descr);
             }
             stack_pointer[-1] = attr;
-            stack_pointer += ((0) ? 1 : 0);
             DISPATCH();
         }
 
@@ -4376,7 +4372,7 @@
             Py_DECREF(self);
             if (attr == NULL) goto pop_3_error;
             stack_pointer[-3] = attr;
-            stack_pointer += -2 + ((0) ? 1 : 0);
+            stack_pointer += -2;
             DISPATCH();
         }
 
