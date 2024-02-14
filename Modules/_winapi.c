@@ -139,7 +139,7 @@ overlapped_dealloc(OverlappedObject *self)
         {
             /* The operation is still pending -- give a warning.  This
                will probably only happen on Windows XP. */
-            PyErr_SetString(PyExc_RuntimeError,
+            PyErr_SetString(PyExc_PythonFinalizationError,
                             "I/O operations still in flight while destroying "
                             "Overlapped object, the process may crash");
             PyErr_WriteUnraisable(NULL);
