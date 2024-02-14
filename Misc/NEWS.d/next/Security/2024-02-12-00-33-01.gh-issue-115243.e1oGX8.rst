@@ -1,2 +1,1 @@
-Fix possible crashes in :func:`deque.index` when calling
-:c:func:`PyObject_RichCompareBool`.
+Fix possible crashes in :meth:`collections.deque.index` when the deque is concurrently modified.
