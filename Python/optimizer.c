@@ -156,17 +156,23 @@ PyUnstable_GetOptimizer(void)
 static _PyExecutorObject *
 make_executor_from_uops(_PyUOpInstruction *buffer, const _PyBloomFilter *dependencies);
 
-static _PyExecutorObject *
-make_cold_exit_executor(int oparg);
+static void
+init_cold_exit_executor(_PyExecutorObject *executor, int oparg);
 
 static int cold_exits_initialized = 0;
-static const _PyExecutorObject *COLD_EXITS[UOP_MAX_TRACE_LENGTH] = { 0 };
+static _PyExecutorObject COLD_EXITS[UOP_MAX_TRACE_LENGTH] = { 0 };
 
 static const _PyBloomFilter EMPTY = { 0 };
 
 _PyOptimizerObject *
 _Py_SetOptimizer(PyInterpreterState *interp, _PyOptimizerObject *optimizer)
 {
+    if (cold_exits_initialized == 0) {
+        cold_exits_initialized = 1;
+        for (int i = 0; i < UOP_MAX_TRACE_LENGTH; i++) {
+            init_cold_exit_executor(&COLD_EXITS[i], i);
+        }
+    }
     if (optimizer == NULL) {
         optimizer = &_PyOptimizer_Default;
     }
@@ -199,12 +205,6 @@ _PyOptimizer_Optimize(
     _PyInterpreterFrame *frame, _Py_CODEUNIT *start,
     PyObject **stack_pointer, _PyExecutorObject **executor_ptr)
 {
-    if (cold_exits_initialized == 0) {
-        cold_exits_initialized = 1;
-        for (int i = 0; i < UOP_MAX_TRACE_LENGTH; i++) {
-            COLD_EXITS[i] = make_cold_exit_executor(i);
-        }
-    }
     PyCodeObject *code = (PyCodeObject *)frame->f_executable;
     assert(PyCode_Check(code));
     PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -841,7 +841,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, const _PyBloomFilter *depende
     }
     /* Initialize exits */
     for (int i = 0; i < exit_count; i++) {
-        executor->exits[i].executor = COLD_EXITS[i];
+        executor->exits[i].executor = &COLD_EXITS[i];
         executor->exits[i].temperature = 0;
     }
     int next_exit = exit_count-1;
@@ -905,30 +905,29 @@ make_executor_from_uops(_PyUOpInstruction *buffer, const _PyBloomFilter *depende
     return executor;
 }
 
-static _PyExecutorObject *
-make_cold_exit_executor(int oparg)
+static void
+init_cold_exit_executor(_PyExecutorObject *executor, int oparg)
 {
-    _PyExecutorObject *executor = allocate_executor(0, 1);
-    if (executor == NULL) {
-        return NULL;
-    }
+    _Py_SetImmortal(executor);
+    Py_SET_TYPE(executor, &_PyUOpExecutor_Type);
+    executor->trace = (_PyUOpInstruction *)executor->exits;
+    executor->code_size = 1;
+    executor->exit_count = 0;
     _PyUOpInstruction *inst = (_PyUOpInstruction *)&executor->trace[0];
     inst->opcode = _COLD_EXIT;
     inst->oparg = oparg;
     executor->vm_data.valid = true;
     for (int i = 0; i < BLOOM_FILTER_WORDS; i++) {
-        executor->vm_data.bloom.bits[i] = 0;
+        assert(executor->vm_data.bloom.bits[i] == 0);
     }
 #ifdef _Py_JIT
     executor->jit_code = NULL;
-    executor->code_size = 0;
+    executor->jit_size = 0;
     if (_PyJIT_Compile(executor, executor->trace, 1)) {
         Py_DECREF(executor);
         return NULL;
     }
 #endif
-    _Py_SetImmortal(executor);
-    return executor;
 }
 
 static int
@@ -1249,7 +1248,7 @@ _Py_ExecutorClear(_PyExecutorObject *executor)
     }
     for (uint32_t i = 0; i < executor->exit_count; i++) {
         Py_DECREF(executor->exits[i].executor);
-        executor->exits[i].executor = COLD_EXITS[i];
+        executor->exits[i].executor = &COLD_EXITS[i];
         executor->exits[i].temperature = INT16_MIN;
     }
     _Py_CODEUNIT *instruction = &_PyCode_CODE(code)[executor->vm_data.index];
