@@ -104,7 +104,7 @@ FTP objects
    :param timeout:
       A timeout in seconds for blocking operations like :meth:`connect`
       (default: the global default timeout setting).
-   :type timeout: int | None
+   :type timeout: float | None
 
    :param source_address:
       |param_doc_source_address|
@@ -178,7 +178,7 @@ FTP objects
       :param timeout:
          A timeout in seconds for the connection attempt
          (default: the global default timeout setting).
-      :type timeout: int | None
+      :type timeout: float | None
 
       :param source_address:
          |param_doc_source_address|
@@ -483,7 +483,7 @@ FTP_TLS objects
    :param timeout:
       A timeout in seconds for blocking operations like :meth:`~FTP.connect`
       (default: the global default timeout setting).
-   :type timeout: int | None
+   :type timeout: float | None
 
    :param source_address:
       |param_doc_source_address|
