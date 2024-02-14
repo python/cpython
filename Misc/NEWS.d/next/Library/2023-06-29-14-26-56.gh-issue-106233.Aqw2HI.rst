@@ -1,0 +1,2 @@
+Fix stacklevel in ``InvalidTZPathWarning`` during :mod:`zoneinfo` module
+import.

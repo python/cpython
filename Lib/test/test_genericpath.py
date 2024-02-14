@@ -7,9 +7,9 @@ import os
 import sys
 import unittest
 import warnings
-from test.support import is_emscripten
-from test.support import os_helper
-from test.support import warnings_helper
+from test.support import (
+    is_apple, is_emscripten, os_helper, warnings_helper
+)
 from test.support.script_helper import assert_python_ok
 from test.support.os_helper import FakePath
 
@@ -164,6 +164,12 @@ class GenericTest:
             os.close(r)
             os.close(w)
         self.assertFalse(self.pathmodule.exists(r))
+
+    def test_exists_bool(self):
+        for fd in False, True:
+            with self.assertWarnsRegex(RuntimeWarning,
+                    'bool is used as a file descriptor'):
+                self.pathmodule.exists(fd)
 
     def test_isdir(self):
         filename = os_helper.TESTFN
@@ -483,12 +489,16 @@ class CommonTest(GenericTest):
                     self.assertIsInstance(abspath(path), str)
 
     def test_nonascii_abspath(self):
-        if (os_helper.TESTFN_UNDECODABLE
-        # macOS and Emscripten deny the creation of a directory with an
-        # invalid UTF-8 name. Windows allows creating a directory with an
-        # arbitrary bytes name, but fails to enter this directory
-        # (when the bytes name is used).
-        and sys.platform not in ('win32', 'darwin', 'emscripten', 'wasi')):
+        if (
+            os_helper.TESTFN_UNDECODABLE
+            # Apple platforms and Emscripten/WASI deny the creation of a
+            # directory with an invalid UTF-8 name. Windows allows creating a
+            # directory with an arbitrary bytes name, but fails to enter this
+            # directory (when the bytes name is used).
+            and sys.platform not in {
+                "win32", "emscripten", "wasi"
+            } and not is_apple
+        ):
             name = os_helper.TESTFN_UNDECODABLE
         elif os_helper.TESTFN_NONASCII:
             name = os_helper.TESTFN_NONASCII
