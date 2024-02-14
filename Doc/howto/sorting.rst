@@ -96,10 +96,14 @@ The same technique works for objects with named attributes. For example:
     >>> sorted(student_objects, key=lambda student: student.age)   # sort by age
     [('dave', 'B', 10), ('jane', 'B', 12), ('john', 'A', 15)]
 
+Objects with named functions can be made by a regular class as shown
+above, or they can be instances of :class:`dataclasses.dataclass` or a
+:term:`named tuple`.
+
 Operator Module Functions and Partial Function Evaluation
 =========================================================
 
-The key-function patterns shown above are very common, so Python provides
+The :term:`key function` patterns shown above are very common, so Python provides
 convenience functions to make accessor functions easier and faster. The
 :mod:`operator` module has :func:`~operator.itemgetter`,
 :func:`~operator.attrgetter`, and a :func:`~operator.methodcaller` function.
