@@ -3,6 +3,7 @@
 import os
 import sys
 
+from test.support import swap_attr
 from test.support import os_helper
 
 class OverwriteTests:
@@ -153,3 +154,24 @@ class OverwriteTests:
                 self.extractall(ar)
         self.assertTrue(os.path.islink(target))
         self.assertFalse(os.path.exists(target2))
+
+    def test_concurrent_extract_dir(self):
+        target = os.path.join(self.testdir, 'test')
+        def concurrent_mkdir(*args, **kwargs):
+            orig_mkdir(*args, **kwargs)
+            orig_mkdir(*args, **kwargs)
+        with swap_attr(os, 'mkdir', concurrent_mkdir) as orig_mkdir:
+            with self.open(self.ar_with_dir) as ar:
+                self.extractall(ar)
+        self.assertTrue(os.path.isdir(target))
+
+    def test_concurrent_extract_implicit_dir(self):
+        target = os.path.join(self.testdir, 'test')
+        def concurrent_mkdir(*args, **kwargs):
+            orig_mkdir(*args, **kwargs)
+            orig_mkdir(*args, **kwargs)
+        with swap_attr(os, 'mkdir', concurrent_mkdir) as orig_mkdir:
+            with self.open(self.ar_with_implicit_dir) as ar:
+                self.extractall(ar)
+        self.assertTrue(os.path.isdir(target))
+        self.assertTrue(os.path.isfile(os.path.join(target, 'file')))

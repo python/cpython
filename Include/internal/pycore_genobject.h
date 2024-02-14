@@ -26,10 +26,6 @@ extern PyTypeObject _PyCoroWrapper_Type;
 extern PyTypeObject _PyAsyncGenWrappedValue_Type;
 extern PyTypeObject _PyAsyncGenAThrow_Type;
 
-/* runtime lifecycle */
-
-extern void _PyAsyncGen_Fini(_PyFreeListState *);
-
 #ifdef __cplusplus
 }
 #endif

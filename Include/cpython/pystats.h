@@ -120,6 +120,9 @@ typedef struct _optimization_stats {
     uint64_t trace_length_hist[_Py_UOP_HIST_SIZE];
     uint64_t trace_run_length_hist[_Py_UOP_HIST_SIZE];
     uint64_t optimized_trace_length_hist[_Py_UOP_HIST_SIZE];
+    uint64_t optimizer_attempts;
+    uint64_t optimizer_successes;
+    uint64_t optimizer_failure_reason_no_memory;
 } OptimizationStats;
 
 typedef struct _rare_event_stats {
@@ -133,6 +136,9 @@ typedef struct _rare_event_stats {
     uint64_t builtin_dict;
     /* Modifying a function, e.g. func.__defaults__ = ..., etc. */
     uint64_t func_modification;
+    /* Modifying a dict that is being watched */
+    uint64_t watched_dict_modification;
+    uint64_t watched_globals_modification;
 } RareEventStats;
 
 typedef struct _stats {
