@@ -55,7 +55,7 @@ For example, here's a case-insensitive string comparison:
 
 .. doctest::
 
-    >>> sorted("This is a test string from Andrew".split(), key=str.lower)
+    >>> sorted("This is a test string from Andrew".split(), key=str.casefold)
     ['a', 'Andrew', 'from', 'is', 'string', 'test', 'This']
 
 The value of the *key* parameter should be a function (or other callable) that
