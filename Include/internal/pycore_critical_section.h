@@ -96,13 +96,13 @@ extern "C" {
         _PyCriticalSection_End(&_cs);                                   \
     }
 
-# define Py_BEGIN_CRITICAL_SECTION_OPT(op)                              \
+# define Py_XBEGIN_CRITICAL_SECTION(op)                                 \
     {                                                                   \
         _PyCriticalSection _cs_opt = {0};                               \
-        _PyCriticalSection_BeginOpt(&_cs_opt, _PyObject_CAST(op))
+        _PyCriticalSection_XBegin(&_cs_opt, _PyObject_CAST(op))
 
-# define Py_END_CRITICAL_SECTION_OPT()                                  \
-        _PyCriticalSection_EndOpt(&_cs_opt);                            \
+# define Py_XEND_CRITICAL_SECTION()                                     \
+        _PyCriticalSection_XEnd(&_cs_opt);                              \
     }
 
 # define Py_BEGIN_CRITICAL_SECTION2(a, b)                               \
@@ -199,7 +199,7 @@ _PyCriticalSection_Begin(_PyCriticalSection *c, PyMutex *m)
 }
 
 static inline void
-_PyCriticalSection_BeginOpt(_PyCriticalSection *c, PyObject *op)
+_PyCriticalSection_XBegin(_PyCriticalSection *c, PyObject *op)
 {
 #ifdef Py_GIL_DISABLED
     if (op != NULL) {
@@ -231,7 +231,7 @@ _PyCriticalSection_End(_PyCriticalSection *c)
 }
 
 static inline void
-_PyCriticalSection_EndOpt(_PyCriticalSection *c)
+_PyCriticalSection_XEnd(_PyCriticalSection *c)
 {
     if (c->mutex) {
         _PyCriticalSection_End(c);

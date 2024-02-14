@@ -50,13 +50,13 @@ test_critical_sections(PyObject *self, PyObject *Py_UNUSED(args))
     assert_nogil(!PyMutex_IsLocked(&d2->ob_mutex));
 
     // Optional variant behaves the same if the object is non-NULL
-    Py_BEGIN_CRITICAL_SECTION_OPT(d1);
+    Py_XBEGIN_CRITICAL_SECTION(d1);
     assert_nogil(PyMutex_IsLocked(&d1->ob_mutex));
-    Py_END_CRITICAL_SECTION_OPT();
+    Py_XEND_CRITICAL_SECTION();
 
     // No-op
-    Py_BEGIN_CRITICAL_SECTION_OPT(NULL);
-    Py_END_CRITICAL_SECTION_OPT();
+    Py_XBEGIN_CRITICAL_SECTION(NULL);
+    Py_XEND_CRITICAL_SECTION();
 
     Py_DECREF(d2);
     Py_DECREF(d1);
