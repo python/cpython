@@ -38,7 +38,7 @@ import sys
 class error(Exception):
     pass
 
-_names = ['dbm.gnu', 'dbm.ndbm', 'dbm.sqlite3', 'dbm.dumb']
+_names = ['dbm.sqlite3', 'dbm.gnu', 'dbm.ndbm', 'dbm.dumb']
 _defaultmod = None
 _modules = {}
 
