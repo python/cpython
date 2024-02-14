@@ -3462,10 +3462,8 @@
             oparg = CURRENT_OPARG();
             TIER_TWO_ONLY
             _PyExecutorObject *previous = (_PyExecutorObject *)tstate->previous_executor;
-            assert(previous->trace[0].opcode != _COLD_EXIT);
             _PyExitData *exit = &previous->exits[oparg];
             exit->temperature++;
-            assert(exit->executor->trace[0].opcode == _COLD_EXIT);
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
             if (exit->temperature < (int32_t)tstate->interp->optimizer_side_threshold) {
