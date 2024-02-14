@@ -4,15 +4,13 @@ on:
     paths:
       - '**jit**'
       - 'Python/bytecodes.c'
-      - 'Python/optimizer.c'
-      - 'Python/optimizer_analysis.c'
+      - 'Python/optimizer*.c'
       - 'Python/tier2_redundancy_eliminator_bytecodes.c'
   push:
     paths:
       - '**jit**'
       - 'Python/bytecodes.c'
-      - 'Python/optimizer.c'
-      - 'Python/optimizer_analysis.c'
+      - 'Python/optimizer*.c'
       - 'Python/tier2_redundancy_eliminator_bytecodes.c'
   workflow_dispatch:
 
