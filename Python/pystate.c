@@ -1044,7 +1044,14 @@ _PyInterpreterState_SetNotRunningMain(PyInterpreterState *interp)
 int
 _PyInterpreterState_IsRunningMain(PyInterpreterState *interp)
 {
-    return (interp->threads.main != NULL);
+    if (interp->threads.main != NULL) {
+        return 1;
+    }
+    // For now, we assume the main interpreter is always running.
+    if (_Py_IsMainInterpreter(interp)) {
+        return 1;
+    }
+    return 0;
 }
 
 int
