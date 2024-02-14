@@ -1050,6 +1050,16 @@ _io__Buffered_read1_impl(buffered *self, Py_ssize_t n)
         Py_DECREF(res);
         return NULL;
     }
+    /* Flush the write buffer if necessary */
+    if (self->writable) {
+        PyObject *r = buffered_flush_and_rewind_unlocked(self);
+        if (r == NULL) {
+            LEAVE_BUFFERED(self)
+            Py_DECREF(res);
+            return NULL;
+        }
+        Py_DECREF(r);
+    }
     _bufferedreader_reset_buf(self);
     r = _bufferedreader_raw_read(self, PyBytes_AS_STRING(res), n);
     LEAVE_BUFFERED(self)
@@ -2526,9 +2536,9 @@ static PyMemberDef bufferedreader_members[] = {
 };
 
 static PyGetSetDef bufferedreader_getset[] = {
-    _IO__BUFFERED_CLOSED_GETTERDEF
-    _IO__BUFFERED_NAME_GETTERDEF
-    _IO__BUFFERED_MODE_GETTERDEF
+    _IO__BUFFERED_CLOSED_GETSETDEF
+    _IO__BUFFERED_NAME_GETSETDEF
+    _IO__BUFFERED_MODE_GETSETDEF
     {NULL}
 };
 
@@ -2586,9 +2596,9 @@ static PyMemberDef bufferedwriter_members[] = {
 };
 
 static PyGetSetDef bufferedwriter_getset[] = {
-    _IO__BUFFERED_CLOSED_GETTERDEF
-    _IO__BUFFERED_NAME_GETTERDEF
-    _IO__BUFFERED_MODE_GETTERDEF
+    _IO__BUFFERED_CLOSED_GETSETDEF
+    _IO__BUFFERED_NAME_GETSETDEF
+    _IO__BUFFERED_MODE_GETSETDEF
     {NULL}
 };
 
@@ -2704,9 +2714,9 @@ static PyMemberDef bufferedrandom_members[] = {
 };
 
 static PyGetSetDef bufferedrandom_getset[] = {
-    _IO__BUFFERED_CLOSED_GETTERDEF
-    _IO__BUFFERED_NAME_GETTERDEF
-    _IO__BUFFERED_MODE_GETTERDEF
+    _IO__BUFFERED_CLOSED_GETSETDEF
+    _IO__BUFFERED_NAME_GETSETDEF
+    _IO__BUFFERED_MODE_GETSETDEF
     {NULL}
 };
 

@@ -5,6 +5,7 @@ from typing import Any
 
 from test import support
 from test.support import os_helper
+from test.support import refleak_helper
 
 from .runtests import HuntRefleak
 from .utils import clear_caches
@@ -96,7 +97,12 @@ def runtest_refleak(test_name, test_func,
     support.gc_collect()
 
     for i in rep_range:
-        results = test_func()
+        current = refleak_helper._hunting_for_refleaks
+        refleak_helper._hunting_for_refleaks = True
+        try:
+            results = test_func()
+        finally:
+            refleak_helper._hunting_for_refleaks = current
 
         dash_R_cleanup(fs, ps, pic, zdc, abcs)
         support.gc_collect()
@@ -195,8 +201,8 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     # Clear caches
     clear_caches()
 
-    # Clear type cache at the end: previous function calls can modify types
-    sys._clear_type_cache()
+    # Clear other caches last (previous function calls can re-populate them):
+    sys._clear_internal_caches()
 
 
 def warm_caches():
