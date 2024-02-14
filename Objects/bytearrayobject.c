@@ -650,7 +650,9 @@ bytearray_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *valu
         bytes = NULL;
         needed = 0;
     }
-    else if (values == (PyObject *)self || !PyObject_CheckBuffer(values)) {
+    else if (values == (PyObject *)self || !PyObject_CheckBuffer(values) ||
+            PyObject_GetBuffer(values, &vbytes, PyBUF_SIMPLE) != 0)
+    {
         int err;
         if (PyNumber_Check(values) || PyUnicode_Check(values)) {
             PyErr_SetString(PyExc_TypeError,
@@ -667,8 +669,6 @@ bytearray_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *valu
         return err;
     }
     else {
-        if (PyObject_GetBuffer(values, &vbytes, PyBUF_SIMPLE) != 0)
-            return -1;
         bytes = vbytes.buf;
         needed = vbytes.len;
     }
