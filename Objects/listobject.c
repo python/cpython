@@ -3441,6 +3441,7 @@ static PyObject *
 listiter_reduce_general(void *_it, int forward)
 {
     PyObject *list;
+    PyObject *iter;
 
     /* _PyEval_GetBuiltin can invoke arbitrary code,
      * call must be before access of iterator pointers.
@@ -3448,7 +3449,7 @@ listiter_reduce_general(void *_it, int forward)
 
     /* the objects are not the same, index is of different types! */
     if (forward) {
-        PyObject *iter = _PyEval_GetBuiltin(&_Py_ID(iter));
+        iter = _PyEval_GetBuiltin(&_Py_ID(iter));
         if (!iter) {
             return NULL;
         }
@@ -3456,21 +3457,19 @@ listiter_reduce_general(void *_it, int forward)
         if (it->it_seq) {
             return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
         }
-        Py_DECREF(iter);
     } else {
-        PyObject *reversed = _PyEval_GetBuiltin(&_Py_ID(reversed));
-        if (!reversed) {
+        iter = _PyEval_GetBuiltin(&_Py_ID(reversed));
+        if (!iter) {
             return NULL;
         }
         listreviterobject *it = (listreviterobject *)_it;
         if (it->it_seq) {
-            return Py_BuildValue("N(O)n", reversed, it->it_seq, it->it_index);
+            return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
         }
-        Py_DECREF(reversed);
     }
     /* empty iterator, create an empty list */
     list = PyList_New(0);
     if (list == NULL)
         return NULL;
-    return Py_BuildValue("N(N)", _PyEval_GetBuiltin(&_Py_ID(iter)), list);
+    return Py_BuildValue("N(N)", iter, list);
 }
