@@ -962,13 +962,13 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
 }
 
 
-static void maybe_freelist_clear(_PyFreeListState *, int);
+static void maybe_freelist_clear(struct _Py_object_freelists *, int);
 
 
 void
-_PyTuple_ClearFreeList(_PyFreeListState *state, int is_finalization)
+_PyTuple_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization)
 {
-    maybe_freelist_clear(state, is_finalization);
+    maybe_freelist_clear(freelists, is_finalization);
 }
 
 /*********************** Tuple Iterator **************************/
@@ -1120,26 +1120,26 @@ tuple_iter(PyObject *seq)
  * freelists *
  *************/
 
-#define STATE (state->tuples)
-#define FREELIST_FINALIZED (STATE.numfree[0] < 0)
+#define TUPLE_FREELIST (freelists->tuples)
+#define FREELIST_FINALIZED (TUPLE_FREELIST.numfree[0] < 0)
 
 static inline PyTupleObject *
 maybe_freelist_pop(Py_ssize_t size)
 {
 #ifdef WITH_FREELISTS
-    _PyFreeListState *state = _PyFreeListState_GET();
+    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
     if (size == 0) {
         return NULL;
     }
     assert(size > 0);
     if (size < PyTuple_MAXSAVESIZE) {
         Py_ssize_t index = size - 1;
-        PyTupleObject *op = STATE.free_list[index];
+        PyTupleObject *op = TUPLE_FREELIST.free_list[index];
         if (op != NULL) {
             /* op is the head of a linked list, with the first item
                pointing to the next node.  Here we pop off the old head. */
-            STATE.free_list[index] = (PyTupleObject *) op->ob_item[0];
-            STATE.numfree[index]--;
+            TUPLE_FREELIST.free_list[index] = (PyTupleObject *) op->ob_item[0];
+            TUPLE_FREELIST.numfree[index]--;
             /* Inlined _PyObject_InitVar() without _PyType_HasFeature() test */
 #ifdef Py_TRACE_REFS
             /* maybe_freelist_push() ensures these were already set. */
@@ -1161,21 +1161,21 @@ static inline int
 maybe_freelist_push(PyTupleObject *op)
 {
 #ifdef WITH_FREELISTS
-    _PyFreeListState *state = _PyFreeListState_GET();
+    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
     if (Py_SIZE(op) == 0) {
         return 0;
     }
     Py_ssize_t index = Py_SIZE(op) - 1;
     if (index < PyTuple_NFREELISTS
-        && STATE.numfree[index] < PyTuple_MAXFREELIST
-        && STATE.numfree[index] >= 0
+        && TUPLE_FREELIST.numfree[index] < PyTuple_MAXFREELIST
+        && TUPLE_FREELIST.numfree[index] >= 0
         && Py_IS_TYPE(op, &PyTuple_Type))
     {
         /* op is the head of a linked list, with the first item
            pointing to the next node.  Here we set op as the new head. */
-        op->ob_item[0] = (PyObject *) STATE.free_list[index];
-        STATE.free_list[index] = op;
-        STATE.numfree[index]++;
+        op->ob_item[0] = (PyObject *) TUPLE_FREELIST.free_list[index];
+        TUPLE_FREELIST.free_list[index] = op;
+        TUPLE_FREELIST.numfree[index]++;
         OBJECT_STAT_INC(to_freelist);
         return 1;
     }
@@ -1184,13 +1184,13 @@ maybe_freelist_push(PyTupleObject *op)
 }
 
 static void
-maybe_freelist_clear(_PyFreeListState *state, int fini)
+maybe_freelist_clear(struct _Py_object_freelists *freelists, int fini)
 {
 #ifdef WITH_FREELISTS
     for (Py_ssize_t i = 0; i < PyTuple_NFREELISTS; i++) {
-        PyTupleObject *p = STATE.free_list[i];
-        STATE.free_list[i] = NULL;
-        STATE.numfree[i] = fini ? -1 : 0;
+        PyTupleObject *p = TUPLE_FREELIST.free_list[i];
+        TUPLE_FREELIST.free_list[i] = NULL;
+        TUPLE_FREELIST.numfree[i] = fini ? -1 : 0;
         while (p) {
             PyTupleObject *q = p;
             p = (PyTupleObject *)(p->ob_item[0]);
@@ -1205,13 +1205,13 @@ void
 _PyTuple_DebugMallocStats(FILE *out)
 {
 #ifdef WITH_FREELISTS
-    _PyFreeListState *state = _PyFreeListState_GET();
+    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
     for (int i = 0; i < PyTuple_NFREELISTS; i++) {
         int len = i + 1;
         char buf[128];
         PyOS_snprintf(buf, sizeof(buf),
                       "free %d-sized PyTupleObject", len);
-        _PyDebugAllocatorStats(out, buf, STATE.numfree[i],
+        _PyDebugAllocatorStats(out, buf, TUPLE_FREELIST.numfree[i],
                                _PyObject_VAR_SIZE(&PyTuple_Type, len));
     }
 #endif
