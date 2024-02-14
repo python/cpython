@@ -205,10 +205,6 @@ The :mod:`dbm.gnu` module provides an interface to the :abbr:`GDBM (GNU dbm)`
 library, similar to the :mod:`dbm.ndbm` module, but with additional
 functionality like crash tolerance.
 
-:class:`!gdbm` objects behave similar to :term:`mappings <mapping>`,
-except that keys and values are always converted to :class:`bytes` before storing,
-and the :meth:`!items` and :meth:`!values` methods are not supported.
-
 .. note:: |incompat_note|
 
 .. exception:: error
@@ -256,8 +252,9 @@ and the :meth:`!items` and :meth:`!values` methods are not supported.
 
       A string of characters the *flag* parameter of :meth:`~dbm.gnu.open` supports.
 
-   In addition to the dictionary-like methods, :class:`gdbm` objects have the
-   following methods and attributes:
+   :class:`!gdbm` objects behave similar to :term:`mappings <mapping>`,
+   but :meth:`!items` and :meth:`!values` methods are not supported.
+   The following methods are also provided:
 
    .. method:: gdbm.firstkey()
 
@@ -314,10 +311,6 @@ and the :meth:`!items` and :meth:`!values` methods are not supported.
 
 The :mod:`dbm.ndbm` module provides an interface to the
 :abbr:`NDBM (New Database Manager)` library.
-:class:`!ndbm` objects behave similar to :term:`mappings <mapping>`,
-except that keys and values are always stored as :class:`bytes`,
-and the :meth:`!items` and :meth:`!values` methods are not supported.
-
 This module can be used with the "classic" NDBM interface or the
 :abbr:`GDBM (GNU dbm)` compatibility interface.
 
@@ -359,8 +352,9 @@ This module can be used with the "classic" NDBM interface or the
    :param int mode:
       |mode_param_doc|
 
-   In addition to the dictionary-like methods, :class:`!ndbm` objects
-   provide the following method:
+   :class:`!ndbm` objects behave similar to :term:`mappings <mapping>`,
+   but :meth:`!items` and :meth:`!values` methods are not supported.
+   The following methods are also provided:
 
    .. versionchanged:: 3.11
       Accepts :term:`path-like object` for filename.
@@ -399,8 +393,6 @@ The :mod:`dbm.dumb` module provides a persistent :class:`dict`-like
 interface which is written entirely in Python.
 Unlike other :mod:`dbm` backends, such as :mod:`dbm.gnu`, no
 external library is required.
-As with other :mod:`dbm` backends,
-the keys and values are always stored as :class:`bytes`.
 
 The :mod:`!dbm.dumb` module defines the following:
 
