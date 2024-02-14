@@ -2353,10 +2353,9 @@ impl_definition block
         clinic = self
 
     def warn(self, *args: object) -> None:
-        warn_or_fail(*args,
-                     filename=self.filename,
-                     line_number=self.block_parser.line_number,
-                     fail=False)
+        warn(*args,
+             filename=self.filename,
+             line_number=self.block_parser.line_number)
 
     def fail(self, *args: object, line_number: int | None = None) -> NoReturn:
         if line_number is None:
