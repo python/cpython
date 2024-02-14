@@ -301,6 +301,9 @@ Odds and Ends
 
   However, note that ``<`` can fall back to using :meth:`~object.__gt__` if
   :meth:`~object.__lt__` is not implemented (see :func:`object.__lt__`).
+  To avoid surprises, :pep:`8` recommends that all six comparison
+  methods be implemented.  The :func:`~functools.total_ordering`
+  decorator is provided to make that task easier.
 
 * Key functions need not depend directly on the objects being sorted. A key
   function can also access external resources. For instance, if the student grades
