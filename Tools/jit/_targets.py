@@ -37,6 +37,7 @@ class _Target(typing.Generic[_S, _R]):
     triple: str
     _: dataclasses.KW_ONLY
     alignment: int = 1
+    pic: bool = False
     prefix: str = ""
     debug: bool = False
     force: bool = False
@@ -121,8 +122,8 @@ class _Target(typing.Generic[_S, _R]):
             "-fno-asynchronous-unwind-tables",
             # SET_FUNCTION_ATTRIBUTE on 32-bit Windows debug builds:
             "-fno-jump-tables",
-            # Position-independent code adds indirection to every load and jump:
-            "-fno-pic",
+            "-fno-plt",
+            "-fpic" if self.pic else "-fno-pic",
             # Don't make calls to weird stack-smashing canaries:
             "-fno-stack-protector",
             # We have three options for code model:
@@ -131,7 +132,7 @@ class _Target(typing.Generic[_S, _R]):
             # - "medium": assumes that code resides in the lowest 2GB of memory,
             #   and makes no assumptions about data (not available on aarch64)
             # - "large": makes no assumptions about either code or data
-            "-mcmodel=large",
+            "-mcmodel=small" if self.pic else "-mcmodel=large",
             "-o",
             f"{o}",
             "-std=c11",
@@ -284,7 +285,21 @@ class _ELF(
     def _handle_relocation(
         self, base: int, relocation: _schema.ELFRelocation, raw: bytes
     ) -> _stencils.Hole:
+        symbol: str | None
         match relocation:
+            case {
+                "Addend": addend,
+                "Offset": offset,
+                "Symbol": {"Value": s},
+                "Type": {
+                    "Value": "R_X86_64_GOTPCREL"
+                    | "R_X86_64_GOTPCRELX"
+                    | "R_X86_64_REX_GOTPCRELX" as kind
+                },
+            }:
+                offset += base
+                s = s.removeprefix(self.prefix)
+                value, symbol = _stencils.HoleValue.GOT, s
             case {
                 "Addend": addend,
                 "Offset": offset,
@@ -390,5 +405,5 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
     if re.fullmatch(r"x86_64-pc-windows-msvc", host):
         return _COFF(host)
     if re.fullmatch(r"x86_64-.*-linux-gnu", host):
-        return _ELF(host)
+        return _ELF(host, pic=True)
     raise ValueError(host)

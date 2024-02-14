@@ -47,18 +47,18 @@ jit_error(const char *message)
     PyErr_Format(PyExc_RuntimeWarning, "JIT %s (%d)", message, hint);
 }
 
-static char *
+static unsigned char *
 jit_alloc(size_t size)
 {
     assert(size);
     assert(size % get_page_size() == 0);
 #ifdef MS_WINDOWS
     int flags = MEM_COMMIT | MEM_RESERVE;
-    char *memory = VirtualAlloc(NULL, size, flags, PAGE_READWRITE);
+    unsigned char *memory = VirtualAlloc(NULL, size, flags, PAGE_READWRITE);
     int failed = memory == NULL;
 #else
     int flags = MAP_ANONYMOUS | MAP_PRIVATE;
-    char *memory = mmap(NULL, size, PROT_READ | PROT_WRITE, flags, -1, 0);
+    unsigned char *memory = mmap(NULL, size, PROT_READ | PROT_WRITE, flags, -1, 0);
     int failed = memory == MAP_FAILED;
 #endif
     if (failed) {
@@ -69,7 +69,7 @@ jit_alloc(size_t size)
 }
 
 static int
-jit_free(char *memory, size_t size)
+jit_free(unsigned char *memory, size_t size)
 {
     assert(size);
     assert(size % get_page_size() == 0);
@@ -86,7 +86,7 @@ jit_free(char *memory, size_t size)
 }
 
 static int
-mark_executable(char *memory, size_t size)
+mark_executable(unsigned char *memory, size_t size)
 {
     if (size == 0) {
         return 0;
@@ -102,7 +102,7 @@ mark_executable(char *memory, size_t size)
     int old;
     int failed = !VirtualProtect(memory, size, PAGE_EXECUTE_READ, &old);
 #else
-    __builtin___clear_cache((char *)memory, (char *)memory + size);
+    __builtin___clear_cache(memory, memory + size);
     int failed = mprotect(memory, size, PROT_EXEC | PROT_READ);
 #endif
     if (failed) {
@@ -113,7 +113,7 @@ mark_executable(char *memory, size_t size)
 }
 
 static int
-mark_readable(char *memory, size_t size)
+mark_readable(unsigned char *memory, size_t size)
 {
     if (size == 0) {
         return 0;
@@ -169,11 +169,11 @@ set_bits(uint32_t *loc, uint8_t loc_start, uint64_t value, uint8_t value_start,
 // Fill all of stencil's holes in the memory pointed to by base, using the
 // values in patches.
 static void
-patch(char *base, const Stencil *stencil, uint64_t *patches)
+patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
 {
     for (uint64_t i = 0; i < stencil->holes_size; i++) {
         const Hole *hole = &stencil->holes[i];
-        void *location = base + hole->offset;
+        unsigned char *location = base + hole->offset;
         uint64_t value = patches[hole->value] + (uint64_t)hole->symbol + hole->addend;
         uint32_t *loc32 = (uint32_t *)location;
         uint64_t *loc64 = (uint64_t *)location;
@@ -207,6 +207,46 @@ patch(char *base, const Stencil *stencil, uint64_t *patches)
             case HoleKind_R_X86_64_64:
                 // 64-bit absolute address.
                 *loc64 = value;
+                continue;
+            case HoleKind_R_X86_64_GOTPCRELX:
+            case HoleKind_R_X86_64_REX_GOTPCRELX:
+                // 32-bit relative address.
+                // Try to relax the GOT load into an immediate value:
+                uint64_t relaxed = *(uint64_t *)(value + 4) - 4;
+                if ((int64_t)relaxed - (int64_t)location >= -(1L << 31) &&
+                    (int64_t)relaxed - (int64_t)location + 1 < (1L << 31))
+                {
+                    if (location[-2] == 0x8B) {
+                        location[-2] = 0x8D;
+                    }
+                    else if (location[-2] == 0xFF && location[-1] == 0x15) {
+                        location[-2] = 0x67;
+                        location[-1] = 0xE8;
+                    }
+                    else if (location[-2] == 0xFF && location[-1] == 0x25) {
+                        location[-2] = 0xE9;
+                        location[3] = 0x90;
+                        loc32 = (uint32_t *)(location - 1);
+                        relaxed += 1;
+                    }
+                    else if (location[-2] == 0x85) {
+                        location[-3] = (location[-3] & ~0x4) | (location[-3] & 0x4) >> 2;
+                        location[-2] = 0xF7;
+                        location[-1] = 0xC0 | (location[-1] & 0x38) >> 3;
+                    }
+                    else {
+                        location[-3] = (location[-3] & ~0x4) | (location[-3] & 0x4) >> 2;
+                        location[-1] = 0xC0 | (location[-1] & 0x38) >> 3 | (location[-2] & 0x3C);
+                        location[-2] = 0x81;
+                    }
+                    value = relaxed;
+                }
+                // Fall through...
+            case HoleKind_R_X86_64_GOTPCREL:
+            case HoleKind_R_X86_64_PC32:
+                // 32-bit relative address.
+                value -= (uint64_t)location;
+                *loc32 = (uint32_t)value;
                 continue;
             case HoleKind_R_AARCH64_CALL26:
             case HoleKind_R_AARCH64_JUMP26:
@@ -285,7 +325,7 @@ patch(char *base, const Stencil *stencil, uint64_t *patches)
 }
 
 static void
-copy_and_patch(char *base, const Stencil *stencil, uint64_t *patches)
+copy_and_patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
 {
     memcpy(base, stencil->body, stencil->body_size);
     patch(base, stencil, patches);
@@ -294,8 +334,8 @@ copy_and_patch(char *base, const Stencil *stencil, uint64_t *patches)
 static void
 emit(const StencilGroup *group, uint64_t patches[])
 {
-    copy_and_patch((char *)patches[HoleValue_CODE], &group->code, patches);
-    copy_and_patch((char *)patches[HoleValue_DATA], &group->data, patches);
+    copy_and_patch((unsigned char *)patches[HoleValue_DATA], &group->data, patches);
+    copy_and_patch((unsigned char *)patches[HoleValue_CODE], &group->code, patches);
 }
 
 // Compiles executor in-place. Don't forget to call _PyJIT_Free later!
@@ -316,13 +356,13 @@ _PyJIT_Compile(_PyExecutorObject *executor, _PyUOpInstruction *trace, size_t len
     assert((page_size & (page_size - 1)) == 0);
     code_size += page_size - (code_size & (page_size - 1));
     data_size += page_size - (data_size & (page_size - 1));
-    char *memory = jit_alloc(code_size + data_size);
+    unsigned char *memory = jit_alloc(code_size + data_size);
     if (memory == NULL) {
         return -1;
     }
     // Loop again to emit the code:
-    char *code = memory;
-    char *data = memory + code_size;
+    unsigned char *code = memory;
+    unsigned char *data = memory + code_size;
     for (size_t i = 0; i < length; i++) {
         _PyUOpInstruction *instruction = &trace[i];
         const StencilGroup *group = &stencil_groups[instruction->opcode];
@@ -355,7 +395,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, _PyUOpInstruction *trace, size_t len
 void
 _PyJIT_Free(_PyExecutorObject *executor)
 {
-    char *memory = (char *)executor->jit_code;
+    unsigned char *memory = (unsigned char *)executor->jit_code;
     size_t size = executor->jit_size;
     if (memory) {
         executor->jit_code = NULL;
