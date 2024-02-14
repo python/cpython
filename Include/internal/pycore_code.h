@@ -286,9 +286,13 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
 #define GC_STAT_ADD(gen, name, n) do { if (_Py_stats) _Py_stats->gc_stats[(gen)].name += (n); } while (0)
 #define OPT_STAT_INC(name) do { if (_Py_stats) _Py_stats->optimization_stats.name++; } while (0)
 #define UOP_STAT_INC(opname, name) do { if (_Py_stats) { assert(opname < 512); _Py_stats->optimization_stats.opcode[opname].name++; } } while (0)
-#define UOP_PAIR_INC(uopcode, lastuop) do { if (lastuop && _Py_stats) { \
-    _Py_stats->optimization_stats.opcode[lastuop].pair_count[uopcode]++; } \
-    lastuop = uopcode; } while (0)
+#define UOP_PAIR_INC(uopcode, lastuop)                                              \
+    do {                                                                            \
+        if (lastuop && _Py_stats) {                                                 \
+            _Py_stats->optimization_stats.opcode[lastuop].pair_count[uopcode]++;    \
+        }                                                                           \
+        lastuop = uopcode;                                                          \
+    } while (0)
 #define OPT_UNSUPPORTED_OPCODE(opname) do { if (_Py_stats) _Py_stats->optimization_stats.unsupported_opcode[opname]++; } while (0)
 #define OPT_HIST(length, name) \
     do { \
