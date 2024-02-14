@@ -1140,9 +1140,7 @@ class DocTestFinder:
             obj = obj.fget
         if inspect.isfunction(obj) and getattr(obj, '__doc__', None):
             # We don't use `docstring` var here, because `obj` can be changed.
-            while hasattr(obj, "__wrapped__"):
-                obj = obj.__wrapped__
-            obj = obj.__code__
+            obj = inspect.unwrap(obj).__code__
         if inspect.istraceback(obj): obj = obj.tb_frame
         if inspect.isframe(obj): obj = obj.f_code
         if inspect.iscode(obj):
