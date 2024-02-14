@@ -1,1 +1,1 @@
-Added support for the ``Partitioned`` cookie flag to the ``http.cookies`` module.
+Added support for the ``Partitioned`` cookie flag in :mod:`http.cookies`.
