@@ -1883,9 +1883,8 @@ class BlockParser:
         self.first_block = True
 
     def fail(self, *args: object) -> NoReturn:
-        warn_or_fail(*args,
-                     filename=self.filename, line_number=self.line_number,
-                     fail=True)
+        fail(*args,
+             filename=self.filename, line_number=self.line_number)
 
     def __iter__(self) -> BlockParser:
         return self
