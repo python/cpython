@@ -184,6 +184,8 @@ PYTHONFRAMEWORK=	@PYTHONFRAMEWORK@
 PYTHONFRAMEWORKDIR=	@PYTHONFRAMEWORKDIR@
 PYTHONFRAMEWORKPREFIX=	@PYTHONFRAMEWORKPREFIX@
 PYTHONFRAMEWORKINSTALLDIR= @PYTHONFRAMEWORKINSTALLDIR@
+PYTHONFRAMEWORKINSTALLNAMEPREFIX= @PYTHONFRAMEWORKINSTALLNAMEPREFIX@
+RESSRCDIR= @RESSRCDIR@
 # Deployment target selected during configure, to be checked
 # by distutils. The export statement is needed to ensure that the
 # deployment target is active during build.
@@ -866,7 +868,7 @@ libpython3.so:	libpython$(LDVERSION).so
 	$(BLDSHARED) $(NO_AS_NEEDED) -o $@ -Wl,-h$@ $^
 
 libpython$(LDVERSION).dylib: $(LIBRARY_OBJS)
-	 $(CC) -dynamiclib -Wl,-single_module $(PY_CORE_LDFLAGS) -undefined dynamic_lookup -Wl,-install_name,$(prefix)/lib/libpython$(LDVERSION).dylib -Wl,-compatibility_version,$(VERSION) -Wl,-current_version,$(VERSION) -o $@ $(LIBRARY_OBJS) $(DTRACE_OBJS) $(SHLIBS) $(LIBC) $(LIBM); \
+	 $(CC) -dynamiclib $(PY_CORE_LDFLAGS) -undefined dynamic_lookup -Wl,-install_name,$(PYTHONFRAMEWORKINSTALLNAMEPREFIX)/lib/libpython$(LDVERSION).dylib -Wl,-compatibility_version,$(VERSION) -Wl,-current_version,$(VERSION) -o $@ $(LIBRARY_OBJS) $(DTRACE_OBJS) $(SHLIBS) $(LIBC) $(LIBM); \
 
 
 libpython$(VERSION).sl: $(LIBRARY_OBJS)
@@ -891,14 +893,13 @@ $(BUILDPYTHON)-gdb.py: $(SRC_GDB_HOOKS)
 # This rule is here for OPENSTEP/Rhapsody/MacOSX. It builds a temporary
 # minimal framework (not including the Lib directory and such) in the current
 # directory.
-RESSRCDIR=Mac/Resources/framework
 $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK): \
 		$(LIBRARY) \
 		$(RESSRCDIR)/Info.plist
 	$(INSTALL) -d -m $(DIRMODE) $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)
 	$(CC) -o $(LDLIBRARY) $(PY_CORE_LDFLAGS) -dynamiclib \
-		-all_load $(LIBRARY) -Wl,-single_module \
-		-install_name $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK) \
+		-all_load $(LIBRARY) \
+		-install_name $(DESTDIR)$(PYTHONFRAMEWORKINSTALLNAMEPREFIX)/$(PYTHONFRAMEWORK) \
 		-compatibility_version $(VERSION) \
 		-current_version $(VERSION) \
 		-framework CoreFoundation $(LIBS);
@@ -1862,6 +1863,10 @@ regen-cases:
 	    -o $(srcdir)/Python/generated_cases.c.h.new $(srcdir)/Python/bytecodes.c
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/tier2_generator.py \
 	    -o $(srcdir)/Python/executor_cases.c.h.new $(srcdir)/Python/bytecodes.c
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/tier2_abstract_generator.py \
+	    -o $(srcdir)/Python/tier2_redundancy_eliminator_cases.c.h.new \
+	    $(srcdir)/Python/tier2_redundancy_eliminator_bytecodes.c \
+	    $(srcdir)/Python/bytecodes.c
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/opcode_metadata_generator.py \
 	    -o $(srcdir)/Include/internal/pycore_opcode_metadata.h.new $(srcdir)/Python/bytecodes.c
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/uop_metadata_generator.py -o \
@@ -1873,6 +1878,7 @@ regen-cases:
 	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_opcode_metadata.h $(srcdir)/Include/internal/pycore_opcode_metadata.h.new
 	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_uop_metadata.h $(srcdir)/Include/internal/pycore_uop_metadata.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/executor_cases.c.h $(srcdir)/Python/executor_cases.c.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/tier2_redundancy_eliminator_cases.c.h $(srcdir)/Python/tier2_redundancy_eliminator_cases.c.h.new
 	$(UPDATE_FILE) $(srcdir)/Lib/_opcode_metadata.py $(srcdir)/Lib/_opcode_metadata.py.new
 
 Python/compile.o: $(srcdir)/Include/internal/pycore_opcode_metadata.h
@@ -1894,7 +1900,8 @@ Python/optimizer.o: \
 
 Python/optimizer_analysis.o: \
 		$(srcdir)/Include/internal/pycore_opcode_metadata.h \
-		$(srcdir)/Include/internal/pycore_optimizer.h
+		$(srcdir)/Include/internal/pycore_optimizer.h \
+		$(srcdir)/Python/tier2_redundancy_eliminator_cases.c.h
 
 Python/frozen.o: $(FROZEN_FILES_OUT)
 
@@ -2000,7 +2007,7 @@ multissltest: all
 # which can lead to two parallel `./python setup.py build` processes that
 # step on each others toes.
 .PHONY: install
-install: @FRAMEWORKINSTALLFIRST@ commoninstall bininstall maninstall @FRAMEWORKINSTALLLAST@
+install: @FRAMEWORKINSTALLFIRST@ @INSTALLTARGETS@ @FRAMEWORKINSTALLLAST@
 	if test "x$(ENSUREPIP)" != "xno"  ; then \
 		case $(ENSUREPIP) in \
 			upgrade) ensurepip="--upgrade" ;; \
@@ -2306,6 +2313,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_module \
 		test/test_pathlib \
 		test/test_peg_generator \
+		test/test_pydoc \
 		test/test_sqlite3 \
 		test/test_tkinter \
 		test/test_tomllib \
