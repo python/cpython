@@ -783,7 +783,7 @@ class TestUopsOptimization(unittest.TestCase):
         assert "_LOAD_GLOBAL_BUILTINS" not in uops
         assert "_LOAD_CONST_INLINE_BORROW_WITH_NULL" in uops
         """))
-        self.assertEqual(result[0].rc, 0)
+        self.assertEqual(result[0].rc, 0, result)
 
 
 
