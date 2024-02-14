@@ -1,4 +1,3 @@
-import sqlite3
 import sys
 import test.support
 import unittest
@@ -8,6 +7,7 @@ from pathlib import Path
 from test.support import cpython_only, import_helper, os_helper
 
 
+sqlite3 = import_helper.import_module("sqlite3")
 dbm_sqlite3 = import_helper.import_module("dbm.sqlite3")
 from dbm.sqlite3 import _normalize_uri
 
