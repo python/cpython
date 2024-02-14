@@ -167,5 +167,4 @@ class SendChannel(_ChannelEnd):
         _channels.close(self._id, send=True)
 
 
-# XXX This is causing leaks (gh-110318):
 _channels._register_end_types(SendChannel, RecvChannel)
