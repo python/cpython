@@ -81,12 +81,53 @@ dummy_func(void) {
 
 
     op(_BINARY_OP_ADD_INT, (left, right -- res)) {
-        // TODO constant propagation
-        (void)left;
-        (void)right;
-        res = sym_new_known_type(ctx, &PyLong_Type);
-        if (res == NULL) {
-            goto out_of_space;
+        if (is_const(left) && is_const(right)) {
+            PyObject *temp = _PyLong_Add(get_const(left), get_const(right));
+            if (temp == NULL) {
+                goto error;
+            }
+            res = sym_new_const(ctx, temp);
+            // TODO replace opcode with constant propagated one and add tests!
+        }
+        else {
+            res = sym_new_known_type(ctx, &PyLong_Type);
+            if (res == NULL) {
+                goto out_of_space;
+            }
+        }
+    }
+
+    op(_BINARY_OP_SUBTRACT_INT, (left, right -- res)) {
+        if (is_const(left) && is_const(right)) {
+            PyObject *temp = _PyLong_Subtract(get_const(left), get_const(right));
+            if (temp == NULL) {
+                goto error;
+            }
+            res = sym_new_const(ctx, temp);
+            // TODO replace opcode with constant propagated one and add tests!
+        }
+        else {
+            res = sym_new_known_type(ctx, &PyLong_Type);
+            if (res == NULL) {
+                goto out_of_space;
+            }
+        }
+    }
+
+    op(_BINARY_OP_MULTIPLY_INT, (left, right -- res)) {
+        if (is_const(left) && is_const(right)) {
+            PyObject *temp = _PyLong_Multiply(get_const(left), get_const(right));
+            if (temp == NULL) {
+                goto error;
+            }
+            res = sym_new_const(ctx, temp);
+            // TODO replace opcode with constant propagated one and add tests!
+        }
+        else {
+            res = sym_new_known_type(ctx, &PyLong_Type);
+            if (res == NULL) {
+                goto out_of_space;
+            }
         }
     }
 
