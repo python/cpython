@@ -17,6 +17,8 @@
 #include "pycore_uop_metadata.h" // Uop tables
 #undef NEED_OPCODE_METADATA
 
+#define UOP_MAX_TRACE_LENGTH 512
+
 #define MAX_EXECUTORS_SIZE 256
 
 
@@ -109,9 +111,6 @@ never_optimize(
     _PyExecutorObject **exec,
     int Py_UNUSED(stack_entries))
 {
-    /* Although it should be benign for this to be called,
-     * it shouldn't happen, so fail in debug builds. */
-    assert(0 && "never optimize should never be called");
     return 0;
 }
 
@@ -123,18 +122,12 @@ PyTypeObject _PyDefaultOptimizer_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
 };
 
-static _PyOptimizerObject _PyOptimizer_Default = {
+_PyOptimizerObject _PyOptimizer_Default = {
     PyObject_HEAD_INIT(&_PyDefaultOptimizer_Type)
     .optimize = never_optimize,
-    .resume_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD,
-    .backedge_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD,
+    .resume_threshold = INT16_MAX,
+    .backedge_threshold = INT16_MAX,
 };
-
-static uint32_t
-shift_and_offset_threshold(uint16_t threshold)
-{
-    return (threshold << OPTIMIZER_BITS_IN_COUNTER) + (1 << 15);
-}
 
 _PyOptimizerObject *
 PyUnstable_GetOptimizer(void)
@@ -143,33 +136,24 @@ PyUnstable_GetOptimizer(void)
     if (interp->optimizer == &_PyOptimizer_Default) {
         return NULL;
     }
-    assert(interp->optimizer_backedge_threshold ==
-           shift_and_offset_threshold(interp->optimizer->backedge_threshold));
-    assert(interp->optimizer_resume_threshold ==
-           shift_and_offset_threshold(interp->optimizer->resume_threshold));
+    assert(interp->optimizer_backedge_threshold == interp->optimizer->backedge_threshold);
+    assert(interp->optimizer_resume_threshold == interp->optimizer->resume_threshold);
     Py_INCREF(interp->optimizer);
     return interp->optimizer;
-}
-
-_PyOptimizerObject *
-_Py_SetOptimizer(PyInterpreterState *interp, _PyOptimizerObject *optimizer)
-{
-    if (optimizer == NULL) {
-        optimizer = &_PyOptimizer_Default;
-    }
-    _PyOptimizerObject *old = interp->optimizer;
-    Py_INCREF(optimizer);
-    interp->optimizer = optimizer;
-    interp->optimizer_backedge_threshold = shift_and_offset_threshold(optimizer->backedge_threshold);
-    interp->optimizer_resume_threshold = shift_and_offset_threshold(optimizer->resume_threshold);
-    return old;
 }
 
 void
 PyUnstable_SetOptimizer(_PyOptimizerObject *optimizer)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyOptimizerObject *old = _Py_SetOptimizer(interp, optimizer);
+    if (optimizer == NULL) {
+        optimizer = &_PyOptimizer_Default;
+    }
+    _PyOptimizerObject *old = interp->optimizer;
+    Py_INCREF(optimizer);
+    interp->optimizer = optimizer;
+    interp->optimizer_backedge_threshold = optimizer->backedge_threshold;
+    interp->optimizer_resume_threshold = optimizer->resume_threshold;
     Py_DECREF(old);
 }
 
@@ -324,6 +308,8 @@ BRANCH_TO_GUARD[4][2] = {
     [POP_JUMP_IF_NOT_NONE - POP_JUMP_IF_FALSE][1] = _GUARD_IS_NOT_NONE_POP,
 };
 
+#define TRACE_STACK_SIZE 5
+
 #define CONFIDENCE_RANGE 1000
 #define CONFIDENCE_CUTOFF 333
 
@@ -337,11 +323,10 @@ BRANCH_TO_GUARD[4][2] = {
 
 #define ADD_TO_TRACE(OPCODE, OPARG, OPERAND, TARGET) \
     DPRINTF(2, \
-            "  ADD_TO_TRACE(%s, %d, %" PRIu64 ", %d)\n", \
+            "  ADD_TO_TRACE(%s, %d, %" PRIu64 ")\n", \
             _PyUOpName(OPCODE), \
             (OPARG), \
-            (uint64_t)(OPERAND), \
-            TARGET); \
+            (uint64_t)(OPERAND)); \
     assert(trace_length < max_length); \
     trace[trace_length].opcode = (OPCODE); \
     trace[trace_length].oparg = (OPARG); \
@@ -432,8 +417,9 @@ translate_bytecode_to_trace(
 top:  // Jump here after _PUSH_FRAME or likely branches
     for (;;) {
         target = INSTR_IP(instr, code);
-        RESERVE_RAW(2, "epilogue");  // Always need space for _SET_IP, _CHECK_VALIDITY and _EXIT_TRACE
-        ADD_TO_TRACE(_CHECK_VALIDITY_AND_SET_IP, 0, (uintptr_t)instr, target);
+        RESERVE_RAW(3, "epilogue");  // Always need space for _SET_IP, _CHECK_VALIDITY and _EXIT_TRACE
+        ADD_TO_TRACE(_SET_IP, target, 0, target);
+        ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0, target);
 
         uint32_t opcode = instr->op.code;
         uint32_t oparg = instr->op.arg;
@@ -839,13 +825,11 @@ uop_optimize(
     char *uop_optimize = Py_GETENV("PYTHONUOPSOPTIMIZE");
     if (uop_optimize == NULL || *uop_optimize > '0') {
         err = _Py_uop_analyze_and_optimize(frame, buffer,
-                                           UOP_MAX_TRACE_LENGTH,
-                                           curr_stackentries, &dependencies);
+                                           UOP_MAX_TRACE_LENGTH, curr_stackentries, &dependencies);
         if (err <= 0) {
             return err;
         }
     }
-    assert(err == 1);
     _PyExecutorObject *executor = make_executor_from_uops(buffer, &dependencies);
     if (executor == NULL) {
         return -1;
@@ -877,10 +861,10 @@ PyUnstable_Optimizer_NewUOpOptimizer(void)
         return NULL;
     }
     opt->optimize = uop_optimize;
-    opt->resume_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD;
-    // Need a few iterations to settle specializations,
-    // and to ammortize the cost of optimization.
-    opt->backedge_threshold = 16;
+    opt->resume_threshold = INT16_MAX;
+    // Need at least 3 iterations to settle specializations.
+    // A few lower bits of the counter are reserved for other flags.
+    opt->backedge_threshold = 16 << OPTIMIZER_BITS_IN_COUNTER;
     return (PyObject *)opt;
 }
 
@@ -967,7 +951,7 @@ PyUnstable_Optimizer_NewCounter(void)
         return NULL;
     }
     opt->base.optimize = counter_optimize;
-    opt->base.resume_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD;
+    opt->base.resume_threshold = INT16_MAX;
     opt->base.backedge_threshold = 0;
     opt->count = 0;
     return (PyObject *)opt;

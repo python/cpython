@@ -262,7 +262,7 @@ random_seed_urandom(RandomObject *self)
 static void
 random_seed_time_pid(RandomObject *self)
 {
-    PyTime_t now;
+    _PyTime_t now;
     uint32_t key[5];
 
     now = _PyTime_GetSystemClock();
@@ -342,8 +342,7 @@ random_seed(RandomObject *self, PyObject *arg)
     res = _PyLong_AsByteArray((PyLongObject *)n,
                               (unsigned char *)key, keyused * 4,
                               PY_LITTLE_ENDIAN,
-                              0, /* unsigned */
-                              1); /* with exceptions */
+                              0); /* unsigned */
     if (res == -1) {
         goto Done;
     }

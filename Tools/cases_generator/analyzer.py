@@ -24,6 +24,7 @@ class Properties:
 
     pure: bool
     passthrough: bool
+    guard: bool
 
     def dump(self, indent: str) -> None:
         print(indent, end="")
@@ -50,6 +51,7 @@ class Properties:
             has_free=any(p.has_free for p in properties),
             pure=all(p.pure for p in properties),
             passthrough=all(p.passthrough for p in properties),
+            guard=all(p.guard for p in properties),
         )
 
 
@@ -71,6 +73,7 @@ SKIP_PROPERTIES = Properties(
     has_free=False,
     pure=False,
     passthrough=False,
+    guard=False,
 )
 
 
@@ -270,7 +273,7 @@ def override_error(
 
 def convert_stack_item(item: parser.StackEffect) -> StackItem:
     return StackItem(
-        item.name, item.type, item.cond, (item.size or "1")
+        item.name, item.type, item.cond, (item.size or "1"), type_prop=item.type_prop
     )
 
 
@@ -470,6 +473,7 @@ def compute_properties(op: parser.InstDef) -> Properties:
         has_free=has_free,
         pure="pure" in op.annotations,
         passthrough=passthrough,
+        guard=passthrough and deopts,
     )
 
 

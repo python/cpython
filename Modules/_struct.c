@@ -1000,10 +1000,9 @@ bp_longlong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
                               (unsigned char *)p,
                               8,
                               0, /* little_endian */
-                              1, /* signed */
-                              0  /* !with_exceptions */);
+                              1  /* signed */);
     Py_DECREF(v);
-    if (res < 0) {
+    if (res == -1 && PyErr_Occurred()) {
         PyErr_Format(state->StructError,
                      "'%c' format requires %lld <= number <= %lld",
                      f->format,
@@ -1025,10 +1024,9 @@ bp_ulonglong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f
                               (unsigned char *)p,
                               8,
                               0, /* little_endian */
-                              0, /* signed */
-                              0  /* !with_exceptions */);
+                              0  /* signed */);
     Py_DECREF(v);
-    if (res < 0) {
+    if (res == -1 && PyErr_Occurred()) {
         PyErr_Format(state->StructError,
                      "'%c' format requires 0 <= number <= %llu",
                      f->format,
@@ -1262,10 +1260,9 @@ lp_longlong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
                               (unsigned char *)p,
                               8,
                               1, /* little_endian */
-                              1, /* signed */
-                              0  /* !with_exceptions */);
+                              1  /* signed */);
     Py_DECREF(v);
-    if (res < 0) {
+    if (res == -1 && PyErr_Occurred()) {
         PyErr_Format(state->StructError,
                      "'%c' format requires %lld <= number <= %lld",
                      f->format,
@@ -1287,10 +1284,9 @@ lp_ulonglong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f
                               (unsigned char *)p,
                               8,
                               1, /* little_endian */
-                              0, /* signed */
-                              0  /* !with_exceptions */);
+                              0  /* signed */);
     Py_DECREF(v);
-    if (res < 0) {
+    if (res == -1 && PyErr_Occurred()) {
         PyErr_Format(state->StructError,
                      "'%c' format requires 0 <= number <= %llu",
                      f->format,

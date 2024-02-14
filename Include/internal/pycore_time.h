@@ -1,39 +1,34 @@
-// Internal PyTime_t C API: see Doc/c-api/time.rst for the documentation.
+// The _PyTime_t API is written to use timestamp and timeout values stored in
+// various formats and to read clocks.
 //
-// The PyTime_t type is an integer to support directly common arithmetic
-// operations such as t1 + t2.
+// The _PyTime_t type is an integer to support directly common arithmetic
+// operations like t1 + t2.
 //
-// Time formats:
+// The _PyTime_t API supports a resolution of 1 nanosecond. The _PyTime_t type
+// is signed to support negative timestamps. The supported range is around
+// [-292.3 years; +292.3 years]. Using the Unix epoch (January 1st, 1970), the
+// supported date range is around [1677-09-21; 2262-04-11].
 //
-// * Seconds.
-// * Seconds as a floating point number (C double).
-// * Milliseconds (10^-3 seconds).
-// * Microseconds (10^-6 seconds).
-// * 100 nanoseconds (10^-7 seconds), used on Windows.
-// * Nanoseconds (10^-9 seconds).
-// * timeval structure, 1 microsecond (10^-6 seconds).
-// * timespec structure, 1 nanosecond (10^-9 seconds).
+// Formats:
 //
-// Note that PyTime_t is now specified as int64_t, in nanoseconds.
-// (If we need to change this, we'll need new public API with new names.)
-// Previously, PyTime_t was configurable (in theory); some comments and code
-// might still allude to that.
+// * seconds
+// * seconds as a floating pointer number (C double)
+// * milliseconds (10^-3 seconds)
+// * microseconds (10^-6 seconds)
+// * 100 nanoseconds (10^-7 seconds)
+// * nanoseconds (10^-9 seconds)
+// * timeval structure, 1 microsecond resolution (10^-6 seconds)
+// * timespec structure, 1 nanosecond resolution (10^-9 seconds)
 //
 // Integer overflows are detected and raise OverflowError. Conversion to a
-// resolution larger than 1 nanosecond is rounded correctly with the requested
-// rounding mode. Available rounding modes:
+// resolution worse than 1 nanosecond is rounded correctly with the requested
+// rounding mode. There are 4 rounding modes: floor (towards -inf), ceiling
+// (towards +inf), half even and up (away from zero).
 //
-// * Round towards minus infinity (-inf). For example, used to read a clock.
-// * Round towards infinity (+inf). For example, used for timeout to wait "at
-//   least" N seconds.
-// * Round to nearest with ties going to nearest even integer. For example, used
-//   to round from a Python float.
-// * Round away from zero. For example, used for timeout.
-//
-// Some functions clamp the result in the range [PyTime_MIN; PyTime_MAX]. The
-// caller doesn't have to handle errors and so doesn't need to hold the GIL to
-// handle exceptions. For example, _PyTime_Add(t1, t2) computes t1+t2 and
-// clamps the result on overflow.
+// Some functions clamp the result in the range [_PyTime_MIN; _PyTime_MAX], so
+// the caller doesn't have to handle errors and doesn't need to hold the GIL.
+// For example, _PyTime_Add(t1, t2) computes t1+t2 and clamp the result on
+// overflow.
 //
 // Clocks:
 //
@@ -41,11 +36,10 @@
 // * Monotonic clock
 // * Performance counter
 //
-// Internally, operations like (t * k / q) with integers are implemented in a
-// way to reduce the risk of integer overflow. Such operation is used to convert a
-// clock value expressed in ticks with a frequency to PyTime_t, like
-// QueryPerformanceCounter() with QueryPerformanceFrequency() on Windows.
-
+// Operations like (t * k / q) with integers are implemented in a way to reduce
+// the risk of integer overflow. Such operation is used to convert a clock
+// value expressed in ticks with a frequency to _PyTime_t, like
+// QueryPerformanceCounter() with QueryPerformanceFrequency().
 
 #ifndef Py_INTERNAL_TIME_H
 #define Py_INTERNAL_TIME_H
@@ -62,7 +56,14 @@ extern "C" {
 struct timeval;
 #endif
 
-typedef PyTime_t _PyTime_t;
+// _PyTime_t: Python timestamp with subsecond precision. It can be used to
+// store a duration, and so indirectly a date (related to another date, like
+// UNIX epoch).
+typedef int64_t _PyTime_t;
+// _PyTime_MIN nanoseconds is around -292.3 years
+#define _PyTime_MIN INT64_MIN
+// _PyTime_MAX nanoseconds is around +292.3 years
+#define _PyTime_MAX INT64_MAX
 #define _SIZEOF_PYTIME_T 8
 
 typedef enum {
@@ -146,7 +147,7 @@ PyAPI_FUNC(_PyTime_t) _PyTime_FromSecondsDouble(double seconds, _PyTime_round_t 
 PyAPI_FUNC(_PyTime_t) _PyTime_FromNanoseconds(_PyTime_t ns);
 
 // Create a timestamp from a number of microseconds.
-// Clamp to [PyTime_MIN; PyTime_MAX] on overflow.
+// Clamp to [_PyTime_MIN; _PyTime_MAX] on overflow.
 extern _PyTime_t _PyTime_FromMicrosecondsClamp(_PyTime_t us);
 
 // Create a timestamp from nanoseconds (Python int).
@@ -168,6 +169,10 @@ PyAPI_FUNC(int) _PyTime_FromMillisecondsObject(_PyTime_t *t,
     PyObject *obj,
     _PyTime_round_t round);
 
+// Convert a timestamp to a number of seconds as a C double.
+// Export for '_socket' shared extension.
+PyAPI_FUNC(double) _PyTime_AsSecondsDouble(_PyTime_t t);
+
 // Convert timestamp to a number of milliseconds (10^-3 seconds).
 // Export for '_ssl' shared extension.
 PyAPI_FUNC(_PyTime_t) _PyTime_AsMilliseconds(_PyTime_t t,
@@ -177,6 +182,9 @@ PyAPI_FUNC(_PyTime_t) _PyTime_AsMilliseconds(_PyTime_t t,
 // Export for '_queue' shared extension.
 PyAPI_FUNC(_PyTime_t) _PyTime_AsMicroseconds(_PyTime_t t,
     _PyTime_round_t round);
+
+// Convert timestamp to a number of nanoseconds (10^-9 seconds).
+extern _PyTime_t _PyTime_AsNanoseconds(_PyTime_t t);
 
 #ifdef MS_WINDOWS
 // Convert timestamp to a number of 100 nanoseconds (10^-7 seconds).
@@ -242,7 +250,7 @@ PyAPI_FUNC(void) _PyTime_AsTimespec_clamp(_PyTime_t t, struct timespec *ts);
 #endif
 
 
-// Compute t1 + t2. Clamp to [PyTime_MIN; PyTime_MAX] on overflow.
+// Compute t1 + t2. Clamp to [_PyTime_MIN; _PyTime_MAX] on overflow.
 extern _PyTime_t _PyTime_Add(_PyTime_t t1, _PyTime_t t2);
 
 // Structure used by time.get_clock_info()
@@ -259,8 +267,7 @@ typedef struct {
 // On integer overflow, silently ignore the overflow and clamp the clock to
 // [_PyTime_MIN; _PyTime_MAX].
 //
-// Use _PyTime_GetSystemClockWithInfo or the public PyTime_Time() to check
-// for failure.
+// Use _PyTime_GetSystemClockWithInfo() to check for failure.
 // Export for '_random' shared extension.
 PyAPI_FUNC(_PyTime_t) _PyTime_GetSystemClock(void);
 
@@ -280,8 +287,7 @@ extern int _PyTime_GetSystemClockWithInfo(
 // On integer overflow, silently ignore the overflow and clamp the clock to
 // [_PyTime_MIN; _PyTime_MAX].
 //
-// Use _PyTime_GetMonotonicClockWithInfo or the public PyTime_Monotonic()
-// to check for failure.
+// Use _PyTime_GetMonotonicClockWithInfo() to check for failure.
 // Export for '_random' shared extension.
 PyAPI_FUNC(_PyTime_t) _PyTime_GetMonotonicClock(void);
 
@@ -316,11 +322,9 @@ PyAPI_FUNC(int) _PyTime_gmtime(time_t t, struct tm *tm);
 // On integer overflow, silently ignore the overflow and clamp the clock to
 // [_PyTime_MIN; _PyTime_MAX].
 //
-// Use _PyTime_GetPerfCounterWithInfo() or the public PyTime_PerfCounter
-// to check for failure.
+// Use _PyTime_GetPerfCounterWithInfo() to check for failure.
 // Export for '_lsprof' shared extension.
 PyAPI_FUNC(_PyTime_t) _PyTime_GetPerfCounter(void);
-
 
 // Get the performance counter: clock with the highest available resolution to
 // measure a short duration.
@@ -332,13 +336,6 @@ extern int _PyTime_GetPerfCounterWithInfo(
     _PyTime_t *t,
     _Py_clock_info_t *info);
 
-// Alias for backward compatibility
-#define _PyTime_MIN PyTime_MIN
-#define _PyTime_MAX PyTime_MAX
-#define _PyTime_AsSecondsDouble PyTime_AsSecondsDouble
-
-
-// --- _PyDeadline -----------------------------------------------------------
 
 // Create a deadline.
 // Pseudo code: _PyTime_GetMonotonicClock() + timeout.

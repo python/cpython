@@ -237,8 +237,7 @@ extern "C" {
 #define _CHECK_GLOBALS 384
 #define _CHECK_BUILTINS 385
 #define _INTERNAL_INCREMENT_OPT_COUNTER 386
-#define _CHECK_VALIDITY_AND_SET_IP 387
-#define MAX_UOP_ID 387
+#define MAX_UOP_ID 386
 
 #ifdef __cplusplus
 }

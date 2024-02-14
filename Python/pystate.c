@@ -625,7 +625,9 @@ init_interpreter(PyInterpreterState *interp,
     }
     interp->sys_profile_initialized = false;
     interp->sys_trace_initialized = false;
-    (void)_Py_SetOptimizer(interp, NULL);
+    interp->optimizer = &_PyOptimizer_Default;
+    interp->optimizer_backedge_threshold = _PyOptimizer_Default.backedge_threshold;
+    interp->optimizer_resume_threshold = _PyOptimizer_Default.backedge_threshold;
     interp->next_func_version = 1;
     interp->executor_list_head = NULL;
     if (interp != &runtime->_main_interpreter) {
@@ -778,8 +780,10 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
         tstate->_status.cleared = 0;
     }
 
-    _PyOptimizerObject *old = _Py_SetOptimizer(interp, NULL);
-    Py_DECREF(old);
+    Py_CLEAR(interp->optimizer);
+    interp->optimizer = &_PyOptimizer_Default;
+    interp->optimizer_backedge_threshold = _PyOptimizer_Default.backedge_threshold;
+    interp->optimizer_resume_threshold = _PyOptimizer_Default.backedge_threshold;
 
     /* It is possible that any of the objects below have a finalizer
        that runs Python code or otherwise relies on a thread state

@@ -883,7 +883,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(defaultaction));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(delete));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(depth));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(desired_access));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(detect_types));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(deterministic));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(device));
@@ -974,7 +973,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(groups));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(h));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(handle));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(handle_seq));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(hash_name));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(header));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(headers));
@@ -992,12 +990,9 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(indexgroup));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(inf));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(infer_variance));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(inherit_handle));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(inheritable));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(initial));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(initial_bytes));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(initial_owner));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(initial_state));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(initial_value));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(initval));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(inner_size));
@@ -1053,7 +1048,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(locals));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(logoption));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(loop));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(manual_reset));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(mapping));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(match));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(max_length));
@@ -1070,7 +1064,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(metadata));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(method));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(microsecond));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(milliseconds));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(minute));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(mod));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(mode));
@@ -1080,7 +1073,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(month));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(mro));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(msg));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(mutex));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(mycmp));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(n));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(n_arg));
@@ -1184,7 +1176,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(sched_priority));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(scheduler));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(second));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(security_attributes));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(seek));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(seekable));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(selectors));
@@ -1272,7 +1263,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(values));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(version));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(volume));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(wait_all));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(warnings));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(warnoptions));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(wbits));

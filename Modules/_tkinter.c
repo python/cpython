@@ -926,8 +926,7 @@ AsObj(PyObject *value)
                                 (unsigned char *)(void *)&wideValue,
                                 sizeof(wideValue),
                                 PY_LITTLE_ENDIAN,
-                                /* signed */ 1,
-                                /* with_exceptions */ 1) == 0) {
+                                /* signed */ 1) == 0) {
             return Tcl_NewWideIntObj(wideValue);
         }
         PyErr_Clear();
