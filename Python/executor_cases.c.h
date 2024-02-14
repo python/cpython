@@ -2201,9 +2201,6 @@
             _PyListIterObject *it = (_PyListIterObject *)iter;
             assert(Py_TYPE(iter) == &PyListIter_Type);
             PyListObject *seq = it->it_seq;
-            #ifndef Py_GIL_DISABLED
-            if (seq == NULL) goto deoptimize;
-            #endif
             if ((size_t)it->it_index >= (size_t)PyList_GET_SIZE(seq)) goto deoptimize;
             break;
         }

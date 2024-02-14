@@ -2615,13 +2615,13 @@ dummy_func(
             STAT_INC(FOR_ITER, hit);
             PyListObject *seq = it->it_seq;
             if ((size_t)it->it_index >= (size_t)PyList_GET_SIZE(seq)) {
+                it->it_index = -1;
                 #ifndef Py_GIL_DISABLED
                 if (seq != NULL) {
                     it->it_seq = NULL;
                     Py_DECREF(seq);
                 }
                 #endif
-                it->it_index = -1;
                 Py_DECREF(iter);
                 STACK_SHRINK(1);
                 /* Jump forward oparg, then skip following END_FOR and POP_TOP instructions */
@@ -2635,9 +2635,6 @@ dummy_func(
             _PyListIterObject *it = (_PyListIterObject *)iter;
             assert(Py_TYPE(iter) == &PyListIter_Type);
             PyListObject *seq = it->it_seq;
-            #ifndef Py_GIL_DISABLED
-            DEOPT_IF(seq == NULL);
-            #endif
             DEOPT_IF((size_t)it->it_index >= (size_t)PyList_GET_SIZE(seq));
         }
 
