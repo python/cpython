@@ -85,8 +85,8 @@ Python for the ARM64 iOS simulator will look something like::
         CPP=arm64-apple-ios-simulator-cpp \
         CXX=arm64-apple-ios-simulator-clang \
         --enable-framework=/path/to/install \
-        --host=aarch64-apple-ios-simulator \
-        --build=aarch64-apple-darwin \
+        --host=arm64-apple-ios-simulator \
+        --build=arm64-apple-darwin \
         --with-build-python=/path/to/python.exe
   $ make
   $ make install
@@ -114,8 +114,8 @@ In this invocation:
 * ``--host`` is the architecture and ABI that you want to build, in GNU compiler
   triple format. This will be one of:
 
-  - ``aarch64-apple-ios`` for ARM64 iOS devices.
-  - ``aarch64-apple-ios-simulator`` for the iOS simulator running on Apple
+  - ``arm64-apple-ios`` for ARM64 iOS devices.
+  - ``arm64-apple-ios-simulator`` for the iOS simulator running on Apple
     Silicon devices.
   - ``x86_64-apple-ios-simulator`` for the iOS simulator running on Intel
     devices.
@@ -123,7 +123,7 @@ In this invocation:
 * ``--build`` is the GNU compiler triple for the machine that will be running
   the compiler. This is one of:
 
-  - ``aarch64-apple-darwin`` for Apple Silicon devices.
+  - ``arm64-apple-darwin`` for Apple Silicon devices.
   - ``x86_64-apple-darwin`` for Intel devices.
 
 * ``/path/to/python.exe`` is the path to a Python binary on the machine that
@@ -228,7 +228,7 @@ test case in Xcode's XCTest framework. The single XCTest passes if the test
 suite passes.
 
 To run the test suite, configure a Python build for an iOS simulator (i.e.,
-``--host=aarch64-apple-ios-simulator`` or ``--host=x86_64-apple-ios-simulator``
+``--host=arm64-apple-ios-simulator`` or ``--host=x86_64-apple-ios-simulator``
 ), setting the framework location to the testbed project::
 
     --enable-framework="./Tools/iOSTestbed/Python.xcframework/ios-arm64_x86_64-simulator"
