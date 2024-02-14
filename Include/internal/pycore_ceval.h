@@ -206,6 +206,7 @@ void _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame)
 #define _PY_ASYNC_EXCEPTION_BIT 3
 #define _PY_GC_SCHEDULED_BIT 4
 #define _PY_EVAL_PLEASE_STOP_BIT 5
+#define _PY_EVAL_EXPLICIT_MERGE_BIT 6
 
 /* Reserve a few bits for future use */
 #define _PY_EVAL_EVENTS_BITS 8
