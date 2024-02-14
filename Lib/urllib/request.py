@@ -2563,51 +2563,44 @@ def _proxy_bypass_macosx_sysconf(host, proxy_settings):
     }
     """
     from fnmatch import fnmatch
-    from ipaddress import AddressValueError, IPv4Address
+    from ipaddress import IPv4Address, IPv4Network
 
-    hostonly, port = _splitport(host)
-
-    def ip2num(ipAddr):
-        parts = ipAddr.split('.')
-        parts = list(map(int, parts))
-        if len(parts) != 4:
-            parts = (parts + [0, 0, 0, 0])[:4]
-        return (parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3]
+    host, _ = _splitport(host)
+    # Strip brackets for IPv6 addresses
+    if host and host[0] == '[' and host[-1] == ']':
+        host = host[1:-1]
 
     # Check for simple host names:
     if '.' not in host:
         if proxy_settings['exclude_simple']:
             return True
 
-    hostIP = None
+    host_ip = None
     try:
-        hostIP = int(IPv4Address(hostonly))
-    except AddressValueError:
+        host_ip = IPv4Address(host)
+    except ValueError:
         pass
 
     for value in proxy_settings.get('exceptions', ()):
         # Items in the list are strings like these: *.local, 169.254/16
+        value = value.strip()
         if not value: continue
 
-        m = re.match(r"(\d+(?:\.\d+)*)(/\d+)?", value)
-        if m is not None and hostIP is not None:
-            base = ip2num(m.group(1))
+        m = re.match(r"(\d+(?:\.\d+)*)\.?/(\d+)", value)
+        if m is not None and host_ip is not None:
+            base = m.group(1)
             mask = m.group(2)
-            if mask is None:
-                mask = 8 * (m.group(1).count('.') + 1)
-            else:
-                mask = int(mask[1:])
+            parts = base.split(".")
+            if len(parts) < 4:
+                base = ".".join((parts + ["0", "0", "0"])[:4])
+            try:
+                network = IPv4Network("{}/{}".format(base, mask))
+                if host_ip in network:
+                    return True
+            except ValueError:
+                pass
 
-            if mask < 0 or mask > 32:
-                # System libraries ignore invalid prefix lengths
-                continue
-
-            mask = 32 - mask
-
-            if (hostIP >> mask) == (base >> mask):
-                return True
-
-        elif fnmatch(host, value):
+        if fnmatch(host, value):
             return True
 
     return False

@@ -1514,17 +1514,20 @@ class HandlerTests(unittest.TestCase):
     def test_osx_proxy_bypass(self):
         bypass = {
             'exclude_simple': False,
-            'exceptions': ['foo.bar', '*.bar.com', '127.0.0.1', '10.10',
-                           '10.0/16']
+            'exceptions': ['foo.bar', '*.bar.com', '127.0.0.1', '10.0/16',
+                           '11.0./16', '12.13.14.0/24', '19.*',
+                           '2001:0db8:0123:4567:89ab:cdef:1234:5678']
         }
         # Check hosts that should trigger the proxy bypass
-        for host in ('foo.bar', 'www.bar.com', '127.0.0.1', '10.10.0.1',
-                     '10.0.0.1'):
+        for host in ('foo.bar', 'www.bar.com', '127.0.0.1', '10.0.0.1',
+                     '11.0.0.1', '12.13.14.15', '19.0.0.1',
+                     '[2001:0db8:0123:4567:89ab:cdef:1234:5678]'):
             self.assertTrue(_proxy_bypass_macosx_sysconf(host, bypass),
                             'expected bypass of %s to be True' % host)
         # Check hosts that should not trigger the proxy bypass
         for host in ('abc.foo.bar', 'bar.com', '127.0.0.2', '10.11.0.1',
-                'notinbypass'):
+                     '11.1.0.1', '12.13.15.16', 'notinbypass',
+                     '[2001:0db8:0123:4567:89ab:cdef:1234:0001]'):
             self.assertFalse(_proxy_bypass_macosx_sysconf(host, bypass),
                              'expected bypass of %s to be False' % host)
 
@@ -1532,17 +1535,14 @@ class HandlerTests(unittest.TestCase):
         bypass = {'exclude_simple': True, 'exceptions': []}
         self.assertTrue(_proxy_bypass_macosx_sysconf('test', bypass))
 
-        # Check that invalid prefix lengths are ignored
+        # Check that invalid IPs are ignored
         bypass = {
             'exclude_simple': False,
-            'exceptions': [ '10.0.0.0/40', '172.19.10.0/24' ]
+            'exceptions': ['10.0.0.0/40', '1.256/16', '192.168']
         }
-        host = '172.19.10.5'
-        self.assertTrue(_proxy_bypass_macosx_sysconf(host, bypass),
-                        'expected bypass of %s to be True' % host)
-        host = '10.0.1.5'
-        self.assertFalse(_proxy_bypass_macosx_sysconf(host, bypass),
-                        'expected bypass of %s to be False' % host)
+        for host in ('10.0.1.5', '1.256.0.1', '192.168.0.1'):
+            self.assertFalse(_proxy_bypass_macosx_sysconf(host, bypass),
+                             'expected bypass of %s to be False' % host)
 
     def check_basic_auth(self, headers, realm):
         with self.subTest(realm=realm, headers=headers):
