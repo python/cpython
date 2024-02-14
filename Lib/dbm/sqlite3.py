@@ -7,13 +7,13 @@ from collections.abc import MutableMapping
 
 BUILD_TABLE = """
   CREATE TABLE IF NOT EXISTS Dict (
-    key TEXT UNIQUE NOT NULL,
+    key BLOB UNIQUE NOT NULL,
     value BLOB NOT NULL
   )
 """
 GET_SIZE = "SELECT COUNT (key) FROM Dict"
 LOOKUP_KEY = "SELECT value FROM Dict WHERE key = ?"
-STORE_KV = "REPLACE INTO Dict (key, value) VALUES (?, ?)"
+STORE_KV = "REPLACE INTO Dict (key, value) VALUES (CAST(? AS BLOB), CAST(? AS BLOB))"
 DELETE_KEY = "DELETE FROM Dict WHERE key = ?"
 ITER_KEYS = "SELECT key FROM Dict"
 
