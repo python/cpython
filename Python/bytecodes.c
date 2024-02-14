@@ -4113,8 +4113,6 @@ dummy_func(
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
             if (exit->temperature < (int32_t)tstate->interp->optimizer_side_threshold) {
-                Py_DECREF(previous);
-                tstate->previous_executor = NULL;
                 GOTO_TIER_ONE(target);
             }
             _PyExecutorObject *executor;
@@ -4126,9 +4124,11 @@ dummy_func(
                 if (optimized <= 0) {
                     int32_t new_temp = -1 * tstate->interp->optimizer_side_threshold;
                     exit->temperature = (new_temp < INT16_MIN) ? INT16_MIN : new_temp;
-                    Py_DECREF(previous);
-                    tstate->previous_executor = NULL;
-                    ERROR_IF(optimized < 0, error);
+                    if (optimized < 0) {
+                        Py_DECREF(previous);
+                        tstate->previous_executor = Py_None;
+                        ERROR_IF(1, error);
+                    }
                     GOTO_TIER_ONE(target);
                 }
             }

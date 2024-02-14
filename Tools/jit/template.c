@@ -102,9 +102,11 @@ pop_1_error_tier_two:
     STACK_SHRINK(1);
 error_tier_two:
     _PyFrame_SetStackPointer(frame, stack_pointer);
+    tstate->previous_executor = (PyObject *)current_executor;
     return NULL;
 deoptimize:
     _PyFrame_SetStackPointer(frame, stack_pointer);
+    tstate->previous_executor = (PyObject *)current_executor;
     return _PyCode_CODE(_PyFrame_GetCode(frame)) + _target;
 side_exit:
     {

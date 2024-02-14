@@ -392,6 +392,8 @@ stack_pointer = _PyFrame_GetStackPointer(frame);
     do {                                                   \
         jit_func jitted = (EXECUTOR)->jit_code;            \
         next_instr = jitted(frame, stack_pointer, tstate); \
+        Py_DECREF(tstate->previous_executor);              \
+        tstate->previous_executor = NULL;                  \
         frame = tstate->current_frame;                     \
         if (next_instr == NULL) {                          \
             goto resume_with_error;                        \
@@ -409,6 +411,8 @@ do { \
 #endif
 
 #define GOTO_TIER_ONE(TARGET) \
+    Py_DECREF(tstate->previous_executor); \
+    tstate->previous_executor = NULL;  \
     next_instr = target; \
     DISPATCH();
 

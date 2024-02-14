@@ -300,7 +300,7 @@ emit(const StencilGroup *group, uint64_t patches[])
 
 // Compiles executor in-place. Don't forget to call _PyJIT_Free later!
 int
-_PyJIT_Compile(_PyExecutorObject *executor, _PyUOpInstruction *trace, size_t length)
+_PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size_t length)
 {
     // Loop once to find the total compiled size:
     size_t code_size = 0;
