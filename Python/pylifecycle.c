@@ -611,7 +611,7 @@ static int
 builtins_dict_watcher(PyDict_WatchEvent event, PyObject *dict, PyObject *key, PyObject *new_value)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (event != PyDict_EVENT_CLONED && interp->rare_events.builtin_dict < _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS) {
+    if (interp->rare_events.builtin_dict < _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS) {
         _Py_Executors_InvalidateAll(interp);
     }
     RARE_EVENT_INTERP_INC(interp, builtin_dict);
@@ -1627,8 +1627,8 @@ finalize_modules(PyThreadState *tstate)
 
     // Invalidate all executors and turn off tier 2 optimizer
     _Py_Executors_InvalidateAll(interp);
-    Py_XDECREF(interp->optimizer);
-    interp->optimizer = &_PyOptimizer_Default;
+    _PyOptimizerObject *old = _Py_SetOptimizer(interp, NULL);
+    Py_XDECREF(old);
 
     // Stop watching __builtin__ modifications
     PyDict_Unwatch(0, interp->builtins);
