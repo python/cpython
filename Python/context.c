@@ -65,11 +65,11 @@ contextvar_del(PyContextVar *var);
 
 
 #ifdef WITH_FREELISTS
-static struct _Py_context_state *
-get_context_state(void)
+static struct _Py_context_freelist *
+get_context_freelist(void)
 {
-    _PyFreeListState *state = _PyFreeListState_GET();
-    return &state->contexts;
+    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
+    return &freelists->contexts;
 }
 #endif
 
@@ -341,11 +341,11 @@ _context_alloc(void)
 {
     PyContext *ctx;
 #ifdef WITH_FREELISTS
-    struct _Py_context_state *state = get_context_state();
-    if (state->numfree > 0) {
-        state->numfree--;
-        ctx = state->freelist;
-        state->freelist = (PyContext *)ctx->ctx_weakreflist;
+    struct _Py_context_freelist *context_freelist = get_context_freelist();
+    if (context_freelist->numfree > 0) {
+        context_freelist->numfree--;
+        ctx = context_freelist->freelist;
+        context_freelist->freelist = (PyContext *)ctx->ctx_weakreflist;
         OBJECT_STAT_INC(from_freelist);
         ctx->ctx_weakreflist = NULL;
         _Py_NewReference((PyObject *)ctx);
@@ -468,11 +468,11 @@ context_tp_dealloc(PyContext *self)
     (void)context_tp_clear(self);
 
 #ifdef WITH_FREELISTS
-    struct _Py_context_state *state = get_context_state();
-    if (state->numfree >= 0 && state->numfree < PyContext_MAXFREELIST) {
-        state->numfree++;
-        self->ctx_weakreflist = (PyObject *)state->freelist;
-        state->freelist = self;
+    struct _Py_context_freelist *context_freelist = get_context_freelist();
+    if (context_freelist->numfree >= 0 && context_freelist->numfree < PyContext_MAXFREELIST) {
+        context_freelist->numfree++;
+        self->ctx_weakreflist = (PyObject *)context_freelist->freelist;
+        context_freelist->freelist = self;
         OBJECT_STAT_INC(to_freelist);
     }
     else
@@ -1267,10 +1267,10 @@ get_token_missing(void)
 
 
 void
-_PyContext_ClearFreeList(_PyFreeListState *freelist_state, int is_finalization)
+_PyContext_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization)
 {
 #ifdef WITH_FREELISTS
-    struct _Py_context_state *state = &freelist_state->contexts;
+    struct _Py_context_freelist *state = &freelists->contexts;
     for (; state->numfree > 0; state->numfree--) {
         PyContext *ctx = state->freelist;
         state->freelist = (PyContext *)ctx->ctx_weakreflist;

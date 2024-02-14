@@ -794,19 +794,19 @@ PyObject_Bytes(PyObject *v)
 }
 
 void
-_PyObject_ClearFreeLists(_PyFreeListState *state, int is_finalization)
+_PyObject_ClearFreeLists(struct _Py_object_freelists *freelists, int is_finalization)
 {
     // In the free-threaded build, freelists are per-PyThreadState and cleared in PyThreadState_Clear()
     // In the default build, freelists are per-interpreter and cleared in finalize_interp_types()
-    _PyFloat_ClearFreeList(state, is_finalization);
-    _PyTuple_ClearFreeList(state, is_finalization);
-    _PyList_ClearFreeList(state, is_finalization);
-    _PyDict_ClearFreeList(state, is_finalization);
-    _PyContext_ClearFreeList(state, is_finalization);
-    _PyAsyncGen_ClearFreeLists(state, is_finalization);
+    _PyFloat_ClearFreeList(freelists, is_finalization);
+    _PyTuple_ClearFreeList(freelists, is_finalization);
+    _PyList_ClearFreeList(freelists, is_finalization);
+    _PyDict_ClearFreeList(freelists, is_finalization);
+    _PyContext_ClearFreeList(freelists, is_finalization);
+    _PyAsyncGen_ClearFreeLists(freelists, is_finalization);
     // Only be cleared if is_finalization is true.
-    _PyObjectStackChunk_ClearFreeList(state, is_finalization);
-    _PySlice_ClearFreeList(state, is_finalization);
+    _PyObjectStackChunk_ClearFreeList(freelists, is_finalization);
+    _PySlice_ClearFreeList(freelists, is_finalization);
 }
 
 /*
