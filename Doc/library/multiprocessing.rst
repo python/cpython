@@ -649,8 +649,8 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 
    .. method:: terminate()
 
-      Terminate the process.  On POSIX this is done using the ``SIGTERM`` signal;
-      on Windows :c:func:`TerminateProcess` is used.  Note that exit handlers and
+      Terminate the process.  On POSIX this is done using the :py:const:`~signal.SIGTERM` signal;
+      on Windows :c:func:`!TerminateProcess` is used.  Note that exit handlers and
       finally clauses, etc., will not be executed.
 
       Note that descendant processes of the process will *not* be terminated --
