@@ -266,6 +266,7 @@
     <ClInclude Include="..\Include\internal\pycore_parking_lot.h" />
     <ClInclude Include="..\Include\internal\pycore_pathconfig.h" />
     <ClInclude Include="..\Include\internal\pycore_pyarena.h" />
+    <ClInclude Include="..\Include\internal\pycore_pyatomic_ft_wrappers.h" />
     <ClInclude Include="..\Include\internal\pycore_pyerrors.h" />
     <ClInclude Include="..\Include\internal\pycore_pyhash.h" />
     <ClInclude Include="..\Include\internal\pycore_pylifecycle.h" />

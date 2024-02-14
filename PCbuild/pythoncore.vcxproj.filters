@@ -723,6 +723,9 @@
     <ClInclude Include="..\Include\internal\pycore_pyarena.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_pyatomic_ft_wrappers.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_pyerrors.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
