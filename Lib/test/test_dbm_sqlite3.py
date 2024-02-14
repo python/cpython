@@ -213,6 +213,7 @@ class DataTypes(_SQLiteDbmTests):
         (42, b"42"),
         (3.14, b"3.14"),
         ("string", b"string"),
+        (b"bytes", b"bytes"),
     )
 
     def setUp(self):
@@ -234,10 +235,15 @@ class DataTypes(_SQLiteDbmTests):
             with self.subTest(raw=raw, coerced=coerced):
                 self.db[raw] = "value"
                 self.assertEqual(self.db[coerced], b"value")
-                with self.assertRaises(KeyError):
-                    self.db[raw]
-                with self.assertRaises(KeyError):
-                    del self.db[raw]
+                # Raw keys are silently coerced to bytes.
+                self.assertEqual(self.db[raw], b"value")
+                del self.db[raw]
+
+    def test_datatypes_replace_coerced(self):
+        self.db["10"] = "value"
+        self.db[b"10"] = "value"
+        self.db[10] = "value"
+        self.assertEqual(self.db.keys(), [b"10"])
 
 
 class CorruptDatabase(_SQLiteDbmTests):
