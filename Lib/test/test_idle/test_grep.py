@@ -71,13 +71,14 @@ class FindfilesTest(unittest.TestCase):
             'idlelib',
             'idle_test',
         )
+        htest = os.path.join(idle_test_root, 'htest.py')
         readme = os.path.join(idle_test_root, 'README.txt')
 
         # Check for Python files in path where this file lives.
         python_files = list(ff(idle_test_root, '*.py', False))
         # This directory has many Python files.
         self.assertGreaterEqual(len(python_files), 5)
-        self.assertIn(self.realpath, python_files)
+        self.assertIn(htest, python_files)
         self.assertNotIn(readme, python_files)
 
         # Look for .txt files in path where this file lives.
@@ -99,6 +100,7 @@ class FindfilesTest(unittest.TestCase):
             'idlelib',
         )
         grepfile = os.path.join(parent, 'grep.py')
+        htest = os.path.join(parent, 'idle_test', 'htest.py')
         pat = '*.py'
 
         # Get Python files only in parent directory.
@@ -108,7 +110,7 @@ class FindfilesTest(unittest.TestCase):
         self.assertGreater(parent_size, 20)
         self.assertIn(grepfile, filelist)
         # Without subdirectories, this file isn't returned.
-        self.assertNotIn(self.realpath, filelist)
+        self.assertNotIn(htest, filelist)
 
         # Include subdirectories.
         filelist = list(ff(parent, pat, True))
@@ -116,12 +118,12 @@ class FindfilesTest(unittest.TestCase):
         self.assertGreater(len(filelist), parent_size)
         self.assertIn(grepfile, filelist)
         # This file exists in list now.
-        self.assertIn(self.realpath, filelist)
+        self.assertIn(htest, filelist)
 
         # Check another level up the tree.
         parent = os.path.dirname(parent)
         filelist = list(ff(parent, '*.py', True))
-        self.assertIn(self.realpath, filelist)
+        self.assertIn(htest, filelist)
 
 
 class Grep_itTest(unittest.TestCase):
