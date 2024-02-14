@@ -96,9 +96,9 @@ The same technique works for objects with named attributes. For example:
     >>> sorted(student_objects, key=lambda student: student.age)   # sort by age
     [('dave', 'B', 10), ('jane', 'B', 12), ('john', 'A', 15)]
 
-Objects with named functions can be made by a regular class as shown
-above, or they can be instances of :class:`dataclasses.dataclass` or a
-:term:`named tuple`.
+Objects with named attributes can be made by a regular class as shown
+above, or they can be instances of :class:`~dataclasses.dataclass` or
+a :term:`named tuple`.
 
 Operator Module Functions and Partial Function Evaluation
 =========================================================
@@ -140,9 +140,12 @@ function making it suitable for use as a key-function.
 
     >>> from functools import partial
     >>> from unicodedata import normalize
+
     >>> names = 'Zoë Åbjørn Núñez Élana Zeke Abe Nubia Eloise'.split()
+
     >>> sorted(names, key=partial(normalize, 'NFD'))
     ['Abe', 'Åbjørn', 'Eloise', 'Élana', 'Nubia', 'Núñez', 'Zeke', 'Zoë']
+
     >>> sorted(names, key=partial(normalize, 'NFC'))
     ['Abe', 'Eloise', 'Nubia', 'Núñez', 'Zeke', 'Zoë', 'Åbjørn', 'Élana']
 
@@ -300,10 +303,11 @@ Odds and Ends
     [('dave', 'B', 10), ('jane', 'B', 12), ('john', 'A', 15)]
 
   However, note that ``<`` can fall back to using :meth:`~object.__gt__` if
-  :meth:`~object.__lt__` is not implemented (see :func:`object.__lt__`).
-  To avoid surprises, :pep:`8` recommends that all six comparison
-  methods be implemented.  The :func:`~functools.total_ordering`
-  decorator is provided to make that task easier.
+  :meth:`~object.__lt__` is not implemented (see :func:`object.__lt__`
+  for details on the mechanics).  To avoid surprises, :pep:`8`
+  recommends that all six comparison methods be implemented.
+  The :func:`~functools.total_ordering` decorator is provided to make that
+  task easier.
 
 * Key functions need not depend directly on the objects being sorted. A key
   function can also access external resources. For instance, if the student grades
