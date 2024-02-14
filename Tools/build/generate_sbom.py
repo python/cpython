@@ -59,7 +59,10 @@ PACKAGE_TO_FILES = {
         include=["Modules/_decimal/libmpdec/**"]
     ),
     "expat": PackageFiles(
-        include=["Modules/expat/**"]
+        include=["Modules/expat/**"],
+        exclude=[
+            "Modules/expat/expat_config.h",
+        ]
     ),
     "macholib": PackageFiles(
         include=["Lib/ctypes/macholib/**"],
