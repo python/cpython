@@ -174,9 +174,6 @@ or any other SQLite browser, including the SQLite CLI.
    implements a :meth:`!close` method,
    and supports a "closing" context manager via the :keyword:`with` keyword.
 
-   Neither keys nor values are coerced to a specific type
-   before being stored in the database.
-
    :param filename:
       The path to the database to be opened.
    :type filename: :term:`path-like object`
