@@ -625,9 +625,7 @@ init_interpreter(PyInterpreterState *interp,
     }
     interp->sys_profile_initialized = false;
     interp->sys_trace_initialized = false;
-    interp->optimizer = &_PyOptimizer_Default;
-    interp->optimizer_backedge_threshold = _PyOptimizer_Default.backedge_threshold;
-    interp->optimizer_resume_threshold = _PyOptimizer_Default.backedge_threshold;
+    (void)_Py_SetOptimizer(interp, NULL);
     interp->next_func_version = 1;
     interp->executor_list_head = NULL;
     if (interp != &runtime->_main_interpreter) {
@@ -780,10 +778,8 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
         tstate->_status.cleared = 0;
     }
 
-    Py_CLEAR(interp->optimizer);
-    interp->optimizer = &_PyOptimizer_Default;
-    interp->optimizer_backedge_threshold = _PyOptimizer_Default.backedge_threshold;
-    interp->optimizer_resume_threshold = _PyOptimizer_Default.backedge_threshold;
+    _PyOptimizerObject *old = _Py_SetOptimizer(interp, NULL);
+    Py_DECREF(old);
 
     /* It is possible that any of the objects below have a finalizer
        that runs Python code or otherwise relies on a thread state
@@ -1552,8 +1548,8 @@ PyThreadState_Clear(PyThreadState *tstate)
     }
 #ifdef Py_GIL_DISABLED
     // Each thread should clear own freelists in free-threading builds.
-    _PyFreeListState *freelist_state = _PyFreeListState_GET();
-    _PyObject_ClearFreeLists(freelist_state, 1);
+    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
+    _PyObject_ClearFreeLists(freelists, 1);
 
     // Remove ourself from the biased reference counting table of threads.
     _Py_brc_remove_thread(tstate);

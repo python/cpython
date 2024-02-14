@@ -1598,7 +1598,7 @@
                        something was returned by a descriptor protocol).  Set
                        the second element of the stack to NULL, to signal
                        CALL that it's not a method call.
-                       NULL | meth | arg1 | ... | argN
+                       meth | NULL | arg1 | ... | argN
                      */
                     Py_DECREF(owner);
                     if (attr == NULL) goto pop_1_error_tier_two;
@@ -3360,10 +3360,9 @@
         }
 
         case _SET_IP: {
-            oparg = CURRENT_OPARG();
+            PyObject *instr_ptr = (PyObject *)CURRENT_OPERAND();
             TIER_TWO_ONLY
-            // TODO: Put the code pointer in `operand` to avoid indirection via `frame`
-            frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame)) + oparg;
+            frame->instr_ptr = (_Py_CODEUNIT *)instr_ptr;
             break;
         }
 
@@ -3456,6 +3455,14 @@
             _PyCounterOptimizerObject *exe = (_PyCounterOptimizerObject *)opt;
             exe->count++;
             stack_pointer += -1;
+            break;
+        }
+
+        case _CHECK_VALIDITY_AND_SET_IP: {
+            PyObject *instr_ptr = (PyObject *)CURRENT_OPERAND();
+            TIER_TWO_ONLY
+            if (!current_executor->vm_data.valid) goto deoptimize;
+            frame->instr_ptr = (_Py_CODEUNIT *)instr_ptr;
             break;
         }
 
