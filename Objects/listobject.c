@@ -4,7 +4,7 @@
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_interp.h"        // PyInterpreterState.list
-#include "pycore_list.h"          // struct _Py_list_state, _PyListIterObject
+#include "pycore_list.h"          // struct _Py_list_freelist, _PyListIterObject
 #include "pycore_long.h"          // _PyLong_DigitCount
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_GC_TRACK(), _PyDebugAllocatorStats()
@@ -21,12 +21,12 @@ class list "PyListObject *" "&PyList_Type"
 _Py_DECLARE_STR(list_err, "list index out of range");
 
 #ifdef WITH_FREELISTS
-static struct _Py_list_state *
-get_list_state(void)
+static struct _Py_list_freelist *
+get_list_freelist(void)
 {
-    _PyFreeListState *state = _PyFreeListState_GET();
-    assert(state != NULL);
-    return &state->lists;
+    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
+    assert(freelists != NULL);
+    return &freelists->lists;
 }
 #endif
 
@@ -120,10 +120,10 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
 }
 
 void
-_PyList_ClearFreeList(_PyFreeListState *freelist_state, int is_finalization)
+_PyList_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization)
 {
 #ifdef WITH_FREELISTS
-    struct _Py_list_state *state = &freelist_state->lists;
+    struct _Py_list_freelist *state = &freelists->lists;
     while (state->numfree > 0) {
         PyListObject *op = state->free_list[--state->numfree];
         assert(PyList_CheckExact(op));
@@ -140,10 +140,10 @@ void
 _PyList_DebugMallocStats(FILE *out)
 {
 #ifdef WITH_FREELISTS
-    struct _Py_list_state *state = get_list_state();
+    struct _Py_list_freelist *list_freelist = get_list_freelist();
     _PyDebugAllocatorStats(out,
                            "free PyListObject",
-                           state->numfree, sizeof(PyListObject));
+                           list_freelist->numfree, sizeof(PyListObject));
 #endif
 }
 
@@ -158,10 +158,10 @@ PyList_New(Py_ssize_t size)
     }
 
 #ifdef WITH_FREELISTS
-    struct _Py_list_state *state = get_list_state();
-    if (PyList_MAXFREELIST && state->numfree > 0) {
-        state->numfree--;
-        op = state->free_list[state->numfree];
+    struct _Py_list_freelist *list_freelist = get_list_freelist();
+    if (PyList_MAXFREELIST && list_freelist->numfree > 0) {
+        list_freelist->numfree--;
+        op = list_freelist->free_list[list_freelist->numfree];
         OBJECT_STAT_INC(from_freelist);
         _Py_NewReference((PyObject *)op);
     }
@@ -391,9 +391,9 @@ list_dealloc(PyObject *self)
         PyMem_Free(op->ob_item);
     }
 #ifdef WITH_FREELISTS
-    struct _Py_list_state *state = get_list_state();
-    if (state->numfree < PyList_MAXFREELIST && state->numfree >= 0 && PyList_CheckExact(op)) {
-        state->free_list[state->numfree++] = op;
+    struct _Py_list_freelist *list_freelist = get_list_freelist();
+    if (list_freelist->numfree < PyList_MAXFREELIST && list_freelist->numfree >= 0 && PyList_CheckExact(op)) {
+        list_freelist->free_list[list_freelist->numfree++] = op;
         OBJECT_STAT_INC(to_freelist);
     }
     else

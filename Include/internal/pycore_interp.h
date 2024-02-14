@@ -20,7 +20,6 @@ extern "C" {
 #include "pycore_dtoa.h"          // struct _dtoa_state
 #include "pycore_exceptions.h"    // struct _Py_exc_state
 #include "pycore_floatobject.h"   // struct _Py_float_state
-#include "pycore_freelist.h"      // struct _Py_freelist_state
 #include "pycore_function.h"      // FUNC_MAX_WATCHERS
 #include "pycore_gc.h"            // struct _gc_runtime_state
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
@@ -222,9 +221,6 @@ struct _is {
     // One bit is set for each non-NULL entry in code_watchers
     uint8_t active_code_watchers;
 
-#if !defined(Py_GIL_DISABLED)
-    struct _Py_freelist_state freelist_state;
-#endif
     struct _py_object_state object_state;
     struct _Py_unicode_state unicode;
     struct _Py_long_state long_state;
