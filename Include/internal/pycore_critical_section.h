@@ -140,8 +140,8 @@ extern "C" {
 // The critical section APIs are no-ops with the GIL.
 # define Py_BEGIN_CRITICAL_SECTION(op)
 # define Py_END_CRITICAL_SECTION()
-# define Py_BEGIN_CRITICAL_SECTION_OPT(op)
-# define Py_END_CRITICAL_SECTION_OPT()
+# define Py_XBEGIN_CRITICAL_SECTION(op)
+# define Py_XEND_CRITICAL_SECTION()
 # define Py_BEGIN_CRITICAL_SECTION2(a, b)
 # define Py_END_CRITICAL_SECTION2()
 # define _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(mutex)
