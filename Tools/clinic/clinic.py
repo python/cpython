@@ -2360,9 +2360,8 @@ impl_definition block
     def fail(self, *args: object, line_number: int | None = None) -> NoReturn:
         if line_number is None:
             line_number = self.block_parser.line_number
-        warn_or_fail(*args,
-                     filename=self.filename, line_number=line_number,
-                     fail=True)
+        fail(*args,
+             filename=self.filename, line_number=line_number)
 
     def add_include(self, name: str, reason: str,
                     *, condition: str | None = None) -> None:
