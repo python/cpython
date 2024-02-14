@@ -1015,7 +1015,7 @@ make platform
 Build the ``python`` program, but don't build the standard library
 extension modules. This generates a file named ``platform`` which
 contains a single line describing the details of the build platform,
-e.g., ``macosx-14.3-arm64-3.12`` or ``linux-x86_64-3.13``
+e.g., ``macosx-14.3-arm64-3.12`` or ``linux-x86_64-3.13``.
 
 make profile-opt
 ^^^^^^^^^^^^^^^^
@@ -1036,7 +1036,7 @@ make distclean
 
 In addition to the the work done by ``make clean``, remove files
 created by the configure script.  (Related: ``git clean -fdx`` removes
-all files not known to `git`. Use with care.)
+all files not known to Git. Use with care.)
 
 make install
 ^^^^^^^^^^^^
