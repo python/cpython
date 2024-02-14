@@ -229,7 +229,7 @@ struct _ts {
 #elif defined(__s390x__)
 #  define Py_C_RECURSION_LIMIT 800
 #elif defined(_WIN32)
-#  define Py_C_RECURSION_LIMIT 4000
+#  define Py_C_RECURSION_LIMIT 3000
 #elif defined(_Py_ADDRESS_SANITIZER)
 #  define Py_C_RECURSION_LIMIT 4000
 #else

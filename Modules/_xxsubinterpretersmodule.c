@@ -19,8 +19,12 @@
 #include "interpreteridobject.h"
 #include "marshal.h"              // PyMarshal_ReadObjectFromString()
 
+#include "_interpreters_common.h"
 
-#define MODULE_NAME "_xxsubinterpreters"
+
+#define MODULE_NAME _xxsubinterpreters
+#define MODULE_NAME_STR Py_STRINGIFY(MODULE_NAME)
+#define MODINIT_FUNC_NAME RESOLVE_MODINIT_FUNC_NAME(MODULE_NAME)
 
 
 static PyInterpreterState *
@@ -125,7 +129,7 @@ get_interpid_obj(PyInterpreterState *interp)
 static PyObject *
 _get_current_module(void)
 {
-    PyObject *name = PyUnicode_FromString(MODULE_NAME);
+    PyObject *name = PyUnicode_FromString(MODULE_NAME_STR);
     if (name == NULL) {
         return NULL;
     }
@@ -152,16 +156,16 @@ typedef struct {
 static PyObject *
 xibufferview_from_xid(PyTypeObject *cls, _PyCrossInterpreterData *data)
 {
-    assert(data->data != NULL);
-    assert(data->obj == NULL);
-    assert(data->interpid >= 0);
+    assert(_PyCrossInterpreterData_DATA(data) != NULL);
+    assert(_PyCrossInterpreterData_OBJ(data) == NULL);
+    assert(_PyCrossInterpreterData_INTERPID(data) >= 0);
     XIBufferViewObject *self = PyObject_Malloc(sizeof(XIBufferViewObject));
     if (self == NULL) {
         return NULL;
     }
     PyObject_Init((PyObject *)self, cls);
-    self->view = (Py_buffer *)data->data;
-    self->interpid = data->interpid;
+    self->view = (Py_buffer *)_PyCrossInterpreterData_DATA(data);
+    self->interpid = _PyCrossInterpreterData_INTERPID(data);
     return (PyObject *)self;
 }
 
@@ -209,7 +213,7 @@ static PyType_Slot XIBufferViewType_slots[] = {
 };
 
 static PyType_Spec XIBufferViewType_spec = {
-    .name = MODULE_NAME ".CrossInterpreterBufferView",
+    .name = MODULE_NAME_STR ".CrossInterpreterBufferView",
     .basicsize = sizeof(XIBufferViewObject),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE),
@@ -267,8 +271,7 @@ register_memoryview_xid(PyObject *mod, PyTypeObject **p_state)
     *p_state = cls;
 
     // Register XID for the builtin memoryview type.
-    if (_PyCrossInterpreterData_RegisterClass(
-                &PyMemoryView_Type, _memoryview_shared) < 0) {
+    if (ensure_xid_class(&PyMemoryView_Type, _memoryview_shared) < 0) {
         return -1;
     }
     // We don't ever bother un-registering memoryview.
@@ -303,7 +306,7 @@ _get_current_module_state(void)
     if (mod == NULL) {
         // XXX import it?
         PyErr_SetString(PyExc_RuntimeError,
-                        MODULE_NAME " module not imported yet");
+                        MODULE_NAME_STR " module not imported yet");
         return NULL;
     }
     module_state *state = get_module_state(mod);
@@ -372,9 +375,7 @@ check_code_object(PyCodeObject *code)
     }
     // We trust that no code objects under co_consts have unbound cell vars.
 
-    if (code->co_executors != NULL
-        || code->_co_instrumentation_version > 0)
-    {
+    if (_PyCode_HAS_EXECUTORS(code) || _PyCode_HAS_INSTRUMENTATION(code)) {
         return "only basic functions are supported";
     }
     if (code->_co_monitoring != NULL) {
@@ -602,7 +603,7 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
 
     // Destroy the interpreter.
     PyThreadState *tstate = PyThreadState_New(interp);
-    tstate->_whence = _PyThreadState_WHENCE_INTERP;
+    _PyThreadState_SetWhence(tstate, _PyThreadState_WHENCE_INTERP);
     // XXX Possible GILState issues?
     PyThreadState *save_tstate = PyThreadState_Swap(tstate);
     Py_EndInterpreter(tstate);
@@ -691,7 +692,7 @@ static PyObject *
 interp_set___main___attrs(PyObject *self, PyObject *args)
 {
     PyObject *id, *updates;
-    if (!PyArg_ParseTuple(args, "OO:" MODULE_NAME ".set___main___attrs",
+    if (!PyArg_ParseTuple(args, "OO:" MODULE_NAME_STR ".set___main___attrs",
                           &id, &updates))
     {
         return NULL;
@@ -856,18 +857,18 @@ interp_exec(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *id, *code;
     PyObject *shared = NULL;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "OO|O:" MODULE_NAME ".exec", kwlist,
+                                     "OO|O:" MODULE_NAME_STR ".exec", kwlist,
                                      &id, &code, &shared)) {
         return NULL;
     }
 
     const char *expected = "a string, a function, or a code object";
     if (PyUnicode_Check(code)) {
-         code = (PyObject *)convert_script_arg(code, MODULE_NAME ".exec",
+         code = (PyObject *)convert_script_arg(code, MODULE_NAME_STR ".exec",
                                                "argument 2", expected);
     }
     else {
-         code = (PyObject *)convert_code_arg(code, MODULE_NAME ".exec",
+         code = (PyObject *)convert_code_arg(code, MODULE_NAME_STR ".exec",
                                              "argument 2", expected);
     }
     if (code == NULL) {
@@ -908,12 +909,12 @@ interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *id, *script;
     PyObject *shared = NULL;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "OU|O:" MODULE_NAME ".run_string", kwlist,
+                                     "OU|O:" MODULE_NAME_STR ".run_string", kwlist,
                                      &id, &script, &shared)) {
         return NULL;
     }
 
-    script = (PyObject *)convert_script_arg(script, MODULE_NAME ".exec",
+    script = (PyObject *)convert_script_arg(script, MODULE_NAME_STR ".exec",
                                             "argument 2", "a string");
     if (script == NULL) {
         return NULL;
@@ -934,7 +935,7 @@ PyDoc_STRVAR(run_string_doc,
 \n\
 Execute the provided string in the identified interpreter.\n\
 \n\
-(See " MODULE_NAME ".exec().");
+(See " MODULE_NAME_STR ".exec().");
 
 static PyObject *
 interp_run_func(PyObject *self, PyObject *args, PyObject *kwds)
@@ -943,12 +944,12 @@ interp_run_func(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *id, *func;
     PyObject *shared = NULL;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "OO|O:" MODULE_NAME ".run_func", kwlist,
+                                     "OO|O:" MODULE_NAME_STR ".run_func", kwlist,
                                      &id, &func, &shared)) {
         return NULL;
     }
 
-    PyCodeObject *code = convert_code_arg(func, MODULE_NAME ".exec",
+    PyCodeObject *code = convert_code_arg(func, MODULE_NAME_STR ".exec",
                                           "argument 2",
                                           "a function or a code object");
     if (code == NULL) {
@@ -972,7 +973,7 @@ Execute the body of the provided function in the identified interpreter.\n\
 Code objects are also supported.  In both cases, closures and args\n\
 are not supported.  Methods and other callables are not supported either.\n\
 \n\
-(See " MODULE_NAME ".exec().");
+(See " MODULE_NAME_STR ".exec().");
 
 
 static PyObject *
@@ -1166,7 +1167,7 @@ module_free(void *mod)
 
 static struct PyModuleDef moduledef = {
     .m_base = PyModuleDef_HEAD_INIT,
-    .m_name = MODULE_NAME,
+    .m_name = MODULE_NAME_STR,
     .m_doc = module_doc,
     .m_size = sizeof(module_state),
     .m_methods = module_functions,
@@ -1177,7 +1178,7 @@ static struct PyModuleDef moduledef = {
 };
 
 PyMODINIT_FUNC
-PyInit__xxsubinterpreters(void)
+MODINIT_FUNC_NAME(void)
 {
     return PyModuleDef_Init(&moduledef);
 }

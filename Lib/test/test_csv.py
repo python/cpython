@@ -392,10 +392,26 @@ class Test_Csv(unittest.TestCase):
         # will this fail where locale uses comma for decimals?
         self._read_test([',3,"5",7.3, 9'], [['', 3, '5', 7.3, 9]],
                         quoting=csv.QUOTE_NONNUMERIC)
+        self._read_test([',3,"5",7.3, 9'], [[None, '3', '5', '7.3', ' 9']],
+                        quoting=csv.QUOTE_NOTNULL)
+        self._read_test([',3,"5",7.3, 9'], [[None, 3, '5', 7.3, 9]],
+                        quoting=csv.QUOTE_STRINGS)
+
+        self._read_test([',,"",'], [['', '', '', '']])
+        self._read_test([',,"",'], [['', '', '', '']],
+                        quoting=csv.QUOTE_NONNUMERIC)
+        self._read_test([',,"",'], [[None, None, '', None]],
+                        quoting=csv.QUOTE_NOTNULL)
+        self._read_test([',,"",'], [[None, None, '', None]],
+                        quoting=csv.QUOTE_STRINGS)
+
         self._read_test(['"a\nb", 7'], [['a\nb', ' 7']])
         self.assertRaises(ValueError, self._read_test,
                           ['abc,3'], [[]],
                           quoting=csv.QUOTE_NONNUMERIC)
+        self.assertRaises(ValueError, self._read_test,
+                          ['abc,3'], [[]],
+                          quoting=csv.QUOTE_STRINGS)
         self._read_test(['1,@,3,@,5'], [['1', ',3,', '5']], quotechar='@')
         self._read_test(['1,\0,3,\0,5'], [['1', ',3,', '5']], quotechar='\0')
 
@@ -403,6 +419,15 @@ class Test_Csv(unittest.TestCase):
         self._read_test(['no space, space,  spaces,\ttab'],
                         [['no space', 'space', 'spaces', '\ttab']],
                         skipinitialspace=True)
+        self._read_test([' , , '],
+                        [['', '', '']],
+                        skipinitialspace=True)
+        self._read_test([' , , '],
+                        [[None, None, None]],
+                        skipinitialspace=True, quoting=csv.QUOTE_NOTNULL)
+        self._read_test([' , , '],
+                        [[None, None, None]],
+                        skipinitialspace=True, quoting=csv.QUOTE_STRINGS)
 
     def test_read_bigfield(self):
         # This exercises the buffer realloc functionality and field size

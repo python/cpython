@@ -908,6 +908,8 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
     }
 }
 
+#define MAX_VERSIONS_PER_CLASS 1000
+
 static int
 assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
 {
@@ -922,7 +924,10 @@ assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
     if (!_PyType_HasFeature(type, Py_TPFLAGS_READY)) {
         return 0;
     }
-
+    if (type->tp_versions_used >= MAX_VERSIONS_PER_CLASS) {
+        return 0;
+    }
+    type->tp_versions_used++;
     if (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) {
         /* static types */
         if (NEXT_GLOBAL_VERSION_TAG > _Py_MAX_GLOBAL_TYPE_VERSION_TAG) {
@@ -3828,6 +3833,17 @@ type_new_impl(type_new_ctx *ctx)
     // Put the proper slots in place
     fixup_slot_dispatchers(type);
 
+    if (!_PyDict_HasOnlyStringKeys(type->tp_dict)) {
+        if (PyErr_WarnFormat(
+                PyExc_RuntimeWarning,
+                1,
+                "non-string key in the __dict__ of class %.200s",
+                type->tp_name) == -1)
+        {
+            goto error;
+        }
+    }
+
     if (type_new_set_names(type) < 0) {
         goto error;
     }
@@ -6667,7 +6683,7 @@ type_add_method(PyTypeObject *type, PyMethodDef *meth)
     int err;
     PyObject *dict = lookup_tp_dict(type);
     if (!(meth->ml_flags & METH_COEXIST)) {
-        err = PyDict_SetDefault(dict, name, descr) == NULL;
+        err = PyDict_SetDefaultRef(dict, name, descr, NULL) < 0;
     }
     else {
         err = PyDict_SetItem(dict, name, descr) < 0;
@@ -6715,7 +6731,7 @@ type_add_members(PyTypeObject *type)
         if (descr == NULL)
             return -1;
 
-        if (PyDict_SetDefault(dict, PyDescr_NAME(descr), descr) == NULL) {
+        if (PyDict_SetDefaultRef(dict, PyDescr_NAME(descr), descr, NULL) < 0) {
             Py_DECREF(descr);
             return -1;
         }
@@ -6740,7 +6756,7 @@ type_add_getset(PyTypeObject *type)
             return -1;
         }
 
-        if (PyDict_SetDefault(dict, PyDescr_NAME(descr), descr) == NULL) {
+        if (PyDict_SetDefaultRef(dict, PyDescr_NAME(descr), descr, NULL) < 0) {
             Py_DECREF(descr);
             return -1;
         }
