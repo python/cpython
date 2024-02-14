@@ -1150,6 +1150,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_parser.h \
 		$(srcdir)/Include/internal/pycore_pathconfig.h \
 		$(srcdir)/Include/internal/pycore_pyarena.h \
+		$(srcdir)/Include/internal/pycore_pyatomic_ft_wrappers.h \
 		$(srcdir)/Include/internal/pycore_pybuffer.h \
 		$(srcdir)/Include/internal/pycore_pyerrors.h \
 		$(srcdir)/Include/internal/pycore_pyhash.h \
