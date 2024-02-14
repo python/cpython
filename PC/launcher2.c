@@ -39,6 +39,9 @@
 #define RC_NO_PYTHON_AT_ALL 112
 #define RC_NO_SHEBANG       113
 #define RC_RECURSIVE_SHEBANG 114
+#define RC_NO_ALIAS         115
+#define RC_NO_INI           116
+#define RC_ACCESS_DENIED    117
 
 static FILE * log_fp = NULL;
 
@@ -440,6 +443,10 @@ typedef struct {
     bool listPaths;
     // if true, display help message before continuing
     bool help;
+    // if true, create global python/python3 aliases without launching
+    bool activate;
+    // if true, delete global python/python3 aliases without launching
+    bool deactivate;
     // if set, limits search to registry keys with the specified Company
     // This is intended for debugging and testing only
     const wchar_t *limitToCompany;
@@ -523,6 +530,8 @@ dumpSearchInfo(SearchInfo *search)
     DEBUG_BOOL(list);
     DEBUG_BOOL(listPaths);
     DEBUG_BOOL(help);
+    DEBUG_BOOL(activate);
+    DEBUG_BOOL(deactivate);
     DEBUG(limitToCompany);
 #undef DEBUG_BOOL
 #undef DEBUG_2
@@ -587,6 +596,25 @@ typedef struct AppExecLinkFile { // For tag IO_REPARSE_TAG_APPEXECLINK
     */
 } AppExecLinkFile;
 
+int readAliasInfo(SearchInfo *search, const wchar_t *tail, int tailLen);
+int _readIni(const wchar_t *section, const wchar_t *settingName, wchar_t *buffer, int bufferLength);
+
+void
+_parseVOption(SearchInfo *search, const wchar_t *argStart, const wchar_t *tail)
+{
+    // Arguments starting with 'V:' specify company and/or tag
+    const wchar_t *tagStart = wcschr(argStart, L'/') ;
+    if (tagStart) {
+        search->company = argStart;
+        search->companyLength = (int)(tagStart - argStart);
+        search->tag = tagStart + 1;
+    } else {
+        search->tag = argStart;
+    }
+    search->tagLength = (int)(tail - search->tag);
+    search->allowDefaults = false;
+    search->restOfCmdLine = tail;
+}
 
 int
 parseCommandLine(SearchInfo *search)
@@ -639,25 +667,20 @@ parseCommandLine(SearchInfo *search)
         search->allowExecutableOverride = true;
         search->allowDefaults = true;
         search->windowed = true;
-    } else if (STARTSWITH(L"python3")) {
-        search->executable = L"python.exe";
-        search->tag = &tail[6];
-        search->tagLength = tailLen - 6;
-        search->allowExecutableOverride = true;
-        search->oldStyleTag = true;
-        search->allowPyvenvCfg = true;
-    } else if (STARTSWITH(L"pythonw3")) {
-        search->executable = L"pythonw.exe";
-        search->tag = &tail[7];
-        search->tagLength = tailLen - 7;
-        search->allowExecutableOverride = true;
-        search->oldStyleTag = true;
-        search->allowPyvenvCfg = true;
-        search->windowed = true;
     } else {
-        search->executable = tail;
-        search->executableLength = tailLen;
-        search->allowPyvenvCfg = true;
+        int res = readAliasInfo(search, tail, tailLen);
+        switch (res)
+        {
+        case RC_NO_ALIAS:
+            search->executable = tail;
+            search->executableLength = tailLen;
+            search->allowPyvenvCfg = true;
+            break;
+        case 0:
+            break;
+        default:
+            return res;
+        }
     }
 #undef STARTSWITH
 #undef MATCHES
@@ -680,19 +703,8 @@ parseCommandLine(SearchInfo *search)
                 search->oldStyleTag = true;
                 search->restOfCmdLine = tail;
             } else if (STARTSWITH(L"V:") || STARTSWITH(L"-version:")) {
-                // Arguments starting with 'V:' specify company and/or tag
                 const wchar_t *argStart = wcschr(arg, L':') + 1;
-                const wchar_t *tagStart = wcschr(argStart, L'/') ;
-                if (tagStart) {
-                    search->company = argStart;
-                    search->companyLength = (int)(tagStart - argStart);
-                    search->tag = tagStart + 1;
-                } else {
-                    search->tag = argStart;
-                }
-                search->tagLength = (int)(tail - search->tag);
-                search->allowDefaults = false;
-                search->restOfCmdLine = tail;
+                _parseVOption(search, arg, tail);
             } else if (MATCHES(L"0") || MATCHES(L"-list")) {
                 search->list = true;
                 search->restOfCmdLine = tail;
@@ -703,6 +715,20 @@ parseCommandLine(SearchInfo *search)
                 search->help = true;
                 // Do not update restOfCmdLine so that we trigger the help
                 // message from whichever interpreter we select
+            } else if (MATCHES(L"-activate")) {
+                search->activate = true;
+                search->restOfCmdLine = tail;
+            } else if (STARTSWITH(L"-activate:")) {
+                const wchar_t *argStart = wcschr(arg, L':') + 1;
+                _parseVOption(search, argStart, tail);
+                search->activate = true;
+            } else if (MATCHES(L"-deactivate")) {
+                search->deactivate = true;
+                search->restOfCmdLine = tail;
+            } else if (STARTSWITH(L"-deactivate:")) {
+                const wchar_t *argStart = wcschr(arg, L':') + 1;
+                _parseVOption(search, argStart, tail);
+                search->deactivate = true;
             }
         }
     }
@@ -727,6 +753,33 @@ parseCommandLine(SearchInfo *search)
     return 0;
 }
 
+int
+readAliasInfo(SearchInfo *search, const wchar_t *tail, int tailLen)
+{
+    wchar_t buffer[MAXLEN];
+    wchar_t key[MAXLEN];
+    if (tailLen < 0 ? wcscpy_s(key, MAXLEN, tail) : wcsncpy_s(key, MAXLEN, tail, tailLen)) {
+        debug(L"# filename too long\n");
+        return RC_NO_MEMORY;
+    }
+    int n = _readIni(L"alias", key, buffer, MAXLEN);
+    if (!n) {
+        return RC_NO_ALIAS;
+    }
+
+    wchar_t *buf = allocSearchInfoBuffer(search, n + 1);
+    if (!buf || wcscpy_s(buf, n + 1, buffer)) {
+        return RC_NO_MEMORY;
+    }
+
+    /* Allow ourselves to override the executable path entirely */
+    search->allowExecutableOverride = true;
+    search->executablePath = buf;
+    search->allowPyvenvCfg = false;
+    search->allowDefaults = false;
+    
+    return 0;
+}
 
 int
 _decodeShebang(SearchInfo *search, const char *buffer, int bufferLength, bool onlyUtf8, wchar_t **decoded, int *decodedLength)
@@ -950,6 +1003,34 @@ _readIni(const wchar_t *section, const wchar_t *settingName, wchar_t *buffer, in
         }
     }
     return 0;
+}
+
+
+int
+_writeIni(int appdata, const wchar_t *section, const wchar_t *settingName, const wchar_t *buffer)
+{
+    wchar_t iniPath[MAXLEN];
+    if (!(appdata
+        ? SUCCEEDED(SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, iniPath))
+        : (GetModuleFileNameW(NULL, iniPath, MAXLEN)
+           && SUCCEEDED(PathCchRemoveFileSpec(iniPath, MAXLEN))))
+    ) {
+        winerror(0, L"Failed to calculate path to py.ini\n");
+        return RC_NO_INI;
+    }
+    if (!join(iniPath, MAXLEN, L"py.ini")) {
+        return RC_NO_INI;
+    }
+    debug(L"# Writing %s/%s=%s to %s\n", section, settingName, buffer, iniPath);
+    if (WritePrivateProfileStringW(section, settingName, buffer, iniPath)) {
+        return 0;
+    }
+    if (GetLastError() == ERROR_ACCESS_DENIED) {
+        return RC_ACCESS_DENIED;
+    }
+
+    winerror(0, L"Failed to write to py.ini\n");
+    return RC_NO_INI;
 }
 
 
@@ -2424,6 +2505,88 @@ listEnvironments(EnvironmentInfo *env, FILE * out, bool showPath, EnvironmentInf
 
 
 /******************************************************************************\
+ ***                          ALIAS CREATION/DELETE                         ***
+\******************************************************************************/
+
+int
+manageAlias(int activate, const SearchInfo *search, const EnvironmentInfo *launch, const wchar_t *launchCommand)
+{
+    int exitCode;
+
+    wchar_t pythonTagAlias[MAXLEN];
+    const wchar_t * aliases[4] = {
+        !search->windowed ? L"python" : L"pythonw",
+        !search->windowed ? L"python3" : L"pythonw3",
+        pythonTagAlias,
+        NULL
+    };
+
+    if (!launch->tag) {
+        // TODO: Remove all aliases
+        debug(L"# passed no tag - nothing to remove!\n");
+        return 0;
+    }
+
+    if (wcscpy_s(pythonTagAlias, MAXLEN, aliases[0]) ||
+        wcscat_s(pythonTagAlias, MAXLEN, launch->tag)) {
+        debug(L"# failed to construct tagged alias\n");
+        return RC_INTERNAL_ERROR;
+    }
+
+    wchar_t pyExe[MAXLEN];
+    wchar_t aliasExe[MAXLEN];
+    int useHardLink = 1; /* start with hard links, disable if it fails */
+
+    if (!GetModuleFileNameW(NULL, pyExe, MAXLEN)) {
+        winerror(0, L"Reading py.exe location");
+        return RC_INTERNAL_ERROR;
+    }
+
+    for (const wchar_t **aliasName = aliases; *aliasName; ++aliasName) {
+        exitCode = _writeIni(0, L"alias", *aliasName, activate ? launchCommand : NULL);
+        if (exitCode) {
+            return exitCode;
+        }
+
+        if (wcscpy_s(aliasExe, MAXLEN, pyExe) ||
+            !split_parent(aliasExe, MAXLEN) ||
+            !join(aliasExe, MAXLEN, *aliasName) ||
+            wcscat_s(aliasExe, MAXLEN, L".exe")
+        ) {
+            debug(L"# Unable to create alias for '%s'\n", *aliasName);
+            exitCode = RC_NO_ALIAS;
+            break;
+        }
+
+        if (activate) {
+            if (useHardLink) {
+                if (!CreateHardLinkW(aliasExe, pyExe, NULL)) {
+                    useHardLink = 0;
+                }
+            }
+            if (!useHardLink) {
+                if (!CopyFileW(pyExe, aliasExe, FALSE)) {
+                    winerror(0, L"creating alias '%s'", aliasExe);
+                    exitCode = RC_NO_ALIAS;
+                }
+            }
+        }
+        else {
+            if (!DeleteFileW(aliasExe)) {
+                int err = GetLastError();
+                if (err != ERROR_FILE_NOT_FOUND) {
+                    winerror(err, L"deleting alias '%s'", aliasExe);
+                    exitCode = RC_NO_ALIAS;
+                }
+            }
+        }
+    }
+
+    return exitCode;
+}
+
+
+/******************************************************************************\
  ***                           INTERPRETER LAUNCH                           ***
 \******************************************************************************/
 
@@ -2790,8 +2953,14 @@ process(int argc, wchar_t ** argv)
         goto abort;
     }
 
-    // Launch selected runtime
-    exitCode = launchEnvironment(&search, env, launchCommand);
+    if (search.activate || search.deactivate) {
+        // Create/delete the aliases and update the INI file
+        exitCode = manageAlias(search.activate, &search, env, launchCommand);
+    }
+    else {
+        // Launch selected runtime
+        exitCode = launchEnvironment(&search, env, launchCommand);
+    }
 
 abort:
     freeSearchInfo(&search);
