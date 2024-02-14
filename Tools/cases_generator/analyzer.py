@@ -453,6 +453,10 @@ def compute_properties(op: parser.InstDef) -> Properties:
     )
     deopts_if = variable_used(op, "DEOPT_IF")
     exits_if = variable_used(op, "EXIT_IF")
+    if deopts_if and exits_if:
+        tkn = op.tokens[0]
+        raise lexer.make_syntax_error("Op cannot contain both EXIT_IF and DEOPT_IF",
+             tkn.filename, tkn.line, tkn.column, op.name)
     infallible = is_infallible(op)
     passthrough = stack_effect_only_peeks(op) and infallible
     return Properties(
