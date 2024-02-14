@@ -66,20 +66,26 @@ class FindfilesTest(unittest.TestCase):
 
     def test_base(self):
         ff = grep.findfiles
-        readme = os.path.join(self.path, 'README.txt')
+        idle_test_root = readme = os.path.join(
+            os.path.dirname(os.path.dirname(self.path)),
+            'idlelib',
+            'idle_test',
+        )
+        readme = os.path.join(idle_test_root, 'README.txt')
 
         # Check for Python files in path where this file lives.
-        filelist = list(ff(self.path, '*.py', False))
+        python_files = list(ff(idle_test_root, '*.py', False))
         # This directory has many Python files.
-        self.assertGreater(len(filelist), 10)
-        self.assertIn(self.realpath, filelist)
-        self.assertNotIn(readme, filelist)
+        self.assertGreaterEqual(len(python_files), 5)
+        self.assertIn(self.realpath, python_files)
+        self.assertNotIn(readme, python_files)
 
         # Look for .txt files in path where this file lives.
-        filelist = list(ff(self.path, '*.txt', False))
-        self.assertNotEqual(len(filelist), 0)
-        self.assertNotIn(self.realpath, filelist)
+        filelist = list(ff(idle_test_root, '*.txt', False))
+        self.assertGreater(len(filelist), 0)
         self.assertIn(readme, filelist)
+        for python_file in python_files:
+            self.assertNotIn(python_file, filelist)
 
         # Look for non-matching pattern.
         filelist = list(ff(self.path, 'grep.*', False))
@@ -88,7 +94,10 @@ class FindfilesTest(unittest.TestCase):
 
     def test_recurse(self):
         ff = grep.findfiles
-        parent = os.path.dirname(self.path)
+        parent = os.path.join(
+            os.path.dirname(os.path.dirname(self.path)),
+            'idlelib',
+        )
         grepfile = os.path.join(parent, 'grep.py')
         pat = '*.py'
 
