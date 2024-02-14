@@ -2614,7 +2614,7 @@ dummy_func(
             assert(Py_TYPE(iter) == &PyListIter_Type);
             STAT_INC(FOR_ITER, hit);
             PyListObject *seq = it->it_seq;
-            if (seq == NULL || it->it_index >= PyList_GET_SIZE(seq)) {
+            if ((size_t)it->it_index >= (size_t)PyList_GET_SIZE(seq)) {
                 #ifndef Py_GIL_DISABLED
                 if (seq != NULL) {
                     it->it_seq = NULL;
@@ -2635,8 +2635,10 @@ dummy_func(
             _PyListIterObject *it = (_PyListIterObject *)iter;
             assert(Py_TYPE(iter) == &PyListIter_Type);
             PyListObject *seq = it->it_seq;
+            #ifndef Py_GIL_DISABLED
             DEOPT_IF(seq == NULL);
-            DEOPT_IF(it->it_index >= PyList_GET_SIZE(seq));
+            #endif
+            DEOPT_IF((size_t)it->it_index >= (size_t)PyList_GET_SIZE(seq));
         }
 
         op(_ITER_NEXT_LIST, (iter -- iter, next)) {
