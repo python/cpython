@@ -3,6 +3,7 @@
 #include "pycore_dict.h"          // _PyDict_GetItem_KnownHash()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
 
 #include <stddef.h>
@@ -2007,7 +2008,7 @@ dequeiter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject *
 dequeiter_len(dequeiterobject *it, PyObject *Py_UNUSED(ignored))
 {
-    Py_ssize_t len = _Py_atomic_load_ssize(&it->counter);
+    Py_ssize_t len = FT_ATOMIC_LOAD_SSIZE(it->counter);
     return PyLong_FromSsize_t(len);
 }
 
