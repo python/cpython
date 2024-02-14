@@ -153,11 +153,16 @@ Morsel Objects
    attacks. Valid values for this attribute are "Strict" and "Lax".
 
    The attribute :attr:`partitioned` indicates to user agents that these
-   cross-site cookies should only be available in the same top-level context
-   that the cookie was first set in. Must also set ``Secure`` and ``Path=/``.
+   cross-site cookies *should* only be available in the same top-level context
+   that the cookie was first set in. For this to be accepted by the user agent,
+   you **must** also set both ``Secure`` and ``Path=/``.
    In addition, it is recommended to use the ``__Host`` prefix when setting
    partitioned cookies to make them bound to the hostname and not the
-   registrable domain.
+   registrable domain. Read
+   `CHIPS (Cookies Having Independent Partitioned State)`_
+   for full details and examples.
+
+   .. _CHIPS (Cookies Having Independent Partitioned State): https://github.com/privacycg/CHIPS/blob/main/README.md
 
    The keys are case-insensitive and their default value is ``''``.
 
