@@ -82,7 +82,10 @@ dummy_func(void) {
 
     op(_BINARY_OP_ADD_INT, (left, right -- res)) {
         if (is_const(left) && is_const(right)) {
-            PyObject *temp = _PyLong_Add(get_const(left), get_const(right));
+            assert(PyLong_CheckExact(get_const(left)));
+            assert(PyLong_CheckExact(get_const(right)));
+            PyObject *temp = _PyLong_Add((PyLongObject *)get_const(left),
+                                         (PyLongObject *)get_const(right));
             if (temp == NULL) {
                 goto error;
             }
@@ -99,7 +102,10 @@ dummy_func(void) {
 
     op(_BINARY_OP_SUBTRACT_INT, (left, right -- res)) {
         if (is_const(left) && is_const(right)) {
-            PyObject *temp = _PyLong_Subtract(get_const(left), get_const(right));
+            assert(PyLong_CheckExact(get_const(left)));
+            assert(PyLong_CheckExact(get_const(right)));
+            PyObject *temp = _PyLong_Subtract((PyLongObject *)get_const(left),
+                                              (PyLongObject *)get_const(right));
             if (temp == NULL) {
                 goto error;
             }
@@ -116,7 +122,10 @@ dummy_func(void) {
 
     op(_BINARY_OP_MULTIPLY_INT, (left, right -- res)) {
         if (is_const(left) && is_const(right)) {
-            PyObject *temp = _PyLong_Multiply(get_const(left), get_const(right));
+            assert(PyLong_CheckExact(get_const(left)));
+            assert(PyLong_CheckExact(get_const(right)));
+            PyObject *temp = _PyLong_Multiply((PyLongObject *)get_const(left),
+                                              (PyLongObject *)get_const(right));
             if (temp == NULL) {
                 goto error;
             }
