@@ -1650,6 +1650,20 @@ get_rare_event_counters(PyObject *self, PyObject *type)
     );
 }
 
+static PyObject *
+reset_rare_event_counters(PyObject *self, PyObject *Py_UNUSED(type))
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+
+    interp->rare_events.set_class = 0;
+    interp->rare_events.set_bases = 0;
+    interp->rare_events.set_eval_frame_func = 0;
+    interp->rare_events.builtin_dict = 0;
+    interp->rare_events.func_modification = 0;
+
+    return Py_None;
+}
+
 
 #ifdef Py_GIL_DISABLED
 static PyObject *
@@ -1727,6 +1741,7 @@ static PyMethodDef module_functions[] = {
     _TESTINTERNALCAPI_TEST_LONG_NUMBITS_METHODDEF
     {"get_type_module_name",    get_type_module_name,            METH_O},
     {"get_rare_event_counters", get_rare_event_counters, METH_NOARGS},
+    {"reset_rare_event_counters", reset_rare_event_counters, METH_NOARGS},
 #ifdef Py_GIL_DISABLED
     {"py_thread_id", get_py_thread_id, METH_NOARGS},
 #endif
