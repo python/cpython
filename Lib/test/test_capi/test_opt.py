@@ -7,6 +7,8 @@ import gc
 
 import _testinternalcapi
 
+from test.support import script_helper
+
 
 @contextlib.contextmanager
 def temporary_optimizer(opt):
@@ -659,7 +661,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         opt = _testinternalcapi.get_uop_optimizer()
         with temporary_optimizer(opt):
-            testfunc(20)
+            testfunc(32)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -677,10 +679,10 @@ class TestUopsOptimization(unittest.TestCase):
 
         opt = _testinternalcapi.get_uop_optimizer()
         with temporary_optimizer(opt):
-            res = testfunc(20)
+            res = testfunc(32)
 
         ex = get_first_executor(testfunc)
-        self.assertEqual(res, 19 * 2)
+        self.assertEqual(res, 62)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
         self.assertNotIn("_GUARD_BOTH_INT", uops)
@@ -699,7 +701,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         opt = _testinternalcapi.get_uop_optimizer()
         with temporary_optimizer(opt):
-            res = testfunc(20)
+            res = testfunc(32)
 
         ex = get_first_executor(testfunc)
         self.assertEqual(res, 4)
@@ -716,7 +718,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         opt = _testinternalcapi.get_uop_optimizer()
         with temporary_optimizer(opt):
-            testfunc(20)
+            testfunc(32)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -740,7 +742,7 @@ class TestUopsOptimization(unittest.TestCase):
 
             def dummy(x):
                 return x + 2
-            testfunc(10)
+            testfunc(32)
 
         ex = get_first_executor(testfunc)
         # Honestly as long as it doesn't crash it's fine.
@@ -749,20 +751,39 @@ class TestUopsOptimization(unittest.TestCase):
         # This test is a little implementation specific.
 
     def test_promote_globals_to_constants(self):
+
+        result = script_helper.run_python_until_end('-c', textwrap.dedent("""
+        import _testinternalcapi
+        import opcode
+
+        def get_first_executor(func):
+            code = func.__code__
+            co_code = code.co_code
+            JUMP_BACKWARD = opcode.opmap["JUMP_BACKWARD"]
+            for i in range(0, len(co_code), 2):
+                if co_code[i] == JUMP_BACKWARD:
+                    try:
+                        return _testinternalcapi.get_executor(code, i)
+                    except ValueError:
+                        pass
+            return None
+
         def testfunc(n):
             for i in range(n):
                 x = range(i)
             return x
 
         opt = _testinternalcapi.get_uop_optimizer()
-        with temporary_optimizer(opt):
-            testfunc(20)
+        _testinternalcapi.set_optimizer(opt)
+        testfunc(64)
 
         ex = get_first_executor(testfunc)
-        self.assertIsNotNone(ex)
+        assert ex is not None
         uops = {opname for opname, _, _ in ex}
-        self.assertNotIn("_LOAD_GLOBAL_BUILTIN", uops)
-        self.assertIn("_LOAD_CONST_INLINE_BORROW_WITH_NULL", uops)
+        assert "_LOAD_GLOBAL_BUILTINS" not in uops
+        assert "_LOAD_CONST_INLINE_BORROW_WITH_NULL" in uops
+        """))
+        self.assertEqual(result[0].rc, 0, result)
 
 
 
