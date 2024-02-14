@@ -1304,7 +1304,7 @@ do_start_new_thread(thread_module_state* state,
         return -1;
     }
     if (interp->finalizing) {
-        PyErr_SetString(PyExc_RuntimeError,
+        PyErr_SetString(PyExc_PythonFinalizationError,
                         "can't create new thread at interpreter shutdown");
         return -1;
     }
