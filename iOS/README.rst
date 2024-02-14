@@ -26,10 +26,11 @@ as Apple does not maintain Xcode for older macOS versions.
 iOS specific arguments to configure
 ===================================
 
-* ``--enable-framework[=DIR]``
+* ``--enable-framework=DIR``
 
-  This argument specifies the location where the Python.framework will
-  be installed.
+  This argument specifies the location where the Python.framework will be
+  installed. This argument is required for all iOS builds; a directory *must*
+  be specified.
 
 * ``--with-framework-name=NAME``
 
@@ -131,10 +132,21 @@ In this invocation:
   Python, you can compile a python interpreter and then use that interpreter to
   run Python code. However, the binaries produced for iOS won't run on macOS, so
   you need to provide an external Python interpreter. This interpreter must be
-  the version as the Python that is being compiled.
+  the *exact* same version as the Python that is being compiled.
 
-In practice, you will likely also need to specify the paths to iOS builds of the
-binary libraries that CPython depends on (XZ, BZip2, LibFFI and OpenSSL).
+For a full CPython build, you also need to specify the paths to iOS builds of
+the binary libraries that CPython depends on (XZ, BZip2, LibFFI and OpenSSL).
+This can be done by defining the ``LIBLZMA_CFLAGS``, ``LIBLZMA_LIBS``,
+``BZIP2_CFLAGS``, ``BZIP2_LIBS``, ``LIBFFI_CFLAGS``, and ``LIBFFI_LIBS``
+environment variables, and the ``--with-openssl`` configure option. Versions of
+these libraries pre-compiled for iOS can be found in [this
+repository](https://github.com/beeware/cpython-apple-source-deps/releases).
+
+By default, Python will be compiled with an iOS deployment target (i.e., the
+minimum supported iOS version) of 12.0. To specify a different deployment
+target, provide the version number as part of the ``--host`` argument - for
+example, ``--host=arm64-apple-ios15.4-simulator`` would compile an ARM64
+simulator build with a deployment target of 15.4.
 
 Merge thin frameworks into fat frameworks
 -----------------------------------------
@@ -207,116 +219,6 @@ Then, add symbolic links to "common" platform names for each slice::
 
 You now have a Python.xcframework that can be used in a project.
 
-Using Python on iOS
-===================
-
-To add Python to an iOS Xcode project:
-
-1. Build a Python ``XCFramework`` using the instructions above. At a minimum,
-   you will need a build for `arm64-apple-ios`, plus one of either
-   `arm64-apple-ios-simulator` or `x86_64-apple-ios-simulator`.
-
-2. Drag the ``XCframework`` into your iOS project. In the following
-   instructions, we'll assume you've dropped the ``XCframework`` into the root
-   of your project; however, you can use any other location that you want.
-
-3. Drag the ``iOS/Resources/dylib-Info-template.plist`` file into your project,
-   and ensure it is associated with the app target.
-
-4. Select the app target by selecting the root node of your Xcode project, then
-   the target name in the sidebar that appears.
-
-5. In the "General" settings, under "Frameworks, Libraries and Embedded
-   Content", Add ``Python.xcframework``, with "Embed & Sign" selected.
-
-6. In the "Build Settings" tab, modify the following:
-
-   - Build Options
-     * User script sandboxing: No
-     * Enable Testability: Yes
-   - Search Paths
-     * Framework Search Paths: ``$(PROJECT_DIR)``
-     * Header Search Paths: ``"$(BUILT_PRODUCTS_DIR)/Python.framework/Headers"``
-   - Apple Clang - Warnings - All languages
-     * Quoted Include in Framework Header: No
-
-7. In the "Build Phases" tab, add a new "Run Script" build step *before* the
-   "Embed Frameworks" step. Name the step "Install Target Specific Python
-   Standard Library", disable the "Based on dependency analysis" checkbox, and
-   set the script content to::
-
-    set -e
-
-    mkdir -p "$CODESIGNING_FOLDER_PATH/python/lib"
-    if [ "$EFFECTIVE_PLATFORM_NAME" = "-iphonesimulator" ]; then
-        echo "Installing Python modules for iOS Simulator"
-        rsync -au --delete "$PROJECT_DIR/Python.xcframework/iphonesimulator/lib/" "$CODESIGNING_FOLDER_PATH/python/lib/"
-    else
-        echo "Installing Python modules for iOS Device"
-        rsync -au --delete "$PROJECT_DIR/Python.xcframework/iphoneos/lib/" "$CODESIGNING_FOLDER_PATH/python/lib/"
-    fi
-
-8. Add a second "Run Script" build step *directly after* the step you just
-   added, named "Prepare Python Binary Modules". It should also have "Based on
-   dependency analysis" unchecked, with the following script content::
-
-    set -e
-
-    install_dylib () {
-        INSTALL_BASE=$1
-        FULL_DYLIB=$2
-
-        # The name of the .dylib file
-        DYLIB=$(basename "$FULL_DYLIB")
-        # The name of the .dylib file, relative to the install base
-        RELATIVE_DYLIB=${FULL_DYLIB#$CODESIGNING_FOLDER_PATH/$INSTALL_BASE/}
-        # The full dotted name of the binary module, constructed from the file path.
-        FULL_MODULE_NAME=$(echo $RELATIVE_DYLIB | cut -d "." -f 1 | tr "/" ".");
-        # A bundle identifier; not actually used, but required by Xcode framework packaging
-        FRAMEWORK_BUNDLE_ID=$(echo $PRODUCT_BUNDLE_IDENTIFIER.$FULL_MODULE_NAME | tr "_" "-")
-        # The name of the framework folder.
-        FRAMEWORK_FOLDER="Frameworks/$FULL_MODULE_NAME.framework"
-
-        # If the framework folder doesn't exist, create it.
-        if [ ! -d "$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER" ]; then
-            echo "Creating framework for $RELATIVE_DYLIB"
-            mkdir -p "$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER"
-
-            cp "$CODESIGNING_FOLDER_PATH/dylib-Info-template.plist" "$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER/Info.plist"
-            plutil -replace CFBundleExecutable -string "$DYLIB" "$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER/Info.plist"
-            plutil -replace CFBundleIdentifier -string "$FRAMEWORK_BUNDLE_ID" "$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER/Info.plist"
-        fi
-
-        echo "Installing binary for $RELATIVE_DYLIB"
-        mv "$FULL_DYLIB" "$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER"
-    }
-
-    PYTHON_VER=$(ls "$CODESIGNING_FOLDER_PATH/python/lib")
-    echo "Install Python $PYTHON_VER standard library dylibs..."
-    find "$CODESIGNING_FOLDER_PATH/python/lib/$PYTHON_VER/lib-dynload" -name "*.dylib" | while read FULL_DYLIB; do
-        install_dylib python/lib/$PYTHON_VER/lib-dynload "$FULL_DYLIB"
-    done
-
-    # Clean up dylib template
-    rm -f "$CODESIGNING_FOLDER_PATH/dylib-Info-template.plist"
-
-    echo "Signing frameworks as $EXPANDED_CODE_SIGN_IDENTITY_NAME ($EXPANDED_CODE_SIGN_IDENTITY)..."
-    find "$CODESIGNING_FOLDER_PATH/Frameworks" -name "*.framework" -exec /usr/bin/codesign --force --sign "$EXPANDED_CODE_SIGN_IDENTITY" ${OTHER_CODE_SIGN_FLAGS:-} -o runtime --timestamp=none --preserve-metadata=identifier,entitlements,flags --generate-entitlement-der "{}" \;
-
-9. Add Objective C code to initialize and use a Python interpreter in embedded
-   mode. When configuring the interpreter, you can use:
-
-      [NSString stringWithFormat:@"%@/python", [[NSBundle mainBundle] resourcePath], nil]
-
-   as the value of ``PYTHONHOME``; the standard library will be installed as the
-   ``lib/python3.X`` subfolder of that ``PYTHONHOME``.
-
-If you have third-party binary modules in your app, they will need to be:
-
-* Compiled for both on-device and simulator platforms;
-* Copied into your project as part of the script in step 9;
-* Installed and signed as part of the script in step 10.
-
 Testing Python on iOS
 =====================
 
@@ -348,8 +250,8 @@ test suite. No output of the Python test suite will be displayed.
 On failure, the output of the Python test suite *will* be displayed. This will
 show the details of the tests that failed.
 
-Debuging test failures
-----------------------
+Debugging test failures
+-----------------------
 
 The easiest way to diagnose a single test failure is to open the testbed project
 in Xcode and run the tests from there using the "Product > Test" menu item.
