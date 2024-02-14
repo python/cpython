@@ -21,11 +21,11 @@ class list "PyListObject *" "&PyList_Type"
 _Py_DECLARE_STR(list_err, "list index out of range");
 
 #ifdef Py_GIL_DISABLED
-    #define LOAD_SSIZE(value) _Py_atomic_load_ssize_relaxed(&value)
-    #define STORE_SSIZE(value, new_value) _Py_atomic_store_ssize_relaxed(&value, new_value)
+#  define LOAD_SSIZE(value) _Py_atomic_load_ssize_relaxed(&value)
+#  define STORE_SSIZE(value, new_value) _Py_atomic_store_ssize_relaxed(&value, new_value)
 #else
-    #define LOAD_SSIZE(value) value
-    #define STORE_SSIZE(value, new_value) value = new_value
+#  define LOAD_SSIZE(value) value
+#  define STORE_SSIZE(value, new_value) value = new_value
 #endif
 
 #ifdef WITH_FREELISTS
@@ -3572,8 +3572,7 @@ listreviter_len(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     listreviterobject *it = (listreviterobject *)self;
     Py_ssize_t index = LOAD_SSIZE(it->it_index);
-    Py_ssize_t len;
-    STORE_SSIZE(len, index + 1);
+    Py_ssize_t len = index + 1;
     if (it->it_seq == NULL || PyList_GET_SIZE(it->it_seq) < len)
         len = 0;
     return PyLong_FromSsize_t(len);
