@@ -1,0 +1,2 @@
+Fix a bug in :mod:`doctest` where incorrect line numbers would be
+reported for decorated functions.

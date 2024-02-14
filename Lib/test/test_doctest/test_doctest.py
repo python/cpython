@@ -686,6 +686,7 @@ It used to be broken for quite some time until `bpo-28249`.
      None  test.test_doctest.doctest_lineno.MethodWrapper.method_without_docstring
        61  test.test_doctest.doctest_lineno.MethodWrapper.property_with_doctest
         4  test.test_doctest.doctest_lineno.func_with_docstring
+       77  test.test_doctest.doctest_lineno.func_with_docstring_wrapped
        12  test.test_doctest.doctest_lineno.func_with_doctest
      None  test.test_doctest.doctest_lineno.func_without_docstring
 
