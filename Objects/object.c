@@ -299,13 +299,13 @@ _Py_DecRef(PyObject *o)
 
 #ifdef Py_GIL_DISABLED
 # ifdef Py_REF_DEBUG
-static inline int
-is_shared_refcnt_dead(Py_ssize_t shared)
+static int
+is_dead(PyObject *o)
 {
 #  if SIZEOF_SIZE_T == 8
-    return shared == (Py_ssize_t)0xDDDDDDDDDDDDDDDD;
+    return (uintptr_t)o->ob_type == 0xDDDDDDDDDDDDDDDD;
 #  else
-    return shared == (Py_ssize_t)0xDDDDDDDD;
+    return (uintptr_t)o->ob_type == 0xDDDDDDDD;
 #  endif
 }
 # endif
@@ -335,8 +335,8 @@ _Py_DecRefSharedDebug(PyObject *o, const char *filename, int lineno)
         }
 
 #ifdef Py_REF_DEBUG
-        if ((_Py_REF_IS_MERGED(new_shared) && new_shared < 0) ||
-            is_shared_refcnt_dead(shared))
+        if ((new_shared < 0 && _Py_REF_IS_MERGED(new_shared)) ||
+            (should_queue && is_dead(o)))
         {
             _Py_NegativeRefcount(filename, lineno, o);
         }
