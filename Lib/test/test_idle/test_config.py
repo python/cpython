@@ -187,7 +187,7 @@ class IdleConfTest(unittest.TestCase):
         conf = config.IdleConf(_utest=True)
         idle_dir = os.path.abspath(os.path.dirname(idlelib.__file__))
         for ctype in conf.config_types:
-            config_path = os.path.join(idle_dir, '../config-%s.def' % ctype)
+            config_path = os.path.join(idle_dir, 'config-%s.def' % ctype)
             with open(config_path) as f:
                 cls.config_string[ctype] = f.read()
 
