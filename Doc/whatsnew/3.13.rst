@@ -238,7 +238,7 @@ dbm
   from the database.
   (Contributed by Donghee Na in :gh:`107122`.)
 
-* Add new :mod:`dbm.sqlite3` backend.
+* Add new :mod:`dbm.sqlite3` backend, and make it the default :mod:`!dbm` backend.
   (Contributed by Raymond Hettinger and Erlend E. Aasland in :gh:`100414`.)
 
 doctest
