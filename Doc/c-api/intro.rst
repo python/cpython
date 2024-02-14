@@ -148,7 +148,7 @@ complete listing.
    worse performances (due to increased code size for example). The compiler is
    usually smarter than the developer for the cost/benefit analysis.
 
-   If Python is :ref:`built in debug mode <debug-build>` (if the ``Py_DEBUG``
+   If Python is :ref:`built in debug mode <debug-build>` (if the :c:macro:`Py_DEBUG`
    macro is defined), the :c:macro:`Py_ALWAYS_INLINE` macro does nothing.
 
    It must be specified before the function return type. Usage::
@@ -325,8 +325,8 @@ objects that reference each other here; for now, the solution
 is "don't do that.")
 
 .. index::
-   single: Py_INCREF()
-   single: Py_DECREF()
+   single: Py_INCREF (C function)
+   single: Py_DECREF (C function)
 
 Reference counts are always manipulated explicitly.  The normal way is
 to use the macro :c:func:`Py_INCREF` to take a new reference to an
@@ -401,8 +401,8 @@ function, that function assumes that it now owns that reference, and you are not
 responsible for it any longer.
 
 .. index::
-   single: PyList_SetItem()
-   single: PyTuple_SetItem()
+   single: PyList_SetItem (C function)
+   single: PyTuple_SetItem (C function)
 
 Few functions steal references; the two notable exceptions are
 :c:func:`PyList_SetItem` and :c:func:`PyTuple_SetItem`, which  steal a reference
@@ -491,8 +491,8 @@ using :c:func:`PySequence_GetItem` (which happens to take exactly the same
 arguments), you do own a reference to the returned object.
 
 .. index::
-   single: PyList_GetItem()
-   single: PySequence_GetItem()
+   single: PyList_GetItem (C function)
+   single: PySequence_GetItem (C function)
 
 Here is an example of how you could write a function that computes the sum of
 the items in a list of integers; once using  :c:func:`PyList_GetItem`, and once
@@ -587,7 +587,7 @@ caller, then to the caller's caller, and so on, until they reach the top-level
 interpreter, where they are reported to the  user accompanied by a stack
 traceback.
 
-.. index:: single: PyErr_Occurred()
+.. index:: single: PyErr_Occurred (C function)
 
 For C programmers, however, error checking always has to be explicit.  All
 functions in the Python/C API can raise exceptions, unless an explicit claim is
@@ -601,8 +601,8 @@ ambiguous return value, and require explicit testing for errors with
 :c:func:`PyErr_Occurred`.  These exceptions are always explicitly documented.
 
 .. index::
-   single: PyErr_SetString()
-   single: PyErr_Clear()
+   single: PyErr_SetString (C function)
+   single: PyErr_Clear (C function)
 
 Exception state is maintained in per-thread storage (this is  equivalent to
 using global storage in an unthreaded application).  A  thread can be in one of
@@ -624,7 +624,7 @@ an exception is being passed on between C functions until it reaches the Python
 bytecode interpreter's  main loop, which takes care of transferring it to
 ``sys.exc_info()`` and friends.
 
-.. index:: single: exc_info() (in module sys)
+.. index:: single: exc_info (in module sys)
 
 Note that starting with Python 1.5, the preferred, thread-safe way to access the
 exception state from Python code is to call the function :func:`sys.exc_info`,
@@ -709,9 +709,9 @@ Here is the corresponding C code, in all its glory::
 .. index:: single: incr_item()
 
 .. index::
-   single: PyErr_ExceptionMatches()
-   single: PyErr_Clear()
-   single: Py_XDECREF()
+   single: PyErr_ExceptionMatches (C function)
+   single: PyErr_Clear (C function)
+   single: Py_XDECREF (C function)
 
 This example represents an endorsed use of the ``goto`` statement  in C!
 It illustrates the use of :c:func:`PyErr_ExceptionMatches` and
@@ -735,7 +735,7 @@ the finalization, of the Python interpreter.  Most functionality of the
 interpreter can only be used after the interpreter has been initialized.
 
 .. index::
-   single: Py_Initialize()
+   single: Py_Initialize (C function)
    pair: module; builtins
    pair: module; __main__
    pair: module; sys
@@ -770,10 +770,10 @@ environment variable :envvar:`PYTHONHOME`, or insert additional directories in
 front of the standard path by setting :envvar:`PYTHONPATH`.
 
 .. index::
-   single: Py_GetPath()
-   single: Py_GetPrefix()
-   single: Py_GetExecPrefix()
-   single: Py_GetProgramFullPath()
+   single: Py_GetPath (C function)
+   single: Py_GetPrefix (C function)
+   single: Py_GetExecPrefix (C function)
+   single: Py_GetProgramFullPath (C function)
 
 The embedding application can steer the search by setting
 :c:member:`PyConfig.program_name` *before* calling
@@ -784,7 +784,7 @@ control has to provide its own implementation of :c:func:`Py_GetPath`,
 :c:func:`Py_GetPrefix`, :c:func:`Py_GetExecPrefix`, and
 :c:func:`Py_GetProgramFullPath` (all defined in :file:`Modules/getpath.c`).
 
-.. index:: single: Py_IsInitialized()
+.. index:: single: Py_IsInitialized (C function)
 
 Sometimes, it is desirable to "uninitialize" Python.  For instance,  the
 application may want to start over (make another call to
@@ -812,12 +812,14 @@ available that support tracing of reference counts, debugging the memory
 allocator, or low-level profiling of the main interpreter loop.  Only the most
 frequently used builds will be described in the remainder of this section.
 
-Compiling the interpreter with the :c:macro:`Py_DEBUG` macro defined produces
+.. c:macro:: Py_DEBUG
+
+Compiling the interpreter with the :c:macro:`!Py_DEBUG` macro defined produces
 what is generally meant by :ref:`a debug build of Python <debug-build>`.
-:c:macro:`Py_DEBUG` is enabled in the Unix build by adding
+:c:macro:`!Py_DEBUG` is enabled in the Unix build by adding
 :option:`--with-pydebug` to the :file:`./configure` command.
 It is also implied by the presence of the
-not-Python-specific :c:macro:`_DEBUG` macro.  When :c:macro:`Py_DEBUG` is enabled
+not-Python-specific :c:macro:`!_DEBUG` macro.  When :c:macro:`!Py_DEBUG` is enabled
 in the Unix build, compiler optimization is disabled.
 
 In addition to the reference count debugging described below, extra checks are
@@ -832,4 +834,3 @@ after every statement run by the interpreter.)
 
 Please refer to :file:`Misc/SpecialBuilds.txt` in the Python source distribution
 for more detailed information.
-

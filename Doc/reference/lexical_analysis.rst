@@ -708,10 +708,12 @@ and formatted string literals may be concatenated with plain string literals.
    single: ! (exclamation); in formatted string literal
    single: : (colon); in formatted string literal
    single: = (equals); for help in debugging using string literals
-.. _f-strings:
 
-Formatted string literals
--------------------------
+.. _f-strings:
+.. _formatted-string-literals:
+
+f-strings
+---------
 
 .. versionadded:: 3.6
 

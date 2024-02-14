@@ -3448,8 +3448,8 @@ class ProtocolTests(BaseTestCase):
 
         self.assertNotIn("__protocol_attrs__", vars(NonP))
         self.assertNotIn("__protocol_attrs__", vars(NonPR))
-        self.assertNotIn("__callable_proto_members_only__", vars(NonP))
-        self.assertNotIn("__callable_proto_members_only__", vars(NonPR))
+        self.assertNotIn("__non_callable_proto_members__", vars(NonP))
+        self.assertNotIn("__non_callable_proto_members__", vars(NonPR))
 
         self.assertEqual(get_protocol_members(P), {"x"})
         self.assertEqual(get_protocol_members(PR), {"meth"})
@@ -3533,13 +3533,26 @@ class ProtocolTests(BaseTestCase):
 
     def test_issubclass_fails_correctly(self):
         @runtime_checkable
-        class P(Protocol):
+        class NonCallableMembers(Protocol):
             x = 1
+
+        class NotRuntimeCheckable(Protocol):
+            def callable_member(self) -> int: ...
+
+        @runtime_checkable
+        class RuntimeCheckable(Protocol):
+            def callable_member(self) -> int: ...
 
         class C: pass
 
-        with self.assertRaisesRegex(TypeError, r"issubclass\(\) arg 1 must be a class"):
-            issubclass(C(), P)
+        # These three all exercise different code paths,
+        # but should result in the same error message:
+        for protocol in NonCallableMembers, NotRuntimeCheckable, RuntimeCheckable:
+            with self.subTest(proto_name=protocol.__name__):
+                with self.assertRaisesRegex(
+                    TypeError, r"issubclass\(\) arg 1 must be a class"
+                ):
+                    issubclass(C(), protocol)
 
     def test_defining_generic_protocols(self):
         T = TypeVar('T')
@@ -4091,6 +4104,56 @@ class ProtocolTests(BaseTestCase):
         self.assertIsInstance(Foo(), ProtocolWithMixedMembers)
         self.assertNotIsInstance(42, ProtocolWithMixedMembers)
 
+    def test_protocol_issubclass_error_message(self):
+        @runtime_checkable
+        class Vec2D(Protocol):
+            x: float
+            y: float
+
+            def square_norm(self) -> float:
+                return self.x ** 2 + self.y ** 2
+
+        self.assertEqual(Vec2D.__protocol_attrs__, {'x', 'y', 'square_norm'})
+        expected_error_message = (
+            "Protocols with non-method members don't support issubclass()."
+            " Non-method members: 'x', 'y'."
+        )
+        with self.assertRaisesRegex(TypeError, re.escape(expected_error_message)):
+            issubclass(int, Vec2D)
+
+    def test_nonruntime_protocol_interaction_with_evil_classproperty(self):
+        class classproperty:
+            def __get__(self, instance, type):
+                raise RuntimeError("NO")
+
+        class Commentable(Protocol):
+            evil = classproperty()
+
+        # recognised as a protocol attr,
+        # but not actually accessed by the protocol metaclass
+        # (which would raise RuntimeError) for non-runtime protocols.
+        # See gh-113320
+        self.assertEqual(get_protocol_members(Commentable), {"evil"})
+
+    def test_runtime_protocol_interaction_with_evil_classproperty(self):
+        class CustomError(Exception): pass
+
+        class classproperty:
+            def __get__(self, instance, type):
+                raise CustomError
+
+        with self.assertRaises(TypeError) as cm:
+            @runtime_checkable
+            class Commentable(Protocol):
+                evil = classproperty()
+
+        exc = cm.exception
+        self.assertEqual(
+            exc.args[0],
+            "Failed to determine whether protocol member 'evil' is a method member"
+        )
+        self.assertIs(type(exc.__cause__), CustomError)
+
 
 class GenericTests(BaseTestCase):
 
@@ -4259,6 +4322,16 @@ class GenericTests(BaseTestCase):
         c = C()
         c.bar = 'abc'
         self.assertEqual(c.__dict__, {'bar': 'abc'})
+
+    def test_setattr_exceptions(self):
+        class Immutable[T]:
+            def __setattr__(self, key, value):
+                raise RuntimeError("immutable")
+
+        # gh-115165: This used to cause RuntimeError to be raised
+        # when we tried to set `__orig_class__` on the `Immutable` instance
+        # returned by the `Immutable[int]()` call
+        self.assertIsInstance(Immutable[int](), Immutable)
 
     def test_subscripted_generics_as_proxies(self):
         T = TypeVar('T')
@@ -4856,6 +4929,75 @@ class GenericTests(BaseTestCase):
         class B(Generic[S]): ...
         class C(List[int], B): ...
         self.assertEqual(C.__mro__, (C, list, B, Generic, object))
+
+    def test_multiple_inheritance_non_type_with___mro_entries__(self):
+        class GoodEntries:
+            def __mro_entries__(self, bases):
+                return (object,)
+
+        class A(List[int], GoodEntries()): ...
+
+        self.assertEqual(A.__mro__, (A, list, Generic, object))
+
+    def test_multiple_inheritance_non_type_without___mro_entries__(self):
+        # Error should be from the type machinery, not from typing.py
+        with self.assertRaisesRegex(TypeError, r"^bases must be types"):
+            class A(List[int], object()): ...
+
+    def test_multiple_inheritance_non_type_bad___mro_entries__(self):
+        class BadEntries:
+            def __mro_entries__(self, bases):
+                return None
+
+        # Error should be from the type machinery, not from typing.py
+        with self.assertRaisesRegex(
+            TypeError,
+            r"^__mro_entries__ must return a tuple",
+        ):
+            class A(List[int], BadEntries()): ...
+
+    def test_multiple_inheritance___mro_entries___returns_non_type(self):
+        class BadEntries:
+            def __mro_entries__(self, bases):
+                return (object(),)
+
+        # Error should be from the type machinery, not from typing.py
+        with self.assertRaisesRegex(
+            TypeError,
+            r"^bases must be types",
+        ):
+            class A(List[int], BadEntries()): ...
+
+    def test_multiple_inheritance_with_genericalias(self):
+        class A(typing.Sized, list[int]): ...
+
+        self.assertEqual(
+            A.__mro__,
+            (A, collections.abc.Sized, Generic, list, object),
+        )
+
+    def test_multiple_inheritance_with_genericalias_2(self):
+        T = TypeVar("T")
+
+        class BaseSeq(typing.Sequence[T]): ...
+        class MySeq(List[T], BaseSeq[T]): ...
+
+        self.assertEqual(
+            MySeq.__mro__,
+            (
+                MySeq,
+                list,
+                BaseSeq,
+                collections.abc.Sequence,
+                collections.abc.Reversible,
+                collections.abc.Collection,
+                collections.abc.Sized,
+                collections.abc.Iterable,
+                collections.abc.Container,
+                Generic,
+                object,
+            ),
+        )
 
     def test_init_subclass_super_called(self):
         class FinalException(Exception):
@@ -5621,7 +5763,7 @@ class ForwardRefTests(BaseTestCase):
         def cmp(o1, o2):
             return o1 == o2
 
-        with infinite_recursion():
+        with infinite_recursion(25):
             r1 = namespace1()
             r2 = namespace2()
             self.assertIsNot(r1, r2)
@@ -6013,8 +6155,6 @@ class OverloadTests(BaseTestCase):
 
             self.assertEqual(list(get_overloads(impl)), overloads)
 
-
-# Definitions needed for features introduced in Python 3.6
 
 from test.typinganndata import (
     ann_module, ann_module2, ann_module3, ann_module5, ann_module6,
@@ -7519,6 +7659,83 @@ class NamedTupleTests(BaseTestCase):
 
         self.assertEqual(CallNamedTuple.__orig_bases__, (NamedTuple,))
 
+    def test_setname_called_on_values_in_class_dictionary(self):
+        class Vanilla:
+            def __set_name__(self, owner, name):
+                self.name = name
+
+        class Foo(NamedTuple):
+            attr = Vanilla()
+
+        foo = Foo()
+        self.assertEqual(len(foo), 0)
+        self.assertNotIn('attr', Foo._fields)
+        self.assertIsInstance(foo.attr, Vanilla)
+        self.assertEqual(foo.attr.name, "attr")
+
+        class Bar(NamedTuple):
+            attr: Vanilla = Vanilla()
+
+        bar = Bar()
+        self.assertEqual(len(bar), 1)
+        self.assertIn('attr', Bar._fields)
+        self.assertIsInstance(bar.attr, Vanilla)
+        self.assertEqual(bar.attr.name, "attr")
+
+    def test_setname_raises_the_same_as_on_other_classes(self):
+        class CustomException(BaseException): pass
+
+        class Annoying:
+            def __set_name__(self, owner, name):
+                raise CustomException
+
+        annoying = Annoying()
+
+        with self.assertRaises(CustomException) as cm:
+            class NormalClass:
+                attr = annoying
+        normal_exception = cm.exception
+
+        with self.assertRaises(CustomException) as cm:
+            class NamedTupleClass(NamedTuple):
+                attr = annoying
+        namedtuple_exception = cm.exception
+
+        self.assertIs(type(namedtuple_exception), CustomException)
+        self.assertIs(type(namedtuple_exception), type(normal_exception))
+
+        self.assertEqual(len(namedtuple_exception.__notes__), 1)
+        self.assertEqual(
+            len(namedtuple_exception.__notes__), len(normal_exception.__notes__)
+        )
+
+        expected_note = (
+            "Error calling __set_name__ on 'Annoying' instance "
+            "'attr' in 'NamedTupleClass'"
+        )
+        self.assertEqual(namedtuple_exception.__notes__[0], expected_note)
+        self.assertEqual(
+            namedtuple_exception.__notes__[0],
+            normal_exception.__notes__[0].replace("NormalClass", "NamedTupleClass")
+        )
+
+    def test_strange_errors_when_accessing_set_name_itself(self):
+        class CustomException(Exception): pass
+
+        class Meta(type):
+            def __getattribute__(self, attr):
+                if attr == "__set_name__":
+                    raise CustomException
+                return object.__getattribute__(self, attr)
+
+        class VeryAnnoying(metaclass=Meta): pass
+
+        very_annoying = VeryAnnoying()
+
+        with self.assertRaises(CustomException):
+            class Foo(NamedTuple):
+                attr = very_annoying
+
 
 class TypedDictTests(BaseTestCase):
     def test_basics_functional_syntax(self):
@@ -7675,6 +7892,46 @@ class TypedDictTests(BaseTestCase):
             'tail': bool,
             'voice': str,
         })
+
+    def test_keys_inheritance_with_same_name(self):
+        class NotTotal(TypedDict, total=False):
+            a: int
+
+        class Total(NotTotal):
+            a: int
+
+        self.assertEqual(NotTotal.__required_keys__, frozenset())
+        self.assertEqual(NotTotal.__optional_keys__, frozenset(['a']))
+        self.assertEqual(Total.__required_keys__, frozenset(['a']))
+        self.assertEqual(Total.__optional_keys__, frozenset())
+
+        class Base(TypedDict):
+            a: NotRequired[int]
+            b: Required[int]
+
+        class Child(Base):
+            a: Required[int]
+            b: NotRequired[int]
+
+        self.assertEqual(Base.__required_keys__, frozenset(['b']))
+        self.assertEqual(Base.__optional_keys__, frozenset(['a']))
+        self.assertEqual(Child.__required_keys__, frozenset(['a']))
+        self.assertEqual(Child.__optional_keys__, frozenset(['b']))
+
+    def test_multiple_inheritance_with_same_key(self):
+        class Base1(TypedDict):
+            a: NotRequired[int]
+
+        class Base2(TypedDict):
+            a: Required[str]
+
+        class Child(Base1, Base2):
+            pass
+
+        # Last base wins
+        self.assertEqual(Child.__annotations__, {'a': Required[str]})
+        self.assertEqual(Child.__required_keys__, frozenset(['a']))
+        self.assertEqual(Child.__optional_keys__, frozenset())
 
     def test_required_notrequired_keys(self):
         self.assertEqual(NontotalMovie.__required_keys__,
@@ -8312,6 +8569,17 @@ class AnnotatedTests(BaseTestCase):
         self.assertEqual(MyCount([4, 4, 5]), {4: 2, 5: 1})
         self.assertEqual(MyCount[int]([4, 4, 5]), {4: 2, 5: 1})
 
+    def test_instantiate_immutable(self):
+        class C:
+            def __setattr__(self, key, value):
+                raise Exception("should be ignored")
+
+        A = Annotated[C, "a decoration"]
+        # gh-115165: This used to cause RuntimeError to be raised
+        # when we tried to set `__orig_class__` on the `C` instance
+        # returned by the `A()` call
+        self.assertIsInstance(A(), C)
+
     def test_cannot_instantiate_forward(self):
         A = Annotated["int", (5, 6)]
         with self.assertRaises(TypeError):
@@ -8541,6 +8809,40 @@ class AnnotatedTests(BaseTestCase):
         class X(Annotated[int, (1, 10)]): ...
         self.assertEqual(X.__mro__, (X, int, object),
                          "Annotated should be transparent.")
+
+    def test_annotated_cached_with_types(self):
+        class A(str): ...
+        class B(str): ...
+
+        field_a1 = Annotated[str, A("X")]
+        field_a2 = Annotated[str, B("X")]
+        a1_metadata = field_a1.__metadata__[0]
+        a2_metadata = field_a2.__metadata__[0]
+
+        self.assertIs(type(a1_metadata), A)
+        self.assertEqual(a1_metadata, A("X"))
+        self.assertIs(type(a2_metadata), B)
+        self.assertEqual(a2_metadata, B("X"))
+        self.assertIsNot(type(a1_metadata), type(a2_metadata))
+
+        field_b1 = Annotated[str, A("Y")]
+        field_b2 = Annotated[str, B("Y")]
+        b1_metadata = field_b1.__metadata__[0]
+        b2_metadata = field_b2.__metadata__[0]
+
+        self.assertIs(type(b1_metadata), A)
+        self.assertEqual(b1_metadata, A("Y"))
+        self.assertIs(type(b2_metadata), B)
+        self.assertEqual(b2_metadata, B("Y"))
+        self.assertIsNot(type(b1_metadata), type(b2_metadata))
+
+        field_c1 = Annotated[int, 1]
+        field_c2 = Annotated[int, 1.0]
+        field_c3 = Annotated[int, True]
+
+        self.assertIs(type(field_c1.__metadata__[0]), int)
+        self.assertIs(type(field_c2.__metadata__[0]), float)
+        self.assertIs(type(field_c3.__metadata__[0]), bool)
 
 
 class TypeAliasTests(BaseTestCase):

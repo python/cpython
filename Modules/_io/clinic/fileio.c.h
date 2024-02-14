@@ -27,7 +27,7 @@ _io_FileIO_close_impl(fileio *self, PyTypeObject *cls);
 static PyObject *
 _io_FileIO_close(fileio *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "close() takes no arguments");
         return NULL;
     }
@@ -528,4 +528,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=1c0f4a36f76b0c6a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e3d9446b4087020e input=a9049054013a1b77]*/

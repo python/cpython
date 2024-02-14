@@ -16,6 +16,7 @@ to modify the meaning of the API call itself.
 import collections
 import collections.abc
 import concurrent.futures
+import errno
 import functools
 import heapq
 import itertools
@@ -1339,9 +1340,9 @@ class BaseEventLoop(events.AbstractEventLoop):
                                        allow_broadcast=None, sock=None):
         """Create datagram connection."""
         if sock is not None:
-            if sock.type != socket.SOCK_DGRAM:
+            if sock.type == socket.SOCK_STREAM:
                 raise ValueError(
-                    f'A UDP Socket was expected, got {sock!r}')
+                    f'A datagram socket was expected, got {sock!r}')
             if (local_addr or remote_addr or
                     family or proto or flags or
                     reuse_port or allow_broadcast):
@@ -1496,6 +1497,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             ssl=None,
             reuse_address=None,
             reuse_port=None,
+            keep_alive=None,
             ssl_handshake_timeout=None,
             ssl_shutdown_timeout=None,
             start_serving=True):
@@ -1569,6 +1571,9 @@ class BaseEventLoop(events.AbstractEventLoop):
                             socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
                     if reuse_port:
                         _set_reuseport(sock)
+                    if keep_alive:
+                        sock.setsockopt(
+                            socket.SOL_SOCKET, socket.SO_KEEPALIVE, True)
                     # Disable IPv4/IPv6 dual stack support (enabled by
                     # default on Linux) which makes a single socket
                     # listen on both address families.
@@ -1581,9 +1586,22 @@ class BaseEventLoop(events.AbstractEventLoop):
                     try:
                         sock.bind(sa)
                     except OSError as err:
-                        raise OSError(err.errno, 'error while attempting '
-                                      'to bind on address %r: %s'
-                                      % (sa, err.strerror.lower())) from None
+                        msg = ('error while attempting '
+                               'to bind on address %r: %s'
+                               % (sa, err.strerror.lower()))
+                        if err.errno == errno.EADDRNOTAVAIL:
+                            # Assume the family is not enabled (bpo-30945)
+                            sockets.pop()
+                            sock.close()
+                            if self._debug:
+                                logger.warning(msg)
+                            continue
+                        raise OSError(err.errno, msg) from None
+
+                if not sockets:
+                    raise OSError('could not bind on any address out of %r'
+                                  % ([info[4] for info in infos],))
+
                 completed = True
             finally:
                 if not completed:

@@ -8,6 +8,7 @@
 # Unicode identifiers in tests is allowed by PEP 3131.
 
 import ast
+import dis
 import os
 import re
 import types
@@ -1737,6 +1738,15 @@ print(f'''{{
             _, stdout, stderr = assert_python_ok(script)
             self.assertIn(rb'\1', stdout)
             self.assertEqual(len(stderr.strip().splitlines()), 2)
+
+    def test_fstring_without_formatting_bytecode(self):
+        # f-string without any formatting should emit the same bytecode
+        # as a normal string. See gh-99606.
+        def get_code(s):
+            return [(i.opname, i.oparg) for i in dis.get_instructions(s)]
+
+        for s in ["", "some string"]:
+            self.assertEqual(get_code(f"'{s}'"), get_code(f"f'{s}'"))
 
 if __name__ == '__main__':
     unittest.main()
