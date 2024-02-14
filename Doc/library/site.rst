@@ -59,7 +59,8 @@ additional items (one per line) to be added to ``sys.path``.  Non-existing items
 are never added to ``sys.path``, and no check is made that the item refers to a
 directory rather than a file.  No item is added to ``sys.path`` more than
 once.  Blank lines and lines beginning with ``#`` are skipped.  Lines starting
-with ``import`` (followed by space or tab) are executed.
+with ``import`` (followed by space or tab) are executed in a copy of the
+:mod:`site` module's global namespace.
 
 .. note::
 
