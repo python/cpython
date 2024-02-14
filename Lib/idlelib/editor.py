@@ -1752,7 +1752,7 @@ def _editor_window(parent):  # htest #
 
 if __name__ == '__main__':
     from unittest import main
-    main('idlelib.idle_test.test_editor', verbosity=2, exit=False)
+    main('test.test_idle.test_editor', verbosity=2, exit=False)
 
     from idlelib.idle_test.htest import run
     run(_editor_window)

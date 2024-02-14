@@ -309,4 +309,4 @@ class HyperParser:
 
 if __name__ == '__main__':
     from unittest import main
-    main('idlelib.idle_test.test_hyperparser', verbosity=2)
+    main('test.test_idle.test_hyperparser', verbosity=2)

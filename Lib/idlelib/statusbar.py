@@ -46,7 +46,7 @@ def _multistatus_bar(parent):  # htest #
 
 if __name__ == '__main__':
     from unittest import main
-    main('idlelib.idle_test.test_statusbar', verbosity=2, exit=False)
+    main('test.test_idle.test_statusbar', verbosity=2, exit=False)
 
     from idlelib.idle_test.htest import run
     run(_multistatus_bar)
