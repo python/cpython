@@ -743,8 +743,8 @@ Several new and useful functions and methods have been added:
 
 Two methods have been deprecated:
 
-* :meth:`xml.etree.ElementTree.getchildren` use ``list(elem)`` instead.
-* :meth:`xml.etree.ElementTree.getiterator` use ``Element.iter`` instead.
+* :meth:`!xml.etree.ElementTree.getchildren` use ``list(elem)`` instead.
+* :meth:`!xml.etree.ElementTree.getiterator` use ``Element.iter`` instead.
 
 For details of the update, see `Introducing ElementTree
 <https://web.archive.org/web/20200703234532/http://effbot.org/zone/elementtree-13-intro.htm>`_
@@ -2682,7 +2682,7 @@ require changes to your code:
 
   (Contributed by Georg Brandl; :issue:`5675`.)
 
-* The previously deprecated :func:`contextlib.nested` function has been removed
+* The previously deprecated :func:`!contextlib.nested` function has been removed
   in favor of a plain :keyword:`with` statement which can accept multiple
   context managers.  The latter technique is faster (because it is built-in),
   and it does a better job finalizing multiple context managers when one of them

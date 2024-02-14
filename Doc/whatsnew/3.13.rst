@@ -101,6 +101,17 @@ Improved Error Messages
   variables. See also :ref:`using-on-controlling-color`.
   (Contributed by Pablo Galindo Salgado in :gh:`112730`.)
 
+* When an incorrect keyword argument is passed to a function, the error message
+  now potentially suggests the correct keyword argument.
+  (Contributed by Pablo Galindo Salgado and Shantanu Jain in :gh:`107944`.)
+
+    >>> "better error messages!".split(max_split=1)
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+        "better error messages!".split(max_split=1)
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+    TypeError: split() got an unexpected keyword argument 'max_split'. Did you mean 'maxsplit'?
+
 Other Language Changes
 ======================
 
@@ -173,6 +184,9 @@ array
 * Add ``'w'`` type code (``Py_UCS4``) that can be used for Unicode strings.
   It can be used instead of ``'u'`` type code, which is deprecated.
   (Contributed by Inada Naoki in :gh:`80480`.)
+
+* Add ``clear()`` method in order to implement ``MutableSequence``.
+  (Contributed by Mike Zimin in :gh:`114894`.)
 
 ast
 ---
@@ -392,6 +406,13 @@ pdb
   command line option or :envvar:`PYTHONSAFEPATH` environment variable).
   (Contributed by Tian Gao and Christian Walther in :gh:`111762`.)
 
+queue
+-----
+
+* Add :meth:`queue.Queue.shutdown` (along with :exc:`queue.ShutDown`) for queue
+  termination.
+  (Contributed by Laurie Opperman and Yves Duprat in :gh:`104750`.)
+
 re
 --
 * Rename :exc:`!re.error` to :exc:`re.PatternError` for improved clarity.
@@ -447,6 +468,12 @@ tkinter
   ``w.wm_attributes(return_python_dict=True)`` returns the attributes as
   a dict instead of a tuple.
   (Contributed by Serhiy Storchaka in :gh:`43457`.)
+
+* Add new optional keyword-only parameter *return_ints* in
+  the :meth:`!Text.count` method.
+  Passing ``return_ints=True`` makes it always returning the single count
+  as an integer instead of a 1-tuple or ``None``.
+  (Contributed by Serhiy Storchaka in :gh:`97928`.)
 
 * Add support of the "vsapi" element type in
   the :meth:`~tkinter.ttk.Style.element_create` method of
@@ -558,6 +585,7 @@ The internal architecture is roughly as follows.
 (JIT by Brandt Bucher, inspired by a paper by Haoran Xu and Fredrik Kjolstad.
 Tier 2 IR by Mark Shannon and Guido van Rossum.
 Tier 2 optimizer by Ken Jin.)
+
 
 
 Deprecated
@@ -1265,13 +1293,6 @@ that may require changes to your code.
 Changes in the Python API
 -------------------------
 
-* :meth:`!tkinter.Text.count` now always returns an integer if one or less
-  counting options are specified.
-  Previously it could return a single count as a 1-tuple, an integer (only if
-  option ``"update"`` was specified) or ``None`` if no items found.
-  The result is now the same if ``wantobjects`` is set to ``0``.
-  (Contributed by Serhiy Storchaka in :gh:`97928`.)
-
 * Functions :c:func:`PyDict_GetItem`, :c:func:`PyDict_GetItemString`,
   :c:func:`PyMapping_HasKey`, :c:func:`PyMapping_HasKeyString`,
   :c:func:`PyObject_HasAttr`, :c:func:`PyObject_HasAttrString`, and
@@ -1327,6 +1348,12 @@ Build Changes
   ``_testimportmultiple`` and ``_uuid`` C extensions are now built with the
   :ref:`limited C API <limited-c-api>`.
   (Contributed by Victor Stinner in :gh:`85283`.)
+
+* ``wasm32-wasi`` is now a tier 2 platform.
+  (Contributed by Brett Cannon in :gh:`115192`.)
+
+* ``wasm32-emscripten`` is no longer a supported platform.
+  (Contributed by Brett Cannon in :gh:`115192`.)
 
 
 C API Changes
@@ -1490,6 +1517,21 @@ New Features
 * Add :c:func:`Py_HashPointer` function to hash a pointer.
   (Contributed by Victor Stinner in :gh:`111545`.)
 
+* Add PyTime C API:
+
+  * :c:type:`PyTime_t` type.
+  * :c:var:`PyTime_MIN` and :c:var:`PyTime_MAX` constants.
+  * :c:func:`PyTime_AsSecondsDouble`
+    :c:func:`PyTime_Monotonic`, :c:func:`PyTime_PerfCounter`, and
+    :c:func:`PyTime_Time` functions.
+
+  (Contributed by Victor Stinner and Petr Viktorin in :gh:`110850`.)
+
+* Add :c:func:`PyLong_AsNativeBytes`, :c:func:`PyLong_FromNativeBytes` and
+  :c:func:`PyLong_FromUnsignedNativeBytes` functions to simplify converting
+  between native integer types and Python :class:`int` objects.
+  (Contributed by Steve Dower in :gh:`111140`.)
+
 
 Porting to Python 3.13
 ----------------------
@@ -1548,7 +1590,6 @@ Porting to Python 3.13
   Including ``<stddef.h>`` explicitly was already needed by all other
   platforms, the ``HAVE_STDDEF_H`` macro is only defined on Windows.
   (Contributed by Victor Stinner in :gh:`108765`.)
-
 
 Deprecated
 ----------

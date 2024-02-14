@@ -3124,10 +3124,13 @@ class TestTracebackException(unittest.TestCase):
         class MyException(Exception):
             pass
 
-        self.do_test_smoke(
-            MyException('bad things happened'),
-            ('test.test_traceback.TestTracebackException.'
-             'test_smoke_user_exception.<locals>.MyException'))
+        if __name__ == '__main__':
+            expected = ('TestTracebackException.'
+                        'test_smoke_user_exception.<locals>.MyException')
+        else:
+            expected = ('test.test_traceback.TestTracebackException.'
+                        'test_smoke_user_exception.<locals>.MyException')
+        self.do_test_smoke(MyException('bad things happened'), expected)
 
     def test_from_exception(self):
         # Check all the parameters are accepted.

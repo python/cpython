@@ -2,6 +2,7 @@
 /* Generic object operations; and implementation of None */
 
 #include "Python.h"
+#include "pycore_brc.h"           // _Py_brc_queue_object()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
 #include "pycore_context.h"       // _PyContextTokenMissing_Type
@@ -344,12 +345,10 @@ _Py_DecRefSharedDebug(PyObject *o, const char *filename, int lineno)
                                                 &shared, new_shared));
 
     if (should_queue) {
-        // TODO: the inter-thread queue is not yet implemented. For now,
-        // we just merge the refcount here.
-        Py_ssize_t refcount = _Py_ExplicitMergeRefcount(o, -1);
-        if (refcount == 0) {
-            _Py_Dealloc(o);
-        }
+#ifdef Py_REF_DEBUG
+        _Py_IncRefTotal(_PyInterpreterState_GET());
+#endif
+        _Py_brc_queue_object(o);
     }
     else if (new_shared == _Py_REF_MERGED) {
         // refcount is zero AND merged
@@ -399,16 +398,16 @@ _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra)
     Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared);
     do {
         refcnt = Py_ARITHMETIC_RIGHT_SHIFT(Py_ssize_t, shared, _Py_REF_SHARED_SHIFT);
-        if (_Py_REF_IS_MERGED(shared)) {
-            return refcnt;
-        }
-
         refcnt += (Py_ssize_t)op->ob_ref_local;
         refcnt += extra;
 
         new_shared = _Py_REF_SHARED(refcnt, _Py_REF_MERGED);
     } while (!_Py_atomic_compare_exchange_ssize(&op->ob_ref_shared,
                                                 &shared, new_shared));
+
+#ifdef Py_REF_DEBUG
+    _Py_AddRefTotal(_PyInterpreterState_GET(), extra);
+#endif
 
     _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, 0);
     _Py_atomic_store_uintptr_relaxed(&op->ob_tid, 0);
@@ -794,6 +793,21 @@ PyObject_Bytes(PyObject *v)
     return PyBytes_FromObject(v);
 }
 
+void
+_PyObject_ClearFreeLists(_PyFreeListState *state, int is_finalization)
+{
+    // In the free-threaded build, freelists are per-PyThreadState and cleared in PyThreadState_Clear()
+    // In the default build, freelists are per-interpreter and cleared in finalize_interp_types()
+    _PyFloat_ClearFreeList(state, is_finalization);
+    _PyTuple_ClearFreeList(state, is_finalization);
+    _PyList_ClearFreeList(state, is_finalization);
+    _PyDict_ClearFreeList(state, is_finalization);
+    _PyContext_ClearFreeList(state, is_finalization);
+    _PyAsyncGen_ClearFreeLists(state, is_finalization);
+    // Only be cleared if is_finalization is true.
+    _PyObjectStackChunk_ClearFreeList(state, is_finalization);
+    _PySlice_ClearFreeList(state, is_finalization);
+}
 
 /*
 def _PyObject_FunctionStr(x):
