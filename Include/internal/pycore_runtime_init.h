@@ -169,7 +169,6 @@ extern PyTypeObject _PyExc_MemoryError;
                 { .threshold = 10, }, \
             }, \
         }, \
-        .object_state = _py_object_state_INIT(INTERP), \
         .dtoa = _dtoa_state_INIT(&(INTERP)), \
         .dict_state = _dict_state_INIT, \
         .func_state = { \
@@ -205,16 +204,6 @@ extern PyTypeObject _PyExc_MemoryError;
         .py_recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
         .context_ver = 1, \
     }
-
-#ifdef Py_TRACE_REFS
-# define _py_object_state_INIT(INTERP) \
-    { \
-        .refchain = NULL, \
-    }
-#else
-# define _py_object_state_INIT(INTERP) \
-    { 0 }
-#endif
 
 
 // global objects
