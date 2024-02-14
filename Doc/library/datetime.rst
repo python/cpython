@@ -1777,7 +1777,7 @@ Other constructor:
       be truncated).
    4. Fractional hours and minutes are not supported.
 
-   Examples::
+   Examples:
 
    .. doctest::
 
