@@ -2613,6 +2613,31 @@ def _proxy_bypass_macosx_sysconf(host, proxy_settings):
     return False
 
 
+# Same as _proxy_bypass_macosx_sysconf, testable on all platforms
+def _proxy_bypass_winreg_override(host, override):
+    """Return True if the host should bypass the proxy server.
+
+    The proxy override list is obtained from the Windows
+    Internet settings proxy override registry value.
+
+    An example of a proxy override value is:
+    "www.example.com;*.example.net; 192.168.0.1"
+    """
+    from fnmatch import fnmatch
+
+    host, _ = _splitport(host)
+    proxy_override = override.split(';')
+    for test in proxy_override:
+        test = test.strip()
+        # "<local>" should bypass the proxy server for all intranet addresses
+        if test == '<local>':
+            if '.' not in host:
+                return True
+        elif fnmatch(host, test):
+            return True
+    return False
+
+
 if sys.platform == 'darwin':
     from _scproxy import _get_proxy_settings, _get_proxies
 
@@ -2711,7 +2736,7 @@ elif os.name == 'nt':
             import winreg
         except ImportError:
             # Std modules, so should be around - but you never know!
-            return 0
+            return False
         try:
             internetSettings = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
                 r'Software\Microsoft\Windows\CurrentVersion\Internet Settings')
@@ -2721,26 +2746,10 @@ elif os.name == 'nt':
                                                      'ProxyOverride')[0])
             # ^^^^ Returned as Unicode but problems if not converted to ASCII
         except OSError:
-            return 0
+            return False
         if not proxyEnable or not proxyOverride:
-            return 0
-        # try to make a host list from name and IP address.
-        host, _ = _splitport(host)
-        # make a check value list from the registry entry: replace the
-        # '<local>' string by the localhost entry and the corresponding
-        # canonical entry.
-        proxyOverride = proxyOverride.split(';')
-        # now check if we match one of the registry values.
-        for test in proxyOverride:
-            if test == '<local>':
-                if '.' not in host:
-                    return 1
-            test = test.replace(".", r"\.")     # mask dots
-            test = test.replace("*", r".*")     # change glob sequence
-            test = test.replace("?", r".")      # change glob char
-            if re.match(test, host, re.I):
-                return 1
-        return 0
+            return False
+        return _proxy_bypass_winreg_override(host, proxyOverride)
 
     def proxy_bypass(host):
         """Return True, if host should be bypassed.
