@@ -3393,19 +3393,19 @@ listiter_next(PyObject *self)
 {
     _PyListIterObject *it = (_PyListIterObject *)self;
     Py_ssize_t index = LOAD_SSIZE(it->it_index);
-    if (it->it_seq == NULL || index < 0) {
+    if (index < 0) {
         return NULL;
     }
 
     PyObject *item = list_get_item_ref(it->it_seq, index);
     if (item == NULL) {
         // out-of-bounds
+        STORE_SSIZE(it->it_index, -1);
 #ifndef Py_GIL_DISABLED
         PyListObject *seq = it->it_seq;
         it->it_seq = NULL;
         Py_DECREF(seq);
 #endif
-        STORE_SSIZE(it->it_index, -1);
         return NULL;
     }
     STORE_SSIZE(it->it_index, index + 1);
@@ -3551,7 +3551,7 @@ listreviter_next(PyObject *self)
     assert(PyList_Check(seq));
 
     Py_ssize_t index = LOAD_SSIZE(it->it_index);
-    if (it->it_seq == NULL || index < 0) {
+    if (index < 0) {
         return NULL;
     }
     PyObject *item = list_get_item_ref(seq, index);
@@ -3559,11 +3559,11 @@ listreviter_next(PyObject *self)
         STORE_SSIZE(it->it_index, index - 1);
         return item;
     }
+    STORE_SSIZE(it->it_index, -1);
 #ifndef Py_GIL_DISABLED
     it->it_seq = NULL;
     Py_DECREF(seq);
 #endif
-    STORE_SSIZE(it->it_index, -1);
     return NULL;
 }
 
