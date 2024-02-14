@@ -85,13 +85,13 @@ typedef struct {
 static inline int
 get_thread_handle_state(ThreadHandleObject *handle)
 {
-    return _Py_atomic_load_int_relaxed(&handle->state);
+    return _Py_atomic_load_int(&handle->state);
 }
 
 static inline void
 set_thread_handle_state(ThreadHandleObject *handle, ThreadHandleState state)
 {
-    _Py_atomic_store_int_relaxed(&handle->state, state);
+    _Py_atomic_store_int(&handle->state, state);
 }
 
 static ThreadHandleObject*
