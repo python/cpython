@@ -128,6 +128,7 @@ static _PyOptimizerObject _PyOptimizer_Default = {
     PyObject_HEAD_INIT(&_PyDefaultOptimizer_Type)
     .optimize = never_optimize,
     .resume_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD,
+    .side_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD,
     .backedge_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD,
 };
 
@@ -141,13 +142,13 @@ _PyOptimizerObject *
 PyUnstable_GetOptimizer(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->optimizer == &_PyOptimizer_Default) {
-        return NULL;
-    }
     assert(interp->optimizer_backedge_threshold ==
            shift_and_offset_threshold(interp->optimizer->backedge_threshold));
     assert(interp->optimizer_resume_threshold ==
            shift_and_offset_threshold(interp->optimizer->resume_threshold));
+    if (interp->optimizer == &_PyOptimizer_Default) {
+        return NULL;
+    }
     Py_INCREF(interp->optimizer);
     return interp->optimizer;
 }
@@ -173,7 +174,12 @@ _Py_SetOptimizer(PyInterpreterState *interp, _PyOptimizerObject *optimizer)
     Py_INCREF(optimizer);
     interp->optimizer = optimizer;
     interp->optimizer_backedge_threshold = shift_and_offset_threshold(optimizer->backedge_threshold);
+    interp->optimizer_side_threshold = optimizer->side_threshold;
     interp->optimizer_resume_threshold = shift_and_offset_threshold(optimizer->resume_threshold);
+    if (optimizer == &_PyOptimizer_Default) {
+        assert(interp->optimizer_backedge_threshold > (1 << 16));
+        assert(interp->optimizer_resume_threshold > (1 << 16));
+    }
     return old;
 }
 
@@ -475,9 +481,8 @@ translate_bytecode_to_trace(
 top:  // Jump here after _PUSH_FRAME or likely branches
     for (;;) {
         target = INSTR_IP(instr, code);
-        RESERVE_RAW(3, "epilogue");  // Always need space for _SET_IP, _CHECK_VALIDITY and _EXIT_TRACE
-        ADD_TO_TRACE(_SET_IP, target, 0, target);
-        ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0, target);
+        RESERVE_RAW(2, "epilogue");  // Always need space for _SET_IP, _CHECK_VALIDITY and _EXIT_TRACE
+        ADD_TO_TRACE(_CHECK_VALIDITY_AND_SET_IP, 0, (uintptr_t)instr, target);
 
         uint32_t opcode = instr->op.code;
         uint32_t oparg = instr->op.arg;
@@ -837,7 +842,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, const _PyBloomFilter *depende
     /* Initialize exits */
     for (int i = 0; i < exit_count; i++) {
         executor->exits[i].executor = COLD_EXITS[i];
-        executor->exits[i].temperature = -67;
+        executor->exits[i].temperature = 0;
     }
     int next_exit = exit_count-1;
     _PyUOpInstruction *dest = (_PyUOpInstruction *)&executor->trace[length];
@@ -987,6 +992,7 @@ PyUnstable_Optimizer_NewUOpOptimizer(void)
     opt->resume_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD;
     // Need a few iterations to settle specializations,
     // and to ammortize the cost of optimization.
+    opt->side_threshold = 16;
     opt->backedge_threshold = 16;
     return (PyObject *)opt;
 }

@@ -239,7 +239,8 @@ extern "C" {
 #define _COLD_EXIT 387
 #define _START_EXECUTOR 388
 #define _FATAL_ERROR 389
-#define MAX_UOP_ID 389
+#define _CHECK_VALIDITY_AND_SET_IP 390
+#define MAX_UOP_ID 390
 
 #ifdef __cplusplus
 }

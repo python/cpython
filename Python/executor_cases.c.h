@@ -3360,10 +3360,9 @@
         }
 
         case _SET_IP: {
-            oparg = CURRENT_OPARG();
+            PyObject *instr_ptr = (PyObject *)CURRENT_OPERAND();
             TIER_TWO_ONLY
-            // TODO: Put the code pointer in `operand` to avoid indirection via `frame`
-            frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame)) + oparg;
+            frame->instr_ptr = (_Py_CODEUNIT *)instr_ptr;
             break;
         }
 
@@ -3469,7 +3468,7 @@
             assert(exit->executor->trace[0].opcode == _COLD_EXIT);
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
-            if (exit->temperature < 0) {
+            if (exit->temperature < tstate->interp->optimizer_side_threshold) {
                 Py_DECREF(previous);
                 tstate->previous_executor = NULL;
                 GOTO_TIER_ONE(target);
@@ -3481,7 +3480,7 @@
             } else {
                 int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor);
                 if (optimized <= 0) {
-                    exit->temperature = -10000; /* Choose a better number */
+                    exit->temperature = (int16_t)(-1 * tstate->interp->optimizer_side_threshold);
                     Py_DECREF(previous);
                     tstate->previous_executor = NULL;
                     if (optimized < 0) goto error_tier_two;
@@ -3509,6 +3508,14 @@
             TIER_TWO_ONLY
             assert(0);
             Py_FatalError("Fatal error uop executed.");
+            break;
+        }
+
+        case _CHECK_VALIDITY_AND_SET_IP: {
+            PyObject *instr_ptr = (PyObject *)CURRENT_OPERAND();
+            TIER_TWO_ONLY
+            if (!current_executor->vm_data.valid) goto deoptimize;
+            frame->instr_ptr = (_Py_CODEUNIT *)instr_ptr;
             break;
         }
 

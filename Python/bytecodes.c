@@ -4041,10 +4041,9 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        op(_SET_IP, (--)) {
+        op(_SET_IP, (instr_ptr/4 --)) {
             TIER_TWO_ONLY
-            // TODO: Put the code pointer in `operand` to avoid indirection via `frame`
-            frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame)) + oparg;
+            frame->instr_ptr = (_Py_CODEUNIT *)instr_ptr;
         }
 
         op(_SAVE_RETURN_OFFSET, (--)) {
@@ -4113,7 +4112,7 @@ dummy_func(
             assert(exit->executor->trace[0].opcode == _COLD_EXIT);
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
-            if (exit->temperature < 0) {
+            if (exit->temperature < tstate->interp->optimizer_side_threshold) {
                 Py_DECREF(previous);
                 tstate->previous_executor = NULL;
                 GOTO_TIER_ONE(target);
@@ -4125,7 +4124,7 @@ dummy_func(
             } else {
                 int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor);
                 if (optimized <= 0) {
-                    exit->temperature = -10000; /* Choose a better number */
+                    exit->temperature = (int16_t)(-1 * tstate->interp->optimizer_side_threshold);
                     Py_DECREF(previous);
                     tstate->previous_executor = NULL;
                     ERROR_IF(optimized < 0, error);
@@ -4152,6 +4151,11 @@ dummy_func(
             Py_FatalError("Fatal error uop executed.");
         }
 
+        op(_CHECK_VALIDITY_AND_SET_IP, (instr_ptr/4 --)) {
+            TIER_TWO_ONLY
+            DEOPT_IF(!current_executor->vm_data.valid);
+            frame->instr_ptr = (_Py_CODEUNIT *)instr_ptr;
+        }
 
 // END BYTECODES //
 
