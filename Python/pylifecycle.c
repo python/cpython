@@ -1627,8 +1627,8 @@ finalize_modules(PyThreadState *tstate)
 
     // Invalidate all executors and turn off tier 2 optimizer
     _Py_Executors_InvalidateAll(interp);
-    Py_XDECREF(interp->optimizer);
-    interp->optimizer = &_PyOptimizer_Default;
+    _PyOptimizerObject *old = _Py_SetOptimizer(interp, NULL);
+    Py_XDECREF(old);
 
     // Stop watching __builtin__ modifications
     PyDict_Unwatch(0, interp->builtins);
@@ -1795,8 +1795,8 @@ finalize_interp_types(PyInterpreterState *interp)
 #ifndef Py_GIL_DISABLED
     // With Py_GIL_DISABLED:
     // the freelists for the current thread state have already been cleared.
-    _PyFreeListState *state = _PyFreeListState_GET();
-    _PyObject_ClearFreeLists(state, 1);
+    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
+    _PyObject_ClearFreeLists(freelists, 1);
 #endif
 
 #ifdef Py_DEBUG
