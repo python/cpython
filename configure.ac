@@ -487,10 +487,18 @@ AC_ARG_ENABLE([framework],
 [
 	case $enableval in
 	yes)
+		if test "$ac_sys_system" = "iOS"; then
+			AC_MSG_ERROR([iOS builds must provide an explicit path for --enable-framework])
+		fi
+
 		enableval=/Library/Frameworks
 	esac
 	case $enableval in
 	no)
+		if test "$ac_sys_system" = "iOS"; then
+			AC_MSG_ERROR([iOS builds must use --enable-framework=<install path>])
+		fi
+
 		PYTHONFRAMEWORK=
 		PYTHONFRAMEWORKDIR=no-framework
 		PYTHONFRAMEWORKPREFIX=
@@ -597,6 +605,10 @@ AC_ARG_ENABLE([framework],
 			esac
 		esac
 	],[
+	if test "$ac_sys_system" = "iOS"; then
+		AC_MSG_ERROR([iOS builds must use --enable-framework=<install path>])
+	fi
+
 	PYTHONFRAMEWORK=
 	PYTHONFRAMEWORKDIR=no-framework
 	PYTHONFRAMEWORKPREFIX=
@@ -651,26 +663,22 @@ if test "$cross_compiling" = yes; then
 	*-*-cygwin*)
 		_host_ident=
 		;;
-	*-apple-ios*-simulator)
-		_host_os=`echo $host | cut -d '-' -f3`
-		IOS_DEPLOYMENT_TARGET=${_host_os:3}
-		case "$host_cpu" in
-		aarch64)
-			_host_ident=${IOS_DEPLOYMENT_TARGET}-iphonesimulator-arm64
-			;;
-		*)
-			_host_ident=${IOS_DEPLOYMENT_TARGET}-iphonesimulator-$host_cpu
-		esac
-		;;
 	*-apple-ios*)
 		_host_os=`echo $host | cut -d '-' -f3`
+		_host_device=`echo $host | cut -d '-' -f4`
+		_host_device=${_host_device:=os}
+
+		dnl IOS_DEPLOYMENT_TARGET is the minimum supported iOS version
 		IOS_DEPLOYMENT_TARGET=${_host_os:3}
+		IOS_DEPLOYMENT_TARGET=${IOS_DEPLOYMENT_TARGET:=12.0}
+
 		case "$host_cpu" in
-		aarch64)
-			_host_ident=${IOS_DEPLOYMENT_TARGET}-iphoneos-arm64
-			;;
-		*)
-			_host_ident=${IOS_DEPLOYMENT_TARGET}-iphoneos-$host_cpu
+			aarch64)
+				_host_ident=${IOS_DEPLOYMENT_TARGET}-arm64-iphone${_host_device}
+				;;
+			*)
+				_host_ident=${IOS_DEPLOYMENT_TARGET}-$host_cpu-iphone${_host_device}
+				;;
 		esac
 		;;
 	*-*-vxworks*)
@@ -843,12 +851,9 @@ AS_CASE([$host],
   ],
 )
 
-dnl iOS needs to enforce the deployment target; if the version hasn't
-dnl been provided as part of the --host configuration, fall back to
-dnl a default value (12.0 for iOS).
+dnl Add the compiler flag for the iOS minimum supported OS version.
 AS_CASE([$ac_sys_system],
   [iOS], [
-    IOS_DEPLOYMENT_TARGET=${IOS_DEPLOYMENT_TARGET:=12.0}
     AS_VAR_APPEND([CFLAGS], [" -mios-version-min=${IOS_DEPLOYMENT_TARGET}"])
     AS_VAR_APPEND([LDFLAGS], [" -mios-version-min=${IOS_DEPLOYMENT_TARGET}"])
     AC_SUBST([IOS_DEPLOYMENT_TARGET])
@@ -3439,7 +3444,7 @@ then
 	Linux-android*) LINKFORSHARED="-pie -Xlinker -export-dynamic";;
 	Linux*|GNU*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	# -u libsys_s pulls in all symbols in libsys
-	Darwin/*)
+	Darwin/*|iOS/*)
 		LINKFORSHARED="$extra_undefs -framework CoreFoundation"
 
 		# Issue #18075: the default maximum stack size (8MBytes) is too
@@ -3451,36 +3456,22 @@ then
 			# Undefined behavior sanitizer requires an even deeper stack
 			stack_size="4000000"  # 64 MB
 		fi
-
-		LINKFORSHARED="-Wl,-stack_size,$stack_size $LINKFORSHARED"
 
 		AC_DEFINE_UNQUOTED([THREAD_STACK_SIZE],
 				[0x$stack_size],
 				[Custom thread stack size depending on chosen sanitizer runtimes.])
 
-		if test "$enable_framework"
-		then
-			LINKFORSHARED="$LINKFORSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
+		if test $ac_sys_system = "Darwin"; then
+			LINKFORSHARED="-Wl,-stack_size,$stack_size $LINKFORSHARED"
+
+			if test "$enable_framework"; then
+				LINKFORSHARED="$LINKFORSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
+			fi
+			LINKFORSHARED="$LINKFORSHARED"
+		elif test $ac_sys_system = "iOS"; then
+			LINKFORSHARED="-Wl,-stack_size,$stack_size $LINKFORSHARED "'$(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK)'
 		fi
-		LINKFORSHARED="$LINKFORSHARED";;
-	iOS/*)
-		LINKFORSHARED="$extra_undefs -framework CoreFoundation"
-
-		# Issue #18075: the default maximum stack size (8MBytes) is too
-		# small for the default recursion limit. Increase the stack size
-		# to ensure that tests don't crash
-		stack_size="1000000"  # 16 MB
-		if test "$with_ubsan" = "yes"
-		then
-			# Undefined behavior sanitizer requires an even deeper stack
-			stack_size="4000000"  # 64 MB
-		fi
-
-		AC_DEFINE_UNQUOTED([THREAD_STACK_SIZE],
-			[0x$stack_size],
-			[Custom thread stack size depending on chosen sanitizer runtimes.])
-
-		LINKFORSHARED="-Wl,-stack_size,$stack_size $LINKFORSHARED "'$(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK)';;
+		;;
 	OpenUNIX*|UnixWare*) LINKFORSHARED="-Wl,-Bexport";;
 	SCO_SV*) LINKFORSHARED="-Wl,-Bexport";;
 	ReliantUNIX*) LINKFORSHARED="-W1 -Blargedynsym";;
@@ -6629,8 +6620,11 @@ AC_MSG_NOTICE([checking for device files])
 
 dnl NOTE: Inform user how to proceed with files when cross compiling.
 dnl iOS cross-compile builds are predictable; they won't ever
-dnl have /dev/ptmx or /dev/ptc, so we can set them explicitly
-if test "$ac_sys_system" != "iOS" ; then
+dnl have /dev/ptmx or /dev/ptc, so we can set them explicitly.
+if test "$ac_sys_system" = "iOS" ; then
+  ac_cv_file__dev_ptmx=no
+  ac_cv_file__dev_ptc=no
+else
   if test "x$cross_compiling" = xyes; then
     if test "${ac_cv_file__dev_ptmx+set}" != set; then
       AC_MSG_CHECKING([for /dev/ptmx])
@@ -7310,7 +7304,6 @@ AS_CASE([$ac_sys_system],
       [_posixsubprocess],
       [_scproxy],
       [_tkinter],
-      [_xxsubinterpreters],
       [grp],
       [nis],
       [readline],

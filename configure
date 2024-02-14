@@ -4197,10 +4197,18 @@ then :
   enableval=$enable_framework;
 	case $enableval in
 	yes)
+		if test "$ac_sys_system" = "iOS"; then
+			as_fn_error $? "iOS builds must provide an explicit path for --enable-framework" "$LINENO" 5
+		fi
+
 		enableval=/Library/Frameworks
 	esac
 	case $enableval in
 	no)
+		if test "$ac_sys_system" = "iOS"; then
+			as_fn_error $? "iOS builds must use --enable-framework=<install path>" "$LINENO" 5
+		fi
+
 		PYTHONFRAMEWORK=
 		PYTHONFRAMEWORKDIR=no-framework
 		PYTHONFRAMEWORKPREFIX=
@@ -4314,6 +4322,10 @@ then :
 
 else $as_nop
 
+	if test "$ac_sys_system" = "iOS"; then
+		as_fn_error $? "iOS builds must use --enable-framework=<install path>" "$LINENO" 5
+	fi
+
 	PYTHONFRAMEWORK=
 	PYTHONFRAMEWORKDIR=no-framework
 	PYTHONFRAMEWORKPREFIX=
@@ -4371,26 +4383,21 @@ if test "$cross_compiling" = yes; then
 	*-*-cygwin*)
 		_host_ident=
 		;;
-	*-apple-ios*-simulator)
-		_host_os=`echo $host | cut -d '-' -f3`
-		IOS_DEPLOYMENT_TARGET=${_host_os:3}
-		case "$host_cpu" in
-		aarch64)
-			_host_ident=${IOS_DEPLOYMENT_TARGET}-iphonesimulator-arm64
-			;;
-		*)
-			_host_ident=${IOS_DEPLOYMENT_TARGET}-iphonesimulator-$host_cpu
-		esac
-		;;
 	*-apple-ios*)
 		_host_os=`echo $host | cut -d '-' -f3`
-		IOS_DEPLOYMENT_TARGET=${_host_os:3}
+		_host_device=`echo $host | cut -d '-' -f4`
+		_host_device=${_host_device:=os}
+
+				IOS_DEPLOYMENT_TARGET=${_host_os:3}
+		IOS_DEPLOYMENT_TARGET=${IOS_DEPLOYMENT_TARGET:=12.0}
+
 		case "$host_cpu" in
-		aarch64)
-			_host_ident=${IOS_DEPLOYMENT_TARGET}-iphoneos-arm64
-			;;
-		*)
-			_host_ident=${IOS_DEPLOYMENT_TARGET}-iphoneos-$host_cpu
+			aarch64)
+				_host_ident=${IOS_DEPLOYMENT_TARGET}-arm64-iphone${_host_device}
+				;;
+			*)
+				_host_ident=${IOS_DEPLOYMENT_TARGET}-$host_cpu-iphone${_host_device}
+				;;
 		esac
 		;;
 	*-*-vxworks*)
@@ -4571,7 +4578,6 @@ esac
 case $ac_sys_system in #(
   iOS) :
 
-    IOS_DEPLOYMENT_TARGET=${IOS_DEPLOYMENT_TARGET:=12.0}
     as_fn_append CFLAGS " -mios-version-min=${IOS_DEPLOYMENT_TARGET}"
     as_fn_append LDFLAGS " -mios-version-min=${IOS_DEPLOYMENT_TARGET}"
 
@@ -12906,31 +12912,7 @@ then
 	Linux-android*) LINKFORSHARED="-pie -Xlinker -export-dynamic";;
 	Linux*|GNU*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	# -u libsys_s pulls in all symbols in libsys
-	Darwin/*)
-		LINKFORSHARED="$extra_undefs -framework CoreFoundation"
-
-		# Issue #18075: the default maximum stack size (8MBytes) is too
-		# small for the default recursion limit. Increase the stack size
-		# to ensure that tests don't crash
-		stack_size="1000000"  # 16 MB
-		if test "$with_ubsan" = "yes"
-		then
-			# Undefined behavior sanitizer requires an even deeper stack
-			stack_size="4000000"  # 64 MB
-		fi
-
-		LINKFORSHARED="-Wl,-stack_size,$stack_size $LINKFORSHARED"
-
-
-printf "%s\n" "#define THREAD_STACK_SIZE 0x$stack_size" >>confdefs.h
-
-
-		if test "$enable_framework"
-		then
-			LINKFORSHARED="$LINKFORSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
-		fi
-		LINKFORSHARED="$LINKFORSHARED";;
-	iOS/*)
+	Darwin/*|iOS/*)
 		LINKFORSHARED="$extra_undefs -framework CoreFoundation"
 
 		# Issue #18075: the default maximum stack size (8MBytes) is too
@@ -12947,7 +12929,17 @@ printf "%s\n" "#define THREAD_STACK_SIZE 0x$stack_size" >>confdefs.h
 printf "%s\n" "#define THREAD_STACK_SIZE 0x$stack_size" >>confdefs.h
 
 
-		LINKFORSHARED="-Wl,-stack_size,$stack_size $LINKFORSHARED "'$(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK)';;
+		if test $ac_sys_system = "Darwin"; then
+			LINKFORSHARED="-Wl,-stack_size,$stack_size $LINKFORSHARED"
+
+			if test "$enable_framework"; then
+				LINKFORSHARED="$LINKFORSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
+			fi
+			LINKFORSHARED="$LINKFORSHARED"
+		elif test $ac_sys_system = "iOS"; then
+			LINKFORSHARED="-Wl,-stack_size,$stack_size $LINKFORSHARED "'$(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK)'
+		fi
+		;;
 	OpenUNIX*|UnixWare*) LINKFORSHARED="-Wl,-Bexport";;
 	SCO_SV*) LINKFORSHARED="-Wl,-Bexport";;
 	ReliantUNIX*) LINKFORSHARED="-W1 -Blargedynsym";;
@@ -26804,7 +26796,10 @@ CPPFLAGS=$ac_save_cppflags
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for device files" >&5
 printf "%s\n" "$as_me: checking for device files" >&6;}
 
-if test "$ac_sys_system" != "iOS" ; then
+if test "$ac_sys_system" = "iOS" ; then
+  ac_cv_file__dev_ptmx=no
+  ac_cv_file__dev_ptc=no
+else
   if test "x$cross_compiling" = xyes; then
     if test "${ac_cv_file__dev_ptmx+set}" != set; then
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for /dev/ptmx" >&5
@@ -28268,7 +28263,6 @@ case $ac_sys_system in #(
     py_cv_module__posixsubprocess=n/a
     py_cv_module__scproxy=n/a
     py_cv_module__tkinter=n/a
-    py_cv_module__xxsubinterpreters=n/a
     py_cv_module_grp=n/a
     py_cv_module_nis=n/a
     py_cv_module_readline=n/a
