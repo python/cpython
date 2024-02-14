@@ -231,6 +231,16 @@ dis
   the ``show_offsets`` parameter.
   (Contributed by Irit Katriel in :gh:`112137`.)
 
+dbm
+---
+
+* Add :meth:`dbm.gnu.gdbm.clear` and :meth:`dbm.ndbm.ndbm.clear`  methods that remove all items
+  from the database.
+  (Contributed by Donghee Na in :gh:`107122`.)
+
+* Add new :mod:`dbm.sqlite3` backend.
+  (Contributed by Raymond Hettinger and Erlend E. Aasland in :gh:`100414`.)
+
 doctest
 -------
 
