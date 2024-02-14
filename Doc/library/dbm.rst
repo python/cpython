@@ -56,10 +56,6 @@ the Oracle Berkeley DB.
    The Unix file access mode of the file (default: octal ``0o666``),
    used only when the database has to be created.
 
-.. |incompat_note| replace::
-   The file formats created by :mod:`dbm.gnu` and :mod:`dbm.ndbm` are incompatible
-   and can not be used interchangeably.
-
 .. function:: open(file, flag='r', mode=0o666)
 
    Open a database and return the corresponding database object.
@@ -160,7 +156,10 @@ The :mod:`dbm.gnu` module provides an interface to the :abbr:`GDBM (GNU dbm)`
 library, similar to the :mod:`dbm.ndbm` module, but with additional
 functionality like crash tolerance.
 
-.. note:: |incompat_note|
+.. note::
+
+   The file formats created by :mod:`dbm.gnu` and :mod:`dbm.ndbm` are incompatible
+   and can not be used interchangeably.
 
 .. exception:: error
 
@@ -263,7 +262,10 @@ The :mod:`dbm.ndbm` module provides an interface to the
 This module can be used with the "classic" NDBM interface or the
 :abbr:`GDBM (GNU dbm)` compatibility interface.
 
-.. note:: |incompat_note|
+.. note::
+
+   The file formats created by :mod:`dbm.gnu` and :mod:`dbm.ndbm` are incompatible
+   and can not be used interchangeably.
 
 .. warning::
 
