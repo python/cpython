@@ -96,8 +96,8 @@ The same technique works for objects with named attributes. For example:
     >>> sorted(student_objects, key=lambda student: student.age)   # sort by age
     [('dave', 'B', 10), ('jane', 'B', 12), ('john', 'A', 15)]
 
-Operator Module Functions
-=========================
+Operator Module Functions and Partial Function Evaluation
+=========================================================
 
 The key-function patterns shown above are very common, so Python provides
 convenience functions to make accessor functions easier and faster. The
@@ -126,6 +126,21 @@ sort by *grade* then by *age*:
 
     >>> sorted(student_objects, key=attrgetter('grade', 'age'))
     [('john', 'A', 15), ('dave', 'B', 10), ('jane', 'B', 12)]
+
+The :mod:`functools` module provides another helpful tool for making
+key-functions.  The :func:`~functools.partial` function can reduce the
+`arity <https://en.wikipedia.org/wiki/Arity>`_ of a multi-argument
+function making it suitable for use as a key-function.
+
+.. doctest::
+
+    >>> from functools import partial
+    >>> from unicodedata import normalize
+    >>> names = 'Zoë Åbjørn Núñez Élana Zeke Abe Nubia Eloise'.split()
+    >>> sorted(names, key=partial(normalize, 'NFD'))
+    ['Abe', 'Åbjørn', 'Eloise', 'Élana', 'Nubia', 'Núñez', 'Zeke', 'Zoë']
+    >>> sorted(names, key=partial(normalize, 'NFC'))
+    ['Abe', 'Eloise', 'Nubia', 'Núñez', 'Zeke', 'Zoë', 'Åbjørn', 'Élana']
 
 Ascending and Descending
 ========================
