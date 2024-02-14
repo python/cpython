@@ -92,7 +92,7 @@ PyAPI_FUNC(int) PyUnstable_Replace_Executor(PyCodeObject *code, _Py_CODEUNIT *in
 
 _PyOptimizerObject *_Py_SetOptimizer(PyInterpreterState *interp, _PyOptimizerObject* optimizer);
 
-PyAPI_FUNC(void) PyUnstable_SetOptimizer(_PyOptimizerObject* optimizer);
+PyAPI_FUNC(int) PyUnstable_SetOptimizer(_PyOptimizerObject* optimizer);
 
 PyAPI_FUNC(_PyOptimizerObject *) PyUnstable_GetOptimizer(void);
 

@@ -156,7 +156,7 @@ PyUnstable_GetOptimizer(void)
 static _PyExecutorObject *
 make_executor_from_uops(_PyUOpInstruction *buffer, const _PyBloomFilter *dependencies);
 
-static void
+static int
 init_cold_exit_executor(_PyExecutorObject *executor, int oparg);
 
 static int cold_exits_initialized = 0;
@@ -167,16 +167,23 @@ static const _PyBloomFilter EMPTY = { 0 };
 _PyOptimizerObject *
 _Py_SetOptimizer(PyInterpreterState *interp, _PyOptimizerObject *optimizer)
 {
-    if (cold_exits_initialized == 0) {
-        cold_exits_initialized = 1;
-        for (int i = 0; i < UOP_MAX_TRACE_LENGTH; i++) {
-            init_cold_exit_executor(&COLD_EXITS[i], i);
-        }
-    }
+
     if (optimizer == NULL) {
         optimizer = &_PyOptimizer_Default;
     }
+    else if (cold_exits_initialized == 0) {
+        cold_exits_initialized = 1;
+        for (int i = 0; i < UOP_MAX_TRACE_LENGTH; i++) {
+            if (init_cold_exit_executor(&COLD_EXITS[i], i)) {
+                PyErr_NoMemory();
+                return NULL;
+            }
+        }
+    }
     _PyOptimizerObject *old = interp->optimizer;
+    if (old == NULL) {
+        old = &_PyOptimizer_Default;
+    }
     Py_INCREF(optimizer);
     interp->optimizer = optimizer;
     interp->optimizer_backedge_threshold = shift_and_offset_threshold(optimizer->backedge_threshold);
@@ -189,12 +196,13 @@ _Py_SetOptimizer(PyInterpreterState *interp, _PyOptimizerObject *optimizer)
     return old;
 }
 
-void
+int
 PyUnstable_SetOptimizer(_PyOptimizerObject *optimizer)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     _PyOptimizerObject *old = _Py_SetOptimizer(interp, optimizer);
-    Py_DECREF(old);
+    Py_XDECREF(old);
+    return old == NULL ? -1 : 0;
 }
 
 /* Returns 1 if optimized, 0 if not optimized, and -1 for an error.
@@ -905,7 +913,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, const _PyBloomFilter *depende
     return executor;
 }
 
-static void
+static int
 init_cold_exit_executor(_PyExecutorObject *executor, int oparg)
 {
     _Py_SetImmortal(executor);
@@ -924,10 +932,10 @@ init_cold_exit_executor(_PyExecutorObject *executor, int oparg)
     executor->jit_code = NULL;
     executor->jit_size = 0;
     if (_PyJIT_Compile(executor, executor->trace, 1)) {
-        Py_DECREF(executor);
-        return NULL;
+        return -1;
     }
 #endif
+    return 0;
 }
 
 static int
