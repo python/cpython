@@ -4,7 +4,6 @@ Sorting HOW TO
 **************
 
 :Author: Andrew Dalke and Raymond Hettinger
-:Release: 0.1
 
 
 Python lists have a built-in :meth:`list.sort` method that modifies the list
