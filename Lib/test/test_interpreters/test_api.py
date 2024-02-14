@@ -509,7 +509,7 @@ class TestInterpreterPrepareMain(TestBase):
             interp.exec('print(spam)')
 
 
-class TestInterpreterExecSync(TestBase):
+class TestInterpreterExec(TestBase):
 
     def test_success(self):
         interp = interpreters.create()
@@ -662,32 +662,223 @@ class TestInterpreterExecSync(TestBase):
     # Interpreter.exec() behavior.
 
 
-class TestInterpreterRun(TestBase):
+def call_func_noop():
+    pass
 
-    def test_success(self):
+
+def call_func_return_shareable():
+    return (1, None)
+
+
+def call_func_return_not_shareable():
+    return [1, 2, 3]
+
+
+def call_func_failure():
+    raise Exception('spam!')
+
+
+def call_func_ident(value):
+    return value
+
+
+def get_call_func_closure(value):
+    def call_func_closure():
+        return value
+    return call_func_closure
+
+
+class Spam:
+
+    @staticmethod
+    def noop():
+        pass
+
+    @classmethod
+    def from_values(cls, *values):
+        return cls(values)
+
+    def __init__(self, value):
+        self.value = value
+
+    def __call__(self, *args, **kwargs):
+        return (self.value, args, kwargs)
+
+    def __eq__(self, other):
+        if not isinstance(other, Spam):
+            return NotImplemented
+        return self.value == other.value
+
+    def run(self, *args, **kwargs):
+        return (self.value, args, kwargs)
+
+
+def call_func_complex(op, /, value=None, *args, exc=None, **kwargs):
+    if exc is not None:
+        raise exc
+    if op == '':
+        raise ValueError('missing op')
+    elif op == 'ident':
+        if args or kwargs:
+            raise Exception((args, kwargs))
+        return value
+    elif op == 'full-ident':
+        return (value, args, kwargs)
+    elif op == 'globals':
+        if value is not None or args or kwargs:
+            raise Exception((value, args, kwargs))
+        return __name__
+    elif op == 'interpid':
+        if value is not None or args or kwargs:
+            raise Exception((value, args, kwargs))
+        return interpreters.get_current().id
+    elif op == 'closure':
+        if args or kwargs:
+            raise Exception((args, kwargs))
+        return get_call_func_closure(value)
+    elif op == 'custom':
+        if args or kwargs:
+            raise Exception((args, kwargs))
+        return Spam(value)
+    elif op == 'custom-inner':
+        if args or kwargs:
+            raise Exception((args, kwargs))
+        class Eggs(Spam):
+            pass
+        return Eggs(value)
+    else if not isinstance(op, str):
+        raise TypeError(op)
+    else:
+        raise NotImplementedError(op)
+
+
+class TestInterpreterCall(TestBase):
+
+    # signature
+    #  - blank
+    #  - args
+    #  - kwargs
+    #  - args, kwargs
+    # return
+    #  - nothing (None)
+    #  - simple
+    #  - closure
+    #  - custom
+    # ops:
+    #  - do nothing
+    #  - fail
+    #  - echo
+    #  - do complex, relative to interpreter
+    # scope
+    #  - global func
+    #  - local closure
+    #  - returned closure
+    #  - callable type instance
+    #  - type
+    #  - classmethod
+    #  - staticmethod
+    #  - instance method
+    # exception
+    #  - builtin
+    #  - custom
+    #  - preserves info (e.g. SyntaxError)
+    #  - matching error display
+
+    def test_call(self):
         interp = interpreters.create()
-        script, file = _captured_script('print("it worked!", end="")')
-        with file:
-            t = interp.run(script)
-            t.join()
-            out = file.read()
 
-        self.assertEqual(out, 'it worked!')
+        for i, ((callable, args, kwargs), expected) in enumerate([
+            ((call_func_noop, (), {}),
+             None),
+            ((call_func_return_shareable, (), {}),
+             (1, None)),
+            ((call_func_return_not_shareable, (), {}),
+             [1, 2, 3]),
+            ((call_func_ident, ('spamspamspam',), {}),
+             'spamspamspam'),
+            ((get_call_func_closure, (42,), {}),
+             ...),
+            ((get_call_func_closure(42), (), {}),
+             42),
+            ((Spam.noop, (), {}),
+             None),
+            ((Spam.from_values, (), {}),
+             None),
+            ((Spam.from_values, (1, 2, 3), {}),
+             Spam((1, 2, 3)),
+            ((Spam, ('???'), {}),
+             Spam('???')),
+            ((Spam(101), (), {}),
+             101),
+            ((Spam(10101).run, (), {}),
+             10101),
+            ((call_func_complex, ('ident', 'spam'), {}),
+             'spam'),
+            ((call_func_complex, ('full-ident', 'spam'), {}),
+             ('spam', (), {})),
+            ((call_func_complex, ('full-ident', 'spam', 'ham'), {'eggs': '!!!'}),
+                ('spam', ('ham',), {'eggs': '!!!'})),
+            ((call_func_complex, ('globals',), {}),
+             'test.test_interpreters.test_api'),
+            ((call_func_complex, ('interpid',), {}),
+             interp.id),
+            ((call_func_complex, ('closure',), {'value': '~~~'}),
+             '~~~'),
+            ((call_func_complex, ('custom', 'spam!'), {}),
+             Spam('spam!')),
+            ((call_func_complex, ('custom-inner', 'eggs!'), {}),
+             ...),
+        ]):
+            with self.subTest(f'success case #{i+1}'):
+                res = interp.call(callable, args, kwargs)
+                self.assertEqual(res, expected)
 
-    def test_failure(self):
-        caught = False
-        def excepthook(args):
-            nonlocal caught
-            caught = True
-        threading.excepthook = excepthook
-        try:
-            interp = interpreters.create()
-            t = interp.run('raise Exception')
-            t.join()
+        for i, ((callable, args, kwargs), expected) in enumerate([
+            ((call_func_failure, (), {}),
+             Exception),
+            ((call_func_complex, ('???',), {exc=ValueError('spam')}),
+             ValueError),
+        ]):
+            with self.subTest(f'failure case #{i+1}'):
+                with self.assertRaises(expected):
+                    interp.call(callable, args, kwargs)
 
-            self.assertTrue(caught)
-        except BaseException:
-            threading.excepthook = threading.__excepthook__
+    def test_call_in_thread(self):
+        interp = interpreters.create()
+
+        for i, (callable, args, kwargs) in enumerate([
+            (call_func_noop, (), {}),
+            (call_func_return_shareable, (), {}),
+            (call_func_return_not_shareable, (), {}),
+            (call_func_ident, ('spamspamspam',), {}),
+            (get_call_func_closure, (42,), {}),
+            (get_call_func_closure(42), (), {}),
+            (Spam.noop, (), {}),
+            (Spam.from_values, (), {}),
+            (Spam.from_values, (1, 2, 3), {}),
+            (Spam, ('???'), {}),
+            (Spam(101), (), {}),
+            (Spam(10101).run, (), {}),
+            (call_func_complex, ('ident', 'spam'), {}),
+            (call_func_complex, ('full-ident', 'spam'), {}),
+            (call_func_complex, ('full-ident', 'spam', 'ham'), {'eggs': '!!!'}),
+            (call_func_complex, ('globals',), {}),
+            (call_func_complex, ('interpid',), {}),
+            (call_func_complex, ('closure',), {'value': '~~~'}),
+            (call_func_complex, ('custom', 'spam!'), {}),
+            (call_func_complex, ('custom-inner', 'eggs!'), {}),
+        ]):
+            with self.subTest(f'success case #{i+1}'):
+                t = interp.call_in_thread(callable, args, kwargs)
+                t.join()
+
+        for i, (callable, args, kwargs) in enumerate([
+            (call_func_failure, (), {}),
+            (call_func_complex, ('???',), {exc=ValueError('spam')}),
+        ]):
+            with self.subTest(f'failure case #{i+1}'):
+                t = interp.call_in_thread(callable, args, kwargs)
+                t.join()
 
 
 class TestIsShareable(TestBase):

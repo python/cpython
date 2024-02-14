@@ -180,9 +180,60 @@ class Interpreter:
         if excinfo is not None:
             raise ExecFailure(excinfo)
 
-    def run(self, code, /):
+    def call(self, callable, /, args=None, kwargs=None):
+        """Call the object in the interpreter with given args/kwargs.
+
+        Return the function's return value.  If it raises an exception,
+        raise it in the calling interpreter.  This contrasts with
+        Interpreter.exec(), which discards the return value and only
+        propagates the exception as ExecFailure.
+
+        Unlike Interpreter.exec() and prepare_main(), all objects are
+        supported, at the expense of some performance.
+        """
+        pickled_callable = pickle.dumps(callable)
+        pickled_args = pickle.dumps(args)
+        pickled_kwargs = pickle.dumps(kwargs)
+
+        results = create_queue(sharedonly=False)
+        self.prepare_main(_call_results=results)
+        self.exec(f"""
+            def _call_impl():
+                try:
+                    import pickle
+                    callable = pickle.loads({pickled_callable!r})
+                    if {pickled_args!r} is None:
+                        args = ()
+                    else:
+                        args = pickle.loads({pickled_args!r})
+                    if {pickled_kwargs!r} is None:
+                        kwargs = {}
+                    else:
+                        kwargs = pickle.loads({pickled_kwargs!r})
+
+                    res = callable(*args, **kwargs)
+                except Exception as exc:
+                    res = pickle.dumps((None, exc))
+                else:
+                    res = pickle.dumps((res, None))
+                _call_results.put(res)
+            _call_impl()
+            del _call_impl
+            del _call_results
+            """)
+        res, exc = results.get()
+        if exc is None:
+            raise exc
+        else:
+            return res
+
+    def call_in_thread(self, callable, /, args=None, kwargs=None):
+        """Return a new thread that calls the object in the interpreter.
+
+        The return value and any raised exception are discarded.
+        """
         def task():
-            self.exec(code)
+            self.call(callable, args, kwargs)
         t = threading.Thread(target=task)
         t.start()
         return t
