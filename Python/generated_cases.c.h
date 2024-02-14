@@ -2541,11 +2541,14 @@
                 assert(Py_TYPE(iter) == &PyListIter_Type);
                 STAT_INC(FOR_ITER, hit);
                 PyListObject *seq = it->it_seq;
-                if (seq == NULL || it->it_index >= PyList_GET_SIZE(seq)) {
+                if ((size_t)it->it_index >= (size_t)PyList_GET_SIZE(seq)) {
+                    it->it_index = -1;
+                    #ifndef Py_GIL_DISABLED
                     if (seq != NULL) {
                         it->it_seq = NULL;
                         Py_DECREF(seq);
                     }
+                    #endif
                     Py_DECREF(iter);
                     STACK_SHRINK(1);
                     /* Jump forward oparg, then skip following END_FOR and POP_TOP instructions */
