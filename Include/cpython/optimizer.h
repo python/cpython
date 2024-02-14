@@ -35,7 +35,7 @@ typedef struct {
     uint16_t oparg;
     union {
         uint32_t target;
-        uint16_t exit_index;
+        uint32_t exit_index;
     };
     uint64_t operand;  // A cache entry
 } _PyUOpInstruction;

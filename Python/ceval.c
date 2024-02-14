@@ -1085,7 +1085,8 @@ deoptimize:
 side_exit:
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     UOP_STAT_INC(uopcode, miss);
-    uint16_t exit_index = next_uop[-1].exit_index;
+    uint32_t exit_index = next_uop[-1].exit_index;
+    assert(exit_index < current_executor->exit_count);
     _PyExitData *exit = &current_executor->exits[exit_index];
     DPRINTF(2, "SIDE EXIT: [UOp %d (%s), oparg %d, operand %" PRIu64 ", exit %u, temp %d, target %d -> %s]\n",
             uopcode, _PyUOpName(uopcode), next_uop[-1].oparg, next_uop[-1].operand, exit_index, exit->temperature,
