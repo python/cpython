@@ -3468,7 +3468,7 @@
             assert(exit->executor->trace[0].opcode == _COLD_EXIT);
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
-            if (exit->temperature < tstate->interp->optimizer_side_threshold) {
+            if (exit->temperature < (int32_t)tstate->interp->optimizer_side_threshold) {
                 Py_DECREF(previous);
                 tstate->previous_executor = NULL;
                 GOTO_TIER_ONE(target);
@@ -3480,7 +3480,8 @@
             } else {
                 int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor);
                 if (optimized <= 0) {
-                    exit->temperature = (int16_t)(-1 * tstate->interp->optimizer_side_threshold);
+                    int32_t new_temp = -1 * tstate->interp->optimizer_side_threshold;
+                    exit->temperature = (new_temp < INT16_MIN) ? INT16_MIN : new_temp;
                     Py_DECREF(previous);
                     tstate->previous_executor = NULL;
                     if (optimized < 0) goto error_tier_two;

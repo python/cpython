@@ -241,8 +241,8 @@ struct _is {
     _PyExecutorObject *executor_list_head;
     /* These values are shifted and offset to speed up check in JUMP_BACKWARD */
     uint32_t optimizer_resume_threshold;
-    uint32_t optimizer_side_threshold;
     uint32_t optimizer_backedge_threshold;
+    uint16_t optimizer_side_threshold;
 
     uint32_t next_func_version;
     _rare_events rare_events;

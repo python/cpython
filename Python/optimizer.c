@@ -1082,6 +1082,7 @@ PyUnstable_Optimizer_NewCounter(void)
     }
     opt->base.optimize = counter_optimize;
     opt->base.resume_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD;
+    opt->base.side_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD;
     opt->base.backedge_threshold = 0;
     opt->count = 0;
     return (PyObject *)opt;
