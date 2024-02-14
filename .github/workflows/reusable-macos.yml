@@ -28,11 +28,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
+    - name: Runner image version
+      run: echo "IMAGE_VERSION=${ImageVersion}" >> $GITHUB_ENV
     - name: Restore config.cache
       uses: actions/cache@v3
       with:
         path: config.cache
-        key: ${{ github.job }}-${{ matrix.os }}-${{ inputs.config_hash }}
+        key: ${{ github.job }}-${{ matrix.os }}-${{ env.IMAGE_VERSION }}-${{ inputs.config_hash }}
     - name: Install Homebrew dependencies
       run: brew install pkg-config openssl@3.0 xz gdbm tcl-tk
     - name: Configure CPython

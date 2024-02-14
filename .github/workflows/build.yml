@@ -158,11 +158,13 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: '3.x'
+      - name: Runner image version
+        run: echo "IMAGE_VERSION=${ImageVersion}" >> $GITHUB_ENV
       - name: Restore config.cache
         uses: actions/cache@v3
         with:
           path: config.cache
-          key: ${{ github.job }}-${{ runner.os }}-${{ needs.check_source.outputs.config_hash }}-${{ env.pythonLocation }}
+          key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ needs.check_source.outputs.config_hash }}-${{ env.pythonLocation }}
       - name: Install Dependencies
         run: sudo ./.github/workflows/posix-deps-apt.sh
       - name: Add ccache to PATH
@@ -257,11 +259,13 @@ jobs:
       LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}/lib
     steps:
     - uses: actions/checkout@v4
+    - name: Runner image version
+      run: echo "IMAGE_VERSION=${ImageVersion}" >> $GITHUB_ENV
     - name: Restore config.cache
       uses: actions/cache@v3
       with:
         path: config.cache
-        key: ${{ github.job }}-${{ runner.os }}-${{ needs.check_source.outputs.config_hash }}
+        key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ needs.check_source.outputs.config_hash }}
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install Dependencies
@@ -340,11 +344,13 @@ jobs:
       run: mkdir -p $CPYTHON_RO_SRCDIR $CPYTHON_BUILDDIR
     - name: Bind mount sources read-only
       run: sudo mount --bind -o ro $GITHUB_WORKSPACE $CPYTHON_RO_SRCDIR
+    - name: Runner image version
+      run: echo "IMAGE_VERSION=${ImageVersion}" >> $GITHUB_ENV
     - name: Restore config.cache
       uses: actions/cache@v3
       with:
         path: ${{ env.CPYTHON_BUILDDIR }}/config.cache
-        key: ${{ github.job }}-${{ runner.os }}-${{ needs.check_source.outputs.config_hash }}
+        key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ needs.check_source.outputs.config_hash }}
     - name: Configure CPython out-of-tree
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: |
@@ -419,11 +425,13 @@ jobs:
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:
     - uses: actions/checkout@v4
+    - name: Runner image version
+      run: echo "IMAGE_VERSION=${ImageVersion}" >> $GITHUB_ENV
     - name: Restore config.cache
       uses: actions/cache@v3
       with:
         path: config.cache
-        key: ${{ github.job }}-${{ runner.os }}-${{ needs.check_source.outputs.config_hash }}
+        key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ needs.check_source.outputs.config_hash }}
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install Dependencies
