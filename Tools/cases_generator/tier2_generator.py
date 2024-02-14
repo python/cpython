@@ -170,6 +170,9 @@ def generate_tier2(
     for name, uop in analysis.uops.items():
         if uop.properties.tier_one_only:
             continue
+        if uop.properties.oparg_and_1:
+            out.emit(f"/* {uop.name} is split on (oparg & 1) */\n\n")
+            continue
         if uop.is_super():
             continue
         if not uop.is_viable():

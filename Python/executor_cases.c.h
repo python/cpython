@@ -1174,49 +1174,7 @@
             break;
         }
 
-        case _LOAD_GLOBAL: {
-            PyObject *res;
-            PyObject *null = NULL;
-            oparg = CURRENT_OPARG();
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
-            if (PyDict_CheckExact(GLOBALS())
-                && PyDict_CheckExact(BUILTINS()))
-            {
-                res = _PyDict_LoadGlobal((PyDictObject *)GLOBALS(),
-                    (PyDictObject *)BUILTINS(),
-                    name);
-                if (res == NULL) {
-                    if (!_PyErr_Occurred(tstate)) {
-                        /* _PyDict_LoadGlobal() returns NULL without raising
-                         * an exception if the key doesn't exist */
-                        _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                            NAME_ERROR_MSG, name);
-                    }
-                    if (true) goto error_tier_two;
-                }
-                Py_INCREF(res);
-            }
-            else {
-                /* Slow-path if globals or builtins is not a dict */
-                /* namespace 1: globals */
-                if (PyMapping_GetOptionalItem(GLOBALS(), name, &res) < 0) goto error_tier_two;
-                if (res == NULL) {
-                    /* namespace 2: builtins */
-                    if (PyMapping_GetOptionalItem(BUILTINS(), name, &res) < 0) goto error_tier_two;
-                    if (res == NULL) {
-                        _PyEval_FormatExcCheckArg(
-                            tstate, PyExc_NameError,
-                            NAME_ERROR_MSG, name);
-                        if (true) goto error_tier_two;
-                    }
-                }
-            }
-            null = NULL;
-            stack_pointer[0] = res;
-            if (oparg & 1) stack_pointer[1] = null;
-            stack_pointer += 1 + (oparg & 1);
-            break;
-        }
+        /* _LOAD_GLOBAL is split on (oparg & 1) */
 
         case _GUARD_GLOBALS_VERSION: {
             uint16_t version = (uint16_t)CURRENT_OPERAND();
@@ -1271,23 +1229,7 @@
             break;
         }
 
-        case _LOAD_GLOBAL_MODULE: {
-            PyObject *res;
-            PyObject *null = NULL;
-            oparg = CURRENT_OPARG();
-            uint16_t index = (uint16_t)CURRENT_OPERAND();
-            PyDictObject *dict = (PyDictObject *)GLOBALS();
-            PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
-            res = entries[index].me_value;
-            if (res == NULL) goto deoptimize;
-            Py_INCREF(res);
-            STAT_INC(LOAD_GLOBAL, hit);
-            null = NULL;
-            stack_pointer[0] = res;
-            if (oparg & 1) stack_pointer[1] = null;
-            stack_pointer += 1 + (oparg & 1);
-            break;
-        }
+        /* _LOAD_GLOBAL_MODULE is split on (oparg & 1) */
 
         case _LOAD_GLOBAL_BUILTINS_0: {
             PyObject *res;
@@ -1324,23 +1266,7 @@
             break;
         }
 
-        case _LOAD_GLOBAL_BUILTINS: {
-            PyObject *res;
-            PyObject *null = NULL;
-            oparg = CURRENT_OPARG();
-            uint16_t index = (uint16_t)CURRENT_OPERAND();
-            PyDictObject *bdict = (PyDictObject *)BUILTINS();
-            PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(bdict->ma_keys);
-            res = entries[index].me_value;
-            if (res == NULL) goto deoptimize;
-            Py_INCREF(res);
-            STAT_INC(LOAD_GLOBAL, hit);
-            null = NULL;
-            stack_pointer[0] = res;
-            if (oparg & 1) stack_pointer[1] = null;
-            stack_pointer += 1 + (oparg & 1);
-            break;
-        }
+        /* _LOAD_GLOBAL_BUILTINS is split on (oparg & 1) */
 
         case _DELETE_FAST: {
             oparg = CURRENT_OPARG();
@@ -1673,7 +1599,7 @@
 
         /* _INSTRUMENTED_LOAD_SUPER_ATTR_1 is not a viable micro-op for tier 2 */
 
-        /* _INSTRUMENTED_LOAD_SUPER_ATTR is not a viable micro-op for tier 2 */
+        /* _INSTRUMENTED_LOAD_SUPER_ATTR is split on (oparg & 1) */
 
         case _LOAD_SUPER_ATTR_ATTR: {
             PyObject *self;
@@ -1818,47 +1744,7 @@
             break;
         }
 
-        case _LOAD_ATTR: {
-            PyObject *owner;
-            PyObject *attr;
-            PyObject *self_or_null = NULL;
-            oparg = CURRENT_OPARG();
-            owner = stack_pointer[-1];
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
-            if (oparg & 1) {
-                /* Designed to work in tandem with CALL, pushes two values. */
-                attr = NULL;
-                if (_PyObject_GetMethod(owner, name, &attr)) {
-                    /* We can bypass temporary bound method object.
-                       meth is unbound method and obj is self.
-                       meth | self | arg1 | ... | argN
-                     */
-                    assert(attr != NULL);  // No errors on this branch
-                    self_or_null = owner;  // Transfer ownership
-                }
-                else {
-                    /* meth is not an unbound method (but a regular attr, or
-                       something was returned by a descriptor protocol).  Set
-                       the second element of the stack to NULL, to signal
-                       CALL that it's not a method call.
-                       meth | NULL | arg1 | ... | argN
-                     */
-                    Py_DECREF(owner);
-                    if (attr == NULL) goto pop_1_error_tier_two;
-                    self_or_null = NULL;
-                }
-            }
-            else {
-                /* Classic, pushes one value. */
-                attr = PyObject_GetAttr(owner, name);
-                Py_DECREF(owner);
-                if (attr == NULL) goto pop_1_error_tier_two;
-            }
-            stack_pointer[-1] = attr;
-            if (oparg & 1) stack_pointer[0] = self_or_null;
-            stack_pointer += (oparg & 1);
-            break;
-        }
+        /* _LOAD_ATTR is split on (oparg & 1) */
 
         case _GUARD_TYPE_VERSION: {
             PyObject *owner;
@@ -1918,25 +1804,7 @@
             break;
         }
 
-        case _LOAD_ATTR_INSTANCE_VALUE: {
-            PyObject *owner;
-            PyObject *attr;
-            PyObject *null = NULL;
-            oparg = CURRENT_OPARG();
-            owner = stack_pointer[-1];
-            uint16_t index = (uint16_t)CURRENT_OPERAND();
-            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-            attr = _PyDictOrValues_GetValues(dorv)->values[index];
-            if (attr == NULL) goto deoptimize;
-            STAT_INC(LOAD_ATTR, hit);
-            Py_INCREF(attr);
-            null = NULL;
-            Py_DECREF(owner);
-            stack_pointer[-1] = attr;
-            if (oparg & 1) stack_pointer[0] = null;
-            stack_pointer += (oparg & 1);
-            break;
-        }
+        /* _LOAD_ATTR_INSTANCE_VALUE is split on (oparg & 1) */
 
         case _CHECK_ATTR_MODULE: {
             PyObject *owner;
@@ -1993,28 +1861,7 @@
             break;
         }
 
-        case _LOAD_ATTR_MODULE: {
-            PyObject *owner;
-            PyObject *attr;
-            PyObject *null = NULL;
-            oparg = CURRENT_OPARG();
-            owner = stack_pointer[-1];
-            uint16_t index = (uint16_t)CURRENT_OPERAND();
-            PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
-            assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
-            assert(index < dict->ma_keys->dk_nentries);
-            PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + index;
-            attr = ep->me_value;
-            if (attr == NULL) goto deoptimize;
-            STAT_INC(LOAD_ATTR, hit);
-            Py_INCREF(attr);
-            null = NULL;
-            Py_DECREF(owner);
-            stack_pointer[-1] = attr;
-            if (oparg & 1) stack_pointer[0] = null;
-            stack_pointer += (oparg & 1);
-            break;
-        }
+        /* _LOAD_ATTR_MODULE is split on (oparg & 1) */
 
         case _CHECK_ATTR_WITH_HINT: {
             PyObject *owner;
@@ -2090,37 +1937,7 @@
             break;
         }
 
-        case _LOAD_ATTR_WITH_HINT: {
-            PyObject *owner;
-            PyObject *attr;
-            PyObject *null = NULL;
-            oparg = CURRENT_OPARG();
-            owner = stack_pointer[-1];
-            uint16_t hint = (uint16_t)CURRENT_OPERAND();
-            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-            PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
-            if (hint >= (size_t)dict->ma_keys->dk_nentries) goto deoptimize;
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
-            if (DK_IS_UNICODE(dict->ma_keys)) {
-                PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
-                if (ep->me_key != name) goto deoptimize;
-                attr = ep->me_value;
-            }
-            else {
-                PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + hint;
-                if (ep->me_key != name) goto deoptimize;
-                attr = ep->me_value;
-            }
-            if (attr == NULL) goto deoptimize;
-            STAT_INC(LOAD_ATTR, hit);
-            Py_INCREF(attr);
-            null = NULL;
-            Py_DECREF(owner);
-            stack_pointer[-1] = attr;
-            if (oparg & 1) stack_pointer[0] = null;
-            stack_pointer += (oparg & 1);
-            break;
-        }
+        /* _LOAD_ATTR_WITH_HINT is split on (oparg & 1) */
 
         case _LOAD_ATTR_SLOT_0: {
             PyObject *owner;
@@ -2160,25 +1977,7 @@
             break;
         }
 
-        case _LOAD_ATTR_SLOT: {
-            PyObject *owner;
-            PyObject *attr;
-            PyObject *null = NULL;
-            oparg = CURRENT_OPARG();
-            owner = stack_pointer[-1];
-            uint16_t index = (uint16_t)CURRENT_OPERAND();
-            char *addr = (char *)owner + index;
-            attr = *(PyObject **)addr;
-            if (attr == NULL) goto deoptimize;
-            STAT_INC(LOAD_ATTR, hit);
-            Py_INCREF(attr);
-            null = NULL;
-            Py_DECREF(owner);
-            stack_pointer[-1] = attr;
-            if (oparg & 1) stack_pointer[0] = null;
-            stack_pointer += (oparg & 1);
-            break;
-        }
+        /* _LOAD_ATTR_SLOT is split on (oparg & 1) */
 
         case _CHECK_ATTR_CLASS: {
             PyObject *owner;
@@ -2224,23 +2023,7 @@
             break;
         }
 
-        case _LOAD_ATTR_CLASS: {
-            PyObject *owner;
-            PyObject *attr;
-            PyObject *null = NULL;
-            oparg = CURRENT_OPARG();
-            owner = stack_pointer[-1];
-            PyObject *descr = (PyObject *)CURRENT_OPERAND();
-            STAT_INC(LOAD_ATTR, hit);
-            assert(descr != NULL);
-            attr = Py_NewRef(descr);
-            null = NULL;
-            Py_DECREF(owner);
-            stack_pointer[-1] = attr;
-            if (oparg & 1) stack_pointer[0] = null;
-            stack_pointer += (oparg & 1);
-            break;
-        }
+        /* _LOAD_ATTR_CLASS is split on (oparg & 1) */
 
         /* _LOAD_ATTR_PROPERTY is not a viable micro-op for tier 2 */
 
@@ -3598,7 +3381,7 @@
 
         /* _CALL_FUNCTION_EX_1 is not a viable micro-op for tier 2 */
 
-        /* _CALL_FUNCTION_EX is not a viable micro-op for tier 2 */
+        /* _CALL_FUNCTION_EX is split on (oparg & 1) */
 
         case _MAKE_FUNCTION: {
             PyObject *codeobj;
