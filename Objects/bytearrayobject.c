@@ -1731,7 +1731,7 @@ bytearray_extend(PyByteArrayObject *self, PyObject *iterable_of_ints)
         if (! _getbytevalue(item, &value)) {
             if (PyErr_ExceptionMatches(PyExc_TypeError) && PyUnicode_Check(iterable_of_ints)) {
                 PyErr_Format(PyExc_TypeError,
-                             "'str' object should be 'bytes'");
+                             "Expected 'bytes'; got: 'str'");
             }
             Py_DECREF(item);
             Py_DECREF(it);
