@@ -33,24 +33,29 @@ from stack import StackOffset, Stack, SizeMismatch
 DEFAULT_OUTPUT = ROOT / "Python/executor_cases.c.h"
 
 
+def declare_variable(
+    var: StackItem, uop: Uop, variables: set[str], out: CWriter
+) -> None:
+    if var.name in variables:
+        return
+    type = var.type if var.type else "PyObject *"
+    variables.add(var.name)
+    if var.condition:
+        out.emit(f"{type}{var.name} = NULL;\n")
+        if uop.replicates:
+            # Replicas may not use all their conditional variables
+            # So avoid a compiler warning with a fake use
+            out.emit(f"(void){var.name};\n")
+    else:
+        out.emit(f"{type}{var.name};\n")
+
+
 def declare_variables(uop: Uop, out: CWriter) -> None:
     variables = {"unused"}
     for var in reversed(uop.stack.inputs):
-        if var.name not in variables:
-            type = var.type if var.type else "PyObject *"
-            variables.add(var.name)
-            if var.condition:
-                out.emit(f"{type}{var.name} = NULL;\n")
-            else:
-                out.emit(f"{type}{var.name};\n")
+        declare_variable(var, uop, variables, out)
     for var in uop.stack.outputs:
-        if var.name not in variables:
-            variables.add(var.name)
-            type = var.type if var.type else "PyObject *"
-            if var.condition:
-                out.emit(f"{type}{var.name} = NULL;\n")
-            else:
-                out.emit(f"{type}{var.name};\n")
+        declare_variable(var, uop, variables, out)
 
 
 def tier2_replace_error(
@@ -115,8 +120,9 @@ def tier2_replace_oparg(
         out.emit(amp)
         return
     one = next(tkn_iter)
-    assert(one.text == "1")
+    assert one.text == "1"
     out.emit_at(uop.name[-1], tkn)
+
 
 TIER2_REPLACEMENT_FUNCTIONS = REPLACEMENT_FUNCTIONS.copy()
 TIER2_REPLACEMENT_FUNCTIONS["ERROR_IF"] = tier2_replace_error
@@ -129,7 +135,7 @@ def write_uop(uop: Uop, out: CWriter, stack: Stack) -> None:
         out.start_line()
         if uop.properties.oparg:
             out.emit("oparg = CURRENT_OPARG();\n")
-            assert(uop.properties.const_oparg < 0)
+            assert uop.properties.const_oparg < 0
         elif uop.properties.const_oparg >= 0:
             out.emit(f"oparg = {uop.properties.const_oparg};\n")
             out.emit(f"assert(oparg == CURRENT_OPARG());\n")

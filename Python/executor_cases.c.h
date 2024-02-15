@@ -1817,6 +1817,7 @@
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
+            (void)null;
             owner = stack_pointer[-1];
             uint16_t index = (uint16_t)CURRENT_OPERAND();
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
@@ -1834,6 +1835,7 @@
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
+            (void)null;
             owner = stack_pointer[-1];
             uint16_t index = (uint16_t)CURRENT_OPERAND();
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
@@ -1933,6 +1935,7 @@
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
+            (void)null;
             owner = stack_pointer[-1];
             uint16_t index = (uint16_t)CURRENT_OPERAND();
             char *addr = (char *)owner + index;
@@ -1950,6 +1953,7 @@
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
+            (void)null;
             owner = stack_pointer[-1];
             uint16_t index = (uint16_t)CURRENT_OPERAND();
             char *addr = (char *)owner + index;
@@ -1981,6 +1985,7 @@
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
+            (void)null;
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)CURRENT_OPERAND();
             STAT_INC(LOAD_ATTR, hit);
@@ -1996,6 +2001,7 @@
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
+            (void)null;
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)CURRENT_OPERAND();
             STAT_INC(LOAD_ATTR, hit);
