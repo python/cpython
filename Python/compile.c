@@ -1692,16 +1692,13 @@ compiler_unwind_fblock_stack(struct compiler *c, location *ploc,
 static int
 compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
 {
-    int i = 0;
-    stmt_ty st;
-    PyObject *docstring;
 
     /* Set current line number to the line number of first statement.
        This way line number for SETUP_ANNOTATIONS will always
        coincide with the line number of first "real" statement in module.
        If body is empty, then lineno will be set later in optimize_and_assemble. */
     if (c->u->u_scope_type == COMPILER_SCOPE_MODULE && asdl_seq_LEN(stmts)) {
-        st = (stmt_ty)asdl_seq_GET(stmts, 0);
+        stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, 0);
         loc = LOC(st);
     }
     /* Every annotated class and module should have __annotations__. */
@@ -1711,16 +1708,17 @@ compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
     if (!asdl_seq_LEN(stmts)) {
         return SUCCESS;
     }
-    /* if not -OO mode, set docstring */
-    if (c->c_optimize < 2) {
-        docstring = _PyAST_GetDocString(stmts);
-        if (docstring) {
+    Py_ssize_t first_instr = 0;
+    PyObject *docstring = _PyAST_GetDocString(stmts);
+    if (docstring) {
+        first_instr = 1;
+        /* if not -OO mode, set docstring */
+        if (c->c_optimize < 2) {
             PyObject *cleandoc = _PyCompile_CleanDoc(docstring);
             if (cleandoc == NULL) {
                 return ERROR;
             }
-            i = 1;
-            st = (stmt_ty)asdl_seq_GET(stmts, 0);
+            stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, 0);
             assert(st->kind == Expr_kind);
             location loc = LOC(st->v.Expr.value);
             ADDOP_LOAD_CONST(c, loc, cleandoc);
@@ -1728,7 +1726,7 @@ compiler_body(struct compiler *c, location loc, asdl_stmt_seq *stmts)
             RETURN_IF_ERROR(compiler_nameop(c, NO_LOCATION, &_Py_ID(__doc__), Store));
         }
     }
-    for (; i < asdl_seq_LEN(stmts); i++) {
+    for (Py_ssize_t i = first_instr; i < asdl_seq_LEN(stmts); i++) {
         VISIT(c, stmt, (stmt_ty)asdl_seq_GET(stmts, i));
     }
     return SUCCESS;
@@ -2239,7 +2237,6 @@ static int
 compiler_function_body(struct compiler *c, stmt_ty s, int is_async, Py_ssize_t funcflags,
                        int firstlineno)
 {
-    PyObject *docstring = NULL;
     arguments_ty args;
     identifier name;
     asdl_stmt_seq *body;
@@ -2266,15 +2263,20 @@ compiler_function_body(struct compiler *c, stmt_ty s, int is_async, Py_ssize_t f
     RETURN_IF_ERROR(
         compiler_enter_scope(c, name, scope_type, (void *)s, firstlineno));
 
-    /* if not -OO mode, add docstring */
-    if (c->c_optimize < 2) {
-        docstring = _PyAST_GetDocString(body);
-        if (docstring) {
+    Py_ssize_t first_instr = 0;
+    PyObject *docstring = _PyAST_GetDocString(body);
+    if (docstring) {
+        first_instr = 1;
+        /* if not -OO mode, add docstring */
+        if (c->c_optimize < 2) {
             docstring = _PyCompile_CleanDoc(docstring);
             if (docstring == NULL) {
                 compiler_exit_scope(c);
                 return ERROR;
             }
+        }
+        else {
+            docstring = NULL;
         }
     }
     if (compiler_add_const(c->c_const_cache, c->u, docstring ? docstring : Py_None) < 0) {
@@ -2282,12 +2284,12 @@ compiler_function_body(struct compiler *c, stmt_ty s, int is_async, Py_ssize_t f
         compiler_exit_scope(c);
         return ERROR;
     }
-    Py_XDECREF(docstring);
+    Py_CLEAR(docstring);
 
     c->u->u_metadata.u_argcount = asdl_seq_LEN(args->args);
     c->u->u_metadata.u_posonlyargcount = asdl_seq_LEN(args->posonlyargs);
     c->u->u_metadata.u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
-    for (Py_ssize_t i = docstring ? 1 : 0; i < asdl_seq_LEN(body); i++) {
+    for (Py_ssize_t i = first_instr; i < asdl_seq_LEN(body); i++) {
         VISIT_IN_SCOPE(c, stmt, (stmt_ty)asdl_seq_GET(body, i));
     }
     if (c->u->u_ste->ste_coroutine || c->u->u_ste->ste_generator) {
