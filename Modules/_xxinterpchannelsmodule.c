@@ -93,38 +93,6 @@ API..  The module does not create any objects that are shared globally.
     PyMem_RawFree(VAR)
 
 
-struct xid_class_registry {
-    size_t count;
-#define MAX_XID_CLASSES 5
-    struct {
-        PyTypeObject *cls;
-    } added[MAX_XID_CLASSES];
-};
-
-static int
-register_xid_class(PyTypeObject *cls, crossinterpdatafunc shared,
-                   struct xid_class_registry *classes)
-{
-    int res = ensure_xid_class(cls, shared);
-    if (res == 0) {
-        assert(classes->count < MAX_XID_CLASSES);
-        // The class has refs elsewhere, so we need to incref here.
-        classes->added[classes->count].cls = cls;
-        classes->count += 1;
-    }
-    return res;
-}
-
-static void
-clear_xid_class_registry(struct xid_class_registry *classes)
-{
-    while (classes->count > 0) {
-        classes->count -= 1;
-        PyTypeObject *cls = classes->added[classes->count].cls;
-        _PyCrossInterpreterData_UnregisterClass(cls);
-    }
-}
-
 #define XID_IGNORE_EXC 1
 #define XID_FREE 2
 
@@ -247,8 +215,6 @@ wait_for_lock(PyThread_type_lock mutex, PY_TIMEOUT_T timeout)
 /* module state *************************************************************/
 
 typedef struct {
-    struct xid_class_registry xid_classes;
-
     /* Added at runtime by interpreters module. */
     PyTypeObject *send_channel_type;
     PyTypeObject *recv_channel_type;
@@ -313,8 +279,6 @@ traverse_module_state(module_state *state, visitproc visit, void *arg)
 static void
 clear_xid_types(module_state *state)
 {
-    clear_xid_class_registry(&state->xid_classes);
-
     /* external types */
     if (state->send_channel_type != NULL) {
         (void)_PyCrossInterpreterData_UnregisterClass(state->send_channel_type);
