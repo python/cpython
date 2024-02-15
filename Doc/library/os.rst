@@ -1001,10 +1001,13 @@ as internal buffering of data.
 
    .. audit-event:: os.chmod path,mode,dir_fd os.fchmod
 
-   .. availability:: Unix.
+   .. availability:: Unix, Windows.
 
       The function is limited on Emscripten and WASI, see
       :ref:`wasm-availability` for more information.
+
+   .. versionchanged:: 3.13
+      Added support on Windows.
 
 
 .. function:: fchown(fd, uid, gid)
@@ -1118,6 +1121,20 @@ as internal buffering of data.
 
    .. versionchanged:: 3.12
       Added support for pipes on Windows.
+
+
+.. function:: grantpt(fd, /)
+
+   Grant access to the slave pseudo-terminal device associated with the
+   master pseudo-terminal device to which the file descriptor *fd* refers.
+   The file descriptor *fd* is not closed upon failure.
+
+   Calls the C standard library function :c:func:`grantpt`.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+   .. versionadded:: 3.13
+
 
 .. function:: isatty(fd, /)
 
@@ -1251,8 +1268,8 @@ as internal buffering of data.
       :meth:`~file.read` and :meth:`~file.write` methods (and many more).  To
       wrap a file descriptor in a file object, use :func:`fdopen`.
 
-   .. versionadded:: 3.3
-      The *dir_fd* argument.
+   .. versionchanged:: 3.3
+      Added the *dir_fd* parameter.
 
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise an
@@ -1426,6 +1443,23 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.3
 
 
+.. function:: posix_openpt(oflag, /)
+
+   Open and return a file descriptor for a master pseudo-terminal device.
+
+   Calls the C standard library function :c:func:`posix_openpt`. The *oflag*
+   argument is used to set file status flags and file access modes as
+   specified in the manual page of :c:func:`posix_openpt` of your system.
+
+   The returned file descriptor is :ref:`non-inheritable <fd_inheritance>`.
+   If the value :data:`O_CLOEXEC` is available on the system, it is added to
+   *oflag*.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+   .. versionadded:: 3.13
+
+
 .. function:: preadv(fd, buffers, offset, flags=0, /)
 
    Read from a file descriptor *fd* at a position of *offset* into mutable
@@ -1481,6 +1515,21 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. availability:: Linux >= 4.6.
 
    .. versionadded:: 3.7
+
+
+.. function:: ptsname(fd, /)
+
+   Return the name of the slave pseudo-terminal device associated with the
+   master pseudo-terminal device to which the file descriptor *fd* refers.
+   The file descriptor *fd* is not closed upon failure.
+
+   Calls the reentrant C standard library function :c:func:`ptsname_r` if
+   it is available; otherwise, the C standard library function
+   :c:func:`ptsname`, which is not guaranteed to be thread-safe, is called.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+   .. versionadded:: 3.13
 
 
 .. function:: pwrite(fd, str, offset, /)
@@ -1733,6 +1782,19 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    exception is raised.
 
    .. availability:: Unix.
+
+
+.. function:: unlockpt(fd, /)
+
+   Unlock the slave pseudo-terminal device associated with the master
+   pseudo-terminal device to which the file descriptor *fd* refers.
+   The file descriptor *fd* is not closed upon failure.
+
+   Calls the C standard library function :c:func:`unlockpt`.
+
+   .. availability:: Unix, not Emscripten, not WASI.
+
+   .. versionadded:: 3.13
 
 
 .. function:: write(fd, str, /)
@@ -1988,7 +2050,7 @@ features:
 
    .. audit-event:: os.chdir path os.chdir
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       Added support for specifying *path* as a file descriptor
       on some platforms.
 
@@ -2020,8 +2082,8 @@ features:
 
    .. availability:: Unix, not Emscripten, not WASI.
 
-   .. versionadded:: 3.3
-      The *follow_symlinks* argument.
+   .. versionchanged:: 3.3
+      Added the *follow_symlinks* parameter.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -2062,6 +2124,7 @@ features:
       Although Windows supports :func:`chmod`, you can only set the file's
       read-only flag with it (via the ``stat.S_IWRITE`` and ``stat.S_IREAD``
       constants or a corresponding integer value).  All other bits are ignored.
+      The default value of *follow_symlinks* is ``False`` on Windows.
 
       The function is limited on Emscripten and WASI, see
       :ref:`wasm-availability` for more information.
@@ -2074,6 +2137,10 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.13
+      Added support for a file descriptor and the *follow_symlinks* argument
+      on Windows.
 
 
 .. function:: chown(path, uid, gid, *, dir_fd=None, follow_symlinks=True)
@@ -2160,12 +2227,18 @@ features:
    for possible values of *mode*.  As of Python 3.3, this is equivalent to
    ``os.chmod(path, mode, follow_symlinks=False)``.
 
+   ``lchmod()`` is not part of POSIX, but Unix implementations may have it if
+   changing the mode of symbolic links is supported.
+
    .. audit-event:: os.chmod path,mode,dir_fd os.lchmod
 
-   .. availability:: Unix.
+   .. availability:: Unix, Windows, not Linux, FreeBSD >= 1.3, NetBSD >= 1.3, not OpenBSD
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.13
+      Added support on Windows.
 
 .. function:: lchown(path, uid, gid)
 
@@ -2196,8 +2269,8 @@ features:
    .. versionchanged:: 3.2
       Added Windows support.
 
-   .. versionadded:: 3.3
-      Added the *src_dir_fd*, *dst_dir_fd*, and *follow_symlinks* arguments.
+   .. versionchanged:: 3.3
+      Added the *src_dir_fd*, *dst_dir_fd*, and *follow_symlinks* parameters.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` for *src* and *dst*.
@@ -2361,8 +2434,8 @@ features:
 
    .. audit-event:: os.mkdir path,mode,dir_fd os.mkdir
 
-   .. versionadded:: 3.3
-      The *dir_fd* argument.
+   .. versionchanged:: 3.3
+      Added the *dir_fd* parameter.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -2395,8 +2468,8 @@ features:
 
    .. audit-event:: os.mkdir path,mode,dir_fd os.makedirs
 
-   .. versionadded:: 3.2
-      The *exist_ok* parameter.
+   .. versionchanged:: 3.2
+      Added the *exist_ok* parameter.
 
    .. versionchanged:: 3.4.1
 
@@ -2429,8 +2502,8 @@ features:
 
    .. availability:: Unix, not Emscripten, not WASI.
 
-   .. versionadded:: 3.3
-      The *dir_fd* argument.
+   .. versionchanged:: 3.3
+      Added the *dir_fd* parameter.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -2451,8 +2524,8 @@ features:
 
    .. availability:: Unix, not Emscripten, not WASI.
 
-   .. versionadded:: 3.3
-      The *dir_fd* argument.
+   .. versionchanged:: 3.3
+      Added the *dir_fd* parameter.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -2532,8 +2605,8 @@ features:
    .. versionchanged:: 3.2
       Added support for Windows 6.0 (Vista) symbolic links.
 
-   .. versionadded:: 3.3
-      The *dir_fd* argument.
+   .. versionchanged:: 3.3
+      Added the *dir_fd* parameter.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` on Unix.
@@ -2563,8 +2636,8 @@ features:
 
    .. audit-event:: os.remove path,dir_fd os.remove
 
-   .. versionadded:: 3.3
-      The *dir_fd* argument.
+   .. versionchanged:: 3.3
+      Added the *dir_fd* parameter.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -2614,8 +2687,8 @@ features:
 
    .. audit-event:: os.rename src,dst,src_dir_fd,dst_dir_fd os.rename
 
-   .. versionadded:: 3.3
-      The *src_dir_fd* and *dst_dir_fd* arguments.
+   .. versionchanged:: 3.3
+      Added the *src_dir_fd* and *dst_dir_fd* parameters.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` for *src* and *dst*.
@@ -2670,8 +2743,8 @@ features:
 
    .. audit-event:: os.rmdir path,dir_fd os.rmdir
 
-   .. versionadded:: 3.3
-      The *dir_fd* parameter.
+   .. versionchanged:: 3.3
+      Added the *dir_fd* parameter.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -2745,7 +2818,7 @@ features:
 
    .. versionadded:: 3.5
 
-   .. versionadded:: 3.6
+   .. versionchanged:: 3.6
       Added support for the :term:`context manager` protocol and the
       :func:`~scandir.close()` method.  If a :func:`scandir` iterator is neither
       exhausted nor explicitly closed a :exc:`ResourceWarning` will be emitted
@@ -2959,9 +3032,9 @@ features:
 
       :func:`fstat` and :func:`lstat` functions.
 
-   .. versionadded:: 3.3
-      Added the *dir_fd* and *follow_symlinks* arguments, specifying a file
-      descriptor instead of a path.
+   .. versionchanged:: 3.3
+      Added the *dir_fd* and *follow_symlinks* parameters,
+      specifying a file descriptor instead of a path.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -3042,15 +3115,21 @@ features:
 
       Time of most recent access expressed in nanoseconds as an integer.
 
+      .. versionadded: 3.3
+
    .. attribute:: st_mtime_ns
 
       Time of most recent content modification expressed in nanoseconds as an
       integer.
 
+      .. versionadded: 3.3
+
    .. attribute:: st_ctime_ns
 
       Time of most recent metadata change expressed in nanoseconds as an
       integer.
+
+      .. versionadded: 3.3
 
       .. versionchanged:: 3.12
          ``st_ctime_ns`` is deprecated on Windows. Use ``st_birthtime_ns``
@@ -3152,6 +3231,8 @@ features:
       See the :const:`!FILE_ATTRIBUTE_* <stat.FILE_ATTRIBUTE_ARCHIVE>`
       constants in the :mod:`stat` module.
 
+      .. versionadded:: 3.5
+
    .. attribute:: st_reparse_tag
 
       When :attr:`st_file_attributes` has the :const:`~stat.FILE_ATTRIBUTE_REPARSE_POINT`
@@ -3171,13 +3252,6 @@ features:
    :attr:`st_mtime`, :attr:`st_ctime`. More items may be added at the end by
    some implementations. For compatibility with older Python versions,
    accessing :class:`stat_result` as a tuple always returns integers.
-
-   .. versionadded:: 3.3
-      Added the :attr:`st_atime_ns`, :attr:`st_mtime_ns`, and
-      :attr:`st_ctime_ns` members.
-
-   .. versionadded:: 3.5
-      Added the :attr:`st_file_attributes` member on Windows.
 
    .. versionchanged:: 3.5
       Windows now returns the file index as :attr:`st_ino` when
@@ -3243,7 +3317,7 @@ features:
    .. versionchanged:: 3.2
       The :const:`ST_RDONLY` and :const:`ST_NOSUID` constants were added.
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       Added support for specifying *path* as an open file descriptor.
 
    .. versionchanged:: 3.4
@@ -3255,8 +3329,8 @@ features:
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
-   .. versionadded:: 3.7
-      Added :attr:`f_fsid`.
+   .. versionchanged:: 3.7
+      Added the :attr:`f_fsid` attribute.
 
 
 .. data:: supports_dir_fd
@@ -3380,8 +3454,8 @@ features:
    .. versionchanged:: 3.2
       Added support for Windows 6.0 (Vista) symbolic links.
 
-   .. versionadded:: 3.3
-      Added the *dir_fd* argument, and now allow *target_is_directory*
+   .. versionchanged:: 3.3
+      Added the *dir_fd* parameter, and now allow *target_is_directory*
       on non-Windows platforms.
 
    .. versionchanged:: 3.6
@@ -3429,8 +3503,8 @@ features:
 
    .. audit-event:: os.remove path,dir_fd os.unlink
 
-   .. versionadded:: 3.3
-      The *dir_fd* parameter.
+   .. versionchanged:: 3.3
+      Added the *dir_fd* parameter.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -3468,7 +3542,7 @@ features:
 
    .. audit-event:: os.utime path,times,ns,dir_fd os.utime
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       Added support for specifying *path* as an open file descriptor,
       and the *dir_fd*, *follow_symlinks*, and *ns* parameters.
 
@@ -4203,7 +4277,7 @@ to be ignored.
 
    .. availability:: Unix, Windows, not Emscripten, not WASI.
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       Added support for specifying *path* as an open file descriptor
       for :func:`execve`.
 
@@ -4373,6 +4447,11 @@ written in Python, such as a mail server's external command delivery program.
       If you use TLS sockets in an application calling ``fork()``, see
       the warning in the :mod:`ssl` documentation.
 
+   .. warning::
+
+      On macOS the use of this function is unsafe when mixed with using
+      higher-level system APIs, and that includes using :mod:`urllib.request`.
+
    .. versionchanged:: 3.8
       Calling ``fork()`` in a subinterpreter is no longer supported
       (:exc:`RuntimeError` is raised).
@@ -4412,6 +4491,11 @@ written in Python, such as a mail server's external command delivery program.
 
    .. audit-event:: os.forkpty "" os.forkpty
 
+   .. warning::
+
+      On macOS the use of this function is unsafe when mixed with using
+      higher-level system APIs, and that includes using :mod:`urllib.request`.
+
    .. versionchanged:: 3.12
       If Python is able to detect that your process has multiple
       threads, this now raises a :exc:`DeprecationWarning`. See the
@@ -4447,8 +4531,8 @@ written in Python, such as a mail server's external command delivery program.
 
    .. availability:: Unix, Windows, not Emscripten, not WASI.
 
-   .. versionadded:: 3.2
-      Windows support.
+   .. versionchanged:: 3.2
+      Added Windows support.
 
 
 .. function:: killpg(pgid, sig, /)
@@ -4550,7 +4634,8 @@ written in Python, such as a mail server's external command delivery program.
    Most users should use :func:`subprocess.run` instead of :func:`posix_spawn`.
 
    The positional-only arguments *path*, *args*, and *env* are similar to
-   :func:`execve`.
+   :func:`execve`. *env* is allowed to be ``None``, in which case current
+   process' environment is used.
 
    The *path* parameter is the path to the executable file.  The *path* should
    contain a directory.  Use :func:`posix_spawnp` to pass an executable file
@@ -4580,10 +4665,17 @@ written in Python, such as a mail server's external command delivery program.
 
       Performs ``os.dup2(fd, new_fd)``.
 
+   .. data:: POSIX_SPAWN_CLOSEFROM
+
+      (``os.POSIX_SPAWN_CLOSEFROM``, *fd*)
+
+      Performs ``os.closerange(fd, INF)``.
+
    These tuples correspond to the C library
    :c:func:`!posix_spawn_file_actions_addopen`,
-   :c:func:`!posix_spawn_file_actions_addclose`, and
-   :c:func:`!posix_spawn_file_actions_adddup2` API calls used to prepare
+   :c:func:`!posix_spawn_file_actions_addclose`,
+   :c:func:`!posix_spawn_file_actions_adddup2`, and
+   :c:func:`!posix_spawn_file_actions_addclosefrom_np` API calls used to prepare
    for the :c:func:`!posix_spawn` call itself.
 
    The *setpgroup* argument will set the process group of the child to the value
@@ -4624,6 +4716,13 @@ written in Python, such as a mail server's external command delivery program.
    .. audit-event:: os.posix_spawn path,argv,env os.posix_spawn
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.13
+      *env* parameter accepts ``None``.
+
+   .. versionchanged:: 3.13
+      ``os.POSIX_SPAWN_CLOSEFROM`` is available on platforms where
+      :c:func:`!posix_spawn_file_actions_addclosefrom_np` exists.
 
    .. availability:: Unix, not Emscripten, not WASI.
 
@@ -4948,6 +5047,9 @@ written in Python, such as a mail server's external command delivery program.
    .. availability:: Unix, not Emscripten, not WASI.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.13
+      This function is now available on macOS as well.
 
 
 .. function:: waitpid(pid, options, /)

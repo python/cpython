@@ -10,7 +10,7 @@ preserve
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(batched_new__doc__,
-"batched(iterable, n)\n"
+"batched(iterable, n, *, strict=False)\n"
 "--\n"
 "\n"
 "Batch data into tuples of length n. The last batch may be shorter than n.\n"
@@ -25,10 +25,14 @@ PyDoc_STRVAR(batched_new__doc__,
 "    ...\n"
 "    (\'A\', \'B\', \'C\')\n"
 "    (\'D\', \'E\', \'F\')\n"
-"    (\'G\',)");
+"    (\'G\',)\n"
+"\n"
+"If \"strict\" is True, raises a ValueError if the final batch is shorter\n"
+"than n.");
 
 static PyObject *
-batched_new_impl(PyTypeObject *type, PyObject *iterable, Py_ssize_t n);
+batched_new_impl(PyTypeObject *type, PyObject *iterable, Py_ssize_t n,
+                 int strict);
 
 static PyObject *
 batched_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
@@ -36,14 +40,14 @@ batched_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(iterable), &_Py_ID(n), },
+        .ob_item = { &_Py_ID(iterable), &_Py_ID(n), &_Py_ID(strict), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -52,18 +56,20 @@ batched_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"iterable", "n", NULL};
+    static const char * const _keywords[] = {"iterable", "n", "strict", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "batched",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 2;
     PyObject *iterable;
     Py_ssize_t n;
+    int strict = 0;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 2, 2, 0, argsbuf);
     if (!fastargs) {
@@ -82,7 +88,15 @@ batched_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         }
         n = ival;
     }
-    return_value = batched_new_impl(type, iterable, n);
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    strict = PyObject_IsTrue(fastargs[2]);
+    if (strict < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = batched_new_impl(type, iterable, n, strict);
 
 exit:
     return return_value;
@@ -914,4 +928,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=782fe7e30733779b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c6a515f765da86b5 input=a9049054013a1b77]*/

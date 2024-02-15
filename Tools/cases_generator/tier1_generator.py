@@ -151,7 +151,8 @@ def generate_tier1(
         stack = Stack()
         for part in inst.parts:
             # Only emit braces if more than one uop
-            offset = write_uop(part, out, offset, stack, inst, len(inst.parts) > 1)
+            insert_braces = len([p for p in inst.parts if isinstance(p, Uop)]) > 1
+            offset = write_uop(part, out, offset, stack, inst, insert_braces)
         out.start_line()
         if not inst.parts[-1].properties.always_exits:
             stack.flush(out)
@@ -180,6 +181,15 @@ arg_parser.add_argument(
 arg_parser.add_argument(
     "input", nargs=argparse.REMAINDER, help="Instruction definition file(s)"
 )
+
+
+def generate_tier1_from_files(
+    filenames: list[str], outfilename: str, lines: bool
+) -> None:
+    data = analyze_files(filenames)
+    with open(outfilename, "w") as outfile:
+        generate_tier1(filenames, data, outfile, lines)
+
 
 if __name__ == "__main__":
     args = arg_parser.parse_args()

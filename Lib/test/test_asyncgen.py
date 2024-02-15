@@ -379,7 +379,10 @@ class AsyncGenTest(unittest.TestCase):
 
     def test_async_gen_exception_12(self):
         async def gen():
-            await anext(me)
+            with self.assertWarnsRegex(RuntimeWarning,
+                    f"coroutine method 'asend' of '{gen.__qualname__}' "
+                    f"was never awaited"):
+                await anext(me)
             yield 123
 
         me = gen()
@@ -395,7 +398,12 @@ class AsyncGenTest(unittest.TestCase):
             yield 123
 
         with self.assertWarns(DeprecationWarning):
-            gen().athrow(GeneratorExit, GeneratorExit(), None)
+            x = gen().athrow(GeneratorExit, GeneratorExit(), None)
+        with self.assertWarnsRegex(RuntimeWarning,
+                f"coroutine method 'athrow' of '{gen.__qualname__}' "
+                f"was never awaited"):
+            del x
+            gc_collect()
 
     def test_async_gen_api_01(self):
         async def gen():
@@ -1564,6 +1572,11 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         self.assertIsInstance(message['exception'], ZeroDivisionError)
         self.assertIn('unhandled exception during asyncio.run() shutdown',
                       message['message'])
+        with self.assertWarnsRegex(RuntimeWarning,
+                f"coroutine method 'aclose' of '{async_iterate.__qualname__}' "
+                f"was never awaited"):
+            del message, messages
+            gc_collect()
 
     def test_async_gen_expression_01(self):
         async def arange(n):
@@ -1617,6 +1630,10 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         asyncio.run(main())
 
         self.assertEqual([], messages)
+        with self.assertWarnsRegex(RuntimeWarning,
+                f"coroutine method 'aclose' of '{async_iterate.__qualname__}' "
+                f"was never awaited"):
+            gc_collect()
 
     def test_async_gen_await_same_anext_coro_twice(self):
         async def async_iterate():
@@ -1700,6 +1717,14 @@ class TestUnawaitedWarnings(unittest.TestCase):
     def test_asend(self):
         async def gen():
             yield 1
+
+        # gh-113753: asend objects allocated from a free-list should warn.
+        # Ensure there is a finalized 'asend' object ready to be reused.
+        try:
+            g = gen()
+            g.asend(None).send(None)
+        except StopIteration:
+            pass
 
         msg = f"coroutine method 'asend' of '{gen.__qualname__}' was never awaited"
         with self.assertWarnsRegex(RuntimeWarning, msg):

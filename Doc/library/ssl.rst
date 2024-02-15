@@ -25,7 +25,7 @@ probably additional platforms, as long as OpenSSL is installed on that platform.
 
    Some behavior may be platform dependent, since calls are made to the
    operating system socket APIs.  The installed version of OpenSSL may also
-   cause variations in behavior. For example, TLSv1.3 with OpenSSL version
+   cause variations in behavior. For example, TLSv1.3 comes with OpenSSL version
    1.1.1.
 
 .. warning::
@@ -2574,12 +2574,8 @@ provided.
      :exc:`SSLWantReadError` if it needs more data than the incoming BIO has
      available.
 
-   - There is no module-level ``wrap_bio()`` call like there is for
-     :meth:`~SSLContext.wrap_socket`. An :class:`SSLObject` is always created
-     via an :class:`SSLContext`.
-
    .. versionchanged:: 3.7
-      :class:`SSLObject` instances must to created with
+      :class:`SSLObject` instances must be created with
       :meth:`~SSLContext.wrap_bio`. In earlier versions, it was possible to
       create instances directly. This was never documented or officially
       supported.

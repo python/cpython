@@ -1632,6 +1632,14 @@ class CircularImportTests(unittest.TestCase):
             str(cm.exception),
         )
 
+    def test_circular_import(self):
+        with self.assertRaisesRegex(
+            AttributeError,
+            r"partially initialized module 'test.test_import.data.circular_imports.import_cycle' "
+            r"from '.*' has no attribute 'some_attribute' \(most likely due to a circular import\)"
+        ):
+            import test.test_import.data.circular_imports.import_cycle
+
     def test_absolute_circular_submodule(self):
         with self.assertRaises(AttributeError) as cm:
             import test.test_import.data.circular_imports.subpkg2.parent

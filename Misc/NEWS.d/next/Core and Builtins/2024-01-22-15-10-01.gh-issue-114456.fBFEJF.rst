@@ -1,0 +1,1 @@
+Lower the recursion limit under a debug build of WASI.
