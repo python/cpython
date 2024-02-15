@@ -44,7 +44,7 @@ dummy_func(void) {
     op(_LOAD_FAST_AND_CLEAR, (-- value)) {
         value = GETLOCAL(oparg);
         _Py_UOpsSymType *temp;
-        OUT_OF_SPACE_IF_NULL(temp, sym_new_null(ctx));
+        OUT_OF_SPACE_IF_NULL(temp = sym_new_null(ctx));
         GETLOCAL(oparg) = temp;
     }
 
@@ -87,12 +87,12 @@ dummy_func(void) {
             if (temp == NULL) {
                 goto error;
             }
-            OUT_OF_SPACE_IF_NULL(res, sym_new_const(ctx, temp));
+            OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, temp));
             // TODO gh-115506:
             // replace opcode with constant propagated one and add tests!
         }
         else {
-            OUT_OF_SPACE_IF_NULL(res, sym_new_known_type(ctx, &PyLong_Type));
+            OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyLong_Type));
         }
     }
 
@@ -105,12 +105,12 @@ dummy_func(void) {
             if (temp == NULL) {
                 goto error;
             }
-            OUT_OF_SPACE_IF_NULL(res, sym_new_const(ctx, temp));
+            OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, temp));
             // TODO gh-115506:
             // replace opcode with constant propagated one and add tests!
         }
         else {
-            OUT_OF_SPACE_IF_NULL(res, sym_new_known_type(ctx, &PyLong_Type));
+            OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyLong_Type));
         }
     }
 
@@ -123,12 +123,12 @@ dummy_func(void) {
             if (temp == NULL) {
                 goto error;
             }
-            OUT_OF_SPACE_IF_NULL(res, sym_new_const(ctx, temp));
+            OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, temp));
             // TODO gh-115506:
             // replace opcode with constant propagated one and add tests!
         }
         else {
-            OUT_OF_SPACE_IF_NULL(res, sym_new_known_type(ctx, &PyLong_Type));
+            OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyLong_Type));
         }
     }
 
@@ -139,21 +139,21 @@ dummy_func(void) {
     }
 
     op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
-        OUT_OF_SPACE_IF_NULL(value, sym_new_const(ctx, ptr));
+        OUT_OF_SPACE_IF_NULL(value = sym_new_const(ctx, ptr));
     }
 
     op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
-        OUT_OF_SPACE_IF_NULL(value, sym_new_const(ctx, ptr));
+        OUT_OF_SPACE_IF_NULL(value = sym_new_const(ctx, ptr));
     }
 
     op(_LOAD_CONST_INLINE_WITH_NULL, (ptr/4 -- value, null)) {
-        OUT_OF_SPACE_IF_NULL(value, sym_new_const(ctx, ptr));
-        OUT_OF_SPACE_IF_NULL(null, sym_new_null(ctx));
+        OUT_OF_SPACE_IF_NULL(value = sym_new_const(ctx, ptr));
+        OUT_OF_SPACE_IF_NULL(null = sym_new_null(ctx));
     }
 
     op(_LOAD_CONST_INLINE_BORROW_WITH_NULL, (ptr/4 -- value, null)) {
-        OUT_OF_SPACE_IF_NULL(value, sym_new_const(ctx, ptr));
-        OUT_OF_SPACE_IF_NULL(null, sym_new_null(ctx));
+        OUT_OF_SPACE_IF_NULL(value = sym_new_const(ctx, ptr));
+        OUT_OF_SPACE_IF_NULL(null = sym_new_null(ctx));
     }
 
 
@@ -235,7 +235,7 @@ dummy_func(void) {
             localsplus_start = args;
             n_locals_already_filled = argcount;
         }
-        OUT_OF_SPACE_IF_NULL(new_frame,
+        OUT_OF_SPACE_IF_NULL(new_frame =
                              ctx_frame_new(ctx, co, localsplus_start, n_locals_already_filled, 0));
     }
 
@@ -259,7 +259,7 @@ dummy_func(void) {
         /* This has to be done manually */
         (void)seq;
         for (int i = 0; i < oparg; i++) {
-            OUT_OF_SPACE_IF_NULL(values[i], sym_new_unknown(ctx));
+            OUT_OF_SPACE_IF_NULL(values[i] = sym_new_unknown(ctx));
         }
     }
 
@@ -268,12 +268,12 @@ dummy_func(void) {
         (void)seq;
         int totalargs = (oparg & 0xFF) + (oparg >> 8) + 1;
         for (int i = 0; i < totalargs; i++) {
-            OUT_OF_SPACE_IF_NULL(values[i], sym_new_unknown(ctx));
+            OUT_OF_SPACE_IF_NULL(values[i] = sym_new_unknown(ctx));
         }
     }
 
     op(_ITER_NEXT_RANGE, (iter -- iter, next)) {
-       OUT_OF_SPACE_IF_NULL(next, sym_new_known_type(ctx, &PyLong_Type));
+       OUT_OF_SPACE_IF_NULL(next = sym_new_known_type(ctx, &PyLong_Type));
        (void)iter;
     }
 
