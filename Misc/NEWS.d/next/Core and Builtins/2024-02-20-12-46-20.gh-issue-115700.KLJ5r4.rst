@@ -1,0 +1,1 @@
+The regen-cases build stage now works on Windows.
