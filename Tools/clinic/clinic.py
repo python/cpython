@@ -163,50 +163,6 @@ def ensure_legal_c_identifier(s: str) -> str:
     return s
 
 
-def linear_format(s: str, **kwargs: str) -> str:
-    """
-    Perform str.format-like substitution, except:
-      * The strings substituted must be on lines by
-        themselves.  (This line is the "source line".)
-      * If the substitution text is empty, the source line
-        is removed in the output.
-      * If the field is not recognized, the original line
-        is passed unmodified through to the output.
-      * If the substitution text is not empty:
-          * Each line of the substituted text is indented
-            by the indent of the source line.
-          * A newline will be added to the end.
-    """
-    lines = []
-    for line in s.split('\n'):
-        indent, curly, trailing = line.partition('{')
-        if not curly:
-            lines.extend([line, "\n"])
-            continue
-
-        name, curly, trailing = trailing.partition('}')
-        if not curly or name not in kwargs:
-            lines.extend([line, "\n"])
-            continue
-
-        if trailing:
-            fail(f"Text found after {{{name}}} block marker! "
-                 "It must be on a line by itself.")
-        if indent.strip():
-            fail(f"Non-whitespace characters found before {{{name}}} block marker! "
-                 "It must be on a line by itself.")
-
-        value = kwargs[name]
-        if not value:
-            continue
-
-        stripped = [line.rstrip() for line in value.split("\n")]
-        value = textwrap.indent("\n".join(stripped), indent)
-        lines.extend([value, "\n"])
-
-    return "".join(lines[:-1])
-
-
 class CRenderData:
     def __init__(self) -> None:
 
@@ -915,7 +871,8 @@ class CLanguage(Language):
             """)
             for field in preamble, *fields, finale:
                 lines.append(field)
-            return linear_format("\n".join(lines), parser_declarations=declarations)
+            return libclinic.linear_format("\n".join(lines),
+                                           parser_declarations=declarations)
 
         fastcall = not new_or_init
         limited_capi = clinic.limited_capi
@@ -1570,7 +1527,7 @@ class CLanguage(Language):
         {group_booleans}
         break;
 """
-            s = linear_format(s, group_booleans=lines)
+            s = libclinic.linear_format(s, group_booleans=lines)
             s = s.format_map(d)
             out.append(s)
 
@@ -1729,9 +1686,9 @@ class CLanguage(Language):
         for name, destination in clinic.destination_buffers.items():
             template = templates[name]
             if has_option_groups:
-                template = linear_format(template,
+                template = libclinic.linear_format(template,
                         option_group_parsing=template_dict['option_group_parsing'])
-            template = linear_format(template,
+            template = libclinic.linear_format(template,
                 declarations=template_dict['declarations'],
                 return_conversion=template_dict['return_conversion'],
                 initializers=template_dict['initializers'],
@@ -1744,10 +1701,8 @@ class CLanguage(Language):
 
             # Only generate the "exit:" label
             # if we have any gotos
-            need_exit_label = "goto exit;" in template
-            template = linear_format(template,
-                exit_label="exit:" if need_exit_label else ''
-                )
+            label = "exit:" if "goto exit;" in template else ""
+            template = libclinic.linear_format(template, exit_label=label)
 
             s = template.format_map(template_dict)
 
@@ -6125,9 +6080,9 @@ class DSLParser:
         parameters = self.format_docstring_parameters(params)
         signature = self.format_docstring_signature(f, params)
         docstring = "\n".join(lines)
-        return linear_format(docstring,
-                             signature=signature,
-                             parameters=parameters).rstrip()
+        return libclinic.linear_format(docstring,
+                                       signature=signature,
+                                       parameters=parameters).rstrip()
 
     def check_remaining_star(self, lineno: int | None = None) -> None:
         assert isinstance(self.function, Function)
