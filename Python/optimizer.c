@@ -128,8 +128,8 @@ static _PyOptimizerObject _PyOptimizer_Default = {
     PyObject_HEAD_INIT(&_PyDefaultOptimizer_Type)
     .optimize = never_optimize,
     .resume_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD,
-    .side_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD,
     .backedge_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD,
+    .side_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD,
 };
 
 static uint32_t
@@ -167,7 +167,6 @@ static const _PyBloomFilter EMPTY = { 0 };
 _PyOptimizerObject *
 _Py_SetOptimizer(PyInterpreterState *interp, _PyOptimizerObject *optimizer)
 {
-
     if (optimizer == NULL) {
         optimizer = &_PyOptimizer_Default;
     }
@@ -187,8 +186,8 @@ _Py_SetOptimizer(PyInterpreterState *interp, _PyOptimizerObject *optimizer)
     Py_INCREF(optimizer);
     interp->optimizer = optimizer;
     interp->optimizer_backedge_threshold = shift_and_offset_threshold(optimizer->backedge_threshold);
-    interp->optimizer_side_threshold = optimizer->side_threshold;
     interp->optimizer_resume_threshold = shift_and_offset_threshold(optimizer->resume_threshold);
+    interp->optimizer_side_threshold = optimizer->side_threshold;
     if (optimizer == &_PyOptimizer_Default) {
         assert(interp->optimizer_backedge_threshold > (1 << 16));
         assert(interp->optimizer_resume_threshold > (1 << 16));
