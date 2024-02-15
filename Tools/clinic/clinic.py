@@ -4402,14 +4402,6 @@ def correct_name_for_self(
         return "PyTypeObject *", "type"
     raise AssertionError(f"Unhandled type of function f: {f.kind!r}")
 
-def required_type_for_self_for_parser(
-        f: Function
-) -> str | None:
-    type, _ = correct_name_for_self(f)
-    if f.kind in (METHOD_INIT, METHOD_NEW, STATIC_METHOD, CLASS_METHOD):
-        return type
-    return None
-
 
 class self_converter(CConverter):
     """
@@ -4474,7 +4466,10 @@ class self_converter(CConverter):
     @property
     def parser_type(self) -> str:
         assert self.type is not None
-        return required_type_for_self_for_parser(self.function) or self.type
+        if self.function.kind in {METHOD_INIT, METHOD_NEW, STATIC_METHOD, CLASS_METHOD}:
+            tp, _ = correct_name_for_self(self.function)
+            return tp
+        return self.type
 
     def render(self, parameter: Parameter, data: CRenderData) -> None:
         """
