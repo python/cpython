@@ -14,7 +14,8 @@ from _xxsubinterpreters import (
 __all__ = [
     'get_current', 'get_main', 'create', 'list_all', 'is_shareable',
     'Interpreter',
-    'InterpreterError', 'InterpreterNotFoundError', 'ExecFailure',
+    'InterpreterError', 'InterpreterNotFoundError',
+    'ExecFailure', 'CallFailure',
     'NotShareableError',
     'create_queue', 'Queue', 'QueueEmpty', 'QueueFull',
 ]
@@ -43,7 +44,7 @@ Uncaught in the interpreter:
 {formatted}
 """.strip()
 
-class ExecFailure(RuntimeError):
+class _ExecFailure(RuntimeError):
 
     def __init__(self, excinfo):
         msg = excinfo.formatted
@@ -65,6 +66,14 @@ class ExecFailure(RuntimeError):
                 superstr=super().__str__(),
                 formatted=formatted,
             )
+
+
+class ExecFailure(_ExecFailure):
+    """Raised from Interpreter.exec() for unhandled exceptions."""
+
+
+class CallFailure(_ExecFailure):
+    """Raised from Interpreter.call() for unhandled exceptions."""
 
 
 def create():
@@ -180,60 +189,33 @@ class Interpreter:
         if excinfo is not None:
             raise ExecFailure(excinfo)
 
-    def call(self, callable, /, args=None, kwargs=None):
+    def call(self, callable, /):
         """Call the object in the interpreter with given args/kwargs.
 
-        Return the function's return value.  If it raises an exception,
-        raise it in the calling interpreter.  This contrasts with
-        Interpreter.exec(), which discards the return value and only
-        propagates the exception as ExecFailure.
+        Only functions that take no arguments and have no closure
+        are supported.
 
-        Unlike Interpreter.exec() and prepare_main(), all objects are
-        supported, at the expense of some performance.
+        The return value is discarded.
+
+        If the callable raises an exception then the error display
+        (including full traceback) is send back between the interpreters
+        and a CallFailedError is raised, much like what happens with
+        Interpreter.exec().
         """
-        pickled_callable = pickle.dumps(callable)
-        pickled_args = pickle.dumps(args)
-        pickled_kwargs = pickle.dumps(kwargs)
+        # XXX Support args and kwargs.
+        # XXX Support arbitrary callables.
+        # XXX Support returning the return value (e.g. via pickle).
+        excinfo = _interpreters.call(self._id, callable)
+        if excinfo is not None:
+            raise CallFailure(excinfo)
 
-        results = create_queue(sharedonly=False)
-        self.prepare_main(_call_results=results)
-        self.exec(f"""
-            def _call_impl():
-                try:
-                    import pickle
-                    callable = pickle.loads({pickled_callable!r})
-                    if {pickled_args!r} is None:
-                        args = ()
-                    else:
-                        args = pickle.loads({pickled_args!r})
-                    if {pickled_kwargs!r} is None:
-                        kwargs = {}
-                    else:
-                        kwargs = pickle.loads({pickled_kwargs!r})
-
-                    res = callable(*args, **kwargs)
-                except Exception as exc:
-                    res = pickle.dumps((None, exc))
-                else:
-                    res = pickle.dumps((res, None))
-                _call_results.put(res)
-            _call_impl()
-            del _call_impl
-            del _call_results
-            """)
-        res, exc = results.get()
-        if exc is None:
-            raise exc
-        else:
-            return res
-
-    def call_in_thread(self, callable, /, args=None, kwargs=None):
+    def call_in_thread(self, callable, /):
         """Return a new thread that calls the object in the interpreter.
 
         The return value and any raised exception are discarded.
         """
         def task():
-            self.call(callable, args, kwargs)
+            self.call(callable)
         t = threading.Thread(target=task)
         t.start()
         return t

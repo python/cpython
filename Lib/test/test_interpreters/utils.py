@@ -4,8 +4,9 @@ import os.path
 import subprocess
 import sys
 import tempfile
-import threading
 from textwrap import dedent
+import threading
+import types
 import unittest
 
 from test import support
@@ -83,6 +84,18 @@ class TestBase(unittest.TestCase):
         tempdir = os.path.realpath(tempdir)
         self.addCleanup(lambda: os_helper.rmtree(tempdir))
         return tempdir
+
+    @contextlib.contextmanager
+    def captured_thread_exception(self):
+        ctx = types.SimpleNamespace(caught=None)
+        def excepthook(args):
+            ctx.caught = args
+        orig_excepthook = threading.excepthook
+        threading.excepthook = excepthook
+        try:
+            yield ctx
+        finally:
+            threading.excepthook = orig_excepthook
 
     def make_script(self, filename, dirname=None, text=None):
         if text:
