@@ -45,12 +45,6 @@
 // Starting size of the array of qsbr thread states
 #define MIN_ARRAY_SIZE 8
 
-// The shared write sequence is always odd and incremented by two. Detached
-// threads are indicated by a read sequence of zero.
-#define QSBR_OFFLINE 0
-#define QSBR_INITIAL 1
-#define QSBR_INCR    2
-
 // For _Py_qsbr_deferred_advance(): the number of deferrals before advancing
 // the write sequence.
 #define QSBR_DEFERRED_LIMIT 10
@@ -72,7 +66,7 @@ qsbr_allocate(struct _qsbr_shared *shared)
 
 // Initialize (or reintialize) the freelist of QSBR thread states
 static void
-initialize_freelist(struct _qsbr_shared *shared)
+initialize_new_array(struct _qsbr_shared *shared)
 {
     for (Py_ssize_t i = 0; i != shared->size; i++) {
         struct _qsbr_thread_state *qsbr = &shared->array[i].qsbr;
@@ -111,7 +105,7 @@ grow_thread_array(struct _qsbr_shared *shared)
     shared->array = array;
     shared->size = new_size;
     shared->freelist = NULL;
-    initialize_freelist(shared);
+    initialize_new_array(shared);
 
     PyMem_RawFree(old);
     return 0;
@@ -120,6 +114,9 @@ grow_thread_array(struct _qsbr_shared *shared)
 uint64_t
 _Py_qsbr_advance(struct _qsbr_shared *shared)
 {
+    // NOTE: with 64-bit sequence numbers, we don't have to worry too much
+    // about the wr_seq getting too far ahead of rd_seq, but if we ever use
+    // 32-bit sequence numbers, we'll need to be more careful.
     return _Py_atomic_add_uint64(&shared->wr_seq, QSBR_INCR) + QSBR_INCR;
 }
 
@@ -200,7 +197,7 @@ _Py_qsbr_reserve(PyInterpreterState *interp)
 {
     struct _qsbr_shared *shared = &interp->qsbr;
 
-    PyMutex_LockFlags(&shared->mutex, _Py_LOCK_DONT_DETACH);
+    PyMutex_Lock(&shared->mutex);
     // Try allocating from our internal freelist
     struct _qsbr_thread_state *qsbr = qsbr_allocate(shared);
 
@@ -231,10 +228,7 @@ _Py_qsbr_register(_PyThreadStateImpl *tstate, PyInterpreterState *interp,
     // Associate the QSBR state with the thread state
     struct _qsbr_shared *shared = &interp->qsbr;
 
-    // NOTE: this function is called with runtime locked, so we don't detach
-    // while waiting for the lock. This prevents a stop-the-world pause
-    // while the runtime lock is held, which could lead to deadlock.
-    PyMutex_LockFlags(&shared->mutex, _Py_LOCK_DONT_DETACH);
+    PyMutex_Lock(&shared->mutex);
     struct _qsbr_thread_state *qsbr = &interp->qsbr.array[index].qsbr;
     assert(qsbr->allocated && qsbr->tstate == NULL);
     qsbr->tstate = (PyThreadState *)tstate;
@@ -250,7 +244,7 @@ _Py_qsbr_unregister(_PyThreadStateImpl *tstate)
 
     assert(qsbr->seq == 0 && "thread state must be detached");
 
-    PyMutex_LockFlags(&shared->mutex, _Py_LOCK_DONT_DETACH);
+    PyMutex_Lock(&shared->mutex);
     assert(qsbr->allocated && qsbr->tstate == (PyThreadState *)tstate);
     tstate->qsbr = NULL;
     qsbr->tstate = NULL;

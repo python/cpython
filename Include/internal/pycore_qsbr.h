@@ -21,6 +21,14 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+// The shared write sequence is always odd and incremented by two. Detached
+// threads are indicated by a read sequence of zero. This avoids collisions
+// between the offline state and any valid sequence number even if the
+// sequences numbers wrap around.
+#define QSBR_OFFLINE 0
+#define QSBR_INITIAL 1
+#define QSBR_INCR    2
+
 struct _qsbr_shared;
 struct _PyThreadStateImpl;  // forward declare to avoid circular dependency
 

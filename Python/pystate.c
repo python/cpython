@@ -1412,9 +1412,6 @@ new_threadstate(PyInterpreterState *interp, int whence)
                sizeof(*tstate));
     }
 
-#ifdef Py_GIL_DISABLED
-    _Py_qsbr_register(tstate, interp, qsbr_idx);
-#endif
     init_threadstate(tstate, interp, id, whence);
     add_threadstate(interp, (PyThreadState *)tstate, old_head);
 
@@ -1423,6 +1420,12 @@ new_threadstate(PyInterpreterState *interp, int whence)
         // Must be called with lock unlocked to avoid re-entrancy deadlock.
         PyMem_RawFree(new_tstate);
     }
+
+#ifdef Py_GIL_DISABLED
+    // Must be called with lock unlocked to avoid lock ordering deadlocks.
+    _Py_qsbr_register(tstate, interp, qsbr_idx);
+#endif
+
     return (PyThreadState *)tstate;
 }
 
