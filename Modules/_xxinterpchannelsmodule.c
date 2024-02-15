@@ -2709,13 +2709,18 @@ set_channelend_types(PyObject *mod, PyTypeObject *send, PyTypeObject *recv)
         Py_CLEAR(state->recv_channel_type);
     }
 
+    // Add and register the types.
     state->send_channel_type = (PyTypeObject *)Py_NewRef(send);
     state->recv_channel_type = (PyTypeObject *)Py_NewRef(recv);
-
     if (register_xid_class(send, _channelend_shared, xid_classes)) {
+        Py_CLEAR(state->send_channel_type);
+        Py_CLEAR(state->recv_channel_type);
         return -1;
     }
     if (register_xid_class(recv, _channelend_shared, xid_classes)) {
+        (void)_PyCrossInterpreterData_UnregisterClass(state->send_channel_type);
+        Py_CLEAR(state->send_channel_type);
+        Py_CLEAR(state->recv_channel_type);
         return -1;
     }
 
