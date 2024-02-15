@@ -221,6 +221,8 @@ This idiom is called Decorate-Sort-Undecorate after its three steps:
 
 For example, to sort the student data by *grade* using the DSU approach:
 
+.. doctest::
+
     >>> decorated = [(student.grade, i, student) for i, student in enumerate(student_objects)]
     >>> decorated.sort()
     >>> [student for grade, i, student in decorated]               # undecorate
@@ -328,7 +330,7 @@ Some applications require only some of the data to be ordered.  The standard
 library provides several tools that do less work than a full sort:
 
 * :func:`min` and :func:`max` return the smallest and largest values,
-  respectively.  They make a single pass over the input data and
+  respectively.  These functions make a single pass over the input data and
   require almost no auxiliary memory.
 
 * :func:`heapq.nsmallest` and :func:`heapq.nlargest` return
