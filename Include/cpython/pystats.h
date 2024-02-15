@@ -19,6 +19,8 @@
 // Define _PY_INTERPRETER macro to increment interpreter_increfs and
 // interpreter_decrefs. Otherwise, increment increfs and decrefs.
 
+#include "pycore_uop_ids.h" // MAX_UOP_ID
+
 #ifndef Py_CPYTHON_PYSTATS_H
 #  error "this header file must not be included directly"
 #endif
@@ -99,7 +101,7 @@ typedef struct _gc_stats {
 typedef struct _uop_stats {
     uint64_t execution_count;
     uint64_t miss;
-    uint64_t pair_count[512];
+    uint64_t pair_count[MAX_UOP_ID + 1];
 } UOpStats;
 
 #define _Py_UOP_HIST_SIZE 32
