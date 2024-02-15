@@ -189,6 +189,7 @@ Objects/exceptions.c	-	_PyExc_ProcessLookupError	-
 Objects/exceptions.c	-	_PyExc_TimeoutError	-
 Objects/exceptions.c	-	_PyExc_EOFError	-
 Objects/exceptions.c	-	_PyExc_RuntimeError	-
+Objects/exceptions.c	-	_PyExc_PythonFinalizationError	-
 Objects/exceptions.c	-	_PyExc_RecursionError	-
 Objects/exceptions.c	-	_PyExc_NotImplementedError	-
 Objects/exceptions.c	-	_PyExc_NameError	-
@@ -254,6 +255,7 @@ Objects/exceptions.c	-	PyExc_ProcessLookupError	-
 Objects/exceptions.c	-	PyExc_TimeoutError	-
 Objects/exceptions.c	-	PyExc_EOFError	-
 Objects/exceptions.c	-	PyExc_RuntimeError	-
+Objects/exceptions.c	-	PyExc_PythonFinalizationError	-
 Objects/exceptions.c	-	PyExc_RecursionError	-
 Objects/exceptions.c	-	PyExc_NotImplementedError	-
 Objects/exceptions.c	-	PyExc_NameError	-
