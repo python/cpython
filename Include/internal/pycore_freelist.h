@@ -71,6 +71,14 @@ struct _Py_dict_freelist {
 #ifdef WITH_FREELISTS
     /* Dictionary reuse scheme to save calls to malloc and free */
     PyDictObject *free_list[PyDict_MAXFREELIST];
+    int numfree;
+    int keys_numfree;
+#endif
+};
+
+struct _Py_dictkeys_freelist {
+#ifdef WITH_FREELISTS
+    /* Dictionary keys reuse scheme to save calls to malloc and free */
     PyDictKeysObject *keys_free_list[PyDict_MAXFREELIST];
     int numfree;
     int keys_numfree;
@@ -119,6 +127,7 @@ struct _Py_object_freelists {
     struct _Py_tuple_freelist tuples;
     struct _Py_list_freelist lists;
     struct _Py_dict_freelist dicts;
+    struct _Py_dictkeys_freelist dictkeys;
     struct _Py_slice_freelist slices;
     struct _Py_context_freelist contexts;
     struct _Py_async_gen_freelist async_gens;
