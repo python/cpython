@@ -341,6 +341,18 @@ sym_new_const(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val)
     return temp;
 }
 
+static inline bool
+is_const(_Py_UOpsSymType *sym)
+{
+    return sym->const_val != NULL;
+}
+
+static inline PyObject *
+get_const(_Py_UOpsSymType *sym)
+{
+    return sym->const_val;
+}
+
 static _Py_UOpsSymType*
 sym_new_null(_Py_UOpsAbstractInterpContext *ctx)
 {
