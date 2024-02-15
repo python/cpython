@@ -38,7 +38,9 @@
 #include "pycore_pystate.h"         // _PyThreadState_GET()
 
 
-// Wrap-around safe comparison
+// Wrap-around safe comparison. This is a holdover from the FreeBSD
+// implementation, which uses 32-bit sequence numbers. We currently use 64-bit
+// sequence numbers, so wrap-around is unlikely.
 #define QSBR_LT(a, b) ((int64_t)((a)-(b)) < 0)
 #define QSBR_LEQ(a, b) ((int64_t)((a)-(b)) <= 0)
 
