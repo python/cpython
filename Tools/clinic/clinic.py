@@ -5126,8 +5126,7 @@ class DSLParser:
 
         self.next(self.state_modulename_name, line)
 
-    @staticmethod
-    def parse_function_names(line: str) -> FunctionNames:
+    def parse_function_names(self, line: str) -> FunctionNames:
         left, as_, right = line.partition(' as ')
         full_name = left.strip()
         c_basename = right.strip()
@@ -5142,28 +5141,101 @@ class DSLParser:
             fail(f"Illegal function name: {full_name!r}")
         if not is_legal_c_identifier(c_basename):
             fail(f"Illegal C basename: {c_basename!r}")
-        return FunctionNames(full_name=full_name, c_basename=c_basename)
+        names = FunctionNames(full_name=full_name, c_basename=c_basename)
+        self.normalize_function_kind(names.full_name)
+        return names
 
-    def update_function_kind(self, fullname: str) -> None:
+    def normalize_function_kind(self, fullname: str) -> None:
+        # Fetch the method name and possibly class.
         fields = fullname.split('.')
         name = fields.pop()
         _, cls = self.clinic._module_and_class(fields)
+
+        # Check special method requirements.
         if name in unsupported_special_methods:
             fail(f"{name!r} is a special method and cannot be converted to Argument Clinic!")
+        if name == '__init__' and (self.kind is not CALLABLE or not cls):
+            fail(f"{name!r} must be a normal method; got '{self.kind}'!")
+        if name == '__new__' and (self.kind is not CLASS_METHOD or not cls):
+            fail("'__new__' must be a class method!")
+        if self.kind in {GETTER, SETTER} and not cls:
+            fail("@getter and @setter must be methods")
 
+        # Normalise self.kind.
         if name == '__new__':
-            if (self.kind is CLASS_METHOD) and cls:
-                self.kind = METHOD_NEW
-            else:
-                fail("'__new__' must be a class method!")
+            self.kind = METHOD_NEW
         elif name == '__init__':
-            if (self.kind is CALLABLE) and cls:
-                self.kind = METHOD_INIT
+            self.kind = METHOD_INIT
+
+    def resolve_return_converter(
+        self, full_name: str, forced_converter: str
+    ) -> CReturnConverter:
+        if forced_converter:
+            if self.kind in {GETTER, SETTER}:
+                fail(f"@{self.kind.name.lower()} method cannot define a return type")
+            ast_input = f"def x() -> {forced_converter}: pass"
+            try:
+                module_node = ast.parse(ast_input)
+            except SyntaxError:
+                fail(f"Badly formed annotation for {full_name!r}: {forced_converter!r}")
+            function_node = module_node.body[0]
+            assert isinstance(function_node, ast.FunctionDef)
+            try:
+                name, legacy, kwargs = self.parse_converter(function_node.returns)
+                if legacy:
+                    fail(f"Legacy converter {name!r} not allowed as a return converter")
+                if name not in return_converters:
+                    fail(f"No available return converter called {name!r}")
+                return return_converters[name](**kwargs)
+            except ValueError:
+                fail(f"Badly formed annotation for {full_name!r}: {forced_converter!r}")
+
+        if self.kind is METHOD_INIT:
+            return init_return_converter()
+        return CReturnConverter()
+
+    def parse_cloned_function(self, names: FunctionNames, existing: str) -> None:
+        full_name, c_basename = names
+        fields = [x.strip() for x in existing.split('.')]
+        function_name = fields.pop()
+        module, cls = self.clinic._module_and_class(fields)
+        parent = cls or module
+
+        for existing_function in parent.functions:
+            if existing_function.name == function_name:
+                break
+        else:
+            print(f"{cls=}, {module=}, {existing=}", file=sys.stderr)
+            print(f"{(cls or module).functions=}", file=sys.stderr)
+            fail(f"Couldn't find existing function {existing!r}!")
+
+        fields = [x.strip() for x in full_name.split('.')]
+        function_name = fields.pop()
+        module, cls = self.clinic._module_and_class(fields)
+
+        overrides: dict[str, Any] = {
+            "name": function_name,
+            "full_name": full_name,
+            "module": module,
+            "cls": cls,
+            "c_basename": c_basename,
+            "docstring": "",
+        }
+        if not (existing_function.kind is self.kind and
+                existing_function.coexist == self.coexist):
+            # Allow __new__ or __init__ methods.
+            if existing_function.kind.new_or_init:
+                overrides["kind"] = self.kind
+                # Future enhancement: allow custom return converters
+                overrides["return_converter"] = CReturnConverter()
             else:
-                fail(
-                    "'__init__' must be a normal method; "
-                    f"got '{self.kind}'!"
-                )
+                fail("'kind' of function and cloned function don't match! "
+                     "(@classmethod/@staticmethod/@coexist)")
+        function = existing_function.copy(**overrides)
+        self.function = function
+        self.block.signatures.append(function)
+        (cls or module).functions.append(function)
+        self.next(self.state_function_docstring)
 
     def state_modulename_name(self, line: str) -> None:
         # looking for declaration, which establishes the leftmost column
@@ -5188,110 +5260,55 @@ class DSLParser:
         # are we cloning?
         before, equals, existing = line.rpartition('=')
         if equals:
-            full_name, c_basename = self.parse_function_names(before)
             existing = existing.strip()
             if is_legal_py_identifier(existing):
                 # we're cloning!
-                fields = [x.strip() for x in existing.split('.')]
-                function_name = fields.pop()
-                module, cls = self.clinic._module_and_class(fields)
-
-                for existing_function in (cls or module).functions:
-                    if existing_function.name == function_name:
-                        break
-                else:
-                    print(f"{cls=}, {module=}, {existing=}", file=sys.stderr)
-                    print(f"{(cls or module).functions=}", file=sys.stderr)
-                    fail(f"Couldn't find existing function {existing!r}!")
-
-                fields = [x.strip() for x in full_name.split('.')]
-                function_name = fields.pop()
-                module, cls = self.clinic._module_and_class(fields)
-
-                self.update_function_kind(full_name)
-                overrides: dict[str, Any] = {
-                    "name": function_name,
-                    "full_name": full_name,
-                    "module": module,
-                    "cls": cls,
-                    "c_basename": c_basename,
-                    "docstring": "",
-                }
-                if not (existing_function.kind is self.kind and
-                        existing_function.coexist == self.coexist):
-                    # Allow __new__ or __init__ methods.
-                    if existing_function.kind.new_or_init:
-                        overrides["kind"] = self.kind
-                        # Future enhancement: allow custom return converters
-                        overrides["return_converter"] = CReturnConverter()
-                    else:
-                        fail("'kind' of function and cloned function don't match! "
-                             "(@classmethod/@staticmethod/@coexist)")
-                function = existing_function.copy(**overrides)
-                self.function = function
-                self.block.signatures.append(function)
-                (cls or module).functions.append(function)
-                self.next(self.state_function_docstring)
-                return
+                names = self.parse_function_names(before)
+                return self.parse_cloned_function(names, existing)
 
         line, _, returns = line.partition('->')
         returns = returns.strip()
         full_name, c_basename = self.parse_function_names(line)
-
-        return_converter = None
-        if returns:
-            if self.kind in {GETTER, SETTER}:
-                fail(f"@{self.kind.name.lower()} method cannot define a return type")
-            ast_input = f"def x() -> {returns}: pass"
-            try:
-                module_node = ast.parse(ast_input)
-            except SyntaxError:
-                fail(f"Badly formed annotation for {full_name!r}: {returns!r}")
-            function_node = module_node.body[0]
-            assert isinstance(function_node, ast.FunctionDef)
-            try:
-                name, legacy, kwargs = self.parse_converter(function_node.returns)
-                if legacy:
-                    fail(f"Legacy converter {name!r} not allowed as a return converter")
-                if name not in return_converters:
-                    fail(f"No available return converter called {name!r}")
-                return_converter = return_converters[name](**kwargs)
-            except ValueError:
-                fail(f"Badly formed annotation for {full_name!r}: {returns!r}")
+        return_converter = self.resolve_return_converter(full_name, returns)
 
         fields = [x.strip() for x in full_name.split('.')]
         function_name = fields.pop()
         module, cls = self.clinic._module_and_class(fields)
 
-        if self.kind in {GETTER, SETTER}:
-            if not cls:
-                fail("@getter and @setter must be methods")
+        func = Function(
+            name=function_name,
+            full_name=full_name,
+            module=module,
+            cls=cls,
+            c_basename=c_basename,
+            return_converter=return_converter,
+            kind=self.kind,
+            coexist=self.coexist,
+            critical_section=self.critical_section,
+            target_critical_section=self.target_critical_section
+        )
+        self.add_function(func)
 
-        self.update_function_kind(full_name)
-        if self.kind is METHOD_INIT and not return_converter:
-            return_converter = init_return_converter()
-
-        if not return_converter:
-            return_converter = CReturnConverter()
-
-        self.function = Function(name=function_name, full_name=full_name, module=module, cls=cls, c_basename=c_basename,
-                                 return_converter=return_converter, kind=self.kind, coexist=self.coexist,
-                                 critical_section=self.critical_section,
-                                 target_critical_section=self.target_critical_section)
-        self.block.signatures.append(self.function)
-
-        # insert a self converter automatically
-        type, name = correct_name_for_self(self.function)
-        kwargs = {}
-        if cls and type == "PyObject *":
-            kwargs['type'] = cls.typedef
-        sc = self.function.self_converter = self_converter(name, name, self.function, **kwargs)
-        p_self = Parameter(name, inspect.Parameter.POSITIONAL_ONLY,
-                           function=self.function, converter=sc)
-        self.function.parameters[name] = p_self
-
-        (cls or module).functions.append(self.function)
         self.next(self.state_parameters_start)
+
+    def add_function(self, func: Function) -> None:
+        # Insert a self converter automatically.
+        tp, name = correct_name_for_self(func)
+        if func.cls and tp == "PyObject *":
+            func.self_converter = self_converter(name, name, func,
+                                                 type=func.cls.typedef)
+        else:
+            func.self_converter = self_converter(name, name, func)
+        func.parameters[name] = Parameter(
+            name,
+            inspect.Parameter.POSITIONAL_ONLY,
+            function=func,
+            converter=func.self_converter
+        )
+
+        self.block.signatures.append(func)
+        self.function = func
+        (func.cls or func.module).functions.append(func)
 
     # Now entering the parameters section.  The rules, formally stated:
     #
