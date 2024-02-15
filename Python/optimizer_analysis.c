@@ -416,7 +416,7 @@ globals_watcher_callback(PyDict_WatchEvent event, PyObject* dict,
 static void
 global_to_const(_PyUOpInstruction *inst, PyObject *obj)
 {
-    assert(PyDict_CheckExact(obj));
+    assert(inst->opcode == _LOAD_GLOBAL_MODULE || inst->opcode == _LOAD_GLOBAL_BUILTINS);    assert(PyDict_CheckExact(obj));
     PyDictObject *dict = (PyDictObject *)obj;
     assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
     PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
@@ -527,15 +527,11 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 }
                 break;
             case _LOAD_GLOBAL_BUILTINS:
-            case _LOAD_GLOBAL_BUILTINS_0:
-            case _LOAD_GLOBAL_BUILTINS_1:
                 if (globals_checked & builtins_checked & globals_watched & builtins_watched & 1) {
                     global_to_const(inst, builtins);
                 }
                 break;
             case _LOAD_GLOBAL_MODULE:
-            case _LOAD_GLOBAL_MODULE_0:
-            case _LOAD_GLOBAL_MODULE_1:
                 if (globals_checked & globals_watched & 1) {
                     global_to_const(inst, globals);
                 }

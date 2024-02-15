@@ -559,9 +559,6 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                     for (int i = 0; i < nuops; i++) {
                         oparg = orig_oparg;
                         uint32_t uop = expansion->uops[i].uop;
-                        if (_PyUop_Flags[uop] & HAS_OPARG_AND_1_FLAG) {
-                            uop += 1 + (oparg & 1);
-                        }
                         uint64_t operand = 0;
                         // Add one to account for the actual opcode/oparg pair:
                         int offset = expansion->uops[i].offset + 1;
@@ -849,6 +846,21 @@ uop_optimize(
         }
     }
     assert(err == 1);
+    /* Fix up */
+    for (int pc = 0; pc < UOP_MAX_TRACE_LENGTH; pc++) {
+        int opcode = buffer[pc].opcode;
+        int oparg = buffer[pc].oparg;
+        if (_PyUop_Flags[opcode] & HAS_OPARG_AND_1_FLAG) {
+            buffer[pc].opcode = opcode + 1 + (oparg & 1);
+        }
+        else if (oparg < _PyUop_Replication[opcode]) {
+            buffer[pc].opcode = opcode + oparg + 1;
+        }
+        else if (opcode == _JUMP_TO_TOP || opcode == _EXIT_TRACE) {
+            break;
+        }
+        assert(_PyOpcode_uop_name[buffer[pc].opcode]);
+    }
     _PyExecutorObject *executor = make_executor_from_uops(buffer, &dependencies);
     if (executor == NULL) {
         return -1;

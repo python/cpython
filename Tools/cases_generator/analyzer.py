@@ -25,6 +25,7 @@ class Properties:
     pure: bool
     passthrough: bool
     oparg_and_1: bool = False
+    const_oparg: int = -1
 
     def dump(self, indent: str) -> None:
         print(indent, end="")
@@ -139,6 +140,8 @@ class Uop:
     properties: Properties
     _size: int = -1
     implicitly_created: bool = False
+    replicated = 0
+    replicates : "Uop | None" = None
 
     def dump(self, indent: str) -> None:
         print(
@@ -444,7 +447,7 @@ def stack_effect_only_peeks(instr: parser.InstDef) -> bool:
         for s, other in zip(stack_inputs, instr.outputs)
     )
 
-OPARG_AND_1 = re.compile("\(*oparg *& *1")
+OPARG_AND_1 = re.compile("\\(*oparg *& *1")
 
 def effect_depends_on_oparg_1(op: parser.InstDef) -> bool:
     for effect in op.inputs:
@@ -502,10 +505,14 @@ def make_uop(name: str, op: parser.InstDef, inputs: list[parser.InputEffect], uo
         body=op.block.tokens,
         properties=compute_properties(op),
     )
-    if effect_depends_on_oparg_1(op):
+    if effect_depends_on_oparg_1(op) and "split" in op.annotations:
         result.properties.oparg_and_1 = True
         for bit in ("0", "1"):
             name_x = name + "_" + bit
+            properties = compute_properties(op)
+            if properties.oparg:
+                # May not need oparg anymore
+                properties.oparg = any(token.text == "oparg" for token in op.block.tokens)
             uops[name_x] = Uop(
                 name=name_x,
                 context=op.context,
@@ -513,8 +520,31 @@ def make_uop(name: str, op: parser.InstDef, inputs: list[parser.InputEffect], uo
                 stack=analyze_stack(op, bit),
                 caches=analyze_caches(inputs),
                 body=op.block.tokens,
-                properties=compute_properties(op),
+                properties=properties,
             )
+    for anno in op.annotations:
+        if anno.startswith("replicate"):
+            result.replicated = int(anno[10:-1])
+            break
+    else:
+        return result
+    for oparg in range(result.replicated):
+        name_x = name + "_" + str(oparg)
+        properties = compute_properties(op)
+        properties.oparg = False
+        properties.const_oparg = oparg
+        rep = Uop(
+            name=name_x,
+            context=op.context,
+            annotations=op.annotations,
+            stack=analyze_stack(op),
+            caches=analyze_caches(inputs),
+            body=op.block.tokens,
+            properties=properties,
+        )
+        rep.replicates = result
+        uops[name_x] = rep
+
     return result
 
 
