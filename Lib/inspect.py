@@ -383,8 +383,10 @@ def isfunction(object):
 
 def _has_code_flag(f, flag):
     """Return true if ``f`` is a function (or a method or functools.partial
-    wrapper wrapping a function) whose code object has the given ``flag``
+    wrapper wrapping a function or a functools.partialmethod wrapping a
+    function) whose code object has the given ``flag``
     set in its flags."""
+    f = functools._unwrap_partialmethod(f)
     while ismethod(f):
         f = f.__func__
     f = functools._unwrap_partial(f)
@@ -2561,7 +2563,7 @@ def _signature_from_callable(obj, *,
             return sig
 
     try:
-        partialmethod = obj._partialmethod
+        partialmethod = obj.__partialmethod__
     except AttributeError:
         pass
     else:
