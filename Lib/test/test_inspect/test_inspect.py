@@ -3111,6 +3111,10 @@ class TestSignatureObject(unittest.TestCase):
                           int))
 
     def test_signature_on_classmethod(self):
+        self.assertEqual(self.signature(classmethod),
+                         ((('function', ..., ..., "positional_only"),),
+                          ...))
+
         class Test:
             @classmethod
             def foo(cls, arg1, *, arg2=1):
@@ -3129,6 +3133,10 @@ class TestSignatureObject(unittest.TestCase):
                           ...))
 
     def test_signature_on_staticmethod(self):
+        self.assertEqual(self.signature(staticmethod),
+                         ((('function', ..., ..., "positional_only"),),
+                          ...))
+
         class Test:
             @staticmethod
             def foo(cls, *, arg):
