@@ -339,5 +339,5 @@ library provides several tools that do less work than a full sort:
 
 * :func:`heapq.heappush` and :func:`heapq.heappop` create and maintain a
   partially sorted arrangement of data that keeps the smallest element
-  at position `0`.  This makes it suitable for implementing priority
+  at position ``0``.  This makes it suitable for implementing priority
   queues which are commonly used for task scheduling.
