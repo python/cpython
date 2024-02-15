@@ -21,6 +21,7 @@ from .identifiers import (
     is_legal_c_identifier,
     is_legal_py_identifier,
 )
+from .tokenizer import generate_tokens
 from .utils import (
     FormatCounterFormatter,
     compute_checksum,
@@ -50,6 +51,9 @@ __all__ = [
     "ensure_legal_c_identifier",
     "is_legal_c_identifier",
     "is_legal_py_identifier",
+
+    # Parsing helpers
+    "generate_tokens",
 
     # Utility functions
     "FormatCounterFormatter",

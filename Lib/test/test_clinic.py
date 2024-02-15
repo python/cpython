@@ -600,7 +600,7 @@ class ClinicWholeFileTest(TestCase):
             foo as = foo2
             [clinic start generated code]*/
         """
-        err = "No C basename provided after 'as' keyword"
+        err = "No C basename provided for 'foo' after 'as' keyword"
         self.expect_failure(block, err, lineno=5)
 
     def test_cloned_with_custom_c_basename(self):
@@ -1541,7 +1541,7 @@ class ClinicParserTest(TestCase):
             foo.bar => int
                 /
         """
-        err = "Illegal function name: 'foo.bar => int'"
+        err = "Invalid syntax: 'foo.bar => int'"
         self.expect_failure(block, err)
 
     def test_illegal_c_basename(self):
@@ -1555,7 +1555,7 @@ class ClinicParserTest(TestCase):
 
     def test_no_c_basename(self):
         block = "foo as "
-        err = "No C basename provided after 'as' keyword"
+        err = "No C basename provided for 'foo' after 'as' keyword"
         self.expect_failure(block, err, strip=False)
 
     def test_single_star(self):

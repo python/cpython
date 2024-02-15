@@ -39,7 +39,6 @@ from typing import (
     Any,
     Final,
     Literal,
-    NamedTuple,
     NoReturn,
     Protocol,
     TypeVar,
@@ -4757,11 +4756,6 @@ class ParamState(enum.IntEnum):
     RIGHT_SQUARE_AFTER = 6
 
 
-class FunctionNames(NamedTuple):
-    full_name: str
-    c_basename: str
-
-
 class DSLParser:
     function: Function | None
     state: StateKeeper
@@ -5047,25 +5041,6 @@ class DSLParser:
 
         self.next(self.state_modulename_name, line)
 
-    def parse_function_names(self, line: str) -> FunctionNames:
-        left, as_, right = line.partition(' as ')
-        full_name = left.strip()
-        c_basename = right.strip()
-        if as_ and not c_basename:
-            fail("No C basename provided after 'as' keyword")
-        if not c_basename:
-            fields = full_name.split(".")
-            if fields[-1] == '__new__':
-                fields.pop()
-            c_basename = "_".join(fields)
-        if not libclinic.is_legal_py_identifier(full_name):
-            fail(f"Illegal function name: {full_name!r}")
-        if not libclinic.is_legal_c_identifier(c_basename):
-            fail(f"Illegal C basename: {c_basename!r}")
-        names = FunctionNames(full_name=full_name, c_basename=c_basename)
-        self.normalize_function_kind(names.full_name)
-        return names
-
     def normalize_function_kind(self, fullname: str) -> None:
         # Fetch the method name and possibly class.
         fields = fullname.split('.')
@@ -5089,7 +5064,7 @@ class DSLParser:
             self.kind = METHOD_INIT
 
     def resolve_return_converter(
-        self, full_name: str, forced_converter: str
+        self, full_name: str, forced_converter: str | None
     ) -> CReturnConverter:
         if forced_converter:
             if self.kind in {GETTER, SETTER}:
@@ -5115,8 +5090,12 @@ class DSLParser:
             return init_return_converter()
         return CReturnConverter()
 
-    def parse_cloned_function(self, names: FunctionNames, existing: str) -> None:
-        full_name, c_basename = names
+    def parse_cloned_function(
+        self,
+        full_name: str,
+        c_basename: str,
+        existing: str
+    ) -> None:
         fields = [x.strip() for x in existing.split('.')]
         function_name = fields.pop()
         module, cls = self.clinic._module_and_class(fields)
@@ -5158,6 +5137,72 @@ class DSLParser:
         (cls or module).functions.append(function)
         self.next(self.state_function_docstring)
 
+    @staticmethod
+    def generate_c_basename(full_name: str) -> str:
+        fields = full_name.split(".")
+        if fields[-1] == '__new__':
+            fields.pop()
+        return "_".join(fields)
+
+    def parse_declaration(
+        self, line: str
+    ) -> tuple[str, str, str | None, str | None]:
+        full_name: str
+        c_basename: str = ""
+        cloned: str | None = None
+        returns: str | None = None
+
+        def invalid_syntax(msg: str | None = None) -> NoReturn:
+            preamble = "Invalid syntax"
+            if msg:
+                preamble += f" ({msg})"
+            fail(f"{preamble}: {line!r}\n\n"
+                 "Allowed syntax:\n"
+                 "[module.[submodule.]][class.]func [as c_name] [-> return_annotation]\n\n"
+                 "Nested submodules are allowed.")
+
+        # Parse line.
+        try:
+            tokens = libclinic.generate_tokens(line)
+        except ValueError as exc:
+            invalid_syntax(str(exc))
+
+        match [t.token for t in tokens]:
+            # Common cases.
+            case [full_name]: ...
+            case [full_name, "as", c_basename]: ...
+
+            # Cloning.
+            case [full_name, "=", cloned]: ...
+            case [full_name, "as", c_basename, "=", cloned]: ...
+            case [full_name, "="] | [full_name, "as", _, "="]:
+                fail(f"No source function provided for {full_name!r} after '=' keyword")
+
+            # With return annotation.
+            case [full_name, "as" | "=", _, "->"] | [full_name, "->"]:
+                fail(f"No return annotation provided for {full_name!r} after '->' keyword")
+            case [full_name, "->", *_]:
+                returns = line[tokens[2].pos:].strip()
+            case [full_name, "as", c_basename, "->", *_]:
+                returns = line[tokens[4].pos:].strip()
+
+            # Other cases of invalid syntax.
+            case [full_name, "as"] | [full_name, "as", "=" | "->", *_]:
+                fail(f"No C basename provided for {full_name!r} after 'as' keyword")
+            case _:
+                invalid_syntax()
+
+        # Validate input.
+        if not libclinic.is_legal_py_identifier(full_name):
+            fail(f"Illegal function name: {full_name!r}")
+        if not c_basename:
+            c_basename = self.generate_c_basename(full_name)
+        if not libclinic.is_legal_c_identifier(c_basename):
+            fail(f"Illegal C basename: {c_basename!r}")
+        self.normalize_function_kind(full_name)
+
+        return full_name, c_basename, cloned, returns
+
     def state_modulename_name(self, line: str) -> None:
         # looking for declaration, which establishes the leftmost column
         # line should be
@@ -5178,20 +5223,15 @@ class DSLParser:
         assert self.valid_line(line)
         self.indent.infer(line)
 
-        # are we cloning?
-        before, equals, existing = line.rpartition('=')
-        if equals:
-            existing = existing.strip()
-            if libclinic.is_legal_py_identifier(existing):
-                # we're cloning!
-                names = self.parse_function_names(before)
-                return self.parse_cloned_function(names, existing)
+        full_name, c_basename, cloned, returns = self.parse_declaration(line)
 
-        line, _, returns = line.partition('->')
-        returns = returns.strip()
-        full_name, c_basename = self.parse_function_names(line)
+        # Handle cloning.
+        if cloned and libclinic.is_legal_py_identifier(cloned):
+            return self.parse_cloned_function(full_name, c_basename, cloned)
+
         return_converter = self.resolve_return_converter(full_name, returns)
 
+        # Split out function name, and determine module and class.
         fields = [x.strip() for x in full_name.split('.')]
         function_name = fields.pop()
         module, cls = self.clinic._module_and_class(fields)
