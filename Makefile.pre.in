@@ -25,6 +25,7 @@ MODSHARED_NAMES=   _MODSHARED_NAMES_
 MODDISABLED_NAMES= _MODDISABLED_NAMES_
 MODOBJS=           _MODOBJS_
 MODLIBS=           _MODLIBS_
+TESTSUBDIRS=       _TESTSUBDIRS_
 
 # === Variables set by configure
 VERSION=	@VERSION@
@@ -2233,139 +2234,6 @@ LIBSUBDIRS=	asyncio \
 		zipfile zipfile/_path \
 		zoneinfo \
 		__phello__
-TESTSUBDIRS=	idlelib/idle_test \
-		test \
-		test/archivetestdata \
-		test/audiodata \
-		test/certdata \
-		test/certdata/capath \
-		test/cjkencodings \
-		test/configdata \
-		test/crashers \
-		test/data \
-		test/decimaltestdata \
-		test/dtracedata \
-		test/encoded_modules \
-		test/leakers \
-		test/libregrtest \
-		test/mathdata \
-		test/regrtestdata \
-		test/regrtestdata/import_from_tests \
-		test/regrtestdata/import_from_tests/test_regrtest_b \
-		test/subprocessdata \
-		test/support \
-		test/support/_hypothesis_stubs \
-		test/support/interpreters \
-		test/test_asyncio \
-		test/test_capi \
-		test/test_concurrent_futures \
-		test/test_cppext \
-		test/test_ctypes \
-		test/test_dataclasses \
-		test/test_doctest \
-		test/test_email \
-		test/test_email/data \
-		test/test_future_stmt \
-		test/test_gdb \
-		test/test_import \
-		test/test_import/data \
-		test/test_import/data/circular_imports \
-		test/test_import/data/circular_imports/subpkg \
-		test/test_import/data/circular_imports/subpkg2 \
-		test/test_import/data/circular_imports/subpkg2/parent \
-		test/test_import/data/package \
-		test/test_import/data/package2 \
-		test/test_import/data/unwritable \
-		test/test_importlib \
-		test/test_importlib/builtin \
-		test/test_importlib/data \
-		test/test_importlib/extension \
-		test/test_importlib/frozen \
-		test/test_importlib/import_ \
-		test/test_importlib/namespace_pkgs \
-		test/test_importlib/namespace_pkgs/both_portions \
-		test/test_importlib/namespace_pkgs/both_portions/foo \
-		test/test_importlib/namespace_pkgs/module_and_namespace_package \
-		test/test_importlib/namespace_pkgs/module_and_namespace_package/a_test \
-		test/test_importlib/namespace_pkgs/not_a_namespace_pkg \
-		test/test_importlib/namespace_pkgs/not_a_namespace_pkg/foo \
-		test/test_importlib/namespace_pkgs/portion1 \
-		test/test_importlib/namespace_pkgs/portion1/foo \
-		test/test_importlib/namespace_pkgs/portion2 \
-		test/test_importlib/namespace_pkgs/portion2/foo \
-		test/test_importlib/namespace_pkgs/project1 \
-		test/test_importlib/namespace_pkgs/project1/parent \
-		test/test_importlib/namespace_pkgs/project1/parent/child \
-		test/test_importlib/namespace_pkgs/project2 \
-		test/test_importlib/namespace_pkgs/project2/parent \
-		test/test_importlib/namespace_pkgs/project2/parent/child \
-		test/test_importlib/namespace_pkgs/project3 \
-		test/test_importlib/namespace_pkgs/project3/parent \
-		test/test_importlib/namespace_pkgs/project3/parent/child \
-		test/test_importlib/partial \
-		test/test_importlib/resources \
-		test/test_importlib/resources/data01 \
-		test/test_importlib/resources/data01/subdirectory \
-		test/test_importlib/resources/data02 \
-		test/test_importlib/resources/data02/one \
-		test/test_importlib/resources/data02/subdirectory \
-		test/test_importlib/resources/data02/subdirectory/subsubdir \
-		test/test_importlib/resources/data02/two \
-		test/test_importlib/resources/data03 \
-		test/test_importlib/resources/data03/namespace \
-		test/test_importlib/resources/data03/namespace/portion1 \
-		test/test_importlib/resources/data03/namespace/portion2 \
-		test/test_importlib/resources/namespacedata01 \
-		test/test_importlib/resources/zipdata01 \
-		test/test_importlib/resources/zipdata02 \
-		test/test_importlib/source \
-		test/test_inspect \
-		test/test_interpreters \
-		test/test_json \
-		test/test_module \
-		test/test_multiprocessing_fork \
-		test/test_multiprocessing_forkserver \
-		test/test_multiprocessing_spawn \
-		test/test_pathlib \
-		test/test_peg_generator \
-		test/test_pydoc \
-		test/test_sqlite3 \
-		test/test_tkinter \
-		test/test_tomllib \
-		test/test_tomllib/data \
-		test/test_tomllib/data/invalid \
-		test/test_tomllib/data/invalid/array \
-		test/test_tomllib/data/invalid/array-of-tables \
-		test/test_tomllib/data/invalid/boolean \
-		test/test_tomllib/data/invalid/dates-and-times \
-		test/test_tomllib/data/invalid/dotted-keys \
-		test/test_tomllib/data/invalid/inline-table \
-		test/test_tomllib/data/invalid/keys-and-vals \
-		test/test_tomllib/data/invalid/literal-str \
-		test/test_tomllib/data/invalid/multiline-basic-str \
-		test/test_tomllib/data/invalid/multiline-literal-str \
-		test/test_tomllib/data/invalid/table \
-		test/test_tomllib/data/valid \
-		test/test_tomllib/data/valid/array \
-		test/test_tomllib/data/valid/dates-and-times \
-		test/test_tomllib/data/valid/multiline-basic-str \
-		test/test_tools \
-		test/test_ttk \
-		test/test_unittest \
-		test/test_unittest/testmock \
-		test/test_warnings \
-		test/test_warnings/data \
-		test/test_zipfile \
-		test/test_zipfile/_path \
-		test/test_zoneinfo \
-		test/test_zoneinfo/data \
-		test/tkinterdata \
-		test/tokenizedata \
-		test/tracedmodules \
-		test/typinganndata \
-		test/wheeldata \
-		test/xmltestdata \
-		test/xmltestdata/c14n-20
 
 COMPILEALL_OPTS=-j0
 

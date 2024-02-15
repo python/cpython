@@ -37,6 +37,7 @@ set -e
 # - replace _MODOBJS_ by the list of objects from Setup (except for
 #   Setup files after a -n option)
 # - replace _MODLIBS_ by the list of libraries from Setup
+# - replace _TESTSUBDIRS_ by the list of test directories
 # - for each object file mentioned in Setup, append a rule
 #   '<file>.o: <file>.c; <build commands>' to the end of the Makefile
 # - for each module mentioned in Setup, append a rule
@@ -342,6 +343,9 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 		echo "s%_MODDISABLED_NAMES_%$DISABLED%" >>$sedf
 		echo "s%_MODOBJS_%$OBJS%" >>$sedf
 		echo "s%_MODLIBS_%$LIBS%" >>$sedf
+		# We used to have some test modules not installed, see gh-115421
+		TESTSUBDIRS="$(cd Lib; find test -type d -not -path '*/__pycache__' | tr '\n' ' ')"
+		echo "s%_TESTSUBDIRS_%$TESTSUBDIRS%" >> $sedf
 		echo "/Definitions added by makesetup/r $sedr" >>$sedf
 		sed -f $sedf $makepre >Makefile
 		cat $rulesf >>Makefile
