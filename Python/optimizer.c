@@ -380,12 +380,13 @@ BRANCH_TO_GUARD[4][2] = {
 #endif
 
 
+// Beware: Macro arg order differs from struct member order
 #define ADD_TO_TRACE(OPCODE, OPARG, OPERAND, TARGET) \
     assert(trace_length < max_length); \
     trace[trace_length].opcode = (OPCODE); \
     trace[trace_length].oparg = (OPARG); \
-    trace[trace_length].operand = (OPERAND); \
     trace[trace_length].target = (TARGET); \
+    trace[trace_length].operand = (OPERAND); \
     if (lltrace >= 2) { \
         printf("  ADD_TO_TRACE: "); \
         _PyUOpPrint(&trace[trace_length]); \
