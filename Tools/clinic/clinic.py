@@ -4466,9 +4466,8 @@ class self_converter(CConverter):
     @property
     def parser_type(self) -> str:
         assert self.type is not None
-        f = self.function
-        if f.kind in (METHOD_INIT, METHOD_NEW, STATIC_METHOD, CLASS_METHOD):
-            tp, _ = correct_name_for_self(f)
+        if self.function.kind in {METHOD_INIT, METHOD_NEW, STATIC_METHOD, CLASS_METHOD}:
+            tp, _ = correct_name_for_self(self.function)
             return tp
         return self.type
 
