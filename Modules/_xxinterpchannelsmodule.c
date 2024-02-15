@@ -2699,12 +2699,16 @@ set_channelend_types(PyObject *mod, PyTypeObject *send, PyTypeObject *recv)
     }
     struct xid_class_registry *xid_classes = &state->xid_classes;
 
-    if (state->send_channel_type != NULL
-        || state->recv_channel_type != NULL)
-    {
-        PyErr_SetString(PyExc_TypeError, "already registered");
-        return -1;
+    // Clear the old values if the .py module was reloaded.
+    if (state->send_channel_type != NULL) {
+        (void)_PyCrossInterpreterData_UnregisterClass(state->send_channel_type);
+        Py_CLEAR(state->send_channel_type);
     }
+    if (state->recv_channel_type != NULL) {
+        (void)_PyCrossInterpreterData_UnregisterClass(state->recv_channel_type);
+        Py_CLEAR(state->recv_channel_type);
+    }
+
     state->send_channel_type = (PyTypeObject *)Py_NewRef(send);
     state->recv_channel_type = (PyTypeObject *)Py_NewRef(recv);
 
