@@ -68,7 +68,8 @@ def subdir(working_dir, *, clean_ok=False):
                 terminal_width = 80
             print("⎯" * terminal_width)
             print("📁", working_dir)
-            if clean_ok and context.clean and working_dir.exists():
+            if (clean_ok and getattr(context, "clean", False) and
+                working_dir.exists()):
                 print(f"🚮 Deleting directory (--clean)...")
                 shutil.rmtree(working_dir)
 
@@ -164,7 +165,7 @@ def wasi_sdk_env(context):
     wasi_sdk_path = context.wasi_sdk_path
     sysroot = wasi_sdk_path / "share" / "wasi-sysroot"
     env = {"CC": "clang", "CPP": "clang-cpp", "CXX": "clang++",
-           "LDSHARED": "wasm-ld", "AR": "llvm-ar", "RANLIB": "ranlib"}
+           "AR": "llvm-ar", "RANLIB": "ranlib"}
 
     for env_var, binary_name in list(env.items()):
         env[env_var] = os.fsdecode(wasi_sdk_path / "bin" / binary_name)

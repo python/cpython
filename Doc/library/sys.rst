@@ -195,6 +195,17 @@ always available.
 
    This function should be used for internal and specialized purposes only.
 
+   .. deprecated:: 3.13
+      Use the more general :func:`_clear_internal_caches` function instead.
+
+
+.. function:: _clear_internal_caches()
+
+   Clear all internal performance-related caches. Use this function *only* to
+   release unnecessary references and memory blocks when hunting for leaks.
+
+   .. versionadded:: 3.13
+
 
 .. function:: _current_frames()
 
@@ -724,7 +735,7 @@ always available.
    regardless of their size.  This function is mainly useful for tracking
    and debugging memory leaks.  Because of the interpreter's internal
    caches, the result can vary from call to call; you may have to call
-   :func:`_clear_type_cache()` and :func:`gc.collect()` to get more
+   :func:`_clear_internal_caches()` and :func:`gc.collect()` to get more
    predictable results.
 
    If a Python build or implementation cannot reasonably compute this
@@ -1191,6 +1202,8 @@ always available.
    Return :const:`True` if the main Python interpreter is
    :term:`shutting down <interpreter shutdown>`. Return :const:`False` otherwise.
 
+   See also the :exc:`PythonFinalizationError` exception.
+
    .. versionadded:: 3.5
 
 .. data:: last_exc
@@ -1293,7 +1306,10 @@ always available.
    The list of the original command line arguments passed to the Python
    executable.
 
-   See also :data:`sys.argv`.
+   The elements of :data:`sys.orig_argv` are the arguments to the Python interpreter,
+   while the elements of :data:`sys.argv` are the arguments to the user's program.
+   Arguments consumed by the interpreter itself will be present in :data:`sys.orig_argv`
+   and missing from :data:`sys.argv`.
 
    .. versionadded:: 3.10
 
@@ -1655,7 +1671,7 @@ always available.
       ``'opcode'`` event type added; :attr:`~frame.f_trace_lines` and
       :attr:`~frame.f_trace_opcodes` attributes added to frames
 
-.. function:: set_asyncgen_hooks(firstiter, finalizer)
+.. function:: set_asyncgen_hooks([firstiter] [, finalizer])
 
    Accepts two optional keyword arguments which are callables that accept an
    :term:`asynchronous generator iterator` as an argument. The *firstiter*

@@ -31,32 +31,53 @@ descriptor.
    raise an :exc:`OSError`.
 
 .. versionchanged:: 3.8
-   The fcntl module now contains ``F_ADD_SEALS``, ``F_GET_SEALS``, and
+   The :mod:`!fcntl` module now contains ``F_ADD_SEALS``, ``F_GET_SEALS``, and
    ``F_SEAL_*`` constants for sealing of :func:`os.memfd_create` file
    descriptors.
 
 .. versionchanged:: 3.9
-   On macOS, the fcntl module exposes the ``F_GETPATH`` constant, which obtains
-   the path of a file from a file descriptor.
-   On Linux(>=3.15), the fcntl module exposes the ``F_OFD_GETLK``, ``F_OFD_SETLK``
-   and ``F_OFD_SETLKW`` constants, which are used when working with open file
-   description locks.
+   On macOS, the :mod:`!fcntl` module exposes the ``F_GETPATH`` constant,
+   which obtains the path of a file from a file descriptor.
+   On Linux(>=3.15), the :mod:`!fcntl` module exposes the ``F_OFD_GETLK``,
+   ``F_OFD_SETLK`` and ``F_OFD_SETLKW`` constants, which are used when working
+   with open file description locks.
 
 .. versionchanged:: 3.10
-   On Linux >= 2.6.11, the fcntl module exposes the ``F_GETPIPE_SZ`` and
+   On Linux >= 2.6.11, the :mod:`!fcntl` module exposes the ``F_GETPIPE_SZ`` and
    ``F_SETPIPE_SZ`` constants, which allow to check and modify a pipe's size
    respectively.
 
 .. versionchanged:: 3.11
-   On FreeBSD, the fcntl module exposes the ``F_DUP2FD`` and ``F_DUP2FD_CLOEXEC``
-   constants, which allow to duplicate a file descriptor, the latter setting
-   ``FD_CLOEXEC`` flag in addition.
+   On FreeBSD, the :mod:`!fcntl` module exposes the ``F_DUP2FD`` and
+   ``F_DUP2FD_CLOEXEC`` constants, which allow to duplicate a file descriptor,
+   the latter setting ``FD_CLOEXEC`` flag in addition.
 
 .. versionchanged:: 3.12
    On Linux >= 4.5, the :mod:`fcntl` module exposes the ``FICLONE`` and
    ``FICLONERANGE`` constants, which allow to share some data of one file with
    another file by reflinking on some filesystems (e.g., btrfs, OCFS2, and
    XFS). This behavior is commonly referred to as "copy-on-write".
+
+.. versionchanged:: 3.13
+   On Linux >= 2.6.32, the :mod:`!fcntl` module exposes the
+   ``F_GETOWN_EX``, ``F_SETOWN_EX``, ``F_OWNER_TID``, ``F_OWNER_PID``, ``F_OWNER_PGRP`` constants, which allow to direct I/O availability signals
+   to a specific thread, process, or process group.
+   On Linux >= 4.13, the :mod:`!fcntl` module exposes the
+   ``F_GET_RW_HINT``, ``F_SET_RW_HINT``, ``F_GET_FILE_RW_HINT``,
+   ``F_SET_FILE_RW_HINT``, and ``RWH_WRITE_LIFE_*`` constants, which allow
+   to inform the kernel about the relative expected lifetime of writes on
+   a given inode or via a particular open file description.
+   On Linux >= 5.1 and NetBSD, the :mod:`!fcntl` module exposes the
+   ``F_SEAL_FUTURE_WRITE`` constant for use with ``F_ADD_SEALS`` and
+   ``F_GET_SEALS`` operations.
+   On FreeBSD, the :mod:`!fcntl` module exposes the ``F_READAHEAD``, ``F_ISUNIONSTACK``, and ``F_KINFO`` constants.
+   On macOS and FreeBSD, the :mod:`!fcntl` module exposes the ``F_RDAHEAD``
+   constant.
+   On NetBSD and AIX, the :mod:`!fcntl` module exposes the ``F_CLOSEM``
+   constant.
+   On NetBSD, the :mod:`!fcntl` module exposes the ``F_MAXFD`` constant.
+   On macOS and NetBSD, the :mod:`!fcntl` module exposes the ``F_GETNOSIGPIPE``
+   and ``F_SETNOSIGPIPE`` constant.
 
 The module defines the following functions:
 

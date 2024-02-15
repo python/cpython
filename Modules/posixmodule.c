@@ -52,6 +52,12 @@
 #  define EX_OK EXIT_SUCCESS
 #endif
 
+#ifdef __APPLE__
+ /* Needed for the implementation of os.statvfs */
+#  include <sys/param.h>
+#  include <sys/mount.h>
+#endif
+
 /* On android API level 21, 'AT_EACCESS' is not declared although
  * HAVE_FACCESSAT is defined. */
 #ifdef __ANDROID__
@@ -637,6 +643,10 @@ PyOS_AfterFork_Child(void)
     tstate->native_thread_id = PyThread_get_thread_native_id();
 #endif
 
+#ifdef Py_GIL_DISABLED
+    _Py_brc_after_fork(tstate->interp);
+#endif
+
     status = _PyEval_ReInitThreads(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         goto fatal_error;
@@ -969,6 +979,13 @@ _fd_converter(PyObject *o, int *p)
     int overflow;
     long long_value;
 
+    if (PyBool_Check(o)) {
+        if (PyErr_WarnEx(PyExc_RuntimeWarning,
+                "bool is used as a file descriptor", 1))
+        {
+            return 0;
+        }
+    }
     PyObject *index = _PyNumber_Index(o);
     if (index == NULL) {
         return 0;
@@ -1620,7 +1637,7 @@ convertenviron(void)
             Py_DECREF(d);
             return NULL;
         }
-        if (PyDict_SetDefault(d, k, v) == NULL) {
+        if (PyDict_SetDefaultRef(d, k, v, NULL) < 0) {
             Py_DECREF(v);
             Py_DECREF(k);
             Py_DECREF(d);
@@ -7824,7 +7841,7 @@ os_fork1_impl(PyObject *module)
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->finalizing) {
-        PyErr_SetString(PyExc_RuntimeError,
+        PyErr_SetString(PyExc_PythonFinalizationError,
                         "can't fork at interpreter shutdown");
         return NULL;
     }
@@ -7868,7 +7885,7 @@ os_fork_impl(PyObject *module)
     pid_t pid;
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->finalizing) {
-        PyErr_SetString(PyExc_RuntimeError,
+        PyErr_SetString(PyExc_PythonFinalizationError,
                         "can't fork at interpreter shutdown");
         return NULL;
     }
@@ -8358,6 +8375,149 @@ error:
 #endif /* HAVE_SCHED_H */
 
 
+#ifdef HAVE_POSIX_OPENPT
+/*[clinic input]
+os.posix_openpt -> int
+
+    oflag: int
+    /
+
+Open and return a file descriptor for a master pseudo-terminal device.
+
+Performs a posix_openpt() C function call. The oflag argument is used to
+set file status flags and file access modes as specified in the manual page
+of posix_openpt() of your system.
+[clinic start generated code]*/
+
+static int
+os_posix_openpt_impl(PyObject *module, int oflag)
+/*[clinic end generated code: output=ee0bc2624305fc79 input=0de33d0e29693caa]*/
+{
+    int fd;
+
+#if defined(O_CLOEXEC)
+    oflag |= O_CLOEXEC;
+#endif
+
+    fd = posix_openpt(oflag);
+    if (fd == -1) {
+        posix_error();
+        return -1;
+    }
+
+    // Just in case, likely a no-op given O_CLOEXEC above.
+    if (_Py_set_inheritable(fd, 0, NULL) < 0) {
+        close(fd);
+        return -1;
+    }
+
+    return fd;
+}
+#endif /* HAVE_POSIX_OPENPT */
+
+#ifdef HAVE_GRANTPT
+/*[clinic input]
+os.grantpt
+
+    fd: fildes
+        File descriptor of a master pseudo-terminal device.
+    /
+
+Grant access to the slave pseudo-terminal device.
+
+Performs a grantpt() C function call.
+[clinic start generated code]*/
+
+static PyObject *
+os_grantpt_impl(PyObject *module, int fd)
+/*[clinic end generated code: output=dfd580015cf548ab input=0668e3b96760e849]*/
+{
+    int ret;
+    int saved_errno;
+    PyOS_sighandler_t sig_saved;
+
+    sig_saved = PyOS_setsig(SIGCHLD, SIG_DFL);
+
+    ret = grantpt(fd);
+    if (ret == -1)
+        saved_errno = errno;
+
+    PyOS_setsig(SIGCHLD, sig_saved);
+
+    if (ret == -1) {
+        errno = saved_errno;
+        return posix_error();
+    }
+
+    Py_RETURN_NONE;
+}
+#endif /* HAVE_GRANTPT */
+
+#ifdef HAVE_UNLOCKPT
+/*[clinic input]
+os.unlockpt
+
+    fd: fildes
+        File descriptor of a master pseudo-terminal device.
+    /
+
+Unlock a pseudo-terminal master/slave pair.
+
+Performs an unlockpt() C function call.
+[clinic start generated code]*/
+
+static PyObject *
+os_unlockpt_impl(PyObject *module, int fd)
+/*[clinic end generated code: output=e08d354dec12d30c input=de7ab1f59f69a2b4]*/
+{
+    if (unlockpt(fd) == -1)
+        return posix_error();
+
+    Py_RETURN_NONE;
+}
+#endif /* HAVE_UNLOCKPT */
+
+#if defined(HAVE_PTSNAME) || defined(HAVE_PTSNAME_R)
+/*[clinic input]
+os.ptsname
+
+    fd: fildes
+        File descriptor of a master pseudo-terminal device.
+    /
+
+Return the name of the slave pseudo-terminal device.
+
+If the ptsname_r() C function is available, it is called;
+otherwise, performs a ptsname() C function call.
+[clinic start generated code]*/
+
+static PyObject *
+os_ptsname_impl(PyObject *module, int fd)
+/*[clinic end generated code: output=ef300fadc5675872 input=1369ccc0546f3130]*/
+{
+#ifdef HAVE_PTSNAME_R
+    int ret;
+    char name[MAXPATHLEN+1];
+
+    ret = ptsname_r(fd, name, sizeof(name));
+    if (ret != 0) {
+        errno = ret;
+        return posix_error();
+    }
+#else
+    char *name;
+
+    name = ptsname(fd);
+    /* POSIX manpage: Upon failure, ptsname() shall return a null pointer and may set errno.
+       *MAY* set errno? Hmm... */
+    if (name == NULL)
+        return posix_error();
+#endif /* HAVE_PTSNAME_R */
+
+    return PyUnicode_DecodeFSDefault(name);
+}
+#endif /* defined(HAVE_PTSNAME) || defined(HAVE_PTSNAME_R) */
+
 /* AIX uses /dev/ptc but is otherwise the same as /dev/ptmx */
 #if defined(HAVE_DEV_PTC) && !defined(HAVE_DEV_PTMX)
 #  define DEV_PTY_FILE "/dev/ptc"
@@ -8558,7 +8718,7 @@ os_forkpty_impl(PyObject *module)
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->finalizing) {
-        PyErr_SetString(PyExc_RuntimeError,
+        PyErr_SetString(PyExc_PythonFinalizationError,
                         "can't fork at interpreter shutdown");
         return NULL;
     }
@@ -12732,6 +12892,62 @@ os_WSTOPSIG_impl(PyObject *module, int status)
 #endif
 #include <sys/statvfs.h>
 
+#ifdef __APPLE__
+/* On macOS struct statvfs uses 32-bit integers for block counts,
+ * resulting in overflow when filesystems are larger than 4TB. Therefore
+ * os.statvfs is implemented in terms of statfs(2).
+ */
+
+static PyObject*
+_pystatvfs_fromstructstatfs(PyObject *module, struct statfs st) {
+    PyObject *StatVFSResultType = get_posix_state(module)->StatVFSResultType;
+    PyObject *v = PyStructSequence_New((PyTypeObject *)StatVFSResultType);
+    if (v == NULL) {
+        return NULL;
+    }
+
+    long flags = 0;
+    if (st.f_flags & MNT_RDONLY) {
+        flags |= ST_RDONLY;
+    }
+    if (st.f_flags & MNT_NOSUID) {
+        flags |= ST_NOSUID;
+    }
+
+    _Static_assert(sizeof(st.f_blocks) == sizeof(long long), "assuming large file");
+
+#define SET_ITEM(SEQ, INDEX, EXPR)                       \
+    do {                                                 \
+        PyObject *obj = (EXPR);                          \
+        if (obj == NULL) {                               \
+            Py_DECREF((SEQ));                            \
+            return NULL;                                 \
+        }                                                \
+        PyStructSequence_SET_ITEM((SEQ), (INDEX), obj);  \
+    } while (0)
+
+    SET_ITEM(v, 0, PyLong_FromLong((long) st.f_iosize));
+    SET_ITEM(v, 1, PyLong_FromLong((long) st.f_bsize));
+    SET_ITEM(v, 2, PyLong_FromLongLong((long long) st.f_blocks));
+    SET_ITEM(v, 3, PyLong_FromLongLong((long long) st.f_bfree));
+    SET_ITEM(v, 4, PyLong_FromLongLong((long long) st.f_bavail));
+    SET_ITEM(v, 5, PyLong_FromLongLong((long long) st.f_files));
+    SET_ITEM(v, 6, PyLong_FromLongLong((long long) st.f_ffree));
+    SET_ITEM(v, 7, PyLong_FromLongLong((long long) st.f_ffree));
+    SET_ITEM(v, 8, PyLong_FromLong((long) flags));
+
+    SET_ITEM(v, 9, PyLong_FromLong((long) NAME_MAX));
+    SET_ITEM(v, 10, PyLong_FromUnsignedLong(st.f_fsid.val[0]));
+
+#undef SET_ITEM
+
+    return v;
+}
+
+#else
+
+
+
 static PyObject*
 _pystatvfs_fromstructstatvfs(PyObject *module, struct statvfs st) {
     PyObject *StatVFSResultType = get_posix_state(module)->StatVFSResultType;
@@ -12783,6 +12999,8 @@ _pystatvfs_fromstructstatvfs(PyObject *module, struct statvfs st) {
     return v;
 }
 
+#endif
+
 
 /*[clinic input]
 os.fstatvfs
@@ -12800,6 +13018,22 @@ os_fstatvfs_impl(PyObject *module, int fd)
 {
     int result;
     int async_err = 0;
+#ifdef __APPLE__
+    struct statfs st;
+    /* On macOS os.fstatvfs is implemented using fstatfs(2) because
+     * the former uses 32-bit values for block counts.
+     */
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        result = fstatfs(fd, &st);
+        Py_END_ALLOW_THREADS
+    } while (result != 0 && errno == EINTR &&
+             !(async_err = PyErr_CheckSignals()));
+    if (result != 0)
+        return (!async_err) ? posix_error() : NULL;
+
+    return _pystatvfs_fromstructstatfs(module, st);
+#else
     struct statvfs st;
 
     do {
@@ -12812,6 +13046,7 @@ os_fstatvfs_impl(PyObject *module, int fd)
         return (!async_err) ? posix_error() : NULL;
 
     return _pystatvfs_fromstructstatvfs(module, st);
+#endif
 }
 #endif /* defined(HAVE_FSTATVFS) && defined(HAVE_SYS_STATVFS_H) */
 
@@ -12835,6 +13070,28 @@ os_statvfs_impl(PyObject *module, path_t *path)
 /*[clinic end generated code: output=87106dd1beb8556e input=3f5c35791c669bd9]*/
 {
     int result;
+
+#ifdef __APPLE__
+    /* On macOS os.statvfs is implemented using statfs(2)/fstatfs(2) because
+     * the former uses 32-bit values for block counts.
+     */
+    struct statfs st;
+
+    Py_BEGIN_ALLOW_THREADS
+    if (path->fd != -1) {
+        result = fstatfs(path->fd, &st);
+    }
+    else
+        result = statfs(path->narrow, &st);
+    Py_END_ALLOW_THREADS
+
+    if (result) {
+        return path_error(path);
+    }
+
+    return _pystatvfs_fromstructstatfs(module, st);
+
+#else
     struct statvfs st;
 
     Py_BEGIN_ALLOW_THREADS
@@ -12852,6 +13109,7 @@ os_statvfs_impl(PyObject *module, path_t *path)
     }
 
     return _pystatvfs_fromstructstatvfs(module, st);
+#endif
 }
 #endif /* defined(HAVE_STATVFS) && defined(HAVE_SYS_STATVFS_H) */
 
@@ -16275,6 +16533,10 @@ static PyMethodDef posix_methods[] = {
     OS_SCHED_YIELD_METHODDEF
     OS_SCHED_SETAFFINITY_METHODDEF
     OS_SCHED_GETAFFINITY_METHODDEF
+    OS_POSIX_OPENPT_METHODDEF
+    OS_GRANTPT_METHODDEF
+    OS_UNLOCKPT_METHODDEF
+    OS_PTSNAME_METHODDEF
     OS_OPENPTY_METHODDEF
     OS_LOGIN_TTY_METHODDEF
     OS_FORKPTY_METHODDEF

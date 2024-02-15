@@ -908,6 +908,8 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
     }
 }
 
+#define MAX_VERSIONS_PER_CLASS 1000
+
 static int
 assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
 {
@@ -922,7 +924,10 @@ assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
     if (!_PyType_HasFeature(type, Py_TPFLAGS_READY)) {
         return 0;
     }
-
+    if (type->tp_versions_used >= MAX_VERSIONS_PER_CLASS) {
+        return 0;
+    }
+    type->tp_versions_used++;
     if (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) {
         /* static types */
         if (NEXT_GLOBAL_VERSION_TAG > _Py_MAX_GLOBAL_TYPE_VERSION_TAG) {
@@ -1371,6 +1376,7 @@ type_set_bases(PyTypeObject *type, PyObject *new_bases, void *context)
         res = 0;
     }
 
+    RARE_EVENT_INC(set_bases);
     Py_DECREF(old_bases);
     Py_DECREF(old_base);
 
@@ -3492,7 +3498,7 @@ type_new_set_doc(PyTypeObject *type)
 
     // Silently truncate the docstring if it contains a null byte
     Py_ssize_t size = strlen(doc_str) + 1;
-    char *tp_doc = (char *)PyObject_Malloc(size);
+    char *tp_doc = (char *)PyMem_Malloc(size);
     if (tp_doc == NULL) {
         PyErr_NoMemory();
         return -1;
@@ -3826,6 +3832,17 @@ type_new_impl(type_new_ctx *ctx)
 
     // Put the proper slots in place
     fixup_slot_dispatchers(type);
+
+    if (!_PyDict_HasOnlyStringKeys(type->tp_dict)) {
+        if (PyErr_WarnFormat(
+                PyExc_RuntimeWarning,
+                1,
+                "non-string key in the __dict__ of class %.200s",
+                type->tp_name) == -1)
+        {
+            goto error;
+        }
+    }
 
     if (type_new_set_names(type) < 0) {
         goto error;
@@ -4165,12 +4182,12 @@ _PyType_FromMetaclass_impl(
                 goto finally;
             }
             if (slot->pfunc == NULL) {
-                PyObject_Free(tp_doc);
+                PyMem_Free(tp_doc);
                 tp_doc = NULL;
             }
             else {
                 size_t len = strlen(slot->pfunc)+1;
-                tp_doc = PyObject_Malloc(len);
+                tp_doc = PyMem_Malloc(len);
                 if (tp_doc == NULL) {
                     PyErr_NoMemory();
                     goto finally;
@@ -4500,7 +4517,7 @@ _PyType_FromMetaclass_impl(
         Py_CLEAR(res);
     }
     Py_XDECREF(bases);
-    PyObject_Free(tp_doc);
+    PyMem_Free(tp_doc);
     Py_XDECREF(ht_name);
     PyMem_Free(_ht_tpname);
     return (PyObject*)res;
@@ -5098,7 +5115,7 @@ type_dealloc(PyObject *self)
     /* A type's tp_doc is heap allocated, unlike the tp_doc slots
      * of most other objects.  It's okay to cast it to char *.
      */
-    PyObject_Free((char *)type->tp_doc);
+    PyMem_Free((char *)type->tp_doc);
 
     PyHeapTypeObject *et = (PyHeapTypeObject *)type;
     Py_XDECREF(et->ht_name);
@@ -5842,6 +5859,8 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
         Py_SET_TYPE(self, newto);
         if (oldto->tp_flags & Py_TPFLAGS_HEAPTYPE)
             Py_DECREF(oldto);
+
+        RARE_EVENT_INC(set_class);
         return 0;
     }
     else {
@@ -6664,7 +6683,7 @@ type_add_method(PyTypeObject *type, PyMethodDef *meth)
     int err;
     PyObject *dict = lookup_tp_dict(type);
     if (!(meth->ml_flags & METH_COEXIST)) {
-        err = PyDict_SetDefault(dict, name, descr) == NULL;
+        err = PyDict_SetDefaultRef(dict, name, descr, NULL) < 0;
     }
     else {
         err = PyDict_SetItem(dict, name, descr) < 0;
@@ -6712,7 +6731,7 @@ type_add_members(PyTypeObject *type)
         if (descr == NULL)
             return -1;
 
-        if (PyDict_SetDefault(dict, PyDescr_NAME(descr), descr) == NULL) {
+        if (PyDict_SetDefaultRef(dict, PyDescr_NAME(descr), descr, NULL) < 0) {
             Py_DECREF(descr);
             return -1;
         }
@@ -6737,7 +6756,7 @@ type_add_getset(PyTypeObject *type)
             return -1;
         }
 
-        if (PyDict_SetDefault(dict, PyDescr_NAME(descr), descr) == NULL) {
+        if (PyDict_SetDefaultRef(dict, PyDescr_NAME(descr), descr, NULL) < 0) {
             Py_DECREF(descr);
             return -1;
         }
