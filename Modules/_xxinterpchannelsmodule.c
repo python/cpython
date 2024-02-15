@@ -310,19 +310,28 @@ traverse_module_state(module_state *state, visitproc visit, void *arg)
     return 0;
 }
 
+static void
+clear_xid_types(module_state *state)
+{
+    /* heap types */
+    if (state->ChannelInfoType != NULL) {
+        (void)_PyCrossInterpreterData_UnregisterClass(state->ChannelInfoType);
+        Py_CLEAR(state->ChannelInfoType);
+    }
+
+    /* external types */
+    clear_xid_class_registry(&state->xid_classes);
+    Py_CLEAR(state->send_channel_type);
+    Py_CLEAR(state->recv_channel_type);
+}
+
 static int
 clear_module_state(module_state *state)
 {
-    /* external types */
-    Py_CLEAR(state->send_channel_type);
-    Py_CLEAR(state->recv_channel_type);
+    clear_xid_types(state);
 
     /* heap types */
     Py_CLEAR(state->ChannelInfoType);
-    if (state->ChannelIDType != NULL) {
-        (void)_PyCrossInterpreterData_UnregisterClass(state->ChannelIDType);
-    }
-    Py_CLEAR(state->ChannelIDType);
 
     /* exceptions */
     Py_CLEAR(state->ChannelError);
@@ -3326,9 +3335,8 @@ module_exec(PyObject *mod)
     return 0;
 
 error:
-    if (state->ChannelInfoType != NULL) {
-        (void)_PyCrossInterpreterData_UnregisterClass(state->ChannelInfoType);
-        Py_CLEAR(state->ChannelInfoType);
+    if (state != NULL) {
+        clear_xid_types(state);
     }
     _globals_fini();
     return -1;
@@ -3355,9 +3363,6 @@ module_clear(PyObject *mod)
     module_state *state = get_module_state(mod);
     assert(state != NULL);
 
-    // Before clearing anything, we unregister the various XID types. */
-    clear_xid_class_registry(&state->xid_classes);
-
     // Now we clear the module state.
     clear_module_state(state);
     return 0;
@@ -3368,9 +3373,6 @@ module_free(void *mod)
 {
     module_state *state = get_module_state(mod);
     assert(state != NULL);
-
-    // Before clearing anything, we unregister the various XID types. */
-    clear_xid_class_registry(&state->xid_classes);
 
     // Now we clear the module state.
     clear_module_state(state);
