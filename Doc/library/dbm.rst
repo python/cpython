@@ -8,8 +8,13 @@
 
 --------------
 
-:mod:`dbm` is a generic interface to variants of the DBM database ---
-:mod:`dbm.gnu` or :mod:`dbm.ndbm`.  If none of these modules is installed, the
+:mod:`dbm` is a generic interface to variants of the DBM database:
+
+* :mod:`dbm.sqlite3`
+* :mod:`dbm.gnu`
+* :mod:`dbm.ndbm`
+
+If none of these modules are installed, the
 slow-but-simple implementation in module :mod:`dbm.dumb` will be used.  There
 is a `third party interface <https://www.jcea.es/programacion/pybsddb.htm>`_ to
 the Oracle Berkeley DB.
@@ -25,8 +30,8 @@ the Oracle Berkeley DB.
 .. function:: whichdb(filename)
 
    This function attempts to guess which of the several simple database modules
-   available --- :mod:`dbm.gnu`, :mod:`dbm.ndbm` or :mod:`dbm.dumb` --- should
-   be used to open a given file.
+   available --- :mod:`dbm.sqlite3`, :mod:`dbm.gnu`, :mod:`dbm.ndbm`,
+   or :mod:`dbm.dumb` --- should be used to open a given file.
 
    Return one of the following values:
 
@@ -55,10 +60,6 @@ the Oracle Berkeley DB.
 .. |mode_param_doc| replace::
    The Unix file access mode of the file (default: octal ``0o666``),
    used only when the database has to be created.
-
-.. |incompat_note| replace::
-   The file formats created by :mod:`dbm.gnu` and :mod:`dbm.ndbm` are incompatible
-   and can not be used interchangeably.
 
 .. function:: open(file, flag='r', mode=0o666)
 
@@ -144,6 +145,46 @@ then prints out the contents of the database::
 
 The individual submodules are described in the following sections.
 
+:mod:`dbm.sqlite3` --- SQLite backend for dbm
+---------------------------------------------
+
+.. module:: dbm.sqlite3
+   :platform: All
+   :synopsis: SQLite backend for dbm
+
+.. versionadded:: 3.13
+
+**Source code:** :source:`Lib/dbm/sqlite3.py`
+
+--------------
+
+This module uses the standard library :mod:`sqlite3` module to provide an
+SQLite backend for the :mod:`dbm` module.
+The files created by :mod:`dbm.sqlite3` can thus be opened by :mod:`sqlite3`,
+or any other SQLite browser, including the SQLite CLI.
+
+.. function:: open(filename, /, flag="r", mode=0o666)
+
+   Open an SQLite database.
+   The returned object behaves like a :term:`mapping`,
+   implements a :meth:`!close` method,
+   and supports a "closing" context manager via the :keyword:`with` keyword.
+
+   :param filename:
+      The path to the database to be opened.
+   :type filename: :term:`path-like object`
+
+   :param str flag:
+
+      * ``'r'`` (default): |flag_r|
+      * ``'w'``: |flag_w|
+      * ``'c'``: |flag_c|
+      * ``'n'``: |flag_n|
+
+   :param mode:
+      The Unix file access mode of the file (default: octal ``0o666``),
+      used only when the database has to be created.
+
 
 :mod:`dbm.gnu` --- GNU database manager
 ---------------------------------------
@@ -160,11 +201,10 @@ The :mod:`dbm.gnu` module provides an interface to the :abbr:`GDBM (GNU dbm)`
 library, similar to the :mod:`dbm.ndbm` module, but with additional
 functionality like crash tolerance.
 
-:class:`!gdbm` objects behave similar to :term:`mappings <mapping>`,
-except that keys and values are always converted to :class:`bytes` before storing,
-and the :meth:`!items` and :meth:`!values` methods are not supported.
+.. note::
 
-.. note:: |incompat_note|
+   The file formats created by :mod:`dbm.gnu` and :mod:`dbm.ndbm` are incompatible
+   and can not be used interchangeably.
 
 .. exception:: error
 
@@ -211,8 +251,9 @@ and the :meth:`!items` and :meth:`!values` methods are not supported.
 
       A string of characters the *flag* parameter of :meth:`~dbm.gnu.open` supports.
 
-   In addition to the dictionary-like methods, :class:`gdbm` objects have the
-   following methods and attributes:
+   :class:`!gdbm` objects behave similar to :term:`mappings <mapping>`,
+   but :meth:`!items` and :meth:`!values` methods are not supported.
+   The following methods are also provided:
 
    .. method:: gdbm.firstkey()
 
@@ -269,14 +310,13 @@ and the :meth:`!items` and :meth:`!values` methods are not supported.
 
 The :mod:`dbm.ndbm` module provides an interface to the
 :abbr:`NDBM (New Database Manager)` library.
-:class:`!ndbm` objects behave similar to :term:`mappings <mapping>`,
-except that keys and values are always stored as :class:`bytes`,
-and the :meth:`!items` and :meth:`!values` methods are not supported.
-
 This module can be used with the "classic" NDBM interface or the
 :abbr:`GDBM (GNU dbm)` compatibility interface.
 
-.. note:: |incompat_note|
+.. note::
+
+   The file formats created by :mod:`dbm.gnu` and :mod:`dbm.ndbm` are incompatible
+   and can not be used interchangeably.
 
 .. warning::
 
@@ -314,8 +354,9 @@ This module can be used with the "classic" NDBM interface or the
    :param int mode:
       |mode_param_doc|
 
-   In addition to the dictionary-like methods, :class:`!ndbm` objects
-   provide the following method:
+   :class:`!ndbm` objects behave similar to :term:`mappings <mapping>`,
+   but :meth:`!items` and :meth:`!values` methods are not supported.
+   The following methods are also provided:
 
    .. versionchanged:: 3.11
       Accepts :term:`path-like object` for filename.
@@ -354,8 +395,6 @@ The :mod:`dbm.dumb` module provides a persistent :class:`dict`-like
 interface which is written entirely in Python.
 Unlike other :mod:`dbm` backends, such as :mod:`dbm.gnu`, no
 external library is required.
-As with other :mod:`dbm` backends,
-the keys and values are always stored as :class:`bytes`.
 
 The :mod:`!dbm.dumb` module defines the following:
 

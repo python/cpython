@@ -1,0 +1,2 @@
+Add :mod:`dbm.sqlite3` as a backend to :mod:`dbm`, and make it the new default :mod:`!dbm` backend.
+Patch by Raymond Hettinger and Erlend E. Aasland.

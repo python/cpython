@@ -1,0 +1,1 @@
+Allows :mod:`multiprocessing` to create pools of greater than 62 processes.
