@@ -776,15 +776,64 @@ The launcher was originally specified in :pep:`397`.
 Getting started
 ---------------
 
+Global activation
+^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 3.13
+
+Default install settings of Python when using :ref:`windows-full` will not
+put :file:`python.exe` on :envvar:`PATH`, but will add the :file:`py.exe`
+launcher. To add global commands using the full names, execute the following
+from your terminal::
+
+  py --activate
+
+This will add :file:`python.exe`, :file:`python3.exe`, and
+:file:`python3.x.exe` (where ``x`` is the minor version number) to the same
+directory as the launcher, which makes them available globally.
+
+By default, the version of Python that would have been launched is added. To
+select a different version, specify it as part of the command::
+
+  py --activate:3.13
+
+Aliases can be deactivated using either ``py --deactivate:<VERSION>`` to
+deactivate a specific version, or ``py --deactivate`` to deactivate all.
+Deactivating may leave you without global aliases, so it is recommended to
+``--activate`` the version you want to use as default after deactivating.
+
+Activating a version will replace any previously activated aliases without
+confirmation. For example, if you activate 3.12 and then activate 3.11, the
+:file:`python3.exe` alias will point to 3.11.
+
+There is usually no need to reactivate after installing updates.
+
+Executing :file:`pyw.exe` instead of :file:`py.exe` will activate the windowed
+executables instead. These will start with :file:`pythonw` rather than
+:file:`python`.
+
+.. note::
+   The argument to specify version has the same behaviour as the ``-V:``
+   option described below. The interpreter that would be launched with the
+   same argument to ``-V:`` will be assigned to the global aliases.
+
+   The actual aliases created are ``python`` (or ``pythonw``), ``python[v]``
+   followed by the interpreter Tag (typically a version like ``3.13`` or
+   ``3.13-32``), and ``python[w]`` followed by the leading alphanumeric
+   characters from the Tag (for example, ``3.13`` has the leading
+   alphanumeric characters ``3``). Runtimes that do their own :pep:`514`
+   registration may use this to influence the aliases created for themselves.
+
+
 From the command-line
 ^^^^^^^^^^^^^^^^^^^^^
 
 .. versionchanged:: 3.6
 
-System-wide installations of Python 3.3 and later will put the launcher on your
-:envvar:`PATH`. The launcher is compatible with all available versions of
-Python, so it does not matter which version is installed. To check that the
-launcher is available, execute the following command in Command Prompt::
+Normal installations of Python will put the launcher on your :envvar:`PATH`.
+The launcher is compatible with all available versions of Python, so it does
+not matter which version is installed. To check that the launcher is
+available, execute the following command in Command Prompt::
 
   py
 
@@ -1113,6 +1162,11 @@ While this information manages to be simultaneously verbose *and* terse, it
 should allow you to see what versions of Python were located, why a
 particular version was chosen and the exact command-line used to execute the
 target Python. It is primarily intended for testing and debugging.
+
+Setting :envvar:`PYLAUNCHER_QUIET` to any value will suppress all output
+messages, including errors. The :file:`pyw.exe` launcher typically displays
+errors in popup dialogs, and these are also suppressed. Check the process exit
+code for failures, and rerun without quiet to see more information.
 
 Dry Run
 -------

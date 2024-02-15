@@ -42,32 +42,48 @@
 #define RC_NO_ALIAS         115
 #define RC_NO_INI           116
 #define RC_ACCESS_DENIED    117
+#define RC_AGAIN            118
 
 static FILE * log_fp = NULL;
+static FILE * warn_fp = NULL;
+
+void
+_write_to_console(FILE *fp, wchar_t * format, va_list va)
+{
+    if (fp == NULL) {
+        return;
+    }
+
+    wchar_t buffer[MAXLEN];
+    int r = vswprintf_s(buffer, MAXLEN, format, va);
+    if (r <= 0) {
+        return;
+    }
+    fputws(buffer, fp);
+    while (r && isspace(buffer[r])) {
+        buffer[r--] = L'\0';
+    }
+    if (buffer[0]) {
+        OutputDebugStringW(buffer);
+    }
+}
 
 void
 debug(wchar_t * format, ...)
 {
     va_list va;
+    va_start(va, format);
+    _write_to_console(log_fp, format, va);
+    va_end(va);
+}
 
-    if (log_fp != NULL) {
-        wchar_t buffer[MAXLEN];
-        int r = 0;
-        va_start(va, format);
-        r = vswprintf_s(buffer, MAXLEN, format, va);
-        va_end(va);
-
-        if (r <= 0) {
-            return;
-        }
-        fputws(buffer, log_fp);
-        while (r && isspace(buffer[r])) {
-            buffer[r--] = L'\0';
-        }
-        if (buffer[0]) {
-            OutputDebugStringW(buffer);
-        }
-    }
+void
+warn(wchar_t * format, ...)
+{
+    va_list va;
+    va_start(va, format);
+    _write_to_console(warn_fp, format, va);
+    va_end(va);
 }
 
 
@@ -89,6 +105,9 @@ winerror(int err, wchar_t * format, ... )
     wchar_t win_message[MSGSIZE];
     int len;
 
+    if (!warn_fp) {
+        return;
+    }
     if (err == 0) {
         err = GetLastError();
     }
@@ -104,7 +123,7 @@ winerror(int err, wchar_t * format, ... )
     }
 
 #if !defined(_WINDOWS)
-    fwprintf(stderr, L"%s\n", message);
+    fwprintf(warn_fp, L"%s\n", message);
 #else
     MessageBoxW(NULL, message, L"Python Launcher is sorry to say ...",
                MB_OK);
@@ -118,12 +137,15 @@ error(wchar_t * format, ... )
     va_list va;
     wchar_t message[MSGSIZE];
 
+    if (!warn_fp) {
+        return;
+    }
     va_start(va, format);
     _vsnwprintf_s(message, MSGSIZE, _TRUNCATE, format, va);
     va_end(va);
 
 #if !defined(_WINDOWS)
-    fwprintf(stderr, L"%s\n", message);
+    fwprintf(warn_fp, L"%s\n", message);
 #else
     MessageBoxW(NULL, message, L"Python Launcher is sorry to say ...",
                MB_OK);
@@ -443,9 +465,9 @@ typedef struct {
     bool listPaths;
     // if true, display help message before continuing
     bool help;
-    // if true, create global python/python3 aliases without launching
+    // if true, create global aliases without launching
     bool activate;
-    // if true, delete global python/python3 aliases without launching
+    // if true, delete global aliases without launching
     bool deactivate;
     // if set, limits search to registry keys with the specified Company
     // This is intended for debugging and testing only
@@ -597,7 +619,7 @@ typedef struct AppExecLinkFile { // For tag IO_REPARSE_TAG_APPEXECLINK
 } AppExecLinkFile;
 
 int readAliasInfo(SearchInfo *search, const wchar_t *tail, int tailLen);
-int _readIni(const wchar_t *section, const wchar_t *settingName, wchar_t *buffer, int bufferLength);
+int _readIni(const wchar_t *section, const wchar_t *settingName, wchar_t *buffer, int bufferLength, int allowAppdata);
 
 void
 _parseVOption(SearchInfo *search, const wchar_t *argStart, const wchar_t *tail)
@@ -759,10 +781,10 @@ readAliasInfo(SearchInfo *search, const wchar_t *tail, int tailLen)
     wchar_t buffer[MAXLEN];
     wchar_t key[MAXLEN];
     if (tailLen < 0 ? wcscpy_s(key, MAXLEN, tail) : wcsncpy_s(key, MAXLEN, tail, tailLen)) {
-        debug(L"# filename too long\n");
+        error(L"Launcher filename was too long");
         return RC_NO_MEMORY;
     }
-    int n = _readIni(L"alias", key, buffer, MAXLEN);
+    int n = _readIni(L"alias", key, buffer, MAXLEN, 0);
     if (!n) {
         return RC_NO_ALIAS;
     }
@@ -777,7 +799,7 @@ readAliasInfo(SearchInfo *search, const wchar_t *tail, int tailLen)
     search->executablePath = buf;
     search->allowPyvenvCfg = false;
     search->allowDefaults = false;
-    
+
     return 0;
 }
 
@@ -790,7 +812,7 @@ _decodeShebang(SearchInfo *search, const char *buffer, int bufferLength, bool on
         cp = CP_ACP;
         wideLen = MultiByteToWideChar(cp, MB_ERR_INVALID_CHARS, buffer, bufferLength, NULL, 0);
         if (!wideLen) {
-            debug(L"# Failed to decode shebang line (0x%08X)\n", GetLastError());
+            winerror(0, L"Failed to decode shebang line");
             return RC_BAD_VIRTUAL_PATH;
         }
     }
@@ -800,7 +822,7 @@ _decodeShebang(SearchInfo *search, const char *buffer, int bufferLength, bool on
     }
     wideLen = MultiByteToWideChar(cp, 0, buffer, bufferLength, b, wideLen + 1);
     if (!wideLen) {
-        debug(L"# Failed to decode shebang line (0x%08X)\n", GetLastError());
+        winerror(0, L"Failed to decode shebang line");
         return RC_BAD_VIRTUAL_PATH;
     }
     b[wideLen] = L'\0';
@@ -851,7 +873,8 @@ ensure_no_redirector_stub(wchar_t* filename, wchar_t* buffer)
         return 0;
     }
 
-    HANDLE hReparsePoint = CreateFileW(buffer, 0, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT, NULL);
+    HANDLE hReparsePoint = CreateFileW(buffer, 0, FILE_SHARE_READ, NULL,
+            OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT, NULL);
     if (!hReparsePoint) {
         // Let normal handling take over
         debug(L"# Did not find %s on PATH\n", filename);
@@ -860,7 +883,8 @@ ensure_no_redirector_stub(wchar_t* filename, wchar_t* buffer)
 
     AppExecLinkFile appExecLink;
 
-    if (!DeviceIoControl(hReparsePoint, FSCTL_GET_REPARSE_POINT, NULL, 0, &appExecLink, sizeof(appExecLink), NULL, NULL)) {
+    if (!DeviceIoControl(hReparsePoint, FSCTL_GET_REPARSE_POINT, NULL, 0,
+            &appExecLink, sizeof(appExecLink), NULL, NULL)) {
         // Let normal handling take over
         debug(L"# Did not find %s on PATH\n", filename);
         CloseHandle(hReparsePoint);
@@ -969,40 +993,66 @@ searchPath(SearchInfo *search, const wchar_t *shebang, int shebangLength)
     return 0;
 }
 
-
 int
-_readIni(const wchar_t *section, const wchar_t *settingName, wchar_t *buffer, int bufferLength)
+_readIniSetting(const wchar_t *iniPath, const wchar_t *section, const wchar_t *settingName, wchar_t *buffer, int bufferLength)
 {
-    wchar_t iniPath[MAXLEN];
-    int n;
-    if (SUCCEEDED(SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, iniPath)) &&
-        join(iniPath, MAXLEN, L"py.ini")) {
-        debug(L"# Reading from %s for %s/%s\n", iniPath, section, settingName);
-        n = GetPrivateProfileStringW(section, settingName, NULL, buffer, bufferLength, iniPath);
-        if (n) {
-            debug(L"# Found %s in %s\n", settingName, iniPath);
-            return n;
-        } else if (GetLastError() == ERROR_FILE_NOT_FOUND) {
-            debug(L"# Did not find file %s\n", iniPath);
-        } else {
-            winerror(0, L"Failed to read from %s\n", iniPath);
-        }
-    }
-    if (GetModuleFileNameW(NULL, iniPath, MAXLEN) &&
-        SUCCEEDED(PathCchRemoveFileSpec(iniPath, MAXLEN)) &&
-        join(iniPath, MAXLEN, L"py.ini")) {
-        debug(L"# Reading from %s for %s/%s\n", iniPath, section, settingName);
-        n = GetPrivateProfileStringW(section, settingName, NULL, buffer, MAXLEN, iniPath);
-        if (n) {
-            debug(L"# Found %s in %s\n", settingName, iniPath);
-            return n;
-        } else if (GetLastError() == ERROR_FILE_NOT_FOUND) {
-            debug(L"# Did not find file %s\n", iniPath);
-        } else {
-            winerror(0, L"Failed to read from %s\n", iniPath);
-        }
+    debug(L"# Reading from %s for %s/%s\n", iniPath, section, settingName);
+    int n = GetPrivateProfileStringW(section, settingName, NULL, buffer, bufferLength, iniPath);
+    if (n) {
+        debug(L"# Found %s in %s\n", settingName, iniPath);
+        return n;
+    } else if (GetLastError() == ERROR_FILE_NOT_FOUND) {
+        debug(L"# Did not find file %s\n", iniPath);
+    } else {
+        winerror(0, L"Failed to read from %s\n", iniPath);
     }
     return 0;
+}
+
+int
+_readIniSection(const wchar_t *iniPath, const wchar_t *section, wchar_t *buffer, int bufferLength)
+{
+    debug(L"# Reading from %s for %s/*\n", iniPath, section);
+    int n = GetPrivateProfileSectionW(section, buffer, bufferLength, iniPath);
+    if (n >= bufferLength - 2) {
+        debug(L"# Too much data in %s in %s\n", section, iniPath);
+        return n;
+    } else if (n) {
+        debug(L"# Read %s/* in %s\n", section, iniPath);
+        return n;
+    } else if (GetLastError() == ERROR_FILE_NOT_FOUND) {
+        debug(L"# Did not find file %s\n", iniPath);
+    } else {
+        winerror(0, L"Failed to read from %s\n", iniPath);
+    }
+    return 0;
+}
+
+int
+_readIni(const wchar_t *section, const wchar_t *settingName, wchar_t *buffer, int bufferLength, int allowAppdata)
+{
+    wchar_t iniPath[MAXLEN];
+    int n = 0;
+    if (allowAppdata &&
+        SUCCEEDED(SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, iniPath)) &&
+        join(iniPath, MAXLEN, L"py.ini")) {
+        if (settingName) {
+            n = _readIniSetting(iniPath, section, settingName, buffer, bufferLength);
+        } else {
+            n = _readIniSection(iniPath, section, buffer, bufferLength);
+        }
+    }
+    if (!n &&
+        GetModuleFileNameW(NULL, iniPath, MAXLEN) &&
+        SUCCEEDED(PathCchRemoveFileSpec(iniPath, MAXLEN)) &&
+        join(iniPath, MAXLEN, L"py.ini")) {
+        if (settingName) {
+            n = _readIniSetting(iniPath, section, settingName, buffer, bufferLength);
+        } else {
+            n = _readIniSection(iniPath, section, buffer, bufferLength);
+        }
+    }
+    return n;
 }
 
 
@@ -1040,7 +1090,7 @@ _findCommand(SearchInfo *search, const wchar_t *command, int commandLength)
     wchar_t commandBuffer[MAXLEN];
     wchar_t buffer[MAXLEN];
     wcsncpy_s(commandBuffer, MAXLEN, command, commandLength);
-    int n = _readIni(L"commands", commandBuffer, buffer, MAXLEN);
+    int n = _readIni(L"commands", commandBuffer, buffer, MAXLEN, 1);
     if (!n) {
         return false;
     }
@@ -1136,8 +1186,8 @@ checkShebang(SearchInfo *search)
         NULL, OPEN_EXISTING, 0, NULL);
 
     if (hFile == INVALID_HANDLE_VALUE) {
-        debug(L"# Failed to open %s for shebang parsing (0x%08X)\n",
-              scriptFile, GetLastError());
+        warn(L"Failed to open %s for shebang parsing (0x%08X)\n",
+             scriptFile, GetLastError());
         free(scriptFile);
         return 0;
     }
@@ -1145,8 +1195,8 @@ checkShebang(SearchInfo *search)
     DWORD bytesRead = 0;
     char buffer[4096];
     if (!ReadFile(hFile, buffer, sizeof(buffer), &bytesRead, NULL)) {
-        debug(L"# Failed to read %s for shebang parsing (0x%08X)\n",
-              scriptFile, GetLastError());
+        warn(L"Failed to read %s for shebang parsing (0x%08X)\n",
+             scriptFile, GetLastError());
         free(scriptFile);
         return 0;
     }
@@ -1165,7 +1215,7 @@ checkShebang(SearchInfo *search)
             bytesRead -= 3;
             onlyUtf8 = true;
         } else {
-            debug(L"# Invalid BOM in shebang line");
+            warn(L"Shebang line in script contained invalid Unicode BOM");
             return 0;
         }
     }
@@ -1183,7 +1233,8 @@ checkShebang(SearchInfo *search)
     int shebangLength;
     // We add 1 when bytesRead==0, as in that case we hit EOF and b points
     // to the last character in the file, not the newline
-    int exitCode = _decodeShebang(search, start, (int)(b - start + (bytesRead == 0)), onlyUtf8, &shebang, &shebangLength);
+    int exitCode = _decodeShebang(search, start, (int)(b - start + (bytesRead == 0)),
+                                  onlyUtf8, &shebang, &shebangLength);
     if (exitCode) {
         return exitCode;
     }
@@ -1221,7 +1272,7 @@ checkShebang(SearchInfo *search)
                 search->executableArgs = &command[commandLength];
                 search->executableArgsLength = shebangLength - commandLength;
                 debug(L"# Treating shebang command '%.*s' as %s\n",
-                    commandLength + 6, &command[-6], search->executablePath);
+                      commandLength + 6, &command[-6], search->executablePath);
                 return 0;
             }
 
@@ -1249,10 +1300,10 @@ checkShebang(SearchInfo *search)
             search->executableArgsLength = shebangLength - commandLength;
             if (search->tag && search->tagLength) {
                 debug(L"# Treating shebang command '%.*s' as 'py -%.*s'\n",
-                    commandLength, command, search->tagLength, search->tag);
+                      commandLength, command, search->tagLength, search->tag);
             } else {
                 debug(L"# Treating shebang command '%.*s' as 'py'\n",
-                    commandLength, command);
+                      commandLength, command);
             }
             return 0;
         }
@@ -1272,7 +1323,7 @@ checkShebang(SearchInfo *search)
         search->executableArgs = &shebang[commandLength];
         search->executableArgsLength = shebangLength - commandLength;
         debug(L"# Treating shebang command '%.*s' as %s\n",
-            commandLength, shebang, search->executablePath);
+              commandLength, shebang, search->executablePath);
         return 0;
     }
 
@@ -1318,7 +1369,7 @@ checkDefaults(SearchInfo *search)
 
     // If none found, check in our two .ini files instead
     if (!n) {
-        n = _readIni(L"defaults", iniSettingName, buffer, MAXLEN);
+        n = _readIni(L"defaults", iniSettingName, buffer, MAXLEN, 1);
     }
 
     if (n) {
@@ -1530,7 +1581,7 @@ addEnvironmentInfo(EnvironmentInfo **root, EnvironmentInfo* parent, EnvironmentI
             } else if (node->parent->next == r) {
                 node->parent->next = node;
             } else {
-                debug(L"# Inconsistent parent value in tree\n");
+                error(L"Inconsistent parent value in tree");
                 freeEnvironmentInfo(node);
                 return RC_INTERNAL_ERROR;
             }
@@ -1675,7 +1726,7 @@ _registryReadLegacyEnvironment(const SearchInfo *search, HKEY root, EnvironmentI
 
             int count = swprintf_s(realTag, tagLength + 4, L"%s-32", env->tag);
             if (count == -1) {
-                debug(L"# Failed to generate 32bit tag\n");
+                error(L"Failed to generate 32-bit tag for %s", env->tag);
                 free(realTag);
                 return RC_INTERNAL_ERROR;
             }
@@ -1842,7 +1893,7 @@ appxSearch(const SearchInfo *search, EnvironmentInfo **result, const wchar_t *pa
     if (!join(buffer, MAXLEN, L"Microsoft\\WindowsApps") ||
         !join(buffer, MAXLEN, packageFamilyName) ||
         !join(buffer, MAXLEN, exeName)) {
-        debug(L"# Failed to construct App Execution Alias path\n");
+        error(L"Failed to construct App Execution Alias path");
         return RC_INTERNAL_ERROR;
     }
 
@@ -2043,6 +2094,7 @@ struct AppxSearchInfo {
 
 struct AppxSearchInfo APPX_SEARCH[] = {
     // Releases made through the Store
+    { L"PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0", L"3.13", 10 },
     { L"PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0", L"3.12", 10 },
     { L"PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0", L"3.11", 10 },
     { L"PythonSoftwareFoundation.Python.3.10_qbz5n2kfra8p0", L"3.10", 10 },
@@ -2052,6 +2104,7 @@ struct AppxSearchInfo APPX_SEARCH[] = {
     // Side-loadable releases. Note that the publisher ID changes whenever we
     // renew our code-signing certificate, so the newer ID has a higher
     // priority (lower sortKey)
+    { L"PythonSoftwareFoundation.Python.3.13_3847v3x7pw1km", L"3.13", 11 },
     { L"PythonSoftwareFoundation.Python.3.12_3847v3x7pw1km", L"3.12", 11 },
     { L"PythonSoftwareFoundation.Python.3.11_3847v3x7pw1km", L"3.11", 11 },
     { L"PythonSoftwareFoundation.Python.3.11_hd69rhyc2wevp", L"3.11", 12 },
@@ -2072,7 +2125,7 @@ collectEnvironments(const SearchInfo *search, EnvironmentInfo **result)
     EnvironmentInfo *env = NULL;
 
     if (!result) {
-        debug(L"# collectEnvironments() was passed a NULL result\n");
+        error(L"collectEnvironments() was passed a NULL 'result'");
         return RC_INTERNAL_ERROR;
     }
     *result = NULL;
@@ -2133,7 +2186,8 @@ struct StoreSearchInfo {
 
 
 struct StoreSearchInfo STORE_SEARCH[] = {
-    { L"3", /* 3.11 */ L"9NRWMJP3717K" },
+    { L"3", /* 3.12 */ L"9NCVDN91XZQP" },
+    { L"3.13", L"9PNRBTZXMB4Z" },
     { L"3.12", L"9NCVDN91XZQP" },
     { L"3.11", L"9NRWMJP3717K" },
     { L"3.10", L"9PJPW5LDXLZ5" },
@@ -2231,6 +2285,9 @@ installEnvironment(const SearchInfo *search)
         if (INVALID_FILE_ATTRIBUTES == GetFileAttributesW(command)) {
             formatWinerror(GetLastError(), arguments, MAXLEN);
             debug(L"# Skipping %s: %s\n", command, arguments);
+        } else if (isEnvVarSet(L"PYLAUNCHER_QUIET") &&
+                !wcscat_s(arguments, MAXLEN, L" --silent")) {
+            return _installEnvironment(command, arguments);
         } else {
             fputws(L"Launching winget to install Python. The following output is from the install process\n\
 ***********************************************************************\n", stdout);
@@ -2248,7 +2305,9 @@ Install appears to have succeeded. Searching for new matching installs.\n", stdo
         }
     }
 
-    if (swprintf_s(command, MAXLEN, MSSTORE_COMMAND, storeId)) {
+    // Do not pop open the Store when QUIET is set
+    if (!isEnvVarSet(L"PYLAUNCHER_QUIET")
+        && swprintf_s(command, MAXLEN, MSSTORE_COMMAND, storeId)) {
         fputws(L"Opening the Microsoft Store to install Python. After installation, "
                L"please run your command again.\n", stderr);
         exitCode = _installEnvironment(command, NULL);
@@ -2367,7 +2426,7 @@ int
 selectEnvironment(const SearchInfo *search, EnvironmentInfo *root, EnvironmentInfo **best)
 {
     if (!best) {
-        debug(L"# selectEnvironment() was passed a NULL best\n");
+        error(L"selectEnvironment() was passed a NULL 'best'");
         return RC_INTERNAL_ERROR;
     }
     if (!root) {
@@ -2508,28 +2567,131 @@ listEnvironments(EnvironmentInfo *env, FILE * out, bool showPath, EnvironmentInf
  ***                          ALIAS CREATION/DELETE                         ***
 \******************************************************************************/
 
+static int
+_copyAlnum(wchar_t *dest, int destSize, const wchar_t *src)
+{
+    wchar_t *p = dest + wcsnlen(dest, destSize);
+    wchar_t *end = dest + destSize;
+    int n = 0;
+    while (p != end && src && *src && isalnum(*src)) {
+        *p++ = *src++;
+        *p = L'\0';
+        n += 1;
+    }
+    if (p == end || !src) {
+        return -1;
+    }
+    return n;
+}
+
+static int
+_deleteAllAlias(int dryRun)
+{
+    #define MAXSETTINGSLEN 32767
+    wchar_t settings[MAXSETTINGSLEN];
+    int exitCode = 0;
+    int n = _readIni(L"alias", NULL, settings, MAXSETTINGSLEN, 0);
+    if (n >= MAXSETTINGSLEN - 2) {
+        // If we have too many to read all at once, do as many as we can and
+        // request another call. We'll have removed some settings from the
+        // py.ini and can do the next batch.
+        exitCode = RC_AGAIN;
+        while (n > 0 && settings[n]) {
+            --n;
+        }
+        settings[n + 1] = L'\0';
+    }
+    if (!n) {
+        debug(L"# no aliases to delete\n");
+        return 0;
+    }
+
+    wchar_t pyExe[MAXLEN];
+    wchar_t aliasName[MAXLEN];
+    wchar_t aliasExe[MAXLEN];
+
+    if (!GetModuleFileNameW(NULL, pyExe, MAXLEN)) {
+        winerror(0, L"Reading py.exe location");
+        return RC_INTERNAL_ERROR;
+    }
+
+    for (wchar_t *p = settings; *p; p += wcslen(p) + 1) {
+        const wchar_t *sep = wcschr(p, L'=');
+        if (!sep) {
+            error(L"Invalid data in py.ini");
+            return RC_NO_INI;
+        }
+        if (wcsncpy_s(aliasName, MAXLEN, p, sep - p)
+            || wcscpy_s(aliasExe, MAXLEN, pyExe)
+            || !split_parent(aliasExe, MAXLEN)
+            || !join(aliasExe, MAXLEN, aliasName)
+            || wcscat_s(aliasExe, MAXLEN, L".exe")) {
+            warn(L"Unable to create alias path\n");
+            exitCode = RC_NO_ALIAS;
+            break;
+        }
+
+        debug(L"# Write NULL to alias/%s in py.ini\n", aliasName);
+        if (!dryRun) {
+            exitCode = _writeIni(0, L"alias", aliasName, NULL);
+            if (exitCode) {
+                return exitCode;
+            }
+        }
+
+        debug(L"# Delete alias at '%s'\n", aliasExe);
+        if (!dryRun && !DeleteFileW(aliasExe)) {
+            int err = GetLastError();
+            if (err != ERROR_FILE_NOT_FOUND) {
+                winerror(err, L"Failed to delete alias '%s'", aliasExe);
+                exitCode = RC_NO_ALIAS;
+            }
+        }
+    }
+    return exitCode;
+    #undef MAXSETTINGSLEN
+}
+
 int
 manageAlias(int activate, const SearchInfo *search, const EnvironmentInfo *launch, const wchar_t *launchCommand)
 {
     int exitCode;
+    int n;
 
+    wchar_t pythonShortAlias[MAXLEN];
     wchar_t pythonTagAlias[MAXLEN];
-    const wchar_t * aliases[4] = {
+    const wchar_t * aliases[] = {
         !search->windowed ? L"python" : L"pythonw",
-        !search->windowed ? L"python3" : L"pythonw3",
+        pythonShortAlias,
         pythonTagAlias,
         NULL
     };
 
-    if (!launch->tag) {
-        // TODO: Remove all aliases
-        debug(L"# passed no tag - nothing to remove!\n");
-        return 0;
+    int dryRun = isEnvVarSet(L"PYLAUNCHER_DRYRUN");
+
+    if (!activate && (!search->tag || !search->tagLength)) {
+        do {
+            exitCode = _deleteAllAlias(dryRun);
+        } while (exitCode == RC_AGAIN);
+        return exitCode;
+    }
+
+    if (wcscpy_s(pythonShortAlias, MAXLEN, aliases[0])) {
+        error(L"Failed to construct alias name");
+        return RC_INTERNAL_ERROR;
+    }
+    n = _copyAlnum(pythonShortAlias, MAXLEN, launch->tag);
+    if (n < 0) {
+        error(L"Failed to construct alias name");
+        return RC_INTERNAL_ERROR;
+    } else if (n == 0) {
+        aliases[1] = aliases[2];
+        aliases[2] = NULL;
     }
 
     if (wcscpy_s(pythonTagAlias, MAXLEN, aliases[0]) ||
         wcscat_s(pythonTagAlias, MAXLEN, launch->tag)) {
-        debug(L"# failed to construct tagged alias\n");
+        error(L"Failed to construct alias name");
         return RC_INTERNAL_ERROR;
     }
 
@@ -2541,11 +2703,15 @@ manageAlias(int activate, const SearchInfo *search, const EnvironmentInfo *launc
         winerror(0, L"Reading py.exe location");
         return RC_INTERNAL_ERROR;
     }
+    debug(L"# Aliases based on '%s'\n", pyExe);
 
     for (const wchar_t **aliasName = aliases; *aliasName; ++aliasName) {
-        exitCode = _writeIni(0, L"alias", *aliasName, activate ? launchCommand : NULL);
-        if (exitCode) {
-            return exitCode;
+        debug(L"# Write %s to alias/%s in py.ini\n", activate ? launchCommand : L"NULL", *aliasName);
+        if (!dryRun) {
+            exitCode = _writeIni(0, L"alias", *aliasName, activate ? launchCommand : NULL);
+            if (exitCode) {
+                return exitCode;
+            }
         }
 
         if (wcscpy_s(aliasExe, MAXLEN, pyExe) ||
@@ -2553,29 +2719,31 @@ manageAlias(int activate, const SearchInfo *search, const EnvironmentInfo *launc
             !join(aliasExe, MAXLEN, *aliasName) ||
             wcscat_s(aliasExe, MAXLEN, L".exe")
         ) {
-            debug(L"# Unable to create alias for '%s'\n", *aliasName);
+            warn(L"Unable to create alias path for '%s'\n", *aliasName);
             exitCode = RC_NO_ALIAS;
             break;
         }
 
         if (activate) {
-            if (useHardLink) {
+            debug(L"# Creating alias at '%s'\n", aliasExe);
+            if (!dryRun && useHardLink) {
                 if (!CreateHardLinkW(aliasExe, pyExe, NULL)) {
                     useHardLink = 0;
                 }
             }
-            if (!useHardLink) {
+            if (!dryRun && !useHardLink) {
                 if (!CopyFileW(pyExe, aliasExe, FALSE)) {
-                    winerror(0, L"creating alias '%s'", aliasExe);
+                    winerror(0, L"Failed to create alias '%s'", aliasExe);
                     exitCode = RC_NO_ALIAS;
                 }
             }
         }
         else {
-            if (!DeleteFileW(aliasExe)) {
+            debug(L"# Delete alias at '%s'\n", aliasExe);
+            if (!dryRun && !DeleteFileW(aliasExe)) {
                 int err = GetLastError();
                 if (err != ERROR_FILE_NOT_FOUND) {
-                    winerror(err, L"deleting alias '%s'", aliasExe);
+                    winerror(err, L"Failed to delete alias '%s'", aliasExe);
                     exitCode = RC_NO_ALIAS;
                 }
             }
@@ -2621,12 +2789,12 @@ calculateCommandLine(const SearchInfo *search, const EnvironmentInfo *launch, wc
         }
     } else if (launch) {
         if (!launch->installDir) {
-            fwprintf_s(stderr, L"Cannot launch %s %s because no install directory was specified",
-                       launch->company, launch->tag);
+            warn(L"Cannot launch %s %s because no install directory was specified",
+                 launch->company, launch->tag);
             exitCode = RC_NO_PYTHON;
         } else if (!search->executable || !search->executableLength) {
-            fwprintf_s(stderr, L"Cannot launch %s %s because no executable name is available",
-                       launch->company, launch->tag);
+            warn(L"Cannot launch %s %s because no executable name is available",
+                 launch->company, launch->tag);
             exitCode = RC_NO_PYTHON;
         } else {
             wchar_t executable[256];
@@ -2864,6 +3032,11 @@ process(int argc, wchar_t ** argv)
         debug(L"argv0: %s\nversion: %S\n", argv[0], PY_VERSION);
     }
 
+    if (!isEnvVarSet(L"PYLAUNCHER_QUIET")) {
+        setvbuf(stderr, (char *)NULL, _IONBF, 0);
+        warn_fp = stderr;
+    }
+
     DWORD len = GetEnvironmentVariableW(L"PYLAUNCHER_LIMIT_TO_COMPANY", NULL, 0);
     if (len > 1) {
         wchar_t *limitToCompany = allocSearchInfoBuffer(&search, len);
@@ -2926,16 +3099,16 @@ process(int argc, wchar_t ** argv)
         }
     }
     if (exitCode == RC_NO_PYTHON) {
-        fputws(L"No suitable Python runtime found\n", stderr);
-        fputws(L"Pass --list (-0) to see all detected environments on your machine\n", stderr);
+        warn(L"No suitable Python runtime found\n");
+        warn(L"Pass --list (-0) to see all detected environments on your machine\n");
         if (!isEnvVarSet(L"PYLAUNCHER_ALLOW_INSTALL") && search.oldStyleTag) {
-            fputws(L"or set environment variable PYLAUNCHER_ALLOW_INSTALL to use winget\n"
-                   L"or open the Microsoft Store to the requested version.\n", stderr);
+            warn(L"or set environment variable PYLAUNCHER_ALLOW_INSTALL to use winget\n"
+                 L"or open the Microsoft Store to the requested version.\n");
         }
         goto abort;
     }
     if (exitCode == RC_NO_PYTHON_AT_ALL) {
-        fputws(L"No installed Python found!\n", stderr);
+        error(L"No installed Python found!\n");
         goto abort;
     }
     if (exitCode) {
@@ -2954,8 +3127,11 @@ process(int argc, wchar_t ** argv)
     }
 
     if (search.activate || search.deactivate) {
-        // Create/delete the aliases and update the INI file
-        exitCode = manageAlias(search.activate, &search, env, launchCommand);
+        exitCode = RC_AGAIN;
+        while (exitCode == RC_AGAIN) {
+            // Create/delete the aliases and update the INI file
+            exitCode = manageAlias(search.activate, &search, env, launchCommand);
+        }
     }
     else {
         // Launch selected runtime
