@@ -1,1 +1,0 @@
-Fixes ``py.exe`` launcher failing when run as users without user profiles.

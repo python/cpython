@@ -1,1 +1,0 @@
-Fix possible crashes in :meth:`collections.deque.index` when the deque is concurrently modified.

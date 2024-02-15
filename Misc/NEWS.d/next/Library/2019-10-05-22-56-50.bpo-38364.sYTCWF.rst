@@ -1,1 +1,0 @@
-The ``inspect`` functions ``isgeneratorfunction``, ``iscoroutinefunction``, ``isasyncgenfunction`` now support ``functools.partialmethod`` wrapped functions the same way they support ``functools.partial``.

@@ -1,2 +1,0 @@
-Revert changes in :gh:`106584` which made calls of ``TestResult`` methods
-``startTest()`` and ``stopTest()`` unbalanced.

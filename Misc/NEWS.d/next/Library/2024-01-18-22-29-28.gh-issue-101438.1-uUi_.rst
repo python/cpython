@@ -1,4 +1,0 @@
-Avoid reference cycle in ElementTree.iterparse. The iterator returned by
-``ElementTree.iterparse`` may hold on to a file descriptor. The reference
-cycle prevented prompt clean-up of the file descriptor if the returned
-iterator was not exhausted.
