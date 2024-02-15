@@ -1,0 +1,1 @@
+Make methods on :class:`collections.deque` thread-safe when the GIL is disabled.

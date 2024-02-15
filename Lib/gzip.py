@@ -349,7 +349,7 @@ class GzipFile(_compression.BaseStream):
 
     def close(self):
         fileobj = self.fileobj
-        if fileobj is None:
+        if fileobj is None or self._buffer.closed:
             return
         try:
             if self.mode == WRITE:
@@ -401,6 +401,9 @@ class GzipFile(_compression.BaseStream):
 
     def seek(self, offset, whence=io.SEEK_SET):
         if self.mode == WRITE:
+            self._check_not_closed()
+            # Flush buffer to ensure validity of self.offset
+            self._buffer.flush()
             if whence != io.SEEK_SET:
                 if whence == io.SEEK_CUR:
                     offset = self.offset + offset

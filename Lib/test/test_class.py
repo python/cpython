@@ -455,8 +455,8 @@ class ClassTests(unittest.TestCase):
                 self.attr = 1
 
         a = A()
-        self.assertEqual(_testcapi.hasattr_string(a, "attr"), True)
-        self.assertEqual(_testcapi.hasattr_string(a, "noattr"), False)
+        self.assertEqual(_testcapi.object_hasattrstring(a, b"attr"), 1)
+        self.assertEqual(_testcapi.object_hasattrstring(a, b"noattr"), 0)
         self.assertIsNone(sys.exception())
 
     def testDel(self):
@@ -771,6 +771,22 @@ class ClassTests(unittest.TestCase):
         with self.assertRaises(RecursionError):
             add_one_level()
 
+    def testMetaclassCallOptimization(self):
+        calls = 0
+
+        class TypeMetaclass(type):
+            def __call__(cls, *args, **kwargs):
+                nonlocal calls
+                calls += 1
+                return type.__call__(cls, *args, **kwargs)
+
+        class Type(metaclass=TypeMetaclass):
+            def __init__(self, obj):
+                self._obj = obj
+
+        for i in range(100):
+            Type(i)
+        self.assertEqual(calls, 100)
 
 if __name__ == '__main__':
     unittest.main()
