@@ -1829,7 +1829,11 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
     @unittest.skipUnless(support.Py_DEBUG,
                          '-X presite requires a Python debug build')
     def test_presite(self):
-        cmd = [sys.executable, "-I", "-X", "presite=test.reperf", "-c", "print('cmd')"]
+        cmd = [
+            sys.executable,
+            "-I", "-X", "presite=test._test_embed_structseq",
+            "-c", "print('cmd')",
+        ]
         proc = subprocess.run(
             cmd,
             stdout=subprocess.PIPE,
@@ -1838,8 +1842,7 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
         )
         self.assertEqual(proc.returncode, 0)
         out = proc.stdout.strip()
-        self.assertIn("10 times sub", out)
-        self.assertIn("CPU seconds", out)
+        self.assertIn("Tests passed", out)
         self.assertIn("cmd", out)
 
 
