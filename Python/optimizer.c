@@ -874,7 +874,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, const _PyBloomFilter *depende
         }
         /* Set the oparg to be the destination offset,
          * so that we can set the oparg of earlier jumps correctly. */
-        buffer[i].oparg = dest - executor->trace;
+        buffer[i].oparg = (uint16_t)(dest - executor->trace);
         dest--;
     }
     assert(next_exit == -1);
