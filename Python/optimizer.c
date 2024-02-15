@@ -271,7 +271,7 @@ _PyUOpName(int index)
 
 #ifdef Py_DEBUG
 void
-_PyUopPrint(_PyUOpInstruction *uop)
+_PyUOpPrint(_PyUOpInstruction *uop)
 {
     char buffer[100];
     const char *name = _PyUOpName(uop->opcode);
@@ -286,7 +286,6 @@ _PyUopPrint(_PyUOpInstruction *uop)
            uop->target,
            (uint64_t)uop->operand);
 }
-#define UOP_PRINT(LEVEL, UOP) if (lltrace >= (LEVEL)) _PyUopPrint((UOP))
 #endif
 
 static Py_ssize_t
@@ -387,9 +386,11 @@ BRANCH_TO_GUARD[4][2] = {
     trace[trace_length].oparg = (OPARG); \
     trace[trace_length].operand = (OPERAND); \
     trace[trace_length].target = (TARGET); \
-    DPRINTF(2, "ADD_TO_TRACE: "); \
-    UOP_PRINT(2, &trace[trace_length]); \
-    DPRINTF(2, "\n"); \
+    if (lltrace >= 2) { \
+        printf("  ADD_TO_TRACE: "); \
+        _PyUOpPrint(&trace[trace_length]); \
+        printf("\n"); \
+    } \
     trace_length++;
 
 #define INSTR_IP(INSTR, CODE) \
@@ -842,8 +843,8 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
     if (lltrace >= 2) {
         printf("Optimized executor (length %d):\n", length);
         for (int i = 0; i < length; i++) {
-            printf("%4d ", i);
-            _PyUopPrint(&executor->trace[i]);
+            printf("%4d OPTIMIZED: ", i);
+            _PyUOpPrint(&executor->trace[i]);
             printf("\n");
         }
     }
