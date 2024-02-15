@@ -1,0 +1,3 @@
+The Argument Clinic CLI is now invoked as either :program:`python3
+Tools/clinic` or :program:`python3 Tools/clinic/run_clinic.py`, as
+:file:`Tools/clinic/clinic.py` has been refactored into ``libclinic``.
