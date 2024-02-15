@@ -686,7 +686,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
      * could error. _CHECK_VALIDITY is needed if the previous
      * instruction could have escaped. */
     int last_set_ip = -1;
-    bool may_have_escaped = false;
+    bool may_have_escaped = true;
     for (int pc = 0; pc < buffer_size; pc++) {
         int opcode = buffer[pc].opcode;
         switch (opcode) {
@@ -712,6 +712,21 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                 }
                 last_set_ip = pc;
                 break;
+            case _POP_TOP:
+            {
+                _PyUOpInstruction *last = &buffer[pc-1];
+                while (last->opcode == _NOP) {
+                    last--;
+                }
+                if (last->opcode == _LOAD_CONST_INLINE  ||
+                    last->opcode == _LOAD_CONST_INLINE_BORROW ||
+                    last->opcode == _LOAD_FAST ||
+                    last->opcode == _COPY
+                ) {
+                    last->opcode = _NOP;
+                    buffer[pc].opcode = NOP;
+                }
+            }
             case _JUMP_TO_TOP:
             case _EXIT_TRACE:
                 return;
@@ -723,9 +738,6 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     may_have_escaped = true;
                 }
                 if (_PyUop_Flags[opcode] & HAS_ERROR_FLAG) {
-                    needs_ip = true;
-                }
-                if (opcode == _PUSH_FRAME) {
                     needs_ip = true;
                 }
                 if (needs_ip && last_set_ip >= 0) {
