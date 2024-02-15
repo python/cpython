@@ -290,19 +290,19 @@ void
 _PyDict_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization)
 {
 #ifdef WITH_FREELISTS
-    struct _Py_dict_freelist *dict_freelist = &freelists->dicts;
-    while (dict_freelist->numfree > 0) {
-        PyDictObject *op = dict_freelist->free_list[--dict_freelist->numfree];
+    struct _Py_dict_freelist *freelist = &freelists->dicts;
+    while (freelist->numfree > 0) {
+        PyDictObject *op = freelist->free_list[--freelist->numfree];
         assert(PyDict_CheckExact(op));
         PyObject_GC_Del(op);
     }
-    struct _Py_dictkeys_freelist *dictkeys_freelist = &freelists->dictkeys;
-    while (dictkeys_freelist->numfree > 0) {
-        PyMem_Free(dictkeys_freelist->keys_free_list[--dictkeys_freelist->numfree]);
+    struct _Py_dictkeys_freelist *keys_freelist = &freelists->dictkeys;
+    while (keys_freelist->numfree > 0) {
+        PyMem_Free(keys_freelist->keys_free_list[--keys_freelist->numfree]);
     }
     if (is_finalization) {
-        dict_freelist->numfree = -1;
-        dictkeys_freelist->numfree = -1;
+        freelist->numfree = -1;
+        keys_freelist->numfree = -1;
     }
 #endif
 }
