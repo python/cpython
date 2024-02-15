@@ -2208,6 +2208,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_lib2to3/data/fixers/myfixes \
 		test/test_module \
 		test/test_peg_generator \
+		test/test_pydoc \
 		test/test_sqlite3 \
 		test/test_tkinter \
 		test/test_tomllib \
