@@ -824,6 +824,10 @@ class TestSpecifics(unittest.TestCase):
                     "docstring2"
                     return 42
 
+                class C:
+                    "docstring3"
+                    pass
+
                 return h
         """)
         for opt in [-1, 0, 1, 2]:
