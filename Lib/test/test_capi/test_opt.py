@@ -123,6 +123,10 @@ def get_first_executor(func):
     return None
 
 
+def get_opnames(ex):
+    return {opname for opname, _, _, _ in ex}
+
+
 class TestExecutorInvalidation(unittest.TestCase):
 
     def setUp(self):
@@ -214,7 +218,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
+        uops = get_opnames(ex)
         self.assertIn("_SET_IP", uops)
         self.assertIn("_LOAD_FAST", uops)
 
@@ -263,7 +267,8 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(many_vars)
         self.assertIsNotNone(ex)
-        self.assertIn(("_LOAD_FAST", 259, 0), list(ex))
+        self.assertTrue(any((opcode, oparg, operand) == ("_LOAD_FAST", 259, 0)
+                            for opcode, oparg, _, operand in list(ex)))
 
     def test_unspecialized_unpack(self):
         # An example of an unspecialized opcode
@@ -284,7 +289,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
+        uops = get_opnames(ex)
         self.assertIn("_UNPACK_SEQUENCE", uops)
 
     def test_pop_jump_if_false(self):
@@ -299,7 +304,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
+        uops = get_opnames(ex)
         self.assertIn("_GUARD_IS_TRUE_POP", uops)
 
     def test_pop_jump_if_none(self):
@@ -314,7 +319,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
+        uops = get_opnames(ex)
         self.assertIn("_GUARD_IS_NOT_NONE_POP", uops)
 
     def test_pop_jump_if_not_none(self):
@@ -330,7 +335,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
+        uops = get_opnames(ex)
         self.assertIn("_GUARD_IS_NONE_POP", uops)
 
     def test_pop_jump_if_true(self):
@@ -345,7 +350,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
+        uops = get_opnames(ex)
         self.assertIn("_GUARD_IS_FALSE_POP", uops)
 
     def test_jump_backward(self):
@@ -360,7 +365,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
+        uops = get_opnames(ex)
         self.assertIn("_JUMP_TO_TOP", uops)
 
     def test_jump_forward(self):
@@ -380,7 +385,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
+        uops = get_opnames(ex)
         # Since there is no JUMP_FORWARD instruction,
         # look for indirect evidence: the += operator
         self.assertIn("_BINARY_OP_ADD_INT", uops)
@@ -401,7 +406,7 @@ class TestUops(unittest.TestCase):
         self.assertIsNotNone(ex)
         # for i, (opname, oparg) in enumerate(ex):
         #     print(f"{i:4d}: {opname:<20s} {oparg:3d}")
-        uops = {opname for opname, _, _ in ex}
+        uops = get_opnames(ex)
         self.assertIn("_GUARD_NOT_EXHAUSTED_RANGE", uops)
         # Verification that the jump goes past END_FOR
         # is done by manual inspection of the output
@@ -423,7 +428,7 @@ class TestUops(unittest.TestCase):
         self.assertIsNotNone(ex)
         # for i, (opname, oparg) in enumerate(ex):
         #     print(f"{i:4d}: {opname:<20s} {oparg:3d}")
-        uops = {opname for opname, _, _ in ex}
+        uops = get_opnames(ex)
         self.assertIn("_GUARD_NOT_EXHAUSTED_LIST", uops)
         # Verification that the jump goes past END_FOR
         # is done by manual inspection of the output
@@ -445,7 +450,7 @@ class TestUops(unittest.TestCase):
         self.assertIsNotNone(ex)
         # for i, (opname, oparg) in enumerate(ex):
         #     print(f"{i:4d}: {opname:<20s} {oparg:3d}")
-        uops = {opname for opname, _, _ in ex}
+        uops = get_opnames(ex)
         self.assertIn("_GUARD_NOT_EXHAUSTED_TUPLE", uops)
         # Verification that the jump goes past END_FOR
         # is done by manual inspection of the output
@@ -477,7 +482,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
+        uops = get_opnames(ex)
         self.assertIn("_PUSH_FRAME", uops)
         self.assertIn("_BINARY_OP_ADD_INT", uops)
 
@@ -495,7 +500,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
+        uops = get_opnames(ex)
         self.assertIn("_GUARD_IS_FALSE_POP", uops)
 
     def test_for_iter_tier_two(self):
@@ -525,7 +530,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
+        uops = get_opnames(ex)
         self.assertIn("_FOR_ITER_TIER_TWO", uops)
 
     def test_confidence_score(self):
@@ -553,7 +558,7 @@ class TestUops(unittest.TestCase):
         self.assertEqual(x, 40)
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        ops = [opname for opname, _, _ in ex]
+        ops = [opname for opname, _, _, _ in ex]
         count = ops.count("_GUARD_IS_TRUE_POP")
         # Because Each 'if' halves the score, the second branch is
         # too much already.
@@ -578,8 +583,8 @@ class TestUopsOptimization(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         self.assertEqual(res, 63)
-        binop_count = [opname for opname, _, _ in ex if opname == "_BINARY_OP_ADD_INT"]
-        guard_both_int_count = [opname for opname, _, _ in ex if opname == "_GUARD_BOTH_INT"]
+        binop_count = [opname for opname, _, _, _ in ex if opname == "_BINARY_OP_ADD_INT"]
+        guard_both_int_count = [opname for opname, _, _, _ in ex if opname == "_GUARD_BOTH_INT"]
         self.assertGreaterEqual(len(binop_count), 3)
         self.assertLessEqual(len(guard_both_int_count), 1)
 
@@ -602,8 +607,8 @@ class TestUopsOptimization(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         self.assertEqual(res, 124)
-        binop_count = [opname for opname, _, _ in ex if opname == "_BINARY_OP_ADD_INT"]
-        guard_both_int_count = [opname for opname, _, _ in ex if opname == "_GUARD_BOTH_INT"]
+        binop_count = [opname for opname, _, _, _ in ex if opname == "_BINARY_OP_ADD_INT"]
+        guard_both_int_count = [opname for opname, _, _, _ in ex if opname == "_GUARD_BOTH_INT"]
         self.assertGreaterEqual(len(binop_count), 3)
         self.assertLessEqual(len(guard_both_int_count), 1)
 
@@ -626,8 +631,8 @@ class TestUopsOptimization(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         self.assertEqual(res, 124)
-        binop_count = [opname for opname, _, _ in ex if opname == "_BINARY_OP_ADD_INT"]
-        guard_both_int_count = [opname for opname, _, _ in ex if opname == "_GUARD_BOTH_INT"]
+        binop_count = [opname for opname, _, _, _ in ex if opname == "_BINARY_OP_ADD_INT"]
+        guard_both_int_count = [opname for opname, _, _, _ in ex if opname == "_GUARD_BOTH_INT"]
         self.assertGreaterEqual(len(binop_count), 3)
         self.assertLessEqual(len(guard_both_int_count), 1)
 
@@ -649,7 +654,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        binop_count = [opname for opname, _, _ in ex if opname == "_BINARY_OP_ADD_INT"]
+        binop_count = [opname for opname, _, _, _ in ex if opname == "_BINARY_OP_ADD_INT"]
         self.assertGreaterEqual(len(binop_count), 3)
 
     def test_call_py_exact_args(self):
@@ -665,7 +670,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
+        uops = get_opnames(ex)
         self.assertIn("_PUSH_FRAME", uops)
         self.assertIn("_BINARY_OP_ADD_INT", uops)
         self.assertNotIn("_CHECK_PEP_523", uops)
@@ -684,7 +689,7 @@ class TestUopsOptimization(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertEqual(res, 62)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
+        uops = get_opnames(ex)
         self.assertNotIn("_GUARD_BOTH_INT", uops)
 
     def test_int_value_numbering(self):
@@ -706,9 +711,9 @@ class TestUopsOptimization(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertEqual(res, 4)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
+        uops = get_opnames(ex)
         self.assertIn("_GUARD_BOTH_INT", uops)
-        guard_count = [opname for opname, _, _ in ex if opname == "_GUARD_BOTH_INT"]
+        guard_count = [opname for opname, _, _, _ in ex if opname == "_GUARD_BOTH_INT"]
         self.assertEqual(len(guard_count), 1)
 
     def test_comprehension(self):
@@ -722,7 +727,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
+        uops = get_opnames(ex)
         self.assertNotIn("_BINARY_OP_ADD_INT", uops)
 
     def test_call_py_exact_args_disappearing(self):
@@ -768,6 +773,9 @@ class TestUopsOptimization(unittest.TestCase):
                         pass
             return None
 
+        def get_opnames(ex):
+            return {opname for opname, _, _, _ in ex}
+
         def testfunc(n):
             for i in range(n):
                 x = range(i)
@@ -779,7 +787,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         ex = get_first_executor(testfunc)
         assert ex is not None
-        uops = {opname for opname, _, _ in ex}
+        uops = get_opnames(ex)
         assert "_LOAD_GLOBAL_BUILTINS" not in uops
         assert "_LOAD_CONST_INLINE_BORROW_WITH_NULL" in uops
         """))

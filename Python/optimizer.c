@@ -277,14 +277,21 @@ uop_item(_PyExecutorObject *self, Py_ssize_t index)
         Py_DECREF(oname);
         return NULL;
     }
-    PyObject *operand = PyLong_FromUnsignedLongLong(self->trace[index].operand);
-    if (operand == NULL) {
+    PyObject *target = PyLong_FromUnsignedLong(self->trace[index].target);
+    if (oparg == NULL) {
         Py_DECREF(oparg);
         Py_DECREF(oname);
         return NULL;
     }
-    PyObject *args[3] = { oname, oparg, operand };
-    return _PyTuple_FromArraySteal(args, 3);
+    PyObject *operand = PyLong_FromUnsignedLongLong(self->trace[index].operand);
+    if (operand == NULL) {
+        Py_DECREF(target);
+        Py_DECREF(oparg);
+        Py_DECREF(oname);
+        return NULL;
+    }
+    PyObject *args[4] = { oname, oparg, target, operand };
+    return _PyTuple_FromArraySteal(args, 4);
 }
 
 PySequenceMethods uop_as_sequence = {
