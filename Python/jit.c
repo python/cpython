@@ -102,7 +102,7 @@ mark_executable(unsigned char *memory, size_t size)
     int old;
     int failed = !VirtualProtect(memory, size, PAGE_EXECUTE_READ, &old);
 #else
-    __builtin___clear_cache(memory, memory + size);
+    __builtin___clear_cache((char *)memory, (char *)memory + size);
     int failed = mprotect(memory, size, PROT_EXEC | PROT_READ);
 #endif
     if (failed) {
@@ -209,7 +209,7 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                 *loc64 = value;
                 continue;
             case HoleKind_R_X86_64_GOTPCRELX:
-            case HoleKind_R_X86_64_REX_GOTPCRELX:
+            case HoleKind_R_X86_64_REX_GOTPCRELX: {
                 // 32-bit relative address.
                 // Try to relax the GOT load into an immediate value:
                 uint64_t relaxed = *(uint64_t *)(value + 4) - 4;
@@ -242,6 +242,7 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                     value = relaxed;
                 }
                 // Fall through...
+            }
             case HoleKind_R_X86_64_GOTPCREL:
             case HoleKind_R_X86_64_PC32:
                 // 32-bit relative address.
