@@ -381,6 +381,7 @@ BRANCH_TO_GUARD[4][2] = {
 
 
 // Beware: Macro arg order differs from struct member order
+#ifdef Py_DEBUG
 #define ADD_TO_TRACE(OPCODE, OPARG, OPERAND, TARGET) \
     assert(trace_length < max_length); \
     trace[trace_length].opcode = (OPCODE); \
@@ -393,6 +394,15 @@ BRANCH_TO_GUARD[4][2] = {
         printf("\n"); \
     } \
     trace_length++;
+#else
+#define ADD_TO_TRACE(OPCODE, OPARG, OPERAND, TARGET) \
+    assert(trace_length < max_length); \
+    trace[trace_length].opcode = (OPCODE); \
+    trace[trace_length].oparg = (OPARG); \
+    trace[trace_length].target = (TARGET); \
+    trace[trace_length].operand = (OPERAND); \
+    trace_length++;
+#endif
 
 #define INSTR_IP(INSTR, CODE) \
     ((uint32_t)((INSTR) - ((_Py_CODEUNIT *)(CODE)->co_code_adaptive)))
