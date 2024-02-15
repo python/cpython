@@ -648,7 +648,10 @@ static const _Py_CODEUNIT _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS[] = {
 
 extern const struct _PyCode_DEF(8) _Py_InitCleanup;
 
-extern const char *_PyUOpName(int index);
+#ifdef Py_DEBUG
+extern void _PyUOpPrint(_PyUOpInstruction *uop);
+#endif
+
 
 /* Disable unused label warnings.  They are handy for debugging, even
    if computed gotos aren't used. */
@@ -1015,14 +1018,14 @@ enter_tier_two:
 
     for (;;) {
         uopcode = next_uop->opcode;
-        DPRINTF(3,
-                "%4d: uop %s, oparg %d, operand %" PRIu64 ", target %d, stack_level %d\n",
-                (int)(next_uop - current_executor->trace),
-                _PyUOpName(uopcode),
-                next_uop->oparg,
-                next_uop->operand,
-                next_uop->target,
+#ifdef Py_DEBUG
+        if (lltrace >= 3) {
+            printf("%4d uop: ", (int)(next_uop - current_executor->trace));
+            _PyUOpPrint(next_uop);
+            printf(" stack_level=%d\n",
                 (int)(stack_pointer - _PyFrame_Stackbase(frame)));
+        }
+#endif
         next_uop++;
         OPT_STAT_INC(uops_executed);
         UOP_STAT_INC(uopcode, execution_count);
@@ -1037,9 +1040,9 @@ enter_tier_two:
             default:
 #ifdef Py_DEBUG
             {
-                fprintf(stderr, "Unknown uop %d, oparg %d, operand %" PRIu64 " @ %d\n",
-                        opcode, next_uop[-1].oparg, next_uop[-1].operand,
-                        (int)(next_uop - current_executor->trace - 1));
+                printf("Unknown uop: ");
+                _PyUOpPrint(&next_uop[-1]);
+                printf(" @ %d\n", (int)(next_uop - current_executor->trace - 1));
                 Py_FatalError("Unknown uop");
             }
 #else
@@ -1067,10 +1070,15 @@ pop_2_error_tier_two:
 pop_1_error_tier_two:
     STACK_SHRINK(1);
 error_tier_two:
-    DPRINTF(2, "Error: [UOp %d (%s), oparg %d, operand %" PRIu64 ", target %d @ %d -> %s]\n",
-            uopcode, _PyUOpName(uopcode), next_uop[-1].oparg, next_uop[-1].operand, next_uop[-1].target,
-            (int)(next_uop - current_executor->trace - 1),
-            _PyOpcode_OpName[frame->instr_ptr->op.code]);
+#ifdef Py_DEBUG
+    if (lltrace >= 2) {
+        printf("Error: [UOp ");
+        _PyUOpPrint(&next_uop[-1]);
+        printf(" @ %d -> %s]\n",
+               (int)(next_uop - current_executor->trace - 1),
+               _PyOpcode_OpName[frame->instr_ptr->op.code]);
+    }
+#endif
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     frame->return_offset = 0;  // Don't leave this random
     _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -1080,10 +1088,15 @@ error_tier_two:
 // Jump here from DEOPT_IF()
 deoptimize:
     next_instr = next_uop[-1].target + _PyCode_CODE(_PyFrame_GetCode(frame));
-    DPRINTF(2, "DEOPT: [UOp %d (%s), oparg %d, operand %" PRIu64 ", target %d @ %d -> %s]\n",
-            uopcode, _PyUOpName(uopcode), next_uop[-1].oparg, next_uop[-1].operand, next_uop[-1].target,
-            (int)(next_uop - current_executor->trace - 1),
-            _PyOpcode_OpName[frame->instr_ptr->op.code]);
+#ifdef Py_DEBUG
+    if (lltrace >= 2) {
+        printf("DEOPT: [UOp ");
+        _PyUOpPrint(&next_uop[-1]);
+        printf(" @ %d -> %s]\n",
+               (int)(next_uop - current_executor->trace - 1),
+               _PyOpcode_OpName[frame->instr_ptr->op.code]);
+    }
+#endif
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     UOP_STAT_INC(uopcode, miss);
     Py_DECREF(current_executor);
