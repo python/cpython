@@ -987,27 +987,33 @@ Main build steps
 Main Makefile targets
 ---------------------
 
-make
-^^^^
+make [all]
+^^^^^^^^^^
 
 For the most part, when rebuilding after editing some code or
 refreshing your checkout from upstream, all you need to do is execute
 ``make``, which (per Make's semantics) builds the default target, the
-first one defined in the Makefile.  This is the ``all`` target, but
-what it depends on is defined during execution of the ``configure``
-script. Common configured targets include ``profile-opt`` (with
-``--enable-optimizations``) and ``build_wasm`` (with the
-``--with-emscripten-target``).
+first one defined in the Makefile.  By tradition (including in the
+CPython project) this is usually the ``all`` target. The
+``configure`` script expands an ``autoconf`` variable,
+``@DEF_MAKE_ALL_RULE@`` to describe precisely which targets ``make
+all`` will build. The three choices are
 
-Make will usually rebuild any targets (object files and executables)
-or situations where ``configure`` needs to be re-run, depending on the
-most recent source file changes.  Source/target dependencies are many
-and maintained manually though, so make sometimes doesn't correctly
+* ``profile-opt`` (configured with ``--enable-optimizations``)
+* ``build_wasm`` (configured with ``--with-emscripten-target``)
+* ``build_all`` (configured without explicitly using either of the others)
+
+Depending on the most recent source file changes, Make will rebuild
+any targets (object files and executables) deemed out-of-date,
+including running ``configure`` again if necessary, Source/target
+dependencies are many and maintained manually however, so Make
+sometimes doesn't have all the information necessary to correctly
 detect all targets which need to be rebuilt.  Depending on which
 targets aren't rebuilt, you might experience a number of problems. If
 you have build or test problems which you can't otherwise explain,
 ``make clean && make`` should work around most dependency problems, at
 the expense of longer build times.
+
 
 make platform
 ^^^^^^^^^^^^^
@@ -1016,6 +1022,7 @@ Build the ``python`` program, but don't build the standard library
 extension modules. This generates a file named ``platform`` which
 contains a single line describing the details of the build platform,
 e.g., ``macosx-14.3-arm64-3.12`` or ``linux-x86_64-3.13``.
+
 
 make profile-opt
 ^^^^^^^^^^^^^^^^
@@ -1026,39 +1033,43 @@ default target of the ``make`` command (``make all`` or just
 ``make``).
 
 
+
 make clean
 ^^^^^^^^^^
 
 Remove built files.
 
+
 make distclean
 ^^^^^^^^^^^^^^
 
 In addition to the the work done by ``make clean``, remove files
-created by the configure script.  (Related: ``git clean -fdx`` removes
-all files not known to Git. Use with care.)
+created by the configure script.  ``configure`` will have to be run
+before building again. [#]_
+
 
 make install
 ^^^^^^^^^^^^
 
-Build and install Python.
+Build the ``all`` target and install Python.
+
 
 make test
 ^^^^^^^^^
 
-Build Python and run the Python test suite with ``--fast-ci``
-option. Variables:
+Build the ``all`` target and run the Python test suite with the
+``--fast-ci`` option. Variables:
 
 * ``TESTOPTS``: additional regrtest command line options.
 * ``TESTPYTHONOPTS``: additional Python command line options.
 * ``TESTTIMEOUT``: timeout in seconds (default: 10 minutes).
 
+
 make buildbottest
 ^^^^^^^^^^^^^^^^^
 
 This is similar to ``make test``, but uses the ``--slow-ci``
-option and default timeout of 20 minutes, instead of ``--fast-ci`` option
-and a default timeout of 10 minutes.
+option and default timeout of 20 minutes, instead of ``--fast-ci`` option.
 
 
 make regen-all
@@ -1359,3 +1370,13 @@ Linker flags
    Linker flags used for building the interpreter object files.
 
    .. versionadded:: 3.8
+
+
+.. rubric:: Footnotes
+
+.. [#] ``git clean -fdx`` removes all files not known to Git.
+   When bug hunting using ``git bisect``, this is
+   `recommended between probes <https://github.com/python/cpython/issues/114505#issuecomment-1907021718>`_
+   to guarantee a completely clean build. **Use with care**, as it
+   will delete all files not checked into Git, including your
+   uncommitted work.
