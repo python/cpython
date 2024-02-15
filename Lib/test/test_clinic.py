@@ -1900,7 +1900,7 @@ class ClinicParserTest(TestCase):
                *vararg1: object
                *vararg2: object
         """
-        self.expect_failure(block, err, lineno=0)
+        self.expect_failure(block, err, lineno=3)
 
     def test_function_not_at_column_0(self):
         function = self.parse_function("""
@@ -2286,10 +2286,10 @@ class ClinicParserTest(TestCase):
             self.parse(block)
         # The line numbers are off; this is a known limitation.
         expected = dedent("""\
-            Warning in file 'clinic_tests' on line 0:
+            Warning:
             Non-ascii characters are not allowed in docstrings: 'á'
 
-            Warning in file 'clinic_tests' on line 0:
+            Warning:
             Non-ascii characters are not allowed in docstrings: 'ü', 'á', 'ß'
 
         """)
@@ -2390,7 +2390,7 @@ class ClinicParserTest(TestCase):
             docstring1
             docstring2
         """
-        self.expect_failure(block, err, lineno=0)
+        self.expect_failure(block, err, lineno=3)
 
     def test_state_func_docstring_only_one_param_template(self):
         err = "You may not specify {parameters} more than once in a docstring!"
@@ -2404,7 +2404,7 @@ class ClinicParserTest(TestCase):
             these are the params again:
                 {parameters}
         """
-        self.expect_failure(block, err, lineno=0)
+        self.expect_failure(block, err, lineno=7)
 
 
 class ClinicExternalTest(TestCase):

@@ -116,11 +116,6 @@ def warn_or_fail(
     line_number: int | None = None,
 ) -> None:
     joined = " ".join([str(a) for a in args])
-    if clinic:
-        if filename is None:
-            filename = clinic.filename
-        if getattr(clinic, 'block_parser', None) and (line_number is None):
-            line_number = clinic.block_parser.line_number
     error = ClinicError(joined, filename=filename, lineno=line_number)
     if fail:
         raise error
@@ -277,7 +272,7 @@ class Language(metaclass=abc.ABCMeta):
     checksum_line = ""
 
     def __init__(self, filename: str) -> None:
-        ...
+        self.filename = filename
 
     @abc.abstractmethod
     def render(
@@ -833,8 +828,6 @@ class CLanguage(Language):
                 if not p.is_optional():
                     min_kw_only = i - max_pos
             elif p.is_vararg():
-                if vararg != self.NO_VARARG:
-                    fail("Too many var args")
                 pseudo_args += 1
                 vararg = i - 1
             else:
@@ -1889,7 +1882,12 @@ class BlockParser:
                 raise StopIteration
 
             if self.dsl_name:
-                return_value = self.parse_clinic_block(self.dsl_name)
+                try:
+                    return_value = self.parse_clinic_block(self.dsl_name)
+                except ClinicError as exc:
+                    exc.filename = self.language.filename
+                    exc.lineno = self.line_number
+                    raise
                 self.dsl_name = None
                 self.first_block = False
                 return return_value
@@ -5071,6 +5069,7 @@ class DSLParser:
                 self.state(line)
             except ClinicError as exc:
                 exc.lineno = line_number
+                exc.filename = self.clinic.filename
                 raise
 
         self.do_post_block_processing_cleanup(line_number)
@@ -5078,7 +5077,8 @@ class DSLParser:
 
         if self.preserve_output:
             if block.output:
-                fail("'preserve' only works for blocks that don't produce any output!")
+                fail("'preserve' only works for blocks that don't produce any output!",
+                     line_number=line_number)
             block.output = self.saved_output
 
     def in_docstring(self) -> bool:
@@ -5503,6 +5503,8 @@ class DSLParser:
                  f"invalid parameter declaration (**kwargs?): {line!r}")
 
         if function_args.vararg:
+            if any(p.is_vararg() for p in self.function.parameters.values()):
+                fail("Too many var args")
             is_vararg = True
             parameter = function_args.vararg
         else:
@@ -6174,7 +6176,12 @@ class DSLParser:
             return
 
         self.check_remaining_star(lineno)
-        self.function.docstring = self.format_docstring()
+        try:
+            self.function.docstring = self.format_docstring()
+        except ClinicError as exc:
+            exc.lineno = lineno
+            exc.filename = self.clinic.filename
+            raise
 
 
 
