@@ -762,13 +762,13 @@ class ClinicLinearFormatTest(TestCase):
         """, name='bingle\nbungle\n')
 
     def test_text_before_block_marker(self):
-        regex = "found before '{marker}'"
+        regex = re.escape("found before '{marker}'")
         with self.assertRaisesRegex(clinic.ClinicError, regex):
             libclinic.linear_format("no text before marker for you! {marker}",
                                     marker="not allowed!")
 
     def test_text_after_block_marker(self):
-        regex = "found after '{marker}'"
+        regex = re.escape("found after '{marker}'")
         with self.assertRaisesRegex(clinic.ClinicError, regex):
             libclinic.linear_format("{marker} no text after marker for you!",
                                     marker="not allowed!")
