@@ -1,3 +1,0 @@
-Setters for members with an unsigned integer type now support the same range
-of valid values for objects that has a :meth:`~object.__index__` method as
-for :class:`int`.
