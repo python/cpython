@@ -174,7 +174,6 @@ _Py_SetOptimizer(PyInterpreterState *interp, _PyOptimizerObject *optimizer)
         cold_exits_initialized = 1;
         for (int i = 0; i < UOP_MAX_TRACE_LENGTH; i++) {
             if (init_cold_exit_executor(&COLD_EXITS[i], i)) {
-                PyErr_NoMemory();
                 return NULL;
             }
         }
@@ -1005,7 +1004,7 @@ PyUnstable_Optimizer_NewUOpOptimizer(void)
 
 static void
 counter_dealloc(_PyExecutorObject *self) {
-    /* The optimizer is the operand of the first uop. */
+    /* The optimizer is the operand of the second uop. */
     PyObject *opt = (PyObject *)self->trace[1].operand;
     Py_DECREF(opt);
     uop_dealloc(self);
@@ -1043,7 +1042,7 @@ counter_optimize(
         return 0;
     }
     _Py_CODEUNIT *target = instr + 1 + _PyOpcode_Caches[JUMP_BACKWARD] - oparg;
-    _PyUOpInstruction buffer[4] = {
+    _PyUOpInstruction buffer[3] = {
         { .opcode = _LOAD_CONST_INLINE_BORROW, .operand = (uintptr_t)self },
         { .opcode = _INTERNAL_INCREMENT_OPT_COUNTER },
         { .opcode = _EXIT_TRACE, .target = (uint32_t)(target - _PyCode_CODE(code)) }

@@ -57,12 +57,6 @@ typedef struct _PyExecutorObject {
     _PyExitData exits[1];
 } _PyExecutorObject;
 
-typedef struct _cold_exit {
-    _PyExecutorObject base;
-    _PyUOpInstruction uop;
-} _PyColdExitObject;
-
-
 typedef struct _PyOptimizerObject _PyOptimizerObject;
 
 /* Should return > 0 if a new executor is created. O if no executor is produced and < 0 if an error occurred. */

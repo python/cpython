@@ -3352,7 +3352,7 @@
         }
 
         case _JUMP_TO_TOP: {
-            #ifndef Py_JIT
+            #ifndef _Py_JIT
             next_uop = &current_executor->trace[1];
             #endif
             CHECK_EVAL_BREAKER();
@@ -3486,6 +3486,8 @@
                     GOTO_TIER_ONE(target);
                 }
             }
+            /* We need two references. One to store in exit->executor and
+             * one to keep the executor alive when executing. */
             Py_INCREF(executor);
             exit->executor = executor;
             GOTO_TIER_TWO(executor);
@@ -3497,7 +3499,7 @@
             TIER_TWO_ONLY
             Py_DECREF(tstate->previous_executor);
             tstate->previous_executor = NULL;
-            #ifndef Py_JIT
+            #ifndef _Py_JIT
             current_executor = (_PyExecutorObject*)executor;
             #endif
             break;

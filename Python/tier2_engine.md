@@ -95,8 +95,11 @@ design as the JIT simplifies debugging and is good for performance.
 Provided that we incref the new executor before executing it, we
 can jump directly to the code of the executor, without needing
 to pass a reference to that executor object.
-However, we do need to pass a reference to the previous executor,
+However, we do need a reference to the previous executor,
 so that it can be decref'd and for handling of cold exits.
+To avoid messing up the JIT's register allocation, we pass a
+reference to the previous executor in the thread state's
+`previous_executor` field.
 
 #### The interpreter
 
@@ -112,7 +115,7 @@ points to the currently live executor. When transfering from executor
 
 We also make the first instruction in `B` do the following:
 1. Set `current_executor` to point to `B`
-2. Decrement the reference count of `A`
+2. Decrement the reference count of `A` (`A` is referenced by `tstate->previous_executor`)
 
 The net effect of the above is to safely decrement the refcount of `A`,
 increment the refcount of `B` and set `current_executor` to point to `B`.
@@ -122,8 +125,7 @@ increment the refcount of `B` and set `current_executor` to point to `B`.
 Transfering control from one executor to another is done via tailcalls.
 
 The compiled executor should do the same, except that there is no local
-variable `current_executor`, so that the old executor, `A`, must be passed
-as an additional parameter when tailcalling.
+variable `current_executor`.
 
 ### Tier 1 to tier 2
 
@@ -131,9 +133,8 @@ Since the executor doesn't know if the previous code was tier 1 or tier 2,
 we need to make a transfer from tier 1 to tier 2 look like a tier 2 to tier 2
 transfer to the executor.
 
-To do that, we create a single, immortal executor that cannot be executed.
 We can then perform a tier 1 to tier 2 transfer by setting `current_executor`
-to this singleton, and then performing a tier 2 to tier 2 transfer as above.
+to `None`, and then performing a tier 2 to tier 2 transfer as above.
 
 ### Tier 2 to tier 1
 

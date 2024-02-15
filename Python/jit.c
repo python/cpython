@@ -306,7 +306,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
     size_t code_size = 0;
     size_t data_size = 0;
     for (size_t i = 0; i < length; i++) {
-        _PyUOpInstruction *instruction = &trace[i];
+        _PyUOpInstruction *instruction = (_PyUOpInstruction *)&trace[i];
         const StencilGroup *group = &stencil_groups[instruction->opcode];
         code_size += group->code.body_size;
         data_size += group->data.body_size;
@@ -329,7 +329,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
         top += stencil_groups[_START_EXECUTOR].code.body_size;
     }
     for (size_t i = 0; i < length; i++) {
-        _PyUOpInstruction *instruction = &trace[i];
+        _PyUOpInstruction *instruction = (_PyUOpInstruction *)&trace[i];
         const StencilGroup *group = &stencil_groups[instruction->opcode];
         // Think of patches as a dictionary mapping HoleValue to uint64_t:
         uint64_t patches[] = GET_PATCHES();
