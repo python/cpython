@@ -223,28 +223,6 @@ add_new_exception(PyObject *mod, const char *name, PyObject *base)
 #define ADD_NEW_EXCEPTION(MOD, NAME, BASE) \
     add_new_exception(MOD, MODULE_NAME_STR "." Py_STRINGIFY(NAME), BASE)
 
-static PyTypeObject *
-add_new_type(PyObject *mod, PyType_Spec *spec, crossinterpdatafunc shared,
-             struct xid_class_registry *classes)
-{
-    PyTypeObject *cls = (PyTypeObject *)PyType_FromModuleAndSpec(
-                mod, spec, NULL);
-    if (cls == NULL) {
-        return NULL;
-    }
-    if (PyModule_AddType(mod, cls) < 0) {
-        Py_DECREF(cls);
-        return NULL;
-    }
-    if (shared != NULL) {
-        if (register_xid_class(cls, shared, classes)) {
-            Py_DECREF(cls);
-            return NULL;
-        }
-    }
-    return cls;
-}
-
 static int
 wait_for_lock(PyThread_type_lock mutex, PY_TIMEOUT_T timeout)
 {
@@ -2614,6 +2592,25 @@ static PyType_Spec channelid_typespec = {
     .slots = channelid_typeslots,
 };
 
+static PyTypeObject *
+add_channelid_type(PyObject *mod)
+{
+    PyTypeObject *cls = (PyTypeObject *)PyType_FromModuleAndSpec(
+                mod, &channelid_typespec, NULL);
+    if (cls == NULL) {
+        return NULL;
+    }
+    if (PyModule_AddType(mod, cls) < 0) {
+        Py_DECREF(cls);
+        return NULL;
+    }
+    if (ensure_xid_class(cls, _channelid_shared) < 0) {
+        Py_DECREF(cls);
+        return NULL;
+    }
+    return cls;
+}
+
 
 /* SendChannel and RecvChannel classes */
 
@@ -3294,13 +3291,11 @@ module_exec(PyObject *mod)
     if (_globals_init() != 0) {
         return -1;
     }
-    struct xid_class_registry *xid_classes = NULL;
 
     module_state *state = get_module_state(mod);
     if (state == NULL) {
         goto error;
     }
-    xid_classes = &state->xid_classes;
 
     /* Add exception types */
     if (exceptions_init(mod) != 0) {
@@ -3319,8 +3314,7 @@ module_exec(PyObject *mod)
     }
 
     // ChannelID
-    state->ChannelIDType = add_new_type(
-            mod, &channelid_typespec, _channelid_shared, xid_classes);
+    state->ChannelIDType = add_channelid_type(mod);
     if (state->ChannelIDType == NULL) {
         goto error;
     }
@@ -3332,8 +3326,9 @@ module_exec(PyObject *mod)
     return 0;
 
 error:
-    if (xid_classes != NULL) {
-        clear_xid_class_registry(xid_classes);
+    if (state->ChannelInfoType != NULL) {
+        (void)_PyCrossInterpreterData_UnregisterClass(state->ChannelInfoType);
+        Py_CLEAR(state->ChannelInfoType);
     }
     _globals_fini();
     return -1;
