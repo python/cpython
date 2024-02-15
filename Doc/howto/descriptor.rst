@@ -1218,8 +1218,8 @@ descriptor works in practice:
 .. testcode::
 
     class D:
-        def f(self, x):
-             return x
+        def f(self):
+             return self
 
     class D2:
         pass
