@@ -335,7 +335,7 @@ library provides several tools that do less work than a full sort:
   the *n* smallest and largest values, respectively.  These functions
   make a single pass over the data keeping only *n* elements in memory
   at a time.  For values of *n* that are small relative to the number of
-  inputs, these functions make many fewer comparisons than a full sort.
+  inputs, these functions make far fewer comparisons than a full sort.
 
 * :func:`heapq.heappush` and :func:`heapq.heappop` create and maintain a
   partially sorted arrangement of data that keeps the smallest element
