@@ -32,16 +32,16 @@ def clear_executors(func):
 
 class TestOptimizerAPI(unittest.TestCase):
 
-    def test_get_counter_optimizer_dealloc(self):
+    def test_new_counter_optimizer_dealloc(self):
         # See gh-108727
         def f():
-            _testinternalcapi.get_counter_optimizer()
+            _testinternalcapi.new_counter_optimizer()
 
         f()
 
     def test_get_set_optimizer(self):
         old = _testinternalcapi.get_optimizer()
-        opt = _testinternalcapi.get_counter_optimizer()
+        opt = _testinternalcapi.new_counter_optimizer()
         try:
             _testinternalcapi.set_optimizer(opt)
             self.assertEqual(_testinternalcapi.get_optimizer(), opt)
@@ -62,7 +62,7 @@ class TestOptimizerAPI(unittest.TestCase):
         loop = ns['loop']
 
         for repeat in range(5):
-            opt = _testinternalcapi.get_counter_optimizer()
+            opt = _testinternalcapi.new_counter_optimizer()
             with temporary_optimizer(opt):
                 self.assertEqual(opt.get_count(), 0)
                 with clear_executors(loop):
@@ -90,7 +90,7 @@ class TestOptimizerAPI(unittest.TestCase):
         """), ns, ns)
         long_loop = ns['long_loop']
 
-        opt = _testinternalcapi.get_counter_optimizer()
+        opt = _testinternalcapi.new_counter_optimizer()
         with temporary_optimizer(opt):
             self.assertEqual(opt.get_count(), 0)
             long_loop()
@@ -102,7 +102,7 @@ class TestOptimizerAPI(unittest.TestCase):
             while i < x:
                 i += 1
 
-        opt = _testinternalcapi.get_counter_optimizer()
+        opt = _testinternalcapi.new_counter_optimizer()
         with temporary_optimizer(opt):
             testfunc(1000)
             code, replace_code  = testfunc.__code__, testfunc.__code__.replace()
@@ -127,7 +127,7 @@ class TestExecutorInvalidation(unittest.TestCase):
 
     def setUp(self):
         self.old = _testinternalcapi.get_optimizer()
-        self.opt = _testinternalcapi.get_counter_optimizer()
+        self.opt = _testinternalcapi.new_counter_optimizer()
         _testinternalcapi.set_optimizer(self.opt)
 
     def tearDown(self):
@@ -176,7 +176,7 @@ class TestExecutorInvalidation(unittest.TestCase):
                     pass
         """), ns, ns)
         f = ns['f']
-        opt = _testinternalcapi.get_uop_optimizer()
+        opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
             f()
         exe = get_first_executor(f)
@@ -189,7 +189,7 @@ class TestExecutorInvalidation(unittest.TestCase):
         def f():
             for _ in range(1000):
                 pass
-        opt = _testinternalcapi.get_uop_optimizer()
+        opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
             f()
         exe = get_first_executor(f)
@@ -208,7 +208,7 @@ class TestUops(unittest.TestCase):
             while i < x:
                 i += 1
 
-        opt = _testinternalcapi.get_uop_optimizer()
+        opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
             testfunc(1000)
 
@@ -255,7 +255,7 @@ class TestUops(unittest.TestCase):
         """), ns, ns)
         many_vars = ns["many_vars"]
 
-        opt = _testinternalcapi.get_uop_optimizer()
+        opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
             ex = get_first_executor(many_vars)
             self.assertIsNone(ex)
@@ -277,7 +277,7 @@ class TestUops(unittest.TestCase):
             while i < x:
                 i += 1
 
-        opt = _testinternalcapi.get_uop_optimizer()
+        opt = _testinternalcapi.new_uop_optimizer()
 
         with temporary_optimizer(opt):
             testfunc(20)
@@ -293,7 +293,7 @@ class TestUops(unittest.TestCase):
             while i < n:
                 i += 1
 
-        opt = _testinternalcapi.get_uop_optimizer()
+        opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
             testfunc(20)
 
@@ -308,7 +308,7 @@ class TestUops(unittest.TestCase):
                 if x is None:
                     x = 0
 
-        opt = _testinternalcapi.get_uop_optimizer()
+        opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
             testfunc(range(20))
 
@@ -324,7 +324,7 @@ class TestUops(unittest.TestCase):
                 if x is not None:
                     x = 0
 
-        opt = _testinternalcapi.get_uop_optimizer()
+        opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
             testfunc(range(20))
 
@@ -339,7 +339,7 @@ class TestUops(unittest.TestCase):
             while not i >= n:
                 i += 1
 
-        opt = _testinternalcapi.get_uop_optimizer()
+        opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
             testfunc(20)
 
@@ -354,7 +354,7 @@ class TestUops(unittest.TestCase):
             while i < n:
                 i += 1
 
-        opt = _testinternalcapi.get_uop_optimizer()
+        opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
             testfunc(20)
 
@@ -374,7 +374,7 @@ class TestUops(unittest.TestCase):
                 a += 1
             return a
 
-        opt = _testinternalcapi.get_uop_optimizer()
+        opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
             testfunc(20)
 
@@ -392,7 +392,7 @@ class TestUops(unittest.TestCase):
                 total += i
             return total
 
-        opt = _testinternalcapi.get_uop_optimizer()
+        opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
             total = testfunc(20)
             self.assertEqual(total, 190)
@@ -413,7 +413,7 @@ class TestUops(unittest.TestCase):
                 total += i
             return total
 
-        opt = _testinternalcapi.get_uop_optimizer()
+        opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
             a = list(range(20))
             total = testfunc(a)
@@ -435,7 +435,7 @@ class TestUops(unittest.TestCase):
                 total += i
             return total
 
-        opt = _testinternalcapi.get_uop_optimizer()
+        opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
             a = tuple(range(20))
             total = testfunc(a)
@@ -455,7 +455,7 @@ class TestUops(unittest.TestCase):
             for x in it:
                 pass
 
-        opt = _testinternalcapi.get_uop_optimizer()
+        opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
             a = [1, 2, 3]
             it = iter(a)
@@ -471,7 +471,7 @@ class TestUops(unittest.TestCase):
             for i in range(n):
                 dummy(i)
 
-        opt = _testinternalcapi.get_uop_optimizer()
+        opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
             testfunc(20)
 
@@ -489,7 +489,7 @@ class TestUops(unittest.TestCase):
                 else:
                     i = 1
 
-        opt = _testinternalcapi.get_uop_optimizer()
+        opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
             testfunc(20)
 
@@ -517,7 +517,7 @@ class TestUops(unittest.TestCase):
                     x += 1000*i + j
             return x
 
-        opt = _testinternalcapi.get_uop_optimizer()
+        opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
             x = testfunc(10, 10)
 
@@ -546,7 +546,7 @@ class TestUops(unittest.TestCase):
                     bits += 1
             return bits
 
-        opt = _testinternalcapi.get_uop_optimizer()
+        opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
             x = testfunc(20)
 
@@ -570,7 +570,7 @@ class TestUopsOptimization(unittest.TestCase):
                 num += 1
             return a
 
-        opt = _testinternalcapi.get_uop_optimizer()
+        opt = _testinternalcapi.new_uop_optimizer()
         res = None
         with temporary_optimizer(opt):
             res = testfunc(32)
@@ -594,7 +594,7 @@ class TestUopsOptimization(unittest.TestCase):
                 num += 1
             return a
 
-        opt = _testinternalcapi.get_uop_optimizer()
+        opt = _testinternalcapi.new_uop_optimizer()
         res = None
         with temporary_optimizer(opt):
             res = testfunc(32)
@@ -618,7 +618,7 @@ class TestUopsOptimization(unittest.TestCase):
                 num += 1
             return x
 
-        opt = _testinternalcapi.get_uop_optimizer()
+        opt = _testinternalcapi.new_uop_optimizer()
         res = None
         with temporary_optimizer(opt):
             res = testfunc(32)
@@ -642,7 +642,7 @@ class TestUopsOptimization(unittest.TestCase):
                 num += 1
             return a
 
-        opt = _testinternalcapi.get_uop_optimizer()
+        opt = _testinternalcapi.new_uop_optimizer()
         res = None
         with temporary_optimizer(opt):
             res = testfunc(64)
@@ -659,7 +659,7 @@ class TestUopsOptimization(unittest.TestCase):
             for i in range(n):
                 dummy(i)
 
-        opt = _testinternalcapi.get_uop_optimizer()
+        opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
             testfunc(32)
 
@@ -677,7 +677,7 @@ class TestUopsOptimization(unittest.TestCase):
                 x = i + i
             return x
 
-        opt = _testinternalcapi.get_uop_optimizer()
+        opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
             res = testfunc(32)
 
@@ -699,7 +699,7 @@ class TestUopsOptimization(unittest.TestCase):
                 res = x + z + a + b
             return res
 
-        opt = _testinternalcapi.get_uop_optimizer()
+        opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
             res = testfunc(32)
 
@@ -716,7 +716,7 @@ class TestUopsOptimization(unittest.TestCase):
             for _ in range(n):
                 return [i for i in range(n)]
 
-        opt = _testinternalcapi.get_uop_optimizer()
+        opt = _testinternalcapi.new_uop_optimizer()
         with temporary_optimizer(opt):
             testfunc(32)
 
@@ -733,7 +733,7 @@ class TestUopsOptimization(unittest.TestCase):
             for i in range(n):
                 dummy(i)
 
-        opt = _testinternalcapi.get_uop_optimizer()
+        opt = _testinternalcapi.new_uop_optimizer()
         # Trigger specialization
         testfunc(8)
         with temporary_optimizer(opt):
@@ -773,7 +773,7 @@ class TestUopsOptimization(unittest.TestCase):
                 x = range(i)
             return x
 
-        opt = _testinternalcapi.get_uop_optimizer()
+        opt = _testinternalcapi.new_uop_optimizer()
         _testinternalcapi.set_optimizer(opt)
         testfunc(64)
 
