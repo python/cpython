@@ -25,7 +25,7 @@ which is equivalent but more efficient.
 
 A superblock is a representation of the code we want to execute,
 but it is not in executable form.
-The executable form is know as an executor.
+The executable form is known as an executor.
 
 Executors are semantically equivalent to the superblock they are
 created from, but are in a form that can be efficiently executable.
@@ -89,7 +89,7 @@ executing it.
 We want to minimize the amount of data that is passed from
 one executor to the next. In the JIT, this reduces the number
 of arguments in the tailcall, freeing up registers for other uses.
-It is less important in the interpreter, but follwing the same
+It is less important in the interpreter, but following the same
 design as the JIT simplifies debugging and is good for performance.
 
 Provided that we incref the new executor before executing it, we
