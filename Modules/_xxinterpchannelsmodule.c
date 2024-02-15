@@ -313,16 +313,23 @@ traverse_module_state(module_state *state, visitproc visit, void *arg)
 static void
 clear_xid_types(module_state *state)
 {
+    clear_xid_class_registry(&state->xid_classes);
+
+    /* external types */
+    if (state->send_channel_type != NULL) {
+        (void)_PyCrossInterpreterData_UnregisterClass(state->send_channel_type);
+        Py_CLEAR(state->send_channel_type);
+    }
+    if (state->recv_channel_type != NULL) {
+        (void)_PyCrossInterpreterData_UnregisterClass(state->recv_channel_type);
+        Py_CLEAR(state->recv_channel_type);
+    }
+
     /* heap types */
     if (state->ChannelInfoType != NULL) {
         (void)_PyCrossInterpreterData_UnregisterClass(state->ChannelInfoType);
         Py_CLEAR(state->ChannelInfoType);
     }
-
-    /* external types */
-    clear_xid_class_registry(&state->xid_classes);
-    Py_CLEAR(state->send_channel_type);
-    Py_CLEAR(state->recv_channel_type);
 }
 
 static int
@@ -2703,7 +2710,6 @@ set_channelend_types(PyObject *mod, PyTypeObject *send, PyTypeObject *recv)
     if (state == NULL) {
         return -1;
     }
-    struct xid_class_registry *xid_classes = &state->xid_classes;
 
     if (state->send_channel_type != NULL
         || state->recv_channel_type != NULL)
@@ -2713,11 +2719,15 @@ set_channelend_types(PyObject *mod, PyTypeObject *send, PyTypeObject *recv)
     }
     state->send_channel_type = (PyTypeObject *)Py_NewRef(send);
     state->recv_channel_type = (PyTypeObject *)Py_NewRef(recv);
-
-    if (register_xid_class(send, _channelend_shared, xid_classes)) {
+    if (ensure_xid_class(send, _channelend_shared) < 0) {
+        Py_CLEAR(state->send_channel_type);
+        Py_CLEAR(state->recv_channel_type);
         return -1;
     }
-    if (register_xid_class(recv, _channelend_shared, xid_classes)) {
+    if (ensure_xid_class(recv, _channelend_shared) < 0) {
+        (void)_PyCrossInterpreterData_UnregisterClass(state->send_channel_type);
+        Py_CLEAR(state->send_channel_type);
+        Py_CLEAR(state->recv_channel_type);
         return -1;
     }
 
