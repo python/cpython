@@ -588,16 +588,16 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
     INST->oparg = ARG;            \
     INST->operand = OPERAND;
 
+#define OUT_OF_SPACE_IF_NULL(RES, EXPR) \
+    RES = (EXPR);                       \
+    if (RES == NULL) {                  \
+        goto out_of_space;              \
+    }
+
 #define _LOAD_ATTR_NOT_NULL \
     do {                    \
-    attr = sym_new_known_notnull(ctx); \
-    if (attr == NULL) { \
-        goto error; \
-    } \
-    null = sym_new_null(ctx); \
-    if (null == NULL) { \
-        goto error; \
-    } \
+    OUT_OF_SPACE_IF_NULL(attr, sym_new_known_notnull(ctx)); \
+    OUT_OF_SPACE_IF_NULL(null, sym_new_null(ctx)); \
     } while (0);
 
 
