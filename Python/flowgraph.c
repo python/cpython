@@ -2729,7 +2729,7 @@ _PyCfg_ToInstructionSequence(cfg_builder *g, _PyCompile_InstructionSequence *seq
         RETURN_IF_ERROR(_PyCompile_InstructionSequence_UseLabel(seq, b->b_label.id));
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
-            if (OPCODE_HAS_JUMP(instr->i_opcode)) {
+            if (OPCODE_HAS_JUMP(instr->i_opcode) || is_block_push(instr)) {
                 instr->i_oparg = instr->i_target->b_label.id;
             }
             RETURN_IF_ERROR(
