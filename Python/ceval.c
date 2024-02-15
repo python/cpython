@@ -745,7 +745,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     PyObject **stack_pointer;
 
 #ifndef _Py_JIT
-    /* State shared between Tier 1 and Tier 2 interpreter */
+    /* Tier 2 interpreter state */
     _PyExecutorObject *current_executor = NULL;
     const _PyUOpInstruction *next_uop = NULL;
 #endif
