@@ -1,5 +1,0 @@
-Synchronization of the :mod:`dbm.dumb` database is now no-op if there was no
-modification since opening or last synchronization.
-The directory file for a newly created empty :mod:`dbm.dumb` database is now
-created immediately after opening instead of deferring this until
-synchronizing or closing.

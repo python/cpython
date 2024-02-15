@@ -393,7 +393,7 @@ method_vectorcall_FASTCALL(
     if (method_check_args(func, args, nargs, kwnames)) {
         return NULL;
     }
-    _PyCFunctionFast meth = (_PyCFunctionFast)
+    PyCFunctionFast meth = (PyCFunctionFast)
                             method_enter_call(tstate, func);
     if (meth == NULL) {
         return NULL;
@@ -412,7 +412,7 @@ method_vectorcall_FASTCALL_KEYWORDS(
     if (method_check_args(func, args, nargs, NULL)) {
         return NULL;
     }
-    _PyCFunctionFastWithKeywords meth = (_PyCFunctionFastWithKeywords)
+    PyCFunctionFastWithKeywords meth = (PyCFunctionFastWithKeywords)
                                         method_enter_call(tstate, func);
     if (meth == NULL) {
         return NULL;
@@ -1730,15 +1730,12 @@ property_copy(PyObject *old, PyObject *get, PyObject *set, PyObject *del)
         return NULL;
 
     if (get == NULL || get == Py_None) {
-        Py_XDECREF(get);
         get = pold->prop_get ? pold->prop_get : Py_None;
     }
     if (set == NULL || set == Py_None) {
-        Py_XDECREF(set);
         set = pold->prop_set ? pold->prop_set : Py_None;
     }
     if (del == NULL || del == Py_None) {
-        Py_XDECREF(del);
         del = pold->prop_del ? pold->prop_del : Py_None;
     }
     if (pold->getter_doc && get != Py_None) {

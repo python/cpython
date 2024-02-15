@@ -711,7 +711,7 @@ class ClinicGroupPermuterTest(TestCase):
 
 class ClinicLinearFormatTest(TestCase):
     def _test(self, input, output, **kwargs):
-        computed = clinic.linear_format(input, **kwargs)
+        computed = libclinic.linear_format(input, **kwargs)
         self.assertEqual(output, computed)
 
     def test_empty_strings(self):
@@ -760,6 +760,19 @@ class ClinicLinearFormatTest(TestCase):
 
           def
         """, name='bingle\nbungle\n')
+
+    def test_text_before_block_marker(self):
+        regex = re.escape("found before '{marker}'")
+        with self.assertRaisesRegex(clinic.ClinicError, regex):
+            libclinic.linear_format("no text before marker for you! {marker}",
+                                    marker="not allowed!")
+
+    def test_text_after_block_marker(self):
+        regex = re.escape("found after '{marker}'")
+        with self.assertRaisesRegex(clinic.ClinicError, regex):
+            libclinic.linear_format("{marker} no text after marker for you!",
+                                    marker="not allowed!")
+
 
 class InertParser:
     def __init__(self, clinic):
@@ -1900,7 +1913,7 @@ class ClinicParserTest(TestCase):
                *vararg1: object
                *vararg2: object
         """
-        self.expect_failure(block, err, lineno=0)
+        self.expect_failure(block, err, lineno=3)
 
     def test_function_not_at_column_0(self):
         function = self.parse_function("""
@@ -2286,10 +2299,10 @@ class ClinicParserTest(TestCase):
             self.parse(block)
         # The line numbers are off; this is a known limitation.
         expected = dedent("""\
-            Warning in file 'clinic_tests' on line 0:
+            Warning:
             Non-ascii characters are not allowed in docstrings: 'á'
 
-            Warning in file 'clinic_tests' on line 0:
+            Warning:
             Non-ascii characters are not allowed in docstrings: 'ü', 'á', 'ß'
 
         """)
@@ -2390,7 +2403,7 @@ class ClinicParserTest(TestCase):
             docstring1
             docstring2
         """
-        self.expect_failure(block, err, lineno=0)
+        self.expect_failure(block, err, lineno=3)
 
     def test_state_func_docstring_only_one_param_template(self):
         err = "You may not specify {parameters} more than once in a docstring!"
@@ -2404,7 +2417,7 @@ class ClinicParserTest(TestCase):
             these are the params again:
                 {parameters}
         """
-        self.expect_failure(block, err, lineno=0)
+        self.expect_failure(block, err, lineno=7)
 
 
 class ClinicExternalTest(TestCase):

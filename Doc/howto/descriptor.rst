@@ -1,8 +1,8 @@
 .. _descriptorhowto:
 
-======================
-Descriptor HowTo Guide
-======================
+================
+Descriptor Guide
+================
 
 :Author: Raymond Hettinger
 :Contact: <python at rcn dot com>
@@ -1192,6 +1192,10 @@ roughly equivalent to:
             "Emulate method_getattro() in Objects/classobject.c"
             return getattr(self.__func__, name)
 
+        def __get__(self, obj, objtype=None):
+            "Emulate method_descr_get() in Objects/classobject.c"
+            return self
+
 To support automatic creation of methods, functions include the
 :meth:`__get__` method for binding methods during attribute access.  This
 means that functions are non-data descriptors that return bound methods
@@ -1214,8 +1218,20 @@ descriptor works in practice:
 .. testcode::
 
     class D:
-        def f(self, x):
-             return x
+        def f(self):
+             return self
+
+    class D2:
+        pass
+
+.. doctest::
+    :hide:
+
+    >>> d = D()
+    >>> d2 = D2()
+    >>> d2.f = d.f.__get__(d2, D2)
+    >>> d2.f() is d
+    True
 
 The function has a :term:`qualified name` attribute to support introspection:
 

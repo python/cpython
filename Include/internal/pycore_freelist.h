@@ -35,7 +35,7 @@ extern "C" {
 
 struct _Py_list_freelist {
 #ifdef WITH_FREELISTS
-    PyListObject *free_list[PyList_MAXFREELIST];
+    PyListObject *items[PyList_MAXFREELIST];
     int numfree;
 #endif
 };
@@ -50,7 +50,7 @@ struct _Py_tuple_freelist {
        object is used as the linked list node, with its first item
        (ob_item[0]) pointing to the next node (i.e. the previous head).
        Each linked list is initially NULL. */
-    PyTupleObject *free_list[PyTuple_NFREELISTS];
+    PyTupleObject *items[PyTuple_NFREELISTS];
     int numfree[PyTuple_NFREELISTS];
 #else
     char _unused;  // Empty structs are not allowed.
@@ -63,17 +63,23 @@ struct _Py_float_freelist {
        free_list is a singly-linked list of available PyFloatObjects,
        linked via abuse of their ob_type members. */
     int numfree;
-    PyFloatObject *free_list;
+    PyFloatObject *items;
 #endif
 };
 
 struct _Py_dict_freelist {
 #ifdef WITH_FREELISTS
     /* Dictionary reuse scheme to save calls to malloc and free */
-    PyDictObject *free_list[PyDict_MAXFREELIST];
-    PyDictKeysObject *keys_free_list[PyDict_MAXFREELIST];
+    PyDictObject *items[PyDict_MAXFREELIST];
     int numfree;
-    int keys_numfree;
+#endif
+};
+
+struct _Py_dictkeys_freelist {
+#ifdef WITH_FREELISTS
+    /* Dictionary keys reuse scheme to save calls to malloc and free */
+    PyDictKeysObject *items[PyDict_MAXFREELIST];
+    int numfree;
 #endif
 };
 
@@ -88,7 +94,7 @@ struct _Py_slice_freelist {
 struct _Py_context_freelist {
 #ifdef WITH_FREELISTS
     // List of free PyContext objects
-    PyContext *freelist;
+    PyContext *items;
     int numfree;
 #endif
 };
@@ -99,18 +105,22 @@ struct _Py_async_gen_freelist {
        fragmentation, as _PyAsyncGenWrappedValue and PyAsyncGenASend
        are short-living objects that are instantiated for every
        __anext__() call. */
-    struct _PyAsyncGenWrappedValue* value_freelist[_PyAsyncGen_MAXFREELIST];
-    int value_numfree;
+    struct _PyAsyncGenWrappedValue* items[_PyAsyncGen_MAXFREELIST];
+    int numfree;
+#endif
+};
 
-    struct PyAsyncGenASend* asend_freelist[_PyAsyncGen_MAXFREELIST];
-    int asend_numfree;
+struct _Py_async_gen_asend_freelist {
+#ifdef WITH_FREELISTS
+    struct PyAsyncGenASend* items[_PyAsyncGen_MAXFREELIST];
+    int numfree;
 #endif
 };
 
 struct _PyObjectStackChunk;
 
 struct _Py_object_stack_freelist {
-    struct _PyObjectStackChunk *free_list;
+    struct _PyObjectStackChunk *items;
     Py_ssize_t numfree;
 };
 
@@ -119,9 +129,11 @@ struct _Py_object_freelists {
     struct _Py_tuple_freelist tuples;
     struct _Py_list_freelist lists;
     struct _Py_dict_freelist dicts;
+    struct _Py_dictkeys_freelist dictkeys;
     struct _Py_slice_freelist slices;
     struct _Py_context_freelist contexts;
     struct _Py_async_gen_freelist async_gens;
+    struct _Py_async_gen_asend_freelist async_gen_asends;
     struct _Py_object_stack_freelist object_stacks;
 };
 

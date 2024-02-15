@@ -317,7 +317,7 @@
         case _TO_BOOL_BOOL: {
             PyObject *value;
             value = stack_pointer[-1];
-            if (!PyBool_Check(value)) goto deoptimize;
+            if (!PyBool_Check(value)) goto side_exit;
             STAT_INC(TO_BOOL, hit);
             break;
         }
@@ -326,7 +326,7 @@
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
-            if (!PyLong_CheckExact(value)) goto deoptimize;
+            if (!PyLong_CheckExact(value)) goto side_exit;
             STAT_INC(TO_BOOL, hit);
             if (_PyLong_IsZero((PyLongObject *)value)) {
                 assert(_Py_IsImmortal(value));
@@ -344,7 +344,7 @@
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
-            if (!PyList_CheckExact(value)) goto deoptimize;
+            if (!PyList_CheckExact(value)) goto side_exit;
             STAT_INC(TO_BOOL, hit);
             res = Py_SIZE(value) ? Py_True : Py_False;
             Py_DECREF(value);
@@ -357,7 +357,7 @@
             PyObject *res;
             value = stack_pointer[-1];
             // This one is a bit weird, because we expect *some* failures:
-            if (!Py_IsNone(value)) goto deoptimize;
+            if (!Py_IsNone(value)) goto side_exit;
             STAT_INC(TO_BOOL, hit);
             res = Py_False;
             stack_pointer[-1] = res;
@@ -368,7 +368,7 @@
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
-            if (!PyUnicode_CheckExact(value)) goto deoptimize;
+            if (!PyUnicode_CheckExact(value)) goto side_exit;
             STAT_INC(TO_BOOL, hit);
             if (value == &_Py_STR(empty)) {
                 assert(_Py_IsImmortal(value));
@@ -390,7 +390,7 @@
             uint32_t version = (uint32_t)CURRENT_OPERAND();
             // This one is a bit weird, because we expect *some* failures:
             assert(version);
-            if (Py_TYPE(value)->tp_version_tag != version) goto deoptimize;
+            if (Py_TYPE(value)->tp_version_tag != version) goto side_exit;
             STAT_INC(TO_BOOL, hit);
             Py_DECREF(value);
             res = Py_True;
@@ -414,8 +414,8 @@
             PyObject *left;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (!PyLong_CheckExact(left)) goto deoptimize;
-            if (!PyLong_CheckExact(right)) goto deoptimize;
+            if (!PyLong_CheckExact(left)) goto side_exit;
+            if (!PyLong_CheckExact(right)) goto side_exit;
             break;
         }
 
@@ -472,8 +472,8 @@
             PyObject *left;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (!PyFloat_CheckExact(left)) goto deoptimize;
-            if (!PyFloat_CheckExact(right)) goto deoptimize;
+            if (!PyFloat_CheckExact(left)) goto side_exit;
+            if (!PyFloat_CheckExact(right)) goto side_exit;
             break;
         }
 
@@ -530,8 +530,8 @@
             PyObject *left;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (!PyUnicode_CheckExact(left)) goto deoptimize;
-            if (!PyUnicode_CheckExact(right)) goto deoptimize;
+            if (!PyUnicode_CheckExact(left)) goto side_exit;
+            if (!PyUnicode_CheckExact(right)) goto side_exit;
             break;
         }
 
@@ -1799,7 +1799,7 @@
             uint32_t type_version = (uint32_t)CURRENT_OPERAND();
             PyTypeObject *tp = Py_TYPE(owner);
             assert(type_version != 0);
-            if (tp->tp_version_tag != type_version) goto deoptimize;
+            if (tp->tp_version_tag != type_version) goto side_exit;
             break;
         }
 
@@ -2246,8 +2246,6 @@
             stack_pointer[-1] = b;
             break;
         }
-
-        /* _JUMP_BACKWARD is not a viable micro-op for tier 2 */
 
         /* _POP_JUMP_IF_FALSE is not a viable micro-op for tier 2 */
 
@@ -3204,7 +3202,7 @@
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
             /* res = func(self, args, nargs) */
-            res = ((_PyCFunctionFast)(void(*)(void))cfunc)(
+            res = ((PyCFunctionFast)(void(*)(void))cfunc)(
                 PyCFunction_GET_SELF(callable),
                 args,
                 total_args);
@@ -3245,8 +3243,8 @@
             if (PyCFunction_GET_FLAGS(callable) != (METH_FASTCALL | METH_KEYWORDS)) goto deoptimize;
             STAT_INC(CALL, hit);
             /* res = func(self, args, nargs, kwnames) */
-            _PyCFunctionFastWithKeywords cfunc =
-            (_PyCFunctionFastWithKeywords)(void(*)(void))
+            PyCFunctionFastWithKeywords cfunc =
+            (PyCFunctionFastWithKeywords)(void(*)(void))
             PyCFunction_GET_FUNCTION(callable);
             res = cfunc(PyCFunction_GET_SELF(callable), args, total_args, NULL);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -3397,8 +3395,8 @@
             if (!Py_IS_TYPE(self, d_type)) goto deoptimize;
             STAT_INC(CALL, hit);
             int nargs = total_args - 1;
-            _PyCFunctionFastWithKeywords cfunc =
-            (_PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
+            PyCFunctionFastWithKeywords cfunc =
+            (PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
             res = cfunc(self, args + 1, nargs, NULL);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Free the arguments. */
@@ -3476,8 +3474,8 @@
             PyObject *self = args[0];
             if (!Py_IS_TYPE(self, method->d_common.d_type)) goto deoptimize;
             STAT_INC(CALL, hit);
-            _PyCFunctionFast cfunc =
-            (_PyCFunctionFast)(void(*)(void))meth->ml_meth;
+            PyCFunctionFast cfunc =
+            (PyCFunctionFast)(void(*)(void))meth->ml_meth;
             int nargs = total_args - 1;
             res = cfunc(self, args + 1, nargs);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -3679,7 +3677,7 @@
             PyObject *flag;
             flag = stack_pointer[-1];
             stack_pointer += -1;
-            if (!Py_IsTrue(flag)) goto deoptimize;
+            if (!Py_IsTrue(flag)) goto side_exit;
             assert(Py_IsTrue(flag));
             break;
         }
@@ -3688,7 +3686,7 @@
             PyObject *flag;
             flag = stack_pointer[-1];
             stack_pointer += -1;
-            if (!Py_IsFalse(flag)) goto deoptimize;
+            if (!Py_IsFalse(flag)) goto side_exit;
             assert(Py_IsFalse(flag));
             break;
         }
@@ -3699,7 +3697,7 @@
             stack_pointer += -1;
             if (!Py_IsNone(val)) {
                 Py_DECREF(val);
-                if (1) goto deoptimize;
+                if (1) goto side_exit;
             }
             break;
         }
@@ -3708,13 +3706,15 @@
             PyObject *val;
             val = stack_pointer[-1];
             stack_pointer += -1;
-            if (Py_IsNone(val)) goto deoptimize;
+            if (Py_IsNone(val)) goto side_exit;
             Py_DECREF(val);
             break;
         }
 
         case _JUMP_TO_TOP: {
-            next_uop = current_executor->trace;
+            #ifndef _Py_JIT
+            next_uop = &current_executor->trace[1];
+            #endif
             CHECK_EVAL_BREAKER();
             break;
         }
@@ -3739,7 +3739,7 @@
 
         case _EXIT_TRACE: {
             TIER_TWO_ONLY
-            if (1) goto deoptimize;
+            if (1) goto side_exit;
             break;
         }
 
@@ -3815,6 +3815,60 @@
             _PyCounterOptimizerObject *exe = (_PyCounterOptimizerObject *)opt;
             exe->count++;
             stack_pointer += -1;
+            break;
+        }
+
+        case _COLD_EXIT: {
+            oparg = CURRENT_OPARG();
+            TIER_TWO_ONLY
+            _PyExecutorObject *previous = (_PyExecutorObject *)tstate->previous_executor;
+            _PyExitData *exit = &previous->exits[oparg];
+            exit->temperature++;
+            PyCodeObject *code = _PyFrame_GetCode(frame);
+            _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
+            if (exit->temperature < (int32_t)tstate->interp->optimizer_side_threshold) {
+                GOTO_TIER_ONE(target);
+            }
+            _PyExecutorObject *executor;
+            if (target->op.code == ENTER_EXECUTOR) {
+                executor = code->co_executors->executors[target->op.arg];
+                Py_INCREF(executor);
+            } else {
+                int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor);
+                if (optimized <= 0) {
+                    int32_t new_temp = -1 * tstate->interp->optimizer_side_threshold;
+                    exit->temperature = (new_temp < INT16_MIN) ? INT16_MIN : new_temp;
+                    if (optimized < 0) {
+                        Py_DECREF(previous);
+                        tstate->previous_executor = Py_None;
+                        if (1) goto error_tier_two;
+                    }
+                    GOTO_TIER_ONE(target);
+                }
+            }
+            /* We need two references. One to store in exit->executor and
+             * one to keep the executor alive when executing. */
+            Py_INCREF(executor);
+            exit->executor = executor;
+            GOTO_TIER_TWO(executor);
+            break;
+        }
+
+        case _START_EXECUTOR: {
+            PyObject *executor = (PyObject *)CURRENT_OPERAND();
+            TIER_TWO_ONLY
+            Py_DECREF(tstate->previous_executor);
+            tstate->previous_executor = NULL;
+            #ifndef _Py_JIT
+            current_executor = (_PyExecutorObject*)executor;
+            #endif
+            break;
+        }
+
+        case _FATAL_ERROR: {
+            TIER_TWO_ONLY
+            assert(0);
+            Py_FatalError("Fatal error uop executed.");
             break;
         }
 

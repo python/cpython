@@ -22,6 +22,7 @@ class Properties:
     uses_co_names: bool
     uses_locals: bool
     has_free: bool
+    side_exit: bool
     pure: bool
     passthrough: bool
     oparg_and_1: bool = False
@@ -50,6 +51,7 @@ class Properties:
             uses_co_names=any(p.uses_co_names for p in properties),
             uses_locals=any(p.uses_locals for p in properties),
             has_free=any(p.has_free for p in properties),
+            side_exit=any(p.side_exit for p in properties),
             pure=all(p.pure for p in properties),
             passthrough=all(p.passthrough for p in properties),
         )
@@ -71,6 +73,7 @@ SKIP_PROPERTIES = Properties(
     uses_co_names=False,
     uses_locals=False,
     has_free=False,
+    side_exit=False,
     pure=False,
     passthrough=False,
 )
@@ -470,13 +473,24 @@ def compute_properties(op: parser.InstDef) -> Properties:
         or variable_used(op, "PyCell_GET")
         or variable_used(op, "PyCell_SET")
     )
+    deopts_if = variable_used(op, "DEOPT_IF")
+    exits_if = variable_used(op, "EXIT_IF")
+    if deopts_if and exits_if:
+        tkn = op.tokens[0]
+        raise lexer.make_syntax_error(
+            "Op cannot contain both EXIT_IF and DEOPT_IF",
+            tkn.filename,
+            tkn.line,
+            tkn.column,
+            op.name,
+        )
     infallible = is_infallible(op)
-    deopts = variable_used(op, "DEOPT_IF")
     passthrough = stack_effect_only_peeks(op) and infallible
     return Properties(
         escapes=makes_escaping_api_call(op),
         infallible=infallible,
-        deopts=deopts,
+        deopts=deopts_if or exits_if,
+        side_exit=exits_if,
         oparg=variable_used(op, "oparg"),
         jumps=variable_used(op, "JUMPBY"),
         eval_breaker=variable_used(op, "CHECK_EVAL_BREAKER"),

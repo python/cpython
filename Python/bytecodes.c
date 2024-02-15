@@ -342,12 +342,12 @@ dummy_func(
         macro(TO_BOOL) = _SPECIALIZE_TO_BOOL + unused/2 + _TO_BOOL;
 
         inst(TO_BOOL_BOOL, (unused/1, unused/2, value -- value)) {
-            DEOPT_IF(!PyBool_Check(value));
+            EXIT_IF(!PyBool_Check(value));
             STAT_INC(TO_BOOL, hit);
         }
 
         inst(TO_BOOL_INT, (unused/1, unused/2, value -- res)) {
-            DEOPT_IF(!PyLong_CheckExact(value));
+            EXIT_IF(!PyLong_CheckExact(value));
             STAT_INC(TO_BOOL, hit);
             if (_PyLong_IsZero((PyLongObject *)value)) {
                 assert(_Py_IsImmortal(value));
@@ -360,7 +360,7 @@ dummy_func(
         }
 
         inst(TO_BOOL_LIST, (unused/1, unused/2, value -- res)) {
-            DEOPT_IF(!PyList_CheckExact(value));
+            EXIT_IF(!PyList_CheckExact(value));
             STAT_INC(TO_BOOL, hit);
             res = Py_SIZE(value) ? Py_True : Py_False;
             DECREF_INPUTS();
@@ -368,13 +368,13 @@ dummy_func(
 
         inst(TO_BOOL_NONE, (unused/1, unused/2, value -- res)) {
             // This one is a bit weird, because we expect *some* failures:
-            DEOPT_IF(!Py_IsNone(value));
+            EXIT_IF(!Py_IsNone(value));
             STAT_INC(TO_BOOL, hit);
             res = Py_False;
         }
 
         inst(TO_BOOL_STR, (unused/1, unused/2, value -- res)) {
-            DEOPT_IF(!PyUnicode_CheckExact(value));
+            EXIT_IF(!PyUnicode_CheckExact(value));
             STAT_INC(TO_BOOL, hit);
             if (value == &_Py_STR(empty)) {
                 assert(_Py_IsImmortal(value));
@@ -390,7 +390,7 @@ dummy_func(
         inst(TO_BOOL_ALWAYS_TRUE, (unused/1, version/2, value -- res)) {
             // This one is a bit weird, because we expect *some* failures:
             assert(version);
-            DEOPT_IF(Py_TYPE(value)->tp_version_tag != version);
+            EXIT_IF(Py_TYPE(value)->tp_version_tag != version);
             STAT_INC(TO_BOOL, hit);
             DECREF_INPUTS();
             res = Py_True;
@@ -414,8 +414,8 @@ dummy_func(
         };
 
         op(_GUARD_BOTH_INT, (left, right -- left, right)) {
-            DEOPT_IF(!PyLong_CheckExact(left));
-            DEOPT_IF(!PyLong_CheckExact(right));
+            EXIT_IF(!PyLong_CheckExact(left));
+            EXIT_IF(!PyLong_CheckExact(right));
         }
 
         pure op(_BINARY_OP_MULTIPLY_INT, (left, right -- res)) {
@@ -450,8 +450,8 @@ dummy_func(
             _GUARD_BOTH_INT + unused/1 + _BINARY_OP_SUBTRACT_INT;
 
         op(_GUARD_BOTH_FLOAT, (left, right -- left, right)) {
-            DEOPT_IF(!PyFloat_CheckExact(left));
-            DEOPT_IF(!PyFloat_CheckExact(right));
+            EXIT_IF(!PyFloat_CheckExact(left));
+            EXIT_IF(!PyFloat_CheckExact(right));
         }
 
         pure op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res)) {
@@ -486,8 +486,8 @@ dummy_func(
             _GUARD_BOTH_FLOAT + unused/1 + _BINARY_OP_SUBTRACT_FLOAT;
 
         op(_GUARD_BOTH_UNICODE, (left, right -- left, right)) {
-            DEOPT_IF(!PyUnicode_CheckExact(left));
-            DEOPT_IF(!PyUnicode_CheckExact(right));
+            EXIT_IF(!PyUnicode_CheckExact(left));
+            EXIT_IF(!PyUnicode_CheckExact(right));
         }
 
         pure op(_BINARY_OP_ADD_UNICODE, (left, right -- res)) {
@@ -1906,7 +1906,7 @@ dummy_func(
         op(_GUARD_TYPE_VERSION, (type_version/2, owner -- owner)) {
             PyTypeObject *tp = Py_TYPE(owner);
             assert(type_version != 0);
-            DEOPT_IF(tp->tp_version_tag != type_version);
+            EXIT_IF(tp->tp_version_tag != type_version);
         }
 
         op(_CHECK_MANAGED_OBJECT_HAS_VALUES, (owner -- owner)) {
@@ -2316,6 +2316,7 @@ dummy_func(
         }
 
         inst(JUMP_BACKWARD, (unused/1 --)) {
+            TIER_ONE_ONLY
             CHECK_EVAL_BREAKER();
             assert(oparg <= INSTR_OFFSET());
             JUMPBY(-oparg);
@@ -2337,13 +2338,13 @@ dummy_func(
                     oparg >>= 8;
                     start--;
                 }
-                int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer);
+                _PyExecutorObject *executor;
+                int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer, &executor);
                 ERROR_IF(optimized < 0, error);
                 if (optimized) {
-                    // Rewind and enter the executor:
-                    assert(start->op.code == ENTER_EXECUTOR);
-                    next_instr = start;
-                    this_instr[1].cache &= OPTIMIZER_BITS_MASK;
+                    assert(tstate->previous_executor == NULL);
+                    tstate->previous_executor = Py_None;
+                    GOTO_TIER_TWO(executor);
                 }
                 else {
                     int backoff = this_instr[1].cache & OPTIMIZER_BITS_MASK;
@@ -2373,14 +2374,15 @@ dummy_func(
         inst(ENTER_EXECUTOR, (--)) {
             TIER_ONE_ONLY
             CHECK_EVAL_BREAKER();
-
             PyCodeObject *code = _PyFrame_GetCode(frame);
-            current_executor = code->co_executors->executors[oparg & 255];
-            assert(current_executor->vm_data.index == INSTR_OFFSET() - 1);
-            assert(current_executor->vm_data.code == code);
-            assert(current_executor->vm_data.valid);
-            Py_INCREF(current_executor);
-            GOTO_TIER_TWO();
+            _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
+            assert(executor->vm_data.index == INSTR_OFFSET() - 1);
+            assert(executor->vm_data.code == code);
+            assert(executor->vm_data.valid);
+            assert(tstate->previous_executor == NULL);
+            tstate->previous_executor = Py_None;
+            Py_INCREF(executor);
+            GOTO_TIER_TWO(executor);
         }
 
         replaced op(_POP_JUMP_IF_FALSE, (cond -- )) {
@@ -3378,7 +3380,7 @@ dummy_func(
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
             /* res = func(self, args, nargs) */
-            res = ((_PyCFunctionFast)(void(*)(void))cfunc)(
+            res = ((PyCFunctionFast)(void(*)(void))cfunc)(
                 PyCFunction_GET_SELF(callable),
                 args,
                 total_args);
@@ -3409,8 +3411,8 @@ dummy_func(
             DEOPT_IF(PyCFunction_GET_FLAGS(callable) != (METH_FASTCALL | METH_KEYWORDS));
             STAT_INC(CALL, hit);
             /* res = func(self, args, nargs, kwnames) */
-            _PyCFunctionFastWithKeywords cfunc =
-                (_PyCFunctionFastWithKeywords)(void(*)(void))
+            PyCFunctionFastWithKeywords cfunc =
+                (PyCFunctionFastWithKeywords)(void(*)(void))
                 PyCFunction_GET_FUNCTION(callable);
             res = cfunc(PyCFunction_GET_SELF(callable), args, total_args, NULL);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -3541,8 +3543,8 @@ dummy_func(
             DEOPT_IF(!Py_IS_TYPE(self, d_type));
             STAT_INC(CALL, hit);
             int nargs = total_args - 1;
-            _PyCFunctionFastWithKeywords cfunc =
-                (_PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
+            PyCFunctionFastWithKeywords cfunc =
+                (PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
             res = cfunc(self, args + 1, nargs, NULL);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
@@ -3599,8 +3601,8 @@ dummy_func(
             PyObject *self = args[0];
             DEOPT_IF(!Py_IS_TYPE(self, method->d_common.d_type));
             STAT_INC(CALL, hit);
-            _PyCFunctionFast cfunc =
-                (_PyCFunctionFast)(void(*)(void))meth->ml_meth;
+            PyCFunctionFast cfunc =
+                (PyCFunctionFast)(void(*)(void))meth->ml_meth;
             int nargs = total_args - 1;
             res = cfunc(self, args + 1, nargs);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -3999,26 +4001,26 @@ dummy_func(
         inst(CACHE, (--)) {
             TIER_ONE_ONLY
             assert(0 && "Executing a cache.");
-            Py_UNREACHABLE();
+            Py_FatalError("Executing a cache.");
         }
 
         inst(RESERVED, (--)) {
             TIER_ONE_ONLY
             assert(0 && "Executing RESERVED instruction.");
-            Py_UNREACHABLE();
+            Py_FatalError("Executing RESERVED instruction.");
         }
 
         ///////// Tier-2 only opcodes /////////
 
         op (_GUARD_IS_TRUE_POP, (flag -- )) {
             SYNC_SP();
-            DEOPT_IF(!Py_IsTrue(flag));
+            EXIT_IF(!Py_IsTrue(flag));
             assert(Py_IsTrue(flag));
         }
 
         op (_GUARD_IS_FALSE_POP, (flag -- )) {
             SYNC_SP();
-            DEOPT_IF(!Py_IsFalse(flag));
+            EXIT_IF(!Py_IsFalse(flag));
             assert(Py_IsFalse(flag));
         }
 
@@ -4026,18 +4028,20 @@ dummy_func(
             SYNC_SP();
             if (!Py_IsNone(val)) {
                 Py_DECREF(val);
-                DEOPT_IF(1);
+                EXIT_IF(1);
             }
         }
 
         op (_GUARD_IS_NOT_NONE_POP, (val -- )) {
             SYNC_SP();
-            DEOPT_IF(Py_IsNone(val));
+            EXIT_IF(Py_IsNone(val));
             Py_DECREF(val);
         }
 
         op(_JUMP_TO_TOP, (--)) {
-            next_uop = current_executor->trace;
+#ifndef _Py_JIT
+            next_uop = &current_executor->trace[1];
+#endif
             CHECK_EVAL_BREAKER();
         }
 
@@ -4057,7 +4061,7 @@ dummy_func(
 
         op(_EXIT_TRACE, (--)) {
             TIER_TWO_ONLY
-            DEOPT_IF(1);
+            EXIT_IF(1);
         }
 
         op(_CHECK_VALIDITY, (--)) {
@@ -4101,6 +4105,58 @@ dummy_func(
         op(_INTERNAL_INCREMENT_OPT_COUNTER, (opt --)) {
             _PyCounterOptimizerObject *exe = (_PyCounterOptimizerObject *)opt;
             exe->count++;
+        }
+
+        /* Only used for handling cold side exits, should never appear in
+         * a normal trace or as part of an instruction.
+         */
+        op(_COLD_EXIT, (--)) {
+            TIER_TWO_ONLY
+            _PyExecutorObject *previous = (_PyExecutorObject *)tstate->previous_executor;
+            _PyExitData *exit = &previous->exits[oparg];
+            exit->temperature++;
+            PyCodeObject *code = _PyFrame_GetCode(frame);
+            _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
+            if (exit->temperature < (int32_t)tstate->interp->optimizer_side_threshold) {
+                GOTO_TIER_ONE(target);
+            }
+            _PyExecutorObject *executor;
+            if (target->op.code == ENTER_EXECUTOR) {
+                executor = code->co_executors->executors[target->op.arg];
+                Py_INCREF(executor);
+            } else {
+                int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor);
+                if (optimized <= 0) {
+                    int32_t new_temp = -1 * tstate->interp->optimizer_side_threshold;
+                    exit->temperature = (new_temp < INT16_MIN) ? INT16_MIN : new_temp;
+                    if (optimized < 0) {
+                        Py_DECREF(previous);
+                        tstate->previous_executor = Py_None;
+                        ERROR_IF(1, error);
+                    }
+                    GOTO_TIER_ONE(target);
+                }
+            }
+            /* We need two references. One to store in exit->executor and
+             * one to keep the executor alive when executing. */
+            Py_INCREF(executor);
+            exit->executor = executor;
+            GOTO_TIER_TWO(executor);
+        }
+
+        op(_START_EXECUTOR, (executor/4 --)) {
+            TIER_TWO_ONLY
+            Py_DECREF(tstate->previous_executor);
+            tstate->previous_executor = NULL;
+#ifndef _Py_JIT
+            current_executor = (_PyExecutorObject*)executor;
+#endif
+        }
+
+        op(_FATAL_ERROR, (--)) {
+            TIER_TWO_ONLY
+            assert(0);
+            Py_FatalError("Fatal error uop executed.");
         }
 
         op(_CHECK_VALIDITY_AND_SET_IP, (instr_ptr/4 --)) {
