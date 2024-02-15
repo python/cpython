@@ -39,6 +39,7 @@ class _Target(typing.Generic[_S, _R]):
     alignment: int = 1
     pic: bool = False
     prefix: str = ""
+    small: bool = False
     debug: bool = False
     force: bool = False
     verbose: bool = False
@@ -132,7 +133,7 @@ class _Target(typing.Generic[_S, _R]):
             # - "medium": assumes that code resides in the lowest 2GB of memory,
             #   and makes no assumptions about data (not available on aarch64)
             # - "large": makes no assumptions about either code or data
-            "-mcmodel=small" if self.pic else "-mcmodel=large",
+            "-mcmodel=small" if self.small else "-mcmodel=large",
             "-o",
             f"{o}",
             "-std=c11",
@@ -395,7 +396,7 @@ class _MachO(
 def get_target(host: str) -> _COFF | _ELF | _MachO:
     """Build a _Target for the given host "triple" and options."""
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
-        return _MachO(host, alignment=8, prefix="_")
+        return _MachO(host, alignment=8, pic=True, prefix="_")
     if re.fullmatch(r"aarch64-.*-linux-gnu", host):
         return _ELF(host, alignment=8)
     if re.fullmatch(r"i686-pc-windows-msvc", host):
@@ -405,5 +406,5 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
     if re.fullmatch(r"x86_64-pc-windows-msvc", host):
         return _COFF(host)
     if re.fullmatch(r"x86_64-.*-linux-gnu", host):
-        return _ELF(host, pic=True)
+        return _ELF(host, pic=True, small=True)
     raise ValueError(host)

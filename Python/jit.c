@@ -198,7 +198,7 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                 // 32-bit absolute address.
                 // Check that we're not out of range of 32 unsigned bits:
                 assert(value < (1ULL << 32));
-                *loc32 = (uint32_t)value;
+                loc32[0] = (uint32_t)value;
                 continue;
             case HoleKind_ARM64_RELOC_UNSIGNED:
             case HoleKind_IMAGE_REL_AMD64_ADDR64:
@@ -206,7 +206,7 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
             case HoleKind_X86_64_RELOC_UNSIGNED:
             case HoleKind_R_X86_64_64:
                 // 64-bit absolute address.
-                *loc64 = value;
+                loc64[0] = value;
                 continue;
             case HoleKind_R_X86_64_GOTPCRELX:
             case HoleKind_R_X86_64_REX_GOTPCRELX: {
@@ -214,7 +214,7 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                 // Try to relax the GOT load into an immediate value:
                 uint64_t relaxed = *(uint64_t *)(value + 4) - 4;
                 if ((int64_t)relaxed - (int64_t)location >= -(1L << 31) &&
-                    (int64_t)relaxed - (int64_t)location + 1 < (1L << 31))
+                    (int64_t)relaxed - (int64_t)location + 1 < (1LL << 31))
                 {
                     if (location[-2] == 0x8B) {
                         location[-2] = 0x8D;
@@ -247,7 +247,7 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
             case HoleKind_R_X86_64_PC32:
                 // 32-bit relative address.
                 value -= (uint64_t)location;
-                *loc32 = (uint32_t)value;
+                loc32[0] = (uint32_t)value;
                 continue;
             case HoleKind_R_AARCH64_CALL26:
             case HoleKind_R_AARCH64_JUMP26:
@@ -255,8 +255,8 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                 assert(IS_AARCH64_BRANCH(*loc32));
                 value -= (uint64_t)location;
                 // Check that we're not out of range of 28 signed bits:
-                assert((int64_t)value >= -(1 << 27));
-                assert((int64_t)value < (1 << 27));
+                assert((int64_t)value >= -(1L << 27));
+                assert((int64_t)value < (1L << 27));
                 // Since instructions are 4-byte aligned, only use 26 bits:
                 assert(get_bits(value, 0, 2) == 0);
                 set_bits(loc32, 0, value, 2, 26);
@@ -289,11 +289,44 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                 assert(get_bits(*loc32, 21, 2) == 3);
                 set_bits(loc32, 5, value, 48, 16);
                 continue;
-            case HoleKind_ARM64_RELOC_GOT_LOAD_PAGE21:
+            case HoleKind_ARM64_RELOC_GOT_LOAD_PAGE21: {
                 // 21-bit count of pages between this page and an absolute address's
                 // page... I know, I know, it's weird. Pairs nicely with
                 // ARM64_RELOC_GOT_LOAD_PAGEOFF12 (below).
+                assert(i + 1 < stencil->holes_size);
+                const Hole *next_hole = &stencil->holes[i + 1];
+                assert(next_hole->kind == HoleKind_ARM64_RELOC_GOT_LOAD_PAGEOFF12);
+                assert(next_hole->offset == hole->offset + 4);
+                assert(next_hole->symbol == hole->symbol);
+                assert(next_hole->addend == hole->addend);
+                assert(next_hole->value == hole->value);
                 assert(IS_AARCH64_ADRP(*loc32));
+                unsigned char rd = get_bits(loc32[0], 0, 5);
+                assert(IS_AARCH64_LDR_OR_STR(*(loc32 + 1)));
+                unsigned char rt = get_bits(loc32[1], 0, 5);
+                unsigned char rn = get_bits(loc32[1], 5, 5);
+                assert(rd == rn && rn == rt);
+                uint64_t relaxed = *(uint64_t *)value;
+                if (relaxed < (1UL << 16)) {
+                    loc32[0] = 0xD503201F;
+                    loc32[1] = 0xD2800000 | (get_bits(relaxed, 0, 16) << 5) | rd;
+                    i++;
+                    continue;
+                }
+                if (relaxed < (1ULL << 32)) {
+                    loc32[0] = 0xD2800000 | (get_bits(relaxed,  0, 16) << 5) | rd;
+                    loc32[1] = 0xF2A00000 | (get_bits(relaxed, 16, 16) << 5) | rd;
+                    i++;
+                    continue;
+                }
+                relaxed = (uint64_t)value - (uint64_t)location - 4;
+                if ((relaxed & 0x3) == 0 && (int64_t)relaxed >= -(1L << 19) && (int64_t)relaxed < (1L << 19)) {
+                    loc32[0] = 0xD503201F;
+                    loc32[1] = 0x58000000 | (get_bits(relaxed, 2, 19) << 5) | rd;
+                    i++;
+                    continue;
+                }
+                assert(0);
                 // Number of pages between this page and the value's page:
                 value = (value >> 12) - ((uint64_t)location >> 12);
                 // Check that we're not out of range of 21 signed bits:
@@ -304,6 +337,7 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                 // value[2:21] goes in loc[5:26]:
                 set_bits(loc32, 5, value, 2, 19);
                 continue;
+            }
             case HoleKind_ARM64_RELOC_GOT_LOAD_PAGEOFF12:
                 // 12-bit low part of an absolute address. Pairs nicely with
                 // ARM64_RELOC_GOT_LOAD_PAGE21 (above).
