@@ -324,7 +324,7 @@ Odds and Ends
 Partial Sorts
 =============
 
-Some applications require only some of the data to ordered.  The standard
+Some applications require only some of the data to be ordered.  The standard
 library provides several tools that do less work than a full sort:
 
 * :func:`min` and :func:`max` return the smallest and largest values
