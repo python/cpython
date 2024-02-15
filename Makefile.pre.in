@@ -1150,6 +1150,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_parser.h \
 		$(srcdir)/Include/internal/pycore_pathconfig.h \
 		$(srcdir)/Include/internal/pycore_pyarena.h \
+		$(srcdir)/Include/internal/pycore_pyatomic_ft_wrappers.h \
 		$(srcdir)/Include/internal/pycore_pybuffer.h \
 		$(srcdir)/Include/internal/pycore_pyerrors.h \
 		$(srcdir)/Include/internal/pycore_pyhash.h \
@@ -1670,6 +1671,14 @@ Modules/grpmodule.o: $(srcdir)/Modules/grpmodule.c $(srcdir)/Modules/posixmodule
 Modules/pwdmodule.o: $(srcdir)/Modules/pwdmodule.c $(srcdir)/Modules/posixmodule.h
 
 Modules/signalmodule.o: $(srcdir)/Modules/signalmodule.c $(srcdir)/Modules/posixmodule.h
+
+Modules/_xxsubinterpretersmodule.o: $(srcdir)/Modules/_xxsubinterpretersmodule.c $(srcdir)/Modules/_interpreters_common.h
+
+Modules/_xxinterpqueuesmodule.o: $(srcdir)/Modules/_xxinterpqueuesmodule.c $(srcdir)/Modules/_interpreters_common.h
+
+Modules/_xxinterpchannelsmodule.o: $(srcdir)/Modules/_xxinterpchannelsmodule.c $(srcdir)/Modules/_interpreters_common.h
+
+Python/crossinterp.o: $(srcdir)/Python/crossinterp.c $(srcdir)/Python/crossinterp_data_lookup.h $(srcdir)/Python/crossinterp_exceptions.h
 
 Python/dynload_shlib.o: $(srcdir)/Python/dynload_shlib.c Makefile
 	$(CC) -c $(PY_CORE_CFLAGS) \
@@ -2226,13 +2235,13 @@ LIBSUBDIRS=	asyncio \
 		__phello__
 TESTSUBDIRS=	idlelib/idle_test \
 		test \
-		test/audiodata \
 		test/archivetestdata \
+		test/audiodata \
 		test/certdata \
 		test/certdata/capath \
 		test/cjkencodings \
-		test/crashers \
 		test/configdata \
+		test/crashers \
 		test/data \
 		test/decimaltestdata \
 		test/dtracedata \
@@ -2246,8 +2255,10 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/subprocessdata \
 		test/support \
 		test/support/_hypothesis_stubs \
+		test/support/interpreters \
 		test/test_asyncio \
 		test/test_capi \
+		test/test_concurrent_futures \
 		test/test_cppext \
 		test/test_ctypes \
 		test/test_dataclasses \
@@ -2256,7 +2267,6 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_email/data \
 		test/test_future_stmt \
 		test/test_gdb \
-		test/test_inspect \
 		test/test_import \
 		test/test_import/data \
 		test/test_import/data/circular_imports \
@@ -2309,8 +2319,13 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_importlib/resources/zipdata01 \
 		test/test_importlib/resources/zipdata02 \
 		test/test_importlib/source \
+		test/test_inspect \
+		test/test_interpreters \
 		test/test_json \
 		test/test_module \
+		test/test_multiprocessing_fork \
+		test/test_multiprocessing_forkserver \
+		test/test_multiprocessing_spawn \
 		test/test_pathlib \
 		test/test_peg_generator \
 		test/test_pydoc \

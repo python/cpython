@@ -1069,7 +1069,7 @@
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
             /* res = func(self, args, nargs) */
-            res = ((_PyCFunctionFast)(void(*)(void))cfunc)(
+            res = ((PyCFunctionFast)(void(*)(void))cfunc)(
                 PyCFunction_GET_SELF(callable),
                 args,
                 total_args);
@@ -1115,8 +1115,8 @@
             DEOPT_IF(PyCFunction_GET_FLAGS(callable) != (METH_FASTCALL | METH_KEYWORDS), CALL);
             STAT_INC(CALL, hit);
             /* res = func(self, args, nargs, kwnames) */
-            _PyCFunctionFastWithKeywords cfunc =
-            (_PyCFunctionFastWithKeywords)(void(*)(void))
+            PyCFunctionFastWithKeywords cfunc =
+            (PyCFunctionFastWithKeywords)(void(*)(void))
             PyCFunction_GET_FUNCTION(callable);
             res = cfunc(PyCFunction_GET_SELF(callable), args, total_args, NULL);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -1523,8 +1523,8 @@
             PyObject *self = args[0];
             DEOPT_IF(!Py_IS_TYPE(self, method->d_common.d_type), CALL);
             STAT_INC(CALL, hit);
-            _PyCFunctionFast cfunc =
-            (_PyCFunctionFast)(void(*)(void))meth->ml_meth;
+            PyCFunctionFast cfunc =
+            (PyCFunctionFast)(void(*)(void))meth->ml_meth;
             int nargs = total_args - 1;
             res = cfunc(self, args + 1, nargs);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -1568,8 +1568,8 @@
             DEOPT_IF(!Py_IS_TYPE(self, d_type), CALL);
             STAT_INC(CALL, hit);
             int nargs = total_args - 1;
-            _PyCFunctionFastWithKeywords cfunc =
-            (_PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
+            PyCFunctionFastWithKeywords cfunc =
+            (PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
             res = cfunc(self, args + 1, nargs, NULL);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Free the arguments. */
@@ -2541,11 +2541,14 @@
                 assert(Py_TYPE(iter) == &PyListIter_Type);
                 STAT_INC(FOR_ITER, hit);
                 PyListObject *seq = it->it_seq;
-                if (seq == NULL || it->it_index >= PyList_GET_SIZE(seq)) {
+                if ((size_t)it->it_index >= (size_t)PyList_GET_SIZE(seq)) {
+                    it->it_index = -1;
+                    #ifndef Py_GIL_DISABLED
                     if (seq != NULL) {
                         it->it_seq = NULL;
                         Py_DECREF(seq);
                     }
+                    #endif
                     Py_DECREF(iter);
                     STACK_SHRINK(1);
                     /* Jump forward oparg, then skip following END_FOR and POP_TOP instructions */
@@ -3263,13 +3266,16 @@
             assert(oparg <= INSTR_OFFSET());
             JUMPBY(-oparg);
             #if ENABLE_SPECIALIZATION
-            this_instr[1].cache += (1 << OPTIMIZER_BITS_IN_COUNTER);
+            uint16_t counter = this_instr[1].cache;
+            this_instr[1].cache = counter + (1 << OPTIMIZER_BITS_IN_COUNTER);
             /* We are using unsigned values, but we really want signed values, so
-             * do the 2s complement comparison manually */
-            uint16_t ucounter = this_instr[1].cache + (1 << 15);
-            uint16_t threshold = tstate->interp->optimizer_backedge_threshold + (1 << 15);
+             * do the 2s complement adjustment manually */
+            uint32_t offset_counter = counter ^ (1 << 15);
+            uint32_t threshold = tstate->interp->optimizer_backedge_threshold;
+            assert((threshold & OPTIMIZER_BITS_MASK) == 0);
+            // Use '>=' not '>' so that the optimizer/backoff bits do not effect the result.
             // Double-check that the opcode isn't instrumented or something:
-            if (ucounter > threshold && this_instr->op.code == JUMP_BACKWARD) {
+            if (offset_counter >= threshold && this_instr->op.code == JUMP_BACKWARD) {
                 OPT_STAT_INC(attempts);
                 _Py_CODEUNIT *start = this_instr;
                 /* Back up over EXTENDED_ARGs so optimizer sees the whole instruction */
@@ -3283,18 +3289,18 @@
                     // Rewind and enter the executor:
                     assert(start->op.code == ENTER_EXECUTOR);
                     next_instr = start;
-                    this_instr[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
+                    this_instr[1].cache &= OPTIMIZER_BITS_MASK;
                 }
                 else {
-                    int backoff = this_instr[1].cache & ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
-                    if (backoff < MINIMUM_TIER2_BACKOFF) {
-                        backoff = MINIMUM_TIER2_BACKOFF;
+                    int backoff = this_instr[1].cache & OPTIMIZER_BITS_MASK;
+                    backoff++;
+                    if (backoff < MIN_TIER2_BACKOFF) {
+                        backoff = MIN_TIER2_BACKOFF;
                     }
-                    else if (backoff < 15 - OPTIMIZER_BITS_IN_COUNTER) {
-                        backoff++;
+                    else if (backoff > MAX_TIER2_BACKOFF) {
+                        backoff = MAX_TIER2_BACKOFF;
                     }
-                    assert(backoff <= 15 - OPTIMIZER_BITS_IN_COUNTER);
-                    this_instr[1].cache = ((1 << 16) - ((1 << OPTIMIZER_BITS_IN_COUNTER) << backoff)) | backoff;
+                    this_instr[1].cache = ((UINT16_MAX << OPTIMIZER_BITS_IN_COUNTER) << backoff) | backoff;
                 }
             }
             #endif  /* ENABLE_SPECIALIZATION */

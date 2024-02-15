@@ -160,6 +160,21 @@ Other Language Changes
   (Contributed by Levi Sabah, Zackery Spytz and Hugo van Kemenade in
   :gh:`73965`.)
 
+* Add :exc:`PythonFinalizationError` exception. This exception derived from
+  :exc:`RuntimeError` is raised when an operation is blocked during
+  the :term:`Python finalization <interpreter shutdown>`.
+
+  The following functions now raise PythonFinalizationError, instead of
+  :exc:`RuntimeError`:
+
+  * :func:`_thread.start_new_thread`.
+  * :class:`subprocess.Popen`.
+  * :func:`os.fork`.
+  * :func:`os.forkpty`.
+
+  (Contributed by Victor Stinner in :gh:`114570`.)
+
+
 New Modules
 ===========
 
@@ -230,6 +245,16 @@ dis
   The offsets can be added with the new ``-O`` command line option or
   the ``show_offsets`` parameter.
   (Contributed by Irit Katriel in :gh:`112137`.)
+
+dbm
+---
+
+* Add :meth:`dbm.gnu.gdbm.clear` and :meth:`dbm.ndbm.ndbm.clear`  methods that remove all items
+  from the database.
+  (Contributed by Donghee Na in :gh:`107122`.)
+
+* Add new :mod:`dbm.sqlite3` backend, and make it the default :mod:`!dbm` backend.
+  (Contributed by Raymond Hettinger and Erlend E. Aasland in :gh:`100414`.)
 
 doctest
 -------

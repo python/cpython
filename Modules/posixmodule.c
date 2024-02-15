@@ -7841,7 +7841,7 @@ os_fork1_impl(PyObject *module)
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->finalizing) {
-        PyErr_SetString(PyExc_RuntimeError,
+        PyErr_SetString(PyExc_PythonFinalizationError,
                         "can't fork at interpreter shutdown");
         return NULL;
     }
@@ -7885,7 +7885,7 @@ os_fork_impl(PyObject *module)
     pid_t pid;
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->finalizing) {
-        PyErr_SetString(PyExc_RuntimeError,
+        PyErr_SetString(PyExc_PythonFinalizationError,
                         "can't fork at interpreter shutdown");
         return NULL;
     }
@@ -8718,7 +8718,7 @@ os_forkpty_impl(PyObject *module)
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->finalizing) {
-        PyErr_SetString(PyExc_RuntimeError,
+        PyErr_SetString(PyExc_PythonFinalizationError,
                         "can't fork at interpreter shutdown");
         return NULL;
     }
