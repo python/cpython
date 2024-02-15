@@ -2843,7 +2843,7 @@
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
             /* res = func(self, args, nargs) */
-            res = ((_PyCFunctionFast)(void(*)(void))cfunc)(
+            res = ((PyCFunctionFast)(void(*)(void))cfunc)(
                 PyCFunction_GET_SELF(callable),
                 args,
                 total_args);
@@ -2884,8 +2884,8 @@
             if (PyCFunction_GET_FLAGS(callable) != (METH_FASTCALL | METH_KEYWORDS)) goto deoptimize;
             STAT_INC(CALL, hit);
             /* res = func(self, args, nargs, kwnames) */
-            _PyCFunctionFastWithKeywords cfunc =
-            (_PyCFunctionFastWithKeywords)(void(*)(void))
+            PyCFunctionFastWithKeywords cfunc =
+            (PyCFunctionFastWithKeywords)(void(*)(void))
             PyCFunction_GET_FUNCTION(callable);
             res = cfunc(PyCFunction_GET_SELF(callable), args, total_args, NULL);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -3036,8 +3036,8 @@
             if (!Py_IS_TYPE(self, d_type)) goto deoptimize;
             STAT_INC(CALL, hit);
             int nargs = total_args - 1;
-            _PyCFunctionFastWithKeywords cfunc =
-            (_PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
+            PyCFunctionFastWithKeywords cfunc =
+            (PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
             res = cfunc(self, args + 1, nargs, NULL);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Free the arguments. */
@@ -3115,8 +3115,8 @@
             PyObject *self = args[0];
             if (!Py_IS_TYPE(self, method->d_common.d_type)) goto deoptimize;
             STAT_INC(CALL, hit);
-            _PyCFunctionFast cfunc =
-            (_PyCFunctionFast)(void(*)(void))meth->ml_meth;
+            PyCFunctionFast cfunc =
+            (PyCFunctionFast)(void(*)(void))meth->ml_meth;
             int nargs = total_args - 1;
             res = cfunc(self, args + 1, nargs);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));

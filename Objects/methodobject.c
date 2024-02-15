@@ -417,7 +417,7 @@ cfunction_vectorcall_FASTCALL(
         return NULL;
     }
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    _PyCFunctionFast meth = (_PyCFunctionFast)
+    PyCFunctionFast meth = (PyCFunctionFast)
                             cfunction_enter_call(tstate, func);
     if (meth == NULL) {
         return NULL;
@@ -433,7 +433,7 @@ cfunction_vectorcall_FASTCALL_KEYWORDS(
 {
     PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    _PyCFunctionFastWithKeywords meth = (_PyCFunctionFastWithKeywords)
+    PyCFunctionFastWithKeywords meth = (PyCFunctionFastWithKeywords)
                                         cfunction_enter_call(tstate, func);
     if (meth == NULL) {
         return NULL;
@@ -552,4 +552,3 @@ cfunction_call(PyObject *func, PyObject *args, PyObject *kwargs)
     }
     return _Py_CheckFunctionResult(tstate, func, result, NULL);
 }
-
