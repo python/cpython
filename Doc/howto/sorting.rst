@@ -320,3 +320,24 @@ Odds and Ends
     >>> newgrades = {'john': 'F', 'jane':'A', 'dave': 'C'}
     >>> sorted(students, key=newgrades.__getitem__)
     ['jane', 'dave', 'john']
+
+Partial Sorts
+=============
+
+Some applications require only some of the data to ordered.  The standard
+library provides several tools that do less work than a full sort:
+
+* :func:`min` and :func:`max` return the smallest and largest values
+  respectively.  They make a single pass over the input data and
+  require almost no auxiliary memory.
+
+* :func:`heapq.nsmallest` and :func:`heapq.nlargest` functions return
+  the *n* smallest and largest values respectively.  These functions
+  make a single pass over the data keeping only *n* elements in memory
+  at a time.  For values of *n* that are small relative to the number of
+  inputs, these functions make many fewer comparisons than a full sort.
+
+* :func:`heapq.heappush` and :func:`heapq.heappop` create and maintain a
+  partially sorted arrangement of data that keeps the smallest element
+  at position `0`.  This makes it suitable for implementing priority
+  queues which are commonly used for task scheduling.
