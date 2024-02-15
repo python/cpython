@@ -190,24 +190,27 @@ def linear_format(text: str, **kwargs: str) -> str:
           * A newline will be added to the end.
     """
     lines = []
-    for line in text.split('\n'):
-        indent, curly, trailing = line.partition('{')
+    for line in text.split("\n"):
+        indent, curly, trailing = line.partition("{")
         if not curly:
             lines.extend([line, "\n"])
             continue
 
-        name, curly, trailing = trailing.partition('}')
+        name, curly, trailing = trailing.partition("}")
         if not curly or name not in kwargs:
             lines.extend([line, "\n"])
             continue
 
         if trailing:
-            raise ClinicError(f"Text found after '{{{name}}}' block marker! "
-                              "It must be on a line by itself.")
+            raise ClinicError(
+                f"Text found after '{{{name}}}' block marker! "
+                "It must be on a line by itself."
+            )
         if indent.strip():
-            raise ClinicError("Non-whitespace characters found before "
-                              f"'{{{name}}}' block marker! It must be on a line "
-                              "by itself.")
+            raise ClinicError(
+                f"Non-whitespace characters found before '{{{name}}}' block marker! "
+                "It must be on a line by itself."
+            )
 
         value = kwargs[name]
         if not value:
