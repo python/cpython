@@ -2030,6 +2030,7 @@ TESTSUBDIRS=	ctypes/test \
 		test/test_json \
 		test/test_module \
 		test/test_peg_generator \
+		test/test_pydoc \
 		test/test_sqlite3 \
 		test/test_tomllib \
 		test/test_tomllib/data \
