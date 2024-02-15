@@ -6180,6 +6180,7 @@ class DSLParser:
             self.function.docstring = self.format_docstring()
         except ClinicError as exc:
             exc.lineno = lineno
+            exc.filename = self.clinic.filename
             raise
 
 
