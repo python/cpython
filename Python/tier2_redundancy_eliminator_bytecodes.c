@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "pycore_uops.h"
 #include "pycore_uop_ids.h"
+#include "internal/pycore_moduleobject.h"
 
 #define op(name, ...) /* NAME is ignored */
 
@@ -229,10 +230,40 @@ dummy_func(void) {
         (void)owner;
     }
 
+    op(_CHECK_ATTR_MODULE, (dict_version/2, owner -- owner)) {
+        (void)dict_version;
+        if (sym_is_const(owner)) {
+            PyModuleObject *mod = (PyModuleObject *)sym_get_const(owner);
+            if (PyModule_CheckExact(mod)) {
+                PyObject *dict = mod->md_dict;
+                uint64_t watched_mutations = get_mutations(dict);
+                if (watched_mutations < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
+                    PyDict_Watch(GLOBALS_WATCHER_ID, dict);
+                    _Py_BloomFilter_Add(dependencies, dict);
+                    this_instr->opcode = _NOP;
+                }
+            }
+        }
+    }
+
     op(_LOAD_ATTR_MODULE, (index/1, owner -- attr, null if (oparg & 1))) {
-        _LOAD_ATTR_NOT_NULL
         (void)index;
-        (void)owner;
+        OUT_OF_SPACE_IF_NULL(null = sym_new_null(ctx));
+        attr = NULL;
+        if (this_instr[-1].opcode == _NOP) {
+            assert(sym_is_const(owner));
+            PyModuleObject *mod = (PyModuleObject *)sym_get_const(owner);
+            assert(PyModule_CheckExact(mod));
+            PyObject *dict = mod->md_dict;
+            PyObject *res = global_to_const(this_instr, dict);
+            if (res != NULL) {
+                this_instr[-1].opcode = _POP_TOP;
+                OUT_OF_SPACE_IF_NULL(attr = sym_new_const(ctx, res));
+            }
+        }
+        if (attr == NULL) {
+            OUT_OF_SPACE_IF_NULL(attr = sym_new_known_notnull(ctx));
+        }
     }
 
     op(_LOAD_ATTR_WITH_HINT, (hint/1, owner -- attr, null if (oparg & 1))) {

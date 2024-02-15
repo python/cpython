@@ -276,6 +276,20 @@ sym_is_null(_Py_UOpsSymType *sym)
     return (sym->flags & (IS_NULL | NOT_NULL)) == IS_NULL;
 }
 
+static inline bool
+sym_is_const(_Py_UOpsSymType *sym)
+{
+    return (sym->flags & TRUE_CONST) != 0;
+}
+
+static inline PyObject *
+sym_get_const(_Py_UOpsSymType *sym)
+{
+    assert(sym_is_const(sym));
+    assert(sym->const_val);
+    return sym->const_val;
+}
+
 static inline void
 sym_set_type(_Py_UOpsSymType *sym, PyTypeObject *tp)
 {
@@ -413,10 +427,10 @@ globals_watcher_callback(PyDict_WatchEvent event, PyObject* dict,
     return 0;
 }
 
-static void
+static PyObject *
 global_to_const(_PyUOpInstruction *inst, PyObject *obj)
 {
-    assert(inst->opcode == _LOAD_GLOBAL_MODULE || inst->opcode == _LOAD_GLOBAL_BUILTINS);
+    assert(inst->opcode == _LOAD_GLOBAL_MODULE || inst->opcode == _LOAD_GLOBAL_BUILTINS || inst->opcode == _LOAD_ATTR_MODULE);
     assert(PyDict_CheckExact(obj));
     PyDictObject *dict = (PyDictObject *)obj;
     assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
@@ -424,7 +438,7 @@ global_to_const(_PyUOpInstruction *inst, PyObject *obj)
     assert(inst->operand <= UINT16_MAX);
     PyObject *res = entries[inst->operand].me_value;
     if (res == NULL) {
-        return;
+        return NULL;
     }
     if (_Py_IsImmortal(res)) {
         inst->opcode = (inst->oparg & 1) ? _LOAD_CONST_INLINE_BORROW_WITH_NULL : _LOAD_CONST_INLINE_BORROW;
@@ -433,6 +447,7 @@ global_to_const(_PyUOpInstruction *inst, PyObject *obj)
         inst->opcode = (inst->oparg & 1) ? _LOAD_CONST_INLINE_WITH_NULL : _LOAD_CONST_INLINE;
     }
     inst->operand = (uint64_t)res;
+    return res;
 }
 
 static int
@@ -608,7 +623,8 @@ uop_redundancy_eliminator(
     PyCodeObject *co,
     _PyUOpInstruction *trace,
     int trace_len,
-    int curr_stacklen
+    int curr_stacklen,
+    _PyBloomFilter *dependencies
 )
 {
 
@@ -796,7 +812,7 @@ _Py_uop_analyze_and_optimize(
 
     err = uop_redundancy_eliminator(
         (PyCodeObject *)frame->f_executable, buffer,
-        buffer_size, curr_stacklen);
+        buffer_size, curr_stacklen, dependencies);
 
     if (err == 0) {
         goto not_ready;
