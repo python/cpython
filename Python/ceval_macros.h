@@ -416,7 +416,7 @@ do { \
     tstate->previous_executor = NULL;  \
     next_instr = target; \
     DISPATCH(); \
-while (0)
+} while (0)
 
 #define CURRENT_OPARG() (next_uop[-1].oparg)
 
