@@ -130,14 +130,12 @@ class Benchmark:
 
     def _prepare_data(self, loops: int) -> list[float]:
         bench = BENCHMARKS[self._name]
-        return [
-            bench(self._size, self._random)
-            for _ in range(loops)
-        ]
+        return [bench(self._size, self._random)] * loops
 
 
 def add_cmdline_args(cmd: list[str], args) -> None:
-    cmd.append(args.benchmark)
+    if args.benchmark:
+        cmd.append(args.benchmark)
     cmd.append(f"--size={args.size}")
     cmd.append(f"--rng-seed={args.rng_seed}")
 
@@ -147,7 +145,6 @@ def add_parser_args(parser: argparse.ArgumentParser) -> None:
         "benchmark",
         choices=BENCHMARKS,
         nargs="?",
-        default="list_sort",
         help="Can be any of: {0}".format(", ".join(BENCHMARKS)),
     )
     parser.add_argument(
@@ -164,7 +161,7 @@ def add_parser_args(parser: argparse.ArgumentParser) -> None:
     )
 
 
-DEFAULT_SIZE = 262144  # 1 << 18
+DEFAULT_SIZE = 1 << 14
 DEFAULT_RANDOM_SEED = 0
 BENCHMARKS = {
     "list_sort": list_sort,
@@ -190,5 +187,10 @@ if __name__ == "__main__":
     runner.metadata["list_sort_size"] = args.size
     runner.metadata["list_sort_random_seed"] = args.rng_seed
 
-    benchmark = Benchmark(args.benchmark, args.size, args.rng_seed)
-    runner.bench_time_func(args.benchmark, benchmark.run)
+    if args.benchmark:
+        benchmarks = (args.benchmark,)
+    else:
+        benchmarks = sorted(BENCHMARKS)
+    for bench in benchmarks:
+        benchmark = Benchmark(bench, args.size, args.rng_seed)
+        runner.bench_time_func(bench, benchmark.run)
