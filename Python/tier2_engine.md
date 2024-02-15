@@ -10,7 +10,7 @@ Since each executor must exit, we also track the "hotness" of those
 exits and attach new executors to those exits.
 
 As the program executes, and the hot parts of the program get optimized,
-a graph of executors will form.
+a graph of executors forms.
 
 ## Superblocks and Executors
 
@@ -50,7 +50,7 @@ different instruction set, and does not adapt.
 
 The JIT compiler converts superblocks into machine code executors.
 These have identical behavior to interpreted executors, except that
-they consume a bit more memory and are a lot faster.
+they consume more memory for the generated machine code and are a lot faster.
 
 ## Transfering control
 

@@ -977,7 +977,7 @@ set_optimizer(PyObject *self, PyObject *opt)
     if (opt == Py_None) {
         opt = NULL;
     }
-    if (PyUnstable_SetOptimizer((_PyOptimizerObject*)opt)) {
+    if (PyUnstable_SetOptimizer((_PyOptimizerObject*)opt) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;

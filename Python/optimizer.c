@@ -162,7 +162,7 @@ init_cold_exit_executor(_PyExecutorObject *executor, int oparg);
 static int cold_exits_initialized = 0;
 static _PyExecutorObject COLD_EXITS[UOP_MAX_TRACE_LENGTH] = { 0 };
 
-static const _PyBloomFilter EMPTY = { 0 };
+static const _PyBloomFilter EMPTY_FILTER = { 0 };
 
 _PyOptimizerObject *
 _Py_SetOptimizer(PyInterpreterState *interp, _PyOptimizerObject *optimizer)
@@ -1047,7 +1047,7 @@ counter_optimize(
         { .opcode = _INTERNAL_INCREMENT_OPT_COUNTER },
         { .opcode = _EXIT_TRACE, .target = (uint32_t)(target - _PyCode_CODE(code)) }
     };
-    _PyExecutorObject *executor = make_executor_from_uops(buffer, &EMPTY);
+    _PyExecutorObject *executor = make_executor_from_uops(buffer, &EMPTY_FILTER);
     if (executor == NULL) {
         return -1;
     }
