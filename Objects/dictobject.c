@@ -1350,7 +1350,6 @@ insert_split_dict(PyInterpreterState *interp, PyDictObject *mp,
             return -1;
         }
         assert(!_PyDict_HasSplitTable(mp));
-        assert(DK_IS_UNICODE(keys));
         return insert_combined_dict(interp, mp, hash, key, value);
     }
 
@@ -1609,7 +1608,7 @@ dictresize(PyInterpreterState *interp, PyDictObject *mp,
     Py_ssize_t numentries = mp->ma_used;
 
     if (oldvalues != NULL) {
-        ASSERT_KEYS_LOCKED(oldkeys);
+        LOCK_KEYS(oldkeys);
         PyDictUnicodeEntry *oldentries = DK_UNICODE_ENTRIES(oldkeys);
         /* Convert split table into new combined table.
          * We must incref keys; we can transfer values.
@@ -1640,6 +1639,7 @@ dictresize(PyInterpreterState *interp, PyDictObject *mp,
             }
             build_indices_unicode(mp->ma_keys, newentries, numentries);
         }
+        UNLOCK_KEYS(oldkeys);
         dictkeys_decref(interp, oldkeys);
         mp->ma_values = NULL;
         free_values(oldvalues);
@@ -3998,14 +3998,8 @@ dict_popitem_impl(PyDictObject *self)
     /* Convert split table to combined table */
     if (_PyDict_HasSplitTable(self)) {
         PyDictKeysObject *keys = self->ma_keys;
-        dictkeys_incref(keys);
-        LOCK_KEYS(keys);
 
-        int status = dictresize(interp, self, DK_LOG_SIZE(self->ma_keys), 1);
-        UNLOCK_KEYS(keys);
-        dictkeys_decref(interp, keys);
-
-        if (status < 0) {
+        if (dictresize(interp, self, DK_LOG_SIZE(self->ma_keys), 1) < 0) {
             Py_DECREF(res);
             return NULL;
         }
