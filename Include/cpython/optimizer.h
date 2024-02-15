@@ -24,9 +24,10 @@ typedef struct {
     uint8_t opcode;
     uint8_t oparg;
     uint8_t valid;
-    uint8_t linked;
+    int index;           // Index of ENTER_EXECUTOR (if code isn't NULL, below).
     _PyBloomFilter bloom;
     _PyExecutorLinkListNode links;
+    PyCodeObject *code;  // Weak (NULL if no corresponding ENTER_EXECUTOR).
 } _PyVMData;
 
 typedef struct {
@@ -70,6 +71,8 @@ typedef struct {
 
 PyAPI_FUNC(int) PyUnstable_Replace_Executor(PyCodeObject *code, _Py_CODEUNIT *instr, _PyExecutorObject *executor);
 
+_PyOptimizerObject *_Py_SetOptimizer(PyInterpreterState *interp, _PyOptimizerObject* optimizer);
+
 PyAPI_FUNC(void) PyUnstable_SetOptimizer(_PyOptimizerObject* optimizer);
 
 PyAPI_FUNC(_PyOptimizerObject *) PyUnstable_GetOptimizer(void);
@@ -78,8 +81,6 @@ PyAPI_FUNC(_PyExecutorObject *) PyUnstable_GetExecutor(PyCodeObject *code, int o
 
 int
 _PyOptimizer_Optimize(struct _PyInterpreterFrame *frame, _Py_CODEUNIT *start, PyObject **stack_pointer);
-
-extern _PyOptimizerObject _PyOptimizer_Default;
 
 void _Py_ExecutorInit(_PyExecutorObject *, _PyBloomFilter *);
 void _Py_ExecutorClear(_PyExecutorObject *);
@@ -95,7 +96,11 @@ PyAPI_FUNC(PyObject *)PyUnstable_Optimizer_NewUOpOptimizer(void);
 
 #define OPTIMIZER_BITS_IN_COUNTER 4
 /* Minimum of 16 additional executions before retry */
-#define MINIMUM_TIER2_BACKOFF 4
+#define MIN_TIER2_BACKOFF 4
+#define MAX_TIER2_BACKOFF (15 - OPTIMIZER_BITS_IN_COUNTER)
+#define OPTIMIZER_BITS_MASK ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1)
+/* A value <= UINT16_MAX but large enough that when shifted is > UINT16_MAX */
+#define OPTIMIZER_UNREACHABLE_THRESHOLD UINT16_MAX
 
 #define _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS 3
 #define _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS 6

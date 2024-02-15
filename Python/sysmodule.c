@@ -2127,6 +2127,22 @@ sys__clear_type_cache_impl(PyObject *module)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+sys._clear_internal_caches
+
+Clear all internal performance-related caches.
+[clinic start generated code]*/
+
+static PyObject *
+sys__clear_internal_caches_impl(PyObject *module)
+/*[clinic end generated code: output=0ee128670a4966d6 input=253e741ca744f6e8]*/
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _Py_Executors_InvalidateAll(interp);
+    PyType_ClearCache();
+    Py_RETURN_NONE;
+}
+
 /* Note that, for now, we do not have a per-interpreter equivalent
   for sys.is_finalizing(). */
 
@@ -2461,6 +2477,7 @@ static PyMethodDef sys_methods[] = {
     {"audit", _PyCFunction_CAST(sys_audit), METH_FASTCALL, audit_doc },
     {"breakpointhook", _PyCFunction_CAST(sys_breakpointhook),
      METH_FASTCALL | METH_KEYWORDS, breakpointhook_doc},
+    SYS__CLEAR_INTERNAL_CACHES_METHODDEF
     SYS__CLEAR_TYPE_CACHE_METHODDEF
     SYS__CURRENT_FRAMES_METHODDEF
     SYS__CURRENT_EXCEPTIONS_METHODDEF

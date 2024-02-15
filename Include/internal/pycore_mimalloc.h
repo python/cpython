@@ -20,9 +20,12 @@ typedef enum {
 #include "pycore_pymem.h"
 
 #ifdef WITH_MIMALLOC
-#define MI_DEBUG_UNINIT     PYMEM_CLEANBYTE
-#define MI_DEBUG_FREED      PYMEM_DEADBYTE
-#define MI_DEBUG_PADDING    PYMEM_FORBIDDENBYTE
+#  ifdef Py_GIL_DISABLED
+#    define MI_PRIM_THREAD_ID   _Py_ThreadId
+#  endif
+#  define MI_DEBUG_UNINIT     PYMEM_CLEANBYTE
+#  define MI_DEBUG_FREED      PYMEM_DEADBYTE
+#  define MI_DEBUG_PADDING    PYMEM_FORBIDDENBYTE
 #ifdef Py_DEBUG
 #  define MI_DEBUG 1
 #else
