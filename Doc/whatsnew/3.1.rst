@@ -80,6 +80,28 @@ Support was also added for third-party tools like `PyYAML <https://pyyaml.org/>`
       PEP written by Armin Ronacher and Raymond Hettinger.  Implementation
       written by Raymond Hettinger.
 
+Since an ordered dictionary remembers its insertion order, it can be used
+in conjuction with sorting to make a sorted dictionary::
+
+    >>> # regular unsorted dictionary
+    >>> d = {'banana': 3, 'apple':4, 'pear': 1, 'orange': 2}
+
+    >>> # dictionary sorted by key
+    >>> OrderedDict(sorted(d.items(), key=lambda t: t[0]))
+    OrderedDict([('apple', 4), ('banana', 3), ('orange', 2), ('pear', 1)])
+
+    >>> # dictionary sorted by value
+    >>> OrderedDict(sorted(d.items(), key=lambda t: t[1]))
+    OrderedDict([('pear', 1), ('orange', 2), ('banana', 3), ('apple', 4)])
+
+    >>> # dictionary sorted by length of the key string
+    >>> OrderedDict(sorted(d.items(), key=lambda t: len(t[0])))
+    OrderedDict([('pear', 1), ('apple', 4), ('orange', 2), ('banana', 3)])
+
+The new sorted dictionaries maintain their sort order when entries
+are deleted.  But when new keys are added, the keys are appended
+to the end and the sort is not maintained.
+
 
 PEP 378: Format Specifier for Thousands Separator
 =================================================

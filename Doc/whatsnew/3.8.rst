@@ -2243,6 +2243,21 @@ details, see the documentation for ``loop.create_datagram_endpoint()``.
 (Contributed by Kyle Stanley, Antoine Pitrou, and Yury Selivanov in
 :issue:`37228`.)
 
+Notable changes in Python 3.8.2
+===============================
+
+Fixed a regression with the ``ignore`` callback of :func:`shutil.copytree`.
+The argument types are now str and List[str] again.
+(Contributed by Manuel Barkhau and Giampaolo Rodola in :gh:`83571`.)
+
+Notable changes in Python 3.8.3
+===============================
+
+The constant values of future flags in the :mod:`__future__` module
+are updated in order to prevent collision with compiler flags. Previously
+``PyCF_ALLOW_TOP_LEVEL_AWAIT`` was clashing with ``CO_FUTURE_DIVISION``.
+(Contributed by Batuhan Taskaya in :gh:`83743`)
+
 Notable changes in Python 3.8.8
 ===============================
 
@@ -2256,8 +2271,54 @@ functions internally. For more details, please see their respective
 documentation.
 (Contributed by Adam Goldschmidt, Senthil Kumaran and Ken Jin in :issue:`42967`.)
 
+Notable changes in Python 3.8.9
+===============================
+
+A security fix alters the :class:`ftplib.FTP` behavior to not trust the
+IPv4 address sent from the remote server when setting up a passive data
+channel.  We reuse the ftp server IP address instead.  For unusual code
+requiring the old behavior, set a ``trust_server_pasv_ipv4_address``
+attribute on your FTP instance to ``True``.  (See :gh:`87451`)
+
+Notable changes in Python 3.8.10
+================================
+
+macOS 11.0 (Big Sur) and Apple Silicon Mac support
+--------------------------------------------------
+
+As of 3.8.10, Python now supports building and running on macOS 11
+(Big Sur) and on Apple Silicon Macs (based on the ``ARM64`` architecture).
+A new universal build variant, ``universal2``, is now available to natively
+support both ``ARM64`` and ``Intel 64`` in one set of executables.
+Note that support for "weaklinking", building binaries targeted for newer
+versions of macOS that will also run correctly on older versions by
+testing at runtime for missing features, is not included in this backport
+from Python 3.9; to support a range of macOS versions, continue to target
+for and build on the oldest version in the range.
+
+(Originally contributed by Ronald Oussoren and Lawrence D'Anna in :gh:`85272`,
+with fixes by FX Coudert and Eli Rykoff, and backported to 3.8 by Maxime Bélanger
+and Ned Deily)
+
+Notable changes in Python 3.8.10
+================================
+
+urllib.parse
+------------
+
+The presence of newline or tab characters in parts of a URL allows for some
+forms of attacks. Following the WHATWG specification that updates :rfc:`3986`,
+ASCII newline ``\n``, ``\r`` and tab ``\t`` characters are stripped from the
+URL by the parser in :mod:`urllib.parse` preventing such attacks. The removal
+characters are controlled by a new module level variable
+``urllib.parse._UNSAFE_URL_BYTES_TO_REMOVE``. (See :issue:`43882`)
+
+
 Notable changes in Python 3.8.12
 ================================
+
+Changes in the Python API
+-------------------------
 
 Starting with Python 3.8.12 the :mod:`ipaddress` module no longer accepts
 any leading zeros in IPv4 address strings. Leading zeros are ambiguous and
@@ -2268,3 +2329,33 @@ any leading zeros.
 
 (Originally contributed by Christian Heimes in :issue:`36384`, and backported
 to 3.8 by Achraf Merzouki.)
+
+Notable security feature in 3.8.14
+==================================
+
+Converting between :class:`int` and :class:`str` in bases other than 2
+(binary), 4, 8 (octal), 16 (hexadecimal), or 32 such as base 10 (decimal)
+now raises a :exc:`ValueError` if the number of digits in string form is
+above a limit to avoid potential denial of service attacks due to the
+algorithmic complexity. This is a mitigation for `CVE-2020-10735
+<https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10735>`_.
+This limit can be configured or disabled by environment variable, command
+line flag, or :mod:`sys` APIs. See the :ref:`integer string conversion
+length limitation <int_max_str_digits>` documentation.  The default limit
+is 4300 digits in string form.
+
+Notable changes in 3.8.17
+=========================
+
+tarfile
+-------
+
+* The extraction methods in :mod:`tarfile`, and :func:`shutil.unpack_archive`,
+  have a new a *filter* argument that allows limiting tar features than may be
+  surprising or dangerous, such as creating files outside the destination
+  directory.
+  See :ref:`tarfile-extraction-filter` for details.
+  In Python 3.12, use without the *filter* argument will show a
+  :exc:`DeprecationWarning`.
+  In Python 3.14, the default will switch to ``'data'``.
+  (Contributed by Petr Viktorin in :pep:`706`.)
