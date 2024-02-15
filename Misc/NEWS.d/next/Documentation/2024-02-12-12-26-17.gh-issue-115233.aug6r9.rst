@@ -1,1 +1,0 @@
-Fix an example for :class:`~logging.LoggerAdapter` in the Logging Cookbook.

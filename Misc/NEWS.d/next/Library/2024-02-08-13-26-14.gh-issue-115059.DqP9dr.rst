@@ -1,1 +1,0 @@
-:meth:`io.BufferedRandom.read1` now flushes the underlying write buffer.

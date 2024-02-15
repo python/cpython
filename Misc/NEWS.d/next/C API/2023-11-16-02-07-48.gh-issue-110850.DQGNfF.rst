@@ -1,9 +1,0 @@
-Add PyTime C API:
-
-* :c:type:`PyTime_t` type.
-* :c:var:`PyTime_MIN` and :c:var:`PyTime_MAX` constants.
-* :c:func:`PyTime_AsSecondsDouble`,
-  :c:func:`PyTime_Monotonic`, :c:func:`PyTime_PerfCounter`, and
-  :c:func:`PyTime_Time` functions.
-
-Patch by Victor Stinner.
