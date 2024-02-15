@@ -84,10 +84,6 @@ update_eval_breaker_for_thread(PyInterpreterState *interp, PyThreadState *tstate
     return;
 #endif
 
-    if (tstate == NULL) {
-        return;
-    }
-
     int32_t calls_to_do = _Py_atomic_load_int32_relaxed(
         &interp->ceval.pending.calls_to_do);
     if (calls_to_do) {

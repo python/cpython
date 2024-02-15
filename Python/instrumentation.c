@@ -891,7 +891,8 @@ static inline int most_significant_bit(uint8_t bits) {
 static uint32_t
 global_version(PyInterpreterState *interp)
 {
-    return _Py_atomic_load_uintptr_relaxed(&interp->ceval.instrumentation_version);
+    return (uint32_t)_Py_atomic_load_uintptr_relaxed(
+        &interp->ceval.instrumentation_version);
 }
 
 /* Atomically set the given version in the given location, without touching
