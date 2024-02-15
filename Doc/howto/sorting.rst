@@ -331,7 +331,7 @@ library provides several tools that do less work than a full sort:
   respectively.  They make a single pass over the input data and
   require almost no auxiliary memory.
 
-* :func:`heapq.nsmallest` and :func:`heapq.nlargest` functions return
+* :func:`heapq.nsmallest` and :func:`heapq.nlargest` return
   the *n* smallest and largest values, respectively.  These functions
   make a single pass over the data keeping only *n* elements in memory
   at a time.  For values of *n* that are small relative to the number of
