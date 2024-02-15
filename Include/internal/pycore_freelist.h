@@ -72,7 +72,6 @@ struct _Py_dict_freelist {
     /* Dictionary reuse scheme to save calls to malloc and free */
     PyDictObject *free_list[PyDict_MAXFREELIST];
     int numfree;
-    int keys_numfree;
 #endif
 };
 
@@ -81,7 +80,6 @@ struct _Py_dictkeys_freelist {
     /* Dictionary keys reuse scheme to save calls to malloc and free */
     PyDictKeysObject *keys_free_list[PyDict_MAXFREELIST];
     int numfree;
-    int keys_numfree;
 #endif
 };
 
