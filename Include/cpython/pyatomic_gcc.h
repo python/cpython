@@ -495,6 +495,9 @@ static inline int
 _Py_atomic_load_int_acquire(const int *obj)
 { return __atomic_load_n(obj, __ATOMIC_ACQUIRE); }
 
+static inline uint32_t
+_Py_atomic_load_uint32_acquire(const uint32_t *obj)
+{ return __atomic_load_n(obj, __ATOMIC_ACQUIRE); }
 
 // --- _Py_atomic_fence ------------------------------------------------------
 

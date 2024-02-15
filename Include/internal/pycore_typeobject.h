@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_moduleobject.h"  // PyModuleObject
+#include "pycore_lock.h"          // PyMutex
 
 
 /* state */
@@ -21,6 +22,7 @@ struct _types_runtime_state {
     // bpo-42745: next_version_tag remains shared by all interpreters
     // because of static types.
     unsigned int next_version_tag;
+    PyMutex type_mutex;
 };
 
 
@@ -28,6 +30,9 @@ struct _types_runtime_state {
 // see _PyType_Lookup().
 struct type_cache_entry {
     unsigned int version;  // initialized from type->tp_version_tag
+#ifdef Py_GIL_DISABLED
+   _PySeqLock sequence;
+#endif
     PyObject *name;        // reference to exactly a str or None
     PyObject *value;       // borrowed reference or NULL
 };
@@ -74,7 +79,7 @@ struct types_state {
 extern PyStatus _PyTypes_InitTypes(PyInterpreterState *);
 extern void _PyTypes_FiniTypes(PyInterpreterState *);
 extern void _PyTypes_Fini(PyInterpreterState *);
-
+extern void _PyTypes_AfterFork(void);
 
 /* other API */
 

@@ -251,6 +251,39 @@ PyAPI_FUNC(void) _PyRWMutex_RUnlock(_PyRWMutex *rwmutex);
 PyAPI_FUNC(void) _PyRWMutex_Lock(_PyRWMutex *rwmutex);
 PyAPI_FUNC(void) _PyRWMutex_Unlock(_PyRWMutex *rwmutex);
 
+// Similar to linux seqlock: https://en.wikipedia.org/wiki/Seqlock
+// We use a sequence number to lock the writer, an even sequence means we're unlocked, an odd
+// sequence means we're locked.  Readers will read the sequence before attempting to read the
+// underlying data and then read the sequence number again after reading the data.  If the
+// sequence has not changed the data is valid.
+//
+// Differs a little bit in that we use CAS on sequence as the lock, instead of a seperate spin lock.
+// The writer can also detect that the undelering data has not changed and abandon the write
+// and restore the previous sequence.
+typedef struct {
+    uint32_t sequence;
+} _PySeqLock;
+
+// Lock the sequence lock for the writer
+PyAPI_FUNC(void) _PySeqLock_LockWrite(_PySeqLock *seqlock);
+
+// Unlock the sequence lock and move to the next sequence number.
+PyAPI_FUNC(void) _PySeqLock_UnlockWrite(_PySeqLock *seqlock);
+
+// Abandon the current update indicating that no mutations have occured
+// and restore the previous sequence value.
+PyAPI_FUNC(void) _PySeqLock_AbandonWrite(_PySeqLock *seqlock);
+
+// Begin a read operation and return the current sequence number.
+PyAPI_FUNC(uint32_t) _PySeqLock_BeginRead(_PySeqLock *seqlock);
+
+// End the read operation and confirm that the sequence number has not changed.
+// Returns 1 if the read was successful or 0 if the read should be re-tried.
+PyAPI_FUNC(uint32_t) _PySeqLock_EndRead(_PySeqLock *seqlock, uint32_t previous);
+
+// Check if the lock was held during a fork and clear the lock.  Returns 1
+// if the lock was held and any associated datat should be cleared.
+PyAPI_FUNC(uint32_t) _PySeqLock_AfterFork(_PySeqLock *seqlock);
 
 #ifdef __cplusplus
 }
