@@ -1,2 +1,0 @@
-Add the :meth:`!close` method for the iterator returned by
-:func:`xml.etree.ElementTree.iterparse`.

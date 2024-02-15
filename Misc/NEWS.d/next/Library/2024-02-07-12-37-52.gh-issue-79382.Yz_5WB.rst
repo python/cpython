@@ -1,2 +1,0 @@
-Trailing ``**`` no longer allows to match files and non-existing paths in
-recursive :func:`~glob.glob`.
