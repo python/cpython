@@ -180,9 +180,28 @@
         }
 
         case _BINARY_OP_MULTIPLY_INT: {
+            _Py_UOpsSymType *right;
+            _Py_UOpsSymType *left;
             _Py_UOpsSymType *res;
-            res = sym_new_unknown(ctx);
-            if (res == NULL) goto out_of_space;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (is_const(left) && is_const(right)) {
+                assert(PyLong_CheckExact(get_const(left)));
+                assert(PyLong_CheckExact(get_const(right)));
+                PyObject *temp = _PyLong_Multiply((PyLongObject *)get_const(left),
+                    (PyLongObject *)get_const(right));
+                if (temp == NULL) {
+                    goto error;
+                }
+                res = sym_new_const(ctx, temp);
+                // TODO replace opcode with constant propagated one and add tests!
+            }
+            else {
+                res = sym_new_known_type(ctx, &PyLong_Type);
+                if (res == NULL) {
+                    goto out_of_space;
+                }
+            }
             stack_pointer[-2] = res;
             stack_pointer += -1;
             break;
@@ -194,12 +213,22 @@
             _Py_UOpsSymType *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            // TODO constant propagation
-            (void)left;
-            (void)right;
-            res = sym_new_known_type(ctx, &PyLong_Type);
-            if (res == NULL) {
-                goto out_of_space;
+            if (is_const(left) && is_const(right)) {
+                assert(PyLong_CheckExact(get_const(left)));
+                assert(PyLong_CheckExact(get_const(right)));
+                PyObject *temp = _PyLong_Add((PyLongObject *)get_const(left),
+                    (PyLongObject *)get_const(right));
+                if (temp == NULL) {
+                    goto error;
+                }
+                res = sym_new_const(ctx, temp);
+                // TODO replace opcode with constant propagated one and add tests!
+            }
+            else {
+                res = sym_new_known_type(ctx, &PyLong_Type);
+                if (res == NULL) {
+                    goto out_of_space;
+                }
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -207,9 +236,28 @@
         }
 
         case _BINARY_OP_SUBTRACT_INT: {
+            _Py_UOpsSymType *right;
+            _Py_UOpsSymType *left;
             _Py_UOpsSymType *res;
-            res = sym_new_unknown(ctx);
-            if (res == NULL) goto out_of_space;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (is_const(left) && is_const(right)) {
+                assert(PyLong_CheckExact(get_const(left)));
+                assert(PyLong_CheckExact(get_const(right)));
+                PyObject *temp = _PyLong_Subtract((PyLongObject *)get_const(left),
+                    (PyLongObject *)get_const(right));
+                if (temp == NULL) {
+                    goto error;
+                }
+                res = sym_new_const(ctx, temp);
+                // TODO replace opcode with constant propagated one and add tests!
+            }
+            else {
+                res = sym_new_known_type(ctx, &PyLong_Type);
+                if (res == NULL) {
+                    goto out_of_space;
+                }
+            }
             stack_pointer[-2] = res;
             stack_pointer += -1;
             break;
