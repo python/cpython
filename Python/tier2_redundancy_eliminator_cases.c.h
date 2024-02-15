@@ -832,30 +832,6 @@
             break;
         }
 
-        case _LOAD_ATTR_INSTANCE_VALUE_0: {
-            _Py_UOpsSymType *attr;
-            _Py_UOpsSymType *null = NULL;
-            attr = sym_new_unknown(ctx);
-            if (attr == NULL) goto out_of_space;
-            null = sym_new_null(ctx);
-            if (null == NULL) goto out_of_space;
-            stack_pointer[-1] = attr;
-            break;
-        }
-
-        case _LOAD_ATTR_INSTANCE_VALUE_1: {
-            _Py_UOpsSymType *attr;
-            _Py_UOpsSymType *null = NULL;
-            attr = sym_new_unknown(ctx);
-            if (attr == NULL) goto out_of_space;
-            null = sym_new_null(ctx);
-            if (null == NULL) goto out_of_space;
-            stack_pointer[-1] = attr;
-            stack_pointer[0] = null;
-            stack_pointer += 1;
-            break;
-        }
-
         case _LOAD_ATTR_INSTANCE_VALUE: {
             _Py_UOpsSymType *owner;
             _Py_UOpsSymType *attr;
@@ -909,30 +885,6 @@
             break;
         }
 
-        case _LOAD_ATTR_SLOT_0: {
-            _Py_UOpsSymType *attr;
-            _Py_UOpsSymType *null = NULL;
-            attr = sym_new_unknown(ctx);
-            if (attr == NULL) goto out_of_space;
-            null = sym_new_null(ctx);
-            if (null == NULL) goto out_of_space;
-            stack_pointer[-1] = attr;
-            break;
-        }
-
-        case _LOAD_ATTR_SLOT_1: {
-            _Py_UOpsSymType *attr;
-            _Py_UOpsSymType *null = NULL;
-            attr = sym_new_unknown(ctx);
-            if (attr == NULL) goto out_of_space;
-            null = sym_new_null(ctx);
-            if (null == NULL) goto out_of_space;
-            stack_pointer[-1] = attr;
-            stack_pointer[0] = null;
-            stack_pointer += 1;
-            break;
-        }
-
         case _LOAD_ATTR_SLOT: {
             _Py_UOpsSymType *owner;
             _Py_UOpsSymType *attr;
@@ -949,30 +901,6 @@
         }
 
         case _CHECK_ATTR_CLASS: {
-            break;
-        }
-
-        case _LOAD_ATTR_CLASS_0: {
-            _Py_UOpsSymType *attr;
-            _Py_UOpsSymType *null = NULL;
-            attr = sym_new_unknown(ctx);
-            if (attr == NULL) goto out_of_space;
-            null = sym_new_null(ctx);
-            if (null == NULL) goto out_of_space;
-            stack_pointer[-1] = attr;
-            break;
-        }
-
-        case _LOAD_ATTR_CLASS_1: {
-            _Py_UOpsSymType *attr;
-            _Py_UOpsSymType *null = NULL;
-            attr = sym_new_unknown(ctx);
-            if (attr == NULL) goto out_of_space;
-            null = sym_new_null(ctx);
-            if (null == NULL) goto out_of_space;
-            stack_pointer[-1] = attr;
-            stack_pointer[0] = null;
-            stack_pointer += 1;
             break;
         }
 

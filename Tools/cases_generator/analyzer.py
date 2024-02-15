@@ -513,7 +513,7 @@ def make_uop(name: str, op: parser.InstDef, inputs: list[parser.InputEffect], uo
             if properties.oparg:
                 # May not need oparg anymore
                 properties.oparg = any(token.text == "oparg" for token in op.block.tokens)
-            uops[name_x] = Uop(
+            rep = Uop(
                 name=name_x,
                 context=op.context,
                 annotations=op.annotations,
@@ -522,6 +522,8 @@ def make_uop(name: str, op: parser.InstDef, inputs: list[parser.InputEffect], uo
                 body=op.block.tokens,
                 properties=properties,
             )
+            rep.replicates = result
+            uops[name_x] = rep
     for anno in op.annotations:
         if anno.startswith("replicate"):
             result.replicated = int(anno[10:-1])
