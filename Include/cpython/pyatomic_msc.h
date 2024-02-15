@@ -938,6 +938,17 @@ _Py_atomic_load_int_acquire(const int *obj)
 #endif
 }
 
+static inline uint32_t
+_Py_atomic_load_uint32_acquire(const uint32_t *obj)
+{
+#if defined(_M_X64) || defined(_M_IX86)
+    return *(uint32_t volatile *)obj;
+#elif defined(_M_ARM64)
+    return (int)__ldar32((uint32_t volatile *)obj);
+#else
+#  error "no implementation of _Py_atomic_load_uint32_acquire"
+#endif
+}
 
 // --- _Py_atomic_fence ------------------------------------------------------
 
