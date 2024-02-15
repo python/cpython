@@ -1,3 +1,0 @@
-Group-related variables of ``_posixsubprocess`` module are renamed to
-stress that supplimentary group affinity is added to a fork, not
-replace the inherited ones. Patch by Oleg Iarygin.

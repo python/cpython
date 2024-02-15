@@ -1,3 +1,0 @@
-Reword :mod:`subprocess` to emphasize default behavior of *stdin*, *stdout*,
-and *stderr* arguments. Remove inaccurate statement about child file handle
-inheritance.
