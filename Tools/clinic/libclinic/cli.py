@@ -6,7 +6,7 @@ import os
 import sys
 from typing import NoReturn
 
-from libclinic import clinic
+from libclinic import clinic, ClinicError
 
 __all__ = ["main"]
 
@@ -181,7 +181,7 @@ def main(argv: list[str] | None = None) -> NoReturn:
     args = parser.parse_args(argv)
     try:
         run_clinic(parser, args)
-    except clinic.ClinicError as exc:
+    except ClinicError as exc:
         sys.stderr.write(exc.report())
         sys.exit(1)
     else:
