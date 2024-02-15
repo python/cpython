@@ -327,7 +327,7 @@ Partial Sorts
 Some applications require only some of the data to be ordered.  The standard
 library provides several tools that do less work than a full sort:
 
-* :func:`min` and :func:`max` return the smallest and largest values
+* :func:`min` and :func:`max` return the smallest and largest values,
   respectively.  They make a single pass over the input data and
   require almost no auxiliary memory.
 
