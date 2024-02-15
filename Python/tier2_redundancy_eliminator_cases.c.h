@@ -194,7 +194,11 @@
                     goto error;
                 }
                 res = sym_new_const(ctx, temp);
-                // TODO replace opcode with constant propagated one and add tests!
+                if (res == NULL) {
+                    goto out_of_space;
+                }
+                // TODO gh-115506:
+                // replace opcode with constant propagated one and add tests!
             }
             else {
                 res = sym_new_known_type(ctx, &PyLong_Type);
@@ -222,7 +226,11 @@
                     goto error;
                 }
                 res = sym_new_const(ctx, temp);
-                // TODO replace opcode with constant propagated one and add tests!
+                if (res == NULL) {
+                    goto out_of_space;
+                }
+                // TODO gh-115506:
+                // replace opcode with constant propagated one and add tests!
             }
             else {
                 res = sym_new_known_type(ctx, &PyLong_Type);
@@ -250,7 +258,11 @@
                     goto error;
                 }
                 res = sym_new_const(ctx, temp);
-                // TODO replace opcode with constant propagated one and add tests!
+                if (res == NULL) {
+                    goto out_of_space;
+                }
+                // TODO gh-115506:
+                // replace opcode with constant propagated one and add tests!
             }
             else {
                 res = sym_new_known_type(ctx, &PyLong_Type);
