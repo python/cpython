@@ -2500,12 +2500,12 @@ def parse_file(
 
     extension = os.path.splitext(filename)[1][1:]
     if not extension:
-        fail(f"Can't extract file type for file {filename!r}")
+        raise ClinicError(f"Can't extract file type for file {filename!r}")
 
     try:
         language = extensions[extension](filename)
     except KeyError:
-        fail(f"Can't identify file type for file {filename!r}")
+        raise ClinicError(f"Can't identify file type for file {filename!r}")
 
     with open(filename, encoding="utf-8") as f:
         raw = f.read()
