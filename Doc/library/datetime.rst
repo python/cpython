@@ -1813,7 +1813,7 @@ Other constructor:
 
    Examples:
 
-   .. doctest::
+     .. doctest::
 
        >>> from datetime import time
        >>> time.fromisoformat('04:23:01')
