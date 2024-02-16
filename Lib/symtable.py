@@ -39,7 +39,7 @@ class SymbolTableFactory:
 _newSymbolTable = SymbolTableFactory()
 
 
-class SymbolTable(object):
+class SymbolTable:
 
     def __init__(self, raw_table, filename):
         self._table = raw_table
@@ -52,7 +52,7 @@ class SymbolTable(object):
         else:
             kind = "%s " % self.__class__.__name__
 
-        if self._table.name == "global":
+        if self._table.name == "top":
             return "<{0}SymbolTable for module {1}>".format(kind, self._filename)
         else:
             return "<{0}SymbolTable for {1} in {2}>".format(kind,
@@ -62,8 +62,8 @@ class SymbolTable(object):
     def get_type(self):
         """Return the type of the symbol table.
 
-        The values retuned are 'class', 'module' and
-        'function'.
+        The values returned are 'class', 'module', 'function',
+        'annotation', 'TypeVar bound', 'type alias', and 'type parameter'.
         """
         if self._table.type == _symtable.TYPE_MODULE:
             return "module"
@@ -71,8 +71,15 @@ class SymbolTable(object):
             return "function"
         if self._table.type == _symtable.TYPE_CLASS:
             return "class"
-        assert self._table.type in (1, 2, 3), \
-               "unexpected type: {0}".format(self._table.type)
+        if self._table.type == _symtable.TYPE_ANNOTATION:
+            return "annotation"
+        if self._table.type == _symtable.TYPE_TYPE_VAR_BOUND:
+            return "TypeVar bound"
+        if self._table.type == _symtable.TYPE_TYPE_ALIAS:
+            return "type alias"
+        if self._table.type == _symtable.TYPE_TYPE_PARAM:
+            return "type parameter"
+        assert False, f"unexpected type: {self._table.type}"
 
     def get_id(self):
         """Return an identifier for the table.
@@ -111,7 +118,7 @@ class SymbolTable(object):
         return bool(self._table.children)
 
     def get_identifiers(self):
-        """Return a list of names of symbols in the table.
+        """Return a view object containing the names of symbols in the table.
         """
         return self._table.symbols.keys()
 
@@ -124,7 +131,9 @@ class SymbolTable(object):
         if sym is None:
             flags = self._table.symbols[name]
             namespaces = self.__check_children(name)
-            sym = self._symbols[name] = Symbol(name, flags, namespaces)
+            module_scope = (self._table.name == "top")
+            sym = self._symbols[name] = Symbol(name, flags, namespaces,
+                                               module_scope=module_scope)
         return sym
 
     def get_symbols(self):
@@ -214,16 +223,26 @@ class Class(SymbolTable):
         return self.__methods
 
 
-class Symbol(object):
+class Symbol:
 
-    def __init__(self, name, flags, namespaces=None):
+    def __init__(self, name, flags, namespaces=None, *, module_scope=False):
         self.__name = name
         self.__flags = flags
         self.__scope = (flags >> SCOPE_OFF) & SCOPE_MASK # like PyST_GetScope()
         self.__namespaces = namespaces or ()
+        self.__module_scope = module_scope
 
     def __repr__(self):
-        return "<symbol {0!r}>".format(self.__name)
+        flags_str = '|'.join(self._flags_str())
+        return f'<symbol {self.__name!r}: {self._scope_str()}, {flags_str}>'
+
+    def _scope_str(self):
+        return _scopes_value_to_name.get(self.__scope) or str(self.__scope)
+
+    def _flags_str(self):
+        for flagname, flagvalue in _flags:
+            if self.__flags & flagvalue == flagvalue:
+                yield flagname
 
     def get_name(self):
         """Return a name of a symbol.
@@ -242,9 +261,10 @@ class Symbol(object):
         return bool(self.__flags & DEF_PARAM)
 
     def is_global(self):
-        """Return *True* if the sysmbol is global.
+        """Return *True* if the symbol is global.
         """
-        return bool(self.__scope in (GLOBAL_IMPLICIT, GLOBAL_EXPLICIT))
+        return bool(self.__scope in (GLOBAL_IMPLICIT, GLOBAL_EXPLICIT)
+                    or (self.__module_scope and self.__flags & DEF_BOUND))
 
     def is_nonlocal(self):
         """Return *True* if the symbol is nonlocal."""
@@ -258,7 +278,8 @@ class Symbol(object):
     def is_local(self):
         """Return *True* if the symbol is local.
         """
-        return bool(self.__scope in (LOCAL, CELL))
+        return bool(self.__scope in (LOCAL, CELL)
+                    or (self.__module_scope and self.__flags & DEF_BOUND))
 
     def is_annotated(self):
         """Return *True* if the symbol is annotated.
@@ -301,17 +322,53 @@ class Symbol(object):
     def get_namespace(self):
         """Return the single namespace bound to this name.
 
-        Raises ValueError if the name is bound to multiple namespaces.
+        Raises ValueError if the name is bound to multiple namespaces
+        or no namespace.
         """
-        if len(self.__namespaces) != 1:
+        if len(self.__namespaces) == 0:
+            raise ValueError("name is not bound to any namespaces")
+        elif len(self.__namespaces) > 1:
             raise ValueError("name is bound to multiple namespaces")
-        return self.__namespaces[0]
+        else:
+            return self.__namespaces[0]
+
+
+_flags = [('USE', USE)]
+_flags.extend(kv for kv in globals().items() if kv[0].startswith('DEF_'))
+_scopes_names = ('FREE', 'LOCAL', 'GLOBAL_IMPLICIT', 'GLOBAL_EXPLICIT', 'CELL')
+_scopes_value_to_name = {globals()[n]: n for n in _scopes_names}
+
+
+def main(args):
+    import sys
+    def print_symbols(table, level=0):
+        indent = '    ' * level
+        nested = "nested " if table.is_nested() else ""
+        if table.get_type() == 'module':
+            what = f'from file {table._filename!r}'
+        else:
+            what = f'{table.get_name()!r}'
+        print(f'{indent}symbol table for {nested}{table.get_type()} {what}:')
+        for ident in table.get_identifiers():
+            symbol = table.lookup(ident)
+            flags = ', '.join(symbol._flags_str()).lower()
+            print(f'    {indent}{symbol._scope_str().lower()} symbol {symbol.get_name()!r}: {flags}')
+        print()
+
+        for table2 in table.get_children():
+            print_symbols(table2, level + 1)
+
+    for filename in args or ['-']:
+        if filename == '-':
+            src = sys.stdin.read()
+            filename = '<stdin>'
+        else:
+            with open(filename, 'rb') as f:
+                src = f.read()
+        mod = symtable(src, filename, 'exec')
+        print_symbols(mod)
+
 
 if __name__ == "__main__":
-    import os, sys
-    with open(sys.argv[0]) as f:
-        src = f.read()
-    mod = symtable(src, os.path.split(sys.argv[0])[1], "exec")
-    for ident in mod.get_identifiers():
-        info = mod.lookup(ident)
-        print(info, info.is_local(), info.is_namespace())
+    import sys
+    main(sys.argv[1:])

@@ -1,1 +1,0 @@
-Remove the old parser, the :mod:`parser` module and all associated support code, command-line options and environment variables. Patch by Pablo Galindo.

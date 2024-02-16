@@ -1,0 +1,28 @@
+name: Mark stale pull requests
+
+on:
+  schedule:
+  - cron: "0 0 * * *"
+
+permissions:
+  pull-requests: write
+
+jobs:
+  stale:
+    if: github.repository_owner == 'python'
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: "Check PRs"
+      uses: actions/stale@v9
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        stale-pr-message: 'This PR is stale because it has been open for 30 days with no activity.'
+        stale-pr-label: 'stale'
+        days-before-issue-stale: -1
+        days-before-pr-stale: 30
+        days-before-close: -1
+        ascending: true
+        operations-per-run: 120

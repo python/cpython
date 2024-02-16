@@ -1,1 +1,0 @@
-Improve performance of HTTPResponse.read with a given amount. Patch by Bruce Merry.

@@ -1225,7 +1225,7 @@ Library
 - Issue #22396: On 32-bit AIX platform, don't expose os.posix_fadvise() nor
   os.posix_fallocate() because their prototypes in system headers are wrong.
 
-- Issue #22517: When a io.BufferedRWPair object is deallocated, clear its
+- Issue #22517: When an io.BufferedRWPair object is deallocated, clear its
   weakrefs.
 
 - Issue #22448: Improve canceled timer handles cleanup to prevent
@@ -1429,7 +1429,7 @@ Library
   by Devin Cook.
 
 - Lax cookie parsing in http.cookies could be a security issue when combined
-  with non-standard cookie handling in some Web browsers.  Reported by
+  with non-standard cookie handling in some web browsers.  Reported by
   Sergey Bobrov.
 
 - Issue #22384: An exception in Tkinter callback no longer crashes the program
@@ -10380,7 +10380,7 @@ Tests
 
 - Avoid failing in test_robotparser when mueblesmoraleda.com is flaky and
   an overzealous DNS service (e.g. OpenDNS) redirects to a placeholder
-  Web site.
+  web site.
 
 - Avoid failing in test_urllibnet.test_bad_address when some overzealous
   DNS service (e.g. OpenDNS) resolves a non-existent domain name.  The test
@@ -11273,7 +11273,7 @@ Library
 
 - Issue #10549: Fix pydoc traceback when text-documenting certain classes.
 
-- Issue #2001: New HTML server with enhanced Web page features.  Patch by Ron
+- Issue #2001: New HTML server with enhanced web page features.  Patch by Ron
   Adam.
 
 - Issue #10360: In WeakSet, do not raise TypeErrors when testing for membership
@@ -13756,7 +13756,7 @@ Library
   processing instruction.  Patch by Neil Muller.
 
 - Issue #6233: ElementTree failed converting unicode characters to XML entities
-  when they could't be represented in the requested output encoding.  Patch by
+  when they couldn't be represented in the requested output encoding.  Patch by
   Jerry Chen.
 
 - Issue #6003: add an argument to ``zipfile.Zipfile.writestr`` to specify the
@@ -16169,7 +16169,7 @@ Core and Builtins
   codec subsystem, for example UTF-8 is turned into utf-8.
 
 - Issue #4200: Changed the atexit module to store its state in its
-  PyModuleDef atexitmodule. This fixes a bug with multiple subinterpeters.
+  PyModuleDef atexitmodule. This fixes a bug with multiple subinterpreters.
 
 - Issue #4237: io.FileIO() was raising invalid warnings caused by
   insufficient initialization of PyFileIOObject struct members.
@@ -19610,7 +19610,7 @@ durable way.  For example, some people say they're confused by that
 the Open Source Initiative's entry for the Python Software Foundation
 License::
 
-      http://www.opensource.org/licenses/PythonSoftFoundation.php
+      https://opensource.org/licenses/PythonSoftFoundation.php
 
 says "Python 2.1.1" all over it, wondering whether it applies only
 to Python 2.1.1.
@@ -20085,7 +20085,7 @@ Windows
 
 - Boosted the stack reservation for python.exe and pythonw.exe from
   the default 1MB to 2MB.  Stack frames under VC 7.1 for 2.4 are enough
-  bigger than under VC 6.0 for 2.3.4 that deeply recursive progams
+  bigger than under VC 6.0 for 2.3.4 that deeply recursive programs
   within the default sys.getrecursionlimit() default value of 1000 were
   able to suffer undetected C stack overflows.  The standard test program
   test_compiler was one such program.  If a Python process on Windows
@@ -21043,7 +21043,7 @@ IDLE
   own when any program opens a socket.  IDLE does use sockets, talking
   on the computer's internal loopback interface.  This connection is not
   visible on any external interface and no data is sent to or received
-  from the Internet.  So, if you get such a dialog when opening IDLE,
+  from the internet.  So, if you get such a dialog when opening IDLE,
   asking whether to let pythonw.exe talk to address 127.0.0.1, say yes,
   and rest assured no communication external to your machine is taking
   place.  If you don't allow it, IDLE won't be able to start.
@@ -21790,7 +21790,7 @@ Library
   x == y is False, and x != y is True.  This is akin to the change made
   for mixed-type comparisons of datetime objects in 2.3a2; more info
   about the rationale is in the NEWS entry for that.  See also SF bug
-  report <http://www.python.org/sf/693121>.
+  report <https://bugs.python.org/issue693121>.
 
 - On Unix platforms, if os.listdir() is called with a Unicode argument,
   it now returns Unicode strings.  (This behavior was added earlier
@@ -22025,7 +22025,7 @@ Extension modules
   now.
 
   today() and now() now round system timestamps to the closest
-  microsecond <http://www.python.org/sf/661086>.  This repairs an
+  microsecond <https://bugs.python.org/issue661086>.  This repairs an
   irritation most likely seen on Windows systems.
 
   In dt.astimezone(tz), if tz.utcoffset(dt) returns a duration,
@@ -22080,7 +22080,7 @@ Extension modules
 
   datetime.fromtimestamp():  Like datetime.now() above, this had less than
   useful behavior when the optional tinzo argument was specified.  See
-  also SF bug report <http://www.python.org/sf/660872>.
+  also SF bug report <https://bugs.python.org/issue660872>.
 
   date and datetime comparison:  In order to prevent comparison from
   falling back to the default compare-object-addresses strategy, these
@@ -22139,10 +22139,10 @@ Library
   dependent path modules (e.g. ntpath.py) rather than os.py, so these
   variables are now available via os.path.  They continue to be
   available from the os module.
-  (see <http://www.python.org/sf/680789>).
+  (see <https://bugs.python.org/issue680789>).
 
 - array.array was added to the types repr.py knows about (see
-  <http://www.python.org/sf/680789>).
+  <https://bugs.python.org/issue680789>).
 
 - The new pickletools.py contains lots of documentation about pickle
   internals, and supplies some helpers for working with pickles, such as
@@ -22527,7 +22527,7 @@ Core and builtins
   potential drawback is that list.sort() may require temp space of
   len(list)*2 bytes (``*4`` on a 64-bit machine).  It's therefore possible
   for list.sort() to raise MemoryError now, even if a comparison function
-  does not.  See <http://www.python.org/sf/587076> for full details.
+  does not.  See <https://bugs.python.org/issue587076> for full details.
 
 - All standard iterators now ensure that, once StopIteration has been
   raised, all future calls to next() on the same iterator will also
@@ -27197,7 +27197,7 @@ Wed Apr  7 20:23:17 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
 
 	"""
 		Mostly I just re-added the SMTPRecipientsRefused exception
-	(the exeption object now has the appropriate info in it ) [Per had
+	(the exception object now has the appropriate info in it ) [Per had
 	removed this in his patch --GvR] and tweaked the behavior of the
 	sendmail method whence it throws the newly added SMTPHeloException (it
 	was closing the connection, which it shouldn't.  whatever catches the
@@ -32325,7 +32325,7 @@ the Tutorial.
 of that chapter.)
 
 
-Changes to the WWW and Internet tools
+Changes to the WWW and internet tools
 =====================================
 
 The "htmllib" module has been rewritten in an incompatible fashion.
@@ -32485,7 +32485,7 @@ notice them anyway :-)
 
 - The Library Reference has been restructured, and many new and
 existing modules are now documented, in particular the debugger and
-the profiler, as well as the persistency and the WWW/Internet support
+the profiler, as well as the persistency and the WWW/internet support
 modules.
 
 - All known bugs have been fixed.  For example the pow(2,2,3L) bug on
@@ -32720,7 +32720,7 @@ New standard library modules:
 
     - types.py defines standard names for built-in types, e.g. StringType
 
-    - urlparse.py parses URLs according to the latest Internet draft
+    - urlparse.py parses URLs according to the latest internet draft
 
     - uu.py does uuencode/uudecode (not the fastest in the world, but
     quicker than installing uuencode on a non-UNIX machine :-)
@@ -34785,7 +34785,7 @@ the "highlights" section above.
 
 4. Changes to the demonstration programs
 
-- Added new useful scipts: byteyears, eptags, fact, from, lfact,
+- Added new useful scripts: byteyears, eptags, fact, from, lfact,
   objgraph, pdeps, pi, primes, ptags, which
 - Added a bunch of socket demos
 - Doubled the speed of ptags
