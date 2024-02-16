@@ -22,7 +22,6 @@ struct _types_runtime_state {
     // bpo-42745: next_version_tag remains shared by all interpreters
     // because of static types.
     unsigned int next_version_tag;
-    PyMutex type_mutex;
 };
 
 
@@ -71,6 +70,7 @@ struct types_state {
     struct type_cache type_cache;
     size_t num_builtins_initialized;
     static_builtin_state builtins[_Py_MAX_STATIC_BUILTIN_TYPES];
+    PyMutex mutex;
 };
 
 

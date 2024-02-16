@@ -11,6 +11,7 @@
 #include "pycore_sysmodule.h"     // _PySys_GetAttr()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
+#include <stdbool.h>
 #include <stddef.h>               // offsetof()
 #ifdef HAVE_SIGNAL_H
 #  include <signal.h>             // SIGINT
@@ -489,6 +490,14 @@ rlock_dealloc(rlockobject *self)
     Py_DECREF(tp);
 }
 
+static bool
+rlock_is_owned_by(rlockobject *self, PyThread_ident_t tid)
+{
+    PyThread_ident_t owner_tid =
+        _Py_atomic_load_ullong_relaxed(&self->rlock_owner);
+    return owner_tid == tid && self->rlock_count > 0;
+}
+
 static PyObject *
 rlock_acquire(rlockobject *self, PyObject *args, PyObject *kwds)
 {
@@ -500,7 +509,7 @@ rlock_acquire(rlockobject *self, PyObject *args, PyObject *kwds)
         return NULL;
 
     tid = PyThread_get_thread_ident_ex();
-    if (self->rlock_count > 0 && tid == self->rlock_owner) {
+    if (rlock_is_owned_by(self, tid)) {
         unsigned long count = self->rlock_count + 1;
         if (count <= self->rlock_count) {
             PyErr_SetString(PyExc_OverflowError,
@@ -513,7 +522,7 @@ rlock_acquire(rlockobject *self, PyObject *args, PyObject *kwds)
     r = acquire_timed(self->rlock_lock, timeout);
     if (r == PY_LOCK_ACQUIRED) {
         assert(self->rlock_count == 0);
-        self->rlock_owner = tid;
+        _Py_atomic_store_ullong_relaxed(&self->rlock_owner, tid);
         self->rlock_count = 1;
     }
     else if (r == PY_LOCK_INTR) {
@@ -544,13 +553,13 @@ rlock_release(rlockobject *self, PyObject *Py_UNUSED(ignored))
 {
     PyThread_ident_t tid = PyThread_get_thread_ident_ex();
 
-    if (self->rlock_count == 0 || self->rlock_owner != tid) {
+    if (!rlock_is_owned_by(self, tid)) {
         PyErr_SetString(PyExc_RuntimeError,
                         "cannot release un-acquired lock");
         return NULL;
     }
     if (--self->rlock_count == 0) {
-        self->rlock_owner = 0;
+        _Py_atomic_store_ullong_relaxed(&self->rlock_owner, 0);
         PyThread_release_lock(self->rlock_lock);
     }
     Py_RETURN_NONE;
@@ -589,7 +598,7 @@ rlock_acquire_restore(rlockobject *self, PyObject *args)
         return NULL;
     }
     assert(self->rlock_count == 0);
-    self->rlock_owner = owner;
+    _Py_atomic_store_ullong_relaxed(&self->rlock_owner, owner);
     self->rlock_count = count;
     Py_RETURN_NONE;
 }
@@ -614,7 +623,7 @@ rlock_release_save(rlockobject *self, PyObject *Py_UNUSED(ignored))
     owner = self->rlock_owner;
     count = self->rlock_count;
     self->rlock_count = 0;
-    self->rlock_owner = 0;
+    _Py_atomic_store_ullong_relaxed(&self->rlock_owner, 0);
     PyThread_release_lock(self->rlock_lock);
     return Py_BuildValue("k" Py_PARSE_THREAD_IDENT_T, count, owner);
 }
@@ -628,8 +637,9 @@ static PyObject *
 rlock_recursion_count(rlockobject *self, PyObject *Py_UNUSED(ignored))
 {
     PyThread_ident_t tid = PyThread_get_thread_ident_ex();
-    return PyLong_FromUnsignedLong(
-        self->rlock_owner == tid ? self->rlock_count : 0UL);
+    PyThread_ident_t owner =
+        _Py_atomic_load_ullong_relaxed(&self->rlock_owner);
+    return PyLong_FromUnsignedLong(owner == tid ? self->rlock_count : 0UL);
 }
 
 PyDoc_STRVAR(rlock_recursion_count_doc,
@@ -642,7 +652,7 @@ rlock_is_owned(rlockobject *self, PyObject *Py_UNUSED(ignored))
 {
     PyThread_ident_t tid = PyThread_get_thread_ident_ex();
 
-    if (self->rlock_count > 0 && self->rlock_owner == tid) {
+    if (rlock_is_owned_by(self, tid)) {
         Py_RETURN_TRUE;
     }
     Py_RETURN_FALSE;
@@ -676,10 +686,12 @@ rlock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject *
 rlock_repr(rlockobject *self)
 {
+    PyThread_ident_t owner =
+            _Py_atomic_load_ullong_relaxed(&self->rlock_owner);
     return PyUnicode_FromFormat(
         "<%s %s object owner=%" PY_FORMAT_THREAD_IDENT_T " count=%lu at %p>",
         self->rlock_count ? "locked" : "unlocked",
-        Py_TYPE(self)->tp_name, self->rlock_owner,
+        Py_TYPE(self)->tp_name, owner,
         self->rlock_count, self);
 }
 
