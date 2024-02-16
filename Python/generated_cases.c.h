@@ -1069,7 +1069,7 @@
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
             /* res = func(self, args, nargs) */
-            res = ((_PyCFunctionFast)(void(*)(void))cfunc)(
+            res = ((PyCFunctionFast)(void(*)(void))cfunc)(
                 PyCFunction_GET_SELF(callable),
                 args,
                 total_args);
@@ -1115,8 +1115,8 @@
             DEOPT_IF(PyCFunction_GET_FLAGS(callable) != (METH_FASTCALL | METH_KEYWORDS), CALL);
             STAT_INC(CALL, hit);
             /* res = func(self, args, nargs, kwnames) */
-            _PyCFunctionFastWithKeywords cfunc =
-            (_PyCFunctionFastWithKeywords)(void(*)(void))
+            PyCFunctionFastWithKeywords cfunc =
+            (PyCFunctionFastWithKeywords)(void(*)(void))
             PyCFunction_GET_FUNCTION(callable);
             res = cfunc(PyCFunction_GET_SELF(callable), args, total_args, NULL);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -1523,8 +1523,8 @@
             PyObject *self = args[0];
             DEOPT_IF(!Py_IS_TYPE(self, method->d_common.d_type), CALL);
             STAT_INC(CALL, hit);
-            _PyCFunctionFast cfunc =
-            (_PyCFunctionFast)(void(*)(void))meth->ml_meth;
+            PyCFunctionFast cfunc =
+            (PyCFunctionFast)(void(*)(void))meth->ml_meth;
             int nargs = total_args - 1;
             res = cfunc(self, args + 1, nargs);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -1568,8 +1568,8 @@
             DEOPT_IF(!Py_IS_TYPE(self, d_type), CALL);
             STAT_INC(CALL, hit);
             int nargs = total_args - 1;
-            _PyCFunctionFastWithKeywords cfunc =
-            (_PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
+            PyCFunctionFastWithKeywords cfunc =
+            (PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
             res = cfunc(self, args + 1, nargs, NULL);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Free the arguments. */
@@ -2541,11 +2541,14 @@
                 assert(Py_TYPE(iter) == &PyListIter_Type);
                 STAT_INC(FOR_ITER, hit);
                 PyListObject *seq = it->it_seq;
-                if (seq == NULL || it->it_index >= PyList_GET_SIZE(seq)) {
+                if ((size_t)it->it_index >= (size_t)PyList_GET_SIZE(seq)) {
+                    it->it_index = -1;
+                    #ifndef Py_GIL_DISABLED
                     if (seq != NULL) {
                         it->it_seq = NULL;
                         Py_DECREF(seq);
                     }
+                    #endif
                     Py_DECREF(iter);
                     STACK_SHRINK(1);
                     /* Jump forward oparg, then skip following END_FOR and POP_TOP instructions */

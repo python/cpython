@@ -1109,7 +1109,6 @@ run_presite(PyThreadState *tstate)
     );
     if (presite_modname == NULL) {
         fprintf(stderr, "Could not convert pre-site module name to unicode\n");
-        Py_DECREF(presite_modname);
     }
     else {
         PyObject *presite = PyImport_Import(presite_modname);
@@ -1795,8 +1794,8 @@ finalize_interp_types(PyInterpreterState *interp)
 #ifndef Py_GIL_DISABLED
     // With Py_GIL_DISABLED:
     // the freelists for the current thread state have already been cleared.
-    _PyFreeListState *state = _PyFreeListState_GET();
-    _PyObject_ClearFreeLists(state, 1);
+    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
+    _PyObject_ClearFreeLists(freelists, 1);
 #endif
 
 #ifdef Py_DEBUG

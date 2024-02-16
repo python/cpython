@@ -67,12 +67,6 @@ typedef struct {
 extern PyObject* _PyDictView_New(PyObject *, PyTypeObject *);
 extern PyObject* _PyDictView_Intersect(PyObject* self, PyObject *other);
 
-
-/* runtime lifecycle */
-
-extern void _PyDict_Fini(PyInterpreterState *state);
-
-
 /* other API */
 
 typedef struct {
