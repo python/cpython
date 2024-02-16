@@ -459,6 +459,48 @@ static PyType_Spec structparam_spec = {
     .slots = structparam_slots,
 };
 
+/*
+  CType_Type - a base metaclass. Its instances (classes) have a StgInfo.
+  */
+
+static int
+CType_Type_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
+static int
+CType_Type_clear(PyObject *self)
+{
+    return 0;
+}
+
+static void
+CType_Type_dealloc(PyObject *self)
+{
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
+    (void)CType_Type_clear(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
+}
+
+static PyType_Slot ctype_type_slots[] = {
+    {Py_tp_traverse, CType_Type_traverse},
+    {Py_tp_clear, CType_Type_clear},
+    {Py_tp_dealloc, CType_Type_dealloc},
+    {0, NULL},
+};
+
+static PyType_Spec pyctype_type_spec = {
+    .name = "_ctypes.CType_Type",
+    .basicsize = -(Py_ssize_t)sizeof(StgInfo),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
+              Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_DISALLOW_INSTANTIATION |
+              Py_TPFLAGS_BASETYPE ),
+    .slots = ctype_type_slots,
+};
 
 /*
   PyCStructType_Type - a meta type/class.  Creating a new class using this one as
@@ -5616,21 +5658,26 @@ _ctypes_add_types(PyObject *mod)
     /* StgDict is derived from PyDict_Type */
     TYPE_READY_BASE(st->PyCStgDict_Type, &PyDict_Type);
 
+    // Common Metaclass
+    CREATE_TYPE(mod, st->PyCType_Type, &pyctype_type_spec,
+                &PyType_Type);
+
     /*************************************************
      *
      * Metaclasses
      */
     CREATE_TYPE(mod, st->PyCStructType_Type, &pycstruct_type_spec,
-                &PyType_Type);
-    CREATE_TYPE(mod, st->UnionType_Type, &union_type_spec, &PyType_Type);
+                st->PyCType_Type);
+    CREATE_TYPE(mod, st->UnionType_Type, &union_type_spec,
+                st->PyCType_Type);
     CREATE_TYPE(mod, st->PyCPointerType_Type, &pycpointer_type_spec,
-                &PyType_Type);
+                st->PyCType_Type);
     CREATE_TYPE(mod, st->PyCArrayType_Type, &pycarray_type_spec,
-                &PyType_Type);
+                st->PyCType_Type);
     CREATE_TYPE(mod, st->PyCSimpleType_Type, &pycsimple_type_spec,
-                &PyType_Type);
+                st->PyCType_Type);
     CREATE_TYPE(mod, st->PyCFuncPtrType_Type, &pycfuncptr_type_spec,
-                &PyType_Type);
+                st->PyCType_Type);
 
     /*************************************************
      *

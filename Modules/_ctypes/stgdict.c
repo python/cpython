@@ -25,13 +25,14 @@
 int PyStgInfo_FromObject(ctypes_state *state, PyObject *obj, StgInfo **result)
 {
     *result = NULL;
-    StgDictObject *dict = PyObject_stgdict(obj);
-    if (!dict) {
+    PyTypeObject *type = Py_TYPE(obj);
+    if (!PyObject_IsInstance((PyObject *)type, (PyObject *)state->PyCType_Type)) {
+        // not a ctypes class.
         return 0;
     }
-    StgInfo *info = &dict->stginfo;
+    StgInfo *info = PyObject_GetTypeData((PyObject *)type, state->PyCType_Type);
     if (!info->initialized) {
-        PyErr_Format(PyExc_SystemError, "%R StgInfo is not initialized.", obj);
+        PyErr_Format(PyExc_SystemError, "%R StgInfo is not initialized.", type);
         return -1;
     }
     *result = info;
@@ -43,21 +44,21 @@ int PyStgInfo_FromObject(ctypes_state *state, PyObject *obj, StgInfo **result)
 // Initialize StgInfo on a newly created
 StgInfo *PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
 {
-    StgDictObject *dict = PyType_stgdict((PyObject *)type);
-    if (!dict) {
+    if (!PyObject_IsInstance((PyObject *)type, (PyObject *)state->PyCType_Type)) {
         PyErr_Format(PyExc_SystemError,
                      "'%s' is not a ctypes class.",
                      type->tp_name);
         return NULL;
     }
-    if (dict->stginfo.initialized) {
+    StgInfo *info = PyObject_GetTypeData((PyObject *)type, state->PyCType_Type);
+    if (info->initialized) {
         PyErr_Format(PyExc_SystemError,
                      "StgInfo of '%s' is already initialized.",
                      type->tp_name);
         return NULL;
     }
-    dict->stginfo.initialized = 1;
-    return &dict->stginfo;
+    info->initialized = 1;
+    return info;
 }
 
 
