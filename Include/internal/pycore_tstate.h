@@ -31,6 +31,7 @@ typedef struct _PyThreadStateImpl {
     struct _qsbr_thread_state *qsbr;  // only used by free-threaded build
 
 #ifdef Py_GIL_DISABLED
+    struct _gc_thread_state gc;
     struct _mimalloc_thread_state mimalloc;
     struct _Py_object_freelists freelists;
     struct _brc_thread_state brc;

@@ -619,6 +619,14 @@ _Py_atomic_load_ptr_relaxed(const void *obj)
                                 memory_order_relaxed);
 }
 
+static inline unsigned long long
+_Py_atomic_load_ullong_relaxed(const unsigned long long *obj)
+{
+    _Py_USING_STD;
+    return atomic_load_explicit((const _Atomic(unsigned long long)*)obj,
+                                memory_order_relaxed);
+}
+
 
 // --- _Py_atomic_store ------------------------------------------------------
 
@@ -835,6 +843,15 @@ _Py_atomic_store_ssize_relaxed(Py_ssize_t *obj, Py_ssize_t value)
                           memory_order_relaxed);
 }
 
+static inline void
+_Py_atomic_store_ullong_relaxed(unsigned long long *obj,
+                                unsigned long long value)
+{
+    _Py_USING_STD;
+    atomic_store_explicit((_Atomic(unsigned long long)*)obj, value,
+                          memory_order_relaxed);
+}
+
 
 // --- _Py_atomic_load_ptr_acquire / _Py_atomic_store_ptr_release ------------
 
@@ -886,6 +903,13 @@ _Py_atomic_load_uint64_acquire(const uint64_t *obj)
                                 memory_order_acquire);
 }
 
+static inline uint32_t
+_Py_atomic_load_uint32_acquire(const uint32_t *obj)
+{
+    _Py_USING_STD;
+    return atomic_load_explicit((const _Atomic(uint32_t)*)obj,
+                                memory_order_acquire);
+}
 
 
 // --- _Py_atomic_fence ------------------------------------------------------

@@ -712,6 +712,12 @@ _Py_atomic_load_ptr_relaxed(const void *obj)
     return *(void * volatile *)obj;
 }
 
+static inline unsigned long long
+_Py_atomic_load_ullong_relaxed(const unsigned long long *obj)
+{
+    return *(volatile unsigned long long *)obj;
+}
+
 
 // --- _Py_atomic_store ------------------------------------------------------
 
@@ -886,6 +892,14 @@ _Py_atomic_store_ssize_relaxed(Py_ssize_t *obj, Py_ssize_t value)
     *(volatile Py_ssize_t *)obj = value;
 }
 
+static inline void
+_Py_atomic_store_ullong_relaxed(unsigned long long *obj,
+                                unsigned long long value)
+{
+    *(volatile unsigned long long *)obj = value;
+}
+
+
 // --- _Py_atomic_load_ptr_acquire / _Py_atomic_store_ptr_release ------------
 
 static inline void *
@@ -964,6 +978,17 @@ _Py_atomic_load_uint64_acquire(const uint64_t *obj)
 #endif
 }
 
+static inline uint32_t
+_Py_atomic_load_uint32_acquire(const uint32_t *obj)
+{
+#if defined(_M_X64) || defined(_M_IX86)
+    return *(uint32_t volatile *)obj;
+#elif defined(_M_ARM64)
+    return (uint32_t)__ldar32((uint32_t volatile *)obj);
+#else
+#  error "no implementation of _Py_atomic_load_uint32_acquire"
+#endif
+}
 
 // --- _Py_atomic_fence ------------------------------------------------------
 
