@@ -776,7 +776,6 @@ encoder_encode_stateful(MultibyteStatefulEncoderContext *ctx,
     PyObject *inbuf = NULL;
     Py_ssize_t inpos, datalen;
     PyObject *origpending = NULL;
-    PyObject *excobj = NULL;
 
     if (PyUnicode_Check(unistr))
         ucvt = NULL;
@@ -826,13 +825,15 @@ encoder_encode_stateful(MultibyteStatefulEncoderContext *ctx,
     if (inpos < datalen) {
         if (datalen - inpos > MAXENCPENDING) {
             /* normal codecs can't reach here */
-            excobj = PyObject_CallFunction(PyExc_UnicodeEncodeError,
-                                           "ssnns",
-                                           ctx->codec->encoding,
-                                           PyUnicode_AsUTF8(inbuf),
-                                           inpos, datalen,
-                                           "pending buffer overflow");
+            PyObject *excobj = PyObject_CallFunction(PyExc_UnicodeEncodeError,
+                                                     "ssnns",
+                                                     ctx->codec->encoding,
+                                                     PyUnicode_AsUTF8(inbuf),
+                                                     inpos, datalen,
+                                                     "pending buffer overflow");
+            if (excobj == NULL) goto errorexit;
             PyErr_SetObject(PyExc_UnicodeEncodeError, excobj);
+            Py_DECREF(excobj);
             goto errorexit;
         }
         ctx->pending = PyUnicode_Substring(inbuf, inpos, datalen);
@@ -851,7 +852,6 @@ errorexit:
     Py_XDECREF(ucvt);
     Py_XDECREF(origpending);
     Py_XDECREF(inbuf);
-    Py_XDECREF(excobj);
     return NULL;
 }
 
@@ -860,16 +860,20 @@ decoder_append_pending(MultibyteStatefulDecoderContext *ctx,
                        MultibyteDecodeBuffer *buf)
 {
     Py_ssize_t npendings;
-    PyObject *excobj = NULL;
 
     npendings = (Py_ssize_t)(buf->inbuf_end - buf->inbuf);
     if (npendings + ctx->pendingsize > MAXDECPENDING ||
         npendings > PY_SSIZE_T_MAX - ctx->pendingsize) {
             Py_ssize_t bufsize = (Py_ssize_t)(buf->inbuf_end - buf->inbuf_top);
-            excobj = PyUnicodeDecodeError_Create(ctx->codec->encoding,
-                       (const char *)buf->inbuf_top, bufsize,
-                       0, bufsize, "pending buffer overflow");
+            PyObject *excobj = PyUnicodeDecodeError_Create(ctx->codec->encoding,
+                                                           (const char *)buf->inbuf_top,
+                                                           bufsize,
+                                                           0,
+                                                           bufsize,
+                                                           "pending buffer overflow");
+            if (excobj == NULL) goto errorexit;
             PyErr_SetObject(PyExc_UnicodeDecodeError, excobj);
+            Py_DECREF(excobj);
             goto errorexit;
     }
     memcpy(ctx->pending + ctx->pendingsize, buf->inbuf, npendings);
@@ -877,7 +881,6 @@ decoder_append_pending(MultibyteStatefulDecoderContext *ctx,
     return 0;
 
 errorexit:
-    Py_XDECREF(excobj);
     return -1;
 }
 
@@ -947,7 +950,6 @@ _multibytecodec_MultibyteIncrementalEncoder_getstate_impl(MultibyteIncrementalEn
     Py_ssize_t statesize;
     const char *pendingbuffer = NULL;
     Py_ssize_t pendingsize;
-    PyObject *excobj = NULL;
 
     if (self->pending != NULL) {
         pendingbuffer = PyUnicode_AsUTF8AndSize(self->pending, &pendingsize);
@@ -955,13 +957,15 @@ _multibytecodec_MultibyteIncrementalEncoder_getstate_impl(MultibyteIncrementalEn
             goto errorexit;
         }
         if (pendingsize > MAXENCPENDING*4) {
-            excobj = PyObject_CallFunction(PyExc_UnicodeEncodeError,
-                                           "ssnns",
-                                           self->codec->encoding,
-                                           pendingbuffer,
-                                           0, pendingsize,
-                                           "pending buffer too large");
+            PyObject *excobj = PyObject_CallFunction(PyExc_UnicodeEncodeError,
+                                                     "ssnns",
+                                                     self->codec->encoding,
+                                                     pendingbuffer,
+                                                     0, pendingsize,
+                                                     "pending buffer too large");
+            if (excobj == NULL) goto errorexit;
             PyErr_SetObject(PyExc_UnicodeEncodeError, excobj);
+            Py_DECREF(excobj);
             goto errorexit;
         }
         statebytes[0] = (unsigned char)pendingsize;
@@ -979,7 +983,6 @@ _multibytecodec_MultibyteIncrementalEncoder_getstate_impl(MultibyteIncrementalEn
                                              1 /* little-endian */ ,
                                              0 /* unsigned */ );
 errorexit:
-    Py_XDECREF(excobj);
     return NULL;
 }
 
