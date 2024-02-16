@@ -153,7 +153,6 @@ class Queue:
             fmt = self._fmt
         else:
             fmt = _SHARED_ONLY if sharedonly else _PICKLED
-        fmt = _SHARED_ONLY if sharedonly else _PICKLED
         if fmt is _PICKLED:
             obj = pickle.dumps(obj)
         try:
