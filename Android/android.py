@@ -11,7 +11,7 @@ from os.path import relpath
 from pathlib import Path
 
 SCRIPT_NAME = Path(__file__).name
-CHECKOUT = Path(__file__).parent.parent
+CHECKOUT = Path(__file__).resolve().parent.parent
 CROSS_BUILD_DIR = CHECKOUT / "cross-build"
 
 
@@ -40,6 +40,7 @@ def run(command, *, host=None, **kwargs):
     if host:
         env_script = CHECKOUT / "Android/android-env.sh"
         env_output = subprocess.run(
+            f"set -eu; "
             f"HOST={host}; "
             f"PREFIX={subdir(host)}/prefix; "
             f". {env_script}; "

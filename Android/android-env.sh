@@ -61,19 +61,19 @@ done
 export CFLAGS=""
 export LDFLAGS="-Wl,--build-id=sha1 -Wl,--no-rosegment"
 
-# Many packages get away with omitting this on standard Linux, but Android is stricter.
-LDFLAGS+=" -lm"
+# Many packages get away with omitting -lm on Linux, but Android is stricter.
+LDFLAGS="$LDFLAGS -lm"
 
 # -mstackrealign is included where necessary in the clang launcher scripts which are
 # pointed to by $CC, so we don't need to include it here.
 if [ $HOST = "arm-linux-androideabi" ]; then
-    CFLAGS+=" -march=armv7-a -mthumb"
+    CFLAGS="$CFLAGS -march=armv7-a -mthumb"
 fi
 
 if [ -n "${PREFIX:-}" ]; then
     abs_prefix=$(realpath $PREFIX)
-    CFLAGS+=" -I$abs_prefix/include"
-    LDFLAGS+=" -L$abs_prefix/lib"
+    CFLAGS="$CFLAGS -I$abs_prefix/include"
+    LDFLAGS="$LDFLAGS -L$abs_prefix/lib"
 
     export PKG_CONFIG="pkg-config --define-prefix"
     export PKG_CONFIG_LIBDIR="$abs_prefix/lib/pkgconfig"
