@@ -493,7 +493,7 @@ class Stats:
                 executed,
                 None,
             ),
-            Doc("Uops executed", "The total number of uops that were executed"): (
+            Doc("Uops executed", "The total number of uops (micro-operations) that were executed"): (
                 uops,
                 executed,
             ),
