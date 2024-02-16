@@ -36,10 +36,8 @@
         case _LOAD_FAST_AND_CLEAR: {
             _Py_UOpsSymType *value;
             value = GETLOCAL(oparg);
-            _Py_UOpsSymType *temp = sym_new_null(ctx);
-            if (temp == NULL) {
-                goto out_of_space;
-            }
+            _Py_UOpsSymType *temp;
+            OUT_OF_SPACE_IF_NULL(temp = sym_new_null(ctx));
             GETLOCAL(oparg) = temp;
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -193,14 +191,12 @@
                 if (temp == NULL) {
                     goto error;
                 }
-                res = sym_new_const(ctx, temp);
-                // TODO replace opcode with constant propagated one and add tests!
+                OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, temp));
+                // TODO gh-115506:
+                // replace opcode with constant propagated one and add tests!
             }
             else {
-                res = sym_new_known_type(ctx, &PyLong_Type);
-                if (res == NULL) {
-                    goto out_of_space;
-                }
+                OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyLong_Type));
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -221,14 +217,12 @@
                 if (temp == NULL) {
                     goto error;
                 }
-                res = sym_new_const(ctx, temp);
-                // TODO replace opcode with constant propagated one and add tests!
+                OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, temp));
+                // TODO gh-115506:
+                // replace opcode with constant propagated one and add tests!
             }
             else {
-                res = sym_new_known_type(ctx, &PyLong_Type);
-                if (res == NULL) {
-                    goto out_of_space;
-                }
+                OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyLong_Type));
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -249,14 +243,12 @@
                 if (temp == NULL) {
                     goto error;
                 }
-                res = sym_new_const(ctx, temp);
-                // TODO replace opcode with constant propagated one and add tests!
+                OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, temp));
+                // TODO gh-115506:
+                // replace opcode with constant propagated one and add tests!
             }
             else {
-                res = sym_new_known_type(ctx, &PyLong_Type);
-                if (res == NULL) {
-                    goto out_of_space;
-                }
+                OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyLong_Type));
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -579,10 +571,7 @@
             /* This has to be done manually */
             (void)seq;
             for (int i = 0; i < oparg; i++) {
-                values[i] = sym_new_unknown(ctx);
-                if (values[i] == NULL) {
-                    goto out_of_space;
-                }
+                OUT_OF_SPACE_IF_NULL(values[i] = sym_new_unknown(ctx));
             }
             stack_pointer += -1 + oparg;
             break;
@@ -630,10 +619,7 @@
             (void)seq;
             int totalargs = (oparg & 0xFF) + (oparg >> 8) + 1;
             for (int i = 0; i < totalargs; i++) {
-                values[i] = sym_new_unknown(ctx);
-                if (values[i] == NULL) {
-                    goto out_of_space;
-                }
+                OUT_OF_SPACE_IF_NULL(values[i] = sym_new_unknown(ctx));
             }
             stack_pointer += (oparg >> 8) + (oparg & 0xFF);
             break;
@@ -1218,10 +1204,7 @@
             _Py_UOpsSymType *iter;
             _Py_UOpsSymType *next;
             iter = stack_pointer[-1];
-            next = sym_new_known_type(ctx, &PyLong_Type);
-            if (next == NULL) {
-                goto out_of_space;
-            }
+            OUT_OF_SPACE_IF_NULL(next = sym_new_known_type(ctx, &PyLong_Type));
             (void)iter;
             stack_pointer[0] = next;
             stack_pointer += 1;
@@ -1424,10 +1407,8 @@
                 localsplus_start = args;
                 n_locals_already_filled = argcount;
             }
-            new_frame = ctx_frame_new(ctx, co, localsplus_start, n_locals_already_filled, 0);
-            if (new_frame == NULL){
-                goto out_of_space;
-            }
+            OUT_OF_SPACE_IF_NULL(new_frame =
+                             ctx_frame_new(ctx, co, localsplus_start, n_locals_already_filled, 0));
             stack_pointer[-2 - oparg] = (_Py_UOpsSymType *)new_frame;
             stack_pointer += -1 - oparg;
             break;
@@ -1717,10 +1698,7 @@
         case _LOAD_CONST_INLINE: {
             _Py_UOpsSymType *value;
             PyObject *ptr = (PyObject *)this_instr->operand;
-            value = sym_new_const(ctx, ptr);
-            if (value == NULL) {
-                goto out_of_space;
-            }
+            OUT_OF_SPACE_IF_NULL(value = sym_new_const(ctx, ptr));
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;
@@ -1729,10 +1707,7 @@
         case _LOAD_CONST_INLINE_BORROW: {
             _Py_UOpsSymType *value;
             PyObject *ptr = (PyObject *)this_instr->operand;
-            value = sym_new_const(ctx, ptr);
-            if (value == NULL) {
-                goto out_of_space;
-            }
+            OUT_OF_SPACE_IF_NULL(value = sym_new_const(ctx, ptr));
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;
@@ -1742,14 +1717,8 @@
             _Py_UOpsSymType *value;
             _Py_UOpsSymType *null;
             PyObject *ptr = (PyObject *)this_instr->operand;
-            value = sym_new_const(ctx, ptr);
-            if (value == NULL) {
-                goto out_of_space;
-            }
-            null = sym_new_null(ctx);
-            if (null == NULL) {
-                goto out_of_space;
-            }
+            OUT_OF_SPACE_IF_NULL(value = sym_new_const(ctx, ptr));
+            OUT_OF_SPACE_IF_NULL(null = sym_new_null(ctx));
             stack_pointer[0] = value;
             stack_pointer[1] = null;
             stack_pointer += 2;
@@ -1760,14 +1729,8 @@
             _Py_UOpsSymType *value;
             _Py_UOpsSymType *null;
             PyObject *ptr = (PyObject *)this_instr->operand;
-            value = sym_new_const(ctx, ptr);
-            if (value == NULL) {
-                goto out_of_space;
-            }
-            null = sym_new_null(ctx);
-            if (null == NULL) {
-                goto out_of_space;
-            }
+            OUT_OF_SPACE_IF_NULL(value = sym_new_const(ctx, ptr));
+            OUT_OF_SPACE_IF_NULL(null = sym_new_null(ctx));
             stack_pointer[0] = value;
             stack_pointer[1] = null;
             stack_pointer += 2;
