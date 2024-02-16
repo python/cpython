@@ -49,7 +49,7 @@ if "%~1"=="-amd64" (set prefix=%pcbuild%amd64) & shift & goto CheckOpts
 if "%~1"=="-arm64" (set prefix=%pcbuild%arm64) & shift & goto CheckOpts
 if "%~1"=="-arm32" (set prefix=%pcbuild%arm32) & shift & goto CheckOpts
 if "%~1"=="-p" (call :SetPlatform %~2) & shift & shift & goto CheckOpts
-if NOT "%~1"=="" (set regrtestargs=%regrtestargs% %1) & shift & goto CheckOpts
+if NOT "%~1"=="" (set regrtestargs=%regrtestargs% %~1) & shift & goto CheckOpts
 
 if not defined prefix set prefix=%pcbuild%amd64
 set exe=%prefix%\%pyname%%suffix%.exe
