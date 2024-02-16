@@ -10,12 +10,14 @@
 
 The :mod:`socketserver` module simplifies the task of writing network servers.
 
+.. include:: ../includes/wasm-notavail.rst
+
 There are four basic concrete server classes:
 
 
 .. class:: TCPServer(server_address, RequestHandlerClass, bind_and_activate=True)
 
-   This uses the Internet TCP protocol, which provides for
+   This uses the internet TCP protocol, which provides for
    continuous streams of data between the client and server.
    If *bind_and_activate* is true, the constructor automatically attempts to
    invoke :meth:`~BaseServer.server_bind` and
@@ -94,8 +96,7 @@ synchronous servers of four types::
 
 Note that :class:`UnixDatagramServer` derives from :class:`UDPServer`, not from
 :class:`UnixStreamServer` --- the only difference between an IP and a Unix
-stream server is the address family, which is simply repeated in both Unix
-server classes.
+server is the address family.
 
 
 .. class:: ForkingMixIn
@@ -115,23 +116,28 @@ server classes.
    :class:`ForkingMixIn` and the Forking classes mentioned below are
    only available on POSIX platforms that support :func:`~os.fork`.
 
-   :meth:`socketserver.ForkingMixIn.server_close` waits until all child
-   processes complete, except if
-   :attr:`socketserver.ForkingMixIn.block_on_close` attribute is false.
+   .. attribute:: block_on_close
 
-   :meth:`socketserver.ThreadingMixIn.server_close` waits until all non-daemon
-   threads complete, except if
-   :attr:`socketserver.ThreadingMixIn.block_on_close` attribute is false. Use
-   daemonic threads by setting
-   :data:`ThreadingMixIn.daemon_threads` to ``True`` to not wait until threads
-   complete.
+      :meth:`ForkingMixIn.server_close <BaseServer.server_close>`
+      waits until all child processes complete, except if
+      :attr:`block_on_close` attribute is ``False``.
+
+      :meth:`ThreadingMixIn.server_close <BaseServer.server_close>`
+      waits until all non-daemon threads complete, except if
+      :attr:`block_on_close` attribute is ``False``.
+
+   .. attribute:: daemon_threads
+
+      For :class:`ThreadingMixIn` use daemonic threads by setting
+      :data:`ThreadingMixIn.daemon_threads <daemon_threads>`
+      to ``True`` to not wait until threads complete.
 
    .. versionchanged:: 3.7
 
-      :meth:`socketserver.ForkingMixIn.server_close` and
-      :meth:`socketserver.ThreadingMixIn.server_close` now waits until all
+      :meth:`ForkingMixIn.server_close <BaseServer.server_close>` and
+      :meth:`ThreadingMixIn.server_close <BaseServer.server_close>` now waits until all
       child processes and non-daemonic threads complete.
-      Add a new :attr:`socketserver.ForkingMixIn.block_on_close` class
+      Add a new :attr:`ForkingMixIn.block_on_close <block_on_close>` class
       attribute to opt-in for the pre-3.7 behaviour.
 
 
@@ -139,9 +145,16 @@ server classes.
            ForkingUDPServer
            ThreadingTCPServer
            ThreadingUDPServer
+           ForkingUnixStreamServer
+           ForkingUnixDatagramServer
+           ThreadingUnixStreamServer
+           ThreadingUnixDatagramServer
 
    These classes are pre-defined using the mix-in classes.
 
+.. versionadded:: 3.12
+   The ``ForkingUnixStreamServer`` and ``ForkingUnixDatagramServer`` classes
+   were added.
 
 To implement a service, you must derive a class from :class:`BaseRequestHandler`
 and redefine its :meth:`~BaseRequestHandler.handle` method.
@@ -175,8 +188,7 @@ expensive or inappropriate for the service) is to maintain an explicit table of
 partially finished requests and to use :mod:`selectors` to decide which
 request to work on next (or whether to handle a new incoming request).  This is
 particularly important for stream services where each client can potentially be
-connected for a long time (if threads or subprocesses cannot be used).  See
-:mod:`asyncore` for another way to manage this.
+connected for a long time (if threads or subprocesses cannot be used).
 
 .. XXX should data and methods be intermingled, or separate?
    how should the distinction between class and instance variables be drawn?
@@ -263,7 +275,7 @@ Server Objects
       The address on which the server is listening.  The format of addresses varies
       depending on the protocol family;
       see the documentation for the :mod:`socket` module
-      for details.  For Internet protocols, this is a tuple containing a string giving
+      for details.  For internet protocols, this is a tuple containing a string giving
       the address, and an integer port number: ``('127.0.0.1', 80)``, for example.
 
 
@@ -405,13 +417,13 @@ Request Handler Objects
 
       This function must do all the work required to service a request.  The
       default implementation does nothing.  Several instance attributes are
-      available to it; the request is available as :attr:`self.request`; the client
-      address as :attr:`self.client_address`; and the server instance as
-      :attr:`self.server`, in case it needs access to per-server information.
+      available to it; the request is available as :attr:`request`; the client
+      address as :attr:`client_address`; and the server instance as
+      :attr:`server`, in case it needs access to per-server information.
 
-      The type of :attr:`self.request` is different for datagram or stream
-      services.  For stream services, :attr:`self.request` is a socket object; for
-      datagram services, :attr:`self.request` is a pair of string and socket.
+      The type of :attr:`request` is different for datagram or stream
+      services.  For stream services, :attr:`request` is a socket object; for
+      datagram services, :attr:`request` is a pair of string and socket.
 
 
    .. method:: finish()
@@ -421,23 +433,42 @@ Request Handler Objects
       raises an exception, this function will not be called.
 
 
+   .. attribute:: request
+
+      The *new* :class:`socket.socket` object
+      to be used to communicate with the client.
+
+
+   .. attribute:: client_address
+
+      Client address returned by :meth:`BaseServer.get_request`.
+
+
+   .. attribute:: server
+
+      :class:`BaseServer` object used for handling the request.
+
+
 .. class:: StreamRequestHandler
            DatagramRequestHandler
 
    These :class:`BaseRequestHandler` subclasses override the
    :meth:`~BaseRequestHandler.setup` and :meth:`~BaseRequestHandler.finish`
-   methods, and provide :attr:`self.rfile` and :attr:`self.wfile` attributes.
-   The :attr:`self.rfile` and :attr:`self.wfile` attributes can be
-   read or written, respectively, to get the request data or return data
-   to the client.
+   methods, and provide :attr:`rfile` and :attr:`wfile` attributes.
 
-   The :attr:`rfile` attributes of both classes support the
-   :class:`io.BufferedIOBase` readable interface, and
-   :attr:`DatagramRequestHandler.wfile` supports the
-   :class:`io.BufferedIOBase` writable interface.
+   .. attribute:: rfile
+
+      A file object from which receives the request is read.
+      Support the :class:`io.BufferedIOBase` readable interface.
+
+   .. attribute:: wfile
+
+      A file object to which the reply is written.
+      Support the :class:`io.BufferedIOBase` writable interface
+
 
    .. versionchanged:: 3.6
-      :attr:`StreamRequestHandler.wfile` also supports the
+      :attr:`wfile` also supports the
       :class:`io.BufferedIOBase` writable interface.
 
 
@@ -463,7 +494,7 @@ This is the server side::
        def handle(self):
            # self.request is the TCP socket connected to the client
            self.data = self.request.recv(1024).strip()
-           print("{} wrote:".format(self.client_address[0]))
+           print("Received from {}:".format(self.client_address[0]))
            print(self.data)
            # just send back the same data, but upper-cased
            self.request.sendall(self.data.upper())
@@ -494,8 +525,9 @@ objects that simplify communication by providing the standard file interface)::
 
 The difference is that the ``readline()`` call in the second handler will call
 ``recv()`` multiple times until it encounters a newline character, while the
-single ``recv()`` call in the first handler will just return what has been sent
-from the client in one ``sendall()`` call.
+single ``recv()`` call in the first handler will just return what has been
+received so far from the client's ``sendall()`` call (typically all of it, but
+this is not guaranteed by the TCP protocol).
 
 
 This is the client side::

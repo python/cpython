@@ -8,7 +8,7 @@ import unittest
 import socket
 import shutil
 import threading
-from test.support import requires, bigmemtest
+from test.support import requires, bigmemtest, requires_resource
 from test.support import SHORT_TIMEOUT
 from test.support import socket_helper
 from test.support.os_helper import TESTFN, unlink
@@ -156,6 +156,8 @@ class TestFileMethods(LargeFileTest):
 def skip_no_disk_space(path, required):
     def decorator(fun):
         def wrapper(*args, **kwargs):
+            if not hasattr(shutil, "disk_usage"):
+                raise unittest.SkipTest("requires shutil.disk_usage")
             if shutil.disk_usage(os.path.realpath(path)).free < required:
                 hsize = int(required / 1024 / 1024)
                 raise unittest.SkipTest(
@@ -171,6 +173,7 @@ class TestCopyfile(LargeFileTest, unittest.TestCase):
     # Exact required disk space would be (size * 2), but let's give it a
     # bit more tolerance.
     @skip_no_disk_space(TESTFN, size * 2.5)
+    @requires_resource('cpu')
     def test_it(self):
         # Internally shutil.copyfile() can use "fast copy" methods like
         # os.sendfile().
@@ -220,6 +223,7 @@ class TestSocketSendfile(LargeFileTest, unittest.TestCase):
     # Exact required disk space would be (size * 2), but let's give it a
     # bit more tolerance.
     @skip_no_disk_space(TESTFN, size * 2.5)
+    @requires_resource('cpu')
     def test_it(self):
         port = socket_helper.find_unused_port()
         with socket.create_server(("", port)) as sock:

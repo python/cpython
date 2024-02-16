@@ -1,4 +1,5 @@
 import unittest
+from types import MethodType
 
 def funcattrs(**kwds):
     def decorate(func):
@@ -76,11 +77,32 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(C.foo(), 42)
         self.assertEqual(C().foo(), 42)
 
-    def test_staticmethod_function(self):
-        @staticmethod
-        def notamethod(x):
+    def check_wrapper_attrs(self, method_wrapper, format_str):
+        def func(x):
             return x
-        self.assertRaises(TypeError, notamethod, 1)
+        wrapper = method_wrapper(func)
+
+        self.assertIs(wrapper.__func__, func)
+        self.assertIs(wrapper.__wrapped__, func)
+
+        for attr in ('__module__', '__qualname__', '__name__',
+                     '__doc__', '__annotations__'):
+            self.assertIs(getattr(wrapper, attr),
+                          getattr(func, attr))
+
+        self.assertEqual(repr(wrapper), format_str.format(func))
+        return wrapper
+
+    def test_staticmethod(self):
+        wrapper = self.check_wrapper_attrs(staticmethod, '<staticmethod({!r})>')
+
+        # bpo-43682: Static methods are callable since Python 3.10
+        self.assertEqual(wrapper(1), 1)
+
+    def test_classmethod(self):
+        wrapper = self.check_wrapper_attrs(classmethod, '<classmethod({!r})>')
+
+        self.assertRaises(TypeError, wrapper, 1)
 
     def test_dotted(self):
         decorators = MiscDecorators()
@@ -269,43 +291,15 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(bar(), 42)
         self.assertEqual(actions, expected_actions)
 
-    def test_wrapped_descriptor_inside_classmethod(self):
-        class BoundWrapper:
-            def __init__(self, wrapped):
-                self.__wrapped__ = wrapped
-
-            def __call__(self, *args, **kwargs):
-                return self.__wrapped__(*args, **kwargs)
-
-        class Wrapper:
-            def __init__(self, wrapped):
-                self.__wrapped__ = wrapped
-
-            def __get__(self, instance, owner):
-                bound_function = self.__wrapped__.__get__(instance, owner)
-                return BoundWrapper(bound_function)
-
-        def decorator(wrapped):
-            return Wrapper(wrapped)
-
-        class Class:
-            @decorator
-            @classmethod
-            def inner(cls):
-                # This should already work.
+    def test_bound_function_inside_classmethod(self):
+        class A:
+            def foo(self, cls):
                 return 'spam'
 
-            @classmethod
-            @decorator
-            def outer(cls):
-                # Raised TypeError with a message saying that the 'Wrapper'
-                # object is not callable.
-                return 'eggs'
+        class B:
+            bar = classmethod(A().foo)
 
-        self.assertEqual(Class.inner(), 'spam')
-        self.assertEqual(Class.outer(), 'eggs')
-        self.assertEqual(Class().inner(), 'spam')
-        self.assertEqual(Class().outer(), 'eggs')
+        self.assertEqual(B.bar(), 'spam')
 
 
 class TestClassDecorators(unittest.TestCase):

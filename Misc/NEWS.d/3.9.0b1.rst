@@ -112,8 +112,8 @@ Port :mod:`syslog` to multiphase initialization (:pep:`489`).
 Reporting a specialised error message for invalid string prefixes, which was
 introduced in :issue:`40246`, is being reverted due to backwards
 compatibility concerns for strings that immediately follow a reserved
-keyword without whitespace between them. Constructs like `bg="#d00" if clear
-else"#fca"` were failing to parse, which is not an acceptable breakage on
+keyword without whitespace between them. Constructs like ``bg="#d00" if clear
+else"#fca"`` were failing to parse, which is not an acceptable breakage on
 such short notice.
 
 ..
@@ -191,7 +191,7 @@ internal subinterpreters module.
 .. section: Core and Builtins
 
 Improve performance of :c:func:`PyLong_FromDouble` for values that fit into
-:c:type:`long`.
+:c:expr:`long`.
 
 ..
 
@@ -489,8 +489,8 @@ The first argument of :func:`pickle.loads` is now positional-only.
 .. nonce: Cuwu_H
 .. section: Library
 
-Update :mod:`nntplib` to merge :class:`nntplib.NNTP` and
-:class:`nntplib._NNTPBase`. Patch by Dong-hee Na.
+Update :mod:`!nntplib` to merge :class:`!nntplib.NNTP` and
+:class:`!nntplib._NNTPBase`. Patch by Donghee Na.
 
 ..
 
@@ -500,7 +500,7 @@ Update :mod:`nntplib` to merge :class:`nntplib.NNTP` and
 .. section: Library
 
 Update :mod:`dbm.gnu` to use gdbm_count if possible when calling
-:func:`len`. Patch by Dong-hee Na.
+:func:`len`. Patch by Donghee Na.
 
 ..
 
@@ -592,7 +592,7 @@ subdirectories in package data, matching backport in importlib_resources
 .. nonce: 5GuK2A
 .. section: Library
 
-:meth:`imaplib.IMAP4.unselect` is added. Patch by Dong-hee Na.
+:meth:`imaplib.IMAP4.unselect` is added. Patch by Donghee Na.
 
 ..
 
@@ -641,7 +641,7 @@ than alphabetical.
 
 On AIX, :func:`~time.thread_time` is now implemented with
 ``thread_cputime()`` which has nanosecond resolution, rather than
-``clock_gettime(CLOCK_THREAD_CPUTIME_ID)`` which has a resolution of 10 ms.
+``clock_gettime(CLOCK_THREAD_CPUTIME_ID)`` which has a resolution of 10 milliseconds.
 Patch by Batuhan Taskaya.
 
 ..
@@ -684,7 +684,7 @@ The ``isocalendar()`` methods of :class:`datetime.date` and
 .. nonce: t6kW_1
 .. section: Documentation
 
-Add version of removal for explicit passing of coros to `asyncio.wait()`'s
+Add version of removal for explicit passing of coros to ``asyncio.wait()``'s
 documentation
 
 ..

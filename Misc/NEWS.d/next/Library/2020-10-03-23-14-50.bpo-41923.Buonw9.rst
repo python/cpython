@@ -1,1 +1,0 @@
-Implement :pep:`613`, introducing :data:`typing.TypeAlias` annotation.

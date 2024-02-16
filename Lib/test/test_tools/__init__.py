@@ -6,6 +6,11 @@ import unittest
 from test import support
 from test.support import import_helper
 
+
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test module requires subprocess")
+
+
 basepath = os.path.normpath(
         os.path.dirname(                 # <src/install dir>
             os.path.dirname(                # Lib

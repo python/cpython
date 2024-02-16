@@ -237,9 +237,9 @@ class HyperParser:
         last_identifier_pos = pos
         postdot_phase = True
 
-        while 1:
+        while True:
             # Eat whitespaces, comments, and if postdot_phase is False - a dot
-            while 1:
+            while True:
                 if pos>brck_limit and rawtext[pos-1] in self._whitespace_chars:
                     # Eat a whitespace
                     pos -= 1

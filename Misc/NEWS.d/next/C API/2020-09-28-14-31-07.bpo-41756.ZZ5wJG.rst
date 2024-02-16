@@ -1,3 +1,0 @@
-Add `PyIter_Send` function to allow sending value into
-generator/coroutine/iterator without raising StopIteration exception to
-signal return.

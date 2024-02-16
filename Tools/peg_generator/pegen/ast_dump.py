@@ -6,9 +6,17 @@ always fail. We rely on string comparison of the base classes instead.
 TODO: Remove the above-described hack.
 """
 
+from typing import Any, Optional, Tuple
 
-def ast_dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
-    def _format(node, level=0):
+
+def ast_dump(
+    node: Any,
+    annotate_fields: bool = True,
+    include_attributes: bool = False,
+    *,
+    indent: Optional[str] = None,
+) -> str:
+    def _format(node: Any, level: int = 0) -> Tuple[str, bool]:
         if indent is not None:
             level += 1
             prefix = "\n" + indent * level
@@ -58,6 +66,4 @@ def ast_dump(node, annotate_fields=True, include_attributes=False, *, indent=Non
 
     if all(cls.__name__ != "AST" for cls in node.__class__.__mro__):
         raise TypeError("expected AST, got %r" % node.__class__.__name__)
-    if indent is not None and not isinstance(indent, str):
-        indent = " " * indent
     return _format(node)[0]

@@ -4,14 +4,11 @@
 extern "C" {
 #endif
 
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject*) _PyWarnings_Init(void);
-#endif
-
 PyAPI_FUNC(int) PyErr_WarnEx(
     PyObject *category,
     const char *message,        /* UTF-8 encoded string */
     Py_ssize_t stack_level);
+
 PyAPI_FUNC(int) PyErr_WarnFormat(
     PyObject *category,
     Py_ssize_t stack_level,
@@ -26,15 +23,7 @@ PyAPI_FUNC(int) PyErr_ResourceWarning(
     const char *format,         /* ASCII-encoded string  */
     ...);
 #endif
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(int) PyErr_WarnExplicitObject(
-    PyObject *category,
-    PyObject *message,
-    PyObject *filename,
-    int lineno,
-    PyObject *module,
-    PyObject *registry);
-#endif
+
 PyAPI_FUNC(int) PyErr_WarnExplicit(
     PyObject *category,
     const char *message,        /* UTF-8 encoded string */
@@ -44,20 +33,9 @@ PyAPI_FUNC(int) PyErr_WarnExplicit(
     PyObject *registry);
 
 #ifndef Py_LIMITED_API
-PyAPI_FUNC(int)
-PyErr_WarnExplicitFormat(PyObject *category,
-                         const char *filename, int lineno,
-                         const char *module, PyObject *registry,
-                         const char *format, ...);
-#endif
-
-/* DEPRECATED: Use PyErr_WarnEx() instead. */
-#ifndef Py_LIMITED_API
-#define PyErr_Warn(category, msg) PyErr_WarnEx(category, msg, 1)
-#endif
-
-#ifndef Py_LIMITED_API
-void _PyErr_WarnUnawaitedCoroutine(PyObject *coro);
+#  define Py_CPYTHON_WARNINGS_H
+#  include "cpython/warnings.h"
+#  undef Py_CPYTHON_WARNINGS_H
 #endif
 
 #ifdef __cplusplus

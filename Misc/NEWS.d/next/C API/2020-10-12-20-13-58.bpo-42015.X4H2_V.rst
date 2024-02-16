@@ -1,3 +1,0 @@
-Fix potential crash in deallocating method objects when dynamically
-allocated `PyMethodDef`'s lifetime is managed through the ``self``
-argument of a `PyCFunction`.
