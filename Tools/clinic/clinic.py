@@ -5227,7 +5227,6 @@ class DSLParser:
 
         full_name, c_basename, cloned, returns = self.parse_declaration(line)
 
-        # Handle cloning.
         if cloned:
             return self.parse_cloned_function(full_name, c_basename, cloned)
 
