@@ -2862,7 +2862,7 @@ tstate_mimalloc_bind(PyThreadState *tstate)
     // Initialize each heap
     for (uint8_t i = 0; i < _Py_MIMALLOC_HEAP_COUNT; i++) {
         _mi_heap_init_ex(&mts->heaps[i], tld, _mi_arena_id_none(), false, i);
-        mts->heaps[i].debug_offset = debug_offsets[i];
+        mts->heaps[i].debug_offset = (uint8_t)debug_offsets[i];
     }
 
     // By default, object allocations use _Py_MIMALLOC_HEAP_OBJECT.
