@@ -5199,6 +5199,10 @@ class DSLParser:
             if not m[1]:
                 fail(f"No return annotation provided for {full_name!r} after '->' keyword")
             returns = m[1].strip()
+            pos = m.end()
+
+        if pos != len(line):
+            invalid_syntax()
 
         self.normalize_function_kind(full_name)
         return full_name, c_basename, cloned, returns

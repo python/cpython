@@ -1553,7 +1553,10 @@ class ClinicParserTest(TestCase):
     def test_invalid_syntax(self):
         err = "Invalid syntax"
         for block in (
+            "foo = bar baz",
+            "a b c d",
             "foo as baz = bar ->",
+            "foo as bar bar = baz",
         ):
             with self.subTest(block=block):
                 self.expect_failure(block, err)
