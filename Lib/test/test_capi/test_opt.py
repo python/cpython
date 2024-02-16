@@ -781,6 +781,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertAlmostEqual(res, 4.2)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
+        guard_both_float_count = [opname for opname, _, _ in ex if opname == "_GUARD_BOTH_FLOAT"]
+        self.assertLessEqual(len(guard_both_float_count), 1)
         # TODO gh-115506: this assertion may change after propagating constants.
         # We'll also need to verify that propagation actually occurs.
         self.assertIn("_BINARY_OP_ADD_FLOAT", uops)
@@ -796,6 +798,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertAlmostEqual(res, -2.2)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
+        guard_both_float_count = [opname for opname, _, _ in ex if opname == "_GUARD_BOTH_FLOAT"]
+        self.assertLessEqual(len(guard_both_float_count), 1)
         # TODO gh-115506: this assertion may change after propagating constants.
         # We'll also need to verify that propagation actually occurs.
         self.assertIn("_BINARY_OP_SUBTRACT_FLOAT", uops)
@@ -811,6 +815,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertAlmostEqual(res, 2 ** 32)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
+        guard_both_float_count = [opname for opname, _, _ in ex if opname == "_GUARD_BOTH_FLOAT"]
+        self.assertLessEqual(len(guard_both_float_count), 1)
         # TODO gh-115506: this assertion may change after propagating constants.
         # We'll also need to verify that propagation actually occurs.
         self.assertIn("_BINARY_OP_MULTIPLY_FLOAT", uops)

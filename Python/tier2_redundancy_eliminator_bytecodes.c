@@ -147,11 +147,7 @@ dummy_func(void) {
             // replace opcode with constant propagated one and update tests!
         }
         else {
-            res = sym_new_known_type(ctx, &PyFloat_Type);
-            // TODO: OUT_OF_SPACE_IF_NULL once gh-115507 goes through
-            if (res == NULL) {
-                goto out_of_space;
-            }
+            OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyFloat_Type));
         }
     }
 
@@ -170,11 +166,7 @@ dummy_func(void) {
             // replace opcode with constant propagated one and update tests!
         }
         else {
-            res = sym_new_known_type(ctx, &PyFloat_Type);
-            // TODO: OUT_OF_SPACE_IF_NULL once gh-115507 goes through
-            if (res == NULL) {
-                goto out_of_space;
-            }
+            OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyFloat_Type));
         }
     }
 
@@ -192,11 +184,7 @@ dummy_func(void) {
             // replace opcode with constant propagated one and update tests!
         }
         else {
-            res = sym_new_known_type(ctx, &PyFloat_Type);
-            // TODO: OUT_OF_SPACE_IF_NULL once gh-115507 goes through
-            if (res == NULL) {
-                goto out_of_space;
-            }
+            OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyFloat_Type));
         }
     }
 
