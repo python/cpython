@@ -16,6 +16,11 @@ from .formatting import (
     wrap_declarations,
     wrapped_c_string_literal,
 )
+from .identifiers import (
+    ensure_legal_c_identifier,
+    is_legal_c_identifier,
+    is_legal_py_identifier,
+)
 from .utils import (
     FormatCounterFormatter,
     compute_checksum,
@@ -40,6 +45,11 @@ __all__ = [
     "suffix_all_lines",
     "wrap_declarations",
     "wrapped_c_string_literal",
+
+    # Identifier helpers
+    "ensure_legal_c_identifier",
+    "is_legal_c_identifier",
+    "is_legal_py_identifier",
 
     # Utility functions
     "FormatCounterFormatter",

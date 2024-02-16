@@ -138,31 +138,6 @@ def fail(
     warn_or_fail(*args, filename=filename, line_number=line_number, fail=True)
 
 
-is_legal_c_identifier = re.compile('^[A-Za-z_][A-Za-z0-9_]*$').match
-
-def is_legal_py_identifier(s: str) -> bool:
-    return all(is_legal_c_identifier(field) for field in s.split('.'))
-
-# identifiers that are okay in Python but aren't a good idea in C.
-# so if they're used Argument Clinic will add "_value" to the end
-# of the name in C.
-c_keywords = set("""
-asm auto break case char const continue default do double
-else enum extern float for goto if inline int long
-register return short signed sizeof static struct switch
-typedef typeof union unsigned void volatile while
-""".strip().split())
-
-def ensure_legal_c_identifier(s: str) -> str:
-    # for now, just complain if what we're given isn't legal
-    if not is_legal_c_identifier(s):
-        fail("Illegal C identifier:", s)
-    # but if we picked a C keyword, pick something else
-    if s in c_keywords:
-        return s + "_value"
-    return s
-
-
 class CRenderData:
     def __init__(self) -> None:
 
@@ -2954,7 +2929,7 @@ class CConverter(metaclass=CConverterAutoRegister):
              unused: bool = False,
              **kwargs: Any
     ) -> None:
-        self.name = ensure_legal_c_identifier(name)
+        self.name = libclinic.ensure_legal_c_identifier(name)
         self.py_name = py_name
         self.unused = unused
         self.includes: list[Include] = []
@@ -5083,9 +5058,9 @@ class DSLParser:
             if fields[-1] == '__new__':
                 fields.pop()
             c_basename = "_".join(fields)
-        if not is_legal_py_identifier(full_name):
+        if not libclinic.is_legal_py_identifier(full_name):
             fail(f"Illegal function name: {full_name!r}")
-        if not is_legal_c_identifier(c_basename):
+        if not libclinic.is_legal_c_identifier(c_basename):
             fail(f"Illegal C basename: {c_basename!r}")
         names = FunctionNames(full_name=full_name, c_basename=c_basename)
         self.normalize_function_kind(names.full_name)
@@ -5207,7 +5182,7 @@ class DSLParser:
         before, equals, existing = line.rpartition('=')
         if equals:
             existing = existing.strip()
-            if is_legal_py_identifier(existing):
+            if libclinic.is_legal_py_identifier(existing):
                 # we're cloning!
                 names = self.parse_function_names(before)
                 return self.parse_cloned_function(names, existing)
