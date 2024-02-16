@@ -918,7 +918,6 @@ def singledispatch(func):
         if not args:
             raise TypeError(f'{funcname} requires at least '
                             '1 positional argument')
-
         return dispatch(args[0].__class__)(*args, **kw)
 
     funcname = getattr(func, '__name__', 'singledispatch function')
