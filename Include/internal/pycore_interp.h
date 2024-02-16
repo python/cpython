@@ -30,6 +30,7 @@ extern "C" {
 #include "pycore_mimalloc.h"      // struct _mimalloc_interp_state
 #include "pycore_object_state.h"  // struct _py_object_state
 #include "pycore_obmalloc.h"      // struct _obmalloc_state
+#include "pycore_qsbr.h"          // struct _qsbr_state
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_tuple.h"         // struct _Py_tuple_state
 #include "pycore_typeobject.h"    // struct types_state
@@ -197,6 +198,7 @@ struct _is {
     struct _warnings_runtime_state warnings;
     struct atexit_state atexit;
     struct _stoptheworld_state stoptheworld;
+    struct _qsbr_shared qsbr;
 
 #if defined(Py_GIL_DISABLED)
     struct _mimalloc_interp_state mimalloc;
