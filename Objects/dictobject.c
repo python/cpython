@@ -5342,7 +5342,7 @@ dictiter_iternext_threadsafe(PyDictObject *d, PyObject *self,
 
     ensure_shared_on_read(d);
 
-    Py_ssize_t start_pos = i = _Py_atomic_load_ssize_relaxed(&di->di_pos);
+    i = _Py_atomic_load_ssize_relaxed(&di->di_pos);
     k = _Py_atomic_load_ptr_relaxed(&d->ma_keys);
     assert(i >= 0);
     if (_PyDict_HasSplitTable(d)) {
@@ -5402,20 +5402,13 @@ dictiter_iternext_threadsafe(PyDictObject *d, PyObject *self,
         }
     }
     // We found an element (key), but did not expect it
-    if (_Py_atomic_load_ssize_relaxed(&di->len) == 0) {
+    Py_ssize_t len;
+    if ((len = _Py_atomic_load_ssize_relaxed(&di->len)) == 0) {
         goto concurrent_modification;
     }
-    if (!_Py_atomic_compare_exchange_ssize(&di->di_pos, &start_pos, i+1)) {
-        // We lost a race with someone else iterating...
-        if (out_key != NULL) {
-            Py_DECREF(*out_key);
-        }
-        if (out_value != NULL) {
-            Py_DECREF(*out_value);
-        }
-        goto try_locked;
-    }
-    _Py_atomic_add_ssize(&di->len, -1);
+
+    _Py_atomic_store_ssize_relaxed(&di->di_pos, i + 1);
+    _Py_atomic_store_ssize_relaxed(&di->len, len - 1);
     return 1;
 
 concurrent_modification:
@@ -5441,22 +5434,16 @@ static bool
 acquire_iter_result(PyObject *result)
 {
 #ifdef Py_GIL_DISABLED
-    if (Py_REFCNT(result) == 1) {
-        Py_INCREF(result);
-        if (Py_REFCNT(result) == 2) {
-            return true;
-        }
-        Py_DECREF(result);
-        return false;
-    }
-    return false;
+    if (_Py_IsOwnedByCurrentThread(result) &&
+        result->ob_ref_local == 1 &&
+        _Py_atomic_load_ssize_relaxed(&result->ob_ref_shared) == 0) {
 #else
     if (Py_REFCNT(result) == 1) {
+#endif
         Py_INCREF(result);
         return true;
     }
     return false;
-#endif
 }
 
 static PyObject *
