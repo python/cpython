@@ -826,9 +826,9 @@ encoder_encode_stateful(MultibyteStatefulEncoderContext *ctx,
         if (datalen - inpos > MAXENCPENDING) {
             /* normal codecs can't reach here */
             PyObject *excobj = PyObject_CallFunction(PyExc_UnicodeEncodeError,
-                                                     "ssnns",
+                                                     "sOnns",
                                                      ctx->codec->encoding,
-                                                     PyUnicode_AsUTF8(inbuf),
+                                                     inbuf,
                                                      inpos, datalen,
                                                      "pending buffer overflow");
             if (excobj == NULL) goto errorexit;
