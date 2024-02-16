@@ -546,6 +546,9 @@
     <ClInclude Include="..\Include\internal\pycore_bitutils.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_brc.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_bytes_methods.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -720,6 +723,9 @@
     <ClInclude Include="..\Include\internal\pycore_pyarena.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_pyatomic_ft_wrappers.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_pyerrors.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -745,6 +751,9 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_pythread.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_qsbr.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_range.h">
@@ -1253,6 +1262,9 @@
     <ClCompile Include="..\Python\bltinmodule.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\brc.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\ceval.c">
       <Filter>Python</Filter>
     </ClCompile>
@@ -1410,6 +1422,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\pystrtod.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\qsbr.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\dtoa.c">

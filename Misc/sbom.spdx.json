@@ -48,28 +48,14 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "ab7bb32514d170592dfb3f76e41bbdc075a4e7e0"
+          "checksumValue": "90c06411f131e777e2b5c3d22b7ccf50bc46f617"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "f521acdad222644365b0e81a33bcd6939a98c91b225c47582cc84bd73d96febc"
+          "checksumValue": "3045f9176950aa13a54e53fa096385670c676c492705d636e977f888e4c72d48"
         }
       ],
       "fileName": "Modules/expat/expat.h"
-    },
-    {
-      "SPDXID": "SPDXRef-FILE-Modules-expat-expat-config.h",
-      "checksums": [
-        {
-          "algorithm": "SHA1",
-          "checksumValue": "73627287302ee3e84347c4fe21f37a9cb828bc3b"
-        },
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "f17e59f9d95eeb05694c02508aa284d332616c22cbe2e6a802d8a0710310eaab"
-        }
-      ],
-      "fileName": "Modules/expat/expat_config.h"
     },
     {
       "SPDXID": "SPDXRef-FILE-Modules-expat-expat-external.h",
@@ -104,11 +90,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "2790d37e7de2f13dccc4f4fb352cbdf9ed6abaa2"
+          "checksumValue": "9f6d9211a7b627785d5c48d10cc8eda66255113f"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "d2efe5a1018449968a689f444cca432e3d5875aba6ad08ee18ca235d64f41bb9"
+          "checksumValue": "9f0bdd346dd94ac4359c636a4e60bc768f4ae53ce0e836eb05fb9246ee36c7f2"
         }
       ],
       "fileName": "Modules/expat/internal.h"
@@ -160,11 +146,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "2b984f806f10fbfbf72d8d1b7ba2992413c15299"
+          "checksumValue": "4c49b5df2bc702f663ba3b5a52d1940ec363226b"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "fbce56cd680e690043bbf572188cc2d0a25dbfc0d47ac8cb98eb3de768d4e694"
+          "checksumValue": "b5ec29f6560acc183f1ee8ab92bb3aea17b87b4c2120cd2e3f78deba7a12491e"
         }
       ],
       "fileName": "Modules/expat/siphash.h"
@@ -188,11 +174,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "e774ae6ee9391aa6ffb8f775fb74e48f4b428959"
+          "checksumValue": "a3a8c44efd55dbf2cfea8fcee009ec63120ec0a3"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "3c71cea9a6174718542331971a35db317902b2433be9d8dd1cb24239b635c0cc"
+          "checksumValue": "e70948500d34dfcba4e9f0b305319dfe2a937c7cbfb687905128b56e1a6f8b33"
         }
       ],
       "fileName": "Modules/expat/winconfig.h"
@@ -202,11 +188,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "b580e827e16baa6b035586ffcd4d90301e5a353f"
+          "checksumValue": "3b5de0ed1de33cad85b46230707403247f2851df"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "483518bbd69338eefc706cd7fc0b6039df2d3e347f64097989059ed6d2385a1e"
+          "checksumValue": "a03abd531601eef61a87e06113d218ff139b6969e15a3d4668cd85d65fc6f79b"
         }
       ],
       "fileName": "Modules/expat/xmlparse.c"
@@ -216,11 +202,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "5ef21312af73deb2428be3fe97a65244608e76de"
+          "checksumValue": "ef767128d2dda99436712dcf3465dde5dbaab876"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "6fcf8c72ac0112c1b98bd2039c632a66b4c3dc516ce7c1f981390951121ef3c0"
+          "checksumValue": "71fb52aa302cf6f56e41943009965804f49ff2210d9bd15b258f70aaf70db772"
         }
       ],
       "fileName": "Modules/expat/xmlrole.c"
@@ -230,11 +216,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "c1a4ea6356643d0820edb9c024c20ad2aaf562dc"
+          "checksumValue": "c961fb1a80f7b0601a63e69fba793fe5f6dff157"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "2b5d674be6ef20c7e3f69295176d75e68c5616e4dfce0a186fdd5e2ed8315f7a"
+          "checksumValue": "228470eb9181a9a7575b63137edcb61b817ee4e0923faffdbeba29e07c939713"
         }
       ],
       "fileName": "Modules/expat/xmlrole.h"
@@ -244,11 +230,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "e6d66ae9fd61d7950c62c5d87693c30a707e8577"
+          "checksumValue": "8394790c0199c8f88108542ad78f23095d28a3fe"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "1110f651bdccfa765ad3d6f3857a35887ab35fc0fe7f3f3488fde2b238b482e3"
+          "checksumValue": "5b16c671ccc42496374762768e4bf48f614aecfd2025a07925b8d94244aec645"
         }
       ],
       "fileName": "Modules/expat/xmltok.c"
@@ -258,11 +244,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "9c2a544875fd08ba9c2397296c97263518a410aa"
+          "checksumValue": "7d2943a0128094455004b1a98007b98734221bae"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "4299a03828b98bfe47ec6809f6e279252954a9a911dc7e0f19551bd74e3af971"
+          "checksumValue": "6b8919dc951606dc6f2b0175f8955a9ced901ce8bd08db47f291b6c04227ae7f"
         }
       ],
       "fileName": "Modules/expat/xmltok.h"
@@ -272,11 +258,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "aa96882de8e3d1d3083124b595aa911efe44e5ad"
+          "checksumValue": "7756f7c0d3625ae7dde6cf7d386685ffacb57c7e"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "0fbcba7931707c60301305dab78d2298d96447d0a5513926d8b18135228c0818"
+          "checksumValue": "a3fe18ff32b21fbcb7c190895c68158404e1b9fb449db6431bc08b261dc03938"
         }
       ],
       "fileName": "Modules/expat/xmltok_impl.c"
@@ -1568,20 +1554,6 @@
         }
       ],
       "fileName": "Modules/_decimal/libmpdec/vcdiv64.asm"
-    },
-    {
-      "SPDXID": "SPDXRef-FILE-Lib-ensurepip-bundled-pip-24.0-py3-none-any.whl",
-      "checksums": [
-        {
-          "algorithm": "SHA1",
-          "checksumValue": "e44313ae1e6af3c2bd3b60ab2fa8c34308d00555"
-        },
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "ba0d021a166865d2265246961bec0152ff124de910c5cc39f1156ce3fa7c69dc"
-        }
-      ],
-      "fileName": "Lib/ensurepip/_bundled/pip-24.0-py3-none-any.whl"
     }
   ],
   "packages": [
@@ -1590,14 +1562,14 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "6b902ab103843592be5e99504f846ec109c1abb692e85347587f237a4ffa1033"
+          "checksumValue": "a13447b9aa67d7c860783fdf6820f33ebdea996900d6d8bbc50a628f55f099f7"
         }
       ],
-      "downloadLocation": "https://github.com/libexpat/libexpat/releases/download/R_2_5_0/expat-2.5.0.tar.gz",
+      "downloadLocation": "https://github.com/libexpat/libexpat/releases/download/R_2_6_0/expat-2.6.0.tar.gz",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:libexpat_project:libexpat:2.5.0:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:libexpat_project:libexpat:2.6.0:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
@@ -1605,7 +1577,7 @@
       "name": "expat",
       "originator": "Organization: Expat development team",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "2.5.0"
+      "versionInfo": "2.6.0"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-hacl-star",
@@ -1694,660 +1666,9 @@
       "originator": "Organization: bytereef.org",
       "primaryPackagePurpose": "SOURCE",
       "versionInfo": "2.5.1"
-    },
-    {
-      "SPDXID": "SPDXRef-PACKAGE-cachecontrol",
-      "checksums": [
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "95dedbec849f46dda3137866dc28b9d133fc9af55f5b805ab1291833e4457aa4"
-        }
-      ],
-      "downloadLocation": "https://files.pythonhosted.org/packages/1d/e3/a22348e6226dcd585d5a4b5f0175b3a16dabfd3912cbeb02f321d00e56c7/cachecontrol-0.13.1-py3-none-any.whl",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE_MANAGER",
-          "referenceLocator": "pkg:pypi/cachecontrol@0.13.1",
-          "referenceType": "purl"
-        }
-      ],
-      "licenseConcluded": "NOASSERTION",
-      "name": "cachecontrol",
-      "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "0.13.1"
-    },
-    {
-      "SPDXID": "SPDXRef-PACKAGE-colorama",
-      "checksums": [
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6"
-        }
-      ],
-      "downloadLocation": "https://files.pythonhosted.org/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE_MANAGER",
-          "referenceLocator": "pkg:pypi/colorama@0.4.6",
-          "referenceType": "purl"
-        }
-      ],
-      "licenseConcluded": "NOASSERTION",
-      "name": "colorama",
-      "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "0.4.6"
-    },
-    {
-      "SPDXID": "SPDXRef-PACKAGE-distlib",
-      "checksums": [
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "034db59a0b96f8ca18035f36290806a9a6e6bd9d1ff91e45a7f172eb17e51784"
-        }
-      ],
-      "downloadLocation": "https://files.pythonhosted.org/packages/8e/41/9307e4f5f9976bc8b7fea0b66367734e8faf3ec84bc0d412d8cfabbb66cd/distlib-0.3.8-py2.py3-none-any.whl",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE_MANAGER",
-          "referenceLocator": "pkg:pypi/distlib@0.3.8",
-          "referenceType": "purl"
-        }
-      ],
-      "licenseConcluded": "NOASSERTION",
-      "name": "distlib",
-      "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "0.3.8"
-    },
-    {
-      "SPDXID": "SPDXRef-PACKAGE-distro",
-      "checksums": [
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "99522ca3e365cac527b44bde033f64c6945d90eb9f769703caaec52b09bbd3ff"
-        }
-      ],
-      "downloadLocation": "https://files.pythonhosted.org/packages/f4/2c/c90a3adaf0ddb70afe193f5ebfb539612af57cffe677c3126be533df3098/distro-1.8.0-py3-none-any.whl",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE_MANAGER",
-          "referenceLocator": "pkg:pypi/distro@1.8.0",
-          "referenceType": "purl"
-        }
-      ],
-      "licenseConcluded": "NOASSERTION",
-      "name": "distro",
-      "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "1.8.0"
-    },
-    {
-      "SPDXID": "SPDXRef-PACKAGE-msgpack",
-      "checksums": [
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "525228efd79bb831cf6830a732e2e80bc1b05436b086d4264814b4b2955b2fa9"
-        }
-      ],
-      "downloadLocation": "https://files.pythonhosted.org/packages/9f/4a/36d936e54cf71e23ad276564465f6a54fb129e3d61520b76e13e0bb29167/msgpack-1.0.5-cp310-cp310-macosx_10_9_universal2.whl",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE_MANAGER",
-          "referenceLocator": "pkg:pypi/msgpack@1.0.5",
-          "referenceType": "purl"
-        }
-      ],
-      "licenseConcluded": "NOASSERTION",
-      "name": "msgpack",
-      "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "1.0.5"
-    },
-    {
-      "SPDXID": "SPDXRef-PACKAGE-packaging",
-      "checksums": [
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "ef103e05f519cdc783ae24ea4e2e0f508a9c99b2d4969652eed6a2e1ea5bd522"
-        }
-      ],
-      "downloadLocation": "https://files.pythonhosted.org/packages/05/8e/8de486cbd03baba4deef4142bd643a3e7bbe954a784dc1bb17142572d127/packaging-21.3-py3-none-any.whl",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE_MANAGER",
-          "referenceLocator": "pkg:pypi/packaging@21.3",
-          "referenceType": "purl"
-        }
-      ],
-      "licenseConcluded": "NOASSERTION",
-      "name": "packaging",
-      "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "21.3"
-    },
-    {
-      "SPDXID": "SPDXRef-PACKAGE-platformdirs",
-      "checksums": [
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "cec7b889196b9144d088e4c57d9ceef7374f6c39694ad1577a0aab50d27ea28c"
-        }
-      ],
-      "downloadLocation": "https://files.pythonhosted.org/packages/9e/d8/563a9fc17153c588c8c2042d2f0f84a89057cdb1c30270f589c88b42d62c/platformdirs-3.8.1-py3-none-any.whl",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE_MANAGER",
-          "referenceLocator": "pkg:pypi/platformdirs@3.8.1",
-          "referenceType": "purl"
-        }
-      ],
-      "licenseConcluded": "NOASSERTION",
-      "name": "platformdirs",
-      "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "3.8.1"
-    },
-    {
-      "SPDXID": "SPDXRef-PACKAGE-pyparsing",
-      "checksums": [
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "d554a96d1a7d3ddaf7183104485bc19fd80543ad6ac5bdb6426719d766fb06c1"
-        }
-      ],
-      "downloadLocation": "https://files.pythonhosted.org/packages/a4/24/6ae4c9c45cf99d96b06b5d99e25526c060303171fb0aea9da2bfd7dbde93/pyparsing-3.1.0-py3-none-any.whl",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE_MANAGER",
-          "referenceLocator": "pkg:pypi/pyparsing@3.1.0",
-          "referenceType": "purl"
-        }
-      ],
-      "licenseConcluded": "NOASSERTION",
-      "name": "pyparsing",
-      "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "3.1.0"
-    },
-    {
-      "SPDXID": "SPDXRef-PACKAGE-pyproject-hooks",
-      "checksums": [
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "283c11acd6b928d2f6a7c73fa0d01cb2bdc5f07c57a2eeb6e83d5e56b97976f8"
-        }
-      ],
-      "downloadLocation": "https://files.pythonhosted.org/packages/d5/ea/9ae603de7fbb3df820b23a70f6aff92bf8c7770043254ad8d2dc9d6bcba4/pyproject_hooks-1.0.0-py3-none-any.whl",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE_MANAGER",
-          "referenceLocator": "pkg:pypi/pyproject-hooks@1.0.0",
-          "referenceType": "purl"
-        }
-      ],
-      "licenseConcluded": "NOASSERTION",
-      "name": "pyproject-hooks",
-      "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "1.0.0"
-    },
-    {
-      "SPDXID": "SPDXRef-PACKAGE-requests",
-      "checksums": [
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "58cd2187c01e70e6e26505bca751777aa9f2ee0b7f4300988b709f44e013003f"
-        }
-      ],
-      "downloadLocation": "https://files.pythonhosted.org/packages/70/8e/0e2d847013cb52cd35b38c009bb167a1a26b2ce6cd6965bf26b47bc0bf44/requests-2.31.0-py3-none-any.whl",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE_MANAGER",
-          "referenceLocator": "pkg:pypi/requests@2.31.0",
-          "referenceType": "purl"
-        }
-      ],
-      "licenseConcluded": "NOASSERTION",
-      "name": "requests",
-      "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "2.31.0"
-    },
-    {
-      "SPDXID": "SPDXRef-PACKAGE-certifi",
-      "checksums": [
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "92d6037539857d8206b8f6ae472e8b77db8058fec5937a1ef3f54304089edbb9"
-        }
-      ],
-      "downloadLocation": "https://files.pythonhosted.org/packages/4c/dd/2234eab22353ffc7d94e8d13177aaa050113286e93e7b40eae01fbf7c3d9/certifi-2023.7.22-py3-none-any.whl",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE_MANAGER",
-          "referenceLocator": "pkg:pypi/certifi@2023.7.22",
-          "referenceType": "purl"
-        }
-      ],
-      "licenseConcluded": "NOASSERTION",
-      "name": "certifi",
-      "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "2023.7.22"
-    },
-    {
-      "SPDXID": "SPDXRef-PACKAGE-chardet",
-      "checksums": [
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "362777fb014af596ad31334fde1e8c327dfdb076e1960d1694662d46a6917ab9"
-        }
-      ],
-      "downloadLocation": "https://files.pythonhosted.org/packages/74/8f/8fc49109009e8d2169d94d72e6b1f4cd45c13d147ba7d6170fb41f22b08f/chardet-5.1.0-py3-none-any.whl",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE_MANAGER",
-          "referenceLocator": "pkg:pypi/chardet@5.1.0",
-          "referenceType": "purl"
-        }
-      ],
-      "licenseConcluded": "NOASSERTION",
-      "name": "chardet",
-      "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "5.1.0"
-    },
-    {
-      "SPDXID": "SPDXRef-PACKAGE-idna",
-      "checksums": [
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "90b77e79eaa3eba6de819a0c442c0b4ceefc341a7a2ab77d7562bf49f425c5c2"
-        }
-      ],
-      "downloadLocation": "https://files.pythonhosted.org/packages/fc/34/3030de6f1370931b9dbb4dad48f6ab1015ab1d32447850b9fc94e60097be/idna-3.4-py3-none-any.whl",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE_MANAGER",
-          "referenceLocator": "pkg:pypi/idna@3.4",
-          "referenceType": "purl"
-        }
-      ],
-      "licenseConcluded": "NOASSERTION",
-      "name": "idna",
-      "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "3.4"
-    },
-    {
-      "SPDXID": "SPDXRef-PACKAGE-rich",
-      "checksums": [
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "8f87bc7ee54675732fa66a05ebfe489e27264caeeff3728c945d25971b6485ec"
-        }
-      ],
-      "downloadLocation": "https://files.pythonhosted.org/packages/fc/1e/482e5eec0b89b593e81d78f819a9412849814e22225842b598908e7ac560/rich-13.4.2-py3-none-any.whl",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE_MANAGER",
-          "referenceLocator": "pkg:pypi/rich@13.4.2",
-          "referenceType": "purl"
-        }
-      ],
-      "licenseConcluded": "NOASSERTION",
-      "name": "rich",
-      "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "13.4.2"
-    },
-    {
-      "SPDXID": "SPDXRef-PACKAGE-pygments",
-      "checksums": [
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "db2db3deb4b4179f399a09054b023b6a586b76499d36965813c71aa8ed7b5fd1"
-        }
-      ],
-      "downloadLocation": "https://files.pythonhosted.org/packages/34/a7/37c8d68532ba71549db4212cb036dbd6161b40e463aba336770e80c72f84/Pygments-2.15.1-py3-none-any.whl",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE_MANAGER",
-          "referenceLocator": "pkg:pypi/pygments@2.15.1",
-          "referenceType": "purl"
-        }
-      ],
-      "licenseConcluded": "NOASSERTION",
-      "name": "pygments",
-      "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "2.15.1"
-    },
-    {
-      "SPDXID": "SPDXRef-PACKAGE-typing-extensions",
-      "checksums": [
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "440d5dd3af93b060174bf433bccd69b0babc3b15b1a8dca43789fd7f61514b36"
-        }
-      ],
-      "downloadLocation": "https://files.pythonhosted.org/packages/ec/6b/63cc3df74987c36fe26157ee12e09e8f9db4de771e0f3404263117e75b95/typing_extensions-4.7.1-py3-none-any.whl",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE_MANAGER",
-          "referenceLocator": "pkg:pypi/typing_extensions@4.7.1",
-          "referenceType": "purl"
-        }
-      ],
-      "licenseConcluded": "NOASSERTION",
-      "name": "typing_extensions",
-      "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "4.7.1"
-    },
-    {
-      "SPDXID": "SPDXRef-PACKAGE-resolvelib",
-      "checksums": [
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "d2da45d1a8dfee81bdd591647783e340ef3bcb104b54c383f70d422ef5cc7dbf"
-        }
-      ],
-      "downloadLocation": "https://files.pythonhosted.org/packages/d2/fc/e9ccf0521607bcd244aa0b3fbd574f71b65e9ce6a112c83af988bbbe2e23/resolvelib-1.0.1-py2.py3-none-any.whl",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE_MANAGER",
-          "referenceLocator": "pkg:pypi/resolvelib@1.0.1",
-          "referenceType": "purl"
-        }
-      ],
-      "licenseConcluded": "NOASSERTION",
-      "name": "resolvelib",
-      "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "1.0.1"
-    },
-    {
-      "SPDXID": "SPDXRef-PACKAGE-setuptools",
-      "checksums": [
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "11e52c67415a381d10d6b462ced9cfb97066179f0e871399e006c4ab101fc85f"
-        }
-      ],
-      "downloadLocation": "https://files.pythonhosted.org/packages/c7/42/be1c7bbdd83e1bfb160c94b9cafd8e25efc7400346cf7ccdbdb452c467fa/setuptools-68.0.0-py3-none-any.whl",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE_MANAGER",
-          "referenceLocator": "pkg:pypi/setuptools@68.0.0",
-          "referenceType": "purl"
-        }
-      ],
-      "licenseConcluded": "NOASSERTION",
-      "name": "setuptools",
-      "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "68.0.0"
-    },
-    {
-      "SPDXID": "SPDXRef-PACKAGE-six",
-      "checksums": [
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"
-        }
-      ],
-      "downloadLocation": "https://files.pythonhosted.org/packages/d9/5a/e7c31adbe875f2abbb91bd84cf2dc52d792b5a01506781dbcf25c91daf11/six-1.16.0-py2.py3-none-any.whl",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE_MANAGER",
-          "referenceLocator": "pkg:pypi/six@1.16.0",
-          "referenceType": "purl"
-        }
-      ],
-      "licenseConcluded": "NOASSERTION",
-      "name": "six",
-      "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "1.16.0"
-    },
-    {
-      "SPDXID": "SPDXRef-PACKAGE-tenacity",
-      "checksums": [
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "2f277afb21b851637e8f52e6a613ff08734c347dc19ade928e519d7d2d8569b0"
-        }
-      ],
-      "downloadLocation": "https://files.pythonhosted.org/packages/e7/b0/c23bd61e1b32c9b96fbca996c87784e196a812da8d621d8d04851f6c8181/tenacity-8.2.2-py3-none-any.whl",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE_MANAGER",
-          "referenceLocator": "pkg:pypi/tenacity@8.2.2",
-          "referenceType": "purl"
-        }
-      ],
-      "licenseConcluded": "NOASSERTION",
-      "name": "tenacity",
-      "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "8.2.2"
-    },
-    {
-      "SPDXID": "SPDXRef-PACKAGE-tomli",
-      "checksums": [
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "939de3e7a6161af0c887ef91b7d41a53e7c5a1ca976325f429cb46ea9bc30ecc"
-        }
-      ],
-      "downloadLocation": "https://files.pythonhosted.org/packages/97/75/10a9ebee3fd790d20926a90a2547f0bf78f371b2f13aa822c759680ca7b9/tomli-2.0.1-py3-none-any.whl",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE_MANAGER",
-          "referenceLocator": "pkg:pypi/tomli@2.0.1",
-          "referenceType": "purl"
-        }
-      ],
-      "licenseConcluded": "NOASSERTION",
-      "name": "tomli",
-      "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "2.0.1"
-    },
-    {
-      "SPDXID": "SPDXRef-PACKAGE-truststore",
-      "checksums": [
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "e37a5642ae9fc48caa8f120b6283d77225d600d224965a672c9e8ef49ce4bb4c"
-        }
-      ],
-      "downloadLocation": "https://files.pythonhosted.org/packages/20/56/7811d5439b6a56374f274a8672d8f18b4deadadeb3a9f0c86424b98b6f96/truststore-0.8.0-py3-none-any.whl",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE_MANAGER",
-          "referenceLocator": "pkg:pypi/truststore@0.8.0",
-          "referenceType": "purl"
-        }
-      ],
-      "licenseConcluded": "NOASSERTION",
-      "name": "truststore",
-      "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "0.8.0"
-    },
-    {
-      "SPDXID": "SPDXRef-PACKAGE-webencodings",
-      "checksums": [
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "a0af1213f3c2226497a97e2b3aa01a7e4bee4f403f95be16fc9acd2947514a78"
-        }
-      ],
-      "downloadLocation": "https://files.pythonhosted.org/packages/f4/24/2a3e3df732393fed8b3ebf2ec078f05546de641fe1b667ee316ec1dcf3b7/webencodings-0.5.1-py2.py3-none-any.whl",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE_MANAGER",
-          "referenceLocator": "pkg:pypi/webencodings@0.5.1",
-          "referenceType": "purl"
-        }
-      ],
-      "licenseConcluded": "NOASSERTION",
-      "name": "webencodings",
-      "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "0.5.1"
-    },
-    {
-      "SPDXID": "SPDXRef-PACKAGE-urllib3",
-      "checksums": [
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "94a757d178c9be92ef5539b8840d48dc9cf1b2709c9d6b588232a055c524458b"
-        }
-      ],
-      "downloadLocation": "https://files.pythonhosted.org/packages/48/fe/a5c6cc46e9fe9171d7ecf0f33ee7aae14642f8d74baa7af4d7840f9358be/urllib3-1.26.17-py2.py3-none-any.whl",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE_MANAGER",
-          "referenceLocator": "pkg:pypi/urllib3@1.26.17",
-          "referenceType": "purl"
-        }
-      ],
-      "licenseConcluded": "NOASSERTION",
-      "name": "urllib3",
-      "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "1.26.17"
-    },
-    {
-      "SPDXID": "SPDXRef-PACKAGE-pip",
-      "checksums": [
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "ba0d021a166865d2265246961bec0152ff124de910c5cc39f1156ce3fa7c69dc"
-        }
-      ],
-      "downloadLocation": "https://files.pythonhosted.org/packages/8a/6a/19e9fe04fca059ccf770861c7d5721ab4c2aebc539889e97c7977528a53b/pip-24.0-py3-none-any.whl",
-      "externalRefs": [
-        {
-          "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:pypa:pip:24.0:*:*:*:*:*:*:*",
-          "referenceType": "cpe23Type"
-        },
-        {
-          "referenceCategory": "PACKAGE_MANAGER",
-          "referenceLocator": "pkg:pypi/pip@24.0",
-          "referenceType": "purl"
-        }
-      ],
-      "licenseConcluded": "NOASSERTION",
-      "name": "pip",
-      "originator": "Organization: Python Packaging Authority",
-      "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "24.0"
     }
   ],
   "relationships": [
-    {
-      "relatedSpdxElement": "SPDXRef-PACKAGE-cachecontrol",
-      "relationshipType": "DEPENDS_ON",
-      "spdxElementId": "SPDXRef-PACKAGE-pip"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-PACKAGE-certifi",
-      "relationshipType": "DEPENDS_ON",
-      "spdxElementId": "SPDXRef-PACKAGE-pip"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-PACKAGE-chardet",
-      "relationshipType": "DEPENDS_ON",
-      "spdxElementId": "SPDXRef-PACKAGE-pip"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-PACKAGE-colorama",
-      "relationshipType": "DEPENDS_ON",
-      "spdxElementId": "SPDXRef-PACKAGE-pip"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-PACKAGE-distlib",
-      "relationshipType": "DEPENDS_ON",
-      "spdxElementId": "SPDXRef-PACKAGE-pip"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-PACKAGE-distro",
-      "relationshipType": "DEPENDS_ON",
-      "spdxElementId": "SPDXRef-PACKAGE-pip"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-PACKAGE-idna",
-      "relationshipType": "DEPENDS_ON",
-      "spdxElementId": "SPDXRef-PACKAGE-pip"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-PACKAGE-msgpack",
-      "relationshipType": "DEPENDS_ON",
-      "spdxElementId": "SPDXRef-PACKAGE-pip"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-PACKAGE-packaging",
-      "relationshipType": "DEPENDS_ON",
-      "spdxElementId": "SPDXRef-PACKAGE-pip"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-PACKAGE-platformdirs",
-      "relationshipType": "DEPENDS_ON",
-      "spdxElementId": "SPDXRef-PACKAGE-pip"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-PACKAGE-pygments",
-      "relationshipType": "DEPENDS_ON",
-      "spdxElementId": "SPDXRef-PACKAGE-pip"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-PACKAGE-pyparsing",
-      "relationshipType": "DEPENDS_ON",
-      "spdxElementId": "SPDXRef-PACKAGE-pip"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-PACKAGE-pyproject-hooks",
-      "relationshipType": "DEPENDS_ON",
-      "spdxElementId": "SPDXRef-PACKAGE-pip"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-PACKAGE-requests",
-      "relationshipType": "DEPENDS_ON",
-      "spdxElementId": "SPDXRef-PACKAGE-pip"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-PACKAGE-resolvelib",
-      "relationshipType": "DEPENDS_ON",
-      "spdxElementId": "SPDXRef-PACKAGE-pip"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-PACKAGE-rich",
-      "relationshipType": "DEPENDS_ON",
-      "spdxElementId": "SPDXRef-PACKAGE-pip"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-PACKAGE-setuptools",
-      "relationshipType": "DEPENDS_ON",
-      "spdxElementId": "SPDXRef-PACKAGE-pip"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-PACKAGE-six",
-      "relationshipType": "DEPENDS_ON",
-      "spdxElementId": "SPDXRef-PACKAGE-pip"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-PACKAGE-tenacity",
-      "relationshipType": "DEPENDS_ON",
-      "spdxElementId": "SPDXRef-PACKAGE-pip"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-PACKAGE-tomli",
-      "relationshipType": "DEPENDS_ON",
-      "spdxElementId": "SPDXRef-PACKAGE-pip"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-PACKAGE-truststore",
-      "relationshipType": "DEPENDS_ON",
-      "spdxElementId": "SPDXRef-PACKAGE-pip"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-PACKAGE-typing-extensions",
-      "relationshipType": "DEPENDS_ON",
-      "spdxElementId": "SPDXRef-PACKAGE-pip"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-PACKAGE-urllib3",
-      "relationshipType": "DEPENDS_ON",
-      "spdxElementId": "SPDXRef-PACKAGE-pip"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-PACKAGE-webencodings",
-      "relationshipType": "DEPENDS_ON",
-      "spdxElementId": "SPDXRef-PACKAGE-pip"
-    },
     {
       "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-COPYING",
       "relationshipType": "CONTAINS",
@@ -2365,11 +1686,6 @@
     },
     {
       "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-expat.h",
-      "relationshipType": "CONTAINS",
-      "spdxElementId": "SPDXRef-PACKAGE-expat"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-expat-config.h",
       "relationshipType": "CONTAINS",
       "spdxElementId": "SPDXRef-PACKAGE-expat"
     },
@@ -2907,11 +2223,6 @@
       "relatedSpdxElement": "SPDXRef-FILE-Modules-decimal-libmpdec-vcdiv64.asm",
       "relationshipType": "CONTAINS",
       "spdxElementId": "SPDXRef-PACKAGE-mpdecimal"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-FILE-Lib-ensurepip-bundled-pip-24.0-py3-none-any.whl",
-      "relationshipType": "CONTAINS",
-      "spdxElementId": "SPDXRef-PACKAGE-pip"
     }
   ],
   "spdxVersion": "SPDX-2.3"

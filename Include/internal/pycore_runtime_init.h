@@ -17,6 +17,7 @@ extern "C" {
 #include "pycore_pyhash.h"        // pyhash_state_INIT
 #include "pycore_pymem_init.h"    // _pymem_allocators_standard_INIT
 #include "pycore_pythread.h"      // _pythread_RUNTIME_INIT
+#include "pycore_qsbr.h"          // QSBR_INITIAL
 #include "pycore_runtime_init_generated.h"  // _Py_bytes_characters_INIT
 #include "pycore_signal.h"        // _signals_RUNTIME_INIT
 #include "pycore_tracemalloc.h"   // _tracemalloc_runtime_state_INIT
@@ -162,14 +163,17 @@ extern PyTypeObject _PyExc_MemoryError;
         }, \
         .gc = { \
             .enabled = 1, \
-            .young = { .threshold = 2000, }, \
-            .old = { \
+            .generations = { \
+                /* .head is set in _PyGC_InitState(). */ \
+                { .threshold = 700, }, \
                 { .threshold = 10, }, \
-                { .threshold = 0, }, \
+                { .threshold = 10, }, \
             }, \
-            .work_to_do = -5000, \
         }, \
-        .object_state = _py_object_state_INIT(INTERP), \
+        .qsbr = { \
+            .wr_seq = QSBR_INITIAL, \
+            .rd_seq = QSBR_INITIAL, \
+        }, \
         .dtoa = _dtoa_state_INIT(&(INTERP)), \
         .dict_state = _dict_state_INIT, \
         .func_state = { \
@@ -205,16 +209,6 @@ extern PyTypeObject _PyExc_MemoryError;
         .py_recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
         .context_ver = 1, \
     }
-
-#ifdef Py_TRACE_REFS
-# define _py_object_state_INIT(INTERP) \
-    { \
-        .refchain = NULL, \
-    }
-#else
-# define _py_object_state_INIT(INTERP) \
-    { 0 }
-#endif
 
 
 // global objects

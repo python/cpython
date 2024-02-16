@@ -1598,7 +1598,7 @@
                        something was returned by a descriptor protocol).  Set
                        the second element of the stack to NULL, to signal
                        CALL that it's not a method call.
-                       NULL | meth | arg1 | ... | argN
+                       meth | NULL | arg1 | ... | argN
                      */
                     Py_DECREF(owner);
                     if (attr == NULL) goto pop_1_error_tier_two;
@@ -2201,8 +2201,7 @@
             _PyListIterObject *it = (_PyListIterObject *)iter;
             assert(Py_TYPE(iter) == &PyListIter_Type);
             PyListObject *seq = it->it_seq;
-            if (seq == NULL) goto deoptimize;
-            if (it->it_index >= PyList_GET_SIZE(seq)) goto deoptimize;
+            if ((size_t)it->it_index >= (size_t)PyList_GET_SIZE(seq)) goto deoptimize;
             break;
         }
 
@@ -2844,7 +2843,7 @@
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
             /* res = func(self, args, nargs) */
-            res = ((_PyCFunctionFast)(void(*)(void))cfunc)(
+            res = ((PyCFunctionFast)(void(*)(void))cfunc)(
                 PyCFunction_GET_SELF(callable),
                 args,
                 total_args);
@@ -2885,8 +2884,8 @@
             if (PyCFunction_GET_FLAGS(callable) != (METH_FASTCALL | METH_KEYWORDS)) goto deoptimize;
             STAT_INC(CALL, hit);
             /* res = func(self, args, nargs, kwnames) */
-            _PyCFunctionFastWithKeywords cfunc =
-            (_PyCFunctionFastWithKeywords)(void(*)(void))
+            PyCFunctionFastWithKeywords cfunc =
+            (PyCFunctionFastWithKeywords)(void(*)(void))
             PyCFunction_GET_FUNCTION(callable);
             res = cfunc(PyCFunction_GET_SELF(callable), args, total_args, NULL);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -3037,8 +3036,8 @@
             if (!Py_IS_TYPE(self, d_type)) goto deoptimize;
             STAT_INC(CALL, hit);
             int nargs = total_args - 1;
-            _PyCFunctionFastWithKeywords cfunc =
-            (_PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
+            PyCFunctionFastWithKeywords cfunc =
+            (PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
             res = cfunc(self, args + 1, nargs, NULL);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Free the arguments. */
@@ -3116,8 +3115,8 @@
             PyObject *self = args[0];
             if (!Py_IS_TYPE(self, method->d_common.d_type)) goto deoptimize;
             STAT_INC(CALL, hit);
-            _PyCFunctionFast cfunc =
-            (_PyCFunctionFast)(void(*)(void))meth->ml_meth;
+            PyCFunctionFast cfunc =
+            (PyCFunctionFast)(void(*)(void))meth->ml_meth;
             int nargs = total_args - 1;
             res = cfunc(self, args + 1, nargs);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -3360,10 +3359,9 @@
         }
 
         case _SET_IP: {
-            oparg = CURRENT_OPARG();
+            PyObject *instr_ptr = (PyObject *)CURRENT_OPERAND();
             TIER_TWO_ONLY
-            // TODO: Put the code pointer in `operand` to avoid indirection via `frame`
-            frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame)) + oparg;
+            frame->instr_ptr = (_Py_CODEUNIT *)instr_ptr;
             break;
         }
 
@@ -3456,6 +3454,14 @@
             _PyCounterOptimizerObject *exe = (_PyCounterOptimizerObject *)opt;
             exe->count++;
             stack_pointer += -1;
+            break;
+        }
+
+        case _CHECK_VALIDITY_AND_SET_IP: {
+            PyObject *instr_ptr = (PyObject *)CURRENT_OPERAND();
+            TIER_TWO_ONLY
+            if (!current_executor->vm_data.valid) goto deoptimize;
+            frame->instr_ptr = (_Py_CODEUNIT *)instr_ptr;
             break;
         }
 

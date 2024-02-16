@@ -1,5 +1,6 @@
 // Cyclic garbage collector implementation for free-threaded build.
 #include "Python.h"
+#include "pycore_brc.h"           // struct _brc_thread_state
 #include "pycore_ceval.h"         // _Py_set_eval_breaker_bit()
 #include "pycore_context.h"
 #include "pycore_dict.h"          // _PyDict_MaybeUntrack()
@@ -21,6 +22,11 @@ typedef struct _gc_runtime_state GCState;
 #ifdef Py_DEBUG
 #  define GC_DEBUG
 #endif
+
+// Each thread buffers the count of allocated objects in a thread-local
+// variable up to +/- this amount to reduce the overhead of updating
+// the global count.
+#define LOCAL_ALLOC_COUNT_THRESHOLD 512
 
 // Automatically choose the generation that needs collecting.
 #define GENERATION_AUTO (-1)
@@ -152,8 +158,7 @@ gc_decref(PyObject *op)
     op->ob_tid -= 1;
 }
 
-// Merge refcounts while the world is stopped.
-static void
+static Py_ssize_t
 merge_refcount(PyObject *op, Py_ssize_t extra)
 {
     assert(_PyInterpreterState_GET()->stoptheworld.world_stopped);
@@ -169,6 +174,7 @@ merge_refcount(PyObject *op, Py_ssize_t extra)
     op->ob_tid = 0;
     op->ob_ref_local = 0;
     op->ob_ref_shared = _Py_REF_SHARED(refcount, _Py_REF_MERGED);
+    return refcount;
 }
 
 static void
@@ -280,6 +286,41 @@ gc_visit_heaps(PyInterpreterState *interp, mi_block_visit_fun *visitor,
     err = gc_visit_heaps_lock_held(interp, visitor, arg);
     HEAD_UNLOCK(&_PyRuntime);
     return err;
+}
+
+static void
+merge_queued_objects(_PyThreadStateImpl *tstate, struct collection_state *state)
+{
+    struct _brc_thread_state *brc = &tstate->brc;
+    _PyObjectStack_Merge(&brc->local_objects_to_merge, &brc->objects_to_merge);
+
+    PyObject *op;
+    while ((op = _PyObjectStack_Pop(&brc->local_objects_to_merge)) != NULL) {
+        // Subtract one when merging because the queue had a reference.
+        Py_ssize_t refcount = merge_refcount(op, -1);
+
+        if (!_PyObject_GC_IS_TRACKED(op) && refcount == 0) {
+            // GC objects with zero refcount are handled subsequently by the
+            // GC as if they were cyclic trash, but we have to handle dead
+            // non-GC objects here. Add one to the refcount so that we can
+            // decref and deallocate the object once we start the world again.
+            op->ob_ref_shared += (1 << _Py_REF_SHARED_SHIFT);
+#ifdef Py_REF_DEBUG
+            _Py_IncRefTotal(_PyInterpreterState_GET());
+#endif
+            worklist_push(&state->objs_to_decref, op);
+        }
+    }
+}
+
+static void
+merge_all_queued_objects(PyInterpreterState *interp, struct collection_state *state)
+{
+    HEAD_LOCK(&_PyRuntime);
+    for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
+        merge_queued_objects((_PyThreadStateImpl *)p, state);
+    }
+    HEAD_UNLOCK(&_PyRuntime);
 }
 
 // Subtract an incoming reference from the computed "gc_refs" refcount.
@@ -616,7 +657,7 @@ void
 _PyGC_InitState(GCState *gcstate)
 {
     // TODO: move to pycore_runtime_init.h once the incremental GC lands.
-    gcstate->young.threshold = 2000;
+    gcstate->generations[0].threshold = 2000;
 }
 
 
@@ -911,8 +952,8 @@ cleanup_worklist(struct worklist *worklist)
 static bool
 gc_should_collect(GCState *gcstate)
 {
-    int count = _Py_atomic_load_int_relaxed(&gcstate->young.count);
-    int threshold = gcstate->young.threshold;
+    int count = _Py_atomic_load_int_relaxed(&gcstate->generations[0].count);
+    int threshold = gcstate->generations[0].threshold;
     if (count <= threshold || threshold == 0 || !gcstate->enabled) {
         return false;
     }
@@ -920,13 +961,51 @@ gc_should_collect(GCState *gcstate)
     // objects. A few tests rely on immediate scheduling of the GC so we ignore
     // the scaled threshold if generations[1].threshold is set to zero.
     return (count > gcstate->long_lived_total / 4 ||
-            gcstate->old[0].threshold == 0);
+            gcstate->generations[1].threshold == 0);
+}
+
+static void
+record_allocation(PyThreadState *tstate)
+{
+    struct _gc_thread_state *gc = &((_PyThreadStateImpl *)tstate)->gc;
+
+    // We buffer the allocation count to avoid the overhead of atomic
+    // operations for every allocation.
+    gc->alloc_count++;
+    if (gc->alloc_count >= LOCAL_ALLOC_COUNT_THRESHOLD) {
+        // TODO: Use Py_ssize_t for the generation count.
+        GCState *gcstate = &tstate->interp->gc;
+        _Py_atomic_add_int(&gcstate->generations[0].count, (int)gc->alloc_count);
+        gc->alloc_count = 0;
+
+        if (gc_should_collect(gcstate) &&
+            !_Py_atomic_load_int_relaxed(&gcstate->collecting))
+        {
+            _Py_ScheduleGC(tstate->interp);
+        }
+    }
+}
+
+static void
+record_deallocation(PyThreadState *tstate)
+{
+    struct _gc_thread_state *gc = &((_PyThreadStateImpl *)tstate)->gc;
+
+    gc->alloc_count--;
+    if (gc->alloc_count <= -LOCAL_ALLOC_COUNT_THRESHOLD) {
+        GCState *gcstate = &tstate->interp->gc;
+        _Py_atomic_add_int(&gcstate->generations[0].count, (int)gc->alloc_count);
+        gc->alloc_count = 0;
+    }
 }
 
 static void
 gc_collect_internal(PyInterpreterState *interp, struct collection_state *state)
 {
     _PyEval_StopTheWorld(interp);
+    // merge refcounts for all queued objects
+    merge_all_queued_objects(interp, state);
+
     // Find unreachable objects
     int err = deduce_unreachable_heap(interp, state);
     if (err < 0) {
@@ -942,9 +1021,15 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state)
         }
     }
 
+    // Record the number of live GC objects
+    interp->gc.long_lived_total = state->long_lived_total;
+
     // Clear weakrefs and enqueue callbacks (but do not call them).
     clear_weakrefs(state);
     _PyEval_StartTheWorld(interp);
+
+    // Deallocate any object from the refcount merge step
+    cleanup_worklist(&state->objs_to_decref);
 
     // Call weakref callbacks and finalizers after unpausing other threads to
     // avoid potential deadlocks.
@@ -1031,15 +1116,10 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 
     /* update collection and allocation counters */
     if (generation+1 < NUM_GENERATIONS) {
-        gcstate->old[generation].count += 1;
+        gcstate->generations[generation+1].count += 1;
     }
     for (i = 0; i <= generation; i++) {
-        if (i == 0) {
-            gcstate->young.count = 0;
-        }
-        else {
-            gcstate->old[i-1].count = 0;
-        }
+        gcstate->generations[i].count = 0;
     }
 
     PyInterpreterState *interp = tstate->interp;
@@ -1053,7 +1133,6 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 
     m = state.collected;
     n = state.uncollectable;
-    gcstate->long_lived_total = state.long_lived_total;
 
     if (gcstate->debug & _PyGC_DEBUG_STATS) {
         double d = _PyTime_AsSecondsDouble(_PyTime_GetPerfCounter() - t1);
@@ -1362,7 +1441,7 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     return gc_collect_main(tstate, generation, reason);
 }
 
-void
+Py_ssize_t
 _PyGC_CollectNoFail(PyThreadState *tstate)
 {
     /* Ideally, this function is only called on interpreter shutdown,
@@ -1371,7 +1450,7 @@ _PyGC_CollectNoFail(PyThreadState *tstate)
        during interpreter shutdown (and then never finish it).
        See http://bugs.python.org/issue8713#msg195178 for an example.
        */
-    gc_collect_main(tstate, NUM_GENERATIONS - 1, _Py_GC_REASON_SHUTDOWN);
+    return gc_collect_main(tstate, NUM_GENERATIONS - 1, _Py_GC_REASON_SHUTDOWN);
 }
 
 void
@@ -1493,15 +1572,7 @@ _Py_ScheduleGC(PyInterpreterState *interp)
 void
 _PyObject_GC_Link(PyObject *op)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    GCState *gcstate = &tstate->interp->gc;
-    gcstate->young.count++;
-
-    if (gc_should_collect(gcstate) &&
-        !_Py_atomic_load_int_relaxed(&gcstate->collecting))
-    {
-        _Py_ScheduleGC(tstate->interp);
-    }
+    record_allocation(_PyThreadState_GET());
 }
 
 void
@@ -1527,7 +1598,7 @@ gc_alloc(PyTypeObject *tp, size_t basicsize, size_t presize)
         ((PyObject **)mem)[1] = NULL;
     }
     PyObject *op = (PyObject *)(mem + presize);
-    _PyObject_GC_Link(op);
+    record_allocation(tstate);
     return op;
 }
 
@@ -1609,10 +1680,9 @@ PyObject_GC_Del(void *op)
         PyErr_SetRaisedException(exc);
 #endif
     }
-    GCState *gcstate = get_gc_state();
-    if (gcstate->young.count > 0) {
-        gcstate->young.count--;
-    }
+
+    record_deallocation(_PyThreadState_GET());
+
     PyObject_Free(((char *)op)-presize);
 }
 
@@ -1684,7 +1754,7 @@ _PyGC_ClearAllFreeLists(PyInterpreterState *interp)
     HEAD_LOCK(&_PyRuntime);
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)interp->threads.head;
     while (tstate != NULL) {
-        _Py_ClearFreeLists(&tstate->freelist_state, 0);
+        _PyObject_ClearFreeLists(&tstate->freelists, 0);
         tstate = (_PyThreadStateImpl *)tstate->base.next;
     }
     HEAD_UNLOCK(&_PyRuntime);
