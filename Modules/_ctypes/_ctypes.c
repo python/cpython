@@ -562,8 +562,13 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
         Py_DECREF(result);
         return NULL;
     }
+    StgInfo *info = PyStgInfo_Init(st, result);
+    if (!info) {
+        Py_DECREF(result);
+        return NULL;
+    }
 
-    dict->paramfunc = StructUnionType_paramfunc;
+    info->paramfunc = StructUnionType_paramfunc;
 
     if (PyDict_GetItemRef((PyObject *)dict, &_Py_ID(_fields_), &fields) < 0) {
         Py_DECREF(result);
@@ -1054,7 +1059,7 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     stgdict->align = _ctypes_get_fielddesc("P")->pffi_type->alignment;
     stgdict->length = 1;
     stgdict->ffi_type_pointer = ffi_type_pointer;
-    stgdict->paramfunc = PyCPointerType_paramfunc;
+    //stgdict->paramfunc = PyCPointerType_paramfunc;
     stgdict->flags |= TYPEFLAG_ISPOINTER;
 
     if (PyDict_GetItemRef(typedict, &_Py_ID(_type_), &proto) < 0) {
@@ -1107,6 +1112,13 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
     Py_SETREF(result->tp_dict, (PyObject *)stgdict);
+
+    StgInfo *info = PyStgInfo_Init(st, result);
+    if (!info) {
+        Py_DECREF((PyObject *)result);
+        return NULL;
+    }
+    info->paramfunc = PyCPointerType_paramfunc;
 
     return (PyObject *)result;
 }
@@ -1513,7 +1525,7 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     stgdict->proto = type_attr;
     type_attr = NULL;
 
-    stgdict->paramfunc = &PyCArrayType_paramfunc;
+    //stgdict->paramfunc = &PyCArrayType_paramfunc;
 
     /* Arrays are passed as pointers to function calls. */
     stgdict->ffi_type_pointer = ffi_type_pointer;
@@ -1523,6 +1535,12 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         goto error;
     Py_SETREF(result->tp_dict, (PyObject *)stgdict);  /* steal the reference */
     stgdict = NULL;
+
+    StgInfo *info = PyStgInfo_Init(st, result);
+    if (!info) {
+        goto error;
+    }
+    info->paramfunc = &PyCArrayType_paramfunc;
 
     /* Special case for character arrays.
        A permanent annoyance: char arrays are also strings!
@@ -2011,6 +2029,7 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (!stgdict) {
         goto error;
     }
+
     stgdict->ffi_type_pointer = *fmt->pffi_type;
     stgdict->align = fmt->pffi_type->alignment;
     stgdict->length = 0;
@@ -2029,7 +2048,7 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    stgdict->paramfunc = PyCSimpleType_paramfunc;
+    //stgdict->paramfunc = PyCSimpleType_paramfunc;
 /*
     if (result->tp_base != st->Simple_Type) {
         stgdict->setfunc = NULL;
@@ -2047,6 +2066,12 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
     Py_SETREF(result->tp_dict, (PyObject *)stgdict);
+
+    StgInfo *info = PyStgInfo_Init(st, result);
+    if (!info) {
+        goto error;
+    }
+    info->paramfunc = PyCSimpleType_paramfunc;
 
     /* Install from_param class methods in ctypes base classes.
        Overrides the PyCSimpleType_from_param generic method.
@@ -2438,7 +2463,8 @@ PyCFuncPtrType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (!stgdict) {
         return NULL;
     }
-    stgdict->paramfunc = PyCFuncPtrType_paramfunc;
+    //stgdict->paramfunc = PyCFuncPtrType_paramfunc;
+
     /* We do NOT expose the function signature in the format string.  It
        is impossible, generally, because the only requirement for the
        argtypes items is that they have a .from_param method - we do not
@@ -2467,6 +2493,13 @@ PyCFuncPtrType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
     Py_SETREF(result->tp_dict, (PyObject *)stgdict);
+
+    StgInfo *info = PyStgInfo_Init(st, result);
+    if (!info) {
+        Py_DECREF((PyObject *)stgdict);
+        return NULL;
+    }
+    info->paramfunc = PyCFuncPtrType_paramfunc;
 
     if (-1 == make_funcptrtype_dict(stgdict)) {
         Py_DECREF(result);

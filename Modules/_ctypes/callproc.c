@@ -666,13 +666,20 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
 {
     StgDictObject *dict;
     pa->keep = NULL; /* so we cannot forget it later */
+    ctypes_state *st = GLOBAL_STATE();
 
     dict = PyObject_stgdict(obj);
+    StgInfo *info;
+    int result = PyStgInfo_FromObject(st, obj, &info);
+    if (result < 0) {
+        return -1;
+    }
     if (dict) {
+        assert(info);
         PyCArgObject *carg;
-        assert(dict->paramfunc);
+        assert(info->paramfunc);
         /* If it has an stgdict, it is a CDataObject */
-        carg = dict->paramfunc((CDataObject *)obj);
+        carg = info->paramfunc((CDataObject *)obj);
         if (carg == NULL)
             return -1;
         pa->ffi_type = carg->pffi_type;
@@ -681,7 +688,6 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
         return 0;
     }
 
-    ctypes_state *st = GLOBAL_STATE();
     if (PyCArg_CheckExact(st, obj)) {
         PyCArgObject *carg = (PyCArgObject *)obj;
         pa->ffi_type = carg->pffi_type;

@@ -16,6 +16,52 @@
 #endif
 #include "ctypes.h"
 
+
+
+// Get a PyCTypeDataObject. These Return -1 on error, 0 if "not found", 1 on OK.
+// from a type:
+//int PyStgInfo_FromType(PyObject *obj, StgInfo **result);
+// from an instance:
+int PyStgInfo_FromObject(ctypes_state *state, PyObject *obj, StgInfo **result)
+{
+    *result = NULL;
+    StgDictObject *dict = PyObject_stgdict(obj);
+    if (!dict) {
+        return 0;
+    }
+    StgInfo *info = &dict->stginfo;
+    if (!info->initialized) {
+        PyErr_Format(PyExc_SystemError, "%R StgInfo is not initialized.", obj);
+        return -1;
+    }
+    *result = info;
+    return 1;
+}
+// from either a type or an instance:
+//int PyStgInfo_FromAny(PyObject *obj, StgInfo **result);
+
+// Initialize StgInfo on a newly created
+StgInfo *PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
+{
+    StgDictObject *dict = PyType_stgdict((PyObject *)type);
+    if (!dict) {
+        PyErr_Format(PyExc_SystemError,
+                     "'%s' is not a ctypes class.",
+                     type->tp_name);
+        return NULL;
+    }
+    if (dict->stginfo.initialized) {
+        PyErr_Format(PyExc_SystemError,
+                     "StgInfo of '%s' is already initialized.",
+                     type->tp_name);
+        return NULL;
+    }
+    dict->stginfo.initialized = 1;
+    return &dict->stginfo;
+}
+
+
+
 /******************************************************************/
 /*
   StdDict - a dictionary subclass, containing additional C accessible fields

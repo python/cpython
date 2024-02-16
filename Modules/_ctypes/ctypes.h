@@ -231,6 +231,22 @@ typedef struct {
     int anonymous;
 } CFieldObject;
 
+typedef struct {
+    int initialized;
+    PARAMFUNC paramfunc;
+} StgInfo;
+
+// Get a PyCTypeDataObject. These Return -1 on error, 0 if "not found", 1 on OK.
+// from a type:
+extern int PyStgInfo_FromType(ctypes_state *state, PyObject *obj, StgInfo **result);
+// from an instance:
+extern int PyStgInfo_FromObject(ctypes_state *state, PyObject *obj, StgInfo **result);
+// from either a type or an instance:
+extern int PyStgInfo_FromAny(ctypes_state *state, PyObject *obj, StgInfo **result);
+
+// Initialize StgInfo on a newly created type
+extern StgInfo *PyStgInfo_Init(ctypes_state *state, PyTypeObject *type);
+
 /* A subclass of PyDictObject, used as the instance dictionary of ctypes
    metatypes */
 typedef struct {
@@ -250,7 +266,7 @@ typedef struct {
     PyObject *proto;            /* Only for Pointer/ArrayObject */
     SETFUNC setfunc;            /* Only for simple objects */
     GETFUNC getfunc;            /* Only for simple objects */
-    PARAMFUNC paramfunc;
+    //PARAMFUNC paramfunc;
 
     /* Following fields only used by PyCFuncPtrType_Type instances */
     PyObject *argtypes;         /* tuple of CDataObjects */
@@ -266,6 +282,7 @@ typedef struct {
 /*      Py_ssize_t *strides;    */ /* unused in ctypes */
 /*      Py_ssize_t *suboffsets; */ /* unused in ctypes */
 
+    StgInfo stginfo;
 } StgDictObject;
 
 /****************************************************************
