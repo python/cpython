@@ -167,7 +167,8 @@ set_keys(PyDictObject *mp, PyDictKeysObject *keys)
 }
 
 static inline void
-set_values(PyDictObject *mp, PyDictValues *values) {
+set_values(PyDictObject *mp, PyDictValues *values)
+{
     ASSERT_OWNED_OR_SHARED(mp);
     _Py_atomic_store_ptr_release(&mp->ma_values, values);
 }
@@ -332,8 +333,6 @@ static int dictresize(PyInterpreterState *interp, PyDictObject *mp,
 
 static PyObject* dict_iter(PyObject *dict);
 
-static int
-contains_known_hash(PyDictObject *mp, PyObject *key, Py_ssize_t hash);
 static int
 setitem_lock_held(PyDictObject *mp, PyObject *key, PyObject *value);
 static int
@@ -817,9 +816,9 @@ new_values(size_t size)
 }
 
 static inline void
-free_values(PyDictValues *values, int use_qsbr)
+free_values(PyDictValues *values, bool use_qsbr)
 {
-    int prefix_size = ((uint8_t *)values)[-1];
+    int prefix_size = DICT_VALUES_SIZE(values);
 #ifdef Py_GIL_DISABLED
     if (use_qsbr) {
         _PyMem_FreeQsbr(((char *)values)-prefix_size);
@@ -1219,12 +1218,10 @@ ensure_shared_on_read(PyDictObject *mp)
 {
 #ifdef Py_GIL_DISABLED
     if (!_Py_IsOwnedByCurrentThread((PyObject *)mp) && !IS_DICT_SHARED(mp)) {
-        // We are accessing the dict from another thread then owns
-        // it and we haven't marked it as shared which will ensure
-        // that when we re-size ma_keys or ma_values that we will
-        // free using QSBR.  We need to lock the dictionary to
-        // contend with writes from the owning thread, mark it as
-        // shared, and then we can continue with lock-free reads.
+        // The first time we access a dict from a non-owning thread we mark it
+        // as shared. This ensures that a concurrent resize operation will
+        // delay freeing the old keys or values using QSBR, which is necessary
+        // to safely allow concurrent reads without locking...
         Py_BEGIN_CRITICAL_SECTION(mp);
         if (!IS_DICT_SHARED(mp)) {
             SET_DICT_SHARED(mp);
@@ -1241,7 +1238,7 @@ ensure_shared_on_resize(PyDictObject *mp)
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(mp);
 
     if (!_Py_IsOwnedByCurrentThread((PyObject *)mp) && !IS_DICT_SHARED(mp)) {
-        // We are writing to the dict from another thread then owns
+        // We are writing to the dict from another thread that owns
         // it and we haven't marked it as shared which will ensure
         // that when we re-size ma_keys or ma_values that we will
         // free using QSBR.  We need to lock the dictionary to
@@ -1299,8 +1296,8 @@ unicodekeys_lookup_generic_threadsafe(PyDictObject *mp, PyDictKeysObject* dk, Py
     return do_lookup(mp, dk, key, hash, compare_unicode_generic_threadsafe);
 }
 
-static inline Py_ALWAYS_INLINE
-Py_ssize_t compare_unicode_unicode_threadsafe(PyDictObject *mp, PyDictKeysObject *dk,
+static inline Py_ALWAYS_INLINE Py_ssize_t
+compare_unicode_unicode_threadsafe(PyDictObject *mp, PyDictKeysObject *dk,
                                    void *ep0, Py_ssize_t ix, PyObject *key, Py_hash_t hash)
 {
     PyDictUnicodeEntry *ep = &((PyDictUnicodeEntry *)ep0)[ix];
@@ -1758,7 +1755,7 @@ Fail:
     return -1;
 }
 
-// Same to insertdict but specialized for ma_keys == Py_EMPTY_KEYS.
+// Same as insertdict but specialized for ma_keys == Py_EMPTY_KEYS.
 // Consumes key and value references.
 static int
 insert_to_emptydict(PyInterpreterState *interp, PyDictObject *mp,
@@ -1803,7 +1800,7 @@ insert_to_emptydict(PyInterpreterState *interp, PyDictObject *mp,
     // We store the keys last so no one can see them in a partially inconsistent
     // state so that we don't need to switch the keys to being shared yet for
     // the case where we're inserting from the non-owner thread.  We don't use
-    // store_keys here because the transition from empty to non-empty is safe
+    // set_keys here because the transition from empty to non-empty is safe
     // as the empty keys will never be freed.
 #ifdef Py_GIL_DISABLED
     _Py_atomic_store_ptr_release(&mp->ma_keys, newkeys);
@@ -1865,7 +1862,7 @@ static int
 dictresize(PyInterpreterState *interp, PyDictObject *mp,
            uint8_t log2_newsize, int unicode)
 {
-    PyDictKeysObject *oldkeys;
+    PyDictKeysObject *oldkeys, *newkeys;
     PyDictValues *oldvalues;
 
     ASSERT_DICT_LOCKED(mp);
@@ -1890,13 +1887,12 @@ dictresize(PyInterpreterState *interp, PyDictObject *mp,
      */
 
     /* Allocate a new table. */
-    set_keys(mp, new_keys_object(interp, log2_newsize, unicode));
-    if (mp->ma_keys == NULL) {
-        set_keys(mp, oldkeys);
+    newkeys = new_keys_object(interp, log2_newsize, unicode);
+    if (newkeys == NULL) {
         return -1;
     }
     // New table must be large enough.
-    assert(mp->ma_keys->dk_usable >= mp->ma_used);
+    assert(newkeys->dk_usable >= mp->ma_used);
 
     Py_ssize_t numentries = mp->ma_used;
 
@@ -1906,9 +1902,9 @@ dictresize(PyInterpreterState *interp, PyDictObject *mp,
         /* Convert split table into new combined table.
          * We must incref keys; we can transfer values.
          */
-        if (mp->ma_keys->dk_kind == DICT_KEYS_GENERAL) {
+        if (newkeys->dk_kind == DICT_KEYS_GENERAL) {
             // split -> generic
-            PyDictKeyEntry *newentries = DK_ENTRIES(mp->ma_keys);
+            PyDictKeyEntry *newentries = DK_ENTRIES(newkeys);
 
             for (Py_ssize_t i = 0; i < numentries; i++) {
                 int index = get_index_from_order(mp, i);
@@ -1918,10 +1914,10 @@ dictresize(PyInterpreterState *interp, PyDictObject *mp,
                 newentries[i].me_hash = unicode_get_hash(ep->me_key);
                 newentries[i].me_value = oldvalues->values[index];
             }
-            build_indices_generic(mp->ma_keys, newentries, numentries);
+            build_indices_generic(newkeys, newentries, numentries);
         }
         else { // split -> combined unicode
-            PyDictUnicodeEntry *newentries = DK_UNICODE_ENTRIES(mp->ma_keys);
+            PyDictUnicodeEntry *newentries = DK_UNICODE_ENTRIES(newkeys);
 
             for (Py_ssize_t i = 0; i < numentries; i++) {
                 int index = get_index_from_order(mp, i);
@@ -1930,9 +1926,10 @@ dictresize(PyInterpreterState *interp, PyDictObject *mp,
                 newentries[i].me_key = Py_NewRef(ep->me_key);
                 newentries[i].me_value = oldvalues->values[index];
             }
-            build_indices_unicode(mp->ma_keys, newentries, numentries);
+            build_indices_unicode(newkeys, newentries, numentries);
         }
         UNLOCK_KEYS(oldkeys);
+        set_keys(mp, newkeys);
         dictkeys_decref(interp, oldkeys, IS_DICT_SHARED(mp));
         set_values(mp, NULL);
         free_values(oldvalues, IS_DICT_SHARED(mp));
@@ -1940,9 +1937,9 @@ dictresize(PyInterpreterState *interp, PyDictObject *mp,
     else {  // oldkeys is combined.
         if (oldkeys->dk_kind == DICT_KEYS_GENERAL) {
             // generic -> generic
-            assert(mp->ma_keys->dk_kind == DICT_KEYS_GENERAL);
+            assert(newkeys->dk_kind == DICT_KEYS_GENERAL);
             PyDictKeyEntry *oldentries = DK_ENTRIES(oldkeys);
-            PyDictKeyEntry *newentries = DK_ENTRIES(mp->ma_keys);
+            PyDictKeyEntry *newentries = DK_ENTRIES(newkeys);
             if (oldkeys->dk_nentries == numentries) {
                 memcpy(newentries, oldentries, numentries * sizeof(PyDictKeyEntry));
             }
@@ -1954,12 +1951,12 @@ dictresize(PyInterpreterState *interp, PyDictObject *mp,
                     newentries[i] = *ep++;
                 }
             }
-            build_indices_generic(mp->ma_keys, newentries, numentries);
+            build_indices_generic(newkeys, newentries, numentries);
         }
         else {  // oldkeys is combined unicode
             PyDictUnicodeEntry *oldentries = DK_UNICODE_ENTRIES(oldkeys);
             if (unicode) { // combined unicode -> combined unicode
-                PyDictUnicodeEntry *newentries = DK_UNICODE_ENTRIES(mp->ma_keys);
+                PyDictUnicodeEntry *newentries = DK_UNICODE_ENTRIES(newkeys);
                 if (oldkeys->dk_nentries == numentries && mp->ma_keys->dk_kind == DICT_KEYS_UNICODE) {
                     memcpy(newentries, oldentries, numentries * sizeof(PyDictUnicodeEntry));
                 }
@@ -1971,10 +1968,10 @@ dictresize(PyInterpreterState *interp, PyDictObject *mp,
                         newentries[i] = *ep++;
                     }
                 }
-                build_indices_unicode(mp->ma_keys, newentries, numentries);
+                build_indices_unicode(newkeys, newentries, numentries);
             }
             else { // combined unicode -> generic
-                PyDictKeyEntry *newentries = DK_ENTRIES(mp->ma_keys);
+                PyDictKeyEntry *newentries = DK_ENTRIES(newkeys);
                 PyDictUnicodeEntry *ep = oldentries;
                 for (Py_ssize_t i = 0; i < numentries; i++) {
                     while (ep->me_value == NULL)
@@ -1984,9 +1981,11 @@ dictresize(PyInterpreterState *interp, PyDictObject *mp,
                     newentries[i].me_value = ep->me_value;
                     ep++;
                 }
-                build_indices_generic(mp->ma_keys, newentries, numentries);
+                build_indices_generic(newkeys, newentries, numentries);
             }
         }
+
+        set_keys(mp, newkeys);
 
         if (oldkeys != Py_EMPTY_KEYS) {
 #ifdef Py_REF_DEBUG
@@ -3640,7 +3639,7 @@ dict_dict_merge(PyInterpreterState *interp, PyDictObject *mp, PyDictObject *othe
                                 Py_NewRef(key), hash, Py_NewRef(value));
         }
         else {
-            err = contains_known_hash(mp, key, hash);
+            err = _PyDict_Contains_KnownHash((PyObject *)mp, key, hash);
             if (err == 0) {
                 err = insertdict(interp, mp,
                                     Py_NewRef(key), hash, Py_NewRef(value));
@@ -4033,29 +4032,14 @@ static PyObject *
 dict___contains__(PyDictObject *self, PyObject *key)
 /*[clinic end generated code: output=a3d03db709ed6e6b input=fe1cb42ad831e820]*/
 {
-    register PyDictObject *mp = self;
-    Py_hash_t hash;
-    Py_ssize_t ix;
-    PyObject *value;
-
-    if (!PyUnicode_CheckExact(key) || (hash = unicode_get_hash(key)) == -1) {
-        hash = PyObject_Hash(key);
-        if (hash == -1)
-            return NULL;
-    }
-#ifdef Py_GIL_DISABLED
-    ix = _Py_dict_lookup_threadsafe(mp, key, hash, &value);
-#else
-    ix = _Py_dict_lookup(mp, key, hash, &value);
-#endif
-    if (ix == DKIX_ERROR)
+    int contains = PyDict_Contains((PyObject *)self, key);
+    if (contains < 0) {
         return NULL;
-    if (ix == DKIX_EMPTY || value == NULL)
-        Py_RETURN_FALSE;
-#ifdef Py_GIL_DISABLED
-    Py_DECREF(value);
-#endif
-    Py_RETURN_TRUE;
+    }
+    if (contains) {
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
 }
 
 /*[clinic input]
@@ -4551,57 +4535,19 @@ static PyMethodDef mapp_methods[] = {
     {NULL,              NULL}   /* sentinel */
 };
 
-static int
-contains_known_hash(PyDictObject *mp, PyObject *key, Py_ssize_t hash)
-{
-    Py_ssize_t ix;
-    PyObject *value;
-
-#ifdef Py_GIL_DISABLED
-    ix = _Py_dict_lookup_threadsafe(mp, key, hash, &value);
-#else
-    ix = _Py_dict_lookup(mp, key, hash, &value);
-#endif
-    if (ix == DKIX_ERROR)
-        return -1;
-
-    if (ix != DKIX_EMPTY && value != NULL) {
-#ifdef Py_GIL_DISABLED
-        Py_DECREF(value);
-#endif
-        return 1;
-    }
-    return 0;
-}
-
 /* Return 1 if `key` is in dict `op`, 0 if not, and -1 on error. */
 int
 PyDict_Contains(PyObject *op, PyObject *key)
 {
     Py_hash_t hash;
-    Py_ssize_t ix;
-    PyObject *value;
-    PyDictObject *mp = (PyDictObject *)op;
 
     if (!PyUnicode_CheckExact(key) || (hash = unicode_get_hash(key)) == -1) {
         hash = PyObject_Hash(key);
         if (hash == -1)
             return -1;
     }
-#ifdef Py_GIL_DISABLED
-    ix = _Py_dict_lookup_threadsafe(mp, key, hash, &value);
-#else
-    ix = _Py_dict_lookup(mp, key, hash, &value);
-#endif
-    if (ix == DKIX_ERROR)
-        return -1;
-    if (ix != DKIX_EMPTY && value != NULL) {
-#ifdef Py_GIL_DISABLED
-        Py_DECREF(value);
-#endif
-        return 1;
-    }
-    return 0;
+
+    return _PyDict_Contains_KnownHash(op, key, hash);
 }
 
 int
