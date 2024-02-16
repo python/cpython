@@ -503,9 +503,9 @@ class TestInterpreterPrepareMain(TestBase):
             interp.prepare_main(spam={'spam': 'eggs', 'foo': 'bar'})
 
         # Make sure neither was actually bound.
-        with self.assertRaises(interpreters.ExecFailure):
+        with self.assertRaises(interpreters.ExecutionFailed):
             interp.exec('print(foo)')
-        with self.assertRaises(interpreters.ExecFailure):
+        with self.assertRaises(interpreters.ExecutionFailed):
             interp.exec('print(spam)')
 
 
@@ -522,7 +522,7 @@ class TestInterpreterExec(TestBase):
 
     def test_failure(self):
         interp = interpreters.create()
-        with self.assertRaises(interpreters.ExecFailure):
+        with self.assertRaises(interpreters.ExecutionFailed):
             interp.exec('raise Exception')
 
     def test_display_preserved_exception(self):
@@ -555,8 +555,8 @@ class TestInterpreterExec(TestBase):
                 interp.exec(script)
                 ~~~~~~~~~~~^^^^^^^^
               {interpmod_line.strip()}
-                raise ExecFailure(excinfo)
-            test.support.interpreters.ExecFailure: RuntimeError: uh-oh!
+                raise ExecutionFailed(excinfo)
+            test.support.interpreters.ExecutionFailed: RuntimeError: uh-oh!
 
             Uncaught in the interpreter:
 
@@ -822,7 +822,7 @@ class TestInterpreterCall(TestBase):
                         raise Exception((args, kwargs))
                     interp.call(callable)
 
-        with self.assertRaises(interpreters.CallFailure):
+        with self.assertRaises(interpreters.ExecutionFailed):
             interp.call(call_func_failure)
 
     def test_call_in_thread(self):

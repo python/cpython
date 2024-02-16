@@ -14,8 +14,7 @@ from _xxsubinterpreters import (
 __all__ = [
     'get_current', 'get_main', 'create', 'list_all', 'is_shareable',
     'Interpreter',
-    'InterpreterError', 'InterpreterNotFoundError',
-    'ExecFailure', 'CallFailure',
+    'InterpreterError', 'InterpreterNotFoundError', 'ExecutionFailed',
     'NotShareableError',
     'create_queue', 'Queue', 'QueueEmpty', 'QueueFull',
 ]
@@ -44,7 +43,11 @@ Uncaught in the interpreter:
 {formatted}
 """.strip()
 
-class _ExecFailure(RuntimeError):
+class ExecutionFailed(RuntimeError):
+    """An unhandled exception happened during execution.
+
+    This is raised from Interpreter.exec() and Interpreter.call().
+    """
 
     def __init__(self, excinfo):
         msg = excinfo.formatted
@@ -66,14 +69,6 @@ class _ExecFailure(RuntimeError):
                 superstr=super().__str__(),
                 formatted=formatted,
             )
-
-
-class ExecFailure(_ExecFailure):
-    """Raised from Interpreter.exec() for unhandled exceptions."""
-
-
-class CallFailure(_ExecFailure):
-    """Raised from Interpreter.call() for unhandled exceptions."""
 
 
 def create():
@@ -176,10 +171,10 @@ class Interpreter:
 
         There is no return value.
 
-        If the code raises an unhandled exception then an ExecFailure
-        is raised, which summarizes the unhandled exception.  The actual
-        exception is discarded because objects cannot be shared between
-        interpreters.
+        If the code raises an unhandled exception then an ExecutionFailed
+        exception is raised, which summarizes the unhandled exception.
+        The actual exception is discarded because objects cannot be
+        shared between interpreters.
 
         This blocks the current Python thread until done.  During
         that time, the previous interpreter is allowed to run
@@ -187,7 +182,7 @@ class Interpreter:
         """
         excinfo = _interpreters.exec(self._id, code)
         if excinfo is not None:
-            raise ExecFailure(excinfo)
+            raise ExecutionFailed(excinfo)
 
     def call(self, callable, /):
         """Call the object in the interpreter with given args/kwargs.
@@ -199,15 +194,15 @@ class Interpreter:
 
         If the callable raises an exception then the error display
         (including full traceback) is send back between the interpreters
-        and a CallFailedError is raised, much like what happens with
-        Interpreter.exec().
+        and an ExecutionFailed exception is raised, much like what
+        happens with Interpreter.exec().
         """
         # XXX Support args and kwargs.
         # XXX Support arbitrary callables.
         # XXX Support returning the return value (e.g. via pickle).
         excinfo = _interpreters.call(self._id, callable)
         if excinfo is not None:
-            raise CallFailure(excinfo)
+            raise ExecutionFailed(excinfo)
 
     def call_in_thread(self, callable, /):
         """Return a new thread that calls the object in the interpreter.
