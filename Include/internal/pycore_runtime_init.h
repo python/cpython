@@ -17,6 +17,7 @@ extern "C" {
 #include "pycore_pyhash.h"        // pyhash_state_INIT
 #include "pycore_pymem_init.h"    // _pymem_allocators_standard_INIT
 #include "pycore_pythread.h"      // _pythread_RUNTIME_INIT
+#include "pycore_qsbr.h"          // QSBR_INITIAL
 #include "pycore_runtime_init_generated.h"  // _Py_bytes_characters_INIT
 #include "pycore_signal.h"        // _signals_RUNTIME_INIT
 #include "pycore_tracemalloc.h"   // _tracemalloc_runtime_state_INIT
@@ -168,6 +169,10 @@ extern PyTypeObject _PyExc_MemoryError;
                 { .threshold = 10, }, \
                 { .threshold = 10, }, \
             }, \
+        }, \
+        .qsbr = { \
+            .wr_seq = QSBR_INITIAL, \
+            .rd_seq = QSBR_INITIAL, \
         }, \
         .dtoa = _dtoa_state_INIT(&(INTERP)), \
         .dict_state = _dict_state_INIT, \
