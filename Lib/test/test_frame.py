@@ -13,7 +13,7 @@ except ImportError:
     _testcapi = None
 
 from test import support
-from test.support import threading_helper
+from test.support import threading_helper, Py_GIL_DISABLED
 from test.support.script_helper import assert_python_ok
 
 
@@ -294,6 +294,7 @@ class TestIncompleteFrameAreInvisible(unittest.TestCase):
         assert_python_ok("-c", code)
 
     @support.cpython_only
+    @unittest.skipIf(Py_GIL_DISABLED, "test requires precise GC scheduling")
     def test_sneaky_frame_object(self):
 
         def trace(frame, event, arg):

@@ -28,6 +28,7 @@ typedef struct _PyThreadStateImpl {
     PyThreadState base;
 
 #ifdef Py_GIL_DISABLED
+    struct _gc_thread_state gc;
     struct _mimalloc_thread_state mimalloc;
     struct _Py_object_freelists freelists;
     struct _brc_thread_state brc;

@@ -260,6 +260,13 @@ struct _gc_runtime_state {
     Py_ssize_t long_lived_pending;
 };
 
+#ifdef Py_GIL_DISABLED
+struct _gc_thread_state {
+    /* Thread-local allocation count. */
+    Py_ssize_t alloc_count;
+};
+#endif
+
 
 extern void _PyGC_InitState(struct _gc_runtime_state *);
 

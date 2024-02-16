@@ -363,6 +363,7 @@ class GCTests(unittest.TestCase):
     # To minimize variations, though, we first store the get_count() results
     # and check them at the end.
     @refcount_test
+    @unittest.skipIf(Py_GIL_DISABLED, 'needs precise allocation counts')
     def test_get_count(self):
         gc.collect()
         a, b, c = gc.get_count()
