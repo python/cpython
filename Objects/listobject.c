@@ -606,9 +606,8 @@ list_concat(PyObject *aa, PyObject *bb)
 }
 
 static PyObject *
-list_repeat(PyObject *aa, Py_ssize_t n)
+list_repeat_locked(PyListObject *a, Py_ssize_t n)
 {
-    PyListObject *a = (PyListObject *)aa;
     const Py_ssize_t input_size = Py_SIZE(a);
     if (input_size == 0 || n <= 0)
         return PyList_New(0);
@@ -628,7 +627,7 @@ list_repeat(PyObject *aa, Py_ssize_t n)
         _Py_RefcntAdd(elem, n);
         PyObject **dest_end = dest + output_size;
         while (dest < dest_end) {
-            *dest++ = elem;
+            FT_ATOMIC_STORE_PTR_RELAXED(*dest++, elem);
         }
     }
     else {
@@ -636,7 +635,7 @@ list_repeat(PyObject *aa, Py_ssize_t n)
         PyObject **src_end = src + input_size;
         while (src < src_end) {
             _Py_RefcntAdd(*src, n);
-            *dest++ = *src++;
+            FT_ATOMIC_STORE_PTR_RELAXED(*dest++, *src++);
         }
 
         _Py_memory_repeat((char *)np->ob_item, sizeof(PyObject *)*output_size,
@@ -645,6 +644,17 @@ list_repeat(PyObject *aa, Py_ssize_t n)
 
     Py_SET_SIZE(np, output_size);
     return (PyObject *) np;
+}
+
+static PyObject *
+list_repeat(PyObject *aa, Py_ssize_t n)
+{
+    PyObject *ret;
+    PyListObject *a = (PyListObject *)aa;
+    Py_BEGIN_CRITICAL_SECTION(a);
+    ret = list_repeat_locked(a, n);
+    Py_END_CRITICAL_SECTION();
+    return ret;
 }
 
 static void
@@ -659,11 +669,12 @@ list_clear(PyListObject *a)
        this list, we make it empty first. */
     Py_ssize_t i = Py_SIZE(a);
     Py_SET_SIZE(a, 0);
-    a->ob_item = NULL;
+    FT_ATOMIC_STORE_PTR_RELEASE(a->ob_item, NULL);
     a->allocated = 0;
     while (--i >= 0) {
         Py_XDECREF(items[i]);
     }
+    // TODO: Use QSBR to free the memory in the background
     PyMem_Free(items);
 
     // Note that there is no guarantee that the list is actually empty
