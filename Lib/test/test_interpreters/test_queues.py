@@ -58,13 +58,13 @@ class QueueTests(TestBase):
 
         with self.subTest('same interpreter'):
             queue2 = queues.create()
-            queue1.put(queue2, strictequiv=True)
+            queue1.put(queue2, syncobj=True)
             queue3 = queue1.get()
             self.assertIs(queue3, queue2)
 
         with self.subTest('from current interpreter'):
             queue4 = queues.create()
-            queue1.put(queue4, strictequiv=True)
+            queue1.put(queue4, syncobj=True)
             out = _run_output(interp, dedent("""
                 queue4 = queue1.get()
                 print(queue4.id)
@@ -75,7 +75,7 @@ class QueueTests(TestBase):
         with self.subTest('from subinterpreter'):
             out = _run_output(interp, dedent("""
                 queue5 = queues.create()
-                queue1.put(queue5, strictequiv=True)
+                queue1.put(queue5, syncobj=True)
                 print(queue5.id)
                 """))
             qid = int(out)
@@ -118,7 +118,7 @@ class TestQueueOps(TestBase):
     def test_empty(self):
         queue = queues.create()
         before = queue.empty()
-        queue.put(None, strictequiv=True)
+        queue.put(None, syncobj=True)
         during = queue.empty()
         queue.get()
         after = queue.empty()
@@ -133,7 +133,7 @@ class TestQueueOps(TestBase):
         queue = queues.create(3)
         for _ in range(3):
             actual.append(queue.full())
-            queue.put(None, strictequiv=True)
+            queue.put(None, syncobj=True)
         actual.append(queue.full())
         for _ in range(3):
             queue.get()
@@ -147,16 +147,16 @@ class TestQueueOps(TestBase):
         queue = queues.create()
         for _ in range(3):
             actual.append(queue.qsize())
-            queue.put(None, strictequiv=True)
+            queue.put(None, syncobj=True)
         actual.append(queue.qsize())
         queue.get()
         actual.append(queue.qsize())
-        queue.put(None, strictequiv=True)
+        queue.put(None, syncobj=True)
         actual.append(queue.qsize())
         for _ in range(3):
             queue.get()
             actual.append(queue.qsize())
-        queue.put(None, strictequiv=True)
+        queue.put(None, syncobj=True)
         actual.append(queue.qsize())
         queue.get()
         actual.append(queue.qsize())
@@ -165,9 +165,9 @@ class TestQueueOps(TestBase):
 
     def test_put_get_main(self):
         expected = list(range(20))
-        for strictequiv in (True, False):
-            kwds = dict(strictequiv=strictequiv)
-            with self.subTest(f'strictequiv={strictequiv}'):
+        for syncobj in (True, False):
+            kwds = dict(syncobj=syncobj)
+            with self.subTest(f'syncobj={syncobj}'):
                 queue = queues.create()
                 for i in range(20):
                     queue.put(i, **kwds)
@@ -176,9 +176,9 @@ class TestQueueOps(TestBase):
                 self.assertEqual(actual, expected)
 
     def test_put_timeout(self):
-        for strictequiv in (True, False):
-            kwds = dict(strictequiv=strictequiv)
-            with self.subTest(f'strictequiv={strictequiv}'):
+        for syncobj in (True, False):
+            kwds = dict(syncobj=syncobj)
+            with self.subTest(f'syncobj={syncobj}'):
                 queue = queues.create(2)
                 queue.put(None, **kwds)
                 queue.put(None, **kwds)
@@ -188,9 +188,9 @@ class TestQueueOps(TestBase):
                 queue.put(None, **kwds)
 
     def test_put_nowait(self):
-        for strictequiv in (True, False):
-            kwds = dict(strictequiv=strictequiv)
-            with self.subTest(f'strictequiv={strictequiv}'):
+        for syncobj in (True, False):
+            kwds = dict(syncobj=syncobj)
+            with self.subTest(f'syncobj={syncobj}'):
                 queue = queues.create(2)
                 queue.put_nowait(None, **kwds)
                 queue.put_nowait(None, **kwds)
@@ -199,7 +199,7 @@ class TestQueueOps(TestBase):
                 queue.get()
                 queue.put_nowait(None, **kwds)
 
-    def test_put_strictequiv(self):
+    def test_put_syncobj(self):
         for obj in [
             None,
             True,
@@ -210,7 +210,7 @@ class TestQueueOps(TestBase):
         ]:
             with self.subTest(repr(obj)):
                 queue = queues.create()
-                queue.put(obj, strictequiv=True)
+                queue.put(obj, syncobj=True)
                 obj2 = queue.get()
                 self.assertEqual(obj2, obj)
 
@@ -221,9 +221,9 @@ class TestQueueOps(TestBase):
             with self.subTest(repr(obj)):
                 queue = queues.create()
                 with self.assertRaises(interpreters.NotShareableError):
-                    queue.put(obj, strictequiv=True)
+                    queue.put(obj, syncobj=True)
 
-    def test_put_not_strictequiv(self):
+    def test_put_not_syncobj(self):
         for obj in [
             None,
             True,
@@ -237,7 +237,7 @@ class TestQueueOps(TestBase):
         ]:
             with self.subTest(repr(obj)):
                 queue = queues.create()
-                queue.put(obj, strictequiv=False)
+                queue.put(obj, syncobj=False)
                 obj2 = queue.get()
                 self.assertEqual(obj2, obj)
 
@@ -251,9 +251,9 @@ class TestQueueOps(TestBase):
         with self.assertRaises(queues.QueueEmpty):
             queue.get_nowait()
 
-    def test_put_get_default_strictequiv(self):
+    def test_put_get_default_syncobj(self):
         expected = list(range(20))
-        queue = queues.create(strictequiv=True)
+        queue = queues.create(syncobj=True)
         for i in range(20):
             queue.put(i)
         actual = [queue.get() for _ in range(20)]
@@ -264,9 +264,9 @@ class TestQueueOps(TestBase):
         with self.assertRaises(interpreters.NotShareableError):
             queue.put(obj)
 
-    def test_put_get_default_not_strictequiv(self):
+    def test_put_get_default_not_syncobj(self):
         expected = list(range(20))
-        queue = queues.create(strictequiv=False)
+        queue = queues.create(syncobj=False)
         for i in range(20):
             queue.put(i)
         actual = [queue.get() for _ in range(20)]
@@ -285,7 +285,7 @@ class TestQueueOps(TestBase):
             from test.support.interpreters import queues
             queue = queues.create()
             orig = b'spam'
-            queue.put(orig, strictequiv=True)
+            queue.put(orig, syncobj=True)
             obj = queue.get()
             assert obj == orig, 'expected: obj == orig'
             assert obj is not orig, 'expected: obj is not orig'
@@ -298,7 +298,7 @@ class TestQueueOps(TestBase):
         self.assertEqual(len(queues.list_all()), 2)
 
         obj1 = b'spam'
-        queue1.put(obj1, strictequiv=True)
+        queue1.put(obj1, syncobj=True)
 
         out = _run_output(
             interp,
@@ -315,7 +315,7 @@ class TestQueueOps(TestBase):
                 obj2 = b'eggs'
                 print(id(obj2))
                 assert queue2.qsize() == 0, 'expected: queue2.qsize() == 0'
-                queue2.put(obj2, strictequiv=True)
+                queue2.put(obj2, syncobj=True)
                 assert queue2.qsize() == 1, 'expected: queue2.qsize() == 1'
                 """))
         self.assertEqual(len(queues.list_all()), 2)
@@ -337,8 +337,8 @@ class TestQueueOps(TestBase):
                 queue = queues.Queue({queue.id})
                 obj1 = b'spam'
                 obj2 = b'eggs'
-                queue.put(obj1, strictequiv=True)
-                queue.put(obj2, strictequiv=True)
+                queue.put(obj1, syncobj=True)
+                queue.put(obj2, syncobj=True)
                 """))
         self.assertEqual(queue.qsize(), 2)
 
@@ -360,12 +360,12 @@ class TestQueueOps(TestBase):
                     break
                 except queues.QueueEmpty:
                     continue
-            queue2.put(obj, strictequiv=True)
+            queue2.put(obj, syncobj=True)
         t = threading.Thread(target=f)
         t.start()
 
         orig = b'spam'
-        queue1.put(orig, strictequiv=True)
+        queue1.put(orig, syncobj=True)
         obj = queue2.get()
         t.join()
 
