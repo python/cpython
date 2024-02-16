@@ -7321,7 +7321,7 @@ class RETests(BaseTestCase):
 
     def test_re_submodule_access_basics(self):
         with warnings.catch_warnings(record=True) as w:
-            warnings.filterwarnings("default", category=DeprecationWarning)
+            warnings.filterwarnings("error", category=DeprecationWarning)
             from typing import re
             self.assertIsInstance(re.__doc__, str)
             self.assertEqual(re.__name__, "typing.re")
