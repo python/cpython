@@ -918,7 +918,6 @@ def singledispatch(func):
         if not args:
             raise TypeError(f'{funcname} requires at least '
                             '1 positional argument')
-
         return dispatch(args[0].__class__)(*args, **kw)
 
     funcname = getattr(func, '__name__', 'singledispatch function')
@@ -968,7 +967,11 @@ class singledispatchmethod:
                 return _method
 
         dispatch = self.dispatcher.dispatch
+        funcname = getattr(self.func, '__name__', 'singledispatchmethod method')
         def _method(*args, **kwargs):
+            if not args:
+                raise TypeError(f'{funcname} requires at least '
+                                '1 positional argument')
             return dispatch(args[0].__class__).__get__(obj, cls)(*args, **kwargs)
 
         _method.__isabstractmethod__ = self.__isabstractmethod__
