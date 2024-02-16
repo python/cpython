@@ -149,7 +149,7 @@ class Callbacks(unittest.TestCase):
             return c
         dll = cdll[_ctypes_test.__file__]
         with support.captured_stdout() as out:
-        # With no fix for i38748, the next line will raise OSError and cause the test to fail.
+            # With no fix for i38748, the next line will raise OSError and cause the test to fail.
             self.assertEqual(dll._test_i38748_runCallback(callback, 5, 10), 15)
             self.assertEqual(out.getvalue(), "a=5, b=10, c=15\n")
 
