@@ -3653,7 +3653,7 @@ class TestSignatureObject(unittest.TestCase):
             def __init__(self, b):
                 pass
 
-        C(1)
+        C(1)  # does not raise
         self.assertEqual(self.signature(C),
                         ((('b', ..., ..., "positional_or_keyword"),),
                         ...))
@@ -3664,7 +3664,7 @@ class TestSignatureObject(unittest.TestCase):
                 def __init__(cls, b):
                     pass
 
-            C(1)
+            C(1)  # does not raise
             self.assertEqual(self.signature(C),
                             ((('b', ..., ..., "positional_or_keyword"),),
                             ...))
@@ -3675,7 +3675,7 @@ class TestSignatureObject(unittest.TestCase):
                 def __init__(b):
                     pass
 
-            C(1)
+            C(1)  # does not raise
             self.assertEqual(self.signature(C),
                             ((('b', ..., ..., "positional_or_keyword"),),
                             ...))
@@ -3683,11 +3683,11 @@ class TestSignatureObject(unittest.TestCase):
         with self.subTest('MethodType'):
             class A:
                 def call(self, a):
-                    return
+                    pass
             class C:
                 __init__ = A().call
 
-            C(1)
+            C(1)  # does not raise
             self.assertEqual(self.signature(C),
                             ((('a', ..., ..., "positional_or_keyword"),),
                             ...))
@@ -3696,7 +3696,7 @@ class TestSignatureObject(unittest.TestCase):
             class C:
                 __init__ = functools.partial(lambda x, a: None, 2)
 
-            C(1)
+            C(1)  # does not raise
             self.assertEqual(self.signature(C),
                             ((('a', ..., ..., "positional_or_keyword"),),
                             ...))
@@ -3864,11 +3864,11 @@ class TestSignatureObject(unittest.TestCase):
         # Test meta-classes without user-defined __init__ or __new__
         class C(type): pass
         class D(C): pass
-        C('A', (), {})
+        self.assertEqual(C('A', (), {}).__name__, 'A')
         # TODO: Support type.
         with self.assertRaisesRegex(ValueError, "callable.*is not supported"):
             self.assertEqual(inspect.signature(C), None)
-        D('A', (), {})
+        self.assertEqual(D('A', (), {}).__name__, 'A')
         with self.assertRaisesRegex(ValueError, "callable.*is not supported"):
             self.assertEqual(inspect.signature(D), None)
 

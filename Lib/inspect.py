@@ -2543,6 +2543,8 @@ def _signature_from_callable(obj, *,
         # handled explicitly below).
         obj = unwrap(obj, stop=(lambda f: hasattr(f, "__signature__")
                                 or isinstance(f, types.MethodType)
+                                # it can be a non-callable data descriptor
+                                # like staticmethod.__wrapped__
                                 or not callable(f.__wrapped__)))
         if isinstance(obj, types.MethodType):
             # If the unwrapped object is a *method*, we might want to
