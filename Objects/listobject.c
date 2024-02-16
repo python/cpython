@@ -133,7 +133,7 @@ _PyList_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalizatio
 #ifdef WITH_FREELISTS
     struct _Py_list_freelist *state = &freelists->lists;
     while (state->numfree > 0) {
-        PyListObject *op = state->free_list[--state->numfree];
+        PyListObject *op = state->items[--state->numfree];
         assert(PyList_CheckExact(op));
         PyObject_GC_Del(op);
     }
@@ -169,7 +169,7 @@ PyList_New(Py_ssize_t size)
     struct _Py_list_freelist *list_freelist = get_list_freelist();
     if (PyList_MAXFREELIST && list_freelist->numfree > 0) {
         list_freelist->numfree--;
-        op = list_freelist->free_list[list_freelist->numfree];
+        op = list_freelist->items[list_freelist->numfree];
         OBJECT_STAT_INC(from_freelist);
         _Py_NewReference((PyObject *)op);
     }
@@ -401,7 +401,7 @@ list_dealloc(PyObject *self)
 #ifdef WITH_FREELISTS
     struct _Py_list_freelist *list_freelist = get_list_freelist();
     if (list_freelist->numfree < PyList_MAXFREELIST && list_freelist->numfree >= 0 && PyList_CheckExact(op)) {
-        list_freelist->free_list[list_freelist->numfree++] = op;
+        list_freelist->items[list_freelist->numfree++] = op;
         OBJECT_STAT_INC(to_freelist);
     }
     else
