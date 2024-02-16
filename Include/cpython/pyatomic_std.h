@@ -887,6 +887,22 @@ _Py_atomic_load_int_acquire(const int *obj)
                                 memory_order_acquire);
 }
 
+static inline void
+_Py_atomic_store_uint64_release(uint64_t *obj, uint64_t value)
+{
+    _Py_USING_STD;
+    atomic_store_explicit((_Atomic(uint64_t)*)obj, value,
+                          memory_order_release);
+}
+
+static inline uint64_t
+_Py_atomic_load_uint64_acquire(const uint64_t *obj)
+{
+    _Py_USING_STD;
+    return atomic_load_explicit((const _Atomic(uint64_t)*)obj,
+                                memory_order_acquire);
+}
+
 static inline uint32_t
 _Py_atomic_load_uint32_acquire(const uint32_t *obj)
 {

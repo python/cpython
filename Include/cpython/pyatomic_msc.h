@@ -952,13 +952,39 @@ _Py_atomic_load_int_acquire(const int *obj)
 #endif
 }
 
+static inline void
+_Py_atomic_store_uint64_release(uint64_t *obj, uint64_t value)
+{
+#if defined(_M_X64) || defined(_M_IX86)
+    *(uint64_t volatile *)obj = value;
+#elif defined(_M_ARM64)
+    _Py_atomic_ASSERT_ARG_TYPE(unsigned __int64);
+    __stlr64((unsigned __int64 volatile *)obj, (unsigned __int64)value);
+#else
+#  error "no implementation of _Py_atomic_store_uint64_release"
+#endif
+}
+
+static inline uint64_t
+_Py_atomic_load_uint64_acquire(const uint64_t *obj)
+{
+#if defined(_M_X64) || defined(_M_IX86)
+    return *(uint64_t volatile *)obj;
+#elif defined(_M_ARM64)
+    _Py_atomic_ASSERT_ARG_TYPE(__int64);
+    return (uint64_t)__ldar64((unsigned __int64 volatile *)obj);
+#else
+#  error "no implementation of _Py_atomic_load_uint64_acquire"
+#endif
+}
+
 static inline uint32_t
 _Py_atomic_load_uint32_acquire(const uint32_t *obj)
 {
 #if defined(_M_X64) || defined(_M_IX86)
     return *(uint32_t volatile *)obj;
 #elif defined(_M_ARM64)
-    return (int)__ldar32((uint32_t volatile *)obj);
+    return (uint32_t)__ldar32((uint32_t volatile *)obj);
 #else
 #  error "no implementation of _Py_atomic_load_uint32_acquire"
 #endif
