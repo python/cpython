@@ -1374,9 +1374,10 @@ Linker flags
 
 .. rubric:: Footnotes
 
-.. [#] ``git clean -fdx`` removes all files not known to Git.
+.. [#] ``git clean -fdx`` is an even more extreme way to "clean" your
+   checkout. It removes all files not known to Git.
    When bug hunting using ``git bisect``, this is
    `recommended between probes <https://github.com/python/cpython/issues/114505#issuecomment-1907021718>`_
    to guarantee a completely clean build. **Use with care**, as it
    will delete all files not checked into Git, including your
-   uncommitted work.
+   new, uncommitted work.
