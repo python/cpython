@@ -124,6 +124,25 @@ class Stencil:
         ):
             self.holes.append(hole.replace(offset=base + 4 * i, kind=kind))
 
+    def emit_x86_64_trampoline(self, hole: Hole) -> None:
+        """Emit an x86_64 trampoline to the given symbol."""
+        base = len(self.body)
+        where = slice(hole.offset, hole.offset + 4)
+        self.body[where] = (base - hole.offset - 4).to_bytes(4, sys.byteorder)
+        # Load the 64-bit address of the symbol into rax and jump to it:
+        self.disassembly += [
+            f"{base +  0:x}: 48 b8 00 00 00 00 00 00 00 00 movabsq $0x0, %rax",
+            f"{base +  0:016x}:  R_X86_64_64  {hole.symbol}",
+            f"{base + 10:x}: ff e0                         jmpq    *%rax",
+        ]
+        for code in [
+            b"\x48\xB8\x00\x00\x00\x00\x00\x00\x00\x00",
+            b"\xFF\xE0",
+        ]:
+            self.body.extend(code)
+        assert hole.addend == -4, hole.addend
+        self.holes.append(hole.replace(offset=base + 2, kind="R_X86_64_64", addend=0))
+
 
 @dataclasses.dataclass
 class StencilGroup:
@@ -161,6 +180,12 @@ class StencilGroup:
                     and hole.value is HoleValue.ZERO
                 ):
                     self.code.emit_aarch64_trampoline(hole)
+                    continue
+                elif (
+                    hole.kind in {"X86_64_RELOC_BRANCH"}
+                    and hole.value is HoleValue.ZERO
+                ):
+                    self.code.emit_x86_64_trampoline(hole)
                     continue
                 holes.append(hole)
             stencil.holes[:] = holes

@@ -19,6 +19,10 @@ HoleKind: typing.TypeAlias = typing.Literal[
     "R_X86_64_GOTPCRELX",
     "R_X86_64_PC32",
     "R_X86_64_REX_GOTPCRELX",
+    "X86_64_RELOC_BRANCH",
+    "X86_64_RELOC_GOT",
+    "X86_64_RELOC_GOT_LOAD",
+    "X86_64_RELOC_SIGNED",
     "X86_64_RELOC_UNSIGNED",
 ]
 

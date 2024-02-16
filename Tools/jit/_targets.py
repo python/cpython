@@ -374,6 +374,34 @@ class _MachO(
                 addend = 0
             case {
                 "Offset": offset,
+                "Symbol": {"Value": s},
+                "Type": {
+                    "Value": "X86_64_RELOC_GOT" | "X86_64_RELOC_GOT_LOAD" as kind
+                },
+            }:
+                offset += base
+                s = s.removeprefix(self.prefix)
+                value, symbol = _stencils.HoleValue.GOT, s
+                addend = int.from_bytes(raw[offset : offset + 4], "little", signed=True) - 4
+            case {
+                "Offset": offset,
+                "Section": {"Value": s},
+                "Type": {
+                    "Value": "X86_64_RELOC_SIGNED" as kind
+                },
+            } | {
+                "Offset": offset,
+                "Symbol": {"Value": s},
+                "Type": {
+                    "Value": "X86_64_RELOC_BRANCH" | "X86_64_RELOC_SIGNED" as kind
+                },
+            }:
+                offset += base
+                s = s.removeprefix(self.prefix)
+                value, symbol = _stencils.symbol_to_value(s)
+                addend = int.from_bytes(raw[offset : offset + 4], "little", signed=True) - 4
+            case {
+                "Offset": offset,
                 "Section": {"Value": s},
                 "Type": {"Value": kind},
             } | {
@@ -395,6 +423,7 @@ class _MachO(
 
 def get_target(host: str) -> _COFF | _ELF | _MachO:
     """Build a _Target for the given host "triple" and options."""
+    host = "x86_64-apple-darwin"
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
         return _MachO(host, alignment=8, pic=True, prefix="_")
     if re.fullmatch(r"aarch64-.*-linux-gnu", host):
@@ -402,7 +431,7 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
     if re.fullmatch(r"i686-pc-windows-msvc", host):
         return _COFF(host, prefix="_")
     if re.fullmatch(r"x86_64-apple-darwin.*", host):
-        return _MachO(host, prefix="_")
+        return _MachO(host, prefix="_", pic=True, small=True)
     if re.fullmatch(r"x86_64-pc-windows-msvc", host):
         return _COFF(host)
     if re.fullmatch(r"x86_64-.*-linux-gnu", host):

@@ -175,12 +175,14 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
         const Hole *hole = &stencil->holes[i];
         unsigned char *location = base + hole->offset;
         uint64_t value = patches[hole->value] + (uint64_t)hole->symbol + hole->addend;
+        uint8_t *loc8 = (uint8_t *)location;
         uint32_t *loc32 = (uint32_t *)location;
         uint64_t *loc64 = (uint64_t *)location;
         // LLD is a great reference for performing relocations... just keep in
         // mind that Tools/jit/build.py does filtering and preprocessing for us!
         // Here's a good place to start for each platform:
         // - aarch64-apple-darwin:
+        //   - https://github.com/llvm/llvm-project/blob/main/lld/MachO/Arch/ARM64.cpp
         //   - https://github.com/llvm/llvm-project/blob/main/lld/MachO/Arch/ARM64Common.cpp
         //   - https://github.com/llvm/llvm-project/blob/main/lld/MachO/Arch/ARM64Common.h
         // - aarch64-unknown-linux-gnu:
@@ -209,50 +211,76 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                 loc64[0] = value;
                 continue;
             case HoleKind_R_X86_64_GOTPCRELX:
-            case HoleKind_R_X86_64_REX_GOTPCRELX: {
+            case HoleKind_R_X86_64_REX_GOTPCRELX:
+            case HoleKind_X86_64_RELOC_GOT: 
+            case HoleKind_X86_64_RELOC_GOT_LOAD: {
                 // 32-bit relative address.
                 // Try to relax the GOT load into an immediate value:
                 uint64_t relaxed = *(uint64_t *)(value + 4) - 4;
                 if ((int64_t)relaxed - (int64_t)location >= -(1L << 31) &&
                     (int64_t)relaxed - (int64_t)location + 1 < (1LL << 31))
                 {
-                    if (location[-2] == 0x8B) {
-                        location[-2] = 0x8D;
+                    unsigned char prefix = loc8[-3];
+                    unsigned char opcode = loc8[-2];
+                    unsigned char suffix = loc8[-1];
+                    if (opcode == 0x8B) {
+                        // mov foo@GOTPCREL(%rip),%reg -> lea foo(%rip),%reg
+                        assert(hole->kind == HoleKind_R_X86_64_GOTPCRELX ||
+                               hole->kind == HoleKind_R_X86_64_REX_GOTPCRELX ||
+                               hole->kind == HoleKind_X86_64_RELOC_GOT_LOAD);
+                        loc8[-2] = 0x8D;
+                        value = relaxed;
                     }
-                    else if (location[-2] == 0xFF && location[-1] == 0x15) {
-                        location[-2] = 0x67;
-                        location[-1] = 0xE8;
+                    else if (opcode == 0xFF && suffix == 0x15) {
+                        // call *foo@GOTPCREL(%rip) -> nop; call foo
+                        assert(hole->kind == HoleKind_R_X86_64_GOTPCRELX ||
+                               hole->kind == HoleKind_X86_64_RELOC_GOT);
+                        loc8[-2] = 0x90;
+                        loc8[-1] = 0xE8;
+                        value = relaxed;
                     }
-                    else if (location[-2] == 0xFF && location[-1] == 0x25) {
-                        location[-2] = 0xE9;
-                        location[3] = 0x90;
+                    else if (opcode == 0xFF && suffix == 0x25) {
+                        // jmp *foo@GOTPCREL(%rip) -> jmp foo; nop
+                        assert(hole->kind == HoleKind_R_X86_64_GOTPCRELX);
+                        loc8[-2] = 0xE9;
+                        loc8[3] = 0x90;
                         loc32 = (uint32_t *)(location - 1);
-                        relaxed += 1;
+                        value = relaxed + 1;
                     }
-                    else if (location[-2] == 0x85) {
-                        location[-3] = (location[-3] & ~0x4) | (location[-3] & 0x4) >> 2;
-                        location[-2] = 0xF7;
-                        location[-1] = 0xC0 | (location[-1] & 0x38) >> 3;
+                    else if (opcode == 0x85) {
+                        // test %reg, foo@GOTPCREL(%rip) -> test $foo, %reg
+                        assert(0);
+                        loc8[-3] = (prefix & ~0x4) | (prefix & 0x4) >> 2;
+                        loc8[-2] = 0xF7;
+                        loc8[-1] = 0xC0 | (suffix & 0x38) >> 3;
+                        value = relaxed;
                     }
-                    else {
-                        location[-3] = (location[-3] & ~0x4) | (location[-3] & 0x4) >> 2;
-                        location[-1] = 0xC0 | (location[-1] & 0x38) >> 3 | (location[-2] & 0x3C);
-                        location[-2] = 0x81;
+                    else if (hole->kind != HoleKind_X86_64_RELOC_GOT) {
+                        // binop foo@GOTPCREL(%rip), %reg -> binop $foo, %reg
+                        assert(hole->kind == HoleKind_R_X86_64_REX_GOTPCRELX);
+                        loc8[-3] = (prefix & ~0x4) | (prefix & 0x4) >> 2;
+                        loc8[-2] = 0x81;
+                        loc8[-1] = 0xC0 | ((suffix & 0x38) >> 3) | (opcode & 0x3C);
+                        value = relaxed;
                     }
-                    value = relaxed;
                 }
-                // Fall through...
+            // Fall through...
             }
             case HoleKind_R_X86_64_GOTPCREL:
             case HoleKind_R_X86_64_PC32:
+            case HoleKind_X86_64_RELOC_SIGNED:
+            case HoleKind_X86_64_RELOC_BRANCH:
                 // 32-bit relative address.
                 value -= (uint64_t)location;
+                // Check that we're not out of range of 32 signed bits:
+                assert((int64_t)value >= -(1LL << 31));
+                assert((int64_t)value < (1LL << 31));
                 loc32[0] = (uint32_t)value;
                 continue;
             case HoleKind_R_AARCH64_CALL26:
             case HoleKind_R_AARCH64_JUMP26:
                 // 28-bit relative branch.
-                assert(IS_AARCH64_BRANCH(*loc32));
+                assert(IS_AARCH64_BRANCH(loc32[0]));
                 value -= (uint64_t)location;
                 // Check that we're not out of range of 28 signed bits:
                 assert((int64_t)value >= -(1L << 27));
@@ -263,30 +291,30 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                 continue;
             case HoleKind_R_AARCH64_MOVW_UABS_G0_NC:
                 // 16-bit low part of an absolute address.
-                assert(IS_AARCH64_MOV(*loc32));
+                assert(IS_AARCH64_MOV(loc32[0]));
                 // Check the implicit shift (this is "part 0 of 3"):
-                assert(get_bits(*loc32, 21, 2) == 0);
+                assert(get_bits(loc32[0], 21, 2) == 0);
                 set_bits(loc32, 5, value, 0, 16);
                 continue;
             case HoleKind_R_AARCH64_MOVW_UABS_G1_NC:
                 // 16-bit middle-low part of an absolute address.
-                assert(IS_AARCH64_MOV(*loc32));
+                assert(IS_AARCH64_MOV(loc32[0]));
                 // Check the implicit shift (this is "part 1 of 3"):
-                assert(get_bits(*loc32, 21, 2) == 1);
+                assert(get_bits(loc32[0], 21, 2) == 1);
                 set_bits(loc32, 5, value, 16, 16);
                 continue;
             case HoleKind_R_AARCH64_MOVW_UABS_G2_NC:
                 // 16-bit middle-high part of an absolute address.
-                assert(IS_AARCH64_MOV(*loc32));
+                assert(IS_AARCH64_MOV(loc32[0]));
                 // Check the implicit shift (this is "part 2 of 3"):
-                assert(get_bits(*loc32, 21, 2) == 2);
+                assert(get_bits(loc32[0], 21, 2) == 2);
                 set_bits(loc32, 5, value, 32, 16);
                 continue;
             case HoleKind_R_AARCH64_MOVW_UABS_G3:
                 // 16-bit high part of an absolute address.
-                assert(IS_AARCH64_MOV(*loc32));
+                assert(IS_AARCH64_MOV(loc32[0]));
                 // Check the implicit shift (this is "part 3 of 3"):
-                assert(get_bits(*loc32, 21, 2) == 3);
+                assert(get_bits(loc32[0], 21, 2) == 3);
                 set_bits(loc32, 5, value, 48, 16);
                 continue;
             case HoleKind_ARM64_RELOC_GOT_LOAD_PAGE21: {
@@ -300,9 +328,9 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                 assert(next_hole->symbol == hole->symbol);
                 assert(next_hole->addend == hole->addend);
                 assert(next_hole->value == hole->value);
-                assert(IS_AARCH64_ADRP(*loc32));
+                assert(IS_AARCH64_ADRP(loc32[0]));
                 unsigned char rd = get_bits(loc32[0], 0, 5);
-                assert(IS_AARCH64_LDR_OR_STR(*(loc32 + 1)));
+                assert(IS_AARCH64_LDR_OR_STR(loc32[1]));
                 unsigned char rt = get_bits(loc32[1], 0, 5);
                 unsigned char rn = get_bits(loc32[1], 5, 5);
                 assert(rd == rn && rn == rt);
@@ -320,7 +348,10 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                     continue;
                 }
                 relaxed = (uint64_t)value - (uint64_t)location - 4;
-                if ((relaxed & 0x3) == 0 && (int64_t)relaxed >= -(1L << 19) && (int64_t)relaxed < (1L << 19)) {
+                if ((relaxed & 0x3) == 0 &&
+                    (int64_t)relaxed >= -(1L << 19) &&
+                    (int64_t)relaxed < (1L << 19))
+                {
                     loc32[0] = 0xD503201F;
                     loc32[1] = 0x58000000 | (get_bits(relaxed, 2, 19) << 5) | rd;
                     i++;
@@ -341,14 +372,14 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
             case HoleKind_ARM64_RELOC_GOT_LOAD_PAGEOFF12:
                 // 12-bit low part of an absolute address. Pairs nicely with
                 // ARM64_RELOC_GOT_LOAD_PAGE21 (above).
-                assert(IS_AARCH64_LDR_OR_STR(*loc32) || IS_AARCH64_ADD_OR_SUB(*loc32));
+                assert(IS_AARCH64_LDR_OR_STR(loc32[0]) || IS_AARCH64_ADD_OR_SUB(loc32[0]));
                 // There might be an implicit shift encoded in the instruction:
                 uint8_t shift = 0;
-                if (IS_AARCH64_LDR_OR_STR(*loc32)) {
-                    shift = (uint8_t)get_bits(*loc32, 30, 2);
+                if (IS_AARCH64_LDR_OR_STR(loc32[0])) {
+                    shift = (uint8_t)get_bits(loc32[0], 30, 2);
                     // If both of these are set, the shift is supposed to be 4.
                     // That's pretty weird, and it's never actually been observed...
-                    assert(get_bits(*loc32, 23, 1) == 0 || get_bits(*loc32, 26, 1) == 0);
+                    assert(get_bits(loc32[0], 23, 1) == 0 || get_bits(loc32[0], 26, 1) == 0);
                 }
                 value = get_bits(value, 0, 12);
                 assert(get_bits(value, 0, shift) == 0);
