@@ -4948,9 +4948,7 @@ static int
 dictiter_iternext_threadsafe(PyDictObject *d, PyObject *self,
                              PyObject **out_key, PyObject **out_value);
 
-#endif
-
-#ifndef Py_GIL_DISABLED
+#else /* Py_GIL_DISABLED */
 
 static PyObject*
 dictiter_iternextkey_lock_held(PyDictObject *d, PyObject *self)
