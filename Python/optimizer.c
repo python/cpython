@@ -273,15 +273,14 @@ _PyUOpName(int index)
 void
 _PyUOpPrint(_PyUOpInstruction *uop)
 {
-    char buffer[100];
     const char *name = _PyUOpName(uop->opcode);
     if (name == NULL) {
-        snprintf(buffer, 100, "<uop %d>", uop->opcode);
-        buffer[99] = '\0';
-        name = buffer;
+        printf("<uop %d>", uop->opcode);
     }
-    printf("%s (%d, target=%d, operand=%" PRIx64 ")",
-           name,
+    else {
+        printf("%s", name);
+    }
+    printf(" (%d, target=%d, operand=%" PRIx64 ")",
            uop->oparg,
            uop->target,
            (uint64_t)uop->operand);
