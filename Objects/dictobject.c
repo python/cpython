@@ -5429,12 +5429,22 @@ try_locked:
 #endif
 
 static bool
+has_unique_reference(PyObject *op)
+{
+#ifdef Py_GIL_DISABLED
+    return (_Py_IsOwnedByCurrentThread(op) &&
+            op->ob_ref_local == 1 &&
+            _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared) == 0);
+#else
+    return Py_REFCNT(op) == 1;
+#endif
+}
+
+static bool
 acquire_iter_result(PyObject *result)
 {
 #ifdef Py_GIL_DISABLED
-    if (_Py_IsOwnedByCurrentThread(result) &&
-        result->ob_ref_local == 1 &&
-        _Py_atomic_load_ssize_relaxed(&result->ob_ref_shared) == 0) {
+    if (has_unique_reference(result)) {
 #else
     if (Py_REFCNT(result) == 1) {
 #endif
@@ -6645,18 +6655,6 @@ _PyObject_MakeDictFromInstanceAttributes(PyObject *obj, PyDictValues *values)
     PyDictKeysObject *keys = CACHED_KEYS(Py_TYPE(obj));
     OBJECT_STAT_INC(dict_materialized_on_request);
     return make_dict_from_instance_attributes(interp, keys, values);
-}
-
-static bool
-has_unique_reference(PyObject *op)
-{
-#ifdef Py_GIL_DISABLED
-    return (_Py_IsOwnedByCurrentThread(op) &&
-            op->ob_ref_local == 1 &&
-            _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared) == 0);
-#else
-    return Py_REFCNT(op) == 1;
-#endif
 }
 
 // Return true if the dict was dematerialized, false otherwise.
