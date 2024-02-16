@@ -591,18 +591,6 @@ class ClinicWholeFileTest(TestCase):
         err = "'__new__' must be a class method"
         self.expect_failure(block, err, lineno=7)
 
-    def test_no_c_basename_cloned(self):
-        block = """
-            /*[clinic input]
-            foo2
-            [clinic start generated code]*/
-            /*[clinic input]
-            foo as = foo2
-            [clinic start generated code]*/
-        """
-        err = "No C basename provided for 'foo' after 'as' keyword"
-        self.expect_failure(block, err, lineno=5)
-
     def test_cloned_with_custom_c_basename(self):
         raw = dedent("""
             /*[clinic input]
@@ -1203,6 +1191,33 @@ class ClinicParserTest(TestCase):
         """)
         self.assertIsInstance(function.return_converter, clinic.int_return_converter)
 
+    def test_return_converter_with_custom_c_name(self):
+        function = self.parse_function("""
+            module os
+            bar as foo -> int
+        """)
+        self.assertIsInstance(function.return_converter, clinic.int_return_converter)
+        self.assertEqual(function.name, "bar")
+        self.assertEqual(function.c_basename, "foo")
+
+    def test_return_converter_with_arg(self):
+        function = self.parse_function("""
+            module os
+            os.stat -> int(py_default=None)
+        """)
+        self.assertIsInstance(function.return_converter, clinic.int_return_converter)
+        self.assertEqual(function.return_converter.py_default, None)
+
+    def test_return_converter_with_arg_and_custom_c_name(self):
+        function = self.parse_function("""
+            module os
+            bar as foo -> int(py_default=None)
+        """)
+        self.assertIsInstance(function.return_converter, clinic.int_return_converter)
+        self.assertEqual(function.return_converter.py_default, None)
+        self.assertEqual(function.name, "bar")
+        self.assertEqual(function.c_basename, "foo")
+
     def test_return_converter_invalid_syntax(self):
         block = """
             module os
@@ -1535,28 +1550,57 @@ class ClinicParserTest(TestCase):
         # but it *is* a parameter
         self.assertEqual(1, len(function.parameters))
 
-    def test_illegal_module_line(self):
-        block = """
-            module foo
-            foo.bar => int
-                /
-        """
-        err = "Invalid syntax: 'foo.bar => int'"
-        self.expect_failure(block, err)
+    def test_invalid_syntax(self):
+        err = "Invalid syntax"
+        for block in (
+            "foo => bar",
+            "foo = bar baz",
+            "a b c d",
+            "foo as baz = bar ->",
+            "foo as bar bar = baz",
+        ):
+            with self.subTest(block=block):
+                self.expect_failure(block, err)
 
     def test_illegal_c_basename(self):
-        block = """
-            module foo
-            foo.bar as 935
-                /
-        """
-        err = "Illegal C basename: '935'"
-        self.expect_failure(block, err)
+        err = "Illegal C basename"
+        for block in (
+            "foo as 935",
+            "foo as ''",
+            "foo as a.c",
+        ):
+            with self.subTest(block=block):
+                self.expect_failure(block, err)
+
+    def test_no_return_annotation(self):
+        err = "No return annotation provided"
+        for block in (
+            "foo ->",
+            "foo = bar ->",
+            "foo as bar ->",
+        ):
+            with self.subTest(block=block):
+                self.expect_failure(block, err)
+
+    def test_clone_no_source_function(self):
+        err = "No source function provided"
+        for block in (
+            "foo =",
+            "foo as bar =",
+        ):
+            with self.subTest(block=block):
+                self.expect_failure(block, err)
 
     def test_no_c_basename(self):
-        block = "foo as "
         err = "No C basename provided for 'foo' after 'as' keyword"
-        self.expect_failure(block, err, strip=False)
+        for block in (
+            "foo as",
+            "foo as ",
+            "foo as = clone",
+            "foo as -> int",
+        ):
+            with self.subTest(block=block):
+                self.expect_failure(block, err)
 
     def test_single_star(self):
         block = """
