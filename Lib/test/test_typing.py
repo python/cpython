@@ -7320,7 +7320,7 @@ class RETests(BaseTestCase):
             self.assertEqual(len(w), 1)
 
     def test_re_submodule_access_basics(self):
-        with warnings.catch_warnings(record=True) as w:
+        with warnings.catch_warnings():
             warnings.filterwarnings("error", category=DeprecationWarning)
             from typing import re
             self.assertIsInstance(re.__doc__, str)
