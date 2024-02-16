@@ -1553,11 +1553,7 @@ class ClinicParserTest(TestCase):
     def test_invalid_syntax(self):
         err = "Invalid syntax"
         for block in (
-            "foo => bar",
-            "foo = bar baz",
-            "a b c d",
             "foo as baz = bar ->",
-            "foo as bar bar = baz",
         ):
             with self.subTest(block=block):
                 self.expect_failure(block, err)
@@ -1585,7 +1581,6 @@ class ClinicParserTest(TestCase):
         err = "No return annotation provided"
         for block in (
             "foo ->",
-            "foo = bar ->",
             "foo as bar ->",
         ):
             with self.subTest(block=block):

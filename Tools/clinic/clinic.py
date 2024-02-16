@@ -51,6 +51,12 @@ from typing import (
 import libclinic
 import libclinic.cpp
 from libclinic import ClinicError
+from libclinic.parser import (
+    RE_CLONE,
+    RE_C_BASENAME,
+    RE_FULLNAME,
+    RE_RETURNS,
+)
 
 
 # TODO:
@@ -5147,10 +5153,8 @@ class DSLParser:
     def parse_declaration(
         self, line: str
     ) -> tuple[str, str, str | None, str | None]:
-        full_name: str
-        c_basename: str = ""
-        cloned: str | None = None
-        returns: str | None = None
+        cloned = None
+        returns = None
 
         def invalid_syntax(msg: str | None = None) -> NoReturn:
             preamble = "Invalid syntax"
@@ -5161,48 +5165,42 @@ class DSLParser:
                  "[module.[submodule.]][class.]func [as c_name] [-> return_annotation]\n\n"
                  "Nested submodules are allowed.")
 
-        # Parse line.
-        try:
-            tokens = libclinic.generate_tokens(line)
-        except ValueError as exc:
-            invalid_syntax(str(exc))
-
-        match [t.token for t in tokens]:
-            # Common cases.
-            case [full_name]: ...
-            case [full_name, "as", c_basename]: ...
-
-            # Cloning.
-            case [full_name, "=", cloned]: ...
-            case [full_name, "as", c_basename, "=", cloned]: ...
-            case [full_name, "="] | [full_name, "as", _, "="]:
-                fail(f"No source function provided for {full_name!r} after '=' keyword")
-
-            # With return annotation.
-            case [full_name, "as" | "=", _, "->"] | [full_name, "->"]:
-                fail(f"No return annotation provided for {full_name!r} after '->' keyword")
-            case [full_name, "->", *_]:
-                returns = line[tokens[2].pos:].strip()
-            case [full_name, "as", c_basename, "->", *_]:
-                returns = line[tokens[4].pos:].strip()
-
-            # Other cases of invalid syntax.
-            case [full_name, "as"] | [full_name, "as", "=" | "->", *_]:
-                fail(f"No C basename provided for {full_name!r} after 'as' keyword")
-            case _:
-                invalid_syntax()
-
-        # Validate input.
+        m = RE_FULLNAME.match(line)
+        assert m
+        full_name = m[1]
         if not libclinic.is_legal_py_identifier(full_name):
             fail(f"Illegal function name: {full_name!r}")
-        if not c_basename:
-            c_basename = self.generate_c_basename(full_name)
-        if not libclinic.is_legal_c_identifier(c_basename):
-            fail(f"Illegal C basename: {c_basename!r}")
-        if cloned is not None and not libclinic.is_legal_py_identifier(cloned):
-            fail(f"Illegal source function name: {cloned!r}")
-        self.normalize_function_kind(full_name)
+        pos = m.end()
 
+        m = RE_C_BASENAME.match(line, pos)
+        if m:
+            if not m[1]:
+                fail(f"No C basename provided for {full_name!r} after 'as' keyword")
+            c_basename = m[1]
+            if not libclinic.is_legal_c_identifier(c_basename):
+                fail(f"Illegal C basename: {c_basename!r}")
+            pos = m.end()
+        else:
+            c_basename = self.generate_c_basename(full_name)
+
+        m = RE_CLONE.match(line, pos)
+        if m:
+            if not m[1]:
+                fail(f"No source function provided for {full_name!r} after '=' keyword")
+            cloned = m[1]
+            if not libclinic.is_legal_py_identifier(cloned):
+                fail(f"Illegal source function name: {cloned!r}")
+            pos = m.end()
+
+        m = RE_RETURNS.match(line, pos)
+        if m:
+            if cloned:
+                invalid_syntax()
+            if not m[1]:
+                fail(f"No return annotation provided for {full_name!r} after '->' keyword")
+            returns = m[1].strip()
+
+        self.normalize_function_kind(full_name)
         return full_name, c_basename, cloned, returns
 
     def state_modulename_name(self, line: str) -> None:
