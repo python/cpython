@@ -811,9 +811,8 @@ PyList_SetSlice(PyObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
 }
 
 static PyObject *
-list_inplace_repeat(PyObject *_self, Py_ssize_t n)
+list_inplace_repeat_locked(PyListObject *self, Py_ssize_t n)
 {
-    PyListObject *self = (PyListObject *)_self;
     Py_ssize_t input_size = PyList_GET_SIZE(self);
     if (input_size == 0 || n == 1) {
         return Py_NewRef(self);
@@ -840,6 +839,17 @@ list_inplace_repeat(PyObject *_self, Py_ssize_t n)
                       sizeof(PyObject *)*input_size);
 
     return Py_NewRef(self);
+}
+
+static PyObject *
+list_inplace_repeat(PyObject *_self, Py_ssize_t n)
+{
+    PyObject *ret;
+    PyListObject *self = (PyListObject *) _self;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    ret = list_inplace_repeat_locked(self, n);
+    Py_END_CRITICAL_SECTION();
+    return ret;
 }
 
 static int
