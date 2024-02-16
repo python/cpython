@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import collections
 from collections.abc import KeysView
+from dataclasses import dataclass
 from datetime import date
 import enum
 import functools
@@ -116,10 +117,10 @@ def save_raw_data(data: RawData, json_output: TextIO):
     json.dump(data, json_output)
 
 
+@dataclass(frozen=True)
 class Doc:
-    def __init__(self, text: str, doc: str):
-        self.text = text
-        self.doc = doc
+    text: str
+    doc: str
 
     def markdown(self) -> str:
         return textwrap.dedent(
@@ -139,11 +140,11 @@ class Count(int):
         return format(self, ",d")
 
 
+@dataclass(frozen=True)
 class Ratio:
-    def __init__(self, num: int, den: int | None, percentage: bool = True):
-        self.num = num
-        self.den = den
-        self.percentage = percentage
+    num: int
+    den: int | None = None
+    percentage: bool = True
 
     def __float__(self):
         if self.den == 0:
