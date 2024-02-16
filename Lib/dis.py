@@ -505,6 +505,20 @@ class ArgResolver:
         self.varname_from_oparg = varname_from_oparg
         self.labels_map = labels_map or {}
 
+    def offset_from_jump_arg(self, op, arg, offset):
+        deop = _deoptop(op)
+        if deop in hasjabs:
+            return arg * 2
+        elif deop in hasjrel:
+            signed_arg = -arg if _is_backward_jump(deop) else arg
+            argval = offset + 2 + signed_arg*2
+            caches = _get_cache_size(_all_opname[deop])
+            argval += 2 * caches
+            if deop == ENTER_EXECUTOR:
+                argval += 2
+            return argval
+        return None
+
     def get_label_for_offset(self, offset):
         return self.labels_map.get(offset, None)
 
@@ -536,17 +550,11 @@ class ArgResolver:
                         argrepr = f"{argrepr} + NULL|self"
                 else:
                     argval, argrepr = _get_name_info(arg, get_name)
-            elif deop in hasjabs:
-                argval = arg*2
-                argrepr = f"to L{self.labels_map[argval]}"
-            elif deop in hasjrel:
-                signed_arg = -arg if _is_backward_jump(deop) else arg
-                argval = offset + 2 + signed_arg*2
-                caches = _get_cache_size(_all_opname[deop])
-                argval += 2 * caches
-                if deop == ENTER_EXECUTOR:
-                    argval += 2
-                argrepr = f"to L{self.labels_map[argval]}"
+            elif deop in hasjump or deop in hasexc:
+                argval = self.offset_from_jump_arg(op, arg, offset)
+                lbl = self.get_label_for_offset(argval)
+                assert lbl is not None
+                argrepr = f"to L{lbl}"
             elif deop in (LOAD_FAST_LOAD_FAST, STORE_FAST_LOAD_FAST, STORE_FAST_STORE_FAST):
                 arg1 = arg >> 4
                 arg2 = arg & 15
