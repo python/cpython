@@ -2956,6 +2956,8 @@ class ThreadedTests(unittest.TestCase):
                 cipher = s.cipher()[0].split('-')
                 self.assertTrue(cipher[:2], ('ECDHE', 'ECDSA'))
 
+    @unittest.skipUnless(IS_OPENSSL_3_0_0, 
+                         "test requires RFC 5280 check added in OpenSSL 3.0+")
     def test_verify_strict(self):
         # verification fails by default, since the server cert is non-conforming
         client_context = ssl.create_default_context()
