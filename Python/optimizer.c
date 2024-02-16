@@ -388,7 +388,7 @@ BRANCH_TO_GUARD[4][2] = {
     trace[trace_length].target = (TARGET); \
     trace[trace_length].operand = (OPERAND); \
     if (lltrace >= 2) { \
-        printf("  ADD_TO_TRACE: "); \
+        printf("%4d ADD_TO_TRACE: ", trace_length); \
         _PyUOpPrint(&trace[trace_length]); \
         printf("\n"); \
     } \
