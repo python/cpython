@@ -8123,6 +8123,17 @@ class RETests(BaseTestCase):
             self.assertEqual(__name__, 'typing.re')
             self.assertEqual(len(w), 1)
 
+    def test_re_submodule_access_basics(self):
+        with warnings.catch_warnings():
+            warnings.filterwarnings("error", category=DeprecationWarning)
+            from typing import re
+            self.assertIsInstance(re.__doc__, str)
+            self.assertEqual(re.__name__, "typing.re")
+            self.assertIsInstance(re.__dict__, types.MappingProxyType)
+
+        with self.assertWarns(DeprecationWarning):
+            re.Match
+
     def test_cannot_subclass(self):
         with self.assertRaisesRegex(
             TypeError,
