@@ -395,6 +395,7 @@ _Py_COMP_DIAG_POP
         &(runtime)->atexit.mutex, \
         &(runtime)->audit_hooks.mutex, \
         &(runtime)->allocators.mutex, \
+        &(runtime)->_main_interpreter.types.mutex, \
     }
 
 static void
@@ -498,6 +499,8 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
     for (size_t i = 0; i < Py_ARRAY_LENGTH(locks); i++) {
         _PyMutex_at_fork_reinit(locks[i]);
     }
+
+    _PyTypes_AfterFork();
 
     /* bpo-42540: id_mutex is freed by _PyInterpreterState_Delete, which does
      * not force the default allocator. */

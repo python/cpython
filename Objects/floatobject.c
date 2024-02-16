@@ -130,9 +130,9 @@ PyFloat_FromDouble(double fval)
     PyFloatObject *op;
 #ifdef WITH_FREELISTS
     struct _Py_float_freelist *float_freelist = get_float_freelist();
-    op = float_freelist->free_list;
+    op = float_freelist->items;
     if (op != NULL) {
-        float_freelist->free_list = (PyFloatObject *) Py_TYPE(op);
+        float_freelist->items = (PyFloatObject *) Py_TYPE(op);
         float_freelist->numfree--;
         OBJECT_STAT_INC(from_freelist);
     }
@@ -251,8 +251,8 @@ _PyFloat_ExactDealloc(PyObject *obj)
         return;
     }
     float_freelist->numfree++;
-    Py_SET_TYPE(op, (PyTypeObject *)float_freelist->free_list);
-    float_freelist->free_list = op;
+    Py_SET_TYPE(op, (PyTypeObject *)float_freelist->items);
+    float_freelist->items = op;
     OBJECT_STAT_INC(to_freelist);
 #else
     PyObject_Free(op);
@@ -1994,13 +1994,13 @@ _PyFloat_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalizati
 {
 #ifdef WITH_FREELISTS
     struct _Py_float_freelist *state = &freelists->floats;
-    PyFloatObject *f = state->free_list;
+    PyFloatObject *f = state->items;
     while (f != NULL) {
         PyFloatObject *next = (PyFloatObject*) Py_TYPE(f);
         PyObject_Free(f);
         f = next;
     }
-    state->free_list = NULL;
+    state->items = NULL;
     if (is_finalization) {
         state->numfree = -1;
     }
