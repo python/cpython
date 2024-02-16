@@ -173,6 +173,7 @@ dummy_func(void) {
     op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res)) {
         if (is_const(left) && is_const(right)) {
             assert(PyFloat_CheckExact(get_const(left)));
+            assert(PyFloat_CheckExact(get_const(right)));
             PyObject *temp = PyFloat_FromDouble(
                 PyFloat_AS_DOUBLE(get_const(left)) *
                 PyFloat_AS_DOUBLE(get_const(right)));

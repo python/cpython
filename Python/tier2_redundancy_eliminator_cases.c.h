@@ -277,6 +277,7 @@
             left = stack_pointer[-2];
             if (is_const(left) && is_const(right)) {
                 assert(PyFloat_CheckExact(get_const(left)));
+                assert(PyFloat_CheckExact(get_const(right)));
                 PyObject *temp = PyFloat_FromDouble(
                     PyFloat_AS_DOUBLE(get_const(left)) *
                     PyFloat_AS_DOUBLE(get_const(right)));
