@@ -2158,7 +2158,7 @@ new_channel_info(PyObject *mod, struct channel_info *info)
     do { \
         PyObject *obj = PyLong_FromLongLong(val); \
         if (obj == NULL) { \
-            Py_CLEAR(info); \
+            Py_CLEAR(self); \
             return NULL; \
         } \
         PyStructSequence_SET_ITEM(self, pos++, obj); \
