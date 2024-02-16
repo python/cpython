@@ -4945,7 +4945,7 @@ update_cache_gil_disabled(struct type_cache_entry *entry, PyObject *name,
 #endif
 
 void
-_PyTypes_AfterFork()
+_PyTypes_AfterFork(void)
 {
 #ifdef Py_GIL_DISABLED
     struct type_cache *cache = get_type_cache();
