@@ -712,6 +712,12 @@ _Py_atomic_load_ptr_relaxed(const void *obj)
     return *(void * volatile *)obj;
 }
 
+static inline unsigned long long
+_Py_atomic_load_ullong_relaxed(const unsigned long long *obj)
+{
+    return *(volatile unsigned long long *)obj;
+}
+
 
 // --- _Py_atomic_store ------------------------------------------------------
 
@@ -885,6 +891,14 @@ _Py_atomic_store_ssize_relaxed(Py_ssize_t *obj, Py_ssize_t value)
 {
     *(volatile Py_ssize_t *)obj = value;
 }
+
+static inline void
+_Py_atomic_store_ullong_relaxed(unsigned long long *obj,
+                                unsigned long long value)
+{
+    *(volatile unsigned long long *)obj = value;
+}
+
 
 // --- _Py_atomic_load_ptr_acquire / _Py_atomic_store_ptr_release ------------
 

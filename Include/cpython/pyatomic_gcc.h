@@ -358,6 +358,10 @@ static inline void *
 _Py_atomic_load_ptr_relaxed(const void *obj)
 { return (void *)__atomic_load_n((const void **)obj, __ATOMIC_RELAXED); }
 
+static inline unsigned long long
+_Py_atomic_load_ullong_relaxed(const unsigned long long *obj)
+{ return __atomic_load_n(obj, __ATOMIC_RELAXED); }
+
 
 // --- _Py_atomic_store ------------------------------------------------------
 
@@ -474,6 +478,11 @@ _Py_atomic_store_ptr_relaxed(void *obj, void *value)
 
 static inline void
 _Py_atomic_store_ssize_relaxed(Py_ssize_t *obj, Py_ssize_t value)
+{ __atomic_store_n(obj, value, __ATOMIC_RELAXED); }
+
+static inline void
+_Py_atomic_store_ullong_relaxed(unsigned long long *obj,
+                                unsigned long long value)
 { __atomic_store_n(obj, value, __ATOMIC_RELAXED); }
 
 
