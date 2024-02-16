@@ -5199,6 +5199,8 @@ class DSLParser:
             c_basename = self.generate_c_basename(full_name)
         if not libclinic.is_legal_c_identifier(c_basename):
             fail(f"Illegal C basename: {c_basename!r}")
+        if cloned is not None and not libclinic.is_legal_py_identifier(cloned):
+            fail(f"Illegal source function name: {cloned!r}")
         self.normalize_function_kind(full_name)
 
         return full_name, c_basename, cloned, returns
@@ -5226,7 +5228,7 @@ class DSLParser:
         full_name, c_basename, cloned, returns = self.parse_declaration(line)
 
         # Handle cloning.
-        if cloned and libclinic.is_legal_py_identifier(cloned):
+        if cloned:
             return self.parse_cloned_function(full_name, c_basename, cloned)
 
         return_converter = self.resolve_return_converter(full_name, returns)

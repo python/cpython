@@ -1572,6 +1572,15 @@ class ClinicParserTest(TestCase):
             with self.subTest(block=block):
                 self.expect_failure(block, err)
 
+    def test_illegal_cloned_name(self):
+        err = "Illegal source function name"
+        for block in (
+            "foo = 935",
+            "foo = ''",
+        ):
+            with self.subTest(block=block):
+                self.expect_failure(block, err)
+
     def test_no_return_annotation(self):
         err = "No return annotation provided"
         for block in (
