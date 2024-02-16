@@ -270,27 +270,81 @@
         }
 
         case _BINARY_OP_MULTIPLY_FLOAT: {
+            _Py_UOpsSymType *right;
+            _Py_UOpsSymType *left;
             _Py_UOpsSymType *res;
-            res = sym_new_unknown(ctx);
-            if (res == NULL) goto out_of_space;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (is_const(left) && is_const(right)) {
+                assert(PyFloat_CheckExact(get_const(left)));
+                assert(PyFloat_CheckExact(get_const(right)));
+                PyObject *temp = PyFloat_FromDouble(
+                    PyFloat_AS_DOUBLE(get_const(left)) *
+                    PyFloat_AS_DOUBLE(get_const(right)));
+                if (temp == NULL) {
+                    goto error;
+                }
+                res = sym_new_const(ctx, temp);
+                // TODO gh-115506:
+                // replace opcode with constant propagated one and update tests!
+            }
+            else {
+                OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyFloat_Type));
+            }
             stack_pointer[-2] = res;
             stack_pointer += -1;
             break;
         }
 
         case _BINARY_OP_ADD_FLOAT: {
+            _Py_UOpsSymType *right;
+            _Py_UOpsSymType *left;
             _Py_UOpsSymType *res;
-            res = sym_new_unknown(ctx);
-            if (res == NULL) goto out_of_space;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (is_const(left) && is_const(right)) {
+                assert(PyFloat_CheckExact(get_const(left)));
+                assert(PyFloat_CheckExact(get_const(right)));
+                PyObject *temp = PyFloat_FromDouble(
+                    PyFloat_AS_DOUBLE(get_const(left)) +
+                    PyFloat_AS_DOUBLE(get_const(right)));
+                if (temp == NULL) {
+                    goto error;
+                }
+                res = sym_new_const(ctx, temp);
+                // TODO gh-115506:
+                // replace opcode with constant propagated one and update tests!
+            }
+            else {
+                OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyFloat_Type));
+            }
             stack_pointer[-2] = res;
             stack_pointer += -1;
             break;
         }
 
         case _BINARY_OP_SUBTRACT_FLOAT: {
+            _Py_UOpsSymType *right;
+            _Py_UOpsSymType *left;
             _Py_UOpsSymType *res;
-            res = sym_new_unknown(ctx);
-            if (res == NULL) goto out_of_space;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (is_const(left) && is_const(right)) {
+                assert(PyFloat_CheckExact(get_const(left)));
+                assert(PyFloat_CheckExact(get_const(right)));
+                PyObject *temp = PyFloat_FromDouble(
+                    PyFloat_AS_DOUBLE(get_const(left)) -
+                    PyFloat_AS_DOUBLE(get_const(right)));
+                if (temp == NULL) {
+                    goto error;
+                }
+                res = sym_new_const(ctx, temp);
+                // TODO gh-115506:
+                // replace opcode with constant propagated one and update tests!
+            }
+            else {
+                OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyFloat_Type));
+            }
             stack_pointer[-2] = res;
             stack_pointer += -1;
             break;

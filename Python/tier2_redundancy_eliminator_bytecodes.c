@@ -132,6 +132,63 @@ dummy_func(void) {
         }
     }
 
+    op(_BINARY_OP_ADD_FLOAT, (left, right -- res)) {
+        if (is_const(left) && is_const(right)) {
+            assert(PyFloat_CheckExact(get_const(left)));
+            assert(PyFloat_CheckExact(get_const(right)));
+            PyObject *temp = PyFloat_FromDouble(
+                PyFloat_AS_DOUBLE(get_const(left)) +
+                PyFloat_AS_DOUBLE(get_const(right)));
+            if (temp == NULL) {
+                goto error;
+            }
+            res = sym_new_const(ctx, temp);
+            // TODO gh-115506:
+            // replace opcode with constant propagated one and update tests!
+        }
+        else {
+            OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyFloat_Type));
+        }
+    }
+
+    op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res)) {
+        if (is_const(left) && is_const(right)) {
+            assert(PyFloat_CheckExact(get_const(left)));
+            assert(PyFloat_CheckExact(get_const(right)));
+            PyObject *temp = PyFloat_FromDouble(
+                PyFloat_AS_DOUBLE(get_const(left)) -
+                PyFloat_AS_DOUBLE(get_const(right)));
+            if (temp == NULL) {
+                goto error;
+            }
+            res = sym_new_const(ctx, temp);
+            // TODO gh-115506:
+            // replace opcode with constant propagated one and update tests!
+        }
+        else {
+            OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyFloat_Type));
+        }
+    }
+
+    op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res)) {
+        if (is_const(left) && is_const(right)) {
+            assert(PyFloat_CheckExact(get_const(left)));
+            assert(PyFloat_CheckExact(get_const(right)));
+            PyObject *temp = PyFloat_FromDouble(
+                PyFloat_AS_DOUBLE(get_const(left)) *
+                PyFloat_AS_DOUBLE(get_const(right)));
+            if (temp == NULL) {
+                goto error;
+            }
+            res = sym_new_const(ctx, temp);
+            // TODO gh-115506:
+            // replace opcode with constant propagated one and update tests!
+        }
+        else {
+            OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyFloat_Type));
+        }
+    }
+
     op(_LOAD_CONST, (-- value)) {
         // There should be no LOAD_CONST. It should be all
         // replaced by peephole_opt.
