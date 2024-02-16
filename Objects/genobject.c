@@ -1941,7 +1941,7 @@ async_gen_wrapped_val_dealloc(_PyAsyncGenWrappedValue *o)
     Py_CLEAR(o->agw_val);
 #ifdef WITH_FREELISTS
     struct _Py_async_gen_freelist *freelist = get_async_gen_freelist();
-    if (freelist->items >= 0 && freelist->numfree < _PyAsyncGen_MAXFREELIST) {
+    if (freelist->numfree >= 0 && freelist->numfree < _PyAsyncGen_MAXFREELIST) {
         assert(_PyAsyncGenWrappedValue_CheckExact(o));
         freelist->items[freelist->numfree++] = o;
         OBJECT_STAT_INC(to_freelist);
