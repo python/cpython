@@ -35,14 +35,15 @@ class QueueFull(_queues.QueueFull, queue.Full):
 _SHARED_ONLY = 0
 _PICKLED = 1
 
-def create(maxsize=0, *, sharedonly=False):
+def create(maxsize=0, *, strictequiv=False):
     """Return a new cross-interpreter queue.
 
     The queue may be used to pass data safely between interpreters.
 
-    "sharedonly" sets the default for Queue.put() and Queue.put_nowait().
+    "strictequiv" sets the default for Queue.put()
+    and Queue.put_nowait().
     """
-    fmt = _SHARED_ONLY if sharedonly else _PICKLED
+    fmt = _SHARED_ONLY if strictequiv else _PICKLED
     qid = _queues.create(maxsize, fmt)
     return Queue(qid, _fmt=fmt)
 
@@ -114,22 +115,41 @@ class Queue:
         return _queues.get_count(self._id)
 
     def put(self, obj, timeout=None, *,
-            sharedonly=None,
+            strictequiv=None,
             _delay=10 / 1000,  # 10 milliseconds
             ):
         """Add the object to the queue.
 
         This blocks while the queue is full.
 
-        If "sharedonly" is true then the object must be "shareable".
-        It will be passed through the queue efficiently.  If false then
-        all objects are supported, at the expense of worse performance.
-        If None (the default) then it uses the queue's default.
+        If "strictequiv" is None (the default) then it uses the
+        queue's default, set with create_queue()..
+
+        If "strictequiv" is false then all objects are supported,
+        at the expense of worse performance.
+
+        If "strictequiv" is true then the corresponding object returned
+        from Queue.get() will be strictly equivalent to the given obj.
+        In other words, the two objects will be indistinguishable from
+        each other, even if the object is mutable.  The received object
+        may actually be the same object, or a copy (immutable values
+        only), or a proxy.
+
+        Regardless, the received object should be treated as though
+        the original has been shared directly, whether or not it
+        actually is.  That’s a slightly different and stronger promise
+        than just equality.
+
+        This stricter guarantee requires that the provided object
+        must be "shareable".  Examples of "shareable" types include
+        the builtin singletons, str, and memoryview.  An additional
+        benefit is that such objects will be passed through the queue
+        efficiently.
         """
-        if sharedonly is None:
+        if strictequiv is None:
             fmt = self._fmt
         else:
-            fmt = _SHARED_ONLY if sharedonly else _PICKLED
+            fmt = _SHARED_ONLY if strictequiv else _PICKLED
         if timeout is not None:
             timeout = int(timeout)
             if timeout < 0:
@@ -148,11 +168,11 @@ class Queue:
             else:
                 break
 
-    def put_nowait(self, obj, *, sharedonly=None):
-        if sharedonly is None:
+    def put_nowait(self, obj, *, strictequiv=None):
+        if strictequiv is None:
             fmt = self._fmt
         else:
-            fmt = _SHARED_ONLY if sharedonly else _PICKLED
+            fmt = _SHARED_ONLY if strictequiv else _PICKLED
         if fmt is _PICKLED:
             obj = pickle.dumps(obj)
         try:
