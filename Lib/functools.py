@@ -969,10 +969,12 @@ class singledispatchmethod:
         dispatch = self.dispatcher.dispatch
         funcname = getattr(self.func, '__name__', 'singledispatchmethod method')
         def _method(*args, **kwargs):
-            if not args:
+            try:
+                key = args[0].__class__
+            except IndexError:
                 raise TypeError(f'{funcname} requires at least '
-                                '1 positional argument')
-            return dispatch(args[0].__class__).__get__(obj, cls)(*args, **kwargs)
+                                '1 positional argument') from None
+            return dispatch(key).__get__(obj, cls)(*args, **kwargs)
 
         _method.__isabstractmethod__ = self.__isabstractmethod__
         _method.register = self.register
