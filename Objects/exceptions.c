@@ -2177,6 +2177,10 @@ SimpleExtendsException(PyExc_Exception, RuntimeError,
 SimpleExtendsException(PyExc_RuntimeError, RecursionError,
                        "Recursion limit exceeded.");
 
+// PythonFinalizationError extends RuntimeError
+SimpleExtendsException(PyExc_RuntimeError, PythonFinalizationError,
+                       "Operation blocked during Python finalization.");
+
 /*
  *    NotImplementedError extends RuntimeError
  */
@@ -3539,7 +3543,6 @@ SimpleExtendsException(PyExc_Warning, ResourceWarning,
 #undef EOPNOTSUPP
 #undef EPROTONOSUPPORT
 #undef EPROTOTYPE
-#undef ETIMEDOUT
 #undef EWOULDBLOCK
 
 #if defined(WSAEALREADY) && !defined(EALREADY)
@@ -3559,9 +3562,6 @@ SimpleExtendsException(PyExc_Warning, ResourceWarning,
 #endif
 #if defined(WSAESHUTDOWN) && !defined(ESHUTDOWN)
 #define ESHUTDOWN WSAESHUTDOWN
-#endif
-#if defined(WSAETIMEDOUT) && !defined(ETIMEDOUT)
-#define ETIMEDOUT WSAETIMEDOUT
 #endif
 #if defined(WSAEWOULDBLOCK) && !defined(EWOULDBLOCK)
 #define EWOULDBLOCK WSAEWOULDBLOCK
@@ -3645,6 +3645,7 @@ static struct static_exception static_exceptions[] = {
     ITEM(KeyError),  // base: LookupError(Exception)
     ITEM(ModuleNotFoundError), // base: ImportError(Exception)
     ITEM(NotImplementedError),  // base: RuntimeError(Exception)
+    ITEM(PythonFinalizationError),  // base: RuntimeError(Exception)
     ITEM(RecursionError),  // base: RuntimeError(Exception)
     ITEM(UnboundLocalError), // base: NameError(Exception)
     ITEM(UnicodeError),  // base: ValueError(Exception)
@@ -3747,6 +3748,9 @@ _PyExc_InitState(PyInterpreterState *interp)
 #endif
     ADD_ERRNO(ProcessLookupError, ESRCH);
     ADD_ERRNO(TimeoutError, ETIMEDOUT);
+#ifdef WSAETIMEDOUT
+    ADD_ERRNO(TimeoutError, WSAETIMEDOUT);
+#endif
 
     return _PyStatus_OK();
 

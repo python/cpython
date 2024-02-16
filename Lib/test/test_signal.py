@@ -13,9 +13,10 @@ import threading
 import time
 import unittest
 from test import support
-from test.support import os_helper
+from test.support import (
+    is_apple, is_apple_mobile, os_helper, threading_helper
+)
 from test.support.script_helper import assert_python_ok, spawn_python
-from test.support import threading_helper
 try:
     import _testcapi
 except ImportError:
@@ -832,7 +833,7 @@ class ItimerTest(unittest.TestCase):
         self.assertEqual(self.hndl_called, True)
 
     # Issue 3864, unknown if this affects earlier versions of freebsd also
-    @unittest.skipIf(sys.platform in ('netbsd5',),
+    @unittest.skipIf(sys.platform in ('netbsd5',) or is_apple_mobile,
         'itimer not reliable (does not mix well with threading) on some BSDs.')
     def test_itimer_virtual(self):
         self.itimer = signal.ITIMER_VIRTUAL
@@ -1344,7 +1345,7 @@ class StressTest(unittest.TestCase):
         # Python handler
         self.assertEqual(len(sigs), N, "Some signals were lost")
 
-    @unittest.skipIf(sys.platform == "darwin", "crashes due to system bug (FB13453490)")
+    @unittest.skipIf(is_apple, "crashes due to system bug (FB13453490)")
     @unittest.skipUnless(hasattr(signal, "SIGUSR1"),
                          "test needs SIGUSR1")
     @threading_helper.requires_working_threading()

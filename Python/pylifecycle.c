@@ -611,7 +611,7 @@ static int
 builtins_dict_watcher(PyDict_WatchEvent event, PyObject *dict, PyObject *key, PyObject *new_value)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (event != PyDict_EVENT_CLONED && interp->rare_events.builtin_dict < _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS) {
+    if (interp->rare_events.builtin_dict < _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS) {
         _Py_Executors_InvalidateAll(interp);
     }
     RARE_EVENT_INTERP_INC(interp, builtin_dict);
@@ -1109,7 +1109,6 @@ run_presite(PyThreadState *tstate)
     );
     if (presite_modname == NULL) {
         fprintf(stderr, "Could not convert pre-site module name to unicode\n");
-        Py_DECREF(presite_modname);
     }
     else {
         PyObject *presite = PyImport_Import(presite_modname);
@@ -1627,8 +1626,8 @@ finalize_modules(PyThreadState *tstate)
 
     // Invalidate all executors and turn off tier 2 optimizer
     _Py_Executors_InvalidateAll(interp);
-    Py_XDECREF(interp->optimizer);
-    interp->optimizer = &_PyOptimizer_Default;
+    _PyOptimizerObject *old = _Py_SetOptimizer(interp, NULL);
+    Py_XDECREF(old);
 
     // Stop watching __builtin__ modifications
     PyDict_Unwatch(0, interp->builtins);
@@ -1790,16 +1789,14 @@ finalize_interp_types(PyInterpreterState *interp)
     // a dict internally.
     _PyUnicode_ClearInterned(interp);
 
-    _PyDict_Fini(interp);
     _PyUnicode_Fini(interp);
 
-    _PyFreeListState *state = _PyFreeListState_GET();
-    _PyTuple_Fini(state);
-    _PyList_Fini(state);
-    _PyFloat_Fini(state);
-    _PySlice_Fini(state);
-    _PyContext_Fini(state);
-    _PyAsyncGen_Fini(state);
+#ifndef Py_GIL_DISABLED
+    // With Py_GIL_DISABLED:
+    // the freelists for the current thread state have already been cleared.
+    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
+    _PyObject_ClearFreeLists(freelists, 1);
+#endif
 
 #ifdef Py_DEBUG
     _PyStaticObjects_CheckRefcnt(interp);

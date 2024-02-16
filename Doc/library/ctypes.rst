@@ -670,6 +670,10 @@ compiler does it. It is possible to override this behavior by specifying a
 :attr:`~Structure._pack_` class attribute in the subclass definition.
 This must be set to a positive integer and specifies the maximum alignment for the fields.
 This is what ``#pragma pack(n)`` also does in MSVC.
+It is also possible to set a minimum alignment for how the subclass itself is packed in the
+same way ``#pragma align(n)`` works in MSVC.
+This can be achieved by specifying a ::attr:`~Structure._align_` class attribute
+in the subclass definition.
 
 :mod:`ctypes` uses the native byte order for Structures and Unions.  To build
 structures with non-native byte order, you can use one of the
@@ -2533,6 +2537,12 @@ fields, or any other data types containing pointer type fields.
       when :attr:`_fields_` is assigned, otherwise it will have no effect.
       Setting this attribute to 0 is the same as not setting it at all.
 
+
+   .. attribute:: _align_
+
+      An optional small integer that allows overriding the alignment of
+      the structure when being packed or unpacked to/from memory.
+      Setting this attribute to 0 is the same as not setting it at all.
 
    .. attribute:: _anonymous_
 
