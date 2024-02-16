@@ -39,21 +39,20 @@ Directory and files operations
 
 .. function:: copyfileobj(fsrc, fdst[, length])
 
-   Copy the contents of the :term:`file-like object <file object>` *fsrc* to the
-   file-like object *fdst*. The integer *length*, if given, is the buffer size.
-   In particular, a negative *length* value means to copy the data without looping
-   over the source data in chunks; by default the data is read in chunks to avoid
-   uncontrolled memory consumption. Note that if the current file position of the
-   *fsrc* object is not 0, only the contents from the current file position to the
-   end of the file will be copied.
+   Copy the contents of the :term:`file-like object <file object>` *fsrc* to the file-like object *fdst*.
+   The integer *length*, if given, is the buffer size. In particular, a negative
+   *length* value means to copy the data without looping over the source data in
+   chunks; by default the data is read in chunks to avoid uncontrolled memory
+   consumption. Note that if the current file position of the *fsrc* object is not
+   0, only the contents from the current file position to the end of the file will
+   be copied.
 
 
 .. function:: copyfile(src, dst, *, follow_symlinks=True)
 
    Copy the contents (no metadata) of the file named *src* to a file named
    *dst* and return *dst* in the most efficient way possible.
-   *src* and *dst* are :term:`path-like objects <path-like object>` or path names
-   given as strings.
+   *src* and *dst* are :term:`path-like objects <path-like object>` or path names given as strings.
 
    *dst* must be the complete target file name; look at :func:`~shutil.copy`
    for a copy that accepts a target directory path.  If *src* and *dst*
@@ -95,8 +94,8 @@ Directory and files operations
 .. function:: copymode(src, dst, *, follow_symlinks=True)
 
    Copy the permission bits from *src* to *dst*.  The file contents, owner, and
-   group are unaffected.  *src* and *dst* are
-   :term:`path-like objects <path-like object>` or path names given as strings.
+   group are unaffected.  *src* and *dst* are :term:`path-like objects <path-like object>` or path names
+   given as strings.
    If *follow_symlinks* is false, and both *src* and *dst* are symbolic links,
    :func:`copymode` will attempt to modify the mode of *dst* itself (rather
    than the file it points to).  This functionality is not available on every
@@ -114,8 +113,8 @@ Directory and files operations
    Copy the permission bits, last access time, last modification time, and
    flags from *src* to *dst*.  On Linux, :func:`copystat` also copies the
    "extended attributes" where possible.  The file contents, owner, and
-   group are unaffected.  *src* and *dst* are
-   :term:`path-like objects <path-like object>` or path names given as strings.
+   group are unaffected.  *src* and *dst* are :term:`path-like objects <path-like object>` or path
+   names given as strings.
 
    If *follow_symlinks* is false, and *src* and *dst* both
    refer to symbolic links, :func:`copystat` will operate on
