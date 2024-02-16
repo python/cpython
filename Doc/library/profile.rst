@@ -301,7 +301,7 @@ functions:
 
       The *sort* parameter specifies the sorting order of the displayed
       statistics. It accepts a single key or a tuple of keys to enable
-      multi-level sorting, as in :func:`Stats.sort_stats <pstats.Stats.sort_stats>.
+      multi-level sorting, as in :func:`Stats.sort_stats <pstats.Stats.sort_stats>`.
 
       .. versionadded:: 3.13
          :meth:`~Profile.print_stats` now accepts a tuple of keys.
