@@ -999,7 +999,6 @@ _multibytecodec_MultibyteIncrementalEncoder_setstate_impl(MultibyteIncrementalEn
 {
     PyObject *pending = NULL;
     unsigned char statebytes[1 + MAXENCPENDING*4 + sizeof(self->state.c)];
-    PyObject *excobj = NULL;
 
     if (_PyLong_AsByteArray(statelong, statebytes, sizeof(statebytes),
                             1 /* little-endian */ ,
@@ -1009,13 +1008,15 @@ _multibytecodec_MultibyteIncrementalEncoder_setstate_impl(MultibyteIncrementalEn
     }
 
     if (statebytes[0] > MAXENCPENDING*4) {
-        excobj = PyObject_CallFunction(PyExc_UnicodeEncodeError,
-                                       "ssnns",
-                                       self->codec->encoding,
-                                       statebytes,
-                                       0, sizeof(statebytes),
-                                       "pending buffer too large");
+        PyObject *excobj = PyObject_CallFunction(PyExc_UnicodeEncodeError,
+                                                 "ssnns",
+                                                 self->codec->encoding,
+                                                 statebytes,
+                                                 0, sizeof(statebytes),
+                                                 "pending buffer too large");
+        if (excobj == NULL) goto errorexit;
         PyErr_SetObject(PyExc_UnicodeEncodeError, excobj);
+        Py_DECREF(excobj);
         goto errorexit;
     }
 
@@ -1033,7 +1034,6 @@ _multibytecodec_MultibyteIncrementalEncoder_setstate_impl(MultibyteIncrementalEn
 
 errorexit:
     Py_XDECREF(pending);
-    Py_XDECREF(excobj);
     return NULL;
 }
 
@@ -1284,7 +1284,6 @@ _multibytecodec_MultibyteIncrementalDecoder_setstate_impl(MultibyteIncrementalDe
     Py_ssize_t buffersize;
     const char *bufferstr;
     unsigned char statebytes[8];
-    PyObject *excobj = NULL;
 
     if (!PyArg_ParseTuple(state, "SO!;setstate(): illegal state argument",
                           &buffer, &PyLong_Type, &statelong))
@@ -1305,12 +1304,13 @@ _multibytecodec_MultibyteIncrementalDecoder_setstate_impl(MultibyteIncrementalDe
     }
 
     if (buffersize > MAXDECPENDING) {
-        excobj = PyUnicodeDecodeError_Create(self->codec->encoding,
-                   PyBytes_AS_STRING(buffer), buffersize,
-                   0, buffersize,
-                   "pending buffer too large");
+        PyObject *excobj = PyUnicodeDecodeError_Create(self->codec->encoding,
+                                                       PyBytes_AS_STRING(buffer), buffersize,
+                                                       0, buffersize,
+                                                       "pending buffer too large");
+        if (excobj == NULL) return NULL;
         PyErr_SetObject(PyExc_UnicodeDecodeError, excobj);
-        Py_XDECREF(excobj);
+        Py_DECREF(excobj);
         return NULL;
     }
 
