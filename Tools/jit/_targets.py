@@ -423,7 +423,6 @@ class _MachO(
 
 def get_target(host: str) -> _COFF | _ELF | _MachO:
     """Build a _Target for the given host "triple" and options."""
-    host = "x86_64-apple-darwin"
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
         return _MachO(host, alignment=8, pic=True, prefix="_")
     if re.fullmatch(r"aarch64-.*-linux-gnu", host):
