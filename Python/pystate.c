@@ -395,6 +395,7 @@ _Py_COMP_DIAG_POP
         &(runtime)->atexit.mutex, \
         &(runtime)->audit_hooks.mutex, \
         &(runtime)->allocators.mutex, \
+        &(runtime)->_main_interpreter.types.mutex, \
     }
 
 static void
@@ -499,6 +500,8 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
         _PyMutex_at_fork_reinit(locks[i]);
     }
 
+    _PyTypes_AfterFork();
+
     /* bpo-42540: id_mutex is freed by _PyInterpreterState_Delete, which does
      * not force the default allocator. */
     if (_PyThread_at_fork_reinit(&runtime->interpreters.main->id_mutex) < 0) {
@@ -516,6 +519,8 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
     if (PyThread_tss_create(&runtime->trashTSSkey) != 0) {
         return _PyStatus_NO_MEMORY();
     }
+
+    _PyThread_AfterFork(&runtime->threads);
 
     return _PyStatus_OK();
 }
@@ -609,6 +614,9 @@ init_interpreter(PyInterpreterState *interp,
     _PyGC_InitState(&interp->gc);
     PyConfig_InitPythonConfig(&interp->config);
     _PyType_InitCache(interp);
+#ifdef Py_GIL_DISABLED
+    _Py_brc_init_state(interp);
+#endif
     for (int i = 0; i < _PY_MONITORING_UNGROUPED_EVENTS; i++) {
         interp->monitors.tools[i] = 0;
     }
@@ -620,9 +628,7 @@ init_interpreter(PyInterpreterState *interp,
     }
     interp->sys_profile_initialized = false;
     interp->sys_trace_initialized = false;
-    interp->optimizer = &_PyOptimizer_Default;
-    interp->optimizer_backedge_threshold = _PyOptimizer_Default.backedge_threshold;
-    interp->optimizer_resume_threshold = _PyOptimizer_Default.backedge_threshold;
+    (void)_Py_SetOptimizer(interp, NULL);
     interp->next_func_version = 1;
     interp->executor_list_head = NULL;
     if (interp != &runtime->_main_interpreter) {
@@ -775,10 +781,8 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
         tstate->_status.cleared = 0;
     }
 
-    Py_CLEAR(interp->optimizer);
-    interp->optimizer = &_PyOptimizer_Default;
-    interp->optimizer_backedge_threshold = _PyOptimizer_Default.backedge_threshold;
-    interp->optimizer_resume_threshold = _PyOptimizer_Default.backedge_threshold;
+    _PyOptimizerObject *old = _Py_SetOptimizer(interp, NULL);
+    Py_DECREF(old);
 
     /* It is possible that any of the objects below have a finalizer
        that runs Python code or otherwise relies on a thread state
@@ -1043,7 +1047,14 @@ _PyInterpreterState_SetNotRunningMain(PyInterpreterState *interp)
 int
 _PyInterpreterState_IsRunningMain(PyInterpreterState *interp)
 {
-    return (interp->threads.main != NULL);
+    if (interp->threads.main != NULL) {
+        return 1;
+    }
+    // For now, we assume the main interpreter is always running.
+    if (_Py_IsMainInterpreter(interp)) {
+        return 1;
+    }
+    return 0;
 }
 
 int
@@ -1334,6 +1345,11 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     tstate->datastack_limit = NULL;
     tstate->what_event = -1;
 
+#ifdef Py_GIL_DISABLED
+    // Initialize biased reference counting inter-thread queue
+    _Py_brc_init_thread(tstate);
+#endif
+
     if (interp->stoptheworld.requested || _PyRuntime.stoptheworld.requested) {
         // Start in the suspended state if there is an ongoing stop-the-world.
         tstate->state = _Py_THREAD_SUSPENDED;
@@ -1459,17 +1475,6 @@ clear_datastack(PyThreadState *tstate)
 }
 
 void
-_Py_ClearFreeLists(_PyFreeListState *state, int is_finalization)
-{
-    _PyFloat_ClearFreeList(state, is_finalization);
-    _PyTuple_ClearFreeList(state, is_finalization);
-    _PyList_ClearFreeList(state, is_finalization);
-    _PyContext_ClearFreeList(state, is_finalization);
-    _PyAsyncGen_ClearFreeLists(state, is_finalization);
-    _PyObjectStackChunk_ClearFreeList(state, is_finalization);
-}
-
-void
 PyThreadState_Clear(PyThreadState *tstate)
 {
     assert(tstate->_status.initialized && !tstate->_status.cleared);
@@ -1553,9 +1558,11 @@ PyThreadState_Clear(PyThreadState *tstate)
     }
 #ifdef Py_GIL_DISABLED
     // Each thread should clear own freelists in free-threading builds.
-    _PyFreeListState *freelist_state = &((_PyThreadStateImpl*)tstate)->freelist_state;
-    _Py_ClearFreeLists(freelist_state, 1);
-    _PySlice_ClearCache(freelist_state);
+    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
+    _PyObject_ClearFreeLists(freelists, 1);
+
+    // Remove ourself from the biased reference counting table of threads.
+    _Py_brc_remove_thread(tstate);
 #endif
 
     _PyThreadState_ClearMimallocHeaps(tstate);
@@ -2485,7 +2492,17 @@ PyGILState_Check(void)
         return 0;
     }
 
-    return (tstate == gilstate_tss_get(runtime));
+#ifdef MS_WINDOWS
+    int err = GetLastError();
+#endif
+
+    PyThreadState *tcur = gilstate_tss_get(runtime);
+
+#ifdef MS_WINDOWS
+    SetLastError(err);
+#endif
+
+    return (tstate == tcur);
 }
 
 PyGILState_STATE

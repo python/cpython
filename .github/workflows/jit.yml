@@ -4,10 +4,14 @@ on:
     paths:
       - '**jit**'
       - 'Python/bytecodes.c'
+      - 'Python/optimizer*.c'
+      - 'Python/tier2_redundancy_eliminator_bytecodes.c'
   push:
     paths:
       - '**jit**'
       - 'Python/bytecodes.c'
+      - 'Python/optimizer*.c'
+      - 'Python/tier2_redundancy_eliminator_bytecodes.c'
   workflow_dispatch:
 
 concurrency:
@@ -18,6 +22,7 @@ jobs:
   jit:
     name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }})
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:

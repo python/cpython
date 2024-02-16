@@ -1,4 +1,6 @@
+import contextlib
 import dis
+import io
 import math
 import os
 import unittest
@@ -812,6 +814,30 @@ class TestSpecifics(unittest.TestCase):
             'RETURN_CONST',
             list(dis.get_instructions(unused_code_at_end))[-1].opname)
 
+    @support.cpython_only
+    def test_docstring_omitted(self):
+        # See gh-115347
+        src = textwrap.dedent("""
+            def f():
+                "docstring1"
+                def h():
+                    "docstring2"
+                    return 42
+
+                class C:
+                    "docstring3"
+                    pass
+
+                return h
+        """)
+        for opt in [-1, 0, 1, 2]:
+            with self.subTest(opt=opt):
+                code = compile(src, "<test>", "exec", optimize=opt)
+                output = io.StringIO()
+                with contextlib.redirect_stdout(output):
+                    dis.dis(code)
+                self.assertNotIn('NOP' , output.getvalue())
+
     def test_dont_merge_constants(self):
         # Issue #25843: compile() must not merge constants which are equal
         # but have a different type.
@@ -1104,6 +1130,17 @@ class TestSpecifics(unittest.TestCase):
         code_lines = self.get_code_lines(test.__code__)
         self.assertEqual(expected_lines, code_lines)
 
+    def check_line_numbers(self, code, opnames=None):
+        # Check that all instructions whose op matches opnames
+        # have a line number. opnames can be a single name, or
+        # a sequence of names. If it is None, match all ops.
+
+        if isinstance(opnames, str):
+            opnames = (opnames, )
+        for inst in dis.Bytecode(code):
+            if opnames and inst.opname in opnames:
+                self.assertIsNotNone(inst.positions.lineno)
+
     def test_line_number_synthetic_jump_multiple_predecessors(self):
         def f():
             for x in it:
@@ -1113,25 +1150,52 @@ class TestSpecifics(unittest.TestCase):
                 except OSError:
                     pass
 
-        # Ensure that all JUMP_BACKWARDs have line number
-        code = f.__code__
-        for inst in dis.Bytecode(code):
-            if inst.opname == 'JUMP_BACKWARD':
-                self.assertIsNotNone(inst.positions.lineno)
+        self.check_line_numbers(f.__code__, 'JUMP_BACKWARD')
 
-    def test_lineno_of_backward_jump(self):
+    def test_line_number_synthetic_jump_multiple_predecessors_nested(self):
+        def f():
+            for x in it:
+                try:
+                    X = 3
+                except OSError:
+                    try:
+                        if C3:
+                            X = 4
+                    except OSError:
+                        pass
+            return 42
+
+        self.check_line_numbers(f.__code__, 'JUMP_BACKWARD')
+
+    def test_line_number_synthetic_jump_multiple_predecessors_more_nested(self):
+        def f():
+            for x in it:
+                try:
+                    X = 3
+                except OSError:
+                    try:
+                        if C3:
+                            if C4:
+                                X = 4
+                    except OSError:
+                        try:
+                            if C3:
+                                if C4:
+                                    X = 5
+                        except OSError:
+                            pass
+            return 42
+
+        self.check_line_numbers(f.__code__, 'JUMP_BACKWARD')
+
+    def test_lineno_of_backward_jump_conditional_in_loop(self):
         # Issue gh-107901
         def f():
             for i in x:
                 if y:
                     pass
 
-        linenos = list(inst.positions.lineno
-                       for inst in dis.get_instructions(f.__code__)
-                       if inst.opname == 'JUMP_BACKWARD')
-
-        self.assertTrue(len(linenos) > 0)
-        self.assertTrue(all(l is not None for l in linenos))
+        self.check_line_numbers(f.__code__, 'JUMP_BACKWARD')
 
     def test_big_dict_literal(self):
         # The compiler has a flushing point in "compiler_dict" that calls compiles

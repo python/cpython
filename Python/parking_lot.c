@@ -244,6 +244,7 @@ dequeue(Bucket *bucket, const void *address)
         if (wait->addr == (uintptr_t)address) {
             llist_remove(node);
             --bucket->num_waiters;
+            wait->is_unparking = true;
             return wait;
         }
     }
@@ -262,6 +263,7 @@ dequeue_all(Bucket *bucket, const void *address, struct llist_node *dst)
             llist_remove(node);
             llist_insert_tail(dst, node);
             --bucket->num_waiters;
+            wait->is_unparking = true;
         }
     }
 }
@@ -337,8 +339,6 @@ _PyParkingLot_Unpark(const void *addr, _Py_unpark_fn_t *fn, void *arg)
     _PyRawMutex_Lock(&bucket->mutex);
     struct wait_entry *waiter = dequeue(bucket, addr);
     if (waiter) {
-        waiter->is_unparking = true;
-
         int has_more_waiters = (bucket->num_waiters > 0);
         fn(arg, waiter->park_arg, has_more_waiters);
     }
