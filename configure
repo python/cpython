@@ -834,7 +834,7 @@ LIBPL
 PY_ENABLE_SHARED
 PLATLIBDIR
 BINLIBDEST
-LIBPYTHON
+MODULE_LDFLAGS
 MODULE_DEPS_SHARED
 EXT_SUFFIX
 ALT_SOABI
@@ -13627,7 +13627,13 @@ then :
 else $as_nop
   if test "$cross_compiling" = yes
 then :
+
+# "yes" changes the hash function to FNV, which breaks Numba.
+if test "$ac_sys_system" = "Linux-android" || test "$ac_sys_system" = "iOS"; then
+  ac_cv_aligned_required=no
+else
   ac_cv_aligned_required=yes
+fi
 else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -22004,7 +22010,9 @@ else $as_nop
   if test "$cross_compiling" = yes
 then :
 
-if test "${enable_ipv6+set}" = set; then
+if test "$ac_sys_system" = "Linux-android" || test "$ac_sys_system" = "iOS"; then
+  ac_cv_buggy_getaddrinfo="no"
+elif test "${enable_ipv6+set}" = set; then
   ac_cv_buggy_getaddrinfo="no -- configured with --(en|dis)able-ipv6"
 else
   ac_cv_buggy_getaddrinfo=yes
@@ -23931,16 +23939,14 @@ LDVERSION='$(VERSION)$(ABIFLAGS)'
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $LDVERSION" >&5
 printf "%s\n" "$LDVERSION" >&6; }
 
-
-MODULE_DEPS_SHARED='$(MODULE_DEPS_STATIC) $(EXPORTSYMS)'
-
 # On Android and Cygwin the shared libraries must be linked with libpython.
 
+
+MODULE_DEPS_SHARED='$(MODULE_DEPS_STATIC) $(EXPORTSYMS)'
+MODULE_LDFLAGS=''
 if test "$PY_ENABLE_SHARED" = "1" && ( test -n "$ANDROID_API_LEVEL" || test "$MACHDEP" = "cygwin"); then
-  LIBPYTHON="$BLDLIBRARY"
   MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(LDLIBRARY)"
-else
-  LIBPYTHON=''
+  MODULE_LDFLAGS="\$(BLDLIBRARY)"
 fi
 
 
@@ -26671,24 +26677,28 @@ CPPFLAGS=$ac_save_cppflags
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for device files" >&5
 printf "%s\n" "$as_me: checking for device files" >&6;}
 
-if test "x$cross_compiling" = xyes; then
-  if test "${ac_cv_file__dev_ptmx+set}" != set; then
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for /dev/ptmx" >&5
+if test "$ac_sys_system" = "Linux-android" || test "$ac_sys_system" = "iOS"; then
+  ac_cv_file__dev_ptmx=no
+  ac_cv_file__dev_ptc=no
+else
+  if test "x$cross_compiling" = xyes; then
+    if test "${ac_cv_file__dev_ptmx+set}" != set; then
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for /dev/ptmx" >&5
 printf %s "checking for /dev/ptmx... " >&6; }
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: not set" >&5
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: not set" >&5
 printf "%s\n" "not set" >&6; }
-    as_fn_error $? "set ac_cv_file__dev_ptmx to yes/no in your CONFIG_SITE file when cross compiling" "$LINENO" 5
-  fi
-  if test "${ac_cv_file__dev_ptc+set}" != set; then
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for /dev/ptc" >&5
+      as_fn_error $? "set ac_cv_file__dev_ptmx to yes/no in your CONFIG_SITE file when cross compiling" "$LINENO" 5
+    fi
+    if test "${ac_cv_file__dev_ptc+set}" != set; then
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for /dev/ptc" >&5
 printf %s "checking for /dev/ptc... " >&6; }
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: not set" >&5
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: not set" >&5
 printf "%s\n" "not set" >&6; }
-    as_fn_error $? "set ac_cv_file__dev_ptc to yes/no in your CONFIG_SITE file when cross compiling" "$LINENO" 5
+      as_fn_error $? "set ac_cv_file__dev_ptc to yes/no in your CONFIG_SITE file when cross compiling" "$LINENO" 5
+    fi
   fi
-fi
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for /dev/ptmx" >&5
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for /dev/ptmx" >&5
 printf %s "checking for /dev/ptmx... " >&6; }
 if test ${ac_cv_file__dev_ptmx+y}
 then :
@@ -26709,12 +26719,12 @@ then :
 
 fi
 
-if test "x$ac_cv_file__dev_ptmx" = xyes; then
+  if test "x$ac_cv_file__dev_ptmx" = xyes; then
 
 printf "%s\n" "#define HAVE_DEV_PTMX 1" >>confdefs.h
 
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for /dev/ptc" >&5
+  fi
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for /dev/ptc" >&5
 printf %s "checking for /dev/ptc... " >&6; }
 if test ${ac_cv_file__dev_ptc+y}
 then :
@@ -26735,10 +26745,11 @@ then :
 
 fi
 
-if test "x$ac_cv_file__dev_ptc" = xyes; then
+  if test "x$ac_cv_file__dev_ptc" = xyes; then
 
 printf "%s\n" "#define HAVE_DEV_PTC 1" >>confdefs.h
 
+  fi
 fi
 
 if test $ac_sys_system = Darwin

@@ -3567,7 +3567,13 @@ int main(void)
 }]])],
 [ac_cv_aligned_required=no],
 [ac_cv_aligned_required=yes],
-[ac_cv_aligned_required=yes])
+[
+# "yes" changes the hash function to FNV, which breaks Numba.
+if test "$ac_sys_system" = "Linux-android" || test "$ac_sys_system" = "iOS"; then
+  ac_cv_aligned_required=no
+else
+  ac_cv_aligned_required=yes
+fi])
 ])
 if test "$ac_cv_aligned_required" = yes ; then
   AC_DEFINE([HAVE_ALIGNED_REQUIRED], [1],
@@ -5275,7 +5281,9 @@ int main(void)
 [ac_cv_buggy_getaddrinfo=no],
 [ac_cv_buggy_getaddrinfo=yes],
 [
-if test "${enable_ipv6+set}" = set; then
+if test "$ac_sys_system" = "Linux-android" || test "$ac_sys_system" = "iOS"; then
+  ac_cv_buggy_getaddrinfo="no"
+elif test "${enable_ipv6+set}" = set; then
   ac_cv_buggy_getaddrinfo="no -- configured with --(en|dis)able-ipv6"
 else
   ac_cv_buggy_getaddrinfo=yes
@@ -5851,16 +5859,14 @@ AC_MSG_CHECKING([LDVERSION])
 LDVERSION='$(VERSION)$(ABIFLAGS)'
 AC_MSG_RESULT([$LDVERSION])
 
-AC_SUBST([MODULE_DEPS_SHARED])
-MODULE_DEPS_SHARED='$(MODULE_DEPS_STATIC) $(EXPORTSYMS)'
-
 # On Android and Cygwin the shared libraries must be linked with libpython.
-AC_SUBST([LIBPYTHON])
+AC_SUBST([MODULE_DEPS_SHARED])
+AC_SUBST([MODULE_LDFLAGS])
+MODULE_DEPS_SHARED='$(MODULE_DEPS_STATIC) $(EXPORTSYMS)'
+MODULE_LDFLAGS=''
 if test "$PY_ENABLE_SHARED" = "1" && ( test -n "$ANDROID_API_LEVEL" || test "$MACHDEP" = "cygwin"); then
-  LIBPYTHON="$BLDLIBRARY"
   MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(LDLIBRARY)"
-else
-  LIBPYTHON=''
+  MODULE_LDFLAGS="\$(BLDLIBRARY)"
 fi
 
 
@@ -6492,28 +6498,35 @@ CPPFLAGS=$ac_save_cppflags
 AC_MSG_NOTICE([checking for device files])
 
 dnl NOTE: Inform user how to proceed with files when cross compiling.
-if test "x$cross_compiling" = xyes; then
-  if test "${ac_cv_file__dev_ptmx+set}" != set; then
-    AC_MSG_CHECKING([for /dev/ptmx])
-    AC_MSG_RESULT([not set])
-    AC_MSG_ERROR([set ac_cv_file__dev_ptmx to yes/no in your CONFIG_SITE file when cross compiling])
+dnl Some cross-compile builds are predictable; they won't ever
+dnl have /dev/ptmx or /dev/ptc, so we can set them explicitly.
+if test "$ac_sys_system" = "Linux-android" || test "$ac_sys_system" = "iOS"; then
+  ac_cv_file__dev_ptmx=no
+  ac_cv_file__dev_ptc=no
+else
+  if test "x$cross_compiling" = xyes; then
+    if test "${ac_cv_file__dev_ptmx+set}" != set; then
+      AC_MSG_CHECKING([for /dev/ptmx])
+      AC_MSG_RESULT([not set])
+      AC_MSG_ERROR([set ac_cv_file__dev_ptmx to yes/no in your CONFIG_SITE file when cross compiling])
+    fi
+    if test "${ac_cv_file__dev_ptc+set}" != set; then
+      AC_MSG_CHECKING([for /dev/ptc])
+      AC_MSG_RESULT([not set])
+      AC_MSG_ERROR([set ac_cv_file__dev_ptc to yes/no in your CONFIG_SITE file when cross compiling])
+    fi
   fi
-  if test "${ac_cv_file__dev_ptc+set}" != set; then
-    AC_MSG_CHECKING([for /dev/ptc])
-    AC_MSG_RESULT([not set])
-    AC_MSG_ERROR([set ac_cv_file__dev_ptc to yes/no in your CONFIG_SITE file when cross compiling])
-  fi
-fi
 
-AC_CHECK_FILE([/dev/ptmx], [], [])
-if test "x$ac_cv_file__dev_ptmx" = xyes; then
-  AC_DEFINE([HAVE_DEV_PTMX], [1],
-  [Define to 1 if you have the /dev/ptmx device file.])
-fi
-AC_CHECK_FILE([/dev/ptc], [], [])
-if test "x$ac_cv_file__dev_ptc" = xyes; then
-  AC_DEFINE([HAVE_DEV_PTC], [1],
-  [Define to 1 if you have the /dev/ptc device file.])
+  AC_CHECK_FILE([/dev/ptmx], [], [])
+  if test "x$ac_cv_file__dev_ptmx" = xyes; then
+    AC_DEFINE([HAVE_DEV_PTMX], [1],
+    [Define to 1 if you have the /dev/ptmx device file.])
+  fi
+  AC_CHECK_FILE([/dev/ptc], [], [])
+  if test "x$ac_cv_file__dev_ptc" = xyes; then
+    AC_DEFINE([HAVE_DEV_PTC], [1],
+    [Define to 1 if you have the /dev/ptc device file.])
+  fi
 fi
 
 if test $ac_sys_system = Darwin
