@@ -3256,11 +3256,11 @@ class TextIO(IO[str]):
 
 class _DeprecatedType(type):
     def __getattribute__(cls, name):
-        if name not in ("__dict__", "__module__") and name in cls.__dict__:
+        if name not in {"__dict__", "__module__", "__doc__"} and name in cls.__dict__:
             warnings.warn(
                 f"{cls.__name__} is deprecated, import directly "
                 f"from typing instead. {cls.__name__} will be removed "
-                "in Python 3.12.",
+                "in Python 3.13.",
                 DeprecationWarning,
                 stacklevel=2,
             )
