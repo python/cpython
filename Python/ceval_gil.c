@@ -610,8 +610,16 @@ PyEval_SaveThread(void)
 void
 PyEval_RestoreThread(PyThreadState *tstate)
 {
+#ifdef MS_WINDOWS
+    int err = GetLastError();
+#endif
+
     _Py_EnsureTstateNotNULL(tstate);
     _PyThreadState_Attach(tstate);
+
+#ifdef MS_WINDOWS
+    SetLastError(err);
+#endif
 }
 
 
@@ -949,6 +957,15 @@ _Py_HandlePending(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
 
+    /* Stop-the-world */
+    if (_Py_eval_breaker_bit_is_set(interp, _PY_EVAL_PLEASE_STOP_BIT)) {
+        _Py_set_eval_breaker_bit(interp, _PY_EVAL_PLEASE_STOP_BIT, 0);
+        _PyThreadState_Suspend(tstate);
+
+        /* The attach blocks until the stop-the-world event is complete. */
+        _PyThreadState_Attach(tstate);
+    }
+
     /* Pending signals */
     if (_Py_eval_breaker_bit_is_set(interp, _PY_SIGNALS_PENDING_BIT)) {
         if (handle_signals(tstate) != 0) {
@@ -962,6 +979,14 @@ _Py_HandlePending(PyThreadState *tstate)
             return -1;
         }
     }
+
+#ifdef Py_GIL_DISABLED
+    /* Objects with refcounts to merge */
+    if (_Py_eval_breaker_bit_is_set(interp, _PY_EVAL_EXPLICIT_MERGE_BIT)) {
+        _Py_set_eval_breaker_bit(interp, _PY_EVAL_EXPLICIT_MERGE_BIT, 0);
+        _Py_brc_merge_refcounts(tstate);
+    }
+#endif
 
     /* GC scheduled to run */
     if (_Py_eval_breaker_bit_is_set(interp, _PY_GC_SCHEDULED_BIT)) {

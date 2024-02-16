@@ -9,7 +9,7 @@ from test import test_tools
 
 
 def skip_if_different_mount_drives():
-    if sys.platform != 'win32':
+    if sys.platform != "win32":
         return
     ROOT = os.path.dirname(os.path.dirname(__file__))
     root_drive = os.path.splitroot(ROOT)[0]
@@ -22,15 +22,18 @@ def skip_if_different_mount_drives():
             f"directory have different mount drives "
             f"({cwd_drive} and {root_drive})"
         )
+
+
 skip_if_different_mount_drives()
 
 
-test_tools.skip_if_missing('cases_generator')
-with test_tools.imports_under_tool('cases_generator'):
+test_tools.skip_if_missing("cases_generator")
+with test_tools.imports_under_tool("cases_generator"):
     from analyzer import StackItem
     import parser
     from stack import Stack
     import tier1_generator
+    import tier2_abstract_generator
 
 
 def handle_stderr():
@@ -39,13 +42,14 @@ def handle_stderr():
     else:
         return support.captured_stderr()
 
+
 class TestEffects(unittest.TestCase):
     def test_effect_sizes(self):
         stack = Stack()
         inputs = [
-            x:= StackItem("x", None, "", "1"),
-            y:= StackItem("y", None, "", "oparg"),
-            z:= StackItem("z", None, "", "oparg*2"),
+            x := StackItem("x", None, "", "1"),
+            y := StackItem("y", None, "", "oparg"),
+            z := StackItem("z", None, "", "oparg*2"),
         ]
         outputs = [
             StackItem("x", None, "", "1"),
@@ -96,9 +100,7 @@ class TestGeneratedCases(unittest.TestCase):
 
         with handle_stderr():
             tier1_generator.generate_tier1_from_files(
-                [self.temp_input_filename],
-                self.temp_output_filename,
-                False
+                [self.temp_input_filename], self.temp_output_filename, False
             )
 
         with open(self.temp_output_filename) as temp_output:
@@ -750,7 +752,7 @@ class TestGeneratedCases(unittest.TestCase):
 
     def test_annotated_inst(self):
         input = """
-        guard inst(OP, (--)) {
+        pure inst(OP, (--)) {
             ham();
         }
         """
@@ -767,7 +769,7 @@ class TestGeneratedCases(unittest.TestCase):
 
     def test_annotated_op(self):
         input = """
-        guard op(OP, (--)) {
+        pure op(OP, (--)) {
             spam();
         }
         macro(M) = OP;
@@ -784,12 +786,164 @@ class TestGeneratedCases(unittest.TestCase):
         self.run_cases_test(input, output)
 
         input = """
-        guard register specializing op(OP, (--)) {
+        pure register specializing op(OP, (--)) {
             spam();
         }
         macro(M) = OP;
         """
         self.run_cases_test(input, output)
+
+
+class TestGeneratedAbstractCases(unittest.TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.maxDiff = None
+
+        self.temp_dir = tempfile.gettempdir()
+        self.temp_input_filename = os.path.join(self.temp_dir, "input.txt")
+        self.temp_input2_filename = os.path.join(self.temp_dir, "input2.txt")
+        self.temp_output_filename = os.path.join(self.temp_dir, "output.txt")
+
+    def tearDown(self) -> None:
+        for filename in [
+            self.temp_input_filename,
+            self.temp_input2_filename,
+            self.temp_output_filename,
+        ]:
+            try:
+                os.remove(filename)
+            except:
+                pass
+        super().tearDown()
+
+    def run_cases_test(self, input: str, input2: str, expected: str):
+        with open(self.temp_input_filename, "w+") as temp_input:
+            temp_input.write(parser.BEGIN_MARKER)
+            temp_input.write(input)
+            temp_input.write(parser.END_MARKER)
+            temp_input.flush()
+
+        with open(self.temp_input2_filename, "w+") as temp_input:
+            temp_input.write(parser.BEGIN_MARKER)
+            temp_input.write(input2)
+            temp_input.write(parser.END_MARKER)
+            temp_input.flush()
+
+        with handle_stderr():
+            tier2_abstract_generator.generate_tier2_abstract_from_files(
+                [self.temp_input_filename, self.temp_input2_filename],
+                self.temp_output_filename
+            )
+
+        with open(self.temp_output_filename) as temp_output:
+            lines = temp_output.readlines()
+            while lines and lines[0].startswith(("// ", "#", "    #", "\n")):
+                lines.pop(0)
+            while lines and lines[-1].startswith(("#", "\n")):
+                lines.pop(-1)
+        actual = "".join(lines)
+        self.assertEqual(actual.strip(), expected.strip())
+
+    def test_overridden_abstract(self):
+        input = """
+        pure op(OP, (--)) {
+            spam();
+        }
+        """
+        input2 = """
+        pure op(OP, (--)) {
+            eggs();
+        }
+        """
+        output = """
+        case OP: {
+            eggs();
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+    def test_overridden_abstract_args(self):
+        input = """
+        pure op(OP, (arg1 -- out)) {
+            spam();
+        }
+        op(OP2, (arg1 -- out)) {
+            eggs();
+        }
+        """
+        input2 = """
+        op(OP, (arg1 -- out)) {
+            eggs();
+        }
+        """
+        output = """
+        case OP: {
+            _Py_UOpsSymType *arg1;
+            _Py_UOpsSymType *out;
+            arg1 = stack_pointer[-1];
+            eggs();
+            stack_pointer[-1] = out;
+            break;
+        }
+
+        case OP2: {
+            _Py_UOpsSymType *out;
+            out = sym_new_unknown(ctx);
+            if (out == NULL) goto out_of_space;
+            stack_pointer[-1] = out;
+            break;
+        }
+       """
+        self.run_cases_test(input, input2, output)
+
+    def test_no_overridden_case(self):
+        input = """
+        pure op(OP, (arg1 -- out)) {
+            spam();
+        }
+
+        pure op(OP2, (arg1 -- out)) {
+        }
+
+        """
+        input2 = """
+        pure op(OP2, (arg1 -- out)) {
+        }
+        """
+        output = """
+        case OP: {
+            _Py_UOpsSymType *out;
+            out = sym_new_unknown(ctx);
+            if (out == NULL) goto out_of_space;
+            stack_pointer[-1] = out;
+            break;
+        }
+
+        case OP2: {
+            _Py_UOpsSymType *arg1;
+            _Py_UOpsSymType *out;
+            arg1 = stack_pointer[-1];
+            stack_pointer[-1] = out;
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+    def test_missing_override_failure(self):
+        input = """
+        pure op(OP, (arg1 -- out)) {
+            spam();
+        }
+        """
+        input2 = """
+        pure op(OTHER, (arg1 -- out)) {
+        }
+        """
+        output = """
+        """
+        with self.assertRaisesRegex(AssertionError, "All abstract uops"):
+            self.run_cases_test(input, input2, output)
 
 
 if __name__ == "__main__":
