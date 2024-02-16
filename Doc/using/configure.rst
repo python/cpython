@@ -1078,7 +1078,7 @@ make regen-all
 Regenerate (almost) all generated files. These include (but are not
 limited to) bytecode cases, parser generator files, and SBOM file.
 ``make regen-stdlib-module-names`` and ``autoconf`` must be run
-separately for the remaining generated files.
+separately for the remaining `generated files <#generated-files>`_.
 
 
 C extensions
