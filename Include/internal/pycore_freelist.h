@@ -105,11 +105,15 @@ struct _Py_async_gen_freelist {
        fragmentation, as _PyAsyncGenWrappedValue and PyAsyncGenASend
        are short-living objects that are instantiated for every
        __anext__() call. */
-    struct _PyAsyncGenWrappedValue* value_freelist[_PyAsyncGen_MAXFREELIST];
-    int value_numfree;
+    struct _PyAsyncGenWrappedValue* items[_PyAsyncGen_MAXFREELIST];
+    int numfree;
+#endif
+};
 
-    struct PyAsyncGenASend* asend_freelist[_PyAsyncGen_MAXFREELIST];
-    int asend_numfree;
+struct _Py_async_gen_asend_freelist {
+#ifdef WITH_FREELISTS
+    struct PyAsyncGenASend* items[_PyAsyncGen_MAXFREELIST];
+    int numfree;
 #endif
 };
 
@@ -129,6 +133,7 @@ struct _Py_object_freelists {
     struct _Py_slice_freelist slices;
     struct _Py_context_freelist contexts;
     struct _Py_async_gen_freelist async_gens;
+    struct _Py_async_gen_asend_freelist async_gen_asends;
     struct _Py_object_stack_freelist object_stacks;
 };
 
