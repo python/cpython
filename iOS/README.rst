@@ -222,7 +222,7 @@ You now have a Python.xcframework that can be used in a project.
 Testing Python on iOS
 =====================
 
-The ``Tools/iOSTestbed`` folder that contains an Xcode project that is able to run
+The ``iOS/testbed`` folder that contains an Xcode project that is able to run
 the iOS test suite. This project converts the Python test suite into a single
 test case in Xcode's XCTest framework. The single XCTest passes if the test
 suite passes.
@@ -231,7 +231,7 @@ To run the test suite, configure a Python build for an iOS simulator (i.e.,
 ``--host=arm64-apple-ios-simulator`` or ``--host=x86_64-apple-ios-simulator``
 ), setting the framework location to the testbed project::
 
-    --enable-framework="./Tools/iOSTestbed/Python.xcframework/ios-arm64_x86_64-simulator"
+    --enable-framework="./iOS/testbed/Python.xcframework/ios-arm64_x86_64-simulator"
 
 Then run ``make all install testiOS``. This will build an iOS framework for your
 chosen architecture, install the Python iOS framework into the testbed project,
