@@ -1998,7 +1998,7 @@ class InstructionTests(InstructionTestCase):
             arg_resolver = MyArgResolver(*init_args)
             return arg_resolver.get_argval_argrepr(opcode, oparg, offset)
     
-        offset = 42               
+        offset = 42
         self.assertEqual(f(opcode.opmap["JUMP_BACKWARD"], 1, offset), (2, 'to L4'))
         self.assertEqual(f(opcode.opmap["SETUP_FINALLY"], 2, offset), (3, 'to L6'))
 
