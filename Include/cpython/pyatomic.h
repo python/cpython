@@ -360,6 +360,8 @@ _Py_atomic_load_ssize_relaxed(const Py_ssize_t *obj);
 static inline void *
 _Py_atomic_load_ptr_relaxed(const void *obj);
 
+static inline unsigned long long
+_Py_atomic_load_ullong_relaxed(const unsigned long long *obj);
 
 // --- _Py_atomic_store ------------------------------------------------------
 // Atomically performs `*obj = value` (sequential consistency)
@@ -451,6 +453,10 @@ _Py_atomic_store_ptr_relaxed(void *obj, void *value);
 
 static inline void
 _Py_atomic_store_ssize_relaxed(Py_ssize_t *obj, Py_ssize_t value);
+
+static inline void
+_Py_atomic_store_ullong_relaxed(unsigned long long *obj,
+                                unsigned long long value);
 
 
 // --- _Py_atomic_load_ptr_acquire / _Py_atomic_store_ptr_release ------------
