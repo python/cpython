@@ -1,0 +1,2 @@
+Add instructions and a script to build for Android, and fix related build
+issues.
