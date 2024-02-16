@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import collections
 from collections.abc import KeysView
+from dataclasses import dataclass
 from datetime import date
 import enum
 import functools
@@ -21,6 +22,7 @@ import os
 from pathlib import Path
 import re
 import sys
+import textwrap
 from typing import Any, Callable, TextIO, TypeAlias
 
 
@@ -113,6 +115,64 @@ def load_raw_data(input: Path) -> RawData:
 
 def save_raw_data(data: RawData, json_output: TextIO):
     json.dump(data, json_output)
+
+
+@dataclass(frozen=True)
+class Doc:
+    text: str
+    doc: str
+
+    def markdown(self) -> str:
+        return textwrap.dedent(
+            f"""
+            {self.text}
+            <details>
+            <summary>ⓘ</summary>
+
+            {self.doc}
+            </details>
+            """
+        )
+
+
+class Count(int):
+    def markdown(self) -> str:
+        return format(self, ",d")
+
+
+@dataclass(frozen=True)
+class Ratio:
+    num: int
+    den: int | None = None
+    percentage: bool = True
+
+    def __float__(self):
+        if self.den == 0:
+            return 0.0
+        elif self.den is None:
+            return self.num
+        else:
+            return self.num / self.den
+
+    def markdown(self) -> str:
+        if self.den is None:
+            return ""
+        elif self.den == 0:
+            if self.num != 0:
+                return f"{self.num:,} / 0 !!"
+            return ""
+        elif self.percentage:
+            return f"{self.num / self.den:,.01%}"
+        else:
+            return f"{self.num / self.den:,.02f}"
+
+
+class DiffRatio(Ratio):
+    def __init__(self, base: int | str, head: int | str):
+        if isinstance(base, str) or isinstance(head, str):
+            super().__init__(0, 0)
+        else:
+            super().__init__(head - base, base)
 
 
 class OpcodeStats:
@@ -389,17 +449,54 @@ class Stats:
         low_confidence = self._data["Optimization low confidence"]
 
         return {
-            "Optimization attempts": (attempts, None),
-            "Traces created": (created, attempts),
-            "Trace stack overflow": (trace_stack_overflow, attempts),
-            "Trace stack underflow": (trace_stack_underflow, attempts),
-            "Trace too long": (trace_too_long, attempts),
-            "Trace too short": (trace_too_short, attempts),
-            "Inner loop found": (inner_loop, attempts),
-            "Recursive call": (recursive_call, attempts),
-            "Low confidence": (low_confidence, attempts),
-            "Traces executed": (executed, None),
-            "Uops executed": (uops, executed),
+            Doc(
+                "Optimization attempts",
+                "The number of times a potential trace is identified.  Specifically, this "
+                "occurs in the JUMP BACKWARD instruction when the counter reaches a "
+                "threshold.",
+            ): (
+                attempts,
+                None,
+            ),
+            Doc(
+                "Traces created", "The number of traces that were successfully created."
+            ): (created, attempts),
+            Doc(
+                "Trace stack overflow",
+                "A trace is truncated because it would require more than 5 stack frames.",
+            ): (trace_stack_overflow, attempts),
+            Doc(
+                "Trace stack underflow",
+                "A potential trace is abandoned because it pops more frames than it pushes.",
+            ): (trace_stack_underflow, attempts),
+            Doc(
+                "Trace too long",
+                "A trace is truncated because it is longer than the instruction buffer.",
+            ): (trace_too_long, attempts),
+            Doc(
+                "Trace too short",
+                "A potential trace is abandoced because it it too short.",
+            ): (trace_too_short, attempts),
+            Doc(
+                "Inner loop found", "A trace is truncated because it has an inner loop"
+            ): (inner_loop, attempts),
+            Doc(
+                "Recursive call",
+                "A trace is truncated because it has a recursive call.",
+            ): (recursive_call, attempts),
+            Doc(
+                "Low confidence",
+                "A trace is abandoned because the likelihood of the jump to top being taken "
+                "is too low.",
+            ): (low_confidence, attempts),
+            Doc("Traces executed", "The number of traces that were executed"): (
+                executed,
+                None,
+            ),
+            Doc("Uops executed", "The total number of uops (micro-operations) that were executed"): (
+                uops,
+                executed,
+            ),
         }
 
     def get_histogram(self, prefix: str) -> list[tuple[int, int]]:
@@ -415,50 +512,10 @@ class Stats:
     def get_rare_events(self) -> list[tuple[str, int]]:
         prefix = "Rare event "
         return [
-            (key[len(prefix) + 1:-1].replace("_", " "), val)
+            (key[len(prefix) + 1 : -1].replace("_", " "), val)
             for key, val in self._data.items()
             if key.startswith(prefix)
         ]
-
-
-class Count(int):
-    def markdown(self) -> str:
-        return format(self, ",d")
-
-
-class Ratio:
-    def __init__(self, num: int, den: int | None, percentage: bool = True):
-        self.num = num
-        self.den = den
-        self.percentage = percentage
-
-    def __float__(self):
-        if self.den == 0:
-            return 0.0
-        elif self.den is None:
-            return self.num
-        else:
-            return self.num / self.den
-
-    def markdown(self) -> str:
-        if self.den is None:
-            return ""
-        elif self.den == 0:
-            if self.num != 0:
-                return f"{self.num:,} / 0 !!"
-            return ""
-        elif self.percentage:
-            return f"{self.num / self.den:,.01%}"
-        else:
-            return f"{self.num / self.den:,.02f}"
-
-
-class DiffRatio(Ratio):
-    def __init__(self, base: int | str, head: int | str):
-        if isinstance(base, str) or isinstance(head, str):
-            super().__init__(0, 0)
-        else:
-            super().__init__(head - base, base)
 
 
 class JoinMode(enum.Enum):
@@ -568,13 +625,16 @@ class Section:
         title: str = "",
         summary: str = "",
         part_iter=None,
+        *,
         comparative: bool = True,
+        doc: str = "",
     ):
         self.title = title
         if not summary:
             self.summary = title.lower()
         else:
             self.summary = summary
+        self.doc = textwrap.dedent(doc)
         if part_iter is None:
             part_iter = []
         if isinstance(part_iter, list):
@@ -620,7 +680,7 @@ def calc_execution_count_table(prefix: str) -> RowCalculator:
 def execution_count_section() -> Section:
     return Section(
         "Execution counts",
-        "execution counts for all instructions",
+        "Execution counts for Tier 1 instructions.",
         [
             Table(
                 ("Name", "Count:", "Self:", "Cumulative:", "Miss ratio:"),
@@ -628,6 +688,11 @@ def execution_count_section() -> Section:
                 join_mode=JoinMode.CHANGE_ONE_COLUMN,
             )
         ],
+        doc="""
+        The "miss ratio" column shows the percentage of times the instruction
+        executed that it deoptimized. When this happens, the base unspecialized
+        instruction is not counted.
+        """,
     )
 
 
@@ -655,7 +720,7 @@ def pair_count_section() -> Section:
 
     return Section(
         "Pair counts",
-        "Pair counts for top 100 pairs",
+        "Pair counts for top 100 Tier 1 instructions",
         [
             Table(
                 ("Pair", "Count:", "Self:", "Cumulative:"),
@@ -663,6 +728,10 @@ def pair_count_section() -> Section:
             )
         ],
         comparative=False,
+        doc="""
+        Pairs of specialized operations that deoptimize and are then followed by
+        the corresponding unspecialized instruction are not counted as pairs.
+        """,
     )
 
 
@@ -705,22 +774,33 @@ def pre_succ_pairs_section() -> Section:
 
     return Section(
         "Predecessor/Successor Pairs",
-        "Top 5 predecessors and successors of each opcode",
+        "Top 5 predecessors and successors of each Tier 1 opcode.",
         iter_pre_succ_pairs_tables,
         comparative=False,
+        doc="""
+        This does not include the unspecialized instructions that occur after a
+        specialized instruction deoptimizes.
+        """,
     )
 
 
 def specialization_section() -> Section:
     def calc_specialization_table(opcode: str) -> RowCalculator:
         def calc(stats: Stats) -> Rows:
+            DOCS = {
+                "deferred": 'Lists the number of "deferred" (i.e. not specialized) instructions executed.',
+                "hit": "Specialized instructions that complete.",
+                "miss": "Specialized instructions that deopt.",
+                "deopt": "Specialized instructions that deopt.",
+            }
+
             opcode_stats = stats.get_opcode_stats("opcode")
             total = opcode_stats.get_specialization_total(opcode)
             specialization_counts = opcode_stats.get_specialization_counts(opcode)
 
             return [
                 (
-                    f"{label:>12}",
+                    Doc(label, DOCS[label]),
                     Count(count),
                     Ratio(count, total),
                 )
@@ -790,7 +870,7 @@ def specialization_section() -> Section:
                         JoinMode.CHANGE,
                     ),
                     Table(
-                        ("", "Count:", "Ratio:"),
+                        ("Success", "Count:", "Ratio:"),
                         calc_specialization_success_failure_table(opcode),
                         JoinMode.CHANGE,
                     ),
@@ -804,7 +884,7 @@ def specialization_section() -> Section:
 
     return Section(
         "Specialization stats",
-        "specialization stats by family",
+        "Specialization stats by family",
         iter_specialization_tables,
     )
 
@@ -822,19 +902,35 @@ def specialization_effectiveness_section() -> Section:
         ) = opcode_stats.get_specialized_total_counts()
 
         return [
-            ("Basic", Count(basic), Ratio(basic, total)),
             (
-                "Not specialized",
+                Doc(
+                    "Basic",
+                    "Instructions that are not and cannot be specialized, e.g. `LOAD_FAST`.",
+                ),
+                Count(basic),
+                Ratio(basic, total),
+            ),
+            (
+                Doc(
+                    "Not specialized",
+                    "Instructions that could be specialized but aren't, e.g. `LOAD_ATTR`, `BINARY_SLICE`.",
+                ),
                 Count(not_specialized),
                 Ratio(not_specialized, total),
             ),
             (
-                "Specialized hits",
+                Doc(
+                    "Specialized hits",
+                    "Specialized instructions, e.g. `LOAD_ATTR_MODULE` that complete.",
+                ),
                 Count(specialized_hits),
                 Ratio(specialized_hits, total),
             ),
             (
-                "Specialized misses",
+                Doc(
+                    "Specialized misses",
+                    "Specialized instructions, e.g. `LOAD_ATTR_MODULE` that deopt.",
+                ),
                 Count(specialized_misses),
                 Ratio(specialized_misses, total),
             ),
@@ -879,7 +975,7 @@ def specialization_effectiveness_section() -> Section:
             ),
             Section(
                 "Deferred by instruction",
-                "",
+                "Breakdown of deferred (not specialized) instruction counts by family",
                 [
                     Table(
                         ("Name", "Count:", "Ratio:"),
@@ -890,7 +986,7 @@ def specialization_effectiveness_section() -> Section:
             ),
             Section(
                 "Misses by instruction",
-                "",
+                "Breakdown of misses (specialized deopts) instruction counts by family",
                 [
                     Table(
                         ("Name", "Count:", "Ratio:"),
@@ -900,6 +996,10 @@ def specialization_effectiveness_section() -> Section:
                 ],
             ),
         ],
+        doc="""
+        All entries are execution counts. Should add up to the total number of
+        Tier 1 instructions executed.
+        """,
     )
 
 
@@ -922,6 +1022,13 @@ def call_stats_section() -> Section:
                 JoinMode.CHANGE,
             )
         ],
+        doc="""
+        This shows what fraction of calls to Python functions are inlined (i.e.
+        not having a call at the C level) and for those that are not, where the
+        call comes from.  The various categories overlap.
+
+        Also includes the count of frame objects created.
+        """,
     )
 
 
@@ -935,7 +1042,7 @@ def object_stats_section() -> Section:
 
     return Section(
         "Object stats",
-        "allocations, frees and dict materializatons",
+        "Allocations, frees and dict materializatons",
         [
             Table(
                 ("", "Count:", "Ratio:"),
@@ -943,6 +1050,16 @@ def object_stats_section() -> Section:
                 JoinMode.CHANGE,
             )
         ],
+        doc="""
+        Below, "allocations" means "allocations that are not from a freelist".
+        Total allocations = "Allocations from freelist" + "Allocations".
+
+        "New values" is the number of values arrays created for objects with
+        managed dicts.
+
+        The cache hit/miss numbers are for the MRO cache, split into dunder and
+        other names.
+        """,
     )
 
 
@@ -969,6 +1086,9 @@ def gc_stats_section() -> Section:
                 calc_gc_stats,
             )
         ],
+        doc="""
+        Collected/visits gives some measure of efficiency.
+        """,
     )
 
 
@@ -1074,7 +1194,19 @@ def optimization_section() -> Section:
 
 def rare_event_section() -> Section:
     def calc_rare_event_table(stats: Stats) -> Table:
-        return [(x, Count(y)) for x, y in stats.get_rare_events()]
+        DOCS = {
+            "set class": "Setting an object's class, `obj.__class__ = ...`",
+            "set bases": "Setting the bases of a class, `cls.__bases__ = ...`",
+            "set eval frame func": (
+                "Setting the PEP 523 frame eval function "
+                "`_PyInterpreterState_SetFrameEvalFunc()`"
+            ),
+            "builtin dict": "Modifying the builtins, `__builtins__.__dict__[var] = ...`",
+            "func modification": "Modifying a function, e.g. `func.__defaults__ = ...`, etc.",
+            "watched dict modification": "A watched dict has been modified",
+            "watched globals modification": "A watched `globals()` dict has been modified",
+        }
+        return [(Doc(x, DOCS[x]), Count(y)) for x, y in stats.get_rare_events()]
 
     return Section(
         "Rare events",
@@ -1134,6 +1266,9 @@ def output_markdown(
                 print("<details>", file=out)
                 print("<summary>", obj.summary, "</summary>", file=out)
                 print(file=out)
+            if obj.doc:
+                print(obj.doc, file=out)
+
             if head_stats is not None and obj.comparative is False:
                 print("Not included in comparative output.\n")
             else:
@@ -1149,24 +1284,36 @@ def output_markdown(
             if len(rows) == 0:
                 return
 
-            width = len(header)
-            header_line = "|"
-            under_line = "|"
+            alignments = []
             for item in header:
-                under = "---"
+                if item.endswith(":"):
+                    alignments.append("right")
+                else:
+                    alignments.append("left")
+
+            print("<table>", file=out)
+            print("<thead>", file=out)
+            print("<tr>", file=out)
+            for item, align in zip(header, alignments):
                 if item.endswith(":"):
                     item = item[:-1]
-                    under += ":"
-                header_line += item + " | "
-                under_line += under + "|"
-            print(header_line, file=out)
-            print(under_line, file=out)
+                print(f'<th align="{align}">{item}</th>', file=out)
+            print("</tr>", file=out)
+            print("</thead>", file=out)
+
+            print("<tbody>", file=out)
             for row in rows:
-                if len(row) != width:
+                if len(row) != len(header):
                     raise ValueError(
                         "Wrong number of elements in row '" + str(row) + "'"
                     )
-                print("|", " | ".join(to_markdown(i) for i in row), "|", file=out)
+                print("<tr>", file=out)
+                for col, align in zip(row, alignments):
+                    print(f'<td align="{align}">{to_markdown(col)}</td>', file=out)
+                print("</tr>", file=out)
+            print("</tbody>", file=out)
+
+            print("</table>", file=out)
             print(file=out)
 
         case list():
