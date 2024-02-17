@@ -2985,6 +2985,11 @@ class TestFolding(TestEmailBase):
             '=?utf-8?q?H=C3=BCbsch?= Kaktus <beautiful@example.com>,\n'
                 ' =?utf-8?q?bei=C3=9Ft_bei=C3=9Ft?= <biter@example.com>\n')
 
+    def test_address_list_with_list_separator_after_fold(self):
+        to = '0123456789' * 8 + '@foo, ä <foo@bar>'
+        self._test(parser.get_address_list(to)[0],
+                   '0123456789' * 8 + '@foo,\n =?utf-8?q?=C3=A4?= <foo@bar>\n')
+
     # XXX Need tests with comments on various sides of a unicode token,
     # and with unicode tokens in the comments.  Spaces inside the quotes
     # currently don't do the right thing.
