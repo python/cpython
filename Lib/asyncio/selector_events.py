@@ -1241,8 +1241,6 @@ class _SelectorDatagramTransport(_SelectorTransport, transports.DatagramTranspor
         if not isinstance(data, (bytes, bytearray, memoryview)):
             raise TypeError(f'data argument must be a bytes-like object, '
                             f'not {type(data).__name__!r}')
-        if not data:
-            return
 
         if self._address:
             if addr not in (None, self._address):
@@ -1278,7 +1276,7 @@ class _SelectorDatagramTransport(_SelectorTransport, transports.DatagramTranspor
 
         # Ensure that what we buffer is immutable.
         self._buffer.append((bytes(data), addr))
-        self._buffer_size += len(data)
+        self._buffer_size += len(data) + 8  # include header bytes
         self._maybe_pause_protocol()
 
     def _sendto_ready(self):
