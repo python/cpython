@@ -1697,15 +1697,12 @@ property_copy(PyObject *old, PyObject *get, PyObject *set, PyObject *del)
         return NULL;
 
     if (get == NULL || get == Py_None) {
-        Py_XDECREF(get);
         get = pold->prop_get ? pold->prop_get : Py_None;
     }
     if (set == NULL || set == Py_None) {
-        Py_XDECREF(set);
         set = pold->prop_set ? pold->prop_set : Py_None;
     }
     if (del == NULL || del == Py_None) {
-        Py_XDECREF(del);
         del = pold->prop_del ? pold->prop_del : Py_None;
     }
     if (pold->getter_doc && get != Py_None) {
