@@ -182,13 +182,13 @@ class _LazyModule(types.ModuleType):
                 # exec_module(), which will access module.__dict__, module.__name__,
                 # and/or module.__spec__, reentering this method. These accesses
                 # need to be allowed to proceed without triggering the load again.
-                if loader_state['is_loading'].is_set() and attr[:2] == attr[-2:] == '__':
+                if loader_state['is_loading'].is_set() and attr.startswith('__') and attr.endswith('__'):
                     return object.__getattribute__(self, attr)
                 loader_state['is_loading'].set()
 
                 __dict__ = object.__getattribute__(self, '__dict__')
 
-                # All module metadata must be garnered from __spec__ in order to avoid
+                # All module metadata must be gathered from __spec__ in order to avoid
                 # using mutated values.
                 # Get the original name to make sure no object substitution occurred
                 # in sys.modules.
@@ -199,7 +199,7 @@ class _LazyModule(types.ModuleType):
                 attrs_now = __dict__
                 attrs_updated = {}
                 for key, value in attrs_now.items():
-                    # Code that set the attribute may have kept a reference to the
+                    # Code that set an attribute may have kept a reference to the
                     # assigned object, making identity more important than equality.
                     if key not in attrs_then:
                         attrs_updated[key] = value
