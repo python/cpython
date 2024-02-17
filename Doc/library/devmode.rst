@@ -16,12 +16,12 @@ setting the :envvar:`PYTHONDEVMODE` environment variable to ``1``.
 See also :ref:`Python debug build <debug-build>`.
 
 Effects of the Python Development Mode
-======================================
+--------------------------------------
 
 Enabling the Python Development Mode is similar to the following command, but
 with additional effects described below::
 
-    PYTHONMALLOC=debug PYTHONASYNCIODEBUG=1 python3 -W default -X faulthandler
+    PYTHONMALLOC=debug PYTHONASYNCIODEBUG=1 python -W default -X faulthandler
 
 Effects of the Python Development Mode:
 
@@ -59,8 +59,9 @@ Effects of the Python Development Mode:
   ``default``.
 
 * Call :func:`faulthandler.enable` at Python startup to install handlers for
-  the :const:`SIGSEGV`, :const:`SIGFPE`, :const:`SIGABRT`, :const:`SIGBUS` and
-  :const:`SIGILL` signals to dump the Python traceback on a crash.
+  the :const:`~signal.SIGSEGV`, :const:`~signal.SIGFPE`,
+  :const:`~signal.SIGABRT`, :const:`~signal.SIGBUS` and
+  :const:`~signal.SIGILL` signals to dump the Python traceback on a crash.
 
   It behaves as if the :option:`-X faulthandler <-X>` command line option is
   used or if the :envvar:`PYTHONFAULTHANDLER` environment variable is set to
@@ -81,7 +82,7 @@ Effects of the Python Development Mode:
   ignored for empty strings.
 
 * The :class:`io.IOBase` destructor logs ``close()`` exceptions.
-* Set the :attr:`~sys.flags.dev_mode` attribute of :attr:`sys.flags` to
+* Set the :attr:`~sys.flags.dev_mode` attribute of :data:`sys.flags` to
   ``True``.
 
 The Python Development Mode does not enable the :mod:`tracemalloc` module by
@@ -107,7 +108,7 @@ value can be read from :data:`sys.flags.dev_mode <sys.flags>`.
 
 
 ResourceWarning Example
-=======================
+-----------------------
 
 Example of a script counting the number of lines of the text file specified in
 the command line::
@@ -128,14 +129,14 @@ any warning. Example using README.txt, which has 269 lines:
 
 .. code-block:: shell-session
 
-    $ python3 script.py README.txt
+    $ python script.py README.txt
     269
 
 Enabling the Python Development Mode displays a :exc:`ResourceWarning` warning:
 
 .. code-block:: shell-session
 
-    $ python3 -X dev script.py README.txt
+    $ python -X dev script.py README.txt
     269
     script.py:10: ResourceWarning: unclosed file <_io.TextIOWrapper name='README.rst' mode='r' encoding='UTF-8'>
       main()
@@ -146,7 +147,7 @@ opened:
 
 .. code-block:: shell-session
 
-    $ python3 -X dev -X tracemalloc=5 script.py README.rst
+    $ python -X dev -X tracemalloc=5 script.py README.rst
     269
     script.py:10: ResourceWarning: unclosed file <_io.TextIOWrapper name='README.rst' mode='r' encoding='UTF-8'>
       main()
@@ -171,7 +172,7 @@ application more deterministic and more reliable.
 
 
 Bad file descriptor error example
-=================================
+---------------------------------
 
 Script displaying the first line of itself::
 
@@ -190,7 +191,7 @@ By default, Python does not emit any warning:
 
 .. code-block:: shell-session
 
-    $ python3 script.py
+    $ python script.py
     import os
 
 The Python Development Mode shows a :exc:`ResourceWarning` and logs a "Bad file
@@ -198,7 +199,7 @@ descriptor" error when finalizing the file object:
 
 .. code-block:: shell-session
 
-    $ python3 script.py
+    $ python -X dev script.py
     import os
     script.py:10: ResourceWarning: unclosed file <_io.TextIOWrapper name='script.py' mode='r' encoding='UTF-8'>
       main()

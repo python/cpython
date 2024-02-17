@@ -288,7 +288,8 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
                         # we got end-of-file so no need to reschedule a new read
                         return
 
-                    data = self._data[:length]
+                    # It's a new slice so make it immutable so protocols upstream don't have problems
+                    data = bytes(memoryview(self._data)[:length])
                 else:
                     # the future will be replaced by next proactor.recv call
                     fut.cancel()
@@ -486,9 +487,6 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
             raise TypeError('data argument must be bytes-like object (%r)',
                             type(data))
 
-        if not data:
-            return
-
         if self._address is not None and addr not in (None, self._address):
             raise ValueError(
                 f'Invalid address: must be None or {self._address}')
@@ -501,7 +499,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
 
         # Ensure that what we buffer is immutable.
         self._buffer.append((bytes(data), addr))
-        self._buffer_size += len(data)
+        self._buffer_size += len(data) + 8  # include header bytes
 
         if self._write_fut is None:
             # No current write operations are active, kick one off
