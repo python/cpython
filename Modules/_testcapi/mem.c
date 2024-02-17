@@ -441,17 +441,6 @@ test_pymem_alloc0(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-test_pymem_getallocatorsname(PyObject *self, PyObject *args)
-{
-    const char *name = _PyMem_GetCurrentAllocatorName();
-    if (name == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "cannot get allocators name");
-        return NULL;
-    }
-    return PyUnicode_FromString(name);
-}
-
-static PyObject *
 test_pymem_setrawallocators(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return test_setallocators(PYMEM_DOMAIN_RAW);
@@ -589,7 +578,6 @@ tracemalloc_untrack(PyObject *self, PyObject *args)
 static PyMethodDef test_methods[] = {
     {"pymem_api_misuse",              pymem_api_misuse,              METH_NOARGS},
     {"pymem_buffer_overflow",         pymem_buffer_overflow,         METH_NOARGS},
-    {"pymem_getallocatorsname",       test_pymem_getallocatorsname,  METH_NOARGS},
     {"pymem_malloc_without_gil",      pymem_malloc_without_gil,      METH_NOARGS},
     {"pyobject_malloc_without_gil",   pyobject_malloc_without_gil,   METH_NOARGS},
     {"remove_mem_hooks",              remove_mem_hooks,              METH_NOARGS,
@@ -622,6 +610,15 @@ _PyTestCapi_Init_Mem(PyObject *mod)
     v = Py_False;
 #endif
     if (PyModule_AddObjectRef(mod, "WITH_PYMALLOC", v) < 0) {
+        return -1;
+    }
+
+#ifdef WITH_MIMALLOC
+    v = Py_True;
+#else
+    v = Py_False;
+#endif
+    if (PyModule_AddObjectRef(mod, "WITH_MIMALLOC", v) < 0) {
         return -1;
     }
 

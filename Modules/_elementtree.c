@@ -18,7 +18,8 @@
 #include "Python.h"
 #include "pycore_import.h"        // _PyImport_GetModuleAttrString()
 #include "pycore_pyhash.h"        // _Py_HashSecret
-#include "structmember.h"         // PyMemberDef
+
+#include <stddef.h>               // offsetof()
 #include "expat.h"
 #include "pyexpat.h"
 
@@ -97,6 +98,7 @@ typedef struct {
     PyTypeObject *TreeBuilder_Type;
     PyTypeObject *XMLParser_Type;
 
+    PyObject *expat_capsule;
     struct PyExpat_CAPI *expat_capi;
 } elementtreestate;
 
@@ -154,6 +156,7 @@ elementtree_clear(PyObject *m)
     Py_CLEAR(st->ElementIter_Type);
     Py_CLEAR(st->TreeBuilder_Type);
     Py_CLEAR(st->XMLParser_Type);
+    Py_CLEAR(st->expat_capsule);
 
     st->expat_capi = NULL;
     return 0;
@@ -174,6 +177,7 @@ elementtree_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(st->ElementIter_Type);
     Py_VISIT(st->TreeBuilder_Type);
     Py_VISIT(st->XMLParser_Type);
+    Py_VISIT(st->expat_capsule);
     return 0;
 }
 
@@ -263,7 +267,7 @@ typedef struct {
 LOCAL(int)
 create_extra(ElementObject* self, PyObject* attrib)
 {
-    self->extra = PyObject_Malloc(sizeof(ElementObjectExtra));
+    self->extra = PyMem_Malloc(sizeof(ElementObjectExtra));
     if (!self->extra) {
         PyErr_NoMemory();
         return -1;
@@ -291,10 +295,11 @@ dealloc_extra(ElementObjectExtra *extra)
     for (i = 0; i < extra->length; i++)
         Py_DECREF(extra->children[i]);
 
-    if (extra->children != extra->_children)
-        PyObject_Free(extra->children);
+    if (extra->children != extra->_children) {
+        PyMem_Free(extra->children);
+    }
 
-    PyObject_Free(extra);
+    PyMem_Free(extra);
 }
 
 LOCAL(void)
@@ -491,14 +496,16 @@ element_resize(ElementObject* self, Py_ssize_t extra)
              * "children", which needs at least 4 bytes. Although it's a
              * false alarm always assume at least one child to be safe.
              */
-            children = PyObject_Realloc(self->extra->children,
-                                        size * sizeof(PyObject*));
-            if (!children)
+            children = PyMem_Realloc(self->extra->children,
+                                     size * sizeof(PyObject*));
+            if (!children) {
                 goto nomemory;
+            }
         } else {
-            children = PyObject_Malloc(size * sizeof(PyObject*));
-            if (!children)
+            children = PyMem_Malloc(size * sizeof(PyObject*));
+            if (!children) {
                 goto nomemory;
+            }
             /* copy existing children from static area to malloc buffer */
             memcpy(children, self->extra->children,
                    self->extra->length * sizeof(PyObject*));
@@ -3040,7 +3047,7 @@ _elementtree_TreeBuilder_start_impl(TreeBuilderObject *self, PyObject *tag,
 #define EXPAT(st, func) ((st)->expat_capi->func)
 
 static XML_Memory_Handling_Suite ExpatMemoryHandler = {
-    PyObject_Malloc, PyObject_Realloc, PyObject_Free};
+    PyMem_Malloc, PyMem_Realloc, PyMem_Free};
 
 typedef struct {
     PyObject_HEAD
@@ -3065,6 +3072,7 @@ typedef struct {
     PyObject *handle_close;
 
     elementtreestate *state;
+    PyObject *elementtree_module;
 } XMLParserObject;
 
 /* helpers */
@@ -3531,12 +3539,11 @@ expat_start_doctype_handler(XMLParserObject *self,
                                            sysid_obj, NULL);
         Py_XDECREF(res);
     }
-    else if (PyObject_GetOptionalAttr((PyObject *)self, st->str_doctype, &res) > 0) {
+    else if (PyObject_HasAttrWithError((PyObject *)self, st->str_doctype) > 0) {
         (void)PyErr_WarnEx(PyExc_RuntimeWarning,
                 "The doctype() method of XMLParser is ignored.  "
                 "Define doctype() method on the TreeBuilder target.",
                 1);
-        Py_DECREF(res);
     }
 
     Py_DECREF(doctype_name_obj);
@@ -3607,7 +3614,11 @@ xmlparser_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         self->handle_start = self->handle_data = self->handle_end = NULL;
         self->handle_comment = self->handle_pi = self->handle_close = NULL;
         self->handle_doctype = NULL;
-        self->state = get_elementtree_state_by_type(type);
+        self->elementtree_module = PyType_GetModuleByDef(type, &elementtreemodule);
+        assert(self->elementtree_module != NULL);
+        Py_INCREF(self->elementtree_module);
+        // See gh-111784 for explanation why is reference to module needed here.
+        self->state = get_elementtree_state(self->elementtree_module);
     }
     return (PyObject *)self;
 }
@@ -3784,6 +3795,7 @@ xmlparser_gc_clear(XMLParserObject *self)
         EXPAT(st, ParserFree)(parser);
     }
 
+    Py_CLEAR(self->elementtree_module);
     Py_CLEAR(self->handle_close);
     Py_CLEAR(self->handle_pi);
     Py_CLEAR(self->handle_comment);
@@ -4134,8 +4146,8 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
 }
 
 static PyMemberDef xmlparser_members[] = {
-    {"entity", T_OBJECT, offsetof(XMLParserObject, entity), READONLY, NULL},
-    {"target", T_OBJECT, offsetof(XMLParserObject, target), READONLY, NULL},
+    {"entity", _Py_T_OBJECT, offsetof(XMLParserObject, entity), Py_READONLY, NULL},
+    {"target", _Py_T_OBJECT, offsetof(XMLParserObject, target), Py_READONLY, NULL},
     {NULL}
 };
 
@@ -4191,7 +4203,7 @@ static PyMethodDef element_methods[] = {
 };
 
 static struct PyMemberDef element_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(ElementObject, weakreflist), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(ElementObject, weakreflist), Py_READONLY},
     {NULL},
 };
 
@@ -4343,7 +4355,10 @@ module_exec(PyObject *m)
         goto error;
 
     /* link against pyexpat */
-    st->expat_capi = PyCapsule_Import(PyExpat_CAPSULE_NAME, 0);
+    if (!(st->expat_capsule = _PyImport_GetModuleAttrString("pyexpat", "expat_CAPI")))
+        goto error;
+    if (!(st->expat_capi = PyCapsule_GetPointer(st->expat_capsule, PyExpat_CAPSULE_NAME)))
+        goto error;
     if (st->expat_capi) {
         /* check that it's usable */
         if (strcmp(st->expat_capi->magic, PyExpat_CAPI_MAGIC) != 0 ||
@@ -4418,9 +4433,7 @@ error:
 
 static struct PyModuleDef_Slot elementtree_slots[] = {
     {Py_mod_exec, module_exec},
-    // XXX gh-103092: fix isolation.
-    {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
-    //{Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL},
 };
 

@@ -332,10 +332,10 @@ Suppose you configure logging with the following JSON:
         }
     }
 
-This configuration does *almost* what we want, except that ``sys.stdout`` would
-show messages of severity ``ERROR`` and above as well as ``INFO`` and
-``WARNING`` messages. To prevent this, we can set up a filter which excludes
-those messages and add it to the relevant handler. This can be configured by
+This configuration does *almost* what we want, except that ``sys.stdout`` would show messages
+of severity ``ERROR`` and only events of this severity and higher will be tracked
+as well as ``INFO`` and ``WARNING`` messages. To prevent this, we can set up a filter which
+excludes those messages and add it to the relevant handler. This can be configured by
 adding a ``filters`` section parallel to ``formatters`` and ``handlers``:
 
 .. code-block:: json
@@ -761,7 +761,7 @@ printed on the console; on the server side, you should see something like:
 
 Note that there are some security issues with pickle in some scenarios. If
 these affect you, you can use an alternative serialization scheme by overriding
-the :meth:`~handlers.SocketHandler.makePickle` method and implementing your
+the :meth:`~SocketHandler.makePickle` method and implementing your
 alternative there, as well as adapting the above script to use your alternative
 serialization.
 
@@ -834,6 +834,8 @@ To test these files, do the following in a POSIX environment:
 
 You may need to tweak the configuration files in the unlikely event that the
 configured ports clash with something else in your test environment.
+
+.. currentmodule:: logging
 
 .. _context-info:
 
@@ -1546,7 +1548,7 @@ Sometimes you want to let a log file grow to a certain size, then open a new
 file and log to that. You may want to keep a certain number of these files, and
 when that many files have been created, rotate the files so that the number of
 files and the size of the files both remain bounded. For this usage pattern, the
-logging package provides a :class:`~handlers.RotatingFileHandler`::
+logging package provides a :class:`RotatingFileHandler`::
 
    import glob
    import logging
@@ -1593,6 +1595,8 @@ and each time it reaches the size limit it is renamed with the suffix
 
 Obviously this example sets the log length much too small as an extreme
 example.  You would want to set *maxBytes* to an appropriate value.
+
+.. currentmodule:: logging
 
 .. _format-styles:
 
@@ -1724,7 +1728,7 @@ when (and if) the logged message is actually about to be output to a log by a
 handler. So the only slightly unusual thing which might trip you up is that the
 parentheses go around the format string and the arguments, not just the format
 string. That's because the __ notation is just syntax sugar for a constructor
-call to one of the XXXMessage classes.
+call to one of the :samp:`{XXX}Message` classes.
 
 If you prefer, you can use a :class:`LoggerAdapter` to achieve a similar effect
 to the above, as in the following example::
@@ -1740,13 +1744,11 @@ to the above, as in the following example::
             return self.fmt.format(*self.args)
 
     class StyleAdapter(logging.LoggerAdapter):
-        def __init__(self, logger, extra=None):
-            super().__init__(logger, extra or {})
-
-        def log(self, level, msg, /, *args, **kwargs):
+        def log(self, level, msg, /, *args, stacklevel=1, **kwargs):
             if self.isEnabledFor(level):
                 msg, kwargs = self.process(msg, kwargs)
-                self.logger._log(level, Message(msg, args), (), **kwargs)
+                self.logger.log(level, Message(msg, args), **kwargs,
+                                stacklevel=stacklevel+1)
 
     logger = StyleAdapter(logging.getLogger(__name__))
 
@@ -1758,7 +1760,7 @@ to the above, as in the following example::
         main()
 
 The above script should log the message ``Hello, world!`` when run with
-Python 3.2 or later.
+Python 3.8 or later.
 
 
 .. currentmodule:: logging
@@ -1840,6 +1842,7 @@ However, it should be borne in mind that each link in the chain adds run-time
 overhead to all logging operations, and the technique should only be used when
 the use of a :class:`Filter` does not provide the desired result.
 
+.. currentmodule:: logging.handlers
 
 .. _zeromq-handlers:
 
@@ -1917,6 +1920,8 @@ of queues, for example a ZeroMQ 'subscribe' socket. Here's an example::
    :ref:`A more advanced logging tutorial <logging-advanced-tutorial>`
 
 
+.. currentmodule:: logging
+
 An example dictionary-based configuration
 -----------------------------------------
 
@@ -1926,30 +1931,28 @@ This dictionary is passed to :func:`~config.dictConfig` to put the configuration
 
     LOGGING = {
         'version': 1,
-        'disable_existing_loggers': True,
+        'disable_existing_loggers': False,
         'formatters': {
             'verbose': {
-                'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
+                'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+                'style': '{',
             },
             'simple': {
-                'format': '%(levelname)s %(message)s'
+                'format': '{levelname} {message}',
+                'style': '{',
             },
         },
         'filters': {
             'special': {
                 '()': 'project.logging.SpecialFilter',
                 'foo': 'bar',
-            }
+            },
         },
         'handlers': {
-            'null': {
-                'level':'DEBUG',
-                'class':'django.utils.log.NullHandler',
-            },
-            'console':{
-                'level':'DEBUG',
-                'class':'logging.StreamHandler',
-                'formatter': 'simple'
+            'console': {
+                'level': 'INFO',
+                'class': 'logging.StreamHandler',
+                'formatter': 'simple',
             },
             'mail_admins': {
                 'level': 'ERROR',
@@ -1959,9 +1962,8 @@ This dictionary is passed to :func:`~config.dictConfig` to put the configuration
         },
         'loggers': {
             'django': {
-                'handlers':['null'],
+                'handlers': ['console'],
                 'propagate': True,
-                'level':'INFO',
             },
             'django.request': {
                 'handlers': ['mail_admins'],
@@ -2637,7 +2639,7 @@ when (and if) the logged message is actually about to be output to a log by a
 handler. So the only slightly unusual thing which might trip you up is that the
 parentheses go around the format string and the arguments, not just the format
 string. That’s because the __ notation is just syntax sugar for a constructor
-call to one of the ``XXXMessage`` classes shown above.
+call to one of the :samp:`{XXX}Message` classes shown above.
 
 
 .. _filters-dictconfig:
@@ -3918,8 +3920,8 @@ that in other languages such as Java and C#, loggers are often static class
 attributes. However, this pattern doesn't make sense in Python, where the
 module (and not the class) is the unit of software decomposition.
 
-Adding handlers other than :class:`NullHandler` to a logger in a library
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Adding handlers other than :class:`~logging.NullHandler` to a logger in a library
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Configuring logging by adding handlers, formatters and filters is the
 responsibility of the application developer, not the library developer. If you
