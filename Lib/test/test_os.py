@@ -3515,7 +3515,7 @@ class ProgramPriorityTests(unittest.TestCase):
 
         # Subprocess inherits the current process' priority.
         _, out, _ = assert_python_ok("-c", code)
-        new_prio = int(out.decode("utf-8"))
+        new_prio = int(out)
         # nice value cap is 19 for linux and 20 for FreeBSD
         if base >= 19 and new_prio <= base:
             raise unittest.SkipTest("unable to reliably test setpriority "
