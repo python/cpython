@@ -1031,24 +1031,31 @@ work_queue_first(struct llist_node *head)
 }
 
 static void
-process_queue(struct llist_node *head, struct _qsbr_thread_state *qsbr)
+process_queue(struct llist_node *head, struct _qsbr_thread_state *qsbr,
+              bool keep_empty)
 {
     while (!llist_empty(head)) {
         struct _mem_work_chunk *buf = work_queue_first(head);
 
-        if (buf->rd_idx == buf->wr_idx) {
-            llist_remove(&buf->node);
-            PyMem_Free(buf);
-            continue;
+        while (buf->rd_idx < buf->wr_idx) {
+            struct _mem_work_item *item = &buf->array[buf->rd_idx];
+            if (!_Py_qsbr_poll(qsbr, item->qsbr_goal)) {
+                return;
+            }
+
+            PyMem_Free(item->ptr);
+            buf->rd_idx++;
         }
 
-        struct _mem_work_item *item = &buf->array[buf->rd_idx];
-        if (!_Py_qsbr_poll(qsbr, item->qsbr_goal)) {
+        assert(buf->rd_idx == buf->wr_idx);
+        if (keep_empty && buf->node.next == head) {
+            // Keep the last buffer in the queue to reduce re-allocations
+            buf->rd_idx = buf->wr_idx = 0;
             return;
         }
 
-        PyMem_Free(item->ptr);
-        buf->rd_idx++;
+        llist_remove(&buf->node);
+        PyMem_Free(buf);
     }
 }
 
@@ -1062,7 +1069,7 @@ process_interp_queue(struct _Py_mem_interp_free_queue *queue,
 
     // Try to acquire the lock, but don't block if it's already held.
     if (_PyMutex_LockTimed(&queue->mutex, 0, 0) == PY_LOCK_ACQUIRED) {
-        process_queue(&queue->head, qsbr);
+        process_queue(&queue->head, qsbr, false);
 
         int more_work = !llist_empty(&queue->head);
         _Py_atomic_store_int_relaxed(&queue->has_work, more_work);
@@ -1078,7 +1085,7 @@ _PyMem_ProcessDelayed(PyThreadState *tstate)
     _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
 
     // Process thread-local work
-    process_queue(&tstate_impl->mem_free_queue, tstate_impl->qsbr);
+    process_queue(&tstate_impl->mem_free_queue, tstate_impl->qsbr, true);
 
     // Process shared interpreter work
     process_interp_queue(&interp->mem_free_queue, tstate_impl->qsbr);
@@ -1091,6 +1098,15 @@ _PyMem_AbandonDelayed(PyThreadState *tstate)
     struct llist_node *queue = &((_PyThreadStateImpl *)tstate)->mem_free_queue;
 
     if (llist_empty(queue)) {
+        return;
+    }
+
+    // Check if the queue contains one empty buffer
+    struct _mem_work_chunk *buf = work_queue_first(queue);
+    if (buf->rd_idx == buf->wr_idx) {
+        llist_remove(&buf->node);
+        PyMem_Free(buf);
+        assert(llist_empty(queue));
         return;
     }
 
