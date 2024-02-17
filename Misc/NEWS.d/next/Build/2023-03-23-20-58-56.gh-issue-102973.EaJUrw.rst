@@ -1,2 +1,0 @@
-Add a dev container (along with accompanying Dockerfile) for development
-purposes.
