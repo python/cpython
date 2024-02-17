@@ -1,2 +1,0 @@
-Fix subclassing complex generics with type variables in :mod:`typing`. Previously an error message saying ``Some type variables ... are not listed in Generic[...]`` was shown.
-:mod:`typing` no longer populates ``__parameters__`` with the ``__parameters__`` of a Python class.

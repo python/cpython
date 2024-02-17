@@ -1,1 +1,0 @@
-Include prompts when saving Shell (interactive input and output).

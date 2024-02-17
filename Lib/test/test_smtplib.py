@@ -21,12 +21,9 @@ from test import support, mock_socket
 from test.support import hashlib_helper
 from test.support import socket_helper
 from test.support import threading_helper
-from test.support import warnings_helper
+from test.support import asyncore
+from test.support import smtpd
 from unittest.mock import Mock
-
-from . import smtpd
-
-asyncore = warnings_helper.import_deprecated('asyncore')
 
 
 support.requires_working_socket(module=True)
@@ -833,6 +830,7 @@ class SimSMTPChannel(smtpd.SMTPChannel):
     def __init__(self, extra_features, *args, **kw):
         self._extrafeatures = ''.join(
             [ "250-{0}\r\n".format(x) for x in extra_features ])
+        self.all_received_lines = []
         super(SimSMTPChannel, self).__init__(*args, **kw)
 
     # AUTH related stuff.  It would be nice if support for this were in smtpd.
@@ -847,6 +845,7 @@ class SimSMTPChannel(smtpd.SMTPChannel):
                 self.smtp_state = self.COMMAND
                 self.push('%s %s' % (e.smtp_code, e.smtp_error))
             return
+        self.all_received_lines.append(self.received_lines)
         super().found_terminator()
 
 
@@ -1350,6 +1349,18 @@ class SMTPSimTests(unittest.TestCase):
 
         self.assertEqual(self.serv._addresses['from'], 'michael@example.com')
         self.assertEqual(self.serv._addresses['tos'], ['rene@example.com'])
+
+    def test_lowercase_mail_from_rcpt_to(self):
+        m = 'A test message'
+        smtp = smtplib.SMTP(
+            HOST, self.port, local_hostname='localhost',
+            timeout=support.LOOPBACK_TIMEOUT)
+        self.addCleanup(smtp.close)
+
+        smtp.sendmail('John', 'Sally', m)
+
+        self.assertIn(['mail from:<John> size=14'], self.serv._SMTPchannel.all_received_lines)
+        self.assertIn(['rcpt to:<Sally>'], self.serv._SMTPchannel.all_received_lines)
 
 
 class SimSMTPUTF8Server(SimSMTPServer):

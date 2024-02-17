@@ -1,1 +1,0 @@
-:meth:`sqlite3.Connection.iterdump` now handles databases that use ``AUTOINCREMENT`` in one or more tables.
