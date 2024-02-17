@@ -121,10 +121,6 @@ ATTLIST_XML = """\
 </foo>
 """
 
-fails_with_expat_2_6_0 = (unittest.expectedFailure
-                        if pyexpat.version_info >= (2, 6, 0) else
-                        lambda test: test)
-
 def checkwarnings(*filters, quiet=False):
     def decorator(test):
         def newtest(*args, **kwargs):
@@ -1468,6 +1464,7 @@ class XMLPullParserTest(unittest.TestCase):
         else:
             for i in range(0, len(data), chunk_size):
                 parser.feed(data[i:i+chunk_size])
+        parser.flush()
 
     def assert_events(self, parser, expected, max_events=None):
         self.assertEqual(
@@ -1506,11 +1503,9 @@ class XMLPullParserTest(unittest.TestCase):
         self.assert_event_tags(parser, [('end', 'root')])
         self.assertIsNone(parser.close())
 
-    @fails_with_expat_2_6_0
     def test_simple_xml_chunk_1(self):
         self.test_simple_xml(chunk_size=1)
 
-    @fails_with_expat_2_6_0
     def test_simple_xml_chunk_5(self):
         self.test_simple_xml(chunk_size=5)
 
