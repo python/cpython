@@ -46,6 +46,7 @@ MSG = 'Michael Gilfix was here\u1234\r\n'.encode('utf-8')
 
 VSOCKPORT = 1234
 AIX = platform.system() == "AIX"
+WSL = "microsoft-standard-WSL" in platform.release()
 
 try:
     import _socket
@@ -481,6 +482,7 @@ class ThreadedRDSSocketTest(SocketRDSTest, ThreadableTest):
         ThreadableTest.clientTearDown(self)
 
 @unittest.skipIf(fcntl is None, "need fcntl")
+@unittest.skipIf(WSL, 'VSOCK does not work on Microsoft WSL')
 @unittest.skipUnless(HAVE_SOCKET_VSOCK,
           'VSOCK sockets required for this test.')
 @unittest.skipUnless(get_cid() != 2,
@@ -497,6 +499,7 @@ class ThreadedVSOCKSocketStreamTest(unittest.TestCase, ThreadableTest):
         self.serv.bind((socket.VMADDR_CID_ANY, VSOCKPORT))
         self.serv.listen()
         self.serverExplicitReady()
+        self.serv.settimeout(support.LOOPBACK_TIMEOUT)
         self.conn, self.connaddr = self.serv.accept()
         self.addCleanup(self.conn.close)
 
