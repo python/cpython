@@ -3505,7 +3505,6 @@ class LoginTests(unittest.TestCase):
 class ProgramPriorityTests(unittest.TestCase):
     """Tests for os.getpriority() and os.setpriority()."""
 
-    @support.requires_subprocess()
     def test_set_get_priority(self):
         base = os.getpriority(os.PRIO_PROCESS, os.getpid())
         code = f"""if 1:
