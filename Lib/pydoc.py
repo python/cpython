@@ -1144,7 +1144,8 @@ class HTMLDoc(Doc):
                 # XXX lambda's won't usually have func_annotations['return']
                 # since the syntax doesn't support but it is possible.
                 # So removing parentheses isn't truly safe.
-                argspec = argspec[1:-1] # remove parentheses
+                if not object.__annotations__:
+                    argspec = argspec[1:-1] # remove parentheses
         if not argspec:
             argspec = '(...)'
 
@@ -1586,7 +1587,8 @@ location listed above.
                 # XXX lambda's won't usually have func_annotations['return']
                 # since the syntax doesn't support but it is possible.
                 # So removing parentheses isn't truly safe.
-                argspec = argspec[1:-1] # remove parentheses
+                if not object.__annotations__:
+                    argspec = argspec[1:-1]
         if not argspec:
             argspec = '(...)'
         decl = asyncqualifier + title + argspec + note
