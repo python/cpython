@@ -138,10 +138,12 @@ class Family(Node):
 @dataclass
 class Pseudo(Node):
     name: str
-    flags: list[str]   # instr flags to set on the pseudo instruction
-    targets: list[str] # opcodes this can be replaced by
+    flags: list[str]  # instr flags to set on the pseudo instruction
+    targets: list[str]  # opcodes this can be replaced by
+
 
 AstNode = InstDef | Macro | Pseudo | Family
+
 
 class Parser(PLexer):
     @contextual
@@ -253,7 +255,7 @@ class Parser(PLexer):
 
     @contextual
     def stack_effect(self) -> StackEffect | None:
-        #   IDENTIFIER [':' IDENTIFIER [TIMES]] ['if' '(' expression ')']
+        # IDENTIFIER [':' IDENTIFIER [TIMES]] ['if' '(' expression ')']
         # | IDENTIFIER '[' expression ']'
         if tkn := self.expect(lx.IDENTIFIER):
             type_text = ""
@@ -364,7 +366,9 @@ class Parser(PLexer):
                     if self.expect(lx.COMMA):
                         if not (size := self.expect(lx.IDENTIFIER)):
                             if not (size := self.expect(lx.NUMBER)):
-                                raise self.make_syntax_error("Expected identifier or number")
+                                raise self.make_syntax_error(
+                                    "Expected identifier or number"
+                                )
                     if self.expect(lx.RPAREN):
                         if self.expect(lx.EQUALS):
                             if not self.expect(lx.LBRACE):

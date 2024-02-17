@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.7
+    rev: v0.2.0
     hooks:
       - id: ruff
         name: Run Ruff on Lib/test/
@@ -28,7 +28,7 @@ repos:
     hooks:
       - id: sphinx-lint
         args: [--enable=default-role]
-        files: ^Doc/|^Misc/NEWS.d/next/
+        files: ^Doc/|^Misc/NEWS.d/
 
   - repo: meta
     hooks:

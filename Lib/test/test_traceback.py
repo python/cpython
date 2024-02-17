@@ -2209,6 +2209,20 @@ class BaseExceptionReportingTests:
         err_msg = "b'please do not show me as numbers'"
         self.assertEqual(self.get_report(e), vanilla + err_msg + '\n')
 
+        # an exception with a broken __getattr__ raising a non expected error
+        class BrokenException(Exception):
+            broken = False
+            def __getattr__(self, name):
+                if self.broken:
+                    raise ValueError(f'no {name}')
+
+        e = BrokenException(123)
+        vanilla = self.get_report(e)
+        e.broken = True
+        self.assertEqual(
+            self.get_report(e),
+            vanilla + "Ignored error getting __notes__: ValueError('no __notes__')\n")
+
     def test_exception_with_multiple_notes(self):
         for e in [ValueError(42), SyntaxError('bad syntax')]:
             with self.subTest(e=e):
@@ -3110,10 +3124,13 @@ class TestTracebackException(unittest.TestCase):
         class MyException(Exception):
             pass
 
-        self.do_test_smoke(
-            MyException('bad things happened'),
-            ('test.test_traceback.TestTracebackException.'
-             'test_smoke_user_exception.<locals>.MyException'))
+        if __name__ == '__main__':
+            expected = ('TestTracebackException.'
+                        'test_smoke_user_exception.<locals>.MyException')
+        else:
+            expected = ('test.test_traceback.TestTracebackException.'
+                        'test_smoke_user_exception.<locals>.MyException')
+        self.do_test_smoke(MyException('bad things happened'), expected)
 
     def test_from_exception(self):
         # Check all the parameters are accepted.
