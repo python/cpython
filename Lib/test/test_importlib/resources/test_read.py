@@ -12,7 +12,7 @@ class CommonBinaryTests(util.CommonTests, unittest.TestCase):
 
 class CommonTextTests(util.CommonTests, unittest.TestCase):
     def execute(self, package, path):
-        resources.files(package).joinpath(path).read_text()
+        resources.files(package).joinpath(path).read_text(encoding='utf-8')
 
 
 class ReadTests:
@@ -21,7 +21,11 @@ class ReadTests:
         self.assertEqual(result, b'\0\1\2\3')
 
     def test_read_text_default_encoding(self):
-        result = resources.files(self.data).joinpath('utf-8.file').read_text()
+        result = (
+            resources.files(self.data)
+            .joinpath('utf-8.file')
+            .read_text(encoding='utf-8')
+        )
         self.assertEqual(result, 'Hello, UTF-8 world!\n')
 
     def test_read_text_given_encoding(self):
@@ -33,7 +37,9 @@ class ReadTests:
         self.assertEqual(result, 'Hello, UTF-16 world!\n')
 
     def test_read_text_with_errors(self):
-        # Raises UnicodeError without the 'errors' argument.
+        """
+        Raises UnicodeError without the 'errors' argument.
+        """
         target = resources.files(self.data) / 'utf-16.file'
         self.assertRaises(UnicodeError, target.read_text, encoding='utf-8')
         result = target.read_text(encoding='utf-8', errors='ignore')

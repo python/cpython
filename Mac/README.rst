@@ -10,6 +10,19 @@ Python on macOS README
 This document provides a quick overview of some macOS specific features in
 the Python distribution.
 
+Compilers for building on macOS
+===============================
+
+The core developers primarily test builds on macOS with Apple's compiler tools,
+either Xcode or the Command Line Tools.  For these we only support building with
+a compiler that includes an SDK that targets the OS on the build machine, that is
+the version of Xcode that shipped with the OS version or one newer.
+
+For example, for macOS 12 we support Xcode 13 and Xcode 14 (or the corresponding
+Command Line Tools).
+
+Building with other compilers, such as GCC, likely works, but is not actively supported.
+
 macOS specific arguments to configure
 =====================================
 
@@ -334,9 +347,9 @@ The configure script sometimes emits warnings like the one below::
    configure: WARNING: libintl.h:     section "Present But Cannot Be Compiled"
    configure: WARNING: libintl.h: proceeding with the preprocessor's result
    configure: WARNING: libintl.h: in the future, the compiler will take precedence
-   configure: WARNING:     ## --------------------------------------- ##
-   configure: WARNING:     ## Report this to https://bugs.python.org/ ##
-   configure: WARNING:     ## --------------------------------------- ##
+   configure: WARNING:     ## -------------------------------------------------------- ##
+   configure: WARNING:     ## Report this to https://github.com/python/cpython/issues/ ##
+   configure: WARNING:     ## -------------------------------------------------------- ##
 
 This almost always means you are trying to build a universal binary for
 Python and have libraries in ``/usr/local`` that don't contain the required

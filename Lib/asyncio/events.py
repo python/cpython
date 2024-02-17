@@ -1,5 +1,9 @@
 """Event loop and event loop policy."""
 
+# Contains code from https://github.com/MagicStack/uvloop/tree/v0.16.0
+# SPDX-License-Identifier: PSF-2.0 AND (MIT OR Apache-2.0)
+# SPDX-FileCopyrightText: Copyright (c) 2015-2021 MagicStack Inc.  http://magic.io
+
 __all__ = (
     'AbstractEventLoopPolicy',
     'AbstractEventLoop', 'AbstractServer',
@@ -13,6 +17,7 @@ __all__ = (
 
 import contextvars
 import os
+import signal
 import socket
 import subprocess
 import sys
@@ -315,6 +320,7 @@ class AbstractEventLoop:
             *, family=socket.AF_UNSPEC,
             flags=socket.AI_PASSIVE, sock=None, backlog=100,
             ssl=None, reuse_address=None, reuse_port=None,
+            keep_alive=None,
             ssl_handshake_timeout=None,
             ssl_shutdown_timeout=None,
             start_serving=True):
@@ -352,6 +358,9 @@ class AbstractEventLoop:
         the same port as other existing endpoints are bound to, so long as
         they all set this flag when being created. This option is not
         supported on Windows.
+
+        keep_alive set to True keeps connections active by enabling the
+        periodic transmission of messages.
 
         ssl_handshake_timeout is the time in seconds that an SSL server
         will wait for completion of the SSL handshake before aborting the
@@ -616,7 +625,7 @@ class AbstractEventLoopPolicy:
     def get_event_loop(self):
         """Get the event loop for the current context.
 
-        Returns an event loop object implementing the BaseEventLoop interface,
+        Returns an event loop object implementing the AbstractEventLoop interface,
         or raises an exception in case no event loop has been set for the
         current context and the current policy does not specify to create one.
 
@@ -674,6 +683,23 @@ class BaseDefaultEventLoopPolicy(AbstractEventLoopPolicy):
         if (self._local._loop is None and
                 not self._local._set_called and
                 threading.current_thread() is threading.main_thread()):
+            stacklevel = 2
+            try:
+                f = sys._getframe(1)
+            except AttributeError:
+                pass
+            else:
+                # Move up the call stack so that the warning is attached
+                # to the line outside asyncio itself.
+                while f:
+                    module = f.f_globals.get('__name__')
+                    if not (module == 'asyncio' or module.startswith('asyncio.')):
+                        break
+                    f = f.f_back
+                    stacklevel += 1
+            import warnings
+            warnings.warn('There is no current event loop',
+                          DeprecationWarning, stacklevel=stacklevel)
             self.set_event_loop(self.new_event_loop())
 
         if self._local._loop is None:
@@ -785,16 +811,9 @@ def get_event_loop():
     the result of `get_event_loop_policy().get_event_loop()` call.
     """
     # NOTE: this function is implemented in C (see _asynciomodule.c)
-    return _py__get_event_loop()
-
-
-def _get_event_loop(stacklevel=3):
     current_loop = _get_running_loop()
     if current_loop is not None:
         return current_loop
-    import warnings
-    warnings.warn('There is no current event loop',
-                  DeprecationWarning, stacklevel=stacklevel)
     return get_event_loop_policy().get_event_loop()
 
 
@@ -824,7 +843,6 @@ _py__get_running_loop = _get_running_loop
 _py__set_running_loop = _set_running_loop
 _py_get_running_loop = get_running_loop
 _py_get_event_loop = get_event_loop
-_py__get_event_loop = _get_event_loop
 
 
 try:
@@ -832,7 +850,7 @@ try:
     # functions in asyncio.  Pure Python implementation is
     # about 4 times slower than C-accelerated.
     from _asyncio import (_get_running_loop, _set_running_loop,
-                          get_running_loop, get_event_loop, _get_event_loop)
+                          get_running_loop, get_event_loop)
 except ImportError:
     pass
 else:
@@ -841,4 +859,14 @@ else:
     _c__set_running_loop = _set_running_loop
     _c_get_running_loop = get_running_loop
     _c_get_event_loop = get_event_loop
-    _c__get_event_loop = _get_event_loop
+
+
+if hasattr(os, 'fork'):
+    def on_fork():
+        # Reset the loop and wakeupfd in the forked child process.
+        if _event_loop_policy is not None:
+            _event_loop_policy._local = BaseDefaultEventLoopPolicy._Local()
+        _set_running_loop(None)
+        signal.set_wakeup_fd(-1)
+
+    os.register_at_fork(after_in_child=on_fork)

@@ -7,6 +7,7 @@ from test.support import warnings_helper, captured_stdout
 import traceback
 import unittest
 from unittest.util import strclass
+from test.test_unittest.support import BufferedWriter
 
 
 class MockTraceback(object):
@@ -31,22 +32,6 @@ def bad_cleanup1():
 def bad_cleanup2():
     print('do cleanup2')
     raise ValueError('bad cleanup2')
-
-
-class BufferedWriter:
-    def __init__(self):
-        self.result = ''
-        self.buffer = ''
-
-    def write(self, arg):
-        self.buffer += arg
-
-    def flush(self):
-        self.result += self.buffer
-        self.buffer = ''
-
-    def getvalue(self):
-        return self.result
 
 
 class Test_TestResult(unittest.TestCase):
@@ -275,6 +260,62 @@ class Test_TestResult(unittest.TestCase):
         self.assertEqual(len(dropped), 1)
         self.assertIn("raise self.failureException(msg)", dropped[0])
 
+    def test_addFailure_filter_traceback_frames_chained_exception_self_loop(self):
+        class Foo(unittest.TestCase):
+            def test_1(self):
+                pass
+
+        def get_exc_info():
+            try:
+                loop = Exception("Loop")
+                loop.__cause__ = loop
+                loop.__context__ = loop
+                raise loop
+            except:
+                return sys.exc_info()
+
+        exc_info_tuple = get_exc_info()
+
+        test = Foo('test_1')
+        result = unittest.TestResult()
+        result.startTest(test)
+        result.addFailure(test, exc_info_tuple)
+        result.stopTest(test)
+
+        formatted_exc = result.failures[0][1]
+        self.assertEqual(formatted_exc.count("Exception: Loop\n"), 1)
+
+    def test_addFailure_filter_traceback_frames_chained_exception_cycle(self):
+        class Foo(unittest.TestCase):
+            def test_1(self):
+                pass
+
+        def get_exc_info():
+            try:
+                # Create two directionally opposed cycles
+                # __cause__ in one direction, __context__ in the other
+                A, B, C = Exception("A"), Exception("B"), Exception("C")
+                edges = [(C, B), (B, A), (A, C)]
+                for ex1, ex2 in edges:
+                    ex1.__cause__ = ex2
+                    ex2.__context__ = ex1
+                raise C
+            except:
+                return sys.exc_info()
+
+        exc_info_tuple = get_exc_info()
+
+        test = Foo('test_1')
+        result = unittest.TestResult()
+        result.startTest(test)
+        result.addFailure(test, exc_info_tuple)
+        result.stopTest(test)
+
+        formatted_exc = result.failures[0][1]
+        self.assertEqual(formatted_exc.count("Exception: A\n"), 1)
+        self.assertEqual(formatted_exc.count("Exception: B\n"), 1)
+        self.assertEqual(formatted_exc.count("Exception: C\n"), 1)
+
     # "addError(test, err)"
     # ...
     # "Called when the test case test raises an unexpected exception err
@@ -409,6 +450,7 @@ class Test_TestResult(unittest.TestCase):
         stream = BufferedWriter()
         runner = unittest.TextTestRunner(stream=stream, failfast=True)
         def test(result):
+            result.testsRun += 1
             self.assertTrue(result.failfast)
         result = runner.run(test)
         stream.flush()
