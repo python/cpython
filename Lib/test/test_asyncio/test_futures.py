@@ -270,10 +270,6 @@ class BaseFutureTests:
         f = self._new_future(loop=self.loop)
         self.assertRaises(asyncio.InvalidStateError, f.exception)
 
-        # StopIteration cannot be raised into a Future - CPython issue26221
-        self.assertRaisesRegex(TypeError, "StopIteration .* cannot be raised",
-                               f.set_exception, StopIteration)
-
         f.set_exception(exc)
         self.assertFalse(f.cancelled())
         self.assertTrue(f.done())
@@ -282,6 +278,25 @@ class BaseFutureTests:
         self.assertRaises(asyncio.InvalidStateError, f.set_result, None)
         self.assertRaises(asyncio.InvalidStateError, f.set_exception, None)
         self.assertFalse(f.cancel())
+
+    def test_stop_iteration_exception(self, stop_iteration_class=StopIteration):
+        exc = stop_iteration_class()
+        f = self._new_future(loop=self.loop)
+        f.set_exception(exc)
+        self.assertFalse(f.cancelled())
+        self.assertTrue(f.done())
+        self.assertRaises(RuntimeError, f.result)
+        exc = f.exception()
+        cause = exc.__cause__
+        self.assertIsInstance(exc, RuntimeError)
+        self.assertRegex(str(exc), 'StopIteration .* cannot be raised')
+        self.assertIsInstance(cause, stop_iteration_class)
+
+    def test_stop_iteration_subclass_exception(self):
+        class MyStopIteration(StopIteration):
+            pass
+
+        self.test_stop_iteration_exception(MyStopIteration)
 
     def test_exception_class(self):
         f = self._new_future(loop=self.loop)
@@ -612,6 +627,8 @@ class BaseFutureTests:
                             Exception, Exception("elephant"), 32)
             self.assertRaises(TypeError, fi.throw,
                             Exception("elephant"), Exception("elephant"))
+            # https://github.com/python/cpython/issues/101326
+            self.assertRaises(ValueError, fi.throw, ValueError, None, None)
         self.assertRaises(TypeError, fi.throw, list)
 
     def test_future_del_collect(self):

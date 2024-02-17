@@ -1,3 +1,5 @@
+import contextlib
+import subprocess
 import sysconfig
 import textwrap
 import unittest
@@ -8,7 +10,7 @@ from pathlib import Path
 
 from test import test_tools
 from test import support
-from test.support import os_helper
+from test.support import os_helper, import_helper
 from test.support.script_helper import assert_python_ok
 
 _py_cflags_nodist = sysconfig.get_config_var("PY_CFLAGS_NODIST")
@@ -24,7 +26,6 @@ with test_tools.imports_under_tool("peg_generator"):
         generate_parser_c_extension,
         generate_c_parser_source,
     )
-    from pegen.ast_dump import ast_dump
 
 
 TEST_TEMPLATE = """
@@ -73,8 +74,18 @@ unittest.main()
 @support.requires_subprocess()
 class TestCParser(unittest.TestCase):
 
+    _has_run = False
+
     @classmethod
     def setUpClass(cls):
+        if cls._has_run:
+            # Since gh-104798 (Use setuptools in peg-generator and reenable
+            # tests), this test case has been producing ref leaks. Initial
+            # debugging points to bug(s) in setuptools and/or importlib.
+            # See gh-105063 for more info.
+            raise unittest.SkipTest("gh-105063: can not rerun because of ref. leaks")
+        cls._has_run = True
+
         # When running under regtest, a separate tempdir is used
         # as the current directory and watched for left-overs.
         # Reusing that as the base for temporary directories
@@ -89,6 +100,16 @@ class TestCParser(unittest.TestCase):
         cls.library_dir = tempfile.mkdtemp(dir=cls.tmp_base)
         cls.addClassCleanup(shutil.rmtree, cls.library_dir)
 
+        with contextlib.ExitStack() as stack:
+            python_exe = stack.enter_context(support.setup_venv_with_pip_setuptools_wheel("venv"))
+            sitepackages = subprocess.check_output(
+                [python_exe, "-c", "import sysconfig; print(sysconfig.get_path('platlib'))"],
+                text=True,
+            ).strip()
+            stack.enter_context(import_helper.DirsOnSysPath(sitepackages))
+            cls.addClassCleanup(stack.pop_all().close)
+
+    @support.requires_venv_with_pip()
     def setUp(self):
         self._backup_config_vars = dict(sysconfig._CONFIG_VARS)
         cmd = support.missing_compiler_executable()
@@ -383,7 +404,7 @@ class TestCParser(unittest.TestCase):
             a='[' b=NAME c=for_if_clauses d=']' { _PyAST_ListComp(b, c, EXTRA) }
         )
         for_if_clauses[asdl_comprehension_seq*]: (
-            a[asdl_comprehension_seq*]=(y=[ASYNC] 'for' a=NAME 'in' b=NAME c[asdl_expr_seq*]=('if' z=NAME { z })*
+            a[asdl_comprehension_seq*]=(y=['async'] 'for' a=NAME 'in' b=NAME c[asdl_expr_seq*]=('if' z=NAME { z })*
                 { _PyAST_comprehension(_PyAST_Name(((expr_ty) a)->v.Name.id, Store, EXTRA), b, c, (y == NULL) ? 0 : 1, p->arena) })+ { a }
         )
         """

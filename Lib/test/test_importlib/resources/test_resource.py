@@ -1,3 +1,4 @@
+import contextlib
 import sys
 import unittest
 import uuid
@@ -7,7 +8,7 @@ from . import data01
 from . import zipdata01, zipdata02
 from . import util
 from importlib import resources, import_module
-from test.support import import_helper
+from test.support import import_helper, os_helper
 from test.support.os_helper import unlink
 
 
@@ -69,10 +70,12 @@ class ResourceLoaderTests(unittest.TestCase):
 
 class ResourceCornerCaseTests(unittest.TestCase):
     def test_package_has_no_reader_fallback(self):
-        # Test odd ball packages which:
+        """
+        Test odd ball packages which:
         # 1. Do not have a ResourceReader as a loader
         # 2. Are not on the file system
         # 3. Are not in a zip file
+        """
         module = util.create_package(
             file=data01, path=data01.__file__, contents=['A', 'B', 'C']
         )
@@ -138,82 +141,71 @@ class ResourceFromZipsTest02(util.ZipSetupBase, unittest.TestCase):
         )
 
 
+@contextlib.contextmanager
+def zip_on_path(dir):
+    data_path = pathlib.Path(zipdata01.__file__)
+    source_zip_path = data_path.parent.joinpath('ziptestdata.zip')
+    zip_path = pathlib.Path(dir) / f'{uuid.uuid4()}.zip'
+    zip_path.write_bytes(source_zip_path.read_bytes())
+    sys.path.append(str(zip_path))
+    import_module('ziptestdata')
+
+    try:
+        yield
+    finally:
+        with contextlib.suppress(ValueError):
+            sys.path.remove(str(zip_path))
+
+        with contextlib.suppress(KeyError):
+            del sys.path_importer_cache[str(zip_path)]
+            del sys.modules['ziptestdata']
+
+        with contextlib.suppress(OSError):
+            unlink(zip_path)
+
+
 class DeletingZipsTest(unittest.TestCase):
     """Having accessed resources in a zip file should not keep an open
     reference to the zip.
     """
 
-    ZIP_MODULE = zipdata01
-
     def setUp(self):
+        self.fixtures = contextlib.ExitStack()
+        self.addCleanup(self.fixtures.close)
+
         modules = import_helper.modules_setup()
         self.addCleanup(import_helper.modules_cleanup, *modules)
 
-        data_path = pathlib.Path(self.ZIP_MODULE.__file__)
-        data_dir = data_path.parent
-        self.source_zip_path = data_dir / 'ziptestdata.zip'
-        self.zip_path = pathlib.Path(f'{uuid.uuid4()}.zip').absolute()
-        self.zip_path.write_bytes(self.source_zip_path.read_bytes())
-        sys.path.append(str(self.zip_path))
-        self.data = import_module('ziptestdata')
-
-    def tearDown(self):
-        try:
-            sys.path.remove(str(self.zip_path))
-        except ValueError:
-            pass
-
-        try:
-            del sys.path_importer_cache[str(self.zip_path)]
-            del sys.modules[self.data.__name__]
-        except KeyError:
-            pass
-
-        try:
-            unlink(self.zip_path)
-        except OSError:
-            # If the test fails, this will probably fail too
-            pass
+        temp_dir = self.fixtures.enter_context(os_helper.temp_dir())
+        self.fixtures.enter_context(zip_on_path(temp_dir))
 
     def test_iterdir_does_not_keep_open(self):
-        c = [item.name for item in resources.files('ziptestdata').iterdir()]
-        self.zip_path.unlink()
-        del c
+        [item.name for item in resources.files('ziptestdata').iterdir()]
 
     def test_is_file_does_not_keep_open(self):
-        c = resources.files('ziptestdata').joinpath('binary.file').is_file()
-        self.zip_path.unlink()
-        del c
+        resources.files('ziptestdata').joinpath('binary.file').is_file()
 
     def test_is_file_failure_does_not_keep_open(self):
-        c = resources.files('ziptestdata').joinpath('not-present').is_file()
-        self.zip_path.unlink()
-        del c
+        resources.files('ziptestdata').joinpath('not-present').is_file()
 
     @unittest.skip("Desired but not supported.")
     def test_as_file_does_not_keep_open(self):  # pragma: no cover
-        c = resources.as_file(resources.files('ziptestdata') / 'binary.file')
-        self.zip_path.unlink()
-        del c
+        resources.as_file(resources.files('ziptestdata') / 'binary.file')
 
     def test_entered_path_does_not_keep_open(self):
-        # This is what certifi does on import to make its bundle
-        # available for the process duration.
-        c = resources.as_file(
-            resources.files('ziptestdata') / 'binary.file'
-        ).__enter__()
-        self.zip_path.unlink()
-        del c
+        """
+        Mimic what certifi does on import to make its bundle
+        available for the process duration.
+        """
+        resources.as_file(resources.files('ziptestdata') / 'binary.file').__enter__()
 
     def test_read_binary_does_not_keep_open(self):
-        c = resources.files('ziptestdata').joinpath('binary.file').read_bytes()
-        self.zip_path.unlink()
-        del c
+        resources.files('ziptestdata').joinpath('binary.file').read_bytes()
 
     def test_read_text_does_not_keep_open(self):
-        c = resources.files('ziptestdata').joinpath('utf-8.file').read_text()
-        self.zip_path.unlink()
-        del c
+        resources.files('ziptestdata').joinpath('utf-8.file').read_text(
+            encoding='utf-8'
+        )
 
 
 class ResourceFromNamespaceTest01(unittest.TestCase):

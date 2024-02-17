@@ -1,4 +1,3 @@
-from collections import namedtuple
 import contextlib
 import itertools
 import os
@@ -6,15 +5,17 @@ import pickle
 import sys
 from textwrap import dedent
 import threading
-import time
 import unittest
 
+import _testinternalcapi
 from test import support
 from test.support import import_helper
+from test.support import os_helper
 from test.support import script_helper
 
 
 interpreters = import_helper.import_module('_xxsubinterpreters')
+from _xxsubinterpreters import InterpreterNotFoundError
 
 
 ##################################
@@ -32,10 +33,10 @@ def _captured_script(script):
     return wrapped, open(r, encoding="utf-8")
 
 
-def _run_output(interp, request, shared=None):
+def _run_output(interp, request):
     script, rpipe = _captured_script(request)
     with rpipe:
-        interpreters.run_string(interp, script, shared)
+        interpreters.run_string(interp, script)
         return rpipe.read()
 
 
@@ -73,207 +74,6 @@ def _running(interp):
     t.join()
 
 
-#@contextmanager
-#def run_threaded(id, source, **shared):
-#    def run():
-#        run_interp(id, source, **shared)
-#    t = threading.Thread(target=run)
-#    t.start()
-#    yield
-#    t.join()
-
-
-def run_interp(id, source, **shared):
-    _run_interp(id, source, shared)
-
-
-def _run_interp(id, source, shared, _mainns={}):
-    source = dedent(source)
-    main = interpreters.get_main()
-    if main == id:
-        if interpreters.get_current() != main:
-            raise RuntimeError
-        # XXX Run a func?
-        exec(source, _mainns)
-    else:
-        interpreters.run_string(id, source, shared)
-
-
-class Interpreter(namedtuple('Interpreter', 'name id')):
-
-    @classmethod
-    def from_raw(cls, raw):
-        if isinstance(raw, cls):
-            return raw
-        elif isinstance(raw, str):
-            return cls(raw)
-        else:
-            raise NotImplementedError
-
-    def __new__(cls, name=None, id=None):
-        main = interpreters.get_main()
-        if id == main:
-            if not name:
-                name = 'main'
-            elif name != 'main':
-                raise ValueError(
-                    'name mismatch (expected "main", got "{}")'.format(name))
-            id = main
-        elif id is not None:
-            if not name:
-                name = 'interp'
-            elif name == 'main':
-                raise ValueError('name mismatch (unexpected "main")')
-            if not isinstance(id, interpreters.InterpreterID):
-                id = interpreters.InterpreterID(id)
-        elif not name or name == 'main':
-            name = 'main'
-            id = main
-        else:
-            id = interpreters.create()
-        self = super().__new__(cls, name, id)
-        return self
-
-
-# XXX expect_channel_closed() is unnecessary once we improve exc propagation.
-
-@contextlib.contextmanager
-def expect_channel_closed():
-    try:
-        yield
-    except interpreters.ChannelClosedError:
-        pass
-    else:
-        assert False, 'channel not closed'
-
-
-class ChannelAction(namedtuple('ChannelAction', 'action end interp')):
-
-    def __new__(cls, action, end=None, interp=None):
-        if not end:
-            end = 'both'
-        if not interp:
-            interp = 'main'
-        self = super().__new__(cls, action, end, interp)
-        return self
-
-    def __init__(self, *args, **kwargs):
-        if self.action == 'use':
-            if self.end not in ('same', 'opposite', 'send', 'recv'):
-                raise ValueError(self.end)
-        elif self.action in ('close', 'force-close'):
-            if self.end not in ('both', 'same', 'opposite', 'send', 'recv'):
-                raise ValueError(self.end)
-        else:
-            raise ValueError(self.action)
-        if self.interp not in ('main', 'same', 'other', 'extra'):
-            raise ValueError(self.interp)
-
-    def resolve_end(self, end):
-        if self.end == 'same':
-            return end
-        elif self.end == 'opposite':
-            return 'recv' if end == 'send' else 'send'
-        else:
-            return self.end
-
-    def resolve_interp(self, interp, other, extra):
-        if self.interp == 'same':
-            return interp
-        elif self.interp == 'other':
-            if other is None:
-                raise RuntimeError
-            return other
-        elif self.interp == 'extra':
-            if extra is None:
-                raise RuntimeError
-            return extra
-        elif self.interp == 'main':
-            if interp.name == 'main':
-                return interp
-            elif other and other.name == 'main':
-                return other
-            else:
-                raise RuntimeError
-        # Per __init__(), there aren't any others.
-
-
-class ChannelState(namedtuple('ChannelState', 'pending closed')):
-
-    def __new__(cls, pending=0, *, closed=False):
-        self = super().__new__(cls, pending, closed)
-        return self
-
-    def incr(self):
-        return type(self)(self.pending + 1, closed=self.closed)
-
-    def decr(self):
-        return type(self)(self.pending - 1, closed=self.closed)
-
-    def close(self, *, force=True):
-        if self.closed:
-            if not force or self.pending == 0:
-                return self
-        return type(self)(0 if force else self.pending, closed=True)
-
-
-def run_action(cid, action, end, state, *, hideclosed=True):
-    if state.closed:
-        if action == 'use' and end == 'recv' and state.pending:
-            expectfail = False
-        else:
-            expectfail = True
-    else:
-        expectfail = False
-
-    try:
-        result = _run_action(cid, action, end, state)
-    except interpreters.ChannelClosedError:
-        if not hideclosed and not expectfail:
-            raise
-        result = state.close()
-    else:
-        if expectfail:
-            raise ...  # XXX
-    return result
-
-
-def _run_action(cid, action, end, state):
-    if action == 'use':
-        if end == 'send':
-            interpreters.channel_send(cid, b'spam')
-            return state.incr()
-        elif end == 'recv':
-            if not state.pending:
-                try:
-                    interpreters.channel_recv(cid)
-                except interpreters.ChannelEmptyError:
-                    return state
-                else:
-                    raise Exception('expected ChannelEmptyError')
-            else:
-                interpreters.channel_recv(cid)
-                return state.decr()
-        else:
-            raise ValueError(end)
-    elif action == 'close':
-        kwargs = {}
-        if end in ('recv', 'send'):
-            kwargs[end] = True
-        interpreters.channel_close(cid, **kwargs)
-        return state.close()
-    elif action == 'force-close':
-        kwargs = {
-            'force': True,
-            }
-        if end in ('recv', 'send'):
-            kwargs[end] = True
-        interpreters.channel_close(cid, **kwargs)
-        return state.close(force=True)
-    else:
-        raise ValueError(action)
-
-
 def clean_up_interpreters():
     for id in interpreters.list_all():
         if id == 0:  # main
@@ -284,18 +84,9 @@ def clean_up_interpreters():
             pass  # already destroyed
 
 
-def clean_up_channels():
-    for cid in interpreters.channel_list_all():
-        try:
-            interpreters.channel_destroy(cid)
-        except interpreters.ChannelNotFoundError:
-            pass  # already destroyed
-
-
 class TestBase(unittest.TestCase):
 
     def tearDown(self):
-        clean_up_channels()
         clean_up_interpreters()
 
 
@@ -313,6 +104,10 @@ class IsShareableTests(unittest.TestCase):
                 'spam',
                 10,
                 -10,
+                True,
+                False,
+                100.0,
+                (1, ('spam', 'eggs')),
                 ]
         for obj in shareables:
             with self.subTest(obj):
@@ -331,8 +126,6 @@ class IsShareableTests(unittest.TestCase):
 
         not_shareables = [
                 # singletons
-                True,
-                False,
                 NotImplemented,
                 ...,
                 # builtin types and objects
@@ -340,7 +133,6 @@ class IsShareableTests(unittest.TestCase):
                 object,
                 object(),
                 Exception(),
-                100.0,
                 # user-defined types and objects
                 Cheese,
                 Cheese('Wensleydale'),
@@ -354,30 +146,20 @@ class IsShareableTests(unittest.TestCase):
 
 class ShareableTypeTests(unittest.TestCase):
 
-    def setUp(self):
-        super().setUp()
-        self.cid = interpreters.channel_create()
-
-    def tearDown(self):
-        interpreters.channel_destroy(self.cid)
-        super().tearDown()
-
     def _assert_values(self, values):
         for obj in values:
             with self.subTest(obj):
-                interpreters.channel_send(self.cid, obj)
-                got = interpreters.channel_recv(self.cid)
+                xid = _testinternalcapi.get_crossinterp_data(obj)
+                got = _testinternalcapi.restore_crossinterp_data(xid)
 
                 self.assertEqual(got, obj)
                 self.assertIs(type(got), type(obj))
-                # XXX Check the following in the channel tests?
-                #self.assertIsNot(got, obj)
 
     def test_singletons(self):
         for obj in [None]:
             with self.subTest(obj):
-                interpreters.channel_send(self.cid, obj)
-                got = interpreters.channel_recv(self.cid)
+                xid = _testinternalcapi.get_crossinterp_data(obj)
+                got = _testinternalcapi.restore_crossinterp_data(xid)
 
                 # XXX What about between interpreters?
                 self.assertIs(got, obj)
@@ -408,7 +190,40 @@ class ShareableTypeTests(unittest.TestCase):
         for i in ints:
             with self.subTest(i):
                 with self.assertRaises(OverflowError):
-                    interpreters.channel_send(self.cid, i)
+                    _testinternalcapi.get_crossinterp_data(i)
+
+    def test_bool(self):
+        self._assert_values([True, False])
+
+    def test_float(self):
+        self._assert_values([0.0, 1.1, -1.0, 0.12345678, -0.12345678])
+
+    def test_tuple(self):
+        self._assert_values([(), (1,), ("hello", "world", ), (1, True, "hello")])
+        # Test nesting
+        self._assert_values([
+            ((1,),),
+            ((1, 2), (3, 4)),
+            ((1, 2), (3, 4), (5, 6)),
+        ])
+
+    def test_tuples_containing_non_shareable_types(self):
+        non_shareables = [
+                Exception(),
+                object(),
+        ]
+        for s in non_shareables:
+            value = tuple([0, 1.0, s])
+            with self.subTest(repr(value)):
+                # XXX Assert the NotShareableError when it is exported
+                with self.assertRaises(ValueError):
+                    _testinternalcapi.get_crossinterp_data(value)
+            # Check nested as well
+            value = tuple([0, 1., (s,)])
+            with self.subTest("nested " + repr(value)):
+                # XXX Assert the NotShareableError when it is exported
+                with self.assertRaises(ValueError):
+                    _testinternalcapi.get_crossinterp_data(value)
 
 
 class ModuleTests(TestBase):
@@ -452,7 +267,7 @@ class GetCurrentTests(TestBase):
         main = interpreters.get_main()
         cur = interpreters.get_current()
         self.assertEqual(cur, main)
-        self.assertIsInstance(cur, interpreters.InterpreterID)
+        self.assertIsInstance(cur, int)
 
     def test_subinterpreter(self):
         main = interpreters.get_main()
@@ -461,7 +276,7 @@ class GetCurrentTests(TestBase):
             import _xxsubinterpreters as _interpreters
             cur = _interpreters.get_current()
             print(cur)
-            assert isinstance(cur, _interpreters.InterpreterID)
+            assert isinstance(cur, int)
             """))
         cur = int(out.strip())
         _, expected = interpreters.list_all()
@@ -475,7 +290,7 @@ class GetMainTests(TestBase):
         [expected] = interpreters.list_all()
         main = interpreters.get_main()
         self.assertEqual(main, expected)
-        self.assertIsInstance(main, interpreters.InterpreterID)
+        self.assertIsInstance(main, int)
 
     def test_from_subinterpreter(self):
         [expected] = interpreters.list_all()
@@ -484,7 +299,7 @@ class GetMainTests(TestBase):
             import _xxsubinterpreters as _interpreters
             main = _interpreters.get_main()
             print(main)
-            assert isinstance(main, _interpreters.InterpreterID)
+            assert isinstance(main, int)
             """))
         main = int(out.strip())
         self.assertEqual(main, expected)
@@ -519,11 +334,11 @@ class IsRunningTests(TestBase):
     def test_already_destroyed(self):
         interp = interpreters.create()
         interpreters.destroy(interp)
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(InterpreterNotFoundError):
             interpreters.is_running(interp)
 
     def test_does_not_exist(self):
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(InterpreterNotFoundError):
             interpreters.is_running(1_000_000)
 
     def test_bad_id(self):
@@ -531,70 +346,11 @@ class IsRunningTests(TestBase):
             interpreters.is_running(-1)
 
 
-class InterpreterIDTests(TestBase):
-
-    def test_with_int(self):
-        id = interpreters.InterpreterID(10, force=True)
-
-        self.assertEqual(int(id), 10)
-
-    def test_coerce_id(self):
-        class Int(str):
-            def __index__(self):
-                return 10
-
-        id = interpreters.InterpreterID(Int(), force=True)
-        self.assertEqual(int(id), 10)
-
-    def test_bad_id(self):
-        self.assertRaises(TypeError, interpreters.InterpreterID, object())
-        self.assertRaises(TypeError, interpreters.InterpreterID, 10.0)
-        self.assertRaises(TypeError, interpreters.InterpreterID, '10')
-        self.assertRaises(TypeError, interpreters.InterpreterID, b'10')
-        self.assertRaises(ValueError, interpreters.InterpreterID, -1)
-        self.assertRaises(OverflowError, interpreters.InterpreterID, 2**64)
-
-    def test_does_not_exist(self):
-        id = interpreters.channel_create()
-        with self.assertRaises(RuntimeError):
-            interpreters.InterpreterID(int(id) + 1)  # unforced
-
-    def test_str(self):
-        id = interpreters.InterpreterID(10, force=True)
-        self.assertEqual(str(id), '10')
-
-    def test_repr(self):
-        id = interpreters.InterpreterID(10, force=True)
-        self.assertEqual(repr(id), 'InterpreterID(10)')
-
-    def test_equality(self):
-        id1 = interpreters.create()
-        id2 = interpreters.InterpreterID(int(id1))
-        id3 = interpreters.create()
-
-        self.assertTrue(id1 == id1)
-        self.assertTrue(id1 == id2)
-        self.assertTrue(id1 == int(id1))
-        self.assertTrue(int(id1) == id1)
-        self.assertTrue(id1 == float(int(id1)))
-        self.assertTrue(float(int(id1)) == id1)
-        self.assertFalse(id1 == float(int(id1)) + 0.1)
-        self.assertFalse(id1 == str(int(id1)))
-        self.assertFalse(id1 == 2**1000)
-        self.assertFalse(id1 == float('inf'))
-        self.assertFalse(id1 == 'spam')
-        self.assertFalse(id1 == id3)
-
-        self.assertFalse(id1 != id1)
-        self.assertFalse(id1 != id2)
-        self.assertTrue(id1 != id3)
-
-
 class CreateTests(TestBase):
 
     def test_in_main(self):
         id = interpreters.create()
-        self.assertIsInstance(id, interpreters.InterpreterID)
+        self.assertIsInstance(id, int)
 
         self.assertIn(id, interpreters.list_all())
 
@@ -630,7 +386,7 @@ class CreateTests(TestBase):
             import _xxsubinterpreters as _interpreters
             id = _interpreters.create()
             print(id)
-            assert isinstance(id, _interpreters.InterpreterID)
+            assert isinstance(id, int)
             """))
         id2 = int(out.strip())
 
@@ -722,11 +478,11 @@ class DestroyTests(TestBase):
     def test_already_destroyed(self):
         id = interpreters.create()
         interpreters.destroy(id)
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(InterpreterNotFoundError):
             interpreters.destroy(id)
 
     def test_does_not_exist(self):
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(InterpreterNotFoundError):
             interpreters.destroy(1_000_000)
 
     def test_bad_id(self):
@@ -864,6 +620,22 @@ class RunStringTests(TestBase):
 
             self.assertEqual(out, 'it worked!')
 
+    def test_shareable_types(self):
+        interp = interpreters.create()
+        objects = [
+            None,
+            'spam',
+            b'spam',
+            42,
+        ]
+        for obj in objects:
+            with self.subTest(obj):
+                interpreters.set___main___attrs(interp, dict(obj=obj))
+                interpreters.run_string(
+                    interp,
+                    f'assert(obj == {obj!r})',
+                )
+
     def test_os_exec(self):
         expected = 'spam spam spam spam spam'
         subinterp = interpreters.create()
@@ -911,7 +683,7 @@ class RunStringTests(TestBase):
         id = 0
         while id in interpreters.list_all():
             id += 1
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(InterpreterNotFoundError):
             interpreters.run_string(id, 'print("spam")')
 
     def test_error_id(self):
@@ -929,43 +701,6 @@ class RunStringTests(TestBase):
     def test_bytes_for_script(self):
         with self.assertRaises(TypeError):
             interpreters.run_string(self.id, b'print("spam")')
-
-    @contextlib.contextmanager
-    def assert_run_failed(self, exctype, msg=None):
-        with self.assertRaises(interpreters.RunFailedError) as caught:
-            yield
-        if msg is None:
-            self.assertEqual(str(caught.exception).split(':')[0],
-                             str(exctype))
-        else:
-            self.assertEqual(str(caught.exception),
-                             "{}: {}".format(exctype, msg))
-
-    def test_invalid_syntax(self):
-        with self.assert_run_failed(SyntaxError):
-            # missing close paren
-            interpreters.run_string(self.id, 'print("spam"')
-
-    def test_failure(self):
-        with self.assert_run_failed(Exception, 'spam'):
-            interpreters.run_string(self.id, 'raise Exception("spam")')
-
-    def test_SystemExit(self):
-        with self.assert_run_failed(SystemExit, '42'):
-            interpreters.run_string(self.id, 'raise SystemExit(42)')
-
-    def test_sys_exit(self):
-        with self.assert_run_failed(SystemExit):
-            interpreters.run_string(self.id, dedent("""
-                import sys
-                sys.exit()
-                """))
-
-        with self.assert_run_failed(SystemExit, '42'):
-            interpreters.run_string(self.id, dedent("""
-                import sys
-                sys.exit(42)
-                """))
 
     def test_with_shared(self):
         r, w = os.pipe()
@@ -986,7 +721,8 @@ class RunStringTests(TestBase):
             with open({w}, 'wb') as chan:
                 pickle.dump(ns, chan)
             """)
-        interpreters.run_string(self.id, script, shared)
+        interpreters.set___main___attrs(self.id, shared)
+        interpreters.run_string(self.id, script)
         with open(r, 'rb') as chan:
             ns = pickle.load(chan)
 
@@ -1003,11 +739,12 @@ class RunStringTests(TestBase):
             """))
 
         shared = {'spam': b'ham'}
-        script = dedent(f"""
+        script = dedent("""
             ns2 = dict(vars())
             del ns2['__builtins__']
         """)
-        interpreters.run_string(self.id, script, shared)
+        interpreters.set___main___attrs(self.id, shared)
+        interpreters.run_string(self.id, script)
 
         r, w = os.pipe()
         script = dedent(f"""
@@ -1038,7 +775,8 @@ class RunStringTests(TestBase):
             with open({w}, 'wb') as chan:
                 pickle.dump(ns, chan)
             """)
-        interpreters.run_string(self.id, script, shared)
+        interpreters.set___main___attrs(self.id, shared)
+        interpreters.run_string(self.id, script)
         with open(r, 'rb') as chan:
             ns = pickle.load(chan)
 
@@ -1107,7 +845,7 @@ class RunStringTests(TestBase):
     # XXX Fix this test!
     @unittest.skip('blocking forever')
     def test_still_running_at_exit(self):
-        script = dedent(f"""
+        script = dedent("""
         from textwrap import dedent
         import threading
         import _xxsubinterpreters as _interpreters
@@ -1130,1284 +868,269 @@ class RunStringTests(TestBase):
         self.assertEqual(retcode, 0)
 
 
-##################################
-# channel tests
+class RunFailedTests(TestBase):
 
-class ChannelIDTests(TestBase):
+    def setUp(self):
+        super().setUp()
+        self.id = interpreters.create()
 
-    def test_default_kwargs(self):
-        cid = interpreters._channel_id(10, force=True)
-
-        self.assertEqual(int(cid), 10)
-        self.assertEqual(cid.end, 'both')
-
-    def test_with_kwargs(self):
-        cid = interpreters._channel_id(10, send=True, force=True)
-        self.assertEqual(cid.end, 'send')
-
-        cid = interpreters._channel_id(10, send=True, recv=False, force=True)
-        self.assertEqual(cid.end, 'send')
-
-        cid = interpreters._channel_id(10, recv=True, force=True)
-        self.assertEqual(cid.end, 'recv')
-
-        cid = interpreters._channel_id(10, recv=True, send=False, force=True)
-        self.assertEqual(cid.end, 'recv')
-
-        cid = interpreters._channel_id(10, send=True, recv=True, force=True)
-        self.assertEqual(cid.end, 'both')
-
-    def test_coerce_id(self):
-        class Int(str):
-            def __index__(self):
-                return 10
-
-        cid = interpreters._channel_id(Int(), force=True)
-        self.assertEqual(int(cid), 10)
-
-    def test_bad_id(self):
-        self.assertRaises(TypeError, interpreters._channel_id, object())
-        self.assertRaises(TypeError, interpreters._channel_id, 10.0)
-        self.assertRaises(TypeError, interpreters._channel_id, '10')
-        self.assertRaises(TypeError, interpreters._channel_id, b'10')
-        self.assertRaises(ValueError, interpreters._channel_id, -1)
-        self.assertRaises(OverflowError, interpreters._channel_id, 2**64)
-
-    def test_bad_kwargs(self):
-        with self.assertRaises(ValueError):
-            interpreters._channel_id(10, send=False, recv=False)
-
-    def test_does_not_exist(self):
-        cid = interpreters.channel_create()
-        with self.assertRaises(interpreters.ChannelNotFoundError):
-            interpreters._channel_id(int(cid) + 1)  # unforced
-
-    def test_str(self):
-        cid = interpreters._channel_id(10, force=True)
-        self.assertEqual(str(cid), '10')
-
-    def test_repr(self):
-        cid = interpreters._channel_id(10, force=True)
-        self.assertEqual(repr(cid), 'ChannelID(10)')
-
-        cid = interpreters._channel_id(10, send=True, force=True)
-        self.assertEqual(repr(cid), 'ChannelID(10, send=True)')
-
-        cid = interpreters._channel_id(10, recv=True, force=True)
-        self.assertEqual(repr(cid), 'ChannelID(10, recv=True)')
-
-        cid = interpreters._channel_id(10, send=True, recv=True, force=True)
-        self.assertEqual(repr(cid), 'ChannelID(10)')
-
-    def test_equality(self):
-        cid1 = interpreters.channel_create()
-        cid2 = interpreters._channel_id(int(cid1))
-        cid3 = interpreters.channel_create()
-
-        self.assertTrue(cid1 == cid1)
-        self.assertTrue(cid1 == cid2)
-        self.assertTrue(cid1 == int(cid1))
-        self.assertTrue(int(cid1) == cid1)
-        self.assertTrue(cid1 == float(int(cid1)))
-        self.assertTrue(float(int(cid1)) == cid1)
-        self.assertFalse(cid1 == float(int(cid1)) + 0.1)
-        self.assertFalse(cid1 == str(int(cid1)))
-        self.assertFalse(cid1 == 2**1000)
-        self.assertFalse(cid1 == float('inf'))
-        self.assertFalse(cid1 == 'spam')
-        self.assertFalse(cid1 == cid3)
-
-        self.assertFalse(cid1 != cid1)
-        self.assertFalse(cid1 != cid2)
-        self.assertTrue(cid1 != cid3)
-
-    def test_shareable(self):
-        chan = interpreters.channel_create()
-
-        obj = interpreters.channel_create()
-        interpreters.channel_send(chan, obj)
-        got = interpreters.channel_recv(chan)
-
-        self.assertEqual(got, obj)
-        self.assertIs(type(got), type(obj))
-        # XXX Check the following in the channel tests?
-        #self.assertIsNot(got, obj)
-
-
-class ChannelTests(TestBase):
-
-    def test_create_cid(self):
-        cid = interpreters.channel_create()
-        self.assertIsInstance(cid, interpreters.ChannelID)
-
-    def test_sequential_ids(self):
-        before = interpreters.channel_list_all()
-        id1 = interpreters.channel_create()
-        id2 = interpreters.channel_create()
-        id3 = interpreters.channel_create()
-        after = interpreters.channel_list_all()
-
-        self.assertEqual(id2, int(id1) + 1)
-        self.assertEqual(id3, int(id2) + 1)
-        self.assertEqual(set(after) - set(before), {id1, id2, id3})
-
-    def test_ids_global(self):
-        id1 = interpreters.create()
-        out = _run_output(id1, dedent("""
-            import _xxsubinterpreters as _interpreters
-            cid = _interpreters.channel_create()
-            print(cid)
+    def add_module(self, modname, text):
+        import tempfile
+        tempdir = tempfile.mkdtemp()
+        self.addCleanup(lambda: os_helper.rmtree(tempdir))
+        interpreters.run_string(self.id, dedent(f"""
+            import sys
+            sys.path.insert(0, {tempdir!r})
             """))
-        cid1 = int(out.strip())
+        return script_helper.make_script(tempdir, modname, text)
 
-        id2 = interpreters.create()
-        out = _run_output(id2, dedent("""
-            import _xxsubinterpreters as _interpreters
-            cid = _interpreters.channel_create()
-            print(cid)
-            """))
-        cid2 = int(out.strip())
-
-        self.assertEqual(cid2, int(cid1) + 1)
-
-    def test_channel_list_interpreters_none(self):
-        """Test listing interpreters for a channel with no associations."""
-        # Test for channel with no associated interpreters.
-        cid = interpreters.channel_create()
-        send_interps = interpreters.channel_list_interpreters(cid, send=True)
-        recv_interps = interpreters.channel_list_interpreters(cid, send=False)
-        self.assertEqual(send_interps, [])
-        self.assertEqual(recv_interps, [])
-
-    def test_channel_list_interpreters_basic(self):
-        """Test basic listing channel interpreters."""
-        interp0 = interpreters.get_main()
-        cid = interpreters.channel_create()
-        interpreters.channel_send(cid, "send")
-        # Test for a channel that has one end associated to an interpreter.
-        send_interps = interpreters.channel_list_interpreters(cid, send=True)
-        recv_interps = interpreters.channel_list_interpreters(cid, send=False)
-        self.assertEqual(send_interps, [interp0])
-        self.assertEqual(recv_interps, [])
-
-        interp1 = interpreters.create()
-        _run_output(interp1, dedent(f"""
-            import _xxsubinterpreters as _interpreters
-            obj = _interpreters.channel_recv({cid})
-            """))
-        # Test for channel that has both ends associated to an interpreter.
-        send_interps = interpreters.channel_list_interpreters(cid, send=True)
-        recv_interps = interpreters.channel_list_interpreters(cid, send=False)
-        self.assertEqual(send_interps, [interp0])
-        self.assertEqual(recv_interps, [interp1])
-
-    def test_channel_list_interpreters_multiple(self):
-        """Test listing interpreters for a channel with many associations."""
-        interp0 = interpreters.get_main()
-        interp1 = interpreters.create()
-        interp2 = interpreters.create()
-        interp3 = interpreters.create()
-        cid = interpreters.channel_create()
-
-        interpreters.channel_send(cid, "send")
-        _run_output(interp1, dedent(f"""
-            import _xxsubinterpreters as _interpreters
-            _interpreters.channel_send({cid}, "send")
-            """))
-        _run_output(interp2, dedent(f"""
-            import _xxsubinterpreters as _interpreters
-            obj = _interpreters.channel_recv({cid})
-            """))
-        _run_output(interp3, dedent(f"""
-            import _xxsubinterpreters as _interpreters
-            obj = _interpreters.channel_recv({cid})
-            """))
-        send_interps = interpreters.channel_list_interpreters(cid, send=True)
-        recv_interps = interpreters.channel_list_interpreters(cid, send=False)
-        self.assertEqual(set(send_interps), {interp0, interp1})
-        self.assertEqual(set(recv_interps), {interp2, interp3})
-
-    def test_channel_list_interpreters_destroyed(self):
-        """Test listing channel interpreters with a destroyed interpreter."""
-        interp0 = interpreters.get_main()
-        interp1 = interpreters.create()
-        cid = interpreters.channel_create()
-        interpreters.channel_send(cid, "send")
-        _run_output(interp1, dedent(f"""
-            import _xxsubinterpreters as _interpreters
-            obj = _interpreters.channel_recv({cid})
-            """))
-        # Should be one interpreter associated with each end.
-        send_interps = interpreters.channel_list_interpreters(cid, send=True)
-        recv_interps = interpreters.channel_list_interpreters(cid, send=False)
-        self.assertEqual(send_interps, [interp0])
-        self.assertEqual(recv_interps, [interp1])
-
-        interpreters.destroy(interp1)
-        # Destroyed interpreter should not be listed.
-        send_interps = interpreters.channel_list_interpreters(cid, send=True)
-        recv_interps = interpreters.channel_list_interpreters(cid, send=False)
-        self.assertEqual(send_interps, [interp0])
-        self.assertEqual(recv_interps, [])
-
-    def test_channel_list_interpreters_released(self):
-        """Test listing channel interpreters with a released channel."""
-        # Set up one channel with main interpreter on the send end and two
-        # subinterpreters on the receive end.
-        interp0 = interpreters.get_main()
-        interp1 = interpreters.create()
-        interp2 = interpreters.create()
-        cid = interpreters.channel_create()
-        interpreters.channel_send(cid, "data")
-        _run_output(interp1, dedent(f"""
-            import _xxsubinterpreters as _interpreters
-            obj = _interpreters.channel_recv({cid})
-            """))
-        interpreters.channel_send(cid, "data")
-        _run_output(interp2, dedent(f"""
-            import _xxsubinterpreters as _interpreters
-            obj = _interpreters.channel_recv({cid})
-            """))
-        # Check the setup.
-        send_interps = interpreters.channel_list_interpreters(cid, send=True)
-        recv_interps = interpreters.channel_list_interpreters(cid, send=False)
-        self.assertEqual(len(send_interps), 1)
-        self.assertEqual(len(recv_interps), 2)
-
-        # Release the main interpreter from the send end.
-        interpreters.channel_release(cid, send=True)
-        # Send end should have no associated interpreters.
-        send_interps = interpreters.channel_list_interpreters(cid, send=True)
-        recv_interps = interpreters.channel_list_interpreters(cid, send=False)
-        self.assertEqual(len(send_interps), 0)
-        self.assertEqual(len(recv_interps), 2)
-
-        # Release one of the subinterpreters from the receive end.
-        _run_output(interp2, dedent(f"""
-            import _xxsubinterpreters as _interpreters
-            _interpreters.channel_release({cid})
-            """))
-        # Receive end should have the released interpreter removed.
-        send_interps = interpreters.channel_list_interpreters(cid, send=True)
-        recv_interps = interpreters.channel_list_interpreters(cid, send=False)
-        self.assertEqual(len(send_interps), 0)
-        self.assertEqual(recv_interps, [interp1])
-
-    def test_channel_list_interpreters_closed(self):
-        """Test listing channel interpreters with a closed channel."""
-        interp0 = interpreters.get_main()
-        interp1 = interpreters.create()
-        cid = interpreters.channel_create()
-        # Put something in the channel so that it's not empty.
-        interpreters.channel_send(cid, "send")
-
-        # Check initial state.
-        send_interps = interpreters.channel_list_interpreters(cid, send=True)
-        recv_interps = interpreters.channel_list_interpreters(cid, send=False)
-        self.assertEqual(len(send_interps), 1)
-        self.assertEqual(len(recv_interps), 0)
-
-        # Force close the channel.
-        interpreters.channel_close(cid, force=True)
-        # Both ends should raise an error.
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_list_interpreters(cid, send=True)
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_list_interpreters(cid, send=False)
-
-    def test_channel_list_interpreters_closed_send_end(self):
-        """Test listing channel interpreters with a channel's send end closed."""
-        interp0 = interpreters.get_main()
-        interp1 = interpreters.create()
-        cid = interpreters.channel_create()
-        # Put something in the channel so that it's not empty.
-        interpreters.channel_send(cid, "send")
-
-        # Check initial state.
-        send_interps = interpreters.channel_list_interpreters(cid, send=True)
-        recv_interps = interpreters.channel_list_interpreters(cid, send=False)
-        self.assertEqual(len(send_interps), 1)
-        self.assertEqual(len(recv_interps), 0)
-
-        # Close the send end of the channel.
-        interpreters.channel_close(cid, send=True)
-        # Send end should raise an error.
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_list_interpreters(cid, send=True)
-        # Receive end should not be closed (since channel is not empty).
-        recv_interps = interpreters.channel_list_interpreters(cid, send=False)
-        self.assertEqual(len(recv_interps), 0)
-
-        # Close the receive end of the channel from a subinterpreter.
-        _run_output(interp1, dedent(f"""
-            import _xxsubinterpreters as _interpreters
-            _interpreters.channel_close({cid}, force=True)
-            """))
-        # Both ends should raise an error.
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_list_interpreters(cid, send=True)
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_list_interpreters(cid, send=False)
-
-    ####################
-
-    def test_send_recv_main(self):
-        cid = interpreters.channel_create()
-        orig = b'spam'
-        interpreters.channel_send(cid, orig)
-        obj = interpreters.channel_recv(cid)
-
-        self.assertEqual(obj, orig)
-        self.assertIsNot(obj, orig)
-
-    def test_send_recv_same_interpreter(self):
-        id1 = interpreters.create()
-        out = _run_output(id1, dedent("""
-            import _xxsubinterpreters as _interpreters
-            cid = _interpreters.channel_create()
-            orig = b'spam'
-            _interpreters.channel_send(cid, orig)
-            obj = _interpreters.channel_recv(cid)
-            assert obj is not orig
-            assert obj == orig
-            """))
-
-    def test_send_recv_different_interpreters(self):
-        cid = interpreters.channel_create()
-        id1 = interpreters.create()
-        out = _run_output(id1, dedent(f"""
-            import _xxsubinterpreters as _interpreters
-            _interpreters.channel_send({cid}, b'spam')
-            """))
-        obj = interpreters.channel_recv(cid)
-
-        self.assertEqual(obj, b'spam')
-
-    def test_send_recv_different_threads(self):
-        cid = interpreters.channel_create()
-
-        def f():
-            while True:
-                try:
-                    obj = interpreters.channel_recv(cid)
-                    break
-                except interpreters.ChannelEmptyError:
-                    time.sleep(0.1)
-            interpreters.channel_send(cid, obj)
-        t = threading.Thread(target=f)
-        t.start()
-
-        interpreters.channel_send(cid, b'spam')
-        t.join()
-        obj = interpreters.channel_recv(cid)
-
-        self.assertEqual(obj, b'spam')
-
-    def test_send_recv_different_interpreters_and_threads(self):
-        cid = interpreters.channel_create()
-        id1 = interpreters.create()
-        out = None
-
-        def f():
-            nonlocal out
-            out = _run_output(id1, dedent(f"""
-                import time
-                import _xxsubinterpreters as _interpreters
-                while True:
-                    try:
-                        obj = _interpreters.channel_recv({cid})
-                        break
-                    except _interpreters.ChannelEmptyError:
-                        time.sleep(0.1)
-                assert(obj == b'spam')
-                _interpreters.channel_send({cid}, b'eggs')
-                """))
-        t = threading.Thread(target=f)
-        t.start()
-
-        interpreters.channel_send(cid, b'spam')
-        t.join()
-        obj = interpreters.channel_recv(cid)
-
-        self.assertEqual(obj, b'eggs')
-
-    def test_send_not_found(self):
-        with self.assertRaises(interpreters.ChannelNotFoundError):
-            interpreters.channel_send(10, b'spam')
-
-    def test_recv_not_found(self):
-        with self.assertRaises(interpreters.ChannelNotFoundError):
-            interpreters.channel_recv(10)
-
-    def test_recv_empty(self):
-        cid = interpreters.channel_create()
-        with self.assertRaises(interpreters.ChannelEmptyError):
-            interpreters.channel_recv(cid)
-
-    def test_recv_default(self):
-        default = object()
-        cid = interpreters.channel_create()
-        obj1 = interpreters.channel_recv(cid, default)
-        interpreters.channel_send(cid, None)
-        interpreters.channel_send(cid, 1)
-        interpreters.channel_send(cid, b'spam')
-        interpreters.channel_send(cid, b'eggs')
-        obj2 = interpreters.channel_recv(cid, default)
-        obj3 = interpreters.channel_recv(cid, default)
-        obj4 = interpreters.channel_recv(cid)
-        obj5 = interpreters.channel_recv(cid, default)
-        obj6 = interpreters.channel_recv(cid, default)
-
-        self.assertIs(obj1, default)
-        self.assertIs(obj2, None)
-        self.assertEqual(obj3, 1)
-        self.assertEqual(obj4, b'spam')
-        self.assertEqual(obj5, b'eggs')
-        self.assertIs(obj6, default)
-
-    def test_recv_sending_interp_destroyed(self):
-        cid = interpreters.channel_create()
-        interp = interpreters.create()
-        interpreters.run_string(interp, dedent(f"""
-            import _xxsubinterpreters as _interpreters
-            _interpreters.channel_send({cid}, b'spam')
-            """))
-        interpreters.destroy(interp)
-
-        with self.assertRaisesRegex(RuntimeError,
-                                    'unrecognized interpreter ID'):
-            interpreters.channel_recv(cid)
-
-    def test_run_string_arg_unresolved(self):
-        cid = interpreters.channel_create()
-        interp = interpreters.create()
-
-        out = _run_output(interp, dedent("""
-            import _xxsubinterpreters as _interpreters
-            print(cid.end)
-            _interpreters.channel_send(cid, b'spam')
-            """),
-            dict(cid=cid.send))
-        obj = interpreters.channel_recv(cid)
-
-        self.assertEqual(obj, b'spam')
-        self.assertEqual(out.strip(), 'send')
-
-    # XXX For now there is no high-level channel into which the
-    # sent channel ID can be converted...
-    # Note: this test caused crashes on some buildbots (bpo-33615).
-    @unittest.skip('disabled until high-level channels exist')
-    def test_run_string_arg_resolved(self):
-        cid = interpreters.channel_create()
-        cid = interpreters._channel_id(cid, _resolve=True)
-        interp = interpreters.create()
-
-        out = _run_output(interp, dedent("""
-            import _xxsubinterpreters as _interpreters
-            print(chan.id.end)
-            _interpreters.channel_send(chan.id, b'spam')
-            """),
-            dict(chan=cid.send))
-        obj = interpreters.channel_recv(cid)
-
-        self.assertEqual(obj, b'spam')
-        self.assertEqual(out.strip(), 'send')
-
-    # close
-
-    def test_close_single_user(self):
-        cid = interpreters.channel_create()
-        interpreters.channel_send(cid, b'spam')
-        interpreters.channel_recv(cid)
-        interpreters.channel_close(cid)
-
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_send(cid, b'eggs')
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_recv(cid)
-
-    def test_close_multiple_users(self):
-        cid = interpreters.channel_create()
-        id1 = interpreters.create()
-        id2 = interpreters.create()
-        interpreters.run_string(id1, dedent(f"""
-            import _xxsubinterpreters as _interpreters
-            _interpreters.channel_send({cid}, b'spam')
-            """))
-        interpreters.run_string(id2, dedent(f"""
-            import _xxsubinterpreters as _interpreters
-            _interpreters.channel_recv({cid})
-            """))
-        interpreters.channel_close(cid)
-        with self.assertRaises(interpreters.RunFailedError) as cm:
-            interpreters.run_string(id1, dedent(f"""
-                _interpreters.channel_send({cid}, b'spam')
-                """))
-        self.assertIn('ChannelClosedError', str(cm.exception))
-        with self.assertRaises(interpreters.RunFailedError) as cm:
-            interpreters.run_string(id2, dedent(f"""
-                _interpreters.channel_send({cid}, b'spam')
-                """))
-        self.assertIn('ChannelClosedError', str(cm.exception))
-
-    def test_close_multiple_times(self):
-        cid = interpreters.channel_create()
-        interpreters.channel_send(cid, b'spam')
-        interpreters.channel_recv(cid)
-        interpreters.channel_close(cid)
-
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_close(cid)
-
-    def test_close_empty(self):
-        tests = [
-            (False, False),
-            (True, False),
-            (False, True),
-            (True, True),
-            ]
-        for send, recv in tests:
-            with self.subTest((send, recv)):
-                cid = interpreters.channel_create()
-                interpreters.channel_send(cid, b'spam')
-                interpreters.channel_recv(cid)
-                interpreters.channel_close(cid, send=send, recv=recv)
-
-                with self.assertRaises(interpreters.ChannelClosedError):
-                    interpreters.channel_send(cid, b'eggs')
-                with self.assertRaises(interpreters.ChannelClosedError):
-                    interpreters.channel_recv(cid)
-
-    def test_close_defaults_with_unused_items(self):
-        cid = interpreters.channel_create()
-        interpreters.channel_send(cid, b'spam')
-        interpreters.channel_send(cid, b'ham')
-
-        with self.assertRaises(interpreters.ChannelNotEmptyError):
-            interpreters.channel_close(cid)
-        interpreters.channel_recv(cid)
-        interpreters.channel_send(cid, b'eggs')
-
-    def test_close_recv_with_unused_items_unforced(self):
-        cid = interpreters.channel_create()
-        interpreters.channel_send(cid, b'spam')
-        interpreters.channel_send(cid, b'ham')
-
-        with self.assertRaises(interpreters.ChannelNotEmptyError):
-            interpreters.channel_close(cid, recv=True)
-        interpreters.channel_recv(cid)
-        interpreters.channel_send(cid, b'eggs')
-        interpreters.channel_recv(cid)
-        interpreters.channel_recv(cid)
-        interpreters.channel_close(cid, recv=True)
-
-    def test_close_send_with_unused_items_unforced(self):
-        cid = interpreters.channel_create()
-        interpreters.channel_send(cid, b'spam')
-        interpreters.channel_send(cid, b'ham')
-        interpreters.channel_close(cid, send=True)
-
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_send(cid, b'eggs')
-        interpreters.channel_recv(cid)
-        interpreters.channel_recv(cid)
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_recv(cid)
-
-    def test_close_both_with_unused_items_unforced(self):
-        cid = interpreters.channel_create()
-        interpreters.channel_send(cid, b'spam')
-        interpreters.channel_send(cid, b'ham')
-
-        with self.assertRaises(interpreters.ChannelNotEmptyError):
-            interpreters.channel_close(cid, recv=True, send=True)
-        interpreters.channel_recv(cid)
-        interpreters.channel_send(cid, b'eggs')
-        interpreters.channel_recv(cid)
-        interpreters.channel_recv(cid)
-        interpreters.channel_close(cid, recv=True)
-
-    def test_close_recv_with_unused_items_forced(self):
-        cid = interpreters.channel_create()
-        interpreters.channel_send(cid, b'spam')
-        interpreters.channel_send(cid, b'ham')
-        interpreters.channel_close(cid, recv=True, force=True)
-
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_send(cid, b'eggs')
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_recv(cid)
-
-    def test_close_send_with_unused_items_forced(self):
-        cid = interpreters.channel_create()
-        interpreters.channel_send(cid, b'spam')
-        interpreters.channel_send(cid, b'ham')
-        interpreters.channel_close(cid, send=True, force=True)
-
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_send(cid, b'eggs')
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_recv(cid)
-
-    def test_close_both_with_unused_items_forced(self):
-        cid = interpreters.channel_create()
-        interpreters.channel_send(cid, b'spam')
-        interpreters.channel_send(cid, b'ham')
-        interpreters.channel_close(cid, send=True, recv=True, force=True)
-
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_send(cid, b'eggs')
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_recv(cid)
-
-    def test_close_never_used(self):
-        cid = interpreters.channel_create()
-        interpreters.channel_close(cid)
-
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_send(cid, b'spam')
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_recv(cid)
-
-    def test_close_by_unassociated_interp(self):
-        cid = interpreters.channel_create()
-        interpreters.channel_send(cid, b'spam')
-        interp = interpreters.create()
-        interpreters.run_string(interp, dedent(f"""
-            import _xxsubinterpreters as _interpreters
-            _interpreters.channel_close({cid}, force=True)
-            """))
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_recv(cid)
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_close(cid)
-
-    def test_close_used_multiple_times_by_single_user(self):
-        cid = interpreters.channel_create()
-        interpreters.channel_send(cid, b'spam')
-        interpreters.channel_send(cid, b'spam')
-        interpreters.channel_send(cid, b'spam')
-        interpreters.channel_recv(cid)
-        interpreters.channel_close(cid, force=True)
-
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_send(cid, b'eggs')
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_recv(cid)
-
-    def test_channel_list_interpreters_invalid_channel(self):
-        cid = interpreters.channel_create()
-        # Test for invalid channel ID.
-        with self.assertRaises(interpreters.ChannelNotFoundError):
-            interpreters.channel_list_interpreters(1000, send=True)
-
-        interpreters.channel_close(cid)
-        # Test for a channel that has been closed.
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_list_interpreters(cid, send=True)
-
-    def test_channel_list_interpreters_invalid_args(self):
-        # Tests for invalid arguments passed to the API.
-        cid = interpreters.channel_create()
-        with self.assertRaises(TypeError):
-            interpreters.channel_list_interpreters(cid)
-
-
-class ChannelReleaseTests(TestBase):
-
-    # XXX Add more test coverage a la the tests for close().
-
-    """
-    - main / interp / other
-    - run in: current thread / new thread / other thread / different threads
-    - end / opposite
-    - force / no force
-    - used / not used  (associated / not associated)
-    - empty / emptied / never emptied / partly emptied
-    - closed / not closed
-    - released / not released
-    - creator (interp) / other
-    - associated interpreter not running
-    - associated interpreter destroyed
-    """
-
-    """
-    use
-    pre-release
-    release
-    after
-    check
-    """
-
-    """
-    release in:         main, interp1
-    creator:            same, other (incl. interp2)
-
-    use:                None,send,recv,send/recv in None,same,other(incl. interp2),same+other(incl. interp2),all
-    pre-release:        None,send,recv,both in None,same,other(incl. interp2),same+other(incl. interp2),all
-    pre-release forced: None,send,recv,both in None,same,other(incl. interp2),same+other(incl. interp2),all
-
-    release:            same
-    release forced:     same
-
-    use after:          None,send,recv,send/recv in None,same,other(incl. interp2),same+other(incl. interp2),all
-    release after:      None,send,recv,send/recv in None,same,other(incl. interp2),same+other(incl. interp2),all
-    check released:     send/recv for same/other(incl. interp2)
-    check closed:       send/recv for same/other(incl. interp2)
-    """
-
-    def test_single_user(self):
-        cid = interpreters.channel_create()
-        interpreters.channel_send(cid, b'spam')
-        interpreters.channel_recv(cid)
-        interpreters.channel_release(cid, send=True, recv=True)
-
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_send(cid, b'eggs')
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_recv(cid)
-
-    def test_multiple_users(self):
-        cid = interpreters.channel_create()
-        id1 = interpreters.create()
-        id2 = interpreters.create()
-        interpreters.run_string(id1, dedent(f"""
-            import _xxsubinterpreters as _interpreters
-            _interpreters.channel_send({cid}, b'spam')
-            """))
-        out = _run_output(id2, dedent(f"""
-            import _xxsubinterpreters as _interpreters
-            obj = _interpreters.channel_recv({cid})
-            _interpreters.channel_release({cid})
-            print(repr(obj))
-            """))
-        interpreters.run_string(id1, dedent(f"""
-            _interpreters.channel_release({cid})
-            """))
-
-        self.assertEqual(out.strip(), "b'spam'")
-
-    def test_no_kwargs(self):
-        cid = interpreters.channel_create()
-        interpreters.channel_send(cid, b'spam')
-        interpreters.channel_recv(cid)
-        interpreters.channel_release(cid)
-
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_send(cid, b'eggs')
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_recv(cid)
-
-    def test_multiple_times(self):
-        cid = interpreters.channel_create()
-        interpreters.channel_send(cid, b'spam')
-        interpreters.channel_recv(cid)
-        interpreters.channel_release(cid, send=True, recv=True)
-
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_release(cid, send=True, recv=True)
-
-    def test_with_unused_items(self):
-        cid = interpreters.channel_create()
-        interpreters.channel_send(cid, b'spam')
-        interpreters.channel_send(cid, b'ham')
-        interpreters.channel_release(cid, send=True, recv=True)
-
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_recv(cid)
-
-    def test_never_used(self):
-        cid = interpreters.channel_create()
-        interpreters.channel_release(cid)
-
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_send(cid, b'spam')
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_recv(cid)
-
-    def test_by_unassociated_interp(self):
-        cid = interpreters.channel_create()
-        interpreters.channel_send(cid, b'spam')
-        interp = interpreters.create()
-        interpreters.run_string(interp, dedent(f"""
-            import _xxsubinterpreters as _interpreters
-            _interpreters.channel_release({cid})
-            """))
-        obj = interpreters.channel_recv(cid)
-        interpreters.channel_release(cid)
-
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_send(cid, b'eggs')
-        self.assertEqual(obj, b'spam')
-
-    def test_close_if_unassociated(self):
-        # XXX Something's not right with this test...
-        cid = interpreters.channel_create()
-        interp = interpreters.create()
-        interpreters.run_string(interp, dedent(f"""
-            import _xxsubinterpreters as _interpreters
-            obj = _interpreters.channel_send({cid}, b'spam')
-            _interpreters.channel_release({cid})
-            """))
-
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_recv(cid)
-
-    def test_partially(self):
-        # XXX Is partial close too weird/confusing?
-        cid = interpreters.channel_create()
-        interpreters.channel_send(cid, None)
-        interpreters.channel_recv(cid)
-        interpreters.channel_send(cid, b'spam')
-        interpreters.channel_release(cid, send=True)
-        obj = interpreters.channel_recv(cid)
-
-        self.assertEqual(obj, b'spam')
-
-    def test_used_multiple_times_by_single_user(self):
-        cid = interpreters.channel_create()
-        interpreters.channel_send(cid, b'spam')
-        interpreters.channel_send(cid, b'spam')
-        interpreters.channel_send(cid, b'spam')
-        interpreters.channel_recv(cid)
-        interpreters.channel_release(cid, send=True, recv=True)
-
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_send(cid, b'eggs')
-        with self.assertRaises(interpreters.ChannelClosedError):
-            interpreters.channel_recv(cid)
-
-
-class ChannelCloseFixture(namedtuple('ChannelCloseFixture',
-                                     'end interp other extra creator')):
-
-    # Set this to True to avoid creating interpreters, e.g. when
-    # scanning through test permutations without running them.
-    QUICK = False
-
-    def __new__(cls, end, interp, other, extra, creator):
-        assert end in ('send', 'recv')
-        if cls.QUICK:
-            known = {}
-        else:
-            interp = Interpreter.from_raw(interp)
-            other = Interpreter.from_raw(other)
-            extra = Interpreter.from_raw(extra)
-            known = {
-                interp.name: interp,
-                other.name: other,
-                extra.name: extra,
-                }
-        if not creator:
-            creator = 'same'
-        self = super().__new__(cls, end, interp, other, extra, creator)
-        self._prepped = set()
-        self._state = ChannelState()
-        self._known = known
-        return self
-
-    @property
-    def state(self):
-        return self._state
-
-    @property
-    def cid(self):
+    def run_script(self, text, *, fails=False):
+        r, w = os.pipe()
         try:
-            return self._cid
-        except AttributeError:
-            creator = self._get_interpreter(self.creator)
-            self._cid = self._new_channel(creator)
-            return self._cid
+            script = dedent(f"""
+                import os, sys
+                os.write({w}, b'0')
 
-    def get_interpreter(self, interp):
-        interp = self._get_interpreter(interp)
-        self._prep_interpreter(interp)
-        return interp
+                # This raises an exception:
+                {{}}
 
-    def expect_closed_error(self, end=None):
-        if end is None:
-            end = self.end
-        if end == 'recv' and self.state.closed == 'send':
-            return False
-        return bool(self.state.closed)
-
-    def prep_interpreter(self, interp):
-        self._prep_interpreter(interp)
-
-    def record_action(self, action, result):
-        self._state = result
-
-    def clean_up(self):
-        clean_up_interpreters()
-        clean_up_channels()
-
-    # internal methods
-
-    def _new_channel(self, creator):
-        if creator.name == 'main':
-            return interpreters.channel_create()
+                # Nothing from here down should ever run.
+                os.write({w}, b'1')
+                class NeverError(Exception): pass
+                raise NeverError  # never raised
+                """).format(dedent(text))
+            if fails:
+                err = interpreters.run_string(self.id, script)
+                self.assertIsNot(err, None)
+                return err
+            else:
+                err = interpreters.run_string(self.id, script)
+                self.assertIs(err, None)
+                return None
+        except:
+            raise  # re-raise
         else:
-            ch = interpreters.channel_create()
-            run_interp(creator.id, f"""
-                import _xxsubinterpreters
-                cid = _xxsubinterpreters.channel_create()
-                # We purposefully send back an int to avoid tying the
-                # channel to the other interpreter.
-                _xxsubinterpreters.channel_send({ch}, int(cid))
-                del _xxsubinterpreters
+            msg = os.read(r, 100)
+            self.assertEqual(msg, b'0')
+        finally:
+            os.close(r)
+            os.close(w)
+
+    def _assert_run_failed(self, exctype, msg, script):
+        if isinstance(exctype, str):
+            exctype_name = exctype
+            exctype = None
+        else:
+            exctype_name = exctype.__name__
+
+        # Run the script.
+        excinfo = self.run_script(script, fails=True)
+
+        # Check the wrapper exception.
+        self.assertEqual(excinfo.type.__name__, exctype_name)
+        if msg is None:
+            self.assertEqual(excinfo.formatted.split(':')[0],
+                             exctype_name)
+        else:
+            self.assertEqual(excinfo.formatted,
+                             '{}: {}'.format(exctype_name, msg))
+
+        return excinfo
+
+    def assert_run_failed(self, exctype, script):
+        self._assert_run_failed(exctype, None, script)
+
+    def assert_run_failed_msg(self, exctype, msg, script):
+        self._assert_run_failed(exctype, msg, script)
+
+    def test_exit(self):
+        with self.subTest('sys.exit(0)'):
+            # XXX Should an unhandled SystemExit(0) be handled as not-an-error?
+            self.assert_run_failed(SystemExit, """
+                sys.exit(0)
                 """)
-            self._cid = interpreters.channel_recv(ch)
-        return self._cid
 
-    def _get_interpreter(self, interp):
-        if interp in ('same', 'interp'):
-            return self.interp
-        elif interp == 'other':
-            return self.other
-        elif interp == 'extra':
-            return self.extra
-        else:
-            name = interp
-            try:
-                interp = self._known[name]
-            except KeyError:
-                interp = self._known[name] = Interpreter(name)
-            return interp
+        with self.subTest('sys.exit()'):
+            self.assert_run_failed(SystemExit, """
+                import sys
+                sys.exit()
+                """)
 
-    def _prep_interpreter(self, interp):
-        if interp.id in self._prepped:
-            return
-        self._prepped.add(interp.id)
-        if interp.name == 'main':
-            return
-        run_interp(interp.id, f"""
-            import _xxsubinterpreters as interpreters
-            import test.test__xxsubinterpreters as helpers
-            ChannelState = helpers.ChannelState
-            try:
-                cid
-            except NameError:
-                cid = interpreters._channel_id({self.cid})
+        with self.subTest('sys.exit(42)'):
+            self.assert_run_failed_msg(SystemExit, '42', """
+                import sys
+                sys.exit(42)
+                """)
+
+        with self.subTest('SystemExit'):
+            self.assert_run_failed_msg(SystemExit, '42', """
+                raise SystemExit(42)
+                """)
+
+        # XXX Also check os._exit() (via a subprocess)?
+
+    def test_plain_exception(self):
+        self.assert_run_failed_msg(Exception, 'spam', """
+            raise Exception("spam")
+            """)
+
+    def test_invalid_syntax(self):
+        script = dedent("""
+            x = 1 + 2
+            y = 2 + 4
+            z = 4 + 8
+
+            # missing close paren
+            print("spam"
+
+            if x + y + z < 20:
+                ...
+            """)
+
+        with self.subTest('script'):
+            self.assert_run_failed(SyntaxError, script)
+
+        with self.subTest('module'):
+            modname = 'spam_spam_spam'
+            filename = self.add_module(modname, script)
+            self.assert_run_failed(SyntaxError, f"""
+                import {modname}
+                """)
+
+    def test_NameError(self):
+        self.assert_run_failed(NameError, """
+            res = spam + eggs
+            """)
+        # XXX check preserved suggestions
+
+    def test_AttributeError(self):
+        self.assert_run_failed(AttributeError, """
+            object().spam
+            """)
+        # XXX check preserved suggestions
+
+    def test_ExceptionGroup(self):
+        self.assert_run_failed(ExceptionGroup, """
+            raise ExceptionGroup('exceptions', [
+                Exception('spam'),
+                ImportError('eggs'),
+            ])
+            """)
+
+    def test_user_defined_exception(self):
+        self.assert_run_failed_msg('MyError', 'spam', """
+            class MyError(Exception):
+                pass
+            raise MyError('spam')
             """)
 
 
-@unittest.skip('these tests take several hours to run')
-class ExhaustiveChannelTests(TestBase):
+class RunFuncTests(TestBase):
 
-    """
-    - main / interp / other
-    - run in: current thread / new thread / other thread / different threads
-    - end / opposite
-    - force / no force
-    - used / not used  (associated / not associated)
-    - empty / emptied / never emptied / partly emptied
-    - closed / not closed
-    - released / not released
-    - creator (interp) / other
-    - associated interpreter not running
-    - associated interpreter destroyed
+    def setUp(self):
+        super().setUp()
+        self.id = interpreters.create()
 
-    - close after unbound
-    """
+    def test_success(self):
+        r, w = os.pipe()
+        def script():
+            global w
+            import contextlib
+            with open(w, 'w', encoding="utf-8") as spipe:
+                with contextlib.redirect_stdout(spipe):
+                    print('it worked!', end='')
+        interpreters.set___main___attrs(self.id, dict(w=w))
+        interpreters.run_func(self.id, script)
 
-    """
-    use
-    pre-close
-    close
-    after
-    check
-    """
+        with open(r, encoding="utf-8") as outfile:
+            out = outfile.read()
 
-    """
-    close in:         main, interp1
-    creator:          same, other, extra
+        self.assertEqual(out, 'it worked!')
 
-    use:              None,send,recv,send/recv in None,same,other,same+other,all
-    pre-close:        None,send,recv in None,same,other,same+other,all
-    pre-close forced: None,send,recv in None,same,other,same+other,all
+    def test_in_thread(self):
+        r, w = os.pipe()
+        def script():
+            global w
+            import contextlib
+            with open(w, 'w', encoding="utf-8") as spipe:
+                with contextlib.redirect_stdout(spipe):
+                    print('it worked!', end='')
+        def f():
+            interpreters.set___main___attrs(self.id, dict(w=w))
+            interpreters.run_func(self.id, script)
+        t = threading.Thread(target=f)
+        t.start()
+        t.join()
 
-    close:            same
-    close forced:     same
+        with open(r, encoding="utf-8") as outfile:
+            out = outfile.read()
 
-    use after:        None,send,recv,send/recv in None,same,other,extra,same+other,all
-    close after:      None,send,recv,send/recv in None,same,other,extra,same+other,all
-    check closed:     send/recv for same/other(incl. interp2)
-    """
+        self.assertEqual(out, 'it worked!')
 
-    def iter_action_sets(self):
-        # - used / not used  (associated / not associated)
-        # - empty / emptied / never emptied / partly emptied
-        # - closed / not closed
-        # - released / not released
+    def test_code_object(self):
+        r, w = os.pipe()
 
-        # never used
-        yield []
+        def script():
+            global w
+            import contextlib
+            with open(w, 'w', encoding="utf-8") as spipe:
+                with contextlib.redirect_stdout(spipe):
+                    print('it worked!', end='')
+        code = script.__code__
+        interpreters.set___main___attrs(self.id, dict(w=w))
+        interpreters.run_func(self.id, code)
 
-        # only pre-closed (and possible used after)
-        for closeactions in self._iter_close_action_sets('same', 'other'):
-            yield closeactions
-            for postactions in self._iter_post_close_action_sets():
-                yield closeactions + postactions
-        for closeactions in self._iter_close_action_sets('other', 'extra'):
-            yield closeactions
-            for postactions in self._iter_post_close_action_sets():
-                yield closeactions + postactions
+        with open(r, encoding="utf-8") as outfile:
+            out = outfile.read()
 
-        # used
-        for useactions in self._iter_use_action_sets('same', 'other'):
-            yield useactions
-            for closeactions in self._iter_close_action_sets('same', 'other'):
-                actions = useactions + closeactions
-                yield actions
-                for postactions in self._iter_post_close_action_sets():
-                    yield actions + postactions
-            for closeactions in self._iter_close_action_sets('other', 'extra'):
-                actions = useactions + closeactions
-                yield actions
-                for postactions in self._iter_post_close_action_sets():
-                    yield actions + postactions
-        for useactions in self._iter_use_action_sets('other', 'extra'):
-            yield useactions
-            for closeactions in self._iter_close_action_sets('same', 'other'):
-                actions = useactions + closeactions
-                yield actions
-                for postactions in self._iter_post_close_action_sets():
-                    yield actions + postactions
-            for closeactions in self._iter_close_action_sets('other', 'extra'):
-                actions = useactions + closeactions
-                yield actions
-                for postactions in self._iter_post_close_action_sets():
-                    yield actions + postactions
+        self.assertEqual(out, 'it worked!')
 
-    def _iter_use_action_sets(self, interp1, interp2):
-        interps = (interp1, interp2)
+    def test_closure(self):
+        spam = True
+        def script():
+            assert spam
 
-        # only recv end used
-        yield [
-            ChannelAction('use', 'recv', interp1),
-            ]
-        yield [
-            ChannelAction('use', 'recv', interp2),
-            ]
-        yield [
-            ChannelAction('use', 'recv', interp1),
-            ChannelAction('use', 'recv', interp2),
-            ]
+        with self.assertRaises(ValueError):
+            interpreters.run_func(self.id, script)
 
-        # never emptied
-        yield [
-            ChannelAction('use', 'send', interp1),
-            ]
-        yield [
-            ChannelAction('use', 'send', interp2),
-            ]
-        yield [
-            ChannelAction('use', 'send', interp1),
-            ChannelAction('use', 'send', interp2),
-            ]
+    # XXX This hasn't been fixed yet.
+    @unittest.expectedFailure
+    def test_return_value(self):
+        def script():
+            return 'spam'
+        with self.assertRaises(ValueError):
+            interpreters.run_func(self.id, script)
 
-        # partially emptied
-        for interp1 in interps:
-            for interp2 in interps:
-                for interp3 in interps:
-                    yield [
-                        ChannelAction('use', 'send', interp1),
-                        ChannelAction('use', 'send', interp2),
-                        ChannelAction('use', 'recv', interp3),
-                        ]
+    def test_args(self):
+        with self.subTest('args'):
+            def script(a, b=0):
+                assert a == b
+            with self.assertRaises(ValueError):
+                interpreters.run_func(self.id, script)
 
-        # fully emptied
-        for interp1 in interps:
-            for interp2 in interps:
-                for interp3 in interps:
-                    for interp4 in interps:
-                        yield [
-                            ChannelAction('use', 'send', interp1),
-                            ChannelAction('use', 'send', interp2),
-                            ChannelAction('use', 'recv', interp3),
-                            ChannelAction('use', 'recv', interp4),
-                            ]
+        with self.subTest('*args'):
+            def script(*args):
+                assert not args
+            with self.assertRaises(ValueError):
+                interpreters.run_func(self.id, script)
 
-    def _iter_close_action_sets(self, interp1, interp2):
-        ends = ('recv', 'send')
-        interps = (interp1, interp2)
-        for force in (True, False):
-            op = 'force-close' if force else 'close'
-            for interp in interps:
-                for end in ends:
-                    yield [
-                        ChannelAction(op, end, interp),
-                        ]
-        for recvop in ('close', 'force-close'):
-            for sendop in ('close', 'force-close'):
-                for recv in interps:
-                    for send in interps:
-                        yield [
-                            ChannelAction(recvop, 'recv', recv),
-                            ChannelAction(sendop, 'send', send),
-                            ]
+        with self.subTest('**kwargs'):
+            def script(**kwargs):
+                assert not kwargs
+            with self.assertRaises(ValueError):
+                interpreters.run_func(self.id, script)
 
-    def _iter_post_close_action_sets(self):
-        for interp in ('same', 'extra', 'other'):
-            yield [
-                ChannelAction('use', 'recv', interp),
-                ]
-            yield [
-                ChannelAction('use', 'send', interp),
-                ]
+        with self.subTest('kwonly'):
+            def script(*, spam=True):
+                assert spam
+            with self.assertRaises(ValueError):
+                interpreters.run_func(self.id, script)
 
-    def run_actions(self, fix, actions):
-        for action in actions:
-            self.run_action(fix, action)
-
-    def run_action(self, fix, action, *, hideclosed=True):
-        end = action.resolve_end(fix.end)
-        interp = action.resolve_interp(fix.interp, fix.other, fix.extra)
-        fix.prep_interpreter(interp)
-        if interp.name == 'main':
-            result = run_action(
-                fix.cid,
-                action.action,
-                end,
-                fix.state,
-                hideclosed=hideclosed,
-                )
-            fix.record_action(action, result)
-        else:
-            _cid = interpreters.channel_create()
-            run_interp(interp.id, f"""
-                result = helpers.run_action(
-                    {fix.cid},
-                    {repr(action.action)},
-                    {repr(end)},
-                    {repr(fix.state)},
-                    hideclosed={hideclosed},
-                    )
-                interpreters.channel_send({_cid}, result.pending.to_bytes(1, 'little'))
-                interpreters.channel_send({_cid}, b'X' if result.closed else b'')
-                """)
-            result = ChannelState(
-                pending=int.from_bytes(interpreters.channel_recv(_cid), 'little'),
-                closed=bool(interpreters.channel_recv(_cid)),
-                )
-            fix.record_action(action, result)
-
-    def iter_fixtures(self):
-        # XXX threads?
-        interpreters = [
-            ('main', 'interp', 'extra'),
-            ('interp', 'main', 'extra'),
-            ('interp1', 'interp2', 'extra'),
-            ('interp1', 'interp2', 'main'),
-        ]
-        for interp, other, extra in interpreters:
-            for creator in ('same', 'other', 'creator'):
-                for end in ('send', 'recv'):
-                    yield ChannelCloseFixture(end, interp, other, extra, creator)
-
-    def _close(self, fix, *, force):
-        op = 'force-close' if force else 'close'
-        close = ChannelAction(op, fix.end, 'same')
-        if not fix.expect_closed_error():
-            self.run_action(fix, close, hideclosed=False)
-        else:
-            with self.assertRaises(interpreters.ChannelClosedError):
-                self.run_action(fix, close, hideclosed=False)
-
-    def _assert_closed_in_interp(self, fix, interp=None):
-        if interp is None or interp.name == 'main':
-            with self.assertRaises(interpreters.ChannelClosedError):
-                interpreters.channel_recv(fix.cid)
-            with self.assertRaises(interpreters.ChannelClosedError):
-                interpreters.channel_send(fix.cid, b'spam')
-            with self.assertRaises(interpreters.ChannelClosedError):
-                interpreters.channel_close(fix.cid)
-            with self.assertRaises(interpreters.ChannelClosedError):
-                interpreters.channel_close(fix.cid, force=True)
-        else:
-            run_interp(interp.id, f"""
-                with helpers.expect_channel_closed():
-                    interpreters.channel_recv(cid)
-                """)
-            run_interp(interp.id, f"""
-                with helpers.expect_channel_closed():
-                    interpreters.channel_send(cid, b'spam')
-                """)
-            run_interp(interp.id, f"""
-                with helpers.expect_channel_closed():
-                    interpreters.channel_close(cid)
-                """)
-            run_interp(interp.id, f"""
-                with helpers.expect_channel_closed():
-                    interpreters.channel_close(cid, force=True)
-                """)
-
-    def _assert_closed(self, fix):
-        self.assertTrue(fix.state.closed)
-
-        for _ in range(fix.state.pending):
-            interpreters.channel_recv(fix.cid)
-        self._assert_closed_in_interp(fix)
-
-        for interp in ('same', 'other'):
-            interp = fix.get_interpreter(interp)
-            if interp.name == 'main':
-                continue
-            self._assert_closed_in_interp(fix, interp)
-
-        interp = fix.get_interpreter('fresh')
-        self._assert_closed_in_interp(fix, interp)
-
-    def _iter_close_tests(self, verbose=False):
-        i = 0
-        for actions in self.iter_action_sets():
-            print()
-            for fix in self.iter_fixtures():
-                i += 1
-                if i > 1000:
-                    return
-                if verbose:
-                    if (i - 1) % 6 == 0:
-                        print()
-                    print(i, fix, '({} actions)'.format(len(actions)))
-                else:
-                    if (i - 1) % 6 == 0:
-                        print(' ', end='')
-                    print('.', end=''); sys.stdout.flush()
-                yield i, fix, actions
-            if verbose:
-                print('---')
-        print()
-
-    # This is useful for scanning through the possible tests.
-    def _skim_close_tests(self):
-        ChannelCloseFixture.QUICK = True
-        for i, fix, actions in self._iter_close_tests():
-            pass
-
-    def test_close(self):
-        for i, fix, actions in self._iter_close_tests():
-            with self.subTest('{} {}  {}'.format(i, fix, actions)):
-                fix.prep_interpreter(fix.interp)
-                self.run_actions(fix, actions)
-
-                self._close(fix, force=False)
-
-                self._assert_closed(fix)
-            # XXX Things slow down if we have too many interpreters.
-            fix.clean_up()
-
-    def test_force_close(self):
-        for i, fix, actions in self._iter_close_tests():
-            with self.subTest('{} {}  {}'.format(i, fix, actions)):
-                fix.prep_interpreter(fix.interp)
-                self.run_actions(fix, actions)
-
-                self._close(fix, force=True)
-
-                self._assert_closed(fix)
-            # XXX Things slow down if we have too many interpreters.
-            fix.clean_up()
+        with self.subTest('posonly'):
+            def script(spam, /):
+                assert spam
+            with self.assertRaises(ValueError):
+                interpreters.run_func(self.id, script)
 
 
 if __name__ == '__main__':
