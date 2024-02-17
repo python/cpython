@@ -1209,7 +1209,8 @@ class BufferedReader(_BufferedIOMixin):
         return written
 
     def tell(self):
-        return _BufferedIOMixin.tell(self) - len(self._read_buf) + self._read_pos
+        # GH-95782: Keep return value non-negative
+        return max(_BufferedIOMixin.tell(self) - len(self._read_buf) + self._read_pos, 0)
 
     def seek(self, pos, whence=0):
         if whence not in valid_seek_flags:
