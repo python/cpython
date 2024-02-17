@@ -251,7 +251,7 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
 
    Send a simple command string to the server and handle the response.  Return
    the response string if the response code corresponds to success (codes in
-   the range 200-299).  Raise :exc:`error_reply` otherwise.
+   the range 200--299).  Raise :exc:`error_reply` otherwise.
 
    .. audit-event:: ftplib.sendcmd self,cmd ftplib.FTP.voidcmd
 
