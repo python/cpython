@@ -7,6 +7,7 @@ import threading
 import types
 import unittest
 
+from test.support import threading_helper
 from test.test_importlib import util as test_util
 
 
@@ -146,6 +147,7 @@ class LazyLoaderTests(unittest.TestCase):
             # Force the load; just care that no exception is raised.
             module.__name__
 
+    @threading_helper.requires_working_threading()
     def test_module_load_race(self):
         with test_util.uncache(TestingImporter.module_name):
             loader = TestingImporter()
