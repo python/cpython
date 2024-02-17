@@ -914,7 +914,7 @@ class HTTPConnection:
         self.debuglevel = level
 
     def _wrap_ipv6(self, ip):
-        if ip.find(b':') >= 0 and ip.find(b'[') != 0:
+        if b':' in ip and ip[0] != b'['[0]:
             return b"[" + ip + b"]"
         return ip
 

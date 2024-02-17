@@ -2278,7 +2278,6 @@ class TunnelTests(TestCase):
         self.assertIn(b'CONNECT [1:2:3::4]:1234', self.conn.sock.data)
         self.assertIn(b'Host: [1:2:3::4]:1234', self.conn.sock.data)
 
-
     def test_tunnel_debuglog(self):
         expected_header = 'X-Dummy: 1'
         response_text = 'HTTP/1.0 200 OK\r\n{}\r\n\r\n'.format(expected_header)
