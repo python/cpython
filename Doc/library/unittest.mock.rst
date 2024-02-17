@@ -2377,6 +2377,14 @@ passed in.
     >>> m.mock_calls == [call(1), call(1, 2), ANY]
     True
 
+:data:`ANY` is not limited to comparisons with call objects and so
+can also be used in test assertions::
+
+    class TestStringMethods(unittest.TestCase):
+
+        def test_split(self):
+            s = 'hello world'
+            self.assertEqual(s.split(), ['hello', ANY])
 
 
 FILTER_DIR
