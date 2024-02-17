@@ -183,9 +183,9 @@ class _LazyModule(types.ModuleType):
                 # exec_module(), which will access module.__dict__, module.__name__,
                 # and/or module.__spec__, reentering this method. These accesses
                 # need to be allowed to proceed without triggering the load again.
-                if loader_state['is_loading'].is_set() and attr.startswith('__') and attr.endswith('__'):
+                if loader_state['is_loading'] and attr.startswith('__') and attr.endswith('__'):
                     return object.__getattribute__(self, attr)
-                loader_state['is_loading'].set()
+                loader_state['is_loading'] = True
 
                 __dict__ = object.__getattribute__(self, '__dict__')
 
@@ -264,6 +264,6 @@ class LazyLoader(Loader):
         loader_state['__dict__'] = module.__dict__.copy()
         loader_state['__class__'] = module.__class__
         loader_state['lock'] = threading.RLock()
-        loader_state['is_loading'] = threading.Event()
+        loader_state['is_loading'] = False
         module.__spec__.loader_state = loader_state
         module.__class__ = _LazyModule
