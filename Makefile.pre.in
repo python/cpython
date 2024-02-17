@@ -649,8 +649,8 @@ all:		@DEF_MAKE_ALL_RULE@
 # Provide quick help for common Makefile targets.
 .PHONY: help
 help:
-	@echo "Please use \`make <target>' where <target> is one of"
-	@echo "  [all]      build the python executable and extension modules"
+	@echo "Please use  'make <target>' where <target> is one of"
+	@echo "  all        build the python executable and extension modules"
 	@echo "  test       run the test suite"
 	@echo "  install    install built files"
 	@echo "  regen-all  regenerate a number of generated source files"
@@ -662,6 +662,9 @@ help:
 	@echo "  recheck    rerun configure with last cmdline options"
 	@echo "  reindent   reindent .py files in Lib directory"
 	@echo "  tags       build a tags file (useful for Emacs and other editors)"
+	@echo ""
+	@echo "For an exhaustive list of Makefile targets, execute:"
+	@echo "  grep -E '^[A-Za-z][A-Za-z0-9]+:' Makefile"
 
 .PHONY: build_all
 build_all:	check-clean-src $(BUILDPYTHON) platform sharedmods \
