@@ -1087,7 +1087,8 @@ class HTMLDoc(Doc):
                 # XXX lambda's won't usually have func_annotations['return']
                 # since the syntax doesn't support but it is possible.
                 # So removing parentheses isn't truly safe.
-                argspec = argspec[1:-1] # remove parentheses
+                if not object.__annotations__:
+                    argspec = argspec[1:-1] # remove parentheses
         if not argspec:
             argspec = '(...)'
 
@@ -1500,17 +1501,14 @@ location listed above.
         argspec = None
 
         if inspect.isroutine(object):
-            if realname == "<lambda>":
-                retann = object.__annotations__.pop("return", None)
-            else:
-                retann = None
             argspec = _getargspec(object)
             if argspec and realname == '<lambda>':
                 title = self.bold(name) + ' lambda '
-                argspec = argspec[1:-1]
-                if retann is not None:
-                    argspec += f' -> {inspect.formatannotation(retann)}'
-                    object.__annotations__['return'] = retann
+                # XXX lambda's won't usually have func_annotations['return']
+                # since the syntax doesn't support but it is possible.
+                # So removing parentheses isn't truly safe.
+                if not object.__annotations__:
+                    argspec = argspec[1:-1]
         if not argspec:
             argspec = '(...)'
         decl = asyncqualifier + title + argspec + note
