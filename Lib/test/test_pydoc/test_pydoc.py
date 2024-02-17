@@ -699,7 +699,7 @@ class PydocDocTest(unittest.TestCase):
         with captured_output('stdout') as help_io:
             pydoc.help(func)
         helptext = help_io.getvalue()
-        self.assertIn("lambda (a, b, c) -> 'int'", helptext)
+        self.assertIn("lambda (a, b, c) -> int", helptext)
 
     def test_namedtuple_fields(self):
         Person = namedtuple('Person', ['nickname', 'firstname'])
