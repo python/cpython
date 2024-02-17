@@ -438,7 +438,12 @@ class LongTests(unittest.TestCase):
         if support.verbose:
             print(f"SIZEOF_SIZE={SZ}\n{MAX_SSIZE=:016X}\n{MAX_USIZE=:016X}")
 
-        # These tests check that the requested buffer size is correct
+        # These tests check that the requested buffer size is correct.
+        # This matches our current implementation: We only specify that the
+        # return value is a size *sufficient* to hold the result when queried
+        # using n_bytes=0. If our implementation changes, feel free to update
+        # the expectations here -- or loosen them to be range checks.
+        # (i.e. 0 *could* be stored in 1 byte and 512 in 2)
         for v, expect in [
             (0, SZ),
             (512, SZ),
