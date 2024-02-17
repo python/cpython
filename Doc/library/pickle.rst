@@ -645,8 +645,8 @@ methods:
 
    .. note::
 
-      If :meth:`__getstate__` returns a false value, the :meth:`__setstate__`
-      method will not be called upon unpickling.
+      If :meth:`__reduce__` returns a state with value ``None`` at pickling,
+      the :meth:`__setstate__` method will not be called upon unpickling.
 
 
 Refer to the section :ref:`pickle-state` for more information about how to use
