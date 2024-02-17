@@ -344,8 +344,8 @@ aspects that are visible to the programmer:
 
 * The :mod:`importlib.abc` module has been updated with new :term:`abstract base
   classes <abstract base class>` for loading bytecode files.  The obsolete
-  ABCs, :class:`~importlib.abc.PyLoader` and
-  :class:`~importlib.abc.PyPycLoader`, have been deprecated (instructions on how
+  ABCs, :class:`!PyLoader` and
+  :class:`!PyPycLoader`, have been deprecated (instructions on how
   to stay Python 3.1 compatible are included with the documentation).
 
 .. seealso::
@@ -401,7 +401,7 @@ The *native strings* are always of type :class:`str` but are restricted to code
 points between *U+0000* through *U+00FF* which are translatable to bytes using
 *Latin-1* encoding.  These strings are used for the keys and values in the
 environment dictionary and for response headers and statuses in the
-:func:`start_response` function.  They must follow :rfc:`2616` with respect to
+:func:`!start_response` function.  They must follow :rfc:`2616` with respect to
 encoding. That is, they must either be *ISO-8859-1* characters or use
 :rfc:`2047` MIME encoding.
 
@@ -415,8 +415,8 @@ points:
   encoded in utf-8 was using ``h.encode('utf-8')`` now needs to convert from
   bytes to native strings using ``h.encode('utf-8').decode('latin-1')``.
 
-* Values yielded by an application or sent using the :meth:`write` method
-  must be byte strings.  The :func:`start_response` function and environ
+* Values yielded by an application or sent using the :meth:`!write` method
+  must be byte strings.  The :func:`!start_response` function and environ
   must use native strings.  The two cannot be mixed.
 
 For server implementers writing CGI-to-WSGI pathways or other CGI-style
@@ -499,7 +499,7 @@ Some smaller changes made to the core Python language are:
 
 * The :func:`hasattr` function works by calling :func:`getattr` and detecting
   whether an exception is raised.  This technique allows it to detect methods
-  created dynamically by :meth:`__getattr__` or :meth:`__getattribute__` which
+  created dynamically by :meth:`~object.__getattr__` or :meth:`~object.__getattribute__` which
   would otherwise be absent from the class dictionary.  Formerly, *hasattr*
   would catch any exception, possibly masking genuine errors.  Now, *hasattr*
   has been tightened to only catch :exc:`AttributeError` and let other
@@ -620,7 +620,7 @@ Some smaller changes made to the core Python language are:
 
 * :class:`range` objects now support *index* and *count* methods. This is part
   of an effort to make more objects fully implement the
-  :class:`collections.Sequence` :term:`abstract base class`.  As a result, the
+  :class:`collections.Sequence <collections.abc.Sequence>` :term:`abstract base class`.  As a result, the
   language will have a more uniform API.  In addition, :class:`range` objects
   now support slicing and negative indices, even with values larger than
   :data:`sys.maxsize`.  This makes *range* more interoperable with lists::
@@ -720,7 +720,7 @@ format.
 elementtree
 -----------
 
-The :mod:`xml.etree.ElementTree` package and its :mod:`xml.etree.cElementTree`
+The :mod:`xml.etree.ElementTree` package and its :mod:`!xml.etree.cElementTree`
 counterpart have been updated to version 1.3.
 
 Several new and useful functions and methods have been added:
@@ -1008,13 +1008,13 @@ datetime and time
   after 1900.  The new supported year range is from 1000 to 9999 inclusive.
 
 * Whenever a two-digit year is used in a time tuple, the interpretation has been
-  governed by :data:`time.accept2dyear`.  The default is ``True`` which means that
+  governed by :data:`!time.accept2dyear`.  The default is ``True`` which means that
   for a two-digit year, the century is guessed according to the POSIX rules
   governing the ``%y`` strptime format.
 
   Starting with Py3.2, use of the century guessing heuristic will emit a
   :exc:`DeprecationWarning`.  Instead, it is recommended that
-  :data:`time.accept2dyear` be set to ``False`` so that large date ranges
+  :data:`!time.accept2dyear` be set to ``False`` so that large date ranges
   can be used without guesswork::
 
     >>> import time, warnings
@@ -1032,7 +1032,7 @@ datetime and time
     'Fri Jan  1 12:34:56 11'
 
   Several functions now have significantly expanded date ranges.  When
-  :data:`time.accept2dyear` is false, the :func:`time.asctime` function will
+  :data:`!time.accept2dyear` is false, the :func:`time.asctime` function will
   accept any year that fits in a C int, while the :func:`time.mktime` and
   :func:`time.strftime` functions will accept the full range supported by the
   corresponding operating system functions.
@@ -1148,15 +1148,15 @@ for slice notation are well-suited to in-place editing::
 reprlib
 -------
 
-When writing a :meth:`__repr__` method for a custom container, it is easy to
+When writing a :meth:`~object.__repr__` method for a custom container, it is easy to
 forget to handle the case where a member refers back to the container itself.
 Python's builtin objects such as :class:`list` and :class:`set` handle
 self-reference by displaying "..." in the recursive part of the representation
 string.
 
-To help write such :meth:`__repr__` methods, the :mod:`reprlib` module has a new
+To help write such :meth:`~object.__repr__` methods, the :mod:`reprlib` module has a new
 decorator, :func:`~reprlib.recursive_repr`, for detecting recursive calls to
-:meth:`__repr__` and substituting a placeholder string instead::
+:meth:`!__repr__` and substituting a placeholder string instead::
 
         >>> class MyList(list):
         ...     @recursive_repr()
@@ -1308,7 +1308,7 @@ used for the imaginary part of a number:
 >>> sys.hash_info # doctest: +SKIP
 sys.hash_info(width=64, modulus=2305843009213693951, inf=314159, nan=0, imag=1000003)
 
-An early decision to limit the inter-operability of various numeric types has
+An early decision to limit the interoperability of various numeric types has
 been relaxed.  It is still unsupported (and ill-advised) to have implicit
 mixing in arithmetic expressions such as ``Decimal('1.1') + float('1.1')``
 because the latter loses information in the process of constructing the binary
@@ -1336,7 +1336,7 @@ Decimal('1.100000000000000088817841970012523233890533447265625')
 Fraction(2476979795053773, 2251799813685248)
 
 Another useful change for the :mod:`decimal` module is that the
-:attr:`Context.clamp` attribute is now public.  This is useful in creating
+:attr:`Context.clamp <decimal.Context.clamp>` attribute is now public.  This is useful in creating
 contexts that correspond to the decimal interchange formats specified in IEEE
 754 (see :issue:`8540`).
 
@@ -1428,7 +1428,7 @@ before compressing and decompressing:
 Aides and Brian Curtin in :issue:`9962`, :issue:`1675951`, :issue:`7471` and
 :issue:`2846`.)
 
-Also, the :class:`zipfile.ZipExtFile` class was reworked internally to represent
+Also, the :class:`zipfile.ZipExtFile <zipfile.ZipFile.open>` class was reworked internally to represent
 files stored inside an archive.  The new implementation is significantly faster
 and can be wrapped in an :class:`io.BufferedReader` object for more speedups.  It
 also solves an issue where interleaved calls to *read* and *readline* gave the
@@ -1596,7 +1596,7 @@ sqlite3
 
 The :mod:`sqlite3` module was updated to pysqlite version 2.6.0.  It has two new capabilities.
 
-* The :attr:`sqlite3.Connection.in_transit` attribute is true if there is an
+* The :attr:`!sqlite3.Connection.in_transit` attribute is true if there is an
   active transaction for uncommitted changes.
 
 * The :meth:`sqlite3.Connection.enable_load_extension` and
@@ -1643,11 +1643,11 @@ for secure (encrypted, authenticated) internet connections:
   other options. It includes a :meth:`~ssl.SSLContext.wrap_socket` for creating
   an SSL socket from an SSL context.
 
-* A new function, :func:`ssl.match_hostname`, supports server identity
+* A new function, :func:`!ssl.match_hostname`, supports server identity
   verification for higher-level protocols by implementing the rules of HTTPS
   (from :rfc:`2818`) which are also suitable for other protocols.
 
-* The :func:`ssl.wrap_socket` constructor function now takes a *ciphers*
+* The :func:`ssl.wrap_socket() <ssl.SSLContext.wrap_socket>` constructor function now takes a *ciphers*
   argument.  The *ciphers* string lists the allowed encryption algorithms using
   the format described in the `OpenSSL documentation
   <https://www.openssl.org/docs/man1.0.2/man1/ciphers.html#CIPHER-LIST-FORMAT>`__.
@@ -1759,7 +1759,7 @@ names.
   (Contributed by Michael Foord.)
 
 * Experimentation at the interactive prompt is now easier because the
-  :class:`unittest.case.TestCase` class can now be instantiated without
+  :class:`unittest.TestCase` class can now be instantiated without
   arguments:
 
   >>> from unittest import TestCase
@@ -1797,7 +1797,7 @@ names.
 * In addition, the method names in the module have undergone a number of clean-ups.
 
   For example, :meth:`~unittest.TestCase.assertRegex` is the new name for
-  :meth:`~unittest.TestCase.assertRegexpMatches` which was misnamed because the
+  :meth:`!assertRegexpMatches` which was misnamed because the
   test uses :func:`re.search`, not :func:`re.match`.  Other methods using
   regular expressions are now named using short form "Regex" in preference to
   "Regexp" -- this matches the names used in other unittest implementations,
@@ -1812,11 +1812,11 @@ names.
    ===============================   ==============================
    Old Name                          Preferred Name
    ===============================   ==============================
-   :meth:`assert_`                   :meth:`.assertTrue`
-   :meth:`assertEquals`              :meth:`.assertEqual`
-   :meth:`assertNotEquals`           :meth:`.assertNotEqual`
-   :meth:`assertAlmostEquals`        :meth:`.assertAlmostEqual`
-   :meth:`assertNotAlmostEquals`     :meth:`.assertNotAlmostEqual`
+   :meth:`!assert_`                   :meth:`.assertTrue`
+   :meth:`!assertEquals`              :meth:`.assertEqual`
+   :meth:`!assertNotEquals`           :meth:`.assertNotEqual`
+   :meth:`!assertAlmostEquals`        :meth:`.assertAlmostEqual`
+   :meth:`!assertNotAlmostEquals`     :meth:`.assertNotAlmostEqual`
    ===============================   ==============================
 
   Likewise, the ``TestCase.fail*`` methods deprecated in Python 3.1 are expected
@@ -1824,7 +1824,7 @@ names.
 
   (Contributed by Ezio Melotti; :issue:`9424`.)
 
-* The :meth:`~unittest.TestCase.assertDictContainsSubset` method was deprecated
+* The :meth:`!assertDictContainsSubset` method was deprecated
   because it was misimplemented with the arguments in the wrong order.  This
   created hard-to-debug optical illusions where tests like
   ``TestCase().assertDictContainsSubset({'a':1, 'b':2}, {'a':1})`` would fail.
@@ -1997,7 +1997,7 @@ under-the-hood.
 dbm
 ---
 
-All database modules now support the :meth:`get` and :meth:`setdefault` methods.
+All database modules now support the :meth:`!get` and :meth:`!setdefault` methods.
 
 (Suggested by Ray Allen in :issue:`9523`.)
 
@@ -2118,7 +2118,7 @@ The :mod:`pdb` debugger module gained a number of usability improvements:
   :file:`.pdbrc` script file.
 * A :file:`.pdbrc` script file can contain ``continue`` and ``next`` commands
   that continue debugging.
-* The :class:`Pdb` class constructor now accepts a *nosigint* argument.
+* The :class:`~pdb.Pdb` class constructor now accepts a *nosigint* argument.
 * New commands: ``l(list)``, ``ll(long list)`` and ``source`` for
   listing source code.
 * New commands: ``display`` and ``undisplay`` for showing or hiding
@@ -2394,11 +2394,11 @@ A number of small performance enhancements have been added:
 
   (Contributed by Antoine Pitrou; :issue:`3001`.)
 
-* The fast-search algorithm in stringlib is now used by the :meth:`split`,
-  :meth:`rsplit`, :meth:`splitlines` and :meth:`replace` methods on
+* The fast-search algorithm in stringlib is now used by the :meth:`~str.split`,
+  :meth:`~str.rsplit`, :meth:`~str.splitlines` and :meth:`~str.replace` methods on
   :class:`bytes`, :class:`bytearray` and :class:`str` objects. Likewise, the
-  algorithm is also used by :meth:`rfind`, :meth:`rindex`, :meth:`rsplit` and
-  :meth:`rpartition`.
+  algorithm is also used by :meth:`~str.rfind`, :meth:`~str.rindex`, :meth:`~str.rsplit` and
+  :meth:`~str.rpartition`.
 
   (Patch by Florent Xicluna in :issue:`7622` and :issue:`7462`.)
 
@@ -2410,8 +2410,8 @@ A number of small performance enhancements have been added:
 
 There were several other minor optimizations. Set differencing now runs faster
 when one operand is much larger than the other (patch by Andress Bennetts in
-:issue:`8685`).  The :meth:`array.repeat` method has a faster implementation
-(:issue:`1569291` by Alexander Belopolsky). The :class:`BaseHTTPRequestHandler`
+:issue:`8685`).  The :meth:`!array.repeat` method has a faster implementation
+(:issue:`1569291` by Alexander Belopolsky). The :class:`~http.server.BaseHTTPRequestHandler`
 has more efficient buffering (:issue:`3709` by Andrew Schaaf).  The
 :func:`operator.attrgetter` function has been sped-up (:issue:`10160` by
 Christos Georgiou).  And :class:`~configparser.ConfigParser` loads multi-line arguments a bit
@@ -2562,11 +2562,11 @@ Changes to Python's build process and to the C API include:
   (Suggested by Raymond Hettinger and implemented by Benjamin Peterson;
   :issue:`9778`.)
 
-* A new macro :c:macro:`Py_VA_COPY` copies the state of the variable argument
+* A new macro :c:macro:`!Py_VA_COPY` copies the state of the variable argument
   list.  It is equivalent to C99 *va_copy* but available on all Python platforms
   (:issue:`2443`).
 
-* A new C API function :c:func:`PySys_SetArgvEx` allows an embedded interpreter
+* A new C API function :c:func:`!PySys_SetArgvEx` allows an embedded interpreter
   to set :data:`sys.argv` without also modifying :data:`sys.path`
   (:issue:`5753`).
 
@@ -2650,8 +2650,9 @@ require changes to your code:
 * :class:`bytearray` objects can no longer be used as filenames; instead,
   they should be converted to :class:`bytes`.
 
-* The :meth:`array.tostring` and :meth:`array.fromstring` have been renamed to
-  :meth:`array.tobytes` and :meth:`array.frombytes` for clarity.  The old names
+* The :meth:`!array.tostring` and :meth:`!array.fromstring` have been renamed to
+  :meth:`array.tobytes() <array.array.tobytes>` and
+  :meth:`array.frombytes() <array.array.frombytes>` for clarity.  The old names
   have been deprecated. (See :issue:`8990`.)
 
 * ``PyArg_Parse*()`` functions:
@@ -2664,7 +2665,7 @@ require changes to your code:
   instead; the new type has a well-defined interface for passing typing safety
   information and a less complicated signature for calling a destructor.
 
-* The :func:`sys.setfilesystemencoding` function was removed because
+* The :func:`!sys.setfilesystemencoding` function was removed because
   it had a flawed design.
 
 * The :func:`random.seed` function and method now salt string seeds with an
@@ -2672,7 +2673,7 @@ require changes to your code:
   reproduce Python 3.1 sequences, set the *version* argument to *1*,
   ``random.seed(s, version=1)``.
 
-* The previously deprecated :func:`string.maketrans` function has been removed
+* The previously deprecated :func:`!string.maketrans` function has been removed
   in favor of the static methods :meth:`bytes.maketrans` and
   :meth:`bytearray.maketrans`.  This change solves the confusion around which
   types were supported by the :mod:`string` module.  Now, :class:`str`,

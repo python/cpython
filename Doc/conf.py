@@ -259,6 +259,7 @@ nitpick_ignore += [
     ('py:attr', '__annotations__'),
     ('py:meth', '__missing__'),
     ('py:attr', '__wrapped__'),
+    ('py:attr', 'decimal.Context.clamp'),
     ('py:meth', 'index'),  # list.index, tuple.index, etc.
 ]
 
