@@ -691,6 +691,30 @@ class PydocDocTest(unittest.TestCase):
         finally:
             pydoc.getpager = getpager_old
 
+    def test_lambda_with_return_annotation(self):
+        func = lambda a, b, c: 1
+        func.__annotations__ = {"return": int}
+        with captured_output('stdout') as help_io:
+            pydoc.help(func)
+        helptext = help_io.getvalue()
+        self.assertIn("lambda (a, b, c) -> int", helptext)
+
+    def test_lambda_without_return_annotation(self):
+        func = lambda a, b, c: 1
+        func.__annotations__ = {"a": int, "b": int, "c": int}
+        with captured_output('stdout') as help_io:
+            pydoc.help(func)
+        helptext = help_io.getvalue()
+        self.assertIn("lambda (a: int, b: int, c: int)", helptext)
+
+    def test_lambda_with_return_and_params_annotation(self):
+        func = lambda a, b, c: 1
+        func.__annotations__ = {"a": int, "b": int, "c": int, "return": int}
+        with captured_output('stdout') as help_io:
+            pydoc.help(func)
+        helptext = help_io.getvalue()
+        self.assertIn("lambda (a: int, b: int, c: int) -> int", helptext)
+
     def test_namedtuple_fields(self):
         Person = namedtuple('Person', ['nickname', 'firstname'])
         with captured_stdout() as help_io:
