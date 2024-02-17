@@ -585,11 +585,10 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
 
     def test_sendto_no_data(self):
         transport = self.datagram_transport()
-        transport._buffer.append((b'data', ('0.0.0.0', 12345)))
-        transport.sendto(b'', ())
-        self.assertFalse(self.sock.sendto.called)
-        self.assertEqual(
-            [(b'data', ('0.0.0.0', 12345))], list(transport._buffer))
+        transport.sendto(b'', ('0.0.0.0', 1234))
+        self.assertTrue(self.proactor.sendto.called)
+        self.proactor.sendto.assert_called_with(
+            self.sock, b'', addr=('0.0.0.0', 1234))
 
     def test_sendto_buffer(self):
         transport = self.datagram_transport()
@@ -625,6 +624,19 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
         self.assertEqual(
             [(b'data1', ('0.0.0.0', 12345)),
              (b'data2', ('0.0.0.0', 12345))],
+            list(transport._buffer))
+        self.assertIsInstance(transport._buffer[1][0], bytes)
+
+    def test_sendto_buffer_nodata(self):
+        data2 = b''
+        transport = self.datagram_transport()
+        transport._buffer.append((b'data1', ('0.0.0.0', 12345)))
+        transport._write_fut = object()
+        transport.sendto(data2, ('0.0.0.0', 12345))
+        self.assertFalse(self.proactor.sendto.called)
+        self.assertEqual(
+            [(b'data1', ('0.0.0.0', 12345)),
+             (b'', ('0.0.0.0', 12345))],
             list(transport._buffer))
         self.assertIsInstance(transport._buffer[1][0], bytes)
 

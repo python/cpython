@@ -218,6 +218,12 @@ asyncio
   the Unix socket when the server is closed.
   (Contributed by Pierre Ossman in :gh:`111246`.)
 
+* :meth:`asyncio.DatagramTransport.sendto` will now send zero-length
+  datagrams if called with an empty bytes object. The transport flow
+  control also now accounts for the datagram header when calculating
+  the buffer size.
+  (Contributed by Jamie Phan in :gh:`115199`.)
+
 copy
 ----
 
