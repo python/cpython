@@ -1,6 +1,8 @@
 import textwrap
 import types
+import typing
 import unittest
+import warnings
 
 
 def global_function():
@@ -68,6 +70,27 @@ class FunctionPropertiesTest(FuncAttrsTest):
         self.assertEqual(test(), None)
         test.__code__ = self.b.__code__
         self.assertEqual(test(), 3) # self.b always returns 3, arbitrarily
+
+    def test_invalid___code___assignment(self):
+        def A(): pass
+        def B(): yield
+        async def C(): yield
+        async def D(x): await x
+
+        for src in [A, B, C, D]:
+            for dst in [A, B, C, D]:
+                if src == dst:
+                    continue
+
+                assert src.__code__.co_flags != dst.__code__.co_flags
+                prev = dst.__code__
+                try:
+                    with self.assertWarnsRegex(DeprecationWarning, 'code object of non-matching type'):
+                        dst.__code__ = src.__code__
+                finally:
+                    with warnings.catch_warnings():
+                        warnings.filterwarnings('ignore', '', DeprecationWarning)
+                        dst.__code__ = prev
 
     def test___globals__(self):
         self.assertIs(self.b.__globals__, globals())
@@ -189,6 +212,23 @@ class FunctionPropertiesTest(FuncAttrsTest):
         self.assertEqual(self.b.__qualname__, 'd')
         # __qualname__ must be a string
         self.cannot_set_attr(self.b, '__qualname__', 7, TypeError)
+
+    def test___type_params__(self):
+        def generic[T](): pass
+        def not_generic(): pass
+        lambda_ = lambda: ...
+        T, = generic.__type_params__
+        self.assertIsInstance(T, typing.TypeVar)
+        self.assertEqual(generic.__type_params__, (T,))
+        for func in (not_generic, lambda_):
+            with self.subTest(func=func):
+                self.assertEqual(func.__type_params__, ())
+                with self.assertRaises(TypeError):
+                    del func.__type_params__
+                with self.assertRaises(TypeError):
+                    func.__type_params__ = 42
+                func.__type_params__ = (T,)
+                self.assertEqual(func.__type_params__, (T,))
 
     def test___code__(self):
         num_one, num_two = 7, 8
