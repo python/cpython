@@ -12,12 +12,12 @@ file or a buffer, but they will not let you interact in a more detailed way with
 the interpreter.
 
 Several of these functions accept a start symbol from the grammar as a
-parameter.  The available start symbols are :const:`Py_eval_input`,
-:const:`Py_file_input`, and :const:`Py_single_input`.  These are described
+parameter.  The available start symbols are :c:data:`Py_eval_input`,
+:c:data:`Py_file_input`, and :c:data:`Py_single_input`.  These are described
 following the functions which accept them as parameters.
 
 Note also that several of these functions take :c:expr:`FILE*` parameters.  One
-particular issue which needs to be handled carefully is that the :c:expr:`FILE`
+particular issue which needs to be handled carefully is that the :c:type:`FILE`
 structure for different C libraries can be different and incompatible.  Under
 Windows (at least), it is possible for dynamically linked extensions to actually
 use different libraries, so care should be taken that :c:expr:`FILE*` parameters
@@ -167,6 +167,10 @@ the same library that the Python runtime is using.
    event loops, as done in the :file:`Modules/_tkinter.c` in the
    Python source code.
 
+   .. versionchanged:: 3.12
+      This function is only called from the
+      :ref:`main interpreter <sub-interpreter-support>`.
+
 
 .. c:var:: char* (*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, const char *)
 
@@ -186,6 +190,10 @@ the same library that the Python runtime is using.
       The result must be allocated by :c:func:`PyMem_RawMalloc` or
       :c:func:`PyMem_RawRealloc`, instead of being allocated by
       :c:func:`PyMem_Malloc` or :c:func:`PyMem_Realloc`.
+
+   .. versionchanged:: 3.12
+      This function is only called from the
+      :ref:`main interpreter <sub-interpreter-support>`.
 
 .. c:function:: PyObject* PyRun_String(const char *str, int start, PyObject *globals, PyObject *locals)
 
@@ -248,8 +256,8 @@ the same library that the Python runtime is using.
 
    Parse and compile the Python source code in *str*, returning the resulting code
    object.  The start token is given by *start*; this can be used to constrain the
-   code which can be compiled and should be :const:`Py_eval_input`,
-   :const:`Py_file_input`, or :const:`Py_single_input`.  The filename specified by
+   code which can be compiled and should be :c:data:`Py_eval_input`,
+   :c:data:`Py_file_input`, or :c:data:`Py_single_input`.  The filename specified by
    *filename* is used to construct the code object and may appear in tracebacks or
    :exc:`SyntaxError` exception messages.  This returns ``NULL`` if the code
    cannot be parsed or compiled.
@@ -314,7 +322,7 @@ the same library that the Python runtime is using.
 
 .. c:var:: int Py_eval_input
 
-   .. index:: single: Py_CompileString()
+   .. index:: single: Py_CompileString (C function)
 
    The start symbol from the Python grammar for isolated expressions; for use with
    :c:func:`Py_CompileString`.
@@ -322,7 +330,7 @@ the same library that the Python runtime is using.
 
 .. c:var:: int Py_file_input
 
-   .. index:: single: Py_CompileString()
+   .. index:: single: Py_CompileString (C function)
 
    The start symbol from the Python grammar for sequences of statements as read
    from a file or other source; for use with :c:func:`Py_CompileString`.  This is
@@ -331,7 +339,7 @@ the same library that the Python runtime is using.
 
 .. c:var:: int Py_single_input
 
-   .. index:: single: Py_CompileString()
+   .. index:: single: Py_CompileString (C function)
 
    The start symbol from the Python grammar for a single statement; for use with
    :c:func:`Py_CompileString`. This is the symbol used for the interactive
@@ -345,7 +353,7 @@ the same library that the Python runtime is using.
    executed, it is passed as ``PyCompilerFlags *flags``.  In this case, ``from
    __future__ import`` can modify *flags*.
 
-   Whenever ``PyCompilerFlags *flags`` is ``NULL``, :attr:`cf_flags` is treated as
+   Whenever ``PyCompilerFlags *flags`` is ``NULL``, :c:member:`~PyCompilerFlags.cf_flags` is treated as
    equal to ``0``, and any modification due to ``from __future__ import`` is
    discarded.
 
@@ -359,7 +367,7 @@ the same library that the Python runtime is using.
       initialized to ``PY_MINOR_VERSION``.
 
       The field is ignored by default, it is used if and only if
-      ``PyCF_ONLY_AST`` flag is set in *cf_flags*.
+      ``PyCF_ONLY_AST`` flag is set in :c:member:`~PyCompilerFlags.cf_flags`.
 
    .. versionchanged:: 3.8
       Added *cf_feature_version* field.

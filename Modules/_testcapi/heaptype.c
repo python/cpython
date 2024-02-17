@@ -1,5 +1,6 @@
 #include "parts.h"
-#include "structmember.h"         // PyMemberDef
+#include <stddef.h>               // offsetof()
+
 
 static struct PyModuleDef *_testcapimodule = NULL;  // set at initialization
 
@@ -22,7 +23,7 @@ static PyObject *pytype_fromspec_meta(PyObject* self, PyObject *meta)
         "_testcapi.HeapCTypeViaMetaclass",
         sizeof(PyObject),
         0,
-        Py_TPFLAGS_DEFAULT,
+        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
         HeapCTypeViaMetaclass_slots
     };
 
@@ -116,10 +117,10 @@ test_from_spec_invalid_metatype_inheritance(PyObject *self, PyObject *Py_UNUSED(
     PyObject *bases = NULL;
     PyObject *new = NULL;
     PyObject *meta_error_string = NULL;
-    PyObject *exc_type = NULL;
-    PyObject *exc_value = NULL;
-    PyObject *exc_traceback = NULL;
+    PyObject *exc = NULL;
     PyObject *result = NULL;
+    PyObject *message = NULL;
+    PyObject *args = NULL;
 
     metaclass_a = PyType_FromSpecWithBases(&MinimalMetaclass_spec, (PyObject*)&PyType_Type);
     if (metaclass_a == NULL) {
@@ -156,19 +157,25 @@ test_from_spec_invalid_metatype_inheritance(PyObject *self, PyObject *Py_UNUSED(
 
     // Assert that the correct exception was raised
     if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-        PyErr_Fetch(&exc_type, &exc_value, &exc_traceback);
-
+        exc = PyErr_GetRaisedException();
+        args = PyException_GetArgs(exc);
+        if (!PyTuple_Check(args) || PyTuple_Size(args) != 1) {
+            PyErr_SetString(PyExc_AssertionError,
+                    "TypeError args are not a one-tuple");
+            goto finally;
+        }
+        message = Py_NewRef(PyTuple_GET_ITEM(args, 0));
         meta_error_string = PyUnicode_FromString("metaclass conflict:");
         if (meta_error_string == NULL) {
             goto finally;
         }
-        int res = PyUnicode_Contains(exc_value, meta_error_string);
+        int res = PyUnicode_Contains(message, meta_error_string);
         if (res < 0) {
             goto finally;
         }
         if (res == 0) {
             PyErr_SetString(PyExc_AssertionError,
-                    "TypeError did not inlclude expected message.");
+                    "TypeError did not include expected message.");
             goto finally;
         }
         result = Py_NewRef(Py_None);
@@ -179,11 +186,11 @@ finally:
     Py_XDECREF(bases);
     Py_XDECREF(new);
     Py_XDECREF(meta_error_string);
-    Py_XDECREF(exc_type);
-    Py_XDECREF(exc_value);
-    Py_XDECREF(exc_traceback);
+    Py_XDECREF(exc);
+    Py_XDECREF(message);
     Py_XDECREF(class_a);
     Py_XDECREF(class_b);
+    Py_XDECREF(args);
     return result;
 }
 
@@ -259,7 +266,7 @@ test_type_from_ephemeral_spec(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     /* deallocate the spec (and all contents) */
 
-    // (Explicitly ovewrite memory before freeing,
+    // (Explicitly overwrite memory before freeing,
     // so bugs show themselves even without the debug allocator's help.)
     memset(spec, 0xdd, sizeof(PyType_Spec));
     PyMem_Del(spec);
@@ -326,7 +333,7 @@ typedef struct {
 
 
 static struct PyMemberDef members_to_repeat[] = {
-    {"T_INT", T_INT, offsetof(HeapCTypeWithDataObject, data), 0, NULL},
+    {"Py_T_INT", Py_T_INT, offsetof(HeapCTypeWithDataObject, data), 0, NULL},
     {NULL}
 };
 
@@ -365,7 +372,6 @@ create_type_from_repeated_slots(PyObject *self, PyObject *variant_obj)
 }
 
 
-
 static PyObject *
 make_immutable_type_with_base(PyObject *self, PyObject *base)
 {
@@ -377,6 +383,30 @@ make_immutable_type_with_base(PyObject *self, PyObject *base)
         .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
     };
     return PyType_FromSpecWithBases(&ImmutableSubclass_spec, base);
+}
+
+static PyObject *
+make_type_with_base(PyObject *self, PyObject *base)
+{
+    assert(PyType_Check(base));
+    PyType_Spec ImmutableSubclass_spec = {
+        .name = "_testcapi.Subclass",
+        .basicsize = (int)((PyTypeObject*)base)->tp_basicsize,
+        .slots = empty_type_slots,
+        .flags = Py_TPFLAGS_DEFAULT,
+    };
+    return PyType_FromSpecWithBases(&ImmutableSubclass_spec, base);
+}
+
+
+static PyObject *
+pyobject_getitemdata(PyObject *self, PyObject *o)
+{
+    void *pointer = PyObject_GetItemData(o);
+    if (pointer == NULL) {
+        return NULL;
+    }
+    return PyLong_FromVoidPtr(pointer);
 }
 
 
@@ -391,6 +421,8 @@ static PyMethodDef TestMethods[] = {
      test_from_spec_invalid_metatype_inheritance,
      METH_NOARGS},
     {"make_immutable_type_with_base", make_immutable_type_with_base, METH_O},
+    {"make_type_with_base", make_type_with_base, METH_O},
+    {"pyobject_getitemdata", pyobject_getitemdata, METH_O},
     {NULL},
 };
 
@@ -446,7 +478,7 @@ typedef struct {
 } HeapCTypeObject;
 
 static struct PyMemberDef heapctype_members[] = {
-    {"value", T_INT, offsetof(HeapCTypeObject, value)},
+    {"value", Py_T_INT, offsetof(HeapCTypeObject, value)},
     {NULL} /* Sentinel */
 };
 
@@ -540,7 +572,7 @@ heapctypesubclass_init(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 static struct PyMemberDef heapctypesubclass_members[] = {
-    {"value2", T_INT, offsetof(HeapCTypeSubclassObject, value2)},
+    {"value2", Py_T_INT, offsetof(HeapCTypeSubclassObject, value2)},
     {NULL} /* Sentinel */
 };
 
@@ -617,22 +649,24 @@ heapctypesubclasswithfinalizer_init(PyObject *self, PyObject *args, PyObject *kw
 static void
 heapctypesubclasswithfinalizer_finalize(PyObject *self)
 {
-    PyObject *error_type, *error_value, *error_traceback, *m;
     PyObject *oldtype = NULL, *newtype = NULL, *refcnt = NULL;
 
     /* Save the current exception, if any. */
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    PyObject *exc = PyErr_GetRaisedException();
 
     if (_testcapimodule == NULL) {
         goto cleanup_finalize;
     }
-    m = PyState_FindModule(_testcapimodule);
+    PyObject *m = PyState_FindModule(_testcapimodule);
     if (m == NULL) {
         goto cleanup_finalize;
     }
     oldtype = PyObject_GetAttrString(m, "HeapCTypeSubclassWithFinalizer");
+    if (oldtype == NULL) {
+        goto cleanup_finalize;
+    }
     newtype = PyObject_GetAttrString(m, "HeapCTypeSubclass");
-    if (oldtype == NULL || newtype == NULL) {
+    if (newtype == NULL) {
         goto cleanup_finalize;
     }
 
@@ -661,7 +695,7 @@ cleanup_finalize:
     Py_XDECREF(refcnt);
 
     /* Restore the saved exception. */
-    PyErr_Restore(error_type, error_value, error_traceback);
+    PyErr_SetRaisedException(exc);
 }
 
 static PyType_Slot HeapCTypeSubclassWithFinalizer_slots[] = {
@@ -711,6 +745,12 @@ static PyType_Spec HeapCTypeMetaclassCustomNew_spec = {
     HeapCTypeMetaclassCustomNew_slots
 };
 
+static PyType_Spec HeapCTypeMetaclassNullNew_spec = {
+    .name = "_testcapi.HeapCTypeMetaclassNullNew",
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .slots = empty_type_slots
+};
+
 
 typedef struct {
     PyObject_HEAD
@@ -733,8 +773,8 @@ static PyGetSetDef heapctypewithdict_getsetlist[] = {
 };
 
 static struct PyMemberDef heapctypewithdict_members[] = {
-    {"dictobj", T_OBJECT, offsetof(HeapCTypeWithDictObject, dict)},
-    {"__dictoffset__", T_PYSSIZET, offsetof(HeapCTypeWithDictObject, dict), READONLY},
+    {"dictobj", _Py_T_OBJECT, offsetof(HeapCTypeWithDictObject, dict)},
+    {"__dictoffset__", Py_T_PYSSIZET, offsetof(HeapCTypeWithDictObject, dict), Py_READONLY},
     {NULL} /* Sentinel */
 };
 
@@ -765,13 +805,13 @@ static int
 heapmanaged_traverse(HeapCTypeObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
-    return _PyObject_VisitManagedDict((PyObject *)self, visit, arg);
+    return PyObject_VisitManagedDict((PyObject *)self, visit, arg);
 }
 
 static int
 heapmanaged_clear(HeapCTypeObject *self)
 {
-    _PyObject_ClearManagedDict((PyObject *)self);
+    PyObject_ClearManagedDict((PyObject *)self);
     return 0;
 }
 
@@ -779,7 +819,7 @@ static void
 heapmanaged_dealloc(HeapCTypeObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    _PyObject_ClearManagedDict((PyObject *)self);
+    PyObject_ClearManagedDict((PyObject *)self);
     PyObject_GC_UnTrack(self);
     PyObject_GC_Del(self);
     Py_DECREF(tp);
@@ -828,8 +868,8 @@ static PyType_Spec  HeapCTypeWithManagedWeakref_spec = {
 };
 
 static struct PyMemberDef heapctypewithnegativedict_members[] = {
-    {"dictobj", T_OBJECT, offsetof(HeapCTypeWithDictObject, dict)},
-    {"__dictoffset__", T_PYSSIZET, -(Py_ssize_t)sizeof(void*), READONLY},
+    {"dictobj", _Py_T_OBJECT, offsetof(HeapCTypeWithDictObject, dict)},
+    {"__dictoffset__", Py_T_PYSSIZET, -(Py_ssize_t)sizeof(void*), Py_READONLY},
     {NULL} /* Sentinel */
 };
 
@@ -854,9 +894,9 @@ typedef struct {
 } HeapCTypeWithWeakrefObject;
 
 static struct PyMemberDef heapctypewithweakref_members[] = {
-    {"weakreflist", T_OBJECT, offsetof(HeapCTypeWithWeakrefObject, weakreflist)},
-    {"__weaklistoffset__", T_PYSSIZET,
-      offsetof(HeapCTypeWithWeakrefObject, weakreflist), READONLY},
+    {"weakreflist", _Py_T_OBJECT, offsetof(HeapCTypeWithWeakrefObject, weakreflist)},
+    {"__weaklistoffset__", Py_T_PYSSIZET,
+      offsetof(HeapCTypeWithWeakrefObject, weakreflist), Py_READONLY},
     {NULL} /* Sentinel */
 };
 
@@ -904,7 +944,7 @@ typedef struct {
 } HeapCTypeSetattrObject;
 
 static struct PyMemberDef heapctypesetattr_members[] = {
-    {"pvalue", T_LONG, offsetof(HeapCTypeSetattrObject, value)},
+    {"pvalue", Py_T_LONG, offsetof(HeapCTypeSetattrObject, value)},
     {NULL} /* Sentinel */
 };
 
@@ -968,6 +1008,113 @@ static PyType_Spec HeapCTypeSetattr_spec = {
     HeapCTypeSetattr_slots
 };
 
+PyDoc_STRVAR(HeapCCollection_doc,
+"Tuple-like heap type that uses PyObject_GetItemData for items.");
+
+static PyObject*
+HeapCCollection_new(PyTypeObject *subtype, PyObject *args, PyObject *kwds)
+{
+    PyObject *self = NULL;
+    PyObject *result = NULL;
+
+    Py_ssize_t size = PyTuple_GET_SIZE(args);
+    self = subtype->tp_alloc(subtype, size);
+    if (!self) {
+        goto finally;
+    }
+    PyObject **data = PyObject_GetItemData(self);
+    if (!data) {
+        goto finally;
+    }
+
+    for (Py_ssize_t i = 0; i < size; i++) {
+        data[i] = Py_NewRef(PyTuple_GET_ITEM(args, i));
+    }
+
+    result = self;
+    self = NULL;
+  finally:
+    Py_XDECREF(self);
+    return result;
+}
+
+static Py_ssize_t
+HeapCCollection_length(PyVarObject *self)
+{
+    return Py_SIZE(self);
+}
+
+static PyObject*
+HeapCCollection_item(PyObject *self, Py_ssize_t i)
+{
+    if (i < 0 || i >= Py_SIZE(self)) {
+        return PyErr_Format(PyExc_IndexError, "index %zd out of range", i);
+    }
+    PyObject **data = PyObject_GetItemData(self);
+    if (!data) {
+        return NULL;
+    }
+    return Py_NewRef(data[i]);
+}
+
+static int
+HeapCCollection_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    PyObject **data = PyObject_GetItemData(self);
+    if (!data) {
+        return -1;
+    }
+    for (Py_ssize_t i = 0; i < Py_SIZE(self); i++) {
+        Py_VISIT(data[i]);
+    }
+    return 0;
+}
+
+static int
+HeapCCollection_clear(PyObject *self)
+{
+    PyObject **data = PyObject_GetItemData(self);
+    if (!data) {
+        return -1;
+    }
+    Py_ssize_t size = Py_SIZE(self);
+    Py_SET_SIZE(self, 0);
+    for (Py_ssize_t i = 0; i < size; i++) {
+        Py_CLEAR(data[i]);
+    }
+    return 0;
+}
+
+static void
+HeapCCollection_dealloc(PyObject *self)
+{
+    PyTypeObject *tp = Py_TYPE(self);
+    HeapCCollection_clear(self);
+    PyObject_GC_UnTrack(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
+}
+
+static PyType_Slot HeapCCollection_slots[] = {
+    {Py_tp_new, HeapCCollection_new},
+    {Py_sq_length, HeapCCollection_length},
+    {Py_sq_item, HeapCCollection_item},
+    {Py_tp_traverse, HeapCCollection_traverse},
+    {Py_tp_clear, HeapCCollection_clear},
+    {Py_tp_dealloc, HeapCCollection_dealloc},
+    {Py_tp_doc, (void *)HeapCCollection_doc},
+    {0, 0},
+};
+
+static PyType_Spec HeapCCollection_spec = {
+    .name = "_testcapi.HeapCCollection",
+    .basicsize = sizeof(PyVarObject),
+    .itemsize = sizeof(PyObject*),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_ITEMS_AT_END),
+    .slots = HeapCCollection_slots,
+};
+
 int
 _PyTestCapi_Init_Heaptype(PyObject *m) {
     _testcapimodule = PyModule_GetDef(m);
@@ -976,94 +1123,62 @@ _PyTestCapi_Init_Heaptype(PyObject *m) {
         return -1;
     }
 
+#define ADD(name, value) do { \
+        if (PyModule_Add(m, name, value) < 0) { \
+            return -1; \
+        } \
+    } while (0)
+
     PyObject *HeapDocCType = PyType_FromSpec(&HeapDocCType_spec);
-    if (HeapDocCType == NULL) {
-        return -1;
-    }
-    PyModule_AddObject(m, "HeapDocCType", HeapDocCType);
+    ADD("HeapDocCType", HeapDocCType);
 
     /* bpo-41832: Add a new type to test PyType_FromSpec()
        now can accept a NULL tp_doc slot. */
     PyObject *NullTpDocType = PyType_FromSpec(&NullTpDocType_spec);
-    if (NullTpDocType == NULL) {
-        return -1;
-    }
-    PyModule_AddObject(m, "NullTpDocType", NullTpDocType);
+    ADD("NullTpDocType", NullTpDocType);
 
     PyObject *HeapGcCType = PyType_FromSpec(&HeapGcCType_spec);
-    if (HeapGcCType == NULL) {
-        return -1;
-    }
-    PyModule_AddObject(m, "HeapGcCType", HeapGcCType);
+    ADD("HeapGcCType", HeapGcCType);
 
     PyObject *HeapCType = PyType_FromSpec(&HeapCType_spec);
     if (HeapCType == NULL) {
         return -1;
     }
     PyObject *subclass_bases = PyTuple_Pack(1, HeapCType);
+    Py_DECREF(HeapCType);
     if (subclass_bases == NULL) {
         return -1;
     }
     PyObject *HeapCTypeSubclass = PyType_FromSpecWithBases(&HeapCTypeSubclass_spec, subclass_bases);
-    if (HeapCTypeSubclass == NULL) {
-        return -1;
-    }
     Py_DECREF(subclass_bases);
-    PyModule_AddObject(m, "HeapCTypeSubclass", HeapCTypeSubclass);
+    ADD("HeapCTypeSubclass", HeapCTypeSubclass);
 
     PyObject *HeapCTypeWithDict = PyType_FromSpec(&HeapCTypeWithDict_spec);
-    if (HeapCTypeWithDict == NULL) {
-        return -1;
-    }
-    PyModule_AddObject(m, "HeapCTypeWithDict", HeapCTypeWithDict);
+    ADD("HeapCTypeWithDict", HeapCTypeWithDict);
 
     PyObject *HeapCTypeWithDict2 = PyType_FromSpec(&HeapCTypeWithDict2_spec);
-    if (HeapCTypeWithDict2 == NULL) {
-        return -1;
-    }
-    PyModule_AddObject(m, "HeapCTypeWithDict2", HeapCTypeWithDict2);
+    ADD("HeapCTypeWithDict2", HeapCTypeWithDict2);
 
     PyObject *HeapCTypeWithNegativeDict = PyType_FromSpec(&HeapCTypeWithNegativeDict_spec);
-    if (HeapCTypeWithNegativeDict == NULL) {
-        return -1;
-    }
-    PyModule_AddObject(m, "HeapCTypeWithNegativeDict", HeapCTypeWithNegativeDict);
+    ADD("HeapCTypeWithNegativeDict", HeapCTypeWithNegativeDict);
 
     PyObject *HeapCTypeWithManagedDict = PyType_FromSpec(&HeapCTypeWithManagedDict_spec);
-    if (HeapCTypeWithManagedDict == NULL) {
-        return -1;
-    }
-    PyModule_AddObject(m, "HeapCTypeWithManagedDict", HeapCTypeWithManagedDict);
+    ADD("HeapCTypeWithManagedDict", HeapCTypeWithManagedDict);
 
     PyObject *HeapCTypeWithManagedWeakref = PyType_FromSpec(&HeapCTypeWithManagedWeakref_spec);
-    if (HeapCTypeWithManagedWeakref == NULL) {
-        return -1;
-    }
-    PyModule_AddObject(m, "HeapCTypeWithManagedWeakref", HeapCTypeWithManagedWeakref);
+    ADD("HeapCTypeWithManagedWeakref", HeapCTypeWithManagedWeakref);
 
     PyObject *HeapCTypeWithWeakref = PyType_FromSpec(&HeapCTypeWithWeakref_spec);
-    if (HeapCTypeWithWeakref == NULL) {
-        return -1;
-    }
-    PyModule_AddObject(m, "HeapCTypeWithWeakref", HeapCTypeWithWeakref);
+    ADD("HeapCTypeWithWeakref", HeapCTypeWithWeakref);
 
     PyObject *HeapCTypeWithWeakref2 = PyType_FromSpec(&HeapCTypeWithWeakref2_spec);
-    if (HeapCTypeWithWeakref2 == NULL) {
-        return -1;
-    }
-    PyModule_AddObject(m, "HeapCTypeWithWeakref2", HeapCTypeWithWeakref2);
+    ADD("HeapCTypeWithWeakref2", HeapCTypeWithWeakref2);
 
     PyObject *HeapCTypeWithBuffer = PyType_FromSpec(&HeapCTypeWithBuffer_spec);
-    if (HeapCTypeWithBuffer == NULL) {
-        return -1;
-    }
-    PyModule_AddObject(m, "HeapCTypeWithBuffer", HeapCTypeWithBuffer);
+    ADD("HeapCTypeWithBuffer", HeapCTypeWithBuffer);
 
     PyObject *HeapCTypeSetattr = PyType_FromSpec(&HeapCTypeSetattr_spec);
-    if (HeapCTypeSetattr == NULL) {
-        return -1;
-    }
-    PyModule_AddObject(m, "HeapCTypeSetattr", HeapCTypeSetattr);
+    ADD("HeapCTypeSetattr", HeapCTypeSetattr);
 
     PyObject *subclass_with_finalizer_bases = PyTuple_Pack(1, HeapCTypeSubclass);
     if (subclass_with_finalizer_bases == NULL) {
@@ -1071,25 +1186,31 @@ _PyTestCapi_Init_Heaptype(PyObject *m) {
     }
     PyObject *HeapCTypeSubclassWithFinalizer = PyType_FromSpecWithBases(
         &HeapCTypeSubclassWithFinalizer_spec, subclass_with_finalizer_bases);
-    if (HeapCTypeSubclassWithFinalizer == NULL) {
-        return -1;
-    }
     Py_DECREF(subclass_with_finalizer_bases);
-    PyModule_AddObject(m, "HeapCTypeSubclassWithFinalizer", HeapCTypeSubclassWithFinalizer);
+    ADD("HeapCTypeSubclassWithFinalizer", HeapCTypeSubclassWithFinalizer);
 
     PyObject *HeapCTypeMetaclass = PyType_FromMetaclass(
         &PyType_Type, m, &HeapCTypeMetaclass_spec, (PyObject *) &PyType_Type);
-    if (HeapCTypeMetaclass == NULL) {
-        return -1;
-    }
-    PyModule_AddObject(m, "HeapCTypeMetaclass", HeapCTypeMetaclass);
+    ADD("HeapCTypeMetaclass", HeapCTypeMetaclass);
 
     PyObject *HeapCTypeMetaclassCustomNew = PyType_FromMetaclass(
         &PyType_Type, m, &HeapCTypeMetaclassCustomNew_spec, (PyObject *) &PyType_Type);
-    if (HeapCTypeMetaclassCustomNew == NULL) {
+    ADD("HeapCTypeMetaclassCustomNew", HeapCTypeMetaclassCustomNew);
+
+    PyObject *HeapCTypeMetaclassNullNew = PyType_FromMetaclass(
+        &PyType_Type, m, &HeapCTypeMetaclassNullNew_spec, (PyObject *) &PyType_Type);
+    ADD("HeapCTypeMetaclassNullNew", HeapCTypeMetaclassNullNew);
+
+    PyObject *HeapCCollection = PyType_FromMetaclass(
+        NULL, m, &HeapCCollection_spec, NULL);
+    if (HeapCCollection == NULL) {
         return -1;
     }
-    PyModule_AddObject(m, "HeapCTypeMetaclassCustomNew", HeapCTypeMetaclassCustomNew);
+    int rc = PyModule_AddType(m, (PyTypeObject *)HeapCCollection);
+    Py_DECREF(HeapCCollection);
+    if (rc < 0) {
+        return -1;
+    }
 
     return 0;
 }
