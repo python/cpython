@@ -1,2 +1,0 @@
-Honor existing errors obtained when searching for mismatching parentheses in
-the tokenizer. Patch by Pablo Galindo

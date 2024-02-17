@@ -1,2 +1,0 @@
-Redefine the ``_Py_CODEUNIT`` typedef as a union to describe its layout to
-the C compiler, avoiding type punning and improving clarity.
