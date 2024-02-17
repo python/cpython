@@ -1336,7 +1336,7 @@ Decimal('1.100000000000000088817841970012523233890533447265625')
 Fraction(2476979795053773, 2251799813685248)
 
 Another useful change for the :mod:`decimal` module is that the
-:attr:`Context.clamp <decimal.Context>` attribute is now public.  This is useful in creating
+:attr:`Context.clamp <decimal.Context.clamp>` attribute is now public.  This is useful in creating
 contexts that correspond to the decimal interchange formats specified in IEEE
 754 (see :issue:`8540`).
 
