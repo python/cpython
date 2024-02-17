@@ -108,6 +108,7 @@ placeholders such as the current date, image sequence number, or file format::
    >>> photofiles = ['img_1074.jpg', 'img_1076.jpg', 'img_1077.jpg']
    >>> class BatchRename(Template):
    ...     delimiter = '%'
+   ...
    >>> fmt = input('Enter rename style (%d-date %n-seqnum %f-format):  ')
    Enter rename style (%d-date %n-seqnum %f-format):  Ashley_%n%f
 
@@ -278,7 +279,7 @@ applications include caching objects that are expensive to create::
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
        d['primary']                # entry was automatically removed
-     File "C:/python312/lib/weakref.py", line 46, in __getitem__
+     File "C:/python313/lib/weakref.py", line 46, in __getitem__
        o = self.data[key]()
    KeyError: 'primary'
 
@@ -393,7 +394,7 @@ point::
 
    >>> sum([Decimal('0.1')]*10) == Decimal('1.0')
    True
-   >>> sum([0.1]*10) == 1.0
+   >>> 0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1 == 1.0
    False
 
 The :mod:`decimal` module provides arithmetic with as much precision as needed::

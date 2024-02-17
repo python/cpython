@@ -1,1 +1,0 @@
-Add ``SO_RTABLE`` and ``SO_USER_COOKIE`` constants to :mod:`socket`.

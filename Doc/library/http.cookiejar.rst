@@ -44,8 +44,8 @@ The module defines the following exception:
    cookies from a file.  :exc:`LoadError` is a subclass of :exc:`OSError`.
 
    .. versionchanged:: 3.3
-      LoadError was made a subclass of :exc:`OSError` instead of
-      :exc:`IOError`.
+      :exc:`LoadError` used to be a subtype of :exc:`IOError`, which is now an
+      alias of :exc:`OSError`.
 
 
 The following classes are provided:
@@ -61,7 +61,7 @@ The following classes are provided:
    responsible for storing and retrieving cookies from a file or database.
 
 
-.. class:: FileCookieJar(filename, delayload=None, policy=None)
+.. class:: FileCookieJar(filename=None, delayload=None, policy=None)
 
    *policy* is an object implementing the :class:`CookiePolicy` interface.  For the
    other arguments, see the documentation for the corresponding attributes.
@@ -70,6 +70,8 @@ The following classes are provided:
    file on disk.  Cookies are **NOT** loaded from the named file until either the
    :meth:`load` or :meth:`revert` method is called.  Subclasses of this class are
    documented in section :ref:`file-cookie-jar-classes`.
+
+   This should not be initialized directly – use its subclasses below instead.
 
    .. versionchanged:: 3.8
 
@@ -160,11 +162,10 @@ contained :class:`Cookie` objects.
    respectively), the :mailheader:`Cookie2` header is also added when appropriate.
 
    The *request* object (usually a :class:`urllib.request.Request` instance)
-   must support the methods :meth:`get_full_url`, :meth:`get_host`,
-   :meth:`get_type`, :meth:`unverifiable`, :meth:`has_header`,
+   must support the methods :meth:`get_full_url`, :meth:`has_header`,
    :meth:`get_header`, :meth:`header_items`, :meth:`add_unredirected_header`
-   and :attr:`origin_req_host` attribute as documented by
-   :mod:`urllib.request`.
+   and the attributes :attr:`host`, :attr:`!type`, :attr:`unverifiable`
+   and :attr:`origin_req_host` as documented by :mod:`urllib.request`.
 
    .. versionchanged:: 3.3
 
@@ -186,11 +187,11 @@ contained :class:`Cookie` objects.
    method, which returns an :class:`email.message.Message` instance.
 
    The *request* object (usually a :class:`urllib.request.Request` instance)
-   must support the methods :meth:`get_full_url`, :meth:`get_host`,
-   :meth:`unverifiable`, and :attr:`origin_req_host` attribute, as documented
-   by :mod:`urllib.request`.  The request is used to set default values for
-   cookie-attributes as well as for checking that the cookie is allowed to be
-   set.
+   must support the method :meth:`get_full_url` and the attributes
+   :attr:`host`, :attr:`unverifiable` and :attr:`origin_req_host`,
+   as documented by :mod:`urllib.request`.  The request is used to set
+   default values for cookie-attributes as well as for checking that the
+   cookie is allowed to be set.
 
    .. versionchanged:: 3.3
 
@@ -318,11 +319,11 @@ FileCookieJar subclasses and co-operation with web browsers
 The following :class:`CookieJar` subclasses are provided for reading and
 writing.
 
-.. class:: MozillaCookieJar(filename, delayload=None, policy=None)
+.. class:: MozillaCookieJar(filename=None, delayload=None, policy=None)
 
    A :class:`FileCookieJar` that can load from and save cookies to disk in the
-   Mozilla ``cookies.txt`` file format (which is also used by the Lynx and Netscape
-   browsers).
+   Mozilla ``cookies.txt`` file format (which is also used by curl and the Lynx
+   and Netscape browsers).
 
    .. note::
 
@@ -339,7 +340,7 @@ writing.
    Mozilla.
 
 
-.. class:: LWPCookieJar(filename, delayload=None, policy=None)
+.. class:: LWPCookieJar(filename=None, delayload=None, policy=None)
 
    A :class:`FileCookieJar` that can load from and save cookies to disk in format
    compatible with the libwww-perl library's ``Set-Cookie3`` file format.  This is

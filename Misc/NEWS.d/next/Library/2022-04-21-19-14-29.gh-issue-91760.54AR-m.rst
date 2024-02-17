@@ -1,5 +1,0 @@
-Apply more strict rules for numerical group references and group names in
-regular expressions. Only sequence of ASCII digits is now accepted as
-a numerical reference. The group name in
-bytes patterns and replacement strings can now only contain ASCII letters
-and digits and underscore.

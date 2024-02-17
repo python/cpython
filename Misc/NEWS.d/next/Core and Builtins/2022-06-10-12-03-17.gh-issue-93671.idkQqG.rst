@@ -1,2 +1,0 @@
-Fix some exponential backtrace case happening with deeply nested sequence
-patterns in match statements. Patch by Pablo Galindo

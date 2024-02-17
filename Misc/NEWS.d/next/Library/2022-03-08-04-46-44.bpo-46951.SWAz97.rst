@@ -1,1 +1,0 @@
-Order the contents of zipapp archives, to make builds more reproducible.
