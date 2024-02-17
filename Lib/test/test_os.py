@@ -3505,23 +3505,24 @@ class LoginTests(unittest.TestCase):
 class ProgramPriorityTests(unittest.TestCase):
     """Tests for os.getpriority() and os.setpriority()."""
 
+    @support.requires_subprocess()
     def test_set_get_priority(self):
-
         base = os.getpriority(os.PRIO_PROCESS, os.getpid())
-        os.setpriority(os.PRIO_PROCESS, os.getpid(), base + 1)
-        try:
-            new_prio = os.getpriority(os.PRIO_PROCESS, os.getpid())
-            if base >= 19 and new_prio <= 19:
-                raise unittest.SkipTest("unable to reliably test setpriority "
-                                        "at current nice level of %s" % base)
-            else:
-                self.assertEqual(new_prio, base + 1)
-        finally:
-            try:
-                os.setpriority(os.PRIO_PROCESS, os.getpid(), base)
-            except OSError as err:
-                if err.errno != errno.EACCES:
-                    raise
+        code = f"""if 1:
+        import os
+        os.setpriority(os.PRIO_PROCESS, os.getpid(), {base} + 1)
+        print(os.getpriority(os.PRIO_PROCESS, os.getpid()))
+        """
+
+        # Subprocess inherits the current process' priority.
+        proc = subprocess.run([sys.executable, "-c", code], check=True,
+                              stdout=subprocess.PIPE, text=True)
+        new_prio = int(proc.stdout.rstrip())
+        if base >= 19 and new_prio <= 19:
+            raise unittest.SkipTest("unable to reliably test setpriority "
+                                    "at current nice level of %s" % base)
+        else:
+            self.assertEqual(new_prio, base + 1)
 
 
 @unittest.skipUnless(hasattr(os, 'sendfile'), "test needs os.sendfile()")
