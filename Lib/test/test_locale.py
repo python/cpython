@@ -1,6 +1,8 @@
 from decimal import Decimal
 from test.support import verbose, is_android, is_emscripten, is_wasi
 from test.support.warnings_helper import check_warnings
+from test.support.import_helper import import_fresh_module
+from unittest import mock
 import unittest
 import locale
 import sys
@@ -522,6 +524,15 @@ class TestMiscellaneous(unittest.TestCase):
         self.assertNotEqual(enc, "")
         # make sure it is valid
         codecs.lookup(enc)
+
+    def test_getencoding_fallback(self):
+        # When _locale.getencoding() is missing, locale.getencoding() uses
+        # the Python filesystem
+        encoding = 'FALLBACK_ENCODING'
+        with mock.patch.object(sys, 'getfilesystemencoding',
+                               return_value=encoding):
+            locale_fallback = import_fresh_module('locale', blocked=['_locale'])
+            self.assertEqual(locale_fallback.getencoding(), encoding)
 
     def test_getpreferredencoding(self):
         # Invoke getpreferredencoding to make sure it does not cause exceptions.

@@ -1,4 +1,0 @@
-In zipfile, sync Path with `zipp 3.14
-<https://zipp.readthedocs.io/en/latest/history.html#v3-14-0>`_, including
-fix for extractall on the underlying zipfile after being wrapped in
-``Path``.

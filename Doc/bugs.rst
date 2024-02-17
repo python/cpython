@@ -38,7 +38,7 @@ though it may take a while to be processed.
    `Helping with Documentation <https://devguide.python.org/docquality/#helping-with-documentation>`_
       Comprehensive guide for individuals that are interested in contributing to Python documentation.
 
-   `Documentation Translations <https://devguide.python.org/documenting/#translating>`_
+   `Documentation Translations <https://devguide.python.org/documentation/translating/>`_
       A list of GitHub pages for documentation translation and their primary contacts.
 
 
@@ -70,7 +70,7 @@ Click on the "New issue" button in the top bar to report a new issue.
 The submission form has two fields, "Title" and "Comment".
 
 For the "Title" field, enter a *very* short description of the problem;
-less than ten words is good.
+fewer than ten words is good.
 
 In the "Comment" field, describe the problem in detail, including what you
 expected to happen and what did happen.  Be sure to include whether any

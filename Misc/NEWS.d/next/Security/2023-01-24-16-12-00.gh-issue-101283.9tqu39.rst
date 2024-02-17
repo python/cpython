@@ -1,3 +1,0 @@
-:class:`subprocess.Popen` now uses a safer approach to find
-``cmd.exe`` when launching with ``shell=True``. Patch by Eryk Sun,
-based on a patch by Oleg Iarygin.
