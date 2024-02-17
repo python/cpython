@@ -1726,6 +1726,17 @@ class XMLParser:
             del self.parser, self._parser
             del self.target, self._target
 
+    def flush(self):
+        if not self.parser.GetReparseDeferralEnabled():
+            return
+
+        self.parser.SetReparseDeferralEnabled(False)
+        try:
+            self.parser.Parse(b"", False)
+        except self._error as v:
+            self._raiseerror(v)
+        finally:
+            self.parser.SetReparseDeferralEnabled(True)
 
 # --------------------------------------------------------------------
 # C14N 2.0
