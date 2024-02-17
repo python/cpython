@@ -26,7 +26,10 @@ extern "C" {
 // 0b11: locked and has parked threads
 //
 // Typical initialization:
-//   PyMutex m = {0};
+//   PyMutex m = (PyMutex){0};
+//
+// Or initialize as global variables:
+//   PyMutex m;
 //
 // Typical usage:
 //   PyMutex_Lock(&m);
