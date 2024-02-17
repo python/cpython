@@ -13,6 +13,7 @@ from ._bootstrap_external import spec_from_file_location
 
 import _imp
 import sys
+import threading
 import types
 
 
@@ -253,8 +254,6 @@ class LazyLoader(Loader):
 
     def exec_module(self, module):
         """Make the module load lazily."""
-        import threading
-
         module.__spec__.loader = self.loader
         module.__loader__ = self.loader
         # Don't need to worry about deep-copying as trying to set an attribute
