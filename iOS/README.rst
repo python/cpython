@@ -10,10 +10,10 @@ Python distribution.
 
 These instructions are only needed if you're planning to compile Python for iOS
 yourself. Most users should *not* need to do this. If you're looking to
-experiment with writing an iOS app in Python on iOS, tools such as `BeeWare's
-Briefcase <https://briefcase.readthedocs.io>`__ and `Kivy's Builddozer
-<https://buildozer.readthedocs.io>`__ will provide a much more approachable user
-experience.
+experiment with writing an iOS app in Python, tools such as `BeeWare's Briefcase
+<https://briefcase.readthedocs.io>`__ and `Kivy's Buildozer
+<https://buildozer.readthedocs.io>`__ will provide a much more approachable
+user experience.
 
 Compilers for building on iOS
 =============================
@@ -34,7 +34,7 @@ iOS specific arguments to configure
 
 * ``--with-framework-name=NAME``
 
-  Specify the name for the python framework; defaults to ``Python``.
+  Specify the name for the Python framework; defaults to ``Python``.
 
 Building Python on iOS
 ======================
@@ -95,13 +95,20 @@ In this invocation:
 
 * ``iOS/Resources/bin`` has been added to the path, providing some shims for the
   compilers and linkers needed by the build. Xcode requires the use of ``xcrun``
-  to invoke compiler tooling; however, ``xcrun`` embeds user- and
+  to invoke compiler tooling. However, if ``xcrun`` is pre-evaluated and the
+  result passed to ``configure``, these results can embed user- and
   version-specific paths into the sysconfig data, which limits the portability
-  of the compiled Python. It also requires that compiler variables like ``CC``
-  include spaces, which can cause significant problems with many C configuration
-  systems which assume that ``CC`` will be a single executable. The
-  ``iOS/Resources/bin`` folder contains some wrapper scripts that present as
-  simple compilers and linkers, but wrap underlying calls to ``xcrun``.
+  of the compiled Python. Alternatively, if ``xcrun`` is used *as* the compiler,
+  it requires that compiler variables like ``CC`` include spaces, which can
+  cause significant problems with many C configuration systems which assume that
+  ``CC`` will be a single executable.
+
+  To work around this problem, the ``iOS/Resources/bin`` folder contains some
+  wrapper scripts that present as simple compilers and linkers, but wrap
+  underlying calls to ``xcrun``. This allows configure to use a ``CC``
+  definition without spaces, and without user- or version-specific paths, while
+  retaining the ability to adapt to the local Xcode install. These scripts are
+  included in the ``bin`` directory of an iOS install.
 
   The path has also been cleared of any user customizations. A common source of
   bugs is for tools like Homebrew to accidentally leak macOS binaries into an iOS
@@ -139,8 +146,8 @@ the binary libraries that CPython depends on (XZ, BZip2, LibFFI and OpenSSL).
 This can be done by defining the ``LIBLZMA_CFLAGS``, ``LIBLZMA_LIBS``,
 ``BZIP2_CFLAGS``, ``BZIP2_LIBS``, ``LIBFFI_CFLAGS``, and ``LIBFFI_LIBS``
 environment variables, and the ``--with-openssl`` configure option. Versions of
-these libraries pre-compiled for iOS can be found in [this
-repository](https://github.com/beeware/cpython-apple-source-deps/releases).
+these libraries pre-compiled for iOS can be found in `this repository
+<https://github.com/beeware/cpython-apple-source-deps/releases>`__.
 
 By default, Python will be compiled with an iOS deployment target (i.e., the
 minimum supported iOS version) of 12.0. To specify a different deployment
