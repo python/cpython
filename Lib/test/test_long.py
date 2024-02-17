@@ -1334,6 +1334,12 @@ class LongTest(unittest.TestCase):
                          b'\xff\xff\xff\xff\xff')
         self.assertRaises(OverflowError, (1).to_bytes, 0, 'big')
 
+        # gh-98783
+        class SubStr(str):
+            pass
+        self.assertEqual((0).to_bytes(1, SubStr('big')), b'\x00')
+        self.assertEqual((0).to_bytes(0, SubStr('little')), b'')
+
     def test_from_bytes(self):
         def check(tests, byteorder, signed=False):
             def equivalent_python(byte_array, byteorder, signed=False):
@@ -1534,12 +1540,23 @@ class LongTest(unittest.TestCase):
         self.assertRaises(TypeError, int.from_bytes, MissingBytes())
         self.assertRaises(ZeroDivisionError, int.from_bytes, RaisingBytes())
 
+        # gh-98783
+        class SubStr(str):
+            pass
+        self.assertEqual(int.from_bytes(b'', SubStr('big')), 0)
+        self.assertEqual(int.from_bytes(b'\x00', SubStr('little')), 0)
+
     @support.cpython_only
     def test_from_bytes_small(self):
         # bpo-46361
         for i in range(-5, 257):
             b = i.to_bytes(2, signed=True)
             self.assertIs(int.from_bytes(b, signed=True), i)
+
+    def test_is_integer(self):
+        self.assertTrue((-1).is_integer())
+        self.assertTrue((0).is_integer())
+        self.assertTrue((1).is_integer())
 
     def test_access_to_nonexistent_digit_0(self):
         # http://bugs.python.org/issue14630: A bug in _PyLong_Copy meant that
@@ -1583,6 +1600,45 @@ class LongTest(unittest.TestCase):
                 # (2**i - 1)**2 = 2**(2*i) - 2*2**i + 1
                 self.assertEqual(n**2,
                     (1 << (2 * bitlen)) - (1 << (bitlen + 1)) + 1)
+
+    def test___sizeof__(self):
+        self.assertEqual(int.__itemsize__, sys.int_info.sizeof_digit)
+
+        # Pairs (test_value, number of allocated digits)
+        test_values = [
+            # We always allocate space for at least one digit, even for
+            # a value of zero; sys.getsizeof should reflect that.
+            (0, 1),
+            (1, 1),
+            (-1, 1),
+            (BASE-1, 1),
+            (1-BASE, 1),
+            (BASE, 2),
+            (-BASE, 2),
+            (BASE*BASE - 1, 2),
+            (BASE*BASE, 3),
+        ]
+
+        for value, ndigits in test_values:
+            with self.subTest(value):
+                self.assertEqual(
+                    value.__sizeof__(),
+                    int.__basicsize__ + int.__itemsize__ * ndigits
+                )
+
+        # Same test for a subclass of int.
+        class MyInt(int):
+            pass
+
+        self.assertEqual(MyInt.__itemsize__, sys.int_info.sizeof_digit)
+
+        for value, ndigits in test_values:
+            with self.subTest(value):
+                self.assertEqual(
+                    MyInt(value).__sizeof__(),
+                    MyInt.__basicsize__ + MyInt.__itemsize__ * ndigits
+                )
+
 
 if __name__ == "__main__":
     unittest.main()

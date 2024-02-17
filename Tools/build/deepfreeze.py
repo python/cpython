@@ -6,7 +6,6 @@ On Windows, and in cross-compilation cases, it is executed
 by Python 3.10, and 3.11 features are not available.
 """
 import argparse
-import ast
 import builtins
 import collections
 import contextlib
@@ -17,13 +16,13 @@ import types
 from typing import Dict, FrozenSet, TextIO, Tuple
 
 import umarshal
-from generate_global_objects import get_identifiers_and_strings
+
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 verbose = False
-identifiers, strings = get_identifiers_and_strings()
 
-# This must be kept in sync with opcode.py
-RESUME = 151
+# This must be kept in sync with Tools/cases_generator/analyzer.py
+RESUME = 149
 
 def isprintable(b: bytes) -> bool:
     return all(0x20 <= c < 0x7f for c in b)
@@ -44,6 +43,7 @@ CO_FAST_LOCAL = 0x20
 CO_FAST_CELL = 0x40
 CO_FAST_FREE = 0x80
 
+next_code_version = 1
 
 def get_localsplus(code: types.CodeType):
     a = collections.defaultdict(int)
@@ -60,7 +60,6 @@ def get_localsplus_counts(code: types.CodeType,
                           names: Tuple[str, ...],
                           kinds: bytes) -> Tuple[int, int, int, int]:
     nlocals = 0
-    nplaincellvars = 0
     ncellvars = 0
     nfreevars = 0
     assert len(names) == len(kinds)
@@ -71,15 +70,13 @@ def get_localsplus_counts(code: types.CodeType,
                 ncellvars += 1
         elif kind & CO_FAST_CELL:
             ncellvars += 1
-            nplaincellvars += 1
         elif kind & CO_FAST_FREE:
             nfreevars += 1
     assert nlocals == len(code.co_varnames) == code.co_nlocals, \
         (nlocals, len(code.co_varnames), code.co_nlocals)
     assert ncellvars == len(code.co_cellvars)
     assert nfreevars == len(code.co_freevars)
-    assert len(names) == nlocals + nplaincellvars + nfreevars
-    return nlocals, nplaincellvars, ncellvars, nfreevars
+    return nlocals, ncellvars, nfreevars
 
 
 PyUnicode_1BYTE_KIND = 1
@@ -114,15 +111,29 @@ class Printer:
         self.file = file
         self.cache: Dict[tuple[type, object, str], str] = {}
         self.hits, self.misses = 0, 0
-        self.patchups: list[str] = []
-        self.deallocs: list[str] = []
-        self.interns: list[str] = []
+        self.finis: list[str] = []
+        self.inits: list[str] = []
+        self.identifiers, self.strings = self.get_identifiers_and_strings()
         self.write('#include "Python.h"')
+        self.write('#include "internal/pycore_object.h"')
         self.write('#include "internal/pycore_gc.h"')
         self.write('#include "internal/pycore_code.h"')
         self.write('#include "internal/pycore_frame.h"')
         self.write('#include "internal/pycore_long.h"')
         self.write("")
+
+    def get_identifiers_and_strings(self) -> tuple[set[str], dict[str, str]]:
+        filename = os.path.join(ROOT, "Include", "internal", "pycore_global_strings.h")
+        with open(filename) as fp:
+            lines = fp.readlines()
+        identifiers: set[str] = set()
+        strings: dict[str, str] = {}
+        for line in lines:
+            if m := re.search(r"STRUCT_FOR_ID\((\w+)\)", line):
+                identifiers.add(m.group(1))
+            if m := re.search(r'STRUCT_FOR_STR\((\w+), "(.*?)"\)', line):
+                strings[m.group(2)] = m.group(1)
+        return identifiers, strings
 
     @contextlib.contextmanager
     def indent(self) -> None:
@@ -144,14 +155,10 @@ class Printer:
         self.write("}" + suffix)
 
     def object_head(self, typename: str) -> None:
-        with self.block(".ob_base =", ","):
-            self.write(f".ob_refcnt = 999999999,")
-            self.write(f".ob_type = &{typename},")
+        self.write(f".ob_base = _PyObject_HEAD_INIT(&{typename}),")
 
     def object_var_head(self, typename: str, size: int) -> None:
-        with self.block(".ob_base =", ","):
-            self.object_head(typename)
-            self.write(f".ob_size = {size},")
+        self.write(f".ob_base = _PyVarObject_HEAD_INIT(&{typename}, {size}),")
 
     def field(self, obj: object, name: str) -> None:
         self.write(f".{name} = {getattr(obj, name)},")
@@ -174,10 +181,16 @@ class Printer:
         return f"& {name}.ob_base.ob_base"
 
     def generate_unicode(self, name: str, s: str) -> str:
-        if s in strings:
-            return f"&_Py_STR({strings[s]})"
-        if s in identifiers:
+        if s in self.strings:
+            return f"&_Py_STR({self.strings[s]})"
+        if s in self.identifiers:
             return f"&_Py_ID({s})"
+        if len(s) == 1:
+            c = ord(s)
+            if c < 128:
+                return f"(PyObject *)&_Py_SINGLETON(strings).ascii[{c}]"
+            elif c < 256:
+                return f"(PyObject *)&_Py_SINGLETON(strings).latin1[{c - 128}]"
         if re.match(r'\A[A-Za-z0-9_]+\Z', s):
             name = f"const_str_{s}"
         kind, ascii = analyze_character_width(s)
@@ -205,6 +218,7 @@ class Printer:
                         self.write(".kind = 1,")
                         self.write(".compact = 1,")
                         self.write(".ascii = 1,")
+                        self.write(".statically_allocated = 1,")
                 self.write(f"._data = {make_string_literal(s.encode('ascii'))},")
                 return f"& {name}._ascii.ob_base"
             else:
@@ -217,6 +231,7 @@ class Printer:
                             self.write(f".kind = {kind},")
                             self.write(".compact = 1,")
                             self.write(".ascii = 0,")
+                            self.write(".statically_allocated = 1,")
                     utf8 = s.encode('utf-8')
                     self.write(f'.utf8 = {make_string_literal(utf8)},')
                     self.write(f'.utf8_length = {len(utf8)},')
@@ -228,6 +243,7 @@ class Printer:
 
 
     def generate_code(self, name: str, code: types.CodeType) -> str:
+        global next_code_version
         # The ordering here matches PyCode_NewWithPosOnlyArgs()
         # (but see below).
         co_consts = self.generate(name + "_consts", code.co_consts)
@@ -242,7 +258,7 @@ class Printer:
         co_localsplusnames = self.generate(name + "_localsplusnames", localsplusnames)
         co_localspluskinds = self.generate(name + "_localspluskinds", localspluskinds)
         # Derived values
-        nlocals, nplaincellvars, ncellvars, nfreevars = \
+        nlocals, ncellvars, nfreevars = \
             get_localsplus_counts(code, localsplusnames, localspluskinds)
         co_code_adaptive = make_string_literal(code.co_code)
         self.write("static")
@@ -257,19 +273,19 @@ class Printer:
             self.write(f".co_names = {co_names},")
             self.write(f".co_exceptiontable = {co_exceptiontable},")
             self.field(code, "co_flags")
-            self.write(".co_warmup = QUICKENING_INITIAL_WARMUP_VALUE,")
-            self.write("._co_linearray_entry_size = 0,")
             self.field(code, "co_argcount")
             self.field(code, "co_posonlyargcount")
             self.field(code, "co_kwonlyargcount")
+            # The following should remain in sync with _PyFrame_NumSlotsForCodeObject
             self.write(f".co_framesize = {code.co_stacksize + len(localsplusnames)} + FRAME_SPECIALS_SIZE,")
             self.field(code, "co_stacksize")
             self.field(code, "co_firstlineno")
             self.write(f".co_nlocalsplus = {len(localsplusnames)},")
             self.field(code, "co_nlocals")
-            self.write(f".co_nplaincellvars = {nplaincellvars},")
             self.write(f".co_ncellvars = {ncellvars},")
             self.write(f".co_nfreevars = {nfreevars},")
+            self.write(f".co_version = {next_code_version},")
+            next_code_version += 1
             self.write(f".co_localsplusnames = {co_localsplusnames},")
             self.write(f".co_localspluskinds = {co_localspluskinds},")
             self.write(f".co_filename = {co_filename},")
@@ -277,15 +293,16 @@ class Printer:
             self.write(f".co_qualname = {co_qualname},")
             self.write(f".co_linetable = {co_linetable},")
             self.write(f"._co_cached = NULL,")
-            self.write("._co_linearray = NULL,")
             self.write(f".co_code_adaptive = {co_code_adaptive},")
-            for i, op in enumerate(code.co_code[::2]):
+            first_traceable = 0
+            for op in code.co_code[::2]:
                 if op == RESUME:
-                    self.write(f"._co_firsttraceable = {i},")
                     break
+                first_traceable += 1
+            self.write(f"._co_firsttraceable = {first_traceable},")
         name_as_code = f"(PyCodeObject *)&{name}"
-        self.deallocs.append(f"_PyStaticCode_Dealloc({name_as_code});")
-        self.interns.append(f"_PyStaticCode_InternStrings({name_as_code})")
+        self.finis.append(f"_PyStaticCode_Fini({name_as_code});")
+        self.inits.append(f"_PyStaticCode_Init({name_as_code})")
         return f"& {name}.ob_base.ob_base"
 
     def generate_tuple(self, name: str, t: Tuple[object, ...]) -> str:
@@ -310,7 +327,7 @@ class Printer:
         return f"& {name}._object.ob_base.ob_base"
 
     def _generate_int_for_bits(self, name: str, i: int, digit: int) -> None:
-        sign = -1 if i < 0 else 0 if i == 0 else +1
+        sign = (i > 0) - (i < 0)
         i = abs(i)
         digits: list[int] = []
         while i:
@@ -319,10 +336,12 @@ class Printer:
         self.write("static")
         with self.indent():
             with self.block("struct"):
-                self.write("PyObject_VAR_HEAD")
+                self.write("PyObject ob_base;")
+                self.write("uintptr_t lv_tag;")
                 self.write(f"digit ob_digit[{max(1, len(digits))}];")
         with self.block(f"{name} =", ";"):
-            self.object_var_head("PyLong_Type", sign*len(digits))
+            self.object_head("PyLong_Type")
+            self.write(f".lv_tag = TAG_FROM_SIGN_AND_SIZE({sign}, {len(digits)}),")
             if digits:
                 ds = ", ".join(map(str, digits))
                 self.write(f".ob_digit = {{ {ds} }},")
@@ -346,7 +365,7 @@ class Printer:
             self.write('#error "PYLONG_BITS_IN_DIGIT should be 15 or 30"')
             self.write("#endif")
             # If neither clause applies, it won't compile
-        return f"& {name}.ob_base.ob_base"
+        return f"& {name}.ob_base"
 
     def generate_float(self, name: str, x: float) -> str:
         with self.block(f"static PyFloatObject {name} =", ";"):
@@ -373,11 +392,7 @@ class Printer:
     def generate_file(self, module: str, code: object)-> None:
         module = module.replace(".", "_")
         self.generate(f"{module}_toplevel", code)
-        with self.block(f"static void {module}_do_patchups(void)"):
-            for p in self.patchups:
-                self.write(p)
-        self.patchups.clear()
-        self.write(EPILOGUE.replace("%%NAME%%", module))
+        self.write(EPILOGUE.format(name=module))
 
     def generate(self, name: str, obj: object) -> str:
         # Use repr() in the key to distinguish -0.0 from +0.0
@@ -421,11 +436,10 @@ class Printer:
 
 EPILOGUE = """
 PyObject *
-_Py_get_%%NAME%%_toplevel(void)
-{
-    %%NAME%%_do_patchups();
-    return Py_NewRef((PyObject *) &%%NAME%%_toplevel);
-}
+_Py_get_{name}_toplevel(void)
+{{
+    return Py_NewRef((PyObject *) &{name}_toplevel);
+}}
 """
 
 FROZEN_COMMENT_C = "/* Auto-generated by Programs/_freeze_module.c */"
@@ -439,12 +453,10 @@ def is_frozen_header(source: str) -> bool:
 
 
 def decode_frozen_data(source: str) -> types.CodeType:
-    lines = source.splitlines()
-    while lines and re.match(FROZEN_DATA_LINE, lines[0]) is None:
-        del lines[0]
-    while lines and re.match(FROZEN_DATA_LINE, lines[-1]) is None:
-        del lines[-1]
-    values: Tuple[int, ...] = ast.literal_eval("".join(lines).strip())
+    values: list[int] = []
+    for line in source.splitlines():
+        if re.match(FROZEN_DATA_LINE, line):
+            values.extend([int(x) for x in line.split(",") if x.strip()])
     data = bytes(values)
     return umarshal.loads(data)
 
@@ -461,13 +473,14 @@ def generate(args: list[str], output: TextIO) -> None:
                 code = compile(fd.read(), f"<frozen {modname}>", "exec")
             printer.generate_file(modname, code)
     with printer.block(f"void\n_Py_Deepfreeze_Fini(void)"):
-        for p in printer.deallocs:
+        for p in printer.finis:
             printer.write(p)
     with printer.block(f"int\n_Py_Deepfreeze_Init(void)"):
-        for p in printer.interns:
+        for p in printer.inits:
             with printer.block(f"if ({p} < 0)"):
                 printer.write("return -1;")
         printer.write("return 0;")
+    printer.write(f"\nuint32_t _Py_next_func_version = {next_code_version};\n")
     if verbose:
         print(f"Cache hits: {printer.hits}, misses: {printer.misses}")
 
@@ -475,7 +488,10 @@ def generate(args: list[str], output: TextIO) -> None:
 parser = argparse.ArgumentParser()
 parser.add_argument("-o", "--output", help="Defaults to deepfreeze.c", default="deepfreeze.c")
 parser.add_argument("-v", "--verbose", action="store_true", help="Print diagnostics")
-parser.add_argument('args', nargs="+", help="Input file and module name (required) in file:modname format")
+group = parser.add_mutually_exclusive_group(required=True)
+group.add_argument("-f", "--file", help="read rule lines from a file")
+group.add_argument('args', nargs="*", default=(),
+                   help="Input file and module name (required) in file:modname format")
 
 @contextlib.contextmanager
 def report_time(label: str):
@@ -493,9 +509,18 @@ def main() -> None:
     args = parser.parse_args()
     verbose = args.verbose
     output = args.output
+
+    if args.file:
+        if verbose:
+            print(f"Reading targets from {args.file}")
+        with open(args.file, "rt", encoding="utf-8-sig") as fin:
+            rules = [x.strip() for x in fin]
+    else:
+        rules = args.args
+
     with open(output, "w", encoding="utf-8") as file:
         with report_time("generate"):
-            generate(args.args, file)
+            generate(rules, file)
     if verbose:
         print(f"Wrote {os.path.getsize(output)} bytes to {output}")
 

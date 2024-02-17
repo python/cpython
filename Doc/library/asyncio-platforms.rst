@@ -37,7 +37,7 @@ All event loops on Windows do not support the following methods:
 
 * :meth:`loop.create_unix_connection` and
   :meth:`loop.create_unix_server` are not supported.
-  The :data:`socket.AF_UNIX` socket family is specific to Unix.
+  The :const:`socket.AF_UNIX` socket family is specific to Unix.
 
 * :meth:`loop.add_signal_handler` and
   :meth:`loop.remove_signal_handler` are not supported.

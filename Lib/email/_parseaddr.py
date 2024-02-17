@@ -13,7 +13,7 @@ __all__ = [
     'quote',
     ]
 
-import time, calendar
+import time
 
 SPACE = ' '
 EMPTYSTRING = ''
@@ -194,6 +194,9 @@ def mktime_tz(data):
         # No zone info, so localtime is better assumption than GMT
         return time.mktime(data[:8] + (-1,))
     else:
+        # Delay the import, since mktime_tz is rarely used
+        import calendar
+
         t = calendar.timegm(data)
         return t - data[9]
 

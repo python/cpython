@@ -25,7 +25,6 @@
             <UpgradeVersion Property="DOWNGRADE" Minimum="$(var.Version)" IncludeMinimum="no" OnlyDetect="yes" />
             <UpgradeVersion Property="UPGRADE" Minimum="$(var.UpgradeMinimumVersion)" IncludeMinimum="yes" Maximum="$(var.Version)" IncludeMaximum="no" />
         </Upgrade>
-        <?endif ?>
         
         <?ifdef CoreUpgradeCode ?>
         <?if $(var.UpgradeCode)!=$(var.CoreUpgradeCode) ?>
@@ -42,6 +41,7 @@
         <InstallExecuteSequence>
             <RemoveExistingProducts After="InstallInitialize" Overridable="yes">UPGRADE</RemoveExistingProducts>
         </InstallExecuteSequence>
+        <?endif ?>
     </Fragment>
     
     <Fragment>

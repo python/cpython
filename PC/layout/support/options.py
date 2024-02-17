@@ -18,7 +18,6 @@ OPTIONS = {
     "stable": {"help": "stable ABI stub"},
     "pip": {"help": "pip"},
     "pip-user": {"help": "pip.ini file for default --user"},
-    "distutils": {"help": "distutils"},
     "tcltk": {"help": "Tcl, Tk and tkinter"},
     "idle": {"help": "Idle"},
     "tests": {"help": "test suite"},
@@ -33,6 +32,10 @@ OPTIONS = {
     "nuspec": {"help": "a python.nuspec file"},
     "chm": {"help": "the CHM documentation"},
     "html-doc": {"help": "the HTML documentation"},
+    "freethreaded": {"help": "freethreaded binaries", "not-in-all": True},
+    "alias": {"help": "aliased python.exe entry-point binaries"},
+    "alias3": {"help": "aliased python3.exe entry-point binaries"},
+    "alias3x": {"help": "aliased python3.x.exe entry-point binaries"},
 }
 
 
@@ -42,14 +45,14 @@ PRESETS = {
         "options": [
             "stable",
             "pip",
-            "pip-user",
-            "distutils",
             "tcltk",
             "idle",
             "venv",
             "dev",
             "launchers",
             "appxmanifest",
+            "alias",
+            "alias3x",
             # XXX: Disabled for now "precompile",
         ],
     },
@@ -59,19 +62,18 @@ PRESETS = {
             "dev",
             "pip",
             "stable",
-            "distutils",
             "venv",
             "props",
             "nuspec",
+            "alias",
         ],
     },
-    "iot": {"help": "Windows IoT Core", "options": ["stable", "pip"]},
+    "iot": {"help": "Windows IoT Core", "options": ["alias", "stable", "pip"]},
     "default": {
         "help": "development kit package",
         "options": [
             "stable",
             "pip",
-            "distutils",
             "tcltk",
             "idle",
             "tests",
@@ -79,11 +81,19 @@ PRESETS = {
             "dev",
             "symbols",
             "html-doc",
+            "alias",
         ],
     },
     "embed": {
         "help": "embeddable package",
-        "options": ["stable", "zip-lib", "flat-dlls", "underpth", "precompile"],
+        "options": [
+            "alias",
+            "stable",
+            "zip-lib",
+            "flat-dlls",
+            "underpth",
+            "precompile",
+        ],
     },
 }
 
