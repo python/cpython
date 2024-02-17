@@ -674,7 +674,7 @@ list_clear(PyListObject *a)
     while (--i >= 0) {
         Py_XDECREF(items[i]);
     }
-    // TODO: Use QSBR to free the memory in the background
+    // TODO: Use QSBR technique, if the list is shared between threads,
     PyMem_Free(items);
 
     // Note that there is no guarantee that the list is actually empty
