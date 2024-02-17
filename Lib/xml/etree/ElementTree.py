@@ -1320,6 +1320,11 @@ class XMLPullParser:
             else:
                 yield event
 
+    def flush(self):
+        if self._parser is None:
+            raise ValueError("flush() called after end of stream")
+        self._parser.flush()
+
 
 def XML(text, parser=None):
     """Parse XML document from string constant.
