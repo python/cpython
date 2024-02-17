@@ -24,7 +24,7 @@ Reduce the number of inline :opcode:`CACHE` entries for
 .. nonce: PRkGca
 .. section: Core and Builtins
 
-Removed :opcode:`JUMP_IF_FALSE_OR_POP` and :opcode:`JUMP_IF_TRUE_OR_POP`
+Removed :opcode:`!JUMP_IF_FALSE_OR_POP` and :opcode:`!JUMP_IF_TRUE_OR_POP`
 instructions.
 
 ..

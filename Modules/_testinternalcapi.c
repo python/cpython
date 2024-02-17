@@ -1635,6 +1635,35 @@ get_type_module_name(PyObject *self, PyObject *type)
     return _PyType_GetModuleName((PyTypeObject *)type);
 }
 
+static PyObject *
+get_rare_event_counters(PyObject *self, PyObject *type)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+
+    return Py_BuildValue(
+        "{sksksksksk}",
+        "set_class", (unsigned long)interp->rare_events.set_class,
+        "set_bases", (unsigned long)interp->rare_events.set_bases,
+        "set_eval_frame_func", (unsigned long)interp->rare_events.set_eval_frame_func,
+        "builtin_dict", (unsigned long)interp->rare_events.builtin_dict,
+        "func_modification", (unsigned long)interp->rare_events.func_modification
+    );
+}
+
+static PyObject *
+reset_rare_event_counters(PyObject *self, PyObject *Py_UNUSED(type))
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+
+    interp->rare_events.set_class = 0;
+    interp->rare_events.set_bases = 0;
+    interp->rare_events.set_eval_frame_func = 0;
+    interp->rare_events.builtin_dict = 0;
+    interp->rare_events.func_modification = 0;
+
+    return Py_None;
+}
+
 
 #ifdef Py_GIL_DISABLED
 static PyObject *
@@ -1711,6 +1740,8 @@ static PyMethodDef module_functions[] = {
     {"restore_crossinterp_data", restore_crossinterp_data,       METH_VARARGS},
     _TESTINTERNALCAPI_TEST_LONG_NUMBITS_METHODDEF
     {"get_type_module_name",    get_type_module_name,            METH_O},
+    {"get_rare_event_counters", get_rare_event_counters, METH_NOARGS},
+    {"reset_rare_event_counters", reset_rare_event_counters, METH_NOARGS},
 #ifdef Py_GIL_DISABLED
     {"py_thread_id", get_py_thread_id, METH_NOARGS},
 #endif
@@ -1736,8 +1767,18 @@ module_exec(PyObject *module)
         return 1;
     }
 
+    Py_ssize_t sizeof_gc_head = 0;
+#ifndef Py_GIL_DISABLED
+    sizeof_gc_head = sizeof(PyGC_Head);
+#endif
+
     if (PyModule_Add(module, "SIZEOF_PYGC_HEAD",
-                        PyLong_FromSsize_t(sizeof(PyGC_Head))) < 0) {
+                        PyLong_FromSsize_t(sizeof_gc_head)) < 0) {
+        return 1;
+    }
+
+    if (PyModule_Add(module, "SIZEOF_MANAGED_PRE_HEADER",
+                        PyLong_FromSsize_t(2 * sizeof(PyObject*))) < 0) {
         return 1;
     }
 

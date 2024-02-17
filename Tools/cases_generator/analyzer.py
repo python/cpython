@@ -24,7 +24,6 @@ class Properties:
 
     pure: bool
     passthrough: bool
-    guard: bool
 
     def dump(self, indent: str) -> None:
         print(indent, end="")
@@ -51,7 +50,6 @@ class Properties:
             has_free=any(p.has_free for p in properties),
             pure=all(p.pure for p in properties),
             passthrough=all(p.passthrough for p in properties),
-            guard=all(p.guard for p in properties),
         )
 
 
@@ -73,7 +71,6 @@ SKIP_PROPERTIES = Properties(
     has_free=False,
     pure=False,
     passthrough=False,
-    guard=False,
 )
 
 
@@ -273,7 +270,7 @@ def override_error(
 
 def convert_stack_item(item: parser.StackEffect) -> StackItem:
     return StackItem(
-        item.name, item.type, item.cond, (item.size or "1"), type_prop=item.type_prop
+        item.name, item.type, item.cond, (item.size or "1")
     )
 
 
@@ -464,7 +461,7 @@ def compute_properties(op: parser.InstDef) -> Properties:
         ends_with_eval_breaker=eval_breaker_at_end(op),
         needs_this=variable_used(op, "this_instr"),
         always_exits=always_exits(op),
-        stores_sp=variable_used(op, "STORE_SP"),
+        stores_sp=variable_used(op, "SYNC_SP"),
         tier_one_only=variable_used(op, "TIER_ONE_ONLY"),
         uses_co_consts=variable_used(op, "FRAME_CO_CONSTS"),
         uses_co_names=variable_used(op, "FRAME_CO_NAMES"),
@@ -473,7 +470,6 @@ def compute_properties(op: parser.InstDef) -> Properties:
         has_free=has_free,
         pure="pure" in op.annotations,
         passthrough=passthrough,
-        guard=passthrough and deopts,
     )
 
 
