@@ -1292,6 +1292,12 @@ Methods on code objects
       :pep:`626` - Precise line numbers for debugging and other tools.
          The PEP that introduced the :meth:`!co_lines` method.
 
+.. method:: codeobject.replace(**kwargs)
+
+   Return a copy of the code object with new values for the specified fields.
+
+   .. versionadded:: 3.8
+
 
 .. _frame-objects:
 
