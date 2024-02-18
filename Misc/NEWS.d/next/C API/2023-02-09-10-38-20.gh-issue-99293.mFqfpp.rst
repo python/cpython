@@ -1,2 +1,0 @@
-Document that the Py_TPFLAGS_VALID_VERSION_TAG is an internal feature,
-should not be used, and will be removed.
