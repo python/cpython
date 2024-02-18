@@ -546,10 +546,11 @@ def relpath(path, start=None):
 def commonpath(paths):
     """Given a sequence of path names, returns the longest common sub-path."""
 
+    paths = tuple(map(os.fspath, paths))
+
     if not paths:
         raise ValueError('commonpath() arg is an empty sequence')
 
-    paths = tuple(map(os.fspath, paths))
     if isinstance(paths[0], bytes):
         sep = b'/'
         curdir = b'.'

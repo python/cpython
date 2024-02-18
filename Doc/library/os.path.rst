@@ -79,7 +79,7 @@ the :mod:`glob` module.)
 
 .. function:: commonpath(paths)
 
-   Return the longest common sub-path of each pathname in the sequence
+   Return the longest common sub-path of each pathname in the iterable
    *paths*.  Raise :exc:`ValueError` if *paths* contain both absolute
    and relative pathnames, the *paths* are on the different drives or
    if *paths* is empty.  Unlike :func:`commonprefix`, this returns a
@@ -90,7 +90,7 @@ the :mod:`glob` module.)
    .. versionadded:: 3.5
 
    .. versionchanged:: 3.6
-      Accepts a sequence of :term:`path-like objects <path-like object>`.
+      Accepts an iterable of :term:`path-like objects <path-like object>`.
 
 
 .. function:: commonprefix(list)
