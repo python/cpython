@@ -93,7 +93,7 @@ the :mod:`glob` module.)
       Accepts a sequence of :term:`path-like objects <path-like object>`.
 
    .. versionchanged:: 3.13
-      Accepts an iterable of :term:`path-like objects <path-like object>`.
+      Any iterable can now be passed, rather than just sequences.
 
 
 .. function:: commonprefix(list)
