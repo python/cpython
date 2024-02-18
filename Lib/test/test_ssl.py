@@ -2429,16 +2429,19 @@ class ThreadedEchoServer(threading.Thread):
                         self.write(msg.lower())
                 except OSError as e:
                     # handles SSLError and socket errors
+                    if isinstance(e, ConnectionError):
+                        # OpenSSL 1.1.1 sometimes raises
+                        # ConnectionResetError when connection is not
+                        # shut down gracefully.
+                        print(
+                            f" Connection reset by peer: {self.addr}"
+                        )
+
+                        self.close()
+                        self.running = False
+                        return
                     if self.server.chatty and support.verbose:
-                        if isinstance(e, ConnectionError):
-                            # OpenSSL 1.1.1 sometimes raises
-                            # ConnectionResetError when connection is not
-                            # shut down gracefully.
-                            print(
-                                f" Connection reset by peer: {self.addr}"
-                            )
-                        else:
-                            handle_error("Test server failure:\n")
+                        handle_error("Test server failure:\n")
                     try:
                         self.write(b"ERROR\n")
                     except OSError:
@@ -4532,8 +4535,8 @@ class TestPostHandshakeAuth(unittest.TestCase):
                 # test sometimes fails with EOF error. Test passes as long as
                 # server aborts connection with an error.
                 with self.assertRaisesRegex(
-                    ssl.SSLError,
-                    '(certificate required|EOF occurred)'
+                    (ssl.SSLError, OSError),
+                    '(certificate required|EOF occurred|closed by the remote host)'
                 ):
                     # receive CertificateRequest
                     data = s.recv(1024)
