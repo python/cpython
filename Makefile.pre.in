@@ -1202,49 +1202,49 @@ PYTHON_HEADERS= \
 LIBMPDEC_CFLAGS=@LIBMPDEC_CFLAGS@ $(PY_STDMODULE_CFLAGS) $(CCSHARED)
 
 # "%.o: %c" is not portable
-Modules/_decimal/libmpdec/basearith.o: $(srcdir)/Modules/_decimal/libmpdec/basearith.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+Modules/_decimal/libmpdec/basearith.o: $(srcdir)/Modules/_decimal/libmpdec/basearith.c
 	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/basearith.c
 
-Modules/_decimal/libmpdec/constants.o: $(srcdir)/Modules/_decimal/libmpdec/constants.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+Modules/_decimal/libmpdec/constants.o: $(srcdir)/Modules/_decimal/libmpdec/constants.c
 	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/constants.c
 
-Modules/_decimal/libmpdec/context.o: $(srcdir)/Modules/_decimal/libmpdec/context.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+Modules/_decimal/libmpdec/context.o: $(srcdir)/Modules/_decimal/libmpdec/context.c
 	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/context.c
 
-Modules/_decimal/libmpdec/convolute.o: $(srcdir)/Modules/_decimal/libmpdec/convolute.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+Modules/_decimal/libmpdec/convolute.o: $(srcdir)/Modules/_decimal/libmpdec/convolute.c
 	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/convolute.c
 
-Modules/_decimal/libmpdec/crt.o: $(srcdir)/Modules/_decimal/libmpdec/crt.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+Modules/_decimal/libmpdec/crt.o: $(srcdir)/Modules/_decimal/libmpdec/crt.c
 	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/crt.c
 
-Modules/_decimal/libmpdec/difradix2.o: $(srcdir)/Modules/_decimal/libmpdec/difradix2.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+Modules/_decimal/libmpdec/difradix2.o: $(srcdir)/Modules/_decimal/libmpdec/difradix2.c
 	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/difradix2.c
 
-Modules/_decimal/libmpdec/fnt.o: $(srcdir)/Modules/_decimal/libmpdec/fnt.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+Modules/_decimal/libmpdec/fnt.o: $(srcdir)/Modules/_decimal/libmpdec/fnt.c
 	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/fnt.c
 
-Modules/_decimal/libmpdec/fourstep.o: $(srcdir)/Modules/_decimal/libmpdec/fourstep.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+Modules/_decimal/libmpdec/fourstep.o: $(srcdir)/Modules/_decimal/libmpdec/fourstep.c
 	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/fourstep.c
 
-Modules/_decimal/libmpdec/io.o: $(srcdir)/Modules/_decimal/libmpdec/io.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+Modules/_decimal/libmpdec/io.o: $(srcdir)/Modules/_decimal/libmpdec/io.c
 	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/io.c
 
-Modules/_decimal/libmpdec/mpalloc.o: $(srcdir)/Modules/_decimal/libmpdec/mpalloc.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+Modules/_decimal/libmpdec/mpalloc.o: $(srcdir)/Modules/_decimal/libmpdec/mpalloc.c
 	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/mpalloc.c
 
-Modules/_decimal/libmpdec/mpdecimal.o: $(srcdir)/Modules/_decimal/libmpdec/mpdecimal.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+Modules/_decimal/libmpdec/mpdecimal.o: $(srcdir)/Modules/_decimal/libmpdec/mpdecimal.c
 	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/mpdecimal.c
 
-Modules/_decimal/libmpdec/mpsignal.o: $(srcdir)/Modules/_decimal/libmpdec/mpsignal.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+Modules/_decimal/libmpdec/mpsignal.o: $(srcdir)/Modules/_decimal/libmpdec/mpsignal.c
 	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/mpsignal.c
 
-Modules/_decimal/libmpdec/numbertheory.o: $(srcdir)/Modules/_decimal/libmpdec/numbertheory.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+Modules/_decimal/libmpdec/numbertheory.o: $(srcdir)/Modules/_decimal/libmpdec/numbertheory.c
 	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/numbertheory.c
 
-Modules/_decimal/libmpdec/sixstep.o: $(srcdir)/Modules/_decimal/libmpdec/sixstep.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+Modules/_decimal/libmpdec/sixstep.o: $(srcdir)/Modules/_decimal/libmpdec/sixstep.c
 	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/sixstep.c
 
-Modules/_decimal/libmpdec/transpose.o: $(srcdir)/Modules/_decimal/libmpdec/transpose.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
+Modules/_decimal/libmpdec/transpose.o: $(srcdir)/Modules/_decimal/libmpdec/transpose.c
 	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/transpose.c
 
 $(LIBMPDEC_A): $(LIBMPDEC_OBJS)
@@ -1255,13 +1255,13 @@ $(LIBMPDEC_A): $(LIBMPDEC_OBJS)
 # Build static libexpat.a
 LIBEXPAT_CFLAGS=@LIBEXPAT_CFLAGS@ $(PY_STDMODULE_CFLAGS) $(CCSHARED)
 
-Modules/expat/xmlparse.o: $(srcdir)/Modules/expat/xmlparse.c $(LIBEXPAT_HEADERS) $(PYTHON_HEADERS)
+Modules/expat/xmlparse.o: $(srcdir)/Modules/expat/xmlparse.c
 	$(CC) -c $(LIBEXPAT_CFLAGS) -o $@ $(srcdir)/Modules/expat/xmlparse.c
 
-Modules/expat/xmlrole.o: $(srcdir)/Modules/expat/xmlrole.c $(LIBEXPAT_HEADERS) $(PYTHON_HEADERS)
+Modules/expat/xmlrole.o: $(srcdir)/Modules/expat/xmlrole.c
 	$(CC) -c $(LIBEXPAT_CFLAGS) -o $@ $(srcdir)/Modules/expat/xmlrole.c
 
-Modules/expat/xmltok.o: $(srcdir)/Modules/expat/xmltok.c $(LIBEXPAT_HEADERS) $(PYTHON_HEADERS)
+Modules/expat/xmltok.o: $(srcdir)/Modules/expat/xmltok.c
 	$(CC) -c $(LIBEXPAT_CFLAGS) -o $@ $(srcdir)/Modules/expat/xmltok.c
 
 $(LIBEXPAT_A): $(LIBEXPAT_OBJS)
@@ -1272,7 +1272,7 @@ $(LIBEXPAT_A): $(LIBEXPAT_OBJS)
 # Build HACL* static libraries for hashlib: libHacl_Hash_SHA2.a
 LIBHACL_CFLAGS=-I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED)
 
-Modules/_hacl/Hacl_Hash_SHA2.o: $(srcdir)/Modules/_hacl/Hacl_Hash_SHA2.c $(LIBHACL_SHA2_HEADERS)
+Modules/_hacl/Hacl_Hash_SHA2.o: $(srcdir)/Modules/_hacl/Hacl_Hash_SHA2.c
 	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_SHA2.c
 
 $(LIBHACL_SHA2_A): $(LIBHACL_SHA2_OBJS)
@@ -1648,7 +1648,7 @@ Modules/getbuildinfo.o: $(PARSER_OBJS) \
 	      -DGITBRANCH="\"`LC_ALL=C $(GITBRANCH)`\"" \
 	      -o $@ $(srcdir)/Modules/getbuildinfo.c
 
-Modules/getpath.o: $(srcdir)/Modules/getpath.c Python/frozen_modules/getpath.h Makefile $(PYTHON_HEADERS)
+Modules/getpath.o: Makefile
 	$(CC) -c $(PY_CORE_CFLAGS) -DPYTHONPATH='"$(PYTHONPATH)"' \
 		-DPREFIX='"$(prefix)"' \
 		-DEXEC_PREFIX='"$(exec_prefix)"' \
@@ -1664,23 +1664,11 @@ Programs/python.o: $(srcdir)/Programs/python.c
 Programs/_testembed.o: $(srcdir)/Programs/_testembed.c Programs/test_frozenmain.h $(PYTHON_HEADERS)
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $(srcdir)/Programs/_testembed.c
 
-Modules/_sre/sre.o: $(srcdir)/Modules/_sre/sre.c $(srcdir)/Modules/_sre/sre.h $(srcdir)/Modules/_sre/sre_constants.h $(srcdir)/Modules/_sre/sre_lib.h
-
-Modules/posixmodule.o: $(srcdir)/Modules/posixmodule.c $(srcdir)/Modules/posixmodule.h
-
-Modules/grpmodule.o: $(srcdir)/Modules/grpmodule.c $(srcdir)/Modules/posixmodule.h
-
-Modules/pwdmodule.o: $(srcdir)/Modules/pwdmodule.c $(srcdir)/Modules/posixmodule.h
-
-Modules/signalmodule.o: $(srcdir)/Modules/signalmodule.c $(srcdir)/Modules/posixmodule.h
-
 Modules/_xxsubinterpretersmodule.o: $(srcdir)/Modules/_xxsubinterpretersmodule.c $(srcdir)/Modules/_interpreters_common.h
 
 Modules/_xxinterpqueuesmodule.o: $(srcdir)/Modules/_xxinterpqueuesmodule.c $(srcdir)/Modules/_interpreters_common.h
 
 Modules/_xxinterpchannelsmodule.o: $(srcdir)/Modules/_xxinterpchannelsmodule.c $(srcdir)/Modules/_interpreters_common.h
-
-Python/crossinterp.o: $(srcdir)/Python/crossinterp.c $(srcdir)/Python/crossinterp_data_lookup.h $(srcdir)/Python/crossinterp_exceptions.h
 
 Python/dynload_shlib.o: $(srcdir)/Python/dynload_shlib.c Makefile
 	$(CC) -c $(PY_CORE_CFLAGS) \
@@ -1692,13 +1680,11 @@ Python/dynload_hpux.o: $(srcdir)/Python/dynload_hpux.c Makefile
 		-DSHLIB_EXT='"$(EXT_SUFFIX)"' \
 		-o $@ $(srcdir)/Python/dynload_hpux.c
 
-Python/sysmodule.o: $(srcdir)/Python/sysmodule.c Makefile $(srcdir)/Include/pydtrace.h
+Python/sysmodule.o: Makefile
 	$(CC) -c $(PY_CORE_CFLAGS) \
 		-DABIFLAGS='"$(ABIFLAGS)"' \
 		$(MULTIARCH_CPPFLAGS) \
 		-o $@ $(srcdir)/Python/sysmodule.c
-
-$(IO_OBJS): $(IO_H)
 
 .PHONY: regen-pegen-metaparser
 regen-pegen-metaparser:
@@ -1789,72 +1775,11 @@ regen-sre:
 		$(srcdir)/Modules/_sre/sre_constants.h \
 		$(srcdir)/Modules/_sre/sre_targets.h
 
-Python/compile.o Python/symtable.o Python/ast_unparse.o Python/ast.o Python/future.o: $(srcdir)/Include/internal/pycore_ast.h
-
 Python/getplatform.o: $(srcdir)/Python/getplatform.c
 		$(CC) -c $(PY_CORE_CFLAGS) -DPLATFORM='"$(MACHDEP)"' -o $@ $(srcdir)/Python/getplatform.c
 
 Python/importdl.o: $(srcdir)/Python/importdl.c
 		$(CC) -c $(PY_CORE_CFLAGS) -I$(DLINCLDIR) -o $@ $(srcdir)/Python/importdl.c
-
-Objects/unicodectype.o:	$(srcdir)/Objects/unicodectype.c \
-				$(srcdir)/Objects/unicodetype_db.h
-
-BYTESTR_DEPS = \
-		$(srcdir)/Objects/stringlib/count.h \
-		$(srcdir)/Objects/stringlib/ctype.h \
-		$(srcdir)/Objects/stringlib/fastsearch.h \
-		$(srcdir)/Objects/stringlib/find.h \
-		$(srcdir)/Objects/stringlib/join.h \
-		$(srcdir)/Objects/stringlib/partition.h \
-		$(srcdir)/Objects/stringlib/split.h \
-		$(srcdir)/Objects/stringlib/stringdefs.h \
-		$(srcdir)/Objects/stringlib/transmogrify.h
-
-UNICODE_DEPS = \
-		$(srcdir)/Objects/stringlib/asciilib.h \
-		$(srcdir)/Objects/stringlib/codecs.h \
-		$(srcdir)/Objects/stringlib/count.h \
-		$(srcdir)/Objects/stringlib/fastsearch.h \
-		$(srcdir)/Objects/stringlib/find.h \
-		$(srcdir)/Objects/stringlib/find_max_char.h \
-		$(srcdir)/Objects/stringlib/localeutil.h \
-		$(srcdir)/Objects/stringlib/partition.h \
-		$(srcdir)/Objects/stringlib/replace.h \
-		$(srcdir)/Objects/stringlib/split.h \
-		$(srcdir)/Objects/stringlib/ucs1lib.h \
-		$(srcdir)/Objects/stringlib/ucs2lib.h \
-		$(srcdir)/Objects/stringlib/ucs4lib.h \
-		$(srcdir)/Objects/stringlib/undef.h \
-		$(srcdir)/Objects/stringlib/unicode_format.h
-
-Objects/bytes_methods.o: $(srcdir)/Objects/bytes_methods.c $(BYTESTR_DEPS)
-Objects/bytesobject.o: $(srcdir)/Objects/bytesobject.c $(BYTESTR_DEPS)
-Objects/bytearrayobject.o: $(srcdir)/Objects/bytearrayobject.c $(BYTESTR_DEPS)
-
-Objects/unicodeobject.o: $(srcdir)/Objects/unicodeobject.c $(UNICODE_DEPS)
-
-Objects/dictobject.o: $(srcdir)/Objects/stringlib/eq.h
-Objects/setobject.o: $(srcdir)/Objects/stringlib/eq.h
-
-Objects/obmalloc.o: $(srcdir)/Objects/mimalloc/alloc.c \
-		$(srcdir)/Objects/mimalloc/alloc-aligned.c \
-		$(srcdir)/Objects/mimalloc/alloc-posix.c \
-		$(srcdir)/Objects/mimalloc/arena.c \
-		$(srcdir)/Objects/mimalloc/bitmap.c \
-		$(srcdir)/Objects/mimalloc/heap.c \
-		$(srcdir)/Objects/mimalloc/init.c \
-		$(srcdir)/Objects/mimalloc/options.c \
-		$(srcdir)/Objects/mimalloc/os.c \
-		$(srcdir)/Objects/mimalloc/page.c \
-		$(srcdir)/Objects/mimalloc/random.c \
-		$(srcdir)/Objects/mimalloc/segment.c \
-		$(srcdir)/Objects/mimalloc/segment-map.c \
-		$(srcdir)/Objects/mimalloc/stats.c \
-		$(srcdir)/Objects/mimalloc/prim/prim.c \
-		$(srcdir)/Objects/mimalloc/prim/osx/prim.c \
-		$(srcdir)/Objects/mimalloc/prim/unix/prim.c \
-		$(srcdir)/Objects/mimalloc/prim/wasi/prim.c
 
 Objects/mimalloc/page.o: $(srcdir)/Objects/mimalloc/page-queue.c
 
@@ -1892,30 +1817,6 @@ regen-cases:
 	$(UPDATE_FILE) $(srcdir)/Python/tier2_redundancy_eliminator_cases.c.h $(srcdir)/Python/tier2_redundancy_eliminator_cases.c.h.new
 	$(UPDATE_FILE) $(srcdir)/Lib/_opcode_metadata.py $(srcdir)/Lib/_opcode_metadata.py.new
 
-Python/compile.o: $(srcdir)/Include/internal/pycore_opcode_metadata.h
-
-Python/ceval.o: \
-		$(srcdir)/Python/ceval_macros.h \
-		$(srcdir)/Python/condvar.h \
-		$(srcdir)/Python/generated_cases.c.h \
-		$(srcdir)/Python/executor_cases.c.h \
-		$(srcdir)/Python/opcode_targets.h
-
-Python/flowgraph.o: \
-		$(srcdir)/Include/internal/pycore_opcode_metadata.h
-
-Python/optimizer.o: \
-		$(srcdir)/Python/executor_cases.c.h \
-		$(srcdir)/Include/internal/pycore_opcode_metadata.h \
-		$(srcdir)/Include/internal/pycore_optimizer.h
-
-Python/optimizer_analysis.o: \
-		$(srcdir)/Include/internal/pycore_opcode_metadata.h \
-		$(srcdir)/Include/internal/pycore_optimizer.h \
-		$(srcdir)/Python/tier2_redundancy_eliminator_cases.c.h
-
-Python/frozen.o: $(FROZEN_FILES_OUT)
-
 # Generate DTrace probe macros, then rename them (PYTHON_ -> PyDTrace_) to
 # follow our naming conventions. dtrace(1) uses the output filename to generate
 # an include guard, so we can't use a pipeline to transform its output.
@@ -1926,14 +1827,8 @@ Include/pydtrace_probes.h: $(srcdir)/Include/pydtrace.d
 	sed 's/PYTHON_/PyDTrace_/' $@ > $@.tmp
 	mv $@.tmp $@
 
-Python/ceval.o: $(srcdir)/Include/pydtrace.h
-Python/gc.o: $(srcdir)/Include/pydtrace.h
-Python/import.o: $(srcdir)/Include/pydtrace.h
-
 Python/pydtrace.o: $(srcdir)/Include/pydtrace.d $(DTRACE_DEPS)
 	$(DTRACE) $(DFLAGS) -o $@ -G -s $< $(DTRACE_DEPS)
-
-Objects/typeobject.o: Objects/typeslots.inc
 
 .PHONY: regen-typeslots
 regen-typeslots:
@@ -1943,8 +1838,6 @@ regen-typeslots:
 		< $(srcdir)/Include/typeslots.h \
 		$(srcdir)/Objects/typeslots.inc.new
 	$(UPDATE_FILE) $(srcdir)/Objects/typeslots.inc $(srcdir)/Objects/typeslots.inc.new
-
-$(LIBRARY_OBJS) $(MODOBJS) Programs/python.o: $(PYTHON_HEADERS)
 
 
 ######################################################################
@@ -2695,7 +2588,7 @@ JIT_DEPS = \
 jit_stencils.h: $(JIT_DEPS)
 	@REGEN_JIT_COMMAND@
 
-Python/jit.o: $(srcdir)/Python/jit.c @JIT_STENCILS_H@
+Python/jit.o: @JIT_STENCILS_H@
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
 
 .PHONY: regen-jit
@@ -2710,7 +2603,7 @@ regen-jit:
 # with -O2 or higher and strict aliasing miscompiles the ratio() function
 # causing rounding issues. Compile dtoa.c using -fno-strict-aliasing on clang.
 # https://bugs.llvm.org//show_bug.cgi?id=31928
-Python/dtoa.o: Python/dtoa.c
+Python/dtoa.o:
 	$(CC) -c $(PY_CORE_CFLAGS) $(CFLAGS_ALIASING) -o $@ $<
 
 # Run reindent on the library
@@ -2737,6 +2630,20 @@ regen-configure:
 .PHONY: regen-sbom
 regen-sbom:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_sbom.py
+
+.PHONY: regen-deps
+regen-deps:
+	rm -f Makefile.deps
+	for obj in $(LIBRARY_OBJS) $(IO_OBJS) $(LIBMPDEC_OBJS) $(LIBEXPAT_OBJS) $(LIBHACL_SHA2_OBJS) Programs/python.o Objects/mimalloc/page.o ; do \
+	    $(CC) -DUNIVERSAL=1 \
+		-DPREFIX='"$(prefix)"' \
+		-DEXEC_PREFIX='"$(exec_prefix)"' \
+		-DVERSION='"$(VERSION)"' \
+		-DVPATH='"$(VPATH)"' \
+		-DPLATLIBDIR='"$(PLATLIBDIR)"' \
+		-DPYTHONFRAMEWORK='"$(PYTHONFRAMEWORK)"' \
+	        -DPy_BUILD_CORE -MM -MG -std=c11 -I./Include/internal -I./Include/internal/mimalloc $(PY_CPPFLAGS) -MT $$obj `echo $$obj | sed -e 's;[.]o;.c;'` >> Makefile.deps ; \
+	done
 
 # Create a tags file for vi
 tags::
@@ -2910,47 +2817,11 @@ update-config:
 
 # Dependencies
 
-Python/thread.o: @THREADHEADERS@ $(srcdir)/Python/condvar.h
+include Makefile.deps
 
-##########################################################################
-# Module dependencies and platform-specific files
-
-# force rebuild when header file or module build flavor (static/shared) is changed
-MODULE_DEPS_STATIC=Modules/config.c
-MODULE_DEPS_SHARED=$(MODULE_DEPS_STATIC) $(EXPORTSYMS)
-
-MODULE__CURSES_DEPS=$(srcdir)/Include/py_curses.h
-MODULE__CURSES_PANEL_DEPS=$(srcdir)/Include/py_curses.h
-MODULE__DATETIME_DEPS=$(srcdir)/Include/datetime.h
-MODULE_CMATH_DEPS=$(srcdir)/Modules/_math.h
-MODULE_MATH_DEPS=$(srcdir)/Modules/_math.h
 MODULE_PYEXPAT_DEPS=@LIBEXPAT_INTERNAL@
-MODULE_UNICODEDATA_DEPS=$(srcdir)/Modules/unicodedata_db.h $(srcdir)/Modules/unicodename_db.h
-MODULE__BLAKE2_DEPS=$(srcdir)/Modules/_blake2/impl/blake2-config.h $(srcdir)/Modules/_blake2/impl/blake2-impl.h $(srcdir)/Modules/_blake2/impl/blake2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2b-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2b-ref.c $(srcdir)/Modules/_blake2/impl/blake2b-round.h $(srcdir)/Modules/_blake2/impl/blake2b.c $(srcdir)/Modules/_blake2/impl/blake2s-load-sse2.h $(srcdir)/Modules/_blake2/impl/blake2s-load-sse41.h $(srcdir)/Modules/_blake2/impl/blake2s-load-xop.h $(srcdir)/Modules/_blake2/impl/blake2s-ref.c $(srcdir)/Modules/_blake2/impl/blake2s-round.h $(srcdir)/Modules/_blake2/impl/blake2s.c $(srcdir)/Modules/_blake2/blake2module.h $(srcdir)/Modules/hashlib.h
-MODULE__CTYPES_DEPS=$(srcdir)/Modules/_ctypes/ctypes.h
-MODULE__CTYPES_MALLOC_CLOSURE=@MODULE__CTYPES_MALLOC_CLOSURE@
 MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h @LIBMPDEC_INTERNAL@
-MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/pyexpat.c @LIBEXPAT_INTERNAL@
-MODULE__HASHLIB_DEPS=$(srcdir)/Modules/hashlib.h
-MODULE__IO_DEPS=$(srcdir)/Modules/_io/_iomodule.h
-MODULE__MD5_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HEADERS) Modules/_hacl/Hacl_Hash_MD5.h Modules/_hacl/Hacl_Hash_MD5.c
-MODULE__SHA1_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HEADERS) Modules/_hacl/Hacl_Hash_SHA1.h Modules/_hacl/Hacl_Hash_SHA1.c
 MODULE__SHA2_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_SHA2_HEADERS) $(LIBHACL_SHA2_A)
-MODULE__SHA3_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HEADERS) Modules/_hacl/Hacl_Hash_SHA3.h Modules/_hacl/Hacl_Hash_SHA3.c
-MODULE__SOCKET_DEPS=$(srcdir)/Modules/socketmodule.h $(srcdir)/Modules/addrinfo.h $(srcdir)/Modules/getaddrinfo.c $(srcdir)/Modules/getnameinfo.c
-MODULE__SSL_DEPS=$(srcdir)/Modules/_ssl.h $(srcdir)/Modules/_ssl/cert.c $(srcdir)/Modules/_ssl/debughelpers.c $(srcdir)/Modules/_ssl/misc.c $(srcdir)/Modules/_ssl_data_111.h $(srcdir)/Modules/_ssl_data_300.h $(srcdir)/Modules/socketmodule.h
-MODULE__TESTCAPI_DEPS=$(srcdir)/Modules/_testcapi/testcapi_long.h $(srcdir)/Modules/_testcapi/parts.h $(srcdir)/Modules/_testcapi/util.h
-MODULE__TESTINTERNALCAPI_DEPS=$(srcdir)/Modules/_testinternalcapi/parts.h
-MODULE__SQLITE3_DEPS=$(srcdir)/Modules/_sqlite/connection.h $(srcdir)/Modules/_sqlite/cursor.h $(srcdir)/Modules/_sqlite/microprotocols.h $(srcdir)/Modules/_sqlite/module.h $(srcdir)/Modules/_sqlite/prepare_protocol.h $(srcdir)/Modules/_sqlite/row.h $(srcdir)/Modules/_sqlite/util.h
-
-CODECS_COMMON_HEADERS=$(srcdir)/Modules/cjkcodecs/multibytecodec.h $(srcdir)/Modules/cjkcodecs/cjkcodecs.h
-MODULE__CODECS_CN_DEPS=$(srcdir)/Modules/cjkcodecs/mappings_cn.h $(CODECS_COMMON_HEADERS)
-MODULE__CODECS_HK_DEPS=$(srcdir)/Modules/cjkcodecs/mappings_hk.h  $(CODECS_COMMON_HEADERS)
-MODULE__CODECS_ISO2022_DEPS=$(srcdir)/Modules/cjkcodecs/mappings_jisx0213_pair.h $(srcdir)/Modules/cjkcodecs/alg_jisx0201.h $(srcdir)/Modules/cjkcodecs/emu_jisx0213_2000.h $(CODECS_COMMON_HEADERS)
-MODULE__CODECS_JP_DEPS=$(srcdir)/Modules/cjkcodecs/mappings_jisx0213_pair.h $(srcdir)/Modules/cjkcodecs/alg_jisx0201.h $(srcdir)/Modules/cjkcodecs/emu_jisx0213_2000.h $(srcdir)/Modules/cjkcodecs/mappings_jp.h $(CODECS_COMMON_HEADERS)
-MODULE__CODECS_KR_DEPS=$(srcdir)/Modules/cjkcodecs/mappings_kr.h $(CODECS_COMMON_HEADERS)
-MODULE__CODECS_TW_DEPS=$(srcdir)/Modules/cjkcodecs/mappings_tw.h $(CODECS_COMMON_HEADERS)
-MODULE__MULTIBYTECODEC_DEPS=$(srcdir)/Modules/cjkcodecs/multibytecodec.h
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY
 # Local Variables:
