@@ -1,0 +1,1 @@
+Several extension modules now raise audit events on previously uncovered code paths that could lead to file system access, C function calling and external binary execution.
