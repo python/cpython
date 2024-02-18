@@ -399,7 +399,7 @@ class ParseArgsTestCase(unittest.TestCase):
         self.checkError(['--unknown-option'],
                         'unrecognized arguments: --unknown-option')
 
-    def check_ci_mode(self, args, use_resources, rerun=True):
+    def create_regrtest(self, args):
         ns = cmdline._parse_args(args)
 
         # Check Regrtest attributes which are more reliable than Namespace
@@ -411,6 +411,10 @@ class ParseArgsTestCase(unittest.TestCase):
 
             regrtest = main.Regrtest(ns)
 
+        return regrtest
+
+    def check_ci_mode(self, args, use_resources, rerun=True):
+        regrtest = self.create_regrtest(args)
         self.assertEqual(regrtest.num_workers, -1)
         self.assertEqual(regrtest.want_rerun, rerun)
         self.assertTrue(regrtest.randomize)
@@ -419,7 +423,6 @@ class ParseArgsTestCase(unittest.TestCase):
         self.assertTrue(regrtest.print_slowest)
         self.assertTrue(regrtest.output_on_failure)
         self.assertEqual(sorted(regrtest.use_resources), sorted(use_resources))
-        self.assertTrue(regrtest.want_bisect)
         return regrtest
 
     def test_fast_ci(self):
@@ -455,6 +458,11 @@ class ParseArgsTestCase(unittest.TestCase):
         args = ['--dont-add-python-opts']
         ns = cmdline._parse_args(args)
         self.assertFalse(ns._add_python_opts)
+
+    def test_bisect(self):
+        args = ['--bisect']
+        regrtest = self.create_regrtest(args)
+        self.assertTrue(regrtest.want_bisect)
 
 
 @dataclasses.dataclass(slots=True)
