@@ -244,8 +244,8 @@ def test_open(testfn):
                 ("~/.history", "r") if readline else None,
                 (testfn, "w") if readline else None,
                 ("~/.history", "w") if readline else None,
-                (testfn, "a") if readline else None,
-                ("~/.history", "a") if readline else None,
+                (testfn, "a") if rl("append_history_file") else None,
+                ("~/.history", "a") if rl("append_history_file") else None,
                 (testfn, "r") if readline else None,
                 ("<readline_init_file>", "r") if readline else None,
             ]
