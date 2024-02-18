@@ -14646,8 +14646,13 @@ Modules/expat/xmltok.o: Modules/expat/xmltok.c \
   Modules/expat/utf8tab.h Modules/expat/iasciitab.h \
   Modules/expat/latin1tab.h Modules/expat/xmltok_ns.c
 Modules/_hacl/Hacl_Hash_SHA2.o: Modules/_hacl/Hacl_Hash_SHA2.c \
-  Modules/_hacl/internal/Hacl_Hash_SHA2.h Modules/_hacl/include/krml/types.h \
-  Modules/_hacl/include/krml/lowstar_endianness.h Modules/_hacl/include/krml/internal/target.h \
+  Modules/_hacl/internal/Hacl_Hash_SHA2.h \
+  Modules/_hacl/include/krml/types.h \
+  Modules/_hacl/include/krml/lowstar_endianness.h \
+  Modules/_hacl/include/krml/fstar_uint128_struct_endianness.h \
+  Modules/_hacl/include/krml/FStar_UInt128_Verified.h \
+  Modules/_hacl/include/krml/FStar_UInt_8_16_32_64.h \
+  Modules/_hacl/include/krml/internal/target.h \
   Modules/_hacl/internal/../Hacl_Hash_SHA2.h \
   Modules/_hacl/python_hacl_namespaces.h \
   Modules/_hacl/Hacl_Streaming_Types.h
@@ -14699,3 +14704,10 @@ Programs/python.o: Programs/python.c Include/Python.h \
   Include/fileutils.h Include/cpython/fileutils.h \
   Include/cpython/pyfpe.h Include/cpython/tracemalloc.h \
   Include/cpython/optimizer.h
+Objects/mimalloc/page.o: Objects/mimalloc/page.c \
+  Include/internal/mimalloc/mimalloc.h \
+  Include/internal/mimalloc/mimalloc/internal.h \
+  Include/internal/mimalloc/mimalloc/types.h \
+  Include/internal/mimalloc/mimalloc/atomic.h \
+  Include/internal/mimalloc/mimalloc/track.h \
+  Objects/mimalloc/page-queue.c

@@ -1272,7 +1272,7 @@ $(LIBEXPAT_A): $(LIBEXPAT_OBJS)
 # Build HACL* static libraries for hashlib: libHacl_Hash_SHA2.a
 LIBHACL_CFLAGS=-I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED)
 
-Modules/_hacl/Hacl_Hash_SHA2.o: $(srcdir)/Modules/_hacl/Hacl_Hash_SHA2.c
+Modules/_hacl/Hacl_Hash_SHA2.o: $(srcdir)/Modules/_hacl/Hacl_Hash_SHA2.c $(LIBHACL_SHA2_HEADERS)
 	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_SHA2.c
 
 $(LIBHACL_SHA2_A): $(LIBHACL_SHA2_OBJS)
@@ -1816,6 +1816,8 @@ regen-cases:
 	$(UPDATE_FILE) $(srcdir)/Python/executor_cases.c.h $(srcdir)/Python/executor_cases.c.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/tier2_redundancy_eliminator_cases.c.h $(srcdir)/Python/tier2_redundancy_eliminator_cases.c.h.new
 	$(UPDATE_FILE) $(srcdir)/Lib/_opcode_metadata.py $(srcdir)/Lib/_opcode_metadata.py.new
+
+Python/frozen.o: $(FROZEN_FILES_OUT)
 
 # Generate DTrace probe macros, then rename them (PYTHON_ -> PyDTrace_) to
 # follow our naming conventions. dtrace(1) uses the output filename to generate
@@ -2635,14 +2637,7 @@ regen-sbom:
 regen-deps:
 	rm -f Makefile.deps
 	for obj in $(LIBRARY_OBJS) $(IO_OBJS) $(LIBMPDEC_OBJS) $(LIBEXPAT_OBJS) $(LIBHACL_SHA2_OBJS) Programs/python.o Objects/mimalloc/page.o ; do \
-	    $(CC) -DUNIVERSAL=1 \
-		-DPREFIX='"$(prefix)"' \
-		-DEXEC_PREFIX='"$(exec_prefix)"' \
-		-DVERSION='"$(VERSION)"' \
-		-DVPATH='"$(VPATH)"' \
-		-DPLATLIBDIR='"$(PLATLIBDIR)"' \
-		-DPYTHONFRAMEWORK='"$(PYTHONFRAMEWORK)"' \
-	        -DPy_BUILD_CORE -MM -MG -std=c11 -I./Include/internal -I./Include/internal/mimalloc $(PY_CPPFLAGS) -MT $$obj `echo $$obj | sed -e 's;[.]o;.c;'` >> Makefile.deps ; \
+	    CC=$(CC) CPPFLAGS="$(PY_CPPFLAGS) -I./Include/internal -I./Include/internal/mimalloc -I./Modules/_hacl/include -DPREFIX='$(prefix)' -DEXEC_PREFIX='$(exec_prefix)' -DVERSION='$(VERSION)' -DVPATH='$(VPATH)' -DPLATLIBDIR='$(PLATLIBDIR)' -DPYTHONFRAMEWORK='$(PYTHONFRAMEWORK)' -DUNIVERSAL=1 -DPy_BUILD_CORE -std=c11" bash Tools/build/makedep.sh $$obj >> Makefile.deps ; \
 	done
 
 # Create a tags file for vi
