@@ -5232,6 +5232,10 @@ The user-exposed type for the union object can be accessed from
    >>> import typing
    >>> isinstance(int | str, typing.Union)
    True
+   >>> typing.Union()
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   TypeError: cannot create 'typing.Union' instances
 
 .. note::
    The :meth:`!__or__` method for type objects was added to support the syntax
