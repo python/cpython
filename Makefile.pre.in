@@ -668,7 +668,7 @@ help:
 # Display a full list of Makefile targets
 .PHONY: list-targets
 list-targets:
-	grep -E '^[A-Za-z][-A-Za-z0-9]+:' Makefile | awk -F : '{print $$1}'
+	@grep -E '^[A-Za-z][-A-Za-z0-9]+:' Makefile | awk -F : '{print $$1}'
 
 .PHONY: build_all
 build_all:	check-clean-src $(BUILDPYTHON) platform sharedmods \
