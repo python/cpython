@@ -6258,9 +6258,6 @@ init_types(struct ast_state *state)
     if (!add_ast_annotations(state)) {
         return -1;
     }
-    state->recursion_depth = 0;
-    state->recursion_limit = 0;
-    state->initialized = 1;
     return 0;
 }
 
