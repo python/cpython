@@ -188,19 +188,13 @@ Standard names are defined for the following types:
 
    .. index:: pair: built-in function; compile
 
-   The type for code objects such as returned by :func:`compile`.
+   The type of :ref:`code objects <code-objects>` such as returned by :func:`compile`.
 
    .. audit-event:: code.__new__ code,filename,name,argcount,posonlyargcount,kwonlyargcount,nlocals,stacksize,flags types.CodeType
 
    Note that the audited arguments may not match the names or positions
    required by the initializer.  The audit event only occurs for direct
    instantiation of code objects, and is not raised for normal compilation.
-
-   .. method:: CodeType.replace(**kwargs)
-
-     Return a copy of the code object with new values for the specified fields.
-
-     .. versionadded:: 3.8
 
 .. data:: CellType
 
