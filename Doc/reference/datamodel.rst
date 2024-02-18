@@ -1296,8 +1296,6 @@ Methods on code objects
 
    Return a copy of the code object with new values for the specified fields.
 
-   Code objects are also supported by the generic function :func:`copy.replace`.
-
    .. versionadded:: 3.8
 
 
