@@ -195,6 +195,17 @@ def test_open(testfn):
     except ImportError:
         load_dh_params = None
 
+    try:
+        import readline
+    except ImportError:
+        readline = None
+
+    def rl(name):
+        if readline:
+            return getattr(readline, name, None)
+        else:
+            return None
+
     # Try a range of "open" functions.
     # All of them should fail
     with TestHook(raise_on_events={"open"}) as hook:
@@ -204,6 +215,14 @@ def test_open(testfn):
             (open, 3, "wb"),
             (open, testfn, "w", -1, None, None, None, False, lambda *a: 1),
             (load_dh_params, testfn),
+            (rl("read_history_file"), testfn),
+            (rl("read_history_file"), None),
+            (rl("write_history_file"), testfn),
+            (rl("write_history_file"), None),
+            (rl("append_history_file"), 0, testfn),
+            (rl("append_history_file"), 0, None),
+            (rl("read_init_file"), testfn),
+            (rl("read_init_file"), None),
         ]:
             if not fn:
                 continue
@@ -221,6 +240,14 @@ def test_open(testfn):
                 (3, "w"),
                 (testfn, "w"),
                 (testfn, "rb") if load_dh_params else None,
+                (testfn, "r") if readline else None,
+                ("~/.history", "r") if readline else None,
+                (testfn, "w") if readline else None,
+                ("~/.history", "w") if readline else None,
+                (testfn, "a") if readline else None,
+                ("~/.history", "a") if readline else None,
+                (testfn, "r") if readline else None,
+                ("<readline_init_file>", "r") if readline else None,
             ]
             if i is not None
         ],
@@ -269,6 +296,42 @@ def test_mmap():
         mmap.mmap(-1, 8)
         assertEqual(hook.seen[0][1][:2], (-1, 8))
 
+
+def test_ctypes_call_function():
+    import ctypes
+    import _ctypes
+
+    with TestHook() as hook:
+        _ctypes.call_function(ctypes._memmove_addr, (0, 0, 0))
+        assert ("ctypes.call_function", (ctypes._memmove_addr, (0, 0, 0))) in hook.seen
+
+        ctypes.CFUNCTYPE(ctypes.c_voidp)(ctypes._memset_addr)(1, 0, 0)
+        assert ("ctypes.call_function", (ctypes._memset_addr, (1, 0, 0))) in hook.seen
+
+    with TestHook() as hook:
+        ctypes.cast(ctypes.c_voidp(0), ctypes.POINTER(ctypes.c_char))
+        assert "ctypes.call_function" in hook.seen_events
+
+    with TestHook() as hook:
+        ctypes.string_at(id("ctypes.string_at") + 40)
+        assert "ctypes.call_function" in hook.seen_events
+        assert "ctypes.string_at" in hook.seen_events
+
+
+def test_posixsubprocess():
+    import subprocess
+    import _posixsubprocess
+    with TestHook() as hook:
+        args = [b'x', b'y']
+        exec_list = [b'xxx', b'yyy']
+        env = [b'A=A']
+        # Based upon `multiprocessing.spawnv_passfds` to figure out arguments
+        _posixsubprocess.fork_exec(
+            args, exec_list, False, (), None, env, -1, -1, -1, -1, -1, -1, -1,
+            -1, False, False, -1, None, None, None, -1, None,
+            subprocess._USE_VFORK
+        )
+        assert ("_posixsubprocess.fork_exec", (exec_list, args, env)) in hook.seen
 
 def test_excepthook():
     def excepthook(exc_type, exc_value, exc_tb):

@@ -1200,6 +1200,17 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
         goto cleanup;
     }
 
+    /* Does using the original objects here pose a problem by
+     * allowing user-defined classes to present a different
+     * value to this function and to the audit hook? */
+    if (PySys_Audit("_posixsubprocess.fork_exec",
+                    "OOO",
+                    executable_list,
+                    process_args,
+                    env_list) < 0) {
+        goto cleanup;
+    }
+
     /* This must be the last thing done before fork() because we do not
      * want to call PyOS_BeforeFork() if there is any chance of another
      * error leading to the cleanup: code without calling fork(). */
