@@ -242,13 +242,10 @@ class BaseEventLoopTests(test_utils.TestCase):
         executor = DummyExecutor()
         self.loop.set_default_executor(executor)
 
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("default")
+        with self.assertWarnsRegex(RuntimeWarning,
+                                   "The executor did not finishing joining"):
             self.loop.run_until_complete(
                 self.loop.shutdown_default_executor(timeout=0.01))
-
-        self.assertEqual(len(w), 1)
-        self.assertIsInstance(w[0].message, RuntimeWarning)
 
     def test_call_soon(self):
         def cb():
