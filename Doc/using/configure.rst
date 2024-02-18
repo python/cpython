@@ -987,8 +987,8 @@ Main build steps
 Main Makefile targets
 ---------------------
 
-make [all]
-^^^^^^^^^^
+make
+^^^^
 
 For the most part, when rebuilding after editing some code or
 refreshing your checkout from upstream, all you need to do is execute
