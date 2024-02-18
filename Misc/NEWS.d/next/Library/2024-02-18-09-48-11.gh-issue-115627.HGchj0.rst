@@ -1,0 +1,2 @@
+Fix :c:func:`PySSL_SetError` : Modify retval handling logic for handling
+SSL_ERROR_SYSCALL.
