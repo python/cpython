@@ -19,8 +19,12 @@ SPHINXERRORHANDLING = -W
 PAPEROPT_a4     = -D latex_elements.papersize=a4paper
 PAPEROPT_letter = -D latex_elements.papersize=letterpaper
 
-ALLSPHINXOPTS = -b $(BUILDER) -d build/doctrees $(PAPEROPT_$(PAPER)) -j $(JOBS) \
-                $(SPHINXOPTS) $(SPHINXERRORHANDLING) . build/$(BUILDER) $(SOURCES)
+ALLSPHINXOPTS = -b $(BUILDER) \
+                -d build/doctrees \
+                -j $(JOBS) \
+                $(PAPEROPT_$(PAPER)) \
+                $(SPHINXOPTS) $(SPHINXERRORHANDLING) \
+                . build/$(BUILDER) $(SOURCES)
 
 .PHONY: help
 help:
@@ -29,6 +33,7 @@ help:
 	@echo "  venv       to create a venv with necessary tools"
 	@echo "  html       to make standalone HTML files"
 	@echo "  htmlview   to open the index page built by the html target in your browser"
+	@echo "  htmllive   to rebuild and reload HTML files in your browser"
 	@echo "  htmlhelp   to make HTML files and a HTML help project"
 	@echo "  latex      to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
 	@echo "  text       to make plain text files"
@@ -138,6 +143,11 @@ pydoc-topics: build
 .PHONY: htmlview
 htmlview: html
 	$(PYTHON) -c "import os, webbrowser; webbrowser.open('file://' + os.path.realpath('build/html/index.html'))"
+
+.PHONY: htmllive
+htmllive: SPHINXBUILD = $(VENVDIR)/bin/sphinx-autobuild
+htmllive: SPHINXOPTS = --re-ignore="/venv/" --open-browser --delay 0
+htmllive: html
 
 .PHONY: clean
 clean: clean-venv

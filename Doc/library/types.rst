@@ -188,21 +188,13 @@ Standard names are defined for the following types:
 
    .. index:: pair: built-in function; compile
 
-   The type for code objects such as returned by :func:`compile`.
+   The type of :ref:`code objects <code-objects>` such as returned by :func:`compile`.
 
    .. audit-event:: code.__new__ code,filename,name,argcount,posonlyargcount,kwonlyargcount,nlocals,stacksize,flags types.CodeType
 
    Note that the audited arguments may not match the names or positions
    required by the initializer.  The audit event only occurs for direct
    instantiation of code objects, and is not raised for normal compilation.
-
-   .. method:: CodeType.replace(**kwargs)
-
-     Return a copy of the code object with new values for the specified fields.
-
-     Code objects are also supported by generic function :func:`copy.replace`.
-
-     .. versionadded:: 3.8
 
 .. data:: CellType
 
@@ -378,17 +370,15 @@ Standard names are defined for the following types:
 
 .. data:: FrameType
 
-   The type of frame objects such as found in ``tb.tb_frame`` if ``tb`` is a
-   traceback object.
-
-   See :ref:`the language reference <frame-objects>` for details of the
-   available attributes and operations.
+   The type of :ref:`frame objects <frame-objects>` such as found in
+   :attr:`tb.tb_frame <traceback.tb_frame>` if ``tb`` is a traceback object.
 
 
 .. data:: GetSetDescriptorType
 
    The type of objects defined in extension modules with ``PyGetSetDef``, such
-   as ``FrameType.f_locals`` or ``array.array.typecode``.  This type is used as
+   as :attr:`FrameType.f_locals <frame.f_locals>` or ``array.array.typecode``.
+   This type is used as
    descriptor for object attributes; it has the same purpose as the
    :class:`property` type, but for classes defined in extension modules.
 
@@ -399,6 +389,10 @@ Standard names are defined for the following types:
    as ``datetime.timedelta.days``.  This type is used as descriptor for simple C
    data members which use standard conversion functions; it has the same purpose
    as the :class:`property` type, but for classes defined in extension modules.
+
+   In addition, when a class is defined with a :attr:`~object.__slots__` attribute, then for
+   each slot, an instance of :class:`!MemberDescriptorType` will be added as an attribute
+   on the class. This allows the slot to appear in the class's :attr:`~object.__dict__`.
 
    .. impl-detail::
 

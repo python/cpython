@@ -183,26 +183,23 @@ class PropertyTests(unittest.TestCase):
             fake_prop.__init__('fget', 'fset', 'fdel', 'doc')
         self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
 
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     "Docstrings are omitted with -O2 and above")
-    def test_class_property(self):
-        class A:
-            @classmethod
-            @property
-            def __doc__(cls):
-                return 'A doc for %r' % cls.__name__
-        self.assertEqual(A.__doc__, "A doc for 'A'")
-
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     "Docstrings are omitted with -O2 and above")
-    def test_class_property_override(self):
-        class A:
-            """First"""
-            @classmethod
-            @property
-            def __doc__(cls):
-                return 'Second'
-        self.assertEqual(A.__doc__, 'Second')
+    @support.refcount_test
+    def test_gh_115618(self):
+        # Py_XDECREF() was improperly called for None argument
+        # in property methods.
+        gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
+        prop = property()
+        refs_before = gettotalrefcount()
+        for i in range(100):
+            prop = prop.getter(None)
+        self.assertIsNone(prop.fget)
+        for i in range(100):
+            prop = prop.setter(None)
+        self.assertIsNone(prop.fset)
+        for i in range(100):
+            prop = prop.deleter(None)
+        self.assertIsNone(prop.fdel)
+        self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
 
     def test_property_set_name_incorrect_args(self):
         p = property()
@@ -245,6 +242,7 @@ class PropertySubSlots(property):
 
 class PropertySubclassTests(unittest.TestCase):
 
+    @support.requires_docstrings
     def test_slots_docstring_copy_exception(self):
         # A special case error that we preserve despite the GH-98963 behavior
         # that would otherwise silently ignore this error.

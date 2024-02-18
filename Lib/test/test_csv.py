@@ -28,14 +28,20 @@ class Test_Csv(unittest.TestCase):
     in TestDialectRegistry.
     """
     def _test_arg_valid(self, ctor, arg):
+        ctor(arg)
         self.assertRaises(TypeError, ctor)
         self.assertRaises(TypeError, ctor, None)
-        self.assertRaises(TypeError, ctor, arg, bad_attr = 0)
-        self.assertRaises(TypeError, ctor, arg, delimiter = 0)
-        self.assertRaises(TypeError, ctor, arg, delimiter = 'XX')
+        self.assertRaises(TypeError, ctor, arg, bad_attr=0)
+        self.assertRaises(TypeError, ctor, arg, delimiter='')
+        self.assertRaises(TypeError, ctor, arg, escapechar='')
+        self.assertRaises(TypeError, ctor, arg, quotechar='')
+        self.assertRaises(TypeError, ctor, arg, delimiter='^^')
+        self.assertRaises(TypeError, ctor, arg, escapechar='^^')
+        self.assertRaises(TypeError, ctor, arg, quotechar='^^')
         self.assertRaises(csv.Error, ctor, arg, 'foo')
         self.assertRaises(TypeError, ctor, arg, delimiter=None)
         self.assertRaises(TypeError, ctor, arg, delimiter=1)
+        self.assertRaises(TypeError, ctor, arg, escapechar=1)
         self.assertRaises(TypeError, ctor, arg, quotechar=1)
         self.assertRaises(TypeError, ctor, arg, lineterminator=None)
         self.assertRaises(TypeError, ctor, arg, lineterminator=1)
@@ -46,6 +52,40 @@ class Test_Csv(unittest.TestCase):
                           quoting=csv.QUOTE_ALL, quotechar=None)
         self.assertRaises(TypeError, ctor, arg,
                           quoting=csv.QUOTE_NONE, quotechar='')
+        self.assertRaises(ValueError, ctor, arg, delimiter='\n')
+        self.assertRaises(ValueError, ctor, arg, escapechar='\n')
+        self.assertRaises(ValueError, ctor, arg, quotechar='\n')
+        self.assertRaises(ValueError, ctor, arg, delimiter='\r')
+        self.assertRaises(ValueError, ctor, arg, escapechar='\r')
+        self.assertRaises(ValueError, ctor, arg, quotechar='\r')
+        ctor(arg, delimiter=' ')
+        ctor(arg, escapechar=' ')
+        ctor(arg, quotechar=' ')
+        ctor(arg, delimiter='\t', skipinitialspace=True)
+        ctor(arg, escapechar='\t', skipinitialspace=True)
+        ctor(arg, quotechar='\t', skipinitialspace=True)
+        self.assertRaises(ValueError, ctor, arg,
+                          delimiter=' ', skipinitialspace=True)
+        self.assertRaises(ValueError, ctor, arg,
+                          escapechar=' ', skipinitialspace=True)
+        self.assertRaises(ValueError, ctor, arg,
+                          quotechar=' ', skipinitialspace=True)
+        ctor(arg, delimiter='^')
+        ctor(arg, escapechar='^')
+        ctor(arg, quotechar='^')
+        self.assertRaises(ValueError, ctor, arg, delimiter='^', escapechar='^')
+        self.assertRaises(ValueError, ctor, arg, delimiter='^', quotechar='^')
+        self.assertRaises(ValueError, ctor, arg, escapechar='^', quotechar='^')
+        ctor(arg, delimiter='\x85')
+        ctor(arg, escapechar='\x85')
+        ctor(arg, quotechar='\x85')
+        ctor(arg, lineterminator='\x85')
+        self.assertRaises(ValueError, ctor, arg,
+                          delimiter='\x85', lineterminator='\x85')
+        self.assertRaises(ValueError, ctor, arg,
+                          escapechar='\x85', lineterminator='\x85')
+        self.assertRaises(ValueError, ctor, arg,
+                          quotechar='\x85', lineterminator='\x85')
 
     def test_reader_arg_valid(self):
         self._test_arg_valid(csv.reader, [])
@@ -297,13 +337,18 @@ class Test_Csv(unittest.TestCase):
                           [b'abc'], None)
 
     def test_read_eol(self):
-        self._read_test(['a,b'], [['a','b']])
-        self._read_test(['a,b\n'], [['a','b']])
-        self._read_test(['a,b\r\n'], [['a','b']])
-        self._read_test(['a,b\r'], [['a','b']])
-        self.assertRaises(csv.Error, self._read_test, ['a,b\rc,d'], [])
-        self.assertRaises(csv.Error, self._read_test, ['a,b\nc,d'], [])
-        self.assertRaises(csv.Error, self._read_test, ['a,b\r\nc,d'], [])
+        self._read_test(['a,b', 'c,d'], [['a','b'], ['c','d']])
+        self._read_test(['a,b\n', 'c,d\n'], [['a','b'], ['c','d']])
+        self._read_test(['a,b\r\n', 'c,d\r\n'], [['a','b'], ['c','d']])
+        self._read_test(['a,b\r', 'c,d\r'], [['a','b'], ['c','d']])
+
+        errmsg = "with newline=''"
+        with self.assertRaisesRegex(csv.Error, errmsg):
+            next(csv.reader(['a,b\rc,d']))
+        with self.assertRaisesRegex(csv.Error, errmsg):
+            next(csv.reader(['a,b\nc,d']))
+        with self.assertRaisesRegex(csv.Error, errmsg):
+            next(csv.reader(['a,b\r\nc,d']))
 
     def test_read_eof(self):
         self._read_test(['a,"'], [['a', '']])
@@ -347,10 +392,26 @@ class Test_Csv(unittest.TestCase):
         # will this fail where locale uses comma for decimals?
         self._read_test([',3,"5",7.3, 9'], [['', 3, '5', 7.3, 9]],
                         quoting=csv.QUOTE_NONNUMERIC)
+        self._read_test([',3,"5",7.3, 9'], [[None, '3', '5', '7.3', ' 9']],
+                        quoting=csv.QUOTE_NOTNULL)
+        self._read_test([',3,"5",7.3, 9'], [[None, 3, '5', 7.3, 9]],
+                        quoting=csv.QUOTE_STRINGS)
+
+        self._read_test([',,"",'], [['', '', '', '']])
+        self._read_test([',,"",'], [['', '', '', '']],
+                        quoting=csv.QUOTE_NONNUMERIC)
+        self._read_test([',,"",'], [[None, None, '', None]],
+                        quoting=csv.QUOTE_NOTNULL)
+        self._read_test([',,"",'], [[None, None, '', None]],
+                        quoting=csv.QUOTE_STRINGS)
+
         self._read_test(['"a\nb", 7'], [['a\nb', ' 7']])
         self.assertRaises(ValueError, self._read_test,
                           ['abc,3'], [[]],
                           quoting=csv.QUOTE_NONNUMERIC)
+        self.assertRaises(ValueError, self._read_test,
+                          ['abc,3'], [[]],
+                          quoting=csv.QUOTE_STRINGS)
         self._read_test(['1,@,3,@,5'], [['1', ',3,', '5']], quotechar='@')
         self._read_test(['1,\0,3,\0,5'], [['1', ',3,', '5']], quotechar='\0')
 
@@ -358,6 +419,15 @@ class Test_Csv(unittest.TestCase):
         self._read_test(['no space, space,  spaces,\ttab'],
                         [['no space', 'space', 'spaces', '\ttab']],
                         skipinitialspace=True)
+        self._read_test([' , , '],
+                        [['', '', '']],
+                        skipinitialspace=True)
+        self._read_test([' , , '],
+                        [[None, None, None]],
+                        skipinitialspace=True, quoting=csv.QUOTE_NOTNULL)
+        self._read_test([' , , '],
+                        [[None, None, None]],
+                        skipinitialspace=True, quoting=csv.QUOTE_STRINGS)
 
     def test_read_bigfield(self):
         # This exercises the buffer realloc functionality and field size
@@ -529,14 +599,6 @@ class TestDialectRegistry(unittest.TestCase):
 
         finally:
             csv.unregister_dialect('testC')
-
-    def test_bad_dialect(self):
-        # Unknown parameter
-        self.assertRaises(TypeError, csv.reader, [], bad_attr = 0)
-        # Bad values
-        self.assertRaises(TypeError, csv.reader, [], delimiter = None)
-        self.assertRaises(TypeError, csv.reader, [], quoting = -1)
-        self.assertRaises(TypeError, csv.reader, [], quoting = 100)
 
     def test_copy(self):
         for name in csv.list_dialects():
@@ -1083,10 +1145,15 @@ class TestDialectValidity(unittest.TestCase):
                          '"lineterminator" must be a string')
 
     def test_invalid_chars(self):
-        def create_invalid(field_name, value):
+        def create_invalid(field_name, value, **kwargs):
             class mydialect(csv.Dialect):
-                pass
+                delimiter = ','
+                quoting = csv.QUOTE_ALL
+                quotechar = '"'
+                lineterminator = '\r\n'
             setattr(mydialect, field_name, value)
+            for field_name, value in kwargs.items():
+                setattr(mydialect, field_name, value)
             d = mydialect()
 
         for field_name in ("delimiter", "escapechar", "quotechar"):
@@ -1095,6 +1162,10 @@ class TestDialectValidity(unittest.TestCase):
                 self.assertRaises(csv.Error, create_invalid, field_name, "abc")
                 self.assertRaises(csv.Error, create_invalid, field_name, b'x')
                 self.assertRaises(csv.Error, create_invalid, field_name, 5)
+                self.assertRaises(ValueError, create_invalid, field_name, "\n")
+                self.assertRaises(ValueError, create_invalid, field_name, "\r")
+                self.assertRaises(ValueError, create_invalid, field_name, " ",
+                                  skipinitialspace=True)
 
 
 class TestSniffer(unittest.TestCase):
@@ -1411,8 +1482,7 @@ class KeyOrderingTest(unittest.TestCase):
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        extra = {'__doc__', '__version__'}
-        support.check__all__(self, csv, ('csv', '_csv'), extra=extra)
+        support.check__all__(self, csv, ('csv', '_csv'))
 
     def test_subclassable(self):
         # issue 44089
