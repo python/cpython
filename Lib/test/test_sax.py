@@ -19,6 +19,7 @@ from xml.sax.xmlreader import InputSource, AttributesImpl, AttributesNSImpl
 from io import BytesIO, StringIO
 import codecs
 import os.path
+import pyexpat
 import shutil
 import sys
 from urllib.error import URLError
@@ -1213,6 +1214,30 @@ class ExpatReaderTest(XmlTestBase):
         parser.close()
 
         self.assertEqual(result.getvalue(), start + b"<doc>text</doc>")
+
+    def test_expat_incremental_reparse_deferral(self):
+        result = BytesIO()
+        xmlgen = XMLGenerator(result)
+        parser = create_parser()
+        parser.setContentHandler(xmlgen)
+
+        # This artificial chunking triggers reparse deferral with Expat >=2.6.0
+        parser.feed("<doc ")
+        parser.feed(">")
+
+        if pyexpat.version_info >= (2, 6, 0):
+            self.assertEqual(result.getvalue(), start)
+        else:
+            self.assertEqual(result.getvalue(), start + b"<doc>")
+
+        parser.flush()  # no-op for Expat <2.6.0
+
+        self.assertEqual(result.getvalue(), start + b"<doc>")
+
+        parser.feed("</doc>")
+        parser.close()
+
+        self.assertEqual(result.getvalue(), start + b"<doc></doc>")
 
     # ===== Locator support
 
