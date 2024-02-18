@@ -188,7 +188,7 @@ Standard names are defined for the following types:
 
    .. index:: pair: built-in function; compile
 
-   The type for :ref:`code objects <code-objects>` such as returned by :func:`compile`.
+   The type of :ref:`code objects <code-objects>` such as returned by :func:`compile`.
 
    .. audit-event:: code.__new__ code,filename,name,argcount,posonlyargcount,kwonlyargcount,nlocals,stacksize,flags types.CodeType
 
