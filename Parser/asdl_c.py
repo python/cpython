@@ -1336,7 +1336,7 @@ static int add_ast_fields(struct ast_state *state)
             self.visit(dfn)
         self.file.write(textwrap.dedent('''
                 if (!add_ast_annotations(state)) {
-                    return 1;
+                    return -1;
                 }
                 state->recursion_depth = 0;
                 state->recursion_limit = 0;
