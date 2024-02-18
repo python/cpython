@@ -19,17 +19,9 @@
 /* Uncomment this to dump debugging output when assertions fail */
 // #define INSTRUMENT_DEBUG 1
 
-PyObject _PyInstrumentation_DISABLE =
-{
-    .ob_refcnt = _Py_IMMORTAL_REFCNT,
-    .ob_type = &PyBaseObject_Type
-};
+PyObject _PyInstrumentation_DISABLE = _PyObject_HEAD_INIT(&PyBaseObject_Type);
 
-PyObject _PyInstrumentation_MISSING =
-{
-    .ob_refcnt = _Py_IMMORTAL_REFCNT,
-    .ob_type = &PyBaseObject_Type
-};
+PyObject _PyInstrumentation_MISSING = _PyObject_HEAD_INIT(&PyBaseObject_Type);
 
 static const int8_t EVENT_FOR_OPCODE[256] = {
     [RETURN_CONST] = PY_MONITORING_EVENT_PY_RETURN,
@@ -1584,13 +1576,11 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
     }
     _Py_Executors_InvalidateDependency(interp, code);
     int code_len = (int)Py_SIZE(code);
-    /* code->_co_firsttraceable >= code_len indicates
-     * that no instrumentation can be inserted.
-     * Exit early to avoid creating instrumentation
+    /* Exit early to avoid creating instrumentation
      * data for potential statically allocated code
      * objects.
      * See https://github.com/python/cpython/issues/108390 */
-    if (code->_co_firsttraceable >= code_len) {
+    if (code->co_flags & CO_NO_MONITORING_EVENTS) {
         return 0;
     }
     if (update_instrumentation_data(code, interp)) {
@@ -1838,6 +1828,23 @@ _PyMonitoring_SetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringEvent
     if (_Py_Instrument(code, interp)) {
         return -1;
     }
+    return 0;
+}
+
+int
+_PyMonitoring_GetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringEventSet *events)
+{
+    assert(0 <= tool_id && tool_id < PY_MONITORING_TOOL_IDS);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (check_tool(interp, tool_id)) {
+        return -1;
+    }
+    if (code->_co_monitoring == NULL) {
+        *events = 0;
+        return 0;
+    }
+    _Py_LocalMonitors *local = &code->_co_monitoring->local_monitors;
+    *events = get_local_events(local, tool_id);
     return 0;
 }
 

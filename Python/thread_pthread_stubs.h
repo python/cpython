@@ -94,6 +94,15 @@ pthread_detach(pthread_t thread)
     return 0;
 }
 
+int
+pthread_join(pthread_t thread, void** value_ptr)
+{
+    if (value_ptr) {
+        *value_ptr = NULL;
+    }
+    return 0;
+}
+
 PyAPI_FUNC(pthread_t) pthread_self(void)
 {
     return 0;

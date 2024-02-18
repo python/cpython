@@ -118,10 +118,19 @@ _PySemaphore_PlatformWait(_PySemaphore *sema, _PyTime_t timeout)
     if (timeout >= 0) {
         struct timespec ts;
 
+#if defined(CLOCK_MONOTONIC) && defined(HAVE_SEM_CLOCKWAIT)
+        _PyTime_t deadline = _PyTime_Add(_PyTime_GetMonotonicClock(), timeout);
+
+        _PyTime_AsTimespec_clamp(deadline, &ts);
+
+        err = sem_clockwait(&sema->platform_sem, CLOCK_MONOTONIC, &ts);
+#else
         _PyTime_t deadline = _PyTime_Add(_PyTime_GetSystemClock(), timeout);
-        _PyTime_AsTimespec(deadline, &ts);
+
+        _PyTime_AsTimespec_clamp(deadline, &ts);
 
         err = sem_timedwait(&sema->platform_sem, &ts);
+#endif
     }
     else {
         err = sem_wait(&sema->platform_sem);
@@ -149,11 +158,15 @@ _PySemaphore_PlatformWait(_PySemaphore *sema, _PyTime_t timeout)
     if (sema->counter == 0) {
         if (timeout >= 0) {
             struct timespec ts;
-
+#if defined(HAVE_PTHREAD_COND_TIMEDWAIT_RELATIVE_NP)
+            _PyTime_AsTimespec_clamp(timeout, &ts);
+            err = pthread_cond_timedwait_relative_np(&sema->cond, &sema->mutex, &ts);
+#else
             _PyTime_t deadline = _PyTime_Add(_PyTime_GetSystemClock(), timeout);
-            _PyTime_AsTimespec(deadline, &ts);
+            _PyTime_AsTimespec_clamp(deadline, &ts);
 
             err = pthread_cond_timedwait(&sema->cond, &sema->mutex, &ts);
+#endif // HAVE_PTHREAD_COND_TIMEDWAIT_RELATIVE_NP
         }
         else {
             err = pthread_cond_wait(&sema->cond, &sema->mutex);
@@ -231,6 +244,7 @@ dequeue(Bucket *bucket, const void *address)
         if (wait->addr == (uintptr_t)address) {
             llist_remove(node);
             --bucket->num_waiters;
+            wait->is_unparking = true;
             return wait;
         }
     }
@@ -249,6 +263,7 @@ dequeue_all(Bucket *bucket, const void *address, struct llist_node *dst)
             llist_remove(node);
             llist_insert_tail(dst, node);
             --bucket->num_waiters;
+            wait->is_unparking = true;
         }
     }
 }
@@ -324,8 +339,6 @@ _PyParkingLot_Unpark(const void *addr, _Py_unpark_fn_t *fn, void *arg)
     _PyRawMutex_Lock(&bucket->mutex);
     struct wait_entry *waiter = dequeue(bucket, addr);
     if (waiter) {
-        waiter->is_unparking = true;
-
         int has_more_waiters = (bucket->num_waiters > 0);
         fn(arg, waiter->park_arg, has_more_waiters);
     }

@@ -76,11 +76,10 @@ isolation_level_converter(PyObject *str_or_none, const char **result)
         *result = NULL;
     }
     else if (PyUnicode_Check(str_or_none)) {
-        const char *str = PyUnicode_AsUTF8(str_or_none);
+        const char *str = _PyUnicode_AsUTF8NoNUL(str_or_none);
         if (str == NULL) {
             return 0;
         }
-
         const char *level = get_isolation_level(str);
         if (level == NULL) {
             return 0;
@@ -1980,12 +1979,17 @@ finally:
 /*[clinic input]
 _sqlite3.Connection.iterdump as pysqlite_connection_iterdump
 
+    *
+    filter: object = None
+        An optional LIKE pattern for database objects to dump
+
 Returns iterator to the dump of the database in an SQL text format.
 [clinic start generated code]*/
 
 static PyObject *
-pysqlite_connection_iterdump_impl(pysqlite_Connection *self)
-/*[clinic end generated code: output=586997aaf9808768 input=1911ca756066da89]*/
+pysqlite_connection_iterdump_impl(pysqlite_Connection *self,
+                                  PyObject *filter)
+/*[clinic end generated code: output=fd81069c4bdeb6b0 input=4ae6d9a898f108df]*/
 {
     if (!pysqlite_check_connection(self)) {
         return NULL;
@@ -1999,9 +2003,16 @@ pysqlite_connection_iterdump_impl(pysqlite_Connection *self)
         }
         return NULL;
     }
-
-    PyObject *retval = PyObject_CallOneArg(iterdump, (PyObject *)self);
+    PyObject *args[3] = {NULL, (PyObject *)self, filter};
+    PyObject *kwnames = Py_BuildValue("(s)", "filter");
+    if (!kwnames) {
+        Py_DECREF(iterdump);
+        return NULL;
+    }
+    Py_ssize_t nargsf = 1 | PY_VECTORCALL_ARGUMENTS_OFFSET;
+    PyObject *retval = PyObject_Vectorcall(iterdump, args + 1, nargsf, kwnames);
     Py_DECREF(iterdump);
+    Py_DECREF(kwnames);
     return retval;
 }
 

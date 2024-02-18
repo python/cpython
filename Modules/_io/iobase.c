@@ -66,12 +66,19 @@ PyDoc_STRVAR(iobase_doc,
     "with open('spam.txt', 'r') as fp:\n"
     "    fp.write('Spam and eggs!')\n");
 
-/* Use this macro whenever you want to check the internal `closed` status
+
+/* Internal methods */
+
+/* Use this function whenever you want to check the internal `closed` status
    of the IOBase object rather than the virtual `closed` attribute as returned
    by whatever subclass. */
 
+static int
+iobase_is_closed(PyObject *self)
+{
+    return PyObject_HasAttrWithError(self, &_Py_ID(__IOBase_closed));
+}
 
-/* Internal methods */
 static PyObject *
 iobase_unsupported(_PyIO_State *state, const char *message)
 {
@@ -143,14 +150,6 @@ _io__IOBase_truncate_impl(PyObject *self, PyTypeObject *cls,
 {
     _PyIO_State *state = get_io_state_by_cls(cls);
     return iobase_unsupported(state, "truncate");
-}
-
-static int
-iobase_is_closed(PyObject *self)
-{
-    /* This gets the derived attribute, which is *not* __IOBase_closed
-       in most cases! */
-    return PyObject_HasAttrWithError(self, &_Py_ID(__IOBase_closed));
 }
 
 /* Flush and close methods */
