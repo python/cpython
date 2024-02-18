@@ -243,6 +243,7 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.loop.set_default_executor(executor)
 
         with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("default")
             self.loop.run_until_complete(
                 self.loop.shutdown_default_executor(timeout=0.01))
 
