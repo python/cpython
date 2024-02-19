@@ -666,10 +666,10 @@ Constants
       >>> math.isnan(float('nan'))
       True
 
+   .. versionadded:: 3.5
+
    .. versionchanged:: 3.11
       It is now always available.
-
-   .. versionadded:: 3.5
 
 
 .. impl-detail::

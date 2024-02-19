@@ -276,14 +276,14 @@ creation according to their needs, the :class:`EnvBuilder` class.
           the virtual environment.
 
 
-        .. versionchanged:: 3.12
-           The attribute ``lib_path`` was added to the context, and the context
-           object was documented.
-
         .. versionchanged:: 3.11
            The *venv*
            :ref:`sysconfig installation scheme <installation_paths>`
            is used to construct the paths of the created directories.
+
+        .. versionchanged:: 3.12
+           The attribute ``lib_path`` was added to the context, and the context
+           object was documented.
 
     .. method:: create_configuration(context)
 
