@@ -1,2 +1,2 @@
-Fix :c:func:`PySSL_SetError` : Modify retval handling logic for handling
-SSL_ERROR_SYSCALL.
+FIX the ssl module error handling of connection terminate by peer.
+it throws OSError instead of EOFError.
