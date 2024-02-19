@@ -1134,6 +1134,8 @@ Special read-only attributes
    * - .. attribute:: codeobject.co_qualname
      - The fully qualified function name
 
+       .. versionadded:: 3.11
+
    * - .. attribute:: codeobject.co_argcount
      - The total number of positional :term:`parameters <parameter>`
        (including positional-only parameters and parameters with default values)
@@ -1289,6 +1291,14 @@ Methods on code objects
 
       :pep:`626` - Precise line numbers for debugging and other tools.
          The PEP that introduced the :meth:`!co_lines` method.
+
+.. method:: codeobject.replace(**kwargs)
+
+   Return a copy of the code object with new values for the specified fields.
+
+   Code objects are also supported by the generic function :func:`copy.replace`.
+
+   .. versionadded:: 3.8
 
 
 .. _frame-objects:

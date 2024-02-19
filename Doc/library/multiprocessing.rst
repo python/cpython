@@ -649,8 +649,8 @@ The :mod:`multiprocessing` package mostly replicates the API of the
 
    .. method:: terminate()
 
-      Terminate the process.  On POSIX this is done using the ``SIGTERM`` signal;
-      on Windows :c:func:`TerminateProcess` is used.  Note that exit handlers and
+      Terminate the process.  On POSIX this is done using the :py:const:`~signal.SIGTERM` signal;
+      on Windows :c:func:`!TerminateProcess` is used.  Note that exit handlers and
       finally clauses, etc., will not be executed.
 
       Note that descendant processes of the process will *not* be terminated --
@@ -1084,13 +1084,13 @@ Miscellaneous
    The return value can be ``'fork'``, ``'spawn'``, ``'forkserver'``
    or ``None``.  See :ref:`multiprocessing-start-methods`.
 
-.. versionchanged:: 3.8
-
-   On macOS, the *spawn* start method is now the default.  The *fork* start
-   method should be considered unsafe as it can lead to crashes of the
-   subprocess. See :issue:`33725`.
-
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.8
+
+      On macOS, the *spawn* start method is now the default.  The *fork* start
+      method should be considered unsafe as it can lead to crashes of the
+      subprocess. See :issue:`33725`.
 
 .. function:: set_executable(executable)
 

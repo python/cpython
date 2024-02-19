@@ -131,7 +131,13 @@ extern bool _mi_process_is_initialized;             // has mi_process_init been 
 
 static inline mi_threadid_t _mi_prim_thread_id(void) mi_attr_noexcept;
 
-#if defined(_WIN32)
+#ifdef MI_PRIM_THREAD_ID
+
+static inline mi_threadid_t _mi_prim_thread_id(void) mi_attr_noexcept {
+  return MI_PRIM_THREAD_ID();
+}
+
+#elif defined(_WIN32)
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
