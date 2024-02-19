@@ -96,6 +96,7 @@ Objects/stringlib/split.h
 
 Modules/_dbmmodule.c
 Modules/cjkcodecs/_codecs_*.c
+Modules/expat/internal.h
 Modules/expat/xmlrole.c
 Modules/expat/xmlparse.c
 Python/initconfig.c
