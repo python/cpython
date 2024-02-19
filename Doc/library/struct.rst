@@ -169,6 +169,7 @@ If the first character is not one of these, ``'@'`` is assumed.
 
    Python example:
 
+       >>> import struct
        >>> struct.pack('>h', 1023)
        b'\x03\xff'
        >>> struct.pack('<h', 1023)
