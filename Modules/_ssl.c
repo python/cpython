@@ -644,32 +644,21 @@ PySSL_SetError(PySSLSocket *sslsock, const char *filename, int lineno)
         case SSL_ERROR_SYSCALL:
         {
             if (e == 0) {
-                PySocketSockObject *s = GET_SOCKET(sslsock);
-                if (((PyObject *)s) == Py_None) {
+                /* underlying BIO reported an I/O error */
+                ERR_clear_error();
+#ifdef MS_WINDOWS
+                if (err.ws) {
+                    return PyErr_SetFromWindowsErr(err.ws);
+                }
+#endif
+                if (err.c) {
+                    errno = err.c;
+                    return PyErr_SetFromErrno(PyExc_OSError);
+                }
+                else {
                     p = PY_SSL_ERROR_EOF;
                     type = state->PySSLEOFErrorObject;
                     errstr = "EOF occurred in violation of protocol";
-                } else if (s) {
-                    /* underlying BIO reported an I/O error */
-                    ERR_clear_error();
-#ifdef MS_WINDOWS
-                    if (err.ws) {
-                        return PyErr_SetFromWindowsErr(err.ws);
-                    }
-#endif
-                    if (err.c) {
-                        errno = err.c;
-                        return PyErr_SetFromErrno(PyExc_OSError);
-                    }
-                    else {
-                        p = PY_SSL_ERROR_EOF;
-                        type = state->PySSLEOFErrorObject;
-                        errstr = "EOF occurred in violation of protocol";
-                    }
-                } else { /* possible? */
-                    p = PY_SSL_ERROR_SYSCALL;
-                    type = state->PySSLSyscallErrorObject;
-                    errstr = "Some I/O error occurred";
                 }
             } else {
                 if (ERR_GET_LIB(e) == ERR_LIB_SSL &&
