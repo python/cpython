@@ -77,6 +77,14 @@ dummy_func(void) {
         sym_set_type(right, &PyFloat_Type);
     }
 
+    op(_GUARD_BOTH_UNICODE, (left, right -- left, right)) {
+        if (sym_matches_type(left, &PyUnicode_Type) &&
+            sym_matches_type(right, &PyUnicode_Type)) {
+            REPLACE_OP(this_instr, _NOP, 0 ,0);
+        }
+        sym_set_type(left, &PyUnicode_Type);
+        sym_set_type(right, &PyUnicode_Type);
+    }
 
     op(_BINARY_OP_ADD_INT, (left, right -- res)) {
         if (is_const(left) && is_const(right)) {
