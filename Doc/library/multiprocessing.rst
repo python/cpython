@@ -1245,7 +1245,7 @@ Connection objects are usually created using
       Connection objects themselves can now be transferred between processes
       using :meth:`Connection.send` and :meth:`Connection.recv`.
 
-      Connection objects now support the context management protocol -- see
+      Connection objects also now support the context management protocol -- see
       :ref:`typecontextmanager`.  :meth:`~contextmanager.__enter__` returns the
       connection object, and :meth:`~contextmanager.__exit__` calls :meth:`close`.
 
