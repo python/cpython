@@ -281,9 +281,6 @@ creation according to their needs, the :class:`EnvBuilder` class.
            :ref:`sysconfig installation scheme <installation_paths>`
            is used to construct the paths of the created directories.
 
-        .. versionchanged:: 3.12
-           The attribute ``lib_path`` was added to the context, and the context
-           object was documented.
 
     .. method:: create_configuration(context)
 
