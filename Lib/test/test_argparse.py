@@ -2210,6 +2210,34 @@ class TestAddSubparsers(TestCase):
             (NS(foo=False, bar=0.5, w=7, x='b'), ['-W', '-X', 'Y', 'Z']),
         )
 
+    def test_parse_known_args_with_single_dash_option(self):
+        parser = ErrorRaisingArgumentParser()
+        parser.add_argument('-k', '--known', action='count', default=0)
+        parser.add_argument('-n', '--new', action='count', default=0)
+        self.assertEqual(parser.parse_known_args(['-k', '-u']),
+                         (NS(known=1, new=0), ['-u']))
+        self.assertEqual(parser.parse_known_args(['-u', '-k']),
+                         (NS(known=1, new=0), ['-u']))
+        self.assertEqual(parser.parse_known_args(['-ku']),
+                         (NS(known=1, new=0), ['-u']))
+        self.assertArgumentParserError(parser.parse_known_args, ['-k=u'])
+        self.assertEqual(parser.parse_known_args(['-uk']),
+                         (NS(known=0, new=0), ['-uk']))
+        self.assertEqual(parser.parse_known_args(['-u=k']),
+                         (NS(known=0, new=0), ['-u=k']))
+        self.assertEqual(parser.parse_known_args(['-kunknown']),
+                         (NS(known=1, new=0), ['-unknown']))
+        self.assertArgumentParserError(parser.parse_known_args, ['-k=unknown'])
+        self.assertEqual(parser.parse_known_args(['-ku=nknown']),
+                         (NS(known=1, new=0), ['-u=nknown']))
+        self.assertEqual(parser.parse_known_args(['-knew']),
+                         (NS(known=1, new=1), ['-ew']))
+        self.assertArgumentParserError(parser.parse_known_args, ['-kn=ew'])
+        self.assertArgumentParserError(parser.parse_known_args, ['-k-new'])
+        self.assertArgumentParserError(parser.parse_known_args, ['-kn-ew'])
+        self.assertEqual(parser.parse_known_args(['-kne-w']),
+                         (NS(known=1, new=1), ['-e-w']))
+
     def test_dest(self):
         parser = ErrorRaisingArgumentParser()
         parser.add_argument('--foo', action='store_true')
