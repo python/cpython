@@ -158,32 +158,6 @@ class GeneralTests:
                               re.MULTILINE)
         self.assertRegex(stderr.getvalue(), expected)
 
-    def test_host_port_host(self):
-        mock_socket.reply_with(b"220 Hello world")
-        # create instance without arguments
-        smtp = smtplib.SMTP(f"{HOST}:{self.port}")
-        # .connect must set ._host since it is used by .starttls
-        self.assertEqual(smtp._host, HOST)
-        smtp.close()
-
-    def test_explicit_connect(self):
-        mock_socket.reply_with(b"220 Hello world")
-        # create instance without arguments
-        smtp = smtplib.SMTP()
-        # .connect must set ._host since it is used by .starttls
-        smtp.connect(HOST, self.port)
-        self.assertEqual(smtp._host, HOST)
-        smtp.close()
-
-    def test_explicit_connect_host_port(self):
-        mock_socket.reply_with(b"220 Hello world")
-        # create instance without arguments
-        smtp = smtplib.SMTP()
-        # .connect must set ._host since it is used by .starttls
-        smtp.connect(f"{HOST}:{self.port}")
-        self.assertEqual(smtp._host, HOST)
-        smtp.close()
-
 
 class SMTPGeneralTests(GeneralTests, unittest.TestCase):
 
@@ -308,6 +282,34 @@ class DebuggingServerTests(unittest.TestCase):
         # connect
         smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
                             timeout=support.LOOPBACK_TIMEOUT)
+        # implicit .connect must set ._host since it is used by .starttls
+        self.assertEqual(smtp._host, HOST)
+        smtp.quit()
+
+    def test_host_port_host(self):
+        # create instance with host:port notation
+        smtp = smtplib.SMTP(f"{HOST}:{self.port}", local_hostname='localhost',
+                            timeout=support.LOOPBACK_TIMEOUT)
+        # implicit .connect must set ._host since it is used by .starttls
+        self.assertEqual(smtp._host, HOST)
+        smtp.quit()
+
+    def test_explicit_connect(self):
+        # create instance without arguments
+        smtp = smtplib.SMTP(local_hostname='localhost',
+                            timeout=support.LOOPBACK_TIMEOUT)
+        # explicit .connect must set ._host since it is used by .starttls
+        smtp.connect(HOST, self.port)
+        self.assertEqual(smtp._host, HOST)
+        smtp.quit()
+
+    def test_explicit_connect_host_port(self):
+        # create instance without arguments
+        smtp = smtplib.SMTP(local_hostname='localhost',
+                            timeout=support.LOOPBACK_TIMEOUT)
+        # explicit .connect with host:port notation must set ._host, too
+        smtp.connect(f"{HOST}:{self.port}")
+        self.assertEqual(smtp._host, HOST)
         smtp.quit()
 
     def testSourceAddress(self):

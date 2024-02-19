@@ -42,7 +42,7 @@ class SmtpTest(unittest.TestCase):
             server.ehlo()
             server.quit()
 
-    def test_connect2_starttls(self):
+    def test_connect_host_port_starttls(self):
         support.get_attribute(smtplib, 'SMTP_SSL')
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         context.check_hostname = False
@@ -59,7 +59,7 @@ class SmtpTest(unittest.TestCase):
             server.ehlo()
             server.quit()
 
-    def test_connect3_starttls(self):
+    def test_explicit_connect_starttls(self):
         support.get_attribute(smtplib, 'SMTP_SSL')
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         context.check_hostname = False
@@ -77,7 +77,7 @@ class SmtpTest(unittest.TestCase):
             server.ehlo()
             server.quit()
 
-    def test_connect4_starttls(self):
+    def test_explicit_connect_host_port_starttls(self):
         support.get_attribute(smtplib, 'SMTP_SSL')
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         context.check_hostname = False
