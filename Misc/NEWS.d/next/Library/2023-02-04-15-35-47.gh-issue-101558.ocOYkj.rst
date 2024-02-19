@@ -1,0 +1,2 @@
+Added the :func:`time.sleep_until` function, which allows sleeping until the
+specified absolute time.
