@@ -254,12 +254,35 @@ class MockTest(unittest.TestCase):
             def my_func(self):
                 return value
         class_mock = create_autospec(spec=MyClass, wraps=MyClass)
+        # Have to reassign the return_value to DEFAULT to return the real
+        # result (actual instance of "MyClass") when the mock is called.
         class_mock.return_value = mock.DEFAULT
         self.assertEqual(class_mock().my_func(), value)
-        # Autospec should also wrap child attributes.
+        # Autospec should also wrap child attributes of parent.
         self.assertEqual(class_mock.my_func._mock_wraps, MyClass.my_func)
 
-    def test_create_autospec_wraps_function(self):
+    def test_create_autospec_instance_wraps_class(self):
+        """Autospec a class instance with wraps & test if the call is passed
+        to the wrapped object."""
+        value = 'my_func is called'
+
+        class MyClass:
+            @staticmethod
+            def my_func():
+                """This is a static method because when the mocked instance of
+                'MyClass' will call this method, it won't be able to consume
+                'self' argument."""
+                return value
+        instance_mock = create_autospec(spec=MyClass, instance=True, wraps=MyClass)
+        # Have to reassign the return_value to DEFAULT to return the real
+        # result from "MyClass.my_func" when the mocked instance of "MyClass"
+        # calls "my_func".
+        instance_mock.my_func.return_value = mock.DEFAULT
+        self.assertEqual(instance_mock.my_func(), value)
+        # Autospec should also wrap child attributes of the instance.
+        self.assertEqual(instance_mock.my_func._mock_wraps, MyClass.my_func)
+
+    def test_create_autospec_wraps_function_type(self):
         """Autospec a function or a method with wraps & test if the call is
         passed to the wrapped object."""
         value = 'my_func is called'
@@ -269,6 +292,18 @@ class MockTest(unittest.TestCase):
                 return value
         func_mock = create_autospec(spec=MyClass.my_func, wraps=MyClass.my_func)
         self.assertEqual(func_mock(MyClass()), value)
+
+    def test_explicit_return_value_even_if_mock_wraps_object(self):
+        """If the mock has an explicit return_value set then calls are not
+        passed to the wrapped object and the return_value is returned instead.
+        """
+        value = 'explicit return value'
+
+        def my_func():
+            return None
+        func_mock = create_autospec(spec=my_func, wraps=my_func)
+        func_mock.return_value = value
+        self.assertEqual(func_mock(), value)
 
     def test_explicit_parent(self):
         parent = Mock()
