@@ -1648,6 +1648,9 @@ Do not instantiate the :class:`Server` class directly.
       Calls :meth:`~asyncio.BaseTransport.close` on all associated
       transports.
 
+      :meth:`close` should be called before :meth:`close_clients` when
+      closing the server to avoid races with new clients connecting.
+
       .. versionadded:: 3.13
 
    .. method:: abort_clients()
@@ -1657,6 +1660,9 @@ Do not instantiate the :class:`Server` class directly.
 
       Calls :meth:`~asyncio.WriteTransport.abort` on all associated
       transports.
+
+      :meth:`close` should be called before :meth:`abort_clients` when
+      closing the server to avoid races with new clients connecting.
 
       .. versionadded:: 3.13
 
