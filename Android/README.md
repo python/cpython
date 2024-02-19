@@ -6,7 +6,7 @@ use Python on Android, one of the following tools will provide a much more
 approachable user experience:
 
 * [Briefcase](https://briefcase.readthedocs.io), from the BeeWare project
-* [Builddozer](https://buildozer.readthedocs.io), from the Kivy project
+* [Buildozer](https://buildozer.readthedocs.io), from the Kivy project
 * [Chaquopy](https://chaquo.com/chaquopy/)
 
 
@@ -52,10 +52,10 @@ Or to do it all in a single command, run:
 ```
 
 In the end you should have a build Python in `cross-build/build`, and an Android
-build in `cross-build/HOST `.
+build in `cross-build/HOST`.
 
-You can use `--` as a separator for any of the `configure`-related commands --
-including `build` itself -- to pass arguments to the underlying `configure`
+You can use `--` as a separator for any of the `configure`-related commands –
+including `build` itself – to pass arguments to the underlying `configure`
 call. For example, if you want a pydebug build that also caches the results from
 `configure`, you can do:
 
