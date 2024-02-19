@@ -7,57 +7,82 @@ GDB support
 .. highlight:: none
 
 If you experience low-level problems such as crashes or deadlocks
-(e.g. when tinkering with parts of CPython which are written in C),
-it can be convenient to use a low-level debugger such as gdb in
-order to diagnose and fix the issue.  By default, however, gdb (or any
-of its front-ends) doesn't know about high-level information specific to the
-CPython interpreter, such as which Python function is currently executing,
-or what type or value has a given Python object represented by a standard
-``PyObject *`` pointer.  We hereafter present two ways to overcome this
-limitation.
+(e.g. when debugging extensions or tinkering with parts of CPython
+which are written in C), it can be convenient to use a low-level
+debugger such as GDB in order to diagnose and fix the issue.
+By default, however, GDB (or any of its front-ends) doesn't know about
+high-level information specific to the CPython interpreter, such as which
+Python function is currently executing, or what type or value has a given
+Python object represented by a standard ``PyObject *`` pointer.
+We hereafter present two ways to overcome this limitation.
+
 
 Prerequisites
 ===============
 
-You need to have gdb on your system and Python debugging extensions. Extensions
-package includes debugging symbols and adds Python-specific commands into gdb.
-On a modern Linux system, you can easily install these with:
+You need to have GDB 7 or later, Python debugging information, and the
+``python-gdb.py`` extension.
+The extension is build with Python, but might be distributed separately or
+not at all. Below, we include tips for a few common systems as examples.
+Note that even if they match your system, they might be outdated.
 
-- Fedora:
+For earlier versions of GDB, see ``Misc/gdbinit`` in the sources of Python 3.11
+or earlier.
 
-  .. code-block:: shell
 
-     sudo yum install gdb python-debuginfo
+Python built from source
+------------------------
+
+When you build CPython from source, debugging information should be available,
+and the build should add a ``python-gdb.py`` file to the root directory of
+your repository.
+
+To activate support, you must add the directory containing ``python-gdb.py``
+to GDB's "auto-load-safe-path".
+If you haven't done this, recent versions of GDB will print out a warning
+with instructions on how to do this.
+
+.. note::
+
+   If you do not seee instructionns for your version of GDB, put this in your
+   configuration file (``~/.gdbinit`` or ``~/.config/gdb/gdbinit``):
+
+      add-auto-load-safe-path /path/to/cpython
+
+   You can also add multiple paths, separated by ``:``.
+
+
+Linux distros
+-------------
+
+Most Linux systems provide debug information for the system Python
+in a package called ``python-debuginfo``, ``python-dbg`` or similar.
+For example:
+
+- Fedora::
+
+   .. code-block:: shell
+
+      sudo dnf install gdb
+      sudo dnf debuginfo-install python3
 
 - Ubuntu:
 
-  .. code-block:: shell
+   .. code-block:: shell
 
-     sudo apt-get install gdb python3.10-dbg
+      sudo apt install gdb python3-dbg
 
-- Centos*:
+On several recent Linux systems, GDB can download debugging symbols
+automatically using *debuginfod*.
+However, this will not install the ``python-gdb.py`` extension;
+you generally do need to install the debuginfo package separately.
 
-  .. code-block:: shell
 
-     sudo yum install yum-utils
-     sudo debuginfo-install glibc
-     sudo yum install gdb python-debuginfo
+Using the ``python-gdb`` extension
+==================================
 
-GDB 7 and later
-===============
-
-In gdb 7, support for `extending gdb with Python
-<https://sourceware.org/gdb/current/onlinedocs/gdb.html/Python.html>`_ was
-added. When CPython is built you will notice a ``python-gdb.py`` file in the
-root directory of your checkout. Read the module docstring for details on how
-to use the file to enhance gdb for easier debugging of a CPython process.
-
-To activate support, you must add the directory containing ``python-gdb.py``
-to GDB's "auto-load-safe-path".  Put this in your ``~/.gdbinit`` file::
-
-   add-auto-load-safe-path /path/to/checkout
-
-You can also add multiple paths, separated by ``:``.
+Pretty-printers
+---------------
 
 This is what a backtrace looks like (truncated) when this extension is
 enabled::
@@ -104,9 +129,8 @@ cast the value to a pointer of the appropriate type.  For example::
     {me_hash = 0, me_key = 0x0, me_value = 0x0}, {
       me_hash = 6614918939584953775, me_key = '__package__', me_value = None}}}
 
-The pretty-printers try to closely match the ``repr()`` implementation of the
-underlying implementation of Python, and thus vary somewhat between Python 2
-and Python 3.
+Note that the pretty-printers do not actually call ``repr()``.
+They merely try to match it closely, and they only work on basic core types.
 
 An area that can be confusing is that the custom printer for some types look a
 lot like gdb's built-in printer for standard types.  For example, the
@@ -165,22 +189,13 @@ the extension adds a number of commands to gdb:
          910            except KeyboardInterrupt:
          911                # properly quit on a keyboard interrupt...
 
-   Use ``py-list START`` to list at a different line number within the python
+   Use ``py-list START`` to list at a different line number within the Python
    source, and ``py-list START,END`` to list a specific range of lines within
-   the python source.
+   the Python source.
 
 ``py-up`` and ``py-down``
 -------------------------
 
-    .. note::
-
-        Versions older than Python 3.12 have a 1 to 1 mapping between the C stack
-        and the Python stack. This means than using ``py-up`` and ``py-down`` will
-        move the C stack exactly one frame up or down. This is not the case for
-        older versions of Python as the same C stack frame can be used for multiple
-        Python stack frames. This means that when using ``py-up`` and ``py-down``
-        there may be multiple Python frames that will be moved at the same time.
-    
 
    The ``py-up`` and ``py-down`` commands are analogous to gdb's regular ``up``
    and ``down`` commands, but try to move at the level of CPython frames, rather
@@ -188,9 +203,9 @@ the extension adds a number of commands to gdb:
 
    gdb is not always able to read the relevant frame information, depending on
    the optimization level with which CPython was compiled. Internally, the
-   commands look for C frames that are executing ``PyEval_EvalFrameEx`` (which
-   implements the core bytecode interpreter loop within CPython) and look up
-   the value of the related ``PyFrameObject *``.
+   commands look for C frames that are executing the default frame evaluation
+   function (that is, the core bytecode interpreter loop within CPython) and
+   look up the value of the related ``PyFrameObject *``.
 
    They emit the frame number (at the C level) within the thread.
 
@@ -207,7 +222,13 @@ the extension adds a number of commands to gdb:
         (gdb) py-up
         Unable to find an older python frame
 
-   so we're at the top of the python stack.  Going back down::
+   so we're at the top of the Python stack.
+
+   The frame numbers correspond to those displayed by gdb's standard
+   ``backtrace`` command.  The skipped frames correspond to C functions.
+   which were not found to be executing Python code.
+
+   Going back down::
 
         (gdb) py-down
         #37 Frame 0x9420b04, for file /usr/lib/python2.6/site-packages/gnome_sudoku/main.py, line 906, in start_game ()
@@ -229,7 +250,30 @@ the extension adds a number of commands to gdb:
         (gdb) py-down
         Unable to find a newer python frame
 
-   and we're at the bottom of the python stack.
+   and we're at the bottom of the Python stack.
+
+   Note that in Python 3.12 and newer, the same C stack frame can be used for
+   multiple Python stack frames. This means that ``py-up`` and ``py-down``
+   may move multiple Python frames at once. For example::
+
+      (gdb) py-up
+      #6 Frame 0x7ffff7fb62b0, for file /tmp/rec.py, line 5, in recursive_function (n=0)
+         time.sleep(5)
+      #6 Frame 0x7ffff7fb6240, for file /tmp/rec.py, line 7, in recursive_function (n=1)
+         recursive_function(n-1)
+      #6 Frame 0x7ffff7fb61d0, for file /tmp/rec.py, line 7, in recursive_function (n=2)
+         recursive_function(n-1)
+      #6 Frame 0x7ffff7fb6160, for file /tmp/rec.py, line 7, in recursive_function (n=3)
+         recursive_function(n-1)
+      #6 Frame 0x7ffff7fb60f0, for file /tmp/rec.py, line 7, in recursive_function (n=4)
+         recursive_function(n-1)
+      #6 Frame 0x7ffff7fb6080, for file /tmp/rec.py, line 7, in recursive_function (n=5)
+         recursive_function(n-1)
+      #6 Frame 0x7ffff7fb6020, for file /tmp/rec.py, line 9, in <module> ()
+         recursive_function(5)
+      (gdb) py-up
+      Unable to find an older python frame
+
 
 ``py-bt``
 ---------
@@ -258,6 +302,7 @@ the extension adds a number of commands to gdb:
 
 ``py-print``
 ------------
+
    The ``py-print`` command looks up a Python name and tries to print it.
    It looks in locals within the current thread, then globals, then finally
    builtins::
@@ -282,6 +327,25 @@ the extension adds a number of commands to gdb:
         self = <SwappableArea(running=<gtk.Dialog at remote 0x98faaa4>,
         main_page=0) at remote 0x98fa6e4>
         d = <gtk.Dialog at remote 0x98faaa4>
+
+   If the current C frame corrresponds to multiple Python frames, locals from
+   all of them will be shown::
+
+      (gdb) py-locals
+      Locals for recursive_function
+      n = 0
+      Locals for recursive_function
+      n = 1
+      Locals for recursive_function
+      n = 2
+      Locals for recursive_function
+      n = 3
+      Locals for recursive_function
+      n = 4
+      Locals for recursive_function
+      n = 5
+      Locals for <module>
+
 
 Other commands
 --------------
@@ -344,75 +408,3 @@ thread is doing at the Python level::
             time.sleep(0.01)
         #8 Frame 0x7fffd00024a0, for file /home/david/coding/python-svn/Lib/test/lock_tests.py, line 378, in _check_notify (self=<ConditionTests(_testMethodName='test_notify', _resultForDoCleanups=<TestResult(_original_stdout=<cStringIO.StringO at remote 0xc191e0>, skipped=[], _mirrorOutput=False, testsRun=39, buffer=False, _original_stderr=<file at remote 0x7ffff7fc6340>, _stdout_buffer=<cStringIO.StringO at remote 0xc9c7f8>, _stderr_buffer=<cStringIO.StringO at remote 0xc9c790>, _moduleSetUpFailed=False, expectedFailures=[], errors=[], _previousTestClass=<type at remote 0x928310>, unexpectedSuccesses=[], failures=[], shouldStop=False, failfast=False) at remote 0xc185a0>, _threads=(0,), _cleanups=[], _type_equality_funcs={<type at remote 0x7eba00>: <instancemethod at remote 0xd750e0>, <type at remote 0x7e7820>: <instancemethod at remote 0xd75160>, <type at remote 0x7e30e0>: <instancemethod at remote 0xd75060>, <type at remote 0x7e7d20>: <instancemethod at remote 0xd751e0>, <type at remote 0x7f19e0...(truncated)
                 _wait()
-
-
-GDB 6 and earlier
-=================
-
-The file at ``Misc/gdbinit`` contains a gdb configuration file which provides
-extra commands when working with a CPython process. To register these commands
-permanently, either copy the commands to your personal gdb configuration file
-or symlink ``~/.gdbinit`` to ``Misc/gdbinit``.  To use these commands from
-a single gdb session without registering them, type ``source Misc/gdbinit``
-from your gdb session.
-
-
-Updating auto-load-safe-path to allow test_gdb to run
-=====================================================
-
-``test_gdb`` attempts to automatically load additional Python specific
-hooks into gdb in order to test them. Unfortunately, the command line
-options it uses to do this aren't always supported correctly.
-
-If ``test_gdb`` is being skipped with an "auto-loading has been declined"
-message, then it is necessary to identify any Python build directories as
-auto-load safe. One way to achieve this is to add a line like the following
-to ``~/.gdbinit`` (edit the specific list of paths as appropriate)::
-
-    add-auto-load-safe-path ~/devel/py3k:~/devel/py32:~/devel/py27
-
-
-GDB tips
-========
-
-Learning to use GDB effectively improves your chances of successfully
-debugging problems with Python's internals.
-
-Saving and loading breakpoints
-------------------------------
-
-With extended exposure to particular parts of the Python runtime, you
-might find it helpful to define a routine set of breakpoints and
-commands to execute when they are hit.
-For convenience, save your breakpoints to a file and load them in future
-sessions using the ``save breakpoints`` command::
-
-   (gdb) save breakpoints python.brk
-
-You can edit the file to your heart's content, then load it in a later
-session::
-
-   (gdb) source python.brk
-
-
-Breaking at labels
-------------------
-
-You will most often set breakpoints at the start of functions, but
-this approach is less helpful when debugging the runtime virtual
-machine, since the main interpreter loop function,
-``_PyEval_EvalFrameDefault``, is well over 4,000 lines long as of Python 3.12.
-Fortunately, among the `many ways to set breakpoints
-<https://sourceware.org/gdb/current/onlinedocs/gdb.html/Location-Specifications.html>`_,
-you can break at C labels, such as those generated for computed gotos.
-If you are debugging an interpreter compiled with computed goto support
-(generally true, certainly when using GCC), each instruction will be
-prefaced with a label named ``TARGET_<instruction>``, e.g.,
-``TARGET_LOAD_CONST``.  You can then set a breakpoint with a command
-like::
-
-   (gdb) break ceval.c:_PyEval_EvalFrameDefault:TARGET_LOAD_CONST
-
-Add commands, save to a file, then reload in future sessions without
-worrying that the starting line number of individual instructions
-change over time.
