@@ -591,6 +591,12 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
     if (!isStruct) {
         dict->flags |= TYPEFLAG_HASUNION;
     }
+    StgInfo *info = PyStgInfo_Init(st, result);
+    if (!info) {
+        Py_DECREF(result);
+        return NULL;
+    }
+
     /* replace the class dict by our updated stgdict, which holds info
        about storage requirements of the instances */
     if (-1 == PyDict_Update((PyObject *)dict, result->tp_dict)) {
@@ -601,11 +607,6 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
     Py_SETREF(result->tp_dict, (PyObject *)dict);
     dict->format = _ctypes_alloc_format_string(NULL, "B");
     if (dict->format == NULL) {
-        Py_DECREF(result);
-        return NULL;
-    }
-    StgInfo *info = PyStgInfo_Init(st, result);
-    if (!info) {
         Py_DECREF(result);
         return NULL;
     }
@@ -1087,6 +1088,14 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (!typedict) {
         return NULL;
     }
+
+    /* create the new instance (which is a class,
+       since we are a metatype!) */
+    result = (PyTypeObject *)PyType_Type.tp_new(type, args, kwds);
+    if (result == NULL) {
+        return NULL;
+    }
+
 /*
   stgdict items size, align, length contain info about pointers itself,
   stgdict->proto has info about the pointed to type!
@@ -1095,16 +1104,24 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     stgdict = (StgDictObject *)_PyObject_CallNoArgs(
         (PyObject *)st->PyCStgDict_Type);
     if (!stgdict) {
+        Py_DECREF((PyObject *)result);
+        return NULL;
+    }
+    StgInfo *stginfo = PyStgInfo_Init(st, result);
+    if (!stginfo) {
+        Py_DECREF((PyObject *)result);
+        Py_DECREF((PyObject *)stgdict);
         return NULL;
     }
     stgdict->size = sizeof(void *);
     stgdict->align = _ctypes_get_fielddesc("P")->pffi_type->alignment;
     stgdict->length = 1;
     stgdict->ffi_type_pointer = ffi_type_pointer;
-    //stgdict->paramfunc = PyCPointerType_paramfunc;
+    stginfo->paramfunc = PyCPointerType_paramfunc;
     stgdict->flags |= TYPEFLAG_ISPOINTER;
 
     if (PyDict_GetItemRef(typedict, &_Py_ID(_type_), &proto) < 0) {
+        Py_DECREF((PyObject *)result);
         Py_DECREF((PyObject *)stgdict);
         return NULL;
     }
@@ -1113,6 +1130,7 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         const char *current_format;
         if (-1 == PyCPointerType_SetProto(stgdict, proto)) {
             Py_DECREF(proto);
+            Py_DECREF((PyObject *)result);
             Py_DECREF((PyObject *)stgdict);
             return NULL;
         }
@@ -1134,17 +1152,10 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
         Py_DECREF(proto);
         if (stgdict->format == NULL) {
+            Py_DECREF((PyObject *)result);
             Py_DECREF((PyObject *)stgdict);
             return NULL;
         }
-    }
-
-    /* create the new instance (which is a class,
-       since we are a metatype!) */
-    result = (PyTypeObject *)PyType_Type.tp_new(type, args, kwds);
-    if (result == NULL) {
-        Py_DECREF((PyObject *)stgdict);
-        return NULL;
     }
 
     /* replace the class dict by our updated spam dict */
@@ -1154,13 +1165,6 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
     Py_SETREF(result->tp_dict, (PyObject *)stgdict);
-
-    StgInfo *info = PyStgInfo_Init(st, result);
-    if (!info) {
-        Py_DECREF((PyObject *)result);
-        return NULL;
-    }
-    info->paramfunc = PyCPointerType_paramfunc;
 
     return (PyObject *)result;
 }
@@ -1526,6 +1530,10 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (!stgdict) {
         goto error;
     }
+    StgInfo *stginfo = PyStgInfo_Init(st, result);
+    if (!stginfo) {
+        goto error;
+    }
     itemdict = PyType_stgdict(type_attr);
     if (!itemdict) {
         PyErr_SetString(PyExc_TypeError,
@@ -1567,7 +1575,7 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     stgdict->proto = type_attr;
     type_attr = NULL;
 
-    //stgdict->paramfunc = &PyCArrayType_paramfunc;
+    stginfo->paramfunc = &PyCArrayType_paramfunc;
 
     /* Arrays are passed as pointers to function calls. */
     stgdict->ffi_type_pointer = ffi_type_pointer;
@@ -1577,12 +1585,6 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         goto error;
     Py_SETREF(result->tp_dict, (PyObject *)stgdict);  /* steal the reference */
     stgdict = NULL;
-
-    StgInfo *info = PyStgInfo_Init(st, result);
-    if (!info) {
-        goto error;
-    }
-    info->paramfunc = &PyCArrayType_paramfunc;
 
     /* Special case for character arrays.
        A permanent annoyance: char arrays are also strings!
@@ -2071,6 +2073,10 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (!stgdict) {
         goto error;
     }
+    StgInfo *stginfo = PyStgInfo_Init(st, result);
+    if (!stginfo) {
+        goto error;
+    }
 
     stgdict->ffi_type_pointer = *fmt->pffi_type;
     stgdict->align = fmt->pffi_type->alignment;
@@ -2090,7 +2096,7 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    //stgdict->paramfunc = PyCSimpleType_paramfunc;
+    stginfo->paramfunc = PyCSimpleType_paramfunc;
 /*
     if (result->tp_base != st->Simple_Type) {
         stgdict->setfunc = NULL;
@@ -2108,12 +2114,6 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
     Py_SETREF(result->tp_dict, (PyObject *)stgdict);
-
-    StgInfo *info = PyStgInfo_Init(st, result);
-    if (!info) {
-        goto error;
-    }
-    info->paramfunc = PyCSimpleType_paramfunc;
 
     /* Install from_param class methods in ctypes base classes.
        Overrides the PyCSimpleType_from_param generic method.
@@ -2499,13 +2499,28 @@ PyCFuncPtrType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyTypeObject *result;
     StgDictObject *stgdict;
 
+    /* create the new instance (which is a class,
+       since we are a metatype!) */
+    result = (PyTypeObject *)PyType_Type.tp_new(type, args, kwds);
+    if (result == NULL) {
+        return NULL;
+    }
+
     ctypes_state *st = GLOBAL_STATE();
     stgdict = (StgDictObject *)_PyObject_CallNoArgs(
         (PyObject *)st->PyCStgDict_Type);
     if (!stgdict) {
+        Py_DECREF(result);
         return NULL;
     }
-    //stgdict->paramfunc = PyCFuncPtrType_paramfunc;
+    StgInfo *stginfo = PyStgInfo_Init(st, result);
+    if (!stginfo) {
+        Py_DECREF(result);
+        Py_DECREF((PyObject *)stgdict);
+        return NULL;
+    }
+
+    stginfo->paramfunc = PyCFuncPtrType_paramfunc;
 
     /* We do NOT expose the function signature in the format string.  It
        is impossible, generally, because the only requirement for the
@@ -2515,18 +2530,11 @@ PyCFuncPtrType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     */
     stgdict->format = _ctypes_alloc_format_string(NULL, "X{}");
     if (stgdict->format == NULL) {
+        Py_DECREF(result);
         Py_DECREF((PyObject *)stgdict);
         return NULL;
     }
     stgdict->flags |= TYPEFLAG_ISPOINTER;
-
-    /* create the new instance (which is a class,
-       since we are a metatype!) */
-    result = (PyTypeObject *)PyType_Type.tp_new(type, args, kwds);
-    if (result == NULL) {
-        Py_DECREF((PyObject *)stgdict);
-        return NULL;
-    }
 
     /* replace the class dict by our updated storage dict */
     if (-1 == PyDict_Update((PyObject *)stgdict, result->tp_dict)) {
@@ -2535,13 +2543,6 @@ PyCFuncPtrType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
     Py_SETREF(result->tp_dict, (PyObject *)stgdict);
-
-    StgInfo *info = PyStgInfo_Init(st, result);
-    if (!info) {
-        Py_DECREF((PyObject *)stgdict);
-        return NULL;
-    }
-    info->paramfunc = PyCFuncPtrType_paramfunc;
 
     if (-1 == make_funcptrtype_dict(stgdict)) {
         Py_DECREF(result);
