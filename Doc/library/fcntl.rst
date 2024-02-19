@@ -14,8 +14,8 @@
 ----------------
 
 This module performs file control and I/O control on file descriptors. It is an
-interface to the :c:func:`fcntl` and :c:func:`ioctl` Unix routines.  For a
-complete description of these calls, see :manpage:`fcntl(2)` and
+interface to the :c:func:`!fcntl` and :c:func:`!ioctl` Unix system calls.  For a
+complete description of these calls, see the :manpage:`fcntl(2)` and
 :manpage:`ioctl(2)` Unix manual pages.
 
 .. availability:: Unix, not Emscripten, not WASI.
@@ -90,10 +90,10 @@ The module defines the following functions:
    in the :mod:`fcntl` module, using the same names as used in the relevant C
    header files. The argument *arg* can either be an integer value, or a
    :class:`bytes` object. With an integer value, the return value of this
-   function is the integer return value of the C :c:func:`fcntl` call.  When
+   function is the integer return value of the C :c:func:`!fcntl` call.  When
    the argument is bytes it represents a binary structure, e.g. created by
    :func:`struct.pack`. The binary data is copied to a buffer whose address is
-   passed to the C :c:func:`fcntl` call.  The return value after a successful
+   passed to the C :c:func:`!fcntl` call.  The return value after a successful
    call is the contents of the buffer, converted to a :class:`bytes` object.
    The length of the returned object will be the same as the length of the
    *arg* argument. This is limited to 1024 bytes. If the information returned
@@ -101,7 +101,7 @@ The module defines the following functions:
    most likely to result in a segmentation violation or a more subtle data
    corruption.
 
-   If the :c:func:`fcntl` fails, an :exc:`OSError` is raised.
+   If the :c:func:`!fcntl` fails, an :exc:`OSError` is raised.
 
    .. audit-event:: fcntl.fcntl fd,cmd,arg fcntl.fcntl
 
@@ -139,7 +139,7 @@ The module defines the following functions:
    buffer 1024 bytes long which is then passed to :func:`ioctl` and copied back
    into the supplied buffer.
 
-   If the :c:func:`ioctl` fails, an :exc:`OSError` exception is raised.
+   If the :c:func:`!ioctl` fails, an :exc:`OSError` exception is raised.
 
    An example::
 
@@ -162,9 +162,9 @@ The module defines the following functions:
    Perform the lock operation *operation* on file descriptor *fd* (file objects providing
    a :meth:`~io.IOBase.fileno` method are accepted as well). See the Unix manual
    :manpage:`flock(2)` for details.  (On some systems, this function is emulated
-   using :c:func:`fcntl`.)
+   using :c:func:`!fcntl`.)
 
-   If the :c:func:`flock` fails, an :exc:`OSError` exception is raised.
+   If the :c:func:`!flock` fails, an :exc:`OSError` exception is raised.
 
    .. audit-event:: fcntl.flock fd,operation fcntl.flock
 
@@ -176,17 +176,17 @@ The module defines the following functions:
    method are accepted as well) of the file to lock or unlock, and *cmd*
    is one of the following values:
 
-   * :const:`LOCK_UN` -- unlock
-   * :const:`LOCK_SH` -- acquire a shared lock
-   * :const:`LOCK_EX` -- acquire an exclusive lock
+   * :const:`!LOCK_UN` -- unlock
+   * :const:`!LOCK_SH` -- acquire a shared lock
+   * :const:`!LOCK_EX` -- acquire an exclusive lock
 
-   When *cmd* is :const:`LOCK_SH` or :const:`LOCK_EX`, it can also be
-   bitwise ORed with :const:`LOCK_NB` to avoid blocking on lock acquisition.
-   If :const:`LOCK_NB` is used and the lock cannot be acquired, an
+   When *cmd* is :const:`!LOCK_SH` or :const:`!LOCK_EX`, it can also be
+   bitwise ORed with :const:`!LOCK_NB` to avoid blocking on lock acquisition.
+   If :const:`!LOCK_NB` is used and the lock cannot be acquired, an
    :exc:`OSError` will be raised and the exception will have an *errno*
-   attribute set to :const:`EACCES` or :const:`EAGAIN` (depending on the
+   attribute set to :data:`~errno.EACCES` or :data:`~errno.EAGAIN` (depending on the
    operating system; for portability, check for both values).  On at least some
-   systems, :const:`LOCK_EX` can only be used if the file descriptor refers to a
+   systems, :const:`!LOCK_EX` can only be used if the file descriptor refers to a
    file opened for writing.
 
    *len* is the number of bytes to lock, *start* is the byte offset at
