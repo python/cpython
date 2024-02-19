@@ -1866,8 +1866,6 @@
             oparg = CURRENT_OPARG();
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (!PyFloat_CheckExact(left)) goto deoptimize;
-            if (!PyFloat_CheckExact(right)) goto deoptimize;
             STAT_INC(COMPARE_OP, hit);
             double dleft = PyFloat_AS_DOUBLE(left);
             double dright = PyFloat_AS_DOUBLE(right);
@@ -1889,8 +1887,6 @@
             oparg = CURRENT_OPARG();
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (!PyLong_CheckExact(left)) goto deoptimize;
-            if (!PyLong_CheckExact(right)) goto deoptimize;
             if (!_PyLong_IsCompact((PyLongObject *)left)) goto deoptimize;
             if (!_PyLong_IsCompact((PyLongObject *)right)) goto deoptimize;
             STAT_INC(COMPARE_OP, hit);
@@ -1916,8 +1912,6 @@
             oparg = CURRENT_OPARG();
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (!PyUnicode_CheckExact(left)) goto deoptimize;
-            if (!PyUnicode_CheckExact(right)) goto deoptimize;
             STAT_INC(COMPARE_OP, hit);
             int eq = _PyUnicode_Equal(left, right);
             assert((oparg >> 5) == Py_EQ || (oparg >> 5) == Py_NE);
