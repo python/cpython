@@ -1,2 +1,2 @@
-FIX the ssl module error handling of connection terminate by peer.
-it throws OSError instead of EOFError.
+Fix the :mod:`ssl` module error handling of connection terminate by peer.
+It now throws an OSError with the appropriate error code instead of an EOFError.
