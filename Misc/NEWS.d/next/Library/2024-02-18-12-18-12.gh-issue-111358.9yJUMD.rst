@@ -1,0 +1,2 @@
+Fix a bug in :meth:`asyncio.BaseEventLoop.shutdown_default_executor` to
+ensure the timeout passed to the coroutine behaves as expected.
