@@ -1542,12 +1542,12 @@ This module implements the ANSI codepage (CP_ACP).
 
 .. availability:: Windows.
 
-.. versionchanged:: 3.3
-   Support any error handler.
-
 .. versionchanged:: 3.2
    Before 3.2, the *errors* argument was ignored; ``'replace'`` was always used
    to encode, and ``'ignore'`` to decode.
+
+.. versionchanged:: 3.3
+   Support any error handler.
 
 
 :mod:`encodings.utf_8_sig` --- UTF-8 codec with BOM signature
