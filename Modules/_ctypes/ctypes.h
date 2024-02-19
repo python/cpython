@@ -235,6 +235,7 @@ typedef struct {
 typedef struct {
     int initialized;
     Py_ssize_t size;            /* number of bytes */
+    Py_ssize_t align;           /* alignment requirements */
 
     PARAMFUNC paramfunc;
 } StgInfo;
@@ -263,7 +264,7 @@ typedef struct {
    belong into this structure anyway.  Maybe in ctypes 2.0... (ctypes 2000?)
 */
     //Py_ssize_t size;            /* number of bytes */
-    Py_ssize_t align;           /* alignment requirements */
+    //Py_ssize_t align;           /* alignment requirements */
     Py_ssize_t length;          /* number of fields */
     ffi_type ffi_type_pointer;
     PyObject *proto;            /* Only for Pointer/ArrayObject */

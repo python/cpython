@@ -159,9 +159,9 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
         /* fall through */
     case NO_BITFIELD:
         if (pack)
-            align = min(pack, dict->align);
+            align = min(pack, info->align);
         else
-            align = dict->align;
+            align = info->align;
         if (align && *poffset % align) {
             Py_ssize_t delta = align - (*poffset % align);
             *psize += delta;

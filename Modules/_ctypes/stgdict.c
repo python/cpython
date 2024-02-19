@@ -48,7 +48,13 @@ PyStgInfo_FromObject(ctypes_state *state, PyObject *obj, StgInfo **result)
     return _stginfo_from_type(state, Py_TYPE(obj), result);
 }
 // from either a type or an instance:
-//int PyStgInfo_FromAny(PyObject *obj, StgInfo **result);
+int
+PyStgInfo_FromAny(ctypes_state *state, PyObject *obj, StgInfo **result) {
+    if (PyType_Check(obj)) {
+        return _stginfo_from_type(state, (PyTypeObject *)obj, result);
+    }
+    return _stginfo_from_type(state, Py_TYPE(obj), result);
+}
 
 // Initialize StgInfo on a newly created
 StgInfo *
@@ -564,7 +570,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     }
     if (basedict) {
         size = offset = baseinfo->size;
-        align = basedict->align;
+        align = baseinfo->align;
         union_size = 0;
         total_align = align ? align : 1;
         total_align = max(total_align, forced_alignment);
@@ -806,7 +812,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     stgdict->ffi_type_pointer.size = aligned_size;
 
     stginfo->size = aligned_size;
-    stgdict->align = total_align;
+    stginfo->align = total_align;
     stgdict->length = ffi_ofs + len;
 
 /*

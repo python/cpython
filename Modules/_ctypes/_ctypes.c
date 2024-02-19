@@ -1137,7 +1137,7 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
     stginfo->size = sizeof(void *);
-    stgdict->align = _ctypes_get_fielddesc("P")->pffi_type->alignment;
+    stginfo->align = _ctypes_get_fielddesc("P")->pffi_type->alignment;
     stgdict->length = 1;
     stgdict->ffi_type_pointer = ffi_type_pointer;
     stginfo->paramfunc = PyCPointerType_paramfunc;
@@ -1593,13 +1593,13 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         goto error;
     }
 
-    itemalign = itemdict->align;
+    itemalign = iteminfo->align;
 
     if (itemdict->flags & (TYPEFLAG_ISPOINTER | TYPEFLAG_HASPOINTER))
         stgdict->flags |= TYPEFLAG_HASPOINTER;
 
     stginfo->size = itemsize * length;
-    stgdict->align = itemalign;
+    stginfo->align = itemalign;
     stgdict->length = length;
     stgdict->proto = type_attr;
     type_attr = NULL;
@@ -2000,7 +2000,7 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
     }
 
     stgdict->ffi_type_pointer = *fmt->pffi_type;
-    stgdict->align = fmt->pffi_type->alignment;
+    stginfo->align = fmt->pffi_type->alignment;
     stgdict->length = 0;
     stginfo->size = fmt->pffi_type->size;
     stgdict->setfunc = fmt->setfunc_swapped;
@@ -2115,7 +2115,7 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
 
     stgdict->ffi_type_pointer = *fmt->pffi_type;
-    stgdict->align = fmt->pffi_type->alignment;
+    stginfo->align = fmt->pffi_type->alignment;
     stgdict->length = 0;
     stginfo->size = fmt->pffi_type->size;
     stgdict->setfunc = fmt->setfunc;
@@ -2446,7 +2446,7 @@ make_funcptrtype_dict(StgDictObject *stgdict, StgInfo *stginfo)
     PyObject *ob;
     PyObject *converters = NULL;
 
-    stgdict->align = _ctypes_get_fielddesc("P")->pffi_type->alignment;
+    stginfo->align = _ctypes_get_fielddesc("P")->pffi_type->alignment;
     stgdict->length = 1;
     stginfo->size = sizeof(void *);
     stgdict->setfunc = NULL;

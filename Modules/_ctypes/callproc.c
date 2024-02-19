@@ -1722,16 +1722,14 @@ PyDoc_STRVAR(alignment_doc,
 static PyObject *
 align_func(PyObject *self, PyObject *obj)
 {
-    StgDictObject *dict;
-
-    dict = PyType_stgdict(obj);
-    if (dict)
-        return PyLong_FromSsize_t(dict->align);
-
-    dict = PyObject_stgdict(obj);
-    if (dict)
-        return PyLong_FromSsize_t(dict->align);
-
+   ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    if (PyStgInfo_FromAny(st, obj, &info) < 0) {
+        return NULL;
+    }
+    if (info) {
+        return PyLong_FromSsize_t(info->align);
+    }
     PyErr_SetString(PyExc_TypeError,
                     "no alignment info");
     return NULL;
