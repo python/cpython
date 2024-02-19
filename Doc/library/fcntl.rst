@@ -13,10 +13,9 @@
 
 ----------------
 
-This module performs file control and I/O control on file descriptors. It is an
-interface to the :c:func:`!fcntl` and :c:func:`!ioctl` Unix system calls.  For a
-complete description of these calls, see the :manpage:`fcntl(2)` and
-:manpage:`ioctl(2)` Unix manual pages.
+This module performs file control and I/O control on file
+descriptors. See the :manpage:`fcntl(2)` and :manpage:`ioctl(2)` Unix
+manual pages for full details.
 
 .. availability:: Unix, not Emscripten, not WASI.
 
