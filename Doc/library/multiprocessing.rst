@@ -1084,13 +1084,13 @@ Miscellaneous
    The return value can be ``'fork'``, ``'spawn'``, ``'forkserver'``
    or ``None``.  See :ref:`multiprocessing-start-methods`.
 
-.. versionchanged:: 3.8
-
-   On macOS, the *spawn* start method is now the default.  The *fork* start
-   method should be considered unsafe as it can lead to crashes of the
-   subprocess. See :issue:`33725`.
-
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.8
+
+      On macOS, the *spawn* start method is now the default.  The *fork* start
+      method should be considered unsafe as it can lead to crashes of the
+      subprocess. See :issue:`33725`.
 
 .. function:: set_executable(executable)
 
