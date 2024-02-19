@@ -722,7 +722,7 @@ class TestSpecifics(unittest.TestCase):
                 return "unused"
 
         self.assertEqual(f.__code__.co_consts,
-                         ("docstring", "used"))
+                         (f.__doc__, "used"))
 
     @support.cpython_only
     def test_remove_unused_consts_no_docstring(self):
@@ -767,7 +767,7 @@ class TestSpecifics(unittest.TestCase):
         def f1():
             "docstring"
             return 42
-        self.assertEqual(f1.__code__.co_consts, ("docstring", 42))
+        self.assertEqual(f1.__code__.co_consts, (f1.__doc__, 42))
 
     # This is a regression test for a CPython specific peephole optimizer
     # implementation bug present in a few releases.  It's assertion verifies
@@ -996,6 +996,8 @@ class TestSpecifics(unittest.TestCase):
 
         for func in (no_code1, no_code2):
             with self.subTest(func=func):
+                if func is no_code1 and no_code1.__doc__ is None:
+                    continue
                 code = func.__code__
                 [(start, end, line)] = code.co_lines()
                 self.assertEqual(start, 0)
@@ -1394,6 +1396,7 @@ class TestSourcePositions(unittest.TestCase):
         self.assertOpcodeSourcePositionIs(compiled_code, 'POP_JUMP_IF_TRUE',
             line=4, end_line=4, column=8, end_column=13, occurrence=2)
 
+    @unittest.skipIf(sys.flags.optimize, "Assertions are disabled in optimized mode")
     def test_multiline_assert(self):
         snippet = textwrap.dedent("""\
             assert (a > 0 and
