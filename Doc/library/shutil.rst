@@ -274,15 +274,15 @@ Directory and files operations
 
    .. audit-event:: shutil.copytree src,dst shutil.copytree
 
-   .. versionchanged:: 3.3
-      Copy metadata when *symlinks* is false.
-      Now returns *dst*.
-
    .. versionchanged:: 3.2
       Added the *copy_function* argument to be able to provide a custom copy
       function.
       Added the *ignore_dangling_symlinks* argument to silence dangling symlinks
       errors when *symlinks* is false.
+
+   .. versionchanged:: 3.3
+      Copy metadata when *symlinks* is false.
+      Now returns *dst*.
 
    .. versionchanged:: 3.8
       Platform-specific fast-copy syscalls may be used internally in order to
