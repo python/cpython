@@ -2203,13 +2203,13 @@ class DocTestCase(unittest.TestCase):
         unittest.TestCase.__init__(self)
         self._dt_optionflags = optionflags
         self._dt_checker = checker
-        self._dt_globs = test.globs.copy()
         self._dt_test = test
         self._dt_setUp = setUp
         self._dt_tearDown = tearDown
 
     def setUp(self):
         test = self._dt_test
+        self._dt_globs = test.globs.copy()
 
         if self._dt_setUp is not None:
             self._dt_setUp(test)
