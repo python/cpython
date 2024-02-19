@@ -1138,7 +1138,7 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
     stginfo->size = sizeof(void *);
     stginfo->align = _ctypes_get_fielddesc("P")->pffi_type->alignment;
-    stgdict->length = 1;
+    stginfo->length = 1;
     stgdict->ffi_type_pointer = ffi_type_pointer;
     stginfo->paramfunc = PyCPointerType_paramfunc;
     stgdict->flags |= TYPEFLAG_ISPOINTER;
@@ -1600,7 +1600,7 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     stginfo->size = itemsize * length;
     stginfo->align = itemalign;
-    stgdict->length = length;
+    stginfo->length = length;
     stgdict->proto = type_attr;
     type_attr = NULL;
 
@@ -2001,7 +2001,7 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
 
     stgdict->ffi_type_pointer = *fmt->pffi_type;
     stginfo->align = fmt->pffi_type->alignment;
-    stgdict->length = 0;
+    stginfo->length = 0;
     stginfo->size = fmt->pffi_type->size;
     stgdict->setfunc = fmt->setfunc_swapped;
     stgdict->getfunc = fmt->getfunc_swapped;
@@ -2116,7 +2116,7 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     stgdict->ffi_type_pointer = *fmt->pffi_type;
     stginfo->align = fmt->pffi_type->alignment;
-    stgdict->length = 0;
+    stginfo->length = 0;
     stginfo->size = fmt->pffi_type->size;
     stgdict->setfunc = fmt->setfunc;
     stgdict->getfunc = fmt->getfunc;
@@ -2447,7 +2447,7 @@ make_funcptrtype_dict(StgDictObject *stgdict, StgInfo *stginfo)
     PyObject *converters = NULL;
 
     stginfo->align = _ctypes_get_fielddesc("P")->pffi_type->alignment;
-    stgdict->length = 1;
+    stginfo->length = 1;
     stginfo->size = sizeof(void *);
     stgdict->setfunc = NULL;
     stgdict->getfunc = NULL;
@@ -2989,7 +2989,7 @@ PyCData_FromBaseObj(PyObject *type, PyObject *base, Py_ssize_t index, char *adr)
         return NULL;
     }
     assert(CDataObject_Check(GLOBAL_STATE(), cmem));
-    cmem->b_length = dict->length;
+    cmem->b_length = info->length;
     cmem->b_size = info->size;
     if (base) { /* use base's buffer */
         assert(CDataObject_Check(GLOBAL_STATE(), base));
@@ -3044,7 +3044,7 @@ PyCData_AtAddress(PyObject *type, void *buf)
     }
     assert(CDataObject_Check(GLOBAL_STATE(), pd));
     pd->b_ptr = (char *)buf;
-    pd->b_length = dict->length;
+    pd->b_length = info->length;
     pd->b_size = info->size;
     return (PyObject *)pd;
 }
@@ -3246,7 +3246,7 @@ GenericPyCData_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     obj->b_base = NULL;
     obj->b_index = 0;
     obj->b_objects = NULL;
-    obj->b_length = dict->length;
+    obj->b_length = info->length;
 
     if (-1 == PyCData_MallocBuffer(obj, dict, info)) {
         Py_DECREF(obj);
@@ -4380,6 +4380,15 @@ _init_pos_args(PyObject *self, PyTypeObject *type,
     }
 
     dict = PyType_stgdict((PyObject *)type);
+    assert(dict);
+
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, (PyObject *)type, &info) < 0) {
+        return -1;
+    }
+    assert(info);
+
     fields = PyDict_GetItemWithError((PyObject *)dict, &_Py_ID(_fields_));
     if (fields == NULL) {
         if (PyErr_Occurred()) {
@@ -4389,7 +4398,7 @@ _init_pos_args(PyObject *self, PyTypeObject *type,
     }
 
     for (i = index;
-         i < dict->length && i < PyTuple_GET_SIZE(args);
+         i < info->length && i < PyTuple_GET_SIZE(args);
          ++i) {
         PyObject *pair = PySequence_GetItem(fields, i - index);
         PyObject *name, *val;
@@ -4422,7 +4431,7 @@ _init_pos_args(PyObject *self, PyTypeObject *type,
         if (res == -1)
             return -1;
     }
-    return dict->length;
+    return info->length;
 }
 
 static int
@@ -4595,7 +4604,7 @@ Array_item(PyObject *myself, Py_ssize_t index)
     /* Would it be clearer if we got the item size from
        stgdict->proto's stgdict?
     */
-    size = stginfo->size / stgdict->length;
+    size = stginfo->size / stginfo->length;
     offset = index * size;
 
     return PyCData_get(stgdict->proto, stgdict->getfunc, (PyObject *)self,
@@ -4733,12 +4742,12 @@ Array_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
     }
     assert(stginfo); /* Cannot be NULL for array object instances */
 
-    if (index < 0 || index >= stgdict->length) {
+    if (index < 0 || index >= stginfo->length) {
         PyErr_SetString(PyExc_IndexError,
                         "invalid index");
         return -1;
     }
-    size = stginfo->size / stgdict->length;
+    size = stginfo->size / stginfo->length;
     offset = index * size;
     ptr = self->b_ptr + offset;
 

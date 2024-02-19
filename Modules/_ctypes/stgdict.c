@@ -185,7 +185,7 @@ PyCStgDict_clone(StgDictObject *dst, StgDictObject *src,
 
     if (src->ffi_type_pointer.elements == NULL)
         return 0;
-    size = sizeof(ffi_type *) * (src->length + 1);
+    size = sizeof(ffi_type *) * (src_info->length + 1);
     dst->ffi_type_pointer.elements = PyMem_Malloc(size);
     if (dst->ffi_type_pointer.elements == NULL) {
         PyErr_NoMemory();
@@ -575,19 +575,19 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         total_align = align ? align : 1;
         total_align = max(total_align, forced_alignment);
         stgdict->ffi_type_pointer.type = FFI_TYPE_STRUCT;
-        stgdict->ffi_type_pointer.elements = PyMem_New(ffi_type *, basedict->length + len + 1);
+        stgdict->ffi_type_pointer.elements = PyMem_New(ffi_type *, baseinfo->length + len + 1);
         if (stgdict->ffi_type_pointer.elements == NULL) {
             PyErr_NoMemory();
             return -1;
         }
         memset(stgdict->ffi_type_pointer.elements, 0,
-               sizeof(ffi_type *) * (basedict->length + len + 1));
-        if (basedict->length > 0) {
+               sizeof(ffi_type *) * (baseinfo->length + len + 1));
+        if (baseinfo->length > 0) {
             memcpy(stgdict->ffi_type_pointer.elements,
                    basedict->ffi_type_pointer.elements,
-                   sizeof(ffi_type *) * (basedict->length));
+                   sizeof(ffi_type *) * (baseinfo->length));
         }
-        ffi_ofs = basedict->length;
+        ffi_ofs = baseinfo->length;
     } else {
         offset = 0;
         size = 0;
@@ -645,6 +645,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
             Py_DECREF(pair);
             return -1;
         }
+        assert(info);
 
         stgdict->ffi_type_pointer.elements[ffi_ofs + i] = &dict->ffi_type_pointer;
         if (dict->flags & (TYPEFLAG_ISPOINTER | TYPEFLAG_HASPOINTER))
@@ -813,7 +814,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
 
     stginfo->size = aligned_size;
     stginfo->align = total_align;
-    stgdict->length = ffi_ofs + len;
+    stginfo->length = ffi_ofs + len;
 
 /*
  * The value of MAX_STRUCT_SIZE depends on the platform Python is running on.
@@ -924,13 +925,21 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
                     i);
                 return -1;
             }
+
+            StgInfo *info;
+            if (PyStgInfo_FromType(st, desc, &info) < 0) {
+                Py_DECREF(pair);
+                return -1;
+            }
+            assert(info);
+
             if (!PyCArrayTypeObject_Check(st, desc)) {
                 /* Not an array. Just need an ffi_type pointer. */
                 num_ffi_type_pointers++;
             }
             else {
                 /* It's an array. */
-                Py_ssize_t length = dict->length;
+                Py_ssize_t length = info->length;
                 StgDictObject *edict;
 
                 edict = PyType_stgdict(dict->proto);
@@ -1023,13 +1032,22 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
                              i);
                 return -1;
             }
+
+            StgInfo *info;
+            if (PyStgInfo_FromType(st, desc, &info) < 0) {
+                Py_DECREF(pair);
+                PyMem_Free(type_block);
+                return -1;
+            }
+            assert(info);
+
             assert(element_index < (ffi_ofs + len)); /* will be used below */
             if (!PyCArrayTypeObject_Check(st, desc)) {
                 /* Not an array. Just copy over the element ffi_type. */
                 element_types[element_index++] = &dict->ffi_type_pointer;
             }
             else {
-                Py_ssize_t length = dict->length;
+                Py_ssize_t length = info->length;
                 StgDictObject *edict;
 
                 edict = PyType_stgdict(dict->proto);
