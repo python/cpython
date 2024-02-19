@@ -275,8 +275,8 @@ class SSLProtocol(protocols.BufferedProtocol):
         if ssl is None:
             raise RuntimeError("stdlib ssl module not available")
 
-        self._ssl_buffer = bytearray(self.max_size)
-        self._ssl_buffer_view = memoryview(self._ssl_buffer)
+        self._ssl_buffer = None
+        self._ssl_buffer_view = None
 
         if ssl_handshake_timeout is None:
             ssl_handshake_timeout = constants.SSL_HANDSHAKE_TIMEOUT
@@ -427,13 +427,12 @@ class SSLProtocol(protocols.BufferedProtocol):
         want = n
         if want <= 0 or want > self.max_size:
             want = self.max_size
-        if len(self._ssl_buffer) < want:
-            self._ssl_buffer = bytearray(want)
-            self._ssl_buffer_view = memoryview(self._ssl_buffer)
-        return self._ssl_buffer_view
+        _ssl_buffer = bytearray(want)
+        _ssl_buffer_view = memoryview(_ssl_buffer)
+        return _ssl_buffer_view
 
-    def buffer_updated(self, nbytes):
-        self._incoming.write(self._ssl_buffer_view[:nbytes])
+    def buffer_updated(self, nbytes, buffer):
+        self._incoming.write(buffer)
 
         if self._state == SSLProtocolState.DO_HANDSHAKE:
             self._do_handshake()

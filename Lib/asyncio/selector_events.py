@@ -989,7 +989,7 @@ class _SelectorSocketTransport(_SelectorTransport):
             return
 
         try:
-            self._protocol.buffer_updated(nbytes)
+            self._protocol.buffer_updated(nbytes, buf[:nbytes])
         except (SystemExit, KeyboardInterrupt):
             raise
         except BaseException as exc:
