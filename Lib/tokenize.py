@@ -194,7 +194,13 @@ class Untokenizer:
                 else:
                     characters.append(character)
             if character == "{":
-                if characters[-2:] != ["\\", "N"] or characters[-3:] == ["\\", "\\", "N"]:
+                n_backslashes = sum(
+                    1 for char in _itertools.takewhile(
+                        "\\".__eq__,
+                        characters[-2::-1]
+                    )
+                )
+                if n_backslashes % 2 == 0:
                     characters.append(character)
                 else:
                     consume_until_next_bracket = True

@@ -1878,9 +1878,22 @@ class TestRoundtrip(TestCase):
                              "else:   print('Loaded')\n")
 
         self.check_roundtrip("f'\\N{EXCLAMATION MARK}'")
-        self.check_roundtrip(r"f'\\N{EXCLAMATION MARK}'")
         self.check_roundtrip(r"f'\\N{SNAKE}'")
         self.check_roundtrip(r"f'\\N{{SNAKE}}'")
+        self.check_roundtrip(r"f'\N{SNAKE}'")
+        self.check_roundtrip(r"f'\\\N{SNAKE}'")
+        self.check_roundtrip(r"f'\\\\\N{SNAKE}'")
+        self.check_roundtrip(r"f'\\\\\\\N{SNAKE}'")
+
+        self.check_roundtrip(r"f'\\N{1}'")
+        self.check_roundtrip(r"f'\\\\N{2}'")
+        self.check_roundtrip(r"f'\\\\\\N{3}'")
+        self.check_roundtrip(r"f'\\\\\\\\N{4}'")
+
+        self.check_roundtrip(r"f'\\N{{'")
+        self.check_roundtrip(r"f'\\\\N{{'")
+        self.check_roundtrip(r"f'\\\\\\N{{'")
+        self.check_roundtrip(r"f'\\\\\\\\N{{'")
         cases = [
     """
 if 1:
