@@ -84,9 +84,7 @@ dummy_func(void) {
             assert(PyLong_CheckExact(get_const(right)));
             PyObject *temp = _PyLong_Add((PyLongObject *)get_const(left),
                                          (PyLongObject *)get_const(right));
-            if (temp == NULL) {
-                goto error;
-            }
+            ERROR_IF(temp == NULL, error);
             OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, temp));
             // TODO gh-115506:
             // replace opcode with constant propagated one and add tests!
@@ -102,9 +100,7 @@ dummy_func(void) {
             assert(PyLong_CheckExact(get_const(right)));
             PyObject *temp = _PyLong_Subtract((PyLongObject *)get_const(left),
                                               (PyLongObject *)get_const(right));
-            if (temp == NULL) {
-                goto error;
-            }
+            ERROR_IF(temp == NULL, error);
             OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, temp));
             // TODO gh-115506:
             // replace opcode with constant propagated one and add tests!
@@ -120,9 +116,7 @@ dummy_func(void) {
             assert(PyLong_CheckExact(get_const(right)));
             PyObject *temp = _PyLong_Multiply((PyLongObject *)get_const(left),
                                               (PyLongObject *)get_const(right));
-            if (temp == NULL) {
-                goto error;
-            }
+            ERROR_IF(temp == NULL, error);
             OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, temp));
             // TODO gh-115506:
             // replace opcode with constant propagated one and add tests!
@@ -139,9 +133,7 @@ dummy_func(void) {
             PyObject *temp = PyFloat_FromDouble(
                 PyFloat_AS_DOUBLE(get_const(left)) +
                 PyFloat_AS_DOUBLE(get_const(right)));
-            if (temp == NULL) {
-                goto error;
-            }
+            ERROR_IF(temp == NULL, error);
             res = sym_new_const(ctx, temp);
             // TODO gh-115506:
             // replace opcode with constant propagated one and update tests!
@@ -158,9 +150,7 @@ dummy_func(void) {
             PyObject *temp = PyFloat_FromDouble(
                 PyFloat_AS_DOUBLE(get_const(left)) -
                 PyFloat_AS_DOUBLE(get_const(right)));
-            if (temp == NULL) {
-                goto error;
-            }
+            ERROR_IF(temp == NULL, error);
             res = sym_new_const(ctx, temp);
             // TODO gh-115506:
             // replace opcode with constant propagated one and update tests!
@@ -177,15 +167,81 @@ dummy_func(void) {
             PyObject *temp = PyFloat_FromDouble(
                 PyFloat_AS_DOUBLE(get_const(left)) *
                 PyFloat_AS_DOUBLE(get_const(right)));
-            if (temp == NULL) {
-                goto error;
-            }
+            ERROR_IF(temp == NULL, error);
             res = sym_new_const(ctx, temp);
             // TODO gh-115506:
             // replace opcode with constant propagated one and update tests!
         }
         else {
             OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyFloat_Type));
+        }
+    }
+
+    op(_TO_BOOL, (value -- res)) {
+        sym_set_type(value, &PyBool_Type);
+        if (is_const(value)) {
+            int err = PyObject_IsTrue(get_const(value));
+            ERROR_IF(err < 0, error);
+            res = sym_new_const(ctx, err ? Py_True : Py_False);
+        }
+        else {
+            res = sym_new_known_type(ctx, &PyBool_Type);
+        }
+    }
+
+    op(_TO_BOOL_BOOL, (value -- value)) {
+        sym_set_type(value, &PyBool_Type);
+    }
+
+    op(_TO_BOOL_INT, (value -- res)) {
+        sym_set_type(value, &PyLong_Type);
+        if (is_const(value)) {
+            PyObject *temp = NULL;
+            if (_PyLong_IsZero((PyLongObject *)get_const(value))) {
+                assert(_Py_IsImmortal(get_const(value)));
+                temp = Py_False;
+            }
+            else {
+                temp = Py_True;
+            }
+            res = sym_new_const(ctx, temp);
+        }
+        else {
+            res = sym_new_known_type(ctx, &PyBool_Type);
+        }
+    }
+
+    op(_TO_BOOL_LIST, (value -- res)) {
+        sym_set_type(value, &PyList_Type);
+        if (is_const(value)) {
+            res = sym_new_const(ctx, Py_SIZE(get_const(value)) ? Py_True : Py_False);
+        }
+        else {
+            res = sym_new_known_type(ctx, &PyBool_Type);
+        }
+    }
+
+    op(_TO_BOOL_NONE, (value -- res)) {
+        sym_set_type(value, &_PyNone_Type);
+        res = sym_new_const(ctx, Py_False);
+    }
+
+    op(_TO_BOOL_STR, (value -- res)) {
+        sym_set_type(value, &PyUnicode_Type);
+        if (is_const(value)) {
+            PyObject *temp = NULL;
+            if (get_const(value) == &_Py_STR(empty)) {
+                assert(_Py_IsImmortal(get_const(value)));
+                temp = Py_False;
+            }
+            else {
+                assert(Py_SIZE(get_const(value)));
+                temp = Py_True;
+            }
+            res = sym_new_const(ctx, temp);
+        }
+        else {
+            res = sym_new_known_type(ctx, &PyBool_Type);
         }
     }
 
@@ -270,9 +326,7 @@ dummy_func(void) {
         (void)callable;
 
         PyFunctionObject *func = (PyFunctionObject *)(this_instr + 2)->operand;
-        if (func == NULL) {
-            goto error;
-        }
+        ERROR_IF(func == NULL, error);
         PyCodeObject *co = (PyCodeObject *)func->func_code;
 
         assert(self_or_null != NULL);
