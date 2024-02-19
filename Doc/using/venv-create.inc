@@ -14,13 +14,13 @@ used at environment creation time). It also creates an (initially empty)
 ``Lib\site-packages``). If an existing directory is specified, it will be
 re-used.
 
+.. versionchanged:: 3.5
+   The use of ``venv`` is now recommended for creating virtual environments.
+
 .. deprecated:: 3.6
    ``pyvenv`` was the recommended tool for creating virtual environments for
    Python 3.3 and 3.4, and is
    :ref:`deprecated in Python 3.6 <whatsnew36-venv>`.
-
-.. versionchanged:: 3.5
-   The use of ``venv`` is now recommended for creating virtual environments.
 
 .. highlight:: none
 
