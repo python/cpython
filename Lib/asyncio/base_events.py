@@ -298,8 +298,7 @@ class Server(events.AbstractServer):
     def _detach(self, transport):
         # Note that 'transport' may already be missing from
         # self._clients if it has been garbage collected
-        if transport in self._clients:
-            self._clients.remove(transport)
+        self._clients.discard(transport)
         if len(self._clients) == 0 and self._sockets is None:
             self._wakeup()
 
