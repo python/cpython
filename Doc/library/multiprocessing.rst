@@ -2978,7 +2978,7 @@ Beware of replacing :data:`sys.stdin` with a "file like object"
 The *spawn* and *forkserver* start methods
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-There are a few extra restriction which don't apply to the *fork*
+There are a few extra restrictions which don't apply to the *fork*
 start method.
 
 More picklability
