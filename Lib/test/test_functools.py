@@ -31,10 +31,6 @@ c_functools = import_helper.import_fresh_module('functools',
 
 decimal = import_helper.import_fresh_module('decimal', fresh=['_decimal'])
 
-_partial_types = [py_functools.partial]
-if c_functools:
-    _partial_types.append(c_functools.partial)
-
 
 @contextlib.contextmanager
 def replaced_module(name, replacement):
