@@ -784,26 +784,30 @@ int can_return_struct_as_sint64(size_t s)
 #endif
 
 
+// returns NULL with exception set on error
 ffi_type *_ctypes_get_ffi_type(PyObject *obj)
 {
-    StgDictObject *dict;
-    if (obj == NULL)
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, obj, &info) < 0) {
+        return NULL;
+    }
+
+    if (info == NULL) {
         return &ffi_type_sint;
-    dict = PyType_stgdict(obj);
-    if (dict == NULL)
-        return &ffi_type_sint;
+    }
 #if defined(MS_WIN32) && !defined(_WIN32_WCE)
     /* This little trick works correctly with MSVC.
        It returns small structures in registers
     */
-    if (dict->ffi_type_pointer.type == FFI_TYPE_STRUCT) {
-        if (can_return_struct_as_int(dict->ffi_type_pointer.size))
+    if (info->ffi_type_pointer.type == FFI_TYPE_STRUCT) {
+        if (can_return_struct_as_int(info->ffi_type_pointer.size))
             return &ffi_type_sint32;
-        else if (can_return_struct_as_sint64 (dict->ffi_type_pointer.size))
+        else if (can_return_struct_as_sint64 (info->ffi_type_pointer.size))
             return &ffi_type_sint64;
     }
 #endif
-    return &dict->ffi_type_pointer;
+    return &info->ffi_type_pointer;
 }
 
 
@@ -1252,6 +1256,9 @@ PyObject *_ctypes_callproc(PPROC pProc,
         rtype = &ffi_type_void;
     } else {
         rtype = _ctypes_get_ffi_type(restype);
+    }
+    if (!rtype) {
+        goto cleanup;
     }
 
     resbuf = alloca(max(rtype->size, sizeof(ffi_arg)));

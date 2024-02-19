@@ -379,13 +379,20 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
         p->ffi_restype = &ffi_type_void;
     } else {
         StgDictObject *dict = PyType_stgdict(restype);
+
+        StgInfo *info;
+        if (PyStgInfo_FromType(st, restype, &info) < 0) {
+            goto error;
+        }
+
         if (dict == NULL || dict->setfunc == NULL) {
           PyErr_SetString(PyExc_TypeError,
                           "invalid result type for callback function");
           goto error;
         }
+        assert(info);
         p->setfunc = dict->setfunc;
-        p->ffi_restype = &dict->ffi_type_pointer;
+        p->ffi_restype = &info->ffi_type_pointer;
     }
 
     cc = FFI_DEFAULT_ABI;

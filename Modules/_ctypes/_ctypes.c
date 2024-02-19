@@ -479,6 +479,15 @@ CType_Type_clear(PyObject *self)
 static void
 CType_Type_dealloc(PyObject *self)
 {
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, self, &info) < 0) {
+        // ignore exception
+    }
+    if (info) {
+        PyMem_Free(info->ffi_type_pointer.elements);
+    }
+
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     (void)CType_Type_clear(self);
@@ -497,9 +506,7 @@ CType_Type_sizeof(PyObject *self) {
         return NULL;
     }
     if (info) {
-        StgDictObject *dict = PyType_stgdict(self);
-        assert(dict);
-        if (dict->ffi_type_pointer.elements) {
+        if (info->ffi_type_pointer.elements) {
             size += (info->length + 1) * sizeof(ffi_type *);
         }
     }
@@ -542,7 +549,6 @@ StructUnionType_paramfunc(CDataObject *self)
 {
     PyCArgObject *parg;
     PyObject *obj;
-    StgDictObject *stgdict;
     void *ptr;
 
     if ((size_t)self->b_size > sizeof(void*)) {
@@ -577,10 +583,16 @@ StructUnionType_paramfunc(CDataObject *self)
         return NULL;
     }
 
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *stginfo;
+    if (PyStgInfo_FromObject(st, (PyObject *)self, &stginfo) < 0) {
+        Py_DECREF(obj);
+        return NULL;
+    }
+    assert(stginfo); /* Cannot be NULL for structure/union instances */
+
     parg->tag = 'V';
-    stgdict = PyObject_stgdict((PyObject *)self);
-    assert(stgdict); /* Cannot be NULL for structure/union instances */
-    parg->pffi_type = &stgdict->ffi_type_pointer;
+    parg->pffi_type = &stginfo->ffi_type_pointer;
     parg->value.p = ptr;
     parg->size = self->b_size;
     parg->obj = obj;
@@ -1167,7 +1179,7 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     stginfo->size = sizeof(void *);
     stginfo->align = _ctypes_get_fielddesc("P")->pffi_type->alignment;
     stginfo->length = 1;
-    stgdict->ffi_type_pointer = ffi_type_pointer;
+    stginfo->ffi_type_pointer = ffi_type_pointer;
     stginfo->paramfunc = PyCPointerType_paramfunc;
     stgdict->flags |= TYPEFLAG_ISPOINTER;
 
@@ -1635,7 +1647,7 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     stginfo->paramfunc = &PyCArrayType_paramfunc;
 
     /* Arrays are passed as pointers to function calls. */
-    stgdict->ffi_type_pointer = ffi_type_pointer;
+    stginfo->ffi_type_pointer = ffi_type_pointer;
 
     /* replace the class dict by our updated spam dict */
     if (-1 == PyDict_Update((PyObject *)stgdict, result->tp_dict))
@@ -2027,7 +2039,7 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
         return NULL;
     }
 
-    stgdict->ffi_type_pointer = *fmt->pffi_type;
+    stginfo->ffi_type_pointer = *fmt->pffi_type;
     stginfo->align = fmt->pffi_type->alignment;
     stginfo->length = 0;
     stginfo->size = fmt->pffi_type->size;
@@ -2142,7 +2154,7 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         goto error;
     }
 
-    stgdict->ffi_type_pointer = *fmt->pffi_type;
+    stginfo->ffi_type_pointer = *fmt->pffi_type;
     stginfo->align = fmt->pffi_type->alignment;
     stginfo->length = 0;
     stginfo->size = fmt->pffi_type->size;
@@ -2479,7 +2491,7 @@ make_funcptrtype_dict(StgDictObject *stgdict, StgInfo *stginfo)
     stginfo->size = sizeof(void *);
     stgdict->setfunc = NULL;
     stgdict->getfunc = NULL;
-    stgdict->ffi_type_pointer = ffi_type_pointer;
+    stginfo->ffi_type_pointer = ffi_type_pointer;
 
     if (PyDict_GetItemRef((PyObject *)stgdict, &_Py_ID(_flags_), &ob) < 0) {
         return -1;
