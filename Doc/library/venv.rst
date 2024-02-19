@@ -281,7 +281,6 @@ creation according to their needs, the :class:`EnvBuilder` class.
            :ref:`sysconfig installation scheme <installation_paths>`
            is used to construct the paths of the created directories.
 
-
     .. method:: create_configuration(context)
 
         Creates the ``pyvenv.cfg`` configuration file in the environment.
