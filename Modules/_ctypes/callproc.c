@@ -1003,8 +1003,15 @@ static PyObject *GetResult(PyObject *restype, void *result, PyObject *checker)
     if (dict == NULL)
         return PyObject_CallFunction(restype, "i", *(int *)result);
 
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, restype, &info) < 0) {
+        return NULL;
+    }
+    assert(info);
+
     if (dict->getfunc && !_ctypes_simple_instance(restype)) {
-        retval = dict->getfunc(result, dict->size);
+        retval = dict->getfunc(result, info->size);
         /* If restype is py_object (detected by comparing getfunc with
            O_get), we have to call Py_DECREF because O_get has already
            called Py_INCREF.
@@ -1689,13 +1696,16 @@ PyDoc_STRVAR(sizeof_doc,
 static PyObject *
 sizeof_func(PyObject *self, PyObject *obj)
 {
-    StgDictObject *dict;
-
-    dict = PyType_stgdict(obj);
-    if (dict) {
-        return PyLong_FromSsize_t(dict->size);
-    }
     ctypes_state *st = GLOBAL_STATE();
+
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, obj, &info) < 0) {
+        return NULL;
+    }
+    if (info) {
+        return PyLong_FromSsize_t(info->size);
+    }
+
     if (CDataObject_Check(st, obj)) {
         return PyLong_FromSsize_t(((CDataObject *)obj)->b_size);
     }
@@ -1844,10 +1854,17 @@ resize(PyObject *self, PyObject *args)
                         "expected ctypes instance");
         return NULL;
     }
-    if (size < dict->size) {
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    int result = PyStgInfo_FromObject(st, (PyObject *)obj, &info);
+    if (result < 0) {
+        return NULL;
+    }
+    assert(info);
+    if (size < info->size) {
         PyErr_Format(PyExc_ValueError,
                      "minimum size is %zd",
-                     dict->size);
+                     info->size);
         return NULL;
     }
     if (obj->b_needsfree == 0) {

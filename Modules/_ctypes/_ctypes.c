@@ -632,8 +632,17 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
         if (basedict == NULL) {
             return (PyObject *)result;
         }
+
+        StgInfo *baseinfo;
+        if (PyStgInfo_FromType(st, (PyObject *)result->tp_base,
+                               &baseinfo) < 0) {
+            Py_DECREF(result);
+            return NULL;
+        }
+        assert(baseinfo);
+
         /* copy base dict */
-        if (-1 == PyCStgDict_clone(dict, basedict)) {
+        if (-1 == PyCStgDict_clone(dict, basedict, info, baseinfo)) {
             Py_DECREF(result);
             return NULL;
         }
@@ -694,6 +703,13 @@ CDataType_from_buffer(PyObject *type, PyObject *args)
         return NULL;
     }
 
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, type, &info) < 0) {
+        return NULL;
+    }
+    assert(info);
+
     if (!PyArg_ParseTuple(args, "O|n:from_buffer", &obj, &offset))
         return NULL;
 
@@ -724,11 +740,11 @@ CDataType_from_buffer(PyObject *type, PyObject *args)
         return NULL;
     }
 
-    if (dict->size > buffer->len - offset) {
+    if (info->size > buffer->len - offset) {
         PyErr_Format(PyExc_ValueError,
                      "Buffer size too small "
                      "(%zd instead of at least %zd bytes)",
-                     buffer->len, dict->size + offset);
+                     buffer->len, info->size + offset);
         Py_DECREF(mv);
         return NULL;
     }
@@ -771,6 +787,13 @@ CDataType_from_buffer_copy(PyObject *type, PyObject *args)
         return NULL;
     }
 
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, type, &info) < 0) {
+        return NULL;
+    }
+    assert(info);
+
     if (!PyArg_ParseTuple(args, "y*|n:from_buffer_copy", &buffer, &offset))
         return NULL;
 
@@ -781,10 +804,10 @@ CDataType_from_buffer_copy(PyObject *type, PyObject *args)
         return NULL;
     }
 
-    if (dict->size > buffer.len - offset) {
+    if (info->size > buffer.len - offset) {
         PyErr_Format(PyExc_ValueError,
                      "Buffer size too small (%zd instead of at least %zd bytes)",
-                     buffer.len, dict->size + offset);
+                     buffer.len, info->size + offset);
         PyBuffer_Release(&buffer);
         return NULL;
     }
@@ -798,7 +821,7 @@ CDataType_from_buffer_copy(PyObject *type, PyObject *args)
     result = GenericPyCData_new((PyTypeObject *)type, NULL, NULL);
     if (result != NULL) {
         memcpy(((CDataObject *)result)->b_ptr,
-               (char *)buffer.buf + offset, dict->size);
+               (char *)buffer.buf + offset, info->size);
     }
     PyBuffer_Release(&buffer);
     return result;
@@ -1113,7 +1136,7 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Py_DECREF((PyObject *)stgdict);
         return NULL;
     }
-    stgdict->size = sizeof(void *);
+    stginfo->size = sizeof(void *);
     stgdict->align = _ctypes_get_fielddesc("P")->pffi_type->alignment;
     stgdict->length = 1;
     stgdict->ffi_type_pointer = ffi_type_pointer;
@@ -1541,6 +1564,12 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         goto error;
     }
 
+    StgInfo *iteminfo;
+    if (PyStgInfo_FromType(st, type_attr, &iteminfo) < 0) {
+        goto error;
+    }
+    assert(iteminfo);
+
     assert(itemdict->format);
     stgdict->format = _ctypes_alloc_format_string(NULL, itemdict->format);
     if (stgdict->format == NULL)
@@ -1557,7 +1586,7 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             sizeof(Py_ssize_t) * (stgdict->ndim - 1));
     }
 
-    itemsize = itemdict->size;
+    itemsize = iteminfo->size;
     if (itemsize != 0 && length > PY_SSIZE_T_MAX / itemsize) {
         PyErr_SetString(PyExc_OverflowError,
                         "array too large");
@@ -1569,7 +1598,7 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (itemdict->flags & (TYPEFLAG_ISPOINTER | TYPEFLAG_HASPOINTER))
         stgdict->flags |= TYPEFLAG_HASPOINTER;
 
-    stgdict->size = itemsize * length;
+    stginfo->size = itemsize * length;
     stgdict->align = itemalign;
     stgdict->length = length;
     stgdict->proto = type_attr;
@@ -1963,10 +1992,17 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
         return NULL;
     }
 
+    StgInfo *stginfo = PyStgInfo_Init(st, result);
+    if (!stginfo) {
+        Py_DECREF(result);
+        Py_DECREF((PyObject *)stgdict);
+        return NULL;
+    }
+
     stgdict->ffi_type_pointer = *fmt->pffi_type;
     stgdict->align = fmt->pffi_type->alignment;
     stgdict->length = 0;
-    stgdict->size = fmt->pffi_type->size;
+    stginfo->size = fmt->pffi_type->size;
     stgdict->setfunc = fmt->setfunc_swapped;
     stgdict->getfunc = fmt->getfunc_swapped;
 
@@ -2081,7 +2117,7 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     stgdict->ffi_type_pointer = *fmt->pffi_type;
     stgdict->align = fmt->pffi_type->alignment;
     stgdict->length = 0;
-    stgdict->size = fmt->pffi_type->size;
+    stginfo->size = fmt->pffi_type->size;
     stgdict->setfunc = fmt->setfunc;
     stgdict->getfunc = fmt->getfunc;
 #ifdef WORDS_BIGENDIAN
@@ -2405,14 +2441,14 @@ converters_from_argtypes(PyObject *ob)
 }
 
 static int
-make_funcptrtype_dict(StgDictObject *stgdict)
+make_funcptrtype_dict(StgDictObject *stgdict, StgInfo *stginfo)
 {
     PyObject *ob;
     PyObject *converters = NULL;
 
     stgdict->align = _ctypes_get_fielddesc("P")->pffi_type->alignment;
     stgdict->length = 1;
-    stgdict->size = sizeof(void *);
+    stginfo->size = sizeof(void *);
     stgdict->setfunc = NULL;
     stgdict->getfunc = NULL;
     stgdict->ffi_type_pointer = ffi_type_pointer;
@@ -2544,7 +2580,7 @@ PyCFuncPtrType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
     Py_SETREF(result->tp_dict, (PyObject *)stgdict);
 
-    if (-1 == make_funcptrtype_dict(stgdict)) {
+    if (-1 == make_funcptrtype_dict(stgdict, stginfo)) {
         Py_DECREF(result);
         return NULL;
     }
@@ -2747,9 +2783,15 @@ PyCData_NewGetBuffer(PyObject *myself, Py_buffer *view, int flags)
     CDataObject *self = (CDataObject *)myself;
     StgDictObject *dict = PyObject_stgdict(myself);
     PyObject *item_type = PyCData_item_type((PyObject*)Py_TYPE(myself));
-    StgDictObject *item_dict = PyType_stgdict(item_type);
 
     if (view == NULL) return 0;
+
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *item_info;
+    if (PyStgInfo_FromType(st, item_type, &item_info) < 0) {
+        return -1;
+    }
+    assert(item_info);
 
     view->buf = self->b_ptr;
     view->obj = Py_NewRef(myself);
@@ -2759,7 +2801,7 @@ PyCData_NewGetBuffer(PyObject *myself, Py_buffer *view, int flags)
     view->format = dict->format ? dict->format : "B";
     view->ndim = dict->ndim;
     view->shape = dict->shape;
-    view->itemsize = item_dict->size;
+    view->itemsize = item_info->size;
     view->strides = NULL;
     view->suboffsets = NULL;
     view->internal = NULL;
@@ -2891,9 +2933,10 @@ PyTypeObject PyCData_Type = {
     0,                                          /* tp_free */
 };
 
-static int PyCData_MallocBuffer(CDataObject *obj, StgDictObject *dict)
+static int
+PyCData_MallocBuffer(CDataObject *obj, StgDictObject *dict, StgInfo *info)
 {
-    if ((size_t)dict->size <= sizeof(obj->b_value)) {
+    if ((size_t)info->size <= sizeof(obj->b_value)) {
         /* No need to call malloc, can use the default buffer */
         obj->b_ptr = (char *)&obj->b_value;
         /* The b_needsfree flag does not mean that we actually did
@@ -2907,15 +2950,15 @@ static int PyCData_MallocBuffer(CDataObject *obj, StgDictObject *dict)
         /* In python 2.4, and ctypes 0.9.6, the malloc call took about
            33% of the creation time for c_int().
         */
-        obj->b_ptr = (char *)PyMem_Malloc(dict->size);
+        obj->b_ptr = (char *)PyMem_Malloc(info->size);
         if (obj->b_ptr == NULL) {
             PyErr_NoMemory();
             return -1;
         }
         obj->b_needsfree = 1;
-        memset(obj->b_ptr, 0, dict->size);
+        memset(obj->b_ptr, 0, info->size);
     }
-    obj->b_size = dict->size;
+    obj->b_size = info->size;
     return 0;
 }
 
@@ -2932,6 +2975,14 @@ PyCData_FromBaseObj(PyObject *type, PyObject *base, Py_ssize_t index, char *adr)
                         "abstract class");
         return NULL;
     }
+
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, type, &info) < 0) {
+        return NULL;
+    }
+    assert(info);
+
     dict->flags |= DICTFLAG_FINAL;
     cmem = (CDataObject *)((PyTypeObject *)type)->tp_alloc((PyTypeObject *)type, 0);
     if (cmem == NULL) {
@@ -2939,7 +2990,7 @@ PyCData_FromBaseObj(PyObject *type, PyObject *base, Py_ssize_t index, char *adr)
     }
     assert(CDataObject_Check(GLOBAL_STATE(), cmem));
     cmem->b_length = dict->length;
-    cmem->b_size = dict->size;
+    cmem->b_size = info->size;
     if (base) { /* use base's buffer */
         assert(CDataObject_Check(GLOBAL_STATE(), base));
         cmem->b_ptr = adr;
@@ -2947,11 +2998,11 @@ PyCData_FromBaseObj(PyObject *type, PyObject *base, Py_ssize_t index, char *adr)
         cmem->b_base = (CDataObject *)Py_NewRef(base);
         cmem->b_index = index;
     } else { /* copy contents of adr */
-        if (-1 == PyCData_MallocBuffer(cmem, dict)) {
+        if (-1 == PyCData_MallocBuffer(cmem, dict, info)) {
             Py_DECREF(cmem);
             return NULL;
         }
-        memcpy(cmem->b_ptr, adr, dict->size);
+        memcpy(cmem->b_ptr, adr, info->size);
         cmem->b_index = index;
     }
     return (PyObject *)cmem;
@@ -2977,6 +3028,14 @@ PyCData_AtAddress(PyObject *type, void *buf)
                         "abstract class");
         return NULL;
     }
+
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, type, &info) < 0) {
+        return NULL;
+    }
+    assert(info);
+
     dict->flags |= DICTFLAG_FINAL;
 
     pd = (CDataObject *)((PyTypeObject *)type)->tp_alloc((PyTypeObject *)type, 0);
@@ -2986,7 +3045,7 @@ PyCData_AtAddress(PyObject *type, void *buf)
     assert(CDataObject_Check(GLOBAL_STATE(), pd));
     pd->b_ptr = (char *)buf;
     pd->b_length = dict->length;
-    pd->b_size = dict->size;
+    pd->b_size = info->size;
     return (PyObject *)pd;
 }
 
@@ -3170,6 +3229,14 @@ GenericPyCData_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                         "abstract class");
         return NULL;
     }
+
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, (PyObject *)type, &info) < 0) {
+        return NULL;
+    }
+    assert(info);
+
     dict->flags |= DICTFLAG_FINAL;
 
     obj = (CDataObject *)type->tp_alloc(type, 0);
@@ -3181,7 +3248,7 @@ GenericPyCData_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     obj->b_objects = NULL;
     obj->b_length = dict->length;
 
-    if (-1 == PyCData_MallocBuffer(obj, dict)) {
+    if (-1 == PyCData_MallocBuffer(obj, dict, info)) {
         Py_DECREF(obj);
         return NULL;
     }
@@ -4518,10 +4585,17 @@ Array_item(PyObject *myself, Py_ssize_t index)
 
     stgdict = PyObject_stgdict((PyObject *)self);
     assert(stgdict); /* Cannot be NULL for array instances */
+
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *stginfo;
+    if (PyStgInfo_FromObject(st, (PyObject *)self, &stginfo) < 0) {
+        return NULL;
+    }
+
     /* Would it be clearer if we got the item size from
        stgdict->proto's stgdict?
     */
-    size = stgdict->size / stgdict->length;
+    size = stginfo->size / stgdict->length;
     offset = index * size;
 
     return PyCData_get(stgdict->proto, stgdict->getfunc, (PyObject *)self,
@@ -4651,12 +4725,20 @@ Array_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
 
     stgdict = PyObject_stgdict((PyObject *)self);
     assert(stgdict); /* Cannot be NULL for array object instances */
+
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *stginfo;
+    if (PyStgInfo_FromObject(st, (PyObject *)self, &stginfo) < 0) {
+        return -1;
+    }
+    assert(stginfo); /* Cannot be NULL for array object instances */
+
     if (index < 0 || index >= stgdict->length) {
         PyErr_SetString(PyExc_IndexError,
                         "invalid index");
         return -1;
     }
-    size = stgdict->size / stgdict->length;
+    size = stginfo->size / stgdict->length;
     offset = index * size;
     ptr = self->b_ptr + offset;
 
@@ -4889,7 +4971,15 @@ Simple_set_value(CDataObject *self, PyObject *value, void *Py_UNUSED(ignored))
     }
     assert(dict); /* Cannot be NULL for CDataObject instances */
     assert(dict->setfunc);
-    result = dict->setfunc(self->b_ptr, value, dict->size);
+
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    if (PyStgInfo_FromObject(st, (PyObject *)self, &info) < 0) {
+        return -1;
+    }
+    assert(info);
+
+    result = dict->setfunc(self->b_ptr, value, info->size);
     if (!result)
         return -1;
 
@@ -5049,8 +5139,16 @@ Pointer_item(PyObject *myself, Py_ssize_t index)
     assert(itemdict); /* proto is the item type of the pointer, a ctypes
                          type, so this cannot be NULL */
 
-    size = itemdict->size;
-    offset = index * itemdict->size;
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *iteminfo;
+    if (PyStgInfo_FromType(st, proto, &iteminfo) < 0) {
+        return NULL;
+    }
+    assert(iteminfo); /* proto is the item type of the pointer, a ctypes
+                         type, so this cannot be NULL */
+
+    size = iteminfo->size;
+    offset = index * iteminfo->size;
 
     return PyCData_get(proto, stgdict->getfunc, (PyObject *)self,
                      index, size, (*(char **)self->b_ptr) + offset);
@@ -5087,8 +5185,16 @@ Pointer_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
     assert(itemdict); /* Cannot be NULL because the itemtype of a pointer
                          is always a ctypes type */
 
-    size = itemdict->size;
-    offset = index * itemdict->size;
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *iteminfo;
+    if (PyStgInfo_FromType(st, proto, &iteminfo) < 0) {
+        return -1;
+    }
+    assert(iteminfo); /* Cannot be NULL because the itemtype of a pointer
+                         is always a ctypes type */
+
+    size = iteminfo->size;
+    offset = index * iteminfo->size;
 
     return PyCData_set((PyObject *)self, proto, stgdict->setfunc, value,
                      index, size, (*(char **)self->b_ptr) + offset);

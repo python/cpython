@@ -157,8 +157,14 @@ static void _CallPythonObject(void *mem,
         StgDictObject *dict;
         dict = PyType_stgdict(cnv);
 
+        StgInfo *info;
+        if (PyStgInfo_FromType(st, cnv, &info) < 0) {
+            goto Done;
+        }
+        assert(info);
+
         if (dict && dict->getfunc && !_ctypes_simple_instance(cnv)) {
-            PyObject *v = dict->getfunc(*pArgs, dict->size);
+            PyObject *v = dict->getfunc(*pArgs, info->size);
             if (!v) {
                 PrintError("create argument %zd:\n", i);
                 goto Done;
@@ -181,7 +187,7 @@ static void _CallPythonObject(void *mem,
                 PrintError("unexpected result of create argument %zd:\n", i);
                 goto Done;
             }
-            memcpy(obj->b_ptr, *pArgs, dict->size);
+            memcpy(obj->b_ptr, *pArgs, info->size);
             args[i] = (PyObject *)obj;
 #ifdef MS_WIN32
             TryAddRef(dict, obj);

@@ -19,30 +19,40 @@
 
 
 // Get a PyCTypeDataObject. These Return -1 on error, 0 if "not found", 1 on OK.
-// from a type:
-//int PyStgInfo_FromType(PyObject *obj, StgInfo **result);
-// from an instance:
-int PyStgInfo_FromObject(ctypes_state *state, PyObject *obj, StgInfo **result)
+static int
+_stginfo_from_type(ctypes_state *state, PyTypeObject *type, StgInfo **result)
 {
     *result = NULL;
-    PyTypeObject *type = Py_TYPE(obj);
     if (!PyObject_IsInstance((PyObject *)type, (PyObject *)state->PyCType_Type)) {
         // not a ctypes class.
         return 0;
     }
     StgInfo *info = PyObject_GetTypeData((PyObject *)type, state->PyCType_Type);
     if (!info->initialized) {
-        PyErr_Format(PyExc_SystemError, "%R StgInfo is not initialized.", type);
-        return -1;
+        //PyErr_Format(PyExc_SystemError, "%R StgInfo is not initialized.", type);
+        //return -1;
     }
     *result = info;
     return 1;
+}
+// from a type:
+int
+PyStgInfo_FromType(ctypes_state *state, PyObject *type, StgInfo **result)
+{
+    return _stginfo_from_type(state, (PyTypeObject *)type, result);
+}
+// from an instance:
+int
+PyStgInfo_FromObject(ctypes_state *state, PyObject *obj, StgInfo **result)
+{
+    return _stginfo_from_type(state, Py_TYPE(obj), result);
 }
 // from either a type or an instance:
 //int PyStgInfo_FromAny(PyObject *obj, StgInfo **result);
 
 // Initialize StgInfo on a newly created
-StgInfo *PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
+StgInfo *
+PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
 {
     if (!PyObject_IsInstance((PyObject *)type, (PyObject *)state->PyCType_Type)) {
         PyErr_Format(PyExc_SystemError,
@@ -121,7 +131,8 @@ PyCStgDict_sizeof(StgDictObject *self, void *unused)
 }
 
 int
-PyCStgDict_clone(StgDictObject *dst, StgDictObject *src)
+PyCStgDict_clone(StgDictObject *dst, StgDictObject *src,
+                 StgInfo *dst_info, StgInfo *src_info)
 {
     char *d, *s;
     Py_ssize_t size;
@@ -139,6 +150,8 @@ PyCStgDict_clone(StgDictObject *dst, StgDictObject *src)
     memcpy(d + sizeof(PyDictObject),
            s + sizeof(PyDictObject),
            sizeof(StgDictObject) - sizeof(PyDictObject));
+
+    memcpy(dst_info, src_info, sizeof(StgInfo));
 
     Py_XINCREF(dst->proto);
     Py_XINCREF(dst->argtypes);
@@ -509,6 +522,14 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
                         "ctypes state is not initialized");
         return -1;
     }
+
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *stginfo;
+    if (PyStgInfo_FromType(st, type, &stginfo) < 0) {
+        return -1;
+    }
+    assert(stginfo);
+
     /* If this structure/union is already marked final we cannot assign
        _fields_ anymore. */
 
@@ -531,11 +552,18 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         stgdict->flags |= (basedict->flags &
                            (TYPEFLAG_HASUNION | TYPEFLAG_HASBITFIELD));
     }
+
+    StgInfo *baseinfo;
+    if (PyStgInfo_FromType(st, (PyObject *)((PyTypeObject *)type)->tp_base,
+                           &baseinfo) < 0) {
+        return -1;
+    }
+
     if (!isStruct) {
         stgdict->flags |= TYPEFLAG_HASUNION;
     }
     if (basedict) {
-        size = offset = basedict->size;
+        size = offset = baseinfo->size;
         align = basedict->align;
         union_size = 0;
         total_align = align ? align : 1;
@@ -581,7 +609,6 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     if (stgdict->format == NULL)
         return -1;
 
-    ctypes_state *st = GLOBAL_STATE();
     for (i = 0; i < len; ++i) {
         PyObject *name = NULL, *desc = NULL;
         PyObject *pair = PySequence_GetItem(fields, i);
@@ -606,6 +633,13 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
                          i);
             return -1;
         }
+
+        StgInfo *info;
+        if (PyStgInfo_FromType(st, desc, &info) < 0) {
+            Py_DECREF(pair);
+            return -1;
+        }
+
         stgdict->ffi_type_pointer.elements[ffi_ofs + i] = &dict->ffi_type_pointer;
         if (dict->flags & (TYPEFLAG_ISPOINTER | TYPEFLAG_HASPOINTER))
             stgdict->flags |= TYPEFLAG_HASPOINTER;
@@ -636,7 +670,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
                 Py_DECREF(pair);
                 return -1;
             }
-            if (bitsize <= 0 || bitsize > dict->size * 8) {
+            if (bitsize <= 0 || bitsize > info->size * 8) {
                 PyErr_SetString(PyExc_ValueError,
                                 "number of bits invalid for bit field");
                 Py_DECREF(pair);
@@ -771,7 +805,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
                                                            unsigned short);
     stgdict->ffi_type_pointer.size = aligned_size;
 
-    stgdict->size = aligned_size;
+    stginfo->size = aligned_size;
     stgdict->align = total_align;
     stgdict->length = ffi_ofs + len;
 

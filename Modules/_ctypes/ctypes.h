@@ -234,6 +234,8 @@ typedef struct {
 
 typedef struct {
     int initialized;
+    Py_ssize_t size;            /* number of bytes */
+
     PARAMFUNC paramfunc;
 } StgInfo;
 
@@ -260,7 +262,7 @@ typedef struct {
    too much risk to change that now, and there are other fields which doesn't
    belong into this structure anyway.  Maybe in ctypes 2.0... (ctypes 2000?)
 */
-    Py_ssize_t size;            /* number of bytes */
+    //Py_ssize_t size;            /* number of bytes */
     Py_ssize_t align;           /* alignment requirements */
     Py_ssize_t length;          /* number of fields */
     ffi_type ffi_type_pointer;
@@ -331,7 +333,8 @@ extern StgDictObject *PyType_stgdict(PyObject *obj);
 /* May return NULL, but does not set an exception! */
 extern StgDictObject *PyObject_stgdict(PyObject *self);
 
-extern int PyCStgDict_clone(StgDictObject *src, StgDictObject *dst);
+extern int PyCStgDict_clone(StgDictObject *src, StgDictObject *dst,
+                            StgInfo *dst_info, StgInfo *src_info);
 
 typedef int(* PPROC)(void);
 

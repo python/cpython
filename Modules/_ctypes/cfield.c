@@ -73,14 +73,22 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
         Py_DECREF(self);
         return NULL;
     }
+
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, desc, &info) < 0) {
+        Py_DECREF(self);
+        return NULL;
+    }
+    assert(info);
+
     if (bitsize /* this is a bitfield request */
         && *pfield_size /* we have a bitfield open */
 #ifdef MS_WIN32
         /* MSVC, GCC with -mms-bitfields */
-        && dict->size * 8 == *pfield_size
+        && info->size * 8 == *pfield_size
 #else
         /* GCC */
-        && dict->size * 8 <= *pfield_size
+        && info->size * 8 <= *pfield_size
 #endif
         && (*pbitofs + bitsize) <= *pfield_size) {
         /* continue bit field */
@@ -88,8 +96,8 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
 #ifndef MS_WIN32
     } else if (bitsize /* this is a bitfield request */
         && *pfield_size /* we have a bitfield open */
-        && dict->size * 8 >= *pfield_size
-        && (*pbitofs + bitsize) <= dict->size * 8) {
+        && info->size * 8 >= *pfield_size
+        && (*pbitofs + bitsize) <= info->size * 8) {
         /* expand bit field */
         fieldtype = EXPAND_BITFIELD;
 #endif
@@ -97,7 +105,7 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
         /* start new bitfield */
         fieldtype = NEW_BITFIELD;
         *pbitofs = 0;
-        *pfield_size = dict->size * 8;
+        *pfield_size = info->size * 8;
     } else {
         /* not a bit field */
         fieldtype = NO_BITFIELD;
@@ -105,7 +113,7 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
         *pfield_size = 0;
     }
 
-    size = dict->size;
+    size = info->size;
     proto = desc;
 
     /*  Field descriptors for 'c_char * n' are be scpecial cased to
@@ -171,10 +179,10 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
         break;
 
     case EXPAND_BITFIELD:
-        *poffset += dict->size - *pfield_size/8;
-        *psize += dict->size - *pfield_size/8;
+        *poffset += info->size - *pfield_size/8;
+        *psize += info->size - *pfield_size/8;
 
-        *pfield_size = dict->size * 8;
+        *pfield_size = info->size * 8;
 
         if (big_endian)
             self->size = (bitsize << 16) + *pfield_size - *pbitofs - bitsize;
