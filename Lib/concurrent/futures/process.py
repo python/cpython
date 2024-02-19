@@ -360,7 +360,7 @@ class _ExecutorManagerThread(threading.Thread):
                 if executor := self.executor_reference():
                     if process_exited:
                         with self.shutdown_lock:
-                            executor._adjust_process_count()
+                            executor._adjust_process_count(force=True)
                     else:
                         executor._idle_worker_semaphore.release()
                     del executor
@@ -753,9 +753,9 @@ class ProcessPoolExecutor(_base.Executor):
             _threads_wakeups[self._executor_manager_thread] = \
                 self._executor_manager_thread_wakeup
 
-    def _adjust_process_count(self):
+    def _adjust_process_count(self, force=False):
         # if there's an idle process, we don't need to spawn a new one.
-        if self._idle_worker_semaphore.acquire(blocking=False):
+        if self._idle_worker_semaphore.acquire(blocking=False) and not force:
             return
 
         process_count = len(self._processes)
