@@ -1007,6 +1007,22 @@ class TestPlainEnumFunction(_EnumTests, _PlainOutputTests, unittest.TestCase):
 class TestPlainFlagClass(_EnumTests, _PlainOutputTests, _FlagTests, unittest.TestCase):
     enum_type = Flag
 
+    def test_none_member(self):
+        class FlagWithNoneMember(Flag):
+            A = 1
+            E = None
+
+        self.assertEqual(FlagWithNoneMember.A.value, 1)
+        self.assertIs(FlagWithNoneMember.E.value, None)
+        with self.assertRaisesRegex(TypeError, r"'FlagWithNoneMember.E' cannot be combined with other flags with |"):
+            FlagWithNoneMember.A | FlagWithNoneMember.E
+        with self.assertRaisesRegex(TypeError, r"'FlagWithNoneMember.E' cannot be combined with other flags with &"):
+            FlagWithNoneMember.E & FlagWithNoneMember.A
+        with self.assertRaisesRegex(TypeError, r"'FlagWithNoneMember.E' cannot be combined with other flags with \^"):
+            FlagWithNoneMember.A ^ FlagWithNoneMember.E
+        with self.assertRaisesRegex(TypeError, r"'FlagWithNoneMember.E' cannot be inverted"):
+            ~FlagWithNoneMember.E
+
 
 class TestPlainFlagFunction(_EnumTests, _PlainOutputTests, _FlagTests, unittest.TestCase):
     enum_type = Flag
