@@ -599,7 +599,7 @@ PySSL_ChainExceptions(PySSLSocket *sslsock) {
 }
 
 static PyObject *
-PySSL_SetError(PySSLSocket *sslsock, int ret, const char *filename, int lineno)
+PySSL_SetError(PySSLSocket *sslsock, const char *filename, int lineno)
 {
     PyObject *type;
     char *errstr = NULL;
@@ -612,7 +612,6 @@ PySSL_SetError(PySSLSocket *sslsock, int ret, const char *filename, int lineno)
     _sslmodulestate *state = get_state_sock(sslsock);
     type = state->PySSLErrorObject;
 
-    assert(ret <= 0);
     e = ERR_peek_last_error();
 
     if (sslsock->ssl != NULL) {
@@ -1026,7 +1025,7 @@ _ssl__SSLSocket_do_handshake_impl(PySSLSocket *self)
              err.ssl == SSL_ERROR_WANT_WRITE);
     Py_XDECREF(sock);
     if (ret < 1)
-        return PySSL_SetError(self, ret, __FILE__, __LINE__);
+        return PySSL_SetError(self, __FILE__, __LINE__);
     if (PySSL_ChainExceptions(self) < 0)
         return NULL;
     Py_RETURN_NONE;
@@ -2433,7 +2432,7 @@ _ssl__SSLSocket_write_impl(PySSLSocket *self, Py_buffer *b)
 
     Py_XDECREF(sock);
     if (retval == 0)
-        return PySSL_SetError(self, retval, __FILE__, __LINE__);
+        return PySSL_SetError(self, __FILE__, __LINE__);
     if (PySSL_ChainExceptions(self) < 0)
         return NULL;
     return PyLong_FromSize_t(count);
@@ -2463,7 +2462,7 @@ _ssl__SSLSocket_pending_impl(PySSLSocket *self)
     self->err = err;
 
     if (count < 0)
-        return PySSL_SetError(self, count, __FILE__, __LINE__);
+        return PySSL_SetError(self, __FILE__, __LINE__);
     else
         return PyLong_FromLong(count);
 }
@@ -2586,7 +2585,7 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
              err.ssl == SSL_ERROR_WANT_WRITE);
 
     if (retval == 0) {
-        PySSL_SetError(self, retval, __FILE__, __LINE__);
+        PySSL_SetError(self, __FILE__, __LINE__);
         goto error;
     }
     if (self->exc != NULL)
@@ -2712,7 +2711,7 @@ _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
     }
     if (ret < 0) {
         Py_XDECREF(sock);
-        PySSL_SetError(self, ret, __FILE__, __LINE__);
+        PySSL_SetError(self, __FILE__, __LINE__);
         return NULL;
     }
     if (self->exc != NULL)
