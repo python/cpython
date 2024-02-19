@@ -36,7 +36,7 @@ bound into a function.
 
 .. c:function:: int PyCode_GetFirstFree(PyCodeObject *co)
 
-   Return the number of local + cell variables in *co*
+   Return the number of local + cell variables in *co*.
 
 .. c:function:: PyCodeObject* PyUnstable_Code_New(int argcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, PyObject *qualname, int firstlineno, PyObject *linetable, PyObject *exceptiontable)
 
