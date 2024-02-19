@@ -486,10 +486,38 @@ CType_Type_dealloc(PyObject *self)
     Py_DECREF(tp);
 }
 
+static PyObject *
+CType_Type_sizeof(PyObject *self) {
+    Py_ssize_t size = Py_TYPE(self)->tp_basicsize;
+    size += Py_TYPE(self)->tp_itemsize * Py_SIZE(self);
+
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, self, &info) < 0) {
+        return NULL;
+    }
+    if (info) {
+        StgDictObject *dict = PyType_stgdict(self);
+        assert(dict);
+        if (dict->ffi_type_pointer.elements) {
+            size += (info->length + 1) * sizeof(ffi_type *);
+        }
+    }
+
+    return PyLong_FromSsize_t(size);
+}
+
+static PyMethodDef ctype_methods[] = {
+    {"__sizeof__", _PyCFunction_CAST(CType_Type_sizeof),
+     METH_NOARGS, PyDoc_STR("Return memory consumption of the type object.")},
+    {0},
+};
+
 static PyType_Slot ctype_type_slots[] = {
     {Py_tp_traverse, CType_Type_traverse},
     {Py_tp_clear, CType_Type_clear},
     {Py_tp_dealloc, CType_Type_dealloc},
+    {Py_tp_methods, ctype_methods},
     {0, NULL},
 };
 

@@ -131,8 +131,6 @@ PyCStgDict_sizeof(StgDictObject *self, void *unused)
     if (self->format)
         res += strlen(self->format) + 1;
     res += self->ndim * sizeof(Py_ssize_t);
-    if (self->ffi_type_pointer.elements)
-        res += (self->length + 1) * sizeof(ffi_type *);
     return PyLong_FromSsize_t(res);
 }
 
