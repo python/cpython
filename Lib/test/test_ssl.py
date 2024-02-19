@@ -2433,9 +2433,8 @@ class ThreadedEchoServer(threading.Thread):
                         # OpenSSL 1.1.1 sometimes raises
                         # ConnectionResetError when connection is not
                         # shut down gracefully.
-                        print(
-                            f" Connection reset by peer: {self.addr}"
-                        )
+                        if self.server.chatty and support.verbose:
+                            print(f" Connection reset by peer: {self.addr}")
 
                         self.close()
                         self.running = False
