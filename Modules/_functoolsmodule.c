@@ -401,17 +401,16 @@ partial_repr(partialobject *pto)
             goto done;
     }
 
-    mod = PyObject_GetAttrString((PyObject *)pto, "__module__");
+    mod = _PyType_GetModuleName(Py_TYPE(pto));
     if (mod == NULL) {
-        result = PyUnicode_FromFormat("%s(%R%U)", Py_TYPE(pto)->tp_name, pto->fn, arglist);
+        result = PyUnicode_FromFormat("%S(%R%U)",
+                                      PyType_GetQualName(Py_TYPE(pto)),
+                                      pto->fn, arglist);
     }
     else {
-        if (strcmp(PyUnicode_AsUTF8(mod), "functools") == 0) {
-            result = PyUnicode_FromFormat("%s(%R%U)", Py_TYPE(pto)->tp_name, pto->fn, arglist);
-        }
-        else {
-            result = PyUnicode_FromFormat("%U.%s(%R%U)", mod, Py_TYPE(pto)->tp_name, pto->fn, arglist);
-        }
+        result = PyUnicode_FromFormat("%U.%S(%R%U)",
+                                      mod, PyType_GetQualName(Py_TYPE(pto)),
+                                      pto->fn, arglist);
     }
 
     Py_DECREF(arglist);
