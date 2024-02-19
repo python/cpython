@@ -649,7 +649,7 @@ PySSL_SetError(PySSLSocket *sslsock, const char *filename, int lineno)
                     p = PY_SSL_ERROR_EOF;
                     type = state->PySSLEOFErrorObject;
                     errstr = "EOF occurred in violation of protocol";
-                } else {
+                } else if (s) {
                     /* underlying BIO reported an I/O error */
                     ERR_clear_error();
 #ifdef MS_WINDOWS
@@ -666,6 +666,10 @@ PySSL_SetError(PySSLSocket *sslsock, const char *filename, int lineno)
                         type = state->PySSLEOFErrorObject;
                         errstr = "EOF occurred in violation of protocol";
                     }
+                } else { /* possible? */
+                    p = PY_SSL_ERROR_SYSCALL;
+                    type = state->PySSLSyscallErrorObject;
+                    errstr = "Some I/O error occurred";
                 }
             } else {
                 if (ERR_GET_LIB(e) == ERR_LIB_SSL &&
