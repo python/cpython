@@ -94,7 +94,7 @@ _Py_brc_queue_object(PyObject *ob)
     }
 
     // Notify owning thread
-    _Py_set_eval_breaker_bit(interp, _PY_EVAL_EXPLICIT_MERGE_BIT, 1);
+    _Py_set_eval_breaker_bit(&tstate->base, _PY_EVAL_EXPLICIT_MERGE_BIT);
 
     PyMutex_Unlock(&bucket->mutex);
 }
