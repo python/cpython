@@ -24,12 +24,19 @@ DEFAULT_OUTPUT = ROOT / "Include/internal/pycore_uop_metadata.h"
 
 def generate_names_and_flags(analysis: Analysis, out: CWriter) -> None:
     out.emit("extern const uint16_t _PyUop_Flags[MAX_UOP_ID+1];\n")
+    out.emit("extern const uint8_t _PyUop_Replication[MAX_UOP_ID+1];\n")
     out.emit("extern const char * const _PyOpcode_uop_name[MAX_UOP_ID+1];\n\n")
     out.emit("#ifdef NEED_OPCODE_METADATA\n")
     out.emit("const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {\n")
     for uop in analysis.uops.values():
         if uop.is_viable() and not uop.properties.tier_one_only:
             out.emit(f"[{uop.name}] = {cflags(uop.properties)},\n")
+
+    out.emit("};\n\n")
+    out.emit("const uint8_t _PyUop_Replication[MAX_UOP_ID+1] = {\n")
+    for uop in analysis.uops.values():
+        if uop.replicated:
+            out.emit(f"[{uop.name}] = {uop.replicated},\n")
 
     out.emit("};\n\n")
     out.emit("const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {\n")
