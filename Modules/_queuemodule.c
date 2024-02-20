@@ -6,7 +6,7 @@
 #include "pycore_ceval.h"         // Py_MakePendingCalls()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_parking_lot.h"
-#include "pycore_time.h"          // PyTime_t
+#include "pycore_time.h"          // _PyTime_FromSecondsObject()
 
 #include <stdbool.h>
 #include <stddef.h>               // offsetof()
