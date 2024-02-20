@@ -1,1 +1,2 @@
-Add asyncio.Queue termination with ``shutdown`` method.
+Add :py:class:`asyncio.Queue`` termination with
+:py:meth:`~asyncio.Queue.shutdown` method.
