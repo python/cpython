@@ -351,6 +351,16 @@
         }
 
         case _GUARD_BOTH_UNICODE: {
+            _Py_UOpsSymType *right;
+            _Py_UOpsSymType *left;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (sym_matches_type(left, &PyUnicode_Type) &&
+                sym_matches_type(right, &PyUnicode_Type)) {
+                REPLACE_OP(this_instr, _NOP, 0 ,0);
+            }
+            sym_set_type(left, &PyUnicode_Type);
+            sym_set_type(right, &PyUnicode_Type);
             break;
         }
 

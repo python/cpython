@@ -2200,9 +2200,16 @@ dummy_func(
 
         macro(COMPARE_OP) = _SPECIALIZE_COMPARE_OP + _COMPARE_OP;
 
-        inst(COMPARE_OP_FLOAT, (unused/1, left, right -- res)) {
-            DEOPT_IF(!PyFloat_CheckExact(left));
-            DEOPT_IF(!PyFloat_CheckExact(right));
+        macro(COMPARE_OP_FLOAT) =
+            _GUARD_BOTH_FLOAT + unused/1 + _COMPARE_OP_FLOAT;
+
+        macro(COMPARE_OP_INT) =
+            _GUARD_BOTH_INT + unused/1 + _COMPARE_OP_INT;
+
+        macro(COMPARE_OP_STR) =
+            _GUARD_BOTH_UNICODE + unused/1 + _COMPARE_OP_STR;
+
+        op(_COMPARE_OP_FLOAT, (left, right -- res)) {
             STAT_INC(COMPARE_OP, hit);
             double dleft = PyFloat_AS_DOUBLE(left);
             double dright = PyFloat_AS_DOUBLE(right);
@@ -2215,9 +2222,7 @@ dummy_func(
         }
 
         // Similar to COMPARE_OP_FLOAT
-        inst(COMPARE_OP_INT, (unused/1, left, right -- res)) {
-            DEOPT_IF(!PyLong_CheckExact(left));
-            DEOPT_IF(!PyLong_CheckExact(right));
+        op(_COMPARE_OP_INT, (left, right -- res)) {
             DEOPT_IF(!_PyLong_IsCompact((PyLongObject *)left));
             DEOPT_IF(!_PyLong_IsCompact((PyLongObject *)right));
             STAT_INC(COMPARE_OP, hit);
@@ -2234,9 +2239,7 @@ dummy_func(
         }
 
         // Similar to COMPARE_OP_FLOAT, but for ==, != only
-        inst(COMPARE_OP_STR, (unused/1, left, right -- res)) {
-            DEOPT_IF(!PyUnicode_CheckExact(left));
-            DEOPT_IF(!PyUnicode_CheckExact(right));
+        op(_COMPARE_OP_STR, (left, right -- res)) {
             STAT_INC(COMPARE_OP, hit);
             int eq = _PyUnicode_Equal(left, right);
             assert((oparg >> 5) == Py_EQ || (oparg >> 5) == Py_NE);

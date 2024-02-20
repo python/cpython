@@ -574,7 +574,7 @@ class TestUopsOptimization(unittest.TestCase):
     def test_int_type_propagation(self):
         def testfunc(loops):
             num = 0
-            while num < loops:
+            for i in range(loops):
                 x = num + num
                 a = x + 1
                 num += 1
@@ -593,7 +593,7 @@ class TestUopsOptimization(unittest.TestCase):
             return x + x
         def testfunc(loops):
             num = 0
-            while num < loops:
+            for i in range(loops):
                 x = num + num
                 a = double(x)
                 num += 1
@@ -617,7 +617,7 @@ class TestUopsOptimization(unittest.TestCase):
             return x + x
         def testfunc(loops):
             num = 0
-            while num < loops:
+            for i in range(loops):
                 a = double(num)
                 x = a + a
                 num += 1
@@ -821,6 +821,59 @@ class TestUopsOptimization(unittest.TestCase):
         # We'll also need to verify that propagation actually occurs.
         self.assertIn("_BINARY_OP_MULTIPLY_FLOAT", uops)
 
+    def test_compare_op_type_propagation_float(self):
+        def testfunc(n):
+            a = 1.0
+            for _ in range(n):
+                x = a == a
+                x = a == a
+                x = a == a
+                x = a == a
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertTrue(res)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _, _ in ex}
+        guard_both_float_count = [opname for opname, _, _ in ex if opname == "_GUARD_BOTH_FLOAT"]
+        self.assertLessEqual(len(guard_both_float_count), 1)
+        self.assertIn("_COMPARE_OP_FLOAT", uops)
+
+    def test_compare_op_type_propagation_int(self):
+        def testfunc(n):
+            a = 1
+            for _ in range(n):
+                x = a == a
+                x = a == a
+                x = a == a
+                x = a == a
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertTrue(res)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _, _ in ex}
+        guard_both_float_count = [opname for opname, _, _ in ex if opname == "_GUARD_BOTH_INT"]
+        self.assertLessEqual(len(guard_both_float_count), 1)
+        self.assertIn("_COMPARE_OP_INT", uops)
+
+    def test_compare_op_type_propagation_unicode(self):
+        def testfunc(n):
+            a = ""
+            for _ in range(n):
+                x = a == a
+                x = a == a
+                x = a == a
+                x = a == a
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertTrue(res)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _, _ in ex}
+        guard_both_float_count = [opname for opname, _, _ in ex if opname == "_GUARD_BOTH_UNICODE"]
+        self.assertLessEqual(len(guard_both_float_count), 1)
+        self.assertIn("_COMPARE_OP_STR", uops)
 
 if __name__ == "__main__":
     unittest.main()
