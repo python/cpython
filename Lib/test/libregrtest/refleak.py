@@ -129,7 +129,9 @@ def runtest_refleak(test_name, test_func,
             if total_leaks <= 0:
                 symbol = '.'
             elif total_leaks < 10:
-                symbol = str(total_leaks)
+                symbol = (
+                    '.', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+                    )[total_leaks]
             else:
                 symbol = 'X'
             if i == warmups:
