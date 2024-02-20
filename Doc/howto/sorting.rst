@@ -1,7 +1,7 @@
 .. _sortinghowto:
 
-Sorting HOW TO
-**************
+Sorting Techniques
+******************
 
 :Author: Andrew Dalke and Raymond Hettinger
 
