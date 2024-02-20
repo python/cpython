@@ -540,6 +540,7 @@ CType_Type_sizeof(PyObject *self) {
         if (info->ffi_type_pointer.elements) {
             size += (info->length + 1) * sizeof(ffi_type *);
         }
+        size += info->ndim * sizeof(Py_ssize_t);
     }
 
     return PyLong_FromSsize_t(size);
@@ -1258,7 +1259,7 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         if (itemdict->shape != NULL) {
             /* pointer to an array: the shape needs to be prefixed */
             stginfo->format = _ctypes_alloc_format_string_with_shape(
-                itemdict->ndim, itemdict->shape, "&", current_format);
+                iteminfo->ndim, itemdict->shape, "&", current_format);
         } else {
             stginfo->format = _ctypes_alloc_format_string("&", current_format);
         }
@@ -1674,16 +1675,16 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     stginfo->format = _ctypes_alloc_format_string(NULL, iteminfo->format);
     if (stginfo->format == NULL)
         goto error;
-    stgdict->ndim = itemdict->ndim + 1;
-    stgdict->shape = PyMem_Malloc(sizeof(Py_ssize_t) * stgdict->ndim);
+    stginfo->ndim = iteminfo->ndim + 1;
+    stgdict->shape = PyMem_Malloc(sizeof(Py_ssize_t) * stginfo->ndim);
     if (stgdict->shape == NULL) {
         PyErr_NoMemory();
         goto error;
     }
     stgdict->shape[0] = length;
-    if (stgdict->ndim > 1) {
+    if (stginfo->ndim > 1) {
         memmove(&stgdict->shape[1], itemdict->shape,
-            sizeof(Py_ssize_t) * (stgdict->ndim - 1));
+            sizeof(Py_ssize_t) * (stginfo->ndim - 1));
     }
 
     itemsize = iteminfo->size;
@@ -2943,7 +2944,7 @@ PyCData_NewGetBuffer(PyObject *myself, Py_buffer *view, int flags)
     view->readonly = 0;
     /* use default format character if not set */
     view->format = info->format ? info->format : "B";
-    view->ndim = dict->ndim;
+    view->ndim = info->ndim;
     view->shape = dict->shape;
     view->itemsize = item_info->size;
     view->strides = NULL;

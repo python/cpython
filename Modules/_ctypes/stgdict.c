@@ -94,7 +94,6 @@ PyCStgDict_init(StgDictObject *self, PyObject *args, PyObject *kwds)
 {
     if (PyDict_Type.tp_init((PyObject *)self, args, kwds) < 0)
         return -1;
-    self->ndim = 0;
     self->shape = NULL;
     return 0;
 }
@@ -120,7 +119,6 @@ PyCStgDict_sizeof(StgDictObject *self, void *unused)
 
     res = _PyDict_SizeOf((PyDictObject *)self);
     res += sizeof(StgDictObject) - sizeof(PyDictObject);
-    res += self->ndim * sizeof(Py_ssize_t);
     return PyLong_FromSsize_t(res);
 }
 
@@ -162,13 +160,13 @@ PyCStgDict_clone(StgDictObject *dst, StgDictObject *src,
         strcpy(dst_info->format, src_info->format);
     }
     if (src->shape) {
-        dst->shape = PyMem_Malloc(sizeof(Py_ssize_t) * src->ndim);
+        dst->shape = PyMem_Malloc(sizeof(Py_ssize_t) * src_info->ndim);
         if (dst->shape == NULL) {
             PyErr_NoMemory();
             return -1;
         }
         memcpy(dst->shape, src->shape,
-               sizeof(Py_ssize_t) * src->ndim);
+               sizeof(Py_ssize_t) * src_info->ndim);
     }
 
     if (src_info->ffi_type_pointer.elements == NULL)
@@ -722,7 +720,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
             ptr = stginfo->format;
             if (dict->shape != NULL) {
                 stginfo->format = _ctypes_alloc_format_string_with_shape(
-                    dict->ndim, dict->shape, stginfo->format, buf);
+                    info->ndim, dict->shape, stginfo->format, buf);
             } else {
                 stginfo->format = _ctypes_alloc_format_string(stginfo->format, buf);
             }
