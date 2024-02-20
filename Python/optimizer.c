@@ -296,11 +296,9 @@ uop_dealloc(_PyExecutorObject *self) {
 const char *
 _PyUOpName(int index)
 {
-#ifdef Py_DEBUG
     if (index < 0 || index > MAX_UOP_ID) {
         return NULL;
     }
-#endif
     return _PyOpcode_uop_name[index];
 }
 
