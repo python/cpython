@@ -1136,7 +1136,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     n = state.uncollectable;
 
     if (gcstate->debug & _PyGC_DEBUG_STATS) {
-        double d = _PyTime_AsSecondsDouble(_PyTime_PerfCounterUnchecked() - t1);
+        double d = PyTime_AsSecondsDouble(_PyTime_PerfCounterUnchecked() - t1);
         PySys_WriteStderr(
             "gc: done, %zd unreachable, %zd uncollectable, %.4fs elapsed\n",
             n+m, n, d);

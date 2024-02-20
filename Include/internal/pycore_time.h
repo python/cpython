@@ -321,7 +321,6 @@ extern int _PyTime_PerfCounterWithInfo(
 // Alias for backward compatibility
 #define _PyTime_MIN PyTime_MIN
 #define _PyTime_MAX PyTime_MAX
-#define _PyTime_AsSecondsDouble PyTime_AsSecondsDouble
 
 
 // --- _PyDeadline -----------------------------------------------------------

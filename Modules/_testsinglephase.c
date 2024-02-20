@@ -8,7 +8,6 @@
 //#include <time.h>
 #include "Python.h"
 #include "pycore_namespace.h"     // _PyNamespace_New()
-#include "pycore_time.h"          // PyTime_t
 
 
 typedef struct {
@@ -71,13 +70,13 @@ _set_initialized(PyTime_t *initialized)
 {
     /* We go strictly monotonic to ensure each time is unique. */
     PyTime_t prev;
-    if (_PyTime_MonotonicWithInfo(&prev, NULL) != 0) {
+    if (PyTime_Monotonic(&prev) != 0) {
         return -1;
     }
     /* We do a busy sleep since the interval should be super short. */
     PyTime_t t;
     do {
-        if (_PyTime_MonotonicWithInfo(&t, NULL) != 0) {
+        if (PyTime_Monotonic(&t) != 0) {
             return -1;
         }
     } while (t == prev);
@@ -136,7 +135,7 @@ init_module(PyObject *module, module_state *state)
         return -1;
     }
 
-    double d = _PyTime_AsSecondsDouble(state->initialized);
+    double d = PyTime_AsSecondsDouble(state->initialized);
     if (PyModule_Add(module, "_module_initialized", PyFloat_FromDouble(d)) < 0) {
         return -1;
     }
@@ -157,7 +156,7 @@ common_state_initialized(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (state == NULL) {
         Py_RETURN_NONE;
     }
-    double d = _PyTime_AsSecondsDouble(state->initialized);
+    double d = PyTime_AsSecondsDouble(state->initialized);
     return PyFloat_FromDouble(d);
 }
 

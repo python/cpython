@@ -2,10 +2,10 @@
 
 #include "parts.h"
 
-#include "pycore_time.h"
+#include "pycore_time.h"          // _PyTime_FromSeconds()
 
 #ifdef MS_WINDOWS
-#  include <winsock2.h>          // struct timeval
+#  include <winsock2.h>           // struct timeval
 #endif
 
 

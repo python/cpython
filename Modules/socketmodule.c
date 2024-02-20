@@ -3113,7 +3113,7 @@ sock_gettimeout(PySocketSockObject *s, PyObject *Py_UNUSED(ignored))
         Py_RETURN_NONE;
     }
     else {
-        double seconds = _PyTime_AsSecondsDouble(s->sock_timeout);
+        double seconds = PyTime_AsSecondsDouble(s->sock_timeout);
         return PyFloat_FromDouble(seconds);
     }
 }
@@ -6917,7 +6917,7 @@ socket_getdefaulttimeout(PyObject *self, PyObject *Py_UNUSED(ignored))
         Py_RETURN_NONE;
     }
     else {
-        double seconds = _PyTime_AsSecondsDouble(state->defaulttimeout);
+        double seconds = PyTime_AsSecondsDouble(state->defaulttimeout);
         return PyFloat_FromDouble(seconds);
     }
 }
