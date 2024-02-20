@@ -5131,7 +5131,7 @@ datetime_from_timestamp(PyObject *cls, TM_FUNC f, PyObject *timestamp,
 static PyObject *
 datetime_best_possible(PyObject *cls, TM_FUNC f, PyObject *tzinfo)
 {
-    _PyTime_t ts = _PyTime_GetSystemClock();
+    PyTime_t ts = _PyTime_GetSystemClock();
     time_t secs;
     int us;
 
