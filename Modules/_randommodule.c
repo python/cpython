@@ -75,6 +75,7 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pylifecycle.h"   // _PyOS_URandomNonblock()
+#include "pycore_time.h"          // _PyTime_GetSystemClock()
 
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>             // getpid()

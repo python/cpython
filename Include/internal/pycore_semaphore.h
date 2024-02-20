@@ -8,7 +8,6 @@
 #endif
 
 #include "pycore_pythread.h"      // _POSIX_SEMAPHORES
-#include "pycore_time.h"          // PyTime_t
 
 #ifdef MS_WINDOWS
 #   define WIN32_LEAN_AND_MEAN
