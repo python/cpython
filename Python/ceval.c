@@ -650,7 +650,7 @@ static const _Py_CODEUNIT _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS[] = {
 extern const struct _PyCode_DEF(8) _Py_InitCleanup;
 
 #ifdef Py_DEBUG
-extern void _PyUOpPrint(_PyUOpInstruction *uop);
+extern void _PyUOpPrint(const _PyUOpInstruction *uop);
 #endif
 
 
@@ -1101,9 +1101,15 @@ side_exit:
     uint32_t exit_index = next_uop[-1].exit_index;
     assert(exit_index < current_executor->exit_count);
     _PyExitData *exit = &current_executor->exits[exit_index];
-    DPRINTF(2, "SIDE EXIT: [UOp %d (%s), oparg %d, operand %" PRIu64 ", exit %u, temp %d, target %d -> %s]\n",
-            uopcode, _PyUOpName(uopcode), next_uop[-1].oparg, next_uop[-1].operand, exit_index, exit->temperature,
-            exit->target, _PyOpcode_OpName[_PyCode_CODE(_PyFrame_GetCode(frame))[exit->target].op.code]);
+#ifdef Py_DEBUG
+    if (lltrace >= 2) {
+        printf("SIDE EXIT: [UOp ");
+        _PyUOpPrint(&next_uop[-1]);
+        printf(", exit %u, temp %d, target %d -> %s]\n",
+               exit_index, exit->temperature, exit->target,
+               _PyOpcode_OpName[frame->instr_ptr->op.code]);
+    }
+#endif
     Py_INCREF(exit->executor);
     tstate->previous_executor = (PyObject *)current_executor;
     GOTO_TIER_TWO(exit->executor);

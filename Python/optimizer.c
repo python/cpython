@@ -306,7 +306,7 @@ _PyUOpName(int index)
 
 #ifdef Py_DEBUG
 void
-_PyUOpPrint(_PyUOpInstruction *uop)
+_PyUOpPrint(const _PyUOpInstruction *uop)
 {
     const char *name = _PyUOpName(uop->opcode);
     if (name == NULL) {
