@@ -963,6 +963,21 @@ uop_optimize(
         }
     }
     assert(err == 1);
+    /* Fix up */
+    for (int pc = 0; pc < UOP_MAX_TRACE_LENGTH; pc++) {
+        int opcode = buffer[pc].opcode;
+        int oparg = buffer[pc].oparg;
+        if (_PyUop_Flags[opcode] & HAS_OPARG_AND_1_FLAG) {
+            buffer[pc].opcode = opcode + 1 + (oparg & 1);
+        }
+        else if (oparg < _PyUop_Replication[opcode]) {
+            buffer[pc].opcode = opcode + oparg + 1;
+        }
+        else if (opcode == _JUMP_TO_TOP || opcode == _EXIT_TRACE) {
+            break;
+        }
+        assert(_PyOpcode_uop_name[buffer[pc].opcode]);
+    }
     _PyExecutorObject *executor = make_executor_from_uops(buffer, &dependencies);
     if (executor == NULL) {
         return -1;
