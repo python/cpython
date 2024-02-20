@@ -564,10 +564,9 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         ops = list(iter_opnames(ex))
-        count = ops.count("_GUARD_IS_TRUE_POP")
-        # Because Each 'if' halves the score, the second branch is
-        # too much already.
-        self.assertEqual(count, 1)
+        #Since branch is 50/50 the trace could go either way.
+        count = ops.count("_GUARD_IS_TRUE_POP") + ops.count("_GUARD_IS_FALSE_POP")
+        self.assertLessEqual(count, 2)
 
 class TestUopsOptimization(unittest.TestCase):
 
@@ -847,8 +846,8 @@ class TestUopsOptimization(unittest.TestCase):
         res, ex = self._run_with_optimizer(testfunc, 32)
         self.assertTrue(res)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
-        guard_both_float_count = [opname for opname, _, _ in ex if opname == "_GUARD_BOTH_FLOAT"]
+        uops = get_opnames(ex)
+        guard_both_float_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_BOTH_FLOAT"]
         self.assertLessEqual(len(guard_both_float_count), 1)
         self.assertIn("_COMPARE_OP_FLOAT", uops)
 
@@ -865,8 +864,8 @@ class TestUopsOptimization(unittest.TestCase):
         res, ex = self._run_with_optimizer(testfunc, 32)
         self.assertTrue(res)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
-        guard_both_float_count = [opname for opname, _, _ in ex if opname == "_GUARD_BOTH_INT"]
+        uops = get_opnames(ex)
+        guard_both_float_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_BOTH_INT"]
         self.assertLessEqual(len(guard_both_float_count), 1)
         self.assertIn("_COMPARE_OP_INT", uops)
 
@@ -883,8 +882,8 @@ class TestUopsOptimization(unittest.TestCase):
         res, ex = self._run_with_optimizer(testfunc, 32)
         self.assertTrue(res)
         self.assertIsNotNone(ex)
-        uops = {opname for opname, _, _ in ex}
-        guard_both_float_count = [opname for opname, _, _ in ex if opname == "_GUARD_BOTH_UNICODE"]
+        uops = get_opnames(ex)
+        guard_both_float_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_BOTH_UNICODE"]
         self.assertLessEqual(len(guard_both_float_count), 1)
         self.assertIn("_COMPARE_OP_STR", uops)
 
