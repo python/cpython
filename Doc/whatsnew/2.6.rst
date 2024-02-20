@@ -2992,6 +2992,33 @@ Changes to Python's build process and to the C API include:
   architectures (x86, PowerPC), 64-bit (x86-64 and PPC-64), or both.
   (Contributed by Ronald Oussoren.)
 
+* A new function added in Python 2.6.6, :c:func:`!PySys_SetArgvEx`, sets
+  the value of ``sys.argv`` and can optionally update ``sys.path`` to
+  include the directory containing the script named by ``sys.argv[0]``
+  depending on the value of an *updatepath* parameter.
+
+  This function was added to close a security hole for applications
+  that embed Python.  The old function, :c:func:`!PySys_SetArgv`, would
+  always update ``sys.path``, and sometimes it would add the current
+  directory.  This meant that, if you ran an application embedding
+  Python in a directory controlled by someone else, attackers could
+  put a Trojan-horse module in the directory (say, a file named
+  :file:`os.py`) that your application would then import and run.
+
+  If you maintain a C/C++ application that embeds Python, check
+  whether you're calling :c:func:`!PySys_SetArgv` and carefully consider
+  whether the application should be using :c:func:`!PySys_SetArgvEx`
+  with *updatepath* set to false.  Note that using this function will
+  break compatibility with Python versions 2.6.5 and earlier; if you
+  have to continue working with earlier versions, you can leave
+  the call to :c:func:`!PySys_SetArgv` alone and call
+  ``PyRun_SimpleString("sys.path.pop(0)\n")`` afterwards to discard
+  the first ``sys.path`` component.
+
+  Security issue reported as `CVE-2008-5983
+  <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-5983>`_;
+  discussed in :gh:`50003`, and fixed by Antoine Pitrou.
+
 * The BerkeleyDB module now has a C API object, available as
   ``bsddb.db.api``.   This object can be used by other C extensions
   that wish to use the :mod:`bsddb` module for their own purposes.
@@ -3293,6 +3320,15 @@ that may require changes to your code:
   Comparisons between cells, which are an implementation detail of Python's
   scoping rules, also cause warnings because such comparisons are forbidden
   entirely in 3.0.
+
+For applications that embed Python:
+
+* The :c:func:`!PySys_SetArgvEx` function was added in Python 2.6.6,
+  letting applications close a security hole when the existing
+  :c:func:`!PySys_SetArgv` function was used.  Check whether you're
+  calling :c:func:`!PySys_SetArgv` and carefully consider whether the
+  application should be using :c:func:`!PySys_SetArgvEx` with
+  *updatepath* set to false.
 
 .. ======================================================================
 

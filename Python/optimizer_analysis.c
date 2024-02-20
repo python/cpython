@@ -341,6 +341,18 @@ sym_new_const(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val)
     return temp;
 }
 
+static inline bool
+is_const(_Py_UOpsSymType *sym)
+{
+    return sym->const_val != NULL;
+}
+
+static inline PyObject *
+get_const(_Py_UOpsSymType *sym)
+{
+    return sym->const_val;
+}
+
 static _Py_UOpsSymType*
 sym_new_null(_Py_UOpsAbstractInterpContext *ctx)
 {
@@ -576,16 +588,17 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
     INST->oparg = ARG;            \
     INST->operand = OPERAND;
 
+#define OUT_OF_SPACE_IF_NULL(EXPR)     \
+    do {                               \
+        if ((EXPR) == NULL) {          \
+            goto out_of_space;         \
+        }                              \
+    } while (0);
+
 #define _LOAD_ATTR_NOT_NULL \
     do {                    \
-    attr = sym_new_known_notnull(ctx); \
-    if (attr == NULL) { \
-        goto error; \
-    } \
-    null = sym_new_null(ctx); \
-    if (null == NULL) { \
-        goto error; \
-    } \
+    OUT_OF_SPACE_IF_NULL(attr = sym_new_known_notnull(ctx)); \
+    OUT_OF_SPACE_IF_NULL(null = sym_new_null(ctx)); \
     } while (0);
 
 
