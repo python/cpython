@@ -75,7 +75,7 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pylifecycle.h"   // _PyOS_URandomNonblock()
-#include "pycore_time.h"          // _PyTime_GetSystemClock()
+#include "pycore_time.h"          // _PyTime_TimeUnchecked()
 
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>             // getpid()
@@ -266,7 +266,7 @@ random_seed_time_pid(RandomObject *self)
     PyTime_t now;
     uint32_t key[5];
 
-    now = _PyTime_GetSystemClock();
+    now = _PyTime_TimeUnchecked();
     key[0] = (uint32_t)(now & 0xffffffffU);
     key[1] = (uint32_t)(now >> 32);
 
@@ -278,7 +278,7 @@ random_seed_time_pid(RandomObject *self)
     key[2] = 0;
 #endif
 
-    now = _PyTime_GetMonotonicClock();
+    now = _PyTime_MonotonicUnchecked();
     key[3] = (uint32_t)(now & 0xffffffffU);
     key[4] = (uint32_t)(now >> 32);
 

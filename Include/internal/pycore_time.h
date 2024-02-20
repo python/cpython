@@ -62,7 +62,6 @@ extern "C" {
 struct timeval;
 #endif
 
-typedef PyTime_t PyTime_t;
 #define _SIZEOF_PYTIME_T 8
 
 typedef enum {
@@ -253,37 +252,28 @@ typedef struct {
     double resolution;
 } _Py_clock_info_t;
 
-// Get the current time from the system clock.
+// Similar to PyTime_Time() but silently ignore the error and return 0 if the
+// internal clock fails.
 //
-// If the internal clock fails, silently ignore the error and return 0.
-// On integer overflow, silently ignore the overflow and clamp the clock to
-// [_PyTime_MIN; _PyTime_MAX].
-//
-// Use _PyTime_GetSystemClockWithInfo or the public PyTime_Time() to check
+// Use _PyTime_TimeWithInfo() or the public PyTime_Time() to check
 // for failure.
 // Export for '_random' shared extension.
-PyAPI_FUNC(PyTime_t) _PyTime_GetSystemClock(void);
+PyAPI_FUNC(PyTime_t) _PyTime_TimeUnchecked(void);
 
 // Get the current time from the system clock.
 // On success, set *t and *info (if not NULL), and return 0.
 // On error, raise an exception and return -1.
-extern int _PyTime_GetSystemClockWithInfo(
+extern int _PyTime_TimeWithInfo(
     PyTime_t *t,
     _Py_clock_info_t *info);
 
-// Get the time of a monotonic clock, i.e. a clock that cannot go backwards.
-// The clock is not affected by system clock updates. The reference point of
-// the returned value is undefined, so that only the difference between the
-// results of consecutive calls is valid.
+// Similar to PyTime_Monotonic() but silently ignore the error and return 0 if
+// the internal clock fails.
 //
-// If the internal clock fails, silently ignore the error and return 0.
-// On integer overflow, silently ignore the overflow and clamp the clock to
-// [_PyTime_MIN; _PyTime_MAX].
-//
-// Use _PyTime_GetMonotonicClockWithInfo or the public PyTime_Monotonic()
+// Use _PyTime_MonotonicWithInfo() or the public PyTime_Monotonic()
 // to check for failure.
 // Export for '_random' shared extension.
-PyAPI_FUNC(PyTime_t) _PyTime_GetMonotonicClock(void);
+PyAPI_FUNC(PyTime_t) _PyTime_MonotonicUnchecked(void);
 
 // Get the time of a monotonic clock, i.e. a clock that cannot go backwards.
 // The clock is not affected by system clock updates. The reference point of
@@ -294,7 +284,7 @@ PyAPI_FUNC(PyTime_t) _PyTime_GetMonotonicClock(void);
 //
 // Return 0 on success, raise an exception and return -1 on error.
 // Export for '_testsinglephase' shared extension.
-PyAPI_FUNC(int) _PyTime_GetMonotonicClockWithInfo(
+PyAPI_FUNC(int) _PyTime_MonotonicWithInfo(
     PyTime_t *t,
     _Py_clock_info_t *info);
 
@@ -309,17 +299,13 @@ PyAPI_FUNC(int) _PyTime_localtime(time_t t, struct tm *tm);
 // Export for '_datetime' shared extension.
 PyAPI_FUNC(int) _PyTime_gmtime(time_t t, struct tm *tm);
 
-// Get the performance counter: clock with the highest available resolution to
-// measure a short duration.
+// Similar to PyTime_PerfCounter() but silently ignore the error and return 0
+// if the internal clock fails.
 //
-// If the internal clock fails, silently ignore the error and return 0.
-// On integer overflow, silently ignore the overflow and clamp the clock to
-// [_PyTime_MIN; _PyTime_MAX].
-//
-// Use _PyTime_GetPerfCounterWithInfo() or the public PyTime_PerfCounter
-// to check for failure.
+// Use _PyTime_PerfCounterWithInfo() or the public PyTime_PerfCounter() to
+// check for failure.
 // Export for '_lsprof' shared extension.
-PyAPI_FUNC(PyTime_t) _PyTime_GetPerfCounter(void);
+PyAPI_FUNC(PyTime_t) _PyTime_PerfCounterUnchecked(void);
 
 
 // Get the performance counter: clock with the highest available resolution to
@@ -328,7 +314,7 @@ PyAPI_FUNC(PyTime_t) _PyTime_GetPerfCounter(void);
 // Fill info (if set) with information of the function used to get the time.
 //
 // Return 0 on success, raise an exception and return -1 on error.
-extern int _PyTime_GetPerfCounterWithInfo(
+extern int _PyTime_PerfCounterWithInfo(
     PyTime_t *t,
     _Py_clock_info_t *info);
 
@@ -341,12 +327,12 @@ extern int _PyTime_GetPerfCounterWithInfo(
 // --- _PyDeadline -----------------------------------------------------------
 
 // Create a deadline.
-// Pseudo code: _PyTime_GetMonotonicClock() + timeout.
+// Pseudo code: _PyTime_MonotonicUnchecked() + timeout.
 // Export for '_ssl' shared extension.
 PyAPI_FUNC(PyTime_t) _PyDeadline_Init(PyTime_t timeout);
 
 // Get remaining time from a deadline.
-// Pseudo code: deadline - _PyTime_GetMonotonicClock().
+// Pseudo code: deadline - _PyTime_MonotonicUnchecked().
 // Export for '_ssl' shared extension.
 PyAPI_FUNC(PyTime_t) _PyDeadline_Get(PyTime_t deadline);
 

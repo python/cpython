@@ -154,12 +154,12 @@ _PyThread_cond_after(long long us, struct timespec *abs)
     PyTime_t t;
 #ifdef CONDATTR_MONOTONIC
     if (condattr_monotonic) {
-        t = _PyTime_GetMonotonicClock();
+        t = _PyTime_MonotonicUnchecked();
     }
     else
 #endif
     {
-        t = _PyTime_GetSystemClock();
+        t = _PyTime_TimeUnchecked();
     }
     t = _PyTime_Add(t, timeout);
     _PyTime_AsTimespec_clamp(t, abs);
@@ -502,7 +502,7 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
     struct timespec abs_timeout;
     // Local scope for deadline
     {
-        PyTime_t deadline = _PyTime_Add(_PyTime_GetMonotonicClock(), timeout);
+        PyTime_t deadline = _PyTime_Add(_PyTime_MonotonicUnchecked(), timeout);
         _PyTime_AsTimespec_clamp(deadline, &abs_timeout);
     }
 #else
@@ -518,7 +518,7 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
             status = fix_status(sem_clockwait(thelock, CLOCK_MONOTONIC,
                                               &abs_timeout));
 #else
-            PyTime_t abs_time = _PyTime_Add(_PyTime_GetSystemClock(),
+            PyTime_t abs_time = _PyTime_Add(_PyTime_TimeUnchecked(),
                                              timeout);
             struct timespec ts;
             _PyTime_AsTimespec_clamp(abs_time, &ts);

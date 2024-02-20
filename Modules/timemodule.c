@@ -106,8 +106,8 @@ _PyFloat_FromPyTime(PyTime_t t)
 static int
 get_system_time(PyTime_t *t)
 {
-    // Avoid _PyTime_GetSystemClock() which silently ignores errors.
-    return _PyTime_GetSystemClockWithInfo(t, NULL);
+    // Avoid _PyTime_TimeUnchecked() which silently ignores errors.
+    return _PyTime_TimeWithInfo(t, NULL);
 }
 
 
@@ -1159,8 +1159,8 @@ should not be relied on.");
 static int
 get_monotonic(PyTime_t *t)
 {
-    // Avoid _PyTime_GetMonotonicClock() which silently ignores errors.
-    return _PyTime_GetMonotonicClockWithInfo(t, NULL);
+    // Avoid _PyTime_MonotonicUnchecked() which silently ignores errors.
+    return _PyTime_MonotonicWithInfo(t, NULL);
 }
 
 
@@ -1198,8 +1198,8 @@ Monotonic clock, cannot go backward, as nanoseconds.");
 static int
 get_perf_counter(PyTime_t *t)
 {
-    // Avoid _PyTime_GetPerfCounter() which silently ignores errors.
-    return _PyTime_GetPerfCounterWithInfo(t, NULL);
+    // Avoid _PyTime_PerfCounterUnchecked() which silently ignores errors.
+    return _PyTime_PerfCounterWithInfo(t, NULL);
 }
 
 
@@ -1615,17 +1615,17 @@ time_get_clock_info(PyObject *module, PyObject *args)
 #endif
 
     if (strcmp(name, "time") == 0) {
-        if (_PyTime_GetSystemClockWithInfo(&t, &info) < 0) {
+        if (_PyTime_TimeWithInfo(&t, &info) < 0) {
             return NULL;
         }
     }
     else if (strcmp(name, "monotonic") == 0) {
-        if (_PyTime_GetMonotonicClockWithInfo(&t, &info) < 0) {
+        if (_PyTime_MonotonicWithInfo(&t, &info) < 0) {
             return NULL;
         }
     }
     else if (strcmp(name, "perf_counter") == 0) {
-        if (_PyTime_GetPerfCounterWithInfo(&t, &info) < 0) {
+        if (_PyTime_PerfCounterWithInfo(&t, &info) < 0) {
             return NULL;
         }
     }

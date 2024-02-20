@@ -361,6 +361,7 @@ Python/import.c	-	_PyImport_Inittab	-
 Python/import.c	-	_PySys_ImplCacheTag	-
 Python/intrinsics.c	-	_PyIntrinsics_UnaryFunctions	-
 Python/intrinsics.c	-	_PyIntrinsics_BinaryFunctions	-
+Python/lock.c	-	TIME_TO_BE_FAIR_NS	-
 Python/opcode_targets.h	-	opcode_targets	-
 Python/perf_trampoline.c	-	_Py_perfmap_callbacks	-
 Python/pyhash.c	-	PyHash_Func	-

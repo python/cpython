@@ -78,7 +78,7 @@ EnterNonRecursiveMutex(PNRMUTEX mutex, DWORD milliseconds)
     } else if (milliseconds != 0) {
         /* wait at least until the deadline */
         PyTime_t nanoseconds = _PyTime_FromNanoseconds((PyTime_t)milliseconds * 1000000);
-        PyTime_t deadline = _PyTime_Add(_PyTime_GetPerfCounter(), nanoseconds);
+        PyTime_t deadline = _PyTime_Add(_PyTime_PerfCounterUnchecked(), nanoseconds);
         while (mutex->locked) {
             PyTime_t microseconds = _PyTime_AsMicroseconds(nanoseconds,
                                                             _PyTime_ROUND_TIMEOUT);
@@ -86,7 +86,7 @@ EnterNonRecursiveMutex(PNRMUTEX mutex, DWORD milliseconds)
                 result = WAIT_FAILED;
                 break;
             }
-            nanoseconds = deadline - _PyTime_GetPerfCounter();
+            nanoseconds = deadline - _PyTime_PerfCounterUnchecked();
             if (nanoseconds <= 0) {
                 break;
             }
