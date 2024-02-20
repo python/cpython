@@ -844,7 +844,7 @@
             attr = sym_new_unknown(ctx);
             if (attr == NULL) goto out_of_space;
             stack_pointer[-3] = attr;
-            stack_pointer += -2 + ((0) ? 1 : 0);
+            stack_pointer += -2;
             break;
         }
 
@@ -1274,8 +1274,8 @@
             self = sym_new_unknown(ctx);
             if (self == NULL) goto out_of_space;
             stack_pointer[-1] = attr;
-            if (1) stack_pointer[0] = self;
-            stack_pointer += ((1) ? 1 : 0);
+            stack_pointer[0] = self;
+            stack_pointer += 1;
             break;
         }
 
@@ -1287,8 +1287,8 @@
             self = sym_new_unknown(ctx);
             if (self == NULL) goto out_of_space;
             stack_pointer[-1] = attr;
-            if (1) stack_pointer[0] = self;
-            stack_pointer += ((1) ? 1 : 0);
+            stack_pointer[0] = self;
+            stack_pointer += 1;
             break;
         }
 
@@ -1297,7 +1297,6 @@
             attr = sym_new_unknown(ctx);
             if (attr == NULL) goto out_of_space;
             stack_pointer[-1] = attr;
-            stack_pointer += ((0) ? 1 : 0);
             break;
         }
 
@@ -1306,7 +1305,6 @@
             attr = sym_new_unknown(ctx);
             if (attr == NULL) goto out_of_space;
             stack_pointer[-1] = attr;
-            stack_pointer += ((0) ? 1 : 0);
             break;
         }
 
@@ -1322,8 +1320,8 @@
             self = sym_new_unknown(ctx);
             if (self == NULL) goto out_of_space;
             stack_pointer[-1] = attr;
-            if (1) stack_pointer[0] = self;
-            stack_pointer += ((1) ? 1 : 0);
+            stack_pointer[0] = self;
+            stack_pointer += 1;
             break;
         }
 
@@ -1419,7 +1417,6 @@
             ctx->frame = new_frame;
             ctx->curr_frame_depth++;
             stack_pointer = new_frame->stack_pointer;
-            stack_pointer += ((0) ? 1 : 0);
             break;
         }
 

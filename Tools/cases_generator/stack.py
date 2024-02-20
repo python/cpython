@@ -23,8 +23,12 @@ def maybe_parenthesize(sym: str) -> str:
 
 def var_size(var: StackItem) -> str:
     if var.condition:
-        # Special case simplification
-        if var.condition == "oparg & 1" and var.size == "1":
+        # Special case simplifications
+        if var.condition == "0":
+            return "0"
+        elif var.condition == "1":
+            return var.size
+        elif var.condition == "oparg & 1" and var.size == "1":
             return f"({var.condition})"
         else:
             return f"(({var.condition}) ? {var.size} : 0)"
@@ -154,7 +158,12 @@ class Stack:
             f"{var.name} = {cast}{indirect}stack_pointer[{self.base_offset.to_c()}];"
         )
         if var.condition:
-            return f"if ({var.condition}) {{ {assign} }}\n"
+            if var.condition == "1":
+                return f"{assign}\n"
+            elif var.condition == "0":
+                return ""
+            else:
+                return f"if ({var.condition}) {{ {assign} }}\n"
         return f"{assign}\n"
 
     def push(self, var: StackItem) -> str:
@@ -175,7 +184,10 @@ class Stack:
                 cast = f"({cast_type})" if var.type else ""
                 if var.name not in UNUSED and not var.is_array():
                     if var.condition:
-                        out.emit(f"if ({var.condition}) ")
+                        if var.condition == "0":
+                            continue
+                        elif var.condition != "1":
+                            out.emit(f"if ({var.condition}) ")
                     out.emit(
                         f"stack_pointer[{self.base_offset.to_c()}] = {cast}{var.name};\n"
                     )
