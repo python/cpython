@@ -1032,7 +1032,7 @@ py_get_system_clock(PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
 
 
 PyTime_t
-_PyTime_GetSystemClock(void)
+_PyTime_TimeUnchecked(void)
 {
     PyTime_t t;
     if (py_get_system_clock(&t, NULL, 0) < 0) {
@@ -1048,8 +1048,6 @@ int
 PyTime_Time(PyTime_t *result)
 {
     if (py_get_system_clock(result, NULL, 1) < 0) {
-        // If clock_gettime(CLOCK_REALTIME) or gettimeofday() fails:
-        // silently ignore the failure and return 0.
         *result = 0;
         return -1;
     }
@@ -1057,7 +1055,7 @@ PyTime_Time(PyTime_t *result)
 }
 
 int
-_PyTime_GetSystemClockWithInfo(PyTime_t *t, _Py_clock_info_t *info)
+_PyTime_TimeWithInfo(PyTime_t *t, _Py_clock_info_t *info)
 {
     return py_get_system_clock(t, info, 1);
 }
@@ -1224,7 +1222,7 @@ py_get_monotonic_clock(PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
 
 
 PyTime_t
-_PyTime_GetMonotonicClock(void)
+_PyTime_MonotonicUnchecked(void)
 {
     PyTime_t t;
     if (py_get_monotonic_clock(&t, NULL, 0) < 0) {
@@ -1248,7 +1246,7 @@ PyTime_Monotonic(PyTime_t *result)
 
 
 int
-_PyTime_GetMonotonicClockWithInfo(PyTime_t *tp, _Py_clock_info_t *info)
+_PyTime_MonotonicWithInfo(PyTime_t *tp, _Py_clock_info_t *info)
 {
     return py_get_monotonic_clock(tp, info, 1);
 }
@@ -1325,18 +1323,18 @@ py_get_win_perf_counter(PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
 
 
 int
-_PyTime_GetPerfCounterWithInfo(PyTime_t *t, _Py_clock_info_t *info)
+_PyTime_PerfCounterWithInfo(PyTime_t *t, _Py_clock_info_t *info)
 {
 #ifdef MS_WINDOWS
     return py_get_win_perf_counter(t, info, 1);
 #else
-    return _PyTime_GetMonotonicClockWithInfo(t, info);
+    return _PyTime_MonotonicWithInfo(t, info);
 #endif
 }
 
 
 PyTime_t
-_PyTime_GetPerfCounter(void)
+_PyTime_PerfCounterUnchecked(void)
 {
     PyTime_t t;
     int res;
@@ -1443,7 +1441,7 @@ _PyTime_gmtime(time_t t, struct tm *tm)
 PyTime_t
 _PyDeadline_Init(PyTime_t timeout)
 {
-    PyTime_t now = _PyTime_GetMonotonicClock();
+    PyTime_t now = _PyTime_MonotonicUnchecked();
     return _PyTime_Add(now, timeout);
 }
 
@@ -1451,6 +1449,6 @@ _PyDeadline_Init(PyTime_t timeout)
 PyTime_t
 _PyDeadline_Get(PyTime_t deadline)
 {
-    PyTime_t now = _PyTime_GetMonotonicClock();
+    PyTime_t now = _PyTime_MonotonicUnchecked();
     return deadline - now;
 }

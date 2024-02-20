@@ -71,13 +71,13 @@ _set_initialized(PyTime_t *initialized)
 {
     /* We go strictly monotonic to ensure each time is unique. */
     PyTime_t prev;
-    if (_PyTime_GetMonotonicClockWithInfo(&prev, NULL) != 0) {
+    if (_PyTime_MonotonicWithInfo(&prev, NULL) != 0) {
         return -1;
     }
     /* We do a busy sleep since the interval should be super short. */
     PyTime_t t;
     do {
-        if (_PyTime_GetMonotonicClockWithInfo(&t, NULL) != 0) {
+        if (_PyTime_MonotonicWithInfo(&t, NULL) != 0) {
             return -1;
         }
     } while (t == prev);
