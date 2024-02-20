@@ -2035,11 +2035,19 @@ buffer_info(PyObject *self, PyObject *arg)
 
     if (dict == NULL)
         dict = PyObject_stgdict(arg);
-    if (dict == NULL) {
+
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    if (PyStgInfo_FromAny(st, arg, &info) < 0) {
+        return NULL;
+    }
+
+    if (info == NULL) {
         PyErr_SetString(PyExc_TypeError,
                         "not a ctypes type or object");
         return NULL;
     }
+    assert(dict);
     shape = PyTuple_New(dict->ndim);
     if (shape == NULL)
         return NULL;
@@ -2050,7 +2058,7 @@ buffer_info(PyObject *self, PyObject *arg)
         Py_DECREF(shape);
         return NULL;
     }
-    return Py_BuildValue("siN", dict->format, dict->ndim, shape);
+    return Py_BuildValue("siN", info->format, dict->ndim, shape);
 }
 
 

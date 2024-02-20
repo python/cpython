@@ -513,6 +513,7 @@ CType_Type_dealloc(PyObject *self)
     }
     if (info) {
         PyMem_Free(info->ffi_type_pointer.elements);
+        PyMem_Free(info->format);
     }
 
     PyTypeObject *tp = Py_TYPE(self);
@@ -533,6 +534,9 @@ CType_Type_sizeof(PyObject *self) {
         return NULL;
     }
     if (info) {
+        if (info->format) {
+            size += strlen(info->format) + 1;
+        }
         if (info->ffi_type_pointer.elements) {
             size += (info->length + 1) * sizeof(ffi_type *);
         }
@@ -672,8 +676,8 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
         return NULL;
     }
     Py_SETREF(result->tp_dict, (PyObject *)dict);
-    dict->format = _ctypes_alloc_format_string(NULL, "B");
-    if (dict->format == NULL) {
+    info->format = _ctypes_alloc_format_string(NULL, "B");
+    if (info->format == NULL) {
         Py_DECREF(result);
         return NULL;
     }
@@ -1235,23 +1239,31 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             return NULL;
         }
         itemdict = PyType_stgdict(proto);
+        StgInfo *iteminfo;
+        if (PyStgInfo_FromType(st, proto, &iteminfo) < 0) {
+            Py_DECREF(proto);
+            Py_DECREF((PyObject *)result);
+            Py_DECREF((PyObject *)stgdict);
+            return NULL;
+        }
         /* PyCPointerType_SetProto has verified proto has a stgdict. */
+        assert(iteminfo);
         assert(itemdict);
-        /* If itemdict->format is NULL, then this is a pointer to an
+        /* If iteminfo->format is NULL, then this is a pointer to an
            incomplete type.  We create a generic format string
            'pointer to bytes' in this case.  XXX Better would be to
            fix the format string later...
         */
-        current_format = itemdict->format ? itemdict->format : "B";
+        current_format = iteminfo->format ? iteminfo->format : "B";
         if (itemdict->shape != NULL) {
             /* pointer to an array: the shape needs to be prefixed */
-            stgdict->format = _ctypes_alloc_format_string_with_shape(
+            stginfo->format = _ctypes_alloc_format_string_with_shape(
                 itemdict->ndim, itemdict->shape, "&", current_format);
         } else {
-            stgdict->format = _ctypes_alloc_format_string("&", current_format);
+            stginfo->format = _ctypes_alloc_format_string("&", current_format);
         }
         Py_DECREF(proto);
-        if (stgdict->format == NULL) {
+        if (stginfo->format == NULL) {
             Py_DECREF((PyObject *)result);
             Py_DECREF((PyObject *)stgdict);
             return NULL;
@@ -1658,9 +1670,9 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
     assert(iteminfo);
 
-    assert(itemdict->format);
-    stgdict->format = _ctypes_alloc_format_string(NULL, itemdict->format);
-    if (stgdict->format == NULL)
+    assert(iteminfo->format);
+    stginfo->format = _ctypes_alloc_format_string(NULL, iteminfo->format);
+    if (stginfo->format == NULL)
         goto error;
     stgdict->ndim = itemdict->ndim + 1;
     stgdict->shape = PyMem_Malloc(sizeof(Py_ssize_t) * stgdict->ndim);
@@ -2234,11 +2246,11 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     stginfo->setfunc = fmt->setfunc;
     stginfo->getfunc = fmt->getfunc;
 #ifdef WORDS_BIGENDIAN
-    stgdict->format = _ctypes_alloc_format_string_for_type(proto_str[0], 1);
+    stginfo->format = _ctypes_alloc_format_string_for_type(proto_str[0], 1);
 #else
-    stgdict->format = _ctypes_alloc_format_string_for_type(proto_str[0], 0);
+    stginfo->format = _ctypes_alloc_format_string_for_type(proto_str[0], 0);
 #endif
-    if (stgdict->format == NULL) {
+    if (stginfo->format == NULL) {
         Py_DECREF(result);
         Py_DECREF(proto);
         Py_DECREF((PyObject *)stgdict);
@@ -2248,8 +2260,8 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     stginfo->paramfunc = PyCSimpleType_paramfunc;
 /*
     if (result->tp_base != st->Simple_Type) {
-        stgdict->setfunc = NULL;
-        stgdict->getfunc = NULL;
+        stginfo->setfunc = NULL;
+        stginfo->getfunc = NULL;
     }
 */
 
@@ -2317,26 +2329,30 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     {
         PyObject *swapped = CreateSwappedType(type, args, kwds,
                                               proto, fmt);
-        StgDictObject *sw_dict;
         if (swapped == NULL) {
             Py_DECREF(result);
             return NULL;
         }
-        sw_dict = PyType_stgdict(swapped);
+        StgInfo *sw_info;
+        if (PyStgInfo_FromType(st, swapped, &sw_info) < 0) {
+            Py_DECREF(result);
+            return NULL;
+        }
+        assert(sw_info);
 #ifdef WORDS_BIGENDIAN
         PyObject_SetAttrString((PyObject *)result, "__ctype_le__", swapped);
         PyObject_SetAttrString((PyObject *)result, "__ctype_be__", (PyObject *)result);
         PyObject_SetAttrString(swapped, "__ctype_be__", (PyObject *)result);
         PyObject_SetAttrString(swapped, "__ctype_le__", swapped);
         /* We are creating the type for the OTHER endian */
-        sw_dict->format = _ctypes_alloc_format_string("<", stgdict->format+1);
+        sw_info->format = _ctypes_alloc_format_string("<", stginfo->format+1);
 #else
         PyObject_SetAttrString((PyObject *)result, "__ctype_be__", swapped);
         PyObject_SetAttrString((PyObject *)result, "__ctype_le__", (PyObject *)result);
         PyObject_SetAttrString(swapped, "__ctype_le__", (PyObject *)result);
         PyObject_SetAttrString(swapped, "__ctype_be__", swapped);
         /* We are creating the type for the OTHER endian */
-        sw_dict->format = _ctypes_alloc_format_string(">", stgdict->format+1);
+        sw_info->format = _ctypes_alloc_format_string(">", stginfo->format+1);
 #endif
         Py_DECREF(swapped);
         if (PyErr_Occurred()) {
@@ -2680,8 +2696,8 @@ PyCFuncPtrType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
        know the types of the arguments (although, in practice, most
        argtypes would be a ctypes type).
     */
-    stgdict->format = _ctypes_alloc_format_string(NULL, "X{}");
-    if (stgdict->format == NULL) {
+    stginfo->format = _ctypes_alloc_format_string(NULL, "X{}");
+    if (stginfo->format == NULL) {
         Py_DECREF(result);
         Py_DECREF((PyObject *)stgdict);
         return NULL;
@@ -2900,6 +2916,14 @@ PyCData_NewGetBuffer(PyObject *myself, Py_buffer *view, int flags)
 {
     CDataObject *self = (CDataObject *)myself;
     StgDictObject *dict = PyObject_stgdict(myself);
+
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    if (PyStgInfo_FromObject(st, myself, &info) < 0) {
+        return -1;
+    }
+    assert(info);
+
     PyObject *item_type = PyCData_item_type((PyObject*)Py_TYPE(myself));
     if (item_type == NULL) {
         return 0;
@@ -2907,7 +2931,6 @@ PyCData_NewGetBuffer(PyObject *myself, Py_buffer *view, int flags)
 
     if (view == NULL) return 0;
 
-    ctypes_state *st = GLOBAL_STATE();
     StgInfo *item_info;
     if (PyStgInfo_FromType(st, item_type, &item_info) < 0) {
         return -1;
@@ -2919,7 +2942,7 @@ PyCData_NewGetBuffer(PyObject *myself, Py_buffer *view, int flags)
     view->len = self->b_size;
     view->readonly = 0;
     /* use default format character if not set */
-    view->format = dict->format ? dict->format : "B";
+    view->format = info->format ? info->format : "B";
     view->ndim = dict->ndim;
     view->shape = dict->shape;
     view->itemsize = item_info->size;
