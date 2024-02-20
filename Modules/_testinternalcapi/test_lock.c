@@ -289,7 +289,7 @@ _testinternalcapi_benchmark_locks_impl(PyObject *module,
         goto exit;
     }
 
-    _PyTime_t start = _PyTime_GetMonotonicClock();
+    PyTime_t start = _PyTime_GetMonotonicClock();
 
     for (Py_ssize_t i = 0; i < num_threads; i++) {
         thread_data[i].bench_data = &bench_data;
@@ -306,7 +306,7 @@ _testinternalcapi_benchmark_locks_impl(PyObject *module,
     }
 
     Py_ssize_t total_iters = bench_data.total_iters;
-    _PyTime_t end = _PyTime_GetMonotonicClock();
+    PyTime_t end = _PyTime_GetMonotonicClock();
 
     // Return the total number of acquisitions and the number of acquisitions
     // for each thread.
