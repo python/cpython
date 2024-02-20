@@ -1008,7 +1008,7 @@ enter_tier_two:
         uopcode = next_uop->opcode;
         DPRINTF(3,
                 "%4d: uop %s, oparg %d, operand %" PRIu64 ", target %d, stack_level %d\n",
-                (int)(next_uop - current_executor->trace),
+                (int)(next_uop - (current_executor == NULL ? next_uop : current_executor->trace)),
                 _PyUOpName(uopcode),
                 next_uop->oparg,
                 next_uop->operand,
@@ -1030,7 +1030,7 @@ enter_tier_two:
             {
                 fprintf(stderr, "Unknown uop %d, oparg %d, operand %" PRIu64 " @ %d\n",
                         next_uop[-1].opcode, next_uop[-1].oparg, next_uop[-1].operand,
-                        (int)(next_uop - current_executor->trace - 1));
+                        (int)(next_uop - (current_executor == NULL ? next_uop : current_executor->trace) - 1));
                 Py_FatalError("Unknown uop");
             }
 #else
