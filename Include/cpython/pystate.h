@@ -68,6 +68,11 @@ struct _ts {
     PyThreadState *next;
     PyInterpreterState *interp;
 
+    /* The global instrumentation version in high bits, plus flags indicating
+       when to break out of the interpreter loop in lower bits. See details in
+       pycore_ceval.h. */
+    uintptr_t eval_breaker;
+
     struct {
         /* Has been initialized to a safe state.
 
