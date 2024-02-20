@@ -6,7 +6,7 @@
 #include "pycore_pyerrors.h"      // _Py_FatalErrorFormat
 #include "pycore_pystate.h"       // _PyThreadState_GET
 #include "pycore_semaphore.h"     // _PySemaphore
-#include "pycore_time.h"          //_PyTime_GetMonotonicClock()
+#include "pycore_time.h"          //_PyTime_MonotonicUnchecked()
 
 #include <stdbool.h>
 
@@ -120,13 +120,13 @@ _PySemaphore_PlatformWait(_PySemaphore *sema, PyTime_t timeout)
         struct timespec ts;
 
 #if defined(CLOCK_MONOTONIC) && defined(HAVE_SEM_CLOCKWAIT)
-        PyTime_t deadline = _PyTime_Add(_PyTime_GetMonotonicClock(), timeout);
+        PyTime_t deadline = _PyTime_Add(_PyTime_MonotonicUnchecked(), timeout);
 
         _PyTime_AsTimespec_clamp(deadline, &ts);
 
         err = sem_clockwait(&sema->platform_sem, CLOCK_MONOTONIC, &ts);
 #else
-        PyTime_t deadline = _PyTime_Add(_PyTime_GetSystemClock(), timeout);
+        PyTime_t deadline = _PyTime_Add(_PyTime_TimeUnchecked(), timeout);
 
         _PyTime_AsTimespec_clamp(deadline, &ts);
 
@@ -163,7 +163,7 @@ _PySemaphore_PlatformWait(_PySemaphore *sema, PyTime_t timeout)
             _PyTime_AsTimespec_clamp(timeout, &ts);
             err = pthread_cond_timedwait_relative_np(&sema->cond, &sema->mutex, &ts);
 #else
-            PyTime_t deadline = _PyTime_Add(_PyTime_GetSystemClock(), timeout);
+            PyTime_t deadline = _PyTime_Add(_PyTime_TimeUnchecked(), timeout);
             _PyTime_AsTimespec_clamp(deadline, &ts);
 
             err = pthread_cond_timedwait(&sema->cond, &sema->mutex, &ts);
