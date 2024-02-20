@@ -110,10 +110,10 @@
             if (is_const(value)) {
                 int err = PyObject_IsTrue(get_const(value));
                 ERROR_IF(err < 0, error);
-                res = sym_new_const(ctx, err ? Py_True : Py_False);
+                OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, err ? Py_True : Py_False));
             }
             else {
-                res = sym_new_known_type(ctx, &PyBool_Type);
+                OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyBool_Type));
             }
             stack_pointer[-1] = res;
             break;
@@ -132,11 +132,11 @@
             value = stack_pointer[-1];
             sym_set_type(value, &PyLong_Type);
             if (is_const(value)) {
-                res = sym_new_const(ctx, _PyLong_IsZero((PyLongObject *)get_const(value))
-                                ? Py_False : Py_True);
+                OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, _PyLong_IsZero((PyLongObject *)get_const(value))
+                                     ? Py_False : Py_True));
             }
             else {
-                res = sym_new_known_type(ctx, &PyBool_Type);
+                OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyBool_Type));
             }
             stack_pointer[-1] = res;
             break;
@@ -147,7 +147,7 @@
             _Py_UOpsSymType *res;
             value = stack_pointer[-1];
             sym_set_type(value, &PyList_Type);
-            res = sym_new_known_type(ctx, &PyBool_Type);
+            OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyBool_Type));
             stack_pointer[-1] = res;
             break;
         }
@@ -157,7 +157,7 @@
             _Py_UOpsSymType *res;
             value = stack_pointer[-1];
             sym_set_type(value, &_PyNone_Type);
-            res = sym_new_const(ctx, Py_False);
+            OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, Py_False));
             stack_pointer[-1] = res;
             break;
         }
@@ -168,19 +168,11 @@
             value = stack_pointer[-1];
             sym_set_type(value, &PyUnicode_Type);
             if (is_const(value)) {
-                PyObject *temp = NULL;
-                if (get_const(value) == &_Py_STR(empty)) {
-                    assert(_Py_IsImmortal(get_const(value)));
-                    temp = Py_False;
-                }
-                else {
-                    assert(Py_SIZE(get_const(value)));
-                    temp = Py_True;
-                }
-                res = sym_new_const(ctx, temp);
+                OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx,
+                                     get_const(value) == &_Py_STR(empty) ? Py_False : Py_True));
             }
             else {
-                res = sym_new_known_type(ctx, &PyBool_Type);
+                OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyBool_Type));
             }
             stack_pointer[-1] = res;
             break;
