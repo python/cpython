@@ -31,11 +31,13 @@
     <!-- Taken from _Target._compute_digest in Tools\jit\_targets.py: -->
     <_JITSources Include="$(PySourcePath)Python\executor_cases.c.h;$(GeneratedPyConfigDir)pyconfig.h;$(PySourcePath)Tools\jit\**"/>
     <_JITOutputs Include="$(GeneratedPyConfigDir)jit_stencils.h"/>
+    <_CasesSources Include="$(PySourcePath)Python\bytecodes.c;$(PySourcePath)Python\tier2_redundancy_eliminator_bytecodes.c;"/>
+    <_CasesOutputs Include="$(PySourcePath)Python\generated_cases.c.h;$(PySourcePath)Include\opcode_ids.h;$(PySourcePath)Include\internal\pycore_uop_ids.h;$(PySourcePath)Python\opcode_targets.h;$(PySourcePath)Include\internal\pycore_opcode_metadata.h;$(PySourcePath)Include\internal\pycore_uop_metadata.h;$(PySourcePath)Python\tier2_redundancy_eliminator_cases.c.h;$(PySourcePath)Lib\_opcode_metadata.py"/>
   </ItemGroup>
 
   <Target Name="_TouchRegenSources" Condition="$(ForceRegen) == 'true'">
     <Message Text="Touching source files to force regeneration" Importance="high" />
-    <Touch Files="@(_PegenSources);@(_ASTSources);@(_TokenSources);@(_KeywordOutputs)"
+    <Touch Files="@(_PegenSources);@(_ASTSources);@(_TokenSources);@(_KeywordOutputs);@(_CasesSources)"
            AlwaysCreate="False" />
   </Target>
 
@@ -79,7 +81,31 @@
     <Exec Command="$(PythonForBuild) Tools\build\generate_global_objects.py"
           WorkingDirectory="$(PySourcePath)" />
   </Target>
-  
+
+  <Target Name="_RegenCases"
+          Inputs="@(_CasesSources)" Outputs="@(_CasesOutputs)"
+          DependsOnTargets="FindPythonForBuild">
+    <Message Text="Regenerate cases" Importance="high" />
+    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\opcode_id_generator.py $(PySourcePath)Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\target_generator.py $(PySourcePath)Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\uop_id_generator.py $(PySourcePath)Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\py_metadata_generator.py $(PySourcePath)Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\tier1_generator.py $(PySourcePath)Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\tier2_generator.py $(PySourcePath)Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\tier2_abstract_generator.py $(PySourcePath)Python\tier2_redundancy_eliminator_bytecodes.c $(PySourcePath)Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\opcode_metadata_generator.py $(PySourcePath)Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\uop_metadata_generator.py $(PySourcePath)Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+  </Target>
+
   <Target Name="_RegenJIT"
           Condition="'$(UseJIT)' == 'true'"
           DependsOnTargets="_UpdatePyconfig;FindPythonForBuild"
@@ -100,7 +126,7 @@
           DependsOnTargets="_TouchRegenSources;_RegenPegen;_RegenAST_H;_RegenTokens;_RegenKeywords;_RegenGlobalObjects">
   </Target>
 
-  <Target Name="Regen" DependsOnTargets="_RegenNoPGUpdate;_RegenJIT">
+  <Target Name="Regen" DependsOnTargets="_RegenNoPGUpdate;_RegenJIT;_RegenCases">
     <Message Text="Generated sources are up to date" Importance="high" />
   </Target>
 
