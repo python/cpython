@@ -5340,7 +5340,8 @@ class NetworkConnectionNoServer(unittest.TestCase):
         port = socket_helper.find_unused_port()
         cli = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.addCleanup(cli.close)
-        with self.assertRaises(OSError) as cm:
+        expected_err_msg = f"Connection refused: ('localhost', {port})"
+        with self.assertRaises(OSError, msg=expected_err_msg) as cm:
             cli.connect((HOST, port))
         self.assertEqual(cm.exception.errno, errno.ECONNREFUSED)
 
