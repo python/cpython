@@ -338,7 +338,7 @@ Again, the implementation details can be revealed with a cast to
         (gdb) py-print scarlet_pimpernel
         'scarlet_pimpernel' not found
 
-   If the current C frame corrresponds to multiple Python frames, ``py-print``
+   If the current C frame corresponds to multiple Python frames, ``py-print``
    only considers the first one.
 
 ``py-locals``
@@ -352,7 +352,7 @@ Again, the implementation details can be revealed with a cast to
         main_page=0) at remote 0x98fa6e4>
         d = <gtk.Dialog at remote 0x98faaa4>
 
-   If the current C frame corrresponds to multiple Python frames, locals from
+   If the current C frame corresponds to multiple Python frames, locals from
    all of them will be shown::
 
       (gdb) py-locals
@@ -374,7 +374,7 @@ Again, the implementation details can be revealed with a cast to
 Use with GDB commands
 =====================·
 
-The extension comands complement GDB's built-in commands.
+The extension commands complement GDB's built-in commands.
 For example, you can use a frame numbers shown by ``py-bt`` with the ``frame``
 command to go a specific frame within the selected thread, like this::
 
