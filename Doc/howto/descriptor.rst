@@ -1004,10 +1004,18 @@ here is a pure Python equivalent:
             if doc is None and fget is not None:
                 doc = fget.__doc__
             self.__doc__ = doc
-            self.__name__ = None
+            self._name = None
 
         def __set_name__(self, owner, name):
-            self.__name__ = name
+            self._name = name
+
+        @property
+        def __name__(self):
+            return self._name if self._name is not None else self.fget.__name__
+
+        @__name__.setter
+        def __name__(self, value):
+            self._name = value
 
         def __get__(self, obj, objtype=None):
             if obj is None:
@@ -1037,17 +1045,17 @@ here is a pure Python equivalent:
 
         def getter(self, fget):
             prop = type(self)(fget, self.fset, self.fdel, self.__doc__)
-            prop.__name__ = self.__name__
+            prop._name = self._name
             return prop
 
         def setter(self, fset):
             prop = type(self)(self.fget, fset, self.fdel, self.__doc__)
-            prop.__name__ = self.__name__
+            prop._name = self._name
             return prop
 
         def deleter(self, fdel):
             prop = type(self)(self.fget, self.fset, fdel, self.__doc__)
-            prop.__name__ = self.__name__
+            prop._name = self._name
             return prop
 
 .. testcode::
