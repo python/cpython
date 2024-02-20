@@ -1,8 +1,9 @@
 // C Extension module to test pycore_lock.h API
 
 #include "parts.h"
-
 #include "pycore_lock.h"
+#include "pycore_time.h"          // _PyTime_GetMonotonicClock()
+
 #include "clinic/test_lock.c.h"
 
 #ifdef MS_WINDOWS

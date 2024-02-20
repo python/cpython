@@ -5,12 +5,13 @@
 #include "pycore_lock.h"
 #include "pycore_parking_lot.h"
 #include "pycore_semaphore.h"
+#include "pycore_time.h"          // _PyTime_GetMonotonicClock()
 
 #ifdef MS_WINDOWS
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>        // SwitchToThread()
+#  define WIN32_LEAN_AND_MEAN
+#  include <windows.h>        // SwitchToThread()
 #elif defined(HAVE_SCHED_H)
-#include <sched.h>          // sched_yield()
+#  include <sched.h>          // sched_yield()
 #endif
 
 // If a thread waits on a lock for longer than TIME_TO_BE_FAIR_NS (1 ms), then
