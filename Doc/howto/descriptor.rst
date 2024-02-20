@@ -1,8 +1,8 @@
 .. _descriptorhowto:
 
-======================
-Descriptor HowTo Guide
-======================
+================
+Descriptor Guide
+================
 
 :Author: Raymond Hettinger
 :Contact: <python at rcn dot com>
