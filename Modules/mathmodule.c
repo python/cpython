@@ -2074,11 +2074,6 @@ math_trunc(PyObject *module, PyObject *x)
         return PyFloat_Type.tp_as_number->nb_int(x);
     }
 
-    if (!_PyType_IsReady(Py_TYPE(x))) {
-        if (PyType_Ready(Py_TYPE(x)) < 0)
-            return NULL;
-    }
-
     math_module_state *state = get_math_module_state(module);
     trunc = _PyObject_LookupSpecial(x, state->str___trunc__);
     if (trunc == NULL) {
@@ -2570,7 +2565,7 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
         goto error_exit;
     }
     if (n > NUM_STACK_ELEMS) {
-        diffs = (double *) PyObject_Malloc(n * sizeof(double));
+        diffs = (double *) PyMem_Malloc(n * sizeof(double));
         if (diffs == NULL) {
             PyErr_NoMemory();
             goto error_exit;
@@ -2590,7 +2585,7 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
     }
     result = vector_norm(n, diffs, max, found_nan);
     if (diffs != diffs_on_stack) {
-        PyObject_Free(diffs);
+        PyMem_Free(diffs);
     }
     if (p_allocated) {
         Py_DECREF(p);
@@ -2602,7 +2597,7 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
 
   error_exit:
     if (diffs != diffs_on_stack) {
-        PyObject_Free(diffs);
+        PyMem_Free(diffs);
     }
     if (p_allocated) {
         Py_DECREF(p);
@@ -2626,7 +2621,7 @@ math_hypot(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     double *coordinates = coord_on_stack;
 
     if (nargs > NUM_STACK_ELEMS) {
-        coordinates = (double *) PyObject_Malloc(nargs * sizeof(double));
+        coordinates = (double *) PyMem_Malloc(nargs * sizeof(double));
         if (coordinates == NULL) {
             return PyErr_NoMemory();
         }
@@ -2643,13 +2638,13 @@ math_hypot(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     result = vector_norm(nargs, coordinates, max, found_nan);
     if (coordinates != coord_on_stack) {
-        PyObject_Free(coordinates);
+        PyMem_Free(coordinates);
     }
     return PyFloat_FromDouble(result);
 
   error_exit:
     if (coordinates != coord_on_stack) {
-        PyObject_Free(coordinates);
+        PyMem_Free(coordinates);
     }
     return NULL;
 }

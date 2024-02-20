@@ -1,6 +1,0 @@
-Added :data:`mmap.MAP_NORESERVE`, :data:`mmap.MAP_NOEXTEND`,
-:data:`mmap.MAP_HASSEMAPHORE`, :data:`mmap.MAP_NOCACHE`,
-:data:`mmap.MAP_JIT`, :data:`mmap.MAP_RESILIENT_CODESIGN`,
-:data:`mmap.MAP_RESILIENT_MEDIA`, :data:`mmap.MAP_32BIT`,
-:data:`mmap.MAP_TRANSLATED_ALLOW_EXECUTE`, :data:`mmap.MAP_UNIX03` and
-:data:`mmap.MAP_TPRO`. All of them are ``mmap(2)`` flags on macOS.

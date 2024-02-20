@@ -161,7 +161,7 @@ faster due to reference-counting optimizations. Patch by Dennis Sweeney.
 .. nonce: 7oGp-I
 .. section: Core and Builtins
 
-:opcode:`PREP_RERAISE_STAR` no longer pushes ``lasti`` to the stack.
+:opcode:`!PREP_RERAISE_STAR` no longer pushes ``lasti`` to the stack.
 
 ..
 
@@ -170,7 +170,7 @@ faster due to reference-counting optimizations. Patch by Dennis Sweeney.
 .. nonce: IKx4v6
 .. section: Core and Builtins
 
-Remove :opcode:`POP_EXCEPT_AND_RERAISE` and replace it by an equivalent
+Remove :opcode:`!POP_EXCEPT_AND_RERAISE` and replace it by an equivalent
 sequence of other opcodes.
 
 ..
@@ -1171,7 +1171,7 @@ Replaced deprecated usage of :c:func:`PyImport_ImportModuleNoBlock` with
 .. nonce: sMgDLz
 .. section: C API
 
-The :c:func:`PyUnicode_CHECK_INTERNED` macro has been excluded from the
+The :c:func:`!PyUnicode_CHECK_INTERNED` macro has been excluded from the
 limited C API. It was never usable there, because it used internal
 structures which are not available in the limited C API. Patch by Victor
 Stinner.

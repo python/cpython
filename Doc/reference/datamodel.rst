@@ -1134,6 +1134,8 @@ Special read-only attributes
    * - .. attribute:: codeobject.co_qualname
      - The fully qualified function name
 
+       .. versionadded:: 3.11
+
    * - .. attribute:: codeobject.co_argcount
      - The total number of positional :term:`parameters <parameter>`
        (including positional-only parameters and parameters with default values)
@@ -1289,6 +1291,14 @@ Methods on code objects
 
       :pep:`626` - Precise line numbers for debugging and other tools.
          The PEP that introduced the :meth:`!co_lines` method.
+
+.. method:: codeobject.replace(**kwargs)
+
+   Return a copy of the code object with new values for the specified fields.
+
+   Code objects are also supported by the generic function :func:`copy.replace`.
+
+   .. versionadded:: 3.8
 
 
 .. _frame-objects:
@@ -1529,7 +1539,7 @@ Class method objects
 A class method object, like a static method object, is a wrapper around another
 object that alters the way in which that object is retrieved from classes and
 class instances. The behaviour of class method objects upon such retrieval is
-described above, under "User-defined methods". Class method objects are created
+described above, under :ref:`"instance methods" <instance-methods>`. Class method objects are created
 by the built-in :func:`classmethod` constructor.
 
 
@@ -1988,8 +1998,8 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
 
 .. method:: object.__dir__(self)
 
-   Called when :func:`dir` is called on the object. A sequence must be
-   returned. :func:`dir` converts the returned sequence to a list and sorts it.
+   Called when :func:`dir` is called on the object. An iterable must be
+   returned. :func:`dir` converts the returned iterable to a list and sorts it.
 
 
 Customizing module attribute access
@@ -2009,7 +2019,7 @@ not found on a module object through the normal lookup, i.e.
 the module ``__dict__`` before raising an :exc:`AttributeError`. If found,
 it is called with the attribute name and the result is returned.
 
-The ``__dir__`` function should accept no arguments, and return a sequence of
+The ``__dir__`` function should accept no arguments, and return an iterable of
 strings that represents the names accessible on module. If present, this
 function overrides the standard :func:`dir` search on a module.
 
