@@ -1,12 +1,14 @@
 /* Return the initial module search path. */
 
 #include "Python.h"
+#include "pycore_fileutils.h"     // _Py_abspath()
+#include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_pathconfig.h"    // _PyPathConfig_ReadGlobal()
+#include "pycore_pymem.h"         // _PyMem_RawWcsdup()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+
 #include "marshal.h"              // PyMarshal_ReadObjectFromString
 #include "osdefs.h"               // DELIM
-#include "pycore_initconfig.h"
-#include "pycore_fileutils.h"
-#include "pycore_pathconfig.h"
-#include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include <wchar.h>
 
 #ifdef MS_WINDOWS
@@ -15,11 +17,12 @@
 #endif
 
 #ifdef __APPLE__
+#  include <dlfcn.h>
 #  include <mach-o/dyld.h>
 #endif
 
 /* Reference the precompiled getpath.py */
-#include "../Python/frozen_modules/getpath.h"
+#include "Python/frozen_modules/getpath.h"
 
 #if (!defined(PREFIX) || !defined(EXEC_PREFIX) \
         || !defined(VERSION) || !defined(VPATH) \
@@ -259,6 +262,10 @@ getpath_joinpath(PyObject *Py_UNUSED(self), PyObject *args)
     }
     /* Convert all parts to wchar and accumulate max final length */
     wchar_t **parts = (wchar_t **)PyMem_Malloc(n * sizeof(wchar_t *));
+    if (parts == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
     memset(parts, 0, n * sizeof(wchar_t *));
     Py_ssize_t cchFinal = 0;
     Py_ssize_t first = 0;
@@ -341,11 +348,12 @@ getpath_readlines(PyObject *Py_UNUSED(self), PyObject *args)
         return NULL;
     }
     FILE *fp = _Py_wfopen(path, L"rb");
-    PyMem_Free((void *)path);
     if (!fp) {
         PyErr_SetFromErrno(PyExc_OSError);
+        PyMem_Free((void *)path);
         return NULL;
     }
+    PyMem_Free((void *)path);
 
     r = PyList_New(0);
     if (!r) {
@@ -498,6 +506,54 @@ done:
     PyMem_Free((void *)path);
     PyMem_Free((void *)narrow);
     return r;
+#elif defined(MS_WINDOWS)
+    HANDLE hFile;
+    wchar_t resolved[MAXPATHLEN+1];
+    int len = 0, err;
+    Py_ssize_t pathlen;
+    PyObject *result;
+
+    wchar_t *path = PyUnicode_AsWideCharString(pathobj, &pathlen);
+    if (!path) {
+        return NULL;
+    }
+    if (wcslen(path) != pathlen) {
+        PyErr_SetString(PyExc_ValueError, "path contains embedded nulls");
+        return NULL;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    hFile = CreateFileW(path, 0, 0, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    if (hFile != INVALID_HANDLE_VALUE) {
+        len = GetFinalPathNameByHandleW(hFile, resolved, MAXPATHLEN, VOLUME_NAME_DOS);
+        err = len ? 0 : GetLastError();
+        CloseHandle(hFile);
+    } else {
+        err = GetLastError();
+    }
+    Py_END_ALLOW_THREADS
+
+    if (err) {
+        PyErr_SetFromWindowsErr(err);
+        result = NULL;
+    } else if (len <= MAXPATHLEN) {
+        const wchar_t *p = resolved;
+        if (0 == wcsncmp(p, L"\\\\?\\", 4)) {
+            if (GetFileAttributesW(&p[4]) != INVALID_FILE_ATTRIBUTES) {
+                p += 4;
+                len -= 4;
+            }
+        }
+        if (CompareStringOrdinal(path, (int)pathlen, p, len, TRUE) == CSTR_EQUAL) {
+            result = Py_NewRef(pathobj);
+        } else {
+            result = PyUnicode_FromWideChar(p, len);
+        }
+    } else {
+        result = Py_NewRef(pathobj);
+    }
+    PyMem_Free(path);
+    return result;
 #endif
 
     return Py_NewRef(pathobj);
@@ -765,16 +821,11 @@ library_to_dict(PyObject *dict, const char *key)
            which is in the framework, not relative to the executable, which may
            be outside of the framework. Except when we're in the build
            directory... */
-        NSSymbol symbol = NSLookupAndBindSymbol("_Py_Initialize");
-        if (symbol != NULL) {
-            NSModule pythonModule = NSModuleForSymbol(symbol);
-            if (pythonModule != NULL) {
-                /* Use dylib functions to find out where the framework was loaded from */
-                const char *path = NSLibraryNameForModule(pythonModule);
-                if (path) {
-                    strncpy(modPath, path, MAXPATHLEN);
-                    modPathInitialized = 1;
-                }
+        Dl_info pythonInfo;
+        if (dladdr(&Py_Initialize, &pythonInfo)) {
+            if (pythonInfo.dli_fname) {
+                strncpy(modPath, pythonInfo.dli_fname, MAXPATHLEN);
+                modPathInitialized = 1;
             }
         }
     }
@@ -818,7 +869,7 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
         return status;
     }
 
-    if (!_PyThreadState_UncheckedGet()) {
+    if (!_PyThreadState_GET()) {
         return PyStatus_Error("cannot calculate path configuration without GIL");
     }
 
@@ -907,7 +958,7 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
     ) {
         Py_DECREF(co);
         Py_DECREF(dict);
-        _PyErr_WriteUnraisableMsg("error evaluating initial values", NULL);
+        PyErr_FormatUnraisable("Exception ignored in preparing getpath");
         return PyStatus_Error("error evaluating initial values");
     }
 
@@ -916,30 +967,13 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
 
     if (!r) {
         Py_DECREF(dict);
-        _PyErr_WriteUnraisableMsg("error evaluating path", NULL);
+        PyErr_FormatUnraisable("Exception ignored in running getpath");
         return PyStatus_Error("error evaluating path");
     }
     Py_DECREF(r);
 
-#if 0
-    PyObject *it = PyObject_GetIter(configDict);
-    for (PyObject *k = PyIter_Next(it); k; k = PyIter_Next(it)) {
-        if (!strcmp("__builtins__", PyUnicode_AsUTF8(k))) {
-            Py_DECREF(k);
-            continue;
-        }
-        fprintf(stderr, "%s = ", PyUnicode_AsUTF8(k));
-        PyObject *o = PyDict_GetItem(configDict, k);
-        o = PyObject_Repr(o);
-        fprintf(stderr, "%s\n", PyUnicode_AsUTF8(o));
-        Py_DECREF(o);
-        Py_DECREF(k);
-    }
-    Py_DECREF(it);
-#endif
-
     if (_PyConfig_FromDict(config, configDict) < 0) {
-        _PyErr_WriteUnraisableMsg("reading getpath results", NULL);
+        PyErr_FormatUnraisable("Exception ignored in reading getpath results");
         Py_DECREF(dict);
         return PyStatus_Error("error getting getpath results");
     }
@@ -948,4 +982,3 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
 
     return _PyStatus_OK();
 }
-

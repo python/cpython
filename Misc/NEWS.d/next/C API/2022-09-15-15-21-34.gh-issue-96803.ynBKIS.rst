@@ -1,6 +1,0 @@
-Add unstable C-API functions to get the code object, lasti and line number from
-the internal ``_PyInterpreterFrame`` in the limited API. The functions are:
-
-* ``PyCodeObject * PyUnstable_InterpreterFrame_GetCode(struct _PyInterpreterFrame *frame)``
-* ``int PyUnstable_InterpreterFrame_GetLasti(struct _PyInterpreterFrame *frame)``
-* ``int PyUnstable_InterpreterFrame_GetLine(struct _PyInterpreterFrame *frame)``

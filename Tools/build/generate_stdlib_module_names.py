@@ -2,8 +2,6 @@
 # to update Python/stdlib_module_names.h
 import _imp
 import os.path
-import re
-import subprocess
 import sys
 import sysconfig
 
@@ -30,6 +28,7 @@ IGNORE = {
     '_testbuffer',
     '_testcapi',
     '_testclinic',
+    '_testclinic_limited',
     '_testconsole',
     '_testimportmultiple',
     '_testinternalcapi',
@@ -37,6 +36,7 @@ IGNORE = {
     '_testsinglephase',
     '_xxsubinterpreters',
     '_xxinterpchannels',
+    '_xxinterpqueues',
     '_xxtestfuzz',
     'idlelib.idle_test',
     'test',
@@ -44,6 +44,16 @@ IGNORE = {
     'xxlimited_35',
     'xxsubtype',
 }
+
+ALLOW_TEST_MODULES = {
+    'doctest',
+    'unittest',
+}
+
+# Built-in modules
+def list_builtin_modules(names):
+    names |= set(sys.builtin_module_names)
+
 
 # Pure Python modules (Lib/*.py)
 def list_python_modules(names):
@@ -95,7 +105,9 @@ def list_frozen(names):
 
 
 def list_modules():
-    names = set(sys.builtin_module_names)
+    names = set()
+
+    list_builtin_modules(names)
     list_modules_setup_extensions(names)
     list_packages(names)
     list_python_modules(names)
@@ -108,9 +120,12 @@ def list_modules():
         if package_name in IGNORE:
             names.discard(name)
 
+    # Sanity checks
     for name in names:
         if "." in name:
-            raise Exception("sub-modules must not be listed")
+            raise Exception(f"sub-modules must not be listed: {name}")
+        if ("test" in name or "xx" in name) and name not in ALLOW_TEST_MODULES:
+            raise Exception(f"test modules must not be listed: {name}")
 
     return names
 
