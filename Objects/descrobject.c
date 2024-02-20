@@ -1519,22 +1519,34 @@ class property(object):
             self.__doc__ = doc
         except AttributeError:  # read-only or dict-less class
             pass
+        self.__name = None
+
+    def __set_name__(self, owner, name):
+        self.__name = name
+
+    @property
+    def __name__(self):
+        return self.__name if self.__name is not None else self.fget.__name__
+
+    @__name__.setter
+    def __name__(self, value):
+        self.__name = value
 
     def __get__(self, inst, type=None):
         if inst is None:
             return self
         if self.__get is None:
-            raise AttributeError, "property has no getter"
+            raise AttributeError("property has no getter")
         return self.__get(inst)
 
     def __set__(self, inst, value):
         if self.__set is None:
-            raise AttributeError, "property has no setter"
+            raise AttributeError("property has no setter")
         return self.__set(inst, value)
 
     def __delete__(self, inst):
         if self.__del is None:
-            raise AttributeError, "property has no deleter"
+            raise AttributeError("property has no deleter")
         return self.__del(inst)
 
 */
@@ -1628,6 +1640,20 @@ property_dealloc(PyObject *self)
     Py_TYPE(self)->tp_free(self);
 }
 
+static int
+property_name(propertyobject *prop, PyObject **name)
+{
+    if (prop->prop_name != NULL) {
+        *name = Py_NewRef(prop->prop_name);
+        return 1;
+    }
+    if (prop->prop_get == NULL) {
+        *name = NULL;
+        return 0;
+    }
+    return PyObject_GetOptionalAttr(prop->prop_get, &_Py_ID(__name__), name);
+}
+
 static PyObject *
 property_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
@@ -1637,11 +1663,15 @@ property_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 
     propertyobject *gs = (propertyobject *)self;
     if (gs->prop_get == NULL) {
+        PyObject *propname;
+        if (property_name(gs, &propname) < 0) {
+            return NULL;
+        }
         PyObject *qualname = PyType_GetQualName(Py_TYPE(obj));
-        if (gs->prop_name != NULL && qualname != NULL) {
+        if (propname != NULL && qualname != NULL) {
             PyErr_Format(PyExc_AttributeError,
                          "property %R of %R object has no getter",
-                         gs->prop_name,
+                         propname,
                          qualname);
         }
         else if (qualname != NULL) {
@@ -1652,6 +1682,7 @@ property_descr_get(PyObject *self, PyObject *obj, PyObject *type)
             PyErr_SetString(PyExc_AttributeError,
                             "property has no getter");
         }
+        Py_XDECREF(propname);
         Py_XDECREF(qualname);
         return NULL;
     }
@@ -1673,16 +1704,20 @@ property_descr_set(PyObject *self, PyObject *obj, PyObject *value)
     }
 
     if (func == NULL) {
+        PyObject *propname;
+        if (property_name(gs, &propname) < 0) {
+            return -1;
+        }
         PyObject *qualname = NULL;
         if (obj != NULL) {
             qualname = PyType_GetQualName(Py_TYPE(obj));
         }
-        if (gs->prop_name != NULL && qualname != NULL) {
+        if (propname != NULL && qualname != NULL) {
             PyErr_Format(PyExc_AttributeError,
                         value == NULL ?
                         "property %R of %R object has no deleter" :
                         "property %R of %R object has no setter",
-                        gs->prop_name,
+                        propname,
                         qualname);
         }
         else if (qualname != NULL) {
@@ -1698,6 +1733,7 @@ property_descr_set(PyObject *self, PyObject *obj, PyObject *value)
                          "property has no deleter" :
                          "property has no setter");
         }
+        Py_XDECREF(propname);
         Py_XDECREF(qualname);
         return -1;
     }
@@ -1884,6 +1920,28 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
 }
 
 static PyObject *
+property_get__name__(propertyobject *prop, void *Py_UNUSED(ignored))
+{
+    PyObject *name;
+    if (property_name(prop, &name) < 0) {
+        return NULL;
+    }
+    if (name == NULL) {
+        PyErr_SetString(PyExc_AttributeError,
+                        "'property' object has no attribute '__name__'");
+    }
+    return name;
+}
+
+static int
+property_set__name__(propertyobject *prop, PyObject *value,
+                     void *Py_UNUSED(ignored))
+{
+    Py_XSETREF(prop->prop_name, Py_XNewRef(value));
+    return 0;
+}
+
+static PyObject *
 property_get___isabstractmethod__(propertyobject *prop, void *closure)
 {
     int res = _PyObject_IsAbstract(prop->prop_get);
@@ -1913,6 +1971,7 @@ property_get___isabstractmethod__(propertyobject *prop, void *closure)
 }
 
 static PyGetSetDef property_getsetlist[] = {
+    {"__name__", (getter)property_get__name__, (setter)property_set__name__},
     {"__isabstractmethod__",
      (getter)property_get___isabstractmethod__, NULL,
      NULL,
