@@ -554,10 +554,9 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         ops = [opname for opname, _, _ in ex]
-        count = ops.count("_GUARD_IS_TRUE_POP")
-        # Because Each 'if' halves the score, the second branch is
-        # too much already.
-        self.assertEqual(count, 1)
+        #Since branch is 50/50 the trace could go either way.
+        count = ops.count("_GUARD_IS_TRUE_POP") + ops.count("_GUARD_IS_FALSE_POP")
+        self.assertLessEqual(count, 2)
 
 class TestUopsOptimization(unittest.TestCase):
 
