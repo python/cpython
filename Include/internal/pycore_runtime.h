@@ -191,7 +191,10 @@ typedef struct pyruntimestate {
         int64_t next_id;
     } interpreters;
 
+    /* Platform-specific identifier and PyThreadState, respectively, for the
+       main thread in the main interpreter. */
     unsigned long main_thread;
+    PyThreadState *main_tstate;
 
     /* ---------- IMPORTANT ---------------------------
      The fields above this line are declared as early as
@@ -227,6 +230,13 @@ typedef struct pyruntimestate {
     struct _faulthandler_runtime_state faulthandler;
     struct _tracemalloc_runtime_state tracemalloc;
 
+    // The rwmutex is used to prevent overlapping global and per-interpreter
+    // stop-the-world events. Global stop-the-world events lock the mutex
+    // exclusively (as a "writer"), while per-interpreter stop-the-world events
+    // lock it non-exclusively (as "readers").
+    _PyRWMutex stoptheworld_mutex;
+    struct _stoptheworld_state stoptheworld;
+
     PyPreConfig preconfig;
 
     // Audit values must be preserved when Py_Initialize()/Py_Finalize()
@@ -261,7 +271,7 @@ typedef struct pyruntimestate {
        a pointer type.
        */
 
-    /* PyInterpreterState.interpreters.main */
+    /* _PyRuntimeState.interpreters.main */
     PyInterpreterState _main_interpreter;
 
 #if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)

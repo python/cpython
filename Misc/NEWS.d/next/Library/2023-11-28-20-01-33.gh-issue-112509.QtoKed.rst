@@ -1,3 +1,0 @@
-Fix edge cases that could cause a key to be present in both the
-``__required_keys__`` and ``__optional_keys__`` attributes of a
-:class:`typing.TypedDict`. Patch by Jelle Zijlstra.

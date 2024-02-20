@@ -1,9 +1,13 @@
 import contextlib
 import opcode
+import sys
 import textwrap
 import unittest
+import gc
 
 import _testinternalcapi
+
+from test.support import script_helper
 
 
 @contextlib.contextmanager
@@ -181,6 +185,21 @@ class TestExecutorInvalidation(unittest.TestCase):
         _testinternalcapi.invalidate_executors(f.__code__)
         self.assertFalse(exe.is_valid())
 
+    def test_sys__clear_internal_caches(self):
+        def f():
+            for _ in range(1000):
+                pass
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            f()
+        exe = get_first_executor(f)
+        self.assertIsNotNone(exe)
+        self.assertTrue(exe.is_valid())
+        sys._clear_internal_caches()
+        self.assertFalse(exe.is_valid())
+        exe = get_first_executor(f)
+        self.assertIsNone(exe)
+
 class TestUops(unittest.TestCase):
 
     def test_basic_loop(self):
@@ -197,7 +216,7 @@ class TestUops(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
         self.assertIn("_SET_IP", uops)
-        self.assertIn("_LOAD_FAST", uops)
+        self.assertIn("_LOAD_FAST_0", uops)
 
     def test_extended_arg(self):
         "Check EXTENDED_ARG handling in superblock creation"
@@ -540,6 +559,321 @@ class TestUops(unittest.TestCase):
         # too much already.
         self.assertEqual(count, 1)
 
+class TestUopsOptimization(unittest.TestCase):
+
+    def _run_with_optimizer(self, testfunc, arg):
+        res = None
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            res = testfunc(arg)
+
+        ex = get_first_executor(testfunc)
+        return res, ex
+
+
+    def test_int_type_propagation(self):
+        def testfunc(loops):
+            num = 0
+            for i in range(loops):
+                x = num + num
+                a = x + 1
+                num += 1
+            return a
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertIsNotNone(ex)
+        self.assertEqual(res, 63)
+        binop_count = [opname for opname, _, _ in ex if opname == "_BINARY_OP_ADD_INT"]
+        guard_both_int_count = [opname for opname, _, _ in ex if opname == "_GUARD_BOTH_INT"]
+        self.assertGreaterEqual(len(binop_count), 3)
+        self.assertLessEqual(len(guard_both_int_count), 1)
+
+    def test_int_type_propagation_through_frame(self):
+        def double(x):
+            return x + x
+        def testfunc(loops):
+            num = 0
+            for i in range(loops):
+                x = num + num
+                a = double(x)
+                num += 1
+            return a
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        res = None
+        with temporary_optimizer(opt):
+            res = testfunc(32)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        self.assertEqual(res, 124)
+        binop_count = [opname for opname, _, _ in ex if opname == "_BINARY_OP_ADD_INT"]
+        guard_both_int_count = [opname for opname, _, _ in ex if opname == "_GUARD_BOTH_INT"]
+        self.assertGreaterEqual(len(binop_count), 3)
+        self.assertLessEqual(len(guard_both_int_count), 1)
+
+    def test_int_type_propagation_from_frame(self):
+        def double(x):
+            return x + x
+        def testfunc(loops):
+            num = 0
+            for i in range(loops):
+                a = double(num)
+                x = a + a
+                num += 1
+            return x
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        res = None
+        with temporary_optimizer(opt):
+            res = testfunc(32)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        self.assertEqual(res, 124)
+        binop_count = [opname for opname, _, _ in ex if opname == "_BINARY_OP_ADD_INT"]
+        guard_both_int_count = [opname for opname, _, _ in ex if opname == "_GUARD_BOTH_INT"]
+        self.assertGreaterEqual(len(binop_count), 3)
+        self.assertLessEqual(len(guard_both_int_count), 1)
+
+    def test_int_impure_region(self):
+        def testfunc(loops):
+            num = 0
+            while num < loops:
+                x = num + num
+                y = 1
+                x // 2
+                a = x + y
+                num += 1
+            return a
+
+        res, ex = self._run_with_optimizer(testfunc, 64)
+        self.assertIsNotNone(ex)
+        binop_count = [opname for opname, _, _ in ex if opname == "_BINARY_OP_ADD_INT"]
+        self.assertGreaterEqual(len(binop_count), 3)
+
+    def test_call_py_exact_args(self):
+        def testfunc(n):
+            def dummy(x):
+                return x+1
+            for i in range(n):
+                dummy(i)
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _, _ in ex}
+        self.assertIn("_PUSH_FRAME", uops)
+        self.assertIn("_BINARY_OP_ADD_INT", uops)
+        self.assertNotIn("_CHECK_PEP_523", uops)
+
+    def test_int_type_propagate_through_range(self):
+        def testfunc(n):
+
+            for i in range(n):
+                x = i + i
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertEqual(res, 62)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _, _ in ex}
+        self.assertNotIn("_GUARD_BOTH_INT", uops)
+
+    def test_int_value_numbering(self):
+        def testfunc(n):
+
+            y = 1
+            for i in range(n):
+                x = y
+                z = x
+                a = z
+                b = a
+                res = x + z + a + b
+            return res
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertEqual(res, 4)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _, _ in ex}
+        self.assertIn("_GUARD_BOTH_INT", uops)
+        guard_count = [opname for opname, _, _ in ex if opname == "_GUARD_BOTH_INT"]
+        self.assertEqual(len(guard_count), 1)
+
+    def test_comprehension(self):
+        def testfunc(n):
+            for _ in range(n):
+                return [i for i in range(n)]
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertEqual(res, list(range(32)))
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _, _ in ex}
+        self.assertNotIn("_BINARY_OP_ADD_INT", uops)
+
+    def test_call_py_exact_args_disappearing(self):
+        def dummy(x):
+            return x+1
+
+        def testfunc(n):
+            for i in range(n):
+                dummy(i)
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        # Trigger specialization
+        testfunc(8)
+        with temporary_optimizer(opt):
+            del dummy
+            gc.collect()
+
+            def dummy(x):
+                return x + 2
+            testfunc(32)
+
+        ex = get_first_executor(testfunc)
+        # Honestly as long as it doesn't crash it's fine.
+        # Whether we get an executor or not is non-deterministic,
+        # because it's decided by when the function is freed.
+        # This test is a little implementation specific.
+
+    def test_promote_globals_to_constants(self):
+
+        result = script_helper.run_python_until_end('-c', textwrap.dedent("""
+        import _testinternalcapi
+        import opcode
+
+        def get_first_executor(func):
+            code = func.__code__
+            co_code = code.co_code
+            JUMP_BACKWARD = opcode.opmap["JUMP_BACKWARD"]
+            for i in range(0, len(co_code), 2):
+                if co_code[i] == JUMP_BACKWARD:
+                    try:
+                        return _testinternalcapi.get_executor(code, i)
+                    except ValueError:
+                        pass
+            return None
+
+        def testfunc(n):
+            for i in range(n):
+                x = range(i)
+            return x
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        _testinternalcapi.set_optimizer(opt)
+        testfunc(64)
+
+        ex = get_first_executor(testfunc)
+        assert ex is not None
+        uops = {opname for opname, _, _ in ex}
+        assert "_LOAD_GLOBAL_BUILTINS" not in uops
+        assert "_LOAD_CONST_INLINE_BORROW_WITH_NULL" in uops
+        """))
+        self.assertEqual(result[0].rc, 0, result)
+
+    def test_float_add_constant_propagation(self):
+        def testfunc(n):
+            a = 1.0
+            for _ in range(n):
+                a = a + 0.1
+            return a
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertAlmostEqual(res, 4.2)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _, _ in ex}
+        guard_both_float_count = [opname for opname, _, _ in ex if opname == "_GUARD_BOTH_FLOAT"]
+        self.assertLessEqual(len(guard_both_float_count), 1)
+        # TODO gh-115506: this assertion may change after propagating constants.
+        # We'll also need to verify that propagation actually occurs.
+        self.assertIn("_BINARY_OP_ADD_FLOAT", uops)
+
+    def test_float_subtract_constant_propagation(self):
+        def testfunc(n):
+            a = 1.0
+            for _ in range(n):
+                a = a - 0.1
+            return a
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertAlmostEqual(res, -2.2)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _, _ in ex}
+        guard_both_float_count = [opname for opname, _, _ in ex if opname == "_GUARD_BOTH_FLOAT"]
+        self.assertLessEqual(len(guard_both_float_count), 1)
+        # TODO gh-115506: this assertion may change after propagating constants.
+        # We'll also need to verify that propagation actually occurs.
+        self.assertIn("_BINARY_OP_SUBTRACT_FLOAT", uops)
+
+    def test_float_multiply_constant_propagation(self):
+        def testfunc(n):
+            a = 1.0
+            for _ in range(n):
+                a = a * 2.0
+            return a
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertAlmostEqual(res, 2 ** 32)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _, _ in ex}
+        guard_both_float_count = [opname for opname, _, _ in ex if opname == "_GUARD_BOTH_FLOAT"]
+        self.assertLessEqual(len(guard_both_float_count), 1)
+        # TODO gh-115506: this assertion may change after propagating constants.
+        # We'll also need to verify that propagation actually occurs.
+        self.assertIn("_BINARY_OP_MULTIPLY_FLOAT", uops)
+
+    def test_compare_op_type_propagation_float(self):
+        def testfunc(n):
+            a = 1.0
+            for _ in range(n):
+                x = a == a
+                x = a == a
+                x = a == a
+                x = a == a
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertTrue(res)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _, _ in ex}
+        guard_both_float_count = [opname for opname, _, _ in ex if opname == "_GUARD_BOTH_FLOAT"]
+        self.assertLessEqual(len(guard_both_float_count), 1)
+        self.assertIn("_COMPARE_OP_FLOAT", uops)
+
+    def test_compare_op_type_propagation_int(self):
+        def testfunc(n):
+            a = 1
+            for _ in range(n):
+                x = a == a
+                x = a == a
+                x = a == a
+                x = a == a
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertTrue(res)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _, _ in ex}
+        guard_both_float_count = [opname for opname, _, _ in ex if opname == "_GUARD_BOTH_INT"]
+        self.assertLessEqual(len(guard_both_float_count), 1)
+        self.assertIn("_COMPARE_OP_INT", uops)
+
+    def test_compare_op_type_propagation_unicode(self):
+        def testfunc(n):
+            a = ""
+            for _ in range(n):
+                x = a == a
+                x = a == a
+                x = a == a
+                x = a == a
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertTrue(res)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _, _ in ex}
+        guard_both_float_count = [opname for opname, _, _ in ex if opname == "_GUARD_BOTH_UNICODE"]
+        self.assertLessEqual(len(guard_both_float_count), 1)
+        self.assertIn("_COMPARE_OP_STR", uops)
 
 if __name__ == "__main__":
     unittest.main()

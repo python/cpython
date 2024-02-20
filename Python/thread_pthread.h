@@ -149,8 +149,8 @@ _PyThread_cond_init(PyCOND_T *cond)
 void
 _PyThread_cond_after(long long us, struct timespec *abs)
 {
-    _PyTime_t timeout = _PyTime_FromMicrosecondsClamp(us);
-    _PyTime_t t;
+    PyTime_t timeout = _PyTime_FromMicrosecondsClamp(us);
+    PyTime_t t;
 #ifdef CONDATTR_MONOTONIC
     if (condattr_monotonic) {
         t = _PyTime_GetMonotonicClock();
@@ -339,16 +339,6 @@ PyThread_detach_thread(PyThread_handle_t th) {
     return pthread_detach((pthread_t) th);
 }
 
-void
-PyThread_update_thread_after_fork(PyThread_ident_t* ident, PyThread_handle_t* handle) {
-    // The thread id might have been updated in the forked child
-    pthread_t th = pthread_self();
-    *ident = (PyThread_ident_t) th;
-    *handle = (PyThread_handle_t) th;
-    assert(th == (pthread_t) *ident);
-    assert(th == (pthread_t) *handle);
-}
-
 /* XXX This implementation is considered (to quote Tim Peters) "inherently
    hosed" because:
      - It does not guarantee the promise that a non-zero integer is returned.
@@ -491,7 +481,7 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
 
     (void) error; /* silence unused-but-set-variable warning */
 
-    _PyTime_t timeout;  // relative timeout
+    PyTime_t timeout;  // relative timeout
     if (microseconds >= 0) {
         // bpo-41710: PyThread_acquire_lock_timed() cannot report timeout
         // overflow to the caller, so clamp the timeout to
@@ -511,11 +501,11 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
     struct timespec abs_timeout;
     // Local scope for deadline
     {
-        _PyTime_t deadline = _PyTime_Add(_PyTime_GetMonotonicClock(), timeout);
+        PyTime_t deadline = _PyTime_Add(_PyTime_GetMonotonicClock(), timeout);
         _PyTime_AsTimespec_clamp(deadline, &abs_timeout);
     }
 #else
-    _PyTime_t deadline = 0;
+    PyTime_t deadline = 0;
     if (timeout > 0 && !intr_flag) {
         deadline = _PyDeadline_Init(timeout);
     }
@@ -527,7 +517,7 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
             status = fix_status(sem_clockwait(thelock, CLOCK_MONOTONIC,
                                               &abs_timeout));
 #else
-            _PyTime_t abs_time = _PyTime_Add(_PyTime_GetSystemClock(),
+            PyTime_t abs_time = _PyTime_Add(_PyTime_GetSystemClock(),
                                              timeout);
             struct timespec ts;
             _PyTime_AsTimespec_clamp(abs_time, &ts);

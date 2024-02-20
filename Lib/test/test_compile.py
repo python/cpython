@@ -1,4 +1,6 @@
+import contextlib
 import dis
+import io
 import math
 import os
 import unittest
@@ -449,9 +451,17 @@ class TestSpecifics(unittest.TestCase):
         compile('if (5 if 5 else T): 0', '<eval>', 'exec')
 
     def test_condition_expression_with_redundant_comparisons_compiles(self):
-        # See gh-113054
-        with self.assertWarns(SyntaxWarning):
-            compile('if 9<9<9and 9or 9:9', '<eval>', 'exec')
+        # See gh-113054, gh-114083
+        exprs = [
+            'if 9<9<9and 9or 9:9',
+            'if 9<9<9and 9or 9or 9:9',
+            'if 9<9<9and 9or 9or 9or 9:9',
+            'if 9<9<9and 9or 9or 9or 9or 9:9',
+        ]
+        for expr in exprs:
+            with self.subTest(expr=expr):
+                with self.assertWarns(SyntaxWarning):
+                    compile(expr, '<eval>', 'exec')
 
     def test_dead_code_with_except_handler_compiles(self):
         compile(textwrap.dedent("""
@@ -739,7 +749,7 @@ class TestSpecifics(unittest.TestCase):
                 return "unused"
 
         self.assertEqual(f.__code__.co_consts,
-                         ("docstring", "used"))
+                         (f.__doc__, "used"))
 
     @support.cpython_only
     def test_remove_unused_consts_no_docstring(self):
@@ -784,7 +794,7 @@ class TestSpecifics(unittest.TestCase):
         def f1():
             "docstring"
             return 42
-        self.assertEqual(f1.__code__.co_consts, ("docstring", 42))
+        self.assertEqual(f1.__code__.co_consts, (f1.__doc__, 42))
 
     # This is a regression test for a CPython specific peephole optimizer
     # implementation bug present in a few releases.  It's assertion verifies
@@ -803,6 +813,30 @@ class TestSpecifics(unittest.TestCase):
         self.assertEqual(
             'RETURN_CONST',
             list(dis.get_instructions(unused_code_at_end))[-1].opname)
+
+    @support.cpython_only
+    def test_docstring_omitted(self):
+        # See gh-115347
+        src = textwrap.dedent("""
+            def f():
+                "docstring1"
+                def h():
+                    "docstring2"
+                    return 42
+
+                class C:
+                    "docstring3"
+                    pass
+
+                return h
+        """)
+        for opt in [-1, 0, 1, 2]:
+            with self.subTest(opt=opt):
+                code = compile(src, "<test>", "exec", optimize=opt)
+                output = io.StringIO()
+                with contextlib.redirect_stdout(output):
+                    dis.dis(code)
+                self.assertNotIn('NOP' , output.getvalue())
 
     def test_dont_merge_constants(self):
         # Issue #25843: compile() must not merge constants which are equal
@@ -1013,6 +1047,8 @@ class TestSpecifics(unittest.TestCase):
 
         for func in (no_code1, no_code2):
             with self.subTest(func=func):
+                if func is no_code1 and no_code1.__doc__ is None:
+                    continue
                 code = func.__code__
                 [(start, end, line)] = code.co_lines()
                 self.assertEqual(start, 0)
@@ -1096,6 +1132,17 @@ class TestSpecifics(unittest.TestCase):
         code_lines = self.get_code_lines(test.__code__)
         self.assertEqual(expected_lines, code_lines)
 
+    def check_line_numbers(self, code, opnames=None):
+        # Check that all instructions whose op matches opnames
+        # have a line number. opnames can be a single name, or
+        # a sequence of names. If it is None, match all ops.
+
+        if isinstance(opnames, str):
+            opnames = (opnames, )
+        for inst in dis.Bytecode(code):
+            if opnames and inst.opname in opnames:
+                self.assertIsNotNone(inst.positions.lineno)
+
     def test_line_number_synthetic_jump_multiple_predecessors(self):
         def f():
             for x in it:
@@ -1105,25 +1152,52 @@ class TestSpecifics(unittest.TestCase):
                 except OSError:
                     pass
 
-        # Ensure that all JUMP_BACKWARDs have line number
-        code = f.__code__
-        for inst in dis.Bytecode(code):
-            if inst.opname == 'JUMP_BACKWARD':
-                self.assertIsNotNone(inst.positions.lineno)
+        self.check_line_numbers(f.__code__, 'JUMP_BACKWARD')
 
-    def test_lineno_of_backward_jump(self):
+    def test_line_number_synthetic_jump_multiple_predecessors_nested(self):
+        def f():
+            for x in it:
+                try:
+                    X = 3
+                except OSError:
+                    try:
+                        if C3:
+                            X = 4
+                    except OSError:
+                        pass
+            return 42
+
+        self.check_line_numbers(f.__code__, 'JUMP_BACKWARD')
+
+    def test_line_number_synthetic_jump_multiple_predecessors_more_nested(self):
+        def f():
+            for x in it:
+                try:
+                    X = 3
+                except OSError:
+                    try:
+                        if C3:
+                            if C4:
+                                X = 4
+                    except OSError:
+                        try:
+                            if C3:
+                                if C4:
+                                    X = 5
+                        except OSError:
+                            pass
+            return 42
+
+        self.check_line_numbers(f.__code__, 'JUMP_BACKWARD')
+
+    def test_lineno_of_backward_jump_conditional_in_loop(self):
         # Issue gh-107901
         def f():
             for i in x:
                 if y:
                     pass
 
-        linenos = list(inst.positions.lineno
-                       for inst in dis.get_instructions(f.__code__)
-                       if inst.opname == 'JUMP_BACKWARD')
-
-        self.assertTrue(len(linenos) > 0)
-        self.assertTrue(all(l is not None for l in linenos))
+        self.check_line_numbers(f.__code__, 'JUMP_BACKWARD')
 
     def test_big_dict_literal(self):
         # The compiler has a flushing point in "compiler_dict" that calls compiles
@@ -1452,6 +1526,7 @@ class TestSourcePositions(unittest.TestCase):
         self.assertOpcodeSourcePositionIs(compiled_code, 'POP_JUMP_IF_TRUE',
             line=4, end_line=4, column=8, end_column=13, occurrence=2)
 
+    @unittest.skipIf(sys.flags.optimize, "Assertions are disabled in optimized mode")
     def test_multiline_assert(self):
         snippet = textwrap.dedent("""\
             assert (a > 0 and
