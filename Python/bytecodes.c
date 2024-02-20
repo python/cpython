@@ -54,6 +54,8 @@
 #define guard
 #define override
 #define specializing
+#define split
+#define replicate(TIMES)
 
 // Dummy variables for stack effects.
 static PyObject *value, *value1, *value2, *left, *right, *res, *sum, *prod, *sub;
@@ -208,7 +210,7 @@ dummy_func(
             Py_INCREF(value);
         }
 
-        pure inst(LOAD_FAST, (-- value)) {
+        replicate(8) pure inst(LOAD_FAST, (-- value)) {
             value = GETLOCAL(oparg);
             assert(value != NULL);
             Py_INCREF(value);
@@ -234,7 +236,7 @@ dummy_func(
             Py_INCREF(value);
         }
 
-        inst(STORE_FAST, (value --)) {
+        replicate(8) inst(STORE_FAST, (value --)) {
             SETLOCAL(oparg, value);
         }
 
@@ -1914,7 +1916,7 @@ dummy_func(
             DEOPT_IF(!_PyDictOrValues_IsValues(*dorv) && !_PyObject_MakeInstanceAttributesFromDict(owner, dorv));
         }
 
-        op(_LOAD_ATTR_INSTANCE_VALUE, (index/1, owner -- attr, null if (oparg & 1))) {
+        split op(_LOAD_ATTR_INSTANCE_VALUE, (index/1, owner -- attr, null if (oparg & 1))) {
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             attr = _PyDictOrValues_GetValues(dorv)->values[index];
             DEOPT_IF(attr == NULL);
@@ -1995,7 +1997,7 @@ dummy_func(
             _LOAD_ATTR_WITH_HINT +
             unused/5;
 
-        op(_LOAD_ATTR_SLOT, (index/1, owner -- attr, null if (oparg & 1))) {
+        split op(_LOAD_ATTR_SLOT, (index/1, owner -- attr, null if (oparg & 1))) {
             char *addr = (char *)owner + index;
             attr = *(PyObject **)addr;
             DEOPT_IF(attr == NULL);
@@ -2018,7 +2020,7 @@ dummy_func(
 
         }
 
-        op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr, null if (oparg & 1))) {
+        split op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr, null if (oparg & 1))) {
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             attr = Py_NewRef(descr);
@@ -2888,7 +2890,7 @@ dummy_func(
             DEOPT_IF(owner_heap_type->ht_cached_keys->dk_version != keys_version);
         }
 
-        op(_LOAD_ATTR_METHOD_WITH_VALUES, (descr/4, owner -- attr, self if (1))) {
+        split op(_LOAD_ATTR_METHOD_WITH_VALUES, (descr/4, owner -- attr, self if (1))) {
             assert(oparg & 1);
             /* Cached method object */
             STAT_INC(LOAD_ATTR, hit);
@@ -3130,7 +3132,7 @@ dummy_func(
             DEOPT_IF(tstate->py_recursion_remaining <= 1);
         }
 
-        pure op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame: _PyInterpreterFrame*)) {
+        replicate(5) pure op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame: _PyInterpreterFrame*)) {
             int argcount = oparg;
             if (self_or_null != NULL) {
                 args--;
