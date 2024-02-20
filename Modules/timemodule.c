@@ -98,16 +98,8 @@ get_time_state(PyObject *module)
 static PyObject*
 _PyFloat_FromPyTime(PyTime_t t)
 {
-    double d = _PyTime_AsSecondsDouble(t);
+    double d = PyTime_AsSecondsDouble(t);
     return PyFloat_FromDouble(d);
-}
-
-
-static int
-get_system_time(PyTime_t *t)
-{
-    // Avoid _PyTime_TimeUnchecked() which silently ignores errors.
-    return _PyTime_TimeWithInfo(t, NULL);
 }
 
 
@@ -115,7 +107,7 @@ static PyObject *
 time_time(PyObject *self, PyObject *unused)
 {
     PyTime_t t;
-    if (get_system_time(&t) < 0) {
+    if (PyTime_Time(&t) < 0) {
         return NULL;
     }
     return _PyFloat_FromPyTime(t);
@@ -132,7 +124,7 @@ static PyObject *
 time_time_ns(PyObject *self, PyObject *unused)
 {
     PyTime_t t;
-    if (get_system_time(&t) < 0) {
+    if (PyTime_Time(&t) < 0) {
         return NULL;
     }
     return _PyTime_AsNanosecondsObject(t);
@@ -1156,19 +1148,11 @@ should not be relied on.");
 #endif /* HAVE_WORKING_TZSET */
 
 
-static int
-get_monotonic(PyTime_t *t)
-{
-    // Avoid _PyTime_MonotonicUnchecked() which silently ignores errors.
-    return _PyTime_MonotonicWithInfo(t, NULL);
-}
-
-
 static PyObject *
 time_monotonic(PyObject *self, PyObject *unused)
 {
     PyTime_t t;
-    if (get_monotonic(&t) < 0) {
+    if (PyTime_Monotonic(&t) < 0) {
         return NULL;
     }
     return _PyFloat_FromPyTime(t);
@@ -1183,7 +1167,7 @@ static PyObject *
 time_monotonic_ns(PyObject *self, PyObject *unused)
 {
     PyTime_t t;
-    if (get_monotonic(&t) < 0) {
+    if (PyTime_Monotonic(&t) < 0) {
         return NULL;
     }
     return _PyTime_AsNanosecondsObject(t);
@@ -1195,19 +1179,11 @@ PyDoc_STRVAR(monotonic_ns_doc,
 Monotonic clock, cannot go backward, as nanoseconds.");
 
 
-static int
-get_perf_counter(PyTime_t *t)
-{
-    // Avoid _PyTime_PerfCounterUnchecked() which silently ignores errors.
-    return _PyTime_PerfCounterWithInfo(t, NULL);
-}
-
-
 static PyObject *
 time_perf_counter(PyObject *self, PyObject *unused)
 {
     PyTime_t t;
-    if (get_perf_counter(&t) < 0) {
+    if (PyTime_PerfCounter(&t) < 0) {
         return NULL;
     }
     return _PyFloat_FromPyTime(t);
@@ -1223,7 +1199,7 @@ static PyObject *
 time_perf_counter_ns(PyObject *self, PyObject *unused)
 {
     PyTime_t t;
-    if (get_perf_counter(&t) < 0) {
+    if (PyTime_PerfCounter(&t) < 0) {
         return NULL;
     }
     return _PyTime_AsNanosecondsObject(t);
@@ -2190,7 +2166,7 @@ pysleep(PyTime_t timeout)
     PyTime_t deadline, monotonic;
     int err = 0;
 
-    if (get_monotonic(&monotonic) < 0) {
+    if (PyTime_Monotonic(&monotonic) < 0) {
         return -1;
     }
     deadline = monotonic + timeout;
@@ -2243,7 +2219,7 @@ pysleep(PyTime_t timeout)
         }
 
 #ifndef HAVE_CLOCK_NANOSLEEP
-        if (get_monotonic(&monotonic) < 0) {
+        if (PyTime_Monotonic(&monotonic) < 0) {
             return -1;
         }
         timeout = deadline - monotonic;
