@@ -2072,7 +2072,7 @@ stop_the_world(struct _stoptheworld_state *stw)
             break;
         }
 
-        _PyTime_t wait_ns = 1000*1000;  // 1ms (arbitrary, may need tuning)
+        PyTime_t wait_ns = 1000*1000;  // 1ms (arbitrary, may need tuning)
         if (PyEvent_WaitTimed(&stw->stop_event, wait_ns)) {
             assert(stw->thread_countdown == 0);
             break;

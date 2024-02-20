@@ -173,7 +173,7 @@ timeval_from_double(PyObject *obj, struct timeval *tv)
         return 0;
     }
 
-    _PyTime_t t;
+    PyTime_t t;
     if (_PyTime_FromSecondsObject(&t, obj, _PyTime_ROUND_CEILING) < 0) {
         return -1;
     }
@@ -1207,7 +1207,7 @@ signal_sigtimedwait_impl(PyObject *module, sigset_t sigset,
                          PyObject *timeout_obj)
 /*[clinic end generated code: output=59c8971e8ae18a64 input=87fd39237cf0b7ba]*/
 {
-    _PyTime_t timeout;
+    PyTime_t timeout;
     if (_PyTime_FromSecondsObject(&timeout,
                                   timeout_obj, _PyTime_ROUND_CEILING) < 0)
         return NULL;
@@ -1217,7 +1217,7 @@ signal_sigtimedwait_impl(PyObject *module, sigset_t sigset,
         return NULL;
     }
 
-    _PyTime_t deadline = _PyDeadline_Init(timeout);
+    PyTime_t deadline = _PyDeadline_Init(timeout);
     siginfo_t si;
 
     do {
