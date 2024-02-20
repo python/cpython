@@ -1,0 +1,1 @@
+Every ``PyThreadState`` now has its own ``eval_breaker``, allowing specific threads to be interrupted.

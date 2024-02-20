@@ -78,13 +78,10 @@ struct _ceval_runtime_state {
 
 
 struct _ceval_state {
-    /* This single variable consolidates all requests to break out of
-     * the fast path in the eval loop.
-     * It is by far the hottest field in this struct and
-     * should be placed at the beginning. */
-    uintptr_t eval_breaker;
-    /* Avoid false sharing */
-    int64_t padding[7];
+    /* This variable holds the global instrumentation version. When a thread is
+       running, this value is overlaid onto PyThreadState.eval_breaker so that
+       changes in the instrumentation version will trigger the eval breaker. */
+    uintptr_t instrumentation_version;
     int recursion_limit;
     struct _gil_runtime_state *gil;
     int own_gil;
