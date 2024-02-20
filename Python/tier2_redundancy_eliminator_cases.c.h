@@ -1063,8 +1063,6 @@
             break;
         }
 
-        /* _JUMP_BACKWARD is not a viable micro-op for tier 2 */
-
         /* _POP_JUMP_IF_FALSE is not a viable micro-op for tier 2 */
 
         /* _POP_JUMP_IF_TRUE is not a viable micro-op for tier 2 */
@@ -1746,6 +1744,18 @@
 
         case _INTERNAL_INCREMENT_OPT_COUNTER: {
             stack_pointer += -1;
+            break;
+        }
+
+        case _COLD_EXIT: {
+            break;
+        }
+
+        case _START_EXECUTOR: {
+            break;
+        }
+
+        case _FATAL_ERROR: {
             break;
         }
 

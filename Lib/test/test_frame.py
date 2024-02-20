@@ -331,6 +331,7 @@ class TestIncompleteFrameAreInvisible(unittest.TestCase):
             # on the *very next* allocation:
             gc.collect()
             gc.set_threshold(1, 0, 0)
+            sys._clear_internal_caches()
             # Okay, so here's the nightmare scenario:
             # - We're tracing the resumption of a generator, which creates a new
             #   frame object.
