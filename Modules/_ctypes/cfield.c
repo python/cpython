@@ -120,7 +120,6 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
         return a Python string instead of an Array object instance...
     */
     if (PyCArrayTypeObject_Check(st, proto)) {
-        StgDictObject *idict;
         StgInfo *ainfo;
         if (PyStgInfo_FromType(st, proto, &ainfo) < 0) {
             Py_DECREF(self);
@@ -128,19 +127,23 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
         }
 
         if (ainfo && ainfo->proto) {
-            idict = PyType_stgdict(ainfo->proto);
-            if (!idict) {
+            StgInfo *iinfo;
+            if (PyStgInfo_FromType(st, ainfo->proto, &iinfo) < 0) {
+                Py_DECREF(self);
+                return NULL;
+            }
+            if (!iinfo) {
                 PyErr_SetString(PyExc_TypeError,
                                 "has no _stginfo_");
                 Py_DECREF(self);
                 return NULL;
             }
-            if (idict->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
+            if (iinfo->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
                 struct fielddesc *fd = _ctypes_get_fielddesc("s");
                 getfunc = fd->getfunc;
                 setfunc = fd->setfunc;
             }
-            if (idict->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
+            if (iinfo->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
                 struct fielddesc *fd = _ctypes_get_fielddesc("U");
                 getfunc = fd->getfunc;
                 setfunc = fd->setfunc;

@@ -154,28 +154,25 @@ static void _CallPythonObject(void *mem,
     ctypes_state *st = GLOBAL_STATE();
     for (i = 0; i < nargs; i++) {
         PyObject *cnv = cnvs[i]; // borrowed ref
-        StgDictObject *dict;
-        dict = PyType_stgdict(cnv);
 
         StgInfo *info;
         if (PyStgInfo_FromType(st, cnv, &info) < 0) {
             goto Done;
         }
-        assert(info);
 
-        if (dict && dict->getfunc && !_ctypes_simple_instance(cnv)) {
-            PyObject *v = dict->getfunc(*pArgs, info->size);
+        if (info && info->getfunc && !_ctypes_simple_instance(cnv)) {
+            PyObject *v = info->getfunc(*pArgs, info->size);
             if (!v) {
                 PrintError("create argument %zd:\n", i);
                 goto Done;
             }
             args[i] = v;
             /* XXX XXX XX
-               We have the problem that c_byte or c_short have dict->size of
+               We have the problem that c_byte or c_short have info->size of
                1 resp. 4, but these parameters are pushed as sizeof(int) bytes.
                BTW, the same problem occurs when they are pushed as parameters
             */
-        } else if (dict) {
+        } else if (info) {
             /* Hm, shouldn't we use PyCData_AtAddress() or something like that instead? */
             CDataObject *obj = (CDataObject *)_PyObject_CallNoArgs(cnv);
             if (!obj) {
@@ -378,20 +375,17 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
         p->setfunc = NULL;
         p->ffi_restype = &ffi_type_void;
     } else {
-        StgDictObject *dict = PyType_stgdict(restype);
-
         StgInfo *info;
         if (PyStgInfo_FromType(st, restype, &info) < 0) {
             goto error;
         }
 
-        if (dict == NULL || dict->setfunc == NULL) {
+        if (info == NULL || info->setfunc == NULL) {
           PyErr_SetString(PyExc_TypeError,
                           "invalid result type for callback function");
           goto error;
         }
-        assert(info);
-        p->setfunc = dict->setfunc;
+        p->setfunc = info->setfunc;
         p->ffi_restype = &info->ffi_type_pointer;
     }
 

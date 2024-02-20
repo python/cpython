@@ -1702,11 +1702,11 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     /* Special case for character arrays.
        A permanent annoyance: char arrays are also strings!
     */
-    if (itemdict->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
+    if (iteminfo->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
         if (-1 == add_getset(result, CharArray_getsets))
             goto error;
     }
-    else if (itemdict->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
+    else if (iteminfo->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
         if (-1 == add_getset(result, WCharArray_getsets))
             goto error;
     }
@@ -1788,18 +1788,25 @@ c_wchar_p_from_param(PyObject *type, PyObject *value)
         if (PyStgInfo_FromObject(st, value, &it) < 0) {
             return NULL;
         }
-        StgDictObject *dict;
         assert(it); /* Cannot be NULL for pointer or array objects */
-        dict = it && it->proto ? PyType_stgdict(it->proto) : NULL;
-        if (dict && (dict->setfunc == _ctypes_get_fielddesc("u")->setfunc)) {
+        StgInfo *info = NULL;
+        if (it && it->proto) {
+            if (PyStgInfo_FromType(st, it->proto, &info) < 0) {
+                return NULL;
+            }
+        }
+        if (info && (info->setfunc == _ctypes_get_fielddesc("u")->setfunc)) {
             return Py_NewRef(value);
         }
     }
     if (PyCArg_CheckExact(st, value)) {
         /* byref(c_char(...)) */
         PyCArgObject *a = (PyCArgObject *)value;
-        StgDictObject *dict = PyObject_stgdict(a->obj);
-        if (dict && (dict->setfunc == _ctypes_get_fielddesc("u")->setfunc)) {
+        StgInfo *info;
+        if (PyStgInfo_FromObject(st, a->obj, &info) < 0) {
+            return NULL;
+        }
+        if (info && (info->setfunc == _ctypes_get_fielddesc("u")->setfunc)) {
             return Py_NewRef(value);
         }
     }
@@ -1855,18 +1862,25 @@ c_char_p_from_param(PyObject *type, PyObject *value)
         if (PyStgInfo_FromObject(st, value, &it) < 0) {
             return NULL;
         }
-        StgDictObject *dict;
         assert(it); /* Cannot be NULL for pointer or array objects */
-        dict = it && it->proto ? PyType_stgdict(it->proto) : NULL;
-        if (dict && (dict->setfunc == _ctypes_get_fielddesc("c")->setfunc)) {
+        StgInfo *info = NULL;
+        if (it && it->proto) {
+            if (PyStgInfo_FromType(st, it->proto, &info) < 0) {
+                return NULL;
+            }
+        }
+        if (info && (info->setfunc == _ctypes_get_fielddesc("c")->setfunc)) {
             return Py_NewRef(value);
         }
     }
     if (PyCArg_CheckExact(st, value)) {
         /* byref(c_char(...)) */
         PyCArgObject *a = (PyCArgObject *)value;
-        StgDictObject *dict = PyObject_stgdict(a->obj);
-        if (dict && (dict->setfunc == _ctypes_get_fielddesc("c")->setfunc)) {
+        StgInfo *info;
+        if (PyStgInfo_FromObject(st, a->obj, &info) < 0) {
+            return NULL;
+        }
+        if (info && (info->setfunc == _ctypes_get_fielddesc("c")->setfunc)) {
             return Py_NewRef(value);
         }
     }
@@ -2095,8 +2109,8 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
     stginfo->align = fmt->pffi_type->alignment;
     stginfo->length = 0;
     stginfo->size = fmt->pffi_type->size;
-    stgdict->setfunc = fmt->setfunc_swapped;
-    stgdict->getfunc = fmt->getfunc_swapped;
+    stginfo->setfunc = fmt->setfunc_swapped;
+    stginfo->getfunc = fmt->getfunc_swapped;
 
     stginfo->proto = Py_NewRef(proto);
 
@@ -2213,8 +2227,8 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     stginfo->align = fmt->pffi_type->alignment;
     stginfo->length = 0;
     stginfo->size = fmt->pffi_type->size;
-    stgdict->setfunc = fmt->setfunc;
-    stgdict->getfunc = fmt->getfunc;
+    stginfo->setfunc = fmt->setfunc;
+    stginfo->getfunc = fmt->getfunc;
 #ifdef WORDS_BIGENDIAN
     stgdict->format = _ctypes_alloc_format_string_for_type(proto_str[0], 1);
 #else
@@ -2547,8 +2561,8 @@ make_funcptrtype_dict(StgDictObject *stgdict, StgInfo *stginfo)
     stginfo->align = _ctypes_get_fielddesc("P")->pffi_type->alignment;
     stginfo->length = 1;
     stginfo->size = sizeof(void *);
-    stgdict->setfunc = NULL;
-    stgdict->getfunc = NULL;
+    stginfo->setfunc = NULL;
+    stginfo->getfunc = NULL;
     stginfo->ffi_type_pointer = ffi_type_pointer;
 
     if (PyDict_GetItemRef((PyObject *)stgdict, &_Py_ID(_flags_), &ob) < 0) {
@@ -3176,13 +3190,16 @@ PyObject *
 PyCData_get(PyObject *type, GETFUNC getfunc, PyObject *src,
           Py_ssize_t index, Py_ssize_t size, char *adr)
 {
-    StgDictObject *dict;
     if (getfunc)
         return getfunc(adr, size);
     assert(type);
-    dict = PyType_stgdict(type);
-    if (dict && dict->getfunc && !_ctypes_simple_instance(type))
-        return dict->getfunc(adr, size);
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, type, &info) < 0) {
+        return NULL;
+    }
+    if (info && info->getfunc && !_ctypes_simple_instance(type))
+        return info->getfunc(adr, size);
     return PyCData_FromBaseObj(type, src, index, adr);
 }
 
@@ -3201,9 +3218,12 @@ _PyCData_set(CDataObject *dst, PyObject *type, SETFUNC setfunc, PyObject *value,
     }
     ctypes_state *st = GLOBAL_STATE();
     if (!CDataObject_Check(st, value)) {
-        StgDictObject *dict = PyType_stgdict(type);
-        if (dict && dict->setfunc)
-            return dict->setfunc(ptr, value, size);
+        StgInfo *info;
+        if (PyStgInfo_FromType(st, type, &info) < 0) {
+            return NULL;
+        }
+        if (info && info->setfunc)
+            return info->setfunc(ptr, value, size);
         /*
            If value is a tuple, we try to call the type with the tuple
            and use the result!
@@ -4711,17 +4731,12 @@ Array_item(PyObject *myself, Py_ssize_t index)
 {
     CDataObject *self = (CDataObject *)myself;
     Py_ssize_t offset, size;
-    StgDictObject *stgdict;
-
 
     if (index < 0 || index >= self->b_length) {
         PyErr_SetString(PyExc_IndexError,
                         "invalid index");
         return NULL;
     }
-
-    stgdict = PyObject_stgdict((PyObject *)self);
-    assert(stgdict); /* Cannot be NULL for array instances */
 
     ctypes_state *st = GLOBAL_STATE();
     StgInfo *stginfo;
@@ -4730,12 +4745,12 @@ Array_item(PyObject *myself, Py_ssize_t index)
     }
 
     /* Would it be clearer if we got the item size from
-       stgdict->proto's stgdict?
+       stginfo->proto's stginfo?
     */
     size = stginfo->size / stginfo->length;
     offset = index * size;
 
-    return PyCData_get(stginfo->proto, stgdict->getfunc, (PyObject *)self,
+    return PyCData_get(stginfo->proto, stginfo->getfunc, (PyObject *)self,
                      index, size, self->b_ptr + offset);
 }
 
@@ -4754,7 +4769,6 @@ Array_subscript(PyObject *myself, PyObject *item)
         return Array_item(myself, i);
     }
     else if (PySlice_Check(item)) {
-        StgDictObject *itemdict;
         PyObject *proto;
         PyObject *np;
         Py_ssize_t start, stop, step, slicelen, i;
@@ -4772,11 +4786,14 @@ Array_subscript(PyObject *myself, PyObject *item)
         }
         assert(stginfo); /* Cannot be NULL for array object instances */
         proto = stginfo->proto;
-        itemdict = PyType_stgdict(proto);
-        assert(itemdict); /* proto is the item type of the array, a
+        StgInfo *iteminfo;
+        if (PyStgInfo_FromType(st, proto, &iteminfo) < 0) {
+            return NULL;
+        }
+        assert(iteminfo); /* proto is the item type of the array, a
                              ctypes type, so this cannot be NULL */
 
-        if (itemdict->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
+        if (iteminfo->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
             char *ptr = (char *)self->b_ptr;
             char *dest;
 
@@ -4800,7 +4817,7 @@ Array_subscript(PyObject *myself, PyObject *item)
             PyMem_Free(dest);
             return np;
         }
-        if (itemdict->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
+        if (iteminfo->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
             wchar_t *ptr = (wchar_t *)self->b_ptr;
             wchar_t *dest;
 
@@ -4855,7 +4872,6 @@ Array_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
 {
     CDataObject *self = (CDataObject *)myself;
     Py_ssize_t size, offset;
-    StgDictObject *stgdict;
     char *ptr;
 
     if (value == NULL) {
@@ -4863,9 +4879,6 @@ Array_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
                         "Array does not support item deletion");
         return -1;
     }
-
-    stgdict = PyObject_stgdict((PyObject *)self);
-    assert(stgdict); /* Cannot be NULL for array object instances */
 
     ctypes_state *st = GLOBAL_STATE();
     StgInfo *stginfo;
@@ -4883,7 +4896,7 @@ Array_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
     offset = index * size;
     ptr = self->b_ptr + offset;
 
-    return PyCData_set((PyObject *)self, stginfo->proto, stgdict->setfunc, value,
+    return PyCData_set((PyObject *)self, stginfo->proto, stginfo->setfunc, value,
                      index, size, ptr);
 }
 
@@ -5107,24 +5120,22 @@ static int
 Simple_set_value(CDataObject *self, PyObject *value, void *Py_UNUSED(ignored))
 {
     PyObject *result;
-    StgDictObject *dict = PyObject_stgdict((PyObject *)self);
 
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError,
                         "can't delete attribute");
         return -1;
     }
-    assert(dict); /* Cannot be NULL for CDataObject instances */
-    assert(dict->setfunc);
 
     ctypes_state *st = GLOBAL_STATE();
     StgInfo *info;
     if (PyStgInfo_FromObject(st, (PyObject *)self, &info) < 0) {
         return -1;
     }
-    assert(info);
+    assert(info); /* Cannot be NULL for CDataObject instances */
+    assert(info->setfunc);
 
-    result = dict->setfunc(self->b_ptr, value, info->size);
+    result = info->setfunc(self->b_ptr, value, info->size);
     if (!result)
         return -1;
 
@@ -5146,11 +5157,14 @@ Simple_init(CDataObject *self, PyObject *args, PyObject *kw)
 static PyObject *
 Simple_get_value(CDataObject *self, void *Py_UNUSED(ignored))
 {
-    StgDictObject *dict;
-    dict = PyObject_stgdict((PyObject *)self);
-    assert(dict); /* Cannot be NULL for CDataObject instances */
-    assert(dict->getfunc);
-    return dict->getfunc(self->b_ptr, self->b_size);
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    if (PyStgInfo_FromObject(st, (PyObject *)self, &info) < 0) {
+        return NULL;
+    }
+    assert(info); /* Cannot be NULL for CDataObject instances */
+    assert(info->getfunc);
+    return info->getfunc(self->b_ptr, self->b_size);
 }
 
 static PyGetSetDef Simple_getsets[] = {
@@ -5270,7 +5284,6 @@ Pointer_item(PyObject *myself, Py_ssize_t index)
     CDataObject *self = (CDataObject *)myself;
     Py_ssize_t size;
     Py_ssize_t offset;
-    StgDictObject *stgdict, *itemdict;
     PyObject *proto;
 
     if (*(void **)self->b_ptr == NULL) {
@@ -5279,21 +5292,15 @@ Pointer_item(PyObject *myself, Py_ssize_t index)
         return NULL;
     }
 
-    stgdict = PyObject_stgdict((PyObject *)self);
-    assert(stgdict); /* Cannot be NULL for pointer object instances */
-
     ctypes_state *st = GLOBAL_STATE();
     StgInfo *stginfo;
     if (PyStgInfo_FromObject(st, (PyObject *)self, &stginfo) < 0) {
         return NULL;
     }
-    assert(stginfo);
+    assert(stginfo); /* Cannot be NULL for pointer object instances */
 
     proto = stginfo->proto;
     assert(proto);
-    itemdict = PyType_stgdict(proto);
-    assert(itemdict); /* proto is the item type of the pointer, a ctypes
-                         type, so this cannot be NULL */
 
     StgInfo *iteminfo;
     if (PyStgInfo_FromType(st, proto, &iteminfo) < 0) {
@@ -5305,7 +5312,7 @@ Pointer_item(PyObject *myself, Py_ssize_t index)
     size = iteminfo->size;
     offset = index * iteminfo->size;
 
-    return PyCData_get(proto, stgdict->getfunc, (PyObject *)self,
+    return PyCData_get(proto, stginfo->getfunc, (PyObject *)self,
                      index, size, (*(char **)self->b_ptr) + offset);
 }
 
@@ -5315,7 +5322,6 @@ Pointer_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
     CDataObject *self = (CDataObject *)myself;
     Py_ssize_t size;
     Py_ssize_t offset;
-    StgDictObject *stgdict, *itemdict;
     PyObject *proto;
 
     if (value == NULL) {
@@ -5330,22 +5336,15 @@ Pointer_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
         return -1;
     }
 
-    stgdict = PyObject_stgdict((PyObject *)self);
-    assert(stgdict); /* Cannot be NULL for pointer instances */
-
     ctypes_state *st = GLOBAL_STATE();
     StgInfo *stginfo;
     if (PyStgInfo_FromObject(st, (PyObject *)self, &stginfo) < 0) {
         return -1;
     }
-    assert(stginfo);
+    assert(stginfo); /* Cannot be NULL for pointer instances */
 
     proto = stginfo->proto;
     assert(proto);
-
-    itemdict = PyType_stgdict(proto);
-    assert(itemdict); /* Cannot be NULL because the itemtype of a pointer
-                         is always a ctypes type */
 
     StgInfo *iteminfo;
     if (PyStgInfo_FromType(st, proto, &iteminfo) < 0) {
@@ -5357,7 +5356,7 @@ Pointer_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
     size = iteminfo->size;
     offset = index * iteminfo->size;
 
-    return PyCData_set((PyObject *)self, proto, stgdict->setfunc, value,
+    return PyCData_set((PyObject *)self, proto, stginfo->setfunc, value,
                      index, size, (*(char **)self->b_ptr) + offset);
 }
 
@@ -5482,7 +5481,6 @@ Pointer_subscript(PyObject *myself, PyObject *item)
         PySliceObject *slice = (PySliceObject *)item;
         Py_ssize_t start, stop, step;
         PyObject *np;
-        StgDictObject *itemdict;
         PyObject *proto;
         Py_ssize_t i, len;
         size_t cur;
@@ -5544,9 +5542,12 @@ Pointer_subscript(PyObject *myself, PyObject *item)
         assert(stginfo); /* Cannot be NULL for pointer instances */
         proto = stginfo->proto;
         assert(proto);
-        itemdict = PyType_stgdict(proto);
-        assert(itemdict);
-        if (itemdict->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
+        StgInfo *iteminfo;
+        if (PyStgInfo_FromType(st, proto, &iteminfo) < 0) {
+            return NULL;
+        }
+        assert(iteminfo);
+        if (iteminfo->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
             char *ptr = *(char **)self->b_ptr;
             char *dest;
 
@@ -5566,7 +5567,7 @@ Pointer_subscript(PyObject *myself, PyObject *item)
             PyMem_Free(dest);
             return np;
         }
-        if (itemdict->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
+        if (iteminfo->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
             wchar_t *ptr = *(wchar_t **)self->b_ptr;
             wchar_t *dest;
 

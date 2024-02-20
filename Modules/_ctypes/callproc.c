@@ -993,7 +993,6 @@ static int _call_function_pointer(int flags,
  */
 static PyObject *GetResult(PyObject *restype, void *result, PyObject *checker)
 {
-    StgDictObject *dict;
     PyObject *retval, *v;
 
     if (restype == NULL)
@@ -1003,24 +1002,22 @@ static PyObject *GetResult(PyObject *restype, void *result, PyObject *checker)
         Py_RETURN_NONE;
     }
 
-    dict = PyType_stgdict(restype);
-    if (dict == NULL)
-        return PyObject_CallFunction(restype, "i", *(int *)result);
-
     ctypes_state *st = GLOBAL_STATE();
     StgInfo *info;
     if (PyStgInfo_FromType(st, restype, &info) < 0) {
         return NULL;
     }
-    assert(info);
+    if (info == NULL) {
+        return PyObject_CallFunction(restype, "i", *(int *)result);
+    }
 
-    if (dict->getfunc && !_ctypes_simple_instance(restype)) {
-        retval = dict->getfunc(result, info->size);
+    if (info->getfunc && !_ctypes_simple_instance(restype)) {
+        retval = info->getfunc(result, info->size);
         /* If restype is py_object (detected by comparing getfunc with
            O_get), we have to call Py_DECREF because O_get has already
            called Py_INCREF.
         */
-        if (dict->getfunc == _ctypes_get_fielddesc("O")->getfunc) {
+        if (info->getfunc == _ctypes_get_fielddesc("O")->getfunc) {
             Py_DECREF(retval);
         }
     } else
