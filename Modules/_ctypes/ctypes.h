@@ -236,8 +236,10 @@ typedef struct {
     PyObject *proto;            /* Only for Pointer/ArrayObject */
     SETFUNC setfunc;            /* Only for simple objects */
     GETFUNC getfunc;            /* Only for simple objects */
-
     PARAMFUNC paramfunc;
+
+    /* Following fields only used by PyCFuncPtrType_Type instances */
+    PyObject *argtypes;         /* tuple of CDataObjects */
 } StgInfo;
 
 // Get a PyCTypeDataObject. These Return -1 on error, 0 if "not found", 1 on OK.
@@ -273,7 +275,7 @@ typedef struct {
     //PARAMFUNC paramfunc;
 
     /* Following fields only used by PyCFuncPtrType_Type instances */
-    PyObject *argtypes;         /* tuple of CDataObjects */
+    //PyObject *argtypes;         /* tuple of CDataObjects */
     PyObject *converters;       /* tuple([t.from_param for t in argtypes]) */
     PyObject *restype;          /* CDataObject or NULL */
     PyObject *checker;

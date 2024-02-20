@@ -495,6 +495,7 @@ CType_Type_clear(PyObject *self)
     }
     if (info) {
         Py_CLEAR(info->proto);
+        Py_CLEAR(info->argtypes);
     }
     return 0;
 }
@@ -2587,7 +2588,7 @@ make_funcptrtype_dict(StgDictObject *stgdict, StgInfo *stginfo)
             Py_DECREF(ob);
             return -1;
         }
-        stgdict->argtypes = ob;
+        stginfo->argtypes = ob;
         stgdict->converters = converters;
     }
 
@@ -3478,14 +3479,17 @@ PyCFuncPtr_set_argtypes(PyCFuncPtrObject *self, PyObject *ob, void *Py_UNUSED(ig
 static PyObject *
 PyCFuncPtr_get_argtypes(PyCFuncPtrObject *self, void *Py_UNUSED(ignored))
 {
-    StgDictObject *dict;
     if (self->argtypes) {
         return Py_NewRef(self->argtypes);
     }
-    dict = PyObject_stgdict((PyObject *)self);
-    assert(dict); /* Cannot be NULL for PyCFuncPtrObject instances */
-    if (dict->argtypes) {
-        return Py_NewRef(dict->argtypes);
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    if (PyStgInfo_FromObject(st, (PyObject *)self, &info) < 0) {
+        return NULL;
+    }
+    assert(info); /* Cannot be NULL for PyCFuncPtrObject instances */
+    if (info->argtypes) {
+        return Py_NewRef(info->argtypes);
     } else {
         Py_RETURN_NONE;
     }
@@ -3594,15 +3598,21 @@ _validate_paramflags(PyTypeObject *type, PyObject *paramflags)
     StgDictObject *dict;
     PyObject *argtypes;
 
+    ctypes_state *st = GLOBAL_STATE();
     dict = PyType_stgdict((PyObject *)type);
-    if (!dict) {
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, (PyObject *)type, &info) < 0) {
+        return -1;
+    }
+    if (!info) {
         PyErr_SetString(PyExc_TypeError,
                         "abstract class");
         return 0;
     }
-    argtypes = dict->argtypes;
+    assert(dict);
+    argtypes = info->argtypes;
 
-    if (paramflags == NULL || dict->argtypes == NULL)
+    if (paramflags == NULL || info->argtypes == NULL)
         return 1;
 
     if (!PyTuple_Check(paramflags)) {
@@ -3612,7 +3622,7 @@ _validate_paramflags(PyTypeObject *type, PyObject *paramflags)
     }
 
     len = PyTuple_GET_SIZE(paramflags);
-    if (len != PyTuple_GET_SIZE(dict->argtypes)) {
+    if (len != PyTuple_GET_SIZE(info->argtypes)) {
         PyErr_SetString(PyExc_ValueError,
                         "paramflags must have the same length as argtypes");
         return 0;
@@ -3893,17 +3903,23 @@ PyCFuncPtr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
 */
 
+    ctypes_state *st = GLOBAL_STATE();
     dict = PyType_stgdict((PyObject *)type);
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, (PyObject *)type, &info) < 0) {
+        return NULL;
+    }
     /* XXXX Fails if we do: 'PyCFuncPtr(lambda x: x)' */
-    if (!dict || !dict->argtypes) {
+    if (!info || !info->argtypes) {
         PyErr_SetString(PyExc_TypeError,
                "cannot construct instance of this class:"
             " no argtypes");
         return NULL;
     }
+    assert(dict);
 
     thunk = _ctypes_alloc_callback(callable,
-                                  dict->argtypes,
+                                  info->argtypes,
                                   dict->restype,
                                   dict->flags);
     if (!thunk)
@@ -4258,11 +4274,18 @@ PyCFuncPtr_call(PyCFuncPtrObject *self, PyObject *inargs, PyObject *kwds)
     int outmask;
     unsigned int numretvals;
 
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    if (PyStgInfo_FromObject(st, (PyObject *)self, &info) < 0) {
+        return NULL;
+    }
+    assert(info); /* Cannot be NULL for PyCFuncPtrObject instances */
+
     assert(dict); /* Cannot be NULL for PyCFuncPtrObject instances */
     restype = self->restype ? self->restype : dict->restype;
     converters = self->converters ? self->converters : dict->converters;
     checker = self->checker ? self->checker : dict->checker;
-    argtypes = self->argtypes ? self->argtypes : dict->argtypes;
+    argtypes = self->argtypes ? self->argtypes : info->argtypes;
 /* later, we probably want to have an errcheck field in stgdict */
     errcheck = self->errcheck /* ? self->errcheck : dict->errcheck */;
 

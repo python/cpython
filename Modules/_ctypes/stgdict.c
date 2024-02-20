@@ -103,7 +103,6 @@ PyCStgDict_init(StgDictObject *self, PyObject *args, PyObject *kwds)
 static int
 PyCStgDict_clear(StgDictObject *self)
 {
-    Py_CLEAR(self->argtypes);
     Py_CLEAR(self->converters);
     Py_CLEAR(self->restype);
     Py_CLEAR(self->checker);
@@ -156,7 +155,7 @@ PyCStgDict_clone(StgDictObject *dst, StgDictObject *src,
     memcpy(dst_info, src_info, sizeof(StgInfo));
 
     Py_XINCREF(dst_info->proto);
-    Py_XINCREF(dst->argtypes);
+    Py_XINCREF(dst_info->argtypes);
     Py_XINCREF(dst->converters);
     Py_XINCREF(dst->restype);
     Py_XINCREF(dst->checker);
