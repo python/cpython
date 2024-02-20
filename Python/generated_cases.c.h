@@ -2026,20 +2026,26 @@
             PyObject *right;
             PyObject *left;
             PyObject *res;
-            /* Skip 1 cache entry */
+            // _GUARD_BOTH_FLOAT
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            DEOPT_IF(!PyFloat_CheckExact(left), COMPARE_OP);
-            DEOPT_IF(!PyFloat_CheckExact(right), COMPARE_OP);
-            STAT_INC(COMPARE_OP, hit);
-            double dleft = PyFloat_AS_DOUBLE(left);
-            double dright = PyFloat_AS_DOUBLE(right);
-            // 1 if NaN, 2 if <, 4 if >, 8 if ==; this matches low four bits of the oparg
-            int sign_ish = COMPARISON_BIT(dleft, dright);
-            _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
-            res = (sign_ish & oparg) ? Py_True : Py_False;
-            // It's always a bool, so we don't care about oparg & 16.
+            {
+                DEOPT_IF(!PyFloat_CheckExact(left), COMPARE_OP);
+                DEOPT_IF(!PyFloat_CheckExact(right), COMPARE_OP);
+            }
+            /* Skip 1 cache entry */
+            // _COMPARE_OP_FLOAT
+            {
+                STAT_INC(COMPARE_OP, hit);
+                double dleft = PyFloat_AS_DOUBLE(left);
+                double dright = PyFloat_AS_DOUBLE(right);
+                // 1 if NaN, 2 if <, 4 if >, 8 if ==; this matches low four bits of the oparg
+                int sign_ish = COMPARISON_BIT(dleft, dright);
+                _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
+                _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
+                res = (sign_ish & oparg) ? Py_True : Py_False;
+                // It's always a bool, so we don't care about oparg & 16.
+            }
             stack_pointer[-2] = res;
             stack_pointer += -1;
             DISPATCH();
@@ -2053,24 +2059,30 @@
             PyObject *right;
             PyObject *left;
             PyObject *res;
-            /* Skip 1 cache entry */
+            // _GUARD_BOTH_INT
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            DEOPT_IF(!PyLong_CheckExact(left), COMPARE_OP);
-            DEOPT_IF(!PyLong_CheckExact(right), COMPARE_OP);
-            DEOPT_IF(!_PyLong_IsCompact((PyLongObject *)left), COMPARE_OP);
-            DEOPT_IF(!_PyLong_IsCompact((PyLongObject *)right), COMPARE_OP);
-            STAT_INC(COMPARE_OP, hit);
-            assert(_PyLong_DigitCount((PyLongObject *)left) <= 1 &&
+            {
+                DEOPT_IF(!PyLong_CheckExact(left), COMPARE_OP);
+                DEOPT_IF(!PyLong_CheckExact(right), COMPARE_OP);
+            }
+            /* Skip 1 cache entry */
+            // _COMPARE_OP_INT
+            {
+                DEOPT_IF(!_PyLong_IsCompact((PyLongObject *)left), COMPARE_OP);
+                DEOPT_IF(!_PyLong_IsCompact((PyLongObject *)right), COMPARE_OP);
+                STAT_INC(COMPARE_OP, hit);
+                assert(_PyLong_DigitCount((PyLongObject *)left) <= 1 &&
                    _PyLong_DigitCount((PyLongObject *)right) <= 1);
-            Py_ssize_t ileft = _PyLong_CompactValue((PyLongObject *)left);
-            Py_ssize_t iright = _PyLong_CompactValue((PyLongObject *)right);
-            // 2 if <, 4 if >, 8 if ==; this matches the low 4 bits of the oparg
-            int sign_ish = COMPARISON_BIT(ileft, iright);
-            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
-            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-            res = (sign_ish & oparg) ? Py_True : Py_False;
-            // It's always a bool, so we don't care about oparg & 16.
+                Py_ssize_t ileft = _PyLong_CompactValue((PyLongObject *)left);
+                Py_ssize_t iright = _PyLong_CompactValue((PyLongObject *)right);
+                // 2 if <, 4 if >, 8 if ==; this matches the low 4 bits of the oparg
+                int sign_ish = COMPARISON_BIT(ileft, iright);
+                _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
+                _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
+                res = (sign_ish & oparg) ? Py_True : Py_False;
+                // It's always a bool, so we don't care about oparg & 16.
+            }
             stack_pointer[-2] = res;
             stack_pointer += -1;
             DISPATCH();
@@ -2084,21 +2096,27 @@
             PyObject *right;
             PyObject *left;
             PyObject *res;
-            /* Skip 1 cache entry */
+            // _GUARD_BOTH_UNICODE
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            DEOPT_IF(!PyUnicode_CheckExact(left), COMPARE_OP);
-            DEOPT_IF(!PyUnicode_CheckExact(right), COMPARE_OP);
-            STAT_INC(COMPARE_OP, hit);
-            int eq = _PyUnicode_Equal(left, right);
-            assert((oparg >> 5) == Py_EQ || (oparg >> 5) == Py_NE);
-            _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
-            assert(eq == 0 || eq == 1);
-            assert((oparg & 0xf) == COMPARISON_NOT_EQUALS || (oparg & 0xf) == COMPARISON_EQUALS);
-            assert(COMPARISON_NOT_EQUALS + 1 == COMPARISON_EQUALS);
-            res = ((COMPARISON_NOT_EQUALS + eq) & oparg) ? Py_True : Py_False;
-            // It's always a bool, so we don't care about oparg & 16.
+            {
+                DEOPT_IF(!PyUnicode_CheckExact(left), COMPARE_OP);
+                DEOPT_IF(!PyUnicode_CheckExact(right), COMPARE_OP);
+            }
+            /* Skip 1 cache entry */
+            // _COMPARE_OP_STR
+            {
+                STAT_INC(COMPARE_OP, hit);
+                int eq = _PyUnicode_Equal(left, right);
+                assert((oparg >> 5) == Py_EQ || (oparg >> 5) == Py_NE);
+                _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
+                _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
+                assert(eq == 0 || eq == 1);
+                assert((oparg & 0xf) == COMPARISON_NOT_EQUALS || (oparg & 0xf) == COMPARISON_EQUALS);
+                assert(COMPARISON_NOT_EQUALS + 1 == COMPARISON_EQUALS);
+                res = ((COMPARISON_NOT_EQUALS + eq) & oparg) ? Py_True : Py_False;
+                // It's always a bool, so we don't care about oparg & 16.
+            }
             stack_pointer[-2] = res;
             stack_pointer += -1;
             DISPATCH();
