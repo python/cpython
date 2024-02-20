@@ -5,7 +5,7 @@
 #include "pycore_lock.h"
 #include "pycore_parking_lot.h"
 #include "pycore_semaphore.h"
-#include "pycore_time.h"          // _PyTime_GetMonotonicClock()
+#include "pycore_time.h"          // _PyTime_MonotonicUnchecked()
 
 #ifdef MS_WINDOWS
 #  define WIN32_LEAN_AND_MEAN
@@ -66,7 +66,7 @@ _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
         return PY_LOCK_FAILURE;
     }
 
-    PyTime_t now = _PyTime_GetMonotonicClock();
+    PyTime_t now = _PyTime_MonotonicUnchecked();
     PyTime_t endtime = 0;
     if (timeout > 0) {
         endtime = _PyTime_Add(now, timeout);
@@ -143,7 +143,7 @@ mutex_unpark(PyMutex *m, struct mutex_entry *entry, int has_more_waiters)
 {
     uint8_t v = 0;
     if (entry) {
-        PyTime_t now = _PyTime_GetMonotonicClock();
+        PyTime_t now = _PyTime_MonotonicUnchecked();
         int should_be_fair = now > entry->time_to_be_fair;
 
         entry->handed_off = should_be_fair;
