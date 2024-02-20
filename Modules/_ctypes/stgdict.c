@@ -435,7 +435,7 @@ _ctypes_alloc_format_padding(const char *prefix, Py_ssize_t padding)
 int
 PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct)
 {
-    StgDictObject *stgdict, *basedict;
+    StgDictObject *stgdict;
     Py_ssize_t len, offset, size, align, i;
     Py_ssize_t union_size, total_align, aligned_size;
     Py_ssize_t field_size = 0;
@@ -531,7 +531,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     /* If this structure/union is already marked final we cannot assign
        _fields_ anymore. */
 
-    if (stgdict->flags & DICTFLAG_FINAL) {/* is final ? */
+    if (stginfo->flags & DICTFLAG_FINAL) {/* is final ? */
         PyErr_SetString(PyExc_AttributeError,
                         "_fields_ is final");
         return -1;
@@ -545,22 +545,19 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     if (stginfo->ffi_type_pointer.elements)
         PyMem_Free(stginfo->ffi_type_pointer.elements);
 
-    basedict = PyType_stgdict((PyObject *)((PyTypeObject *)type)->tp_base);
-    if (basedict) {
-        stgdict->flags |= (basedict->flags &
-                           (TYPEFLAG_HASUNION | TYPEFLAG_HASBITFIELD));
-    }
-
     StgInfo *baseinfo;
     if (PyStgInfo_FromType(st, (PyObject *)((PyTypeObject *)type)->tp_base,
                            &baseinfo) < 0) {
         return -1;
     }
-
-    if (!isStruct) {
-        stgdict->flags |= TYPEFLAG_HASUNION;
+    if (baseinfo) {
+        stginfo->flags |= (baseinfo->flags &
+                           (TYPEFLAG_HASUNION | TYPEFLAG_HASBITFIELD));
     }
-    if (basedict) {
+    if (!isStruct) {
+        stginfo->flags |= TYPEFLAG_HASUNION;
+    }
+    if (baseinfo) {
         size = offset = baseinfo->size;
         align = baseinfo->align;
         union_size = 0;
@@ -640,12 +637,12 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         assert(info);
 
         stginfo->ffi_type_pointer.elements[ffi_ofs + i] = &info->ffi_type_pointer;
-        if (dict->flags & (TYPEFLAG_ISPOINTER | TYPEFLAG_HASPOINTER))
-            stgdict->flags |= TYPEFLAG_HASPOINTER;
-        stgdict->flags |= dict->flags & (TYPEFLAG_HASUNION | TYPEFLAG_HASBITFIELD);
-        dict->flags |= DICTFLAG_FINAL; /* mark field type final */
+        if (info->flags & (TYPEFLAG_ISPOINTER | TYPEFLAG_HASPOINTER))
+            stginfo->flags |= TYPEFLAG_HASPOINTER;
+        stginfo->flags |= info->flags & (TYPEFLAG_HASUNION | TYPEFLAG_HASBITFIELD);
+        info->flags |= DICTFLAG_FINAL; /* mark field type final */
         if (PyTuple_Size(pair) == 3) { /* bits specified */
-            stgdict->flags |= TYPEFLAG_HASBITFIELD;
+            stginfo->flags |= TYPEFLAG_HASBITFIELD;
             switch(info->ffi_type_pointer.type) {
             case FFI_TYPE_UINT8:
             case FFI_TYPE_UINT16:
@@ -983,7 +980,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         if (num_ffi_types > 0) {
             memset(structs, 0, num_ffi_types * sizeof(ffi_type));
         }
-        if (ffi_ofs && (basedict != NULL)) {
+        if (ffi_ofs && (baseinfo != NULL)) {
             memcpy(element_types,
                 baseinfo->ffi_type_pointer.elements,
                 ffi_ofs * sizeof(ffi_type *));
@@ -1082,12 +1079,12 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
 
     /* We did check that this flag was NOT set above, it must not
        have been set until now. */
-    if (stgdict->flags & DICTFLAG_FINAL) {
+    if (stginfo->flags & DICTFLAG_FINAL) {
         PyErr_SetString(PyExc_AttributeError,
                         "Structure or union cannot contain itself");
         return -1;
     }
-    stgdict->flags |= DICTFLAG_FINAL;
+    stginfo->flags |= DICTFLAG_FINAL;
 
     return MakeAnonFields(type);
 }

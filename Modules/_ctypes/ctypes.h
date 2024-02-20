@@ -243,6 +243,7 @@ typedef struct {
     PyObject *converters;       /* tuple([t.from_param for t in argtypes]) */
     PyObject *restype;          /* CDataObject or NULL */
     PyObject *checker;
+    int flags;                  /* calling convention and such */
 } StgInfo;
 
 // Get a PyCTypeDataObject. These Return -1 on error, 0 if "not found", 1 on OK.
@@ -282,7 +283,7 @@ typedef struct {
     //PyObject *converters;       /* tuple([t.from_param for t in argtypes]) */
     //PyObject *restype;          /* CDataObject or NULL */
     //PyObject *checker;
-    int flags;                  /* calling convention and such */
+    //int flags;                  /* calling convention and such */
 
     /* pep3118 fields, pointers need PyMem_Free */
     char *format;

@@ -655,13 +655,13 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
         Py_DECREF(result);
         return NULL;
     }
-    if (!isStruct) {
-        dict->flags |= TYPEFLAG_HASUNION;
-    }
     StgInfo *info = PyStgInfo_Init(st, result);
     if (!info) {
         Py_DECREF(result);
         return NULL;
+    }
+    if (!isStruct) {
+        info->flags |= TYPEFLAG_HASUNION;
     }
 
     /* replace the class dict by our updated stgdict, which holds info
@@ -713,8 +713,8 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
             Py_DECREF(result);
             return NULL;
         }
-        dict->flags &= ~DICTFLAG_FINAL; /* clear the 'final' flag in the subclass dict */
-        basedict->flags |= DICTFLAG_FINAL; /* set the 'final' flag in the baseclass dict */
+        info->flags &= ~DICTFLAG_FINAL; /* clear the 'final' flag in the subclass info */
+        baseinfo->flags |= DICTFLAG_FINAL; /* set the 'final' flag in the baseclass info */
         return (PyObject *)result;
     }
 }
@@ -1218,7 +1218,7 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     stginfo->length = 1;
     stginfo->ffi_type_pointer = ffi_type_pointer;
     stginfo->paramfunc = PyCPointerType_paramfunc;
-    stgdict->flags |= TYPEFLAG_ISPOINTER;
+    stginfo->flags |= TYPEFLAG_ISPOINTER;
 
     if (PyDict_GetItemRef(typedict, &_Py_ID(_type_), &proto) < 0) {
         Py_DECREF((PyObject *)result);
@@ -1683,8 +1683,8 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     itemalign = iteminfo->align;
 
-    if (itemdict->flags & (TYPEFLAG_ISPOINTER | TYPEFLAG_HASPOINTER))
-        stgdict->flags |= TYPEFLAG_HASPOINTER;
+    if (iteminfo->flags & (TYPEFLAG_ISPOINTER | TYPEFLAG_HASPOINTER))
+        stginfo->flags |= TYPEFLAG_HASPOINTER;
 
     stginfo->size = itemsize * length;
     stginfo->align = itemalign;
@@ -2271,21 +2271,21 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         switch (*proto_str) {
         case 'z': /* c_char_p */
             ml = &c_char_p_method;
-            stgdict->flags |= TYPEFLAG_ISPOINTER;
+            stginfo->flags |= TYPEFLAG_ISPOINTER;
             break;
         case 'Z': /* c_wchar_p */
             ml = &c_wchar_p_method;
-            stgdict->flags |= TYPEFLAG_ISPOINTER;
+            stginfo->flags |= TYPEFLAG_ISPOINTER;
             break;
         case 'P': /* c_void_p */
             ml = &c_void_p_method;
-            stgdict->flags |= TYPEFLAG_ISPOINTER;
+            stginfo->flags |= TYPEFLAG_ISPOINTER;
             break;
         case 's':
         case 'X':
         case 'O':
             ml = NULL;
-            stgdict->flags |= TYPEFLAG_ISPOINTER;
+            stginfo->flags |= TYPEFLAG_ISPOINTER;
             break;
         default:
             ml = NULL;
@@ -2578,7 +2578,7 @@ make_funcptrtype_dict(StgDictObject *stgdict, StgInfo *stginfo)
         Py_XDECREF(ob);
         return -1;
     }
-    stgdict->flags = PyLong_AsUnsignedLongMask(ob) | TYPEFLAG_ISPOINTER;
+    stginfo->flags = PyLong_AsUnsignedLongMask(ob) | TYPEFLAG_ISPOINTER;
     Py_DECREF(ob);
 
     /* _argtypes_ is optional... */
@@ -2686,7 +2686,7 @@ PyCFuncPtrType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Py_DECREF((PyObject *)stgdict);
         return NULL;
     }
-    stgdict->flags |= TYPEFLAG_ISPOINTER;
+    stginfo->flags |= TYPEFLAG_ISPOINTER;
 
     /* replace the class dict by our updated storage dict */
     if (-1 == PyDict_Update((PyObject *)stgdict, result->tp_dict)) {
@@ -2949,7 +2949,14 @@ PyCData_reduce(PyObject *myself, PyObject *args)
 {
     CDataObject *self = (CDataObject *)myself;
 
-    if (PyObject_stgdict(myself)->flags & (TYPEFLAG_ISPOINTER|TYPEFLAG_HASPOINTER)) {
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    if (PyStgInfo_FromObject(st, myself, &info) < 0) {
+        return NULL;
+    }
+    assert(info);
+
+    if (info->flags & (TYPEFLAG_ISPOINTER|TYPEFLAG_HASPOINTER)) {
         PyErr_SetString(PyExc_ValueError,
                         "ctypes objects containing pointers cannot be pickled");
         return NULL;
@@ -3108,7 +3115,7 @@ PyCData_FromBaseObj(PyObject *type, PyObject *base, Py_ssize_t index, char *adr)
     }
     assert(info);
 
-    dict->flags |= DICTFLAG_FINAL;
+    info->flags |= DICTFLAG_FINAL;
     cmem = (CDataObject *)((PyTypeObject *)type)->tp_alloc((PyTypeObject *)type, 0);
     if (cmem == NULL) {
         return NULL;
@@ -3140,28 +3147,25 @@ PyObject *
 PyCData_AtAddress(PyObject *type, void *buf)
 {
     CDataObject *pd;
-    StgDictObject *dict;
 
     if (PySys_Audit("ctypes.cdata", "n", (Py_ssize_t)buf) < 0) {
         return NULL;
     }
 
     assert(PyType_Check(type));
-    dict = PyType_stgdict(type);
-    if (!dict) {
-        PyErr_SetString(PyExc_TypeError,
-                        "abstract class");
-        return NULL;
-    }
 
     ctypes_state *st = GLOBAL_STATE();
     StgInfo *info;
     if (PyStgInfo_FromType(st, type, &info) < 0) {
         return NULL;
     }
-    assert(info);
+    if (!info) {
+        PyErr_SetString(PyExc_TypeError,
+                        "abstract class");
+        return NULL;
+    }
 
-    dict->flags |= DICTFLAG_FINAL;
+    info->flags |= DICTFLAG_FINAL;
 
     pd = (CDataObject *)((PyTypeObject *)type)->tp_alloc((PyTypeObject *)type, 0);
     if (!pd) {
@@ -3373,7 +3377,7 @@ GenericPyCData_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
     assert(info);
 
-    dict->flags |= DICTFLAG_FINAL;
+    info->flags |= DICTFLAG_FINAL;
 
     obj = (CDataObject *)type->tp_alloc(type, 0);
     if (!obj)
@@ -3858,7 +3862,6 @@ PyCFuncPtr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyCFuncPtrObject *self;
     PyObject *callable;
-    StgDictObject *dict;
     CThunkObject *thunk;
 
     if (PyTuple_GET_SIZE(args) == 0)
@@ -3910,7 +3913,6 @@ PyCFuncPtr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 */
 
     ctypes_state *st = GLOBAL_STATE();
-    dict = PyType_stgdict((PyObject *)type);
     StgInfo *info;
     if (PyStgInfo_FromType(st, (PyObject *)type, &info) < 0) {
         return NULL;
@@ -3922,12 +3924,11 @@ PyCFuncPtr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             " no argtypes");
         return NULL;
     }
-    assert(dict);
 
     thunk = _ctypes_alloc_callback(callable,
                                   info->argtypes,
                                   info->restype,
-                                  dict->flags);
+                                  info->flags);
     if (!thunk)
         return NULL;
 
@@ -4267,7 +4268,6 @@ PyCFuncPtr_call(PyCFuncPtrObject *self, PyObject *inargs, PyObject *kwds)
     PyObject *converters;
     PyObject *checker;
     PyObject *argtypes;
-    StgDictObject *dict = PyObject_stgdict((PyObject *)self);
     PyObject *result;
     PyObject *callargs;
     PyObject *errcheck;
@@ -4287,7 +4287,6 @@ PyCFuncPtr_call(PyCFuncPtrObject *self, PyObject *inargs, PyObject *kwds)
     }
     assert(info); /* Cannot be NULL for PyCFuncPtrObject instances */
 
-    assert(dict); /* Cannot be NULL for PyCFuncPtrObject instances */
     restype = self->restype ? self->restype : info->restype;
     converters = self->converters ? self->converters : info->converters;
     checker = self->checker ? self->checker : info->checker;
@@ -4341,7 +4340,7 @@ PyCFuncPtr_call(PyCFuncPtrObject *self, PyObject *inargs, PyObject *kwds)
         int actual = Py_SAFE_DOWNCAST(PyTuple_GET_SIZE(callargs),
                                       Py_ssize_t, int);
 
-        if ((dict->flags & FUNCFLAG_CDECL) == FUNCFLAG_CDECL) {
+        if ((info->flags & FUNCFLAG_CDECL) == FUNCFLAG_CDECL) {
             /* For cdecl functions, we allow more actual arguments
                than the length of the argtypes tuple.
             */
@@ -4371,7 +4370,7 @@ PyCFuncPtr_call(PyCFuncPtrObject *self, PyObject *inargs, PyObject *kwds)
                        piunk,
                        self->iid,
 #endif
-                       dict->flags,
+                       info->flags,
                        converters,
                        restype,
                        checker);
