@@ -42,7 +42,7 @@ PyAPI_FUNC(int) _PyEval_MakePendingCalls(PyThreadState *);
 
 extern void _Py_FinishPendingCalls(PyThreadState *tstate);
 extern void _PyEval_InitState(PyInterpreterState *);
-extern void _PyEval_SignalReceived(PyInterpreterState *interp);
+extern void _PyEval_SignalReceived(void);
 
 // bitwise flags:
 #define _Py_PENDING_MAINTHREADONLY 1
@@ -55,7 +55,6 @@ PyAPI_FUNC(int) _PyEval_AddPendingCall(
     void *arg,
     int flags);
 
-extern void _PyEval_SignalAsyncExc(PyInterpreterState *interp);
 #ifdef HAVE_FORK
 extern PyStatus _PyEval_ReInitThreads(PyThreadState *tstate);
 #endif
@@ -200,39 +199,42 @@ int _PyEval_UnpackIterable(PyThreadState *tstate, PyObject *v, int argcnt, int a
 void _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
 
 
-#define _PY_GIL_DROP_REQUEST_BIT 0
-#define _PY_SIGNALS_PENDING_BIT 1
-#define _PY_CALLS_TO_DO_BIT 2
-#define _PY_ASYNC_EXCEPTION_BIT 3
-#define _PY_GC_SCHEDULED_BIT 4
-#define _PY_EVAL_PLEASE_STOP_BIT 5
-#define _PY_EVAL_EXPLICIT_MERGE_BIT 6
+/* Bits that can be set in PyThreadState.eval_breaker */
+#define _PY_GIL_DROP_REQUEST_BIT (1U << 0)
+#define _PY_SIGNALS_PENDING_BIT (1U << 1)
+#define _PY_CALLS_TO_DO_BIT (1U << 2)
+#define _PY_ASYNC_EXCEPTION_BIT (1U << 3)
+#define _PY_GC_SCHEDULED_BIT (1U << 4)
+#define _PY_EVAL_PLEASE_STOP_BIT (1U << 5)
+#define _PY_EVAL_EXPLICIT_MERGE_BIT (1U << 6)
 
 /* Reserve a few bits for future use */
 #define _PY_EVAL_EVENTS_BITS 8
 #define _PY_EVAL_EVENTS_MASK ((1 << _PY_EVAL_EVENTS_BITS)-1)
 
 static inline void
-_Py_set_eval_breaker_bit(PyInterpreterState *interp, uint32_t bit, uint32_t set)
+_Py_set_eval_breaker_bit(PyThreadState *tstate, uintptr_t bit)
 {
-    assert(set == 0 || set == 1);
-    uintptr_t to_set = set << bit;
-    uintptr_t mask = ((uintptr_t)1) << bit;
-    uintptr_t old = _Py_atomic_load_uintptr(&interp->ceval.eval_breaker);
-    if ((old & mask) == to_set) {
-        return;
-    }
-    uintptr_t new;
-    do {
-        new = (old & ~mask) | to_set;
-    } while (!_Py_atomic_compare_exchange_uintptr(&interp->ceval.eval_breaker, &old, new));
+    _Py_atomic_or_uintptr(&tstate->eval_breaker, bit);
 }
 
-static inline bool
-_Py_eval_breaker_bit_is_set(PyInterpreterState *interp, int32_t bit)
+static inline void
+_Py_unset_eval_breaker_bit(PyThreadState *tstate, uintptr_t bit)
 {
-    return _Py_atomic_load_uintptr_relaxed(&interp->ceval.eval_breaker) & (((uintptr_t)1) << bit);
+    _Py_atomic_and_uintptr(&tstate->eval_breaker, ~bit);
 }
+
+static inline int
+_Py_eval_breaker_bit_is_set(PyThreadState *tstate, uintptr_t bit)
+{
+    uintptr_t b = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
+    return (b & bit) != 0;
+}
+
+// Free-threaded builds use these functions to set or unset a bit on all
+// threads in the given interpreter.
+void _Py_set_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit);
+void _Py_unset_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit);
 
 
 #ifdef __cplusplus

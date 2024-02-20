@@ -13,8 +13,6 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_time.h"          // _PyTime_t
-
 
 // A mutex that occupies one byte. The lock can be zero initialized.
 //
@@ -113,7 +111,7 @@ typedef enum _PyLockFlags {
 // Lock a mutex with an optional timeout and additional options. See
 // _PyLockFlags for details.
 extern PyLockStatus
-_PyMutex_LockTimed(PyMutex *m, _PyTime_t timeout_ns, _PyLockFlags flags);
+_PyMutex_LockTimed(PyMutex *m, PyTime_t timeout_ns, _PyLockFlags flags);
 
 // Lock a mutex with aditional options. See _PyLockFlags for details.
 static inline void
@@ -146,7 +144,7 @@ PyAPI_FUNC(void) PyEvent_Wait(PyEvent *evt);
 // Wait for the event to be set, or until the timeout expires. If the event is
 // already set, then this returns immediately. Returns 1 if the event was set,
 // and 0 if the timeout expired or thread was interrupted.
-PyAPI_FUNC(int) PyEvent_WaitTimed(PyEvent *evt, _PyTime_t timeout_ns);
+PyAPI_FUNC(int) PyEvent_WaitTimed(PyEvent *evt, PyTime_t timeout_ns);
 
 
 // _PyRawMutex implements a word-sized mutex that that does not depend on the

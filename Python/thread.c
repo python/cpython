@@ -107,7 +107,7 @@ PyThread_ParseTimeoutArg(PyObject *arg, int blocking, PY_TIMEOUT_T *timeout_p)
         return -1;
     }
 
-    _PyTime_t timeout;
+    PyTime_t timeout;
     if (_PyTime_FromSecondsObject(&timeout, arg, _PyTime_ROUND_TIMEOUT) < 0) {
         return -1;
     }
@@ -132,14 +132,14 @@ PyThread_acquire_lock_timed_with_retries(PyThread_type_lock lock,
                                          PY_TIMEOUT_T timeout)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    _PyTime_t endtime = 0;
+    PyTime_t endtime = 0;
     if (timeout > 0) {
         endtime = _PyDeadline_Init(timeout);
     }
 
     PyLockStatus r;
     do {
-        _PyTime_t microseconds;
+        PyTime_t microseconds;
         microseconds = _PyTime_AsMicroseconds(timeout, _PyTime_ROUND_CEILING);
 
         /* first a simple non-blocking try without releasing the GIL */

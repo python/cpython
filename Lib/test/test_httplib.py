@@ -2408,6 +2408,22 @@ class TunnelTests(TestCase):
         self.assertIn(b'PUT / HTTP/1.1\r\nHost: %(host)s\r\n' % d,
                       self.conn.sock.data)
 
+    def test_connect_put_request_ipv6(self):
+        self.conn.set_tunnel('[1:2:3::4]', 1234)
+        self.conn.request('PUT', '/', '')
+        self.assertEqual(self.conn.sock.host, self.host)
+        self.assertEqual(self.conn.sock.port, client.HTTP_PORT)
+        self.assertIn(b'CONNECT [1:2:3::4]:1234', self.conn.sock.data)
+        self.assertIn(b'Host: [1:2:3::4]:1234', self.conn.sock.data)
+
+    def test_connect_put_request_ipv6_port(self):
+        self.conn.set_tunnel('[1:2:3::4]:1234')
+        self.conn.request('PUT', '/', '')
+        self.assertEqual(self.conn.sock.host, self.host)
+        self.assertEqual(self.conn.sock.port, client.HTTP_PORT)
+        self.assertIn(b'CONNECT [1:2:3::4]:1234', self.conn.sock.data)
+        self.assertIn(b'Host: [1:2:3::4]:1234', self.conn.sock.data)
+
     def test_tunnel_debuglog(self):
         expected_header = 'X-Dummy: 1'
         response_text = 'HTTP/1.0 200 OK\r\n{}\r\n\r\n'.format(expected_header)

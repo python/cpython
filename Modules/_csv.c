@@ -332,9 +332,9 @@ dialect_check_quoting(int quoting)
 }
 
 static int
-dialect_check_char(const char *name, Py_UCS4 c, DialectObj *dialect)
+dialect_check_char(const char *name, Py_UCS4 c, DialectObj *dialect, bool allowspace)
 {
-    if (c == '\r' || c == '\n' || (dialect->skipinitialspace && c == ' ')) {
+    if (c == '\r' || c == '\n' || (c == ' ' && !allowspace)) {
         PyErr_Format(PyExc_ValueError, "bad %s value", name);
         return -1;
     }
@@ -535,9 +535,11 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         PyErr_SetString(PyExc_TypeError, "lineterminator must be set");
         goto err;
     }
-    if (dialect_check_char("delimiter", self->delimiter, self) ||
-        dialect_check_char("escapechar", self->escapechar, self) ||
-        dialect_check_char("quotechar", self->quotechar, self) ||
+    if (dialect_check_char("delimiter", self->delimiter, self, true) ||
+        dialect_check_char("escapechar", self->escapechar, self,
+                           !self->skipinitialspace) ||
+        dialect_check_char("quotechar", self->quotechar, self,
+                           !self->skipinitialspace) ||
         dialect_check_chars("delimiter", "escapechar",
                             self->delimiter, self->escapechar) ||
         dialect_check_chars("delimiter", "quotechar",
@@ -1221,6 +1223,7 @@ join_check_rec_size(WriterObj *self, Py_ssize_t rec_len)
 static int
 join_append(WriterObj *self, PyObject *field, int quoted)
 {
+    DialectObj *dialect = self->dialect;
     int field_kind = -1;
     const void *field_data = NULL;
     Py_ssize_t field_len = 0;
@@ -1230,6 +1233,19 @@ join_append(WriterObj *self, PyObject *field, int quoted)
         field_kind = PyUnicode_KIND(field);
         field_data = PyUnicode_DATA(field);
         field_len = PyUnicode_GET_LENGTH(field);
+    }
+    if (!field_len && dialect->delimiter == ' ' && dialect->skipinitialspace) {
+        if (dialect->quoting == QUOTE_NONE ||
+            (field == NULL &&
+             (dialect->quoting == QUOTE_STRINGS ||
+              dialect->quoting == QUOTE_NOTNULL)))
+        {
+            PyErr_Format(self->error_obj,
+                         "empty field must be quoted if delimiter is a space "
+                         "and skipinitialspace is true");
+            return 0;
+        }
+        quoted = 1;
     }
     rec_len = join_append_data(self, field_kind, field_data, field_len,
                                &quoted, 0);
@@ -1282,6 +1298,7 @@ csv_writerow(WriterObj *self, PyObject *seq)
 {
     DialectObj *dialect = self->dialect;
     PyObject *iter, *field, *line, *result;
+    bool null_field = false;
 
     iter = PyObject_GetIter(seq);
     if (iter == NULL) {
@@ -1318,11 +1335,12 @@ csv_writerow(WriterObj *self, PyObject *seq)
             break;
         }
 
+        null_field = (field == Py_None);
         if (PyUnicode_Check(field)) {
             append_ok = join_append(self, field, quoted);
             Py_DECREF(field);
         }
-        else if (field == Py_None) {
+        else if (null_field) {
             append_ok = join_append(self, NULL, quoted);
             Py_DECREF(field);
         }
@@ -1348,7 +1366,11 @@ csv_writerow(WriterObj *self, PyObject *seq)
         return NULL;
 
     if (self->num_fields > 0 && self->rec_len == 0) {
-        if (dialect->quoting == QUOTE_NONE) {
+        if (dialect->quoting == QUOTE_NONE ||
+            (null_field &&
+             (dialect->quoting == QUOTE_STRINGS ||
+              dialect->quoting == QUOTE_NOTNULL)))
+        {
             PyErr_Format(self->error_obj,
                 "single empty field record must be quoted");
             return NULL;

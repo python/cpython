@@ -11,7 +11,6 @@ extern "C" {
 
 #include "pycore_lock.h"          // PyMutex
 #include "pycore_hashtable.h"     // _Py_hashtable_t
-#include "pycore_time.h"          // _PyTime_t
 
 extern int _PyImport_IsInitialized(PyInterpreterState *);
 
@@ -103,7 +102,7 @@ struct _import_state {
     /* diagnostic info in PyImport_ImportModuleLevelObject() */
     struct {
         int import_level;
-        _PyTime_t accumulated;
+        PyTime_t accumulated;
         int header;
     } find_and_load;
 };

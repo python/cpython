@@ -458,6 +458,7 @@ PYTHON_OBJS=	\
 		Python/pystate.o \
 		Python/pythonrun.o \
 		Python/pytime.o \
+		Python/qsbr.o \
 		Python/bootstrap_hash.o \
 		Python/specialize.o \
 		Python/structmember.o \
@@ -1162,6 +1163,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_pystats.h \
 		$(srcdir)/Include/internal/pycore_pythonrun.h \
 		$(srcdir)/Include/internal/pycore_pythread.h \
+		$(srcdir)/Include/internal/pycore_qsbr.h \
 		$(srcdir)/Include/internal/pycore_range.h \
 		$(srcdir)/Include/internal/pycore_runtime.h \
 		$(srcdir)/Include/internal/pycore_runtime_init.h \

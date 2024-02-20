@@ -64,8 +64,7 @@ class Test_Csv(unittest.TestCase):
         ctor(arg, delimiter='\t', skipinitialspace=True)
         ctor(arg, escapechar='\t', skipinitialspace=True)
         ctor(arg, quotechar='\t', skipinitialspace=True)
-        self.assertRaises(ValueError, ctor, arg,
-                          delimiter=' ', skipinitialspace=True)
+        ctor(arg, delimiter=' ', skipinitialspace=True)
         self.assertRaises(ValueError, ctor, arg,
                           escapechar=' ', skipinitialspace=True)
         self.assertRaises(ValueError, ctor, arg,
@@ -192,9 +191,6 @@ class Test_Csv(unittest.TestCase):
 
     def test_write_arg_valid(self):
         self._write_error_test(csv.Error, None)
-        self._write_test((), '')
-        self._write_test([None], '""')
-        self._write_error_test(csv.Error, [None], quoting = csv.QUOTE_NONE)
         # Check that exceptions are passed up the chain
         self._write_error_test(OSError, BadIterable())
         class BadList:
@@ -208,7 +204,6 @@ class Test_Csv(unittest.TestCase):
             def __str__(self):
                 raise OSError
         self._write_error_test(OSError, [BadItem()])
-
     def test_write_bigfield(self):
         # This exercises the buffer realloc functionality
         bigstring = 'X' * 50000
@@ -314,6 +309,49 @@ class Test_Csv(unittest.TestCase):
             writer.writerows([['a'], [None]])
             fileobj.seek(0)
             self.assertEqual(fileobj.read(), 'a\r\n""\r\n')
+
+
+    def test_write_empty_fields(self):
+        self._write_test((), '')
+        self._write_test([''], '""')
+        self._write_error_test(csv.Error, [''], quoting=csv.QUOTE_NONE)
+        self._write_test([''], '""', quoting=csv.QUOTE_STRINGS)
+        self._write_test([''], '""', quoting=csv.QUOTE_NOTNULL)
+        self._write_test([None], '""')
+        self._write_error_test(csv.Error, [None], quoting=csv.QUOTE_NONE)
+        self._write_error_test(csv.Error, [None], quoting=csv.QUOTE_STRINGS)
+        self._write_error_test(csv.Error, [None], quoting=csv.QUOTE_NOTNULL)
+        self._write_test(['', ''], ',')
+        self._write_test([None, None], ',')
+
+    def test_write_empty_fields_space_delimiter(self):
+        self._write_test([''], '""', delimiter=' ', skipinitialspace=False)
+        self._write_test([''], '""', delimiter=' ', skipinitialspace=True)
+        self._write_test([None], '""', delimiter=' ', skipinitialspace=False)
+        self._write_test([None], '""', delimiter=' ', skipinitialspace=True)
+
+        self._write_test(['', ''], ' ', delimiter=' ', skipinitialspace=False)
+        self._write_test(['', ''], '"" ""', delimiter=' ', skipinitialspace=True)
+        self._write_test([None, None], ' ', delimiter=' ', skipinitialspace=False)
+        self._write_test([None, None], '"" ""', delimiter=' ', skipinitialspace=True)
+
+        self._write_test(['', ''], ' ', delimiter=' ', skipinitialspace=False,
+                         quoting=csv.QUOTE_NONE)
+        self._write_error_test(csv.Error, ['', ''],
+                               delimiter=' ', skipinitialspace=True,
+                               quoting=csv.QUOTE_NONE)
+        for quoting in csv.QUOTE_STRINGS, csv.QUOTE_NOTNULL:
+            self._write_test(['', ''], '"" ""', delimiter=' ', skipinitialspace=False,
+                             quoting=quoting)
+            self._write_test(['', ''], '"" ""', delimiter=' ', skipinitialspace=True,
+                             quoting=quoting)
+
+        for quoting in csv.QUOTE_NONE, csv.QUOTE_STRINGS, csv.QUOTE_NOTNULL:
+            self._write_test([None, None], ' ', delimiter=' ', skipinitialspace=False,
+                             quoting=quoting)
+            self._write_error_test(csv.Error, [None, None],
+                                   delimiter=' ', skipinitialspace=True,
+                                   quoting=quoting)
 
     def test_writerows_errors(self):
         with TemporaryFile("w+", encoding="utf-8", newline='') as fileobj:
@@ -428,6 +466,14 @@ class Test_Csv(unittest.TestCase):
         self._read_test([' , , '],
                         [[None, None, None]],
                         skipinitialspace=True, quoting=csv.QUOTE_STRINGS)
+
+    def test_read_space_delimiter(self):
+        self._read_test(['a   b', '  a  ', '  ', ''],
+                        [['a', '', '', 'b'], ['', '', 'a', '', ''], ['', '', ''], []],
+                        delimiter=' ', skipinitialspace=False)
+        self._read_test(['a   b', '  a  ', '  ', ''],
+                        [['a', 'b'], ['a', ''], [''], []],
+                        delimiter=' ', skipinitialspace=True)
 
     def test_read_bigfield(self):
         # This exercises the buffer realloc functionality and field size
@@ -555,10 +601,10 @@ class TestDialectRegistry(unittest.TestCase):
             escapechar = "\\"
 
         with TemporaryFile("w+", encoding="utf-8") as fileobj:
-            fileobj.write("abc def\nc1ccccc1 benzene\n")
+            fileobj.write("abc   def\nc1ccccc1 benzene\n")
             fileobj.seek(0)
             reader = csv.reader(fileobj, dialect=space())
-            self.assertEqual(next(reader), ["abc", "def"])
+            self.assertEqual(next(reader), ["abc", "", "", "def"])
             self.assertEqual(next(reader), ["c1ccccc1", "benzene"])
 
     def compare_dialect_123(self, expected, *writeargs, **kwwriteargs):
@@ -1164,8 +1210,9 @@ class TestDialectValidity(unittest.TestCase):
                 self.assertRaises(csv.Error, create_invalid, field_name, 5)
                 self.assertRaises(ValueError, create_invalid, field_name, "\n")
                 self.assertRaises(ValueError, create_invalid, field_name, "\r")
-                self.assertRaises(ValueError, create_invalid, field_name, " ",
-                                  skipinitialspace=True)
+                if field_name != "delimiter":
+                    self.assertRaises(ValueError, create_invalid, field_name, " ",
+                                      skipinitialspace=True)
 
 
 class TestSniffer(unittest.TestCase):

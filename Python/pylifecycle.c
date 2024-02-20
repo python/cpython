@@ -663,6 +663,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     if (tstate == NULL) {
         return _PyStatus_ERR("can't make first thread");
     }
+    runtime->main_tstate = tstate;
     _PyThreadState_Bind(tstate);
 
     init_interp_create_gil(tstate, config.gil);
@@ -1261,7 +1262,9 @@ init_interp_main(PyThreadState *tstate)
             if (opt == NULL) {
                 return _PyStatus_ERR("can't initialize optimizer");
             }
-            PyUnstable_SetOptimizer((_PyOptimizerObject *)opt);
+            if (PyUnstable_SetOptimizer((_PyOptimizerObject *)opt)) {
+                return _PyStatus_ERR("can't initialize optimizer");
+            }
             Py_DECREF(opt);
         }
     }
@@ -1833,6 +1836,9 @@ finalize_interp_clear(PyThreadState *tstate)
     }
 
     finalize_interp_types(tstate->interp);
+
+    /* Free any delayed free requests immediately */
+    _PyMem_FiniDelayed(tstate->interp);
 
     /* finalize_interp_types may allocate Python objects so we may need to
        abandon mimalloc segments again */
