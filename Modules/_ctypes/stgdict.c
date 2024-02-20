@@ -103,7 +103,6 @@ PyCStgDict_init(StgDictObject *self, PyObject *args, PyObject *kwds)
 static int
 PyCStgDict_clear(StgDictObject *self)
 {
-    Py_CLEAR(self->proto);
     Py_CLEAR(self->argtypes);
     Py_CLEAR(self->converters);
     Py_CLEAR(self->restype);
@@ -156,7 +155,7 @@ PyCStgDict_clone(StgDictObject *dst, StgDictObject *src,
 
     memcpy(dst_info, src_info, sizeof(StgInfo));
 
-    Py_XINCREF(dst->proto);
+    Py_XINCREF(dst_info->proto);
     Py_XINCREF(dst->argtypes);
     Py_XINCREF(dst->converters);
     Py_XINCREF(dst->restype);
@@ -939,7 +938,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
                 Py_ssize_t length = info->length;
                 StgDictObject *edict;
 
-                edict = PyType_stgdict(dict->proto);
+                edict = PyType_stgdict(info->proto);
                 if (edict == NULL) {
                     Py_DECREF(pair);
                     PyErr_Format(PyExc_TypeError,
@@ -1046,7 +1045,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
             else {
                 Py_ssize_t length = info->length;
                 StgInfo *einfo;
-                if (PyStgInfo_FromType(st, dict->proto, &einfo) < 0) {
+                if (PyStgInfo_FromType(st, info->proto, &einfo) < 0) {
                     return -1;
                 }
                 if (einfo == NULL) {

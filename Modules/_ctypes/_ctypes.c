@@ -473,6 +473,14 @@ CType_Type_traverse(PyObject *self, visitproc visit, void *arg)
 static int
 CType_Type_clear(PyObject *self)
 {
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, self, &info) < 0) {
+        return -1;
+    }
+    if (info) {
+        Py_CLEAR(info->proto);
+    }
     return 0;
 }
 
@@ -947,13 +955,14 @@ CDataType_from_param(PyObject *type, PyObject *value)
         PyCArgObject *p = (PyCArgObject *)value;
         PyObject *ob = p->obj;
         const char *ob_name;
-        StgDictObject *dict;
-        dict = PyType_stgdict(type);
-
+        StgInfo *info;
+        if (PyStgInfo_FromType(st, type, &info) < 0) {
+            return NULL;
+        }
         /* If we got a PyCArgObject, we must check if the object packed in it
            is an instance of the type's dict->proto */
-        if(dict && ob) {
-            res = PyObject_IsInstance(ob, dict->proto);
+        if(info && ob) {
+            res = PyObject_IsInstance(ob, info->proto);
             if (res == -1)
                 return NULL;
             if (res) {
@@ -1004,18 +1013,27 @@ CDataType_repeat(PyObject *self, Py_ssize_t length)
 static int
 CDataType_clear(PyTypeObject *self)
 {
-    StgDictObject *dict = PyType_stgdict((PyObject *)self);
-    if (dict)
-        Py_CLEAR(dict->proto);
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, (PyObject *)self, &info) < 0) {
+        return -1;
+    }
+    if (info) {
+        Py_CLEAR(info->proto);
+    }
     return PyType_Type.tp_clear((PyObject *)self);
 }
 
 static int
 CDataType_traverse(PyTypeObject *self, visitproc visit, void *arg)
 {
-    StgDictObject *dict = PyType_stgdict((PyObject *)self);
-    if (dict) {
-        Py_VISIT(dict->proto);
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, (PyObject *)self, &info) < 0) {
+        return -1;
+    }
+    if (info) {
+        Py_VISIT(info->proto);
     }
     Py_VISIT(Py_TYPE(self));
     return PyType_Type.tp_traverse((PyObject *)self, visit, arg);
@@ -1105,7 +1123,7 @@ size property/method, and the sequence protocol.
 */
 
 static int
-PyCPointerType_SetProto(StgDictObject *stgdict, PyObject *proto)
+PyCPointerType_SetProto(StgInfo *stginfo, PyObject *proto)
 {
     if (!proto || !PyType_Check(proto)) {
         PyErr_SetString(PyExc_TypeError,
@@ -1118,7 +1136,7 @@ PyCPointerType_SetProto(StgDictObject *stgdict, PyObject *proto)
         return -1;
     }
     Py_INCREF(proto);
-    Py_XSETREF(stgdict->proto, proto);
+    Py_XSETREF(stginfo->proto, proto);
     return 0;
 }
 
@@ -1191,7 +1209,7 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (proto) {
         StgDictObject *itemdict;
         const char *current_format;
-        if (-1 == PyCPointerType_SetProto(stgdict, proto)) {
+        if (-1 == PyCPointerType_SetProto(stginfo, proto)) {
             Py_DECREF(proto);
             Py_DECREF((PyObject *)result);
             Py_DECREF((PyObject *)stgdict);
@@ -1245,8 +1263,14 @@ PyCPointerType_set_type(PyTypeObject *self, PyObject *type)
                         "abstract class");
         return NULL;
     }
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, (PyObject *)self, &info) < 0) {
+        return NULL;
+    }
+    assert(info);
 
-    if (-1 == PyCPointerType_SetProto(dict, type))
+    if (-1 == PyCPointerType_SetProto(info, type))
         return NULL;
 
     if (-1 == PyDict_SetItem((PyObject *)dict, &_Py_ID(_type_), type))
@@ -1260,15 +1284,17 @@ static PyObject *_byref(PyObject *);
 static PyObject *
 PyCPointerType_from_param(PyObject *type, PyObject *value)
 {
-    StgDictObject *typedict;
-
     if (value == Py_None) {
         /* ConvParam will convert to a NULL pointer later */
         return Py_NewRef(value);
     }
 
-    typedict = PyType_stgdict(type);
-    if (!typedict) {
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *typeinfo;
+    if (PyStgInfo_FromType(st, type, &typeinfo) < 0) {
+        return NULL;
+    }
+    if (!typeinfo) {
         PyErr_SetString(PyExc_TypeError,
                         "abstract class");
         return NULL;
@@ -1277,7 +1303,8 @@ PyCPointerType_from_param(PyObject *type, PyObject *value)
     /* If we expect POINTER(<type>), but receive a <type> instance, accept
        it by calling byref(<type>).
     */
-    switch (PyObject_IsInstance(value, typedict->proto)) {
+    assert(typeinfo->proto);
+    switch (PyObject_IsInstance(value, typeinfo->proto)) {
     case 1:
         Py_INCREF(value); /* _byref steals a refcount */
         return _byref(value);
@@ -1287,14 +1314,16 @@ PyCPointerType_from_param(PyObject *type, PyObject *value)
         break;
     }
 
-    ctypes_state *st = GLOBAL_STATE();
     if (PointerObject_Check(st, value) || ArrayObject_Check(st, value)) {
         /* Array instances are also pointers when
            the item types are the same.
         */
-        StgDictObject *v = PyObject_stgdict(value);
+        StgInfo *v;
+        if (PyStgInfo_FromObject(st, value, &v) < 0) {
+            return NULL;
+        }
         assert(v); /* Cannot be NULL for pointer or array objects */
-        int ret = PyObject_IsSubclass(v->proto, typedict->proto);
+        int ret = PyObject_IsSubclass(v->proto, typeinfo->proto);
         if (ret < 0) {
             return NULL;
         }
@@ -1641,7 +1670,7 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     stginfo->size = itemsize * length;
     stginfo->align = itemalign;
     stginfo->length = length;
-    stgdict->proto = type_attr;
+    stginfo->proto = type_attr;
     type_attr = NULL;
 
     stginfo->paramfunc = &PyCArrayType_paramfunc;
@@ -1740,10 +1769,13 @@ c_wchar_p_from_param(PyObject *type, PyObject *value)
     ctypes_state *st = GLOBAL_STATE();
     if (ArrayObject_Check(st, value) || PointerObject_Check(st, value)) {
         /* c_wchar array instance or pointer(c_wchar(...)) */
-        StgDictObject *dt = PyObject_stgdict(value);
+        StgInfo *it;
+        if (PyStgInfo_FromObject(st, value, &it) < 0) {
+            return NULL;
+        }
         StgDictObject *dict;
-        assert(dt); /* Cannot be NULL for pointer or array objects */
-        dict = dt && dt->proto ? PyType_stgdict(dt->proto) : NULL;
+        assert(it); /* Cannot be NULL for pointer or array objects */
+        dict = it && it->proto ? PyType_stgdict(it->proto) : NULL;
         if (dict && (dict->setfunc == _ctypes_get_fielddesc("u")->setfunc)) {
             return Py_NewRef(value);
         }
@@ -1804,10 +1836,13 @@ c_char_p_from_param(PyObject *type, PyObject *value)
     ctypes_state *st = GLOBAL_STATE();
     if (ArrayObject_Check(st, value) || PointerObject_Check(st, value)) {
         /* c_char array instance or pointer(c_char(...)) */
-        StgDictObject *dt = PyObject_stgdict(value);
+        StgInfo *it;
+        if (PyStgInfo_FromObject(st, value, &it) < 0) {
+            return NULL;
+        }
         StgDictObject *dict;
-        assert(dt); /* Cannot be NULL for pointer or array objects */
-        dict = dt && dt->proto ? PyType_stgdict(dt->proto) : NULL;
+        assert(it); /* Cannot be NULL for pointer or array objects */
+        dict = it && it->proto ? PyType_stgdict(it->proto) : NULL;
         if (dict && (dict->setfunc == _ctypes_get_fielddesc("c")->setfunc)) {
             return Py_NewRef(value);
         }
@@ -1838,7 +1873,6 @@ c_char_p_from_param(PyObject *type, PyObject *value)
 static PyObject *
 c_void_p_from_param(PyObject *type, PyObject *value)
 {
-    StgDictObject *stgd;
     PyObject *as_parameter;
     int res;
 
@@ -1937,15 +1971,18 @@ c_void_p_from_param(PyObject *type, PyObject *value)
         return (PyObject *)parg;
     }
 /* c_char_p, c_wchar_p */
-    stgd = PyObject_stgdict(value);
-    if (stgd
+    StgInfo *stgi;
+    if (PyStgInfo_FromObject(st, value, &stgi) < 0) {
+        return NULL;
+    }
+    if (stgi
         && CDataObject_Check(st, value)
-        && stgd->proto
-        && PyUnicode_Check(stgd->proto))
+        && stgi->proto
+        && PyUnicode_Check(stgi->proto))
     {
         PyCArgObject *parg;
 
-        switch (PyUnicode_AsUTF8(stgd->proto)[0]) {
+        switch (PyUnicode_AsUTF8(stgi->proto)[0]) {
         case 'z': /* c_char_p */
         case 'Z': /* c_wchar_p */
             parg = PyCArgObject_new();
@@ -2046,7 +2083,7 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
     stgdict->setfunc = fmt->setfunc_swapped;
     stgdict->getfunc = fmt->getfunc_swapped;
 
-    stgdict->proto = Py_NewRef(proto);
+    stginfo->proto = Py_NewRef(proto);
 
     /* replace the class dict by our updated spam dict */
     if (-1 == PyDict_Update((PyObject *)stgdict, result->tp_dict)) {
@@ -2062,14 +2099,17 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
 static PyCArgObject *
 PyCSimpleType_paramfunc(CDataObject *self)
 {
-    StgDictObject *dict;
     const char *fmt;
     PyCArgObject *parg;
     struct fielddesc *fd;
 
-    dict = PyObject_stgdict((PyObject *)self);
-    assert(dict); /* Cannot be NULL for CDataObject instances */
-    fmt = PyUnicode_AsUTF8(dict->proto);
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    if (PyStgInfo_FromObject(st, (PyObject *)self, &info) < 0) {
+        return NULL;
+    }
+    assert(info); /* Cannot be NULL for CDataObject instances */
+    fmt = PyUnicode_AsUTF8(info->proto);
     assert(fmt);
 
     fd = _ctypes_get_fielddesc(fmt);
@@ -2181,7 +2221,7 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 */
 
     /* This consumes the refcount on proto which we have */
-    stgdict->proto = proto;
+    stginfo->proto = proto;
 
     /* replace the class dict by our updated spam dict */
     if (-1 == PyDict_Update((PyObject *)stgdict, result->tp_dict)) {
@@ -2282,7 +2322,6 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject *
 PyCSimpleType_from_param(PyObject *type, PyObject *value)
 {
-    StgDictObject *dict;
     const char *fmt;
     PyCArgObject *parg;
     struct fielddesc *fd;
@@ -2298,15 +2337,19 @@ PyCSimpleType_from_param(PyObject *type, PyObject *value)
         return Py_NewRef(value);
     }
 
-    dict = PyType_stgdict(type);
-    if (!dict) {
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, type, &info) < 0) {
+        return NULL;
+    }
+    if (!info) {
         PyErr_SetString(PyExc_TypeError,
                         "abstract class");
         return NULL;
     }
 
     /* I think we can rely on this being a one-character string */
-    fmt = PyUnicode_AsUTF8(dict->proto);
+    fmt = PyUnicode_AsUTF8(info->proto);
     assert(fmt);
 
     fd = _ctypes_get_fielddesc(fmt);
@@ -2802,13 +2845,15 @@ PyCData_item_type(PyObject *type)
 {
     ctypes_state *st = GLOBAL_STATE();
     if (PyCArrayTypeObject_Check(st, type)) {
-        StgDictObject *stg_dict;
         PyObject *elem_type;
 
         /* asserts used here as these are all guaranteed by construction */
-        stg_dict = PyType_stgdict(type);
-        assert(stg_dict);
-        elem_type = stg_dict->proto;
+        StgInfo *stg_info;
+        if (PyStgInfo_FromType(st, type, &stg_info) < 0) {
+            return NULL;
+        }
+        assert(stg_info);
+        elem_type = stg_info->proto;
         assert(elem_type);
         return PyCData_item_type(elem_type);
     }
@@ -2823,6 +2868,9 @@ PyCData_NewGetBuffer(PyObject *myself, Py_buffer *view, int flags)
     CDataObject *self = (CDataObject *)myself;
     StgDictObject *dict = PyObject_stgdict(myself);
     PyObject *item_type = PyCData_item_type((PyObject*)Py_TYPE(myself));
+    if (item_type == NULL) {
+        return 0;
+    }
 
     if (view == NULL) return 0;
 
@@ -3189,11 +3237,16 @@ _PyCData_set(CDataObject *dst, PyObject *type, SETFUNC setfunc, PyObject *value,
 
     if (PyCPointerTypeObject_Check(st, type)
         && ArrayObject_Check(st, value)) {
-        StgDictObject *p1, *p2;
         PyObject *keep;
-        p1 = PyObject_stgdict(value);
+
+        StgInfo *p1, *p2;
+        if (PyStgInfo_FromObject(st, value, &p1) < 0) {
+            return NULL;
+        }
         assert(p1); /* Cannot be NULL for array instances */
-        p2 = PyType_stgdict(type);
+        if (PyStgInfo_FromType(st, type, &p2) < 0) {
+            return NULL;
+        }
         assert(p2); /* Cannot be NULL for pointer types */
 
         if (p1->proto != p2->proto) {
@@ -3465,7 +3518,6 @@ static PPROC FindAddress(void *handle, const char *name, PyObject *type)
 static int
 _check_outarg_type(PyObject *arg, Py_ssize_t index)
 {
-    StgDictObject *dict;
     ctypes_state *st = GLOBAL_STATE();
 
     if (PyCPointerTypeObject_Check(st, arg)) {
@@ -3474,12 +3526,15 @@ _check_outarg_type(PyObject *arg, Py_ssize_t index)
     if (PyCArrayTypeObject_Check(st, arg)) {
         return 1;
     }
-    dict = PyType_stgdict(arg);
-    if (dict
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, arg, &info) < 0) {
+        return -1;
+    }
+    if (info
         /* simple pointer types, c_void_p, c_wchar_p, BSTR, ... */
-        && PyUnicode_Check(dict->proto)
+        && PyUnicode_Check(info->proto)
 /* We only allow c_void_p, c_char_p and c_wchar_p as a simple output parameter type */
-        && (strchr("PzZ", PyUnicode_AsUTF8(dict->proto)[0]))) {
+        && (strchr("PzZ", PyUnicode_AsUTF8(info->proto)[0]))) {
         return 1;
     }
 
@@ -3920,7 +3975,6 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
 {
     PyObject *paramflags = self->paramflags;
     PyObject *callargs;
-    StgDictObject *dict;
     Py_ssize_t i, len;
     int inargs_index = 0;
     /* It's a little bit difficult to determine how many arguments the
@@ -4009,15 +4063,18 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
                 break;
             }
             ob = PyTuple_GET_ITEM(argtypes, i);
-            dict = PyType_stgdict(ob);
-            if (dict == NULL) {
+            StgInfo *info;
+            if (PyStgInfo_FromType(st, ob, &info) < 0) {
+                goto error;
+            }
+            if (info == NULL) {
                 /* Cannot happen: _validate_paramflags()
                   would not accept such an object */
                 PyErr_Format(PyExc_RuntimeError,
-                             "NULL stgdict unexpected");
+                             "NULL stginfo unexpected");
                 goto error;
             }
-            if (PyUnicode_Check(dict->proto)) {
+            if (PyUnicode_Check(info->proto)) {
                 PyErr_Format(
                     PyExc_TypeError,
                     "%s 'out' parameter must be passed as default value",
@@ -4029,7 +4086,7 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
             }
             else {
                 /* Create an instance of the pointed-to type */
-                ob = _PyObject_CallNoArgs(dict->proto);
+                ob = _PyObject_CallNoArgs(info->proto);
             }
             /*
                XXX Is the following correct any longer?
@@ -4647,7 +4704,7 @@ Array_item(PyObject *myself, Py_ssize_t index)
     size = stginfo->size / stginfo->length;
     offset = index * size;
 
-    return PyCData_get(stgdict->proto, stgdict->getfunc, (PyObject *)self,
+    return PyCData_get(stginfo->proto, stgdict->getfunc, (PyObject *)self,
                      index, size, self->b_ptr + offset);
 }
 
@@ -4666,7 +4723,7 @@ Array_subscript(PyObject *myself, PyObject *item)
         return Array_item(myself, i);
     }
     else if (PySlice_Check(item)) {
-        StgDictObject *stgdict, *itemdict;
+        StgDictObject *itemdict;
         PyObject *proto;
         PyObject *np;
         Py_ssize_t start, stop, step, slicelen, i;
@@ -4677,9 +4734,13 @@ Array_subscript(PyObject *myself, PyObject *item)
         }
         slicelen = PySlice_AdjustIndices(self->b_length, &start, &stop, step);
 
-        stgdict = PyObject_stgdict((PyObject *)self);
-        assert(stgdict); /* Cannot be NULL for array object instances */
-        proto = stgdict->proto;
+        ctypes_state *st = GLOBAL_STATE();
+        StgInfo *stginfo;
+        if (PyStgInfo_FromObject(st, (PyObject *)self, &stginfo) < 0) {
+            return NULL;
+        }
+        assert(stginfo); /* Cannot be NULL for array object instances */
+        proto = stginfo->proto;
         itemdict = PyType_stgdict(proto);
         assert(itemdict); /* proto is the item type of the array, a
                              ctypes type, so this cannot be NULL */
@@ -4791,7 +4852,7 @@ Array_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
     offset = index * size;
     ptr = self->b_ptr + offset;
 
-    return PyCData_set((PyObject *)self, stgdict->proto, stgdict->setfunc, value,
+    return PyCData_set((PyObject *)self, stginfo->proto, stgdict->setfunc, value,
                      index, size, ptr);
 }
 
@@ -5182,13 +5243,19 @@ Pointer_item(PyObject *myself, Py_ssize_t index)
     stgdict = PyObject_stgdict((PyObject *)self);
     assert(stgdict); /* Cannot be NULL for pointer object instances */
 
-    proto = stgdict->proto;
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *stginfo;
+    if (PyStgInfo_FromObject(st, (PyObject *)self, &stginfo) < 0) {
+        return NULL;
+    }
+    assert(stginfo);
+
+    proto = stginfo->proto;
     assert(proto);
     itemdict = PyType_stgdict(proto);
     assert(itemdict); /* proto is the item type of the pointer, a ctypes
                          type, so this cannot be NULL */
 
-    ctypes_state *st = GLOBAL_STATE();
     StgInfo *iteminfo;
     if (PyStgInfo_FromType(st, proto, &iteminfo) < 0) {
         return NULL;
@@ -5227,14 +5294,20 @@ Pointer_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
     stgdict = PyObject_stgdict((PyObject *)self);
     assert(stgdict); /* Cannot be NULL for pointer instances */
 
-    proto = stgdict->proto;
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *stginfo;
+    if (PyStgInfo_FromObject(st, (PyObject *)self, &stginfo) < 0) {
+        return -1;
+    }
+    assert(stginfo);
+
+    proto = stginfo->proto;
     assert(proto);
 
     itemdict = PyType_stgdict(proto);
     assert(itemdict); /* Cannot be NULL because the itemtype of a pointer
                          is always a ctypes type */
 
-    ctypes_state *st = GLOBAL_STATE();
     StgInfo *iteminfo;
     if (PyStgInfo_FromType(st, proto, &iteminfo) < 0) {
         return -1;
@@ -5252,17 +5325,20 @@ Pointer_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
 static PyObject *
 Pointer_get_contents(CDataObject *self, void *closure)
 {
-    StgDictObject *stgdict;
-
     if (*(void **)self->b_ptr == NULL) {
         PyErr_SetString(PyExc_ValueError,
                         "NULL pointer access");
         return NULL;
     }
 
-    stgdict = PyObject_stgdict((PyObject *)self);
-    assert(stgdict); /* Cannot be NULL for pointer instances */
-    return PyCData_FromBaseObj(stgdict->proto,
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *stginfo;
+    if (PyStgInfo_FromObject(st, (PyObject *)self, &stginfo) < 0) {
+        return NULL;
+    }
+    assert(stginfo); /* Cannot be NULL for pointer instances */
+
+    return PyCData_FromBaseObj(stginfo->proto,
                              (PyObject *)self, 0,
                              *(void **)self->b_ptr);
 }
@@ -5270,7 +5346,6 @@ Pointer_get_contents(CDataObject *self, void *closure)
 static int
 Pointer_set_contents(CDataObject *self, PyObject *value, void *closure)
 {
-    StgDictObject *stgdict;
     CDataObject *dst;
     PyObject *keep;
 
@@ -5279,18 +5354,21 @@ Pointer_set_contents(CDataObject *self, PyObject *value, void *closure)
                         "Pointer does not support item deletion");
         return -1;
     }
-    stgdict = PyObject_stgdict((PyObject *)self);
-    assert(stgdict); /* Cannot be NULL for pointer instances */
-    assert(stgdict->proto);
     ctypes_state *st = GLOBAL_STATE();
+    StgInfo *stginfo;
+    if (PyStgInfo_FromObject(st, (PyObject *)self, &stginfo) < 0) {
+        return -1;
+    }
+    assert(stginfo); /* Cannot be NULL for pointer instances */
+    assert(stginfo->proto);
     if (!CDataObject_Check(st, value)) {
-        int res = PyObject_IsInstance(value, stgdict->proto);
+        int res = PyObject_IsInstance(value, stginfo->proto);
         if (res == -1)
             return -1;
         if (!res) {
             PyErr_Format(PyExc_TypeError,
                          "expected %s instead of %s",
-                         ((PyTypeObject *)(stgdict->proto))->tp_name,
+                         ((PyTypeObject *)(stginfo->proto))->tp_name,
                          Py_TYPE(value)->tp_name);
             return -1;
         }
@@ -5338,8 +5416,12 @@ Pointer_init(CDataObject *self, PyObject *args, PyObject *kw)
 static PyObject *
 Pointer_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
-    StgDictObject *dict = PyType_stgdict((PyObject *)type);
-    if (!dict || !dict->proto) {
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, (PyObject *)type, &info) < 0) {
+        return NULL;
+    }
+    if (!info || !info->proto) {
         PyErr_SetString(PyExc_TypeError,
                         "Cannot create instance: has no _type_");
         return NULL;
@@ -5361,7 +5443,7 @@ Pointer_subscript(PyObject *myself, PyObject *item)
         PySliceObject *slice = (PySliceObject *)item;
         Py_ssize_t start, stop, step;
         PyObject *np;
-        StgDictObject *stgdict, *itemdict;
+        StgDictObject *itemdict;
         PyObject *proto;
         Py_ssize_t i, len;
         size_t cur;
@@ -5415,9 +5497,13 @@ Pointer_subscript(PyObject *myself, PyObject *item)
         else
             len = (stop - start + 1) / step + 1;
 
-        stgdict = PyObject_stgdict((PyObject *)self);
-        assert(stgdict); /* Cannot be NULL for pointer instances */
-        proto = stgdict->proto;
+        ctypes_state *st = GLOBAL_STATE();
+        StgInfo *stginfo;
+        if (PyStgInfo_FromObject(st, (PyObject *)self, &stginfo) < 0) {
+            return NULL;
+        }
+        assert(stginfo); /* Cannot be NULL for pointer instances */
+        proto = stginfo->proto;
         assert(proto);
         itemdict = PyType_stgdict(proto);
         assert(itemdict);
@@ -5664,7 +5750,6 @@ string_at(const char *ptr, int size)
 static int
 cast_check_pointertype(PyObject *arg)
 {
-    StgDictObject *dict;
     ctypes_state *st = GLOBAL_STATE();
 
     if (PyCPointerTypeObject_Check(st, arg)) {
@@ -5673,10 +5758,13 @@ cast_check_pointertype(PyObject *arg)
     if (PyCFuncPtrTypeObject_Check(st, arg)) {
         return 1;
     }
-    dict = PyType_stgdict(arg);
-    if (dict != NULL && dict->proto != NULL) {
-        if (PyUnicode_Check(dict->proto)
-            && (strchr("sPzUZXO", PyUnicode_AsUTF8(dict->proto)[0]))) {
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, arg, &info) < 0) {
+        return 0;
+    }
+    if (info != NULL && info->proto != NULL) {
+        if (PyUnicode_Check(info->proto)
+            && (strchr("sPzUZXO", PyUnicode_AsUTF8(info->proto)[0]))) {
             /* simple pointer types, c_void_p, c_wchar_p, BSTR, ... */
             return 1;
         }

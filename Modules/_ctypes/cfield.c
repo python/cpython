@@ -120,10 +120,15 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
         return a Python string instead of an Array object instance...
     */
     if (PyCArrayTypeObject_Check(st, proto)) {
-        StgDictObject *adict = PyType_stgdict(proto);
         StgDictObject *idict;
-        if (adict && adict->proto) {
-            idict = PyType_stgdict(adict->proto);
+        StgInfo *ainfo;
+        if (PyStgInfo_FromType(st, proto, &ainfo) < 0) {
+            Py_DECREF(self);
+            return NULL;
+        }
+
+        if (ainfo && ainfo->proto) {
+            idict = PyType_stgdict(ainfo->proto);
             if (!idict) {
                 PyErr_SetString(PyExc_TypeError,
                                 "has no _stginfo_");
