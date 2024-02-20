@@ -1605,8 +1605,9 @@ to sockets.
 
    Receive data from the socket.  The return value is a bytes object representing the
    data received.  The maximum amount of data to be received at once is specified
-   by *bufsize*.  See the Unix manual page :manpage:`recv(2)` for the meaning of
-   the optional argument *flags*; it defaults to zero.
+   by *bufsize*. A returned empty bytes object indicates that the client has disconnected.
+   See the Unix manual page :manpage:`recv(2)` for the meaning of the optional argument
+   *flags*; it defaults to zero.
 
    .. note::
 
