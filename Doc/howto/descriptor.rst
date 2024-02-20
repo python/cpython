@@ -1004,31 +1004,42 @@ here is a pure Python equivalent:
             if doc is None and fget is not None:
                 doc = fget.__doc__
             self.__doc__ = doc
-            self._name = ''
+            self._name = None
 
         def __set_name__(self, owner, name):
             self._name = name
+
+        @property
+        def __name__(self):
+            return self._name if self._name is not None else self.fget.__name__
+
+        @__name__.setter
+        def __name__(self, value):
+            self._name = value
 
         def __get__(self, obj, objtype=None):
             if obj is None:
                 return self
             if self.fget is None:
                 raise AttributeError(
-                    f'property {self._name!r} of {type(obj).__name__!r} object has no getter'
+                    f'property {self.__name__!r} of {type(obj).__name__!r} '
+                    'object has no getter'
                  )
             return self.fget(obj)
 
         def __set__(self, obj, value):
             if self.fset is None:
                 raise AttributeError(
-                    f'property {self._name!r} of {type(obj).__name__!r} object has no setter'
+                    f'property {self.__name__!r} of {type(obj).__name__!r} '
+                    'object has no setter'
                  )
             self.fset(obj, value)
 
         def __delete__(self, obj):
             if self.fdel is None:
                 raise AttributeError(
-                    f'property {self._name!r} of {type(obj).__name__!r} object has no deleter'
+                    f'property {self.__name__!r} of {type(obj).__name__!r} '
+                    'object has no deleter'
                  )
             self.fdel(obj)
 
