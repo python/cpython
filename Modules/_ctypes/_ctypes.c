@@ -496,6 +496,7 @@ CType_Type_clear(PyObject *self)
     if (info) {
         Py_CLEAR(info->proto);
         Py_CLEAR(info->argtypes);
+        Py_CLEAR(info->converters);
     }
     return 0;
 }
@@ -2589,7 +2590,7 @@ make_funcptrtype_dict(StgDictObject *stgdict, StgInfo *stginfo)
             return -1;
         }
         stginfo->argtypes = ob;
-        stgdict->converters = converters;
+        stginfo->converters = converters;
     }
 
     if (PyDict_GetItemRef((PyObject *)stgdict, &_Py_ID(_restype_), &ob) < 0) {
@@ -4283,7 +4284,7 @@ PyCFuncPtr_call(PyCFuncPtrObject *self, PyObject *inargs, PyObject *kwds)
 
     assert(dict); /* Cannot be NULL for PyCFuncPtrObject instances */
     restype = self->restype ? self->restype : dict->restype;
-    converters = self->converters ? self->converters : dict->converters;
+    converters = self->converters ? self->converters : info->converters;
     checker = self->checker ? self->checker : dict->checker;
     argtypes = self->argtypes ? self->argtypes : info->argtypes;
 /* later, we probably want to have an errcheck field in stgdict */
