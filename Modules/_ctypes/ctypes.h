@@ -241,6 +241,7 @@ typedef struct {
     /* Following fields only used by PyCFuncPtrType_Type instances */
     PyObject *argtypes;         /* tuple of CDataObjects */
     PyObject *converters;       /* tuple([t.from_param for t in argtypes]) */
+    PyObject *restype;          /* CDataObject or NULL */
 } StgInfo;
 
 // Get a PyCTypeDataObject. These Return -1 on error, 0 if "not found", 1 on OK.
@@ -278,7 +279,7 @@ typedef struct {
     /* Following fields only used by PyCFuncPtrType_Type instances */
     //PyObject *argtypes;         /* tuple of CDataObjects */
     //PyObject *converters;       /* tuple([t.from_param for t in argtypes]) */
-    PyObject *restype;          /* CDataObject or NULL */
+    //PyObject *restype;          /* CDataObject or NULL */
     PyObject *checker;
     int flags;                  /* calling convention and such */
 

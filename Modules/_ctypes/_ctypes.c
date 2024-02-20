@@ -497,6 +497,7 @@ CType_Type_clear(PyObject *self)
         Py_CLEAR(info->proto);
         Py_CLEAR(info->argtypes);
         Py_CLEAR(info->converters);
+        Py_CLEAR(info->restype);
     }
     return 0;
 }
@@ -2603,7 +2604,7 @@ make_funcptrtype_dict(StgDictObject *stgdict, StgInfo *stginfo)
             Py_DECREF(ob);
             return -1;
         }
-        stgdict->restype = ob;
+        stginfo->restype = ob;
         if (PyObject_GetOptionalAttr(ob, &_Py_ID(_check_retval_),
                                    &stgdict->checker) < 0)
         {
@@ -3445,14 +3446,17 @@ PyCFuncPtr_set_restype(PyCFuncPtrObject *self, PyObject *ob, void *Py_UNUSED(ign
 static PyObject *
 PyCFuncPtr_get_restype(PyCFuncPtrObject *self, void *Py_UNUSED(ignored))
 {
-    StgDictObject *dict;
     if (self->restype) {
         return Py_NewRef(self->restype);
     }
-    dict = PyObject_stgdict((PyObject *)self);
-    assert(dict); /* Cannot be NULL for PyCFuncPtrObject instances */
-    if (dict->restype) {
-        return Py_NewRef(dict->restype);
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    if (PyStgInfo_FromObject(st, (PyObject *)self, &info) < 0) {
+        return NULL;
+    }
+    assert(info); /* Cannot be NULL for PyCFuncPtrObject instances */
+    if (info->restype) {
+        return Py_NewRef(info->restype);
     } else {
         Py_RETURN_NONE;
     }
@@ -3921,7 +3925,7 @@ PyCFuncPtr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     thunk = _ctypes_alloc_callback(callable,
                                   info->argtypes,
-                                  dict->restype,
+                                  info->restype,
                                   dict->flags);
     if (!thunk)
         return NULL;
@@ -4283,7 +4287,7 @@ PyCFuncPtr_call(PyCFuncPtrObject *self, PyObject *inargs, PyObject *kwds)
     assert(info); /* Cannot be NULL for PyCFuncPtrObject instances */
 
     assert(dict); /* Cannot be NULL for PyCFuncPtrObject instances */
-    restype = self->restype ? self->restype : dict->restype;
+    restype = self->restype ? self->restype : info->restype;
     converters = self->converters ? self->converters : info->converters;
     checker = self->checker ? self->checker : dict->checker;
     argtypes = self->argtypes ? self->argtypes : info->argtypes;
