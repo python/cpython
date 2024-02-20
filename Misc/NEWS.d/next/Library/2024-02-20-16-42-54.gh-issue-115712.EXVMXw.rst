@@ -1,0 +1,3 @@
+:func:`csv.writer()` now quotes empty fields if delimiter is a
+space and skipinitialspace is true and raises exception if quoting is not
+possible.
