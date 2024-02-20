@@ -211,6 +211,45 @@ abstractcontext_init(
     return 0;
 }
 
+static int
+frame_is_inlineable(_Py_UOpsAbstractInterpContext *ctx,
+                        _Py_UOpsAbstractFrame *frame)
+{
+    if (frame->push_frame == NULL || frame->pop_frame == NULL) {
+        return 0;
+    }
+    PyFunctionObject *obj = (PyFunctionObject *)frame->push_frame->operand;
+    if (obj == NULL) {
+        return 0;
+    }
+    PyCodeObject *co = obj->func_code;
+    if (co == NULL) {
+        return 0;
+    }
+    // Ban closures
+    if (co->co_ncellvars > 0 || co->co_nfreevars > 0) {
+        DPRINTF(3, "inline_fail: closure\n");
+        return 0;
+    }
+    // Ban generators, async, etc.
+    int flags = co->co_flags;
+    if ((flags & CO_COROUTINE) ||
+        (flags & CO_GENERATOR) ||
+        (flags & CO_ITERABLE_COROUTINE) ||
+        (flags & CO_ASYNC_GENERATOR) ||
+        // TODO we can support these in the future.
+        (flags & CO_VARKEYWORDS) ||
+        (flags & CO_VARARGS)) {
+        DPRINTF(3, "inline_fail: generator/coroutine\n");
+        return 0;
+    }
+    // Somewhat arbitrary, but if the stack is too big, we will copy a lot
+    // more on deopt, making it not really worth it.
+    if (co->co_stacksize > 32 || co->co_nlocalsplus > 32) {
+        return 0;
+    }
+    return 1;
+}
 
 static int
 ctx_frame_pop(
