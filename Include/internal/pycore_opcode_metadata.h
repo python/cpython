@@ -519,7 +519,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case CALL_ALLOC_AND_ENTER_INIT:
             return 1;
         case CALL_BOUND_METHOD_EXACT_ARGS:
-            return ((0) ? 1 : 0);
+            return 0;
         case CALL_BUILTIN_CLASS:
             return 1;
         case CALL_BUILTIN_FAST:
@@ -551,7 +551,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case CALL_METHOD_DESCRIPTOR_O:
             return 1;
         case CALL_PY_EXACT_ARGS:
-            return ((0) ? 1 : 0);
+            return 0;
         case CALL_PY_WITH_DEFAULTS:
             return 1;
         case CALL_STR_1:
@@ -697,23 +697,23 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case LOAD_ATTR_CLASS:
             return 1 + (oparg & 1);
         case LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN:
-            return 1 + ((0) ? 1 : 0);
+            return 1;
         case LOAD_ATTR_INSTANCE_VALUE:
             return 1 + (oparg & 1);
         case LOAD_ATTR_METHOD_LAZY_DICT:
-            return 1 + ((1) ? 1 : 0);
+            return 2;
         case LOAD_ATTR_METHOD_NO_DICT:
-            return 1 + ((1) ? 1 : 0);
+            return 2;
         case LOAD_ATTR_METHOD_WITH_VALUES:
-            return 1 + ((1) ? 1 : 0);
+            return 2;
         case LOAD_ATTR_MODULE:
             return 1 + (oparg & 1);
         case LOAD_ATTR_NONDESCRIPTOR_NO_DICT:
-            return 1 + ((0) ? 1 : 0);
+            return 1;
         case LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES:
-            return 1 + ((0) ? 1 : 0);
+            return 1;
         case LOAD_ATTR_PROPERTY:
-            return 1 + ((0) ? 1 : 0);
+            return 1;
         case LOAD_ATTR_SLOT:
             return 1 + (oparg & 1);
         case LOAD_ATTR_WITH_HINT:
@@ -749,7 +749,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case LOAD_SUPER_ATTR:
             return 1 + (oparg & 1);
         case LOAD_SUPER_ATTR_ATTR:
-            return 1 + ((0) ? 1 : 0);
+            return 1;
         case LOAD_SUPER_ATTR_METHOD:
             return 2;
         case MAKE_CELL:
@@ -912,6 +912,7 @@ enum InstructionFormat {
 #define HAS_EXIT_FLAG (1024)
 #define HAS_PURE_FLAG (2048)
 #define HAS_PASSTHROUGH_FLAG (4096)
+#define HAS_OPARG_AND_1_FLAG (8192)
 #define OPCODE_HAS_ARG(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_ARG_FLAG))
 #define OPCODE_HAS_CONST(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_CONST_FLAG))
 #define OPCODE_HAS_NAME(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_NAME_FLAG))
@@ -925,6 +926,7 @@ enum InstructionFormat {
 #define OPCODE_HAS_EXIT(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_EXIT_FLAG))
 #define OPCODE_HAS_PURE(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_PURE_FLAG))
 #define OPCODE_HAS_PASSTHROUGH(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_PASSTHROUGH_FLAG))
+#define OPCODE_HAS_OPARG_AND_1(OP) (_PyOpcode_opcode_metadata[OP].flags & (HAS_OPARG_AND_1_FLAG))
 
 #define OPARG_FULL 0
 #define OPARG_CACHE_1 1

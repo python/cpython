@@ -1029,7 +1029,7 @@ enter_tier_two:
 #ifdef Py_DEBUG
             {
                 fprintf(stderr, "Unknown uop %d, oparg %d, operand %" PRIu64 " @ %d\n",
-                        opcode, next_uop[-1].oparg, next_uop[-1].operand,
+                        next_uop[-1].opcode, next_uop[-1].oparg, next_uop[-1].operand,
                         (int)(next_uop - current_executor->trace - 1));
                 Py_FatalError("Unknown uop");
             }

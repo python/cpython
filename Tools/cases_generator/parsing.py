@@ -179,7 +179,13 @@ class Parser(PLexer):
         # | annotation* op(NAME, (inputs -- outputs))
         annotations = []
         while anno := self.expect(lx.ANNOTATION):
-            annotations.append(anno.text)
+            if anno.text == "replicate":
+                self.require(lx.LPAREN)
+                times = self.require(lx.NUMBER)
+                self.require(lx.RPAREN)
+                annotations.append(f"replicate({times.text})")
+            else:
+                annotations.append(anno.text)
         tkn = self.expect(lx.INST)
         if not tkn:
             tkn = self.expect(lx.OP)

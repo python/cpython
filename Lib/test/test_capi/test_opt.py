@@ -216,7 +216,7 @@ class TestUops(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
         self.assertIn("_SET_IP", uops)
-        self.assertIn("_LOAD_FAST", uops)
+        self.assertIn("_LOAD_FAST_0", uops)
 
     def test_extended_arg(self):
         "Check EXTENDED_ARG handling in superblock creation"

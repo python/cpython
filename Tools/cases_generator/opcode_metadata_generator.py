@@ -53,6 +53,7 @@ FLAGS = [
     "EXIT",
     "PURE",
     "PASSTHROUGH",
+    "OPARG_AND_1",
 ]
 
 
