@@ -1621,27 +1621,6 @@ else
   AC_MSG_RESULT([no])
 fi
 
-# Check for --enable-experimental-jit:
-AC_MSG_CHECKING([for --enable-experimental-jit])
-AC_ARG_ENABLE([experimental-jit],
-              [AS_HELP_STRING([--enable-experimental-jit],
-                              [build the experimental just-in-time compiler (default is no)])],
-              [],
-              [enable_experimental_jit=no])
-AS_VAR_IF([enable_experimental_jit],
-          [no],
-          [],
-          [AS_VAR_APPEND([CFLAGS_NODIST], [" -D_Py_JIT"])
-           AS_VAR_SET([REGEN_JIT_COMMAND],
-                      ["\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py $host"])
-           AS_VAR_SET([JIT_STENCILS_H], ["jit_stencils.h"])
-           AS_VAR_IF([Py_DEBUG],
-                     [true],
-                     [AS_VAR_APPEND([REGEN_JIT_COMMAND], [" --debug"])],
-                     [])])
-AC_SUBST([REGEN_JIT_COMMAND])
-AC_SUBST([JIT_STENCILS_H])
-AC_MSG_RESULT([$enable_experimental_jit])
 
 # Enable optimization flags
 AC_SUBST([DEF_MAKE_ALL_RULE])
@@ -2436,42 +2415,50 @@ yes)
                UNIVERSAL_ARCH_FLAGS="-arch ppc -arch i386"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT=""
+	       ARCH_TRIPPLES=`echo {ppc,i386}-apple-darwin`
                ;;
             64-bit)
                UNIVERSAL_ARCH_FLAGS="-arch ppc64 -arch x86_64"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT="true"
+	       ARCH_TRIPPLES=`echo {ppc64,x86_64}-apple-darwin`
                ;;
             all)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch ppc64 -arch x86_64"
                LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
                ARCH_RUN_32BIT="/usr/bin/arch -i386 -ppc"
+	       ARCH_TRIPPLES=`echo {i386,ppc,ppc64,x86_64}-apple-darwin`
                ;;
             universal2)
                UNIVERSAL_ARCH_FLAGS="-arch arm64 -arch x86_64"
                LIPO_32BIT_FLAGS=""
                LIPO_INTEL64_FLAGS="-extract x86_64"
                ARCH_RUN_32BIT="true"
+	       ARCH_TRIPPLES=`echo {aarch64,x86_64}-apple-darwin`
                ;;
             intel)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch x86_64"
                LIPO_32BIT_FLAGS="-extract i386"
                ARCH_RUN_32BIT="/usr/bin/arch -i386"
+	       ARCH_TRIPPLES=`echo {i386,x86_64}-apple-darwin`
                ;;
             intel-32)
                UNIVERSAL_ARCH_FLAGS="-arch i386"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT=""
+	       ARCH_TRIPPLES=i386-apple-darwin
                ;;
             intel-64)
                UNIVERSAL_ARCH_FLAGS="-arch x86_64"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT="true"
+	       ARCH_TRIPPLES=x86_64-apple-darwin
                ;;
             3-way)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch x86_64"
                LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
                ARCH_RUN_32BIT="/usr/bin/arch -i386 -ppc"
+	       ARCH_TRIPPLES=`echo {i386,ppc,x86_64}-apple-darwin`
                ;;
             *)
                AC_MSG_ERROR([proper usage is --with-universal-arch=universal2|32-bit|64-bit|all|intel|3-way])
@@ -2564,6 +2551,28 @@ yes)
     esac
     ;;
 esac
+
+# Check for --enable-experimental-jit:
+AC_MSG_CHECKING([for --enable-experimental-jit])
+AC_ARG_ENABLE([experimental-jit],
+              [AS_HELP_STRING([--enable-experimental-jit],
+                              [build the experimental just-in-time compiler (default is no)])],
+              [],
+              [enable_experimental_jit=no])
+AS_VAR_IF([enable_experimental_jit],
+          [no],
+          [],
+          [AS_VAR_APPEND([CFLAGS_NODIST], [" -D_Py_JIT"])
+           AS_VAR_SET([REGEN_JIT_COMMAND],
+                      ["\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py ${ARCH_TRIPPLES:-$host}"])
+           AS_VAR_SET([JIT_STENCILS_H], ["jit_stencils.h"])
+           AS_VAR_IF([Py_DEBUG],
+                     [true],
+                     [AS_VAR_APPEND([REGEN_JIT_COMMAND], [" --debug"])],
+                     [])])
+AC_SUBST([REGEN_JIT_COMMAND])
+AC_SUBST([JIT_STENCILS_H])
+AC_MSG_RESULT([$enable_experimental_jit])
 
 case "$CC_BASENAME" in
 *mpicc*)

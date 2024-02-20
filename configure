@@ -893,6 +893,8 @@ LDSHARED
 SHLIB_SUFFIX
 DSYMUTIL_PATH
 DSYMUTIL
+JIT_STENCILS_H
+REGEN_JIT_COMMAND
 UNIVERSAL_ARCH_FLAGS
 WASM_STDLIB
 WASM_ASSETS_DIR
@@ -920,8 +922,6 @@ LLVM_AR
 PROFILE_TASK
 DEF_MAKE_RULE
 DEF_MAKE_ALL_RULE
-JIT_STENCILS_H
-REGEN_JIT_COMMAND
 ABIFLAGS
 LN
 MKDIR_P
@@ -1079,11 +1079,11 @@ with_pydebug
 with_trace_refs
 enable_pystats
 with_assertions
-enable_experimental_jit
 enable_optimizations
 with_lto
 enable_bolt
 with_strict_overflow
+enable_experimental_jit
 with_dsymutil
 with_address_sanitizer
 with_memory_sanitizer
@@ -1807,12 +1807,12 @@ Optional Features:
   --disable-gil           enable experimental support for running without the
                           GIL (default is no)
   --enable-pystats        enable internal statistics gathering (default is no)
-  --enable-experimental-jit
-                          build the experimental just-in-time compiler
-                          (default is no)
   --enable-optimizations  enable expensive, stable optimizations (PGO, etc.)
                           (default is no)
   --enable-bolt           enable usage of the llvm-bolt post-link optimizer
+                          (default is no)
+  --enable-experimental-jit
+                          build the experimental just-in-time compiler
                           (default is no)
   --enable-loadable-sqlite-extensions
                           support loadable extensions in the sqlite3 module,
@@ -8036,33 +8036,6 @@ else
 printf "%s\n" "no" >&6; }
 fi
 
-# Check for --enable-experimental-jit:
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-experimental-jit" >&5
-printf %s "checking for --enable-experimental-jit... " >&6; }
-# Check whether --enable-experimental-jit was given.
-if test ${enable_experimental_jit+y}
-then :
-  enableval=$enable_experimental_jit;
-else $as_nop
-  enable_experimental_jit=no
-fi
-
-if test "x$enable_experimental_jit" = xno
-then :
-
-else $as_nop
-  as_fn_append CFLAGS_NODIST " -D_Py_JIT"
-           REGEN_JIT_COMMAND="\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py $host"
-           JIT_STENCILS_H="jit_stencils.h"
-           if test "x$Py_DEBUG" = xtrue
-then :
-  as_fn_append REGEN_JIT_COMMAND " --debug"
-fi
-fi
-
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $enable_experimental_jit" >&5
-printf "%s\n" "$enable_experimental_jit" >&6; }
 
 # Enable optimization flags
 
@@ -9948,42 +9921,50 @@ printf "%s\n" "$CC" >&6; }
                UNIVERSAL_ARCH_FLAGS="-arch ppc -arch i386"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT=""
+	       ARCH_TRIPPLES=`echo {ppc,i386}-apple-darwin`
                ;;
             64-bit)
                UNIVERSAL_ARCH_FLAGS="-arch ppc64 -arch x86_64"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT="true"
+	       ARCH_TRIPPLES=`echo {ppc64,x86_64}-apple-darwin`
                ;;
             all)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch ppc64 -arch x86_64"
                LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
                ARCH_RUN_32BIT="/usr/bin/arch -i386 -ppc"
+	       ARCH_TRIPPLES=`echo {i386,ppc,ppc64,x86_64}-apple-darwin`
                ;;
             universal2)
                UNIVERSAL_ARCH_FLAGS="-arch arm64 -arch x86_64"
                LIPO_32BIT_FLAGS=""
                LIPO_INTEL64_FLAGS="-extract x86_64"
                ARCH_RUN_32BIT="true"
+	       ARCH_TRIPPLES=`echo {aarch64,x86_64}-apple-darwin`
                ;;
             intel)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch x86_64"
                LIPO_32BIT_FLAGS="-extract i386"
                ARCH_RUN_32BIT="/usr/bin/arch -i386"
+	       ARCH_TRIPPLES=`echo {i386,x86_64}-apple-darwin`
                ;;
             intel-32)
                UNIVERSAL_ARCH_FLAGS="-arch i386"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT=""
+	       ARCH_TRIPPLES=i386-apple-darwin
                ;;
             intel-64)
                UNIVERSAL_ARCH_FLAGS="-arch x86_64"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT="true"
+	       ARCH_TRIPPLES=x86_64-apple-darwin
                ;;
             3-way)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch x86_64"
                LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
                ARCH_RUN_32BIT="/usr/bin/arch -i386 -ppc"
+	       ARCH_TRIPPLES=`echo {i386,ppc,x86_64}-apple-darwin`
                ;;
             *)
                as_fn_error $? "proper usage is --with-universal-arch=universal2|32-bit|64-bit|all|intel|3-way" "$LINENO" 5
@@ -10097,6 +10078,34 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam \
     esac
     ;;
 esac
+
+# Check for --enable-experimental-jit:
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-experimental-jit" >&5
+printf %s "checking for --enable-experimental-jit... " >&6; }
+# Check whether --enable-experimental-jit was given.
+if test ${enable_experimental_jit+y}
+then :
+  enableval=$enable_experimental_jit;
+else $as_nop
+  enable_experimental_jit=no
+fi
+
+if test "x$enable_experimental_jit" = xno
+then :
+
+else $as_nop
+  as_fn_append CFLAGS_NODIST " -D_Py_JIT"
+           REGEN_JIT_COMMAND="\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py ${ARCH_TRIPPLES:-$host}"
+           JIT_STENCILS_H="jit_stencils.h"
+           if test "x$Py_DEBUG" = xtrue
+then :
+  as_fn_append REGEN_JIT_COMMAND " --debug"
+fi
+fi
+
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $enable_experimental_jit" >&5
+printf "%s\n" "$enable_experimental_jit" >&6; }
 
 case "$CC_BASENAME" in
 *mpicc*)

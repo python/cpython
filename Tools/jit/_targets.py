@@ -25,6 +25,8 @@ CPYTHON = TOOLS.parent
 PYTHON_EXECUTOR_CASES_C_H = CPYTHON / "Python" / "executor_cases.c.h"
 TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template.c"
 
+ASYNCIO_RUNNER=asyncio.Runner()
+
 
 _S = typing.TypeVar("_S", _schema.COFFSection, _schema.ELFSection, _schema.MachOSection)
 _R = typing.TypeVar(
@@ -106,6 +108,7 @@ class _Target(typing.Generic[_S, _R]):
         o = tempdir / f"{opname}.o"
         args = [
             f"--target={self.triple}",
+            "-isysroot", "/Users/ronald/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk",
             "-DPy_BUILD_CORE",
             "-D_DEBUG" if self.debug else "-DNDEBUG",
             f"-D_JIT_OPCODE={opname}",
@@ -152,17 +155,17 @@ class _Target(typing.Generic[_S, _R]):
                     tasks.append(group.create_task(coro, name=opname))
         return {task.get_name(): task.result() for task in tasks}
 
-    def build(self, out: pathlib.Path, *, comment: str = "") -> None:
+    def build(self, out: pathlib.Path, *, comment: str = "", stencils_h: str = "jit_stencils.h") -> None:
         """Build jit_stencils.h in the given directory."""
         digest = f"// {self._compute_digest(out)}\n"
-        jit_stencils = out / "jit_stencils.h"
+        jit_stencils = out / stencils_h
         if (
             not self.force
             and jit_stencils.exists()
             and jit_stencils.read_text().startswith(digest)
         ):
             return
-        stencil_groups = asyncio.run(self._build_stencils())
+        stencil_groups = ASYNCIO_RUNNER.run(self._build_stencils())
         with jit_stencils.open("w") as file:
             file.write(digest)
             if comment:
