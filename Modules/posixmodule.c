@@ -148,6 +148,9 @@
 #  include <sys/sysctl.h>
 #endif
 
+#ifdef HAVE_SYS_RANDOM_H
+#  include <sys/random.h>       // GRND_RANDOM on !Linux
+#endif
 #ifdef HAVE_LINUX_RANDOM_H
 #  include <linux/random.h>       // GRND_RANDOM
 #endif
