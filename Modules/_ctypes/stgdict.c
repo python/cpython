@@ -29,8 +29,8 @@ _stginfo_from_type(ctypes_state *state, PyTypeObject *type, StgInfo **result)
     }
     StgInfo *info = PyObject_GetTypeData((PyObject *)type, state->PyCType_Type);
     if (!info->initialized) {
-        //PyErr_Format(PyExc_SystemError, "%R StgInfo is not initialized.", type);
-        //return -1;
+        // StgInfo is not initialized. This happens in abstract classes.
+        return 0;
     }
     *result = info;
     return 1;
