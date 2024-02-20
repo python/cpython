@@ -8,7 +8,6 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
-#include "pycore_ceval.h"         // _PyEval_SignalAsyncExc()
 #include "pycore_code.h"
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 #include "pycore_function.h"
@@ -146,7 +145,7 @@ dummy_func(
             TIER_ONE_ONLY
             assert(frame == tstate->current_frame);
             uintptr_t global_version =
-                _Py_atomic_load_uintptr_relaxed(&tstate->interp->ceval.eval_breaker) &
+                _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) &
                 ~_PY_EVAL_EVENTS_MASK;
             uintptr_t code_version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
             assert((code_version & 255) == 0);
@@ -168,14 +167,14 @@ dummy_func(
             DEOPT_IF(_Py_emscripten_signal_clock == 0);
             _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
 #endif
-            uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->interp->ceval.eval_breaker);
+            uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
             uintptr_t version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
             assert((version & _PY_EVAL_EVENTS_MASK) == 0);
             DEOPT_IF(eval_breaker != version);
         }
 
         inst(INSTRUMENTED_RESUME, (--)) {
-            uintptr_t global_version = _Py_atomic_load_uintptr_relaxed(&tstate->interp->ceval.eval_breaker) & ~_PY_EVAL_EVENTS_MASK;
+            uintptr_t global_version = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & ~_PY_EVAL_EVENTS_MASK;
             uintptr_t code_version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
             if (code_version != global_version) {
                 if (_Py_Instrument(_PyFrame_GetCode(frame), tstate->interp)) {
