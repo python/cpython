@@ -430,7 +430,7 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
     if re.fullmatch(r"i686-pc-windows-msvc", host):
         return _COFF(host, prefix="_")
     if re.fullmatch(r"x86_64-apple-darwin.*", host):
-        return _MachO(host, prefix="_", pic=True, small=True)
+        return _MachO(host, pic=True, prefix="_", small=True)
     if re.fullmatch(r"x86_64-pc-windows-msvc", host):
         return _COFF(host)
     if re.fullmatch(r"x86_64-.*-linux-gnu", host):
