@@ -38,6 +38,20 @@
         goto LABEL ## _tier_two; \
     } while (0)
 
+#undef GOTO_TIER_TWO
+#define GOTO_TIER_TWO(EXECUTOR) \
+do {  \
+    __attribute__((musttail))                     \
+    return ((jit_func)((EXECUTOR)->jit_code))(frame, stack_pointer, tstate); \
+} while (0)
+
+#undef GOTO_TIER_ONE
+#define GOTO_TIER_ONE(TARGET) \
+do {  \
+    _PyFrame_SetStackPointer(frame, stack_pointer); \
+    return TARGET; \
+} while (0)
+
 #undef LOAD_IP
 #define LOAD_IP(UNUSED) \
     do {                \
@@ -59,7 +73,6 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
     PATCH_VALUE(_PyExecutorObject *, current_executor, _JIT_EXECUTOR)
     int oparg;
     int opcode = _JIT_OPCODE;
-    _PyUOpInstruction *next_uop;
     // Other stuff we need handy:
     PATCH_VALUE(uint16_t, _oparg, _JIT_OPARG)
     PATCH_VALUE(uint64_t, _operand, _JIT_OPERAND)
@@ -90,9 +103,16 @@ pop_2_error_tier_two:
 pop_1_error_tier_two:
     STACK_SHRINK(1);
 error_tier_two:
-    _PyFrame_SetStackPointer(frame, stack_pointer);
-    return NULL;
+    tstate->previous_executor = (PyObject *)current_executor;
+    GOTO_TIER_ONE(NULL);
 deoptimize:
-    _PyFrame_SetStackPointer(frame, stack_pointer);
-    return _PyCode_CODE(_PyFrame_GetCode(frame)) + _target;
+    tstate->previous_executor = (PyObject *)current_executor;
+    GOTO_TIER_ONE(_PyCode_CODE(_PyFrame_GetCode(frame)) + _target);
+side_exit:
+    {
+        _PyExitData *exit = &current_executor->exits[_target];
+        Py_INCREF(exit->executor);
+        tstate->previous_executor = (PyObject *)current_executor;
+        GOTO_TIER_TWO(exit->executor);
+    }
 }

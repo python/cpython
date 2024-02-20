@@ -794,6 +794,17 @@ class TestGeneratedCases(unittest.TestCase):
         self.run_cases_test(input, output)
 
 
+    def test_deopt_and_exit(self):
+        input = """
+        pure op(OP, (arg1 -- out)) {
+            DEOPT_IF(1);
+            EXIT_IF(1);
+        }
+        """
+        output = ""
+        with self.assertRaises(Exception):
+            self.run_cases_test(input, output)
+
 class TestGeneratedAbstractCases(unittest.TestCase):
     def setUp(self) -> None:
         super().setUp()

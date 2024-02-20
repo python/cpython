@@ -782,6 +782,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     }
 
     _PyOptimizerObject *old = _Py_SetOptimizer(interp, NULL);
+    assert(old != NULL);
     Py_DECREF(old);
 
     /* It is possible that any of the objects below have a finalizer
@@ -1346,6 +1347,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     tstate->datastack_top = NULL;
     tstate->datastack_limit = NULL;
     tstate->what_event = -1;
+    tstate->previous_executor = NULL;
 
 #ifdef Py_GIL_DISABLED
     // Initialize biased reference counting inter-thread queue

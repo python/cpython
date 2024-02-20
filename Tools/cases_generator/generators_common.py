@@ -154,6 +154,7 @@ def replace_check_eval_breaker(
 
 
 REPLACEMENT_FUNCTIONS = {
+    "EXIT_IF": replace_deopt,
     "DEOPT_IF": replace_deopt,
     "ERROR_IF": replace_error,
     "DECREF_INPUTS": replace_decrefs,
@@ -205,6 +206,8 @@ def cflags(p: Properties) -> str:
         flags.append("HAS_EVAL_BREAK_FLAG")
     if p.deopts:
         flags.append("HAS_DEOPT_FLAG")
+    if p.side_exit:
+        flags.append("HAS_EXIT_FLAG")
     if not p.infallible:
         flags.append("HAS_ERROR_FLAG")
     if p.escapes:
