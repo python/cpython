@@ -197,6 +197,17 @@ dummy_func(void) {
         }
     }
 
+    op(_BINARY_OP_ADD_UNICODE, (left, right -- res)) {
+        if (is_const(left) && is_const(right)) {
+            PyObject *temp = PyUnicode_Concat(get_const(left), get_const(right));
+            ERROR_IF(temp == NULL, error);
+            res = sym_new_const(ctx, temp);
+        }
+        else {
+            OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyUnicode_Type));
+        }
+    }
+
     op(_LOAD_CONST, (-- value)) {
         // There should be no LOAD_CONST. It should be all
         // replaced by peephole_opt.

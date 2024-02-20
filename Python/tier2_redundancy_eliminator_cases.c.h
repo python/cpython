@@ -365,9 +365,19 @@
         }
 
         case _BINARY_OP_ADD_UNICODE: {
+            _Py_UOpsSymType *right;
+            _Py_UOpsSymType *left;
             _Py_UOpsSymType *res;
-            res = sym_new_unknown(ctx);
-            if (res == NULL) goto out_of_space;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (is_const(left) && is_const(right)) {
+                PyObject *temp = PyUnicode_Concat(get_const(left), get_const(right));
+                ERROR_IF(temp == NULL, error);
+                res = sym_new_const(ctx, temp);
+            }
+            else {
+                OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyUnicode_Type));
+            }
             stack_pointer[-2] = res;
             stack_pointer += -1;
             break;
