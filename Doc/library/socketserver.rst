@@ -499,7 +499,7 @@ This is the server side::
                    # Client has hung up
                    break
                self.data = self.data.strip()
-               print("{} wrote:".format(self.client_address[0]))
+               print("Received from {}:".format(self.client_address[0]))
                print(self.data)
                # just send back the same data, but upper-cased
                self.request.sendall(self.data.upper())
@@ -527,7 +527,7 @@ objects that simplify communication by providing the standard file interface)::
                    # Client has hung up
                    break
            self.data = self.data.strip()           
-           print("{} wrote:".format(self.client_address[0]))
+           print("Received from {}:".format(self.client_address[0]))
            print(self.data)
            # Likewise, self.wfile is a file-like object used to write back
            # to the client
