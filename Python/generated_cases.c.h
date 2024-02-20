@@ -741,7 +741,8 @@
             INSTRUCTION_STATS(CACHE);
             TIER_ONE_ONLY
             assert(0 && "Executing a cache.");
-            Py_UNREACHABLE();
+            Py_FatalError("Executing a cache.");
+            DISPATCH();
         }
 
         TARGET(CALL) {
@@ -2369,12 +2370,14 @@
             TIER_ONE_ONLY
             CHECK_EVAL_BREAKER();
             PyCodeObject *code = _PyFrame_GetCode(frame);
-            current_executor = code->co_executors->executors[oparg & 255];
-            assert(current_executor->vm_data.index == INSTR_OFFSET() - 1);
-            assert(current_executor->vm_data.code == code);
-            assert(current_executor->vm_data.valid);
-            Py_INCREF(current_executor);
-            GOTO_TIER_TWO();
+            _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
+            assert(executor->vm_data.index == INSTR_OFFSET() - 1);
+            assert(executor->vm_data.code == code);
+            assert(executor->vm_data.valid);
+            assert(tstate->previous_executor == NULL);
+            tstate->previous_executor = Py_None;
+            Py_INCREF(executor);
+            GOTO_TIER_TWO(executor);
             DISPATCH();
         }
 
@@ -3262,6 +3265,7 @@
             next_instr += 2;
             INSTRUCTION_STATS(JUMP_BACKWARD);
             /* Skip 1 cache entry */
+            TIER_ONE_ONLY
             CHECK_EVAL_BREAKER();
             assert(oparg <= INSTR_OFFSET());
             JUMPBY(-oparg);
@@ -3283,13 +3287,13 @@
                     oparg >>= 8;
                     start--;
                 }
-                int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer);
+                _PyExecutorObject *executor;
+                int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer, &executor);
                 if (optimized < 0) goto error;
                 if (optimized) {
-                    // Rewind and enter the executor:
-                    assert(start->op.code == ENTER_EXECUTOR);
-                    next_instr = start;
-                    this_instr[1].cache &= OPTIMIZER_BITS_MASK;
+                    assert(tstate->previous_executor == NULL);
+                    tstate->previous_executor = Py_None;
+                    GOTO_TIER_TWO(executor);
                 }
                 else {
                     int backoff = this_instr[1].cache & OPTIMIZER_BITS_MASK;
@@ -4778,7 +4782,8 @@
             INSTRUCTION_STATS(RESERVED);
             TIER_ONE_ONLY
             assert(0 && "Executing RESERVED instruction.");
-            Py_UNREACHABLE();
+            Py_FatalError("Executing RESERVED instruction.");
+            DISPATCH();
         }
 
         TARGET(RESUME) {
