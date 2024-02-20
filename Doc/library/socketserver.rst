@@ -539,7 +539,7 @@ until the client hangs up::
                # self.request is the TCP socket connected to the client
                self.data = self.request.recv(1024)
                # `socket.recv` indicates that the client has hung up by returning 0 bytes
-               if len(self.data) == 0:
+               if not self.data:
                    return
                print("{} wrote:".format(self.client_address[0]))
                print(self.data)
