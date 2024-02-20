@@ -3537,13 +3537,13 @@ listreviter_next(PyObject *self)
 {
     listreviterobject *it = (listreviterobject *)self;
     assert(it != NULL);
-    PyListObject *seq = it->it_seq;
-    assert(PyList_Check(seq));
-
     Py_ssize_t index = LOAD_SSIZE(it->it_index);
     if (index < 0) {
         return NULL;
     }
+
+    PyListObject *seq = it->it_seq;
+    assert(PyList_Check(seq));
     PyObject *item = list_get_item_ref(seq, index);
     if (item != NULL) {
         STORE_SSIZE(it->it_index, index - 1);
