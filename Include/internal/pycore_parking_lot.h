@@ -18,8 +18,6 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_time.h"        // PyTime_t
-
 
 enum {
     // The thread was unparked by another thread.
