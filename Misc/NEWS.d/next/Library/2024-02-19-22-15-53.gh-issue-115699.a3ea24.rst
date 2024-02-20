@@ -1,0 +1,1 @@
+Make ``python -m tomllib`` convert toml (from stdin) to json (on stdout).
