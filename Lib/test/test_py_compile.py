@@ -132,7 +132,9 @@ class PyCompileTestsBase:
             os.chmod(self.directory, mode.st_mode)
 
     def test_bad_coding(self):
-        bad_coding = os.path.join(os.path.dirname(__file__), 'bad_coding2.py')
+        bad_coding = os.path.join(os.path.dirname(__file__),
+                                  'tokenizedata',
+                                  'bad_coding2.py')
         with support.captured_stderr():
             self.assertIsNone(py_compile.compile(bad_coding, doraise=False))
         self.assertFalse(os.path.exists(
@@ -195,7 +197,9 @@ class PyCompileTestsBase:
         self.assertEqual(flags, 0b1)
 
     def test_quiet(self):
-        bad_coding = os.path.join(os.path.dirname(__file__), 'bad_coding2.py')
+        bad_coding = os.path.join(os.path.dirname(__file__),
+                                  'tokenizedata',
+                                  'bad_coding2.py')
         with support.captured_stderr() as stderr:
             self.assertIsNone(py_compile.compile(bad_coding, doraise=False, quiet=2))
             self.assertIsNone(py_compile.compile(bad_coding, doraise=True, quiet=2))
@@ -223,7 +227,8 @@ class PyCompileCLITestCase(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.mkdtemp()
         self.source_path = os.path.join(self.directory, '_test.py')
-        self.cache_path = importlib.util.cache_from_source(self.source_path)
+        self.cache_path = importlib.util.cache_from_source(self.source_path,
+                                optimization='' if __debug__ else 1)
         with open(self.source_path, 'w') as file:
             file.write('x = 123\n')
 
@@ -246,6 +251,7 @@ class PyCompileCLITestCase(unittest.TestCase):
         return script_helper.assert_python_failure('-m', 'py_compile', *args)
 
     def test_stdin(self):
+        self.assertFalse(os.path.exists(self.cache_path))
         result = self.pycompilecmd('-', input=self.source_path)
         self.assertEqual(result.returncode, 0)
         self.assertEqual(result.stdout, b'')
@@ -260,14 +266,18 @@ class PyCompileCLITestCase(unittest.TestCase):
         self.assertTrue(os.path.exists(self.cache_path))
 
     def test_bad_syntax(self):
-        bad_syntax = os.path.join(os.path.dirname(__file__), 'badsyntax_3131.py')
+        bad_syntax = os.path.join(os.path.dirname(__file__),
+                                  'tokenizedata',
+                                  'badsyntax_3131.py')
         rc, stdout, stderr = self.pycompilecmd_failure(bad_syntax)
         self.assertEqual(rc, 1)
         self.assertEqual(stdout, b'')
         self.assertIn(b'SyntaxError', stderr)
 
     def test_bad_syntax_with_quiet(self):
-        bad_syntax = os.path.join(os.path.dirname(__file__), 'badsyntax_3131.py')
+        bad_syntax = os.path.join(os.path.dirname(__file__),
+                                  'tokenizedata',
+                                  'badsyntax_3131.py')
         rc, stdout, stderr = self.pycompilecmd_failure('-q', bad_syntax)
         self.assertEqual(rc, 1)
         self.assertEqual(stdout, b'')

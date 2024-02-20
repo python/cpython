@@ -2,12 +2,16 @@
 """
 Check the output of running Sphinx in nit-picky mode (missing references).
 """
+from __future__ import annotations
+
 import argparse
-import csv
+import itertools
 import os
 import re
+import subprocess
 import sys
 from pathlib import Path
+from typing import TextIO
 
 # Exclude these whether they're dirty or clean,
 # because they trigger a rebuild of dirty files.
@@ -24,28 +28,178 @@ EXCLUDE_SUBDIRS = {
     "venv",
 }
 
-PATTERN = re.compile(r"(?P<file>[^:]+):(?P<line>\d+): WARNING: (?P<msg>.+)")
+# Regex pattern to match the parts of a Sphinx warning
+WARNING_PATTERN = re.compile(
+    r"(?P<file>([A-Za-z]:[\\/])?[^:]+):(?P<line>\d+): WARNING: (?P<msg>.+)"
+)
+
+# Regex pattern to match the line numbers in a Git unified diff
+DIFF_PATTERN = re.compile(
+    r"^@@ -(?P<linea>\d+)(?:,(?P<removed>\d+))? \+(?P<lineb>\d+)(?:,(?P<added>\d+))? @@",
+    flags=re.MULTILINE,
+)
 
 
-def check_and_annotate(warnings: list[str], files_to_check: str) -> None:
+def get_diff_files(ref_a: str, ref_b: str, filter_mode: str = "") -> set[Path]:
+    """List the files changed between two Git refs, filtered by change type."""
+    added_files_result = subprocess.run(
+        [
+            "git",
+            "diff",
+            f"--diff-filter={filter_mode}",
+            "--name-only",
+            f"{ref_a}...{ref_b}",
+            "--",
+        ],
+        stdout=subprocess.PIPE,
+        check=True,
+        text=True,
+        encoding="UTF-8",
+    )
+
+    added_files = added_files_result.stdout.strip().split("\n")
+    return {Path(file.strip()) for file in added_files if file.strip()}
+
+
+def get_diff_lines(ref_a: str, ref_b: str, file: Path) -> list[int]:
+    """List the lines changed between two Git refs for a specific file."""
+    diff_output = subprocess.run(
+        [
+            "git",
+            "diff",
+            "--unified=0",
+            f"{ref_a}...{ref_b}",
+            "--",
+            str(file),
+        ],
+        stdout=subprocess.PIPE,
+        check=True,
+        text=True,
+        encoding="UTF-8",
+    )
+
+    # Scrape line offsets + lengths from diff and convert to line numbers
+    line_matches = DIFF_PATTERN.finditer(diff_output.stdout)
+    # Removed and added line counts are 1 if not printed
+    line_match_values = [
+        line_match.groupdict(default=1) for line_match in line_matches
+    ]
+    line_ints = [
+        (int(match_value["lineb"]), int(match_value["added"]))
+        for match_value in line_match_values
+    ]
+    line_ranges = [
+        range(line_b, line_b + added) for line_b, added in line_ints
+    ]
+    line_numbers = list(itertools.chain(*line_ranges))
+
+    return line_numbers
+
+
+def get_para_line_numbers(file_obj: TextIO) -> list[list[int]]:
+    """Get the line numbers of text in a file object, grouped by paragraph."""
+    paragraphs = []
+    prev_line = None
+    for lineno, line in enumerate(file_obj):
+        lineno = lineno + 1
+        if prev_line is None or (line.strip() and not prev_line.strip()):
+            paragraph = [lineno - 1]
+            paragraphs.append(paragraph)
+        paragraph.append(lineno)
+        prev_line = line
+    return paragraphs
+
+
+def filter_and_parse_warnings(
+    warnings: list[str], files: set[Path]
+) -> list[re.Match[str]]:
+    """Get the warnings matching passed files and parse them with regex."""
+    filtered_warnings = [
+        warning
+        for warning in warnings
+        if any(str(file) in warning for file in files)
+    ]
+    warning_matches = [
+        WARNING_PATTERN.fullmatch(warning.strip())
+        for warning in filtered_warnings
+    ]
+    non_null_matches = [warning for warning in warning_matches if warning]
+    return non_null_matches
+
+
+def filter_warnings_by_diff(
+    warnings: list[re.Match[str]], ref_a: str, ref_b: str, file: Path
+) -> list[re.Match[str]]:
+    """Filter the passed per-file warnings to just those on changed lines."""
+    diff_lines = get_diff_lines(ref_a, ref_b, file)
+    with file.open(encoding="UTF-8") as file_obj:
+        paragraphs = get_para_line_numbers(file_obj)
+    touched_paras = [
+        para_lines
+        for para_lines in paragraphs
+        if set(diff_lines) & set(para_lines)
+    ]
+    touched_para_lines = set(itertools.chain(*touched_paras))
+    warnings_infile = [
+        warning for warning in warnings if str(file) in warning["file"]
+    ]
+    warnings_touched = [
+        warning
+        for warning in warnings_infile
+        if int(warning["line"]) in touched_para_lines
+    ]
+    return warnings_touched
+
+
+def process_touched_warnings(
+    warnings: list[str], ref_a: str, ref_b: str
+) -> list[re.Match[str]]:
+    """Filter a list of Sphinx warnings to those affecting touched lines."""
+    added_files, modified_files = tuple(
+        get_diff_files(ref_a, ref_b, filter_mode=mode) for mode in ("A", "M")
+    )
+
+    warnings_added = filter_and_parse_warnings(warnings, added_files)
+    warnings_modified = filter_and_parse_warnings(warnings, modified_files)
+
+    modified_files_warned = {
+        file
+        for file in modified_files
+        if any(str(file) in warning["file"] for warning in warnings_modified)
+    }
+
+    warnings_modified_touched = [
+        filter_warnings_by_diff(warnings_modified, ref_a, ref_b, file)
+        for file in modified_files_warned
+    ]
+    warnings_touched = warnings_added + list(
+        itertools.chain(*warnings_modified_touched)
+    )
+
+    return warnings_touched
+
+
+def annotate_diff(
+    warnings: list[str], ref_a: str = "main", ref_b: str = "HEAD"
+) -> None:
     """
-    Convert Sphinx warning messages to GitHub Actions.
+    Convert Sphinx warning messages to GitHub Actions for changed paragraphs.
 
     Converts lines like:
         .../Doc/library/cgi.rst:98: WARNING: reference target not found
     to:
         ::warning file=.../Doc/library/cgi.rst,line=98::reference target not found
 
-    Non-matching lines are echoed unchanged.
-
-    see:
+    See:
     https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-a-warning-message
     """
-    files_to_check = next(csv.reader([files_to_check]))
-    for warning in warnings:
-        if any(filename in warning for filename in files_to_check):
-            if match := PATTERN.fullmatch(warning):
-                print("::warning file={file},line={line}::{msg}".format_map(match))
+    warnings_touched = process_touched_warnings(warnings, ref_a, ref_b)
+    print("Emitting doc warnings matching modified lines:")
+    for warning in warnings_touched:
+        print("::warning file={file},line={line}::{msg}".format_map(warning))
+        print(warning[0])
+    if not warnings_touched:
+        print("None")
 
 
 def fail_if_regression(
@@ -68,7 +222,7 @@ def fail_if_regression(
             print(filename)
             for warning in warnings:
                 if filename in warning:
-                    if match := PATTERN.fullmatch(warning):
+                    if match := WARNING_PATTERN.fullmatch(warning):
                         print("  {line}: {msg}".format_map(match))
         return -1
     return 0
@@ -91,12 +245,14 @@ def fail_if_improved(
     return 0
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--check-and-annotate",
-        help="Comma-separated list of files to check, "
-        "and annotate those with warnings on GitHub Actions",
+        "--annotate-diff",
+        nargs="*",
+        metavar=("BASE_REF", "HEAD_REF"),
+        help="Add GitHub Actions annotations on the diff for warnings on "
+        "lines changed between the given refs (main and HEAD, by default)",
     )
     parser.add_argument(
         "--fail-if-regression",
@@ -108,13 +264,19 @@ def main() -> int:
         action="store_true",
         help="Fail if new files with no nits are found",
     )
-    args = parser.parse_args()
+
+    args = parser.parse_args(argv)
+    if args.annotate_diff is not None and len(args.annotate_diff) > 2:
+        parser.error(
+            "--annotate-diff takes between 0 and 2 ref args, not "
+            f"{len(args.annotate_diff)} {tuple(args.annotate_diff)}"
+        )
     exit_code = 0
 
     wrong_directory_msg = "Must run this script from the repo root"
     assert Path("Doc").exists() and Path("Doc").is_dir(), wrong_directory_msg
 
-    with Path("Doc/sphinx-warnings.txt").open() as f:
+    with Path("Doc/sphinx-warnings.txt").open(encoding="UTF-8") as f:
         warnings = f.read().splitlines()
 
     cwd = str(Path.cwd()) + os.path.sep
@@ -124,15 +286,15 @@ def main() -> int:
         if "Doc/" in warning
     }
 
-    with Path("Doc/tools/.nitignore").open() as clean_files:
+    with Path("Doc/tools/.nitignore").open(encoding="UTF-8") as clean_files:
         files_with_expected_nits = {
             filename.strip()
             for filename in clean_files
             if filename.strip() and not filename.startswith("#")
         }
 
-    if args.check_and_annotate:
-        check_and_annotate(warnings, args.check_and_annotate)
+    if args.annotate_diff is not None:
+        annotate_diff(warnings, *args.annotate_diff)
 
     if args.fail_if_regression:
         exit_code += fail_if_regression(

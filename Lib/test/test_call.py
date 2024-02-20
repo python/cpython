@@ -1,5 +1,6 @@
 import unittest
-from test.support import cpython_only, requires_limited_api
+from test.support import (cpython_only, is_wasi, requires_limited_api, Py_DEBUG,
+                          set_recursion_limit, skip_on_s390x)
 try:
     import _testcapi
 except ImportError:
@@ -65,7 +66,8 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, int.from_bytes, b'a', 'little', False)
 
     def test_varargs1min(self):
-        msg = r"get expected at least 1 argument, got 0"
+        msg = (r"get\(\) takes at least 1 argument \(0 given\)|"
+               r"get expected at least 1 argument, got 0")
         self.assertRaisesRegex(TypeError, msg, {}.get)
 
         msg = r"expected 1 argument, got 0"
@@ -76,11 +78,13 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, getattr)
 
     def test_varargs1max(self):
-        msg = r"input expected at most 1 argument, got 2"
+        msg = (r"input\(\) takes at most 1 argument \(2 given\)|"
+               r"input expected at most 1 argument, got 2")
         self.assertRaisesRegex(TypeError, msg, input, 1, 2)
 
     def test_varargs2max(self):
-        msg = r"get expected at most 2 arguments, got 3"
+        msg = (r"get\(\) takes at most 2 arguments \(3 given\)|"
+               r"get expected at most 2 arguments, got 3")
         self.assertRaisesRegex(TypeError, msg, {}.get, 1, 2, 3)
 
     def test_varargs1_kw(self):
@@ -96,7 +100,7 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, bool, x=2)
 
     def test_varargs4_kw(self):
-        msg = r"^list[.]index\(\) takes no keyword arguments$"
+        msg = r"^(list[.])?index\(\) takes no keyword arguments$"
         self.assertRaisesRegex(TypeError, msg, [].index, x=2)
 
     def test_varargs5_kw(self):
@@ -151,7 +155,7 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
                                min, 0, default=1, key=2, foo=3)
 
     def test_varargs17_kw(self):
-        msg = r"'foo' is an invalid keyword argument for print\(\)$"
+        msg = r"print\(\) got an unexpected keyword argument 'foo'$"
         self.assertRaisesRegex(TypeError, msg,
                                print, 0, sep=1, end=2, file=3, flush=4, foo=5)
 
@@ -916,8 +920,104 @@ class TestErrorMessagesUseQualifiedName(unittest.TestCase):
             A().method_two_args("x", "y", x="oops")
 
 @cpython_only
+class TestErrorMessagesSuggestions(unittest.TestCase):
+    @contextlib.contextmanager
+    def check_suggestion_includes(self, message):
+        with self.assertRaises(TypeError) as cm:
+            yield
+        self.assertIn(f"Did you mean '{message}'?", str(cm.exception))
+
+    @contextlib.contextmanager
+    def check_suggestion_not_present(self):
+        with self.assertRaises(TypeError) as cm:
+            yield
+        self.assertNotIn("Did you mean", str(cm.exception))
+
+    def test_unexpected_keyword_suggestion_valid_positions(self):
+        def foo(blech=None, /, aaa=None, *args, late1=None):
+            pass
+
+        cases = [
+            ("blach", None),
+            ("aa", "aaa"),
+            ("orgs", None),
+            ("late11", "late1"),
+        ]
+
+        for keyword, suggestion in cases:
+            with self.subTest(keyword):
+                ctx = self.check_suggestion_includes(suggestion) if suggestion else self.check_suggestion_not_present()
+                with ctx:
+                    foo(**{keyword:None})
+
+    def test_unexpected_keyword_suggestion_kinds(self):
+
+        def substitution(noise=None, more_noise=None, a = None, blech = None):
+            pass
+
+        def elimination(noise = None, more_noise = None, a = None, blch = None):
+            pass
+
+        def addition(noise = None, more_noise = None, a = None, bluchin = None):
+            pass
+
+        def substitution_over_elimination(blach = None, bluc = None):
+            pass
+
+        def substitution_over_addition(blach = None, bluchi = None):
+            pass
+
+        def elimination_over_addition(bluc = None, blucha = None):
+            pass
+
+        def case_change_over_substitution(BLuch=None, Luch = None, fluch = None):
+            pass
+
+        for func, suggestion in [
+            (addition, "bluchin"),
+            (substitution, "blech"),
+            (elimination, "blch"),
+            (addition, "bluchin"),
+            (substitution_over_elimination, "blach"),
+            (substitution_over_addition, "blach"),
+            (elimination_over_addition, "bluc"),
+            (case_change_over_substitution, "BLuch"),
+        ]:
+            with self.subTest(suggestion):
+                with self.check_suggestion_includes(suggestion):
+                    func(bluch=None)
+
+    def test_unexpected_keyword_suggestion_via_getargs(self):
+        with self.check_suggestion_includes("maxsplit"):
+            "foo".split(maxsplt=1)
+
+        self.assertRaisesRegex(
+            TypeError, r"split\(\) got an unexpected keyword argument 'blech'$",
+            "foo".split, blech=1
+        )
+        with self.check_suggestion_not_present():
+            "foo".split(blech=1)
+        with self.check_suggestion_not_present():
+            "foo".split(more_noise=1, maxsplt=1)
+
+        # Also test the vgetargskeywords path
+        with self.check_suggestion_includes("name"):
+            ImportError(namez="oops")
+
+        self.assertRaisesRegex(
+            TypeError, r"ImportError\(\) got an unexpected keyword argument 'blech'$",
+            ImportError, blech=1
+        )
+        with self.check_suggestion_not_present():
+            ImportError(blech=1)
+        with self.check_suggestion_not_present():
+            ImportError(blech=1, namez="oops")
+
+@cpython_only
 class TestRecursion(unittest.TestCase):
 
+    @skip_on_s390x
+    @unittest.skipIf(is_wasi and Py_DEBUG, "requires deep stack")
     def test_super_deep(self):
 
         def recurse(n):
@@ -938,9 +1038,7 @@ class TestRecursion(unittest.TestCase):
             if m:
                 _testcapi.pyobject_vectorcall(py_recurse, (1000, m), ())
 
-        depth = sys.getrecursionlimit()
-        sys.setrecursionlimit(100_000)
-        try:
+        with set_recursion_limit(100_000):
             recurse(90_000)
             with self.assertRaises(RecursionError):
                 recurse(101_000)
@@ -950,8 +1048,6 @@ class TestRecursion(unittest.TestCase):
             c_py_recurse(90)
             with self.assertRaises(RecursionError):
                 c_py_recurse(100_000)
-        finally:
-            sys.setrecursionlimit(depth)
 
 
 class TestFunctionWithManyArgs(unittest.TestCase):

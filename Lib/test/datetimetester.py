@@ -301,6 +301,10 @@ class TestTimeZone(unittest.TestCase):
         self.assertIsInstance(timezone.utc, tzinfo)
         self.assertIsInstance(self.EST, tzinfo)
 
+    def test_cannot_subclass(self):
+        with self.assertRaises(TypeError):
+            class MyTimezone(timezone): pass
+
     def test_utcoffset(self):
         dummy = self.DT
         for h in [0, 1.5, 12]:
@@ -1699,29 +1703,44 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         cls = self.theclass
         args = [1, 2, 3]
         base = cls(*args)
-        self.assertEqual(base, base.replace())
+        self.assertEqual(base.replace(), base)
+        self.assertEqual(copy.replace(base), base)
 
-        i = 0
-        for name, newval in (("year", 2),
-                             ("month", 3),
-                             ("day", 4)):
+        changes = (("year", 2),
+                   ("month", 3),
+                   ("day", 4))
+        for i, (name, newval) in enumerate(changes):
             newargs = args[:]
             newargs[i] = newval
             expected = cls(*newargs)
-            got = base.replace(**{name: newval})
-            self.assertEqual(expected, got)
-            i += 1
+            self.assertEqual(base.replace(**{name: newval}), expected)
+            self.assertEqual(copy.replace(base, **{name: newval}), expected)
 
         # Out of bounds.
         base = cls(2000, 2, 29)
         self.assertRaises(ValueError, base.replace, year=2001)
+        self.assertRaises(ValueError, copy.replace, base, year=2001)
 
     def test_subclass_replace(self):
         class DateSubclass(self.theclass):
-            pass
+            def __new__(cls, *args, **kwargs):
+                result = self.theclass.__new__(cls, *args, **kwargs)
+                result.extra = 7
+                return result
 
         dt = DateSubclass(2012, 1, 1)
-        self.assertIs(type(dt.replace(year=2013)), DateSubclass)
+
+        test_cases = [
+            ('self.replace', dt.replace(year=2013)),
+            ('copy.replace', copy.replace(dt, year=2013)),
+        ]
+
+        for name, res in test_cases:
+            with self.subTest(name):
+                self.assertIs(type(res), DateSubclass)
+                self.assertEqual(res.year, 2013)
+                self.assertEqual(res.month, 1)
+                self.assertEqual(res.extra, 7)
 
     def test_subclass_date(self):
 
@@ -2856,26 +2875,27 @@ class TestDateTime(TestDate):
         cls = self.theclass
         args = [1, 2, 3, 4, 5, 6, 7]
         base = cls(*args)
-        self.assertEqual(base, base.replace())
+        self.assertEqual(base.replace(), base)
+        self.assertEqual(copy.replace(base), base)
 
-        i = 0
-        for name, newval in (("year", 2),
-                             ("month", 3),
-                             ("day", 4),
-                             ("hour", 5),
-                             ("minute", 6),
-                             ("second", 7),
-                             ("microsecond", 8)):
+        changes = (("year", 2),
+                   ("month", 3),
+                   ("day", 4),
+                   ("hour", 5),
+                   ("minute", 6),
+                   ("second", 7),
+                   ("microsecond", 8))
+        for i, (name, newval) in enumerate(changes):
             newargs = args[:]
             newargs[i] = newval
             expected = cls(*newargs)
-            got = base.replace(**{name: newval})
-            self.assertEqual(expected, got)
-            i += 1
+            self.assertEqual(base.replace(**{name: newval}), expected)
+            self.assertEqual(copy.replace(base, **{name: newval}), expected)
 
         # Out of bounds.
         base = cls(2000, 2, 29)
         self.assertRaises(ValueError, base.replace, year=2001)
+        self.assertRaises(ValueError, copy.replace, base, year=2001)
 
     @support.run_with_tz('EDT4')
     def test_astimezone(self):
@@ -3017,6 +3037,26 @@ class TestDateTime(TestDate):
 
                 self.assertIsInstance(dt, DateTimeSubclass)
                 self.assertEqual(dt.extra, 7)
+
+    def test_subclass_replace_fold(self):
+        class DateTimeSubclass(self.theclass):
+            pass
+
+        dt = DateTimeSubclass(2012, 1, 1)
+        dt2 = DateTimeSubclass(2012, 1, 1, fold=1)
+
+        test_cases = [
+            ('self.replace', dt.replace(year=2013), 0),
+            ('self.replace', dt2.replace(year=2013), 1),
+            ('copy.replace', copy.replace(dt, year=2013), 0),
+            ('copy.replace', copy.replace(dt2, year=2013), 1),
+        ]
+
+        for name, res, fold in test_cases:
+            with self.subTest(name, fold=fold):
+                self.assertIs(type(res), DateTimeSubclass)
+                self.assertEqual(res.year, 2013)
+                self.assertEqual(res.fold, fold)
 
     def test_fromisoformat_datetime(self):
         # Test that isoformat() is reversible
@@ -3671,19 +3711,19 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         cls = self.theclass
         args = [1, 2, 3, 4]
         base = cls(*args)
-        self.assertEqual(base, base.replace())
+        self.assertEqual(base.replace(), base)
+        self.assertEqual(copy.replace(base), base)
 
-        i = 0
-        for name, newval in (("hour", 5),
-                             ("minute", 6),
-                             ("second", 7),
-                             ("microsecond", 8)):
+        changes = (("hour", 5),
+                   ("minute", 6),
+                   ("second", 7),
+                   ("microsecond", 8))
+        for i, (name, newval) in enumerate(changes):
             newargs = args[:]
             newargs[i] = newval
             expected = cls(*newargs)
-            got = base.replace(**{name: newval})
-            self.assertEqual(expected, got)
-            i += 1
+            self.assertEqual(base.replace(**{name: newval}), expected)
+            self.assertEqual(copy.replace(base, **{name: newval}), expected)
 
         # Out of bounds.
         base = cls(1)
@@ -3691,13 +3731,35 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         self.assertRaises(ValueError, base.replace, minute=-1)
         self.assertRaises(ValueError, base.replace, second=100)
         self.assertRaises(ValueError, base.replace, microsecond=1000000)
+        self.assertRaises(ValueError, copy.replace, base, hour=24)
+        self.assertRaises(ValueError, copy.replace, base, minute=-1)
+        self.assertRaises(ValueError, copy.replace, base, second=100)
+        self.assertRaises(ValueError, copy.replace, base, microsecond=1000000)
 
     def test_subclass_replace(self):
         class TimeSubclass(self.theclass):
-            pass
+            def __new__(cls, *args, **kwargs):
+                result = self.theclass.__new__(cls, *args, **kwargs)
+                result.extra = 7
+                return result
 
         ctime = TimeSubclass(12, 30)
-        self.assertIs(type(ctime.replace(hour=10)), TimeSubclass)
+        ctime2 = TimeSubclass(12, 30, fold=1)
+
+        test_cases = [
+            ('self.replace', ctime.replace(hour=10), 0),
+            ('self.replace', ctime2.replace(hour=10), 1),
+            ('copy.replace', copy.replace(ctime, hour=10), 0),
+            ('copy.replace', copy.replace(ctime2, hour=10), 1),
+        ]
+
+        for name, res, fold in test_cases:
+            with self.subTest(name, fold=fold):
+                self.assertIs(type(res), TimeSubclass)
+                self.assertEqual(res.hour, 10)
+                self.assertEqual(res.minute, 30)
+                self.assertEqual(res.extra, 7)
+                self.assertEqual(res.fold, fold)
 
     def test_subclass_time(self):
 
@@ -4085,31 +4147,37 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         zm200 = FixedOffset(timedelta(minutes=-200), "-200")
         args = [1, 2, 3, 4, z100]
         base = cls(*args)
-        self.assertEqual(base, base.replace())
+        self.assertEqual(base.replace(), base)
+        self.assertEqual(copy.replace(base), base)
 
-        i = 0
-        for name, newval in (("hour", 5),
-                             ("minute", 6),
-                             ("second", 7),
-                             ("microsecond", 8),
-                             ("tzinfo", zm200)):
+        changes = (("hour", 5),
+                   ("minute", 6),
+                   ("second", 7),
+                   ("microsecond", 8),
+                   ("tzinfo", zm200))
+        for i, (name, newval) in enumerate(changes):
             newargs = args[:]
             newargs[i] = newval
             expected = cls(*newargs)
-            got = base.replace(**{name: newval})
-            self.assertEqual(expected, got)
-            i += 1
+            self.assertEqual(base.replace(**{name: newval}), expected)
+            self.assertEqual(copy.replace(base, **{name: newval}), expected)
 
         # Ensure we can get rid of a tzinfo.
         self.assertEqual(base.tzname(), "+100")
         base2 = base.replace(tzinfo=None)
         self.assertIsNone(base2.tzinfo)
         self.assertIsNone(base2.tzname())
+        base22 = copy.replace(base, tzinfo=None)
+        self.assertIsNone(base22.tzinfo)
+        self.assertIsNone(base22.tzname())
 
         # Ensure we can add one.
         base3 = base2.replace(tzinfo=z100)
         self.assertEqual(base, base3)
         self.assertIs(base.tzinfo, base3.tzinfo)
+        base32 = copy.replace(base22, tzinfo=z100)
+        self.assertEqual(base, base32)
+        self.assertIs(base.tzinfo, base32.tzinfo)
 
         # Out of bounds.
         base = cls(1)
@@ -4117,6 +4185,10 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         self.assertRaises(ValueError, base.replace, minute=-1)
         self.assertRaises(ValueError, base.replace, second=100)
         self.assertRaises(ValueError, base.replace, microsecond=1000000)
+        self.assertRaises(ValueError, copy.replace, base, hour=24)
+        self.assertRaises(ValueError, copy.replace, base, minute=-1)
+        self.assertRaises(ValueError, copy.replace, base, second=100)
+        self.assertRaises(ValueError, copy.replace, base, microsecond=1000000)
 
     def test_mixed_compare(self):
         t1 = self.theclass(1, 2, 3)
@@ -4885,38 +4957,45 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
         zm200 = FixedOffset(timedelta(minutes=-200), "-200")
         args = [1, 2, 3, 4, 5, 6, 7, z100]
         base = cls(*args)
-        self.assertEqual(base, base.replace())
+        self.assertEqual(base.replace(), base)
+        self.assertEqual(copy.replace(base), base)
 
-        i = 0
-        for name, newval in (("year", 2),
-                             ("month", 3),
-                             ("day", 4),
-                             ("hour", 5),
-                             ("minute", 6),
-                             ("second", 7),
-                             ("microsecond", 8),
-                             ("tzinfo", zm200)):
+        changes = (("year", 2),
+                   ("month", 3),
+                   ("day", 4),
+                   ("hour", 5),
+                   ("minute", 6),
+                   ("second", 7),
+                   ("microsecond", 8),
+                   ("tzinfo", zm200))
+        for i, (name, newval) in enumerate(changes):
             newargs = args[:]
             newargs[i] = newval
             expected = cls(*newargs)
-            got = base.replace(**{name: newval})
-            self.assertEqual(expected, got)
-            i += 1
+            self.assertEqual(base.replace(**{name: newval}), expected)
+            self.assertEqual(copy.replace(base, **{name: newval}), expected)
 
         # Ensure we can get rid of a tzinfo.
         self.assertEqual(base.tzname(), "+100")
         base2 = base.replace(tzinfo=None)
         self.assertIsNone(base2.tzinfo)
         self.assertIsNone(base2.tzname())
+        base22 = copy.replace(base, tzinfo=None)
+        self.assertIsNone(base22.tzinfo)
+        self.assertIsNone(base22.tzname())
 
         # Ensure we can add one.
         base3 = base2.replace(tzinfo=z100)
         self.assertEqual(base, base3)
         self.assertIs(base.tzinfo, base3.tzinfo)
+        base32 = copy.replace(base22, tzinfo=z100)
+        self.assertEqual(base, base32)
+        self.assertIs(base.tzinfo, base32.tzinfo)
 
         # Out of bounds.
         base = cls(2000, 2, 29)
         self.assertRaises(ValueError, base.replace, year=2001)
+        self.assertRaises(ValueError, copy.replace, base, year=2001)
 
     def test_more_astimezone(self):
         # The inherited test_astimezone covered some trivial and error cases.
@@ -5406,42 +5485,50 @@ class TestTimezoneConversions(unittest.TestCase):
 
 class Oddballs(unittest.TestCase):
 
-    def test_bug_1028306(self):
+    def test_date_datetime_comparison(self):
+        # bpo-1028306, bpo-5516 (gh-49766)
         # Trying to compare a date to a datetime should act like a mixed-
         # type comparison, despite that datetime is a subclass of date.
         as_date = date.today()
         as_datetime = datetime.combine(as_date, time())
-        self.assertTrue(as_date != as_datetime)
-        self.assertTrue(as_datetime != as_date)
-        self.assertFalse(as_date == as_datetime)
-        self.assertFalse(as_datetime == as_date)
-        self.assertRaises(TypeError, lambda: as_date < as_datetime)
-        self.assertRaises(TypeError, lambda: as_datetime < as_date)
-        self.assertRaises(TypeError, lambda: as_date <= as_datetime)
-        self.assertRaises(TypeError, lambda: as_datetime <= as_date)
-        self.assertRaises(TypeError, lambda: as_date > as_datetime)
-        self.assertRaises(TypeError, lambda: as_datetime > as_date)
-        self.assertRaises(TypeError, lambda: as_date >= as_datetime)
-        self.assertRaises(TypeError, lambda: as_datetime >= as_date)
-
-        # Nevertheless, comparison should work with the base-class (date)
-        # projection if use of a date method is forced.
-        self.assertEqual(as_date.__eq__(as_datetime), True)
-        different_day = (as_date.day + 1) % 20 + 1
-        as_different = as_datetime.replace(day= different_day)
-        self.assertEqual(as_date.__eq__(as_different), False)
+        date_sc = SubclassDate(as_date.year, as_date.month, as_date.day)
+        datetime_sc = SubclassDatetime(as_date.year, as_date.month,
+                                       as_date.day, 0, 0, 0)
+        for d in (as_date, date_sc):
+            for dt in (as_datetime, datetime_sc):
+                for x, y in (d, dt), (dt, d):
+                    self.assertTrue(x != y)
+                    self.assertFalse(x == y)
+                    self.assertRaises(TypeError, lambda: x < y)
+                    self.assertRaises(TypeError, lambda: x <= y)
+                    self.assertRaises(TypeError, lambda: x > y)
+                    self.assertRaises(TypeError, lambda: x >= y)
 
         # And date should compare with other subclasses of date.  If a
         # subclass wants to stop this, it's up to the subclass to do so.
-        date_sc = SubclassDate(as_date.year, as_date.month, as_date.day)
-        self.assertEqual(as_date, date_sc)
-        self.assertEqual(date_sc, as_date)
-
         # Ditto for datetimes.
-        datetime_sc = SubclassDatetime(as_datetime.year, as_datetime.month,
-                                       as_date.day, 0, 0, 0)
-        self.assertEqual(as_datetime, datetime_sc)
-        self.assertEqual(datetime_sc, as_datetime)
+        for x, y in ((as_date, date_sc),
+                     (date_sc, as_date),
+                     (as_datetime, datetime_sc),
+                     (datetime_sc, as_datetime)):
+            self.assertTrue(x == y)
+            self.assertFalse(x != y)
+            self.assertFalse(x < y)
+            self.assertFalse(x > y)
+            self.assertTrue(x <= y)
+            self.assertTrue(x >= y)
+
+        # Nevertheless, comparison should work if other object is an instance
+        # of date or datetime class with overridden comparison operators.
+        # So special methods should return NotImplemented, as if
+        # date and datetime were independent classes.
+        for x, y in (as_date, as_datetime), (as_datetime, as_date):
+            self.assertEqual(x.__eq__(y), NotImplemented)
+            self.assertEqual(x.__ne__(y), NotImplemented)
+            self.assertEqual(x.__lt__(y), NotImplemented)
+            self.assertEqual(x.__gt__(y), NotImplemented)
+            self.assertEqual(x.__gt__(y), NotImplemented)
+            self.assertEqual(x.__ge__(y), NotImplemented)
 
     def test_extra_attributes(self):
         with self.assertWarns(DeprecationWarning):
