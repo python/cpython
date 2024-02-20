@@ -107,7 +107,6 @@
             _Py_UOpsSymType *value;
             _Py_UOpsSymType *res;
             value = stack_pointer[-1];
-            sym_set_type(value, &PyBool_Type);
             if (is_const(value)) {
                 int err = PyObject_IsTrue(get_const(value));
                 ERROR_IF(err < 0, error);
@@ -133,15 +132,8 @@
             value = stack_pointer[-1];
             sym_set_type(value, &PyLong_Type);
             if (is_const(value)) {
-                PyObject *temp = NULL;
-                if (_PyLong_IsZero((PyLongObject *)get_const(value))) {
-                    assert(_Py_IsImmortal(get_const(value)));
-                    temp = Py_False;
-                }
-                else {
-                    temp = Py_True;
-                }
-                res = sym_new_const(ctx, temp);
+                res = sym_new_const(ctx, _PyLong_IsZero((PyLongObject *)get_const(value))
+                                ? Py_False : Py_True);
             }
             else {
                 res = sym_new_known_type(ctx, &PyBool_Type);
@@ -155,12 +147,7 @@
             _Py_UOpsSymType *res;
             value = stack_pointer[-1];
             sym_set_type(value, &PyList_Type);
-            if (is_const(value)) {
-                res = sym_new_const(ctx, Py_SIZE(get_const(value)) ? Py_True : Py_False);
-            }
-            else {
-                res = sym_new_known_type(ctx, &PyBool_Type);
-            }
+            res = sym_new_known_type(ctx, &PyBool_Type);
             stack_pointer[-1] = res;
             break;
         }
