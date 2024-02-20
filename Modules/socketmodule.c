@@ -7927,6 +7927,9 @@ socket_exec(PyObject *m)
 #ifdef  SO_BINDTODEVICE
     ADD_INT_MACRO(m, SO_BINDTODEVICE);
 #endif
+#ifdef  SO_BINDTOIFINDEX
+    ADD_INT_MACRO(m, SO_BINDTOIFINDEX);
+#endif
 #ifdef  SO_PRIORITY
     ADD_INT_MACRO(m, SO_PRIORITY);
 #endif
