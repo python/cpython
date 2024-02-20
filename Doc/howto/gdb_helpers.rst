@@ -16,18 +16,24 @@ Python function is currently executing, or what type or value has a given
 Python object represented by a standard ``PyObject *`` pointer.
 We hereafter present two ways to overcome this limitation.
 
+This guide assumes you are familiar with GDB, and focuses on Python-specific
+details.
+
 
 Prerequisites
-===============
+=============
 
-You need to have GDB 7 or later, Python debugging information, and the
-``python-gdb.py`` extension.
-The extension is build with Python, but might be distributed separately or
+You need to have:
+
+- GDB 7 or later. (For earlier versions of GDB, see ``Misc/gdbinit`` in the
+  sources of Python 3.11 or earlier.)
+- GDB-compatible debugging information for Python and any extension you are
+  debugging.
+- The ``python-gdb.py`` extension.
+
+The extension is built with Python, but might be distributed separately or
 not at all. Below, we include tips for a few common systems as examples.
-Note that even if they match your system, they might be outdated.
-
-For earlier versions of GDB, see ``Misc/gdbinit`` in the sources of Python 3.11
-or earlier.
+Note that even if the instructions match your system, they might be outdated.
 
 
 Python built from source
@@ -45,7 +51,7 @@ with instructions on how to do this.
 .. note::
 
    If you do not seee instructionns for your version of GDB, put this in your
-   configuration file (``~/.gdbinit`` or ``~/.config/gdb/gdbinit``):
+   configuration file (``~/.gdbinit`` or ``~/.config/gdb/gdbinit``)::
 
       add-auto-load-safe-path /path/to/cpython
 
@@ -59,7 +65,7 @@ Most Linux systems provide debug information for the system Python
 in a package called ``python-debuginfo``, ``python-dbg`` or similar.
 For example:
 
-- Fedora::
+- Fedora:
 
    .. code-block:: shell
 
@@ -75,7 +81,22 @@ For example:
 On several recent Linux systems, GDB can download debugging symbols
 automatically using *debuginfod*.
 However, this will not install the ``python-gdb.py`` extension;
-you generally do need to install the debuginfo package separately.
+you generally do need to install the debug info package separately.
+
+
+Debug build and Development mode
+================================
+
+For easier debugging, you might want to:
+
+- Use a :ref:`debug build <debug-build>` of Python. (When building from source,
+  use ``configure --with-pydebug``. On Linux distros, install and run a package
+  like ``python-debug`` or ``python-dbg``, if available.)
+- Use the runtime :ref:`development mode <devmode>` (``-X dev``).
+
+Both enable extra assertions and disable some optimizations.
+Sometimes this hides the bug you are trying to find, but in most cases they
+make the process easier.
 
 
 Using the ``python-gdb`` extension
@@ -84,7 +105,7 @@ Using the ``python-gdb`` extension
 Pretty-printers
 ---------------
 
-This is what a backtrace looks like (truncated) when this extension is
+This is what a GDB backtrace looks like (truncated) when this extension is
 enabled::
 
    #0  0x000000000041a6b1 in PyObject_Malloc (nbytes=Cannot access memory at address 0x7fffff7fefe8
@@ -103,8 +124,8 @@ enabled::
        {'Yuck': <type at remote 0xad4730>, '__builtins__': <module at remote 0x7ffff7fd5ee8>, '__file__': 'Lib/test/crashers/nasty_eq_vs_dict.py', '__package__': None, 'y': <Yuck(i=0) at remote 0xaacd80>, 'dict': {0: 0, 1: 1, 2: 2, 3: 3}, '__cached__': None, '__name__': '__main__', 'z': <Yuck(i=0) at remote 0xaace60>, '__doc__': None}, key=
        0x5c2b8d "__lltrace__") at Objects/dictobject.c:2171
 
-(Notice how the dictionary argument to ``PyDict_GetItemString`` is displayed
-as its ``repr()``, rather than an opaque ``PyObject *`` pointer.)
+Notice how the dictionary argument to ``PyDict_GetItemString`` is displayed
+as its ``repr()``, rather than an opaque ``PyObject *`` pointer.
 
 The extension works by supplying a custom printing routine for values of type
 ``PyObject *``.  If you need to access lower-level details of an object, then
@@ -130,18 +151,21 @@ cast the value to a pointer of the appropriate type.  For example::
       me_hash = 6614918939584953775, me_key = '__package__', me_value = None}}}
 
 Note that the pretty-printers do not actually call ``repr()``.
-They merely try to match it closely, and they only work on basic core types.
+For basic types, they try to match its result closely.
 
 An area that can be confusing is that the custom printer for some types look a
-lot like gdb's built-in printer for standard types.  For example, the
-pretty-printer for a Python 3 ``int`` gives a ``repr()`` that is not
-distinguishable from a printing of a regular machine-level integer::
+lot like GDB's built-in printer for standard types.  For example, the
+pretty-printer for a Python ``int`` (:c:expr:`PyLongObject *`)
+gives a representation that is not distinguishable from one of a
+regular machine-level integer::
 
     (gdb) p some_machine_integer
     $3 = 42
 
     (gdb) p some_python_integer
     $4 = 42
+
+The internal structure can be revealed with a cast to :c:expr:`PyLongObject *`:
 
     (gdb) p *(PyLongObject*)some_python_integer
     $5 = {ob_base = {ob_base = {ob_refcnt = 8, ob_type = 0x3dad39f5e0}, ob_size = 1},
@@ -160,20 +184,18 @@ values uses double-quotes and contains a hexadecimal address::
     (gdb) p ptr_to_char_star
     $7 = 0x6d72c0 "hello world"
 
-Here's how to see the implementation details of a ``str`` instance (for Python
-3, where a ``str`` is a ``PyUnicodeObject *``)::
+Again, the implementation details can be revealed with a cast to
+:c:expr:`PyUnicodeObject *`::
 
     (gdb) p *(PyUnicodeObject*)$6
     $8 = {ob_base = {ob_refcnt = 33, ob_type = 0x3dad3a95a0}, length = 12,
     str = 0x7ffff2128500, hash = 7065186196740147912, state = 1, defenc = 0x0}
 
-As well as adding pretty-printing support for ``PyObject *``,
-the extension adds a number of commands to gdb:
-
 ``py-list``
 -----------
 
-   List the Python source code (if any) for the current frame in the selected
+   The extension adds a ``py-list`` command, which
+   lists the Python source code (if any) for the current frame in the selected
    thread.  The current line is marked with a ">"::
 
         (gdb) py-list
@@ -196,12 +218,11 @@ the extension adds a number of commands to gdb:
 ``py-up`` and ``py-down``
 -------------------------
 
-
-   The ``py-up`` and ``py-down`` commands are analogous to gdb's regular ``up``
+   The ``py-up`` and ``py-down`` commands are analogous to GDB's regular ``up``
    and ``down`` commands, but try to move at the level of CPython frames, rather
    than C frames.
 
-   gdb is not always able to read the relevant frame information, depending on
+   GDB is not always able to read the relevant frame information, depending on
    the optimization level with which CPython was compiled. Internally, the
    commands look for C frames that are executing the default frame evaluation
    function (that is, the core bytecode interpreter loop within CPython) and
@@ -224,9 +245,9 @@ the extension adds a number of commands to gdb:
 
    so we're at the top of the Python stack.
 
-   The frame numbers correspond to those displayed by gdb's standard
-   ``backtrace`` command.  The skipped frames correspond to C functions.
-   which were not found to be executing Python code.
+   The frame numbers correspond to those displayed by GDB's standard
+   ``backtrace`` command.
+   The command skips C frames which are not executing Python code.
 
    Going back down::
 
@@ -297,7 +318,7 @@ the extension adds a number of commands to gdb:
         #40 Frame 0x948e82c, for file /usr/lib/python2.6/site-packages/gnome_sudoku/gnome_sudoku.py, line 22, in start_game (main=<module at remote 0xb771b7f4>)
             main.start_game()
 
-   The frame numbers correspond to those displayed by gdb's standard
+   The frame numbers correspond to those displayed by GDB's standard
    ``backtrace`` command.
 
 ``py-print``
@@ -316,6 +337,9 @@ the extension adds a number of commands to gdb:
         builtin 'len' = <built-in function len>
         (gdb) py-print scarlet_pimpernel
         'scarlet_pimpernel' not found
+
+   If the current C frame corrresponds to multiple Python frames, ``py-print``
+   only considers the first one.
 
 ``py-locals``
 -------------
@@ -347,12 +371,12 @@ the extension adds a number of commands to gdb:
       Locals for <module>
 
 
-Other commands
---------------
+Use with GDB commands
+=====================·
 
-You can of course use other gdb commands.  For example, the ``frame`` command
-takes you directly to a particular frame within the selected thread.
-We can use it to go a specific frame shown by ``py-bt`` like this::
+The extension comands complement GDB's built-in commands.
+For example, you can use a frame numbers shown by ``py-bt`` with the ``frame``
+command to go a specific frame within the selected thread, like this::
 
         (gdb) py-bt
         (output snipped)
@@ -378,7 +402,7 @@ process, and you can use the ``thread`` command to select a different one::
         * 1 Thread 0x7ffff7fe2700 (LWP 10145)  0x00000038e46d73e3 in select () at ../sysdeps/unix/syscall-template.S:82
 
 You can use ``thread apply all COMMAND`` or (``t a a COMMAND`` for short) to run
-a command on all threads.  You can use this with ``py-bt`` to see what every
+a command on all threads.  With ``py-bt``, this lets you see what every
 thread is doing at the Python level::
 
         (gdb) t a a py-bt
