@@ -15,6 +15,7 @@ _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg)
     Py_VISIT(frame->f_locals);
     Py_VISIT(frame->f_funcobj);
     Py_VISIT(_PyFrame_GetCode(frame));
+    Py_VISIT(frame->f_names);
    /* locals */
     PyObject **locals = _PyFrame_GetLocalsArray(frame);
     int i = 0;
@@ -141,6 +142,7 @@ _PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
     }
     Py_XDECREF(frame->f_locals);
     Py_DECREF(frame->f_funcobj);
+    Py_XDECREF(frame->f_names);
 }
 
 /* Unstable API functions */

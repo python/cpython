@@ -4167,6 +4167,44 @@ dummy_func(
             frame->instr_ptr = (_Py_CODEUNIT *)instr_ptr;
         }
 
+        // Inlining prelude.
+        // Not too easy to express the stack effect.
+        op(_PRE_INLINE, (reconstructer/4 --)) {
+            // NULL out locals of the new inlined frame.
+            PyObject **end = frame->localsplus + oparg;
+            while (stack_pointer < end) {
+                *stack_pointer = NULL;
+                stack_pointer++;
+            }
+            assert((int64_t)reconstructer > 0);
+            frame->frame_reconstruction_inst = current_executor->trace + (int64_t)reconstructer;
+            CHECK_EVAL_BREAKER();
+        }
+
+        op(_SET_FRAME_NAMES, (names/4 --)) {
+            FRAME_CO_NAMES = Py_NewRef(names);
+        }
+
+        // Inlining postlude
+        op(_POST_INLINE, (reconstructer/4 -- retval)) {
+            // clear the locals
+            PyObject **end = frame->localsplus + oparg;
+            PyObject *ret = PEEK(1);
+            stack_pointer--;
+            while (stack_pointer > end) {
+                Py_CLEAR(stack_pointer[-1]);
+                stack_pointer--;
+            }
+            retval = ret;
+            frame->frame_reconstruction_inst = ((int64_t)reconstructer == -1
+                ? NULL
+                : current_executor->trace + (int64_t)reconstructer);
+            CHECK_EVAL_BREAKER();
+        }
+
+        op(_SETUP_TIER2_FRAME, (--)) {
+            DEOPT_IF(_PyFrame_ConvertToTier2(tstate, frame, oparg));
+        }
 // END BYTECODES //
 
     }

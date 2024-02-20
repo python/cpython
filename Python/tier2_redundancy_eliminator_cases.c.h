@@ -1760,3 +1760,24 @@
             break;
         }
 
+        case _PRE_INLINE: {
+            break;
+        }
+
+        case _SET_FRAME_NAMES: {
+            break;
+        }
+
+        case _POST_INLINE: {
+            _Py_UOpsSymType *retval;
+            retval = sym_new_unknown(ctx);
+            if (retval == NULL) goto out_of_space;
+            stack_pointer[0] = retval;
+            stack_pointer += 1;
+            break;
+        }
+
+        case _SETUP_TIER2_FRAME: {
+            break;
+        }
+

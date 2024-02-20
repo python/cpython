@@ -62,10 +62,13 @@ typedef struct _PyInterpreterFrame {
     PyObject *f_builtins; /* Borrowed reference. Only valid if not on C stack */
     PyObject *f_locals; /* Strong reference, may be NULL. Only valid if not on C stack */
     PyFrameObject *frame_obj; /* Strong reference, may be NULL. Only valid if not on C stack */
+    PyObject *f_names; /* Strong reference. Only valid if not on C stack */
     _Py_CODEUNIT *instr_ptr; /* Instruction currently executing (or about to begin) */
     int stacktop;  /* Offset of TOS from localsplus  */
     uint16_t return_offset;  /* Only relevant during a function call */
+    uint16_t tier2_extra_size; /* How many extra entries is at the end of localsplus for tier 2 inlining */
     char owner;
+    void *frame_reconstruction_inst; /* _PyUopInstruction - Instructions to execute for frame reconstruction. Only if frame is tier 2. */
     /* Locals and stack */
     PyObject *localsplus[1];
 } _PyInterpreterFrame;
@@ -131,6 +134,11 @@ _PyFrame_Initialize(
     frame->instr_ptr = _PyCode_CODE(code);
     frame->return_offset = 0;
     frame->owner = FRAME_OWNED_BY_THREAD;
+    frame->tier2_extra_size = 0;
+    // Note: it should be fine to take the code object's because
+    // f_code on frames are not writeable to users in Python.
+    frame->f_names = Py_NewRef(code->co_names);
+    frame->frame_reconstruction_inst = NULL;
 
     for (int i = null_locals_from; i < code->co_nlocalsplus; i++) {
         frame->localsplus[i] = NULL;
@@ -258,6 +266,44 @@ _PyThreadState_PushFrame(PyThreadState *tstate, size_t size);
 
 void _PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame *frame);
 
+/* Adds stack space at the end of the current frame for Tier 2 execution.
+ * The frame that is being expanded MUST be the current executing frame, and
+ * it must be at the top of the datastack.
+ * */
+static inline void
+_PyFrame_GrowLocalsPlus(PyThreadState *tstate, _PyInterpreterFrame *frame, int size)
+{
+    assert(_PyThreadState_HasStackSpace(tstate, size));
+    assert(tstate->current_frame == frame);
+    // Make sure we are the top frame.
+    assert((PyObject **)frame + _PyFrame_GetCode(frame)->co_framesize ==
+           tstate->datastack_top);
+    tstate->datastack_top += size;
+    assert(tstate->datastack_top < tstate->datastack_limit);
+}
+
+
+/* Converts a frame from tier 1 to tier 2.
+ * */
+static inline int
+_PyFrame_ConvertToTier2(PyThreadState *tstate, _PyInterpreterFrame *frame,
+                        int localsplus_grow)
+{
+    if (frame->owner != FRAME_OWNED_BY_THREAD) {
+        return 1;
+    }
+    // Already grown previously
+    if (frame->tier2_extra_size >= localsplus_grow) {
+        return 0;
+    }
+    if (!_PyThreadState_HasStackSpace(tstate, localsplus_grow)) {
+        return 1;
+    }
+    _PyFrame_GrowLocalsPlus(tstate, frame, localsplus_grow);
+    frame->tier2_extra_size += localsplus_grow;
+    return 0;
+}
+
 /* Pushes a frame without checking for space.
  * Must be guarded by _PyThreadState_HasStackSpace()
  * Consumes reference to func. */
@@ -288,6 +334,7 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     frame->f_builtins = NULL;
     frame->f_globals = NULL;
 #endif
+    frame->f_names = Py_NewRef(code->co_names);
     frame->f_locals = NULL;
     frame->stacktop = code->co_nlocalsplus + stackdepth;
     frame->frame_obj = NULL;

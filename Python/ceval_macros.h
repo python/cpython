@@ -237,7 +237,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 
 /* Data access macros */
 #define FRAME_CO_CONSTS (_PyFrame_GetCode(frame)->co_consts)
-#define FRAME_CO_NAMES  (_PyFrame_GetCode(frame)->co_names)
+#define FRAME_CO_NAMES  (frame->f_names)
 
 /* Local variable macros */
 

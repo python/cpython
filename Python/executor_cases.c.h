@@ -3874,4 +3874,53 @@
             break;
         }
 
+        case _PRE_INLINE: {
+            oparg = CURRENT_OPARG();
+            PyObject *reconstructer = (PyObject *)CURRENT_OPERAND();
+            // NULL out locals of the new inlined frame.
+            PyObject **end = frame->localsplus + oparg;
+            while (stack_pointer < end) {
+                *stack_pointer = NULL;
+                stack_pointer++;
+            }
+            assert((int64_t)reconstructer > 0);
+            frame->frame_reconstruction_inst = current_executor->trace + (int64_t)reconstructer;
+            CHECK_EVAL_BREAKER();
+            break;
+        }
+
+        case _SET_FRAME_NAMES: {
+            PyObject *names = (PyObject *)CURRENT_OPERAND();
+            FRAME_CO_NAMES = Py_NewRef(names);
+            break;
+        }
+
+        case _POST_INLINE: {
+            PyObject *retval;
+            oparg = CURRENT_OPARG();
+            PyObject *reconstructer = (PyObject *)CURRENT_OPERAND();
+            // clear the locals
+            PyObject **end = frame->localsplus + oparg;
+            PyObject *ret = PEEK(1);
+            stack_pointer--;
+            while (stack_pointer > end) {
+                Py_CLEAR(stack_pointer[-1]);
+                stack_pointer--;
+            }
+            retval = ret;
+            frame->frame_reconstruction_inst = ((int64_t)reconstructer == -1
+                ? NULL
+            : current_executor->trace + (int64_t)reconstructer);
+            stack_pointer[0] = retval;
+            stack_pointer += 1;
+            CHECK_EVAL_BREAKER();
+            break;
+        }
+
+        case _SETUP_TIER2_FRAME: {
+            oparg = CURRENT_OPARG();
+            if (_PyFrame_ConvertToTier2(tstate, frame, oparg)) goto deoptimize;
+            break;
+        }
+
 #undef TIER_TWO
