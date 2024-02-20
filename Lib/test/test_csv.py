@@ -179,6 +179,7 @@ class Test_Csv(unittest.TestCase):
             def __str__(self):
                 raise OSError
         self._write_error_test(OSError, [BadItem()])
+
     def test_write_bigfield(self):
         # This exercises the buffer realloc functionality
         bigstring = 'X' * 50000
@@ -280,7 +281,6 @@ class Test_Csv(unittest.TestCase):
             writer.writerows([['a'], [None]])
             fileobj.seek(0)
             self.assertEqual(fileobj.read(), 'a\r\n""\r\n')
-
 
     def test_write_empty_fields(self):
         self._write_test((), '')

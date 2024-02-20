@@ -1253,7 +1253,6 @@ csv_writerow(WriterObj *self, PyObject *seq)
 {
     DialectObj *dialect = self->dialect;
     PyObject *iter, *field, *line, *result;
-    bool null_field = false;
 
     iter = PyObject_GetIter(seq);
     if (iter == NULL) {
@@ -1284,12 +1283,11 @@ csv_writerow(WriterObj *self, PyObject *seq)
             break;
         }
 
-        null_field = (field == Py_None);
         if (PyUnicode_Check(field)) {
             append_ok = join_append(self, field, quoted);
             Py_DECREF(field);
         }
-        else if (null_field) {
+        else if (field == Py_None) {
             append_ok = join_append(self, NULL, quoted);
             Py_DECREF(field);
         }
