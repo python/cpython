@@ -169,7 +169,6 @@ extern int PyObject_stginfo(PyObject *self, Py_ssize_t *psize, Py_ssize_t *palig
 
 
 
-extern PyTypeObject PyCData_Type;
 #define CDataObject_CheckExact(st, v)  Py_IS_TYPE((v), (st)->PyCData_Type)
 #define CDataObject_Check(st, v)       PyObject_TypeCheck((v), (st)->PyCData_Type)
 #define _CDataObject_HasExternalBuffer(v)  ((v)->b_ptr != (char *)&(v)->b_value)
@@ -188,10 +187,6 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
 
 extern PyObject *PyCData_AtAddress(PyObject *type, void *buf);
 extern PyObject *PyCData_FromBytes(PyObject *type, char *data, Py_ssize_t length);
-
-extern PyTypeObject PyCArray_Type;
-extern PyTypeObject PyCPointer_Type;
-extern PyTypeObject PyCFuncPtr_Type;
 
 #define PyCArrayTypeObject_Check(st, v)   PyObject_TypeCheck((v), (st)->PyCArrayType_Type)
 #define ArrayObject_Check(st, v)          PyObject_TypeCheck((v), (st)->PyCArray_Type)

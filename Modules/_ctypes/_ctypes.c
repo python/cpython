@@ -128,19 +128,34 @@ bytes(cdata)
 
 #include "pycore_long.h"          // _PyLong_GetZero()
 
-static PyTypeObject Union_Type;
-static PyTypeObject Struct_Type;
-static PyTypeObject Simple_Type;
+/* Allow defining static types that have space for StgInfo at the end.
+ * These should all be converted to actual heap types that
+ * honor tp_basicsize of their metaclass!
+ */
+typedef struct {
+    PyHeapTypeObject ht;
+    StgInfo info;
+} _HackyHeapType;
+
+static _HackyHeapType PyCData_Type;
+static _HackyHeapType PyCData_Type;
+static _HackyHeapType Union_Type;
+static _HackyHeapType Struct_Type;
+static _HackyHeapType Simple_Type;
+static _HackyHeapType PyCArray_Type;
+static _HackyHeapType PyCPointer_Type;
+static _HackyHeapType PyCFuncPtr_Type;
+
 
 ctypes_state global_state = {
     .PyCStgDict_Type = &PyCStgDict_Type,
-    .PyCData_Type = &PyCData_Type,
-    .Struct_Type = &Struct_Type,
-    .Union_Type = &Union_Type,
-    .PyCArray_Type = &PyCArray_Type,
-    .Simple_Type = &Simple_Type,
-    .PyCPointer_Type = &PyCPointer_Type,
-    .PyCFuncPtr_Type = &PyCFuncPtr_Type,
+    .PyCData_Type = (PyTypeObject*)&PyCData_Type,
+    .Struct_Type = (PyTypeObject*)&Struct_Type,
+    .Union_Type = (PyTypeObject*)&Union_Type,
+    .PyCArray_Type = (PyTypeObject*)&PyCArray_Type,
+    .Simple_Type = (PyTypeObject*)&Simple_Type,
+    .PyCPointer_Type = (PyTypeObject*)&PyCPointer_Type,
+    .PyCFuncPtr_Type = (PyTypeObject*)&PyCFuncPtr_Type,
 };
 
 PyObject *PyExc_ArgError = NULL;
@@ -2979,7 +2994,9 @@ static PyMethodDef PyCData_methods[] = {
     { NULL, NULL },
 };
 
-PyTypeObject PyCData_Type = {
+static _HackyHeapType PyCData_Type = {
+ .ht = {
+  .ht_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_ctypes._CData",
     sizeof(CDataObject),                        /* tp_basicsize */
@@ -3019,6 +3036,8 @@ PyTypeObject PyCData_Type = {
     0,                                          /* tp_alloc */
     0,                                          /* tp_new */
     0,                                          /* tp_free */
+  }
+ }
 };
 
 static int
@@ -4405,7 +4424,9 @@ static PyNumberMethods PyCFuncPtr_as_number = {
     (inquiry)PyCFuncPtr_bool, /* nb_bool */
 };
 
-PyTypeObject PyCFuncPtr_Type = {
+static _HackyHeapType PyCFuncPtr_Type = {
+ .ht = {
+  .ht_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_ctypes.CFuncPtr",
     sizeof(PyCFuncPtrObject),                           /* tp_basicsize */
@@ -4445,6 +4466,8 @@ PyTypeObject PyCFuncPtr_Type = {
     0,                                          /* tp_alloc */
     PyCFuncPtr_new,                             /* tp_new */
     0,                                          /* tp_free */
+  }
+ }
 };
 
 /*****************************************************************/
@@ -4565,7 +4588,9 @@ Struct_init(PyObject *self, PyObject *args, PyObject *kwds)
     return 0;
 }
 
-static PyTypeObject Struct_Type = {
+static _HackyHeapType Struct_Type = {
+ .ht = {
+  .ht_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_ctypes.Structure",
     sizeof(CDataObject),                        /* tp_basicsize */
@@ -4605,9 +4630,13 @@ static PyTypeObject Struct_Type = {
     0,                                          /* tp_alloc */
     GenericPyCData_new,                         /* tp_new */
     0,                                          /* tp_free */
+  }
+ }
 };
 
-static PyTypeObject Union_Type = {
+static _HackyHeapType Union_Type = {
+ .ht = {
+  .ht_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_ctypes.Union",
     sizeof(CDataObject),                        /* tp_basicsize */
@@ -4647,6 +4676,8 @@ static PyTypeObject Union_Type = {
     0,                                          /* tp_alloc */
     GenericPyCData_new,                         /* tp_new */
     0,                                          /* tp_free */
+  }
+ }
 };
 
 
@@ -4956,7 +4987,9 @@ PyDoc_STRVAR(array_doc,
 "reads, the resulting object is not itself an Array."
 );
 
-PyTypeObject PyCArray_Type = {
+static _HackyHeapType PyCArray_Type = {
+ .ht = {
+  .ht_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_ctypes.Array",
     sizeof(CDataObject),                        /* tp_basicsize */
@@ -4996,6 +5029,8 @@ PyTypeObject PyCArray_Type = {
     0,                                          /* tp_alloc */
     GenericPyCData_new,                         /* tp_new */
     0,                                          /* tp_free */
+  }
+ }
 };
 
 PyObject *
@@ -5179,7 +5214,9 @@ Simple_repr(CDataObject *self)
     return result;
 }
 
-static PyTypeObject Simple_Type = {
+static _HackyHeapType Simple_Type = {
+ .ht = {
+  .ht_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_ctypes._SimpleCData",
     sizeof(CDataObject),                        /* tp_basicsize */
@@ -5219,6 +5256,8 @@ static PyTypeObject Simple_Type = {
     0,                                          /* tp_alloc */
     GenericPyCData_new,                         /* tp_new */
     0,                                          /* tp_free */
+  }
+ }
 };
 
 /******************************************************************/
@@ -5603,7 +5642,9 @@ static PyNumberMethods Pointer_as_number = {
     (inquiry)Pointer_bool, /* nb_bool */
 };
 
-PyTypeObject PyCPointer_Type = {
+static _HackyHeapType PyCPointer_Type = {
+ .ht = {
+  .ht_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_ctypes._Pointer",
     sizeof(CDataObject),                        /* tp_basicsize */
@@ -5643,6 +5684,8 @@ PyTypeObject PyCPointer_Type = {
     0,                                          /* tp_alloc */
     Pointer_new,                                /* tp_new */
     0,                                          /* tp_free */
+  }
+ }
 };
 
 
