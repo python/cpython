@@ -55,11 +55,11 @@ Up to the prompt, the output from the above is:
 
     To: Penelope Pussycat <penelope@example.com>, Fabrette Pussycat <fabrette@example.com>
     From: Pepé Le Pew <pepe@example.com>
-    Subject: Ayons asperges pour le déjeuner
+    Subject: Pourquoi pas des asperges pour ce midi ?
 
     Salut!
 
-    Cela ressemble à un excellent recipie[1] déjeuner.
+    Cette recette [1] sera sûrement un très bon repas.
 
 
 .. rubric:: Footnotes

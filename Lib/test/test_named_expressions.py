@@ -298,6 +298,16 @@ class NamedExpressionInvalidTest(unittest.TestCase):
                 with self.assertRaisesRegex(SyntaxError, msg):
                     exec(f"lambda: {code}", {}) # Function scope
 
+    def test_named_expression_invalid_mangled_class_variables(self):
+        code = """class Foo:
+            def bar(self):
+                [[(__x:=2) for _ in range(2)] for __x in range(2)]
+        """
+
+        with self.assertRaisesRegex(SyntaxError,
+            "assignment expression cannot rebind comprehension iteration variable '__x'"):
+            exec(code, {}, {})
+
 
 class NamedExpressionAssignmentTest(unittest.TestCase):
 
@@ -674,6 +684,18 @@ spam()"""
         for idx, elem in enumerate(genexp):
             self.assertEqual(elem, b[idx] + a)
 
+    def test_named_expression_scope_mangled_names(self):
+        class Foo:
+            def f(self_):
+                global __x1
+                __x1 = 0
+                [_Foo__x1 := 1 for a in [2]]
+                self.assertEqual(__x1, 1)
+                [__x1 := 2 for a in [3]]
+                self.assertEqual(__x1, 2)
+
+        Foo().f()
+        self.assertEqual(_Foo__x1, 2)
 
 if __name__ == "__main__":
     unittest.main()

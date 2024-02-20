@@ -1,5 +1,0 @@
-Added C API for extending types whose instance memory layout is opaque:
-:c:member:`PyType_Spec.basicsize` can now be zero or negative,
-:c:func:`PyObject_GetTypeData` can be used to get subclass-specific data,
-and :c:macro:`Py_TPFLAGS_ITEMS_AT_END` can be used to safely extend
-variable-size objects. See :pep:`697` for details.

@@ -73,12 +73,12 @@ decompression bomb         Safe                Safe                Safe         
 1. Expat 2.4.1 and newer is not vulnerable to the "billion laughs" and
    "quadratic blowup" vulnerabilities. Items still listed as vulnerable due to
    potential reliance on system-provided libraries. Check
-   :data:`pyexpat.EXPAT_VERSION`.
+   :const:`!pyexpat.EXPAT_VERSION`.
 2. :mod:`xml.etree.ElementTree` doesn't expand external entities and raises a
-   :exc:`ParserError` when an entity occurs.
+   :exc:`~xml.etree.ElementTree.ParseError` when an entity occurs.
 3. :mod:`xml.dom.minidom` doesn't expand external entities and simply returns
    the unexpanded entity verbatim.
-4. :mod:`xmlrpclib` doesn't expand external entities and omits them.
+4. :mod:`xmlrpc.client` doesn't expand external entities and omits them.
 5. Since Python 3.7.1, external general entities are no longer processed by
    default.
 
@@ -119,8 +119,8 @@ all known attack vectors with examples and references.
 
 .. _defusedxml-package:
 
-The :mod:`defusedxml` Package
-------------------------------------------------------
+The :mod:`!defusedxml` Package
+------------------------------
 
 `defusedxml`_ is a pure Python package with modified subclasses of all stdlib
 XML parsers that prevent any potentially malicious operation. Use of this

@@ -4,11 +4,12 @@
 extern "C" {
 #endif
 
-#include "pycore_moduleobject.h"
-
 #ifndef Py_BUILD_CORE
 #  error "this header requires Py_BUILD_CORE define"
 #endif
+
+#include "pycore_moduleobject.h"  // PyModuleObject
+#include "pycore_lock.h"          // PyMutex
 
 
 /* state */
@@ -28,6 +29,9 @@ struct _types_runtime_state {
 // see _PyType_Lookup().
 struct type_cache_entry {
     unsigned int version;  // initialized from type->tp_version_tag
+#ifdef Py_GIL_DISABLED
+   _PySeqLock sequence;
+#endif
     PyObject *name;        // reference to exactly a str or None
     PyObject *value;       // borrowed reference or NULL
 };
@@ -46,11 +50,9 @@ typedef struct {
     PyTypeObject *type;
     int readying;
     int ready;
-    // XXX tp_dict, tp_bases, and tp_mro can probably be statically
-    // allocated, instead of dynamically and stored on the interpreter.
+    // XXX tp_dict can probably be statically allocated,
+    // instead of dynamically and stored on the interpreter.
     PyObject *tp_dict;
-    PyObject *tp_bases;
-    PyObject *tp_mro;
     PyObject *tp_subclasses;
     /* We never clean up weakrefs for static builtin types since
        they will effectively never get triggered.  However, there
@@ -68,6 +70,7 @@ struct types_state {
     struct type_cache type_cache;
     size_t num_builtins_initialized;
     static_builtin_state builtins[_Py_MAX_STATIC_BUILTIN_TYPES];
+    PyMutex mutex;
 };
 
 
@@ -76,7 +79,7 @@ struct types_state {
 extern PyStatus _PyTypes_InitTypes(PyInterpreterState *);
 extern void _PyTypes_FiniTypes(PyInterpreterState *);
 extern void _PyTypes_Fini(PyInterpreterState *);
-
+extern void _PyTypes_AfterFork(void);
 
 /* other API */
 
@@ -116,7 +119,10 @@ extern static_builtin_state * _PyStaticType_GetState(PyInterpreterState *, PyTyp
 extern void _PyStaticType_ClearWeakRefs(PyInterpreterState *, PyTypeObject *type);
 extern void _PyStaticType_Dealloc(PyInterpreterState *, PyTypeObject *);
 
+// Export for 'math' shared extension, used via _PyType_IsReady() static inline
+// function
 PyAPI_FUNC(PyObject *) _PyType_GetDict(PyTypeObject *);
+
 extern PyObject * _PyType_GetBases(PyTypeObject *type);
 extern PyObject * _PyType_GetMRO(PyTypeObject *type);
 extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
@@ -130,20 +136,24 @@ _PyType_IsReady(PyTypeObject *type)
     return _PyType_GetDict(type) != NULL;
 }
 
-PyObject *
-_Py_type_getattro_impl(PyTypeObject *type, PyObject *name, int *suppress_missing_attribute);
-PyObject *
-_Py_type_getattro(PyTypeObject *type, PyObject *name);
+extern PyObject* _Py_type_getattro_impl(PyTypeObject *type, PyObject *name,
+                                        int *suppress_missing_attribute);
+extern PyObject* _Py_type_getattro(PyObject *type, PyObject *name);
 
-PyObject *_Py_slot_tp_getattro(PyObject *self, PyObject *name);
-PyObject *_Py_slot_tp_getattr_hook(PyObject *self, PyObject *name);
+extern PyObject* _Py_BaseObject_RichCompare(PyObject* self, PyObject* other, int op);
 
-PyAPI_DATA(PyTypeObject) _PyBufferWrapper_Type;
+extern PyObject* _Py_slot_tp_getattro(PyObject *self, PyObject *name);
+extern PyObject* _Py_slot_tp_getattr_hook(PyObject *self, PyObject *name);
 
-PyObject *
-_PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj, PyObject *name, int *meth_found);
-PyObject *
-_PySuper_LookupDescr(PyTypeObject *su_type, PyObject *su_obj, PyObject *name);
+extern PyTypeObject _PyBufferWrapper_Type;
+
+extern PyObject* _PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj,
+                                 PyObject *name, int *meth_found);
+
+
+// This is exported for the _testinternalcapi module.
+PyAPI_FUNC(PyObject *) _PyType_GetModuleName(PyTypeObject *);
+
 
 #ifdef __cplusplus
 }
