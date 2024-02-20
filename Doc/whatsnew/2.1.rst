@@ -424,7 +424,8 @@ PEP 232: Function Attributes
 
 In Python 2.1, functions can now have arbitrary information attached to them.
 People were often using docstrings to hold information about functions and
-methods, because the ``__doc__`` attribute was the only way of attaching any
+methods, because the :attr:`~function.__doc__` attribute was the only way of
+attaching any
 information to a function.  For example, in the Zope web application server,
 functions are marked as safe for public access by having a docstring, and in
 John Aycock's SPARK parsing framework, docstrings hold parts of the BNF grammar
@@ -613,7 +614,7 @@ New and Improved Modules
   framework based on running embedded examples in docstrings and comparing the
   results against the expected output.  PyUnit, contributed by Steve Purcell, is a
   unit testing framework inspired by JUnit, which was in turn an adaptation of
-  Kent Beck's Smalltalk testing framework.  See http://pyunit.sourceforge.net/ for
+  Kent Beck's Smalltalk testing framework.  See https://pyunit.sourceforge.net/ for
   more information about PyUnit.
 
 * The :mod:`difflib` module contains a class, :class:`SequenceMatcher`, which
@@ -692,8 +693,8 @@ applied, and 136 bugs fixed; both figures are likely to be underestimates.  Some
 of the more notable changes are:
 
 * A specialized object allocator is now optionally available, that should be
-  faster than the system :func:`malloc` and have less memory overhead.  The
-  allocator uses C's :func:`malloc` function to get large pools of memory, and
+  faster than the system :c:func:`malloc` and have less memory overhead.  The
+  allocator uses C's :c:func:`!malloc` function to get large pools of memory, and
   then fulfills smaller memory requests from these pools.  It can be enabled by
   providing the :option:`!--with-pymalloc` option to the :program:`configure`
   script; see :file:`Objects/obmalloc.c` for the implementation details.
@@ -701,13 +702,13 @@ of the more notable changes are:
   Authors of C extension modules should test their code with the object allocator
   enabled, because some incorrect code may break, causing core dumps at runtime.
   There are a bunch of memory allocation functions in Python's C API that have
-  previously been just aliases for the C library's :func:`malloc` and
-  :func:`free`, meaning that if you accidentally called mismatched functions, the
+  previously been just aliases for the C library's :c:func:`malloc` and
+  :c:func:`free`, meaning that if you accidentally called mismatched functions, the
   error wouldn't be noticeable.  When the object allocator is enabled, these
-  functions aren't aliases of :func:`malloc` and :func:`free` any more, and
+  functions aren't aliases of :c:func:`!malloc` and :c:func:`!free` any more, and
   calling the wrong function to free memory will get you a core dump.  For
-  example, if memory was allocated using :func:`PyMem_New`, it has to be freed
-  using :func:`PyMem_Del`, not :func:`free`.  A few modules included with Python
+  example, if memory was allocated using :c:macro:`PyMem_New`, it has to be freed
+  using :c:func:`PyMem_Del`, not :c:func:`!free`.  A few modules included with Python
   fell afoul of this and had to be fixed; doubtless there are more third-party
   modules that will have the same problem.
 
@@ -717,7 +718,7 @@ of the more notable changes are:
   complain about its lack of speed, and because it's often been used as a naïve
   benchmark.  The :meth:`readline` method of file objects has therefore been
   rewritten to be much faster.  The exact amount of the speedup will vary from
-  platform to platform depending on how slow the C library's :func:`getc` was, but
+  platform to platform depending on how slow the C library's :c:func:`!getc` was, but
   is around 66%, and potentially much faster on some particular operating systems.
   Tim Peters did much of the benchmarking and coding for this change, motivated by
   a discussion in comp.lang.python.
@@ -770,7 +771,7 @@ of the more notable changes are:
   reorganization done by Jeremy Hylton.
 
 * C extensions which import other modules have been changed to use
-  :func:`PyImport_ImportModule`, which means that they will use any import hooks
+  :c:func:`PyImport_ImportModule`, which means that they will use any import hooks
   that have been installed.  This is also encouraged for third-party extensions
   that need to import some other module from C code.
 

@@ -15,7 +15,7 @@
 The :mod:`email` package is a library for managing email messages.  It is
 specifically *not* designed to do any sending of email messages to SMTP
 (:rfc:`2821`), NNTP, or other servers; those are functions of modules such as
-:mod:`smtplib` and :mod:`nntplib`.  The :mod:`email` package attempts to be as
+:mod:`smtplib`.  The :mod:`email` package attempts to be as
 RFC-compliant as possible, supporting :rfc:`5322` and :rfc:`6532`, as well as
 such MIME-related RFCs as :rfc:`2045`, :rfc:`2046`, :rfc:`2047`, :rfc:`2183`,
 and :rfc:`2231`.
@@ -140,9 +140,6 @@ Legacy API:
 
    Module :mod:`imaplib`
       IMAP (Internet Message Access Protocol) client
-
-   Module :mod:`nntplib`
-      NNTP (Net News Transport Protocol) client
 
    Module :mod:`mailbox`
       Tools for creating, reading, and managing collections of messages on disk

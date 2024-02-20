@@ -50,7 +50,7 @@ See also :ref:`Reflection <reflection>`.
 
 .. c:function:: PyObject* PyFrame_GetBuiltins(PyFrameObject *frame)
 
-   Get the *frame*'s ``f_builtins`` attribute.
+   Get the *frame*'s :attr:`~frame.f_builtins` attribute.
 
    Return a :term:`strong reference`. The result cannot be ``NULL``.
 
@@ -81,7 +81,7 @@ See also :ref:`Reflection <reflection>`.
 
 .. c:function:: PyObject* PyFrame_GetGlobals(PyFrameObject *frame)
 
-   Get the *frame*'s ``f_globals`` attribute.
+   Get the *frame*'s :attr:`~frame.f_globals` attribute.
 
    Return a :term:`strong reference`. The result cannot be ``NULL``.
 
@@ -90,7 +90,7 @@ See also :ref:`Reflection <reflection>`.
 
 .. c:function:: int PyFrame_GetLasti(PyFrameObject *frame)
 
-   Get the *frame*'s ``f_lasti`` attribute.
+   Get the *frame*'s :attr:`~frame.f_lasti` attribute.
 
    Returns -1 if ``frame.f_lasti`` is ``None``.
 
@@ -120,7 +120,7 @@ See also :ref:`Reflection <reflection>`.
 
 .. c:function:: PyObject* PyFrame_GetLocals(PyFrameObject *frame)
 
-   Get the *frame*'s ``f_locals`` attribute (:class:`dict`).
+   Get the *frame*'s :attr:`~frame.f_locals` attribute (:class:`dict`).
 
    Return a :term:`strong reference`.
 
@@ -130,3 +130,38 @@ See also :ref:`Reflection <reflection>`.
 .. c:function:: int PyFrame_GetLineNumber(PyFrameObject *frame)
 
    Return the line number that *frame* is currently executing.
+
+
+
+Internal Frames
+^^^^^^^^^^^^^^^
+
+Unless using :pep:`523`, you will not need this.
+
+.. c:struct:: _PyInterpreterFrame
+
+   The interpreter's internal frame representation.
+
+   .. versionadded:: 3.11
+
+.. c:function:: PyObject* PyUnstable_InterpreterFrame_GetCode(struct _PyInterpreterFrame *frame);
+
+    Return a :term:`strong reference` to the code object for the frame.
+
+   .. versionadded:: 3.12
+
+
+.. c:function:: int PyUnstable_InterpreterFrame_GetLasti(struct _PyInterpreterFrame *frame);
+
+   Return the byte offset into the last executed instruction.
+
+   .. versionadded:: 3.12
+
+
+.. c:function:: int PyUnstable_InterpreterFrame_GetLine(struct _PyInterpreterFrame *frame);
+
+   Return the currently executing line number, or -1 if there is no line number.
+
+   .. versionadded:: 3.12
+
+

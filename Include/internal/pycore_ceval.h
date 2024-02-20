@@ -8,28 +8,53 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "dynamic_annotations.h" // _Py_ANNOTATE_RWLOCK_CREATE
+
+#include "pycore_interp.h"        // PyInterpreterState.eval_frame
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+
 /* Forward declarations */
 struct pyruntimestate;
 struct _ceval_runtime_state;
+
+// Export for '_lsprof' shared extension
+PyAPI_FUNC(int) _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg);
+
+extern int _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg);
+
+extern int _PyEval_SetOpcodeTrace(PyFrameObject *f, bool enable);
+
+// Helper to look up a builtin object
+// Export for 'array' shared extension
+PyAPI_FUNC(PyObject*) _PyEval_GetBuiltin(PyObject *);
+
+extern PyObject* _PyEval_GetBuiltinId(_Py_Identifier *);
+
+extern void _PyEval_SetSwitchInterval(unsigned long microseconds);
+extern unsigned long _PyEval_GetSwitchInterval(void);
+
+// Export for '_queue' shared extension
+PyAPI_FUNC(int) _PyEval_MakePendingCalls(PyThreadState *);
 
 #ifndef Py_DEFAULT_RECURSION_LIMIT
 #  define Py_DEFAULT_RECURSION_LIMIT 1000
 #endif
 
-#include "pycore_interp.h"        // PyInterpreterState.eval_frame
-#include "pycore_pystate.h"       // _PyThreadState_GET()
-
-
 extern void _Py_FinishPendingCalls(PyThreadState *tstate);
-extern void _PyEval_InitRuntimeState(struct _ceval_runtime_state *);
-extern void _PyEval_InitState(struct _ceval_state *, PyThread_type_lock);
-extern void _PyEval_FiniState(struct _ceval_state *ceval);
-PyAPI_FUNC(void) _PyEval_SignalReceived(PyInterpreterState *interp);
+extern void _PyEval_InitState(PyInterpreterState *);
+extern void _PyEval_SignalReceived(void);
+
+// bitwise flags:
+#define _Py_PENDING_MAINTHREADONLY 1
+#define _Py_PENDING_RAWFREE 2
+
+// Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(int) _PyEval_AddPendingCall(
     PyInterpreterState *interp,
-    int (*func)(void *),
-    void *arg);
-PyAPI_FUNC(void) _PyEval_SignalAsyncExc(PyInterpreterState *interp);
+    _Py_pending_call_func func,
+    void *arg,
+    int flags);
+
 #ifdef HAVE_FORK
 extern PyStatus _PyEval_ReInitThreads(PyThreadState *tstate);
 #endif
@@ -74,6 +99,7 @@ extern int _PyPerfTrampoline_SetCallbacks(_PyPerf_Callbacks *);
 extern void _PyPerfTrampoline_GetCallbacks(_PyPerf_Callbacks *);
 extern int _PyPerfTrampoline_Init(int activate);
 extern int _PyPerfTrampoline_Fini(void);
+extern void _PyPerfTrampoline_FreeArenas(void);
 extern int _PyIsPerfTrampolineActive(void);
 extern PyStatus _PyPerfTrampoline_AfterFork_Child(void);
 #ifdef PY_HAVE_PERF_TRAMPOLINE
@@ -96,11 +122,12 @@ _PyEval_Vector(PyThreadState *tstate,
             PyObject* const* args, size_t argcount,
             PyObject *kwnames);
 
-extern int _PyEval_ThreadsInitialized(struct pyruntimestate *runtime);
-extern PyStatus _PyEval_InitGIL(PyThreadState *tstate);
+extern int _PyEval_ThreadsInitialized(void);
+extern void _PyEval_InitGIL(PyThreadState *tstate, int own_gil);
 extern void _PyEval_FiniGIL(PyInterpreterState *interp);
 
-extern void _PyEval_ReleaseLock(PyThreadState *tstate);
+extern void _PyEval_AcquireLock(PyThreadState *tstate);
+extern void _PyEval_ReleaseLock(PyInterpreterState *, PyThreadState *);
 
 extern void _PyEval_DeactivateOpCache(void);
 
@@ -120,6 +147,8 @@ static inline int _Py_MakeRecCheck(PyThreadState *tstate) {
 }
 #endif
 
+// Export for '_json' shared extension, used via _Py_EnterRecursiveCall()
+// static inline function.
 PyAPI_FUNC(int) _Py_CheckRecursiveCall(
     PyThreadState *tstate,
     const char *where);
@@ -150,8 +179,62 @@ extern struct _PyInterpreterFrame* _PyEval_GetFrame(void);
 
 extern PyObject* _Py_MakeCoro(PyFunctionObject *func);
 
+/* Handle signals, pending calls, GIL drop request
+   and asynchronous exception */
 extern int _Py_HandlePending(PyThreadState *tstate);
 
+extern PyObject * _PyEval_GetFrameLocals(void);
+
+extern const binaryfunc _PyEval_BinaryOps[];
+int _PyEval_CheckExceptStarTypeValid(PyThreadState *tstate, PyObject* right);
+int _PyEval_CheckExceptTypeValid(PyThreadState *tstate, PyObject* right);
+int _PyEval_ExceptionGroupMatch(PyObject* exc_value, PyObject *match_type, PyObject **match, PyObject **rest);
+void _PyEval_FormatAwaitableError(PyThreadState *tstate, PyTypeObject *type, int oparg);
+void _PyEval_FormatExcCheckArg(PyThreadState *tstate, PyObject *exc, const char *format_str, PyObject *obj);
+void _PyEval_FormatExcUnbound(PyThreadState *tstate, PyCodeObject *co, int oparg);
+void _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwargs);
+PyObject *_PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type, Py_ssize_t nargs, PyObject *kwargs);
+PyObject *_PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys);
+int _PyEval_UnpackIterable(PyThreadState *tstate, PyObject *v, int argcnt, int argcntafter, PyObject **sp);
+void _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
+
+
+/* Bits that can be set in PyThreadState.eval_breaker */
+#define _PY_GIL_DROP_REQUEST_BIT (1U << 0)
+#define _PY_SIGNALS_PENDING_BIT (1U << 1)
+#define _PY_CALLS_TO_DO_BIT (1U << 2)
+#define _PY_ASYNC_EXCEPTION_BIT (1U << 3)
+#define _PY_GC_SCHEDULED_BIT (1U << 4)
+#define _PY_EVAL_PLEASE_STOP_BIT (1U << 5)
+#define _PY_EVAL_EXPLICIT_MERGE_BIT (1U << 6)
+
+/* Reserve a few bits for future use */
+#define _PY_EVAL_EVENTS_BITS 8
+#define _PY_EVAL_EVENTS_MASK ((1 << _PY_EVAL_EVENTS_BITS)-1)
+
+static inline void
+_Py_set_eval_breaker_bit(PyThreadState *tstate, uintptr_t bit)
+{
+    _Py_atomic_or_uintptr(&tstate->eval_breaker, bit);
+}
+
+static inline void
+_Py_unset_eval_breaker_bit(PyThreadState *tstate, uintptr_t bit)
+{
+    _Py_atomic_and_uintptr(&tstate->eval_breaker, ~bit);
+}
+
+static inline int
+_Py_eval_breaker_bit_is_set(PyThreadState *tstate, uintptr_t bit)
+{
+    uintptr_t b = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
+    return (b & bit) != 0;
+}
+
+// Free-threaded builds use these functions to set or unset a bit on all
+// threads in the given interpreter.
+void _Py_set_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit);
+void _Py_unset_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit);
 
 
 #ifdef __cplusplus
