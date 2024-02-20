@@ -307,6 +307,7 @@ dummy_func(void) {
     op(_POP_FRAME, (retval -- res)) {
         SYNC_SP();
         ctx->frame->stack_pointer = stack_pointer;
+        ctx->frame->pop_frame = this_instr;
         ctx_frame_pop(ctx);
         stack_pointer = ctx->frame->stack_pointer;
         res = retval;
@@ -315,9 +316,19 @@ dummy_func(void) {
     op(_PUSH_FRAME, (new_frame: _Py_UOpsAbstractFrame * -- unused if (0))) {
         SYNC_SP();
         ctx->frame->stack_pointer = stack_pointer;
+        ctx->frame->after_call_stackentries = STACK_LEVEL();
         ctx->frame = new_frame;
         ctx->curr_frame_depth++;
         stack_pointer = new_frame->stack_pointer;
+        new_frame->push_frame = this_instr;
+    }
+
+    op(_SET_IP, (instr_ptr/4 --)) {
+        ctx->frame->instr_ptr = (_PyUOpInstruction *)instr_ptr;
+    }
+
+    op(_SAVE_RETURN_OFFSET, (--)) {
+        ctx->frame->return_offset = oparg;
     }
 
     op(_UNPACK_SEQUENCE, (seq -- values[oparg])) {

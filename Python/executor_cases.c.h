@@ -3923,4 +3923,8 @@
             break;
         }
 
+        case _TRUE_END: {
+            break;
+        }
+
 #undef TIER_TWO

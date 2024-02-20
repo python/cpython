@@ -4205,6 +4205,9 @@ dummy_func(
         op(_SETUP_TIER2_FRAME, (--)) {
             DEOPT_IF(_PyFrame_ConvertToTier2(tstate, frame, oparg));
         }
+
+        // Sentinel for true end of trace.
+        op(_TRUE_END, (--)) {}
 // END BYTECODES //
 
     }

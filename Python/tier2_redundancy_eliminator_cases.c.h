@@ -487,6 +487,7 @@
             retval = stack_pointer[-1];
             stack_pointer += -1;
             ctx->frame->stack_pointer = stack_pointer;
+            ctx->frame->pop_frame = this_instr;
             ctx_frame_pop(ctx);
             stack_pointer = ctx->frame->stack_pointer;
             res = retval;
@@ -1414,9 +1415,11 @@
             new_frame = (_Py_UOpsAbstractFrame *)stack_pointer[-1];
             stack_pointer += -1;
             ctx->frame->stack_pointer = stack_pointer;
+            ctx->frame->after_call_stackentries = STACK_LEVEL();
             ctx->frame = new_frame;
             ctx->curr_frame_depth++;
             stack_pointer = new_frame->stack_pointer;
+            new_frame->push_frame = this_instr;
             break;
         }
 
@@ -1674,10 +1677,13 @@
         }
 
         case _SET_IP: {
+            PyObject *instr_ptr = (PyObject *)this_instr->operand;
+            ctx->frame->instr_ptr = (_PyUOpInstruction *)instr_ptr;
             break;
         }
 
         case _SAVE_RETURN_OFFSET: {
+            ctx->frame->return_offset = oparg;
             break;
         }
 
@@ -1778,6 +1784,10 @@
         }
 
         case _SETUP_TIER2_FRAME: {
+            break;
+        }
+
+        case _TRUE_END: {
             break;
         }
 

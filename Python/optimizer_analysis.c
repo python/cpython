@@ -82,6 +82,14 @@ typedef struct _Py_UOpsAbstractFrame {
     _Py_UOpsSymType **stack_pointer;
     _Py_UOpsSymType **stack;
     _Py_UOpsSymType **locals;
+
+    // Used for inlining. Points to their
+    // original _PUSH_FRAME and _POP_FRAME.
+    _PyUOpInstruction *push_frame;
+    _PyUOpInstruction *pop_frame;
+    _PyUOpInstruction *instr_ptr;
+    uint16_t return_offset;
+    int after_call_stackentries;
 } _Py_UOpsAbstractFrame;
 
 
@@ -128,6 +136,9 @@ ctx_frame_new(
     frame->locals = localsplus_start;
     frame->stack = frame->locals + co->co_nlocalsplus;
     frame->stack_pointer = frame->stack + curr_stackentries;
+    frame->pop_frame = NULL;
+    frame->push_frame = NULL;
+    frame->instr_ptr = NULL;
     ctx->n_consumed = localsplus_start + (co->co_nlocalsplus + co->co_stacksize);
     if (ctx->n_consumed >= ctx->limit) {
         return NULL;

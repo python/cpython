@@ -245,6 +245,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_SET_FRAME_NAMES] = HAS_NAME_FLAG,
     [_POST_INLINE] = HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ESCAPES_FLAG,
     [_SETUP_TIER2_FRAME] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
+    [_TRUE_END] = 0,
 };
 
 const uint8_t _PyUop_Replication[MAX_UOP_ID+1] = {
@@ -473,6 +474,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_TO_BOOL_LIST] = "_TO_BOOL_LIST",
     [_TO_BOOL_NONE] = "_TO_BOOL_NONE",
     [_TO_BOOL_STR] = "_TO_BOOL_STR",
+    [_TRUE_END] = "_TRUE_END",
     [_UNARY_INVERT] = "_UNARY_INVERT",
     [_UNARY_NEGATIVE] = "_UNARY_NEGATIVE",
     [_UNARY_NOT] = "_UNARY_NOT",
