@@ -519,9 +519,14 @@ objects that simplify communication by providing the standard file interface)::
    class MyTCPHandler(socketserver.StreamRequestHandler):
 
        def handle(self):
-           # self.rfile is a file-like object created by the handler;
-           # we can now use e.g. readline() instead of raw recv() calls
-           self.data = self.rfile.readline().strip()
+           while True:
+               # self.rfile is a file-like object created by the handler;
+               # we can now use e.g. readline() instead of raw recv() calls
+               self.data = self.rfile.readline()
+               if not self.data:
+                   # Client has hung up
+                   break
+           self.data = self.data.strip()           
            print("{} wrote:".format(self.client_address[0]))
            print(self.data)
            # Likewise, self.wfile is a file-like object used to write back
