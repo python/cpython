@@ -1342,10 +1342,8 @@ insert_split_dict(PyInterpreterState *interp, PyDictObject *mp,
     LOCK_KEYS(keys);
     if (keys->dk_usable <= 0) {
         /* Need to resize. */
-        dictkeys_incref(keys);
-        int ins = insertion_resize(interp, mp, 1);
-        dictkeys_decref(interp, keys);
         UNLOCK_KEYS(keys);
+        int ins = insertion_resize(interp, mp, 1);
         if (ins < 0) {
             return -1;
         }
@@ -1371,30 +1369,6 @@ insert_split_dict(PyInterpreterState *interp, PyDictObject *mp,
     return 0;
 }
 
-static int
-convert_to_nonunicode_keys(PyInterpreterState *interp, PyDictObject *mp)
-{
-    PyDictKeysObject *keys = mp->ma_keys;
-    if (_PyDict_HasSplitTable(mp)) {
-        LOCK_KEYS(keys);
-        dictkeys_incref(keys);
-    } else {
-        keys = NULL;
-    }
-
-    int res = insertion_resize(interp, mp, 0);
-
-    if (keys != NULL) {
-        dictkeys_decref(interp, keys);
-        UNLOCK_KEYS(keys);
-    }
-    if (res < 0) {
-        return res;
-    }
-    assert(mp->ma_keys->dk_kind == DICT_KEYS_GENERAL);
-    return 0;
-}
-
 /*
 Internal routine to insert a new item into the table.
 Used both by the internal resize routine and by the public insert routine.
@@ -1410,9 +1384,9 @@ insertdict(PyInterpreterState *interp, PyDictObject *mp,
     ASSERT_DICT_LOCKED(mp);
 
     if (DK_IS_UNICODE(mp->ma_keys) && !PyUnicode_CheckExact(key)) {
-        if (convert_to_nonunicode_keys(interp, mp) < 0) {
+        if (insertion_resize(interp, mp, 0) < 0)
             goto Fail;
-        }
+        assert(mp->ma_keys->dk_kind == DICT_KEYS_GENERAL);
     }
 
     Py_ssize_t ix = _Py_dict_lookup(mp, key, hash, &old_value);
@@ -1432,7 +1406,8 @@ insertdict(PyInterpreterState *interp, PyDictObject *mp,
             if (insert_combined_dict(interp, mp, hash, key, value) < 0) {
                 goto Fail;
             }
-        } else {
+        }
+        else {
             if (insert_split_dict(interp, mp, hash, key, value) < 0)
                 goto Fail;
         }
@@ -3803,7 +3778,7 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
     }
 
     if (!PyUnicode_CheckExact(key) && DK_IS_UNICODE(mp->ma_keys)) {
-        if (convert_to_nonunicode_keys(interp, mp) < 0) {
+        if (insertion_resize(interp, mp, 0) < 0) {
             if (result) {
                 *result = NULL;
             }
@@ -3834,7 +3809,8 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
                 }
                 return -1;
             }
-        } else {
+        }
+        else {
             if (insert_split_dict(interp, mp, hash, Py_NewRef(key), Py_NewRef(value)) < 0) {
                 Py_DECREF(key);
                 Py_DECREF(value);
@@ -3997,8 +3973,6 @@ dict_popitem_impl(PyDictObject *self)
     }
     /* Convert split table to combined table */
     if (_PyDict_HasSplitTable(self)) {
-        PyDictKeysObject *keys = self->ma_keys;
-
         if (dictresize(interp, self, DK_LOG_SIZE(self->ma_keys), 1) < 0) {
             Py_DECREF(res);
             return NULL;
