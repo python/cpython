@@ -102,6 +102,10 @@ def load_raw_data(input: Path) -> RawData:
                             file=sys.stderr,
                         )
                         continue
+                    # Hack to handle older data files where some uops
+                    # are missing an underscore prefix in their name
+                    if key.startswith("uops[") and key[5:6] != "_":
+                        key = "uops[_" + key[5:]
                     stats[key.strip()] += int(value)
             stats["__nfiles__"] += 1
 
