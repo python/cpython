@@ -1,6 +1,7 @@
 #ifndef Py_INTERNAL_PYMEM_H
 #define Py_INTERNAL_PYMEM_H
 
+#include "pycore_llist.h"           // struct llist_node
 #include "pycore_lock.h"            // PyMutex
 
 #ifdef __cplusplus
@@ -48,6 +49,11 @@ struct _pymem_allocators {
     PyObjectArenaAllocator obj_arena;
 };
 
+struct _Py_mem_interp_free_queue {
+    int has_work;   // true if the queue is not empty
+    PyMutex mutex;  // protects the queue
+    struct llist_node head;  // queue of _mem_work_chunk items
+};
 
 /* Set the memory allocator of the specified domain to the default.
    Save the old allocator into *old_alloc if it's non-NULL.
@@ -109,6 +115,19 @@ extern int _PyMem_SetupAllocators(PyMemAllocatorName allocator);
 
 /* Is the debug allocator enabled? */
 extern int _PyMem_DebugEnabled(void);
+
+// Enqueue a pointer to be freed possibly after some delay.
+extern void _PyMem_FreeDelayed(void *ptr);
+
+// Periodically process delayed free requests.
+extern void _PyMem_ProcessDelayed(PyThreadState *tstate);
+
+// Abandon all thread-local delayed free requests and push them to the
+// interpreter's queue.
+extern void _PyMem_AbandonDelayed(PyThreadState *tstate);
+
+// On interpreter shutdown, frees all delayed free requests.
+extern void _PyMem_FiniDelayed(PyInterpreterState *interp);
 
 #ifdef __cplusplus
 }

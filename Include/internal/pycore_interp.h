@@ -231,6 +231,7 @@ struct _is {
 
     struct _Py_dict_state dict_state;
     struct _Py_exc_state exc_state;
+    struct _Py_mem_interp_free_queue mem_free_queue;
 
     struct ast_state ast;
     struct types_state types;
