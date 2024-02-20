@@ -1,0 +1,2 @@
+Fix :meth:`importlib.resources.simple.ResourceHandle.open` for text mode,
+added missed ``stream`` argument.
