@@ -18,7 +18,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_time.h"        // _PyTime_t
+#include "pycore_time.h"        // PyTime_t
 
 
 enum {
@@ -61,7 +61,7 @@ enum {
 //  }
 PyAPI_FUNC(int)
 _PyParkingLot_Park(const void *address, const void *expected,
-                   size_t address_size, _PyTime_t timeout_ns,
+                   size_t address_size, PyTime_t timeout_ns,
                    void *park_arg, int detach);
 
 // Callback for _PyParkingLot_Unpark:

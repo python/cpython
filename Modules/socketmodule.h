@@ -1,6 +1,6 @@
 /* Socket module header file */
 
-#include "pycore_time.h"          // _PyTime_t
+#include "pycore_time.h"          // PyTime_t
 
 /* Includes needed for the sockaddr_* symbols below */
 #ifndef MS_WINDOWS
@@ -324,7 +324,7 @@ typedef struct {
     PyObject *(*errorhandler)(void); /* Error handler; checks
                                         errno, returns NULL and
                                         sets a Python exception */
-    _PyTime_t sock_timeout;     /* Operation timeout in seconds;
+    PyTime_t sock_timeout;     /* Operation timeout in seconds;
                                         0.0 means non-blocking */
     struct _socket_state *state;
 } PySocketSockObject;

@@ -8,11 +8,11 @@
 //#include <time.h>
 #include "Python.h"
 #include "pycore_namespace.h"     // _PyNamespace_New()
-#include "pycore_time.h"          // _PyTime_t
+#include "pycore_time.h"          // PyTime_t
 
 
 typedef struct {
-    _PyTime_t initialized;
+    PyTime_t initialized;
     PyObject *error;
     PyObject *int_const;
     PyObject *str_const;
@@ -67,15 +67,15 @@ clear_state(module_state *state)
 }
 
 static int
-_set_initialized(_PyTime_t *initialized)
+_set_initialized(PyTime_t *initialized)
 {
     /* We go strictly monotonic to ensure each time is unique. */
-    _PyTime_t prev;
+    PyTime_t prev;
     if (_PyTime_GetMonotonicClockWithInfo(&prev, NULL) != 0) {
         return -1;
     }
     /* We do a busy sleep since the interval should be super short. */
-    _PyTime_t t;
+    PyTime_t t;
     do {
         if (_PyTime_GetMonotonicClockWithInfo(&t, NULL) != 0) {
             return -1;

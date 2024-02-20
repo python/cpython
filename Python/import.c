@@ -2719,7 +2719,7 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
 #define import_level FIND_AND_LOAD(interp).import_level
 #define accumulated FIND_AND_LOAD(interp).accumulated
 
-    _PyTime_t t1 = 0, accumulated_copy = accumulated;
+    PyTime_t t1 = 0, accumulated_copy = accumulated;
 
     PyObject *sys_path = PySys_GetObject("path");
     PyObject *sys_meta_path = PySys_GetObject("meta_path");
@@ -2762,7 +2762,7 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
                                        mod != NULL);
 
     if (import_time) {
-        _PyTime_t cum = _PyTime_GetPerfCounter() - t1;
+        PyTime_t cum = _PyTime_GetPerfCounter() - t1;
 
         import_level--;
         fprintf(stderr, "import time: %9ld | %10ld | %*s%s\n",
