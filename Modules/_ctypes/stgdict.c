@@ -103,7 +103,6 @@ PyCStgDict_init(StgDictObject *self, PyObject *args, PyObject *kwds)
 static int
 PyCStgDict_clear(StgDictObject *self)
 {
-    Py_CLEAR(self->checker);
     return 0;
 }
 
@@ -156,7 +155,7 @@ PyCStgDict_clone(StgDictObject *dst, StgDictObject *src,
     Py_XINCREF(dst_info->argtypes);
     Py_XINCREF(dst_info->converters);
     Py_XINCREF(dst_info->restype);
-    Py_XINCREF(dst->checker);
+    Py_XINCREF(dst_info->checker);
 
     if (src->format) {
         dst->format = PyMem_Malloc(strlen(src->format) + 1);

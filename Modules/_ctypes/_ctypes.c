@@ -498,6 +498,7 @@ CType_Type_clear(PyObject *self)
         Py_CLEAR(info->argtypes);
         Py_CLEAR(info->converters);
         Py_CLEAR(info->restype);
+        Py_CLEAR(info->checker);
     }
     return 0;
 }
@@ -2606,7 +2607,7 @@ make_funcptrtype_dict(StgDictObject *stgdict, StgInfo *stginfo)
         }
         stginfo->restype = ob;
         if (PyObject_GetOptionalAttr(ob, &_Py_ID(_check_retval_),
-                                   &stgdict->checker) < 0)
+                                   &stginfo->checker) < 0)
         {
             return -1;
         }
@@ -4289,10 +4290,10 @@ PyCFuncPtr_call(PyCFuncPtrObject *self, PyObject *inargs, PyObject *kwds)
     assert(dict); /* Cannot be NULL for PyCFuncPtrObject instances */
     restype = self->restype ? self->restype : info->restype;
     converters = self->converters ? self->converters : info->converters;
-    checker = self->checker ? self->checker : dict->checker;
+    checker = self->checker ? self->checker : info->checker;
     argtypes = self->argtypes ? self->argtypes : info->argtypes;
-/* later, we probably want to have an errcheck field in stgdict */
-    errcheck = self->errcheck /* ? self->errcheck : dict->errcheck */;
+/* later, we probably want to have an errcheck field in stginfo */
+    errcheck = self->errcheck /* ? self->errcheck : info->errcheck */;
 
 
     pProc = *(void **)self->b_ptr;
