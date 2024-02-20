@@ -1053,7 +1053,7 @@ PyTime_Time(PyTime_t *result)
         *result = 0;
         return -1;
     }
-    return 1;
+    return 0;
 }
 
 int
