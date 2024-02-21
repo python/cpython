@@ -136,6 +136,11 @@ struct _dictkeysobject {
     /* Kind of keys */
     uint8_t dk_kind;
 
+#ifdef Py_GIL_DISABLED
+    /* Lock used to protect shared keys */
+    PyMutex dk_mutex;
+#endif
+
     /* Version number -- Reset to 0 by any modification to keys */
     uint32_t dk_version;
 
@@ -144,6 +149,7 @@ struct _dictkeysobject {
 
     /* Number of used entries in dk_entries. */
     Py_ssize_t dk_nentries;
+
 
     /* Actual hash table of dk_size entries. It holds indices in dk_entries,
        or DKIX_EMPTY(-1) or DKIX_DUMMY(-2).
