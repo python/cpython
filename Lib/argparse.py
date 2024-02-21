@@ -703,11 +703,6 @@ class ArgumentDefaultsHelpFormatter(HelpFormatter):
     """
 
     def _get_help_string(self, action):
-        """Add the default value to the option help message.
-
-        Except when it's already present, or in cases where it wouldn't
-        make sense to the end user.
-        """
         help = action.help
         if help is None:
             help = ''
