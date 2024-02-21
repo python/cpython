@@ -395,11 +395,13 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
       }
       // Safely get the entire value.
       Py_ssize_t bytes = PyLong_AsNativeBits(pylong, bignum, expected, -1);
-      if (bytes < 0 || bytes > expected) {  // Be safe, should not be possible.
-          if (!PyErr_Occurred()) {
-              PyErr_SetString(PyExc_RuntimeError,
-                  "Unexpected bignum truncation after a size check.");
-          }
+      if (bytes < 0) {  // Exception set.
+          free(bignum);
+          return NULL;
+      }
+      else if (bytes > expected) {  // Be safe, should not be possible.
+          PyErr_SetString(PyExc_RuntimeError,
+              "Unexpected bignum truncation after a size check.");
           free(bignum);
           return NULL;
       }
