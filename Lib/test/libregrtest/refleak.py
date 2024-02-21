@@ -89,7 +89,7 @@ def runtest_refleak(test_name, test_func,
 
     if not quiet:
         print("beginning", repcount, "repetitions. Showing number of leaks "
-                "(. for zero, X for 10 or more)",
+                "(. for 0 or less, X for 10 or more)",
               file=sys.stderr)
         numbers = ("1234567890"*(repcount//10 + 1))[:repcount]
         numbers = numbers[:warmups] + ':' + numbers[warmups:]
@@ -175,14 +175,20 @@ def runtest_refleak(test_name, test_func,
     ]:
         # ignore warmup runs
         deltas = deltas[warmups:]
-        if checker(deltas):
+        failing = checker(deltas)
+        suspicious = any(deltas)
+        if failing or suspicious:
             msg = '%s leaked %s %s, sum=%s' % (
                 test_name, deltas, item_name, sum(deltas))
-            print(msg, file=sys.stderr, flush=True)
-            with open(filename, "a", encoding="utf-8") as refrep:
-                print(msg, file=refrep)
-                refrep.flush()
-            failed = True
+            print(msg, end='', file=sys.stderr)
+            if failing:
+                print(file=sys.stderr, flush=True)
+                with open(filename, "a", encoding="utf-8") as refrep:
+                    print(msg, file=refrep)
+                    refrep.flush()
+                failed = True
+            else:
+                print(' (this is fine)', file=sys.stderr, flush=True)
     return (failed, results)
 
 
