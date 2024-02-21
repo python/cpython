@@ -27,7 +27,8 @@ PyAPI_FUNC(PyObject *) PyWeakref_NewRef(PyObject *ob,
                                         PyObject *callback);
 PyAPI_FUNC(PyObject *) PyWeakref_NewProxy(PyObject *ob,
                                           PyObject *callback);
-PyAPI_FUNC(PyObject *) PyWeakref_GetObject(PyObject *ref);
+Py_DEPRECATED(3.13) PyAPI_FUNC(PyObject *) PyWeakref_GetObject(PyObject *ref);
+PyAPI_FUNC(int) PyWeakref_GetRef(PyObject *ref, PyObject **pobj);
 
 
 #ifndef Py_LIMITED_API
