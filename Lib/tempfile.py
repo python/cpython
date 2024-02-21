@@ -506,9 +506,7 @@ class _TemporaryFileWrapper:
         return a
 
     def __fspath__(self):
-        """
-        Return the filesystem path of this temporary file.
-        """
+        """Return the filesystem path of the temporary file."""
         return self.name
 
     # The underlying __enter__ method returns the wrong object
@@ -945,9 +943,7 @@ class TemporaryDirectory:
         return "<{} {!r}>".format(self.__class__.__name__, self.name)
 
     def __fspath__(self):
-        """
-        Return the filesystem path of this temporary directory.
-        """
+        """Return the filesystem path of the temporary directory."""
         return self.name
 
     def __enter__(self):

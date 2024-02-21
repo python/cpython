@@ -143,7 +143,7 @@ The module defines the following user-callable items:
       Added *delete_on_close* parameter.
 
    .. versionchanged:: 3.13
-      Returns a :term:`path-like object`.
+      Added support for the :term:`path-like object` protocol.
 
 
 .. class:: SpooledTemporaryFile(max_size=0, mode='w+b', buffering=-1, encoding=None, newline=None, suffix=None, prefix=None, dir=None, *, errors=None)
@@ -221,7 +221,7 @@ The module defines the following user-callable items:
       Added the *delete* parameter.
 
    .. versionchanged:: 3.13
-      Returns a :term:`path-like object`.
+      Added support for the :term:`path-like object` protocol.
 
 
 .. function:: mkstemp(suffix=None, prefix=None, dir=None, text=False)

@@ -937,9 +937,7 @@ class TestNamedTemporaryFile(BaseTestCase):
 
     def test_pathlike(self):
         tmp = self.do_create()
-        self.assertTrue(isinstance(tmp, os.PathLike))
-        cls = type(tmp)
-        self.assertTrue(issubclass(cls, os.PathLike))
+        self.assertIsInstance(tmp, os.PathLike)
 
     def test_basic(self):
         # NamedTemporaryFile can create files
@@ -1592,9 +1590,7 @@ class TestTemporaryDirectory(BaseTestCase):
 
     def test_pathlike(self):
         tmp = self.do_create()
-        self.assertTrue(isinstance(tmp, os.PathLike))
-        cls = type(tmp)
-        self.assertTrue(issubclass(cls, os.PathLike))
+        self.assertIsInstance(tmp, os.PathLike)
 
     def do_create2(self, path, recurse=1, dirs=1, files=1):
         # Create subdirectories and some files
