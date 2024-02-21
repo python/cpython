@@ -3490,6 +3490,8 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+
+
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # If we're building out-of-tree, we need to make sure the following
     # resources get picked up before their $srcdir counterparts.
@@ -16092,20 +16094,27 @@ printf %s "checking for _POSIX_THREADS in unistd.h... " >&6; }
 /* end confdefs.h.  */
 
 #include <unistd.h>
-#ifdef _POSIX_THREADS
-yes
+#if defined(_POSIX_THREADS)
+/* pass */
+#else
+#error "not defined"
 #endif
 
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
 _ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "yes" >/dev/null 2>&1
+if ac_fn_c_try_cpp "$LINENO"
 then :
   unistd_defines_pthreads=yes
 else $as_nop
   unistd_defines_pthreads=no
 fi
-rm -rf conftest*
-
+rm -f conftest.err conftest.i conftest.$ac_ext
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $unistd_defines_pthreads" >&5
 printf "%s\n" "$unistd_defines_pthreads" >&6; }
 
@@ -16616,37 +16625,53 @@ printf %s "checking ipv6 stack type... " >&6; }
 /* end confdefs.h.  */
 
 #include <netinet/in.h>
-#ifdef IPV6_INRIA_VERSION
-yes
+#if defined(IPV6_INRIA_VERSION)
+/* pass */
+#else
+#error "not defined"
 #endif
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
 _ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "yes" >/dev/null 2>&1
+if ac_fn_c_try_cpp "$LINENO"
 then :
   ipv6type=$i
 fi
-rm -rf conftest*
-
+rm -f conftest.err conftest.i conftest.$ac_ext
 			;;
 		kame)
 						cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 #include <netinet/in.h>
-#ifdef __KAME__
-yes
+#if defined(__KAME__)
+/* pass */
+#else
+#error "not defined"
 #endif
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "yes" >/dev/null 2>&1
-then :
-  ipv6type=$i;
-				ipv6lib=inet6
-				ipv6libdir=/usr/local/v6/lib
-				ipv6trylibc=yes
-fi
-rm -rf conftest*
 
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_cpp "$LINENO"
+then :
+  ipv6type=$i
+                          ipv6lib=inet6
+                          ipv6libdir=/usr/local/v6/lib
+                          ipv6trylibc=yes
+fi
+rm -f conftest.err conftest.i conftest.$ac_ext
 			;;
 		linux-glibc)
 						cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -16654,17 +16679,25 @@ rm -rf conftest*
 
 #include <features.h>
 #if defined(__GLIBC__) && ((__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1) || (__GLIBC__ > 2))
-yes
+/* pass */
+#else
+#error "not defined"
 #endif
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "yes" >/dev/null 2>&1
-then :
-  ipv6type=$i;
-				ipv6trylibc=yes
-fi
-rm -rf conftest*
 
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_cpp "$LINENO"
+then :
+  ipv6type=$i
+                          ipv6trylibc=yes
+fi
+rm -f conftest.err conftest.i conftest.$ac_ext
 			;;
 		linux-inet6)
 						if test -d /usr/inet6; then
@@ -16687,55 +16720,68 @@ rm -rf conftest*
 /* end confdefs.h.  */
 
 #include <sys/param.h>
-#ifdef _TOSHIBA_INET6
-yes
+                         ipv6type=$i
+                          ipv6lib=inet6
+                          ipv6libdir=/usr/local/v6/lib
+#if defined(_TOSHIBA_INET6)
+/* pass */
+#else
+#error "not defined"
 #endif
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "yes" >/dev/null 2>&1
-then :
-  ipv6type=$i;
-				ipv6lib=inet6;
-				ipv6libdir=/usr/local/v6/lib
-fi
-rm -rf conftest*
 
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_cpp "$LINENO"
+then :
+
+fi
+rm -f conftest.err conftest.i conftest.$ac_ext
 			;;
 		v6d)
 			cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 #include </usr/local/v6/include/sys/v6config.h>
-#ifdef __V6D__
-yes
+#if defined(__V6D__)
+/* pass */
+#else
+#error "not defined"
 #endif
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "yes" >/dev/null 2>&1
-then :
-  ipv6type=$i;
-				ipv6lib=v6;
-				ipv6libdir=/usr/local/v6/lib;
-				BASECFLAGS="-I/usr/local/v6/include $BASECFLAGS"
-fi
-rm -rf conftest*
 
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_cpp "$LINENO"
+then :
+  ipv6type=$i
+                          ipv6lib=v6
+                          ipv6libdir=/usr/local/v6/lib
+                          BASECFLAGS="-I/usr/local/v6/include $BASECFLAGS"
+fi
+rm -f conftest.err conftest.i conftest.$ac_ext
 			;;
 		zeta)
 			cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
 #include <sys/param.h>
-#ifdef _ZETA_MINAMI_INET6
-yes
-#endif
 _ACEOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "yes" >/dev/null 2>&1
+  $EGREP "defined(_ZETA_MINAMI_INET6)" >/dev/null 2>&1
 then :
-  ipv6type=$i;
-				ipv6lib=inet6;
-				ipv6libdir=/usr/local/v6/lib
+  ipv6type=$i
+                          ipv6lib=inet6
+                          ipv6libdir=/usr/local/v6/lib
 fi
 rm -rf conftest*
 

@@ -73,6 +73,17 @@ AC_DEFUN([PY_CHECK_FUNC],
   AS_VAR_POPDEF([py_define])
 ])
 
+dnl PY_CHECK_CPP(CPP_CHECK, [INCLUDES], [ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND])
+AC_DEFUN([PY_CHECK_CPP],
+         [AC_PREPROC_IFELSE([AC_LANG_PROGRAM([
+$2
+@%:@if $1
+/* pass */
+#else
+#error "not defined"
+#endif
+])], [$3], [$4])])
+
 dnl PY_CHECK_LIB(LIBRARY, FUNCTION, [ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND], [OTHER-LIBRARIES])
 dnl Like AC_CHECK_LIB() but does not modify LIBS
 AC_DEFUN([PY_CHECK_LIB],
@@ -4252,13 +4263,10 @@ else
     # define _POSIX_THREADS in unistd.h. Some apparently don't
     # (e.g. gnu pth with pthread emulation)
     AC_MSG_CHECKING([for _POSIX_THREADS in unistd.h])
-    AC_EGREP_CPP([yes],
-    [
-#include <unistd.h>
-#ifdef _POSIX_THREADS
-yes
-#endif
-    ], unistd_defines_pthreads=yes, unistd_defines_pthreads=no)
+    PY_CHECK_CPP([defined(_POSIX_THREADS)],
+                 [@%:@include <unistd.h>],
+                 [unistd_defines_pthreads=yes],
+                 [unistd_defines_pthreads=no])
     AC_MSG_RESULT([$unistd_defines_pthreads])
 
     AC_DEFINE([_REENTRANT])
@@ -4438,34 +4446,25 @@ if test "$ipv6" = yes -a "$cross_compiling" = no; then
 		case $i in
 		inria)
 			dnl http://www.kame.net/
-			AC_EGREP_CPP([yes], [
-#include <netinet/in.h>
-#ifdef IPV6_INRIA_VERSION
-yes
-@%:@endif],
-				[ipv6type=$i])
+			PY_CHECK_CPP([defined(IPV6_INRIA_VERSION)],
+                         [@%:@include <netinet/in.h>],
+				         [ipv6type=$i])
 			;;
 		kame)
 			dnl http://www.kame.net/
-			AC_EGREP_CPP([yes], [
-#include <netinet/in.h>
-#ifdef __KAME__
-yes
-@%:@endif],
-				[ipv6type=$i;
-				ipv6lib=inet6
-				ipv6libdir=/usr/local/v6/lib
-				ipv6trylibc=yes])
+			PY_CHECK_CPP([defined(__KAME__)],
+                         [@%:@include <netinet/in.h>],
+                         [ipv6type=$i
+                          ipv6lib=inet6
+                          ipv6libdir=/usr/local/v6/lib
+                          ipv6trylibc=yes])
 			;;
 		linux-glibc)
 			dnl http://www.v6.linux.or.jp/
-			AC_EGREP_CPP([yes], [
-#include <features.h>
-#if defined(__GLIBC__) && ((__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1) || (__GLIBC__ > 2))
-yes
-@%:@endif],
-				[ipv6type=$i;
-				ipv6trylibc=yes])
+			PY_CHECK_CPP([defined(__GLIBC__) && ((__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1) || (__GLIBC__ > 2))],
+                         [@%:@include <features.h>],
+                         [ipv6type=$i
+                          ipv6trylibc=yes])
 			;;
 		linux-inet6)
 			dnl http://www.v6.linux.or.jp/
@@ -4485,35 +4484,26 @@ yes
                         fi
 			;;
 		toshiba)
-			AC_EGREP_CPP([yes], [
-#include <sys/param.h>
-#ifdef _TOSHIBA_INET6
-yes
-@%:@endif],
-				[ipv6type=$i;
-				ipv6lib=inet6;
-				ipv6libdir=/usr/local/v6/lib])
+			PY_CHECK_CPP([defined(_TOSHIBA_INET6)],
+                         [@%:@include <sys/param.h>]
+                         [ipv6type=$i
+                          ipv6lib=inet6
+                          ipv6libdir=/usr/local/v6/lib])
 			;;
 		v6d)
-			AC_EGREP_CPP([yes], [
-#include </usr/local/v6/include/sys/v6config.h>
-#ifdef __V6D__
-yes
-@%:@endif],
-				[ipv6type=$i;
-				ipv6lib=v6;
-				ipv6libdir=/usr/local/v6/lib;
-				BASECFLAGS="-I/usr/local/v6/include $BASECFLAGS"])
+			PY_CHECK_CPP([defined(__V6D__)],
+                         [@%:@include </usr/local/v6/include/sys/v6config.h>],
+                         [ipv6type=$i
+                          ipv6lib=v6
+                          ipv6libdir=/usr/local/v6/lib
+                          BASECFLAGS="-I/usr/local/v6/include $BASECFLAGS"])
 			;;
 		zeta)
-			AC_EGREP_CPP([yes], [
-#include <sys/param.h>
-#ifdef _ZETA_MINAMI_INET6
-yes
-@%:@endif],
-				[ipv6type=$i;
-				ipv6lib=inet6;
-				ipv6libdir=/usr/local/v6/lib])
+			AC_EGREP_CPP([defined(_ZETA_MINAMI_INET6)],
+                         [@%:@include <sys/param.h>],
+                         [ipv6type=$i
+                          ipv6lib=inet6
+                          ipv6libdir=/usr/local/v6/lib])
 			;;
 		esac
 		if test "$ipv6type" != "unknown"; then
