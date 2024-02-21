@@ -73,10 +73,10 @@ AC_DEFUN([PY_CHECK_FUNC],
   AS_VAR_POPDEF([py_define])
 ])
 
-dnl PY_CHECK_CPP(CPP_CHECK, [INCLUDES], [ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND])
+dnl PY_CHECK_CPP(CPP_CHECK, [LIST-OF-INCLUDES], [ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND])
 AC_DEFUN([PY_CHECK_CPP],
          [AC_PREPROC_IFELSE([AC_LANG_PROGRAM([
-$2
+m4_foreach_w([incl], [$2], [@%:@include <incl> m4_newline])
 @%:@if $1
 /* pass */
 #else
@@ -4264,7 +4264,7 @@ else
     # (e.g. gnu pth with pthread emulation)
     AC_MSG_CHECKING([for _POSIX_THREADS in unistd.h])
     PY_CHECK_CPP([defined(_POSIX_THREADS)],
-                 [@%:@include <unistd.h>],
+                 [unistd.h],
                  [unistd_defines_pthreads=yes],
                  [unistd_defines_pthreads=no])
     AC_MSG_RESULT([$unistd_defines_pthreads])
@@ -4447,13 +4447,13 @@ if test "$ipv6" = yes -a "$cross_compiling" = no; then
 		inria)
 			dnl http://www.kame.net/
 			PY_CHECK_CPP([defined(IPV6_INRIA_VERSION)],
-                         [@%:@include <netinet/in.h>],
+                         [netinet/in.h],
 				         [ipv6type=$i])
 			;;
 		kame)
 			dnl http://www.kame.net/
 			PY_CHECK_CPP([defined(__KAME__)],
-                         [@%:@include <netinet/in.h>],
+                         [netinet/in.h],
                          [ipv6type=$i
                           ipv6lib=inet6
                           ipv6libdir=/usr/local/v6/lib
@@ -4462,7 +4462,7 @@ if test "$ipv6" = yes -a "$cross_compiling" = no; then
 		linux-glibc)
 			dnl http://www.v6.linux.or.jp/
 			PY_CHECK_CPP([defined(__GLIBC__) && ((__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1) || (__GLIBC__ > 2))],
-                         [@%:@include <features.h>],
+                         [features.h],
                          [ipv6type=$i
                           ipv6trylibc=yes])
 			;;
@@ -4485,14 +4485,14 @@ if test "$ipv6" = yes -a "$cross_compiling" = no; then
 			;;
 		toshiba)
 			PY_CHECK_CPP([defined(_TOSHIBA_INET6)],
-                         [@%:@include <sys/param.h>]
+                         [sys/param.h],
                          [ipv6type=$i
                           ipv6lib=inet6
                           ipv6libdir=/usr/local/v6/lib])
 			;;
 		v6d)
 			PY_CHECK_CPP([defined(__V6D__)],
-                         [@%:@include </usr/local/v6/include/sys/v6config.h>],
+                         [/usr/local/v6/include/sys/v6config.h],
                          [ipv6type=$i
                           ipv6lib=v6
                           ipv6libdir=/usr/local/v6/lib

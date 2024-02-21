@@ -16117,6 +16117,7 @@ printf %s "checking for _POSIX_THREADS in unistd.h... " >&6; }
 /* end confdefs.h.  */
 
 #include <unistd.h>
+
 #if defined(_POSIX_THREADS)
 /* pass */
 #else
@@ -16648,6 +16649,7 @@ printf %s "checking ipv6 stack type... " >&6; }
 /* end confdefs.h.  */
 
 #include <netinet/in.h>
+
 #if defined(IPV6_INRIA_VERSION)
 /* pass */
 #else
@@ -16673,6 +16675,7 @@ rm -f conftest.err conftest.i conftest.$ac_ext
 /* end confdefs.h.  */
 
 #include <netinet/in.h>
+
 #if defined(__KAME__)
 /* pass */
 #else
@@ -16701,6 +16704,7 @@ rm -f conftest.err conftest.i conftest.$ac_ext
 /* end confdefs.h.  */
 
 #include <features.h>
+
 #if defined(__GLIBC__) && ((__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1) || (__GLIBC__ > 2))
 /* pass */
 #else
@@ -16743,9 +16747,7 @@ rm -f conftest.err conftest.i conftest.$ac_ext
 /* end confdefs.h.  */
 
 #include <sys/param.h>
-                         ipv6type=$i
-                          ipv6lib=inet6
-                          ipv6libdir=/usr/local/v6/lib
+
 #if defined(_TOSHIBA_INET6)
 /* pass */
 #else
@@ -16762,7 +16764,9 @@ main (void)
 _ACEOF
 if ac_fn_c_try_cpp "$LINENO"
 then :
-
+  ipv6type=$i
+                          ipv6lib=inet6
+                          ipv6libdir=/usr/local/v6/lib
 fi
 rm -f conftest.err conftest.i conftest.$ac_ext
 			;;
@@ -16771,6 +16775,7 @@ rm -f conftest.err conftest.i conftest.$ac_ext
 /* end confdefs.h.  */
 
 #include </usr/local/v6/include/sys/v6config.h>
+
 #if defined(__V6D__)
 /* pass */
 #else
