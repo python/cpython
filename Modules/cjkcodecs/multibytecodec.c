@@ -871,7 +871,7 @@ decoder_append_pending(MultibyteStatefulDecoderContext *ctx,
                                                            0,
                                                            bufsize,
                                                            "pending buffer overflow");
-            if (excobj == NULL) goto errorexit;
+            if (excobj == NULL) return -1;
             PyErr_SetObject(PyExc_UnicodeDecodeError, excobj);
             Py_DECREF(excobj);
             return -1;
