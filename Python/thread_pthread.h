@@ -495,7 +495,7 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
         timeout = _PyTime_FromMicrosecondsClamp(microseconds);
     }
     else {
-        timeout = _PyTime_FromNanoseconds(-1);
+        timeout = -1;
     }
 
 #ifdef HAVE_SEM_CLOCKWAIT
