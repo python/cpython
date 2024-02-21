@@ -626,8 +626,6 @@ PyObject * _PyObject_GetInstanceAttribute(PyObject *obj, PyDictValues *values,
 
 typedef union {
     PyObject *dict;
-    /* Use a char* to generate a warning if directly assigning a PyDictValues */
-    char *values;
 } PyDictOrValues;
 
 static inline PyDictOrValues *
@@ -637,31 +635,21 @@ _PyObject_DictOrValuesPointer(PyObject *obj)
     return (PyDictOrValues *)((char *)obj + MANAGED_DICT_OFFSET);
 }
 
-static inline int
-_PyDictOrValues_IsValues(PyDictOrValues dorv)
-{
-    return ((uintptr_t)dorv.values) & 1;
-}
-
 static inline PyDictValues *
-_PyDictOrValues_GetValues(PyDictOrValues dorv)
+_PyObject_InlineValues(PyObject *obj)
 {
-    assert(_PyDictOrValues_IsValues(dorv));
-    return (PyDictValues *)(dorv.values + 1);
+    assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+    assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+    return (PyDictValues *)((char *)obj + sizeof(PyObject));
 }
 
 static inline PyObject *
 _PyDictOrValues_GetDict(PyDictOrValues dorv)
 {
-    assert(!_PyDictOrValues_IsValues(dorv));
     return dorv.dict;
 }
 
-static inline void
-_PyDictOrValues_SetValues(PyDictOrValues *ptr, PyDictValues *values)
-{
-    ptr->values = ((char *)values) - 1;
-}
+extern int _PyObject_InlineValuesConsistencyCheck(PyObject *obj);
 
 extern PyObject ** _PyObject_ComputedDictPointer(PyObject *);
 extern void _PyObject_FreeInstanceAttributes(PyObject *obj);

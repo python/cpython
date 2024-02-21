@@ -1631,9 +1631,8 @@
             PyObject *owner;
             owner = stack_pointer[-1];
             assert(Py_TYPE(owner)->tp_dictoffset < 0);
-            assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
-            if (!_PyDictOrValues_IsValues(*dorv) && !_PyObject_MakeInstanceAttributesFromDict(owner, dorv)) goto deoptimize;
+            assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+            if (!_PyObject_InlineValues(owner)->valid) goto deoptimize;
             break;
         }
 
@@ -1644,8 +1643,8 @@
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
             uint16_t index = (uint16_t)CURRENT_OPERAND();
-            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-            attr = _PyDictOrValues_GetValues(dorv)->values[index];
+            assert(_PyObject_InlineValuesConsistencyCheck(owner));
+            attr = _PyObject_InlineValues(owner)->values[index];
             if (attr == NULL) goto deoptimize;
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(attr);
@@ -1694,9 +1693,9 @@
         case _CHECK_ATTR_WITH_HINT: {
             PyObject *owner;
             owner = stack_pointer[-1];
+            assert((Py_TYPE(owner)->tp_flags & Py_TPFLAGS_INLINE_VALUES) == 0);
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-            if (_PyDictOrValues_IsValues(dorv)) goto deoptimize;
             PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
             if (dict == NULL) goto deoptimize;
             assert(PyDict_CheckExact((PyObject *)dict));
@@ -1787,12 +1786,13 @@
 
         /* _LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN is not a viable micro-op for tier 2 */
 
-        case _GUARD_DORV_VALUES: {
+        case _GUARD_DORV_NO_DICT: {
             PyObject *owner;
             owner = stack_pointer[-1];
-            assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-            if (!_PyDictOrValues_IsValues(dorv)) goto deoptimize;
+            assert(Py_TYPE(owner)->tp_dictoffset < 0);
+            assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+            if (_PyObject_DictOrValuesPointer(owner)->dict) goto deoptimize;
+            if (_PyObject_InlineValues(owner)->valid == 0) goto deoptimize;
             break;
         }
 
@@ -1802,9 +1802,10 @@
             owner = stack_pointer[-1];
             value = stack_pointer[-2];
             uint16_t index = (uint16_t)CURRENT_OPERAND();
-            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             STAT_INC(STORE_ATTR, hit);
-            PyDictValues *values = _PyDictOrValues_GetValues(dorv);
+            assert(_PyObject_InlineValuesConsistencyCheck(owner));
+            assert(_PyObject_DictOrValuesPointer(owner)->dict == NULL);
+            PyDictValues *values = _PyObject_InlineValues(owner);
             PyObject *old_value = values->values[index];
             values->values[index] = value;
             if (old_value == NULL) {
@@ -2436,9 +2437,8 @@
         case _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT: {
             PyObject *owner;
             owner = stack_pointer[-1];
-            assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
-            if (!_PyDictOrValues_IsValues(*dorv) && !_PyObject_MakeInstanceAttributesFromDict(owner, dorv)) goto deoptimize;
+            assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+            if (!_PyObject_InlineValues(owner)->valid) goto deoptimize;
             break;
         }
 

@@ -1302,7 +1302,7 @@ _PyOpcode_macro_expansion[256] = {
     [SET_FUNCTION_ATTRIBUTE] = { .nuops = 1, .uops = { { _SET_FUNCTION_ATTRIBUTE, 0, 0 } } },
     [SET_UPDATE] = { .nuops = 1, .uops = { { _SET_UPDATE, 0, 0 } } },
     [STORE_ATTR] = { .nuops = 1, .uops = { { _STORE_ATTR, 0, 0 } } },
-    [STORE_ATTR_INSTANCE_VALUE] = { .nuops = 3, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _GUARD_DORV_VALUES, 0, 0 }, { _STORE_ATTR_INSTANCE_VALUE, 1, 3 } } },
+    [STORE_ATTR_INSTANCE_VALUE] = { .nuops = 3, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _GUARD_DORV_NO_DICT, 0, 0 }, { _STORE_ATTR_INSTANCE_VALUE, 1, 3 } } },
     [STORE_ATTR_SLOT] = { .nuops = 2, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _STORE_ATTR_SLOT, 1, 3 } } },
     [STORE_DEREF] = { .nuops = 1, .uops = { { _STORE_DEREF, 0, 0 } } },
     [STORE_FAST] = { .nuops = 1, .uops = { { _STORE_FAST, 0, 0 } } },

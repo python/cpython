@@ -541,6 +541,7 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_CALL_OPERATOR_WRAPPER 29
 #define SPEC_FAIL_CALL_INIT_NOT_SIMPLE 30
 #define SPEC_FAIL_CALL_METACLASS 31
+#define SPEC_FAIL_CALL_INIT_NOT_INLINE_VALUES 32
 
 /* COMPARE_OP */
 #define SPEC_FAIL_COMPARE_OP_DIFFERENT_TYPES 12
@@ -806,11 +807,7 @@ specialize_dict_access(
         return 0;
     }
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
-    PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
-    if (_PyDictOrValues_IsValues(*dorv) ||
-        _PyObject_MakeInstanceAttributesFromDict(owner, dorv))
-    {
-        // Virtual dictionary
+    if (type->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
         PyDictKeysObject *keys = ((PyHeapTypeObject *)type)->ht_cached_keys;
         assert(PyUnicode_CheckExact(name));
         Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
@@ -827,6 +824,7 @@ specialize_dict_access(
         instr->op.code = values_op;
     }
     else {
+        PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
         PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(*dorv);
         if (dict == NULL || !PyDict_CheckExact(dict)) {
             SPECIALIZATION_FAIL(base_op, SPEC_FAIL_NO_DICT);
@@ -1236,11 +1234,8 @@ PyObject *descr, DescriptorClassification kind, bool is_method)
     assert(descr != NULL);
     assert((is_method && kind == METHOD) || (!is_method && kind == NON_DESCRIPTOR));
     if (owner_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
         PyDictKeysObject *keys = ((PyHeapTypeObject *)owner_cls)->ht_cached_keys;
-        if (!_PyDictOrValues_IsValues(*dorv) &&
-            !_PyObject_MakeInstanceAttributesFromDict(owner, dorv))
-        {
+        if ((owner_cls->tp_flags & Py_TPFLAGS_INLINE_VALUES) == 0) {
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_HAS_MANAGED_DICT);
             return 0;
         }
@@ -1706,8 +1701,8 @@ get_init_for_simple_managed_python_class(PyTypeObject *tp)
         SPECIALIZATION_FAIL(CALL, SPEC_FAIL_OVERRIDDEN);
         return NULL;
     }
-    if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
-        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_NO_DICT);
+    if ((tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) == 0) {
+        SPECIALIZATION_FAIL(CALL, SPEC_FAIL_CALL_INIT_NOT_INLINE_VALUES);
         return NULL;
     }
     if (!(tp->tp_flags & Py_TPFLAGS_HEAPTYPE)) {

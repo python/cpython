@@ -1706,7 +1706,7 @@ type_call(PyObject *self, PyObject *args, PyObject *kwds)
 PyObject *
 _PyType_NewManagedObject(PyTypeObject *type)
 {
-    assert(type->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+    assert(type->tp_flags & Py_TPFLAGS_INLINE_VALUES);
     assert(_PyType_IS_GC(type));
     assert(type->tp_new == PyBaseObject_Type.tp_new);
     assert(type->tp_alloc == PyType_GenericAlloc);
@@ -1733,9 +1733,13 @@ _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems)
      * flag to indicate when that is safe) it does not seem worth the memory
      * savings. An example type that doesn't need the +1 is a subclass of
      * tuple. See GH-100659 and GH-81381. */
-    const size_t size = _PyObject_VAR_SIZE(type, nitems+1);
+    size_t size = _PyObject_VAR_SIZE(type, nitems+1);
 
     const size_t presize = _PyType_PreHeaderSize(type);
+    if (type->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+        assert(type->tp_itemsize == 0);
+        size += _PyInlineValuesSize(type);
+    }
     char *alloc = _PyObject_MallocWithType(type, size + presize);
     if (alloc  == NULL) {
         return PyErr_NoMemory();
@@ -2052,15 +2056,12 @@ subtype_dealloc(PyObject *self)
     }
 
     /* If we added a dict, DECREF it, or free inline values. */
+    if (type->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+        _PyObject_FreeInstanceAttributes(self);
+    }
     if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
         PyDictOrValues *dorv_ptr = _PyObject_DictOrValuesPointer(self);
-        if (_PyDictOrValues_IsValues(*dorv_ptr)) {
-            _PyObject_FreeInstanceAttributes(self);
-        }
-        else {
-            Py_XDECREF(_PyDictOrValues_GetDict(*dorv_ptr));
-        }
-        dorv_ptr->values = NULL;
+        Py_CLEAR(dorv_ptr->dict);
     }
     else if (type->tp_dictoffset && !base->tp_dictoffset) {
         PyObject **dictptr = _PyObject_ComputedDictPointer(self);
@@ -2981,7 +2982,13 @@ subtype_setdict(PyObject *obj, PyObject *value, void *context)
                      "not a '%.200s'", Py_TYPE(value)->tp_name);
         return -1;
     }
-    Py_XSETREF(*dictptr, Py_XNewRef(value));
+    if (*dictptr) {
+        _PyDict_DetachFromObject(*dictptr, obj);
+        Py_SETREF(*dictptr, Py_XNewRef(value));
+    }
+    else {
+        *dictptr = Py_XNewRef(value);
+    }
     return 0;
 }
 
@@ -5847,7 +5854,7 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
         assert((oldto->tp_flags & Py_TPFLAGS_PREHEADER) == (newto->tp_flags & Py_TPFLAGS_PREHEADER));
         _PyObject_GetDictPtr(self);
         if (oldto->tp_flags & Py_TPFLAGS_MANAGED_DICT &&
-            _PyDictOrValues_IsValues(*_PyObject_DictOrValuesPointer(self)))
+            _PyObject_DictOrValuesPointer(self)->dict == NULL)
         {
             /* Was unable to convert to dict */
             PyErr_NoMemory();
@@ -7481,9 +7488,9 @@ type_ready_managed_dict(PyTypeObject *type)
             return -1;
         }
     }
-    //if (type->tp_itemsize == 0) {
-    //    type->tp_flags |= Py_TPFLAGS_INLINE_VALUES;
-    //}
+    if (type->tp_itemsize == 0 && type->tp_basicsize == sizeof(PyObject)) {
+        type->tp_flags |= Py_TPFLAGS_INLINE_VALUES;
+    }
     return 0;
 }
 

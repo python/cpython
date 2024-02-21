@@ -1317,14 +1317,13 @@ static PyObject *
 get_object_dict_values(PyObject *self, PyObject *obj)
 {
     PyTypeObject *type = Py_TYPE(obj);
-    if (!_PyType_HasFeature(type, Py_TPFLAGS_MANAGED_DICT)) {
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_INLINE_VALUES)) {
         Py_RETURN_NONE;
     }
-    PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(obj);
-    if (!_PyDictOrValues_IsValues(dorv)) {
+    PyDictValues *values = _PyObject_InlineValues(obj);
+    if (!values->valid) {
         Py_RETURN_NONE;
     }
-    PyDictValues *values = _PyDictOrValues_GetValues(dorv);
     PyDictKeysObject *keys = ((PyHeapTypeObject *)type)->ht_cached_keys;
     assert(keys != NULL);
     int size = (int)keys->dk_nentries;

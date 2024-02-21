@@ -2011,32 +2011,13 @@ gc_alloc(PyTypeObject *tp, size_t basicsize, size_t presize)
 }
 
 
-#define CACHED_KEYS(tp) (((PyHeapTypeObject*)tp)->ht_cached_keys)
-
-static inline size_t
-shared_keys_usable_size(PyDictKeysObject *keys)
-{
-    return (size_t)keys->dk_nentries + (size_t)keys->dk_usable;
-}
-
-static inline size_t
-space_for_values(PyDictKeysObject *keys)
-{
-    size_t size = shared_keys_usable_size(keys);
-    size_t prefix_size = _Py_SIZE_ROUND_UP(size, sizeof(PyObject *));
-    assert(prefix_size < 256);
-    return prefix_size + (size + 1) * sizeof(PyObject *);
-}
-
 PyObject *
 _PyObject_GC_New(PyTypeObject *tp)
 {
     size_t presize = _PyType_PreHeaderSize(tp);
     size_t size = _PyObject_SIZE(tp);
     if (_PyType_HasFeature(tp, Py_TPFLAGS_INLINE_VALUES)) {
-        PyDictKeysObject *keys = CACHED_KEYS(tp);
-        assert(keys != NULL);
-        size += space_for_values(keys);
+        size += _PyInlineValuesSize(tp);
     }
     PyObject *op = gc_alloc(tp, size, presize);
     if (op == NULL) {

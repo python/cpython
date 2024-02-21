@@ -174,6 +174,8 @@ struct _dictkeysobject {
 #define SHARED_KEYS_MAX_SIZE 30
 #define NEXT_LOG2_SHARED_KEYS_MAX_SIZE 6
 
+#define DICTVALUES_SENTINEL 0x99
+
 /* Layout of dict values:
  *
  * The PyObject *values are preceded by an array of bytes holding
@@ -181,9 +183,11 @@ struct _dictkeysobject {
  * [-1] = prefix size. [-2] = used size. size[-2-n...] = insertion order.
  */
 struct _dictvalues {
+    uint8_t refcount;
     uint8_t capacity;
     uint8_t size;
     uint8_t embedded;
+    uint8_t valid;
     PyObject *values[1];
 };
 
@@ -199,6 +203,7 @@ static inline void* _DK_ENTRIES(PyDictKeysObject *dk) {
     size_t index = (size_t)1 << dk->dk_log2_index_bytes;
     return (&indices[index]);
 }
+
 static inline PyDictKeyEntry* DK_ENTRIES(PyDictKeysObject *dk) {
     assert(dk->dk_kind == DICT_KEYS_GENERAL);
     return (PyDictKeyEntry*)_DK_ENTRIES(dk);
@@ -206,6 +211,14 @@ static inline PyDictKeyEntry* DK_ENTRIES(PyDictKeysObject *dk) {
 static inline PyDictUnicodeEntry* DK_UNICODE_ENTRIES(PyDictKeysObject *dk) {
     assert(dk->dk_kind != DICT_KEYS_GENERAL);
     return (PyDictUnicodeEntry*)_DK_ENTRIES(dk);
+}
+
+static inline int
+_PyObject_InlineValuesAreValid(PyObject *obj)
+{
+    PyDictValues *values = _PyObject_InlineValues(obj);
+    assert(values->refcount == 0 || values->refcount == 1);
+    return values->valid;
 }
 
 #define DK_IS_UNICODE(dk) ((dk)->dk_kind != DICT_KEYS_GENERAL)
@@ -246,7 +259,7 @@ _PyDict_NotifyEvent(PyInterpreterState *interp,
 }
 
 extern PyObject *_PyObject_MakeDictFromInstanceAttributes(PyObject *obj, PyDictValues *values);
-extern bool _PyObject_MakeInstanceAttributesFromDict(PyObject *obj, PyDictOrValues *dorv);
+
 extern PyObject *_PyDict_FromItems(
         PyObject *const *keys, Py_ssize_t keys_offset,
         PyObject *const *values, Py_ssize_t values_offset,
@@ -268,6 +281,26 @@ _PyDictValues_AddToInsertionOrder(PyDictValues *values, Py_ssize_t ix)
     array[size] = (uint8_t)ix;
     values->size = size+1;
 }
+
+static inline size_t
+shared_keys_usable_size(PyDictKeysObject *keys)
+{
+    return (size_t)keys->dk_nentries + (size_t)keys->dk_usable;
+}
+
+static inline size_t
+_PyInlineValuesSize(PyTypeObject *tp)
+{
+    PyDictKeysObject *keys = ((PyHeapTypeObject*)tp)->ht_cached_keys;
+    assert(keys != NULL);
+    size_t size = shared_keys_usable_size(keys);
+    size_t prefix_size = _Py_SIZE_ROUND_UP(size, sizeof(PyObject *));
+    assert(prefix_size < 256);
+    return prefix_size + (size + 1) * sizeof(PyObject *);
+}
+
+void
+_PyDict_DetachFromObject(PyObject *dict, PyObject *obj);
 
 #ifdef __cplusplus
 }
