@@ -2029,30 +2029,24 @@ create_pointer_inst(PyObject *module, PyObject *arg)
 static PyObject *
 buffer_info(PyObject *self, PyObject *arg)
 {
-    StgDictObject *dict = PyType_stgdict(arg);
     PyObject *shape;
     Py_ssize_t i;
-
-    if (dict == NULL)
-        dict = PyObject_stgdict(arg);
 
     ctypes_state *st = GLOBAL_STATE();
     StgInfo *info;
     if (PyStgInfo_FromAny(st, arg, &info) < 0) {
         return NULL;
     }
-
     if (info == NULL) {
         PyErr_SetString(PyExc_TypeError,
                         "not a ctypes type or object");
         return NULL;
     }
-    assert(dict);
     shape = PyTuple_New(info->ndim);
     if (shape == NULL)
         return NULL;
     for (i = 0; i < (int)info->ndim; ++i)
-        PyTuple_SET_ITEM(shape, i, PyLong_FromSsize_t(dict->shape[i]));
+        PyTuple_SET_ITEM(shape, i, PyLong_FromSsize_t(info->shape[i]));
 
     if (PyErr_Occurred()) {
         Py_DECREF(shape);

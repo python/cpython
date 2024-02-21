@@ -514,6 +514,7 @@ CType_Type_dealloc(PyObject *self)
     if (info) {
         PyMem_Free(info->ffi_type_pointer.elements);
         PyMem_Free(info->format);
+        PyMem_Free(info->shape);
     }
 
     PyTypeObject *tp = Py_TYPE(self);
@@ -1231,7 +1232,6 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
     if (proto) {
-        StgDictObject *itemdict;
         const char *current_format;
         if (-1 == PyCPointerType_SetProto(stginfo, proto)) {
             Py_DECREF(proto);
@@ -1239,7 +1239,6 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             Py_DECREF((PyObject *)stgdict);
             return NULL;
         }
-        itemdict = PyType_stgdict(proto);
         StgInfo *iteminfo;
         if (PyStgInfo_FromType(st, proto, &iteminfo) < 0) {
             Py_DECREF(proto);
@@ -1249,17 +1248,16 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
         /* PyCPointerType_SetProto has verified proto has a stgdict. */
         assert(iteminfo);
-        assert(itemdict);
         /* If iteminfo->format is NULL, then this is a pointer to an
            incomplete type.  We create a generic format string
            'pointer to bytes' in this case.  XXX Better would be to
            fix the format string later...
         */
         current_format = iteminfo->format ? iteminfo->format : "B";
-        if (itemdict->shape != NULL) {
+        if (iteminfo->shape != NULL) {
             /* pointer to an array: the shape needs to be prefixed */
             stginfo->format = _ctypes_alloc_format_string_with_shape(
-                iteminfo->ndim, itemdict->shape, "&", current_format);
+                iteminfo->ndim, iteminfo->shape, "&", current_format);
         } else {
             stginfo->format = _ctypes_alloc_format_string("&", current_format);
         }
@@ -1590,7 +1588,6 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyTypeObject *result;
     StgDictObject *stgdict;
-    StgDictObject *itemdict;
     PyObject *length_attr, *type_attr;
     Py_ssize_t length;
     Py_ssize_t itemsize, itemalign;
@@ -1658,32 +1655,30 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (!stginfo) {
         goto error;
     }
-    itemdict = PyType_stgdict(type_attr);
-    if (!itemdict) {
-        PyErr_SetString(PyExc_TypeError,
-                        "_type_ must have storage info");
-        goto error;
-    }
 
     StgInfo *iteminfo;
     if (PyStgInfo_FromType(st, type_attr, &iteminfo) < 0) {
         goto error;
     }
-    assert(iteminfo);
+    if (!iteminfo) {
+        PyErr_SetString(PyExc_TypeError,
+                        "_type_ must have storage info");
+        goto error;
+    }
 
     assert(iteminfo->format);
     stginfo->format = _ctypes_alloc_format_string(NULL, iteminfo->format);
     if (stginfo->format == NULL)
         goto error;
     stginfo->ndim = iteminfo->ndim + 1;
-    stgdict->shape = PyMem_Malloc(sizeof(Py_ssize_t) * stginfo->ndim);
-    if (stgdict->shape == NULL) {
+    stginfo->shape = PyMem_Malloc(sizeof(Py_ssize_t) * stginfo->ndim);
+    if (stginfo->shape == NULL) {
         PyErr_NoMemory();
         goto error;
     }
-    stgdict->shape[0] = length;
+    stginfo->shape[0] = length;
     if (stginfo->ndim > 1) {
-        memmove(&stgdict->shape[1], itemdict->shape,
+        memmove(&stginfo->shape[1], iteminfo->shape,
             sizeof(Py_ssize_t) * (stginfo->ndim - 1));
     }
 
@@ -2916,7 +2911,6 @@ static int
 PyCData_NewGetBuffer(PyObject *myself, Py_buffer *view, int flags)
 {
     CDataObject *self = (CDataObject *)myself;
-    StgDictObject *dict = PyObject_stgdict(myself);
 
     ctypes_state *st = GLOBAL_STATE();
     StgInfo *info;
@@ -2945,7 +2939,7 @@ PyCData_NewGetBuffer(PyObject *myself, Py_buffer *view, int flags)
     /* use default format character if not set */
     view->format = info->format ? info->format : "B";
     view->ndim = info->ndim;
-    view->shape = dict->shape;
+    view->shape = info->shape;
     view->itemsize = item_info->size;
     view->strides = NULL;
     view->suboffsets = NULL;

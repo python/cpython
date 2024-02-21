@@ -248,6 +248,9 @@ typedef struct {
     /* pep3118 fields, pointers need PyMem_Free */
     char *format;
     int ndim;
+    Py_ssize_t *shape;
+/*      Py_ssize_t *strides;    */ /* unused in ctypes */
+/*      Py_ssize_t *suboffsets; */ /* unused in ctypes */
 } StgInfo;
 
 // Get a PyCTypeDataObject. These Return -1 on error, 0 if "not found", 1 on OK.
@@ -292,7 +295,7 @@ typedef struct {
     /* pep3118 fields, pointers need PyMem_Free */
     //char *format;
     //int ndim;
-    Py_ssize_t *shape;
+    //Py_ssize_t *shape;
 /*      Py_ssize_t *strides;    */ /* unused in ctypes */
 /*      Py_ssize_t *suboffsets; */ /* unused in ctypes */
 
