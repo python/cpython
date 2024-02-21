@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 import lexer
 import parser
+import re
 from typing import Optional
 
 
@@ -21,9 +22,11 @@ class Properties:
     uses_co_names: bool
     uses_locals: bool
     has_free: bool
-
+    side_exit: bool
     pure: bool
     passthrough: bool
+    oparg_and_1: bool = False
+    const_oparg: int = -1
 
     def dump(self, indent: str) -> None:
         print(indent, end="")
@@ -48,6 +51,7 @@ class Properties:
             uses_co_names=any(p.uses_co_names for p in properties),
             uses_locals=any(p.uses_locals for p in properties),
             has_free=any(p.has_free for p in properties),
+            side_exit=any(p.side_exit for p in properties),
             pure=all(p.pure for p in properties),
             passthrough=all(p.passthrough for p in properties),
         )
@@ -69,6 +73,7 @@ SKIP_PROPERTIES = Properties(
     uses_co_names=False,
     uses_locals=False,
     has_free=False,
+    side_exit=False,
     pure=False,
     passthrough=False,
 )
@@ -138,6 +143,8 @@ class Uop:
     properties: Properties
     _size: int = -1
     implicitly_created: bool = False
+    replicated = 0
+    replicates : "Uop | None" = None
 
     def dump(self, indent: str) -> None:
         print(
@@ -268,17 +275,19 @@ def override_error(
     )
 
 
-def convert_stack_item(item: parser.StackEffect) -> StackItem:
+def convert_stack_item(item: parser.StackEffect, replace_op_arg_1: str | None) -> StackItem:
+    cond = item.cond
+    if replace_op_arg_1 and OPARG_AND_1.match(item.cond):
+        cond = replace_op_arg_1
     return StackItem(
-        item.name, item.type, item.cond, (item.size or "1")
+        item.name, item.type, cond, (item.size or "1")
     )
 
-
-def analyze_stack(op: parser.InstDef) -> StackEffect:
+def analyze_stack(op: parser.InstDef, replace_op_arg_1: str | None = None) -> StackEffect:
     inputs: list[StackItem] = [
-        convert_stack_item(i) for i in op.inputs if isinstance(i, parser.StackEffect)
+        convert_stack_item(i, replace_op_arg_1) for i in op.inputs if isinstance(i, parser.StackEffect)
     ]
-    outputs: list[StackItem] = [convert_stack_item(i) for i in op.outputs]
+    outputs: list[StackItem] = [convert_stack_item(i, replace_op_arg_1) for i in op.outputs]
     for input, output in zip(inputs, outputs):
         if input.name == output.name:
             input.peek = output.peek = True
@@ -441,6 +450,22 @@ def stack_effect_only_peeks(instr: parser.InstDef) -> bool:
         for s, other in zip(stack_inputs, instr.outputs)
     )
 
+OPARG_AND_1 = re.compile("\\(*oparg *& *1")
+
+def effect_depends_on_oparg_1(op: parser.InstDef) -> bool:
+    for effect in op.inputs:
+        if isinstance(effect, parser.CacheEffect):
+            continue
+        if not effect.cond:
+            continue
+        if OPARG_AND_1.match(effect.cond):
+            return True
+    for effect in op.outputs:
+        if not effect.cond:
+            continue
+        if OPARG_AND_1.match(effect.cond):
+            return True
+    return False
 
 def compute_properties(op: parser.InstDef) -> Properties:
     has_free = (
@@ -448,13 +473,24 @@ def compute_properties(op: parser.InstDef) -> Properties:
         or variable_used(op, "PyCell_GET")
         or variable_used(op, "PyCell_SET")
     )
+    deopts_if = variable_used(op, "DEOPT_IF")
+    exits_if = variable_used(op, "EXIT_IF")
+    if deopts_if and exits_if:
+        tkn = op.tokens[0]
+        raise lexer.make_syntax_error(
+            "Op cannot contain both EXIT_IF and DEOPT_IF",
+            tkn.filename,
+            tkn.line,
+            tkn.column,
+            op.name,
+        )
     infallible = is_infallible(op)
-    deopts = variable_used(op, "DEOPT_IF")
     passthrough = stack_effect_only_peeks(op) and infallible
     return Properties(
         escapes=makes_escaping_api_call(op),
         infallible=infallible,
-        deopts=deopts,
+        deopts=deopts_if or exits_if,
+        side_exit=exits_if,
         oparg=variable_used(op, "oparg"),
         jumps=variable_used(op, "JUMPBY"),
         eval_breaker=variable_used(op, "CHECK_EVAL_BREAKER"),
@@ -473,8 +509,8 @@ def compute_properties(op: parser.InstDef) -> Properties:
     )
 
 
-def make_uop(name: str, op: parser.InstDef, inputs: list[parser.InputEffect]) -> Uop:
-    return Uop(
+def make_uop(name: str, op: parser.InstDef, inputs: list[parser.InputEffect], uops: dict[str, Uop]) -> Uop:
+    result = Uop(
         name=name,
         context=op.context,
         annotations=op.annotations,
@@ -483,6 +519,49 @@ def make_uop(name: str, op: parser.InstDef, inputs: list[parser.InputEffect]) ->
         body=op.block.tokens,
         properties=compute_properties(op),
     )
+    if effect_depends_on_oparg_1(op) and "split" in op.annotations:
+        result.properties.oparg_and_1 = True
+        for bit in ("0", "1"):
+            name_x = name + "_" + bit
+            properties = compute_properties(op)
+            if properties.oparg:
+                # May not need oparg anymore
+                properties.oparg = any(token.text == "oparg" for token in op.block.tokens)
+            rep = Uop(
+                name=name_x,
+                context=op.context,
+                annotations=op.annotations,
+                stack=analyze_stack(op, bit),
+                caches=analyze_caches(inputs),
+                body=op.block.tokens,
+                properties=properties,
+            )
+            rep.replicates = result
+            uops[name_x] = rep
+    for anno in op.annotations:
+        if anno.startswith("replicate"):
+            result.replicated = int(anno[10:-1])
+            break
+    else:
+        return result
+    for oparg in range(result.replicated):
+        name_x = name + "_" + str(oparg)
+        properties = compute_properties(op)
+        properties.oparg = False
+        properties.const_oparg = oparg
+        rep = Uop(
+            name=name_x,
+            context=op.context,
+            annotations=op.annotations,
+            stack=analyze_stack(op),
+            caches=analyze_caches(inputs),
+            body=op.block.tokens,
+            properties=properties,
+        )
+        rep.replicates = result
+        uops[name_x] = rep
+
+    return result
 
 
 def add_op(op: parser.InstDef, uops: dict[str, Uop]) -> None:
@@ -492,7 +571,7 @@ def add_op(op: parser.InstDef, uops: dict[str, Uop]) -> None:
             raise override_error(
                 op.name, op.context, uops[op.name].context, op.tokens[0]
             )
-    uops[op.name] = make_uop(op.name, op, op.inputs)
+    uops[op.name] = make_uop(op.name, op, op.inputs, uops)
 
 
 def add_instruction(
@@ -519,7 +598,7 @@ def desugar_inst(
                 uop_index = len(parts)
                 # Place holder for the uop.
                 parts.append(Skip(0))
-    uop = make_uop("_" + inst.name, inst, op_inputs)
+    uop = make_uop("_" + inst.name, inst, op_inputs, uops)
     uop.implicitly_created = True
     uops[inst.name] = uop
     if uop_index < 0:

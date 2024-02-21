@@ -127,9 +127,8 @@ def _finddoc(obj):
             cls = self.__class__
     # Should be tested before isdatadescriptor().
     elif isinstance(obj, property):
-        func = obj.fget
-        name = func.__name__
-        cls = _findclass(func)
+        name = obj.__name__
+        cls = _findclass(obj.fget)
         if cls is None or getattr(cls, name) is not obj:
             return None
     elif inspect.ismethoddescriptor(obj) or inspect.isdatadescriptor(obj):
@@ -1144,7 +1143,8 @@ class HTMLDoc(Doc):
                 # XXX lambda's won't usually have func_annotations['return']
                 # since the syntax doesn't support but it is possible.
                 # So removing parentheses isn't truly safe.
-                argspec = argspec[1:-1] # remove parentheses
+                if not object.__annotations__:
+                    argspec = argspec[1:-1] # remove parentheses
         if not argspec:
             argspec = '(...)'
 
@@ -1586,7 +1586,8 @@ location listed above.
                 # XXX lambda's won't usually have func_annotations['return']
                 # since the syntax doesn't support but it is possible.
                 # So removing parentheses isn't truly safe.
-                argspec = argspec[1:-1] # remove parentheses
+                if not object.__annotations__:
+                    argspec = argspec[1:-1]
         if not argspec:
             argspec = '(...)'
         decl = asyncqualifier + title + argspec + note

@@ -445,6 +445,11 @@ Constants
       Added ``IP_PKTINFO``, ``IP_UNBLOCK_SOURCE``, ``IP_BLOCK_SOURCE``,
       ``IP_ADD_SOURCE_MEMBERSHIP``, ``IP_DROP_SOURCE_MEMBERSHIP``.
 
+   .. versionchanged:: 3.13
+      Added ``SO_BINDTOIFINDEX``. On Linux this constant can be used in the
+      same way that ``SO_BINDTODEVICE`` is used, but with the index of a
+      network interface instead of its name.
+
 .. data:: AF_CAN
           PF_CAN
           SOL_CAN_*
@@ -1605,8 +1610,9 @@ to sockets.
 
    Receive data from the socket.  The return value is a bytes object representing the
    data received.  The maximum amount of data to be received at once is specified
-   by *bufsize*.  See the Unix manual page :manpage:`recv(2)` for the meaning of
-   the optional argument *flags*; it defaults to zero.
+   by *bufsize*. A returned empty bytes object indicates that the client has disconnected.
+   See the Unix manual page :manpage:`recv(2)` for the meaning of the optional argument
+   *flags*; it defaults to zero.
 
    .. note::
 

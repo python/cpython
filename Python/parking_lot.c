@@ -1,11 +1,12 @@
 #include "Python.h"
 
 #include "pycore_llist.h"
-#include "pycore_lock.h"        // _PyRawMutex
+#include "pycore_lock.h"          // _PyRawMutex
 #include "pycore_parking_lot.h"
-#include "pycore_pyerrors.h"    // _Py_FatalErrorFormat
-#include "pycore_pystate.h"     // _PyThreadState_GET
-#include "pycore_semaphore.h"   // _PySemaphore
+#include "pycore_pyerrors.h"      // _Py_FatalErrorFormat
+#include "pycore_pystate.h"       // _PyThreadState_GET
+#include "pycore_semaphore.h"     // _PySemaphore
+#include "pycore_time.h"          //_PyTime_MonotonicUnchecked()
 
 #include <stdbool.h>
 
@@ -91,7 +92,7 @@ _PySemaphore_Destroy(_PySemaphore *sema)
 }
 
 static int
-_PySemaphore_PlatformWait(_PySemaphore *sema, _PyTime_t timeout)
+_PySemaphore_PlatformWait(_PySemaphore *sema, PyTime_t timeout)
 {
     int res;
 #if defined(MS_WINDOWS)
@@ -119,13 +120,13 @@ _PySemaphore_PlatformWait(_PySemaphore *sema, _PyTime_t timeout)
         struct timespec ts;
 
 #if defined(CLOCK_MONOTONIC) && defined(HAVE_SEM_CLOCKWAIT)
-        _PyTime_t deadline = _PyTime_Add(_PyTime_GetMonotonicClock(), timeout);
+        PyTime_t deadline = _PyTime_Add(_PyTime_MonotonicUnchecked(), timeout);
 
         _PyTime_AsTimespec_clamp(deadline, &ts);
 
         err = sem_clockwait(&sema->platform_sem, CLOCK_MONOTONIC, &ts);
 #else
-        _PyTime_t deadline = _PyTime_Add(_PyTime_GetSystemClock(), timeout);
+        PyTime_t deadline = _PyTime_Add(_PyTime_TimeUnchecked(), timeout);
 
         _PyTime_AsTimespec_clamp(deadline, &ts);
 
@@ -162,7 +163,7 @@ _PySemaphore_PlatformWait(_PySemaphore *sema, _PyTime_t timeout)
             _PyTime_AsTimespec_clamp(timeout, &ts);
             err = pthread_cond_timedwait_relative_np(&sema->cond, &sema->mutex, &ts);
 #else
-            _PyTime_t deadline = _PyTime_Add(_PyTime_GetSystemClock(), timeout);
+            PyTime_t deadline = _PyTime_Add(_PyTime_TimeUnchecked(), timeout);
             _PyTime_AsTimespec_clamp(deadline, &ts);
 
             err = pthread_cond_timedwait(&sema->cond, &sema->mutex, &ts);
@@ -188,7 +189,7 @@ _PySemaphore_PlatformWait(_PySemaphore *sema, _PyTime_t timeout)
 }
 
 int
-_PySemaphore_Wait(_PySemaphore *sema, _PyTime_t timeout, int detach)
+_PySemaphore_Wait(_PySemaphore *sema, PyTime_t timeout, int detach)
 {
     PyThreadState *tstate = NULL;
     if (detach) {
@@ -283,7 +284,7 @@ atomic_memcmp(const void *addr, const void *expected, size_t addr_size)
 
 int
 _PyParkingLot_Park(const void *addr, const void *expected, size_t size,
-                   _PyTime_t timeout_ns, void *park_arg, int detach)
+                   PyTime_t timeout_ns, void *park_arg, int detach)
 {
     struct wait_entry wait = {
         .park_arg = park_arg,
