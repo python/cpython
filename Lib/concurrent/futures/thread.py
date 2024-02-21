@@ -124,7 +124,7 @@ class ThreadPoolExecutor(_base.Executor):
     _counter = itertools.count().__next__
 
     def __init__(self, max_workers=None, thread_name_prefix='',
-                 initializer=None, initargs=()):
+                 initializer=None, initargs=(), thread_class=threading.Thread):
         """Initializes a new ThreadPoolExecutor instance.
 
         Args:
@@ -160,6 +160,7 @@ class ThreadPoolExecutor(_base.Executor):
                                     ("ThreadPoolExecutor-%d" % self._counter()))
         self._initializer = initializer
         self._initargs = initargs
+        self._thread_class = thread_class
 
     def submit(self, fn, /, *args, **kwargs):
         with self._shutdown_lock, _global_shutdown_lock:
@@ -194,11 +195,11 @@ class ThreadPoolExecutor(_base.Executor):
         if num_threads < self._max_workers:
             thread_name = '%s_%d' % (self._thread_name_prefix or self,
                                      num_threads)
-            t = threading.Thread(name=thread_name, target=_worker,
-                                 args=(weakref.ref(self, weakref_cb),
-                                       self._work_queue,
-                                       self._initializer,
-                                       self._initargs))
+            t = self._thread_class(name=thread_name, target=_worker,
+                                   args=(weakref.ref(self, weakref_cb),
+                                         self._work_queue,
+                                         self._initializer,
+                                         self._initargs))
             t.start()
             self._threads.add(t)
             _threads_queues[t] = self._work_queue
