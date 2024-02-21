@@ -35,7 +35,6 @@ except ImportError:
     from urllib2 import urlopen, HTTPError
 import re
 import shutil
-import string
 import subprocess
 import sys
 import tarfile
@@ -47,8 +46,10 @@ OPENSSL_OLD_VERSIONS = [
 ]
 
 OPENSSL_RECENT_VERSIONS = [
-    "1.1.1n",
-    "3.0.2"
+    "1.1.1w",
+    "3.0.13",
+    "3.1.5",
+    "3.2.1",
 ]
 
 LIBRESSL_OLD_VERSIONS = [
@@ -151,7 +152,10 @@ class AbstractBuilder(object):
     build_template = None
     depend_target = None
     install_target = 'install'
-    jobs = os.cpu_count()
+    if hasattr(os, 'process_cpu_count'):
+        jobs = os.process_cpu_count()
+    else:
+        jobs = os.cpu_count()
 
     module_files = (
         os.path.join(PYTHONROOT, "Modules/_ssl.c"),
@@ -359,7 +363,7 @@ class AbstractBuilder(object):
         env["LD_RUN_PATH"] = self.lib_dir
 
         log.info("Rebuilding Python modules")
-        cmd = [sys.executable, os.path.join(PYTHONROOT, "setup.py"), "build"]
+        cmd = ["make", "sharedmods", "checksharedmods"]
         self._subprocess_call(cmd, env=env)
         self.check_imports()
 
@@ -403,15 +407,15 @@ class BuildOpenSSL(AbstractBuilder):
     depend_target = 'depend'
 
     def _post_install(self):
-        if self.version.startswith("3.0"):
-            self._post_install_300()
+        if self.version.startswith("3."):
+            self._post_install_3xx()
 
     def _build_src(self, config_args=()):
-        if self.version.startswith("3.0"):
+        if self.version.startswith("3."):
             config_args += ("enable-fips",)
         super()._build_src(config_args)
 
-    def _post_install_300(self):
+    def _post_install_3xx(self):
         # create ssl/ subdir with example configs
         # Install FIPS module
         self._subprocess_call(
@@ -473,7 +477,7 @@ def main():
     start = datetime.now()
 
     if args.steps in {'modules', 'tests'}:
-        for name in ['setup.py', 'Modules/_ssl.c']:
+        for name in ['Makefile.pre.in', 'Modules/_ssl.c']:
             if not os.path.isfile(os.path.join(PYTHONROOT, name)):
                 parser.error(
                     "Must be executed from CPython build dir"

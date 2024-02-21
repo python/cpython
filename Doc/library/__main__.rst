@@ -54,45 +54,45 @@ The top-level code environment can be:
 
 * the scope of an interactive prompt::
 
-    >>> __name__
-    '__main__'
+   >>> __name__
+   '__main__'
 
 * the Python module passed to the Python interpreter as a file argument:
 
-    .. code-block:: shell-session
+  .. code-block:: shell-session
 
-       $ python3 helloworld.py
-       Hello, world!
+     $ python helloworld.py
+     Hello, world!
 
 * the Python module or package passed to the Python interpreter with the
   :option:`-m` argument:
 
-    .. code-block:: shell-session
+  .. code-block:: shell-session
 
-       $ python3 -m tarfile
-       usage: tarfile.py [-h] [-v] (...)
+     $ python -m tarfile
+     usage: tarfile.py [-h] [-v] (...)
 
 * Python code read by the Python interpreter from standard input:
 
-    .. code-block:: shell-session
+  .. code-block:: shell-session
 
-       $ echo "import this" | python3
-       The Zen of Python, by Tim Peters
+     $ echo "import this" | python
+     The Zen of Python, by Tim Peters
 
-       Beautiful is better than ugly.
-       Explicit is better than implicit.
-       ...
+     Beautiful is better than ugly.
+     Explicit is better than implicit.
+     ...
 
 * Python code passed to the Python interpreter with the :option:`-c` argument:
 
-    .. code-block:: shell-session
+  .. code-block:: shell-session
 
-       $ python3 -c "import this"
-       The Zen of Python, by Tim Peters
+     $ python -c "import this"
+     The Zen of Python, by Tim Peters
 
-       Beautiful is better than ugly.
-       Explicit is better than implicit.
-       ...
+     Beautiful is better than ugly.
+     Explicit is better than implicit.
+     ...
 
 In each of these situations, the top-level module's ``__name__`` is set to
 ``'__main__'``.
@@ -102,9 +102,9 @@ top-level environment by checking its own ``__name__``, which allows a common
 idiom for conditionally executing code when the module is not initialized from
 an import statement::
 
-    if __name__ == '__main__':
-        # Execute when the module is not initialized from an import statement.
-        ...
+   if __name__ == '__main__':
+       # Execute when the module is not initialized from an import statement.
+       ...
 
 .. seealso::
 
@@ -124,7 +124,7 @@ This is where using the ``if __name__ == '__main__'`` code block comes in
 handy. Code within this block won't run unless the module is executed in the
 top-level environment.
 
-Putting as few statements as possible in the block below ``if __name___ ==
+Putting as few statements as possible in the block below ``if __name__ ==
 '__main__'`` can improve code clarity and correctness. Most often, a function
 named ``main`` encapsulates the program's primary behavior::
 
@@ -178,7 +178,7 @@ that your function will return some value acceptable as an input to
 returned if your function does not have a return statement).
 
 By proactively following this convention ourselves, our module will have the
-same behavior when run directly (i.e. ``python3 echo.py``) as it will have if
+same behavior when run directly (i.e. ``python echo.py``) as it will have if
 we later package it as a console script entry-point in a pip-installable
 package.
 
@@ -215,7 +215,7 @@ directly from the command line using the :option:`-m` flag. For example:
 
 .. code-block:: shell-session
 
-   $ python3 -m bandclass
+   $ python -m bandclass
 
 This command will cause ``__main__.py`` to run. How you utilize this mechanism
 will depend on the nature of the package you are writing, but in this
@@ -227,7 +227,7 @@ students::
     import sys
     from .student import search_students
 
-    student_name = sys.argv[2] if len(sys.argv) >= 2 else ''
+    student_name = sys.argv[1] if len(sys.argv) >= 2 else ''
     print(f'Found student: {search_students(student_name)}')
 
 Note that ``from .student import search_students`` is an example of a relative
@@ -238,9 +238,9 @@ package.  For more details, see :ref:`intra-package-references` in the
 Idiomatic Usage
 ^^^^^^^^^^^^^^^
 
-The contents of ``__main__.py`` typically isn't fenced with
-``if __name__ == '__main__'`` blocks.  Instead, those files are kept short,
-functions to execute from other modules.  Those other modules can then be
+The content of ``__main__.py`` typically isn't fenced with an
+``if __name__ == '__main__'`` block.  Instead, those files are kept
+short and import functions to execute from other modules.  Those other modules can then be
 easily unit-tested and are properly reusable.
 
 If used, an ``if __name__ == '__main__'`` block will still work as expected
@@ -259,7 +259,7 @@ one mentioned below are preferred.
 
    See :mod:`venv` for an example of a package with a minimal ``__main__.py``
    in the standard library. It doesn't contain a ``if __name__ == '__main__'``
-   block. You can invoke it with ``python3 -m venv [directory]``.
+   block. You can invoke it with ``python -m venv [directory]``.
 
    See :mod:`runpy` for more details on the :option:`-m` flag to the
    interpreter executable.
@@ -320,7 +320,7 @@ Now, if we started our program, the result would look like this:
 
 .. code-block:: shell-session
 
-   $ python3 start.py
+   $ python start.py
    Define the variable `my_name`!
 
 The exit code of the program would be 1, indicating an error. Uncommenting the
@@ -329,19 +329,19 @@ status code 0, indicating success:
 
 .. code-block:: shell-session
 
-   $ python3 start.py
+   $ python start.py
    Dinsdale found in file /path/to/start.py
 
 Note that importing ``__main__`` doesn't cause any issues with unintentionally
 running top-level code meant for script use which is put in the
 ``if __name__ == "__main__"`` block of the ``start`` module. Why does this work?
 
-Python inserts an empty ``__main__`` module in :attr:`sys.modules` at
+Python inserts an empty ``__main__`` module in :data:`sys.modules` at
 interpreter startup, and populates it by running top-level code. In our example
 this is the ``start`` module which runs line by line and imports ``namely``.
 In turn, ``namely`` imports ``__main__`` (which is really ``start``). That's an
 import cycle! Fortunately, since the partially populated ``__main__``
-module is present in :attr:`sys.modules`, Python passes that to ``namely``.
+module is present in :data:`sys.modules`, Python passes that to ``namely``.
 See :ref:`Special considerations for __main__ <import-dunder-main>` in the
 import system's reference for details on how this works.
 
