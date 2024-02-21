@@ -233,8 +233,9 @@ dummy_func(void) {
     op(_CHECK_ATTR_MODULE, (dict_version/2, owner -- owner)) {
         (void)dict_version;
         if (sym_is_const(owner)) {
-            PyModuleObject *mod = (PyModuleObject *)sym_get_const(owner);
-            if (PyModule_CheckExact(mod)) {
+            PyObject *cnst = sym_get_const(owner);
+            if (PyModule_CheckExact(cnst)) {
+                PyModuleObject *mod = (PyModuleObject *)cnst;
                 PyObject *dict = mod->md_dict;
                 uint64_t watched_mutations = get_mutations(dict);
                 if (watched_mutations < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
@@ -256,13 +257,14 @@ dummy_func(void) {
             PyModuleObject *mod = (PyModuleObject *)sym_get_const(owner);
             assert(PyModule_CheckExact(mod));
             PyObject *dict = mod->md_dict;
-            PyObject *res = global_to_const(this_instr, dict);
+            PyObject *res = convert_global_to_const(this_instr, dict);
             if (res != NULL) {
                 this_instr[-1].opcode = _POP_TOP;
                 OUT_OF_SPACE_IF_NULL(attr = sym_new_const(ctx, res));
             }
         }
         if (attr == NULL) {
+            /* No conversion made. We don't know what `attr` is. */
             OUT_OF_SPACE_IF_NULL(attr = sym_new_known_notnull(ctx));
         }
     }

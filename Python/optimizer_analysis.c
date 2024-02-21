@@ -416,7 +416,7 @@ globals_watcher_callback(PyDict_WatchEvent event, PyObject* dict,
 }
 
 static PyObject *
-global_to_const(_PyUOpInstruction *inst, PyObject *obj)
+convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj)
 {
     assert(inst->opcode == _LOAD_GLOBAL_MODULE || inst->opcode == _LOAD_GLOBAL_BUILTINS || inst->opcode == _LOAD_ATTR_MODULE);
     assert(PyDict_CheckExact(obj));
@@ -424,6 +424,9 @@ global_to_const(_PyUOpInstruction *inst, PyObject *obj)
     assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
     PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
     assert(inst->operand <= UINT16_MAX);
+    if ((int)inst->operand >= dict->ma_keys->dk_nentries) {
+        return NULL;
+    }
     PyObject *res = entries[inst->operand].me_value;
     if (res == NULL) {
         return NULL;
@@ -532,12 +535,12 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 break;
             case _LOAD_GLOBAL_BUILTINS:
                 if (globals_checked & builtins_checked & globals_watched & builtins_watched & 1) {
-                    global_to_const(inst, builtins);
+                    convert_global_to_const(inst, builtins);
                 }
                 break;
             case _LOAD_GLOBAL_MODULE:
                 if (globals_checked & globals_watched & 1) {
-                    global_to_const(inst, globals);
+                    convert_global_to_const(inst, globals);
                 }
                 break;
             case _PUSH_FRAME:
@@ -714,6 +717,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     last->opcode = _NOP;
                     buffer[pc].opcode = NOP;
                 }
+                break;
             }
             case _JUMP_TO_TOP:
             case _EXIT_TRACE:
