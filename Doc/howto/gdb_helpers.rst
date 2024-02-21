@@ -1,23 +1,26 @@
 .. _gdb:
 
-===========
-GDB support
-===========
+=========================================================
+Debugging C API extensions and CPython Internals with GDB
+=========================================================
 
 .. highlight:: none
 
-If you experience low-level problems such as crashes or deadlocks
-(e.g. when debugging extensions or tinkering with parts of CPython
-which are written in C), it can be convenient to use a low-level
+If you experience low-level problems such as crashes or deadlocks,
+especially when debugging extensions or tinkering with parts of CPython
+which are written in C, it can be convenient to use a low-level
 debugger such as GDB in order to diagnose and fix the issue.
 By default, however, GDB (or any of its front-ends) doesn't know about
 high-level information specific to the CPython interpreter, such as which
 Python function is currently executing, or what type or value has a given
 Python object represented by a standard ``PyObject *`` pointer.
-We hereafter present two ways to overcome this limitation.
+This guide introduces an extenstion that provides this information to GDB.
 
-This guide assumes you are familiar with GDB, and focuses on Python-specific
+The guide assumes you are familiar with GDB, and focuses on Python-specific
 details.
+It is a consolidation of guidance from the CPython
+`devguide <https://devguide.python.org>`_ and the
+`Python wiki <https://wiki.python.org/moin/DebuggingWithGdb>`_
 
 
 Prerequisites
@@ -36,8 +39,8 @@ not at all. Below, we include tips for a few common systems as examples.
 Note that even if the instructions match your system, they might be outdated.
 
 
-Python built from source
-------------------------
+Setup with Python built from source
+-----------------------------------
 
 When you build CPython from source, debugging information should be available,
 and the build should add a ``python-gdb.py`` file to the root directory of
@@ -58,8 +61,8 @@ with instructions on how to do this.
    You can also add multiple paths, separated by ``:``.
 
 
-Linux distros
--------------
+Setup for Python from a Linux distro
+------------------------------------
 
 Most Linux systems provide debug information for the system Python
 in a package called ``python-debuginfo``, ``python-dbg`` or similar.
@@ -84,8 +87,8 @@ However, this will not install the ``python-gdb.py`` extension;
 you generally do need to install the debug info package separately.
 
 
-Debug build and Development mode
-================================
+Using the Debug build and Development mode
+==========================================
 
 For easier debugging, you might want to:
 
@@ -101,6 +104,9 @@ make the process easier.
 
 Using the ``python-gdb`` extension
 ==================================
+
+When the extension is loaded, it provides two main features:
+pretty printers for Python values, and additional commands.
 
 Pretty-printers
 ---------------
