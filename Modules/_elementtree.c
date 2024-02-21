@@ -3913,6 +3913,12 @@ _elementtree_XMLParser_flush_impl(XMLParserObject *self)
         Py_RETURN_NONE;
     }
 
+    // NOTE: The Expat parser in the C implementation of ElementTree is not
+    //       exposed to the outside; as a result we known that reparse deferall
+    //       is currently enabled, or we would not even have access to function
+    //       XML_SetReparseDeferralEnabled in the first place (which we checked
+    //       for, a few lines up).
+
     EXPAT(st, SetReparseDeferralEnabled)(self->parser, XML_FALSE);
 
     PyObject *res = expat_parse(st, self, "", 0, XML_FALSE);
