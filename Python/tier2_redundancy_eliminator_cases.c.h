@@ -373,7 +373,7 @@
             if (is_const(left) && is_const(right)) {
                 PyObject *temp = PyUnicode_Concat(get_const(left), get_const(right));
                 ERROR_IF(temp == NULL, error);
-                res = sym_new_const(ctx, temp);
+                OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, temp));
             }
             else {
                 OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyUnicode_Type));
