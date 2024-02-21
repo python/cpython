@@ -178,6 +178,7 @@ dummy_func(void) {
     }
 
     op(_TO_BOOL, (value -- res)) {
+        (void)value;
         OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyBool_Type));
     }
 
@@ -193,10 +194,10 @@ dummy_func(void) {
     op(_TO_BOOL_INT, (value -- res)) {
         sym_set_type(value, &PyLong_Type);
         if (is_const(value)) {
-            // TODO gh-115759:
-            // if value is None, we caxn replace with a _POP_TOP; _LOAD_CONST_BORROW
-            OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, _PyLong_IsZero((PyLongObject *)get_const(value))
-                ? Py_False : Py_True));
+            PyObject *load = _PyLong_IsZero((PyLongObject *)get_const(value))
+                             ? Py_False : Py_True;
+            REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)load);
+            OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, load));
         }
         else {
             OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyBool_Type));
@@ -209,8 +210,9 @@ dummy_func(void) {
     }
 
     op(_TO_BOOL_NONE, (value -- res)) {
-        // TODO gh-115759:
-        // if value is None, we caxn replace with a _POP_TOP; _LOAD_CONST_BORROW
+        if (get_const(value) == Py_None) {
+            REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_None);
+        }
         sym_set_type(value, &_PyNone_Type);
         OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, Py_False));
     }
@@ -218,10 +220,9 @@ dummy_func(void) {
     op(_TO_BOOL_STR, (value -- res)) {
         sym_set_type(value, &PyUnicode_Type);
         if (is_const(value)) {
-            // TODO gh-115759:
-            // if value is None, we caxn replace with a _POP_TOP; _LOAD_CONST_BORROW
-            OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx,
-                                    get_const(value) == &_Py_STR(empty) ? Py_False : Py_True));
+            PyObject *load = get_const(value) == &_Py_STR(empty) ? Py_False : Py_True;
+            REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)load);
+            OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, load));
         }
         else {
             OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyBool_Type));
