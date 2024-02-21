@@ -989,8 +989,8 @@ class ClassPropertiesAndMethods(unittest.TestCase):
 
     def test_mro_disagreement(self):
         # Testing error messages for MRO disagreement...
-        mro_err_msg = """Cannot create a consistent method resolution
-order (MRO) for bases """
+        mro_err_msg = ("Cannot create a consistent method resolution "
+                       "order (MRO) for bases ")
 
         def raises(exc, expected, callable, *args):
             try:
@@ -1317,6 +1317,15 @@ order (MRO) for bases """
         with self.assertRaisesRegex(AttributeError, "'X' object has no attribute 'a'"):
             X().a
 
+        # Test string subclass in `__slots__`, see gh-98783
+        class SubStr(str):
+            pass
+        class X(object):
+            __slots__ = (SubStr('x'),)
+        X().x = 1
+        with self.assertRaisesRegex(AttributeError, "'X' object has no attribute 'a'"):
+            X().a
+
     def test_slots_special(self):
         # Testing __dict__ and __weakref__ in __slots__...
         class D(object):
@@ -1585,7 +1594,11 @@ order (MRO) for bases """
 
         cm = classmethod(f)
         cm_dict = {'__annotations__': {},
-                   '__doc__': "f docstring",
+                   '__doc__': (
+                       "f docstring"
+                       if support.HAVE_DOCSTRINGS
+                       else None
+                    ),
                    '__module__': __name__,
                    '__name__': 'f',
                    '__qualname__': f.__qualname__}
@@ -1980,7 +1993,7 @@ order (MRO) for bases """
         ns = {}
         exec(code, ns)
         number_attrs = ns["number_attrs"]
-        # Warm up the the function for quickening (PEP 659)
+        # Warm up the function for quickening (PEP 659)
         for _ in range(30):
             self.assertEqual(number_attrs(Numbers()), list(range(280)))
 
@@ -3252,12 +3265,8 @@ order (MRO) for bases """
                 if otype:
                     otype = otype.__name__
                 return 'object=%s; type=%s' % (object, otype)
-        class OldClass:
+        class NewClass:
             __doc__ = DocDescr()
-        class NewClass(object):
-            __doc__ = DocDescr()
-        self.assertEqual(OldClass.__doc__, 'object=None; type=OldClass')
-        self.assertEqual(OldClass().__doc__, 'object=OldClass instance; type=OldClass')
         self.assertEqual(NewClass.__doc__, 'object=None; type=NewClass')
         self.assertEqual(NewClass().__doc__, 'object=NewClass instance; type=NewClass')
 
@@ -3588,6 +3597,16 @@ order (MRO) for bases """
         self.assertEqual(repr(o), 'A repr')
         self.assertEqual(o.__str__(), '41')
         self.assertEqual(o.__repr__(), 'A repr')
+
+    def test_repr_with_module_str_subclass(self):
+        # gh-98783
+        class StrSub(str):
+            pass
+        class Some:
+            pass
+        Some.__module__ = StrSub('example')
+        self.assertIsInstance(repr(Some), str)  # should not crash
+        self.assertIsInstance(repr(Some()), str)  # should not crash
 
     def test_keyword_arguments(self):
         # Testing keyword arguments to __init__, __call__...
@@ -4442,6 +4461,7 @@ order (MRO) for bases """
         o.whatever = Provoker(o)
         del o
 
+    @support.requires_resource('cpu')
     def test_wrapper_segfault(self):
         # SF 927248: deeply nested wrappers could cause stack overflow
         f = lambda:None
@@ -4718,6 +4738,20 @@ order (MRO) for bases """
         with self.assertRaises(AttributeError):
             del X.__abstractmethods__
 
+    def test_gh55664(self):
+        # gh-55664: issue a warning when the
+        # __dict__ of a class contains non-string keys
+        with self.assertWarnsRegex(RuntimeWarning, 'MyClass'):
+            MyClass = type('MyClass', (), {1: 2})
+
+        class meta(type):
+            def __new__(mcls, name, bases, ns):
+                ns[1] = 2
+                return super().__new__(mcls, name, bases, ns)
+
+        with self.assertWarnsRegex(RuntimeWarning, 'MyClass'):
+            MyClass = meta('MyClass', (), {})
+
     def test_proxy_call(self):
         class FakeStr:
             __class__ = str
@@ -4741,24 +4775,24 @@ order (MRO) for bases """
         thing = Thing()
         for i in range(20):
             with self.assertRaises(TypeError):
-                # PRECALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS
+                # CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS
                 list.sort(thing)
         for i in range(20):
             with self.assertRaises(TypeError):
-                # PRECALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS
+                # CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS
                 str.split(thing)
         for i in range(20):
             with self.assertRaises(TypeError):
-                # PRECALL_NO_KW_METHOD_DESCRIPTOR_NOARGS
+                # CALL_METHOD_DESCRIPTOR_NOARGS
                 str.upper(thing)
         for i in range(20):
             with self.assertRaises(TypeError):
-                # PRECALL_NO_KW_METHOD_DESCRIPTOR_FAST
+                # CALL_METHOD_DESCRIPTOR_FAST
                 str.strip(thing)
         from collections import deque
         for i in range(20):
             with self.assertRaises(TypeError):
-                # PRECALL_NO_KW_METHOD_DESCRIPTOR_O
+                # CALL_METHOD_DESCRIPTOR_O
                 deque.append(thing, thing)
 
     def test_repr_as_str(self):
@@ -4988,6 +5022,47 @@ order (MRO) for bases """
         gc.collect()
         self.assertEqual(Parent.__subclasses__(), [])
 
+    def test_instance_method_get_behavior(self):
+        # test case for gh-113157
+
+        class A:
+            def meth(self):
+                return self
+
+        class B:
+            pass
+
+        a = A()
+        b = B()
+        b.meth = a.meth.__get__(b, B)
+        self.assertEqual(b.meth(), a)
+
+    def test_attr_raise_through_property(self):
+        # test case for gh-103272
+        class A:
+            def __getattr__(self, name):
+                raise ValueError("FOO")
+
+            @property
+            def foo(self):
+                return self.__getattr__("asdf")
+
+        with self.assertRaisesRegex(ValueError, "FOO"):
+            A().foo
+
+        # test case for gh-103551
+        class B:
+            @property
+            def __getattr__(self, name):
+                raise ValueError("FOO")
+
+            @property
+            def foo(self):
+                raise NotImplementedError("BAR")
+
+        with self.assertRaisesRegex(NotImplementedError, "BAR"):
+            B().foo
+
 
 class DictProxyTests(unittest.TestCase):
     def setUp(self):
@@ -5094,7 +5169,8 @@ class MiscTests(unittest.TestCase):
             mykey = 'from Base2'
             mykey2 = 'from Base2'
 
-        X = type('X', (Base,), {MyKey(): 5})
+        with self.assertWarnsRegex(RuntimeWarning, 'X'):
+            X = type('X', (Base,), {MyKey(): 5})
         # mykey is read from Base
         self.assertEqual(X.mykey, 'from Base')
         # mykey2 is read from Base2 because MyKey.__eq__ has set __bases__
