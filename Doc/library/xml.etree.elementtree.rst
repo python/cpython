@@ -846,7 +846,8 @@ Functions
                                                max_depth=6)
    :module:
 
-   This function expands XInclude directives.  *elem* is the root element.  *loader* is
+   This function expands XInclude directives in-place in *elem*.
+   *elem* is the root element or an :class:`ElementTree` instance.  *loader* is
    an optional resource loader.  If omitted, it defaults to :func:`default_loader`.
    If given, it should be a callable that implements the same interface as
    :func:`default_loader`.  *base_url* is base URL of the original file, to resolve
