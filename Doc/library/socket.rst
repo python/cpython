@@ -445,6 +445,11 @@ Constants
       Added ``IP_PKTINFO``, ``IP_UNBLOCK_SOURCE``, ``IP_BLOCK_SOURCE``,
       ``IP_ADD_SOURCE_MEMBERSHIP``, ``IP_DROP_SOURCE_MEMBERSHIP``.
 
+   .. versionchanged:: 3.13
+      Added ``SO_BINDTOIFINDEX``. On Linux this constant can be used in the
+      same way that ``SO_BINDTODEVICE`` is used, but with the index of a
+      network interface instead of its name.
+
 .. data:: AF_CAN
           PF_CAN
           SOL_CAN_*

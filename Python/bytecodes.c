@@ -2612,7 +2612,7 @@ dummy_func(
             assert(Py_TYPE(iter) == &PyListIter_Type);
             STAT_INC(FOR_ITER, hit);
             PyListObject *seq = it->it_seq;
-            if ((size_t)it->it_index >= (size_t)PyList_GET_SIZE(seq)) {
+            if (seq == NULL || (size_t)it->it_index >= (size_t)PyList_GET_SIZE(seq)) {
                 it->it_index = -1;
                 #ifndef Py_GIL_DISABLED
                 if (seq != NULL) {
@@ -2633,6 +2633,7 @@ dummy_func(
             _PyListIterObject *it = (_PyListIterObject *)iter;
             assert(Py_TYPE(iter) == &PyListIter_Type);
             PyListObject *seq = it->it_seq;
+            DEOPT_IF(seq == NULL);
             DEOPT_IF((size_t)it->it_index >= (size_t)PyList_GET_SIZE(seq));
         }
 

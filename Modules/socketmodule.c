@@ -109,6 +109,7 @@ Local naming conventions:
 #include "pycore_capsule.h"       // _PyCapsule_SetTraverse()
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
 #include "pycore_moduleobject.h"  // _PyModule_GetState
+#include "pycore_time.h"          // _PyTime_AsMilliseconds()
 
 #ifdef _Py_MEMORY_SANITIZER
 #  include <sanitizer/msan_interface.h>
@@ -3112,7 +3113,7 @@ sock_gettimeout(PySocketSockObject *s, PyObject *Py_UNUSED(ignored))
         Py_RETURN_NONE;
     }
     else {
-        double seconds = _PyTime_AsSecondsDouble(s->sock_timeout);
+        double seconds = PyTime_AsSecondsDouble(s->sock_timeout);
         return PyFloat_FromDouble(seconds);
     }
 }
@@ -6916,7 +6917,7 @@ socket_getdefaulttimeout(PyObject *self, PyObject *Py_UNUSED(ignored))
         Py_RETURN_NONE;
     }
     else {
-        double seconds = _PyTime_AsSecondsDouble(state->defaulttimeout);
+        double seconds = PyTime_AsSecondsDouble(state->defaulttimeout);
         return PyFloat_FromDouble(seconds);
     }
 }
@@ -7925,6 +7926,9 @@ socket_exec(PyObject *m)
 #endif
 #ifdef  SO_BINDTODEVICE
     ADD_INT_MACRO(m, SO_BINDTODEVICE);
+#endif
+#ifdef  SO_BINDTOIFINDEX
+    ADD_INT_MACRO(m, SO_BINDTOIFINDEX);
 #endif
 #ifdef  SO_PRIORITY
     ADD_INT_MACRO(m, SO_PRIORITY);

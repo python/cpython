@@ -5,6 +5,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_namespace.h"     // _PyNamespace_New()
 #include "pycore_runtime.h"       // _Py_ID()
+#include "pycore_time.h"          // _PyTimeFraction
 
 #include <time.h>                 // clock()
 #ifdef HAVE_SYS_TIMES_H
@@ -97,16 +98,8 @@ get_time_state(PyObject *module)
 static PyObject*
 _PyFloat_FromPyTime(PyTime_t t)
 {
-    double d = _PyTime_AsSecondsDouble(t);
+    double d = PyTime_AsSecondsDouble(t);
     return PyFloat_FromDouble(d);
-}
-
-
-static int
-get_system_time(PyTime_t *t)
-{
-    // Avoid _PyTime_GetSystemClock() which silently ignores errors.
-    return _PyTime_GetSystemClockWithInfo(t, NULL);
 }
 
 
@@ -114,7 +107,7 @@ static PyObject *
 time_time(PyObject *self, PyObject *unused)
 {
     PyTime_t t;
-    if (get_system_time(&t) < 0) {
+    if (PyTime_Time(&t) < 0) {
         return NULL;
     }
     return _PyFloat_FromPyTime(t);
@@ -131,10 +124,10 @@ static PyObject *
 time_time_ns(PyObject *self, PyObject *unused)
 {
     PyTime_t t;
-    if (get_system_time(&t) < 0) {
+    if (PyTime_Time(&t) < 0) {
         return NULL;
     }
-    return _PyTime_AsNanosecondsObject(t);
+    return _PyTime_AsLong(t);
 }
 
 PyDoc_STRVAR(time_ns_doc,
@@ -171,8 +164,7 @@ py_clock(time_module_state *state, PyTime_t *tp, _Py_clock_info_t *info)
                         "or its value cannot be represented");
         return -1;
     }
-    PyTime_t ns = _PyTimeFraction_Mul(ticks, base);
-    *tp = _PyTime_FromNanoseconds(ns);
+    *tp = _PyTimeFraction_Mul(ticks, base);
     return 0;
 }
 #endif /* HAVE_CLOCK */
@@ -266,7 +258,7 @@ time_clock_gettime_ns_impl(PyObject *module, clockid_t clk_id)
     if (_PyTime_FromTimespec(&t, &ts) < 0) {
         return NULL;
     }
-    return _PyTime_AsNanosecondsObject(t);
+    return _PyTime_AsLong(t);
 }
 #endif   /* HAVE_CLOCK_GETTIME */
 
@@ -315,7 +307,7 @@ time_clock_settime_ns(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    if (_PyTime_FromNanosecondsObject(&t, obj) < 0) {
+    if (_PyTime_FromLong(&t, obj) < 0) {
         return NULL;
     }
     if (_PyTime_AsTimespec(t, &ts) == -1) {
@@ -1155,19 +1147,11 @@ should not be relied on.");
 #endif /* HAVE_WORKING_TZSET */
 
 
-static int
-get_monotonic(PyTime_t *t)
-{
-    // Avoid _PyTime_GetMonotonicClock() which silently ignores errors.
-    return _PyTime_GetMonotonicClockWithInfo(t, NULL);
-}
-
-
 static PyObject *
 time_monotonic(PyObject *self, PyObject *unused)
 {
     PyTime_t t;
-    if (get_monotonic(&t) < 0) {
+    if (PyTime_Monotonic(&t) < 0) {
         return NULL;
     }
     return _PyFloat_FromPyTime(t);
@@ -1182,10 +1166,10 @@ static PyObject *
 time_monotonic_ns(PyObject *self, PyObject *unused)
 {
     PyTime_t t;
-    if (get_monotonic(&t) < 0) {
+    if (PyTime_Monotonic(&t) < 0) {
         return NULL;
     }
-    return _PyTime_AsNanosecondsObject(t);
+    return _PyTime_AsLong(t);
 }
 
 PyDoc_STRVAR(monotonic_ns_doc,
@@ -1194,19 +1178,11 @@ PyDoc_STRVAR(monotonic_ns_doc,
 Monotonic clock, cannot go backward, as nanoseconds.");
 
 
-static int
-get_perf_counter(PyTime_t *t)
-{
-    // Avoid _PyTime_GetPerfCounter() which silently ignores errors.
-    return _PyTime_GetPerfCounterWithInfo(t, NULL);
-}
-
-
 static PyObject *
 time_perf_counter(PyObject *self, PyObject *unused)
 {
     PyTime_t t;
-    if (get_perf_counter(&t) < 0) {
+    if (PyTime_PerfCounter(&t) < 0) {
         return NULL;
     }
     return _PyFloat_FromPyTime(t);
@@ -1222,10 +1198,10 @@ static PyObject *
 time_perf_counter_ns(PyObject *self, PyObject *unused)
 {
     PyTime_t t;
-    if (get_perf_counter(&t) < 0) {
+    if (PyTime_PerfCounter(&t) < 0) {
         return NULL;
     }
-    return _PyTime_AsNanosecondsObject(t);
+    return _PyTime_AsLong(t);
 }
 
 PyDoc_STRVAR(perf_counter_ns_doc,
@@ -1256,7 +1232,7 @@ process_time_times(time_module_state *state, PyTime_t *tp,
     PyTime_t ns;
     ns = _PyTimeFraction_Mul(process.tms_utime, base);
     ns += _PyTimeFraction_Mul(process.tms_stime, base);
-    *tp = _PyTime_FromNanoseconds(ns);
+    *tp = ns;
     return 1;
 }
 #endif
@@ -1270,7 +1246,7 @@ py_process_time(time_module_state *state, PyTime_t *tp,
     HANDLE process;
     FILETIME creation_time, exit_time, kernel_time, user_time;
     ULARGE_INTEGER large;
-    PyTime_t ktime, utime, t;
+    PyTime_t ktime, utime;
     BOOL ok;
 
     process = GetCurrentProcess();
@@ -1297,8 +1273,7 @@ py_process_time(time_module_state *state, PyTime_t *tp,
     utime = large.QuadPart;
 
     /* ktime and utime have a resolution of 100 nanoseconds */
-    t = _PyTime_FromNanoseconds((ktime + utime) * 100);
-    *tp = t;
+    *tp = (ktime + utime) * 100;
     return 0;
 #else
 
@@ -1406,7 +1381,7 @@ time_process_time_ns(PyObject *module, PyObject *unused)
     if (py_process_time(state, &t, NULL) < 0) {
         return NULL;
     }
-    return _PyTime_AsNanosecondsObject(t);
+    return _PyTime_AsLong(t);
 }
 
 PyDoc_STRVAR(process_time_ns_doc,
@@ -1424,7 +1399,7 @@ _PyTime_GetThreadTimeWithInfo(PyTime_t *tp, _Py_clock_info_t *info)
     HANDLE thread;
     FILETIME creation_time, exit_time, kernel_time, user_time;
     ULARGE_INTEGER large;
-    PyTime_t ktime, utime, t;
+    PyTime_t ktime, utime;
     BOOL ok;
 
     thread =  GetCurrentThread();
@@ -1451,8 +1426,7 @@ _PyTime_GetThreadTimeWithInfo(PyTime_t *tp, _Py_clock_info_t *info)
     utime = large.QuadPart;
 
     /* ktime and utime have a resolution of 100 nanoseconds */
-    t = _PyTime_FromNanoseconds((ktime + utime) * 100);
-    *tp = t;
+    *tp = (ktime + utime) * 100;
     return 0;
 }
 
@@ -1476,7 +1450,7 @@ _PyTime_GetThreadTimeWithInfo(PyTime_t *tp, _Py_clock_info_t *info)
         info->adjustable = 0;
         info->resolution = 1e-9;
     }
-    *tp = _PyTime_FromNanoseconds(tc.stime + tc.utime);
+    *tp = (tc.stime + tc.utime);
     return 0;
 }
 
@@ -1493,7 +1467,7 @@ _PyTime_GetThreadTimeWithInfo(PyTime_t *tp, _Py_clock_info_t *info)
         info->monotonic = 1;
         info->adjustable = 0;
     }
-    *tp = _PyTime_FromNanoseconds(gethrvtime());
+    *tp = gethrvtime();
     return 0;
 }
 
@@ -1573,7 +1547,7 @@ time_thread_time_ns(PyObject *self, PyObject *unused)
     if (_PyTime_GetThreadTimeWithInfo(&t, NULL) < 0) {
         return NULL;
     }
-    return _PyTime_AsNanosecondsObject(t);
+    return _PyTime_AsLong(t);
 }
 
 PyDoc_STRVAR(thread_time_ns_doc,
@@ -1614,17 +1588,17 @@ time_get_clock_info(PyObject *module, PyObject *args)
 #endif
 
     if (strcmp(name, "time") == 0) {
-        if (_PyTime_GetSystemClockWithInfo(&t, &info) < 0) {
+        if (_PyTime_TimeWithInfo(&t, &info) < 0) {
             return NULL;
         }
     }
     else if (strcmp(name, "monotonic") == 0) {
-        if (_PyTime_GetMonotonicClockWithInfo(&t, &info) < 0) {
+        if (_PyTime_MonotonicWithInfo(&t, &info) < 0) {
             return NULL;
         }
     }
     else if (strcmp(name, "perf_counter") == 0) {
-        if (_PyTime_GetPerfCounterWithInfo(&t, &info) < 0) {
+        if (_PyTime_PerfCounterWithInfo(&t, &info) < 0) {
             return NULL;
         }
     }
@@ -2189,7 +2163,7 @@ pysleep(PyTime_t timeout)
     PyTime_t deadline, monotonic;
     int err = 0;
 
-    if (get_monotonic(&monotonic) < 0) {
+    if (PyTime_Monotonic(&monotonic) < 0) {
         return -1;
     }
     deadline = monotonic + timeout;
@@ -2242,7 +2216,7 @@ pysleep(PyTime_t timeout)
         }
 
 #ifndef HAVE_CLOCK_NANOSLEEP
-        if (get_monotonic(&monotonic) < 0) {
+        if (PyTime_Monotonic(&monotonic) < 0) {
             return -1;
         }
         timeout = deadline - monotonic;

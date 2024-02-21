@@ -6,6 +6,7 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_SetProfile()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_time.h"          // _PyTime_FromLong()
 
 #include "rotatingtree.h"
 
@@ -97,7 +98,7 @@ static PyTime_t CallExternalTimer(ProfilerObject *pObj)
     if (pObj->externalTimerUnit > 0.0) {
         /* interpret the result as an integer that will be scaled
            in profiler_getstats() */
-        err = _PyTime_FromNanosecondsObject(&result, o);
+        err = _PyTime_FromLong(&result, o);
     }
     else {
         /* interpret the result as a double measured in seconds.
@@ -120,7 +121,7 @@ call_timer(ProfilerObject *pObj)
         return CallExternalTimer(pObj);
     }
     else {
-        return _PyTime_GetPerfCounter();
+        return _PyTime_PerfCounterUnchecked();
     }
 }
 

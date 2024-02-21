@@ -262,8 +262,22 @@ is_valid(PyObject *self, PyObject *Py_UNUSED(ignored))
     return PyBool_FromLong(((_PyExecutorObject *)self)->vm_data.valid);
 }
 
+static PyObject *
+get_opcode(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return PyLong_FromUnsignedLong(((_PyExecutorObject *)self)->vm_data.opcode);
+}
+
+static PyObject *
+get_oparg(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return PyLong_FromUnsignedLong(((_PyExecutorObject *)self)->vm_data.oparg);
+}
+
 static PyMethodDef executor_methods[] = {
     { "is_valid", is_valid, METH_NOARGS, NULL },
+    { "get_opcode", get_opcode, METH_NOARGS, NULL },
+    { "get_oparg", get_oparg, METH_NOARGS, NULL },
     { NULL, NULL },
 };
 
@@ -282,8 +296,29 @@ uop_dealloc(_PyExecutorObject *self) {
 const char *
 _PyUOpName(int index)
 {
+    if (index < 0 || index > MAX_UOP_ID) {
+        return NULL;
+    }
     return _PyOpcode_uop_name[index];
 }
+
+#ifdef Py_DEBUG
+void
+_PyUOpPrint(const _PyUOpInstruction *uop)
+{
+    const char *name = _PyUOpName(uop->opcode);
+    if (name == NULL) {
+        printf("<uop %d>", uop->opcode);
+    }
+    else {
+        printf("%s", name);
+    }
+    printf(" (%d, target=%d, operand=%" PRIx64 ")",
+           uop->oparg,
+           uop->target,
+           (uint64_t)uop->operand);
+}
+#endif
 
 static Py_ssize_t
 uop_len(_PyExecutorObject *self)
@@ -312,14 +347,21 @@ uop_item(_PyExecutorObject *self, Py_ssize_t index)
         Py_DECREF(oname);
         return NULL;
     }
-    PyObject *operand = PyLong_FromUnsignedLongLong(self->trace[index].operand);
-    if (operand == NULL) {
+    PyObject *target = PyLong_FromUnsignedLong(self->trace[index].target);
+    if (oparg == NULL) {
         Py_DECREF(oparg);
         Py_DECREF(oname);
         return NULL;
     }
-    PyObject *args[3] = { oname, oparg, operand };
-    return _PyTuple_FromArraySteal(args, 3);
+    PyObject *operand = PyLong_FromUnsignedLongLong(self->trace[index].operand);
+    if (operand == NULL) {
+        Py_DECREF(target);
+        Py_DECREF(oparg);
+        Py_DECREF(oname);
+        return NULL;
+    }
+    PyObject *args[4] = { oname, oparg, target, operand };
+    return _PyTuple_FromArraySteal(args, 4);
 }
 
 PySequenceMethods uop_as_sequence = {
@@ -390,19 +432,29 @@ BRANCH_TO_GUARD[4][2] = {
 #endif
 
 
+// Beware: Macro arg order differs from struct member order
+#ifdef Py_DEBUG
 #define ADD_TO_TRACE(OPCODE, OPARG, OPERAND, TARGET) \
-    DPRINTF(2, \
-            "  ADD_TO_TRACE(%s, %d, %" PRIu64 ", %d)\n", \
-            _PyUOpName(OPCODE), \
-            (OPARG), \
-            (uint64_t)(OPERAND), \
-            TARGET); \
     assert(trace_length < max_length); \
     trace[trace_length].opcode = (OPCODE); \
     trace[trace_length].oparg = (OPARG); \
-    trace[trace_length].operand = (OPERAND); \
     trace[trace_length].target = (TARGET); \
+    trace[trace_length].operand = (OPERAND); \
+    if (lltrace >= 2) { \
+        printf("%4d ADD_TO_TRACE: ", trace_length); \
+        _PyUOpPrint(&trace[trace_length]); \
+        printf("\n"); \
+    } \
     trace_length++;
+#else
+#define ADD_TO_TRACE(OPCODE, OPARG, OPERAND, TARGET) \
+    assert(trace_length < max_length); \
+    trace[trace_length].opcode = (OPCODE); \
+    trace[trace_length].oparg = (OPARG); \
+    trace[trace_length].target = (TARGET); \
+    trace[trace_length].operand = (OPERAND); \
+    trace_length++;
+#endif
 
 #define INSTR_IP(INSTR, CODE) \
     ((uint32_t)((INSTR) - ((_Py_CODEUNIT *)(CODE)->co_code_adaptive)))
@@ -890,12 +942,9 @@ make_executor_from_uops(_PyUOpInstruction *buffer, const _PyBloomFilter *depende
     if (lltrace >= 2) {
         printf("Optimized executor (length %d):\n", length);
         for (int i = 0; i < length; i++) {
-            printf("%4d %s(%d, %d, %" PRIu64 ")\n",
-                   i,
-                   _PyUOpName(executor->trace[i].opcode),
-                   executor->trace[i].oparg,
-                   executor->trace[i].target,
-                   executor->trace[i].operand);
+            printf("%4d OPTIMIZED: ", i);
+            _PyUOpPrint(&executor->trace[i]);
+            printf("\n");
         }
     }
 #endif

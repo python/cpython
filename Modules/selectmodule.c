@@ -15,7 +15,7 @@
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
 #include "pycore_import.h"        // _PyImport_GetModuleAttrString()
-#include "pycore_time.h"          // PyTime_t
+#include "pycore_time.h"          // _PyTime_FromSecondsObject()
 
 #include <stdbool.h>
 #include <stddef.h>               // offsetof()

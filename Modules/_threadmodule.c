@@ -9,6 +9,7 @@
 #include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"       // _PyThreadState_SetCurrent()
 #include "pycore_sysmodule.h"     // _PySys_GetAttr()
+#include "pycore_time.h"          // _PyTime_FromSeconds()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 #include <stdbool.h>
@@ -1947,7 +1948,7 @@ thread_module_exec(PyObject *module)
 
     // TIMEOUT_MAX
     double timeout_max = (double)PY_TIMEOUT_MAX * 1e-6;
-    double time_max = _PyTime_AsSecondsDouble(_PyTime_MAX);
+    double time_max = PyTime_AsSecondsDouble(PyTime_MAX);
     timeout_max = Py_MIN(timeout_max, time_max);
     // Round towards minus infinity
     timeout_max = floor(timeout_max);

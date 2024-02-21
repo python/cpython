@@ -11,7 +11,6 @@ extern "C" {
 
 #include "pycore_lock.h"          // PyMutex
 #include "pycore_hashtable.h"     // _Py_hashtable_t
-#include "pycore_time.h"          // PyTime_t
 
 extern int _PyImport_IsInitialized(PyInterpreterState *);
 

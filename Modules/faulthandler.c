@@ -4,6 +4,7 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_signal.h"        // Py_NSIG
 #include "pycore_sysmodule.h"     // _PySys_GetAttr()
+#include "pycore_time.h"          // _PyTime_FromSecondsObject()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads
 
 #ifdef HAVE_UNISTD_H
