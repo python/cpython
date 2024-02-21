@@ -438,10 +438,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
       When the value does not fit in the provided buffer, the requested size
       returned from the function may be larger than necessary for unsigned use
-      cases.  Passing ``n_bytes=0`` to this function is not a way to determine
-      the bit length of a value, the result will merely indicate a buffer size
-      sufficient to hold it.  When passed ``n_bytes=0`` the return value may be
-      larger than technically necessary.
+      cases.
 
    .. versionadded:: 3.13
 
