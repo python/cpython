@@ -18,7 +18,7 @@ from .info import Analysis
 
 
 def analyze(filenmes, **kwargs):
-    results = iter_analyis_results(filenames, **kwargs)
+    results = iter_analysis_results(filenames, **kwargs)
     return Analysis.from_results(results)
 
 

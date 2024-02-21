@@ -511,6 +511,13 @@ defined by the module.  The specific list of defined symbols is available as
    Operation not supported on transport endpoint
 
 
+.. data:: ENOTSUP
+
+   Operation not supported
+
+   .. versionadded:: 3.2
+
+
 .. data:: EPFNOSUPPORT
 
    Protocol family not supported
@@ -657,3 +664,33 @@ defined by the module.  The specific list of defined symbols is available as
    Interface output queue is full
 
    .. versionadded:: 3.11
+
+.. data:: ENOTCAPABLE
+
+   Capabilities insufficient. This error is mapped to the exception
+   :exc:`PermissionError`.
+
+   .. availability:: WASI, FreeBSD
+
+   .. versionadded:: 3.11.1
+
+
+.. data:: ECANCELED
+
+   Operation canceled
+
+   .. versionadded:: 3.2
+
+
+.. data:: EOWNERDEAD
+
+   Owner died
+
+   .. versionadded:: 3.2
+
+
+.. data:: ENOTRECOVERABLE
+
+   State not recoverable
+
+   .. versionadded:: 3.2

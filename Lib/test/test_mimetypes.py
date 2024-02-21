@@ -180,6 +180,8 @@ class MimeTypesTestCase(unittest.TestCase):
             self.assertEqual(mimetypes.guess_extension('application/x-troff'), '.roff')
             self.assertEqual(mimetypes.guess_extension('application/xml'), '.xsl')
             self.assertEqual(mimetypes.guess_extension('audio/mpeg'), '.mp3')
+            self.assertEqual(mimetypes.guess_extension('image/avif'), '.avif')
+            self.assertEqual(mimetypes.guess_extension('image/webp'), '.webp')
             self.assertEqual(mimetypes.guess_extension('image/jpeg'), '.jpg')
             self.assertEqual(mimetypes.guess_extension('image/tiff'), '.tiff')
             self.assertEqual(mimetypes.guess_extension('message/rfc822'), '.eml')

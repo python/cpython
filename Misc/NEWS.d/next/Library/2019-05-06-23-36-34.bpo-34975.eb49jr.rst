@@ -1,3 +1,0 @@
-Adds a ``start_tls()`` method to :class:`~asyncio.streams.StreamWriter`,
-which upgrades the connection with TLS using the given
-:class:`~ssl.SSLContext`.
