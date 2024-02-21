@@ -32,11 +32,11 @@ bound into a function.
 
 .. c:function:: Py_ssize_t PyCode_GetNumFree(PyCodeObject *co)
 
-   Return the number of free variables in *co*.
+   Return the number of free variables in a code object.
 
 .. c:function:: int PyCode_GetFirstFree(PyCodeObject *co)
 
-   Return the position of first free variable in *co*.
+   Return the position of the first free variable in a code object.
 
 .. c:function:: PyCodeObject* PyUnstable_Code_New(int argcount, int kwonlyargcount, int nlocals, int stacksize, int flags, PyObject *code, PyObject *consts, PyObject *names, PyObject *varnames, PyObject *freevars, PyObject *cellvars, PyObject *filename, PyObject *name, PyObject *qualname, int firstlineno, PyObject *linetable, PyObject *exceptiontable)
 
