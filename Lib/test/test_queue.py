@@ -324,7 +324,6 @@ class BaseQueueTestMixin(BlockingTestMixin):
         start_puts = threading.Event()
         start_gets = threading.Event()
         put = threading.Event()
-        shutdown = threading.Event()
 
         n_gets_lock = threading.Lock()
         n_gets = 0
@@ -358,10 +357,9 @@ class BaseQueueTestMixin(BlockingTestMixin):
                 _record_call(q.put, i)
                 put.clear()
 
-            shutdown.set()
+            _record_call(q.shutdown, immediate)
 
             # Should raise ShutDown
-            put.wait()
             _record_call(q.put, 25)
 
         def get_worker():
@@ -376,7 +374,9 @@ class BaseQueueTestMixin(BlockingTestMixin):
                     n_gets += 1
 
                 put.set()
-                _record_call(q.get, False)
+                _record_call(q.get)
+
+                q.task_done()
 
             put.set()
             _record_call(q.get, False)  # should raise ShutDown if immediate
@@ -385,10 +385,6 @@ class BaseQueueTestMixin(BlockingTestMixin):
             start_gets.wait()
             _record_call(q.join)
             queue_size_after_join.append(q.qsize())
-
-        def shutdown_worker():
-            shutdown.wait()
-            _record_call(q.shutdown, immediate)
 
         def _start_thread(f):
             thread = threading.Thread(target=_record_result, args=(f,))
@@ -399,12 +395,10 @@ class BaseQueueTestMixin(BlockingTestMixin):
             _start_thread(put_worker),
             *(_start_thread(get_worker) for _ in range(4)),
             *(_start_thread(join_worker) for _ in range(2)),
-            _start_thread(shutdown_worker),
         ]
 
         # Act
         start_puts.set()
-        shutdown.wait()
         for thread in threads:
             thread.join()
 
@@ -438,11 +432,6 @@ class BaseQueueTestMixin(BlockingTestMixin):
 
         join_worker_results = [r for f, r in results if f is join_worker]
         self.assertListEqual(join_worker_results, [None, None])
-
-        shutdown_worker_result = next(
-            r for f, r in results if f is shutdown_worker
-        )
-        self.assertIsNone(shutdown_worker_result, None)
 
     def test_shutdown_all_methods_in_many_threads(self):
         return self._shutdown_all_methods_in_many_threads(False)
