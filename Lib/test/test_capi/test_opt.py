@@ -891,7 +891,7 @@ class TestUopsOptimization(unittest.TestCase):
         def testfunc(n):
             a = 1
             for _ in range(n):
-                x = foo(a, a)
+                x = foo(a, 2)
             return x
 
         res, ex = self._run_with_optimizer(testfunc, 32)
@@ -901,10 +901,29 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertLessEqual(len(guard_both_float_count), 1)
         self.assertIn("_COMPARE_OP_STR", uops)
 
+    def test_method_inlining(self):
+        thing = Bar()
+        def testfunc(n):
+            a = 1
+            for _ in range(n):
+                x = thing.foo(a, a)
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertTrue(res)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertLessEqual(len(guard_both_float_count), 1)
+        self.assertIn("_COMPARE_OP_STR", uops)
 
 def foo(x, y):
+    print(x)
     return x + y
 
+class Bar:
+    def foo(self, x, y):
+        self
+        return x + y
 
 if __name__ == "__main__":
     unittest.main()

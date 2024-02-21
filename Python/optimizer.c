@@ -711,7 +711,9 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 Py_FatalError("garbled expansion");
                         }
                         // Temp buffer for _POP_FRAME optimizations (if needed)
-                        ADD_TO_TRACE(_NOP, 0, 0, 0);
+                        if (uop == _POP_FRAME) {
+                            ADD_TO_TRACE(_NOP, 0, 0, 0);
+                        }
                         ADD_TO_TRACE(uop, oparg, operand, target);
                         if (uop == _POP_FRAME) {
                             TRACE_STACK_POP();

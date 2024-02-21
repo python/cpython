@@ -265,6 +265,29 @@ dummy_func(void) {
         (void)owner;
     }
 
+    op(_LOAD_ATTR_METHOD_WITH_VALUES, (descr/4, owner -- attr, self if (oparg & 1))) {
+        _LOAD_ATTR_NOT_NULL_SELF
+        (void)descr;
+        (void)owner;
+    }
+
+    op(_LOAD_ATTR_METHOD_NO_DICT, (descr/4, owner -- attr, self if (oparg & 1))) {
+        _LOAD_ATTR_NOT_NULL_SELF
+        (void)descr;
+        (void)owner;
+    }
+
+    op(_LOAD_ATTR_METHOD_LAZY_DICT, (descr/4, owner -- attr, self if (oparg & 1))) {
+        _LOAD_ATTR_NOT_NULL_SELF
+        (void)descr;
+        (void)owner;
+    }
+
+    op(_INIT_CALL_BOUND_METHOD_EXACT_ARGS, (callable, unused, unused[oparg] -- attr, self, unused[oparg])) {
+        _LOAD_ATTR_NOT_NULL_SELF
+        (void)callable;
+    }
+
     op(_CHECK_FUNCTION_EXACT_ARGS, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
         sym_set_type(callable, &PyFunction_Type);
         (void)self_or_null;
@@ -290,6 +313,7 @@ dummy_func(void) {
         assert(self_or_null != NULL);
         assert(args != NULL);
         if (sym_is_not_null(self_or_null)) {
+            DPRINTF(2, "BOUND METHOD FIDDLING\n");
             // Bound method fiddling, same as _INIT_CALL_PY_EXACT_ARGS in VM
             args--;
             argcount++;
@@ -301,6 +325,7 @@ dummy_func(void) {
         // and make the current stack the new locals.
         // This also sets up for true call inlining.
         if (sym_is_known(self_or_null)) {
+            DPRINTF(2, "I KNOW YOU %d, %d\n", args - ctx->frame->locals, ctx->frame->locals_len);
             localsplus_start = args;
             n_locals_already_filled = argcount;
         }
@@ -313,11 +338,9 @@ dummy_func(void) {
         if (ctx->frame->is_inlined) {
             PyFunctionObject *func = ctx_prev_frame(ctx)->func;
             PyCodeObject *co = (PyCodeObject *)ctx_prev_frame(ctx)->func->func_code;
-            assert((this_instr - 1)->opcode == _SET_IP ||
-                (this_instr - 1)->opcode == _CHECK_VALIDITY_AND_SET_IP ||
-               (this_instr - 1)->opcode == _CHECK_VALIDITY);
+            assert((this_instr - 1)->opcode == _NOP);
             REPLACE_OP(this_instr, _POST_INLINE,
-                       stack_pointer - ctx_prev_frame(ctx)->stack_pointer,
+                       (stack_pointer - ctx_prev_frame(ctx)->stack_pointer),
                        ctx_prev_frame(ctx)->reconstruction_offset);
             REPLACE_OP((this_instr - 1), _SET_FRAME_NAMES, 0,
                        (uintptr_t)Py_NewRef(co->co_names));
@@ -352,6 +375,7 @@ dummy_func(void) {
         assert((this_instr - 3)->opcode == _CHECK_STACK_SPACE);
         _PyUOpInstruction *reconstruction_start = end_writebuffer;
         if (compile_frame_reconstruction(ctx, &end_writebuffer, true_end)) {
+            DPRINTF(1, "OUT OF WRITE SPACE FOR RECONSTRUCTION\n");
             goto error;
         }
         uint64_t reconstruction_offset = (uint64_t)(reconstruction_start - trace);

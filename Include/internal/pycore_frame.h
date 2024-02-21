@@ -270,16 +270,19 @@ void _PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame *frame);
  * The frame that is being expanded MUST be the current executing frame, and
  * it must be at the top of the datastack.
  * */
-static inline void
+static inline int
 _PyFrame_GrowLocalsPlus(PyThreadState *tstate, _PyInterpreterFrame *frame, int size)
 {
     assert(_PyThreadState_HasStackSpace(tstate, size));
     assert(tstate->current_frame == frame);
     // Make sure we are the top frame.
-    assert((PyObject **)frame + _PyFrame_GetCode(frame)->co_framesize ==
-           tstate->datastack_top);
+    if ((PyObject **)frame + _PyFrame_GetCode(frame)->co_framesize !=
+           tstate->datastack_top) {
+        return 0;
+    }
     tstate->datastack_top += size;
     assert(tstate->datastack_top < tstate->datastack_limit);
+    return 1;
 }
 
 
@@ -300,7 +303,9 @@ _PyFrame_ConvertToTier2(PyThreadState *tstate, _PyInterpreterFrame *frame,
     if (!_PyThreadState_HasStackSpace(tstate, localsplus_grow)) {
         return 1;
     }
-    _PyFrame_GrowLocalsPlus(tstate, frame, localsplus_grow);
+    if (!_PyFrame_GrowLocalsPlus(tstate, frame, localsplus_grow)) {
+        return 1;
+    }
     frame->tier2_extra_size += localsplus_grow;
     return 0;
 }

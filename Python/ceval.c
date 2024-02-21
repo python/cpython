@@ -1107,6 +1107,11 @@ deoptimize:
 
 // Jump here from EXIT_IF()
 side_exit:
+    frame = _PyEvalFrame_ReconstructTier2Frame(tstate, frame, &stack_pointer);
+    // Unrecoverable memory error.
+    if (frame == NULL) {
+        goto error_tier_two;
+    }
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     UOP_STAT_INC(uopcode, miss);
     uint32_t exit_index = next_uop[-1].exit_index;
