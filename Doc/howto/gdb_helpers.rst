@@ -50,7 +50,7 @@ with instructions on how to do this.
 
 .. note::
 
-   If you do not seee instructionns for your version of GDB, put this in your
+   If you do not see instructions for your version of GDB, put this in your
    configuration file (``~/.gdbinit`` or ``~/.config/gdb/gdbinit``)::
 
       add-auto-load-safe-path /path/to/cpython
@@ -372,7 +372,7 @@ Again, the implementation details can be revealed with a cast to
 
 
 Use with GDB commands
-=====================·
+=====================
 
 The extension commands complement GDB's built-in commands.
 For example, you can use a frame numbers shown by ``py-bt`` with the ``frame``
