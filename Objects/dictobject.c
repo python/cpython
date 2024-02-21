@@ -5029,7 +5029,7 @@ dictiter_iternextkey(PyObject *self)
 
     PyObject *value;
 #ifdef Py_GIL_DISABLED
-    if (!dictiter_iternext_threadsafe(d, self, &value, NULL)) {
+    if (!dictiter_iternext_threadsafe(d, self, &value, NULL) == 0) {
         value = NULL;
     }
 #else
@@ -5152,7 +5152,7 @@ dictiter_iternextvalue(PyObject *self)
 
     PyObject *value;
 #ifdef Py_GIL_DISABLED
-    if (!dictiter_iternext_threadsafe(d, self, NULL, &value)) {
+    if (!dictiter_iternext_threadsafe(d, self, NULL, &value) == 0) {
         value = NULL;
     }
 #else
@@ -5209,7 +5209,7 @@ dictiter_iternextitem_lock_held(PyDictObject *d, PyObject *self,
         PyErr_SetString(PyExc_RuntimeError,
                         "dictionary changed size during iteration");
         di->di_used = -1; /* Make this state sticky */
-        return 0;
+        return -1;
     }
 
     i = FT_ATOMIC_LOAD_SSIZE_RELAXED(di->di_pos);
@@ -5262,12 +5262,12 @@ dictiter_iternextitem_lock_held(PyDictObject *d, PyObject *self,
     if (out_value != NULL) {
         *out_value = Py_NewRef(value);
     }
-    return 1;
+    return 0;
 
 fail:
     di->di_dict = NULL;
     Py_DECREF(d);
-    return 0;
+    return -1;
 }
 
 #ifdef Py_GIL_DISABLED
@@ -5319,7 +5319,7 @@ dictiter_iternext_threadsafe(PyDictObject *d, PyObject *self,
         PyErr_SetString(PyExc_RuntimeError,
                         "dictionary changed size during iteration");
         di->di_used = -1; /* Make this state sticky */
-        return 0;
+        return -1;
     }
 
     ensure_shared_on_read(d);
@@ -5329,12 +5329,14 @@ dictiter_iternext_threadsafe(PyDictObject *d, PyObject *self,
     assert(i >= 0);
     if (_PyDict_HasSplitTable(d)) {
         PyDictValues *values = _Py_atomic_load_ptr_relaxed(&d->ma_values);
-        if (values == NULL)
+        if (values == NULL) {
             goto concurrent_modification;
+        }
 
         Py_ssize_t used = load_values_used_size(values);
-        if (i >= used)
+        if (i >= used) {
             goto fail;
+        }
 
         // We're racing against writes to the order from delete_index_from_values, but
         // single threaded can suffer from concurrent modification to those as well and
@@ -5391,7 +5393,7 @@ dictiter_iternext_threadsafe(PyDictObject *d, PyObject *self,
 
     _Py_atomic_store_ssize_relaxed(&di->di_pos, i + 1);
     _Py_atomic_store_ssize_relaxed(&di->len, len - 1);
-    return 1;
+    return 0;
 
 concurrent_modification:
     PyErr_SetString(PyExc_RuntimeError,
@@ -5400,14 +5402,14 @@ concurrent_modification:
 fail:
     di->di_dict = NULL;
     Py_DECREF(d);
-    return 0;
+    return -1;
 
-    int success;
+    int res;
 try_locked:
     Py_BEGIN_CRITICAL_SECTION(d);
-    success = dictiter_iternextitem_lock_held(d, self, out_key, out_value);
+    res = dictiter_iternextitem_lock_held(d, self, out_key, out_value);
     Py_END_CRITICAL_SECTION();
-    return success;
+    return res;
 }
 
 #endif
@@ -5427,11 +5429,7 @@ has_unique_reference(PyObject *op)
 static bool
 acquire_iter_result(PyObject *result)
 {
-#ifdef Py_GIL_DISABLED
     if (has_unique_reference(result)) {
-#else
-    if (Py_REFCNT(result) == 1) {
-#endif
         Py_INCREF(result);
         return true;
     }
@@ -5449,9 +5447,9 @@ dictiter_iternextitem(PyObject *self)
 
     PyObject *key, *value;
 #ifdef Py_GIL_DISABLED
-    if (dictiter_iternext_threadsafe(d, self, &key, &value)) {
+    if (dictiter_iternext_threadsafe(d, self, &key, &value) == 0) {
 #else
-    if (dictiter_iternextitem_lock_held(d, self, &key, &value)) {
+    if (dictiter_iternextitem_lock_held(d, self, &key, &value) == 0) {
 
 #endif
         PyObject *result = di->di_result;
