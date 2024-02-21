@@ -212,46 +212,6 @@ abstractcontext_init(
 }
 
 static int
-frame_is_inlineable(_Py_UOpsAbstractInterpContext *ctx,
-                        _Py_UOpsAbstractFrame *frame)
-{
-    if (frame->push_frame == NULL || frame->pop_frame == NULL) {
-        return 0;
-    }
-    PyFunctionObject *obj = (PyFunctionObject *)frame->push_frame->operand;
-    if (obj == NULL) {
-        return 0;
-    }
-    PyCodeObject *co = obj->func_code;
-    if (co == NULL) {
-        return 0;
-    }
-    // Ban closures
-    if (co->co_ncellvars > 0 || co->co_nfreevars > 0) {
-        DPRINTF(3, "inline_fail: closure\n");
-        return 0;
-    }
-    // Ban generators, async, etc.
-    int flags = co->co_flags;
-    if ((flags & CO_COROUTINE) ||
-        (flags & CO_GENERATOR) ||
-        (flags & CO_ITERABLE_COROUTINE) ||
-        (flags & CO_ASYNC_GENERATOR) ||
-        // TODO we can support these in the future.
-        (flags & CO_VARKEYWORDS) ||
-        (flags & CO_VARARGS)) {
-        DPRINTF(3, "inline_fail: generator/coroutine\n");
-        return 0;
-    }
-    // Somewhat arbitrary, but if the stack is too big, we will copy a lot
-    // more on deopt, making it not really worth it.
-    if (co->co_stacksize > 32 || co->co_nlocalsplus > 32) {
-        return 0;
-    }
-    return 1;
-}
-
-static int
 ctx_frame_pop(
     _Py_UOpsAbstractInterpContext *ctx
 )
@@ -777,9 +737,47 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
     }
 }
 
+static int
+function_decide_inlineable(PyFunctionObject *func)
+{
+    if (func == NULL) {
+        return 0;
+    }
+    PyCodeObject *co = func->func_code;
+    if (co == NULL) {
+        return 0;
+    }
+    // Ban closures
+    if (co->co_ncellvars > 0 || co->co_nfreevars > 0) {
+        DPRINTF(2, "inline_fail: closure\n");
+        return 0;
+    }
+    // Ban generators, async, etc.
+    int flags = co->co_flags;
+    if ((flags & CO_COROUTINE) ||
+        (flags & CO_GENERATOR) ||
+        (flags & CO_ITERABLE_COROUTINE) ||
+        (flags & CO_ASYNC_GENERATOR) ||
+        // TODO we can support these in the future.
+        (flags & CO_VARKEYWORDS) ||
+        (flags & CO_VARARGS)) {
+        DPRINTF(2, "inline_fail: generator/coroutine/varargs/varkeywords\n");
+        return 0;
+    }
+    // Somewhat arbitrary, but if the stack is too big, we will copy a lot
+    // more on deopt, making it not really worth it.
+    if (co->co_stacksize > 64) {
+        DPRINTF(2, "inline_fail: stack too big");
+        return 0;
+    }
+    return 1;
+}
+
 static void
 peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_size)
 {
+    _PyUOpInstruction *push_frame[MAX_ABSTRACT_FRAME_DEPTH];
+    int frame_depth = 1;
     PyCodeObject *co = (PyCodeObject *)frame->f_executable;
     for (int pc = 0; pc < buffer_size; pc++) {
         int opcode = buffer[pc].opcode;
@@ -800,7 +798,20 @@ peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_s
                 }
                 break;
             }
-            case _PUSH_FRAME:
+            case _PUSH_FRAME: {
+                push_frame[frame_depth] = &buffer[pc];
+                frame_depth++;
+                PyFunctionObject *func = (PyFunctionObject *)buffer[pc].operand;
+                if (func == NULL) {
+                    co = NULL;
+                }
+                else {
+                    assert(PyFunction_Check(func));
+                    co = (PyCodeObject *)func->func_code;
+                }
+                assert(frame_depth <= MAX_ABSTRACT_FRAME_DEPTH);
+                break;
+            }
             case _POP_FRAME:
             {
                 PyFunctionObject *func = (PyFunctionObject *)buffer[pc].operand;
@@ -811,6 +822,9 @@ peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_s
                     assert(PyFunction_Check(func));
                     co = (PyCodeObject *)func->func_code;
                 }
+                frame_depth--;
+                function_decide_inlineable(func);
+                assert(frame_depth >= 1);
                 break;
             }
             case _JUMP_TO_TOP:
@@ -819,6 +833,8 @@ peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_s
         }
     }
 }
+
+
 
 //  0 - failure, no error raised, just fall back to Tier 1
 // -1 - failure, and raise error
