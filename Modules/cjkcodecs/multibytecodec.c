@@ -874,14 +874,11 @@ decoder_append_pending(MultibyteStatefulDecoderContext *ctx,
             if (excobj == NULL) goto errorexit;
             PyErr_SetObject(PyExc_UnicodeDecodeError, excobj);
             Py_DECREF(excobj);
-            goto errorexit;
+            return -1;
     }
     memcpy(ctx->pending + ctx->pendingsize, buf->inbuf, npendings);
     ctx->pendingsize += npendings;
     return 0;
-
-errorexit:
-    return -1;
 }
 
 static int
@@ -954,19 +951,21 @@ _multibytecodec_MultibyteIncrementalEncoder_getstate_impl(MultibyteIncrementalEn
     if (self->pending != NULL) {
         pendingbuffer = PyUnicode_AsUTF8AndSize(self->pending, &pendingsize);
         if (pendingbuffer == NULL) {
-            goto errorexit;
+            return NULL;
         }
         if (pendingsize > MAXENCPENDING*4) {
             PyObject *excobj = PyObject_CallFunction(PyExc_UnicodeEncodeError,
-                                                     "ssnns",
+                                                     "sOnns",
                                                      self->codec->encoding,
-                                                     pendingbuffer,
-                                                     0, pendingsize,
+                                                     self->pending,
+                                                     0, PyUnicode_GET_LENGTH(self->pending),
                                                      "pending buffer too large");
-            if (excobj == NULL) goto errorexit;
+            if (excobj == NULL) {
+                return NULL;
+            }
             PyErr_SetObject(PyExc_UnicodeEncodeError, excobj);
             Py_DECREF(excobj);
-            goto errorexit;
+            return NULL;
         }
         statebytes[0] = (unsigned char)pendingsize;
         memcpy(statebytes + 1, pendingbuffer, pendingsize);
@@ -982,8 +981,6 @@ _multibytecodec_MultibyteIncrementalEncoder_getstate_impl(MultibyteIncrementalEn
     return (PyObject *)_PyLong_FromByteArray(statebytes, statesize,
                                              1 /* little-endian */ ,
                                              0 /* unsigned */ );
-errorexit:
-    return NULL;
 }
 
 /*[clinic input]
