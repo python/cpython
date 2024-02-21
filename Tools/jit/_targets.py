@@ -108,7 +108,7 @@ class _Target(typing.Generic[_S, _R]):
         o = tempdir / f"{opname}.o"
         args = [
             f"--target={self.triple}",
-            "-DPy_BUILD_CORE",
+            "-DPy_BUILD_CORE_MODULE",
             "-D_DEBUG" if self.debug else "-DNDEBUG",
             f"-D_JIT_OPCODE={opname}",
             "-D_PyJIT_ACTIVE",
@@ -124,7 +124,7 @@ class _Target(typing.Generic[_S, _R]):
             # SET_FUNCTION_ATTRIBUTE on 32-bit Windows debug builds:
             "-fno-jump-tables",
             "-fno-plt",
-            "-fpic" if self.pic else "-fno-pic",
+            # "-fpic" if self.pic else "-fno-pic",
             # Don't make calls to weird stack-smashing canaries:
             "-fno-stack-protector",
             # We have three options for code model:
@@ -293,7 +293,9 @@ class _ELF(
                 "Offset": offset,
                 "Symbol": {"Value": s},
                 "Type": {
-                    "Value": "R_X86_64_GOTPCREL"
+                    "Value": "R_AARCH64_ADR_GOT_PAGE"
+                    | "R_AARCH64_LD64_GOT_LO12_NC"
+                    | "R_X86_64_GOTPCREL"
                     | "R_X86_64_GOTPCRELX"
                     | "R_X86_64_REX_GOTPCRELX" as kind
                 },
@@ -426,7 +428,7 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
         return _MachO(host, alignment=8, pic=True, prefix="_")
     if re.fullmatch(r"aarch64-.*-linux-gnu", host):
-        return _ELF(host, alignment=8)
+        return _ELF(host, alignment=8, pic=True)
     if re.fullmatch(r"i686-pc-windows-msvc", host):
         return _COFF(host, prefix="_")
     if re.fullmatch(r"x86_64-apple-darwin.*", host):

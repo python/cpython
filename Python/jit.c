@@ -212,7 +212,7 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                 continue;
             case HoleKind_R_X86_64_GOTPCRELX:
             case HoleKind_R_X86_64_REX_GOTPCRELX:
-            case HoleKind_X86_64_RELOC_GOT: 
+            case HoleKind_X86_64_RELOC_GOT:
             case HoleKind_X86_64_RELOC_GOT_LOAD: {
                 // 32-bit relative address.
                 // Try to relax the GOT load into an immediate value:
@@ -220,7 +220,7 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                 if ((int64_t)relaxed - (int64_t)location >= -(1L << 31) &&
                     (int64_t)relaxed - (int64_t)location + 1 < (1LL << 31))
                 {
-                    unsigned char prefix = loc8[-3];
+                    // unsigned char prefix = loc8[-3];
                     unsigned char opcode = loc8[-2];
                     unsigned char suffix = loc8[-1];
                     if (opcode == 0x8B) {
@@ -240,32 +240,31 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                         value = relaxed;
                     }
                     else if (opcode == 0xFF && suffix == 0x25) {
-                        // jmp *foo@GOTPCREL(%rip) -> jmp foo; nop
+                        // jmp *foo@GOTPCREL(%rip) -> nop; jmp foo
                         assert(hole->kind == HoleKind_R_X86_64_GOTPCRELX);
-                        loc8[-2] = 0xE9;
-                        loc8[3] = 0x90;
-                        loc32 = (uint32_t *)(location - 1);
-                        value = relaxed + 1;
-                    }
-                    else if (opcode == 0x85) {
-                        // test %reg, foo@GOTPCREL(%rip) -> test $foo, %reg
-                        assert(0);
-                        loc8[-3] = (prefix & ~0x4) | (prefix & 0x4) >> 2;
-                        loc8[-2] = 0xF7;
-                        loc8[-1] = 0xC0 | (suffix & 0x38) >> 3;
+                        loc8[-2] = 0x90;
+                        loc8[-1] = 0xE9;
                         value = relaxed;
                     }
-                    else if (hole->kind != HoleKind_X86_64_RELOC_GOT) {
-                        // binop foo@GOTPCREL(%rip), %reg -> binop $foo, %reg
-                        assert(hole->kind == HoleKind_R_X86_64_REX_GOTPCRELX);
-                        loc8[-3] = (prefix & ~0x4) | (prefix & 0x4) >> 2;
-                        loc8[-2] = 0x81;
-                        loc8[-1] = 0xC0 | ((suffix & 0x38) >> 3) | (opcode & 0x3C);
-                        value = relaxed;
-                    }
+                    // else if (opcode == 0x85) {
+                    //     // test %reg, foo@GOTPCREL(%rip) -> test $foo, %reg
+                    //     assert(0);
+                    //     loc8[-3] = (prefix & ~0x4) | (prefix & 0x4) >> 2;
+                    //     loc8[-2] = 0xF7;
+                    //     loc8[-1] = 0xC0 | (suffix & 0x38) >> 3;
+                    //     value = relaxed;
+                    // }
+                    // else if (hole->kind != HoleKind_X86_64_RELOC_GOT) {
+                    //     // binop foo@GOTPCREL(%rip), %reg -> binop $foo, %reg
+                    //     assert(hole->kind == HoleKind_R_X86_64_REX_GOTPCRELX);
+                    //     loc8[-3] = (prefix & ~0x4) | (prefix & 0x4) >> 2;
+                    //     loc8[-2] = 0x81;
+                    //     loc8[-1] = 0xC0 | ((suffix & 0x38) >> 3) | (opcode & 0x3C);
+                    //     value = relaxed;
+                    // }
                 }
-            // Fall through...
             }
+            // Fall through...
             case HoleKind_R_X86_64_GOTPCREL:
             case HoleKind_R_X86_64_PC32:
             case HoleKind_X86_64_RELOC_SIGNED:
@@ -317,47 +316,50 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                 assert(get_bits(loc32[0], 21, 2) == 3);
                 set_bits(loc32, 5, value, 48, 16);
                 continue;
-            case HoleKind_ARM64_RELOC_GOT_LOAD_PAGE21: {
+            case HoleKind_ARM64_RELOC_GOT_LOAD_PAGE21:
+            case HoleKind_R_AARCH64_ADR_GOT_PAGE: {
                 // 21-bit count of pages between this page and an absolute address's
                 // page... I know, I know, it's weird. Pairs nicely with
                 // ARM64_RELOC_GOT_LOAD_PAGEOFF12 (below).
-                assert(i + 1 < stencil->holes_size);
                 const Hole *next_hole = &stencil->holes[i + 1];
-                assert(next_hole->kind == HoleKind_ARM64_RELOC_GOT_LOAD_PAGEOFF12);
-                assert(next_hole->offset == hole->offset + 4);
-                assert(next_hole->symbol == hole->symbol);
-                assert(next_hole->addend == hole->addend);
-                assert(next_hole->value == hole->value);
-                assert(IS_AARCH64_ADRP(loc32[0]));
-                unsigned char rd = get_bits(loc32[0], 0, 5);
-                assert(IS_AARCH64_LDR_OR_STR(loc32[1]));
-                unsigned char rt = get_bits(loc32[1], 0, 5);
-                unsigned char rn = get_bits(loc32[1], 5, 5);
-                assert(rd == rn && rn == rt);
-                uint64_t relaxed = *(uint64_t *)value;
-                if (relaxed < (1UL << 16)) {
-                    loc32[0] = 0xD503201F;
-                    loc32[1] = 0xD2800000 | (get_bits(relaxed, 0, 16) << 5) | rd;
-                    i++;
-                    continue;
-                }
-                if (relaxed < (1ULL << 32)) {
-                    loc32[0] = 0xD2800000 | (get_bits(relaxed,  0, 16) << 5) | rd;
-                    loc32[1] = 0xF2A00000 | (get_bits(relaxed, 16, 16) << 5) | rd;
-                    i++;
-                    continue;
-                }
-                relaxed = (uint64_t)value - (uint64_t)location - 4;
-                if ((relaxed & 0x3) == 0 &&
-                    (int64_t)relaxed >= -(1L << 19) &&
-                    (int64_t)relaxed < (1L << 19))
+                if (i + 1 < stencil->holes_size &&
+                    (next_hole->kind == HoleKind_ARM64_RELOC_GOT_LOAD_PAGEOFF12 ||
+                     next_hole->kind == HoleKind_R_AARCH64_LD64_GOT_LO12_NC) &&
+                    next_hole->offset == hole->offset + 4 &&
+                    next_hole->symbol == hole->symbol &&
+                    next_hole->addend == hole->addend &&
+                    next_hole->value == hole->value)
                 {
-                    loc32[0] = 0xD503201F;
-                    loc32[1] = 0x58000000 | (get_bits(relaxed, 2, 19) << 5) | rd;
-                    i++;
-                    continue;
+                    assert(IS_AARCH64_ADRP(loc32[0]));
+                    unsigned char rd = get_bits(loc32[0], 0, 5);
+                    assert(IS_AARCH64_LDR_OR_STR(loc32[1]));
+                    unsigned char rt = get_bits(loc32[1], 0, 5);
+                    unsigned char rn = get_bits(loc32[1], 5, 5);
+                    assert(rd == rn && rn == rt);
+                    uint64_t relaxed = *(uint64_t *)value;
+                    if (relaxed < (1UL << 16)) {
+                        loc32[0] = 0xD2800000 | (get_bits(relaxed, 0, 16) << 5) | rd;
+                        loc32[1] = 0xD503201F;
+                        i++;
+                        continue;
+                    }
+                    if (relaxed < (1ULL << 32)) {
+                        loc32[0] = 0xD2800000 | (get_bits(relaxed,  0, 16) << 5) | rd;
+                        loc32[1] = 0xF2A00000 | (get_bits(relaxed, 16, 16) << 5) | rd;
+                        i++;
+                        continue;
+                    }
+                    relaxed = (uint64_t)value - (uint64_t)location - 4;
+                    if ((relaxed & 0x3) == 0 &&
+                        (int64_t)relaxed >= -(1L << 19) &&
+                        (int64_t)relaxed < (1L << 19))
+                    {
+                        loc32[0] = 0x58000000 | (get_bits(relaxed, 2, 19) << 5) | rd;
+                        loc32[1] = 0xD503201F;
+                        i++;
+                        continue;
+                    }
                 }
-                assert(0);
                 // Number of pages between this page and the value's page:
                 value = (value >> 12) - ((uint64_t)location >> 12);
                 // Check that we're not out of range of 21 signed bits:
@@ -370,6 +372,7 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                 continue;
             }
             case HoleKind_ARM64_RELOC_GOT_LOAD_PAGEOFF12:
+            case HoleKind_R_AARCH64_LD64_GOT_LO12_NC:
                 // 12-bit low part of an absolute address. Pairs nicely with
                 // ARM64_RELOC_GOT_LOAD_PAGE21 (above).
                 assert(IS_AARCH64_LDR_OR_STR(loc32[0]) || IS_AARCH64_ADD_OR_SUB(loc32[0]));
