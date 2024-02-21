@@ -2,6 +2,9 @@
 
 #ifndef Py_INTERNAL_AST_STATE_H
 #define Py_INTERNAL_AST_STATE_H
+
+#include "pycore_lock.h"    // _PyOnceFlag
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -11,7 +14,8 @@ extern "C" {
 #endif
 
 struct ast_state {
-    int initialized;
+    _PyOnceFlag once;
+    int finalized;
     PyObject *AST_type;
     PyObject *Add_singleton;
     PyObject *Add_type;
@@ -116,6 +120,7 @@ struct ast_state {
     PyObject *Not_type;
     PyObject *Or_singleton;
     PyObject *Or_type;
+    PyObject *ParamSpec_type;
     PyObject *Pass_type;
     PyObject *Pow_singleton;
     PyObject *Pow_type;
@@ -135,7 +140,10 @@ struct ast_state {
     PyObject *TryStar_type;
     PyObject *Try_type;
     PyObject *Tuple_type;
+    PyObject *TypeAlias_type;
     PyObject *TypeIgnore_type;
+    PyObject *TypeVarTuple_type;
+    PyObject *TypeVar_type;
     PyObject *UAdd_singleton;
     PyObject *UAdd_type;
     PyObject *USub_singleton;
@@ -164,6 +172,7 @@ struct ast_state {
     PyObject *bases;
     PyObject *body;
     PyObject *boolop_type;
+    PyObject *bound;
     PyObject *cases;
     PyObject *cause;
     PyObject *cls;
@@ -241,6 +250,8 @@ struct ast_state {
     PyObject *type_comment;
     PyObject *type_ignore_type;
     PyObject *type_ignores;
+    PyObject *type_param_type;
+    PyObject *type_params;
     PyObject *unaryop_type;
     PyObject *upper;
     PyObject *value;

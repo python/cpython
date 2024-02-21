@@ -1,1 +1,0 @@
-Fixed :func:`ast.unparse` for empty tuples in the assignment target context.

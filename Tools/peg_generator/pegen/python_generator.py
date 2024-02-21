@@ -102,7 +102,7 @@ class PythonCallMakerVisitor(GrammarVisitor):
         if name in ("NAME", "NUMBER", "STRING", "OP", "TYPE_COMMENT"):
             name = name.lower()
             return name, f"self.{name}()"
-        if name in ("NEWLINE", "DEDENT", "INDENT", "ENDMARKER", "ASYNC", "AWAIT"):
+        if name in ("NEWLINE", "DEDENT", "INDENT", "ENDMARKER"):
             # Avoid using names that can be Python keywords
             return "_" + name.lower(), f"self.expect({name!r})"
         return name, f"self.{name}()"

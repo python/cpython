@@ -5,7 +5,19 @@
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#define _Py_HAMT_MAX_TREE_DEPTH 7
+
+/*
+HAMT tree is shaped by hashes of keys. Every group of 5 bits of a hash denotes
+the exact position of the key in one level of the tree. Since we're using
+32 bit hashes, we can have at most 7 such levels. Although if there are
+two distinct keys with equal hashes, they will have to occupy the same
+cell in the 7th level of the tree -- so we'd put them in a "collision" node.
+Which brings the total possible tree depth to 8. Read more about the actual
+layout of the HAMT tree in `hamt.c`.
+
+This constant is used to define a datastucture for storing iteration state.
+*/
+#define _Py_HAMT_MAX_TREE_DEPTH 8
 
 
 extern PyTypeObject _PyHamt_Type;
@@ -16,14 +28,10 @@ extern PyTypeObject _PyHamtKeys_Type;
 extern PyTypeObject _PyHamtValues_Type;
 extern PyTypeObject _PyHamtItems_Type;
 
-/* runtime lifecycle */
-
-void _PyHamt_Fini(PyInterpreterState *);
-
 
 /* other API */
 
-#define PyHamt_Check(o) Py_IS_TYPE(o, &_PyHamt_Type)
+#define PyHamt_Check(o) Py_IS_TYPE((o), &_PyHamt_Type)
 
 
 /* Abstract tree node. */
@@ -39,6 +47,13 @@ typedef struct {
     PyObject *h_weakreflist;
     Py_ssize_t h_count;
 } PyHamtObject;
+
+
+typedef struct {
+    PyObject_VAR_HEAD
+    uint32_t b_bitmap;
+    PyObject *b_array[1];
+} PyHamtNode_Bitmap;
 
 
 /* A struct to hold the state of depth-first traverse of the tree.
