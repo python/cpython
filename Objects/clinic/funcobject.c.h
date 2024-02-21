@@ -3,13 +3,14 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(func_new__doc__,
-"function(code, globals, name=None, argdefs=None, closure=None)\n"
+"function(code, globals, name=None, argdefs=None, closure=None,\n"
+"         kwdefaults=None)\n"
 "--\n"
 "\n"
 "Create a function object.\n"
@@ -23,11 +24,14 @@ PyDoc_STRVAR(func_new__doc__,
 "  argdefs\n"
 "    a tuple that specifies the default argument values\n"
 "  closure\n"
-"    a tuple that supplies the bindings for free variables");
+"    a tuple that supplies the bindings for free variables\n"
+"  kwdefaults\n"
+"    a dictionary that specifies the default keyword argument values");
 
 static PyObject *
 func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
-              PyObject *name, PyObject *defaults, PyObject *closure);
+              PyObject *name, PyObject *defaults, PyObject *closure,
+              PyObject *kwdefaults);
 
 static PyObject *
 func_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
@@ -35,14 +39,14 @@ func_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 5
+    #define NUM_KEYWORDS 6
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(code), &_Py_ID(globals), &_Py_ID(name), &_Py_ID(argdefs), &_Py_ID(closure), },
+        .ob_item = { &_Py_ID(code), &_Py_ID(globals), &_Py_ID(name), &_Py_ID(argdefs), &_Py_ID(closure), &_Py_ID(kwdefaults), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -51,14 +55,14 @@ func_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"code", "globals", "name", "argdefs", "closure", NULL};
+    static const char * const _keywords[] = {"code", "globals", "name", "argdefs", "closure", "kwdefaults", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "function",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[5];
+    PyObject *argsbuf[6];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 2;
@@ -67,8 +71,9 @@ func_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *name = Py_None;
     PyObject *defaults = Py_None;
     PyObject *closure = Py_None;
+    PyObject *kwdefaults = Py_None;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 2, 5, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 2, 6, 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -97,11 +102,17 @@ func_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             goto skip_optional_pos;
         }
     }
-    closure = fastargs[4];
+    if (fastargs[4]) {
+        closure = fastargs[4];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    kwdefaults = fastargs[5];
 skip_optional_pos:
-    return_value = func_new_impl(type, code, globals, name, defaults, closure);
+    return_value = func_new_impl(type, code, globals, name, defaults, closure, kwdefaults);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=777cead7b1f6fad3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=10947342188f38a9 input=a9049054013a1b77]*/

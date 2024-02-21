@@ -352,10 +352,10 @@ class CompressorDecompressorTestCase(unittest.TestCase):
     @bigmemtest(size=_4G + 100, memuse=3)
     def test_decompressor_bigmem(self, size):
         lzd = LZMADecompressor()
-        blocksize = 10 * 1024 * 1024
+        blocksize = min(10 * 1024 * 1024, size)
         block = random.randbytes(blocksize)
         try:
-            input = block * (size // blocksize + 1)
+            input = block * ((size-1) // blocksize + 1)
             cdata = lzma.compress(input)
             ddata = lzd.decompress(cdata)
             self.assertEqual(ddata, input)
@@ -1400,6 +1400,14 @@ class MiscellaneousTestCase(unittest.TestCase):
         self.assertEqual(filterspec["lp"], 0)
         self.assertEqual(filterspec["lc"], 3)
         self.assertEqual(filterspec["dict_size"], 8 << 20)
+
+        # see gh-104282
+        filters = [lzma.FILTER_X86, lzma.FILTER_POWERPC,
+                   lzma.FILTER_IA64, lzma.FILTER_ARM,
+                   lzma.FILTER_ARMTHUMB, lzma.FILTER_SPARC]
+        for f in filters:
+            filterspec = lzma._decode_filter_properties(f, b"")
+            self.assertEqual(filterspec, {"id": f})
 
     def test_filter_properties_roundtrip(self):
         spec1 = lzma._decode_filter_properties(

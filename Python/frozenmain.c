@@ -3,7 +3,11 @@
 #include "Python.h"
 #include "pycore_pystate.h"       // _Py_GetConfig()
 #include "pycore_runtime.h"       // _PyRuntime_Initialize()
-#include <locale.h>
+
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // isatty()
+#endif
+
 
 #ifdef MS_WINDOWS
 extern void PyWinFreeze_ExeInit(void);

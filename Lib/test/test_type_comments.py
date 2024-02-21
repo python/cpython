@@ -66,6 +66,14 @@ with context() as a:  # type: int
     pass
 """
 
+parenthesized_withstmt = """\
+with (a as b):  # type: int
+    pass
+
+with (a, b):  # type: int
+    pass
+"""
+
 vardecl = """\
 a = 0  # type: int
 """
@@ -260,8 +268,8 @@ class TypeCommentTests(unittest.TestCase):
         self.assertEqual(tree.body[1].type_comment, None)
 
     def test_asyncvar(self):
-        for tree in self.parse_all(asyncvar, maxver=6):
-            pass
+        with self.assertRaises(SyntaxError):
+            self.classic_parse(asyncvar)
 
     def test_asynccomp(self):
         for tree in self.parse_all(asynccomp, minver=6):
@@ -299,6 +307,14 @@ class TypeCommentTests(unittest.TestCase):
             self.assertEqual(tree.body[0].type_comment, "int")
         tree = self.classic_parse(withstmt)
         self.assertEqual(tree.body[0].type_comment, None)
+
+    def test_parenthesized_withstmt(self):
+        for tree in self.parse_all(parenthesized_withstmt, minver=9):
+            self.assertEqual(tree.body[0].type_comment, "int")
+            self.assertEqual(tree.body[1].type_comment, "int")
+        tree = self.classic_parse(parenthesized_withstmt)
+        self.assertEqual(tree.body[0].type_comment, None)
+        self.assertEqual(tree.body[1].type_comment, None)
 
     def test_vardecl(self):
         for tree in self.parse_all(vardecl):

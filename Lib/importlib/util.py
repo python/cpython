@@ -135,7 +135,7 @@ class _incompatible_extension_module_restrictions:
     may not be imported in a subinterpreter.  That implies modules
     that do not implement multi-phase init or that explicitly of out.
 
-    Likewise for modules import in a subinterpeter with its own GIL
+    Likewise for modules import in a subinterpreter with its own GIL
     when the extension does not support a per-interpreter GIL.  This
     implies the module does not have a Py_mod_multiple_interpreters slot
     set to Py_MOD_PER_INTERPRETER_GIL_SUPPORTED.

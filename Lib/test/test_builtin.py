@@ -308,14 +308,13 @@ class BuiltinTest(unittest.TestCase):
         self.assertTrue(callable(c3))
 
     def test_chr(self):
+        self.assertEqual(chr(0), '\0')
         self.assertEqual(chr(32), ' ')
         self.assertEqual(chr(65), 'A')
         self.assertEqual(chr(97), 'a')
         self.assertEqual(chr(0xff), '\xff')
-        self.assertRaises(ValueError, chr, 1<<24)
-        self.assertEqual(chr(sys.maxunicode),
-                         str('\\U0010ffff'.encode("ascii"), 'unicode-escape'))
         self.assertRaises(TypeError, chr)
+        self.assertRaises(TypeError, chr, 65.0)
         self.assertEqual(chr(0x0000FFFF), "\U0000FFFF")
         self.assertEqual(chr(0x00010000), "\U00010000")
         self.assertEqual(chr(0x00010001), "\U00010001")
@@ -327,7 +326,11 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(chr(0x0010FFFF), "\U0010FFFF")
         self.assertRaises(ValueError, chr, -1)
         self.assertRaises(ValueError, chr, 0x00110000)
-        self.assertRaises((OverflowError, ValueError), chr, 2**32)
+        self.assertRaises(ValueError, chr, 1<<24)
+        self.assertRaises(ValueError, chr, 2**32-1)
+        self.assertRaises(ValueError, chr, -2**32)
+        self.assertRaises(ValueError, chr, 2**1000)
+        self.assertRaises(ValueError, chr, -2**1000)
 
     def test_cmp(self):
         self.assertTrue(not hasattr(builtins, "cmp"))
@@ -369,16 +372,17 @@ class BuiltinTest(unittest.TestCase):
                   (1, False, 'doc', False, False),
                   (2, False, None, False, False)]
         for optval, *expected in values:
+            with self.subTest(optval=optval):
             # test both direct compilation and compilation via AST
-            codeobjs = []
-            codeobjs.append(compile(codestr, "<test>", "exec", optimize=optval))
-            tree = ast.parse(codestr)
-            codeobjs.append(compile(tree, "<test>", "exec", optimize=optval))
-            for code in codeobjs:
-                ns = {}
-                exec(code, ns)
-                rv = ns['f']()
-                self.assertEqual(rv, tuple(expected))
+                codeobjs = []
+                codeobjs.append(compile(codestr, "<test>", "exec", optimize=optval))
+                tree = ast.parse(codestr)
+                codeobjs.append(compile(tree, "<test>", "exec", optimize=optval))
+                for code in codeobjs:
+                    ns = {}
+                    exec(code, ns)
+                    rv = ns['f']()
+                    self.assertEqual(rv, tuple(expected))
 
     def test_compile_top_level_await_no_coro(self):
         """Make sure top level non-await codes get the correct coroutine flags"""
@@ -517,6 +521,30 @@ class BuiltinTest(unittest.TestCase):
         exec(co, glob)
         self.assertEqual(type(glob['ticker']()), AsyncGeneratorType)
 
+    def test_compile_ast(self):
+        args = ("a*(1+2)", "f.py", "exec")
+        raw = compile(*args, flags = ast.PyCF_ONLY_AST).body[0]
+        opt1 = compile(*args, flags = ast.PyCF_OPTIMIZED_AST).body[0]
+        opt2 = compile(ast.parse(args[0]), *args[1:], flags = ast.PyCF_OPTIMIZED_AST).body[0]
+
+        for tree in (raw, opt1, opt2):
+            self.assertIsInstance(tree.value, ast.BinOp)
+            self.assertIsInstance(tree.value.op, ast.Mult)
+            self.assertIsInstance(tree.value.left, ast.Name)
+            self.assertEqual(tree.value.left.id, 'a')
+
+        raw_right = raw.value.right  # expect BinOp(1, '+', 2)
+        self.assertIsInstance(raw_right, ast.BinOp)
+        self.assertIsInstance(raw_right.left, ast.Constant)
+        self.assertEqual(raw_right.left.value, 1)
+        self.assertIsInstance(raw_right.right, ast.Constant)
+        self.assertEqual(raw_right.right.value, 2)
+
+        for opt in [opt1, opt2]:
+            opt_right = opt.value.right  # expect Constant(3)
+            self.assertIsInstance(opt_right, ast.Constant)
+            self.assertEqual(opt_right.value, 3)
+
     def test_delattr(self):
         sys.spam = 1
         delattr(sys, 'spam')
@@ -586,6 +614,14 @@ class BuiltinTest(unittest.TestCase):
         self.assertIsInstance(res, list)
         self.assertTrue(res == ["a", "b", "c"])
 
+        # dir(obj__dir__iterable)
+        class Foo(object):
+            def __dir__(self):
+                return {"b", "c", "a"}
+        res = dir(Foo())
+        self.assertIsInstance(res, list)
+        self.assertEqual(sorted(res), ["a", "b", "c"])
+
         # dir(obj__dir__not_sequence)
         class Foo(object):
             def __dir__(self):
@@ -601,6 +637,11 @@ class BuiltinTest(unittest.TestCase):
 
         # test that object has a __dir__()
         self.assertEqual(sorted([].__dir__()), dir([]))
+
+    def test___ne__(self):
+        self.assertFalse(None.__ne__(None))
+        self.assertIs(None.__ne__(0), NotImplemented)
+        self.assertIs(None.__ne__("abc"), NotImplemented)
 
     def test_divmod(self):
         self.assertEqual(divmod(12, 7), (1, 5))
@@ -807,6 +848,32 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaisesRegex(NameError, "name 'superglobal' is not defined",
                                exec, code, {'__builtins__': customdict()})
 
+    def test_eval_builtins_mapping(self):
+        code = compile("superglobal", "test", "eval")
+        # works correctly
+        ns = {'__builtins__': types.MappingProxyType({'superglobal': 1})}
+        self.assertEqual(eval(code, ns), 1)
+        # custom builtins mapping is missing key
+        ns = {'__builtins__': types.MappingProxyType({})}
+        self.assertRaisesRegex(NameError, "name 'superglobal' is not defined",
+                               eval, code, ns)
+
+    def test_exec_builtins_mapping_import(self):
+        code = compile("import foo.bar", "test", "exec")
+        ns = {'__builtins__': types.MappingProxyType({})}
+        self.assertRaisesRegex(ImportError, "__import__ not found", exec, code, ns)
+        ns = {'__builtins__': types.MappingProxyType({'__import__': lambda *args: args})}
+        exec(code, ns)
+        self.assertEqual(ns['foo'], ('foo.bar', ns, ns, None, 0))
+
+    def test_eval_builtins_mapping_reduce(self):
+        # list_iterator.__reduce__() calls _PyEval_GetBuiltin("iter")
+        code = compile("x.__reduce__()", "test", "eval")
+        ns = {'__builtins__': types.MappingProxyType({}), 'x': iter([1, 2])}
+        self.assertRaisesRegex(AttributeError, "iter", eval, code, ns)
+        ns = {'__builtins__': types.MappingProxyType({'iter': iter}), 'x': iter([1, 2])}
+        self.assertEqual(eval(code, ns), (iter, ([1, 2],), 0))
+
     def test_exec_redirected(self):
         savestdout = sys.stdout
         sys.stdout = None # Whatever that cannot flush()
@@ -927,6 +994,7 @@ class BuiltinTest(unittest.TestCase):
             f2 = filter(filter_char, "abcdeabcde")
             self.check_iter_pickle(f1, list(f2), proto)
 
+    @support.requires_resource('cpu')
     def test_filter_dealloc(self):
         # Tests recursive deallocation of nested filter objects using the
         # thrashcan mechanism. See gh-102356 for more details.
@@ -2013,6 +2081,23 @@ class BuiltinTest(unittest.TestCase):
         bad_iter = map(int, "X")
         self.assertRaises(ValueError, array.extend, bad_iter)
 
+    def test_bytearray_join_with_misbehaving_iterator(self):
+        # Issue #112625
+        array = bytearray(b',')
+        def iterator():
+            array.clear()
+            yield b'A'
+            yield b'B'
+        self.assertRaises(BufferError, array.join, iterator())
+
+    def test_bytearray_join_with_custom_iterator(self):
+        # Issue #112625
+        array = bytearray(b',')
+        def iterator():
+            yield b'A'
+            yield b'B'
+        self.assertEqual(bytearray(b'A,B'), array.join(iterator()))
+
     def test_construct_singletons(self):
         for const in None, Ellipsis, NotImplemented:
             tp = type(const)
@@ -2177,8 +2262,6 @@ class PtyTests(unittest.TestCase):
         if pid == 0:
             # Child
             try:
-                # Make sure we don't get stuck if there's a problem
-                signal.alarm(2)
                 os.close(r)
                 with open(w, "w") as wpipe:
                     child(wpipe)
@@ -2228,7 +2311,10 @@ class PtyTests(unittest.TestCase):
 
         return lines
 
-    def check_input_tty(self, prompt, terminal_input, stdio_encoding=None):
+    def check_input_tty(self, prompt, terminal_input, stdio_encoding=None, *,
+                        expected=None,
+                        stdin_errors='surrogateescape',
+                        stdout_errors='replace'):
         if not sys.stdin.isatty() or not sys.stdout.isatty():
             self.skipTest("stdin and stdout must be ttys")
         def child(wpipe):
@@ -2236,22 +2322,26 @@ class PtyTests(unittest.TestCase):
             if stdio_encoding:
                 sys.stdin = io.TextIOWrapper(sys.stdin.detach(),
                                              encoding=stdio_encoding,
-                                             errors='surrogateescape')
+                                             errors=stdin_errors)
                 sys.stdout = io.TextIOWrapper(sys.stdout.detach(),
                                               encoding=stdio_encoding,
-                                              errors='replace')
+                                              errors=stdout_errors)
             print("tty =", sys.stdin.isatty() and sys.stdout.isatty(), file=wpipe)
-            print(ascii(input(prompt)), file=wpipe)
+            try:
+                print(ascii(input(prompt)), file=wpipe)
+            except BaseException as e:
+                print(ascii(f'{e.__class__.__name__}: {e!s}'), file=wpipe)
         lines = self.run_child(child, terminal_input + b"\r\n")
         # Check we did exercise the GNU readline path
         self.assertIn(lines[0], {'tty = True', 'tty = False'})
         if lines[0] != 'tty = True':
             self.skipTest("standard IO in should have been a tty")
         input_result = eval(lines[1])   # ascii() -> eval() roundtrip
-        if stdio_encoding:
-            expected = terminal_input.decode(stdio_encoding, 'surrogateescape')
-        else:
-            expected = terminal_input.decode(sys.stdin.encoding)  # what else?
+        if expected is None:
+            if stdio_encoding:
+                expected = terminal_input.decode(stdio_encoding, 'surrogateescape')
+            else:
+                expected = terminal_input.decode(sys.stdin.encoding)  # what else?
         self.assertEqual(input_result, expected)
 
     def test_input_tty(self):
@@ -2272,12 +2362,31 @@ class PtyTests(unittest.TestCase):
     def test_input_tty_non_ascii(self):
         self.skip_if_readline()
         # Check stdin/stdout encoding is used when invoking PyOS_Readline()
-        self.check_input_tty("prompté", b"quux\xe9", "utf-8")
+        self.check_input_tty("prompté", b"quux\xc3\xa9", "utf-8")
 
     def test_input_tty_non_ascii_unicode_errors(self):
         self.skip_if_readline()
         # Check stdin/stdout error handler is used when invoking PyOS_Readline()
         self.check_input_tty("prompté", b"quux\xe9", "ascii")
+
+    def test_input_tty_null_in_prompt(self):
+        self.check_input_tty("prompt\0", b"",
+                expected='ValueError: input: prompt string cannot contain '
+                         'null characters')
+
+    def test_input_tty_nonencodable_prompt(self):
+        self.skip_if_readline()
+        self.check_input_tty("prompté", b"quux", "ascii", stdout_errors='strict',
+                expected="UnicodeEncodeError: 'ascii' codec can't encode "
+                         "character '\\xe9' in position 6: ordinal not in "
+                         "range(128)")
+
+    def test_input_tty_nondecodable_input(self):
+        self.skip_if_readline()
+        self.check_input_tty("prompt", b"quux\xe9", "ascii", stdin_errors='strict',
+                expected="UnicodeDecodeError: 'ascii' codec can't decode "
+                         "byte 0xe9 in position 4: ordinal not in "
+                         "range(128)")
 
     def test_input_no_stdout_fileno(self):
         # Issue #24402: If stdin is the original terminal but stdout.fileno()

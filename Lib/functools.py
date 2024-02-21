@@ -19,8 +19,9 @@ from collections import namedtuple
 # import types, weakref  # Deferred to single_dispatch()
 from reprlib import recursive_repr
 from _thread import RLock
-from types import GenericAlias
 
+# Avoid importing types, so we can speedup import time
+GenericAlias = type(list[int])
 
 ################################################################################
 ### update_wrapper() and wraps() decorator
@@ -236,7 +237,7 @@ _initial_missing = object()
 
 def reduce(function, sequence, initial=_initial_missing):
     """
-    reduce(function, iterable[, initial]) -> value
+    reduce(function, iterable[, initial], /) -> value
 
     Apply a function of two arguments cumulatively to the items of a sequence
     or iterable, from left to right, so as to reduce the iterable to a single
@@ -387,7 +388,7 @@ class partialmethod(object):
             keywords = {**self.keywords, **keywords}
             return self.func(cls_or_self, *self.args, *args, **keywords)
         _method.__isabstractmethod__ = self.__isabstractmethod__
-        _method._partialmethod = self
+        _method.__partialmethod__ = self
         return _method
 
     def __get__(self, obj, cls=None):
@@ -421,6 +422,17 @@ class partialmethod(object):
 def _unwrap_partial(func):
     while isinstance(func, partial):
         func = func.func
+    return func
+
+def _unwrap_partialmethod(func):
+    prev = None
+    while func is not prev:
+        prev = func
+        while isinstance(getattr(func, "__partialmethod__", None), partialmethod):
+            func = func.__partialmethod__
+        while isinstance(func, partialmethod):
+            func = getattr(func, 'func')
+        func = _unwrap_partial(func)
     return func
 
 ################################################################################
@@ -906,7 +918,6 @@ def singledispatch(func):
         if not args:
             raise TypeError(f'{funcname} requires at least '
                             '1 positional argument')
-
         return dispatch(args[0].__class__)(*args, **kw)
 
     funcname = getattr(func, '__name__', 'singledispatch function')
@@ -934,6 +945,9 @@ class singledispatchmethod:
         self.dispatcher = singledispatch(func)
         self.func = func
 
+        import weakref # see comment in singledispatch function
+        self._method_cache = weakref.WeakKeyDictionary()
+
     def register(self, cls, method=None):
         """generic_method.register(cls, func) -> func
 
@@ -942,13 +956,31 @@ class singledispatchmethod:
         return self.dispatcher.register(cls, func=method)
 
     def __get__(self, obj, cls=None):
+        if self._method_cache is not None:
+            try:
+                _method = self._method_cache[obj]
+            except TypeError:
+                self._method_cache = None
+            except KeyError:
+                pass
+            else:
+                return _method
+
+        dispatch = self.dispatcher.dispatch
+        funcname = getattr(self.func, '__name__', 'singledispatchmethod method')
         def _method(*args, **kwargs):
-            method = self.dispatcher.dispatch(args[0].__class__)
-            return method.__get__(obj, cls)(*args, **kwargs)
+            if not args:
+                raise TypeError(f'{funcname} requires at least '
+                                '1 positional argument')
+            return dispatch(args[0].__class__).__get__(obj, cls)(*args, **kwargs)
 
         _method.__isabstractmethod__ = self.__isabstractmethod__
         _method.register = self.register
         update_wrapper(_method, self.func)
+
+        if self._method_cache is not None:
+            self._method_cache[obj] = _method
+
         return _method
 
     @property
@@ -967,6 +999,7 @@ class cached_property:
         self.func = func
         self.attrname = None
         self.__doc__ = func.__doc__
+        self.__module__ = func.__module__
 
     def __set_name__(self, owner, name):
         if self.attrname is None:

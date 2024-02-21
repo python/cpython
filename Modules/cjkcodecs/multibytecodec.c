@@ -9,9 +9,11 @@
 #endif
 
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
+
 #include "multibytecodec.h"
 #include "clinic/multibytecodec.c.h"
+
+#include <stddef.h>               // offsetof()
 
 #define MODULE_NAME "_multibytecodec"
 
@@ -971,7 +973,8 @@ _multibytecodec_MultibyteIncrementalEncoder_setstate_impl(MultibyteIncrementalEn
 
     if (_PyLong_AsByteArray(statelong, statebytes, sizeof(statebytes),
                             1 /* little-endian */ ,
-                            0 /* unsigned */ ) < 0) {
+                            0 /* unsigned */ ,
+                            1 /* with_exceptions */) < 0) {
         goto errorexit;
     }
 
@@ -1253,7 +1256,8 @@ _multibytecodec_MultibyteIncrementalDecoder_setstate_impl(MultibyteIncrementalDe
 
     if (_PyLong_AsByteArray(statelong, statebytes, sizeof(statebytes),
                             1 /* little-endian */ ,
-                            0 /* unsigned */ ) < 0) {
+                            0 /* unsigned */ ,
+                            1 /* with_exceptions */) < 0) {
         return NULL;
     }
 
@@ -1611,9 +1615,9 @@ static struct PyMethodDef mbstreamreader_methods[] = {
 };
 
 static PyMemberDef mbstreamreader_members[] = {
-    {"stream",          T_OBJECT,
+    {"stream",          _Py_T_OBJECT,
                     offsetof(MultibyteStreamReaderObject, stream),
-                    READONLY, NULL},
+                    Py_READONLY, NULL},
     {NULL,}
 };
 
@@ -1919,9 +1923,9 @@ static struct PyMethodDef mbstreamwriter_methods[] = {
 };
 
 static PyMemberDef mbstreamwriter_members[] = {
-    {"stream",          T_OBJECT,
+    {"stream",          _Py_T_OBJECT,
                     offsetof(MultibyteStreamWriterObject, stream),
-                    READONLY, NULL},
+                    Py_READONLY, NULL},
     {NULL,}
 };
 

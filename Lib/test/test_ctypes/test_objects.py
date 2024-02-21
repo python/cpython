@@ -55,14 +55,12 @@ of 'x' ('_b_base_' is either None, or the root object owning the memory block):
 
 import doctest
 import unittest
-import test.test_ctypes.test_objects
 
 
-class TestCase(unittest.TestCase):
-    def test(self):
-        failures, tests = doctest.testmod(test.test_ctypes.test_objects)
-        self.assertFalse(failures, 'doctests failed, see output above')
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
 
 
 if __name__ == '__main__':
-    doctest.testmod(test.test_ctypes.test_objects)
+    unittest.main()

@@ -1,3 +1,9 @@
+#ifndef Py_INTERNAL_INTRINSIC_H
+#define Py_INTERNAL_INTRINSIC_H
+
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
+#endif
 
 /* Unary Functions: */
 #define INTRINSIC_1_INVALID                      0
@@ -40,3 +46,5 @@ typedef struct {
 
 extern const intrinsic_func1_info _PyIntrinsics_UnaryFunctions[];
 extern const intrinsic_func2_info _PyIntrinsics_BinaryFunctions[];
+
+#endif  // !Py_INTERNAL_INTRINSIC_H

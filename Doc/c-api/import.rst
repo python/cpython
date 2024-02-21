@@ -13,20 +13,8 @@ Importing Modules
       single: __all__ (package variable)
       single: modules (in module sys)
 
-   This is a simplified interface to :c:func:`PyImport_ImportModuleEx` below,
-   leaving the *globals* and *locals* arguments set to ``NULL`` and *level* set
-   to 0.  When the *name*
-   argument contains a dot (when it specifies a submodule of a package), the
-   *fromlist* argument is set to the list ``['*']`` so that the return value is the
-   named module rather than the top-level package containing it as would otherwise
-   be the case.  (Unfortunately, this has an additional side effect when *name* in
-   fact specifies a subpackage instead of a submodule: the submodules specified in
-   the package's ``__all__`` variable are  loaded.)  Return a new reference to the
-   imported module, or ``NULL`` with an exception set on failure.  A failing
-   import of a module doesn't leave the module in :data:`sys.modules`.
-
-   This function always uses absolute imports.
-
+   This is a wrapper around :c:func:`PyImport_Import()` which takes a
+   :c:expr:`const char *` as an argument instead of a :c:expr:`PyObject *`.
 
 .. c:function:: PyObject* PyImport_ImportModuleNoBlock(const char *name)
 
@@ -151,10 +139,10 @@ Importing Modules
    The module's :attr:`__spec__` and :attr:`__loader__` will be set, if
    not set already, with the appropriate values.  The spec's loader will
    be set to the module's ``__loader__`` (if set) and to an instance of
-   :class:`SourceFileLoader` otherwise.
+   :class:`~importlib.machinery.SourceFileLoader` otherwise.
 
    The module's :attr:`__file__` attribute will be set to the code object's
-   :c:member:`co_filename`.  If applicable, :attr:`__cached__` will also
+   :attr:`~codeobject.co_filename`.  If applicable, :attr:`__cached__` will also
    be set.
 
    This function will reload the module if it was already imported.  See
@@ -241,7 +229,7 @@ Importing Modules
 
 .. c:function:: PyObject* PyImport_GetImporter(PyObject *path)
 
-   Return a finder object for a :data:`sys.path`/:attr:`pkg.__path__` item
+   Return a finder object for a :data:`sys.path`/:attr:`!pkg.__path__` item
    *path*, possibly by fetching it from the :data:`sys.path_importer_cache`
    dict.  If it wasn't yet cached, traverse :data:`sys.path_hooks` until a hook
    is found that can handle the path item.  Return ``None`` if no hook could;
@@ -310,23 +298,25 @@ Importing Modules
 
 .. c:struct:: _inittab
 
-   Structure describing a single entry in the list of built-in modules.  Each of
-   these structures gives the name and initialization function for a module built
-   into the interpreter.  The name is an ASCII encoded string.  Programs which
+   Structure describing a single entry in the list of built-in modules.
+   Programs which
    embed Python may use an array of these structures in conjunction with
    :c:func:`PyImport_ExtendInittab` to provide additional built-in modules.
-   The structure is defined in :file:`Include/import.h` as::
+   The structure consists of two members:
 
-      struct _inittab {
-          const char *name;           /* ASCII encoded string */
-          PyObject* (*initfunc)(void);
-      };
+   .. c:member:: const char *name
+
+      The module name, as an ASCII encoded string.
+
+   .. c: member:: PyObject* (*initfunc)(void)
+
+      Initialization function for a module built into the interpreter.
 
 
 .. c:function:: int PyImport_ExtendInittab(struct _inittab *newtab)
 
    Add a collection of modules to the table of built-in modules.  The *newtab*
-   array must end with a sentinel entry which contains ``NULL`` for the :attr:`name`
+   array must end with a sentinel entry which contains ``NULL`` for the :c:member:`~_inittab.name`
    field; failure to provide the sentinel value can result in a memory fault.
    Returns ``0`` on success or ``-1`` if insufficient memory could be allocated to
    extend the internal table.  In the event of failure, no modules are added to the
