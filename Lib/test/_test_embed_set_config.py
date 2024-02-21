@@ -9,9 +9,9 @@ import _testinternalcapi
 import os
 import sys
 import unittest
+from test.support import MS_WINDOWS
 
 
-MS_WINDOWS = (os.name == 'nt')
 MAX_HASH_SEED = 4294967295
 
 class SetConfigTests(unittest.TestCase):

@@ -156,6 +156,7 @@ def _search_dialog(parent):  # htest #
     button = Button(frame, text="Search (selection ignored)", command=show_find)
     button.pack()
 
+
 if __name__ == '__main__':
     from unittest import main
     main('idlelib.idle_test.test_search', verbosity=2, exit=False)

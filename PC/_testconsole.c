@@ -31,8 +31,26 @@ static int execfunc(PyObject *m)
 
 PyModuleDef_Slot testconsole_slots[] = {
     {Py_mod_exec, execfunc},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL},
 };
+
+/*[python input]
+class HANDLE_converter(CConverter):
+    type = 'void *'
+    format_unit = '"_Py_PARSE_UINTPTR"'
+
+    def parse_arg(self, argname, displayname, *, limited_capi):
+        return self.format_code("""
+            {paramname} = PyLong_AsVoidPtr({argname});
+            if (!{paramname} && PyErr_Occurred()) {{{{
+                goto exit;
+            }}}}
+            """,
+            argname=argname)
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=380aa5c91076742b]*/
+/*[python end generated code:]*/
 
 /*[clinic input]
 module _testconsole
@@ -114,6 +132,7 @@ _testconsole_read_output_impl(PyObject *module, PyObject *file)
 {
     Py_RETURN_NONE;
 }
+
 
 #include "clinic\_testconsole.c.h"
 

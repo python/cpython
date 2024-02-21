@@ -11,7 +11,7 @@
 
 
 typedef struct {
-    _PyTime_t initialized;
+    PyTime_t initialized;
     PyObject *error;
     PyObject *int_const;
     PyObject *str_const;
@@ -66,17 +66,17 @@ clear_state(module_state *state)
 }
 
 static int
-_set_initialized(_PyTime_t *initialized)
+_set_initialized(PyTime_t *initialized)
 {
     /* We go strictly monotonic to ensure each time is unique. */
-    _PyTime_t prev;
-    if (_PyTime_GetMonotonicClockWithInfo(&prev, NULL) != 0) {
+    PyTime_t prev;
+    if (PyTime_Monotonic(&prev) != 0) {
         return -1;
     }
     /* We do a busy sleep since the interval should be super short. */
-    _PyTime_t t;
+    PyTime_t t;
     do {
-        if (_PyTime_GetMonotonicClockWithInfo(&t, NULL) != 0) {
+        if (PyTime_Monotonic(&t) != 0) {
             return -1;
         }
     } while (t == prev);
@@ -135,12 +135,8 @@ init_module(PyObject *module, module_state *state)
         return -1;
     }
 
-    double d = _PyTime_AsSecondsDouble(state->initialized);
-    PyObject *initialized = PyFloat_FromDouble(d);
-    if (initialized == NULL) {
-        return -1;
-    }
-    if (PyModule_AddObjectRef(module, "_module_initialized", initialized) != 0) {
+    double d = PyTime_AsSecondsDouble(state->initialized);
+    if (PyModule_Add(module, "_module_initialized", PyFloat_FromDouble(d)) < 0) {
         return -1;
     }
 
@@ -160,7 +156,7 @@ common_state_initialized(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (state == NULL) {
         Py_RETURN_NONE;
     }
-    double d = _PyTime_AsSecondsDouble(state->initialized);
+    double d = PyTime_AsSecondsDouble(state->initialized);
     return PyFloat_FromDouble(d);
 }
 
@@ -244,6 +240,25 @@ basic__clear_globals(PyObject *self, PyObject *Py_UNUSED(ignored))
 #define _CLEAR_GLOBALS_METHODDEF \
     {"_clear_globals", basic__clear_globals, METH_NOARGS, \
      basic__clear_globals_doc}
+
+
+PyDoc_STRVAR(basic__clear_module_state_doc, "_clear_module_state()\n\
+\n\
+Free the module state and set it to uninitialized.");
+
+static PyObject *
+basic__clear_module_state(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    module_state *state = get_module_state(self);
+    if (state != NULL) {
+        clear_state(state);
+    }
+    Py_RETURN_NONE;
+}
+
+#define _CLEAR_MODULE_STATE_METHODDEF \
+    {"_clear_module_state", basic__clear_module_state, METH_NOARGS, \
+     basic__clear_module_state_doc}
 
 
 /*********************************************/
@@ -406,7 +421,7 @@ finally:
 /* the _testsinglephase_with_state module */
 /******************************************/
 
-/* This ia less typical of legacy extensions in the wild:
+/* This is less typical of legacy extensions in the wild:
    - single-phase init  (same as _testsinglephase above)
    - has some module state
    - supports repeated initialization
@@ -422,6 +437,7 @@ static PyMethodDef TestMethods_WithState[] = {
     LOOK_UP_SELF_METHODDEF,
     SUM_METHODDEF,
     STATE_INITIALIZED_METHODDEF,
+    _CLEAR_MODULE_STATE_METHODDEF,
     {NULL, NULL}           /* sentinel */
 };
 
