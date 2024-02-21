@@ -301,6 +301,7 @@ sym_new_known_notnull(_Py_UOpsAbstractInterpContext *ctx)
     if (res == NULL) {
         return NULL;
     }
+    sym_set_flag(res, KNOWN);
     sym_set_flag(res, NOT_NULL);
     return res;
 }
@@ -594,6 +595,12 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
     do {                    \
     OUT_OF_SPACE_IF_NULL(attr = sym_new_known_notnull(ctx)); \
     OUT_OF_SPACE_IF_NULL(null = sym_new_null(ctx)); \
+    } while (0);
+
+#define _LOAD_ATTR_NOT_NULL_SELF                                 \
+    do {                                                         \
+        OUT_OF_SPACE_IF_NULL(attr = sym_new_known_notnull(ctx)); \
+        OUT_OF_SPACE_IF_NULL(self = sym_new_known_notnull(ctx)); \
     } while (0);
 
 

@@ -261,6 +261,30 @@ dummy_func(void) {
         (void)owner;
     }
 
+    op(_LOAD_ATTR_METHOD_WITH_VALUES, (descr/4, owner -- attr, self if (oparg & 1))) {
+        _LOAD_ATTR_NOT_NULL_SELF
+        (void)descr;
+        (void)owner;
+    }
+
+    op(_LOAD_ATTR_METHOD_NO_DICT, (descr/4, owner -- attr, self if (oparg & 1))) {
+        _LOAD_ATTR_NOT_NULL_SELF
+        (void)descr;
+        (void)owner;
+    }
+
+    op(_LOAD_ATTR_METHOD_LAZY_DICT, (descr/4, owner -- attr, self if (oparg & 1))) {
+        _LOAD_ATTR_NOT_NULL_SELF
+        (void)descr;
+        (void)owner;
+    }
+
+    op(_INIT_CALL_BOUND_METHOD_EXACT_ARGS, (callable, unused, unused[oparg] -- attr, self, unused[oparg])) {
+        _LOAD_ATTR_NOT_NULL_SELF
+        (void)callable;
+    }
+
+
     op(_CHECK_FUNCTION_EXACT_ARGS, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
         sym_set_type(callable, &PyFunction_Type);
         (void)self_or_null;
