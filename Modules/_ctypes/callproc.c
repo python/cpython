@@ -676,7 +676,7 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
         assert(info);
         PyCArgObject *carg;
         assert(info->paramfunc);
-        /* If it has an stgdict, it is a CDataObject */
+        /* If it has an stginfo, it is a CDataObject */
         carg = info->paramfunc((CDataObject *)obj);
         if (carg == NULL)
             return -1;

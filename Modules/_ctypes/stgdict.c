@@ -87,7 +87,7 @@ PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
 */
 
 int
-PyCStgDict_clone(StgInfo *dst_info, StgInfo *src_info)
+PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info)
 {
     Py_ssize_t size;
 
@@ -299,10 +299,10 @@ _ctypes_alloc_format_padding(const char *prefix, Py_ssize_t padding)
 
 /*
   Retrieve the (optional) _pack_ attribute from a type, the _fields_ attribute,
-  and create an StgDictObject.  Used for Structure and Union subclasses.
+  and initialize StgInfo.  Used for Structure and Union subclasses.
 */
 int
-PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct)
+PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct)
 {
     Py_ssize_t len, offset, size, align, i;
     Py_ssize_t union_size, total_align, aligned_size;

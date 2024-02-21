@@ -109,10 +109,10 @@ PrintError(const char *msg, ...)
  * slower.
  */
 static void
-TryAddRef(StgDictObject *dict, CDataObject *obj)
+TryAddRef(PyObject *cnv, CDataObject *obj)
 {
     IUnknown *punk;
-    int r = PyDict_Contains((PyObject *)dict, &_Py_ID(_needs_com_addref_));
+    int r = PyObject_GetAttrString((PyObject *)cnv, "_needs_com_addref_");
     if (r <= 0) {
         if (r < 0) {
             PrintError("getting _needs_com_addref_");
@@ -187,7 +187,7 @@ static void _CallPythonObject(void *mem,
             memcpy(obj->b_ptr, *pArgs, info->size);
             args[i] = (PyObject *)obj;
 #ifdef MS_WIN32
-            TryAddRef(dict, obj);
+            TryAddRef(cnv, obj);
 #endif
         } else {
             PyErr_SetString(PyExc_TypeError,

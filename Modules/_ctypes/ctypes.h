@@ -144,7 +144,7 @@ typedef struct {
     CThunkObject *thunk;
     PyObject *callable;
 
-    /* These two fields will override the ones in the type's stgdict if
+    /* These two fields will override the ones in the type's stginfo if
        they are set */
     PyObject *converters;
     PyObject *argtypes;
@@ -158,7 +158,7 @@ typedef struct {
     PyObject *paramflags;
 } PyCFuncPtrObject;
 
-extern int PyCStructUnionType_update_stgdict(PyObject *fields, PyObject *type, int isStruct);
+extern int PyCStructUnionType_update_stginfo(PyObject *fields, PyObject *type, int isStruct);
 extern int PyType_stginfo(PyTypeObject *self, Py_ssize_t *psize, Py_ssize_t *palign, Py_ssize_t *plength);
 extern int PyObject_stginfo(PyObject *self, Py_ssize_t *psize, Py_ssize_t *palign, Py_ssize_t *plength);
 
@@ -260,7 +260,7 @@ extern int PyStgInfo_FromAny(ctypes_state *state, PyObject *obj, StgInfo **resul
 extern StgInfo *PyStgInfo_Init(ctypes_state *state, PyTypeObject *type);
 
 /****************************************************************
- StgDictObject fields
+ StgInfo fields
 
  setfunc and getfunc is only set for simple data types, it is copied from the
  corresponding fielddesc entry.  These are functions to set and get the value
@@ -271,11 +271,11 @@ extern StgInfo *PyStgInfo_Init(ctypes_state *state, PyTypeObject *type);
  object.
 
  Probably all the magic ctypes methods (like from_param) should have C
- callable wrappers in the StgDictObject.  For simple data type, for example,
+ callable wrappers in the StgInfo.  For simple data type, for example,
  the fielddesc table could have entries for C codec from_param functions or
  other methods as well, if a subtype overrides this method in Python at
  construction time, or assigns to it later, tp_setattro should update the
- StgDictObject function to a generic one.
+ StgInfo function to a generic one.
 
  Currently, PyCFuncPtr types have 'converters' and 'checker' entries in their
  type dict.  They are only used to cache attributes from other entries, which
@@ -299,7 +299,7 @@ extern StgInfo *PyStgInfo_Init(ctypes_state *state, PyTypeObject *type);
 
 *****************************************************************/
 
-extern int PyCStgDict_clone(StgInfo *dst_info, StgInfo *src_info);
+extern int PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info);
 
 typedef int(* PPROC)(void);
 

@@ -2,7 +2,7 @@
   ToDo:
 
   Get rid of the checker (and also the converters) field in PyCFuncPtrObject and
-  StgDictObject, and replace them by slot functions in StgDictObject.
+  StgInfo, and replace them by slot functions in StgInfo.
 
   think about a buffer-like object (memory? bytes?)
 
@@ -36,7 +36,6 @@ PyCData_Type
   Simple_Type                   __new__(), __init__(), _as_parameter_
 
 PyCField_Type
-PyCStgDict_Type
 
 ==============================================================================
 
@@ -82,7 +81,6 @@ bytes(cdata)
 */
 
 /*
- * PyCStgDict_Type
  * PyCStructType_Type
  * UnionType_Type
  * PyCPointerType_Type
@@ -571,9 +569,8 @@ static PyType_Spec pyctype_type_spec = {
 
 /*
   PyCStructType_Type - a meta type/class.  Creating a new class using this one as
-  __metaclass__ will call the constructor StructUnionType_new.  It replaces the
-  tp_dict member with a new instance of StgDict, and initializes the C
-  accessible fields somehow.
+  __metaclass__ will call the constructor StructUnionType_new.
+  It initializes the C accessible fields somehow.
 */
 
 static PyCArgObject *
@@ -701,7 +698,7 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
         }
 
         /* copy base info */
-        if (-1 == PyCStgDict_clone(info, baseinfo)) {
+        if (-1 == PyCStgInfo_clone(info, baseinfo)) {
             Py_DECREF(result);
             return NULL;
         }
@@ -1054,7 +1051,7 @@ PyCStructType_setattro(PyObject *self, PyObject *key, PyObject *value)
 
     if (value && PyUnicode_Check(key) &&
         _PyUnicode_EqualToASCIIString(key, "_fields_"))
-        return PyCStructUnionType_update_stgdict(self, value, 1);
+        return PyCStructUnionType_update_stginfo(self, value, 1);
     return 0;
 }
 
@@ -1068,7 +1065,7 @@ UnionType_setattro(PyObject *self, PyObject *key, PyObject *value)
 
     if (PyUnicode_Check(key) &&
         _PyUnicode_EqualToASCIIString(key, "_fields_"))
-        return PyCStructUnionType_update_stgdict(self, value, 0);
+        return PyCStructUnionType_update_stginfo(self, value, 0);
     return 0;
 }
 
@@ -2443,10 +2440,13 @@ converters_from_argtypes(PyObject *ob)
  *      not bitfields, the bitfields check is also being disabled as a
  *      precaution.
 
-        StgDictObject *stgdict = PyType_stgdict(tp);
+        StgInfo *stginfo;
+        if (PyStgInfo_FromType(st, tp, &stginfo) < 0) {
+            return -1;
+        }
 
-        if (stgdict != NULL) {
-            if (stgdict->flags & TYPEFLAG_HASUNION) {
+        if (stginfo != NULL) {
+            if (stginfo->flags & TYPEFLAG_HASUNION) {
                 Py_DECREF(converters);
                 Py_DECREF(ob);
                 if (!PyErr_Occurred()) {
@@ -2457,7 +2457,7 @@ converters_from_argtypes(PyObject *ob)
                 }
                 return NULL;
             }
-            if (stgdict->flags & TYPEFLAG_HASBITFIELD) {
+            if (stginfo->flags & TYPEFLAG_HASBITFIELD) {
                 Py_DECREF(converters);
                 Py_DECREF(ob);
                 if (!PyErr_Occurred()) {
@@ -2550,7 +2550,7 @@ make_funcptrtype_dict(PyObject *attrdict, StgInfo *stginfo)
         }
     }
 /* XXX later, maybe.
-    if (PyDict_GetItemRef((PyObject *)stgdict, &_Py _ID(_errcheck_), &ob) < 0) {
+    if (PyDict_GetItemRef((PyObject *)attrdict, &_Py _ID(_errcheck_), &ob) < 0) {
         return -1;
     }
     if (ob) {
@@ -2560,7 +2560,7 @@ make_funcptrtype_dict(PyObject *attrdict, StgInfo *stginfo)
             Py_DECREF(ob);
             return -1;
         }
-        stgdict->errcheck = ob;
+        stginfo->errcheck = ob;
     }
 */
     return 0;
@@ -3460,7 +3460,6 @@ static PPROC FindAddress(void *handle, const char *name, PyObject *type)
 #else
     char *mangled_name;
     int i;
-    StgDictObject *dict;
 
     Py_BEGIN_ALLOW_THREADS
     address = (PPROC)GetProcAddress(handle, name);
@@ -3471,9 +3470,12 @@ static PPROC FindAddress(void *handle, const char *name, PyObject *type)
         return NULL;
     }
 
-    dict = PyType_stgdict((PyObject *)type);
-    /* It should not happen that dict is NULL, but better be safe */
-    if (dict==NULL || dict->flags & FUNCFLAG_CDECL)
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, (PyObject *)type, &info) < 0) {
+        return -1;
+    }
+    /* It should not happen that info is NULL, but better be safe */
+    if (info==NULL || info->flags & FUNCFLAG_CDECL)
         return address;
 
     /* for stdcall, try mangled names:
@@ -5137,7 +5139,7 @@ Simple_from_outparm(PyObject *self, PyObject *args)
     if (_ctypes_simple_instance((PyObject *)Py_TYPE(self))) {
         return Py_NewRef(self);
     }
-    /* call stgdict->getfunc */
+    /* call stginfo->getfunc */
     return Simple_get_value((CDataObject *)self, NULL);
 }
 

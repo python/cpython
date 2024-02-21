@@ -507,8 +507,8 @@ class StructureTestCase(unittest.TestCase):
     @unittest.skipUnless(sys.byteorder == 'little', "can't test on this platform")
     def test_issue18060_a(self):
         # This test case calls
-        # PyCStructUnionType_update_stgdict() for each
-        # _fields_ assignment, and PyCStgDict_clone()
+        # PyCStructUnionType_update_stginfo() for each
+        # _fields_ assignment, and PyCStgInfo_clone()
         # for the Mid and Vector class definitions.
         class Base(Structure):
             _fields_ = [('y', c_double),
@@ -523,7 +523,7 @@ class StructureTestCase(unittest.TestCase):
     @unittest.skipUnless(sys.byteorder == 'little', "can't test on this platform")
     def test_issue18060_b(self):
         # This test case calls
-        # PyCStructUnionType_update_stgdict() for each
+        # PyCStructUnionType_update_stginfo() for each
         # _fields_ assignment.
         class Base(Structure):
             _fields_ = [('y', c_double),
@@ -538,7 +538,7 @@ class StructureTestCase(unittest.TestCase):
     @unittest.skipUnless(sys.byteorder == 'little', "can't test on this platform")
     def test_issue18060_c(self):
         # This test case calls
-        # PyCStructUnionType_update_stgdict() for each
+        # PyCStructUnionType_update_stginfo() for each
         # _fields_ assignment.
         class Base(Structure):
             _fields_ = [('y', c_double)]
