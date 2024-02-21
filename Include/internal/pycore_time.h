@@ -318,10 +318,6 @@ extern int _PyTime_PerfCounterWithInfo(
     PyTime_t *t,
     _Py_clock_info_t *info);
 
-// Alias for backward compatibility
-#define _PyTime_MIN PyTime_MIN
-#define _PyTime_MAX PyTime_MAX
-
 
 // --- _PyDeadline -----------------------------------------------------------
 
@@ -352,7 +348,7 @@ extern int _PyTimeFraction_Set(
     PyTime_t denom);
 
 // Compute ticks * frac.numer / frac.denom.
-// Clamp to [_PyTime_MIN; _PyTime_MAX] on overflow.
+// Clamp to [PyTime_MIN; PyTime_MAX] on overflow.
 extern PyTime_t _PyTimeFraction_Mul(
     PyTime_t ticks,
     const _PyTimeFraction *frac);
