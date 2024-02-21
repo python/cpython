@@ -17,9 +17,15 @@ extern "C" {
 PyAPI_DATA(PyLongObject) _Py_FalseStruct;
 PyAPI_DATA(PyLongObject) _Py_TrueStruct;
 
-/* Use these macros */
+// Export symbols in the stable ABI
+PyAPI_DATA(PyLongObject*) Py_False;
+PyAPI_DATA(PyLongObject*) Py_True;
+
+#ifndef Py_LIMITED_API
+// Implement Py_False and Py_True as macros in the non-limited C API
 #define Py_False _PyObject_CAST(&_Py_FalseStruct)
 #define Py_True _PyObject_CAST(&_Py_TrueStruct)
+#endif
 
 // Test if an object is the True singleton, the same as "x is True" in Python.
 PyAPI_FUNC(int) Py_IsTrue(PyObject *x);

@@ -2970,3 +2970,10 @@ _Py_SetRefcnt(PyObject *ob, Py_ssize_t refcnt)
 {
     Py_SET_REFCNT(ob, refcnt);
 }
+
+
+// Export symbols in the stable ABI
+#undef Py_None
+#undef Py_NotImplemented
+PyObject *Py_None = &_Py_NoneStruct;
+PyObject *Py_NotImplemented = &_Py_NotImplementedStruct;

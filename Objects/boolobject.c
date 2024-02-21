@@ -225,3 +225,10 @@ struct _longobject _Py_TrueStruct = {
         { 1 }
     }
 };
+
+// Stable ABI: export symbols
+
+#undef Py_False
+#undef Py_True
+PyLongObject *Py_False = _Py_CAST(PyLongObject*, &_Py_FalseStruct);
+PyLongObject *Py_True = _Py_CAST(PyLongObject*, &_Py_TrueStruct);

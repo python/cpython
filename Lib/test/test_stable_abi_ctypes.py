@@ -40,6 +40,18 @@ class TestStableABIAvailability(unittest.TestCase):
                 with self.subTest(name):
                     self.assertEqual(feature_macros[name], value)
 
+    def test_constants(self):
+        process = ctypes_test.pythonapi
+        def get_object(name):
+            return ctypes_test.py_object.in_dll(process, name).value
+
+        self.assertIs(get_object("Py_None"), None)
+        self.assertIs(get_object("Py_False"), False)
+        self.assertIs(get_object("Py_True"), True)
+        self.assertIs(get_object("Py_Ellipsis"), Ellipsis)
+        self.assertIs(get_object("Py_NotImplemented"), NotImplemented)
+
+
 SYMBOL_NAMES = (
 
     "PyAIter_Check",
@@ -840,10 +852,12 @@ SYMBOL_NAMES = (
     "Py_CompileString",
     "Py_DecRef",
     "Py_DecodeLocale",
+    "Py_Ellipsis",
     "Py_EncodeLocale",
     "Py_EndInterpreter",
     "Py_EnterRecursiveCall",
     "Py_Exit",
+    "Py_False",
     "Py_FatalError",
     "Py_FileSystemDefaultEncodeErrors",
     "Py_FileSystemDefaultEncoding",
@@ -879,12 +893,15 @@ SYMBOL_NAMES = (
     "Py_MakePendingCalls",
     "Py_NewInterpreter",
     "Py_NewRef",
+    "Py_None",
+    "Py_NotImplemented",
     "Py_ReprEnter",
     "Py_ReprLeave",
     "Py_SetPath",
     "Py_SetProgramName",
     "Py_SetPythonHome",
     "Py_SetRecursionLimit",
+    "Py_True",
     "Py_UTF8Mode",
     "Py_VaBuildValue",
     "Py_Version",

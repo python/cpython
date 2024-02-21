@@ -721,3 +721,8 @@ PyTypeObject PySlice_Type = {
     0,                                          /* tp_alloc */
     slice_new,                                  /* tp_new */
 };
+
+
+// Export the symbol in the stable ABI
+#undef Py_Ellipsis
+PyObject *Py_Ellipsis = &_Py_EllipsisObject;

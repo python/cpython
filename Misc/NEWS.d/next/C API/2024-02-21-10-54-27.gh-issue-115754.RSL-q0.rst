@@ -1,0 +1,6 @@
+In the limited C API and the stable ABI, implement ``Py_None``, ``Py_False``
+``Py_True``, ``Py_Ellipsis`` and ``Py_NotImplemented`` constants are symbols,
+rather than implementing them as macros. So they can be loaded by dlopen/dlsym
+in an embedded in Python, rather than having to reimplement these macros
+manually. In the non-limited C API, these constants are still implemented as
+macros. Patch by Victor Stinner.

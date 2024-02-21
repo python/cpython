@@ -8,7 +8,13 @@ extern "C" {
 
 PyAPI_DATA(PyObject) _Py_EllipsisObject; /* Don't use this directly */
 
+// Export the symbol in the stable ABI
+PyAPI_DATA(PyObject*) Py_Ellipsis;
+
+#ifndef Py_LIMITED_API
+// Implement Py_Ellipsis as a macro in the non-limited C API
 #define Py_Ellipsis (&_Py_EllipsisObject)
+#endif
 
 /* Slice object interface */
 

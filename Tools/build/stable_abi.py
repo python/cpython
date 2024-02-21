@@ -309,6 +309,18 @@ def gen_ctypes_test(manifest, args, outfile):
                         with self.subTest(name):
                             self.assertEqual(feature_macros[name], value)
 
+            def test_constants(self):
+                process = ctypes_test.pythonapi
+                def get_object(name):
+                    return ctypes_test.py_object.in_dll(process, name).value
+
+                self.assertIs(get_object("Py_None"), None)
+                self.assertIs(get_object("Py_False"), False)
+                self.assertIs(get_object("Py_True"), True)
+                self.assertIs(get_object("Py_Ellipsis"), Ellipsis)
+                self.assertIs(get_object("Py_NotImplemented"), NotImplemented)
+
+
         SYMBOL_NAMES = (
     '''))
     items = manifest.select(

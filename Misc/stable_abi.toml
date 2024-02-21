@@ -2496,3 +2496,13 @@
 [typedef.PyCFunctionFastWithKeywords]
     added = '3.13'
     # "abi-only" since 3.10.  (Same story as PyCFunctionFast.)
+[data.Py_False]
+    added = '3.13'
+[data.Py_True]
+    added = '3.13'
+[data.Py_None]
+    added = '3.13'
+[data.Py_Ellipsis]
+    added = '3.13'
+[data.Py_NotImplemented]
+    added = '3.13'
