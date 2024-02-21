@@ -83,10 +83,14 @@ typedef struct _Py_UOpsAbstractFrame {
     _Py_UOpsSymType **stack;
     _Py_UOpsSymType **locals;
 
-    // Used for inlining. Points to their
-    // original _PUSH_FRAME and _POP_FRAME.
-    _PyUOpInstruction *push_frame;
-    _PyUOpInstruction *pop_frame;
+    // For inlining
+    bool is_inlined;
+    // Reflects the real localsplus that will be used in the VM.
+    // This may differ from locals if the frame is inlined.
+    // For an inlined frame, the inlinee shares the same localsplus
+    // as the inliner.
+    _Py_UOpsSymType **real_localsplus;
+    // Same as in VM, from _SET_IP and _SAVE_RETURN_OFFSET
     _PyUOpInstruction *instr_ptr;
     uint16_t return_offset;
     int after_call_stackentries;
@@ -136,8 +140,8 @@ ctx_frame_new(
     frame->locals = localsplus_start;
     frame->stack = frame->locals + co->co_nlocalsplus;
     frame->stack_pointer = frame->stack + curr_stackentries;
-    frame->pop_frame = NULL;
-    frame->push_frame = NULL;
+    frame->is_inlined = false;
+    frame->real_localsplus = NULL;
     frame->instr_ptr = NULL;
     ctx->n_consumed = localsplus_start + (co->co_nlocalsplus + co->co_stacksize);
     if (ctx->n_consumed >= ctx->limit) {
@@ -206,6 +210,8 @@ abstractcontext_init(
     if (frame == NULL) {
         return -1;
     }
+    // Root frame should never be inlined.
+    frame->real_localsplus = frame->locals;
     ctx->curr_frame_depth++;
     ctx->frame = frame;
     return 0;

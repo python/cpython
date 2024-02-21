@@ -307,7 +307,6 @@ dummy_func(void) {
     op(_POP_FRAME, (retval -- res)) {
         SYNC_SP();
         ctx->frame->stack_pointer = stack_pointer;
-        ctx->frame->pop_frame = this_instr;
         ctx_frame_pop(ctx);
         stack_pointer = ctx->frame->stack_pointer;
         res = retval;
@@ -315,23 +314,27 @@ dummy_func(void) {
 
     op(_PUSH_FRAME, (new_frame: _Py_UOpsAbstractFrame * -- unused if (0))) {
         SYNC_SP();
+        new_frame->real_localsplus = new_frame->locals;
         ctx->frame->stack_pointer = stack_pointer;
         ctx->frame->after_call_stackentries = STACK_LEVEL();
         ctx->frame = new_frame;
         ctx->curr_frame_depth++;
         stack_pointer = new_frame->stack_pointer;
-        new_frame->push_frame = this_instr;
     }
 
-    // This should be identical to _PUSH_FRAME!
     op(_PUSH_FRAME_INLINEABLE, (new_frame: _Py_UOpsAbstractFrame * -- unused if (0))) {
         SYNC_SP();
+        new_frame->is_inlined = true;
+        new_frame->real_localsplus = ctx->frame->real_localsplus;
         ctx->frame->stack_pointer = stack_pointer;
         ctx->frame->after_call_stackentries = STACK_LEVEL();
         ctx->frame = new_frame;
         ctx->curr_frame_depth++;
         stack_pointer = new_frame->stack_pointer;
-        new_frame->push_frame = this_instr;
+        assert((this_instr - 1)->opcode == _SAVE_RETURN_OFFSET);
+        assert((this_instr - 2)->opcode == _INIT_CALL_PY_EXACT_ARGS);
+        assert((this_instr - 3)->opcode == _CHECK_STACK_SPACE);
+
     }
 
     op(_SET_IP, (instr_ptr/4 --)) {

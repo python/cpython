@@ -4225,7 +4225,7 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        op(_SETUP_TIER2_FRAME, (--)) {
+        op(_GROW_TIER2_FRAME, (--)) {
             DEOPT_IF(_PyFrame_ConvertToTier2(tstate, frame, oparg));
         }
 
