@@ -341,14 +341,13 @@ typedef struct {
 
 *****************************************************************/
 
+extern int PyCStgDict_clone(StgInfo *dst_info, StgInfo *src_info);
 /* May return NULL, but does not set an exception! */
 extern StgDictObject *PyType_stgdict(PyObject *obj);
 
 /* May return NULL, but does not set an exception! */
 extern StgDictObject *PyObject_stgdict(PyObject *self);
 
-extern int PyCStgDict_clone(StgDictObject *src, StgDictObject *dst,
-                            StgInfo *dst_info, StgInfo *src_info);
 
 typedef int(* PPROC)(void);
 

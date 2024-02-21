@@ -716,8 +716,8 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
             return (PyObject *)result;
         }
 
-        /* copy base dict */
-        if (-1 == PyCStgDict_clone(dict, basedict, info, baseinfo)) {
+        /* copy base info */
+        if (-1 == PyCStgDict_clone(info, baseinfo)) {
             Py_DECREF(result);
             return NULL;
         }

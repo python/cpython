@@ -122,25 +122,16 @@ PyCStgDict_sizeof(StgDictObject *self, void *unused)
 }
 
 int
-PyCStgDict_clone(StgDictObject *dst, StgDictObject *src,
-                 StgInfo *dst_info, StgInfo *src_info)
+PyCStgDict_clone(StgInfo *dst_info, StgInfo *src_info)
 {
-    char *d, *s;
     Py_ssize_t size;
 
-    PyCStgDict_clear(dst);
     PyMem_Free(dst_info->ffi_type_pointer.elements);
     PyMem_Free(dst_info->format);
     dst_info->format = NULL;
     PyMem_Free(dst_info->shape);
     dst_info->shape = NULL;
     dst_info->ffi_type_pointer.elements = NULL;
-
-    d = (char *)dst;
-    s = (char *)src;
-    memcpy(d + sizeof(PyDictObject),
-           s + sizeof(PyDictObject),
-           sizeof(StgDictObject) - sizeof(PyDictObject));
 
     memcpy(dst_info, src_info, sizeof(StgInfo));
 
