@@ -2797,6 +2797,27 @@ class TestMutuallyExclusiveGroupErrors(TestCase):
               '''
         self.assertEqual(parser.format_help(), textwrap.dedent(expected))
 
+    def test_help_subparser_all_mutually_exclusive_group_members_suppressed(self):
+        self.maxDiff = None
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        commands = parser.add_subparsers(title="commands", dest="command")
+        cmd_foo = commands.add_parser("foo")
+        group = cmd_foo.add_mutually_exclusive_group()
+        group.add_argument('--verbose', action='store_true', help=argparse.SUPPRESS)
+        group.add_argument('--quiet', action='store_true', help=argparse.SUPPRESS)
+        longopt = '--' + 'long'*32
+        longmeta = 'LONG'*32
+        cmd_foo.add_argument(longopt)
+        expected = f'''\
+            usage: PROG foo [-h]
+                            [{longopt} {longmeta}]
+
+            options:
+              -h, --help            show this help message and exit
+              {longopt} {longmeta}
+              '''
+        self.assertEqual(cmd_foo.format_help(), textwrap.dedent(expected))
+
     def test_empty_group(self):
         # See issue 26952
         parser = argparse.ArgumentParser()
