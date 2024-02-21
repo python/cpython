@@ -2839,7 +2839,7 @@ AC_CHECK_HEADERS(
 
 # checks for typedefs
 AC_CACHE_CHECK([for clock_t in time.h], [ac_cv_clock_t_time_h], [
-  AC_EGREP_HEADER([clock_t], [time.h], [ac_cv_clock_t_time_h=yes], [ac_cv_clock_t_time_h=no])
+  AX_CHECK_TYPEDEF([clock_t], [time.h], [ac_cv_clock_t_time_h=yes], [ac_cv_clock_t_time_h=no])
 ])
 dnl checks for "no"
 AS_VAR_IF([ac_cv_clock_t_time_h], [no], [

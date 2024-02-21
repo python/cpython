@@ -11221,7 +11221,6 @@ fi
 
 
 # checks for typedefs
-
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for clock_t in time.h" >&5
 printf %s "checking for clock_t in time.h... " >&6; }
 if test ${ac_cv_clock_t_time_h+y}
@@ -11229,19 +11228,42 @@ then :
   printf %s "(cached) " >&6
 else $as_nop
 
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for clock_t in time.h" >&5
+printf %s "checking for clock_t in time.h... " >&6; }
+ ac_lib_var=`echo clock_t'_'time.h | sed 'y%./+-%__p_%'`
+if eval test \${ac_cv_lib_$ac_lib_var+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+   eval "ac_cv_type_$ac_lib_var='not-found'"
+  ac_cv_check_typedef_header=`echo time.h`
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <time.h>
-
+#include <$ac_cv_check_typedef_header>
+int
+main (void)
+{
+int x = sizeof(clock_t); x = x;
+  ;
+  return 0;
+}
 _ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "clock_t" >/dev/null 2>&1
+if ac_fn_c_try_compile "$LINENO"
 then :
-  ac_cv_clock_t_time_h=yes
+  eval "ac_cv_type_$ac_lib_var=yes"
 else $as_nop
-  ac_cv_clock_t_time_h=no
+  eval "ac_cv_type_$ac_lib_var=no"
 fi
-rm -rf conftest*
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  if test `eval echo '$ac_cv_type_'$ac_lib_var` = "no" ; then
+     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+  else
+     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+  fi
+
+fi
 
 
 fi
@@ -11456,6 +11478,7 @@ else $as_nop
 printf "%s\n" "#define size_t unsigned int" >>confdefs.h
 
 fi
+
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for uid_t in sys/types.h" >&5
 printf %s "checking for uid_t in sys/types.h... " >&6; }
