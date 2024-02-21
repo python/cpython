@@ -211,6 +211,8 @@ static inline PyDictUnicodeEntry* DK_UNICODE_ENTRIES(PyDictKeysObject *dk) {
 #define DICT_WATCHER_MASK ((1 << DICT_MAX_WATCHERS) - 1)
 #define DICT_WATCHER_AND_MODIFICATION_MASK ((1 << (DICT_MAX_WATCHERS + DICT_WATCHED_MUTATION_BITS)) - 1)
 
+#define DICT_VALUES_SIZE(values) ((uint8_t *)values)[-1]
+
 #ifdef Py_GIL_DISABLED
 #define DICT_NEXT_VERSION(INTERP) \
     (_Py_atomic_add_uint64(&(INTERP)->dict_state.global_version, DICT_VERSION_INCREMENT) + DICT_VERSION_INCREMENT)
@@ -256,7 +258,7 @@ _PyDictValues_AddToInsertionOrder(PyDictValues *values, Py_ssize_t ix)
     assert(ix < SHARED_KEYS_MAX_SIZE);
     uint8_t *size_ptr = ((uint8_t *)values)-2;
     int size = *size_ptr;
-    assert(size+2 < ((uint8_t *)values)[-1]);
+    assert(size+2 < DICT_VALUES_SIZE(values));
     size++;
     size_ptr[-size] = (uint8_t)ix;
     *size_ptr = size;
