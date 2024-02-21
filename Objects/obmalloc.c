@@ -2459,6 +2459,24 @@ write_size_t(void *p, size_t n)
     }
 }
 
+static void
+fill_mem_debug(debug_alloc_api_t *api, void *data, int c, size_t nbytes)
+{
+#ifdef Py_GIL_DISABLED
+    if (api->api_id == 'o') {
+        // Don't overwrite the first few bytes of a PyObject allocation in the
+        // free-threaded build
+        _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+        size_t debug_offset = tstate->mimalloc.current_object_heap->debug_offset;
+        if (debug_offset < nbytes) {
+            memset((char *)data + debug_offset, c, nbytes - debug_offset);
+        }
+        return;
+    }
+#endif
+    memset(data, c, nbytes);
+}
+
 /* Let S = sizeof(size_t).  The debug malloc asks for 4 * S extra bytes and
    fills them with useful stuff, here calling the underlying malloc's result p:
 
@@ -2535,7 +2553,7 @@ _PyMem_DebugRawAlloc(int use_calloc, void *ctx, size_t nbytes)
     memset(p + SST + 1, PYMEM_FORBIDDENBYTE, SST-1);
 
     if (nbytes > 0 && !use_calloc) {
-        memset(data, PYMEM_CLEANBYTE, nbytes);
+        fill_mem_debug(api, data, PYMEM_CLEANBYTE, nbytes);
     }
 
     /* at tail, write pad (SST bytes) and serialno (SST bytes) */
@@ -2583,8 +2601,9 @@ _PyMem_DebugRawFree(void *ctx, void *p)
 
     _PyMem_DebugCheckAddress(__func__, api->api_id, p);
     nbytes = read_size_t(q);
-    nbytes += PYMEM_DEBUG_EXTRA_BYTES;
-    memset(q, PYMEM_DEADBYTE, nbytes);
+    nbytes += PYMEM_DEBUG_EXTRA_BYTES - 2*SST;
+    memset(q, PYMEM_DEADBYTE, 2*SST);
+    fill_mem_debug(api, p, PYMEM_DEADBYTE, nbytes);
     api->alloc.free(api->alloc.ctx, q);
 }
 
@@ -2604,7 +2623,6 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
     size_t total;         /* 2 * SST + nbytes + 2 * SST */
     size_t original_nbytes;
 #define ERASED_SIZE 64
-    uint8_t save[2*ERASED_SIZE];  /* A copy of erased bytes. */
 
     _PyMem_DebugCheckAddress(__func__, api->api_id, p);
 
@@ -2621,9 +2639,11 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
 #ifdef PYMEM_DEBUG_SERIALNO
     size_t block_serialno = read_size_t(tail + SST);
 #endif
+#ifndef Py_GIL_DISABLED
     /* Mark the header, the trailer, ERASED_SIZE bytes at the begin and
        ERASED_SIZE bytes at the end as dead and save the copy of erased bytes.
      */
+    uint8_t save[2*ERASED_SIZE];  /* A copy of erased bytes. */
     if (original_nbytes <= sizeof(save)) {
         memcpy(save, data, original_nbytes);
         memset(data - 2 * SST, PYMEM_DEADBYTE,
@@ -2636,6 +2656,7 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
         memset(tail - ERASED_SIZE, PYMEM_DEADBYTE,
                ERASED_SIZE + PYMEM_DEBUG_EXTRA_BYTES - 2 * SST);
     }
+#endif
 
     /* Resize and add decorations. */
     r = (uint8_t *)api->alloc.realloc(api->alloc.ctx, head, total);
@@ -2663,6 +2684,7 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
     write_size_t(tail + SST, block_serialno);
 #endif
 
+#ifndef Py_GIL_DISABLED
     /* Restore saved bytes. */
     if (original_nbytes <= sizeof(save)) {
         memcpy(data, save, Py_MIN(nbytes, original_nbytes));
@@ -2675,6 +2697,7 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
                    Py_MIN(nbytes - i, ERASED_SIZE));
         }
     }
+#endif
 
     if (r == NULL) {
         return NULL;
