@@ -506,6 +506,23 @@ list_item(PyObject *aa, Py_ssize_t i)
 }
 
 static PyObject *
+list_slice_lock_held(PyListObject *a, Py_ssize_t start, Py_ssize_t len)
+{
+    PyListObject *np = (PyListObject *) list_new_prealloc(len);
+    if (np == NULL) {
+        return NULL;
+    }
+    PyObject **src = a->ob_item + start;
+    PyObject **dest = np->ob_item;
+    for (Py_ssize_t i = 0; i < len; i++) {
+        PyObject *v = src[i];
+        FT_ATOMIC_STORE_PTR_RELAXED(dest[i], Py_NewRef(v));
+    }
+    Py_SET_SIZE(np, len);
+    return (PyObject *)np;
+}
+
+static PyObject *
 list_slice(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
 {
     PyListObject *np;
@@ -3063,6 +3080,47 @@ static PySequenceMethods list_as_sequence = {
 };
 
 static PyObject *
+list_slice_step_lock_held(PyListObject *a, Py_ssize_t start, Py_ssize_t step, Py_ssize_t len)
+{
+    PyObject *obj = list_new_prealloc(len);
+    if (obj == NULL) {
+        return NULL;
+    }
+    PyListObject *np = (PyListObject *)obj;
+    size_t cur;
+    Py_ssize_t i;
+    PyObject **src = a->ob_item;
+    PyObject **dest = np->ob_item;
+    for (cur = start, i = 0; i < len;
+            cur += (size_t)step, i++) {
+        PyObject *v = src[cur];
+        FT_ATOMIC_STORE_PTR_RELAXED(dest[i], Py_NewRef(v));
+    }
+    Py_SET_SIZE(np, len);
+    return (PyObject *)np;
+}
+
+static PyObject *
+list_slice_wrap(PyListObject *aa, Py_ssize_t start, Py_ssize_t stop, Py_ssize_t step)
+{
+    PyObject *res = NULL;
+    PyListObject *a = (PyListObject *)aa;
+    Py_BEGIN_CRITICAL_SECTION(a);
+    Py_ssize_t len = PySlice_AdjustIndices(Py_SIZE(a), &start, &stop, step);
+    if (len <= 0) {
+        res = PyList_New(0);
+    }
+    else if (step == 1) {
+        res = list_slice_lock_held(a, start, len);
+    }
+    else {
+        res = list_slice_step_lock_held(a, start, step, len);
+    }
+    Py_END_CRITICAL_SECTION();
+    return res;
+}
+
+static PyObject *
 list_subscript(PyObject* _self, PyObject* item)
 {
     PyListObject* self = (PyListObject*)_self;
@@ -3076,38 +3134,11 @@ list_subscript(PyObject* _self, PyObject* item)
         return list_item((PyObject *)self, i);
     }
     else if (PySlice_Check(item)) {
-        Py_ssize_t start, stop, step, slicelength, i;
-        size_t cur;
-        PyObject* result;
-        PyObject* it;
-        PyObject **src, **dest;
-
+        Py_ssize_t start, stop, step;
         if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return NULL;
         }
-        slicelength = PySlice_AdjustIndices(Py_SIZE(self), &start, &stop,
-                                            step);
-
-        if (slicelength <= 0) {
-            return PyList_New(0);
-        }
-        else if (step == 1) {
-            return list_slice(self, start, stop);
-        }
-        else {
-            result = list_new_prealloc(slicelength);
-            if (!result) return NULL;
-
-            src = self->ob_item;
-            dest = ((PyListObject *)result)->ob_item;
-            for (cur = start, i = 0; i < slicelength;
-                 cur += (size_t)step, i++) {
-                it = Py_NewRef(src[cur]);
-                dest[i] = it;
-            }
-            Py_SET_SIZE(result, slicelength);
-            return result;
-        }
+        return list_slice_wrap(self, start, stop, step);
     }
     else {
         PyErr_Format(PyExc_TypeError,
