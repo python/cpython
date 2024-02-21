@@ -80,11 +80,11 @@ dummy_func(void) {
 
 
     op(_BINARY_OP_ADD_INT, (left, right -- res)) {
-        if (is_const(left) && is_const(right)) {
-            assert(PyLong_CheckExact(get_const(left)));
-            assert(PyLong_CheckExact(get_const(right)));
-            PyObject *temp = _PyLong_Add((PyLongObject *)get_const(left),
-                                         (PyLongObject *)get_const(right));
+        if (sym_is_const(left) && sym_is_const(right)) {
+            assert(PyLong_CheckExact(sym_get_const(left)));
+            assert(PyLong_CheckExact(sym_get_const(right)));
+            PyObject *temp = _PyLong_Add((PyLongObject *)sym_get_const(left),
+                                         (PyLongObject *)sym_get_const(right));
             if (temp == NULL) {
                 goto error;
             }
@@ -98,11 +98,11 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_SUBTRACT_INT, (left, right -- res)) {
-        if (is_const(left) && is_const(right)) {
-            assert(PyLong_CheckExact(get_const(left)));
-            assert(PyLong_CheckExact(get_const(right)));
-            PyObject *temp = _PyLong_Subtract((PyLongObject *)get_const(left),
-                                              (PyLongObject *)get_const(right));
+        if (sym_is_const(left) && sym_is_const(right)) {
+            assert(PyLong_CheckExact(sym_get_const(left)));
+            assert(PyLong_CheckExact(sym_get_const(right)));
+            PyObject *temp = _PyLong_Subtract((PyLongObject *)sym_get_const(left),
+                                              (PyLongObject *)sym_get_const(right));
             if (temp == NULL) {
                 goto error;
             }
@@ -116,11 +116,11 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_MULTIPLY_INT, (left, right -- res)) {
-        if (is_const(left) && is_const(right)) {
-            assert(PyLong_CheckExact(get_const(left)));
-            assert(PyLong_CheckExact(get_const(right)));
-            PyObject *temp = _PyLong_Multiply((PyLongObject *)get_const(left),
-                                              (PyLongObject *)get_const(right));
+        if (sym_is_const(left) && sym_is_const(right)) {
+            assert(PyLong_CheckExact(sym_get_const(left)));
+            assert(PyLong_CheckExact(sym_get_const(right)));
+            PyObject *temp = _PyLong_Multiply((PyLongObject *)sym_get_const(left),
+                                              (PyLongObject *)sym_get_const(right));
             if (temp == NULL) {
                 goto error;
             }
@@ -134,12 +134,12 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_ADD_FLOAT, (left, right -- res)) {
-        if (is_const(left) && is_const(right)) {
-            assert(PyFloat_CheckExact(get_const(left)));
-            assert(PyFloat_CheckExact(get_const(right)));
+        if (sym_is_const(left) && sym_is_const(right)) {
+            assert(PyFloat_CheckExact(sym_get_const(left)));
+            assert(PyFloat_CheckExact(sym_get_const(right)));
             PyObject *temp = PyFloat_FromDouble(
-                PyFloat_AS_DOUBLE(get_const(left)) +
-                PyFloat_AS_DOUBLE(get_const(right)));
+                PyFloat_AS_DOUBLE(sym_get_const(left)) +
+                PyFloat_AS_DOUBLE(sym_get_const(right)));
             if (temp == NULL) {
                 goto error;
             }
@@ -153,12 +153,12 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res)) {
-        if (is_const(left) && is_const(right)) {
-            assert(PyFloat_CheckExact(get_const(left)));
-            assert(PyFloat_CheckExact(get_const(right)));
+        if (sym_is_const(left) && sym_is_const(right)) {
+            assert(PyFloat_CheckExact(sym_get_const(left)));
+            assert(PyFloat_CheckExact(sym_get_const(right)));
             PyObject *temp = PyFloat_FromDouble(
-                PyFloat_AS_DOUBLE(get_const(left)) -
-                PyFloat_AS_DOUBLE(get_const(right)));
+                PyFloat_AS_DOUBLE(sym_get_const(left)) -
+                PyFloat_AS_DOUBLE(sym_get_const(right)));
             if (temp == NULL) {
                 goto error;
             }
@@ -172,12 +172,12 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res)) {
-        if (is_const(left) && is_const(right)) {
-            assert(PyFloat_CheckExact(get_const(left)));
-            assert(PyFloat_CheckExact(get_const(right)));
+        if (sym_is_const(left) && sym_is_const(right)) {
+            assert(PyFloat_CheckExact(sym_get_const(left)));
+            assert(PyFloat_CheckExact(sym_get_const(right)));
             PyObject *temp = PyFloat_FromDouble(
-                PyFloat_AS_DOUBLE(get_const(left)) *
-                PyFloat_AS_DOUBLE(get_const(right)));
+                PyFloat_AS_DOUBLE(sym_get_const(left)) *
+                PyFloat_AS_DOUBLE(sym_get_const(right)));
             if (temp == NULL) {
                 goto error;
             }
@@ -251,6 +251,7 @@ dummy_func(void) {
         OUT_OF_SPACE_IF_NULL(null = sym_new_null(ctx));
         attr = NULL;
         if (this_instr[-1].opcode == _NOP) {
+            // Preceding _CHECK_ATTR_MODULE was removed: mod is const and dict is watched.
             assert(sym_is_const(owner));
             PyModuleObject *mod = (PyModuleObject *)sym_get_const(owner);
             assert(PyModule_CheckExact(mod));
