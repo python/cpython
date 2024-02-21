@@ -589,7 +589,6 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 }
 
 
-
 #define STACK_LEVEL()     ((int)(stack_pointer - ctx->frame->stack))
 
 #define GETLOCAL(idx)          ((ctx->frame->locals[idx]))
@@ -612,6 +611,13 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
     OUT_OF_SPACE_IF_NULL(null = sym_new_null(ctx)); \
     } while (0);
 
+int
+real_localsplus_idx(_Py_UOpsAbstractInterpContext *ctx, int oparg)
+{
+    int target = (int)(&GETLOCAL(oparg) - ctx->frame->real_localsplus);
+    assert(target >= 0);
+    return target;
+}
 
 /* 1 for success, 0 for not ready, cannot error at the moment. */
 static int

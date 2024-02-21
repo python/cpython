@@ -209,7 +209,7 @@ dummy_func(
             Py_INCREF(value);
         }
 
-        replicate(8) pure inst(LOAD_FAST, (-- value)) {
+        pure inst(LOAD_FAST, (-- value)) {
             value = GETLOCAL(oparg);
             assert(value != NULL);
             Py_INCREF(value);
@@ -235,7 +235,7 @@ dummy_func(
             Py_INCREF(value);
         }
 
-        replicate(8) inst(STORE_FAST, (value --)) {
+        inst(STORE_FAST, (value --)) {
             SETLOCAL(oparg, value);
         }
 

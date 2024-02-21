@@ -20,6 +20,7 @@
             if (sym_is_null(value)) {
                 goto out_of_space;
             }
+            REPLACE_OP(this_instr, _LOAD_FAST_CHECK, real_localsplus_idx(ctx, oparg), 0);
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;
@@ -28,6 +29,7 @@
         case _LOAD_FAST: {
             _Py_UOpsSymType *value;
             value = GETLOCAL(oparg);
+            REPLACE_OP(this_instr, _LOAD_FAST, real_localsplus_idx(ctx, oparg), 0);
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;
@@ -39,6 +41,7 @@
             _Py_UOpsSymType *temp;
             OUT_OF_SPACE_IF_NULL(temp = sym_new_null(ctx));
             GETLOCAL(oparg) = temp;
+            REPLACE_OP(this_instr, _LOAD_FAST_AND_CLEAR, real_localsplus_idx(ctx, oparg), 0);
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;
@@ -58,6 +61,7 @@
             _Py_UOpsSymType *value;
             value = stack_pointer[-1];
             GETLOCAL(oparg) = value;
+            REPLACE_OP(this_instr, _STORE_FAST, real_localsplus_idx(ctx, oparg), 0);
             stack_pointer += -1;
             break;
         }
@@ -1415,7 +1419,6 @@
             stack_pointer += -1;
             new_frame->real_localsplus = new_frame->locals;
             ctx->frame->stack_pointer = stack_pointer;
-            ctx->frame->after_call_stackentries = STACK_LEVEL();
             ctx->frame = new_frame;
             ctx->curr_frame_depth++;
             stack_pointer = new_frame->stack_pointer;
