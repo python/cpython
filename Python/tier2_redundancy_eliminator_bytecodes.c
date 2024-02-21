@@ -310,6 +310,18 @@ dummy_func(void) {
 
     op(_POP_FRAME, (retval -- res)) {
         SYNC_SP();
+        if (ctx->frame->is_inlined) {
+            PyFunctionObject *func = ctx_prev_frame(ctx)->func;
+            PyCodeObject *co = (PyCodeObject *)ctx_prev_frame(ctx)->func->func_code;
+            assert((this_instr - 1)->opcode == _SET_IP ||
+                (this_instr - 1)->opcode == _CHECK_VALIDITY_AND_SET_IP ||
+               (this_instr - 1)->opcode == _CHECK_VALIDITY);
+            REPLACE_OP(this_instr, _POST_INLINE,
+                       stack_pointer - ctx_prev_frame(ctx)->stack_pointer,
+                       ctx_prev_frame(ctx)->reconstruction_offset);
+            REPLACE_OP((this_instr - 1), _SET_FRAME_NAMES, 0,
+                       (uintptr_t)Py_NewRef(co->co_names));
+        }
         ctx->frame->stack_pointer = stack_pointer;
         ctx_frame_pop(ctx);
         stack_pointer = ctx->frame->stack_pointer;
@@ -329,19 +341,30 @@ dummy_func(void) {
         SYNC_SP();
         new_frame->is_inlined = true;
         new_frame->real_localsplus = ctx->frame->real_localsplus;
+        assert(this_instr->operand != (uintptr_t)NULL);
+        new_frame->func = (PyFunctionObject *)this_instr->operand;
         ctx->frame->stack_pointer = stack_pointer;
-        ctx->frame->after_call_stackentries = STACK_LEVEL();
         ctx->frame = new_frame;
         ctx->curr_frame_depth++;
         stack_pointer = new_frame->stack_pointer;
         assert((this_instr - 1)->opcode == _SAVE_RETURN_OFFSET);
         assert((this_instr - 2)->opcode == _INIT_CALL_PY_EXACT_ARGS);
         assert((this_instr - 3)->opcode == _CHECK_STACK_SPACE);
-
+        _PyUOpInstruction *reconstruction_start = end_writebuffer;
+        if (compile_frame_reconstruction(ctx, &end_writebuffer, true_end)) {
+            goto error;
+        }
+        uint64_t reconstruction_offset = (uint64_t)(reconstruction_start - trace);
+        new_frame->reconstruction_offset = reconstruction_offset;
+        REPLACE_OP(this_instr, _PRE_INLINE, new_frame->locals_len, reconstruction_offset);
+        PyCodeObject *co = (PyCodeObject *)new_frame->func->func_code;
+        REPLACE_OP((this_instr - 1), _SET_FRAME_NAMES, 0, (uintptr_t)Py_NewRef(co->co_names));
+        REPLACE_OP((this_instr - 2), _NOP, 0, 0);
+        REPLACE_OP((this_instr - 3), _GROW_TIER2_FRAME, new_frame->locals_len + new_frame->stack_len, 0);
     }
 
     op(_SET_IP, (instr_ptr/4 --)) {
-        ctx->frame->instr_ptr = (_PyUOpInstruction *)instr_ptr;
+        ctx->frame->instr_ptr = (_Py_CODEUNIT *)instr_ptr;
     }
 
     op(_SAVE_RETURN_OFFSET, (--)) {

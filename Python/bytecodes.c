@@ -4212,15 +4212,15 @@ dummy_func(
         // Inlining postlude
         op(_POST_INLINE, (reconstructer/4 -- retval)) {
             // clear the locals
-            PyObject **end = frame->localsplus + oparg;
             PyObject *ret = PEEK(1);
             stack_pointer--;
+            PyObject **end = stack_pointer - oparg;
             while (stack_pointer > end) {
                 Py_CLEAR(stack_pointer[-1]);
                 stack_pointer--;
             }
             retval = ret;
-            frame->frame_reconstruction_inst = ((int64_t)reconstructer == -1
+            frame->frame_reconstruction_inst = ((int64_t)reconstructer == 0
                 ? NULL
                 : current_executor->trace + (int64_t)reconstructer);
             CHECK_EVAL_BREAKER();
@@ -4228,6 +4228,10 @@ dummy_func(
 
         op(_GROW_TIER2_FRAME, (--)) {
             DEOPT_IF(_PyFrame_ConvertToTier2(tstate, frame, oparg));
+        }
+
+        // Dummy instruction to indicate this is frame reconstruction data.
+        op(_RECONSTRUCT_FRAME_INFO, (--)) {
         }
 
         // Sentinel for true end of trace.

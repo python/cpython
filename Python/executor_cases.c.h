@@ -3748,15 +3748,15 @@
             oparg = CURRENT_OPARG();
             PyObject *reconstructer = (PyObject *)CURRENT_OPERAND();
             // clear the locals
-            PyObject **end = frame->localsplus + oparg;
             PyObject *ret = PEEK(1);
             stack_pointer--;
+            PyObject **end = stack_pointer - oparg;
             while (stack_pointer > end) {
                 Py_CLEAR(stack_pointer[-1]);
                 stack_pointer--;
             }
             retval = ret;
-            frame->frame_reconstruction_inst = ((int64_t)reconstructer == -1
+            frame->frame_reconstruction_inst = ((int64_t)reconstructer == 0
                 ? NULL
             : current_executor->trace + (int64_t)reconstructer);
             stack_pointer[0] = retval;
@@ -3768,6 +3768,10 @@
         case _GROW_TIER2_FRAME: {
             oparg = CURRENT_OPARG();
             if (_PyFrame_ConvertToTier2(tstate, frame, oparg)) goto deoptimize;
+            break;
+        }
+
+        case _RECONSTRUCT_FRAME_INFO: {
             break;
         }
 

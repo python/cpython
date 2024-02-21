@@ -289,12 +289,13 @@ static inline int
 _PyFrame_ConvertToTier2(PyThreadState *tstate, _PyInterpreterFrame *frame,
                         int localsplus_grow)
 {
-    if (frame->owner != FRAME_OWNED_BY_THREAD) {
-        return 1;
-    }
+    assert(localsplus_grow > 0);
     // Already grown previously
     if (frame->tier2_extra_size >= localsplus_grow) {
         return 0;
+    }
+    if (frame->owner != FRAME_OWNED_BY_THREAD) {
+        return 1;
     }
     if (!_PyThreadState_HasStackSpace(tstate, localsplus_grow)) {
         return 1;

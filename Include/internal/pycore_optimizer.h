@@ -11,7 +11,7 @@ extern "C" {
 #include "pycore_uop_ids.h"
 
 // This is the length of the trace we project initially.
-#define UOP_MAX_TRACE_LENGTH 512
+#define UOP_MAX_TRACE_LENGTH 1024
 
 #define TRACE_STACK_SIZE 5
 
