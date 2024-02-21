@@ -804,7 +804,9 @@ def getfqdn(name=''):
     return name
 
 
-_GLOBAL_DEFAULT_TIMEOUT = object()
+class _GLOBAL_DEFAULT_TIMEOUT:
+    pass
+
 
 def create_connection(address, timeout=_GLOBAL_DEFAULT_TIMEOUT,
                       source_address=None, *, all_errors=False):

@@ -1,0 +1,2 @@
+The sentinel value ``socket._GLOBAL_DEFAULT_TIMEOUT`` has changed from an
+``object`` instance to a ``class`` with identical semantics.
