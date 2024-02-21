@@ -107,14 +107,7 @@
             _Py_UOpsSymType *value;
             _Py_UOpsSymType *res;
             value = stack_pointer[-1];
-            if (is_const(value)) {
-                int err = PyObject_IsTrue(get_const(value));
-                ERROR_IF(err < 0, error);
-                OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, err ? Py_True : Py_False));
-            }
-            else {
-                OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyBool_Type));
-            }
+            OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyBool_Type));
             stack_pointer[-1] = res;
             break;
         }
@@ -122,7 +115,12 @@
         case _TO_BOOL_BOOL: {
             _Py_UOpsSymType *value;
             value = stack_pointer[-1];
-            sym_set_type(value, &PyBool_Type);
+            if (sym_matches_type(value, &PyBool_Type)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            else {
+                sym_set_type(value, &PyBool_Type);
+            }
             break;
         }
 
@@ -132,6 +130,8 @@
             value = stack_pointer[-1];
             sym_set_type(value, &PyLong_Type);
             if (is_const(value)) {
+                // TODO gh-115759:
+                // if value is None, we caxn replace with a _POP_TOP; _LOAD_CONST_BORROW
                 OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, _PyLong_IsZero((PyLongObject *)get_const(value))
                                      ? Py_False : Py_True));
             }
@@ -156,6 +156,8 @@
             _Py_UOpsSymType *value;
             _Py_UOpsSymType *res;
             value = stack_pointer[-1];
+            // TODO gh-115759:
+            // if value is None, we caxn replace with a _POP_TOP; _LOAD_CONST_BORROW
             sym_set_type(value, &_PyNone_Type);
             OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, Py_False));
             stack_pointer[-1] = res;
@@ -168,6 +170,8 @@
             value = stack_pointer[-1];
             sym_set_type(value, &PyUnicode_Type);
             if (is_const(value)) {
+                // TODO gh-115759:
+                // if value is None, we caxn replace with a _POP_TOP; _LOAD_CONST_BORROW
                 OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx,
                                      get_const(value) == &_Py_STR(empty) ? Py_False : Py_True));
             }
