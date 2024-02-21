@@ -171,6 +171,7 @@ class SqueezerTest(unittest.TestCase):
 
     def test_write_stdout(self):
         """Test Squeezer's overriding of the EditorWindow's write() method."""
+        requires('gui')
         editwin = self.make_mock_editor_window()
 
         for text in ['', 'TEXT']:
