@@ -492,17 +492,15 @@ This is the server side::
        """
 
        def handle(self):
-           while True:
-               # self.request is the TCP socket connected to the client
-               self.data = self.request.recv(1024)
-               if not self.data:
-                   # Client has hung up
-                   break
+           # self.request is the TCP socket connected to the client
+           self.data = self.request.recv(1024)
+           while self.data:
                self.data = self.data.strip()
                print("Received from {}:".format(self.client_address[0]))
                print(self.data)
                # just send back the same data, but upper-cased
                self.request.sendall(self.data.upper())
+               self.data = self.request.recv(1024)
 
    if __name__ == "__main__":
        HOST, PORT = "localhost", 9999
@@ -519,19 +517,17 @@ objects that simplify communication by providing the standard file interface)::
    class MyTCPHandler(socketserver.StreamRequestHandler):
 
        def handle(self):
-           while True:
-               # self.rfile is a file-like object created by the handler;
-               # we can now use e.g. readline() instead of raw recv() calls
+           # self.rfile is a file-like object created by the handler;
+           # we can now use e.g. readline() instead of raw recv() calls
+           self.data = self.rfile.readline()
+           while self.data:
+               self.data = self.data.strip()           
+               print("Received from {}:".format(self.client_address[0]))
+               print(self.data)
+               # Likewise, self.wfile is a file-like object used to write back
+               # to the client
+               self.wfile.write(self.data.upper())
                self.data = self.rfile.readline()
-               if not self.data:
-                   # Client has hung up
-                   break
-           self.data = self.data.strip()           
-           print("Received from {}:".format(self.client_address[0]))
-           print(self.data)
-           # Likewise, self.wfile is a file-like object used to write back
-           # to the client
-           self.wfile.write(self.data.upper())
 
 The difference is that the ``readline()`` call in the second handler will call
 ``recv()`` multiple times until it encounters a newline character, while the
