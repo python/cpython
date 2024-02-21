@@ -29,7 +29,7 @@ extern "C" {
 //   PyMutex m = (PyMutex){0};
 //
 // Or initialize as global variables:
-//   PyMutex m;
+//   static PyMutex m;
 //
 // Typical usage:
 //   PyMutex_Lock(&m);
