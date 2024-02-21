@@ -26,14 +26,23 @@
 #  include <sys/types.h>          // ssize_t
 #endif
 
-// errno.h, stdio.h, stdlib.h and string.h headers are no longer used by
-// Python, but kept for backward compatibility (avoid compiler warnings).
-// They are no longer included by limited C API version 3.11 and newer.
+// <errno.h>, <stdio.h>, <stdlib.h> and <string.h> headers are no longer used
+// by Python, but kept for the backward compatibility of existing third party C
+// extensions. They are not included by limited C API version 3.11 and newer.
+//
+// The <ctype.h> and <unistd.h> headers are not included by limited C API
+// version 3.13 and newer.
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  include <errno.h>              // errno
 #  include <stdio.h>              // FILE*
 #  include <stdlib.h>             // getenv()
 #  include <string.h>             // memcpy()
+#endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030d0000
+#  include <ctype.h>              // tolower()
+#  ifndef MS_WINDOWS
+#    include <unistd.h>           // close()
+#  endif
 #endif
 
 
@@ -88,6 +97,7 @@
 #include "weakrefobject.h"
 #include "structseq.h"
 #include "cpython/picklebufobject.h"
+#include "cpython/pytime.h"
 #include "codecs.h"
 #include "pyerrors.h"
 #include "pythread.h"

@@ -1,2 +1,0 @@
-Add :c:func:`PyList_Extend` and :c:func:`PyList_Clear` functions: similar to
-Python ``list.extend()`` and ``list.clear()`` methods. Patch by Victor Stinner.

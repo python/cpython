@@ -83,8 +83,6 @@ static Py_ssize_t hashstats[Py_HASH_STATS_MAX + 1] = {0};
 
    */
 
-Py_hash_t _Py_HashPointer(const void *);
-
 Py_hash_t
 _Py_HashDouble(PyObject *inst, double v)
 {
@@ -132,23 +130,13 @@ _Py_HashDouble(PyObject *inst, double v)
 }
 
 Py_hash_t
-_Py_HashPointerRaw(const void *p)
+Py_HashPointer(const void *ptr)
 {
-    size_t y = (size_t)p;
-    /* bottom 3 or 4 bits are likely to be 0; rotate y by 4 to avoid
-       excessive hash collisions for dicts and sets */
-    y = (y >> 4) | (y << (8 * SIZEOF_VOID_P - 4));
-    return (Py_hash_t)y;
-}
-
-Py_hash_t
-_Py_HashPointer(const void *p)
-{
-    Py_hash_t x = _Py_HashPointerRaw(p);
-    if (x == -1) {
-        x = -2;
+    Py_hash_t hash = _Py_HashPointerRaw(ptr);
+    if (hash == -1) {
+        hash = -2;
     }
-    return x;
+    return hash;
 }
 
 Py_hash_t

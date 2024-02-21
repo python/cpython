@@ -1,1 +1,0 @@
-Support setting the :class:`asyncio.Runner` loop_factory kwarg in :class:`unittest.IsolatedAsyncioTestCase`

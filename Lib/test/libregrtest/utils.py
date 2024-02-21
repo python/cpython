@@ -12,7 +12,7 @@ import sys
 import sysconfig
 import tempfile
 import textwrap
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 
 from test import support
 from test.support import os_helper
@@ -290,8 +290,8 @@ def get_build_info():
     build = []
 
     # --disable-gil
-    if sysconfig.get_config_var('Py_NOGIL'):
-        build.append("nogil")
+    if sysconfig.get_config_var('Py_GIL_DISABLED'):
+        build.append("free_threading")
 
     if hasattr(sys, 'gettotalrefcount'):
         # --with-pydebug
@@ -340,6 +340,9 @@ def get_build_info():
     # --with-undefined-behavior-sanitizer
     if support.check_sanitizer(ub=True):
         sanitizers.append("UBSAN")
+    # --with-thread-sanitizer
+    if support.check_sanitizer(thread=True):
+        sanitizers.append("TSAN")
     if sanitizers:
         build.append('+'.join(sanitizers))
 
@@ -377,10 +380,19 @@ def get_temp_dir(tmp_dir: StrPath | None = None) -> StrPath:
                         # Python out of the source tree, especially when the
                         # source tree is read only.
                         tmp_dir = sysconfig.get_config_var('srcdir')
+                        if not tmp_dir:
+                            raise RuntimeError(
+                                "Could not determine the correct value for tmp_dir"
+                            )
                 tmp_dir = os.path.join(tmp_dir, 'build')
             else:
                 # WASI platform
                 tmp_dir = sysconfig.get_config_var('projectbase')
+                if not tmp_dir:
+                    raise RuntimeError(
+                        "sysconfig.get_config_var('projectbase') "
+                        f"unexpectedly returned {tmp_dir!r} on WASI"
+                    )
                 tmp_dir = os.path.join(tmp_dir, 'build')
 
                 # When get_temp_dir() is called in a worker process,
@@ -547,7 +559,7 @@ def is_cross_compiled():
     return ('_PYTHON_HOST_PLATFORM' in os.environ)
 
 
-def format_resources(use_resources: tuple[str, ...]):
+def format_resources(use_resources: Iterable[str]):
     use_resources = set(use_resources)
     all_resources = set(ALL_RESOURCES)
 
@@ -580,9 +592,10 @@ def display_header(use_resources: tuple[str, ...],
     print("== Python build:", ' '.join(get_build_info()))
     print("== cwd:", os.getcwd())
 
-    cpu_count = os.cpu_count()
+    cpu_count: object = os.cpu_count()
     if cpu_count:
-        process_cpu_count = os.process_cpu_count()
+        # The function is new in Python 3.13; mypy doesn't know about it yet:
+        process_cpu_count = os.process_cpu_count()  # type: ignore[attr-defined]
         if process_cpu_count and process_cpu_count != cpu_count:
             cpu_count = f"{process_cpu_count} (process) / {cpu_count} (system)"
         print("== CPU count:", cpu_count)
@@ -624,6 +637,7 @@ def display_header(use_resources: tuple[str, ...],
     asan = support.check_sanitizer(address=True)
     msan = support.check_sanitizer(memory=True)
     ubsan = support.check_sanitizer(ub=True)
+    tsan = support.check_sanitizer(thread=True)
     sanitizers = []
     if asan:
         sanitizers.append("address")
@@ -631,12 +645,15 @@ def display_header(use_resources: tuple[str, ...],
         sanitizers.append("memory")
     if ubsan:
         sanitizers.append("undefined behavior")
+    if tsan:
+        sanitizers.append("thread")
     if sanitizers:
         print(f"== sanitizers: {', '.join(sanitizers)}")
         for sanitizer, env_var in (
             (asan, "ASAN_OPTIONS"),
             (msan, "MSAN_OPTIONS"),
             (ubsan, "UBSAN_OPTIONS"),
+            (tsan, "TSAN_OPTIONS"),
         ):
             options= os.environ.get(env_var)
             if sanitizer and options is not None:

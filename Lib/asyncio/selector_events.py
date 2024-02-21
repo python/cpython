@@ -235,6 +235,10 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
                 await waiter
             except BaseException:
                 transport.close()
+                # gh-109534: When an exception is raised by the SSLProtocol object the
+                # exception set in this future can keep the protocol object alive and
+                # cause a reference cycle.
+                waiter = None
                 raise
                 # It's now up to the protocol to handle the connection.
 
@@ -261,15 +265,11 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             except (AttributeError, TypeError, ValueError):
                 # This code matches selectors._fileobj_to_fd function.
                 raise ValueError(f"Invalid file object: {fd!r}") from None
-        try:
-            transport = self._transports[fileno]
-        except KeyError:
-            pass
-        else:
-            if not transport.is_closing():
-                raise RuntimeError(
-                    f'File descriptor {fd!r} is used by transport '
-                    f'{transport!r}')
+        transport = self._transports.get(fileno)
+        if transport and not transport.is_closing():
+            raise RuntimeError(
+                f'File descriptor {fd!r} is used by transport '
+                f'{transport!r}')
 
     def _add_reader(self, fd, callback, *args):
         self._check_closed()
@@ -1241,8 +1241,6 @@ class _SelectorDatagramTransport(_SelectorTransport, transports.DatagramTranspor
         if not isinstance(data, (bytes, bytearray, memoryview)):
             raise TypeError(f'data argument must be a bytes-like object, '
                             f'not {type(data).__name__!r}')
-        if not data:
-            return
 
         if self._address:
             if addr not in (None, self._address):
@@ -1278,7 +1276,7 @@ class _SelectorDatagramTransport(_SelectorTransport, transports.DatagramTranspor
 
         # Ensure that what we buffer is immutable.
         self._buffer.append((bytes(data), addr))
-        self._buffer_size += len(data)
+        self._buffer_size += len(data) + 8  # include header bytes
         self._maybe_pause_protocol()
 
     def _sendto_ready(self):
