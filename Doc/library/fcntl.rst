@@ -13,9 +13,10 @@
 
 ----------------
 
-This module performs file control and I/O control on file
-descriptors. See the :manpage:`fcntl(2)` and :manpage:`ioctl(2)` Unix
-manual pages for full details.
+This module performs file and I/O control on file descriptors.  It is
+an interface to the :c:func:`fcntl` and :c:func:`ioctl` Unix routines.
+See the :manpage:`fcntl(2)` and :manpage:`ioctl(2)` Unix manual pages
+for full details.
 
 .. availability:: Unix, not Emscripten, not WASI.
 
@@ -175,12 +176,23 @@ The module defines the following functions:
    method are accepted as well) of the file to lock or unlock, and *cmd*
    is one of the following values:
 
-   * :const:`!LOCK_UN` -- unlock
-   * :const:`!LOCK_SH` -- acquire a shared lock
-   * :const:`!LOCK_EX` -- acquire an exclusive lock
+   .. data:: LOCK_UN
 
-   When *cmd* is :const:`!LOCK_SH` or :const:`!LOCK_EX`, it can also be
-   bitwise ORed with :const:`!LOCK_NB` to avoid blocking on lock acquisition.
+             release an existing lock
+
+   .. data:: LOCK_SH
+
+             acquire a shared lock
+
+   .. data:: LOCK_EX
+
+             acquire an exclusive lock
+
+   .. data:: LOCK_NB
+
+             bitwise OR with any of the other three constantsoperations to make
+             the request non-blocking.
+
    If :const:`!LOCK_NB` is used and the lock cannot be acquired, an
    :exc:`OSError` will be raised and the exception will have an *errno*
    attribute set to :data:`~errno.EACCES` or :data:`~errno.EAGAIN` (depending on the
