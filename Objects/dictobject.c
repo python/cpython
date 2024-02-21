@@ -115,19 +115,20 @@ As a consequence of this, split keys have a maximum size of 16.
 #define PyDict_MINSIZE 8
 
 #include "Python.h"
-#include "pycore_bitutils.h"            // _Py_bit_length
-#include "pycore_call.h"                // _PyObject_CallNoArgs()
-#include "pycore_ceval.h"               // _PyEval_GetBuiltin()
-#include "pycore_code.h"                // stats
-#include "pycore_critical_section.h"    // Py_BEGIN_CRITICAL_SECTION, Py_END_CRITICAL_SECTION
-#include "pycore_dict.h"                // export _PyDict_SizeOf()
-#include "pycore_freelist.h"            // _PyFreeListState_GET()
-#include "pycore_gc.h"                  // _PyObject_GC_IS_TRACKED()
-#include "pycore_object.h"              // _PyObject_GC_TRACK(), _PyDebugAllocatorStats()
-#include "pycore_pyerrors.h"            // _PyErr_GetRaisedException()
-#include "pycore_pystate.h"             // _PyThreadState_GET()
-#include "pycore_setobject.h"           // _PySet_NextEntry()
-#include "stringlib/eq.h"               // unicode_eq()
+#include "pycore_bitutils.h"             // _Py_bit_length
+#include "pycore_call.h"                 // _PyObject_CallNoArgs()
+#include "pycore_ceval.h"                // _PyEval_GetBuiltin()
+#include "pycore_code.h"                 // stats
+#include "pycore_critical_section.h"     // Py_BEGIN_CRITICAL_SECTION, Py_END_CRITICAL_SECTION
+#include "pycore_dict.h"                 // export _PyDict_SizeOf()
+#include "pycore_freelist.h"             // _PyFreeListState_GET()
+#include "pycore_gc.h"                   // _PyObject_GC_IS_TRACKED()
+#include "pycore_object.h"               // _PyObject_GC_TRACK(), _PyDebugAllocatorStats()
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_SSIZE_RELAXED
+#include "pycore_pyerrors.h"             // _PyErr_GetRaisedException()
+#include "pycore_pystate.h"              // _PyThreadState_GET()
+#include "pycore_setobject.h"            // _PySet_NextEntry()
+#include "stringlib/eq.h"                // unicode_eq()
 
 #include <stdbool.h>
 
@@ -159,7 +160,6 @@ ASSERT_DICT_LOCKED(PyObject *op)
 #define ASSERT_OWNED_OR_SHARED(mp) \
     assert(_Py_IsOwnedByCurrentThread((PyObject *)mp) || IS_DICT_SHARED(mp));
 #define LOAD_KEYS_NENTRIES(d)
-#define DECREMENT(v) _Py_atomic_add_ssize(&(v), -1)
 
 static inline Py_ssize_t
 load_keys_nentries(PyDictObject *mp)
@@ -222,7 +222,6 @@ static inline void split_keys_entry_added(PyDictKeysObject *keys)
 #define SET_DICT_SHARED(mp)
 #define LOAD_INDEX(keys, size, idx) ((const int##size##_t*)(keys->dk_indices))[idx]
 #define STORE_INDEX(keys, size, idx, value) ((int##size##_t*)(keys->dk_indices))[idx] = (int##size##_t)value
-#define DECREMENT(v) ((v)--)
 
 static inline void split_keys_entry_added(PyDictKeysObject *keys)
 {
@@ -5017,7 +5016,7 @@ fail:
     return NULL;
 }
 
-#endif
+#endif  /* Py_GIL_DISABLED */
 
 static PyObject*
 dictiter_iternextkey(PyObject *self)
@@ -5140,7 +5139,7 @@ fail:
     return NULL;
 }
 
-#endif
+#endif  /* Py_GIL_DISABLED */
 
 static PyObject *
 dictiter_iternextvalue(PyObject *self)
@@ -5213,15 +5212,7 @@ dictiter_iternextitem_lock_held(PyDictObject *d, PyObject *self,
         return 0;
     }
 
-#ifdef Py_GIL_DISABLED
-    Py_ssize_t start_pos;
-    // Even though we hold the lock here we may still lose a race against
-    // a lock-free iterator, therefore we may end up retrying our iteration.
-retry:
-    start_pos = i = _Py_atomic_load_ssize_relaxed(&di->di_pos);
-#else
-    i = di->di_pos;
-#endif
+    i = FT_ATOMIC_LOAD_SSIZE_RELAXED(di->di_pos);
 
     assert(i >= 0);
     if (_PyDict_HasSplitTable(d)) {
@@ -5263,15 +5254,8 @@ retry:
                         "dictionary keys changed during iteration");
         goto fail;
     }
-#ifdef Py_GIL_DISABLED
-    if (!_Py_atomic_compare_exchange_ssize(&di->di_pos, &start_pos, i+1)) {
-        // We lost a a race with a lock-free iterator!
-        goto retry;
-    }
-#else
     di->di_pos = i+1;
-#endif
-    DECREMENT(di->len);
+    di->len--;
     if (out_key != NULL) {
         *out_key = Py_NewRef(key);
     }
