@@ -1267,28 +1267,32 @@
         }
 
         case _LOAD_ATTR_METHOD_WITH_VALUES: {
+            _Py_UOpsSymType *owner;
             _Py_UOpsSymType *attr;
             _Py_UOpsSymType *self = NULL;
-            attr = sym_new_unknown(ctx);
-            if (attr == NULL) goto out_of_space;
-            self = sym_new_unknown(ctx);
-            if (self == NULL) goto out_of_space;
+            owner = stack_pointer[-1];
+            PyObject *descr = (PyObject *)this_instr->operand;
+            _LOAD_ATTR_NOT_NULL_SELF
+            (void)descr;
+            (void)owner;
             stack_pointer[-1] = attr;
-            stack_pointer[0] = self;
-            stack_pointer += 1;
+            if (oparg & 1) stack_pointer[0] = self;
+            stack_pointer += (oparg & 1);
             break;
         }
 
         case _LOAD_ATTR_METHOD_NO_DICT: {
+            _Py_UOpsSymType *owner;
             _Py_UOpsSymType *attr;
             _Py_UOpsSymType *self = NULL;
-            attr = sym_new_unknown(ctx);
-            if (attr == NULL) goto out_of_space;
-            self = sym_new_unknown(ctx);
-            if (self == NULL) goto out_of_space;
+            owner = stack_pointer[-1];
+            PyObject *descr = (PyObject *)this_instr->operand;
+            _LOAD_ATTR_NOT_NULL_SELF
+            (void)descr;
+            (void)owner;
             stack_pointer[-1] = attr;
-            stack_pointer[0] = self;
-            stack_pointer += 1;
+            if (oparg & 1) stack_pointer[0] = self;
+            stack_pointer += (oparg & 1);
             break;
         }
 
@@ -1313,15 +1317,17 @@
         }
 
         case _LOAD_ATTR_METHOD_LAZY_DICT: {
+            _Py_UOpsSymType *owner;
             _Py_UOpsSymType *attr;
             _Py_UOpsSymType *self = NULL;
-            attr = sym_new_unknown(ctx);
-            if (attr == NULL) goto out_of_space;
-            self = sym_new_unknown(ctx);
-            if (self == NULL) goto out_of_space;
+            owner = stack_pointer[-1];
+            PyObject *descr = (PyObject *)this_instr->operand;
+            _LOAD_ATTR_NOT_NULL_SELF
+            (void)descr;
+            (void)owner;
             stack_pointer[-1] = attr;
-            stack_pointer[0] = self;
-            stack_pointer += 1;
+            if (oparg & 1) stack_pointer[0] = self;
+            stack_pointer += (oparg & 1);
             break;
         }
 
@@ -1340,13 +1346,13 @@
         }
 
         case _INIT_CALL_BOUND_METHOD_EXACT_ARGS: {
-            _Py_UOpsSymType *func;
+            _Py_UOpsSymType *callable;
+            _Py_UOpsSymType *attr;
             _Py_UOpsSymType *self;
-            func = sym_new_unknown(ctx);
-            if (func == NULL) goto out_of_space;
-            self = sym_new_unknown(ctx);
-            if (self == NULL) goto out_of_space;
-            stack_pointer[-2 - oparg] = func;
+            callable = stack_pointer[-2 - oparg];
+            _LOAD_ATTR_NOT_NULL_SELF
+            (void)callable;
+            stack_pointer[-2 - oparg] = attr;
             stack_pointer[-1 - oparg] = self;
             break;
         }
