@@ -44,6 +44,7 @@
 #define MAX_ABSTRACT_FRAME_DEPTH (TRACE_STACK_SIZE + 2)
 
 #ifdef Py_DEBUG
+    extern const char *_PyUOpName(int index);
     static const char *const DEBUG_ENV = "PYTHON_OPT_DEBUG";
     static inline int get_lltrace(void) {
         char *uop_debug = Py_GETENV(DEBUG_ENV);
@@ -244,12 +245,6 @@ static inline void
 sym_set_flag(_Py_UOpsSymType *sym, int flag)
 {
     sym->flags |= flag;
-}
-
-static inline void
-sym_clear_flag(_Py_UOpsSymType *sym, int flag)
-{
-    sym->flags &= (~flag);
 }
 
 static inline bool
@@ -632,7 +627,7 @@ uop_redundancy_eliminator(
         _Py_UOpsSymType **stack_pointer = ctx->frame->stack_pointer;
 
         DPRINTF(3, "Abstract interpreting %s:%d ",
-                _PyOpcode_uop_name[opcode],
+                _PyUOpName(opcode),
                 oparg);
         switch (opcode) {
 #include "tier2_redundancy_eliminator_cases.c.h"

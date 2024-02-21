@@ -351,6 +351,16 @@
         }
 
         case _GUARD_BOTH_UNICODE: {
+            _Py_UOpsSymType *right;
+            _Py_UOpsSymType *left;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (sym_matches_type(left, &PyUnicode_Type) &&
+                sym_matches_type(right, &PyUnicode_Type)) {
+                REPLACE_OP(this_instr, _NOP, 0 ,0);
+            }
+            sym_set_type(left, &PyUnicode_Type);
+            sym_set_type(right, &PyUnicode_Type);
             break;
         }
 
@@ -834,7 +844,7 @@
             attr = sym_new_unknown(ctx);
             if (attr == NULL) goto out_of_space;
             stack_pointer[-3] = attr;
-            stack_pointer += -2 + ((0) ? 1 : 0);
+            stack_pointer += -2;
             break;
         }
 
@@ -1053,8 +1063,6 @@
             break;
         }
 
-        /* _JUMP_BACKWARD is not a viable micro-op for tier 2 */
-
         /* _POP_JUMP_IF_FALSE is not a viable micro-op for tier 2 */
 
         /* _POP_JUMP_IF_TRUE is not a viable micro-op for tier 2 */
@@ -1266,8 +1274,8 @@
             self = sym_new_unknown(ctx);
             if (self == NULL) goto out_of_space;
             stack_pointer[-1] = attr;
-            if (1) stack_pointer[0] = self;
-            stack_pointer += ((1) ? 1 : 0);
+            stack_pointer[0] = self;
+            stack_pointer += 1;
             break;
         }
 
@@ -1279,8 +1287,8 @@
             self = sym_new_unknown(ctx);
             if (self == NULL) goto out_of_space;
             stack_pointer[-1] = attr;
-            if (1) stack_pointer[0] = self;
-            stack_pointer += ((1) ? 1 : 0);
+            stack_pointer[0] = self;
+            stack_pointer += 1;
             break;
         }
 
@@ -1289,7 +1297,6 @@
             attr = sym_new_unknown(ctx);
             if (attr == NULL) goto out_of_space;
             stack_pointer[-1] = attr;
-            stack_pointer += ((0) ? 1 : 0);
             break;
         }
 
@@ -1298,7 +1305,6 @@
             attr = sym_new_unknown(ctx);
             if (attr == NULL) goto out_of_space;
             stack_pointer[-1] = attr;
-            stack_pointer += ((0) ? 1 : 0);
             break;
         }
 
@@ -1314,8 +1320,8 @@
             self = sym_new_unknown(ctx);
             if (self == NULL) goto out_of_space;
             stack_pointer[-1] = attr;
-            if (1) stack_pointer[0] = self;
-            stack_pointer += ((1) ? 1 : 0);
+            stack_pointer[0] = self;
+            stack_pointer += 1;
             break;
         }
 
@@ -1411,7 +1417,6 @@
             ctx->frame = new_frame;
             ctx->curr_frame_depth++;
             stack_pointer = new_frame->stack_pointer;
-            stack_pointer += ((0) ? 1 : 0);
             break;
         }
 
@@ -1736,6 +1741,18 @@
 
         case _INTERNAL_INCREMENT_OPT_COUNTER: {
             stack_pointer += -1;
+            break;
+        }
+
+        case _COLD_EXIT: {
+            break;
+        }
+
+        case _START_EXECUTOR: {
+            break;
+        }
+
+        case _FATAL_ERROR: {
             break;
         }
 

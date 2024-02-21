@@ -222,6 +222,8 @@ annotations = {
     "register",
     "replaced",
     "pure",
+    "split",
+    "replicate",
 }
 
 __all__ = []
