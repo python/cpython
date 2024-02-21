@@ -500,6 +500,8 @@ This is the server side::
                print(self.data)
                # just send back the same data, but upper-cased
                self.request.sendall(self.data.upper())
+               # Receive next message from client. Will return an empty message
+               # if client has hung up
                self.data = self.request.recv(1024)
 
    if __name__ == "__main__":
@@ -527,6 +529,8 @@ objects that simplify communication by providing the standard file interface)::
                # Likewise, self.wfile is a file-like object used to write back
                # to the client
                self.wfile.write(self.data.upper())
+               # Receive next message from client. Will return an empty message
+               # if client has hung up
                self.data = self.rfile.readline()
 
 The difference is that the ``readline()`` call in the second handler will call
