@@ -89,10 +89,10 @@ The module defines the following functions:
    in the :mod:`fcntl` module, using the same names as used in the relevant C
    header files. The argument *arg* can either be an integer value, or a
    :class:`bytes` object. With an integer value, the return value of this
-   function is the integer return value of the C :c:func:`!fcntl` call.  When
+   function is the integer return value of the C :c:func:`fcntl` call.  When
    the argument is bytes it represents a binary structure, e.g. created by
    :func:`struct.pack`. The binary data is copied to a buffer whose address is
-   passed to the C :c:func:`!fcntl` call.  The return value after a successful
+   passed to the C :c:func:`fcntl` call.  The return value after a successful
    call is the contents of the buffer, converted to a :class:`bytes` object.
    The length of the returned object will be the same as the length of the
    *arg* argument. This is limited to 1024 bytes. If the information returned
@@ -100,7 +100,7 @@ The module defines the following functions:
    most likely to result in a segmentation violation or a more subtle data
    corruption.
 
-   If the :c:func:`!fcntl` fails, an :exc:`OSError` is raised.
+   If the :c:func:`fcntl` call fails, an :exc:`OSError` is raised.
 
    .. audit-event:: fcntl.fcntl fd,cmd,arg fcntl.fcntl
 
@@ -138,7 +138,7 @@ The module defines the following functions:
    buffer 1024 bytes long which is then passed to :func:`ioctl` and copied back
    into the supplied buffer.
 
-   If the :c:func:`!ioctl` fails, an :exc:`OSError` exception is raised.
+   If the :c:func:`ioctl` call fails, an :exc:`OSError` exception is raised.
 
    An example::
 
@@ -161,9 +161,9 @@ The module defines the following functions:
    Perform the lock operation *operation* on file descriptor *fd* (file objects providing
    a :meth:`~io.IOBase.fileno` method are accepted as well). See the Unix manual
    :manpage:`flock(2)` for details.  (On some systems, this function is emulated
-   using :c:func:`!fcntl`.)
+   using :c:func:`fcntl`.)
 
-   If the :c:func:`!flock` fails, an :exc:`OSError` exception is raised.
+   If the :c:func:`flock` call fails, an :exc:`OSError` exception is raised.
 
    .. audit-event:: fcntl.flock fd,operation fcntl.flock
 
