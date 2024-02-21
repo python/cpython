@@ -48,6 +48,9 @@
 #include "addrinfo.h"
 #endif
 
+#ifdef HAVE_NETDB_H
+#define HAVE_GETNAMEINFO 1
+
 #define SUCCESS 0
 #define YES 1
 #define NO  0
@@ -211,3 +214,4 @@ getnameinfo(sa, salen, host, hostlen, serv, servlen, flags)
     }
     return SUCCESS;
 }
+#endif // HAVE_NETDB_H

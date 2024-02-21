@@ -119,6 +119,12 @@ class CoroutineTests(BaseTest):
 
         self.assertTrue(asyncio.iscoroutine(FakeCoro()))
 
+    def test_iscoroutine_generator(self):
+        def foo(): yield
+
+        self.assertFalse(asyncio.iscoroutine(foo()))
+
+
     def test_iscoroutinefunction(self):
         async def foo(): pass
         self.assertTrue(asyncio.iscoroutinefunction(foo))

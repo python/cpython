@@ -1,1 +1,0 @@
-Move imports in :class:`~multiprocessing.SharedMemory` methods to module level so that they can be executed late in python finalization.

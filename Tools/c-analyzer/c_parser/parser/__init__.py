@@ -12,7 +12,7 @@ conditions that must be applied when parsing C code:
 
 * ...
 
-(see: http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf)
+(see: https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf)
 
 We have taken advantage of the elements of the C grammar that are used
 only in a few limited contexts, mostly as delimiters.  They allow us to

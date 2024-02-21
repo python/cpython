@@ -11,6 +11,3 @@ struct _traceback {
     int tb_lasti;
     int tb_lineno;
 };
-
-PyAPI_FUNC(int) _Py_DisplaySourceLine(PyObject *, PyObject *, int, int, int *, PyObject **);
-PyAPI_FUNC(void) _PyTraceback_Add(const char *, const char *, int);

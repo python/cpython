@@ -1,2 +1,0 @@
-The ``Tools/scripts/parseentities.py`` script used to parse HTML4 entities
-has been removed.
