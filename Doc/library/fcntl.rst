@@ -195,7 +195,7 @@ The module defines the following functions:
 
    If :const:`!LOCK_NB` is used and the lock cannot be acquired, an
    :exc:`OSError` will be raised and the exception will have an *errno*
-   attribute set to :data:`~errno.EACCES` or :data:`~errno.EAGAIN` (depending on the
+   attribute set to :const:`~errno.EACCES` or :const:`~errno.EAGAIN` (depending on the
    operating system; for portability, check for both values).  On at least some
    systems, :const:`!LOCK_EX` can only be used if the file descriptor refers to a
    file opened for writing.
