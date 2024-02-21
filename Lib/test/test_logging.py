@@ -6229,7 +6229,7 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
                 d, fn = os.path.split(c)
                 self.assertTrue(fn.startswith(prefix))
                 suffix = fn[(len(prefix)+1):]
-                self.assertRegexpMatches(suffix, matcher)
+                self.assertRegex(suffix, matcher)
 
 def secs(**kw):
     return datetime.timedelta(**kw) // datetime.timedelta(seconds=1)
