@@ -664,17 +664,15 @@ struct argument {
  */
 static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
 {
-    StgDictObject *dict;
     pa->keep = NULL; /* so we cannot forget it later */
     ctypes_state *st = GLOBAL_STATE();
 
-    dict = PyObject_stgdict(obj);
     StgInfo *info;
     int result = PyStgInfo_FromObject(st, obj, &info);
     if (result < 0) {
         return -1;
     }
-    if (dict) {
+    if (info) {
         assert(info);
         PyCArgObject *carg;
         assert(info->paramfunc);
@@ -1842,7 +1840,6 @@ static PyObject *
 resize(PyObject *self, PyObject *args)
 {
     CDataObject *obj;
-    StgDictObject *dict;
     Py_ssize_t size;
 
     if (!PyArg_ParseTuple(args,
@@ -1850,19 +1847,17 @@ resize(PyObject *self, PyObject *args)
                           &obj, &size))
         return NULL;
 
-    dict = PyObject_stgdict((PyObject *)obj);
-    if (dict == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-                        "expected ctypes instance");
-        return NULL;
-    }
     ctypes_state *st = GLOBAL_STATE();
     StgInfo *info;
     int result = PyStgInfo_FromObject(st, (PyObject *)obj, &info);
     if (result < 0) {
         return NULL;
     }
-    assert(info);
+    if (info == NULL) {
+        PyErr_SetString(PyExc_TypeError,
+                        "expected ctypes instance");
+        return NULL;
+    }
     if (size < info->size) {
         PyErr_Format(PyExc_ValueError,
                      "minimum size is %zd",

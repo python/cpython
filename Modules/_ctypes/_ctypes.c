@@ -712,7 +712,9 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
             Py_DECREF(result);
             return NULL;
         }
-        assert(baseinfo);
+        if (baseinfo == NULL) {
+            return (PyObject *)result;
+        }
 
         /* copy base dict */
         if (-1 == PyCStgDict_clone(dict, basedict, info, baseinfo)) {
@@ -770,18 +772,15 @@ CDataType_from_buffer(PyObject *type, PyObject *args)
     Py_buffer *buffer;
     Py_ssize_t offset = 0;
 
-    StgDictObject *dict = PyType_stgdict(type);
-    if (!dict) {
-        PyErr_SetString(PyExc_TypeError, "abstract class");
-        return NULL;
-    }
-
     ctypes_state *st = GLOBAL_STATE();
     StgInfo *info;
     if (PyStgInfo_FromType(st, type, &info) < 0) {
         return NULL;
     }
-    assert(info);
+    if (!info) {
+        PyErr_SetString(PyExc_TypeError, "abstract class");
+        return NULL;
+    }
 
     if (!PyArg_ParseTuple(args, "O|n:from_buffer", &obj, &offset))
         return NULL;
@@ -854,18 +853,16 @@ CDataType_from_buffer_copy(PyObject *type, PyObject *args)
     Py_buffer buffer;
     Py_ssize_t offset = 0;
     PyObject *result;
-    StgDictObject *dict = PyType_stgdict(type);
-    if (!dict) {
-        PyErr_SetString(PyExc_TypeError, "abstract class");
-        return NULL;
-    }
 
     ctypes_state *st = GLOBAL_STATE();
     StgInfo *info;
     if (PyStgInfo_FromType(st, type, &info) < 0) {
         return NULL;
     }
-    assert(info);
+    if (!info) {
+        PyErr_SetString(PyExc_TypeError, "abstract class");
+        return NULL;
+    }
 
     if (!PyArg_ParseTuple(args, "y*|n:from_buffer_copy", &buffer, &offset))
         return NULL;
@@ -1150,12 +1147,17 @@ size property/method, and the sequence protocol.
 static int
 PyCPointerType_SetProto(StgInfo *stginfo, PyObject *proto)
 {
+    ctypes_state *st = GLOBAL_STATE();
     if (!proto || !PyType_Check(proto)) {
         PyErr_SetString(PyExc_TypeError,
                         "_type_ must be a type");
         return -1;
     }
-    if (!PyType_stgdict(proto)) {
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, proto, &info) < 0) {
+        return -1;
+    }
+    if (!info) {
         PyErr_SetString(PyExc_TypeError,
                         "_type_ must have storage info");
         return -1;
@@ -2611,7 +2613,12 @@ make_funcptrtype_dict(StgDictObject *stgdict, StgInfo *stginfo)
         return -1;
     }
     if (ob) {
-        if (ob != Py_None && !PyType_stgdict(ob) && !PyCallable_Check(ob)) {
+        StgInfo *info;
+        ctypes_state *st = GLOBAL_STATE();
+        if (PyStgInfo_FromType(st, ob, &info) < 0) {
+            return -1;
+        }
+        if (ob != Py_None && !info && !PyCallable_Check(ob)) {
             PyErr_SetString(PyExc_TypeError,
                 "_restype_ must be a type, a callable, or None");
             Py_DECREF(ob);
@@ -3084,7 +3091,7 @@ static _HackyHeapType PyCData_Type = {
 };
 
 static int
-PyCData_MallocBuffer(CDataObject *obj, StgDictObject *dict, StgInfo *info)
+PyCData_MallocBuffer(CDataObject *obj, StgInfo *info)
 {
     if ((size_t)info->size <= sizeof(obj->b_value)) {
         /* No need to call malloc, can use the default buffer */
@@ -3116,22 +3123,19 @@ PyObject *
 PyCData_FromBaseObj(PyObject *type, PyObject *base, Py_ssize_t index, char *adr)
 {
     CDataObject *cmem;
-    StgDictObject *dict;
 
     assert(PyType_Check(type));
-    dict = PyType_stgdict(type);
-    if (!dict) {
-        PyErr_SetString(PyExc_TypeError,
-                        "abstract class");
-        return NULL;
-    }
 
     ctypes_state *st = GLOBAL_STATE();
     StgInfo *info;
     if (PyStgInfo_FromType(st, type, &info) < 0) {
         return NULL;
     }
-    assert(info);
+    if (!info) {
+        PyErr_SetString(PyExc_TypeError,
+                        "abstract class");
+        return NULL;
+    }
 
     info->flags |= DICTFLAG_FINAL;
     cmem = (CDataObject *)((PyTypeObject *)type)->tp_alloc((PyTypeObject *)type, 0);
@@ -3148,7 +3152,7 @@ PyCData_FromBaseObj(PyObject *type, PyObject *base, Py_ssize_t index, char *adr)
         cmem->b_base = (CDataObject *)Py_NewRef(base);
         cmem->b_index = index;
     } else { /* copy contents of adr */
-        if (-1 == PyCData_MallocBuffer(cmem, dict, info)) {
+        if (-1 == PyCData_MallocBuffer(cmem, info)) {
             Py_DECREF(cmem);
             return NULL;
         }
@@ -3379,21 +3383,17 @@ static PyObject *
 GenericPyCData_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     CDataObject *obj;
-    StgDictObject *dict;
-
-    dict = PyType_stgdict((PyObject *)type);
-    if (!dict) {
-        PyErr_SetString(PyExc_TypeError,
-                        "abstract class");
-        return NULL;
-    }
 
     ctypes_state *st = GLOBAL_STATE();
     StgInfo *info;
     if (PyStgInfo_FromType(st, (PyObject *)type, &info) < 0) {
         return NULL;
     }
-    assert(info);
+    if (!info) {
+        PyErr_SetString(PyExc_TypeError,
+                        "abstract class");
+        return NULL;
+    }
 
     info->flags |= DICTFLAG_FINAL;
 
@@ -3406,7 +3406,7 @@ GenericPyCData_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     obj->b_objects = NULL;
     obj->b_length = info->length;
 
-    if (-1 == PyCData_MallocBuffer(obj, dict, info)) {
+    if (-1 == PyCData_MallocBuffer(obj, info)) {
         Py_DECREF(obj);
         return NULL;
     }
@@ -3450,7 +3450,12 @@ PyCFuncPtr_set_restype(PyCFuncPtrObject *self, PyObject *ob, void *Py_UNUSED(ign
         Py_XDECREF(oldchecker);
         return 0;
     }
-    if (ob != Py_None && !PyType_stgdict(ob) && !PyCallable_Check(ob)) {
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, ob, &info) < 0) {
+        return -1;
+    }
+    if (ob != Py_None && !info && !PyCallable_Check(ob)) {
         PyErr_SetString(PyExc_TypeError,
                         "restype must be a type, a callable, or None");
         return -1;
@@ -3623,11 +3628,9 @@ static int
 _validate_paramflags(PyTypeObject *type, PyObject *paramflags)
 {
     Py_ssize_t i, len;
-    StgDictObject *dict;
     PyObject *argtypes;
 
     ctypes_state *st = GLOBAL_STATE();
-    dict = PyType_stgdict((PyObject *)type);
     StgInfo *info;
     if (PyStgInfo_FromType(st, (PyObject *)type, &info) < 0) {
         return -1;
@@ -3637,7 +3640,6 @@ _validate_paramflags(PyTypeObject *type, PyObject *paramflags)
                         "abstract class");
         return 0;
     }
-    assert(dict);
     argtypes = info->argtypes;
 
     if (paramflags == NULL || info->argtypes == NULL)
