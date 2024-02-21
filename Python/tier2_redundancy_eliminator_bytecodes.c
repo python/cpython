@@ -179,7 +179,8 @@ dummy_func(void) {
 
     op(_TO_BOOL, (value -- res)) {
         (void)value;
-        OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyBool_Type));
+        res = sym_new_known_type(ctx, &PyBool_Type);
+        OUT_OF_SPACE_IF_NULL(res);
     }
 
     op(_TO_BOOL_BOOL, (value -- value)) {
@@ -211,7 +212,7 @@ dummy_func(void) {
 
     op(_TO_BOOL_NONE, (value -- res)) {
         if (get_const(value) == Py_None) {
-            REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_None);
+            REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_False);
         }
         sym_set_type(value, &_PyNone_Type);
         OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, Py_False));

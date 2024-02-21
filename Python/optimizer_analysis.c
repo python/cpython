@@ -596,10 +596,10 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
     } while (0);
 
 #define ERROR_IF(COND, LABEL) \
-    do {             \
-        if (COND) {  \
+    do { \
+        if (COND) { \
             goto LABEL; \
-        }            \
+        } \
     } while (0);
 
 #define _LOAD_ATTR_NOT_NULL \
