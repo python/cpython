@@ -831,6 +831,12 @@ peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_s
                 frame_depth--;
                 if (function_decide_inlineable(func)) {
                     push_frame[frame_depth]->opcode = _PUSH_FRAME_INLINEABLE;
+                } else {
+                    // Mark all previous frames as non-inlineable.
+                    // This makes reconstruction easier to reason about.
+                    for (int i = 0; i < frame_depth; i++) {
+                        push_frame[i]->opcode = _PUSH_FRAME;
+                    }
                 }
                 assert(frame_depth >= 1);
                 break;
