@@ -637,13 +637,17 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
 {
     PyTypeObject *result;
     PyObject *fields;
-    StgDictObject *dict;
 
     /* create the new instance (which is a class,
        since we are a metatype!) */
     result = (PyTypeObject *)PyType_Type.tp_new(type, args, kwds);
     if (!result)
         return NULL;
+
+    PyObject *attrdict = PyType_GetDict(result);
+    if (!attrdict) {
+        return NULL;
+    }
 
     /* keep this for bw compatibility */
     int r = PyDict_Contains(result->tp_dict, &_Py_ID(_abstract_));
@@ -656,11 +660,6 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
     }
 
     ctypes_state *st = GLOBAL_STATE();
-    dict = (StgDictObject *)_PyObject_CallNoArgs((PyObject *)st->PyCStgDict_Type);
-    if (!dict) {
-        Py_DECREF(result);
-        return NULL;
-    }
     StgInfo *info = PyStgInfo_Init(st, result);
     if (!info) {
         Py_DECREF(result);
@@ -670,14 +669,6 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
         info->flags |= TYPEFLAG_HASUNION;
     }
 
-    /* replace the class dict by our updated stgdict, which holds info
-       about storage requirements of the instances */
-    if (-1 == PyDict_Update((PyObject *)dict, result->tp_dict)) {
-        Py_DECREF(result);
-        Py_DECREF((PyObject *)dict);
-        return NULL;
-    }
-    Py_SETREF(result->tp_dict, (PyObject *)dict);
     info->format = _ctypes_alloc_format_string(NULL, "B");
     if (info->format == NULL) {
         Py_DECREF(result);
@@ -686,7 +677,7 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
 
     info->paramfunc = StructUnionType_paramfunc;
 
-    if (PyDict_GetItemRef((PyObject *)dict, &_Py_ID(_fields_), &fields) < 0) {
+    if (PyDict_GetItemRef((PyObject *)attrdict, &_Py_ID(_fields_), &fields) < 0) {
         Py_DECREF(result);
         return NULL;
     }
@@ -1187,7 +1178,6 @@ static PyObject *
 PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyTypeObject *result;
-    StgDictObject *stgdict;
     PyObject *proto;
     PyObject *typedict;
 
@@ -1205,20 +1195,13 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
 
 /*
-  stgdict items size, align, length contain info about pointers itself,
-  stgdict->proto has info about the pointed to type!
+  stginfo items size, align, length contain info about pointers itself,
+  stginfo->proto has info about the pointed to type!
 */
     ctypes_state *st = GLOBAL_STATE();
-    stgdict = (StgDictObject *)_PyObject_CallNoArgs(
-        (PyObject *)st->PyCStgDict_Type);
-    if (!stgdict) {
-        Py_DECREF((PyObject *)result);
-        return NULL;
-    }
     StgInfo *stginfo = PyStgInfo_Init(st, result);
     if (!stginfo) {
         Py_DECREF((PyObject *)result);
-        Py_DECREF((PyObject *)stgdict);
         return NULL;
     }
     stginfo->size = sizeof(void *);
@@ -1230,7 +1213,6 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     if (PyDict_GetItemRef(typedict, &_Py_ID(_type_), &proto) < 0) {
         Py_DECREF((PyObject *)result);
-        Py_DECREF((PyObject *)stgdict);
         return NULL;
     }
     if (proto) {
@@ -1238,17 +1220,15 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         if (-1 == PyCPointerType_SetProto(stginfo, proto)) {
             Py_DECREF(proto);
             Py_DECREF((PyObject *)result);
-            Py_DECREF((PyObject *)stgdict);
             return NULL;
         }
         StgInfo *iteminfo;
         if (PyStgInfo_FromType(st, proto, &iteminfo) < 0) {
             Py_DECREF(proto);
             Py_DECREF((PyObject *)result);
-            Py_DECREF((PyObject *)stgdict);
             return NULL;
         }
-        /* PyCPointerType_SetProto has verified proto has a stgdict. */
+        /* PyCPointerType_SetProto has verified proto has a stginfo. */
         assert(iteminfo);
         /* If iteminfo->format is NULL, then this is a pointer to an
            incomplete type.  We create a generic format string
@@ -1266,18 +1246,9 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Py_DECREF(proto);
         if (stginfo->format == NULL) {
             Py_DECREF((PyObject *)result);
-            Py_DECREF((PyObject *)stgdict);
             return NULL;
         }
     }
-
-    /* replace the class dict by our updated spam dict */
-    if (-1 == PyDict_Update((PyObject *)stgdict, result->tp_dict)) {
-        Py_DECREF(result);
-        Py_DECREF((PyObject *)stgdict);
-        return NULL;
-    }
-    Py_SETREF(result->tp_dict, (PyObject *)stgdict);
 
     return (PyObject *)result;
 }
@@ -1286,13 +1257,8 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject *
 PyCPointerType_set_type(PyTypeObject *self, PyObject *type)
 {
-    StgDictObject *dict;
-
-
-    dict = PyType_stgdict((PyObject *)self);
-    if (!dict) {
-        PyErr_SetString(PyExc_TypeError,
-                        "abstract class");
+    PyObject *attrdict = PyType_GetDict(self);
+    if (!attrdict) {
         return NULL;
     }
     ctypes_state *st = GLOBAL_STATE();
@@ -1300,12 +1266,16 @@ PyCPointerType_set_type(PyTypeObject *self, PyObject *type)
     if (PyStgInfo_FromType(st, (PyObject *)self, &info) < 0) {
         return NULL;
     }
-    assert(info);
+    if (!info) {
+        PyErr_SetString(PyExc_TypeError,
+                        "abstract class");
+        return NULL;
+    }
 
     if (-1 == PyCPointerType_SetProto(info, type))
         return NULL;
 
-    if (-1 == PyDict_SetItem((PyObject *)dict, &_Py_ID(_type_), type))
+    if (-1 == PyDict_SetItem(attrdict, &_Py_ID(_type_), type))
         return NULL;
 
     Py_RETURN_NONE;
@@ -1589,7 +1559,6 @@ static PyObject *
 PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyTypeObject *result;
-    StgDictObject *stgdict;
     PyObject *length_attr, *type_attr;
     Py_ssize_t length;
     Py_ssize_t itemsize, itemalign;
@@ -1602,7 +1571,6 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     /* Initialize these variables to NULL so that we can simplify error
        handling by using Py_XDECREF.  */
-    stgdict = NULL;
     type_attr = NULL;
 
     if (PyObject_GetOptionalAttr((PyObject *)result, &_Py_ID(_length_), &length_attr) < 0) {
@@ -1648,11 +1616,6 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
 
     ctypes_state *st = GLOBAL_STATE();
-    stgdict = (StgDictObject *)_PyObject_CallNoArgs(
-        (PyObject *)st->PyCStgDict_Type);
-    if (!stgdict) {
-        goto error;
-    }
     StgInfo *stginfo = PyStgInfo_Init(st, result);
     if (!stginfo) {
         goto error;
@@ -1707,12 +1670,6 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     /* Arrays are passed as pointers to function calls. */
     stginfo->ffi_type_pointer = ffi_type_pointer;
 
-    /* replace the class dict by our updated spam dict */
-    if (-1 == PyDict_Update((PyObject *)stgdict, result->tp_dict))
-        goto error;
-    Py_SETREF(result->tp_dict, (PyObject *)stgdict);  /* steal the reference */
-    stgdict = NULL;
-
     /* Special case for character arrays.
        A permanent annoyance: char arrays are also strings!
     */
@@ -1727,7 +1684,6 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     return (PyObject *)result;
 error:
-    Py_XDECREF((PyObject*)stgdict);
     Py_XDECREF(type_attr);
     Py_DECREF(result);
     return NULL;
@@ -2062,7 +2018,6 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
                                    PyObject *proto, struct fielddesc *fmt)
 {
     PyTypeObject *result;
-    StgDictObject *stgdict;
     PyObject *name = PyTuple_GET_ITEM(args, 0);
     PyObject *newname;
     PyObject *swapped_args;
@@ -2105,17 +2060,10 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
         return NULL;
 
     ctypes_state *st = GLOBAL_STATE();
-    stgdict = (StgDictObject *)_PyObject_CallNoArgs(
-        (PyObject *)st->PyCStgDict_Type);
-    if (!stgdict) {
-        Py_DECREF(result);
-        return NULL;
-    }
 
     StgInfo *stginfo = PyStgInfo_Init(st, result);
     if (!stginfo) {
         Py_DECREF(result);
-        Py_DECREF((PyObject *)stgdict);
         return NULL;
     }
 
@@ -2127,14 +2075,6 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
     stginfo->getfunc = fmt->getfunc_swapped;
 
     stginfo->proto = Py_NewRef(proto);
-
-    /* replace the class dict by our updated spam dict */
-    if (-1 == PyDict_Update((PyObject *)stgdict, result->tp_dict)) {
-        Py_DECREF(result);
-        Py_DECREF((PyObject *)stgdict);
-        return NULL;
-    }
-    Py_SETREF(result->tp_dict, (PyObject *)stgdict);
 
     return (PyObject *)result;
 }
@@ -2173,7 +2113,6 @@ static PyObject *
 PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyTypeObject *result;
-    StgDictObject *stgdict;
     PyObject *proto;
     const char *proto_str;
     Py_ssize_t proto_len;
@@ -2227,11 +2166,6 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
 
     ctypes_state *st = GLOBAL_STATE();
-    stgdict = (StgDictObject *)_PyObject_CallNoArgs(
-        (PyObject *)st->PyCStgDict_Type);
-    if (!stgdict) {
-        goto error;
-    }
     StgInfo *stginfo = PyStgInfo_Init(st, result);
     if (!stginfo) {
         goto error;
@@ -2251,7 +2185,6 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (stginfo->format == NULL) {
         Py_DECREF(result);
         Py_DECREF(proto);
-        Py_DECREF((PyObject *)stgdict);
         return NULL;
     }
 
@@ -2265,14 +2198,6 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     /* This consumes the refcount on proto which we have */
     stginfo->proto = proto;
-
-    /* replace the class dict by our updated spam dict */
-    if (-1 == PyDict_Update((PyObject *)stgdict, result->tp_dict)) {
-        Py_DECREF(result);
-        Py_DECREF((PyObject *)stgdict);
-        return NULL;
-    }
-    Py_SETREF(result->tp_dict, (PyObject *)stgdict);
 
     /* Install from_param class methods in ctypes base classes.
        Overrides the PyCSimpleType_from_param generic method.
@@ -2571,7 +2496,7 @@ converters_from_argtypes(PyObject *ob)
 }
 
 static int
-make_funcptrtype_dict(StgDictObject *stgdict, StgInfo *stginfo)
+make_funcptrtype_dict(PyObject *attrdict, StgInfo *stginfo)
 {
     PyObject *ob;
     PyObject *converters = NULL;
@@ -2583,7 +2508,7 @@ make_funcptrtype_dict(StgDictObject *stgdict, StgInfo *stginfo)
     stginfo->getfunc = NULL;
     stginfo->ffi_type_pointer = ffi_type_pointer;
 
-    if (PyDict_GetItemRef((PyObject *)stgdict, &_Py_ID(_flags_), &ob) < 0) {
+    if (PyDict_GetItemRef((PyObject *)attrdict, &_Py_ID(_flags_), &ob) < 0) {
         return -1;
     }
     if (!ob || !PyLong_Check(ob)) {
@@ -2596,7 +2521,7 @@ make_funcptrtype_dict(StgDictObject *stgdict, StgInfo *stginfo)
     Py_DECREF(ob);
 
     /* _argtypes_ is optional... */
-    if (PyDict_GetItemRef((PyObject *)stgdict, &_Py_ID(_argtypes_), &ob) < 0) {
+    if (PyDict_GetItemRef((PyObject *)attrdict, &_Py_ID(_argtypes_), &ob) < 0) {
         return -1;
     }
     if (ob) {
@@ -2609,7 +2534,7 @@ make_funcptrtype_dict(StgDictObject *stgdict, StgInfo *stginfo)
         stginfo->converters = converters;
     }
 
-    if (PyDict_GetItemRef((PyObject *)stgdict, &_Py_ID(_restype_), &ob) < 0) {
+    if (PyDict_GetItemRef((PyObject *)attrdict, &_Py_ID(_restype_), &ob) < 0) {
         return -1;
     }
     if (ob) {
@@ -2668,7 +2593,6 @@ static PyObject *
 PyCFuncPtrType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyTypeObject *result;
-    StgDictObject *stgdict;
 
     /* create the new instance (which is a class,
        since we are a metatype!) */
@@ -2677,17 +2601,15 @@ PyCFuncPtrType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    ctypes_state *st = GLOBAL_STATE();
-    stgdict = (StgDictObject *)_PyObject_CallNoArgs(
-        (PyObject *)st->PyCStgDict_Type);
-    if (!stgdict) {
-        Py_DECREF(result);
+    PyObject *attrdict = PyType_GetDict(result);
+    if (!attrdict) {
         return NULL;
     }
+
+    ctypes_state *st = GLOBAL_STATE();
     StgInfo *stginfo = PyStgInfo_Init(st, result);
     if (!stginfo) {
         Py_DECREF(result);
-        Py_DECREF((PyObject *)stgdict);
         return NULL;
     }
 
@@ -2702,20 +2624,11 @@ PyCFuncPtrType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     stginfo->format = _ctypes_alloc_format_string(NULL, "X{}");
     if (stginfo->format == NULL) {
         Py_DECREF(result);
-        Py_DECREF((PyObject *)stgdict);
         return NULL;
     }
     stginfo->flags |= TYPEFLAG_ISPOINTER;
 
-    /* replace the class dict by our updated storage dict */
-    if (-1 == PyDict_Update((PyObject *)stgdict, result->tp_dict)) {
-        Py_DECREF(result);
-        Py_DECREF((PyObject *)stgdict);
-        return NULL;
-    }
-    Py_SETREF(result->tp_dict, (PyObject *)stgdict);
-
-    if (-1 == make_funcptrtype_dict(stgdict, stginfo)) {
+    if (-1 == make_funcptrtype_dict(attrdict, stginfo)) {
         Py_DECREF(result);
         return NULL;
     }
@@ -4555,11 +4468,16 @@ _init_pos_args(PyObject *self, PyTypeObject *type,
                PyObject *args, PyObject *kwds,
                Py_ssize_t index)
 {
-    StgDictObject *dict;
+    PyObject *attrdict;
     PyObject *fields;
     Py_ssize_t i;
 
-    if (PyType_stgdict((PyObject *)type->tp_base)) {
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *baseinfo;
+    if (PyStgInfo_FromType(st, (PyObject *)type->tp_base, &baseinfo) < 0) {
+        return -1;
+    }
+    if (baseinfo) {
         index = _init_pos_args(self, type->tp_base,
                                args, kwds,
                                index);
@@ -4567,17 +4485,16 @@ _init_pos_args(PyObject *self, PyTypeObject *type,
             return -1;
     }
 
-    dict = PyType_stgdict((PyObject *)type);
-    assert(dict);
+    attrdict = PyType_GetDict(type);
+    assert(attrdict);
 
-    ctypes_state *st = GLOBAL_STATE();
     StgInfo *info;
     if (PyStgInfo_FromType(st, (PyObject *)type, &info) < 0) {
         return -1;
     }
     assert(info);
 
-    fields = PyDict_GetItemWithError((PyObject *)dict, &_Py_ID(_fields_));
+    fields = PyDict_GetItemWithError((PyObject *)attrdict, &_Py_ID(_fields_));
     if (fields == NULL) {
         if (PyErr_Occurred()) {
             return -1;
