@@ -13,7 +13,7 @@ except ImportError:
     _testcapi = None
 
 from test import support
-from test.support import threading_helper
+from test.support import threading_helper, Py_GIL_DISABLED
 from test.support.script_helper import assert_python_ok
 
 
@@ -54,6 +54,27 @@ class ClearTest(unittest.TestCase):
         support.gc_collect()
         # The reference was released by .clear()
         self.assertIs(None, wr())
+
+    def test_clear_locals_after_f_locals_access(self):
+        # see gh-113939
+        class C:
+            pass
+
+        wr = None
+        def inner():
+            nonlocal wr
+            c = C()
+            wr = weakref.ref(c)
+            1/0
+
+        try:
+            inner()
+        except ZeroDivisionError as exc:
+            support.gc_collect()
+            self.assertIsNotNone(wr())
+            exc.__traceback__.tb_next.tb_frame.clear()
+            support.gc_collect()
+            self.assertIsNone(wr())
 
     def test_clear_does_not_clear_specials(self):
         class C:
@@ -273,6 +294,7 @@ class TestIncompleteFrameAreInvisible(unittest.TestCase):
         assert_python_ok("-c", code)
 
     @support.cpython_only
+    @unittest.skipIf(Py_GIL_DISABLED, "test requires precise GC scheduling")
     def test_sneaky_frame_object(self):
 
         def trace(frame, event, arg):
@@ -309,6 +331,7 @@ class TestIncompleteFrameAreInvisible(unittest.TestCase):
             # on the *very next* allocation:
             gc.collect()
             gc.set_threshold(1, 0, 0)
+            sys._clear_internal_caches()
             # Okay, so here's the nightmare scenario:
             # - We're tracing the resumption of a generator, which creates a new
             #   frame object.

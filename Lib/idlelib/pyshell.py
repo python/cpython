@@ -1694,6 +1694,7 @@ def main():
     root.destroy()
     capture_warnings(False)
 
+
 if __name__ == "__main__":
     main()
 

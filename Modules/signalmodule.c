@@ -13,6 +13,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_signal.h"        // _Py_RestoreSignals()
+#include "pycore_time.h"          // _PyTime_FromSecondsObject()
 
 #ifndef MS_WINDOWS
 #  include "posixmodule.h"        // _PyLong_FromUid()
@@ -173,7 +174,7 @@ timeval_from_double(PyObject *obj, struct timeval *tv)
         return 0;
     }
 
-    _PyTime_t t;
+    PyTime_t t;
     if (_PyTime_FromSecondsObject(&t, obj, _PyTime_ROUND_CEILING) < 0) {
         return -1;
     }
@@ -276,11 +277,7 @@ trip_signal(int sig_num)
        cleared in PyErr_CheckSignals() before .tripped. */
     _Py_atomic_store_int(&is_tripped, 1);
 
-    /* Signals are always handled by the main interpreter */
-    PyInterpreterState *interp = _PyInterpreterState_Main();
-
-    /* Notify ceval.c */
-    _PyEval_SignalReceived(interp);
+    _PyEval_SignalReceived();
 
     /* And then write to the wakeup fd *after* setting all the globals and
        doing the _PyEval_SignalReceived. We used to write to the wakeup fd
@@ -303,6 +300,7 @@ trip_signal(int sig_num)
 
     int fd = wakeup.fd;
     if (fd != INVALID_FD) {
+        PyInterpreterState *interp = _PyInterpreterState_Main();
         unsigned char byte = (unsigned char)sig_num;
 #ifdef MS_WINDOWS
         if (wakeup.use_send) {
@@ -1210,7 +1208,7 @@ signal_sigtimedwait_impl(PyObject *module, sigset_t sigset,
                          PyObject *timeout_obj)
 /*[clinic end generated code: output=59c8971e8ae18a64 input=87fd39237cf0b7ba]*/
 {
-    _PyTime_t timeout;
+    PyTime_t timeout;
     if (_PyTime_FromSecondsObject(&timeout,
                                   timeout_obj, _PyTime_ROUND_CEILING) < 0)
         return NULL;
@@ -1220,7 +1218,7 @@ signal_sigtimedwait_impl(PyObject *module, sigset_t sigset,
         return NULL;
     }
 
-    _PyTime_t deadline = _PyDeadline_Init(timeout);
+    PyTime_t deadline = _PyDeadline_Init(timeout);
     siginfo_t si;
 
     do {
@@ -1770,8 +1768,8 @@ PyErr_CheckSignals(void)
        Python code to ensure signals are handled. Checking for the GC here
        allows long running native code to clean cycles created using the C-API
        even if it doesn't run the evaluation loop */
-    if (_Py_eval_breaker_bit_is_set(tstate->interp, _PY_GC_SCHEDULED_BIT)) {
-        _Py_set_eval_breaker_bit(tstate->interp, _PY_GC_SCHEDULED_BIT, 0);
+    if (_Py_eval_breaker_bit_is_set(tstate, _PY_GC_SCHEDULED_BIT)) {
+        _Py_unset_eval_breaker_bit(tstate, _PY_GC_SCHEDULED_BIT);
         _Py_RunGC(tstate);
     }
 

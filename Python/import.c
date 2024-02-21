@@ -13,6 +13,7 @@
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_sysmodule.h"     // _PySys_Audit()
+#include "pycore_time.h"          // _PyTime_PerfCounterUnchecked()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 #include "marshal.h"              // PyMarshal_ReadObjectFromString()
@@ -252,18 +253,21 @@ import_ensure_initialized(PyInterpreterState *interp, PyObject *mod, PyObject *n
        NOTE: because of this, initializing must be set *before*
        stuffing the new module in sys.modules.
     */
-    spec = PyObject_GetAttr(mod, &_Py_ID(__spec__));
-    int busy = _PyModuleSpec_IsInitializing(spec);
-    Py_XDECREF(spec);
-    if (busy) {
-        /* Wait until module is done importing. */
-        PyObject *value = PyObject_CallMethodOneArg(
-            IMPORTLIB(interp), &_Py_ID(_lock_unlock_module), name);
-        if (value == NULL) {
-            return -1;
-        }
-        Py_DECREF(value);
+    int rc = PyObject_GetOptionalAttr(mod, &_Py_ID(__spec__), &spec);
+    if (rc > 0) {
+        rc = _PyModuleSpec_IsInitializing(spec);
+        Py_DECREF(spec);
     }
+    if (rc <= 0) {
+        return rc;
+    }
+    /* Wait until module is done importing. */
+    PyObject *value = PyObject_CallMethodOneArg(
+        IMPORTLIB(interp), &_Py_ID(_lock_unlock_module), name);
+    if (value == NULL) {
+        return -1;
+    }
+    Py_DECREF(value);
     return 0;
 }
 
@@ -415,11 +419,7 @@ remove_module(PyThreadState *tstate, PyObject *name)
 Py_ssize_t
 _PyImport_GetNextModuleIndex(void)
 {
-    PyThread_acquire_lock(EXTENSIONS.mutex, WAIT_LOCK);
-    LAST_MODULE_INDEX++;
-    Py_ssize_t index = LAST_MODULE_INDEX;
-    PyThread_release_lock(EXTENSIONS.mutex);
-    return index;
+    return _Py_atomic_add_ssize(&LAST_MODULE_INDEX, 1) + 1;
 }
 
 static const char *
@@ -879,13 +879,13 @@ gets even messier.
 static inline void
 extensions_lock_acquire(void)
 {
-    PyThread_acquire_lock(_PyRuntime.imports.extensions.mutex, WAIT_LOCK);
+    PyMutex_Lock(&_PyRuntime.imports.extensions.mutex);
 }
 
 static inline void
 extensions_lock_release(void)
 {
-    PyThread_release_lock(_PyRuntime.imports.extensions.mutex);
+    PyMutex_Unlock(&_PyRuntime.imports.extensions.mutex);
 }
 
 /* Magic for extension modules (built-in as well as dynamically
@@ -2720,7 +2720,7 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
 #define import_level FIND_AND_LOAD(interp).import_level
 #define accumulated FIND_AND_LOAD(interp).accumulated
 
-    _PyTime_t t1 = 0, accumulated_copy = accumulated;
+    PyTime_t t1 = 0, accumulated_copy = accumulated;
 
     PyObject *sys_path = PySys_GetObject("path");
     PyObject *sys_meta_path = PySys_GetObject("meta_path");
@@ -2748,7 +2748,7 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
 #undef header
 
         import_level++;
-        t1 = _PyTime_GetPerfCounter();
+        t1 = _PyTime_PerfCounterUnchecked();
         accumulated = 0;
     }
 
@@ -2763,7 +2763,7 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
                                        mod != NULL);
 
     if (import_time) {
-        _PyTime_t cum = _PyTime_GetPerfCounter() - t1;
+        PyTime_t cum = _PyTime_PerfCounterUnchecked() - t1;
 
         import_level--;
         fprintf(stderr, "import time: %9ld | %10ld | %*s%s\n",
@@ -3545,7 +3545,7 @@ _imp_get_frozen_object_impl(PyObject *module, PyObject *name,
     struct frozen_info info = {0};
     Py_buffer buf = {0};
     if (PyObject_CheckBuffer(dataobj)) {
-        if (PyObject_GetBuffer(dataobj, &buf, PyBUF_READ) != 0) {
+        if (PyObject_GetBuffer(dataobj, &buf, PyBUF_SIMPLE) != 0) {
             return NULL;
         }
         info.data = (const char *)buf.buf;

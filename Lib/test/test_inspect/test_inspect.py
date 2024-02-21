@@ -206,12 +206,33 @@ class TestPredicates(IsTestBase):
         gen_coro = gen_coroutine_function_example(1)
         coro = coroutine_function_example(1)
 
+        class PMClass:
+            async_generator_partialmethod_example = functools.partialmethod(
+                async_generator_function_example)
+            coroutine_partialmethod_example = functools.partialmethod(
+                coroutine_function_example)
+            gen_coroutine_partialmethod_example = functools.partialmethod(
+                gen_coroutine_function_example)
+
+        # partialmethods on the class, bound to an instance
+        pm_instance = PMClass()
+        async_gen_coro_pmi = pm_instance.async_generator_partialmethod_example
+        gen_coro_pmi = pm_instance.gen_coroutine_partialmethod_example
+        coro_pmi = pm_instance.coroutine_partialmethod_example
+
+        # partialmethods on the class, unbound but accessed via the class
+        async_gen_coro_pmc = PMClass.async_generator_partialmethod_example
+        gen_coro_pmc = PMClass.gen_coroutine_partialmethod_example
+        coro_pmc = PMClass.coroutine_partialmethod_example
+
         self.assertFalse(
             inspect.iscoroutinefunction(gen_coroutine_function_example))
         self.assertFalse(
             inspect.iscoroutinefunction(
                 functools.partial(functools.partial(
                     gen_coroutine_function_example))))
+        self.assertFalse(inspect.iscoroutinefunction(gen_coro_pmi))
+        self.assertFalse(inspect.iscoroutinefunction(gen_coro_pmc))
         self.assertFalse(inspect.iscoroutine(gen_coro))
 
         self.assertTrue(
@@ -220,6 +241,8 @@ class TestPredicates(IsTestBase):
             inspect.isgeneratorfunction(
                 functools.partial(functools.partial(
                     gen_coroutine_function_example))))
+        self.assertTrue(inspect.isgeneratorfunction(gen_coro_pmi))
+        self.assertTrue(inspect.isgeneratorfunction(gen_coro_pmc))
         self.assertTrue(inspect.isgenerator(gen_coro))
 
         async def _fn3():
@@ -285,6 +308,8 @@ class TestPredicates(IsTestBase):
             inspect.iscoroutinefunction(
                 functools.partial(functools.partial(
                     coroutine_function_example))))
+        self.assertTrue(inspect.iscoroutinefunction(coro_pmi))
+        self.assertTrue(inspect.iscoroutinefunction(coro_pmc))
         self.assertTrue(inspect.iscoroutine(coro))
 
         self.assertFalse(
@@ -297,6 +322,8 @@ class TestPredicates(IsTestBase):
             inspect.isgeneratorfunction(
                 functools.partial(functools.partial(
                     coroutine_function_example))))
+        self.assertFalse(inspect.isgeneratorfunction(coro_pmi))
+        self.assertFalse(inspect.isgeneratorfunction(coro_pmc))
         self.assertFalse(inspect.isgenerator(coro))
 
         self.assertFalse(
@@ -311,6 +338,8 @@ class TestPredicates(IsTestBase):
             inspect.isasyncgenfunction(
                 functools.partial(functools.partial(
                     async_generator_function_example))))
+        self.assertTrue(inspect.isasyncgenfunction(async_gen_coro_pmi))
+        self.assertTrue(inspect.isasyncgenfunction(async_gen_coro_pmc))
         self.assertTrue(inspect.isasyncgen(async_gen_coro))
 
         coro.close(); gen_coro.close(); # silence warnings
@@ -3389,7 +3418,7 @@ class TestSignatureObject(unittest.TestCase):
 
     def test_signature_on_fake_partialmethod(self):
         def foo(a): pass
-        foo._partialmethod = 'spam'
+        foo.__partialmethod__ = 'spam'
         self.assertEqual(str(inspect.signature(foo)), '(a)')
 
     def test_signature_on_decorated(self):
@@ -3796,26 +3825,36 @@ class TestSignatureObject(unittest.TestCase):
             pass
         self.assertEqual(str(inspect.signature(foo)),
                          '(a: int = 1, *, b, c=None, **kwargs) -> 42')
+        self.assertEqual(str(inspect.signature(foo)),
+                         inspect.signature(foo).format())
 
         def foo(a:int=1, *args, b, c=None, **kwargs) -> 42:
             pass
         self.assertEqual(str(inspect.signature(foo)),
                          '(a: int = 1, *args, b, c=None, **kwargs) -> 42')
+        self.assertEqual(str(inspect.signature(foo)),
+                         inspect.signature(foo).format())
 
         def foo():
             pass
         self.assertEqual(str(inspect.signature(foo)), '()')
+        self.assertEqual(str(inspect.signature(foo)),
+                         inspect.signature(foo).format())
 
         def foo(a: list[str]) -> tuple[str, float]:
             pass
         self.assertEqual(str(inspect.signature(foo)),
                          '(a: list[str]) -> tuple[str, float]')
+        self.assertEqual(str(inspect.signature(foo)),
+                         inspect.signature(foo).format())
 
         from typing import Tuple
         def foo(a: list[str]) -> Tuple[str, float]:
             pass
         self.assertEqual(str(inspect.signature(foo)),
                          '(a: list[str]) -> Tuple[str, float]')
+        self.assertEqual(str(inspect.signature(foo)),
+                         inspect.signature(foo).format())
 
     def test_signature_str_positional_only(self):
         P = inspect.Parameter
@@ -3826,19 +3865,85 @@ class TestSignatureObject(unittest.TestCase):
 
         self.assertEqual(str(inspect.signature(test)),
                          '(a_po, /, *, b, **kwargs)')
+        self.assertEqual(str(inspect.signature(test)),
+                         inspect.signature(test).format())
 
-        self.assertEqual(str(S(parameters=[P('foo', P.POSITIONAL_ONLY)])),
-                         '(foo, /)')
+        test = S(parameters=[P('foo', P.POSITIONAL_ONLY)])
+        self.assertEqual(str(test), '(foo, /)')
+        self.assertEqual(str(test), test.format())
 
-        self.assertEqual(str(S(parameters=[
-                                P('foo', P.POSITIONAL_ONLY),
-                                P('bar', P.VAR_KEYWORD)])),
-                         '(foo, /, **bar)')
+        test = S(parameters=[P('foo', P.POSITIONAL_ONLY),
+                             P('bar', P.VAR_KEYWORD)])
+        self.assertEqual(str(test), '(foo, /, **bar)')
+        self.assertEqual(str(test), test.format())
 
-        self.assertEqual(str(S(parameters=[
-                                P('foo', P.POSITIONAL_ONLY),
-                                P('bar', P.VAR_POSITIONAL)])),
-                         '(foo, /, *bar)')
+        test = S(parameters=[P('foo', P.POSITIONAL_ONLY),
+                             P('bar', P.VAR_POSITIONAL)])
+        self.assertEqual(str(test), '(foo, /, *bar)')
+        self.assertEqual(str(test), test.format())
+
+    def test_signature_format(self):
+        from typing import Annotated, Literal
+
+        def func(x: Annotated[int, 'meta'], y: Literal['a', 'b'], z: 'LiteralString'):
+            pass
+
+        expected_singleline = "(x: Annotated[int, 'meta'], y: Literal['a', 'b'], z: 'LiteralString')"
+        expected_multiline = """(
+    x: Annotated[int, 'meta'],
+    y: Literal['a', 'b'],
+    z: 'LiteralString'
+)"""
+        self.assertEqual(
+            inspect.signature(func).format(),
+            expected_singleline,
+        )
+        self.assertEqual(
+            inspect.signature(func).format(max_width=None),
+            expected_singleline,
+        )
+        self.assertEqual(
+            inspect.signature(func).format(max_width=len(expected_singleline)),
+            expected_singleline,
+        )
+        self.assertEqual(
+            inspect.signature(func).format(max_width=len(expected_singleline) - 1),
+            expected_multiline,
+        )
+        self.assertEqual(
+            inspect.signature(func).format(max_width=0),
+            expected_multiline,
+        )
+        self.assertEqual(
+            inspect.signature(func).format(max_width=-1),
+            expected_multiline,
+        )
+
+    def test_signature_format_all_arg_types(self):
+        from typing import Annotated, Literal
+
+        def func(
+            x: Annotated[int, 'meta'],
+            /,
+            y: Literal['a', 'b'],
+            *,
+            z: 'LiteralString',
+            **kwargs: object,
+        ) -> None:
+            pass
+
+        expected_multiline = """(
+    x: Annotated[int, 'meta'],
+    /,
+    y: Literal['a', 'b'],
+    *,
+    z: 'LiteralString',
+    **kwargs: object
+) -> None"""
+        self.assertEqual(
+            inspect.signature(func).format(max_width=-1),
+            expected_multiline,
+        )
 
     def test_signature_replace_parameters(self):
         def test(a, b) -> 42:
@@ -3914,6 +4019,8 @@ class TestSignatureObject(unittest.TestCase):
         foo_sig = MySignature.from_callable(foo)
         self.assertIsInstance(foo_sig, MySignature)
 
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
     def test_signature_from_callable_class(self):
         # A regression test for a class inheriting its signature from `object`.
         class MySignature(inspect.Signature): pass
@@ -4004,7 +4111,8 @@ class TestSignatureObject(unittest.TestCase):
                             par('c', PORK, annotation="'MyClass'"),
                         )))
 
-                self.assertEqual(signature_func(isa.UnannotatedClass), sig())
+                if not MISSING_C_DOCSTRINGS:
+                    self.assertEqual(signature_func(isa.UnannotatedClass), sig())
                 self.assertEqual(signature_func(isa.unannotated_function),
                     sig(
                         parameters=(

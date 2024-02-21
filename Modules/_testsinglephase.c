@@ -8,11 +8,10 @@
 //#include <time.h>
 #include "Python.h"
 #include "pycore_namespace.h"     // _PyNamespace_New()
-#include "pycore_time.h"          // _PyTime_t
 
 
 typedef struct {
-    _PyTime_t initialized;
+    PyTime_t initialized;
     PyObject *error;
     PyObject *int_const;
     PyObject *str_const;
@@ -67,17 +66,17 @@ clear_state(module_state *state)
 }
 
 static int
-_set_initialized(_PyTime_t *initialized)
+_set_initialized(PyTime_t *initialized)
 {
     /* We go strictly monotonic to ensure each time is unique. */
-    _PyTime_t prev;
-    if (_PyTime_GetMonotonicClockWithInfo(&prev, NULL) != 0) {
+    PyTime_t prev;
+    if (PyTime_Monotonic(&prev) != 0) {
         return -1;
     }
     /* We do a busy sleep since the interval should be super short. */
-    _PyTime_t t;
+    PyTime_t t;
     do {
-        if (_PyTime_GetMonotonicClockWithInfo(&t, NULL) != 0) {
+        if (PyTime_Monotonic(&t) != 0) {
             return -1;
         }
     } while (t == prev);
@@ -136,7 +135,7 @@ init_module(PyObject *module, module_state *state)
         return -1;
     }
 
-    double d = _PyTime_AsSecondsDouble(state->initialized);
+    double d = PyTime_AsSecondsDouble(state->initialized);
     if (PyModule_Add(module, "_module_initialized", PyFloat_FromDouble(d)) < 0) {
         return -1;
     }
@@ -157,7 +156,7 @@ common_state_initialized(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (state == NULL) {
         Py_RETURN_NONE;
     }
-    double d = _PyTime_AsSecondsDouble(state->initialized);
+    double d = PyTime_AsSecondsDouble(state->initialized);
     return PyFloat_FromDouble(d);
 }
 

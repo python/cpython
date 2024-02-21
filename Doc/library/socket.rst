@@ -311,7 +311,7 @@ Exceptions
    The accompanying value is a pair ``(error, string)`` representing an error
    returned by a library call.  *string* represents the description of
    *error*, as returned by the :c:func:`gai_strerror` C function.  The
-   numeric *error* value will match one of the :const:`EAI_\*` constants
+   numeric *error* value will match one of the :const:`!EAI_\*` constants
    defined in this module.
 
    .. versionchanged:: 3.3
@@ -444,6 +444,11 @@ Constants
       ``TCP_ZEROCOPY_RECEIVE``, ``TCP_INQ``, ``TCP_TX_DELAY``.
       Added ``IP_PKTINFO``, ``IP_UNBLOCK_SOURCE``, ``IP_BLOCK_SOURCE``,
       ``IP_ADD_SOURCE_MEMBERSHIP``, ``IP_DROP_SOURCE_MEMBERSHIP``.
+
+   .. versionchanged:: 3.13
+      Added ``SO_BINDTOIFINDEX``. On Linux this constant can be used in the
+      same way that ``SO_BINDTODEVICE`` is used, but with the index of a
+      network interface instead of its name.
 
 .. data:: AF_CAN
           PF_CAN
@@ -1517,7 +1522,7 @@ to sockets.
 .. method:: socket.getsockopt(level, optname[, buflen])
 
    Return the value of the given socket option (see the Unix man page
-   :manpage:`getsockopt(2)`).  The needed symbolic constants (:const:`SO_\*` etc.)
+   :manpage:`getsockopt(2)`).  The needed symbolic constants (:ref:`SO_\* etc. <socket-unix-constants>`)
    are defined in this module.  If *buflen* is absent, an integer option is assumed
    and its integer value is returned by the function.  If *buflen* is present, it
    specifies the maximum length of the buffer used to receive the option in, and
@@ -1605,8 +1610,9 @@ to sockets.
 
    Receive data from the socket.  The return value is a bytes object representing the
    data received.  The maximum amount of data to be received at once is specified
-   by *bufsize*.  See the Unix manual page :manpage:`recv(2)` for the meaning of
-   the optional argument *flags*; it defaults to zero.
+   by *bufsize*. A returned empty bytes object indicates that the client has disconnected.
+   See the Unix manual page :manpage:`recv(2)` for the meaning of the optional argument
+   *flags*; it defaults to zero.
 
    .. note::
 
@@ -1937,8 +1943,8 @@ to sockets.
    .. index:: pair: module; struct
 
    Set the value of the given socket option (see the Unix manual page
-   :manpage:`setsockopt(2)`).  The needed symbolic constants are defined in the
-   :mod:`socket` module (:const:`SO_\*` etc.).  The value can be an integer,
+   :manpage:`setsockopt(2)`).  The needed symbolic constants are defined in this
+   module (:ref:`!SO_\* etc. <socket-unix-constants>`).  The value can be an integer,
    ``None`` or a :term:`bytes-like object` representing a buffer. In the later
    case it is up to the caller to ensure that the bytestring contains the
    proper bits (see the optional built-in module :mod:`struct` for a way to

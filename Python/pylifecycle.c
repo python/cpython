@@ -32,6 +32,8 @@
 #include "pycore_typevarobject.h" // _Py_clear_generic_types()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
+#include "cpython/optimizer.h"    // _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS
+#include "pycore_obmalloc.h"      // _PyMem_init_obmalloc()
 
 #include "opcode.h"
 
@@ -576,46 +578,45 @@ init_interp_settings(PyInterpreterState *interp,
         interp->feature_flags |= Py_RTFLAGS_MULTI_INTERP_EXTENSIONS;
     }
 
-    /* We check "gil" in init_interp_create_gil(). */
+    switch (config->gil) {
+    case PyInterpreterConfig_DEFAULT_GIL: break;
+    case PyInterpreterConfig_SHARED_GIL: break;
+    case PyInterpreterConfig_OWN_GIL: break;
+    default:
+        return _PyStatus_ERR("invalid interpreter config 'gil' value");
+    }
 
     return _PyStatus_OK();
 }
 
 
-static PyStatus
+static void
 init_interp_create_gil(PyThreadState *tstate, int gil)
 {
-    PyStatus status;
-
     /* finalize_interp_delete() comment explains why _PyEval_FiniGIL() is
        only called here. */
     // XXX This is broken with a per-interpreter GIL.
     _PyEval_FiniGIL(tstate->interp);
 
     /* Auto-thread-state API */
-    status = _PyGILState_SetTstate(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
+    _PyGILState_SetTstate(tstate);
 
-    int own_gil;
-    switch (gil) {
-    case PyInterpreterConfig_DEFAULT_GIL: own_gil = 0; break;
-    case PyInterpreterConfig_SHARED_GIL: own_gil = 0; break;
-    case PyInterpreterConfig_OWN_GIL: own_gil = 1; break;
-    default:
-        return _PyStatus_ERR("invalid interpreter config 'gil' value");
-    }
+    int own_gil = (gil == PyInterpreterConfig_OWN_GIL);
 
     /* Create the GIL and take it */
-    status = _PyEval_InitGIL(tstate, own_gil);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    return _PyStatus_OK();
+    _PyEval_InitGIL(tstate, own_gil);
 }
 
+static int
+builtins_dict_watcher(PyDict_WatchEvent event, PyObject *dict, PyObject *key, PyObject *new_value)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->rare_events.builtin_dict < _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS) {
+        _Py_Executors_InvalidateAll(interp);
+    }
+    RARE_EVENT_INTERP_INC(interp, builtin_dict);
+    return 0;
+}
 
 static PyStatus
 pycore_create_interpreter(_PyRuntimeState *runtime,
@@ -650,17 +651,22 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
         return status;
     }
 
+    // initialize the interp->obmalloc state.  This must be done after
+    // the settings are loaded (so that feature_flags are set) but before
+    // any calls are made to obmalloc functions.
+    if (_PyMem_init_obmalloc(interp) < 0) {
+        return  _PyStatus_NO_MEMORY();
+    }
+
     PyThreadState *tstate = _PyThreadState_New(interp,
                                                _PyThreadState_WHENCE_INTERP);
     if (tstate == NULL) {
         return _PyStatus_ERR("can't make first thread");
     }
+    runtime->main_tstate = tstate;
     _PyThreadState_Bind(tstate);
 
-    status = init_interp_create_gil(tstate, config.gil);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
+    init_interp_create_gil(tstate, config.gil);
 
     *tstate_p = tstate;
     return _PyStatus_OK();
@@ -730,6 +736,11 @@ pycore_init_types(PyInterpreterState *interp)
     }
 
     status = _PyContext_Init(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = _PyXI_InitTypes(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -816,6 +827,11 @@ pycore_interp_init(PyThreadState *tstate)
     // PyType_Ready() uses singletons like the Unicode empty string (tp_doc)
     // and the empty tuple singletons (tp_bases).
     status = pycore_init_global_objects(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = _PyDtoa_Init(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1094,7 +1110,6 @@ run_presite(PyThreadState *tstate)
     );
     if (presite_modname == NULL) {
         fprintf(stderr, "Could not convert pre-site module name to unicode\n");
-        Py_DECREF(presite_modname);
     }
     else {
         PyObject *presite = PyImport_Import(presite_modname);
@@ -1230,17 +1245,26 @@ init_interp_main(PyThreadState *tstate)
 
     // Turn on experimental tier 2 (uops-based) optimizer
     if (is_main_interp) {
+#ifndef _Py_JIT
+        // No JIT, maybe use the tier two interpreter:
         char *envvar = Py_GETENV("PYTHON_UOPS");
         int enabled = envvar != NULL && *envvar > '0';
         if (_Py_get_xoption(&config->xoptions, L"uops") != NULL) {
             enabled = 1;
         }
         if (enabled) {
+#else
+        // Always enable tier two for JIT builds (ignoring the environment
+        // variable and command-line option above):
+        if (true) {
+#endif
             PyObject *opt = PyUnstable_Optimizer_NewUOpOptimizer();
             if (opt == NULL) {
                 return _PyStatus_ERR("can't initialize optimizer");
             }
-            PyUnstable_SetOptimizer((_PyOptimizerObject *)opt);
+            if (PyUnstable_SetOptimizer((_PyOptimizerObject *)opt)) {
+                return _PyStatus_ERR("can't initialize optimizer");
+            }
             Py_DECREF(opt);
         }
     }
@@ -1268,6 +1292,12 @@ init_interp_main(PyThreadState *tstate)
                 return _PyStatus_ERR("can't initialize sys.path[0]");
             }
         }
+    }
+
+
+    interp->dict_state.watchers[0] = &builtins_dict_watcher;
+    if (PyDict_Watch(0, interp->builtins) != 0) {
+        return _PyStatus_ERR("failed to set builtin dict watcher");
     }
 
     assert(!_PyErr_Occurred(tstate));
@@ -1596,6 +1626,15 @@ static void
 finalize_modules(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
+
+    // Invalidate all executors and turn off tier 2 optimizer
+    _Py_Executors_InvalidateAll(interp);
+    _PyOptimizerObject *old = _Py_SetOptimizer(interp, NULL);
+    Py_XDECREF(old);
+
+    // Stop watching __builtin__ modifications
+    PyDict_Unwatch(0, interp->builtins);
+
     PyObject *modules = _PyImport_GetModules(interp);
     if (modules == NULL) {
         // Already done
@@ -1737,9 +1776,8 @@ finalize_interp_types(PyInterpreterState *interp)
 {
     _PyUnicode_FiniTypes(interp);
     _PySys_FiniTypes(interp);
+    _PyXI_FiniTypes(interp);
     _PyExc_Fini(interp);
-    _PyAsyncGen_Fini(interp);
-    _PyContext_Fini(interp);
     _PyFloat_FiniType(interp);
     _PyLong_FiniTypes(interp);
     _PyThread_FiniType(interp);
@@ -1754,14 +1792,15 @@ finalize_interp_types(PyInterpreterState *interp)
     // a dict internally.
     _PyUnicode_ClearInterned(interp);
 
-    _PyDict_Fini(interp);
-    _PyList_Fini(interp);
-    _PyTuple_Fini(interp);
-
-    _PySlice_Fini(interp);
-
     _PyUnicode_Fini(interp);
-    _PyFloat_Fini(interp);
+
+#ifndef Py_GIL_DISABLED
+    // With Py_GIL_DISABLED:
+    // the freelists for the current thread state have already been cleared.
+    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
+    _PyObject_ClearFreeLists(freelists, 1);
+#endif
+
 #ifdef Py_DEBUG
     _PyStaticObjects_CheckRefcnt(interp);
 #endif
@@ -1776,6 +1815,7 @@ finalize_interp_clear(PyThreadState *tstate)
     _PyXI_Fini(tstate->interp);
     _PyExc_ClearExceptionGroupType(tstate->interp);
     _Py_clear_generic_types(tstate->interp);
+    _PyDtoa_Fini(tstate->interp);
 
     /* Clear interpreter state and all thread states */
     _PyInterpreterState_Clear(tstate);
@@ -1796,6 +1836,13 @@ finalize_interp_clear(PyThreadState *tstate)
     }
 
     finalize_interp_types(tstate->interp);
+
+    /* Free any delayed free requests immediately */
+    _PyMem_FiniDelayed(tstate->interp);
+
+    /* finalize_interp_types may allocate Python objects so we may need to
+       abandon mimalloc segments again */
+    _PyThreadState_ClearMimallocHeaps(tstate);
 }
 
 
@@ -2087,28 +2134,21 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
         return _PyStatus_OK();
     }
 
-    PyThreadState *tstate = _PyThreadState_New(interp,
-                                               _PyThreadState_WHENCE_INTERP);
-    if (tstate == NULL) {
-        PyInterpreterState_Delete(interp);
-        *tstate_p = NULL;
-        return _PyStatus_OK();
-    }
-    _PyThreadState_Bind(tstate);
-
+    // XXX Might new_interpreter() have been called without the GIL held?
     PyThreadState *save_tstate = _PyThreadState_GET();
-    int has_gil = 0;
+    PyThreadState *tstate = NULL;
 
     /* From this point until the init_interp_create_gil() call,
        we must not do anything that requires that the GIL be held
        (or otherwise exist).  That applies whether or not the new
        interpreter has its own GIL (e.g. the main interpreter). */
+    if (save_tstate != NULL) {
+        _PyThreadState_Detach(save_tstate);
+    }
 
     /* Copy the current interpreter config into the new interpreter */
     const PyConfig *src_config;
     if (save_tstate != NULL) {
-        // XXX Might new_interpreter() have been called without the GIL held?
-        _PyThreadState_Detach(save_tstate);
         src_config = _PyInterpreterState_GetConfig(save_tstate->interp);
     }
     else
@@ -2130,11 +2170,22 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
         goto error;
     }
 
-    status = init_interp_create_gil(tstate, config->gil);
-    if (_PyStatus_EXCEPTION(status)) {
+    // initialize the interp->obmalloc state.  This must be done after
+    // the settings are loaded (so that feature_flags are set) but before
+    // any calls are made to obmalloc functions.
+    if (_PyMem_init_obmalloc(interp) < 0) {
+        status = _PyStatus_NO_MEMORY();
         goto error;
     }
-    has_gil = 1;
+
+    tstate = _PyThreadState_New(interp, _PyThreadState_WHENCE_INTERP);
+    if (tstate == NULL) {
+        status = _PyStatus_NO_MEMORY();
+        goto error;
+    }
+
+    _PyThreadState_Bind(tstate);
+    init_interp_create_gil(tstate, config->gil);
 
     /* No objects have been created yet. */
 
@@ -2153,16 +2204,14 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
 
 error:
     *tstate_p = NULL;
-
-    /* Oops, it didn't work.  Undo it all. */
-    if (has_gil) {
+    if (tstate != NULL) {
+        PyThreadState_Clear(tstate);
         _PyThreadState_Detach(tstate);
+        PyThreadState_Delete(tstate);
     }
     if (save_tstate != NULL) {
         _PyThreadState_Attach(save_tstate);
     }
-    PyThreadState_Clear(tstate);
-    PyThreadState_Delete(tstate);
     PyInterpreterState_Delete(interp);
 
     return status;
@@ -3050,13 +3099,13 @@ wait_for_thread_shutdown(PyThreadState *tstate)
 int Py_AtExit(void (*func)(void))
 {
     struct _atexit_runtime_state *state = &_PyRuntime.atexit;
-    PyThread_acquire_lock(state->mutex, WAIT_LOCK);
+    PyMutex_Lock(&state->mutex);
     if (state->ncallbacks >= NEXITFUNCS) {
-        PyThread_release_lock(state->mutex);
+        PyMutex_Unlock(&state->mutex);
         return -1;
     }
     state->callbacks[state->ncallbacks++] = func;
-    PyThread_release_lock(state->mutex);
+    PyMutex_Unlock(&state->mutex);
     return 0;
 }
 
@@ -3066,18 +3115,18 @@ call_ll_exitfuncs(_PyRuntimeState *runtime)
     atexit_callbackfunc exitfunc;
     struct _atexit_runtime_state *state = &runtime->atexit;
 
-    PyThread_acquire_lock(state->mutex, WAIT_LOCK);
+    PyMutex_Lock(&state->mutex);
     while (state->ncallbacks > 0) {
         /* pop last function from the list */
         state->ncallbacks--;
         exitfunc = state->callbacks[state->ncallbacks];
         state->callbacks[state->ncallbacks] = NULL;
 
-        PyThread_release_lock(state->mutex);
+        PyMutex_Unlock(&state->mutex);
         exitfunc();
-        PyThread_acquire_lock(state->mutex, WAIT_LOCK);
+        PyMutex_Lock(&state->mutex);
     }
-    PyThread_release_lock(state->mutex);
+    PyMutex_Unlock(&state->mutex);
 
     fflush(stdout);
     fflush(stderr);

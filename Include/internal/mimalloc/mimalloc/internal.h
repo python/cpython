@@ -23,23 +23,6 @@ terms of the MIT license. A copy of the license can be found in the file
 #define mi_trace_message(...)
 #endif
 
-#define MI_CACHE_LINE          64
-#if defined(_MSC_VER)
-#pragma warning(disable:4127)   // suppress constant conditional warning (due to MI_SECURE paths)
-#pragma warning(disable:26812)  // unscoped enum warning
-#define mi_decl_noinline        __declspec(noinline)
-#define mi_decl_thread          __declspec(thread)
-#define mi_decl_cache_align     __declspec(align(MI_CACHE_LINE))
-#elif (defined(__GNUC__) && (__GNUC__ >= 3)) || defined(__clang__) // includes clang and icc
-#define mi_decl_noinline        __attribute__((noinline))
-#define mi_decl_thread          __thread
-#define mi_decl_cache_align     __attribute__((aligned(MI_CACHE_LINE)))
-#else
-#define mi_decl_noinline
-#define mi_decl_thread          __thread        // hope for the best :-)
-#define mi_decl_cache_align
-#endif
-
 #if defined(__EMSCRIPTEN__) && !defined(__wasi__)
 #define __wasi__
 #endif
@@ -85,6 +68,7 @@ mi_threadid_t _mi_thread_id(void) mi_attr_noexcept;
 mi_heap_t*    _mi_heap_main_get(void);     // statically allocated main backing heap
 void       _mi_thread_done(mi_heap_t* heap);
 void       _mi_thread_data_collect(void);
+void       _mi_tld_init(mi_tld_t* tld, mi_heap_t* bheap);
 
 // os.c
 void       _mi_os_init(void);                                            // called from process init
@@ -130,11 +114,14 @@ void       _mi_segment_map_allocated_at(const mi_segment_t* segment);
 void       _mi_segment_map_freed_at(const mi_segment_t* segment);
 
 // "segment.c"
+extern mi_abandoned_pool_t _mi_abandoned_default;  // global abandoned pool
 mi_page_t* _mi_segment_page_alloc(mi_heap_t* heap, size_t block_size, size_t page_alignment, mi_segments_tld_t* tld, mi_os_tld_t* os_tld);
 void       _mi_segment_page_free(mi_page_t* page, bool force, mi_segments_tld_t* tld);
 void       _mi_segment_page_abandon(mi_page_t* page, mi_segments_tld_t* tld);
 bool       _mi_segment_try_reclaim_abandoned( mi_heap_t* heap, bool try_all, mi_segments_tld_t* tld);
 void       _mi_segment_thread_collect(mi_segments_tld_t* tld);
+bool       _mi_abandoned_pool_visit_blocks(mi_abandoned_pool_t* pool, uint8_t page_tag, bool visit_blocks, mi_block_visit_fun* visitor, void* arg);
+
 
 #if MI_HUGE_PAGE_ABANDON
 void       _mi_segment_huge_page_free(mi_segment_t* segment, mi_page_t* page, mi_block_t* block);
@@ -144,7 +131,7 @@ void       _mi_segment_huge_page_reset(mi_segment_t* segment, mi_page_t* page, m
 
 uint8_t*   _mi_segment_page_start(const mi_segment_t* segment, const mi_page_t* page, size_t* page_size); // page start for any page
 void       _mi_abandoned_reclaim_all(mi_heap_t* heap, mi_segments_tld_t* tld);
-void       _mi_abandoned_await_readers(void);
+void       _mi_abandoned_await_readers(mi_abandoned_pool_t *pool);
 void       _mi_abandoned_collect(mi_heap_t* heap, bool force, mi_segments_tld_t* tld);
 
 // "page.c"
@@ -170,11 +157,14 @@ size_t     _mi_bin_size(uint8_t bin);           // for stats
 uint8_t    _mi_bin(size_t size);                // for stats
 
 // "heap.c"
+void       _mi_heap_init_ex(mi_heap_t* heap, mi_tld_t* tld, mi_arena_id_t arena_id, bool no_reclaim, uint8_t tag);
 void       _mi_heap_destroy_pages(mi_heap_t* heap);
 void       _mi_heap_collect_abandon(mi_heap_t* heap);
 void       _mi_heap_set_default_direct(mi_heap_t* heap);
 bool       _mi_heap_memid_is_suitable(mi_heap_t* heap, mi_memid_t memid);
 void       _mi_heap_unsafe_destroy_all(void);
+void       _mi_heap_area_init(mi_heap_area_t* area, mi_page_t* page);
+bool       _mi_heap_area_visit_blocks(const mi_heap_area_t* area, mi_page_t *page, mi_block_visit_fun* visitor, void* arg);
 
 // "stats.c"
 void       _mi_stats_done(mi_stats_t* stats);
