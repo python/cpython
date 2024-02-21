@@ -430,8 +430,9 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    zero sign bit -- redundant if the caller's intention is to treat the value
    as unsigned.
 
-   Passing zero to *n_bytes* will return the size of a buffer that'd at least
-   be large enough to hold the value.
+   Passing zero to *n_bytes* will return the size of a buffer that would
+   be large enough to hold the value. This may be larger than technically
+   necessary, but not unreasonably so.
 
    .. note::
 
