@@ -6,11 +6,9 @@
 
 __all__ = ['MIMEText']
 
-from email.charset import Charset
 from email.mime.nonmultipart import MIMENonMultipart
 
 
-
 class MIMEText(MIMENonMultipart):
     """Class for generating text/* type MIME documents."""
 
@@ -37,6 +35,6 @@ class MIMEText(MIMENonMultipart):
                 _charset = 'utf-8'
 
         MIMENonMultipart.__init__(self, 'text', _subtype, policy=policy,
-                                  **{'charset': str(_charset)})
+                                  charset=str(_charset))
 
         self.set_payload(_text, _charset)

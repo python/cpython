@@ -294,8 +294,8 @@ actual dictionary.  This created problems for introspection tools.
 .. nonce: SwcSuU
 .. section: Library
 
-Added :data:`~os.O_EVTONLY`, :data:`~os.O_FSYNC`, :data:`~os.O_SYMLINK` and
-:data:`~os.O_NOFOLLOW_ANY` for macOS. Patch by Dong-hee Na.
+Added :const:`~os.O_EVTONLY`, :const:`~os.O_FSYNC`, :const:`~os.O_SYMLINK` and
+:const:`~os.O_NOFOLLOW_ANY` for macOS. Patch by Donghee Na.
 
 ..
 
@@ -304,7 +304,7 @@ Added :data:`~os.O_EVTONLY`, :data:`~os.O_FSYNC`, :data:`~os.O_SYMLINK` and
 .. nonce: a7Dote
 .. section: Library
 
-Adds :data:`resource.RLIMIT_KQUEUES` constant from FreeBSD to the
+Adds :const:`resource.RLIMIT_KQUEUES` constant from FreeBSD to the
 :mod:`resource` module.
 
 ..

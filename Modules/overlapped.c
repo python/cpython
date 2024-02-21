@@ -7,8 +7,11 @@
 /* XXX check overflow and DWORD <-> Py_ssize_t conversions
    Check itemsize */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
 
 #define WINDOWS_LEAN_AND_MEAN
 #include <winsock2.h>
@@ -17,10 +20,10 @@
 
 #if defined(MS_WIN32) && !defined(MS_WIN64)
 #  define F_POINTER "k"
-#  define T_POINTER T_ULONG
+#  define T_POINTER Py_T_ULONG
 #else
 #  define F_POINTER "K"
-#  define T_POINTER T_ULONGLONG
+#  define T_POINTER Py_T_ULONGLONG
 #endif
 
 #define F_HANDLE F_POINTER
@@ -32,27 +35,43 @@
 #define T_HANDLE T_POINTER
 
 /*[python input]
-class OVERLAPPED_converter(CConverter):
-    type = 'OVERLAPPED *'
+class pointer_converter(CConverter):
     format_unit = '"F_POINTER"'
 
-class HANDLE_converter(CConverter):
+    def parse_arg(self, argname, displayname, *, limited_capi):
+        return self.format_code("""
+            {paramname} = PyLong_AsVoidPtr({argname});
+            if (!{paramname} && PyErr_Occurred()) {{{{
+                goto exit;
+            }}}}
+            """,
+            argname=argname)
+
+class OVERLAPPED_converter(pointer_converter):
+    type = 'OVERLAPPED *'
+
+class HANDLE_converter(pointer_converter):
     type = 'HANDLE'
-    format_unit = '"F_HANDLE"'
 
-class ULONG_PTR_converter(CConverter):
+class ULONG_PTR_converter(pointer_converter):
     type = 'ULONG_PTR'
-    format_unit = '"F_ULONG_PTR"'
 
-class DWORD_converter(CConverter):
+    def parse_arg(self, argname, displayname, *, limited_capi):
+        return self.format_code("""
+            {paramname} = (uintptr_t)PyLong_AsVoidPtr({argname});
+            if (!{paramname} && PyErr_Occurred()) {{{{
+                goto exit;
+            }}}}
+            """,
+            argname=argname)
+
+class DWORD_converter(unsigned_long_converter):
     type = 'DWORD'
-    format_unit = 'k'
 
-class BOOL_converter(CConverter):
+class BOOL_converter(int_converter):
     type = 'BOOL'
-    format_unit = 'i'
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=83bb8c2c2514f2a8]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=436f4440630a304c]*/
 
 /*[clinic input]
 module _overlapped
@@ -104,18 +123,6 @@ typedef struct {
         } read_from_into;
     };
 } OverlappedObject;
-
-typedef struct {
-    PyTypeObject *overlapped_type;
-} OverlappedState;
-
-static inline OverlappedState*
-overlapped_get_state(PyObject *module)
-{
-    void *state = PyModule_GetState(module);
-    assert(state != NULL);
-    return (OverlappedState *)state;
-}
 
 
 static inline void
@@ -365,8 +372,9 @@ _overlapped_RegisterWaitWithQueue_impl(PyObject *module, HANDLE Object,
             &NewWaitObject, Object, PostToQueueCallback, pdata, Milliseconds,
             WT_EXECUTEINWAITTHREAD | WT_EXECUTEONLYONCE))
     {
+        SetFromWindowsErr(0);
         PyMem_RawFree(pdata);
-        return SetFromWindowsErr(0);
+        return NULL;
     }
 
     return Py_BuildValue(F_HANDLE, NewWaitObject);
@@ -443,8 +451,8 @@ EventAttributes must be None.
 static PyObject *
 _overlapped_CreateEvent_impl(PyObject *module, PyObject *EventAttributes,
                              BOOL ManualReset, BOOL InitialState,
-                             const Py_UNICODE *Name)
-/*[clinic end generated code: output=8e04f0916c17b13d input=dbc36ae14375ba24]*/
+                             const wchar_t *Name)
+/*[clinic end generated code: output=b17ddc5fd506972d input=dbc36ae14375ba24]*/
 {
     HANDLE Event;
 
@@ -591,8 +599,7 @@ _overlapped_FormatMessage_impl(PyObject *module, DWORD code)
     if (n) {
         while (iswspace(lpMsgBuf[n-1]))
             --n;
-        lpMsgBuf[n] = L'\0';
-        res = Py_BuildValue("u", lpMsgBuf);
+        res = PyUnicode_FromWideChar(lpMsgBuf, n);
     } else {
         res = PyUnicode_FromFormat("unknown error code %u", code);
     }
@@ -910,8 +917,7 @@ _overlapped_Overlapped_getresult_impl(OverlappedObject *self, BOOL wait)
                 _PyBytes_Resize(&self->allocated_buffer, transferred))
                 return NULL;
 
-            Py_INCREF(self->allocated_buffer);
-            return self->allocated_buffer;
+            return Py_NewRef(self->allocated_buffer);
         case TYPE_READ_FROM:
             assert(PyBytes_CheckExact(self->read_from.allocated_buffer));
 
@@ -938,14 +944,12 @@ _overlapped_Overlapped_getresult_impl(OverlappedObject *self, BOOL wait)
             }
 
             // first item: message
-            Py_INCREF(self->read_from.allocated_buffer);
             PyTuple_SET_ITEM(self->read_from.result, 0,
-                             self->read_from.allocated_buffer);
+                             Py_NewRef(self->read_from.allocated_buffer));
             // second item: address
             PyTuple_SET_ITEM(self->read_from.result, 1, addr);
 
-            Py_INCREF(self->read_from.result);
-            return self->read_from.result;
+            return Py_NewRef(self->read_from.result);
         case TYPE_READ_FROM_INTO:
             // unparse the address
             addr = unparse_address((SOCKADDR*)&self->read_from_into.address,
@@ -968,8 +972,7 @@ _overlapped_Overlapped_getresult_impl(OverlappedObject *self, BOOL wait)
             // second item: address
             PyTuple_SET_ITEM(self->read_from_into.result, 1, addr);
 
-            Py_INCREF(self->read_from_into.result);
-            return self->read_from_into.result;
+            return Py_NewRef(self->read_from_into.result);
         default:
             return PyLong_FromUnsignedLong((unsigned long) transferred);
     }
@@ -1602,8 +1605,8 @@ Connect to the pipe for asynchronous I/O (overlapped).
 
 static PyObject *
 _overlapped_Overlapped_ConnectPipe_impl(OverlappedObject *self,
-                                        const Py_UNICODE *Address)
-/*[clinic end generated code: output=3cc9661667d459d4 input=167c06a274efcefc]*/
+                                        const wchar_t *Address)
+/*[clinic end generated code: output=67cbd8e4d3a57855 input=167c06a274efcefc]*/
 {
     HANDLE PipeHandle;
 
@@ -1672,7 +1675,7 @@ Overlapped_traverse(OverlappedObject *self, visitproc visit, void *arg)
 _overlapped.WSAConnect
 
     client_handle as ConnectSocket: HANDLE
-    address_as_bytes as AddressObj: object
+    address_as_bytes as AddressObj: object(subclass_of='&PyTuple_Type')
     /
 
 Bind a remote address to a connectionless (UDP) socket.
@@ -1681,7 +1684,7 @@ Bind a remote address to a connectionless (UDP) socket.
 static PyObject *
 _overlapped_WSAConnect_impl(PyObject *module, HANDLE ConnectSocket,
                             PyObject *AddressObj)
-/*[clinic end generated code: output=ea0b4391e94dad63 input=169f8075e9ae7fa4]*/
+/*[clinic end generated code: output=ea0b4391e94dad63 input=7cf65313d49c015a]*/
 {
     char AddressBuf[sizeof(struct sockaddr_in6)];
     SOCKADDR *Address = (SOCKADDR*)AddressBuf;
@@ -1715,7 +1718,7 @@ _overlapped.Overlapped.WSASendTo
     handle: HANDLE
     buf as bufobj: Py_buffer
     flags: DWORD
-    address_as_bytes as AddressObj: object
+    address_as_bytes as AddressObj: object(subclass_of='&PyTuple_Type')
     /
 
 Start overlapped sendto over a connectionless (UDP) socket.
@@ -1725,7 +1728,7 @@ static PyObject *
 _overlapped_Overlapped_WSASendTo_impl(OverlappedObject *self, HANDLE handle,
                                       Py_buffer *bufobj, DWORD flags,
                                       PyObject *AddressObj)
-/*[clinic end generated code: output=3cdedc4cfaeb70cd input=b7c1749a62e2e374]*/
+/*[clinic end generated code: output=3cdedc4cfaeb70cd input=31f44cd4ab92fc33]*/
 {
     char AddressBuf[sizeof(struct sockaddr_in6)];
     SOCKADDR *Address = (SOCKADDR*)AddressBuf;
@@ -1944,12 +1947,12 @@ static PyMethodDef Overlapped_methods[] = {
 };
 
 static PyMemberDef Overlapped_members[] = {
-    {"error", T_ULONG,
+    {"error", Py_T_ULONG,
      offsetof(OverlappedObject, error),
-     READONLY, "Error from last operation"},
+     Py_READONLY, "Error from last operation"},
     {"event", T_HANDLE,
      offsetof(OverlappedObject, overlapped) + offsetof(OVERLAPPED, hEvent),
-     READONLY, "Overlapped event handle"},
+     Py_READONLY, "Overlapped event handle"},
     {NULL}
 };
 
@@ -1996,36 +1999,9 @@ static PyMethodDef overlapped_functions[] = {
     {NULL}
 };
 
-static int
-overlapped_traverse(PyObject *module, visitproc visit, void *arg)
-{
-    OverlappedState *state = overlapped_get_state(module);
-    Py_VISIT(state->overlapped_type);
-    return 0;
-}
-
-static int
-overlapped_clear(PyObject *module)
-{
-    OverlappedState *state = overlapped_get_state(module);
-    Py_CLEAR(state->overlapped_type);
-    return 0;
-}
-
-static void
-overlapped_free(void *module)
-{
-    overlapped_clear((PyObject *)module);
-}
-
 #define WINAPI_CONSTANT(fmt, con) \
     do { \
-        PyObject *value = Py_BuildValue(fmt, con); \
-        if (value == NULL) { \
-            return -1; \
-        } \
-        if (PyModule_AddObject(module, #con, value) < 0 ) { \
-            Py_DECREF(value); \
+        if (PyModule_Add(module, #con, Py_BuildValue(fmt, con)) < 0 ) { \
             return -1; \
         } \
     } while (0)
@@ -2045,14 +2021,15 @@ overlapped_exec(PyObject *module)
         return -1;
     }
 
-    OverlappedState *st = overlapped_get_state(module);
-    st->overlapped_type = (PyTypeObject *)PyType_FromModuleAndSpec(
+    PyTypeObject *overlapped_type = (PyTypeObject *)PyType_FromModuleAndSpec(
         module, &overlapped_type_spec, NULL);
-    if (st->overlapped_type == NULL) {
+    if (overlapped_type == NULL) {
         return -1;
     }
 
-    if (PyModule_AddType(module, st->overlapped_type) < 0) {
+    int rc = PyModule_AddType(module, overlapped_type);
+    Py_DECREF(overlapped_type);
+    if (rc < 0) {
         return -1;
     }
 
@@ -2073,18 +2050,15 @@ overlapped_exec(PyObject *module)
 
 static PyModuleDef_Slot overlapped_slots[] = {
     {Py_mod_exec, overlapped_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 
 static struct PyModuleDef overlapped_module = {
-    PyModuleDef_HEAD_INIT,
+    .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "_overlapped",
-    .m_size = sizeof(OverlappedState),
     .m_methods = overlapped_functions,
     .m_slots = overlapped_slots,
-    .m_traverse = overlapped_traverse,
-    .m_clear = overlapped_clear,
-    .m_free = overlapped_free
 };
 
 PyMODINIT_FUNC

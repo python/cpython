@@ -29,11 +29,6 @@ class BadSpecFinderLoader:
 
 class BadLoaderFinder:
     @classmethod
-    def find_module(cls, fullname, path):
-        if fullname == SUBMOD_NAME:
-            return cls
-
-    @classmethod
     def load_module(cls, fullname):
         if fullname == SUBMOD_NAME:
             raise ImportError('I cannot be loaded!')

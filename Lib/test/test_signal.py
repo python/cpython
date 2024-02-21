@@ -1,5 +1,6 @@
 import enum
 import errno
+import functools
 import inspect
 import os
 import random
@@ -12,9 +13,10 @@ import threading
 import time
 import unittest
 from test import support
-from test.support import os_helper
+from test.support import (
+    is_apple, is_apple_mobile, os_helper, threading_helper
+)
 from test.support.script_helper import assert_python_ok, spawn_python
-from test.support import threading_helper
 try:
     import _testcapi
 except ImportError:
@@ -76,6 +78,9 @@ class PosixTests(unittest.TestCase):
     def trivial_signal_handler(self, *args):
         pass
 
+    def create_handler_with_partial(self, argument):
+        return functools.partial(self.trivial_signal_handler, argument)
+
     def test_out_of_range_signal_number_raises_error(self):
         self.assertRaises(ValueError, signal.getsignal, 4242)
 
@@ -95,6 +100,28 @@ class PosixTests(unittest.TestCase):
                          self.trivial_signal_handler)
         signal.signal(signal.SIGHUP, hup)
         self.assertEqual(signal.getsignal(signal.SIGHUP), hup)
+
+    def test_no_repr_is_called_on_signal_handler(self):
+        # See https://github.com/python/cpython/issues/112559.
+
+        class MyArgument:
+            def __init__(self):
+                self.repr_count = 0
+
+            def __repr__(self):
+                self.repr_count += 1
+                return super().__repr__()
+
+        argument = MyArgument()
+        self.assertEqual(0, argument.repr_count)
+
+        handler = self.create_handler_with_partial(argument)
+        hup = signal.signal(signal.SIGHUP, handler)
+        self.assertIsInstance(hup, signal.Handlers)
+        self.assertEqual(signal.getsignal(signal.SIGHUP), handler)
+        signal.signal(signal.SIGHUP, hup)
+        self.assertEqual(signal.getsignal(signal.SIGHUP), hup)
+        self.assertEqual(0, argument.repr_count)
 
     def test_strsignal(self):
         self.assertIn("Interrupt", signal.strsignal(signal.SIGINT))
@@ -745,6 +772,7 @@ class SiginterruptTest(unittest.TestCase):
         interrupted = self.readpipe_interrupted(True)
         self.assertTrue(interrupted)
 
+    @support.requires_resource('walltime')
     def test_siginterrupt_off(self):
         # If a signal handler is installed and siginterrupt is called with
         # a false value for the second argument, when that signal arrives, it
@@ -805,22 +833,19 @@ class ItimerTest(unittest.TestCase):
         self.assertEqual(self.hndl_called, True)
 
     # Issue 3864, unknown if this affects earlier versions of freebsd also
-    @unittest.skipIf(sys.platform in ('netbsd5',),
+    @unittest.skipIf(sys.platform in ('netbsd5',) or is_apple_mobile,
         'itimer not reliable (does not mix well with threading) on some BSDs.')
     def test_itimer_virtual(self):
         self.itimer = signal.ITIMER_VIRTUAL
         signal.signal(signal.SIGVTALRM, self.sig_vtalrm)
         signal.setitimer(self.itimer, 0.3, 0.2)
 
-        start_time = time.monotonic()
-        while time.monotonic() - start_time < 60.0:
+        for _ in support.busy_retry(support.LONG_TIMEOUT):
             # use up some virtual time by doing real work
             _ = pow(12345, 67890, 10000019)
             if signal.getitimer(self.itimer) == (0.0, 0.0):
-                break # sig_vtalrm handler stopped this itimer
-        else: # Issue 8424
-            self.skipTest("timeout: likely cause: machine too slow or load too "
-                          "high")
+                # sig_vtalrm handler stopped this itimer
+                break
 
         # virtual itimer should be (0.0, 0.0) now
         self.assertEqual(signal.getitimer(self.itimer), (0.0, 0.0))
@@ -832,15 +857,12 @@ class ItimerTest(unittest.TestCase):
         signal.signal(signal.SIGPROF, self.sig_prof)
         signal.setitimer(self.itimer, 0.2, 0.2)
 
-        start_time = time.monotonic()
-        while time.monotonic() - start_time < 60.0:
+        for _ in support.busy_retry(support.LONG_TIMEOUT):
             # do some work
             _ = pow(12345, 67890, 10000019)
             if signal.getitimer(self.itimer) == (0.0, 0.0):
-                break # sig_prof handler stopped this itimer
-        else: # Issue 8424
-            self.skipTest("timeout: likely cause: machine too slow or load too "
-                          "high")
+                # sig_prof handler stopped this itimer
+                break
 
         # profiling itimer should be (0.0, 0.0) now
         self.assertEqual(signal.getitimer(self.itimer), (0.0, 0.0))
@@ -1307,8 +1329,6 @@ class StressTest(unittest.TestCase):
         self.setsig(signal.SIGALRM, handler)  # for ITIMER_REAL
 
         expected_sigs = 0
-        deadline = time.monotonic() + support.SHORT_TIMEOUT
-
         while expected_sigs < N:
             # Hopefully the SIGALRM will be received somewhere during
             # initial processing of SIGUSR1.
@@ -1317,13 +1337,15 @@ class StressTest(unittest.TestCase):
 
             expected_sigs += 2
             # Wait for handlers to run to avoid signal coalescing
-            while len(sigs) < expected_sigs and time.monotonic() < deadline:
-                time.sleep(1e-5)
+            for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+                if len(sigs) >= expected_sigs:
+                    break
 
         # All ITIMER_REAL signals should have been delivered to the
         # Python handler
         self.assertEqual(len(sigs), N, "Some signals were lost")
 
+    @unittest.skipIf(is_apple, "crashes due to system bug (FB13453490)")
     @unittest.skipUnless(hasattr(signal, "SIGUSR1"),
                          "test needs SIGUSR1")
     @threading_helper.requires_working_threading()
@@ -1345,7 +1367,7 @@ class StressTest(unittest.TestCase):
                 num_sent_signals += 1
 
         def cycle_handlers():
-            while num_sent_signals < 100:
+            while num_sent_signals < 100 or num_received_signals < 1:
                 for i in range(20000):
                     # Cycle between a Python-defined and a non-Python handler
                     for handler in [custom_handler, signal.SIG_IGN]:
@@ -1378,7 +1400,7 @@ class StressTest(unittest.TestCase):
             if not ignored:
                 # Sanity check that some signals were received, but not all
                 self.assertGreater(num_received_signals, 0)
-            self.assertLess(num_received_signals, num_sent_signals)
+            self.assertLessEqual(num_received_signals, num_sent_signals)
         finally:
             do_stop = True
             t.join()
@@ -1412,6 +1434,21 @@ class RaiseSignalTest(unittest.TestCase):
 
         signal.raise_signal(signal.SIGINT)
         self.assertTrue(is_ok)
+
+    def test__thread_interrupt_main(self):
+        # See https://github.com/python/cpython/issues/102397
+        code = """if 1:
+        import _thread
+        class Foo():
+            def __del__(self):
+                _thread.interrupt_main()
+
+        x = Foo()
+        """
+
+        rc, out, err = assert_python_ok('-c', code)
+        self.assertIn(b'OSError: Signal 2 ignored due to race condition', err)
+
 
 
 class PidfdSignalTest(unittest.TestCase):
