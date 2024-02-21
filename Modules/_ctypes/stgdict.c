@@ -871,7 +871,6 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         for (i = 0; i < len; ++i) {
             PyObject *name, *desc;
             PyObject *pair = PySequence_GetItem(fields, i);
-            StgDictObject *dict;
             int bitsize = 0;
 
             if (pair == NULL) {
@@ -883,21 +882,19 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
                 Py_DECREF(pair);
                 return -1;
             }
-            dict = PyType_stgdict(desc);
-            if (dict == NULL) {
-                Py_DECREF(pair);
-                PyErr_Format(PyExc_TypeError,
-                    "second item in _fields_ tuple (index %zd) must be a C type",
-                    i);
-                return -1;
-            }
 
             StgInfo *info;
             if (PyStgInfo_FromType(st, desc, &info) < 0) {
                 Py_DECREF(pair);
                 return -1;
             }
-            assert(info);
+            if (info == NULL) {
+                Py_DECREF(pair);
+                PyErr_Format(PyExc_TypeError,
+                    "second item in _fields_ tuple (index %zd) must be a C type",
+                    i);
+                return -1;
+            }
 
             if (!PyCArrayTypeObject_Check(st, desc)) {
                 /* Not an array. Just need an ffi_type pointer. */
@@ -906,10 +903,12 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
             else {
                 /* It's an array. */
                 Py_ssize_t length = info->length;
-                StgDictObject *edict;
 
-                edict = PyType_stgdict(info->proto);
-                if (edict == NULL) {
+                StgInfo *einfo;
+                if (PyStgInfo_FromType(st, info->proto, &einfo) < 0) {
+                    return -1;
+                }
+                if (einfo == NULL) {
                     Py_DECREF(pair);
                     PyErr_Format(PyExc_TypeError,
                         "second item in _fields_ tuple (index %zd) must be a C type",
@@ -968,7 +967,6 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         for (i = 0; i < len; ++i) {
             PyObject *name, *desc;
             PyObject *pair = PySequence_GetItem(fields, i);
-            StgDictObject *dict;
             int bitsize = 0;
 
             if (pair == NULL) {
@@ -988,16 +986,6 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
                 PyMem_Free(type_block);
                 return -1;
             }
-            dict = PyType_stgdict(desc);
-            /* Possibly this check could be avoided, but see above comment. */
-            if (dict == NULL) {
-                Py_DECREF(pair);
-                PyMem_Free(type_block);
-                PyErr_Format(PyExc_TypeError,
-                             "second item in _fields_ tuple (index %zd) must be a C type",
-                             i);
-                return -1;
-            }
 
             StgInfo *info;
             if (PyStgInfo_FromType(st, desc, &info) < 0) {
@@ -1005,7 +993,16 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
                 PyMem_Free(type_block);
                 return -1;
             }
-            assert(info);
+
+            /* Possibly this check could be avoided, but see above comment. */
+            if (info == NULL) {
+                Py_DECREF(pair);
+                PyMem_Free(type_block);
+                PyErr_Format(PyExc_TypeError,
+                             "second item in _fields_ tuple (index %zd) must be a C type",
+                             i);
+                return -1;
+            }
 
             assert(element_index < (ffi_ofs + len)); /* will be used below */
             if (!PyCArrayTypeObject_Check(st, desc)) {

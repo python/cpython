@@ -691,12 +691,6 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
         return (PyObject *)result;
     }
     else {
-        StgDictObject *basedict = PyType_stgdict((PyObject *)result->tp_base);
-
-        if (basedict == NULL) {
-            return (PyObject *)result;
-        }
-
         StgInfo *baseinfo;
         if (PyStgInfo_FromType(st, (PyObject *)result->tp_base,
                                &baseinfo) < 0) {
