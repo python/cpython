@@ -16802,17 +16802,30 @@ rm -f conftest.err conftest.i conftest.$ac_ext
 		zeta)
 			cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
+
 #include <sys/param.h>
+
+#if defined(_ZETA_MINAMI_INET6)
+/* pass */
+#else
+#error "not defined"
+#endif
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
 _ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "defined(_ZETA_MINAMI_INET6)" >/dev/null 2>&1
+if ac_fn_c_try_cpp "$LINENO"
 then :
   ipv6type=$i
                           ipv6lib=inet6
                           ipv6libdir=/usr/local/v6/lib
 fi
-rm -rf conftest*
-
+rm -f conftest.err conftest.i conftest.$ac_ext
 			;;
 		esac
 		if test "$ipv6type" != "unknown"; then

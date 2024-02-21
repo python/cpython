@@ -4499,8 +4499,8 @@ if test "$ipv6" = yes -a "$cross_compiling" = no; then
                           BASECFLAGS="-I/usr/local/v6/include $BASECFLAGS"])
 			;;
 		zeta)
-			AC_EGREP_CPP([defined(_ZETA_MINAMI_INET6)],
-                         [@%:@include <sys/param.h>],
+			PY_CHECK_CPP([defined(_ZETA_MINAMI_INET6)],
+                         [sys/param.h],
                          [ipv6type=$i
                           ipv6lib=inet6
                           ipv6libdir=/usr/local/v6/lib])
