@@ -405,8 +405,6 @@ class HelpFormatter(object):
                 group_action_count = len(group._group_actions)
                 end = start + group_action_count
                 if actions[start:end] == group._group_actions:
-                    if all((action.help is SUPPRESS for action in group._group_actions)):
-                        continue
 
                     suppressed_actions_count = 0
                     for action in group._group_actions:
@@ -415,6 +413,8 @@ class HelpFormatter(object):
                             suppressed_actions_count += 1
 
                     exposed_actions_count = group_action_count - suppressed_actions_count
+                    if not exposed_actions_count:
+                        continue
 
                     if not group.required:
                         if start in inserts:

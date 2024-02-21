@@ -2872,14 +2872,16 @@ class TestMutuallyExclusiveGroupErrors(TestCase):
         group = cmd_foo.add_mutually_exclusive_group()
         group.add_argument('--verbose', action='store_true', help=argparse.SUPPRESS)
         group.add_argument('--quiet', action='store_true', help=argparse.SUPPRESS)
-        cmd_foo.add_argument("--longlonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglong")
-        expected = '''\
+        longopt = '--' + 'long'*32
+        longmeta = 'LONG'*32
+        cmd_foo.add_argument(longopt)
+        expected = f'''\
             usage: PROG foo [-h]
-                            [--longlonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglong LONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONG]
+                            [{longopt} {longmeta}]
 
             options:
               -h, --help            show this help message and exit
-              --longlonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglonglong LONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONGLONG
+              {longopt} {longmeta}
               '''
         self.assertEqual(cmd_foo.format_help(), textwrap.dedent(expected))
 
