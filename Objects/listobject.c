@@ -556,7 +556,7 @@ PyList_GetSlice(PyObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
 }
 
 static PyObject *
-list_concat_locked(PyListObject *a, PyListObject *b)
+list_concat_lock_held(PyListObject *a, PyListObject *b)
 {
     Py_ssize_t size;
     Py_ssize_t i;
@@ -600,13 +600,13 @@ list_concat(PyObject *aa, PyObject *bb)
     PyListObject *b = (PyListObject *)bb;
     PyObject *ret;
     Py_BEGIN_CRITICAL_SECTION2(a, b);
-    ret = list_concat_locked(a, b);
+    ret = list_concat_lock_held(a, b);
     Py_END_CRITICAL_SECTION2();
     return ret;
 }
 
 static PyObject *
-list_repeat_locked(PyListObject *a, Py_ssize_t n)
+list_repeat_lock_held(PyListObject *a, Py_ssize_t n)
 {
     const Py_ssize_t input_size = Py_SIZE(a);
     if (input_size == 0 || n <= 0)
@@ -652,7 +652,7 @@ list_repeat(PyObject *aa, Py_ssize_t n)
     PyObject *ret;
     PyListObject *a = (PyListObject *)aa;
     Py_BEGIN_CRITICAL_SECTION(a);
-    ret = list_repeat_locked(a, n);
+    ret = list_repeat_lock_held(a, n);
     Py_END_CRITICAL_SECTION();
     return ret;
 }
@@ -811,7 +811,7 @@ PyList_SetSlice(PyObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
 }
 
 static PyObject *
-list_inplace_repeat_locked(PyListObject *self, Py_ssize_t n)
+list_inplace_repeat_lock_held(PyListObject *self, Py_ssize_t n)
 {
     Py_ssize_t input_size = PyList_GET_SIZE(self);
     if (input_size == 0 || n == 1) {
@@ -847,13 +847,13 @@ list_inplace_repeat(PyObject *_self, Py_ssize_t n)
     PyObject *ret;
     PyListObject *self = (PyListObject *) _self;
     Py_BEGIN_CRITICAL_SECTION(self);
-    ret = list_inplace_repeat_locked(self, n);
+    ret = list_inplace_repeat_lock_held(self, n);
     Py_END_CRITICAL_SECTION();
     return ret;
 }
 
 static int
-list_ass_item_locked(PyListObject *a, Py_ssize_t i, PyObject *v)
+list_ass_item_lock_held(PyListObject *a, Py_ssize_t i, PyObject *v)
 {
     if (!valid_index(i, Py_SIZE(a))) {
         PyErr_SetString(PyExc_IndexError,
@@ -881,7 +881,7 @@ list_ass_item(PyObject *aa, Py_ssize_t i, PyObject *v)
     int ret;
     PyListObject *a = (PyListObject *)aa;
     Py_BEGIN_CRITICAL_SECTION(a);
-    ret = list_ass_item_locked(a, i, v);
+    ret = list_ass_item_lock_held(a, i, v);
     Py_END_CRITICAL_SECTION();
     return ret;
 }
