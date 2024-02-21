@@ -2,7 +2,9 @@ import contextlib
 import dataclasses
 import json
 import os
+import shlex
 import subprocess
+import sys
 from typing import Any
 
 from test import support
@@ -33,7 +35,8 @@ class JsonFile:
                 popen_kwargs['pass_fds'] = [self.file]
             case JsonFileType.WINDOWS_HANDLE:
                 # Windows handle
-                startupinfo = subprocess.STARTUPINFO()
+                # We run mypy with `--platform=linux` so it complains about this:
+                startupinfo = subprocess.STARTUPINFO()  # type: ignore[attr-defined]
                 startupinfo.lpAttributeList = {"handle_list": [self.file]}
                 popen_kwargs['startupinfo'] = startupinfo
 
@@ -66,6 +69,11 @@ class HuntRefleak:
     runs: int
     filename: StrPath
 
+    def bisect_cmd_args(self) -> list[str]:
+        # Ignore filename since it can contain colon (":"),
+        # and usually it's not used. Use the default filename.
+        return ["-R", f"{self.warmups}:{self.runs}:"]
+
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class RunTests:
@@ -92,12 +100,16 @@ class RunTests:
     python_cmd: tuple[str, ...] | None
     randomize: bool
     random_seed: int | str
-    json_file: JsonFile | None
 
-    def copy(self, **override):
+    def copy(self, **override) -> 'RunTests':
         state = dataclasses.asdict(self)
         state.update(override)
         return RunTests(**state)
+
+    def create_worker_runtests(self, **override):
+        state = dataclasses.asdict(self)
+        state.update(override)
+        return WorkerRunTests(**state)
 
     def get_match_tests(self, test_name) -> FilterTuple | None:
         if self.match_tests_dict is not None:
@@ -119,13 +131,6 @@ class RunTests:
         else:
             yield from self.tests
 
-    def as_json(self) -> StrJSON:
-        return json.dumps(self, cls=_EncodeRunTests)
-
-    @staticmethod
-    def from_json(worker_json: StrJSON) -> 'RunTests':
-        return json.loads(worker_json, object_hook=_decode_runtests)
-
     def json_file_use_stdout(self) -> bool:
         # Use STDOUT in two cases:
         #
@@ -139,10 +144,65 @@ class RunTests:
             or support.is_wasi
         )
 
+    def create_python_cmd(self) -> list[str]:
+        python_opts = support.args_from_interpreter_flags()
+        if self.python_cmd is not None:
+            executable = self.python_cmd
+            # Remove -E option, since --python=COMMAND can set PYTHON
+            # environment variables, such as PYTHONPATH, in the worker
+            # process.
+            python_opts = [opt for opt in python_opts if opt != "-E"]
+        else:
+            executable = (sys.executable,)
+        cmd = [*executable, *python_opts]
+        if '-u' not in python_opts:
+            cmd.append('-u')  # Unbuffered stdout and stderr
+        if self.coverage:
+            cmd.append("-Xpresite=test.cov")
+        return cmd
+
+    def bisect_cmd_args(self) -> list[str]:
+        args = []
+        if self.fail_fast:
+            args.append("--failfast")
+        if self.fail_env_changed:
+            args.append("--fail-env-changed")
+        if self.timeout:
+            args.append(f"--timeout={self.timeout}")
+        if self.hunt_refleak is not None:
+            args.extend(self.hunt_refleak.bisect_cmd_args())
+        if self.test_dir:
+            args.extend(("--testdir", self.test_dir))
+        if self.memory_limit:
+            args.extend(("--memlimit", self.memory_limit))
+        if self.gc_threshold:
+            args.append(f"--threshold={self.gc_threshold}")
+        if self.use_resources:
+            args.extend(("-u", ','.join(self.use_resources)))
+        if self.python_cmd:
+            cmd = shlex.join(self.python_cmd)
+            args.extend(("--python", cmd))
+        if self.randomize:
+            args.append(f"--randomize")
+        args.append(f"--randseed={self.random_seed}")
+        return args
+
+
+@dataclasses.dataclass(slots=True, frozen=True)
+class WorkerRunTests(RunTests):
+    json_file: JsonFile
+
+    def as_json(self) -> StrJSON:
+        return json.dumps(self, cls=_EncodeRunTests)
+
+    @staticmethod
+    def from_json(worker_json: StrJSON) -> 'WorkerRunTests':
+        return json.loads(worker_json, object_hook=_decode_runtests)
+
 
 class _EncodeRunTests(json.JSONEncoder):
     def default(self, o: Any) -> dict[str, Any]:
-        if isinstance(o, RunTests):
+        if isinstance(o, WorkerRunTests):
             result = dataclasses.asdict(o)
             result["__runtests__"] = True
             return result
@@ -157,6 +217,6 @@ def _decode_runtests(data: dict[str, Any]) -> RunTests | dict[str, Any]:
             data['hunt_refleak'] = HuntRefleak(**data['hunt_refleak'])
         if data['json_file']:
             data['json_file'] = JsonFile(**data['json_file'])
-        return RunTests(**data)
+        return WorkerRunTests(**data)
     else:
         return data

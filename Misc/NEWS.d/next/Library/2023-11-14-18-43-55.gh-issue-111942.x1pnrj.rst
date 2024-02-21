@@ -1,2 +1,0 @@
-Fix SystemError in the TextIOWrapper constructor with non-encodable "errors"
-argument in non-debug mode.

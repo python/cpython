@@ -3,7 +3,7 @@ import os.path
 import shlex
 import sys
 from test.support import os_helper, Py_DEBUG
-from .utils import ALL_RESOURCES, RESOURCE_NAMES
+from .utils import ALL_RESOURCES, RESOURCE_NAMES, TestFilter
 
 
 USAGE = """\
@@ -161,7 +161,7 @@ class Namespace(argparse.Namespace):
         self.forever = False
         self.header = False
         self.failfast = False
-        self.match_tests = []
+        self.match_tests: TestFilter = []
         self.pgo = False
         self.pgo_extended = False
         self.worker_json = None
@@ -347,6 +347,8 @@ def _create_parser():
                        help='override the working directory for the test run')
     group.add_argument('--cleanup', action='store_true',
                        help='remove old test_python_* directories')
+    group.add_argument('--bisect', action='store_true',
+                       help='if some tests fail, run test.bisect_cmd on them')
     group.add_argument('--dont-add-python-opts', dest='_add_python_opts',
                        action='store_false',
                        help="internal option, don't use it")

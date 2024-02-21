@@ -166,8 +166,9 @@ class EditorWindow:
             text.bind("<3>",self.right_menu_event)
 
         text.bind('<MouseWheel>', wheel_event)
-        text.bind('<Button-4>', wheel_event)
-        text.bind('<Button-5>', wheel_event)
+        if text._windowingsystem == 'x11':
+            text.bind('<Button-4>', wheel_event)
+            text.bind('<Button-5>', wheel_event)
         text.bind('<Configure>', self.handle_winconfig)
         text.bind("<<cut>>", self.cut)
         text.bind("<<copy>>", self.copy)
@@ -1747,6 +1748,7 @@ def _editor_window(parent):  # htest #
     # text.bind("<<close-all-windows>>", edit.close_event)
     # Does not stop error, neither does following
     # edit.text.bind("<<close-window>>", edit.close_event)
+
 
 if __name__ == '__main__':
     from unittest import main

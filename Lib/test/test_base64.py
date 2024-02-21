@@ -586,6 +586,7 @@ class BaseXYTestCase(unittest.TestCase):
         eq(base64.a85decode(b'y+<Vd', foldspaces=True, adobe=False), b' '*7)
         eq(base64.a85decode(b'y+<U', foldspaces=True, adobe=False), b' '*6)
         eq(base64.a85decode(b'y+9', foldspaces=True, adobe=False), b' '*5)
+        eq(base64.a85decode(b'aaaaay', foldspaces=True), b'\xc9\x80\x0b@    ')
 
         self.check_other_types(base64.a85decode, b'GB\\6`E-ZP=Df.1GEb>',
                                b"www.python.org")
@@ -689,6 +690,8 @@ class BaseXYTestCase(unittest.TestCase):
         self.assertRaises(ValueError, base64.a85decode, b's8W', adobe=False)
         self.assertRaises(ValueError, base64.a85decode, b's8W-', adobe=False)
         self.assertRaises(ValueError, base64.a85decode, b's8W-"', adobe=False)
+        self.assertRaises(ValueError, base64.a85decode, b'aaaay',
+                          foldspaces=True)
 
     def test_b85decode_errors(self):
         illegal = list(range(33)) + \

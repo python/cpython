@@ -15,7 +15,7 @@ facility.
 
 This module wraps the system ``syslog`` family of routines.  A pure Python
 library that can speak to a syslog server is available in the
-:mod:`logging.handlers` module as :class:`SysLogHandler`.
+:mod:`logging.handlers` module as :class:`~logging.handlers.SysLogHandler`.
 
 The module defines the following functions:
 
@@ -107,22 +107,62 @@ The module defines the following functions:
 
 The module defines the following constants:
 
-Priority levels (high to low):
-   :const:`LOG_EMERG`, :const:`LOG_ALERT`, :const:`LOG_CRIT`, :const:`LOG_ERR`,
-   :const:`LOG_WARNING`, :const:`LOG_NOTICE`, :const:`LOG_INFO`,
-   :const:`LOG_DEBUG`.
 
-Facilities:
-   :const:`LOG_KERN`, :const:`LOG_USER`, :const:`LOG_MAIL`, :const:`LOG_DAEMON`,
-   :const:`LOG_AUTH`, :const:`LOG_LPR`, :const:`LOG_NEWS`, :const:`LOG_UUCP`,
-   :const:`LOG_CRON`, :const:`LOG_SYSLOG`, :const:`LOG_LOCAL0` to
-   :const:`LOG_LOCAL7`, and, if defined in ``<syslog.h>``,
-   :const:`LOG_AUTHPRIV`.
+.. data:: LOG_EMERG
+          LOG_ALERT
+          LOG_CRIT
+          LOG_ERR
+          LOG_WARNING
+          LOG_NOTICE
+          LOG_INFO
+          LOG_DEBUG
 
-Log options:
-   :const:`LOG_PID`, :const:`LOG_CONS`, :const:`LOG_NDELAY`, and, if defined
-   in ``<syslog.h>``, :const:`LOG_ODELAY`, :const:`LOG_NOWAIT`, and
-   :const:`LOG_PERROR`.
+   Priority levels (high to low).
+
+
+.. data:: LOG_AUTH
+          LOG_AUTHPRIV
+          LOG_CRON
+          LOG_DAEMON
+          LOG_FTP
+          LOG_INSTALL
+          LOG_KERN
+          LOG_LAUNCHD
+          LOG_LPR
+          LOG_MAIL
+          LOG_NETINFO
+          LOG_NEWS
+          LOG_RAS
+          LOG_REMOTEAUTH
+          LOG_SYSLOG
+          LOG_USER
+          LOG_UUCP
+          LOG_LOCAL0
+          LOG_LOCAL1
+          LOG_LOCAL2
+          LOG_LOCAL3
+          LOG_LOCAL4
+          LOG_LOCAL5
+          LOG_LOCAL6
+          LOG_LOCAL7
+
+   Facilities, depending on availability in ``<syslog.h>`` for :const:`LOG_AUTHPRIV`,
+   :const:`LOG_FTP`, :const:`LOG_NETINFO`, :const:`LOG_REMOTEAUTH`,
+   :const:`LOG_INSTALL` and :const:`LOG_RAS`.
+
+   .. versionchanged:: 3.13
+       Added :const:`LOG_FTP`, :const:`LOG_NETINFO`, :const:`LOG_REMOTEAUTH`,
+       :const:`LOG_INSTALL`, :const:`LOG_RAS`, and :const:`LOG_LAUNCHD`.
+
+.. data:: LOG_PID
+          LOG_CONS
+          LOG_NDELAY
+          LOG_ODELAY
+          LOG_NOWAIT
+          LOG_PERROR
+
+   Log options, depending on availability in ``<syslog.h>`` for
+   :const:`LOG_ODELAY`, :const:`LOG_NOWAIT` and :const:`LOG_PERROR`.
 
 
 Examples

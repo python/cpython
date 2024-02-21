@@ -1,3 +1,0 @@
-Make regrtest ``--verbose3`` option compatible with ``--huntrleaks -jN``
-options. The ``./python -m test -j1 -R 3:3 --verbose3`` command now works as
-expected. Patch by Victor Stinner.
