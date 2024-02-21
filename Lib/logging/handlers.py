@@ -369,16 +369,20 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         dirName, baseName = os.path.split(self.baseFilename)
         fileNames = os.listdir(dirName)
         result = []
-        # See bpo-44753: Don't use the extension when computing the prefix.
-        n, e = os.path.splitext(baseName)
-        prefix = n + '.'
-        plen = len(prefix)
-        for fileName in fileNames:
-            if self.namer is None:
-                # Our files will always start with baseName
-                if not fileName.startswith(baseName):
-                    continue
-            else:
+        if self.namer is None:
+            prefix = baseName + '.'
+            plen = len(prefix)
+            for fileName in fileNames:
+                if fileName[:plen] == prefix:
+                    suffix = fileName[plen:]
+                    if self.extMatch.match(suffix):
+                        result.append(os.path.join(dirName, fileName))
+        else:
+            # See bpo-44753: Don't use the extension when computing the prefix.
+            n, e = os.path.splitext(baseName)
+            prefix = n + '.'
+            plen = len(prefix)
+            for fileName in fileNames:
                 # Our files could be just about anything after custom naming, but
                 # likely candidates are of the form
                 # foo.log.DATETIME_SUFFIX or foo.DATETIME_SUFFIX.log
@@ -386,15 +390,16 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
                     len(fileName) > (plen + 1) and not fileName[plen+1].isdigit()):
                     continue
 
-            if fileName[:plen] == prefix:
-                suffix = fileName[plen:]
-                # See bpo-45628: The date/time suffix could be anywhere in the
-                # filename
-                parts = suffix.split('.')
-                for part in parts:
-                    if self.extMatch.match(part):
-                        result.append(os.path.join(dirName, fileName))
-                        break
+                if fileName[:plen] == prefix:
+                    suffix = fileName[plen:]
+                    # See bpo-45628: The date/time suffix could be anywhere in the
+                    # filename
+
+                    parts = suffix.split('.')
+                    for part in parts:
+                        if self.extMatch.match(part):
+                            result.append(os.path.join(dirName, fileName))
+                            break
         if len(result) < self.backupCount:
             result = []
         else:
