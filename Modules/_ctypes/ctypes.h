@@ -41,7 +41,6 @@ typedef struct {
     PyTypeObject *PyCArg_Type;
     PyTypeObject *PyCField_Type;
     PyTypeObject *PyCThunk_Type;
-    PyTypeObject *PyCStgDict_Type;
     PyTypeObject *StructParam_Type;
     PyTypeObject *PyCStructType_Type;
     PyTypeObject *UnionType_Type;
@@ -159,10 +158,6 @@ typedef struct {
     PyObject *paramflags;
 } PyCFuncPtrObject;
 
-extern PyTypeObject PyCStgDict_Type;
-#define PyCStgDict_CheckExact(st, v)        Py_IS_TYPE((v), (st)->PyCStgDict_Type)
-#define PyCStgDict_Check(st, v)     PyObject_TypeCheck((v), (st)->PyCStgDict_Type)
-
 extern int PyCStructUnionType_update_stgdict(PyObject *fields, PyObject *type, int isStruct);
 extern int PyType_stginfo(PyTypeObject *self, Py_ssize_t *psize, Py_ssize_t *palign, Py_ssize_t *plength);
 extern int PyObject_stginfo(PyObject *self, Py_ssize_t *psize, Py_ssize_t *palign, Py_ssize_t *plength);
@@ -264,43 +259,6 @@ extern int PyStgInfo_FromAny(ctypes_state *state, PyObject *obj, StgInfo **resul
 // Initialize StgInfo on a newly created type
 extern StgInfo *PyStgInfo_Init(ctypes_state *state, PyTypeObject *type);
 
-/* A subclass of PyDictObject, used as the instance dictionary of ctypes
-   metatypes */
-typedef struct {
-    PyDictObject dict;          /* first part identical to PyDictObject */
-/* The size and align fields are unneeded, they are in ffi_type as well.  As
-   an experiment shows, it's trivial to get rid of them, the only thing to
-   remember is that in PyCArrayType_new the ffi_type fields must be filled in -
-   so far it was unneeded because libffi doesn't support arrays at all
-   (because they are passed as pointers to function calls anyway).  But it's
-   too much risk to change that now, and there are other fields which doesn't
-   belong into this structure anyway.  Maybe in ctypes 2.0... (ctypes 2000?)
-*/
-    //Py_ssize_t size;            /* number of bytes */
-    //Py_ssize_t align;           /* alignment requirements */
-    //Py_ssize_t length;          /* number of fields */
-    //ffi_type ffi_type_pointer;
-    //PyObject *proto;            /* Only for Pointer/ArrayObject */
-    //SETFUNC setfunc;            /* Only for simple objects */
-    //GETFUNC getfunc;            /* Only for simple objects */
-    //PARAMFUNC paramfunc;
-
-    /* Following fields only used by PyCFuncPtrType_Type instances */
-    //PyObject *argtypes;         /* tuple of CDataObjects */
-    //PyObject *converters;       /* tuple([t.from_param for t in argtypes]) */
-    //PyObject *restype;          /* CDataObject or NULL */
-    //PyObject *checker;
-    //int flags;                  /* calling convention and such */
-
-    /* pep3118 fields, pointers need PyMem_Free */
-    //char *format;
-    //int ndim;
-    //Py_ssize_t *shape;
-/*      Py_ssize_t *strides;    */ /* unused in ctypes */
-/*      Py_ssize_t *suboffsets; */ /* unused in ctypes */
-
-} StgDictObject;
-
 /****************************************************************
  StgDictObject fields
 
@@ -342,12 +300,6 @@ typedef struct {
 *****************************************************************/
 
 extern int PyCStgDict_clone(StgInfo *dst_info, StgInfo *src_info);
-/* May return NULL, but does not set an exception! */
-extern StgDictObject *PyType_stgdict(PyObject *obj);
-
-/* May return NULL, but does not set an exception! */
-extern StgDictObject *PyObject_stgdict(PyObject *self);
-
 
 typedef int(* PPROC)(void);
 

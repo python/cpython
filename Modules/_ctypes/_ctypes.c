@@ -148,7 +148,6 @@ static _HackyHeapType PyCFuncPtr_Type;
 
 
 ctypes_state global_state = {
-    .PyCStgDict_Type = &PyCStgDict_Type,
     .PyCData_Type = (PyTypeObject*)&PyCData_Type,
     .Struct_Type = (PyTypeObject*)&Struct_Type,
     .Union_Type = (PyTypeObject*)&Union_Type,
@@ -5867,13 +5866,6 @@ _ctypes_add_types(PyObject *mod)
         return -1; \
     }
 
-#define TYPE_READY_BASE(TYPE_EXPR, TP_BASE) \
-    do { \
-        PyTypeObject *type = (TYPE_EXPR); \
-        type->tp_base = (TP_BASE); \
-        TYPE_READY(type); \
-    } while (0)
-
 #define MOD_ADD_TYPE(TYPE_EXPR, TP_TYPE, TP_BASE) \
     do { \
         PyTypeObject *type = (TYPE_EXPR); \
@@ -5902,8 +5894,6 @@ _ctypes_add_types(PyObject *mod)
     CREATE_TYPE(mod, st->PyCArg_Type, &carg_spec, NULL);
     CREATE_TYPE(mod, st->PyCThunk_Type, &cthunk_spec, NULL);
     TYPE_READY(st->PyCData_Type);
-    /* StgDict is derived from PyDict_Type */
-    TYPE_READY_BASE(st->PyCStgDict_Type, &PyDict_Type);
 
     // Common Metaclass
     CREATE_TYPE(mod, st->PyCType_Type, &pyctype_type_spec,
@@ -5958,7 +5948,6 @@ _ctypes_add_types(PyObject *mod)
 #endif
 
 #undef TYPE_READY
-#undef TYPE_READY_BASE
 #undef MOD_ADD_TYPE
 #undef CREATE_TYPE
     return 0;

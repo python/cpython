@@ -86,41 +86,6 @@ PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
   XXX blabla more
 */
 
-/* Seems we need this, otherwise we get problems when calling
- * PyDict_SetItem() (ma_lookup is NULL)
- */
-static int
-PyCStgDict_init(StgDictObject *self, PyObject *args, PyObject *kwds)
-{
-    if (PyDict_Type.tp_init((PyObject *)self, args, kwds) < 0) {
-        return -1;
-    }
-    return 0;
-}
-
-static int
-PyCStgDict_clear(StgDictObject *self)
-{
-    return 0;
-}
-
-static void
-PyCStgDict_dealloc(StgDictObject *self)
-{
-    PyCStgDict_clear(self);
-    PyDict_Type.tp_dealloc((PyObject *)self);
-}
-
-static PyObject *
-PyCStgDict_sizeof(StgDictObject *self, void *unused)
-{
-    Py_ssize_t res;
-
-    res = _PyDict_SizeOf((PyDictObject *)self);
-    res += sizeof(StgDictObject) - sizeof(PyDictObject);
-    return PyLong_FromSsize_t(res);
-}
-
 int
 PyCStgDict_clone(StgInfo *dst_info, StgInfo *src_info)
 {
@@ -171,86 +136,6 @@ PyCStgDict_clone(StgInfo *dst_info, StgInfo *src_info)
            src_info->ffi_type_pointer.elements,
            size);
     return 0;
-}
-
-static struct PyMethodDef PyCStgDict_methods[] = {
-    {"__sizeof__", (PyCFunction)PyCStgDict_sizeof, METH_NOARGS},
-    {NULL, NULL}                /* sentinel */
-};
-
-PyTypeObject PyCStgDict_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "StgDict",
-    sizeof(StgDictObject),
-    0,
-    (destructor)PyCStgDict_dealloc,             /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    0,                                          /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    0,                                          /* tp_doc */
-    0,                                          /* tp_traverse */
-    0,                                          /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    PyCStgDict_methods,                         /* tp_methods */
-    0,                                          /* tp_members */
-    0,                                          /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    (initproc)PyCStgDict_init,                          /* tp_init */
-    0,                                          /* tp_alloc */
-    0,                                          /* tp_new */
-    0,                                          /* tp_free */
-};
-
-/* May return NULL, but does not set an exception! */
-StgDictObject *
-PyType_stgdict(PyObject *obj)
-{
-    PyTypeObject *type;
-
-    if (!PyType_Check(obj)) {
-        return NULL;
-    }
-    ctypes_state *st = GLOBAL_STATE();
-    type = (PyTypeObject *)obj;
-    if (!type->tp_dict || !PyCStgDict_CheckExact(st, type->tp_dict)) {
-        return NULL;
-    }
-    return (StgDictObject *)type->tp_dict;
-}
-
-/* May return NULL, but does not set an exception! */
-/*
-  This function should be as fast as possible, so we don't call PyType_stgdict
-  above but inline the code, and avoid the PyType_Check().
-*/
-StgDictObject *
-PyObject_stgdict(PyObject *self)
-{
-    PyTypeObject *type = Py_TYPE(self);
-    ctypes_state *st = GLOBAL_STATE();
-    if (!type->tp_dict || !PyCStgDict_CheckExact(st, type->tp_dict)) {
-        return NULL;
-    }
-    return (StgDictObject *)type->tp_dict;
 }
 
 /* descr is the descriptor for a field marked as anonymous.  Get all the
