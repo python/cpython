@@ -20,8 +20,8 @@
 
 // Define PY_TIMEOUT_MAX constant.
 #ifdef _POSIX_THREADS
-   // PyThread_acquire_lock_timed() uses _PyTime_FromNanoseconds(us * 1000),
-   // convert microseconds to nanoseconds.
+   // PyThread_acquire_lock_timed() uses (us * 1000) to convert microseconds
+   // to nanoseconds.
 #  define PY_TIMEOUT_MAX_VALUE (LLONG_MAX / 1000)
 #elif defined (NT_THREADS)
    // WaitForSingleObject() accepts timeout in milliseconds in the range
