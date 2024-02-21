@@ -247,12 +247,6 @@ sym_set_flag(_Py_UOpsSymType *sym, int flag)
     sym->flags |= flag;
 }
 
-static inline void
-sym_clear_flag(_Py_UOpsSymType *sym, int flag)
-{
-    sym->flags &= (~flag);
-}
-
 static inline bool
 sym_has_flag(_Py_UOpsSymType *sym, int flag)
 {
