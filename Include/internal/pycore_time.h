@@ -140,17 +140,13 @@ PyAPI_FUNC(PyTime_t) _PyTime_FromSecondsDouble(double seconds, _PyTime_round_t r
 #define _PYTIME_FROMSECONDS(seconds) \
             ((PyTime_t)(seconds) * (1000 * 1000 * 1000))
 
-// Create a timestamp from a number of nanoseconds.
-// Export for '_testinternalcapi' shared extension.
-PyAPI_FUNC(PyTime_t) _PyTime_FromNanoseconds(PyTime_t ns);
-
 // Create a timestamp from a number of microseconds.
 // Clamp to [PyTime_MIN; PyTime_MAX] on overflow.
 extern PyTime_t _PyTime_FromMicrosecondsClamp(PyTime_t us);
 
-// Create a timestamp from nanoseconds (Python int).
+// Create a timestamp from a Python int object (number of nanoseconds).
 // Export for '_lsprof' shared extension.
-PyAPI_FUNC(int) _PyTime_FromNanosecondsObject(PyTime_t *t,
+PyAPI_FUNC(int) _PyTime_FromLong(PyTime_t *t,
     PyObject *obj);
 
 // Convert a number of seconds (Python float or int) to a timestamp.
@@ -183,10 +179,9 @@ extern PyTime_t _PyTime_As100Nanoseconds(PyTime_t t,
     _PyTime_round_t round);
 #endif
 
-// Convert timestamp to a number of nanoseconds (10^-9 seconds) as a Python int
-// object.
+// Convert a timestamp (number of nanoseconds) as a Python int object.
 // Export for '_testinternalcapi' shared extension.
-PyAPI_FUNC(PyObject*) _PyTime_AsNanosecondsObject(PyTime_t t);
+PyAPI_FUNC(PyObject*) _PyTime_AsLong(PyTime_t t);
 
 #ifndef MS_WINDOWS
 // Create a timestamp from a timeval structure.
