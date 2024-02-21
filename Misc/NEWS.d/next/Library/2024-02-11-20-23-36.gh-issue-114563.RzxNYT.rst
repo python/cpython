@@ -1,4 +1,0 @@
-Fix several :func:`format()` bugs when using the C implementation of :class:`~decimal.Decimal`:
-* memory leak in some rare cases when using the ``z`` format option (coerce negative 0)
-* incorrect output when applying the ``z`` format option to type ``F`` (fixed-point with capital ``NAN`` / ``INF``)
-* incorrect output when applying the ``#`` format option (alternate form)

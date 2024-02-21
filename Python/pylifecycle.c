@@ -663,6 +663,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     if (tstate == NULL) {
         return _PyStatus_ERR("can't make first thread");
     }
+    runtime->main_tstate = tstate;
     _PyThreadState_Bind(tstate);
 
     init_interp_create_gil(tstate, config.gil);
@@ -1109,7 +1110,6 @@ run_presite(PyThreadState *tstate)
     );
     if (presite_modname == NULL) {
         fprintf(stderr, "Could not convert pre-site module name to unicode\n");
-        Py_DECREF(presite_modname);
     }
     else {
         PyObject *presite = PyImport_Import(presite_modname);
@@ -1262,7 +1262,9 @@ init_interp_main(PyThreadState *tstate)
             if (opt == NULL) {
                 return _PyStatus_ERR("can't initialize optimizer");
             }
-            PyUnstable_SetOptimizer((_PyOptimizerObject *)opt);
+            if (PyUnstable_SetOptimizer((_PyOptimizerObject *)opt)) {
+                return _PyStatus_ERR("can't initialize optimizer");
+            }
             Py_DECREF(opt);
         }
     }
@@ -1627,8 +1629,8 @@ finalize_modules(PyThreadState *tstate)
 
     // Invalidate all executors and turn off tier 2 optimizer
     _Py_Executors_InvalidateAll(interp);
-    Py_XDECREF(interp->optimizer);
-    interp->optimizer = &_PyOptimizer_Default;
+    _PyOptimizerObject *old = _Py_SetOptimizer(interp, NULL);
+    Py_XDECREF(old);
 
     // Stop watching __builtin__ modifications
     PyDict_Unwatch(0, interp->builtins);
@@ -1795,8 +1797,8 @@ finalize_interp_types(PyInterpreterState *interp)
 #ifndef Py_GIL_DISABLED
     // With Py_GIL_DISABLED:
     // the freelists for the current thread state have already been cleared.
-    _PyFreeListState *state = _PyFreeListState_GET();
-    _PyObject_ClearFreeLists(state, 1);
+    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
+    _PyObject_ClearFreeLists(freelists, 1);
 #endif
 
 #ifdef Py_DEBUG
@@ -1834,6 +1836,9 @@ finalize_interp_clear(PyThreadState *tstate)
     }
 
     finalize_interp_types(tstate->interp);
+
+    /* Free any delayed free requests immediately */
+    _PyMem_FiniDelayed(tstate->interp);
 
     /* finalize_interp_types may allocate Python objects so we may need to
        abandon mimalloc segments again */

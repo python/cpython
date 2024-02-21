@@ -113,6 +113,28 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    retrieved from the resulting value using :c:func:`PyLong_AsVoidPtr`.
 
 
+.. c:function:: PyObject* PyLong_FromNativeBytes(const void* buffer, size_t n_bytes, int endianness)
+
+   Create a Python integer from the value contained in the first *n_bytes* of
+   *buffer*, interpreted as a two's-complement signed number.
+
+   *endianness* may be passed ``-1`` for the native endian that CPython was
+   compiled with, or else ``0`` for big endian and ``1`` for little.
+
+   .. versionadded:: 3.13
+
+
+.. c:function:: PyObject* PyLong_FromUnsignedNativeBytes(const void* buffer, size_t n_bytes, int endianness)
+
+   Create a Python integer from the value contained in the first *n_bytes* of
+   *buffer*, interpreted as an unsigned number.
+
+   *endianness* may be passed ``-1`` for the native endian that CPython was
+   compiled with, or else ``0`` for big endian and ``1`` for little.
+
+   .. versionadded:: 3.13
+
+
 .. XXX alias PyLong_AS_LONG (for now)
 .. c:function:: long PyLong_AsLong(PyObject *obj)
 
@@ -330,6 +352,54 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    with :c:func:`PyLong_FromVoidPtr`.
 
    Returns ``NULL`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
+
+
+.. c:function:: Py_ssize_t PyLong_AsNativeBytes(PyObject *pylong, void* buffer, Py_ssize_t n_bytes, int endianness)
+
+   Copy the Python integer value to a native *buffer* of size *n_bytes*::
+
+      int value;
+      Py_ssize_t bytes = PyLong_AsNativeBytes(v, &value, sizeof(value), -1);
+      if (bytes < 0) {
+          // Error occurred
+          return NULL;
+      }
+      else if (bytes <= (Py_ssize_t)sizeof(value)) {
+          // Success!
+      }
+      else {
+          // Overflow occurred, but 'value' contains truncated value
+      }
+
+   *endianness* may be passed ``-1`` for the native endian that CPython was
+   compiled with, or ``0`` for big endian and ``1`` for little.
+
+   Return ``-1`` with an exception raised if *pylong* cannot be interpreted as
+   an integer. Otherwise, return the size of the buffer required to store the
+   value. If this is equal to or less than *n_bytes*, the entire value was
+   copied.
+
+   Unless an exception is raised, all *n_bytes* of the buffer will be written
+   with as much of the value as can fit. This allows the caller to ignore all
+   non-negative results if the intent is to match the typical behavior of a
+   C-style downcast. No exception is set for this case.
+
+   Values are always copied as two's-complement, and sufficient buffer will be
+   requested to include a sign bit. For example, this may cause an value that
+   fits into 8 bytes when treated as unsigned to request 9 bytes, even though
+   all eight bytes were copied into the buffer. What has been omitted is the
+   zero sign bit, which is redundant when the intention is to treat the value as
+   unsigned.
+
+   Passing zero to *n_bytes* will return the requested buffer size.
+
+   .. note::
+
+      When the value does not fit in the provided buffer, the requested size
+      returned from the function may be larger than necessary. Passing 0 to this
+      function is not an accurate way to determine the bit length of a value.
+
+   .. versionadded:: 3.13
 
 
 .. c:function:: int PyUnstable_Long_IsCompact(const PyLongObject* op)

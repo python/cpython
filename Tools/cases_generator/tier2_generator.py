@@ -33,24 +33,29 @@ from stack import StackOffset, Stack, SizeMismatch
 DEFAULT_OUTPUT = ROOT / "Python/executor_cases.c.h"
 
 
+def declare_variable(
+    var: StackItem, uop: Uop, variables: set[str], out: CWriter
+) -> None:
+    if var.name in variables:
+        return
+    type = var.type if var.type else "PyObject *"
+    variables.add(var.name)
+    if var.condition:
+        out.emit(f"{type}{var.name} = NULL;\n")
+        if uop.replicates:
+            # Replicas may not use all their conditional variables
+            # So avoid a compiler warning with a fake use
+            out.emit(f"(void){var.name};\n")
+    else:
+        out.emit(f"{type}{var.name};\n")
+
+
 def declare_variables(uop: Uop, out: CWriter) -> None:
     variables = {"unused"}
     for var in reversed(uop.stack.inputs):
-        if var.name not in variables:
-            type = var.type if var.type else "PyObject *"
-            variables.add(var.name)
-            if var.condition:
-                out.emit(f"{type}{var.name} = NULL;\n")
-            else:
-                out.emit(f"{type}{var.name};\n")
+        declare_variable(var, uop, variables, out)
     for var in uop.stack.outputs:
-        if var.name not in variables:
-            variables.add(var.name)
-            type = var.type if var.type else "PyObject *"
-            if var.condition:
-                out.emit(f"{type}{var.name} = NULL;\n")
-            else:
-                out.emit(f"{type}{var.name};\n")
+        declare_variable(var, uop, variables, out)
 
 
 def tier2_replace_error(
@@ -98,9 +103,47 @@ def tier2_replace_deopt(
     out.emit(") goto deoptimize;\n")
 
 
+def tier2_replace_exit_if(
+    out: CWriter,
+    tkn: Token,
+    tkn_iter: Iterator[Token],
+    uop: Uop,
+    unused: Stack,
+    inst: Instruction | None,
+) -> None:
+    out.emit_at("if ", tkn)
+    out.emit(next(tkn_iter))
+    emit_to(out, tkn_iter, "RPAREN")
+    next(tkn_iter)  # Semi colon
+    out.emit(") goto side_exit;\n")
+
+
+def tier2_replace_oparg(
+    out: CWriter,
+    tkn: Token,
+    tkn_iter: Iterator[Token],
+    uop: Uop,
+    unused: Stack,
+    inst: Instruction | None,
+) -> None:
+    if not uop.name.endswith("_0") and not uop.name.endswith("_1"):
+        out.emit(tkn)
+        return
+    amp = next(tkn_iter)
+    if amp.text != "&":
+        out.emit(tkn)
+        out.emit(amp)
+        return
+    one = next(tkn_iter)
+    assert one.text == "1"
+    out.emit_at(uop.name[-1], tkn)
+
+
 TIER2_REPLACEMENT_FUNCTIONS = REPLACEMENT_FUNCTIONS.copy()
 TIER2_REPLACEMENT_FUNCTIONS["ERROR_IF"] = tier2_replace_error
 TIER2_REPLACEMENT_FUNCTIONS["DEOPT_IF"] = tier2_replace_deopt
+TIER2_REPLACEMENT_FUNCTIONS["oparg"] = tier2_replace_oparg
+TIER2_REPLACEMENT_FUNCTIONS["EXIT_IF"] = tier2_replace_exit_if
 
 
 def write_uop(uop: Uop, out: CWriter, stack: Stack) -> None:
@@ -108,6 +151,10 @@ def write_uop(uop: Uop, out: CWriter, stack: Stack) -> None:
         out.start_line()
         if uop.properties.oparg:
             out.emit("oparg = CURRENT_OPARG();\n")
+            assert uop.properties.const_oparg < 0
+        elif uop.properties.const_oparg >= 0:
+            out.emit(f"oparg = {uop.properties.const_oparg};\n")
+            out.emit(f"assert(oparg == CURRENT_OPARG());\n")
         for var in reversed(uop.stack.inputs):
             out.emit(stack.pop(var))
         if not uop.properties.stores_sp:
@@ -148,6 +195,9 @@ def generate_tier2(
     out.emit("\n")
     for name, uop in analysis.uops.items():
         if uop.properties.tier_one_only:
+            continue
+        if uop.properties.oparg_and_1:
+            out.emit(f"/* {uop.name} is split on (oparg & 1) */\n\n")
             continue
         if uop.is_super():
             continue
