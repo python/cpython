@@ -709,6 +709,7 @@ new_values(size_t size)
     if (res == NULL) {
         return NULL;
     }
+    res->embedded = 0;
     res->size = 0;
     res->capacity = size;
     return res;
@@ -717,7 +718,9 @@ new_values(size_t size)
 static inline void
 free_values(PyDictValues *values)
 {
-    PyMem_Free(values);
+    if (!values->embedded) {
+        PyMem_Free(values);
+    }
 }
 
 /* Consumes a reference to the keys object */
@@ -3104,6 +3107,27 @@ dict_copy_impl(PyDictObject *self)
     return PyDict_Copy((PyObject *)self);
 }
 
+/* Copies the values, but does not change the reference
+ * counts of the objects in the array. */
+static PyDictValues *
+copy_values(PyDictValues *values)
+{
+    PyDictValues *newvalues = new_values(values->capacity);
+    if (newvalues == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    newvalues->embedded = 0;
+    newvalues->size = values->size;
+    uint8_t *values_order = get_insertion_order_array(values);
+    uint8_t *new_values_order = get_insertion_order_array(newvalues);
+    memcpy(new_values_order, values_order, values->capacity);
+    for (int i = 0; i < values->capacity; i++) {
+        newvalues->values[i] = values->values[i];
+    }
+    return newvalues;
+}
+
 PyObject *
 PyDict_Copy(PyObject *o)
 {
@@ -3124,28 +3148,23 @@ PyDict_Copy(PyObject *o)
 
     if (_PyDict_HasSplitTable(mp)) {
         PyDictObject *split_copy;
-        size_t size = shared_keys_usable_size(mp->ma_keys);
-        PyDictValues *newvalues = new_values(size);
-        if (newvalues == NULL)
+        PyDictValues *newvalues = copy_values(mp->ma_values);
+        if (newvalues == NULL) {
             return PyErr_NoMemory();
+        }
         split_copy = PyObject_GC_New(PyDictObject, &PyDict_Type);
         if (split_copy == NULL) {
             free_values(newvalues);
             return NULL;
         }
-        newvalues->size = mp->ma_values->size;
-        uint8_t *values_order = get_insertion_order_array(mp->ma_values);
-        uint8_t *new_values_order = get_insertion_order_array(newvalues);
-        memcpy(new_values_order, values_order, size);
+        for (size_t i = 0; i < newvalues->capacity; i++) {
+            Py_XINCREF(newvalues->values[i]);
+        }
         split_copy->ma_values = newvalues;
         split_copy->ma_keys = mp->ma_keys;
         split_copy->ma_used = mp->ma_used;
         split_copy->ma_version_tag = DICT_NEXT_VERSION(interp);
         dictkeys_incref(mp->ma_keys);
-        for (size_t i = 0; i < size; i++) {
-            PyObject *value = mp->ma_values->values[i];
-            split_copy->ma_values->values[i] = Py_XNewRef(value);
-        }
         if (_PyObject_GC_IS_TRACKED(mp))
             _PyObject_GC_TRACK(split_copy);
         return (PyObject *)split_copy;

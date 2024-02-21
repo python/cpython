@@ -183,7 +183,7 @@ struct _dictkeysobject {
 struct _dictvalues {
     uint8_t capacity;
     uint8_t size;
-    uint8_t refcount;
+    uint8_t embedded;
     PyObject *values[1];
 };
 
