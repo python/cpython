@@ -649,6 +649,21 @@ class CosmeticTestCase(ASTTestCase):
         self.check_ast_roundtrip("""f'''""\"''\\'{"\\n\\"'"}''' """)
         self.check_ast_roundtrip("""f'''""\"''\\'{""\"\\n\\"'''""\" '''\\n'''}''' """)
 
+    def test_backslash_in_format_spec(self):
+        self.check_ast_roundtrip("""f"{x:\\ }" """)
+        self.check_ast_roundtrip("""f"{x:\\\\ }" """)
+        self.check_ast_roundtrip("""f"{x:\\\\\\ }" """)
+        self.check_ast_roundtrip("""f"{x:\\\\\\\\ }" """)
+
+    def test_quote_in_format_spec(self):
+        self.check_ast_roundtrip("""f"{x:'}" """)
+        self.check_ast_roundtrip("""f"{x:\\'}" """)
+        self.check_ast_roundtrip("""f"{x:\\\\'}" """)
+
+        self.check_ast_roundtrip("""f'\\'{x:"}' """)
+        self.check_ast_roundtrip("""f'\\'{x:\\"}' """)
+        self.check_ast_roundtrip("""f'\\'{x:\\\\"}' """)
+
 
 class ManualASTCreationTestCase(unittest.TestCase):
     """Test that AST nodes created without a type_params field unparse correctly."""
