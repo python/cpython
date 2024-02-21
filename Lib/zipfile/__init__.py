@@ -1335,7 +1335,10 @@ class ZipFile:
         if hasattr(file, 'read') or hasattr(file, 'write'):
             self._filePassed = 1
             self.fp = file
-            self.filename = getattr(file, 'name', None)
+            if isinstance(file, os.PathLike):
+                self.filename = os.fspath(file)
+            else:
+                self.filename = getattr(file, 'name', None)
         else:
             # No, it's a filename
             self._filePassed = 0
