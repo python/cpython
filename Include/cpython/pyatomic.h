@@ -470,6 +470,9 @@ static inline void
 _Py_atomic_store_ptr_release(void *obj, void *value);
 
 static inline void
+_Py_atomic_store_ssize_release(Py_ssize_t *obj, Py_ssize_t value);
+
+static inline void
 _Py_atomic_store_int_release(int *obj, int value);
 
 static inline int
@@ -483,6 +486,9 @@ _Py_atomic_load_uint64_acquire(const uint64_t *obj);
 
 static inline uint32_t
 _Py_atomic_load_uint32_acquire(const uint32_t *obj);
+
+static inline Py_ssize_t
+_Py_atomic_load_ssize_acquire(const Py_ssize_t *obj);
 
 
 // --- _Py_atomic_fence ------------------------------------------------------
