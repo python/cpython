@@ -323,6 +323,17 @@ dummy_func(void) {
         new_frame->push_frame = this_instr;
     }
 
+    // This should be identical to _PUSH_FRAME!
+    op(_PUSH_FRAME_INLINEABLE, (new_frame: _Py_UOpsAbstractFrame * -- unused if (0))) {
+        SYNC_SP();
+        ctx->frame->stack_pointer = stack_pointer;
+        ctx->frame->after_call_stackentries = STACK_LEVEL();
+        ctx->frame = new_frame;
+        ctx->curr_frame_depth++;
+        stack_pointer = new_frame->stack_pointer;
+        new_frame->push_frame = this_instr;
+    }
+
     op(_SET_IP, (instr_ptr/4 --)) {
         ctx->frame->instr_ptr = (_PyUOpInstruction *)instr_ptr;
     }

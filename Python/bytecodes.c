@@ -3171,6 +3171,29 @@ dummy_func(
 #endif
         }
 
+        // Exact same as _PUSH_FRAME. But marks a frame as inlineable
+        // to the tier 2 redundancy eliminator.
+        // TODO: add support to pseudo for uops.
+        op(_PUSH_FRAME_INLINEABLE, (new_frame: _PyInterpreterFrame* -- unused if (0))) {
+            // Write it out explicitly because it's subtly different.
+            // Eventually this should be the only occurrence of this code.
+            assert(tstate->interp->eval_frame == NULL);
+            SYNC_SP();
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            new_frame->previous = frame;
+            CALL_STAT_INC(inlined_py_calls);
+            frame = tstate->current_frame = new_frame;
+            tstate->py_recursion_remaining--;
+            LOAD_SP();
+            LOAD_IP(0);
+#if LLTRACE && TIER_ONE
+            lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
+            if (lltrace < 0) {
+                goto exit_unwind;
+            }
+#endif
+        }
+
         macro(CALL_BOUND_METHOD_EXACT_ARGS) =
             unused/1 + // Skip over the counter
             _CHECK_PEP_523 +

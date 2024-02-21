@@ -1423,6 +1423,19 @@
             break;
         }
 
+        case _PUSH_FRAME_INLINEABLE: {
+            _Py_UOpsAbstractFrame *new_frame;
+            new_frame = (_Py_UOpsAbstractFrame *)stack_pointer[-1];
+            stack_pointer += -1;
+            ctx->frame->stack_pointer = stack_pointer;
+            ctx->frame->after_call_stackentries = STACK_LEVEL();
+            ctx->frame = new_frame;
+            ctx->curr_frame_depth++;
+            stack_pointer = new_frame->stack_pointer;
+            new_frame->push_frame = this_instr;
+            break;
+        }
+
         /* _CALL_PY_WITH_DEFAULTS is not a viable micro-op for tier 2 */
 
         case _CALL_TYPE_1: {

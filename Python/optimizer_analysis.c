@@ -743,7 +743,7 @@ function_decide_inlineable(PyFunctionObject *func)
     if (func == NULL) {
         return 0;
     }
-    PyCodeObject *co = func->func_code;
+    PyCodeObject *co = (PyCodeObject *)func->func_code;
     if (co == NULL) {
         return 0;
     }
@@ -823,7 +823,9 @@ peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_s
                     co = (PyCodeObject *)func->func_code;
                 }
                 frame_depth--;
-                function_decide_inlineable(func);
+                if (function_decide_inlineable(func)) {
+                    push_frame[frame_depth]->opcode = _PUSH_FRAME_INLINEABLE;
+                }
                 assert(frame_depth >= 1);
                 break;
             }
