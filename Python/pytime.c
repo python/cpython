@@ -255,7 +255,7 @@ _PyTime_AsTime_t(PyTime_t t, time_t *t2)
 // Convert PyTime_t to long.
 // Return 0 on success. Return -1 and clamp the value on overflow.
 static int
-_PyTime_AsLong(PyTime_t t, long *t2)
+_PyTime_AsCLong(PyTime_t t, long *t2)
 {
 #if SIZEOF_LONG < _SIZEOF_PYTIME_T
     if ((PyTime_t)LONG_MAX < t) {
@@ -805,7 +805,7 @@ pytime_as_timeval_struct(PyTime_t t, struct timeval *tv,
     int res2;
 #ifdef MS_WINDOWS
     // On Windows, timeval.tv_sec type is long
-    res2 = _PyTime_AsLong(tv_sec, &tv->tv_sec);
+    res2 = _PyTime_AsCLong(tv_sec, &tv->tv_sec);
 #else
     res2 = _PyTime_AsTime_t(tv_sec, &tv->tv_sec);
 #endif
