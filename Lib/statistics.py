@@ -136,9 +136,10 @@ from fractions import Fraction
 from decimal import Decimal
 from itertools import count, groupby, repeat
 from bisect import bisect_left, bisect_right
-from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum
+from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum, sumprod
+from math import isfinite, isinf
 from functools import reduce
-from operator import mul, itemgetter
+from operator import itemgetter
 from collections import Counter, namedtuple, defaultdict
 
 _SQRT2 = sqrt(2.0)
@@ -355,7 +356,8 @@ def _fail_neg(values, errmsg='negative value'):
             raise StatisticsError(errmsg)
         yield x
 
-def _rank(data, /, *, key=None, reverse=False, ties='average') -> list[float]:
+
+def _rank(data, /, *, key=None, reverse=False, ties='average', start=1) -> list[float]:
     """Rank order a dataset. The lowest value has rank 1.
 
     Ties are averaged so that equal values receive the same rank:
@@ -369,13 +371,21 @@ def _rank(data, /, *, key=None, reverse=False, ties='average') -> list[float]:
         >>> _rank([3.5, 5.0, 3.5, 2.0, 6.0, 1.0])
         [3.5, 5.0, 3.5, 2.0, 6.0, 1.0]
 
-    It is possible to rank the data in reverse order so that
-    the highest value has rank 1.  Also, a key-function can
-    extract the field to be ranked:
+    It is possible to rank the data in reverse order so that the
+    highest value has rank 1.  Also, a key-function can extract
+    the field to be ranked:
 
         >>> goals = [('eagles', 45), ('bears', 48), ('lions', 44)]
         >>> _rank(goals, key=itemgetter(1), reverse=True)
         [2.0, 1.0, 3.0]
+
+    Ranks are conventionally numbered starting from one; however,
+    setting *start* to zero allows the ranks to be used as array indices:
+
+        >>> prize = ['Gold', 'Silver', 'Bronze', 'Certificate']
+        >>> scores = [8.1, 7.3, 9.4, 8.3]
+        >>> [prize[int(i)] for i in _rank(scores, start=0, reverse=True)]
+        ['Bronze', 'Certificate', 'Gold', 'Silver']
 
     """
     # If this function becomes public at some point, more thought
@@ -389,7 +399,7 @@ def _rank(data, /, *, key=None, reverse=False, ties='average') -> list[float]:
     if key is not None:
         data = map(key, data)
     val_pos = sorted(zip(data, count()), reverse=reverse)
-    i = 0   # To rank starting at 0 instead of 1, set i = -1.
+    i = start - 1
     result = [0] * len(val_pos)
     for _, g in groupby(val_pos, key=itemgetter(0)):
         group = list(g)
@@ -399,6 +409,7 @@ def _rank(data, /, *, key=None, reverse=False, ties='average') -> list[float]:
             result[orig_pos] = rank
         i += size
     return result
+
 
 def _integer_sqrt_of_frac_rto(n: int, m: int) -> int:
     """Square root of n/m, rounded to the nearest integer using round-to-odd."""
@@ -486,28 +497,26 @@ def fmean(data, weights=None):
     >>> fmean([3.5, 4.0, 5.25])
     4.25
     """
-    try:
-        n = len(data)
-    except TypeError:
-        # Handle iterators that do not define __len__().
-        n = 0
-        def count(iterable):
-            nonlocal n
-            for n, x in enumerate(iterable, start=1):
-                yield x
-        data = count(data)
     if weights is None:
+        try:
+            n = len(data)
+        except TypeError:
+            # Handle iterators that do not define __len__().
+            n = 0
+            def count(iterable):
+                nonlocal n
+                for n, x in enumerate(iterable, start=1):
+                    yield x
+            data = count(data)
         total = fsum(data)
         if not n:
             raise StatisticsError('fmean requires at least one data point')
         return total / n
-    try:
-        num_weights = len(weights)
-    except TypeError:
+    if not isinstance(weights, (list, tuple)):
         weights = list(weights)
-        num_weights = len(weights)
-    num = fsum(map(mul, data, weights))
-    if n != num_weights:
+    try:
+        num = sumprod(data, weights)
+    except ValueError:
         raise StatisticsError('data and weights must be the same length')
     den = fsum(weights)
     if not den:
@@ -518,8 +527,10 @@ def fmean(data, weights=None):
 def geometric_mean(data):
     """Convert data to floats and compute the geometric mean.
 
-    Raises a StatisticsError if the input dataset is empty,
-    if it contains a zero, or if it contains a negative value.
+    Raises a StatisticsError if the input dataset is empty
+    or if it contains a negative value.
+
+    Returns zero if the product of inputs is zero.
 
     No special efforts are made to achieve exact results.
     (However, this may change in the future.)
@@ -527,11 +538,25 @@ def geometric_mean(data):
     >>> round(geometric_mean([54, 24, 36]), 9)
     36.0
     """
-    try:
-        return exp(fmean(map(log, data)))
-    except ValueError:
-        raise StatisticsError('geometric mean requires a non-empty dataset '
-                              'containing positive numbers') from None
+    n = 0
+    found_zero = False
+    def count_positive(iterable):
+        nonlocal n, found_zero
+        for n, x in enumerate(iterable, start=1):
+            if x > 0.0 or math.isnan(x):
+                yield x
+            elif x == 0.0:
+                found_zero = True
+            else:
+                raise StatisticsError('No negative inputs allowed', x)
+    total = fsum(map(log, count_positive(data)))
+    if not n:
+        raise StatisticsError('Must have a non-empty dataset')
+    if math.isnan(total):
+        return math.nan
+    if found_zero:
+        return math.nan if total == math.inf else 0.0
+    return exp(total / n)
 
 
 def harmonic_mean(data, weights=None):
@@ -835,7 +860,9 @@ def quantiles(data, *, n=4, method='exclusive'):
     data = sorted(data)
     ld = len(data)
     if ld < 2:
-        raise StatisticsError('must have at least two data points')
+        if ld == 1:
+            return data * (n - 1)
+        raise StatisticsError('must have at least one data point')
     if method == 'inclusive':
         m = ld - 1
         result = []
@@ -996,6 +1023,27 @@ def _mean_stdev(data):
         # Handle Nans and Infs gracefully
         return float(xbar), float(xbar) / float(ss)
 
+def _sqrtprod(x: float, y: float) -> float:
+    "Return sqrt(x * y) computed with improved accuracy and without overflow/underflow."
+    h = sqrt(x * y)
+    if not isfinite(h):
+        if isinf(h) and not isinf(x) and not isinf(y):
+            # Finite inputs overflowed, so scale down, and recompute.
+            scale = 2.0 ** -512  # sqrt(1 / sys.float_info.max)
+            return _sqrtprod(scale * x, scale * y) / scale
+        return h
+    if not h:
+        if x and y:
+            # Non-zero inputs underflowed, so scale up, and recompute.
+            # Scale:  1 / sqrt(sys.float_info.min * sys.float_info.epsilon)
+            scale = 2.0 ** 537
+            return _sqrtprod(scale * x, scale * y) / scale
+        return h
+    # Improve accuracy with a differential correction.
+    # https://www.wolframalpha.com/input/?i=Maclaurin+series+sqrt%28h**2+%2B+x%29+at+x%3D0
+    d = sumprod((x, h), (y, -h))
+    return h + d / (2.0 * h)
+
 
 # === Statistics for relations between two inputs ===
 
@@ -1028,7 +1076,7 @@ def covariance(x, y, /):
         raise StatisticsError('covariance requires at least two data points')
     xbar = fsum(x) / n
     ybar = fsum(y) / n
-    sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
+    sxy = sumprod((xi - xbar for xi in x), (yi - ybar for yi in y))
     return sxy / (n - 1)
 
 
@@ -1063,15 +1111,19 @@ def correlation(x, y, /, *, method='linear'):
     if method not in {'linear', 'ranked'}:
         raise ValueError(f'Unknown method: {method!r}')
     if method == 'ranked':
-        x = _rank(x)
-        y = _rank(y)
-    xbar = fsum(x) / n
-    ybar = fsum(y) / n
-    sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
-    sxx = fsum((d := xi - xbar) * d for xi in x)
-    syy = fsum((d := yi - ybar) * d for yi in y)
+        start = (n - 1) / -2            # Center rankings around zero
+        x = _rank(x, start=start)
+        y = _rank(y, start=start)
+    else:
+        xbar = fsum(x) / n
+        ybar = fsum(y) / n
+        x = [xi - xbar for xi in x]
+        y = [yi - ybar for yi in y]
+    sxy = sumprod(x, y)
+    sxx = sumprod(x, x)
+    syy = sumprod(y, y)
     try:
-        return sxy / sqrt(sxx * syy)
+        return sxy / _sqrtprod(sxx, syy)
     except ZeroDivisionError:
         raise StatisticsError('at least one of the inputs is constant')
 
@@ -1101,7 +1153,7 @@ def linear_regression(x, y, /, *, proportional=False):
     >>> noise = NormalDist().samples(5, seed=42)
     >>> y = [3 * x[i] + 2 + noise[i] for i in range(5)]
     >>> linear_regression(x, y)  #doctest: +ELLIPSIS
-    LinearRegression(slope=3.09078914170..., intercept=1.75684970486...)
+    LinearRegression(slope=3.17495..., intercept=1.00925...)
 
     If *proportional* is true, the independent variable *x* and the
     dependent variable *y* are assumed to be directly proportional.
@@ -1114,7 +1166,7 @@ def linear_regression(x, y, /, *, proportional=False):
 
     >>> y = [3 * x[i] + noise[i] for i in range(5)]
     >>> linear_regression(x, y, proportional=True)  #doctest: +ELLIPSIS
-    LinearRegression(slope=3.02447542484..., intercept=0.0)
+    LinearRegression(slope=2.90475..., intercept=0.0)
 
     """
     n = len(x)
@@ -1122,14 +1174,13 @@ def linear_regression(x, y, /, *, proportional=False):
         raise StatisticsError('linear regression requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('linear regression requires at least two data points')
-    if proportional:
-        sxy = fsum(xi * yi for xi, yi in zip(x, y))
-        sxx = fsum(xi * xi for xi in x)
-    else:
+    if not proportional:
         xbar = fsum(x) / n
         ybar = fsum(y) / n
-        sxy = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
-        sxx = fsum((d := xi - xbar) * d for xi in x)
+        x = [xi - xbar for xi in x]  # List because used three times below
+        y = (yi - ybar for yi in y)  # Generator because only used once below
+    sxy = sumprod(x, y) + 0.0        # Add zero to coerce result to a float
+    sxx = sumprod(x, x)
     try:
         slope = sxy / sxx   # equivalent to:  covariance(x, y) / variance(x)
     except ZeroDivisionError:
@@ -1246,9 +1297,11 @@ class NormalDist:
 
     def samples(self, n, *, seed=None):
         "Generate *n* samples for a given mean and standard deviation."
-        gauss = random.gauss if seed is None else random.Random(seed).gauss
-        mu, sigma = self._mu, self._sigma
-        return [gauss(mu, sigma) for _ in repeat(None, n)]
+        rnd = random.random if seed is None else random.Random(seed).random
+        inv_cdf = _normal_dist_inv_cdf
+        mu = self._mu
+        sigma = self._sigma
+        return [inv_cdf(rnd(), mu, sigma) for _ in repeat(None, n)]
 
     def pdf(self, x):
         "Probability density function.  P(x <= X < x+dx) / dx"
@@ -1435,3 +1488,9 @@ class NormalDist:
 
     def __repr__(self):
         return f'{type(self).__name__}(mu={self._mu!r}, sigma={self._sigma!r})'
+
+    def __getstate__(self):
+        return self._mu, self._sigma
+
+    def __setstate__(self, state):
+        self._mu, self._sigma = state

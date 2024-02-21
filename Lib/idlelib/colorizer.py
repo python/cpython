@@ -310,7 +310,7 @@ class ColorDelegator(Delegator):
                     # crumb telling the next invocation to resume here
                     # in case update tells us to leave.
                     self.tag_add("TODO", next)
-                self.update()
+                self.update_idletasks()
                 if self.stop_colorizing:
                     if DEBUG: print("colorizing stopped")
                     return

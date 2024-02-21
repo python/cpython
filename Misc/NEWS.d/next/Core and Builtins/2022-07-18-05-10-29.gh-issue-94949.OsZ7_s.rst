@@ -1,1 +1,0 @@
-:func:`ast.parse` will no longer parse parenthesized context managers when passed ``feature_version`` less than ``(3, 9)``. Patch by Shantanu Jain.

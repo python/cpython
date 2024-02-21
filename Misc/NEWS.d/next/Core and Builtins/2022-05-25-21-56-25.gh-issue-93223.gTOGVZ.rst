@@ -1,1 +1,0 @@
-When a bytecode instruction jumps to an unconditional jump instruction, the first instruction can often be optimized to target the unconditional jump's target directly. For tracing reasons, this would previously only occur if both instructions have the same line number. This also now occurs if the unconditional jump is artificial, i.e., if it has no associated line number.

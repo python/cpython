@@ -87,7 +87,6 @@ class RuleCheckingVisitor(GrammarVisitor):
 
 
 class ParserGenerator:
-
     callmakervisitor: GrammarVisitor
 
     def __init__(self, grammar: Grammar, tokens: Set[str], file: Optional[IO[Text]]):

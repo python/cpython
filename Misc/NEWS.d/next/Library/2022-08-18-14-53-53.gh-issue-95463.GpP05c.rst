@@ -1,2 +1,0 @@
-Remove an incompatible change from :issue:`28080` that caused a regression
-that ignored the utf8 in ``ZipInfo.flag_bits``. Patch by Pablo Galindo.
