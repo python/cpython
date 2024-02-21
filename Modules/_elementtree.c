@@ -3914,7 +3914,7 @@ _elementtree_XMLParser_flush_impl(XMLParserObject *self)
     }
 
     // NOTE: The Expat parser in the C implementation of ElementTree is not
-    //       exposed to the outside; as a result we known that reparse deferall
+    //       exposed to the outside; as a result we known that reparse deferral
     //       is currently enabled, or we would not even have access to function
     //       XML_SetReparseDeferralEnabled in the first place (which we checked
     //       for, a few lines up).
