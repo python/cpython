@@ -834,20 +834,20 @@ Functions
    :module:
 
    Default loader. This default loader reads an included resource from disk.
-   *href* is a URL. *parse* is for parse mode either "xml" or "text".
-   *encoding* is an optional text encoding. If not given, encoding is ``utf-8``.
+   *href* is a URL.  *parse* is for parse mode either "xml" or "text".
+   *encoding* is an optional text encoding.  If not given, encoding is ``utf-8``.
    Returns the expanded resource.
-   If the parse mode is ``"xml"``, this is an :class:`Element` instance.
+   If the parse mode is ``"xml"``, this is an :class:`xml.etree.Element` instance.
    If the parse mode is ``"text"``, this is a string.
-   If the loader fails, it can return None or raise an exception.
+   If the loader fails, it can return ``None`` or raise an exception.
 
 
 .. function:: xml.etree.ElementInclude.include(elem, loader=None, base_url=None, \
                                                max_depth=6)
    :module:
 
-   This function expands XInclude directives in-place in *elem*.
-   *elem* is the root element or an :class:`ElementTree` instance.  *loader* is
+   This function expands XInclude directives in-place in *elem*.  *elem* is the
+   root element or an :class:`xml.etree.ElementTree` instance.  *loader* is
    an optional resource loader.  If omitted, it defaults to :func:`default_loader`.
    If given, it should be a callable that implements the same interface as
    :func:`default_loader`.  *base_url* is base URL of the original file, to resolve
@@ -855,7 +855,7 @@ Functions
    inclusions.  Limited to reduce the risk of malicious content explosion.
    Pass ``None`` to disable the limitation.
 
-   Returns the expanded resource in *elem*.
+   Returns ``None``.  Updates tree pointed by *elem*.
 
    .. versionadded:: 3.9
       The *base_url* and *max_depth* parameters.

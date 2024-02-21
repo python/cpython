@@ -106,12 +106,13 @@ def default_loader(href, parse, encoding=None):
 #     relative include file references.
 # @param max_depth The maximum number of recursive inclusions.
 #     Limited to reduce the risk of malicious content explosion.
-#     Pass a negative value to disable the limitation.
+#     Pass None to disable the limitation.
 # @throws LimitedRecursiveIncludeError If the {@link max_depth} was exceeded.
 # @throws FatalIncludeError If the function fails to include a given
 #     resource, or if the tree contains malformed XInclude elements.
 # @throws IOError If the function fails to load a given resource.
-# @returns the node or its replacement if it was an XInclude node
+# @throws ValueError If negative {@link max_depth} is passed.
+# @returns None. Modifies tree pointed by {@link elem}
 
 def include(elem, loader=None, base_url=None,
             max_depth=DEFAULT_MAX_INCLUSION_DEPTH):
